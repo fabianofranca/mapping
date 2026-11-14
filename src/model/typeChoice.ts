@@ -1,31 +1,31 @@
 import type { SpecAnnotationType, SpecLayerGroup } from './spec';
 
 export interface TypeChoiceSection {
-  /** Chave estável: o id do grupo, ou 'others' para o bloco "Outros" (sem cabeçalho de grupo: 'all'). */
+  /** Stable key: the group id, or 'others' for the "Others" block (with no group header: 'all'). */
   readonly key: string;
-  /** Grupo declarado do cabeçalho; null no bloco "Outros" e na lista sem cabeçalhos. */
+  /** Group declared in the header; null in the "Others" block and in the list with no headers. */
   readonly group: SpecLayerGroup | null;
-  /** true só no bloco dos tipos sem grupo, que a UI chama de "Outros". */
+  /** true only in the block of types with no group, which the UI calls "Others". */
   readonly others: boolean;
   readonly types: readonly SpecAnnotationType[];
 }
 
 export interface TypeChoice {
-  /** false: lista plana (uma só seção, sem cabeçalhos). */
+  /** false: flat list (a single section, no headers). */
   readonly headers: boolean;
   readonly sections: readonly TypeChoiceSection[];
-  /** Total de tipos oferecidos (antes da busca), para "Buscar entre N tipos". */
+  /** Total types offered (before the search), for "Search among N types". */
   readonly total: number;
-  /** Tipos que passaram na busca (soma das seções, sem repetir o tipo que está em vários grupos). */
+  /** Types that passed the search (sum of the sections, not repeating a type that is in several groups). */
   readonly matches: number;
 }
 
-/** Minúsculas, sem acentos e sem espaços nas pontas. */
+/** Lowercase, without accents and without spaces at the ends. */
 export function normalizeSearch(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
 }
 
-/** O tipo casa pelo nome, id ou descrição; busca vazia casa tudo. */
+/** The type matches by name, id or description; an empty search matches everything. */
 export function typeMatchesQuery(type: SpecAnnotationType, query: string): boolean {
   return matchesNormalized(type, normalizeSearch(query));
 }
@@ -37,12 +37,12 @@ function matchesNormalized(type: SpecAnnotationType, q: string): boolean {
   );
 }
 
-/** Ids dos grupos do tipo que existem na camada. */
+/** Ids of the type's groups that exist in the layer. */
 function knownGroups(type: SpecAnnotationType, known: ReadonlySet<string>): string[] {
   return (type.groups ?? []).filter((id) => known.has(id));
 }
 
-/** Agrupa os tipos (ordem dos grupos da camada) e filtra pela busca. */
+/** Groups the types (in the layer's group order) and filters by the search. */
 export function chooseTypes(
   types: readonly SpecAnnotationType[],
   groups: readonly SpecLayerGroup[] | undefined,

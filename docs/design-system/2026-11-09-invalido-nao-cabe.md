@@ -1,13 +1,13 @@
-# Inválido também não cabe — 2026-11-09 (épico `epic/invalido-nao-cabe`)
+# Invalid does not fit either — 2026-11-09 (épico `epic/invalido-nao-cabe`)
 
 ## Pendências
 
-Nenhuma.
+None.
 
 ## Sincronização
 
-Nada a gravar no artefato Mapping do Claude Design: a etapa só muda o exemplo `proposta-componentes.zip`, o gerador de teste e o Preparo do R13 em `docs/TESTING.md`. Nenhum componente, token ou ícone mudou.
+Nothing to write to the Mapping artifact in Claude Design: the stage only changes the `proposta-componentes.zip` example, the test generator and the R13 Setup in `docs/TESTING.md`. No component, token or icon changed.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

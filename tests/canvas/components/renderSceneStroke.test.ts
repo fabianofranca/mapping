@@ -1,4 +1,4 @@
-// Formato 4 no desenho: cap/join, sides com traço reto e o recorte ampliado da raiz.
+// Format 4 in the drawing: cap/join, sides with a straight stroke and the enlarged clip of the root.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -35,16 +35,16 @@ function shapesOf(scene: Scene): Konva.Shape[] {
   return renderScene(scene).root.find('Shape') as Konva.Shape[];
 }
 
-describe('traço com cap e join', () => {
-  it('chegam à forma (lineCap/lineJoin)', () => {
+describe('stroke with cap and join', () => {
+  it('reach the shape (lineCap/lineJoin)', () => {
     const [shape] = shapesOf(root({ stroke: stroke({ cap: 'round', join: 'round' }) }));
     expect(shape?.lineCap()).toBe('round');
     expect(shape?.lineJoin()).toBe('round');
   });
 });
 
-describe('traço por lado (sides)', () => {
-  it('["bottom"] num 100×40 produz uma linha só, de (0,40) a (100,40), com a largura e a cor do traço', () => {
+describe('stroke per side (sides)', () => {
+  it('["bottom"] on a 100×40 produces a single line, from (0,40) to (100,40), with the stroke width and color', () => {
     const shapes = shapesOf(root({ stroke: stroke({ sides: ['bottom'] }) }));
     expect(shapes).toHaveLength(1);
     const line = shapes[0] as Konva.Line;
@@ -54,7 +54,7 @@ describe('traço por lado (sides)', () => {
     expect(line.stroke()).toBe('#112233');
   });
 
-  it('com cornerRadius e ["top"] o traço é reto, sem arco no canto', () => {
+  it('with cornerRadius and ["top"] the stroke is straight, without an arc at the corner', () => {
     const shapes = shapesOf(
       root({ cornerRadius: 8, stroke: stroke({ sides: ['top'], align: 'inside' }) }),
     );
@@ -62,7 +62,7 @@ describe('traço por lado (sides)', () => {
     expect((shapes[0] as Konva.Line).points()).toEqual([0, 1, 100, 1]);
   });
 
-  it('dois lados são duas linhas, com ponta e canto do traço', () => {
+  it('two sides are two lines, with the stroke cap and join', () => {
     const shapes = shapesOf(
       root({ stroke: stroke({ sides: ['left', 'right'], cap: 'square' }) }),
     );
@@ -74,7 +74,7 @@ describe('traço por lado (sides)', () => {
   });
 });
 
-describe('recorte ampliado da raiz', () => {
+describe('enlarged clip of the root', () => {
   function clipRect(scene: Scene): number[] {
     const group = renderScene(scene).root;
     const calls: number[][] = [];
@@ -91,7 +91,7 @@ describe('recorte ampliado da raiz', () => {
     return calls[0] ?? [];
   }
 
-  it('com clipBox o recorte é o retângulo ampliado', () => {
+  it('with clipBox the clip is the enlarged rectangle', () => {
     const scene = root({
       clip: true,
       clipBox: { x: -4, y: -4, width: 108, height: 48 },
@@ -100,15 +100,15 @@ describe('recorte ampliado da raiz', () => {
     expect(clipRect(scene)).toEqual([-4, -4, 108, 48]);
   });
 
-  it('sem clipBox o recorte segue a caixa arredondada', () => {
+  it('without clipBox the clip follows the rounded box', () => {
     const group = renderScene(root({ clip: true, cornerRadius: 8 })).root;
     expect(group.clipFunc()).toBeDefined();
     expect(clipRect(root({ clip: true, cornerRadius: 8 }))).toEqual([]);
   });
 });
 
-describe('recorte ampliado de um quadro com raio (1.6 do reteste)', () => {
-  it('os filhos saem num grupo recortado pela forma, não pelo retângulo ampliado', () => {
+describe('enlarged clip of a frame with a radius (1.6 of the retest)', () => {
+  it('the children come out in a group clipped by the shape, not by the enlarged rectangle', () => {
     const child: FrameNode = {
       ...baseNode({ id: 'c', name: 'c', width: 100, height: 40 }),
       type: 'frame',

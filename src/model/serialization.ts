@@ -20,7 +20,7 @@ import {
   type ProjectSpecialization,
 } from './types';
 
-/** A âncora da marcação com as chaves sempre na mesma ordem e só as presentes. */
+/** The marking's anchor with the keys always in the same order and only the present ones. */
 function canonicalAnchor(a: MarkingAnchor): MarkingAnchor {
   return {
     to: a.to,
@@ -33,9 +33,9 @@ function canonicalAnchor(a: MarkingAnchor): MarkingAnchor {
 }
 
 /**
- * Gera o texto do `mapping.json`: chaves sempre na mesma ordem, indentação de
- * 2 espaços e quebra de linha no final. Serializar o resultado de
- * `deserialize` produz exatamente o mesmo texto (round-trip sem perdas).
+ * Produces the text of `mapping.json`: keys always in the same order, 2-space indentation and
+ * a line break at the end. Serializing the result of `deserialize` produces exactly the same
+ * text (lossless round-trip).
  */
 export function serialize(p: Project): string {
   const canonical: ProjectFile = {
@@ -139,12 +139,12 @@ export function serialize(p: Project): string {
   return `${JSON.stringify(canonical, null, 2)}\n`;
 }
 
-/** Texto de `specs/<id>.json`: a especialização com indentação de 2 espaços. */
+/** Text of `specs/<id>.json`: the specialization with 2-space indentation. */
 export function serializeSpec(spec: Spec): string {
   return `${JSON.stringify(spec, null, 2)}\n`;
 }
 
-/** Arquivos de `specs/` do projeto (caminho → texto), para gravar ou exportar. */
+/** The project's `specs/` files (path → text), to write or export. */
 export function specFiles(p: Project): Map<string, string> {
   const files = new Map<string, string>();
   for (const s of p.specializations) {
@@ -154,19 +154,19 @@ export function specFiles(p: Project): Map<string, string> {
 }
 
 /**
- * Caminhos de `specs/` citados por um `mapping.json` ainda não validado, para o
- * armazenamento ler as cópias antes de `deserialize`. Vazio se não der para ler.
+ * `specs/` paths cited by a not-yet-validated `mapping.json`, so that the storage can read the
+ * copies before `deserialize`. Empty if it cannot be read.
  */
 export function referencedSpecFiles(text: string): string[] {
   try {
     return referencedSpecFilesOf(JSON.parse(text));
   } catch {
-    // Só descobre quais cópias de `specs/` ler; o JSON inválido é tratado em `deserialize`.
+    // It only finds out which `specs/` copies to read; invalid JSON is handled in `deserialize`.
     return [];
   }
 }
 
-/** Como `referencedSpecFiles`, para quem já interpretou o JSON (`deserializeParsed`). */
+/** Like `referencedSpecFiles`, for whoever already parsed the JSON (`deserializeParsed`). */
 export function referencedSpecFilesOf(raw: unknown): string[] {
   const list: unknown = isRecord(raw) ? raw.specializations : null;
   if (!Array.isArray(list)) return [];
@@ -175,12 +175,12 @@ export function referencedSpecFilesOf(raw: unknown): string[] {
   );
 }
 
-/** Problema com a cópia de uma especialização em `specs/` (não impede a abertura). */
+/** Problem with the copy of a specialization in `specs/` (does not prevent opening). */
 export interface SpecFileWarning {
   readonly specId: string;
   readonly file: string;
   readonly problem: 'missing' | 'invalid' | 'id-mismatch' | 'version-mismatch';
-  /** Erros de validação (`caminho: mensagem`), em `invalid`. */
+  /** Validation errors (`path: message`), in `invalid`. */
   readonly errors?: readonly string[];
 }
 
@@ -195,23 +195,23 @@ export type DeserializeResult =
   | {
       readonly ok: true;
       readonly project: Project;
-      /** Arquivo de uma versão mais nova que a suportada: abrir sem permitir edição. */
+      /** File of a version newer than the supported one: open without allowing edits. */
       readonly readOnly: boolean;
-      /** Versão original, quando o arquivo passou por migrações. */
+      /** Original version, when the file went through migrations. */
       readonly migratedFrom: number | null;
       /**
-       * Cópias de especialização ausentes ou inválidas: o projeto abre, e as
-       * anotações delas aparecem como pendências ("tipo inexistente").
+       * Missing or invalid specialization copies: the project opens, and their
+       * annotations show up as issues ("nonexistent type").
        */
       readonly specWarnings: readonly SpecFileWarning[];
       /**
-       * `urlTemplate` de `platformRepos` que a migração para o schema 11 descartou (o endereço
-       * dos arquivos passou a ser da especialização); vazio quando não houve.
+       * `urlTemplate` of `platformRepos` that the migration to schema 11 discarded (the address of
+       * the files became the specialization's); empty when there were none.
        */
       readonly discardedUrlTemplates: readonly DiscardedUrlTemplate[];
       /**
-       * Anotações que tinham `inherit: true` e perderam a herança na migração para o schema 13
-       * (vazio se não houve).
+       * Annotations that had `inherit: true` and lost the inheritance in the migration to schema 13
+       * (empty if there were none).
        */
       readonly discardedInherit: readonly DiscardedInherit[];
     }
@@ -219,14 +219,15 @@ export type DeserializeResult =
       readonly ok: false;
       readonly error: DeserializeError;
       /**
-       * Em `invariant-violation`, o reparo mecânico do projeto lido (`repairProject`),
-       * com o que a leitura apurou. Ler nunca grava: quem aceita o reparo é a app, e a
-       * sessão grava o backup do original e o reparado na primeira gravação.
+       * In `invariant-violation`, the mechanical repair of the project read (`repairProject`),
+       * with what the read found. Reading never writes: the app is the one that accepts the
+       * repair, and the session writes the backup of the original and the repaired one on the
+       * first write.
        */
       readonly repair?: RepairedLoad;
     };
 
-/** Projeto inconsistente reparado na leitura (ver `DeserializeResult`). */
+/** Inconsistent project repaired on read (see `DeserializeResult`). */
 export interface RepairedLoad extends RepairResult {
   readonly readOnly: boolean;
   readonly migratedFrom: number | null;
@@ -235,7 +236,7 @@ export interface RepairedLoad extends RepairResult {
   readonly discardedInherit: readonly DiscardedInherit[];
 }
 
-/** Junta ao `mapping.json` o conteúdo de cada `specs/<id>.json`. */
+/** Attaches to `mapping.json` the content of each `specs/<id>.json`. */
 function attachSpecs(
   data: ProjectFile,
   files: ReadonlyMap<string, string>,
@@ -271,10 +272,10 @@ function attachSpecs(
 }
 
 /**
- * Lê o texto do `mapping.json`: JSON → migrações → schema zod → invariantes.
- * `specs` traz o texto das cópias das especializações (caminho → texto, ex.:
- * `specs/sdui.json`). Versão maior que a suportada: tenta ler como a versão
- * atual em modo somente leitura.
+ * Reads the text of `mapping.json`: JSON → migrations → zod schema → invariants.
+ * `specs` carries the text of the specialization copies (path → text, e.g.
+ * `specs/sdui.json`). A version higher than the supported one: tries to read it as the
+ * current version in read-only mode.
  */
 export function deserialize(
   text: string,
@@ -290,7 +291,7 @@ export function deserialize(
   return deserializeParsed(raw, registry, specs);
 }
 
-/** `deserialize` para o JSON já interpretado (quem o leu para outra coisa não o lê de novo). */
+/** `deserialize` for already-parsed JSON (whoever read it for something else does not read it again). */
 export function deserializeParsed(
   raw: unknown,
   registry: ReadonlyMap<number, Migration> = defaultMigrations,
@@ -325,7 +326,7 @@ export function deserializeParsed(
     }
     data = migrated.data;
     migratedFrom = version;
-    // Os campos descartados só existiam em arquivos antigos: um v15 editado à mão não ganha aviso.
+    // The discarded fields only existed in old files: a hand-edited v15 gets no warning.
     if (version <= 10) discardedUrlTemplates = discardedOnMigrationTo11(raw);
     if (version <= 12) discardedInherit = discardedOnMigrationTo13(raw);
   }

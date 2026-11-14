@@ -1,78 +1,78 @@
 # Divider
 
-Linha fina que separa conteúdo. Horizontal separa itens de uma lista ou seções de uma coluna; vertical separa itens lado a lado numa linha.
+A thin line that separates content. Horizontal separates the items of a list or the sections of a column; vertical separates items side by side in a row.
 
-Tipo de anotação: `divider` (camada Componentes).
+Annotation type: `divider` (Components layer).
 
-## Campos
+## Fields
 
-| Chave         | Rótulo               | Tipo   | Obrigatório | Opções                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Padrão       | Descrição                                                                                                                                              |
-| ------------- | -------------------- | ------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `orientation` | Orientação           | enum   | não         | `horizontal`, `vertical`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `horizontal` | horizontal (HorizontalDivider) ou vertical (VerticalDivider).                                                                                          |
-| `thickness`   | Espessura (dp)       | number | não         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |              | Espessura da linha em dp. Vazio = 1 (o padrão do Compose). O desenho aproxima valores de 1 a 4.                                                        |
-| `color`       | Cor                  | enum   | não         | `primary`, `onPrimary`, `primaryContainer`, `onPrimaryContainer`, `secondary`, `onSecondary`, `secondaryContainer`, `onSecondaryContainer`, `tertiary`, `onTertiary`, `tertiaryContainer`, `onTertiaryContainer`, `error`, `onError`, `errorContainer`, `onErrorContainer`, `background`, `onBackground`, `surface`, `onSurface`, `surfaceVariant`, `onSurfaceVariant`, `surfaceTint`, `inverseSurface`, `inverseOnSurface`, `inversePrimary`, `outline`, `outlineVariant`, `scrim`, `surfaceBright`, `surfaceDim`, `surfaceContainerLowest`, `surfaceContainerLow`, `surfaceContainer`, `surfaceContainerHigh`, `surfaceContainerHighest` |              | Papel de cor do tema usado na linha (parâmetro color). Vazio = outline variant (DividerDefaults.color).                                                |
-| `inset`       | Recuo (dp)           | number | não         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |              | Recuo nas duas pontas da linha, em dp. Vazio = de ponta a ponta (sem recuo).                                                                           |
-| `insetStart`  | Recuo no início (dp) | number | não         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |              | Recuo da ponta inicial da linha (esquerda no horizontal, alto no vertical), em dp. Vazio com o insetEnd também vazio = vale o inset nas duas pontas.   |
-| `insetEnd`    | Recuo no fim (dp)    | number | não         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |              | Recuo da ponta final da linha (direita no horizontal, embaixo no vertical), em dp. Vazio com o insetStart também vazio = vale o inset nas duas pontas. |
+| Key           | Label            | Type   | Required | Options                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Default      | Description                                                                                                                                                 |
+| ------------- | ---------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `orientation` | Orientation      | enum   | no       | `horizontal`, `vertical`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `horizontal` | horizontal (HorizontalDivider) or vertical (VerticalDivider).                                                                                               |
+| `thickness`   | Thickness (dp)   | number | no       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |              | Line thickness in dp. Empty = 1 (the Compose default). The drawing approximates values from 1 to 4.                                                         |
+| `color`       | Color            | enum   | no       | `primary`, `onPrimary`, `primaryContainer`, `onPrimaryContainer`, `secondary`, `onSecondary`, `secondaryContainer`, `onSecondaryContainer`, `tertiary`, `onTertiary`, `tertiaryContainer`, `onTertiaryContainer`, `error`, `onError`, `errorContainer`, `onErrorContainer`, `background`, `onBackground`, `surface`, `onSurface`, `surfaceVariant`, `onSurfaceVariant`, `surfaceTint`, `inverseSurface`, `inverseOnSurface`, `inversePrimary`, `outline`, `outlineVariant`, `scrim`, `surfaceBright`, `surfaceDim`, `surfaceContainerLowest`, `surfaceContainerLow`, `surfaceContainer`, `surfaceContainerHigh`, `surfaceContainerHighest` |              | Theme color role used for the line (color parameter). Empty = outline variant (DividerDefaults.color).                                                      |
+| `inset`       | Inset (dp)       | number | no       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |              | Inset at both ends of the line, in dp. Empty = edge to edge (no inset).                                                                                     |
+| `insetStart`  | Start inset (dp) | number | no       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |              | Inset of the start end of the line (left when horizontal, top when vertical), in dp. Empty with insetEnd also empty = the inset applies to both ends.       |
+| `insetEnd`    | End inset (dp)   | number | no       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |              | Inset of the final end of the line (right when horizontal, bottom when vertical), in dp. Empty with insetStart also empty = the inset applies to both ends. |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.HorizontalDivider`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Divider.kt`
-- O campo `orientation` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.HorizontalDivider`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Divider.kt`
+- The `orientation` field chooses the symbol; values without their own case use the base one.
 
-| `orientation`       | Símbolo             |
+| `orientation`       | Symbol              |
 | ------------------- | ------------------- |
 | `horizontal` (base) | `HorizontalDivider` |
 | `vertical`          | `VerticalDivider`   |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
-HorizontalDivider(    // orientation vertical: VerticalDivider (mesmos parâmetros)
-    thickness = 1.dp,    // sem thickness na anotação: omita (1 dp)
+HorizontalDivider(    // orientation vertical: VerticalDivider (same parameters)
+    thickness = 1.dp,    // no thickness in the annotation: omit it (1 dp)
 )
 
-// com inset 16: recuo nas duas pontas
+// with inset 16: inset at both ends
 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
-// VerticalDivider entre dois itens de uma Row
+// VerticalDivider between two items of a Row
 Row(Modifier.height(48.dp)) {
-    Text("Hoje")
+    Text("Today")
     VerticalDivider()
-    Text("Ontem")
+    Text("Yesterday")
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> Estável, sem opt-in. `thickness` é um `Dp`: escreva `thickness = <thickness>.dp` (sem o campo, fica o padrão de 1 dp). O `HorizontalDivider` já ocupa a largura toda do pai (`fillMaxWidth()` por dentro); para um recuo nas pontas use `Modifier.padding(horizontal = <inset>.dp)`. A cor padrão é `DividerDefaults.color` (outline variant); com o campo `color` preenchido, passe `color = <color>`. Para recuos diferentes nas pontas use `Modifier.padding(start = <insetStart>.dp, end = <insetEnd>.dp)`. Numa `Column` ou `LazyColumn` vai entre os itens; dentro de um `ListItem` use a posição entre um item e o seguinte.
+> Stable, no opt-in. `thickness` is a `Dp`: write `thickness = <thickness>.dp` (without the field, the default of 1 dp stays). The `HorizontalDivider` already fills the parent's whole width (`fillMaxWidth()` inside); for an inset at the ends use `Modifier.padding(horizontal = <inset>.dp)`. The default color is `DividerDefaults.color` (outline variant); with the `color` field filled, pass `color = <color>`. For different insets at the ends use `Modifier.padding(start = <insetStart>.dp, end = <insetEnd>.dp)`. In a `Column` or `LazyColumn` it goes between items; inside a `ListItem` use the position between one item and the next.
 
-Variante `vertical`: Estável, sem opt-in. `thickness = <thickness>.dp` (sem o campo, 1 dp). O `VerticalDivider` já ocupa a altura toda do pai (`fillMaxHeight()` por dentro); dentro de uma `Row`, dê a altura à linha com `Modifier.height(<altura da marcação>.dp)` ou deixe a `Row` limitar. Com `color` preenchido, passe `color = <color>`. Para um recuo no alto e embaixo use `Modifier.padding(vertical = <inset>.dp)`, ou `Modifier.padding(top = <insetStart>.dp, bottom = <insetEnd>.dp)` com os recuos por ponta.
+`vertical` variant: Stable, no opt-in. `thickness = <thickness>.dp` (without the field, 1 dp). The `VerticalDivider` already fills the parent's whole height (`fillMaxHeight()` inside); inside a `Row`, give the line its height with `Modifier.height(<marking height>.dp)` or let the `Row` constrain it. With `color` filled, pass `color = <color>`. For an inset at the top and bottom use `Modifier.padding(vertical = <inset>.dp)`, or `Modifier.padding(top = <insetStart>.dp, bottom = <insetEnd>.dp)` with per-end insets.
 
-## Exemplos
+## Examples
 
 - **Horizontal**: orientation=horizontal
-- **Horizontal com recuo**: orientation=horizontal, thickness=1, inset=16
+- **Horizontal with inset**: orientation=horizontal, thickness=1, inset=16
 - **Vertical**: orientation=vertical, thickness=1
-- **Recuo por ponta**: orientation=horizontal, insetStart=16, insetEnd=48
+- **Inset per end**: orientation=horizontal, insetStart=16, insetEnd=48
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Divider.kt` (linhas 49 a 61: `HorizontalDivider(thickness, color)` com `fillMaxWidth()`; linhas 111 a 118: `DividerDefaults.Thickness` e `DividerDefaults.color`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/DividerTokens.kt` (linhas 24 e 25: `Color` = `OutlineVariant`, `Thickness` = 1 dp).
-- `ColorLightTokens.kt` e `ColorDarkTokens.kt`: o papel `outline-variant`.
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Divider.kt` (lines 49 to 61: `HorizontalDivider(thickness, color)` with `fillMaxWidth()`; lines 111 to 118: `DividerDefaults.Thickness` and `DividerDefaults.color`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/DividerTokens.kt` (lines 24 and 25: `Color` = `OutlineVariant`, `Thickness` = 1 dp).
+- `ColorLightTokens.kt` and `ColorDarkTokens.kt`: the `outline-variant` role.
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- A linha é um `rect` no papel do campo `color` (`outline-variant` quando vazio, o `DividerDefaults.color`), com a espessura do campo `thickness` (qualquer valor, 1 dp quando vazio) lida por expressão no tamanho do nó: o `rect` de cada espessura (1 a 4) saiu.
-- Horizontal: a linha ocupa a largura da caixa; vertical: a altura, como o `fillMaxWidth()` e o `fillMaxHeight()` do Compose. O `insetStart` e o `insetEnd` recuam cada ponta (esquerda e direita no horizontal; alto e embaixo no vertical); o `inset` recua as duas quando os dois estão vazios (um valor preenchido, mesmo 0, vale no lugar do `inset`).
-- A linha fica centrada na caixa da marcação.
+- The line is a `rect` in the role of the `color` field (`outline-variant` when empty, the `DividerDefaults.color`), with the thickness of the `thickness` field (any value, 1 dp when empty) read by an expression in the node size: the `rect` for each thickness (1 to 4) is gone.
+- Horizontal: the line takes the width of the box; vertical: the height, like Compose's `fillMaxWidth()` and `fillMaxHeight()`. `insetStart` and `insetEnd` inset each end (left and right when horizontal; top and bottom when vertical); `inset` insets both when both are empty (a filled value, even 0, applies in place of `inset`).
+- The line is centered in the marking box.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O Compose faz o recuo com `Modifier.padding`, fora do `Divider`; no desenho ele é campo do tipo (`inset`, `insetStart` e `insetEnd`).
+- Compose applies the inset with `Modifier.padding`, outside the `Divider`; in the drawing it is a field of the type (`inset`, `insetStart` and `insetEnd`).

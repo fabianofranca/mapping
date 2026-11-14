@@ -5,8 +5,8 @@ import { createProjectActions } from '../../src/store/project';
 import { NOW } from '../model/fixtures';
 import { arrowBase, arrowProject } from '../model/arrowFixtures';
 
-// Setas no store (ME4): cada action é uma entrada de desfazer; a rota e a ponta também têm
-// prévia de gesto, e um gesto é uma entrada só. Fixture: tests/model/arrowFixtures.ts.
+// Arrows in the store (ME4): each action is an undo entry; the route and the head also have
+// a gesture preview, and a gesture is a single entry. Fixture: tests/model/arrowFixtures.ts.
 
 function setup(project: Project = arrowProject()) {
   let clock = 0;
@@ -22,14 +22,14 @@ function setup(project: Project = arrowProject()) {
 type Store = ReturnType<typeof createProjectStore>;
 
 const project = (store: Store): Project => {
-  if (!store.project.value) throw new Error('sem projeto');
+  if (!store.project.value) throw new Error('no project');
   return store.project.value;
 };
 const arrow = (store: Store, id: string) =>
   project(store).arrows.find((a) => a.id === id);
 
-describe('store: actions das setas', () => {
-  it('addArrow devolve o id, cria a seta com a rota padrão e entra no desfazer', () => {
+describe('store: arrow actions', () => {
+  it('addArrow returns the id, creates the arrow with the default route and enters the undo', () => {
     const { store, actions } = setup(arrowBase());
     const result = actions.addArrow('a1', 'b1');
     expect(result).toEqual({ ok: true, value: 'id1' });
@@ -48,23 +48,23 @@ describe('store: actions das setas', () => {
     expect(arrow(store, 'id1')).toBeDefined();
   });
 
-  it('addArrow aceita estilo, nome e lados', () => {
+  it('addArrow accepts style, name and sides', () => {
     const { store, actions } = setup(arrowBase());
     actions.addArrow('a1', 'b1', {
       style: 'straight',
-      name: 'abre',
+      name: 'opens',
       fromSide: 'top',
       toSide: 'left',
     });
     expect(arrow(store, 'id1')).toMatchObject({
       style: 'straight',
-      name: 'abre',
+      name: 'opens',
       fromSide: 'top',
       toSide: 'left',
     });
   });
 
-  it('as recusas voltam o código do erro e não entram no histórico', () => {
+  it('refusals return the error code and do not enter the history', () => {
     const { store, actions } = setup();
     expect(actions.addArrow('a1', 'a1')).toEqual({ ok: false, error: 'arrow-self' });
     expect(actions.addArrow('r1', 'a1')).toEqual({ ok: false, error: 'arrow-endpoint' });
@@ -77,17 +77,17 @@ describe('store: actions das setas', () => {
     expect(store.revision.value).toBe(0);
   });
 
-  it('cada action é uma entrada de desfazer', () => {
+  it('each action is an undo entry', () => {
     const { store, actions } = setup();
     expect(actions.setArrowStyle('r1', 'elbow').ok).toBe(true);
-    expect(actions.setArrowName('r1', 'abre').ok).toBe(true);
+    expect(actions.setArrowName('r1', 'opens').ok).toBe(true);
     expect(actions.setArrowRoute('r1', [{ x: 500, y: 100 }]).ok).toBe(true);
     expect(actions.setArrowEndpoint('r1', 'to', 'a2', 'top').ok).toBe(true);
     expect(actions.setArrowLocked('r1', true).ok).toBe(true);
     expect(store.revision.value).toBe(5);
     expect(arrow(store, 'r1')).toMatchObject({
       style: 'elbow',
-      name: 'abre',
+      name: 'opens',
       to: 'a2',
       toSide: 'top',
       locked: true,
@@ -105,7 +105,7 @@ describe('store: actions das setas', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('uma action que não muda nada não cria entrada', () => {
+  it('an action that changes nothing does not create an entry', () => {
     const { store, actions } = setup();
     expect(actions.setArrowStyle('r1', 'curve').ok).toBe(true);
     expect(actions.setArrowRoute('r1', []).ok).toBe(true);
@@ -115,7 +115,7 @@ describe('store: actions das setas', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('a seta trancada recusa rota, ponta e estilo, mas aceita o nome', () => {
+  it('the locked arrow refuses route, head and style, but accepts the name', () => {
     const { actions } = setup();
     actions.setArrowLocked('r1', true);
     expect(actions.setArrowRoute('r1', [{ x: 1, y: 1 }])).toEqual({
@@ -131,7 +131,7 @@ describe('store: actions das setas', () => {
     expect(actions.setArrowName('r1', 'ok').ok).toBe(true);
   });
 
-  it('removeArrow apaga a seta e as anotações dela numa entrada só', () => {
+  it('removeArrow deletes the arrow and its annotations in a single entry', () => {
     const { store, actions } = setup();
     expect(actions.removeArrow('r1').ok).toBe(true);
     expect(project(store).arrows).toEqual([]);
@@ -141,7 +141,7 @@ describe('store: actions das setas', () => {
     expect(project(store).annotations.map((a) => a.id)).toEqual(['ra1', 'ra2']);
   });
 
-  it('apagar a marcação leva a seta, e desfazer devolve tudo numa entrada', () => {
+  it('deleting the marking takes the arrow along, and undo returns everything in a single entry', () => {
     const { store, actions } = setup();
     expect(actions.removeMarking('a1').ok).toBe(true);
     expect(project(store).arrows).toEqual([]);
@@ -151,7 +151,7 @@ describe('store: actions das setas', () => {
     expect(project(store).annotations.map((a) => a.id)).toEqual(['ra1', 'ra2']);
   });
 
-  it('removeItems e setItemsLocked alcançam as setas', () => {
+  it('removeItems and setItemsLocked reach the arrows', () => {
     const { store, actions } = setup();
     expect(actions.setItemsLocked([{ kind: 'arrow', id: 'r1' }], true).ok).toBe(true);
     expect(arrow(store, 'r1')?.locked).toBe(true);
@@ -165,8 +165,8 @@ describe('store: actions das setas', () => {
   });
 });
 
-describe('store: gesto de rota e de ponta', () => {
-  it('várias prévias de rota são uma entrada de desfazer no fim', () => {
+describe('store: route and head gesture', () => {
+  it('several route previews are one undo entry at the end', () => {
     const { store, actions } = setup();
     const before = project(store);
     expect(actions.beginGesture().ok).toBe(true);
@@ -174,7 +174,7 @@ describe('store: gesto de rota e de ponta', () => {
       expect(actions.previewArrowRoute('r1', [{ x, y: 50 }]).ok).toBe(true);
     }
     expect(arrow(store, 'r1')?.points).toEqual([{ x: 500, y: 50 }]);
-    // Nada entrou no histórico nem no confirmado até soltar.
+    // Nothing entered the history nor the committed one until release.
     expect(store.canUndo.value).toBe(false);
     expect(store.committed.value).toBe(before);
     expect(store.revision.value).toBe(0);
@@ -186,7 +186,7 @@ describe('store: gesto de rota e de ponta', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('cancelar o gesto volta ao projeto do início', () => {
+  it('canceling the gesture goes back to the project from the start', () => {
     const { store, actions } = setup();
     const before = project(store);
     actions.beginGesture();
@@ -196,20 +196,20 @@ describe('store: gesto de rota e de ponta', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('arrastar a ponta: prévias até outras marcações, uma inválida no meio, e uma entrada', () => {
+  it('dragging the head: previews up to other markings, an invalid one in the middle, and one entry', () => {
     const { store, actions } = setup();
     actions.setArrowRoute('r1', [{ x: 500, y: 100 }]);
     const revision = store.revision.value;
     actions.beginGesture();
     expect(actions.previewArrowEndpoint('r1', 'to', 'a2', null).ok).toBe(true);
     expect(arrow(store, 'r1')?.to).toBe('a2');
-    // Soltar sobre a outra ponta é recusado; a prévia fica na última válida.
+    // Releasing over the other end is refused; the preview stays on the last valid one.
     expect(actions.previewArrowEndpoint('r1', 'to', 'a1', null)).toEqual({
       ok: false,
       error: 'arrow-self',
     });
     expect(arrow(store, 'r1')?.to).toBe('a2');
-    // Até outro container: a rota deixa de ser dele e é apagada.
+    // Up to another container: the route stops being its own and is deleted.
     expect(actions.previewArrowEndpoint('r1', 'to', 'b1', 'left').ok).toBe(true);
     expect(arrow(store, 'r1')).toMatchObject({ to: 'b1', toSide: 'left', points: [] });
     actions.commitGesture();
@@ -222,7 +222,7 @@ describe('store: gesto de rota e de ponta', () => {
     });
   });
 
-  it('sem mudança, o gesto não cria entrada', () => {
+  it('without a change, the gesture does not create an entry', () => {
     const { store, actions } = setup();
     actions.beginGesture();
     actions.previewArrowRoute('r1', []);

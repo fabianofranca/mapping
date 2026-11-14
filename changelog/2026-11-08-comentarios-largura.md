@@ -1,16 +1,16 @@
-# Janela Comentários na largura — 2026-11-08 (épico `epic/comentarios-largura`, PR #885, MCP 0.28.2 sem mudança, schema v18)
+# Comments window at width — 2026-11-08 (épico `epic/comentarios-largura`, PR #885, MCP 0.28.2 no change, schema v18)
 
 ## Alterado
 
-- A janela inferior (**Comentários**, **Lista**, **Incompletas**, **Avisos**, **Diagnósticos**, **Propostas**) abre mais alta (360 px, antes 208 px): a 900 × 720 a **Comentários** mostra 4 linhas inteiras da lista, com filtros e cabeçalho. A altura que você arrastou antes continua valendo.
-- No filtro **Usuário** da janela **Comentários**, a primeira opção é "Todos" (antes "Todos (n)"); as opções de pessoa seguem com a contagem de conversas.
+- The bottom window (**Comments**, **List**, **Incomplete**, **Notices**, **Diagnostics**, **Proposals**) opens taller (360 px, before 208 px): at 900 × 720 **Comments** shows 4 whole rows of the list, with filters and header. The height you dragged before still applies.
+- In the **User** filter of the **Comments** window, the first option is "Everyone" (before "Everyone (n)"); the person options keep the conversation count.
 
 ## Corrigido
 
-- A janela **Comentários** cabe na largura em que está: sem barra de rolagem horizontal e com o menu ⋯ de cada linha inteiro e clicável (é o caminho de **Apagar**), de 887 px até a janela estreita de 900 × 720 com Árvore, Camadas e Detalhes abertos.
-- O selo de status (**Aguardando humano** e os outros) fica dentro da célula, com reticências e o rótulo na dica quando falta espaço, e a coluna **Status** ficou mais larga; a célula do **Quando** também corta com reticências.
-- Em janela estreita (abaixo de 640 px de largura da janela), **Msgs** e **Quando** somem e **Por** mostra só o avatar, com o nome na dica; Âncora, Última mensagem, Status e o ⋯ continuam.
-- A faixa de abas da janela inferior cabe inteira a 900 × 720 (a primeira aba, **Lista**, não é mais cortada nem a faixa rola): a contagem das abas ficou mais justa.
-- A 900 × 720 a janela **Comentários** mostra de fato 4 linhas inteiras da lista, também com âncoras longas quebradas em duas linhas: no layout estreito os filtros ficam em duas linhas de duas (**Status** e **Usuário**; busca e **Citam a seleção**) em vez de quatro empilhados.
-- Na aba **Resolvidas** (e em **Todas**), a âncora da conversa resolvida aparece riscada e em cinza; antes o texto continuava sublinhado e escuro.
-- Na janela **Comentários**, o ponto de "não lida" fica na mesma linha da âncora (que corta com reticências): todas as linhas têm a altura de uma linha e as 4 linhas aparecem inteiras a 900 × 720, também com 4 conversas.
+- The **Comments** window fits the width it is in: no horizontal scrollbar and with the ⋯ menu of each row whole and clickable (it is the path to **Delete**), from 887 px down to the narrow 900 × 720 window with Tree, Layers and Details open.
+- The status badge (**Waiting for human** and the others) stays inside the cell, with an ellipsis and the label in the tooltip when space runs out, and the **Status** column became wider; the **When** cell also cuts with an ellipsis.
+- In a narrow window (under 640 px of window width), **Msgs** and **When** disappear and **By** shows only the avatar, with the name in the tooltip; Anchor, Last message, Status and the ⋯ remain.
+- The tab strip of the bottom window fits whole at 900 × 720 (the first tab, **List**, is no longer cut off and the strip does not scroll): the tab count became tighter.
+- At 900 × 720 the **Comments** window actually shows 4 whole rows of the list, also with long anchors wrapped onto two lines: in the narrow layout the filters sit on two rows of two (**Status** and **User**; search and **Citing selection**) instead of four stacked.
+- In the **Resolved** tab (and in **All**), the anchor of a resolved conversation appears struck through and gray; before, the text was still underlined and dark.
+- In the **Comments** window, the "unread" dot stays on the same line as the anchor (which cuts with an ellipsis): all rows have the height of one line and the 4 rows appear whole at 900 × 720, also with 4 conversations.

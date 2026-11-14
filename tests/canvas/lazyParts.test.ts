@@ -1,6 +1,6 @@
-// Partes do nó sob demanda (CD2 da etapa canvas-desempenho, decisão 5): o nó de uma marcação nasce só
-// com o grupo e a borda; o halo, a linha dupla, o selo, o alerta e o nome nascem no primeiro quadro
-// em que ficam visíveis e, uma vez criados, ficam.
+// Node parts on demand (CD2 of the canvas-performance stage, decision 5): a marking's node is born
+// with only the group and the border; the halo, the double line, the badge, the alert and the name
+// are born in the first frame in which they become visible and, once created, stay.
 import Konva from 'konva/lib/Core';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { MarkingNode, MarkingRenderer } from '../../src/canvas/renderers/markings';
@@ -10,7 +10,7 @@ const rendererOf = (s: WholeProjectScenario) =>
   (s.controller as unknown as { markings: MarkingRenderer }).markings;
 const nodeOf = (s: WholeProjectScenario, id: string) => rendererOf(s).node(id);
 
-/** Nós do Konva criados para o nó da marcação (penduradas ou não). */
+/** Konva nodes created for the marking's node (attached or not). */
 function createdKonvaNodes(node: MarkingNode): number {
   const parts: unknown[] = [
     node.group,
@@ -32,8 +32,8 @@ afterEach(() => {
   scenario = null;
 });
 
-describe('partes do nó sob demanda (2.000 marcações)', () => {
-  it('em Enquadrar tudo, cada marcação desenhada tem 2 nós criados (grupo e borda)', () => {
+describe('node parts on demand (2,000 markings)', () => {
+  it('in Fit all, each drawn marking has 2 nodes created (group and border)', () => {
     const s = (scenario = openWholeProject(2000, 'fit'));
     const withNode = s.project.markings.filter((m) => nodeOf(s, m.id) !== undefined);
     expect(withNode.length).toBeGreaterThan(1000);
@@ -44,7 +44,7 @@ describe('partes do nó sob demanda (2.000 marcações)', () => {
     expect(created).toBe(2 * withNode.length);
   }, 120_000);
 
-  it('aproximar uma marcação cria o resto das partes dela e afastar não as destrói', () => {
+  it('zooming in on a marking creates the rest of its parts and zooming out does not destroy them', () => {
     const s = (scenario = openWholeProject(2000, 'fit'));
     const target = s.project.markings[0];
     if (!target) throw new Error('fixture');
@@ -64,7 +64,7 @@ describe('partes do nó sob demanda (2.000 marcações)', () => {
     expect(halo?.visible()).toBe(false);
   }, 120_000);
 
-  it('selecionar uma marcação pequena cria as partes dela', () => {
+  it('selecting a small marking creates its parts', () => {
     const s = (scenario = openWholeProject(2000, 'fit'));
     const target = s.project.markings[0];
     if (!target) throw new Error('fixture');
@@ -73,7 +73,7 @@ describe('partes do nó sob demanda (2.000 marcações)', () => {
     s.flush();
     const node = nodeOf(s, target.id);
     expect(node?.halo?.visible()).toBe(true);
-    // As demais continuam com as 2 de sempre.
+    // The others keep the usual 2.
     const other = s.project.markings[1];
     const otherNode = other ? nodeOf(s, other.id) : undefined;
     expect(otherNode ? createdKonvaNodes(otherNode) : 2).toBe(2);

@@ -1,4 +1,4 @@
-/* Conversas (etapa Comentários): seção dos Detalhes, vista da conversa, mensagens e compositor. */
+/* Threads (Comments stage): Details section, thread view, messages and composer. */
 
 .thread-list {
   display: flex;
@@ -198,7 +198,7 @@
   font: var(--t-text-heading);
 }
 
-/* Citações (etapa Comentários, CM5): o chip vivo das mensagens e o do editor do compositor */
+/* Citations (Comments stage, CM5): the live chip in messages and the one in the composer editor */
 .citation-chip {
   display: inline;
   padding: 0 var(--space-1-5);
@@ -214,7 +214,7 @@
   background: var(--color-pressed);
 }
 
-/* Alvo apagado: riscado, com o rótulo de reserva */
+/* Deleted target: struck through, with the fallback label */
 .citation-chip-broken,
 .citation-chip-broken:hover {
   background: var(--color-selection-muted);
@@ -223,7 +223,7 @@
   cursor: default;
 }
 
-/* No editor o chip é um bloco de texto só: seleciona e apaga de uma vez */
+/* In the editor the chip is a single text block: selected and deleted at once */
 .citation-chip-editor {
   user-select: all;
   cursor: default;
@@ -242,7 +242,7 @@
   font: var(--t-micro);
 }
 
-/* Citada em (CM5): uma linha de chips abaixo das mensagens */
+/* Cited in (CM5): a row of chips below the messages */
 .thread-cited-in {
   display: flex;
   flex-wrap: wrap;
@@ -255,7 +255,7 @@
   color: var(--color-text-muted);
 }
 
-/* Cartão da proposta numa mensagem da conversa (decisão 36) */
+/* Proposal card in a thread message (decision 36) */
 .proposal-card {
   display: flex;
   align-items: center;
@@ -281,7 +281,7 @@
   white-space: nowrap;
 }
 
-/* "da conversa <chip>" na linha da proposta (janela Propostas) */
+/* "from thread <chip>" on the proposal row (Proposals window) */
 .proposal-row-thread {
   display: flex;
   align-items: center;

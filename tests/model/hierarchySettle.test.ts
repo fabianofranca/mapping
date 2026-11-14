@@ -13,9 +13,9 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// Regras de contenção (docs/ARCHITECTURE.md, "Espaços, pertencimento e gestos"): o teste
-// que vem antes de qualquer canvas. Os projetos são montados à mão, sem as operações (que já
-// assentam), para o assentar ser exercitado sozinho.
+// Containment rules (docs/ARCHITECTURE.md, "Spaces, containment and gestures"): the test
+// that comes before any canvas. The projects are built by hand, without the operations (which
+// already settle), so the settle is exercised on its own.
 
 function rect(x: number, y: number, width: number, height: number): Rect {
   return { x, y, width, height };
@@ -72,14 +72,14 @@ const containerParents = (p: Project) =>
   Object.fromEntries(p.containers.map((c) => [c.id, c.parentId]));
 const get = (p: Project, id: string) => projectIndex(p).markings.get(id) as Marking;
 
-// Três telas no canvas: A (1000×1000, escala 1, em 0,0), B (500×500, escala 2, em 2000,0,
-// ocupa 1000×1000 no canvas) e C (1000×1000, escala 1, em 4000,0).
+// Three screens on the canvas: A (1000×1000, scale 1, at 0,0), B (500×500, scale 2, at 2000,0,
+// takes 1000×1000 on the canvas) and C (1000×1000, scale 1, at 4000,0).
 const A = container('A', 1000, 1000, { x: 0, y: 0, scale: 1 });
 const B = container('B', 500, 500, { x: 2000, y: 0, scale: 2 });
 const C = container('C', 1000, 1000, { x: 4000, y: 0, scale: 1 });
 
-describe('pai de uma marcação: a menor do mesmo espaço que a contém inteira', () => {
-  it('escolhe a de menor área entre as que contêm', () => {
+describe('parent of a marking: the smallest in the same space that fully contains it', () => {
+  it('picks the one with the smallest area among those that contain it', () => {
     const p = settleHierarchy(
       project(
         [A],
@@ -93,7 +93,7 @@ describe('pai de uma marcação: a menor do mesmo espaço que a contém inteira'
     expect(parents(p)).toEqual({ inner: 'mid', big: null, mid: 'big' });
   });
 
-  it('bordas coincidentes contam como dentro', () => {
+  it('coinciding edges count as inside', () => {
     const p = settleHierarchy(
       project(
         [A],
@@ -103,7 +103,7 @@ describe('pai de uma marcação: a menor do mesmo espaço que a contém inteira'
     expect(get(p, 'in').parentId).toBe('out');
   });
 
-  it('empate de área: a que vem antes no array é a de fora', () => {
+  it('area tie: the one that comes first in the array is the outer one', () => {
     const p = settleHierarchy(
       project(
         [A],
@@ -114,11 +114,11 @@ describe('pai de uma marcação: a menor do mesmo espaço que a contém inteira'
         ],
       ),
     );
-    // Entre várias iguais, a mais próxima no array (a de maior índice antes dela).
+    // Among several equal ones, the nearest in the array (the one with the highest index before it).
     expect(parents(p)).toEqual({ first: null, second: 'first', third: 'second' });
   });
 
-  it('empate dentro de uma maior: a relação atual entre as iguais vale, não o array', () => {
+  it('tie inside a larger one: the current relation among the equal ones holds, not the array', () => {
     const p = settleHierarchy(
       project(
         [A],
@@ -129,12 +129,12 @@ describe('pai de uma marcação: a menor do mesmo espaço que a contém inteira'
         ],
       ),
     );
-    // Desempate estável (#549): twinB já é filha de twinA, e continua, mesmo vindo antes no
-    // array. A maior é o pai da de fora do par.
+    // Stable tie-break (#549): twinB is already a child of twinA, and stays so, even coming before it in
+    // the array. The larger one is the parent of the outer one of the pair.
     expect(parents(p)).toEqual({ twinB: 'twinA', big: null, twinA: 'big' });
   });
 
-  it('marcações que se cruzam não têm relação; o que está dentro das duas pertence à menor', () => {
+  it('crossing markings have no relation; what is inside both belongs to the smaller one', () => {
     const p = settleHierarchy(
       project(
         [A],
@@ -154,7 +154,7 @@ describe('pai de uma marcação: a menor do mesmo espaço que a contém inteira'
     });
   });
 
-  it('item parcialmente coberto não é filho', () => {
+  it('a partially covered item is not a child', () => {
     const p = settleHierarchy(
       project(
         [A],
@@ -165,13 +165,13 @@ describe('pai de uma marcação: a menor do mesmo espaço que a contém inteira'
   });
 });
 
-describe('os dois espaços', () => {
-  it('marcações de espaços diferentes nunca se relacionam, mesmo com os mesmos números', () => {
+describe('the two spaces', () => {
+  it('markings in different spaces never relate, even with the same numbers', () => {
     const p = settleHierarchy(
       project(
         [A, C],
         [
-          // Canvas: cobre só A no canvas, em volta de onde está a marcação de C em pixels de C.
+          // Canvas: covers only A on the canvas, around where C's marking sits in C's pixels.
           mk('canvasBox', null, rect(-50, -50, 1100, 1100)),
           mk('inC', 'C', rect(10, 10, 100, 100)),
           mk('inA', 'A', rect(10, 10, 100, 100)),
@@ -181,7 +181,7 @@ describe('os dois espaços', () => {
     expect(parents(p)).toEqual({ canvasBox: null, inC: null, inA: null });
   });
 
-  it('uma marcação do canvas em volta de dois containers os tem como membros', () => {
+  it('a canvas marking around two containers has them as members', () => {
     const p = settleHierarchy(
       project([A, B, C], [mk('group', null, rect(-10, -10, 3020, 1020))]),
     );
@@ -191,7 +191,7 @@ describe('os dois espaços', () => {
     expect(members.markings).toEqual([]);
   });
 
-  it('container dentro de marcações do canvas aninhadas pertence à menor', () => {
+  it('a container inside nested canvas markings belongs to the smaller one', () => {
     const p = settleHierarchy(
       project(
         [A, B],
@@ -206,7 +206,7 @@ describe('os dois espaços', () => {
     expect(projectIndex(p).canvasRoots.map((m) => m.id)).toEqual(['outer']);
   });
 
-  it('container parcialmente coberto não é membro', () => {
+  it('a partially covered container is not a member', () => {
     const p = settleHierarchy(
       project([A], [mk('half', null, rect(-10, -10, 500, 2000))]),
     );
@@ -214,7 +214,7 @@ describe('os dois espaços', () => {
     expect(containerParents(p)).toEqual({ A: null });
   });
 
-  it('o pai de um container sai quando a marcação deixa de contê-lo', () => {
+  it('the parent of a container goes away when the marking stops containing it', () => {
     const base = settleHierarchy(
       project([A], [mk('box', null, rect(-10, -10, 1020, 1020))]),
     );
@@ -230,19 +230,19 @@ describe('os dois espaços', () => {
   });
 });
 
-describe('troca de espaço ao assentar', () => {
-  it('marcação de A arrastada para B vira marcação de B, com o mesmo tamanho na tela', () => {
-    // Em pixels de A (escala 1), o retângulo está no canvas em 2100,100 — dentro de B.
+describe('space change on settle', () => {
+  it('a marking of A dragged to B becomes a marking of B, with the same size on screen', () => {
+    // In A's pixels (scale 1), the rectangle is on the canvas at 2100,100 — inside B.
     const p = settleHierarchy(
       project([A, B], [mk('ball', 'A', rect(2100, 100, 200, 100))]),
     );
     const ball = get(p, 'ball');
     expect(ball.containerId).toBe('B');
-    // B tem escala 2: 200×100 no canvas = 100×50 pixels de B.
+    // B has scale 2: 200×100 on the canvas = 100×50 pixels of B.
     expect(ball.rect).toEqual(rect(50, 50, 100, 50));
   });
 
-  it('as descendentes trocam junto e continuam filhas', () => {
+  it('the descendants switch along and remain children', () => {
     const p = settleHierarchy(
       project(
         [A, B],
@@ -263,8 +263,8 @@ describe('troca de espaço ao assentar', () => {
     });
   });
 
-  it('solta fora de todos os containers vira marcação do canvas, em unidades do canvas', () => {
-    // Em pixels de B (escala 2, em 2000,0): -300 px = 1400 no canvas, no vão entre A e B.
+  it('dropped outside all containers becomes a canvas marking, in canvas units', () => {
+    // In B's pixels (scale 2, at 2000,0): -300 px = 1400 on the canvas, in the gap between A and B.
     const p = settleHierarchy(project([A, B], [mk('m', 'B', rect(-300, 10, 50, 20))]));
     expect(get(p, 'm')).toMatchObject({
       containerId: null,
@@ -272,18 +272,18 @@ describe('troca de espaço ao assentar', () => {
     });
   });
 
-  it('marcação do canvas que fica inteira dentro de um container vira dele (decisão 5)', () => {
+  it('a canvas marking that ends up entirely inside a container becomes its own (decision 5)', () => {
     const p = settleHierarchy(project([A, B], [mk('m', null, rect(2010, 10, 100, 100))]));
     expect(get(p, 'm')).toMatchObject({ containerId: 'B', rect: rect(5, 5, 50, 50) });
   });
 
-  it('a conversão arredonda pelas bordas, garante o mínimo e o do componente', () => {
+  it('the conversion rounds by the edges, enforces the minimum and the component minimum', () => {
     const D = container('D', 300, 300, { x: 0, y: 2000, scale: 3 });
     const p = settleHierarchy(
       project(
         [D],
         [
-          // 10×10 no canvas = 3,33 px de D: sobe para o mínimo de 8.
+          // 10×10 on the canvas = 3.33 px of D: rises to the minimum of 8.
           mk('tiny', null, rect(31, 2031, 10, 10)),
           mk('button', null, rect(301, 2301, 31, 31)),
         ],
@@ -297,14 +297,14 @@ describe('troca de espaço ao assentar', () => {
     });
   });
 
-  it('a marcação de container que continua dentro dele não muda', () => {
+  it('a container marking that stays inside it does not change', () => {
     const before = project([A, B], [mk('m', 'B', rect(0, 0, 500, 500))]);
     expect(settleHierarchy(before)).toBe(before);
   });
 });
 
-describe('flutuantes: fora da árvore nos dois sentidos', () => {
-  it('nunca é mãe: um post-it grande não captura uma tela nem marcações do canvas', () => {
+describe('floating: outside the tree in both directions', () => {
+  it('never a parent: a large sticky note does not capture a screen or canvas markings', () => {
     const p = settleHierarchy(
       project(
         [A],
@@ -318,7 +318,7 @@ describe('flutuantes: fora da árvore nos dois sentidos', () => {
     expect(containerParents(p)).toEqual({ A: null });
   });
 
-  it('nunca é filha nem troca de espaço: sobre uma tela, continua do canvas', () => {
+  it('never a child and never changes space: over a screen, it stays on the canvas', () => {
     const p = settleHierarchy(
       project(
         [A],
@@ -333,7 +333,7 @@ describe('flutuantes: fora da árvore nos dois sentidos', () => {
     expect(get(p, 'onScreen')).toMatchObject({ containerId: null, parentId: null });
   });
 
-  it('flutuante gravada num container vai para o canvas, convertida', () => {
+  it('a floating one saved in a container goes to the canvas, converted', () => {
     const p = settleHierarchy(
       project([B], [mk('note', 'B', rect(10, 10, 50, 50), { floating: true })]),
     );
@@ -345,7 +345,7 @@ describe('flutuantes: fora da árvore nos dois sentidos', () => {
   });
 });
 
-describe('assentar é determinístico e idempotente', () => {
+describe('settling is deterministic and idempotent', () => {
   const messy = () =>
     project(
       [A, B, C],
@@ -359,22 +359,22 @@ describe('assentar é determinístico e idempotente', () => {
       ],
     );
 
-  it('assentar de novo devolve o mesmo objeto', () => {
+  it('settling again returns the same object', () => {
     const once = settleHierarchy(messy());
     expect(settleHierarchy(once)).toBe(once);
   });
 
-  it('não muda a ordem dos arrays', () => {
+  it('does not change the order of the arrays', () => {
     const once = settleHierarchy(messy());
     expect(once.markings.map((m) => m.id)).toEqual(messy().markings.map((m) => m.id));
     expect(once.containers.map((c) => c.id)).toEqual(['A', 'B', 'C']);
   });
 
-  it('o resultado satisfaz as invariantes de contenção', () => {
+  it('the result satisfies the containment invariants', () => {
     expect(validateProject(settleHierarchy(messy()))).toEqual([]);
   });
 
-  it('projetos aleatórios assentados são válidos e estáveis', () => {
+  it('settled random projects are valid and stable', () => {
     let seed = 7;
     const rand = (n: number) => {
       seed = (seed * 1103515245 + 12345) % 2147483648;
@@ -397,9 +397,9 @@ describe('assentar é determinístico e idempotente', () => {
   });
 });
 
-// Setas (ME4): fora da árvore de pertencimento. O assentar as ignora, salvo numa coisa: se uma
-// ponta muda de espaço, os pontos de passagem (que ficam no espaço das pontas) são apagados.
-describe('setas', () => {
+// Arrows (ME4): outside the containment tree. The settle ignores them, except for one thing: if an
+// end changes space, the waypoints (which live in the space of the ends) are erased.
+describe('arrows', () => {
   const arrowOf = (
     id: string,
     from: string,
@@ -419,7 +419,7 @@ describe('setas', () => {
   const withArrows = (p: Project, arrows: Arrow[]): Project => ({ ...p, arrows });
   const via = [{ x: 400, y: 50 }];
 
-  it('são ignoradas: nada a mudar devolve o mesmo objeto, com as setas como estão', () => {
+  it('they are ignored: nothing to change returns the same object, with the arrows as they are', () => {
     const settled = withArrows(
       settleHierarchy(
         project(
@@ -437,12 +437,12 @@ describe('setas', () => {
     const again = settleHierarchy(settled);
     expect(again).toBe(settled);
     expect(again.arrows).toBe(settled.arrows);
-    // Ser pai ou filho não depende das setas: elas não entram na árvore.
+    // Being parent or child does not depend on arrows: they are not in the tree.
     expect(parents(again)).toEqual({ x: null, y: null, z: null, h: null });
   });
 
-  it('uma ponta que muda de espaço apaga os pontos (do canvas para o container)', () => {
-    // `y` é do canvas, mas cabe inteira em A: o assentar a passa para A.
+  it('an end that changes space erases the points (from the canvas to the container)', () => {
+    // `y` is on the canvas, but fits entirely in A: the settle moves it to A.
     const p = withArrows(
       project(
         [A, B],
@@ -457,15 +457,15 @@ describe('setas', () => {
     const settled = settleHierarchy(p);
     expect(get(settled, 'y').containerId).toBe('A');
     expect(settled.arrows[0]?.points).toEqual([]);
-    // A seta que não toca marcação nenhuma que mudou fica como está.
+    // An arrow that touches no marking that changed stays as is.
     expect(settled.arrows[1]).toBe(p.arrows[1]);
     expect(settled.arrows[0]).toMatchObject({ from: 'x', to: 'y', style: 'curve' });
-    // E assentar de novo devolve o mesmo objeto.
+    // And settling again returns the same object.
     expect(settleHierarchy(settled)).toBe(settled);
   });
 
-  it('uma ponta que sai do container para o canvas apaga os pontos', () => {
-    // `x` passa da borda de A: vira marcação do canvas.
+  it('an end that leaves the container for the canvas erases the points', () => {
+    // `x` goes past the edge of A: becomes a canvas marking.
     const p = withArrows(
       project(
         [A, B],
@@ -478,8 +478,8 @@ describe('setas', () => {
     expect(settled.arrows[0]?.points).toEqual([]);
   });
 
-  it('uma ponta que troca de container apaga os pontos, mesmo que o espaço derivado seja o canvas', () => {
-    // x (A) e z (B) já têm os pontos no canvas; x passa para B: troca de espaço da ponta.
+  it('an end that changes container erases the points, even if the derived space is the canvas', () => {
+    // x (A) and z (B) already have the points on the canvas; x moves to B: the end changes space.
     const p = withArrows(
       project(
         [A, B],
@@ -491,7 +491,7 @@ describe('setas', () => {
     expect(settleHierarchy(p).arrows[0]?.points).toEqual([]);
   });
 
-  it('seta sem pontos nunca é reescrita', () => {
+  it('an arrow without points is never rewritten', () => {
     const p = withArrows(
       project(
         [A, B],
@@ -502,7 +502,7 @@ describe('setas', () => {
     expect(settleHierarchy(p).arrows).toBe(p.arrows);
   });
 
-  it('o assentar não cria, apaga nem reordena setas', () => {
+  it('the settle does not create, delete or reorder arrows', () => {
     const p = withArrows(
       project(
         [A, B],

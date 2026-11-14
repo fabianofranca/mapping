@@ -1,4 +1,4 @@
-// Auxiliares dos testes da L5 (#1101): o catálogo da Material 3 (Compose) e marcações de componente nele.
+// Helpers for the L5 tests (#1101): the Material 3 (Compose) catalog and component markings in it.
 import {
   addComponentMarking,
   addContainer,
@@ -70,7 +70,7 @@ export function base(): Project {
   return p;
 }
 
-/** O container `typeId` em `rect` com `values`, e `n` botões de 100 × 40 empilhados no canto dele. */
+/** The container `typeId` at `rect` with `values`, and `n` 100 × 40 buttons stacked in its corner. */
 export function withButtons(
   typeId: string,
   rect: Rect,
@@ -89,8 +89,8 @@ export function withButtons(
 }
 
 /**
- * Uma lazy-column de 200 × 100 e um Box roxo dentro dela; depois a lazy-column encolhe (a prévia de
- * um gesto, sem assentar): o Box passa da borda de baixo e da direita do slot.
+ * A 200 × 100 lazy-column and a purple Box inside it; then the lazy-column shrinks (the preview of
+ * a gesture, without settling): the Box goes past the bottom and right edges of the slot.
  */
 export function clipProject(): Project {
   let p = put(base(), {

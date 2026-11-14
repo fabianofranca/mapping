@@ -6,15 +6,15 @@ import { REVIEW_KEYS } from './DecisionControl';
 import { ProposalList } from './ProposalList';
 import { ReviewLevels } from './ReviewLevels';
 
-// Conteúdo da janela Propostas (inferior): a lista de
-// propostas fora da revisão e os níveis da proposta aberta em modo revisão.
+// Content of the Proposals window (bottom): the list of
+// proposals outside review and the levels of the open proposal in review mode.
 
 export interface ProposalsWindowProps {
-  /** Abre a Ajuda na seção das propostas. */
+  /** Opens Help at the proposals section. */
   readonly onHelp: () => void;
 }
 
-/** Confere a pasta agora (propostas novas, alteradas ou apagadas por fora). */
+/** Checks the folder now (proposals new, changed or deleted outside). */
 export function useScanProposals(): () => void {
   const { session, ui } = useEditor();
   return () => {
@@ -34,8 +34,8 @@ export function useScanProposals(): () => void {
 }
 
 /**
- * Ações do cabeçalho: fora da revisão, "Verificar a pasta agora"; na revisão, "Próxima
- * pendente" (N).
+ * Header actions: outside review, "Check the folder now"; in review, "Next
+ * pending" (N).
  */
 export function ProposalsHeaderActions() {
   const { review, canvas } = useEditor();

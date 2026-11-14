@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-scrim",
   "name": "Scrim",
-  "description": "Película que escurece a tela atrás de um modal: scrim (#000) a 32 %. Cobre a tela inteira, por baixo da folha.",
+  "description": "Layer that darkens the screen behind a modal: scrim (#000) at 32 %. Covers the whole screen, under the sheet.",
   "size": {
     "width": 412,
     "height": 917

@@ -13,17 +13,17 @@ import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { libraryHarness, type LibraryHarness } from './libraryHarness';
 import { renderLive } from './harness';
 
-// Âncora na app (R4, decisão 13): a seção Âncora dos Detalhes (Select das marcações do mesmo
-// espaço, Lado, Alinhamento, Deslocamento e Encostar na âncora) e o Arrumar que também encosta.
+// Anchor in the app (R4, decision 13): the Anchor section of the Details (Select of the markings in
+// the same space, Side, Alignment, Offset and Snap to anchor) and the Arrange that also snaps.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
 interface Scene {
   readonly harness: LibraryHarness;
-  /** O botão (alvo da âncora), o FAB (ancorado) e um botão em outra imagem (I2). */
+  /** The button (anchor target), the FAB (anchored) and a button in another image (I2). */
   readonly button: string;
   readonly fab: string;
   readonly other: string;
@@ -84,8 +84,8 @@ const pressed = (name: string, label: string) =>
     .getByRole<HTMLButtonElement>('button', { name: label })
     .getAttribute('aria-pressed');
 
-describe('seção Âncora dos Detalhes', () => {
-  it('aparece na marcação que desenha um componente, sem âncora ("Nenhuma") e com o resto desabilitado', async () => {
+describe('Anchor section of the Details', () => {
+  it('appears on the marking that draws a component, without an anchor ("None") and with the rest disabled', async () => {
     const { harness, fab } = await scene();
     renderPanel(harness, fab);
     expect(screen.getByRole('region', { name: t('anchor.section') })).toBeTruthy();
@@ -102,7 +102,7 @@ describe('seção Âncora dos Detalhes', () => {
     }
   });
 
-  it('o Select lista só as marcações do mesmo espaço (e "Nenhuma"), não a própria nem as de outro container', async () => {
+  it('the Select lists only the markings in the same space (and "None"), not itself nor those of another container', async () => {
     const { harness, fab, other } = await scene();
     renderPanel(harness, fab);
     const texts = optionTexts(select());
@@ -118,7 +118,7 @@ describe('seção Âncora dos Detalhes', () => {
     expect(values).not.toContain(other);
   });
 
-  it('escolher a âncora grava com desfazer, sem mover a marcação; "Nenhuma" a tira', async () => {
+  it('choosing the anchor saves with undo, without moving the marking; "None" removes it', async () => {
     const { harness, button, fab } = await scene();
     const user = renderPanel(harness, fab);
     const before = marking(harness, fab).rect;
@@ -135,11 +135,11 @@ describe('seção Âncora dos Detalhes', () => {
     expect(marking(harness, fab).anchor).toBeNull();
   });
 
-  it('Lado e Alinhamento gravam o valor escolhido, cada um numa entrada de desfazer', async () => {
+  it('Side and Alignment save the chosen value, each in one undo entry', async () => {
     const { harness, button, fab } = await scene();
     const user = renderPanel(harness, fab);
     await user.selectOptions(select(), button);
-    // Sem nada gravado, vale o padrão do lugar: acima e ao centro.
+    // With nothing saved, the default of the place applies: above and centered.
     expect(pressed(t('anchor.side'), t('anchor.sideTop'))).toBe('true');
     expect(pressed(t('anchor.align'), t('anchor.alignCenter'))).toBe('true');
 
@@ -168,7 +168,7 @@ describe('seção Âncora dos Detalhes', () => {
     expect(marking(harness, fab).anchor).toEqual({ to: button });
   });
 
-  it('Deslocamento grava distância e deslocamento ao longo do lado, com desfazer', async () => {
+  it('Offset saves the distance and the offset along the side, with undo', async () => {
     const { harness, button, fab } = await scene();
     const user = renderPanel(harness, fab);
     await user.selectOptions(select(), button);
@@ -196,7 +196,7 @@ describe('seção Âncora dos Detalhes', () => {
     });
   });
 
-  it('um valor que não é número é recusado com o erro da seção e não grava', async () => {
+  it('a value that is not a number is refused with the section error and does not save', async () => {
     const { harness, button, fab } = await scene();
     const user = renderPanel(harness, fab);
     await user.selectOptions(select(), button);
@@ -206,7 +206,7 @@ describe('seção Âncora dos Detalhes', () => {
     expect(marking(harness, fab).anchor).toEqual({ to: button });
   });
 
-  it('Encostar na âncora move a marcação e o Ctrl+Z a devolve, numa entrada só', async () => {
+  it('Snap to anchor moves the marking and Ctrl+Z returns it, in a single entry', async () => {
     const { harness, button, fab } = await scene();
     const user = renderPanel(harness, fab);
     await user.selectOptions(select(), button);
@@ -214,7 +214,7 @@ describe('seção Âncora dos Detalhes', () => {
     const target = marking(harness, button).rect;
     await user.click(snapButton());
     const after = marking(harness, fab).rect;
-    // Acima da âncora (padrão), centrada nela; o tamanho não muda.
+    // Above the anchor (default), centered on it; the size does not change.
     expect(after.width).toBe(before.width);
     expect(after.height).toBe(before.height);
     expect(after.y).toBe(target.y - after.height);
@@ -230,7 +230,7 @@ describe('seção Âncora dos Detalhes', () => {
     expect(harness.ui.toast.value).toBe(t('anchor.snapNothing'));
   });
 
-  it('somente leitura: tudo desabilitado', async () => {
+  it('read-only: everything disabled', async () => {
     const { harness, button, fab } = await scene();
     harness.actions.setMarkingAnchor(fab, { to: button });
     harness.store.load(harness.project(), { readOnly: true });
@@ -244,7 +244,7 @@ describe('seção Âncora dos Detalhes', () => {
     }
   });
 
-  it('marcação trancada: grava a âncora mas não encosta', async () => {
+  it('locked marking: saves the anchor but does not snap', async () => {
     const { harness, button, fab } = await scene();
     harness.actions.setMarkingAnchor(fab, { to: button });
     harness.actions.setMarkingLocked(fab, true);
@@ -255,7 +255,7 @@ describe('seção Âncora dos Detalhes', () => {
     expect(marking(harness, fab).anchor).toBeNull();
   });
 
-  it('uma marcação sem componente e sem âncora não tem a seção; com âncora (vinda do MCP) tem', async () => {
+  it('a marking without a component and without an anchor has no section; with an anchor (from the MCP) it does', async () => {
     const { harness, button } = await scene();
     const created = harness.actions.createMarking('I1', {
       x: 5,
@@ -272,7 +272,7 @@ describe('seção Âncora dos Detalhes', () => {
     expect(screen.getByRole('region', { name: t('anchor.section') })).toBeTruthy();
   });
 
-  it('uma marcação que não mostra a seção não calcula as candidatas a âncora', async () => {
+  it('a marking that does not show the section does not compute the anchor candidates', async () => {
     const { harness } = await scene();
     const created = harness.actions.createMarking('I1', {
       x: 5,
@@ -287,7 +287,7 @@ describe('seção Âncora dos Detalhes', () => {
     expect(read).not.toHaveBeenCalled();
   });
 
-  it('em en-US os textos vêm de t()', async () => {
+  it('texts come from t()', async () => {
     const { harness, fab } = await scene();
     locale.value = 'en-US';
     renderPanel(harness, fab);
@@ -296,10 +296,10 @@ describe('seção Âncora dos Detalhes', () => {
   });
 });
 
-describe('Arrumar numa marcação com âncora encosta', () => {
+describe('Arrange on a marking with an anchor snaps', () => {
   const arrangeName = () => new RegExp(t('arrange.action'));
 
-  it('a folha (FAB) não tem o botão Arrumar; com âncora passa a ter, e ele encosta numa entrada só', async () => {
+  it('the leaf (FAB) has no Arrange button; with an anchor it gets one, and it snaps in a single entry', async () => {
     const { harness, button, fab } = await scene();
     const user = renderPanel(harness, fab);
     expect(screen.queryByRole('button', { name: arrangeName() })).toBeNull();
@@ -316,14 +316,14 @@ describe('Arrumar numa marcação com âncora encosta', () => {
     expect(marking(harness, fab).rect).toEqual(before);
   });
 
-  it('a dica do botão diz que ele encosta na âncora', async () => {
+  it('the button hint says it snaps to the anchor', async () => {
     const { harness, button, fab } = await scene();
     harness.actions.setMarkingAnchor(fab, { to: button });
     expect(arrangeHintKey(harness.context, fab)).toBe('arrange.hintAnchor');
     expect(t('arrange.hintAnchor')).not.toBe('arrange.hintAnchor');
   });
 
-  it('o menu do canvas oferece Arrumar na marcação ancorada e a folha sem âncora não', async () => {
+  it('the canvas menu offers Arrange on the anchored marking and not on the leaf without an anchor', async () => {
     const { harness, button, fab } = await scene();
     render(
       <EditorContext.Provider value={harness.context}>
@@ -346,7 +346,7 @@ describe('Arrumar numa marcação com âncora encosta', () => {
     expect(marking(harness, fab).rect).not.toEqual(before);
   });
 
-  describe('atalho Alt+Shift+A', () => {
+  describe('Alt+Shift+A shortcut', () => {
     function Probe() {
       useEditorShortcuts(
         { current: null, show: vi.fn(), close: vi.fn() } as unknown as EditorDialogs,
@@ -366,7 +366,7 @@ describe('Arrumar numa marcação com âncora encosta', () => {
         }),
       );
 
-    it('encosta a marcação ancorada selecionada', async () => {
+    it('snaps the selected anchored marking', async () => {
       const { harness, button, fab } = await scene();
       harness.actions.setMarkingAnchor(fab, { to: button });
       harness.ui.selection.value = { kind: 'marking', id: fab };

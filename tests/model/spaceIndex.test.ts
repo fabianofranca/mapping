@@ -3,7 +3,7 @@ import { containsRect, containsRectApprox, EPSILON } from '../../src/model';
 import type { Rect } from '../../src/model';
 import { buildRectIndex } from '../../src/model/spaceIndex';
 
-/** Gerador determinístico (mulberry32). */
+/** Deterministic generator (mulberry32). */
 function rng(seed: number): () => number {
   let a = seed;
   return () => {
@@ -24,12 +24,12 @@ function randomRect(r: () => number, scale: number): Rect {
 }
 
 describe('buildRectIndex', () => {
-  it('devolve um superconjunto de quem contém, na ordem dada', () => {
+  it('returns a superset of the containers, in the given order', () => {
     const SEED = 20261108;
     const r = rng(SEED);
     for (const scale of [1, 4, 1000]) {
       const rects = Array.from({ length: 200 }, () => randomRect(r, scale));
-      // Mistura retângulos fora da grade: largura nula e valores não finitos.
+      // Mixes in rectangles off the grid: zero width and non-finite values.
       rects.push(
         { x: 0, y: 0, width: 0, height: 5 },
         { x: NaN, y: 0, width: 4, height: 4 },
@@ -44,9 +44,7 @@ describe('buildRectIndex', () => {
           const found = index.containing(inner, slack);
           const expected = rects.filter((rect) => contains(rect, inner));
           const exact = found.filter((rect) => contains(rect, inner));
-          expect(exact, `semente ${SEED} escala ${scale} consulta ${q}`).toEqual(
-            expected,
-          );
+          expect(exact, `seed ${SEED} scale ${scale} query ${q}`).toEqual(expected);
           expect(found.map((rect) => rects.indexOf(rect))).toEqual(
             [...found.map((rect) => rects.indexOf(rect))].sort((a, b) => a - b),
           );
@@ -55,7 +53,7 @@ describe('buildRectIndex', () => {
     }
   });
 
-  it('retângulo de consulta inválido devolve todos', () => {
+  it('an invalid query rectangle returns all', () => {
     const rects: Rect[] = [{ x: 0, y: 0, width: 10, height: 10 }];
     const index = buildRectIndex(rects, (rect) => rect);
     expect(index.containing({ x: 0, y: 0, width: -1, height: 1 })).toEqual(rects);

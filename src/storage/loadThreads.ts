@@ -10,21 +10,21 @@ import { reportError } from '../utils/report';
 import { FOLDER_CONCURRENCY } from './folderConcurrency';
 import type { ProjectStorage } from './types';
 
-// Leitura das conversas (`comments/<id>.json` e `comments/resolved/<id>.json`, etapa Comentários):
-// ao abrir o projeto, a cada conferência (só `comments/`) e sob pedido (`resolved/`). Um arquivo
-// inválido não derruba nada: vira um problema listado à parte (a conversa some da lista, o resto
-// continua), e o texto dele fica guardado para voltar idêntico no zip.
+// Reading the threads (`comments/<id>.json` and `comments/resolved/<id>.json`, Comments stage):
+// on opening the project, on each check (`comments/` only) and on request (`resolved/`). An
+// invalid file does not bring anything down: it becomes a problem listed separately (the thread vanishes from the list, the rest
+// goes on), and its text is kept to come back identical in the zip.
 
-/** Uma cópia de conversa lida: a conversa, o texto exato, o carimbo (só na pasta) e a pasta. */
+/** A thread copy read: the thread, the exact text, the stamp (folder only) and the folder. */
 export interface LoadedThread {
   readonly thread: Thread;
   readonly text: string;
   readonly stamp: string | null;
-  /** De qual pasta o arquivo veio: `comments/resolved/` (`true`) ou `comments/`. */
+  /** Which folder the file came from: `comments/resolved/` (`true`) or `comments/`. */
   readonly resolvedDir: boolean;
 }
 
-/** Arquivo de conversa que não pôde ser lido: o id do arquivo, a pasta e os erros. */
+/** A thread file that could not be read: the file id, the folder and the errors. */
 export interface ThreadProblem {
   readonly id: string;
   readonly resolvedDir: boolean;
@@ -34,7 +34,7 @@ export interface ThreadProblem {
 export interface LoadedThreads {
   readonly threads: readonly LoadedThread[];
   readonly problems: readonly ThreadProblem[];
-  /** Texto dos arquivos inválidos (caminho → texto), guardado para exportar sem perda. */
+  /** Text of the invalid files (path → text), kept to export without loss. */
   readonly problemTexts?: ReadonlyMap<string, string>;
 }
 
@@ -44,14 +44,14 @@ export type ReadThreadResult =
   | ({ readonly ok: true } & LoadedThread)
   | {
       readonly ok: false;
-      /** O arquivo não existe (mais). */
+      /** The file does not exist (any more). */
       readonly missing: boolean;
       readonly errors: readonly string[];
-      /** O texto lido, quando o arquivo existe mas é inválido. */
+      /** The text read, when the file exists but is invalid. */
       readonly text: string | null;
     };
 
-/** Lê e valida uma cópia da conversa. O `id` do arquivo precisa ser o do nome. */
+/** Reads and validates a thread copy. The file's `id` must be the one in the name. */
 export async function readThread(
   storage: ProjectStorage,
   id: string,
@@ -87,7 +87,7 @@ export function parseThreadFile(
     return {
       ok: false,
       missing: false,
-      errors: [`id: deve ser "${id}" (o nome do arquivo), mas é "${parsed.thread.id}"`],
+      errors: [`id: must be "${id}" (the file name), but is "${parsed.thread.id}"`],
       text,
     };
   }
@@ -95,10 +95,10 @@ export function parseThreadFile(
   return { ok: true, thread: parsed.thread, text, stamp, resolvedDir };
 }
 
-/** Caminho do arquivo da conversa, a chave dos textos inválidos. */
+/** Path of the thread file, the key of the invalid texts. */
 export const threadProblemPath = threadFilePath;
 
-/** Registra um problema de leitura no Diagnóstico (uma linha por arquivo). */
+/** Records a read problem in the Diagnostics (one line per file). */
 export function reportThreadProblem(problem: ThreadProblem): void {
   reportError(
     'threads.invalid',
@@ -106,7 +106,7 @@ export function reportThreadProblem(problem: ThreadProblem): void {
   );
 }
 
-/** Junta as duas cópias da mesma conversa, quando há. `null` se nenhuma é legível. */
+/** Merges the two copies of the same thread, when there are any. `null` if none is readable. */
 export function mergeLoaded(
   open: LoadedThread | null,
   resolved: LoadedThread | null,
@@ -116,11 +116,11 @@ export function mergeLoaded(
 }
 
 export interface LoadThreadsOptions {
-  /** Ler também `comments/resolved/` (padrão). `false` lê só `comments/`. */
+  /** Also read `comments/resolved/` (default). `false` reads only `comments/`. */
   readonly resolved?: boolean;
 }
 
-/** Lê as conversas do armazenamento (abertas e, por padrão, resolvidas). */
+/** Reads the threads from storage (open ones and, by default, resolved ones). */
 export async function loadThreads(
   storage: ProjectStorage,
   options: LoadThreadsOptions = {},

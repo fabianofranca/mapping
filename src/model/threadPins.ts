@@ -3,31 +3,31 @@ import { initials } from './threadUsers';
 import { awaiting, hostKey, hostOf, type ThreadHost } from './threadView';
 import type { Project } from './types';
 
-// Pinos do canvas (decisão 24): um pino por item que hospeda a âncora, não por proximidade. O
-// modelo só agrupa e decide cor, rótulo e "não lida"; mostrar ou não (botão Conversas, Ver
-// limpo, revisão) é estado da interface.
+// Canvas pins (decision 24): one pin per item that hosts the anchor, not by proximity. The
+// model only groups and decides color, label and "unread"; showing or not (Threads button,
+// clean View, review) is interface state.
 
-/** Cor do pino, da mais urgente à menos: aguardando humano, aguardando agente, resolvida. */
+/** Pin color, from most to least urgent: awaiting human, awaiting agent, resolved. */
 export type PinColor = 'awaitingHuman' | 'awaitingAgent' | 'resolved';
 
 export interface PinGroup {
   readonly hostKey: string;
   readonly host: ThreadHost;
-  /** Ids das conversas do grupo, na ordem da entrada. */
+  /** Ids of the group's threads, in input order. */
   readonly threadIds: readonly string[];
   readonly count: number;
   readonly color: PinColor;
-  /** Iniciais de quem abriu a conversa (só com uma conversa; senão `null`). */
+  /** Initials of who opened the thread (only with one thread; otherwise `null`). */
   readonly initials: string | null;
-  /** Mensagens da conversa (só com uma conversa; senão `null`). */
+  /** Messages of the thread (only with one thread; otherwise `null`). */
   readonly messages: number | null;
-  /** `"MA 3"` (iniciais e mensagens) com uma conversa; a contagem (`"3"`) com várias. */
+  /** `"MA 3"` (initials and messages) with one thread; the count (`"3"`) with several. */
   readonly label: string;
   readonly hasUnread: boolean;
 }
 
 export interface PinGroupOptions {
-  /** A conversa selecionada: é a única resolvida que tem pino. */
+  /** The selected thread: it is the only resolved one that gets a pin. */
   readonly selectedThreadId: string | null;
   readonly unread: (thread: Thread) => boolean;
 }
@@ -72,9 +72,9 @@ function describeGroup(
 }
 
 /**
- * Grupos de pinos por item hospedeiro. Entram as conversas abertas e a resolvida selecionada;
- * camada, órfã e anotação sem dona não têm pino. A ordem é a da primeira conversa de cada
- * grupo na entrada.
+ * Pin groups per host item. Open threads and the selected resolved one are included; layer,
+ * orphan and ownerless annotation have no pin. The order is that of the first thread of each
+ * group in the input.
  */
 export function pinGroups(
   project: Project,

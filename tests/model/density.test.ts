@@ -1,4 +1,4 @@
-// Densidade do container (schema v19): `containers[].density`, de 0,5 a 8; ausente vale 1.
+// Container density (schema v19): `containers[].density`, from 0.5 to 8; absent means 1.
 import { describe, expect, it } from 'vitest';
 import {
   SCHEMA_VERSION,
@@ -34,14 +34,14 @@ function open(raw: Raw): Project {
 
 const first = (p: Project) => p.containers[0]!;
 
-describe('schema v19 (densidade)', () => {
-  it('a versão atual é pelo menos 19 e o registro tem a migração v18 → v19', () => {
+describe('schema v19 (density)', () => {
+  it('the current version is at least 19 and the registry has the v18 → v19 migration', () => {
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(19);
     expect(migrations.get(18)).toBe(migrateFrom18To19);
   });
 
-  it('a migração só sobe o número: um mapping.json v18 abre sem density e regrava sem a chave', () => {
-    const data = { project: { id: 'fixo' }, extra: 1 };
+  it('the migration only bumps the number: a v18 mapping.json opens without density and is rewritten without the key', () => {
+    const data = { project: { id: 'fixed' }, extra: 1 };
     expect(migrateFrom18To19(data)).toEqual(data);
     const result = deserialize(JSON.stringify(v18Raw()), migrations);
     if (!result.ok) throw new Error(JSON.stringify(result.error));
@@ -52,7 +52,7 @@ describe('schema v19 (densidade)', () => {
     expect((saved.containers as Raw[]).every((c) => !('density' in c))).toBe(true);
   });
 
-  it('density 3 faz round-trip e fica depois de background; null é o mesmo que ausente', () => {
+  it('density 3 round-trips and comes after background; null is the same as absent', () => {
     const raw = v18Raw();
     raw.schemaVersion = 19;
     const containers = raw.containers as Raw[];
@@ -69,7 +69,7 @@ describe('schema v19 (densidade)', () => {
     expect('density' in (text.containers as Raw[])[0]!).toBe(false);
   });
 
-  it('density que não é número falha ao abrir', () => {
+  it('a density that is not a number fails to open', () => {
     const raw = v18Raw();
     raw.schemaVersion = 19;
     (raw.containers as Raw[])[0] = { ...(raw.containers as Raw[])[0], density: '3' };
@@ -78,18 +78,18 @@ describe('schema v19 (densidade)', () => {
 });
 
 describe('effectiveDensity', () => {
-  it('ausente vale 1; o canvas (containerId nulo) vale 1; o valor do container vale ele', () => {
+  it("absent is 1; the canvas (null containerId) is 1; the container's value is itself", () => {
     const p = sampleProject();
     const id = first(p).id;
     expect(effectiveDensity(p, id)).toBe(1);
     expect(effectiveDensity(p, null)).toBe(1);
-    expect(effectiveDensity(p, 'inexistente')).toBe(1);
+    expect(effectiveDensity(p, 'missing')).toBe(1);
     expect(effectiveDensity(setContainerDensity(p, id, 3), id)).toBe(3);
   });
 });
 
 describe('setContainerDensity', () => {
-  it('aceita de 0,5 a 8 e recusa fora com container-density', () => {
+  it('accepts 0.5 to 8 and refuses outside it with container-density', () => {
     const p = sampleProject();
     const id = first(p).id;
     for (const ok of [0.5, 1.5, 2, 2.625, 8]) {
@@ -100,7 +100,7 @@ describe('setContainerDensity', () => {
     }
   });
 
-  it('null volta a 1 (remove a chave) e repetir o mesmo valor devolve o mesmo projeto', () => {
+  it('null goes back to 1 (removes the key) and repeating the same value returns the same project', () => {
     const p = setContainerDensity(sampleProject(), first(sampleProject()).id, 3);
     const id = first(p).id;
     expect(setContainerDensity(p, id, 3)).toBe(p);
@@ -109,15 +109,15 @@ describe('setContainerDensity', () => {
     expect(setContainerDensity(back, id, null)).toBe(back);
   });
 
-  it('container inexistente falha com not-found', () => {
-    expect(() => setContainerDensity(sampleProject(), 'nao-existe', 2)).toThrowError(
+  it('a missing container fails with not-found', () => {
+    expect(() => setContainerDensity(sampleProject(), 'does-not-exist', 2)).toThrowError(
       /not-found/,
     );
   });
 });
 
-describe('invariante container-density', () => {
-  it('density fora de 0,5 a 8 (ou não finita) é violação; dentro, não', () => {
+describe('container-density invariant', () => {
+  it('density outside 0.5 to 8 (or not finite) is a violation; inside it is not', () => {
     const p = sampleProject();
     const bad = (density: number): Project => ({
       ...p,
@@ -130,8 +130,8 @@ describe('invariante container-density', () => {
   });
 });
 
-// Sugestão de densidade (D2, decisão 6): a largura do container ÷ a do tamanho pronto é 1,5, 2, 3
-// ou 4 (tolerância de 2 px); a altura só desempata; só sugere, nunca aplica.
+// Density suggestion (D2, decision 6): the container width ÷ the preset width is 1.5, 2, 3
+// or 4 (2 px tolerance); the height only breaks ties; it only suggests, never applies.
 const specOf = (
   id: string,
   containers: readonly { id: string; name: string; width: number; height: number }[],
@@ -147,32 +147,32 @@ const specOf = (
     layers: [],
   },
 });
-const PHONE = { id: 'phone', name: 'Celular', width: 360, height: 800 };
+const PHONE = { id: 'phone', name: 'Phone', width: 360, height: 800 };
 const PHONE_LARGE = {
   id: 'phone-large',
-  name: 'Celular grande',
+  name: 'Large phone',
   width: 412,
   height: 915,
 };
 const material = specOf('m3', [PHONE, PHONE_LARGE]);
 
 describe('suggestDensity', () => {
-  it('1080 com o tamanho pronto 360 dá 3 e devolve o tamanho pronto (nome e medidas)', () => {
+  it('1080 with the 360 preset gives 3 and returns the preset (name and size)', () => {
     const found = suggestDensity({ width: 1080, height: 2400 }, [material]);
     expect(found).toMatchObject({
       density: 3,
       specId: 'm3',
-      preset: { id: 'phone', name: 'Celular', width: 360, height: 800 },
+      preset: { id: 'phone', name: 'Phone', width: 360, height: 800 },
     });
   });
 
-  it('1082 (tolerância de 2 px no arredondamento) também dá 3; 1083 já não', () => {
+  it('1082 (2 px rounding tolerance) also gives 3; 1083 does not', () => {
     expect(suggestDensity({ width: 1082, height: 2400 }, [material])?.density).toBe(3);
     expect(suggestDensity({ width: 1078, height: 2400 }, [material])?.density).toBe(3);
     expect(suggestDensity({ width: 1083, height: 2400 }, [material])).toBeNull();
   });
 
-  it('720 com 360 e 412 dá 2 pelo 360; 540 dá 1,5 e 1440 dá 4', () => {
+  it('720 with 360 and 412 gives 2 via the 360; 540 gives 1.5 and 1440 gives 4', () => {
     expect(suggestDensity({ width: 720, height: 1600 }, [material])).toMatchObject({
       density: 2,
       preset: { id: 'phone' },
@@ -181,65 +181,65 @@ describe('suggestDensity', () => {
     expect(suggestDensity({ width: 1440, height: 3200 }, [material])?.density).toBe(4);
   });
 
-  it('1000 sem múltiplo dá nada; a mesma largura do tamanho pronto (1x) também', () => {
+  it('1000 with no multiple gives nothing; the same width as the preset (1x) too', () => {
     expect(suggestDensity({ width: 1000, height: 2000 }, [material])).toBeNull();
     expect(suggestDensity({ width: 360, height: 800 }, [material])).toBeNull();
   });
 
-  it('sem especialização com containers (ou sem cópia legível) dá nada', () => {
+  it('with no specialization with containers (or no readable copy) gives nothing', () => {
     expect(suggestDensity({ width: 1080, height: 2400 }, [])).toBeNull();
     expect(
       suggestDensity({ width: 1080, height: 2400 }, [{ id: 'a', spec: null }]),
     ).toBeNull();
     expect(
-      suggestDensity({ width: 1080, height: 2400 }, [specOf('vazia', [])]),
+      suggestDensity({ width: 1080, height: 2400 }, [specOf('empty', [])]),
     ).toBeNull();
   });
 
-  it('a altura desempata entre tamanhos prontos da mesma largura; depois, a ordem', () => {
+  it('the height breaks ties between presets of the same width; then, the order', () => {
     const a = specOf('a', [
-      { id: 'curto', name: 'Curto', width: 360, height: 640 },
-      { id: 'longo', name: 'Longo', width: 360, height: 800 },
+      { id: 'short', name: 'Short', width: 360, height: 640 },
+      { id: 'long', name: 'Long', width: 360, height: 800 },
     ]);
-    // 2400 ÷ 3 = 800: o "Longo" tem a altura mais próxima, mesmo vindo depois.
-    expect(suggestDensity({ width: 1080, height: 2400 }, [a])?.preset.id).toBe('longo');
-    // Altura igual para os dois: o primeiro na ordem das especializações aplicadas.
-    const b = specOf('b', [{ id: 'outro', name: 'Outro', width: 360, height: 800 }]);
+    // 2400 ÷ 3 = 800: "Long" has the closest height, even though it comes later.
+    expect(suggestDensity({ width: 1080, height: 2400 }, [a])?.preset.id).toBe('long');
+    // Same height for both: the first in the order of the applied specializations.
+    const b = specOf('b', [{ id: 'other', name: 'Other', width: 360, height: 800 }]);
     expect(suggestDensity({ width: 1080, height: 2400 }, [b, material])?.specId).toBe(
       'b',
     );
   });
 
-  it('com dois fatores na tolerância, vale o mais próximo (tamanho pronto minúsculo)', () => {
+  it('with two factors within tolerance, the closest wins (tiny preset)', () => {
     const tiny = specOf('t', [{ id: 'x', name: 'X', width: 2, height: 5 }]);
-    // 4 está a 1 px de 1,5 × 2 = 3 e a 0 px de 2 × 2 = 4: o fator é 2, não 1,5.
+    // 4 is 1 px from 1.5 × 2 = 3 and 0 px from 2 × 2 = 4: the factor is 2, not 1.5.
     expect(suggestDensity({ width: 4, height: 10 }, [tiny])?.density).toBe(2);
   });
 
-  it('a captura costuma recortar barras: a altura não impede a sugestão', () => {
+  it('a capture tends to crop bars: the height does not prevent the suggestion', () => {
     expect(suggestDensity({ width: 1080, height: 2100 }, [material])?.density).toBe(3);
   });
 });
 
-// CL2 (#1715), achados 2, 3 e 4.
-describe('CL2: suggestDensity considera o 1x', () => {
-  it('1080×1920 com o tamanho pronto 1080×1920 (já em 1x) não sugere nada', () => {
+// CL2 (#1715), findings 2, 3 and 4.
+describe('CL2: suggestDensity considers 1x', () => {
+  it('1080×1920 with the 1080×1920 preset (already 1x) suggests nothing', () => {
     const full = specOf('hd', [{ id: 'hd', name: 'HD', width: 1080, height: 1920 }]);
     expect(suggestDensity({ width: 1080, height: 1920 }, [full])).toBeNull();
   });
 
-  it('com 1x e 3x na tolerância, o que fica mais perto vale; o 1x não é sugerido', () => {
+  it('with 1x and 3x within tolerance, the closest wins; 1x is not suggested', () => {
     const both = specOf('both', [
-      { id: 'big', name: 'Grande', width: 1080, height: 1920 },
-      { id: 'small', name: 'Pequeno', width: 360, height: 640 },
+      { id: 'big', name: 'Big', width: 1080, height: 1920 },
+      { id: 'small', name: 'Small', width: 360, height: 640 },
     ]);
-    // O tamanho pronto 1080×1920 explica o container (1x): nada a aplicar, mesmo que o 360 dê 3x.
+    // The 1080×1920 preset explains the container (1x): nothing to apply, even though the 360 gives 3x.
     expect(suggestDensity({ width: 1080, height: 1920 }, [both])).toBeNull();
   });
 });
 
-describe('CL2: rectFromUnits arredonda pelas bordas', () => {
-  it('a borda direita/inferior do filho não passa a do slot (densidade 2,625)', () => {
+describe('CL2: rectFromUnits rounds by the edges', () => {
+  it("the child's right/bottom edge does not pass the slot's (density 2.625)", () => {
     const d = 2.625;
     const slotUnit = { x: 0, y: 0, width: 9.728, height: 9.728 };
     const childUnit = { x: 0.2, y: 0.2, width: 9.5276, height: 9.5276 };
@@ -252,8 +252,8 @@ describe('CL2: rectFromUnits arredonda pelas bordas', () => {
   });
 });
 
-describe('CL2: density 1 é ausente', () => {
-  it('setContainerDensity(p, id, 1) não grava a chave e, sem densidade, devolve o mesmo projeto', () => {
+describe('CL2: density 1 is absent', () => {
+  it('setContainerDensity(p, id, 1) does not write the key and, without a density, returns the same project', () => {
     const p = sampleProject();
     const id = first(p).id;
     expect(setContainerDensity(p, id, 1)).toBe(p);

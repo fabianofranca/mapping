@@ -1,5 +1,5 @@
-# Exemplo gerado das fontes — 2026-11-02 (épico `epic/exemplo-gerado`)
+# Example generated from the sources — 2026-11-02 (épico `epic/exemplo-gerado`)
 
 ## Sincronização
 
-Sem impacto: a etapa só mudou scripts, testes e documentação do projeto de exemplo, sem tocar em `src/` nem em `scripts/guia/`. Nada foi gravado no artefato.
+Sem impacto: the stage only changed scripts, tests and documentation of the example project, without touching `src/` or `scripts/guia/`. Nothing was written to the artifact.

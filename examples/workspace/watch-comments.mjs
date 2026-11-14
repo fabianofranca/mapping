@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-// Watcher de conversas do Mapping (Node >= 20, sem dependências).
+// Mapping conversation watcher (Node >= 20, no dependencies).
 //
-// Observa `projetos/*/comments/` e, quando alguma conversa ABERTA aguarda o agente (a última
-// mensagem é de pessoa), roda UM comando (o agente) com a lista delas em `MAPPING_AWAITING`.
-// O servidor MCP nunca dispara agente: quem decide rodar é este processo, que você inicia.
+// Watches `projetos/*/comments/` and, when some OPEN conversation awaits the agent (the last
+// message is from a person), runs ONE command (the agent) with the list of them in `MAPPING_AWAITING`.
+// The MCP server never triggers an agent: this process, which you start, decides to run it.
 //
-//   node watch-comments.mjs [--root <pasta>] [--quiet <segundos>] -- <comando> [args…]
+//   node watch-comments.mjs [--root <folder>] [--quiet <seconds>] -- <command> [args…]
 //   node watch-comments.mjs -- claude -p "<prompt>"
 //
-// Instalado e atualizado pelo `setup.sh`; não edite (a próxima atualização sobrescreve).
+// Installed and updated by `setup.sh`; do not edit (the next update overwrites it).
 //
-// Formato da conversa: `docs/COMMENT-FORMAT.md` do Mapping.
+// Conversation format: Mapping's `docs/COMMENT-FORMAT.md`.
 import { spawn } from 'node:child_process';
 import { realpathSync, watch } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
@@ -21,20 +21,19 @@ const PREFIX = 'watch-comments:';
 const DEFAULT_QUIET_SECONDS = 5;
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const USAGE =
-  'uso: node watch-comments.mjs [--root <pasta>] [--quiet <segundos>] -- <comando> [args…]';
+  'usage: node watch-comments.mjs [--root <folder>] [--quiet <seconds>] -- <command> [args…]';
 
 function log(message) {
   process.stderr.write(`${PREFIX} ${message}\n`);
 }
 
-/** Valida o mínimo que o watcher usa da conversa; o resto é com a app e o servidor MCP. */
+/** Validates the minimum the watcher uses of the conversation; the rest is up to the app and the MCP server. */
 function parseThread(text) {
   const thread = JSON.parse(text);
-  if (thread === null || typeof thread !== 'object') throw new Error('não é um objeto');
-  if (thread.format !== 'mapping-thread')
-    throw new Error('format diferente de mapping-thread');
+  if (thread === null || typeof thread !== 'object') throw new Error('not an object');
+  if (thread.format !== 'mapping-thread') throw new Error('format is not mapping-thread');
   if (typeof thread.id !== 'string' || !Array.isArray(thread.messages)) {
-    throw new Error('sem id ou messages');
+    throw new Error('no id or messages');
   }
   const valid = thread.messages.every(
     (m) =>
@@ -46,11 +45,11 @@ function parseThread(text) {
       typeof m.author === 'object' &&
       (m.author.kind === 'human' || m.author.kind === 'agent'),
   );
-  if (!valid) throw new Error('mensagem inválida');
+  if (!valid) throw new Error('invalid message');
   return thread;
 }
 
-/** Ordem das mensagens: por `at` e, no empate, por `id`. */
+/** Message order: by `at` and, on a tie, by `id`. */
 function compareMessages(a, b) {
   const byTime = Date.parse(a.at) - Date.parse(b.at);
   if (byTime !== 0 && !Number.isNaN(byTime)) return byTime;
@@ -59,8 +58,8 @@ function compareMessages(a, b) {
 }
 
 /**
- * Id da última mensagem se a conversa aguarda o agente (aberta e a última mensagem é de pessoa);
- * `null` quando está resolvida, vazia ou aguarda pessoa.
+ * Id of the last message if the conversation awaits the agent (open and the last message is from a
+ * person); `null` when it is resolved, empty or awaits a person.
  */
 export function awaitingAgent(thread) {
   if (thread.resolved !== null && thread.resolved !== undefined) return null;
@@ -78,12 +77,12 @@ async function listDir(dir) {
   }
 }
 
-/** Lê uma conversa; ilegível ou inválida vira aviso no stderr e `null`. */
+/** Reads a conversation; an unreadable or invalid one becomes a warning on stderr and `null`. */
 async function readThread(path) {
   try {
     return parseThread(await readFile(path, 'utf8'));
   } catch (err) {
-    log(`conversa ignorada (${path}): ${err.message}`);
+    log(`conversation ignored (${path}): ${err.message}`);
     return null;
   }
 }
@@ -103,7 +102,7 @@ async function scanProject(root, project) {
   return found;
 }
 
-/** As conversas abertas (`comments/*.json` de cada projeto de `root`) que aguardam o agente. */
+/** The open conversations (`comments/*.json` of each project under `root`) that await the agent. */
 export async function scanAwaiting(root) {
   const projects = (await listDir(root))
     .filter((entry) => entry.isDirectory())
@@ -114,7 +113,7 @@ export async function scanAwaiting(root) {
   return found;
 }
 
-/** `<projeto>/comments/…`: o único caminho que interessa (`filename` nulo vale como interesse). */
+/** `<project>/comments/…`: the only path that matters (a null `filename` counts as interest). */
 function isCommentsPath(filename) {
   if (filename === null || filename === undefined) return true;
   const parts = String(filename).split(/[\\/]/);
@@ -124,8 +123,8 @@ function isCommentsPath(filename) {
 const pairKey = (item) => `${item.project}/${item.thread}:${item.messageId}`;
 
 /**
- * O ciclo do watcher: evento reinicia a quietude; passada a quietude, lê as conversas e roda o
- * comando se houver par novo; um comando por vez; mudança durante a execução marca "pendente".
+ * The watcher cycle: an event restarts the quiet period; once it has passed, reads the conversations
+ * and runs the command if there is a new pair; one command at a time; a change during the run marks "pending".
  */
 function createRunner({ root, quietMs, command, args }) {
   const handled = new Set();
@@ -150,7 +149,7 @@ function createRunner({ root, quietMs, command, args }) {
 
   function runCommand(items) {
     const payload = items.map(({ project, thread, path }) => ({ project, thread, path }));
-    log(`${items.length} conversa(s) aguardando o agente; rodando ${command}`);
+    log(`${items.length} conversation(s) awaiting the agent; running ${command}`);
     let finished = false;
     const finish = (message) => {
       if (finished) return;
@@ -162,11 +161,9 @@ function createRunner({ root, quietMs, command, args }) {
       stdio: 'inherit',
       env: { ...process.env, MAPPING_AWAITING: JSON.stringify(payload) },
     });
-    child.on('error', (err) =>
-      finish(`não foi possível rodar ${command}: ${err.message}`),
-    );
+    child.on('error', (err) => finish(`could not run ${command}: ${err.message}`));
     child.on('close', (code, signal) =>
-      finish(`${command} terminou (código ${code ?? signal})`),
+      finish(`${command} finished (code ${code ?? signal})`),
     );
   }
 
@@ -182,7 +179,7 @@ function createRunner({ root, quietMs, command, args }) {
       for (const item of fresh) handled.add(pairKey(item));
       runCommand(fresh);
     } catch (err) {
-      log(`erro ao ler as conversas: ${err.message}`);
+      log(`error reading the conversations: ${err.message}`);
       release();
     }
   }
@@ -202,7 +199,7 @@ function createRunner({ root, quietMs, command, args }) {
   return { onEvent, schedule, stop };
 }
 
-/** Lê as opções; devolve `{ error }` com a mensagem, ou a configuração. */
+/** Reads the options; returns `{ error }` with the message, or the configuration. */
 function parseArgs(argv, defaultRoot) {
   const config = { root: defaultRoot, quietSeconds: DEFAULT_QUIET_SECONDS };
   const split = argv.indexOf('--');
@@ -211,19 +208,19 @@ function parseArgs(argv, defaultRoot) {
   for (let i = 0; i < options.length; i += 2) {
     const name = options[i];
     const value = options[i + 1];
-    if (value === undefined) return { error: `a opção ${name} pede um valor` };
+    if (value === undefined) return { error: `option ${name} requires a value` };
     if (name === '--root') config.root = resolve(value);
     else if (name === '--quiet') config.quietSeconds = Number(value);
-    else return { error: `opção desconhecida: ${name}` };
+    else return { error: `unknown option: ${name}` };
   }
   if (!Number.isFinite(config.quietSeconds) || config.quietSeconds < 0) {
-    return { error: '--quiet pede um número de segundos (0 ou mais)' };
+    return { error: '--quiet requires a number of seconds (0 or more)' };
   }
-  if (command.length === 0) return { error: 'falta o comando depois de "--"' };
+  if (command.length === 0) return { error: 'missing the command after "--"' };
   return { ...config, command: command[0], args: command.slice(1) };
 }
 
-/** Roda o watcher até SIGINT/SIGTERM. Devolve o código de saída (2 para uso incorreto). */
+/** Runs the watcher until SIGINT/SIGTERM. Returns the exit code (2 for incorrect usage). */
 export async function main(argv) {
   const defaultRoot = join(dirname(SCRIPT_PATH), 'projetos');
   const config = parseArgs(argv, defaultRoot);
@@ -253,17 +250,17 @@ export async function main(argv) {
         runner.onEvent(filename),
       );
     } catch (err) {
-      log(`não foi possível observar ${config.root}: ${err.message}`);
+      log(`could not watch ${config.root}: ${err.message}`);
       return done(1);
     }
     watcher.on('error', (err) => {
-      log(`erro ao observar: ${err.message}`);
+      log(`watch error: ${err.message}`);
       quit(1);
     });
     process.on('SIGINT', onSignal);
     process.on('SIGTERM', onSignal);
     log(
-      `observando ${config.root} (quietude de ${config.quietSeconds}s); Ctrl+C encerra`,
+      `observing ${config.root} (quiet period of ${config.quietSeconds}s); Ctrl+C stops`,
     );
     runner.schedule();
   });

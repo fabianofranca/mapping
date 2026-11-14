@@ -1,6 +1,7 @@
-// O exemplo SDUI na formatVersion 12 (etapa #559, PD7): atualizar um projeto que aplicou o SDUI
-// v3 (eventos onClick/onHold/onChange) passa pelo contrato de versão, e os vínculos migrados ganham
-// o papel pelos passos `set-role`, sem pendência.
+// The SDUI example at formatVersion 12 (stage #559, PD7): updating a project that applied SDUI
+// v3 (onClick/onHold/onChange events) goes through the version contract, and the migrated links get
+// the role through the `set-role` steps, without issues.
+// pt-BR kept: shared fixture data (sdui example fields/layers, Material 3 node names) asserted by other dirs
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -27,7 +28,17 @@ function loadV3(): Spec {
   );
   const parsed = parseSpecText(text);
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
-  return parsed.spec;
+  // The frozen v3 fixture predates the English layer ids; a layer id is not part of the version
+  // contract, so the v3 project is built with the ids the current example uses.
+  const layerIds: Record<string, string> = {
+    componentes: 'components',
+    eventos: 'events',
+    telas: 'screens',
+  };
+  return {
+    ...parsed.spec,
+    layers: parsed.spec.layers.map((l) => ({ ...l, id: layerIds[l.id] ?? l.id })),
+  };
 }
 
 function projectV3() {
@@ -37,18 +48,18 @@ function projectV3() {
     id: 'M1',
     containerId: 'I1',
     rect: { x: 0, y: 0, width: 100, height: 100 },
-    name: 'Tela',
+    name: 'Screen',
   });
   p = addTypedAnnotation(p, {
     id: 'B',
     markingId: 'M1',
-    layerId: layerOf(p, 'sdui', 'componentes'),
+    layerId: layerOf(p, 'sdui', 'components'),
     type: { specId: 'sdui', typeId: 'button' },
   });
   p = addTypedAnnotation(p, {
     id: 'E',
     markingId: 'M1',
-    layerId: layerOf(p, 'sdui', 'eventos'),
+    layerId: layerOf(p, 'sdui', 'events'),
     type: { specId: 'sdui', typeId: 'onClick' },
     parentAnnotationId: 'B',
   });
@@ -56,21 +67,21 @@ function projectV3() {
 }
 
 describe('exemplo SDUI v12', () => {
-  it('valida sem erro, sem aviso de lista longa nem de grupo ou repositório sem uso', () => {
+  it('validates without errors, without a long-list warning nor an unused group or repository warning', () => {
     const spec = loadExample('sdui');
     expect(spec.formatVersion).toBe(12);
-    // O Screen não tem `code` de propósito; o aviso que importa aqui é o da lista longa.
+    // The Screen has no `code` on purpose; the warning that matters here is the long-list one.
     const codes = specWarnings(spec).map((w) => w.code);
     expect(codes).toEqual(['type-without-code']);
   });
 
-  it('o contrato v3 → v4 cobre a troca dos eventos por ação, feedback e validação', () => {
+  it('the v3 → v4 contract covers swapping the events for action, feedback and validation', () => {
     const impact = specializationUpdateImpact(projectV3(), loadExample('sdui'));
     expect(impact.refused).toBe(false);
     expect(impact.missingMigrations).toEqual([]);
   });
 
-  it('atualizar migra o tipo do vínculo e dá o papel (set-role), sem pendência', () => {
+  it('updating migrates the link type and gives the role (set-role), without issues', () => {
     const before = projectV3();
     expect(getAnnotationIssues(before, 'E').map((i) => i.code)).not.toContain(
       'missing-role',
@@ -82,16 +93,16 @@ describe('exemplo SDUI v12', () => {
     expect(e?.type).toEqual({ specId: 'sdui', typeId: 'action' });
     expect(e?.parentAnnotationId).toBe('B');
     expect(e?.parentRole).toBe('click');
-    expect(e?.values).toMatchObject({ acao: 'submit' });
+    expect(e?.values).toMatchObject({ action: 'submit' });
     expect(getAnnotationIssues(after, 'E').map((i) => i.code)).not.toContain(
       'missing-role',
     );
   });
 });
 
-describe('exemplo papeis-migracao (rename-role e remove-role)', () => {
-  it('valida na formatVersion 12 e declara os três passos de papel', () => {
-    const spec = loadExample('papeis-migracao');
+describe('roles-migration example (rename-role and remove-role)', () => {
+  it('validates at formatVersion 12 and declares the three role steps', () => {
+    const spec = loadExample('roles-migration');
     expect(spec.formatVersion).toBe(12);
     expect(specWarnings(spec)).toEqual([]);
     const ops = (spec.migrations ?? []).flatMap((m) => m.steps.map((s) => s.op));

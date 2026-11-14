@@ -35,8 +35,8 @@ import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 import { buildLargeProject } from './largeProject';
 import { buildLargeTypedProject } from './largeTypedProject';
 
-// Limites folgados (o CI e o celular são mais lentos que o desktop): o objetivo é
-// pegar regressões grosseiras (algo virar O(n²) ou pior) com 20 imagens e 500 marcações.
+// Loose limits (CI and the phone are slower than the desktop): the goal is
+// to catch gross regressions (something turning O(n²) or worse) with 20 images and 500 markings.
 const BUDGET_MS = 500;
 
 function time<T>(fn: () => T): { value: T; ms: number } {
@@ -45,27 +45,27 @@ function time<T>(fn: () => T): { value: T; ms: number } {
   return { value, ms: performance.now() - start };
 }
 
-describe('projeto grande (20 imagens, 500 marcações)', () => {
+describe('large project (20 images, 500 markings)', () => {
   const project = buildLargeProject();
 
-  it('o fixture é válido', () => {
+  it('the fixture is valid', () => {
     expect(project.containers).toHaveLength(20);
     expect(project.markings).toHaveLength(500);
     expect(validateProject(project)).toEqual([]);
   });
 
-  it('valida os invariantes rápido', () => {
+  it('validates the invariants fast', () => {
     expect(time(() => validateProject(project)).ms).toBeLessThan(BUDGET_MS);
   });
 
-  it('serializa e lê de volta sem perdas, rápido', () => {
+  it('serializes and reads back losslessly, fast', () => {
     const written = time(() => serialize(project));
     const read = time(() => deserialize(written.value));
     expect(written.ms + read.ms).toBeLessThan(BUDGET_MS);
     expect(read.value.ok && serialize(read.value.project)).toBe(written.value);
   });
 
-  it('monta a lista rápido', () => {
+  it('builds the list fast', () => {
     const { value, ms } = time(() =>
       buildListing(project, project.layers, { showEmpty: true }),
     );
@@ -73,17 +73,17 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
     expect(ms).toBeLessThan(BUDGET_MS);
   });
 
-  it('assentar o projeto grande (pertencimento por geometria) é rápido e estável', () => {
+  it('settling the large project (containment by geometry) is fast and stable', () => {
     const settled = time(() => settleHierarchy({ ...project }));
     expect(settled.ms).toBeLessThan(BUDGET_MS);
-    // O fixture já está assentado: não há o que mudar e o resultado é o mesmo, marcação a marcação.
+    // The fixture is already settled: there is nothing to change and the result is the same, marking by marking.
     expect(settled.value.markings).toEqual(project.markings);
     expect(settled.value.containers).toEqual(project.containers);
-    // Assentar de novo é idempotente (devolve o mesmo objeto).
+    // Settling again is idempotent (returns the same object).
     expect(settleHierarchy(settled.value)).toBe(settled.value);
   });
 
-  it('assentar 500 marcações num só container (o pior caso, O(n²) por espaço) cabe no orçamento', () => {
+  it('settling 500 markings in a single container (the worst case, O(n²) per space) fits the budget', () => {
     const dense = buildLargeProject({
       images: 1,
       markingsPerImage: 500,
@@ -91,7 +91,7 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
     });
     expect(dense.markings).toHaveLength(500);
     expect(validateProject(dense)).toEqual([]);
-    // Zera o pai de todas: o assentar refaz a hierarquia inteira.
+    // Clears every parent: the settle rebuilds the whole hierarchy.
     const scrambled = {
       ...dense,
       markings: dense.markings.map((m) => ({ ...m, parentId: null })),
@@ -103,19 +103,19 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
     );
   });
 
-  it('seleção múltipla: mover 20 containers e 500 marcações, e excluir a seleção, cabe no orçamento', () => {
+  it('multi-selection: moving 20 containers and 500 markings, and deleting the selection, fits the budget', () => {
     const everything: ItemRef[] = [
       ...project.containers.map((c) => ({ kind: 'image' as const, id: c.id })),
       ...project.markings.map((m) => ({ kind: 'marking' as const, id: m.id })),
     ];
     expect(time(() => canMoveItems(project, everything)).ms).toBeLessThan(BUDGET_MS);
-    // As marcações vão com o container: só os 20 containers recebem deslocamento.
+    // The markings go with the container: only the 20 containers get an offset.
     const movedAll = time(() => moveItems(project, everything, 7.5, 3.25));
     expect(movedAll.ms).toBeLessThan(BUDGET_MS);
     expect(movedAll.value.containers[0]?.placement.x).toBe(7.5);
     expect(movedAll.value.markings).toEqual(project.markings);
 
-    // Só as 500 marcações (100 mães, as filhas vão com elas): 12 e 8 pixels da imagem.
+    // Only the 500 markings (100 parents, the children go with them): 12 and 8 image pixels.
     const onlyMarkings = everything.filter((i) => i.kind === 'marking');
     const movedMarkings = time(() => moveItems(project, onlyMarkings, 3, 2));
     expect(movedMarkings.ms).toBeLessThan(BUDGET_MS);
@@ -133,13 +133,13 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
     expect(removed.value.containers).toEqual([]);
   });
 
-  it('operações de edição continuam rápidas', () => {
+  it('editing operations stay fast', () => {
     const parent = project.markings.find((m) => m.parentId === null)!;
     const moved = time(() => moveMarking(project, parent.id, 5, 5));
     expect(moved.ms).toBeLessThan(BUDGET_MS);
     const annotated = time(() =>
       addAnnotation(project, {
-        id: 'novo',
+        id: 'new',
         markingId: parent.id,
         layerId: 'L2',
         name: null,
@@ -150,17 +150,17 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
   });
 });
 
-// Orçamentos por quadro (docs/ARCHITECTURE.md, "Desempenho"): o que o canvas, o painel e a lista leem a
-// cada mudança de projeto. A mediana de várias rodadas, cada uma numa versão
-// nova do projeto (sem o índice nem as pendências já calculados).
+// Per-frame budgets (docs/ARCHITECTURE.md, "Desempenho"): what the canvas, the panel and the list read on
+// every project change. The median of several rounds, each on a new
+// project version (without the index or the pending items already computed).
 const FRAME_BUDGET_MS = 8;
-/** Desligados com `--coverage` (vite.config.ts): o código instrumentado é mais lento. */
+/** Turned off with `--coverage` (vite.config.ts): instrumented code is slower. */
 const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
 /**
- * Um orçamento é uma medida de tempo num runner compartilhado: um vizinho ocupado estoura
- * o limite por 1% sem regressão nenhuma (deploy de 2026-10-11: 8,108 ms contra 8 ms, com o
- * mesmo commit passando 17 min antes). Uma repetição separa ruído de regressão: a regressão
- * real (algo virar O(n²)) estoura o limite por muito, nas duas vezes.
+ * A budget is a time measurement on a shared runner: a busy neighbor exceeds
+ * the limit by 1% with no regression at all (deploy of 2026-10-11: 8.108 ms against 8 ms, with the
+ * same commit passing 17 min earlier). A retry separates noise from regression: a real
+ * regression (something turning O(n²)) exceeds the limit by a lot, both times.
  */
 const BUDGET_OPTIONS = { retry: 1 };
 
@@ -170,9 +170,9 @@ function median(values: number[]): number {
 }
 
 /**
- * As primeiras rodadas medem o JIT, não o código: caem de ~13 ms para ~3 ms até
- * estabilizar (no app, isso acontece nos primeiros quadros). Aquece até lá antes
- * de medir; senão um runner mais lento estoura o orçamento só no aquecimento.
+ * The first rounds measure the JIT, not the code: they drop from ~13 ms to ~3 ms until
+ * stabilizing (in the app, this happens in the first frames). Warm up until then before
+ * measuring; otherwise a slower runner blows the budget during warmup alone.
  */
 const WARMUP_RUNS = 12;
 
@@ -181,12 +181,12 @@ function medianMs(fn: (p: Project) => unknown, p: Project, runs = 9): number {
   return median(Array.from({ length: runs }, () => time(() => fn({ ...p })).ms));
 }
 
-describe('projeto grande com tipadas e referências', () => {
+describe('large project with typed annotations and references', () => {
   const project = buildLargeTypedProject();
   const typed = project.annotations.filter((a) => a.type !== null);
   const refs = project.annotations.flatMap((a) => refsOf(project, a));
 
-  it('o fixture tem o tamanho pedido e é válido', () => {
+  it('the fixture has the requested size and is valid', () => {
     expect(project.markings).toHaveLength(500);
     expect(project.annotations).toHaveLength(1500);
     expect(typed).toHaveLength(750);
@@ -199,7 +199,7 @@ describe('projeto grande com tipadas e referências', () => {
   });
 
   budgetIt(
-    `índice + pendências + indicadores + visibilidade em menos de ${FRAME_BUDGET_MS} ms`,
+    `index + pending items + indicators + visibility in under ${FRAME_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
       const ms = medianMs((p) => {
@@ -214,27 +214,23 @@ describe('projeto grande com tipadas e referências', () => {
     },
   );
 
-  budgetIt(
-    'consultas repetidas na mesma versão reaproveitam o índice',
-    BUDGET_OPTIONS,
-    () => {
-      projectIssues(project);
-      const queryAll = () => {
-        for (const a of project.annotations) {
-          getAnnotationIssues(project, a.id);
-          getBacklinks(project, a.id);
-        }
-      };
-      queryAll(); // Aquece o JIT.
-      const runs = Array.from({ length: 5 }, () => time(queryAll).ms);
-      expectBelow(median(runs), FRAME_BUDGET_MS * 4);
-    },
-  );
+  budgetIt('repeated queries on the same version reuse the index', BUDGET_OPTIONS, () => {
+    projectIssues(project);
+    const queryAll = () => {
+      for (const a of project.annotations) {
+        getAnnotationIssues(project, a.id);
+        getBacklinks(project, a.id);
+      }
+    };
+    queryAll(); // Warms up the JIT.
+    const runs = Array.from({ length: 5 }, () => time(queryAll).ms);
+    expectBelow(median(runs), FRAME_BUDGET_MS * 4);
+  });
 });
 
-// Crescimento do assentar (#882, fase 1): o espaço denso embaralhado (todos os `parentId` zerados, o
-// assentar refaz a hierarquia inteira) não pode ser quadrático. Mede 500 e 2.000 marcações num container só.
-describe('assentar um espaço denso: crescimento', () => {
+// Settle growth (#882, phase 1): the shuffled dense space (all `parentId` cleared, the
+// settle rebuilds the whole hierarchy) must not be quadratic. Measures 500 and 2,000 markings in a single container.
+describe('settling a dense space: growth', () => {
   const denseScrambled = (n: number): Project => {
     const dense = buildLargeProject({
       images: 1,
@@ -244,15 +240,15 @@ describe('assentar um espaço denso: crescimento', () => {
     return { ...dense, markings: dense.markings.map((m) => ({ ...m, parentId: null })) };
   };
 
-  it('500 → 2.000 marcações num container só: razão < 6×', GROWTH_OPTIONS, () => {
-    expectLinearGrowth('assentar espaço denso', {
+  it('500 → 2,000 markings in a single container: ratio < 6×', GROWTH_OPTIONS, () => {
+    expectLinearGrowth('settle dense space', {
       build: denseScrambled,
       run: (p) => settleHierarchy(p),
       n: 500,
     });
   });
 
-  it('2.000 marcações num container só assentam abaixo de 50 ms', GROWTH_OPTIONS, () => {
+  it('2,000 markings in a single container settle in under 50 ms', GROWTH_OPTIONS, () => {
     const scrambled = denseScrambled(2000);
     settleHierarchy({ ...scrambled });
     const times = Array.from(
@@ -264,16 +260,16 @@ describe('assentar um espaço denso: crescimento', () => {
   });
 });
 
-// Edição em projeto grande (#882, fase 2): uma edição custa o espaço que ela mexe, não o projeto inteiro.
-describe('edição: crescimento e orçamento', () => {
-  /** A i-ésima marcação nova de `I0`: fora dos grupos do fixture, numa grade de 100 colunas. */
+// Editing in a large project (#882, phase 2): an edit costs the space it touches, not the whole project.
+describe('editing: growth and budget', () => {
+  /** The i-th new marking of `I0`: outside the fixture's groups, on a 100-column grid. */
   const newRect = (i: number) => ({
     x: (i % 190) * 21 + 5,
     y: 2750 + Math.floor(i / 190) * 22,
     width: 20,
     height: 20,
   });
-  /** Cria `count` marcações uma a uma em cada um dos containers `I0..I(containers-1)`. */
+  /** Creates `count` markings one by one in each of the containers `I0..I(containers-1)`. */
   const createMany = (p: Project, count: number, containers = 1): Project => {
     let next = p;
     for (let c = 0; c < containers; c++) {
@@ -287,19 +283,19 @@ describe('edição: crescimento e orçamento', () => {
     }
     return next;
   };
-  /** Um projeto do `buildLargeProject` com `n` marcações (25 por imagem). */
+  /** A `buildLargeProject` project with `n` markings (25 per image). */
   const largeOf = (n: number): Project => buildLargeProject({ images: n / 25 });
 
   it(
-    'criar marcações uma a uma num container: 250 → 1.000 criações, razão < 6×',
+    'creating markings one by one in a container: 250 → 1,000 creations, ratio < 6×',
     { ...GROWTH_OPTIONS, timeout: 60_000 },
     () => {
-      // Num projeto de 20.000 marcações: cada criação sempre copia o array e confere o id (custo da
-      // operação, linear no projeto), e esse custo quase não cresce quando o container recebe mais mil.
-      // O que a razão mede é o assentar do container que vai enchendo, que não pode custar mais a cada
-      // vez (o assentar do container inteiro a cada criação daria mais de 10×).
+      // In a project of 20,000 markings: each creation always copies the array and checks the id (cost of the
+      // operation, linear in the project), and that cost barely grows when the container gets another thousand.
+      // What the ratio measures is the settle of the container that keeps filling up, which cannot cost more each
+      // time (settling the whole container on each creation would give more than 10×).
       const project = buildLargeProject({ images: 800 });
-      expectLinearGrowth('criar uma a uma', {
+      expectLinearGrowth('create one by one', {
         build: (n) => ({ project, count: n }),
         run: ({ project: p, count }) => createMany(p, count),
         prepare: ({ project: p }) => projectIndex(p),
@@ -311,18 +307,18 @@ describe('edição: crescimento e orçamento', () => {
   );
 
   it(
-    'uma edição (criar, mover): 2.500 → 10.000 marcações, razão < 6×',
+    'one edit (create, move): 2,500 → 10,000 markings, ratio < 6×',
     GROWTH_OPTIONS,
     () => {
       for (const [label, edit] of [
         [
-          'criar uma marcação',
+          'create a marking',
           (p: Project) =>
             createMarking(p, { id: 'N', containerId: 'I0', rect: newRect(0) }),
         ],
-        ['mover uma marcação', (p: Project) => moveMarking(p, 'M0-0', 5, 5)],
+        ['move a marking', (p: Project) => moveMarking(p, 'M0-0', 5, 5)],
       ] as const) {
-        expectLinearGrowth(`edição: ${label}`, {
+        expectLinearGrowth(`edit: ${label}`, {
           build: largeOf,
           run: edit,
           prepare: (p) => projectIndex(p),
@@ -332,14 +328,14 @@ describe('edição: crescimento e orçamento', () => {
     },
   );
 
-  budgetIt('1.000 criações num container abaixo de 2 s', BUDGET_OPTIONS, () => {
+  budgetIt('1,000 creations in a container in under 2 s', BUDGET_OPTIONS, () => {
     const project = buildLargeProject();
     const created = time(() => createMany(project, 1000));
     expect(created.value.markings).toHaveLength(1500);
     expectBelow(created.ms, 2000);
   });
 
-  /** Mediana de uma edição sobre versões novas do projeto, cujo índice já está montado (o app o lê a cada quadro). */
+  /** Median of an edit over new project versions whose index is already built (the app reads it every frame). */
   const medianEditMs = (project: Project, edit: (p: Project) => unknown): number => {
     const run = () => {
       const version = { ...project };
@@ -353,39 +349,39 @@ describe('edição: crescimento e orçamento', () => {
     createMarking(p, { id: 'N', containerId: 'I0', rect: newRect(0) });
   const move = (p: Project) => moveMarking(p, 'M0-0', 5, 5);
 
-  budgetIt('uma edição com 10.000 marcações abaixo de 16 ms', BUDGET_OPTIONS, () => {
+  budgetIt('one edit with 10,000 markings in under 16 ms', BUDGET_OPTIONS, () => {
     const project = largeOf(10000);
     expect(project.markings).toHaveLength(10000);
-    expectBelow(medianEditMs(project, create), 16, 'criar');
-    expectBelow(medianEditMs(project, move), 16, 'mover');
+    expectBelow(medianEditMs(project, create), 16, 'create');
+    expectBelow(medianEditMs(project, move), 16, 'move');
   });
 
-  // Com perspectivas a reconciliação roda a cada edição: ela olha só o que a edição mexeu (decisão 6),
-  // não monta o índice do projeto inteiro (que sozinho levava ~17 ms com 10.000 marcações).
+  // With perspectives the reconciliation runs on every edit: it looks only at what the edit touched (decision 6),
+  // it does not build the whole project's index (which alone took ~17 ms with 10,000 markings).
   budgetIt(
-    'uma edição com 10.000 marcações e duas perspectivas abaixo de 16 ms',
+    'one edit with 10,000 markings and two perspectives in under 16 ms',
     BUDGET_OPTIONS,
     () => {
       let project = largeOf(10000);
       project = addPerspective(
         project,
-        buildPerspective(project, { id: 'P1', name: 'Todas', startFrom: null }),
+        buildPerspective(project, { id: 'P1', name: 'All', startFrom: null }),
       );
       project = addPerspective(
         project,
-        buildPerspective(project, { id: 'P2', name: 'Vazia', startFrom: 'empty' }),
+        buildPerspective(project, { id: 'P2', name: 'Empty', startFrom: 'empty' }),
       );
       expect(project.perspectives[0]?.items.length).toBeGreaterThan(100);
-      expectBelow(medianEditMs(project, create), 16, 'criar');
-      expectBelow(medianEditMs(project, move), 16, 'mover');
+      expectBelow(medianEditMs(project, create), 16, 'create');
+      expectBelow(medianEditMs(project, move), 16, 'move');
     },
   );
 });
 
 describe('nearestFreeSpot', () => {
-  budgetIt('600 obstáculos em grade cerrada abaixo de 200 ms', BUDGET_OPTIONS, () => {
-    // Grade 25 × 24 de retângulos 100×100 com vão de 10: o ponto pedido cai no meio dela e o
-    // lugar livre mais próximo é na borda (o pior caso para quem testa candidato por obstáculo).
+  budgetIt('600 obstacles on a tight grid in under 200 ms', BUDGET_OPTIONS, () => {
+    // 25 × 24 grid of 100×100 rectangles with a 10 gap: the requested point falls in the middle of it and the
+    // nearest free spot is at the edge (the worst case for whoever tests each candidate against each obstacle).
     const obstacles: Rect[] = [];
     for (let i = 0; i < 25; i++) {
       for (let j = 0; j < 24; j++) {
@@ -408,13 +404,13 @@ describe('nearestFreeSpot', () => {
   });
 });
 
-describe('colocação em espaço livre (#1087)', () => {
+describe('placement in free space (#1087)', () => {
   budgetIt(
-    'peça nova com 100 irmãs que ocupam o R0 abaixo de 50 ms',
+    'a new piece with 100 siblings that occupy R0 in under 50 ms',
     BUDGET_OPTIONS,
     () => {
-      // Grade 10 × 10 de irmãs 30×30 com vão de 10 ao redor do centro da imagem (1000 × 800): o R0
-      // (450, 380, 100, 40) cai no meio dela, então a busca roda e o lugar livre fica fora da grade.
+      // 10 × 10 grid of 30×30 siblings with a 10 gap around the image center (1000 × 800): R0
+      // (450, 380, 100, 40) falls in the middle of it, so the search runs and the free spot lies outside the grid.
       let p = componentProject();
       for (let i = 0; i < 10; i++) {
         for (let j = 0; j < 10; j++) {

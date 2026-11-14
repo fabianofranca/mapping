@@ -11,11 +11,12 @@ import { TreeWindow } from '../../src/ui/TreeWindow';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, type Harness } from './harness';
 
-// Janela Árvore (R6): nós que recolhem, bolinhas das camadas na linha, Localizar e
-// Recolher tudo. O projeto é o da amostra: I1 › M1 › M2 › M3 e I2 › M4.
+// Tree window (R6): collapsible nodes, layer dots on the row, Locate and
+// Collapse all. The project is the sample one: I1 › M1 › M2 › M3 and I2 › M4.
+// pt-BR kept: shared fixture data (names Porta, Maçaneta, Fechadura, Lataria, Vidros, image files lateral/frente of sampleProject) asserted by tests/
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   showToolWindow('tree');
 });
 afterEach(cleanup);
@@ -29,8 +30,8 @@ function withContext(harness: Harness, ui: preact.ComponentChildren) {
 const rowOf = (name: string) =>
   screen.getByRole('button', { name: new RegExp(`^${name}`) });
 
-describe('janela Árvore', () => {
-  it('mostra o título, as ações e as linhas', () => {
+describe('Tree window', () => {
+  it('shows the title, the actions and the rows', () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);
     expect(screen.getByRole('heading', { name: t('panel.treeTitle') })).toBeTruthy();
@@ -40,7 +41,7 @@ describe('janela Árvore', () => {
     expect(rowOf('Maçaneta')).toBeTruthy();
   });
 
-  it('escolher uma linha seleciona o item', async () => {
+  it('choosing a row selects the item', async () => {
     const harness = createHarness(sampleProject());
     const onSelect = vi.fn();
     withContext(harness, <TreeWindow onSelect={onSelect} />);
@@ -48,7 +49,7 @@ describe('janela Árvore', () => {
     expect(onSelect).toHaveBeenCalledWith({ kind: 'marking', id: 'M1' });
   });
 
-  it('o nó recolhe e abre, e esconde as filhas', async () => {
+  it('the node collapses and opens, and hides the children', async () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);
     const user = userEvent.setup();
@@ -65,7 +66,7 @@ describe('janela Árvore', () => {
     expect(rowOf('Maçaneta')).toBeTruthy();
   });
 
-  it('Recolher tudo deixa só as imagens e não mexe no projeto', async () => {
+  it('Collapse all leaves only the images and does not touch the project', async () => {
     const harness = createHarness(sampleProject());
     const before = harness.project();
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);
@@ -75,17 +76,17 @@ describe('janela Árvore', () => {
     expect(
       screen.queryAllByRole('button', { name: /lateral|frente/ }).length,
     ).toBeGreaterThan(0);
-    // É estado de UI: o projeto e o desfazer ficam como estavam.
+    // It is UI state: the project and the undo stay as they were.
     expect(harness.project()).toBe(before);
     expect(harness.store.canUndo.value).toBe(false);
   });
 
-  it('Localizar abre os ancestrais da seleção e leva o foco à linha', async () => {
+  it('Locate opens the ancestors of the selection and moves focus to the row', async () => {
     const harness = createHarness(sampleProject());
     collapseTree(harness.ui, harness.project());
     harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);
-    // A seleção também abre os ancestrais sozinha; recolher de novo isola o botão.
+    // The selection also opens the ancestors by itself; collapsing again isolates the button.
     await waitFor(() => expect(rowOf('Maçaneta')).toBeTruthy());
     collapseTree(harness.ui, harness.project());
     await waitFor(() =>
@@ -95,7 +96,7 @@ describe('janela Árvore', () => {
     await waitFor(() => expect(document.activeElement).toBe(rowOf('Maçaneta')));
   });
 
-  it('Localizar fica desabilitado sem seleção', () => {
+  it('Locate is disabled without a selection', () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);
     expect(screen.getByRole('button', { name: t('tree.locate') })).toHaveProperty(
@@ -104,7 +105,7 @@ describe('janela Árvore', () => {
     );
   });
 
-  it('a linha selecionada fica marcada e aria-current', () => {
+  it('the selected row is marked and aria-current', () => {
     const harness = createHarness(sampleProject());
     harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);
@@ -114,9 +115,9 @@ describe('janela Árvore', () => {
   });
 });
 
-describe('árvore: seleção por fora', () => {
+describe('tree: selection from outside', () => {
   function Tree({ harness }: { readonly harness: Harness }) {
-    // Ler o signal aqui re-renderiza a árvore quando a seleção muda por fora.
+    // Reading the signal here re-renders the tree when the selection changes from outside.
     return (
       <MarkingTree
         project={harness.project()}
@@ -126,7 +127,7 @@ describe('árvore: seleção por fora', () => {
     );
   }
 
-  it('selecionar uma marcação escondida abre os ancestrais dela', async () => {
+  it('selecting a hidden marking opens its ancestors', async () => {
     const harness = createHarness(sampleProject());
     collapseTree(harness.ui, harness.project());
     withContext(harness, <Tree harness={harness} />);
@@ -136,35 +137,35 @@ describe('árvore: seleção por fora', () => {
     expect(rowOf('Maçaneta').getAttribute('aria-current')).toBe('true');
     expect(harness.ui.collapsedTree.value.has(treeKey('image', 'I1'))).toBe(false);
     expect(harness.ui.collapsedTree.value.has(treeKey('marking', 'M1'))).toBe(false);
-    // As outras imagens continuam recolhidas.
+    // The other images stay collapsed.
     expect(harness.ui.collapsedTree.value.has(treeKey('image', 'I2'))).toBe(true);
   });
 });
 
-describe('bolinhas das camadas na linha', () => {
-  it('cada marcação mostra as camadas visíveis que chegam a ela', () => {
+describe('layer dots on the row', () => {
+  it('each marking shows the visible layers that reach it', () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);
     const dots = (name: string) =>
       [...(rowOf(name).querySelectorAll<HTMLElement>('.tree-dot') ?? [])].map(
         (d) => d.title,
       );
-    // A1 (M1/L1) e A2 (M1/L2); A3 (M2/L1).
-    expect(dots('Porta')).toEqual(['Camada Lataria', 'Camada Vidros']);
-    expect(dots('Maçaneta')).toEqual(['Camada Lataria']);
+    // A1 (M1/L1) and A2 (M1/L2); A3 (M2/L1).
+    expect(dots('Porta')).toEqual(['Layer Lataria', 'Layer Vidros']);
+    expect(dots('Maçaneta')).toEqual(['Layer Lataria']);
   });
 
-  it('esconder uma camada tira a bolinha dela', () => {
+  it('hiding a layer removes its dot', () => {
     const harness = createHarness(sampleProject());
     harness.ui.hiddenLayers.value = new Set(['L2']);
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);
     const titles = [...rowOf('Porta').querySelectorAll<HTMLElement>('.tree-dot')].map(
       (d) => d.title,
     );
-    expect(titles).toEqual(['Camada Lataria']);
+    expect(titles).toEqual(['Layer Lataria']);
   });
 
-  it('a imagem não tem bolinhas', () => {
+  it('the image has no dots', () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);
     const image = screen.getAllByRole('button', { name: /lateral/ })[0];
@@ -172,8 +173,8 @@ describe('bolinhas das camadas na linha', () => {
   });
 });
 
-describe('Árvore: seleção múltipla', () => {
-  it('Shift+clique acrescenta e tira itens, com as linhas selecionadas à vista', async () => {
+describe('Tree: multiple selection', () => {
+  it('Shift+click adds and removes items, with the selected rows in view', async () => {
     const harness = createHarness(sampleProject());
     const onSelect = vi.fn();
     withContext(harness, <TreeWindow onSelect={onSelect} />);
@@ -195,12 +196,12 @@ describe('Árvore: seleção múltipla', () => {
     await user.click(rowOf('Fechadura'));
     await user.keyboard('{/Shift}');
     expect(selectedItems(harness.ui).map((i) => i.id)).toEqual(['M1', 'M2']);
-    // Clique simples: um item só.
+    // Plain click: a single item.
     await user.click(rowOf('Porta'));
     expect(onSelect).toHaveBeenCalledWith({ kind: 'marking', id: 'M1' });
   });
 
-  it('Ctrl+clique e Cmd+clique na linha juntam e tiram como o Shift+clique', async () => {
+  it('Ctrl+click and Cmd+click on the row add and remove like Shift+click', async () => {
     const harness = createHarness(sampleProject());
     const onSelect = vi.fn();
     withContext(harness, <TreeWindow onSelect={onSelect} />);
@@ -220,7 +221,7 @@ describe('Árvore: seleção múltipla', () => {
     expect(selectedItems(harness.ui).map((i) => i.id)).toEqual(['M1', 'M2']);
   });
 
-  it('o menu da linha tem "Selecionar com o conteúdo" e fecha ao escolher', async () => {
+  it('the row menu has "Select with contents" and closes on choosing', async () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);
     await userEvent.click(

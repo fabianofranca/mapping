@@ -1,5 +1,5 @@
-// Biblioteca de exemplo de analytics (`examples/libraries/analytics/`, ME4): o pacote valida sem
-// erro, o Evento desenha a tabela do `preview` e a Transição só se aplica a setas.
+// Example analytics library (`examples/libraries/analytics/`, ME4): the package validates without
+// errors, the Event draws the `preview` table and the Transition only applies to arrows.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -25,59 +25,59 @@ const files = listDisk(ROOT)
   .map((path) => ({ path, text: readFileSync(join(ROOT, path), 'utf8') }));
 const text = (path: string): string => files.find((f) => f.path === path)?.text ?? '';
 
-describe('biblioteca de exemplo analytics', () => {
-  it('tem a especialização, um componente e um documento por tipo', () => {
+describe('example analytics library', () => {
+  it('has the specialization, one component and one document per type', () => {
     expect(files.map((f) => f.path)).toEqual(
-      [SPEC_FILE, 'components/evento.json', 'docs/evento.md', 'docs/transicao.md'].sort(),
+      [SPEC_FILE, 'components/event.json', 'docs/event.md', 'docs/transition.md'].sort(),
     );
   });
 
-  it('valida sem erro nos três níveis e sem aviso', () => {
+  it('validates without errors on the three levels and without warnings', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
-    // Nenhum aviso: o preview cabe até no tamanho mínimo.
+    // No warning: the preview fits even at the minimum size.
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
     expect(report.summary).toMatchObject({ level: 3, types: 2, components: 1, docs: 2 });
   });
 
-  it('a especialização é a formatVersion 7: Evento flutuante com componente e Transição só de seta', () => {
+  it('the specialization is formatVersion 7: floating Event with a component and arrow-only Transition', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.spec).toMatchObject({ formatVersion: 7, id: 'analytics', version: 1 });
+    expect(parsed.spec).toMatchObject({ formatVersion: 7, id: 'analytics', version: 2 });
     const [layer] = parsed.spec.layers;
     expect(layer).toMatchObject({ id: 'analytics', name: 'Analytics' });
-    const [evento, transicao] = layer?.annotationTypes ?? [];
-    expect(evento).toMatchObject({
-      id: 'evento',
+    const [event, transition] = layer?.annotationTypes ?? [];
+    expect(event).toMatchObject({
+      id: 'event',
       floating: true,
-      labelField: 'nome',
-      component: 'components/evento.json',
+      labelField: 'name',
+      component: 'components/event.json',
     });
-    expect(evento?.appliesTo).toBeUndefined();
-    const props = evento?.fields.find((f) => f.key === 'propriedades');
+    expect(event?.appliesTo).toBeUndefined();
+    const props = event?.fields.find((f) => f.key === 'properties');
     expect(props?.type === 'table' && props.columns).toMatchObject([
-      { key: 'propriedade', type: 'string', required: true },
-      { key: 'valor', type: 'string' },
+      { key: 'property', type: 'string', required: true },
+      { key: 'value', type: 'string' },
     ]);
-    expect(transicao).toMatchObject({ id: 'transicao', appliesTo: ['arrow'] });
-    expect(transicao?.component).toBeUndefined();
-    expect(transicao?.floating).toBeUndefined();
-    expect(transicao?.fields.map((f) => f.key)).toEqual(['condicao', 'evento']);
+    expect(transition).toMatchObject({ id: 'transition', appliesTo: ['arrow'] });
+    expect(transition?.component).toBeUndefined();
+    expect(transition?.floating).toBeUndefined();
+    expect(transition?.fields.map((f) => f.key)).toEqual(['condition', 'event']);
   });
 
-  it('os documentos dizem como o evento e a transição se ligam por seta', () => {
-    expect(text('docs/evento.md')).toMatch(/seta/);
-    expect(text('docs/transicao.md')).toMatch(/seta/);
+  it('the documents say how the event and the transition link by arrow', () => {
+    expect(text('docs/event.md')).toMatch(/arrow/);
+    expect(text('docs/transition.md')).toMatch(/arrow/);
   });
 
-  it('o Evento desenha o preview: cabeçalho com o nome e uma linha por propriedade', () => {
+  it('the Event draws the preview: header with the name and one row per property', () => {
     const catalog = buildCatalog(files);
     expect(catalog.report.errors).toEqual([]);
-    const entry = findEntry(catalog, 'evento');
+    const entry = findEntry(catalog, 'event');
     expect(entry?.component?.formatVersion).toBe(2);
-    expect(entry?.previewValues?.propriedades).toHaveLength(3);
+    expect(entry?.previewValues?.properties).toHaveLength(3);
     const drawing = drawEntry(entry!, entry!.previewValues ?? {}, approximateMeasurer);
     expect(drawing?.warnings).toEqual([]);
     const texts: string[] = [];
@@ -88,12 +88,12 @@ describe('biblioteca de exemplo analytics', () => {
     if (drawing) visit(drawing.root);
     expect(texts).toEqual([
       'checkout_started',
-      'origem',
-      'carrinho',
-      'itens',
+      'source',
+      'cart',
+      'items',
       '3',
       'total',
-      '149,90',
+      '149.90',
     ]);
   });
 });

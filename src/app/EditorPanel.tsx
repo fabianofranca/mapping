@@ -24,7 +24,7 @@ export interface EditorPanelProps {
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 
-/** Detalhes: a janela da direita. */
+/** Details: the window on the right. */
 export function EditorPanel({
   busy,
   dialogs,
@@ -32,13 +32,13 @@ export function EditorPanel({
   onGoToAnnotation,
 }: EditorPanelProps) {
   const { store, ui, display, review, derived } = useEditor();
-  // O projeto à vista: fora da revisão, o confirmado (os campos do painel atualizam ao
-  // soltar o gesto, não durante); na revisão, o que a visão Atual/Proposto mostra.
+  // The project in view: outside the review, the confirmed one (the panel fields update when
+  // the gesture is released, not during); in the review, what the Current/Proposed view shows.
   const project = review.derived.shownProject.value;
   if (!project) return null;
 
-  // Revisão de uma proposta: o painel normal do item, somente leitura, com os marcadores
-  // (ou o nível selecionado com as mudanças, na proposta e no grupo Projeto).
+  // Reviewing a proposal: the item's normal panel, read-only, with the markers (or the
+  // selected level with the changes, in the proposal and in the Project group).
   if (review.proposalId.value !== null) {
     return (
       <div class="tab-panel">
@@ -47,7 +47,8 @@ export function EditorPanel({
     );
   }
   const openSettings = () => dialogs.show({ kind: 'settings' });
-  // Conversa sem item (camada, ponto solto, órfã): abre sozinha, no lugar do painel de seleção.
+  // Thread without an item (layer, loose point, orphan): opens by itself, in place of the
+  // selection panel.
   if (hasStandaloneThread(ui, project, derived.threads.entries.value)) {
     return (
       <div class="tab-panel">

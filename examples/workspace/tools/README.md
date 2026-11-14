@@ -1,3 +1,3 @@
 # tools/
 
-O `setup.sh` da pasta de cima baixa aqui o `mapping-mcp.js` (servidor MCP do Mapping, autocontido) e o `mapping-mcp.js.sha256`. Versione os dois: quem clonar a pasta tem o servidor funcionando sem instalar nada além do Node ≥ 20.
+The `setup.sh` of the parent folder downloads `mapping-mcp.js` (Mapping's MCP server, self-contained) and `mapping-mcp.js.sha256` here. Version both: whoever clones the folder has the server working without installing anything besides Node ≥ 20.

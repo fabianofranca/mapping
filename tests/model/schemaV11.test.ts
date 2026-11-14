@@ -12,9 +12,9 @@ import {
 import { emptyProject, sampleProject } from './fixtures';
 import { legacyJson } from './legacyShape';
 
-// Schema v11 (etapa Código de instanciação): o repositório da plataforma é da especialização
-// (`platforms[].repo`) e `platformRepos[x]` fica só com `localPath`. A migração v10 → v11
-// descarta o `urlTemplate`; a entrada que fica sem `localPath` sai.
+// Schema v11 (stage Instantiation code): the platform repository belongs to the specialization
+// (`platforms[].repo`) and `platformRepos[x]` keeps only `localPath`. The v10 → v11 migration
+// discards the `urlTemplate`; an entry left without `localPath` goes away.
 
 function load(text: string) {
   const result = deserialize(text, migrations, new Map());
@@ -22,7 +22,7 @@ function load(text: string) {
   return result;
 }
 
-/** Um mapping.json v10 do projeto, com `platformRepos` no formato antigo. */
+/** A v10 mapping.json of the project, with `platformRepos` in the old format. */
 function v10Text(p: Project, platformRepos?: Record<string, unknown>): string {
   const data = legacyJson(p);
   if (platformRepos !== undefined) data.platformRepos = platformRepos;
@@ -31,8 +31,8 @@ function v10Text(p: Project, platformRepos?: Record<string, unknown>): string {
 
 const TEMPLATE = 'https://github.com/org/app/blob/main/{path}#L{line}';
 
-describe('migração v10 → v11 (repositório na especialização)', () => {
-  it('descarta o urlTemplate e mantém o localPath', () => {
+describe('migration v10 → v11 (repository in the specialization)', () => {
+  it('discards the urlTemplate and keeps the localPath', () => {
     const result = load(
       v10Text(sampleProject(), {
         android: { urlTemplate: TEMPLATE, localPath: '../..' },
@@ -47,31 +47,31 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
     ]);
   });
 
-  it('entrada só com localPath fica como está e não há nada descartado', () => {
+  it('an entry with only localPath stays as is and nothing is discarded', () => {
     const result = load(v10Text(sampleProject(), { ios: { localPath: '.' } }));
     expect(result.project.platformRepos).toEqual({ ios: { localPath: '.' } });
     expect(result.discardedUrlTemplates).toEqual([]);
   });
 
-  it('entrada só com urlTemplate (localPath nulo ou vazio) é removida', () => {
+  it('an entry with only urlTemplate (null or empty localPath) is removed', () => {
     const result = load(
       v10Text(sampleProject(), {
         android: { urlTemplate: TEMPLATE, localPath: null },
         ios: { urlTemplate: TEMPLATE },
         bff: { urlTemplate: null, localPath: '' },
         web: { urlTemplate: null, localPath: null },
-        mantida: { urlTemplate: TEMPLATE, localPath: '../app' },
+        kept: { urlTemplate: TEMPLATE, localPath: '../app' },
       }),
     );
-    expect(result.project.platformRepos).toEqual({ mantida: { localPath: '../app' } });
+    expect(result.project.platformRepos).toEqual({ kept: { localPath: '../app' } });
     expect(result.discardedUrlTemplates.map((d) => d.platform)).toEqual([
       'android',
       'ios',
-      'mantida',
+      'kept',
     ]);
   });
 
-  it('projeto v10 sem platformRepos ou com {} migra sem mudar mais nada', () => {
+  it('a v10 project without platformRepos or with {} migrates without changing anything else', () => {
     const p = sampleProject();
     const empty = load(v10Text(p, {}));
     expect(empty.migratedFrom).toBe(10);
@@ -80,12 +80,12 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
 
     const data = JSON.parse(v10Text(p)) as Record<string, unknown>;
     delete data.platformRepos;
-    // Sem `platformRepos` desde a v7 a migração v6 → v7 não rodou; a v10 o exige: o schema recusa.
+    // Without `platformRepos` since v7 the v6 → v7 migration did not run; v10 requires it: the schema refuses.
     expect(deserialize(JSON.stringify(data), migrations, new Map()).ok).toBe(false);
     expect(migrateFrom10To11(data)).toBe(data);
   });
 
-  it('grava a versão atual e a releitura é estável', () => {
+  it('writes the current version and re-reading is stable', () => {
     const saved = serialize(
       load(
         v10Text(sampleProject(), { android: { urlTemplate: TEMPLATE, localPath: '..' } }),
@@ -100,7 +100,7 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
     expect(serialize(again.project)).toBe(saved);
   });
 
-  it('a cadeia v1 → v16 junta o que os passos anteriores já faziam', () => {
+  it('the v1 → v16 chain puts together what the previous steps already did', () => {
     const p = emptyProject();
     const v1 = JSON.stringify({
       schemaVersion: 1,
@@ -119,14 +119,14 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
     expect(result.discardedUrlTemplates).toEqual([]);
   });
 
-  it('a função da migração ignora platformRepos que não é objeto e itens estranhos', () => {
+  it('the migration function ignores a platformRepos that is not an object and strange items', () => {
     expect(migrateFrom10To11({ platformRepos: null })).toEqual({ platformRepos: null });
     expect(migrateFrom10To11({ platformRepos: [1] })).toEqual({ platformRepos: [1] });
     expect(
       migrateFrom10To11({
         a: 1,
         platformRepos: {
-          x: 'texto',
+          x: 'text',
           y: null,
           z: { localPath: 7 },
           w: { localPath: '.' },
@@ -135,7 +135,7 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
     ).toEqual({ a: 1, platformRepos: { w: { localPath: '.' } } });
   });
 
-  it('discardedOnMigrationTo11 lista só os urlTemplate não vazios, na ordem do objeto', () => {
+  it('discardedOnMigrationTo11 lists only the non-empty urlTemplates, in the object order', () => {
     expect(
       discardedOnMigrationTo11({
         platformRepos: {
@@ -143,8 +143,8 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
           ios: { urlTemplate: '   ', localPath: '.' },
           bff: { urlTemplate: null },
           web: { urlTemplate: 'https://x/{path}' },
-          estranho: 'texto',
-          outro: { urlTemplate: 3 },
+          strange: 'text',
+          other: { urlTemplate: 3 },
         },
       }),
     ).toEqual([
@@ -155,7 +155,7 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
     expect(discardedOnMigrationTo11({ platformRepos: [] })).toEqual([]);
   });
 
-  it('o registro tem a migração v10 → v11', () => {
+  it('the registry has the v10 → v11 migration', () => {
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(11);
     expect(migrations.get(10)).toBe(migrateFrom10To11);
     expect([...migrations.keys()].slice(0, 10)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -163,7 +163,7 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
 });
 
 describe('schema v11', () => {
-  it('o projeto novo grava a versão atual com platformRepos vazio', () => {
+  it('the new project writes the current version with an empty platformRepos', () => {
     expect(emptyProject().schemaVersion).toBe(SCHEMA_VERSION);
     expect(JSON.parse(serialize(emptyProject()))).toMatchObject({
       schemaVersion: SCHEMA_VERSION,
@@ -171,7 +171,7 @@ describe('schema v11', () => {
     });
   });
 
-  it('um projeto v11 com localPath é lido sem mudança', () => {
+  it('a v11 project with localPath is read unchanged', () => {
     const p: Project = {
       ...sampleProject(),
       platformRepos: { android: { localPath: '../..' } },
@@ -183,7 +183,7 @@ describe('schema v11', () => {
     expect(serialize(result.project)).toBe(text);
   });
 
-  it('o schema aceita só localPath (texto ou null) e descarta chave desconhecida', () => {
+  it('the schema accepts only localPath (text or null) and drops an unknown key', () => {
     expect(platformRepoSchema.safeParse({ localPath: null }).success).toBe(true);
     expect(platformRepoSchema.safeParse({}).success).toBe(false);
     expect(platformRepoSchema.safeParse({ localPath: 3 }).success).toBe(false);
@@ -192,7 +192,7 @@ describe('schema v11', () => {
     });
   });
 
-  it('um v11 gravado à mão com urlTemplate perde a chave na leitura', () => {
+  it('a hand-written v11 with urlTemplate loses the key on reading', () => {
     const data = JSON.parse(serialize(sampleProject())) as Record<string, unknown>;
     data.platformRepos = { android: { urlTemplate: TEMPLATE, localPath: '..' } };
     const result = load(JSON.stringify(data));

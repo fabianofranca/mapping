@@ -8,9 +8,9 @@ import { NOW, sampleProject } from '../model/fixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 import { material3Package, material3Spec } from '../storage/packageFixture';
 
-// FA2, decisão 10: os arquivos de um pacote (e as cópias de `specs/`) gravam em paralelo com
-// limite, mas SEMPRE antes do `mapping.json`: nenhum `saveMapping` começa antes de todos
-// terminarem, e uma falha aborta a gravação sem tocar o `mapping.json`.
+// FA2, decision 10: the files of a package (and the copies in `specs/`) are written in parallel with
+// a limit, but ALWAYS before `mapping.json`: no `saveMapping` starts before all of them
+// finish, and a failure aborts the write without touching `mapping.json`.
 
 interface Probe {
   readonly session: ProjectSession;
@@ -20,9 +20,9 @@ interface Probe {
     peak: number;
     started: number;
     finished: number;
-    /** Arquivos terminados / iniciados quando o `saveMapping` começou (um item por chamada). */
+    /** Files finished / started when `saveMapping` began (one item per call). */
     atSave: { started: number; finished: number; inFlight: number }[];
-    /** Falha toda gravação a partir da `failFrom`-ésima (enquanto não for `null`). */
+    /** Fails every write from the `failFrom`-th on (while it is not `null`). */
     failFrom: number | null;
   };
 }
@@ -53,7 +53,7 @@ function start(): Probe {
       try {
         await new Promise((r) => setTimeout(r, 3));
         if (state.failFrom !== null && index >= state.failFrom)
-          throw new Error('disco cheio');
+          throw new Error('disk full');
         await fn(...args);
       } finally {
         state.inFlight--;
@@ -76,7 +76,7 @@ function start(): Probe {
   const session = openSession({
     storage,
     project: sampleProject(),
-    prepareImage: () => Promise.reject(new Error('sem imagens')),
+    prepareImage: () => Promise.reject(new Error('no images')),
     now: () => NOW,
     autosaveDelay: 1,
   });
@@ -84,8 +84,8 @@ function start(): Probe {
   return { session, root, state };
 }
 
-describe('gravação do pacote em paralelo com limite', () => {
-  it('grava os arquivos do pacote com pico de 4 e nenhum saveMapping antes de todos terminarem', async () => {
+describe('package write in parallel with a limit', () => {
+  it('writes the package files with a peak of 4 and no saveMapping before all finish', async () => {
     const h = start();
     const files = material3Package();
     expect(files.size).toBeGreaterThan(8);
@@ -99,11 +99,11 @@ describe('gravação do pacote em paralelo com limite', () => {
       expect(at.inFlight).toBe(0);
       expect(at.finished).toBe(at.started);
     }
-    // O pacote inteiro chegou ao disco (os arquivos mais a cópia da especialização).
+    // The whole package reached the disk (the files plus the specialization copy).
     expect(h.state.atSave[0]?.started).toBeGreaterThanOrEqual(files.size);
   });
 
-  it('falha em um arquivo do pacote: o mapping.json não é tocado e a regravação refaz o pacote', async () => {
+  it('failure on one package file: mapping.json is not touched and the rewrite redoes the package', async () => {
     const h = start();
     h.state.failFrom = 2;
     const files = material3Package();
@@ -111,7 +111,7 @@ describe('gravação do pacote em paralelo com limite', () => {
     await expect(h.session.flush()).resolves.toMatchObject({ ok: false });
     expect(h.state.atSave).toEqual([]);
     expect(await h.root.read('mapping.json')).toBeNull();
-    // Passou: a próxima gravação regrava o pacote inteiro e só então o mapping.json.
+    // It passed: the next write rewrites the whole package and only then mapping.json.
     h.state.failFrom = null;
     h.state.started = 0;
     h.state.finished = 0;

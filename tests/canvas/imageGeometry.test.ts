@@ -10,38 +10,38 @@ import {
 import { createMarking, imageCanvasRect } from '../../src/model';
 import { image, sampleProject } from '../model/fixtures';
 
-// I1: 4000×3000 em (0, 0) com escala 0.25 → 1000×750. I2: 1000×1000 à direita.
+// I1: 4000×3000 at (0, 0) with scale 0.25 → 1000×750. I2: 1000×1000 to the right.
 const p = sampleProject();
 const i1 = image(p, 'I1');
 
-describe('geometria das imagens no canvas', () => {
-  it('encontra a imagem sob o ponto', () => {
+describe('image geometry on the canvas', () => {
+  it('finds the image under the point', () => {
     expect(imageAt(p.containers, { x: 10, y: 10 })?.id).toBe('I1');
     expect(imageAt(p.containers, { x: 1100, y: 10 })?.id).toBe('I2');
     expect(imageAt(p.containers, { x: 1025, y: 10 })).toBeNull();
     expect(imageAt(p.containers, { x: -1, y: 10 })).toBeNull();
   });
 
-  it('encontra o container pelo rótulo do nome, respeitando a ordem de desenho', () => {
-    // Rótulo de I1 em cima dele (y -20..-4) e um de I2 sobre o corpo de I1 (sem tapar I2).
+  it('finds the container by its name label, respecting the drawing order', () => {
+    // I1 label on top of it (y -20..-4) and one of I2 over the I1 body (without covering I2).
     const titles = new Map([
       ['I1', { x: 0, y: -20, width: 100, height: 16 }],
       ['I2', { x: 1100, y: -20, width: 100, height: 16 }],
     ]);
     expect(containerTitleAt(p.containers, titles, { x: 50, y: -10 })?.id).toBe('I1');
     expect(containerTitleAt(p.containers, titles, { x: 1150, y: -10 })?.id).toBe('I2');
-    // Fora do texto (a faixa é mais larga que o texto) e no corpo: nada.
+    // Outside the text (the strip is wider than the text) and in the body: nothing.
     expect(containerTitleAt(p.containers, titles, { x: 500, y: -10 })).toBeNull();
     expect(containerTitleAt(p.containers, titles, { x: 50, y: 100 })).toBeNull();
-    // Rótulo coberto pelo corpo de um container de cima: não vale.
+    // Label covered by the body of a container above: does not count.
     const covered = new Map([['I1', { x: 1100, y: 100, width: 100, height: 16 }]]);
     expect(containerTitleAt(p.containers, covered, { x: 1150, y: 110 })).toBeNull();
-    // Rótulo de um container de cima sobre o corpo de um de baixo vence.
+    // Label of a container above over the body of one below wins.
     const over = new Map([['I2', { x: 10, y: 100, width: 100, height: 16 }]]);
     expect(containerTitleAt(p.containers, over, { x: 50, y: 110 })?.id).toBe('I2');
   });
 
-  it('encontra o canto mais próximo dentro do raio', () => {
+  it('finds the nearest corner within the radius', () => {
     const rect = imageCanvasRect(i1, i1.placement);
     expect(cornerAt(rect, { x: 3, y: -4 }, 10)).toBe('nw');
     expect(cornerAt(rect, { x: 995, y: 755 }, 10)).toBe('se');
@@ -49,12 +49,12 @@ describe('geometria das imagens no canvas', () => {
     expect(cornerAt(rect, { x: 500, y: 0 }, 10)).toBeNull();
   });
 
-  it('redimensiona pelo canto SE mantendo o NW fixo e a proporção', () => {
+  it('resizes by the SE corner keeping the NW fixed and the proportion', () => {
     const next = resizeFromCorner(i1, i1.placement, 'se', { x: 2000, y: 900 });
     expect(next).toEqual({ x: 0, y: 0, scale: 0.5 });
   });
 
-  it('redimensiona pelo canto NW mantendo o SE fixo', () => {
+  it('resizes by the NW corner keeping the SE fixed', () => {
     const next = resizeFromCorner(i1, i1.placement, 'nw', { x: 500, y: 375 });
     expect(next.scale).toBeCloseTo(0.125);
     const rect = imageCanvasRect(i1, next);
@@ -62,7 +62,7 @@ describe('geometria das imagens no canvas', () => {
     expect(rect.y + rect.height).toBeCloseTo(750);
   });
 
-  it('não encolhe abaixo do tamanho mínimo, mesmo cruzando o canto oposto', () => {
+  it('does not shrink below the minimum size, even when crossing the opposite corner', () => {
     const next = resizeFromCorner(i1, i1.placement, 'se', { x: -500, y: -500 });
     const rect = imageCanvasRect(i1, next);
     expect(Math.max(rect.width, rect.height)).toBeCloseTo(MIN_IMAGE_CANVAS_SIZE);
@@ -70,7 +70,7 @@ describe('geometria das imagens no canvas', () => {
     expect(rect.y).toBe(0);
   });
 
-  it('caixa que envolve as imagens', () => {
+  it('box that encloses the images', () => {
     expect(imagesBounds([])).toBeNull();
     const i2 = image(p, 'I2');
     const r2 = imageCanvasRect(i2, i2.placement);
@@ -82,7 +82,7 @@ describe('geometria das imagens no canvas', () => {
     });
   });
 
-  it('inclui as marcações do canvas (flutuantes também), mas não as de container', () => {
+  it('includes the canvas markings (floating ones too), but not the container ones', () => {
     const withCanvas = createMarking(p, {
       id: 'C1',
       containerId: null,
@@ -108,7 +108,7 @@ describe('geometria das imagens no canvas', () => {
       width: 5400,
       height: 1200,
     });
-    // Só marcações do canvas, sem imagens.
+    // Only canvas markings, without images.
     expect(imagesBounds([], noted.markings)).toEqual({
       x: -300,
       y: -200,

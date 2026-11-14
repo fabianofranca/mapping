@@ -1,23 +1,24 @@
 import { computed, signal, type ReadonlySignal } from '@preact/signals';
 import type { CitationTarget } from '../model';
 
-// Ponte do compositor de conversas (etapa Comentários, CM5): quem tem um compositor aberto e
-// gravável o registra aqui, e os menus "Citar na conversa" inserem o chip no mais recente. É
-// estado só da UI: sem DOM nem projeto; o compositor decide como insere (cursor ou fim).
+// Thread composer bridge (Comments stage, CM5): whoever has an open, writable composer
+// registers it here, and the "Cite in the conversation" menus insert the chip in the most
+// recent one. It is UI-only state: no DOM or project; the composer decides how it inserts
+// (cursor or end).
 
 export interface ComposerHandle {
-  /** Insere a citação do alvo no cursor (ou no fim, se o campo não tem o foco). */
+  /** Inserts the target's citation at the cursor (or at the end, if the field is not focused). */
   insert(target: CitationTarget): void;
 }
 
 const registered = signal<readonly ComposerHandle[]>([]);
 
-/** Há ao menos um compositor aberto e gravável. */
+/** There is at least one open, writable composer. */
 export const composerOpen: ReadonlySignal<boolean> = computed(
   () => registered.value.length > 0,
 );
 
-/** Registra o compositor; a função devolvida o tira (pode ser chamada mais de uma vez). */
+/** Registers the composer; the returned function removes it (it can be called more than once). */
 export function registerComposer(handle: ComposerHandle): () => void {
   registered.value = [...registered.peek(), handle];
   return () => {
@@ -25,7 +26,7 @@ export function registerComposer(handle: ComposerHandle): () => void {
   };
 }
 
-/** Insere a citação no compositor registrado mais recente; `false` se não há nenhum. */
+/** Inserts the citation in the most recently registered composer; `false` if there is none. */
 export function insertCitation(target: CitationTarget): boolean {
   const handle = registered.peek().at(-1);
   if (handle === undefined) return false;

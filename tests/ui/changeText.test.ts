@@ -26,9 +26,9 @@ import { emptyProject, sampleProject } from '../model/fixtures';
 import { propose } from '../model/proposalFixtures';
 import { cadastroProject, loadExample } from '../model/specFixtures';
 
-// Etapa 6 (6.4), achado 6: o nome do tipo de uma anotação criada tem a mesma caixa na
-// lista ("Anotação Button criada") e em Detalhes, mesmo quando a anotação não está no
-// "como ficaria" (rejeitada) e o título sai da própria mudança.
+// Stage 6 (6.4), finding 6: the type name of a created annotation has the same casing in the
+// list ("Annotation Button created") and in Details, even when the annotation is not in the
+// "how it would look" (rejected) and the title comes from the change itself.
 
 function created(to: JsonValue): Change {
   return {
@@ -44,12 +44,16 @@ function created(to: JsonValue): Change {
   };
 }
 
+// pt-BR kept: shared fixture data asserted by tests/model, tests/components (marking names of sampleProject)
+const PORTA = 'Porta';
+const ARROW_NAME = `${PORTA} → Maçaneta`;
+
 const proposalOf = (changes: readonly Change[]) => ({ changes }) as unknown as Proposal;
 
-describe('changeTitle: nome do tipo', () => {
+describe('changeTitle: type name', () => {
   const button = created({ name: null, type: { specId: 'sdui', typeId: 'button' } });
 
-  it('usa o nome do tipo da especialização do projeto, não o id', () => {
+  it('uses the type name from the project specialization, not the id', () => {
     const names = {
       current: cadastroProject(),
       preview: null,
@@ -59,7 +63,7 @@ describe('changeTitle: nome do tipo', () => {
     expect(changeTitle(names, button)).not.toContain('button');
   });
 
-  it('numa importação nova, acha o nome na especialização que a proposta aplica', () => {
+  it('in a new import, finds the name in the specialization the proposal applies', () => {
     const spec: Change = {
       ...created({
         id: 'sdui',
@@ -80,53 +84,53 @@ describe('changeTitle: nome do tipo', () => {
   });
 });
 
-// Seta (ME4): o nome dela, senão "Origem → Destino" pelos nomes das marcações das pontas.
-describe('changeTitle: seta', () => {
+// Arrow (ME4): its name, otherwise "Source → Target" by the names of the markings at the ends.
+describe('changeTitle: arrow', () => {
   const base = sampleProject();
-  const named = createArrow(base, { id: 'R1', from: 'M1', to: 'M2', name: 'abre' });
+  const named = createArrow(base, { id: 'R1', from: 'M1', to: 'M2', name: 'opens' });
   const plain = createArrow(base, { id: 'R2', from: 'M1', to: 'M2' });
 
-  it('usa o nome da seta', () => {
+  it('uses the arrow name', () => {
     const proposal = propose(base, named);
     const c = proposal.changes[0]!;
     const title = changeTitle({ current: base, preview: named, proposal }, c);
-    expect(title).toContain('abre');
+    expect(title).toContain('opens');
     expect(title).toContain(t('review.entity.arrow'));
   });
 
-  it('sem nome, usa as marcações das pontas, com a seta ainda só na proposta', () => {
+  it('with no name, uses the markings at the ends, with the arrow still only in the proposal', () => {
     const proposal = propose(base, plain);
     const c = proposal.changes[0]!;
-    // Sem a prévia, o nome sai do registro da criação (`to`) e dos nomes das marcações.
+    // Without the preview, the name comes from the creation record (`to`) and from the marking names.
     const title = changeTitle({ current: base, preview: null, proposal }, c);
-    expect(title).toContain('Porta → Maçaneta');
+    expect(title).toContain(ARROW_NAME);
   });
 
-  it('o item da revisão que é uma seta tem o nome dela', () => {
+  it('the review item that is an arrow has its name', () => {
     const proposal = propose(base, plain);
     expect(markingName({ current: base, preview: plain, proposal }, 'R2')).toBe(
-      'Porta → Maçaneta',
+      ARROW_NAME,
     );
     expect(markingName({ current: base, preview: null, proposal }, 'R2')).toBe(
-      'Porta → Maçaneta',
+      ARROW_NAME,
     );
-    // A marcação segue pelo nome dela.
-    expect(markingName({ current: base, preview: null, proposal }, 'M1')).toBe('Porta');
+    // The marking goes by its own name.
+    expect(markingName({ current: base, preview: null, proposal }, 'M1')).toBe(PORTA);
   });
 
-  it('a remoção da seta usa o registro de antes', () => {
+  it('the removal of the arrow uses the earlier record', () => {
     const proposal = propose(plain, base);
     const c = proposal.changes[0]!;
     expect(changeTitle({ current: plain, preview: base, proposal }, c)).toContain(
-      'Porta → Maçaneta',
+      ARROW_NAME,
     );
   });
 });
 
-describe('droppedChangeSummary: resumo da mudança retirada', () => {
-  it('mostra o tipo da anotação criada, que já não está na proposta', () => {
+describe('droppedChangeSummary: summary of the withdrawn change', () => {
+  it('shows the type of the created annotation, which is no longer in the proposal', () => {
     const button = created({ name: null, type: { specId: 'sdui', typeId: 'button' } });
-    // A mudança foi retirada: a proposta já não a tem em `changes`.
+    // The change was withdrawn: the proposal no longer has it in `changes`.
     const names = { current: cadastroProject(), preview: null, proposal: proposalOf([]) };
     const summary = droppedChangeSummary(names, button);
     expect(summary).toContain('Button');
@@ -134,8 +138,8 @@ describe('droppedChangeSummary: resumo da mudança retirada', () => {
   });
 });
 
-describe('changeTitle: o ajuste ao conteúdo (MC3, decisão 18 da #898)', () => {
-  it('a mudança de retângulo que o fit_marking gera é a Posição de sempre, do tipo movida', () => {
+describe('changeTitle: fitting to the content (MC3, decision 18 of #898)', () => {
+  it('the rectangle change that fit_marking generates is the usual Position, of the moved type', () => {
     const rect: Change = {
       id: 'C1',
       kind: 'update',
@@ -157,9 +161,9 @@ describe('changeTitle: o ajuste ao conteúdo (MC3, decisão 18 da #898)', () => 
   });
 });
 
-describe('changeTitle e changeSummary: a densidade do container (D2, decisão 7 da #1085)', () => {
+describe('changeTitle and changeSummary: the container density (D2, decision 7 of #1085)', () => {
   beforeEach(() => {
-    locale.value = 'pt-BR';
+    locale.value = 'en-US';
   });
   const base = addBackgroundContainer(emptyProject(), {
     id: 'c1',
@@ -170,27 +174,32 @@ describe('changeTitle e changeSummary: a densidade do container (D2, decisão 7 
   const summaryOf = (before: typeof base, after: typeof base) => {
     const proposal = propose(before, after);
     const change = proposal.changes.find((c) => c.field === 'density');
-    if (!change) throw new Error('sem mudança de densidade');
+    if (!change) throw new Error('no density change');
     const names = { current: before, preview: null, proposal };
     return `${changeTitle(names, change)}: ${changeSummary(names, change)}`;
   };
 
-  it('uma proposta com update_container density mostra "Densidade: 1 → 3"', () => {
-    expect(summaryOf(base, setContainerDensity(base, 'c1', 3))).toBe('Densidade: 1 → 3');
+  it('a proposal with update_container density shows "Density: 1 → 3"', () => {
+    expect(summaryOf(base, setContainerDensity(base, 'c1', 3))).toBe('Density: 1 → 3');
   });
 
-  it('voltar a 1 (null) mostra "3 → 1", e valor fracionário usa o separador do idioma', () => {
+  it('going back to 1 (null) shows "3 → 1", and a fractional value uses the locale separator', () => {
     const fixed = setContainerDensity(base, 'c1', 3);
-    expect(summaryOf(fixed, base)).toBe('Densidade: 3 → 1');
+    expect(summaryOf(fixed, base)).toBe('Density: 3 → 1');
+    expect(summaryOf(base, setContainerDensity(base, 'c1', 2.5))).toBe(
+      'Density: 1 → 2.5',
+    );
+    locale.value = 'pt-BR';
+    // pt-BR kept: the decimal separator of the locale is the object of this assertion
     expect(summaryOf(base, setContainerDensity(base, 'c1', 2.5))).toBe(
       'Densidade: 1 → 2,5',
     );
   });
 });
 
-describe('changeTitle e changeSummary: a direção de leitura (R2 da etapa #1096)', () => {
+describe('changeTitle and changeSummary: the reading direction (R2 of stage #1096)', () => {
   beforeEach(() => {
-    locale.value = 'pt-BR';
+    locale.value = 'en-US';
   });
   const base = addBackgroundContainer(emptyProject(), {
     id: 'c1',
@@ -203,50 +212,55 @@ describe('changeTitle e changeSummary: a direção de leitura (R2 da etapa #1096
     const change = proposal.changes.find(
       (c) => c.entity === entity && (entity === 'project' || c.field === 'direction'),
     );
-    if (!change) throw new Error('sem mudança de direção');
+    if (!change) throw new Error('no direction change');
     const names = { current: before, preview: null, proposal };
     const summary = changeSummary(names, change);
     return entity === 'project' ? summary : `${changeTitle(names, change)}: ${summary}`;
   };
 
-  it('o container que fixa rtl mostra "Direção: Segue o projeto → direita para a esquerda"', () => {
-    expect(summaryOf(base, setContainerDirection(base, 'c1', 'rtl'), 'image')).toBe(
-      'Direção: Segue o projeto → direita para a esquerda',
-    );
-  });
-
-  it('voltar a seguir o projeto mostra o texto de "Segue o projeto"', () => {
-    const fixed = setContainerDirection(base, 'c1', 'rtl');
-    expect(summaryOf(fixed, base, 'image')).toBe(
-      'Direção: direita para a esquerda → Segue o projeto',
-    );
-  });
-
-  it('a direção do projeto aparece na mudança do projeto, com o campo "Direção"', () => {
-    const empty = t('review.value.empty');
-    expect(summaryOf(base, setProjectDirection(base, 'rtl'), 'project')).toBe(
-      `${empty} → Direção: direita para a esquerda`,
-    );
-  });
-
-  it('trocar só o modo num projeto rtl mantém a direção nos dois lados', () => {
-    const rtl = setProjectDirection(base, 'rtl');
-    expect(summaryOf(rtl, setProjectDrawingMode(rtl, 'dark'), 'project')).toBe(
-      'Direção: direita para a esquerda → dark · Direção: direita para a esquerda',
-    );
-  });
-
-  it('em en-US o campo e os valores também vêm de t()', () => {
-    locale.value = 'en-US';
+  it('the container that fixes rtl shows "Direction: Follows the project → right to left"', () => {
     expect(summaryOf(base, setContainerDirection(base, 'c1', 'rtl'), 'image')).toBe(
       'Direction: Follows the project → right to left',
     );
   });
+
+  it('going back to following the project shows the text of "Follows the project"', () => {
+    const fixed = setContainerDirection(base, 'c1', 'rtl');
+    expect(summaryOf(fixed, base, 'image')).toBe(
+      'Direction: right to left → Follows the project',
+    );
+  });
+
+  it('the project direction appears in the project change, with the "Direction" field', () => {
+    const empty = t('review.value.empty');
+    expect(summaryOf(base, setProjectDirection(base, 'rtl'), 'project')).toBe(
+      `${empty} → Direction: right to left`,
+    );
+  });
+
+  it('changing only the mode in an rtl project keeps the direction on both sides', () => {
+    const rtl = setProjectDirection(base, 'rtl');
+    expect(summaryOf(rtl, setProjectDrawingMode(rtl, 'dark'), 'project')).toBe(
+      'Direction: right to left → dark · Direction: right to left',
+    );
+  });
+
+  it('the field and the values come from t(), in en-US and in pt-BR', () => {
+    locale.value = 'en-US';
+    expect(summaryOf(base, setContainerDirection(base, 'c1', 'rtl'), 'image')).toBe(
+      'Direction: Follows the project → right to left',
+    );
+    locale.value = 'pt-BR';
+    // pt-BR kept: the Portuguese field and values are the object of this assertion
+    expect(summaryOf(base, setContainerDirection(base, 'c1', 'rtl'), 'image')).toBe(
+      'Direção: Segue o projeto → direita para a esquerda',
+    );
+  });
 });
 
-describe('changeTitle e changeSummary: a âncora da marcação (R3 da etapa #1096)', () => {
+describe('changeTitle and changeSummary: the marking anchor (R3 of stage #1096)', () => {
   beforeEach(() => {
-    locale.value = 'pt-BR';
+    locale.value = 'en-US';
   });
   const base = createMarking(
     createMarking(
@@ -259,47 +273,47 @@ describe('changeTitle e changeSummary: a âncora da marcação (R3 da etapa #109
       {
         id: 'T',
         containerId: 'c1',
-        name: 'Botão',
+        name: 'Button',
         rect: { x: 100, y: 100, width: 80, height: 30 },
       },
     ),
     {
       id: 'B',
       containerId: 'c1',
-      name: 'Dica',
+      name: 'Hint',
       rect: { x: 300, y: 10, width: 60, height: 20 },
     },
   );
   const summaryOf = (before: typeof base, after: typeof base, field = 'anchor') => {
     const proposal = propose(before, after);
     const change = proposal.changes.find((c) => c.field === field);
-    if (!change) throw new Error(`sem mudança de ${field}`);
+    if (!change) throw new Error(`no ${field} change`);
     const names = { current: before, preview: null, proposal };
     return `${changeTitle(names, change)}: ${changeSummary(names, change)}`;
   };
 
-  it('ancorar mostra "Âncora: … → lado/alinhamento de <nome da âncora>"', () => {
+  it('anchoring shows "Anchor: … → side/alignment of <anchor name>"', () => {
     const anchored = setMarkingAnchor(base, 'B', {
       to: 'T',
       side: 'top',
       align: 'start',
     });
     expect(summaryOf(base, anchored)).toBe(
-      `Âncora: ${t('review.value.empty')} → acima/início de Botão`,
+      `Anchor: ${t('review.value.empty')} → top/start of Button`,
     );
   });
 
-  it('o que a âncora não diz aparece como "padrão" e tirar a âncora volta a vazio', () => {
+  it('what the anchor does not say appears as "default" and removing the anchor goes back to empty', () => {
     const anchored = setMarkingAnchor(base, 'B', { to: 'T' });
     expect(summaryOf(base, anchored)).toBe(
-      `Âncora: ${t('review.value.empty')} → padrão/padrão de Botão`,
+      `Anchor: ${t('review.value.empty')} → default/default of Button`,
     );
     expect(summaryOf(anchored, base)).toBe(
-      `Âncora: padrão/padrão de Botão → ${t('review.value.empty')}`,
+      `Anchor: default/default of Button → ${t('review.value.empty')}`,
     );
   });
 
-  it('em en-US o campo e os valores vêm de t()', () => {
+  it('the field and the values come from t(), in en-US and in pt-BR', () => {
     locale.value = 'en-US';
     const anchored = setMarkingAnchor(base, 'B', {
       to: 'T',
@@ -307,11 +321,21 @@ describe('changeTitle e changeSummary: a âncora da marcação (R3 da etapa #109
       align: 'center',
     });
     expect(summaryOf(base, anchored)).toBe(
-      `Anchor: ${t('review.value.empty')} → end/center of Botão`,
+      `Anchor: ${t('review.value.empty')} → end/center of Button`,
+    );
+    locale.value = 'pt-BR';
+    const topStart = setMarkingAnchor(base, 'B', {
+      to: 'T',
+      side: 'top',
+      align: 'start',
+    });
+    // pt-BR kept: the Portuguese field and values are the object of this assertion
+    expect(summaryOf(base, topStart)).toBe(
+      `Âncora: ${t('review.value.empty')} → acima/início de Button`,
     );
   });
 
-  it('o snap_to_anchor é a Posição de sempre, do tipo movida', () => {
+  it('snap_to_anchor is the usual Position, of the moved type', () => {
     const anchored = setMarkingAnchor(base, 'B', { to: 'T', side: 'bottom' });
     const proposal = propose(anchored, snapToAnchor(anchored, 'B').project);
     const rect = proposal.changes.find((c) => c.field === 'rect')!;

@@ -1,19 +1,19 @@
-// let.mjs: node let.mjs <pasta da biblioteca> [caso]
-// Troca o `card` de uma cópia de `m3-tokens` por um componente de formato 4 com variáveis (`let` e
-// `$var`, R25.121 ao R25.126). Sem `caso`, o card é válido; com `caso`, o card sai com um erro:
-//   indefinida  o `$var` de um nome que nenhum `let` declara
-//   ciclo       duas variáveis que se usam (a → b → a)
-//   tipo        um erro de tipo dentro da variável (texto numa conta)
-//   nome        um nome de variável fora de [a-z][a-zA-Z0-9]*
-//   v3          o mesmo card na formatVersion 3
-// O card válido (300 × 120 unidades) desenha:
-//   - quatro quadrados de 20 em fileira, a partir de (20, 20), vão 10 (variável `gap`): os dois
-//     primeiros vermelhos e os dois últimos azuis, porque a variável `dot` do `let` da raiz usa o
-//     `$index` da linha em que é usada; o tamanho 20 vem do `let` do template do repeat;
-//   - um retângulo verde em (170, 20), 60 × 40, com a `tone` do `let` do quadro de dentro, e um
-//     laranja em (240, 20), 40 × 40, com a `tone` da raiz (o de dentro esconde o de fora);
-//   - uma barra roxa em (0, 100), de altura 10 e metade da largura da instância (`$size` na
-//     variável `half`): 150 em 300.
+// let.mjs: node let.mjs <library folder> [case]
+// Replaces the `card` of a copy of `m3-tokens` with a format 4 component with variables (`let` and
+// `$var`, R25.121 to R25.126). Without `case`, the card is valid; with `case`, the card comes out with an error:
+//   undefined   the `$var` of a name that no `let` declares
+//   cycle       two variables that use each other (a → b → a)
+//   type        a type error inside the variable (text in a calculation)
+//   name        a variable name outside [a-z][a-zA-Z0-9]*
+//   v3          the same card in formatVersion 3
+// The valid card (300 × 120 units) draws:
+//   - four 20 squares in a row, starting at (20, 20), gap 10 (variable `gap`): the first two red
+//     and the last two blue, because the `dot` variable of the root `let` uses the `$index` of the
+//     row where it is used; the size 20 comes from the `let` of the repeat template;
+//   - a green rectangle at (170, 20), 60 × 40, with the `tone` of the inner frame's `let`, and an
+//     orange one at (240, 20), 40 × 40, with the root's `tone` (the inner one hides the outer one);
+//   - a purple bar at (0, 100), height 10 and half the width of the instance (`$size` in the
+//     `half` variable): 150 out of 300.
 import fs from 'node:fs';
 
 const file = process.argv[2] + '/components/card.json';
@@ -100,18 +100,18 @@ const card = {
 const repeat = card.template.children[0].children[0];
 const roots = card.template.let;
 const variants = {
-  indefinida: () => {
+  undefined: () => {
     repeat.gap = { $var: 'space' };
   },
-  ciclo: () => {
+  cycle: () => {
     roots.a = { $add: [{ $var: 'b' }, 1] };
     roots.b = { $mul: [{ $var: 'a' }, 2] };
     repeat.gap = { $var: 'a' };
   },
-  tipo: () => {
-    roots.gap = { $mul: ['larga', 0.5] };
+  type: () => {
+    roots.gap = { $mul: ['wide', 0.5] };
   },
-  nome: () => {
+  name: () => {
     roots.Gap = 10;
   },
   v3: () => {
@@ -122,7 +122,7 @@ const variants = {
 if (kind !== undefined) {
   const apply = variants[kind];
   if (apply === undefined) {
-    console.error(`caso desconhecido: ${kind} (${Object.keys(variants).join(', ')})`);
+    console.error(`unknown case: ${kind} (${Object.keys(variants).join(', ')})`);
     process.exit(2);
   }
   apply();

@@ -1,20 +1,20 @@
 # Scrim
 
-Película que escurece a tela atrás de um modal: preto a 32 %. Cobre a tela inteira, por baixo da folha.
+Film that darkens the screen behind a modal: black at 32%. It covers the whole screen, below the sheet.
 
-Tipo de anotação: `sdui-scrim` (Scrim).
+Annotation type: `sdui-scrim` (Scrim).
 
-## Tamanho
+## Size
 
-- Inicial: 412 × 917 px
-- Mínimo: 16 × 16 px
-- Dimensionamento: largura fill, altura fill
+- Initial: 412 × 917 px
+- Minimum: 16 × 16 px
+- Sizing: width fill, height fill
 
-## Campos
+## Fields
 
-| Chave | Rótulo | Tipo | Obrigatório | Opções | Padrão |
-| ----- | ------ | ---- | ----------- | ------ | ------ |
+| Key | Label | Type | Required | Options | Default |
+| --- | ----- | ---- | -------- | ------- | ------- |
 
-## Exemplos
+## Examples
 
-- **Padrão**
+- **Default**

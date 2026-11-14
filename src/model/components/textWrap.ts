@@ -1,18 +1,18 @@
 /**
- * Folga da quebra de linha (FX4, decisão 20 da #896): uma linha só quebra quando passa da largura
- * da caixa por mais de 0,5 px. A soma das larguras das palavras e a largura medida do DOM diferem
- * na ponta do ponto flutuante; sem a folga a última palavra caía para a linha de baixo por uma
- * fração de pixel. É a única constante: o modelo (`measureLines`), o medidor e o desenho do Konva
- * (app) e o desenho do servidor MCP leem esta.
+ * Line-wrap slack (FX4, decision 20 of #896): a line only wraps when it exceeds the box width
+ * by more than 0.5 px. The sum of the word widths and the width measured from the DOM differ
+ * at the floating-point tip; without the slack the last word fell to the next line by a
+ * fraction of a pixel. It is the only constant: the model (`measureLines`), the measurer and the
+ * Konva drawing (app) and the MCP server drawing all read this one.
  */
 export const WRAP_SLACK = 0.5;
 
-/** Alcance vertical (px) do recorte horizontal de um texto cortado: bem além de qualquer texto. */
+/** Vertical reach (px) of the horizontal clip of a cut text: well beyond any text. */
 export const CUT_REACH = 10000;
 
 /**
- * `wrap: none` sem `ellipsis` numa caixa de largura fixa (FX4, decisão 19): a linha é recortada por
- * pixel na caixa do texto (a letra que passa sai cortada no meio). A app e o PNG do MCP leem esta.
+ * `wrap: none` without `ellipsis` in a fixed-width box (FX4, decision 19): the line is clipped by
+ * pixel at the text box (a letter that overflows is cut in half). The app and the MCP PNG read this.
  */
 export function cutsText(node: {
   readonly width: number;
@@ -22,11 +22,11 @@ export function cutsText(node: {
 }
 
 /**
- * Onde começa a linha de largura `lineWidth` do texto cortado (`cutsText`, decisão 30 da #898): as
- * linhas se alinham entre si pela mais larga (o bloco, de largura `blockWidth`) e o bloco se alinha
- * na caixa de largura `boxWidth` pelo `align`; um bloco mais largo que a caixa começa na borda
- * esquerda. `justify` conta como `left`. É o que o `Text` do Konva faz sem `width`; a app e o PNG do
- * MCP leem esta.
+ * Where the line of width `lineWidth` of the cut text starts (`cutsText`, decision 30 of #898):
+ * the lines align with each other by the widest one (the block, of width `blockWidth`) and the
+ * block aligns in the box of width `boxWidth` by `align`; a block wider than the box starts at
+ * the left edge. `justify` counts as `left`. It is what Konva's `Text` does without `width`; the
+ * app and the MCP PNG read this.
  */
 export function cutLineLeft(
   align: 'left' | 'center' | 'right' | 'justify',
@@ -51,16 +51,16 @@ export function cutLineLeft(
   return blockLeft + inBlock;
 }
 
-/** A altura da linha como o Konva a calcula: `lineHeight / fontSize × fontSize` (a mesma aritmética). */
+/** The line height as Konva computes it: `lineHeight / fontSize × fontSize` (the same arithmetic). */
 export const konvaLineHeight = (lineHeight: number, fontSize: number): number =>
   (lineHeight / fontSize) * fontSize;
 
 /**
- * Quantas das `total` linhas cabem numa caixa de altura `boxHeight` (decisão 31 da #898): o laço do
- * `_setTextData` do Konva 10.7.1. A primeira linha fica sempre e cada seguinte enquanto
- * `(k + 1) × lineHeight ≤ boxHeight`, somando `lineHeight` linha a linha. Sem altura
- * (`boxHeight ≤ 0`), todas. Com `total` infinito, devolve quantas linhas cabem. Passe a
- * `lineHeight` por `konvaLineHeight` para bater com o Konva.
+ * How many of the `total` lines fit in a box of height `boxHeight` (decision 31 of #898): the
+ * loop of Konva 10.7.1's `_setTextData`. The first line always stays, and each following one
+ * while `(k + 1) × lineHeight ≤ boxHeight`, adding `lineHeight` line by line. Without a height
+ * (`boxHeight ≤ 0`), all of them. With infinite `total`, returns how many lines fit. Pass the
+ * `lineHeight` through `konvaLineHeight` to match Konva.
  */
 export function visibleLineCount(
   total: number,

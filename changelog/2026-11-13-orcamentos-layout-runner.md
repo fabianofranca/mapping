@@ -1,5 +1,5 @@
-# Orçamentos do layout medidos no runner — 2026-11-13 (épico `epic/orcamentos-layout-runner`, PR #1811, MCP sem mudança, schema v19)
+# Layout budgets measured on the runner — 2026-11-13 (épico `epic/orcamentos-layout-runner`, PR #1811, MCP unchanged, schema v19)
 
 ## Alterado
 
-- Os tetos dos dois orçamentos de 4 ms do layout (grade com texto e intrínseco aninhado em 3 níveis, `test:perf`) passam a ser medidos no runner: 6 e 6,5 ms (o maior valor da 1ª tentativa no CI × 1,25, arredondado ao 0,5 ms). Só os testes mudam; nada muda para quem usa a app ou o MCP.
+- The ceilings of the two 4 ms layout budgets (grid with text and intrinsic nested 3 levels deep, `test:perf`) are now measured on the runner: 6 and 6.5 ms (the highest value of the 1st attempt on CI × 1.25, rounded to 0.5 ms). Only the tests change; nothing changes for whoever uses the app or the MCP.

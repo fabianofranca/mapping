@@ -1,21 +1,21 @@
 import { signal, type ReadonlySignal } from '@preact/signals';
 
-/** Quantos erros ficam guardados em memória (os mais recentes). */
+/** How many errors are kept in memory (the most recent ones). */
 export const ERROR_LOG_LIMIT = 20;
 
 export interface ReportedError {
-  /** Onde o erro aconteceu (ex.: `save`, `folder.write`). */
+  /** Where the error happened (e.g. `save`, `folder.write`). */
   readonly context: string;
   readonly message: string;
-  /** Data ISO do registro (a da última repetição, quando agrupado). */
+  /** ISO date of the record (that of the last repetition, when grouped). */
   readonly at: string;
-  /** Quantas vezes seguidas o mesmo erro aconteceu; ausente quando foi uma só. */
+  /** How many times in a row the same error happened; absent when it was just one. */
   readonly count?: number;
 }
 
 const log = signal<readonly ReportedError[]>([]);
 
-/** Erros registrados nesta sessão, do mais antigo para o mais recente. */
+/** Errors recorded in this session, from oldest to most recent. */
 export const reportedErrors: ReadonlySignal<readonly ReportedError[]> = log;
 
 function describe(error: unknown): string {
@@ -26,9 +26,9 @@ function describe(error: unknown): string {
 }
 
 /**
- * Registra uma falha que a app trata sozinha (e por isso não chega ao usuário):
- * vai para o console e para a lista de "Diagnóstico", que ele pode copiar e
- * colar numa conversa. Nunca lança.
+ * Records a failure that the app handles on its own (and so does not reach the user):
+ * it goes to the console and to the "Diagnostics" list, which they can copy and
+ * paste into a conversation. Never throws.
  */
 export function reportError(
   context: string,
@@ -39,7 +39,7 @@ export function reportError(
   const message = describe(error);
   const at = now();
   const last = log.value.at(-1);
-  // O mesmo erro em sequência (ex.: um laço) vira uma linha com contador.
+  // The same error in sequence (e.g. a loop) becomes one line with a counter.
   if (last?.context === context && last.message === message) {
     log.value = [
       ...log.value.slice(0, -1),
@@ -52,14 +52,14 @@ export function reportError(
 }
 
 /**
- * Leva ao Diagnóstico o que escapa dos handlers: erro não capturado e promessa
- * rejeitada sem `catch` (`main.tsx`). Devolve a função que remove os ouvintes.
+ * Brings to Diagnostics what escapes the handlers: an uncaught error and a promise
+ * rejected without `catch` (`main.tsx`). Returns the function that removes the listeners.
  */
 export function listenForUncaughtErrors(target: EventTarget): () => void {
   const onError = (event: Event) => {
     const { error, message } = event as ErrorEvent;
-    // Aviso do navegador (sem `error`) de que o observador de tamanho adiou uma notificação para o
-    // quadro seguinte: o desenho acontece, nada falhou, e registrá-lo acendia o alerta do Diagnóstico.
+    // Browser warning (without `error`) that the size observer deferred a notification to the
+    // next frame: the drawing happens, nothing failed, and recording it lit up the Diagnostics alert.
     if (!error && /^ResizeObserver loop/.test(message)) return;
     reportError('window', error ?? message);
   };
@@ -74,7 +74,7 @@ export function listenForUncaughtErrors(target: EventTarget): () => void {
   };
 }
 
-/** Texto para colar numa conversa: um erro por linha, o mais recente primeiro. */
+/** Text to paste into a conversation: one error per line, the most recent first. */
 export function formatReportedErrors(errors: readonly ReportedError[]): string {
   return [...errors]
     .reverse()
@@ -82,7 +82,7 @@ export function formatReportedErrors(errors: readonly ReportedError[]): string {
     .join('\n');
 }
 
-/** Uma operação da pasta já medida (ver `storage/folderCalls`). */
+/** A folder operation already measured (see `storage/folderCalls`). */
 export interface FolderMeasureLine {
   readonly op: string;
   readonly calls: number;
@@ -97,19 +97,19 @@ function formatFolderLine(measures: readonly FolderMeasureLine[]): string {
 }
 
 /**
- * Ambiente de quem relata um problema, sem nomes nem caminhos (privacidade). Os
- * campos do projeto são `null` fora do editor.
+ * Environment of whoever reports a problem, without names or paths (privacy). The
+ * project fields are `null` outside the editor.
  */
 export interface DiagnosticsInfo {
   readonly build: string;
   readonly channel: string;
   readonly schema: number;
-  /** Origens de imagem remota permitidas neste navegador. */
+  /** Remote image origins allowed in this browser. */
   readonly remoteImageOrigins?: number;
   readonly storage: string | null;
   /**
-   * As últimas medidas de cada operação da pasta (`folder:`); `null` (ou ausente) fora de
-   * projeto em pasta, onde a linha não existe.
+   * The latest measurements of each folder operation (`folder:`); `null` (or absent) outside a
+   * folder project, where the line does not exist.
    */
   readonly folder?: readonly FolderMeasureLine[] | null;
   readonly userAgent: string;
@@ -124,7 +124,7 @@ export interface DiagnosticsInfo {
   readonly pendingSave: boolean | null;
 }
 
-/** Build, canal e schema, um por linha (também o "Copiar" do Sobre). */
+/** Build, channel and schema, one per line (also the About "Copy"). */
 export function formatBuildInfo(
   info: Pick<DiagnosticsInfo, 'build' | 'channel' | 'schema' | 'remoteImageOrigins'>,
 ): string {
@@ -140,8 +140,8 @@ export function formatBuildInfo(
 }
 
 /**
- * Texto do "Copiar" do Diagnóstico: o cabeçalho com o ambiente e depois os erros. As
- * chaves ficam em inglês e fixas, como um log, para quem lê o relato em qualquer idioma.
+ * Text of the Diagnostics "Copy": the header with the environment and then the errors. The
+ * keys stay in English and fixed, like a log, for whoever reads the report in any language.
  */
 export function formatDiagnosticsReport(
   info: DiagnosticsInfo,

@@ -5,8 +5,8 @@ import {
   semanticMode,
 } from '../../src/canvas/semanticText';
 
-describe('zoom semântico: quando aparece', () => {
-  it('só o cabeçalho, e só com o tamanho mínimo da marcação na tela', () => {
+describe('semantic zoom: when it appears', () => {
+  it('only the header, and only with the minimum size of the marking on screen', () => {
     const at = (screenWidth: number, screenHeight: number) =>
       semanticMode({ screenWidth, screenHeight });
     expect(at(SEMANTIC_MIN_WIDTH - 1, 500)).toBe('none');

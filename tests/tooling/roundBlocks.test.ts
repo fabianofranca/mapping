@@ -1,34 +1,35 @@
 // @vitest-environment node
-// Etapa #424 (PL1, decisão 2): a rodada completa roda em blocos paralelos (5, etapa #841, RB4). A tabela de blocos
-// do docs/TESTING-NUVEM.md é conferida contra os passos do docs/TESTING.md: um roteiro novo (R26)
-// ou um passo novo fora da tabela faz este teste falhar até ser posto num bloco.
+// Stage #424 (PL1, decision 2): the full round runs in parallel blocks (5, stage #841, RB4). The blocks table
+// of docs/TESTING-NUVEM.md is checked against the steps of docs/TESTING.md: a new test script (R26)
+// or a new step outside the table makes this test fail until it is put in a block.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Etapa #841 (decisão 6): o guia gerado de cada bloco tem até 200 mil caracteres. A TE1 (#1557)
- * subiu o teto em 500 (para 200.500): os acréscimos do R23.12 e do R23.13 (tema escuro) levaram o
- * bloco 5 a 200.2 mil, e os cinco blocos já estavam colados no teto.
+ * Stage #841 (decision 6): the generated guide of each block has up to 200 thousand characters. TE1 (#1557)
+ * raised the ceiling by 500 (to 200,500): the additions of R23.12 and R23.13 (dark theme) took
+ * block 5 to 200.2 thousand, and the five blocks were already stuck to the ceiling. Stage #824 (ID8, English
+ * translation plus the new steps R8.6 and R11.15) left it as it was: the largest block, 3, measures 200,463.
  */
 const MAX_BLOCK_GUIDE_CHARS = 200_500;
 
 /**
- * Etapa #1533 (TE1, decisões 3 e 5): o limite acima mede o que o testador lê, o guia do bloco sem as
- * seções sob demanda (`mandatoryOnly`: a base obrigatória mais os roteiros), e a base de cada bloco
- * (sem os roteiros, que saem pelo `passo`) tem até 45 mil caracteres.
+ * Stage #1533 (TE1, decisions 3 and 5): the limit above measures what the tester reads, the block's guide without the
+ * on-demand sections (`mandatoryOnly`: the mandatory base plus the test scripts), and the base of each block
+ * (without the test scripts, which come out through `passo`) has up to 45 thousand characters (the largest base, block 2, measures 43,773 after the translation).
  */
 const MAX_BLOCK_BASE_CHARS = 45_000;
 
 const GUIDE = readFileSync('docs/TESTING.md', 'utf8');
-const NUVEM = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
+const CLOUD = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
 
 const STEP_RE = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
 
-/** Os passos dos roteiros principais (R0 a R26), na ordem do guia, fora dos roteiros sob demanda. */
+/** The steps of the main test scripts (R0 to R26), in the order of the guide, outside the on-demand test scripts. */
 function guideSteps(): string[] {
   const lines = GUIDE.split('\n');
-  const start = lines.findIndex((l) => /^## 8\. Roteiros/.test(l));
-  const end = lines.findIndex((l, i) => i > start && /^### Roteiros sob demanda/.test(l));
+  const start = lines.findIndex((l) => /^## 8\. Test scripts/.test(l));
+  const end = lines.findIndex((l, i) => i > start && /^### On-demand scripts/.test(l));
   const steps: string[] = [];
   let inFence = false;
   for (const line of lines.slice(start, end)) {
@@ -44,44 +45,44 @@ function guideSteps(): string[] {
 
 interface Block {
   n: number;
-  /** Os passos do bloco (R0 incluído). */
+  /** The steps of the block (R0 included). */
   steps: string[];
-  /** Os roteiros que o guia da rodada do bloco precisa (R6 entra por R6.3 e R6.8a). */
-  roteiros: string[];
-  /** Os itens que o `round-guide.mjs` recebe: o roteiro inteiro ou a faixa de passos (`R6.3-R6.7`) que a tabela dá ao bloco. */
+  /** The test scripts the block's round guide needs (R6 comes in through R6.3 and R6.8a). */
+  scripts: string[];
+  /** The items `round-guide.mjs` receives: the whole test script or the step range (`R6.3-R6.7`) the table gives the block. */
   guideItems: string[];
   section6: boolean;
   visual: boolean;
   declared: number;
 }
 
-const roteiroOf = (step: string): string => step.split('.')[0] as string;
+const scriptOf = (step: string): string => step.split('.')[0] as string;
 
-/** Expande um item da tabela ("R7", "R6.3 a R6.7") em passos, pela ordem do guia. */
+/** Expands a table item ("R7", "R6.3 to R6.7") into steps, in the order of the guide. */
 function expand(token: string, steps: string[]): string[] {
-  const range = /^(R\d+\.\d+[a-z]?) a (R\d+\.\d+[a-z]?)$/.exec(token);
+  const range = /^(R\d+\.\d+[a-z]?) to (R\d+\.\d+[a-z]?)$/.exec(token);
   if (range) {
     const from = steps.indexOf(range[1] as string);
     const to = steps.indexOf(range[2] as string);
-    if (from < 0 || to < from) throw new Error(`faixa inválida: ${token}`);
+    if (from < 0 || to < from) throw new Error(`invalid range: ${token}`);
     return steps.slice(from, to + 1);
   }
   if (/^R\d+\.\d+[a-z]?$/.test(token)) {
-    if (!steps.includes(token)) throw new Error(`passo inexistente: ${token}`);
+    if (!steps.includes(token)) throw new Error(`nonexistent step: ${token}`);
     return [token];
   }
   if (/^R\d+$/.test(token)) {
-    const all = steps.filter((s) => roteiroOf(s) === token);
-    if (all.length === 0) throw new Error(`roteiro inexistente: ${token}`);
+    const all = steps.filter((s) => scriptOf(s) === token);
+    if (all.length === 0) throw new Error(`nonexistent test script: ${token}`);
     return all;
   }
   return [];
 }
 
-/** Lê a tabela da seção "Rodada completa em blocos" do docs/TESTING-NUVEM.md. */
+/** Reads the table of the "Full round in blocks" section of docs/TESTING-NUVEM.md. */
 function readBlocks(steps: string[]): Block[] {
-  const lines = NUVEM.split('\n');
-  const start = lines.findIndex((l) => /^## Rodada completa em blocos\s*$/.test(l));
+  const lines = CLOUD.split('\n');
+  const start = lines.findIndex((l) => /^## Full round in blocks\s*$/.test(l));
   if (start < 0) return [];
   const end = lines.findIndex((l, i) => i > start && /^## /.test(l));
   const blocks: Block[] = [];
@@ -90,20 +91,20 @@ function readBlocks(steps: string[]): Block[] {
     if (!m) continue;
     const cell = (m[2] as string).trim();
     const items = cell
-      .replace(/ e a passada visual$/, ', passada visual')
-      .split(/,\s*| e /)
+      .replace(/ and the visual pass$/, ', visual pass')
+      .split(/,\s*| and /)
       .map((t) => t.trim())
       .filter(Boolean);
     const own = items.flatMap((t) => expand(t, steps));
     blocks.push({
       n: Number(m[1]),
       steps: own,
-      roteiros: [...new Set(own.map(roteiroOf))],
+      scripts: [...new Set(own.map(scriptOf))],
       guideItems: items
         .filter((t) => /^R\d+/.test(t))
-        .map((t) => t.replace(/^(R\d+\.\d+[a-z]?) a (R\d+\.\d+[a-z]?)$/, '$1-$2')),
-      section6: items.includes('seção 6'),
-      visual: items.includes('passada visual'),
+        .map((t) => t.replace(/^(R\d+\.\d+[a-z]?) to (R\d+\.\d+[a-z]?)$/, '$1-$2')),
+      section6: items.includes('section 6'),
+      visual: items.includes('visual pass'),
       declared: Number(m[3]),
     });
   }
@@ -115,107 +116,107 @@ const blocks = readBlocks(steps);
 const blockOf = (step: string): number[] =>
   blocks.filter((b) => b.steps.includes(step)).map((b) => b.n);
 
-describe('divisão da rodada completa em 5 blocos (etapas #424 e #841)', () => {
-  it('o guia tem os passos de R0 a R26 e a tabela tem 5 blocos numerados de 1 a 5', () => {
+describe('split of the full round into 5 blocks (stages #424 and #841)', () => {
+  it('the guide has the steps from R0 to R26 and the table has 5 blocks numbered 1 to 5', () => {
     expect(steps.length).toBeGreaterThan(200);
     expect(steps.some((s) => s.startsWith('R17.'))).toBe(true);
     expect(steps.some((s) => s.startsWith('R26.'))).toBe(true);
     expect(blocks.map((b) => b.n)).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it('todo passo de R0 a R26 está em exatamente um bloco, e o R0 em todos', () => {
+  it('every step from R0 to R26 is in exactly one block, and R0 in all of them', () => {
     for (const s of steps) {
       const where = blockOf(s);
-      if (roteiroOf(s) === 'R0') expect(where, s).toEqual([1, 2, 3, 4, 5]);
-      else expect(where, `${s} deve estar em um só bloco`).toHaveLength(1);
+      if (scriptOf(s) === 'R0') expect(where, s).toEqual([1, 2, 3, 4, 5]);
+      else expect(where, `${s} must be in a single block`).toHaveLength(1);
     }
   });
 
-  it('as dependências da seção 8 ficam no mesmo bloco', () => {
+  it('the dependencies of section 8 stay in the same block', () => {
     const together = (group: string[]): void => {
       const ids = group.flatMap((t) => expand(t, steps));
       const where = new Set(ids.map((s) => blockOf(s)[0]));
-      expect(where.has(undefined), `${group.join(', ')} fora da tabela`).toBe(false);
+      expect(where.has(undefined), `${group.join(', ')} outside the table`).toBe(false);
       expect([...where], group.join(', ')).toHaveLength(1);
     };
-    together(['R1', 'R3', 'R5', 'R6.3 a R6.7', 'R6.12 a R6.13', 'R7', 'R8']);
-    together(['R4', 'R6.8a a R6.11']);
+    together(['R1', 'R3', 'R5', 'R6.3 to R6.7', 'R6.12 to R6.13', 'R7', 'R8']);
+    together(['R4', 'R6.8a to R6.11']);
     together(['R9', 'R10']);
   });
 
-  it('cada cadeia da rodada em grupos (TR4, decisão 16) existe no guia e fica num só bloco', async () => {
+  it('each chain of the directed round in groups (TR4, decision 16) exists in the guide and stays in a single block', async () => {
     const mod: { CHAINS: { name: string; items: string[] }[] } =
       await import('../../scripts/testing/round-guide.mjs');
     expect(mod.CHAINS.length).toBeGreaterThan(2);
     for (const chain of mod.CHAINS) {
-      const ids = chain.items.flatMap((t) => expand(t.replace('-', ' a '), steps));
+      const ids = chain.items.flatMap((t) => expand(t.replace('-', ' to '), steps));
       expect(ids.length, chain.name).toBeGreaterThan(0);
       const where = new Set(ids.map((s) => blockOf(s)[0]));
-      expect(where.has(undefined), `${chain.name} fora da tabela`).toBe(false);
+      expect(where.has(undefined), `${chain.name} outside the table`).toBe(false);
       expect([...where], chain.name).toHaveLength(1);
     }
   });
 
-  it('a seção 6 está em todo bloco com R3, R5, R9, R12, R16 ou R17', () => {
+  it('section 6 is in every block with R3, R5, R9, R12, R16 or R17', () => {
     for (const b of blocks) {
-      const needs = b.roteiros.some((r) =>
+      const needs = b.scripts.some((r) =>
         ['R3', 'R5', 'R9', 'R12', 'R16', 'R17'].includes(r),
       );
-      if (needs) expect(b.section6, `bloco ${b.n}`).toBe(true);
+      if (needs) expect(b.section6, `block ${b.n}`).toBe(true);
     }
   });
 
-  it('a coluna Passos de cada bloco é a contagem real (R0 incluído)', () => {
-    for (const b of blocks) expect(b.declared, `bloco ${b.n}`).toBe(b.steps.length);
+  it('the Steps column of each block is the real count (R0 included)', () => {
+    for (const b of blocks) expect(b.declared, `block ${b.n}`).toBe(b.steps.length);
   });
 
-  it('a passada visual está em exatamente um bloco, o que a tabela diz', () => {
+  it('the visual pass is in exactly one block, the one the table says', () => {
     const visual = blocks.filter((b) => b.visual);
     expect(visual).toHaveLength(1);
     const owner = visual[0] as Block;
-    // A etapa #482 (GT3, decisão 7): sai do bloco 1, a cadeia do `principal`, que é o mais lento.
+    // Stage #482 (GT3, decision 7): it leaves block 1, the `principal` chain, which is the slowest.
     expect(owner.n).not.toBe(1);
-    // O bloco precisa ter o que a lista padrão abre: "Sair da revisão?" pelo R4.
-    expect(owner.roteiros).toContain('R4');
-    // A linha "Por quê" e as mensagens citam o mesmo bloco, nunca o bloco 1.
-    expect(NUVEM).toMatch(new RegExp(`A passada visual fica no bloco ${owner.n}\\b`));
-    expect(NUVEM).toMatch(
-      new RegExp(`só o \\*\\*bloco ${owner.n}\\*\\* faz a passada visual`),
+    // The block needs what the default list opens: the leave-review dialog, through R4.
+    expect(owner.scripts).toContain('R4');
+    // The "Why" line and the messages cite the same block, never block 1.
+    expect(CLOUD).toMatch(new RegExp(`The visual pass stays in block ${owner.n}\\b`));
+    expect(CLOUD).toMatch(
+      new RegExp(`only \\*\\*block ${owner.n}\\*\\* does the visual pass`),
     );
     for (const [name, text] of [
-      ['TESTING-NUVEM', NUVEM],
+      ['TESTING-NUVEM', CLOUD],
       ['FLOW', readFileSync('docs/FLOW.md', 'utf8')],
       ['PROCESS', readFileSync('docs/PROCESS.md', 'utf8')],
       ['CLAUDE', readFileSync('CLAUDE.md', 'utf8')],
     ] as const) {
-      expect(text, name).not.toMatch(/passada visual[^.\n]{0,40}só[^.\n]{0,20}bloco 1/i);
-      expect(text, name).not.toMatch(/no bloco 1[^.\n]{0,40}passada visual/i);
-      expect(text, name).not.toMatch(/(vai|faz) só no bloco 1/);
+      expect(text, name).not.toMatch(/visual pass[^.\n]{0,40}only[^.\n]{0,20}block 1/i);
+      expect(text, name).not.toMatch(/in block 1[^.\n]{0,40}visual pass/i);
+      expect(text, name).not.toMatch(/(goes|does) only in block 1/);
     }
   });
 
-  it('os roteiros de cada bloco são aceitos pelo round-guide.mjs', async () => {
+  it('the test scripts of each block are accepted by round-guide.mjs', async () => {
     const mod: {
       buildRoundGuide: (
         md: string,
-        roteiros: string[],
+        scripts: string[],
         o?: { commit?: string; mandatoryOnly?: boolean },
       ) => string;
-      buildGuideBase: (md: string, roteiros: string[], o?: { commit?: string }) => string;
+      buildGuideBase: (md: string, scripts: string[], o?: { commit?: string }) => string;
     } = await import('../../scripts/testing/round-guide.mjs');
     expect(blocks.length).toBe(5);
     for (const b of blocks) {
-      // Como o item 1 do "Modo completo, bloco k de 5": o roteiro que a tabela divide entre blocos entra só
-      // pela faixa de passos do bloco (`R6.3-R6.7`), sem o resto do roteiro.
+      // As in item 1 of "modo completo, bloco k de 5": the test script that the table splits between blocks comes in only
+      // through the block's step range (`R6.3-R6.7`), without the rest of the test script.
       const out = mod.buildRoundGuide(GUIDE, b.guideItems, {
         commit: 'abc1234',
         mandatoryOnly: true,
       });
-      for (const r of b.roteiros)
-        expect(out, `bloco ${b.n}`).toMatch(new RegExp(`^### ${r} `, 'm'));
-      expect(out.length, `bloco ${b.n}`).toBeLessThanOrEqual(MAX_BLOCK_GUIDE_CHARS);
+      for (const r of b.scripts)
+        expect(out, `block ${b.n}`).toMatch(new RegExp(`^### ${r} `, 'm'));
+      expect(out.length, `block ${b.n}`).toBeLessThanOrEqual(MAX_BLOCK_GUIDE_CHARS);
       const base = mod.buildGuideBase(GUIDE, b.guideItems, { commit: 'abc1234' });
-      expect(base.length, `base do bloco ${b.n}`).toBeLessThanOrEqual(
+      expect(base.length, `base of block ${b.n}`).toBeLessThanOrEqual(
         MAX_BLOCK_BASE_CHARS,
       );
     }

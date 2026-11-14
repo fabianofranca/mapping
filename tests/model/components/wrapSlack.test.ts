@@ -1,4 +1,4 @@
-// A folga única de 0,5 px antes de quebrar a linha (FX4, decisão 20 da #896).
+// The single 0.5 px slack before breaking the line (FX4, decision 20 of #896).
 import { describe, expect, it } from 'vitest';
 import { WRAP_SLACK } from '../../../src/model/components/textWrap';
 import { measureLines } from '../../../src/model/components/instantiate';
@@ -13,26 +13,26 @@ const font = {
   lineHeight: 12,
   letterSpacing: 0,
 };
-// "aa bb" mede 50 px (10 por caractere, o espaço conta).
+// "aa bb" measures 50 px (10 per character, the space counts).
 const widthOf = (text: string): number => text.length * 10;
 
-describe('folga da quebra', () => {
-  it('a constante é 0,5 px', () => {
+describe('break slack', () => {
+  it('the constant is 0.5 px', () => {
     expect(WRAP_SLACK).toBe(0.5);
   });
 
-  it('o medidor não quebra a linha que passa menos que a folga da largura', () => {
+  it('the measurer does not break a line that overflows by less than the slack', () => {
     expect(measureLines('aa bb', font, 49.6, widthOf).lines).toEqual(['aa bb']);
     expect(measureLines('aa bb', font, 49.4, widthOf).lines).toEqual(['aa', 'bb']);
   });
 
-  it('o ellipsis também só corta além da folga', () => {
+  it('the ellipsis also only cuts beyond the slack', () => {
     const e = { ...font, wrap: 'none' as const, ellipsis: true };
     expect(measureLines('aaaaa', e, 49.6, widthOf).lines).toEqual(['aaaaa']);
     expect(measureLines('aaaaa', e, 49.4, widthOf).lines).not.toEqual(['aaaaa']);
   });
 
-  it('o desenho das barras do servidor quebra no mesmo ponto', () => {
+  it('the server bar drawing breaks at the same point', () => {
     const node = (width: number): TextNode => ({
       ...baseNode({ id: 't', name: 't', width, height: 20 }),
       type: 'text',

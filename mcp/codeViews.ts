@@ -30,47 +30,47 @@ import { ToolError } from './errors';
 import type { Refs } from './items';
 import type { SignatureReader } from './signatureFiles';
 
-// Visões em JSON do código de instanciação das especializações (etapa 3b.4; etapa 9; etapa
-// Código de instanciação): o `code` das plataformas de cada tipo (`symbol`, o que se chama, e
-// `definition`, o arquivo que o define, com a URL e a `ref` do `repo` da especialização e o
-// caminho local da sobreposição do projeto) e as chamadas de `get_code_hints`. O servidor só monta caminhos e confere a existência
-// (`codeFiles.ts`): nenhum arquivo de código é lido.
+// JSON views of the specializations' instantiation code (stage 3b.4; stage 9; stage
+// Instantiation code): the `code` of each type's platforms (`symbol`, what you call, and
+// `definition`, the file that defines it, with the URL and the `ref` of the specialization's `repo` and
+// the local path of the project's overlay) and the `get_code_hints` calls. The server only builds paths and checks existence
+// (`codeFiles.ts`): no code file is read.
 
 type Json = Record<string, unknown>;
 
 /**
- * O que é o `code` de um tipo, repetido nas respostas que mostram plataformas
- * (`get_specialization`, `get_project`) para o conceito chegar ao agente por qualquer caminho.
+ * What a type's `code` is, repeated in the responses that show platforms
+ * (`get_specialization`, `get_project`) so the concept reaches the agent by any path.
  */
 export const CODE_HINT =
-  'O `code` de um tipo é o código de instanciação: `symbol` é o que se chama para criar uma instância do tipo nessa plataforma, `path` é o arquivo que define o `symbol` (leia a assinatura antes de escrever a chamada), `params` e `values` dizem como passar os campos, `notes` orienta. O repositório da biblioteca está em `platforms[].repo` da especialização; o clone local, em `platformRepos` do projeto. O mapeamento não guarda nada sobre a solução.';
+  "The `code` of a type is the instantiation code: `symbol` is what you call to create an instance of the type on that platform, `path` is the file that defines the `symbol` (read the signature before writing the call), `params` and `values` say how to pass the fields, `notes` guides. The library's repository is in the specialization's `platforms[].repo`; the local clone, in the project's `platformRepos`. The mapping stores nothing about the solution.";
 
-/** O que as visões precisam para resolver o `path` de um tipo. */
+/** What the views need to resolve a type's `path`. */
 export interface CodeContext {
   readonly refs: Refs;
   readonly files: LocalFileChecker;
-  /** Lê a ficha de assinatura do pacote aplicado (para o `unmapped`); sem ele, o `code` não traz `unmapped`. */
+  /** Reads the signature sheet of the applied package (for `unmapped`); without it, the `code` carries no `unmapped`. */
   readonly signatures?: SignatureReader;
 }
 
-/** Plataforma pedida em `platform`: precisa ser declarada por alguma especialização aplicada. */
+/** Platform requested in `platform`: it must be declared by some applied specialization. */
 export function assertPlatform(refs: Refs, platformId: string): void {
   const p = refs.project;
   if (findPlatform(p, platformId)) return;
   throw new ToolError(
     'unknown-platform',
-    `plataforma não declarada pelas especializações aplicadas: ${platformId}`,
+    `platform not declared by the applied specializations: ${platformId}`,
     { platform: platformId, platforms: projectPlatforms(refs.project).map((x) => x.id) },
   );
 }
 
-/** Onde o arquivo está no clone local do cliente (`null`s sem `localPath` configurado). */
+/** Where the file is in the client's local clone (`null`s without a configured `localPath`). */
 const NO_LOCAL: LocalFile = { localFile: null, exists: null };
 
 /**
- * `definition` de uma entrada de `code`: o arquivo que define o `symbol`, com a `url` e o
- * `ref` do `repo` da especialização e `localFile`/`exists` da sobreposição local do projeto.
- * `null` sem `path`.
+ * `definition` of a `code` entry: the file that defines the `symbol`, with the `url` and the
+ * `ref` of the specialization's `repo` and `localFile`/`exists` from the project's local overlay.
+ * `null` without `path`.
  */
 function definitionJson(
   path: string | null | undefined,
@@ -106,7 +106,7 @@ async function resolveDefinition(
   });
 }
 
-/** Forma única de uma entrada de `code`: `symbol`, `definition` (ou `null`) e o resto (`params`, `values`, `notes`). */
+/** Single shape of a `code` entry: `symbol`, `definition` (or `null`) and the rest (`params`, `values`, `notes`). */
 function codeEntryJson(
   entry: SpecCode,
   definition: Json | null,
@@ -122,7 +122,7 @@ function codeEntryJson(
   };
 }
 
-/** A ficha de assinatura da entrada de `code` (para o `unmapped`); `null` sem ficha ou sem como lê-la. */
+/** The signature sheet of the `code` entry (for `unmapped`); `null` without a sheet or without a way to read it. */
 async function signatureOf(
   ctx: CodeContext | null,
   specId: string,
@@ -133,10 +133,10 @@ async function signatureOf(
 }
 
 /**
- * `code` do tipo da anotação por plataforma (`symbol`, `definition`, `params`, `values`,
- * `notes`), já resolvido pelos valores da anotação (o caso de `variants` aplicado; a saída
- * não traz `variants`). Com `platform`, só ela. `null` se o tipo não tem `code` (para essa
- * plataforma).
+ * `code` of the annotation's type per platform (`symbol`, `definition`, `params`, `values`,
+ * `notes`), already resolved by the annotation's values (the `variants` case applied; the output
+ * does not carry `variants`). With `platform`, only that one. `null` if the type has no `code` (for that
+ * platform).
  */
 export async function annotationCode(
   ctx: CodeContext,
@@ -153,10 +153,10 @@ export async function annotationCode(
 }
 
 /**
- * `code` de um tipo (ou só as plataformas de `only`) na forma única, com a `definition`
- * resolvida; `null` se não sobrar nenhuma plataforma. `get_marking`, `get_annotation` e
- * `find_by_code` usam o mesmo. `resolveEntry` troca cada entrada antes (o código resolvido da
- * anotação); sem ele, o `code` cru do tipo (com `variants`).
+ * `code` of a type (or only the platforms in `only`) in the single shape, with the `definition`
+ * resolved; `null` if no platform is left. `get_marking`, `get_annotation` and
+ * `find_by_code` use the same one. `resolveEntry` replaces each entry beforehand (the annotation's
+ * resolved code); without it, the type's raw `code` (with `variants`).
  */
 export async function typeCodeView(
   ctx: CodeContext,
@@ -186,8 +186,8 @@ export async function typeCodeView(
 }
 
 /**
- * `code` de um tipo lido de um pacote (`get_component`): o `repo` vem da especialização do
- * pacote e, com `ctx` (pacote aplicado a um projeto), a sobreposição local também.
+ * `code` of a type read from a package (`get_component`): the `repo` comes from the package's
+ * specialization and, with `ctx` (a package applied to a project), so does the local overlay.
  */
 export async function packageCodeView(
   spec: Spec,
@@ -230,7 +230,7 @@ export async function packageCodeView(
 // ---------------------------------------------------------------------------
 // get_code_hints
 
-/** Alvo de um `ref` para a anotação inteira: a posição, o rótulo e o alvo expandido. */
+/** Target of a `ref` for the whole annotation: the position, the label and the expanded target. */
 function hintTarget(
   target: BlueprintTarget,
   refs: Refs,
@@ -252,9 +252,9 @@ function hintTarget(
 }
 
 /**
- * Um argumento da chamada: `{ field, name, value }`; o posicional (`#n`, formatVersion 16) traz
- * `position` no lugar de `name`; o de uma fábrica (`calls`) é `{ name, call, args }`, só com os
- * campos preenchidos.
+ * An argument of the call: `{ field, name, value }`; the positional one (`#n`, formatVersion 16) carries
+ * `position` in place of `name`; a factory's (`calls`) is `{ name, call, args }`, with only the
+ * filled-in fields.
  */
 function argJson(param: BlueprintParam): Json {
   if (param.call !== undefined) {
@@ -298,9 +298,9 @@ function hintAnnotation(
 }
 
 /**
- * A âncora da marcação para quem escreve o código: a marcação-alvo e o lado e o alinhamento
- * efetivos (os declarados na marcação ou, na falta, os do componente: `top` e `center` sem eles).
- * `null` sem âncora.
+ * The marking's anchor for whoever writes the code: the target marking and the effective side and alignment
+ * (the ones declared on the marking or, failing that, the component's: `top` and `center` without them).
+ * `null` without an anchor.
  */
 function hintAnchor(refs: Refs, markingId: string): Json | null {
   const marking = projectIndex(refs.project).markings.get(markingId);
@@ -326,7 +326,7 @@ function hintNode(
     ref: refs.ref('m', node.markingId),
     name: node.name,
     rect: node.rect,
-    // Direção de leitura efetiva do espaço da marcação (o container dela, senão a do projeto).
+    // Effective reading direction of the marking's space (its container, otherwise the project's).
     direction: effectiveDirection(refs.project, marking?.containerId ?? null),
     ...(anchor === null ? {} : { anchor }),
     ...(annotations.length > 0 ? { annotations } : {}),
@@ -334,7 +334,7 @@ function hintNode(
   };
 }
 
-/** Anotações da árvore, com as vinculadas e as dos alvos expandidos (e das filhas deles). */
+/** Annotations of the tree, with the linked ones and those of the expanded targets (and of their children). */
 function allAnnotations(node: BlueprintNode): BlueprintAnnotation[] {
   const out: BlueprintAnnotation[] = [];
   const visitAnnotation = (a: BlueprintAnnotation) => {
@@ -354,9 +354,9 @@ function allAnnotations(node: BlueprintNode): BlueprintAnnotation[] {
 }
 
 /**
- * `notices` do tipo para o `get_code_hints`: os avisos do tipo, dos campos e das colunas, por
- * gravidade, cada um com o lugar (`key`, `column`). Vazio (sem a chave) se não há aviso; não
- * filtra por plataforma (o guia manda ignorar o prefixo de outra).
+ * `notices` of the type for `get_code_hints`: the notices of the type, fields and columns, by
+ * severity, each with its place (`key`, `column`). Empty (without the key) if there is no notice; it does not
+ * filter by platform (the guide says to ignore another platform's prefix).
  */
 function noticesJson(type: SpecAnnotationType): Json {
   const placed = placedTypeNotices(type);
@@ -375,9 +375,9 @@ function noticesJson(type: SpecAnnotationType): Json {
 }
 
 /**
- * `get_code_hints`: as chamadas a escrever na plataforma, a partir da marcação e das
- * descendentes. `types` traz, por `specId/typeId`, o código de instanciação do tipo (uma vez
- * só); a árvore traz, por anotação, só o que é da instância (`args`, `values`, `linked`).
+ * `get_code_hints`: the calls to write on the platform, from the marking and its
+ * descendants. `types` carries, per `specId/typeId`, the type's instantiation code (only
+ * once); the tree carries, per annotation, only what belongs to the instance (`args`, `values`, `linked`).
  */
 export async function codeHintsView(
   ctx: CodeContext,
@@ -394,8 +394,8 @@ export async function codeHintsView(
     ),
   ];
   const types: Record<string, Json> = {};
-  // Tipo com `variants`: o código resolvido de cada anotação vai na árvore (`code`), porque
-  // o `symbol`, o `path`, os `params` e as `notes` de `types` são os da base.
+  // Type with `variants`: each annotation's resolved code goes in the tree (`code`), because
+  // the `symbol`, `path`, `params` and `notes` in `types` are the base's.
   const codes = new Map<string, Json>();
   for (const a of annotations) {
     if (a.symbol === null) continue;
@@ -435,7 +435,7 @@ export async function codeHintsView(
       language: blueprint.platform.language,
     },
     repos: blueprint.repo === null ? {} : { [platformId]: blueprint.repo },
-    // A direção de leitura efetiva da marcação pedida: a plataforma a aplica no envoltório.
+    // The requested marking's effective reading direction: the platform applies it in the wrapper.
     direction: effectiveDirection(
       refs.project,
       projectIndex(refs.project).markings.get(markingId)?.containerId ?? null,
@@ -445,7 +445,7 @@ export async function codeHintsView(
     ...(unmapped.length > 0
       ? {
           unmappedTypes: unmapped,
-          hint: 'tipos em `unmappedTypes` não têm `code` nesta plataforma na especialização: não há código de instanciação mapeado para eles',
+          hint: 'types in `unmappedTypes` have no `code` on this platform in the specialization: there is no instantiation code mapped for them',
         }
       : {}),
     tree: hintNode(blueprint.root, refs, codes),

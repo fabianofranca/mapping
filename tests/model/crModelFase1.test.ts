@@ -26,17 +26,17 @@ function codeOf(op: () => unknown): string | null {
   }
 }
 
-const extra = { project: 'mapeamento', ref: 'mapping://mapeamento/m/x' };
+const extra = { project: 'mapping', ref: 'mapping://mapping/m/x' };
 
-describe('CR do modelo, fase 1', () => {
-  it('(5) itemClipboardData com o id de uma seta devolve os dados da seta', () => {
+describe('model CR, phase 1', () => {
+  it('(5) itemClipboardData with an arrow id returns the arrow data', () => {
     const p = createArrow(sampleProject(), { id: 'R1', from: 'M1', to: 'M4' });
     const data = itemClipboardData(p, 'm', 'R1', extra);
     expect(data.item.id).toBe('R1');
     expect(data.markings).toEqual([]);
   });
 
-  it('(28) trocar a imagem que sairia de baixo de marcação trancada é recusado', () => {
+  it('(28) replacing the image from under a locked marking is refused', () => {
     const base = multiProject();
     const withFile = {
       ...base,
@@ -46,13 +46,13 @@ describe('CR do modelo, fase 1', () => {
     };
     const p = setMarkingLocked(withFile, 'G', true);
     const bigger = { file: 'images/b.png', width: 1000, height: 1000 };
-    // A escala de B muda (mesma largura exibida): o `placement` que a troca grava.
+    // B's scale changes (same displayed width): the `placement` the replacement writes.
     const moved = { ...bigger, placement: { x: 2000, y: 0, scale: 1 } };
     expect(canReplaceImage(p, 'B', moved)).toBe(false);
     expect(codeOf(() => replaceContainer(p, 'B', bigger))).toBe('locked');
   });
 
-  it('(31) setMarkingSpace com o mesmo container e rect devolve o projeto intacto', () => {
+  it('(31) setMarkingSpace with the same container and rect returns the project untouched', () => {
     const base = sampleProject();
     const m = base.markings.find((x) => x.id === 'M1');
     if (!m) throw new Error('M1');
@@ -60,7 +60,7 @@ describe('CR do modelo, fase 1', () => {
     expect(setMarkingSpace(p, 'M1', 'I1', { ...m.rect })).toBe(p);
   });
 
-  it('(32) id usado por container recusa marcação, seta e envolver; e o inverso', () => {
+  it('(32) an id used by a container refuses marking, arrow and wrap; and the reverse', () => {
     const p = sampleProject();
     const r = { x: 10, y: 10, width: 50, height: 50 };
     expect(codeOf(() => createMarking(p, { id: 'I1', containerId: 'I1', rect: r }))).toBe(
@@ -79,7 +79,7 @@ describe('CR do modelo, fase 1', () => {
     ).toBe('duplicate-id');
   });
 
-  it('(33) a trancada selecionada que sai com a mãe entra em lockedMarkings', () => {
+  it('(33) the selected locked marking that leaves with its parent counts in lockedMarkings', () => {
     const p: Project = setMarkingLocked(multiProject(), 'a2', true);
     const impact = itemsDeletionImpact(p, [
       { kind: 'marking', id: 'a1' },
@@ -88,7 +88,7 @@ describe('CR do modelo, fase 1', () => {
     expect(impact.lockedMarkings).toBe(1);
   });
 
-  it('(33) a trancada selecionada que sai com o container entra em lockedMarkings', () => {
+  it('(33) the selected locked marking that leaves with its container counts in lockedMarkings', () => {
     const p: Project = setMarkingLocked(multiProject(), 'a3', true);
     const impact = itemsDeletionImpact(p, [
       { kind: 'image', id: 'A' },
@@ -97,10 +97,10 @@ describe('CR do modelo, fase 1', () => {
     expect(impact.lockedMarkings).toBe(1);
   });
 
-  it('(34) commonParent ignora flutuantes: o pai comum das demais continua o pai', () => {
-    // P1 e P2 têm a mesma área, retângulos diferentes e ambos contêm c1 e c2; c1 e c2 são
-    // filhas de P1. Com a flutuante N na seleção, o pai comum não pode se perder (o desempate
-    // cairia em P2, a que vem depois no array).
+  it('(34) commonParent ignores floating ones: the common parent of the others stays the parent', () => {
+    // P1 and P2 have the same area, different rectangles, and both contain c1 and c2; c1 and c2 are
+    // children of P1. With the floating N in the selection, the common parent must not be lost (the
+    // tie-break would fall on P2, the one that comes later in the array).
     let p = sampleProject();
     const add = (id: string, x: number, y: number, size: number) => {
       p = createMarking(p, {

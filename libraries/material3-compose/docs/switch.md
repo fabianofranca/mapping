@@ -1,81 +1,81 @@
 # Switch
 
-Chave liga e desliga. Use para configurações com efeito imediato.
+On and off switch. Use it for settings with an immediate effect.
 
-Tipo de anotação: `switch` (camada Componentes).
+Annotation type: `switch` (layer Components).
 
-## Campos
+## Fields
 
-| Chave         | Rótulo           | Tipo   | Obrigatório | Opções                                  | Padrão  | Descrição                                                                                                                                                                                                                                                 |
-| ------------- | ---------------- | ------ | ----------- | --------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `label`       | Rótulo           | string | não         |                                         |         | Texto ao lado da chave (o Switch em si não tem rótulo).                                                                                                                                                                                                   |
-| `checked`     | Ligado           | enum   | não         | `true`, `false`                         | `false` | true liga a chave.                                                                                                                                                                                                                                        |
-| `enabled`     | Habilitado       | enum   | não         | `true`, `false`                         | `true`  | false desabilita a chave.                                                                                                                                                                                                                                 |
-| `thumbIcon`   | Ícone no polegar | enum   | não         | `true`, `false`                         | `false` | true mostra um ícone de marca no polegar quando ligada.                                                                                                                                                                                                   |
-| `interaction` | Interação        | enum   | não         | `none`, `hovered`, `focused`, `pressed` | `none`  | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed, a alça vai a 28); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence). |
+| Key           | Label       | Type   | Required | Options                                 | Default | Description                                                                                                                                                                                                                                                 |
+| ------------- | ----------- | ------ | -------- | --------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `label`       | Label       | string | no       |                                         |         | Text beside the switch (the Switch itself has no label).                                                                                                                                                                                                    |
+| `checked`     | On          | enum   | no       | `true`, `false`                         | `false` | true turns the switch on.                                                                                                                                                                                                                                   |
+| `enabled`     | Enabled     | enum   | no       | `true`, `false`                         | `true`  | false disables the switch.                                                                                                                                                                                                                                  |
+| `thumbIcon`   | Thumb icon  | enum   | no       | `true`, `false`                         | `false` | true shows a check icon on the thumb when on.                                                                                                                                                                                                               |
+| `interaction` | Interaction | enum   | no       | `none`, `hovered`, `focused`, `pressed` | `none`  | Resting appearance of the interaction state: hovered, focused or pressed (pressed, the handle goes to 28); none = no state layer. It only changes the drawing and does not go into the code. With enabled false nothing is drawn (the disabled state wins). |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.Switch`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Switch.kt`
+- Symbol: `androidx.compose.material3.Switch`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Switch.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 Row(verticalAlignment = Alignment.CenterVertically) {
-    Text("Modo avião", Modifier.weight(1f))
+    Text("Airplane mode", Modifier.weight(1f))
     Switch(
         checked = checked,
         onCheckedChange = { checked = it },
         enabled = true,
-        thumbContent = {    // só com thumbIcon = true
+        thumbContent = {    // only with thumbIcon = true
             Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(SwitchDefaults.IconSize))
         },
     )
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+`code` notes (what the tool hands to the agent):
 
-> `onCheckedChange` liga à lógica da tela. O Switch não tem rótulo: o `label` vira um `Text` ao lado, numa `Row`. Com `thumbIcon = true`, passe `thumbContent = { Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(SwitchDefaults.IconSize)) }`.
+> `onCheckedChange` binds to the screen logic. The Switch has no label: the `label` becomes a `Text` beside it, in a `Row`. With `thumbIcon = true`, pass `thumbContent = { Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(SwitchDefaults.IconSize)) }`.
 
-## Exemplos
+## Examples
 
-- **Desligada**: label=Notificações, checked=false
-- **Ligada com ícone**: label=Modo avião, checked=true, thumbIcon=true
-- **Mouse sobre**: label=Wi-Fi, checked=false, interaction=hovered
-- **Com foco**: label=Wi-Fi, checked=true, thumbIcon=true, interaction=focused
-- **Pressionado**: label=Wi-Fi, checked=true, interaction=pressed
+- **Off**: label=Notifications, checked=false
+- **On with icon**: label=Airplane mode, checked=true, thumbIcon=true
+- **Hovered**: label=Wi-Fi, checked=false, interaction=hovered
+- **Focused**: label=Wi-Fi, checked=true, thumbIcon=true, interaction=focused
+- **Pressed**: label=Wi-Fi, checked=true, interaction=pressed
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or opacity is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Switch.kt` (linhas 91 a 133: `Switch` com `requiredSize(SwitchWidth, SwitchHeight)`; 136 a 182: `SwitchImpl`, o `border` e o `background` do trilho e o fundo da alça; 209 a 297: `ThumbNode`, o tamanho 24 ou 16 (`hasContent || checked`) e a posição `minBound` e `maxBound`; 389 a 433: `defaultSwitchColors` (o desabilitado é `compositeOver(surface)`); 436: `IconSize` 16; 529 a 580: `thumbColor`, `trackColor`, `borderColor` e `iconColor` por estado; 624 a 629: `ThumbDiameter`, `UncheckedThumbDiameter`, `SwitchWidth`, `SwitchHeight` e `ThumbPadding`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SwitchTokens.kt` (linhas 23 a 82: `TrackWidth` 52, `TrackHeight` 32, `TrackOutlineWidth` 2, `SelectedHandleWidth` 24, `UnselectedHandleWidth` 16, os papéis de cor de trilho, alça, contorno e ícone, `DisabledTrackOpacity` 0,12 e as opacidades de 0,38; linhas 38 e 39: `PressedHandleHeight` e `PressedHandleWidth` 28; 40 a 53 e 61 a 77: os papéis `Focus`, `Hover` e `Pressed`; 56: `StateLayerSize` 40).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Switch.kt` (lines 91 to 133: `Switch` with `requiredSize(SwitchWidth, SwitchHeight)`; 136 to 182: `SwitchImpl`, the track `border` and `background` and the handle background; 209 to 297: `ThumbNode`, the size 24 or 16 (`hasContent || checked`) and the `minBound` and `maxBound` position; 389 to 433: `defaultSwitchColors` (disabled is `compositeOver(surface)`); 436: `IconSize` 16; 529 to 580: `thumbColor`, `trackColor`, `borderColor` and `iconColor` by state; 624 to 629: `ThumbDiameter`, `UncheckedThumbDiameter`, `SwitchWidth`, `SwitchHeight` and `ThumbPadding`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SwitchTokens.kt` (lines 23 to 82: `TrackWidth` 52, `TrackHeight` 32, `TrackOutlineWidth` 2, `SelectedHandleWidth` 24, `UnselectedHandleWidth` 16, the track, handle, outline and icon color roles, `DisabledTrackOpacity` 0.12 and the 0.38 opacities; lines 38 and 39: `PressedHandleHeight` and `PressedHandleWidth` 28; 40 to 53 and 61 to 77: the `Focus`, `Hover` and `Pressed` roles; 56: `StateLayerSize` 40).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Trilho de 52 por 32 na forma `corner-full`. Ligado: `primary`, sem contorno. Desligado: `surface-container-highest` com contorno de 2 por dentro em `outline` (o `border` é desenhado sobre o fundo).
-- Alça circular: ligada 24 em `on-primary`, a 4 da borda direita (`thumbPathLength` = 52 - 24 - 4); desligada 16 em `outline`, a 8 da esquerda ((32 - 16) / 2); desligada com ícone 24, a 4 (a alça passa a 24 quando há `thumbContent`). A alça fica no centro de uma área de 24 que o trilho põe com `padding` de 4 e `justify` no fim ou no início.
-- Ícone da alça (`thumbIcon`) de 16 (`SwitchDefaults.IconSize`), nó `icon` do conjunto: `check` ligado em `on-primary-container` e `close` desligado em `surface-container-highest`.
-- Desabilitado: o Compose compõe cada cor sobre a `surface` (`compositeOver(surface)`). O desenho faz o mesmo, numa camada só e opaca (`over: "surface"` no `$token`, sem empilhar transparência; `Switch.kt`, linhas 343 a 368 e 405 a 409): trilho ligado `on-surface` a 0,12 (`state-disabled-container`), desligado `surface-container-highest` a 0,12, contorno `on-surface` a 0,12, alça ligada `surface`, alça desligada `on-surface` a 0,38 e ícones a 0,38 (`on-surface` ligado, `surface-container-highest` desligado). Light e dark seguem os mesmos tokens.
+- Track 52 by 32 in the `corner-full` shape. On: `primary`, no outline. Off: `surface-container-highest` with a 2 outline inside in `outline` (the `border` is drawn over the background).
+- Circular handle: on 24 in `on-primary`, 4 from the right edge (`thumbPathLength` = 52 - 24 - 4); off 16 in `outline`, 8 from the left ((32 - 16) / 2); off with icon 24, at 4 (the handle becomes 24 when there is `thumbContent`). The handle sits in the center of a 24 area that the track places with a `padding` of 4 and `justify` at the end or start.
+- Handle icon (`thumbIcon`) of 16 (`SwitchDefaults.IconSize`), an `icon` node of the set: `check` when on in `on-primary-container` and `close` when off in `surface-container-highest`.
+- Disabled: Compose composites each color over the `surface` (`compositeOver(surface)`). The drawing does the same, in a single opaque layer (`over: "surface"` in the `$token`, without stacking transparency; `Switch.kt`, lines 343 to 368 and 405 to 409): on track `on-surface` at 0.12 (`state-disabled-container`), off `surface-container-highest` at 0.12, outline `on-surface` at 0.12, on handle `surface`, off handle `on-surface` at 0.38 and icons at 0.38 (`on-surface` when on, `surface-container-highest` when off). Light and dark follow the same tokens.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o desabilitado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que o `SwitchTokens.kt` do commit define: `hovered`, `focused` e `pressed` (não há `Dragged*`, então não há `dragged`).
+The field chooses the resting appearance of a state, as `enabled` chooses the disabled state; it does not go into the `code` or the `variants`. The options are `none` and the states that the commit's `SwitchTokens.kt` defines: `hovered`, `focused` and `pressed` (there is no `Dragged*`, so there is no `dragged`).
 
-- **Camada de estado:** o nó `estado` é um círculo de 32 centrado na alça, atrás dela, filho do quadro `chave`. O Compose usa 40 (`StateLayerSize`, `StateLayerShape` `CornerFull`, linhas 55 e 56), mas a caixa do componente tem a altura do trilho (32): o círculo de 40 passaria dela, e o desenho não deixa nada vazar da caixa, então a camada fica contida (4 a menos de cada lado). O `SwitchTokens.kt` não traz a cor da camada; segue a do Material 3 para a seleção, como no checkbox: `primary` ligada e `on-surface` desligada. O `opacity` vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10).
-- **Alça por estado:** ligada, a cor vai de `on-primary` para `primary-container` nos três estados (`SelectedHoverHandleColor`, `SelectedFocusHandleColor`, `SelectedPressedHandleColor`, linhas 46, 40 e 51); desligada, de `outline` para `on-surface-variant` (`UnselectedHoverHandleColor`, `UnselectedFocusHandleColor`, `UnselectedPressedHandleColor`, linhas 68, 61 e 74). Trilho, contorno e ícone mantêm as cores do padrão (`Selected*TrackColor` `Primary`, `Unselected*TrackColor` `SurfaceContainerHighest`, `Unselected*TrackOutlineColor` `Outline`, `Selected*IconColor` `OnPrimaryContainer`).
-- **Alça pressionada:** vira 28 por 28 (`PressedHandleWidth` e `PressedHandleHeight`, linhas 38 e 39), ligada, desligada ou com ícone, centrada na mesma área de 24; mouse e foco não mudam o tamanho.
-- **Desabilitado vence:** com `enabled` `false` o nó `estado` fica invisível, a alça não muda de cor nem vai a 28, então o desenho é o do desabilitado, qualquer que seja o `interaction`.
+- **State layer:** the `state` node is a 32 circle centered on the handle, behind it, a child of the `switch` frame. Compose uses 40 (`StateLayerSize`, `StateLayerShape` `CornerFull`, lines 55 and 56), but the component box has the track height (32): a 40 circle would go past it, and the drawing lets nothing leak out of the box, so the layer is contained (4 less on each side). `SwitchTokens.kt` does not carry the layer color; it follows Material 3 for selection, as in the checkbox: `primary` when on and `on-surface` when off. The `opacity` comes from the `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10) tokens.
+- **Handle by state:** when on, the color goes from `on-primary` to `primary-container` in all three states (`SelectedHoverHandleColor`, `SelectedFocusHandleColor`, `SelectedPressedHandleColor`, lines 46, 40 and 51); when off, from `outline` to `on-surface-variant` (`UnselectedHoverHandleColor`, `UnselectedFocusHandleColor`, `UnselectedPressedHandleColor`, lines 68, 61 and 74). Track, outline and icon keep the default colors (`Selected*TrackColor` `Primary`, `Unselected*TrackColor` `SurfaceContainerHighest`, `Unselected*TrackOutlineColor` `Outline`, `Selected*IconColor` `OnPrimaryContainer`).
+- **Pressed handle:** becomes 28 by 28 (`PressedHandleWidth` and `PressedHandleHeight`, lines 38 and 39), on, off or with icon, centered in the same 24 area; mouse and focus do not change the size.
+- **Disabled wins:** with `enabled` `false` the `state` node is invisible, the handle neither changes color nor goes to 28, so the drawing is the disabled one, whatever the `interaction`.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- Sem ripple animado, sem transição entre estados e sem a animação do deslizar da alça: o desenho é um quadro parado. Em `focused` a chave ganha o anel de foco (`FocusIndicatorColor`, `SwitchTokens.kt` linha 36): o anel de 3 em `secondary`, afastado 2 da forma (`stroke.offset`), por fora da caixa (a largura e o afastamento são os da decisão da etapa; o `*Tokens.kt` só traz a cor), em volta do trilho de 52 × 32.
-- A camada de 32 do desenho é menor que a de 40 do Compose, que passaria 4 acima e abaixo do trilho de 32 e, com a chave encostada na borda direita, 4 além da instância. No pressionado a área da alça cresce de 24 para 28 (e o recuo lateral cai de 4 para 2), para a alça de 28 caber nela sem mudar o centro. No pressionado o Compose também desloca a alça para dentro do trilho (o recuo); o desenho mantém a posição de parada.
-- O `thumbContent` do Compose é livre; o campo `thumbIcon` desenha `check` ligado e `close` desligado (o par do Material), e o `code` do tipo só passa o `check`.
-- O espaço de 16 entre o rótulo e a chave e o rótulo a 0,38 quando desabilitado são convenção do desenho: o Compose não tem rótulo.
+- No animated ripple, no transition between states and no handle slide animation: the drawing is a still frame. In `focused` the switch gets the focus ring (`FocusIndicatorColor`, `SwitchTokens.kt` line 36): the 3 ring in `secondary`, offset 2 from the shape (`stroke.offset`), outside the box (the width and the offset are from the stage decision; `*Tokens.kt` only provides the color), around the 52 × 32 track.
+- The drawing's 32 layer is smaller than Compose's 40, which would go 4 above and below the 32 track and, with the switch against the right edge, 4 beyond the instance. When pressed the handle area grows from 24 to 28 (and the side inset drops from 4 to 2), so the 28 handle fits in it without changing the center. When pressed Compose also moves the handle inside the track (the inset); the drawing keeps the resting position.
+- The Compose `thumbContent` is free; the `thumbIcon` field draws `check` when on and `close` when off (the Material pair), and the type's `code` only passes the `check`.
+- The 16 space between the label and the switch and the label at 0.38 when disabled are drawing conventions: Compose has no label.

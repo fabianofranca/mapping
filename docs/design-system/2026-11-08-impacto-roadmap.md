@@ -1,13 +1,13 @@
-# Impacto nas issues roadmap — 2026-11-08 (épico `epic/impacto-roadmap`)
+# Impact on the roadmap issues — 2026-11-08 (épico `epic/impacto-roadmap`)
 
 ## Pendências
 
-- IR1: nenhuma (só documentação do fluxo).
+- IR1: nenhuma (flow documentation only).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só mudou a documentação do fluxo.
+No write to the Mapping artifact in Claude Design: the stage only changed the flow documentation.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

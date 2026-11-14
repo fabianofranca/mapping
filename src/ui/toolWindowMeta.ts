@@ -8,14 +8,14 @@ import {
 } from '../store/toolWindows';
 import type { IconName } from './icons';
 
-// Ícone, título e atalho de cada janela de ferramenta. O título vem de `t()` na hora
-// de desenhar (nunca guardado), para acompanhar a troca de idioma.
+// Icon, title and shortcut of each tool window. The title comes from `t()` at draw time
+// (never stored), to follow a language switch.
 
 export interface ToolWindowMeta {
   readonly icon: IconName;
-  /** Título mostrado no cabeçalho e no botão da faixa. */
+  /** Title shown in the header and in the strip button. */
   title(): string;
-  /** Texto curto da aba (janela inferior); sem ele vale o título. */
+  /** Short text of the tab (bottom window); without it the title applies. */
   tab?(): string;
 }
 
@@ -36,22 +36,23 @@ export function toolWindowMeta(id: ToolWindowId): ToolWindowMeta {
   return META[id];
 }
 
-/** Atalho oficial da janela (Ctrl+Shift+N, Ctrl também no macOS). */
+/** The window's official shortcut (Ctrl+Shift+N, Ctrl also on macOS). */
 export function toolWindowShortcut(id: ToolWindowId): string {
   return `Ctrl+Shift+${WINDOW_NUMBER[id]}`;
 }
 
 /**
- * Janelas de um lado, na ordem de `TOOL_WINDOWS` (a das abas: Avisos fica entre Incompletas e
- * Diagnóstico, embora o atalho dela seja o 8).
+ * Windows of one side, in the order of `TOOL_WINDOWS` (that of the tabs: Notices sits between
+ * Incomplete and Diagnostics, although its shortcut is 8).
  */
 export function windowsOfSide(side: ToolWindowSide): readonly ToolWindowId[] {
   return TOOL_WINDOWS.filter((id) => WINDOW_SIDE[id] === side);
 }
 
 /**
- * Contador da aba de uma janela: as pendências na Incompletas, as anotações com aviso na
- * Avisos e as propostas novas (informativo, em destaque) na Propostas e as conversas abertas na Comentários.
+ * Counter of a window's tab: the pending items in Incomplete, the annotations with a notice in
+ * Notices, the new proposals (informational, highlighted) in Proposals and the open threads in
+ * Comments.
  */
 export function windowBadge(
   id: ToolWindowId,

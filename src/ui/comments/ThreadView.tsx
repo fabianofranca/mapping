@@ -17,7 +17,7 @@ import { useDeleteThread } from './useDeleteThread';
 
 interface ThreadViewProps {
   readonly thread: Thread;
-  /** "em Button › variante": onde a conversa mora, quando não é o próprio item. */
+  /** "in Button › variant": where the thread lives, when it is not the item itself. */
   readonly where?: string | null;
   readonly onOpenSettings?: () => void;
 }
@@ -40,7 +40,7 @@ function StateBadge({ thread }: { readonly thread: Thread }) {
   );
 }
 
-/** Marca a conversa como lida enquanto ela está à vista (nunca recua, então não entra em laço). */
+/** Marks the thread as read while it is in view (never steps back, so it does not loop). */
 function useMarkRead(thread: Thread): void {
   const { session } = useEditor();
   const copyId = session.storage.copyId;
@@ -62,7 +62,7 @@ function ThreadActions({ thread }: { readonly thread: Thread }) {
       ? actions.reopen(thread.id)
       : actions.resolve(thread.id));
     setError(result.ok ? null : result.error);
-    // A conversa resolvida continua à vista (ela só aparece nos Detalhes quando escolhida).
+    // The resolved thread stays in view (it only appears in Details when chosen).
     const project = review.derived.shownProject.peek();
     if (result.ok && project) selectThread(ui, project, result.thread);
   };
@@ -93,8 +93,8 @@ function ThreadActions({ thread }: { readonly thread: Thread }) {
 }
 
 /**
- * A conversa inteira: selo de estado, Resolver/Reabrir e o menu ⋯ (Apagar) quando a pessoa pode
- * escrever, as mensagens e o compositor de resposta. Mostrar a conversa a marca como lida.
+ * The whole thread: state badge, Resolve/Reopen and the ⋯ menu (Delete) when the person can
+ * write, the messages and the reply composer. Showing the thread marks it as read.
  */
 export function ThreadView({ thread, where, onOpenSettings }: ThreadViewProps) {
   const { can, writable } = useThreadAccess();

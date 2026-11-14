@@ -1,22 +1,25 @@
 /** @jsxImportSource react */
 /**
- * Invólucro React fino do visualizador embutível: `<MappingViewer/>` é um `<div>`
- * que hospeda um `createViewer`. Importa só de `react` (o `react-dom` é do hospedeiro).
+ * Thin React wrapper of the embeddable viewer: `<MappingViewer/>` is a `<div>`
+ * that hosts a `createViewer`. It imports only from `react` (`react-dom` belongs to the host).
  *
- * - O viewer é criado e destruído por `useEffect([])`: em `<StrictMode>` o React monta,
- *   desmonta e monta de novo, e cada ciclo cria e descarta o seu viewer sem vazar.
- * - Os callbacks (`onHover`, `onClick`, `onWarnings`, `onSource`) são lidos por ref: passar uma função nova
- *   a cada render NÃO recria o viewer.
- * - `library`/`screen`/`source`/`sourceSystem`/`drawingMode`/`direction` → `update` (`source`, o JSON externo, vence `screen`
- *   e é traduzido pela origem da especialização; `onSource` recebe cada cálculo), `selection` → `setSelection`, `hover` → `setHover`,
+ * - The viewer is created and destroyed by `useEffect([])`: in `<StrictMode>` React mounts,
+ *   unmounts and mounts again, and each cycle creates and discards its own viewer without leaking.
+ * - The callbacks (`onHover`, `onClick`, `onWarnings`, `onSource`) are read through a ref:
+ *   passing a new function on every render does NOT recreate the viewer.
+ * - `library`/`screen`/`source`/`sourceSystem`/`drawingMode`/`direction` → `update` (`source`,
+ *   the external JSON, wins over `screen` and is translated by the specialization's origin;
+ *   `onSource` receives each computation), `selection` → `setSelection`, `hover` → `setHover`,
  *   `fontsVersion` → `redraw`.
- * - `interactive` (padrão `true`) → `setInteractive`: com `false` o canvas não seleciona nem
- *   avisa `onHover`/`onClick`; `selection` e `hover` do hospedeiro continuam valendo.
- * - `remoteImages` e `allowOrigin` valem só na criação (imagens remotas, desligadas por padrão;
- *   `allowOrigin` é lida por ref, então uma função nova a cada render não recria o viewer).
- * - `measure`, `fonts`, `selectionColor` e `hoverColor` valem só na criação (como `fit` e `padding`).
- * - `fit` e `padding` valem só na criação (mudá-los depois não reenquadra). Para reenquadrar
- *   a pedido, use `createViewer` direto e chame `viewer.fit()`.
+ * - `interactive` (default `true`) → `setInteractive`: with `false` the canvas neither selects nor
+ *   reports `onHover`/`onClick`; the host's `selection` and `hover` keep working.
+ * - `remoteImages` and `allowOrigin` apply only at creation (remote images, off by default;
+ *   `allowOrigin` is read through a ref, so a new function on every render does not recreate
+ *   the viewer).
+ * - `measure`, `fonts`, `selectionColor` and `hoverColor` apply only at creation (like `fit` and
+ *   `padding`).
+ * - `fit` and `padding` apply only at creation (changing them later does not reframe). To
+ *   reframe on demand, use `createViewer` directly and call `viewer.fit()`.
  */
 import { useEffect, useRef } from 'react';
 import type { CSSProperties, JSX } from 'react';
@@ -28,12 +31,12 @@ export * from './index';
 export interface MappingViewerProps {
   readonly library: Library | undefined;
   readonly screen: Screen | undefined;
-  /** JSON externo já parseado; definido, vence `screen` (ver `ViewerInput.source`). */
+  /** External JSON, already parsed; when defined, it wins over `screen` (see `ViewerInput.source`). */
   readonly source?: unknown;
   readonly sourceSystem?: string;
-  /** Modo dos tokens do desenho (`light`, `dark`…); mudar redesenha sem recarregar. */
+  /** Mode of the drawing tokens (`light`, `dark`…); changing it redraws without reloading. */
   readonly drawingMode?: string;
-  /** Direção de leitura (`ltr`, o padrão, ou `rtl`); vale para a tela calculada de `source`. */
+  /** Reading direction (`ltr`, the default, or `rtl`); applies to the screen computed from `source`. */
   readonly direction?: ViewerOptions['direction'];
   readonly onSource?: ViewerOptions['onSource'];
   readonly selection?: readonly string[];
@@ -41,27 +44,27 @@ export interface MappingViewerProps {
   readonly onHover?: ViewerOptions['onHover'];
   readonly onClick?: ViewerOptions['onClick'];
   readonly onWarnings?: ViewerOptions['onWarnings'];
-  /** Padrão `true`; `false` = o canvas é só imagem (seleção e hover só pelas props). */
+  /** Default `true`; `false` = the canvas is image-only (selection and hover only through props). */
   readonly interactive?: boolean;
-  /** Só na criação do viewer: medidor de texto (padrão: `konvaMeasurer`). */
+  /** Only at viewer creation: text measurer (default: `konvaMeasurer`). */
   readonly measure?: ViewerOptions['measure'];
-  /** Só na criação do viewer: fonte padrão dos textos sem `family`. */
+  /** Only at viewer creation: default font of the texts without `family`. */
   readonly fonts?: ViewerOptions['fonts'];
-  /** Só na criação do viewer: cores do realce de seleção e de hover (CSS). */
+  /** Only at viewer creation: selection and hover highlight colors (CSS). */
   readonly selectionColor?: string;
   readonly hoverColor?: string;
-  /** Só na criação do viewer (mudar depois não tem efeito). */
+  /** Only at viewer creation (changing it later has no effect). */
   readonly fit?: ViewerOptions['fit'];
-  /** Só na criação do viewer (mudar depois não tem efeito). */
+  /** Only at viewer creation (changing it later has no effect). */
   readonly padding?: number;
-  /** Só na criação do viewer: liga as imagens remotas (padrão `false`). */
+  /** Only at viewer creation: turns remote images on (default `false`). */
   readonly remoteImages?: boolean;
-  /** Origens aceitas (padrão: recusa tudo). Vale com `remoteImages`; lida a cada pedido. */
+  /** Accepted origins (default: refuse everything). Applies with `remoteImages`; read on every request. */
   readonly allowOrigin?: ViewerOptions['allowOrigin'];
   readonly className?: string;
-  /** Mesclado sobre o padrão `{ width: '100%', height: '100%' }`. */
+  /** Merged over the default `{ width: '100%', height: '100%' }`. */
   readonly style?: CSSProperties;
-  /** Versão das fontes do hospedeiro: mudar o valor chama `redraw()` (remede os textos). */
+  /** Version of the host's fonts: changing the value calls `redraw()` (re-measures the texts). */
   readonly fontsVersion?: number | string;
 }
 
@@ -85,7 +88,7 @@ export function MappingViewer(props: MappingViewerProps): JSX.Element {
   const interactive = props.interactive ?? true;
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
-  /** Sempre a última versão das props: callbacks e valores iniciais da criação. */
+  /** Always the latest version of the props: callbacks and the initial values at creation. */
   const latest = useRef(props);
 
   useEffect(() => {
@@ -149,7 +152,7 @@ export function MappingViewer(props: MappingViewerProps): JSX.Element {
 
   const drawnFonts = useRef(fontsVersion);
   useEffect(() => {
-    // O valor da criação não redesenha (o viewer já desenhou com ele), nem a remontagem do StrictMode.
+    // The creation value does not redraw (the viewer already drew with it), nor does StrictMode's remount.
     if (drawnFonts.current === fontsVersion) return;
     drawnFonts.current = fontsVersion;
     viewerRef.current?.redraw();

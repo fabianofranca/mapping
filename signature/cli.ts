@@ -4,8 +4,8 @@ import { parseArgs, USAGE, type CodeArgs, type DesignArgs, type RunArgs } from '
 import { CliError, usageError } from './errors';
 import { READERS } from './readers';
 
-// A CLI do extrator: lê os arquivos, chama o leitor, valida a ficha com `parseSignature` e a
-// imprime (ou grava em `--out`). É o único módulo que grava no disco, e só o `--out`.
+// The extractor CLI: reads the files, calls the reader, validates the sheet with `parseSignature`
+// and prints it (or writes it to `--out`). It is the only module that writes to disk, and only `--out`.
 
 export interface CliIo {
   readFile(path: string): string;
@@ -16,7 +16,7 @@ export interface CliIo {
 
 const nodeIo: CliIo = {
   readFile: (path) => readFileSync(path, 'utf8'),
-  // `w` cria o arquivo e não cria pastas.
+  // `w` creates the file and does not create folders.
   writeFile: (path, text) => writeFileSync(path, text, { encoding: 'utf8', flag: 'w' }),
   stdout: (text) => void process.stdout.write(text),
   stderr: (text) => void process.stderr.write(text),
@@ -24,11 +24,11 @@ const nodeIo: CliIo = {
 
 const ABSOLUTE = /^(?:\/|[A-Za-z]:[\\/])/;
 
-/** O `source.path`: o `--path` como veio, ou o `--file` relativo (com `/` e sem `./` na frente). */
+/** The `source.path`: the `--path` as given, or the relative `--file` (with `/` and no leading `./`). */
 function sourcePath(args: CodeArgs): string {
   if (args.path !== undefined) return args.path;
   if (ABSOLUTE.test(args.file)) {
-    throw usageError('--file absoluto: informe --path, relativo à raiz do repositório');
+    throw usageError('absolute --file: give --path, relative to the repository root');
   }
   return args.file.replace(/\\/g, '/').replace(/^(?:\.\/)+/, '');
 }
@@ -38,26 +38,26 @@ function readText(io: CliIo, path: string): string {
     return io.readFile(path);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    throw new CliError(`não foi possível ler ${path}: ${reason}`);
+    throw new CliError(`could not read ${path}: ${reason}`);
   }
 }
 
-/** A ficha em texto (2 espaços, `\n` no fim), conferida pelo `parseSignature` antes de sair. */
+/** The sheet as text (2 spaces, `\n` at the end), checked by `parseSignature` before it goes out. */
 function serialize(signature: Signature): string {
   const text = `${JSON.stringify(signature, null, 2)}\n`;
   const checked = parseSignature(JSON.parse(text));
   if (!checked.ok) {
     const lines = checked.issues.map(
-      (i) => `  ${i.path === '' ? '(raiz)' : i.path}: ${i.message}`,
+      (i) => `  ${i.path === '' ? '(root)' : i.path}: ${i.message}`,
     );
     throw new CliError(
-      `erro interno: a ficha gerada não passa na validação:\n${lines.join('\n')}`,
+      `internal error: the generated sheet fails validation:\n${lines.join('\n')}`,
     );
   }
   return text;
 }
 
-/** Lê os arquivos e roda o leitor: o de código recebe o arquivo e os `--also`; o de design, o JSON. */
+/** Reads the files and runs the reader: the code one gets the file and the `--also`; the design one, the JSON. */
 function read(args: RunArgs, io: CliIo): Signature {
   const def = READERS[args.reader]!;
   if (def.kind === 'design') {
@@ -93,12 +93,12 @@ function execute(argv: readonly string[], io: CliIo): number {
     io.writeFile(args.out, text);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    throw new CliError(`não foi possível gravar ${args.out}: ${reason}`);
+    throw new CliError(`could not write ${args.out}: ${reason}`);
   }
   return 0;
 }
 
-/** Roda a CLI; devolve o código de saída (0 ok, 1 erro de extração, 2 erro de uso). */
+/** Runs the CLI; returns the exit code (0 ok, 1 extraction error, 2 usage error). */
 export function runCli(argv: readonly string[], io: CliIo = nodeIo): number {
   try {
     return execute(argv, io);
@@ -108,7 +108,7 @@ export function runCli(argv: readonly string[], io: CliIo = nodeIo): number {
       return error.exitCode;
     }
     io.stderr(
-      `erro interno: ${error instanceof Error ? error.message : String(error)}\n`,
+      `internal error: ${error instanceof Error ? error.message : String(error)}\n`,
     );
     return 1;
   }

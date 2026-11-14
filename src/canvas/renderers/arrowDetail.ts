@@ -1,30 +1,30 @@
-// Nível de detalhe da seta pelo tamanho dela e o das pontas na tela (etapa canvas-desempenho, decisão 7).
+// Arrow level of detail by its size and that of the ends on screen (canvas-performance stage, decision 7).
 import { levelOfDetail } from './levelOfDetail';
 
 export type ArrowDetail = 'full' | 'thin' | 'hidden';
 
-/** Uma ponta da seta: a marcação ligada, com o tamanho na tela (px). */
+/** An arrow end: the linked marking, with its size on screen (px). */
 export interface ArrowEnd {
   readonly screenWidth: number;
   readonly screenHeight: number;
-  /** Selecionada (inclusive na seleção múltipla), sob o mouse ou com marca da revisão. */
+  /** Selected (including in multi-select), under the mouse or with a review mark. */
   readonly always: boolean;
 }
 
 export interface ArrowDetailInput {
-  /** Comprimento do traço na tela (px): soma dos trechos do `path` × zoom. */
+  /** Length of the stroke on screen (px): sum of the `path` segments × zoom. */
   readonly screenLength: number;
-  /** A seta está selecionada. */
+  /** The arrow is selected. */
   readonly always: boolean;
   readonly from: ArrowEnd;
   readonly to: ArrowEnd;
-  /** `size-lod-min-marking`: abaixo disto o comprimento só dá o traço. */
+  /** `size-lod-min-marking`: below this the length only gives the stroke. */
   readonly minFull: number;
-  /** `size-lod-hide-marking`: abaixo disto, nas duas medidas, a ponta é invisível. */
+  /** `size-lod-hide-marking`: below this, in both measures, the end is invisible. */
   readonly hide: number;
 }
 
-/** A ponta é invisível pelo tamanho (a mesma regra das marcações, `levelOfDetail`). */
+/** The end is invisible by size (the same rule as the markings, `levelOfDetail`). */
 function endHidden(end: ArrowEnd, input: ArrowDetailInput): boolean {
   return (
     levelOfDetail({
@@ -38,9 +38,9 @@ function endHidden(end: ArrowEnd, input: ArrowDetailInput): boolean {
 }
 
 /**
- * Inteira se a seta está selecionada ou liga uma marcação selecionada, sob o mouse (ou com marca
- * da revisão); some se as duas pontas são invisíveis; só o traço (sem halo, ponta nem rótulo) se o
- * comprimento na tela é menor que `minFull`.
+ * Whole if the arrow is selected or links a selected marking, under the mouse (or with a review
+ * mark); gone if both ends are invisible; only the stroke (no halo, tip or label) if the
+ * length on screen is less than `minFull`.
  */
 export function arrowDetail(input: ArrowDetailInput): ArrowDetail {
   if (input.always || input.from.always || input.to.always) return 'full';

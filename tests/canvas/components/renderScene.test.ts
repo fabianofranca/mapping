@@ -1,4 +1,4 @@
-// A cena vira nós Konva com a estrutura, as transformações e os paints esperados.
+// The scene becomes Konva nodes with the expected structure, transformations and paints.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -50,7 +50,7 @@ const card: FrameNode = {
         transform: translate(100, 10),
       }),
       type: 'text',
-      text: 'Olá',
+      text: 'Hello',
       fills: [{ type: 'solid', color: '#111111' }],
       style: {
         fontFamily: 'Inter',
@@ -90,7 +90,7 @@ const card: FrameNode = {
       },
     },
     {
-      ...baseNode({ id: 'photo', name: 'Foto', width: 56, height: 40 }),
+      ...baseNode({ id: 'photo', name: 'Photo', width: 56, height: 40 }),
       type: 'rect',
       cornerRadius: [4, 4, 0, 0],
       fills: [{ type: 'image' }],
@@ -103,7 +103,7 @@ const card: FrameNode = {
     {
       ...baseNode({
         id: 'ghost',
-        name: 'Oculto',
+        name: 'Hidden',
         width: 10,
         height: 10,
         visible: false,
@@ -117,7 +117,7 @@ const card: FrameNode = {
 };
 
 describe('renderScene', () => {
-  it('cria um contêiner Konva por nó, com o sceneId, a transformação e a visibilidade', () => {
+  it('creates a Konva container per node, with the sceneId, the transform and the visibility', () => {
     const { root, byId } = renderScene(scene(card));
     expect(byId.size).toBe(7);
     expect(root.getAttr('sceneId')).toBe('card');
@@ -129,7 +129,7 @@ describe('renderScene', () => {
     expect(sceneIdOf(byId.get('avatar')?.getChildren()[0])).toBe('avatar');
   });
 
-  it('desenha o quadro com fundo, traço por dentro, sombra e recorte arredondado', () => {
+  it('draws the frame with background, inner stroke, shadow and rounded clip', () => {
     const { root } = renderScene(scene(card));
     const rects = root.getChildren((n) => n instanceof Konva.Rect) as Konva.Rect[];
     expect(rects).toHaveLength(2);
@@ -138,7 +138,7 @@ describe('renderScene', () => {
     expect(fill?.cornerRadius()).toBe(8);
     expect(fill?.shadowBlur()).toBe(8);
     expect(fill?.shadowOffset()).toEqual({ x: 0, y: 4 });
-    // Traço de 2px por dentro: o retângulo do traço encolhe 1px de cada lado.
+    // 2px stroke on the inside: the stroke rectangle shrinks 1px on each side.
     expect(stroke?.x()).toBe(1);
     expect(stroke?.width()).toBe(198);
     expect(stroke?.stroke()).toBe('#1a63cc');
@@ -146,7 +146,7 @@ describe('renderScene', () => {
     expect(root.clipFunc()).toBeTypeOf('function');
   });
 
-  it('texto com pilha de fonte entrega a pilha ao Konva, sem aspas em volta', () => {
+  it('text with a font stack hands the stack to Konva, without surrounding quotes', () => {
     const stack = 'system-ui, "Segoe UI", Roboto, sans-serif';
     const withFamily = (family: string): FrameNode => ({
       ...card,
@@ -163,7 +163,7 @@ describe('renderScene', () => {
     expect(familyOf('system-ui')).toBe('system-ui');
   });
 
-  it('texto: wrap none, ellipsis e maxLines chegam ao Konva', () => {
+  it('text: wrap none, ellipsis and maxLines reach Konva', () => {
     const textOf = (style: Record<string, unknown>, height = 60): Konva.Text => {
       const root: FrameNode = {
         ...card,
@@ -187,13 +187,13 @@ describe('renderScene', () => {
     const single = textOf({ wrap: 'none', ellipsis: true });
     expect(single.wrap()).toBe('none');
     expect(single.ellipsis()).toBe(true);
-    // maxLines: a caixa do Konva encolhe para as linhas permitidas e desce no centro da do nó.
+    // maxLines: the Konva box shrinks to the allowed lines and is centered within the node's.
     const two = textOf({ maxLines: 2, ellipsis: true, fontSize: 10, lineHeight: 12 });
     expect(two.height()).toBe(24);
     expect(two.y()).toBe(18);
   });
 
-  it('texto centrado sem largura fica ancorado no x; gradiente, caminho e imagem sem pixels', () => {
+  it('centered text without width is anchored at x; gradient, path and image without pixels', () => {
     const { byId, warnings } = renderScene(scene(card));
     const text = byId.get('title')?.getChildren()[0] as Konva.Text;
     expect(text.fontStyle()).toBe('600');
@@ -217,7 +217,7 @@ describe('renderScene', () => {
     expect(warnings).toContainEqual({ code: 'unknown-node', params: { type: 'STICKY' } });
   });
 
-  it('um grupo com sombra repassa a sombra à primeira forma descendente', () => {
+  it('a group with a shadow passes the shadow to the first descendant shape', () => {
     const group: SceneNode = {
       ...baseNode({
         id: 'g',
@@ -240,7 +240,7 @@ describe('renderScene', () => {
     expect(rect.shadowOffset()).toEqual({ x: 1, y: 2 });
   });
 
-  it('sombra interna é ignorada com aviso', () => {
+  it('inner shadow is ignored with a warning', () => {
     const node: SceneNode = {
       ...baseNode({
         id: 'r',
@@ -259,7 +259,7 @@ describe('renderScene', () => {
     expect((byId.get('r')?.getChildren()[0] as Konva.Rect).shadowBlur()).toBe(0);
   });
 
-  describe('aviso "só a primeira sombra" (extra-shadows)', () => {
+  describe('"only the first shadow" warning (extra-shadows)', () => {
     const sh = (extra: Partial<Shadow> = {}): Shadow => ({
       color: '#000',
       offset: { x: 0, y: 2 },
@@ -269,7 +269,7 @@ describe('renderScene', () => {
     const textNode = (effects: Shadow[]): SceneNode => ({
       ...baseNode({ id: 't', name: 't', width: 40, height: 12, effects }),
       type: 'text',
-      text: 'Olá',
+      text: 'Hello',
       fills: [{ type: 'solid', color: '#111111' }],
       style: {
         fontFamily: 'Inter',
@@ -287,30 +287,30 @@ describe('renderScene', () => {
       fills: [{ type: 'solid', color: '#f00' }],
     });
 
-    it('texto com duas sombras externas avisa', () => {
+    it('text with two outer shadows warns', () => {
       const { warnings } = renderScene(scene(textNode([sh(), sh({ blur: 8 })])));
       expect(warnings).toContainEqual({ code: 'extra-shadows' });
     });
 
-    it('texto com spread avisa', () => {
+    it('text with spread warns', () => {
       const { warnings } = renderScene(scene(textNode([sh({ spread: 2 })])));
       expect(warnings).toContainEqual({ code: 'extra-shadows' });
     });
 
-    it('texto com uma sombra sem spread, ou só uma externa e uma interna, não avisa', () => {
+    it('text with one shadow without spread, or just one outer and one inner, does not warn', () => {
       expect(renderScene(scene(textNode([sh()]))).warnings).toEqual([]);
       expect(renderScene(scene(textNode([sh(), sh({ inner: true })]))).warnings).toEqual([
         { code: 'inner-shadow' },
       ]);
     });
 
-    it('rect com a lista e o spread desenha tudo e não avisa', () => {
+    it('rect with the list and the spread draws everything and does not warn', () => {
       const { warnings } = renderScene(scene(rectNode([sh(), sh({ spread: 2 })])));
       expect(warnings).toEqual([]);
     });
   });
 
-  it('decompõe matrizes com rotação e escala; fontStyle combina peso e itálico', () => {
+  it('decomposes matrices with rotation and scale; fontStyle combines weight and italic', () => {
     const rotated = decompose([0, 1, -1, 0, 10, 20]);
     expect(rotated.rotation).toBeCloseTo(90);
     expect(rotated.x).toBe(10);
@@ -324,7 +324,7 @@ describe('renderScene', () => {
     expect(fontStyle(500, true)).toBe('italic 500');
   });
 
-  it('rotation gira o contêiner em volta do centro da caixa; os filhos e o recorte vão junto', () => {
+  it('rotation turns the container around the box center; children and clip go along', () => {
     const turned: FrameNode = {
       ...baseNode({
         id: 'turned',
@@ -348,21 +348,21 @@ describe('renderScene', () => {
     };
     const { byId } = renderScene(scene(turned));
     const abs = byId.get('turned')!.getAbsoluteTransform();
-    // 40×10 a 90° em torno do centro (50, 50): o canto (0, 0) local vai para (55, 30)
+    // 40×10 at 90° around the center (50, 50): the local corner (0, 0) goes to (55, 30)
     const corner = abs.point({ x: 0, y: 0 });
     expect(corner.x).toBeCloseTo(55, 6);
     expect(corner.y).toBeCloseTo(30, 6);
-    // o filho herda a rotação: seu canto oposto (40, 10) vai para (45, 70)
+    // the child inherits the rotation: its opposite corner (40, 10) goes to (45, 70)
     const far = byId.get('kid')!.getAbsoluteTransform().point({ x: 40, y: 10 });
     expect(far.x).toBeCloseTo(45, 6);
     expect(far.y).toBeCloseTo(70, 6);
-    // o nó não girado continua só com a translação
+    // the unrotated node keeps only the translation
     const { byId: plain } = renderScene(scene({ ...turned, rotation: undefined }));
     expect(plain.get('turned')!.rotation()).toBeCloseTo(0, 9);
     expect(plain.get('turned')!.position()).toEqual({ x: 30, y: 45 });
   });
 
-  it('as cores do reservado e do nó desconhecido vêm da paleta (padrão do laboratório)', () => {
+  it('the colors of the placeholder and of the unknown node come from the palette (lab default)', () => {
     const unknown: SceneNode = {
       ...baseNode({ id: 'u', name: 'u', width: 20, height: 10 }),
       type: 'unknown',
@@ -390,7 +390,7 @@ describe('renderScene', () => {
   });
 });
 
-describe('slot (reservado do container)', () => {
+describe('slot (container placeholder)', () => {
   const slot: SceneNode = {
     ...baseNode({
       id: 's',
@@ -403,19 +403,19 @@ describe('slot (reservado do container)', () => {
     sourceType: 'slot',
   };
 
-  it('desenha o contorno tracejado por padrão', () => {
+  it('draws the dashed outline by default', () => {
     const rect = renderScene(scene(slot)).byId.get('s')?.getChildren()[0] as Konva.Rect;
     expect(rect.dash()).toEqual([3, 5]);
   });
 
-  it('com showSlots: false não gera forma, mas o contêiner existe', () => {
+  it('with showSlots: false it generates no shape, but the container exists', () => {
     const result = renderScene(scene(slot), { showSlots: false });
     expect(result.byId.get('s')?.getChildren()).toHaveLength(0);
     expect(result.warnings).toEqual([]);
   });
 });
 
-describe('imagem remota e embutida', () => {
+describe('remote and embedded image', () => {
   const rectWith = (fill: object): SceneNode => ({
     ...baseNode({ id: 'img', name: 'img', width: 40, height: 20 }),
     type: 'rect',
@@ -423,7 +423,7 @@ describe('imagem remota e embutida', () => {
     fills: [fill as never],
   });
 
-  /** Espiona o construtor de `Image`: devolve as URLs atribuídas a `src`. */
+  /** Spies on the `Image` constructor: returns the URLs assigned to `src`. */
   function spyImage(): { sources: string[]; restore: () => void } {
     const original = globalThis.Image;
     const sources: string[] = [];
@@ -445,12 +445,12 @@ describe('imagem remota e embutida', () => {
     };
   }
 
-  it('o paint com url desenha o reservado (forma cinza e X), sem Image e sem aviso', () => {
+  it('the paint with a url draws the placeholder (gray shape and X), without Image and without a warning', () => {
     const spy = spyImage();
     try {
       const { byId, warnings } = renderScene(
         scene(
-          rectWith({ type: 'image', fit: 'cover', url: 'https://cdn.exemplo.com/a.png' }),
+          rectWith({ type: 'image', fit: 'cover', url: 'https://cdn.example.com/a.png' }),
         ),
       );
       const [fill, cross] = byId.get('img')?.getChildren() ?? [];
@@ -463,11 +463,11 @@ describe('imagem remota e embutida', () => {
     }
   });
 
-  it('src de outro esquema vira reservado e nunca cria Image', () => {
+  it('src of another scheme becomes a placeholder and never creates an Image', () => {
     const spy = spyImage();
     try {
       for (const src of [
-        'https://cdn.exemplo.com/a.png',
+        'https://cdn.example.com/a.png',
         'http://x.com/a.png',
         'blob:x',
       ]) {
@@ -482,7 +482,7 @@ describe('imagem remota e embutida', () => {
     }
   });
 
-  it('src data: continua carregando a imagem embutida', () => {
+  it('src data: keeps loading the embedded image', () => {
     const spy = spyImage();
     try {
       const src = 'data:image/png;base64,AAAA';
@@ -497,8 +497,8 @@ describe('imagem remota e embutida', () => {
   });
 });
 
-describe('imagem remota resolvida pela função das opções', () => {
-  const URL = 'https://cdn.exemplo.com/a.png';
+describe('remote image resolved by the options function', () => {
+  const URL = 'https://cdn.example.com/a.png';
   const fake = (width: number, height: number) =>
     ({ width, height }) as unknown as CanvasImageSource;
   const loaded = (width = 200, height = 100): RemoteImageView => ({
@@ -521,7 +521,7 @@ describe('imagem remota resolvida pela função das opções', () => {
     return children.length === 2 && children[1] instanceof Konva.Line;
   };
 
-  it('loaded desenha um KonvaImage e registra a URL usada', () => {
+  it('loaded draws a KonvaImage and records the URL used', () => {
     const view = loaded();
     const result = renderScene(scene(rectWith(paint())), { remoteImage: () => view });
     expect(imageOf(result)).toBeInstanceOf(Konva.Image);
@@ -530,7 +530,7 @@ describe('imagem remota resolvida pela função das opções', () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it('pede a imagem à função uma vez por paint, com a URL do campo', () => {
+  it('asks the function for the image once per paint, with the field URL', () => {
     const calls: string[] = [];
     renderScene(scene(rectWith(paint())), {
       remoteImage: (url) => {
@@ -541,7 +541,7 @@ describe('imagem remota resolvida pela função das opções', () => {
     expect(calls).toEqual([URL]);
   });
 
-  it('cada estado sem pixels desenha o reservado, sem aviso', () => {
+  it('each state without pixels draws the placeholder, without a warning', () => {
     const states = [
       'loading',
       'failed',
@@ -559,7 +559,7 @@ describe('imagem remota resolvida pela função das opções', () => {
     }
   });
 
-  it('loaded sem a imagem ou com tamanho zero cai no reservado; a função que lança também', () => {
+  it('loaded without the image or with zero size falls back to the placeholder; so does a function that throws', () => {
     const noImage = renderScene(scene(rectWith(paint())), {
       remoteImage: () => ({ state: 'loaded' }),
     });
@@ -576,13 +576,13 @@ describe('imagem remota resolvida pela função das opções', () => {
     expect(isPlaceholder(throws)).toBe(true);
   });
 
-  it('sem a função, reservado; a URL ainda é registrada para a camada saber', () => {
+  it('without the function, placeholder; the URL is still registered so the layer knows', () => {
     const result = renderScene(scene(rectWith(paint())));
     expect(isPlaceholder(result)).toBe(true);
     expect(result.imageUrls).toEqual([URL]);
   });
 
-  it('opaque aparece no canvas principal e vira reservado com pixelSafe', () => {
+  it('opaque shows on the main canvas and becomes a placeholder with pixelSafe', () => {
     const opaque: RemoteImageView = { ...loaded(), state: 'opaque' };
     const main = renderScene(scene(rectWith(paint())), {
       remoteImage: () => opaque,
@@ -596,7 +596,7 @@ describe('imagem remota resolvida pela função das opções', () => {
     expect(isPlaceholder(safe)).toBe(true);
     const ofShapes = (r: ReturnType<typeof renderScene>) => r.root.find('Image').length;
     expect(ofShapes(safe)).toBe(0);
-    // pixelSafe não esconde a imagem com CORS.
+    // pixelSafe does not hide the image with CORS.
     const cors = renderScene(scene(rectWith(paint())), {
       remoteImage: () => loaded(),
       pixelSafe: true,
@@ -604,8 +604,8 @@ describe('imagem remota resolvida pela função das opções', () => {
     expect(imageOf(cors)).toBeInstanceOf(Konva.Image);
   });
 
-  it('fit cover recorta o centro da fonte para cobrir a caixa', () => {
-    // Fonte 200×100 numa caixa 40×40: escala 0,4, recorte de 100×100 centrado em x=50.
+  it('fit cover crops the center of the source to cover the box', () => {
+    // Source 200×100 in a 40×40 box: scale 0.4, crop of 100×100 centered at x=50.
     const result = renderScene(scene(rectWith(paint({ fit: 'cover' }))), {
       remoteImage: () => loaded(200, 100),
     });
@@ -615,14 +615,14 @@ describe('imagem remota resolvida pela função das opções', () => {
     expect(image.crop()).toEqual({ x: 50, y: 0, width: 100, height: 100 });
   });
 
-  it('o fit é cover quando não vem', () => {
+  it('the fit is cover when absent', () => {
     const result = renderScene(scene(rectWith(paint())), {
       remoteImage: () => loaded(100, 200),
     });
     expect(imageOf(result).crop()).toEqual({ x: 0, y: 50, width: 100, height: 100 });
   });
 
-  it('fit contain encaixa a fonte inteira, centralizada', () => {
+  it('fit contain fits the whole source, centered', () => {
     const result = renderScene(scene(rectWith(paint({ fit: 'contain' }))), {
       remoteImage: () => loaded(200, 100),
     });
@@ -633,7 +633,7 @@ describe('imagem remota resolvida pela função das opções', () => {
     expect(image.cropWidth()).toBeFalsy();
   });
 
-  it('fit fill estica a imagem pela caixa inteira', () => {
+  it('fit fill stretches the image over the whole box', () => {
     const result = renderScene(scene(rectWith(paint({ fit: 'fill' }))), {
       remoteImage: () => loaded(200, 100),
     });
@@ -641,7 +641,7 @@ describe('imagem remota resolvida pela função das opções', () => {
     expect([image.x(), image.y(), image.width(), image.height()]).toEqual([0, 0, 40, 40]);
   });
 
-  it('respeita cornerRadius e a opacidade do paint', () => {
+  it('respects cornerRadius and the paint opacity', () => {
     const result = renderScene(scene(rectWith(paint({ opacity: 0.5 }), 6)), {
       remoteImage: () => loaded(),
     });
@@ -649,7 +649,7 @@ describe('imagem remota resolvida pela função das opções', () => {
     expect(imageOf(result).opacity()).toBe(0.5);
   });
 
-  it('nunca cria Image para a URL remota', () => {
+  it('never creates an Image for the remote URL', () => {
     const original = globalThis.Image;
     let created = 0;
     globalThis.Image = class {
@@ -668,44 +668,44 @@ describe('imagem remota resolvida pela função das opções', () => {
 });
 
 describe('imageFit', () => {
-  it('cover com fonte mais alta recorta em cima e embaixo', () => {
+  it('cover with a taller source crops top and bottom', () => {
     const fit = imageFit('cover', { width: 100, height: 50 }, { width: 50, height: 100 });
     expect(fit.crop).toEqual({ x: 0, y: 37.5, width: 50, height: 25 });
   });
 });
 
-describe('imageFit: fit novos (formato 4)', () => {
+describe('imageFit: new fits (format 4)', () => {
   const box = { width: 100, height: 50 };
-  const source = { width: 40, height: 80 }; // tamanho natural conhecido
+  const source = { width: 40, height: 80 }; // known natural size
 
-  it('fill-width ocupa a largura e recorta o excesso de altura', () => {
-    // escala 2,5: a fonte vira 100 × 200; a caixa mostra 50/2,5 = 20 de altura, no centro
+  it('fill-width takes the width and crops the excess height', () => {
+    // scale 2.5: the source becomes 100 × 200; the box shows 50/2.5 = 20 of height, at the center
     const fit = imageFit('fill-width', box, source);
     expect(fit).toMatchObject({ x: 0, y: 0, width: 100, height: 50 });
     expect(fit.crop).toEqual({ x: 0, y: 30, width: 40, height: 20 });
   });
 
-  it('fill-height ocupa a altura e centraliza na largura, sem esticar', () => {
-    // escala 50/80 = 0,625: a fonte vira 25 × 50, no centro da caixa
+  it('fill-height takes the height and centers on the width, without stretching', () => {
+    // scale 50/80 = 0.625: the source becomes 25 × 50, at the center of the box
     const fit = imageFit('fill-height', box, source);
     expect(fit).toEqual({ x: 37.5, y: 0, width: 25, height: 50 });
   });
 
-  it('fill-height com fonte larga recorta as laterais', () => {
+  it('fill-height with a wide source crops the sides', () => {
     const fit = imageFit('fill-height', { width: 20, height: 50 }, source);
     expect(fit.crop).toEqual({ x: 4, y: 0, width: 32, height: 80 });
     expect(fit).toMatchObject({ x: 0, y: 0, width: 20, height: 50 });
   });
 
-  it('scale-down encolhe como contain, mas nunca amplia', () => {
-    // a fonte 40 × 80 não cabe em 100 × 50: encolhe a 25 × 50
+  it('scale-down shrinks like contain, but never enlarges', () => {
+    // the 40 × 80 source does not fit in 100 × 50: shrinks to 25 × 50
     expect(imageFit('scale-down', box, source)).toEqual({
       x: 37.5,
       y: 0,
       width: 25,
       height: 50,
     });
-    // em caixa maior que a fonte, fica no tamanho natural, centrada
+    // in a box larger than the source, it keeps its natural size, centered
     expect(imageFit('scale-down', { width: 200, height: 200 }, source)).toEqual({
       x: 80,
       y: 60,
@@ -714,7 +714,7 @@ describe('imageFit: fit novos (formato 4)', () => {
     });
   });
 
-  it('none usa o tamanho natural, centrado, recortando o que passa da caixa', () => {
+  it('none uses the natural size, centered, cropping what goes past the box', () => {
     expect(imageFit('none', { width: 200, height: 200 }, source)).toEqual({
       x: 80,
       y: 60,
@@ -726,14 +726,14 @@ describe('imageFit: fit novos (formato 4)', () => {
     expect(cut.crop).toEqual({ x: 0, y: 15, width: 40, height: 50 });
   });
 
-  it('caixa sem área ou imagem sem tamanho não gera recorte com NaN', () => {
+  it('box without area or image without size does not generate a crop with NaN', () => {
     for (const fit of ['fill-width', 'fill-height', 'scale-down', 'none'] as const) {
       const empty = imageFit(fit, { width: 0, height: 0 }, source);
       expect(empty).toEqual({ x: 0, y: 0, width: 0, height: 0 });
     }
   });
 
-  it('escala que não é exata não cria recorte quando a imagem inteira aparece', () => {
+  it('a scale that is not exact does not create a crop when the whole image shows', () => {
     expect(
       imageFit('scale-down', { width: 10, height: 10 }, { width: 3, height: 7 }),
     ).not.toHaveProperty('crop');

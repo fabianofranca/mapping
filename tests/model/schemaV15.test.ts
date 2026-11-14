@@ -1,5 +1,5 @@
-// Schema v15 (vínculo entre anotações da mesma camada): a mudança é só de regra (formatVersion 13
-// da especialização); os dados não mudam. Migração v14 → v15 só troca a versão.
+// Schema v15 (link between annotations of the same layer): the change is a rule only (formatVersion 13
+// of the specialization); the data do not change. The v14 → v15 migration only swaps the version.
 import { describe, expect, it } from 'vitest';
 import {
   SCHEMA_VERSION,
@@ -20,7 +20,7 @@ function load(text: string, specs = new Map<string, string>()) {
   return result;
 }
 
-/** O projeto como um mapping.json v14: a mesma forma, com a versão anterior. */
+/** The project as a v14 mapping.json: the same shape, with the previous version. */
 const v14Text = (): string => {
   const raw = JSON.parse(serialize(sampleProject())) as Raw;
   raw.schemaVersion = 14;
@@ -28,16 +28,16 @@ const v14Text = (): string => {
 };
 
 describe('schema v15', () => {
-  it('o registro tem a migração v14 → v15', () => {
+  it('the registry has the v14 → v15 migration', () => {
     expect(migrations.get(14)).toBe(migrateFrom14To15);
   });
 
-  it('a migração não muda os dados', () => {
+  it('the migration does not change the data', () => {
     const data = { annotations: [{ id: 'X' }], docRepos: {}, extra: 1 };
     expect(migrateFrom14To15(data)).toEqual(data);
   });
 
-  it('o v14 abre, migra (migratedFrom 14) e grava v15 sem mudar dados', () => {
+  it('the v14 opens, migrates (migratedFrom 14) and writes v15 without changing data', () => {
     const result = load(v14Text());
     expect(result.migratedFrom).toBe(14);
     expect(result.readOnly).toBe(false);
@@ -50,7 +50,7 @@ describe('schema v15', () => {
     );
   });
 
-  it('o atual abre sem migrar; o v21 abre só para leitura ("versão mais nova")', () => {
+  it('the current one opens without migrating; the v21 opens read-only ("newer version")', () => {
     const p = add(add(sameLayerProject(), 'R1', 'request'), 'N1', 'navigate', 'R1');
     const text = serialize(p);
     expect(load(text, specFiles(p)).migratedFrom).toBeNull();

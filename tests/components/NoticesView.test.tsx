@@ -17,10 +17,10 @@ import { sampleProject } from '../model/fixtures';
 import { createHarness, type Harness } from './harness';
 import { noticeProject } from './noticeFixtures';
 
-// Janela Avisos (etapa #486, AV3): grupos por aviso, filtros, ir à anotação, aba e status.
+// Notices window (stage #486, AV3): groups per notice, filters, go to the annotation, tab and status.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   hideToolWindow('notices');
 });
 afterEach(cleanup);
@@ -31,28 +31,29 @@ function withContext(harness: Harness, ui: preact.ComponentChildren) {
   );
 }
 
-describe('janela Avisos', () => {
-  it('lista um grupo por aviso, do mais grave ao menos, com selo, lugar, mensagem e contagem', () => {
+describe('Notices window', () => {
+  it('lists one group per notice, from the most to the least severe, with badge, place, message and count', () => {
     const harness = createHarness(noticeProject());
     withContext(harness, <NoticesView onGoToAnnotation={vi.fn()} />);
     const table = screen.getByRole('table', { name: t('notices.title') });
-    const groups = within(table).getAllByRole('rowgroup').slice(1); // sem o thead
+    const groups = within(table).getAllByRole('rowgroup').slice(1); // without the thead
     expect(groups).toHaveLength(4);
     const head = (i: number) =>
       groups[i]!.querySelector('.notices-group-row')!.textContent ?? '';
-    expect(head(0)).toContain('Removido');
+    expect(head(0)).toContain('Removed');
     expect(head(0)).toContain('Gone');
+    // pt-BR kept: shared fixture data asserted by tests/model, tests/components (message of noticeFixtures)
     expect(head(0)).toContain('Saiu do contrato.');
-    expect(head(1)).toContain('Obsoleto');
+    expect(head(1)).toContain('Deprecated');
     expect(head(1)).toContain('Alert › legacyStyle');
     expect(head(2)).toContain('Alert › events › handler');
-    expect(head(3)).toContain('Pendente');
+    expect(head(3)).toContain('Pending');
     expect(head(3)).toContain('2026-11-04');
-    // 1 anotação afetada por aviso
+    // 1 annotation affected per notice
     expect(head(0)).toContain(t('notices.count', { count: 1 }));
   });
 
-  it('cada linha traz marcação, camada, anotação e o valor no campo', () => {
+  it('each row carries marking, layer, annotation and the value in the field', () => {
     const harness = createHarness(noticeProject());
     withContext(harness, <NoticesView onGoToAnnotation={vi.fn()} />);
     const rows = screen
@@ -60,12 +61,13 @@ describe('janela Avisos', () => {
       .filter((r) => r.classList.contains('list-row'));
     expect(rows).toHaveLength(4);
     const deprecated = rows[1]!;
+    // pt-BR kept: shared fixture data asserted by tests/model, tests/components (marking and layer names of noticeFixtures)
     expect(deprecated.textContent).toContain('Alvo');
     expect(deprecated.textContent).toContain('Componentes');
     expect(deprecated.textContent).toContain('x');
   });
 
-  it('o Segmented por kind traz "Todos" e um botão por kind com a contagem', async () => {
+  it('the Segmented by kind carries "All" and one button per kind with the count', async () => {
     const harness = createHarness(noticeProject());
     withContext(harness, <NoticesView onGoToAnnotation={vi.fn()} />);
     const group = screen.getByRole('group', { name: t('notices.kindFilter') });
@@ -73,20 +75,20 @@ describe('janela Avisos', () => {
       .getAllByRole('button')
       .map((b) => b.textContent);
     expect(names).toEqual([
-      'Todos 2',
-      'Removido 1',
-      'Obsoleto 1',
-      'Diverge 1',
-      'Pendente 1',
+      'All 2',
+      'Removed 1',
+      'Deprecated 1',
+      'Diverges 1',
+      'Pending 1',
     ]);
-    await userEvent.click(within(group).getByRole('button', { name: /Obsoleto/ }));
+    await userEvent.click(within(group).getByRole('button', { name: /Deprecated/ }));
     expect(harness.ui.noticeKind.value).toBe('deprecated');
     expect(
       screen.getAllByRole('row').filter((r) => r.classList.contains('list-row')),
     ).toHaveLength(1);
   });
 
-  it('escolher a linha leva à anotação', async () => {
+  it('choosing the row leads to the annotation', async () => {
     const harness = createHarness(noticeProject());
     const onGo = vi.fn();
     withContext(harness, <NoticesView onGoToAnnotation={onGo} />);
@@ -97,7 +99,7 @@ describe('janela Avisos', () => {
     expect(onGo).toHaveBeenCalledWith(expect.objectContaining({ id: 'AA' }));
   });
 
-  it('"Só avisos em uso" desmarcado mostra o aviso sem anotação', async () => {
+  it('"Only notices in use" unchecked shows the notice without an annotation', async () => {
     const harness = createHarness({
       ...noticeProject(),
       annotations: noticeProject().annotations.filter((a) => a.id !== 'AG'),
@@ -109,12 +111,12 @@ describe('janela Avisos', () => {
     expect(screen.getByText(t('notices.unused'))).toBeTruthy();
   });
 
-  it('"Só camadas visíveis" e os estados vazios', async () => {
+  it('"Only visible layers" and the empty states', async () => {
     const harness = createHarness(noticeProject());
     withContext(harness, <NoticesView onGoToAnnotation={vi.fn()} />);
     harness.ui.noticesVisibleOnly.value = true;
     harness.ui.noticeKind.value = null;
-    // a camada está visível: a lista continua
+    // the layer is visible: the list stays
     expect(
       screen.getAllByRole('row').filter((r) => r.classList.contains('list-row')),
     ).toHaveLength(4);
@@ -125,7 +127,7 @@ describe('janela Avisos', () => {
     expect(screen.getByText(t('notices.empty'))).toBeTruthy();
   });
 
-  it('mostra o vazio com filtro quando nada passa por ele', () => {
+  it('shows the empty state with a filter when nothing passes through it', () => {
     const harness = createHarness(noticeProject());
     harness.ui.noticesVisibleOnly.value = true;
     harness.ui.hiddenLayers.value = new Set(harness.project().layers.map((l) => l.id));
@@ -134,8 +136,8 @@ describe('janela Avisos', () => {
   });
 });
 
-describe('aba, atalho e barra de status', () => {
-  it('Ctrl+Shift+8 é a janela Avisos, na janela inferior', () => {
+describe('tab, shortcut and status bar', () => {
+  it('Ctrl+Shift+8 is the Notices window, in the bottom window', () => {
     expect(toolWindowByNumber(8)).toBe('notices');
     showToolWindow('notices');
     expect(isToolWindowOpen('notices')).toBe(true);
@@ -143,7 +145,7 @@ describe('aba, atalho e barra de status', () => {
     expect(isToolWindowOpen('notices')).toBe(false);
   });
 
-  it('a aba fica entre Incompletas e Diagnóstico e mostra a contagem', () => {
+  it('the tab sits between Incomplete and Diagnostics and shows the count', () => {
     const harness = createHarness(noticeProject());
     withContext(harness, <BottomTabs active="list" />);
     const tabs = screen.getAllByRole('tab');
@@ -155,7 +157,7 @@ describe('aba, atalho e barra de status', () => {
     expect(names[i]).toContain('2');
   });
 
-  it('"Avisos: N" só com N > 0 e o clique abre a janela', async () => {
+  it('"Notices: N" only with N > 0 and the click opens the window', async () => {
     const harness = createHarness(noticeProject());
     withContext(harness, <StatusBar />);
     const item = screen.getByRole('button', { name: t('notices.status', { count: 2 }) });
@@ -166,10 +168,10 @@ describe('aba, atalho e barra de status', () => {
 
     const without = createHarness(sampleProject());
     withContext(without, <StatusBar />);
-    expect(screen.queryByRole('button', { name: /Avisos/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Notices/ })).toBeNull();
   });
 
-  it('a contagem de Incompletas não muda por causa de aviso', () => {
+  it('the Incomplete count does not change because of a notice', () => {
     const harness = createHarness(noticeProject());
     expect(harness.context.derived.noticedCount.value).toBe(2);
     expect(harness.context.derived.incompleteCount.value).toBe(0);

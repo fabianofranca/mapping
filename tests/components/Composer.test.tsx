@@ -13,13 +13,13 @@ import { sampleThread } from '../model/threadFixtures';
 import { chipsOf, keyDown, typeIn } from './composerHelpers';
 import { createHarness } from './harness';
 
-// O compositor com o editor de citações (etapa Comentários, CM5): âncora do `@`, ponte,
-// rascunho com chips.
+// The composer with the citation editor (Comments stage, CM5): `@` anchor, bridge,
+// draft with chips.
 
 beforeEach(() => {
   localStorage.clear();
-  locale.value = 'pt-BR';
-  setIdentity('Marina Alves', 'marina@exemplo.com');
+  locale.value = 'en-US';
+  setIdentity('Marina Alves', 'marina@example.com');
 });
 afterEach(() => {
   cleanup();
@@ -36,16 +36,17 @@ function mount(target: ComposerTarget, readOnly = false) {
   return harness;
 }
 
-describe('Composer › o @', () => {
-  it('conversa nova: o grupo "aqui" é o do item da âncora', () => {
+describe('Composer › the @', () => {
+  it('new thread: the "here" group is the one of the anchor item', () => {
     mount({ kind: 'new', anchor: { kind: 'marking', id: 'M1' } });
     typeIn(screen.getByRole('textbox'), '@');
     const first = document.querySelector('.cite-picker-group');
     expect(first?.textContent).toBe(t('citation.group.here'));
+    // pt-BR kept: shared fixture data asserted by tests/model (sampleProject)
     expect(screen.getAllByRole('option')[0]!.textContent).toContain('tipo');
   });
 
-  it('resposta: usa a âncora da conversa e não oferece a própria conversa', async () => {
+  it('reply: uses the thread anchor and does not offer the thread itself', async () => {
     const harness = createHarness(sampleProject());
     await harness.context.session.threads.create(
       sampleThread({
@@ -56,7 +57,7 @@ describe('Composer › o @', () => {
             id: 'r1m',
             author: { kind: 'human', name: 'M', email: 'm@x.com' },
             at: '2026-09-01T10:00:00.000Z',
-            text: 'Conversa própria',
+            text: 'Own thread',
             proposal: null,
           },
         ],
@@ -71,51 +72,55 @@ describe('Composer › o @', () => {
     expect(document.querySelector('.cite-picker-group')?.textContent).toBe(
       t('citation.group.here'),
     );
-    expect(screen.queryByRole('option', { name: /Conversa própria/ })).toBeNull();
+    expect(screen.queryByRole('option', { name: /Own thread/ })).toBeNull();
   });
 });
 
-describe('Composer › rascunho e envio', () => {
-  it('o rascunho guardado volta com os chips', async () => {
+describe('Composer › draft and sending', () => {
+  it('the stored draft comes back with the chips', async () => {
     const harness = createHarness(sampleProject());
     const url = citationUrl(
-      harness.context.session.storage.folderName ?? 'projeto',
+      harness.context.session.storage.folderName ?? 'project',
       harness.project(),
       [],
       { kind: 'marking', id: 'M2' },
     )!;
-    setDraft(harness.ui, replyDraftKey('r9'), `olha [Maçaneta](${url}) aqui`);
+    // pt-BR kept: shared fixture data asserted by tests/model (sampleProject)
+    setDraft(harness.ui, replyDraftKey('r9'), `look [Maçaneta](${url}) here`);
     render(
       <EditorContext.Provider value={harness.context}>
         <Composer target={{ kind: 'reply', threadId: 'r9' }} />
       </EditorContext.Provider>,
     );
     const editor = screen.getByRole('textbox');
+    // pt-BR kept: shared fixture data asserted by tests/model (sampleProject)
     expect(chipsOf(editor).map((c) => c.textContent)).toEqual(['Maçaneta']);
   });
 
-  it('enviar grava o markdown com a citação e limpa o campo', async () => {
+  it('sending saves the markdown with the citation and clears the field', async () => {
     const harness = mount({ kind: 'new', anchor: { kind: 'marking', id: 'M1' } });
     const editor = screen.getByRole('textbox');
-    typeIn(editor, 'veja @maç');
+    // pt-BR kept: shared fixture data asserted by tests/model (sampleProject)
+    typeIn(editor, 'see @maç');
     keyDown(editor, 'Enter');
     keyDown(editor, 'Enter', { ctrlKey: true });
     await waitFor(() =>
       expect(harness.context.session.threads.list.value).toHaveLength(1),
     );
     const text = harness.context.session.threads.list.value[0]!.messages[0]!.text;
-    expect(text).toMatch(/^veja \[Maçaneta\]\(mapping:\/\/[^)]+\)$/);
+    // pt-BR kept: shared fixture data asserted by tests/model (sampleProject)
+    expect(text).toMatch(/^see \[Maçaneta\]\(mapping:\/\/[^)]+\)$/);
     await waitFor(() => expect(harness.ui.threadDrafts.value.size).toBe(0));
   });
 });
 
-describe('Composer › ponte', () => {
-  it('registra-se quando o campo está à mostra', () => {
+describe('Composer › bridge', () => {
+  it('registers itself when the field is shown', () => {
     mount({ kind: 'new', anchor: { kind: 'marking', id: 'M1' } });
     expect(composerOpen.value).toBe(true);
   });
 
-  it('cópia somente leitura ou sem identidade: nada registrado', () => {
+  it('read-only copy or no identity: nothing registered', () => {
     mount({ kind: 'new', anchor: { kind: 'marking', id: 'M1' } }, true);
     expect(screen.queryByRole('textbox')).toBeNull();
     expect(composerOpen.value).toBe(false);
@@ -127,8 +132,8 @@ describe('Composer › ponte', () => {
   });
 });
 
-describe('Composer › foco', () => {
-  it('reposicionar o rascunho (nova âncora) devolve o foco ao compositor', () => {
+describe('Composer › focus', () => {
+  it('repositioning the draft (new anchor) returns the focus to the composer', () => {
     const harness = createHarness(sampleProject());
     const view = (anchor: ThreadAnchor) => (
       <EditorContext.Provider value={harness.context}>

@@ -1,20 +1,20 @@
 import { reportError } from '../utils/report';
 
-/** `true` se o navegador consegue compartilhar este arquivo pela Web Share API. */
+/** `true` if the browser can share this file through the Web Share API. */
 export function canShareFile(file: File): boolean {
   try {
     return (
       typeof navigator.share === 'function' && !!navigator.canShare?.({ files: [file] })
     );
   } catch {
-    // Detecção de recurso: `canShare` pode lançar com tipos de arquivo não suportados.
+    // Feature detection: `canShare` can throw with unsupported file types.
     return false;
   }
 }
 
 export type ShareResult = 'shared' | 'cancelled' | 'failed';
 
-/** Abre a folha de compartilhamento do sistema com o arquivo. */
+/** Opens the system share sheet with the file. */
 export async function shareFile(file: File, title: string): Promise<ShareResult> {
   try {
     await navigator.share({ files: [file], title });
@@ -47,8 +47,9 @@ function saveFilePicker(): SaveFilePicker | null {
 }
 
 /**
- * `showSaveFilePicker` existe (Chrome e Edge) e a página não está num iframe (onde ele é
- * bloqueado). Sem ele, a exportação usa `downloadFile`, que não sabe se a pessoa salvou.
+ * `showSaveFilePicker` exists (Chrome and Edge) and the page is not in an iframe (where it is
+ * blocked). Without it, the export uses `downloadFile`, which does not know whether the person
+ * saved.
  */
 export function canSaveWithPicker(): boolean {
   try {
@@ -61,10 +62,10 @@ export function canSaveWithPicker(): boolean {
 export type SaveResult = 'saved' | 'cancelled' | 'failed';
 
 /**
- * Abre o "Salvar como" do sistema (nome sugerido, tipo zip) e grava o arquivo pelo
- * handle. `saved` só depois do `close()`, quando o arquivo está no disco; `cancelled`
- * se a pessoa fechou o seletor. Precisa ser chamada direto do clique (o seletor exige
- * um gesto do usuário), antes de qualquer `await`.
+ * Opens the system "Save as" (suggested name, zip type) and writes the file through the
+ * handle. `saved` only after `close()`, when the file is on disk; `cancelled`
+ * if the person closed the picker. It must be called straight from the click (the picker requires
+ * a user gesture), before any `await`.
  */
 export async function saveFileWithPicker(file: File): Promise<SaveResult> {
   const picker = saveFilePicker();
@@ -87,14 +88,14 @@ export async function saveFileWithPicker(file: File): Promise<SaveResult> {
     await writable.close();
     return 'saved';
   } catch (e) {
-    // Descarta a gravação incompleta: o arquivo no disco fica como estava.
+    // Discards the incomplete write: the file on disk stays as it was.
     await writable?.abort().catch(() => undefined);
     reportError('export.saveWrite', e);
     return 'failed';
   }
 }
 
-/** Baixa o arquivo pelo navegador (link temporário com `download`). */
+/** Downloads the file through the browser (temporary link with `download`). */
 export function downloadFile(file: File): void {
   const url = URL.createObjectURL(file);
   const link = document.createElement('a');
@@ -104,6 +105,6 @@ export function downloadFile(file: File): void {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  // Dá tempo para o navegador começar o download antes de liberar a URL.
+  // Gives the browser time to start the download before releasing the URL.
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

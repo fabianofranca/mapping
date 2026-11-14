@@ -13,10 +13,10 @@ import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { UpdateBanner } from '../../src/ui/UpdateBanner';
 
-// Fase 1 da #954 (item 41): atualizar não recarrega a página se a gravação do projeto falhou.
+// Phase 1 of #954 (item 41): updating does not reload the page if saving the project failed.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   updateReady.value = true;
   applyUpdate.mockReset();
 });
@@ -38,21 +38,21 @@ async function clickUpdate() {
 }
 
 describe('UpdateBanner', () => {
-  it('gravou: recarrega com a versão nova', async () => {
+  it('saved: reloads with the new version', async () => {
     openWithFlush({ ok: true });
     render(<UpdateBanner />);
     await clickUpdate();
     expect(applyUpdate).toHaveBeenCalledTimes(1);
   });
 
-  it('sem projeto aberto: recarrega', async () => {
+  it('no project open: reloads', async () => {
     render(<UpdateBanner />);
     await clickUpdate();
     expect(applyUpdate).toHaveBeenCalledTimes(1);
   });
 
-  it('a gravação falhou: não recarrega e o aviso diz que não salvou', async () => {
-    openWithFlush({ ok: false, error: new Error('sem permissão') });
+  it('saving failed: does not reload and the notice says it did not save', async () => {
+    openWithFlush({ ok: false, error: new Error('no permission') });
     render(<UpdateBanner />);
     await clickUpdate();
     expect(applyUpdate).not.toHaveBeenCalled();
@@ -60,7 +60,7 @@ describe('UpdateBanner', () => {
     expect(screen.getByRole('button', { name: t('pwa.update') })).toBeTruthy();
   });
 
-  it('uma nova tentativa que grava recarrega', async () => {
+  it('a new attempt that saves reloads', async () => {
     const flush = vi
       .fn()
       .mockResolvedValueOnce({ ok: false, error: new Error('x') })

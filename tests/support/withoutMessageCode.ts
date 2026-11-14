@@ -1,6 +1,6 @@
 /**
- * Sem o código de mensagem da interface (`messageCode` e `messageParams`): os testes do modelo
- * comparam o texto (`message`), que não mudou (etapa #1263, decisão 8).
+ * Without the interface message code (`messageCode` and `messageParams`): the model tests
+ * compare the text (`message`), which did not change (stage #1263, decision 8).
  */
 export function withoutMessageCode<T extends object>(
   item: T,

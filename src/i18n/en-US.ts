@@ -1,10 +1,13 @@
-import type { Dictionary } from './pt-BR';
 import { catalogEnUS } from './catalog';
 import { modelMessagesEnUS } from './modelMessages';
 import { reviewEnUS } from './review';
 import { perspectivesEnUS } from './perspectives';
 
-export const enUS: Dictionary = {
+// en-US is the base dictionary: it defines the keys (`TranslationKey`) and the comments here are the
+// context for whoever translates. `pt-BR.ts` is typed against it (`Dictionary`) and holds only the
+// values, with the same keys and the same {parameters}. The modules below (`review`, `perspectives`,
+// `catalog`, `modelMessages`) follow the same rule and enter the dictionary through a spread.
+export const enUS = {
   ...reviewEnUS,
   ...perspectivesEnUS,
   ...catalogEnUS,
@@ -40,7 +43,7 @@ export const enUS: Dictionary = {
   'home.newProject': 'New project',
   'home.openFolder': 'Open folder',
   'home.openZip': 'Open zip',
-  'home.guide': 'Interactive guide (in Portuguese)',
+  'home.guide': 'Interactive guide',
   'home.recentProjects': 'Recent projects',
   'home.noRecentProjects':
     'No projects yet. Projects on this device and the folders you open show up here.',
@@ -575,11 +578,11 @@ export const enUS: Dictionary = {
   'help.search': 'Search help',
   'help.guide.title': 'Interactive guide',
   'help.guide.intro':
-    'A 14-step tour of the example project: screens, markings, layers, typed annotations, containers with Material 3, reviewing a proposal and perspectives. It works offline and opens in a new tab. The guide is in Portuguese only.',
+    'A 14-step tour of the example project: screens, markings, layers, typed annotations, containers with Material 3, reviewing a proposal and perspectives. It works offline and opens in a new tab. The guide is in English or Portuguese, following the app’s language.',
   'help.guide.example':
-    'To see the same project in the app, download examples/exemplo-completo.zip from the repository (github.com/fabianofranca/mapping) and use Open zip on the home screen (it creates a copy on this device and does not touch any folder).',
+    'To see the same project in the app, download examples/full-example.zip from the repository (github.com/fabianofranca/mapping) and use Open zip on the home screen (it creates a copy on this device and does not touch any folder).',
   'help.guide.fileProtocol':
-    "Opened as a standalone file, the app cannot find the guide: it lives in guia/index.html, next to index.html, in the build's dist/ folder and in the published version.",
+    "Opened as a standalone file, the app cannot find the guide: it lives in guide/index.html, next to index.html, in the build's dist/ folder and in the published version.",
   'help.guide.open': 'Open the interactive guide',
   'help.noResults': 'Nothing found for "{query}".',
   'help.shortcuts.title': 'Keyboard shortcuts',
@@ -840,7 +843,7 @@ export const enUS: Dictionary = {
   'help.specs.downloadsHint':
     'Download the examples and the format’s JSON Schema. The JSON Schema only validates the structure; the other rules are checked by the app when applying.',
   'help.specs.download.sdui': 'Download SDUI example (sdui.json)',
-  'help.specs.download.data-model': 'Download Data model example (modelo-de-dados.json)',
+  'help.specs.download.data-model': 'Download Data model example (data-model.json)',
   'help.specs.download.schema': 'Download JSON Schema (spec.schema.json)',
   'help.specs.applyHint':
     'To use an example: open a project, choose Specializations (a button on the main bar) → Apply and pick the downloaded file.',
@@ -966,7 +969,7 @@ export const enUS: Dictionary = {
   'issue.component-overflow': 'The component does not fit',
   'list.incomplete': 'Incomplete only',
   'list.emptyIncomplete': 'No incomplete annotations in the visible layers.',
-  // Detalhes (R5)
+  // Details (R5)
   'marking.section': 'Marking',
   'marking.position': 'Position',
   'marking.size': 'Size',
@@ -1103,6 +1106,7 @@ export const enUS: Dictionary = {
     'Schema 11: the file address left the project and was discarded from {platforms} ({templates}). The repository now belongs to the specialization: rewrite the specialization with repo (formatVersion 5) and update it in the project.',
   'migration.v13.discardedInherit':
     'Schema 13: annotation inheritance was removed from the format. {count} annotation(s) also applied to the descendant markings and now apply only to their own marking: {markings}. No annotation was deleted.',
+  'open.repairLog': '{count} repair(s): {repairs}',
   'repos.title': 'Repositories',
   'repos.code.title': 'Code',
   'repos.docs.title': 'Documents',
@@ -1363,3 +1367,6 @@ export const enUS: Dictionary = {
   'shortcuts.key.drag': 'drag',
   'shortcuts.key.doubleClick': 'double click',
 };
+
+/** Every dictionary has exactly the keys of the en-US one. */
+export type Dictionary = Record<keyof typeof enUS, string>;

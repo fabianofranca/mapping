@@ -1,15 +1,15 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-// Código-fonte do servidor (`mcp/**/*.ts`, recursivo) para as guardas estáticas: uma pasta nova
-// dentro de `mcp/` (como `mcp/image/`) entra sozinha.
+// Server source code (`mcp/**/*.ts`, recursive) for the static guards: a new folder
+// inside `mcp/` (such as `mcp/image/`) is picked up on its own.
 
 export interface McpSource {
-  /** Caminho relativo a `mcp/`, com `/` (`paths.ts`, `image/codecs.ts`). */
+  /** Path relative to `mcp/`, with `/` (`paths.ts`, `image/codecs.ts`). */
   readonly file: string;
-  /** Texto do arquivo. */
+  /** Text of the file. */
   readonly text: string;
-  /** O texto sem comentários (blocos, linhas inteiras e o fim de linha depois de ` // `). */
+  /** The text without comments (blocks, whole lines and the end of line after ` // `). */
   readonly code: string;
 }
 

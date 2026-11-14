@@ -1,13 +1,13 @@
-# Impacto nos agentes — 2026-11-07 (épico `epic/impacto-nos-agentes`)
+# Impact on agents — 2026-11-07 (épico `epic/impacto-nos-agentes`)
 
 ## Pendências
 
-Nenhuma (impacto `nenhum`).
+None (impact `nenhum`).
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: nenhuma fase teve impacto no DS (só documentação, testes e textos do MCP). O artefato não foi aberto.
+Nothing to write to the **Mapping** artifact: no phase had DS impact (only documentation, tests and MCP texts). The artifact was not opened.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

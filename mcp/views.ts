@@ -49,12 +49,12 @@ import {
 import { resolveProjectFile, type Roots } from './paths';
 import type { LoadedProject } from './projects';
 
-// Visões em JSON das tools de leitura. Tudo o que devolvem traz as referências `mapping://`
-// dos itens, para o agente passar de uma tool à outra sem conhecer ids.
+// JSON views of the read tools. Everything they return carries the `mapping://` references
+// of the items, so the agent can pass from one tool to another without knowing ids.
 
 type Json = Record<string, unknown>;
 
-/** Máximo de pendências e de filhas listadas por resposta (o total vem sempre). */
+/** Maximum number of pending items and children listed per response (the total always comes). */
 const LIST_LIMIT = 50;
 
 function rectOf(m: Marking): Json {
@@ -79,8 +79,8 @@ function layerView(project: Project, layer: Layer): Json {
 }
 
 /**
- * Quando a marcação desenha um componente (primeira anotação tipada própria com componente
- * no catálogo): `component` (`specId/typeId`) e `minSize`, o tamanho mínimo do retângulo.
+ * When the marking draws a component (first own typed annotation with a component
+ * in the catalog): `component` (`specId/typeId`) and `minSize`, the minimum size of the rectangle.
  */
 function componentInfo(refs: Refs, marking: Marking): Json {
   const drawn = markingComponent(refs.project, refs.loaded.catalog, marking.id);
@@ -93,8 +93,8 @@ function componentInfo(refs: Refs, marking: Marking): Json {
 }
 
 /**
- * Modo do desenho que vale num espaço (`containerId` nulo = o canvas): o do container, senão o
- * do projeto, senão o primeiro modo que as especializações aplicadas declaram; `null` sem modo.
+ * Drawing mode that applies in a space (`containerId` null = the canvas): the container's, else the
+ * project's, else the first mode the applied specializations declare; `null` with no mode.
  */
 export function effectiveModeOf(p: Project, containerId: string | null): string | null {
   const fixed = effectiveDrawingMode(p, containerId);
@@ -103,9 +103,9 @@ export function effectiveModeOf(p: Project, containerId: string | null): string 
 }
 
 /**
- * Posição de cada marcação entre as irmãs (mesmo pai e mesmo espaço, na ordem do array),
- * montada uma vez por versão do projeto: uma lista com centenas de linhas não varre as irmãs
- * a cada uma.
+ * Position of each marking among its siblings (same parent and same space, in array order),
+ * built once per project version: a list with hundreds of rows does not scan the siblings
+ * for each one.
  */
 const siblingIndexes = memoByProject((p: Project): ReadonlyMap<string, number> => {
   const counters = new Map<string, number>();
@@ -119,7 +119,7 @@ const siblingIndexes = memoByProject((p: Project): ReadonlyMap<string, number> =
   return indexes;
 });
 
-/** Marcação numa linha compacta (listas e filhas). */
+/** Marking in a compact row (lists and children). */
 export function markingRow(refs: Refs, marking: Marking): Json {
   const index = projectIndex(refs.project);
   const own = index.annotationsByMarking.get(marking.id) ?? [];
@@ -134,7 +134,7 @@ export function markingRow(refs: Refs, marking: Marking): Json {
     floating: marking.floating,
     parent: marking.parentId === null ? null : refs.ref('m', marking.parentId),
     rect: rectOf(marking),
-    // Posição entre as irmãs (0 = primeira, desenhada por baixo).
+    // Position among the siblings (0 = first, drawn at the bottom).
     order: siblingIndexes(refs.project).get(marking.id) ?? 0,
     ...componentInfo(refs, marking),
     locked: marking.locked,
@@ -170,7 +170,7 @@ function refTarget(refs: Refs, target: ResolvedRef): Json {
   }
 }
 
-/** `row` (0-based) e `column` de uma referência; `null` nos dois quando ela está num campo e não numa célula. */
+/** `row` (0-based) and `column` of a reference; `null` in both when it is in a field and not in a cell. */
 function refCell(link: Pick<AnnotationRef, 'rowIndex' | 'column'>): {
   row: number | null;
   column: string | null;
@@ -178,7 +178,7 @@ function refCell(link: Pick<AnnotationRef, 'rowIndex' | 'column'>): {
   return { row: link.rowIndex ?? null, column: link.column ?? null };
 }
 
-/** Quem aponta para a anotação: uma entrada por origem (na ordem do projeto), com os `fields` que apontam. */
+/** What points to the annotation: one entry per source (in project order), with the `fields` that point. */
 function backlinksView(refs: Refs, annotation: Annotation): Json[] {
   const p = refs.project;
   const bySource = new Map<string, { source: Annotation; fields: Json[] }>();
@@ -200,13 +200,13 @@ function backlinksView(refs: Refs, annotation: Annotation): Json[] {
   }));
 }
 
-/** A anotação com tudo o que a descreve: conteúdo, vínculos, referências de saída, backlinks e pendências. */
+/** The annotation with everything that describes it: content, links, outgoing references, backlinks and pending items. */
 export function annotationView(
   refs: Refs,
   annotation: Annotation,
   options: {
     readonly withMarking?: boolean;
-    /** `code` do tipo (`annotationCode`, já com o `path` resolvido); sem ele, a anotação não traz `code`. */
+    /** `code` of the type (`annotationCode`, with the `path` already resolved); without it, the annotation carries no `code`. */
     readonly code?: Json | null;
   } = {},
 ): Json {
@@ -217,7 +217,7 @@ export function annotationView(
 
   const outgoing = refsOf(p, annotation).map((link) => {
     const { ref } = link;
-    // Numa célula de coluna `ref`, o campo é `tabela[2].coluna`.
+    // In a cell of a `ref` column, the field is `table[2].column`.
     const field = refPathText(link);
     const target = resolveRef(p, ref);
     const cell = refCell(link);
@@ -265,9 +265,9 @@ export function annotationView(
 }
 
 /**
- * Os filhos de um dono com `childRoles` agrupados pelo papel (na ordem dos papéis), mais os que
- * ficaram sem papel ou com um papel que o dono não oferece (`unassigned`). `null` num dono sem
- * papéis: ali o agente lê `linked`. É o resolvedor do modelo, não uma lista crua.
+ * The children of an owner with `childRoles` grouped by role (in role order), plus those that
+ * have no role or a role the owner does not offer (`unassigned`). `null` for an owner without
+ * roles: there the agent reads `linked`. It is the model's resolver, not a raw list.
  */
 function linkedByRoleView(refs: Refs, owner: Annotation): Json | null {
   const grouped = linkedByRole(refs.project, owner);
@@ -292,7 +292,7 @@ interface LinkNode {
   readonly linked?: LinkNode[];
 }
 
-/** Árvore de vínculos das anotações da marcação: dona → vinculadas (da mesma camada ou de outras). */
+/** Link tree of the marking's annotations: owner -> linked (from the same layer or others). */
 function linkTree(refs: Refs, own: readonly Annotation[]): LinkNode[] | null {
   const p = refs.project;
   const index = projectIndex(p);
@@ -314,7 +314,7 @@ function linkTree(refs: Refs, own: readonly Annotation[]): LinkNode[] | null {
   return own.filter((a) => a.parentAnnotationId === null).map(node);
 }
 
-/** A âncora da marcação com `to` como referência (os campos que ela não diz ficam ausentes); `null` sem âncora. */
+/** The marking's anchor with `to` as a reference (the fields it does not state are absent); `null` without an anchor. */
 function anchorView(refs: Refs, marking: Marking): Json | null {
   const { anchor } = marking;
   if (anchor == null) return null;
@@ -326,7 +326,7 @@ function anchorView(refs: Refs, marking: Marking): Json | null {
   };
 }
 
-/** Tudo sobre a marcação (`get_marking`). Com `platform`, o `code` mostra só essa plataforma. */
+/** Everything about the marking (`get_marking`). With `platform`, `code` shows only that platform. */
 export async function markingView(
   ctx: CodeContext,
   marking: Marking,
@@ -374,7 +374,7 @@ export async function markingView(
     path: [
       image
         ? { ref: refs.ref('i', image.id), name: refs.imageLabel(image.id) }
-        : // Marcação do canvas: o segmento do espaço é "Canvas", sem referência.
+        : // Canvas marking: the space segment is "Canvas", with no reference.
           { ref: null, name: refs.imageLabel(null) },
       ...[...ancestors, marking].map((m) => ({
         ref: refs.ref('m', m.id),
@@ -386,8 +386,8 @@ export async function markingView(
     floating: marking.floating,
     ...rootInfo(refs, marking.id),
     rect: rectOf(marking),
-    // Posição entre as irmãs (mesmo pai e mesmo espaço) e quantas são: `index` 0 = a primeira,
-    // desenhada por baixo.
+    // Position among the siblings (same parent and same space) and how many there are: `index` 0 = the first,
+    // drawn at the bottom.
     order: siblingPosition(p, marking.id),
     ...componentInfo(refs, marking),
     lock: {
@@ -397,13 +397,13 @@ export async function markingView(
     },
     needsReview: marking.needsReview,
     parent: marking.parentId === null ? null : refs.ref('m', marking.parentId),
-    // Âncora (v20): a marcação a que esta está ligada e as que estão ligadas a ela.
+    // Anchor (v20): the marking this one is attached to and those attached to it.
     anchor: anchorView(refs, marking),
     anchoredBy: (index.anchoredBy.get(marking.id) ?? []).map((m) => refs.ref('m', m.id)),
     children: childRows,
     ...(children.length > LIST_LIMIT ? { childrenTotal: children.length } : {}),
-    // Quem tem esta marcação como pai (derivado da geometria): marcações do mesmo espaço e,
-    // numa marcação do canvas, os containers que ela contém.
+    // Who has this marking as parent (derived from the geometry): markings in the same space and,
+    // on a canvas marking, the containers it contains.
     members: {
       markings: childRows,
       containers: memberContainers.slice(0, LIST_LIMIT).map((c) => ({
@@ -430,7 +430,7 @@ export async function markingView(
   };
 }
 
-/** A outra ponta de uma seta: referência, nome e caminho legível. */
+/** The other end of an arrow: reference, name and readable path. */
 function arrowEnd(refs: Refs, markingId: string): Json {
   const exists = projectIndex(refs.project).markings.has(markingId);
   return {
@@ -440,7 +440,7 @@ function arrowEnd(refs: Refs, markingId: string): Json {
   };
 }
 
-/** Seta numa linha, vista de uma das pontas: `other` diz qual é a outra (`to` nas que saem). */
+/** Arrow in a row, seen from one of its ends: `other` says which is the other (`to` on outgoing ones). */
 function arrowRow(refs: Refs, arrow: Arrow, other: 'from' | 'to'): Json {
   return {
     ref: refs.ref('m', arrow.id),
@@ -453,8 +453,8 @@ function arrowRow(refs: Refs, arrow: Arrow, other: 'from' | 'to'): Json {
 }
 
 /**
- * Tudo sobre a seta (`get_marking` com o id dela): `kind: "arrow"`, as duas pontas, estilo,
- * trava e as anotações por camada, como numa marcação. Não traz `points` (a rota é da pessoa).
+ * Everything about the arrow (`get_marking` with its id): `kind: "arrow"`, the two ends, style,
+ * lock and the annotations by layer, as on a marking. It does not carry `points` (the route is the person's).
  */
 export async function arrowView(
   ctx: CodeContext,
@@ -508,25 +508,25 @@ function containerSummary(refs: Refs, image: ProjectContainer): Json {
     ref: refs.ref('i', image.id),
     name: image.name,
     file: image.file,
-    // Container só com fundo: `file` é `null` e `background` traz a cor.
+    // Container with only a background: `file` is `null` and `background` carries the color.
     background: image.background,
     width: image.width,
     height: image.height,
     locked: image.locked,
-    // Modo do desenho que o container fixa (`null` = segue o projeto) e o que vale nele.
+    // Drawing mode the container fixes (`null` = follows the project) and the one that applies in it.
     drawingMode: image.drawingMode ?? null,
     effectiveDrawingMode: effectiveModeOf(refs.project, image.id),
-    // Direção de leitura que o container fixa (`null` = segue o projeto) e a que vale nele.
+    // Reading direction the container fixes (`null` = follows the project) and the one that applies in it.
     direction: image.direction ?? null,
     effectiveDirection: effectiveDirection(refs.project, image.id),
-    // Pixels da imagem por unidade do componente (1 = o padrão, também quando ausente).
+    // Image pixels per component unit (1 = the default, also when absent).
     density: image.density ?? 1,
-    // Marcação do canvas que contém o container (derivado da geometria), ou `null`.
+    // Canvas marking that contains the container (derived from the geometry), or `null`.
     parent: image.parentId === null ? null : refs.ref('m', image.parentId),
   };
 }
 
-/** Dados do container (`get_container`); confere se o arquivo existe dentro das raízes. */
+/** Container data (`get_container`); checks that the file exists inside the roots. */
 export async function containerView(
   roots: Roots,
   refs: Refs,
@@ -543,7 +543,7 @@ export async function containerView(
   );
   return {
     ...containerSummary(refs, image),
-    // Container sem arquivo não tem arquivo: nada a conferir.
+    // A container without a file has no file: nothing to check.
     exists: image.file === null ? true : absolute !== null,
     path: absolute,
     placement: image.placement,
@@ -555,7 +555,7 @@ export async function containerView(
   };
 }
 
-/** Dados da anotação (`get_annotation`). */
+/** Annotation data (`get_annotation`). */
 export async function annotationDetail(
   ctx: CodeContext,
   annotation: Annotation,
@@ -566,7 +566,7 @@ export async function annotationDetail(
   });
 }
 
-/** Linha de `list_projects`. */
+/** Row of `list_projects`. */
 export function projectSummary(loaded: LoadedProject): Json {
   const { location, project } = loaded;
   return {
@@ -595,7 +595,7 @@ export function projectSummary(loaded: LoadedProject): Json {
   };
 }
 
-/** Resumo do projeto (`get_project`). */
+/** Project summary (`get_project`). */
 export function projectDetail(refs: Refs): Json {
   const loaded = refs.loaded;
   const p = refs.project;
@@ -649,9 +649,9 @@ export function projectDetail(refs: Refs): Json {
   return {
     ...projectSummary(loaded),
     createdAt: p.project.createdAt,
-    // Modo do desenho do projeto (`null` = o primeiro modo de cada especialização).
+    // The project's drawing mode (`null` = the first mode of each specialization).
     drawingMode: p.drawingMode ?? null,
-    // Direção de leitura do projeto: `ltr` quando nenhuma está gravada (é o que vale).
+    // The project's reading direction: `ltr` when none is saved (it is what applies).
     direction: p.direction ?? 'ltr',
     ...(loaded.migratedFrom !== null ? { migratedFrom: loaded.migratedFrom } : {}),
     containers: p.containers.map((image) => ({
@@ -696,12 +696,12 @@ export function projectDetail(refs: Refs): Json {
   };
 }
 
-/** Uma especialização aplicada, com o conteúdo completo (`get_specialization`). */
+/** An applied specialization, with the full content (`get_specialization`). */
 export function specializationView(refs: Refs, specId: string): Json {
   const p = refs.project;
   const applied = projectIndex(p).specializations.get(specId);
   if (!applied) {
-    throw new ToolError('not-found', `especialização não aplicada: ${specId}`, {
+    throw new ToolError('not-found', `specialization not applied: ${specId}`, {
       applied: p.specializations.map((s) => s.id),
     });
   }
@@ -710,7 +710,7 @@ export function specializationView(refs: Refs, specId: string): Json {
   if (!spec) {
     throw new ToolError(
       'spec-unavailable',
-      `a cópia da especialização está ${warning?.problem === 'missing' ? 'ausente' : 'inválida'}: ${applied.file}`,
+      `the specialization copy is ${warning?.problem === 'missing' ? 'missing' : 'invalid'}: ${applied.file}`,
       { specId, file: applied.file, ...(warning ? { warning } : {}) },
     );
   }

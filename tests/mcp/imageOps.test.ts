@@ -25,7 +25,7 @@ function solid(
 }
 
 describe('raster', () => {
-  it('clampRect limita às bordas e devolve null fora da imagem', () => {
+  it('clampRect limits to the edges and returns null outside the image', () => {
     const bounds = { width: 100, height: 50 };
     expect(clampRect({ x: -10, y: -5, width: 30, height: 20 }, bounds)).toEqual({
       x: 0,
@@ -48,13 +48,13 @@ describe('raster', () => {
     expect(clampRect({ x: 100, y: 0, width: 10, height: 10 }, bounds)).toBeNull();
   });
 
-  it('fitSize reduz o lado maior, nunca amplia e nunca zera um lado', () => {
+  it('fitSize shrinks the longer side, never enlarges and never zeroes a side', () => {
     expect(fitSize(3000, 2000, 1500)).toEqual({ width: 1500, height: 1000, scale: 0.5 });
     expect(fitSize(100, 50, 1568)).toEqual({ width: 100, height: 50, scale: 1 });
     expect(fitSize(4000, 2, 100)).toMatchObject({ width: 100, height: 1 });
   });
 
-  it('crop copia exatamente a região', () => {
+  it('crop copies exactly the region', () => {
     const source = patternRaster(20, 10, []);
     const cut = crop(source, { x: 5, y: 3, width: 4, height: 2 });
     expect([cut.width, cut.height]).toEqual([4, 2]);
@@ -62,7 +62,7 @@ describe('raster', () => {
     expect(pixel(cut, 3, 1)).toEqual(pixel(source, 8, 4));
   });
 
-  it('resize faz a média da área (cor sólida continua sólida; 2×2 → 1×1 é a média)', () => {
+  it('resize averages the area (a solid color stays solid; 2×2 → 1×1 is the average)', () => {
     const flat = resize(solid(37, 23, [10, 200, 30, 255]), 11, 7);
     expect([flat.width, flat.height]).toEqual([11, 7]);
     for (const [x, y] of [
@@ -79,36 +79,36 @@ describe('raster', () => {
     expect(pixel(resize(four, 1, 1), 0, 0)).toEqual([100, 100, 100, 255]);
   });
 
-  it('resize pondera a cor pela opacidade (transparente não escurece a borda)', () => {
+  it('resize weights the color by opacity (transparent does not darken the edge)', () => {
     const two = createRaster(2, 1);
     two.data.set([255, 0, 0, 255, 0, 0, 0, 0]);
     const one = resize(two, 1, 1);
-    // Metade vermelho opaco, metade transparente: vermelho com ~50% de opacidade.
+    // Half opaque red, half transparent: red with ~50% opacity.
     expect(pixel(one, 0, 0)).toEqual([255, 0, 0, 128]);
   });
 
-  it('resize com razões não inteiras cobre a imagem toda', () => {
+  it('resize with non-integer ratios covers the whole image', () => {
     const r = resize(patternRaster(100, 100, []), 33, 33);
     expect(pixel(r, 0, 0)[0]).toBeLessThan(5);
     expect(pixel(r, 32, 0)[0]).toBeGreaterThan(250);
     expect(pixel(r, 0, 32)[1]).toBeGreaterThan(250);
   });
 
-  it('outlineRect desenha a linha por dentro, com halo escuro, e recorta nas bordas', () => {
+  it('outlineRect draws the line inside, with a dark halo, and clips at the edges', () => {
     const r = solid(20, 20, [255, 255, 255, 255]);
     outlineRect(r, { x: 5, y: 5, width: 10, height: 10 }, [255, 0, 0], 2);
     expect(pixel(r, 5, 10)).toEqual([255, 0, 0, 255]);
     expect(pixel(r, 6, 10)).toEqual([255, 0, 0, 255]);
-    expect(pixel(r, 4, 10)).toEqual([0, 0, 0, 255]); // halo por fora
-    expect(pixel(r, 7, 10)).toEqual([0, 0, 0, 255]); // halo por dentro
+    expect(pixel(r, 4, 10)).toEqual([0, 0, 0, 255]); // halo outside
+    expect(pixel(r, 7, 10)).toEqual([0, 0, 0, 255]); // halo inside
     expect(pixel(r, 10, 10)).toEqual([255, 255, 255, 255]); // miolo intacto
-    // Contorno que passa das bordas não estoura o raster.
+    // An outline that goes past the edges does not overflow the raster.
     expect(() =>
       outlineRect(r, { x: -3, y: -3, width: 40, height: 40 }, [0, 255, 0]),
     ).not.toThrow();
   });
 
-  it('flattenOnWhite funde a transparência sobre branco', () => {
+  it('flattenOnWhite blends the transparency over white', () => {
     const r = createRaster(1, 1);
     r.data.set([0, 0, 0, 0]);
     expect(pixel(flattenOnWhite(r), 0, 0)).toEqual([255, 255, 255, 255]);
@@ -116,7 +116,7 @@ describe('raster', () => {
 });
 
 describe('compose', () => {
-  it('não altera o raster de origem ao desenhar contornos', () => {
+  it('does not change the source raster when drawing outlines', () => {
     const source = solid(50, 50, [9, 9, 9, 255]);
     const before = new Uint8ClampedArray(source.data);
     compose(
@@ -128,7 +128,7 @@ describe('compose', () => {
     expect(source.data).toEqual(before);
   });
 
-  it('mapeia os contornos para a escala da saída', () => {
+  it('maps the outlines to the output scale', () => {
     const source = solid(400, 200, [9, 9, 9, 255]);
     const out = compose(
       source,
@@ -141,7 +141,7 @@ describe('compose', () => {
     expect(out.outlines[0]!.output).toEqual({ x: 0, y: 0, width: 100, height: 50 });
   });
 
-  it('recusa região fora da imagem', () => {
+  it('refuses a region outside the image', () => {
     expect(() =>
       compose(
         solid(10, 10, [0, 0, 0, 255]),
@@ -153,8 +153,8 @@ describe('compose', () => {
   });
 });
 
-describe('formatos e codecs', () => {
-  it('detecta o formato pelos primeiros bytes', async () => {
+describe('formats and codecs', () => {
+  it('detects the format by the first bytes', async () => {
     const raster = patternRaster(30, 20, []);
     expect(detectFormat(await encodeImage(raster, 'png'))).toBe('png');
     expect(detectFormat(await encodeImage(raster, 'jpeg'))).toBe('jpeg');
@@ -164,7 +164,7 @@ describe('formatos e codecs', () => {
   });
 
   it.each(['png', 'jpeg', 'webp'] as const)(
-    'lê as dimensões de %s pelo cabeçalho, sem decodificar',
+    'reads the dimensions of %s from the header, without decoding',
     async (format) => {
       for (const [w, h] of [
         [30, 20],
@@ -177,13 +177,13 @@ describe('formatos e codecs', () => {
     },
   );
 
-  it('cabeçalhos truncados ou inválidos viram null', () => {
+  it('truncated or invalid headers become null', () => {
     expect(readSize(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), 'png')).toBeNull();
     expect(readSize(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), 'jpeg')).toBeNull();
     expect(readSize(new Uint8Array(40), 'webp')).toBeNull();
   });
 
-  it('PNG e WebP sem perdas preservam os pixels (inclusive a transparência)', async () => {
+  it('lossless PNG and WebP preserve the pixels (including the transparency)', async () => {
     const r = patternRaster(16, 16, []);
     r.data.set([12, 34, 56, 128], 0);
     const png = (await decodeImage(await encodeImage(r, 'png'))).raster;
@@ -195,16 +195,16 @@ describe('formatos e codecs', () => {
     expect(pixel(webp, 0, 0)[3]).toBe(128);
   });
 
-  it('JPEG perde pouco e funde a transparência sobre branco', async () => {
+  it('JPEG loses little and blends the transparency over white', async () => {
     const clear = solid(16, 16, [0, 0, 0, 0]);
     const decoded = (await decodeImage(await encodeImage(clear, 'jpeg'))).raster;
     expect(distance(pixel(decoded, 8, 8), [255, 255, 255])).toBeLessThanOrEqual(2);
   });
 
-  it('decodeImage recusa o que não é imagem, arquivo truncado e pixels demais', async () => {
-    await expect(
-      decodeImage(new TextEncoder().encode('texto qualquer')),
-    ).rejects.toMatchObject({ code: 'unsupported-image' });
+  it('decodeImage refuses what is not an image, a truncated file and too many pixels', async () => {
+    await expect(decodeImage(new TextEncoder().encode('any text'))).rejects.toMatchObject(
+      { code: 'unsupported-image' },
+    );
     const png = await encodeImage(patternRaster(40, 40, []), 'png');
     await expect(decodeImage(png.slice(0, 40))).rejects.toMatchObject({
       code: 'invalid-image',

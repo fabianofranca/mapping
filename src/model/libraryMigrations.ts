@@ -11,110 +11,110 @@ import {
 } from './typed';
 import type { Annotation, JsonValue, Project, TypedValues } from './types';
 
-// Execução das `migrations` declaradas por uma versão nova da biblioteca (etapa Biblioteca, B4).
-// Ver docs/SPEC-FORMAT.md ("Contrato de versão"). Puro e sem APIs de navegador (reutilizado pelo
-// MCP): recebe o projeto, a especialização NOVA e a versão que o projeto aplicou, e devolve o
-// projeto com as anotações migradas mais um relatório por passo. Quem troca a cópia aplicada, as
-// camadas e a versão é `updateSpecialization` (`specializations.ts`); aqui a especialização
-// aplicada continua a antiga.
+// Execution of the `migrations` declared by a new version of the library (Library stage, B4).
+// See docs/SPEC-FORMAT.md ("Version contract"). Pure and free of browser APIs (reused by the
+// MCP): it receives the project, the NEW specialization and the version the project applied, and returns the
+// project with the annotations migrated plus a report per step. Whoever swaps the applied copy, the
+// layers and the version is `updateSpecialization` (`specializations.ts`); here the applied
+// specialization remains the old one.
 //
-// Regras:
-// - A cadeia é `migrationChain(next, from)`: as entradas de `migrations` ligadas por `from → to`,
-//   e os passos de cada uma na ordem. Cada passo opera sobre o resultado do anterior, e identifica
-//   o tipo pelo `typeId` ATUAL da anotação naquele ponto (depois dos renomes anteriores). Cadeia
-//   rompida (ou sem `migrations`): nada roda. Só as anotações de `next.id` são tocadas.
-// - Passo que não encontra nada é um no-op: continua no relatório, com zeros.
-// - Uma chave de campo de passo é `key` (nível superior) ou `tabela.coluna`; numa coluna o passo
-//   vale para cada linha da tabela. `rename-field` entre formas diferentes (campo × coluna, ou
-//   tabelas diferentes) não tem como mover o valor: os de `from` são apagados (`removed-field`).
-// - Perda é valor NÃO vazio que o passo apagou ou sobrescreveu (vazio: `isEmptyValue`, e a tabela
-//   sem linhas). `map-values` e `fill-field` preferem a pendência à perda: valor fora das opções
-//   fica como está (`unknown-option`); só o que não vale NADA no tipo do campo (`invalid-value`)
-//   é trocado pelo `default` de `fill-field`, e isso é perda.
-// - `rename-field` de campo de nível superior reescreve as referências (`ref`) do projeto inteiro
-//   (de qualquer especialização) que apontam para o campo ou para uma linha da tabela dele, nas
-//   anotações do tipo renomeado: o formato do valor é o que identifica uma `ref`, sem depender
-//   da especialização (a aplicada ainda é a antiga). Vale para o campo `ref` e para a célula
-//   de uma coluna `ref` de tabela. `refs` conta as reescritas.
-// - `remove-type` com `delete` apaga a anotação e as vinculadas a ela (`annotationWithLinked`),
-//   também as de outros tipos e as livres. Cada anotação apagada gera uma perda `removed-type`,
-//   com o `typeId` dela (`''` se for livre). `annotations` conta só as do tipo do passo;
-//   `deleted`, todas as apagadas. Referências que quebram saem no `countBrokenRefs` do impacto.
-// - `remove-type` com `convert` usa `freeVersionOf` no projeto atual (a especialização antiga
-//   ainda resolve o tipo; se não resolver, o fallback dele serve). A anotação convertida fica
-//   na camada em que estava: se for da especialização, vira a pendência `layer-mismatch`.
-// - `rename-type` não troca a camada da anotação (fora do contrato: vira `layer-mismatch`).
-// - Passos de papel do vínculo (`rename-role`, `remove-role`, `set-role`; `type` é o tipo do DONO):
-//   os filhos do passo são as anotações cujo `parentAnnotationId` aponta para uma anotação da
-//   especialização cujo `typeId` ATUAL é o `type` do passo. O filho pode ser de qualquer tipo, de
-//   outra especialização ou livre. `annotations` conta os filhos alterados.
-//   - `rename-role`: o filho com `parentRole === from` passa a `to` (se `to` já era papel de
-//     outros filhos, juntam-se); sem perda.
-//   - `remove-role` com `clear`: o filho com o papel fica sem papel e continua vinculado (perda
-//     `cleared-role`). Com `unlink`: sai do vínculo, sem dono e sem papel (perda `unlinked`,
-//     contada também em `unlinked` do relatório). A perda leva o papel perdido em `role`.
-//   - `set-role`: o filho sem papel (e do tipo `childType`, quando vem; sem `childType`, qualquer
-//     um, livre ou de outra especialização) recebe o papel. Quem já tem papel não é tocado;
-//     nunca gera perda.
-//   - Invariante: `parentRole` não nulo exige `parentAnnotationId` não nulo.
-// - Imutável; ids intocados; as outras chaves de `values` seguem como estavam.
+// Rules:
+// - The chain is `migrationChain(next, from)`: the `migrations` entries linked by `from → to`,
+//   and the steps of each one in order. Each step operates on the result of the previous one, and identifies
+//   the type by the annotation's CURRENT `typeId` at that point (after the earlier renames). A broken
+//   chain (or without `migrations`): nothing runs. Only the annotations of `next.id` are touched.
+// - A step that finds nothing is a no-op: it stays in the report, with zeros.
+// - A step's field key is `key` (top level) or `table.column`; on a column the step
+//   applies to each row of the table. `rename-field` between different shapes (field × column, or
+//   different tables) has no way to move the value: the `from` ones are deleted (`removed-field`).
+// - A loss is a NON-empty value that the step deleted or overwrote (empty: `isEmptyValue`, and a table
+//   without rows). `map-values` and `fill-field` prefer the pending item to the loss: a value outside the options
+//   stays as it is (`unknown-option`); only what is worth NOTHING in the field's type (`invalid-value`)
+//   is replaced by the `default` of `fill-field`, and that is a loss.
+// - `rename-field` of a top-level field rewrites the references (`ref`) of the whole project
+//   (of any specialization) that point to the field or to a row of its table, in the
+//   annotations of the renamed type: the format of the value is what identifies a `ref`, without depending
+//   on the specialization (the applied one is still the old one). It applies to the `ref` field and to the cell
+//   of a table `ref` column. `refs` counts the rewrites.
+// - `remove-type` with `delete` deletes the annotation and the ones linked to it (`annotationWithLinked`),
+//   including those of other types and free ones. Each deleted annotation generates a `removed-type` loss,
+//   with its `typeId` (`''` if free). `annotations` counts only those of the step's type;
+//   `deleted`, all the deleted ones. References that break show up in the impact's `countBrokenRefs`.
+// - `remove-type` with `convert` uses `freeVersionOf` on the current project (the old specialization
+//   still resolves the type; if it does not, its fallback serves). The converted annotation stays
+//   in the layer it was in: if it belongs to the specialization, it becomes the `layer-mismatch` pending item.
+// - `rename-type` does not change the annotation's layer (outside the contract: it becomes `layer-mismatch`).
+// - Link-role steps (`rename-role`, `remove-role`, `set-role`; `type` is the OWNER's type):
+//   the step's children are the annotations whose `parentAnnotationId` points to an annotation of the
+//   specialization whose CURRENT `typeId` is the step's `type`. The child can be of any type, of
+//   another specialization or free. `annotations` counts the changed children.
+//   - `rename-role`: the child with `parentRole === from` becomes `to` (if `to` was already the role of
+//     other children, they are merged); no loss.
+//   - `remove-role` with `clear`: the child with the role is left without a role and stays linked (loss
+//     `cleared-role`). With `unlink`: it leaves the link, without an owner and without a role (loss `unlinked`,
+//     also counted in the report's `unlinked`). The loss carries the lost role in `role`.
+//   - `set-role`: the child without a role (and of the `childType` type, when given; without `childType`, any
+//     one, free or of another specialization) receives the role. Whoever already has a role is not touched;
+//     it never generates a loss.
+//   - Invariant: a non-null `parentRole` requires a non-null `parentAnnotationId`.
+// - Immutable; ids untouched; the other `values` keys stay as they were.
 
 export type MigrationLossReason =
-  /** `remove-field` (ou `rename-field` impossível) apagou um valor não vazio. */
+  /** `remove-field` (or an impossible `rename-field`) deleted a non-empty value. */
   | 'removed-field'
-  /** `remove-type` com `delete`: a anotação foi apagada (as vinculadas também). */
+  /** `remove-type` with `delete`: the annotation was deleted (the linked ones too). */
   | 'removed-type'
-  /** `fill-field` trocou um valor que não vale mais no tipo do campo. */
+  /** `fill-field` replaced a value that is no longer valid in the field's type. */
   | 'replaced-value'
-  /** `rename-field`: o campo destino já tinha um valor não vazio e foi sobrescrito. */
+  /** `rename-field`: the destination field already had a non-empty value and was overwritten. */
   | 'overwritten-value'
-  /** `remove-role` com `clear`: o filho perdeu o papel (`role`) e continua vinculado. */
+  /** `remove-role` with `clear`: the child lost the role (`role`) and stays linked. */
   | 'cleared-role'
-  /** `remove-role` com `unlink`: o filho saiu do vínculo com o dono (`role` era o papel). */
+  /** `remove-role` with `unlink`: the child left the link with the owner (`role` was the role). */
   | 'unlinked';
 
 export interface MigrationLoss {
   readonly reason: MigrationLossReason;
   readonly annotationId: string;
   readonly markingId: string;
-  /** Tipo da anotação no momento do passo (`''` numa vinculada livre apagada). */
+  /** Type of the annotation at the time of the step (`''` on a deleted free linked one). */
   readonly typeId: string;
-  /** Chave do campo, ou `tabela.coluna`. Ausente em `removed-type`. */
+  /** Key of the field, or `table.column`. Absent in `removed-type`. */
   readonly field?: string;
-  /** Linha da tabela, quando a perda é numa célula. */
+  /** Row of the table, when the loss is in a cell. */
   readonly rowId?: string;
-  /** O valor perdido. Ausente em `removed-type`. */
+  /** The lost value. Absent in `removed-type`. */
   readonly value?: JsonValue;
-  /** O papel que o filho tinha, em `cleared-role` e `unlinked`. */
+  /** The role the child had, in `cleared-role` and `unlinked`. */
   readonly role?: string;
 }
 
 export interface MigrationStepReport {
-  /** A entrada de `migrations` (versões) e a posição do passo nela. */
+  /** The `migrations` entry (versions) and the step's position in it. */
   readonly from: number;
   readonly to: number;
   readonly index: number;
   readonly step: SpecMigrationStep;
-  /** Anotações do tipo do passo que ele alterou, converteu ou apagou (nos passos de papel, os filhos alterados). */
+  /** Annotations of the step's type that it changed, converted or deleted (in the role steps, the changed children). */
   readonly annotations: number;
-  /** Valores alterados (cada célula de tabela conta uma vez). */
+  /** Values changed (each table cell counts once). */
   readonly values: number;
-  /** Anotações convertidas em livres (`remove-type` com `convert`). */
+  /** Annotations converted to free ones (`remove-type` with `convert`). */
   readonly converted: number;
-  /** Anotações apagadas (`remove-type` com `delete`), com as vinculadas. */
+  /** Annotations deleted (`remove-type` with `delete`), with the linked ones. */
   readonly deleted: number;
-  /** Referências (`ref`) reescritas por `rename-field`. */
+  /** References (`ref`) rewritten by `rename-field`. */
   readonly refs: number;
-  /** Filhos que saíram do vínculo com o dono (`remove-role` com `unlink`). */
+  /** Children that left the link with the owner (`remove-role` with `unlink`). */
   readonly unlinked: number;
   readonly losses: readonly MigrationLoss[];
 }
 
 export interface MigrationRun {
-  /** O projeto com as anotações migradas; a especialização aplicada ainda é a antiga. */
+  /** The project with the annotations migrated; the applied specialization is still the old one. */
   readonly project: Project;
   readonly steps: readonly MigrationStepReport[];
-  /** Todas as perdas, na ordem dos passos. */
+  /** All the losses, in the order of the steps. */
   readonly losses: readonly MigrationLoss[];
 }
 
@@ -135,7 +135,7 @@ const NO_COUNTS: Counts = {
   losses: [],
 };
 
-/** Vazio para fins de perda: `isEmptyValue` ou tabela sem linhas. */
+/** Empty for the purpose of losses: `isEmptyValue` or a table without rows. */
 function isNothingToLose(value: JsonValue | undefined): boolean {
   return isEmptyValue(value) || (Array.isArray(value) && value.length === 0);
 }
@@ -144,7 +144,7 @@ function sameJson(a: JsonValue | undefined, b: JsonValue | undefined): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-/** Onde mora o campo de um passo: no nível superior ou numa coluna de tabela. */
+/** Where a step's field lives: at the top level or in a table column. */
 type Target =
   | { readonly kind: 'field'; readonly key: string }
   | { readonly kind: 'column'; readonly table: string; readonly column: string };
@@ -155,11 +155,11 @@ function parseTarget(ref: string): Target {
   return { kind: 'column', table: ref.slice(0, dot), column: ref.slice(dot + 1) };
 }
 
-/** Texto do campo nas perdas: a `key` ou `tabela.coluna`. */
+/** Text of the field in the losses: the `key` or `table.column`. */
 const targetName = (t: Target): string =>
   t.kind === 'field' ? t.key : `${t.table}.${t.column}`;
 
-/** O que fazer com um valor: nada (`undefined`), trocar ou apagar a chave. */
+/** What to do with a value: nothing (`undefined`), replace or delete the key. */
 type Edit = { readonly set: JsonValue } | { readonly drop: true } | undefined;
 
 interface CellsResult {
@@ -168,9 +168,9 @@ interface CellsResult {
 }
 
 /**
- * Aplica `edit` ao valor do campo (nível superior) ou a cada célula da coluna (uma por linha
- * da tabela; linhas sem `_id` texto entram com `rowId` indefinido e itens que não são objeto
- * ficam como estão). `drop` só conta se a chave existia.
+ * Applies `edit` to the field's value (top level) or to each cell of the column (one per row
+ * of the table; rows without a text `_id` enter with an undefined `rowId` and items that are not an object
+ * stay as they are). `drop` only counts if the key existed.
  */
 function editCells(
   values: TypedValues,
@@ -213,11 +213,11 @@ function applyEdit(
   return { values: { ...record, [key]: edit.set }, changed: 1 };
 }
 
-/** Anotações de `specId` cujo tipo atual é `typeId` (as que um passo enxerga). */
+/** Annotations of `specId` whose current type is `typeId` (the ones a step sees). */
 const isOfType = (a: Annotation, specId: string, typeId: string): boolean =>
   a.type?.specId === specId && a.type.typeId === typeId;
 
-/** Reescreve `a.values` com `change`; anotação sem alteração volta a mesma. */
+/** Rewrites `a.values` with `change`; an annotation without a change comes back the same. */
 function withValues(a: Annotation, values: TypedValues): Annotation {
   return values === a.values ? a : { ...a, values };
 }
@@ -227,7 +227,7 @@ function lossBase(a: Annotation, typeId: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Passos
+// Steps
 
 function renameType(
   p: Project,
@@ -284,7 +284,7 @@ function removeType(
   };
 }
 
-/** A referência com a `key` trocada, se ela aponta para um campo ou linha de `ids` com `from`. */
+/** The reference with the `key` swapped, if it points to a field or row of `ids` with `from`. */
 function rewrittenRef(
   value: JsonValue | undefined,
   ids: ReadonlySet<string>,
@@ -299,8 +299,8 @@ function rewrittenRef(
 }
 
 /**
- * Reescreve a `key` das referências de campo e de linha que apontam para `ids`: as dos
- * campos `ref` e as das células de colunas `ref` das tabelas.
+ * Rewrites the `key` of the field and row references that point to `ids`: those of the
+ * `ref` fields and those of the cells of `ref` columns of the tables.
  */
 function rewriteRefs(
   values: TypedValues,
@@ -347,14 +347,14 @@ function renameField(
   specId: string,
   step: Extract<SpecMigrationStep, { op: 'rename-field' }>,
 ): StepResult {
-  // Renomear para o mesmo nome não muda nada (e não conta valores nem referências).
+  // Renaming to the same name changes nothing (and counts neither values nor references).
   if (step.from === step.to) return { project: p, counts: NO_COUNTS };
   const from = parseTarget(step.from);
   const to = parseTarget(step.to);
   const topLevel = from.kind === 'field' && to.kind === 'field';
   const sameTable =
     from.kind === 'column' && to.kind === 'column' && from.table === to.table;
-  // Os ids das anotações do tipo, antes de qualquer reescrita, para achar as referências.
+  // The ids of the type's annotations, before any rewrite, to find the references.
   const ids = new Set(
     topLevel
       ? p.annotations.filter((a) => isOfType(a, specId, step.type)).map((a) => a.id)
@@ -370,7 +370,7 @@ function renameField(
       const base = lossBase(a, step.type);
       let result: CellsResult;
       if (topLevel || sameTable) {
-        // Lê o destino da mesma linha (ou do nível superior) para não perder o que está lá.
+        // Reads the destination of the same row (or of the top level) so as not to lose what is there.
         result = renameInPlace(a.values, from, to, (loss) =>
           losses.push({ ...base, ...loss }),
         );
@@ -411,9 +411,9 @@ function renameField(
 type LossPart = Pick<MigrationLoss, 'reason' | 'field' | 'rowId' | 'value'>;
 
 /**
- * Renomeia a chave no nível superior ou, na mesma tabela, em cada linha. Valor de `from`
- * vazio não sobrescreve um destino preenchido (o destino fica e `from` sai sem perda);
- * destino preenchido e diferente de um `from` preenchido é sobrescrito, com perda.
+ * Renames the key at the top level or, in the same table, in each row. An empty `from` value
+ * does not overwrite a filled destination (the destination stays and `from` goes out without a loss);
+ * a filled destination different from a filled `from` is overwritten, with a loss.
  */
 function renameInPlace(
   values: TypedValues,
@@ -500,7 +500,7 @@ function mapValues(
   );
 }
 
-/** A coluna ou o campo simples `target` do tipo na versão nova, se existir e for simples. */
+/** The column or simple field `target` of the type in the new version, if it exists and is simple. */
 function simpleFieldIn(
   next: Spec,
   typeId: string,
@@ -530,7 +530,7 @@ function fillField(
   return mapAnnotations(p, specId, step.type, losses, (a) =>
     editCells(a.values ?? {}, target, (value, rowId) => {
       if (isEmptyValue(value)) return { set: step.default };
-      // Só o que não vale nada no tipo do campo é trocado; `unknown-option` fica pendência.
+      // Only what is worth nothing in the field's type is replaced; `unknown-option` stays pending.
       if (field && checkSimpleValue(field, value as JsonValue) === 'invalid-value') {
         losses.push({
           reason: 'replaced-value',
@@ -546,7 +546,7 @@ function fillField(
   );
 }
 
-/** Aplica `change` às anotações com `values` do tipo do passo e soma o que mudou. */
+/** Applies `change` to the annotations with `values` of the step's type and adds up what changed. */
 function mapAnnotations(
   p: Project,
   specId: string,
@@ -571,8 +571,8 @@ function mapAnnotations(
 }
 
 /**
- * Aplica `change` aos filhos das anotações da especialização cujo tipo atual é `ownerType`; o
- * filho que `change` devolve igual (ou `null`) fica como está. Conta os filhos alterados.
+ * Applies `change` to the children of the specialization's annotations whose current type is `ownerType`; the
+ * child that `change` returns equal (or `null`) stays as it is. Counts the changed children.
  */
 function changeChildren(
   p: Project,
@@ -680,9 +680,9 @@ function runStep(
 }
 
 /**
- * Executa as migrações declaradas por `next` para um projeto que aplicou a versão `from`:
- * os passos da cadeia `from → next.version`, em ordem. Devolve o projeto migrado e o relatório
- * por passo. Não troca a especialização aplicada nem as camadas (`updateSpecialization`).
+ * Runs the migrations declared by `next` for a project that applied version `from`:
+ * the steps of the `from → next.version` chain, in order. Returns the migrated project and the report
+ * per step. Does not swap the applied specialization or the layers (`updateSpecialization`).
  */
 export function runLibraryMigrations(
   p: Project,

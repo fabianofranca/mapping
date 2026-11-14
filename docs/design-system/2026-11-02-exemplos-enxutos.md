@@ -1,7 +1,7 @@
-# Exemplos enxutos — 2026-11-02 (épico `epic/exemplos-enxutos`)
+# Lean examples — 2026-11-02 (épico `epic/exemplos-enxutos`)
 
 ## Sincronização
 
-A linha abaixo é de outro épico, aplicada aqui porque ele entrou na `main` antes de a regra existir.
+The line below belongs to another epic, applied here because it reached `main` before the rule existed.
 
-Aplicado no fechamento do `epic/sincronia-ds`. O guia e o preview do `Home` perderam o botão "Abrir projeto de exemplo", removido da tela inicial (`src/app/Home.tsx`, `src/app/exampleProject.ts` e as chaves `home.openExample*`); o caminho atual é baixar `examples/exemplo-completo.zip` do repositório e usar o Abrir zip. Versão 16 do artefato.
+Applied when closing `epic/sincronia-ds`. The guide and the `Home` preview lost the "Open example project" button, removed from the home screen (`src/app/Home.tsx`, `src/app/exampleProject.ts` and the `home.openExample*` keys); the current path is to download `examples/exemplo-completo.zip` from the repository and use Open zip. Version 16 of the artifact.

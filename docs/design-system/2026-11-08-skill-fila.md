@@ -1,13 +1,13 @@
-# Skill de implementação da fila — 2026-11-08 (épico `epic/skill-fila`)
+# Queue implementation skill — 2026-11-08 (épico `epic/skill-fila`)
 
 ## Pendências
 
-- SF1: nenhuma (só ferramenta do fluxo de entrega).
+- SF1: nenhuma (delivery flow tooling only).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só acrescentou e ajustou skills do Claude Code.
+No write to the Mapping artifact in Claude Design: the stage only added and adjusted Claude Code skills.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

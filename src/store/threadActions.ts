@@ -15,12 +15,12 @@ import type { Identity } from './identity';
 import { forgetThreadRead } from './threadReads';
 import type { ThreadStore, ThreadStoreError } from './threads';
 
-// Ações das conversas (etapa Comentários): abrir, acrescentar, resolver, reabrir e apagar. São as
-// únicas que mudam uma conversa na app; a gravação é de `ThreadStore`. Cada uma recusa sem
-// escrever quando o projeto é só leitura, quando há uma revisão de proposta aberta (decisão 26)
-// ou quando falta a identidade (decisão 11). `kind` nunca vem do chamador: a app só monta o
-// autor `human`, com o nome e o e-mail das Configurações (decisão 12; catraca em
-// `tests/tooling/threadAuthors.test.ts`). Nada disso passa pelo histórico de desfazer nem pelo
+// Thread actions (Comments stage): open, append, resolve, reopen and delete. They are the
+// only ones that change a thread in the app; writing belongs to `ThreadStore`. Each one refuses without
+// writing when the project is read-only, when a proposal review is open (decision 26)
+// or when the identity is missing (decision 11). `kind` never comes from the caller: the app only builds the
+// `human` author, with the name and e-mail from Settings (decision 12; ratchet in
+// `tests/tooling/threadAuthors.test.ts`). None of this goes through the undo history nor
 // `mapping.json`.
 
 export type ThreadActionError =
@@ -47,17 +47,17 @@ export type ThreadRemoveManyResult =
   | { readonly ok: false; readonly error: ThreadActionError };
 
 export interface ThreadActions {
-  /** Abre uma conversa ancorada em `anchor` com a primeira mensagem da pessoa. */
+  /** Opens a thread anchored at `anchor` with the person's first message. */
   open(anchor: ThreadAnchor, text: string): Promise<ThreadActionResult>;
-  /** Acrescenta uma mensagem da pessoa. */
+  /** Appends a message from the person. */
   post(threadId: string, text: string): Promise<ThreadActionResult>;
-  /** Resolve a conversa (o arquivo vai para `comments/resolved/`). */
+  /** Resolves the thread (the file goes to `comments/resolved/`). */
   resolve(threadId: string): Promise<ThreadActionResult>;
-  /** Reabre a conversa (o arquivo volta para `comments/`). */
+  /** Reopens the thread (the file goes back to `comments/`). */
   reopen(threadId: string): Promise<ThreadActionResult>;
-  /** Apaga a conversa. A confirmação com o aviso de quem perde mensagem é da interface. */
+  /** Deletes the thread. The confirmation warning about who loses a message belongs to the interface. */
   remove(threadId: string): Promise<ThreadRemoveResult>;
-  /** Apaga várias (o lote: só as resolvidas, ou as anteriores a uma data). */
+  /** Deletes several (the batch: only the resolved ones, or those before a date). */
   removeMany(threadIds: readonly string[]): Promise<ThreadRemoveManyResult>;
 }
 
@@ -67,14 +67,14 @@ export interface ThreadActionsDeps {
   readonly identity: ReadonlySignal<Identity | null>;
   readonly now: () => string;
   readonly newId: () => string;
-  /** A cópia do projeto (`ProjectStorage.copyId`): onde o "lida" de uma conversa apagada sai. */
+  /** The project copy (`ProjectStorage.copyId`): where the "read" mark of a deleted thread goes away. */
   readonly copyId?: string;
 }
 
 export function createThreadActions(deps: ThreadActionsDeps): ThreadActions {
   const { store, threads, now, newId } = deps;
 
-  /** Quem pode escrever agora, ou o motivo de não poder. */
+  /** Who can write now, or the reason for not being able to. */
   const writer = ():
     { ok: true; me: Identity } | { ok: false; error: ThreadActionError } => {
     if (store.readOnly.value) return { ok: false, error: 'read-only' };
@@ -89,7 +89,7 @@ export function createThreadActions(deps: ThreadActionsDeps): ThreadActions {
     email: me.email,
   });
 
-  /** O texto da mensagem já limpo, ou o motivo de recusar. */
+  /** The message text already cleaned, or the reason for refusing. */
   const cleanText = (
     text: string,
   ): { ok: true; text: string } | { ok: false; error: ThreadActionError } => {

@@ -9,18 +9,18 @@ import {
 } from '../../src/model';
 import { blocksPng } from './png';
 
-// Âncora na app (R4, etapa #1096): a seção Âncora dos Detalhes e o Encostar, num painel estreito
-// (900 px): os campos do Deslocamento cabem, Lado e Alinhamento gravam e o Encostar move a marcação
-// e se desfaz numa entrada só.
+// Anchor in the app (R4, stage #1096): the Anchor section of Details and Snap, in a narrow panel
+// (900 px): the Offset fields fit, Side and Alignment save and Snap moves the marking
+// and undoes in a single entry.
 
 test.use({ viewport: { width: 900, height: 720 } });
 
 const NOW = '2026-11-13T12:00:00.000Z';
 
-/** Um container com o `Alvo` e a `Ancorada` (já ancorada nele, longe, sem componente). */
+/** A container with the `Target` and the `Anchored` (already anchored to it, far away, no component). */
 async function anchoredZip(): Promise<Buffer> {
   let p = createProject({
-    name: 'Ancora',
+    name: 'Anchor',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Componentes', color: '#1e88e5' },
   });
@@ -28,13 +28,13 @@ async function anchoredZip(): Promise<Buffer> {
   p = createMarking(p, {
     id: 'M1',
     containerId: 'I1',
-    name: 'Alvo',
+    name: 'Target',
     rect: { x: 400, y: 300, width: 200, height: 100 },
   });
   p = createMarking(p, {
     id: 'M2',
     containerId: 'I1',
-    name: 'Ancorada',
+    name: 'Anchored',
     rect: { x: 100, y: 100, width: 100, height: 40 },
   });
   p = setMarkingAnchor(p, 'M2', { to: 'M1' });
@@ -50,56 +50,54 @@ async function openAnchored(page: Page): Promise<void> {
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'ancora.zip',
+      name: 'anchor.zip',
       mimeType: 'application/zip',
       buffer: await anchoredZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit3');
   await page.keyboard.press('Control+Shift+Digit2');
-  await page.locator('.tree-row', { hasText: 'Ancorada' }).first().click();
+  await page.locator('.tree-row', { hasText: 'Anchored' }).first().click();
 }
 
-test('seção Âncora: mostra a âncora, grava lado e alinhamento e Encostar move e desfaz numa entrada', async ({
+test('Anchor section: shows the anchor, saves side and alignment and Snap moves and undoes in one entry', async ({
   page,
 }) => {
   await openAnchored(page);
-  const section = page.getByRole('region', { name: 'Âncora' });
+  const section = page.getByRole('region', { name: 'Anchor' });
   await expect(section).toBeVisible();
-  await expect(section.getByLabel('Ancorada a', { exact: true })).toHaveValue('M1');
+  await expect(section.getByLabel('Anchored to', { exact: true })).toHaveValue('M1');
   const x = page.getByRole('spinbutton', { name: 'X', exact: true });
   const y = page.getByRole('spinbutton', { name: 'Y', exact: true });
   await expect(x).toHaveValue('100');
   await expect(y).toHaveValue('100');
 
-  // Os padrões do lugar (sem componente): acima e ao centro; o Encostar leva à âncora.
-  await expect(section.getByRole('button', { name: 'Acima' })).toHaveAttribute(
+  // The place defaults (no component): above and centered; Snap takes it to the anchor.
+  await expect(section.getByRole('button', { name: 'Above' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  await section.getByRole('button', { name: 'Encostar na âncora' }).click();
+  await section.getByRole('button', { name: 'Snap to anchor' }).click();
   await expect(x).toHaveValue('450');
   await expect(y).toHaveValue('260');
 
-  // Abaixo da âncora (Y = 300 + 100): outra mudança, outra entrada de desfazer.
-  await section.getByRole('button', { name: 'Abaixo' }).click();
-  await section.getByRole('button', { name: 'Encostar na âncora' }).click();
+  // Below the anchor (Y = 300 + 100): another change, another undo entry.
+  await section.getByRole('button', { name: 'Below' }).click();
+  await section.getByRole('button', { name: 'Snap to anchor' }).click();
   await expect(y).toHaveValue('400');
 
-  // O foco sai do campo e o Ctrl+Z desfaz o Encostar de cima numa entrada só.
-  await page.getByRole('heading', { name: 'Detalhes' }).first().click();
+  // Focus leaves the field and Ctrl+Z undoes the top Snap in a single entry.
+  await page.getByRole('heading', { name: 'Details' }).first().click();
   await page.keyboard.press('Control+z');
   await expect(y).toHaveValue('260');
   await expect(x).toHaveValue('450');
 });
 
-test('seção Âncora a 900 px: os dois campos do Deslocamento cabem inteiros', async ({
-  page,
-}) => {
+test('Anchor section at 900 px: both Offset fields fit whole', async ({ page }) => {
   await openAnchored(page);
-  const section = page.getByRole('region', { name: 'Âncora' });
-  const main = section.getByLabel('Distância da borda');
-  const cross = section.getByLabel('Deslocamento ao longo do lado');
+  const section = page.getByRole('region', { name: 'Anchor' });
+  const main = section.getByLabel('Distance from edge');
+  const cross = section.getByLabel('Shift along the side');
   await main.fill('-1234');
   await main.press('Enter');
   await cross.fill('5678');
@@ -111,11 +109,11 @@ test('seção Âncora a 900 px: os dois campos do Deslocamento cabem inteiros', 
     });
     expect(m.scroll).toBeLessThanOrEqual(m.client);
   }
-  // A fonte do CI deixa o campo 2 px mais estreito que o do Chromium local: sem folga, o "-1234"
-  // corta. No painel estreito os dois campos ficam um sobre o outro, cada um com a coluna inteira.
+  // The CI font leaves the field 2 px narrower than the local Chromium one: without slack, the "-1234"
+  // gets cut. In the narrow panel the two fields stack, each with the whole column.
   const boxes = await Promise.all([main.boundingBox(), cross.boundingBox()]);
   const [mainBox, crossBox] = boxes;
-  if (!mainBox || !crossBox) throw new Error('campos do Deslocamento sem caixa');
+  if (!mainBox || !crossBox) throw new Error('Offset fields without a box');
   expect(crossBox.y).toBeGreaterThan(mainBox.y + mainBox.height - 1);
   expect(Math.min(mainBox.width, crossBox.width)).toBeGreaterThan(80);
   await expect(main).toHaveValue('-1234');

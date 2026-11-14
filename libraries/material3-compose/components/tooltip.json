@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "tooltip",
   "name": "Tooltip",
-  "description": "Tooltip plain (pílula em inverse surface, só texto) ou rich (cartão em surface container com título, texto e ação opcionais), como aparece ao lado do elemento âncora.",
+  "description": "Plain tooltip (pill in inverse surface, text only) or rich (card in surface container with optional title, text and action), as it appears beside the anchor element.",
   "size": {
     "width": 240,
     "height": 24
@@ -100,7 +100,7 @@
         "children": [
           {
             "type": "text",
-            "name": "texto",
+            "name": "text",
             "text": {
               "$field": "text",
               "default": "Tooltip"
@@ -198,7 +198,7 @@
         "children": [
           {
             "type": "text",
-            "name": "título",
+            "name": "title",
             "text": {
               "$field": "title"
             },
@@ -230,7 +230,7 @@
           },
           {
             "type": "frame",
-            "name": "corpo",
+            "name": "body",
             "width": "fill",
             "height": "hug",
             "layout": {
@@ -239,7 +239,7 @@
             "children": [
               {
                 "type": "text",
-                "name": "texto",
+                "name": "text",
                 "text": {
                   "$field": "text",
                   "default": "Tooltip"
@@ -296,7 +296,7 @@
           },
           {
             "type": "frame",
-            "name": "ação",
+            "name": "action",
             "width": "hug",
             "height": "hug",
             "layout": {
@@ -309,7 +309,7 @@
             "children": [
               {
                 "type": "frame",
-                "name": "botão da ação",
+                "name": "action button",
                 "width": "hug",
                 "height": 40,
                 "layout": {
@@ -320,7 +320,7 @@
                 "children": [
                   {
                     "type": "text",
-                    "name": "rótulo da ação",
+                    "name": "action label",
                     "text": {
                       "$field": "action"
                     },
@@ -352,7 +352,7 @@
       },
       {
         "type": "path",
-        "name": "seta",
+        "name": "caret",
         "d": "M0 0H16L8 8Z",
         "viewBox": [16, 8],
         "width": 16,
@@ -372,7 +372,7 @@
       },
       {
         "type": "path",
-        "name": "seta",
+        "name": "caret",
         "d": "M0 8H16L8 0Z",
         "viewBox": [16, 8],
         "width": 16,
@@ -392,7 +392,7 @@
       },
       {
         "type": "path",
-        "name": "seta",
+        "name": "caret",
         "d": "M0 0V16L8 8Z",
         "viewBox": [8, 16],
         "width": 8,
@@ -413,7 +413,7 @@
       },
       {
         "type": "path",
-        "name": "seta",
+        "name": "caret",
         "d": "M8 0V16L0 8Z",
         "viewBox": [8, 16],
         "width": 8,

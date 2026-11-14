@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "progress-indicator",
   "name": "Progress indicator",
-  "description": "Indicador de progresso circular (40, traço de 4) ou linear (barra de 4 com parada), com o indicador em primary e o trilho em secondary-container (ou no papel de trackColor), de ponta redonda (ou Butt/Square, pelo strokeCap) e com gap de 4. Sem valor de progresso é indeterminado e o desenho mostra um quadro congelado da animação (um arco ou uma barra parcial).",
+  "description": "Circular (40, 4 stroke) or linear (4 bar with stop) progress indicator, with the indicator in primary and the track in secondary-container (or in the trackColor role), with a round cap (or Butt/Square, by strokeCap) and a gap of 4. With no progress value it is indeterminate and the drawing shows a frozen frame of the animation (an arc or a partial bar).",
   "size": { "width": 240, "height": 48 },
   "sizing": { "width": "fill", "height": 48 },
   "preview": { "shape": "circular", "progress": 0.6 },
@@ -22,7 +22,7 @@
         "children": [
           {
             "type": "ellipse",
-            "name": "trilho completo",
+            "name": "full track",
             "width": 40,
             "height": 40,
             "fill": "none",
@@ -81,7 +81,7 @@
           },
           {
             "type": "path",
-            "name": "trilho arco",
+            "name": "arc track",
             "visible": {
               "$and": [
                 { "$gt": [{ "$field": "progress" }, 0] },
@@ -217,7 +217,7 @@
           },
           {
             "type": "path",
-            "name": "indicador",
+            "name": "indicator",
             "visible": {
               "$and": [
                 { "$gt": [{ "$field": "progress" }, 0] },
@@ -276,7 +276,7 @@
           },
           {
             "type": "ellipse",
-            "name": "anel completo",
+            "name": "full ring",
             "width": 40,
             "height": 40,
             "fill": "none",
@@ -285,7 +285,7 @@
           },
           {
             "type": "path",
-            "name": "indicador indeterminado",
+            "name": "indeterminate indicator",
             "visible": { "$not": { "$has": "progress" } },
             "width": 40,
             "height": 40,
@@ -316,7 +316,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "trilho antes",
+            "name": "track before",
             "width": "30%",
             "height": 4,
             "layout": { "type": "none" },
@@ -324,7 +324,7 @@
             "children": [
               {
                 "type": "rect",
-                "name": "faixa antes",
+                "name": "segment before",
                 "fill": {
                   "$switch": "trackColor",
                   "cases": {
@@ -385,7 +385,7 @@
           },
           {
             "type": "frame",
-            "name": "indicador",
+            "name": "indicator",
             "width": {
               "$if": { "$has": "progress" },
               "then": {
@@ -401,7 +401,7 @@
             "children": [
               {
                 "type": "rect",
-                "name": "barra",
+                "name": "bar",
                 "visible": { "$gt": [{ "$field": "progress" }, 0] },
                 "fill": { "$token": "primary" },
                 "cornerRadius": {
@@ -420,7 +420,7 @@
               },
               {
                 "type": "rect",
-                "name": "barra indeterminada",
+                "name": "indeterminate bar",
                 "visible": { "$not": { "$has": "progress" } },
                 "fill": { "$token": "primary" },
                 "cornerRadius": {
@@ -445,7 +445,7 @@
           },
           {
             "type": "frame",
-            "name": "trilho",
+            "name": "track",
             "width": "fill",
             "height": 4,
             "layout": { "type": "none" },
@@ -453,7 +453,7 @@
             "children": [
               {
                 "type": "rect",
-                "name": "faixa",
+                "name": "segment",
                 "visible": {
                   "$and": [
                     { "$not": { "$lte": [{ "$field": "progress" }, 0] } },
@@ -536,7 +536,7 @@
               },
               {
                 "type": "rect",
-                "name": "faixa total",
+                "name": "full segment",
                 "visible": { "$lte": [{ "$field": "progress" }, 0] },
                 "fill": {
                   "$switch": "trackColor",
@@ -588,7 +588,7 @@
               },
               {
                 "type": "ellipse",
-                "name": "parada",
+                "name": "stop",
                 "width": 4,
                 "height": 4,
                 "fill": { "$token": "primary" },

@@ -1,99 +1,99 @@
 # Secure text field
 
-Campo de senha: o texto digitado fica mascarado. Filled tem fundo preenchido; outlined tem contorno.
+Password field: the typed text is masked. Filled has a filled background; outlined has an outline.
 
-Tipo de anotação: `secure-text-field` (camada Componentes).
+Annotation type: `secure-text-field` (layer Components).
 
-## Campos
+## Fields
 
-| Chave            | Rótulo             | Tipo   | Obrigatório | Opções                                                         | Padrão   | Descrição                                                                                                                                                                                                                                                            |
-| ---------------- | ------------------ | ------ | ----------- | -------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `label`          | Rótulo             | string | sim         |                                                                |          | Rótulo flutuante do campo.                                                                                                                                                                                                                                           |
-| `hasText`        | Com texto digitado | enum   | não         | `true`, `false`                                                | `false`  | true mostra o campo preenchido, com os caracteres mascarados (ou escondidos). Só afeta o desenho: o texto vive no TextFieldState, não na anotação.                                                                                                                   |
-| `placeholder`    | Dica               | string | não         |                                                                |          | Texto de dica quando o campo está vazio.                                                                                                                                                                                                                             |
-| `supportingText` | Texto de apoio     | string | não         |                                                                |          | Texto de apoio ou de erro abaixo do campo.                                                                                                                                                                                                                           |
-| `style`          | Estilo             | enum   | não         | `filled`, `outlined`                                           | `filled` | filled (SecureTextField) ou outlined (OutlinedSecureTextField).                                                                                                                                                                                                      |
-| `enabled`        | Habilitado         | enum   | não         | `true`, `false`                                                | `true`   | false desabilita o campo.                                                                                                                                                                                                                                            |
-| `interaction`    | Interação          | enum   | não         | `none`, `hovered`, `focused`                                   | `none`   | Aparência parada do estado de interação: mouse sobre (hovered) ou foco (focused: indicador ou contorno de 2 em primary e rótulo em primary); none = sem destaque. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence). |
-| `isError`        | Em erro            | enum   | não         | `true`, `false`                                                | `false`  | true pinta o campo como erro.                                                                                                                                                                                                                                        |
-| `leadingIcon`    | Ícone inicial      | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |          | Ícone antes do texto. Vazio = sem ícone.                                                                                                                                                                                                                             |
-| `trailingIcon`   | Ícone final        | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |          | Ícone depois do texto, em geral o botão de mostrar ou esconder a senha. Vazio = sem ícone.                                                                                                                                                                           |
-| `width`          | Largura            | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).                                                                                                                                                                |
-| `height`         | Altura             | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).                                                                                                                                                                  |
-| `weight`         | Peso (weight)      | number | não         |                                                                |          | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                                                                                                                                                                                    |
+| Key              | Label           | Type   | Required | Options                                                   | Default  | Description                                                                                                                                                                                                                                                                       |
+| ---------------- | --------------- | ------ | -------- | --------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `label`          | Label           | string | yes      |                                                           |          | Floating label of the field.                                                                                                                                                                                                                                                      |
+| `hasText`        | With typed text | enum   | no       | `true`, `false`                                           | `false`  | true shows the field filled, with the characters masked (or hidden). It only affects the drawing: the text lives in the TextFieldState, not in the annotation.                                                                                                                    |
+| `placeholder`    | Hint            | string | no       |                                                           |          | Hint text when the field is empty.                                                                                                                                                                                                                                                |
+| `supportingText` | Supporting text | string | no       |                                                           |          | Supporting or error text below the field.                                                                                                                                                                                                                                         |
+| `style`          | Style           | enum   | no       | `filled`, `outlined`                                      | `filled` | filled (SecureTextField) or outlined (OutlinedSecureTextField).                                                                                                                                                                                                                   |
+| `enabled`        | Enabled         | enum   | no       | `true`, `false`                                           | `true`   | false disables the field.                                                                                                                                                                                                                                                         |
+| `interaction`    | Interaction     | enum   | no       | `none`, `hovered`, `focused`                              | `none`   | Resting appearance of the interaction state: hovered or focused (focused: 2 indicator or outline in primary and label in primary); none = no highlight. It only changes the drawing and does not go into the code. With enabled false nothing is drawn (the disabled state wins). |
+| `isError`        | Error           | enum   | no       | `true`, `false`                                           | `false`  | true paints the field as an error.                                                                                                                                                                                                                                                |
+| `leadingIcon`    | Leading icon    | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |          | Icon before the text. Empty = no icon.                                                                                                                                                                                                                                            |
+| `trailingIcon`   | Trailing icon   | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |          | Icon after the text, usually the show or hide password button. Empty = no icon.                                                                                                                                                                                                   |
+| `width`          | Width           | enum   | no       | `wrap`, `fill`, `fixed`                                   | `wrap`   | wrap fits the content, fill takes all the available width and fixed uses the marking width (dp).                                                                                                                                                                                  |
+| `height`         | Height          | enum   | no       | `wrap`, `fill`, `fixed`                                   | `wrap`   | wrap fits the content, fill takes all the available height and fixed uses the marking height (dp).                                                                                                                                                                                |
+| `weight`         | Weight          | number | no       |                                                           |          | Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.                                                                                                                                                                                              |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.SecureTextField`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SecureTextField.kt`
-- O campo `style` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.SecureTextField`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SecureTextField.kt`
+- The `style` field chooses the symbol; values without their own case use the base one.
 
-| `style`         | Símbolo                   |
+| `style`         | Symbol                    |
 | --------------- | ------------------------- |
 | `filled` (base) | `SecureTextField`         |
 | `outlined`      | `OutlinedSecureTextField` |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 var showPassword by remember { mutableStateOf(false) }
-SecureTextField(    // style outlined: OutlinedSecureTextField (mesmos parâmetros)
-    state = rememberTextFieldState(),    // guarda o texto digitado
+SecureTextField(    // style outlined: OutlinedSecureTextField (same parameters)
+    state = rememberTextFieldState(),    // holds the typed text
     enabled = true,
     isError = false,
-    label = { Text("Senha") },
-    supportingText = { Text("Mínimo de 8 caracteres") },
+    label = { Text("Password") },
+    supportingText = { Text("At least 8 characters") },
     leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
     textObfuscationMode = if (showPassword) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
     modifier = Modifier.fillMaxWidth(),
 )
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+`code` notes (what the tool hands to the agent):
 
-> Estável, sem opt-in. Em vez de `value`/`onValueChange`, o campo recebe `state = rememberTextFieldState()` (`androidx.compose.foundation.text.input.TextFieldState`), que guarda o texto; `hasText` só afeta o desenho e não é parâmetro. `label`, `placeholder` e `supportingText` preenchidos viram `{ Text(<campo>) }`; `leadingIcon` e `trailingIcon` viram `{ Icon(Icons.Filled.<nome>, contentDescription = null) }` (para mostrar e esconder a senha, ligue o ícone a um `textObfuscationMode` que alterne `TextObfuscationMode.Visible` e `TextObfuscationMode.RevealLastTyped`). Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> Stable, no opt-in. Instead of `value`/`onValueChange`, the field takes `state = rememberTextFieldState()` (`androidx.compose.foundation.text.input.TextFieldState`), which holds the text; `hasText` only affects the drawing and is not a parameter. A filled `label`, `placeholder` and `supportingText` become `{ Text(<field>) }`; `leadingIcon` and `trailingIcon` become `{ Icon(Icons.Filled.<name>, contentDescription = null) }` (to show and hide the password, bind the icon to a `textObfuscationMode` that toggles `TextObfuscationMode.Visible` and `TextObfuscationMode.RevealLastTyped`). Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).
 
-## Exemplos
+## Examples
 
-- **Preenchido**: label=Senha, style=filled
-- **Contornado com texto**: label=Senha, hasText=true, style=outlined, leadingIcon=Lock, trailingIcon=Done
-- **Em erro**: label=Senha, hasText=true, supportingText=Senha incorreta, style=outlined, isError=true
-- **Mouse sobre**: label=Senha, hasText=true, style=outlined, interaction=hovered
-- **Com foco**: label=Senha, hasText=true, style=filled, interaction=focused
-- **Preenchido com apoio**: label=Senha, supportingText=Mínimo de 8 caracteres, style=filled
+- **Filled**: label=Password, style=filled
+- **Outlined with text**: label=Password, hasText=true, style=outlined, leadingIcon=Lock, trailingIcon=Done
+- **Error**: label=Password, hasText=true, supportingText=Incorrect password, style=outlined, isError=true
+- **Hovered**: label=Password, hasText=true, style=outlined, interaction=hovered
+- **Focused**: label=Password, hasText=true, style=filled, interaction=focused
+- **Filled with supporting text**: label=Password, supportingText=At least 8 characters, style=filled
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente, e nenhum nó de texto declara `family` (todos herdam `font-sans`).
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component, and no text node declares `family` (all inherit `font-sans`).
 
-**Arquivos usados**
+**Files used**
 
-- Os mesmos do `text-field` (`TextFieldDefaults.kt`, `TextField.kt`, `OutlinedTextField.kt`, `internal/TextFieldImpl.kt`, `tokens/FilledTextFieldTokens.kt` e `tokens/OutlinedTextFieldTokens.kt`; linhas em `docs/text-field.md`), porque `SecureTextField` e `OutlinedSecureTextField` usam o mesmo decorador `TextFieldDefaults.decorator` e as mesmas cores.
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TextField.kt` (as sobrecargas `SecureTextField`, com `TextFieldLineLimits.SingleLine`) e `OutlinedTextField.kt` (`OutlinedSecureTextField`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FilledTextFieldTokens.kt` (linhas 45 a 73: os papéis `Focus*`, `Hover*`, `ErrorFocus*` e `ErrorHover*`) e `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedTextFieldTokens.kt` (linhas 42 a 70: os mesmos, mais `FocusOutlineWidth`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- The same as `text-field` (`TextFieldDefaults.kt`, `TextField.kt`, `OutlinedTextField.kt`, `internal/TextFieldImpl.kt`, `tokens/FilledTextFieldTokens.kt` and `tokens/OutlinedTextFieldTokens.kt`; lines in `docs/text-field.md`), because `SecureTextField` and `OutlinedSecureTextField` use the same `TextFieldDefaults.decorator` decorator and the same colors.
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TextField.kt` (the `SecureTextField` overloads, with `TextFieldLineLimits.SingleLine`) and `OutlinedTextField.kt` (`OutlinedSecureTextField`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FilledTextFieldTokens.kt` (lines 45 to 73: the `Focus*`, `Hover*`, `ErrorFocus*` and `ErrorHover*` roles) and `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedTextFieldTokens.kt` (lines 42 to 70: the same, plus `FocusOutlineWidth`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Tudo o que o `text-field` desenha: campo de 56, filled com fundo `surface-container-highest`, raio superior `corner-extra-small` e indicador de 1 só embaixo por `stroke.sides: ["bottom"]`; outlined com contorno de 1, raio `corner-extra-small`, 8 de cima do rótulo e vão de verdade no contorno (`stroke.gap` sobre o rótulo minimizado, cantos redondos); rótulo `body-large` ou `body-small` minimizado; apoio `body-small`; ícones de 24 pelo nó `icon`; cores de erro e desabilitado (0,38 e 0,12) iguais.
-- **Altura e largura:** as do `text-field` (`sizing.height` por expressão, `minWidth` 280 na raiz): filled 56 sem apoio e 76 com (56 + 4 + 16), outlined 64 sem apoio (8 + 56) e 84 com (8 + 56 + 4 + 16); o `size` continua 280 por 84. O `SecureTextField` tem o mesmo `defaultMinSize(TextFieldDefaults.MinWidth, MinHeight)` (`SecureTextField.kt` linhas 173 a 176) e o mesmo apoio (`TextFieldDefaults.kt` linhas 466 a 470, `TextField.kt` linhas 797 a 801); o `OutlinedSecureTextField` soma os 8 de cima do rótulo (`OutlinedTextField.kt` linhas 244 a 260).
-- Texto digitado: com `hasText`, oito `•` em `body-large` e `on-surface`, numa linha só, sem quebra nem reticências (o campo seguro é sempre `SingleLine`) e recortado na largura. Sem `hasText`, aparece a dica (rótulo minimizado) ou só o rótulo expandido.
-- Rótulo (o grande e o minimizado), dica e os oito `•` do valor centram pela altura da maiúscula (`font.verticalAlign: "cap-middle"`). O `Text` do Compose centra pela caixa de linha da fonte; com Roboto as duas coincidem a menos de 1 px.
+- Everything `text-field` draws: 56 field, filled with `surface-container-highest` background, top radius `corner-extra-small` and a 1 indicator only at the bottom through `stroke.sides: ["bottom"]`; outlined with a 1 outline, radius `corner-extra-small`, 8 above the label and a real gap in the outline (`stroke.gap` over the minimized label, rounded corners); `body-large` label or minimized `body-small`; `body-small` support text; 24 icons by the `icon` node; the same error and disabled colors (0.38 and 0.12).
+- **Height and width:** those of `text-field` (`sizing.height` by expression, `minWidth` 280 on the root): filled 56 without support text and 76 with it (56 + 4 + 16), outlined 64 without support text (8 + 56) and 84 with it (8 + 56 + 4 + 16); the `size` stays 280 by 84. The `SecureTextField` has the same `defaultMinSize(TextFieldDefaults.MinWidth, MinHeight)` (`SecureTextField.kt` lines 173 to 176) and the same support text (`TextFieldDefaults.kt` lines 466 to 470, `TextField.kt` lines 797 to 801); the `OutlinedSecureTextField` adds the 8 above the label (`OutlinedTextField.kt` lines 244 to 260).
+- Typed text: with `hasText`, eight `•` in `body-large` and `on-surface`, on a single line, with no wrapping or ellipsis (the secure field is always `SingleLine`) and clipped at the width. Without `hasText`, the hint appears (minimized label) or just the expanded label.
+- The label (large and minimized), the hint and the eight `•` of the value are centered by the cap height (`font.verticalAlign: "cap-middle"`). The Compose `Text` centers by the font line box; with Roboto the two coincide to within 1 px.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o desabilitado; não entra no `code` nem nas `variants`. As opções são `none`, `hovered` e `focused`: os tokens do campo (`FilledTextFieldTokens.kt` e `OutlinedTextFieldTokens.kt`) definem `Hover*` e `Focus*` e nenhum `Pressed*` nem `Dragged*`, então não há `pressed` nem `dragged`.
+The field chooses the resting appearance of a state, as `enabled` chooses the disabled state; it does not go into the `code` or the `variants`. The options are `none`, `hovered` and `focused`: the field tokens (`FilledTextFieldTokens.kt` and `OutlinedTextFieldTokens.kt`) define `Hover*` and `Focus*` and no `Pressed*` or `Dragged*`, so there is no `pressed` or `dragged`.
 
-- **Filled, com foco** (`FilledTextFieldTokens.kt`, linhas 63 a 66): o indicador de baixo passa a 2 de espessura (`FocusActiveIndicatorHeight`) em `primary` (`FocusActiveIndicatorColor`) e o rótulo vai a `primary` (`FocusLabelColor`). Em erro, o indicador e o rótulo ficam em `error` (`ErrorFocusActiveIndicatorColor` e `ErrorFocusLabelColor`, linhas 45 e 48).
-- **Outlined, com foco** (`OutlinedTextFieldTokens.kt`, linhas 60 a 63): o contorno passa a 2 (`FocusOutlineWidth`) em `primary` (`FocusOutlineColor`), inclusive o lado de cima ao redor do vão do rótulo, e o rótulo vai a `primary` (`FocusLabelColor`). Em erro, `error` (`ErrorFocusOutlineColor` e `ErrorFocusLabelColor`, linhas 42 e 44).
-- **Filled, com o mouse** (`FilledTextFieldTokens.kt`, linhas 70 a 73): o indicador vai a `on-surface` (`HoverActiveIndicatorColor`), ainda com 1 de espessura (`HoverActiveIndicatorHeight`); o rótulo continua `on-surface-variant` (`HoverLabelColor`). Em erro, o indicador, o rótulo e o ícone final vão a `on-error-container` (`ErrorHoverActiveIndicatorColor`, `ErrorHoverLabelColor` e `ErrorHoverTrailingIconColor`, linhas 52, 54 e 57).
-- **Outlined, com o mouse** (`OutlinedTextFieldTokens.kt`, linhas 67 a 69): o contorno e o rótulo vão a `on-surface` (`HoverOutlineColor` e `HoverLabelColor`), com a espessura de 1. Em erro, o contorno, o rótulo e o ícone final vão a `on-error-container` (linhas 48, 50 e 52).
-- **Sem mudança:** o texto (`on-surface`), o ícone inicial (`on-surface-variant`), o texto de apoio e o contêiner repetem os papéis de sempre nos dois estados (`Hover*` e `Focus*` de `InputColor`, `LeadingIconColor` e `SupportingColor`); o ícone final só muda no erro com o mouse.
-- **Desabilitado vence:** com `enabled` `false` o `interaction` não muda cor nem espessura, então o desenho é o do desabilitado, qualquer que seja o estado.
-- **Layout igual:** o indicador e o contorno de 2 ficam por dentro (`align` `inside`); o texto e o campo não se mexem.
+- **Filled, focused** (`FilledTextFieldTokens.kt`, lines 63 to 66): the bottom indicator goes to 2 thick (`FocusActiveIndicatorHeight`) in `primary` (`FocusActiveIndicatorColor`) and the label goes to `primary` (`FocusLabelColor`). In error, the indicator and the label stay in `error` (`ErrorFocusActiveIndicatorColor` and `ErrorFocusLabelColor`, lines 45 and 48).
+- **Outlined, focused** (`OutlinedTextFieldTokens.kt`, lines 60 to 63): the outline goes to 2 (`FocusOutlineWidth`) in `primary` (`FocusOutlineColor`), including the top side around the label gap, and the label goes to `primary` (`FocusLabelColor`). In error, `error` (`ErrorFocusOutlineColor` and `ErrorFocusLabelColor`, lines 42 and 44).
+- **Filled, hovered** (`FilledTextFieldTokens.kt`, lines 70 to 73): the indicator goes to `on-surface` (`HoverActiveIndicatorColor`), still 1 thick (`HoverActiveIndicatorHeight`); the label stays `on-surface-variant` (`HoverLabelColor`). In error, the indicator, the label and the trailing icon go to `on-error-container` (`ErrorHoverActiveIndicatorColor`, `ErrorHoverLabelColor` and `ErrorHoverTrailingIconColor`, lines 52, 54 and 57).
+- **Outlined, hovered** (`OutlinedTextFieldTokens.kt`, lines 67 to 69): the outline and the label go to `on-surface` (`HoverOutlineColor` and `HoverLabelColor`), with a width of 1. In error, the outline, the label and the trailing icon go to `on-error-container` (lines 48, 50 and 52).
+- **No change:** the text (`on-surface`), the leading icon (`on-surface-variant`), the support text and the container repeat the usual roles in both states (`Hover*` and `Focus*` of `InputColor`, `LeadingIconColor` and `SupportingColor`); the trailing icon only changes on error with the mouse.
+- **Disabled wins:** with `enabled` `false` the `interaction` changes neither color nor thickness, so the drawing is the disabled one, whatever the state.
+- **Same layout:** the 2 indicator and outline sit inside (`align` `inside`); the text and the field do not move.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- As mesmas diferenças do `text-field`: o `interaction` é um quadro parado (sem foco real, cursor, `pressed` e animação do rótulo; sem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado); dica mostrada com o rótulo minimizado; raio superior do filled pela lista de 4 raios com `$token` por item; contêiner desabilitado do filled como no código (`ContainerColor`), não o 0,04 do token; o `size` é 84 (o do outlined com apoio) e a altura vem do `sizing`, que só conta uma linha de apoio (um apoio de duas linhas passa da caixa ajustada); a largura é `fill` no `sizing`, então o `minWidth` de 280 da raiz só age quando a largura é medida.
-- Os oito `•` são fixos: o Compose desenha um por caractere digitado e, com `RevealLastTyped`, mostra o último por um instante.
-- Sem o ícone de mostrar ou esconder a senha: ele é o `trailingIcon` que a tela escolhe.
+- The same differences as `text-field`: the `interaction` is a still frame (no real focus, cursor, `pressed` or label animation; no focus ring (Compose does not define `FocusIndicatorColor` for it at the pinned commit); the hint is shown with the minimized label; filled top radius from the list of 4 radii with `$token` per item; filled disabled container as in the code (`ContainerColor`), not the 0.04 of the token; the `size` is 84 (the outlined one with support text) and the height comes from `sizing`, which only counts one line of support text (two-line support text overflows the fitted box); the width is `fill` in `sizing`, so the root `minWidth` of 280 only acts when the width is measured.
+- The eight `•` are fixed: Compose draws one per typed character and, with `RevealLastTyped`, shows the last one for a moment.
+- No show or hide password icon: it is the `trailingIcon` that the screen chooses.

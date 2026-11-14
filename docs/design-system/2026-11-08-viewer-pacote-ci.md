@@ -1,13 +1,13 @@
-# Pacote do visualizador e CI na troca de base — 2026-11-08 (épico `epic/viewer-pacote-ci`)
+# Viewer package and CI on base switch — 2026-11-08 (épico `epic/viewer-pacote-ci`)
 
 ## Pendências
 
-Pendências: nenhuma (sem UI do app; só o pacote `mapping-viewer`, os tipos de imagem remota e o `ci.yml`).
+Pending items: none (no app UI; only the `mapping-viewer` package, the remote image types and `ci.yml`).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só mexeu no pacote `mapping-viewer`, nos tipos de imagem remota e no `ci.yml`.
+No write to the Mapping artifact in Claude Design: the stage only touched the `mapping-viewer` package, the remote image types and `ci.yml`.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

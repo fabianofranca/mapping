@@ -1,13 +1,13 @@
-# Referência como URL — 2026-11-06 (épico `epic/referencia-url`)
+# Reference as a URL — 2026-11-06 (épico `epic/referencia-url`)
 
 ## Pendências
 
-Nenhuma. O texto copiado pela referência muda (só a URL), mas nenhum componente, token ou ícone do design system muda.
+None. The text copied by the reference changes (only the URL), but no design system component, token or icon changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não mudou componente, token nem ícone (o texto copiado pela referência é só a URL).
+Nothing to write to the **Mapping** artifact: the epic changed no component, token or icon (the text copied by the reference is only the URL).
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

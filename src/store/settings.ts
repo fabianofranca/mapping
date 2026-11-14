@@ -16,7 +16,7 @@ export function isTheme(value: unknown): value is ThemePreference {
   return THEMES.some((th) => th === value);
 }
 
-/** Idioma padrão a partir de `navigator.language`. */
+/** Default language from `navigator.language`. */
 export function detectLocale(language: string | undefined): Locale {
   return language?.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en-US';
 }
@@ -32,7 +32,7 @@ const storedTheme = readSetting(THEME_KEY);
 export const locale = signal<Locale>(
   isLocale(storedLocale) ? storedLocale : detectLocale(globalThis.navigator?.language),
 );
-/** Zoom semântico: texto das anotações dentro das marcações (ligado por padrão). */
+/** Semantic zoom: annotation text inside the markings (on by default). */
 export const theme = signal<ThemePreference>(
   isTheme(storedTheme) ? storedTheme : 'system',
 );
@@ -42,7 +42,7 @@ export function isMarkingDisplayMode(value: unknown): value is MarkingDisplayMod
 }
 
 const storedDisplay = readSetting(MARKING_DISPLAY_KEY);
-/** Marcações sem anotação: mostrar todas, esmaecer (padrão) ou ocultar. Por dispositivo. */
+/** Markings without an annotation: show all, dim (default) or hide. Per device. */
 export const markingDisplay = signal<MarkingDisplayMode>(
   isMarkingDisplayMode(storedDisplay) ? storedDisplay : 'dim',
 );
@@ -63,8 +63,8 @@ export function setTheme(value: ThemePreference): void {
 }
 
 /**
- * Desenhar os componentes por cima de uma foto (padrão desligado: na foto só a borda). Na tela
- * em branco o desenho aparece sempre. Por dispositivo, não vai para o projeto.
+ * Draw the components over a photo (off by default: on a photo only the border). On the blank
+ * screen the drawing always shows. Per device, it does not go into the project.
  */
 export const showComponentsOnPhotos = signal<boolean>(
   readSetting(COMPONENTS_ON_PHOTOS_KEY) === 'on',
@@ -77,7 +77,7 @@ export function setShowComponentsOnPhotos(value: boolean): void {
 
 const ARROWS_KEY = 'mapping.showArrows';
 
-/** Mostrar as setas no canvas (padrão ligado; ME4). Por dispositivo, não vai para o projeto. */
+/** Show the arrows on the canvas (on by default; ME4). Per device, it does not go into the project. */
 export const showArrows = signal<boolean>(readSetting(ARROWS_KEY) !== 'off');
 
 export function setShowArrows(value: boolean): void {

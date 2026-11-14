@@ -1,13 +1,13 @@
-// Projeto do `npm run perf:canvas`: a mesma receita do cenário "projeto inteiro à vista" dos testes
-// (tests/model/scenarioProject.ts), com containers de fundo sem arquivo, para a app abrir a pasta sem
-// imagens. Empacotado pelo esbuild em `scripts/perf/canvas.mjs`.
+// Project for `npm run perf:canvas`: the same recipe as the "whole project in view" scenario of the tests
+// (tests/model/scenarioProject.ts), with background containers without a file, so the app opens the folder without
+// images. Bundled by esbuild into `scripts/perf/canvas.mjs`.
 import { serialize, type Project } from '../../src/model';
 import { material3Files, scenarioProject } from '../../tests/model/scenarioProject';
 
 export interface PerfOptions {
-  /** Número de setas (padrão: metade das marcações). */
+  /** Number of arrows (default: half the markings). */
   readonly arrows?: number;
-  /** Acrescenta a tela `M3_SCREEN` em cada container. */
+  /** Adds the `M3_SCREEN` screen to each container. */
   readonly components?: boolean;
 }
 
@@ -15,12 +15,12 @@ export function perfProject(size: number, options: PerfOptions = {}): Project {
   return scenarioProject({ size, backgrounds: true, ...options });
 }
 
-/** `mapping.json` do projeto, com a revisão 1 que a app espera de um arquivo já gravado. */
+/** The project's `mapping.json`, with the revision 1 that the app expects from an already saved file. */
 export function perfMappingJson(size: number, options: PerfOptions = {}): string {
   return serialize({ ...perfProject(size, options), revision: 1 });
 }
 
-/** Arquivos da biblioteca do Material 3 (`specs/material3/...`), em base64, para gravar na pasta. */
+/** Material 3 library files (`specs/material3/...`), in base64, to be written to the folder. */
 export function perfLibraryFiles(): { path: string; base64: string }[] {
   return material3Files().map((f) => ({
     path: f.path,

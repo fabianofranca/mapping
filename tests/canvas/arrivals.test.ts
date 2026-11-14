@@ -40,42 +40,42 @@ const bandLabelSpot = (
   nameClear: number,
 ) => bandSpotOf(band, zoom, size, view, nameClear, A);
 
-// As marcas de chegada no canvas (etapa #659, PE3, decisão 8): o selo "Veio de <nome>" sobre cada
-// raiz com marca e a faixa "Área de chegada". Funções puras sobre o projeto, sem Konva.
+// The arrival marks on the canvas (stage #659, PE3, decision 8): the "Came from <name>" seal over each
+// root with a mark and the "Arrival area" strip. Pure functions over the project, without Konva.
 
-const mark = (p: Project, root: string, fromName = 'Frente'): Project => ({
+const mark = (p: Project, root: string, fromName = 'Front'): Project => ({
   ...p,
   arrivals: [...p.arrivals, { root, from: 'V', fromName } satisfies Arrival],
 });
 
-describe('arrivalMarks: o que desenhar', () => {
-  it('sem marca de chegada, nada a desenhar', () => {
+describe('arrivalMarks: what to draw', () => {
+  it('without an arrival mark, nothing to draw', () => {
     expect(arrivalMarks(canvasProject())).toBeNull();
     expect(arrivalMarks(null)).toBeNull();
   });
 
-  it('um selo por raiz com marca, com o nome da origem e a pegada da raiz', () => {
-    const p = mark(canvasProject(), 'I2', 'Frente');
+  it('one seal per root with a mark, with the origin name and the root footprint', () => {
+    const p = mark(canvasProject(), 'I2', 'Front');
     const marks = arrivalMarks(p);
     expect(marks?.badges).toEqual([
-      { root: 'I2', name: 'Frente', rect: { x: 1100, y: 0, width: 500, height: 500 } },
+      { root: 'I2', name: 'Front', rect: { x: 1100, y: 0, width: 500, height: 500 } },
     ]);
   });
 
-  it('marca de uma raiz que não existe mais não vira selo', () => {
+  it('a mark of a root that no longer exists does not become a seal', () => {
     expect(arrivalMarks(mark(canvasProject(), 'XX'))).toBeNull();
   });
 
-  it('dispensar a marca tira o selo (e a faixa)', () => {
+  it('dismissing the mark removes the seal (and the strip)', () => {
     const p = mark(canvasProject(), 'I2');
     expect(arrivalMarks(p)).not.toBeNull();
     expect(arrivalMarks(dismissArrival(p, 'I2'))).toBeNull();
   });
 
-  it('faixa: a caixa das raízes com marca, com folga, quando fica à direita de tudo o resto', () => {
+  it('strip: the box of the roots with a mark, with slack, when it sits to the right of everything else', () => {
     const p = mark(canvasProject(), 'I2');
     const band = arrivalMarks(p)?.band;
-    // I1 (o que não tem marca) termina em x=1000; I2 começa em 1100.
+    // I1 (the one without a mark) ends at x=1000; I2 starts at 1100.
     expect(band).toEqual({
       x: 1100 - ARRIVAL_BAND_PAD,
       y: 0 - ARRIVAL_BAND_PAD,
@@ -84,20 +84,20 @@ describe('arrivalMarks: o que desenhar', () => {
     });
   });
 
-  it('sem faixa quando a raiz com marca não está à direita do resto (marca perto da referência)', () => {
+  it('without a strip when the root with a mark is not to the right of the rest (mark near the reference)', () => {
     const p = mark(canvasProject(), 'I1');
     const marks = arrivalMarks(p);
     expect(marks?.badges).toHaveLength(1);
     expect(marks?.band).toBeNull();
   });
 
-  it('com todas as raízes marcadas a faixa envolve todas', () => {
+  it('with all the roots marked the strip wraps them all', () => {
     const p = mark(mark(canvasProject(), 'I1'), 'I2');
     expect(arrivalMarks(p)?.band).not.toBeNull();
   });
 
-  it('sem ArrivalInfo (depois de recarregar): a faixa envolve só a raiz sem referência (etapa #764, AP1)', () => {
-    // I3 (0,900) chegou perto da referência I1 (seta de M1 para M4); I2 (1100,0) não tem seta.
+  it('without ArrivalInfo (after reloading): the strip wraps only the root without a reference (stage #764, AP1)', () => {
+    // I3 (0,900) arrived near the reference I1 (arrow from M1 to M4); I2 (1100,0) has no arrow.
     let p = addContainer(canvasProject(), {
       id: 'I3',
       file: 'images/c.jpg',
@@ -121,49 +121,49 @@ describe('arrivalMarks: o que desenhar', () => {
     });
   });
 
-  it('só raízes marcadas com referência: selo e nenhuma faixa', () => {
+  it('only marked roots with a reference: seal and no strip', () => {
     const p = createArrow(canvasProject(), { id: 'R1', from: 'M1', to: 'M3' });
     const marks = arrivalMarks(mark(p, 'I2'));
     expect(marks?.badges).toHaveLength(1);
     expect(marks?.band).toBeNull();
   });
 
-  it('é calculado uma vez por versão do projeto (mesmo objeto na segunda chamada)', () => {
+  it('it is computed once per project version (same object on the second call)', () => {
     const p = mark(canvasProject(), 'I2');
     expect(arrivalMarks(p)).toBe(arrivalMarks(p));
     expect(arrivalMarks(mark(p, 'I1'))).not.toBe(arrivalMarks(p));
   });
 });
 
-describe('arrivalBadgeSpot: o lugar do selo', () => {
+describe('arrivalBadgeSpot: the place of the seal', () => {
   const big = { x: 100, y: 200, width: 800, height: 600 };
   const small = { x: 100, y: 200, width: 40, height: 30 };
 
-  it('raiz grande: por dentro, no canto de baixo à esquerda (o nome do container fica em cima)', () => {
+  it('big root: inside, at the bottom left corner (the container name is on top)', () => {
     const spot = badgeSpot(big, 1, 100);
     expect(spot.x).toBeGreaterThan(100);
     expect(spot.y).toBeGreaterThan(200 + 600 - 2 * A.height);
     expect(spot.y + A.height).toBeLessThanOrEqual(200 + 600);
   });
 
-  it('raiz pequena: por fora, abaixo do canto de baixo à esquerda (nunca sobre o nome nem a faixa)', () => {
+  it('small root: outside, below the bottom left corner (never over the name nor the strip)', () => {
     const spot = badgeSpot(small, 1, 100);
     expect(spot.x).toBe(100);
     expect(spot.y).toBeGreaterThanOrEqual(200 + 30);
   });
 
-  it('o tamanho do selo na tela não muda com o zoom: o vão em unidades do canvas encolhe', () => {
+  it('the seal size on the screen does not change with zoom: the gap in canvas units shrinks', () => {
     const at1 = badgeSpot(small, 1, 100);
     const at2 = badgeSpot(small, 2, 100);
     expect(at1.y - 230).toBeCloseTo(2 * (at2.y - 230));
   });
 
-  it('raiz pequena: o vão cobre as alças da seleção (10 px de tela abaixo do canto)', () => {
+  it('small root: the gap covers the selection handles (10 screen px below the corner)', () => {
     const spot = badgeSpot(small, 2, 100);
     expect(spot.y - (200 + 30)).toBeGreaterThanOrEqual(10 / 2 - 1e-9);
   });
 
-  it('raiz pequena com outra raiz logo abaixo: o selo não cai no nome dela, vai para o lado', () => {
+  it('small root with another root right below: the seal does not fall on its name, it goes to the side', () => {
     const zoom = 0.22;
     const below = { x: 100, y: 200 + 30 + 5, width: 40, height: 30 };
     const width = 100;
@@ -177,44 +177,44 @@ describe('arrivalBadgeSpot: o lugar do selo', () => {
       spot.y < below.y + below.height &&
       spot.y + A.height / zoom > below.y - nameBand;
     expect(hits).toBe(false);
-    // Sem obstáculo, o lugar de sempre: abaixo do canto.
+    // Without an obstacle, the usual place: below the corner.
     expect(badgeSpot(small, zoom, width).x).toBe(100);
   });
 
-  // R23.10: a Relatório em y 0 e a Funil logo abaixo, no mesmo x; a ~39% de zoom a faixa do nome
-  // da Funil (24 px de tela) invade o fundo da Relatório, onde o selo ficava.
-  const relatorio = { x: 0, y: 0, width: 1000, height: 700 };
-  const funil = { x: 0, y: 720, width: 1000, height: 600 };
+  // R23.10: the Report at y 0 and the Funnel right below, at the same x; at ~39% zoom the name strip
+  // of the Funnel (24 screen px) invades the bottom of the Report, where the seal used to sit.
+  const report = { x: 0, y: 0, width: 1000, height: 700 };
+  const funnel = { x: 0, y: 720, width: 1000, height: 600 };
   const both = [
-    { id: 'R', rect: relatorio },
-    { id: 'F', rect: funil },
+    { id: 'R', rect: report },
+    { id: 'F', rect: funnel },
   ];
   const crosses = (at: { x: number; y: number }, w: number, h: number, r: Rect) =>
     at.x < r.x + r.width && at.x + w > r.x && at.y < r.y + r.height && at.y + h > r.y;
 
-  it('raiz grande com outra raiz logo abaixo (~39%): o selo não cruza a faixa do nome dela', () => {
+  it('big root with another root right below (~39%): the seal does not cross its name strip', () => {
     const zoom = 0.39;
     const width = 150;
-    const spot = badgeSpot(relatorio, zoom, width, undefined, undefined, both, 'R');
+    const spot = badgeSpot(report, zoom, width, undefined, undefined, both, 'R');
     const band = {
-      x: funil.x,
-      y: funil.y - A.nameBand / zoom,
-      width: funil.width,
-      height: funil.height + A.nameBand / zoom,
+      x: funnel.x,
+      y: funnel.y - A.nameBand / zoom,
+      width: funnel.width,
+      height: funnel.height + A.nameBand / zoom,
     };
     expect(crosses(spot, width / zoom, A.height / zoom, band)).toBe(false);
-    // Ainda por dentro da Relatório, abaixo da faixa do nome dela.
-    expect(spot.y).toBeGreaterThanOrEqual(relatorio.y + A.nameBand / zoom);
-    expect(spot.y + A.height / zoom).toBeLessThanOrEqual(relatorio.y + relatorio.height);
+    // Still inside the Report, below its name strip.
+    expect(spot.y).toBeGreaterThanOrEqual(report.y + A.nameBand / zoom);
+    expect(spot.y + A.height / zoom).toBeLessThanOrEqual(report.y + report.height);
   });
 
-  it('a raiz não se bloqueia a si mesma: a comparação é por id, não pelo objeto', () => {
-    const copy = [{ id: 'R', rect: { ...relatorio } }];
-    const alone = badgeSpot(relatorio, 1, 150);
-    expect(badgeSpot(relatorio, 1, 150, undefined, undefined, copy, 'R')).toEqual(alone);
+  it('the root does not block itself: the comparison is by id, not by object', () => {
+    const copy = [{ id: 'R', rect: { ...report } }];
+    const alone = badgeSpot(report, 1, 150);
+    expect(badgeSpot(report, 1, 150, undefined, undefined, copy, 'R')).toEqual(alone);
   });
 
-  it('sem candidato livre: o de menor interseção', () => {
+  it('without a free candidate: the one with the least intersection', () => {
     const a = { x: 0, y: 0, width: 300, height: 60 };
     const b = { x: -50, y: 60, width: 200, height: 100 };
     const c = { x: 300, y: 30, width: 60, height: 60 };
@@ -223,13 +223,13 @@ describe('arrivalBadgeSpot: o lugar do selo', () => {
       { id: 'B', rect: b },
       { id: 'C', rect: c },
     ];
-    // O de dentro cairia por inteiro sobre a faixa do nome da B (2000), o de baixo sobre o corpo
-    // dela (2000), o da direita sobre a C (1120); o da esquerda é o que menos cobre (920).
+    // The inside one would fall entirely over the name strip of B (2000), the lower one over its body
+    // (2000), the right one over C (1120); the left one is the one that covers the least (920).
     const spot = badgeSpot(a, 1, 100, undefined, undefined, roots, 'A');
     expect(spot).toEqual({ x: a.x - A.gap - 100, y: a.y + 60 + A.gap - A.height });
   });
 
-  it('o selo não sai da área visível: encosta na borda direita e na de baixo', () => {
+  it('the seal does not leave the visible area: it touches the right and bottom edges', () => {
     const zoom = 0.16;
     const width = 220;
     const view = { x: 0, y: 0, width: 880 / zoom, height: 660 / zoom };
@@ -240,13 +240,13 @@ describe('arrivalBadgeSpot: o lugar do selo', () => {
     expect(spot.x).toBeGreaterThanOrEqual(view.x);
   });
 
-  it('a largura cresce com o nome', () => {
-    expect(badgeWidth('Veio de Frente longa')).toBeGreaterThan(badgeWidth('Veio de A'));
+  it('the width grows with the name', () => {
+    expect(badgeWidth('Came from Long front')).toBeGreaterThan(badgeWidth('Came from A'));
   });
 });
 
-describe('medidas do selo vêm dos tokens', () => {
-  it('largura, altura e vão seguem as medidas passadas', () => {
+describe('seal measures come from the tokens', () => {
+  it('width, height and gap follow the measures passed', () => {
     expect(widthOf('abc', { ...A, charWidth: 10, pad: 4 })).toBe(38);
     const rect = { x: 0, y: 0, width: 1000, height: 1000 };
     const tall = spotOf(rect, 1, 100, { ...A, height: 40, gap: 10 });
@@ -255,23 +255,23 @@ describe('medidas do selo vêm dos tokens', () => {
   });
 });
 
-describe('arrivalBandLabelSpot: o lugar do rótulo da faixa', () => {
+describe('arrivalBandLabelSpot: the place of the strip label', () => {
   const view = { x: 0, y: 0, width: 900, height: 600 };
   const size = { width: 160, height: 40 };
 
-  it('com espaço em cima: acima da faixa, sem encostar nela', () => {
+  it('with room on top: above the strip, without touching it', () => {
     const band = { x: 300, y: 300, width: 200, height: 200 };
     const spot = bandLabelSpot(band, 1, size, view, 20);
     expect(spot.x).toBe(300);
     expect(spot.y + size.height).toBeLessThanOrEqual(300);
   });
 
-  it('zoom baixo: a folga da faixa encolhe e o rótulo sobe acima da linha do nome do container', () => {
+  it('low zoom: the strip slack shrinks and the label rises above the container name line', () => {
     const zoom = 0.16;
     const band = { x: 3000, y: 2000, width: 800, height: 3000 };
     const spot = arrivalBadgeSpotless(band, zoom);
-    // O nome do container ocupa os 20 px de tela logo acima do conteúdo, que está
-    // ARRIVAL_BAND_PAD abaixo do topo da faixa.
+    // The container name takes the 20 screen px right above the content, which is
+    // ARRIVAL_BAND_PAD below the top of the strip.
     const contentTop = band.y + ARRIVAL_BAND_PAD;
     const nameTop = contentTop - 20 / zoom;
     expect(spot.y + size.height / zoom).toBeLessThanOrEqual(nameTop);
@@ -282,14 +282,14 @@ describe('arrivalBandLabelSpot: o lugar do rótulo da faixa', () => {
     }
   });
 
-  it('sem espaço em cima: vai para baixo da faixa, dentro da área visível', () => {
+  it('without room on top: goes below the strip, inside the visible area', () => {
     const band = { x: 100, y: 5, width: 200, height: 300 };
     const spot = bandLabelSpot(band, 1, size, view, 20);
     expect(spot.y).toBeGreaterThanOrEqual(305);
     expect(spot.y + size.height).toBeLessThanOrEqual(view.y + view.height);
   });
 
-  it('o rótulo fica a tokens.arrival.pad (px de tela) de cada borda da área visível', () => {
+  it('the label stays at tokens.arrival.pad (screen px) from each edge of the visible area', () => {
     const margin = A.pad / 0.5;
     const wide = { x: 0, y: 0, width: 1800, height: 1200 };
     const right = bandLabelSpot(
@@ -318,7 +318,7 @@ describe('arrivalBandLabelSpot: o lugar do rótulo da faixa', () => {
     expect(top.y).toBeGreaterThanOrEqual(wide.y + margin);
   });
 
-  it('mais largo que a área visível menos as margens: ganha largura e reticências', () => {
+  it('wider than the visible area minus the margins: gains width and ellipsis', () => {
     expect(bandFitOf(160, 1, view, A)).toBeNull();
     expect(bandFitOf(1000, 1, view, A)).toBe(view.width - 2 * A.pad);
     expect(bandFitOf(1000, 0.5, view, A)).toBe(view.width * 0.5 - 2 * A.pad);
@@ -327,7 +327,7 @@ describe('arrivalBandLabelSpot: o lugar do rótulo da faixa', () => {
     expect(spot.x).toBe(view.x + A.pad);
   });
 
-  it('não sai pela direita nem pela esquerda da área visível', () => {
+  it('does not leave through the right nor the left of the visible area', () => {
     const band = { x: 820, y: 300, width: 60, height: 100 };
     const spot = bandLabelSpot(band, 1, size, view, 20);
     expect(spot.x + size.width).toBeLessThanOrEqual(view.x + view.width);
@@ -335,12 +335,12 @@ describe('arrivalBandLabelSpot: o lugar do rótulo da faixa', () => {
   });
 });
 
-describe('arrivalBadgeSpot: sem cair sob o minimapa', () => {
+describe('arrivalBadgeSpot: without falling under the minimap', () => {
   const view = { x: 0, y: 0, width: 600, height: 400 };
   const width = 135;
   const minimap = { x: 500, y: 300, width: 90, height: 90 };
 
-  it('selo que cairia sob o minimapa vai para a esquerda dele', () => {
+  it('seal that would fall under the minimap goes to its left', () => {
     const rect = { x: 480, y: 250, width: 60, height: 40 };
     const spot = badgeSpot(rect, 1, width, view, minimap);
     const overlaps =
@@ -352,7 +352,7 @@ describe('arrivalBadgeSpot: sem cair sob o minimapa', () => {
     expect(spot.x).toBeGreaterThanOrEqual(view.x);
   });
 
-  it('sem espaço à esquerda dele, sobe para cima do minimapa', () => {
+  it('without room on its left, it goes up above the minimap', () => {
     const narrow = { x: 0, y: 0, width: 600, height: 400 };
     const mini = { x: 20, y: 300, width: 570, height: 90 };
     const rect = { x: 480, y: 250, width: 60, height: 40 };
@@ -360,7 +360,7 @@ describe('arrivalBadgeSpot: sem cair sob o minimapa', () => {
     expect(spot.y + A.height).toBeLessThanOrEqual(mini.y);
   });
 
-  it('longe do minimapa, nada muda', () => {
+  it('far from the minimap, nothing changes', () => {
     const rect = { x: 100, y: 100, width: 60, height: 40 };
     expect(badgeSpot(rect, 1, width, view, minimap)).toEqual(
       badgeSpot(rect, 1, width, view),
@@ -368,30 +368,30 @@ describe('arrivalBadgeSpot: sem cair sob o minimapa', () => {
   });
 });
 
-// Achados 1.2 e 2.1 da rodada do testador da PV2 (#1406, correção CL1): o selo não cobre o título
-// de nenhum container nem o da faixa, nem quando a área visível o empurra para onde ele estava.
-describe('arrivalBadgeSpot: sem cobrir títulos (CL1, achados 1.2 e 2.1)', () => {
+// Findings 1.2 and 2.1 of the PV2 tester round (#1406, fix CL1): the seal does not cover the title
+// of any container nor that of the strip, even when the visible area pushes it to where it was.
+describe('arrivalBadgeSpot: without covering titles (CL1, findings 1.2 and 2.1)', () => {
   const crosses = (at: { x: number; y: number }, w: number, h: number, r: Rect) =>
     at.x < r.x + r.width && at.x + w > r.x && at.y < r.y + r.height && at.y + h > r.y;
 
-  it('1.2: a Principal enquadrada (11%): o selo da Relatório não cai no título da Funil', () => {
+  it('1.2: the Main one fitted (11%): the seal of the Report does not fall on the title of the Funnel', () => {
     const zoom = 0.11;
     const width = 120;
     const c = { x: 0, y: 0, width: 1400, height: 1000 };
-    const relatorio = { x: 1450, y: 0, width: 1600, height: 1000 };
-    const funil = { x: 1450, y: 1050, width: 1600, height: 1000 };
+    const report = { x: 1450, y: 0, width: 1600, height: 1000 };
+    const funnel = { x: 1450, y: 1050, width: 1600, height: 1000 };
     const roots = [
       { id: 'C', rect: c },
-      { id: 'R', rect: relatorio },
-      { id: 'F', rect: funil },
+      { id: 'R', rect: report },
+      { id: 'F', rect: funnel },
     ];
-    // Canvas de 360 px: a área visível termina logo depois da faixa, e o lugar à direita da
-    // Relatório, puxado para dentro dela, caía sobre o título da Funil.
+    // Canvas of 360 px: the visible area ends right after the strip, and the place to the right of the
+    // Report, pulled inside it, fell on the title of the Funnel.
     const view = { x: -100, y: -400, width: 3270, height: 5000 };
-    const spot = badgeSpot(relatorio, zoom, width, view, undefined, roots, 'R');
+    const spot = badgeSpot(report, zoom, width, view, undefined, roots, 'R');
     const w = width / zoom;
     const h = A.height / zoom;
-    for (const other of [c, funil]) {
+    for (const other of [c, funnel]) {
       const named = {
         x: other.x,
         y: other.y - A.nameBand / zoom,
@@ -404,19 +404,19 @@ describe('arrivalBadgeSpot: sem cobrir títulos (CL1, achados 1.2 e 2.1)', () =>
     expect(spot.x + w).toBeLessThanOrEqual(view.x + view.width);
   });
 
-  it('2.1: o título da faixa abaixo dela (topo fora da vista): o selo da Funil não o cobre', () => {
+  it('2.1: the strip title below it (top out of view): the seal of the Funnel does not cover it', () => {
     const zoom = 0.23;
     const width = 120;
-    const funil = { x: 1450, y: 1050, width: 700, height: 1000 };
+    const funnel = { x: 1450, y: 1050, width: 700, height: 1000 };
     const band = { x: 1426, y: -24, width: 748, height: 2098 };
     const view = { x: 100, y: 300, width: 2500, height: 2600 };
     const size = { width: 160, height: 40 };
     const at = bandLabelSpot(band, zoom, size, view, 20);
-    // O topo da faixa saiu da vista: o título fica abaixo dela.
+    // The top of the strip left the view: the title sits below it.
     expect(at.y).toBeGreaterThan(band.y + band.height);
     const label = { ...at, width: size.width / zoom, height: size.height / zoom };
-    const roots = [{ id: 'F', rect: funil }];
-    const spot = badgeSpot(funil, zoom, width, view, undefined, roots, 'F', [label]);
+    const roots = [{ id: 'F', rect: funnel }];
+    const spot = badgeSpot(funnel, zoom, width, view, undefined, roots, 'F', [label]);
     expect(
       crosses(spot, width / zoom, A.height / zoom, label),
       JSON.stringify({ spot, label }),

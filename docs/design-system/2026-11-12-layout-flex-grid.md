@@ -1,13 +1,13 @@
-# Layout alinhado a Flexbox e CSS Grid — 2026-11-12 (épico `epic/layout-flex-grid`)
+# Layout aligned with Flexbox and CSS Grid — 2026-11-12 (épico `epic/layout-flex-grid`)
 
 ## Pendências
 
-Nenhuma. O épico mexe no formato do componente, no motor de layout, na prova de desenho e na biblioteca `material3-compose`; nenhum componente, token nem ícone do design system da app muda.
+None. The epic touches the component format, the layout engine, the drawing proof and the `material3-compose` library; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto no artefato **Mapping**: o épico não muda componente, token nem ícone da app.
+Sem impacto on the **Mapping** artifact: the epic changes no component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

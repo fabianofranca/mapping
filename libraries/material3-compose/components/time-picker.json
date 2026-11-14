@@ -3,11 +3,11 @@
   "formatVersion": 4,
   "id": "time-picker",
   "name": "Time picker",
-  "description": "Seletor de hora em um diálogo de 328: no modo picker, os campos de hora e minuto e o relógio de 256 com o seletor; no modo input, só os campos com os rótulos. Sem 24 horas, mostra o AM/PM.",
+  "description": "Time picker in a 328 dialog: in picker mode, the hour and minute fields and the 256 clock with the selector; in input mode, only the fields with the labels. Without 24 hours, shows AM/PM.",
   "size": { "width": 328, "height": 528 },
   "sizing": { "width": 328, "height": "hug" },
   "preview": {
-    "title": "Selecionar horário",
+    "title": "Select time",
     "mode": "picker",
     "hour": 14,
     "minute": 30,
@@ -23,7 +23,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "cabeçalho",
+        "name": "header",
         "layout": { "type": "column" },
         "width": "fill",
         "height": 36,
@@ -31,7 +31,7 @@
         "children": [
           {
             "type": "text",
-            "name": "título",
+            "name": "title",
             "text": { "$field": "title" },
             "font": {
               "size": { "$token": "label-medium-size" },
@@ -45,14 +45,14 @@
       },
       {
         "type": "frame",
-        "name": "hora e minuto",
+        "name": "hour and minute",
         "layout": { "type": "row", "align": "start", "justify": "center" },
         "width": "fill",
         "height": { "$if": { "$eq": ["mode", "input"] }, "then": "hug", "else": 80 },
         "children": [
           {
             "type": "frame",
-            "name": "campo da hora",
+            "name": "hour field",
             "layout": {
               "type": "column",
               "gap": { "$if": { "$eq": ["mode", "input"] }, "then": 7, "else": 0 }
@@ -62,7 +62,7 @@
             "children": [
               {
                 "type": "frame",
-                "name": "hora",
+                "name": "hour",
                 "layout": { "type": "none" },
                 "width": 96,
                 "height": { "$if": { "$eq": ["mode", "input"] }, "then": 72, "else": 80 },
@@ -89,7 +89,7 @@
                 "children": [
                   {
                     "type": "rect",
-                    "name": "estado",
+                    "name": "state",
                     "cornerRadius": { "$token": "corner-small" },
                     "fill": { "$token": "on-primary-container" },
                     "opacity": {
@@ -111,7 +111,7 @@
                   },
                   {
                     "type": "text",
-                    "name": "valor",
+                    "name": "value",
                     "text": {
                       "$if": { "$has": "hour" },
                       "then": {
@@ -196,8 +196,8 @@
               },
               {
                 "type": "text",
-                "name": "rótulo da hora",
-                "text": "Hora",
+                "name": "hour label",
+                "text": "Hour",
                 "font": {
                   "size": { "$token": "body-small-size" },
                   "weight": { "$token": "body-small-weight" },
@@ -211,14 +211,14 @@
           },
           {
             "type": "frame",
-            "name": "dois pontos",
+            "name": "colon",
             "layout": { "type": "row", "align": "center", "justify": "center" },
             "width": 24,
             "height": { "$if": { "$eq": ["mode", "input"] }, "then": 72, "else": 80 },
             "children": [
               {
                 "type": "text",
-                "name": "separador",
+                "name": "separator",
                 "text": ":",
                 "font": {
                   "size": {
@@ -249,7 +249,7 @@
           },
           {
             "type": "frame",
-            "name": "campo do minuto",
+            "name": "minute field",
             "layout": {
               "type": "column",
               "gap": { "$if": { "$eq": ["mode", "input"] }, "then": 7, "else": 0 }
@@ -259,7 +259,7 @@
             "children": [
               {
                 "type": "frame",
-                "name": "minuto",
+                "name": "minute",
                 "layout": { "type": "none" },
                 "width": 96,
                 "height": { "$if": { "$eq": ["mode", "input"] }, "then": 72, "else": 80 },
@@ -286,7 +286,7 @@
                 "children": [
                   {
                     "type": "rect",
-                    "name": "estado",
+                    "name": "state",
                     "cornerRadius": { "$token": "corner-small" },
                     "fill": { "$token": "on-primary-container" },
                     "opacity": {
@@ -308,7 +308,7 @@
                   },
                   {
                     "type": "text",
-                    "name": "valor",
+                    "name": "value",
                     "text": {
                       "$if": { "$has": "minute" },
                       "then": {
@@ -348,8 +348,8 @@
               },
               {
                 "type": "text",
-                "name": "rótulo do minuto",
-                "text": "Minuto",
+                "name": "minute label",
+                "text": "Minute",
                 "font": {
                   "size": { "$token": "body-small-size" },
                   "weight": { "$token": "body-small-weight" },
@@ -363,7 +363,7 @@
           },
           {
             "type": "rect",
-            "name": "espaço",
+            "name": "space",
             "width": 12,
             "height": 1,
             "fill": "none",
@@ -371,7 +371,7 @@
           },
           {
             "type": "frame",
-            "name": "AM e PM",
+            "name": "AM and PM",
             "layout": { "type": "column" },
             "width": 52,
             "height": { "$if": { "$eq": ["mode", "input"] }, "then": 72, "else": 80 },
@@ -394,7 +394,7 @@
                 "children": [
                   {
                     "type": "text",
-                    "name": "texto",
+                    "name": "text",
                     "text": "AM",
                     "font": {
                       "size": { "$token": "title-medium-size" },
@@ -414,7 +414,7 @@
               },
               {
                 "type": "rect",
-                "name": "divisor",
+                "name": "divider",
                 "width": "fill",
                 "height": 1,
                 "fill": { "$token": "outline" }
@@ -433,7 +433,7 @@
                 "children": [
                   {
                     "type": "text",
-                    "name": "texto",
+                    "name": "text",
                     "text": "PM",
                     "font": {
                       "size": { "$token": "title-medium-size" },
@@ -457,7 +457,7 @@
       },
       {
         "type": "rect",
-        "name": "margem",
+        "name": "margin",
         "width": "fill",
         "height": 36,
         "fill": "none",
@@ -465,7 +465,7 @@
       },
       {
         "type": "frame",
-        "name": "relógio",
+        "name": "clock",
         "layout": { "type": "none" },
         "width": 256,
         "height": 256,
@@ -474,7 +474,7 @@
         "children": [
           {
             "type": "repeat",
-            "name": "números",
+            "name": "numbers",
             "count": {
               "$if": {
                 "$and": [
@@ -491,14 +491,14 @@
             "anchors": { "left": 0, "top": 0 },
             "template": {
               "type": "frame",
-              "name": "posição",
+              "name": "position",
               "width": 0,
               "height": 0,
               "layout": { "type": "none" },
               "children": [
                 {
                   "type": "text",
-                  "name": "número",
+                  "name": "number",
                   "text": {
                     "$if": { "$eq": ["selection", "minute"] },
                     "then": { "$mul": [{ "$field": "$index" }, 5] },
@@ -573,7 +573,7 @@
           },
           {
             "type": "path",
-            "name": "trilho",
+            "name": "track",
             "width": 256,
             "height": 256,
             "viewBox": [256, 256],
@@ -653,7 +653,7 @@
           },
           {
             "type": "frame",
-            "name": "alça",
+            "name": "handle",
             "width": 48,
             "height": 48,
             "cornerRadius": { "$token": "corner-full" },
@@ -662,7 +662,7 @@
             "children": [
               {
                 "type": "repeat",
-                "name": "números sob a alça",
+                "name": "numbers under the handle",
                 "count": {
                   "$if": {
                     "$and": [
@@ -679,14 +679,14 @@
                 "anchors": { "left": -24, "top": -24 },
                 "template": {
                   "type": "frame",
-                  "name": "posição",
+                  "name": "position",
                   "width": 0,
                   "height": 0,
                   "layout": { "type": "none" },
                   "children": [
                     {
                       "type": "text",
-                      "name": "número sob a alça",
+                      "name": "number under the handle",
                       "text": {
                         "$if": { "$eq": ["selection", "minute"] },
                         "then": { "$mul": [{ "$field": "$index" }, 5] },
@@ -1032,7 +1032,7 @@
           },
           {
             "type": "ellipse",
-            "name": "centro",
+            "name": "center",
             "width": 8,
             "height": 8,
             "fill": { "$token": "primary" },

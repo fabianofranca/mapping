@@ -1,9 +1,9 @@
-// O jsdom não implementa `showModal`/`close` nem a inércia do resto da página com um
-// diálogo modal aberto (ligado para todo teste com DOM em `tests/setup.ts`, etapa 8, F8). No Chrome, enquanto o modal está aberto, `focus()` num elemento
-// fora dele não faz nada; e, quando o diálogo sai do DOM com o foco dentro, o foco cai no
-// `body`. Este simulador reproduz as duas coisas para os testes de foco ao fechar
-// (etapa 7, achado A1): sem ele, um `focus()` feito com o modal ainda aberto passaria no
-// jsdom e falharia no navegador.
+// jsdom implements neither `showModal`/`close` nor the inertness of the rest of the page
+// while a modal dialog is open (enabled for every DOM test in `tests/setup.ts`, stage 8, F8).
+// In Chrome, while the modal is open, `focus()` on an element outside it does nothing; and,
+// when the dialog leaves the DOM with focus inside, focus falls to `body`. This simulator
+// reproduces both for the focus-on-close tests (stage 7, finding A1): without it, a `focus()`
+// made while the modal is still open would pass in jsdom and fail in the browser.
 
 import { vi } from 'vitest';
 
@@ -16,7 +16,7 @@ interface Saved {
 let saved: Saved | null = null;
 const modals: HTMLDialogElement[] = [];
 
-/** O modal de cima, se ainda estiver aberto e no DOM. */
+/** The topmost modal, if it is still open and in the DOM. */
 function topModal(): HTMLDialogElement | undefined {
   for (let i = modals.length - 1; i >= 0; i--) {
     const dialog = modals[i];
@@ -25,7 +25,7 @@ function topModal(): HTMLDialogElement | undefined {
   return undefined;
 }
 
-/** Liga a simulação do modal; `restoreModalFocus` desliga. */
+/** Turns the modal simulation on; `restoreModalFocus` turns it off. */
 export function simulateModalFocus(): void {
   if (saved) return;
   const dialogProto = HTMLDialogElement.prototype;
@@ -58,7 +58,7 @@ export function simulateModalFocus(): void {
     writable: true,
     value(this: HTMLElement, options?: FocusOptions) {
       const modal = topModal();
-      // Fora do modal aberto, a página está inerte: o foco não sai do diálogo.
+      // Outside the open modal the page is inert: focus does not leave the dialog.
       if (modal && !modal.contains(this)) return;
       nativeFocus.call(this, options);
     },
@@ -79,15 +79,16 @@ export function restoreModalFocus(): void {
 }
 
 /**
- * Espera o modal de cima abrir de fato (aberto e com o foco dentro) e o devolve. Use antes
- * de clicar dentro dele: `vi.waitFor` só pelo `<dialog>` no DOM devolve cedo demais.
+ * Waits for the topmost modal to actually open (open and with focus inside) and returns it.
+ * Use it before clicking inside it: `vi.waitFor` on the `<dialog>` in the DOM alone returns
+ * too early.
  */
 export function openDialog(): Promise<HTMLDialogElement> {
   return vi.waitFor(() => {
     const dialogs = [...document.querySelectorAll('dialog')];
     const dialog = dialogs.at(-1);
     if (!dialog?.open || !dialog.contains(document.activeElement)) {
-      throw new Error('o diálogo ainda não abriu');
+      throw new Error('the dialog has not opened yet');
     }
     return dialog;
   });

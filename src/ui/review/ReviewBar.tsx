@@ -15,11 +15,11 @@ import { ProgressBar } from './ReviewLevels';
 import { reviewBarRef } from './reviewBarRef';
 import { useApplyAccepted, useDecideVisible, useShowProblem } from './useReview';
 
-// Faixa do modo revisão (HANDOFF-PROPOSALS 5.2, ReviewBar): selo REVISÃO, título,
-// origem, progresso, contagens e as quatro ações (Rejeitar tudo, Aceitar tudo, Aplicar
-// aceitas · N, o único primário, e Sair da revisão). Com filtros ativos, o lote vale só
-// para o que a lista mostra. Abaixo de 1200px fica compacta (contagens só com ícone e o
-// lote num menu "Em lote").
+// Review mode strip (HANDOFF-PROPOSALS 5.2, ReviewBar): REVIEW badge, title,
+// source, progress, counts and the four actions (Reject all changes, Accept all changes, Apply
+// accepted · N, the only primary, and Exit review). With active filters, the bulk action only
+// applies to what the list shows. Below 1200px it is compact (counts with only an icon and the
+// bulk action in a "Bulk" menu).
 
 function Stat({
   label,
@@ -43,7 +43,7 @@ function Stat({
   );
 }
 
-/** Rótulo do "Aplicar aceitas · N" e o motivo de estar desabilitado. */
+/** Label of "Apply accepted · N" and the reason it is disabled. */
 export function useApplyState() {
   const { review, store } = useEditor();
   const d = review.derived;
@@ -68,7 +68,7 @@ export function useApplyState() {
 export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
   const { review } = useEditor();
   const compact = useMediaQuery(`(max-width: ${BREAKPOINTS.compact}px)`);
-  // Abaixo da largura de referência (1440px), as contagens ficam só com ícone e número.
+  // Below the reference width (1440px), the counts show only an icon and a number.
   const narrow = useMediaQuery(`(max-width: ${BREAKPOINTS.design - 1}px)`);
   const d = review.derived;
   const p = d.proposal.value;
@@ -177,7 +177,7 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
       </div>
       <div class="review-bar-actions">
         {applyState.blocked && (
-          /* Exceção ao Button: selo de problema clicável (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+          /* Exception to Button: clickable problem badge (docs/DESIGN-SYSTEM.md, "Loose buttons") */
           <button
             type="button"
             class="flag flag-danger review-bar-problem"

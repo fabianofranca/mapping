@@ -1,13 +1,13 @@
-# Rede de segurança da fila — 2026-11-10 (épico `epic/rede-de-seguranca`)
+# Queue safety net — 2026-11-10 (épico `epic/rede-de-seguranca`)
 
 ## Pendências
 
-Nenhuma. Impacto no design system: nenhum (só skills, scripts de CI e docs do fluxo de entrega).
+None. Impact on the design system: none (only skills, CI scripts and docs of the delivery flow).
 
 ## Sincronização
 
-O artefato **Mapping** (https://claude.ai/artifact/HEoYNh91CqK1YDDpjXBxi9) foi lido no fechamento (2026-11-10) e nada foi gravado: o épico só mexe em skills, scripts de CI e docs do fluxo de entrega, sem componente, token nem ícone. O índice `project/design-system.json` não foi tocado.
+The **Mapping** artifact (https://claude.ai/artifact/HEoYNh91CqK1YDDpjXBxi9) was read at closing (2026-11-10) and nothing was written: the epic only touches skills, CI scripts and delivery-flow docs, with no component, token or icon. The `project/design-system.json` index was not touched.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

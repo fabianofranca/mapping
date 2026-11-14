@@ -1,13 +1,13 @@
-# Gancho de contexto da fase — 2026-11-14 (épico `epic/gancho-de-contexto`)
+# Phase context hook — 2026-11-14 (épico `epic/gancho-de-contexto`)
 
 ## Pendências
 
-Pendências: nenhuma (só processo). O épico mexe só no fluxo de entrega (o gancho `PostToolUse`, o `.claude/settings.json` e o texto do `docs/FLOW.md`); nenhum componente, token ou ícone do design system da app muda.
+Pending items: none (process only). The epic only touches the delivery flow (the `PostToolUse` hook, `.claude/settings.json` and the text of `docs/FLOW.md`); no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componente, token nem ícone da app (só o gancho `PostToolUse` e o texto do `docs/FLOW.md`).
+Sem impacto on the Claude Design Mapping artifact: nothing was written, since the epic changes no component, token or icon of the app (only the `PostToolUse` hook and the text of `docs/FLOW.md`).
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

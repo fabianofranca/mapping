@@ -13,8 +13,8 @@ import {
 } from '../../src/model';
 import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 
-// Âncora (R3, decisão 15): a entrada do cache guarda o retângulo da âncora da marcação (`anchorRect`)
-// e o compara, como a direção e o modo. Só as ancoradas dependem dele.
+// Anchor (R3, decision 15): the cache entry stores the rectangle of the marking's anchor (`anchorRect`)
+// and compares it, like the direction and the mode. Only the anchored ones depend on it.
 
 const catalog = testCatalog();
 
@@ -36,7 +36,7 @@ function add(p: Project, id: string, x: number, extra: Partial<NewComponentArgs>
   );
 }
 
-/** T (sem componente) com 3 ancoradas (B1 a B3) e X solta, todas desenhadas por componente (menos T). */
+/** T (without a component) with 3 anchored ones (B1 to B3) and a loose X, all drawn by a component (except T). */
 function scene(): Project {
   let p = componentProject();
   p = createMarking(p, {
@@ -58,8 +58,8 @@ const changed = (
   after: ReturnType<typeof run>,
 ): string[] => [...after.keys()].filter((id) => after.get(id) !== before.get(id)).sort();
 
-describe('cache com âncora', () => {
-  it('redimensionar a âncora reinstancia as 3 ancoradas e mais nada', () => {
+describe('cache with an anchor', () => {
+  it('resizing the anchor re-instantiates the 3 anchored ones and nothing else', () => {
     const p = scene();
     const cache = createDrawingCache();
     const before = run(cache, p);
@@ -70,7 +70,7 @@ describe('cache com âncora', () => {
     expect(changed(before, after)).toEqual(['B1', 'B2', 'B3']);
   });
 
-  it('mover a âncora reinstancia as 3 (que andam junto); X fica', () => {
+  it('moving the anchor re-instantiates the 3 (which move along); X stays', () => {
     const p = scene();
     const cache = createDrawingCache();
     const before = run(cache, p);
@@ -79,7 +79,7 @@ describe('cache com âncora', () => {
     expect(after.get('X')).toBe(before.get('X'));
   });
 
-  it('mover outra marcação reinstancia 0', () => {
+  it('moving another marking re-instantiates 0', () => {
     const p = scene();
     const cache = createDrawingCache();
     const before = run(cache, p);
@@ -88,7 +88,7 @@ describe('cache com âncora', () => {
     for (const id of ['B1', 'B2', 'B3']) expect(after.get(id)).toBe(before.get(id));
   });
 
-  it('pan e zoom (mesmo projeto) não instanciam nem medem nada', () => {
+  it('pan and zoom (same project) neither instantiate nor measure anything', () => {
     const p = scene();
     const measure = vi.fn<TextMeasurer>(approximateMeasurer);
     const cache = createDrawingCache();
@@ -98,14 +98,14 @@ describe('cache com âncora', () => {
     expect(measure.mock.calls.length).toBe(calls);
   });
 
-  it('um projeto novo com as mesmas âncoras reaproveita todos os desenhos', () => {
+  it('a new project with the same anchors reuses all the drawings', () => {
     const p = scene();
     const cache = createDrawingCache();
     const before = run(cache, p);
     expect(changed(before, run(cache, { ...p }))).toEqual([]);
   });
 
-  it('tirar a âncora reinstancia a ancorada (o retângulo dela deixa de entrar)', () => {
+  it('removing the anchor re-instantiates the anchored one (its rectangle stops being an input)', () => {
     const p = scene();
     const cache = createDrawingCache();
     const before = run(cache, p);
@@ -113,7 +113,7 @@ describe('cache com âncora', () => {
     expect(changed(before, after)).toEqual(['B2']);
   });
 
-  it('o desenho leva o lado e o retângulo da âncora (a R3 parte 2 os entrega ao motor)', () => {
+  it('the drawing carries the side and the rectangle of the anchor (R3 part 2 hands them to the engine)', () => {
     const drawings = run(createDrawingCache(), scene());
     expect(drawings.get('B1')?.anchor).toEqual({
       side: 'top',

@@ -1,16 +1,16 @@
-// sombras.mjs: node sombras.mjs <pasta da biblioteca>
-// Troca o `card` de uma cópia de `m3-tokens` por um componente de formato 4 de 300 × 120, de fundo
-// branco, com as chaves do épico "Material 3 fiel, o resto" (R25.79 em diante): a lista de
-// sombras com `shadow.spread` e o contorno com vão (`stroke.gap`). Os nós, em unidades do card:
-//   - o retângulo amarelo `#FFEB3B` em (40, 20), de 60 × 40, com DUAS sombras: a primeira
-//     (por cima) é azul `#1976D2`, sem desfoque, `spread` 4 (um anel de 4 em volta, de x 36 a 104
-//     e de y 16 a 64); a segunda é preta, `y` 14, `blur` 4 e `spread` -6 (a forma dela vai de
-//     x 46 a 94 e de y 40 a 68, e o que passa do anel azul embaixo é a sombra ambiente);
-//   - o quadro de 120 × 60 em (150, 30), sem preenchimento, de `cornerRadius` 8 e contorno
-//     vermelho `#D32F2F` de 2 por dentro com `gap` no nó `label` e `padding` 4;
-//   - o rótulo `label` (texto preto `hug`, fonte 12, linha de 16) em (170, 22): a caixa dele cruza
-//     o lado de cima do quadro (y 30 a 32), e o contorno some nesse trecho mais 4 de cada lado
-//     (de x 166 em diante; o fim depende da largura do texto).
+// sombras.mjs: node sombras.mjs <library folder>
+// Replaces the `card` of a copy of `m3-tokens` with a 300 × 120 format 4 component, white
+// background, with the keys of the "faithful Material 3, the rest" epic (R25.79 onwards): the list
+// of shadows with `shadow.spread` and the outline with a gap (`stroke.gap`). The nodes, in card units:
+//   - the yellow rectangle `#FFEB3B` (node `sombras`, shadows) at (40, 20), 60 × 40, with TWO shadows: the first
+//     (on top) is blue `#1976D2`, no blur, `spread` 4 (a ring of 4 around it, from x 36 to 104
+//     and from y 16 to 64); the second is black, `y` 14, `blur` 4 and `spread` -6 (its shape goes from
+//     x 46 to 94 and from y 40 to 68, and what sticks out below the blue ring is the ambient shadow);
+//   - the 120 × 60 frame (node `contorno`, outline) at (150, 30), no fill, `cornerRadius` 8 and a 2 red
+//     `#D32F2F` inside outline with `gap` on the `label` node and `padding` 4;
+//   - the `label` (black `hug` text, font 12, line of 16) at (170, 22): its box crosses
+//     the top side of the frame (y 30 to 32), and the outline disappears in that stretch plus 4 on each side
+//     (from x 166 onwards; the end depends on the text width).
 import fs from 'node:fs';
 
 const file = process.argv[2] + '/components/card.json';

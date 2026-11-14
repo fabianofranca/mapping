@@ -11,14 +11,14 @@ import {
 
 export interface MarkdownProps {
   readonly text: string;
-  /** Chamado ao clicar num link `mapping://…`; sem ele, o link vira só texto. */
+  /** Called on clicking a `mapping://…` link; without it, the link becomes plain text. */
   readonly onLink?: (href: string) => void;
   /**
-   * Desenha a citação `[rótulo](mapping://projeto/letra/código…)` (não os links da biblioteca),
-   * antes de `onLink`: o chip vivo das conversas. `null` deixa valer o link de sempre.
+   * Draws the citation `[label](mapping://project/letter/code…)` (not the library links),
+   * before `onLink`: the live chip of the threads. `null` lets the usual link apply.
    */
   readonly renderMapping?: (href: string, label: string) => ComponentChild | null;
-  /** Quebra simples de linha vira `<br/>` (mensagens das conversas); padrão: vira espaço. */
+  /** A simple line break becomes `<br/>` (thread messages); default: becomes a space. */
   readonly lineBreaks?: boolean;
 }
 
@@ -182,7 +182,7 @@ function renderBlock(b: MarkdownBlock, key: number, ctx: Ctx): VNode {
   }
 }
 
-/** Documento em markdown (subconjunto): nunca HTML cru nem imagens; links só `mapping://`, âncoras e `http(s)://` absoluto (nova aba). */
+/** Markdown document (subset): never raw HTML or images; links only `mapping://`, anchors and absolute `http(s)://` (new tab). */
 export function Markdown({
   text,
   onLink,

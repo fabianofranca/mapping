@@ -22,17 +22,17 @@ import { DecisionControl, REVIEW_KEYS } from './DecisionControl';
 import { ImageCompare } from './ImageCompare';
 import { useDecide } from './useReview';
 
-// Controles do canvas na revisão (HANDOFF-PROPOSALS 4.6 e 5.2): Atual / Proposto (P), a
-// legenda das marcas (L) e "Comparar" na imagem trocada, que abre o ImageCompare.
+// Canvas controls in review (HANDOFF-PROPOSALS 4.6 and 5.2): Current / Proposed (P), the
+// mark legend (L) and "Compare" on the swapped image, which opens the ImageCompare.
 
-/** O botão "Legenda das marcas", para onde o foco volta ao fechar a legenda. */
+/** The "Mark legend" button, where focus returns to when the legend closes. */
 const legendToggle = createRef<HTMLButtonElement>();
-/** O painel da legenda, para saber se o foco está dentro dele. */
+/** The legend panel, to know whether focus is inside it. */
 const legendPanel = createRef<HTMLElement>();
 
 /**
- * Alterna a legenda (botão e atalho L). Ao fechar com o foco dentro dela, devolve-o ao
- * botão que a abre: o painel sai do DOM e o foco cairia no body.
+ * Toggles the legend (button and L shortcut). On closing with focus inside it, gives it back to
+ * the button that opens it: the panel leaves the DOM and focus would fall on body.
  */
 export function toggleReviewLegend(ui: { readonly reviewLegend: Signal<boolean> }) {
   const open = ui.reviewLegend.peek();
@@ -43,10 +43,11 @@ export function toggleReviewLegend(ui: { readonly reviewLegend: Signal<boolean> 
 }
 
 /**
- * Esc com a legenda aberta e o foco no botão que a abre ou no canvas (ou em nenhum controle):
- * fecha só a legenda e deixa o foco onde estava, para o Esc seguinte fazer o de antes (limpar a
- * seleção). Com o foco dentro da legenda quem fecha é o painel dela; em outro lugar (Propostas,
- * Detalhes) o Esc é de quem tem o foco. Devolve `true` quando consumiu o Esc.
+ * Esc with the legend open and focus on the button that opens it or on the canvas (or on no
+ * control): closes only the legend and leaves focus where it was, so the next Esc does what it did
+ * before (clear the selection). With focus inside the legend, the panel itself closes it;
+ * elsewhere (Proposals, Details) Esc belongs to whoever has focus. Returns `true` when it consumed
+ * Esc.
  */
 export function closeReviewLegendOnEscape(ui: {
   readonly reviewLegend: Signal<boolean>;
@@ -59,7 +60,7 @@ export function closeReviewLegendOnEscape(ui: {
   return true;
 }
 
-/** A troca de arquivo da imagem ainda não aplicada (a que "Comparar" mostra). */
+/** The image file swap not yet applied (the one "Compare" shows). */
 export function replaceChangeOf(p: Proposal, imageId: string): Change | null {
   return (
     p.changes.find(
@@ -73,12 +74,12 @@ export function replaceChangeOf(p: Proposal, imageId: string): Change | null {
   );
 }
 
-/** Imagem selecionada (ou a da marcação selecionada) que a proposta troca. */
+/** Selected image (or that of the selected marking) which the proposal swaps. */
 function useComparable(): string | null {
   const { review, ui } = useEditor();
   const p = review.derived.proposal.value;
   const selection = ui.selection.value;
-  // O projeto à vista: a marcação que só existe na proposta resolve pela prévia.
+  // The project in view: a marking that only exists in the proposal resolves through the preview.
   const project = review.derived.shownProject.value;
   if (!p || !selection || !project) return null;
   const resolved =
@@ -117,7 +118,7 @@ export function ReviewViewToggle() {
   );
 }
 
-/** Atual / Proposto, a legenda e "Comparar" (barra dos breadcrumbs). */
+/** Current / Proposed, the legend and "Compare" (breadcrumbs bar). */
 export function ReviewCanvasControls() {
   const { review, ui } = useEditor();
   const comparable = useComparable();
@@ -146,10 +147,10 @@ export function ReviewCanvasControls() {
 }
 
 /**
- * Posiciona a legenda (que é `position: fixed`, para não ser recortada pelo canvas): o
- * canto superior esquerdo do canvas, a largura da coluna dele e a altura até o fim das
- * janelas (o topo da barra de status). Entrega as medidas ao CSS em variáveis; o espaço e a margem vêm dos
- * tokens, não daqui.
+ * Positions the legend (which is `position: fixed`, so the canvas does not clip it): the
+ * canvas's top-left corner, its column's width and the height down to the end of the
+ * windows (the top of the status bar). Hands the measurements to the CSS in variables; the
+ * spacing and margin come from the tokens, not from here.
  */
 function useLegendPlacement(legend: { readonly current: HTMLElement | null }): void {
   useLayoutEffect(() => {
@@ -158,7 +159,7 @@ function useLegendPlacement(legend: { readonly current: HTMLElement | null }): v
     if (!el || !area) return;
     const place = () => {
       const a = area.getBoundingClientRect();
-      // O fim das janelas é o topo da barra de status.
+      // The end of the windows is the top of the status bar.
       const panes = area.closest<HTMLElement>('[data-panes]');
       const bottom = panes?.getBoundingClientRect().bottom ?? globalThis.innerHeight;
       el.style.setProperty('--legend-top', `${a.top}px`);
@@ -178,7 +179,7 @@ function useLegendPlacement(legend: { readonly current: HTMLElement | null }): v
   }, [legend]);
 }
 
-/** Legenda das marcas do canvas (L), sobre o canvas e, se não couber nele, sobre as janelas. */
+/** Mark legend (L), over the canvas and, if it does not fit there, over the windows. */
 export function ReviewLegend() {
   const { review, ui } = useEditor();
   if (review.proposalId.value === null || !ui.reviewLegend.value) return null;
@@ -189,7 +190,8 @@ function LegendPanel() {
   const { ui } = useEditor();
   const panel = legendPanel;
   useLegendPlacement(panel);
-  // Fechar (X ou Esc) devolve o foco ao botão que a abre, nunca ao body (etapa #515, FN1).
+  // Closing (X or Esc) gives focus back to the button that opens it, never to body (stage #515,
+  // FN1).
   const close = () => {
     ui.reviewLegend.value = false;
     legendToggle.current?.focus();
@@ -260,14 +262,14 @@ function LegendPanel() {
   );
 }
 
-/** Diálogo "Comparar antes e depois" da imagem trocada, com a decisão da troca. */
+/** "Compare before and after" dialog of the swapped image, with the swap's decision. */
 export function CompareDialog() {
   const { review, ui, store, display } = useEditor();
   const decide = useDecide();
   const imageId = ui.compareImage.value;
   const p = review.derived.proposal.value;
-  // A imagem "antes" é a do projeto confirmado por definição (não a da visão): é a base
-  // da comparação com o arquivo proposto.
+  // The "before" image is the confirmed project's by definition (not the view's): it is the base
+  // of the comparison with the proposed file.
   const project = store.committed.value;
   const change = p && imageId ? replaceChangeOf(p, imageId) : null;
   const image =

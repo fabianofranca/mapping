@@ -4,22 +4,22 @@ import { t } from '../../src/i18n';
 import { TOOL_WINDOWS, WINDOW_NUMBER } from '../../src/store/toolWindows';
 import { comboText, shortcutGroups } from '../../src/ui/shortcutList';
 
-describe('lista de atalhos da Ajuda (P10)', () => {
+describe('Help shortcut list (P10)', () => {
   const groups = shortcutGroups();
 
-  it('tem uma linha por janela de ferramenta, com Ctrl+Shift+N e Alt+N', () => {
+  it('has one row per tool window, with Ctrl+Shift+N and Alt+N', () => {
     const windows = groups.find((g) => g.id === 'windows');
     for (const id of TOOL_WINDOWS) {
       const n = WINDOW_NUMBER[id];
       const row = windows?.rows.find((r) =>
         r.combos.some((c) => comboText(c) === `Ctrl + Shift + ${n}`),
       );
-      expect(row, `janela ${id}`).toBeDefined();
+      expect(row, `window ${id}`).toBeDefined();
       expect(row?.combos.map(comboText)).toContain(`Alt + ${n}`);
     }
   });
 
-  it('o Ctrl+Shift+N listado dispara a janela de verdade', () => {
+  it('the listed Ctrl+Shift+N really triggers the window', () => {
     for (const id of TOOL_WINDOWS) {
       const n = WINDOW_NUMBER[id];
       expect(
@@ -35,13 +35,13 @@ describe('lista de atalhos da Ajuda (P10)', () => {
     }
   });
 
-  it('lista "Visualizar" com o Alt+H, e ele dispara de verdade', () => {
+  it('lists "View" with Alt+H, and it really triggers', () => {
     const rows = groups.flatMap((g) => g.rows);
     const row = rows.find((r) => r.combos.some((c) => comboText(c) === 'Alt + H'));
     expect(row?.label).toBe(t('shortcuts.viewMode'));
   });
 
-  it('lista o Alt+L de trancar na seção de edição, e ele dispara de verdade', () => {
+  it('lists the Alt+L lock in the edit section, and it really triggers', () => {
     const edit = groups.find((g) => g.id === 'edit');
     const row = edit?.rows.find((r) => r.combos.some((c) => comboText(c) === 'Alt + L'));
     expect(row).toBeDefined();
@@ -58,7 +58,7 @@ describe('lista de atalhos da Ajuda (P10)', () => {
     ).toEqual({ kind: 'toggle-lock' });
   });
 
-  it('lista o Alt+Shift+A de arrumar, e ele dispara de verdade', () => {
+  it('lists the Alt+Shift+A arrange, and it really triggers', () => {
     const edit = groups.find((g) => g.id === 'edit');
     const row = edit?.rows.find((r) =>
       r.combos.some((c) => comboText(c) === 'Alt + Shift + A'),
@@ -76,7 +76,7 @@ describe('lista de atalhos da Ajuda (P10)', () => {
     ).toEqual({ kind: 'arrange' });
   });
 
-  it('os atalhos da revisão listados disparam de verdade', () => {
+  it('the listed review shortcuts really trigger', () => {
     const review = groups.find((g) => g.id === 'review');
     const keys = (c: readonly string[]) => {
       const key = c.at(-1) ?? '';
@@ -96,7 +96,7 @@ describe('lista de atalhos da Ajuda (P10)', () => {
     }
   });
 
-  it('lista o Shift+arrasto de selecionar por retângulo na seção de edição', () => {
+  it('lists the Shift+drag rectangle selection in the edit section', () => {
     const edit = groups.find((g) => g.id === 'edit');
     const row = edit?.rows.find((r) =>
       r.combos.some((c) => comboText(c) === `Shift + ${t('shortcuts.key.drag')}`),
@@ -105,7 +105,7 @@ describe('lista de atalhos da Ajuda (P10)', () => {
     expect(row?.label).toBe(t('shortcuts.selectRect'));
   });
 
-  it('lista o Esc que fecha Detalhes ou Comentários, logo depois do Esc da seleção', () => {
+  it('lists the Esc that closes Details or Comments, right after the selection Esc', () => {
     const edit = groups.find((g) => g.id === 'edit');
     const labels = edit?.rows.map((r) => r.label) ?? [];
     const at = labels.indexOf(t('shortcuts.escape'));
@@ -113,7 +113,7 @@ describe('lista de atalhos da Ajuda (P10)', () => {
     expect(edit?.rows[at + 1]?.combos.map(comboText)).toEqual(['Esc']);
   });
 
-  it('nenhuma linha vazia e nenhum texto repetido', () => {
+  it('no empty row and no repeated text', () => {
     const labels = groups.flatMap((g) => g.rows.map((r) => r.label));
     expect(new Set(labels).size).toBe(labels.length);
     for (const row of groups.flatMap((g) => g.rows)) {

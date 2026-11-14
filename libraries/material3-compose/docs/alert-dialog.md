@@ -1,33 +1,33 @@
 # Alert dialog
 
-Diálogo que interrompe o fluxo para pedir uma decisão ou dar uma informação: ícone opcional, título, texto e até dois botões de texto. Standard monta o conteúdo; basic deixa o conteúdo por conta de quem chama.
+Dialog that interrupts the flow to ask for a decision or give information: optional icon, title, text and up to two text buttons. Standard assembles the content; basic leaves the content to the caller.
 
-Tipo de anotação: `alert-dialog` (camada Componentes).
+Annotation type: `alert-dialog` (Components layer).
 
-## Campos
+## Fields
 
-| Chave                | Rótulo             | Tipo   | Obrigatório | Opções                                                         | Padrão     | Descrição                                                                                                                               |
-| -------------------- | ------------------ | ------ | ----------- | -------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `style`              | Estilo             | enum   | não         | `standard`, `basic`                                            | `standard` | standard (AlertDialog, com título, texto e botões) ou basic (BasicAlertDialog, só a janela: o conteúdo é montado à mão e exige opt-in). |
-| `title`              | Título             | string | não         |                                                                |            | Título do diálogo. Vazio = sem título.                                                                                                  |
-| `text`               | Texto              | string | não         |                                                                |            | Texto de apoio com os detalhes. Vazio = sem texto.                                                                                      |
-| `confirmButton`      | Botão de confirmar | string | sim         |                                                                |            | Rótulo do botão que confirma a ação (obrigatório no AlertDialog).                                                                       |
-| `dismissButton`      | Botão de dispensar | string | não         |                                                                |            | Rótulo do botão que dispensa o diálogo. Vazio = só o botão de confirmar.                                                                |
-| `icon`               | Ícone              | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |            | Ícone acima do título. Vazio = sem ícone.                                                                                               |
-| `contentDescription` | Descrição do ícone | string | não         |                                                                |            | Texto de acessibilidade do ícone (vai no `contentDescription` do Icon). Vazio = ícone decorativo.                                       |
+| Key                  | Label            | Type   | Required | Options                                                   | Default    | Description                                                                                                                                          |
+| -------------------- | ---------------- | ------ | -------- | --------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `style`              | Style            | enum   | no       | `standard`, `basic`                                       | `standard` | standard (AlertDialog, with title, text and buttons) or basic (BasicAlertDialog, only the window: the content is built by hand and requires opt-in). |
+| `title`              | Title            | string | no       |                                                           |            | Dialog title. Empty = no title.                                                                                                                      |
+| `text`               | Text             | string | no       |                                                           |            | Supporting text with the details. Empty = no text.                                                                                                   |
+| `confirmButton`      | Confirm button   | string | yes      |                                                           |            | Label of the button that confirms the action (required in AlertDialog).                                                                              |
+| `dismissButton`      | Dismiss button   | string | no       |                                                           |            | Label of the button that dismisses the dialog. Empty = only the confirm button.                                                                      |
+| `icon`               | Icon             | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |            | Icon above the title. Empty = no icon.                                                                                                               |
+| `contentDescription` | Icon description | string | no       |                                                           |            | Accessibility text of the icon (goes into the Icon's `contentDescription`). Empty = decorative icon.                                                 |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.AlertDialog`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AlertDialog.kt`
-- O campo `style` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.AlertDialog`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AlertDialog.kt`
+- The `style` field chooses the symbol; values without their own case use the base one.
 
-| `style`           | Símbolo            |
+| `style`           | Symbol             |
 | ----------------- | ------------------ |
 | `standard` (base) | `AlertDialog`      |
 | `basic`           | `BasicAlertDialog` |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in the `code`):
 
 ```kotlin
 // style standard: AlertDialog
@@ -35,76 +35,76 @@ if (showDialog) {
     AlertDialog(
         onDismissRequest = { showDialog = false },
         confirmButton = {
-            TextButton(onClick = { /* lógica da tela */ }) { Text("Descartar") }
+            TextButton(onClick = { /* screen logic */ }) { Text("Discard") }
         },
         dismissButton = {
-            TextButton(onClick = { showDialog = false }) { Text("Cancelar") }
+            TextButton(onClick = { showDialog = false }) { Text("Cancel") }
         },
         icon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-        title = { Text("Descartar rascunho?") },
-        text = { Text("O rascunho será apagado e não poderá ser recuperado.") },
+        title = { Text("Discard draft?") },
+        text = { Text("The draft will be deleted and cannot be recovered.") },
     )
 }
 
-// style basic: BasicAlertDialog (@OptIn(ExperimentalMaterial3Api::class)), conteúdo montado à mão
+// style basic: BasicAlertDialog (@OptIn(ExperimentalMaterial3Api::class)), content built by hand
 BasicAlertDialog(onDismissRequest = { showDialog = false }) {
     Surface(
         shape = AlertDialogDefaults.shape,
         tonalElevation = AlertDialogDefaults.TonalElevation,
     ) {
         Column(Modifier.padding(24.dp)) {
-            Text("Sair da conta?", style = MaterialTheme.typography.headlineSmall)
+            Text("Sign out?", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(16.dp))
-            Text("Você precisará entrar de novo para ver suas mensagens.")
+            Text("You will need to sign in again to see your messages.")
             Spacer(Modifier.height(24.dp))
             Row(Modifier.align(Alignment.End)) {
-                TextButton(onClick = { showDialog = false }) { Text("Cancelar") }
-                TextButton(onClick = { /* lógica da tela */ }) { Text("Sair") }
+                TextButton(onClick = { showDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { /* screen logic */ }) { Text("Sign out") }
             }
         }
     }
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from the `code` (what the tool hands to the agent):
 
-> Estável, sem opt-in: use o overload com `confirmButton` (o de `content` está `@Deprecated` e é experimental). `AlertDialog(onDismissRequest = { … }, confirmButton = { TextButton(onClick = { … }) { Text(<confirmButton>) } }, dismissButton = { TextButton(onClick = { … }) { Text(<dismissButton>) } }, icon = { … }, title = { Text(<title>) }, text = { Text(<text>) })`. `dismissButton`, `icon`, `title` e `text` só entram quando o campo está preenchido (os parâmetros são opcionais e `null` por padrão). `onDismissRequest` fecha o diálogo (limpa o estado que o mostra) e não é chamado pelos botões. Com `icon` preenchido: `icon = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }` (sem `contentDescription`, passe `null`); com ícone, o título fica centralizado. A largura vai de 280 a 560 dp pelo conteúdo e o diálogo é uma janela sobre a tela, não parte do layout: declare-o onde o estado que o abre vive (`if (showDialog) AlertDialog(…)`).
+> Stable, no opt-in: use the overload with `confirmButton` (the `content` one is `@Deprecated` and experimental). `AlertDialog(onDismissRequest = { … }, confirmButton = { TextButton(onClick = { … }) { Text(<confirmButton>) } }, dismissButton = { TextButton(onClick = { … }) { Text(<dismissButton>) } }, icon = { … }, title = { Text(<title>) }, text = { Text(<text>) })`. `dismissButton`, `icon`, `title` and `text` are only included when the field is filled in (the parameters are optional and `null` by default). `onDismissRequest` closes the dialog (clears the state that shows it) and is not called by the buttons. With `icon` filled in: `icon = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }` (without `contentDescription`, pass `null`); with an icon, the title is centered. The width goes from 280 to 560 dp by content and the dialog is a window over the screen, not part of the layout: declare it where the state that opens it lives (`if (showDialog) AlertDialog(…)`).
 
-Variante `basic`: Exige @OptIn(ExperimentalMaterial3Api::class) (o `BasicAlertDialog` é experimental no commit fixado). Só abre a janela: `BasicAlertDialog(onDismissRequest = { … }) { … }`, e o conteúdo não tem estilo próprio. Para parecer o diálogo do M3, monte `Surface(shape = AlertDialogDefaults.shape, tonalElevation = AlertDialogDefaults.TonalElevation) { Column(Modifier.padding(24.dp)) { … } }` com `Text(<title>, style = MaterialTheme.typography.headlineSmall)`, `Text(<text>, style = MaterialTheme.typography.bodyMedium)` e uma `Row(Modifier.align(Alignment.End))` com `TextButton`s para `dismissButton` e `confirmButton` (espaçamento de 24 dp entre as partes e 8 dp entre os botões). Com `icon` preenchido, o ícone vai antes do título, centralizado: `Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>)` (sem `contentDescription`, passe `null`).
+`basic` variant: Requires @OptIn(ExperimentalMaterial3Api::class) (`BasicAlertDialog` is experimental in the pinned commit). It only opens the window: `BasicAlertDialog(onDismissRequest = { … }) { … }`, and the content has no style of its own. To look like the M3 dialog, build `Surface(shape = AlertDialogDefaults.shape, tonalElevation = AlertDialogDefaults.TonalElevation) { Column(Modifier.padding(24.dp)) { … } }` with `Text(<title>, style = MaterialTheme.typography.headlineSmall)`, `Text(<text>, style = MaterialTheme.typography.bodyMedium)` and a `Row(Modifier.align(Alignment.End))` with `TextButton`s for `dismissButton` and `confirmButton` (24 dp of spacing between the parts and 8 dp between the buttons). With `icon` filled in, the icon goes before the title, centered: `Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>)` (without `contentDescription`, pass `null`).
 
-## Exemplos
+## Examples
 
-- **Confirmação com ícone**: style=standard, icon=Delete, title=Descartar rascunho?, text=O rascunho será apagado e não poderá ser recuperado., confirmButton=Descartar, dismissButton=Cancelar
-- **Só informação**: style=standard, title=Sincronização concluída, text=Seus dados estão atualizados em todos os dispositivos., confirmButton=OK
-- **Basic com título e texto**: style=basic, title=Sair da conta?, text=Você precisará entrar de novo para ver suas mensagens., confirmButton=Sair, dismissButton=Cancelar
-- **Botões em duas linhas**: style=standard, title=Descartar rascunho?, text=O rascunho será apagado., confirmButton=Descartar o rascunho agora, dismissButton=Cancelar
+- **Confirmation with icon**: style=standard, icon=Delete, title=Discard draft?, text=The draft will be deleted and cannot be recovered., confirmButton=Discard, dismissButton=Cancel
+- **Information only**: style=standard, title=Sync complete, text=Your data is up to date on all devices., confirmButton=OK
+- **Basic with title and text**: style=basic, title=Sign out?, text=You will need to sign in again to see your messages., confirmButton=Sign out, dismissButton=Cancel
+- **Buttons on two lines**: style=standard, title=Discard draft?, text=The draft will be deleted., confirmButton=Discard the draft now, dismissButton=Cancel
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade fica literal no componente, nenhum nó de texto declara `family` (todos herdam `font-sans`) e o ícone é o nó `icon` do conjunto da biblioteca, pelo `$switch` do nome do Compose para o do conjunto, sem caminho SVG no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font, radius or opacity is literal in the component, no text node declares `family` (all inherit `font-sans`) and the icon is the `icon` node of the library set, through the `$switch` from the Compose name to the set one, with no SVG path in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AlertDialog.kt` (linhas 94 a 110: `AlertDialog` e a ordem dos slots; 219 a 242: `AlertDialogDefaults`, a forma, as cores e `TonalElevation` = 0 dp; 246 a 292: `AlertDialogImpl`, o `buttonContentColor` do token; 295 a 369: `AlertDialogContent`, o `Surface` sem `shadowElevation`, a `Column` com `padding(DialogPadding)`, o ícone no `Box` com `IconPadding` e `align(CenterHorizontally)`, o título com `TitlePadding` e centralizado quando há ícone, o texto com `TextPadding` e `align(Start)`, os botões num `Box` com `align(End)`; 375 a 466: `AlertDialogFlowRow`, 8 de espaço entre os botões e 12 entre as linhas, o botão de confirmar acima do de dispensar; 468 a 478: `DialogMinWidth` 280, `DialogMaxWidth` 560, `ButtonsMainAxisSpacing` 8, `ButtonsCrossAxisSpacing` 12, `DialogPadding` 24, `IconPadding`, `TitlePadding` 16 e `TextPadding` 24).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/DialogTokens.kt` (linhas 26 e 27: botões em `Primary` e `LabelLarge`; 29 a 31: contêiner `SurfaceContainerHigh`, `ContainerElevation` `Level3` (não aplicado pelo composable) e forma `CornerExtraLarge`; 32 e 33: título em `OnSurface` e `HeadlineSmall`; 34 e 35: texto em `OnSurfaceVariant` e `BodyMedium`; 36 e 37: ícone de 24 em `Secondary`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt` (linhas 143 a 147: `defaultMinSize(minWidth = MinWidth, minHeight = MinHeight)`; 418 a 440: `TextButton`; 497 a 510: `TextButtonContentPadding` com 12 de cada lado; 527 e 533: `MinWidth` 58 e `MinHeight` 40) e `Surface.kt` (linha 219: `minimumInteractiveComponentSize()` do `Surface` clicável, que leva o `TextButton` a 48 de altura no layout).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt` (`HeadlineSmall` 24/32/400/0, `BodyMedium` 14/20/400/0,2 e `LabelLarge` 14/20/500/0,1) e `ShapeTokens.kt` (linha 29: `CornerExtraLarge` 28).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AlertDialog.kt` (lines 94 to 110: `AlertDialog` and the order of the slots; 219 to 242: `AlertDialogDefaults`, the shape, the colors and `TonalElevation` = 0 dp; 246 to 292: `AlertDialogImpl`, the token `buttonContentColor`; 295 to 369: `AlertDialogContent`, the `Surface` without `shadowElevation`, the `Column` with `padding(DialogPadding)`, the icon in the `Box` with `IconPadding` and `align(CenterHorizontally)`, the title with `TitlePadding` and centered when there is an icon, the text with `TextPadding` and `align(Start)`, the buttons in a `Box` with `align(End)`; 375 to 466: `AlertDialogFlowRow`, 8 of space between the buttons and 12 between the rows, the confirm button above the dismiss one; 468 to 478: `DialogMinWidth` 280, `DialogMaxWidth` 560, `ButtonsMainAxisSpacing` 8, `ButtonsCrossAxisSpacing` 12, `DialogPadding` 24, `IconPadding`, `TitlePadding` 16 and `TextPadding` 24).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/DialogTokens.kt` (lines 26 and 27: buttons in `Primary` and `LabelLarge`; 29 to 31: container `SurfaceContainerHigh`, `ContainerElevation` `Level3` (not applied by the composable) and shape `CornerExtraLarge`; 32 and 33: title in `OnSurface` and `HeadlineSmall`; 34 and 35: text in `OnSurfaceVariant` and `BodyMedium`; 36 and 37: 24 icon in `Secondary`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt` (lines 143 to 147: `defaultMinSize(minWidth = MinWidth, minHeight = MinHeight)`; 418 to 440: `TextButton`; 497 to 510: `TextButtonContentPadding` with 12 on each side; 527 and 533: `MinWidth` 58 and `MinHeight` 40) and `Surface.kt` (line 219: `minimumInteractiveComponentSize()` of the clickable `Surface`, which takes the `TextButton` to 48 tall in the layout).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt` (`HeadlineSmall` 24/32/400/0, `BodyMedium` 14/20/400/0.2 and `LabelLarge` 14/20/500/0.1) and `ShapeTokens.kt` (line 29: `CornerExtraLarge` 28).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Contêiner `surface-container-high` com `corner-extra-large` (28) e 24 de margem dos quatro lados, sem sombra: o `Surface` do diálogo tem `tonalElevation` 0 e nenhum `shadowElevation`, então o `Level3` do token não é desenhado.
-- Ícone do conjunto de 24 em `secondary` (`IconColor`), centralizado, com 16 até o título. Título em `headline-small` (24/32, peso 400) em `on-surface`, a 16 do texto, centralizado quando há ícone e à esquerda sem ele. Texto em `body-medium` (14/20) em `on-surface-variant`, a 24 dos botões. Tudo pelos tokens de tipografia, sem `family`.
-- Botões de texto à direita, o de dispensar antes do de confirmar e 8 entre eles. Cada um é um `TextButton`: rótulo em `label-large` (14/20, peso 500, espaçamento 0,1) em `primary`, 12 de cada lado (`TextButtonContentPadding`), largura mínima de 58 (`ButtonDefaults.MinWidth`, o `minWidth` do quadro) e 40 de altura no mínimo (`ButtonDefaults.MinHeight`), com 24 até a borda de baixo, como no Material. A altura do botão abraça o rótulo (`hug`): 8 de respiro em cima e embaixo (`TextButtonContentPadding`, `Button.kt` linhas 469 e 504 a 510) e o mínimo de 40 (linhas 143 a 148); cada botão fica num quadro `área de toque (<botão>)` de no mínimo 48, a área de toque do `TextButton` (`minimumInteractiveComponentSize`), com o botão de 40 centrado nele, e a fileira dos botões abraça esses quadros (e também tem o mínimo de 48). Um rótulo mais longo que a largura da fileira quebra em linhas de 20 (o `conteúdo do rótulo`, uma coluna `hug`, limita o texto à largura do pai) e o botão, a fileira e o diálogo crescem junto: 3 linhas dão um botão de 76.
-- Os botões quebram em linhas como o `AlertDialogFlowRow`: a fileira dos botões é `wrap-reverse`, com 8 entre os botões da mesma linha (`ButtonsMainAxisSpacing`, o `gap`) e 12 entre as linhas (`ButtonsCrossAxisSpacing`, o `lineGap`). Quando os dois não cabem na largura da fileira, o de dispensar fica na linha de baixo e o de confirmar vai para a de cima, os dois à direita (`justify: end` vale em cada linha), e a fileira e o diálogo crescem: 48 + 12 + 48.
-- Largura de 280 a 560 (`DialogMinWidth` e `DialogMaxWidth`, o `minWidth` e o `maxWidth` da raiz) e altura que abraça o conteúdo (`sizing` com `height: "hug"`). O `sizing` da largura continua 312, o valor de partida do Material.
-- O estilo `basic` desenha o mesmo diálogo: o `BasicAlertDialog` só abre a janela e o exemplo do Compose monta o conteúdo com a mesma forma, os mesmos 24 de margem e os mesmos espaços.
-- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `rótulo` dos dois botões usa `font.verticalAlign: "cap-middle"` e a caixa dele é a das linhas (`hug`), centrada na altura do botão como o `Row` do `TextButton` (`verticalAlignment = CenterVertically`, `Button.kt` linha 150). O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
+- `surface-container-high` container with `corner-extra-large` (28) and 24 of padding on all four sides, no shadow: the dialog `Surface` has `tonalElevation` 0 and no `shadowElevation`, so the token's `Level3` is not drawn.
+- 24 icon from the set in `secondary` (`IconColor`), centered, with 16 down to the title. Title in `headline-small` (24/32, weight 400) in `on-surface`, 16 from the text, centered when there is an icon and left-aligned without it. Text in `body-medium` (14/20) in `on-surface-variant`, 24 from the buttons. Everything through the typography tokens, without `family`.
+- Text buttons on the right, the dismiss one before the confirm one and 8 between them. Each is a `TextButton`: label in `label-large` (14/20, weight 500, spacing 0.1) in `primary`, 12 on each side (`TextButtonContentPadding`), minimum width of 58 (`ButtonDefaults.MinWidth`, the frame's `minWidth`) and minimum height of 40 (`ButtonDefaults.MinHeight`), with 24 to the bottom edge, as in Material. The button height hugs the label (`hug`): 8 of breathing room above and below (`TextButtonContentPadding`, `Button.kt` lines 469 and 504 to 510) and the minimum of 40 (lines 143 to 148); each button sits in a `touch target (<button>)` frame of at least 48, the `TextButton` touch target (`minimumInteractiveComponentSize`), with the 40 button centered in it, and the row of buttons hugs those frames (and also has the minimum of 48). A label longer than the row width wraps into lines of 20 (the `label content`, a `hug` column, limits the text to the parent width) and the button, the row and the dialog grow along with it: 3 lines give a button of 76.
+- The buttons wrap into lines like the `AlertDialogFlowRow`: the row of buttons is `wrap-reverse`, with 8 between the buttons on the same line (`ButtonsMainAxisSpacing`, the `gap`) and 12 between the lines (`ButtonsCrossAxisSpacing`, the `lineGap`). When the two do not fit in the row width, the dismiss one stays on the bottom line and the confirm one goes to the top one, both on the right (`justify: end` applies to each line), and the row and the dialog grow: 48 + 12 + 48.
+- Width from 280 to 560 (`DialogMinWidth` and `DialogMaxWidth`, the root's `minWidth` and `maxWidth`) and a height that hugs the content (`sizing` with `height: "hug"`). The width `sizing` stays 312, the Material starting value.
+- The `basic` style draws the same dialog: `BasicAlertDialog` only opens the window and the Compose example builds the content with the same shape, the same 24 of padding and the same spaces.
+- Single-line label centered by the capital letter (`cap-middle`): the `label` node of both buttons uses `font.verticalAlign: "cap-middle"` and its box is that of the lines (`hug`), centered in the button height like the `TextButton`'s `Row` (`verticalAlignment = CenterVertically`, `Button.kt` line 150). Compose's `Text` centers by the font's line box (ascent and descent); the drawing centers the capital height in the box, and with Roboto the two coincide to within 1 px.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- A quebra das linhas dos botões parte do tamanho natural de cada botão (o rótulo numa linha só), a regra do `wrap`: um rótulo que sozinho passa da largura da fileira fica sozinho na linha e quebra dentro do próprio botão, e o texto que muda de altura ao quebrar não muda as linhas. Não há `alignContent`: as linhas ficam juntas, separadas pelos 12.
-- A sombra da janela do diálogo (do sistema) e o `scrim` atrás dele não fazem parte do desenho, e o `onDismissRequest`, a janela, o foco e a animação de abertura também não.
-- Título de mais de uma linha com ícone: o Compose centraliza a caixa do título e deixa as linhas à esquerda dentro dela; o desenho centraliza cada linha (`font.align: "center"`).
-- O texto não rola quando passa da altura da janela (`weight(1f, fill = false)` com o `verticalScroll` da tela), e o conteúdo livre dos slots `title`, `text` e `icon` (composables) não existe: só texto e ícone do conjunto.
-- A linha dos botões mede 48 e o `size` é 312 × 248 (o diálogo do exemplo "Confirmação com ícone"): o `TextButton` ocupa 48 no layout, os 40 do botão mais a área de toque mínima de `minimumInteractiveComponentSize` (`Surface.kt` linha 219). O botão desenhado continua com 40 de altura, centrado nos 48 (o quadro `área de toque (<botão>)`), e o rótulo fica a 28 da borda de baixo como no Compose; com os botões em duas linhas a fileira mede 48 + 12 + 48. Os exemplos sem ícone ou com menos texto sobram embaixo (efeito aceito, como na #863).
-- Nenhum nó do diálogo tem posição vertical estimada: os espaços são os 24, 16 e 8 do Compose e o rótulo é centrado no botão. O `cap-middle` centra a maiúscula, e não a caixa de linha que o `Text` do Compose centra; com o Roboto a diferença fica abaixo de 1 px.
+- The wrapping of the button lines starts from the natural size of each button (the label on a single line), the `wrap` rule: a label that alone exceeds the row width stays alone on its line and wraps inside its own button, and text that changes height when wrapping does not change the lines. There is no `alignContent`: the lines stay together, separated by the 12.
+- The dialog window's shadow (from the system) and the `scrim` behind it are not part of the drawing, and neither are the `onDismissRequest`, the window, the focus and the opening animation.
+- Title of more than one line with an icon: Compose centers the title box and leaves the lines left-aligned inside it; the drawing centers each line (`font.align: "center"`).
+- The text does not scroll when it exceeds the window height (`weight(1f, fill = false)` with the screen's `verticalScroll`), and the free content of the `title`, `text` and `icon` slots (composables) does not exist: only text and an icon from the set.
+- The button row measures 48 and the `size` is 312 × 248 (the dialog of the "Confirmation with icon" example): the `TextButton` takes 48 in the layout, the button's 40 plus the minimum touch target of `minimumInteractiveComponentSize` (`Surface.kt` line 219). The drawn button stays 40 tall, centered in the 48 (the `touch target (<button>)` frame), and the label sits 28 from the bottom edge as in Compose; with the buttons on two lines the row measures 48 + 12 + 48. Examples without an icon or with less text have leftover space at the bottom (accepted effect, as in #863).
+- No node of the dialog has an estimated vertical position: the spaces are Compose's 24, 16 and 8 and the label is centered in the button. `cap-middle` centers the capital letter, not the line box that Compose's `Text` centers; with Roboto the difference is below 1 px.

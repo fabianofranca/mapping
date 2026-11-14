@@ -1,6 +1,6 @@
 /**
- * Retângulo em pixels (x, y, largura, altura): o único tipo de caixa dos componentes. Fica
- * aqui, sem importar o resto do modelo, para o pacote do visualizador não arrastar `types.ts`.
+ * Rectangle in pixels (x, y, width, height): the only box type of the components. It lives
+ * here, without importing the rest of the model, so the viewer package does not drag in `types.ts`.
  */
 export interface Box {
   readonly x: number;
@@ -10,8 +10,8 @@ export interface Box {
 }
 
 /**
- * Interseção de dois recortes (o de um slot com `clip` dentro do de outro); um ausente não
- * recorta. Caixas que não se tocam dão largura ou altura 0 (recorta tudo).
+ * Intersection of two clips (a slot's `clip` inside another's); a missing one does not
+ * clip. Boxes that do not touch give width or height 0 (clips everything).
  */
 export function intersectClips(a: Box | undefined, b: Box | undefined): Box | undefined {
   if (a === undefined || b === undefined) return a ?? b;

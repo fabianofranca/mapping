@@ -2,8 +2,8 @@ import { createHash, randomBytes } from 'node:crypto';
 import { createServer, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-// Este módulo só escuta em 127.0.0.1 para entregar ao chat do cliente as imagens das tools
-// (por URL); guarda tudo em memória, não lê arquivo e não faz requisição de saída.
+// This module only listens on 127.0.0.1 to hand the tools' images to the client's chat
+// (by URL); it keeps everything in memory, reads no file and makes no outgoing request.
 
 export const MAX_ENTRIES = 64;
 export const MAX_BYTES = 64 * 1024 * 1024;
@@ -18,12 +18,12 @@ export interface ImageServerOptions {
   readonly maxBytes?: number;
 }
 
-/** Servidor HTTP local (127.0.0.1, porta efêmera) que entrega imagens guardadas em memória. */
+/** Local HTTP server (127.0.0.1, ephemeral port) that serves images kept in memory. */
 export class ImageServer {
   private readonly maxEntries: number;
   private readonly maxBytes: number;
   private readonly token = randomBytes(16).toString('hex');
-  /** Em ordem de uso: a primeira é a menos recente. */
+  /** In order of use: the first is the least recent. */
   private readonly entries = new Map<string, Entry>();
   private total = 0;
   private starting: Promise<Server> | null = null;
@@ -34,7 +34,7 @@ export class ImageServer {
     this.maxBytes = options.maxBytes ?? MAX_BYTES;
   }
 
-  /** `http://127.0.0.1:<porta>/<token>/<chave>.<ext>`; rejeita se a porta não abrir. */
+  /** `http://127.0.0.1:<port>/<token>/<key>.<ext>`; rejects if the port does not open. */
   async publish(bytes: Uint8Array, mimeType: string, extension: string): Promise<string> {
     const server = await this.start();
     const key = createHash('sha256').update(bytes).digest('hex').slice(0, 32);
@@ -50,7 +50,7 @@ export class ImageServer {
     return `http://127.0.0.1:${port}/${this.token}/${key}.${extension}`;
   }
 
-  /** Endereço de escuta (ou `null` antes da primeira publicação). */
+  /** Listening address (or `null` before the first publication). */
   address(): AddressInfo | null {
     return (this.server?.address() as AddressInfo | null | undefined) ?? null;
   }
@@ -74,10 +74,10 @@ export class ImageServer {
     if (!this.starting) {
       const starting = new Promise<Server>((resolve, reject) => {
         const server = createServer((req, res) => this.handle(req.method, req.url, res));
-        // Antes de escutar, o erro é da porta (rejeita); depois, só vai para o stderr.
+        // Before listening, the error is the port's (rejects); afterwards, it only goes to stderr.
         server.on('error', (error) => {
           if (this.server === server) {
-            process.stderr.write(`mapping-mcp: servidor de imagens: ${error.message}\n`);
+            process.stderr.write(`mapping-mcp: image server: ${error.message}\n`);
             return;
           }
           if (this.starting === starting) this.starting = null;
@@ -94,7 +94,7 @@ export class ImageServer {
     return this.starting;
   }
 
-  /** Descarta as menos recentes até caber; o item mais novo nunca sai, mesmo sozinho acima do teto. */
+  /** Discards the least recent ones until it fits; the newest item never leaves, even if alone above the cap. */
   private evict(): void {
     for (const [key, entry] of this.entries) {
       if (this.entries.size <= 1) break;
@@ -121,7 +121,7 @@ export class ImageServer {
       return;
     }
     if (method === 'GET') {
-      // Renova a posição no LRU.
+      // Renews the position in the LRU.
       this.entries.delete(match[2]!);
       this.entries.set(match[2]!, entry);
     }

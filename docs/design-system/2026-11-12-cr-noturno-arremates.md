@@ -1,9 +1,9 @@
-# CR noturno: arremates do agendamento — 2026-11-12 (épico `epic/cr-noturno-arremates`)
+# Nightly CR: scheduling finishing touches — 2026-11-12 (épico `epic/cr-noturno-arremates`)
 
 ## Pendências
 
-Sem impacto. O épico só mexe no `docs/FLOW.md` (fluxo de entrega), no teste de `tests/tooling/epicCodeReview.test.ts` e nos registros; nenhum componente, token ou ícone da app muda.
+No impact. The epic only touches `docs/FLOW.md` (delivery flow), the test in `tests/tooling/epicCodeReview.test.ts` and the records; no component, token or icon of the app changes.
 
 ## Sincronização
 
-Sem impacto: nada a gravar no artefato **Mapping**.
+Sem impacto: nothing to write to the **Mapping** artifact.

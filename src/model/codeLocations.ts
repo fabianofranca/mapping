@@ -4,22 +4,22 @@ import { resolveCode } from './codeVariants';
 import type { SpecCode, SpecField, SpecRepo } from './spec';
 import type { DocRepo, PlatformRepo, Project } from './types';
 
-// Código de instanciação das especializações (etapa 3b; schema v11): o `code` de um tipo diz
-// com que código se cria uma instância dele em cada plataforma (`symbol` é o que se chama),
-// e `path` é o arquivo que define o `symbol`, relativo à raiz do `repo` da especialização.
-// Aqui ficam as plataformas declaradas pelas especializações aplicadas (cada uma com o `repo`
-// da própria biblioteca), o link do arquivo de um tipo (pelo `urlTemplate` do `repo` da
-// especialização dona do tipo), o caminho local dele (o projeto só guarda onde está o clone,
-// `platformRepos[x].localPath`) e a busca de tipos por arquivo ou símbolo. O mapeamento não
-// sabe nada sobre a solução. Funções puras, sem APIs de navegador: a app e o servidor MCP
-// usam as mesmas.
+// Instantiation code of specializations (stage 3b; schema v11): a type's `code` says
+// which code creates an instance of it on each platform (`symbol` is what gets called),
+// and `path` is the file that defines the `symbol`, relative to the root of the specialization's `repo`.
+// This is where the platforms declared by the applied specializations live (each with the `repo`
+// of its own library), the link to a type's file (through the `urlTemplate` of the `repo` of the
+// specialization that owns the type), its local path (the project only stores where the clone is,
+// `platformRepos[x].localPath`) and the search for types by file or symbol. The mapping knows
+// nothing about the solution. Pure functions, no browser APIs: the app and the MCP server
+// use the same ones.
 
 // ---------------------------------------------------------------------------
-// Caminhos
+// Paths
 
 const DRIVE_RE = /^[A-Za-z]:/;
 
-/** `true` se o texto tem caractere de controle (quebra de linha, tab, NUL…). */
+/** `true` if the text has a control character (line break, tab, NUL…). */
 function hasControlChar(text: string): boolean {
   for (let i = 0; i < text.length; i++) {
     const code = text.charCodeAt(i);
@@ -29,8 +29,8 @@ function hasControlChar(text: string): boolean {
 }
 
 /**
- * Normaliza o caminho de um arquivo no repositório: sem espaços nas pontas, `\` vira
- * `/`, sem `./` no começo e sem `/` no fim. `null` se ficar vazio.
+ * Normalizes the path of a file in the repository: no leading or trailing spaces, `\` becomes
+ * `/`, no leading `./` and no trailing `/`. `null` if it ends up empty.
  */
 export function normalizeCodePath(path: string): string | null {
   let s = path.trim().replaceAll('\\', '/');
@@ -40,8 +40,8 @@ export function normalizeCodePath(path: string): string | null {
 }
 
 /**
- * `true` para um caminho já normalizado e relativo à raiz do repositório: segmentos
- * não vazios, sem `.` nem `..`, sem `/` no começo nem letra de unidade (`C:`).
+ * `true` for a path that is already normalized and relative to the repository root: non-empty
+ * segments, no `.` or `..`, no leading `/` and no drive letter (`C:`).
  */
 export function isValidCodePath(path: string): boolean {
   if (normalizeCodePath(path) !== path) return false;
@@ -49,51 +49,51 @@ export function isValidCodePath(path: string): boolean {
   return path.split('/').every((s) => s !== '' && s !== '.' && s !== '..');
 }
 
-/** Normaliza o `localPath`: sem espaços nas pontas, `\` vira `/`, sem `/` no fim. */
+/** Normalizes the `localPath`: no leading or trailing spaces, `\` becomes `/`, no trailing `/`. */
 export function normalizeLocalPath(path: string): string | null {
   let s = path.trim().replaceAll('\\', '/');
   while (s.length > 1 && s.endsWith('/')) s = s.slice(0, -1);
   return s === '' ? null : s;
 }
 
-/** `true` para um `localPath` normalizado e relativo à pasta do projeto (`..` vale). */
+/** `true` for a `localPath` that is normalized and relative to the project folder (`..` is allowed). */
 export function isValidLocalPath(path: string): boolean {
   if (normalizeLocalPath(path) !== path) return false;
   return !path.startsWith('/') && !DRIVE_RE.test(path) && !hasControlChar(path);
 }
 
-/** `true` para um `urlTemplate` `http(s)://…` sem espaços e com `{path}`. */
+/** `true` for an `http(s)://…` `urlTemplate` with no spaces and with `{path}`. */
 export function isValidUrlTemplate(template: string): boolean {
   return /^https?:\/\/\S+$/i.test(template) && template.includes('{path}');
 }
 
-/** Texto aparado; vazio vira `null`. */
+/** Trimmed text; empty becomes `null`. */
 function optionalText(value: string | null | undefined): string | null {
   const trimmed = value?.trim() ?? '';
   return trimmed === '' ? null : trimmed;
 }
 
 // ---------------------------------------------------------------------------
-// Plataformas
+// Platforms
 
-/** Plataforma declarada pelas especializações aplicadas ao projeto. */
+/** Platform declared by the specializations applied to the project. */
 export interface ProjectPlatform {
   readonly id: string;
   readonly name: string;
   readonly language: string | null;
   /**
-   * Especializações aplicadas que a declaram, na ordem de aplicação. Com o mesmo id,
-   * é a mesma plataforma: `name` e `language` vêm da primeira (sem erro se divergirem).
+   * Applied specializations that declare it, in application order. With the same id,
+   * it is the same platform: `name` and `language` come from the first (no error if they differ).
    */
   readonly specIds: readonly string[];
   /**
-   * As especializações aplicadas que declaram `repo` para a plataforma, na ordem de
-   * aplicação. Cada uma declara o repositório da própria biblioteca e eles podem diferir.
+   * The applied specializations that declare `repo` for the platform, in
+   * application order. Each declares the repository of its own library and they may differ.
    */
   readonly repos: readonly { readonly specId: string; readonly repo: SpecRepo }[];
 }
 
-/** Plataformas de todas as especializações aplicadas, sem repetir id, na ordem de aplicação. */
+/** Platforms of all applied specializations, without repeating ids, in application order. */
 export const projectPlatforms: (p: Project) => readonly ProjectPlatform[] = memoByProject(
   (p) => {
     const byId = new Map<
@@ -127,17 +127,17 @@ const platformIndex = memoByProject(
   (p) => new Map(projectPlatforms(p).map((platform) => [platform.id, platform])),
 );
 
-/** Plataforma declarada com esse id; `null` se nenhuma especialização aplicada a declara. */
+/** Platform declared with that id; `null` if no applied specialization declares it. */
 export function findPlatform(p: Project, platformId: string): ProjectPlatform | null {
   return platformIndex(p).get(platformId) ?? null;
 }
 
 // ---------------------------------------------------------------------------
-// Repositório (especialização) e clone local (projeto)
+// Repository (specialization) and local clone (project)
 
 /**
- * `repo` que a especialização `specId` declara para a plataforma; `null` se ela não está
- * aplicada, não tem cópia válida, não declara a plataforma ou não tem `repo`.
+ * `repo` that the specialization `specId` declares for the platform; `null` if it is not
+ * applied, has no valid copy, does not declare the platform or has no `repo`.
  */
 export function specPlatformRepo(
   p: Project,
@@ -149,24 +149,24 @@ export function specPlatformRepo(
   );
 }
 
-/** Sobreposição local gravada para a plataforma; `null` se não houver. */
+/** Local override stored for the platform; `null` if there is none. */
 export function platformRepoOf(p: Project, platformId: string): PlatformRepo | null {
   return Object.hasOwn(p.platformRepos, platformId)
     ? (p.platformRepos[platformId] ?? null)
     : null;
 }
 
-/** O projeto informa onde está o clone local da plataforma (`localPath` preenchido). */
+/** The project says where the platform's local clone is (`localPath` filled in). */
 export function hasLocalPath(p: Project, platformId: string): boolean {
   return optionalText(platformRepoOf(p, platformId)?.localPath) !== null;
 }
 
-/** Propriedades a gravar. */
+/** Properties to store. */
 export interface PlatformRepoInput {
   readonly localPath: string | null;
 }
 
-/** Sobreposições sem a entrada `id` (plataformas e repositórios de documentos). */
+/** Overrides without the `id` entry (platforms and document repositories). */
 function withoutRepo<T>(
   repos: { readonly [id: string]: T },
   id: string,
@@ -174,7 +174,7 @@ function withoutRepo<T>(
   return Object.fromEntries(Object.entries(repos).filter(([key]) => key !== id));
 }
 
-/** Caminho local normalizado e validado; `null` = remover a entrada. */
+/** Local path normalized and validated; `null` = remove the entry. */
 function checkedLocalPath(raw: string | null): string | null {
   const localPath = raw === null ? null : normalizeLocalPath(raw);
   if (localPath !== null && !isValidLocalPath(localPath)) {
@@ -184,8 +184,8 @@ function checkedLocalPath(raw: string | null): string | null {
 }
 
 /**
- * Informa onde está o clone local de uma plataforma declarada por alguma especialização
- * aplicada. Texto vazio ou `null` remove a entrada (o arquivo não guarda configuração vazia).
+ * Says where the local clone of a platform declared by some applied specialization
+ * is. Empty text or `null` removes the entry (the file does not store empty configuration).
  */
 export function setPlatformRepo(
   p: Project,
@@ -207,18 +207,18 @@ export function setPlatformRepo(
   };
 }
 
-/** Remove a sobreposição local da plataforma (declarada ou não). */
+/** Removes the platform's local override (declared or not). */
 export function removePlatformRepo(p: Project, platformId: string): Project {
   if (!Object.hasOwn(p.platformRepos, platformId)) fail('not-found', platformId);
   return { ...p, platformRepos: withoutRepo(p.platformRepos, platformId) };
 }
 
 // ---------------------------------------------------------------------------
-// Link e caminho local
+// Link and local path
 
 /**
- * Onde um arquivo está: a especialização dona do tipo (que dá o `repo`), a plataforma (que
- * dá o clone local) e o caminho relativo à raiz do repositório (o `path` do `code`).
+ * Where a file is: the specialization that owns the type (which gives the `repo`), the platform (which
+ * gives the local clone) and the path relative to the repository root (the `code`'s `path`).
  */
 export interface CodeLocation {
   readonly specId: string;
@@ -227,8 +227,8 @@ export interface CodeLocation {
 }
 
 /**
- * Sem linha: tira o fragmento final `#…{line}` (se não tiver `{path}`); em qualquer caso, o
- * `{line}` que sobrar (na query, por exemplo) vira vazio.
+ * Without a line: drops the trailing fragment `#…{line}` (if it has no `{path}`); in any case, any
+ * remaining `{line}` (in the query, for example) becomes empty.
  */
 function withoutLine(template: string): string {
   if (!template.includes('{line}')) return template;
@@ -243,19 +243,19 @@ function withoutLine(template: string): string {
 }
 
 /**
- * URL do arquivo, a partir do `urlTemplate` do `repo` que a especialização `location.specId`
- * declara para a plataforma; `null` sem `repo`, sem `urlTemplate` (ou inválido) ou sem
- * caminho válido. Nada do projeto entra no link.
- * - `{path}`: o caminho com cada segmento codificado (`encodeURIComponent`), mantendo as `/`;
- * - `{line}`: o caminho não tem linha, então o trecho a partir do último `#` que contém
- *   `{line}` é removido (ex: `…/{path}#L{line}` → `…/{path}`); se `{line}` não estiver num
- *   fragmento assim, vira vazio.
+ * URL of the file, from the `urlTemplate` of the `repo` that the specialization `location.specId`
+ * declares for the platform; `null` without `repo`, without `urlTemplate` (or invalid) or without
+ * a valid path. Nothing from the project goes into the link.
+ * - `{path}`: the path with each segment encoded (`encodeURIComponent`), keeping the `/`;
+ * - `{line}`: the path has no line, so the part from the last `#` that contains
+ *   `{line}` is removed (e.g. `…/{path}#L{line}` → `…/{path}`); if `{line}` is not in such a
+ *   fragment, it becomes empty.
  */
 export function codeLink(p: Project, location: CodeLocation): string | null {
   return repoLink(specPlatformRepo(p, location.specId, location.platform), location.path);
 }
 
-/** O mesmo link de `codeLink`, a partir de um `repo` de especialização (ex: de um pacote lido fora do projeto). */
+/** The same link as `codeLink`, from a specialization `repo` (e.g. from a package read outside the project). */
 export function repoLink(
   repo: SpecRepo | null | undefined,
   filePath: string | null,
@@ -267,7 +267,7 @@ export function repoLink(
   return withoutLine(template).replaceAll('{path}', path);
 }
 
-/** Junta caminhos relativos com `/`, resolvendo `.` e os `..` que dá para resolver. */
+/** Joins relative paths with `/`, resolving `.` and the `..` that can be resolved. */
 function joinRelative(base: string, path: string): string {
   const out: string[] = [];
   for (const segment of `${base}/${path}`.split('/')) {
@@ -279,10 +279,10 @@ function joinRelative(base: string, path: string): string {
 }
 
 /**
- * Caminho do arquivo relativo à pasta do projeto: o `localPath` do clone da plataforma
- * (sobreposição do projeto, igual para qualquer especialização) mais o `path` (ex:
- * `../..` + `app/Main.kt` → `../../app/Main.kt`). `null` sem `localPath` (ou inválido) ou sem
- * caminho válido. Não confere se o arquivo existe.
+ * Path of the file relative to the project folder: the `localPath` of the platform's clone
+ * (project override, the same for any specialization) plus the `path` (e.g.
+ * `../..` + `app/Main.kt` → `../../app/Main.kt`). `null` without `localPath` (or invalid) or without
+ * a valid path. Does not check whether the file exists.
  */
 export function codeLocalPath(p: Project, location: CodeLocation): string | null {
   const localPath = optionalText(platformRepoOf(p, location.platform)?.localPath);
@@ -292,21 +292,21 @@ export function codeLocalPath(p: Project, location: CodeLocation): string | null
 }
 
 // ---------------------------------------------------------------------------
-// Tipos com `code`
+// Types with `code`
 
-/** Uma entrada do `code` de um tipo de uma especialização aplicada. */
+/** An entry of the `code` of a type of an applied specialization. */
 export interface TypeCodeEntry {
   readonly specId: string;
   readonly typeId: string;
   readonly platform: string;
   readonly code: SpecCode;
-  /** Campos do tipo (`resolveCode` precisa do `default` do campo da variante). */
+  /** Fields of the type (`resolveCode` needs the `default` of the variant's field). */
   readonly fields: readonly SpecField[];
 }
 
 /**
- * Entradas do `code` de todos os tipos das especializações aplicadas (com cópia válida),
- * na ordem das especializações, das camadas, dos tipos e do `code`.
+ * Entries of the `code` of all types of the applied specializations (with a valid copy),
+ * in the order of the specializations, layers, types and `code`.
  */
 export const projectTypeCode: (p: Project) => readonly TypeCodeEntry[] = memoByProject(
   (p) =>
@@ -326,37 +326,37 @@ export const projectTypeCode: (p: Project) => readonly TypeCodeEntry[] = memoByP
 );
 
 // ---------------------------------------------------------------------------
-// Busca por arquivo ou símbolo
+// Search by file or symbol
 
 export interface CodeQuery {
-  /** Caminho inteiro ou só os últimos segmentos (ex: `CheckoutScreen.kt`). */
+  /** Whole path or only the last segments (e.g. `CheckoutScreen.kt`). */
   readonly path?: string | null;
   readonly symbol?: string | null;
 }
 
-/** `true` se `query` é o caminho inteiro ou um sufixo dele por segmentos inteiros. */
+/** `true` if `query` is the whole path or a suffix of it by whole segments. */
 export function codePathMatches(path: string, query: string): boolean {
   return path === query || path.endsWith(`/${query}`);
 }
 
-/** Onde está uma anotação do tipo encontrado (para montar a referência `mapping://`). */
+/** Where an annotation of the found type is (to build the `mapping://` reference). */
 export interface CodeAnnotationLocation {
   readonly containerId: string | null;
   readonly markingId: string;
   readonly annotationId: string;
 }
 
-/** Tipo cujo `code` casou com a busca, com as anotações dele no projeto. */
+/** Type whose `code` matched the search, with its annotations in the project. */
 export interface CodeTypeMatch {
   readonly specId: string;
   readonly typeId: string;
-  /** Plataformas do `code` do tipo que casaram, na ordem do `code`. */
+  /** Platforms of the type's `code` that matched, in the order of the `code`. */
   readonly code: readonly { readonly platform: string; readonly code: SpecCode }[];
-  /** Anotações tipadas do tipo, na ordem do projeto (vazio se nenhuma o usa). */
+  /** Typed annotations of the type, in project order (empty if none uses it). */
   readonly annotations: readonly CodeAnnotationLocation[];
 }
 
-/** `true` se o `code` (já resolvido) casa com a busca; com os dois, ambos na mesma entrada. */
+/** `true` if the (already resolved) `code` matches the search; with both, both on the same entry. */
 function codeMatches(
   code: SpecCode,
   path: string | null,
@@ -371,7 +371,7 @@ function codeMatches(
 }
 
 /**
- * A entrada casa se a base (o `code` sem `variants`) ou algum caso resolvido casa com a busca.
+ * The entry matches if the base (the `code` without `variants`) or some resolved case matches the search.
  */
 function entryMatches(
   entry: TypeCodeEntry,
@@ -391,17 +391,17 @@ function entryMatches(
 }
 
 /**
- * Tipos das especializações aplicadas cujo `code` (em alguma plataforma) casa com a busca,
- * com as anotações desses tipos. `path` casa com `code.<plataforma>.path` por igualdade ou
- * por sufixo de segmentos inteiros (`CheckoutScreen.kt` casa com `app/…/CheckoutScreen.kt`,
- * `Screen.kt` não); `symbol`, com `code.<plataforma>.symbol` por igualdade. Com os dois, a
- * mesma entrada do `code` precisa casar com ambos; sem nenhum, a lista é vazia. Diferencia
- * maiúsculas de minúsculas.
+ * Types of the applied specializations whose `code` (on some platform) matches the search,
+ * with the annotations of those types. `path` matches `code.<platform>.path` by equality or
+ * by a suffix of whole segments (`CheckoutScreen.kt` matches `app/…/CheckoutScreen.kt`,
+ * `Screen.kt` does not); `symbol`, with `code.<platform>.symbol` by equality. With both, the
+ * same `code` entry must match both; with neither, the list is empty. Case
+ * sensitive.
  *
- * Com `variants` (formatVersion 9), o tipo casa se a base ou algum caso casa, e as
- * `annotations` são só as que têm o código resolvido (pelos valores delas) casando numa
- * plataforma que casou; o `code` do resultado continua o cru. Sem `variants`, todas as
- * anotações do tipo.
+ * With `variants` (formatVersion 9), the type matches if the base or some case matches, and the
+ * `annotations` are only those whose resolved code (by their values) matches on a
+ * platform that matched; the result's `code` stays the raw one. Without `variants`, all the
+ * annotations of the type.
  */
 export function findByCode(p: Project, query: CodeQuery): CodeTypeMatch[] {
   const rawPath = query.path ? normalizeCodePath(query.path) : null;
@@ -452,23 +452,23 @@ export function findByCode(p: Project, query: CodeQuery): CodeTypeMatch[] {
 }
 
 // ---------------------------------------------------------------------------
-// Repositórios de documentos (schema v14)
+// Document repositories (schema v14)
 
-/** Repositório de documentos declarado por alguma especialização aplicada (`docRepos`). */
+/** Document repository declared by some applied specialization (`docRepos`). */
 const declaredDocRepoIds = memoByProject(
   (p) => new Set(projectDocRepos(p).map((r) => r.id)),
 );
 
-/** Repositório de documentos declarado pelas especializações aplicadas ao projeto. */
+/** Document repository declared by the specializations applied to the project. */
 export interface ProjectDocRepo {
   readonly id: string;
-  /** Especializações aplicadas que o declaram, na ordem de aplicação. */
+  /** Applied specializations that declare it, in application order. */
   readonly specIds: readonly string[];
-  /** O endereço (`url`, `urlTemplate`, `ref`) que cada uma declara para ele. */
+  /** The address (`url`, `urlTemplate`, `ref`) that each one declares for it. */
   readonly repos: readonly { readonly specId: string; readonly repo: SpecRepo }[];
 }
 
-/** Repositórios de documentos de todas as especializações aplicadas, sem repetir id, na ordem de aplicação. */
+/** Document repositories of all applied specializations, without repeating ids, in application order. */
 export const projectDocRepos: (p: Project) => readonly ProjectDocRepo[] = memoByProject(
   (p) => {
     const byId = new Map<
@@ -491,14 +491,14 @@ export const projectDocRepos: (p: Project) => readonly ProjectDocRepo[] = memoBy
   },
 );
 
-/** Clone local gravado para o repositório de documentos; `null` se não houver. */
+/** Local clone stored for the document repository; `null` if there is none. */
 export function docRepoOf(p: Project, docRepoId: string): DocRepo | null {
   return Object.hasOwn(p.docRepos, docRepoId) ? (p.docRepos[docRepoId] ?? null) : null;
 }
 
 /**
- * Informa onde está o clone local de um repositório de documentos declarado por alguma
- * especialização aplicada. Texto vazio ou `null` remove a entrada.
+ * Says where the local clone of a document repository declared by some
+ * applied specialization is. Empty text or `null` removes the entry.
  */
 export function setDocRepo(
   p: Project,
@@ -515,7 +515,7 @@ export function setDocRepo(
   return { ...p, docRepos: { ...p.docRepos, [docRepoId]: { localPath } } };
 }
 
-/** Remove o clone local do repositório de documentos (declarado ou não). */
+/** Removes the local clone of the document repository (declared or not). */
 export function removeDocRepo(p: Project, docRepoId: string): Project {
   if (!Object.hasOwn(p.docRepos, docRepoId)) fail('not-found', docRepoId);
   return { ...p, docRepos: withoutRepo(p.docRepos, docRepoId) };

@@ -6,13 +6,13 @@ import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive } from './harness';
 
-// Texto que corta com reticências na janela estreita leva o texto inteiro no `title`
-// (relato da rodada dirigida da etapa Marcação pai, achado 1).
+// Text that is cut with an ellipsis in the narrow window carries the whole text in `title`
+// (report of the guided round of the Parent marking stage, finding 1).
 
 afterEach(cleanup);
 
-describe('texto cortado com dica', () => {
-  it('a camada sem anotação mostra a frase inteira numa nota, não num resumo cortado', () => {
+describe('truncated text with a hint', () => {
+  it('the layer without an annotation shows the whole sentence in a note, not in a truncated summary', () => {
     const harness = createHarness(sampleProject());
     renderLive(harness, (p) => {
       const m = p.markings.find((x) => x.id === 'M2');
@@ -29,14 +29,14 @@ describe('texto cortado com dica', () => {
         />
       );
     });
-    // M2 só tem anotação na L1: a L2 mostra a nota de camada vazia (CL1, 1.4), abaixo do cabeçalho
-    // e fora do `.layer-group-summary`, que corta com reticências.
+    // M2 only has an annotation on L1: L2 shows the empty-layer note (CL1, 1.4), below the header
+    // and outside `.layer-group-summary`, which is cut with an ellipsis.
     const note = screen.getByText(t('annotation.emptySection'));
     expect(note.classList.contains('layer-group-empty')).toBe(true);
     expect(note.closest('.layer-group-summary')).toBeNull();
   });
 
-  it('cada nível do caminho tem o nome inteiro no title', () => {
+  it('each level of the path has the whole name in title', () => {
     const harness = createHarness(sampleProject());
     harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     renderLive(harness, () => <Breadcrumbs onSelect={() => undefined} />);

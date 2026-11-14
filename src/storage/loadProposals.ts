@@ -4,18 +4,18 @@ import { reportError } from '../utils/report';
 import { FOLDER_CONCURRENCY } from './folderConcurrency';
 import type { ProjectStorage } from './types';
 
-// Leitura das propostas de alteração (`proposals/<id>/proposal.json`, etapa 4): ao abrir
-// o projeto e quando a pasta é conferida de novo. Um arquivo inválido não derruba nada:
-// vira um problema listado à parte (a proposta some da lista, o resto continua).
+// Reading the change proposals (`proposals/<id>/proposal.json`, stage 4): on opening
+// the project and when the folder is checked again. An invalid file does not bring anything down:
+// it becomes a problem listed separately (the proposal vanishes from the list, the rest goes on).
 
-/** Uma proposta lida: a proposta, o texto exato do arquivo e o carimbo dele (só na pasta). */
+/** A proposal read: the proposal, the file's exact text and its stamp (folder only). */
 export interface LoadedProposal {
   readonly proposal: Proposal;
   readonly text: string;
   readonly stamp: string | null;
 }
 
-/** `proposal.json` que não pôde ser lido: o id da pasta e os erros, com o caminho exato. */
+/** `proposal.json` that could not be read: the folder id and the errors, with the exact path. */
 export interface ProposalProblem {
   readonly id: string;
   readonly errors: readonly string[];
@@ -24,7 +24,7 @@ export interface ProposalProblem {
 export interface LoadedProposals {
   readonly proposals: readonly LoadedProposal[];
   readonly problems: readonly ProposalProblem[];
-  /** Texto dos arquivos inválidos (id → texto), guardado para exportar sem perda. */
+  /** Text of the invalid files (id → text), kept to export without loss. */
   readonly problemTexts?: ReadonlyMap<string, string>;
 }
 
@@ -34,14 +34,14 @@ export type ReadProposalResult =
   | ({ readonly ok: true } & LoadedProposal)
   | {
       readonly ok: false;
-      /** O arquivo não existe (mais). */
+      /** The file does not exist (any more). */
       readonly missing: boolean;
       readonly errors: readonly string[];
-      /** O texto lido, quando o arquivo existe mas é inválido (para não perdê-lo ao exportar). */
+      /** The text read, when the file exists but is invalid (so as not to lose it on export). */
       readonly text: string | null;
     };
 
-/** Lê e valida uma proposta. O `id` do arquivo precisa ser o da pasta. */
+/** Reads and validates a proposal. The file's `id` must be the folder's. */
 export async function readProposal(
   storage: ProjectStorage,
   id: string,
@@ -75,7 +75,7 @@ export function parseProposalFile(
     return {
       ok: false,
       missing: false,
-      errors: [`id: deve ser "${id}" (o nome da pasta), mas é "${parsed.proposal.id}"`],
+      errors: [`id: must be "${id}" (the folder name), but is "${parsed.proposal.id}"`],
       text,
     };
   }
@@ -84,7 +84,7 @@ export function parseProposalFile(
   return { ok: true, proposal: parsed.proposal, text, stamp };
 }
 
-/** Lê todas as propostas do armazenamento. */
+/** Reads all the proposals from storage. */
 export async function loadProposals(storage: ProjectStorage): Promise<LoadedProposals> {
   let ids: string[];
   try {

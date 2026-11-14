@@ -9,31 +9,31 @@ import { createHarness, renderLive } from './harness';
 
 afterEach(cleanup);
 
-/** Mostra o diálogo aberto e expõe os pedidos de exclusão como botões. */
+/** Shows the open dialog and exposes the delete requests as buttons. */
 function Probe({ markingId }: { readonly markingId: string }) {
   const { store } = useEditor();
   const dialogs = useEditorDialogs();
   const marking = store.project.value?.markings.find((m) => m.id === markingId);
   return (
     <>
-      <output>{dialogs.current?.kind ?? 'nenhum'}</output>
+      <output>{dialogs.current?.kind ?? 'none'}</output>
       <button
         type="button"
         onClick={() => marking && dialogs.requestDeleteMarking(marking)}
       >
-        excluir
+        delete
       </button>
     </>
   );
 }
 
 describe('EditorContext', () => {
-  it('useEditor fora do provider falha com mensagem clara', () => {
+  it('useEditor outside the provider fails with a clear message', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     expect(() => render(<Probe markingId="M1" />)).toThrow(/EditorProvider/);
   });
 
-  it('expõe store, actions e ui da sessão aberta', () => {
+  it('exposes store, actions and ui of the open session', () => {
     const harness = createHarness(sampleProject());
     const { context } = harness;
     expect(context.store).toBe(context.session.store);
@@ -41,7 +41,7 @@ describe('EditorContext', () => {
     expect(context.canvas.current).toBeNull();
   });
 
-  it('exclusão em cascata pede confirmação; a simples exclui direto', async () => {
+  it('cascading deletion asks for confirmation; a simple one deletes directly', async () => {
     const harness = createHarness(sampleProject());
     const project = harness.project();
     const withImpact = project.markings.find((m) => {
@@ -52,19 +52,19 @@ describe('EditorContext', () => {
       const impact = markingDeletionImpact(project, m.id);
       return impact.descendants === 0 && impact.annotations === 0;
     });
-    if (!withImpact || !simple) throw new Error('fixture sem os dois casos');
+    if (!withImpact || !simple) throw new Error('fixture without both cases');
     const user = userEvent.setup();
 
     const view = renderLive(harness, () => <Probe markingId={withImpact.id} />);
-    await user.click(screen.getByRole('button', { name: 'excluir' }));
+    await user.click(screen.getByRole('button', { name: 'delete' }));
     expect(screen.getByRole('status').textContent).toBe('deleteMarking');
     expect(harness.project().markings.some((m) => m.id === withImpact.id)).toBe(true);
     view.unmount();
 
     renderLive(harness, () => <Probe markingId={simple.id} />);
     harness.ui.selection.value = { kind: 'marking', id: simple.id };
-    await user.click(screen.getByRole('button', { name: 'excluir' }));
-    expect(screen.getByRole('status').textContent).toBe('nenhum');
+    await user.click(screen.getByRole('button', { name: 'delete' }));
+    expect(screen.getByRole('status').textContent).toBe('none');
     expect(harness.project().markings.some((m) => m.id === simple.id)).toBe(false);
     expect(harness.ui.selection.value).toBeNull();
   });

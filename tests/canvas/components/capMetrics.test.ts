@@ -1,12 +1,12 @@
-// CL2 (#896, achado 4.2 da CL1): as métricas do `cap-middle` não podem vir arredondadas em px
-// inteiros. O canvas do navegador devolve ascent, descent e `H` inteiros nos tamanhos pequenos
-// (16 px: 14, 3 e 12, quando valem 14,5, 3,4 e 11,25), e o desvio de ~0,5 unidade deixava o texto
-// 2 a 3 px de tela abaixo do centro a 420%.
+// CL2 (#896, finding 4.2 of CL1): the `cap-middle` metrics must not come rounded to whole
+// px. The browser canvas returns integer ascent, descent and `H` at small sizes
+// (16 px: 14, 3 and 12, when they are 14.5, 3.4 and 11.25), and the ~0.5 unit deviation left the text
+// 2 to 3 screen px below the center at 420%.
 import type { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { describe, expect, it } from 'vitest';
 import { capMetricsOf } from '../../../src/canvas/components/capMiddle';
 
-/** Uma fonte de proporções 0,906 / 0,213 / 0,703 que o navegador mede arredondando ao pixel. */
+/** A font with proportions 0.906 / 0.213 / 0.703 that the browser measures rounding to the pixel. */
 function roundingSample(initial: number): KonvaText {
   let size = initial;
   const sample = {
@@ -27,14 +27,14 @@ function roundingSample(initial: number): KonvaText {
 }
 
 describe('capMetricsOf', () => {
-  it('mede num tamanho grande e devolve as métricas fracionárias no tamanho do nó', () => {
+  it('measures at a large size and returns the fractional metrics at the node size', () => {
     const metrics = capMetricsOf(roundingSample(16), 16);
     expect(metrics.ascent).toBeCloseTo(0.906 * 16, 1);
     expect(metrics.descent).toBeCloseTo(0.213 * 16, 1);
     expect(metrics.capHeight).toBeCloseTo(0.703 * 16, 1);
   });
 
-  it('devolve o nó no tamanho que tinha', () => {
+  it('returns the node at the size it had', () => {
     const sample = roundingSample(16);
     capMetricsOf(sample, 16);
     expect(sample.fontSize()).toBe(16);

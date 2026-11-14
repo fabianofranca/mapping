@@ -10,11 +10,12 @@ import { createHarness } from './harness';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { render } from '@testing-library/preact';
 
-// BC1 (#1064): o "…" do caminho recolhido e o menu do caminho inteiro. Com 3 ou mais trechos
-// o `Breadcrumbs` sempre desenha o "…" (o CSS o esconde na barra larga); com 2 não há.
+// BC1 (#1064): the "…" of the collapsed path and the menu of the whole path. With 3 or more
+// segments the `Breadcrumbs` always draws the "…" (the CSS hides it on the wide bar); with 2 there is none.
+// pt-BR kept: shared fixture data asserted by tests/model (sampleProject names 'Porta', 'Maçaneta' and the review fixture 'Formulário')
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
@@ -40,20 +41,20 @@ function select(
 
 const showFull = () => screen.queryByRole('button', { name: t('crumbs.showFull') });
 
-describe('o "…" do caminho', () => {
-  it('com 3 ou mais trechos há o botão "…", com nome acessível', () => {
+describe('the "…" of the path', () => {
+  it('with 3 or more segments there is the "…" button, with an accessible name', () => {
     openPath({ kind: 'marking', id: 'M2' });
     const more = showFull();
     expect(more).toBeTruthy();
     expect(more?.getAttribute('aria-haspopup')).toBe('menu');
   });
 
-  it('com 2 trechos (Canvas › Imagem) não há "…"', () => {
+  it('with 2 segments (Canvas › Image) there is no "…"', () => {
     openPath({ kind: 'image', id: 'I1' });
     expect(showFull()).toBeNull();
   });
 
-  it('o menu lista do Canvas à seleção com os nomes inteiros', async () => {
+  it('the menu lists from the Canvas to the selection with the full names', async () => {
     openPath({ kind: 'marking', id: 'M2' });
     await userEvent.click(showFull()!);
     const menu = screen.getByRole('menu', { name: t('crumbs.menu') });
@@ -64,7 +65,7 @@ describe('o "…" do caminho', () => {
       'Porta',
       'Maçaneta',
     ]);
-    // O Canvas só rotula; o último é a seleção.
+    // The Canvas only labels; the last one is the selection.
     expect((items[0] as HTMLButtonElement).disabled).toBe(true);
     expect(items.map((i) => i.getAttribute('aria-current'))).toEqual([
       null,
@@ -74,7 +75,7 @@ describe('o "…" do caminho', () => {
     ]);
   });
 
-  it('escolher um nível seleciona o item dele e fecha o menu', async () => {
+  it('choosing a level selects its item and closes the menu', async () => {
     const { onSelect } = openPath({ kind: 'marking', id: 'M2' });
     await userEvent.click(showFull()!);
     await userEvent.click(screen.getByRole('menuitem', { name: 'Porta' }));
@@ -82,7 +83,7 @@ describe('o "…" do caminho', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('Esc fecha o menu e o foco volta ao "…"', async () => {
+  it('Esc closes the menu and the focus returns to the "…"', async () => {
     openPath({ kind: 'marking', id: 'M2' });
     await userEvent.click(showFull()!);
     expect(screen.getByRole('menu')).toBeTruthy();
@@ -91,7 +92,7 @@ describe('o "…" do caminho', () => {
     expect(document.activeElement).toBe(showFull());
   });
 
-  it('na revisão, Proposto, o menu mostra o caminho da vista aberta', async () => {
+  it('in the review, Proposed, the menu shows the path of the open view', async () => {
     const { base, proposal } = firstImport();
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);

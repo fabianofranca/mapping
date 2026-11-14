@@ -14,9 +14,9 @@ interface LargeProjectOptions {
 }
 
 /**
- * Projeto grande e válido para testes de desempenho (docs/ARCHITECTURE.md, "Desempenho"): 20 imagens e
- * 500 marcações por padrão. Cada imagem tem `markingsPerImage / 5` grupos de 1 marcação
- * com 4 filhas (hierarquia de 2 níveis), e as marcações têm anotações em 2 camadas.
+ * Large, valid project for performance tests (docs/ARCHITECTURE.md, "Performance"): 20 images and
+ * 500 markings by default. Each image has `markingsPerImage / 5` groups of 1 marking
+ * with 4 children (2-level hierarchy), and the markings have annotations in 2 layers.
  */
 export function buildLargeProject(options: LargeProjectOptions = {}): Project {
   const {
@@ -26,9 +26,9 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
     imageHeight = 3000,
   } = options;
   const base = createProject({
-    name: 'Grande',
+    name: 'Large',
     now: '2026-09-30T12:00:00.000Z',
-    firstLayer: { id: 'L1', name: 'Lataria', color: '#E53935' },
+    firstLayer: { id: 'L1', name: 'Bodywork', color: '#E53935' },
   });
   const cols = 5;
   const scale = 1000 / Math.max(imageWidth, imageHeight);
@@ -47,7 +47,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
       markingColor: null,
       locked: false,
       source: null,
-      file: `images/foto-${i}.jpg`,
+      file: `images/photo-${i}.jpg`,
       background: null,
       width: imageWidth,
       height: imageHeight,
@@ -66,7 +66,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
         id: parentId,
         containerId: containerId,
         parentId: null,
-        name: `Marcação ${i}-${g}`,
+        name: `Marking ${i}-${g}`,
         rect: parent,
         needsReview: false,
         locked: false,
@@ -99,22 +99,22 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
         id: `A${index}-${layerId}`,
         markingId: marking.id,
         layerId,
-        name: `Anotação ${index}`,
+        name: `Annotation ${index}`,
         parentAnnotationId: null,
         parentRole: null,
         type: null,
         values: null,
         entries: [
-          { id: `A${index}-${layerId}-e1`, key: 'tipo', value: 'amassado' },
-          { id: `A${index}-${layerId}-e2`, key: 'gravidade', value: 'média' },
-          { id: `A${index}-${layerId}-e3`, key: 'obs', value: `item ${index}` },
+          { id: `A${index}-${layerId}-e1`, key: 'kind', value: 'dented' },
+          { id: `A${index}-${layerId}-e2`, key: 'severity', value: 'medium' },
+          { id: `A${index}-${layerId}-e3`, key: 'notes', value: `item ${index}` },
         ],
       });
     }
   });
   return {
     ...base,
-    layers: [...base.layers, { id: 'L2', name: 'Vidros', color: '#1E88E5', spec: null }],
+    layers: [...base.layers, { id: 'L2', name: 'Glass', color: '#1E88E5', spec: null }],
     containers: imageList,
     markings,
     annotations,

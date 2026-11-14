@@ -10,12 +10,12 @@ import { decided } from '../../model/proposalFixtures';
 import { richScenario } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 
-// Achado da rodada da #898 (R25): sair da revisão logo após aplicar abria "Sair da revisão?"
-// com "0 aceita(s) aguardando aplicação" e "Aplicar bloqueado". O clique decidia pelo estado
-// de antes de a aplicação terminar; o diálogo, já aberto, via o estado de depois.
+// Finding from the #898 round (R25): leaving the review right after applying opened "Exit
+// the review?" with "0 accepted, awaiting apply" and "Apply blocked". The click decided by
+// the state from before the apply finished; the dialog, already open, saw the state after.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
@@ -32,18 +32,18 @@ function Shell() {
   );
 }
 
-describe('Sair da revisão logo após aplicar', () => {
-  it('não deixa o diálogo contraditório (0 aguardando) aberto: sai direto', async () => {
+describe('Exiting the review right after applying', () => {
+  it('does not leave the contradictory dialog (0 awaiting) open: exits directly', async () => {
     const { base, proposal } = richScenario();
     const p = decided(proposal, base, { level: 'item', id: 'M1' }, 'accepted');
     const h = await openReviewHarness({ proposals: [p] });
     h.review.open('P1');
     renderInEditor(h, <Shell />);
     const applying = h.review.apply();
-    fireEvent.click(screen.getByRole('button', { name: 'Sair da revisão' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Exit review' }));
     await applying;
     await waitFor(() => expect(h.review.proposalId.value).toBeNull());
-    expect(screen.queryByText(/0 aceita/)).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Sair mesmo assim' })).toBeNull();
+    expect(screen.queryByText(/0 accepted/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Exit anyway' })).toBeNull();
   });
 });

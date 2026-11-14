@@ -7,17 +7,18 @@ import { propose } from '../../model/proposalFixtures';
 import { richScenario } from '../../store/proposalHarness';
 import { showReviewPanel } from './reviewHarness';
 
-// SA1 (etapa #347, decisão 3): todo botão com texto visível tem um nome acessível que
-// começa por esse texto ("<visível>: <alvo>"), para o comando de voz (WCAG 2.5.3). O
-// estado fica só no `aria-pressed`; o conflito vai para a descrição.
+// SA1 (stage #347, decision 3): every button with visible text has an accessible name that
+// starts with that text ("<visible>: <target>"), for voice control (WCAG 2.5.3). The state
+// stays only in `aria-pressed`; the conflict goes into the description.
+// pt-BR kept: shared fixture data asserted by tests/store (names Porta and Porta dianteira from richScenario)
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
 
-const header = () => screen.getByRole('region', { name: 'Decisão' });
+const header = () => screen.getByRole('region', { name: 'Decision' });
 const describedText = (el: HTMLElement) =>
   (el.getAttribute('aria-describedby') ?? '')
     .split(' ')
@@ -25,11 +26,11 @@ const describedText = (el: HTMLElement) =>
     .map((id) => document.getElementById(id)?.textContent ?? '')
     .join(' ');
 
-describe('nomes acessíveis da revisão', () => {
-  it('imagem: "Aceitar imagem: <nome>" mesmo marcada; o estado está no aria-pressed', async () => {
+describe('accessible names in the review', () => {
+  it('image: "Accept image: <name>" even when pressed; the state is in aria-pressed', async () => {
     const base = sampleProject();
     const after = replaceContainer(base, 'I2', {
-      file: 'images/frente-2.jpg',
+      file: 'images/front-2.jpg',
       width: 2000,
       height: 2000,
     });
@@ -37,40 +38,40 @@ describe('nomes acessíveis da revisão', () => {
       { project: base, proposals: [propose(base, after)] },
       { level: 'image', id: 'I2' },
     );
-    const accept = within(header()).getByRole('button', { name: /^Aceitar imagem/ });
+    const accept = within(header()).getByRole('button', { name: /^Accept image/ });
     expect(accept.getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(accept);
     await vi_waitPressed(accept);
     expect(
       within(header())
-        .getByRole('button', { name: /^Aceitar imagem/ })
+        .getByRole('button', { name: /^Accept image/ })
         .getAttribute('aria-pressed'),
     ).toBe('true');
     expect(h.review.selected.value).toEqual({ level: 'image', id: 'I2' });
   });
 
-  it('marcação: "Rejeitar marcação: <nome>"', async () => {
+  it('marking: "Reject marking: <name>"', async () => {
     const { proposal } = richScenario();
     await showReviewPanel({ proposals: [proposal] }, { level: 'item', id: 'M1' });
-    const reject = within(header()).getByRole('button', { name: /^Rejeitar marcação/ });
-    expect(reject.getAttribute('aria-label')).toBe('Rejeitar marcação: Porta');
+    const reject = within(header()).getByRole('button', { name: /^Reject marking/ });
+    expect(reject.getAttribute('aria-label')).toBe('Reject marking: Porta');
   });
 
-  it('conflito: "Sobrescrever" começa o nome e o efeito vai para a descrição', async () => {
+  it('conflict: "Overwrite" starts the name and the effect goes into the description', async () => {
     const { proposal } = richScenario();
-    const edited = renameMarking(sampleProject(), 'M1', 'Topo');
+    const edited = renameMarking(sampleProject(), 'M1', 'Top');
     await showReviewPanel(
       { project: edited, proposals: [proposal] },
       { level: 'item', id: 'M1' },
     );
     fireEvent.click(
-      screen.getByRole('button', { name: /^Nome: alterado, pendente, em conflito/ }),
+      screen.getByRole('button', { name: /^Name: changed, pending, in conflict/ }),
     );
     const pop = screen.getByRole('dialog');
-    const overwrite = within(pop).getByRole('button', { name: /^Sobrescrever/ });
-    expect(describedText(overwrite)).toContain('sobrescreve Topo por Porta dianteira');
-    const keep = within(pop).getByRole('button', { name: /^Manter atual/ });
-    expect(describedText(keep)).toContain('mantém Topo');
+    const overwrite = within(pop).getByRole('button', { name: /^Overwrite/ });
+    expect(describedText(overwrite)).toContain('overwrites Top with Porta dianteira');
+    const keep = within(pop).getByRole('button', { name: /^Keep current/ });
+    expect(describedText(keep)).toContain('keeps Top');
   });
 });
 

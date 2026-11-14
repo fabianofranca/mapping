@@ -1,5 +1,5 @@
-# Defeitos corrigidos na própria etapa — 2026-11-05 (épico `epic/correcao-na-etapa`)
+# Defects fixed in the stage itself — 2026-11-05 (épico `epic/correcao-na-etapa`)
 
 ## Sincronização
 
-Sem impacto: o épico só mudou regras de trabalho (`CLAUDE.md` e `docs/FLOW.md`), sem tocar em `src/`. Nada foi gravado no artefato.
+Sem impacto: the epic only changed work rules (`CLAUDE.md` and `docs/FLOW.md`), without touching `src/`. Nothing was written to the artifact.

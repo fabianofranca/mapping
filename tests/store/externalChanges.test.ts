@@ -22,8 +22,8 @@ import { NOW, emptyProject, sampleProject } from '../model/fixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 import { richScenario } from './proposalHarness';
 
-// Etapa 3a.2: a revisão do `mapping.json`, as alterações externas (o MCP, um editor de texto)
-// e o que a sessão faz com elas: recusar a gravação, recarregar ou deixar o usuário decidir.
+// Stage 3a.2: the revision of `mapping.json`, the external changes (the MCP, a text editor)
+// and what the session does with them: refuse the write, reload or let the user decide.
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
@@ -31,9 +31,9 @@ afterEach(() => {
   clearReportedErrors();
 });
 
-/** Pasta com o projeto já gravado (revisão `revision`), como a app a encontra ao abrir. */
+/** Folder with the project already saved (revision `revision`), as the app finds it on open. */
 function projectOnDisk(project: Project, revision = 0) {
-  const root = new MemoryDirectory('mapeamento');
+  const root = new MemoryDirectory('mapping');
   const text = serialize({ ...project, revision });
   root.put('mapping.json', text);
   return { root, text, project: { ...project, revision } };
@@ -50,18 +50,18 @@ function open(
     project,
     loadedText: text,
     onImagesChanged,
-    prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
+    prepareImage: () => Promise.reject(new Error('no images here')),
     now: () => NOW,
   });
 }
 
 async function diskProject(root: MemoryDirectory): Promise<Project> {
   const parsed = deserialize((await root.read('mapping.json')) ?? '');
-  if (!parsed.ok) throw new Error('mapping.json inválido');
+  if (!parsed.ok) throw new Error('mapping.json invalid');
   return parsed.project;
 }
 
-/** Outro processo (o MCP) grava o arquivo: muda o nome e sobe a revisão. */
+/** Another process (the MCP) writes the file: changes the name and bumps the revision. */
 function externalWrite(
   root: MemoryDirectory,
   project: Project,
@@ -73,26 +73,26 @@ function externalWrite(
   return next;
 }
 
-describe('revisão do mapping.json', () => {
+describe('mapping.json revision', () => {
   let session: ProjectSession | null = null;
   afterEach(async () => {
     await session?.close();
     session = null;
   });
 
-  it('cada gravação sobe a revisão em 1', async () => {
+  it('each write bumps the revision by 1', async () => {
     const { root, text, project } = projectOnDisk(sampleProject(), 4);
     session = open(root, project, text);
-    session.actions.renameProject('Um');
+    session.actions.renameProject('One');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect((await diskProject(root)).revision).toBe(5);
-    session.actions.renameProject('Dois');
+    session.actions.renameProject('Two');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect((await diskProject(root)).revision).toBe(6);
     expect(session.saveStatus.value).toBe('saved');
   });
 
-  it('um arquivo v5 (sem revisão) é lido como 0 e a primeira gravação grava 1', async () => {
+  it('a v5 file (no revision) is read as 0 and the first write writes 1', async () => {
     const root = new MemoryDirectory('p');
     const project = emptyProject();
     const v5 = JSON.parse(serialize(project)) as Record<string, unknown>;
@@ -101,39 +101,40 @@ describe('revisão do mapping.json', () => {
     root.put('mapping.json', text);
     expect(readRevision(text)).toBe(0);
     session = open(root, project, text);
-    session.actions.renameProject('Novo');
+    session.actions.renameProject('New');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect((await diskProject(root)).revision).toBe(1);
   });
 
-  it('recusa gravar se outro processo mudou o arquivo e abre o conflito', async () => {
+  it('refuses to write if another process changed the file and opens the conflict', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
-    const external = externalWrite(root, project, 1, 'Feito pelo MCP');
+    const external = externalWrite(root, project, 1, 'Done by MCP');
 
-    session.actions.renameProject('Meu nome');
+    session.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
 
     expect(session.saveStatus.value).toBe('error');
     expect(session.conflict.value).toEqual({ reloadFailed: false });
-    // O arquivo do outro processo continua intacto.
+    // The other process file stays intact.
     expect(await root.read('mapping.json')).toBe(serialize(external));
   });
 
-  it('percebe também a edição à mão, que não mexe na revisão', async () => {
+  it('also notices the hand edit, which does not touch the revision', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
-    root.put('mapping.json', text.replace('"Teste"', '"Editado à mão"'));
-    session.actions.renameProject('Meu nome');
+    // pt-BR kept: shared fixture data (the sampleProject name "Teste") asserted by tests/mcp
+    root.put('mapping.json', text.replace('"Teste"', '"Edited by hand"'));
+    session.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
   });
 
-  it('"Manter as minhas" grava por cima, com a revisão seguinte à do arquivo', async () => {
+  it('"Keep mine" writes over it, with the revision after the file one', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
-    externalWrite(root, project, 7, 'Feito pelo MCP');
-    session.actions.renameProject('Meu nome');
+    externalWrite(root, project, 7, 'Done by MCP');
+    session.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
 
@@ -142,102 +143,102 @@ describe('revisão do mapping.json', () => {
     expect(session.conflict.value).toBeNull();
     expect(session.saveStatus.value).toBe('saved');
     const saved = await diskProject(root);
-    expect(saved.project.name).toBe('Meu nome');
+    expect(saved.project.name).toBe('My name');
     expect(saved.revision).toBe(8);
   });
 
-  it('"Recarregar" descarta as alterações locais e abre o arquivo como está', async () => {
+  it('"Reload" discards the local changes and opens the file as it is', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
-    const external = externalWrite(root, project, 1, 'Feito pelo MCP');
-    session.actions.renameProject('Meu nome');
+    const external = externalWrite(root, project, 1, 'Done by MCP');
+    session.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
 
     await session.resolveConflict('reload');
     await vi.advanceTimersByTimeAsync(2000);
 
     expect(session.conflict.value).toBeNull();
-    expect(session.store.project.value?.project.name).toBe('Feito pelo MCP');
+    expect(session.store.project.value?.project.name).toBe('Done by MCP');
     expect(session.store.canUndo.value).toBe(false);
     expect(session.saveStatus.value).toBe('saved');
     expect(session.reloads.value).toBe(1);
-    // Nada foi gravado por cima.
+    // Nothing was written over it.
     expect(await root.read('mapping.json')).toBe(serialize(external));
   });
 
-  it('"Recarregar" com o arquivo ilegível mantém o conflito aberto, avisando', async () => {
+  it('"Reload" with the file unreadable keeps the conflict open, warning', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
-    externalWrite(root, project, 1, 'Feito pelo MCP');
-    session.actions.renameProject('Meu nome');
+    externalWrite(root, project, 1, 'Done by MCP');
+    session.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
 
-    root.put('mapping.json', '{ isso não é json');
+    root.put('mapping.json', '{ this is not json');
     await session.resolveConflict('reload');
     expect(session.conflict.value).toEqual({ reloadFailed: true });
 
-    // Ainda dá para decidir manter as minhas.
+    // It is still possible to decide to keep mine.
     await session.resolveConflict('keep');
     expect(session.conflict.value).toBeNull();
-    expect((await diskProject(root)).project.name).toBe('Meu nome');
+    expect((await diskProject(root)).project.name).toBe('My name');
   });
 
-  it('um arquivo apagado por fora é gravado de novo, sem conflito', async () => {
+  it('a file deleted from outside is written again, without a conflict', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     root.files.delete('mapping.json');
-    session.actions.renameProject('Meu nome');
+    session.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).toBeNull();
-    expect((await diskProject(root)).project.name).toBe('Meu nome');
+    expect((await diskProject(root)).project.name).toBe('My name');
   });
 
-  it('o zip exportado leva a revisão do disco', async () => {
+  it('the exported zip carries the disk revision', async () => {
     const { root, text, project } = projectOnDisk(sampleProject(), 3);
     session = open(root, project, text);
-    session.actions.renameProject('Um');
+    session.actions.renameProject('One');
     const files = await session.collectFiles();
     expect(readRevision(files.mapping)).toBe(4);
   });
 });
 
-describe('mudanças externas', () => {
+describe('external changes', () => {
   let session: ProjectSession | null = null;
   afterEach(async () => {
     await session?.close();
     session = null;
   });
 
-  it('recarrega sozinha quando o arquivo muda e não há pendências', async () => {
+  it('reloads by itself when the file changes and there is nothing pending', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
-    externalWrite(root, project, 1, 'Feito pelo MCP');
+    externalWrite(root, project, 1, 'Done by MCP');
 
     expect(await session.sync()).toBe('reloaded');
 
-    expect(session.store.project.value?.project.name).toBe('Feito pelo MCP');
+    expect(session.store.project.value?.project.name).toBe('Done by MCP');
     expect(session.reloads.value).toBe(1);
-    // Recarregar não grava nada, nem agenda gravação.
+    // Reloading writes nothing, nor schedules a write.
     await vi.advanceTimersByTimeAsync(2000);
     expect((await diskProject(root)).revision).toBe(1);
     expect(session.saveStatus.value).toBe('saved');
-    // E uma gravação seguinte parte da revisão nova.
-    session.actions.renameProject('Depois');
+    // And a following write starts from the new revision.
+    session.actions.renameProject('After');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect((await diskProject(root)).revision).toBe(2);
   });
 
-  it('não recarrega de novo quando nada mudou (nem a própria gravação conta)', async () => {
+  it('does not reload again when nothing changed (not even its own write counts)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     expect(await session.sync()).toBe('unchanged');
-    session.actions.renameProject('Meu nome');
+    session.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(await session.sync()).toBe('unchanged');
     expect(session.reloads.value).toBe(0);
   });
 
-  it('só a data do arquivo mudou (touch): o conteúdo é o mesmo, não recarrega', async () => {
+  it('only the file date changed (touch): the content is the same, does not reload', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     root.touch('mapping.json');
@@ -245,65 +246,65 @@ describe('mudanças externas', () => {
     expect(session.reloads.value).toBe(0);
   });
 
-  it('com alterações locais pendentes, não recarrega: a gravação decide', async () => {
+  it('with pending local changes, does not reload: the write decides', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
-    externalWrite(root, project, 1, 'Feito pelo MCP');
-    session.actions.renameProject('Meu nome');
+    externalWrite(root, project, 1, 'Done by MCP');
+    session.actions.renameProject('My name');
 
     expect(await session.sync()).toBe('busy');
-    expect(session.store.project.value?.project.name).toBe('Meu nome');
+    expect(session.store.project.value?.project.name).toBe('My name');
 
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
   });
 
-  it('um gesto em andamento também segura a recarga', async () => {
+  it('a gesture in progress also holds the reload', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
-    externalWrite(root, project, 1, 'Feito pelo MCP');
+    externalWrite(root, project, 1, 'Done by MCP');
     session.store.beginGesture();
     expect(await session.sync()).toBe('busy');
     session.store.cancelGesture();
     expect(await session.sync()).toBe('reloaded');
   });
 
-  it('arquivo escrito pela metade (ilegível) é ignorado até ficar válido', async () => {
+  it('a half-written (unreadable) file is ignored until it becomes valid', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     root.put('mapping.json', '{ "schemaVersion": 6, ');
     expect(await session.sync()).toBe('unchanged');
     expect(session.reloads.value).toBe(0);
 
-    externalWrite(root, project, 1, 'Pronto');
+    externalWrite(root, project, 1, 'Ready');
     expect(await session.sync()).toBe('reloaded');
-    expect(session.store.project.value?.project.name).toBe('Pronto');
+    expect(session.store.project.value?.project.name).toBe('Ready');
   });
 
-  it('com o conflito aberto, não recarrega por baixo do diálogo', async () => {
+  it('with the conflict open, does not reload under the dialog', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
-    externalWrite(root, project, 1, 'Feito pelo MCP');
-    session.actions.renameProject('Meu nome');
+    externalWrite(root, project, 1, 'Done by MCP');
+    session.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
     expect(await session.sync()).toBe('unchanged');
     expect(session.reloads.value).toBe(0);
   });
 
-  it('o recarregamento zera o histórico e passa a gravar as cópias de specs/ certas', async () => {
+  it('the reload resets the history and starts writing the right specs/ copies', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     session.actions.renameProject('Local');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.store.canUndo.value).toBe(true);
     const current = await diskProject(root);
-    externalWrite(root, current, current.revision + 1, 'Externo');
+    externalWrite(root, current, current.revision + 1, 'External');
     expect(await session.sync()).toBe('reloaded');
     expect(session.store.canUndo.value).toBe(false);
   });
 
-  it('um projeto fora de pasta (sem statMapping) não é observável', async () => {
+  it('a project outside a folder (without statMapping) is not watchable', async () => {
     const root = new MemoryDirectory('p');
     const storage = createFolderStorage(root);
     const { statMapping, statImage, ...local } = storage;
@@ -319,7 +320,7 @@ describe('mudanças externas', () => {
   });
 });
 
-describe('imagens trocadas por fora', () => {
+describe('images swapped from outside', () => {
   let session: ProjectSession | null = null;
   afterEach(async () => {
     await session?.close();
@@ -327,13 +328,14 @@ describe('imagens trocadas por fora', () => {
   });
 
   function withImages() {
+    // pt-BR kept: shared fixture data (image paths of sampleProject: lateral.jpg, frente.jpg) asserted by tests/mcp
     const disk = projectOnDisk(sampleProject());
-    disk.root.put('images/lateral.jpg', 'v1-lateral');
-    disk.root.put('images/frente.jpg', 'v1-frente');
+    disk.root.put('images/lateral.jpg', 'v1-side');
+    disk.root.put('images/frente.jpg', 'v1-front');
     return disk;
   }
 
-  it('avisa só o arquivo trocado ao conferir as imagens (foco de volta na janela)', async () => {
+  it('reports only the swapped file when checking the images (focus back on the window)', async () => {
     const { root, text, project } = withImages();
     const changed: string[][] = [];
     session = open(root, project, text, (paths) => changed.push([...paths]));
@@ -341,40 +343,40 @@ describe('imagens trocadas por fora', () => {
     expect(await session.sync({ images: true })).toBe('unchanged');
     expect(changed).toEqual([]);
 
-    root.put('images/frente.jpg', 'v2-frente-maior');
+    root.put('images/frente.jpg', 'v2-front-larger');
     await session.sync({ images: true });
     expect(changed).toEqual([['images/frente.jpg']]);
 
-    // O carimbo novo vira o conhecido: a conferência seguinte não repete o aviso.
+    // The new stamp becomes the known one: the next check does not repeat the warning.
     await session.sync({ images: true });
     expect(changed).toHaveLength(1);
   });
 
-  it('a conferência a cada 3 s (sem images) não olha os arquivos de imagem', async () => {
+  it('the check every 3 s (without images) does not look at the image files', async () => {
     const { root, text, project } = withImages();
     const changed: string[][] = [];
     session = open(root, project, text, (paths) => changed.push([...paths]));
-    root.put('images/frente.jpg', 'v2-frente-maior');
+    root.put('images/frente.jpg', 'v2-front-larger');
     await session.sync();
     expect(changed).toEqual([]);
   });
 
-  it('depois de recarregar o projeto, avisa as imagens novas e as trocadas', async () => {
+  it('after reloading the project, reports the new and the swapped images', async () => {
     const { root, text, project } = withImages();
     const changed: string[][] = [];
     session = open(root, project, text, (paths) => changed.push([...paths]));
     await session.sync({ images: true });
 
-    root.put('images/lateral.jpg', 'v2-lateral-trocada');
-    externalWrite(root, project, 1, 'Trocou a lateral');
+    root.put('images/lateral.jpg', 'v2-side-swapped');
+    externalWrite(root, project, 1, 'Swapped the side');
     expect(await session.sync()).toBe('reloaded');
     expect(changed.flat()).toContain('images/lateral.jpg');
     expect(changed.flat()).not.toContain('images/frente.jpg');
   });
 
-  it('uma imagem que estava ausente e aparece por fora é recarregada', async () => {
+  it('an image that was missing and shows up from outside is reloaded', async () => {
     const disk = projectOnDisk(sampleProject());
-    disk.root.put('images/frente.jpg', 'v1-frente'); // a lateral ainda não existe
+    disk.root.put('images/frente.jpg', 'v1-front'); // the side one does not exist yet
     const changed: string[][] = [];
     session = open(disk.root, disk.project, disk.text, (paths) =>
       changed.push([...paths]),
@@ -382,57 +384,58 @@ describe('imagens trocadas por fora', () => {
     await session.sync({ images: true });
     expect(changed).toEqual([]);
 
-    disk.root.put('images/lateral.jpg', 'chegou');
+    disk.root.put('images/lateral.jpg', 'arrived');
     await session.sync({ images: true });
     expect(changed).toEqual([['images/lateral.jpg']]);
   });
 });
 
-// Etapa 6 (6.2), achado 8 do relato de 2026-10-11 (R6.10): com a gravação em erro (o arquivo
-// travado), a conferência periódica devolvia `busy` sem olhar o disco, e a alteração feita por
-// fora só aparecia ao clicar em "Tentar de novo".
-describe('alteração externa com a gravação em erro (fase 6.2)', () => {
+// Stage 6 (6.2), finding 8 of the 2026-10-11 report (R6.10): with the write in error (the file
+// locked), the periodic check returned `busy` without looking at the disk, and the change made from
+// outside only showed up when clicking "Try again".
+describe('external change with the write in error (phase 6.2)', () => {
   let session: ProjectSession | null = null;
   afterEach(async () => {
     await session?.close();
     session = null;
   });
 
-  /** Gravação travada (somente leitura) com uma edição local pendente: "Erro ao salvar". */
+  /** Locked write (read-only) with a pending local edit: "Error saving". */
   async function failedSave(root: MemoryDirectory, s: ProjectSession) {
     root.failWrites = new Error('NoModificationAllowedError');
-    s.actions.renameProject('Título app');
+    s.actions.renameProject('App title');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(s.saveStatus.value).toBe('error');
     expect(s.conflict.value).toBeNull();
   }
 
-  it('o arquivo mudou por fora: a conferência abre o conflito, sem recarregar', async () => {
+  it('the file changed from outside: the check opens the conflict, without reloading', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     await failedSave(root, session);
-    const external = externalWrite(root, project, 1, 'Rodapé externo');
+    const external = externalWrite(root, project, 1, 'External footer');
 
     expect(await session.sync()).toBe('conflict');
 
     expect(session.conflict.value).toEqual({ reloadFailed: false });
-    // Há pendência: nada é recarregado nem gravado por cima.
-    expect(session.store.project.value?.project.name).toBe('Título app');
+    // There is something pending: nothing is reloaded nor written over.
+    expect(session.store.project.value?.project.name).toBe('App title');
     expect(session.reloads.value).toBe(0);
     expect(session.saveStatus.value).toBe('error');
     expect(await root.read('mapping.json')).toBe(serialize(external));
   });
 
-  it('percebe também a edição à mão (mesma revisão)', async () => {
+  it('also notices the hand edit (same revision)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     await failedSave(root, session);
-    root.put('mapping.json', text.replace('"Teste"', '"Editado à mão"'));
+    // pt-BR kept: shared fixture data (the sampleProject name "Teste") asserted by tests/mcp
+    root.put('mapping.json', text.replace('"Teste"', '"Edited by hand"'));
     expect(await session.sync()).toBe('conflict');
     expect(session.conflict.value).not.toBeNull();
   });
 
-  it('o arquivo não mudou: nada acontece e o erro continua', async () => {
+  it('the file did not change: nothing happens and the error stays', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     await failedSave(root, session);
@@ -441,14 +444,14 @@ describe('alteração externa com a gravação em erro (fase 6.2)', () => {
     expect(await session.sync()).toBe('unchanged');
     expect(session.conflict.value).toBeNull();
     expect(session.saveStatus.value).toBe('error');
-    expect(session.store.project.value?.project.name).toBe('Título app');
+    expect(session.store.project.value?.project.name).toBe('App title');
   });
 
-  it('um gesto em andamento segura a conferência', async () => {
+  it('a gesture in progress holds the check', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     await failedSave(root, session);
-    externalWrite(root, project, 1, 'Rodapé externo');
+    externalWrite(root, project, 1, 'External footer');
     session.store.beginGesture();
     expect(await session.sync()).toBe('busy');
     expect(session.conflict.value).toBeNull();
@@ -456,45 +459,45 @@ describe('alteração externa com a gravação em erro (fase 6.2)', () => {
     expect(await session.sync()).toBe('conflict');
   });
 
-  it('"Recarregar" a partir desse estado descarta a pendência e lê o arquivo', async () => {
+  it('"Reload" from that state discards the pending edit and reads the file', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     await failedSave(root, session);
-    const external = externalWrite(root, project, 1, 'Rodapé externo');
+    const external = externalWrite(root, project, 1, 'External footer');
     expect(await session.sync()).toBe('conflict');
 
     await session.resolveConflict('reload');
 
     expect(session.conflict.value).toBeNull();
     expect(session.saveStatus.value).toBe('saved');
-    expect(session.store.project.value?.project.name).toBe('Rodapé externo');
+    expect(session.store.project.value?.project.name).toBe('External footer');
     expect(session.reloads.value).toBe(1);
     expect(await root.read('mapping.json')).toBe(serialize(external));
   });
 
-  it('"Manter as minhas" a partir desse estado grava por cima, com a revisão nova', async () => {
+  it('"Keep mine" from that state writes over it, with the new revision', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     await failedSave(root, session);
-    externalWrite(root, project, 7, 'Rodapé externo');
+    externalWrite(root, project, 7, 'External footer');
     expect(await session.sync()).toBe('conflict');
 
-    // R6.11: devolve a permissão e escolhe manter as minhas.
+    // R6.11: gives the permission back and chooses to keep mine.
     root.failWrites = null;
     await session.resolveConflict('keep');
 
     expect(session.conflict.value).toBeNull();
     expect(session.saveStatus.value).toBe('saved');
     const saved = await diskProject(root);
-    expect(saved.project.name).toBe('Título app');
+    expect(saved.project.name).toBe('App title');
     expect(saved.revision).toBe(8);
   });
 
-  it('"Manter as minhas" com o arquivo ainda travado volta ao erro, sem conflito', async () => {
+  it('"Keep mine" with the file still locked goes back to the error, without a conflict', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     await failedSave(root, session);
-    const external = externalWrite(root, project, 1, 'Rodapé externo');
+    const external = externalWrite(root, project, 1, 'External footer');
     expect(await session.sync()).toBe('conflict');
 
     await session.resolveConflict('keep');
@@ -502,16 +505,16 @@ describe('alteração externa com a gravação em erro (fase 6.2)', () => {
     expect(session.conflict.value).toBeNull();
     expect(session.saveStatus.value).toBe('error');
     expect(await root.read('mapping.json')).toBe(serialize(external));
-    // O arquivo de fora virou o conhecido: a conferência seguinte não reabre o conflito.
+    // The outside file became the known one: the next check does not reopen the conflict.
     expect(await session.sync()).toBe('unchanged');
     expect(session.conflict.value).toBeNull();
   });
 });
 
-// Fase 6.2 e fase 8.1 (achados S1 a S10): gravação, conferência e recarga são trabalhos de
-// uma fila só e nunca se cruzam. Os ganchos de `hooked` seguram uma gravação ou uma leitura
-// no meio para provar as corridas.
-describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
+// Phase 6.2 and phase 8.1 (findings S1 to S10): write, check and reload are jobs of a
+// single queue and never cross. The `hooked` hooks hold a write or a read
+// in the middle to prove the races.
+describe('check and write do not cross (phases 6.2 and 8.1)', () => {
   let session: ProjectSession | null = null;
   beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => undefined));
   afterEach(async () => {
@@ -536,11 +539,11 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
   }
 
   /**
-   * Sessão sobre a pasta com ganchos no armazenamento: `holdSave` segura a próxima gravação
-   * do `mapping.json` (antes ou depois de escrever), `holdRead` segura a próxima leitura dele
-   * (devolvendo o texto lido antes da espera), `failReads` faz toda leitura lançar (permissão
-   * revogada), e os contadores dizem quantas gravações começaram, quantas leituras houve e
-   * quantas conferências de data (`stat`).
+   * Session over the folder with hooks on the storage: `holdSave` holds the next write
+   * of `mapping.json` (before or after writing), `holdRead` holds the next read of it
+   * (returning the text read before the wait), `failReads` makes every read throw (permission
+   * revoked), and the counters say how many writes started, how many reads there were and
+   * how many date checks (`stat`).
    */
   function hooked(
     root: MemoryDirectory,
@@ -579,7 +582,7 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
           if (hold?.afterWrite) await hold.gate;
         },
         loadMapping: () => gatedRead(() => storage.loadMapping()),
-        // A sessão lê por aqui (texto e data numa leitura só): os mesmos ganchos valem.
+        // The session reads through here (text and date in a single read): the same hooks apply.
         loadMappingStamped: () =>
           gatedRead(async () => (await storage.loadMappingStamped?.()) ?? null),
         statMapping: async () => {
@@ -589,7 +592,7 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
       },
       project,
       loadedText: text,
-      prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
+      prepareImage: () => Promise.reject(new Error('no images here')),
       now: () => NOW,
       onImagesChanged: options.onImagesChanged,
       proposals: options.proposals,
@@ -616,11 +619,11 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     };
   }
 
-  /** Edição local com o disco travado: "Erro ao salvar". */
+  /** Local edit with the disk locked: "Error saving". */
   async function lockedEdit(
     root: MemoryDirectory,
     s: ProjectSession,
-    name = 'Título app',
+    name = 'App title',
   ) {
     root.failWrites = new Error('NoModificationAllowedError');
     s.actions.renameProject(name);
@@ -628,30 +631,30 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(s.saveStatus.value).toBe('error');
   }
 
-  /** Edição local com o arquivo vazio de vez: as tentativas se esgotam e o status cai em erro. */
+  /** Local edit with the file empty for good: the attempts run out and the status falls into error. */
   async function emptyForever(root: MemoryDirectory, s: ProjectSession) {
     root.put('mapping.json', '');
-    s.actions.renameProject('Meu nome');
+    s.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     for (let attempt = 1; attempt < EMPTY_RETRY_ATTEMPTS; attempt++) {
-      expect(s.saveStatus.value, `tentativa ${attempt}`).toBe('saving');
+      expect(s.saveStatus.value, `attempt ${attempt}`).toBe('saving');
       await vi.advanceTimersByTimeAsync(EMPTY_RETRY_DELAY_MS);
     }
     expect(s.saveStatus.value).toBe('error');
     expect(await root.read('mapping.json')).toBe('');
   }
 
-  // Reescrito na fase 8.1: a versão da 6.2 fazia "Tentar de novo" gravar enquanto a
-  // conferência lia o arquivo (duas filas) e provava que a leitura antiga não virava
-  // conflito. Com a fila única, a gravação espera a conferência terminar.
-  it('"Tentar de novo" durante a conferência espera a fila: nem conflito falso nem gravação cruzada', async () => {
+  // Rewritten in phase 8.1: the 6.2 version made "Try again" write while the
+  // check read the file (two queues) and proved that the old read did not become a
+  // conflict. With the single queue, the write waits for the check to finish.
+  it('"Try again" during the check waits for the queue: neither a false conflict nor a crossed write', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
     await lockedEdit(root, session);
 
-    // A conferência lê o arquivo (só a data mudou) e fica parada; a permissão volta e a
-    // pessoa clica em "Tentar de novo": a gravação entra na fila atrás da conferência.
+    // The check reads the file (only the date changed) and stays stopped; the permission comes back and
+    // the person clicks "Try again": the write enters the queue behind the check.
     root.touch('mapping.json');
     const read = h.holdRead();
     const syncing = session.sync();
@@ -667,35 +670,35 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(session.conflict.value).toBeNull();
     expect(await retrying).toEqual({ ok: true });
     expect(session.saveStatus.value).toBe('saved');
-    expect((await diskProject(root)).project.name).toBe('Título app');
+    expect((await diskProject(root)).project.name).toBe('App title');
     expect(await session.sync()).toBe('unchanged');
   });
 
-  // Reescrito na fase 8.1 (S2): a versão da 6.2 fixava `status === 'error'` com uma gravação
-  // em curso, que era o sintoma (o AutoSaver não marcava `saving` na enfileirada).
-  it('uma gravação em curso depois de um erro tem o status "saving" e a conferência espera a fila (S2)', async () => {
+  // Rewritten in phase 8.1 (S2): the 6.2 version pinned `status === 'error'` with a write
+  // in progress, which was the symptom (the AutoSaver did not mark `saving` on the queued one).
+  it('a write in progress after an error has the "saving" status and the check waits for the queue (S2)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
-    // A primeira gravação fica parada e depois falha; a segunda, enfileirada atrás dela,
-    // roda em seguida e para logo depois de escrever o arquivo.
+    // The first write stays stopped and then fails; the second, queued behind it,
+    // runs next and stops right after writing the file.
     const first = h.holdSave(false);
-    session.actions.renameProject('Um');
+    session.actions.renameProject('One');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     await vi.waitFor(() => expect(h.savesStarted()).toBe(1));
-    session.actions.renameProject('Dois');
+    session.actions.renameProject('Two');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     const second = h.holdSave(true);
     first.reject(new Error('NoModificationAllowedError'));
     await vi.waitFor(() => expect(h.savesStarted()).toBe(2));
     await vi.waitFor(async () =>
-      expect((await diskProject(root)).project.name).toBe('Dois'),
+      expect((await diskProject(root)).project.name).toBe('Two'),
     );
-    // Há uma gravação rodando: o status é "Salvando…", não "Erro ao salvar".
+    // There is a write running: the status is "Saving…", not "Error saving".
     expect(session.saveStatus.value).toBe('saving');
 
-    // O arquivo já tem a gravação nova, mas a sessão ainda não a registrou: a conferência
-    // espera a fila (só roda depois da gravação) em vez de tomar o arquivo por alteração externa.
+    // The file already has the new write, but the session has not registered it yet: the check
+    // waits for the queue (only runs after the write) instead of taking the file for an external change.
     const syncing = session.sync();
     second.resolve();
     expect(await syncing).toBe('unchanged');
@@ -705,30 +708,30 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(session.conflict.value).toBeNull();
   });
 
-  it('editor trunca o arquivo e depois escreve: a gravação espera e o resultado é conflito, não recarga (S1)', async () => {
+  it('editor truncates the file and then writes: the write waits and the result is a conflict, not a reload (S1)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
-    session.actions.renameProject('Meu nome');
-    // O editor truncou o arquivo; a gravação chega e o encontra vazio.
+    session.actions.renameProject('My name');
+    // The editor truncated the file; the write arrives and finds it empty.
     root.put('mapping.json', '');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(await root.read('mapping.json')).toBe('');
     expect(session.saveStatus.value).toBe('saving');
     expect(h.savesStarted()).toBe(0);
-    // O editor terminou de escrever: a nova tentativa vê um arquivo de fora.
-    const external = externalWrite(root, project, 1, 'Do editor');
+    // The editor finished writing: the new attempt sees an outside file.
+    const external = externalWrite(root, project, 1, 'From the editor');
     await vi.advanceTimersByTimeAsync(EMPTY_RETRY_DELAY_MS);
     expect(session.conflict.value).toEqual({ reloadFailed: false });
     expect(session.saveStatus.value).toBe('error');
     expect(h.savesStarted()).toBe(0);
     expect(await root.read('mapping.json')).toBe(serialize(external));
-    // Com o conflito aberto, a conferência não recarrega por baixo da edição local.
+    // With the conflict open, the check does not reload under the local edit.
     expect(await session.sync()).toBe('unchanged');
-    expect(session.store.project.value?.project.name).toBe('Meu nome');
+    expect(session.store.project.value?.project.name).toBe('My name');
   });
 
-  it('arquivo vazio de vez: tenta EMPTY_RETRY_ATTEMPTS vezes, não grava, cai em erro com a causa no Diagnóstico; apagar o arquivo libera a gravação (S1, B1)', async () => {
+  it('file empty for good: tries EMPTY_RETRY_ATTEMPTS times, does not write, falls into error with the cause in Diagnostics; deleting the file releases the write (S1, B1)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
@@ -736,27 +739,27 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(h.savesStarted()).toBe(0);
     expect(reportedErrors.value.map((e) => e.context)).toContain('session.emptyMapping');
 
-    // "Tentar de novo" repete as tentativas e falha de novo.
+    // "Try again" repeats the attempts and fails again.
     const retrying = session.flush();
     await vi.advanceTimersByTimeAsync(EMPTY_RETRY_DELAY_MS * EMPTY_RETRY_ATTEMPTS);
     expect(await retrying).toMatchObject({ ok: false });
     expect(session.saveStatus.value).toBe('error');
     expect(h.savesStarted()).toBe(0);
 
-    // Saída 2: a pessoa apaga o arquivo por fora; a gravação seguinte grava.
+    // Way out 2: the person deletes the file from outside; the next write writes.
     root.files.delete('mapping.json');
     expect(await session.flush()).toEqual({ ok: true });
     expect(session.saveStatus.value).toBe('saved');
-    expect((await diskProject(root)).project.name).toBe('Meu nome');
+    expect((await diskProject(root)).project.name).toBe('My name');
   });
 
-  it('vazio persistente depois do erro: a conferência abre o conflito; Recarregar falha; Manter as minhas grava por cima (A1)', async () => {
+  it('persistent empty after the error: the check opens the conflict; Reload fails; Keep mine writes over it (A1)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
     await emptyForever(root, session);
 
-    // Saída 3: a conferência, com a gravação em erro, trata o vazio como alteração externa.
+    // Way out 3: the check, with the write in error, treats the empty as an external change.
     expect(await session.sync()).toBe('conflict');
     expect(session.conflict.value).toEqual({ reloadFailed: false });
     await session.resolveConflict('reload');
@@ -764,21 +767,21 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     await session.resolveConflict('keep');
     expect(session.conflict.value).toBeNull();
     expect(session.saveStatus.value).toBe('saved');
-    expect((await diskProject(root)).project.name).toBe('Meu nome');
+    expect((await diskProject(root)).project.name).toBe('My name');
   });
 
-  it('Recarregar com uma gravação em curso não grava o projeto antigo por cima do adotado (S3)', async () => {
+  it('Reload with a write in progress does not write the old project over the adopted one (S3)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
-    const external = externalWrite(root, project, 1, 'De fora');
-    session.actions.renameProject('Um');
+    const external = externalWrite(root, project, 1, 'From outside');
+    session.actions.renameProject('One');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
 
-    // Uma segunda gravação (edição nova) está lendo o arquivo quando a pessoa clica em Recarregar.
+    // A second write (new edit) is reading the file when the person clicks Reload.
     const read = h.holdRead();
-    session.actions.renameProject('Dois');
+    session.actions.renameProject('Two');
     const flushing = session.flush();
     await vi.waitFor(() => expect(h.readsHeld()).toBe(1));
     const reloading = session.resolveConflict('reload');
@@ -787,34 +790,34 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     await reloading;
 
     expect(session.conflict.value).toBeNull();
-    expect(session.store.project.value?.project.name).toBe('De fora');
+    expect(session.store.project.value?.project.name).toBe('From outside');
     expect(session.saveStatus.value).toBe('saved');
     expect(await root.read('mapping.json')).toBe(serialize(external));
     expect(h.savesStarted()).toBe(0);
   });
 
-  it('desfazer depois de uma gravação recusada não regrava o projeto base (S5)', async () => {
+  it('undo after a refused write does not rewrite the base project (S5)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
-    const external = externalWrite(root, project, 1, 'De fora');
-    session.actions.renameProject('Meu nome');
+    const external = externalWrite(root, project, 1, 'From outside');
+    session.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
 
     const reads = h.reads();
     session.store.undo();
     await vi.advanceTimersByTimeAsync(2000);
-    // Nenhuma gravação nova: nem sequer leu o arquivo.
+    // No new write: it did not even read the file.
     expect(h.reads()).toBe(reads);
     expect(h.savesStarted()).toBe(0);
     expect(session.saveStatus.value).toBe('saved');
     expect(await root.read('mapping.json')).toBe(serialize(external));
-    // O diálogo continua até a pessoa decidir (D3).
+    // The dialog stays until the person decides (D3).
     expect(session.conflict.value).not.toBeNull();
   });
 
-  it('desfazer depois de uma gravação que falhou no disco volta a "saved" sem gravar (S5)', async () => {
+  it('undo after a write that failed on disk goes back to "saved" without writing (S5)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
@@ -827,7 +830,7 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(await root.read('mapping.json')).toBe(text);
   });
 
-  it('aplicar aceitas com a gravação recusada: o desfazer da compensação não regrava o projeto base (S5)', async () => {
+  it('applying accepted with the write refused: the compensation undo does not rewrite the base project (S5)', async () => {
     const { base, proposal, ids } = richScenario();
     const { root, text, project } = projectOnDisk(base);
     root.put('proposals/P1/proposal.json', serializeProposal(proposal));
@@ -835,14 +838,14 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
       proposals: await loadProposals(createFolderStorage(root)),
     });
     session = h.session;
-    // Só a mudança de nome (sem imagem a copiar).
+    // Only the name change (no image to copy).
     const decided = await session.proposalActions.decide(
       'P1',
       { level: 'change', id: ids.name },
       'accepted',
     );
     expect(decided).toMatchObject({ ok: true });
-    const external = externalWrite(root, project, 1, 'De fora');
+    const external = externalWrite(root, project, 1, 'From outside');
 
     const applied = await session.proposalActions.applyAccepted('P1');
     expect(applied).toEqual({ ok: false, error: 'save-failed' });
@@ -856,11 +859,11 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(await root.read('mapping.json')).toBe(serialize(external));
   });
 
-  it('arquivo gravado pela app: editar e desfazer até o início não regrava (A2, caso normal)', async () => {
+  it('file written by the app: editing and undoing back to the start does not rewrite (A2, normal case)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
-    session.actions.renameProject('Meu nome');
+    session.actions.renameProject('My name');
     session.store.undo();
     await vi.advanceTimersByTimeAsync(2000);
     expect(h.savesStarted()).toBe(0);
@@ -868,16 +871,16 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(await root.read('mapping.json')).toBe(text);
   });
 
-  it('Recarregar com a leitura lançando: avisa (reloadFailed), registra no Diagnóstico e não rejeita (S7)', async () => {
+  it('Reload with the read throwing: warns (reloadFailed), logs to Diagnostics and does not reject (S7)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
-    externalWrite(root, project, 1, 'De fora');
-    session.actions.renameProject('Meu nome');
+    externalWrite(root, project, 1, 'From outside');
+    session.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
 
-    h.failReads(new Error('permissão revogada'));
+    h.failReads(new Error('permission revoked'));
     await expect(session.resolveConflict('reload')).resolves.toBeUndefined();
     expect(session.conflict.value).toEqual({ reloadFailed: true });
     expect(reportedErrors.value.map((e) => e.context)).toContain('session.reload');
@@ -885,40 +888,41 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     h.failReads(null);
     await session.resolveConflict('reload');
     expect(session.conflict.value).toBeNull();
-    expect(session.store.project.value?.project.name).toBe('De fora');
+    expect(session.store.project.value?.project.name).toBe('From outside');
   });
 
-  it('Manter as minhas com a leitura lançando: não rejeita; a gravação cai em erro e o conflito volta quando o arquivo é lido (S7, D4)', async () => {
+  it('Keep mine with the read throwing: does not reject; the write falls into error and the conflict comes back when the file is read (S7, D4)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
-    externalWrite(root, project, 1, 'De fora');
-    session.actions.renameProject('Meu nome');
+    externalWrite(root, project, 1, 'From outside');
+    session.actions.renameProject('My name');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
 
-    h.failReads(new Error('permissão revogada'));
+    h.failReads(new Error('permission revoked'));
     await expect(session.resolveConflict('keep')).resolves.toBeUndefined();
     expect(session.conflict.value).toBeNull();
     expect(session.saveStatus.value).toBe('error');
     expect(reportedErrors.value.map((e) => e.context)).toContain('session.keep');
 
-    // A leitura volta: a revisão conhecida não é a do arquivo de fora, então é conflito de novo,
-    // e a pessoa decide com o arquivo legível.
+    // The read comes back: the known revision is not the outside file one, so it is a conflict again,
+    // and the person decides with the readable file.
     h.failReads(null);
     expect(await session.flush()).toMatchObject({ ok: false });
     expect(session.conflict.value).not.toBeNull();
     await session.resolveConflict('keep');
     expect(session.saveStatus.value).toBe('saved');
     const saved = await diskProject(root);
-    expect(saved.project.name).toBe('Meu nome');
+    expect(saved.project.name).toBe('My name');
     expect(saved.revision).toBe(2);
   });
 
-  it('sync({ images: true }) durante uma conferência em curso não é descartado: as imagens são conferidas (S9)', async () => {
+  it('sync({ images: true }) during a check in progress is not discarded: the images are checked (S9)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
-    root.put('images/lateral.jpg', 'v1-lateral');
-    root.put('images/frente.jpg', 'v1-frente');
+    // pt-BR kept: shared fixture data (image paths of sampleProject: lateral.jpg, frente.jpg) asserted by tests/mcp
+    root.put('images/lateral.jpg', 'v1-side');
+    root.put('images/frente.jpg', 'v1-front');
     const changed: string[][] = [];
     const h = hooked(root, project, text, {
       onImagesChanged: (paths) => changed.push([...paths]),
@@ -927,7 +931,7 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(await session.sync({ images: true })).toBe('unchanged');
     expect(changed).toEqual([]);
 
-    root.put('images/frente.jpg', 'v2-frente-maior');
+    root.put('images/frente.jpg', 'v2-front-larger');
     root.touch('mapping.json');
     const read = h.holdRead();
     const first = session.sync();
@@ -939,11 +943,11 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(changed).toEqual([['images/frente.jpg']]);
   });
 
-  it('chamadas concorrentes de sync: a em curso e no máximo uma a mais, com a mesma promessa (S9)', async () => {
+  it('concurrent sync calls: the one in progress and at most one more, with the same promise (S9)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
-    await vi.advanceTimersByTimeAsync(0); // a data conhecida desde a abertura
+    await vi.advanceTimersByTimeAsync(0); // the date known since opening
     root.touch('mapping.json');
     const read = h.holdRead();
     const first = session.sync();
@@ -960,7 +964,7 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(h.stats()).toBe(stats + 1);
   });
 
-  it('a primeira conferência com o arquivo igual não o lê: a data é conhecida desde a abertura (S10)', async () => {
+  it('the first check with the same file does not read it: the date is known since opening (S10)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
@@ -968,16 +972,16 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     const reads = h.reads();
     expect(await session.sync()).toBe('unchanged');
     expect(h.reads()).toBe(reads);
-    // Mudou de verdade: lê e recarrega.
-    externalWrite(root, project, 1, 'De fora');
+    // It really changed: reads and reloads.
+    externalWrite(root, project, 1, 'From outside');
     expect(await session.sync()).toBe('reloaded');
   });
 
-  it('close() espera a conferência em curso: nenhum projeto é adotado depois de fechar (S10)', async () => {
+  it('close() waits for the check in progress: no project is adopted after closing (S10)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
-    externalWrite(root, project, 1, 'De fora');
+    externalWrite(root, project, 1, 'From outside');
     const read = h.holdRead();
     const syncing = session.sync();
     await vi.waitFor(() => expect(h.readsHeld()).toBe(1));
@@ -989,21 +993,21 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(session.reloads.value).toBe(0);
   });
 
-  it('uma edição durante a conferência: ela não adota o arquivo de fora, e o flush seguinte nunca devolve ok com ele (B2, cadeia do P7)', async () => {
-    // Variante 1: o arquivo de fora é diferente → a conferência devolve busy e o flush abre o conflito.
+  it('an edit during the check: it does not adopt the outside file, and the next flush never returns ok with it (B2, P7 chain)', async () => {
+    // Variant 1: the outside file is different → the check returns busy and the flush opens the conflict.
     {
       const { root, text, project } = projectOnDisk(sampleProject());
       const h = hooked(root, project, text);
       session = h.session;
-      const external = externalWrite(root, project, 1, 'De fora');
+      const external = externalWrite(root, project, 1, 'From outside');
       const read = h.holdRead();
       const syncing = session.sync();
       await vi.waitFor(() => expect(h.readsHeld()).toBe(1));
-      session.actions.renameProject('Aplicado'); // o `store.apply` da 8.2
+      session.actions.renameProject('Applied'); // the 8.2 `store.apply`
       read.resolve();
       expect(await syncing).toBe('busy');
       expect(session.reloads.value).toBe(0);
-      expect(session.store.project.value?.project.name).toBe('Aplicado');
+      expect(session.store.project.value?.project.name).toBe('Applied');
       const flushed = await session.flush();
       expect(flushed.ok).toBe(false);
       if (!flushed.ok) expect(flushed.error).toBeInstanceOf(ExternalChangeError);
@@ -1012,39 +1016,39 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
       await session.close();
       session = null;
     }
-    // Variante 2: o arquivo é o conhecido (só a data mudou) → o flush grava o aplicado.
+    // Variant 2: the file is the known one (only the date changed) → the flush writes the applied one.
     {
       const { root, text, project } = projectOnDisk(sampleProject());
       const h = hooked(root, project, text);
       session = h.session;
-      await vi.advanceTimersByTimeAsync(0); // a data conhecida desde a abertura
+      await vi.advanceTimersByTimeAsync(0); // the date known since opening
       root.touch('mapping.json');
       const read = h.holdRead();
       const syncing = session.sync();
       await vi.waitFor(() => expect(h.readsHeld()).toBe(1));
-      session.actions.renameProject('Aplicado');
+      session.actions.renameProject('Applied');
       read.resolve();
       expect(await syncing).not.toBe('reloaded');
       expect(session.reloads.value).toBe(0);
       expect(await session.flush()).toEqual({ ok: true });
-      expect((await diskProject(root)).project.name).toBe('Aplicado');
+      expect((await diskProject(root)).project.name).toBe('Applied');
     }
   });
 });
 
-// Etapa #1777 (decisão 8): `session.busy()` é o que `useExternalChanges` lê para adiar o ciclo.
-describe('session.busy: trabalho em curso que adia a conferência (etapa #1777)', () => {
+// Stage #1777 (decision 8): `session.busy()` is what `useExternalChanges` reads to postpone the cycle.
+describe('session.busy: work in progress that postpones the check (stage #1777)', () => {
   let session: ProjectSession | null = null;
   afterEach(async () => {
     await session?.close();
     session = null;
   });
 
-  it('em repouso, não está ocupada; com gravação agendada, sim; gravada, não', async () => {
+  it('at rest, it is not busy; with a scheduled write, it is; saved, it is not', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     expect(session.busy()).toBe(false);
-    session.actions.renameProject('Agendada');
+    session.actions.renameProject('Scheduled');
     expect(session.saveStatus.value).toBe('saving');
     expect(session.busy()).toBe(true);
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
@@ -1052,7 +1056,7 @@ describe('session.busy: trabalho em curso que adia a conferência (etapa #1777)'
     expect(session.busy()).toBe(false);
   });
 
-  it('um gesto em andamento a deixa ocupada', async () => {
+  it('a gesture in progress leaves it busy', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     session.store.beginGesture();
@@ -1061,18 +1065,18 @@ describe('session.busy: trabalho em curso que adia a conferência (etapa #1777)'
     expect(session.busy()).toBe(false);
   });
 
-  it('com a gravação em erro não fica ocupada (a conferência precisa abrir o conflito)', async () => {
+  it('with the write in error it is not busy (the check needs to open the conflict)', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     root.failWrites = new Error('NoModificationAllowedError');
-    session.actions.renameProject('Falha');
+    session.actions.renameProject('Failure');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.saveStatus.value).toBe('error');
     expect(session.busy()).toBe(false);
   });
 
-  it('uma decisão de proposta sendo gravada a deixa ocupada até terminar', async () => {
+  it('a proposal decision being written leaves it busy until it finishes', async () => {
     const { base, proposal, ids } = richScenario();
     const { root, text, project } = projectOnDisk(base);
     root.put('proposals/P1/proposal.json', serializeProposal(proposal));
@@ -1081,7 +1085,7 @@ describe('session.busy: trabalho em curso que adia a conferência (etapa #1777)'
       project,
       loadedText: text,
       proposals: await loadProposals(createFolderStorage(root)),
-      prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
+      prepareImage: () => Promise.reject(new Error('no images here')),
       now: () => NOW,
     });
     expect(session.busy()).toBe(false);
@@ -1095,10 +1099,10 @@ describe('session.busy: trabalho em curso que adia a conferência (etapa #1777)'
     expect(session.busy()).toBe(false);
   });
 
-  it('fechada, não está ocupada', async () => {
+  it('closed, it is not busy', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
-    session.actions.renameProject('Pendente');
+    session.actions.renameProject('Pending');
     const closing = session.close();
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     await closing;

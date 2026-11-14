@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-// Seletor de opções (`Segmented`) numa coluna estreita dos Detalhes: nenhuma opção fica
-// cortada nem fora do clique. jsdom não tem layout; a medição é no Chromium. A coluna
-// de valor tem ~122 px com os Detalhes em 280 px (janela de 900 px) e ~202 px em 360 px.
+// Option selector (`Segmented`) in a narrow Details column: no option is
+// cut off or outside the click. jsdom has no layout; the measurement is in Chromium. The value
+// column is ~122 px with Details at 280 px (900 px window) and ~202 px at 360 px.
 
 for (const column of [122, 202]) {
-  test(`o seletor estilo cabe inteiro e clicável numa coluna de ${column} px`, async ({
+  test(`the style selector fits whole and clickable in a ${column} px column`, async ({
     page,
   }) => {
     await page.goto('/');
@@ -43,7 +43,7 @@ for (const column of [122, 202]) {
           return {
             hit: hit !== null && el.contains(hit),
             inside: r.left >= box.left && r.right <= box.right + 0.5,
-            // Texto inteiro: sem reticências nem corte.
+            // Whole text: no ellipsis or cut.
             textCut: text.scrollWidth > text.clientWidth,
           };
         },

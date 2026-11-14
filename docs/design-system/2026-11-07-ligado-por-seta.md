@@ -1,19 +1,19 @@
-# Ligado por seta — 2026-11-07 (épico `epic/ligado-por-seta`)
+# Linked by arrow — 2026-11-07 (épico `epic/ligado-por-seta`)
 
 ## Pendências
 
-### LS1 — seção Ligado por seta nos Detalhes da marcação
+### LS1 — Linked by arrow section in the marking Details
 
-- `MarkingPanel`: nova seção recolhível **Ligado por seta** (`Section` com contagem), depois de **Anotações** e antes de "Outras mudanças"; só existe com seta na marcação. Preview novo ou estado novo no guia do `MarkingPanel`.
-- Linha da seta (`.arrow-link`, `li` de uma lista sem marcador): ícone de direção (`arrowRight` sai, `arrowLeft` chega, com nome acessível "Sai para" / "Chega de"), `Button` `sm` `ghost` com o nome da outra ponta (seleciona a ponta; encolhe com reticências), nome da seta em texto secundário e `IconButton` `sm` com o ícone `arrow` (**Selecionar a seta**, dica com o nome dela). Ponta removida vira texto neutro, sem botão.
-- Conteúdo da linha, só leitura: grupo por camada sem cabeçalho de `LayerGroup` (`.arrow-link-layer`: bolinha `.layer-dot` com `--layer-color` e nome, nunca só a cor), com `AnnotationTitle` e `AnnotationLines` (`.arrow-link-annotation`, `.arrow-link-line`, `.arrow-link-key`); bloco **Na seta** (`.arrow-link-on-arrow`) com o mesmo grupo; estado vazio "Sem anotações nas camadas visíveis." (`.arrow-link-empty`). Nenhum `+`, nenhum campo.
-- `AnnotationsPanel`: `PagedList` agora é exportada (a seção reaproveita a paginação da revisão); sem mudança visual.
-- Ícones novos: nenhum (`arrow`, `arrowLeft`, `arrowRight`). Tokens novos: nenhum.
+- `MarkingPanel`: new collapsible section **Linked by arrow** (`Section` with a count), after **Annotations** and before "Other changes"; it only exists when the marking has an arrow. New preview or new state in the `MarkingPanel` guide.
+- Arrow row (`.arrow-link`, `li` of a list without bullets): direction icon (`arrowRight` goes out, `arrowLeft` comes in, with the accessible name "Goes to" / "Comes from"), `ghost` `sm` `Button` with the name of the other end (selects the end; shrinks with an ellipsis), the arrow's name in secondary text and an `sm` `IconButton` with the `arrow` icon (**Select the arrow**, tip with its name). A removed end becomes neutral text, without a button.
+- Row content, read-only: group by layer without a `LayerGroup` header (`.arrow-link-layer`: `.layer-dot` dot with `--layer-color` and name, never just the color), with `AnnotationTitle` and `AnnotationLines` (`.arrow-link-annotation`, `.arrow-link-line`, `.arrow-link-key`); **On the arrow** block (`.arrow-link-on-arrow`) with the same group; empty state "No annotations in the visible layers." (`.arrow-link-empty`). No `+`, no field.
+- `AnnotationsPanel`: `PagedList` is now exported (the section reuses the review's pagination); no visual change.
+- New icons: none (`arrow`, `arrowLeft`, `arrowRight`). New tokens: none.
 
 ## Sincronização
 
-Versões 51 (conteúdo) e 52 (índice) do artefato, de 2026-11-07. **`MarkingPanel`:** o guia (`README.md`) ganhou a seção **Ligado por seta** (linha de seta com direção, botão da ponta, **Selecionar a seta**, grupo por camada só de leitura, **Na seta** e o estado vazio) e o arquivo de código dela. Sem ícone nem token novo. O `preview.html` não foi alterado.
+Versões 51 (content) and 52 (index) of the artifact, from 2026-11-07. **`MarkingPanel`:** the guide (`README.md`) gained the **Linked by arrow** section (arrow row with direction, end button, **Select the arrow**, read-only group by layer, **On the arrow** and the empty state) and its code file. No new icon or token. The `preview.html` was not changed.
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: estado "Ligado por seta" na prévia do `MarkingPanel` (DS5) e as classes `.arrow-links`/`.arrow-link*` no `bundle.css` (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: "Linked by arrow" state in the `MarkingPanel` preview (DS5) and the `.arrow-links`/`.arrow-link*` classes in `bundle.css` (DS3).

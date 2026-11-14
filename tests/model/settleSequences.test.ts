@@ -30,13 +30,13 @@ import type { ItemRef, Marking, Project, Rect } from '../../src/model';
 import type { SettleOptions } from '../../src/model/hierarchySettle';
 import { AT, decided, propose } from './proposalFixtures';
 
-// Equivalência por sequências de operações públicas (#882, decisão 5): a cada operação que assenta,
-// o que `settleFrom` devolve é IGUAL ao assentar inteiro (`settleHierarchy(next, { before })`) do mesmo
-// `next`, perspectivas e marcas "Veio de…" incluídas. A conferência mora em `settleFrom` (substituída
-// pelo mock abaixo): toda chamada, de dentro de qualquer operação (a composta chama outras), é
-// comparada com a inteira. Os projetos e as sequências vêm de um gerador determinístico (mulberry32);
-// a falha mostra a semente, a sequência e o passo, e cada sequência se reproduz sozinha
-// (`runSequence(SEED + índice * PASSO)`).
+// Equivalence by sequences of public operations (#882, decision 5): for each operation that settles,
+// what `settleFrom` returns is EQUAL to the whole settle (`settleHierarchy(next, { before })`) of the same
+// `next`, perspectives and "Came from…" marks included. The check lives in `settleFrom` (replaced
+// by the mock below): every call, from inside any operation (a composite calls others), is
+// compared with the whole one. The projects and sequences come from a deterministic generator (mulberry32);
+// a failure shows the seed, the sequence and the step, and each sequence reproduces on its own
+// (`runSequence(SEED + index * STEP)`).
 
 const SEED = 20261109;
 const SEQUENCES = 60;
@@ -47,7 +47,7 @@ const check = vi.hoisted(() => ({
   context: '',
   calls: 0,
   partial: 0,
-  /** Quantas vezes cada operação mudou o projeto (e não foi recusada). */
+  /** How many times each operation changed the project (and was not refused). */
   changed: {} as Record<string, number>,
 }));
 
@@ -61,13 +61,13 @@ vi.mock('../../src/model/hierarchySettle', async (importOriginal) => {
       const full = real.settleHierarchy(next, { before, ...options });
       check.calls++;
       if (got !== next) check.partial++;
-      const why = `settleFrom ≠ assentar inteiro · ${check.context}`;
+      const why = `settleFrom ≠ whole settle · ${check.context}`;
       expect(got, why).toEqual(full);
-      // Nada muda: o mesmo objeto; e o que o inteiro não mexe o recortado também não.
-      if (full === next) expect(got, `${why} · identidade`).toBe(next);
+      // Nothing changes: the same object; and what the whole one does not touch the clipped one does not either.
+      if (full === next) expect(got, `${why} · identity`).toBe(next);
       full.markings.forEach((m, i) => {
         if (m === next.markings[i])
-          expect(got.markings[i], `${why} · marcação ${m.id}`).toBe(m);
+          expect(got.markings[i], `${why} · marking ${m.id}`).toBe(m);
       });
       return got;
     },
@@ -75,7 +75,7 @@ vi.mock('../../src/model/hierarchySettle', async (importOriginal) => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// Gerador pseudoaleatório
+// Pseudo-random generator
 // ---------------------------------------------------------------------------------------------
 
 interface Rng {
@@ -107,17 +107,17 @@ function makeRng(seed: number): Rng {
 interface Ctx {
   readonly rng: Rng;
   readonly p: Project;
-  /** Contador de ids novos. */
+  /** Counter of new ids. */
   next(prefix: string): string;
 }
 
 type Op = (c: Ctx) => Project;
 
 // ---------------------------------------------------------------------------------------------
-// Retângulos e escolhas
+// Rectangles and choices
 // ---------------------------------------------------------------------------------------------
 
-/** Um retângulo no espaço `containerId`: encaixado numa existente do espaço, igual, solto ou sobre um container. */
+/** A rectangle in the `containerId` space: nested in an existing one of the space, equal, loose or over a container. */
 function rectIn(c: Ctx, containerId: string | null): Rect {
   const { rng, p } = c;
   const container = p.containers.find((x) => x.id === containerId);
@@ -171,7 +171,7 @@ function anyMarking(c: Ctx): Marking | null {
   return c.p.markings.length > 0 ? c.rng.pick(c.p.markings) : null;
 }
 
-/** Itens da seleção: 1 a 3 marcações (e, às vezes, um container). */
+/** Selection items: 1 to 3 markings (and, sometimes, a container). */
 function someItems(c: Ctx): ItemRef[] {
   const items: ItemRef[] = [];
   const count = c.rng.int(1, 3);
@@ -187,7 +187,7 @@ function someItems(c: Ctx): ItemRef[] {
 const smallDelta = (c: Ctx): number => c.rng.int(-30, 30);
 
 // ---------------------------------------------------------------------------------------------
-// Operações públicas do modelo
+// Public model operations
 // ---------------------------------------------------------------------------------------------
 
 const OPS: Record<string, { weight: number; run: Op }> = {
@@ -348,7 +348,7 @@ const OPS: Record<string, { weight: number; run: Op }> = {
         c.p,
         buildPerspective(c.p, {
           id,
-          name: `Perspectiva ${id}`,
+          name: `Perspective ${id}`,
           startFrom: from
             ? c.rng.pick(c.p.perspectives)
             : c.rng.chance(0.5)
@@ -400,7 +400,7 @@ const OPS: Record<string, { weight: number; run: Op }> = {
   },
   addArrival: {
     weight: 2,
-    // Marca "Veio de…" (v16) posta à mão: o arquivo pode trazê-la; o assentar a limpa se a raiz mexer.
+    // "Came from…" mark (v16) placed by hand: the file may carry it; the settle clears it if the root moves.
     run: (c) => {
       const roots = [
         ...c.p.containers.map((x) => x.id),
@@ -411,7 +411,7 @@ const OPS: Record<string, { weight: number; run: Op }> = {
       if (c.p.arrivals.some((a) => a.root === root)) return c.p;
       return {
         ...c.p,
-        arrivals: [...c.p.arrivals, { root, from: 'P0', fromName: 'Origem' }],
+        arrivals: [...c.p.arrivals, { root, from: 'P0', fromName: 'Origin' }],
       };
     },
   },
@@ -423,17 +423,17 @@ const WEIGHTED = OP_NAMES.flatMap((name) =>
 );
 
 // ---------------------------------------------------------------------------------------------
-// Sequência
+// Sequence
 // ---------------------------------------------------------------------------------------------
 
-/** Projeto inicial: 3 containers, marcações espalhadas (criadas por `createMarking`) e duas perspectivas. */
+/** Initial project: 3 containers, scattered markings (created by `createMarking`) and two perspectives. */
 function startProject(rng: Rng, seed: number): { p: Project; counter: { n: number } } {
   const counter = { n: 0 };
   const next = (prefix: string): string => `${prefix}${seed}-${counter.n++}`;
   let p = createProject({
-    name: 'Sequências',
+    name: 'Sequences',
     now: '2026-11-09T12:00:00.000Z',
-    firstLayer: { id: 'L1', name: 'Camada', color: '#D32F2F' },
+    firstLayer: { id: 'L1', name: 'Layer', color: '#D32F2F' },
   });
   for (let k = 0; k < 3; k++) {
     p = addContainer(p, {
@@ -455,11 +455,11 @@ function startProject(rng: Rng, seed: number): { p: Project; counter: { n: numbe
   }
   p = addPerspective(
     p,
-    buildPerspective(p, { id: 'P0', name: 'Principal+', startFrom: null }),
+    buildPerspective(p, { id: 'P0', name: 'Main+', startFrom: null }),
   );
   p = addPerspective(
     p,
-    buildPerspective(p, { id: 'P1', name: 'Vazia', startFrom: 'empty' }),
+    buildPerspective(p, { id: 'P1', name: 'Empty', startFrom: 'empty' }),
   );
   return { p, counter };
 }
@@ -467,43 +467,43 @@ function startProject(rng: Rng, seed: number): { p: Project; counter: { n: numbe
 function runSequence(seed: number): void {
   const rng = makeRng(seed);
   let { p } = startProject(rng, seed);
-  // Versões anteriores: o desfazer volta a uma delas e a operação seguinte sai de um ramo novo.
+  // Previous versions: undo goes back to one of them and the next operation comes out of a new branch.
   const history: Project[] = [p];
   let n = 0;
   const next = (prefix: string): string => `${prefix}${seed}x${n++}`;
   for (let step = 0; step < STEPS; step++) {
     if (rng.chance(0.1)) p = rng.pick(history);
     const name = rng.pick(WEIGHTED);
-    check.context = `semente ${seed} · passo ${step} · ${name}`;
+    check.context = `seed ${seed} · step ${step} · ${name}`;
     try {
       const result = (OPS[name] as { run: Op }).run({ rng, p, next });
       if (result !== p) check.changed[name] = (check.changed[name] ?? 0) + 1;
       p = result;
       history.push(p);
     } catch (error) {
-      // Operação recusada pelo modelo (travada, sobreposta, fora do container…): o passo vira nada.
+      // Operation refused by the model (locked, overlapping, outside the container…): the step becomes a no-op.
       if (!(error instanceof ModelError)) throw error;
     }
   }
 }
 
-describe('assentar recortado: equivalência por sequências de operações públicas (#882)', () => {
-  it(`${SEQUENCES} sequências de ${STEPS} operações: cada assentar é igual ao inteiro`, () => {
+describe('clipped settle: equivalence by sequences of public operations (#882)', () => {
+  it(`${SEQUENCES} sequences of ${STEPS} operations: each settle equals the whole one`, () => {
     check.calls = 0;
     check.partial = 0;
     check.changed = {};
     for (let i = 0; i < SEQUENCES; i++) runSequence(SEED + i * SEED_STEP);
-    // O sorteio precisa de fato assentar e mudar coisas, senão não prova nada.
+    // The draw must really settle and change things, otherwise it proves nothing.
     expect(check.calls).toBeGreaterThan(SEQUENCES * STEPS * 0.4);
     expect(check.partial).toBeGreaterThan(check.calls * 0.1);
     for (const name of OP_NAMES) {
       expect(
         check.changed[name] ?? 0,
-        `a operação ${name} nunca mudou o projeto`,
+        `the operation ${name} never changed the project`,
       ).toBeGreaterThan(0);
     }
     console.info(
-      `assentar recortado: ${check.calls} assentares conferidos, ${check.partial} mudaram o projeto`,
+      `clipped settle: ${check.calls} settles checked, ${check.partial} changed the project`,
     );
   });
 });

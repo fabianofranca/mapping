@@ -1,7 +1,7 @@
 /**
- * Família de fonte do componente (`font.family`): uma família ou uma pilha CSS.
- * Funções puras, sem DOM. `canvasFontFamily` monta o valor que o canvas (Konva) recebe;
- * `isValidFontFamily` diz se o valor é uma lista de famílias válida (usada no aviso da validação).
+ * Font family of the component (`font.family`): a family or a CSS stack.
+ * Pure functions, no DOM. `canvasFontFamily` builds the value the canvas (Konva) receives;
+ * `isValidFontFamily` tells whether the value is a valid family list (used in the validation warning).
  */
 
 const GENERIC_FAMILIES: ReadonlySet<string> = new Set([
@@ -20,12 +20,12 @@ const GENERIC_FAMILIES: ReadonlySet<string> = new Set([
   'fangsong',
 ]);
 
-/** Quando o valor não serve, o desenho usa esta família (com o tamanho e o peso do componente). */
+/** When the value is unusable, the drawing uses this family (with the component's size and weight). */
 const INVALID_FALLBACK = 'sans-serif';
 
 /**
- * Parte a lista por vírgulas fora de aspas. Devolve `undefined` se há aspas sem fechar.
- * Cada item vem sem espaços nas pontas.
+ * Splits the list by commas outside quotes. Returns `undefined` if a quote is left unclosed.
+ * Each item comes without leading or trailing spaces.
  */
 function splitItems(value: string): string[] | undefined {
   const items: string[] = [];
@@ -48,7 +48,7 @@ function splitItems(value: string): string[] | undefined {
   return items;
 }
 
-/** Um nome entre aspas inteiro: abre e fecha com a mesma aspa, sem aquela aspa no meio. */
+/** A fully quoted name: opens and closes with the same quote, with no such quote in the middle. */
 function isQuotedName(item: string): boolean {
   const quote = item[0];
   if ((quote !== '"' && quote !== "'") || item.length < 3 || !item.endsWith(quote))
@@ -63,16 +63,16 @@ function isValidItem(item: string): boolean {
   return !item.includes('"') && !item.includes("'");
 }
 
-/** `true` se o valor é uma lista de famílias que o CSS aceita (item vazio e aspas soltas não). */
+/** `true` if the value is a family list that CSS accepts (an empty item and stray quotes are not). */
 export function isValidFontFamily(value: string): boolean {
   const items = splitItems(value);
   return items !== undefined && items.every(isValidItem);
 }
 
 /**
- * O `fontFamily` que o canvas recebe para o `font.family` do componente:
- * pilha passa como veio; nome entre aspas ganha `, sans-serif`; genérico sozinho fica sem aspas;
- * nome simples vira `"<nome>", sans-serif`; valor inválido vira `sans-serif`.
+ * The `fontFamily` the canvas receives for the component's `font.family`:
+ * a stack passes through as it came; a quoted name gets `, sans-serif`; a lone generic stays
+ * unquoted; a plain name becomes `"<name>", sans-serif`; an invalid value becomes `sans-serif`.
  */
 export function canvasFontFamily(value: string): string {
   const family = value.trim();

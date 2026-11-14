@@ -1,13 +1,13 @@
-# Espera do CI mais curta — 2026-11-10 (épico `epic/espera-ci-curta`)
+# Shorter CI wait — 2026-11-10 (épico `epic/espera-ci-curta`)
 
 ## Pendências
 
-Nenhuma. Impacto no DS: nenhum. O épico só muda o texto do fluxo automatizado; nenhum componente, token ou ícone do design system da app muda.
+None. DS impact: none. The epic only changes the text of the automated flow; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não muda componente, token nem ícone da app.
+Nothing to write to the **Mapping** artifact: the epic changes no component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

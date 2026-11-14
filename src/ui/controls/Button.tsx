@@ -2,9 +2,9 @@ import type { ComponentChildren, JSX, Ref } from 'preact';
 import { classes } from './classes';
 
 /**
- * `accept` e `reject`: os botões de decisão da revisão ("Aceitar item" / "Rejeitar item",
- * HANDOFF-PROPOSALS 2.2), alternâncias com `aria-pressed` que se enchem de `color-success`
- * ou `color-danger` quando marcadas.
+ * `accept` and `reject`: the review decision buttons ("Accept item" / "Reject item",
+ * HANDOFF-PROPOSALS 2.2), toggles with `aria-pressed` that fill with `color-success`
+ * or `color-danger` when marked.
  */
 export type ButtonVariant =
   'default' | 'primary' | 'danger' | 'accept' | 'reject' | 'ghost';
@@ -13,15 +13,15 @@ type NativeButton = Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, 'class' | 
 
 interface ButtonProps extends NativeButton {
   readonly variant?: ButtonVariant;
-  /** `sm` é o controle compacto (24px). */
+  /** `sm` is the compact control (24px). */
   readonly size?: 'md' | 'sm';
-  /** Classes extras de layout (a aparência do botão vem de `variant` e `size`). */
+  /** Extra layout classes (the button's look comes from `variant` and `size`). */
   readonly class?: string;
-  /** O `<button>` (para devolver o foco a ele), como o `inputRef` do `TextField`. */
+  /** The `<button>` (to give focus back to it), like the `inputRef` of `TextField`. */
   readonly buttonRef?: Ref<HTMLButtonElement>;
 }
 
-/** Botão com texto. Estados (hover, pressionado, foco, desabilitado) vêm do CSS. */
+/** Button with text. States (hover, pressed, focus, disabled) come from the CSS. */
 export function Button({
   variant = 'default',
   size = 'md',
@@ -46,15 +46,15 @@ export function Button({
 }
 
 interface LinkButtonProps {
-  /** Endereço do link: sempre abre em outra aba, sem enviar o endereço da app. */
+  /** Link address: always opens in another tab, without sending the app's address. */
   readonly href: string;
   readonly children: ComponentChildren;
   readonly class?: string;
 }
 
 /**
- * Link com a aparência do `Button`: um `<a>` comum que abre em outra aba (`noopener`), sem
- * nenhuma requisição feita pela app (quem navega é o navegador, ao clicar).
+ * Link with the look of `Button`: a plain `<a>` that opens in another tab (`noopener`), with
+ * no request made by the app (the browser navigates, on click).
  */
 export function LinkButton({ href, children, class: extra }: LinkButtonProps) {
   return (

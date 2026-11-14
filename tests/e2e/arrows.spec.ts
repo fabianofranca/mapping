@@ -9,12 +9,12 @@ import {
   type Rect,
 } from './helpers';
 
-// Etapa Marcações espaciais, ME4: a seta (uma marcação que aponta) no canvas. O canvas publica no
-// container (`.canvas-host`) `data-arrows`, a contagem de setas que já desenhou. A seta nasce de
-// puxar a alça de ligação da marcação selecionada até outra marcação; o botão direito no traço
-// abre o menu com o estilo (Reta, Curva, Canto) e Excluir.
+// Spatial markings stage, ME4: the arrow (a marking that points) on the canvas. The canvas publishes on the
+// container (`.canvas-host`) `data-arrows`, the count of arrows it has already drawn. The arrow is born by
+// pulling the link handle of the selected marking to another marking; a right click on the stroke
+// opens the menu with the style (Straight, Curve, Elbow) and Delete.
 
-/** O `arrows` do `mapping.json` (o helper compartilhado ainda não o tipa). */
+/** The `arrows` of `mapping.json` (the shared helper does not type it yet). */
 interface ArrowJson {
   readonly id: string;
   readonly from: string;
@@ -25,34 +25,34 @@ interface ArrowJson {
 }
 type MappingWithArrows = MappingJson & { readonly arrows: readonly ArrowJson[] };
 
-/** Distância (px de tela) da alça de ligação até a borda direita da marcação (`LINK_HANDLE_OFFSET`). */
+/** Distance (screen px) from the link handle to the right edge of the marking (`LINK_HANDLE_OFFSET`). */
 const LINK_HANDLE_OFFSET = 14;
-/** Margem, em px de tela, que o enquadramento deixa em volta de tudo (`FIT_PADDING`). */
+/** Margin, in screen px, that the fit leaves around everything (`FIT_PADDING`). */
 const FIT_PADDING = 24;
 
-/** Novo container (Personalizado) com o nome dado, pelo diálogo. */
+/** New container (Custom) with the given name, through the dialog. */
 async function addContainer(page: Page, host: Locator, name: string): Promise<void> {
   const before = Number((await host.getAttribute('data-images')) ?? 0);
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill(name);
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill(name);
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
   await expect(host).toHaveAttribute('data-images', String(before + 1));
 }
 
-/** Enquadrar tudo, esperando o canvas desenhar o enquadramento novo. */
+/** Fit all, waiting for the canvas to draw the new fit. */
 async function fitAll(page: Page, host: Locator): Promise<void> {
   const before = Number((await host.getAttribute('data-fits')) ?? 0);
-  await page.getByRole('button', { name: 'Enquadrar tudo' }).click();
+  await page.getByRole('button', { name: 'Fit all' }).click();
   await expect(host).toHaveAttribute('data-fits', String(before + 1));
 }
 
-/** Onde cada container está na tela, logo depois de Enquadrar tudo (as posições vêm do `mapping.json`). */
+/** Where each container is on screen, right after Fit all (the positions come from `mapping.json`). */
 async function containerRects(page: Page, host: Locator): Promise<Map<string, Rect>> {
   const { mapping } = await exportMapping(page);
   const box = await host.boundingBox();
-  if (!box) throw new Error('canvas sem tamanho');
+  if (!box) throw new Error('canvas has no size');
   const canvas = mapping.containers.map((c) => ({
     id: c.id,
     x: c.placement.x,
@@ -83,7 +83,7 @@ async function containerRects(page: Page, host: Locator): Promise<Map<string, Re
   );
 }
 
-/** As setas do `mapping.json`, pelo Exportar; fecha o diálogo, que senão cobre o canvas. */
+/** The arrows of `mapping.json`, through Export; closes the dialog, which would otherwise cover the canvas. */
 async function arrowsOf(page: Page): Promise<readonly ArrowJson[]> {
   const { mapping } = await exportMapping(page);
   await page.keyboard.press('Escape');
@@ -92,8 +92,8 @@ async function arrowsOf(page: Page): Promise<readonly ArrowJson[]> {
 }
 
 /**
- * Duas telas com uma marcação cada, do mesmo tamanho e no mesmo ponto relativo de cada tela:
- * devolve o retângulo (px de tela) das duas marcações, na ordem das telas.
+ * Two screens with one marking each, of the same size and at the same relative point of each screen:
+ * returns the rectangle (screen px) of the two markings, in the order of the screens.
  */
 async function twoMarkedScreens(page: Page, host: Locator): Promise<[Rect, Rect]> {
   for (const name of ['Tela A', 'Tela B']) await addContainer(page, host, name);
@@ -107,31 +107,31 @@ async function twoMarkedScreens(page: Page, host: Locator): Promise<[Rect, Rect]
       width: screen.width * 0.25,
       height: screen.height * 0.2,
     };
-    await setMode(page, 'Desenhar');
+    await setMode(page, 'Draw');
     await drag(
       page,
       { x: mark.x, y: mark.y },
       { x: mark.x + mark.width, y: mark.y + mark.height },
     );
-    await setMode(page, 'Navegar');
+    await setMode(page, 'Navigate');
     marks.push(mark);
   }
   const [first, second] = marks;
-  if (!first || !second) throw new Error('sem marcações');
+  if (!first || !second) throw new Error('no markings');
   return [first, second];
 }
 
 const centerOf = (r: Rect): Point => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
 
-test('puxar a alça de ligação de uma marcação até outra cria uma seta curva e a seleciona', async ({
+test('pulling the link handle of a marking to another creates a curved arrow and selects it', async ({
   page,
 }) => {
-  await createProject(page, 'Setas');
+  await createProject(page, 'Arrows');
   const host = page.locator('.canvas-host');
   const [first, second] = await twoMarkedScreens(page, host);
   await expect(host).toHaveAttribute('data-arrows', '0');
 
-  // Seleciona a primeira marcação: a alça de ligação aparece fora da borda direita.
+  // Select the first marking: the link handle appears outside the right edge.
   await page.mouse.click(centerOf(first).x, centerOf(first).y);
   const handle = {
     x: first.x + first.width + LINK_HANDLE_OFFSET,
@@ -146,17 +146,17 @@ test('puxar a alça de ligação de uma marcação até outra cria uma seta curv
   expect(mapping.markings).toHaveLength(2);
   const [a, b] = mapping.markings;
   expect(arrows[0]).toMatchObject({ from: a?.id, to: b?.id, style: 'curve', points: [] });
-  // Criar a seta não mexe nas marcações.
+  // Creating the arrow does not touch the markings.
   expect(a?.rect.width).toBeGreaterThan(0);
 });
 
-test('soltar a alça de ligação fora de uma marcação cancela', async ({ page }) => {
-  await createProject(page, 'Setas');
+test('dropping the link handle outside a marking cancels', async ({ page }) => {
+  await createProject(page, 'Arrows');
   const host = page.locator('.canvas-host');
   const [first] = await twoMarkedScreens(page, host);
   await page.mouse.click(centerOf(first).x, centerOf(first).y);
   const box = await host.boundingBox();
-  if (!box) throw new Error('canvas sem tamanho');
+  if (!box) throw new Error('canvas has no size');
   await drag(
     page,
     { x: first.x + first.width + LINK_HANDLE_OFFSET, y: first.y + first.height / 2 },
@@ -166,10 +166,10 @@ test('soltar a alça de ligação fora de uma marcação cancela', async ({ page
   expect(await arrowsOf(page)).toHaveLength(0);
 });
 
-test('o menu do traço troca o estilo (reta, curva, canto), uma entrada cada, e exclui', async ({
+test('the stroke menu switches the style (straight, curve, elbow), one entry each, and deletes', async ({
   page,
 }) => {
-  await createProject(page, 'Setas');
+  await createProject(page, 'Arrows');
   const host = page.locator('.canvas-host');
   const [first, second] = await twoMarkedScreens(page, host);
   await page.mouse.click(centerOf(first).x, centerOf(first).y);
@@ -180,16 +180,16 @@ test('o menu do traço troca o estilo (reta, curva, canto), uma entrada cada, e 
   );
   await expect(host).toHaveAttribute('data-arrows', '1');
 
-  // As duas marcações têm o mesmo tamanho: o meio do traço é o meio entre os centros.
+  // The two markings have the same size: the middle of the stroke is the middle between the centers.
   const middle = {
     x: (centerOf(first).x + centerOf(second).x) / 2,
     y: (centerOf(first).y + centerOf(second).y) / 2,
   };
-  const menu = page.getByRole('menu', { name: 'Menu do item no canvas' });
+  const menu = page.getByRole('menu', { name: 'Canvas item menu' });
   for (const [label, style] of [
-    ['Canto', 'elbow'],
-    ['Reta', 'straight'],
-    ['Curva', 'curve'],
+    ['Elbow', 'elbow'],
+    ['Straight', 'straight'],
+    ['Curve', 'curve'],
   ] as const) {
     await page.mouse.click(middle.x, middle.y, { button: 'right' });
     await expect(menu).toBeVisible();
@@ -198,21 +198,21 @@ test('o menu do traço troca o estilo (reta, curva, canto), uma entrada cada, e 
     expect((await arrowsOf(page))[0]?.style).toBe(style);
   }
 
-  // O estilo atual vem marcado no menu.
+  // The current style comes checked in the menu.
   await page.mouse.click(middle.x, middle.y, { button: 'right' });
-  await expect(menu.getByRole('menuitemradio', { name: 'Curva' })).toHaveAttribute(
+  await expect(menu.getByRole('menuitemradio', { name: 'Curve' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
-  await menu.getByRole('menuitem', { name: 'Excluir seta' }).click();
+  await menu.getByRole('menuitem', { name: 'Delete arrow' }).click();
   await expect(host).toHaveAttribute('data-arrows', '0');
   expect(await arrowsOf(page)).toHaveLength(0);
 });
 
-test('no menu do traço, o espaço entre o check e o rótulo é o de sempre (6 px)', async ({
+test('in the stroke menu, the space between the check and the label is the usual one (6 px)', async ({
   page,
 }) => {
-  await createProject(page, 'Setas');
+  await createProject(page, 'Arrows');
   const host = page.locator('.canvas-host');
   const [first, second] = await twoMarkedScreens(page, host);
   await page.mouse.click(centerOf(first).x, centerOf(first).y);
@@ -227,7 +227,7 @@ test('no menu do traço, o espaço entre o check e o rótulo é o de sempre (6 p
     y: (centerOf(first).y + centerOf(second).y) / 2,
   };
   await page.mouse.click(middle.x, middle.y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Menu do item no canvas' });
+  const menu = page.getByRole('menu', { name: 'Canvas item menu' });
   await expect(menu).toBeVisible();
   const checked = menu.locator('[role=menuitemradio][aria-checked=true]');
   await expect(checked).toHaveCount(1);
@@ -241,8 +241,8 @@ test('no menu do traço, o espaço entre o check e o rótulo é o de sempre (6 p
   expect(space).toBe(6);
 });
 
-test('arrastar o meio do traço cria um ponto de passagem', async ({ page }) => {
-  await createProject(page, 'Setas');
+test('dragging the middle of the stroke creates a waypoint', async ({ page }) => {
+  await createProject(page, 'Arrows');
   const host = page.locator('.canvas-host');
   const [first, second] = await twoMarkedScreens(page, host);
   await page.mouse.click(centerOf(first).x, centerOf(first).y);
@@ -253,7 +253,7 @@ test('arrastar o meio do traço cria um ponto de passagem', async ({ page }) => 
   );
   await expect(host).toHaveAttribute('data-arrows', '1');
 
-  // A seta recém-criada está selecionada: a alça do meio do trecho fica sobre o traço.
+  // The newly created arrow is selected: the handle of the middle of the segment sits on the stroke.
   const middle = {
     x: (centerOf(first).x + centerOf(second).x) / 2,
     y: (centerOf(first).y + centerOf(second).y) / 2,
@@ -262,20 +262,20 @@ test('arrastar o meio do traço cria um ponto de passagem', async ({ page }) => 
   await expect.poll(async () => (await arrowsOf(page))[0]?.points.length).toBe(1);
 });
 
-test('Ligar a… nos Detalhes cria a seta curva sem arrastar (o caminho do agente testador)', async ({
+test('Link to… in Details creates the curved arrow without dragging (the tester agent path)', async ({
   page,
 }) => {
-  await createProject(page, 'Setas');
+  await createProject(page, 'Arrows');
   const host = page.locator('.canvas-host');
   const [first] = await twoMarkedScreens(page, host);
   await expect(host).toHaveAttribute('data-arrows', '0');
 
-  // Seleciona a primeira marcação e abre o seletor pelo botão dos Detalhes.
+  // Select the first marking and open the picker through the Details button.
   await page.mouse.click(centerOf(first).x, centerOf(first).y);
-  await page.getByRole('button', { name: 'Ligar a…', exact: true }).click();
-  const picker = page.getByRole('dialog', { name: /^Ligar .* a…$/ });
+  await page.getByRole('button', { name: 'Link to…', exact: true }).click();
+  const picker = page.getByRole('dialog', { name: /^Link .* to…$/ });
   await expect(picker).toBeVisible();
-  // A própria marcação não aparece: só a outra é oferecida.
+  // The marking itself does not appear: only the other one is offered.
   const options = picker.getByRole('option');
   await expect(options).toHaveCount(1);
   await options.first().click();

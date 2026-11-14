@@ -1,113 +1,113 @@
 # Tabs
 
-Fileira de abas para trocar entre vistas de um mesmo nível. Primary fica sob a barra do topo; Secondary separa conteúdo dentro de uma área; as roláveis aceitam mais abas do que cabem. Cada linha de Abas é uma aba.
+Row of tabs to switch between views of the same level. Primary sits under the top bar; Secondary separates content within an area; the scrollable ones accept more tabs than fit. Each row of Tabs is a tab.
 
-Tipo de anotação: `tabs` (camada Componentes).
+Annotation type: `tabs` (layer Components).
 
-## Campos
+## Fields
 
-| Chave          | Rótulo           | Tipo  | Obrigatório | Opções                                                               | Padrão    | Descrição                                                                                                                                                                                                                                                                                              |
-| -------------- | ---------------- | ----- | ----------- | -------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `items`        | Abas             | table | sim         | ver Colunas abaixo                                                   |           | Uma aba por linha, na ordem em que aparecem; só uma com Selecionada = true.                                                                                                                                                                                                                            |
-| `style`        | Estilo           | enum  | não         | `primary`, `secondary`, `primary-scrollable`, `secondary-scrollable` | `primary` | primary (indicador de 3 no tamanho do rótulo), secondary (indicador de 3 na largura da aba) ou a versão rolável de cada um (abas com a largura do conteúdo, no mínimo 90, e recuo inicial de 52).                                                                                                      |
-| `iconPosition` | Posição do ícone | enum  | não         | `top`, `leading`                                                     | `top`     | top (Tab) põe o ícone acima do texto, e a fileira passa de 48 para 72; leading (LeadingIconTab) põe o ícone à esquerda do texto, em 48. Só vale para as abas com ícone e texto.                                                                                                                        |
-| `interaction`  | Interação        | enum  | não         | `none`, `hovered`, `focused`, `pressed`                              | `none`    | Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda. |
+| Key            | Label         | Type  | Required | Options                                                              | Default   | Description                                                                                                                                                                                                                                                                                      |
+| -------------- | ------------- | ----- | -------- | -------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `items`        | Tabs          | table | yes      | see Columns below                                                    |           | One tab per row, in the order they appear; only one with Selected = true.                                                                                                                                                                                                                        |
+| `style`        | Style         | enum  | no       | `primary`, `secondary`, `primary-scrollable`, `secondary-scrollable` | `primary` | primary (3 indicator at the label size), secondary (3 indicator at the tab width) or the scrollable version of each (tabs with the content width, at least 90, and an initial inset of 52).                                                                                                      |
+| `iconPosition` | Icon position | enum  | no       | `top`, `leading`                                                     | `top`     | top (Tab) puts the icon above the text, and the row goes from 48 to 72; leading (LeadingIconTab) puts the icon to the left of the text, at 48. Only applies to tabs with icon and text.                                                                                                          |
+| `interaction`  | Interaction   | enum  | no       | `none`, `hovered`, `focused`, `pressed`                              | `none`    | Resting appearance of the interaction state of the selected item: hovered, focused or pressed; none = no state layer. It only changes the drawing and does not go into the code. The type has no disabled state (no enabled): the state is always drawn. With no selected item, nothing changes. |
 
-Colunas de `items` (uma linha por aba):
+Columns of `items` (one row per tab):
 
-| Chave      | Rótulo      | Tipo   | Obrigatório | Opções                                                         | Padrão  |
-| ---------- | ----------- | ------ | ----------- | -------------------------------------------------------------- | ------- |
-| `label`    | Rótulo      | string | sim         |                                                                |         |
-| `icon`     | Ícone       | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |         |
-| `selected` | Selecionada | enum   | não         | `true`, `false`                                                | `false` |
+| Key        | Label    | Type   | Required | Options                                                   | Default |
+| ---------- | -------- | ------ | -------- | --------------------------------------------------------- | ------- |
+| `label`    | Label    | string | yes      |                                                           |         |
+| `icon`     | Icon     | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
+| `selected` | Selected | enum   | no       | `true`, `false`                                           | `false` |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.PrimaryTabRow`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TabRow.kt`
-- O campo `style` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.PrimaryTabRow`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TabRow.kt`
+- The `style` field chooses the symbol; values without their own case use the base one.
 
-| `style`                | Símbolo                     |
+| `style`                | Symbol                      |
 | ---------------------- | --------------------------- |
 | `primary` (base)       | `PrimaryTabRow`             |
 | `secondary`            | `SecondaryTabRow`           |
 | `primary-scrollable`   | `PrimaryScrollableTabRow`   |
 | `secondary-scrollable` | `SecondaryScrollableTabRow` |
 
-A aba em si não depende do estilo, e sim de `iconPosition`: `top` (ou aba sem ícone) é `Tab`, e `leading` é `LeadingIconTab`, os dois em `Tab.kt`.
+The tab itself does not depend on the style, but on `iconPosition`: `top` (or a tab without an icon) is `Tab`, and `leading` is `LeadingIconTab`, both in `Tab.kt`.
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 PrimaryTabRow(selectedTabIndex = 0) {    // style secondary: SecondaryTabRow, primary-scrollable: PrimaryScrollableTabRow…
-    // uma linha de items vira uma Tab (iconPosition top)
+    // a row of items becomes a Tab (iconPosition top)
     Tab(
         selected = true,
-        onClick = { /* lógica da tela */ },
-        text = { Text("Início") },
+        onClick = { /* screen logic */ },
+        text = { Text("Home") },
         icon = { Icon(Icons.Filled.Home, contentDescription = null) },
     )
     Tab(
         selected = false,
         onClick = { /* ... */ },
-        text = { Text("Buscar") },
+        text = { Text("Search") },
         icon = { Icon(Icons.Filled.Search, contentDescription = null) },
     )
     // iconPosition leading: LeadingIconTab(selected, onClick, text = { … }, icon = { … })
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+`code` notes (what the tool hands to the agent):
 
-> A fileira é `PrimaryTabRow(selectedTabIndex = <índice da linha de items com selected = true>) { … }` (`style` escolhe a fileira). Dentro, uma aba por linha de `items`: com `iconPosition = top` (ou sem ícone), `Tab(selected = <selected>, onClick = …, text = { Text(<label>) }, icon = { Icon(Icons.Filled.<icon>, contentDescription = null) })` (omita `icon` quando a coluna estiver vazia); com `iconPosition = leading`, `LeadingIconTab(selected, onClick, text = { Text(<label>) }, icon = { Icon(…) })`, que pede `text` e `icon`. `Tab` e `LeadingIconTab` estão em `Tab.kt`, do mesmo pacote, e vêm de `androidx.compose.material3`. `TabRow` e `ScrollableTabRow` estão `@Deprecated` (substituídos pelas quatro fileiras): não os use. As quatro fileiras e as duas abas são estáveis, sem opt-in. A fileira fixa reparte a largura por igual; as roláveis (`edgePadding` 52, `minTabWidth` 90, `scrollState`) deixam cada aba com a largura do conteúdo. Largura e posição vêm do `Modifier` (a fileira não tem tamanho próprio; costuma ir sob o `TopAppBar` ou acima do conteúdo da página). Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.
+> The row is `PrimaryTabRow(selectedTabIndex = <index of the row of items with selected = true>) { … }` (`style` chooses the row). Inside, one tab per row of `items`: with `iconPosition = top` (or no icon), `Tab(selected = <selected>, onClick = …, text = { Text(<label>) }, icon = { Icon(Icons.Filled.<icon>, contentDescription = null) })` (omit `icon` when the column is empty); with `iconPosition = leading`, `LeadingIconTab(selected, onClick, text = { Text(<label>) }, icon = { Icon(…) })`, which requires `text` and `icon`. `Tab` and `LeadingIconTab` are in `Tab.kt`, in the same package, and come from `androidx.compose.material3`. `TabRow` and `ScrollableTabRow` are `@Deprecated` (replaced by the four rows): do not use them. The four rows and the two tabs are stable, no opt-in. The fixed row splits the width equally; the scrollable ones (`edgePadding` 52, `minTabWidth` 90, `scrollState`) leave each tab at the content width. Width and position come from the `Modifier` (the row has no size of its own; it usually goes under the `TopAppBar` or above the page content). Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) are in `Icons.AutoMirrored.Filled`.
 
-## Exemplos
+## Examples
 
-- **Primárias com ícone acima**: style=primary, iconPosition=top
-- **Secundárias com ícone à esquerda**: style=secondary, iconPosition=leading
-- **Primárias roláveis**: style=primary-scrollable, iconPosition=leading
-- **Mouse sobre**: style=primary, iconPosition=top, interaction=hovered
-- **Com foco**: style=primary, iconPosition=top, interaction=focused
-- **Pressionado**: style=primary, iconPosition=top, interaction=pressed
+- **Primary with icon above**: style=primary, iconPosition=top
+- **Secondary with icon on the left**: style=secondary, iconPosition=leading
+- **Scrollable primary**: style=primary-scrollable, iconPosition=leading
+- **Hovered**: style=primary, iconPosition=top, interaction=hovered
+- **Focused**: style=primary, iconPosition=top, interaction=focused
+- **Pressed**: style=primary, iconPosition=top, interaction=pressed
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or opacity is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Tab.kt` (linhas 90 a 123: `Tab` com texto e ícone, o estilo `PrimaryNavigationTabTokens.LabelTextFont`; 154 a 196: `LeadingIconTab`, altura `SmallTabHeight`, `padding(horizontal = 16)` e o espaço de 8; 229 a 262: a `Tab` base, que ocupa a largura da fileira; 270 a 293: `TabTransition` e a cor do conteúdo; 301 a 364: `TabBaselineLayout`, a altura 48 ou 72; 367 a 417: `placeTextOrIcon` e `placeTextAndIcon`; 420 a 438: `SmallTabHeight` 48, `LargeTabHeight` 72, `HorizontalTextPadding` 16, `SingleLineTextBaselineWithIcon` 14, `IconDistanceFromBaseline` 20.sp e `TextDistanceFromLeadingIcon` 8).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TabRow.kt` (linhas 150 a 165: `PrimaryTabRow`, indicador com `matchContentSize = true`; 201 a 216: `SecondaryTabRow`, indicador com `matchContentSize = false`; 253 a 282 e 324 a 350: as fileiras roláveis; 392 a 505: `TabRowImpl`, `tabWidth = tabRowWidth / tabCount` (447) e o indicador de no mínimo 24 (459 a 461); 511 a 650: `ScrollableTabRowImpl`, a aba de `maxOf(minTabWidth, largura)` (605) e o indicador centrado na aba (637); 682 a 745: `TabIndicatorOffsetNode`; 976 a 1090: `TabRowDefaults` com `ScrollableTabRowMinTabWidth` 90 (981), `ScrollableTabRowEdgeStartPadding` 52 (987), as cores do contêiner e do conteúdo (998 a 1018), `PrimaryIndicator` (1054) e `SecondaryIndicator` (1078)).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Divider.kt` (linhas 49 a 61: `HorizontalDivider`, uma linha de `DividerDefaults.Thickness`; 113 a 116: `DividerDefaults`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/PrimaryNavigationTabTokens.kt` (linhas 25 a 51: indicador de 3 em `Primary`, `RoundedCornerShape(3)`, contêiner `Surface` de 48, ícone de 24, cores ativa `Primary` e inativa `OnSurfaceVariant`, `LabelTextFont` `TitleSmall`) e `SecondaryNavigationTabTokens.kt` (linhas 24 a 42: ativa `OnSurface`, inativa `OnSurfaceVariant`, `ContainerHeight` 48).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/DividerTokens.kt` (linhas 23 a 26: `Color` `OutlineVariant`, `Thickness` 1) e `TypographyTokens.kt` (`TitleSmall`: 14, linha 20, peso 500, espaçamento 0,1).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/PrimaryNavigationTabTokens.kt` e `tokens/SecondaryNavigationTabTokens.kt` (linhas 33 a 50 e 32 a 42: `Active*`/`Inactive*` `Hover`, `Focus` e `Pressed` do ícone e do rótulo; só o `Primary` nomeia `Active*`, e todos repetem a cor do estado normal) e `Tab.kt` (linhas 166 a 169: `ripple(bounded = true, color = selectedContentColor)`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Tab.kt` (lines 90 to 123: `Tab` with text and icon, the style `PrimaryNavigationTabTokens.LabelTextFont`; 154 to 196: `LeadingIconTab`, height `SmallTabHeight`, `padding(horizontal = 16)` and the 8 space; 229 to 262: the base `Tab`, which takes the row width; 270 to 293: `TabTransition` and the content color; 301 to 364: `TabBaselineLayout`, the height 48 or 72; 367 to 417: `placeTextOrIcon` and `placeTextAndIcon`; 420 to 438: `SmallTabHeight` 48, `LargeTabHeight` 72, `HorizontalTextPadding` 16, `SingleLineTextBaselineWithIcon` 14, `IconDistanceFromBaseline` 20.sp and `TextDistanceFromLeadingIcon` 8).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TabRow.kt` (lines 150 to 165: `PrimaryTabRow`, indicator with `matchContentSize = true`; 201 to 216: `SecondaryTabRow`, indicator with `matchContentSize = false`; 253 to 282 and 324 to 350: the scrollable rows; 392 to 505: `TabRowImpl`, `tabWidth = tabRowWidth / tabCount` (447) and the indicator of at least 24 (459 to 461); 511 to 650: `ScrollableTabRowImpl`, the tab of `maxOf(minTabWidth, width)` (605) and the indicator centered on the tab (637); 682 to 745: `TabIndicatorOffsetNode`; 976 to 1090: `TabRowDefaults` with `ScrollableTabRowMinTabWidth` 90 (981), `ScrollableTabRowEdgeStartPadding` 52 (987), the container and content colors (998 to 1018), `PrimaryIndicator` (1054) and `SecondaryIndicator` (1078)).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Divider.kt` (lines 49 to 61: `HorizontalDivider`, a line of `DividerDefaults.Thickness`; 113 to 116: `DividerDefaults`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/PrimaryNavigationTabTokens.kt` (lines 25 to 51: 3 indicator in `Primary`, `RoundedCornerShape(3)`, `Surface` container of 48, 24 icon, active `Primary` and inactive `OnSurfaceVariant` colors, `LabelTextFont` `TitleSmall`) and `SecondaryNavigationTabTokens.kt` (lines 24 to 42: active `OnSurface`, inactive `OnSurfaceVariant`, `ContainerHeight` 48).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/DividerTokens.kt` (lines 23 to 26: `Color` `OutlineVariant`, `Thickness` 1) and `TypographyTokens.kt` (`TitleSmall`: 14, line 20, weight 500, spacing 0.1).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/PrimaryNavigationTabTokens.kt` and `tokens/SecondaryNavigationTabTokens.kt` (lines 33 to 50 and 32 to 42: `Active*`/`Inactive*` `Hover`, `Focus` and `Pressed` of the icon and the label; only `Primary` names `Active*`, and all repeat the normal state color) and `Tab.kt` (lines 166 to 169: `ripple(bounded = true, color = selectedContentColor)`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Fileira fixa: as abas dividem a largura por igual (`repeat.distribute: "fill"`, o `tabWidth = tabRowWidth / tabCount` do `TabRowImpl`), sobre o fundo `surface`. A altura é a da marcação: 48 (`SmallTabHeight`) e 72 com ícone e texto empilhados (`LargeTabHeight`); aba só com texto ou só com ícone fica centrada na altura (`placeTextOrIcon`).
-- Divisória de 1 em `outline-variant` embaixo (`HorizontalDivider`), um quadro com `stroke.sides: ["bottom"]` desenhado por baixo das abas e dos indicadores. O `HorizontalDivider` padrão usa `DividerTokens.Color` (`OutlineVariant`), e não o `DividerColor` do token da secundária.
-- Rótulo em `title-small` pelos tokens (14, linha 20, peso 500, espaçamento 0,1), sem `family`. Ícone do conjunto da biblioteca (nó `icon`) de 24, na mesma cor do rótulo.
-- Cores: a aba selecionada em `primary` nas primárias e em `on-surface` nas secundárias (`ActiveLabelTextColor` e `ActiveIconColor` de cada token); as outras em `on-surface-variant` (`InactiveLabelTextColor`). Light e dark seguem os mesmos tokens.
-- Ícone acima do texto (`Tab`), pela linha de base como o `placeTextAndIcon`: o nó `rótulo empilhado` (`rótulo empilhado rolável` nas roláveis) leva `baselinePadding` com `top` 20 e `bottom` 9. O `top` é a distância do ícone à primeira linha de base (`IconDistanceFromBaseline`, `Tab.kt` linhas 435 e 407 a 409: o ícone termina a 20 acima dela). O `bottom` é a do fundo da aba à última linha de base: `DoubleLineTextBaselineWithIcon` 6 (linha 432) mais o indicador de 3 (`ActiveIndicatorHeight`, linha 398 a 400), 9 com duas linhas; com uma linha vale `SingleLineTextBaselineWithIcon` 14 mais 3, 17, e a diferença de 8 é o padding inferior da `pilha`, que some quando o `$lines` do rótulo passa de 1 (as linhas medidas, na largura da aba). Na aba de 72 com uma linha o ícone fica a 11 do topo e a linha de base a 17 do fundo, em qualquer fonte, e não só no Roboto 14/20. Ícone à esquerda (`LeadingIconTab`): ícone, 8 e texto, centrados juntos.
-- Rótulo de duas linhas na fileira fixa: o rótulo empilhado quebra por palavra na largura da aba menos os 2 × 16 do `HorizontalTextPadding` (`width: "fill"`, `font.maxLines: 2`, linhas centradas como o `TextAlign.Center` da linha 107) e sobe, com a última linha de base a 9 do fundo e o ícone 20 acima da primeira. Cada aba usa as suas linhas: uma aba curta da mesma fileira segue a 17. O indicador primário acompanha a linha mais larga do rótulo e fica dentro da aba, como o `matchContentSize`.
-- Indicador primário: 3 de altura em `primary`, canto 3 (o `RoundedCornerShape(3)` do token, que numa altura de 3 vira 1,5), do tamanho do conteúdo (`matchContentSize`: o texto, ou o ícone, o espaço e o texto no `LeadingIconTab`) e no mínimo 24 (`minWidth`), centrado na aba. Indicador secundário: 3 de altura (`SecondaryIndicator` usa `ActiveIndicatorHeight`, e não 2) em `primary`, na largura toda da aba, sem canto, desenhado por `stroke.sides: ["bottom"]` de 3. Só a aba selecionada leva indicador.
-- Roláveis: recuo inicial de 52 (`ScrollableTabRowEdgeStartPadding`), abas com a largura do conteúdo mais 2 vezes 16 (`HorizontalTextPadding`) e no mínimo 90 (`minWidth`, no lugar do retângulo sem altura que fazia isso na `formatVersion` 2). Com ícone à esquerda a aba mede 16 + ícone + 8 + texto + 16.
-- Rótulo centrado pela maiúscula (`cap-middle`): o nó `rótulo` usa `font.verticalAlign: "cap-middle"`; com ícone acima o rótulo é o nó `rótulo empilhado`, `hug` e posicionado pela linha de base (como descrito acima), e nos demais casos, uma linha só com ou sem ícone ao lado, o nó `rótulo` ocupa a altura da aba (`height: "fill"`). O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
+- Fixed row: the tabs split the width equally (`repeat.distribute: "fill"`, the `tabWidth = tabRowWidth / tabCount` of `TabRowImpl`), over the `surface` background. The height is the marking's: 48 (`SmallTabHeight`) and 72 with stacked icon and text (`LargeTabHeight`); a tab with only text or only an icon is centered in the height (`placeTextOrIcon`).
+- 1 divider in `outline-variant` at the bottom (`HorizontalDivider`), a frame with `stroke.sides: ["bottom"]` drawn below the tabs and the indicators. The default `HorizontalDivider` uses `DividerTokens.Color` (`OutlineVariant`), not the `DividerColor` of the secondary token.
+- Label in `title-small` from the tokens (14, line 20, weight 500, spacing 0.1), without `family`. 24 icon from the library set (`icon` node), in the same color as the label.
+- Colors: the selected tab in `primary` on the primary rows and in `on-surface` on the secondary ones (`ActiveLabelTextColor` and `ActiveIconColor` of each token); the others in `on-surface-variant` (`InactiveLabelTextColor`). Light and dark follow the same tokens.
+- Icon above the text (`Tab`), by baseline like `placeTextAndIcon`: the `stacked label` node (`scrollable stacked label` in the scrollable ones) carries `baselinePadding` with `top` 20 and `bottom` 9. The `top` is the distance from the icon to the first baseline (`IconDistanceFromBaseline`, `Tab.kt` lines 435 and 407 to 409: the icon ends 20 above it). The `bottom` is that from the bottom of the tab to the last baseline: `DoubleLineTextBaselineWithIcon` 6 (line 432) plus the 3 indicator (`ActiveIndicatorHeight`, lines 398 to 400), 9 with two lines; with one line it is `SingleLineTextBaselineWithIcon` 14 plus 3, 17, and the difference of 8 is the bottom padding of the `stack`, which disappears when the label's `$lines` exceeds 1 (the lines measured, at the tab width). In the 72 tab with one line the icon sits 11 from the top and the baseline 17 from the bottom, in any font, not only Roboto 14/20. Icon on the left (`LeadingIconTab`): icon, 8 and text, centered together.
+- Two-line label in the fixed row: the stacked label wraps by word at the tab width minus the 2 × 16 of the `HorizontalTextPadding` (`width: "fill"`, `font.maxLines: 2`, lines centered like the `TextAlign.Center` on line 107) and moves up, with the last baseline 9 from the bottom and the icon 20 above the first. Each tab uses its own lines: a short tab in the same row stays at 17. The primary indicator follows the widest line of the label and stays inside the tab, like `matchContentSize`.
+- Primary indicator: 3 high in `primary`, corner 3 (the token's `RoundedCornerShape(3)`, which at a height of 3 becomes 1.5), the size of the content (`matchContentSize`: the text, or the icon, the space and the text in the `LeadingIconTab`) and at least 24 (`minWidth`), centered on the tab. Secondary indicator: 3 high (`SecondaryIndicator` uses `ActiveIndicatorHeight`, not 2) in `primary`, across the whole tab width, no corner, drawn by `stroke.sides: ["bottom"]` of 3. Only the selected tab carries an indicator.
+- Scrollable: initial inset of 52 (`ScrollableTabRowEdgeStartPadding`), tabs with the content width plus 2 times 16 (`HorizontalTextPadding`) and at least 90 (`minWidth`, in place of the rectangle with no height that did this in `formatVersion` 2). With the icon on the left the tab measures 16 + icon + 8 + text + 16.
+- Label centered by the cap height (`cap-middle`): the `label` node uses `font.verticalAlign: "cap-middle"`; with the icon above, the label is the `stacked label` node, `hug` and positioned by baseline (as described above), and in the other cases, a single line with or without an icon beside it, the `label` node takes the tab height (`height: "fill"`). The Compose `Text` centers by the font line box (ascent and descent); the drawing centers the cap height in the box, and with Roboto the two coincide to within 1 px.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `variants`. As opções são `none` e os três estados que os tokens das abas nomeiam: `hovered`, `focused` e `pressed` (não há `Dragged*`). **Este tipo não tem `enabled`**, então não existe um desabilitado que vença: o estado sempre desenha.
+The field chooses the resting appearance of a state; it does not go into the `code` or the `variants`. The options are `none` and the three states that the tab tokens name: `hovered`, `focused` and `pressed` (there is no `Dragged*`). **This type has no `enabled`**, so there is no disabled state that wins: the state is always drawn.
 
-- **Camada de estado:** o nó `estado` é um `rect` do tamanho da aba (a aba inteira, o `ripple(bounded = true)` do `Tab`), atrás do conteúdo, na cor do ripple: `selectedContentColor`, que no desenho é a cor da aba selecionada (`primary` nas primárias, `on-surface` nas secundárias). A opacidade vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10). Os tokens das abas **não nomeiam** a camada nem a opacidade: é o ripple do `Tab` parado.
-- **Cores do conteúdo:** `ActiveHover*`, `ActiveFocus*` e `ActivePressed*` (ícone e rótulo) repetem `primary`, e os `Inactive*` `on-surface`: são as cores de sempre, então ícone e rótulo não mudam.
-- **Item do estado:** vale para o item selecionado (decisão 6 da etapa); com nenhum item selecionado nada muda. O Compose desenha o estado no item que o mouse, o foco ou o toque alcança; escolher "o primeiro" pediria o índice do item no `repeat` (#897), e um campo de índice do item fica fora. Os exemplos de estado trazem os `items` do `preview`: no Catálogo o exemplo desenha os destinos, com a camada de estado no item selecionado.
+- **State layer:** the `state` node is a `rect` the size of the tab (the whole tab, the `ripple(bounded = true)` of the `Tab`), behind the content, in the ripple color: `selectedContentColor`, which in the drawing is the color of the selected tab (`primary` on the primary rows, `on-surface` on the secondary ones). The opacity comes from the `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10) tokens. The tab tokens **do not name** the layer or the opacity: it is the resting `Tab` ripple.
+- **Content colors:** `ActiveHover*`, `ActiveFocus*` and `ActivePressed*` (icon and label) repeat `primary`, and the `Inactive*` ones `on-surface`: they are the usual colors, so the icon and label do not change.
+- **Item of the state:** it applies to the selected item (decision 6 of the stage); with no selected item nothing changes. Compose draws the state on the item that the mouse, focus or touch reaches; choosing "the first one" would need the item index in the `repeat` (#897), and an item index field is out of scope. The state examples carry the `items` of the `preview`: in the Catalog the example draws the destinations, with the state layer on the selected item.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- Cor das abas não selecionadas: no Compose, sem `selectedContentColor` e `unselectedContentColor`, a `Tab` pinta todas as abas com a cor do conteúdo da fileira (`unselectedContentColor` vale o `selectedContentColor`), e as inativas só ficam em `OnSurfaceVariant` quando a tela passa as cores. O desenho segue os tokens (`InactiveLabelTextColor`) e o `code` do tipo não passa as cores.
-- Sem o ripple animado nem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado), sem a animação do indicador e da cor, sem a rolagem (`scrollState`) nem o deslocamento que centraliza a aba selecionada: nas roláveis, o que passa da largura sai cortado.
-- A altura da fileira depende do conteúdo no Compose: `max(72, ícone + texto + 20)` (`Tab.kt` linhas 327 a 340), 72 com uma linha e 84 com um rótulo de duas linhas sob o ícone. Aqui é a da marcação (48 sem retângulo, o literal do `sizing.height`: o `$lines` e o `$rows` não enxergam o texto de uma linha da tabela, então a altura não acompanha os itens). Numa marcação de 72, um rótulo de duas linhas sobe o ícone 1 acima do topo da aba, porque a posição segue o Compose (a última linha de base a 9 do fundo) e a altura não cresce; para ver a aba inteira, a marcação precisa de 84.
-- Rótulo longo: o desenho quebra em até duas linhas (`maxLines` 2) só no rótulo sob o ícone da fileira fixa; o que passa de duas linhas é cortado, e o Compose, sem `maxLines`, cresceria a aba. Nas roláveis a aba tem a largura do conteúdo, então o rótulo sob o ícone só quebra com uma quebra de linha escrita no texto. Com o ícone à esquerda e nas abas só de texto o rótulo segue em uma linha, sem quebra, e o indicador acompanha a largura inteira do texto mesmo quando passa da aba (o Compose limita ao `tabWidth`).
-- Sem o `badge` sobre o ícone (`Modifier.badgeBounds`) e sem `Tab` de conteúdo livre.
+- Color of the unselected tabs: in Compose, without `selectedContentColor` and `unselectedContentColor`, the `Tab` paints all tabs with the row content color (`unselectedContentColor` is the `selectedContentColor`), and the inactive ones are only `OnSurfaceVariant` when the screen passes the colors. The drawing follows the tokens (`InactiveLabelTextColor`) and the type's `code` does not pass the colors.
+- No animated ripple or focus ring (Compose does not define `FocusIndicatorColor` for it at the pinned commit), no indicator and color animation, no scrolling (`scrollState`) and no shift that centers the selected tab: in the scrollable ones, what goes past the width is cut off.
+- The row height depends on the content in Compose: `max(72, icon + text + 20)` (`Tab.kt` lines 327 to 340), 72 with one line and 84 with a two-line label under the icon. Here it is the marking's (48 without a rectangle, the literal of `sizing.height`: `$lines` and `$rows` do not see the single-line text of the table, so the height does not follow the items). On a 72 marking, a two-line label raises the icon 1 above the top of the tab, because the position follows Compose (the last baseline 9 from the bottom) and the height does not grow; to see the whole tab, the marking needs 84.
+- Long label: the drawing wraps into up to two lines (`maxLines` 2) only on the label under the icon of the fixed row; what goes past two lines is cut off, and Compose, without `maxLines`, would grow the tab. In the scrollable ones the tab has the content width, so the label under the icon only wraps with a line break written in the text. With the icon on the left and in text-only tabs the label stays on one line, without wrapping, and the indicator follows the full text width even when it goes past the tab (Compose limits it to the `tabWidth`).
+- No `badge` over the icon (`Modifier.badgeBounds`) and no free-content `Tab`.

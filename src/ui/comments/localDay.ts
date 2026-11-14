@@ -1,7 +1,7 @@
-// O `<input type="date">` entrega `YYYY-MM-DD`; "antes de" essa data vale como a meia-noite do
-// fuso local de quem escolheu (decisão 9 da #954). O modelo recebe um instante ISO completo, sem
-// mudar (`Date.parse` de uma data pura seria meia-noite UTC). Texto que não é uma data segue
-// como veio (o modelo trata data inválida como "não apaga nada").
+// The `<input type="date">` delivers `YYYY-MM-DD`; "before" that date counts as the midnight of the
+// local time zone of whoever chose it (decision 9 of #954). The model receives a full ISO instant,
+// unchanged (`Date.parse` of a bare date would be UTC midnight). Text that is not a date goes on
+// as it came (the model treats an invalid date as "deletes nothing").
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export function localDayStart(day: string): string {

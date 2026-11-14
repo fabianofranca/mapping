@@ -2,8 +2,8 @@
   "format": "mapping-component",
   "formatVersion": 2,
   "id": "tabela",
-  "name": "Tabela",
-  "description": "Post-it amarelo com um título opcional em negrito e uma linha por registro: a chave à esquerda e o valor à direita.",
+  "name": "Table",
+  "description": "Yellow sticky note with an optional bold title and one row per record: the key on the left and the value on the right.",
   "size": {
     "width": 240,
     "height": 120
@@ -19,9 +19,9 @@
   "preview": {
     "titulo": "checkout_started",
     "linhas": [
-      { "chave": "origem", "valor": "carrinho" },
-      { "chave": "itens", "valor": "3" },
-      { "chave": "total", "valor": "149,90" }
+      { "chave": "source", "valor": "cart" },
+      { "chave": "items", "valor": "3" },
+      { "chave": "total", "valor": "149.90" }
     ]
   },
   "template": {
@@ -43,7 +43,7 @@
     "children": [
       {
         "type": "text",
-        "name": "título",
+        "name": "title",
         "text": {
           "$field": "titulo"
         },
@@ -60,13 +60,13 @@
       },
       {
         "type": "repeat",
-        "name": "linhas",
+        "name": "rows",
         "field": "linhas",
         "direction": "column",
         "gap": 4,
         "template": {
           "type": "frame",
-          "name": "linha",
+          "name": "row",
           "layout": {
             "type": "row",
             "gap": 12
@@ -74,7 +74,7 @@
           "children": [
             {
               "type": "text",
-              "name": "chave",
+              "name": "key",
               "text": {
                 "$field": "chave"
               },
@@ -88,7 +88,7 @@
             },
             {
               "type": "text",
-              "name": "valor",
+              "name": "value",
               "text": {
                 "$field": "valor"
               },

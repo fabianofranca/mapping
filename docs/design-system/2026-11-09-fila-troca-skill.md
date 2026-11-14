@@ -1,13 +1,13 @@
-# Troca de coordenador por skill novo — 2026-11-09 (épico `epic/fila-troca-skill`)
+# Coordinator handoff by a new skill — 2026-11-09 (épico `epic/fila-troca-skill`)
 
 ## Pendências
 
-- FT1: nenhuma (só ferramenta do fluxo de entrega).
+- FT1: nenhuma (delivery flow tooling only).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só ajustou o skill `/implementar-fila`.
+No write to the Mapping artifact in Claude Design: the stage only adjusted the `/implementar-fila` skill.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

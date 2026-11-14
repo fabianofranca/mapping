@@ -2,9 +2,9 @@ import type { Project } from '../model';
 import type { EditorMode, Selection } from './ui';
 
 /**
- * A dica do modo Desenhar ("Arraste sobre uma imagem…") aparece na barra do canvas, no lugar
- * de "Nada selecionado": só com o modo `draw`, o projeto não trancado, sem seleção e com o
- * projeto à vista tendo ao menos um container. Condição num lugar só (lida pelo `Breadcrumbs`).
+ * The Draw mode hint ("Drag over an image…") shows in the canvas bar, in place of
+ * "Nothing selected": only in `draw` mode, with the project unlocked, no selection and the
+ * shown project having at least one container. One place for the condition (read by `Breadcrumbs`).
  */
 export function drawHintVisible(input: {
   readonly mode: EditorMode;

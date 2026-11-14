@@ -1,0 +1,22 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "card",
+  "name": "Card",
+  "description": "White card with a thin border that contains other elements.",
+  "size": {
+    "width": 320,
+    "height": 160
+  },
+  "template": {
+    "type": "frame",
+    "name": "card",
+    "cornerRadius": 8,
+    "fill": "#FFFFFF",
+    "stroke": {
+      "color": "#D1D5DB",
+      "width": 1
+    },
+    "children": []
+  }
+}

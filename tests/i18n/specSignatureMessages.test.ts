@@ -4,9 +4,10 @@ import { MODEL_MESSAGE_TEMPLATES } from '../../src/model/messages';
 import { parseSpec, type SpecIssue } from '../../src/model/spec';
 import { locale } from '../../src/store/settings';
 import { messageText } from '../../src/ui/modelMessage';
+import { ptBRText } from '../support/modelText';
 
-// CL2 R-4 (#1785): toda mensagem da `formatVersion` 16 de `specSignature.ts` sai com código do
-// catálogo `spec` e, em en-US, sem palavra em português fora dos parâmetros.
+// CL2 R-4 (#1785): every `formatVersion` 16 message of `specSignature.ts` comes out with a code from the
+// `spec` catalog and, in en-US, with no Portuguese word outside the parameters.
 
 afterEach(() => {
   locale.value = 'pt-BR';
@@ -102,9 +103,9 @@ function shown(issue: SpecIssue): string {
   return out;
 }
 
-describe('mensagens da formatVersion 16 (specSignature) no catálogo', () => {
+describe('formatVersion 16 messages (specSignature) in the catalog', () => {
   it.each(CASES.map(([name, mutate]) => [name, mutate] as const))(
-    'tem código do catálogo e en-US sem português: %s',
+    'has a catalog code and en-US without Portuguese: %s',
     (_name, mutate) => {
       const issues = issuesOf(mutate);
       expect(issues.length).toBeGreaterThan(0);
@@ -118,15 +119,18 @@ describe('mensagens da formatVersion 16 (specSignature) no catálogo', () => {
     },
   );
 
-  it('pt-BR: o texto mostrado é o `message`', () => {
+  it('pt-BR: the text shown is the pt-BR template filled in; en-US shows the `message`', () => {
     for (const [, mutate] of CASES) {
       for (const issue of issuesOf(mutate)) {
-        expect(shown(issue)).toBe(
-          Object.values(issue.params ?? {}).reduce<string>(
-            (acc, v) => acc.replace(`${v}`, ''),
-            issue.message,
-          ),
+        const message = modelMessage(
+          issue.code ?? 'raw',
+          issue.params ?? {},
+          issue.message,
         );
+        locale.value = 'pt-BR';
+        expect(messageText(message), issue.message).toBe(ptBRText(message));
+        locale.value = 'en-US';
+        expect(messageText(message), issue.message).toBe(issue.message);
       }
     }
   });

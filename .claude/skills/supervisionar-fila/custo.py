@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Agrega um JSONL de `get_session` por grupo de sessões (skill `supervisionar-fila`, argumento `varredura`).
+"""Aggregates a JSONL of `get_session` results per session group (skill `supervisionar-fila`, argument `varredura`).
 
-Uso: custo.py <arquivo.jsonl>
+Usage: custo.py <arquivo.jsonl>
 
-Cada linha é o JSON devolvido por `get_session` (com ou sem o envelope `ccr`). O grupo sai do título:
-"Testador — …" (Reteste, se o título diz reteste), "Fila — coordenador…", "Detalhamento — …",
-"Supervisor…", "<código> — …" (Fase; Correção ou Fechamento, se o título diz); o resto é Outras.
-Imprime, por grupo, o número de sessões, o US$ e a mediana, o total e o % de US$ por modelo.
-Sessão sem `cost_usd` não entra nas contas (vai numa linha `sem custo`). Só biblioteca padrão. Erro de uso, arquivo ilegível ou linha inválida sai com 2.
+Each line is the JSON returned by `get_session` (with or without the `ccr` envelope). The group comes from the title:
+"Testador — …" (Reteste, if the title says reteste), "Fila — coordenador…", "Detalhamento — …",
+"Supervisor…", "<code> — …" ("Fase"; "Correção" or "Fechamento", if the title says so); the rest is Outras.
+Prints, per group, the number of sessions, the US$ and the median, the total and the % of US$ per model.
+A session without `cost_usd` is left out of the sums (it goes in a `sem custo` line). Standard library only. A usage error, unreadable file or invalid line exits with 2.
 """
 import json
 import re
@@ -16,7 +16,7 @@ import sys
 
 GROUPS = ["Testador", "Fase", "Coordenador", "Detalhamento", "Supervisão",
           "Reteste", "Correção", "Fechamento", "Outras"]
-# Código de fase: maiúsculas e dígitos, com ao menos um dígito (FM8, RS1, FM4-C); "CR — …" não é fase.
+# Phase code: uppercase letters and digits, with at least one digit (FM8, RS1, FM4-C); "CR — …" is not a phase.
 CODE = re.compile(r"^[A-Z][A-Z0-9-]*\d[A-Za-z0-9-]* — ")
 
 
@@ -41,7 +41,7 @@ def group_of(title):
 
 
 def read(path):
-    """Devolve (sessões com custo, número de sessões sem custo)."""
+    """Returns (sessions with a cost, number of sessions without a cost)."""
     out, no_cost = [], 0
     try:
         f = open(path, encoding="utf-8")
@@ -51,16 +51,16 @@ def read(path):
         try:
             lines = list(f)
         except UnicodeDecodeError:
-            raise UsageError("o arquivo não é UTF-8")
+            raise UsageError("the file is not UTF-8")
     for n, line in enumerate(lines, 1):
         if not line.strip():
             continue
         try:
             obj = json.loads(line)
         except ValueError:
-            raise UsageError(f"linha {n}: não é JSON")
+            raise UsageError(f"line {n}: not JSON")
         if not isinstance(obj, dict):
-            raise UsageError(f"linha {n}: não é um objeto")
+            raise UsageError(f"line {n}: not an object")
         s = obj["ccr"] if isinstance(obj.get("ccr"), dict) else obj
         title = s.get("title") if isinstance(s.get("title"), str) else ""
         ctx = s.get("session_context") if isinstance(s.get("session_context"), dict) else {}
@@ -68,7 +68,7 @@ def read(path):
         usage = meta.get("usage") if isinstance(meta.get("usage"), dict) else {}
         usd = usage.get("cost_usd")
         if isinstance(usd, bool) or not isinstance(usd, (int, float)):
-            no_cost += 1  # sem custo gravado (ainda rodando, por exemplo): fora das contagens e das medianas
+            no_cost += 1  # no cost recorded (still running, for example): left out of the counts and the medians
             continue
         model = ctx.get("model") if isinstance(ctx.get("model"), str) else "—"
         out.append((group_of(title), usd, model))

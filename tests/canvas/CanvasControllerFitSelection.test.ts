@@ -6,8 +6,8 @@ import { createDisplayImages } from '../../src/store/displayImages';
 import { selectItems, setViewMode } from '../../src/store/ui';
 import { canvasProject, editorFor, installFakeCanvas } from './harness';
 
-// Enquadrar seleção (etapa Enquadrar seleção, EQ2): `fitSelection()` dá zoom e centra a vista
-// na caixa de todos os itens selecionados, só mexendo na vista.
+// Fit selection (Fit selection stage, EQ2): `fitSelection()` zooms and centers the view
+// on the box of all selected items, only touching the view.
 
 const WIDTH = 380;
 const HEIGHT = 700;
@@ -46,7 +46,7 @@ describe('CanvasController: fitSelection', () => {
     return { ...editor, container, controller };
   }
 
-  /** Caixa de tela de um retângulo do canvas na vista atual. */
+  /** Screen box of a canvas rectangle in the current view. */
   function screenBox(
     view: { x: number; y: number; scale: number },
     rect: { x: number; y: number; width: number; height: number },
@@ -59,7 +59,7 @@ describe('CanvasController: fitSelection', () => {
     };
   }
 
-  it('enquadra uma marcação dentro de um container, centrada e com a folga do Enquadrar tudo', () => {
+  it('fits a marking inside a container, centered and with the Fit all margin', () => {
     const { controller, ui, view } = setup();
     selectItems(ui, [{ kind: 'marking', id: 'M2' }]);
     controller.fitSelection();
@@ -72,12 +72,12 @@ describe('CanvasController: fitSelection', () => {
     });
     expect(box.x + box.width / 2).toBeCloseTo(WIDTH / 2);
     expect(box.y + box.height / 2).toBeCloseTo(HEIGHT / 2);
-    // A largura é o limite: a caixa ocupa a tela menos a folga dos dois lados.
+    // The width is the limit: the box takes the screen minus the margin on both sides.
     expect(box.width).toBeCloseTo(WIDTH - 2 * FIT_PADDING);
     controller.destroy();
   });
 
-  it('soma a colocação do container: uma marcação do segundo container', () => {
+  it('adds the container placement: a marking of the second container', () => {
     const { controller, ui, view } = setup();
     selectItems(ui, [{ kind: 'marking', id: 'M3' }]);
     controller.fitSelection();
@@ -93,7 +93,7 @@ describe('CanvasController: fitSelection', () => {
     controller.destroy();
   });
 
-  it('com seleção múltipla em containers diferentes, enquadra a caixa de todos', () => {
+  it('with multiple selection in different containers, fits the box of all', () => {
     const { controller, ui, view } = setup();
     selectItems(ui, [
       { kind: 'marking', id: 'M2' },
@@ -101,7 +101,7 @@ describe('CanvasController: fitSelection', () => {
     ]);
     controller.fitSelection();
     flush();
-    // M2 vai de x 200 a 300; M3 de 1150 a 1350; y de 50 a 300.
+    // M2 goes from x 200 to 300; M3 from 1150 to 1350; y from 50 to 300.
     const box = screenBox(view.viewport.value, {
       x: 200,
       y: 50,
@@ -115,7 +115,7 @@ describe('CanvasController: fitSelection', () => {
     controller.destroy();
   });
 
-  it('uma marcação de 8 px (o mínimo) não passa do zoom máximo', () => {
+  it('an 8 px marking (the minimum) does not exceed the maximum zoom', () => {
     const project = createMarking(canvasProject(), {
       id: 'M9',
       containerId: 'I1',
@@ -129,7 +129,7 @@ describe('CanvasController: fitSelection', () => {
     controller.destroy();
   });
 
-  it('não muda a seleção, o projeto nem o desfazer', () => {
+  it('does not change the selection, the project nor the undo', () => {
     const { controller, ui, store } = setup();
     selectItems(ui, [{ kind: 'marking', id: 'M2' }]);
     const before = store.project.peek();
@@ -141,7 +141,7 @@ describe('CanvasController: fitSelection', () => {
     controller.destroy();
   });
 
-  it('sem seleção, não mexe na vista', () => {
+  it('without selection, does not touch the view', () => {
     const { controller, view } = setup();
     const before = view.viewport.value;
     controller.fitSelection();
@@ -150,7 +150,7 @@ describe('CanvasController: fitSelection', () => {
     controller.destroy();
   });
 
-  it('no modo Visualizar, não mexe na vista', () => {
+  it('in View mode, does not touch the view', () => {
     const { controller, ui, view } = setup();
     selectItems(ui, [{ kind: 'marking', id: 'M2' }]);
     setViewMode(ui, true);
@@ -161,7 +161,7 @@ describe('CanvasController: fitSelection', () => {
     controller.destroy();
   });
 
-  it('com a marcação trancada selecionada, funciona igual', () => {
+  it('with the locked marking selected, it works the same', () => {
     const { controller, ui, actions, view } = setup();
     actions.setMarkingLocked('M2', true);
     selectItems(ui, [{ kind: 'marking', id: 'M2' }]);

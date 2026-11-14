@@ -27,8 +27,8 @@ import { emptyProject, sampleProject } from '../model/fixtures';
 import { decided, propose } from '../model/proposalFixtures';
 import { richScenario } from '../store/proposalHarness';
 
-// Marcas de revisão no canvas (HANDOFF-PROPOSALS 4): a forma da linha e o selo dizem o
-// tipo; rejeitadas: a existente só na visão Atual, a criação (fantasma) nas duas; movida com fantasma na outra posição.
+// Review marks on the canvas (HANDOFF-PROPOSALS 4): the shape of the line and the badge tell the
+// type; rejected: the existing one only in the Current view, the creation (ghost) in both; moved with a ghost in the other position.
 
 function marks(
   p: Proposal,
@@ -50,7 +50,7 @@ function marks(
 }
 
 describe('reviewMarks', () => {
-  it('Proposto: criada tracejada, movida com fantasma na posição antiga, alterada dupla', () => {
+  it('Proposed: created dashed, moved with a ghost at the old position, changed double', () => {
     const { base, proposal } = richScenario();
     const m = marks(proposal, base, 'proposed');
     expect(m.markings.get('M5')).toEqual({
@@ -73,7 +73,7 @@ describe('reviewMarks', () => {
     ]);
   });
 
-  it('Atual: a criada não aparece; o fantasma da movida fica na posição nova', () => {
+  it('Current: the created one does not appear; the ghost of the moved one is at the new position', () => {
     const { base, proposal } = richScenario();
     const m = marks(proposal, base, 'current');
     expect(m.markings.has('M5')).toBe(false);
@@ -83,7 +83,7 @@ describe('reviewMarks', () => {
     ]);
   });
 
-  it('rejeitada: pontilhada e esmaecida com ✕ só na visão Atual', () => {
+  it('rejected: dotted and dimmed with ✕ only in the Current view', () => {
     const { base, proposal } = richScenario();
     const rejected = decided(proposal, base, { level: 'item', id: 'M1' }, 'rejected');
     expect(marks(rejected, base, 'proposed').markings.has('M1')).toBe(false);
@@ -92,14 +92,14 @@ describe('reviewMarks', () => {
       dim: true,
       badges: ['rejected'],
     });
-    // A criação rejeitada numa imagem que existe vira fantasma com ✕ nas duas visões.
+    // The rejected creation on an image that exists becomes a ghost with ✕ in both views.
     const added = propose(
       base,
       createMarking(base, {
         id: 'M9',
         containerId: 'I1',
         rect: { x: 10, y: 10, width: 50, height: 50 },
-        name: 'Novo',
+        name: 'New',
       }),
     );
     const noItem = decided(added, base, { level: 'item', id: 'M9' }, 'rejected');
@@ -111,7 +111,7 @@ describe('reviewMarks', () => {
     ]);
   });
 
-  it('matriz: marcação criada e alterada por estado de decisão, em cada visão', () => {
+  it('matrix: created and changed marking by decision state, in each view', () => {
     const base = sampleProject();
     const created = propose(
       base,
@@ -119,7 +119,7 @@ describe('reviewMarks', () => {
         id: 'M9',
         containerId: 'I1',
         rect: { x: 10, y: 10, width: 50, height: 50 },
-        name: 'Novo',
+        name: 'New',
       }),
     );
     const item = { level: 'item', id: 'M9' } as const;
@@ -127,20 +127,20 @@ describe('reviewMarks', () => {
       m.ghosts
         .filter((g) => g.key.startsWith('rejected:'))
         .map((g) => [g.key, g.name, g.badges]);
-    const rejectedGhost = [['rejected:M9', 'Novo', ['rejected']]];
+    const rejectedGhost = [['rejected:M9', 'New', ['rejected']]];
     const createdMark = { line: 'created', dim: false, badges: ['created'] };
     const cases = [
-      ['pendente', created, undefined, createdMark, []],
-      ['aceita', decided(created, base, item, 'accepted'), undefined, createdMark, []],
+      ['pending', created, undefined, createdMark, []],
+      ['accepted', decided(created, base, item, 'accepted'), undefined, createdMark, []],
       [
-        'rejeitada',
+        'rejected',
         decided(created, base, item, 'rejected'),
         undefined,
         undefined,
         rejectedGhost,
       ],
       [
-        'inválida',
+        'invalid',
         created,
         [created.changes[0]!.id],
         { line: 'invalid', dim: false, badges: ['invalid', 'created'] },
@@ -157,22 +157,22 @@ describe('reviewMarks', () => {
       const proposed = marks(proposal, base, 'proposed', {
         invalid: invalid ? [...invalid] : [],
       });
-      expect(proposed.markings.get('M9'), `${state}, Proposto`).toEqual(mark);
-      expect(ghostsOf(proposed), `${state}, Proposto`).toEqual(ghosts);
+      expect(proposed.markings.get('M9'), `${state}, Proposed`).toEqual(mark);
+      expect(ghostsOf(proposed), `${state}, Proposed`).toEqual(ghosts);
       const current = marks(proposal, base, 'current', {
         invalid: invalid ? [...invalid] : [],
       });
-      expect(current.markings.has('M9'), `${state}, Atual`).toBe(false);
-      expect(ghostsOf(current), `${state}, Atual`).toEqual(ghosts);
+      expect(current.markings.has('M9'), `${state}, Current`).toBe(false);
+      expect(ghostsOf(current), `${state}, Current`).toEqual(ghosts);
     }
 
-    // Existente alterada: o fantasma de rejeitada só existe na Atual (a mudança rejeitada
-    // fica fora do "como ficaria"); pendente e aceita nunca o têm.
+    // Existing changed: the rejected ghost only exists in the Current (the rejected change
+    // stays out of the "how it would look"); pending and accepted never have it.
     const moved = propose(base, moveMarking(base, 'M4', 10, 10));
     const rejectedMove = decided(moved, base, { level: 'item', id: 'M4' }, 'rejected');
     for (const [state, proposal] of [
-      ['pendente', moved],
-      ['aceita', decided(moved, base, { level: 'item', id: 'M4' }, 'accepted')],
+      ['pending', moved],
+      ['accepted', decided(moved, base, { level: 'item', id: 'M4' }, 'accepted')],
     ] as const) {
       for (const view of ['proposed', 'current'] as const)
         expect(ghostsOf(marks(proposal, base, view)), `${state}, ${view}`).toEqual([]);
@@ -186,7 +186,7 @@ describe('reviewMarks', () => {
     });
   });
 
-  it('criação rejeitada de componente (sem name): o fantasma leva o nome do tipo', () => {
+  it('rejected creation of a component (no name): the ghost carries the type name', () => {
     const spec = parseSpec(SPEC_JSON);
     if (!spec.ok) throw new Error(spec.errors.join('\n'));
     let n = 0;
@@ -196,7 +196,7 @@ describe('reviewMarks', () => {
     });
     base = addBackgroundContainer(base, {
       id: 'B1',
-      name: 'Tela',
+      name: 'Screen',
       width: 400,
       height: 600,
       background: '#FFFFFF',
@@ -231,7 +231,7 @@ describe('reviewMarks', () => {
     }
   });
 
-  it('removida: hachura com o nome (riscado) nas duas visões', () => {
+  it('removed: hatching with the name (struck through) in both views', () => {
     const base = sampleProject();
     const p = propose(base, removeMarking(base, 'M3'));
     for (const view of ['proposed', 'current'] as const) {
@@ -239,6 +239,7 @@ describe('reviewMarks', () => {
       expect(m.removed).toEqual([
         expect.objectContaining({
           key: 'marking:M3',
+          // pt-BR kept: shared fixture data (sampleProject) asserted by tests/model, tests/components
           name: 'Fechadura',
           badges: ['removed'],
           rect: { x: 1300, y: 1250, width: 50, height: 50 },
@@ -247,7 +248,7 @@ describe('reviewMarks', () => {
     }
   });
 
-  it('conflito e conjunto inválido somam o selo de alerta ao tipo', () => {
+  it('conflict and invalid set add the alert badge to the type', () => {
     const { base, proposal, ids } = richScenario();
     expect(
       marks(proposal, base, 'proposed', { conflicts: [ids.rect] }).markings.get('M4'),
@@ -257,7 +258,7 @@ describe('reviewMarks', () => {
     ).toEqual({ line: 'invalid', dim: false, badges: ['invalid', 'moved'] });
   });
 
-  it('criada no Proposto: pendente e aceita dão a mesma marca; inválida troca a linha e soma o selo', () => {
+  it('created in Proposed: pending and accepted give the same mark; invalid changes the line and adds the badge', () => {
     const { base, proposal, ids } = richScenario();
     const pending = marks(proposal, base, 'proposed').markings.get('M5');
     const accepted = marks(
@@ -270,48 +271,49 @@ describe('reviewMarks', () => {
     expect(
       marks(proposal, base, 'proposed', { invalid: [ids.marking] }).markings.get('M5'),
     ).toEqual({ line: 'invalid', dim: false, badges: ['invalid', 'created'] });
-    // Na visão Atual a criada não tem marca, inválida ou não.
+    // In the Current view the created one has no mark, invalid or not.
     expect(
       marks(proposal, base, 'current', { invalid: [ids.marking] }).markings.has('M5'),
     ).toBe(false);
   });
 
-  it('o "como ficaria" desenha a imagem nova do arquivo que espera em proposals/', () => {
+  it('the "how it would look" draws the new image of the file waiting in proposals/', () => {
     const { base, proposal } = richScenario();
     const preview = previewProject(base, proposal).project;
     const shown = proposedDisplay(preview, proposal);
     expect(shown.containers.find((i) => i.id === 'I3')?.file).toBe(
+      // pt-BR kept: shared fixture data (proposalFixtures file name) asserted by tests/model
       'proposals/P1/images/nova.webp',
     );
-    // As demais imagens não mudam (mesmo objeto).
+    // The other images do not change (same object).
     expect(shown.containers.find((i) => i.id === 'I1')).toBe(
       preview.containers.find((i) => i.id === 'I1'),
     );
-    // Memoizado pela versão do "como ficaria".
+    // Memoized by the version of the "how it would look".
     expect(proposedDisplay(preview, proposal)).toBe(shown);
   });
 });
 
-// Marcações do canvas (v13): o espaço delas é a identidade, e a troca de espaço é uma mudança só
-// (`space`), com o fantasma no espaço de cada lado.
-describe('reviewMarks: marcações do canvas', () => {
-  /** sampleProject com C1 no canvas, longe das imagens (I1 em 0..1000 × 0..750, I2 a partir de 1050). */
+// Canvas markings (v13): their space is the identity, and the space change is a single change
+// (`space`), with the ghost in the space of each side.
+describe('reviewMarks: canvas markings', () => {
+  /** sampleProject with C1 on the canvas, away from the images (I1 at 0..1000 × 0..750, I2 from 1050). */
   function withCanvasMarking(): Project {
     return createMarking(sampleProject(), {
       id: 'C1',
       containerId: null,
       rect: { x: -3000, y: -3000, width: 400, height: 300 },
-      name: 'Grupo',
+      name: 'Group',
     });
   }
 
-  it('criada no canvas e rejeitada: fantasma com a posição identidade na visão Atual', () => {
+  it('created on the canvas and rejected: ghost with the identity position in the Current view', () => {
     const base = sampleProject();
     const after = createMarking(base, {
       id: 'C9',
       containerId: null,
       rect: { x: -500, y: -400, width: 120, height: 80 },
-      name: 'Nova',
+      name: 'New',
     });
     const p = propose(base, after);
     const rejected = decided(p, base, { level: 'item', id: 'C9' }, 'rejected');
@@ -321,11 +323,11 @@ describe('reviewMarks: marcações do canvas', () => {
         key: 'rejected:C9',
         placement: IDENTITY_PLACEMENT,
         rect: { x: -500, y: -400, width: 120, height: 80 },
-        name: 'Nova',
+        name: 'New',
         badges: ['rejected'],
       }),
     ]);
-    // Aceita, aparece como criada na visão Proposto.
+    // Accepted, it appears as created in the Proposed view.
     expect(marks(p, base, 'proposed').markings.get('C9')).toEqual({
       line: 'created',
       dim: false,
@@ -333,7 +335,7 @@ describe('reviewMarks: marcações do canvas', () => {
     });
   });
 
-  it('movida no canvas: o fantasma está no espaço identidade, na posição antiga (Proposto) ou nova (Atual)', () => {
+  it('moved on the canvas: the ghost is in the identity space, at the old position (Proposed) or new (Current)', () => {
     const base = withCanvasMarking();
     const p = propose(base, moveMarking(base, 'C1', 100, 50));
     const proposed = marks(p, base, 'proposed');
@@ -358,9 +360,9 @@ describe('reviewMarks: marcações do canvas', () => {
     ]);
   });
 
-  it('troca de espaço (de um container para o canvas): o fantasma fica no espaço de cada lado', () => {
+  it('space change (from a container to the canvas): the ghost is in the space of each side', () => {
     const base = sampleProject();
-    // M4 (0,0,100×100 em I2, que está em (1050, 0) na escala 1) sai por 5000 pixels à esquerda.
+    // M4 (0,0,100×100 in I2, which is at (1050, 0) at scale 1) leaves by 5000 pixels to the left.
     const after = moveMarking(base, 'M4', -5000, 0);
     const moved = after.markings.find((m) => m.id === 'M4');
     expect(moved?.containerId).toBeNull();
@@ -383,14 +385,14 @@ describe('reviewMarks: marcações do canvas', () => {
     ]);
   });
 
-  it('removida no canvas: a hachura usa a posição identidade', () => {
+  it('removed on the canvas: the hatching uses the identity position', () => {
     const base = withCanvasMarking();
     const p = propose(base, removeMarking(base, 'C1'));
     for (const view of ['proposed', 'current'] as const) {
       expect(marks(p, base, view).removed).toEqual([
         expect.objectContaining({
           key: 'marking:C1',
-          name: 'Grupo',
+          name: 'Group',
           placement: IDENTITY_PLACEMENT,
           rect: { x: -3000, y: -3000, width: 400, height: 300 },
         }),
@@ -399,10 +401,10 @@ describe('reviewMarks: marcações do canvas', () => {
   });
 });
 
-describe('selos visíveis', () => {
+describe('visible badges', () => {
   const rect = (side: number) => ({ x: 0, y: 0, width: side, height: side });
 
-  it('marcação pequena na tela: só os importantes; menor que o selo, nenhum', () => {
+  it('small marking on screen: only the important ones; smaller than the badge, none', () => {
     expect(visibleBadges(['conflict', 'moved'], rect(200), 1)).toEqual([
       'conflict',
       'moved',
@@ -410,7 +412,7 @@ describe('selos visíveis', () => {
     expect(visibleBadges(['conflict', 'moved'], rect(30), 1)).toEqual(['conflict']);
     expect(visibleBadges(['created'], rect(30), 1)).toEqual([]);
     expect(visibleBadges(['changed'], rect(10), 1)).toEqual([]);
-    // O que conta é o tamanho na tela (zoom).
+    // What counts is the size on screen (zoom).
     expect(visibleBadges(['created'], rect(30), 4)).toEqual(['created']);
   });
 });

@@ -1,6 +1,6 @@
-// CL1 (P2): a contagem de trilhas lembrada da medida `hug` (`huggedCounts`) só vale para o quadro
-// que abraça o conteúdo; numa grade `fill` o tamanho conhecido manda, mesmo que seja igual ao total
-// que uma medida anterior (com outro limite) deu a outra contagem.
+// CL1 (P2): the track count remembered from the `hug` measure (`huggedCounts`) only applies to the frame
+// that hugs the content; in a `fill` grid the known size decides, even if it equals the total
+// that an earlier measure (with another limit) gave to another count.
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import {
@@ -30,9 +30,9 @@ const rect = (name: string, w: number, h: number, extra: Json = {}): Json => ({
 });
 
 /**
- * Uma grade `minColumnWidth: 100` com A (span 3, 150 px), B e C (20 px): com 3 trilhas e com 1 o
- * total é o mesmo (150). O pai `hug` a mede primeiro com o limite de 300 (3 trilhas) e depois a
- * entrega com 150, onde cabe uma trilha só.
+ * A `minColumnWidth: 100` grid with A (span 3, 150 px), B and C (20 px): with 3 tracks and with 1 the
+ * total is the same (150). The `hug` parent measures it first with the limit of 300 (3 tracks) and then
+ * hands it over with 150, where only one track fits.
  */
 function draw(gridWidth: 'fill' | 'hug') {
   const grid: Json = {
@@ -73,15 +73,15 @@ function draw(gridWidth: 'fill' | 'hug') {
   return at;
 }
 
-describe('huggedCounts: a contagem lembrada não vaza para a grade de tamanho dado', () => {
-  it('grade fill de 150 com minColumnWidth 100: uma trilha, B e C empilhados', () => {
+describe('huggedCounts: the remembered count does not leak into the grid of a given size', () => {
+  it('fill grid of 150 with minColumnWidth 100: one track, B and C stacked', () => {
     const at = draw('fill');
     expect(at('g').width).toBe(150);
     expect(at('B').x).toBe(at('C').x);
     expect(at('C').y).toBeGreaterThan(at('B').y);
   });
 
-  it('grade hug: a contagem medida (3 trilhas) vale na passagem final', () => {
+  it('hug grid: the measured count (3 tracks) applies in the final pass', () => {
     const at = draw('hug');
     expect(at('B').y).toBe(at('C').y);
     expect(at('C').x).toBeGreaterThan(at('B').x);
@@ -89,9 +89,9 @@ describe('huggedCounts: a contagem lembrada não vaza para a grade de tamanho da
 });
 
 /**
- * #1692: dois limites (300 e 150) dão o mesmo total (150) com contagens diferentes (3 e 1 trilhas).
- * A passagem final lê a contagem pelo limite dela (150: uma trilha), nas duas ordens em que o pai
- * mede a grade `hug`.
+ * #1692: two limits (300 and 150) give the same total (150) with different counts (3 and 1 tracks).
+ * The final pass reads the count by its own limit (150: one track), in both orders in which the parent
+ * measures the `hug` grid.
  */
 function drawHugged(
   order: 'natural-first' | 'narrow-first',
@@ -113,7 +113,7 @@ function drawHugged(
     width: wrapperWidth,
     height: 'hug',
     layout: { type: wrapperLayout },
-    // Um pai `hug` mede os filhos na ordem em que vêm: a grade antes ou depois do filho fixo.
+    // A `hug` parent measures the children in the order they come: the grid before or after the fixed child.
     children: order === 'natural-first' ? [grid, wide] : [wide, grid],
   };
   const template: Json = {
@@ -135,13 +135,13 @@ function drawHugged(
     boxes.get([...walk(result.root)].find((n) => n.name === name)!.id)!;
 }
 
-describe('huggedCounts: o empate de total com contagens diferentes (#1692)', () => {
+describe('huggedCounts: the total tie with different counts (#1692)', () => {
   const parents = ['hug'] as const;
   const cases = (['natural-first', 'narrow-first'] as const).flatMap((order) =>
     parents.map((parent) => [order, parent] as const),
   );
   for (const [order, parent] of cases) {
-    it(`grade hug num pai ${parent} (${order}): a passagem final tem 1 trilha, como a grade fill`, () => {
+    it(`hug grid in a ${parent} parent (${order}): the final pass has 1 track, like the fill grid`, () => {
       const at = drawHugged(order, parent);
       expect(at('g').width).toBe(150);
       const fill = draw('fill');
@@ -154,17 +154,17 @@ describe('huggedCounts: o empate de total com contagens diferentes (#1692)', () 
 });
 
 /**
- * #1749: sob um pai `max-content` ou `min-content` a largura é resolvida antes de medir a grade, e
- * o desenho fica igual ao do mesmo wrapper em px, na largura que o pai intrínseco resolveu.
+ * #1749: under a `max-content` or `min-content` parent the width is resolved before measuring the grid, and
+ * the drawing is equal to that of the same wrapper in px, at the width the intrinsic parent resolved.
  */
-describe('huggedCounts: grade hug sob pai max-content/min-content (#1749)', () => {
+describe('huggedCounts: hug grid under a max-content/min-content parent (#1749)', () => {
   const orders = ['natural-first', 'narrow-first'] as const;
   const parents = ['max-content', 'min-content'] as const;
   const layouts = ['column', 'row'] as const;
   for (const parent of parents) {
     for (const layout of layouts) {
       for (const order of orders) {
-        it(`${parent} em ${layout} (${order}): igual ao pai em px da largura resolvida`, () => {
+        it(`${parent} in ${layout} (${order}): equal to the px parent of the resolved width`, () => {
           const at = drawHugged(order, parent, layout);
           const resolved = at('wrap').width;
           const ref = drawHugged(order, resolved, layout);

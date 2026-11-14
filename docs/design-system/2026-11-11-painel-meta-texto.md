@@ -1,13 +1,13 @@
-# Painel da fila lê os campos-lista do meta — 2026-11-11 (épico `epic/painel-meta-texto`)
+# Queue panel reads the meta's list fields — 2026-11-11 (épico `epic/painel-meta-texto`)
 
 ## Pendências
 
-Nenhuma.
+None.
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do design system: a etapa só muda a página do painel da fila (skill `implementar-fila`), fora da app.
+Sem impacto on the design system's Mapping artifact: the stage only changes the queue panel page (`implementar-fila` skill), outside the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

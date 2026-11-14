@@ -1,7 +1,7 @@
-// VL2 da etapa "variáveis no formato 4" (#1504): o `carousel.json` da material3-compose escreve cada
-// subexpressão longa uma vez, num `let`, e a usa com `$var`, em vez de repetir o trecho (eram 107 kB
-// formatado, quase todo repetição). O teste lê o arquivo como está (com `let` e `$var`), não o
-// componente já trocado pelo `parseComponent`.
+// VL2 of the "variables in format 4" stage (#1504): the material3-compose `carousel.json` writes each
+// long subexpression once, in a `let`, and uses it with `$var`, instead of repeating the snippet (it was 107 kB
+// formatted, almost all repetition). The test reads the file as it is (with `let` and `$var`), not the
+// component already replaced by `parseComponent`.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseComponentText } from '../../src/model/components/parseComponent';
@@ -10,10 +10,10 @@ const FILE = 'libraries/material3-compose/components/carousel.json';
 const text = readFileSync(FILE, 'utf8');
 const file = JSON.parse(text) as { template: { let?: Record<string, unknown> } };
 
-/** O tamanho, em caracteres, a partir do qual uma subexpressão não pode se repetir. */
+/** The size, in characters, from which a subexpression cannot repeat. */
 const MAX_REPEATED_CHARS = 200;
 
-/** Toda subexpressão (objeto ou lista) do arquivo, serializada, com as de dentro dos `let`. */
+/** Every subexpression (object or list) of the file, serialized, including those inside the `let`s. */
 function subexpressions(node: unknown, found: string[] = []): string[] {
   if (typeof node !== 'object' || node === null) return found;
   found.push(JSON.stringify(node));
@@ -22,8 +22,8 @@ function subexpressions(node: unknown, found: string[] = []): string[] {
   return found;
 }
 
-describe('carousel.json com variáveis (let e $var)', () => {
-  it('nenhuma subexpressão de mais de 200 caracteres aparece mais de uma vez', () => {
+describe('carousel.json with variables (let and $var)', () => {
+  it('no subexpression of more than 200 characters appears more than once', () => {
     const counts = new Map<string, number>();
     for (const sub of subexpressions(file)) {
       if (sub.length > MAX_REPEATED_CHARS) counts.set(sub, (counts.get(sub) ?? 0) + 1);
@@ -34,14 +34,14 @@ describe('carousel.json com variáveis (let e $var)', () => {
     expect(repeated).toEqual([]);
   });
 
-  it('declara variáveis no quadro raiz e todas são usadas', () => {
+  it('declares variables in the root frame and all of them are used', () => {
     const declared = Object.keys(file.template.let ?? {});
     expect(declared.length).toBeGreaterThan(0);
     const used = new Set([...text.matchAll(/"\$var":\s*"([^"]+)"/g)].map((m) => m[1]));
     expect(declared.filter((name) => !used.has(name))).toEqual([]);
   });
 
-  it('o componente é válido, sem erro nem aviso, e o lido não tem let nem $var', () => {
+  it('the component is valid, without errors or warnings, and the parsed one has no let or $var', () => {
     const result = parseComponentText(text);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -51,7 +51,7 @@ describe('carousel.json com variáveis (let e $var)', () => {
     expect(expanded).not.toContain('"$var"');
   });
 
-  it('o arquivo formatado fica abaixo de 60 kB (era 107 kB sem variáveis)', () => {
+  it('the formatted file stays below 60 kB (it was 107 kB without variables)', () => {
     expect(Buffer.byteLength(text, 'utf8')).toBeLessThan(60_000);
   });
 });

@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// CL1, achado 3.1 (#1890): o lote do R17.14 usa o `text-field` num tamanho que o servidor aceita
-// (nunca abaixo do `minSize`) e o `size` do componente não fica abaixo do `minSize`.
+// CL1, finding 3.1 (#1890): the R17.14 batch uses the `text-field` at a size the server accepts
+// (never below `minSize`) and the component's `size` does not fall below `minSize`.
 
 const ROOT = join(__dirname, '../..');
 const component = JSON.parse(
@@ -35,7 +35,7 @@ describe('R17.14 e o text-field da Material 3', () => {
     }
   });
 
-  it('o R17.29 mede a tinta do light num recorte (os cantos do PNG também são brancos)', () => {
+  it('R17.29 measures the light ink in a crop (the PNG corners are white too)', () => {
     const row = readFileSync(join(ROOT, 'docs/TESTING.md'), 'utf8')
       .split('\n')
       .find((line) => line.startsWith('| R17.29 |'));

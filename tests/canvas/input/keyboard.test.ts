@@ -5,7 +5,7 @@ const key = (type: 'keydown' | 'keyup', code = 'Space') =>
   new KeyboardEvent(type, { code, bubbles: true, cancelable: true });
 
 describe('watchSpaceKey', () => {
-  it('acompanha o Espaço e avisa a cada mudança', () => {
+  it('follows Space and reports each change', () => {
     const onChange = vi.fn();
     const space = watchSpaceKey(onChange);
     const down = key('keydown');
@@ -18,7 +18,7 @@ describe('watchSpaceKey', () => {
     space.dispose();
   });
 
-  it('ignora outras teclas e o Espaço digitado num campo', () => {
+  it('ignores other keys and Space typed in a field', () => {
     const onChange = vi.fn();
     const space = watchSpaceKey(onChange);
     window.dispatchEvent(key('keydown', 'KeyA'));
@@ -31,7 +31,7 @@ describe('watchSpaceKey', () => {
     space.dispose();
   });
 
-  it('perder o foco solta a tecla; depois de `dispose` não escuta mais', () => {
+  it('losing focus releases the key; after `dispose` it no longer listens', () => {
     const space = watchSpaceKey(() => undefined);
     window.dispatchEvent(key('keydown'));
     window.dispatchEvent(new Event('blur'));
@@ -42,8 +42,8 @@ describe('watchSpaceKey', () => {
   });
 });
 
-describe('watchSpaceKey: foco em campo (CR canvas/store, item 18)', () => {
-  it('soltar o Espaço num campo zera o estado', () => {
+describe('watchSpaceKey: focus in a field (CR canvas/store, item 18)', () => {
+  it('releasing Space in a field resets the state', () => {
     const space = watchSpaceKey(() => undefined);
     window.dispatchEvent(key('keydown'));
     expect(space.down()).toBe(true);
@@ -55,7 +55,7 @@ describe('watchSpaceKey: foco em campo (CR canvas/store, item 18)', () => {
     space.dispose();
   });
 
-  it('o keydown não é cancelado num link, botão ou role=button, nem em campo', () => {
+  it('keydown is not cancelled on a link, button or role=button, nor in a field', () => {
     const space = watchSpaceKey(() => undefined);
     for (const make of [
       () => document.createElement('input'),
@@ -88,13 +88,13 @@ describe('watchSpaceKey: foco em campo (CR canvas/store, item 18)', () => {
 });
 
 describe('isEditable', () => {
-  it('campos de texto, botões e conteúdo editável', () => {
+  it('text fields, buttons and editable content', () => {
     expect(isEditable(document.createElement('textarea'))).toBe(true);
     expect(isEditable(document.createElement('button'))).toBe(true);
     const div = document.createElement('div');
     expect(isEditable(div)).toBe(false);
     div.contentEditable = 'true';
-    // jsdom não calcula `isContentEditable`: simula o navegador.
+    // jsdom does not compute `isContentEditable`: simulates the browser.
     Object.defineProperty(div, 'isContentEditable', { value: true });
     expect(isEditable(div)).toBe(true);
     expect(isEditable(null)).toBe(false);

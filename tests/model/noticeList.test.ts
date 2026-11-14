@@ -11,15 +11,15 @@ import {
 import { noticeProject } from '../components/noticeFixtures';
 import { layerOf } from './specFixtures';
 
-// Lista da janela Avisos (etapa #486, AV3): grupos por aviso, linhas por anotação e contagens.
+// Notices window list (stage #486, AV3): groups by notice, rows by annotation and counts.
 
 const title = (g: { usage: { scope: string; key?: string; column?: string } }) =>
   [g.usage.scope, g.usage.key, g.usage.column].filter(Boolean).join(':');
 
 describe('buildNoticeList', () => {
-  it('ordena os grupos por gravidade e, depois, pela ordem da especialização', () => {
+  it('sorts the groups by severity and then by specialization order', () => {
     const groups = buildNoticeList(noticeProject(), {});
-    // removed (Gone) > deprecated (campo legacyStyle) > diverges (coluna) > pending (tipo Alert)
+    // removed (Gone) > deprecated (field legacyStyle) > diverges (column) > pending (type Alert)
     expect(groups.map((g) => g.usage.notice.kind)).toEqual([
       'removed',
       'deprecated',
@@ -34,7 +34,7 @@ describe('buildNoticeList', () => {
     ]);
   });
 
-  it('traz as linhas de cada grupo: marcação, camada, anotação e valor no campo', () => {
+  it('brings the rows of each group: marking, layer, annotation and field value', () => {
     const groups = buildNoticeList(noticeProject(), {});
     const deprecated = groups[1]!;
     expect(deprecated.count).toBe(1);
@@ -42,20 +42,21 @@ describe('buildNoticeList', () => {
     expect(row?.annotation.id).toBe('AA');
     expect(row?.marking.id).toBe('M1');
     expect(row?.path.map((m) => m.id)).toEqual(['M1']);
+    // pt-BR kept: shared fixture data asserted by tests/components (noticeFixtures)
     expect(row?.layer.name).toBe('Componentes');
     expect(row?.value).toBe('x');
-    // aviso de tipo: sem valor
+    // type notice: no value
     expect(groups[0]!.rows[0]?.value).toBeUndefined();
-    // aviso de coluna: as células com valor
+    // column notice: the cells with a value
     expect(groups[2]!.rows[0]?.value).toEqual(['onTap']);
   });
 
-  it('filtra por kind', () => {
+  it('filters by kind', () => {
     const groups = buildNoticeList(noticeProject(), { kind: 'deprecated' });
     expect(groups.map((g) => g.usage.notice.kind)).toEqual(['deprecated']);
   });
 
-  it('"Só avisos em uso" esconde o aviso que nenhuma anotação usa', () => {
+  it('"Only notices in use" hides the notice that no annotation uses', () => {
     let p = noticeProject();
     p = setFieldValue(p, 'AA', 'legacyStyle', '');
     expect(
@@ -67,17 +68,18 @@ describe('buildNoticeList', () => {
     expect(all[1]!.count).toBe(0);
   });
 
-  it('"Só camadas visíveis" tira as linhas de camadas fora da lista', () => {
+  it('"Only visible layers" drops the rows of layers outside the list', () => {
     const p = noticeProject();
     expect(buildNoticeList(p, { onlyLayers: [] })).toEqual([]);
     expect(buildNoticeList(p, { onlyLayers: p.layers }).length).toBe(4);
     expect(buildNoticeList(p, { onlyLayers: [], inUseOnly: false })).toHaveLength(4);
   });
 
-  it('o aviso de campo vazio não afeta a anotação nem a lista', () => {
+  it('the empty-field notice affects neither the annotation nor the list', () => {
     const p = addTypedAnnotation(noticeProject(), {
       id: 'AA2',
       markingId: 'M1',
+      // pt-BR kept: shared fixture data (noticeFixtures) asserted by tests/components
       layerId: layerOf(noticeProject(), 'avisos', 'componentes'),
       type: { specId: 'avisos', typeId: 'alert' },
       parentAnnotationId: null,
@@ -95,19 +97,19 @@ describe('buildNoticeList', () => {
 });
 
 describe('noticeCounts', () => {
-  it('conta as anotações com algum aviso, no total e por kind', () => {
+  it('counts the annotations with any notice, in total and by kind', () => {
     const counts = noticeCounts(noticeProject(), {});
-    // AA (pending, deprecated, diverges) e AG (removed); AP não tem aviso
+    // AA (pending, deprecated, diverges) and AG (removed); AP has no notice
     expect(counts.total).toBe(2);
     expect(counts.byKind).toEqual({ removed: 1, deprecated: 1, diverges: 1, pending: 1 });
   });
 
-  it('o total não depende do filtro de kind', () => {
+  it('the total does not depend on the kind filter', () => {
     expect(noticeCounts(noticeProject(), { kind: 'removed' }).total).toBe(2);
   });
 
-  it('com "Só avisos em uso" desmarcado conta os avisos listados (grupos), não as anotações', () => {
-    // sem nenhuma anotação com aviso: a lista tem um grupo por aviso e os botões não podem dar 0
+  it('with "Only notices in use" unchecked it counts the listed notices (groups), not the annotations', () => {
+    // with no annotation having a notice: the list has one group per notice and the buttons cannot show 0
     let p = noticeProject();
     p = setFieldValue(p, 'AA', 'legacyStyle', '');
     const groups = buildNoticeList(p, { inUseOnly: false });
@@ -121,31 +123,31 @@ describe('noticeCounts', () => {
       );
   });
 
-  it('um projeto só com avisos pending e sem anotações conta os grupos', () => {
+  it('a project with only pending notices and no annotations counts the groups', () => {
     const base = noticeProject();
     const p = { ...base, annotations: [], arrows: [] };
     const counts = noticeCounts(p, { inUseOnly: false });
     expect(counts.total).toBe(buildNoticeList(p, { inUseOnly: false }).length);
     expect(counts.total).toBeGreaterThan(0);
     expect(counts.byKind.pending).toBe(1);
-    // marcado, segue contando anotações
+    // checked, it keeps counting annotations
     expect(noticeCounts(p, { inUseOnly: true })).toMatchObject({
       unit: 'annotations',
       total: 0,
     });
   });
 
-  it('com o filtro marcado a unidade é anotação', () => {
+  it('with the filter checked the unit is annotation', () => {
     expect(noticeCounts(noticeProject(), {}).unit).toBe('annotations');
   });
 
-  it('um projeto sem avisos tem total 0', () => {
+  it('a project with no notices has total 0', () => {
     expect(noticeCounts({ ...noticeProject(), specializations: [] }, {}).total).toBe(0);
   });
 });
 
 describe('annotationNotices', () => {
-  it('lista os avisos que afetam a anotação', () => {
+  it('lists the notices that affect the annotation', () => {
     const p = noticeProject();
     expect(
       annotationNotices(p, 'AA')
@@ -176,13 +178,13 @@ describe('changeNotices', () => {
   const kinds = (list: readonly { notice: { kind: string } }[]) =>
     list.map((u) => u.notice.kind).sort();
 
-  it('a criação da anotação traz todos os avisos que ela passa a ter', () => {
+  it('creating the annotation brings every notice it starts to have', () => {
     expect(
       kinds(changeNotices(noticeProject(), change('annotation', 'create', null), '')),
     ).toEqual(['deprecated', 'diverges', 'pending']);
   });
 
-  it('a troca de tipo traz os avisos do tipo', () => {
+  it("changing the type brings the type's notices", () => {
     expect(
       kinds(
         changeNotices(noticeProject(), change('annotation', 'update', 'type'), 'type'),
@@ -190,7 +192,7 @@ describe('changeNotices', () => {
     ).toEqual(['pending']);
   });
 
-  it('o valor de um campo traz o aviso do campo e os das colunas dele', () => {
+  it("a field value brings the field's notice and its columns' notices", () => {
     const p = noticeProject();
     expect(
       kinds(
@@ -212,7 +214,7 @@ describe('changeNotices', () => {
     ).toEqual(['diverges']);
   });
 
-  it('outras entidades, campos e remoções não trazem aviso', () => {
+  it('other entities, fields and removals bring no notice', () => {
     const p = noticeProject();
     expect(changeNotices(p, change('marking', 'update', 'name'), 'name')).toEqual([]);
     expect(changeNotices(p, change('annotation', 'update', 'name'), 'name')).toEqual([]);

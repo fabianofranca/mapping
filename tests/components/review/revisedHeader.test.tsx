@@ -8,11 +8,11 @@ import { NEW_IMAGE_PATH, richScenario } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 import { REVISED_AT, revisedScenario } from './revisedFixture';
 
-// Cabeçalho da proposta revisada (etapa #644, CP3): "Revisada pelo agente em <data>: …",
-// sem as contagens zeradas.
+// Header of the revised proposal (stage #644, CP3): "Revised by the agent on <date>: …",
+// without the zero counts.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
@@ -20,7 +20,7 @@ afterEach(cleanup);
 async function showProposal(proposal = revisedScenario().proposal) {
   const h = await openReviewHarness({
     proposals: [proposal],
-    files: { [NEW_IMAGE_PATH]: 'imagem' },
+    files: { [NEW_IMAGE_PATH]: 'image' },
   });
   expect(h.review.open('P1').ok).toBe(true);
   act(() => h.review.select({ level: 'proposal', id: null }));
@@ -28,28 +28,28 @@ async function showProposal(proposal = revisedScenario().proposal) {
   return h;
 }
 
-describe('linha da revisão no cabeçalho da proposta', () => {
-  it('diz a data e só as contagens maiores que zero', async () => {
+describe('revision line in the proposal header', () => {
+  it('states the date and only the counts greater than zero', async () => {
     await showProposal();
-    const date = formatFullDate(REVISED_AT, 'pt-BR');
+    const date = formatFullDate(REVISED_AT, 'en-US');
     expect(
-      screen.getByText(`Revisada pelo agente em ${date}: 1 trocada(s), 1 nova(s)`),
+      screen.getByText(`Revised by the agent on ${date}: 1 replaced, 1 new`),
     ).toBeTruthy();
-    expect(screen.queryByText(/retirada/)).toBeNull();
+    expect(screen.queryByText(/withdrawn/)).toBeNull();
   });
 
-  it('proposta sem revisão não mostra a linha', async () => {
+  it('proposal without a revision does not show the line', async () => {
     await showProposal(richScenario().proposal);
-    expect(screen.queryByText(/^Revisada pelo agente/)).toBeNull();
+    expect(screen.queryByText(/^Revised by the agent/)).toBeNull();
   });
 });
 
 describe('revisionParts', () => {
-  it('omite as partes zeradas e diz "nenhuma mudança" quando todas são zero', () => {
-    expect(revisionParts({ changed: 0, added: 0, dropped: 2 })).toBe('2 retirada(s)');
+  it('omits the zero parts and says "no changes" when all are zero', () => {
+    expect(revisionParts({ changed: 0, added: 0, dropped: 2 })).toBe('2 withdrawn');
     expect(revisionParts({ changed: 3, added: 0, dropped: 1 })).toBe(
-      '3 trocada(s), 1 retirada(s)',
+      '3 replaced, 1 withdrawn',
     );
-    expect(revisionParts({ changed: 0, added: 0, dropped: 0 })).toBe('nenhuma mudança');
+    expect(revisionParts({ changed: 0, added: 0, dropped: 0 })).toBe('no changes');
   });
 });

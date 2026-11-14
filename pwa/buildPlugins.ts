@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { channelManifest, stampServiceWorker, type BuildChannel } from './build';
 import { applyCsp } from './csp';
 
-/** FNV-1a de 32 bits em hexadecimal: basta para distinguir um build do outro. */
+/** 32-bit FNV-1a in hexadecimal: enough to tell one build from another. */
 function hash(text: string): string {
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
@@ -14,15 +14,15 @@ function hash(text: string): string {
 }
 
 /**
- * Content Security Policy do `index.html` (etapa 2.4). Precisa ver o HTML já com o JS e o
- * CSS embutidos, então roda depois do vite-plugin-singlefile e antes do `serviceWorker()`,
- * cujo hash do build precisa enxergar o HTML já com a CSP. Se a política não bater com
- * os blocos embutidos, o build falha.
+ * Content Security Policy of the `index.html` (stage 2.4). It needs to see the HTML with the JS
+ * and CSS already embedded, so it runs after vite-plugin-singlefile and before `serviceWorker()`,
+ * whose build hash must see the HTML already carrying the CSP. If the policy does not match
+ * the embedded blocks, the build fails.
  *
- * A ordem não depende da versão do singlefile (a 2.3.3 embute na fase normal; a 2.3.4, em
- * `order: 'post'`): os nossos plugins têm `enforce: 'post'` (rodam depois dos plugins comuns
- * e do singlefile na lista) e `generateBundle` com `order: 'post'`; entre eles vale a ordem
- * da lista do `vite.config.ts` (singlefile, CSP, sw). Travado por `tests/app/pluginOrder.test.ts`.
+ * The order does not depend on the singlefile version (2.3.3 embeds in the normal phase; 2.3.4,
+ * in `order: 'post'`): our plugins have `enforce: 'post'` (they run after the regular plugins
+ * and after singlefile in the list) and `generateBundle` with `order: 'post'`; between them the
+ * order of the `vite.config.ts` list holds (singlefile, CSP, sw). Locked by `tests/app/pluginOrder.test.ts`.
  */
 export function contentSecurityPolicy(): Plugin {
   return {
@@ -33,8 +33,7 @@ export function contentSecurityPolicy(): Plugin {
       order: 'post',
       handler(_options, bundle) {
         const html = bundle['index.html'];
-        if (html?.type !== 'asset')
-          throw new Error('index.html não encontrado no bundle');
+        if (html?.type !== 'asset') throw new Error('index.html not found in the bundle');
         html.source = applyCsp(String(html.source), 'app');
       },
     },
@@ -42,10 +41,10 @@ export function contentSecurityPolicy(): Plugin {
 }
 
 /**
- * Publica o service worker (`pwa/sw.js`) carimbado com um hash do index.html:
- * cada build novo muda o sw.js, e é isso que faz o navegador detectar a
- * "nova versão". Publica também o manifest do canal (o do preview tem outro
- * nome). Ficam fora de `public/` para poderem ser transformados.
+ * Publishes the service worker (`pwa/sw.js`) stamped with a hash of the index.html:
+ * every new build changes the sw.js, and that is what makes the browser detect the
+ * "new version". It also publishes the channel's manifest (the preview one has another
+ * name). They stay outside `public/` so they can be transformed.
  */
 export function serviceWorker(channel: BuildChannel): Plugin {
   return {
@@ -56,10 +55,12 @@ export function serviceWorker(channel: BuildChannel): Plugin {
       order: 'post',
       handler(_options, bundle) {
         const html = bundle['index.html'];
-        if (html?.type !== 'asset')
-          throw new Error('index.html não encontrado no bundle');
-        // O guia (public/guia/, gerado antes do build) também está no cache: mudou, o sw.js muda.
-        const guide = readFileSync('public/guia/index.html', 'utf8');
+        if (html?.type !== 'asset') throw new Error('index.html not found in the bundle');
+        // The guide (public/guide/, generated before the build) and the redirect page of its old
+        // address (public/guia/) are in the cache too: if they change, the sw.js changes.
+        const guide =
+          readFileSync('public/guide/index.html', 'utf8') +
+          readFileSync('public/guia/index.html', 'utf8');
         const sw = stampServiceWorker(
           readFileSync('pwa/sw.js', 'utf8'),
           hash(String(html.source) + guide),

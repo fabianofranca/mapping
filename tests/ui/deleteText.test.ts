@@ -14,36 +14,36 @@ import {
   sampleThread,
 } from '../model/threadFixtures';
 
-// Trava o que o roteiro (docs/TESTING.md, R22.18 e R3.10) afirma sobre os textos da app.
-describe('textos citados no roteiro', () => {
+// Locks what the script (docs/TESTING.md, R22.18 and R3.10) claims about the app texts.
+describe('texts cited in the script', () => {
   beforeEach(() => {
-    locale.value = 'pt-BR';
+    locale.value = 'en-US';
   });
 
-  it('R22.18: "Vão embora 5 mensagens" por autor, do que mais escreveu ao que menos, empate alfabético', () => {
-    const teste = {
+  it('R22.18: "5 messages will be gone" by author, from who wrote the most to who wrote the least, alphabetical tie', () => {
+    const cloud = {
       kind: 'human' as const,
-      name: 'Teste Nuvem',
-      email: 'teste@exemplo.com',
+      name: 'Cloud Test',
+      email: 'test@example.com',
     };
-    const testador = { kind: 'agent' as const, name: 'agente-testador', email: null };
+    const tester = { kind: 'agent' as const, name: 'agent-tester', email: null };
     const thread = sampleThread({
       messages: [
         message('m1', T0, HUMAN),
-        message('m2', T1, teste),
+        message('m2', T1, cloud),
         message('m3', T2, AGENT),
-        message('m4', T3, testador),
-        message('m5', T3, teste),
+        message('m4', T3, tester),
+        message('m5', T3, cloud),
       ],
     });
     expect(impactText(deleteImpact(thread, null))).toBe(
-      'Vão embora 5 mensagens: 2 de Teste Nuvem, 1 de agente-testador (agente), 1 de Claude Code (agente), 1 de Marina Alves.',
+      '5 messages will be gone: 2 from Cloud Test, 1 from agent-tester (agent), 1 from Claude Code (agent), 1 from Marina Alves.',
     );
   });
 
-  it('R3.10: a aplicação traz o nome entre aspas', () => {
+  it('R3.10: the application message carries the name in quotes', () => {
     expect(t('spec.appliedMessage', { name: 'Material 3 (Compose)', layers: 3 })).toBe(
-      '"Material 3 (Compose)" aplicada: 3 camada(s) criada(s).',
+      '"Material 3 (Compose)" applied: 3 layer(s) created.',
     );
   });
 });

@@ -1,4 +1,4 @@
-// fiel.mjs: node fiel.mjs <pasta da biblioteca> [formatVersion]
+// fiel.mjs: node fiel.mjs <library folder> [formatVersion]
 import fs from 'node:fs';
 const dir = process.argv[2] + '/components/';
 const version = Number(process.argv[3] ?? 4);
@@ -107,7 +107,7 @@ write(
     fill: '#FFFFFF',
     layout: { type: 'column', gap: 8, padding: 20 },
     children: [
-      { type: 'rect', name: 'régua', width: 'fill', height: 6, fill: '#6D4C41' },
+      { type: 'rect', name: 'ruler', width: 'fill', height: 6, fill: '#6D4C41' },
       {
         type: 'frame',
         name: 'cartao',
@@ -158,7 +158,7 @@ write(
             default: '#9E9E9E',
           },
           children: [
-            { type: 'text', name: 'rótulo', text: { $field: 'label' }, color: '#000000' },
+            { type: 'text', name: 'label', text: { $field: 'label' }, color: '#000000' },
           ],
         },
       },
@@ -195,7 +195,7 @@ write(
     fill: '#FFFFFF',
     layout: { type: 'column', gap: 4, padding: 5 },
     children: [
-      { type: 'rect', name: 'régua', width: 'fill', height: 4, fill: '#E65100' },
+      { type: 'rect', name: 'ruler', width: 'fill', height: 4, fill: '#E65100' },
       {
         type: 'text',
         name: 'linha',
@@ -244,7 +244,7 @@ write(
     fill: '#FFFFFF',
     layout: { type: 'column', gap: 8, padding: 10 },
     children: [
-      { type: 'rect', name: 'régua', width: 'fill', height: 4, fill: '#827717' },
+      { type: 'rect', name: 'ruler', width: 'fill', height: 4, fill: '#827717' },
       {
         type: 'text',
         name: 'linha',
@@ -288,13 +288,13 @@ write(
   { preview: { label: 'novo' } },
 );
 
-// MC0 (R25.91 e R25.92): o `badge` vira duas caixas de texto de 40 × 28 numa peça de 140 × 50. A da
-// esquerda (azul `#0D47A1`, em 10, 10) é um texto cortado (`wrap` `none`) de dois parágrafos com
-// `align` `center`: `HHHHHHH` (cerca de 50 de largura, mais larga que a caixa) e `H`, então a linha
-// curta começa no bloco, não no centro da caixa. A da direita (vermelha `#B71C1C`, em 90, 10) é um
-// `cap-middle` de três linhas numa caixa de duas: só duas se desenham, centradas pelo bloco delas
-// (o `maxLines` 3 só cala o aviso `texto maior que a caixa`: não corta nada).
-// Só na versão 4 (as duas chaves não existem antes dela; o R25.2 segue com as oito peças e 15 erros).
+// MC0 (R25.91 and R25.92): the `badge` becomes two 40 × 28 text boxes in a 140 × 50 piece. The one on
+// the left (blue `#0D47A1`, at 10, 10) is a clipped text (`wrap` `none`) of two paragraphs with
+// `align` `center`: `HHHHHHH` (about 50 wide, wider than the box) and `H`, so the short line
+// starts at the block, not at the center of the box. The one on the right (red `#B71C1C`, at 90, 10) is a
+// three-line `cap-middle` in a two-line box: only two are drawn, centered by their block
+// (`maxLines` 3 only silences the `text larger than the box` warning: it cuts nothing).
+// Only in version 4 (the two keys do not exist before it; R25.2 still has the eight pieces and 15 errors).
 if (version >= 4) {
   const box = (name, left, color, text, font) => ({
     type: 'text',
@@ -328,11 +328,11 @@ if (version >= 4) {
   );
 }
 
-// MC1 (R25.93 a R25.95): o `snackbar` vira uma peça de 140 × 80 com a linha de base. À esquerda, um
-// `H` vermelho (`#B71C1C`, em 10, 0, numa caixa de 40 × 60) com `baselinePadding.top` 30: o pé da
-// letra fica a 30 do topo do nó. À direita, uma `row` `hug` (em 70, 10) com `align` `baseline` e dois
-// `H`, um azul (`#0D47A1`, 14/20) e um verde (`#1B5E20`, 22/28): os dois pés ficam na mesma linha.
-// Só na versão 4 (as chaves não existem antes dela; o R25.2 segue com as oito peças e 15 erros).
+// MC1 (R25.93 to R25.95): the `snackbar` becomes a 140 × 80 piece with the baseline. On the left, a
+// red `H` (`#B71C1C`, at 10, 0, in a 40 × 60 box) with `baselinePadding.top` 30: the foot of the
+// letter sits 30 from the top of the node. On the right, a `hug` `row` (at 70, 10) with `align` `baseline` and two
+// `H`, a blue one (`#0D47A1`, 14/20) and a green one (`#1B5E20`, 22/28): both feet sit on the same line.
+// Only in version 4 (the keys do not exist before it; R25.2 still has the eight pieces and 15 errors).
 if (version >= 4) {
   const letter = (name, color, size, lineHeight, extra = {}) => ({
     type: 'text',
@@ -377,11 +377,11 @@ if (version >= 4) {
   );
 }
 
-// MC2 (R25.95 e R25.96): o `top-app-bar` vira uma peça de 140 × 100 com a altura pelas linhas. Uma
-// caixa vermelha (`#B71C1C`) `hug` na altura, com `minHeight` 48 ou 68 pelo `$lines` do texto `msg`,
-// e o texto de 1, 2 ou 3 linhas (`H` brancos, 20 de altura de linha, respiro de 14 em cima e embaixo)
-// pelo `style` (`small`, `center` e `medium`): a caixa mede 48, 68 e 88. Só na versão 4 (`$lines` não
-// existe antes dela; o R25.2 segue com as oito peças e 15 erros).
+// MC2 (R25.95 and R25.96): the `top-app-bar` becomes a 140 × 100 piece with the height by lines. A
+// red box (`#B71C1C`) `hug` in height, with `minHeight` 48 or 68 by the `$lines` of the `msg` text,
+// and the text of 1, 2 or 3 lines (white `H`s, 20 line height, 14 of breathing room above and below)
+// by the `style` (`small`, `center` and `medium`): the box measures 48, 68 and 88. Only in version 4 (`$lines` does not
+// exist before it; R25.2 still has the eight pieces and 15 errors).
 if (version >= 4) {
   write(
     'top-app-bar',
@@ -424,11 +424,11 @@ if (version >= 4) {
   );
 }
 
-// MC3 (R25.97 e R25.98): o `button` vira uma peça de 120 × 40 com a altura pelo rótulo. Uma caixa
-// vermelha (`#B71C1C`) `hug` na altura (`sizing.height` `hug`, `minSize` 48 × 40), com o rótulo em
-// `H` brancos (20 de altura de linha, respiro de 10 em cima e embaixo): 1 linha mede 40, 2 linhas 60,
-// 3 linhas 80. O exemplo "Rótulo longo" do tipo sai (a peça só cabe o texto longo no tamanho ajustado). Só na versão 4
-// (o `sizing` com `hug` na altura só vale no formato 4; o R25.2 segue com as oito peças e 15 erros).
+// MC3 (R25.97 and R25.98): the `button` becomes a 120 × 40 piece with the height by the label. A
+// red box (`#B71C1C`) `hug` in height (`sizing.height` `hug`, `minSize` 48 × 40), with the label in
+// white `H`s (20 line height, 10 of breathing room above and below): 1 line measures 40, 2 lines 60,
+// 3 lines 80. The type's "Long label" example is removed (the piece only fits the long text at the adjusted size). Only in version 4
+// (`sizing` with `hug` in height is only valid in format 4; R25.2 still has the eight pieces and 15 errors).
 if (version >= 4) {
   write(
     'button',
@@ -466,11 +466,11 @@ if (version >= 4) {
   );
 }
 
-// MC4 (R25.98 e R25.99): o `flow-row` vira uma peça de 140 × 80 com a quebra de fileira. Uma `row` `hug`
-// (em 10, 10, com 120 de largura) com `wrap`, `gap` 4 e `lineGap` 6 e cinco caixas de 36 × 20 de cores
-// diferentes (`#B71C1C`, `#0D47A1`, `#1B5E20`, `#E65100` e `#4A148C`): três na primeira linha (x 10,
-// 50 e 90; y 10) e duas na segunda (x 10 e 50; y 36). Só na versão 4 (`wrap` não existe antes dela; o
-// R25.2 segue com as oito peças e 15 erros).
+// MC4 (R25.98 and R25.99): the `flow-row` becomes a 140 × 80 piece with the row wrap. A `hug` `row`
+// (at 10, 10, 120 wide) with `wrap`, `gap` 4 and `lineGap` 6 and five 36 × 20 boxes of different
+// colors (`#B71C1C`, `#0D47A1`, `#1B5E20`, `#E65100` and `#4A148C`): three on the first line (x 10,
+// 50 and 90; y 10) and two on the second (x 10 and 50; y 36). Only in version 4 (`wrap` does not exist before it; R25.2
+// still has the eight pieces and 15 errors).
 if (version >= 4) {
   const box = (name, color) => ({
     type: 'rect',
@@ -511,8 +511,8 @@ if (version >= 4) {
   );
 }
 
-// Os componentes mínimos acima não desenham o `interaction`: sem tirar o campo e os exemplos que o
-// usam, o validador avisa "campo não usado" (R25.1).
+// The minimal components above do not draw `interaction`: without removing the field and the examples that
+// use it, the validator warns "unused field" (R25.1).
 const specFile = process.argv[2] + '/material3-compose.spec.json';
 const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
 for (const layer of spec.layers)
@@ -533,13 +533,13 @@ for (const layer of spec.layers)
         (e) => e.values?.interaction === undefined,
       );
     }
-// O exemplo de rótulo longo do `button` só cabe no tamanho ajustado, e a prova no `size` avisa (MC3).
+// The `button`'s long-label example only fits the adjusted size, and the proof at `size` warns (MC3).
 for (const layer of spec.layers)
   for (const type of layer.annotationTypes)
     if (version >= 4 && type.id === 'button') {
       const before = (type.examples ?? []).length;
-      type.examples = (type.examples ?? []).filter((e) => e.name !== 'Rótulo longo');
+      type.examples = (type.examples ?? []).filter((e) => e.name !== 'Long label');
       if (type.examples.length === before)
-        throw new Error('exemplo "Rótulo longo" do button não achado');
+        throw new Error('example "Long label" of the button not found');
     }
 fs.writeFileSync(specFile, JSON.stringify(spec, null, 2));

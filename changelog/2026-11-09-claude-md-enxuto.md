@@ -1,4 +1,4 @@
-# CLAUDE.md enxuto: processo de entrega em docs/PROCESS.md — 2026-11-09 (épico `epic/claude-md-enxuto`, PR #1342, MCP 0.28.15, schema v18)
+# Lean CLAUDE.md: delivery process in docs/PROCESS.md — 2026-11-09 (épico `epic/claude-md-enxuto`, PR #1342, MCP 0.28.15, schema v18)
 
 ## Adicionado
 
@@ -6,7 +6,7 @@
 
 ## Alterado
 
-- O processo de entrega ("Fluxo de trabalho", "Uso de modelos" e "Etapas") saiu do `CLAUDE.md` e foi para o `docs/PROCESS.md`, lido por quem faz trabalho de entrega; o `CLAUDE.md` ficou com as regras de toda sessão e um resumo do fluxo (de ~45 mil para ~13 mil caracteres). As referências nas mensagens do `docs/FLOW.md`, nos skills, no `ci.yml` e nos testes apontam para o novo arquivo. Na segunda fase, o `docs/PROCESS.md` ficou com a regra e o porquê (até 25 mil bytes) e o passo a passo do orquestrador, a busca de duplicadas, o corpo e a evidência do bug (com os comandos do branch `evidencias`) e o fluxo do preview foram para o `docs/FLOW.md`, com um link no lugar. Nenhuma regra mudou.
+- The delivery process ("Workflow", "Model use" and "Stages") left `CLAUDE.md` and went to `docs/PROCESS.md`, read by whoever does delivery work; `CLAUDE.md` kept the rules for every session and a summary of the flow (from ~45 thousand to ~13 thousand characters). The references in the messages of `docs/FLOW.md`, in the skills, in `ci.yml` and in the tests point to the new file. In the second phase, `docs/PROCESS.md` kept the rule and the why (up to 25 thousand bytes) and the orchestrator's step by step, the duplicate search, the bug body and evidence (with the commands of the `evidencias` branch) and the preview flow went to `docs/FLOW.md`, with a link in their place. No rule changed.
 
 ## Corrigido
 

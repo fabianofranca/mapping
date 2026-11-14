@@ -1,6 +1,6 @@
 // @vitest-environment node
-// Fases VG1 e VG2 (etapa #1440). VG1: o painel calcula a nota "Vagas k/N" com o motivo de cada `ready` que não
-// começou, diz quais começam agora e guarda o contexto do coordenador (alerta acima de 35%).
+// Phases VG1 and VG2 (stage #1440). VG1: the panel computes the "Vagas k/N" note with the reason for each `ready`
+// that has not started, says which ones start now and keeps the coordinator's context (alert above 35%).
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -11,8 +11,8 @@ import { between, section } from '../support/textSlice';
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
 const PAGE = '.claude/skills/implementar-fila/painel/index.html';
 const NOW = '2026-11-10T10:00:00Z';
-// Testes que sobem dezenas de subprocessos do painel.py: folga para o CI sob carga.
-const TEMPO_SUBPROCESSOS = 30_000;
+// Tests that spawn dozens of painel.py subprocesses: headroom for CI under load.
+const SUBPROCESS_TIMEOUT = 30_000;
 
 let dir = '';
 
@@ -30,7 +30,7 @@ function json(name: string): Array<Record<string, unknown>> {
   >;
 }
 
-function vagas(): string {
+function slots(): string {
   return String(json('meta')[0]?.vagas);
 }
 
@@ -38,8 +38,8 @@ function ficha(dep: string, toca: string, schema = 'não'): string {
   return `dep=${dep} | nivel=impact: low | mcp=não | schema=${schema} | toca=${toca}`;
 }
 
-function etapa(issue: string, plan: string, ...extra: string[]) {
-  run('row', dir, issue, `title=Etapa ${issue}`, `plan=${plan}`, ...extra);
+function stage(issue: string, plan: string, ...extra: string[]) {
+  run('row', dir, issue, `title=Stage ${issue}`, `plan=${plan}`, ...extra);
 }
 
 describe('painel.py — vagas (VG1, #1440)', () => {
@@ -52,12 +52,12 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('start --paralelo N grava meta.paralelo, repete sem mexer no runStart e, sem o campo, a conta usa 2', () => {
-    etapa('#1', ficha('nenhuma', 'a.ts'));
-    etapa('#2', ficha('nenhuma', 'b.ts'));
-    etapa('#3', ficha('nenhuma', 'c.ts'));
+  it('start --paralelo N writes meta.paralelo, repeating it leaves runStart alone and, without the field, the count uses 2', () => {
+    stage('#1', ficha('nenhuma', 'a.ts'));
+    stage('#2', ficha('nenhuma', 'b.ts'));
+    stage('#3', ficha('nenhuma', 'c.ts'));
     run('log', dir, 'x');
-    expect(vagas()).toBe('Vagas 0/2 · #1 começa · #2 começa · #3 vagas cheias');
+    expect(slots()).toBe('Vagas 0/2 · #1 começa · #2 começa · #3 vagas cheias');
     run('start', dir, '--paralelo', '3');
     const first = json('meta')[0]?.runStart;
     expect(json('meta')[0]?.paralelo).toBe(3);
@@ -75,16 +75,16 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     expect(json('meta')[0]?.paralelo).toBe(4);
   });
 
-  it('hold é campo da linha, aceito pelo row e mostrado pelo show #n', () => {
-    etapa('#1', ficha('nenhuma', 'a.ts'), 'hold=pausada pelo dono');
+  it('hold is a row field, accepted by row and shown by show #n', () => {
+    stage('#1', ficha('nenhuma', 'a.ts'), 'hold=pausada pelo dono');
     expect(json('queue')[0]?.hold).toBe('pausada pelo dono');
     expect(run('show', dir, '#1')).toContain('hold: pausada pelo dono');
-    expect(vagas()).toContain('#1 pausada pelo dono');
+    expect(slots()).toContain('#1 pausada pelo dono');
     run('row', dir, '#1', 'hold=');
-    expect(vagas()).toContain('#1 começa');
+    expect(slots()).toContain('#1 começa');
   });
 
-  it('merged acrescenta a meta.merged sem repetir e recusa #N inválido (código 2)', () => {
+  it('merged appends to meta.merged without repeating and refuses an invalid #N (code 2)', () => {
     run('merged', dir, '#7');
     run('merged', dir, '#7');
     run('merged', dir, '#8');
@@ -93,39 +93,39 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     expect(bad.status).toBe(2);
   });
 
-  it('estado das dependências: :main, meta.merged e linha concluída satisfazem; :aberta, sem estado e ? não', () => {
+  it('dependency state: :main, meta.merged and a concluída row satisfy; :aberta, no state and ? do not', () => {
     run('merged', dir, '#20');
     run('row', dir, '#30', 'status=concluída');
-    etapa('#1', ficha('#10:main', 'a.ts'));
-    etapa('#2', ficha('#11:aberta', 'b.ts'));
-    etapa('#3', ficha('#12', 'c.ts'));
-    etapa('#4', ficha('#20', 'd.ts'));
-    etapa('#5', ficha('#30', 'e.ts'));
-    etapa('#6', ficha('nenhuma', 'f.ts'));
-    etapa('#7', ficha('?', 'g.ts'));
-    etapa('#8', ficha('#11:aberta,#12', 'h.ts'));
+    stage('#1', ficha('#10:main', 'a.ts'));
+    stage('#2', ficha('#11:aberta', 'b.ts'));
+    stage('#3', ficha('#12', 'c.ts'));
+    stage('#4', ficha('#20', 'd.ts'));
+    stage('#5', ficha('#30', 'e.ts'));
+    stage('#6', ficha('nenhuma', 'f.ts'));
+    stage('#7', ficha('?', 'g.ts'));
+    stage('#8', ficha('#11:aberta,#12', 'h.ts'));
     run('start', dir, '--paralelo', '9');
-    expect(vagas()).toBe(
+    expect(slots()).toBe(
       'Vagas 0/9 · #1 começa · #2 dep #11 · #3 dep #12 · #4 começa · #5 começa · #6 começa · #7 ficha incompleta (dep) · #8 dep #11, #12 · nenhuma ready elegível',
     );
   });
 
-  it('a conta: ocupadas, começadas, ordem dos motivos, candidata que começa conta para as seguintes', () => {
+  it('the count: taken, started, order of the reasons, a candidate that starts counts for the following ones', () => {
     run('start', dir, '--paralelo', '3');
-    etapa(
+    stage(
       '#1',
       ficha('nenhuma', 'docs/TESTING.md#R12'),
       'status=em andamento',
       'started=now',
     );
-    etapa('#2', ficha('nenhuma', 'docs/TESTING.md#R25'));
-    etapa('#3', ficha('nenhuma', 'docs/TESTING.md#R12'));
-    etapa('#4', ficha('#9:aberta', 'docs/TESTING.md#R12'));
-    etapa('#5', ficha('nenhuma', 'x.ts', 'v19'), 'status=esperando dono');
-    etapa('#6', ficha('nenhuma', 'y.ts', 'v19'));
-    etapa('#7', ficha('nenhuma', 'docs/TESTING.md#R25'));
-    etapa('#8', ficha('nenhuma', 'z.ts'));
-    const out = vagas();
+    stage('#2', ficha('nenhuma', 'docs/TESTING.md#R25'));
+    stage('#3', ficha('nenhuma', 'docs/TESTING.md#R12'));
+    stage('#4', ficha('#9:aberta', 'docs/TESTING.md#R12'));
+    stage('#5', ficha('nenhuma', 'x.ts', 'v19'), 'status=esperando dono');
+    stage('#6', ficha('nenhuma', 'y.ts', 'v19'));
+    stage('#7', ficha('nenhuma', 'docs/TESTING.md#R25'));
+    stage('#8', ficha('nenhuma', 'z.ts'));
+    const out = slots();
     expect(out).toBe(
       'Vagas 1/3 · #2 começa · #3 arquivo docs/TESTING.md#R12 com #1 · #4 dep #9 · #6 schema com #5 · #7 arquivo docs/TESTING.md#R25 com #2 · #8 começa',
     );
@@ -134,118 +134,124 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     expect(show).toContain('começar agora: #2 #8');
   });
 
-  it('aguardando com started conta como começada e não mesclada; motivo hold vem antes do dep', () => {
+  it('aguardando with started counts as started and not merged; the hold reason comes before the dep', () => {
     run('start', dir, '--paralelo', '5');
-    etapa('#1', ficha('nenhuma', 'a.ts'), 'started=now');
-    etapa('#2', ficha('nenhuma', 'a.ts'));
-    etapa('#3', ficha('#99:aberta', 'q.ts'), 'hold=ordem do dono (por último)');
-    expect(vagas()).toBe(
-      'Vagas 0/5 · #2 arquivo a.ts com #1 · #3 ordem do dono (por último) · nenhuma ready elegível',
+    stage('#1', ficha('nenhuma', 'a.ts'), 'started=now');
+    stage('#2', ficha('nenhuma', 'a.ts'));
+    stage('#3', ficha('#99:aberta', 'q.ts'), 'hold=owner order (last)');
+    expect(slots()).toBe(
+      'Vagas 0/5 · #2 arquivo a.ts com #1 · #3 owner order (last) · nenhuma ready elegível',
     );
     expect(run('show', dir)).toContain('começar agora: nenhuma');
   });
 
-  it('nenhuma ready elegível quando sobra vaga; vagas cheias sem vaga', () => {
+  it('nenhuma ready elegível when a slot is left; vagas cheias without a slot', () => {
     run('start', dir, '--paralelo', '1');
-    etapa('#1', ficha('nenhuma', 'a.ts'), 'status=em andamento');
-    etapa('#2', ficha('nenhuma', 'b.ts'));
-    expect(vagas()).toBe('Vagas 1/1 · #2 vagas cheias');
+    stage('#1', ficha('nenhuma', 'a.ts'), 'status=em andamento');
+    stage('#2', ficha('nenhuma', 'b.ts'));
+    expect(slots()).toBe('Vagas 1/1 · #2 vagas cheias');
     run('row', dir, '#2', 'status=concluída');
-    expect(vagas()).toBe('Vagas 1/1');
+    expect(slots()).toBe('Vagas 1/1');
     run('row', dir, '#1', 'status=concluída');
-    expect(vagas()).toBe('Vagas 0/1 · nenhuma ready elegível');
+    expect(slots()).toBe('Vagas 0/1 · nenhuma ready elegível');
   });
 
   it(
-    'comparação do Toca em: roteiro, arquivo inteiro, ignorados, pasta, crases e ?',
+    'Toca em: comparison: script, whole file, ignored ones, folder, backticks and ?',
     () => {
       run('start', dir, '--paralelo', '9');
-      const motivo = (a: string, b: string): string => {
+      const reason = (a: string, b: string): string => {
         run('init', dir, '--force');
         run('start', dir, '--paralelo', '9');
-        etapa('#1', ficha('nenhuma', a), 'status=em andamento');
-        etapa('#2', ficha('nenhuma', b));
-        return vagas().split(' · ')[1] ?? '';
+        stage('#1', ficha('nenhuma', a), 'status=em andamento');
+        stage('#2', ficha('nenhuma', b));
+        return slots().split(' · ')[1] ?? '';
       };
-      expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md#R25')).toBe('#2 começa');
-      expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md#R12')).toBe(
+      expect(reason('docs/TESTING.md#R12', 'docs/TESTING.md#R25')).toBe('#2 começa');
+      expect(reason('docs/TESTING.md#R12', 'docs/TESTING.md#R12')).toBe(
         '#2 arquivo docs/TESTING.md#R12 com #1',
       );
-      expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md')).toBe(
+      expect(reason('docs/TESTING.md#R12', 'docs/TESTING.md')).toBe(
         '#2 ficha incompleta (toca: docs/TESTING.md)',
       );
-      expect(motivo('docs/TESTING.md', 'docs/TESTING.md#R12')).toBe(
+      expect(reason('docs/TESTING.md', 'docs/TESTING.md#R12')).toBe(
         '#2 arquivo docs/TESTING.md#R12 com #1',
       );
-      expect(motivo('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md#blocos')).toBe(
+      expect(reason('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md#blocos')).toBe(
         '#2 começa',
       );
-      expect(motivo('mcp/version.ts', 'mcp/version.ts')).toBe('#2 começa');
-      expect(motivo('changelog/a.md', 'changelog/a.md')).toBe('#2 começa');
-      expect(motivo('docs/design-system/a.md', 'docs/design-system/a.md')).toBe(
+      expect(
+        reason(
+          'docs/TESTING-NUVEM.md#full-round-in-blocks',
+          'docs/TESTING-NUVEM.md#full-round-in-blocks',
+        ),
+      ).toBe('#2 começa');
+      expect(reason('mcp/version.ts', 'mcp/version.ts')).toBe('#2 começa');
+      expect(reason('changelog/a.md', 'changelog/a.md')).toBe('#2 começa');
+      expect(reason('docs/design-system/a.md', 'docs/design-system/a.md')).toBe(
         '#2 começa',
       );
-      expect(motivo('docs/TESTING-NUVEM.md', 'docs/TESTING-NUVEM.md#ambiente')).toBe(
-        '#2 arquivo docs/TESTING-NUVEM.md#ambiente com #1',
+      expect(reason('docs/TESTING-NUVEM.md', 'docs/TESTING-NUVEM.md#environment')).toBe(
+        '#2 arquivo docs/TESTING-NUVEM.md#environment com #1',
       );
-      expect(motivo('tests/tooling/', 'tests/tooling/a.test.ts')).toBe(
+      expect(reason('tests/tooling/', 'tests/tooling/a.test.ts')).toBe(
         '#2 arquivo tests/tooling/a.test.ts com #1',
       );
-      expect(motivo('tests/tooling/**', 'tests/tooling/a.test.ts')).toBe(
+      expect(reason('tests/tooling/**', 'tests/tooling/a.test.ts')).toBe(
         '#2 arquivo tests/tooling/a.test.ts com #1',
       );
-      expect(motivo('tests/tooling/a.test.ts', 'tests/tooling/**')).toBe(
+      expect(reason('tests/tooling/a.test.ts', 'tests/tooling/**')).toBe(
         '#2 ficha incompleta (toca: tests/tooling/**)',
       );
-      expect(motivo('`./src/a.ts`, `src/b.ts`', ' src/a.ts ')).toBe(
+      expect(reason('`./src/a.ts`, `src/b.ts`', ' src/a.ts ')).toBe(
         '#2 arquivo src/a.ts com #1',
       );
-      expect(motivo('src/a.ts', '?')).toBe('#2 ficha incompleta (toca)');
-      expect(motivo('src/i18n/pt-BR.ts', 'src/i18n/pt-BR.ts')).toBe(
+      expect(reason('src/a.ts', '?')).toBe('#2 ficha incompleta (toca)');
+      expect(reason('src/i18n/pt-BR.ts', 'src/i18n/pt-BR.ts')).toBe(
         '#2 arquivo src/i18n/pt-BR.ts com #1',
       );
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
-  it('o texto da issue (decisão 1.5) vira teste e toda gravação o recalcula, inclusive log e current', () => {
+  it('the issue text (decision 1.5) becomes a test and every write recalculates it, including log and current', () => {
     run('start', dir, '--paralelo', '5');
-    etapa('#1219', ficha('nenhuma', 'docs/TESTING.md'), 'status=em andamento');
-    etapa('#1390', ficha('#1384:aberta', 'a.ts'));
-    etapa('#1273', ficha('nenhuma', 'docs/TESTING.md#R9'));
-    etapa('#1232', ficha('nenhuma', 'b.ts'));
+    stage('#1219', ficha('nenhuma', 'docs/TESTING.md'), 'status=em andamento');
+    stage('#1390', ficha('#1384:aberta', 'a.ts'));
+    stage('#1273', ficha('nenhuma', 'docs/TESTING.md#R9'));
+    stage('#1232', ficha('nenhuma', 'b.ts'));
     const esperado =
       'Vagas 1/5 · #1390 dep #1384 · #1273 arquivo docs/TESTING.md#R9 com #1219 · #1232 começa · nenhuma ready elegível';
-    expect(vagas()).toBe(esperado);
+    expect(slots()).toBe(esperado);
     run('merged', dir, '#1384');
-    expect(vagas()).toBe(
+    expect(slots()).toBe(
       'Vagas 1/5 · #1390 começa · #1273 arquivo docs/TESTING.md#R9 com #1219 · #1232 começa · nenhuma ready elegível',
     );
     run('row', dir, '#1219', 'status=concluída');
     run('log', dir, 'oi');
-    expect(vagas()).toBe(
+    expect(slots()).toBe(
       'Vagas 0/5 · #1390 começa · #1273 começa · #1232 começa · nenhuma ready elegível',
     );
     run('row', dir, '#1273', 'status=em andamento');
     run('current', dir, 'x');
-    expect(vagas()).toBe(
+    expect(slots()).toBe(
       'Vagas 1/5 · #1390 começa · #1232 começa · nenhuma ready elegível',
     );
   });
 
-  it('aceite da issue: fila de exemplo com paralelo 3', () => {
+  it('issue acceptance: example queue with paralelo 3', () => {
     run('start', dir, '--paralelo', '3');
-    etapa('#1', ficha('nenhuma', 'docs/TESTING.md#R12'), 'status=em andamento');
-    etapa('#2', ficha('nenhuma', 'docs/TESTING.md#R25'));
-    etapa('#3', ficha('nenhuma', 'docs/TESTING.md#R12'));
-    etapa('#4', ficha('#5:aberta', 'src/x.ts'));
+    stage('#1', ficha('nenhuma', 'docs/TESTING.md#R12'), 'status=em andamento');
+    stage('#2', ficha('nenhuma', 'docs/TESTING.md#R25'));
+    stage('#3', ficha('nenhuma', 'docs/TESTING.md#R12'));
+    stage('#4', ficha('#5:aberta', 'src/x.ts'));
     expect(run('show', dir)).toContain(
       'vagas: Vagas 1/3 · #2 começa · #3 arquivo docs/TESTING.md#R12 com #1 · #4 dep #5 · nenhuma ready elegível',
     );
     expect(run('show', dir)).toContain('começar agora: #2');
   });
 
-  it('context grava meta.context e contextAt; inteiro de 0 a 100, senão erro de uso (código 2)', () => {
+  it('context writes meta.context and contextAt; an integer from 0 to 100, otherwise a usage error (code 2)', () => {
     run('context', dir, '55');
     expect(json('meta')[0]?.context).toBe(55);
     expect(json('meta')[0]?.contextAt).toBe(NOW);
@@ -254,7 +260,7 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     }
   });
 
-  it('show: contexto — sem registro, 35% sem alerta, 36% com o alerta de troca', () => {
+  it('show: contexto — no record, 35% without an alert, 36% with the switch alert', () => {
     expect(run('show', dir)).toContain('contexto: —');
     run('context', dir, '35');
     const ok = run('show', dir);
@@ -268,7 +274,7 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     );
   });
 
-  it('show imprime vagas e começar agora depois de atual:', () => {
+  it('show prints vagas and começar agora after atual:', () => {
     run('current', dir, 'rodando');
     const lines = run('show', dir).split('\n');
     const i = lines.findIndex((l) => l.startsWith('atual:'));
@@ -276,16 +282,16 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     expect(lines[i + 2]).toBe('começar agora: nenhuma');
   });
 
-  it('a página mostra a nota no subtítulo e o card "Andamento" a partir de meta.grafoNos', () => {
+  it('the page shows the note in the subtitle and the "Progress" card from meta.grafoNos', () => {
     const html = readFileSync(PAGE, 'utf8');
     expect(html).toContain('id="mp-andamento"');
-    expect(html).toContain('<h2>Andamento</h2>');
+    expect(html).toContain('<h2>Progress</h2>');
     expect(html).toContain('m.grafoNos');
     expect(html).toContain('m.vagas');
-    expect(html).not.toContain('Por que há vaga livre');
+    expect(html).not.toContain('Why there is a free slot');
     expect(html).not.toContain('id="mp-vagas"');
-    expect(html).not.toContain('Dependências e ordem de entrada');
-    expect(html).not.toContain('Passo a passo');
+    expect(html).not.toContain('Dependencies and order of entry');
+    expect(html).not.toContain('Step by step');
     expect(html).not.toContain('id="mp-table"');
     expect(html.indexOf('id="mp-andamento"')).toBeLessThan(
       html.indexOf('id="mp-concluidas"'),
@@ -293,118 +299,114 @@ describe('painel.py — vagas (VG1, #1440)', () => {
   });
 });
 
-// Fase VG2 (etapa #1440): os skills e o PROCESS.md usam a nota de vagas, o contexto e a comparação por roteiro.
-describe('implementar-fila e detalhar-backlog: vagas, contexto e roteiros (VG2, #1440)', () => {
-  const fila = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+// Phase VG2 (stage #1440): the skills and PROCESS.md use the slots note, the context and the per-script comparison.
+describe('implementar-fila and detalhar-backlog: slots, context and scripts (VG2, #1440)', () => {
+  const queue = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
-  const processo = readFileSync('docs/PROCESS.md', 'utf8');
+  const processDoc = readFileSync('docs/PROCESS.md', 'utf8');
 
-  it('"Ficha da etapa" pede o estado das dependências e o toca por roteiro (decisão 7)', () => {
-    const ficha = section(fila, '### Ficha da etapa');
+  it('"Stage ficha" asks for the state of the dependencies and the toca per script (decision 7)', () => {
+    const ficha = section(queue, '### Stage ficha');
     expect(ficha).toContain(':main');
     expect(ficha).toContain(':aberta');
     expect(ficha).toContain('docs/TESTING.md#R');
-    expect(ficha).toContain('docs/TESTING-NUVEM.md#blocos');
+    expect(ficha).toContain('docs/TESTING-NUVEM.md#full-round-in-blocks');
   });
 
-  it('"1. Começo" e "Na sessão nova" rodam o start --paralelo N (decisão 1.1)', () => {
-    expect(between(fila, '## 2. Fila', '## 3. Por etapa')).toContain(
-      'painel.py start <pasta> --paralelo N',
+  it('"1. Start" and "In the new session" run start --paralelo N (decision 1.1)', () => {
+    expect(between(queue, '## 2. Queue', '## 3. Per stage')).toContain(
+      'painel.py start <folder> --paralelo N',
     );
-    expect(between(fila, '**Na sessão nova**', '## Fim')).toContain(
-      'start <pasta> --paralelo N',
+    expect(between(queue, '**In the new session**', '## End')).toMatch(
+      /start <(folder|pasta)> --paralelo N/,
     );
   });
 
-  it('"Conferências de reserva" começa pelo contexto e depois usa o começar agora (decisões 3.1 e 3.3)', () => {
-    const reserva = between(fila, '**Conferências de reserva:**', '**CI vermelho');
-    expect(reserva).toContain('painel.py context');
-    expect(reserva).toContain('começar agora');
-    expect(reserva.indexOf('painel.py context')).toBeLessThan(
-      reserva.indexOf('skill mudou na `main`'),
+  it('"Fallback checks" starts with the context and then uses começar agora (decisions 3.1 and 3.3)', () => {
+    const fallback = between(queue, '**Fallback checks:**', '**Red CI');
+    expect(fallback).toContain('painel.py context');
+    expect(fallback).toContain('começar agora');
+    expect(fallback.indexOf('painel.py context')).toBeLessThan(
+      fallback.indexOf('skill changed on `main`'),
     );
-    expect(reserva).toMatch(/Sem atrasadas, sem `começar agora`/);
+    expect(fallback).toMatch(/With no overdue ones, no `começar agora`/);
   });
 
-  it('"Paralelo" aponta para o painel.py, o roteiro e a tabela de blocos (decisões 4 a 6 e 8)', () => {
-    const paralelo = section(fila, '## Paralelo');
-    expect(paralelo).toContain('painel.py');
-    expect(paralelo).toContain('docs/TESTING.md#R12');
-    expect(paralelo).toContain('docs/TESTING-NUVEM.md#blocos');
-    expect(paralelo).toContain('vagas:');
-    expect(paralelo).toContain('começar agora:');
+  it('"Parallel" points to painel.py, the script and the blocks table (decisions 4 to 6 and 8)', () => {
+    const parallel = section(queue, '## Parallel');
+    expect(parallel).toContain('painel.py');
+    expect(parallel).toContain('docs/TESTING.md#R12');
+    expect(parallel).toContain('docs/TESTING-NUVEM.md#full-round-in-blocks');
+    expect(parallel).toContain('vagas:');
+    expect(parallel).toContain('começar agora:');
   });
 
-  it('"Painel" lista os comandos novos e as linhas novas do show (decisão 10)', () => {
-    const painel = section(fila, '## Painel');
-    for (const termo of [
-      'start <pasta> --paralelo N',
+  it('"Panel" lists the new commands and the new lines of the show (decision 10)', () => {
+    const panel = section(queue, '## Panel');
+    for (const term of [
+      'start <folder> --paralelo N',
       'hold=',
-      "merged <pasta> '#N'",
-      'context <pasta> <pct>',
+      "merged <folder> '#N'",
+      'context <folder> <pct>',
       'contexto:',
     ]) {
-      expect(painel).toContain(termo);
+      expect(panel).toContain(term);
     }
   });
 
-  it('"Mudanças na fila" tem o recado de estado, o Seguir/Segurar e o hold (decisões 9 e 3.4)', () => {
-    const mudancas = section(fila, '## Mudanças na fila durante a execução');
-    expect(mudancas).toContain('Seguir (Recomendado)');
-    expect(mudancas).toContain('Segurar');
-    expect(mudancas).toContain('hold=');
-    expect(mudancas).toContain('pausada pelo dono');
-    expect(mudancas).toContain('ordem do dono (');
+  it('"Queue changes" has the state note, the Seguir/Segurar and the hold (decisions 9 and 3.4)', () => {
+    const changes = section(queue, '## Queue changes during the run');
+    expect(changes).toContain('Seguir (Recomendado)');
+    expect(changes).toContain('Segurar');
+    expect(changes).toContain('hold=');
+    expect(changes).toContain('pausada pelo dono');
+    expect(changes).toContain('ordem do dono (');
   });
 
-  it('"Troca de sessão" mantém Acima de 35%, troca na hora e perde o aviso de filha (decisões 3.1 e 3.2)', () => {
-    const troca = section(fila, '## Troca de sessão');
-    expect(troca).toContain('Acima de 35%');
-    expect(troca).toContain('na hora');
-    expect(troca).not.toContain('a cada aviso de filha');
+  it('"Session switch" keeps Above 35%, switches right away and loses the child notice (decisions 3.1 and 3.2)', () => {
+    const switchSection = section(queue, '## Session switch');
+    expect(switchSection).toContain('Above 35%');
+    expect(switchSection).toContain('right away');
+    expect(switchSection).not.toContain('at each child notice');
   });
 
-  it('"Entre etapas" marca a dependência fora da fila como merged e começa o que o começar agora lista', () => {
-    const entre = between(fila, '7. **Entre etapas:**', '**Arquivar as sessões**');
-    expect(entre).toContain('painel.py merged');
-    expect(entre).toContain('começar agora');
+  it('"Between stages" marks the dependency outside the queue as merged and starts what começar agora lists', () => {
+    const between7 = between(queue, '7. **Between stages:**', '**Archive the sessions**');
+    expect(between7).toContain('painel.py merged');
+    expect(between7).toContain('começar agora');
   });
 
-  it('o detalhar-backlog compara o Toca em: por roteiro (decisão 11)', () => {
-    const passos = between(
-      detalhar,
-      '3. Rascunhe o plano inteiro',
-      '5. Decisão de produto',
-    );
-    expect(passos).toContain('docs/TESTING.md#R12');
-    expect(passos).toContain('docs/TESTING-NUVEM.md#blocos');
-    expect(passos).toContain('arquivo em comum');
+  it('detalhar-backlog compares the Toca em: per script (decision 11)', () => {
+    const steps = between(detalhar, '3. Draft the whole plan', '5. Product decision');
+    expect(steps).toContain('docs/TESTING.md#R12');
+    expect(steps).toContain('docs/TESTING-NUVEM.md#full-round-in-blocks');
+    expect(steps).toContain('file in common');
     expect(detalhar).toContain('mcp/version.ts');
   });
 
-  it('o PROCESS.md cita o roteiro no Toca em: do detalhamento (decisão 12)', () => {
-    const detalhe =
-      processo.split('\n').find((l) => l.includes('**Detalhar uma etapa:**')) ?? '';
-    expect(detalhe).toContain('docs/TESTING.md#R12');
-    expect(detalhe).toContain('docs/TESTING-NUVEM.md#blocos');
+  it('PROCESS.md cites the script in the Toca em: of the detailing (decision 12)', () => {
+    const detail =
+      processDoc.split('\n').find((l) => l.includes('**Detailing a stage:**')) ?? '';
+    expect(detail).toContain('docs/TESTING.md#R12');
+    expect(detail).toContain('docs/TESTING-NUVEM.md#full-round-in-blocks');
   });
 
-  it('achados da revisão: pausa sem apagar hold, linhagem, contexto da sessão nova, dep fechada e merged na conferência', () => {
-    const mudancas = section(fila, '## Mudanças na fila durante a execução');
-    expect(mudancas).toContain('sem `hold`');
-    expect(mudancas).toContain('só nos `pausada pelo dono`');
-    const reserva = between(fila, '**Conferências de reserva:**', '**CI vermelho');
-    expect(reserva).toContain('Limite de linhagem');
-    expect(reserva).toContain('painel.py merged');
-    expect(reserva).toContain('não publica');
-    const nova = between(fila, '**Na sessão nova**', '## Fim');
-    expect(nova).toContain('painel.py context');
-    expect(section(fila, '### Ficha da etapa')).toContain('fechada como concluída');
+  it('review findings: pause without clearing hold, lineage, context of the new session, closed dep and merged in the check', () => {
+    const changes = section(queue, '## Queue changes during the run');
+    expect(changes).toContain('has no `hold`');
+    expect(changes).toContain('only on the `pausada pelo dono`');
+    const fallback = between(queue, '**Fallback checks:**', '**Red CI');
+    expect(fallback).toContain('Lineage limit');
+    expect(fallback).toContain('painel.py merged');
+    expect(fallback).toContain('does not publish');
+    const fresh = between(queue, '**In the new session**', '## End');
+    expect(fresh).toContain('painel.py context');
+    expect(section(queue, '### Stage ficha')).toContain('closed as completed');
   });
 });
 
-// Fase VG3 (etapa #1440): correções da revisão final do épico.
-describe('painel.py — correções da revisão final (VG3, #1440)', () => {
+// Phase VG3 (stage #1440): fixes from the epic's final review.
+describe('painel.py — final review fixes (VG3, #1440)', () => {
   beforeEach(() => {
     dir = mkdtempSync(path.join(tmpdir(), 'vagas-'));
     run('init', dir);
@@ -415,73 +417,71 @@ describe('painel.py — correções da revisão final (VG3, #1440)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  const motivo = (a: string, b: string): string => {
+  const reason = (a: string, b: string): string => {
     run('init', dir, '--force');
     run('start', dir, '--paralelo', '9');
-    etapa('#1', ficha('nenhuma', a), 'status=em andamento');
-    etapa('#2', ficha('nenhuma', b));
-    return vagas().split(' · ')[1] ?? '';
+    stage('#1', ficha('nenhuma', a), 'status=em andamento');
+    stage('#2', ficha('nenhuma', b));
+    return slots().split(' · ')[1] ?? '';
   };
 
   it(
-    'achado 2: glob (src/i18n/*, *.ts) e pasta sem barra final casam com o que está debaixo',
+    'finding 2: glob (src/i18n/*, *.ts) and folder without a trailing slash match what is under them',
     () => {
-      expect(motivo('src/i18n/*', 'src/i18n/pt-BR.ts')).toBe(
+      expect(reason('src/i18n/*', 'src/i18n/pt-BR.ts')).toBe(
         '#2 arquivo src/i18n/pt-BR.ts com #1',
       );
-      expect(motivo('src/i18n/pt-BR.ts', 'src/i18n/pt*.ts')).toBe(
+      expect(reason('src/i18n/pt-BR.ts', 'src/i18n/pt*.ts')).toBe(
         '#2 arquivo src/i18n/pt*.ts com #1',
       );
-      expect(motivo('src/model/*.ts', 'src/model/a.ts')).toBe(
+      expect(reason('src/model/*.ts', 'src/model/a.ts')).toBe(
         '#2 arquivo src/model/a.ts com #1',
       );
-      expect(motivo('src/model/*.ts', 'src/store/a.ts')).toBe('#2 começa');
-      expect(motivo('src/model', 'src/model/a.ts')).toBe(
+      expect(reason('src/model/*.ts', 'src/store/a.ts')).toBe('#2 começa');
+      expect(reason('src/model', 'src/model/a.ts')).toBe(
         '#2 arquivo src/model/a.ts com #1',
       );
-      expect(motivo('src/model', 'src/modelo/a.ts')).toBe('#2 começa');
+      expect(reason('src/model', 'src/modelo/a.ts')).toBe('#2 começa');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
-  it('achado 3: anotação entre parênteses depois do caminho é descartada, mesmo com vírgula dentro', () => {
-    expect(motivo('src/store/session.ts (novo método)', 'src/store/session.ts')).toBe(
+  it('finding 3: a parenthesized note after the path is discarded, even with a comma inside', () => {
+    expect(reason('src/store/session.ts (novo método)', 'src/store/session.ts')).toBe(
       '#2 arquivo src/store/session.ts com #1',
     );
-    expect(motivo('src/a.ts (um, dois), src/b.ts', 'src/b.ts')).toBe(
+    expect(reason('src/a.ts (um, dois), src/b.ts', 'src/b.ts')).toBe(
       '#2 arquivo src/b.ts com #1',
     );
   });
 
-  it('achado 4: âncoras diferentes separam os .md de docs/ e da raiz; nos outros arquivos conflitam', () => {
+  it('finding 4: different anchors separate the .md of docs/ and of the root; in other files they conflict', () => {
     expect(
-      motivo(
-        'docs/ARCHITECTURE.md#desempenho',
-        'docs/ARCHITECTURE.md#espacos-pertencimento-e-gestos',
+      reason(
+        'docs/ARCHITECTURE.md#performance',
+        'docs/ARCHITECTURE.md#spaces-containment-and-gestures',
       ),
     ).toBe('#2 começa');
-    expect(motivo('viewer/README.md#X', 'viewer/README.md#Y')).toBe(
+    expect(reason('viewer/README.md#X', 'viewer/README.md#Y')).toBe(
       '#2 arquivo viewer/README.md#Y com #1',
     );
-    expect(motivo('docs/TESTING.md#R1', 'docs/TESTING.md#R2')).toBe('#2 começa');
+    expect(reason('docs/TESTING.md#R1', 'docs/TESTING.md#R2')).toBe('#2 começa');
   });
 
-  it('achado 5: item vazio na dependência é ignorado; hold sai quando a etapa deixa de aguardar', () => {
-    etapa('#1', ficha('#12:main,', 'a.ts'));
-    etapa('#2', ficha('#12:main,,#13:main', 'b.ts'));
-    expect(vagas()).toBe('Vagas 0/9 · #1 começa · #2 começa · nenhuma ready elegível');
-    etapa('#3', ficha('nenhuma', 'c.ts'), 'hold=pausada pelo dono');
+  it('finding 5: an empty item in the dependency is ignored; hold goes away when the stage stops waiting', () => {
+    stage('#1', ficha('#12:main,', 'a.ts'));
+    stage('#2', ficha('#12:main,,#13:main', 'b.ts'));
+    expect(slots()).toBe('Vagas 0/9 · #1 começa · #2 começa · nenhuma ready elegível');
+    stage('#3', ficha('nenhuma', 'c.ts'), 'hold=pausada pelo dono');
     run('row', dir, '#3', 'status=em andamento');
     expect(json('queue').find((r) => r.issue === '#3')?.hold).toBe('');
-    run('row', dir, '#3', 'status=aguardando', 'hold=ordem do dono (por último)');
-    expect(json('queue').find((r) => r.issue === '#3')?.hold).toBe(
-      'ordem do dono (por último)',
-    );
+    run('row', dir, '#3', 'status=aguardando', 'hold=owner order (last)');
+    expect(json('queue').find((r) => r.issue === '#3')?.hold).toBe('owner order (last)');
   });
 
-  it('achado 10: meta.vagasItens guarda cada pedaço inteiro, mesmo com " · " no hold, e a página o usa', () => {
-    etapa('#1', ficha('nenhuma', 'a.ts'), 'hold=ordem do dono (a · b)');
-    etapa('#2', ficha('nenhuma', 'b.ts'));
+  it('finding 10: meta.vagasItens keeps each piece whole, even with " · " in the hold, and the page uses it', () => {
+    stage('#1', ficha('nenhuma', 'a.ts'), 'hold=ordem do dono (a · b)');
+    stage('#2', ficha('nenhuma', 'b.ts'));
     expect(json('meta')[0]?.vagasItens).toEqual([
       'Vagas 0/9',
       '#1 ordem do dono (a · b)',

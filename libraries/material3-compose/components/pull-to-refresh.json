@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "pull-to-refresh",
   "name": "Pull to refresh",
-  "description": "Área que atualiza o conteúdo ao ser puxada para baixo: o indicador circular de 40 fica no topo (spinner enquanto atualiza, seta enquanto é puxado) e as marcações filhas são o conteúdo.",
+  "description": "Area that refreshes the content when pulled down: the 40 circular indicator sits at the top (spinner while refreshing, arrow while being pulled) and the child markings are the content.",
   "size": {
     "width": 360,
     "height": 400
@@ -73,7 +73,7 @@
       },
       {
         "type": "frame",
-        "name": "indicador atualizando",
+        "name": "refreshing indicator",
         "width": 40,
         "height": 40,
         "cornerRadius": {
@@ -125,7 +125,7 @@
         "children": [
           {
             "type": "path",
-            "name": "anel",
+            "name": "ring",
             "width": 24,
             "height": 24,
             "viewBox": [24, 24],
@@ -149,7 +149,7 @@
       },
       {
         "type": "frame",
-        "name": "indicador puxando",
+        "name": "pulling indicator",
         "width": 40,
         "height": 40,
         "cornerRadius": {
@@ -203,7 +203,7 @@
         "children": [
           {
             "type": "path",
-            "name": "anel",
+            "name": "ring",
             "width": 24,
             "height": 24,
             "viewBox": [24, 24],
@@ -250,7 +250,7 @@
           },
           {
             "type": "path",
-            "name": "seta",
+            "name": "arrow",
             "width": 24,
             "height": 24,
             "viewBox": [24, 24],

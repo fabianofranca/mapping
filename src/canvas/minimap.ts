@@ -1,31 +1,31 @@
-// Contas do minimapa (proposta P3): área das imagens → caixa do minimapa e de volta.
-// Funções puras, testadas em `tests/canvas/minimap.test.ts`.
+// Minimap calculations (proposal P3): image area → minimap box and back.
+// Pure functions, tested in `tests/canvas/minimap.test.ts`.
 import { boundingBox, type Rect } from '../model';
 import { visibleArea } from './frame';
 import type { Point, Size, Viewport } from './viewport';
 
 export interface MinimapLayout {
-  /** Escala do minimapa: pixels do minimapa por unidade do canvas. */
+  /** Minimap scale: minimap pixels per canvas unit. */
   readonly scale: number;
-  /** Área do minimapa, em pixels (cabe dentro de `box`, na proporção do conteúdo). */
+  /** Minimap area, in pixels (fits inside `box`, in the content's proportion). */
   readonly size: Size;
-  /** Conteúdo desenhado (as imagens mais a parte visível). */
+  /** Drawn content (the images plus the visible part). */
   readonly content: Rect;
 }
 
-/** Retângulo que contém `a` e `b`. */
+/** Rectangle that contains `a` and `b`. */
 export function unionRect(a: Rect, b: Rect): Rect {
   return boundingBox([a, b]) ?? a;
 }
 
-/** Parte visível do canvas (unidades do canvas) para um viewport e um tamanho de tela. */
+/** Visible part of the canvas (canvas units) for a viewport and a screen size. */
 export function visibleRect(viewport: Viewport, size: Size): Rect {
   return visibleArea(size, viewport);
 }
 
 /**
- * Enquadra as imagens (e a parte visível, para a moldura nunca sair do mapa) numa
- * caixa de no máximo `box` pixels, mantendo a proporção.
+ * Fits the images (and the visible part, so the frame never leaves the map) into a
+ * box of at most `box` pixels, keeping the proportion.
  */
 export function minimapLayout(
   bounds: Rect,
@@ -42,7 +42,7 @@ export function minimapLayout(
   };
 }
 
-/** Retângulo do canvas em pixels do minimapa. */
+/** Canvas rectangle in minimap pixels. */
 export function toMinimap(layout: MinimapLayout, rect: Rect): Rect {
   const { scale, content } = layout;
   return {
@@ -53,7 +53,7 @@ export function toMinimap(layout: MinimapLayout, rect: Rect): Rect {
   };
 }
 
-/** Ponto clicado no minimapa (pixels, relativo a ele) → ponto do canvas. */
+/** Point clicked on the minimap (pixels, relative to it) → canvas point. */
 export function fromMinimap(layout: MinimapLayout, p: Point): Point {
   return {
     x: layout.content.x + p.x / layout.scale,

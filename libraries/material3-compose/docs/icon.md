@@ -1,63 +1,63 @@
 # Icon
 
-Ícone de 24 dp da família Material. Use sozinho ou dentro de botões, campos e itens de lista.
+A 24 dp icon from the Material family. Use it alone or inside buttons, fields and list items.
 
-Tipo de anotação: `icon` (camada Conteúdo).
+Annotation type: `icon` (Content layer).
 
-## Campos
+## Fields
 
-| Chave                | Rótulo    | Tipo   | Obrigatório | Opções                                                         | Padrão | Descrição                                                                                                                                                 |
-| -------------------- | --------- | ------ | ----------- | -------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `imageVector`        | Ícone     | string | sim         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) | `Home` | Nome do ícone em Icons.Default (por exemplo Home). A lista sugere os 164 ícones do conjunto da biblioteca; um nome fora dela desenha o reservado e avisa. |
-| `contentDescription` | Descrição | string | não         |                                                                |        | Texto de acessibilidade do ícone. Vazio = decorativo (null).                                                                                              |
-| `tint`               | Cor       | enum   | não         | papéis do `ColorScheme`                                        |        | Papel de cor do tema usado no ícone. Vazio = cor do conteúdo (LocalContentColor).                                                                         |
+| Key                  | Label       | Type   | Required | Options                                                   | Default | Description                                                                                                                                                    |
+| -------------------- | ----------- | ------ | -------- | --------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `imageVector`        | Icon        | string | yes      | free text; icon suggestions (`Home`, `Search`, `Person`…) | `Home`  | Name of the icon in Icons.Default (for example Home). The list suggests the 164 icons of the library's set; a name outside it draws the placeholder and warns. |
+| `contentDescription` | Description | string | no       |                                                           |         | Accessibility text of the icon. Empty = decorative (null).                                                                                                     |
+| `tint`               | Color       | enum   | no       | `ColorScheme` roles                                       |         | Theme color role used for the icon. Empty = content color (LocalContentColor).                                                                                 |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.Icon`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Icon.kt`
+- Symbol: `androidx.compose.material3.Icon`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Icon.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 Icon(
     imageVector = Icons.Filled.Home,
-    contentDescription = "Início",    // sem descrição: null
-    tint = MaterialTheme.colorScheme.error,   // só se tint preenchido
+    contentDescription = "Home", // no description: null
+    tint = MaterialTheme.colorScheme.error, // only if tint is filled
 )
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> O ícone vem de `Icons.Filled.<imageVector>`, por exemplo `Icon(imageVector = Icons.Filled.Home, contentDescription = <contentDescription>)`; sem descrição use `contentDescription = null`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`, e em `rtl` o desenho os vira na horizontal (o `mirror` do conjunto). `tint` só entra quando preenchido; o tamanho é o padrão de 24 dp.
+> The icon comes from `Icons.Filled.<imageVector>`, for example `Icon(imageVector = Icons.Filled.Home, contentDescription = <contentDescription>)`; without a description use `contentDescription = null`. Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`, and in `rtl` the drawing flips them horizontally (the set's `mirror`). `tint` only goes in when filled; the size is the default 24 dp.
 
-## Exemplos
+## Examples
 
-- **Início**: imageVector=Home, contentDescription=Início
-- **Favorito colorido**: imageVector=Favorite, tint=error
-- **Voltar**: imageVector=ArrowBack, contentDescription=Voltar
+- **Home**: imageVector=Home, contentDescription=Home
+- **Colored favorite**: imageVector=Favorite, tint=error
+- **Back**: imageVector=ArrowBack, contentDescription=Back
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Icon.kt` (linhas 65 a 70: `tint = LocalContentColor.current`; linhas 207 a 219: o tamanho padrão `SmallIconButtonTokens.IconSize`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SmallIconButtonTokens.kt` (linha 29: `IconSize` = 24 dp).
-- `ColorLightTokens.kt` e `ColorDarkTokens.kt`: os papéis de `tint`.
-- Os desenhos dos ícones vêm do pacote npm `@material-design-icons/svg` 0.14.15, pasta `filled` (o `Icons.Default` do Compose), em `icons/material-icons.json` (origem e licença em `icons/LEIA-ME.txt` e `icons/LICENSE-material-icons.txt`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Icon.kt` (lines 65 to 70: `tint = LocalContentColor.current`; lines 207 to 219: the default size `SmallIconButtonTokens.IconSize`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SmallIconButtonTokens.kt` (line 29: `IconSize` = 24 dp).
+- `ColorLightTokens.kt` and `ColorDarkTokens.kt`: the `tint` roles.
+- The icon drawings come from the npm package `@material-design-icons/svg` 0.14.15, `filled` folder (Compose's `Icons.Default`), in `icons/material-icons.json` (origin and license in `icons/LEIA-ME.txt` and `icons/LICENSE-material-icons.txt`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- O nó `icon` do formato 4 escolhe o desenho no conjunto da biblioteca. O campo `imageVector` guarda o nome do Compose (`Home`, `KeyboardArrowRight`, o que vai em `Icons.Default.<nome>`) e o componente o traduz para o nome do conjunto (`home`, `keyboard_arrow_right`) por um `$switch`; os `$switch` de caminhos SVG saíram do componente.
-- O tamanho é o do `viewBox` do ícone (24 por 24), escalado para a caixa da marcação.
-- Em `rtl`, o ícone com `mirror` no conjunto (a seta de voltar, o chevron do fim) desenha virado dentro da mesma caixa; a caixa e o layout não mudam (ver `docs/COMPONENT-FORMAT.md`, "Direção de leitura").
-- A cor é o papel de `tint`; sem `tint`, a cor do conteúdo herdada (`Icon.kt`, linha 69: `tint = LocalContentColor.current`): dentro de um `surface` ou `scaffold` sai na cor que o pai oferece, e sem pai, em `on-surface`.
+- The format 4 `icon` node picks the drawing from the library's set. The `imageVector` field holds the Compose name (`Home`, `KeyboardArrowRight`, what goes in `Icons.Default.<name>`) and the component translates it to the set's name (`home`, `keyboard_arrow_right`) through a `$switch`; the SVG path `$switch`es are gone from the component.
+- The size is that of the icon's `viewBox` (24 by 24), scaled to the marking box.
+- In `rtl`, an icon with `mirror` in the set (the back arrow, the end chevron) is drawn flipped within the same box; the box and the layout do not change (see `docs/COMPONENT-FORMAT.md`, "Reading direction").
+- The color is the `tint` role; without `tint`, the inherited content color (`Icon.kt`, line 69: `tint = LocalContentColor.current`): inside a `surface` or `scaffold` it comes out in the color the parent offers, and with no parent, in `on-surface`.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O conjunto tem um subconjunto fechado do `Icons.Default` (ver as sugestões do campo `imageVector`). Um nome fora dele desenha o reservado (um quadrado contornado) e o Diagnóstico mostra o aviso `ícone desconhecido`; para usar outro ícone, acrescente-o ao conjunto (`icons/LEIA-ME.txt`).
-- Só a variante `Filled`: `Outlined`, `Rounded`, `Sharp` e `TwoTone` ficam fora da etapa.
-- O conjunto (`formatVersion` 2) marca com `mirror: true` os 24 ícones que o androidx põe em `Icons.AutoMirrored.Filled` (`arrow_back`, `arrow_forward`, `keyboard_arrow_left`, `keyboard_arrow_right`, `list`, `send`, `help`…, lidos nos artefatos `material-icons-core` e `-extended` 1.7.8: o commit fixado não traz os arquivos dos ícones, que são gerados e publicados à parte). Em `rtl` (a direção do container ou do projeto) o desenho os vira na horizontal, como o `AutoMirrored` faz com `LayoutDirection.Rtl`; em `ltr` nada muda. Os outros ícones nunca viram (um relógio, uma câmera).
-- `PhotoCamera` e os outros ícones do pacote que têm formas além de `<path>` (círculo, por exemplo) não estão no subconjunto.
+- The set has a closed subset of `Icons.Default` (see the suggestions of the `imageVector` field). A name outside it draws the placeholder (an outlined square) and Diagnostics shows the warning `unknown icon`; to use another icon, add it to the set (`icons/LEIA-ME.txt`).
+- Only the `Filled` variant: `Outlined`, `Rounded`, `Sharp` and `TwoTone` are outside the stage.
+- The set (`formatVersion` 2) marks with `mirror: true` the 24 icons that androidx puts in `Icons.AutoMirrored.Filled` (`arrow_back`, `arrow_forward`, `keyboard_arrow_left`, `keyboard_arrow_right`, `list`, `send`, `help`…, read from the `material-icons-core` and `-extended` 1.7.8 artifacts: the pinned commit does not carry the icon files, which are generated and published separately). In `rtl` (the direction of the container or of the project) the drawing flips them horizontally, as `AutoMirrored` does with `LayoutDirection.Rtl`; in `ltr` nothing changes. The other icons never flip (a clock, a camera).
+- `PhotoCamera` and the other icons of the package that have shapes beyond `<path>` (a circle, for example) are not in the subset.

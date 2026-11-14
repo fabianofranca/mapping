@@ -1,13 +1,13 @@
-# Expressões que calculam no formato 4 — 2026-11-10 (épico `epic/expressoes-formato-4`)
+# Expressions that calculate in format 4 — 2026-11-10 (épico `epic/expressoes-formato-4`)
 
 ## Pendências
 
-Nenhuma. O épico só mexe no formato do componente, na biblioteca `material3-compose`, nos documentos para os agentes e nos roteiros; nenhum componente, token ou ícone do design system da app muda.
+None. The epic only touches the component format, the `material3-compose` library, the documents for the agents and the test scripts; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não muda componente, token nem ícone da app.
+Nothing to write to the **Mapping** artifact: the epic changes no component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

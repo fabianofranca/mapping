@@ -5,9 +5,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { acceptAllAndApply, ok, propose, readProject } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// Correções da rodada da ME5: `near` em container de `placement` fracionário (como os que a app
-// cria), `container` por nome em `create_marking`/`update_marking` e o aviso `ignored-argument`
-// do `parent`.
+// Fixes of the ME5 round: `near` in a container with a fractional `placement` (like those the app
+// creates), `container` by name in `create_marking`/`update_marking` and the `ignored-argument`
+// warning of `parent`.
 
 interface Plan {
   valid: boolean;
@@ -45,12 +45,12 @@ beforeAll(async () => {
       op: 'create_marking',
       container: 'Home',
       rect: { x: 10, y: 10, width: 60, height: 40 },
-      name: 'Botão',
+      name: 'Button',
     },
   ]);
   expect(second.valid, JSON.stringify(second.errors)).toBe(true);
   acceptAllAndApply(dir, second.proposal.id);
-  // O container da app encaixa 300×200 com escala fracionária.
+  // The app's container fits 300×200 with a fractional scale.
   const file = join(dir, 'mapping.json');
   const raw = JSON.parse(readFileSync(file, 'utf8')) as {
     containers: { name: string; placement: Record<string, number> }[];
@@ -65,11 +65,11 @@ afterAll(async () => {
   rmSync(root, { recursive: true, force: true });
 });
 
-describe('create_marking com near em container fracionário', () => {
-  it('perto da marcação e perto do container: o retângulo sai inteiro', async () => {
-    const botao = readProject(dir).markings.find((m) => m.name === 'Botão')!;
+describe('create_marking with near in a fractional container', () => {
+  it('near the marking and near the container: the rectangle comes out integer', async () => {
+    const button = readProject(dir).markings.find((m) => m.name === 'Button')!;
     const home = readProject(dir).containers.find((c) => c.name === 'Home')!;
-    for (const near of [botao.id, home.id]) {
+    for (const near of [button.id, home.id]) {
       const result = await plan([
         { op: 'create_marking', near, annotation: { type: 'notas/nota' }, name: 'Nota' },
       ]);
@@ -79,8 +79,8 @@ describe('create_marking com near em container fracionário', () => {
   });
 });
 
-describe('container por nome', () => {
-  it('create_marking e update_marking aceitam o nome do container', async () => {
+describe('container by name', () => {
+  it('create_marking and update_marking accept the container name', async () => {
     const result = await plan([
       {
         op: 'create_marking',
@@ -90,7 +90,7 @@ describe('container por nome', () => {
       },
       {
         op: 'update_marking',
-        marking: readProject(dir).markings.find((m) => m.name === 'Botão')!.id,
+        marking: readProject(dir).markings.find((m) => m.name === 'Button')!.id,
         container: 'Detalhe',
         rect: { x: 5, y: 5, width: 30, height: 30 },
       },
@@ -99,7 +99,7 @@ describe('container por nome', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('nome que não existe continua not-found', async () => {
+  it('a name that does not exist is still not-found', async () => {
     const result = await plan([
       {
         op: 'create_marking',
@@ -112,13 +112,13 @@ describe('container por nome', () => {
 });
 
 describe('parent ignorado', () => {
-  it('o aviso sai com o código ignored-argument', async () => {
+  it('the warning comes out with the code ignored-argument', async () => {
     const result = await plan([
       {
         op: 'update_marking',
-        marking: readProject(dir).markings.find((m) => m.name === 'Botão')!.id,
+        marking: readProject(dir).markings.find((m) => m.name === 'Button')!.id,
         parent: 'qualquer',
-        name: 'Botão',
+        name: 'Button',
       },
     ]);
     expect(result.warnings?.[0]).toMatchObject({ code: 'ignored-argument', op: 0 });

@@ -1,6 +1,6 @@
-# Orçamentos estáveis — 2026-11-04 (épico `epic/orcamentos-estaveis`, PR #408, MCP 0.13.0, schema v13)
+# Stable budgets — 2026-11-04 (épico `epic/orcamentos-estaveis`, PR #408, MCP 0.13.0, schema v13)
 
 ## Corrigido
 
-- O orçamento de desempenho "pan, zoom e edição com 200 setas" (16 ms, `retry: 1`, ambos iguais) passa a ser medido como os irmãos: 3 rodadas de aquecimento descartadas e a mediana de 15 amostras por métrica, com a métrica no `expect`. O nome diz o que se mede (o projeto grande).
-- No `npm test`, os 3 arquivos de orçamento rodam em projetos próprios do Vitest, depois do resto da suíte e um arquivo por vez, sem disputar CPU com ela. `test:perf`, `test:coverage`, os shards do CI e `PERF_BUDGETS=off` não mudam. Nenhum teste foi removido, pulado ou enfraquecido; a app e o MCP não mudam.
+- The performance budget "pan, zoom and edit with 200 arrows" (16 ms, `retry: 1`, both equal) is now measured like its siblings: 3 discarded warm-up rounds and the median of 15 samples per metric, with the metric in the `expect`. The name says what is measured (the large project).
+- In `npm test`, the 3 budget files run in their own Vitest projects, after the rest of the suite and one file at a time, without competing for CPU with it. `test:perf`, `test:coverage`, the CI shards and `PERF_BUDGETS=off` do not change. No test was removed, skipped or weakened; the app and the MCP do not change.

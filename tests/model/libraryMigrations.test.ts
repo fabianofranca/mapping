@@ -22,11 +22,11 @@ import {
 } from './libraryMigrationFixtures';
 import { idGen } from './specFixtures';
 
-// Execução pura das `migrations` (`runLibraryMigrations`): um teste por passo, o encadeamento de
-// duas versões, a cadeia rompida e o passo sem efeito. A atualização inteira (camadas, contrato,
-// impacto) está em libraryUpdate.test.ts.
+// Pure execution of the `migrations` (`runLibraryMigrations`): one test per step, the chaining of
+// two versions, the broken chain and the no-effect step. The whole update (layers, contract,
+// impact) is in libraryUpdate.test.ts.
 
-/** `next` v2 com os passos dados numa entrada 1 → 2. */
+/** `next` v2 with the given steps in a 1 → 2 entry. */
 function nextWith(...steps: SpecMigrationStep[]): Spec {
   return libSpec(2, undefined, { migrations: [{ from: 1, to: 2, steps }] });
 }
@@ -39,7 +39,7 @@ const ref = (annotationId: string, key: string, rowId?: string): JsonValue =>
   rowId === undefined ? { annotationId, key } : { annotationId, key, rowId };
 
 describe('rename-type', () => {
-  it('troca o typeId, mantém a camada e deixa as outras anotações como estão', () => {
+  it('swaps the typeId, keeps the layer and leaves the other annotations as they are', () => {
     const p = libProject(libSpec(1), [
       { id: 'B1', type: 'button' },
       { id: 'G1', type: 'badge' },
@@ -58,9 +58,9 @@ describe('rename-type', () => {
 });
 
 describe('remove-type', () => {
-  it('convert: vira livre com os valores em pares; o resto não muda', () => {
+  it('convert: becomes free with the values as pairs; the rest does not change', () => {
     const p = libProject(libSpec(1), [
-      { id: 'G1', type: 'badge', values: { text: 'novo' } },
+      { id: 'G1', type: 'badge', values: { text: 'new' } },
       { id: 'B1', type: 'button', values: { label: 'OK' } },
     ]);
     const out = run(p, nextWith({ op: 'remove-type', type: 'badge', mode: 'convert' }));
@@ -68,13 +68,13 @@ describe('remove-type', () => {
     expect(free.type).toBeNull();
     expect(free.values).toBeNull();
     expect(free.name).toBe('Badge');
-    expect(free.entries.map((e) => [e.key, e.value])).toEqual([['text', 'novo']]);
+    expect(free.entries.map((e) => [e.key, e.value])).toEqual([['text', 'new']]);
     expect(annotationOf(out.project, 'B1')).toBe(annotationOf(p, 'B1'));
     expect(out.steps[0]).toMatchObject({ annotations: 1, converted: 1, deleted: 0 });
     expect(out.losses).toEqual([]);
   });
 
-  it('delete: apaga a anotação e as vinculadas, uma perda por apagada', () => {
+  it('delete: removes the annotation and the linked ones, one loss per deleted one', () => {
     const p = libProject(libSpec(1), [
       { id: 'B1', type: 'button' },
       { id: 'C1', type: 'chip', parent: 'B1' },
@@ -89,7 +89,7 @@ describe('remove-type', () => {
     ]);
   });
 
-  it('delete: vinculada livre sai com typeId vazio', () => {
+  it('delete: a free linked one leaves with an empty typeId', () => {
     let p = libProject(libSpec(1), [{ id: 'B1', type: 'button' }]);
     const free: Annotation = {
       id: 'F1',
@@ -113,7 +113,7 @@ describe('remove-type', () => {
 });
 
 describe('rename-field', () => {
-  it('move o valor para a chave nova e preserva as outras', () => {
+  it('moves the value to the new key and preserves the others', () => {
     const p = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { label: 'OK', size: 3 } },
     ]);
@@ -139,22 +139,22 @@ describe('rename-field', () => {
     expect(out.steps[0]).toMatchObject({ annotations: 0, values: 0 });
   });
 
-  it('destino ocupado e diferente: sobrescreve com perda; igual ou origem vazia: sem perda', () => {
+  it('occupied and different destination: overwrites with a loss; same or empty origin: no loss', () => {
     let p = libProject(libSpec(1), [
       { id: 'B1', type: 'button' },
       { id: 'B2', type: 'button' },
       { id: 'B3', type: 'button' },
     ]);
-    p = setRaw(p, 'B1', { label: 'novo', title: 'velho' });
-    p = setRaw(p, 'B2', { label: '', title: 'fica' });
-    p = setRaw(p, 'B3', { label: 'igual', title: 'igual' });
+    p = setRaw(p, 'B1', { label: 'new', title: 'old' });
+    p = setRaw(p, 'B2', { label: '', title: 'stays' });
+    p = setRaw(p, 'B3', { label: 'same', title: 'same' });
     const out = run(
       p,
       nextWith({ op: 'rename-field', type: 'button', from: 'label', to: 'title' }),
     );
-    expect(valuesOf(out.project, 'B1')).toEqual({ title: 'novo' });
-    expect(valuesOf(out.project, 'B2')).toEqual({ title: 'fica' });
-    expect(valuesOf(out.project, 'B3')).toEqual({ title: 'igual' });
+    expect(valuesOf(out.project, 'B1')).toEqual({ title: 'new' });
+    expect(valuesOf(out.project, 'B2')).toEqual({ title: 'stays' });
+    expect(valuesOf(out.project, 'B3')).toEqual({ title: 'same' });
     expect(out.losses).toEqual([
       {
         reason: 'overwritten-value',
@@ -162,12 +162,12 @@ describe('rename-field', () => {
         markingId: 'M1',
         typeId: 'button',
         field: 'title',
-        value: 'velho',
+        value: 'old',
       },
     ]);
   });
 
-  it('coluna da mesma tabela: renomeia a chave em cada linha', () => {
+  it('column of the same table: renames the key in each row', () => {
     const p = libProject(libSpec(1), [
       {
         id: 'B1',
@@ -175,7 +175,7 @@ describe('rename-field', () => {
         values: {
           rows: [
             row('r1', { col: 'x', kind: 'a' }),
-            row('r2', { col: 'y', kind: 'b', extra: 'velho' }),
+            row('r2', { col: 'y', kind: 'b', extra: 'old' }),
             row('r3', { kind: 'a' }),
           ],
         },
@@ -204,12 +204,12 @@ describe('rename-field', () => {
         typeId: 'button',
         field: 'rows.extra',
         rowId: 'r2',
-        value: 'velho',
+        value: 'old',
       },
     ]);
   });
 
-  it('formas diferentes (coluna para campo): os valores de from saem com perda', () => {
+  it('different shapes (column to field): the values of from leave with a loss', () => {
     const p = libProject(libSpec(1), [
       {
         id: 'B1',
@@ -239,7 +239,7 @@ describe('rename-field', () => {
     ]);
   });
 
-  it('tabelas diferentes: também apaga os valores de from', () => {
+  it('different tables: also removes the values of from', () => {
     const p = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { rows: [row('r1', { col: 'x' })] } },
     ]);
@@ -251,14 +251,14 @@ describe('rename-field', () => {
     expect(out.losses[0]).toMatchObject({ reason: 'removed-field', rowId: 'r1' });
   });
 
-  it('reescreve as referências de campo e de linha, de qualquer especialização', () => {
+  it('rewrites the field and row references, from any specialization', () => {
     let p = libProject(libSpec(1), [
       {
         id: 'B1',
         type: 'button',
         values: { label: 'OK', rows: [row('r1', { col: 'x' })] },
       },
-      { id: 'B2', type: 'button', values: { label: 'outro' } },
+      { id: 'B2', type: 'button', values: { label: 'another' } },
       { id: 'G1', type: 'badge', marking: 'M2' },
       { id: 'G2', type: 'badge', marking: 'M2' },
     ]);
@@ -267,13 +267,13 @@ describe('rename-field', () => {
     const foreign: Annotation = {
       ...annotationOf(p, 'G1'),
       id: 'X1',
-      type: { specId: 'outra', typeId: 'qualquer' },
+      type: { specId: 'other', typeId: 'any' },
       values: {
         a: ref('B1', 'label'),
         b: ref('B2', 'label'),
         c: ref('B1', 'size'),
         d: { annotationId: 'B1', entryId: 'e1' },
-        e: 'texto',
+        e: 'text',
       },
     };
     p = { ...p, annotations: [...p.annotations, foreign] };
@@ -291,16 +291,16 @@ describe('rename-field', () => {
       b: ref('B2', 'title'),
       c: ref('B1', 'size'),
       d: { annotationId: 'B1', entryId: 'e1' },
-      e: 'texto',
+      e: 'text',
     });
-    // B2 também é do tipo renomeado: a referência a ela acompanha.
+    // B2 is also of the renamed type: the reference to it follows.
     expect(out.steps.map((s) => s.refs)).toEqual([3, 1]);
-    // `annotations` conta só as do tipo do passo.
+    // `annotations` counts only those of the step's type.
     expect(out.steps.map((s) => s.annotations)).toEqual([2, 2]);
     expect(out.losses).toEqual([]);
   });
 
-  it('não reescreve referências de outro tipo nem de outra chave', () => {
+  it('does not rewrite references of another type or another key', () => {
     let p = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { label: 'OK' } },
       { id: 'G1', type: 'badge', values: { text: 'T' } },
@@ -317,7 +317,7 @@ describe('rename-field', () => {
 });
 
 describe('remove-field', () => {
-  it('apaga a chave e perde só o que não era vazio', () => {
+  it('removes the key and loses only what was not empty', () => {
     let p = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { label: 'OK', size: 2 } },
       { id: 'B2', type: 'button', values: { label: '' } },
@@ -341,7 +341,7 @@ describe('remove-field', () => {
     ]);
   });
 
-  it('tabela inteira com linhas é perda; vazia não', () => {
+  it('a whole table with rows is a loss; an empty one is not', () => {
     const p = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { rows: [row('r1', { col: 'x' })] } },
       { id: 'B2', type: 'button' },
@@ -351,7 +351,7 @@ describe('remove-field', () => {
     expect(out.losses[0]?.value).toEqual([row('r1', { col: 'x' })]);
   });
 
-  it('coluna: apaga a célula de cada linha, com a perda por linha', () => {
+  it('column: removes the cell of each row, with the loss per row', () => {
     const p = libProject(libSpec(1), [
       {
         id: 'B1',
@@ -383,11 +383,11 @@ describe('remove-field', () => {
 });
 
 describe('map-values', () => {
-  it('troca a opção antiga; o que não está no mapa fica (pendência, não perda)', () => {
+  it('swaps the old option; what is not in the map stays (pending item, not a loss)', () => {
     const p = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { style: 'primary' } },
       { id: 'B2', type: 'button', values: { style: 'text' } },
-      { id: 'B3', type: 'button', values: { style: 'estranho' } },
+      { id: 'B3', type: 'button', values: { style: 'odd' } },
       { id: 'B4', type: 'button', values: { style: null } },
     ]);
     const out = run(
@@ -401,13 +401,13 @@ describe('map-values', () => {
     );
     expect(valuesOf(out.project, 'B1').style).toBe('filled');
     expect(valuesOf(out.project, 'B2').style).toBe('text');
-    expect(valuesOf(out.project, 'B3').style).toBe('estranho');
+    expect(valuesOf(out.project, 'B3').style).toBe('odd');
     expect(valuesOf(out.project, 'B4').style).toBeNull();
     expect(out.steps[0]).toMatchObject({ annotations: 1, values: 1 });
     expect(out.losses).toEqual([]);
   });
 
-  it('coluna: troca a célula de cada linha', () => {
+  it('column: swaps the cell of each row', () => {
     const p = libProject(libSpec(1), [
       {
         id: 'B1',
@@ -439,8 +439,8 @@ describe('map-values', () => {
   });
 });
 
-describe('passos sem efeito (CR #945, item 27)', () => {
-  it('map-values com mapeamento identidade não conta valores nem anotações', () => {
+describe('no-effect steps (CR #945, item 27)', () => {
+  it('map-values with an identity mapping counts neither values nor annotations', () => {
     const p = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { style: 'primary' } },
     ]);
@@ -457,7 +457,7 @@ describe('passos sem efeito (CR #945, item 27)', () => {
     expect(out.project).toBe(p);
   });
 
-  it('rename-field com from igual a to não conta valores nem anotações', () => {
+  it('rename-field with from equal to to counts neither values nor annotations', () => {
     const p = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { label: 'OK' } },
     ]);
@@ -483,24 +483,24 @@ describe('fill-field', () => {
       ],
     });
 
-  it('vazio ou ausente recebe o default; valor válido fica', () => {
+  it('empty or absent gets the default; a valid value stays', () => {
     let p = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { size: null } },
       { id: 'B2', type: 'button', values: { size: 5 } },
       { id: 'B3', type: 'button' },
     ]);
-    p = setRaw(p, 'B3', { label: 'sem size' });
+    p = setRaw(p, 'B3', { label: 'no size' });
     const out = run(p, nextFill(1));
     expect(valuesOf(out.project, 'B1').size).toBe(1);
     expect(valuesOf(out.project, 'B2').size).toBe(5);
-    expect(valuesOf(out.project, 'B3')).toEqual({ label: 'sem size', size: 1 });
+    expect(valuesOf(out.project, 'B3')).toEqual({ label: 'no size', size: 1 });
     expect(out.steps[0]).toMatchObject({ annotations: 2, values: 2 });
     expect(out.losses).toEqual([]);
   });
 
-  it('valor que não vale no tipo do campo é trocado, com perda', () => {
+  it('a value that is not valid for the field type is swapped, with a loss', () => {
     const p = libProject(libSpec(1), [
-      { id: 'B1', type: 'button', values: { size: 'grande' } },
+      { id: 'B1', type: 'button', values: { size: 'large' } },
     ]);
     const out = run(p, nextFill(1));
     expect(valuesOf(out.project, 'B1').size).toBe(1);
@@ -511,23 +511,23 @@ describe('fill-field', () => {
         markingId: 'M1',
         typeId: 'button',
         field: 'size',
-        value: 'grande',
+        value: 'large',
       },
     ]);
   });
 
-  it('opção desconhecida fica (pendência, sem perda)', () => {
+  it('an unknown option stays (pending item, no loss)', () => {
     const p = libProject(libSpec(1), [
-      { id: 'B1', type: 'button', values: { style: 'estranho' } },
+      { id: 'B1', type: 'button', values: { style: 'odd' } },
       { id: 'B2', type: 'button', values: { style: null } },
     ]);
     const out = run(p, nextFill('text', 'style'));
-    expect(valuesOf(out.project, 'B1').style).toBe('estranho');
+    expect(valuesOf(out.project, 'B1').style).toBe('odd');
     expect(valuesOf(out.project, 'B2').style).toBe('text');
     expect(out.losses).toEqual([]);
   });
 
-  it('coluna: preenche as células vazias de cada linha e troca as inválidas', () => {
+  it('column: fills the empty cells of each row and swaps the invalid ones', () => {
     const p = libProject(libSpec(1), [
       {
         id: 'B1',
@@ -555,15 +555,17 @@ describe('fill-field', () => {
     ]);
   });
 
-  it('campo que não existe na versão nova: só preenche os vazios', () => {
+  it('a field that does not exist in the new version: only fills the empty ones', () => {
     const p = libProject(libSpec(1), [
-      { id: 'B1', type: 'button', values: { size: 'grande' } },
+      { id: 'B1', type: 'button', values: { size: 'large' } },
       { id: 'B2', type: 'button', values: { size: null } },
     ]);
-    // `size` foi renomeado depois na cadeia: o tipo existe, o campo não.
+    // `size` was renamed later in the chain: the type exists, the field does not.
     const next = libSpec(
       2,
-      { c: [buttonType({ fields: [{ key: 'tamanho', type: 'number' }] }), badgeType()] },
+      {
+        c: [buttonType({ fields: [{ key: 'dimension', type: 'number' }] }), badgeType()],
+      },
       {
         migrations: [
           {
@@ -575,17 +577,17 @@ describe('fill-field', () => {
       },
     );
     const out = run(p, next);
-    expect(valuesOf(out.project, 'B1').size).toBe('grande');
+    expect(valuesOf(out.project, 'B1').size).toBe('large');
     expect(valuesOf(out.project, 'B2').size).toBe(1);
     expect(out.losses).toEqual([]);
   });
 });
 
-describe('cadeia', () => {
-  it('encadeia duas versões: rename-type e depois rename-field no tipo novo', () => {
+describe('chain', () => {
+  it('chains two versions: rename-type and then rename-field on the new type', () => {
     const p = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { label: 'OK' } },
-      { id: 'B2', type: 'button', values: { label: 'Cancelar' } },
+      { id: 'B2', type: 'button', values: { label: 'Cancel' } },
     ]);
     const next = libSpec(3, undefined, {
       migrations: [
@@ -617,11 +619,11 @@ describe('cadeia', () => {
       [2, 3, 0, 'rename-field', 2],
       [2, 3, 1, 'remove-field', 2],
     ]);
-    // `size` valia o padrão (null): vazio, sem perda.
+    // `size` had the default (null): empty, no loss.
     expect(out.losses).toEqual([]);
   });
 
-  it('projeto já na versão intermediária roda só a parte que falta', () => {
+  it('a project already at the intermediate version runs only the missing part', () => {
     const p = libProject(libSpec(2), [{ id: 'B1', type: 'button' }]);
     const next = libSpec(3, undefined, {
       migrations: [
@@ -661,13 +663,13 @@ describe('cadeia', () => {
     expect(out.losses).toEqual([]);
   });
 
-  it('sem migrations ou na mesma versão: nada roda', () => {
+  it('without migrations or at the same version: nothing runs', () => {
     const p = libProject(libSpec(1), [{ id: 'B1', type: 'button' }]);
     expect(run(p, libSpec(2)).project).toBe(p);
     expect(run(p, libSpec(2), 2).steps).toEqual([]);
   });
 
-  it('passo que não acha nada é um no-op, mas aparece no relatório', () => {
+  it('a step that finds nothing is a no-op, but appears in the report', () => {
     const p = libProject(libSpec(1), [{ id: 'G1', type: 'badge' }]);
     const steps: SpecMigrationStep[] = [
       { op: 'rename-type', from: 'button', to: 'cta' },
@@ -692,15 +694,15 @@ describe('cadeia', () => {
     }
   });
 
-  it('só toca as anotações da especialização e não altera a entrada', () => {
+  it('only touches the annotations of the specialization and does not change the input', () => {
     const p = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { label: 'OK' } },
     ]);
     const other: Annotation = {
       ...annotationOf(p, 'B1'),
       id: 'X1',
-      type: { specId: 'outra', typeId: 'button' },
-      values: { label: 'igual' },
+      type: { specId: 'other', typeId: 'button' },
+      values: { label: 'same' },
     };
     const withOther = { ...p, annotations: [...p.annotations, other] };
     const before = JSON.stringify(withOther);
@@ -719,15 +721,15 @@ describe('cadeia', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Passos de papel do vínculo (`rename-role`, `remove-role`, `set-role`)
+// Link role steps (`rename-role`, `remove-role`, `set-role`)
 
 const ROLES = [
-  { id: 'click', name: 'Clique' },
-  { id: 'tap', name: 'Toque' },
-  { id: 'hover', name: 'Foco' },
+  { id: 'click', name: 'Click' },
+  { id: 'tap', name: 'Tap' },
+  { id: 'hover', name: 'Focus' },
 ];
 
-/** Especialização com o `button` oferecendo papéis; `chip` exige dono, `badge` não. */
+/** Specialization with `button` offering roles; `chip` requires an owner, `badge` does not. */
 function roleSpec(version: number, roles = ROLES, over: Partial<Spec> = {}): Spec {
   return libSpec(
     version,
@@ -742,7 +744,7 @@ function roleSpec(version: number, roles = ROLES, over: Partial<Spec> = {}): Spe
   );
 }
 
-/** Anotação livre ou de outra especialização, ligada a `parent`, direto no projeto. */
+/** Free annotation or one of another specialization, linked to `parent`, directly in the project. */
 function rawChild(
   p: Project,
   id: string,
@@ -765,11 +767,11 @@ function rawChild(
   return { ...p, annotations: [...p.annotations, child] };
 }
 
-/** `parentRole` não nulo exige `parentAnnotationId` não nulo. */
+/** A non-null `parentRole` requires a non-null `parentAnnotationId`. */
 function expectRoleInvariant(p: Project): void {
   for (const a of p.annotations) {
     if (a.parentRole !== null) {
-      expect(a.parentAnnotationId, `${a.id} tem papel sem dono`).not.toBeNull();
+      expect(a.parentAnnotationId, `${a.id} has a role without an owner`).not.toBeNull();
     }
   }
 }
@@ -777,7 +779,7 @@ function expectRoleInvariant(p: Project): void {
 const roleOf = (p: Project, id: string) => annotationOf(p, id).parentRole;
 const ownerOf = (p: Project, id: string) => annotationOf(p, id).parentAnnotationId;
 
-/** B1 (button) com filhos de vários tipos e papéis; X1 é de outra especialização, F1 é livre. */
+/** B1 (button) with children of several types and roles; X1 is of another specialization, F1 is free. */
 function roleProject(): Project {
   let p = libProject(roleSpec(1), [
     { id: 'B1', type: 'button' },
@@ -789,13 +791,13 @@ function roleProject(): Project {
   ]);
   p = rawChild(p, 'F1', 'B1', 'click');
   p = rawChild(p, 'F2', 'B1', null);
-  p = rawChild(p, 'X1', 'B1', 'click', { specId: 'outra', typeId: 'z' });
-  p = rawChild(p, 'X2', 'B1', null, { specId: 'outra', typeId: 'z' });
+  p = rawChild(p, 'X1', 'B1', 'click', { specId: 'other', typeId: 'z' });
+  p = rawChild(p, 'X2', 'B1', null, { specId: 'other', typeId: 'z' });
   return p;
 }
 
 describe('rename-role', () => {
-  it('troca o papel dos filhos de qualquer tipo; o resto fica como está', () => {
+  it('swaps the role of the children of any type; the rest stays as is', () => {
     const p = roleProject();
     const out = run(
       p,
@@ -813,7 +815,7 @@ describe('rename-role', () => {
     expectRoleInvariant(out.project);
   });
 
-  it('junta os papéis quando o destino já era papel de outros filhos, sem perda', () => {
+  it('merges the roles when the destination was already a role of other children, with no loss', () => {
     const p = roleProject();
     const out = run(
       p,
@@ -826,7 +828,7 @@ describe('rename-role', () => {
     expectRoleInvariant(out.project);
   });
 
-  it('filho de dono de outro tipo ou de outra especialização não é tocado', () => {
+  it('a child of an owner of another type or another specialization is not touched', () => {
     let p = libProject(roleSpec(1), [
       { id: 'B1', type: 'button' },
       { id: 'G1', type: 'badge', marking: 'M2' },
@@ -835,7 +837,7 @@ describe('rename-role', () => {
     const foreign: Annotation = {
       ...annotationOf(p, 'B1'),
       id: 'OB',
-      type: { specId: 'outra', typeId: 'button' },
+      type: { specId: 'other', typeId: 'button' },
       values: null,
     };
     p = { ...p, annotations: [...p.annotations, foreign] };
@@ -850,7 +852,7 @@ describe('rename-role', () => {
 });
 
 describe('remove-role', () => {
-  it('clear: o filho fica sem papel e continua vinculado; perda cleared-role', () => {
+  it('clear: the child is left without a role and stays linked; cleared-role loss', () => {
     const p = roleProject();
     const out = run(
       p,
@@ -895,7 +897,7 @@ describe('remove-role', () => {
     expectRoleInvariant(out.project);
   });
 
-  it('unlink: o filho sai do vínculo, sem dono e sem papel; perda unlinked e contagem', () => {
+  it('unlink: the child leaves the link, without owner or role; unlinked loss and count', () => {
     const p = roleProject();
     const out = run(
       p,
@@ -919,11 +921,11 @@ describe('remove-role', () => {
     expectRoleInvariant(out.project);
   });
 
-  it('filho sem esse papel (ou sem papel) não é tocado; sem filhos é no-op', () => {
+  it('a child without that role (or without a role) is not touched; without children it is a no-op', () => {
     const p = roleProject();
     const out = run(
       p,
-      nextWith({ op: 'remove-role', type: 'button', role: 'nada', mode: 'unlink' }),
+      nextWith({ op: 'remove-role', type: 'button', role: 'nothing', mode: 'unlink' }),
     );
     expect(out.project).toBe(p);
     expect(out.steps[0]).toMatchObject({ annotations: 0, unlinked: 0, losses: [] });
@@ -931,7 +933,7 @@ describe('remove-role', () => {
 });
 
 describe('set-role', () => {
-  it('sem childType: todo filho sem papel recebe o papel, de qualquer tipo; quem já tem fica', () => {
+  it('without childType: every child without a role gets the role, of any type; those that already have one stay', () => {
     const p = roleProject();
     const out = run(p, nextWith({ op: 'set-role', type: 'button', role: 'tap' }));
     for (const id of ['C3', 'G2', 'F2', 'X2']) {
@@ -946,7 +948,7 @@ describe('set-role', () => {
     expectRoleInvariant(out.project);
   });
 
-  it('com childType: só os filhos desse tipo da especialização, sem papel', () => {
+  it('with childType: only the children of that type of the specialization, without a role', () => {
     const p = roleProject();
     const out = run(
       p,
@@ -960,7 +962,7 @@ describe('set-role', () => {
     expect(out.losses).toEqual([]);
   });
 
-  it('filho que já tem papel não é tocado, nem o de papel diferente do passo', () => {
+  it('a child that already has a role is not touched, nor one with a role different from that of the step', () => {
     const p = libProject(roleSpec(1), [
       { id: 'B1', type: 'button' },
       { id: 'C1', type: 'chip', parent: 'B1', role: 'hover' },
@@ -974,8 +976,8 @@ describe('set-role', () => {
   });
 });
 
-describe('passos de papel em sequência', () => {
-  it('passo depois de rename-type do dono identifica o dono pelo typeId novo', () => {
+describe('role steps in sequence', () => {
+  it('a step after the rename-type of the owner identifies the owner by the new typeId', () => {
     const p = roleProject();
     const out = run(
       p,
@@ -987,12 +989,12 @@ describe('passos de papel em sequência', () => {
     );
     expect(roleOf(out.project, 'C1')).toBe('tap');
     expect(out.steps[1]).toMatchObject({ annotations: 4 });
-    // O id antigo já não existe naquele ponto da cadeia.
+    // The old id no longer exists at that point in the chain.
     expect(roleOf(out.project, 'C2')).toBe('hover');
     expect(out.steps[2]).toMatchObject({ annotations: 0 });
   });
 
-  it('set-role com childType antes do rename-type do filho usa o id antigo do filho', () => {
+  it('set-role with childType before the rename-type of the child uses the old id of the child', () => {
     const p = roleProject();
     const before = run(
       p,
@@ -1014,7 +1016,7 @@ describe('passos de papel em sequência', () => {
     expect(after.steps[1]).toMatchObject({ annotations: 0 });
   });
 
-  it('rename-role seguido de remove-role do nome novo perde com o papel novo', () => {
+  it('rename-role followed by remove-role of the new name loses with the new role', () => {
     const out = run(
       roleProject(),
       nextWith(
@@ -1032,7 +1034,7 @@ describe('passos de papel em sequência', () => {
     expectRoleInvariant(out.project);
   });
 
-  it('o invariante parentRole → parentAnnotationId vale em toda combinação de passos', () => {
+  it('the parentRole → parentAnnotationId invariant holds in every combination of steps', () => {
     const combos: SpecMigrationStep[][] = [
       [{ op: 'rename-role', type: 'button', from: 'click', to: 'tap' }],
       [{ op: 'remove-role', type: 'button', role: 'click', mode: 'clear' }],
@@ -1055,7 +1057,7 @@ describe('passos de papel em sequência', () => {
     }
   });
 
-  it('não altera a entrada', () => {
+  it('does not change the input', () => {
     const p = roleProject();
     const before = JSON.stringify(p);
     run(
@@ -1069,13 +1071,13 @@ describe('passos de papel em sequência', () => {
   });
 });
 
-describe('impacto e atualização com passos de papel', () => {
+describe('impact and update with role steps', () => {
   const v2Roles = [
-    { id: 'tap', name: 'Toque' },
-    { id: 'hover', name: 'Foco' },
+    { id: 'tap', name: 'Tap' },
+    { id: 'hover', name: 'Focus' },
   ];
 
-  it('remove-role clear: perda cleared-role e missing-role enquanto o dono oferece papéis', () => {
+  it('remove-role clear: cleared-role loss and missing-role while the owner offers roles', () => {
     const p = roleProject();
     const next = roleSpec(2, v2Roles, {
       migrations: [
@@ -1097,13 +1099,13 @@ describe('impacto e atualização com passos de papel', () => {
     const missing = impact.pending
       .filter((x) => x.issue.code === 'missing-role')
       .map((x) => x.annotationId);
-    // C1 e G1 são da especialização; F1 (livre) e X1 (outra) não geram pendência de papel.
+    // C1 and G1 are of the specialization; F1 (free) and X1 (other) do not generate a role pending item.
     expect(missing).toContain('C1');
     expect(missing).toContain('G1');
     expect(missing).not.toContain('C2');
   });
 
-  it('remove-role unlink: unlinked no relatório e missing-owner no tipo que exige dono', () => {
+  it('remove-role unlink: unlinked in the report and missing-owner on the type that requires an owner', () => {
     const p = roleProject();
     const next = roleSpec(2, v2Roles, {
       migrations: [
@@ -1122,7 +1124,7 @@ describe('impacto e atualização com passos de papel', () => {
     expect(codes).not.toContainEqual(['G1', 'missing-owner']);
   });
 
-  it('updateSpecialization aplica os passos de papel e grava a versão nova', () => {
+  it('updateSpecialization applies the role steps and records the new version', () => {
     const p = roleProject();
     const next = roleSpec(2, v2Roles, {
       migrations: [
@@ -1143,7 +1145,7 @@ describe('impacto e atualização com passos de papel', () => {
     expectRoleInvariant(out);
   });
 
-  it('sem o passo a atualização que tira um papel é recusada; com ele é aceita', () => {
+  it('without the step an update that removes a role is refused; with it, it is accepted', () => {
     const p = roleProject();
     const without = roleSpec(2, v2Roles);
     const refused = specializationUpdateImpact(p, without);
@@ -1166,7 +1168,7 @@ describe('impacto e atualização com passos de papel', () => {
     expect(specializationUpdateImpact(p, withSteps).refused).toBe(false);
   });
 
-  it('a atualização não altera o projeto de entrada (o desfazer devolve os papéis)', () => {
+  it('the update does not change the input project (undo returns the roles)', () => {
     const p = roleProject();
     const before = JSON.stringify(p);
     const next = roleSpec(2, v2Roles, {

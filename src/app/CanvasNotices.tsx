@@ -6,17 +6,17 @@ import { ProposalNotices } from '../ui/review/ProposalNotices';
 import type { EditorNotices } from './useEditorNotices';
 
 /**
- * Avisos sobre o canvas: somente leitura, reparo ao abrir e backup da migração, erro ao salvar (B13),
- * erros de operação (no topo) e, no pé, o aviso curto e o progresso (a dica do Desenhar vive na barra do canvas).
+ * Notices over the canvas: read-only, repair on open and migration backup, save error (B13),
+ * operation errors (at the top) and, at the bottom, the short notice and the progress (the Draw hint lives in the canvas bar).
  */
 export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) {
   const { open, session, store, ui } = useEditor();
-  // Com o diálogo de alteração externa aberto, o erro de gravação já está explicado nele.
+  // With the external-change dialog open, the write error is already explained in it.
   const saveFailed =
     session.saveStatus.value === 'error' && session.conflict.value === null;
   const [backupDismissed, setBackupDismissed] = useState(false);
   const backupSaved = session.backupSaved.value;
-  // Projeto reparado ao abrir: o aviso do reparo já fala do backup (não é uma migração).
+  // Project repaired on open: the repair notice already mentions the backup (it is not a migration).
   const repairs = open.repaired?.length ?? 0;
   const readOnly = store.readOnly.value;
   const { message, progress } = notices;
@@ -76,7 +76,7 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
         )}
       </div>
       {(toast || progress) && (
-        // Avisos curtos no pé do canvas (PV2): pequenos, à esquerda, sem cobrir o topo da imagem.
+        // Short notices at the bottom of the canvas (PV2): small, on the left, without covering the top of the image.
         <div class="canvas-overlay-foot">
           {toast && (
             <p class="notice notice-info" role="status">

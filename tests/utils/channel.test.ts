@@ -7,26 +7,27 @@ import {
 } from '../../src/utils/channel';
 import { readSetting, writeSetting } from '../../src/utils/safeStorage';
 
-describe('canal do build', () => {
-  it('só "preview" vira preview; o resto é a versão principal', () => {
+describe('build channel', () => {
+  it('only "preview" becomes preview; the rest is the main version', () => {
     expect(parseChannel('preview')).toBe('preview');
     expect(parseChannel(undefined)).toBe('main');
     expect(parseChannel('main')).toBe('main');
     expect(parseChannel('PREVIEW')).toBe('main');
   });
 
-  it('os testes rodam como a versão principal', () => {
+  it('the tests run as the main version', () => {
     expect(CHANNEL).toBe('main');
   });
 
-  it('o preview separa as chaves do localStorage e o banco IndexedDB', () => {
+  it('the preview separates the localStorage keys and the IndexedDB database', () => {
     expect(channelStorageKey('mapping.theme', 'main')).toBe('mapping.theme');
     expect(channelStorageKey('mapping.theme', 'preview')).toBe('preview:mapping.theme');
+    // pt-BR kept: real IndexedDB name (LEGACY_APP_ID) defined in src/storage/local.ts
     expect(channelDbName('mapeador-imagens', 'main')).toBe('mapeador-imagens');
     expect(channelDbName('mapeador-imagens', 'preview')).toBe('mapeador-imagens-preview');
   });
 
-  it('na versão principal as chaves continuam as mesmas de antes', () => {
+  it('in the main version the keys stay the same as before', () => {
     writeSetting('mapping.test', 'x');
     expect(localStorage.getItem('mapping.test')).toBe('x');
     expect(readSetting('mapping.test')).toBe('x');

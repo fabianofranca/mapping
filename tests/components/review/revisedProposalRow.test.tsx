@@ -6,31 +6,31 @@ import { richScenario } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 import { revisedScenario } from './revisedFixture';
 
-// Linha da janela Propostas com marca à vista (etapa #644, CP3): "Revisada · N para conferir".
+// Proposals window row with a visible mark (stage #644, CP3): "Revised · N to check".
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
 
 const noop = () => {};
 
-describe('linha da proposta revisada', () => {
-  it('diz "Revisada · 2 para conferir" e mantém Revisar; `fresh` não muda', async () => {
+describe('revised proposal row', () => {
+  it('says "Revised · 2 to check" and keeps Review; `fresh` does not change', async () => {
     const { proposal } = revisedScenario();
     const h = await openReviewHarness({ proposals: [proposal] });
     renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
     const row = screen.getByRole('listitem');
-    expect(within(row).getByText('Revisada · 2 para conferir')).toBeTruthy();
-    expect(within(row).getByRole('button', { name: 'Revisar: Checkout' })).toBeTruthy();
+    expect(within(row).getByText('Revised · 2 to check')).toBeTruthy();
+    expect(within(row).getByRole('button', { name: 'Review: Checkout' })).toBeTruthy();
     expect(h.review.derived.rows.value[0]?.revised).toBe(2);
-    // Chegou revisada e ninguém abriu: continua "Nova" e na contagem da barra.
+    // It arrived revised and nobody opened it: it stays "New" and in the bar count.
     expect(h.review.derived.rows.value[0]?.fresh).toBe(true);
-    expect(within(row).getByText('Nova')).toBeTruthy();
+    expect(within(row).getByText('New')).toBeTruthy();
   });
 
-  it('decidir uma mudança revisada baixa a contagem; todas decididas, a linha some', async () => {
+  it('deciding a revised change lowers the count; with all decided, the row disappears', async () => {
     const { proposal, changedId, addedId } = revisedScenario();
     const h = await openReviewHarness({ proposals: [proposal] });
     h.review.open('P1');
@@ -38,18 +38,18 @@ describe('linha da proposta revisada', () => {
     await act(async () => {
       await h.review.decide({ level: 'change', id: changedId }, 'accepted');
     });
-    expect(screen.getByText('Revisada · 1 para conferir')).toBeTruthy();
+    expect(screen.getByText('Revised · 1 to check')).toBeTruthy();
     await act(async () => {
       await h.review.decide({ level: 'change', id: addedId }, 'rejected');
     });
-    expect(screen.queryByText(/^Revisada ·/)).toBeNull();
+    expect(screen.queryByText(/^Revised ·/)).toBeNull();
   });
 
-  it('proposta sem revisão não leva o texto', async () => {
+  it('proposal without a revision does not carry the text', async () => {
     const { proposal } = richScenario();
     const h = await openReviewHarness({ proposals: [proposal] });
     renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
-    expect(screen.queryByText(/^Revisada ·/)).toBeNull();
+    expect(screen.queryByText(/^Revised ·/)).toBeNull();
     expect(h.review.derived.rows.value[0]?.revised).toBe(0);
   });
 });

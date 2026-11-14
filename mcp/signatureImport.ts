@@ -14,12 +14,12 @@ import type { Roots } from './paths';
 
 type Json = Record<string, unknown>;
 
-// `plan_signature_import` (etapa #1079, decisões 1c e 13): da ficha `mapping-signature` (inline ou
-// um `.json` dentro das raízes) e do pacote da biblioteca, a prévia da importação e a
-// especialização já importada. Somente leitura: não grava nada (quem grava é o agente). O servidor
-// só lê JSON; um `signatureFile` que não é `.json` é recusado sem ser aberto.
+// `plan_signature_import` (stage #1079, decisions 1c and 13): from the `mapping-signature` sheet (inline or
+// a `.json` inside the roots) and the library package, the import preview and the
+// already-imported specialization. Read-only: it writes nothing (whoever writes is the agent). The server
+// only reads JSON; a `signatureFile` that is not `.json` is refused without being opened.
 
-/** Os erros do importador viram os códigos do servidor, com o mesmo nome (a spec anterior à 16 é `invalid-spec`). */
+/** The importer's errors become the server's codes, with the same name (a spec before 16 is `invalid-spec`). */
 const CODES = {
   'type-not-found': 'type-not-found',
   'platform-not-declared': 'platform-not-declared',
@@ -44,7 +44,7 @@ function invalid(
 ): never {
   throw new ToolError('signature-invalid', message, {
     issues: issues.slice(0, 20),
-    hint: 'corrija a ficha (cada problema traz o caminho dentro dela) conforme mapping-docs://SIGNATURE-FORMAT.md e chame de novo',
+    hint: 'fix the sheet (each problem carries its path inside it) according to mapping-docs://SIGNATURE-FORMAT.md and call again',
   });
 }
 
@@ -55,14 +55,14 @@ async function readSignature(
   if ((args.signature === undefined) === (args.signatureFile === undefined)) {
     throw new ToolError(
       'invalid-arguments',
-      'passe exatamente um entre signature (a ficha inline) e signatureFile (um .json dentro das raízes)',
+      'pass exactly one of signature (the inline sheet) and signatureFile (a .json inside the roots)',
     );
   }
   const parsed =
     args.signatureFile === undefined
       ? parseSignature(args.signature)
       : parseSignatureText(await readJsonFile(roots, args.signatureFile));
-  if (!parsed.ok) invalid('a ficha de assinatura é inválida', parsed.issues);
+  if (!parsed.ok) invalid('the signature sheet is invalid', parsed.issues);
   return parsed.signature;
 }
 
@@ -72,7 +72,7 @@ function target(
   if ((args.platform === undefined) === (args.system === undefined)) {
     throw new ToolError(
       'invalid-arguments',
-      'passe exatamente um entre platform (alvo de código) e system (alvo de design)',
+      'pass exactly one of platform (code target) and system (design target)',
     );
   }
   return args.platform === undefined
@@ -80,7 +80,7 @@ function target(
     : { platform: args.platform };
 }
 
-/** O tipo `id` da especialização, em qualquer camada. */
+/** The type `id` of the specialization, in any layer. */
 function findType(
   spec: Spec,
   id: string,
@@ -88,13 +88,13 @@ function findType(
   return spec.layers.flatMap((layer) => layer.annotationTypes).find((t) => t.id === id);
 }
 
-/** A ficha citada pelo `code` do tipo na plataforma (a do caso, com `variant`). */
+/** The sheet cited by the type's `code` on the platform (the case's, with `variant`). */
 function codeSignature(code: SpecCode | undefined, variant?: string): string | undefined {
   if (variant === undefined) return code?.signature;
   return code?.variants?.cases[variant]?.signature;
 }
 
-/** O caminho da ficha gravada no pacote para o alvo (o `signature` do `code`, do caso ou da source). */
+/** The path of the sheet saved in the package for the target (the `code`'s `signature`, the case's or the source's). */
 function recordedPath(spec: Spec, args: PlanSignatureImportArgs): string | undefined {
   const type = findType(spec, args.type);
   if (args.system !== undefined)
@@ -102,13 +102,13 @@ function recordedPath(spec: Spec, args: PlanSignatureImportArgs): string | undef
   return codeSignature(type?.code?.[args.platform as string], args.variant);
 }
 
-/** A ficha gravada no pacote (a anterior), ou o motivo de não ter podido usá-la. */
+/** The sheet saved in the package (the previous one), or the reason it could not be used. */
 interface Previous {
   readonly signature?: Signature;
   readonly problem?: string;
 }
 
-/** A ficha gravada no pacote (a anterior), se existe e é válida; senão, o motivo em `problem`. */
+/** The sheet saved in the package (the previous one), if it exists and is valid; otherwise, the reason in `problem`. */
 async function readPrevious(
   pkg: PackageSource,
   args: PlanSignatureImportArgs,
@@ -118,15 +118,15 @@ async function readPrevious(
   const path = pkg.resolve(ref);
   const text = await pkg.read(path);
   if (text === null)
-    return { problem: `a ficha gravada \`${path}\` está ausente do pacote` };
+    return { problem: `the saved sheet \`${path}\` is missing from the package` };
   const parsed = parseSignatureText(text);
   if (parsed.ok) return { signature: parsed.signature };
   return {
-    problem: `a ficha gravada \`${path}\` é inválida (${parsed.issues[0]?.message ?? 'sem detalhe'})`,
+    problem: `the saved sheet \`${path}\` is invalid (${parsed.issues[0]?.message ?? 'no detail'})`,
   };
 }
 
-/** Funde o tipo importado no JSON cru do arquivo (mantém a ordem das chaves do arquivo). */
+/** Merges the imported type into the file's raw JSON (keeps the file's key order). */
 function mergedSpec(rawText: string, typeId: string, imported: unknown): unknown {
   const raw: unknown = JSON.parse(rawText);
   const layers = (raw as { layers?: { annotationTypes?: Json[] }[] }).layers ?? [];
@@ -139,7 +139,7 @@ function mergedSpec(rawText: string, typeId: string, imported: unknown): unknown
 }
 
 const HINT = (path: string, bump: boolean): string =>
-  `nada foi gravado. Grave o \`spec\` no arquivo da especialização do pacote e a ficha (o mesmo JSON passado) em \`${path}\` dentro dele; rode validate_library na pasta${bump ? ' (previous = a versão anterior) e suba a version, porque o contrato mudou' : ''}. Escreva só label, description e ignore à mão; \`migrations\` só se a pessoa pedir (veja suggestedMigrations).`;
+  `nothing was written. Write the \`spec\` to the package's specialization file and the sheet (the same JSON passed) to \`${path}\` inside it; run validate_library on the folder${bump ? ' (previous = the earlier version) and raise the version, because the contract changed' : ''}. Write only label, description and ignore by hand; \`migrations\` only if the person asks (see suggestedMigrations).`;
 
 export async function planSignatureImportTool(
   roots: Roots,
@@ -165,10 +165,7 @@ export async function planSignatureImportTool(
   const { plan } = result;
   const rawText = await pkg.read(pkg.specPath);
   if (rawText === null)
-    throw new ToolError(
-      'path-not-found',
-      `arquivo da especialização não encontrado: ${args.path}`,
-    );
+    throw new ToolError('path-not-found', `specialization file not found: ${args.path}`);
   return {
     path: args.path,
     type: args.type,

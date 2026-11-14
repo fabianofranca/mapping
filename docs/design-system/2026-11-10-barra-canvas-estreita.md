@@ -1,21 +1,21 @@
-# Barra do canvas estreita — 2026-11-10 (épico `epic/barra-canvas-estreita`)
+# Narrow canvas bar — 2026-11-10 (épico `epic/barra-canvas-estreita`)
 
 ## Pendências
 
-- **`Breadcrumbs`:** na barra do canvas estreita (container query, `max-width: 470px`), o meio do caminho recolhe e aparece o **…** (`ActionMenu` com o ícone `more`, compacto), que abre o menu do caminho inteiro (nome do botão "Mostrar o caminho inteiro", do menu "Caminho inteiro"; o Canvas desabilitado e o último com `aria-current`). Com o **…**, o último trecho perde o ícone, e o Canvas encolhe antes da seleção. Textos novos: `crumbs.showFull` e `crumbs.menu`. Arquivos: `src/ui/Breadcrumbs.tsx`, `src/theme/editor.css`.
-- **`ActionMenu`:** props novas `icon` (`more` ou `moreVertical`), `menuLabel` e `className`, e `current` no item (`aria-current`). Arquivo: `src/ui/ActionMenu.tsx`.
-- **Barra do canvas:** na revisão estreita (container query, `max-width: 470px`) o `OverflowMenu` (`ActionMenu` com o ícone `more`, compacto, nome "Mais controles" = `editor.moreControls`) fica no fim da barra, antes do zoom, e guarda Conversas, Visualizar, Mostrar no canvas, Enquadrar tudo e Enquadrar seleção, com as mesmas ações e chaves dos botões. Padrão novo de menu de excesso: o botão leva o selo de contagem e o ponto de não lida das conversas (como o `PinsButton`). Para dar letras à seleção, vão justos o vão da barra, o do `.canvas-bar-end` e o botão. O painel **Mostrar no canvas** se ancora no "⋯" quando o botão dele está escondido (`Popover` com `anchor`) e devolve o foco a ele. Arquivos: `src/app/EditorTools.tsx`, `src/app/EditorWindows.tsx`, `src/ui/ViewModePanel.tsx`, `src/ui/Popover.tsx`, `src/theme/editor.css`.
-- **`ActionMenu`:** props novas `badge` e `alert` (selo e ponto no botão) e, no item, `checked` (vira `menuitemcheckbox`, com `aria-checked` e o visto) e `shortcut` (à direita). Arquivos: `src/ui/ActionMenu.tsx`, `src/theme/details.css`.
-- **`Popover`:** prop nova `anchor` (elemento que ancora o painel no lugar do host). Arquivo: `src/ui/Popover.tsx`.
+- **`Breadcrumbs`:** in the narrow canvas bar (container query, `max-width: 470px`), the middle of the path collapses and the **…** appears (`ActionMenu` with the `more` icon, compact), which opens the full-path menu (button name "Show full path", menu name "Full path"; the Canvas disabled and the last one with `aria-current`). With the **…**, the last segment loses the icon, and the Canvas shrinks before the selection. New texts: `crumbs.showFull` and `crumbs.menu`. Files: `src/ui/Breadcrumbs.tsx`, `src/theme/editor.css`.
+- **`ActionMenu`:** new props `icon` (`more` or `moreVertical`), `menuLabel` and `className`, and `current` on the item (`aria-current`). File: `src/ui/ActionMenu.tsx`.
+- **Canvas bar:** in the narrow review (container query, `max-width: 470px`) the `OverflowMenu` (`ActionMenu` with the `more` icon, compact, name "More controls" = `editor.moreControls`) sits at the end of the bar, before the zoom, and holds Conversations, View, Show on canvas, Fit all and Fit selection, with the same actions and keys as the buttons. New overflow menu pattern: the button carries the count badge and the unread dot of the conversations (like the `PinsButton`). To leave room for letters in the selection, the bar gap, that of `.canvas-bar-end` and the button are tight. The **Show on canvas** panel anchors to the "⋯" when its button is hidden (`Popover` with `anchor`) and returns focus to it. Files: `src/app/EditorTools.tsx`, `src/app/EditorWindows.tsx`, `src/ui/ViewModePanel.tsx`, `src/ui/Popover.tsx`, `src/theme/editor.css`.
+- **`ActionMenu`:** new props `badge` and `alert` (badge and dot on the button) and, on the item, `checked` (becomes `menuitemcheckbox`, with `aria-checked` and the check) and `shortcut` (on the right). Files: `src/ui/ActionMenu.tsx`, `src/theme/details.css`.
+- **`Popover`:** new prop `anchor` (element that anchors the panel in place of the host). File: `src/ui/Popover.tsx`.
 
 ## Sincronização
 
-Nenhuma gravação feita pelo agente: artefato curado à mão.
+No write made by the agent: hand-curated artifact.
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: `Breadcrumbs` na barra estreita, o "…" com o `ActionMenu` e as chaves `crumbs.showFull` e `crumbs.menu`: guia (texto, DS3), `bundle.css` (texto, DS3) e preview (prévia, DS5).
-- Passou para o registro do épico `epic/sincronia-ds-2`: `ActionMenu`, props `icon`, `menuLabel`, `className` e `current` no item: guia do `Menu` (texto, DS3) e `bundle.css` (texto, DS3).
-- Passou para o registro do épico `epic/sincronia-ds-2`: barra do canvas estreita na revisão, `OverflowMenu` ("Mais controles") e o painel "Mostrar no canvas" ancorado no "⋯": guias `Breadcrumbs` e `ViewModePanel` (texto, DS3), `bundle.css` (texto, DS3) e previews de `Breadcrumbs` e `Menu` (prévia, DS5).
-- Passou para o registro do épico `epic/sincronia-ds-2`: `ActionMenu`, props `badge` e `alert` e, no item, `checked` e `shortcut`: guia do `Menu` (texto, DS3), `bundle.css` (texto, DS3) e preview do `Menu` (prévia, DS5).
-- Passou para o registro do épico `epic/sincronia-ds-2`: `Popover`, prop `anchor`: guia do `Menu`, que cobre o `Popover` (texto, DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `Breadcrumbs` in the narrow bar, the "…" with the `ActionMenu` and the keys `crumbs.showFull` and `crumbs.menu`: guide (text, DS3), `bundle.css` (text, DS3) and preview (preview, DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `ActionMenu`, props `icon`, `menuLabel`, `className` and `current` on the item: `Menu` guide (text, DS3) and `bundle.css` (text, DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: canvas bar in the narrow review, `OverflowMenu` ("More controls") and the "Show on canvas" panel anchored to the "⋯": `Breadcrumbs` and `ViewModePanel` guides (text, DS3), `bundle.css` (text, DS3) and `Breadcrumbs` and `Menu` previews (preview, DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `ActionMenu`, props `badge` and `alert` and, on the item, `checked` and `shortcut`: `Menu` guide (text, DS3), `bundle.css` (text, DS3) and `Menu` preview (preview, DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `Popover`, prop `anchor`: `Menu` guide, which covers the `Popover` (text, DS3).

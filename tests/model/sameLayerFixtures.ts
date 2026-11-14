@@ -11,11 +11,12 @@ import { idGen, layerOf } from './specFixtures';
 
 export type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
+// pt-BR kept: shared fixture data (layer ids/names, role names) asserted by tests/components and other model tests
 /**
- * Especialização de teste para vínculo na mesma camada (`formatVersion` 13): `button`
- * (componentes) aceita `onClick`; na camada `eventos`, `onClick` aceita `request`; `request`
- * (papéis `onSuccess` e `onFailure`) aceita a camada inteira, inclusive ele mesmo; `navigate` não
- * aceita filhos.
+ * Test specialization for a same-layer link (`formatVersion` 13): `button`
+ * (components) accepts `onClick`; in the `eventos` layer, `onClick` accepts `request`; `request`
+ * (roles `onSuccess` and `onFailure`) accepts the whole layer, itself included; `navigate` does not
+ * accept children.
  */
 export function sameLayerSpec(formatVersion = 13, edit?: (s: Json) => void): Json {
   const spec: Json = {
@@ -77,7 +78,7 @@ export function sameLayerSpec(formatVersion = 13, edit?: (s: Json) => void): Jso
   return spec;
 }
 
-/** A especialização de `sameLayerSpec` já validada. */
+/** The `sameLayerSpec` specialization, already validated. */
 export function sameLayerProject(formatVersion = 13, edit?: (s: Json) => void): Project {
   const parsed = parseSpec(sameLayerSpec(formatVersion, edit));
   if (!parsed.ok) throw new Error(JSON.stringify(parsed.issues));
@@ -92,7 +93,7 @@ export function sameLayerProject(formatVersion = 13, edit?: (s: Json) => void): 
   return p;
 }
 
-/** Cria a anotação tipada `typeId` (camada `eventos` ou `componentes`) na `M1`. */
+/** Creates the typed annotation `typeId` (layer `eventos` or `componentes`) on `M1`. */
 export function add(
   p: Project,
   id: string,

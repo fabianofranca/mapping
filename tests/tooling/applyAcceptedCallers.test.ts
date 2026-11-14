@@ -1,17 +1,17 @@
 // @vitest-environment node
-// Devolução do portão da 8.2 (achado 7): catraca do "aplicar em curso". Enquanto o
-// aplicar das aceitas roda, a revisão segura a reavaliação (`derived.hold()`), e quem
-// segura é `review.apply()` (`src/store/review.ts`). Por isso só ele chama
-// `proposalActions.applyAccepted(`: um chamador novo aplicaria sem segurar e traria de
-// volta o "Aplicar bloqueado" e o "O projeto mudou desde a sua última sessão" falsos no
-// meio do aplicar. A lista é exata (`toEqual`): um chamador novo quebra este teste.
+// Return of the gate of 8.2 (finding 7): ratchet of the "apply in progress". While the
+// apply of the accepted ones runs, the review holds the re-evaluation (`derived.hold()`), and the one that
+// holds it is `review.apply()` (`src/store/review.ts`). That is why only it calls
+// `proposalActions.applyAccepted(`: a new caller would apply without holding and would bring back the
+// false "Apply blocked" and "The project changed since your last session" in the
+// middle of the apply. The list is exact (`toEqual`): a new caller breaks this test.
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const PATTERN = /\.applyAccepted\(/;
 
-/** Arquivos (ordenados) que chamam `.applyAccepted(`. */
+/** Files (sorted) that call `.applyAccepted(`. */
 export function callersOf(files: ReadonlyMap<string, string>): string[] {
   return [...files]
     .filter(([, text]) => PATTERN.test(text))
@@ -19,7 +19,7 @@ export function callersOf(files: ReadonlyMap<string, string>): string[] {
     .sort();
 }
 
-/** `{ caminho relativo → texto }` de todo `.ts`/`.tsx` sob `dir`. */
+/** `{ relative path → text }` of every `.ts`/`.tsx` under `dir`. */
 function sources(dir: string, root = dir): Map<string, string> {
   const result = new Map<string, string>();
   for (const name of readdirSync(dir)) {
@@ -33,23 +33,23 @@ function sources(dir: string, root = dir): Map<string, string> {
   return result;
 }
 
-/** Quem pode chamar `.applyAccepted(`: só o `review.apply()`, que segura a revisão. */
+/** Who may call `.applyAccepted(`: only `review.apply()`, which holds the review. */
 const ALLOWED = ['src/store/review.ts'];
 
-describe('aplicar aceitas: só review.apply() chama applyAccepted', () => {
-  it('os chamadores em src/ são exatamente os permitidos', () => {
+describe('apply accepted: only review.apply() calls applyAccepted', () => {
+  it('the callers in src/ are exactly the allowed ones', () => {
     const files = sources(join(process.cwd(), 'src'), process.cwd());
     expect(callersOf(files)).toEqual(ALLOWED);
   });
 
-  it('a varredura pega um chamador novo e deixa passar o certo', () => {
+  it('the scan catches a new caller and lets the right one through', () => {
     const files = new Map([
       ['src/store/review.ts', 'return proposalActions.applyAccepted(id);'],
-      ['src/ui/review/Novo.tsx', 'void session.proposalActions.applyAccepted(id);'],
-      ['src/ui/review/Certo.tsx', 'const result = await review.apply();'],
-      // A função do modelo não é o aplicar da sessão.
+      ['src/ui/review/New.tsx', 'void session.proposalActions.applyAccepted(id);'],
+      ['src/ui/review/Right.tsx', 'const result = await review.apply();'],
+      // The model function is not the session apply.
       ['src/store/proposalActions.ts', 'const applying = applyAccepted(base, p, now());'],
     ]);
-    expect(callersOf(files)).toEqual(['src/store/review.ts', 'src/ui/review/Novo.tsx']);
+    expect(callersOf(files)).toEqual(['src/store/review.ts', 'src/ui/review/New.tsx']);
   });
 });

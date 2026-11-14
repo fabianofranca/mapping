@@ -1,5 +1,5 @@
-// Modo do desenho (etapa "componentes fiéis", CF6): o do projeto, o que o container fixa e o
-// efetivo. Funções puras do modelo.
+// Drawing mode (stage "faithful components", CF6): the project's, the one the container fixes and the
+// effective one. Pure model functions.
 import { describe, expect, it } from 'vitest';
 import {
   drawingModesOf,
@@ -17,8 +17,8 @@ function projectWithContainer(): { p: Project; containerId: string } {
   return { p, containerId };
 }
 
-describe('modo do desenho', () => {
-  it('setProjectDrawingMode fixa, troca e remove (null)', () => {
+describe('drawing mode', () => {
+  it('setProjectDrawingMode sets, switches and removes (null)', () => {
     const { p } = projectWithContainer();
     const dark = setProjectDrawingMode(p, 'dark');
     expect(dark.drawingMode).toBe('dark');
@@ -26,39 +26,39 @@ describe('modo do desenho', () => {
     const cleared = setProjectDrawingMode(dark, null);
     expect(cleared.drawingMode).toBeUndefined();
     expect('drawingMode' in cleared).toBe(false);
-    // Igual ao que já estava: devolve o mesmo projeto.
+    // Same as what was already there: returns the same project.
     expect(setProjectDrawingMode(dark, 'dark')).toBe(dark);
     expect(setProjectDrawingMode(p, null)).toBe(p);
   });
 
-  it('recusa modo vazio ou fora do padrão', () => {
+  it('refuses an empty mode or one outside the pattern', () => {
     const { p } = projectWithContainer();
     expect(() => setProjectDrawingMode(p, '')).toThrow();
     expect(() => setProjectDrawingMode(p, 'Dark Mode')).toThrow();
   });
 
-  it('setContainerDrawingMode fixa e volta a seguir o projeto com null', () => {
+  it('setContainerDrawingMode sets and goes back to following the project with null', () => {
     const { p, containerId } = projectWithContainer();
     const fixed = setContainerDrawingMode(p, containerId, 'light');
     expect(fixed.containers[0]!.drawingMode).toBe('light');
     const follow = setContainerDrawingMode(fixed, containerId, null);
     expect(follow.containers[0]!.drawingMode ?? null).toBeNull();
     expect(setContainerDrawingMode(p, containerId, null)).toBe(p);
-    expect(() => setContainerDrawingMode(p, 'nao-existe', 'dark')).toThrow();
+    expect(() => setContainerDrawingMode(p, 'does-not-exist', 'dark')).toThrow();
   });
 
-  it('modo efetivo: o do container, senão o do projeto, senão undefined (primeiro modo)', () => {
+  it("effective mode: the container's, else the project's, else undefined (first mode)", () => {
     const { p, containerId } = projectWithContainer();
     expect(effectiveDrawingMode(p, containerId)).toBeUndefined();
     const dark = setProjectDrawingMode(p, 'dark');
     expect(effectiveDrawingMode(dark, containerId)).toBe('dark');
     const fixed = setContainerDrawingMode(dark, containerId, 'light');
     expect(effectiveDrawingMode(fixed, containerId)).toBe('light');
-    // Marcação do canvas (sem container) segue o projeto.
+    // A canvas marking (no container) follows the project.
     expect(effectiveDrawingMode(fixed, null)).toBe('dark');
   });
 
-  it('drawingModesOf junta os modos das especializações, sem repetir', () => {
+  it('drawingModesOf joins the modes of the specializations, without repeating', () => {
     expect(
       drawingModesOf([
         { modes: ['light', 'dark'] },
@@ -69,7 +69,7 @@ describe('modo do desenho', () => {
     expect(drawingModesOf([])).toEqual([]);
   });
 
-  it('undeclaredDrawingMode: modo gravado que nenhuma especialização declara', () => {
+  it('undeclaredDrawingMode: a saved mode that no specialization declares', () => {
     const { p, containerId } = projectWithContainer();
     const declared = ['light', 'dark'];
     expect(undeclaredDrawingMode(setProjectDrawingMode(p, 'dark'), declared)).toEqual([]);

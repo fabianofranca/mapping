@@ -1,5 +1,5 @@
-# e2e paralelo — 2026-11-03 (épico `epic/e2e-paralelo`)
+# Parallel e2e — 2026-11-03 (épico `epic/e2e-paralelo`)
 
 ## Sincronização
 
-Sem impacto: a etapa só mudou o `playwright.config.ts`, o job `e2e` do `ci.yml`, testes de configuração e documentação, sem tocar em `src/`. Nada foi gravado no artefato.
+Sem impacto: the stage only changed `playwright.config.ts`, the `e2e` job in `ci.yml`, configuration tests and documentation, without touching `src/`. Nothing was written to the artifact.

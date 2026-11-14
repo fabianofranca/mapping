@@ -14,6 +14,7 @@ import { createHarness, renderLive } from './harness';
 afterEach(cleanup);
 
 function setup(withDrawing: boolean) {
+  // pt-BR kept: shared fixture data (layers 'Camada A', 'Camada B', 'Só dados' of viewModeFixtures) asserted by tests/canvas and tests/store
   const project = withDrawing ? viewProject() : sampleProject();
   const h = createHarness(project);
   const context = withDrawing
@@ -38,8 +39,8 @@ const dialog = () => screen.getByRole('dialog', { name: t('view.panelTitle') });
 const box = (name: string) =>
   within(dialog()).getByRole('checkbox', { name: new RegExp(name) });
 
-describe('painel Mostrar no canvas', () => {
-  it('traz a frase, os cinco elementos e começa com tudo marcado menos o contorno', () => {
+describe('Show on canvas panel', () => {
+  it('brings the sentence, the five elements and starts with everything checked except the outline', () => {
     setup(true);
     expect(within(dialog()).getByText(t('view.panelHint'))).toBeTruthy();
     for (const key of [
@@ -58,7 +59,7 @@ describe('painel Mostrar no canvas', () => {
     expect((box(t('view.panelArrows')) as HTMLInputElement).checked).toBe(true);
   });
 
-  it('marcar e desmarcar um elemento muda a escolha', () => {
+  it('checking and unchecking an element changes the choice', () => {
     const { h } = setup(true);
     fireEvent.click(box(t('view.outline')));
     expect(h.ui.viewShow.value.outline).toBe(true);
@@ -66,7 +67,7 @@ describe('painel Mostrar no canvas', () => {
     expect(h.ui.viewShow.value.arrows).toBe(false);
   });
 
-  it('lista só as camadas com desenho; desmarcar uma a guarda como desmarcada', () => {
+  it('lists only the layers with a drawing; unchecking one stores it as unchecked', () => {
     const { h, project } = setup(true);
     const ids = viewLayerIds(project);
     expect(box('Camada A')).toBeTruthy();
@@ -78,13 +79,13 @@ describe('painel Mostrar no canvas', () => {
     expect((box('Camada A') as HTMLInputElement).checked).toBe(false);
   });
 
-  it('sem nenhuma camada com desenho, o grupo não aparece', () => {
+  it('without any layer with a drawing, the group does not appear', () => {
     setup(false);
     expect(within(dialog()).queryByText(t('view.groupLayers'))).toBeNull();
     expect(box(t('view.containers'))).toBeTruthy();
   });
 
-  it('Mostrar tudo marca tudo e Só as telas desmarca contorno, nome e setas', () => {
+  it('Show all checks everything and Only screens unchecks outline, name and arrows', () => {
     const { h } = setup(true);
     fireEvent.click(within(dialog()).getByRole('button', { name: t('view.showAll') }));
     expect(h.ui.viewShow.value).toEqual({
@@ -102,7 +103,7 @@ describe('painel Mostrar no canvas', () => {
     });
   });
 
-  it('leva o foco para dentro do painel ao abrir', () => {
+  it('moves focus inside the panel on open', () => {
     setup(true);
     expect(dialog().contains(document.activeElement)).toBe(true);
   });

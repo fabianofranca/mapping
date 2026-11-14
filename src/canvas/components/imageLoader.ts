@@ -1,7 +1,7 @@
-// Único lugar que cria imagem a partir de uma URL fora de `src/storage/` (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador";
-// regra `imageCreationSyntaxRules` em eslint.config.js): nenhum
-// código monta URL de imagem por fora da política de URL e do consentimento. A RI3 acrescentou
-// aqui as imagens remotas (`crossOrigin`, `referrerPolicy`, limites, cache).
+// The only place that creates an image from a URL outside `src/storage/` (docs/ARCHITECTURE.md,
+// "Remote images: policy, consent and loader"; `imageCreationSyntaxRules` rule in
+// eslint.config.js): no code builds an image URL outside the URL policy and the consent.
+// RI3 added the remote images here (`crossOrigin`, `referrerPolicy`, limits, cache).
 
 import { signal, type ReadonlySignal } from '@preact/signals';
 import type { RemoteImageView } from './remoteImageTypes';
@@ -19,17 +19,17 @@ export interface EmbeddedImageHandlers {
   onError?(): void;
 }
 
-/** Imagens embutidas guardadas por URL (as menos recentes saem; ninguém redecodifica a cada desenho). */
+/** Embedded images kept by URL (the least recent leave; nobody re-decodes on every draw). */
 export const EMBEDDED_IMAGE_CACHE_ENTRIES = 64;
 
 const embeddedReady = new Map<string, HTMLImageElement>();
 const embeddedWaiting = new Map<string, EmbeddedImageHandlers[]>();
 const embeddedEpochSignal = signal(0);
 
-/** Sobe quando uma imagem embutida termina de carregar (a galeria do Catálogo refaz o PNG). */
+/** Goes up when an embedded image finishes loading (the Catalog gallery redoes the PNG). */
 export const embeddedImageEpoch: ReadonlySignal<number> = embeddedEpochSignal;
 
-/** A imagem embutida já carregada (e a torna a mais recente); `undefined` se ainda não está. */
+/** The embedded image already loaded (and makes it the most recent); `undefined` if not yet. */
 export function cachedEmbeddedImage(src: string): HTMLImageElement | undefined {
   const element = embeddedReady.get(src);
   if (element) {
@@ -39,7 +39,7 @@ export function cachedEmbeddedImage(src: string): HTMLImageElement | undefined {
   return element;
 }
 
-/** Esquece as imagens embutidas (testes e troca de projeto). */
+/** Forgets the embedded images (tests and project switch). */
 export function clearEmbeddedImages(): void {
   embeddedReady.clear();
   embeddedWaiting.clear();
@@ -63,9 +63,9 @@ function settleEmbedded(src: string, element: HTMLImageElement | null): void {
 }
 
 /**
- * Carrega uma imagem embutida (`data:`). Devolve `null` para qualquer outro esquema
- * (defesa a mais: o renderizador já cai no reservado antes de chamar). Quem pede enquanto a
- * mesma URL carrega divide a mesma `Image`; a carregada fica guardada (`cachedEmbeddedImage`).
+ * Loads an embedded image (`data:`). Returns `null` for any other scheme
+ * (extra defense: the renderer already falls back to the placeholder before calling). Whoever asks
+ * while the same URL loads shares the same `Image`; the loaded one is kept (`cachedEmbeddedImage`).
  */
 export function loadEmbeddedImage(
   src: string,
@@ -91,17 +91,17 @@ export function loadEmbeddedImage(
 }
 
 // ---------------------------------------------------------------------------------------------
-// Imagens remotas (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador"). A classe não conhece o consentimento nem a
-// política de URL: quem a chama (`remoteImages.ts`) só pede uma URL que já passou pelas duas
-// portas da app. Aqui ficam os limites (concorrência, tempo, tamanho), o bitmap reduzido, o
-// cache em memória e a única nova tentativa sem CORS.
+// Remote images (docs/ARCHITECTURE.md, "Remote images: policy, consent and loader"). The class
+// does not know the consent or the URL policy: its caller (`remoteImages.ts`) only asks for a URL
+// that already went through the app's two gates. Here live the limits (concurrency, time, size),
+// the reduced bitmap, the in-memory cache and the single retry without CORS.
 
 export interface RemoteImageRequest {
-  /** Interruptor "Mostrar imagens de servidores sem CORS" (decisão 17). */
+  /** "Show images from servers without CORS" switch (decision 17). */
   readonly allowNoCors: boolean;
 }
 
-/** Limites do carregador (decisão 6). */
+/** Loader limits (decision 6). */
 export const REMOTE_IMAGE_LIMITS = {
   parallel: 6,
   timeoutMs: 20_000,
@@ -109,14 +109,14 @@ export const REMOTE_IMAGE_LIMITS = {
   maxPixels: 40_000_000,
   displaySide: 2048,
   cacheEntries: 64,
-  /** Falhas lembradas na sessão (só a URL e o motivo; despeja a mais antiga). */
+  /** Failures remembered in the session (only the URL and the reason; drops the oldest). */
   failureEntries: 512,
 } as const;
 
-/** Dependências trocáveis nos testes (o jsdom não carrega imagem de verdade). */
+/** Dependencies swappable in the tests (jsdom does not really load images). */
 export interface RemoteImageLoaderDeps {
   createImage(): HTMLImageElement;
-  /** `undefined` = o navegador não tem `createImageBitmap`: usa o próprio elemento. */
+  /** `undefined` = the browser has no `createImageBitmap`: uses the element itself. */
   createBitmap:
     | ((image: HTMLImageElement, options?: ImageBitmapOptions) => Promise<ImageBitmap>)
     | undefined;
@@ -143,7 +143,7 @@ function defaultDeps(): RemoteImageLoaderDeps {
 
 interface Ready {
   readonly image: CanvasImageSource;
-  /** O mesmo `image` quando é bitmap (tem `close()`), senão `null`. */
+  /** The same `image` when it is a bitmap (has `close()`), otherwise `null`. */
   readonly bitmap: ImageBitmap | null;
   readonly width: number;
   readonly height: number;
@@ -152,7 +152,7 @@ interface Ready {
 
 interface Pending {
   readonly url: string;
-  /** Tentativa sem `crossOrigin` (a única, decisão 17). */
+  /** Attempt without `crossOrigin` (the only one, decision 17). */
   readonly noCors: boolean;
   element: HTMLImageElement | null;
   timer: unknown;
@@ -161,13 +161,13 @@ interface Pending {
 interface Failure {
   readonly state: 'failed' | 'too-large';
   readonly timeout: boolean;
-  /** A nova tentativa sem CORS já foi feita (ou não adiantaria): não se repete. */
+  /** The retry without CORS was already made (or it would not help): it is not repeated. */
   readonly triedNoCors: boolean;
 }
 
 export class RemoteImageLoader {
   private readonly deps: RemoteImageLoaderDeps;
-  /** Carregadas (`loaded` e `opaque`), da menos para a mais recente (LRU pela ordem do Map). */
+  /** Loaded (`loaded` and `opaque`), from least to most recent (LRU by Map order). */
   private readonly ready = new Map<string, Ready>();
   private readonly failures = new Map<string, Failure>();
   private readonly inFlight = new Map<string, Pending>();
@@ -177,18 +177,18 @@ export class RemoteImageLoader {
   private readonly toClose: ImageBitmap[] = [];
   private closeScheduled = false;
   /**
-   * URLs pedidas no quadro atual e no anterior: o cache não despeja nenhuma delas (despejar uma
-   * URL à vista só a faria ser pedida de novo, em ciclo). Com mais URLs à vista que o limite, o
-   * cache passa do limite até elas saírem de vista.
+   * URLs requested in the current frame and the previous one: the cache does not evict any of them
+   * (evicting an in-view URL would only get it requested again, in a cycle). With more in-view URLs
+   * than the limit, the cache goes over the limit until they leave view.
    */
   private seen = new Set<string>();
   private seenBefore = new Set<string>();
   private seenScheduled = false;
-  /** Último valor do interruptor de CORS visto num `request` (a nova tentativa depende dele). */
+  /** Last value of the CORS switch seen in a `request` (the retry depends on it). */
   private noCorsAllowed = false;
   private readonly epochSignal = signal(0);
 
-  /** Sobe quando uma imagem termina de carregar (a galeria do Catálogo invalida o cache). */
+  /** Goes up when an image finishes loading (the Catalog gallery invalidates the cache). */
   readonly epoch: ReadonlySignal<number> = this.epochSignal;
 
   constructor(deps: Partial<RemoteImageLoaderDeps> = {}) {
@@ -196,15 +196,15 @@ export class RemoteImageLoader {
   }
 
   /**
-   * O estado atual de uma URL; inicia a carga se for preciso. Nunca lança. `url` precisa ter
-   * passado pelas duas portas da app (política de URL e consentimento).
+   * The current state of a URL; starts the load if needed. Never throws. `url` must have
+   * gone through the app's two gates (URL policy and consent).
    */
   request(url: string, { allowNoCors }: RemoteImageRequest): RemoteImageView {
     this.noCorsAllowed = allowNoCors;
     this.markSeen(url);
     const ready = this.ready.get(url);
     if (ready) {
-      // Imagem carregada sem CORS só aparece com o interruptor ligado.
+      // An image loaded without CORS only shows with the switch on.
       if (ready.opaque && !allowNoCors) return { state: 'failed', reason: 'failed' };
       this.ready.delete(url);
       this.ready.set(url, ready);
@@ -217,7 +217,7 @@ export class RemoteImageLoader {
     }
     const failure = this.failures.get(url);
     if (failure) {
-      // A única nova tentativa: o interruptor foi ligado depois da falha com CORS.
+      // The single retry: the switch was turned on after the CORS failure.
       if (failure.state === 'failed' && !failure.triedNoCors && allowNoCors) {
         this.failures.delete(url);
         this.enqueue(url, true);
@@ -231,7 +231,7 @@ export class RemoteImageLoader {
     return { state: 'loading' };
   }
 
-  /** Avisa (com a URL) cada mudança de estado: carregou, falhou ou saiu do cache. */
+  /** Notifies (with the URL) each state change: loaded, failed or left the cache. */
   subscribe(listener: (url: string) => void): () => void {
     this.listeners.add(listener);
     return () => {
@@ -239,7 +239,7 @@ export class RemoteImageLoader {
     };
   }
 
-  /** Solta o cache e cancela o que está em andamento (testes e encerramento da app). */
+  /** Drops the cache and cancels what is in progress (tests and app shutdown). */
   dispose(): void {
     for (const pending of this.inFlight.values()) this.cancel(pending);
     this.inFlight.clear();
@@ -253,7 +253,7 @@ export class RemoteImageLoader {
     this.seenBefore.clear();
   }
 
-  /** Marca a URL como à vista; a cada quadro as marcas envelhecem uma geração. */
+  /** Marks the URL as in view; each frame the marks age one generation. */
   private markSeen(url: string): void {
     this.seen.add(url);
     if (this.seenScheduled) return;
@@ -264,7 +264,7 @@ export class RemoteImageLoader {
   private ageSeen(): void {
     this.seenBefore = this.seen;
     this.seen = new Set();
-    // Enquanto sobrar marca da geração anterior, mais um quadro a faz sair de vista.
+    // While marks from the previous generation remain, one more frame takes it out of view.
     if (this.seenBefore.size > 0) this.deps.requestFrame(() => this.ageSeen());
     else this.seenScheduled = false;
   }
@@ -288,7 +288,7 @@ export class RemoteImageLoader {
   private start(pending: Pending): void {
     const element = this.deps.createImage();
     pending.element = element;
-    // Sem cookies entre origens (a menos da única nova tentativa sem CORS) e sem `Referer`.
+    // No cookies across origins (except for the single retry without CORS) and no `Referer`.
     if (!pending.noCors) element.crossOrigin = 'anonymous';
     element.referrerPolicy = 'no-referrer';
     element.onload = () => {
@@ -299,7 +299,7 @@ export class RemoteImageLoader {
     element.onerror = () => {
       if (!this.owns(pending)) return;
       this.settle(pending);
-      // Servidor sem CORS: com o interruptor ligado, uma só nova tentativa sem `crossOrigin`.
+      // Server without CORS: with the switch on, a single retry without `crossOrigin`.
       if (!pending.noCors && this.noCorsAllowed) {
         this.enqueue(pending.url, true);
         return;
@@ -310,7 +310,7 @@ export class RemoteImageLoader {
       if (!this.owns(pending)) return;
       this.cancel(pending);
       this.settle(pending);
-      // Estourar o tempo não é falta de CORS: não há nova tentativa.
+      // Timing out is not a lack of CORS: there is no retry.
       this.fail(pending.url, 'failed', true, true);
     }, REMOTE_IMAGE_LIMITS.timeoutMs);
     element.src = pending.url;
@@ -320,7 +320,7 @@ export class RemoteImageLoader {
     return this.inFlight.get(pending.url) === pending;
   }
 
-  /** Para o relógio e libera a vaga (a próxima da fila começa já). */
+  /** Stops the clock and frees the slot (the next in the queue starts right away). */
   private settle(pending: Pending): void {
     if (pending.timer !== null) this.deps.clearTimeout(pending.timer);
     pending.timer = null;
@@ -335,7 +335,7 @@ export class RemoteImageLoader {
     if (!element) return;
     element.onload = null;
     element.onerror = null;
-    // Abandona a transferência (só a string vazia: nunca monta URL por fora da política).
+    // Abandons the transfer (only the empty string: never builds a URL outside the policy).
     element.src = '';
   }
 
@@ -366,7 +366,7 @@ export class RemoteImageLoader {
       return;
     }
     if (width > maxSide || height > maxSide || width * height > maxPixels) {
-      // Nada é decodificado para bitmap.
+      // Nothing is decoded to a bitmap.
       this.fail(url, 'too-large', false, true);
       return;
     }
@@ -377,7 +377,7 @@ export class RemoteImageLoader {
       if (this.owns(pending)) this.fail(url, 'failed', false, pending.noCors);
       return;
     }
-    // Pode ter sido cancelada (`dispose`) enquanto o bitmap era feito.
+    // It may have been cancelled (`dispose`) while the bitmap was being made.
     if (!this.owns(pending)) {
       if (shown.bitmap) this.defer(shown.bitmap);
       return;
@@ -388,7 +388,7 @@ export class RemoteImageLoader {
     this.emit(url);
   }
 
-  /** O que se desenha: bitmap reduzido a 2048 px no lado maior, ou o próprio elemento. */
+  /** What is drawn: a bitmap reduced to 2048 px on the longer side, or the element itself. */
   private async display(
     element: HTMLImageElement,
     width: number,
@@ -409,7 +409,7 @@ export class RemoteImageLoader {
             });
       return { image: bitmap, bitmap, width: bitmap.width, height: bitmap.height };
     } catch {
-      // Bitmap não saiu: o elemento carregado serve.
+      // No bitmap came out: the loaded element will do.
       return { image: element, bitmap: null, width, height };
     }
   }
@@ -417,8 +417,8 @@ export class RemoteImageLoader {
   private store(url: string, entry: Ready): void {
     this.ready.set(url, entry);
     if (this.ready.size <= REMOTE_IMAGE_LIMITS.cacheEntries) return;
-    // Da menos para a mais recente, só as que não estão à vista; acima do limite, para quando
-    // não houver mais nenhuma fora de vista.
+    // From least to most recent, only those not in view; above the limit, stops when
+    // there are no more out of view.
     for (const [evictedUrl, evicted] of [...this.ready]) {
       if (this.ready.size <= REMOTE_IMAGE_LIMITS.cacheEntries) break;
       if (
@@ -428,7 +428,7 @@ export class RemoteImageLoader {
       )
         continue;
       this.ready.delete(evictedUrl);
-      // Um nó do Konva pode estar usando o bitmap neste quadro: o `close()` espera o próximo.
+      // A Konva node may be using the bitmap in this frame: `close()` waits for the next one.
       this.release(evicted);
       this.emit(evictedUrl);
     }
@@ -455,7 +455,7 @@ export class RemoteImageLoader {
 
 let shared: RemoteImageLoader | null = null;
 
-/** O carregador único da app (o cache sobrevive a trocas de projeto e a reaberturas). */
+/** The app's single loader (the cache survives project switches and reopenings). */
 export function sharedRemoteImageLoader(): RemoteImageLoader {
   shared ??= new RemoteImageLoader();
   return shared;

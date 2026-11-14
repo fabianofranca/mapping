@@ -14,14 +14,14 @@ import {
 import { AGENT, HUMAN, T0, T1, message, sampleThread } from '../../model/threadFixtures';
 import { canvasProject, editorFor } from '../harness';
 
-// O clique do botão Comentar e o clique no pino (CM4, decisões 24 e 25). Viewport 1:1 em (0, 0).
+// The click of the Comment button and the click on the pin (CM4, decisions 24 and 25). Viewport 1:1 at (0, 0).
 
 const thread = (id: string, anchor: Thread['anchor']): Thread =>
   sampleThread({
     id,
     anchor,
     messages: [
-      message(`${id}1`, T0, HUMAN, `assunto ${id}`),
+      message(`${id}1`, T0, HUMAN, `subject ${id}`),
       message(`${id}2`, T1, AGENT, 'ok'),
     ],
   });
@@ -71,7 +71,7 @@ function setup(threads: readonly Thread[] = [], readOnly = false) {
   };
   const place = () => {
     const project = editor.store.project.peek();
-    if (!project) throw new Error('sem projeto');
+    if (!project) throw new Error('no project');
     pins = pinPlaces(
       project,
       derived.threads.pins.peek(),
@@ -93,8 +93,8 @@ function setup(threads: readonly Thread[] = [], readOnly = false) {
 let current: ReturnType<typeof setup> | null = null;
 afterEach(() => current?.destroy());
 
-describe('botão Comentar armado: o próximo clique abre o rascunho', () => {
-  it('sobre uma marcação, ancora nela e volta à ferramenta de antes', () => {
+describe('Comment button armed: the next click opens the draft', () => {
+  it('on a marking, anchors to it and goes back to the previous tool', () => {
     const s = (current = setup());
     s.ui.mode.value = 'draw';
     armComment(s.ui);
@@ -105,7 +105,7 @@ describe('botão Comentar armado: o próximo clique abre o rascunho', () => {
     expect(s.ui.commentPins.value).toBe(true);
   });
 
-  it('num lugar vazio do container, abre o rascunho num ponto (pixels do container)', () => {
+  it('on an empty spot of the container, opens the draft at a point (container pixels)', () => {
     const s = (current = setup());
     armComment(s.ui);
     s.click(900, 700);
@@ -117,7 +117,7 @@ describe('botão Comentar armado: o próximo clique abre o rascunho', () => {
     });
   });
 
-  it('num lugar vazio do canvas, o ponto fica nas unidades do canvas', () => {
+  it('on an empty spot of the canvas, the point is in canvas units', () => {
     const s = (current = setup());
     armComment(s.ui);
     s.click(1050, 900);
@@ -129,7 +129,7 @@ describe('botão Comentar armado: o próximo clique abre o rascunho', () => {
     });
   });
 
-  it('no somente leitura o clique desarma e não abre rascunho', () => {
+  it('in read-only the click disarms and opens no draft', () => {
     const s = (current = setup([], true));
     armComment(s.ui);
     s.click(250, 250);
@@ -137,7 +137,7 @@ describe('botão Comentar armado: o próximo clique abre o rascunho', () => {
     expect(s.ui.commentArm.value).toBeNull();
   });
 
-  it('o clique não muda a seleção do canvas por baixo do Comentar', () => {
+  it('the click does not change the canvas selection underneath Comment', () => {
     const s = (current = setup());
     armComment(s.ui);
     s.click(900, 700);
@@ -145,20 +145,20 @@ describe('botão Comentar armado: o próximo clique abre o rascunho', () => {
   });
 });
 
-describe('clique no pino', () => {
-  it('uma conversa: seleciona o item e a conversa, e ganha da marcação embaixo', () => {
+describe('click on the pin', () => {
+  it('one thread: selects the item and the thread, and wins over the marking underneath', () => {
     const s = (current = setup([thread('t1', { kind: 'marking', id: 'M1' })]));
     s.ui.commentPins.value = true;
     const [pin] = s.place();
-    // O pino de M1 fica no canto (700,100) acima dele; o clique em (710, 90) não toca marcação, então
-    // forçamos o caso do pino sobre outra marcação: pino de M1, clique dentro dele.
+    // The pin of M1 sits at the corner (700,100) above it; the click at (710, 90) touches no marking, so
+    // we force the case of the pin over another marking: pin of M1, click inside it.
     expect(pin).toBeDefined();
     s.click(pin!.origin.x + 5, pin!.origin.y - 5);
     expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
     expect(selectedThreadId(s.ui)).toBe('t1');
   });
 
-  it('várias conversas no item: seleciona o item e abre a lista (nenhuma conversa escolhida)', () => {
+  it('several threads on the item: selects the item and opens the list (no thread chosen)', () => {
     const s = (current = setup([
       thread('t1', { kind: 'marking', id: 'M1' }),
       thread('t2', { kind: 'field', annotationId: 'A1', key: 'tipo' }),
@@ -170,7 +170,7 @@ describe('clique no pino', () => {
     expect(selectedThreadId(s.ui)).toBeNull();
   });
 
-  it('no ponto solto: seleciona a conversa, sem item', () => {
+  it('on a loose point: selects the thread, without an item', () => {
     const s = (current = setup([
       thread('t1', { kind: 'point', containerId: null, x: 1050, y: 900 }),
     ]));
@@ -181,8 +181,8 @@ describe('clique no pino', () => {
     expect(selectedThreadId(s.ui)).toBe('t1');
   });
 
-  it('o pino sobre outra marcação ganha dela: o clique vai para a conversa, não para a marcação', () => {
-    // O pino do ponto (250, 250) cai sobre M2; o clique é do pino.
+  it('the pin over another marking wins over it: the click goes to the thread, not to the marking', () => {
+    // The pin of the point (250, 250) falls over M2; the click is the pin one.
     const s = (current = setup([
       thread('t1', { kind: 'point', containerId: 'I1', x: 250, y: 250 }),
     ]));

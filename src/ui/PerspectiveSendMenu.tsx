@@ -7,9 +7,9 @@ import { Icon } from './icons';
 import { MenuPopover } from './MenuPopover';
 import { perspectiveRows, type PerspectiveRow } from './perspectiveRows';
 
-// "Enviar para perspectiva…" dos Detalhes (etapa #659, PE3): um menu com a Principal e as
-// perspectivas do projeto em caixas. A Principal e a aberta ficam marcadas e travadas; marcar
-// uma outra envia a raiz, desmarcar a tira. Mesmo comportamento do submenu do botão direito.
+// "Send to perspective…" in the Details (stage #659, PE3): a menu with the Main one and the
+// project perspectives as checkboxes. The Main and the open ones are checked and locked; checking
+// another sends the root, unchecking removes the strip. Same behavior as the right-click submenu.
 
 export function PerspectiveSendMenu({
   rootId,

@@ -1,13 +1,13 @@
-# Testador enxuto — 2026-11-11 (épico `epic/testador-enxuto`)
+# Lean tester — 2026-11-11 (épico `epic/testador-enxuto`)
 
 ## Pendências
 
-Nenhuma.
+None.
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do design system: a etapa mexe em guias e auxiliares do testador; as correções CL1/CL2 só ajustam larguras mínimas (nome na Árvore, célula de texto da tabela de Detalhes) com tokens existentes, sem token, ícone nem componente novo.
+Sem impacto on the design system's Mapping artifact: the stage touches tester guides and helpers; the CL1/CL2 fixes only adjust minimum widths (name in the Tree, text cell of the Details table) with existing tokens, with no new token, icon or component.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

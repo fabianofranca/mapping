@@ -1,4 +1,4 @@
-// API pública do modelo: tipos, operações puras, validação e serialização.
+// Public API of the model: types, pure operations, validation and serialization.
 export * from './types';
 export * from './errors';
 export * from './modelMessage';
@@ -36,7 +36,7 @@ export * from './anchors';
 export * from './anchorPlacement';
 export * from './anchorDefaults';
 export * from './multiSelection';
-// Motor dos componentes: só o que quem desenha ou mede precisa pelo índice do modelo.
+// Component engine: only what whoever draws or measures needs through the model index.
 export { approximateMeasurer, type TextMeasurer } from './components/instantiate';
 export { cachedMeasurer, MEASURE_CACHE_LIMIT } from './components/measureCache';
 export type { ComponentFile, FieldValues } from './components/componentFormat';
@@ -90,7 +90,7 @@ export * from './proposalCompare';
 export * from './proposalView';
 export * from './proposalRevise';
 export * from './proposalRevisions';
-// Conversas ancoradas (formato mapping-thread 1): formato e operações puras.
+// Anchored threads (mapping-thread 1 format): format and pure operations.
 export * from './thread';
 export * from './threadOps';
 export * from './citations';
@@ -102,10 +102,10 @@ export * from './threadFilters';
 export * from './threadCites';
 export * from './threadPins';
 export * from './threadDelete';
-// Valor de um campo na forma de `from`/`to` (os marcadores dos Detalhes na revisão).
+// Value of a field in the `from`/`to` form (the Details markers in the review).
 export { annotationField, imageField, markingField } from './proposalValues';
 export * from './specWarnings';
-// Subconjunto de markdown dos documentos da biblioteca (Catálogo).
+// Markdown subset of the library documents (Catalog).
 export * from './markdown';
-// Escolha de tipo: agrupar por grupo e filtrar pela busca.
+// Type choice: group by group and filter by the search.
 export * from './typeChoice';

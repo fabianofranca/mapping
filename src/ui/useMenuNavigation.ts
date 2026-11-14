@@ -1,22 +1,22 @@
 import type { RefObject } from 'preact';
 import { useLayoutEffect } from 'preact/hooks';
 
-// Foco e setas dos menus em popover (`ActionMenu` e `MenuPopover`): ao abrir, o foco vai
-// ao primeiro item habilitado; ↑/↓ andam em círculo entre os habilitados; Esc fecha. O
-// foco volta ao gatilho em `close` de quem usa (`returnFocusToTrigger`).
+// Focus and arrows of popover menus (`ActionMenu` and `MenuPopover`): on open, focus goes
+// to the first enabled item; ↑/↓ cycle among the enabled ones; Esc closes. Focus
+// returns to the trigger in the caller's `close` (`returnFocusToTrigger`).
 
 const ITEMS = '[role^="menuitem"]:not(:disabled)';
 
-/** Foca o primeiro item habilitado do menu dentro de `root`, ao abrir. */
+/** Focuses the first enabled item of the menu inside `root`, on open. */
 export function useFocusFirstItem(root: RefObject<HTMLElement>, open: boolean): void {
-  // Em layout effect: o foco vale desde o commit que abre o menu.
+  // In a layout effect: focus counts from the commit that opens the menu.
   useLayoutEffect(() => {
     if (open)
       root.current?.querySelector<HTMLElement>(ITEMS)?.focus({ preventScroll: true });
   }, [open, root]);
 }
 
-/** Tratador de teclado do menu: Esc fecha (sem borbulhar) e ↑/↓ circulam entre os itens. */
+/** Menu keyboard handler: Esc closes (without bubbling) and ↑/↓ cycle among the items. */
 export function menuKeyDown(
   root: RefObject<HTMLElement>,
   open: boolean,

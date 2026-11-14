@@ -35,20 +35,20 @@ import { Flag } from './Flag';
 import { OtherChangesSection } from './OtherChanges';
 import { IdentityFlags, ReviewHeader, WholeDecision } from './ReviewHeader';
 
-// A revisão no ponto de extensão dos Detalhes (fase 9.5): monta, para o item mostrado, o
-// que o painel normal pergunta campo a campo (marcadores, selos, fantasmas, seções que
-// abrem, camadas escondidas). Lê só o índice "mudanças por entidade e campo"
-// (`review.derived.fieldIndex`) e os projetos; as decisões ficam com cada marcador, o
-// cabeçalho e os selos (componentes que leem o derivado), então decidir não refaz a extensão
-// nem o painel.
+// The review in the Details extension point (phase 9.5): builds, for the shown item, what the
+// normal panel asks field by field (markers, badges, ghosts, sections that open, hidden
+// layers). It reads only the "changes by entity and field" index
+// (`review.derived.fieldIndex`) and the projects; the decisions stay with each marker, the
+// header and the badges (components that read the derived state), so deciding does not
+// rebuild the extension or the panel.
 
-/** Camada com mais anotações que isto começa recolhida, só com os cabeçalhos (E17). */
+/** A layer with more annotations than this starts collapsed, with only the headers (E17). */
 export const BIG_LAYER = 8;
-/** Cabeçalhos mostrados de início num grupo e de quantos em quantos o "Mostrar mais" acrescenta. */
+/** Headers shown at first in a group, and how many "Show more" adds each time. */
 const PAGE_FIRST = 12;
 const PAGE_STEP = 20;
 
-/** Campos da anotação que o painel mostra (uma parte de criação ou remoção leva marcador). */
+/** Annotation fields the panel shows (a creation or removal part gets a marker). */
 function isAnnotationPanelField(field: string): boolean {
   return (
     field === 'parentAnnotationId' ||
@@ -59,15 +59,15 @@ function isAnnotationPanelField(field: string): boolean {
 }
 
 /**
- * Campos que têm lugar no painel normal; as outras mudanças da entidade (origem, trava,
- * troca de imagem da marcação, posição da imagem) ficam fora dos marcadores.
+ * Fields that have a place in the normal panel; the entity's other changes (source, lock,
+ * marking image swap, image position) stay outside the markers.
  */
 const PANEL_FIELDS: Readonly<Record<'marking' | 'image', ReadonlySet<string>>> = {
   marking: new Set(['name', 'rect', 'parentId']),
   image: new Set(['name', 'file', 'markingColor']),
 };
 
-/** As mudanças de um item sem campo no painel (os cartões de "Outras mudanças"). */
+/** The changes of an item that has no field in the panel (the "Other changes" cards). */
 export function otherChangeIds(
   index: FieldChangeIndex,
   kind: 'marking' | 'image',
@@ -81,9 +81,9 @@ export function otherChangeIds(
 }
 
 /**
- * As seções que escondem a mudança (para abrir ao chegar nela pela janela Propostas): o
- * campo do painel, "Outras mudanças" ou a anotação com a camada e as Anotações. A criação
- * ou a remoção do próprio item não está em seção nenhuma (é o cabeçalho).
+ * The sections that hide the change (to open when reaching it from the Proposals window): the
+ * panel field, "Other changes", or the annotation with its layer and the Annotations. The
+ * creation or removal of the item itself is in no section (it is the header).
  */
 export function sectionsForChange(
   c: Change,
@@ -104,7 +104,7 @@ export function sectionsForChange(
   return [{ kind: 'others' }];
 }
 
-/** A camada da mudança de anotação está escondida no editor (só o "Mostrar aqui" a traz)? */
+/** Is the layer of the annotation change hidden in the editor (only "Show here" brings it)? */
 export function isChangeLayerHidden(
   c: Change,
   args: Pick<ReviewExtensionArgs, 'project' | 'current' | 'hiddenLayers'>,
@@ -115,7 +115,7 @@ export function isChangeLayerHidden(
   return !visibleLayers(args.project, args.hiddenLayers).some((l) => l.id === layer);
 }
 
-/** Quantas mudanças a entidade tem (a criação ou remoção conta uma). */
+/** How many changes the entity has (a creation or removal counts as one). */
 function entityCount(e: EntityChanges | undefined): number {
   return e ? e.fields.size + (e.whole ? 1 : 0) : 0;
 }
@@ -123,31 +123,32 @@ function entityCount(e: EntityChanges | undefined): number {
 export interface ReviewExtensionArgs {
   readonly kind: 'marking' | 'image';
   readonly id: string;
-  /** O projeto que o painel mostra (o à vista, ou o outro lado se o item não está nele). */
+  /** The project the panel shows (the one in view, or the other side if the item is not in it). */
   readonly project: Project;
-  /** O projeto atual (de onde vêm as anotações e os pares que saem). */
+  /** The current project (where the annotations and the outgoing pairs come from). */
   readonly current: Project;
   readonly index: FieldChangeIndex;
   readonly view: ReviewView;
   readonly hiddenLayers: ReadonlySet<string>;
-  /** "Mostrar aqui" das camadas escondidas com mudanças (estado de UI, até trocar de item). */
+  /** "Show here" of the hidden layers with changes (UI state, until the item changes). */
   readonly revealed: boolean;
   readonly onReveal: (revealed: boolean) => void;
   readonly onShowCurrent: () => void;
-  /** A proposta aberta (o nome sai riscado só enquanto a remoção não foi rejeitada). */
+  /** The open proposal (the name is struck through only while the removal is not rejected). */
   readonly proposal: ReadonlySignal<Proposal | null>;
-  /** O item tem nó na árvore da revisão (algo a decidir): tem cabeçalho. */
+  /** The item has a node in the review tree (something to decide): it has a header. */
   readonly hasNode: boolean;
-  /** Anotação da mudança selecionada, que não pode ficar além do "mostrar mais". */
+  /** Annotation of the selected change, which cannot stay beyond "show more". */
   readonly reveal: ReadonlySignal<string | null>;
   /**
-   * O "como ficaria" com todas as mudanças (`review.derived.fullPreview`): de onde vem a
-   * anotação criada e rejeitada, que a visão Proposto não tem. Lido só quando há uma.
+   * The "how it would look" with all changes (`review.derived.fullPreview`): where the
+   * created-and-rejected annotation comes from, which the Proposed view lacks. Read only when
+   * there is one.
    */
   readonly full: () => Project | null;
 }
 
-/** Anotações de mudanças desta marcação, por camada (no projeto mostrado). */
+/** Annotations of changes of this marking, by layer (in the shown project). */
 function changesByLayer(
   args: Pick<ReviewExtensionArgs, 'kind' | 'id' | 'project' | 'current' | 'index'>,
 ): Map<string, Change[]> {
@@ -167,7 +168,7 @@ function changesByLayer(
   return result;
 }
 
-/** Valor de um campo da entidade no projeto mostrado (para o marcador de uma parte). */
+/** Value of an entity field in the shown project (for the marker of a part). */
 function fieldValue(
   project: Project,
   e: EntityChanges,
@@ -193,7 +194,7 @@ function fieldValue(
   }
 }
 
-/** Uma anotação que sai, no lugar onde estava (visão Proposto). */
+/** An annotation that goes away, in the place where it was (Proposed view). */
 function RemovedAnnotationCard({
   project,
   annotation,
@@ -232,14 +233,14 @@ function RemovedAnnotationCard({
   );
 }
 
-/** A extensão dos Detalhes para o item mostrado na revisão. */
+/** The Details extension for the item shown in the review. */
 export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
   const { index, project, current } = args;
   const shownIndex = projectIndex(project);
   const currentIndex = projectIndex(current);
   const byLayer = changesByLayer(args);
   const baseLayers = new Set(visibleLayers(project, args.hiddenLayers).map((l) => l.id));
-  // Camadas escondidas (pela pessoa) com mudanças nesta marcação.
+  // Layers hidden (by the person) with changes on this marking.
   const hiddenWithChanges = project.layers.filter(
     (l) => !baseLayers.has(l.id) && (byLayer.get(l.id)?.length ?? 0) > 0,
   );
@@ -249,8 +250,8 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
     level: args.kind === 'marking' ? 'item' : 'image',
     id: args.id,
   };
-  // Riscado só enquanto a remoção vale: rejeitada, a entidade fica (um computed, para o
-  // painel não refazer a cada decisão, só quando esta vira).
+  // Struck through only while the removal holds: once rejected, the entity stays (a computed,
+  // so the panel does not redo on every decision, only when this one flips).
   const wholeOf = index.entities.get(args.id)?.whole ?? null;
   const removalRejected = computed(
     () =>
@@ -270,7 +271,7 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
       return e.whole ? <ChangeMark change={e.whole} field="" part={false} /> : null;
     }
     if (e.whole) {
-      // Campo de uma entidade criada ou removida: a parte, sem decisão própria.
+      // Field of a created or removed entity: the part, with no decision of its own.
       if (e.entity === 'annotation' && !isAnnotationPanelField(field)) return null;
       return (
         <ChangeMark
@@ -320,10 +321,10 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
     return allNew ? t('review.panel.allNew') : t('review.panel.changes', { count });
   };
 
-  // As criações de anotação rejeitadas não estão na visão Proposto: voltam como cartão no
-  // lugar onde entrariam, com a decisão ali (senão a rejeição não teria como ser desfeita
-  // no painel). Uma chave de texto: o painel só refaz quando esse conjunto muda, não a cada
-  // decisão.
+  // Rejected annotation creations are not in the Proposed view: they come back as a card in
+  // the place where they would go, with the decision there (otherwise the rejection could not
+  // be undone in the panel). A text key: the panel only redoes when this set changes, not on
+  // every decision.
   const rejectedCreations = computed(() => {
     const decisions = args.proposal.value?.decisions;
     if (!decisions || args.view !== 'proposed') return '';
@@ -369,7 +370,7 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
     for (const c of index.leaving.get(markingId) ?? []) {
       const a = currentIndex.annotations.get(c.entityId);
       if (!a || a.layerId !== layerId || a.markingId !== markingId) continue;
-      // Ainda está na marcação mostrada (visão Atual, ou a remoção rejeitada).
+      // Still on the shown marking (Current view, or the rejected removal).
       if (shownIndex.annotations.get(a.id)?.markingId === markingId) continue;
       const position = annotationsOf(current, markingId, layerId).findIndex(
         (x) => x.id === a.id,
@@ -512,7 +513,7 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
       label: (count) => t('review.panel.showMore', { count }),
       reveal: args.reveal,
     },
-    // Lido na hora do render: o `useMemo` do painel não depende do idioma.
+    // Read at render time: the panel's `useMemo` does not depend on the language.
     get markColumn() {
       return t('review.mark.column');
     },
@@ -520,9 +521,10 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
 }
 
 /**
- * Seções a abrir e a recolher ao mostrar o item (HANDOFF-REVIEW-DETAILS 5.2): abrem a
- * seção do item, as Anotações, as camadas e as anotações com mudanças; camada com mais de
- * `BIG_LAYER` anotações começa recolhida e as anotações dela, só pelo cabeçalho.
+ * Sections to open and to collapse when showing the item (HANDOFF-REVIEW-DETAILS 5.2): they
+ * open the item section, the Annotations, the layers and the annotations with changes; a layer
+ * with more than `BIG_LAYER` annotations starts collapsed and its annotations show only the
+ * header.
  */
 export function sectionsFor(
   args: Pick<ReviewExtensionArgs, 'kind' | 'id' | 'project' | 'current' | 'index'>,

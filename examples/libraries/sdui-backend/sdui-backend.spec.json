@@ -2,13 +2,13 @@
   "format": "mapping-spec",
   "formatVersion": 9,
   "id": "sdui-backend",
-  "name": "SDUI do backend",
-  "version": 2,
-  "description": "Exemplo da origem executável: um sistema externo fictício (um backend de SDUI) descreve telas em JSON e a declaração de origens as traduz em componentes. Mostra sources, slot, âncoras, scrim, exemplos do sistema externo e o contrato de versão.",
+  "name": "Backend SDUI",
+  "version": 3,
+  "description": "Example of the executable origin: a fictional external system (an SDUI backend) describes screens in JSON and the origins declaration translates them into components. It shows sources, slot, anchors, scrim, examples of the external system and the version contract.",
   "containers": [
     {
       "id": "phone",
-      "name": "Celular",
+      "name": "Phone",
       "width": 412,
       "height": 917,
       "background": "#FEF7FF"
@@ -17,7 +17,7 @@
   "origins": [
     {
       "system": "sdui",
-      "name": "SDUI do backend",
+      "name": "Backend SDUI",
       "node": {
         "type": "type",
         "props": "props",
@@ -29,7 +29,7 @@
         },
         "name": {
           "path": "screen.title",
-          "default": "Tela"
+          "default": "Screen"
         },
         "width": {
           "path": "screen.device.width"
@@ -65,12 +65,12 @@
         ]
       },
       "booleans": {
-        "true": "sim",
-        "false": "não"
+        "true": "yes",
+        "false": "no"
       },
       "examples": [
         {
-          "name": "Configurações",
+          "name": "Settings",
           "file": "examples/settings.sdui.json"
         }
       ]
@@ -122,6 +122,21 @@
           "mode": "delete"
         }
       ]
+    },
+    {
+      "from": 2,
+      "to": 3,
+      "steps": [
+        {
+          "op": "map-values",
+          "type": "sdui-button",
+          "field": "disabled",
+          "values": {
+            "sim": "yes",
+            "não": "no"
+          }
+        }
+      ]
     }
   ],
   "layers": [
@@ -170,14 +185,14 @@
           ],
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "spacing": 8,
                 "padding": 0
               }
             },
             {
-              "name": "Espaçada",
+              "name": "Spaced",
               "values": {
                 "spacing": 16,
                 "padding": 16
@@ -255,8 +270,8 @@
               "key": "disabled",
               "label": "Disabled",
               "type": "enum",
-              "options": ["sim", "não"],
-              "default": "não",
+              "options": ["yes", "no"],
+              "default": "no",
               "sources": [
                 {
                   "system": "sdui",
@@ -267,12 +282,12 @@
           ],
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "label": "Label",
                 "variant": "filled",
                 "mode": "normal",
-                "disabled": "não"
+                "disabled": "no"
               }
             },
             {
@@ -281,11 +296,11 @@
                 "label": "Label",
                 "variant": "text",
                 "mode": "link",
-                "disabled": "não"
+                "disabled": "no"
               }
             },
             {
-              "name": "Do sistema externo",
+              "name": "From the external system",
               "system": "sdui",
               "file": "examples/button.sdui.json"
             }
@@ -333,14 +348,14 @@
           ],
           "examples": [
             {
-              "name": "Mais",
+              "name": "Plus",
               "values": {
                 "icon": "add",
                 "color": "primary"
               }
             },
             {
-              "name": "Anel",
+              "name": "Ring",
               "values": {
                 "icon": "ring",
                 "color": "secondary"
@@ -398,11 +413,11 @@
           ],
           "examples": [
             {
-              "name": "Ordenar",
+              "name": "Sort",
               "values": {
                 "title": "Sort by",
-                "subtitle": "Escolha a ordem da lista",
-                "footer": "Cancelar"
+                "subtitle": "Choose the list order",
+                "footer": "Cancel"
               }
             }
           ]
@@ -415,7 +430,7 @@
           "fields": [],
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {}
             }
           ]
@@ -430,7 +445,7 @@
         {
           "id": "sdui-endpoint",
           "name": "Endpoint",
-          "description": "O endpoint que entrega uma tela ou um bloco. Só se aplica a marcações (não a setas): ele descreve o que a área mostra.",
+          "description": "The endpoint that delivers a screen or a block. It applies only to markings (not to arrows): it describes what the area shows.",
           "labelField": "url",
           "appliesTo": ["marking"],
           "doc": "docs/sdui-endpoint.md",
@@ -440,18 +455,18 @@
               "label": "URL",
               "type": "string",
               "required": true,
-              "description": "O caminho do endpoint (/v1/screens/settings)."
+              "description": "The endpoint path (/v1/screens/settings)."
             },
             {
               "key": "typeName",
-              "label": "Tipo da resposta",
+              "label": "Response type",
               "type": "string",
               "linkedRef": "typeRef",
-              "description": "O nome do tipo da resposta; escolher uma declaração mapeada grava o texto e o vínculo juntos."
+              "description": "The name of the response type; choosing a mapped declaration saves the text and the link together."
             },
             {
               "key": "typeRef",
-              "label": "Declaração",
+              "label": "Declaration",
               "type": "ref",
               "accepts": {
                 "free": true
@@ -459,18 +474,18 @@
             },
             {
               "key": "params",
-              "label": "Parâmetros",
+              "label": "Parameters",
               "type": "table",
               "columns": [
                 {
                   "key": "name",
-                  "label": "Nome",
+                  "label": "Name",
                   "type": "string",
                   "required": true
                 },
                 {
                   "key": "kind",
-                  "label": "Onde",
+                  "label": "Where",
                   "type": "enum",
                   "options": ["query", "header", "body"],
                   "default": "query",
@@ -493,12 +508,12 @@
                 },
                 {
                   "key": "since",
-                  "label": "Desde",
+                  "label": "Since",
                   "type": "date"
                 },
                 {
                   "key": "target",
-                  "label": "Alvo",
+                  "label": "Target",
                   "type": "ref",
                   "accepts": {
                     "free": true
@@ -509,7 +524,7 @@
           ],
           "examples": [
             {
-              "name": "Tela de configurações",
+              "name": "Settings screen",
               "values": {
                 "url": "/v1/screens/settings"
               }

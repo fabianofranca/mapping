@@ -52,7 +52,7 @@ type HomeDialog =
       readonly kind: 'folder-unavailable';
       readonly folder: FolderRecent;
       readonly reason: 'denied' | 'missing';
-      /** "Localizar pasta…" escolheu uma pasta sem `mapping.json`. */
+      /** "Locate folder…" chose a folder without `mapping.json`. */
       readonly noProject: boolean;
     }
   | { readonly kind: 'inconsistent'; readonly inconsistent: InconsistentProject }
@@ -61,8 +61,8 @@ type HomeDialog =
 
 export function Home() {
   const narrow = useNarrowWindow();
-  // Os diálogos da tela inicial são um slot: a troca (Configurações › Ver atalhos) mantém
-  // quem abriu o primeiro, para onde o foco volta.
+  // The home screen dialogs are a slot: the swap (Settings › View shortcuts) keeps
+  // whoever opened the first, where focus returns to.
   const dialogs = useDialogSlot<HomeDialog>();
   const dialog = dialogs.current;
   const reopen = useReopenTrace(dialog?.kind === 'folder-unavailable');
@@ -73,10 +73,10 @@ export function Home() {
   const zipInput = useRef<HTMLInputElement>(null);
   const libraryZipInput = useRef<HTMLInputElement>(null);
   const listSection = useRef<HTMLElement>(null);
-  // Linha que sai da lista (Remover da lista, Excluir): a posição dela, para o foco ir à
-  // linha que ficou no lugar, e não ao `body` (etapa 7, G4). Um dono por fechamento (etapa
-  // 8, F2): pelo diálogo, o `returnFocus` dele (o diálogo fecha depois da ação, já sem a
-  // linha); direto na linha, sem diálogo, este efeito, no commit da lista nova.
+  // Row that leaves the list (Remove from list, Delete): its position, so that focus goes to the
+  // row that stayed in its place, and not to `body` (stage 7, G4). One owner per close (stage
+  // 8, F2): through the dialog, its `returnFocus` (the dialog closes after the action, already without the
+  // row); directly on the row, without a dialog, this effect, on the commit of the new list.
   const removedAt = useRef(0);
   const focusRowAfter = useRef<number | null>(null);
   useLayoutEffect(() => {
@@ -87,8 +87,8 @@ export function Home() {
   });
 
   const available = features.value;
-  // Voltou do Catálogo da biblioteca: o foco vai ao "Abrir biblioteca" (ou ao primeiro
-  // controle), no commit em que a tela já tem controles.
+  // Came back from the Library Catalog: focus goes to "Open library" (or the first
+  // control), on the commit in which the screen already has controls.
   const mainRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     if (available && mainRef.current) fulfillHomeFocus(mainRef.current, FOCUSABLE);
@@ -102,8 +102,8 @@ export function Home() {
   }
 
   /**
-   * Roda uma ação mostrando o erro traduzido, se houver. Projeto inconsistente abre o diálogo
-   * com a lista de problemas (e o "Reparar e abrir", quando dá).
+   * Runs an action showing the translated error, if any. An inconsistent project opens the dialog
+   * with the list of problems (and "Repair and open", when possible).
    */
   const run = async <T,>(action: () => Promise<AppResult<T>>): Promise<T | null> => {
     setBusy(true);
@@ -138,10 +138,10 @@ export function Home() {
       await run(() => openLocalProject(project.id));
       return;
     }
-    // A linha de origem, para o aviso devolver o foco a ela ao fechar sem remover: o Abrir
-    // fica desabilitado enquanto a pasta abre e perde o foco, então o diálogo não o guarda.
+    // The source row, so the notice returns focus to it when closing without removing: Open
+    // stays disabled while the folder opens and loses focus, so the dialog does not keep it.
     removedAt.current = recentRowIndex(listSection.current, `folder:${project.id}`);
-    // Direto no clique: o navegador só mostra o pedido de permissão dentro do gesto.
+    // Directly on the click: the browser only shows the permission prompt inside the gesture.
     const result = await run(() =>
       reopen.track((trace) => openRecentFolder(project.id, trace)),
     );
@@ -160,14 +160,14 @@ export function Home() {
     if (result?.kind === 'no-project') {
       dialogs.show({ kind: 'folder-unavailable', folder, reason, noProject: true });
     } else if (result === null) {
-      // O erro aparece na tela inicial (ou o diálogo do projeto inconsistente já entrou).
+      // The error appears on the home screen (or the inconsistent project dialog already came in).
       dialogs.closeIf((current) => current.kind === 'folder-unavailable');
     }
   };
 
   /**
-   * Tira a pasta da lista. Pelo aviso "Pasta indisponível", o aviso fecha depois e devolve
-   * o foco à linha que ficou; direto na linha, a própria Home leva o foco até ela.
+   * Removes the folder from the list. Through the "Folder unavailable" notice, the notice closes afterwards and returns
+   * focus to the row that stayed; directly on the row, Home itself moves focus to it.
    */
   const onForget = async (id: string, viaDialog: boolean) => {
     const index = recentRowIndex(listSection.current, `folder:${id}`);
@@ -177,14 +177,14 @@ export function Home() {
     if (viaDialog) dialogs.closeIf((current) => current.kind === 'folder-unavailable');
   };
 
-  /** Excluir pelo diálogo: ele fecha depois da exclusão, já sem a linha (F2). */
+  /** Delete through the dialog: it closes after the deletion, already without the row (F2). */
   const onDelete = async (id: string) => {
     removedAt.current = recentRowIndex(listSection.current, `local:${id}`);
     await run(() => deleteLocalProject(id));
     dialogs.closeIf((current) => current.kind === 'delete');
   };
 
-  /** Alvo do foco quando o diálogo fecha sem a linha que o abriu. */
+  /** Focus target when the dialog closes without the row that opened it. */
   const rowLeft = () => recentRowTarget(listSection.current, removedAt.current);
 
   const onZipChosen = async (input: HTMLInputElement) => {
@@ -193,7 +193,7 @@ export function Home() {
     if (file) await run(() => importZip(file));
   };
 
-  /** Mensagem de um pacote que não pôde ser lido; o cancelamento do seletor não diz nada. */
+  /** Message of a package that could not be read; cancelling the picker says nothing. */
   const showLibraryResult = (result: LibraryOpenResult) => {
     if (result.kind !== 'failed') return;
     setMessage(
@@ -225,7 +225,7 @@ export function Home() {
   };
 
   const closeDialog = () => dialogs.close();
-  // "Reparar e abrir" do projeto inconsistente (`null`: há problema sem reparo).
+  // "Repair and open" of the inconsistent project (`null`: there is a problem with no repair).
   const repair = dialog?.kind === 'inconsistent' ? dialog.inconsistent.repair : null;
   const actions: HomeActions = {
     busy,
@@ -236,7 +236,7 @@ export function Home() {
     },
     onOpenFolder: () => void onOpenFolder(),
     onOpenZip: () => zipInput.current?.click(),
-    // Pasta onde o navegador deixa escolher uma; senão, o zip do pacote.
+    // Folder where the browser lets you choose one; otherwise, the package zip.
     onOpenLibrary: () =>
       canPickDirectory()
         ? void onOpenLibrary({ kind: 'folder' })
@@ -333,9 +333,9 @@ export function Home() {
             <PreviewBadge />
           </div>
           {/*
-           * Itens de navegação da faixa lateral (papel próprio, com `aria-current`): ficam
-           * como `<button class="home-nav-item">`, e não como `Button`, que é de ação comum
-           * (exceção registrada em `docs/DESIGN-SYSTEM.md`, "Botões avulsos").
+           * Navigation items of the side strip (own role, with `aria-current`): they stay
+           * as `<button class="home-nav-item">`, and not as `Button`, which is for common action
+           * (exception recorded in `docs/DESIGN-SYSTEM.md`, "Loose buttons").
            */}
           <nav class="home-nav">
             <button type="button" class="home-nav-item" aria-current="page">
@@ -552,7 +552,7 @@ interface HomeActions {
   readonly onOpenLibrary: () => void;
 }
 
-/** Os três pontos de entrada como botões do cabeçalho. */
+/** The three entry points as header buttons. */
 function HomeButtons({
   busy,
   available,
@@ -593,8 +593,8 @@ function HomeButtons({
 }
 
 /**
- * Abaixo das ações. Abrir pasta indisponível: o motivo fica escrito na tela (um botão
- * desabilitado não explica); disponível: a recomendação do formato pasta para quem usa git.
+ * Below the actions. Open folder unavailable: the reason is written on the screen (a disabled
+ * button does not explain); available: the recommendation of the folder format for those who use git.
  */
 function FolderReason({ available }: HomeActions) {
   if (available.folder) return <p class="muted home-reason">{t('home.gitHint')}</p>;

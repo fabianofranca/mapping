@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "navigation-rail",
   "name": "Navigation rail",
-  "description": "Barra de navegação lateral com um destino por linha de Itens. A rail estreita tem 80 de largura (indicador de 56 × 32 sob o ícone) em surface; a wide recolhida tem 96, com 44 de topo, e a expandida 220 ou mais, com o ícone ao lado do rótulo (pílula de 56 a 20 da borda); a modal expandida usa surface container e cantos de 16 (sem scrim nem sombra, que são do composable). A folha se desenha à esquerda da marcação com a largura do estilo; o resto do retângulo fica vazio.",
+  "description": "Side navigation bar with one destination per line of Items. The narrow rail is 80 wide (56 × 32 indicator under the icon) in surface; the collapsed wide is 96, with 44 at the top, and the expanded 220 or more, with the icon beside the label (56 pill, 20 from the edge); the expanded modal uses surface container and 16 corners (no scrim or shadow, which belong to the composable). The sheet is drawn at the left of the marking with the width of the style; the rest of the rectangle stays empty.",
   "size": {
     "width": 220,
     "height": 400
@@ -15,17 +15,17 @@
   "preview": {
     "items": [
       {
-        "label": "Início",
+        "label": "Home",
         "icon": "Home",
         "selected": "true"
       },
       {
-        "label": "Buscar",
+        "label": "Search",
         "icon": "Search",
         "selected": "false"
       },
       {
-        "label": "Perfil",
+        "label": "Profile",
         "icon": "Person",
         "selected": "false"
       }
@@ -43,7 +43,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "folha da rail",
+        "name": "rail sheet",
         "width": "hug",
         "height": "fill",
         "minWidth": {
@@ -135,7 +135,7 @@
         "children": [
           {
             "type": "repeat",
-            "name": "destinos",
+            "name": "destinations",
             "field": "items",
             "direction": "column",
             "gap": {
@@ -159,7 +159,7 @@
             "width": "fill",
             "template": {
               "type": "frame",
-              "name": "destino",
+              "name": "destination",
               "width": "fill",
               "layout": {
                 "type": "column",
@@ -181,7 +181,7 @@
               "children": [
                 {
                   "type": "frame",
-                  "name": "ícone acima",
+                  "name": "icon above",
                   "width": "fill",
                   "height": {
                     "$if": {
@@ -236,7 +236,7 @@
                   "children": [
                     {
                       "type": "frame",
-                      "name": "indicador",
+                      "name": "indicator",
                       "width": 56,
                       "height": 32,
                       "cornerRadius": {
@@ -257,7 +257,7 @@
                       "children": [
                         {
                           "type": "rect",
-                          "name": "estado",
+                          "name": "state",
                           "anchors": {
                             "left": 0,
                             "right": 0,
@@ -300,7 +300,7 @@
                         },
                         {
                           "type": "frame",
-                          "name": "conteúdo",
+                          "name": "content",
                           "width": "fill",
                           "height": "fill",
                           "layout": {
@@ -506,7 +506,7 @@
                     },
                     {
                       "type": "text",
-                      "name": "rótulo",
+                      "name": "label",
                       "text": {
                         "$field": "label"
                       },
@@ -565,7 +565,7 @@
                 },
                 {
                   "type": "frame",
-                  "name": "indicador",
+                  "name": "indicator",
                   "width": "hug",
                   "height": 56,
                   "visible": {
@@ -598,7 +598,7 @@
                   "children": [
                     {
                       "type": "rect",
-                      "name": "estado",
+                      "name": "state",
                       "anchors": {
                         "left": 0,
                         "right": 0,
@@ -641,7 +641,7 @@
                     },
                     {
                       "type": "frame",
-                      "name": "conteúdo",
+                      "name": "content",
                       "width": "hug",
                       "height": "fill",
                       "layout": {
@@ -844,7 +844,7 @@
                         },
                         {
                           "type": "text",
-                          "name": "rótulo",
+                          "name": "label",
                           "text": {
                             "$field": "label"
                           },

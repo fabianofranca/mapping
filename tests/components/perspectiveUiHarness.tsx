@@ -9,16 +9,16 @@ import { MemoryDirectory } from '../storage/memoryFs';
 import type { Harness } from './harness';
 
 /**
- * Como `createHarness`, mas com o IndexedDB das perspectivas "Só eu" (precisa de
- * `fake-indexeddb/auto` no teste).
+ * Like `createHarness`, but with the IndexedDB of the "Only me" perspectives (needs
+ * `fake-indexeddb/auto` in the test).
  */
 export async function createLocalHarness(project: Project): Promise<Harness> {
   const localStore = await openLocalPerspectives();
   const session = openSession({
-    storage: createFolderStorage(new MemoryDirectory('projeto'), { copyId: 'harness' }),
+    storage: createFolderStorage(new MemoryDirectory('project'), { copyId: 'harness' }),
     project,
     localPerspectives: { store: localStore, initial: [] },
-    prepareImage: () => Promise.reject(new Error('imagens não são usadas aqui')),
+    prepareImage: () => Promise.reject(new Error('images are not used here')),
     now: () => '2026-10-02T12:00:00.000Z',
   });
   const context = createEditorContextValue({
@@ -35,7 +35,7 @@ export async function createLocalHarness(project: Project): Promise<Harness> {
     context,
     project() {
       const p = context.store.project.value;
-      if (!p) throw new Error('sem projeto');
+      if (!p) throw new Error('no project');
       return p;
     },
   };

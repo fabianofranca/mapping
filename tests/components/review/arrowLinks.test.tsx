@@ -8,19 +8,20 @@ import { sampleProject } from '../../model/fixtures';
 import { propose } from '../../model/proposalFixtures';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 
-// "Ligado por seta" na revisão (etapa #658, decisão 7): os Detalhes da revisão montam o mesmo
-// MarkingPanel, e a seção lê o projeto à vista (Atual ou Proposto), sem marcas de revisão.
+// "Linked by arrow" in the review (stage #658, decision 7): the review Details mount the same
+// MarkingPanel, and the section reads the project on view (Current or Proposed), without
+// review marks.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
 
-describe('Detalhes da revisão — seção "Ligado por seta"', () => {
-  it('aparece e lê o projeto à vista, sem marcadores de revisão dentro dela', async () => {
+describe('review Details — "Linked by arrow" section', () => {
+  it('shows up and reads the project on view, without review markers inside it', async () => {
     const base = createArrow(sampleProject(), { id: 'R1', from: 'M1', to: 'M4' });
-    const after = renameMarking(base, 'M4', 'Tela de destino');
+    const after = renameMarking(base, 'M4', 'Destination screen');
     const proposal = propose(base, after, { id: 'P1' });
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
@@ -28,13 +29,13 @@ describe('Detalhes da revisão — seção "Ligado por seta"', () => {
     renderInEditor(h, <ReviewPanel onGoToAnnotation={() => {}} />);
 
     const section = () => screen.getByRole('region', { name: t('arrowLinks.section') });
-    // Proposto (padrão): a outra ponta já tem o nome novo.
+    // Proposed (default): the other end already has the new name.
     expect(
       within(section()).getByRole('button', {
-        name: t('arrow.select', { name: 'Tela de destino' }),
+        name: t('arrow.select', { name: 'Destination screen' }),
       }),
     ).toBeTruthy();
-    expect(within(section()).queryAllByRole('button', { name: /: alterado, / })).toEqual(
+    expect(within(section()).queryAllByRole('button', { name: /: changed, / })).toEqual(
       [],
     );
 
@@ -44,7 +45,7 @@ describe('Detalhes da revisão — seção "Ligado por seta"', () => {
         name: t('arrow.select', { name: t('marking.unnamed') }),
       }),
     ).toBeTruthy();
-    expect(within(section()).queryAllByRole('button', { name: /: alterado, / })).toEqual(
+    expect(within(section()).queryAllByRole('button', { name: /: changed, / })).toEqual(
       [],
     );
   });

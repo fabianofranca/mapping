@@ -1,8 +1,8 @@
 /**
- * Visualizador embutível: funções do HOSPEDEIRO (carga da biblioteca por URL e registro das
- * fontes). Ficam fora do núcleo (`createViewer` não faz rede nem registra fonte) e as páginas
- * da demo NÃO as usam: a CSP delas bloqueia requisição de rede (`connect-src 'none'`).
- * Existem para o site que instala o pacote, onde a pasta da biblioteca é servida por URL.
+ * Embeddable viewer: HOST functions (loading the library by URL and registering the
+ * fonts). They stay outside the core (`createViewer` does no network and registers no font) and the
+ * demo pages do NOT use them: their CSP blocks network requests (`connect-src 'none'`).
+ * They exist for the site that installs the package, where the library folder is served by URL.
  */
 import { createFontRegistry } from '../src/storage/fonts';
 import type { FontHost, FontRegistry, FontStatus } from '../src/storage/fonts';
@@ -12,16 +12,16 @@ import type { Library, TextFile } from '../src/model/components/library';
 export type { FontHost, FontStatus } from '../src/storage/fonts';
 
 export interface LoadFromUrlOptions {
-  /** Padrão: o `fetch` global. Passe um quando o ambiente não tem (ou para autenticar). */
+  /** Default: the global `fetch`. Pass one when the environment has none (or to authenticate). */
   readonly fetch?: typeof fetch;
-  /** Buscar também as fontes declaradas em `fonts` (padrão `true`). */
+  /** Also fetch the fonts declared in `fonts` (default `true`). */
   readonly fonts?: boolean;
 }
 
-/** Pedidos simultâneos de `loadLibraryFromUrl` (componentes, ícones e fontes). */
+/** Simultaneous requests of `loadLibraryFromUrl` (components, icons and fonts). */
 export const MAX_PARALLEL_REQUESTS = 6;
 
-/** Executa as tarefas com no máximo `limit` em andamento; devolve os resultados na ordem. */
+/** Runs the tasks with at most `limit` in flight; returns the results in order. */
 async function runLimited<T>(
   tasks: readonly (() => Promise<T>)[],
   limit: number,
@@ -43,7 +43,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Referências relativas da especialização: `component` dos tipos, `file` das fontes e `icons`. */
+/** Relative references of the specialization: the types' `component`, the fonts' `file` and `icons`. */
 function collectRefs(spec: unknown): {
   components: string[];
   fonts: string[];
@@ -69,7 +69,7 @@ function collectRefs(spec: unknown): {
       if (isRecord(font) && typeof font.file === 'string') fonts.push(font.file);
     }
   }
-  // Referências iguais valem um pedido só.
+  // Identical references count as a single request.
   return {
     components: [...new Set(components)],
     fonts: [...new Set(fonts)],
@@ -77,7 +77,7 @@ function collectRefs(spec: unknown): {
   };
 }
 
-/** Nome do arquivo sem a codificação da URL (`my%20spec.json` → `my spec.json`). */
+/** File name without the URL encoding (`my%20spec.json` → `my spec.json`). */
 function decodeName(name: string): string {
   try {
     return decodeURIComponent(name);
@@ -87,12 +87,12 @@ function decodeName(name: string): string {
 }
 
 /**
- * Carrega a biblioteca a partir da URL da especialização: busca o JSON, os componentes que ele
- * aponta (texto), o arquivo de ícones (`icons`, texto; sempre, mesmo com `fonts: false`) e,
- * salvo `fonts: false`, as fontes (bytes), todos relativos à URL da especialização, e entrega a
- * lista de arquivos ao `loadLibrary`. Um componente, o arquivo de ícones ou uma fonte que não
- * vem (resposta não-ok ou erro de rede) fica de fora, e o `loadLibrary` relata (em `problems`
- * ou no status das fontes). Lança se a especialização não vier ou se não houver
+ * Loads the library from the specialization's URL: fetches the JSON, the components it
+ * points to (text), the icons file (`icons`, text; always, even with `fonts: false`) and,
+ * unless `fonts: false`, the fonts (bytes), all relative to the specialization's URL, and hands the
+ * list of files to `loadLibrary`. A component, the icons file or a font that does not
+ * come (non-ok response or network error) is left out, and `loadLibrary` reports it (in `problems`
+ * or in the fonts' status). Throws if the specialization does not come or if there is no
  * `fetch`.
  */
 export async function loadLibraryFromUrl(
@@ -102,17 +102,17 @@ export async function loadLibraryFromUrl(
   const doFetch = options.fetch ?? globalThis.fetch;
   if (typeof doFetch !== 'function') {
     throw new Error(
-      'loadLibraryFromUrl: este ambiente não tem fetch; o hospedeiro precisa fornecer options.fetch.',
+      'loadLibraryFromUrl: this environment has no fetch; the host must provide options.fetch.',
     );
   }
   const specResponse = await doFetch(specUrl);
   if (!specResponse.ok) {
     throw new Error(
-      `Não foi possível carregar a especialização ${specUrl} (HTTP ${specResponse.status}).`,
+      `Could not load the specialization ${specUrl} (HTTP ${specResponse.status}).`,
     );
   }
   const specText = await specResponse.text();
-  // URL absoluta (a especialização pode vir relativa à página do hospedeiro).
+  // Absolute URL (the specialization may come relative to the host page).
   const base = new URL(specUrl, globalThis.location?.href ?? 'http://localhost/');
   const specName = decodeName(base.pathname.slice(base.pathname.lastIndexOf('/') + 1));
   const files: TextFile[] = [{ path: specName, text: specText }];
@@ -121,7 +121,7 @@ export async function loadLibraryFromUrl(
   try {
     spec = JSON.parse(specText);
   } catch {
-    // JSON inválido: o loadLibrary relata o problema e lança por falta de especialização.
+    // Invalid JSON: loadLibrary reports the problem and throws for lack of a specialization.
     return loadLibrary(files, { allowOutside: true });
   }
   const refs = collectRefs(spec);
@@ -138,7 +138,7 @@ export async function loadLibraryFromUrl(
     }
   };
 
-  // Um conjunto só de pedidos (componentes, ícones, fontes), com o limite de simultâneos.
+  // A single set of requests (components, icons, fonts), with the limit on simultaneous ones.
   const fontRefs = options.fonts === false ? [] : refs.fonts;
   const fetched = await runLimited<string | ArrayBuffer | undefined>(
     [
@@ -172,8 +172,8 @@ export async function loadLibraryFromUrl(
 }
 
 /**
- * Registro do visualizador por `host`: cada chamada de `registerLibraryFonts` troca as faces da
- * chamada anterior (o registro do `src/storage/fonts.ts` não tem estado de módulo).
+ * Viewer registry per `host`: each call to `registerLibraryFonts` replaces the faces of the
+ * previous call (the `src/storage/fonts.ts` registry has no module state).
  */
 let defaultRegistry: FontRegistry | undefined;
 const hostRegistries = new WeakMap<FontHost, FontRegistry>();
@@ -189,9 +189,9 @@ function registryFor(host: FontHost | undefined): FontRegistry {
 }
 
 /**
- * Registra as fontes da biblioteca (as que vieram com bytes) no documento do hospedeiro e
- * devolve o status de cada uma. Depois, `viewer.redraw()` (ou mudar `fontsVersion` no
- * invólucro React) para remedir os textos. `host` existe para os testes e para ambientes sem
+ * Registers the library's fonts (the ones that came with bytes) in the host's document and
+ * returns the status of each. Afterwards, call `viewer.redraw()` (or change `fontsVersion` in the
+ * React wrapper) to remeasure the texts. `host` exists for tests and for environments without
  * `document.fonts`.
  */
 export async function registerLibraryFonts(

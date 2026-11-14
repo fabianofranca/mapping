@@ -4,7 +4,7 @@ import { paintScene } from '../../mcp/image/sceneRaster';
 import { createFontBook, measurerFor } from '../../mcp/image/textMeasurer';
 import { baseNode, type FrameNode } from '../../src/model/components/scene';
 
-// CL1 / D3: o quadro com `clip` recorta pela forma (raio de canto), não pelo retângulo.
+// CL1 / D3: a frame with `clip` crops by its shape (corner radius), not by the rectangle.
 
 const book = createFontBook();
 const measure = measurerFor(book);
@@ -44,13 +44,13 @@ function render(cornerRadius: number): ReturnType<typeof createRaster> {
 const green = (r: ReturnType<typeof createRaster>, x: number, y: number): number =>
   r.data[(y * r.width + x) * 4 + 1]!;
 
-describe('recorte do quadro pela forma', () => {
-  it('com raio circular o canto fica sem tinta e o centro pintado', () => {
+describe('frame crop by shape', () => {
+  it('with a circular radius the corner has no ink and the center is painted', () => {
     const r = render(20);
     expect(green(r, 1, 1)).toBe(255);
     expect(green(r, 20, 20)).toBeLessThan(10);
   });
-  it('sem raio o retângulo todo é pintado', () => {
+  it('without a radius the whole rectangle is painted', () => {
     const r = render(0);
     expect(green(r, 1, 1)).toBeLessThan(10);
   });

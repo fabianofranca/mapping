@@ -3,18 +3,18 @@ import { describe, expect, it } from 'vitest';
 import { MCP_ERROR_CODES } from '../../mcp/errors';
 import { mcpSources } from './sources';
 
-// Registro dos códigos de erro do servidor (fase 8.5, M9): `MCP_ERROR_CODES` (`mcp/errors.ts`)
-// é a união literal que o `ToolError` aceita (o `tsc` recusa um código fora dela); aqui se
-// confere que todo código do registro está documentado para o agente (`docs/AGENT-GUIDE.md`)
-// ou para quem instala (`docs/MCP.md`), que todo literal de `new ToolError('…'` está no
-// registro e que o registro não tem entrada morta.
+// Registry of the server's error codes (phase 8.5, M9): `MCP_ERROR_CODES` (`mcp/errors.ts`)
+// is the literal union that `ToolError` accepts (`tsc` refuses a code outside it); here we
+// check that every code in the registry is documented for the agent (`docs/AGENT-GUIDE.md`)
+// or for whoever installs (`docs/MCP.md`), that every literal of `new ToolError('…'` is in the
+// registry and that the registry has no dead entry.
 
 const docs = ['docs/AGENT-GUIDE.md', 'docs/MCP.md']
   .map((file) => readFileSync(file, 'utf8'))
   .join('\n');
 const registry: ReadonlySet<string> = new Set(MCP_ERROR_CODES);
 
-/** Códigos literais de `new ToolError('…'` em `mcp/**`. */
+/** Literal codes of `new ToolError('…'` in `mcp/**`. */
 function literalCodes(): Map<string, string[]> {
   const codes = new Map<string, string[]>();
   for (const { file, code } of mcpSources()) {
@@ -25,27 +25,27 @@ function literalCodes(): Map<string, string[]> {
   return codes;
 }
 
-describe('códigos de erro do servidor', () => {
-  it('todo código de new ToolError( está documentado (entre crases)', () => {
+describe('server error codes', () => {
+  it('every code of new ToolError( is documented (in backticks)', () => {
     const codes = literalCodes();
     expect(codes.size).toBeGreaterThan(40);
     const missing = [...codes.keys()].filter((code) => !docs.includes(`\`${code}\``));
     expect(missing.sort()).toEqual([]);
   });
 
-  it('todo código do registro está documentado (entre crases)', () => {
+  it('every code in the registry is documented (in backticks)', () => {
     const missing = MCP_ERROR_CODES.filter((code) => !docs.includes(`\`${code}\``));
     expect(missing).toEqual([]);
   });
 
-  it('todo literal de new ToolError( está no registro', () => {
+  it('every literal of new ToolError( is in the registry', () => {
     const outside = [...literalCodes().entries()]
       .filter(([code]) => !registry.has(code))
       .map(([code, files]) => `${code} (${files.join(', ')})`);
     expect(outside).toEqual([]);
   });
 
-  it('o registro não tem código que nenhum módulo usa', () => {
+  it('the registry has no code that no module uses', () => {
     const used = mcpSources()
       .filter(({ file }) => file !== 'errors.ts')
       .map(({ code }) => code)
@@ -54,7 +54,7 @@ describe('códigos de erro do servidor', () => {
     expect(unused).toEqual([]);
   });
 
-  it('o registro está em ordem alfabética e sem repetição', () => {
+  it('the registry is in alphabetical order and without repetition', () => {
     expect([...MCP_ERROR_CODES]).toEqual([...registry].sort());
   });
 });

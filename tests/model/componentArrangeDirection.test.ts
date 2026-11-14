@@ -14,8 +14,8 @@ import {
 import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 import { marking } from './fixtures';
 
-// Direção (schema v20): a efetiva do espaço da marcação chega ao Arrumar e ao desenho. Em `rtl`
-// a linha corre da direita para a esquerda (R1 espelha no motor; aqui o projeto escolhe).
+// Direction (schema v20): the effective one of the marking's space reaches Arrange and the drawing. In `rtl`
+// the row runs from right to left (R1 mirrors in the engine; here the project chooses).
 
 const catalog = testCatalog();
 const box = (x: number, y: number, width: number, height: number): Rect => ({
@@ -50,7 +50,7 @@ function add(
   );
 }
 
-/** Linha de 300×100 em (100,100) com duas filhas de 100×40 fora de ordem. */
+/** Row of 300×100 at (100,100) with two out-of-order children of 100×40. */
 function row(): Project {
   let p = add(componentProject(), 'C', 'row', box(100, 100, 300, 100));
   p = add(p, 'T1', 'text', box(150, 150, 100, 40), 'C');
@@ -61,30 +61,30 @@ function row(): Project {
 const arrange = (p: Project) => arrangeMarking(p, catalog, 'C', approximateMeasurer);
 const rectOf = (p: Project, id: string): Rect => marking(p, id).rect;
 
-describe('Arrumar com a direção efetiva', () => {
-  it('ltr (padrão): a primeira filha no começo à esquerda', () => {
+describe('Arrange with the effective direction', () => {
+  it('ltr (default): the first child at the start on the left', () => {
     const { project } = arrange(row());
     expect(rectOf(project, 'T1')).toEqual(box(100, 100, 100, 40));
     expect(rectOf(project, 'T2')).toEqual(box(208, 100, 100, 40));
   });
 
-  it('rtl no projeto: a linha corre da direita para a esquerda', () => {
+  it('rtl in the project: the row runs from right to left', () => {
     const { project } = arrange(setProjectDirection(row(), 'rtl'));
     expect(rectOf(project, 'T1')).toEqual(box(300, 100, 100, 40));
     expect(rectOf(project, 'T2')).toEqual(box(192, 100, 100, 40));
   });
 
-  it('rtl fixado no container vale mesmo com o projeto em ltr', () => {
+  it('rtl pinned on the container applies even with the project in ltr', () => {
     const { project } = arrange(setContainerDirection(row(), 'I1', 'rtl'));
     expect(rectOf(project, 'T1')).toEqual(box(300, 100, 100, 40));
   });
 
-  it('o container que fixa ltr num projeto rtl arruma em ltr', () => {
+  it('a container that pins ltr in an rtl project arranges in ltr', () => {
     const p = setContainerDirection(setProjectDirection(row(), 'rtl'), 'I1', 'ltr');
     expect(rectOf(arrange(p).project, 'T1')).toEqual(box(100, 100, 100, 40));
   });
 
-  it('o ponto de uma filha nova segue a direção: depois da última, à esquerda dela', () => {
+  it('the spot of a new child follows the direction: after the last one, to its left', () => {
     const arranged = (dir: 'ltr' | 'rtl') =>
       arrange(setProjectDirection(row(), dir)).project;
     const place = (p: Project): Rect =>
@@ -105,9 +105,9 @@ describe('Arrumar com a direção efetiva', () => {
   });
 });
 
-describe('desenho com a direção efetiva', () => {
-  it('o desenho em rtl espelha a linha em relação ao ltr', () => {
-    // `wide`: duas caixas numa linha, que o motor espelha em rtl.
+describe('drawing with the effective direction', () => {
+  it('the rtl drawing mirrors the row relative to ltr', () => {
+    // `wide`: two boxes in a row, which the engine mirrors in rtl.
     const p = add(componentProject(), 'C', 'wide', box(100, 100, 300, 100));
     const ltr = createDrawingCache()(p, catalog, approximateMeasurer, 0).get('C');
     const rtl = createDrawingCache()(
@@ -118,7 +118,7 @@ describe('desenho com a direção efetiva', () => {
     ).get('C');
     const xs = (d: typeof ltr) => d?.root.children?.map((n) => n.transform[4]);
     expect(xs(ltr)).toHaveLength(2);
-    // Caixas de 80 numa linha de 300: [0, 80] em ltr e, espelhadas, [220, 140] em rtl.
+    // Boxes of 80 in a row of 300: [0, 80] in ltr and, mirrored, [220, 140] in rtl.
     expect(xs(ltr)).toEqual([0, 80]);
     expect(xs(rtl)).toEqual([220, 140]);
   });

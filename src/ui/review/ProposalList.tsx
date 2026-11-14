@@ -12,27 +12,27 @@ import { Notice } from '../Notice';
 import { ProposalRow } from './ProposalRow';
 import { useReviewCommands } from './useReviewCommands';
 
-// Janela Propostas fora do modo revisão (HANDOFF-PROPOSALS 5.1): propostas abertas e
-// fechadas, com busca por título, origem e autor, a contagem de aceitas aguardando
-// aplicação em cada linha e o estado vazio. Os dados vêm de `review.derived.rows`; o selo
-// "Nova" vai em toda linha `fresh` (a mesma contagem da barra de status; fase 8.2).
+// Proposals window outside review mode (HANDOFF-PROPOSALS 5.1): open and closed
+// proposals, with search by title, origin and author, the count of accepted ones awaiting
+// application on each row and the empty state. The data comes from `review.derived.rows`; the
+// "New" badge goes on every `fresh` row (the same count as the status bar; phase 8.2).
 
 type Scope = 'all' | 'open' | 'closed';
 
 interface ProposalListProps {
-  /** Abre a Ajuda na seção das propostas ("Como o agente envia propostas"). */
+  /** Opens Help at the proposals section ("How the agent sends proposals"). */
   readonly onHelp: () => void;
-  /** "Verificar a pasta agora". */
+  /** "Check the folder now". */
   readonly onScan: () => void;
 }
 
-/** Estado vazio: como as propostas chegam e onde elas valem. */
+/** Empty state: how proposals arrive and where they apply. */
 export function ProposalsEmpty({
   onHelp,
   onScan,
   helpRef,
 }: ProposalListProps & {
-  /** O primeiro botão (alvo do foco quando a última proposta é apagada). */
+  /** The first button (focus target when the last proposal is deleted). */
   readonly helpRef?: Ref<HTMLButtonElement>;
 }) {
   return (
@@ -68,8 +68,8 @@ export function ProposalList({ onHelp, onScan }: ProposalListProps) {
   const [removing, setRemoving] = useState(false);
   const rowsRef = useRef<HTMLDivElement>(null);
   const emptyFocus = useRef<HTMLButtonElement>(null);
-  // Onde estava a linha apagada: um dono só para o foco (o `returnFocus` do diálogo, que
-  // fecha depois da ação, já sem a linha; etapa 8, F2).
+  // Where the deleted row was: a single owner for focus (the dialog's `returnFocus`, which
+  // closes after the action, already without the row; stage 8, F2).
   const removedAt = useRef(0);
   const rows = review.derived.rows.value;
   const problems = session.proposals.problems.value;
@@ -87,7 +87,7 @@ export function ProposalList({ onHelp, onScan }: ProposalListProps) {
   const shownClosed = scope === 'open' ? [] : closed.filter(matches);
   const now = new Date();
 
-  // Revisar, Continuar e Ver abrem a revisão (a retirada só explica que não há o que rever).
+  // Review, Continue and View open the review (withdrawal only explains that there is nothing to review).
   const onAction = (row: ProposalRowData) => {
     openReview(row.proposal.id);
   };
@@ -97,7 +97,7 @@ export function ProposalList({ onHelp, onScan }: ProposalListProps) {
     setPending(row);
   };
 
-  /** A linha que ocupa o lugar da apagada (ou a anterior); sem linhas, o estado vazio ou a lista. */
+  /** The row that takes the place of the deleted one (or the previous one); with no rows, the empty state or the list. */
   const focusAfterRemoval = (): HTMLElement | null => {
     const actions = rowsRef.current?.querySelectorAll<HTMLElement>(
       '[data-proposal-action]',
@@ -153,8 +153,8 @@ export function ProposalList({ onHelp, onScan }: ProposalListProps) {
     </Dialog>
   );
 
-  // O diálogo fica sempre na mesma posição do fragmento: apagar a última proposta troca a
-  // lista pelo estado vazio sem remontar o diálogo aberto.
+  // The dialog always stays in the same position of the fragment: deleting the last proposal swaps the
+  // list for the empty state without remounting the open dialog.
   if (rows.length === 0 && problems.length === 0) {
     return (
       <>

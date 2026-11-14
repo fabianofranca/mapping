@@ -16,9 +16,9 @@ import { paintScene } from '../../mcp/image/sceneRaster';
 import { createFontBook, measurerFor } from '../../mcp/image/textMeasurer';
 import { emptyProject } from '../model/fixtures';
 
-// Densidade (#1085, decisão 8): o mesmo componente num container 3x (174×120) e num 1x (58×40) a
-// `zoom` 3 dá o mesmo PNG no raster do MCP, porque a escala vai na raiz da cena. `screen` e
-// `stroke.scale: false` não escalam com a densidade.
+// Density (#1085, decision 8): the same component in a 3x container (174×120) and a 1x one (58×40) at
+// `zoom` 3 gives the same PNG in the MCP raster, because the scale goes on the scene root. `screen` and
+// `stroke.scale: false` do not scale with the density.
 
 const book = createFontBook();
 const measure = measurerFor(book);
@@ -41,7 +41,7 @@ const button = {
     children: [
       {
         type: 'text',
-        name: 'rótulo',
+        name: 'label',
         text: { $field: 'label', default: 'Salvar' },
         font: { size: 14, lineHeight: 20 },
         color: '#1D1B20',
@@ -164,8 +164,8 @@ const inkCount = (r: Raster, bg = 255): number => {
   return n;
 };
 
-describe('paridade raster: container 3x × container 1x a zoom 3', () => {
-  it('button 174×120 a 3x (zoom 1) é o mesmo PNG do button 58×40 a 1x (zoom 3)', () => {
+describe('raster parity: 3x container × 1x container at zoom 3', () => {
+  it('button 174×120 at 3x (zoom 1) is the same PNG as button 58×40 at 1x (zoom 3)', () => {
     const dense = paint(
       projectWith('button', { x: 30, y: 30, width: 174, height: 120 }, 3),
       1,
@@ -178,25 +178,25 @@ describe('paridade raster: container 3x × container 1x a zoom 3', () => {
     expect(maxDiff(dense, flat)).toBeLessThanOrEqual(2);
   });
 
-  it('a densidade 1 não muda o desenho (a matriz da raiz é só a translação)', () => {
+  it('density 1 does not change the drawing (the root matrix is just the translation)', () => {
     const p = projectWith('button', { x: 10, y: 10, width: 58, height: 40 }, 1);
     const root = createDrawingCache()(p, cat, measure, 0).get('M')!.root;
     expect(root.transform).toEqual([1, 0, 0, 1, 10, 10]);
   });
 
-  it('stroke.scale: false mantém a largura em pixels de saída, com ou sem densidade', () => {
+  it('stroke.scale: false keeps the width in output pixels, with or without density', () => {
     const rect3 = { x: 30, y: 30, width: 174, height: 120 };
     const dense = paint(projectWith('fixed', rect3, 3), 1);
     const flat = paint(
       projectWith('fixed', { x: 10, y: 10, width: 58, height: 40 }, 1),
       3,
     );
-    // O traço de 2 px de saída: a coluna de pixels do meio do botão cruza a borda de cima e a de baixo.
+    // The 2 px output stroke: the button's middle pixel column crosses the top edge and the bottom one.
     const column = (r: Raster, x: number): number => {
       let n = 0;
       for (let y = 0; y < r.height; y++) {
         const i = (y * r.width + x) * 4;
-        // roxo do traço: R baixo, B alto
+        // the stroke's purple: low R, high B
         if (r.data[i]! < 140 && r.data[i + 2]! > 150) n++;
       }
       return n;

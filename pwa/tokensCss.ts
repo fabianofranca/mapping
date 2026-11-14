@@ -1,6 +1,6 @@
-// Plugin do Vite que entrega `src/theme/tokens.ts` como CSS (`import 'virtual:tokens.css'`):
-// os tokens têm uma fonte só e não há arquivo gerado para ficar desatualizado. Usado pelo
-// build da app (vite.config.ts) e por outras páginas que usem os tokens.
+// Vite plugin that delivers `src/theme/tokens.ts` as CSS (`import 'virtual:tokens.css'`):
+// the tokens have a single source and there is no generated file to go stale. Used by the
+// app build (vite.config.ts) and by other pages that use the tokens.
 import type { Plugin } from 'vite';
 import { renderTokensCss } from '../src/theme/tokens';
 

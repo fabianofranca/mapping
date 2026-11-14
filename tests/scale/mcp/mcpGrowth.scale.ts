@@ -16,10 +16,10 @@ import {
 import { buildScaleProject, buildScaleThreads } from '../../model/scaleProject';
 import { GROWTH_OPTIONS, expectLinearGrowthAsync } from '../../support/growth';
 
-// Tools de leitura do MCP em processo (createServer + InMemoryTransport) sobre o projeto de escala gravado
-// numa pasta temporária (#881): a mesma chamada com 1.250 e 5.000 marcações, razão < 6×. O servidor lê o
-// projeto do disco a cada chamada; é esse o custo de uma chamada num projeto grande.
-const PROJECT = 'escala';
+// MCP read tools in process (createServer + InMemoryTransport) over the scale project written
+// to a temporary folder (#881): the same call with 1,250 and 5,000 markings, ratio < 6×. The server reads the
+// project from disk on every call; that is the cost of a call on a large project.
+const PROJECT = 'scale';
 const roots: string[] = [];
 const clients: Client[] = [];
 
@@ -50,7 +50,7 @@ function writeProject(root: string, p: Project): void {
 }
 
 const contexts = new Map<number, Promise<Ctx>>();
-/** Um servidor por tamanho, reaproveitado entre as tools (montar o projeto grande custa mais que medir). */
+/** One server per size, reused across the tools (building the large project costs more than measuring). */
 function setup(markings: number): Promise<Ctx> {
   let ctx = contexts.get(markings);
   if (!ctx) {
@@ -67,10 +67,10 @@ async function start(markings: number): Promise<Ctx> {
   writeProject(root, p);
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await createServer({ roots: [root] }).connect(serverSide);
-  const client = new Client({ name: 'escala', version: '0' });
+  const client = new Client({ name: 'scale', version: '0' });
   await client.connect(clientSide);
   clients.push(client);
-  // Um item do meio do projeto (a chamada por item não pode ser mais barata no começo do arquivo).
+  // An item from the middle of the project (the per-item call must not be cheaper at the start of the file).
   const midBlock = Math.floor(markings / 25 / 2);
   const mid = p.markings.find((m) => m.id === `B${midBlock}-0-0`)!;
   const annotation = p.annotations.find((a) => a.markingId === mid.id)!;
@@ -90,14 +90,14 @@ async function call(
 ): Promise<string> {
   const result = await ctx.client.callTool({ name, arguments: args });
   const text = JSON.stringify(result.content);
-  if (result.isError) throw new Error(`${name} falhou: ${text.slice(0, 300)}`);
+  if (result.isError) throw new Error(`${name} failed: ${text.slice(0, 300)}`);
   return text;
 }
 
 interface Case {
   readonly tool: string;
   readonly args: (ctx: Ctx) => Record<string, unknown>;
-  /** O que a resposta tem de ter, para a medida ser de uma chamada que acha o que procura. */
+  /** What the response must contain, so the measurement is of a call that finds what it looks for. */
   readonly expects: (ctx: Ctx) => string;
 }
 
@@ -110,7 +110,7 @@ const CASES: readonly Case[] = [
   {
     tool: 'list_markings',
     args: () => ({ project: PROJECT }),
-    expects: () => 'mapping://escala/m/',
+    expects: () => 'mapping://scale/m/',
   },
   {
     tool: 'get_marking',
@@ -135,11 +135,12 @@ const CASES: readonly Case[] = [
   {
     tool: 'list_threads',
     args: () => ({ project: PROJECT }),
+    // pt-BR kept: shared fixture data (thread text `Dúvida` of buildScaleThreads in tests/model/scaleProject.ts)
     expects: () => 'Dúvida',
   },
 ];
 
-describe('crescimento das tools de leitura do MCP (n = 1.250, 4n = 5.000 marcações)', () => {
+describe('growth of the MCP read tools (n = 1,250, 4n = 5,000 markings)', () => {
   it.each(CASES.map((c) => [c.tool, c] as const))(
     '%s',
     GROWTH_OPTIONS,

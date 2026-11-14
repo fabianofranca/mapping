@@ -18,40 +18,44 @@ import {
 import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './spec';
 import { READING_DIRECTIONS, type JsonValue } from './types';
 
-// Formato da proposta de alteração (etapa 4): `proposals/<id>/proposal.json`,
-// `formatVersion` 4 na criação, 5 com `revisions`, 6 com o modo do desenho e 7 com a densidade do container (só quando a proposta os usa: `proposalFormatVersionFor`; a 1 a 3 continuam lidas). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
-// leitura devolve os erros com o caminho exato (`changes[3].to.rect.width: …`).
+// Format of the change proposal (stage 4): `proposals/<id>/proposal.json`, `formatVersion` 4 on
+// creation, 5 with `revisions`, 6 with the drawing mode and 7 with the container density (only
+// when the proposal uses them: `proposalFormatVersionFor`; 1 to 3 are still read). See
+// docs/PROPOSAL-FORMAT.md. The zod schema here is the source of truth; reading returns the errors
+// with the exact path (`changes[3].to.rect.width: …`).
 
 export const PROPOSAL_FORMAT = 'mapping-proposal';
 export const PROPOSAL_FORMAT_VERSION = 4;
 /**
- * Versões lidas, de 1 a 9: a 9 acrescenta a âncora da marcação (campo `anchor` da marcação e `anchor` no
- * valor de uma marcação criada, schema v20) e só é gravada quando a proposta a usa (inclui o que a 8 e
- * as anteriores têm); a 8 acrescenta a direção de leitura (campo `direction` do container e
- * do projeto, schema v20) e só é gravada quando a proposta a usa (inclui o que a 7 e a 6 têm); a 7
- * acrescenta a densidade do container (campo `density`, schema v19) e só
- * é gravada quando a proposta a usa (inclui o que a 6 tem); a 6 acrescenta o modo do desenho (a entidade `project` e o campo
- * `drawingMode` do container) e só é gravada quando a proposta o usa; a 5 acrescenta `revisions`
- * (a revisão do agente); a 4 acrescenta `insertBefore` à criação de marcação (a posição dela no
- * array; uma app antiga recusa a 4 em vez de descartar o campo ao regravar as decisões). A 3 não
- * tem `inherit` na anotação nem `parentId` comparado na marcação (a mudança de uma proposta
- * antiga é ignorada, com aviso), e traz o nível `canvas`, a mudança composta `space` e
- * `floating`, e as mudanças `create-arrow` e `delete-arrow` (entidade `arrow`, ME4); a 2
- * acrescenta `add_container` às `operations`; a 1 continua válida. A criação grava a 4 (a 6, com
- * o modo do desenho).
+ * Versions read, from 1 to 9: 9 adds the marking's anchor (the marking's `anchor` field and
+ * `anchor` in the value of a created marking, schema v20) and is only written when the proposal
+ * uses it (it includes what 8 and the earlier ones have); 8 adds the reading direction (the
+ * `direction` field of the container and of the project, schema v20) and is only written when
+ * the proposal uses it (it includes what 7 and 6 have); 7 adds the container density (the
+ * `density` field, schema v19) and is only written when the proposal uses it (it includes what 6
+ * has); 6 adds the drawing mode (the `project` entity and the container's `drawingMode` field)
+ * and is only written when the proposal uses it; 5 adds `revisions` (the agent's revision); 4
+ * adds `insertBefore` to marking creation (its position in the array; an old app refuses 4
+ * instead of dropping the field when rewriting the decisions). 3 has no `inherit` on the
+ * annotation or compared `parentId` on the marking (the change from an old proposal is
+ * ignored, with a warning), and brings the `canvas` level, the composite `space` change and
+ * `floating`, and the `create-arrow` and `delete-arrow` changes (`arrow` entity, ME4); 2 adds
+ * `add_container` to the `operations`; 1 is still valid. Creation writes 4 (6, with the drawing
+ * mode).
  */
 export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 /**
- * Versão da proposta que traz o modo do desenho (schema v18): a entidade `project` (campo
- * `drawingMode`), o campo `drawingMode` do container e o `drawingMode` no valor de um container
- * criado. Uma versão anterior recusaria a entidade e o campo, mas descartaria em silêncio o
- * `drawingMode` do container criado; por isso a proposta que o usa grava a 6 (a criação e a
- * revisão não sobem a versão de uma proposta que não o usa). A 6 aceita `revisions` (opcional).
+ * Proposal version that carries the drawing mode (schema v18): the `project` entity (field
+ * `drawingMode`), the container's `drawingMode` field and the `drawingMode` in the value of a
+ * created container. An earlier version would refuse the entity and the field, but would
+ * silently drop the created container's `drawingMode`; so a proposal that uses it is written as
+ * 6 (creation and revision do not raise the version of a proposal that does not use it). 6
+ * accepts `revisions` (optional).
  */
 export const PROPOSAL_DRAWING_MODE_FORMAT_VERSION = 6;
 
-/** A proposta usa o modo do desenho (e por isso só a `formatVersion` 6 a representa)? */
+/** Does the proposal use the drawing mode (so that only `formatVersion` 6 represents it)? */
 export function usesDrawingMode(changes: readonly Change[]): boolean {
   return changes.some(
     (c) =>
@@ -62,15 +66,15 @@ export function usesDrawingMode(changes: readonly Change[]): boolean {
 }
 
 /**
- * Versão da proposta que traz a densidade do container (schema v19): o campo `density` e o
- * `density` no valor de um container criado. Uma versão anterior recusaria o campo, mas
- * descartaria em silêncio o `density` do container criado; por isso a proposta que o usa grava a
- * 7 (a criação e a revisão não sobem a versão de uma proposta que não o usa). A 7 aceita
- * `revisions` (opcional) e tudo o que a 6 aceita.
+ * Proposal version that carries the container density (schema v19): the `density` field and the
+ * `density` in the value of a created container. An earlier version would refuse the field, but
+ * would silently drop the created container's `density`; so a proposal that uses it is written
+ * as 7 (creation and revision do not raise the version of a proposal that does not use it). 7
+ * accepts `revisions` (optional) and everything 6 accepts.
  */
 export const PROPOSAL_DENSITY_FORMAT_VERSION = 7;
 
-/** A proposta usa a densidade do container (e por isso só a `formatVersion` 7 a representa)? */
+/** Does the proposal use the container density (so that only `formatVersion` 7 represents it)? */
 export function usesDensity(changes: readonly Change[]): boolean {
   return changes.some(
     (c) =>
@@ -89,15 +93,16 @@ function hasDensity(value: JsonValue): boolean {
 }
 
 /**
- * Versão da proposta que traz a direção de leitura (schema v20): o campo `direction` do container
- * e da entidade `project` e o `direction` no valor de um container criado. Uma versão anterior
- * descartaria em silêncio o `direction` do container criado e da entidade do projeto; por isso a
- * proposta que o usa grava a 8 (a criação e a revisão não sobem a versão de uma proposta que não
- * o usa). A 8 aceita `revisions` (opcional) e tudo o que a 7 aceita.
+ * Proposal version that carries the reading direction (schema v20): the `direction` field of the
+ * container and of the `project` entity and the `direction` in the value of a created container.
+ * An earlier version would silently drop the `direction` of the created container and of the
+ * project entity; so a proposal that uses it is written as 8 (creation and revision do not
+ * raise the version of a proposal that does not use it). 8 accepts `revisions` (optional) and
+ * everything 7 accepts.
  */
 export const PROPOSAL_DIRECTION_FORMAT_VERSION = 8;
 
-/** A proposta usa a direção de leitura (e por isso só a `formatVersion` 8 a representa)? */
+/** Does the proposal use the reading direction (so that only `formatVersion` 8 represents it)? */
 export function proposalUsesDirection(changes: readonly Change[]): boolean {
   return changes.some(
     (c) =>
@@ -117,14 +122,15 @@ function hasDirection(value: JsonValue): boolean {
 }
 
 /**
- * Versão da proposta que traz a âncora da marcação (schema v20): o campo `anchor` de uma marcação
- * (o valor da âncora ou `null`) e o `anchor` no valor de uma marcação criada. Uma versão anterior
- * descartaria em silêncio a âncora da marcação criada (e recusaria o campo novo); por isso a proposta
- * que a usa grava a 9. `snap_to_anchor` não precisa dela: é só a mudança de Posição (`rect`).
+ * Proposal version that carries the marking's anchor (schema v20): the `anchor` field of a
+ * marking (the anchor value or `null`) and the `anchor` in the value of a created marking. An
+ * earlier version would silently drop the created marking's anchor (and refuse the new field);
+ * so a proposal that uses it is written as 9. `snap_to_anchor` does not need it: it is just the
+ * Position (`rect`) change.
  */
 export const PROPOSAL_ANCHOR_FORMAT_VERSION = 9;
 
-/** A proposta usa a âncora da marcação (e por isso só a `formatVersion` 9 a representa)? */
+/** Does the proposal use the marking's anchor (so that only `formatVersion` 9 represents it)? */
 export function proposalUsesAnchor(changes: readonly Change[]): boolean {
   return changes.some(
     (c) =>
@@ -143,9 +149,9 @@ function hasAnchor(value: JsonValue): boolean {
 }
 
 /**
- * A `formatVersion` que a criação ou a revisão grava: a 9 com âncora, a 8 com direção, a 7 com densidade, a 6 com
- * modo do desenho, senão `fallback` (4 na criação, 5 na revisão). `current` é a versão da proposta
- * que se regrava: uma 6, 7, 8 ou 9 nunca desce.
+ * The `formatVersion` that creation or revision writes: 9 with an anchor, 8 with a direction, 7
+ * with a density, 6 with a drawing mode, otherwise `fallback` (4 on creation, 5 on revision).
+ * `current` is the version of the proposal being rewritten: a 6, 7, 8 or 9 never goes down.
  */
 export function proposalFormatVersionFor(
   changes: readonly Change[],
@@ -177,20 +183,21 @@ function hasDrawingMode(value: JsonValue): boolean {
 }
 
 /**
- * Versão gravada pela revisão do agente (`reviseProposal`): a 5, com `revisions` na raiz (a 6,
- * quando a proposta usa o modo do desenho, mantém a 6). A criação continua gravando
- * `PROPOSAL_FORMAT_VERSION` (4); quem regrava decisões e notas mantém a versão do arquivo. Ver docs/PROPOSAL-FORMAT.md, "Revisão pelo agente".
+ * Version written by the agent's revision (`reviseProposal`): 5, with `revisions` at the root (6,
+ * when the proposal uses the drawing mode, keeps 6). Creation keeps writing
+ * `PROPOSAL_FORMAT_VERSION` (4); whoever rewrites decisions and notes keeps the file's version.
+ * See docs/PROPOSAL-FORMAT.md, "Agent revision".
  */
 export const PROPOSAL_REVISED_FORMAT_VERSION = 5;
-/** Pasta das propostas, relativa à raiz do projeto. */
+/** Folder of the proposals, relative to the project root. */
 export const PROPOSALS_DIR = 'proposals';
-/** Nome do arquivo da proposta dentro de `proposals/<id>/`. */
+/** Name of the proposal file inside `proposals/<id>/`. */
 export const PROPOSAL_FILE = 'proposal.json';
 
 /**
- * `open`: em revisão. `applied`: tudo decidido e as aceitas aplicadas. `superseded`:
- * substituída por outra (as aceitas ainda podem ser aplicadas; as pendentes não).
- * `withdrawn`: retirada pelo agente.
+ * `open`: under review. `applied`: everything decided and the accepted ones applied.
+ * `superseded`: replaced by another (the accepted ones can still be applied; the pending ones
+ * cannot). `withdrawn`: withdrawn by the agent.
  */
 export type ProposalStatus = 'open' | 'applied' | 'superseded' | 'withdrawn';
 export const PROPOSAL_STATUSES: readonly ProposalStatus[] = [
@@ -202,7 +209,7 @@ export const PROPOSAL_STATUSES: readonly ProposalStatus[] = [
 
 export type ChangeKind = 'create' | 'update' | 'remove';
 
-/** Entidades que uma mudança pode alterar. As três primeiras formam o grupo "Projeto". */
+/** Entities a change can alter. The first three form the "Project" group. */
 export type ChangeEntity =
   | 'specialization'
   | 'platformRepo'
@@ -227,8 +234,8 @@ export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
 ];
 
 /**
- * Campos alterados de uma imagem (`file` é a troca: `{ file, width, height }`). `background` e
- * `size` (`{ width, height }`) só existem no container sem arquivo (v10).
+ * Fields altered on an image (`file` is the swap: `{ file, width, height }`). `background` and
+ * `size` (`{ width, height }`) only exist on a container without a file (v10).
  */
 export const IMAGE_FIELDS = [
   'name',
@@ -244,12 +251,12 @@ export const IMAGE_FIELDS = [
   'direction',
 ] as const;
 /**
- * Campos alterados de uma marcação. `space` é a troca de espaço (`{ containerId, rect }`, o
- * `containerId` nulo é o canvas): vira uma mudança só para o revisor não aceitar metade; o
- * `rect` só é um campo à parte quando o espaço não muda. `floating` é comparado; `parentId` é
- * derivado (o assentar recalcula) e não é comparado. `containerId` sozinho é o formato de
- * antes da v13, ainda aceito na leitura. `position`: índice entre as irmãs (mesmo espaço e
- * mesmo pai), só quando a ordem relativa muda.
+ * Fields altered on a marking. `space` is the change of space (`{ containerId, rect }`, a null
+ * `containerId` is the canvas): it becomes a single change so the reviewer does not accept half
+ * of it; `rect` is only a separate field when the space does not change. `floating` is
+ * compared; `parentId` is derived (the settle recomputes it) and is not compared. `containerId`
+ * alone is the format from before v13, still accepted when reading. `position`: index among the
+ * siblings (same space and same parent), only when the relative order changes.
  */
 export const MARKING_FIELDS = [
   'name',
@@ -263,16 +270,17 @@ export const MARKING_FIELDS = [
   'anchor',
 ] as const;
 /**
- * A seta (v13, ME4) só tem criação e remoção (`create-arrow`, `delete-arrow`): nenhum campo é
- * comparado. A rota (`points`) é só da pessoa e nunca vem de proposta; o estilo, o nome, a
- * trava e as pontas de uma seta que já existe também não são propostos (uma mudança dessas é
- * ignorada na leitura, com aviso). A anotação numa seta usa as mudanças de anotação de sempre.
+ * The arrow (v13, ME4) only has creation and removal (`create-arrow`, `delete-arrow`): no field
+ * is compared. The route (`points`) belongs only to the person and never comes from a proposal;
+ * the style, name, lock and endpoints of an arrow that already exists are not proposed either (a
+ * change like that is ignored when reading, with a warning). An annotation on an arrow uses the
+ * usual annotation changes.
  */
 export const ARROW_FIELDS = [] as const;
 /**
- * Campos fixos de uma anotação. Além deles: `values.<key>` (um campo da tipada) e
- * `entries.<id>` (um par da livre). `type` é a troca de tipo, que leva `type`, `values`
- * e `entries` juntos (ex: a conversão para livre ao remover uma especialização).
+ * Fixed fields of an annotation. Besides them: `values.<key>` (a field of the typed one) and
+ * `entries.<id>` (a pair of the free one). `type` is the type swap, which carries `type`,
+ * `values` and `entries` together (e.g. the conversion to free when removing a specialization).
  */
 export const ANNOTATION_FIELDS = [
   'name',
@@ -282,27 +290,27 @@ export const ANNOTATION_FIELDS = [
   'layerId',
   'type',
 ] as const;
-/** `position` é o índice na lista de camadas (só quando a ordem relativa muda). */
+/** `position` is the index in the layer list (only when the relative order changes). */
 export const LAYER_FIELDS = ['name', 'color', 'spec', 'position'] as const;
 
 export const VALUES_FIELD_PREFIX = 'values.';
 export const ENTRIES_FIELD_PREFIX = 'entries.';
 
 /**
- * Uma alteração isolada. `from` é o valor no momento da proposta e `to` o proposto:
- * na criação, `from` é `null` e `to` a entidade inteira; na remoção, o contrário; na
- * alteração, os valores do campo `field` (especialização e repositório não têm campo:
- * `field` é `null` e os valores são a entidade inteira). `imageId` e `markingId` dizem
- * em que imagem e item (marcação) a mudança aparece na revisão: ambos `null` é o grupo
- * Projeto; `imageId` nulo com `markingId` é uma marcação do canvas (e as anotações dela).
- * A seta (`entity: "arrow"`) é um item como a marcação: `markingId` é o id dela e `imageId` o
- * container da marcação de origem (ou `null`, o canvas); as anotações dela levam o mesmo par.
+ * An isolated change. `from` is the value at the time of the proposal and `to` the proposed
+ * one: on creation, `from` is `null` and `to` the whole entity; on removal, the opposite; on
+ * update, the values of the `field` (specialization and repository have no field: `field` is
+ * `null` and the values are the whole entity). `imageId` and `markingId` say in which image and
+ * item (marking) the change appears in the review: both `null` is the Project group; a null
+ * `imageId` with `markingId` is a canvas marking (and its annotations). The arrow
+ * (`entity: "arrow"`) is an item like the marking: `markingId` is its id and `imageId` the
+ * container of the origin marking (or `null`, the canvas); its annotations carry the same pair.
  */
 export interface Change {
   readonly id: string;
   readonly kind: ChangeKind;
   readonly entity: ChangeEntity;
-  /** Id da entidade; no repositório, o id da plataforma. */
+  /** Id of the entity; for the repository, the platform id. */
   readonly entityId: string;
   readonly imageId: string | null;
   readonly markingId: string | null;
@@ -310,10 +318,10 @@ export interface Change {
   readonly from: JsonValue;
   readonly to: JsonValue;
   /**
-   * Só na criação de marcação (formatVersion 4): o id de uma marcação da base antes da qual a
-   * criada entra no array do aplicador, escolhida (`proposalAnchors`) para os empates saírem
-   * como no proposto. Ausente ou `null`: a criada vai para o fim. Uma âncora que não está na
-   * base ao aplicar (removida, ou inexistente) também manda para o fim.
+   * Only on marking creation (formatVersion 4): the id of a base marking before which the
+   * created one enters the applier's array, chosen (`proposalAnchors`) so that ties come out as
+   * in the proposed project. Absent or `null`: the created one goes to the end. An anchor that
+   * is not in the base when applying (removed, or nonexistent) also sends it to the end.
    */
   readonly insertBefore?: string | null;
 }
@@ -325,18 +333,18 @@ export interface Decision {
   readonly at: string;
 }
 
-/** Decisão de cada mudança (por id). Mudança ausente = sem decisão. */
+/** Decision of each change (by id). Absent change = no decision. */
 export type ProposalDecisions = { readonly [changeId: string]: Decision };
 
-/** Mudanças já efetivadas no projeto (por id), com a data. */
+/** Changes already carried out in the project (by id), with the date. */
 export type ProposalApplied = { readonly [changeId: string]: { readonly at: string } };
 
-/** Níveis da revisão. `canvas` é o grupo das marcações do canvas, irmão dos containers. */
+/** Review levels. `canvas` is the group of canvas markings, a sibling of the containers. */
 export type ReviewLevel = 'proposal' | 'project' | 'canvas' | 'image' | 'item' | 'change';
 
 /**
- * Alvo de uma decisão ou nota. `id` é `null` em `proposal`, `project` e `canvas`; nos
- * demais, o id da imagem, da marcação (item) ou da mudança.
+ * Target of a decision or note. `id` is `null` in `proposal`, `project` and `canvas`; in the
+ * others, the id of the image, of the marking (item) or of the change.
  */
 export interface ReviewTarget {
   readonly level: ReviewLevel;
@@ -350,32 +358,35 @@ export interface ProposalNote {
   readonly at: string;
 }
 
-/** Decisão de antes de uma revisão: rejeitada ou sem decisão (aceita fica congelada). */
+/** Decision from before a revision: rejected or no decision (accepted stays frozen). */
 export type RevisedPriorState = 'rejected' | null;
 
-/** Uma mudança retirada numa revisão: como era, a decisão de antes e as notas que subiram. */
+/**
+ * A change withdrawn in a revision: as it was, the decision from before and the notes that moved
+ * up.
+ */
 export interface RevisionDropped {
   readonly change: Change;
   readonly state: RevisedPriorState;
-  /** Ids das notas da mudança que passaram ao nível da proposta. */
+  /** Ids of the change's notes that moved to the proposal level. */
   readonly notes: readonly string[];
 }
 
-/** Uma revisão do agente (formatVersion 5), em `revisions`, da mais antiga para a mais nova. */
+/** An agent revision (formatVersion 5), in `revisions`, from oldest to newest. */
 export interface ProposalRevision {
   readonly at: string;
-  /** `revision` do `mapping.json` sobre a qual a revisão foi calculada. */
+  /** `revision` of the `mapping.json` on which the revision was computed. */
   readonly baseRevision: number;
-  /** As operações do lote, só para referência (base64 trocado pelo marcador). */
+  /** The batch's operations, for reference only (base64 replaced by the marker). */
   readonly operations: readonly JsonValue[];
-  /** Mudanças trocadas: o `to` e a decisão de antes desta revisão. */
+  /** Changes swapped: the `to` and the decision from before this revision. */
   readonly changed: {
     readonly [changeId: string]: {
       readonly to: JsonValue;
       readonly state: RevisedPriorState;
     };
   };
-  /** Ids das mudanças novas. */
+  /** Ids of the new changes. */
   readonly added: readonly string[];
   readonly dropped: readonly RevisionDropped[];
 }
@@ -386,24 +397,24 @@ export interface Proposal {
   readonly id: string;
   readonly title: string;
   readonly description: string | null;
-  /** De onde vieram os dados (texto livre, ex: "Figma: Loja v3 › Checkout"). */
+  /** Where the data came from (free text, e.g. "Figma: Store v3 › Checkout"). */
   readonly origin: string | null;
   readonly author: string | null;
   readonly createdAt: string;
-  /** `revision` do `mapping.json` sobre o qual as mudanças foram calculadas. */
+  /** `revision` of the `mapping.json` on which the changes were computed. */
   readonly baseRevision: number;
-  /** Id da proposta que esta substitui. */
+  /** Id of the proposal that this one supersedes. */
   readonly supersedes: string | null;
   readonly status: ProposalStatus;
-  /** Contador de gravações do arquivo da proposta (mesma conferência do `mapping.json`). */
+  /** Write counter of the proposal file (same check as `mapping.json`). */
   readonly revision: number;
-  /** As operações enviadas pelo agente, só para referência. */
+  /** The operations sent by the agent, for reference only. */
   readonly operations: readonly JsonValue[];
   readonly changes: readonly Change[];
   readonly decisions: ProposalDecisions;
   readonly notes: readonly ProposalNote[];
   readonly applied: ProposalApplied;
-  /** Histórico das revisões do agente: obrigatório na formatVersion 5, ausente antes. */
+  /** History of the agent's revisions: required in formatVersion 5, absent before. */
   readonly revisions?: readonly ProposalRevision[];
 }
 
@@ -418,35 +429,35 @@ export function proposalFilePath(proposalId: string): string {
 }
 
 /**
- * Onde a imagem nova ou trocada espera a aceitação: `proposals/<id>/` mais o caminho
- * definitivo (`images/tela.webp` → `proposals/<id>/images/tela.webp`).
+ * Where the new or swapped image waits for acceptance: `proposals/<id>/` plus the final path
+ * (`images/screen.webp` → `proposals/<id>/images/screen.webp`).
  */
 export function proposalImagePath(proposalId: string, file: string): string {
   return `${proposalDir(proposalId)}/${file}`;
 }
 
 /**
- * Onde os arquivos do pacote de biblioteca esperam a aceitação: `proposals/<id>/` mais a
- * pasta definitiva (`specs/material3` → `proposals/<id>/specs/material3`).
+ * Where the library package files wait for acceptance: `proposals/<id>/` plus the final
+ * folder (`specs/material3` → `proposals/<id>/specs/material3`).
  */
 export function proposalPackageDir(proposalId: string, dir: string): string {
   return `${proposalDir(proposalId)}/${dir}`;
 }
 
 // ---------------------------------------------------------------------------
-// Validação (zod)
+// Validation (zod)
 
-/** Id da proposta: vira nome de pasta, então só `[A-Za-z0-9._-]`, sem começar com ponto. */
+/** Proposal id: it becomes a folder name, so only `[A-Za-z0-9._-]`, not starting with a dot. */
 export const PROPOSAL_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
-const id = z.string().min(1, 'não pode ser vazio');
+const id = z.string().min(1, 'cannot be empty');
 const proposalId = z
   .string()
-  .regex(PROPOSAL_ID_RE, 'id inválido; use [A-Za-z0-9._-], sem começar com ponto');
+  .regex(PROPOSAL_ID_RE, 'invalid id; use [A-Za-z0-9._-], not starting with a dot');
 const isoDate = z.iso
-  .datetime({ offset: true, error: 'data inválida; use ISO 8601 (UTC)' })
+  .datetime({ offset: true, error: 'invalid date; use ISO 8601 (UTC)' })
   .transform(normalizeIsoDate);
-const hexColor = z.string().regex(HEX_COLOR_RE, 'cor inválida; use #RRGGBB');
+const hexColor = z.string().regex(HEX_COLOR_RE, 'invalid color; use #RRGGBB');
 const optionalText = z.string().nullable();
 
 const imageFileValue = z.object({
@@ -462,7 +473,7 @@ const imageSizeValue = z.object({
 
 const typeRef = z.object({ specId: id, typeId: id });
 
-/** Valor do campo `type` de uma anotação: o tipo com os valores e pares que vão junto. */
+/** Value of the `type` field of an annotation: the type with the values and pairs that go along. */
 const annotationTypeValue = z
   .object({
     type: typeRef.nullable(),
@@ -474,14 +485,14 @@ const annotationTypeValue = z
       ctx.addIssue({
         code: 'custom',
         path: ['values'],
-        message: 'type e values devem ser ambos null ou ambos preenchidos',
+        message: 'type and values must be both null or both filled in',
       });
     }
     if (v.type !== null && v.entries.length > 0) {
       ctx.addIssue({
         code: 'custom',
         path: ['entries'],
-        message: 'anotação tipada não tem entries',
+        message: 'a typed annotation has no entries',
       });
     }
   });
@@ -500,17 +511,21 @@ const specializationValue = z
       ctx.addIssue({
         code: 'custom',
         path: ['spec', 'id'],
-        message: `deve ser "${v.id}"`,
+        message: `must be "${v.id}"`,
       });
     }
   });
 
-/** A seta numa proposta: sem `points` (a rota é só da pessoa; um `points` que venha é ignorado). */
+/**
+ * The arrow in a proposal: without `points` (the route belongs only to the person; a `points` that
+ * comes is ignored).
+ */
 const arrowValue = arrowSchema.omit({ points: true });
 
 /**
- * A anotação numa proposta. O `parentRole` é da v14, mas a proposta continua na `formatVersion` 4:
- * quem escreve sem ele (agente antes da v14) vale como sem papel (`null`).
+ * The annotation in a proposal. The `parentRole` is from v14, but the proposal stays at
+ * `formatVersion` 4: whoever writes without it (an agent from before v14) counts as no role
+ * (`null`).
  */
 const annotationValueSchema = z.preprocess(
   (value) =>
@@ -530,8 +545,8 @@ const drawingModeName = z
 const readingDirection = z.enum(READING_DIRECTIONS);
 
 /**
- * A entidade `project` (formatVersion 6): o que do projeto é proposto, o modo do desenho e, na
- * formatVersion 8, a direção de leitura (ausente = sem direção fixada).
+ * The `project` entity (formatVersion 6): what of the project is proposed, the drawing mode and,
+ * in formatVersion 8, the reading direction (absent = no pinned direction).
  */
 const projectValueSchema = z.object({
   drawingMode: drawingModeName.nullable(),
@@ -565,8 +580,8 @@ const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
 };
 
 /**
- * Retângulo de uma mudança de marcação: inteiros, sem o limite `≥ 0` (a marcação do canvas
- * aceita coordenadas negativas); o limite de cada espaço é das invariantes.
+ * Rectangle of a marking change: integers, without the `≥ 0` limit (a canvas marking accepts
+ * negative coordinates); the limit of each space belongs to the invariants.
  */
 const looseRect = z.object({
   x: z.number().int(),
@@ -607,7 +622,7 @@ function has<K extends string>(record: Record<K, unknown>, key: string): key is 
   return Object.hasOwn(record, key);
 }
 
-/** Schema do valor de `field` na `entity`; `null` se o campo não existe. */
+/** Schema of the value of `field` on the `entity`; `null` if the field does not exist. */
 function fieldSchema(entity: ChangeEntity, field: string): z.ZodType | null {
   switch (entity) {
     case 'image':
@@ -629,7 +644,7 @@ function fieldSchema(entity: ChangeEntity, field: string): z.ZodType | null {
   }
 }
 
-/** Valida `value` com `schema` e copia os erros para `path`. */
+/** Validates `value` with `schema` and copies the errors to `path`. */
 function checkValue(
   schema: z.ZodType,
   value: unknown,
@@ -657,10 +672,10 @@ const changeSchema = z
   .object({
     id,
     kind: z.enum(['create', 'update', 'remove'], {
-      error: 'deve ser "create", "update" ou "remove"',
+      error: 'must be "create", "update" or "remove"',
     }),
     entity: z.enum(CHANGE_ENTITIES as [ChangeEntity, ...ChangeEntity[]], {
-      error: `deve ser ${CHANGE_ENTITIES.map((e) => `"${e}"`).join(', ')}`,
+      error: `must be ${CHANGE_ENTITIES.map((e) => `"${e}"`).join(', ')}`,
     }),
     entityId: id,
     imageId: id.nullable(),
@@ -674,13 +689,16 @@ const changeSchema = z
     const add = (path: (string | number)[], message: string) =>
       ctx.addIssue({ code: 'custom', path, message });
     if (c.entity === 'platformRepo' && !PLATFORM_ID_RE.test(c.entityId)) {
-      add(['entityId'], 'id de plataforma inválido; use [a-z0-9-]+');
+      add(['entityId'], 'invalid platform id; use [a-z0-9-]+');
     }
     if (c.entity === 'project' && (c.entityId !== 'project' || c.kind !== 'update')) {
-      add(['entityId'], 'a entidade project é só alterada, com entityId "project"');
+      add(
+        ['entityId'],
+        'the project entity can only be updated, with entityId "project"',
+      );
     }
     if (c.entity === 'docRepo' && !PLATFORM_ID_RE.test(c.entityId)) {
-      add(['entityId'], 'id de repositório inválido; use [a-z0-9-]+');
+      add(['entityId'], 'invalid repository id; use [a-z0-9-]+');
     }
     const projectLevel =
       c.entity === 'specialization' ||
@@ -689,25 +707,26 @@ const changeSchema = z
       c.entity === 'project' ||
       c.entity === 'layer';
     if (projectLevel && (c.imageId !== null || c.markingId !== null)) {
-      add(['imageId'], 'mudanças do projeto não têm imageId nem markingId');
+      add(['imageId'], 'project changes have neither imageId nor markingId');
     }
-    // Marcação (e anotação) sem container é da marcação do canvas; só a imagem exige o id.
-    if (c.entity === 'image' && c.imageId === null) add(['imageId'], 'obrigatório');
+    // A marking (and annotation) without a container belongs to a canvas marking; only the image
+    // requires the id.
+    if (c.entity === 'image' && c.imageId === null) add(['imageId'], 'required');
     if (
       (c.entity === 'marking' || c.entity === 'arrow' || c.entity === 'annotation') &&
       c.markingId === null
     ) {
-      add(['markingId'], 'obrigatório');
+      add(['markingId'], 'required');
     }
     if (
       (c.entity === 'marking' || c.entity === 'arrow') &&
       c.markingId !== null &&
       c.markingId !== c.entityId
     ) {
-      add(['markingId'], `deve ser "${c.entityId}"`);
+      add(['markingId'], `must be "${c.entityId}"`);
     }
     if (c.entity === 'image' && c.imageId !== null && c.imageId !== c.entityId) {
-      add(['imageId'], `deve ser "${c.entityId}"`);
+      add(['imageId'], `must be "${c.entityId}"`);
     }
 
     const wholeEntity =
@@ -717,38 +736,38 @@ const changeSchema = z
       c.entity === 'project';
     if (c.kind === 'update' && !wholeEntity) {
       if (c.field === null) {
-        add(['field'], 'obrigatório na alteração');
+        add(['field'], 'required in an update');
         return;
       }
       const schema = fieldSchema(c.entity, c.field);
       if (!schema) {
-        add(['field'], `"${c.field}" não é um campo de ${c.entity}`);
+        add(['field'], `"${c.field}" is not a field of ${c.entity}`);
         return;
       }
-      // Camada ou marcação criada nesta proposta e reposicionada: `from` é `null`.
+      // A layer or marking created in this proposal and repositioned: `from` is `null`.
       const fromSchema = c.field === 'position' ? schema.nullable() : schema;
       checkValue(fromSchema, c.from, ctx, ['from']);
       checkValue(schema, c.to, ctx, ['to']);
       return;
     }
     if (c.field !== null) {
-      add(['field'], 'deve ser null em criação, remoção, especialização e repositório');
+      add(['field'], 'must be null in creation, removal, specialization and repository');
     }
     const schema = entitySchemas[c.entity];
     if (c.kind !== 'create') checkValue(schema, c.from, ctx, ['from']);
-    else if (c.from !== null) add(['from'], 'deve ser null na criação');
+    else if (c.from !== null) add(['from'], 'must be null in creation');
     if (c.kind !== 'remove') checkValue(schema, c.to, ctx, ['to']);
-    else if (c.to !== null) add(['to'], 'deve ser null na remoção');
+    else if (c.to !== null) add(['to'], 'must be null in removal');
 
     if (c.entity === 'platformRepo' || c.entity === 'docRepo' || c.entity === 'project')
       return;
-    // Criação e remoção levam a entidade inteira: o id dela é o `entityId`.
+    // Creation and removal carry the whole entity: its id is the `entityId`.
     for (const side of ['from', 'to'] as const) {
       const value = c[side];
       if (value === null) continue;
       const valueId = idOf(value);
       if (valueId !== undefined && valueId !== c.entityId) {
-        add([side, 'id'], `deve ser "${c.entityId}"`);
+        add([side, 'id'], `must be "${c.entityId}"`);
       }
     }
   });
@@ -756,7 +775,7 @@ const changeSchema = z
 const targetSchema = z
   .object({
     level: z.enum(['proposal', 'project', 'canvas', 'image', 'item', 'change'], {
-      error: 'deve ser "proposal", "project", "canvas", "image", "item" ou "change"',
+      error: 'must be "proposal", "project", "canvas", "image", "item" or "change"',
     }),
     id: id.nullable(),
   })
@@ -767,11 +786,11 @@ const targetSchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['id'],
-        message: `deve ser null em ${t.level}`,
+        message: `must be null in ${t.level}`,
       });
     }
     if (!global && t.id === null) {
-      ctx.addIssue({ code: 'custom', path: ['id'], message: 'obrigatório' });
+      ctx.addIssue({ code: 'custom', path: ['id'], message: 'required' });
     }
   });
 
@@ -783,14 +802,14 @@ const revisionSchema = z.object({
     z.string(),
     z.object({
       to: jsonValue,
-      state: z.literal('rejected', { error: 'deve ser "rejected" ou null' }).nullable(),
+      state: z.literal('rejected', { error: 'must be "rejected" or null' }).nullable(),
     }),
   ),
   added: z.array(id),
   dropped: z.array(
     z.object({
       change: changeSchema,
-      state: z.literal('rejected', { error: 'deve ser "rejected" ou null' }).nullable(),
+      state: z.literal('rejected', { error: 'must be "rejected" or null' }).nullable(),
       notes: z.array(id),
     }),
   ),
@@ -807,9 +826,9 @@ interface RevisionsToCheck {
 type AddIssue = (path: (string | number)[], message: string) => void;
 
 /**
- * Regras do histórico de revisões (formatVersion 5): `revisions` é obrigatório na 5 e não existe
- * antes; uma mudança retirada não está mais em `changes`; uma mudança nova entra uma só vez no
- * histórico. Ids citados em `changed`, `added` e `notes` que já não existem são histórico.
+ * Rules of the revision history (formatVersion 5): `revisions` is required in 5 and does not
+ * exist before; a withdrawn change is no longer in `changes`; a new change enters the history
+ * only once. Ids cited in `changed`, `added` and `notes` that no longer exist are history.
  */
 function checkRevisions(
   p: RevisionsToCheck,
@@ -817,25 +836,25 @@ function checkRevisions(
   add: AddIssue,
 ): void {
   if (p.revisions === undefined) {
-    if (p.formatVersion === 5) add(['revisions'], 'obrigatório na formatVersion 5');
+    if (p.formatVersion === 5) add(['revisions'], 'required in formatVersion 5');
     return;
   }
   if (p.formatVersion < 5) {
-    add(['revisions'], 'só na formatVersion 5 ou mais');
+    add(['revisions'], 'only in formatVersion 5 or later');
     return;
   }
   const added = new Set<string>();
   p.revisions.forEach((revision, i) => {
     revision.added.forEach((changeId, k) => {
       if (added.has(changeId))
-        add(['revisions', i, 'added', k], `id "${changeId}" repetido`);
+        add(['revisions', i, 'added', k], `duplicate id "${changeId}"`);
       added.add(changeId);
     });
     revision.dropped.forEach((d, j) => {
       if (changeIds.has(d.change.id)) {
         add(
           ['revisions', i, 'dropped', j, 'change', 'id'],
-          `id "${d.change.id}" ainda está em changes`,
+          `id "${d.change.id}" is still in changes`,
         );
       }
     });
@@ -844,7 +863,7 @@ function checkRevisions(
 
 export const proposalSchema = z
   .object({
-    format: z.literal(PROPOSAL_FORMAT, { error: `deve ser "${PROPOSAL_FORMAT}"` }),
+    format: z.literal(PROPOSAL_FORMAT, { error: `must be "${PROPOSAL_FORMAT}"` }),
     formatVersion: z.union(
       [
         z.literal(1),
@@ -857,10 +876,10 @@ export const proposalSchema = z
         z.literal(8),
         z.literal(9),
       ],
-      { error: 'deve ser 1, 2, 3, 4, 5, 6, 7, 8 ou 9' },
+      { error: 'must be 1, 2, 3, 4, 5, 6, 7, 8 or 9' },
     ),
     id: proposalId,
-    title: z.string().trim().min(1, 'não pode ser vazio'),
+    title: z.string().trim().min(1, 'cannot be empty'),
     description: optionalText,
     origin: optionalText,
     author: optionalText,
@@ -868,7 +887,7 @@ export const proposalSchema = z
     baseRevision: z.number().int().min(0),
     supersedes: proposalId.nullable(),
     status: z.enum(['open', 'applied', 'superseded', 'withdrawn'], {
-      error: 'deve ser "open", "applied", "superseded" ou "withdrawn"',
+      error: 'must be "open", "applied", "superseded" or "withdrawn"',
     }),
     revision: z.number().int().min(0),
     operations: z.array(jsonValue),
@@ -877,7 +896,7 @@ export const proposalSchema = z
       z.string(),
       z.object({
         state: z.enum(['accepted', 'rejected'], {
-          error: 'deve ser "accepted" ou "rejected"',
+          error: 'must be "accepted" or "rejected"',
         }),
         at: isoDate,
       }),
@@ -891,35 +910,35 @@ export const proposalSchema = z
       ctx.addIssue({ code: 'custom', path, message });
     const changeIds = new Set<string>();
     p.changes.forEach((c, i) => {
-      if (changeIds.has(c.id)) add(['changes', i, 'id'], `id "${c.id}" repetido`);
+      if (changeIds.has(c.id)) add(['changes', i, 'id'], `duplicate id "${c.id}"`);
       changeIds.add(c.id);
       if (
         c.insertBefore !== undefined &&
         (c.kind !== 'create' || c.entity !== 'marking')
       ) {
-        add(['changes', i, 'insertBefore'], 'só na criação de marcação');
+        add(['changes', i, 'insertBefore'], 'only in marking creation');
       }
     });
     if (p.supersedes !== null && p.supersedes === p.id) {
-      add(['supersedes'], 'uma proposta não substitui a si mesma');
+      add(['supersedes'], 'a proposal cannot supersede itself');
     }
     for (const changeId of Object.keys(p.decisions)) {
-      if (!changeIds.has(changeId)) add(['decisions', changeId], 'mudança inexistente');
+      if (!changeIds.has(changeId)) add(['decisions', changeId], 'nonexistent change');
     }
     for (const changeId of Object.keys(p.applied)) {
-      if (!changeIds.has(changeId)) add(['applied', changeId], 'mudança inexistente');
+      if (!changeIds.has(changeId)) add(['applied', changeId], 'nonexistent change');
       else if (p.decisions[changeId]?.state !== 'accepted') {
-        add(['applied', changeId], 'só uma mudança aceita pode estar aplicada');
+        add(['applied', changeId], 'only an accepted change can be applied');
       }
     }
     checkRevisions(p, changeIds, add);
     const noteIds = new Set<string>();
     p.notes.forEach((n, i) => {
-      if (noteIds.has(n.id)) add(['notes', i, 'id'], `id "${n.id}" repetido`);
+      if (noteIds.has(n.id)) add(['notes', i, 'id'], `duplicate id "${n.id}"`);
       noteIds.add(n.id);
       if (n.target.level === 'change' && n.target.id !== null) {
         if (!changeIds.has(n.target.id)) {
-          add(['notes', i, 'target', 'id'], 'mudança inexistente');
+          add(['notes', i, 'target', 'id'], 'nonexistent change');
         }
       }
     });
@@ -929,16 +948,16 @@ export type ProposalParseResult =
   | {
       readonly ok: true;
       readonly proposal: Proposal;
-      /** Avisos da leitura (ex.: campo que saiu do formato e foi ignorado). */
+      /** Warnings from reading (e.g. a field that left the format and was ignored). */
       readonly warnings: readonly string[];
     }
   | { readonly ok: false; readonly issues: SpecIssue[]; readonly errors: string[] };
 
 /**
- * Proposta escrita antes do schema 11: o valor de `platformRepo` tinha `urlTemplate` além de
- * `localPath`. O `urlTemplate` é ignorado (o endereço dos arquivos é da especialização): cada
- * lado fica só com `localPath`. Uma mudança que só alterava o `urlTemplate` vira uma
- * atualização com `from` igual a `to`, sem efeito no projeto.
+ * Proposal written before schema 11: the `platformRepo` value had `urlTemplate` besides
+ * `localPath`. The `urlTemplate` is ignored (the files' address belongs to the specialization):
+ * each side keeps only `localPath`. A change that only altered the `urlTemplate` becomes an
+ * update with `from` equal to `to`, with no effect on the project.
  */
 function withoutLegacyUrlTemplate(proposal: Proposal): Proposal {
   const strip = (value: JsonValue): JsonValue =>
@@ -959,10 +978,10 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Proposta escrita antes do schema 12: a marcação apontava para a imagem por `imageId`, e agora
- * aponta para o container por `containerId`. Na leitura, a criação e a remoção de marcação
- * (valor inteiro) e a mudança do campo `imageId` passam para o nome novo. O cabeçalho da
- * mudança (`imageId`, que diz em que container ela aparece na revisão) não muda.
+ * Proposal written before schema 12: the marking pointed to the image by `imageId`, and now it
+ * points to the container by `containerId`. On reading, marking creation and removal (whole
+ * value) and the `imageId` field change move to the new name. The change header (`imageId`,
+ * which says in which container it appears in the review) does not change.
  */
 function withContainerIdOnMarkings(data: unknown): unknown {
   if (!isPlainRecord(data) || !Array.isArray(data.changes)) return data;
@@ -987,8 +1006,8 @@ function withContainerIdOnMarkings(data: unknown): unknown {
 }
 
 /**
- * Tira de `data` as mudanças de id em `dropped` e as decisões e aplicações delas; uma nota
- * presa a uma mudança descartada passa para a proposta.
+ * Drops from `data` the changes whose id is in `dropped` and their decisions and applications; a
+ * note attached to a dropped change moves to the proposal.
  */
 function pruneChanges(
   data: Record<string, unknown>,
@@ -1018,10 +1037,11 @@ function pruneChanges(
 }
 
 /**
- * Proposta escrita antes do schema 13: a anotação tinha `inherit` (a herança para as marcações
- * descendentes saiu do formato). Na leitura, a mudança do campo `inherit` é descartada (com a
- * decisão e a aplicação dela; uma nota presa a ela passa para a proposta) e o campo some das
- * anotações inteiras de criação e remoção. `ignored` conta o que foi ignorado, para o aviso.
+ * Proposal written before schema 13: the annotation had `inherit` (inheritance to the
+ * descendant markings left the format). On reading, the `inherit` field change is dropped (with
+ * its decision and application; a note attached to it moves to the proposal) and the field
+ * disappears from the whole annotations of creation and removal. `ignored` counts what was
+ * ignored, for the warning.
  */
 function withoutInherit(data: unknown): { data: unknown; ignored: number } {
   if (!isPlainRecord(data) || !Array.isArray(data.changes)) return { data, ignored: 0 };
@@ -1052,11 +1072,11 @@ function withoutInherit(data: unknown): { data: unknown; ignored: number } {
 }
 
 /**
- * Proposta escrita antes do pertencimento por geometria (schema 13): a marcação tinha o
- * `parentId` como campo comparado, e agora o pai é sempre derivado (o assentar o recalcula ao
- * aplicar). Na leitura, a mudança do campo `parentId` é descartada, como a de `inherit`.
- * Também completa o que o schema 13 exige nas entidades inteiras: `floating: false` na
- * marcação e `parentId: null` no container. `ignored` conta as mudanças de `parentId`.
+ * Proposal written before containment by geometry (schema 13): the marking had `parentId` as a
+ * compared field, and now the parent is always derived (the settle recomputes it on apply). On
+ * reading, the `parentId` field change is dropped, like the `inherit` one. It also completes what
+ * schema 13 requires on whole entities: `floating: false` on the marking and `parentId: null`
+ * on the container. `ignored` counts the `parentId` changes.
  */
 function withDerivedParent(data: unknown): { data: unknown; ignored: number } {
   if (!isPlainRecord(data) || !Array.isArray(data.changes)) return { data, ignored: 0 };
@@ -1096,10 +1116,10 @@ function withDerivedParent(data: unknown): { data: unknown; ignored: number } {
 }
 
 /**
- * Mudança de campo de uma seta que já existe (estilo, nome, pontas, trava): a proposta só cria
- * e remove setas (ME4, decisão 14), então essas mudanças são ignoradas na leitura, com a
- * decisão e a aplicação delas (uma nota presa a uma passa para a proposta). `ignored` conta o
- * que foi ignorado, para o aviso.
+ * Field change of an arrow that already exists (style, name, endpoints, lock): the proposal only
+ * creates and removes arrows (ME4, decision 14), so these changes are ignored on reading, with
+ * their decision and application (a note attached to one moves to the proposal). `ignored`
+ * counts what was ignored, for the warning.
  */
 function withoutArrowUpdates(data: unknown): { data: unknown; ignored: number } {
   if (!isPlainRecord(data) || !Array.isArray(data.changes)) return { data, ignored: 0 };
@@ -1117,8 +1137,8 @@ function withoutArrowUpdates(data: unknown): { data: unknown; ignored: number } 
 }
 
 /**
- * Antes da formatVersion 4 a mudança não tem `insertBefore`: se o campo aparecer numa proposta
- * 1 a 3, ele é ignorado (essas versões são lidas e aplicadas como sempre foram).
+ * Before formatVersion 4 the change has no `insertBefore`: if the field appears in a 1 to 3
+ * proposal, it is ignored (those versions are read and applied as they always were).
  */
 function withoutInsertBefore(data: unknown): unknown {
   if (!isPlainRecord(data) || !Array.isArray(data.changes)) return data;
@@ -1134,7 +1154,7 @@ function withoutInsertBefore(data: unknown): unknown {
   };
 }
 
-/** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
+/** Validates an already parsed JSON; errors in the format `path: message`. */
 export function parseProposal(data: unknown): ProposalParseResult {
   const noInherit = withoutInherit(withContainerIdOnMarkings(withoutInsertBefore(data)));
   const noParent = withDerivedParent(noInherit.data);
@@ -1144,17 +1164,17 @@ export function parseProposal(data: unknown): ProposalParseResult {
     const warnings: string[] = [];
     if (noInherit.ignored > 0) {
       warnings.push(
-        `"inherit" saiu do formato (schema 13): ${noInherit.ignored} ocorrência(s) na proposta ignorada(s); a anotação vale só para a própria marcação`,
+        `"inherit" left the format (schema 13): ${noInherit.ignored} occurrence(s) in the proposal ignored; the annotation applies only to its own marking`,
       );
     }
     if (noParent.ignored > 0) {
       warnings.push(
-        `"parentId" da marcação é derivado da geometria (schema 13): ${noParent.ignored} mudança(s) de pai na proposta ignorada(s); o pai é recalculado ao aplicar`,
+        `"parentId" of the marking is derived from the geometry (schema 13): ${noParent.ignored} parent change(s) in the proposal ignored; the parent is recomputed on apply`,
       );
     }
     if (noArrowUpdate.ignored > 0) {
       warnings.push(
-        `A seta só tem criação e remoção na proposta (ME4): ${noArrowUpdate.ignored} mudança(s) de campo de seta ignorada(s); o estilo, o nome, as pontas e a rota são da pessoa`,
+        `An arrow only has creation and removal in the proposal (ME4): ${noArrowUpdate.ignored} arrow field change(s) ignored; the style, name, endpoints and route belong to the person`,
       );
     }
     return {
@@ -1174,13 +1194,13 @@ export function parseProposal(data: unknown): ProposalParseResult {
   };
 }
 
-/** Lê o texto de um `proposal.json`. */
+/** Reads the text of a `proposal.json`. */
 export function parseProposalText(text: string): ProposalParseResult {
   let data: unknown;
   try {
     data = JSON.parse(text);
   } catch (e) {
-    const message = `JSON inválido: ${e instanceof Error ? e.message : String(e)}`;
+    const message = `invalid JSON: ${e instanceof Error ? e.message : String(e)}`;
     return { ok: false, issues: [{ path: '', message }], errors: [message] };
   }
   return parseProposal(data);
@@ -1219,8 +1239,8 @@ function serializeRevision(r: ProposalRevision) {
 }
 
 /**
- * Texto do `proposal.json`: chaves de nível superior e das mudanças sempre na mesma
- * ordem, indentação de 2 espaços e quebra de linha no final.
+ * Text of the `proposal.json`: top-level and change keys always in the same order, 2-space
+ * indentation and a line break at the end.
  */
 export function serializeProposal(p: Proposal): string {
   const canonical = {

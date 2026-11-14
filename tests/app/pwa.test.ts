@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { canRegisterServiceWorker } from '../../src/app/pwa';
 
 describe('canRegisterServiceWorker', () => {
-  it('só registra em https e com suporte do navegador', () => {
+  it('only registers on https and with browser support', () => {
     expect(canRegisterServiceWorker('https:', { serviceWorker: {} })).toBe(true);
     expect(canRegisterServiceWorker('file:', { serviceWorker: {} })).toBe(false);
     expect(canRegisterServiceWorker('http:', { serviceWorker: {} })).toBe(false);

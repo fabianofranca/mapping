@@ -1,13 +1,13 @@
-# Roteiros que batem com a app — 2026-11-10 (épico `epic/roteiros-com-a-app`)
+# Scripts that match the app — 2026-11-10 (épico `epic/roteiros-com-a-app`)
 
 ## Pendências
 
-Nenhuma. O épico só mexe nos roteiros (`docs/TESTING.md`, `docs/TESTING-NUVEM.md`), nos auxiliares do testador (`scripts/testing/cloud.mjs`) e em testes; nenhum componente, token ou ícone do design system da app muda.
+None. The epic only touches the scripts (`docs/TESTING.md`, `docs/TESTING-NUVEM.md`), the tester's helpers (`scripts/testing/cloud.mjs`) and tests; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-O artefato **Mapping** (https://claude.ai/artifact/HEoYNh91CqK1YDDpjXBxi9) foi lido no fechamento (2026-11-10) e nada foi gravado: o épico não muda componente, token nem ícone da app, e o DS não descreve roteiros nem auxiliares do testador. O índice `project/design-system.json` não foi tocado.
+The **Mapping** artifact (https://claude.ai/artifact/HEoYNh91CqK1YDDpjXBxi9) was read at closing (2026-11-10) and nothing was written: the epic changes no component, token or icon of the app, and the DS does not describe scripts or tester helpers. The `project/design-system.json` index was not touched.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

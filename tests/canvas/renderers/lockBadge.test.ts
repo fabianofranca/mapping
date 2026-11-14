@@ -4,27 +4,27 @@ import { lockBadgeSpot } from '../../../src/canvas/renderers/lockBadge';
 const VIEW = { x: 0, y: 0, width: 400, height: 700 };
 
 describe('lockBadgeSpot', () => {
-  it('item grande: por dentro do canto superior direito, com vão de 2 px', () => {
+  it('large item: inside the top right corner, with a 2 px gap', () => {
     const rect = { x: 100, y: 100, width: 200, height: 200 };
     expect(lockBadgeSpot(rect, VIEW, 1, 20)).toEqual({ x: 300 - 22, y: 102 });
   });
 
-  it('o tamanho em tela não muda com o zoom', () => {
+  it('the screen size does not change with the zoom', () => {
     const rect = { x: 100, y: 100, width: 200, height: 200 };
     expect(lockBadgeSpot(rect, VIEW, 2, 20)).toEqual({ x: 300 - 11, y: 101 });
   });
 
-  it('com a borda direita ou o topo fora da tela, ancora na parte visível', () => {
+  it('with the right border or the top off screen, it anchors to the visible part', () => {
     const rect = { x: -50, y: -80, width: 1000, height: 1000 };
     expect(lockBadgeSpot(rect, VIEW, 1, 20)).toEqual({ x: 400 - 22, y: 2 });
   });
 
-  it('item pequeno: por fora, acima do canto superior direito', () => {
+  it('small item: outside, above the top right corner', () => {
     const rect = { x: 100, y: 200, width: 30, height: 30 };
     expect(lockBadgeSpot(rect, VIEW, 1, 20)).toEqual({ x: 110, y: 200 - 22 });
   });
 
-  it('item pequeno sem espaço acima na tela: por baixo', () => {
+  it('small item without room above on screen: below', () => {
     const rect = { x: 100, y: 5, width: 30, height: 30 };
     expect(lockBadgeSpot(rect, VIEW, 1, 20)).toEqual({ x: 110, y: 35 + 2 });
   });

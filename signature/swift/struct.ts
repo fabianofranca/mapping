@@ -7,39 +7,39 @@ import { readPrefix, splitMembers, type Prefix } from './members';
 import type { RawParam } from './params';
 import { topLevelArrow, unwrap } from './types';
 
-// O que a `struct` declara: os `init` (o cabeçalho) e as propriedades armazenadas que entram no
-// `init` memberwise. O memberwise deixa de fora o que o Swift não põe nele ou que não se passa de
-// fora: `@State`, `@StateObject`, `@Environment`, `@EnvironmentObject`, `@FocusState`, `let` com
-// valor, `static`/`class`, `lazy`, `private`/`fileprivate`, as computadas e os wrappers com argumentos.
+// What the `struct` declares: the `init`s (the header) and the stored properties that go into the
+// memberwise `init`. The memberwise one leaves out what Swift does not put in it or what is not passed from
+// outside: `@State`, `@StateObject`, `@Environment`, `@EnvironmentObject`, `@FocusState`, `let` with
+// a value, `static`/`class`, `lazy`, `private`/`fileprivate`, computed ones and wrappers with arguments.
 
-/** Os property wrappers de estado interno: o `init` memberwise não os recebe. */
+/** The internal-state property wrappers: the memberwise `init` does not receive them. */
 const INTERNAL_WRAPPERS = new Set([
   'State',
   'StateObject',
   'Environment',
   'EnvironmentObject',
   'FocusState',
-  // o Swift os preenche sozinho: também não são argumento do init memberwise
+  // Swift fills them in on its own: they are not memberwise init arguments either
   'Namespace',
   'GestureState',
   'ScaledMetric',
   'AccessibilityFocusState',
 ]);
-/** Atributos que não são property wrappers (podem ter argumentos sem tirar a propriedade do memberwise). */
+/** Attributes that are not property wrappers (they can have arguments without removing the property from the memberwise). */
 const PLAIN_ATTRIBUTES = new Set(['available', 'MainActor', 'objc', 'preconcurrency']);
-/** Modificadores que tiram a propriedade do `init` memberwise. */
+/** Modifiers that remove the property from the memberwise `init`. */
 const EXCLUDED_MODIFIERS = new Set(['static', 'class', 'lazy', 'private', 'fileprivate']);
 const OBSERVERS = new Set(['willSet', 'didSet']);
 const OBJECT_WRAPPERS = new Set(['ObservedObject', 'Bindable']);
 
 export interface InitDecl {
-  /** O `(` e o `)` da lista de parâmetros. */
+  /** The `(` and the `)` of the parameter list. */
   readonly open: number;
   readonly close: number;
   readonly line: number;
   /** `@available(…, deprecated|unavailable|obsoleted)`. */
   readonly deprecated: boolean;
-  /** `private` ou `fileprivate`: não é chamável de fora, então não é candidato sozinho. */
+  /** `private` or `fileprivate`: not callable from outside, so it is not a candidate on its own. */
   readonly hidden: boolean;
   readonly doc?: string;
 }
@@ -51,9 +51,9 @@ export interface MemberProp {
 
 export interface StructMembers {
   readonly inits: readonly InitDecl[];
-  /** As propriedades do memberwise, na ordem da declaração. */
+  /** The memberwise properties, in declaration order. */
   readonly props: readonly MemberProp[];
-  /** O texto do `///` de cada `let`/`var` com documentação (entre ou não no memberwise), por nome. */
+  /** The text of the `///` of each `let`/`var` with documentation (in the memberwise or not), by name. */
   readonly propDocs: ReadonlyMap<string, string>;
 }
 
@@ -94,19 +94,19 @@ function readInit(
 }
 
 interface Shape {
-  /** O `=` do padrão e onde o padrão termina (antes dos observadores `didSet`). */
+  /** The `=` of the default and where the default ends (before the `didSet` observers). */
   readonly eq?: number;
   readonly valueEnd: number;
-  /** O fim do tipo escrito (o `=`, o `{` ou o fim do membro). */
+  /** The end of the written type (the `=`, the `{` or the end of the member). */
   readonly typeEnd: number;
-  /** Tem corpo que a faz computada (`{ … }` que não são observadores). */
+  /** Has a body that makes it computed (`{ … }` that are not observers). */
   readonly computed: boolean;
 }
 
 const startsObservers = (stream: TokenStream, open: number): boolean =>
   OBSERVERS.has(stream.tokens[open + 1]?.text ?? '');
 
-/** O primeiro `=` ou `{` no nível de cima (o que vier antes). */
+/** The first `=` or `{` at the top level (whichever comes first). */
 function firstBreak(
   stream: TokenStream,
   from: number,
@@ -119,13 +119,13 @@ function firstBreak(
   return {};
 }
 
-/** O `{` dos observadores (`didSet`) que fecham o membro depois do padrão, ou `to` se não há. */
+/** The `{` of the observers (`didSet`) that close the member after the default, or `to` if there is none. */
 function valueEndOf(stream: TokenStream, after: number, to: number): number {
   const opener = isPunct(stream, to - 1, '}') ? stream.match[to - 1]! : -1;
   return opener > after && startsObservers(stream, opener) ? opener : to;
 }
 
-/** O `=`, o `{` e os observadores de uma propriedade, a partir do que vem depois do nome. */
+/** The `=`, the `{` and the observers of a property, starting from what comes after the name. */
 function shapeOf(stream: TokenStream, from: number, to: number): Shape {
   const { eq, brace } = firstBreak(stream, from, to);
   return {
@@ -149,7 +149,7 @@ function wrapped(type: string, attributes: readonly Attribute[]): string {
     : type;
 }
 
-/** Fora do memberwise por causa de um modificador ou de um property wrapper? */
+/** Out of the memberwise because of a modifier or a property wrapper? */
 function excluded(prefix: Prefix): boolean {
   if (prefix.modifiers.some((m) => EXCLUDED_MODIFIERS.has(m))) return true;
   return prefix.attributes.some(
@@ -159,7 +159,7 @@ function excluded(prefix: Prefix): boolean {
   );
 }
 
-/** O padrão escrito, ou `nil` numa `var` opcional sem padrão (o Swift o dá sozinho). */
+/** The written default, or `nil` for an optional `var` with no default (Swift supplies it on its own). */
 function defaultOf(
   keyword: string,
   type: string,
@@ -227,7 +227,7 @@ function readMember(stream: TokenStream, member: Range, found: Found): void {
   }
 }
 
-/** Os `init` e as propriedades do corpo da struct. */
+/** The `init`s and the properties of the struct body. */
 export function readStruct(stream: TokenStream, decl: TypeDecl): StructMembers {
   const found: Found = { inits: [], props: [], propDocs: new Map() };
   for (const member of splitMembers(stream, decl.open + 1, decl.close))

@@ -1,10 +1,10 @@
 /*
- * Demo do visualizador React: estilos próprios da página.
+ * React viewer demo: the page's own styles.
  *
- * A página NÃO usa os tokens nem o CSS da app, de propósito: é um exemplo autocontido de
- * hospedeiro, copiável por quem instala o pacote `mapping-viewer`. As variáveis `--demo-*`
- * abaixo são só desta página; os valores foram copiados do tema da app (claro e escuro) em
- * 2026-10 e não acompanham mudanças posteriores nele.
+ * The page does NOT use the app's tokens or CSS, on purpose: it is a self-contained example of
+ * a host, copyable by whoever installs the `mapping-viewer` package. The `--demo-*` variables
+ * below belong to this page only; the values were copied from the app's theme (light and dark)
+ * in 2026-10 and do not follow later changes to it.
  */
 :root {
   color-scheme: light dark;
@@ -71,7 +71,7 @@ body {
 .react-lab {
   height: 100dvh;
   display: grid;
-  /* esquerda (JSON) | visualizador | direita (árvore e propriedades) */
+  /* left (JSON) | viewer | right (tree and properties) */
   grid-template-columns: var(--demo-size-left) 1fr var(--demo-size-right);
   min-height: 0;
 }

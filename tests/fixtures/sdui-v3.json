@@ -4,7 +4,7 @@
   "id": "sdui",
   "name": "SDUI",
   "version": 3,
-  "description": "Componentes de tela e seus eventos para Server-Driven UI.",
+  "description": "Screen components and their events for Server-Driven UI.",
   "platforms": [
     {
       "id": "android",
@@ -40,7 +40,7 @@
   "layers": [
     {
       "id": "componentes",
-      "name": "Componentes",
+      "name": "Components",
       "color": "#1E88E5",
       "annotationTypes": [
         {
@@ -91,7 +91,7 @@
                   "não": "false"
                 }
               },
-              "notes": "Use o modifier de testTag com o valor do campo id."
+              "notes": "Use the testTag modifier with the value of the id field."
             },
             "ios": {
               "symbol": "DSButton",
@@ -122,7 +122,7 @@
                 "estilo": "variant",
                 "habilitado": "enabled"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         },
@@ -165,7 +165,7 @@
                 "tags": ["data-field"],
                 "free": true
               },
-              "description": "Atributo do modelo de dados exibido e editado por este campo"
+              "description": "Data model attribute displayed and edited by this field"
             }
           ],
           "code": {
@@ -191,7 +191,7 @@
                   "não": "false"
                 }
               },
-              "notes": "O campo dado indica o atributo do modelo de dados ligado ao valor digitado."
+              "notes": "The dado field indicates the data model attribute bound to the typed value."
             },
             "ios": {
               "symbol": "DSTextField",
@@ -225,7 +225,7 @@
                 "obrigatorio": "required",
                 "maxLength": "maxLength"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         },
@@ -257,7 +257,7 @@
                 "tags": ["data-field"],
                 "free": true
               },
-              "description": "Atributo exibido por este texto (opcional)"
+              "description": "Attribute displayed by this text (optional)"
             }
           ],
           "code": {
@@ -297,7 +297,7 @@
                 "conteudo": "content",
                 "estilo": "variant"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         },
@@ -345,7 +345,7 @@
                 "descricao": "accessibilityLabel",
                 "url": "url"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         }
@@ -353,7 +353,7 @@
     },
     {
       "id": "eventos",
-      "name": "Eventos",
+      "name": "Events",
       "color": "#FB8C00",
       "annotationTypes": [
         {
@@ -397,7 +397,7 @@
                 "destino": "target",
                 "parametros": "params"
               },
-              "notes": "Associe o evento ao componente dono por meio do parâmetro onClick."
+              "notes": "Link the event to the owner component through the onClick parameter."
             },
             "ios": {
               "symbol": "OnClick",
@@ -415,7 +415,7 @@
                 "destino": "target",
                 "parametros": "parameters"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         },
@@ -460,7 +460,7 @@
                 "acao": "action",
                 "duracaoMs": "durationMs"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         },
@@ -479,7 +479,7 @@
             {
               "key": "regra",
               "type": "string",
-              "description": "Ex: email, cpf, minLength:8"
+              "description": "E.g.: email, cpf, minLength:8"
             }
           ],
           "code": {
@@ -504,7 +504,7 @@
                 "acao": "action",
                 "regra": "rule"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         }
@@ -512,7 +512,7 @@
     },
     {
       "id": "telas",
-      "name": "Telas",
+      "name": "Screens",
       "color": "#00897B",
       "annotationTypes": [
         {

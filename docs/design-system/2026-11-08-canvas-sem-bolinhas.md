@@ -1,13 +1,13 @@
-# Canvas sem bolinhas — 2026-11-08 (épico `epic/canvas-sem-bolinhas`)
+# Canvas without dots — 2026-11-08 (épico `epic/canvas-sem-bolinhas`)
 
 ## Pendências
 
-- **`CanvasMarking` e seção `Canvas.md`:** saem do desenho da marcação as bolinhas de camada (uma por camada visível com anotação) e o `+N`. O ⚠ de incompleta fica encostado no canto superior esquerdo (margem de 3 px), depois do selo "a revisar" quando houver; o nome do zoom semântico começa depois deles (altura da linha de cabeçalho 14 px, a mesma). Sem token, ícone ou componente novo. A bolinha da Árvore, dos painéis e da janela Camadas não muda.
+- **`CanvasMarking` and `Canvas.md` section:** the layer dots (one per visible layer with an annotation) and the `+N` leave the marking's drawing. The incomplete ⚠ sits against the top-left corner (3 px margin), after the "to review" badge when there is one; the semantic zoom name starts after them (header row height 14 px, the same). No new token, icon or component. The dot in the Tree, the panels and the Layers window does not change.
 
 ## Sincronização
 
-Nenhuma gravação feita pelo agente: artefato curado à mão.
+No write made by the agent: artifact curated by hand.
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: `CanvasMarking` (guia, prévia) e `Canvas.md` sem as bolinhas de camada e o "+N", com o ⚠ no canto (guia e seção em DS3; prévia em DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `CanvasMarking` (guide, preview) and `Canvas.md` without the layer dots and the "+N", with the ⚠ in the corner (guide and section in DS3; preview in DS5).

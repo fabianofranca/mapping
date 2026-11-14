@@ -1,5 +1,5 @@
-// L2 (#1078): nas telas do visualizador, a filha de um slot com `clip` é recortada pela caixa do
-// slot da mãe (`Instance.parentId`); sem `clip` nada muda.
+// L2 (#1078): in the viewer screens, the child of a slot with `clip` is clipped by the box of the
+// parent's slot (`Instance.parentId`); without `clip` nothing changes.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -16,8 +16,8 @@ beforeAll(() => installFakeCanvas());
 const LABELS: ScreenRendererLabels = {
   typeWithoutComponent: (name) => name,
   unknownType: (id) => id,
-  warningTypeWithoutComponent: 'sem componente',
-  warningUnknownType: 'desconhecido',
+  warningTypeWithoutComponent: 'no component',
+  warningUnknownType: 'unknown',
   drawWarning: ({ code }) => code,
 };
 
@@ -92,7 +92,7 @@ function screenOf(parentType: string): Screen {
         box: { x: 100, y: 50, width: 300, height: 100 },
         values: {},
       },
-      // A filha passa da caixa do slot (que vai de 120,60 a 380,140 na tela).
+      // The child goes past the slot box (which runs from 120,60 to 380,140 on the screen).
       {
         id: 'D',
         typeId: 'dot',
@@ -110,7 +110,7 @@ function setup() {
     labels: LABELS,
     measure: approximateMeasurer,
   });
-  /** O retângulo (espaço local do nó) que a filha recorta; `null` sem recorte. */
+  /** The rectangle (node local space) that the child clips; `null` without a clip. */
   const clipOf = (id: string): number[] | null => {
     const node = renderer.nodeOf(id);
     if (!node) return null;
@@ -133,22 +133,22 @@ function setup() {
   return { renderer, clipOf };
 }
 
-describe('ScreenRenderer: clip do slot', () => {
-  it('recorta a filha pela caixa do slot da mãe, no espaço local da filha', () => {
+describe('ScreenRenderer: slot clip', () => {
+  it("clips the child by the parent's slot box, in the child's local space", () => {
     const { renderer, clipOf } = setup();
     renderer.update(library, screenOf('cut'));
-    // Slot na tela: x 120..380, y 60..140. A filha está em 360,120: o recorte local começa em -240,-60.
+    // Slot on the screen: x 120..380, y 60..140. The child is at 360,120: the local clip starts at -240,-60.
     expect(clipOf('D')).toEqual([-240, -60, 260, 80]);
     expect(clipOf('P')).toBeNull();
   });
 
-  it('sem clip no slot a filha não é recortada', () => {
+  it('without clip on the slot the child is not clipped', () => {
     const { renderer, clipOf } = setup();
     renderer.update(library, screenOf('open'));
     expect(clipOf('D')).toBeNull();
   });
 
-  it('a mãe que muda de tipo atualiza o recorte da filha sem redesenhá-la', () => {
+  it("a parent that changes type updates the child's clip without redrawing it", () => {
     const { renderer, clipOf } = setup();
     renderer.update(library, screenOf('cut'));
     expect(clipOf('D')).not.toBeNull();
@@ -157,7 +157,7 @@ describe('ScreenRenderer: clip do slot', () => {
   });
 });
 
-/** P (cut) com Q (`qType`) meio fora do slot de P e o ponto D dentro de Q. */
+/** P (cut) with Q (`qType`) half outside P's slot and the point D inside Q. */
 function nestedScreen(qType: string): Screen {
   return {
     id: 's',
@@ -172,7 +172,7 @@ function nestedScreen(qType: string): Screen {
         box: { x: 100, y: 50, width: 300, height: 100 },
         values: {},
       },
-      // Slot de Q na tela: x 320..480, y 90..130 (passa do slot de P, que vai até 380).
+      // Q's slot on the screen: x 320..480, y 90..130 (goes past P's slot, which ends at 380).
       {
         id: 'Q',
         typeId: qType,
@@ -191,34 +191,34 @@ function nestedScreen(qType: string): Screen {
   };
 }
 
-describe('ScreenRenderer: clip do slot nas netas (code review #1078)', () => {
-  it('a filha sem clip passa adiante o recorte da mãe: a neta é recortada pelo slot da avó', () => {
+describe('ScreenRenderer: slot clip on grandchildren (code review #1078)', () => {
+  it("a child without clip passes the parent's clip along: the grandchild is clipped by the grandparent's slot", () => {
     const { renderer, clipOf } = setup();
     renderer.update(library, nestedScreen('open'));
-    // Slot de P: 120..380 × 60..140; D está em 440,95.
+    // P's slot: 120..380 × 60..140; D is at 440,95.
     expect(clipOf('D')).toEqual([-320, -35, 260, 80]);
   });
 
-  it('slot com clip dentro de outro: a neta leva a interseção dos dois', () => {
+  it('slot with clip inside another: the grandchild gets the intersection of both', () => {
     const { renderer, clipOf } = setup();
     renderer.update(library, nestedScreen('cut'));
-    // 320..380 × 90..130, no espaço de D (440,95).
+    // 320..380 × 90..130, in the space of D (440,95).
     expect(clipOf('D')).toEqual([-120, -5, 60, 40]);
   });
 });
 
-describe('ScreenRenderer: slot com clip que colapsa (code review #1078)', () => {
+describe('ScreenRenderer: slot with a clip that collapses (code review #1078)', () => {
   function collapsed(): Screen {
     const s = screenOf('cut');
     const [parent, child] = s.instances;
-    // Slot com âncoras de 20 nos lados numa caixa de 40 de largura: largura 0.
+    // Slot with anchors of 20 on the sides in a box 40 wide: width 0.
     return {
       ...s,
       instances: [{ ...parent!, box: { x: 100, y: 50, width: 40, height: 100 } }, child!],
     };
   }
 
-  it('o recorte de largura 0 fica aplicado e o sync seguinte não reporta mudança', () => {
+  it('the width-0 clip stays applied and the next sync reports no change', () => {
     const { renderer } = setup();
     const s = collapsed();
     expect(renderer.update(library, s)).toBe(true);

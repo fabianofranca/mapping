@@ -1,25 +1,25 @@
 import { normalizeDoc, type ComposerPart } from '../../model';
 
-// Funções de DOM do editor de citações (etapa Comentários, CM5, decisão 30). O editor é um
-// `contenteditable` cujo DOM é montado só com `createElement`/`createTextNode` (nunca HTML em
-// texto): texto são nós de texto e `<br>` por quebra de linha; a citação é um `<span>` não
-// editável. Aqui ficam as partes sem estado do componente, para testar sem teclado nem foco.
+// DOM functions of the citation editor (stage Comments, CM5, decision 30). The editor is a
+// `contenteditable` whose DOM is built only with `createElement`/`createTextNode` (never HTML in
+// text): text is text nodes and `<br>` per line break; the citation is a non-editable
+// `<span>`. These are the stateless parts of the component, to test without keyboard or focus.
 
-/** `<br>` de preenchimento: o navegador só mostra a última linha vazia com um `<br>` a mais. */
+/** Filler `<br>`: the browser only shows the last empty line with an extra `<br>`. */
 const FILL_ATTR = 'data-fill';
 
-/** O que um chip do editor mostra. */
+/** What an editor chip shows. */
 export interface ChipSpec {
   readonly url: string;
-  /** O nome vivo (ou o rótulo de reserva, se o alvo sumiu): é também o rótulo que se grava. */
+  /** The live name (or the fallback label, if the target vanished): also the saved label. */
   readonly name: string;
   readonly broken: boolean;
   readonly ariaLabel: string;
-  /** Dica do chip quebrado. */
+  /** Hint of the broken chip. */
   readonly title?: string;
 }
 
-/** Um ponto do DOM (nó e posição), como os de uma `Range`. */
+/** A DOM point (node and offset), like those of a `Range`. */
 export interface Point {
   readonly node: Node;
   readonly offset: number;
@@ -38,7 +38,7 @@ const isBreak = (node: Node | null | undefined): node is HTMLElement =>
 const isFill = (node: Node | null | undefined): boolean =>
   isBreak(node) && node.hasAttribute(FILL_ATTR);
 
-/** O `<span>` de uma citação (não editável, com a URL em `data-url`). */
+/** The `<span>` of a citation (non-editable, with the URL in `data-url`). */
 export function isChip(node: Node | null | undefined): node is HTMLElement {
   return (
     node?.nodeType === 1 &&
@@ -65,7 +65,7 @@ export function createChip(doc: Document, spec: ChipSpec): HTMLSpanElement {
   return chip;
 }
 
-/** Atualiza o chip para o estado vivo; devolve se algo mudou. */
+/** Updates the chip to the live state; returns whether anything changed. */
 export function updateChip(chip: HTMLElement, spec: ChipSpec): boolean {
   const same =
     chip.dataset.url === spec.url &&
@@ -77,7 +77,7 @@ export function updateChip(chip: HTMLElement, spec: ChipSpec): boolean {
   return !same;
 }
 
-// ------------------------------------------------------------------ DOM → documento
+// ------------------------------------------------------------------ DOM → document
 
 const BLOCKS = new Set(['DIV', 'P']);
 
@@ -103,21 +103,21 @@ function readLeaf(node: Node, out: ComposerPart[]): boolean {
 
 function readNode(node: Node, out: ComposerPart[]): void {
   if (readLeaf(node, out)) return;
-  // Bloco colado ou arrastado de fora: vira linha; o resto (negrito etc.) vira só o texto.
+  // Block pasted or dragged from outside: becomes a line; the rest (bold etc.) becomes plain text.
   if (BLOCKS.has(node.nodeName) && out.length > 0 && !endsWithBreak(out)) {
     out.push({ type: 'text', text: '\n' });
   }
   for (const child of node.childNodes) readNode(child, out);
 }
 
-/** O conteúdo do editor como documento: só texto e chips, o que mais houver vira texto. */
+/** The editor content as a document: only text and chips, anything else becomes text. */
 export function readParts(root: HTMLElement): ComposerPart[] {
   const out: ComposerPart[] = [];
   for (const child of root.childNodes) readNode(child, out);
   return normalizeDoc(out);
 }
 
-// ------------------------------------------------------------------ documento → DOM
+// ------------------------------------------------------------------ document → DOM
 
 function lastMeaningful(root: Node): Node | null {
   for (let n = root.lastChild; n; n = n.previousSibling) {
@@ -127,7 +127,7 @@ function lastMeaningful(root: Node): Node | null {
   return null;
 }
 
-/** Garante o `<br>` de preenchimento só quando a última linha está vazia (acabou numa quebra). */
+/** Ensures the filler `<br>` only when the last line is empty (it ended in a break). */
 export function syncFill(root: HTMLElement): void {
   for (const fill of [...root.querySelectorAll(`br[${FILL_ATTR}]`)]) fill.remove();
   if (isBreak(lastMeaningful(root))) {
@@ -137,7 +137,7 @@ export function syncFill(root: HTMLElement): void {
   }
 }
 
-/** Nós para um trecho de texto: nós de texto e `<br>` entre as linhas. */
+/** Nodes for a piece of text: text nodes and `<br>` between the lines. */
 export function textNodes(doc: Document, data: string): Node[] {
   const out: Node[] = [];
   data.split('\n').forEach((line, i) => {
@@ -147,7 +147,7 @@ export function textNodes(doc: Document, data: string): Node[] {
   return out;
 }
 
-/** Monta o DOM do editor a partir do documento (apaga o que havia). */
+/** Builds the editor DOM from the document (erases what was there). */
 export function renderParts(
   root: HTMLElement,
   parts: readonly ComposerPart[],
@@ -162,14 +162,14 @@ export function renderParts(
   syncFill(root);
 }
 
-/** O fim do conteúdo (antes do preenchimento). */
+/** The end of the content (before the filler). */
 export function endPoint(root: HTMLElement): Point {
   let count = root.childNodes.length;
   while (count > 0 && isFill(root.childNodes[count - 1])) count--;
   return { node: root, offset: count };
 }
 
-// ------------------------------------------------------------------ chips ao lado do cursor
+// ------------------------------------------------------------------ chips next to the cursor
 
 function skipEmpty(node: Node | null, dir: Direction): Node | null {
   let n = node;
@@ -188,7 +188,7 @@ function neighbour(container: Node, offset: number, dir: Direction): Node | null
   return (dir === 'back' ? children[offset - 1] : children[offset]) ?? null;
 }
 
-/** O chip colado ao cursor (`back`: logo antes dele; `forward`: logo depois), ou `null`. */
+/** The chip adjacent to the cursor (`back`: just before it; `forward`: just after), or `null`. */
 export function chipBeside(
   container: Node,
   offset: number,
@@ -198,16 +198,16 @@ export function chipBeside(
   return isChip(node) ? node : null;
 }
 
-/** O ponto do outro lado do chip: antes dele (`back`) ou depois dele (`forward`). */
+/** The point on the other side of the chip: before it (`back`) or after it (`forward`). */
 export function caretAcross(chip: HTMLElement, dir: Direction): Point {
   const parent = chip.parentNode as Node;
   const index = [...parent.childNodes].indexOf(chip);
   return { node: parent, offset: dir === 'back' ? index : index + 1 };
 }
 
-// ------------------------------------------------------------------ o @
+// ------------------------------------------------------------------ the @
 
-/** O `@termo` sob o cursor: onde começa (no `@`), onde acaba (o cursor) e o termo digitado. */
+/** The `@term` under the cursor: where it starts (the `@`), where it ends (cursor) and the term. */
 export interface Trigger {
   readonly node: Text;
   readonly start: number;
@@ -218,8 +218,8 @@ export interface Trigger {
 const TRIGGER = /(^|\s)@([^\n@]{0,40})$/;
 
 /**
- * Há um `@termo` terminando no cursor? O `@` vale no começo do campo, depois de espaço e depois
- * de quebra (não no meio de uma palavra, como num e-mail, nem colado a um chip).
+ * Is there an `@term` ending at the cursor? The `@` counts at the start of the field, after a space
+ * and after a break (not in the middle of a word, as in an email, nor glued to a chip).
  */
 export function triggerAt(container: Node, offset: number): Trigger | null {
   if (!isText(container)) return null;
@@ -233,7 +233,7 @@ export function triggerAt(container: Node, offset: number): Trigger | null {
   return { node: container, start, end: offset, term: found[2] ?? '' };
 }
 
-// ------------------------------------------------------------------ inserir
+// ------------------------------------------------------------------ insert
 
 const WHITESPACE = /\s/;
 
@@ -242,7 +242,7 @@ function pointAfter(parent: Node, last: Node): Point {
   return { node: parent, offset: [...parent.childNodes].indexOf(last as ChildNode) + 1 };
 }
 
-/** Insere `nodes` antes de `ref` (ou no fim) e devolve o cursor depois do último. */
+/** Inserts `nodes` before `ref` (or at the end) and returns the cursor after the last one. */
 export function insertNodes(
   parent: Node,
   ref: Node | null,
@@ -254,7 +254,7 @@ export function insertNodes(
   return pointAfter(parent, last);
 }
 
-/** Põe uma quebra de linha antes de `ref`; o cursor fica depois dela. */
+/** Puts a line break before `ref`; the cursor stays after it. */
 export function insertBreak(root: HTMLElement, ref: Node | null): Point {
   const br = root.ownerDocument.createElement('br');
   root.insertBefore(br, ref);
@@ -262,7 +262,7 @@ export function insertBreak(root: HTMLElement, ref: Node | null): Point {
   return { node: root, offset: [...root.childNodes].indexOf(br) + 1 };
 }
 
-/** Texto sem espaço no fim, ou chip, antes do ponto de inserção: pede espaço antes do chip. */
+/** Text without a trailing space, or a chip, before the insertion point: needs a space first. */
 function needsSpaceBefore(previous: Node | null): boolean {
   const node = skipEmpty(previous, 'back');
   if (isChip(node)) return true;
@@ -270,8 +270,8 @@ function needsSpaceBefore(previous: Node | null): boolean {
 }
 
 /**
- * Põe o chip antes de `ref` com um espaço de cada lado quando preciso (nunca duplica o que já
- * existe). O cursor fica depois do espaço que vem depois do chip.
+ * Puts the chip before `ref` with a space on each side when needed (never duplicates what already
+ * exists). The cursor stays after the space that follows the chip.
  */
 export function placeChip(parent: Node, ref: Node | null, chip: HTMLElement): Point {
   const doc = parent.ownerDocument as Document;
@@ -291,9 +291,9 @@ export function placeChip(parent: Node, ref: Node | null, chip: HTMLElement): Po
   return { node: space, offset: 1 };
 }
 
-// ------------------------------------------------------------------ seleção
+// ------------------------------------------------------------------ selection
 
-/** A seleção do navegador, se for um ponto ou trecho dentro do editor. */
+/** The browser selection, if it is a point or range inside the editor. */
 export function rangeIn(root: HTMLElement): Range | null {
   const selection = root.ownerDocument.getSelection();
   if (!selection || selection.rangeCount === 0) return null;
@@ -303,7 +303,7 @@ export function rangeIn(root: HTMLElement): Range | null {
     : null;
 }
 
-/** Leva o cursor ao ponto dado. */
+/** Moves the cursor to the given point. */
 export function setCaret(doc: Document, point: Point): void {
   const selection = doc.getSelection();
   if (!selection) return;
@@ -315,8 +315,8 @@ export function setCaret(doc: Document, point: Point): void {
 }
 
 /**
- * Parte o texto no ponto (se for texto) e devolve onde inserir: o pai e o nó antes do qual
- * entra o novo conteúdo (`null` = no fim).
+ * Splits the text at the point (if it is text) and returns where to insert: the parent and the node
+ * before which the new content goes (`null` = at the end).
  */
 export function splitAt(point: Point): {
   readonly parent: Node;
@@ -330,8 +330,8 @@ export function splitAt(point: Point): {
 }
 
 /**
- * Depois de apagar tudo, o navegador deixa um `<br>` solto: o campo volta a ficar vazio, para o
- * rascunho vazio não virar uma quebra de linha.
+ * After deleting everything, the browser leaves a stray `<br>`: the field goes back to being empty,
+ * so the empty draft does not become a line break.
  */
 export function clearIfBlank(root: HTMLElement): boolean {
   const blank = [...root.childNodes].every(

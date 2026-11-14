@@ -1,7 +1,7 @@
 import { CliError } from './errors';
 
-// Um arquivo de código lido: o nome (como veio na linha de comando, para as mensagens) e o texto,
-// com a tabela de começos de linha para converter posição em linha e coluna.
+// A source file that was read: the name (as it came on the command line, for the messages) and the text,
+// with the table of line starts to convert a position into line and column.
 
 export interface SourceFile {
   readonly name: string;
@@ -23,7 +23,7 @@ export interface Position {
   readonly column: number;
 }
 
-/** Linha e coluna (1 em diante) de um deslocamento do texto. */
+/** Line and column (1 onwards) of an offset in the text. */
 export function positionOf(src: SourceFile, offset: number): Position {
   let low = 0;
   let high = src.lineStarts.length - 1;
@@ -35,7 +35,7 @@ export function positionOf(src: SourceFile, offset: number): Position {
   return { line: low + 1, column: offset - src.lineStarts[low]! + 1 };
 }
 
-/** O erro de sintaxe no formato `<arquivo>:<linha>:<coluna>: <mensagem>`. */
+/** The syntax error in the format `<file>:<line>:<column>: <message>`. */
 export function syntaxError(src: SourceFile, offset: number, message: string): CliError {
   const { line, column } = positionOf(src, offset);
   return new CliError(`${src.name}:${line}:${column}: ${message}`, 1);

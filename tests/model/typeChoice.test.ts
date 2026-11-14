@@ -15,70 +15,73 @@ function type(
 }
 
 const groups: SpecLayerGroup[] = [
-  { id: 'g-b', name: 'Segundo' },
-  { id: 'g-a', name: 'Primeiro' },
+  { id: 'g-b', name: 'Second' },
+  { id: 'g-a', name: 'First' },
 ];
 
-const botao = type('botao', 'Botão', {
+// pt-BR kept: accent-insensitive search is the object (Botão, ação, Cartão below)
+const button = type('button', 'Botão', {
   groups: ['g-a'],
   description: 'Dispara uma ação',
 });
-const campo = type('campo', 'Campo', { groups: ['g-b'] });
+const fieldType = type('field', 'Field', { groups: ['g-b'] });
 
 const types: SpecAnnotationType[] = [
-  botao,
-  campo,
+  button,
+  fieldType,
+  // pt-BR kept: accent-insensitive search is the object ('cartao' query)
   type('card', 'Cartão', { groups: ['g-a', 'g-b'] }),
-  type('solto', 'Solto'),
-  type('fantasma', 'Fantasma', { groups: ['nao-existe'] }),
+  type('loose', 'Loose'),
+  type('ghost', 'Ghost', { groups: ['nonexistent'] }),
 ];
 
 const ids = (list: readonly SpecAnnotationType[]): string[] => list.map((t) => t.id);
 
 describe('normalizeSearch', () => {
-  it('remove acentos, caixa e espaços das pontas', () => {
+  it('removes accents, case and surrounding spaces (pt-BR)', () => {
+    // pt-BR kept: accent normalization of Portuguese text is the object
     expect(normalizeSearch('  AÇÃO Já ')).toBe('acao ja');
   });
 });
 
 describe('typeMatchesQuery', () => {
-  it('casa por nome, id e descrição, sem acento e sem caixa', () => {
-    expect(typeMatchesQuery(botao, 'BOTAO')).toBe(true);
-    expect(typeMatchesQuery(botao, 'acao')).toBe(true);
-    expect(typeMatchesQuery(campo, 'camp')).toBe(true);
-    expect(typeMatchesQuery(campo, 'acao')).toBe(false);
+  it('matches by name, id and description, ignoring accents and case', () => {
+    expect(typeMatchesQuery(button, 'BOTAO')).toBe(true);
+    expect(typeMatchesQuery(button, 'acao')).toBe(true);
+    expect(typeMatchesQuery(fieldType, 'fie')).toBe(true);
+    expect(typeMatchesQuery(fieldType, 'acao')).toBe(false);
   });
 
-  it('busca vazia ou só com espaços casa tudo', () => {
-    expect(typeMatchesQuery(campo, '')).toBe(true);
-    expect(typeMatchesQuery(campo, '   ')).toBe(true);
+  it('an empty search or one with only spaces matches everything', () => {
+    expect(typeMatchesQuery(fieldType, '')).toBe(true);
+    expect(typeMatchesQuery(fieldType, '   ')).toBe(true);
   });
 });
 
 describe('chooseTypes', () => {
-  it('agrupa na ordem dos grupos da camada, com o tipo em vários grupos em cada um', () => {
+  it('groups in the order of the layer groups, with the type in several groups in each one', () => {
     const r = chooseTypes(types, groups, '');
     expect(r.headers).toBe(true);
     expect(r.sections.map((s) => s.key)).toEqual(['g-b', 'g-a', 'others']);
     expect(r.sections[0]!.group).toEqual(groups[0]);
-    expect(ids(r.sections[0]!.types)).toEqual(['campo', 'card']);
-    expect(ids(r.sections[1]!.types)).toEqual(['botao', 'card']);
+    expect(ids(r.sections[0]!.types)).toEqual(['field', 'card']);
+    expect(ids(r.sections[1]!.types)).toEqual(['button', 'card']);
   });
 
-  it('põe os tipos sem grupo existente em Outros, no fim', () => {
+  it('puts the types without an existing group in Others, at the end', () => {
     const r = chooseTypes(types, groups, '');
     const last = r.sections.at(-1)!;
     expect(last.others).toBe(true);
     expect(last.group).toBeNull();
-    expect(ids(last.types)).toEqual(['solto', 'fantasma']);
+    expect(ids(last.types)).toEqual(['loose', 'ghost']);
   });
 
-  it('não cria Outros quando todos têm grupo', () => {
+  it('does not create Others when all have a group', () => {
     const r = chooseTypes(types.slice(0, 3), groups, '');
     expect(r.sections.map((s) => s.key)).toEqual(['g-b', 'g-a']);
   });
 
-  it('camada sem grupos: lista plana', () => {
+  it('layer without groups: flat list', () => {
     for (const g of [undefined, []]) {
       const r = chooseTypes(types, g, '');
       expect(r.headers).toBe(false);
@@ -88,13 +91,13 @@ describe('chooseTypes', () => {
     }
   });
 
-  it('camada com grupos mas nenhum tipo agrupado: lista plana', () => {
+  it('layer with groups but no grouped type: flat list', () => {
     const r = chooseTypes(types.slice(3), groups, '');
     expect(r.headers).toBe(false);
     expect(r.sections[0]!.key).toBe('all');
   });
 
-  it('sem tipos: sem cabeçalhos, seção plana vazia e total 0', () => {
+  it('without types: no headers, an empty flat section and total 0', () => {
     const r = chooseTypes([], groups, 'x');
     expect(r.headers).toBe(false);
     expect(r.total).toBe(0);
@@ -103,26 +106,26 @@ describe('chooseTypes', () => {
     expect(r.sections[0]!.types).toEqual([]);
   });
 
-  it('busca por nome, id e descrição mantém só os grupos com resultado', () => {
-    const byName = chooseTypes(types, groups, 'campo');
+  it('search by name, id and description keeps only the groups with results', () => {
+    const byName = chooseTypes(types, groups, 'field');
     expect(byName.headers).toBe(true);
     expect(byName.sections.map((s) => s.key)).toEqual(['g-b']);
-    const byId = chooseTypes(types, groups, 'SOLTO');
+    const byId = chooseTypes(types, groups, 'LOOSE');
     expect(byId.sections.map((s) => s.key)).toEqual(['others']);
     const byDesc = chooseTypes(types, groups, 'acao');
     expect(byDesc.sections.map((s) => s.key)).toEqual(['g-a']);
-    expect(ids(byDesc.sections[0]!.types)).toEqual(['botao']);
+    expect(ids(byDesc.sections[0]!.types)).toEqual(['button']);
   });
 
-  it('a busca não desliga os cabeçalhos nem some com a lista plana', () => {
+  it('the search does not turn off the headers nor remove the flat list', () => {
     expect(chooseTypes(types, groups, 'zzz').headers).toBe(true);
     expect(chooseTypes(types, groups, 'zzz').sections).toEqual([]);
-    const flat = chooseTypes(types, undefined, 'campo');
+    const flat = chooseTypes(types, undefined, 'field');
     expect(flat.headers).toBe(false);
-    expect(ids(flat.sections[0]!.types)).toEqual(['campo']);
+    expect(ids(flat.sections[0]!.types)).toEqual(['field']);
   });
 
-  it('total conta antes da busca e matches não repete o tipo de vários grupos', () => {
+  it('total counts before the search and matches does not repeat the type of several groups', () => {
     const all = chooseTypes(types, groups, '   ');
     expect(all.total).toBe(5);
     expect(all.matches).toBe(5);

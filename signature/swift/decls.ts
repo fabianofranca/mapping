@@ -11,29 +11,29 @@ import {
 import { caseName } from './literals';
 import { readPrefix, splitMembers } from './members';
 
-// As declarações de tipo de um arquivo Swift (`struct`, `class`, `enum`, `actor`, `extension`), em
-// qualquer nível, com os tipos que as envolvem, e os `enum` com os casos. Lê o cabeçalho e o
-// corpo; não é uma gramática.
+// The type declarations of a Swift file (`struct`, `class`, `enum`, `actor`, `extension`), at
+// any level, with the types that enclose them, and the `enum`s with their cases. It reads the header and
+// the body; it is not a grammar.
 
 const TYPE_KEYWORDS = new Set(['struct', 'class', 'enum', 'actor', 'extension']);
 
 export interface TypeDecl {
   readonly keyword: string;
-  /** O nome simples (`ProfileCard`); numa `extension`, o nome qualificado como veio. */
+  /** The simple name (`ProfileCard`); for an `extension`, the qualified name as it came. */
   readonly name: string;
-  /** Os tipos que a envolvem, de fora para dentro. */
+  /** The types that enclose it, from outside in. */
   readonly enclosing: readonly string[];
-  /** O `{` e o `}` do corpo. */
+  /** The `{` and the `}` of the body. */
   readonly open: number;
   readonly close: number;
   readonly line: number;
-  /** O comentário de documentação colado na declaração (texto cru). */
+  /** The doc comment attached to the declaration (raw text). */
   readonly doc?: string;
-  /** Os genéricos que são `View` (`<Content: View>` ou `where Content: View`). */
+  /** The generics that are `View` (`<Content: View>` or `where Content: View`). */
   readonly viewGenerics: ReadonlySet<string>;
 }
 
-/** Os intervalos de `[from, to)` separados por vírgula no nível de cima, contando `<>` (genéricos). */
+/** The ranges of `[from, to)` separated by commas at the top level, counting `<>` (generics). */
 function splitCommas(stream: TokenStream, from: number, to: number): Range[] {
   const ranges: Range[] = [];
   let angle = 0;
@@ -52,20 +52,20 @@ function splitCommas(stream: TokenStream, from: number, to: number): Range[] {
   return ranges;
 }
 
-/** O nome do `X: View` de um pedaço (`Content: View`), se for esse. */
+/** The name of the `X: View` in a piece (`Content: View`), if it is one. */
 function viewConstraint(stream: TokenStream, range: Range): string | undefined {
   for (const i of topLevel(stream, range.from, range.to)) {
     if (!isPunct(stream, i, ':')) continue;
     const bound = joinTokens(stream, i + 1, range.to).replace(/\s+/g, '');
     const name = joinTokens(stream, range.from, i).trim();
-    // `View & Equatable` também é view: basta uma das partes ser `View`
+    // `View & Equatable` is also a view: it is enough for one of the parts to be `View`
     const isView = bound.split('&').some((b) => b === 'View' || b === 'SwiftUI.View');
     return isView && /^\w+$/.test(name) ? name : undefined;
   }
   return undefined;
 }
 
-/** Os genéricos `View` do cabeçalho: o `<…>` depois do nome e o `where …` antes do corpo. */
+/** The `View` generics of the header: the `<…>` after the name and the `where …` before the body. */
 function viewGenericsOf(
   stream: TokenStream,
   nameEnd: number,
@@ -87,7 +87,7 @@ function viewGenericsOf(
   return found;
 }
 
-/** O nome (qualificado, para a `extension`) que começa em `from` e o índice depois dele. */
+/** The name (qualified, for the `extension`) that starts at `from` and the index after it. */
 function readName(stream: TokenStream, from: number): { name: string; end: number } {
   let end = from + 1;
   while (isPunct(stream, end, '.') && stream.tokens[end + 1]?.kind === 'ident') end += 2;
@@ -137,7 +137,7 @@ function walk(
   }
 }
 
-/** Todas as declarações de tipo do arquivo, em ordem de fonte (as de dentro depois da que as envolve). */
+/** All the type declarations of the file, in source order (inner ones after the one enclosing them). */
 export function findTypeDecls(stream: TokenStream): TypeDecl[] {
   const out: TypeDecl[] = [];
   walk(stream, { from: 0, to: stream.tokens.length }, [], out);
@@ -146,11 +146,11 @@ export function findTypeDecls(stream: TokenStream): TypeDecl[] {
 
 interface EnumCases {
   readonly options: string[];
-  /** Algum caso tem valor associado: não dá para escolher só pelo nome. */
+  /** Some case has an associated value: it cannot be chosen by name alone. */
   readonly associated: boolean;
 }
 
-/** Os casos de um `case a, b = 1, c(Int)`: nomes e se algum tem valor associado. */
+/** The cases of a `case a, b = 1, c(Int)`: names and whether any has an associated value. */
 function readCases(stream: TokenStream, member: Range, from: number): EnumCases {
   const options: string[] = [];
   let associated = false;
@@ -163,7 +163,7 @@ function readCases(stream: TokenStream, member: Range, from: number): EnumCases 
   return { options, associated };
 }
 
-/** Os casos do corpo de um `enum`, na ordem da declaração. */
+/** The cases of an `enum` body, in declaration order. */
 function casesOf(stream: TokenStream, decl: TypeDecl): EnumCases {
   const options: string[] = [];
   let associated = false;
@@ -177,7 +177,7 @@ function casesOf(stream: TokenStream, decl: TypeDecl): EnumCases {
   return { options, associated };
 }
 
-/** As constantes de um `enum` simples (sem valor associado): `Nome → casos`, na ordem da declaração. */
+/** The constants of a simple `enum` (no associated value): `Name → cases`, in declaration order. */
 export function enumsOf(stream: TokenStream): Map<string, readonly string[]> {
   const enums = new Map<string, readonly string[]>();
   for (const decl of findTypeDecls(stream)) {

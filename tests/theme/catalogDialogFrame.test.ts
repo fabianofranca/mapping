@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { tokenValue } from '../../src/theme/tokens';
 
-// CL1 (#1738): achados 1.1, 1.2, 1.4 e 3.1 do testador da #1504, no CSS do Catálogo e dos
-// diálogos (o jsdom não calcula layout: o que se confere aqui é a regra; a medida no
-// navegador está no relato da correção).
+// CL1 (#1738): findings 1.1, 1.2, 1.4 and 3.1 of the tester of #1504, in the CSS of the Catalog and of the
+// dialogs (jsdom does not compute layout: what is checked here is the rule; the measure in the
+// browser is in the fix report).
 
 function strip(path: string): string {
   return readFileSync(path, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -32,17 +32,17 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-describe('diálogo do Catálogo (CL1)', () => {
-  it('1.4: o <dialog> não rola (só o corpo): overflow clip, não o auto do navegador', () => {
+describe('Catalog dialog (CL1)', () => {
+  it('1.4: the <dialog> does not scroll (only the body): overflow clip, not the browser auto', () => {
     expect(rule(dialogs, '.dialog')).toMatch(/overflow:\s*clip/);
     expect(rule(dialogs, '.dialog-body')).toMatch(/overflow-y:\s*auto/);
   });
 
-  it('1.1: a última coluna das tabelas e as células do markdown parte identificador longo', () => {
+  it('1.1: the last column of the tables and the markdown cells break a long identifier', () => {
     expect(rule(catalog, '.catalog-table td:last-child')).toMatch(
       /overflow-wrap:\s*anywhere/,
     );
-    // CL1 (sobras do testador, 1.3): só a última coluna do markdown; as outras não partem palavra.
+    // CL1 (tester leftovers, 1.3): only the last markdown column; the others do not break a word.
     expect(rule(catalog, '.catalog-page .markdown td:last-child')).toMatch(
       /overflow-wrap:\s*anywhere/,
     );
@@ -51,12 +51,12 @@ describe('diálogo do Catálogo (CL1)', () => {
     );
   });
 
-  it('3.1: o quadro da Galeria não centra com justify-content (corta a borda esquerda)', () => {
+  it('3.1: the Gallery frame does not center with justify-content (it cuts the left border)', () => {
     expect(rule(catalog, '.catalog-image-frame')).not.toMatch(/justify-content/);
     expect(rule(catalog, '.catalog-image')).toMatch(/margin-inline:\s*auto/);
   });
 
-  it('1.2: o fundo do quadro deixa o trilho inativo do Slider (#E8DEF8) distinguível', () => {
+  it('1.2: the frame background keeps the inactive Slider track (#E8DEF8) distinguishable', () => {
     const bg = /background:\s*var\(--([\w-]+)\)/.exec(
       rule(catalog, '.catalog-image-frame'),
     )?.[1];

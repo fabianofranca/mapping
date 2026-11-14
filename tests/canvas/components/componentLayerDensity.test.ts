@@ -1,5 +1,5 @@
-// Densidade (#1085, decisão 8): o grupo da marcação recebe a cena com a escala na raiz, então o
-// mesmo componente num container 3x (174×120) e num 1x (58×40) com zoom 3 dá as mesmas caixas.
+// Density (#1085, decision 8): the marking group receives the scene with the scale at the root, so the
+// same component in a 3x container (174×120) and in a 1x one (58×40) at zoom 3 gives the same boxes.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -40,7 +40,7 @@ function project(rect: Rect, density: number): Project {
   return setContainerDensity(p, 'I1', density);
 }
 
-/** As caixas (em pixels de tela) de todas as formas desenhadas pela marcação `M`. */
+/** The boxes (in screen pixels) of all the shapes drawn by the marking `M`. */
 function boxes(p: Project, zoom: number): Rect[] {
   const drawings = createDrawingCache()(p, catalog, approximateMeasurer, 0);
   const stage = new Konva.Group({ scaleX: zoom, scaleY: zoom });
@@ -49,8 +49,8 @@ function boxes(p: Project, zoom: number): Rect[] {
   return stage.find('Shape').map((s) => s.getClientRect());
 }
 
-describe('camada de componentes com densidade', () => {
-  it('3x em 180×72 (zoom 1) tem as mesmas caixas do 1x em 60×24 com zoom 3', () => {
+describe('component layer with density', () => {
+  it('3x at 180×72 (zoom 1) has the same boxes as 1x at 60×24 with zoom 3', () => {
     const dense = boxes(project({ x: 30, y: 30, width: 180, height: 72 }, 3), 1);
     const flat = boxes(project({ x: 10, y: 10, width: 60, height: 24 }, 1), 3);
     expect(dense.length).toBeGreaterThan(0);

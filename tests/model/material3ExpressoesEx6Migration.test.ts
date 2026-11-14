@@ -1,8 +1,8 @@
-// EX6 da etapa "expressões que calculam no formato 4" (#897), decisão 14: o slider passa a ter
-// `value`, `valueStart` e `valueEnd` numéricos. O texto que o `enum` gravava ("0.3") não vale num
-// campo `number`: o `fill-field` o troca pelo default e reporta a perda (`replaced-value`).
-// Decisão do dono (2026-11-10): nenhum projeto usa o slider ainda, então fica o mais simples, sem
-// converter o texto (o `fillField` e o docs/SPEC-FORMAT.md não mudam).
+// EX6 of the "expressions that compute in format 4" stage (#897), decision 14: the slider now has
+// numeric `value`, `valueStart` and `valueEnd`. The text the `enum` stored ("0.3") is not valid in a
+// `number` field: `fill-field` replaces it with the default and reports the loss (`replaced-value`).
+// Owner's decision (2026-11-10): no project uses the slider yet, so it stays as simple as possible, without
+// converting the text (`fillField` and docs/SPEC-FORMAT.md do not change).
 import { describe, expect, it } from 'vitest';
 import {
   runLibraryMigrations,
@@ -38,8 +38,8 @@ const steps: SpecMigrationStep[] = [
   { op: 'fill-field', type: 'slider', field: 'valueEnd', default: 0.8 },
 ];
 
-describe('EX6 — o texto do enum antigo do slider na migração para number', () => {
-  it('o texto vira o default e a perda é reportada; número e vazio ficam como são', () => {
+describe('EX6 — the text of the old slider enum in the migration to number', () => {
+  it('the text becomes the default and the loss is reported; number and empty stay as they are', () => {
     const p = libProject(libSpec(1, { c: [sliderOld] }), [
       {
         id: 'S1',

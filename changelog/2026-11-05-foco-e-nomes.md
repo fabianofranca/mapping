@@ -1,9 +1,9 @@
-# Foco que não se perde e nomes acessíveis estáveis — 2026-11-05 (épico `epic/foco-e-nomes`, PR #535, MCP 0.16.0 sem mudança, schema v13)
+# Focus that is not lost and stable accessible names — 2026-11-05 (épico `epic/foco-e-nomes`, PR #535, MCP 0.16.0 unchanged, schema v13)
 
 ## Corrigido
 
-- Legenda das marcas da revisão: `Esc` com o foco nela a fecha, o X se chama "Fechar legenda" e, ao fechar (pelo X ou por `Esc`), o foco volta ao botão **Legenda das marcas**, em vez de se perder.
-- Sair da revisão: pelo botão ou pelo diálogo "Sair da revisão?" (**Sair mesmo assim**), o foco vai ao **Revisar** ou **Continuar** da proposta na janela Propostas, ou ao canvas se a janela estiver fechada.
-- Voltar do Catálogo da biblioteca para a tela inicial (por Enter ou por clique): o foco vai ao **Abrir biblioteca**, e não mais ao fundo da página.
-- Detalhes não fecha mais ao estreitar a janela de 1280 para 900 px: as janelas laterais encolhem, mas continuam abertas. Só abrir a app já numa janela abaixo de 1200 px começa com Detalhes recolhido.
-- Menu ⋮ das linhas (pares de Detalhes, Camadas e Árvore): abre no primeiro clique mesmo quando a linha está fora da vista e o clique faz a página ou a lista rolar; rolar depois da abertura ainda fecha o menu.
+- Review mark legend: `Esc` with focus on it closes it, the X is named "Close legend" and, on closing (by the X or by `Esc`), focus returns to the **Mark legend** button instead of being lost.
+- Leaving the review: by the button or by the "Exit the review?" dialog (**Exit anyway**), focus goes to the proposal's **Review** or **Continue** in the Proposals window, or to the canvas if the window is closed.
+- Going back from the library Catalog to the home screen (by Enter or by click): focus goes to **Open library**, and no longer to the page background.
+- Details no longer closes when the window narrows from 1280 to 900 px: the side windows shrink but stay open. Only opening the app already in a window below 1200 px starts with Details collapsed.
+- Row ⋮ menu (Details pairs, Layers and Tree): opens on the first click even when the row is out of view and the click makes the page or the list scroll; scrolling after it opens still closes the menu.

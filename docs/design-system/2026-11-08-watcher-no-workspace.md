@@ -1,13 +1,13 @@
-# Watcher no workspace — 2026-11-08 (épico `epic/watcher-no-workspace`)
+# Watcher in the workspace — 2026-11-08 (épico `epic/watcher-no-workspace`)
 
 ## Pendências
 
-Pendências: nenhuma (sem UI; só `setup.sh`, release do MCP e docs).
+Pending items: none (no UI; only `setup.sh`, the MCP release and docs).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só mudou o `setup.sh`, a release do MCP e a documentação do workspace.
+No write to the Mapping artifact in Claude Design: the stage only changed `setup.sh`, the MCP release and the workspace documentation.
 
 ## Ficou sem gravar
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só mudou o `setup.sh`, a release do MCP e a documentação do workspace.
+No write to the Mapping artifact in Claude Design: the stage only changed `setup.sh`, the MCP release and the workspace documentation.

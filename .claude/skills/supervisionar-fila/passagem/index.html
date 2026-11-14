@@ -1,7 +1,7 @@
 <title>Supervisão da fila</title>
 <meta name="claude:viewport-fit-sides" content="cover" />
 <style>
-  /* Leitura da passagem: uma coluna estreita, quatro grupos de regras, só texto e uma linha de metadados por regra. */
+  /* Reading the handoff: a narrow column, four groups of rules, text only and one metadata line per rule. */
   :root {
     --bg: #f6f7f9;
     --surface: #ffffff;
@@ -142,10 +142,10 @@
 
 <main>
   <header>
-    <h1>Supervisão da fila</h1>
-    <p class="sub">Passagem da supervisão: regras em vigor, não estados. Só leitura.</p>
+    <h1>Queue supervision</h1>
+    <p class="sub">Supervision handoff: rules in force, not states. Read-only.</p>
   </header>
-  <p id="status" class="status" role="status">Carregando a passagem…</p>
+  <p id="status" class="status" role="status">Loading the handoff…</p>
   <div id="grupos" hidden></div>
 </main>
 
@@ -154,20 +154,20 @@
     var GRUPOS = [
       {
         tipo: 'decisao',
-        titulo: 'Decisões do dono',
-        vazio: 'Nenhuma decisão registrada.',
+        titulo: 'Owner decisions',
+        vazio: 'No decision recorded.',
       },
       {
         tipo: 'issue',
-        titulo: 'Issues abertas',
-        vazio: 'Nenhuma issue aberta registrada.',
+        titulo: 'Open issues',
+        vazio: 'No open issue recorded.',
       },
       {
         tipo: 'agendamento',
-        titulo: 'Agendamentos',
-        vazio: 'Nenhum agendamento ligado à supervisão.',
+        titulo: 'Schedules',
+        vazio: 'No schedule tied to the supervision.',
       },
-      { tipo: 'licao', titulo: 'Lições', vazio: 'Nenhuma lição registrada.' },
+      { tipo: 'licao', titulo: 'Lessons', vazio: 'No lesson recorded.' },
     ];
     var statusEl = document.getElementById('status');
     var gruposEl = document.getElementById('grupos');
@@ -179,7 +179,7 @@
       statusEl.hidden = false;
       statusEl.className = 'status erro';
       statusEl.textContent =
-        'A passagem não carregou. Abra o link de novo ou peça à supervisão para ler a coleção passagem.';
+        'The handoff did not load. Open the link again or ask the supervision to read the passagem collection.';
     }
 
     function el(tag, className, text) {
@@ -193,11 +193,11 @@
       var p = el('p', 'meta');
       var partes = [];
       partes.push(['id', id]);
-      if (d.origem) partes.push(['origem', String(d.origem)]);
-      if (d.desde) partes.push(['desde', String(d.desde)]);
+      if (d.origem) partes.push(['origin', String(d.origem)]);
+      if (d.desde) partes.push(['since', String(d.desde)]);
       if (d.tipo === 'agendamento') {
         if (d.trigger) partes.push(['trigger', String(d.trigger)]);
-        if (d.parada) partes.push(['parada', String(d.parada)]);
+        if (d.parada) partes.push(['stop', String(d.parada)]);
       }
       partes.forEach(function (par, i) {
         if (i > 0) p.appendChild(document.createTextNode(' · '));
@@ -220,7 +220,7 @@
       statusEl.hidden = snap.size > 0;
       if (snap.size === 0) {
         statusEl.className = 'status';
-        statusEl.textContent = 'A passagem está vazia: nenhuma regra gravada ainda.';
+        statusEl.textContent = 'The handoff is empty: no rule recorded yet.';
       }
       var conhecidos = GRUPOS.map(function (g) {
         return g.tipo;
@@ -232,7 +232,7 @@
       var grupos = GRUPOS.slice();
       if (outras.length > 0) {
         porTipo.outras = outras;
-        grupos.push({ tipo: 'outras', titulo: 'Outras regras', vazio: '' });
+        grupos.push({ tipo: 'outras', titulo: 'Other rules', vazio: '' });
       }
       grupos.forEach(function (g) {
         var itens = (porTipo[g.tipo] || []).sort(function (a, b) {
@@ -274,7 +274,7 @@
       );
     }
 
-    // O window.claude pode chegar depois da primeira execução: tenta de novo até o prazo de 10 s.
+    // window.claude may arrive after the first run: retries until the 10 s deadline.
     function tentar() {
       if (respondeu || falhado) return;
       if (!(window.claude && window.claude.use)) {

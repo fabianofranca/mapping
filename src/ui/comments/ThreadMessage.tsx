@@ -9,7 +9,7 @@ const renderCitation = (href: string, label: string) => (
   <CitationChip url={href} label={label} />
 );
 
-/** Uma mensagem da conversa: iniciais, nome, selo de agente, hora relativa e o texto em markdown. */
+/** A message of the thread: initials, name, agent badge, relative time and the text in markdown. */
 export function ThreadMessage({ message }: { readonly message: Message }) {
   const agent = message.author.kind === 'agent';
   return (

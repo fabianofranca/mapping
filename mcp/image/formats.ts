@@ -1,5 +1,5 @@
-// Formatos de imagem que o servidor lê e grava, e a leitura das dimensões pelo cabeçalho
-// (antes de decodificar: um PNG pequeno em disco pode declarar bilhões de pixels).
+// Image formats the server reads and writes, and reading the dimensions from the header
+// (before decoding: a small PNG on disk can declare billions of pixels).
 
 export type ImageFormat = 'png' | 'jpeg' | 'webp';
 
@@ -9,32 +9,31 @@ export const MIME: Record<ImageFormat, string> = {
   webp: 'image/webp',
 };
 
-/** Arquivos de imagem maiores que isto são recusados. */
+/** Image files larger than this are refused. */
 export const MAX_FILE_BYTES = 64 * 1024 * 1024;
 /**
- * Imagens com mais pixels que isto (40 megapixels) não são decodificadas: o pico de memória de
- * uma decodificação (heap WASM, RGBA, cópia da orientação e redução) fica abaixo de ~1 GB.
+ * Images with more pixels than this (40 megapixels) are not decoded: the memory peak of
+ * a decode (WASM heap, RGBA, orientation copy and downscaling) stays below ~1 GB.
  */
 export const MAX_PIXELS = 40_000_000;
 /**
- * Maior imagem aceita em `base64` nas operações (16 MB; maiores vão por `file`). Menor que
- * `MAX_FILE_BYTES` porque a mensagem inteira passa pelo stdin: o buffer de leitura do SDK copia
- * a mensagem a cada pedaço recebido (tempo quadrático no tamanho), e 87 MB levavam ~90 s.
+ * Largest image accepted as `base64` in the operations (16 MB; larger ones go through `file`). Smaller than
+ * `MAX_FILE_BYTES` because the whole message goes through stdin: the SDK's read buffer copies
+ * the message on every chunk received (quadratic time in the size), and 87 MB took ~90 s.
  */
 export const MAX_BASE64_FILE_BYTES = 16 * 1024 * 1024;
-/** Tamanho em base64 (sem prefixo `data:` nem quebras de linha) de um arquivo de `MAX_BASE64_FILE_BYTES`. */
+/** Size in base64 (without the `data:` prefix or line breaks) of a file of `MAX_BASE64_FILE_BYTES`. */
 export const MAX_BASE64_LENGTH = Math.ceil(MAX_BASE64_FILE_BYTES / 3) * 4;
 /**
- * Teto do texto `base64` no schema: o conteúdo com folga para o prefixo `data:` e quebras de
- * linha (CRLF a cada 76 caracteres). O tamanho exato é conferido antes de decodificar
- * (`mcp/batch.ts`).
+ * Cap of the `base64` text in the schema: the content with room for the `data:` prefix and line breaks
+ * (CRLF every 76 characters). The exact size is checked before decoding (`mcp/batch.ts`).
  */
 export const MAX_BASE64_TEXT =
   MAX_BASE64_LENGTH + Math.ceil(MAX_BASE64_LENGTH / 38) + 256;
 /**
- * Maior mensagem JSON-RPC lida do stdin (`maxBufferSize` do transporte, `mcp/main.ts`): um
- * `base64` no teto do schema mais 1 MB para o resto da mensagem. Acima disso o servidor sai com
- * erro no stderr.
+ * Largest JSON-RPC message read from stdin (the transport's `maxBufferSize`, `mcp/main.ts`): a
+ * `base64` at the schema's cap plus 1 MB for the rest of the message. Above that the server exits with
+ * an error on stderr.
  */
 export const MAX_MESSAGE_BYTES = MAX_BASE64_TEXT + 1024 * 1024;
 
@@ -43,7 +42,7 @@ export interface Size {
   readonly height: number;
 }
 
-/** Formato pelos primeiros bytes; `null` se não for PNG, JPEG nem WebP. */
+/** Format by the first bytes; `null` if it is not PNG, JPEG or WebP. */
 export function detectFormat(bytes: Uint8Array): ImageFormat | null {
   if (
     bytes.length >= 8 &&
@@ -80,7 +79,7 @@ const u32be = (b: Uint8Array, i: number) =>
   ((b[i]! << 24) | (b[i + 1]! << 16) | (b[i + 2]! << 8) | b[i + 3]!) >>> 0;
 const u24le = (b: Uint8Array, i: number) => b[i]! | (b[i + 1]! << 8) | (b[i + 2]! << 16);
 
-/** Dimensões (sem aplicar a orientação EXIF) lidas do cabeçalho; `null` se ilegível. */
+/** Dimensions (without applying the EXIF orientation) read from the header; `null` if unreadable. */
 export function readSize(bytes: Uint8Array, format: ImageFormat): Size | null {
   const size =
     format === 'png'
@@ -92,7 +91,7 @@ export function readSize(bytes: Uint8Array, format: ImageFormat): Size | null {
 }
 
 function pngSize(b: Uint8Array): Size | null {
-  // Assinatura (8) + tamanho do bloco (4) + "IHDR" (4) + largura + altura.
+  // Signature (8) + block size (4) + "IHDR" (4) + width + height.
   if (b.length < 24 || ascii(b, 12, 4) !== 'IHDR') return null;
   return { width: u32be(b, 16), height: u32be(b, 20) };
 }
@@ -109,12 +108,12 @@ function jpegSize(b: Uint8Array): Size | null {
       i++;
       continue;
     }
-    // Marcadores sem tamanho: RSTn, SOI, EOI, TEM.
+    // Markers without a size: RSTn, SOI, EOI, TEM.
     if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) {
       i += 2;
       continue;
     }
-    // SOF0–SOF15, menos DHT (C4), JPG (C8) e DAC (CC).
+    // SOF0–SOF15, except DHT (C4), JPG (C8) and DAC (CC).
     if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
       return { height: u16be(b, i + 5), width: u16be(b, i + 7) };
     }
@@ -135,7 +134,7 @@ function webpSize(b: Uint8Array): Size | null {
     return { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 };
   }
   if (chunk === 'VP8 ') {
-    // Quadro-chave: 3 bytes de cabeçalho, código de início 9d 01 2a, 14 bits de largura e de altura.
+    // Keyframe: 3 header bytes, start code 9d 01 2a, 14 bits of width and of height.
     if (b[23] !== 0x9d || b[24] !== 0x01 || b[25] !== 0x2a) return null;
     return {
       width: (b[26]! | (b[27]! << 8)) & 0x3fff,

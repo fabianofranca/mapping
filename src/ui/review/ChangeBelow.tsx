@@ -4,9 +4,9 @@ import { useEditor } from '../EditorContext';
 import { Icon } from '../icons';
 import { Flag } from './Flag';
 
-// A linha embaixo do controle de um campo alterado (HANDOFF-REVIEW-DETAILS 5.5 e 5.7): a
-// nota da mudança (ícone e texto) e, numa proposta substituída, o selo igual / diferente /
-// não consta na nova. Sem nenhum dos dois, não desenha nada.
+// The row below the control of a changed field (HANDOFF-REVIEW-DETAILS 5.5 and 5.7): the
+// change note (icon and text) and, in a replaced proposal, the same / different /
+// not in the new one badge. With neither of the two, it draws nothing.
 
 export function ChangeBelow({ changeId }: { readonly changeId: string }) {
   const { review } = useEditor();

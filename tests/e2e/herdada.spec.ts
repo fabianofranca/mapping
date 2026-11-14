@@ -1,13 +1,13 @@
-// MF3 no Chromium de verdade: a cor herdada (`provide` no `slot` do pai, `$provided` na filha)
-// desenhada pelo Konva (renderScene), lida pixel a pixel, e a paridade com o raster do MCP (a mesma
-// cena a 100% e a 420%, numa tolerância por canal escrita aqui). Não abre a app: monta o Konva
-// numa página em branco, como o shadowsGap.spec.
+// MF3 in a real Chromium: the inherited color (`provide` in the parent's `slot`, `$provided` in the child)
+// drawn by Konva (renderScene), read pixel by pixel, and the parity with the MCP raster (the same
+// scene at 100% and 420%, within a per-channel tolerance written here). It does not open the app: it mounts Konva
+// on a blank page, like shadowsGap.spec.
 import { expect, test, type Page } from '@playwright/test';
 import { build, type Plugin } from 'esbuild';
 
-// O pai e a filha são instanciados como o cache dos desenhos faz: o que o pai oferece
-// (`provides`) vira o `provided` da filha, que vai como filha do quadro do pai. Os bytes das
-// fontes do raster (`font:*`) ficam vazios (a cena não tem texto).
+// The parent and the child are instantiated as the drawing cache does: what the parent offers
+// (`provides`) becomes the child's `provided`, which goes as a child of the parent's frame. The bytes of
+// the raster fonts (`font:*`) stay empty (the scene has no text).
 const ENTRY = `
 import Konva from 'konva/lib/Core';
 import { Layer } from 'konva/lib/Layer';
@@ -18,8 +18,8 @@ import { createRaster } from './mcp/image/raster';
 import { paintScene } from './mcp/image/sceneRaster';
 Konva.autoDrawEnabled = false;
 const measure = { measure: approximateMeasurer };
-// O pai desenhado na caixa inteira com a filha (do componente \`child\`, se vier) em \`rect\`; sem
-// \`parent\`, só a filha, sem ancestral. Devolve os pixels (RGB, sobre branco) do Konva e do raster.
+// The parent drawn in the whole box with the child (of the component \`child\`, if any) in \`rect\`; without
+// \`parent\`, only the child, with no ancestor. Returns the pixels (RGB, over white) of Konva and of the raster.
 window.draw = ({ parent, parentValues, child, rect, width, height, zoom }) => {
   const box = { x: 0, y: 0, width, height };
   let provided;
@@ -105,7 +105,7 @@ type Drawn = {
 };
 type Window = { draw: (request: Request) => Drawn };
 
-/** Os pixels RGB do Konva e do raster do MCP, no zoom pedido. */
+/** The RGB pixels of Konva and of the MCP raster, at the requested zoom. */
 async function drawBoth(page: Page, request: Request) {
   await load(page);
   const { konva, raster, provided } = await page.evaluate(
@@ -128,7 +128,7 @@ async function drawBoth(page: Page, request: Request) {
 
 const COMPONENT = { format: 'mapping-component', formatVersion: 4 };
 
-/** O pai: um quadro creme de 120 × 70 com um `slot` que oferece `content-color` (campo `ink`, ou azul). */
+/** The parent: a cream frame of 120 × 70 with a `slot` that offers `content-color` (field `ink`, or blue). */
 const PARENT = {
   ...COMPONENT,
   id: 'card',
@@ -141,7 +141,7 @@ const PARENT = {
     children: [
       {
         type: 'slot',
-        name: 'conteudo',
+        name: 'content',
         anchors: { left: 4, top: 4, right: 4, bottom: 4 },
         layout: { type: 'none' },
         provide: { 'content-color': { $field: 'ink', default: '#1976D2' } },
@@ -150,7 +150,7 @@ const PARENT = {
   },
 };
 
-/** A filha: uma barra de 60 × 20 que lê `content-color` (verde sem ancestral) e um ponto fixo preto. */
+/** The child: a 60 × 20 bar that reads `content-color` (green without an ancestor) and a fixed black dot. */
 const CHILD = {
   ...COMPONENT,
   id: 'bar',
@@ -162,7 +162,7 @@ const CHILD = {
     children: [
       {
         type: 'rect',
-        name: 'barra',
+        name: 'bar',
         anchors: { left: 0, top: 0 },
         width: 40,
         height: 20,
@@ -171,7 +171,7 @@ const CHILD = {
       },
       {
         type: 'rect',
-        name: 'ponto',
+        name: 'dot',
         anchors: { left: 48, top: 6 },
         width: 8,
         height: 8,
@@ -188,7 +188,7 @@ const GREEN = [0x2e, 0x7d, 0x32];
 const BLACK = [0, 0, 0];
 const CARD = [0xff, 0xf8, 0xe1];
 
-/** Tolerância por canal (0 a 255) e fração de pixels que pode passar dela (bordas arredondadas). */
+/** Per-channel tolerance (0 to 255) and the fraction of pixels that may exceed it (rounded borders). */
 const TOLERANCE = 40;
 const OUTLIERS = 0.02;
 
@@ -215,19 +215,19 @@ const request = (extra: Partial<Request> = {}): Request => ({
 });
 
 for (const zoom of [1, 4.2]) {
-  test(`paridade com o raster a ${Math.round(zoom * 100)}%: a filha herda a cor do pai`, async ({
+  test(`parity with the raster at ${Math.round(zoom * 100)}%: the child inherits the parent's color`, async ({
     page,
   }) => {
     const drawn = await drawBoth(page, request({ zoom }));
     expectParity(drawn.konva, drawn.raster);
-    // A barra (x de 20 a 60, y de 25 a 45) é azul: o `default` do `ink` do pai.
+    // The bar (x from 20 to 60, y from 25 to 45) is blue: the `default` of the parent's `ink`.
     expect(drawn.at(40 * zoom, 35 * zoom)).toEqual(BLUE);
     expect(drawn.rasterAt(40 * zoom, 35 * zoom)).toEqual(BLUE);
-    expect(drawn.at(72 * zoom, 35 * zoom)).toEqual(BLACK); // o ponto não lê nada
+    expect(drawn.at(72 * zoom, 35 * zoom)).toEqual(BLACK); // the dot reads nothing
   });
 }
 
-test('o campo do pai muda a cor da filha, e o resto do desenho fica como estava', async ({
+test('the parent field changes the child color, and the rest of the drawing stays as it was', async ({
   page,
 }) => {
   const before = await drawBoth(page, request());
@@ -242,7 +242,9 @@ test('o campo do pai muda a cor da filha, e o resto do desenho fica como estava'
   expectParity(after.konva, after.raster);
 });
 
-test('sem ancestral que ofereça a cor vale o default da filha', async ({ page }) => {
+test('without an ancestor that offers the color, the child default applies', async ({
+  page,
+}) => {
   const drawn = await drawBoth(page, request({ parent: undefined }));
   expect(drawn.provided).toBeNull();
   expect(drawn.at(40, 35)).toEqual(GREEN);
@@ -250,7 +252,7 @@ test('sem ancestral que ofereça a cor vale o default da filha', async ({ page }
   expectParity(drawn.konva, drawn.raster);
 });
 
-test('o campo `ink` vazio do pai oferece o default dele, não a tinta anterior', async ({
+test('the parent empty `ink` field offers its default, not the previous ink', async ({
   page,
 }) => {
   const drawn = await drawBoth(page, request({ parentValues: { ink: '' } }));

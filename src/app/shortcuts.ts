@@ -1,4 +1,4 @@
-// Atalhos de teclado do editor (desktop). Ver a seção Atalhos do design system (docs/DESIGN-SYSTEM.md).
+// Editor keyboard shortcuts (desktop). See the Shortcuts section of the design system (docs/DESIGN-SYSTEM.md).
 import { toolWindowByNumber, type ToolWindowId } from '../store/toolWindows';
 
 export type Shortcut =
@@ -6,42 +6,42 @@ export type Shortcut =
   | { readonly kind: 'redo' }
   | { readonly kind: 'delete' }
   | { readonly kind: 'escape' }
-  /** Shift+Esc: esconde a janela de ferramenta em foco. */
+  /** Shift+Esc: hides the focused tool window. */
   | { readonly kind: 'hide-window' }
   | { readonly kind: 'toggle-window'; readonly window: ToolWindowId }
-  /** Ctrl+Shift+setas: redimensiona a janela em foco em 16px. */
+  /** Ctrl+Shift+arrows: resizes the focused window by 16px. */
   | { readonly kind: 'resize-window'; readonly dx: number; readonly dy: number }
-  /** Alt+↑ / Alt+↓ nos breadcrumbs. */
+  /** Alt+↑ / Alt+↓ on the breadcrumbs. */
   | { readonly kind: 'select-parent' }
   | { readonly kind: 'select-child' }
   | { readonly kind: 'zoom'; readonly factor: number }
   | { readonly kind: 'zoom-reset' }
-  /** Shift+1: enquadra tudo (zoom e centro da vista). */
+  /** Shift+1: frames everything (zoom and view center). */
   | { readonly kind: 'fit-all' }
-  /** Shift+2: enquadra a seleção (zoom e centro da vista). */
+  /** Shift+2: frames the selection (zoom and view center). */
   | { readonly kind: 'fit-selection' }
   | { readonly kind: 'export' }
   | { readonly kind: 'layers' }
   | { readonly kind: 'help' }
   | { readonly kind: 'settings' }
-  /** Alt+L: tranca ou destranca o item selecionado. */
+  /** Alt+L: locks or unlocks the selected item. */
   | { readonly kind: 'toggle-lock' }
-  /** Alt+H: liga ou desliga o modo visualização do canvas. */
+  /** Alt+H: turns the canvas view mode on or off. */
   | { readonly kind: 'view-mode' }
-  /** Ctrl/Cmd+C: copia a referência do item (fora de campos de texto e sem texto selecionado). */
+  /** Ctrl/Cmd+C: copies the item's reference (outside text fields and with no selected text). */
   | { readonly kind: 'copy-reference' }
-  /** Ctrl+Alt+C: copia como PNG o recorte da marcação selecionada. */
+  /** Ctrl+Alt+C: copies the selected marking's crop as PNG. */
   | { readonly kind: 'copy-crop' }
-  /** Alt+Shift+A: arruma as filhas do container selecionado (etapa Biblioteca, B3). */
+  /** Alt+Shift+A: arranges the selected container's children (Library stage, B3). */
   | { readonly kind: 'arrange' }
-  /** Ctrl/Cmd+G: envolve a seleção numa marcação nova (etapa Envolver). */
+  /** Ctrl/Cmd+G: wraps the selection in a new marking (Wrap stage). */
   | { readonly kind: 'wrap' }
-  /** ←↑→↓ movem a seleção 1 px; Shift+seta, 10 px (`dx`, `dy` já com o passo). */
+  /** ←↑→↓ move the selection by 1 px; Shift+arrow, 10 px (`dx`, `dy` already with the step). */
   | { readonly kind: 'nudge'; readonly dx: number; readonly dy: number };
 
 /**
- * Texto dos atalhos nas dicas dos botões. Nas janelas e no redimensionar é sempre
- * Ctrl (também no macOS, onde Cmd+Shift+3/4/5 tira print da tela).
+ * Text of the shortcuts in the button hints. For the windows and for resizing it is always
+ * Ctrl (also on macOS, where Cmd+Shift+3/4/5 takes a screenshot).
  */
 export const SHORTCUT_LABELS = {
   undo: 'Ctrl+Z',
@@ -93,13 +93,13 @@ const ARIA_KEY_NAMES: Readonly<Record<string, string>> = {
 };
 
 /**
- * O valor de `aria-keyshortcuts` (sintaxe WAI-ARIA: `Control+E`, `Control+Shift+Z`,
- * `Alt+Enter`, `F1`) a partir do rótulo humano da dica (`Ctrl+E`), que continua só na dica.
- * Rótulo que não é tecla ("Ctrl+clique") não vira atributo (etapa 8, F5).
+ * The value of `aria-keyshortcuts` (WAI-ARIA syntax: `Control+E`, `Control+Shift+Z`,
+ * `Alt+Enter`, `F1`) from the human label of the hint (`Ctrl+E`), which stays only in the hint.
+ * A label that is not a key ("Ctrl+click") does not become an attribute (stage 8, F5).
  */
 export function ariaKeys(label: string | undefined): string | undefined {
   if (!label) return undefined;
-  // "Ctrl++": o último "+" é a tecla.
+  // "Ctrl++": the last "+" is the key.
   const parts = label.endsWith('++')
     ? [...label.slice(0, -2).split('+'), '+']
     : label.split('+');
@@ -116,7 +116,7 @@ export function ariaKeys(label: string | undefined): string | undefined {
   return name === undefined ? undefined : [...modifiers, name].join('+');
 }
 
-/** `aria-keyshortcuts` de vários atalhos de uma ação (separados por espaço, como a ARIA pede). */
+/** `aria-keyshortcuts` of several shortcuts of an action (separated by space, as ARIA asks). */
 export function ariaKeysAll(labels: readonly string[]): string | undefined {
   const keys = labels.map((label) => ariaKeys(label)).filter((k) => k !== undefined);
   return keys.length > 0 ? keys.join(' ') : undefined;
@@ -126,11 +126,11 @@ type KeyInfo = Pick<
   KeyboardEvent,
   'key' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'
 > & {
-  /** Tecla física: com Shift (ou Alt no macOS) o `key` do número vira outro caractere. */
+  /** Physical key: with Shift (or Alt on macOS) the number's `key` becomes another character. */
   readonly code?: string;
 };
 
-/** Fator de zoom de um passo de Ctrl+= / Ctrl+−. */
+/** Zoom factor of one Ctrl+= / Ctrl+− step. */
 const ZOOM_STEP = 1.25;
 
 const ARROWS: Readonly<Record<string, { readonly dx: number; readonly dy: number }>> = {
@@ -141,16 +141,16 @@ const ARROWS: Readonly<Record<string, { readonly dx: number; readonly dy: number
 };
 
 /**
- * Alt+número é atalho extra: só onde o navegador não o intercepta. No Chrome do
- * Linux ele troca de aba, então ali vale só quando a app está instalada (PWA).
+ * Alt+number is an extra shortcut: only where the browser does not intercept it. In Chrome on
+ * Linux it switches tabs, so there it only applies when the app is installed (PWA).
  */
 export function altNumbersAvailable(userAgent: string, standalone: boolean): boolean {
   return standalone || !/Linux/.test(userAgent);
 }
 
 /**
- * Número de 0 a 9 da tecla. Com Shift, `key` vira o símbolo do teclado (Ctrl+Shift+4
- * chega como `$` no layout americano), então a tecla física (`code`) é quem manda.
+ * Number from 0 to 9 of the key. With Shift, `key` becomes the keyboard symbol (Ctrl+Shift+4
+ * arrives as `$` on the US layout), so the physical key (`code`) is what rules.
  */
 function numberOf(e: KeyInfo): number | null {
   const physical = /^(?:Digit|Numpad)([0-9])$/.exec(e.code ?? '');
@@ -160,7 +160,7 @@ function numberOf(e: KeyInfo): number | null {
   return Number.isInteger(n) && n >= 0 && n <= 9 ? n : null;
 }
 
-/** Teclas de Ctrl/Cmd (sem Shift nem Alt) que sempre dão o mesmo atalho. */
+/** Ctrl/Cmd keys (without Shift or Alt) that always give the same shortcut. */
 const MOD_KEYS: Readonly<Record<string, Shortcut>> = {
   z: { kind: 'undo' },
   c: { kind: 'copy-reference' },
@@ -174,35 +174,35 @@ const MOD_KEYS: Readonly<Record<string, Shortcut>> = {
   '0': { kind: 'zoom-reset' },
 };
 
-/** Atalhos com Ctrl/Cmd (sem Shift nem Alt). */
+/** Shortcuts with Ctrl/Cmd (without Shift or Alt). */
 function modShortcut(e: KeyInfo, key: string): Shortcut | null {
-  // Ctrl+Y refaz; o Cmd+Y do macOS é do navegador.
+  // Ctrl+Y redoes; macOS Cmd+Y belongs to the browser.
   if (key === 'y') return e.ctrlKey && !e.metaKey ? { kind: 'redo' } : null;
   return MOD_KEYS[key] ?? null;
 }
 
 /**
- * Ctrl/Cmd+Z desfaz; Ctrl/Cmd+Shift+Z e Ctrl+Y refazem; Delete (ou Backspace, a
- * tecla "delete" do Mac) exclui; Esc cancela/desseleciona; Shift+Esc esconde a
- * janela em foco. Ctrl+Shift+número abre e fecha as janelas (Alt+número é o extra,
- * ligado por `altNumbers`), Ctrl+Shift+setas as redimensiona, Alt+↑/↓ anda na
- * seleção, Alt+N cria uma anotação na camada ativa, Alt+L tranca/destranca o item
- * selecionado, Alt+H liga o modo visualização, Ctrl/Cmd+C copia a referência do item, Ctrl/Cmd+G envolve a seleção, Ctrl+Alt+C copia o recorte da
- * marcação e Ctrl+=/−/0 controlam o zoom.
+ * Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z and Ctrl+Y redo; Delete (or Backspace, the
+ * Mac "delete" key) deletes; Esc cancels/deselects; Shift+Esc hides the
+ * focused window. Ctrl+Shift+number opens and closes the windows (Alt+number is the extra,
+ * turned on by `altNumbers`), Ctrl+Shift+arrows resize them, Alt+↑/↓ moves through the
+ * selection, Alt+N creates an annotation in the active layer, Alt+L locks/unlocks the
+ * selected item, Alt+H turns on view mode, Ctrl/Cmd+C copies the item's reference, Ctrl/Cmd+G wraps the
+ * selection, Ctrl+Alt+C copies the marking crop and Ctrl+=/−/0 control the zoom.
  */
 export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
   const key = e.key.toLowerCase();
   const mod = e.ctrlKey || e.metaKey;
 
   if (e.altKey) {
-    // Ctrl+Alt+C (a tecla física: com Alt o `key` vira outro caractere). Não usar Ctrl+Shift+C,
-    // que abre as ferramentas de desenvolvedor no Chrome.
+    // Ctrl+Alt+C (the physical key: with Alt the `key` becomes another character). Do not use Ctrl+Shift+C,
+    // which opens the developer tools in Chrome.
     if (mod) {
       return !e.shiftKey && (e.code === 'KeyC' || key === 'c')
         ? { kind: 'copy-crop' }
         : null;
     }
-    // Com Alt (Option no macOS) o `key` vira outro caractere: a tecla física manda.
+    // With Alt (Option on macOS) the `key` becomes another character: the physical key rules.
     if (e.shiftKey && (e.code === 'KeyA' || key === 'a')) return { kind: 'arrange' };
     if (!e.shiftKey && (e.code === 'KeyL' || key === 'l')) return { kind: 'toggle-lock' };
     if (!e.shiftKey && (e.code === 'KeyH' || key === 'h')) return { kind: 'view-mode' };
@@ -215,7 +215,7 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
 
   if (mod && e.shiftKey) {
     if (key === 'z') return { kind: 'redo' };
-    // Ctrl+Shift+= (Ctrl++): aproxima, como Ctrl+=; senão cai no zoom do navegador.
+    // Ctrl+Shift+= (Ctrl++): zooms in, like Ctrl+=; otherwise falls to the browser zoom.
     if (key === '+' || key === '=') return MOD_KEYS['=']!;
     const n = numberOf(e);
     const window = n === null ? null : toolWindowByNumber(n);
@@ -231,7 +231,7 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
   const nudge = nudgeShortcut(key, e.shiftKey);
   if (nudge) return nudge;
   if (e.shiftKey) {
-    // Pela tecla física: com Shift o `key` vira `@` ou `"` conforme o layout.
+    // By physical key: with Shift the `key` becomes `@` or `"` depending on the layout.
     const digit = numberOf(e);
     if (digit === 1) return { kind: 'fit-all' };
     if (digit === 2) return { kind: 'fit-selection' };
@@ -242,7 +242,7 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
   return null;
 }
 
-/** Passo das setas sem Ctrl/Alt: 1 px, ou 10 px com Shift. */
+/** Arrow step without Ctrl/Alt: 1 px, or 10 px with Shift. */
 export const NUDGE_STEP = 1;
 export const NUDGE_STEP_SHIFT = 10;
 
@@ -253,14 +253,14 @@ function nudgeShortcut(key: string, shift: boolean): Shortcut | null {
   return { kind: 'nudge', dx: arrow.dx * step, dy: arrow.dy * step };
 }
 
-/** Controles de dentro do canvas que usam as setas (ou o foco) por conta própria. */
+/** Controls inside the canvas that use the arrows (or focus) on their own. */
 const OWN_ARROWS =
   'button, a[href], input, select, textarea, [contenteditable], [role="menu"], [role="menuitem"], [role="slider"], [role="tab"], [role="listbox"], [role="option"], [role="radio"], [role="tree"], [role="treeitem"], [tabindex]:not([tabindex="-1"])';
 
 /**
- * As setas são do editor (movem a seleção) só com o foco no canvas ou em nenhum controle
- * (`body`). Num campo, na Árvore, num menu, lista, abas ou qualquer controle que use setas, o
- * teclado é dele.
+ * The arrows belong to the editor (they move the selection) only with focus on the canvas or on no control
+ * (`body`). In a field, the Tree, a menu, list, tabs or any control that uses arrows, the
+ * keyboard is theirs.
  */
 export function arrowsBelongToEditor(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return true;
@@ -270,9 +270,9 @@ export function arrowsBelongToEditor(target: EventTarget | null): boolean {
 }
 
 /**
- * Atalhos da revisão de propostas (HANDOFF-PROPOSALS 6): valem só com a revisão aberta e
- * o foco fora de um campo de texto. O projeto está somente leitura, então as letras ficam
- * livres (`R` rejeita).
+ * Proposal review shortcuts (HANDOFF-PROPOSALS 6): they apply only with the review open and
+ * focus outside a text field. The project is read-only, so the letters stay
+ * free (`R` rejects).
  */
 export type ReviewShortcut =
   | { readonly kind: 'decide'; readonly state: 'accepted' | 'rejected' | null }
@@ -286,9 +286,9 @@ export type ReviewShortcut =
   | { readonly kind: 'apply' };
 
 /**
- * A / R aceitam e rejeitam o nível selecionado, Backspace limpa a decisão, N / Shift+N e
- * C / Shift+C andam nas pendentes e nos conflitos, P alterna Atual / Proposto, L mostra a
- * legenda das marcas e Ctrl+Enter aplica as aceitas.
+ * A / R accept and reject the selected level, Backspace clears the decision, N / Shift+N and
+ * C / Shift+C move through the pending ones and the conflicts, P toggles Current / Proposed, L shows the
+ * legend of the marks and Ctrl+Enter applies the accepted ones.
  */
 export function reviewShortcutFor(e: KeyInfo): ReviewShortcut | null {
   const key = e.key.toLowerCase();
@@ -310,19 +310,19 @@ export function reviewShortcutFor(e: KeyInfo): ReviewShortcut | null {
   return null;
 }
 
-/** Alvos em que o teclado pertence ao campo, não ao editor. */
+/** Targets where the keyboard belongs to the field, not the editor. */
 export function isTextInput(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
   return /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
 }
 
-/** Tipos de `<input>` que não recebem texto: caixa, opção, botão, controle deslizante etc. */
+/** `<input>` types that do not receive text: checkbox, radio, button, slider etc. */
 const NON_TEXT_INPUTS = /^(checkbox|radio|button|submit|reset|range|color|file|image)$/;
 
 /**
- * Atalho que vale também com o foco numa caixa ou opção (o Alt+H do modo visualização, com o
- * foco no painel "Mostrar no canvas"): só o campo em que se digita fica de fora.
+ * Shortcut that also applies with focus on a checkbox or radio (the view-mode Alt+H, with
+ * focus on the "Show on canvas" panel): only the field where one types is left out.
  */
 export function isTypingField(target: EventTarget | null): boolean {
   if (!isTextInput(target)) return false;

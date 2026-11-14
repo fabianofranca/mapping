@@ -1,8 +1,8 @@
-// Fase CL1 (#1630, achado 4.3 da rodada da #898): R9.26 (slot cheio). A Column de 260 × 100 com três
-// Buttons sem `rect`: os dois primeiros empilham (88 de 100) e o terceiro, sem lugar abaixo, vai para
-// o lugar livre mais perto de onde o slot o poria (`componentPlacement`, decisão 5 da #1087), na
-// fileira ao lado, dentro da Column e encostado no fundo. É o comportamento da colocação, não do
-// Arrumar: o `layout.wrap` só age ao arrumar (o Arrumar põe a fileira nova no topo).
+// Phase CL1 (#1630, finding 4.3 of the #898 round): R9.26 (full slot). The 260 × 100 Column with three
+// Buttons without `rect`: the first two stack (88 of 100) and the third, with no room below, goes to
+// the free spot closest to where the slot would put it (`componentPlacement`, decision 5 of #1087), in the
+// row beside, inside the Column and against the bottom. It is the placement behavior, not Arrange's:
+// `layout.wrap` only acts when arranging (Arrange puts the new row at the top).
 import { describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
@@ -70,18 +70,18 @@ function build(columnWidth = 260): Project {
   return p;
 }
 
-describe('R9.26: slot cheio', () => {
-  it('o terceiro Button fica dentro da Column, na fileira ao lado e encostado no fundo', () => {
+describe('R9.26: full slot', () => {
+  it('the third Button stays inside the Column, in the row beside and against the bottom', () => {
     const p = build();
     const [b1, b2, b3] = ['B1', 'B2', 'B3'].map((id) => at(p, id)) as [Rect, Rect, Rect];
     expect(
       ['B1', 'B2', 'B3'].map((id) => p.markings.find((m) => m.id === id)!.parentId),
     ).toEqual(['C', 'C', 'C']);
-    // Os dois primeiros empilham com o gap 8; o terceiro não cabe abaixo (88 de 100 usados).
+    // The first two stack with gap 8; the third does not fit below (88 of 100 used).
     expect(b2).toEqual({ ...b1, y: b1.y + b1.height + 8 });
     expect(b3.x).toBe(b1.x + b1.width + 8);
     expect(b3.y).toBe(20 + 100 - b3.height);
-    // Coube no slot (sem `ignored-argument`): a quebra de fileira não é "slot cheio".
+    // It fit the slot (without `ignored-argument`): the row break is not a "full slot".
     const before: Project = {
       ...p,
       markings: p.markings.filter((m) => m.id !== 'B3'),
@@ -89,7 +89,7 @@ describe('R9.26: slot cheio', () => {
     expect(placementFitsSlot(before, catalog, 'C', b3, approximateMeasurer)).toBe(true);
   });
 
-  it('sem lugar livre no slot (Column de 100 de largura), o terceiro não cabe', () => {
+  it('without a free spot in the slot (100-wide Column), the third does not fit', () => {
     const p = build(100);
     const b3 = at(p, 'B3');
     const before: Project = { ...p, markings: p.markings.filter((m) => m.id !== 'B3') };

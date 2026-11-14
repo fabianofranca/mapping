@@ -7,9 +7,9 @@ import { closeLibrary } from './controller';
 import { requestHomeFocus } from './homeFocus';
 import { NarrowWindowNotice, useNarrowWindow } from './NarrowWindow';
 
-// Tela do Catálogo de uma biblioteca aberta pela tela inicial, sem projeto (etapa Biblioteca,
-// B5): barra com o Voltar, o nome e a versão, e o catálogo com lista e página lado a lado.
-// Sem projeto não há onde adicionar nem repositório para os links de código.
+// Catalog screen of a library opened from the home screen, without a project (Library stage,
+// B5): a bar with Back, the name and the version, and the catalog with list and page side by
+// side. Without a project there is nowhere to add to nor a repository for the code links.
 
 interface CatalogScreenProps {
   readonly library: LibraryPreview;

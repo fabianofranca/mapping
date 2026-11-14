@@ -5,12 +5,12 @@ import { ReviewLevels } from '../../../src/ui/review/ReviewLevels';
 import { richScenario } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 
-// Etapa #950, itens 4 e 5 (#961, #962): a árvore da revisão só trata teclas quando o foco está
-// nela (nos botões da linha, Enter decide), e anuncia a linha selecionada por
-// `aria-activedescendant`, com posição e total do nível.
+// Stage #950, items 4 and 5 (#961, #962): the review tree only handles keys when focus is
+// in it (on the row buttons, Enter decides), and announces the selected row through
+// `aria-activedescendant`, with position and total of the level.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
@@ -23,8 +23,8 @@ async function mount() {
   return h;
 }
 
-describe('árvore da revisão: teclado nos botões da linha', () => {
-  it('Enter e setas num botão ✓/✕ não movem a seleção nem o foco', async () => {
+describe('review tree: keyboard on the row buttons', () => {
+  it('Enter and arrows on a ✓/✕ button do not move the selection or focus', async () => {
     const h = await mount();
     const tree = screen.getByRole('tree');
     const rows = screen.getAllByRole('treeitem');
@@ -42,14 +42,14 @@ describe('árvore da revisão: teclado nos botões da linha', () => {
     fireEvent.keyDown(button, { key: 'Home' });
     expect(h.review.selected.value).toEqual(selected);
     const enter = fireEvent.keyDown(button, { key: 'Enter' });
-    expect(enter).toBe(true); // sem preventDefault: o clique nativo acontece
+    expect(enter).toBe(true); // no preventDefault: the native click happens
     expect(document.activeElement).toBe(button);
     expect(tree.contains(button)).toBe(true);
   });
 });
 
-describe('árvore da revisão: aria-activedescendant', () => {
-  it('as linhas têm id, posição e total, e a árvore aponta a selecionada', async () => {
+describe('review tree: aria-activedescendant', () => {
+  it('the rows have id, position and total, and the tree points to the selected one', async () => {
     const h = await mount();
     const tree = screen.getByRole('tree');
     const rows = screen.getAllByRole('treeitem');

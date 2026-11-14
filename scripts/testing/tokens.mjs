@@ -1,19 +1,19 @@
-// tokens.mjs: node scripts/testing/tokens.mjs <pasta da biblioteca> [ok|erro]
+// tokens.mjs: node scripts/testing/tokens.mjs <library folder> [ok|error]
 import fs from 'node:fs';
 const dir = process.argv[2];
-const erro = process.argv[3] === 'erro';
+const failing = process.argv[3] === 'error';
 const specFile = dir + '/material3-compose.spec.json';
 const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
 spec.formatVersion = Math.max(spec.formatVersion, 15);
-// O card.json mínimo mais abaixo não desenha o `interaction`: sem tirar o campo do tipo, o validador avisa.
+// The minimal card.json further below does not draw `interaction`: without removing the field from the type, the validator warns.
 for (const layer of spec.layers)
   for (const type of layer.annotationTypes)
     if (type.id === 'card') {
       type.fields = type.fields.filter((f) => f.key !== 'interaction');
       type.examples = type.examples.filter((e) => e.values?.interaction === undefined);
     }
-// O pacote já traz `tokens` (~170 chaves) e `icons`: os quatro valores abaixo são MESCLADOS nos
-// existentes (trocar `spec.tokens` inteiro apaga os que os outros componentes usam).
+// The package already carries `tokens` (~170 keys) and `icons`: the four values below are MERGED into the
+// existing ones (replacing the whole `spec.tokens` deletes the ones the other components use).
 const base = spec.tokens ?? { modes: ['light', 'dark'], values: {} };
 spec.tokens = {
   modes: base.modes,
@@ -34,7 +34,7 @@ const line = (name, text, color, family) => ({
   font: { size: 14, lineHeight: 20, ...(family ? { family } : {}) },
 });
 const mono = { $token: 'font-mono' };
-const template = erro
+const template = failing
   ? {
       type: 'frame',
       name: 'cartao',
@@ -47,7 +47,7 @@ const template = erro
           name: 'sem-token',
           width: 50,
           height: 20,
-          fill: { $token: 'inexistente' },
+          fill: { $token: 'missing' },
         },
         {
           type: 'rect',
@@ -67,7 +67,7 @@ const template = erro
       cornerRadius: { $token: 'radius-md' },
       layout: { type: 'column', gap: 8, padding: { $token: 'space-4' } },
       children: [
-        { type: 'rect', name: 'régua', width: 100, height: 4, fill: '#FFEB3B' },
+        { type: 'rect', name: 'ruler', width: 100, height: 4, fill: '#FFEB3B' },
         line('i-sans', 'iiiiiiiiii', '#00E5FF'),
         line('w-sans', 'WWWWWWWWWW', '#76FF03'),
         line('i-mono', 'iiiiiiiiii', '#FF4081', mono),

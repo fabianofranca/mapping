@@ -5,8 +5,8 @@ import type { EditorContextValue } from '../EditorContext';
 import { openReviewIn } from '../review/useReviewCommands';
 import { openToolWindow } from '../toolWindowLayout';
 
-// O clique num chip de citação (etapa Comentários, CM5): leva ao alvo reaproveitando o que o
-// resto da app já faz (seleção, ir até a anotação, escolher a conversa, abrir a revisão).
+// Click on a citation chip (Comments stage, CM5): leads to the target reusing what the
+// rest of the app already does (selection, go to the annotation, pick the thread, open the review).
 
 type PartTarget = Extract<CitationTarget, { kind: 'field' | 'entry' | 'row' }>;
 
@@ -17,7 +17,7 @@ function goToLayer(editor: EditorContextValue, id: string): void {
   openToolWindow('layers');
 }
 
-/** Campo e linha focam o campo da anotação; o par só a anotação. */
+/** Field and row focus the annotation's field; the pair only the annotation. */
 function goToPart(
   editor: EditorContextValue,
   project: Project,
@@ -53,15 +53,15 @@ function goToThread(editor: EditorContextValue, project: Project, id: string): v
   const thread = editor.session.threads.list.peek().find((th) => th.id === id);
   if (!thread) return;
   selectThread(editor.ui, project, thread);
-  // Do chip de uma janela que não é a dos Detalhes (ex: "da conversa" em Propostas), a
-  // conversa só aparece se os Detalhes estiverem à vista.
+  // From the chip of a window that is not Details (e.g. "from the thread" in Proposals), the
+  // thread only shows up if Details is in view.
   openToolWindow('details');
 }
 
 /**
- * Vai até o alvo citado: marcação, container e seta são selecionados; anotação, campo, par e
- * linha levam o foco até a anotação (e o campo); a camada é mostrada na janela Camadas; a
- * conversa é escolhida e a proposta abre na revisão. Alvo que não existe mais não faz nada.
+ * Goes to the cited target: marking, container and arrow are selected; annotation, field, pair and
+ * row take focus to the annotation (and the field); the layer is shown in the Layers window; the
+ * thread is picked and the proposal opens in review. A target that no longer exists does nothing.
  */
 export function goToCitation(editor: EditorContextValue, target: CitationTarget): void {
   if (target.kind === 'proposal') {

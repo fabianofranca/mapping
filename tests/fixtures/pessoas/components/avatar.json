@@ -3,7 +3,7 @@
   "formatVersion": 3,
   "id": "avatar",
   "name": "Avatar",
-  "description": "Foto redonda de uma pessoa (imagem remota) com o nome ao lado. Sem a foto carregada, desenha o reservado.",
+  "description": "Round photo of a person (remote image) with the name beside it. Without the photo loaded, it draws the placeholder.",
   "size": {
     "width": 220,
     "height": 56

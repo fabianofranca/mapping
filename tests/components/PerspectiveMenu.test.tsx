@@ -11,11 +11,11 @@ import { sampleProject } from '../model/fixtures';
 import { createHarness, type Harness } from './harness';
 import { libraryHarness } from './libraryHarness';
 
-// Etapa Perspectivas (PE3, C1): o menu do botão direito envia a raiz do item para outra
-// perspectiva, tira da aberta e desabilita o que só vale na Principal.
+// Perspectives stage (PE3, C1): the right-click menu sends the item's root to another
+// perspective, removes it from the open one and disables what only applies on Main.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -23,17 +23,17 @@ function setup(options: { open?: boolean; others?: number } = {}) {
   const harness = createHarness(sampleProject());
   const actions = harness.context.session.perspectiveActions;
   const ids: string[] = [];
-  const names = ['Vista A', 'Vista B'];
+  const names = ['View A', 'View B'];
   for (let i = 0; i < (options.others ?? 1); i++) {
     const created = actions.createPerspective({
       name: names[i] ?? `V${i}`,
       startFrom: 'empty',
       local: false,
     });
-    if (!created.ok) throw new Error(`perspectiva não criada: ${created.error}`);
+    if (!created.ok) throw new Error(`perspective not created: ${created.error}`);
     ids.push(created.value);
   }
-  // "Só eu" sem IndexedDB no teste: marca a segunda no conjunto `localIds` (só a interface o lê).
+  // "Only me" without IndexedDB in the test: mark the second one in the `localIds` set (only the interface reads it).
   if (ids[1] !== undefined) {
     (harness.context.session.perspective.localIds as Signal<ReadonlySet<string>>).value =
       new Set([ids[1]]);
@@ -62,8 +62,8 @@ const itemsOf = (harness: Harness, id: string) =>
 
 const sendItem = () => screen.getByRole('menuitem', { name: t('perspective.menu.send') });
 
-describe('Enviar para perspectiva', () => {
-  it('o item abre um submenu com a Principal e a aberta marcadas e travadas', () => {
+describe('Send to perspective', () => {
+  it('the item opens a submenu with Main and the open one checked and locked', () => {
     const { harness, ids } = setup({ open: true, others: 2 });
     openMenu(harness, 'i', 'I1');
     const send = sendItem();
@@ -74,8 +74,8 @@ describe('Enviar para perspectiva', () => {
     const boxes = within(sub).getAllByRole('menuitemcheckbox');
     expect(boxes.map((b) => b.textContent)).toEqual([
       `${t('perspective.principal')}${t('perspective.menu.always')}`,
-      `Vista A${t('perspective.menu.current')}`,
-      `Vista B${t('perspective.menu.mine')}`,
+      `View A${t('perspective.menu.current')}`,
+      `View B${t('perspective.menu.mine')}`,
     ]);
     expect(boxes[0]?.getAttribute('aria-checked')).toBe('true');
     expect((boxes[0] as HTMLButtonElement).disabled).toBe(true);
@@ -86,7 +86,7 @@ describe('Enviar para perspectiva', () => {
     expect(ids).toHaveLength(2);
   });
 
-  it('passar o ponteiro sobre o item abre o submenu, sem roubar o foco', () => {
+  it('hovering the item opens the submenu, without stealing the focus', () => {
     const { harness } = setup({ others: 1 });
     openMenu(harness, 'i', 'I1');
     expect(screen.queryByRole('menu', { name: t('perspective.menu.send') })).toBeNull();
@@ -98,7 +98,7 @@ describe('Enviar para perspectiva', () => {
     expect(document.activeElement).toBe(send);
   });
 
-  it('clicar no item depois de o ponteiro abri-lo mantém o submenu aberto', () => {
+  it('clicking the item after the pointer opened it keeps the submenu open', () => {
     const { harness } = setup({ others: 1 });
     openMenu(harness, 'i', 'I1');
     const send = sendItem();
@@ -108,8 +108,8 @@ describe('Enviar para perspectiva', () => {
     expect(send.getAttribute('aria-expanded')).toBe('true');
   });
 
-  // Fase 1 da #954 (item 31): o hover que abre também fecha, e o ← não deixa a marca para trás.
-  it('na Principal, sair do item com o ponteiro fecha o submenu aberto por hover', () => {
+  // Phase 1 of #954 (item 31): the hover that opens also closes, and ← does not leave the mark behind.
+  it('on Main, leaving the item with the pointer closes the submenu opened by hover', () => {
     const { harness } = setup({ others: 1 });
     openMenu(harness, 'i', 'I1');
     const host = sendItem().parentElement as HTMLElement;
@@ -119,7 +119,7 @@ describe('Enviar para perspectiva', () => {
     expect(screen.queryByRole('menu', { name: t('perspective.menu.send') })).toBeNull();
   });
 
-  it('fechar com ← depois do hover não engole o clique seguinte', () => {
+  it('closing with ← after the hover does not swallow the next click', () => {
     const { harness } = setup({ others: 1 });
     openMenu(harness, 'i', 'I1');
     const send = sendItem();
@@ -133,7 +133,7 @@ describe('Enviar para perspectiva', () => {
     expect(screen.getByRole('menu', { name: t('perspective.menu.send') })).toBeTruthy();
   });
 
-  it('perto da borda direita, o submenu abre à esquerda do item', () => {
+  it('near the right edge, the submenu opens to the left of the item', () => {
     const { harness } = setup({ others: 1 });
     openMenu(harness, 'i', 'I1');
     const spy = vi
@@ -159,7 +159,7 @@ describe('Enviar para perspectiva', () => {
     }
   });
 
-  it('na Principal, com uma outra perspectiva, a caixa dela começa desmarcada', () => {
+  it('on Main, with another perspective, its box starts unchecked', () => {
     const { harness } = setup({ others: 1 });
     openMenu(harness, 'i', 'I1');
     fireEvent.click(sendItem());
@@ -169,39 +169,39 @@ describe('Enviar para perspectiva', () => {
     expect(boxes[1]?.getAttribute('aria-checked')).toBe('false');
   });
 
-  it('marcar envia a raiz e desmarcar tira', () => {
+  it('checking sends the root and unchecking removes it', () => {
     const { harness, ids } = setup({ others: 1 });
     const [target] = ids as [string];
     openMenu(harness, 'i', 'I1');
     fireEvent.click(sendItem());
     let box = within(
       screen.getByRole('menu', { name: t('perspective.menu.send') }),
-    ).getByRole('menuitemcheckbox', { name: /Vista A/ });
+    ).getByRole('menuitemcheckbox', { name: /View A/ });
     fireEvent.click(box);
     expect(itemsOf(harness, target)).toContain('I1');
-    // O submenu segue aberto, agora com a caixa marcada: desmarcar tira.
+    // The submenu stays open, now with the box checked: unchecking removes it.
     box = within(
       screen.getByRole('menu', { name: t('perspective.menu.send') }),
-    ).getByRole('menuitemcheckbox', { name: /Vista A/ });
+    ).getByRole('menuitemcheckbox', { name: /View A/ });
     expect(box.getAttribute('aria-checked')).toBe('true');
     fireEvent.click(box);
     expect(itemsOf(harness, target)).not.toContain('I1');
   });
 
-  it('o alvo é a raiz do item: uma marcação dentro do container envia o container', () => {
+  it("the target is the item's root: a marking inside the container sends the container", () => {
     const { harness, ids } = setup({ others: 1 });
     openMenu(harness, 'm', 'M3');
     fireEvent.click(sendItem());
     fireEvent.click(
       within(screen.getByRole('menu', { name: t('perspective.menu.send') })).getByRole(
         'menuitemcheckbox',
-        { name: /Vista A/ },
+        { name: /View A/ },
       ),
     );
     expect(itemsOf(harness, ids[0] as string)).toEqual(['I1']);
   });
 
-  it('com várias raízes selecionadas, envia todas', () => {
+  it('with several roots selected, sends all of them', () => {
     const { harness, ids } = setup({ others: 1 });
     act(() => {
       selectItems(harness.ui, [
@@ -214,19 +214,19 @@ describe('Enviar para perspectiva', () => {
     fireEvent.click(
       within(screen.getByRole('menu', { name: t('perspective.menu.send') })).getByRole(
         'menuitemcheckbox',
-        { name: /Vista A/ },
+        { name: /View A/ },
       ),
     );
     expect(itemsOf(harness, ids[0] as string).sort()).toEqual(['I1', 'I2']);
   });
 
-  it('somente leitura, Enviar e Tirar ficam desabilitados', () => {
+  it('read-only, Send and Remove are disabled', () => {
     const base = sampleProject();
     const project = addPerspective(
       base,
       buildPerspective(base, {
         id: 'V',
-        name: 'Vista A',
+        name: 'View A',
         startFrom: 'empty',
         hiddenLayers: [],
       }),
@@ -245,8 +245,8 @@ describe('Enviar para perspectiva', () => {
   });
 });
 
-describe('Tirar desta perspectiva', () => {
-  it('tira só da aberta e o projeto fica como está', () => {
+describe('Remove from this perspective', () => {
+  it('removes only from the open one and the project stays as it is', () => {
     const { harness, ids } = setup({ open: true, others: 1 });
     const [open] = ids as [string];
     const actions = harness.context.session.perspectiveActions;
@@ -257,7 +257,7 @@ describe('Tirar desta perspectiva', () => {
     expect(harness.project().containers.map((c) => c.id)).toContain('I1');
   });
 
-  it('na Principal não há de onde tirar: o item não aparece', () => {
+  it('on Main there is nothing to remove from: the item does not appear', () => {
     const { harness } = setup({ others: 1 });
     openMenu(harness, 'i', 'I1');
     expect(
@@ -266,7 +266,7 @@ describe('Tirar desta perspectiva', () => {
   });
 });
 
-describe('Só na Principal', () => {
+describe('Main only', () => {
   const arrange = () => screen.getByRole('menuitem', { name: t('arrange.action') });
 
   async function arrangeScene(open: boolean) {
@@ -286,7 +286,7 @@ describe('Só na Principal', () => {
     if (open) {
       const actions = harness.context.session.perspectiveActions;
       const created = actions.createPerspective({
-        name: 'Vista A',
+        name: 'View A',
         startFrom: 'empty',
         local: false,
       });
@@ -302,7 +302,7 @@ describe('Só na Principal', () => {
     openMenu(harness, 'm', column);
   }
 
-  it('fora da Principal, Arrumar fica desabilitado com a dica', async () => {
+  it('outside Main, Arrange is disabled with the hint', async () => {
     await arrangeScene(true);
     const item = arrange() as HTMLButtonElement;
     expect(item.disabled).toBe(true);
@@ -310,25 +310,25 @@ describe('Só na Principal', () => {
     expect(screen.getAllByText(t('perspective.principalOnly')).length).toBeGreaterThan(0);
   });
 
-  it('na Principal, Arrumar segue habilitado', async () => {
+  it('on Main, Arrange stays enabled', async () => {
     await arrangeScene(false);
     expect((arrange() as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('Excluir de uma raiz aparece desabilitado fora da Principal', () => {
+  it('Delete of a root appears disabled outside Main', () => {
     const { harness } = setup({ open: true, others: 1 });
     openMenu(harness, 'i', 'I1');
     const del = screen.getByRole('menuitem', { name: t('common.delete') });
     expect((del as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('Excluir não aparece na Principal', () => {
+  it('Delete does not appear on Main', () => {
     const { harness } = setup({ others: 1 });
     openMenu(harness, 'i', 'I1');
     expect(screen.queryByRole('menuitem', { name: t('common.delete') })).toBeNull();
   });
 
-  it('Comentar aqui num ponto do canvas fica desabilitado fora da Principal', () => {
+  it('Comment here on a canvas point is disabled outside Main', () => {
     const { harness } = setup({ open: true, others: 1 });
     act(() => {
       harness.ui.canvasMenu.value = {
@@ -342,7 +342,7 @@ describe('Só na Principal', () => {
     expect((item as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('Comentar aqui num ponto de container segue habilitado fora da Principal', () => {
+  it('Comment here on a container point stays enabled outside Main', () => {
     const { harness } = setup({ open: true, others: 1 });
     act(() => {
       harness.ui.canvasMenu.value = {
@@ -356,7 +356,7 @@ describe('Só na Principal', () => {
     expect((item as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('Comentar aqui num ponto do canvas segue habilitado na Principal', () => {
+  it('Comment here on a canvas point stays enabled on Main', () => {
     const { harness } = setup({ others: 1 });
     act(() => {
       harness.ui.canvasMenu.value = {
@@ -371,15 +371,15 @@ describe('Só na Principal', () => {
   });
 });
 
-describe('Teclado', () => {
-  it('→ abre o submenu, ← fecha e volta ao item, ↓ e ↑ movem', () => {
+describe('Keyboard', () => {
+  it('→ opens the submenu, ← closes and returns to the item, ↓ and ↑ move', () => {
     const { harness } = setup({ open: true, others: 2 });
     openMenu(harness, 'i', 'I1');
     const send = sendItem();
     send.focus();
     fireEvent.keyDown(send, { key: 'ArrowRight' });
     const sub = screen.getByRole('menu', { name: t('perspective.menu.send') });
-    // O foco vai à primeira caixa habilitada.
+    // The focus goes to the first enabled box.
     const enabled = within(sub)
       .getAllByRole('menuitemcheckbox')
       .filter((b) => !(b as HTMLButtonElement).disabled);
@@ -391,7 +391,7 @@ describe('Teclado', () => {
     expect(document.activeElement).toBe(sendItem());
   });
 
-  it('↓ e ↑ percorrem os itens do menu', () => {
+  it('↓ and ↑ walk through the menu items', () => {
     const { harness } = setup({ open: true, others: 1 });
     openMenu(harness, 'i', 'I1');
     const send = sendItem();
@@ -403,7 +403,7 @@ describe('Teclado', () => {
     expect(document.activeElement).toBe(send);
   });
 
-  it('Esc fecha o menu', () => {
+  it('Esc closes the menu', () => {
     const { harness } = setup({ open: true, others: 1 });
     openMenu(harness, 'i', 'I1');
     fireEvent.click(sendItem());

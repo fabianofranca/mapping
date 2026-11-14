@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isImageFile, nameForPasted, splitImageFiles } from '../../src/app/imageIntake';
 
 describe('imageIntake', () => {
-  it('separa imagens de outros arquivos', () => {
+  it('separates images from other files', () => {
     const files = [
       new File([''], 'a.png', { type: 'image/png' }),
       new File([''], 'b.pdf', { type: 'application/pdf' }),
@@ -12,11 +12,11 @@ describe('imageIntake', () => {
     expect(images.map((f) => f.name)).toEqual(['a.png', 'c.JPG']);
     expect(ignored).toEqual(['b.pdf']);
   });
-  it('sem tipo, decide pela extensão', () => {
+  it('without a type, decides by the extension', () => {
     expect(isImageFile({ name: 'x.webp', type: '' })).toBe(true);
     expect(isImageFile({ name: 'x.txt', type: '' })).toBe(false);
   });
-  it('nomeia a imagem colada', () => {
+  it('names the pasted image', () => {
     const file = nameForPasted(
       new Blob(['x'], { type: 'image/png' }),
       new Date(2026, 8, 30, 12, 29, 15),

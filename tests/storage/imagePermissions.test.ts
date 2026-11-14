@@ -14,8 +14,8 @@ import { join } from 'node:path';
 beforeEach(() => localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
-describe('consentimento de imagens remotas: armazenamento', () => {
-  it('padrão: nenhuma origem e todos os interruptores desligados', () => {
+describe('remote image consent: storage', () => {
+  it('default: no origin and all switches off', () => {
     expect(loadAllowedOrigins()).toEqual([]);
     expect(loadImageSwitches()).toEqual({
       allowAnyOrigin: false,
@@ -25,19 +25,19 @@ describe('consentimento de imagens remotas: armazenamento', () => {
     });
   });
 
-  it('grava e lê as origens; http e https da mesma máquina são distintos', () => {
+  it('writes and reads the origins; http and https of the same host are distinct', () => {
     saveAllowedOrigins(['https://a.com', 'http://a.com', 'https://a.com']);
     expect(loadAllowedOrigins()).toEqual(['https://a.com', 'http://a.com']);
   });
 
-  it('grava os interruptores', () => {
+  it('writes the switches', () => {
     saveImageSwitch('allowHttp', true);
     saveImageSwitch('allowNoCors', true);
     saveImageSwitch('allowNoCors', false);
     expect(loadImageSwitches()).toMatchObject({ allowHttp: true, allowNoCors: false });
   });
 
-  it('valores corrompidos viram o padrão', () => {
+  it('corrupted values become the default', () => {
     localStorage.setItem(channelStorageKey(IMAGE_ORIGINS_KEY), '{nao-e-json');
     localStorage.setItem(channelStorageKey(IMAGE_ALLOW_ANY_KEY), 'talvez');
     expect(loadAllowedOrigins()).toEqual([]);
@@ -51,7 +51,7 @@ describe('consentimento de imagens remotas: armazenamento', () => {
     expect(loadAllowedOrigins()).toEqual(['https://a.com']);
   });
 
-  it('armazenamento indisponível (lança): lê o padrão e gravar não quebra', () => {
+  it('unavailable storage (throws): reads the default and writing does not break', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('bloqueado');
     });
@@ -65,8 +65,8 @@ describe('consentimento de imagens remotas: armazenamento', () => {
   });
 });
 
-describe('o consentimento não viaja com o projeto', () => {
-  it('nenhum módulo que grava projeto, zip, especialização ou proposta o referencia', () => {
+describe('the consent does not travel with the project', () => {
+  it('no module that writes a project, zip, specialization or proposal references it', () => {
     const roots = ['src/storage', 'src/model', 'src/store', 'mcp'];
     const offenders: string[] = [];
     const walk = (dir: string) => {
@@ -93,10 +93,10 @@ describe('o consentimento não viaja com o projeto', () => {
     ).toEqual([]);
   });
 
-  it('a chave é só a origem: nada de id de especialização, então um id reaproveitado não herda', () => {
-    saveAllowedOrigins(['https://cdn.exemplo.com']);
+  it('the key is only the origin: no specialization id, so a reused id does not inherit it', () => {
+    saveAllowedOrigins(['https://cdn.example.com']);
     const raw = localStorage.getItem(channelStorageKey(IMAGE_ORIGINS_KEY));
-    expect(JSON.parse(raw ?? 'null')).toEqual(['https://cdn.exemplo.com']);
+    expect(JSON.parse(raw ?? 'null')).toEqual(['https://cdn.example.com']);
     expect(Object.keys(localStorage).every((k) => !k.includes('spec'))).toBe(true);
   });
 });

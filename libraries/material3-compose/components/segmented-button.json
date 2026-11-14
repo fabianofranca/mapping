@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "segmented-button",
   "name": "Segmented button",
-  "description": "Linha de segmentos de 40 com contorno e forma full, um por linha de Opções; o selecionado leva secondary container e um check antes do rótulo.",
+  "description": "Row of 40 segments with outline and full shape, one per row of Options; the selected one takes secondary container and a check before the label.",
   "size": {
     "width": 328,
     "height": 40
@@ -19,7 +19,7 @@
   "preview": {
     "options": [
       {
-        "label": "Dia",
+        "label": "Day",
         "icon": "",
         "selected": "false"
       },
@@ -29,7 +29,7 @@
         "selected": "true"
       },
       {
-        "label": "Mês",
+        "label": "Month",
         "icon": "",
         "selected": "false"
       }
@@ -49,7 +49,7 @@
     "children": [
       {
         "type": "repeat",
-        "name": "segmentos",
+        "name": "segments",
         "field": "options",
         "anchors": {
           "left": -1,
@@ -59,7 +59,7 @@
         "height": "fill",
         "template": {
           "type": "frame",
-          "name": "segmento",
+          "name": "segment",
           "width": "fill",
           "height": 40,
           "minWidth": 58,
@@ -78,7 +78,7 @@
           "children": [
             {
               "type": "rect",
-              "name": "estado",
+              "name": "state",
               "anchors": {
                 "left": 0,
                 "right": 0,
@@ -123,7 +123,7 @@
             },
             {
               "type": "frame",
-              "name": "conteúdo",
+              "name": "content",
               "width": "fill",
               "height": "fill",
               "layout": {
@@ -357,7 +357,7 @@
                 },
                 {
                   "type": "text",
-                  "name": "rótulo",
+                  "name": "label",
                   "text": {
                     "$field": "label"
                   },
@@ -416,7 +416,7 @@
             },
             {
               "type": "rect",
-              "name": "divisor",
+              "name": "divider",
               "width": 1,
               "height": "fill",
               "anchors": {
@@ -447,7 +447,7 @@
       },
       {
         "type": "frame",
-        "name": "contorno",
+        "name": "outline",
         "width": "fill",
         "height": "fill",
         "cornerRadius": {

@@ -7,7 +7,7 @@ import { emptyProject } from '../model/fixtures';
 import { reportedErrors } from '../../src/utils/report';
 import { MemoryDirectory } from './memoryFs';
 
-/** Tamanho fake: o conteúdo do arquivo é "LxA"; "ruim" não decodifica. */
+/** Fake size: the file content is "WxH"; "bad" does not decode. */
 async function readSize(data: Blob) {
   const text = await data.text();
   const match = /^(\d+)x(\d+)$/.exec(text);
@@ -21,8 +21,8 @@ function ids() {
 }
 
 describe('importExistingImages', () => {
-  it('mantém as de images/, move as da raiz e posiciona sem sobrepor', async () => {
-    const root = new MemoryDirectory('carro');
+  it('keeps the ones in images/, moves the ones in the root and positions without overlapping', async () => {
+    const root = new MemoryDirectory('car');
     root.put('images/frente.jpg', '400x300');
     root.put('lateral.jpg', '800x600');
     const storage = createFolderStorage(root);
@@ -45,11 +45,11 @@ describe('importExistingImages', () => {
     expect(await root.read('images/lateral.jpg')).toBe('800x600');
   });
 
-  it('renomeia na colisão e não sobrescreve imagem ilegível de images/', async () => {
-    const root = new MemoryDirectory('carro');
-    root.put('images/foto.jpg', '100x100');
-    root.put('images/foto-2.jpg', 'ruim');
-    root.put('foto.jpg', '200x100');
+  it('renames on collision and does not overwrite an unreadable image in images/', async () => {
+    const root = new MemoryDirectory('car');
+    root.put('images/photo.jpg', '100x100');
+    root.put('images/photo-2.jpg', 'bad');
+    root.put('photo.jpg', '200x100');
     const storage = createFolderStorage(root);
 
     const { project, skipped } = await importExistingImages(
@@ -59,19 +59,19 @@ describe('importExistingImages', () => {
       { readSize, newId: ids() },
     );
 
-    expect(skipped).toEqual(['images/foto-2.jpg']);
+    expect(skipped).toEqual(['images/photo-2.jpg']);
     expect(project.containers.map((i) => i.file)).toEqual([
-      'images/foto.jpg',
-      'images/foto-3.jpg',
+      'images/photo.jpg',
+      'images/photo-3.jpg',
     ]);
-    expect(await root.read('images/foto-2.jpg')).toBe('ruim');
-    expect(await root.read('images/foto-3.jpg')).toBe('200x100');
+    expect(await root.read('images/photo-2.jpg')).toBe('bad');
+    expect(await root.read('images/photo-3.jpg')).toBe('200x100');
   });
 
-  it('a colisão ignora a caixa: foto.jpg da raiz não cai em cima de images/Foto.jpg', async () => {
-    const root = new MemoryDirectory('carro');
-    root.put('images/Foto.jpg', '100x100');
-    root.put('foto.jpg', '200x100');
+  it('the collision ignores case: a root photo.jpg does not land on top of images/Photo.jpg', async () => {
+    const root = new MemoryDirectory('car');
+    root.put('images/Photo.jpg', '100x100');
+    root.put('photo.jpg', '200x100');
     const storage = createFolderStorage(root);
 
     const { project, skipped } = await importExistingImages(
@@ -83,22 +83,22 @@ describe('importExistingImages', () => {
 
     expect(skipped).toEqual([]);
     expect(project.containers.map((i) => i.file)).toEqual([
-      'images/Foto.jpg',
-      'images/foto-2.jpg',
+      'images/Photo.jpg',
+      'images/photo-2.jpg',
     ]);
-    expect(await root.read('images/Foto.jpg')).toBe('100x100');
-    expect(await root.read('images/foto-2.jpg')).toBe('200x100');
+    expect(await root.read('images/Photo.jpg')).toBe('100x100');
+    expect(await root.read('images/photo-2.jpg')).toBe('200x100');
   });
 
-  it('removeImage falha depois de writeImage: o container entra com a cópia, a falha vai ao Diagnóstico e não é "skipped"', async () => {
-    const root = new MemoryDirectory('carro');
-    root.put('foto.jpg', '200x100');
-    root.put('foto-2.jpg', '10x10');
+  it('removeImage fails after writeImage: the container comes in with the copy, the failure goes to Diagnostics and is not "skipped"', async () => {
+    const root = new MemoryDirectory('car');
+    root.put('photo.jpg', '200x100');
+    root.put('photo-2.jpg', '10x10');
     const storage = createFolderStorage(root);
     const failing = {
       ...storage,
       removeImage: async (path: string) => {
-        if (path === 'foto.jpg') throw new Error('sem permissão');
+        if (path === 'photo.jpg') throw new Error('no permission');
         return storage.removeImage(path);
       },
     };
@@ -113,11 +113,11 @@ describe('importExistingImages', () => {
 
     expect(skipped).toEqual([]);
     expect(project.containers.map((i) => i.file).sort()).toEqual([
-      'images/foto-2.jpg',
-      'images/foto.jpg',
+      'images/photo-2.jpg',
+      'images/photo.jpg',
     ]);
-    expect(await root.read('images/foto.jpg')).toBe('200x100');
-    expect(await root.read('foto.jpg')).toBe('200x100');
+    expect(await root.read('images/photo.jpg')).toBe('200x100');
+    expect(await root.read('photo.jpg')).toBe('200x100');
     expect(reportedErrors.value.slice(before).map((e) => e.context)).toContain(
       'folder.importExisting.remove',
     );

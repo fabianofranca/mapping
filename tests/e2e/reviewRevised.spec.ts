@@ -17,9 +17,9 @@ import {
   fixtureProposal,
 } from './proposalFixture';
 
-// CP3 (#644): a revisão do agente na app. A "fixture 5" é escrita aqui: a proposta de
-// exemplo, com o renomear do cabeçalho rejeitado, uma nota na remoção do banner, e então
-// revisada como o MCP a gravaria (o nome do cabeçalho é trocado e a remoção é retirada).
+// CP3 (#644): the agent's revision in the app. "Fixture 5" is written here: the sample
+// proposal, with the header rename rejected, a note on the banner removal, and then
+// revised as the MCP would write it (the header name is swapped and the removal is withdrawn).
 
 const REVISED_AT = '2026-11-07T10:00:00.000Z';
 
@@ -30,7 +30,7 @@ function revisedProposal(): Proposal {
   const removal = base.changes.find(
     (c) => c.entity === 'marking' && c.entityId === 'M5' && c.kind === 'remove',
   );
-  if (!rename || !removal) throw new Error('mudanças esperadas ausentes');
+  if (!rename || !removal) throw new Error('expected changes missing');
   let p: Proposal = {
     ...base,
     decisions: { [rename.id]: { state: 'rejected', at: REVISED_AT } },
@@ -38,13 +38,13 @@ function revisedProposal(): Proposal {
   p = addNote(
     p,
     { level: 'change', id: removal.id },
-    'O banner fica.',
+    'The banner stays.',
     REVISED_AT,
     'N-banner',
   );
   const prep = prepareRevision(project, p, [removal.id]);
   if (!prep.ok) throw new Error(prep.error.code);
-  const after = renameMarking(prep.proposed, 'M1', 'Topo do checkout');
+  const after = renameMarking(prep.proposed, 'M1', 'Checkout top');
   const result = reviseProposal(project, p, {
     drop: [removal.id],
     at: REVISED_AT,
@@ -59,7 +59,7 @@ async function revisedZip(): Promise<Buffer> {
   expect(proposal.formatVersion).toBe(5);
   const files = fixtureFiles();
   files.set(proposalFilePath(proposal.id), serializeProposal(proposal));
-  for (const file of ['images/confirmacao.png', 'images/carrinho-v2.png'] as const) {
+  for (const file of ['images/confirmation.png', 'images/cart-v2.png'] as const) {
     files.set(proposalImagePath(proposal.id, file), FIXTURE_IMAGES[file]);
   }
   const zip = new JSZip();
@@ -79,58 +79,58 @@ async function openRevised(page: Page): Promise<void> {
       mimeType: 'application/zip',
       buffer: await revisedZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+7');
 }
 
-test('revisão do agente na app: selo, filtro, antes da revisão e nota da mudança retirada', async ({
+test('agent revision in the app: badge, filter, before the revision and note of the withdrawn change', async ({
   page,
 }) => {
   await openRevised(page);
 
-  // A janela Propostas avisa quantas mudanças conferir.
-  await expect(page.getByText(/Revisada · \d+ para conferir/).first()).toBeVisible();
+  // The Proposals window says how many changes to check.
+  await expect(page.getByText(/Revised · \d+ to check/).first()).toBeVisible();
   await page
-    .getByRole('button', { name: /^(Revisar|Continuar)/ })
+    .getByRole('button', { name: /^(Review|Continue)/ })
     .first()
     .click();
   await expect(page.locator('.review-levels')).toBeVisible();
 
-  // O selo na linha da mudança trocada.
-  const renamed = page.getByRole('treeitem', { name: 'Nome, Revisada', exact: true });
+  // The badge on the row of the swapped change.
+  const renamed = page.getByRole('treeitem', { name: 'Name, Revised', exact: true });
   await expect(renamed).toBeVisible();
-  await expect(renamed).toContainText('Topo do checkout');
-  await expect(renamed.locator('.flag', { hasText: /^Revisada/ })).toBeVisible();
+  await expect(renamed).toContainText('Checkout top');
+  await expect(renamed.locator('.flag', { hasText: /^Revised/ })).toBeVisible();
 
-  // A nota da mudança retirada subiu para as notas da proposta (a linha raiz da árvore).
+  // The note of the withdrawn change moved up to the proposal notes (the tree root row).
   await page
-    .getByRole('treeitem', { name: /^Checkout a partir do Figma/ })
+    .getByRole('treeitem', { name: /^Checkout from Figma/ })
     .first()
     .click();
   await expect(
-    page.getByText(/Da mudança retirada: .*Banner promoção/).first(),
+    page.getByText(/From the withdrawn change: .*Promo banner/).first(),
   ).toBeVisible();
   await expect(
-    page.getByRole('textbox', { name: 'Nota para o agente' }).first(),
-  ).toHaveValue('O banner fica.');
+    page.getByRole('textbox', { name: 'Note for the agent' }).first(),
+  ).toHaveValue('The banner stays.');
 
-  // Filtros › Só revisadas (N): só as revisadas ficam.
+  // Filters › Revised only (N): only the revised ones stay.
   const total = await page.locator('.review-row').count();
-  await page.getByRole('button', { name: /^Filtros/ }).click();
-  const only = page.getByRole('checkbox', { name: /^Só revisadas \(\d+\)$/ });
+  await page.getByRole('button', { name: /^Filters/ }).click();
+  const only = page.getByRole('checkbox', { name: /^Revised only \(\d+\)$/ });
   await only.check();
   await page.keyboard.press('Escape');
   const rows = page.locator('.review-row');
   await expect(renamed).toBeVisible();
-  await expect(rows.filter({ hasText: 'Botão Pagar' })).toHaveCount(0);
+  await expect(rows.filter({ hasText: 'Pay button' })).toHaveCount(0);
   expect(await rows.count()).toBeLessThan(total);
 
-  // O bloco "Antes da revisão" nos detalhes da mudança trocada.
+  // The "Before the revision" block in the details of the swapped change.
   await renamed.click();
   const before = page.locator('.revised-before').first();
   await expect(before).toBeVisible();
-  await expect(before).toContainText('Antes da revisão');
-  await expect(before).toContainText('O agente tinha proposto');
-  await expect(before).toContainText('Cabeçalho do checkout');
-  await expect(before).toContainText('Você tinha rejeitado');
+  await expect(before).toContainText('Before the revision');
+  await expect(before).toContainText('The agent had proposed');
+  await expect(before).toContainText('Checkout header');
+  await expect(before).toContainText('You had rejected');
 });

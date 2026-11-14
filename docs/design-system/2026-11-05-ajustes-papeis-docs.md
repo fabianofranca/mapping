@@ -1,13 +1,13 @@
-# Ajustes de papéis e documentos externos — 2026-11-05 (épico `epic/ajustes-papeis-docs`)
+# Role and external document adjustments — 2026-11-05 (épico `epic/ajustes-papeis-docs`)
 
 ## Pendências
 
-AJ1: nenhuma. Só textos (singular de "Buscar entre N tipos", gênero do título da revisão do repositório), uma contagem e uma mensagem de erro do MCP, e o link absoluto do `Markdown` (um `<a>` com os estilos de link que já existem). Nenhum token, ícone, tamanho nem anatomia de componente muda. O "Buscar entre N tipos" aparece em prévias do DS (`TypePicker`, `LayerGroup`): se alguém regravar a prévia, o texto com 1 tipo é "Buscar entre 1 tipo".
+AJ1: none. Only texts (singular of "Search among N types", gender of the repository review title), a count and an MCP error message, and the absolute link of `Markdown` (an `<a>` with the link styles that already exist). No token, icon, size or component anatomy changes. The "Search among N types" appears in DS previews (`TypePicker`, `LayerGroup`): if someone rewrites the preview, the text with 1 type is "Search among 1 type".
 
 ## Sincronização
 
-Sem impacto: nada foi gravado no artefato **Mapping**. A mudança é só de texto, de contagem do MCP e de um link absoluto no `Markdown` (que usa o estilo de link que já existe); nenhum token, ícone, tamanho nem anatomia mudou.
+Sem impacto: nothing was written to the **Mapping** artifact. The change is only in text, in the MCP count and in an absolute link in `Markdown` (which uses the link style that already exists); no token, icon, size or anatomy changed.
 
 ## Ficou sem gravar
 
-Nada. Fica só uma nota: se alguém regravar as prévias de `TypePicker` e `LayerGroup`, o texto com um tipo é "Buscar entre 1 tipo".
+Nothing. Only a note remains: if someone rewrites the `TypePicker` and `LayerGroup` previews, the text with one type is "Search among 1 type".

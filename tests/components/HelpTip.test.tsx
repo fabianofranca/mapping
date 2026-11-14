@@ -8,40 +8,40 @@ import { TextField } from '../../src/ui/controls';
 import { descriptionOf } from './describedBy';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
-// Decisão 4 da etapa #353: explicação = ícone com dica, acessível pelo teclado e pelo leitor de tela.
+// Decision 4 of stage #353: explanation = icon with a tip, reachable by keyboard and by screen reader.
 
 describe('HelpTip', () => {
-  it('é um botão "Sobre {name}" focável pelo Tab', async () => {
+  it('is an "About {name}" button focusable with Tab', async () => {
     const user = userEvent.setup();
-    render(<HelpTip name="Largura" text="Em pixels da imagem." />);
+    render(<HelpTip name="Width" text="In image pixels." />);
     await user.tab();
-    const button = screen.getByRole('button', { name: 'Sobre Largura' });
+    const button = screen.getByRole('button', { name: 'About Width' });
     expect(document.activeElement).toBe(button);
     expect(button.querySelector('svg')).not.toBeNull();
   });
 
-  it('a descrição acessível do botão é o texto da explicação', () => {
-    render(<HelpTip name="Largura" text="Em pixels da imagem." />);
-    expect(descriptionOf(screen.getByRole('button', { name: 'Sobre Largura' }))).toBe(
-      'Em pixels da imagem.',
+  it('the accessible description of the button is the explanation text', () => {
+    render(<HelpTip name="Width" text="In image pixels." />);
+    expect(descriptionOf(screen.getByRole('button', { name: 'About Width' }))).toBe(
+      'In image pixels.',
     );
   });
 
-  it('a dica existe no DOM para o hover e o foco, aria-hidden', () => {
-    const { container } = render(<HelpTip name="Largura" text="Em pixels da imagem." />);
+  it('the tip exists in the DOM for hover and focus, aria-hidden', () => {
+    const { container } = render(<HelpTip name="Width" text="In image pixels." />);
     const tip = container.querySelector('[data-tooltip]');
-    expect(tip?.textContent).toBe('Em pixels da imagem.');
+    expect(tip?.textContent).toBe('In image pixels.');
     expect(tip?.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('Enter fixa a dica (aria-expanded) e Esc fecha', async () => {
+  it('Enter pins the tip (aria-expanded) and Esc closes it', async () => {
     const user = userEvent.setup();
-    render(<HelpTip name="Largura" text="Em pixels da imagem." />);
-    const button = screen.getByRole('button', { name: 'Sobre Largura' });
+    render(<HelpTip name="Width" text="In image pixels." />);
+    const button = screen.getByRole('button', { name: 'About Width' });
     expect(button.getAttribute('aria-expanded')).toBe('false');
     await user.tab();
     await user.keyboard('{Enter}');
@@ -50,10 +50,10 @@ describe('HelpTip', () => {
     expect(button.getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('reabre por Enter e por clique depois de um Esc', async () => {
+  it('reopens with Enter and with a click after an Esc', async () => {
     const user = userEvent.setup();
-    const { container } = render(<HelpTip name="Largura" text="Em pixels da imagem." />);
-    const button = screen.getByRole('button', { name: 'Sobre Largura' });
+    const { container } = render(<HelpTip name="Width" text="In image pixels." />);
+    const button = screen.getByRole('button', { name: 'About Width' });
     const anchor = container.querySelector('.tooltip-anchor') as HTMLElement;
     await user.tab();
     await user.keyboard('{Enter}');
@@ -69,56 +69,56 @@ describe('HelpTip', () => {
     expect(anchor.classList.contains('tooltip-dismissed')).toBe(false);
   });
 
-  it('o clique fixa a dica e um clique fora fecha', async () => {
+  it('a click pins the tip and a click outside closes it', async () => {
     const user = userEvent.setup();
     render(
       <div>
-        <HelpTip name="Largura" text="Em pixels da imagem." />
-        <p>fora</p>
+        <HelpTip name="Width" text="In image pixels." />
+        <p>outside</p>
       </div>,
     );
-    const button = screen.getByRole('button', { name: 'Sobre Largura' });
+    const button = screen.getByRole('button', { name: 'About Width' });
     await user.click(button);
     expect(button.getAttribute('aria-expanded')).toBe('true');
-    await user.click(screen.getByText('fora'));
+    await user.click(screen.getByText('outside'));
     expect(button.getAttribute('aria-expanded')).toBe('false');
   });
 });
 
-describe('Property com hint', () => {
-  it('mostra o HelpTip ao lado do rótulo, sem .props-note e sem title', () => {
+describe('Property with hint', () => {
+  it('shows the HelpTip next to the label, without .props-note and without title', () => {
     const { container } = render(
       <PropertyGrid>
-        <Property label="Altura" for="h" hint="Em pixels.">
+        <Property label="Height" for="h" hint="In pixels.">
           <TextField id="h" value="" onInput={() => undefined} />
         </Property>
       </PropertyGrid>,
     );
     expect(container.querySelector('.props-note')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Sobre Altura' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'About Height' })).toBeTruthy();
     expect(container.querySelector('.props-label')?.getAttribute('title')).toBeNull();
   });
 
-  it('o controle ligado por for tem a descrição acessível igual ao hint', () => {
+  it('the control linked by for has an accessible description equal to the hint', () => {
     render(
       <PropertyGrid>
-        <Property label="Altura" for="h" hint="Em pixels.">
+        <Property label="Height" for="h" hint="In pixels.">
           <TextField id="h" value="" onInput={() => undefined} />
         </Property>
       </PropertyGrid>,
     );
-    expect(descriptionOf(screen.getByLabelText('Altura'))).toBe('Em pixels.');
+    expect(descriptionOf(screen.getByLabelText('Height'))).toBe('In pixels.');
   });
 
-  it('sem hint não há ícone nem descrição', () => {
+  it('without a hint there is no icon or description', () => {
     render(
       <PropertyGrid>
-        <Property label="Altura" for="h">
+        <Property label="Height" for="h">
           <TextField id="h" value="" onInput={() => undefined} />
         </Property>
       </PropertyGrid>,
     );
-    expect(screen.queryByRole('button', { name: /^Sobre / })).toBeNull();
-    expect(descriptionOf(screen.getByLabelText('Altura'))).toBe('');
+    expect(screen.queryByRole('button', { name: /^About / })).toBeNull();
+    expect(descriptionOf(screen.getByLabelText('Height'))).toBe('');
   });
 });

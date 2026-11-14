@@ -5,14 +5,14 @@ import { Button, IconButton } from '../controls';
 import { Icon } from '../icons';
 import { useClickSource } from './clickSource';
 
-// Par ✓ ✕ que decide um nível (HANDOFF-PROPOSALS 2.1): nenhum marcado é "sem decisão";
-// apertar o marcado limpa a decisão. Decidir grava na hora, sem confirmação (é
-// reversível). Versão de ícone (linhas e cartões, 24px) e versão com
-// texto ("Aceitar item" / "Rejeitar item", nos Detalhes).
+// ✓ ✕ pair that decides a level (HANDOFF-PROPOSALS 2.1): none checked means "no decision";
+// pressing the checked one clears the decision. Deciding saves immediately, without confirmation (it is
+// reversible). Icon version (rows and cards, 24px) and a version with
+// text ("Accept item" / "Reject item", in the Details).
 
 export type DecisionValue = 'accepted' | 'rejected' | null;
 
-/** Atalhos da revisão mostrados nas dicas (HANDOFF-PROPOSALS 6). */
+/** Review shortcuts shown in the hints (HANDOFF-PROPOSALS 6). */
 export const REVIEW_KEYS = {
   accept: 'A',
   reject: 'R',
@@ -27,30 +27,30 @@ export const REVIEW_KEYS = {
 } as const;
 
 interface DecisionControlProps {
-  /** Estado marcado (`null`: nenhum; num nível "parcial" também nenhum). */
+  /** Checked state (`null`: none; on a "partial" level also none). */
   readonly value: DecisionValue;
-  /** Nome do alvo, para o nome acessível ("Aceitar Botão Pagar"). */
+  /** Name of the target, for the accessible name ("Accept Pay Button"). */
   readonly name: string;
   readonly onDecide: (next: DecisionValue) => void;
-  /** Rejeitou com o mouse (versão de ícone): quem usa sugere a nota para o agente. */
+  /** Rejected with the mouse (icon version): the caller suggests the note for the agent. */
   readonly onRejectedByMouse?: () => void;
   /**
-   * Decidiu pelo teclado (versão de ícone): o par pode ser trocado pela decisão e o botão
-   * focado sai do DOM; quem usa guarda qual era para o par novo pegar o foco.
+   * Decided by keyboard (icon version): the pair may be swapped by the decision and the focused
+   * button leaves the DOM; the caller keeps track of which it was so the new pair takes focus.
    */
   readonly onDecidedByKeyboard?: (control: 'accept' | 'reject') => void;
-  /** Chamada ao montar: o controle que deve receber o foco (o par anterior perdeu o dele). */
+  /** Called on mount: the control that should receive focus (the previous pair lost its own). */
   readonly takeFocus?: () => 'accept' | 'reject' | null;
   readonly disabled?: boolean;
-  /** Conflito: os rótulos dizem o efeito (sobrescreve / mantém o valor atual). */
+  /** Conflict: the labels state the effect (overwrites / keeps the current value). */
   readonly conflict?: boolean;
-  /** `text`: botões com rótulo (`acceptText`, `rejectText`). */
+  /** `text`: buttons with a label (`acceptText`, `rejectText`). */
   readonly variant?: 'icon' | 'text';
   readonly acceptText?: string;
   readonly rejectText?: string;
-  /** Dica explicando por que está desabilitado. */
+  /** Hint explaining why it is disabled. */
   readonly disabledReason?: string;
-  /** Id do texto que explica o motivo (`aria-describedby` dos botões desabilitados). */
+  /** Id of the text that explains the reason (`aria-describedby` of the disabled buttons). */
   readonly describedBy?: string;
 }
 
@@ -74,21 +74,21 @@ export function DecisionControl({
   const acceptClick = useClickSource();
   const acceptRef = useRef<HTMLButtonElement>(null);
   const rejectRef = useRef<HTMLButtonElement>(null);
-  // O par montou porque o anterior saiu do DOM com o foco (decisão pelo teclado): o foco
-  // volta ao controle equivalente, no commit que o desenha, nunca ao `body`.
+  // The pair mounted because the previous one left the DOM with focus (decision by keyboard): focus
+  // returns to the equivalent control, in the commit that draws it, never to `body`.
   useLayoutEffect(() => {
     const which = takeFocus?.();
     if (!which) return;
     const active = document.activeElement;
     if (active && active !== document.body && active.isConnected) return;
     (which === 'accept' ? acceptRef : rejectRef).current?.focus();
-    // Só ao montar.
+    // Only on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const toggle = (state: 'accepted' | 'rejected') =>
     onDecide(value === state ? null : state);
-  // Versão de ícone: o nome diz a ação e o estado. Versão de texto: o nome é "<texto
-  // visível>: <alvo>" (WCAG 2.5.3), o estado fica no `aria-pressed` e o conflito na descrição.
+  // Icon version: the name states the action and the state. Text version: the name is "<visible
+  // text>: <target>" (WCAG 2.5.3), the state stays in `aria-pressed` and the conflict in the description.
   const acceptLabel = conflict
     ? t('review.decide.acceptConflict', { name })
     : value === 'accepted'
@@ -183,8 +183,8 @@ export function DecisionControl({
         buttonRef={rejectRef}
         {...rejectClick.handlers}
         onClick={() => {
-          // Tudo que não veio do teclado conta como mouse e sugere a nota; o teclado
-          // não abre a nota e mantém o foco no controle (mesmo que o par seja remontado).
+          // Everything that did not come from the keyboard counts as the mouse and suggests the note; the keyboard
+          // does not open the note and keeps focus on the control (even if the pair is remounted).
           const byKeyboard = rejectClick.takeKeyboard();
           if (byKeyboard) onDecidedByKeyboard?.('reject');
           toggle('rejected');

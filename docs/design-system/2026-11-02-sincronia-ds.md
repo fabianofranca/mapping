@@ -1,13 +1,13 @@
-# Sincronia do design system — 2026-11-02 (épico `epic/sincronia-ds`)
+# Design system sync — 2026-11-02 (épico `epic/sincronia-ds`)
 
 ## Sincronização
 
-Primeira sincronização pelo processo. Versões 14 (conteúdo) e 15 (índice) do artefato. **Proposto com componentes:** `Revisao.md` e `Canvas.md` passaram ao presente (saíram "ainda não implementado" e a lista "Para implementar"), e `ComponentDrawing`, `ChangeMark`, `ChangePopover`, `ReviewBar`, `ReviewHeader` e `OtherChanges` ganharam a marca de criada e o fantasma nas duas visões. **Sugestões no campo:** `TextField` ganhou as seções "Sugestões" e "Estados da lista" e o preview ganhou três cartões; `PropertyGrid`, `DataGrid` e `ReferenceField` ganharam o vocabulário sugerido e o `linkedRef`. **Imagens remotas:** `ComponentDrawing` e `Canvas.md` ganharam o nó `image`; `SettingsDialog` ganhou a seção Privacidade, com as quatro chaves e a lista de origens. **Material 3:** `CodeDefinitions` ganhou a prop `values` e a resolução da variante; `CatalogPage` ganhou a tabela de variantes. **Marcação pai:** `MultiSelectionPanel` ganhou o botão Envolver; `LayerGroup` e `Breadcrumbs` ganharam a dica no nome cortado. **Tokens:** entraram `size-grid-col-min` e os papéis `control-height`, `control-height-sm`, `control-radius`, `control-icon`, `control-check` e `row-height`.
+First sync through the process. Versions 14 (content) and 15 (index) of the artifact. **Proposed with components:** `Revisao.md` and `Canvas.md` moved to the present tense (the "not yet implemented" notes and the "To implement" list are gone), and `ComponentDrawing`, `ChangeMark`, `ChangePopover`, `ReviewBar`, `ReviewHeader` and `OtherChanges` gained the created mark and the ghost in both views. **Suggestions in the field:** `TextField` gained the "Suggestions" and "List states" sections and the preview gained three cards; `PropertyGrid`, `DataGrid` and `ReferenceField` gained the suggested vocabulary and the `linkedRef`. **Remote images:** `ComponentDrawing` and `Canvas.md` gained the `image` node; `SettingsDialog` gained the Privacy section, with the four keys and the list of sources. **Material 3:** `CodeDefinitions` gained the `values` prop and the variant resolution; `CatalogPage` gained the variants table. **Parent marking:** `MultiSelectionPanel` gained the Wrap button; `LayerGroup` and `Breadcrumbs` gained the hint on the truncated name. **Tokens:** `size-grid-col-min` and the roles `control-height`, `control-height-sm`, `control-radius`, `control-icon`, `control-check` and `row-height` were added.
 
-### Correções do próprio registro
+### Corrections to the record itself
 
-A sincronia de 2026-11-02 achou três erros na lista de pendências que a DS1 montou, todos já corrigidos acima:
+The 2026-11-02 sync found three errors in the list of pending items that DS1 put together, all already fixed above:
 
-- A dica (`title`) no nome cortado foi atribuída ao `TreeRow`, que já estava correto (lá só a linha da seta tem `title`). O componente certo é o `Breadcrumbs`, o caminho acima do canvas.
-- O `KeyValueGrid` foi listado como afetado pelo vocabulário sugerido. As células de chave e valor da anotação livre **não** têm lista: o vocabulário é dos campos e colunas `string` da especialização. O guia ganhou esse esclarecimento.
-- A pendência dizia que a string `review.legend.rejected` não existia mais em `src/`. A chave existe (`src/i18n/review.ts`); o que saiu do texto dela foi o "(só em Atual)".
+- The hint (`title`) on the truncated name was attributed to `TreeRow`, which was already correct (there only the arrow row has `title`). The right component is `Breadcrumbs`, the path above the canvas.
+- `KeyValueGrid` was listed as affected by the suggested vocabulary. The key and value cells of the free annotation do **not** have a list: the vocabulary belongs to the `string` fields and columns of the specialization. The guide gained this clarification.
+- The pending item said the `review.legend.rejected` string no longer existed in `src/`. The key exists (`src/i18n/review.ts`); what left its text was the "(only in Current)".

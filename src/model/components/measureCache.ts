@@ -1,17 +1,17 @@
-// Cache de medida de texto (#1078, decisão 19): puro, sem DOM. O motor recria os nós a cada
-// instanciação, então o cache é por conteúdo e restrição (texto, fonte, limite), como o `measure`
-// do Yoga, e não por nó.
+// Text measurement cache (#1078, decision 19): pure, no DOM. The engine recreates the nodes on each
+// instantiation, so the cache is by content and constraint (text, font, limit), like Yoga's
+// `measure`, and not by node.
 import type { MeasureFont, TextMeasurer } from './instantiate';
 
-/** Tamanho do LRU do medidor da app e do MCP (decisão 19). */
+/** Size of the LRU of the app's and the MCP's measurer (decision 19). */
 export const MEASURE_CACHE_LIMIT = 4096;
 
-/** O `maxWidth` entra na chave arredondado a 1/64 px: diferenças menores não mudam a quebra. */
+/** `maxWidth` enters the key rounded to 1/64 px: smaller differences do not change the wrapping. */
 const WIDTH_STEPS_PER_PX = 64;
 
 const SEPARATOR = '\u0000';
 
-/** Os campos de `MeasureFont` que mudam a medida, em texto (a base da chave). */
+/** The `MeasureFont` fields that change the measurement, as text (the base of the key). */
 export function fontKey(font: MeasureFont): string {
   return [
     font.family,
@@ -27,7 +27,7 @@ export function fontKey(font: MeasureFont): string {
   ].join(SEPARATOR);
 }
 
-/** Chave de uma medida: a fonte, o limite (a 1/64 px; vazio = sem limite) e, por último, o texto. */
+/** Key of a measurement: the font, the limit (at 1/64 px; empty = no limit) and, last, the text. */
 export function measureKey(
   text: string,
   font: MeasureFont,
@@ -38,21 +38,21 @@ export function measureKey(
   return `${fontKey(font)}${SEPARATOR}${width}${SEPARATOR}${text}`;
 }
 
-/** Os medidores que já memoizam (o `cachedMeasurer` e o `withMeasureMemo`): não se embrulham de novo. */
+/** The measurers that already memoize (`cachedMeasurer` and `withMeasureMemo`): not wrapped again. */
 const memoized = new WeakSet<TextMeasurer>();
 
 /**
- * Memoiza um medidor por (texto, `MeasureFont`, `maxWidth` a 1/64 px) num LRU de `limit` entradas.
- * O mesmo `TextMetrics` volta para a mesma chave (quem lê não o altera). Um medidor novo vale um
- * cache novo: a app e o MCP trocam o medidor (e o `fontsEpoch`) e o cache de desenhos, que compara
- * o medidor por identidade, redesenha tudo.
+ * Memoizes a measurer by (text, `MeasureFont`, `maxWidth` at 1/64 px) in an LRU of `limit` entries.
+ * The same `TextMetrics` comes back for the same key (whoever reads it does not change it). A new
+ * measurer means a new cache: the app and the MCP swap the measurer (and the `fontsEpoch`) and the
+ * drawing cache, which compares the measurer by identity, redraws everything.
  */
 export function cachedMeasurer(
   measure: TextMeasurer,
   options: { readonly limit: number },
 ): TextMeasurer {
   const limit = Math.max(1, Math.floor(options.limit));
-  // A ordem de inserção do `Map` é a do uso: a primeira chave é a menos recente.
+  // The insertion order of the `Map` is the order of use: the first key is the least recent.
   const entries = new Map<string, ReturnType<TextMeasurer>>();
   const cached: TextMeasurer = (text, font, maxWidth) => {
     const key = measureKey(text, font, maxWidth);
@@ -75,10 +75,11 @@ export function cachedMeasurer(
 }
 
 /**
- * O medidor que o motor usa dentro de uma instanciação (as duas passagens do `$lines` incluídas):
- * o mesmo, se já memoiza (o da app e o do MCP); senão um que lembra cada (texto, fonte, limite
- * exato) enquanto a instanciação dura. Um medidor sem cache (testes, `approximateMeasurer`) fica
- * assim sem repetir a mesma medida de textos iguais em nós diferentes.
+ * The measurer the engine uses inside an instantiation (the two passes of `$lines` included):
+ * the same one, if it already memoizes (the app's and the MCP's); otherwise one that remembers each
+ * (text, font, exact limit) while the instantiation lasts. A measurer without a cache (tests,
+ * `approximateMeasurer`) stays that way without repeating the same measurement of equal texts in
+ * different nodes.
  */
 export function withMeasureMemo(measure: TextMeasurer): TextMeasurer {
   if (memoized.has(measure)) return measure;

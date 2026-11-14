@@ -1,91 +1,91 @@
-# signature/: o extrator de fichas de assinatura (`mapping-signature`)
+# signature/: the signature sheet extractor (`mapping-signature`)
 
-Uma CLI em Node, sem dependência, que lê o **código-fonte** de uma função `@Composable` (Kotlin) ou de uma `struct` SwiftUI, ou o **JSON de um nó do Figma**, e imprime a **ficha de assinatura** dele (`mapping-signature`, `formatVersion` 1; formato em [`docs/SIGNATURE-FORMAT.md`](../docs/SIGNATURE-FORMAT.md)). É o `source.extractor: "mapping-signature/<leitor>@1"` da ficha, e há três leitores: `kotlin`, `swift` e `figma`. Os três dão fichas do mesmo formato, importadas pela mesma tool.
+A dependency-free Node CLI that reads the **source code** of a `@Composable` function (Kotlin) or of a SwiftUI `struct`, or the **JSON of a Figma node**, and prints its **signature sheet** (`mapping-signature`, `formatVersion` 1; format in [`docs/SIGNATURE-FORMAT.md`](../docs/SIGNATURE-FORMAT.md)). It is the sheet's `source.extractor: "mapping-signature/<reader>@1"`, and there are three readers: `kotlin`, `swift` and `figma`. All three produce sheets of the same format, imported by the same tool.
 
-O servidor MCP **nunca lê código**; quem lê é este script, na máquina do dono, no repositório dele. O que ele devolve é só o JSON que a especialização cita em `signature`.
+The MCP server **never reads code**; this script does, on the owner's machine, in the owner's repository. All it returns is the JSON that the specialization cites in `signature`.
 
-## Uso
+## Usage
 
 ```bash
-node tools/mapping-signature.mjs kotlin --file <arquivo.kt> --symbol <nome> [--path <relativo ao repositório>] [--ref <commit>]
-                                 [--also <arquivo.kt>]... [--overload <n>] [--out <ficha.json>]
-node tools/mapping-signature.mjs swift  --file <arquivo.swift> --symbol <nome> [--path <relativo ao repositório>] [--ref <commit>]
-                                 [--also <arquivo.swift>]... [--init <n>] [--out <ficha.json>]
-node tools/mapping-signature.mjs figma  --file <nós.json> --node <id> [--out <ficha.json>]
+node tools/mapping-signature.mjs kotlin --file <file.kt> --symbol <name> [--path <relative to the repository>] [--ref <commit>]
+                                 [--also <file.kt>]... [--overload <n>] [--out <sheet.json>]
+node tools/mapping-signature.mjs swift  --file <file.swift> --symbol <name> [--path <relative to the repository>] [--ref <commit>]
+                                 [--also <file.swift>]... [--init <n>] [--out <sheet.json>]
+node tools/mapping-signature.mjs figma  --file <nodes.json> --node <id> [--out <sheet.json>]
 node tools/mapping-signature.mjs --help
 ```
 
-No repositório do Mapping, depois do `npm run build:signature` (ou do `build:mcp`), os dois arquivos saem em `dist-mcp/`: `mapping-signature.js` (CommonJS, o que os roteiros chamam) e `mapping-signature.mjs` (ESM, o que a Release publica e o `setup.sh` instala em `tools/`). Os dois são o mesmo código e dão a mesma saída, byte a byte.
+In the Mapping repository, after `npm run build:signature` (or `build:mcp`), the two files land in `dist-mcp/`: `mapping-signature.js` (CommonJS, what the scripts call) and `mapping-signature.mjs` (ESM, what the Release publishes and `setup.sh` installs in `tools/`). Both are the same code and give the same output, byte for byte.
 
-| Opção                | O que faz                                                                                                                                                                     |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--file <arquivo>`   | O arquivo que define a função (`kotlin`), a struct (`swift`) ou o JSON do Figma (`figma`).                                                                                    |
-| `--symbol <nome>`    | O nome da função, simples (`Button`) ou completo (`androidx.compose.material3.Button`). O prefixo, se vier, tem de ser o `package` do arquivo.                                |
-| `--path <caminho>`   | Vai em `source.path` (relativo à raiz do repositório). Sem ele vale o `--file`, se for relativo (com `/` e sem `./` na frente); `--file` absoluto sem `--path` é erro de uso. |
-| `--ref <commit>`     | Vai em `source.ref`. Sem ele a chave não existe: o extrator não inventa.                                                                                                      |
-| `--also <arquivo>`   | Outro arquivo onde procurar `object …Defaults` (fábricas) e `enum class`. Repetível; a ordem conta.                                                                           |
-| `--overload <n>`     | A sobrecarga a usar (0 em diante, na ordem do arquivo, **contando as `@Deprecated`**). Vai em `source.overload`.                                                              |
-| `--init <n>`         | `swift`: o `init` a usar (0 em diante, na ordem da struct, **contando os `deprecated`**). Vai em `source.init`. Sem `init` escrito, `0` é o memberwise.                       |
-| `--node <id>`        | `figma`: o id do nó (`12:34`; `12-34`, como vem na URL, também vale).                                                                                                         |
-| `--out <ficha.json>` | Grava a ficha neste arquivo em vez de imprimir. É o **único** arquivo que o script grava: ele cria o arquivo, não cria pastas.                                                |
+| Option               | What it does                                                                                                                                                                                  |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--file <file>`      | The file that defines the function (`kotlin`), the struct (`swift`) or the Figma JSON (`figma`).                                                                                              |
+| `--symbol <name>`    | The function name, simple (`Button`) or full (`androidx.compose.material3.Button`). The prefix, if present, must be the file's `package`.                                                     |
+| `--path <path>`      | Goes in `source.path` (relative to the repository root). Without it the `--file` is used, if relative (with `/` and no leading `./`); an absolute `--file` without `--path` is a usage error. |
+| `--ref <commit>`     | Goes in `source.ref`. Without it the key does not exist: the extractor does not make one up.                                                                                                  |
+| `--also <file>`      | Another file to look for `object …Defaults` (factories) and `enum class` in. Repeatable; order matters.                                                                                       |
+| `--overload <n>`     | The overload to use (0 onwards, in file order, **counting the `@Deprecated` ones**). Goes in `source.overload`.                                                                               |
+| `--init <n>`         | `swift`: the `init` to use (0 onwards, in struct order, **counting the `deprecated` ones**). Goes in `source.init`. With no written `init`, `0` is the memberwise one.                        |
+| `--node <id>`        | `figma`: the node id (`12:34`; `12-34`, as it comes in the URL, also works).                                                                                                                  |
+| `--out <sheet.json>` | Writes the sheet to this file instead of printing it. It is the **only** file the script writes: it creates the file, not folders.                                                            |
 
-`source.symbol` é sempre `<package do arquivo>.<nome>` (só o nome, se o arquivo não declara `package`). A ficha sai com 2 espaços de indentação, as chaves na ordem do tipo (`src/model/signatures/types.ts`) e `\n` no fim.
+`source.symbol` is always `<file's package>.<name>` (just the name, if the file declares no `package`). The sheet comes out with 2-space indentation, the keys in the type's order (`src/model/signatures/types.ts`) and `\n` at the end.
 
-Códigos de saída: **0** ok; **1** erro de extração (sintaxe, símbolo ou nó ausente, sobrecarga ou `init` ambíguo, arquivo ilegível, ficha que não passa no `parseSignature`); **2** erro de uso (argumento faltando ou desconhecido, leitor desconhecido, opção que não é do leitor: `a opção --init não vale para kotlin (vale para swift)`). As mensagens vão para o stderr, em português; o erro de sintaxe sai como `<arquivo>:<linha>:<coluna>: <mensagem>`.
+Exit codes: **0** ok; **1** extraction error (syntax, missing symbol or node, ambiguous overload or `init`, unreadable file, sheet that fails `parseSignature`); **2** usage error (missing or unknown argument, unknown reader, option that does not belong to the reader: `the option --init does not apply to kotlin (it applies to swift)`). Messages go to stderr, in English; the syntax error comes out as `<file>:<line>:<column>: <message>`.
 
-Antes de escrever, a ficha passa no `parseSignature` (o mesmo do importador e do `validate_library`); se falhar, o erro é interno (exit 1) e nada é impresso nem gravado.
+Before writing, the sheet goes through `parseSignature` (the same one as the importer and `validate_library`); if it fails, the error is internal (exit 1) and nothing is printed or written.
 
-## O que o leitor Kotlin faz
+## What the Kotlin reader does
 
-1. **Tokeniza** o arquivo inteiro: parênteses, colchetes, chaves, strings (`"…"` com escape, `"""…"""`, `${…}` aninhado), caracteres, comentários `//` e `/* */` (que aninham; o KDoc `/** */` é guardado para o `doc`). Delimitador, string ou comentário não fechado é erro com a linha e a coluna do abridor.
-2. **Candidatas:** toda `fun [<T>] [Receptor.]Nome(` anotada com `@Composable` (antes ou depois de outras anotações e modificadores, na mesma linha ou em linhas separadas). `@Composable` dentro do tipo de um parâmetro não conta; função de mesmo nome sem `@Composable` é ignorada.
-3. **Sobrecargas:** as `@Deprecated` saem. Sobrando uma, é ela. Sobrando mais de uma (ou nenhuma) e sem `--overload`, o erro começa com `sobrecarga ambígua:` e lista **todas** as candidatas, uma por linha: `  <índice>: linha <n> [@Deprecated] (<nomes dos parâmetros>)`. Com `--overload n`, vale a n-ésima da lista completa; índice fora da lista é erro com a lista.
-4. **Parâmetros** (`[anotações] [vararg|noinline|crossinline] nome: Tipo [= padrão]`, vírgula final aceita): `type` e `default` são o texto da fonte com os espaços normalizados (a quebra de linha junto de `( [ < .` ou de `) ] > , .` some; em outro lugar vira um espaço); `required: true` quando não há padrão.
-5. **`role`:** `Modifier` → `modifier`; tipo-função (tem `->` no nível de cima, com ou sem parênteses e `?`) → `slot` se for `@Composable`, senão `callback`; tipo terminado em `InteractionSource`, `State`, `FocusRequester` ou `ScrollBehavior` (sem os argumentos de genérico) → `state`, salvo se o tipo for um `enum class` conhecido (do arquivo ou dos `--also`): o enum vence o sufixo (`role: value`, `kind: enum`); `vararg` → `other` (com `type: "vararg <T>"`); o resto → `value`.
-6. **`value.kind`** (só em `role: value`): `String`/`AnnotatedString` → `text`; `Boolean` → `boolean`; `Int`/`Long`/`Short`/`Byte` → `integer`; `Float`/`Double` → `number`; `Dp` → `dimension`; `Color` → `color`; `enum class` do mesmo arquivo ou dos `--also` → `enum` com `options` (as constantes, na ordem da declaração); o resto → `opaque`. O `?` final não muda o kind.
-7. **`value.default`** só para literal representável: `true`/`false`; string simples (sem `$` nem `\`); inteiro (`3`, `1_000`, `10L`); decimal (`0.5f`, `1.0`); `16.dp`/`16.0.dp` → 16; `Enum.CONSTANTE` do enum conhecido. `null`, `Modifier`, `ButtonDefaults.shape` e outras expressões ficam só no `default` em texto do parâmetro.
-8. **Fábricas:** um padrão `Objeto.fabrica(...)` leva `factory` se houver `fun fabrica(` no corpo de `object Objeto { … }` do mesmo arquivo ou dos `--also`. Entre as de mesmo nome, descartam-se as `@Deprecated` e fica a de **mais parâmetros** (empate: a primeira); sem parâmetros, sem `factory`. `call` é `<package do arquivo onde achou>.Objeto.fabrica`. O parâmetro com fábrica não tem `value`, e a fábrica não tem fábrica dentro (um nível só).
-9. **`doc`:** o KDoc colado na declaração, um `@param nome texto…` por parâmetro (as continuações viram um texto só). Só entram parâmetros que existem; os da fábrica vão como `doc["<param>.<paramDaFábrica>"]` (`colors.containerColor`). Sem nada, a chave não existe.
+1. **Tokenizes** the whole file: parentheses, brackets, braces, strings (`"…"` with escapes, `"""…"""`, nested `${…}`), characters, `//` and `/* */` comments (which nest; the `/** */` KDoc is kept for `doc`). An unclosed delimiter, string or comment is an error with the line and column of the opener.
+2. **Candidates:** every `fun [<T>] [Receiver.]Name(` annotated with `@Composable` (before or after other annotations and modifiers, on the same line or on separate lines). `@Composable` inside a parameter's type does not count; a function of the same name without `@Composable` is ignored.
+3. **Overloads:** the `@Deprecated` ones are dropped. If one is left, that is the one. If more than one is left (or none) and there is no `--overload`, the error starts with `ambiguous overload:` and lists **all** the candidates, one per line: `  <index>: line <n> [@Deprecated] (<parameter names>)`. With `--overload n`, the n-th of the complete list is used; an index outside the list is an error with the list.
+4. **Parameters** (`[annotations] [vararg|noinline|crossinline] name: Type [= default]`, trailing comma accepted): `type` and `default` are the source text with normalized whitespace (a line break next to `( [ < .` or `) ] > , .` disappears; elsewhere it becomes a space); `required: true` when there is no default.
+5. **`role`:** `Modifier` → `modifier`; function type (has `->` at the top level, with or without parentheses and `?`) → `slot` if `@Composable`, otherwise `callback`; a type ending in `InteractionSource`, `State`, `FocusRequester` or `ScrollBehavior` (without the generic arguments) → `state`, unless the type is a known `enum class` (from the file or the `--also` ones): the enum wins over the suffix (`role: value`, `kind: enum`); `vararg` → `other` (with `type: "vararg <T>"`); the rest → `value`.
+6. **`value.kind`** (only in `role: value`): `String`/`AnnotatedString` → `text`; `Boolean` → `boolean`; `Int`/`Long`/`Short`/`Byte` → `integer`; `Float`/`Double` → `number`; `Dp` → `dimension`; `Color` → `color`; `enum class` from the same file or the `--also` ones → `enum` with `options` (the constants, in declaration order); the rest → `opaque`. A trailing `?` does not change the kind.
+7. **`value.default`** only for a representable literal: `true`/`false`; a simple string (no `$` or `\`); an integer (`3`, `1_000`, `10L`); a decimal (`0.5f`, `1.0`); `16.dp`/`16.0.dp` → 16; `Enum.CONSTANT` of the known enum. `null`, `Modifier`, `ButtonDefaults.shape` and other expressions stay only in the parameter's text `default`.
+8. **Factories:** a default `Object.factory(...)` gets a `factory` if there is a `fun factory(` in the body of `object Object { … }` in the same file or in the `--also` ones. Among those of the same name, the `@Deprecated` ones are discarded and the one with the **most parameters** stays (tie: the first); with no parameters, no `factory`. `call` is `<package of the file where it was found>.Object.factory`. A parameter with a factory has no `value`, and the factory has no factory inside it (one level only).
+9. **`doc`:** the KDoc attached to the declaration, one `@param name text…` per parameter (continuations become a single text). Only parameters that exist are included; the factory's go as `doc["<param>.<factoryParam>"]` (`colors.containerColor`). With nothing, the key does not exist.
 
-## O que o leitor Swift faz
+## What the Swift reader does
 
-Usa o mesmo tokenizador do Kotlin (o dialeto Swift lê `///` como doc e a interpolação `\(…)` das strings).
+It uses the same tokenizer as Kotlin (the Swift dialect reads `///` as doc and the `\(…)` interpolation of strings).
 
-1. **Candidata:** `struct <Nome>` (com ou sem genéricos e `: View`) no nível de cima do arquivo ou dentro de outro tipo. `--symbol` é o nome simples (`ProfileCard`) ou qualificado (`DS.ProfileCard`); o texto vai como veio em `source.symbol`, e o prefixo só desambigua structs de mesmo nome (pelo tipo que as envolve).
-2. **`init`:** os `init(...)` escritos **na struct** (não os de `extension`), na ordem do arquivo. Com um só, é ele; com mais de um e sem `--init`, o erro começa com `init ambíguo:` e lista **todos**, `  <índice>: linha <n> [deprecated] (<rótulos>)`. Um `@available(… deprecated|unavailable|obsoleted)` conta como o `@Deprecated` do Kotlin, e um `init` `private`/`fileprivate` (que ninguém de fora chama) também: aparecem na lista (`[deprecated]`, `[private]`) e saem da escolha automática, mas `--init <n>` os alcança. Sem nenhum `init` escrito vale o **memberwise**, e `--init 0` o escolhe.
-3. **Memberwise:** as propriedades armazenadas, na ordem da declaração: `let` sem valor e `var`. Ficam de fora `@State`, `@StateObject`, `@Environment`, `@EnvironmentObject`, `@FocusState`, `@Namespace`, `@GestureState`, `@ScaledMetric`, `@AccessibilityFocusState` (e qualquer wrapper com argumentos, como `@AppStorage("k")`), `private`/`fileprivate`, `static`/`class`, `lazy`, `let` com valor e as computadas. `var x: T?` sem valor ganha `default: "nil"`; `var x = 0` sem tipo usa o tipo do literal (ou `_`).
-4. **Rótulos:** em `init(_ title: String, badge badgeCount: Int)`, `name` é o nome **interno** (`title`, `badgeCount`) e `label` o externo (`_` para o posicional, `badge`); sem rótulo escrito, o externo é o próprio nome e a chave `label` não existe.
-5. **`role`:** tipo-função (`->`) → `slot` se tem `@ViewBuilder` (ou devolve view), senão `callback` (`@escaping` e `Optional` valem); `some View`, `AnyView` e genérico `<C: View>`/`<C: View & Equatable>`/`where C: View` → `slot`; `@Binding var x: T` vira `Binding<T>`, e `@ObservedObject`/`@Bindable` → `state`; o resto → `value`.
-6. **`value.kind`:** `String`, `LocalizedStringKey`, `AttributedString` → `text`; `Bool` → `boolean`; `Int`… → `integer`; `Double`, `Float` → `number`; `CGFloat` → `dimension`; `Color` → `color`; `enum` do mesmo arquivo (ou dos `--also`) → `enum` com `options` (os `case`, na ordem; valor associado → `opaque`); o resto → `opaque`. O `?` final não muda o kind.
-7. **`value.default`** só para literal: `true`/`false`, string simples, inteiro, decimal, `CGFloat(8)` e `.caso`/`Enum.caso` do enum conhecido (vira a opção: `.compact` → `compact`). `nil` e outras expressões ficam só no `default` em texto do parâmetro.
-8. **`doc`:** o `- Parameter nome:`/`- Parameters:` do `///` do `init`, depois o da struct e, por último, o `///` da propriedade (a chave é o nome interno; o rótulo externo também acha).
+1. **Candidate:** `struct <Name>` (with or without generics and `: View`) at the top level of the file or inside another type. `--symbol` is the simple name (`ProfileCard`) or qualified (`DS.ProfileCard`); the text goes as given in `source.symbol`, and the prefix only disambiguates structs of the same name (by the type that wraps them).
+2. **`init`:** the `init(...)`s written **in the struct** (not those in an `extension`), in file order. With just one, that is the one; with more than one and no `--init`, the error starts with `ambiguous init:` and lists **all** of them, `  <index>: line <n> [deprecated] (<labels>)`. An `@available(… deprecated|unavailable|obsoleted)` counts like Kotlin's `@Deprecated`, and so does a `private`/`fileprivate` `init` (which no outsider calls): they appear in the list (`[deprecated]`, `[private]`) and drop out of the automatic choice, but `--init <n>` reaches them. With no written `init` the **memberwise** one applies, and `--init 0` picks it.
+3. **Memberwise:** the stored properties, in declaration order: `let` without a value and `var`. Left out: `@State`, `@StateObject`, `@Environment`, `@EnvironmentObject`, `@FocusState`, `@Namespace`, `@GestureState`, `@ScaledMetric`, `@AccessibilityFocusState` (and any wrapper with arguments, such as `@AppStorage("k")`), `private`/`fileprivate`, `static`/`class`, `lazy`, `let` with a value and the computed ones. `var x: T?` without a value gets `default: "nil"`; `var x = 0` without a type uses the literal's type (or `_`).
+4. **Labels:** in `init(_ title: String, badge badgeCount: Int)`, `name` is the **internal** name (`title`, `badgeCount`) and `label` the external one (`_` for the positional one, `badge`); with no written label, the external one is the name itself and the `label` key does not exist.
+5. **`role`:** function type (`->`) → `slot` if it has `@ViewBuilder` (or returns a view), otherwise `callback` (`@escaping` and `Optional` count); `some View`, `AnyView` and generic `<C: View>`/`<C: View & Equatable>`/`where C: View` → `slot`; `@Binding var x: T` becomes `Binding<T>`, and `@ObservedObject`/`@Bindable` → `state`; the rest → `value`.
+6. **`value.kind`:** `String`, `LocalizedStringKey`, `AttributedString` → `text`; `Bool` → `boolean`; `Int`… → `integer`; `Double`, `Float` → `number`; `CGFloat` → `dimension`; `Color` → `color`; `enum` from the same file (or the `--also` ones) → `enum` with `options` (the `case`s, in order; associated value → `opaque`); the rest → `opaque`. A trailing `?` does not change the kind.
+7. **`value.default`** only for a literal: `true`/`false`, simple string, integer, decimal, `CGFloat(8)` and `.case`/`Enum.case` of the known enum (becomes the option: `.compact` → `compact`). `nil` and other expressions stay only in the parameter's text `default`.
+8. **`doc`:** the `- Parameter name:`/`- Parameters:` of the `init`'s `///`, then the struct's and, last, the property's `///` (the key is the internal name; the external label also finds it).
 
-## O que o leitor Figma faz
+## What the Figma reader does
 
-Lê o JSON salvo (não abre rede nem o MCP do Figma) e acha o nó em qualquer lugar dele, por `id` + `type`: a resposta de `GET /v1/files/:key/nodes`, a do arquivo inteiro ou o nó solto servem, **desde que o nó traga `id`, `type` e `componentPropertyDefinitions`** (o que o MCP do Figma devolve não foi conferido: salve nesse formato).
+Reads the saved JSON (it does not open the network or the Figma MCP) and finds the node anywhere in it, by `id` + `type`: the response of `GET /v1/files/:key/nodes`, the whole-file one or the bare node all work, **as long as the node carries `id`, `type` and `componentPropertyDefinitions`** (what the Figma MCP returns was not checked: save it in this format).
 
-- `VARIANT` → `enum` com `variantOptions` em `options`; `BOOLEAN` → `boolean`; `TEXT` → `text`; `INSTANCE_SWAP` → `slot` (sem `default` nem `required`); tipo que o leitor não conhece → `role: other`. O `defaultValue` vai em `default` (e `value.default`); a `description` da propriedade vai para o `doc`.
-- O sufixo `#<id>` do nome (`Disabled#1:2`) sai de `name` e vai para o `id` do parâmetro.
-- `source` é `{ kind: "design", system: "figma", id, name }` do nó (sem `path`, `ref` nem `symbol`): ao importar, a ficha liga `sources` do tipo, não `code`.
-- Variante (um `COMPONENT` sem definições, filho de um `COMPONENT_SET`) é erro apontando o `COMPONENT_SET`; nó que não existe também.
+- `VARIANT` → `enum` with `variantOptions` in `options`; `BOOLEAN` → `boolean`; `TEXT` → `text`; `INSTANCE_SWAP` → `slot` (no `default` or `required`); a type the reader does not know → `role: other`. The `defaultValue` goes in `default` (and `value.default`); the property's `description` goes to `doc`.
+- The `#<id>` suffix of the name (`Disabled#1:2`) leaves `name` and goes to the parameter's `id`.
+- `source` is `{ kind: "design", system: "figma", id, name }` of the node (no `path`, `ref` or `symbol`): on import, the sheet links the type's `sources`, not `code`.
+- A variant (a `COMPONENT` with no definitions, child of a `COMPONENT_SET`) is an error pointing to the `COMPONENT_SET`; a node that does not exist is too.
 
-## Determinismo
+## Determinism
 
-A mesma entrada dá os mesmos bytes: a ficha não leva data, caminho absoluto nem nada que dependa de locale, e as chaves saem na ordem fixa do tipo. Dois testes provam isso (duas execuções; `.js` contra `.mjs`).
+The same input gives the same bytes: the sheet carries no date, absolute path or anything locale-dependent, and the keys come out in the type's fixed order. Two tests prove it (two runs; `.js` against `.mjs`).
 
-## Segurança
+## Security
 
-O script não abre rede (`net`, `http(s)`, `dns`, `child_process`, `fetch`, `WebSocket` não aparecem nem no código nem no bundle) e não grava nada fora do `--out`: só `readFileSync` do `--file` e dos `--also`. O ESLint proíbe os módulos de rede e as funções de escrita fora do `cli.ts`, e `tests/signature/staticGuards.test.ts` confere o código, o bundle e a árvore de pastas antes e depois de uma execução. De `src/` só se importa `src/model/` (a ficha e o `parseSignature`).
+The script does not open the network (`net`, `http(s)`, `dns`, `child_process`, `fetch`, `WebSocket` appear neither in the code nor in the bundle) and writes nothing outside `--out`: only `readFileSync` of the `--file` and the `--also` ones. ESLint forbids the network modules and the write functions outside `cli.ts`, and `tests/signature/staticGuards.test.ts` checks the code, the bundle and the folder tree before and after a run. From `src/` only `src/model/` is imported (the sheet and `parseSignature`).
 
-## Limites conhecidos
+## Known limits
 
-O leitor não é um compilador: lê o cabeçalho das funções, não resolve nada.
+The reader is not a compiler: it reads the function headers and resolves nothing.
 
-- **Tipos de outros arquivos:** só os `enum class` do arquivo e dos `--also` viram `enum`; qualquer outro tipo (`Shape`, `PaddingValues`, `BorderStroke`, `TextUnit`, `WindowInsets`, `TextStyle`, `typealias`, classes) é `opaque`. O mesmo vale para **genéricos** (`List<String>`) e para parâmetro com **anotação própria** (`@FloatRange(…)`: o texto da anotação fica no começo de `type`).
-- **Padrões:** só os literais acima viram `value.default`; constantes (`DEFAULT`, `Dp.Unspecified`), cálculos e `stringResource(…)` ficam só no `default` em texto. Hexadecimal e string com `$` ou escape não são literais representáveis.
-- **Fábricas:** só o formato `Objeto.fabrica(...)` com `Objeto` começando em maiúscula; função de extensão, `companion object` sem nome e fábrica em objeto de outro módulo (sem `--also`) ficam sem `factory`.
-- **Tipos:** `typealias` e o nome qualificado só pelo último segmento (`androidx.…Color` vale `Color`); um tipo com o mesmo nome de outro (`Color` do seu projeto) é lido como o `Color` do Compose.
-- **Candidatas:** vale o nome, em qualquer nível do arquivo (função de classe ou de objeto também). `expect`/`actual` aparecem como duas candidatas (use `--overload`).
-- **`<` em padrões:** só abre genérico quando cola no identificador (`listOf<A>()`); `a<b` sem espaços seria lido como genérico.
-- **Swift:** só os `init` escritos na struct (os de `extension` e os dentro de `#if` não são lidos); string com `#"…"#` não é tokenizada; struct duplicada com o mesmo nome e sem prefixo em `--symbol` é ambígua; `enum` e tipos de outros arquivos só valem com `--also`.
-- **Figma:** só as `componentPropertyDefinitions` do nó; os filhos e as variantes não são lidos.
+- **Types from other files:** only the `enum class`es of the file and of the `--also` ones become `enum`; any other type (`Shape`, `PaddingValues`, `BorderStroke`, `TextUnit`, `WindowInsets`, `TextStyle`, `typealias`, classes) is `opaque`. The same holds for **generics** (`List<String>`) and for a parameter with **its own annotation** (`@FloatRange(…)`: the annotation text stays at the start of `type`).
+- **Defaults:** only the literals above become `value.default`; constants (`DEFAULT`, `Dp.Unspecified`), computations and `stringResource(…)` stay only in the text `default`. Hexadecimal and strings with `$` or escapes are not representable literals.
+- **Factories:** only the `Object.factory(...)` format with `Object` starting in uppercase; an extension function, an unnamed `companion object` and a factory in an object of another module (without `--also`) get no `factory`.
+- **Types:** `typealias` and the qualified name only by the last segment (`androidx.…Color` counts as `Color`); a type with the same name as another (your project's `Color`) is read as Compose's `Color`.
+- **Candidates:** the name counts, at any level of the file (a class's or object's function too). `expect`/`actual` show up as two candidates (use `--overload`).
+- **`<` in defaults:** it only opens a generic when it sticks to the identifier (`listOf<A>()`); `a<b` without spaces would be read as a generic.
+- **Swift:** only the `init`s written in the struct (those in an `extension` and those inside `#if` are not read); a `#"…"#` string is not tokenized; a duplicate struct with the same name and no prefix in `--symbol` is ambiguous; `enum`s and types from other files only count with `--also`.
+- **Figma:** only the node's `componentPropertyDefinitions`; the children and the variants are not read.

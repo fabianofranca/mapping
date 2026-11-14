@@ -1,10 +1,10 @@
 import { fireEvent } from '@testing-library/preact';
 
-// Ajudantes dos testes do editor de citações: o jsdom não tem `execCommand` nem digitação real,
-// então o teste mexe no DOM do `contenteditable` (nós de texto, cursor na `Selection`) e dispara
-// o `input`, que é o que o editor lê.
+// Helpers for the citation editor tests: jsdom has neither `execCommand` nor real typing,
+// so the test changes the `contenteditable` DOM (text nodes, caret in the `Selection`) and fires
+// the `input`, which is what the editor reads.
 
-/** O ponto de inserção: a seleção, se estiver dentro do editor; senão, o fim dele. */
+/** The insertion point: the selection, if it is inside the editor; otherwise, its end. */
 function currentRange(editor: HTMLElement): Range {
   const selection = window.getSelection();
   const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
@@ -24,7 +24,7 @@ export function setCaret(node: Node, offset: number): void {
   selection.addRange(range);
 }
 
-/** Cursor no fim do conteúdo, antes do `<br>` de preenchimento. */
+/** Caret at the end of the content, before the filler `<br>`. */
 export function caretAtEnd(editor: HTMLElement): void {
   let count = editor.childNodes.length;
   while (
@@ -37,7 +37,7 @@ export function caretAtEnd(editor: HTMLElement): void {
   else setCaret(editor, count);
 }
 
-/** Digita `text` no cursor (no fim, se não houver cursor no editor) e dispara `input`. */
+/** Types `text` at the caret (at the end, if there is no caret in the editor) and fires `input`. */
 export function typeIn(editor: HTMLElement, text: string): void {
   editor.focus();
   const range = currentRange(editor);

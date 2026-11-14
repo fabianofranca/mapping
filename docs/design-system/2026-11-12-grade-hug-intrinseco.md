@@ -1,13 +1,13 @@
-# Grade hug sob pai max-content/min-content provada por teste — 2026-11-12 (épico `epic/grade-hug-intrinseco`)
+# Hug grid under a max-content/min-content parent proven by test — 2026-11-12 (épico `epic/grade-hug-intrinseco`)
 
 ## Pendências
 
-Nenhuma. O épico acrescenta um teste e corrige um comentário do motor de componentes; nenhum componente, token nem ícone muda.
+None. The epic adds a test and fixes a comment in the component engine; no component, token or icon changes.
 
 ## Sincronização
 
-Sem impacto: nada a gravar no artefato **Mapping**.
+Sem impacto: nothing to write to the **Mapping** artifact.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

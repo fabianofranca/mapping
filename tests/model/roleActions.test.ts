@@ -1,4 +1,4 @@
-// Ações do modelo sobre o papel (etapa #559, PD2, decisão 15).
+// Model actions on the role (stage #559, PD2, decision 15).
 import { describe, expect, it } from 'vitest';
 import {
   addTypedAnnotation,
@@ -22,14 +22,14 @@ function codeOf(fn: () => unknown): string {
   return 'no-error';
 }
 
-describe('criar vinculada com papel', () => {
-  it('grava o papel junto com o dono', () => {
+describe('creating a linked annotation with a role', () => {
+  it('stores the role together with the owner', () => {
     const p = addChild(roleProject(withRoles), 'E1', 'A1', 'hold');
     expect(role(p, 'E1')).toBe('hold');
   });
 
-  it('papel que o dono não oferece falha com unknown-role', () => {
-    expect(codeOf(() => addChild(roleProject(withRoles), 'E1', 'A1', 'nao'))).toBe(
+  it('a role the owner does not offer fails with unknown-role', () => {
+    expect(codeOf(() => addChild(roleProject(withRoles), 'E1', 'A1', 'nope'))).toBe(
       'unknown-role',
     );
     expect(codeOf(() => addChild(roleProject(), 'E1', 'A1', 'click'))).toBe(
@@ -37,7 +37,7 @@ describe('criar vinculada com papel', () => {
     );
   });
 
-  it('papel sem dono falha com role-without-owner', () => {
+  it('a role without an owner fails with role-without-owner', () => {
     const p = roleProject(withRoles);
     expect(
       codeOf(() =>
@@ -52,13 +52,13 @@ describe('criar vinculada com papel', () => {
     ).toBe('role-without-owner');
   });
 
-  it('sem papel, nasce com parentRole nulo', () => {
+  it('without a role, it is born with a null parentRole', () => {
     expect(role(addChild(roleProject(withRoles), 'E1', 'A1', null), 'E1')).toBeNull();
   });
 });
 
-describe('trocar o papel', () => {
-  it('troca por um papel que o dono oferece, e null limpa', () => {
+describe('changing the role', () => {
+  it('switches to a role the owner offers, and null clears it', () => {
     let p = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
     p = setAnnotationRole(p, 'E1', 'hold');
     expect(role(p, 'E1')).toBe('hold');
@@ -66,31 +66,31 @@ describe('trocar o papel', () => {
     expect(role(p, 'E1')).toBeNull();
   });
 
-  it('papel que o dono não oferece falha com unknown-role; sem dono, com role-without-owner', () => {
+  it('a role the owner does not offer fails with unknown-role; without an owner, with role-without-owner', () => {
     const p = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
-    expect(codeOf(() => setAnnotationRole(p, 'E1', 'nao'))).toBe('unknown-role');
+    expect(codeOf(() => setAnnotationRole(p, 'E1', 'nope'))).toBe('unknown-role');
     const free = setAnnotationParent(p, 'E1', null);
     expect(codeOf(() => setAnnotationRole(free, 'E1', 'click'))).toBe(
       'role-without-owner',
     );
   });
 
-  it('o mesmo papel devolve o mesmo projeto', () => {
+  it('the same role returns the same project', () => {
     const p = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
     expect(setAnnotationRole(p, 'E1', 'click')).toBe(p);
   });
 });
 
-describe('trocar o dono', () => {
-  it('um dono que oferece o papel atual mantém o papel', () => {
+describe('changing the owner', () => {
+  it('an owner that offers the current role keeps the role', () => {
     const p = addChild(roleProject(withRoles), 'E1', 'A1', 'hold');
     const moved = setAnnotationParent(p, 'E1', 'A2');
     expect(moved.annotations.find((a) => a.id === 'E1')?.parentAnnotationId).toBe('A2');
     expect(role(moved, 'E1')).toBe('hold');
   });
 
-  it('um dono que não oferece o papel limpa o papel na mesma operação', () => {
-    // O A2 é de um tipo que aceita filhos, mas não declara papéis (`image`).
+  it('an owner that does not offer the role clears the role in the same operation', () => {
+    // A2 is of a type that accepts children but does not declare roles (`image`).
     let p = addChild(
       roleProject((s) => {
         withRoles(s);
@@ -110,7 +110,7 @@ describe('trocar o dono', () => {
     expect(role(moved, 'E1')).toBeNull();
   });
 
-  it('tirar o dono limpa o papel', () => {
+  it('removing the owner clears the role', () => {
     const p = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
     expect(role(setAnnotationParent(p, 'E1', null), 'E1')).toBeNull();
   });

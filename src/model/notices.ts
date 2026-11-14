@@ -9,38 +9,39 @@ import {
 import { isEmptyValue } from './typed';
 import type { Annotation, Project } from './types';
 
-// Avisos da especialização (`formatVersion` 10, etapa #486): `removed`, `deprecated`,
-// `diverges` e `pending` num tipo, campo ou coluna de `table`. Só informam: não geram
-// pendência (`issues.ts`). Gravidade fixa: removed > deprecated = diverges > pending.
-// Puro e sem APIs de navegador (reutilizado pelo servidor MCP).
+// Specialization notices (`formatVersion` 10, stage #486): `removed`, `deprecated`,
+// `diverges` and `pending` on a type, field or `table` column. They only inform: they do not
+// generate a pending item (`issues.ts`). Fixed severity: removed > deprecated = diverges > pending.
+// Pure and with no browser APIs (reused by the MCP server).
 
-/** Tipos de aviso na ordem de exibição (da maior gravidade à menor; empate: deprecated antes). */
+/** Notice kinds in display order (from highest to lowest severity; tie: deprecated first). */
 export const NOTICE_KINDS: readonly SpecNoticeKind[] = SPEC_NOTICE_KINDS;
 
-/** Posição do tipo de aviso na ordem de exibição. */
+/** Position of the notice kind in the display order. */
 function displayOrder(kind: SpecNoticeKind): number {
   return NOTICE_KINDS.indexOf(kind);
 }
 
-/** Comparador de avisos: ordem de exibição dos tipos (empate: a ordem do arquivo, por ser estável). */
+/** Notice comparator: display order of the kinds (tie: file order, since the sort is stable). */
 export function compareNotices(a: SpecNotice, b: SpecNotice): number {
   return displayOrder(a.kind) - displayOrder(b.kind);
 }
 
-/** Avisos na ordem de exibição; dentro do mesmo tipo, a ordem do arquivo. Não altera a lista. */
+/** Notices in display order; within the same kind, file order. Does not change the list. */
 export function sortNotices(notices: readonly SpecNotice[]): SpecNotice[] {
   return [...notices].sort(compareNotices);
 }
 
-/** Avisos do tipo, depois dos campos e depois das colunas, na ordem do arquivo. */
+/** The type's notices, then the fields' and then the columns', in file order. */
 export function typeNotices(type: SpecAnnotationType): SpecNotice[] {
   return placedTypeNotices(type).map((p) => p.notice);
 }
 
 /**
- * O aviso de maior gravidade do tipo, contando o do tipo e os dos campos e colunas; `null` se
- * não há nenhum. Empate (inclusive `deprecated` e `diverges`): o que vem antes na ordem de
- * exibição e, no mesmo tipo de aviso, o primeiro do arquivo (tipo, campos, colunas).
+ * The highest-severity notice of the type, counting the type's own and those of the fields and
+ * columns; `null` if there is none. Tie (including `deprecated` and `diverges`): the one that
+ * comes first in the display order and, within the same notice kind, the first in the file
+ * (type, fields, columns).
  */
 export function highestNotice(type: SpecAnnotationType): SpecNotice | null {
   return sortNotices(typeNotices(type))[0] ?? null;
@@ -48,22 +49,22 @@ export function highestNotice(type: SpecAnnotationType): SpecNotice | null {
 
 export type NoticeScope = 'type' | 'field' | 'column';
 
-/** Um aviso da especialização e as anotações do projeto que ele afeta. */
+/** A specialization notice and the project annotations it affects. */
 export interface NoticeUsage {
   readonly specId: string;
   readonly layerId: string;
   readonly typeId: string;
   readonly scope: NoticeScope;
-  /** Chave do campo (escopo `field`) ou da tabela (escopo `column`). */
+  /** Key of the field (scope `field`) or of the table (scope `column`). */
   readonly key?: string;
-  /** Chave da coluna (escopo `column`). */
+  /** Key of the column (scope `column`). */
   readonly column?: string;
   readonly notice: SpecNotice;
-  /** Ids das anotações afetadas, na ordem do projeto; vazio se nenhuma usa o aviso. */
+  /** Ids of the affected annotations, in project order; empty if none uses the notice. */
   readonly annotationIds: readonly string[];
 }
 
-/** Anotações tipadas de cada tipo, por `typeKey`, na ordem do projeto. */
+/** Typed annotations of each type, by `typeKey`, in project order. */
 function annotationsByType(p: Project): Map<string, Annotation[]> {
   const map = new Map<string, Annotation[]>();
   for (const a of p.annotations) {
@@ -95,19 +96,19 @@ interface TypeContext {
   readonly annotations: readonly Annotation[];
 }
 
-/** Um aviso do tipo com o lugar onde está: o tipo, um campo (`key`) ou uma coluna de `table`. */
+/** A notice of the type with where it sits: the type, a field (`key`) or a `table` column. */
 export interface PlacedNotice {
   readonly scope: NoticeScope;
-  /** Chave do campo (escopo `field`) ou da tabela (escopo `column`). */
+  /** Key of the field (scope `field`) or of the table (scope `column`). */
   readonly key?: string;
-  /** Chave da coluna (escopo `column`). */
+  /** Key of the column (scope `column`). */
   readonly column?: string;
   readonly notice: SpecNotice;
 }
 
 /**
- * Cada aviso do tipo com o lugar, na ordem do `typeNotices`: os do tipo, depois os dos campos
- * e depois os das colunas (dentro de cada grupo, a ordem do arquivo).
+ * Each notice of the type with its place, in the order of `typeNotices`: the type's, then the
+ * fields' and then the columns' (within each group, file order).
  */
 export function placedTypeNotices(type: SpecAnnotationType): PlacedNotice[] {
   const own = (type.notices ?? []).map((notice): PlacedNotice => ({
@@ -127,7 +128,7 @@ export function placedTypeNotices(type: SpecAnnotationType): PlacedNotice[] {
   return [...own, ...fields, ...columns];
 }
 
-/** Ids das anotações que o aviso afeta, pelo escopo (ver `noticeUsage`). */
+/** Ids of the annotations the notice affects, by scope (see `noticeUsage`). */
 function affected(placed: PlacedNotice, annotations: readonly Annotation[]): string[] {
   const { scope, key, column } = placed;
   if (scope === 'type') return ids(annotations, () => true);
@@ -147,12 +148,13 @@ function typeUsages(ctx: TypeContext): NoticeUsage[] {
 }
 
 /**
- * Cada aviso das especializações carregadas no projeto, com as anotações que ele afeta, na
- * ordem do arquivo (especialização, camada, tipo; em cada tipo: avisos do tipo, dos campos e
- * das colunas). Aviso do tipo afeta toda anotação do tipo; o do campo, a anotação com valor não
- * vazio nele; o da coluna, a anotação com valor não vazio nela em alguma linha da tabela.
- * Anotação livre e de outro tipo ficam fora. Avisos que nenhuma anotação usa vêm com lista
- * vazia (quem mostra filtra). Memoizada pela versão do projeto.
+ * Each notice of the specializations loaded in the project, with the annotations it affects, in
+ * file order (specialization, layer, type; within each type: notices of the type, of the fields
+ * and of the columns). A type notice affects every annotation of the type; a field notice, the
+ * annotation with a non-empty value in it; a column notice, the annotation with a non-empty
+ * value in it in some row of the table. Free annotations and those of another type are left
+ * out. Notices that no annotation uses come with an empty list (whoever displays filters).
+ * Memoized by project version.
  */
 export const noticeUsage: (p: Project) => readonly NoticeUsage[] = memoByProject((p) => {
   const byType = annotationsByType(p);

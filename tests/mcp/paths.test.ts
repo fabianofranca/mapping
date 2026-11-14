@@ -2,33 +2,33 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { hasParentSegment, isWithin } from '../../mcp/paths';
 
-// Os testes do servidor rodam só no Linux (CI `ubuntu-latest`); as duas conferências de caminho
-// que valem no Windows são testadas aqui com `path.win32` (fase 8.5, M14).
+// The server tests run only on Linux (CI `ubuntu-latest`); the two path checks
+// that matter on Windows are tested here with `path.win32` (phase 8.5, M14).
 
 describe('isWithin', () => {
   it.each([
     ['C:\\proj', 'C:\\proj', true],
-    ['C:\\proj', 'C:\\proj\\loja\\mapping.json', true],
-    ['C:\\proj', 'c:\\PROJ\\loja', true],
-    ['C:\\proj\\', 'C:\\proj\\loja', true],
-    ['C:\\proj', 'C:\\projeto', false],
-    ['C:\\proj', 'C:\\proj\\..\\fora', false],
+    ['C:\\proj', 'C:\\proj\\store\\mapping.json', true],
+    ['C:\\proj', 'c:\\PROJ\\store', true],
+    ['C:\\proj\\', 'C:\\proj\\store', true],
+    ['C:\\proj', 'C:\\project', false],
+    ['C:\\proj', 'C:\\proj\\..\\outside', false],
     ['C:\\proj', 'C:\\', false],
-    ['C:\\proj', 'D:\\proj\\loja', false],
-    ['\\\\servidor\\design', '\\\\servidor\\design\\loja', true],
-    ['\\\\servidor\\design', '\\\\servidor\\outra\\loja', false],
-    ['\\\\servidor\\design', 'C:\\design\\loja', false],
-  ])('win32: %s contém %s? %s', (parent, child, expected) => {
+    ['C:\\proj', 'D:\\proj\\store', false],
+    ['\\\\server\\design', '\\\\server\\design\\store', true],
+    ['\\\\server\\design', '\\\\server\\other\\store', false],
+    ['\\\\server\\design', 'C:\\design\\store', false],
+  ])('win32: %s contains %s? %s', (parent, child, expected) => {
     expect(isWithin(parent, child, path.win32)).toBe(expected);
   });
 
   it.each([
-    ['/raiz', '/raiz/loja', true],
-    ['/raiz', '/raiz', true],
-    ['/raiz', '/raiz-2/loja', false],
-    ['/raiz', '/', false],
-    ['/raiz', '/RAIZ/loja', false],
-  ])('posix (padrão): %s contém %s? %s', (parent, child, expected) => {
+    ['/root', '/root/store', true],
+    ['/root', '/root', true],
+    ['/root', '/root-2/store', false],
+    ['/root', '/', false],
+    ['/root', '/ROOT/store', false],
+  ])('posix (default): %s contains %s? %s', (parent, child, expected) => {
     expect(isWithin(parent, child)).toBe(expected);
     expect(isWithin(parent, child, path.posix)).toBe(expected);
   });
@@ -36,14 +36,14 @@ describe('isWithin', () => {
 
 describe('hasParentSegment', () => {
   it.each([
-    ['..\\fora', true],
-    ['loja\\..\\..\\fora', true],
-    ['loja/..\\fora', true],
+    ['..\\outside', true],
+    ['store\\..\\..\\outside', true],
+    ['store/..\\outside', true],
     ['C:\\proj\\..', true],
-    ['loja\\a..b\\c', false],
-    ['loja\\..x', false],
-    ['..loja', false],
-    ['loja\\imagens', false],
+    ['store\\a..b\\c', false],
+    ['store\\..x', false],
+    ['..store', false],
+    ['store\\images', false],
   ])('%s → %s', (input, expected) => {
     expect(hasParentSegment(input)).toBe(expected);
   });

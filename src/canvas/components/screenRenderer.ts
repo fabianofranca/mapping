@@ -1,15 +1,16 @@
 /**
- * Desenha UMA tela dentro de um `Konva.Group` fornecido pelo chamador (o
- * visualizador usa um por Stage; o editor do laboratório, um por tela do quadro). Cada instância
- * vira um `Konva.Group` filho, na posição do retângulo (coordenadas da tela), com o atributo
- * `instanceId`, o componente instanciado (`instantiate` → `renderScene`) e um retângulo "hit"
- * transparente para o clique. Tipo sem componente (ou desconhecido) vira a caixa tracejada
- * reservada, com um aviso.
+ * Draws ONE screen inside a `Konva.Group` supplied by the caller (the
+ * viewer uses one per Stage; the lab editor, one per board screen). Each instance
+ * becomes a child `Konva.Group`, at the rectangle's position (screen coordinates), with the
+ * `instanceId` attribute, the instantiated component (`instantiate` → `renderScene`) and a
+ * transparent "hit" rectangle for the click. A type without a component (or unknown) becomes the
+ * dashed reserved box, with a notice.
  *
- * `update` faz o diff por instância: compara por identidade (`===`) a biblioteca e o objeto de
- * cada instância; só as instâncias novas ou com objeto novo são (re)instanciadas, as que sumiram
- * são destruídas. O renderer não conhece "quadro", "artboard" nem "tela ativa": só o grupo que
- * recebe. Não tem eventos de arrasto (o editor liga os dele em `onInstanceCreated`).
+ * `update` diffs per instance: it compares the library and each instance's object by identity
+ * (`===`); only new instances or ones with a new object are (re)instantiated, those that
+ * vanished are destroyed. The renderer does not know "board", "artboard" or "active screen": only
+ * the group it
+ * receives. It has no drag events (the editor wires its own in `onInstanceCreated`).
  */
 import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
@@ -36,55 +37,59 @@ import {
 import { type Instance, type Screen, renderOrder } from '../../model/components/screen';
 import { konvaMeasurer } from './konvaMeasurer';
 
-/** Área clicável da instância: transparente, mas que recebe o ponteiro. */
+/** Clickable area of the instance: transparent, but it receives the pointer. */
 const HIT_FILL = 'transparent';
 
-/** Avisos da instanciação por instância (só as que têm aviso). */
+/** Per-instance instantiation warnings (only those that have a warning). */
 export type InstanceWarnings = ReadonlyMap<string, readonly string[]>;
 
 /**
- * Os textos que o renderer desenha ou devolve (a caixa de tipo ausente e os avisos): quem chama
- * os fornece, no idioma dele. O renderer não tem texto de interface próprio.
+ * The texts the renderer draws or returns (the missing-type box and the warnings): the caller
+ * supplies them, in its language. The renderer has no interface text of its own.
  */
 export interface ScreenRendererLabels {
-  /** Texto da caixa de uma instância cujo tipo não tem componente. */
+  /** Box text of an instance whose type has no component. */
   typeWithoutComponent(typeName: string): string;
-  /** Texto da caixa de uma instância cujo tipo a biblioteca não tem. */
+  /** Box text of an instance whose type the library does not have. */
   unknownType(typeId: string): string;
-  /** Aviso da instância de tipo sem componente. */
+  /** Warning of the instance of a type without a component. */
   readonly warningTypeWithoutComponent: string;
-  /** Aviso da instância de tipo que a biblioteca não tem. */
+  /** Warning of the instance of a type the library does not have. */
   readonly warningUnknownType: string;
-  /** Texto de um aviso do desenho da cena (`renderScene`). */
+  /** Text of a scene-drawing warning (`renderScene`). */
   drawWarning(warning: RenderWarning): string;
 }
 
 export interface ScreenRendererOptions {
-  /** Textos do renderer, no idioma de quem chama. */
+  /** Renderer texts, in the caller's language. */
   readonly labels: ScreenRendererLabels;
-  /** Cores e medidas do reservado e da caixa de tipo ausente (padrão: `DEFAULT_PALETTE`). */
+  /** Colors and measures of the placeholder and the missing-type box (default: `DEFAULT_PALETTE`). */
   readonly palette?: Partial<RenderPalette>;
-  /** Medidor de texto (padrão: `konvaMeasurer`). */
+  /** Text measurer (default: `konvaMeasurer`). */
   readonly measure?: TextMeasurer;
-  /** Chamado uma vez por instância, quando o grupo dela é criado (o editor liga o arrasto aqui). */
+  /** Called once per instance, when its group is created (the editor wires the drag here). */
   readonly onInstanceCreated?: (id: string, node: Konva.Group) => void;
   /**
-   * Resolve a URL do nó `image` dos componentes (ver `RenderOptions.remoteImage`). Sem ela,
-   * toda imagem remota é o reservado.
+   * Resolves the URL of the components' `image` node (see `RenderOptions.remoteImage`). Without it,
+   * every remote image is the placeholder.
    */
   readonly remoteImage?: (url: string) => RemoteImageResult;
-  /** O resultado será lido de volta (`toDataURL`): imagem `opaque` vira reservado. */
+  /** The result will be read back (`toDataURL`): an `opaque` image becomes the placeholder. */
   readonly pixelSafe?: boolean;
 }
 
 export interface ScreenRendererUpdateOptions {
-  /** Re-instancia tudo (fontes carregadas, por exemplo). */
+  /** Re-instantiates everything (loaded fonts, for example). */
   readonly force?: boolean;
-  /** Índice, no grupo, da primeira instância (o chamador pode ter outros filhos antes). Padrão 0. */
+  /**
+   * Index, in the group, of the first instance (the caller may have other children before). Default
+   * 0.
+   */
   readonly zBase?: number;
   /**
-   * Direção de leitura do interior dos componentes. Ausente, vale a `screen.direction` (a tela
-   * `rtl` de `layoutScreen`), senão `ltr`; presente, vence a da tela. Trocá-la re-instancia tudo.
+   * Reading direction of the components' interior. When absent, the `screen.direction` applies (the
+   * `rtl` screen of `layoutScreen`), otherwise `ltr`; when present, it overrides the screen's.
+   * Changing it re-instantiates everything.
    */
   readonly direction?: Direction;
 }
@@ -93,19 +98,22 @@ interface Mounted {
   instance: Instance;
   readonly node: Konva.Group;
   label: string | undefined;
-  /** URLs remotas que o último desenho da instância pediu. */
+  /** Remote URLs that the instance's last drawing requested. */
   imageUrls: readonly string[];
-  /** Cor herdada: os valores oferecidos pelos ancestrais que o último desenho leu. */
+  /** Inherited color: the values offered by the ancestors that the last drawing read. */
   provided: ProvidedValues;
-  /** O que o slot da instância oferece às filhas no último desenho (`provide`). */
+  /** What the instance's slot offers its children in the last drawing (`provide`). */
   offers: ProvidedValues | undefined;
-  /** Caixa do slot (na tela) quando ele tem `clip`: as filhas só aparecem dentro dela. */
+  /** Slot box (on the screen) when it has `clip`: the children only appear inside it. */
   slotClip: Box | undefined;
-  /** O recorte (na tela) que as filhas recebem: o `slotClip` dentro do recorte da própria instância. */
+  /**
+   * The clip (on the screen) that the children receive: the `slotClip` inside the instance's own
+   * clip.
+   */
   childClip: Box | undefined;
 }
 
-/** A direção do interior: a opção vence a da tela; sem nenhuma, `ltr`. */
+/** The interior direction: the option overrides the screen's; with neither, `ltr`. */
 function directionOf(screen: Screen, options: ScreenRendererUpdateOptions): Direction {
   return options.direction ?? screen.direction ?? 'ltr';
 }
@@ -129,9 +137,9 @@ export class ScreenRenderer {
   }
 
   /**
-   * Diff: cria, atualiza (só as instâncias cujo objeto mudou) e remove; o z-order segue
-   * `renderOrder(screen)` a partir de `zBase`. Biblioteca nova (outro objeto) equivale a `force`.
-   * Devolve true se algo foi criado, redesenhado, removido ou reordenado.
+   * Diff: creates, updates (only instances whose object changed) and removes; the z-order follows
+   * `renderOrder(screen)` from `zBase`. A new library (another object) is equivalent to `force`.
+   * Returns true if anything was created, redrawn, removed or reordered.
    */
   update(
     library: Library | undefined,
@@ -153,8 +161,8 @@ export class ScreenRenderer {
     let changed = false;
     const seen = new Set<string>();
     const order: string[] = [];
-    // Cor herdada: o que as filhas de cada instância herdam (o que o pai herdou, com o que ele
-    // oferece por cima), de cima para baixo na ordem de desenho; quem não oferece é atravessado.
+    // Inherited color: what each instance's children inherit (what the parent inherited, with what it
+    // offers on top), top to bottom in drawing order; one that offers nothing is passed through.
     const scopes = new Map<string, ProvidedValues>();
     renderOrder(screen).forEach((instance, index) => {
       seen.add(instance.id);
@@ -173,8 +181,9 @@ export class ScreenRenderer {
   }
 
   /**
-   * Cria, redesenha ou só reordena uma instância (o diff por identidade, mais a cor herdada: ela
-   * também é redesenhada quando muda o valor oferecido que o componente lê). Devolve true se algo mudou.
+   * Creates, redraws or only reorders an instance (the identity diff, plus the inherited color: it
+   * is also redrawn when the offered value the component reads changes). Returns true if anything
+   * changed.
    */
   private syncInstance(
     instance: Instance,
@@ -200,9 +209,9 @@ export class ScreenRenderer {
   }
 
   /**
-   * Recorta a instância pelo recorte que a mãe passa às filhas (a caixa do slot com `clip`,
-   * dentro do recorte que a mãe recebeu; a mãe é sempre desenhada antes) e guarda o que esta
-   * passa às dela. Devolve true se o recorte mudou.
+   * Clips the instance by the clip its parent passes to its children (the slot box with `clip`,
+   * inside the clip the parent received; the parent is always drawn first) and stores what this one
+   * passes to its own. Returns true if the clip changed.
    */
   private clipByParent(entry: Mounted): boolean {
     const { parentId } = entry.instance;
@@ -212,13 +221,13 @@ export class ScreenRenderer {
     return applyClip(entry.node, localClip(clip, entry.instance.box));
   }
 
-  /** Dos valores herdados, os que o componente da instância lê (nenhum se ele não lê nada). */
+  /** Of the inherited values, those the instance's component reads (none if it reads nothing). */
   private readProvided(instance: Instance, inherited: ProvidedValues): ProvidedValues {
     const component = this.typesById.get(instance.typeId)?.component;
     return component === undefined ? NO_PROVIDED : pickProvided(inherited, component);
   }
 
-  /** Cria o grupo da instância e o registra (o desenho vem de `renderInto`). */
+  /** Creates the instance group and registers it (the drawing comes from `renderInto`). */
   private mount(instance: Instance): Mounted {
     const node = new Konva.Group();
     node.setAttr('instanceId', instance.id);
@@ -244,42 +253,42 @@ export class ScreenRenderer {
   }
 
   /**
-   * Re-instancia UMA instância com dados temporários (redimensionar ao vivo no editor), sem
-   * mexer na tela: o próximo `update` com o objeto original da tela desfaz o temporário.
+   * Re-instantiates ONE instance with temporary data (live resizing in the editor), without
+   * touching the screen: the next `update` with the screen's original object undoes the temporary one.
    */
   render(instance: Instance): void {
     const entry = this.mounted.get(instance.id);
     if (entry) this.renderInto(entry, instance);
   }
 
-  /** O grupo da instância (posição = `box.x/y`). */
+  /** The instance group (position = `box.x/y`). */
   nodeOf(id: string): Konva.Group | undefined {
     return this.mounted.get(id)?.node;
   }
 
-  /** O último objeto desenhado (inclui o temporário de `render`). */
+  /** The last object drawn (includes `render`'s temporary one). */
   instanceOf(id: string): Instance | undefined {
     return this.mounted.get(id)?.instance;
   }
 
-  /** `instanceLabel(tipo, valores)` da instância; sem tipo, o id do tipo. */
+  /** The instance's `instanceLabel(type, values)`; without a type, the type id. */
   labelOf(id: string): string | undefined {
     return this.mounted.get(id)?.label;
   }
 
-  /** Ids na ordem de desenho. */
+  /** Ids in drawing order. */
   ids(): readonly string[] {
     return this.order;
   }
 
-  /** Avisos por instância; só as que têm aviso. */
+  /** Warnings per instance; only those that have a warning. */
   warnings(): InstanceWarnings {
     return new Map(this.warningsById);
   }
 
   /**
-   * A instância (deste renderer) dona de um nó Konva: sobe pelos pais procurando o atributo
-   * `instanceId` cujo grupo é um dos nossos.
+   * The instance (of this renderer) that owns a Konva node: goes up through the parents looking for the
+   * `instanceId` attribute whose group is one of ours.
    */
   instanceIdOf(target: Konva.Node | null | undefined): string | undefined {
     let node: Konva.Node | null | undefined = target;
@@ -291,7 +300,7 @@ export class ScreenRenderer {
     return undefined;
   }
 
-  /** A instância mais acima (a última na ordem de desenho) cujo retângulo contém o ponto. */
+  /** The topmost instance (the last in drawing order) whose rectangle contains the point. */
   instanceAt(point: { x: number; y: number }): string | undefined {
     for (let i = this.order.length - 1; i >= 0; i -= 1) {
       const id = this.order[i];
@@ -311,8 +320,8 @@ export class ScreenRenderer {
   }
 
   /**
-   * Redesenha as instâncias que usam a URL remota (a imagem terminou de carregar, ou mudou de
-   * estado). Devolve true se alguma foi redesenhada.
+   * Redraws the instances that use the remote URL (the image finished loading, or changed
+   * state). Returns true if any was redrawn.
    */
   refreshImage(url: string): boolean {
     let changed = false;
@@ -324,7 +333,7 @@ export class ScreenRenderer {
     return changed;
   }
 
-  /** Destrói os grupos das instâncias (o grupo recebido fica a cargo do chamador). */
+  /** Destroys the instances' groups (the received group is left to the caller). */
   dispose(): void {
     for (const { node } of this.mounted.values()) node.destroy();
     this.mounted.clear();
@@ -350,7 +359,7 @@ export class ScreenRenderer {
     const type = this.typesById.get(instance.typeId);
     const local = { x: 0, y: 0, width: instance.box.width, height: instance.box.height };
     if (!type?.component) {
-      // Tipo sem componente (ou biblioteca sem o tipo): a caixa tracejada com o nome.
+      // Type without a component (or library without the type): the dashed box with the name.
       const { labels } = this.options;
       const { palette } = this;
       node.add(
@@ -401,7 +410,7 @@ export class ScreenRenderer {
     entry.imageUrls = rendered.imageUrls;
     rendered.root.listening(true);
     node.add(rendered.root);
-    // Área de clique inteira (mesmo com fundo transparente).
+    // Whole click area (even with a transparent background).
     node.add(new KonvaRect({ ...local, fill: HIT_FILL, name: 'hit', listening: true }));
     const all = [
       ...result.warnings,
@@ -414,12 +423,12 @@ export class ScreenRenderer {
   }
 }
 
-/** A caixa deslocada para a posição da instância (a cena parte de 0,0); nenhuma fica nenhuma. */
+/** The box shifted to the instance position (the scene starts at 0,0); a null stays null. */
 function offsetBox(box: Box | undefined, origin: Box): Box | undefined {
   return box && { ...box, x: box.x + origin.x, y: box.y + origin.y };
 }
 
-/** O recorte da mãe nas coordenadas locais do grupo da filha (cuja origem é `box`). */
+/** The parent's clip in the child group's local coordinates (whose origin is `box`). */
 function localClip(clip: Box | undefined, box: Box): Box | undefined {
   return (
     clip && {
@@ -431,9 +440,9 @@ function localClip(clip: Box | undefined, box: Box): Box | undefined {
   );
 }
 
-/** Aplica (ou tira) o recorte do grupo; devolve true se ele mudou. */
+/** Applies (or removes) the group's clip; returns true if it changed. */
 function applyClip(node: Konva.Group, next: Box | undefined): boolean {
-  // Largura 0 (slot que colapsou) também é recorte: o Konva recorta com qualquer número (tudo).
+  // Width 0 (a collapsed slot) is also a clip: Konva clips with any number (everything).
   const before =
     typeof node.clipWidth() === 'number'
       ? [node.clipX(), node.clipY(), node.clipWidth(), node.clipHeight()]
@@ -447,7 +456,7 @@ function applyClip(node: Konva.Group, next: Box | undefined): boolean {
   return true;
 }
 
-/** O desenho montado já é o da instância e dos valores herdados (nada a redesenhar). */
+/** The drawn scene is already that of the instance and the inherited values (nothing to redraw). */
 function isUpToDate(
   entry: Mounted,
   instance: Instance,

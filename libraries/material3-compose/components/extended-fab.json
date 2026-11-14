@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "extended-fab",
   "name": "Extended FAB",
-  "description": "Botão de ação flutuante estendido, como o ExtendedFloatingActionButton do Compose: 56 de altura, forma large, elevação 3, ícone de 24, 12 entre o ícone e o rótulo (label large); recolhido (expanded falso) mostra só o ícone.",
+  "description": "Extended floating action button, like Compose's ExtendedFloatingActionButton: 56 high, large shape, elevation 3, 24 icon, 12 between the icon and the label (label large); collapsed (expanded false) shows only the icon.",
   "size": {
     "width": 142,
     "height": 56
@@ -17,7 +17,7 @@
     "height": "hug"
   },
   "preview": {
-    "text": "Criar",
+    "text": "Create",
     "icon": "Add",
     "expanded": "true",
     "containerColor": "primaryContainer"
@@ -211,7 +211,7 @@
     "children": [
       {
         "type": "rect",
-        "name": "sombra elevada",
+        "name": "elevated shadow",
         "fill": {
           "$switch": "containerColor",
           "cases": {
@@ -367,7 +367,7 @@
       },
       {
         "type": "rect",
-        "name": "estado",
+        "name": "state",
         "fill": {
           "$switch": "containerColor",
           "cases": {
@@ -438,7 +438,7 @@
       },
       {
         "type": "frame",
-        "name": "conteúdo",
+        "name": "content",
         "clip": false,
         "anchors": {
           "centerX": true,
@@ -699,7 +699,7 @@
           },
           {
             "type": "text",
-            "name": "texto",
+            "name": "text",
             "text": {
               "$field": "text",
               "default": "Label"

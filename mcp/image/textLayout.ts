@@ -6,20 +6,20 @@ import { capHeightOf, fontExtents, textPolygons, type Polygon } from './glyphs';
 import { blockTop, lineHeightOf, lineLeft, plainLines, richShift } from './textBars';
 import { textWidth, type FontBook } from './textMeasurer';
 
-// Disposição do texto de uma cena com fonte real: os contornos dos glifos de cada linha e trecho
-// (e o fundo dos chips), medidos com a mesma fonte que os desenha.
+// Layout of a scene's text with a real font: the glyph outlines of each line and run
+// (and the chips' background), measured with the same font that draws them.
 
 // ---------------------------------------------------------------------------------------
 // Glifos
 // ---------------------------------------------------------------------------------------
 
-/** Contornos pintados na cor do trecho (`undefined` = a cor do texto do nó). */
+/** Outlines painted in the run's color (`undefined` = the node's text color). */
 export interface InkGlyphs {
   readonly polygons: Polygon[];
   readonly color?: string;
 }
 
-/** Fundo de uma caixa em linha (chip), no espaço local do nó. */
+/** Background of an inline box (chip), in the node's local space. */
 export interface InkBox {
   readonly x: number;
   readonly y: number;
@@ -49,17 +49,17 @@ const rectPolygon = (x: number, y: number, w: number, h: number): Polygon => [
   { x, y: y + h },
 ];
 
-/** As medidas verticais da fonte do nó (a base do `cap-middle`), lidas da mesma fonte que desenha. */
+/** The vertical metrics of the node's font (the base of `cap-middle`), read from the same font that draws. */
 function capMetricsOf(book: FontBook, spec: FontSpec): CapMetrics {
   const face = book.fontFor(spec.family, spec.weight, spec.italic);
   return { ...fontExtents(face, spec.size), capHeight: capHeightOf(face, spec.size) };
 }
 
-/** O `cap-middle` e o `baselinePadding.top` leem as medidas da fonte que desenha. */
+/** `cap-middle` and `baselinePadding.top` read the metrics of the font that draws. */
 const needsMetrics = (node: TextNode): boolean =>
   node.style.verticalAlign === 'cap-middle' || node.style.baselineTop !== undefined;
 
-/** Contornos de uma linha de texto cujo topo está em `top` e altura `lineHeight`, mais a decoração. */
+/** Outlines of a line of text whose top is at `top` and height `lineHeight`, plus the decoration. */
 function lineInk(
   book: FontBook,
   text: string,
@@ -94,8 +94,8 @@ function decorationBar(
 }
 
 /**
- * Linha justificada (como o Konva): o espaço que falta até a largura do nó se reparte igualmente
- * entre os espaços da linha; as palavras ficam no tamanho delas.
+ * Justified line (like Konva): the space left up to the node's width is split equally
+ * among the line's spaces; the words keep their size.
  */
 function justifiedInk(
   book: FontBook,
@@ -134,7 +134,7 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
     letterSpacing: style.letterSpacing ?? 0,
   };
   const widthOf = (text: string) => textWidth(book, text, spec);
-  // Só as linhas que cabem na altura da caixa (decisão 31); o `cap-middle` centra por elas.
+  // Only the lines that fit the box's height (decision 31); `cap-middle` centers by them.
   const { lines, ends } = plainLines(node, measure, widthOf);
   const top = blockTop(
     node,
@@ -240,7 +240,7 @@ function richInk(node: TextNode, layout: RunLayout, book: FontBook): TextInk {
   return out;
 }
 
-/** Os glifos (e os fundos de chip) do texto no espaço local do nó, medidos e desenhados com a mesma fonte. */
+/** The glyphs (and the chip backgrounds) of the text in the node's local space, measured and drawn with the same font. */
 export function textInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextInk {
   return node.runLayout && node.runs
     ? richInk(node, node.runLayout, book)

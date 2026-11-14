@@ -8,10 +8,10 @@ import type { DecisionValue } from './DecisionControl';
 import { useReviewCommands } from './useReviewCommands';
 import { openToolWindow } from '../toolWindowLayout';
 
-// Ganchos comuns aos componentes da revisão: os nomes (projeto atual + "como ficaria"),
-// decidir com o aviso de erro, e navegar (selecionar e mostrar no canvas).
+// Hooks shared by the review components: the names (current project + "how it would look"),
+// deciding with the error notice, and navigating (selecting and showing on the canvas).
 
-/** Projeto atual, "como ficaria" e a proposta aberta; `null` fora da revisão. */
+/** Current project, "how it would look" and the open proposal; `null` outside the review. */
 export function useReviewNames(): ReviewNames | null {
   const { store, review } = useEditor();
   const proposal = review.derived.proposal.value;
@@ -20,7 +20,7 @@ export function useReviewNames(): ReviewNames | null {
   return { current, preview: review.derived.preview.value?.project ?? null, proposal };
 }
 
-/** Decide um alvo e avisa se a decisão foi recusada (ex.: a proposta não está mais aberta). */
+/** Decides a target and notifies if the decision was refused (e.g. the proposal is no longer open). */
 export function useDecide(): (target: ReviewTarget, state: DecisionValue) => void {
   const { review } = useEditor();
   const { report } = useReviewCommands();
@@ -31,7 +31,7 @@ export function useDecide(): (target: ReviewTarget, state: DecisionValue) => voi
   };
 }
 
-/** Decide várias mudanças numa decisão só (um "Desfazer"); um erro é relatado uma vez. */
+/** Decides several changes in a single decision (one "Undo"); an error is reported once. */
 export function useDecideMany(): (
   ids: readonly string[],
   state: 'accepted' | 'rejected',
@@ -47,8 +47,8 @@ export function useDecideMany(): (
 }
 
 /**
- * Seleciona um nível da revisão e o mostra no canvas (a seleção do canvas acompanha a da
- * revisão por `useReviewSync`). `center` centraliza a vista.
+ * Selects a review level and shows it on the canvas (the canvas selection follows the
+ * review's through `useReviewSync`). `center` centers the view.
  */
 export function useReviewNavigate(): (target: ReviewTarget, center?: boolean) => void {
   const { review, canvas } = useEditor();
@@ -58,7 +58,7 @@ export function useReviewNavigate(): (target: ReviewTarget, center?: boolean) =>
   };
 }
 
-/** Mensagem do lote que acabou de ser decidido (o aviso com "Desfazer"). */
+/** Message of the batch that was just decided (the notice with "Undo"). */
 export function undoMessage(
   changed: number,
   cascaded: number,
@@ -76,7 +76,7 @@ export function undoMessage(
     : main;
 }
 
-/** Leva ao problema que bloqueia "Aplicar": seleciona a primeira mudança envolvida. */
+/** Leads to the problem that blocks "Apply": selects the first change involved. */
 export function useShowProblem(): () => void {
   const { review, canvas } = useEditor();
   return () => {
@@ -90,7 +90,7 @@ export function useShowProblem(): () => void {
   };
 }
 
-/** "Aceitar tudo" / "Rejeitar tudo" (as visíveis, com filtros ativos). */
+/** "Accept all" / "Reject all" (the visible ones, with active filters). */
 export function useDecideVisible(): (state: 'accepted' | 'rejected') => void {
   const { review } = useEditor();
   const { report } = useReviewCommands();
@@ -101,7 +101,7 @@ export function useDecideVisible(): (state: 'accepted' | 'rejected') => void {
   };
 }
 
-/** "Aplicar aceitas": uma entrada de desfazer; bloqueado, leva ao problema. */
+/** "Apply accepted": one undo entry; when blocked, leads to the problem. */
 export function useApplyAccepted(): () => Promise<boolean> {
   const { review, ui } = useEditor();
   const { report } = useReviewCommands();

@@ -1,13 +1,13 @@
-# Workspace atualizado — 2026-11-07 (épico `epic/workspace-atualizado`)
+# Workspace updated — 2026-11-07 (épico `epic/workspace-atualizado`)
 
 ## Pendências
 
-Nenhuma (impacto `nenhum`).
+None (impact `nenhum`).
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: nenhuma fase teve impacto no DS (só scripts, workflows, documentação e testes). O artefato não foi aberto.
+Nothing to write to the **Mapping** artifact: no phase had DS impact (only scripts, workflows, documentation and tests). The artifact was not opened.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

@@ -2,15 +2,15 @@ import { t } from '../../i18n';
 import { Icon } from '../icons';
 import type { ValuePart } from './changeText';
 
-// Valor atual, antes e depois de um campo (HANDOFF-PROPOSALS 2.1, DiffValue): fonte mono,
-// sem vermelho nem verde. O que muda se destaca por peso e fundo, e o rótulo da linha diz
-// qual é qual. Na posição, só o número que muda vai em negrito.
+// Current value, before and after of a field (HANDOFF-PROPOSALS 2.1, DiffValue): mono font,
+// no red or green. What changes stands out by weight and background, and the row's label says
+// which is which. For the position, only the number that changes goes in bold.
 
 export type DiffRowKind = 'current' | 'before' | 'after' | 'same';
 
 export interface DiffRow {
   readonly kind: DiffRowKind;
-  /** Rótulo da linha ("Atual", "Antes", "Depois"; "Esta", "Na nova" na substituída). */
+  /** Row label ("Current", "Before", "After"; "This one", "In the new one" on the replaced one). */
   readonly label: string;
   readonly parts: readonly ValuePart[];
 }

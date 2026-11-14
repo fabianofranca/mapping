@@ -1,6 +1,6 @@
-// R26 (Importar a assinatura): o ajudante `scripts/testing/assinatura.mjs` grava o `spec` e a ficha da
-// n-ésima resposta de `plan_signature_import` na saída do cliente stdio, e confere se reimportar
-// não muda nada. O teste monta a saída no formato do `mcp-stdio-client.mjs`.
+// R26 (Import the signature): the helper `scripts/testing/assinatura.mjs` writes the `spec` and the sheet of the
+// nth reply of `plan_signature_import` in the stdio client's output, and checks that reimporting
+// changes nothing. The test builds the output in the format of `mcp-stdio-client.mjs`.
 import { spawnSync } from 'node:child_process';
 import {
   existsSync,
@@ -28,7 +28,7 @@ afterEach(() => {
 const run = (...args: string[]) =>
   spawnSync('node', [SCRIPT, ...args], { encoding: 'utf8' });
 
-/** A saída do cliente stdio: um bloco `=== tool` por chamada, a resposta como lista de um texto JSON. */
+/** The stdio client's output: one `=== tool` block per call, the reply as a list of one JSON text. */
 function output(blocks: { name: string; result: unknown }[]): string {
   return blocks
     .map((b) => `=== ${b.name}\n[\n ${JSON.stringify(JSON.stringify(b.result))}\n]\n`)
@@ -38,7 +38,7 @@ function output(blocks: { name: string; result: unknown }[]): string {
 const SPEC = { format: 'mapping-spec', version: 2, layers: [] };
 
 describe('assinatura.mjs (R26)', () => {
-  it('gravar: o spec da resposta n e a ficha em signaturePath', () => {
+  it('gravar: the spec of reply n and the sheet at signaturePath', () => {
     const saida = path.join(dir, 'saida.txt');
     writeFileSync(
       saida,
@@ -60,7 +60,7 @@ describe('assinatura.mjs (R26)', () => {
     mkdirSync(pacote);
     const r = run('gravar', saida, pacote, ficha, 'lib.spec.json', '2');
     expect(r.status, r.stderr).toBe(0);
-    expect(r.stdout).toContain('gravado: lib.spec.json e signatures/b.json');
+    expect(r.stdout).toContain('written: lib.spec.json and signatures/b.json');
     expect(JSON.parse(readFileSync(path.join(pacote, 'lib.spec.json'), 'utf8'))).toEqual(
       SPEC,
     );
@@ -69,7 +69,7 @@ describe('assinatura.mjs (R26)', () => {
     );
   });
 
-  it('gravar: um signaturePath que sai do pacote é recusado e nada é escrito fora', () => {
+  it('gravar: a signaturePath that leaves the package is refused and nothing is written outside', () => {
     const saida = path.join(dir, 'saida.txt');
     writeFileSync(
       saida,
@@ -86,11 +86,11 @@ describe('assinatura.mjs (R26)', () => {
     mkdirSync(pacote);
     const r = run('gravar', saida, pacote, ficha, 'lib.spec.json');
     expect(r.status).toBe(2);
-    expect(r.stderr).toContain('fora do pacote');
+    expect(r.stderr).toContain('goes outside the package');
     expect(existsSync(path.join(dir, 'fora'))).toBe(false);
   });
 
-  it('igual: diz igual e sai com 0; diferente sai com 1', () => {
+  it('igual: says equal and exits with 0; different exits with 1', () => {
     const saida = path.join(dir, 'saida.txt');
     writeFileSync(
       saida,
@@ -98,14 +98,14 @@ describe('assinatura.mjs (R26)', () => {
     );
     const arquivo = path.join(dir, 'lib.spec.json');
     writeFileSync(arquivo, JSON.stringify(SPEC, null, 2));
-    expect(run('igual', saida, arquivo).stdout.trim()).toBe('igual');
+    expect(run('igual', saida, arquivo).stdout.trim()).toBe('equal');
     writeFileSync(arquivo, JSON.stringify({ ...SPEC, version: 3 }));
     const r = run('igual', saida, arquivo);
-    expect(r.stdout.trim()).toBe('diferente');
+    expect(r.stdout.trim()).toBe('different');
     expect(r.status).toBe(1);
   });
 
-  it('a resposta que é erro, a que falta e o uso errado saem com 2 e dizem o motivo', () => {
+  it('an error reply, a missing one and wrong usage exit with 2 and say why', () => {
     const saida = path.join(dir, 'saida.txt');
     writeFileSync(
       saida,
@@ -121,7 +121,7 @@ describe('assinatura.mjs (R26)', () => {
     expect(erro.stderr).toContain('signature-invalid');
     const falta = run('igual', saida, path.join(dir, 'x.json'), '3');
     expect(falta.status).toBe(2);
-    expect(falta.stderr).toContain('não tem a resposta 3');
+    expect(falta.stderr).toContain('has no response 3');
     expect(run().status).toBe(2);
   });
 });

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CanvasController } from '../../src/canvas/CanvasController';
 import { t } from '../../src/i18n';
 import { SCHEMA_VERSION } from '../../src/model';
+import { locale } from '../../src/store/settings';
 import {
   hideToolWindow,
   isToolWindowOpen,
@@ -22,12 +23,14 @@ import { BUILD_ID } from '../../src/utils/build';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, type Harness } from './harness';
 
-// Estrutura do editor no desktop (R4): faixas, janelas, breadcrumbs, barra de status,
-// minimapa e campo de zoom.
+// Structure of the desktop editor (R4): strips, windows, breadcrumbs, status bar,
+// minimap and zoom field.
+// pt-BR kept: shared fixture data asserted by tests/model (sampleProject names 'Porta', 'Maçaneta')
 
 const SPACE = { width: 1400, height: 800, otherWidth: 0 };
 
 beforeEach(() => {
+  locale.value = 'en-US';
   showToolWindow('tree');
   showToolWindow('layers');
   showToolWindow('details');
@@ -54,13 +57,13 @@ function fakeCanvas(harness: Harness) {
   return canvas;
 }
 
-describe('faixas e janelas', () => {
-  it('a faixa esquerda abre e esconde a Árvore e a Lista', async () => {
+describe('strips and windows', () => {
+  it('the left strip opens and hides the Tree and the List', async () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <ToolStrip side="left" />);
     const user = userEvent.setup();
     const tree = t('panel.treeTitle');
-    // O nome é fixo (o título da janela); o estado fica só no aria-pressed (NE1).
+    // The name is fixed (the window title); the state stays only in aria-pressed (NE1).
     const treeButton = () => screen.getByRole('button', { name: tree });
     expect(treeButton().getAttribute('aria-pressed')).toBe('true');
     await user.click(treeButton());
@@ -69,7 +72,7 @@ describe('faixas e janelas', () => {
     await user.click(treeButton());
     expect(isToolWindowOpen('tree')).toBe(true);
     expect(treeButton().getAttribute('aria-pressed')).toBe('true');
-    // A faixa da esquerda também abre a janela inferior (Lista).
+    // The left strip also opens the bottom window (List).
     const listButton = screen.getByRole('button', { name: t('list.title') });
     expect(listButton.getAttribute('aria-pressed')).toBe('false');
     await user.click(listButton);
@@ -77,7 +80,7 @@ describe('faixas e janelas', () => {
     expect(listButton.getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('o botão aberto fica pressionado', () => {
+  it('the open button stays pressed', () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <ToolStrip side="right" />);
     const button = screen.getByRole('button', {
@@ -86,8 +89,8 @@ describe('faixas e janelas', () => {
     expect(button.getAttribute('aria-pressed')).toBe('true');
   });
 
-  // #497 (AC1): a dica da faixa sai ao lado do botão; embaixo, cobria o conteúdo da janela.
-  it('todos os botões das faixas abrem a dica ao lado (placement end)', () => {
+  // #497 (AC1): the strip tooltip comes out beside the button; below, it covered the window content.
+  it('all strip buttons open the tooltip beside them (placement end)', () => {
     const harness = createHarness(sampleProject());
     withContext(
       harness,
@@ -101,12 +104,12 @@ describe('faixas e janelas', () => {
     for (const anchor of anchors) expect(anchor.className).toContain('tooltip-end');
   });
 
-  it('a janela mostra o título, a divisória e fecha pelo cabeçalho', async () => {
+  it('the window shows the title, the divider and closes from the header', async () => {
     const harness = createHarness(sampleProject());
     withContext(
       harness,
       <ToolWindow id="tree">
-        <p>conteúdo</p>
+        <p>content</p>
       </ToolWindow>,
     );
     const title = t('panel.treeTitle');
@@ -121,27 +124,27 @@ describe('faixas e janelas', () => {
   });
 });
 
-describe('Camadas como janela (B3)', () => {
-  it('a faixa esquerda também abre e esconde as Camadas', async () => {
+describe('Layers as a window (B3)', () => {
+  it('the left strip also opens and hides the Layers', async () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <ToolStrip side="left" />);
     const name = t('layer.title');
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name }));
     expect(isToolWindowOpen('layers')).toBe(false);
-    // Esconder as Camadas não esconde a Árvore: elas dividem a coluna da esquerda.
+    // Hiding the Layers does not hide the Tree: they share the left column.
     expect(isToolWindowOpen('tree')).toBe(true);
     await user.click(screen.getByRole('button', { name }));
     expect(isToolWindowOpen('layers')).toBe(true);
     expect(isToolWindowOpen('tree')).toBe(true);
   });
 
-  it('a janela traz Nova camada e Mostrar todas no cabeçalho e a lista no corpo', async () => {
+  it('the window brings New layer and Show all in the header and the list in the body', async () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <LayersWindow stacked />);
     const region = screen.getByRole('region', { name: t('layer.title') });
     const head = region.querySelector<HTMLElement>('.tool-window-head');
-    if (!head) throw new Error('sem cabeçalho');
+    if (!head) throw new Error('no header');
     expect(within(head).getByRole('button', { name: t('layer.add') })).toBeTruthy();
     expect(within(head).getByRole('button', { name: t('layer.showAll') })).toBeTruthy();
     expect(screen.getAllByLabelText(t('layer.name'))).toHaveLength(2);
@@ -150,16 +153,16 @@ describe('Camadas como janela (B3)', () => {
     const before = harness.project().layers.length;
     await userEvent.click(within(head).getByRole('button', { name: t('layer.add') }));
     expect(harness.project().layers).toHaveLength(before + 1);
-    // A lista acompanha o projeto sem o editor reabrir nada.
+    // The list follows the project without the editor reopening anything.
     expect(isToolWindowOpen('layers')).toBe(true);
   });
 
-  it('empilhada tem a divisória com a Árvore; sozinha, não', () => {
+  it('stacked has the divider with the Tree; alone, it does not', () => {
     const harness = createHarness(sampleProject());
     const { unmount } = withContext(harness, <LayersWindow stacked />);
     const name = t('layer.title');
     const label = t('window.resize', { name });
-    // Duas divisórias: a lateral (largura da coluna) e a horizontal (altura).
+    // Two dividers: the lateral one (column width) and the horizontal one (height).
     expect(screen.getAllByRole('separator', { name: label })).toHaveLength(2);
     expect(
       screen
@@ -172,7 +175,7 @@ describe('Camadas como janela (B3)', () => {
     expect(screen.getAllByRole('separator', { name: label })).toHaveLength(1);
   });
 
-  it('fecha pelo cabeçalho sem tocar na Árvore', async () => {
+  it('closes from the header without touching the Tree', async () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <LayersWindow stacked />);
     await userEvent.click(
@@ -186,23 +189,23 @@ describe('Camadas como janela (B3)', () => {
 });
 
 describe('breadcrumbs', () => {
-  it('mostra o caminho e escolher um nível seleciona o item', async () => {
+  it('shows the path and choosing a level selects the item', async () => {
     const harness = createHarness(sampleProject());
     const onSelect = vi.fn();
     harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     withContext(harness, <Breadcrumbs onSelect={onSelect} />);
-    // O "…" (BC1) não é um trecho do caminho.
+    // The "…" (BC1) is not a segment of the path.
     const crumbs = screen
       .getAllByRole('button')
       .filter((b) => b.classList.contains('crumb'));
-    // Imagem › Porta › Maçaneta: o último é o item selecionado.
+    // Image › Porta › Maçaneta: the last one is the selected item.
     expect(crumbs).toHaveLength(3);
     expect(crumbs[2]?.getAttribute('aria-current')).toBe('location');
     await userEvent.click(crumbs[1]!);
     expect(onSelect).toHaveBeenCalledWith({ kind: 'marking', id: 'M1' });
   });
 
-  it('sem seleção avisa que não há nada selecionado', () => {
+  it('with no selection it says that nothing is selected', () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <Breadcrumbs onSelect={vi.fn()} />);
     expect(screen.getByText(t('panel.nothingSelected'))).toBeTruthy();
@@ -210,8 +213,8 @@ describe('breadcrumbs', () => {
   });
 });
 
-describe('barra de status', () => {
-  it('mostra salvamento, destino, seleção, cursor, zoom, schema, canal e build', () => {
+describe('status bar', () => {
+  it('shows saving, destination, selection, cursor, zoom, schema, channel and build', () => {
     const harness = createHarness(sampleProject());
     harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     harness.context.view.cursor.value = { containerId: 'I1', x: 120, y: 48 };
@@ -229,13 +232,13 @@ describe('barra de status', () => {
     expect(screen.getByText(BUILD_ID)).toBeTruthy();
   });
 
-  it('fora de uma imagem o cursor fica vazio', () => {
+  it('outside an image the cursor is empty', () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <StatusBar />);
     expect(screen.getByText(t('status.empty'))).toBeTruthy();
   });
 
-  it('somente leitura aparece no lugar do salvamento', () => {
+  it('read-only appears in place of the saving', () => {
     const harness = createHarness(sampleProject(), true);
     withContext(harness, <StatusBar />);
     expect(screen.getByText(t('status.readOnly'))).toBeTruthy();
@@ -243,8 +246,8 @@ describe('barra de status', () => {
   });
 });
 
-describe('zoom e minimapa', () => {
-  it('o campo de zoom mostra a porcentagem e volta a 100%', async () => {
+describe('zoom and minimap', () => {
+  it('the zoom field shows the percentage and goes back to 100%', async () => {
     const harness = createHarness(sampleProject());
     const canvas = fakeCanvas(harness);
     harness.context.view.viewport.value = { x: 0, y: 0, scale: 0.42 };
@@ -255,7 +258,7 @@ describe('zoom e minimapa', () => {
     expect(canvas.zoomTo).toHaveBeenCalledWith(1);
   });
 
-  it('o minimapa aparece com as imagens e o clique move a vista', async () => {
+  it('the minimap appears with the images and the click moves the view', async () => {
     const harness = createHarness(sampleProject());
     const canvas = fakeCanvas(harness);
     const { view } = harness.context;
@@ -267,7 +270,7 @@ describe('zoom e minimapa', () => {
     expect(canvas.centerOnPoint).toHaveBeenCalledOnce();
   });
 
-  it('sem imagens não há minimapa', () => {
+  it('with no images there is no minimap', () => {
     const harness = createHarness(sampleProject());
     harness.context.view.size.value = { width: 400, height: 300 };
     withContext(harness, <Minimap />);

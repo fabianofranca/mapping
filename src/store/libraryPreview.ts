@@ -6,17 +6,17 @@ import { fontDeclaration } from './componentLibrary';
 import { libraryInputFiles } from './packageValidation';
 import type { SpecPackageFiles } from './project';
 
-// Biblioteca aberta sem projeto (etapa Biblioteca, B5): o pacote lido para a memória vira um
-// catálogo para a tela do Catálogo. Nada é gravado em disco nem nos recentes, e as fontes do
-// pacote só valem enquanto a tela está aberta (`dispose` as tira do documento).
+// Library opened without a project (Library stage, B5): the package read into memory becomes a
+// catalog for the Catalog screen. Nothing is written to disk or to the recents, and the package
+// fonts only hold while the screen is open (`dispose` removes them from the document).
 
 export interface LibraryPreview {
-  /** Nome da biblioteca (o da especialização; vazio se o pacote não tem uma legível). */
+  /** Library name (the specialization's; empty if the package has no readable one). */
   readonly name: string;
   readonly specId: string;
   readonly version: number;
   readonly catalog: Catalog;
-  /** Sobe quando as fontes terminam de registrar: os desenhos remedem. */
+  /** Rises when the fonts finish registering: the drawings are remeasured. */
   readonly fontsEpoch: ReadonlySignal<number>;
   dispose(): void;
 }

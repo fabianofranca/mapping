@@ -1,13 +1,13 @@
-# CR noturno sem repetição — 2026-11-11 (épico `epic/cr-noturno`)
+# Nightly CR without repetition — 2026-11-11 (épico `epic/cr-noturno`)
 
 ## Pendências
 
-Pendências: nenhuma (sem UI do app; só os docs do fluxo `docs/PROCESS.md` e `docs/FLOW.md` e um teste em `tests/tooling/`).
+Pending items: none (no app UI; only the flow docs `docs/PROCESS.md` and `docs/FLOW.md` and a test in `tests/tooling/`).
 
 ## Sincronização
 
-Sem impacto: o épico não mudou componentes, tokens nem ícones da app.
+Sem impacto: the epic did not change components, tokens or icons of the app.
 
 ## Ficou sem gravar
 
-Nenhuma gravação no artefato Mapping do Claude Design: o épico não mudou componentes, tokens nem ícones da app.
+Nothing written to the Claude Design Mapping artifact: the epic did not change components, tokens or icons of the app.

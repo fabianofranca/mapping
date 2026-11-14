@@ -11,17 +11,17 @@ import { sharedRemoteImageSource } from '../../canvas/components/remoteImages';
 import { readCanvasTokens } from '../../canvas/theme';
 import type { TextMeasurer } from '../../model';
 
-// O que o Catálogo usa para medir texto e rasterizar desenhos. Injetável nos testes (o jsdom
-// não tem canvas real); em produção usa o Konva isolado em `src/canvas/components/`.
+// What the Catalog uses to measure text and rasterize drawings. Injectable in the tests (jsdom
+// has no real canvas); in production it uses Konva isolated in `src/canvas/components/`.
 
 export interface CatalogRenderer {
   readonly measure: TextMeasurer;
   readonly rasterize: SceneRasterizer;
-  /** Cache das imagens da galeria (chave: especialização@versão, tipo, exemplo, tamanho). */
+  /** Cache of the gallery images (key: specialization@version, type, example, size). */
   readonly cache: ExampleImageCache;
   /**
-   * Muda quando uma imagem remota termina de carregar ou o consentimento muda (decisão 7 das
-   * imagens remotas): entra na chave do cache da galeria, como a época das fontes.
+   * Changes when a remote image finishes loading or the consent changes (decision 7 of the
+   * remote images): enters the gallery cache key, like the fonts epoch.
    */
   readonly imagesEpoch: ReadonlySignal<number>;
 }
@@ -34,7 +34,7 @@ export function createCatalogRenderer(
   return { measure, rasterize, cache: createExampleImageCache(rasterize), imagesEpoch };
 }
 
-/** A época das imagens de produção: carregador, imagens embutidas e as duas portas (consentimento, interruptores). */
+/** The production images epoch: loader, embedded images and the two gates (consent, switches). */
 function productionImagesEpoch(): ReadonlySignal<number> {
   const source = sharedRemoteImageSource();
   let version = 0;
@@ -48,16 +48,16 @@ function productionImagesEpoch(): ReadonlySignal<number> {
 
 let shared: CatalogRenderer | null = null;
 
-/** O renderizador de produção, único para a página inteira (o cache sobrevive a reaberturas). */
+/** The production renderer, single for the whole page (the cache survives reopenings). */
 export function defaultCatalogRenderer(): CatalogRenderer {
   if (shared) return shared;
   const source = sharedRemoteImageSource();
-  // Mesmas duas portas e mesmo carregador do canvas; a imagem `opaque` nunca entra (pixelSafe).
+  // Same two gates and same loader as the canvas; an `opaque` image never enters (pixelSafe).
   shared = createCatalogRenderer(
     konvaMeasurer,
     (root, options) =>
       renderSceneToDataUrl(root, {
-        // As cores do reservado e da caixa de nó desconhecido são as do tema de agora.
+        // The colors of the placeholder and of the unknown-node box are those of the current theme.
         palette: readCanvasTokens().component,
         ...options,
         remoteImage: options.remoteImage ?? ((url) => source.resolve(url)),

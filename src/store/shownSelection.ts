@@ -2,16 +2,18 @@ import type { Project } from '../model';
 import type { ReviewState } from './review';
 import { resolveSelection, type ResolvedSelection, type Selection } from './ui';
 
-// A seleção resolvida contra o projeto à vista (`review.derived.shownProject`): na visão
-// Proposto da revisão, o item de uma criação rejeitada já não está no "como ficaria", mas
-// continua selecionado (os Detalhes o mostram com "A criação foi rejeitada"); a trilha, a
-// barra de status e a limpeza depois de recarregar o resolvem então pelo "como ficaria" sem
-// as decisões. Na visão Atual e fora da revisão, só o projeto à vista (a criação ainda não
-// existe lá: "Nada selecionado").
+// The selection resolved against the project in view (`review.derived.shownProject`): in
+// the review's Proposed view, the item of a rejected creation is no longer in the "how it
+// would look", but is still selected (the Details show it with "The creation was
+// rejected"); the breadcrumb, the status bar and the cleanup after reloading then resolve
+// it by the "how it would look" without the decisions. In the Current view and outside the
+// review, only the project in view (the creation does not exist there yet: "Nothing
+// selected").
 
 type ReviewSource = Pick<ReviewState, 'derived' | 'view' | 'proposalId'>;
 
-/** O projeto em que a seleção existe (o à vista; senão, a prévia sem decisões); `null` se em nenhum. */
+/** The project in which the selection exists (the one in view; otherwise, the preview without
+ * decisions); `null` if in none. */
 export function selectionProject(
   review: ReviewSource,
   selection: Selection,
@@ -27,7 +29,8 @@ export function selectionProject(
   return resolveSelection(full, selection) ? full : null;
 }
 
-/** A seleção resolvida pelo projeto à vista, com a prévia sem decisões na visão Proposto. */
+/** The selection resolved by the project in view, with the preview without decisions in the
+ * Proposed view. */
 export function resolveShownSelection(
   review: ReviewSource,
   selection: Selection,

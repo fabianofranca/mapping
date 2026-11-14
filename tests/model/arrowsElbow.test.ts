@@ -12,9 +12,9 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// O roteador do canto (estilo `elbow`, ME4): trechos só horizontais e verticais, saída e chegada
-// perpendiculares aos lados, os pontos de passagem como segmentos do meio. As marcações ficam no
-// canvas (sem container), então os pontos de passagem também são unidades do canvas.
+// The elbow router (`elbow` style, ME4): only horizontal and vertical segments, departure and arrival
+// perpendicular to the sides, the waypoints as the middle segments. The markings are on the
+// canvas (no container), so the waypoints are canvas units too.
 
 const r = (x: number, y: number, width = 100, height = 100): Rect => ({
   x,
@@ -48,13 +48,13 @@ function scene(
 
 function route(p: Project) {
   const arrow = p.arrows[0];
-  if (!arrow) throw new Error('seta');
+  if (!arrow) throw new Error('arrow');
   const result = arrowRoute(p, arrow);
-  if (!result) throw new Error('rota');
+  if (!result) throw new Error('route');
   return result;
 }
 
-/** Todos os trechos são horizontais ou verticais. */
+/** Every segment is horizontal or vertical. */
 function orthogonal(points: readonly ArrowPoint[]): boolean {
   return points.every((pt, i) => {
     const prev = points[i - 1];
@@ -62,7 +62,7 @@ function orthogonal(points: readonly ArrowPoint[]): boolean {
   });
 }
 
-/** A direção (versor) do trecho `i`, ou `null` se ele tem comprimento zero. */
+/** The direction (unit vector) of segment `i`, or `null` if it has zero length. */
 function direction(points: readonly ArrowPoint[], i: number): ArrowPoint | null {
   const a = points[i] as ArrowPoint;
   const b = points[i + 1] as ArrowPoint;
@@ -77,7 +77,7 @@ const NORMALS: Record<ArrowSide, ArrowPoint> = {
   right: { x: 1, y: 0 },
 };
 
-/** Sai no sentido do lado de origem e chega no sentido contrário ao lado de destino. */
+/** Leaves in the direction of the origin side and arrives opposite to the destination side. */
 function leavesAndArrivesPerpendicular(p: Project): void {
   const { points, fromSide, toSide } = route(p);
   expect(orthogonal(points)).toBe(true);
@@ -89,8 +89,8 @@ function leavesAndArrivesPerpendicular(p: Project): void {
   });
 }
 
-describe('elbow: rota padrão', () => {
-  it('lados automáticos horizontais: um Z com a pista no meio', () => {
+describe('elbow: default route', () => {
+  it('automatic horizontal sides: a Z with the lane in the middle', () => {
     const p = scene(r(0, 0), r(400, 300));
     const { points, lanes, fromSide, toSide } = route(p);
     expect([fromSide, toSide]).toEqual(['right', 'left']);
@@ -104,7 +104,7 @@ describe('elbow: rota padrão', () => {
     leavesAndArrivesPerpendicular(p);
   });
 
-  it('lados automáticos verticais: o mesmo Z transposto', () => {
+  it('automatic vertical sides: the same Z transposed', () => {
     const p = scene(r(0, 0), r(300, 400));
     const { points, lanes, fromSide, toSide } = route(p);
     expect([fromSide, toSide]).toEqual(['bottom', 'top']);
@@ -118,13 +118,13 @@ describe('elbow: rota padrão', () => {
     leavesAndArrivesPerpendicular(p);
   });
 
-  it('para a esquerda e para cima também saem e chegam do lado certo', () => {
+  it('to the left and upward also leave and arrive on the right side', () => {
     leavesAndArrivesPerpendicular(scene(r(400, 300), r(0, 0)));
     leavesAndArrivesPerpendicular(scene(r(300, 400), r(0, 0)));
   });
 
-  it('lados diferentes (L): uma dobra só, sem pistas', () => {
-    // Sai pela direita de A e chega pelo topo de B.
+  it('different sides (L): a single bend, no lanes', () => {
+    // Leaves from the right of A and arrives at the top of B.
     const p = scene(r(0, 0), r(300, 300), { fromSide: 'right', toSide: 'top' });
     const { points, lanes } = route(p);
     expect(points).toEqual([
@@ -136,18 +136,18 @@ describe('elbow: rota padrão', () => {
     leavesAndArrivesPerpendicular(p);
   });
 
-  it('o L não cabe (a ponta de chegada está do lado errado): quatro trechos', () => {
-    // Sai pela direita de A, mas B está à esquerda e chega pelo topo, com A abaixo de B.
+  it('the L does not fit (the arrival endpoint is on the wrong side): four segments', () => {
+    // Leaves from the right of A, but B is on the left and it arrives at the top, with A below B.
     const p = scene(r(300, 400), r(0, 0), { fromSide: 'right', toSide: 'top' });
     const { points, lanes } = route(p);
     expect(lanes).toHaveLength(2);
     expect(points).toHaveLength(5);
     leavesAndArrivesPerpendicular(p);
-    // A primeira dobra respeita o trecho mínimo de saída.
+    // The first bend respects the minimum departure segment.
     expect((points[1] as ArrowPoint).x - (points[0] as ArrowPoint).x).toBe(ELBOW_STUB);
   });
 
-  it('os dois do mesmo lado (C): a pista passa depois das duas marcações', () => {
+  it('both on the same side (C): the lane passes beyond both markings', () => {
     const p = scene(r(0, 0), r(0, 300), { fromSide: 'right', toSide: 'right' });
     const { points, lanes } = route(p);
     expect(lanes).toEqual([{ axis: 'x', value: 100 + ELBOW_STUB }]);
@@ -163,8 +163,8 @@ describe('elbow: rota padrão', () => {
     leavesAndArrivesPerpendicular(left);
   });
 
-  it('marcações coladas, de frente uma para a outra: cinco trechos com o mínimo nas pontas', () => {
-    // Sem espaço para o Z (menos que duas vezes o trecho mínimo entre elas).
+  it('markings stuck together, facing each other: five segments with the minimum at the ends', () => {
+    // No room for the Z (less than twice the minimum segment between them).
     const p = scene(r(0, 0), r(110, 200), { fromSide: 'right', toSide: 'left' });
     const { points, lanes } = route(p);
     expect(lanes.map((l) => l.axis)).toEqual(['x', 'y', 'x']);
@@ -172,7 +172,7 @@ describe('elbow: rota padrão', () => {
     leavesAndArrivesPerpendicular(p);
   });
 
-  it('sempre ortogonal, saindo e chegando do lado certo, em todas as combinações de lados', () => {
+  it('always orthogonal, leaving and arriving on the right side, in all side combinations', () => {
     const sides: ArrowSide[] = ['top', 'right', 'bottom', 'left'];
     const targets = [r(400, 300), r(-400, 300), r(30, -300), r(110, 20), r(-30, 150)];
     for (const to of targets) {
@@ -185,8 +185,8 @@ describe('elbow: rota padrão', () => {
   });
 });
 
-describe('elbow: pontos de passagem são segmentos do meio', () => {
-  it('uma pista dada: o segmento vertical vai para o x do ponto (o y é ignorado)', () => {
+describe('elbow: waypoints are middle segments', () => {
+  it('a given lane: the vertical segment goes to the x of the point (the y is ignored)', () => {
     const p = scene(r(0, 0), r(400, 300), { points: [{ x: 180, y: 9999 }] });
     const { points, lanes } = route(p);
     expect(points).toEqual([
@@ -198,7 +198,7 @@ describe('elbow: pontos de passagem são segmentos do meio', () => {
     expect(lanes).toEqual([{ axis: 'x', value: 180 }]);
   });
 
-  it('no eixo vertical a pista fixa o y', () => {
+  it('on the vertical axis the lane pins the y', () => {
     const p = scene(r(0, 0), r(300, 400), { points: [{ x: 9999, y: 180 }] });
     expect(route(p).points).toEqual([
       { x: 50, y: 100 },
@@ -208,10 +208,10 @@ describe('elbow: pontos de passagem são segmentos do meio', () => {
     ]);
   });
 
-  it('mover uma marcação estica só o primeiro ou o último segmento', () => {
+  it('moving a marking stretches only the first or the last segment', () => {
     const lane = [{ x: 180, y: 200 }];
     const before = route(scene(r(0, 0), r(400, 300), { points: lane })).points;
-    // A sobe e B desce: a pista do meio fica no x = 180, só as pontas esticam.
+    // A goes up and B goes down: the middle lane stays at x = 180, only the ends stretch.
     const after = route(scene(r(0, -60), r(400, 340), { points: lane })).points;
     expect(after).toHaveLength(before.length);
     expect(after[1]).toEqual({ x: 180, y: -10 });
@@ -219,13 +219,13 @@ describe('elbow: pontos de passagem são segmentos do meio', () => {
     expect((after[1] as ArrowPoint).x).toBe((before[1] as ArrowPoint).x);
     expect((after[2] as ArrowPoint).x).toBe((before[2] as ArrowPoint).x);
     expect(orthogonal(after)).toBe(true);
-    // Movida na direção do trecho, a primeira perna encolhe: a pista continua onde estava.
+    // Moved in the direction of the segment, the first leg shrinks: the lane stays where it was.
     const closer = route(scene(r(40, 0), r(400, 300), { points: lane })).points;
     expect(closer[0]).toEqual({ x: 140, y: 50 });
     expect(closer[1]).toEqual({ x: 180, y: 50 });
   });
 
-  it('três pistas (cinco trechos), alternando vertical, horizontal, vertical', () => {
+  it('three lanes (five segments), alternating vertical, horizontal, vertical', () => {
     const p = scene(r(0, 0), r(400, 300), {
       points: [
         { x: 120, y: 0 },
@@ -243,7 +243,7 @@ describe('elbow: pontos de passagem são segmentos do meio', () => {
     ]);
   });
 
-  it('lados perpendiculares: duas pistas (horizontal e vertical)', () => {
+  it('perpendicular sides: two lanes (horizontal and vertical)', () => {
     const p = scene(r(0, 0), r(300, 300), {
       fromSide: 'right',
       toSide: 'top',
@@ -261,7 +261,7 @@ describe('elbow: pontos de passagem são segmentos do meio', () => {
     ]);
   });
 
-  it('pontos que não casam com os lados (quantidade errada) são ignorados: rota padrão', () => {
+  it('points that do not match the sides (wrong quantity) are ignored: default route', () => {
     const base = route(scene(r(0, 0), r(400, 300))).points;
     const twoLanes = scene(r(0, 0), r(400, 300), {
       points: [
@@ -272,13 +272,13 @@ describe('elbow: pontos de passagem são segmentos do meio', () => {
     expect(route(twoLanes).points).toEqual(base);
   });
 
-  it('o lado automático não depende dos pontos', () => {
-    // O ponto longe abaixo não vira o lado de saída para baixo, como faria na reta.
+  it('the automatic side does not depend on the points', () => {
+    // The far point below does not turn the departure side downwards, as it would on the straight style.
     const p = scene(r(0, 0), r(400, 300), { points: [{ x: 180, y: 5000 }] });
     expect(route(p)).toMatchObject({ fromSide: 'right', toSide: 'left' });
   });
 
-  it('reta e curva continuam com a polilinha de antes e sem pistas', () => {
+  it('straight and curve keep the previous polyline and no lanes', () => {
     const p = scene(r(0, 0), r(400, 300));
     const straight = {
       ...p,

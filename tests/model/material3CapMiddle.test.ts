@@ -1,51 +1,51 @@
-// FX6 (#1013, decisões 23 e 25 da #896): os rótulos de uma linha da `material3-compose` centram pela
-// maiúscula (`font.verticalAlign: "cap-middle"`). A lista abaixo é a do PR. O centro da tinta no raster
-// do MCP está em `tests/mcp/material3CapMiddleRaster.test.ts`.
+// FX6 (#1013, decisions 23 and 25 of #896): the single-line labels of the `material3-compose` are centered by the
+// capital letter (`font.verticalAlign: "cap-middle"`). The list below is the PR's. The ink center in the
+// MCP raster is in `tests/mcp/material3CapMiddleRaster.test.ts`.
 import { describe, expect, it } from 'vitest';
 import { files } from '../support/material3Library';
 
 interface Group {
-  /** Nomes exatos dos nós de texto. */
+  /** Exact names of the text nodes. */
   names?: string[];
-  /** Ou um padrão para os nomes (dias, números do relógio). */
+  /** Or a pattern for the names (days, clock numbers). */
   pattern?: RegExp;
-  /** `true`: basta um nó com o nome (há outro, de várias linhas, que fica como está). */
+  /** `true`: one node with the name is enough (there is another, multi-line one, that stays as is). */
   some?: boolean;
-  /** `true`: o nó ocupa a altura da caixa (`height` `fill`, ou uma expressão que o devolve). */
+  /** `true`: the node fills the box height (`height` `fill`, or an expression that returns it). */
   fill?: boolean;
 }
 
-/** Componente → os rótulos de uma linha que centram pela maiúscula (decisão 23). */
+/** Component → the single-line labels centered by the capital letter (decision 23). */
 const LABELS: Record<string, Group[]> = {
-  // MC5 (#1033, grupo C): button, extended-fab e chip crescem com o rótulo (altura hug), então o rótulo já não ocupa a altura da caixa
-  button: [{ names: ['rótulo'] }],
-  'extended-fab': [{ names: ['texto'] }],
-  chip: [{ names: ['rótulo'] }],
-  tabs: [{ names: ['rótulo'], fill: true }],
-  'segmented-button': [{ names: ['rótulo'], fill: true }],
-  'navigation-bar': [{ names: ['rótulo'] }],
-  'navigation-rail': [{ names: ['rótulo'] }],
-  'short-navigation-bar': [{ names: ['rótulo'] }],
-  'navigation-drawer': [{ names: ['título', 'rótulo', 'selo'] }],
-  badge: [{ names: ['número'] }],
-  snackbar: [{ names: ['rótulo da ação'], fill: true }],
-  // MC5 (#1033): o botão de texto cresce com o rótulo (altura hug), então o rótulo já não ocupa a altura da caixa
-  'alert-dialog': [{ names: ['rótulo'] }],
+  // MC5 (#1033, group C): button, extended-fab and chip grow with the label (hug height), so the label no longer fills the box height
+  button: [{ names: ['label'] }],
+  'extended-fab': [{ names: ['text'] }],
+  chip: [{ names: ['label'] }],
+  tabs: [{ names: ['label'], fill: true }],
+  'segmented-button': [{ names: ['label'], fill: true }],
+  'navigation-bar': [{ names: ['label'] }],
+  'navigation-rail': [{ names: ['label'] }],
+  'short-navigation-bar': [{ names: ['label'] }],
+  'navigation-drawer': [{ names: ['title', 'label', 'badge'] }],
+  badge: [{ names: ['number'] }],
+  snackbar: [{ names: ['action label'], fill: true }],
+  // MC5 (#1033): the text button grows with the label (hug height), so the label no longer fills the box height
+  'alert-dialog': [{ names: ['label'] }],
   tooltip: [
-    { names: ['rótulo da ação'], fill: true },
-    { names: ['texto'], some: true },
+    { names: ['action label'], fill: true },
+    { names: ['text'], some: true },
   ],
-  'dropdown-menu': [{ names: ['rótulo', 'valor', 'texto'] }],
-  'text-field': [{ names: ['rótulo', 'valor'] }],
-  'secure-text-field': [{ names: ['rótulo', 'valor'] }],
-  'list-item': [{ names: ['título', 'conteúdo final'] }],
-  'search-bar': [{ names: ['dica', 'consulta'] }],
-  'top-app-bar': [{ names: ['título', 'título centralizado'], fill: true }],
-  'bottom-sheet': [{ names: ['rótulo'] }],
-  carousel: [{ names: ['rótulo'] }],
-  'date-picker': [{ pattern: /^(dia( da semana)? \d+|número|mês exibido)$/ }],
+  'dropdown-menu': [{ names: ['label', 'value', 'text'] }],
+  'text-field': [{ names: ['label', 'value'] }],
+  'secure-text-field': [{ names: ['label', 'value'] }],
+  'list-item': [{ names: ['title', 'trailing content'] }],
+  'search-bar': [{ names: ['hint', 'query'] }],
+  'top-app-bar': [{ names: ['title', 'centered title'], fill: true }],
+  'bottom-sheet': [{ names: ['label'] }],
+  carousel: [{ names: ['label'] }],
+  'date-picker': [{ pattern: /^((week)?day \d+|number|displayed month)$/ }],
   'time-picker': [
-    { pattern: /^(valor|separador|texto|número( interno)? \d+|valor selecionado)$/ },
+    { pattern: /^(value|separator|text|number( inner)? \d+|selected value)$/ },
   ],
 };
 
@@ -70,7 +70,7 @@ const componentOf = (id: string): RawNode => {
   return (JSON.parse(file?.text ?? '{}') as { template: RawNode }).template;
 };
 
-describe('rótulos de uma linha da Material 3 com cap-middle (decisão 23)', () => {
+describe('single-line labels of Material 3 with cap-middle (decision 23)', () => {
   for (const [id, groups] of Object.entries(LABELS)) {
     it(`${id}: ${groups.flatMap((g) => g.names ?? [String(g.pattern)]).join(', ')}`, () => {
       const all = textNodes(componentOf(id));
@@ -80,7 +80,7 @@ describe('rótulos de uma linha da Material 3 com cap-middle (decisão 23)', () 
             ? group.names.includes(String(n.name))
             : group.pattern!.test(String(n.name)),
         );
-        expect(hits.length, 'nenhum nó com o nome da lista').toBeGreaterThan(0);
+        expect(hits.length, 'no node with a name from the list').toBeGreaterThan(0);
         const capped = hits.filter((n) =>
           JSON.stringify(n.font?.verticalAlign ?? '').includes('cap-middle'),
         );
@@ -89,13 +89,13 @@ describe('rótulos de uma linha da Material 3 com cap-middle (decisão 23)', () 
             hits
               .filter((n) => !JSON.stringify(n.height ?? '').includes('fill'))
               .map((n) => String(n.name)),
-            'nós sem height fill',
+            'nodes without height fill',
           ).toEqual([]);
         if (group.some === true) expect(capped.length).toBeGreaterThan(0);
         else
           expect(
             hits.filter((n) => !capped.includes(n)).map((n) => String(n.name)),
-            'nós sem cap-middle',
+            'nodes without cap-middle',
           ).toEqual([]);
       }
     });

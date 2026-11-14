@@ -4,25 +4,25 @@ import { findBodyOpen, topLevel, type TokenStream } from '../tokens';
 import { findFunctions, type FunctionDecl } from './functions';
 import { parseParams } from './params';
 
-// A fábrica de um padrão `Objeto.fabrica(...)`: a `fun fabrica(` de dentro de `object Objeto { … }`,
-// no mesmo arquivo e nos `--also` (nessa ordem). Entre as de mesmo nome, descartam-se as
-// `@Deprecated` e fica a de mais parâmetros (empate: a primeira).
+// The factory of a default `Object.factory(...)`: the `fun factory(` inside `object Object { … }`,
+// in the same file and in the `--also` ones (in that order). Among those with the same name, the
+// `@Deprecated` ones are dropped and the one with the most parameters stays (tie: the first).
 
 export interface KotlinFile {
   readonly stream: TokenStream;
-  /** O `package` do arquivo (vazio se não declara). */
+  /** The file's `package` (empty if it declares none). */
   readonly pkg: string;
 }
 
 export interface FoundFactory {
   readonly factory: SignatureFactory;
-  /** O KDoc da função escolhida (texto cru), para o `doc` de `<param>.<paramDaFábrica>`. */
+  /** The KDoc of the chosen function (raw text), for the `doc` of `<param>.<factoryParam>`. */
   readonly doc: string | undefined;
 }
 
 const FACTORY_DEFAULT = /^([A-Z]\w*)\.([a-z]\w*)\(/;
 
-/** O fim do literal de texto ou de caractere que abre em `from` (aspas `"` ou `'`). */
+/** The end of the string or character literal that opens at `from` (quote `"` or `'`). */
 function skipQuoted(text: string, from: number): number {
   const quote = text[from]!;
   let i = from + 1;
@@ -30,7 +30,7 @@ function skipQuoted(text: string, from: number): number {
   return i;
 }
 
-/** O índice do `)` que fecha o `(` em `open` (ignora parênteses dentro de literais); -1 se não fecha. */
+/** The index of the `)` that closes the `(` at `open` (ignores parentheses inside literals); -1 if it never closes. */
 function closingParen(text: string, open: number): number {
   let depth = 0;
   for (let i = open; i < text.length; i++) {
@@ -42,7 +42,7 @@ function closingParen(text: string, open: number): number {
   return -1;
 }
 
-/** `Objeto.fabrica(...)` inteiro: o nome do objeto e o da função, se o padrão é só essa chamada. */
+/** The whole `Object.factory(...)`: the object name and the function name, if the default is only that call. */
 export function factoryCall(
   defaultText: string | undefined,
 ): [string, string] | undefined {
@@ -54,14 +54,14 @@ export function factoryCall(
     : undefined;
 }
 
-/** As funções que são membros diretos (nível de cima do corpo) de algum `object` com este nome. */
+/** The functions that are direct members (top level of the body) of some `object` with this name. */
 function objectMembers(stream: TokenStream, objectName: string): FunctionDecl[] {
   return membersByObject(stream).get(objectName) ?? [];
 }
 
 const MEMBERS = new WeakMap<TokenStream, Map<string, FunctionDecl[]>>();
 
-/** Os membros diretos de cada `object` do arquivo, por nome; calculado uma vez por arquivo. */
+/** The direct members of each `object` of the file, by name; computed once per file. */
 function membersByObject(stream: TokenStream): Map<string, FunctionDecl[]> {
   const cached = MEMBERS.get(stream);
   if (cached !== undefined) return cached;
@@ -82,7 +82,7 @@ function membersByObject(stream: TokenStream): Map<string, FunctionDecl[]> {
   return byName;
 }
 
-/** Entre as funções de mesmo nome: sem as `@Deprecated`, a de mais parâmetros (empate: a primeira). */
+/** Among the functions with the same name: without the `@Deprecated` ones, the one with the most parameters (tie: the first). */
 function pickFactory(
   stream: TokenStream,
   members: readonly FunctionDecl[],
@@ -101,7 +101,7 @@ function pickFactory(
   return best;
 }
 
-/** A fábrica `objectName.functionName` no primeiro arquivo que a tem (a que não tem parâmetros não conta). */
+/** The factory `objectName.functionName` in the first file that has it (one without parameters does not count). */
 export function findFactory(
   files: readonly KotlinFile[],
   objectName: string,

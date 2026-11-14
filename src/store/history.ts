@@ -4,10 +4,10 @@ import { touchProject } from '../model/project';
 import type { Project } from '../model/types';
 import { reportError } from '../utils/report';
 
-/** Limite de entradas na pilha de desfazer. */
+/** Limit of entries on the undo stack. */
 export const HISTORY_LIMIT = 100;
 
-/** Operação pura aplicada ao projeto (ver `src/model/`). */
+/** Pure operation applied to the project (see `src/model/`). */
 export type Operation = (p: Project) => Project;
 
 export type StoreErrorCode =
@@ -16,25 +16,26 @@ export type StoreErrorCode =
   | 'read-only'
   | 'gesture-active'
   | 'reviewing'
-  // Perspectivas "Só eu" (#659): sem IndexedDB, ou a gravação nele falhou.
+  // "Only me" perspectives (#659): without IndexedDB, or writing to it failed.
   | 'local-unavailable'
-  // Perspectivas: levar uma "Só eu" ao arquivo não gravou o `mapping.json`.
+  // Perspectives: taking an "Only me" one to the file did not write `mapping.json`.
   | 'save-failed'
-  // Perspectivas: comando que só vale na Principal (desenhar no canvas, rota de seta, arrumar, excluir raiz).
+  // Perspectives: command that only applies on the Main one (drawing on the canvas, arrow route,
+  // tidy, delete root).
   | 'principal-only';
 
 /**
- * Efeito fora do projeto ligado a uma entrada do histórico: aplicar as aceitas
- * de uma proposta também marca a proposta como aplicada, e desfazer/refazer essa entrada
- * precisa desfazer/refazer isso junto. `tag` identifica o dono (o id da proposta). Uma
- * entrada com `link` nasce da revisão, então passa pelo bloqueio de somente leitura dela.
+ * Effect outside the project tied to a history entry: applying the accepted changes
+ * of a proposal also marks the proposal as applied, and undoing/redoing that entry
+ * must undo/redo that too. `tag` identifies the owner (the proposal id). An
+ * entry with `link` is born from the review, so it goes through the review's read-only lock.
  */
 export interface HistoryLink {
   readonly tag: string;
   /**
-   * Desfazer/refazer o efeito. A promessa traz o resultado da gravação: enquanto está
-   * pendente o histórico fica parado, e uma falha reverte o passo. Sem promessa (efeito
-   * síncrono), vale como sucesso.
+   * Undo/redo the effect. The promise carries the result of the write: while it is
+   * pending the history stays stopped, and a failure reverts the step. Without a promise
+   * (synchronous effect), it counts as success.
    */
   readonly undo: () => Promise<LinkResult> | undefined;
   readonly redo: () => Promise<LinkResult> | undefined;
@@ -43,7 +44,7 @@ export interface HistoryLink {
 export type LinkResult =
   { readonly ok: true } | { readonly ok: false; readonly error: string };
 
-/** A última falha de um vínculo (o passo foi revertido); `seq` distingue falhas iguais seguidas. */
+/** The last failure of a link (the step was reverted); `seq` tells apart equal consecutive failures. */
 export interface LinkFailure {
   readonly seq: number;
   readonly error: string;
@@ -53,7 +54,7 @@ export interface ApplyOptions {
   readonly link?: HistoryLink;
 }
 
-/** Uma entrada do histórico: o projeto de antes da transição e o efeito dela. */
+/** A history entry: the project from before the transition and its effect. */
 interface Frame {
   readonly project: Project;
   readonly link: HistoryLink | null;
@@ -64,7 +65,7 @@ export type ActionResult<T = void> =
   | { readonly ok: false; readonly error: StoreErrorCode };
 
 export interface ProjectStoreDeps {
-  /** Data ISO usada em `project.updatedAt`. */
+  /** ISO date used in `project.updatedAt`. */
   readonly now?: () => string;
 }
 
@@ -73,74 +74,74 @@ export interface LoadOptions {
 }
 
 /**
- * Estado do projeto (o que vai para o JSON) com desfazer/refazer.
- * O histórico é uma pilha de snapshots imutáveis. Estado de UI não entra aqui.
+ * Project state (what goes to the JSON) with undo/redo.
+ * The history is a stack of immutable snapshots. UI state does not go in here.
  */
 export interface ProjectStore {
-  /** Projeto atual, com a prévia do gesto em andamento (lido pelo canvas, para a geometria). */
+  /** Current project, with the preview of the gesture in progress (read by the canvas, for geometry). */
   readonly project: ReadonlySignal<Project | null>;
   /**
-   * Projeto sem as prévias de gesto: fora de um gesto é o mesmo objeto de `project`;
-   * durante o gesto fica no projeto do início e só muda no `commitGesture`/`cancelGesture`.
-   * A interface e o estado derivado leem este, para não renderizar a cada `pointermove`.
+   * Project without the gesture previews: outside a gesture it is the same object as `project`;
+   * during the gesture it stays at the project from the start and only changes on `commitGesture`/`cancelGesture`.
+   * The interface and the derived state read this one, to avoid rendering on every `pointermove`.
    */
   readonly committed: ReadonlySignal<Project | null>;
   readonly readOnly: ReadonlySignal<boolean>;
   readonly canUndo: ReadonlySignal<boolean>;
   readonly canRedo: ReadonlySignal<boolean>;
-  /** Incrementa a cada alteração do projeto (útil para o salvamento automático). */
+  /** Increments on every project change (useful for autosave). */
   readonly revision: ReadonlySignal<number>;
   readonly gestureActive: ReadonlySignal<boolean>;
   /**
-   * Revisão de uma proposta aberta (etapa 4): o projeto fica somente leitura, e só as
-   * entradas ligadas à proposta aberta (`ApplyOptions.link`, com `link.tag` igual ao id
-   * dela) podem ser aplicadas, desfeitas e refeitas.
+   * Review of an open proposal (stage 4): the project becomes read-only, and only the
+   * entries tied to the open proposal (`ApplyOptions.link`, with `link.tag` equal to its
+   * id) can be applied, undone and redone.
    */
   readonly reviewing: ReadonlySignal<boolean>;
   /**
-   * Edição bloqueada por qualquer motivo: somente leitura ou revisão aberta. A interface
-   * usa este para desabilitar o que seria recusado (desenhar, adicionar imagens, travar…).
+   * Editing blocked for any reason: read-only or open review. The interface
+   * uses this one to disable what would be refused (drawing, adding images, locking…).
    */
   readonly locked: ReadonlySignal<boolean>;
-  /** Falha da gravação ao desfazer/refazer uma aplicação; a interface mostra o erro. */
+  /** Write failure when undoing/redoing an application; the interface shows the error. */
   readonly linkFailure: ReadonlySignal<LinkFailure | null>;
 
   /**
-   * Arquivos de imagem referenciados pelo projeto atual ou por qualquer
-   * snapshot do histórico (desfazer/refazer/gesto). Quem guarda o conteúdo de
-   * imagens removidas só precisa dele enquanto o arquivo estiver neste conjunto.
+   * Image files referenced by the current project or by any
+   * history snapshot (undo/redo/gesture). Whoever keeps the content of
+   * removed images only needs it while the file is in this set.
    */
   referencedImageFiles(): ReadonlySet<string>;
 
   load(project: Project, options?: LoadOptions): void;
   close(): void;
-  /** Liga a revisão da proposta de id `tag`, ou a desliga com `null`. */
+  /** Turns on the review of the proposal with id `tag`, or turns it off with `null`. */
   setReviewing(tag: string | null): void;
-  /** Aplica a operação e cria uma entrada no histórico. */
+  /** Applies the operation and creates a history entry. */
   apply(op: Operation, options?: ApplyOptions): ActionResult;
   /**
-   * Descarta o "refazer" se alguma entrada dele tem o efeito de `tag`: a proposta mudou
-   * depois do desfazer, então refazer deixaria projeto e proposta em desacordo.
+   * Discards the "redo" if any entry of it has the effect of `tag`: the proposal changed
+   * after the undo, so redoing would leave project and proposal out of sync.
    */
   discardRedoOf(tag: string): void;
   /**
-   * Tira o vínculo (`HistoryLink`) de `tag` de todas as entradas, do desfazer e do refazer:
-   * a proposta foi apagada, então desfazer e refazer só mexem no projeto. As entradas ficam.
+   * Removes the link (`HistoryLink`) of `tag` from all entries, in undo and redo:
+   * the proposal was deleted, so undo and redo only touch the project. The entries stay.
    */
   detachLinks(tag: string): void;
   undo(): boolean;
   redo(): boolean;
 
-  /** Começa um gesto (arrastar/redimensionar): as prévias não entram no histórico. */
+  /** Starts a gesture (drag/resize): the previews do not enter the history. */
   beginGesture(): ActionResult;
   /**
-   * Prévia do gesto: aplica `op` ao projeto do início do gesto. Se a operação
-   * falhar, o projeto fica na última prévia válida.
+   * Gesture preview: applies `op` to the project from the start of the gesture. If the
+   * operation fails, the project stays at the last valid preview.
    */
   updateGesture(op: Operation): ActionResult;
-  /** Termina o gesto gerando uma única entrada no histórico (se algo mudou). */
+  /** Ends the gesture producing a single history entry (if anything changed). */
   commitGesture(): void;
-  /** Descarta o gesto e volta ao projeto do início dele. */
+  /** Discards the gesture and goes back to the project from its start. */
   cancelGesture(): void;
 }
 
@@ -163,11 +164,11 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
   const reviewTag = signal<string | null>(null);
   const reviewing = computed(() => reviewTag.value !== null);
   const revision = signal(0);
-  /** Há um desfazer/refazer de vínculo esperando a gravação: o histórico fica parado. */
+  /** An undo/redo of a link is waiting for the write: the history stays stopped. */
   const linkPending = signal(false);
   const linkFailure = signal<LinkFailure | null>(null);
   let linkSeq = 0;
-  /** Projeto no início do gesto em andamento; `null` quando não há gesto. */
+  /** Project at the start of the gesture in progress; `null` when there is no gesture. */
   const gestureBase = signal<Project | null>(null);
 
   const guard = (fromReview = false): ActionResult<Project> => {
@@ -179,15 +180,15 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
   };
 
   /**
-   * Roda o efeito do vínculo. Assíncrono: o histórico para até a gravação terminar; se
-   * falha, `revert` devolve o passo (só se nada mais mudou o projeto desde então).
+   * Runs the link's effect. Asynchronous: the history stops until the write finishes; if
+   * it fails, `revert` returns the step (only if nothing else changed the project since).
    */
   const runLink = (run: () => Promise<LinkResult> | undefined, revert: () => void) => {
     let pending: Promise<LinkResult> | undefined;
     try {
       pending = run();
     } catch (e) {
-      // Falha síncrona: igual à assíncrona, devolve o passo e deixa o erro à vista.
+      // Synchronous failure: same as the asynchronous one, returns the step and leaves the error in view.
       reportError('history.link', e);
       batch(() => {
         revert();
@@ -254,7 +255,7 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
 
     referencedImageFiles() {
       const files = new Set<string>();
-      // Snapshots vizinhos costumam compartilhar o mesmo array de imagens.
+      // Neighboring snapshots tend to share the same images array.
       const seen = new Set<readonly unknown[]>();
       const collect = (p: Project | null) => {
         if (!p || seen.has(p.containers)) return;
@@ -393,7 +394,7 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
     commitGesture() {
       const base = gestureBase.value;
       const current = project.value;
-      // Em lote: `committed` passa direto do projeto do início para o final.
+      // In a batch: `committed` goes straight from the project at the start to the end.
       batch(() => {
         gestureBase.value = null;
         if (base && current && current !== base) commit(base, current);

@@ -1,4 +1,4 @@
-// Avisos da especialização (v10): gravidade, ordem e que anotações cada aviso afeta (AV1).
+// Specialization notices (v10): severity, order and which annotations each notice affects (AV1).
 import { describe, expect, it } from 'vitest';
 import {
   addContainer,
@@ -28,12 +28,12 @@ const n = (kind: SpecNotice['kind'], message: string = kind): SpecNotice => ({
   message,
 });
 
-describe('gravidade e ordem', () => {
-  it('a ordem de exibição é removed, deprecated, diverges, pending', () => {
+describe('severity and order', () => {
+  it('the display order is removed, deprecated, diverges, pending', () => {
     expect(NOTICE_KINDS).toEqual(['removed', 'deprecated', 'diverges', 'pending']);
   });
 
-  it('sortNotices ordena por kind e mantém a ordem do arquivo dentro do kind', () => {
+  it('sortNotices sorts by kind and keeps the file order within the kind', () => {
     const list = [
       n('pending', 'p1'),
       n('diverges', 'd1'),
@@ -63,48 +63,48 @@ function fieldType(): SpecAnnotationType {
 }
 
 describe('highestNotice', () => {
-  it('sem avisos, null', () => {
+  it('no notices, null', () => {
     expect(highestNotice(fieldType())).toBeNull();
     expect(highestNotice({ ...fieldType(), notices: [] })).toBeNull();
   });
 
-  it('conta o tipo, os campos e as colunas', () => {
+  it('counts the type, the fields and the columns', () => {
     const type: SpecAnnotationType = {
       ...fieldType(),
-      notices: [n('pending', 'tipo')],
+      notices: [n('pending', 'type')],
       fields: [
-        { key: 'a', type: 'string', notices: [n('diverges', 'campo')] },
+        { key: 'a', type: 'string', notices: [n('diverges', 'field')] },
         {
           key: 'tab',
           type: 'table',
-          columns: [{ key: 'c', type: 'string', notices: [n('removed', 'coluna')] }],
+          columns: [{ key: 'c', type: 'string', notices: [n('removed', 'column')] }],
         },
       ],
     };
-    expect(highestNotice(type)).toMatchObject({ kind: 'removed', message: 'coluna' });
+    expect(highestNotice(type)).toMatchObject({ kind: 'removed', message: 'column' });
   });
 
-  it('empate entre deprecated e diverges: deprecated; dentro do kind, a ordem do arquivo', () => {
+  it('tie between deprecated and diverges: deprecated; within the kind, the file order', () => {
     const tie: SpecAnnotationType = {
       ...fieldType(),
-      notices: [n('diverges', 'tipo')],
-      fields: [{ key: 'a', type: 'string', notices: [n('deprecated', 'campo')] }],
+      notices: [n('diverges', 'type')],
+      fields: [{ key: 'a', type: 'string', notices: [n('deprecated', 'field')] }],
     };
-    expect(highestNotice(tie)).toMatchObject({ kind: 'deprecated', message: 'campo' });
+    expect(highestNotice(tie)).toMatchObject({ kind: 'deprecated', message: 'field' });
     const sameKind: SpecAnnotationType = {
       ...fieldType(),
       fields: [
-        { key: 'a', type: 'string', notices: [n('pending', 'campo')] },
+        { key: 'a', type: 'string', notices: [n('pending', 'field')] },
         {
           key: 'tab',
           type: 'table',
-          columns: [{ key: 'c', type: 'string', notices: [n('pending', 'coluna')] }],
+          columns: [{ key: 'c', type: 'string', notices: [n('pending', 'column')] }],
         },
       ],
-      notices: [n('pending', 'tipo')],
+      notices: [n('pending', 'type')],
     };
-    expect(highestNotice(sameKind)?.message).toBe('tipo');
-    expect(highestNotice({ ...sameKind, notices: undefined })?.message).toBe('campo');
+    expect(highestNotice(sameKind)?.message).toBe('type');
+    expect(highestNotice({ ...sameKind, notices: undefined })?.message).toBe('field');
   });
 });
 
@@ -124,12 +124,14 @@ function specOf(): Spec {
           {
             id: 'button',
             name: 'Button',
-            notices: [{ kind: 'deprecated', message: 'use Botão2', since: '2026-05-01' }],
+            notices: [
+              { kind: 'deprecated', message: 'use Button2', since: '2026-05-01' },
+            ],
             fields: [
               {
                 key: 'label',
                 type: 'string',
-                notices: [{ kind: 'pending', message: 'rótulo diverge', ref: 'X-1' }],
+                notices: [{ kind: 'pending', message: 'label diverges', ref: 'X-1' }],
               },
               {
                 key: 'rows',
@@ -138,7 +140,7 @@ function specOf(): Spec {
                   {
                     key: 'a',
                     type: 'string',
-                    notices: [{ kind: 'removed', message: 'coluna saiu' }],
+                    notices: [{ kind: 'removed', message: 'column removed' }],
                   },
                   { key: 'b', type: 'string' },
                 ],
@@ -150,14 +152,14 @@ function specOf(): Spec {
       },
       {
         id: 'ev',
-        name: 'Eventos',
+        name: 'Events',
         color: '#43A047',
         annotationTypes: [
           {
             id: 'click',
             name: 'Click',
             fields: [{ key: 'x', type: 'string' }],
-            notices: [{ kind: 'diverges', message: 'comportamento difere' }],
+            notices: [{ kind: 'diverges', message: 'behavior differs' }],
           },
         ],
       },
@@ -167,7 +169,7 @@ function specOf(): Spec {
   return result.spec;
 }
 
-/** B1: botão vazio; B2: label preenchido; B3: tabela com linha com `a`; B4: linha só com `b`; C1: card; F1: livre. */
+/** B1: empty button; B2: filled label; B3: table with a row with `a`; B4: row with only `b`; C1: card; F1: free. */
 function project(): Project {
   let p = applySpecialization(emptyProject(), specOf(), { newId: idGen('LS') });
   p = addContainer(p, { id: 'I1', file: 'images/a.png', width: 1000, height: 1000 });
@@ -192,16 +194,16 @@ function project(): Project {
   add('B4', 'button', 300);
   add('C1', 'card', 400);
   p = setFieldValue(p, 'B2', 'label', 'Oi');
-  p = setFieldValue(p, 'C1', 'title', 'Cartão');
+  p = setFieldValue(p, 'C1', 'title', 'Card');
   p = addTableRow(p, 'B3', 'rows', 'r1');
-  p = setTableCell(p, 'B3', 'rows', 'r1', 'a', 'valor');
+  p = setTableCell(p, 'B3', 'rows', 'r1', 'a', 'value');
   p = addTableRow(p, 'B4', 'rows', 'r2');
-  p = setTableCell(p, 'B4', 'rows', 'r2', 'b', 'outro');
+  p = setTableCell(p, 'B4', 'rows', 'r2', 'b', 'other');
   return p;
 }
 
 describe('noticeUsage', () => {
-  it('lista os avisos na ordem da especialização e as anotações afetadas por escopo', () => {
+  it('lists the notices in specialization order and the annotations affected by scope', () => {
     const usage = noticeUsage(project());
     expect(
       usage.map((u) => [
@@ -220,18 +222,18 @@ describe('noticeUsage', () => {
     ]);
   });
 
-  it('traz especialização, camada e o aviso inteiro', () => {
+  it('brings specialization, layer and the whole notice', () => {
     const [first] = noticeUsage(project());
     expect(first).toMatchObject({
       specId: 'lib',
       layerId: 'ui',
       typeId: 'button',
       scope: 'type',
-      notice: { kind: 'deprecated', message: 'use Botão2', since: '2026-05-01' },
+      notice: { kind: 'deprecated', message: 'use Button2', since: '2026-05-01' },
     });
   });
 
-  it('anotação livre e de outro tipo ficam fora; campo vazio não conta', () => {
+  it('a free annotation and one of another type are left out; an empty field does not count', () => {
     const usage = noticeUsage(project());
     const all = usage.flatMap((u) => u.annotationIds);
     expect(all).not.toContain('C1');
@@ -239,7 +241,7 @@ describe('noticeUsage', () => {
     expect(label?.annotationIds).toEqual(['B2']);
   });
 
-  it('é memoizada pela versão do projeto', () => {
+  it('is memoized by the project version', () => {
     const p = project();
     expect(noticeUsage(p)).toBe(noticeUsage(p));
     const other = setFieldValue(p, 'B1', 'label', 'Novo');
@@ -250,7 +252,7 @@ describe('noticeUsage', () => {
     ]);
   });
 
-  it('projeto sem especialização não tem avisos', () => {
+  it('a project without a specialization has no notices', () => {
     expect(noticeUsage(emptyProject())).toEqual([]);
   });
 });
@@ -262,28 +264,28 @@ describe('placedTypeNotices', () => {
     fields: [
       { key: 'a', type: 'string', notices: [n('pending', 'a1'), n('removed', 'a2')] },
       {
-        key: 'itens',
+        key: 'items',
         type: 'table',
-        columns: [{ key: 'rotulo', type: 'string', notices: [n('diverges', 'c1')] }],
+        columns: [{ key: 'label', type: 'string', notices: [n('diverges', 'c1')] }],
       },
       { key: 'b', type: 'string', notices: [n('deprecated', 'b1')] },
     ],
     notices: [n('diverges', 't1')],
   } as unknown as SpecAnnotationType;
 
-  it('devolve o lugar de cada aviso, na ordem do typeNotices (tipo, campos, colunas)', () => {
+  it('returns the place of each notice, in typeNotices order (type, fields, columns)', () => {
     const placed = placedTypeNotices(type);
     expect(placed.map((p) => [p.scope, p.key, p.column, p.notice.message])).toEqual([
       ['type', undefined, undefined, 't1'],
       ['field', 'a', undefined, 'a1'],
       ['field', 'a', undefined, 'a2'],
       ['field', 'b', undefined, 'b1'],
-      ['column', 'itens', 'rotulo', 'c1'],
+      ['column', 'items', 'label', 'c1'],
     ]);
     expect(placed.map((p) => p.notice)).toEqual(typeNotices(type));
   });
 
-  it('tipo sem aviso devolve lista vazia', () => {
+  it('a type with no notice returns an empty list', () => {
     expect(placedTypeNotices({ id: 't', name: 'T', fields: [] } as never)).toEqual([]);
   });
 });

@@ -16,10 +16,10 @@ import { markingLabel } from './labels';
 import { mergeLinkedItems, type SuggestionItem } from './suggestions';
 import { annotationSourceLabel } from './typedText';
 
-// Peças comuns dos campos tipados: o editor de um valor simples (campo ou célula de
-// tabela) e a lista de referências recebidas.
+// Shared pieces of the typed fields: the editor of a simple value (field or table cell)
+// and the list of incoming references.
 
-/** Botões segmentados até este número de opções; acima, lista. */
+/** Segmented buttons up to this number of options; above it, a list. */
 const SEGMENTED_MAX = 3;
 
 export interface FieldContext {
@@ -36,7 +36,7 @@ function valueText(value: JsonValue | undefined): string {
   return JSON.stringify(value);
 }
 
-/** Lê o número digitado (aceita vírgula decimal); `undefined` = inválido. */
+/** Reads the typed number (accepts a decimal comma); `undefined` = invalid. */
 export function parseNumberInput(text: string): number | null | undefined {
   const trimmed = text.trim().replace(',', '.');
   if (trimmed === '') return null;
@@ -44,11 +44,11 @@ export function parseNumberInput(text: string): number | null | undefined {
   return Number.isFinite(value) ? value : undefined;
 }
 
-/** Um texto com quebra de linha, ou mais comprido que isto, abre no editor de várias linhas. */
+/** A text with a line break, or longer than this, opens in the multi-line editor. */
 export const MULTILINE_MIN_LENGTH = 60;
 const MULTILINE_ROWS = 4;
 
-/** Ignora a quebra de linha do Enter que ainda está em curso (até o `keyup` dele). */
+/** Ignores the line break of the Enter that is still in progress (until its `keyup`). */
 function swallowEnterOnce(el: HTMLTextAreaElement) {
   const block = (e: Event) => {
     if (
@@ -70,25 +70,25 @@ function swallowEnterOnce(el: HTMLTextAreaElement) {
 interface MultilineProps {
   readonly id: string | undefined;
   readonly label: string;
-  /** O valor atual do projeto: o que o campo mostra enquanto a pessoa não editou. */
+  /** The current project value: what the field shows while the person has not edited. */
   readonly initial: string;
-  /** Rascunho que já nasce editado (o que foi digitado antes da troca por Shift+Enter). */
+  /** Draft that is born already edited (what was typed before the Shift+Enter switch). */
   readonly startText?: string;
   readonly readOnly: boolean;
   readonly invalid: boolean;
   readonly required: boolean;
-  /** Foca ao montar, com o cursor no fim (a troca por Shift+Enter). */
+  /** Focuses on mount, with the cursor at the end (the Shift+Enter switch). */
   readonly autoFocus: boolean;
-  /** O foco veio no meio de um Enter: a quebra desse mesmo Enter não entra no campo novo. */
+  /** Focus arrived mid-Enter: that same Enter's break does not enter the new field. */
   readonly swallowBreak?: boolean;
   readonly onCommit: (text: string) => void;
-  /** Avisa que o Enter gravou (o pai cuida do foco se o editor trocar). */
+  /** Signals that Enter saved (the parent handles the focus if the editor switches). */
   readonly onEnterCommit?: () => void;
 }
 
 /**
- * Texto em várias linhas: sair do campo grava. Enquanto o texto não tem quebra, o Enter também
- * grava (como no campo de uma linha) e o Shift+Enter quebra; com uma quebra, o Enter quebra.
+ * Multi-line text: leaving the field saves. While the text has no break, Enter also
+ * saves (as in the single-line field) and Shift+Enter breaks; with a break, Enter breaks.
  */
 function MultilineEditor({
   id,
@@ -103,20 +103,20 @@ function MultilineEditor({
   onCommit,
   onEnterCommit,
 }: MultilineProps) {
-  // Rascunho + o valor do projeto sobre o qual foi digitado: se o projeto mudou por fora
-  // (desfazer, recarga) ou nada foi editado, o campo mostra o valor atual do projeto.
+  // Draft + the project value it was typed over: if the project changed from outside
+  // (undo, reload) or nothing was edited, the field shows the project's current value.
   const [draft, setDraft] = useState<{ base: string; text: string } | null>(
     startText === undefined ? null : { base: initial, text: startText },
   );
-  // A troca por Shift+Enter grava o texto do campo de uma linha (o `change` do input que sai
-  // do DOM) e o valor do projeto passa a ser o início do rascunho: ele segue valendo.
+  // The Shift+Enter switch saves the single-line field's text (the `change` of the input that
+  // leaves the DOM) and the project value becomes the start of the draft: it stays valid.
   const draftHolds =
     draft !== null &&
     (draft.base === initial ||
       (startText !== undefined && draft.text === `${initial}\n`));
   const current = draftHolds && draft.text !== initial ? draft.text : initial;
   const area = useRef<HTMLTextAreaElement>(null);
-  // Foco e cursor no fim só ao montar: renderizar por digitação não os move.
+  // Focus and cursor at the end only on mount: rendering while typing does not move them.
   useLayoutEffect(() => {
     const el = area.current;
     if (el === null || !autoFocus) return;
@@ -136,7 +136,7 @@ function MultilineEditor({
       value={current}
       onInput={(text) => setDraft({ base: initial, text })}
       onCommit={(text) => {
-        // Sair sem editar não grava (nem o valor velho por cima de um valor novo).
+        // Leaving without editing does not save (nor the old value over a new one).
         if (text !== initial) onCommit(text);
       }}
       onKeyDown={(e) => {
@@ -152,10 +152,10 @@ function MultilineEditor({
 }
 
 /**
- * Editor de um campo `string` da anotação: uma linha; abre em várias linhas quando o texto já
- * tem quebra ou passa de `MULTILINE_MIN_LENGTH`, ou quando a pessoa aperta Shift+Enter (o que
- * foi digitado segue, com a quebra). Só nos campos da anotação: a célula de tabela continua
- * de uma linha.
+ * Editor of an annotation `string` field: one line; opens in several lines when the text already
+ * has a break or exceeds `MULTILINE_MIN_LENGTH`, or when the person presses Shift+Enter (what
+ * was typed stays, with the break). Only in annotation fields: the table cell stays
+ * single-line.
  */
 export function StringEditor(props: SimpleEditorProps) {
   const { field, value, label, readOnly, id, invalid = false, onSet } = props;
@@ -166,17 +166,19 @@ export function StringEditor(props: SimpleEditorProps) {
     draft !== null || text.includes('\n') || text.length > MULTILINE_MIN_LENGTH;
   const box = useRef<HTMLDivElement>(null);
   const refocus = useRef(false);
-  // O Enter gravou no campo de uma linha e o valor passou a pedir várias: o TEXTAREA nasce focado.
+  // Enter saved in the single-line field and the value now needs several lines: the TEXTAREA is
+  // born focused.
   const focusMultiline = useRef(false);
   const focusOnMount = multiline && focusMultiline.current;
   useLayoutEffect(() => {
     if (multiline) focusMultiline.current = false;
   }, [multiline]);
-  // O Enter gravou um valor curto e o editor voltou a uma linha: o foco vai ao campo novo.
+  // Enter saved a short value and the editor went back to one line: the focus goes to the new
+  // field.
   useLayoutEffect(() => {
     if (multiline || !refocus.current) return;
     refocus.current = false;
-    // Só se o foco ainda estava neste editor (o campo trocado deixou-o no `body`).
+    // Only if the focus was still in this editor (the swapped field left it on `body`).
     const active = document.activeElement;
     if (active !== null && active !== document.body) return;
     const input = box.current?.querySelector('input');
@@ -225,8 +227,8 @@ export function StringEditor(props: SimpleEditorProps) {
           refocus.current = true;
         }}
         onCommit={(typed) => {
-          // A quebra de linha no fim (um Enter de sobra) não é parte do texto: tira, para que
-          // um valor como a URL de uma imagem não vá ao disco com `\n`.
+          // The line break at the end (a stray Enter) is not part of the text: remove it, so that
+          // a value such as an image URL does not go to disk with `\n`.
           const next = typed.replace(/[\r\n]+$/, '');
           const result = onSet(next === '' ? null : next);
           setError(result.ok ? null : t('typed.invalidValue'));
@@ -245,20 +247,21 @@ export function StringEditor(props: SimpleEditorProps) {
 export interface SimpleEditorProps {
   readonly field: SpecSimpleColumn;
   readonly value: JsonValue | undefined;
-  /** Nome acessível do controle. */
+  /** Accessible name of the control. */
   readonly label: string;
   readonly readOnly: boolean;
-  /** `id` do controle (o rótulo da grade de propriedades aponta para ele). */
+  /** `id` of the control (the label of the property grid points to it). */
   readonly id?: string;
-  /** Pendência no valor (obrigatório vazio, opção inexistente…): estado inválido. */
+  /** Pending item in the value (empty required, nonexistent option…): invalid state. */
   readonly invalid?: boolean;
-  /** Dica do controle (ex.: o motivo da pendência numa célula). */
+  /** Hint of the control (e.g. the reason for the pending item in a cell). */
   readonly title?: string;
-  /** Grava o valor (`null` limpa). */
+  /** Saves the value (`null` clears). */
   readonly onSet: (value: JsonValue) => ActionResult;
   /**
-   * `linkedRef` (campo `string`): os alvos do `ref` irmão entram na lista antes das sugestões
-   * fixas; ao confirmar com um deles escolhido, `onSetLinked` grava o texto e o `ref` juntos.
+   * `linkedRef` (`string` field): the targets of the sibling `ref` enter the list before the fixed
+   * suggestions; when confirming with one of them chosen, `onSetLinked` saves the text and the
+   * `ref` together.
    */
   readonly linked?: {
     readonly items: readonly SuggestionItem[];
@@ -266,7 +269,7 @@ export interface SimpleEditorProps {
   };
 }
 
-/** Editor de um campo simples: texto, número, data ou opções. */
+/** Editor of a simple field: text, number, date or options. */
 export function SimpleEditor({
   field,
   value,
@@ -286,8 +289,8 @@ export function SimpleEditor({
   const required = field.required === true;
   const text = valueText(value);
   const bad = invalid || error !== null;
-  // Texto e número podem sair cortados na célula ("ana@exe"): o valor inteiro vai na dica,
-  // antes do motivo da pendência, se houver (etapa 7, achado A3).
+  // Text and number may come out cut off in the cell ("ana@exe"): the whole value goes in the hint,
+  // before the pending-item reason, if any (stage 7, finding A3).
   const fullTitle = [text, title ?? ''].filter((s) => s !== '').join('\n') || undefined;
   let editor;
 
@@ -370,7 +373,7 @@ export function SimpleEditor({
             value={field.options.includes(text) ? text : null}
             invalid={bad}
             disabled={readOnly}
-            // Opcional: tocar na opção escolhida limpa o campo.
+            // Optional: tapping the chosen option clears the field.
             onSelect={(option) => {
               if (text !== option) report(onSet(option));
               else if (!required) report(onSet(null));
@@ -414,7 +417,7 @@ export function SimpleEditor({
   );
 }
 
-/** Quem aponta para uma tupla, linha ou campo: "← Input input_nome (Nome)". Tocar vai até a origem. */
+/** Who points to a tuple, row or field: "← Input input_name (Name)". Tapping goes to the origin. */
 export function BacklinkList({
   project,
   backlinks,

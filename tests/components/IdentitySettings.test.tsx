@@ -17,8 +17,8 @@ afterEach(() => {
 const open = () => render(<SettingsDialog onClose={vi.fn()} onShowShortcuts={vi.fn()} />);
 const section = () => screen.getByRole('region', { name: t('identity.title') });
 
-describe('Configurações › Identidade', () => {
-  it('sem identidade, avisa que a pessoa só lê e não deixa salvar campos vazios', () => {
+describe('Settings › Identity', () => {
+  it('without an identity, warns that the person can only read and does not allow saving empty fields', () => {
     open();
     expect(within(section()).getByText(t('identity.missing'))).toBeTruthy();
     expect(
@@ -30,21 +30,21 @@ describe('Configurações › Identidade', () => {
     ).toBe(true);
   });
 
-  it('salva nome e e-mail no dispositivo e confirma', async () => {
+  it('saves name and email on the device and confirms', async () => {
     const user = userEvent.setup();
     open();
     await user.type(within(section()).getByLabelText(t('identity.name')), 'Marina Alves');
     await user.type(
       within(section()).getByLabelText(t('identity.email')),
-      'marina@exemplo.com',
+      'marina@example.com',
     );
     await user.click(within(section()).getByRole('button', { name: t('identity.save') }));
-    expect(identity.value).toEqual({ name: 'Marina Alves', email: 'marina@exemplo.com' });
+    expect(identity.value).toEqual({ name: 'Marina Alves', email: 'marina@example.com' });
     expect(within(section()).getByText(t('identity.saved'))).toBeTruthy();
     expect(within(section()).queryByText(t('identity.missing'))).toBeNull();
   });
 
-  it('e-mail sem algo@algo fica inválido e não salva', async () => {
+  it('email without something@something becomes invalid and does not save', async () => {
     const user = userEvent.setup();
     open();
     await user.type(within(section()).getByLabelText(t('identity.name')), 'Marina');
@@ -62,8 +62,8 @@ describe('Configurações › Identidade', () => {
     expect(identity.value).toBeNull();
   });
 
-  it('mostra a identidade guardada e permite esquecê-la', async () => {
-    setIdentity('Marina Alves', 'marina@exemplo.com');
+  it('shows the stored identity and allows forgetting it', async () => {
+    setIdentity('Marina Alves', 'marina@example.com');
     const user = userEvent.setup();
     open();
     expect(

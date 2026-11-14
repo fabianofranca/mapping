@@ -1,24 +1,24 @@
 # Snackbar
 
-Aviso rápido e temporário na parte de baixo da tela, com uma mensagem curta, uma ação opcional e, se quiser, o botão de fechar.
+Quick, temporary notice at the bottom of the screen, with a short message, an optional action and, if wanted, the dismiss button.
 
-Tipo de anotação: `snackbar` (camada Componentes).
+Annotation type: `snackbar` (layer Components).
 
-## Campos
+## Fields
 
-| Chave             | Rótulo             | Tipo   | Obrigatório | Opções          | Padrão  | Descrição                                                                                                                                                          |
-| ----------------- | ------------------ | ------ | ----------- | --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `message`         | Mensagem           | string | sim         |                 |         | Texto do snackbar.                                                                                                                                                 |
-| `actionLabel`     | Ação               | string | não         |                 |         | Texto do botão de ação. Vazio = sem ação.                                                                                                                          |
-| `dismissAction`   | Botão de fechar    | enum   | não         | `true`, `false` | `false` | true mostra o botão de fechar (ícone Close) depois da ação.                                                                                                        |
-| `actionOnNewLine` | Ação em nova linha | enum   | não         | `true`, `false` | `false` | true põe a ação abaixo da mensagem, para textos longos (com uma linha de texto a altura do retângulo passa de 48 para 92; os 68 são a linha única de duas linhas). |
+| Key               | Label              | Type   | Required | Options         | Default | Description                                                                                                                                                    |
+| ----------------- | ------------------ | ------ | -------- | --------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `message`         | Message            | string | yes      |                 |         | Snackbar text.                                                                                                                                                 |
+| `actionLabel`     | Action             | string | no       |                 |         | Action button text. Empty = no action.                                                                                                                         |
+| `dismissAction`   | Dismiss button     | enum   | no       | `true`, `false` | `false` | true shows the dismiss button (Close icon) after the action.                                                                                                   |
+| `actionOnNewLine` | Action on new line | enum   | no       | `true`, `false` | `false` | true puts the action below the message, for long texts (with one line of text the rectangle height goes from 48 to 92; the 68 is the single row of two lines). |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.Snackbar`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Snackbar.kt`
+- Symbol: `androidx.compose.material3.Snackbar`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Snackbar.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 val snackbarHostState = remember { SnackbarHostState() }
@@ -29,59 +29,59 @@ Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { innerPadding ->
         onClick = {
             scope.launch {
                 snackbarHostState.showSnackbar(
-                    message = "Mensagem arquivada",
-                    actionLabel = "Desfazer",
+                    message = "Message archived",
+                    actionLabel = "Undo",
                     withDismissAction = true,
                 )
             }
         },
         modifier = Modifier.padding(innerPadding),
-    ) { Text("Arquivar") }
+    ) { Text("Archive") }
 }
 
-// Visual próprio, sem o host:
+// Custom look, without the host:
 Snackbar(
-    action = { TextButton(onClick = { /* desfazer */ }) { Text("Desfazer") } },
-    dismissAction = { IconButton(onClick = { /* fechar */ }) { Icon(Icons.Filled.Close, contentDescription = "Fechar") } },
+    action = { TextButton(onClick = { /* undo */ }) { Text("Undo") } },
+    dismissAction = { IconButton(onClick = { /* dismiss */ }) { Icon(Icons.Filled.Close, contentDescription = "Close") } },
     actionOnNewLine = false,
-) { Text("Mensagem arquivada") }
+) { Text("Message archived") }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+`code` notes (what the tool hands to the agent):
 
-> Estável, sem opt-in. O snackbar costuma ser mostrado pelo `SnackbarHost` (arquivo `SnackbarHost.kt`) no slot `snackbarHost` do Scaffold: `snackbarHost = { SnackbarHost(snackbarHostState) }`, com `val snackbarHostState = remember { SnackbarHostState() }`, e aparece com `scope.launch { snackbarHostState.showSnackbar(message = <message>, actionLabel = <actionLabel>, withDismissAction = <dismissAction>) }`; nesse caso a `Snackbar` é a padrão do host e não se chama à mão. Para um visual próprio, use `Snackbar(action = { TextButton(onClick = …) { Text(<actionLabel>) } }, dismissAction = { IconButton(onClick = …) { Icon(Icons.Filled.Close, contentDescription = …) } }, actionOnNewLine = <actionOnNewLine>) { Text(<message>) }`: `action` só entra com `actionLabel` preenchido e `dismissAction` só com `dismissAction = true`.
+> Stable, no opt-in. The snackbar is usually shown by the `SnackbarHost` (file `SnackbarHost.kt`) in the `snackbarHost` slot of the Scaffold: `snackbarHost = { SnackbarHost(snackbarHostState) }`, with `val snackbarHostState = remember { SnackbarHostState() }`, and appears with `scope.launch { snackbarHostState.showSnackbar(message = <message>, actionLabel = <actionLabel>, withDismissAction = <dismissAction>) }`; in that case the `Snackbar` is the host default and is not called by hand. For a custom look, use `Snackbar(action = { TextButton(onClick = …) { Text(<actionLabel>) } }, dismissAction = { IconButton(onClick = …) { Icon(Icons.Filled.Close, contentDescription = …) } }, actionOnNewLine = <actionOnNewLine>) { Text(<message>) }`: `action` is only included with `actionLabel` filled and `dismissAction` only with `dismissAction = true`.
 
-## Exemplos
+## Examples
 
-- **Só mensagem**: message=Arquivo salvo
-- **Com ação**: message=Mensagem arquivada, actionLabel=Desfazer
-- **Com ação e fechar**: message=Sem conexão, actionLabel=Tentar de novo, dismissAction=true
+- **Message only**: message=File saved
+- **With action**: message=Message archived, actionLabel=Undo
+- **With action and close**: message=No connection, actionLabel=Try again, dismissAction=true
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade fica literal no componente, nenhum nó de texto declara `family` (todos herdam `font-sans`) e o ícone de fechar é o nó `icon` do conjunto da biblioteca (`close`), sem caminho SVG no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font, radius or opacity is literal in the component, no text node declares `family` (all inherit `font-sans`) and the dismiss icon is the `icon` node of the library set (`close`), with no SVG path in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Snackbar.kt` (linhas 100 a 140: `Snackbar`, o `Surface` com `shadowElevation = SnackbarTokens.ContainerElevation` (117) e a escolha entre `NewLineButtonSnackbar` e `OneRowSnackbar`; 197 a 250: o `Snackbar(snackbarData)`, o `TextButton` da ação, o `IconButton` com `Icons.Filled.Close` e o `padding(12.dp)` de fora (238); 252 a 295: `NewLineButtonSnackbar`, `padding(start = 16, bottom = 2)`, `paddingFromBaseline(30, 12)` no texto e `padding(end = 8)` nas ações; 297 a 409: `OneRowSnackbar`, o texto com `padding(vertical = 6)` (310), a largura do texto sem os botões e sem os 8 de `TextEndExtraSpacing` quando não há fechar (344 a 347), a altura mínima de 48 (366) ou 68 (385) pelo número de linhas e o texto a 30 da linha de base (383) na versão de várias linhas; 411 a 435: `SnackbarDefaults`; 437 a 444: `ContainerMaxWidth` 600, `HeightToFirstLine` 30, `HorizontalSpacing` 16, `HorizontalSpacingButtonSide` 8, `SeparateButtonExtraY` 2, `SnackbarVerticalPadding` 6, `TextEndExtraSpacing` 8 e `LongButtonVerticalOffset` 12).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SnackbarTokens.kt` (linhas 26 e 27: ação em `InversePrimary` e `LabelLarge`; 29 a 31: contêiner `InverseSurface`, `ContainerElevation` `Level3` e forma `CornerExtraSmall`; 32 e 36: ícone `InverseOnSurface` de 24; 37 e 38: texto em `InverseOnSurface` e `BodyMedium`; 39 e 40: alturas 48 e 68), `ElevationTokens.kt` (`Level3` 6 dp) e `ShapeTokens.kt` (linha 38: `CornerExtraSmall` 4).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt` (linhas 497 a 510 e 527: `TextButtonContentPadding` de 12 e `MinWidth` 58), `IconButton.kt` (linhas 177 a 179: `minimumInteractiveComponentSize()` e `smallContainerSize()`, o contêiner de 40) e `Surface.kt` (linha 219: a área de toque de 48 do `Surface` clicável).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt` (`BodyMedium` 14/20/400/0,2 e `LabelLarge` 14/20/500/0,1).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Snackbar.kt` (lines 100 to 140: `Snackbar`, the `Surface` with `shadowElevation = SnackbarTokens.ContainerElevation` (117) and the choice between `NewLineButtonSnackbar` and `OneRowSnackbar`; 197 to 250: the `Snackbar(snackbarData)`, the action `TextButton`, the `IconButton` with `Icons.Filled.Close` and the outer `padding(12.dp)` (238); 252 to 295: `NewLineButtonSnackbar`, `padding(start = 16, bottom = 2)`, `paddingFromBaseline(30, 12)` on the text and `padding(end = 8)` on the actions; 297 to 409: `OneRowSnackbar`, the text with `padding(vertical = 6)` (310), the text width without the buttons and without the 8 of `TextEndExtraSpacing` when there is no dismiss (344 to 347), the minimum height of 48 (366) or 68 (385) by the number of lines and the text 30 from the baseline (383) in the multi-line version; 411 to 435: `SnackbarDefaults`; 437 to 444: `ContainerMaxWidth` 600, `HeightToFirstLine` 30, `HorizontalSpacing` 16, `HorizontalSpacingButtonSide` 8, `SeparateButtonExtraY` 2, `SnackbarVerticalPadding` 6, `TextEndExtraSpacing` 8 and `LongButtonVerticalOffset` 12).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SnackbarTokens.kt` (lines 26 and 27: action in `InversePrimary` and `LabelLarge`; 29 to 31: container `InverseSurface`, `ContainerElevation` `Level3` and shape `CornerExtraSmall`; 32 and 36: 24 icon `InverseOnSurface`; 37 and 38: text in `InverseOnSurface` and `BodyMedium`; 39 and 40: heights 48 and 68), `ElevationTokens.kt` (`Level3` 6 dp) and `ShapeTokens.kt` (line 38: `CornerExtraSmall` 4).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt` (lines 497 to 510 and 527: `TextButtonContentPadding` of 12 and `MinWidth` 58), `IconButton.kt` (lines 177 to 179: `minimumInteractiveComponentSize()` and `smallContainerSize()`, the 40 container) and `Surface.kt` (line 219: the 48 touch target of the clickable `Surface`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt` (`BodyMedium` 14/20/400/0.2 and `LabelLarge` 14/20/500/0.1).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Contêiner `inverse-surface` com `corner-extra-small` (4) e as duas sombras do nível 3 (ponto: `y` 1, `blur` 3; ambiente: `y` 4, `blur` 8, `spread` 3; tokens `elevation-3-point-*` e `elevation-3-ambient-*`), em light e dark: no dark o fundo é claro e o texto escuro, porque os papéis `inverse-*` trocam de modo.
-- Mensagem em `body-medium` (14/20) em `inverse-on-surface`, a 16 da borda. Ação (`TextButton`) em `label-large` em `inverse-primary`, com 12 de cada lado, 58 no mínimo e 48 de altura (os 40 do botão mais a área de toque mínima); fechar é um `IconButton` com a área de 48 e o ícone `close` de 24 em `inverse-on-surface`, colado à direita (12 do ícone à borda).
-- Uma linha: altura mínima de 48 (`SingleLineContainerHeight`), mensagem centrada na altura. Com ação e sem fechar, a ação termina a 8 da borda (`HorizontalSpacingButtonSide`) e a mensagem a 8 dela (`TextEndExtraSpacing`); sem ação nem fechar, a mensagem tem 16 dos dois lados (8 + 8); com fechar não há folga entre a mensagem e a ação, e o fechar encosta na borda.
-- Duas ou mais linhas (`OneRowSnackbar`, `Snackbar.kt` linhas 382 a 394): a primeira linha de base do texto fica a 30 do topo (`HeightToFirstLine`, linhas 383 e 384; o texto leva `baselinePadding.top` 30) e a última a 11 do fundo da caixa do texto (os 6 de `SnackbarVerticalPadding`, linha 310, mais os 5 da linha de base ao fim da linha do Roboto 14/20); a altura é a maior entre 68 (`TwoLinesContainerHeight`, linha 385) e a do texto (linhas 386 e 387): duas linhas medem 68 e três medem 81 (30 + 40 + 11), como o Compose. A ação e o fechar ficam centrados na altura (linhas 388 a 400). Quem escolhe entre os dois desenhos é o `$lines` do texto da `mensagem`: com uma linha aparece o quadro `mensagem` (respiro de 14, texto centrado, altura 48) e com duas ou mais, o quadro `mensagem em várias linhas`, e o `minHeight` da fileira passa de 48 para 68 (o tipo tem `sizing` com altura `hug`, então o Arrumar e o `fit_marking` levam a marcação a 48, 68 ou 81).
-- Ação em nova linha (`actionOnNewLine` com ação preenchida; sem ação o Compose cai na linha única, e o desenho também): a primeira linha de base da mensagem a 30 do topo e a última a 12 do fim da caixa (`paddingFromBaseline(30, 12)`, linha 269; `baselinePadding` 30 e 12), as ações numa fileira de 48 à direita e 2 de margem embaixo (linha 266): 30 + 12 + 48 + 2 = 92 para uma linha de texto, e 20 a mais por linha.
-- Largura máxima de 600 (`ContainerMaxWidth`, o `maxWidth` da raiz).
-- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `rótulo da ação` (a `mensagem` fica como está) usa `font.verticalAlign: "cap-middle"` e ocupa a altura da caixa (`height: "fill"`), sem mudar a posição horizontal. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
+- Container `inverse-surface` with `corner-extra-small` (4) and the two level 3 shadows (point: `y` 1, `blur` 3; ambient: `y` 4, `blur` 8, `spread` 3; tokens `elevation-3-point-*` and `elevation-3-ambient-*`), in light and dark: in dark the background is light and the text dark, because the `inverse-*` roles swap with the mode.
+- Message in `body-medium` (14/20) in `inverse-on-surface`, 16 from the edge. Action (`TextButton`) in `label-large` in `inverse-primary`, with 12 on each side, 58 minimum and 48 high (the 40 of the button plus the minimum touch target); dismiss is an `IconButton` with the 48 area and the 24 `close` icon in `inverse-on-surface`, flush right (12 from the icon to the edge).
+- One line: minimum height of 48 (`SingleLineContainerHeight`), message centered in the height. With an action and no dismiss, the action ends 8 from the edge (`HorizontalSpacingButtonSide`) and the message 8 from it (`TextEndExtraSpacing`); with no action or dismiss, the message has 16 on both sides (8 + 8); with dismiss there is no slack between the message and the action, and the dismiss touches the edge.
+- Two or more lines (`OneRowSnackbar`, `Snackbar.kt` lines 382 to 394): the first text baseline sits 30 from the top (`HeightToFirstLine`, lines 383 and 384; the text carries `baselinePadding.top` 30) and the last 11 from the bottom of the text box (the 6 of `SnackbarVerticalPadding`, line 310, plus the 5 from the baseline to the end of the Roboto 14/20 line); the height is the larger of 68 (`TwoLinesContainerHeight`, line 385) and the text's (lines 386 and 387): two lines measure 68 and three measure 81 (30 + 40 + 11), as in Compose. The action and the dismiss are centered in the height (lines 388 to 400). What chooses between the two drawings is the `$lines` of the `message` text: with one line the `message` frame appears (14 of room, centered text, height 48) and with two or more, the `multi-line message` frame, and the `minHeight` of the row goes from 48 to 68 (the type has `sizing` with height `hug`, so Arrange and `fit_marking` take the marking to 48, 68 or 81).
+- Action on a new line (`actionOnNewLine` with the action filled; without an action Compose falls back to the single row, and so does the drawing): the first message baseline 30 from the top and the last 12 from the end of the box (`paddingFromBaseline(30, 12)`, line 269; `baselinePadding` 30 and 12), the actions in a 48 row on the right and 2 of margin below (line 266): 30 + 12 + 48 + 2 = 92 for one line of text, and 20 more per line.
+- Maximum width of 600 (`ContainerMaxWidth`, the root `maxWidth`).
+- Single-line label centered by the cap height (`cap-middle`): the `action label` node (the `message` stays as is) uses `font.verticalAlign: "cap-middle"` and takes the box height (`height: "fill"`), without changing the horizontal position. The Compose `Text` centers by the font line box (ascent and descent); the drawing centers the cap height in the box, and with Roboto the two coincide to within 1 px.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O número de linhas vem do medidor de quem desenha (a app, o PNG do MCP, o medidor aproximado dos testes): a quebra pode diferir do Roboto do Android, e com ela a escolha entre 48, 68 e 81. Os 11 do fim são o piso: com uma fonte cuja linha de base fica a mais de 5 do fim da linha, a distância é a da fonte, como no Compose.
-- Com a ação em nova linha a altura é a do código (92 com uma linha de texto); os 68 são o `TwoLinesContainerHeight` da linha única de duas linhas, e a descrição do campo diz isso desde a versão 4 da biblioteca.
-- O limite de 600 vale só quando o componente é medido sem retângulo (`hug`), e o `sizing` deste componente é `fill` na largura; com a marcação desenhada a largura é a dela.
-- As duas sombras (ponto e ambiente) vêm dos tokens `elevation-3-point-*` e `elevation-3-ambient-*` (`$token` em `shadow`, lista de duas sombras com `spread`); a tonal da elevação não é desenhada. Valores da elevação do Material 3 para a web: `elevation/internal/_elevation.scss` do `material-components/material-web` (versão 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), fonte de fora do Compose, que no Android entrega a elevação à plataforma e não traz os números: sombra de ponto em preto a 30% e sombra ambiente em preto a 15%, com `y`, `blur` e `spread` por nível (tokens `elevation-3-point-*` e `elevation-3-ambient-*`).
-- Fora do desenho: o `SnackbarHost` (posição na tela, os 12 de margem do `Snackbar(snackbarData)`, a fila, o tempo de exibição e a animação), o estado de pressionado, foco e passar o mouse, e o `contentDescription` do fechar.
+- The number of lines comes from the measurer of whoever draws (the app, the MCP PNG, the approximate measurer in the tests): the wrap can differ from Android's Roboto, and with it the choice between 48, 68 and 81. The 11 at the end is the floor: with a font whose baseline is more than 5 from the end of the line, the distance is the font's, as in Compose.
+- With the action on a new line the height is the code's (92 with one line of text); the 68 is the `TwoLinesContainerHeight` of the single row of two lines, and the field description has said so since version 4 of the library.
+- The limit of 600 only applies when the component is measured without a rectangle (`hug`), and this component's `sizing` is `fill` in width; with the marking drawn the width is the marking's.
+- The two shadows (point and ambient) come from the `elevation-3-point-*` and `elevation-3-ambient-*` tokens (`$token` in `shadow`, a list of two shadows with `spread`); the tonal elevation is not drawn. Material 3 elevation values for the web: `elevation/internal/_elevation.scss` of `material-components/material-web` (version 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), a source outside Compose, which on Android hands the elevation to the platform and does not carry the numbers: point shadow in black at 30% and ambient shadow in black at 15%, with `y`, `blur` and `spread` per level (tokens `elevation-3-point-*` and `elevation-3-ambient-*`).
+- Outside the drawing: the `SnackbarHost` (position on the screen, the 12 margin of the `Snackbar(snackbarData)`, the queue, the display time and the animation), the pressed, focused and hovered states, and the dismiss `contentDescription`.

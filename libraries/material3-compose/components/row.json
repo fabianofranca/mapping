@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "row",
   "name": "Row",
-  "description": "Linha do Compose: as filhas se enfileiram pela ordem, com spacing, padding e alinhamentos dos campos.",
+  "description": "Compose row: the children are lined up in order, with spacing, padding and the alignments of the fields.",
   "size": {
     "width": 380,
     "height": 48

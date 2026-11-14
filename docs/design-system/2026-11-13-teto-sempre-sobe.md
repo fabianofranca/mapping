@@ -1,15 +1,15 @@
-# Teto do dist/index.html que sempre sobe — 2026-11-13 (épico `epic/teto-sempre-sobe`)
+# dist/index.html ceiling that always goes up — 2026-11-13 (épico `epic/teto-sempre-sobe`)
 
 ## Pendências
 
-Pendências: nenhuma. O épico só mexe no script do orçamento do `dist/index.html`, nos textos do fluxo e nos testes de `tests/tooling/`; nenhum componente, token ou ícone da app muda.
+Pending items: none. The epic only touches the `dist/index.html` budget script, the flow texts and the tests in `tests/tooling/`; no component, token or icon of the app changes.
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componente, token nem ícone da app.
+Sem impacto on the Claude Design Mapping artifact: nothing was written, since the epic changes no component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.
 
-Impacto no DS: nenhum.
+Impact on the DS: none.

@@ -1,5 +1,5 @@
-// Entradas de um quadro do canvas e o estado de interação que a entrada de
-// ponteiro escreve e os renderers leem. Sem Konva: só tipos e funções puras.
+// Inputs of a canvas frame and the interaction state that the pointer input writes
+// and the renderers read. No Konva: only types and pure functions.
 import { signal, type Signal } from '@preact/signals';
 import type {
   ComponentDrawings,
@@ -18,29 +18,29 @@ import type { ReviewCanvas } from './reviewMarks';
 import type { CanvasTokens } from './theme';
 import type { Point, Size, Viewport } from './viewport';
 
-/** Posição exibida durante um gesto de imagem (segue o dedo, mesmo se inválida). */
+/** Position shown during an image gesture (follows the finger, even if invalid). */
 export interface ImagePreview {
   readonly containerId: string;
   readonly placement: Placement;
   readonly valid: boolean;
 }
 
-/** Alvo de um arrastar-e-soltar de arquivos: área vazia ou uma imagem (será trocada). */
+/** Target of a file drag-and-drop: empty area or an image (it will be replaced). */
 export type DropTarget = {
   readonly containerId: string | null;
-  /** Marcação (componente com slot) que receberia o item: acende o retângulo dela. */
+  /** Marking (component with a slot) that would receive the item: its rectangle lights up. */
   readonly markingId?: string;
 } | null;
 
-/** Item trancado sob o mouse: recebe o emblema do cadeado enquanto o cursor está nele. */
+/** Locked item under the mouse: gets the padlock badge while the cursor is on it. */
 export interface HoverLock {
   readonly kind: 'image' | 'marking';
   readonly id: string;
 }
 
 /**
- * Retângulo sendo desenhado (modo Desenhar): em pixels do container, ou em unidades do canvas
- * (`containerId` nulo) quando o desenho começou no vazio.
+ * Rectangle being drawn (Draw mode): in container pixels, or in canvas units
+ * (`containerId` null) when the drawing started in the empty space.
  */
 export interface Draft {
   readonly containerId: string | null;
@@ -48,43 +48,43 @@ export interface Draft {
 }
 
 /**
- * Gesto de seta em andamento (ME4): a linha provisória (criar pela alça de ligação, ou arrastar uma
- * ponta que ainda não está sobre uma marcação, em unidades do canvas) e a marcação que receberia a
- * ponta se o ponteiro fosse solto agora (acende como o alvo de soltar).
+ * Arrow gesture in progress (ME4): the provisional line (create from the link handle, or drag an
+ * end that is not yet over a marking, in canvas units) and the marking that would receive the
+ * end if the pointer were released now (lights up like the drop target).
  */
 export interface ArrowDraft {
   readonly line: { readonly from: Point; readonly to: Point } | null;
   readonly target: string | null;
 }
 
-/** Estado passageiro dos gestos: escrito pela entrada, desenhado nas sobreposições. */
+/** Transient gesture state: written by the input, drawn in the overlays. */
 export interface InteractionState {
   readonly preview: Signal<ImagePreview | null>;
   readonly draft: Signal<Draft | null>;
-  /** Marcação (ou imagem) com a geometria travada sob o mouse; `null` se não há nenhum ou se ele é livre. */
+  /** Marking (or image) with locked geometry under the mouse; `null` if there is none or it is free. */
   readonly hoverLock: Signal<HoverLock | null>;
   /**
-   * Marcação desenhada (com componente visível) sob o mouse, para a borda aparecer; `null` se o
-   * mouse está fora delas. Só é escrito quando muda e só enquanto há marcações desenhadas.
+   * Drawn marking (with a visible component) under the mouse, so the border shows; `null` if the
+   * mouse is outside them. Only written when it changes and only while there are drawn markings.
    */
   readonly hoverMarking: Signal<string | null>;
   /**
-   * Container que fica com a marcação arrastada se ela fosse solta agora (a contém ou a recebe
-   * pelo encaixe), quando é outro que o de origem: acende como o alvo de soltar um arquivo.
+   * Container that would keep the dragged marking if it were dropped now (it contains it or receives
+   * it by snapping), when it is a different one than the origin: lights up like the file drop target.
    */
   readonly moveTarget: Signal<string | null>;
   /**
-   * Itens que seriam absorvidos se o desenho ou o redimensionamento terminasse agora (acendem),
-   * em unidades do canvas. Escrito só quando muda.
+   * Items that would be absorbed if the drawing or the resize ended now (they light up),
+   * in canvas units. Written only when it changes.
    */
   readonly absorb: Signal<readonly Rect[]>;
-  /** Gesto de seta em andamento (criar ou trocar uma ponta); `null` fora dele. */
+  /** Arrow gesture in progress (creating or swapping an end); `null` outside it. */
   readonly arrowDraft: Signal<ArrowDraft | null>;
-  /** Retângulo da seleção por Shift+arrasto (canvas); `null` fora do gesto. */
+  /** Rectangle of the Shift+drag selection (canvas); `null` outside the gesture. */
   readonly marquee: Signal<Rect | null>;
 }
 
-/** Sinais de interação vazios (o canvas e os testes montam o estado por aqui). */
+/** Empty interaction signals (the canvas and the tests build the state from here). */
 export function createInteractionState(): InteractionState {
   return {
     preview: signal<ImagePreview | null>(null),
@@ -99,8 +99,8 @@ export function createInteractionState(): InteractionState {
 }
 
 /**
- * O que o modo visualização mostra do canvas (`ViewShow` sem as camadas com desenho, que já
- * chegam filtradas em `drawn`). `null` no quadro fora do modo.
+ * What view mode shows of the canvas (`ViewShow` without the layers with drawing, which already
+ * arrive filtered in `drawn`). `null` in the frame outside the mode.
  */
 export interface ViewFrame {
   readonly containers: boolean;
@@ -110,7 +110,7 @@ export interface ViewFrame {
   readonly arrows: boolean;
 }
 
-/** Tudo o que um quadro desenha. Mudar qualquer item agenda um novo quadro. */
+/** Everything a frame draws. Changing any item schedules a new frame. */
 export interface Frame {
   readonly project: Project | null;
   readonly readOnly: boolean;
@@ -118,20 +118,20 @@ export interface Frame {
   readonly preview: ImagePreview | null;
   readonly draft: Draft | null;
   readonly dropTarget: DropTarget;
-  /** Itens que o desenho ou o redimensionamento em andamento absorveria (canvas). */
+  /** Items that the drawing or resize in progress would absorb (canvas). */
   readonly absorb: readonly Rect[];
   readonly hoverLock: HoverLock | null;
-  /** Marcação desenhada sob o mouse (a borda dela aparece); `null` se nenhuma. */
+  /** Drawn marking under the mouse (its border shows); `null` if none. */
   readonly hoverMarking: string | null;
   readonly tokens: CanvasTokens;
   readonly size: Size;
   readonly viewport: Viewport;
   readonly selection: Selection;
   /**
-   * Todos os itens selecionados (seleção múltipla), o primário (`selection`) por último; vazio no
-   * modo visualização, como a seleção. As alças, o cadeado e a etiqueta de nome são só do primário; os
-   * demais recebem o contorno de seleção secundário (`overlay.ts`). Mesmo objeto enquanto a
-   * seleção não muda: o quadro compara por referência.
+   * All the selected items (multiple selection), the primary (`selection`) last; empty in view
+   * mode, like the selection. The handles, the padlock and the name label belong only to the primary;
+   * the others get the secondary selection outline (`overlay.ts`). Same object while the
+   * selection does not change: the frame compares by reference.
    */
   readonly items: readonly SelectionItem[];
   readonly mode: EditorMode;
@@ -139,51 +139,51 @@ export interface Frame {
   readonly incomplete: ReadonlySet<string>;
   readonly visibility: ReadonlyMap<string, MarkingVisibility>;
   /**
-   * Desenhos dos componentes do projeto desenhado (com a prévia do gesto), por marcação. O
-   * canvas compara os objetos por identidade: só o que mudou é refeito.
+   * Drawings of the components of the drawn project (with the gesture preview), per marking. The
+   * canvas compares the objects by identity: only what changed is redone.
    */
   readonly drawings: ComponentDrawings;
-  /** Marcações cujo desenho está visível (têm borda só em hover e seleção, e sem cartão de texto). */
+  /** Markings whose drawing is visible (they have a border only on hover and selection, and no text card). */
   readonly drawn: ReadonlySet<string>;
-  /** Marcações flutuantes do projeto à vista: o desenho delas fica acima de tudo. */
+  /** Floating markings of the project in view: their drawing stays above everything. */
   readonly floating: ReadonlySet<string>;
-  /** Marcas da revisão de uma proposta (etapa 4); `null` fora da revisão. */
+  /** Review marks of a proposal (stage 4); `null` outside the review. */
   readonly review: ReviewCanvas | null;
   /**
-   * Setas desenhadas (v13): as do projeto desenhado com as duas pontas visíveis; vazio com
-   * "Mostrar setas" desligado (fora do modo visualização, que tem o item Setas). O mesmo array enquanto elas não mudam.
+   * Drawn arrows (v13): those of the drawn project with both ends visible; empty with
+   * "Show arrows" off (outside view mode, which has the Arrows item). The same array while they do not change.
    */
   readonly arrows: readonly ArrowShape[];
-  /** Gesto de seta em andamento (linha provisória e marcação de destino). */
+  /** Arrow gesture in progress (provisional line and target marking). */
   readonly arrowDraft: ArrowDraft | null;
-  /** Retângulo da seleção por Shift+arrasto (canvas); `null` fora do gesto. */
+  /** Rectangle of the Shift+drag selection (canvas); `null` outside the gesture. */
   readonly marquee: Rect | null;
   /**
-   * Modo visualização: o que o canvas mostra (`ViewFrame`); `null` fora do modo. No modo não há
-   * seleção, alças, hover, indicadores, rascunho nem marcas da revisão, e `visibility` traz todas
-   * as marcações inteiras (quem esconde o contorno ou o nome é este item). O mesmo objeto
-   * enquanto os cinco itens não mudam.
+   * View mode: what the canvas shows (`ViewFrame`); `null` outside the mode. In the mode there is no
+   * selection, handles, hover, indicators, draft or review marks, and `visibility` carries all
+   * the markings whole (whoever hides the outline or the name is this item). The same object
+   * while the five items do not change.
    */
   readonly view: ViewFrame | null;
   /**
-   * Pinos das conversas (decisão 24): vazio com os pinos desligados (fora o da conversa selecionada),
-   * no modo visualização e na revisão. O mesmo array enquanto o projeto, as conversas e a
-   * visibilidade não mudam: pan e zoom não o recalculam.
+   * Thread pins (decision 24): empty with the pins off (except the selected thread's),
+   * in view mode and in review. The same array while the project, the threads and the
+   * visibility do not change: pan and zoom do not recompute it.
    */
   readonly pins: readonly PinPlace[];
-  /** A conversa selecionada: o pino dela ganha o anel de selecionado. */
+  /** The selected thread: its pin gets the selected ring. */
   readonly pinSelected: string | null;
-  /** Onde fica o pino tracejado do rascunho de uma conversa nova num ponto (canvas); `null` fora dele. */
+  /** Where the dashed pin of a new-thread draft at a point sits (canvas); `null` outside it. */
   readonly draftPin: Point | null;
   /**
-   * Marcas de chegada (PE3, decisão 8): o selo "Veio de <nome>" e a faixa "Área de chegada", só na
-   * Principal; `null` com uma perspectiva ou uma proposta aberta, no modo visualização ou sem marca.
-   * O mesmo objeto enquanto o projeto não muda: pan e zoom não o recalculam.
+   * Arrival marks (PE3, decision 8): the "Came from <name>" stamp and the "Arrival area" band, only on the
+   * Main one; `null` with a perspective or an open proposal, in view mode or without a mark.
+   * The same object while the project does not change: pan and zoom do not recompute it.
    */
   readonly arrivals?: ArrivalMarks | null;
 }
 
-/** `true` se `a` e `b` têm os mesmos valores (por referência) nas chaves dadas. */
+/** `true` if `a` and `b` have the same values (by reference) on the given keys. */
 export function sameFrame(
   a: Frame | null,
   b: Frame,
@@ -192,7 +192,7 @@ export function sameFrame(
   return a !== null && keys.every((key) => a[key] === b[key]);
 }
 
-/** O que muda o desenho das imagens (o deslocamento do viewport não muda). */
+/** What changes the drawing of the images (the viewport offset does not change it). */
 export const IMAGE_KEYS = [
   'project',
   'bitmaps',
@@ -201,9 +201,9 @@ export const IMAGE_KEYS = [
   'locale',
   'view',
 ] as const;
-/** O que muda a camada de componentes (as posições das imagens também, comparadas à parte). */
+/** What changes the components layer (the images' positions too, compared separately). */
 export const COMPONENT_KEYS = ['drawings', 'drawn', 'floating', 'tokens'] as const;
-/** O que muda a camada das setas (o zoom, que muda a espessura, é comparado à parte). */
+/** What changes the arrows layer (the zoom, which changes the thickness, is compared separately). */
 export const ARROW_KEYS = [
   'arrows',
   'tokens',
@@ -214,7 +214,7 @@ export const ARROW_KEYS = [
   'review',
   'view',
 ] as const;
-/** O que muda as sobreposições (seleção, alças, rascunho, alvo de soltar). */
+/** What changes the overlays (selection, handles, draft, drop target). */
 export const OVERLAY_KEYS = [
   'project',
   'readOnly',
@@ -223,7 +223,7 @@ export const OVERLAY_KEYS = [
   'dropTarget',
   'absorb',
   'hoverLock',
-  // A ligação da âncora aparece na ancorada sob o mouse (`overlay.ts`).
+  // The anchor's link shows on the anchored one under the mouse (`overlay.ts`).
   'hoverMarking',
   'tokens',
   'selection',
@@ -232,11 +232,11 @@ export const OVERLAY_KEYS = [
   'arrows',
   'arrowDraft',
   'marquee',
-  // A etiqueta do nome da selecionada leva o risco da remoção proposta (`overlay.ts`).
+  // The selected one's name label carries the strike-through of the proposed removal (`overlay.ts`).
   'review',
 ] as const;
 
-/** Parte do canvas visível na tela, em coordenadas do canvas. */
+/** Part of the canvas visible on screen, in canvas coordinates. */
 export function visibleArea(size: Size, vp: Viewport): Rect {
   return {
     x: -vp.x / vp.scale,

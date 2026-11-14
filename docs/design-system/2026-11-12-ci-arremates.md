@@ -1,13 +1,13 @@
-# Arremates do CI — 2026-11-12 (épico `epic/ci-arremates`)
+# CI finishing touches — 2026-11-12 (épico `epic/ci-arremates`)
 
 ## Pendências
 
-Pendências: nenhuma. Impacto no DS: nenhum. O épico só mexe no `ci.yml`, no `ci-rerun.yml`, em `scripts/ci/`, em uma skill do fluxo, nos testes de `tests/tooling/` e nos registros.
+Pending items: none. Impact on the DS: none. The epic only touches `ci.yml`, `ci-rerun.yml`, `scripts/ci/`, one flow skill, the tests in `tests/tooling/` and the records.
 
 ## Sincronização
 
-Sem impacto: nada a gravar no artefato **Mapping**.
+Sem impacto: nothing to write to the **Mapping** artifact.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

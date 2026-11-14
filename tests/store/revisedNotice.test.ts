@@ -9,26 +9,26 @@ import {
 } from '../../src/model';
 import { openHarness, richScenario, writeOutside } from './proposalHarness';
 
-// Aviso de revisão nova (etapa #644, CP3): uma proposta já conhecida que ganhou uma revisão
-// por fora avisa `revised` (com as contagens) no lugar de `changed`.
+// New-revision notice (stage #644, CP3): an already known proposal that gained a revision
+// outside warns `revised` (with the counts) instead of `changed`.
 
 const REVISED_AT = '2026-11-07T10:00:00.000Z';
 
 function revisedOnDisk(project: Project, p: Proposal) {
   const prep = prepareRevision(project, p, []);
   if (!prep.ok) throw new Error(prep.error.code);
-  const after = renameMarking(prep.proposed, 'M1', 'Porta traseira');
+  const after = renameMarking(prep.proposed, 'M1', 'Rear door');
   const result = reviseProposal(project, p, { drop: [], at: REVISED_AT, after });
   if (!result.ok) throw new Error(result.error.code);
   return { ...result.proposal, revision: p.revision + 1 };
 }
 
-describe('aviso de revisão', () => {
-  it('scan: revisão nova avisa `revised` com as contagens, no lugar de `changed`', async () => {
+describe('new-revision notice', () => {
+  it('scan: a new revision warns `revised` with the counts, instead of `changed`', async () => {
     const { proposal } = richScenario();
     const { session, root } = await openHarness({ proposals: [proposal] });
     const project = session.store.committed.peek();
-    if (!project) throw new Error('sem projeto');
+    if (!project) throw new Error('no project');
     writeOutside(root, revisedOnDisk(project, proposal));
     await session.proposals.scan();
     const kinds = session.proposals.notices.value.map((n) => n.kind);
@@ -42,20 +42,20 @@ describe('aviso de revisão', () => {
     expect(session.proposals.notices.value).toEqual([]);
   });
 
-  it('scan: mudança sem revisão nova continua `changed`', async () => {
+  it('scan: a change without a new revision stays `changed`', async () => {
     const { proposal } = richScenario();
     const { session, root } = await openHarness({ proposals: [proposal] });
-    writeOutside(root, { ...proposal, title: 'Outro título', revision: 5 });
+    writeOutside(root, { ...proposal, title: 'Other title', revision: 5 });
     await session.proposals.scan();
     expect(session.proposals.notices.value.map((n) => n.kind)).toEqual(['changed']);
     expect(session.proposals.notices.value[0]?.revision).toBeUndefined();
   });
 
-  it('a adoção na gravação (decidir outra mudança) também avisa `revised`', async () => {
+  it('adoption at write time (deciding another change) also warns `revised`', async () => {
     const { proposal, ids } = richScenario();
     const { session, root } = await openHarness({ proposals: [proposal] });
     const project = session.store.committed.peek();
-    if (!project) throw new Error('sem projeto');
+    if (!project) throw new Error('no project');
     writeOutside(root, revisedOnDisk(project, proposal));
     await session.proposalActions.decide(
       'P1',

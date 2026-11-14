@@ -15,8 +15,8 @@ import { CatalogPage } from '../../../src/ui/catalog/CatalogPage';
 import { createCatalogRenderer } from '../../../src/ui/catalog/renderer';
 import { material3Package } from '../../storage/packageFixture';
 
-// Documento externo no Catálogo (etapa #559, decisões 23 a 25): a página lê o `.md` da pasta
-// que a pessoa conectou e, sem ela, mostra o que fazer ou só o link.
+// External document in the Catalog (stage #559, decisions 23 to 25): the page reads the `.md` from the
+// folder the person connected and, without it, shows what to do or just the link.
 
 const files = [...material3Package()].map(([path, content]) =>
   typeof content === 'string' ? { path, text: content } : { path, binary: true },
@@ -48,7 +48,7 @@ function patched(patch: Partial<CatalogEntry>): {
   const entry = catalog.layers
     .flatMap((l) => l.entries)
     .find((e) => e.type.id === 'm3-button');
-  if (!entry) throw new Error('m3-button ausente');
+  if (!entry) throw new Error('m3-button missing');
   return { catalog, entry };
 }
 
@@ -61,7 +61,7 @@ interface Fake extends DocFolderAccess {
   request: ReturnType<typeof vi.fn<(repoUrl: string) => Promise<boolean>>>;
 }
 
-/** Acesso falso: `reads` são as respostas de `read`, em ordem (a última se repete). */
+/** Fake access: `reads` are the responses of `read`, in order (the last one repeats). */
 function fakeAccess(reads: DocReadResult[], supported = true): Fake {
   let n = 0;
   return {
@@ -102,18 +102,18 @@ function page(
 const docSection = () => screen.getByRole('region', { name: t('catalog.page.document') });
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
 });
 
-describe('documento externo: estados', () => {
-  it('1. pasta conectada e arquivo encontrado: mostra o documento e um link discreto', async () => {
-    const access = fakeAccess([{ status: 'found', text: '# Botão\n\nTexto do botão.' }]);
+describe('external document: states', () => {
+  it('1. folder connected and file found: shows the document and a discreet link', async () => {
+    const access = fakeAccess([{ status: 'found', text: '# Button\n\nButton text.' }]);
     page(access);
-    expect(await within(docSection()).findByText('Texto do botão.')).toBeTruthy();
+    expect(await within(docSection()).findByText('Button text.')).toBeTruthy();
     expect(access.read).toHaveBeenCalledWith(REPO_URL, 'components/button.md');
     const link = within(docSection()).getByRole('link', {
       name: t('catalog.doc.openRepo'),
@@ -122,10 +122,10 @@ describe('documento externo: estados', () => {
     expect(within(docSection()).queryByRole('button')).toBeNull();
   });
 
-  it('2. permissão pendente: "Permitir acesso a <repo>" chama request e depois mostra o documento', async () => {
+  it('2. permission pending: "Allow access to <repo>" calls request and then shows the document', async () => {
     const access = fakeAccess([
       { status: 'permission' },
-      { status: 'found', text: 'Texto liberado.' },
+      { status: 'found', text: 'Unlocked text.' },
     ]);
     const { user } = page(access);
     const allow = await within(docSection()).findByRole('button', {
@@ -136,11 +136,11 @@ describe('documento externo: estados', () => {
     ).toBeTruthy();
     await user.click(allow);
     expect(access.request).toHaveBeenCalledWith(REPO_URL);
-    expect(await within(docSection()).findByText('Texto liberado.')).toBeTruthy();
+    expect(await within(docSection()).findByText('Unlocked text.')).toBeTruthy();
     expect(access.read).toHaveBeenCalledTimes(2);
   });
 
-  it('2b. permissão negada no clique: oferece também "Trocar pasta…"', async () => {
+  it('2b. permission denied on click: also offers "Change folder…"', async () => {
     const access = fakeAccess([{ status: 'permission' }]);
     access.request.mockResolvedValue(false);
     const { user } = page(access);
@@ -157,10 +157,10 @@ describe('documento externo: estados', () => {
     ).toBeTruthy();
   });
 
-  it('3. arquivo ausente: "<path> não está em <repo>" com "Trocar pasta…" que chama pick e relê', async () => {
+  it('3. file missing: "<path> is not in <repo>" with "Change folder…" that calls pick and rereads', async () => {
     const access = fakeAccess([
       { status: 'missing' },
-      { status: 'found', text: 'Achou agora.' },
+      { status: 'found', text: 'Found now.' },
     ]);
     const { user } = page(access);
     expect(
@@ -175,13 +175,13 @@ describe('documento externo: estados', () => {
       within(docSection()).getByRole('button', { name: t('catalog.doc.change') }),
     );
     expect(access.pick).toHaveBeenCalledWith(REPO_URL);
-    expect(await within(docSection()).findByText('Achou agora.')).toBeTruthy();
+    expect(await within(docSection()).findByText('Found now.')).toBeTruthy();
   });
 
-  it('4. sem pasta: "Conectar a pasta de <repo>…" chama pick e relê', async () => {
+  it('4. no folder: "Connect the <repo> folder…" calls pick and rereads', async () => {
     const access = fakeAccess([
       { status: 'no-folder' },
-      { status: 'found', text: 'Conectado.' },
+      { status: 'found', text: 'Connected.' },
     ]);
     const { user } = page(access);
     const connect = await within(docSection()).findByRole('button', {
@@ -192,10 +192,10 @@ describe('documento externo: estados', () => {
     ).toBeTruthy();
     await user.click(connect);
     expect(access.pick).toHaveBeenCalledWith(REPO_URL);
-    expect(await within(docSection()).findByText('Conectado.')).toBeTruthy();
+    expect(await within(docSection()).findByText('Connected.')).toBeTruthy();
   });
 
-  it('4b. cancelar o seletor não troca o estado nem relê', async () => {
+  it('4b. cancelling the picker neither changes the state nor rereads', async () => {
     const access = fakeAccess([{ status: 'no-folder' }]);
     access.pick.mockResolvedValue(false);
     const { user } = page(access);
@@ -213,7 +213,7 @@ describe('documento externo: estados', () => {
     ).toBeTruthy();
   });
 
-  it('5a. navegador sem seletor de pasta: só o link, sem botões e sem ler', async () => {
+  it('5a. browser without a folder picker: only the link, no buttons and no reading', async () => {
     const access = fakeAccess([{ status: 'no-folder' }], false);
     page(access);
     const link = await within(docSection()).findByRole('link', {
@@ -224,7 +224,7 @@ describe('documento externo: estados', () => {
     expect(access.read).not.toHaveBeenCalled();
   });
 
-  it('5b. sem urlTemplate: só "<repo>: <path>" em fonte mono (token), sem link', async () => {
+  it('5b. no urlTemplate: only "<repo>: <path>" in mono font (token), no link', async () => {
     const access = fakeAccess([{ status: 'no-folder' }]);
     page(access, { ...EXTERNAL, url: null });
     const label = await within(docSection()).findByText(
@@ -234,7 +234,7 @@ describe('documento externo: estados', () => {
     expect(within(docSection()).queryByRole('link')).toBeNull();
   });
 
-  it('5c. sem suporte e sem url: só o caminho', async () => {
+  it('5c. no support and no url: only the path', async () => {
     const access = fakeAccess([{ status: 'no-folder' }], false);
     page(access, { ...EXTERNAL, url: null });
     expect(
@@ -244,7 +244,7 @@ describe('documento externo: estados', () => {
     expect(within(docSection()).queryByRole('button')).toBeNull();
   });
 
-  it('5d. repositório não declarado (repoUrl nulo): sem botões, só o link', async () => {
+  it('5d. repository not declared (null repoUrl): no buttons, only the link', async () => {
     const access = fakeAccess([{ status: 'no-folder' }]);
     page(access, { ...EXTERNAL, repoUrl: null });
     expect(
@@ -254,7 +254,7 @@ describe('documento externo: estados', () => {
     expect(access.read).not.toHaveBeenCalled();
   });
 
-  it('mostra "Lendo o documento…" enquanto a leitura não termina', async () => {
+  it('shows "Reading the document…" while the read has not finished', async () => {
     const access = fakeAccess([{ status: 'no-folder' }]);
     access.read.mockReturnValue(new Promise(() => undefined));
     page(access);
@@ -262,8 +262,8 @@ describe('documento externo: estados', () => {
   });
 });
 
-describe('documento externo: link', () => {
-  it('abre em outra aba, sem referrer, e o href vem do urlTemplate', async () => {
+describe('external document: link', () => {
+  it('opens in another tab, without referrer, and the href comes from the urlTemplate', async () => {
     page(fakeAccess([{ status: 'missing' }]));
     const link = await within(docSection()).findByRole('link', {
       name: t('catalog.doc.openRepo'),
@@ -273,7 +273,7 @@ describe('documento externo: link', () => {
     expect(link.getAttribute('rel')).toBe('noopener noreferrer');
   });
 
-  it('nunca usa fetch', async () => {
+  it('never uses fetch', async () => {
     const spy = vi.fn();
     vi.stubGlobal('fetch', spy);
     page(fakeAccess([{ status: 'found', text: 'x' }]));
@@ -283,15 +283,15 @@ describe('documento externo: link', () => {
   });
 });
 
-describe('documento externo: Markdown', () => {
-  it('imagem vira o texto alternativo, link relativo vira texto e o absoluto é link', async () => {
+describe('external document: Markdown', () => {
+  it('image becomes the alt text, relative link becomes text and the absolute one is a link', async () => {
     const text =
-      '![diagrama alt](rel.png)\n\nVeja [outro](./outro.md) e [site](https://x.com).';
+      '![diagram alt](rel.png)\n\nSee [other](./other.md) and [site](https://x.com).';
     page(fakeAccess([{ status: 'found', text }]));
     const section = docSection();
-    expect(await within(section).findByText(/diagrama alt/)).toBeTruthy();
+    expect(await within(section).findByText(/diagram alt/)).toBeTruthy();
     expect(section.querySelector('img')).toBeNull();
-    expect(section.textContent).toContain('Veja outro e site.');
+    expect(section.textContent).toContain('See other and site.');
     const anchors = [...section.querySelectorAll('a')];
     expect(anchors.map((a) => a.getAttribute('href'))).toEqual([
       'https://x.com',
@@ -303,17 +303,17 @@ describe('documento externo: Markdown', () => {
   });
 });
 
-describe('documento do pacote', () => {
-  it('doc texto continua como hoje: Markdown, sem botões nem link e sem ler pasta', () => {
-    const access = fakeAccess([{ status: 'found', text: 'nunca' }]);
-    page(access, null, { docText: 'Documento do pacote.' });
-    expect(within(docSection()).getByText('Documento do pacote.')).toBeTruthy();
+describe('package document', () => {
+  it('text doc stays as today: Markdown, no buttons or link and no folder reading', () => {
+    const access = fakeAccess([{ status: 'found', text: 'never' }]);
+    page(access, null, { docText: 'Package document.' });
+    expect(within(docSection()).getByText('Package document.')).toBeTruthy();
     expect(within(docSection()).queryByRole('button')).toBeNull();
     expect(within(docSection()).queryByRole('link')).toBeNull();
     expect(access.read).not.toHaveBeenCalled();
   });
 
-  it('sem doc nenhum: o aviso de sempre', () => {
+  it('no doc at all: the usual notice', () => {
     page(fakeAccess([{ status: 'missing' }]), null);
     expect(within(docSection()).getByText(t('catalog.page.noDoc'))).toBeTruthy();
   });

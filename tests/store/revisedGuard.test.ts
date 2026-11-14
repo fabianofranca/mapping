@@ -9,20 +9,20 @@ import {
 } from '../../src/model';
 import { diskProposal, openHarness, richScenario, writeOutside } from './proposalHarness';
 
-// Guarda da decisão na app (etapa #644, CP3, decisão 8): o agente revisou a proposta enquanto a
-// pessoa olhava a versão antiga. Decidir uma mudança que a revisão trocou ou acrescentou é
-// recusado (`revised`), nada é gravado e a sessão adota a versão do disco.
+// Decision guard in the app (stage #644, CP3, decision 8): the agent revised the proposal while
+// the person was looking at the old version. Deciding a change that the revision replaced or
+// added is refused (`revised`), nothing is written and the session adopts the disk version.
 
 const REVISED_AT = '2026-11-07T10:00:00.000Z';
 
-/** A proposta revisada como o MCP a gravaria: troca o nome da M1 e cria o da M2. */
+/** The proposal revised as the MCP would write it: renames M1 and creates the name of M2. */
 function revisedOnDisk(project: Project, p: Proposal, drop: readonly string[] = []) {
   const prep = prepareRevision(project, p, drop);
   if (!prep.ok) throw new Error(prep.error.code);
   const after = renameMarking(
-    renameMarking(prep.proposed, 'M1', 'Porta traseira'),
+    renameMarking(prep.proposed, 'M1', 'Rear door'),
     'M2',
-    'Capô novo',
+    'New hood',
   );
   const result = reviseProposal(project, p, { drop, at: REVISED_AT, after });
   if (!result.ok) throw new Error(result.error.code);
@@ -35,18 +35,18 @@ async function openWithRevision(
   const { proposal, ids } = richScenario();
   const harness = await openHarness({ proposals: [proposal] });
   const project = harness.session.store.committed.peek();
-  if (!project) throw new Error('sem projeto');
+  if (!project) throw new Error('no project');
   const revised = revisedOnDisk(project, proposal, drop(ids));
-  // A app leu a proposta antes; o agente a revisa por fora, sem a app saber.
+  // The app read the proposal before; the agent revises it outside, without the app knowing.
   writeOutside(harness.root, revised);
   return { ...harness, proposal, revised, ids };
 }
 
-describe('Guarda da decisão sobre conteúdo revisado', () => {
-  it('aceitar a mudança que a revisão trocou: recusa com "revised", nada é gravado e a sessão adota o disco', async () => {
+describe('Decision guard on revised content', () => {
+  it('accepting the change that the revision replaced: refuses with "revised", nothing is written and the session adopts the disk', async () => {
     const { session, root, revised, ids } = await openWithRevision();
     const changedId = Object.keys(revised.revisions?.[0]?.changed ?? {})[0];
-    if (!changedId) throw new Error('a revisão não trocou nada');
+    if (!changedId) throw new Error('the revision replaced nothing');
     const result = await session.proposalActions.decide(
       'P1',
       { level: 'change', id: changedId },
@@ -59,7 +59,7 @@ describe('Guarda da decisão sobre conteúdo revisado', () => {
     expect(session.proposals.get('P1')?.revisions).toHaveLength(1);
     expect(ids.name).toBeDefined();
 
-    // Agora que a sessão adotou a versão do disco (a pessoa vê a marca), a decisão vale.
+    // Now that the session adopted the disk version (the person sees the mark), the decision holds.
     const again = await session.proposalActions.decide(
       'P1',
       { level: 'change', id: changedId },
@@ -68,10 +68,10 @@ describe('Guarda da decisão sobre conteúdo revisado', () => {
     expect(again.ok).toBe(true);
   });
 
-  it('aceitar o item que contém uma mudança nova da revisão: recusa', async () => {
+  it('accepting the item that contains a new change from the revision: refuses', async () => {
     const { session, root, revised } = await openWithRevision();
     const added = revised.revisions?.[0]?.added[0];
-    if (!added) throw new Error('a revisão não acrescentou nada');
+    if (!added) throw new Error('the revision added nothing');
     const change = revised.changes.find((c) => c.id === added);
     const result = await session.proposalActions.decide(
       'P1',
@@ -82,7 +82,7 @@ describe('Guarda da decisão sobre conteúdo revisado', () => {
     expect((await diskProposal(root)).revision).toBe(revised.revision);
   });
 
-  it('aceitar uma mudança que a revisão não tocou: grava sobre a versão do disco', async () => {
+  it('accepting a change that the revision did not touch: writes over the disk version', async () => {
     const { session, root, revised, ids } = await openWithRevision();
     const result = await session.proposalActions.decide(
       'P1',
@@ -96,26 +96,26 @@ describe('Guarda da decisão sobre conteúdo revisado', () => {
     expect(disk.revisions).toHaveLength(1);
   });
 
-  it('uma nota numa mudança retirada vai para o nível da proposta, com a origem', async () => {
+  it('a note on a withdrawn change goes to the proposal level, with the origin', async () => {
     const { session, root, ids } = await openWithRevision((i) => [i.rect]);
     const result = await session.proposalActions.addNote(
       'P1',
       { level: 'change', id: ids.rect },
-      'Eu queria isto',
+      'I wanted this',
     );
     expect(result.ok).toBe(true);
     const disk = await diskProposal(root);
-    const note = disk.notes.find((n) => n.text === 'Eu queria isto');
+    const note = disk.notes.find((n) => n.text === 'I wanted this');
     expect(note?.target).toEqual({ level: 'proposal', id: null });
     expect(
       disk.revisions?.[0]?.dropped.find((d) => d.change.id === ids.rect)?.notes,
     ).toContain(note?.id);
   });
 
-  it('Aplicar aceitas sobre uma versão revisada grava como antes', async () => {
+  it('Apply accepted on a revised version writes as before', async () => {
     const { session, root, revised, ids } = await openWithRevision();
-    // A decisão de uma mudança intocada vale; depois o agente revisa de novo por fora? Não:
-    // aqui só se aplica o que já foi aceito sobre a versão revisada.
+    // The decision on an untouched change holds; then the agent revises again outside? No:
+    // here only what was already accepted on the revised version is applied.
     await session.proposalActions.decide(
       'P1',
       { level: 'change', id: ids.rect },

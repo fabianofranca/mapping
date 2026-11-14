@@ -1,7 +1,7 @@
-// rot.mjs: node rot.mjs <pasta da biblioteca>
-// Troca o `card` de uma cópia de `m3-tokens` por um componente de formato 4 com as chaves do
-// épico "expressões que calculam" (R25.75 ao R25.78): a largura de uma barra por `$size` e
-// `$mul` (metade da largura da instância) e um retângulo com `rotation` 45.
+// rot.mjs: node rot.mjs <library folder>
+// Replaces the `card` of a copy of `m3-tokens` with a format 4 component with the keys of the
+// "expressions that calculate" epic (R25.75 to R25.78): the width of a bar by `$size` and
+// `$mul` (half the width of the instance) and a rectangle with `rotation` 45.
 import fs from 'node:fs';
 
 const file = process.argv[2] + '/components/card.json';
@@ -16,7 +16,7 @@ const card = {
     fill: '#FFFFFF',
     layout: { type: 'none' },
     children: [
-      // A barra azul começa em x 20 e tem metade da largura da instância (150 de 300).
+      // The blue bar starts at x 20 and has half the width of the instance (150 of 300).
       {
         type: 'rect',
         anchors: { left: 20, top: 20 },
@@ -24,7 +24,7 @@ const card = {
         height: 10,
         fill: '#1976D2',
       },
-      // 60 × 20 em (200, 60), girado 45° em volta do centro (230, 70): só desenho.
+      // 60 × 20 at (200, 60), rotated 45° around the center (230, 70): drawing only.
       {
         type: 'rect',
         anchors: { left: 200, top: 60 },

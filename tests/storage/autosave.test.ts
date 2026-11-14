@@ -5,8 +5,8 @@ import { createAutoSaver } from '../../src/storage/autosave';
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
-describe('salvamento automático', () => {
-  it('agrupa alterações seguidas numa gravação após o debounce', async () => {
+describe('autosave', () => {
+  it('groups consecutive changes into one write after the debounce', async () => {
     const save = vi.fn(async () => undefined);
     const saver = createAutoSaver(save, 800);
     expect(saver.status.value).toBe('saved');
@@ -22,11 +22,11 @@ describe('salvamento automático', () => {
     expect(saver.status.value).toBe('saved');
   });
 
-  it('erro: mostra o status e tenta de novo no flush ou na próxima alteração', async () => {
+  it('error: shows the status and retries on flush or on the next change', async () => {
     const save = vi
       .fn<() => Promise<void>>()
-      .mockRejectedValueOnce(new Error('sem permissão'))
-      .mockRejectedValueOnce(new Error('sem permissão'))
+      .mockRejectedValueOnce(new Error('no permission'))
+      .mockRejectedValueOnce(new Error('no permission'))
       .mockResolvedValue(undefined);
     const saver = createAutoSaver(save, 800);
 
@@ -44,7 +44,7 @@ describe('salvamento automático', () => {
     expect(saver.status.value).toBe('saved');
   });
 
-  it('não grava em paralelo; alteração durante a gravação agenda outra', async () => {
+  it('does not write in parallel; a change during a write schedules another', async () => {
     let release: () => void = () => undefined;
     let running = 0;
     let maxRunning = 0;
@@ -70,7 +70,7 @@ describe('salvamento automático', () => {
     expect(saver.status.value).toBe('saved');
   });
 
-  it('flush sem alterações pendentes não grava; dispose cancela o agendado', async () => {
+  it('flush without pending changes does not write; dispose cancels the scheduled one', async () => {
     const save = vi.fn(async () => undefined);
     const saver = createAutoSaver(save, 800);
     await saver.flush();
@@ -84,8 +84,8 @@ describe('salvamento automático', () => {
   });
 });
 
-describe('salvamento automático: reset', () => {
-  it('descarta a gravação agendada e volta a "saved" (recarregar do disco)', async () => {
+describe('autosave: reset', () => {
+  it('discards the scheduled write and returns to "saved" (reload from disk)', async () => {
     const save = vi.fn(async () => undefined);
     const saver = createAutoSaver(save, 800);
     saver.schedule();
@@ -97,7 +97,7 @@ describe('salvamento automático: reset', () => {
     expect(save).not.toHaveBeenCalled();
   });
 
-  it('descarta também o erro pendente', async () => {
+  it('also discards the pending error', async () => {
     const save = vi.fn<() => Promise<void>>().mockRejectedValue(new Error('x'));
     const saver = createAutoSaver(save, 800);
     saver.schedule();
@@ -109,7 +109,7 @@ describe('salvamento automático: reset', () => {
     expect(save).toHaveBeenCalledTimes(1);
   });
 
-  it('uma alteração depois do reset grava normalmente', async () => {
+  it('a change after the reset writes normally', async () => {
     const save = vi.fn(async () => undefined);
     const saver = createAutoSaver(save, 800);
     saver.schedule();
@@ -120,11 +120,11 @@ describe('salvamento automático: reset', () => {
   });
 });
 
-// Fase 8.1 (achados S2 e S3): uma fila só para gravar e para o que não pode cruzar com a
-// gravação, e os invariantes que a interface supõe (`saved` = nada em curso nem pendente;
-// uma gravação em curso é sempre `saving`).
-describe('fila única e invariantes (fase 8.1)', () => {
-  /** `save()` cujo término o teste controla: cada chamada espera `resolve`/`reject`. */
+// Phase 8.1 (findings S2 and S3): a single queue for writing and for whatever cannot cross
+// the write, and the invariants the interface assumes (`saved` = nothing in progress or pending;
+// a write in progress is always `saving`).
+describe('single queue and invariants (phase 8.1)', () => {
+  /** A `save()` whose end the test controls: each call waits for `resolve`/`reject`. */
   function controlled() {
     const pending: { resolve: () => void; reject: (e: Error) => void }[] = [];
     let inFlight = 0;
@@ -150,27 +150,27 @@ describe('fila única e invariantes (fase 8.1)', () => {
   beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => undefined));
   afterEach(() => vi.restoreAllMocks());
 
-  it('a gravação enfileirada atrás de uma que falhou roda com o status "saving" (S2)', async () => {
+  it('the write queued behind one that failed runs with the "saving" status (S2)', async () => {
     const c = controlled();
     const saver = createAutoSaver(c.save, 800);
     saver.schedule();
     await vi.advanceTimersByTimeAsync(800);
     expect(c.inFlight()).toBe(1);
-    // Outra alteração durante a gravação: a segunda fica na fila.
+    // Another change during the write: the second one stays in the queue.
     saver.schedule();
     await vi.advanceTimersByTimeAsync(800);
-    c.pending[0]?.reject(new Error('sem permissão'));
+    c.pending[0]?.reject(new Error('no permission'));
     await vi.advanceTimersByTimeAsync(0);
     expect(c.save).toHaveBeenCalledTimes(2);
     expect(c.inFlight()).toBe(1);
-    // Há uma gravação rodando: o status diz isso, não o erro da anterior.
+    // A write is running: the status says so, not the error of the previous one.
     expect(saver.status.value).toBe('saving');
     c.pending[1]?.resolve();
     await vi.advanceTimersByTimeAsync(0);
     expect(saver.status.value).toBe('saved');
   });
 
-  it('reset() cancela a gravação enfileirada ainda não iniciada (S3)', async () => {
+  it('reset() cancels the queued write that has not started yet (S3)', async () => {
     const c = controlled();
     const saver = createAutoSaver(c.save, 800);
     saver.schedule();
@@ -185,23 +185,23 @@ describe('fila única e invariantes (fase 8.1)', () => {
     expect(saver.status.value).toBe('saved');
   });
 
-  it('um save() em curso quando reset() acontece termina sem mudar o status', async () => {
+  it('a save() in progress when reset() happens ends without changing the status', async () => {
     const c = controlled();
     const saver = createAutoSaver(c.save, 800);
     saver.schedule();
     await vi.advanceTimersByTimeAsync(800);
     saver.reset();
-    // A gravação ainda está rodando: o status continua dizendo isso.
+    // The write is still running: the status keeps saying so.
     expect(saver.status.value).toBe('saving');
-    c.pending[0]?.reject(new Error('sem permissão'));
+    c.pending[0]?.reject(new Error('no permission'));
     await vi.advanceTimersByTimeAsync(0);
-    // O pendente foi descartado pelo reset: a falha dele não vira erro nem pendência.
+    // The pending one was discarded by the reset: its failure becomes neither an error nor a pending item.
     expect(saver.status.value).toBe('saved');
     await saver.flush();
     expect(c.save).toHaveBeenCalledTimes(1);
   });
 
-  it('enqueue(): um trabalho espera a gravação em curso e a gravação seguinte espera o trabalho', async () => {
+  it('enqueue(): a job waits for the write in progress and the next write waits for the job', async () => {
     const c = controlled();
     const saver = createAutoSaver(c.save, 800);
     const order: string[] = [];
@@ -212,7 +212,7 @@ describe('fila única e invariantes (fase 8.1)', () => {
       () =>
         new Promise<string>((resolve) => {
           order.push('job');
-          release = () => resolve('feito');
+          release = () => resolve('done');
         }),
     );
     const result = saver.enqueue(job);
@@ -226,7 +226,7 @@ describe('fila única e invariantes (fase 8.1)', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(c.save).toHaveBeenCalledTimes(1);
     release();
-    expect(await result).toBe('feito');
+    expect(await result).toBe('done');
     await vi.advanceTimersByTimeAsync(0);
     expect(c.save).toHaveBeenCalledTimes(2);
     c.pending[1]?.resolve();
@@ -234,7 +234,7 @@ describe('fila única e invariantes (fase 8.1)', () => {
     expect(order).toEqual(['job']);
   });
 
-  it('um trabalho que rejeita não quebra a fila', async () => {
+  it('a job that rejects does not break the queue', async () => {
     const save = vi.fn(async () => undefined);
     const saver = createAutoSaver(save, 800);
     await expect(saver.enqueue(() => Promise.reject(new Error('x')))).rejects.toThrow(
@@ -245,7 +245,7 @@ describe('fila única e invariantes (fase 8.1)', () => {
     expect(save).toHaveBeenCalledTimes(1);
   });
 
-  it('invariantes: saved ⇒ nada em curso nem pendente; em curso ⇒ saving; error ⇒ nada em curso', async () => {
+  it('invariants: saved => nothing in progress or pending; in progress => saving; error => nothing in progress', async () => {
     for (let seed = 1; seed <= 20; seed++) {
       let state = seed;
       const rnd = () => {

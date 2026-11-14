@@ -1,8 +1,10 @@
 /**
- * `font.verticalAlign: "cap-middle"` (formato 4): o bloco que vai do topo da maiúscula da
- * primeira linha à linha de base da última fica centrado na caixa do nó. O desenho continua sendo
- * o `Text` do Konva; a conta (`lineBaseline`, `capMiddleShift`) é a de `src/model/components/baseline.ts`.
- * Aqui fica só a medida da fonte pelo canvas do navegador (`capMetricsOf`), com a mesma fonte do texto.
+ * `font.verticalAlign: "cap-middle"` (format 4): the block that runs from the top of the
+ * capital letter of the first line to the baseline of the last one is centered in the
+ * node's box. The drawing is still the Konva `Text`; the computation (`lineBaseline`,
+ * `capMiddleShift`) is the one in `src/model/components/baseline.ts`. Only the font
+ * measurement by the browser canvas (`capMetricsOf`) lives here, with the same font as the
+ * text.
  */
 import type { Text as KonvaText } from 'konva/lib/shapes/Text';
 import {
@@ -17,14 +19,14 @@ const positive = (n: unknown): n is number =>
 const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
 
 /**
- * O canvas do navegador arredonda ascent, descent e a altura do `H` ao pixel nos tamanhos
- * pequenos (a 16 px: 14, 3 e 12, quando valem 14,5, 3,4 e 11,25); o desvio de ~0,5 unidade
- * aparece como 2 a 3 px de tela a 420%. Por isso as medidas saem de um tamanho grande e voltam
- * ao do nó.
+ * The browser canvas rounds ascent, descent and the height of the `H` to the pixel at small
+ * sizes (at 16 px: 14, 3 and 12, when they are 14.5, 3.4 and 11.25); the deviation of ~0.5
+ * unit shows up as 2 to 3 screen px at 420%. That is why the measurements are taken at a
+ * large size and scaled back to the node's size.
  */
 const MEASURE_SCALE = 32;
 
-/** `capHeight`, `ascent` e `descent` da fonte do nó, pelas mesmas medidas que o Konva usa. */
+/** `capHeight`, `ascent` and `descent` of the node's font, by the same measures Konva uses. */
 export function capMetricsOf(sample: KonvaText, fontSize: number): CapMetrics {
   const original = sample.fontSize();
   sample.fontSize(fontSize * MEASURE_SCALE);

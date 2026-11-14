@@ -21,7 +21,7 @@ import { codeProject } from './specFixtures';
 const strip = (item: Record<string, unknown>, key: string) =>
   Object.fromEntries(Object.entries(item).filter(([k]) => k !== key));
 
-/** Um mapping.json v7 do projeto: sem `source` nas imagens e marcações. */
+/** A v7 mapping.json of the project: without `source` on images and markings. */
 function v7Text(p: Project): string {
   const data = legacyJson(p);
   return JSON.stringify({
@@ -44,8 +44,8 @@ const FIGMA = {
   url: 'https://figma.com/file/x?node-id=12-34',
 };
 
-describe('migração v7 → v8 (origem externa)', () => {
-  it('imagens e marcações ganham source: null e o resto fica igual', () => {
+describe('migration v7 → v8 (external source)', () => {
+  it('images and markings get source: null and the rest stays the same', () => {
     const result = load(v7Text(sampleProject()));
     expect(result.migratedFrom).toBe(7);
     expect(result.readOnly).toBe(false);
@@ -55,12 +55,12 @@ describe('migração v7 → v8 (origem externa)', () => {
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('projeto com especializações e repositórios migra sem perder nada', () => {
+  it('a project with specializations and repositories migrates without losing anything', () => {
     const p = codeProject();
     expect(load(v7Text(p), p).project).toEqual(p);
   });
 
-  it('o v7 migrado salva como v16 estável (round-trip)', () => {
+  it('the migrated v7 saves as a stable v16 (round-trip)', () => {
     const saved = serialize(load(v7Text(sampleProject())).project);
     expect(JSON.parse(saved).schemaVersion).toBe(20);
     const again = load(saved);
@@ -68,7 +68,7 @@ describe('migração v7 → v8 (origem externa)', () => {
     expect(serialize(again.project)).toBe(saved);
   });
 
-  it('preserva um source que já exista e não toca em itens que não são objetos', () => {
+  it('preserves an existing source and does not touch items that are not objects', () => {
     const migrated = migrateFrom7To8({
       images: [{ id: 'I1', source: FIGMA }, 7],
       markings: [{ id: 'M1' }],
@@ -77,19 +77,19 @@ describe('migração v7 → v8 (origem externa)', () => {
     expect(migrated.markings).toEqual([{ id: 'M1', source: null }]);
   });
 
-  it('o registro tem a migração da v7', () => {
+  it('the registry has the v7 migration', () => {
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(8);
     expect(migrations.get(7)).toBe(migrateFrom7To8);
   });
 });
 
 describe('schema v8: source', () => {
-  it('serializa source no fim de cada imagem e marcação, na ordem system, id, url', () => {
+  it('serializes source at the end of each image and marking, in the order system, id, url', () => {
     let p = setImageSource(sampleProject(), 'I1', FIGMA);
     p = setMarkingSource(p, 'M1', { system: 'figma', id: '12:35', url: null });
     const text = serialize(p);
     const data = JSON.parse(text);
-    // `background` (v10) vem depois do `source`.
+    // `background` (v10) comes after `source`.
     expect(Object.keys(data.containers[0]).at(-2)).toBe('source');
     expect(Object.keys(data.containers[0].source)).toEqual(['system', 'id', 'url']);
     expect(data.markings[0].source).toEqual({ system: 'figma', id: '12:35', url: null });
@@ -99,7 +99,7 @@ describe('schema v8: source', () => {
     expect(serialize(loaded.project)).toBe(text);
   });
 
-  it('recusa source sem system, com id vazio ou sem a chave url', () => {
+  it('refuses a source without system, with an empty id or without the url key', () => {
     const data = JSON.parse(serialize(sampleProject()));
     const variants: unknown[] = [
       undefined,
@@ -118,7 +118,7 @@ describe('schema v8: source', () => {
     }
   });
 
-  it('setImageSource e setMarkingSource normalizam, limpam e recusam origem incompleta', () => {
+  it('setImageSource and setMarkingSource normalize, clear and refuse an incomplete source', () => {
     let p = setMarkingSource(sampleProject(), 'M2', {
       system: ' figma ',
       id: ' 1:2 ',
@@ -137,10 +137,10 @@ describe('schema v8: source', () => {
     expect(() =>
       setMarkingSource(p, 'M2', { system: 'figma', id: ' ', url: null }),
     ).toThrow('invalid-source');
-    expect(() => setImageSource(p, 'nada', FIGMA)).toThrow('not-found');
+    expect(() => setImageSource(p, 'nothing', FIGMA)).toThrow('not-found');
   });
 
-  it('a trava não impede definir a origem (não é geometria)', () => {
+  it('the lock does not prevent setting the source (it is not geometry)', () => {
     let p = setImageLocked(sampleProject(), 'I1', true);
     p = setMarkingLocked(p, 'M1', true);
     p = setImageSource(p, 'I1', FIGMA);
@@ -151,10 +151,10 @@ describe('schema v8: source', () => {
 });
 
 describe('findBySource', () => {
-  it('acha imagens e marcações pela origem exata, imagens primeiro', () => {
+  it('finds images and markings by the exact source, images first', () => {
     let p = setImageSource(sampleProject(), 'I2', FIGMA);
     p = setMarkingSource(p, 'M3', FIGMA);
-    p = setMarkingSource(p, 'M1', { system: 'figma', id: 'outro', url: null });
+    p = setMarkingSource(p, 'M1', { system: 'figma', id: 'other', url: null });
     const found = findBySource(p, 'figma', '12:34');
     expect(found.map((f) => (f.kind === 'image' ? f.image.id : f.marking.id))).toEqual([
       'I2',
@@ -163,7 +163,7 @@ describe('findBySource', () => {
     expect(found.map((f) => f.kind)).toEqual(['image', 'marking']);
   });
 
-  it('não acha com outro sistema, outro id ou sem origem', () => {
+  it('does not find with another system, another id or without a source', () => {
     const p = setMarkingSource(sampleProject(), 'M1', FIGMA);
     expect(findBySource(p, 'sketch', '12:34')).toEqual([]);
     expect(findBySource(p, 'figma', '12:3')).toEqual([]);

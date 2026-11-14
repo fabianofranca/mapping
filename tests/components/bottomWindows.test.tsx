@@ -21,10 +21,11 @@ import { cadastroProject } from '../model/specFixtures';
 import { addChild, forceRole, roleProject, withRoles } from '../model/roleFixtures';
 import { createHarness, type Harness } from './harness';
 
-// Janela inferior (R7): Lista em tabela (P7), Incompletas (B5) e Diagnóstico (B4).
+// Bottom window (R7): table List (P7), Incomplete (B5) and Diagnostics (B4).
+// pt-BR kept: shared fixture data (Porta, Maçaneta, Vidros, amassado, trinca, Título, Clique) asserted by tests/model
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   clearReportedErrors();
   markDiagnosticsSeen();
   hideToolWindow('diagnostics');
@@ -43,8 +44,8 @@ function withContext(harness: Harness, ui: preact.ComponentChildren) {
   );
 }
 
-describe('Lista em tabela (P7)', () => {
-  it('uma linha por anotação, com Marcação, Camada, Anotação e Conteúdo', () => {
+describe('Table list (P7)', () => {
+  it('one row per annotation, with Marking, Layer, Annotation and Content', () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <ListView onSelect={vi.fn()} />);
     const table = screen.getByRole<HTMLTableElement>('table', { name: t('list.title') });
@@ -57,15 +58,15 @@ describe('Lista em tabela (P7)', () => {
       t('list.col.annotation'),
       t('list.col.content'),
     ]);
-    // M1 tem A1 (Lataria) e A2 (Vidros); M2 tem A3 (Lataria); M4 tem A4 (Vidros).
+    // M1 has A1 (Lataria) and A2 (Vidros); M2 has A3 (Lataria); M4 has A4 (Vidros).
     expect(within(table).getAllByRole('row').length).toBe(
-      1 + 2 /* imagens */ + 4 /* anotações */,
+      1 + 2 /* images */ + 4 /* annotations */,
     );
     expect(within(table).getByText('amassado')).toBeTruthy();
     expect(within(table).getByText('Amassado')).toBeTruthy();
   });
 
-  it('escolher a linha seleciona a marcação', async () => {
+  it('choosing the row selects the marking', async () => {
     const harness = createHarness(sampleProject());
     const onSelect = vi.fn();
     withContext(harness, <ListView onSelect={onSelect} />);
@@ -77,28 +78,28 @@ describe('Lista em tabela (P7)', () => {
     expect(onSelect).toHaveBeenCalledWith({ kind: 'marking', id: 'M2' });
   });
 
-  it('mantém os filtros: camadas visíveis, sem anotação e só incompletas', async () => {
+  it('keeps the filters: visible layers, no annotation and only incomplete', async () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <ListView onSelect={vi.fn()} />);
     const user = userEvent.setup();
 
-    // Esconder Vidros tira A2 e A4 (e a imagem I2) da tabela.
+    // Hiding Vidros removes A2 and A4 (and image I2) from the table.
     await user.click(screen.getByLabelText(t('layer.visible', { name: 'Vidros' })));
     expect(screen.queryByText('trinca')).toBeNull();
     expect(screen.getAllByRole('row').length).toBe(1 + 1 + 2);
 
-    // Mostrar marcações sem anotação inclui a Fechadura (M3).
+    // Showing markings without an annotation includes the Fechadura (M3).
     await user.click(screen.getByLabelText(t('list.showEmpty')));
     expect(screen.getAllByText(t('list.noAnnotations')).length).toBeGreaterThan(0);
 
-    // Só incompletas: o projeto não tem pendência.
+    // Only incomplete: the project has no pending item.
     await user.click(screen.getByLabelText(t('list.incomplete')));
     expect(screen.getByText(t('list.emptyIncomplete'))).toBeTruthy();
     expect(screen.queryByRole('table')).toBeNull();
   });
 });
 
-describe('Lista: vínculo por papel (etapa #559, PD4)', () => {
+describe('List: link by role (stage #559, PD4)', () => {
   const linked = (role: string | null) =>
     role === 'gone'
       ? forceRole(addChild(roleProject(withRoles), 'E1', 'A1', 'click'), 'E1', role)
@@ -110,31 +111,31 @@ describe('Lista: vínculo por papel (etapa #559, PD4)', () => {
     return container.querySelector('.list-linked')?.textContent ?? undefined;
   }
 
-  it('mostra o nome do papel depois do dono', () => {
-    expect(linkedText('click')).toMatch(/^↳ de .+ \(Clique\)$/);
+  it('shows the role name after the owner', () => {
+    expect(linkedText('click')).toMatch(/^↳ of .+ \(Clique\)$/);
   });
 
-  it('papel desconhecido: o id cru entre parênteses', () => {
+  it('unknown role: the raw id in parentheses', () => {
     expect(linkedText('gone')).toMatch(/\(gone\)$/);
   });
 
-  it('sem papel: só o dono', () => {
-    expect(linkedText(null)).toMatch(/^↳ de [^()]+$/);
+  it('no role: only the owner', () => {
+    expect(linkedText(null)).toMatch(/^↳ of [^()]+$/);
   });
 });
 
-describe('Incompletas (B5)', () => {
-  it('lista as pendências por imagem, com os motivos', () => {
+describe('Incomplete (B5)', () => {
+  it('lists the pending items per image, with the reasons', () => {
     const harness = createHarness(cadastroProject());
     withContext(harness, <IncompleteView onGoToAnnotation={vi.fn()} />);
     const table = screen.getByRole('table', { name: t('incomplete.title') });
-    // O Text do Título está sem o campo obrigatório `id`.
+    // The Text of the Título lacks the required `id` field.
     expect(within(table).getByText('Título')).toBeTruthy();
     expect(within(table).getAllByRole('listitem').length).toBeGreaterThan(0);
     expect(derivedCount(harness)).toBe(within(table).getAllByRole('listitem').length);
   });
 
-  it('clicar leva à anotação', async () => {
+  it('clicking leads to the annotation', async () => {
     const harness = createHarness(cadastroProject());
     const onGoTo = vi.fn();
     withContext(harness, <IncompleteView onGoToAnnotation={onGoTo} />);
@@ -144,11 +145,11 @@ describe('Incompletas (B5)', () => {
     expect(onGoTo).toHaveBeenCalledWith(expect.objectContaining({ id: 'AT' }));
   });
 
-  it('"Só camadas visíveis" esconde as pendências de camadas escondidas', async () => {
+  it('"Visible layers only" hides the pending items of hidden layers', async () => {
     const harness = createHarness(cadastroProject());
     withContext(harness, <IncompleteView onGoToAnnotation={vi.fn()} />);
     const annotation = harness.project().annotations.find((a) => a.id === 'AT');
-    if (!annotation) throw new Error('sem AT');
+    if (!annotation) throw new Error('no AT');
     const user = userEvent.setup();
     harness.ui.hiddenLayers.value = new Set([annotation.layerId]);
     await user.click(screen.getByLabelText(t('incomplete.visibleOnly')));
@@ -156,7 +157,7 @@ describe('Incompletas (B5)', () => {
     expect(screen.getByText(t('incomplete.emptyVisible'))).toBeTruthy();
   });
 
-  it('sem pendências avisa', () => {
+  it('with no pending items it says so', () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <IncompleteView onGoToAnnotation={vi.fn()} />);
     expect(screen.getByText(t('incomplete.empty'))).toBeTruthy();
@@ -168,25 +169,25 @@ function derivedCount(harness: Harness): number {
   return [...issues.values()].reduce((sum, list) => sum + list.length, 0);
 }
 
-describe('Diagnóstico (B4)', () => {
-  it('mostra o registro em tabela, do mais recente ao mais antigo', () => {
-    reportError('save', new Error('primeiro'));
-    reportError('folder.write', new Error('segundo'));
+describe('Diagnostics (B4)', () => {
+  it('shows the log in a table, from the newest to the oldest', () => {
+    reportError('save', new Error('first'));
+    reportError('folder.write', new Error('second'));
     const harness = createHarness(sampleProject());
     withContext(harness, <DiagnosticsView />);
     const rows = within(screen.getByRole('table')).getAllByRole('row');
-    expect(rows[1]?.textContent).toContain('segundo');
-    expect(rows[2]?.textContent).toContain('primeiro');
+    expect(rows[1]?.textContent).toContain('second');
+    expect(rows[2]?.textContent).toContain('first');
   });
 
-  it('sem erros avisa', () => {
+  it('with no errors it says so', () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <DiagnosticsView />);
     expect(screen.getByText(t('diagnostics.empty'))).toBeTruthy();
   });
 
-  it('com a janela à vista os erros contam como vistos', () => {
-    reportError('save', new Error('falhou'));
+  it('with the window in view the errors count as seen', () => {
+    reportError('save', new Error('failed'));
     expect(diagnosticsUnseen.value).toBe(true);
     const harness = createHarness(sampleProject());
     withContext(harness, <DiagnosticsView />);
@@ -194,18 +195,18 @@ describe('Diagnóstico (B4)', () => {
   });
 });
 
-describe('janela inferior: abas e faixa', () => {
-  it('as abas trocam de janela e a janela fecha pelo cabeçalho', async () => {
+describe('bottom window: tabs and strip', () => {
+  it('the tabs switch windows and the window closes from the header', async () => {
     const harness = createHarness(sampleProject());
     showToolWindow('list');
     withContext(
       harness,
       <ToolWindow id="list">
-        <p>conteúdo</p>
+        <p>content</p>
       </ToolWindow>,
     );
     const tabs = screen.getAllByRole('tab');
-    // Comentários é só ícone e contagem: o nome vem do `aria-label`.
+    // Comments is only an icon and a count: the name comes from the `aria-label`.
     expect(tabs.map((tab) => tab.getAttribute('aria-label') ?? tab.textContent)).toEqual([
       t('view.list'),
       t('incomplete.title'),
@@ -220,13 +221,13 @@ describe('janela inferior: abas e faixa', () => {
     expect(isToolWindowOpen('list')).toBe(false);
   });
 
-  it('a aba Incompletas mostra quantas anotações estão pendentes', () => {
+  it('the Incomplete tab shows how many annotations are pending', () => {
     const harness = createHarness(cadastroProject());
     showToolWindow('list');
     withContext(
       harness,
       <ToolWindow id="list">
-        <p>conteúdo</p>
+        <p>content</p>
       </ToolWindow>,
     );
     const count = harness.context.derived.incompleteCount.value;
@@ -236,7 +237,7 @@ describe('janela inferior: abas e faixa', () => {
     ).toBeTruthy();
   });
 
-  it('erro novo acende o ponto na faixa e na aba; ver a janela apaga', async () => {
+  it('a new error lights the dot on the strip and the tab; viewing the window clears it', async () => {
     const harness = createHarness(sampleProject());
     showToolWindow('list');
     withContext(
@@ -244,7 +245,7 @@ describe('janela inferior: abas e faixa', () => {
       <>
         <ToolStrip side="left" />
         <ToolWindow id="list">
-          <p>conteúdo</p>
+          <p>content</p>
         </ToolWindow>
       </>,
     );
@@ -254,13 +255,13 @@ describe('janela inferior: abas e faixa', () => {
         name: new RegExp(`^${name}`),
       });
     expect(stripButton().getAttribute('aria-label')).toBe(name);
-    reportError('save', new Error('falhou'));
+    reportError('save', new Error('failed'));
     await vi.waitFor(() =>
       expect(stripButton().getAttribute('aria-label')).toContain(t('diagnostics.unseen')),
     );
     await userEvent.click(stripButton());
     expect(isToolWindowOpen('diagnostics')).toBe(true);
-    // Aberta, o nome continua o mesmo; só o aria-pressed muda.
+    // Open, the name stays the same; only aria-pressed changes.
     expect(stripButton().getAttribute('aria-label')).toBe(name);
     expect(stripButton().getAttribute('aria-pressed')).toBe('true');
   });

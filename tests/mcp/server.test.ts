@@ -3,10 +3,10 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { describe, expect, it } from 'vitest';
 import { createServer } from '../../mcp/server';
 
-describe('servidor MCP (em memória)', () => {
-  it('anuncia as tools e, com raízes inexistentes, lista só as raízes', async () => {
+describe('MCP server (in memory)', () => {
+  it('announces the tools and, with nonexistent roots, lists only the roots', async () => {
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
-    await createServer({ roots: ['/raiz/a', '/raiz/b'] }).connect(serverSide);
+    await createServer({ roots: ['/root/a', '/root/b'] }).connect(serverSide);
     const client = new Client({ name: 'teste', version: '0' });
     await client.connect(clientSide);
 
@@ -16,8 +16,8 @@ describe('servidor MCP (em memória)', () => {
     const result = await client.callTool({ name: 'list_projects', arguments: {} });
     const text = (result.content as { type: string; text: string }[])[0]!.text;
     expect(JSON.parse(text)).toEqual({
-      roots: ['/raiz/a', '/raiz/b'],
-      missingRoots: ['/raiz/a', '/raiz/b'],
+      roots: ['/root/a', '/root/b'],
+      missingRoots: ['/root/a', '/root/b'],
       projects: [],
     });
     await client.close();

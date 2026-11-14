@@ -1,27 +1,28 @@
-// Auxiliares de automação do agente testador da nuvem (docs/TESTING.md, apêndice A,
-// "Diálogos nativos na nuvem (Xvfb)"; docs/TESTING-NUVEM.md). Empacota as receitas 4 a 10 do
-// apêndice A para não reescrevê-las em toda rodada.
+// Automation helpers for the cloud tester agent (docs/TESTING.md, Appendix A,
+// "Native dialogs in the cloud (Xvfb)"; docs/TESTING-NUVEM.md). Packages recipes 4 to 10 of
+// Appendix A so they are not rewritten in every round.
 //
-// Uso como biblioteca:
+// Use as a library:
 //   import { connect, selectFolder, ... } from './cloud.mjs';
 //
-// Uso como CLI:
-//   node scripts/testing/cloud.mjs mark <roteiro> <start|end>   (o cloud-up.sh chama)
-//   node scripts/testing/cloud.mjs tempos <apoio>               (duração por roteiro, do tempos.log)
-//   node scripts/testing/cloud.mjs state [<pasta-do-projeto>]    (conecta, imprime o estado, sai)
-//   node scripts/testing/cloud.mjs run [<pasta-do-projeto>] [--prazo=<s>] < corpo.js   (corpo do passo pela entrada padrão)
-//   node scripts/testing/cloud.mjs find <texto>                  (candidatos cujo nome contém o texto)
-//   node scripts/testing/cloud.mjs help                          (comandos e exports, da tabela HELP)
+// Use as a CLI:
+//   node scripts/testing/cloud.mjs mark <script> <start|end>    (called by cloud-up.sh)
+//   node scripts/testing/cloud.mjs tempos <apoio>               (duration per script, from tempos.log)
+//   node scripts/testing/cloud.mjs state [<project-folder>]     (connects, prints the state, exits)
+//   node scripts/testing/cloud.mjs run [<project-folder>] [--prazo=<s>] < body.js   (step body on standard input)
+//   node scripts/testing/cloud.mjs find <text>                  (candidates whose name contains the text)
+//   node scripts/testing/cloud.mjs help                         (commands and exports, from the HELP table)
 //
-// Pasta de apoio: toda função que precisa de disco recebe `apoioDir` (a pasta `apoio/` da
-// pasta de trabalho da rodada, docs/TESTING-NUVEM.md item 3) como argumento explícito; a CLI
-// lê esse caminho da variável de ambiente `APOIO` (decisão desta fase: um nome só, sem `S`,
-// para não colidir com a variável `S` usada nas receitas do apêndice A em shells à parte).
+// Support folder: every function that needs disk receives `apoioDir` (the `apoio/` folder of the
+// round's working folder, docs/TESTING-NUVEM.md item 3) as an explicit argument; the CLI
+// reads that path from the `APOIO` environment variable (decision of this phase: a single name,
+// without `S`, to avoid colliding with the `S` variable used in the Appendix A recipes in
+// separate shells).
 //
-// Nunca: registrar `page.on('filechooser')` ou `waitForEvent('filechooser')`, nem usar
-// `setInputFiles` como atalho (regra do "Nunca" do docs/TESTING-NUVEM.md); nunca enviar Enter a
-// um seletor de arquivo/pasta ou a um "Salvar como" do GTK — só alt+o / alt+s / alt+c.
-/* global document, location, CSS, MutationObserver, DataTransfer, DragEvent -- só dentro das funções que rodam na página */
+// Never: register `page.on('filechooser')` or `waitForEvent('filechooser')`, or use
+// `setInputFiles` as a shortcut (rule of the "Never" section of docs/TESTING-NUVEM.md); never send Enter to
+// a GTK file/folder picker or a "Save as" — only alt+o / alt+s / alt+c.
+/* global document, location, CSS, MutationObserver, DataTransfer, DragEvent -- only inside the functions that run on the page */
 import { chromium } from 'playwright';
 import { createHash } from 'node:crypto';
 import { execFile, execFileSync, spawn, spawnSync } from 'node:child_process';
@@ -36,12 +37,12 @@ import { guideExcerpt, guidePreparo, guideSection, listSecoes } from './round-gu
 
 const execFileAsync = promisify(execFile);
 
-/** Caminho fixo do Chrome for Testing headless usado por `makeCadastroPng` (docs do ambiente). */
+/** Fixed path of the headless Chrome for Testing used by `makeCadastroPng` (environment docs). */
 const HEADLESS_CHROMIUM = '/opt/pw-browsers/chromium';
 
 /**
- * Lê o formato que o `cloud-up.sh` grava em `apoio/env.sh` (`export A=1 B=2`, uma ou mais linhas;
- * aspas simples ou duplas em volta do valor são tiradas). Pura.
+ * Reads the format that `cloud-up.sh` writes to `apoio/env.sh` (`export A=1 B=2`, one or more
+ * lines; single or double quotes around the value are stripped). Pure.
  */
 export function parseEnvFile(text) {
   const values = {};
@@ -58,9 +59,9 @@ export function parseEnvFile(text) {
 }
 
 /**
- * Carrega o ambiente da rodada (`DISPLAY`, `DBUS_SESSION_BUS_ADDRESS`, `APOIO`) de
- * `<apoioDir>/env.sh`, preenchendo só o que falta em `env` (padrão `process.env`). Sem o arquivo e
- * sem `DISPLAY`, lança. O script do passo não precisa mais de `source apoio/env.sh`.
+ * Loads the round's environment (`DISPLAY`, `DBUS_SESSION_BUS_ADDRESS`, `APOIO`) from
+ * `<apoioDir>/env.sh`, filling in only what is missing in `env` (default `process.env`). Without the
+ * file and without `DISPLAY`, throws. The step script no longer needs `source apoio/env.sh`.
  */
 export function loadEnv(apoioDir, env = process.env) {
   const file = path.join(apoioDir, 'env.sh');
@@ -70,19 +71,19 @@ export function loadEnv(apoioDir, env = process.env) {
       if (!env[key] && values[key]) env[key] = values[key];
     }
   } else if (!env.DISPLAY) {
-    throw new Error('apoio/env.sh não existe: rode o cloud-up.sh');
+    throw new Error('apoio/env.sh does not exist: run cloud-up.sh');
   }
   if (!env.APOIO) env.APOIO = apoioDir;
   return env;
 }
 
-/** `xdotool key` sem Enter: atalho de um diálogo nativo (receitas 5, 7 e 8 do apêndice A). */
+/** `xdotool key` without Enter: shortcut of a native dialog (recipes 5, 7 and 8 of Appendix A). */
 function xdotoolKey(windowId, ...keys) {
   execFileSync('xdotool', ['windowactivate', '--sync', windowId]);
   execFileSync('xdotool', ['key', '--clearmodifiers', ...keys]);
 }
 
-/** Primeira janela visível cujo título casa com algum nome da lista, ou null. */
+/** First visible window whose title matches any name in the list, or null. */
 function findWindow(names) {
   for (const name of names) {
     const result = spawnSync('xdotool', ['search', '--onlyvisible', '--name', name], {
@@ -94,7 +95,7 @@ function findWindow(names) {
   return null;
 }
 
-/** Espera até `predicate()` ser verdade ou o tempo acabar; não lança ao esgotar (devolve o último valor). */
+/** Waits until `predicate()` is truthy or time runs out; does not throw on timeout (returns the last value). */
 async function waitUntil(predicate, { timeoutMs = 4000, stepMs = 150 } = {}) {
   const deadline = Date.now() + timeoutMs;
   let value = await predicate();
@@ -105,7 +106,7 @@ async function waitUntil(predicate, { timeoutMs = 4000, stepMs = 150 } = {}) {
   return value;
 }
 
-/** Título da janela ativa do sistema (via `xdotool getactivewindow getwindowname`), ou ''. */
+/** Title of the system's active window (via `xdotool getactivewindow getwindowname`), or ''. */
 function activeWindowTitle() {
   const result = spawnSync('xdotool', ['getactivewindow', 'getwindowname'], {
     encoding: 'utf8',
@@ -113,14 +114,15 @@ function activeWindowTitle() {
   return result.status === 0 ? result.stdout.trim() : '';
 }
 
-/** Prazo padrão (ms) da espera por um diálogo nativo (etapa #405, decisão 2). */
+/** Default timeout (ms) of the wait for a native dialog (stage #405, decision 2). */
 const DIALOG_TIMEOUT_MS = 5000;
 
 /**
- * Espera uma janela visível cujo título case com algum nome da lista e devolve o id dela. Tenta
- * a cada `stepMs` (150 ms) até `timeoutMs` (5 s). Ao esgotar o prazo, lança com os títulos
- * esperados e o título da janela ativa; se a ativa não é a da app (título "Mapping…"), acrescenta
- * a frase das duas abas. `find` e `activeTitle` são injetáveis para o teste rodar sem `xdotool`.
+ * Waits for a visible window whose title matches any name in the list and returns its id. Tries
+ * every `stepMs` (150 ms) up to `timeoutMs` (5 s). When the timeout runs out, throws with the
+ * expected titles and the active window's title; if the active one is not the app's (title
+ * "Mapping…"), adds the two-tabs sentence. `find` and `activeTitle` are injectable so the test
+ * runs without `xdotool`.
  */
 export async function waitForWindow(
   names,
@@ -134,18 +136,18 @@ export async function waitForWindow(
   const id = await waitUntil(() => find(names), { timeoutMs, stepMs });
   if (id) return id;
   const active = activeTitle();
-  let message = `Nenhum seletor de arquivo/pasta encontrado em ${timeoutMs} ms (títulos esperados: ${names.join(', ')}; janela ativa: "${active}").`;
+  let message = `No file/folder picker found within ${timeoutMs} ms (expected titles: ${names.join(', ')}; active window: "${active}").`;
   if (active && !/^Mapping\b/.test(active)) {
     message +=
-      ' Causa provável: a aba ativa da janela não é a da app; o seletor nativo só abre com ela em foco no sistema (feche a outra aba).';
+      " Probable cause: the window's active tab is not the app's; the native picker only opens with it focused in the system (close the other tab).";
   }
   throw new Error(message);
 }
 
 /**
- * Lista {id, name} de toda janela visível. Os nomes vêm de um comando só
- * (`xdotool search ... getwindowname %@`, uma linha por janela, na ordem do `search`), em vez de
- * um `getwindowname` por janela a cada tentativa do `waitUntil`.
+ * Lists {id, name} of every visible window. The names come from a single command
+ * (`xdotool search ... getwindowname %@`, one line per window, in the `search` order), instead of
+ * one `getwindowname` per window on each `waitUntil` attempt.
  */
 function listWindows() {
   const search = spawnSync('xdotool', ['search', '--onlyvisible', '--name', '.'], {
@@ -161,14 +163,14 @@ function listWindows() {
     .stdout.trim()
     .split('\n');
   if (names.length === ids.length) return ids.map((id, i) => ({ id, name: names[i] }));
-  // A lista mudou entre os dois comandos (janela abriu ou fechou): volta ao nome por janela.
+  // The list changed between the two commands (a window opened or closed): back to one name per window.
   return ids.map((id) => ({
     id,
     name: spawnSync('xdotool', ['getwindowname', id], { encoding: 'utf8' }).stdout.trim(),
   }));
 }
 
-/** Geometria {x, y, width, height} de uma janela (via `xdotool getwindowgeometry --shell`). */
+/** Geometry {x, y, width, height} of a window (via `xdotool getwindowgeometry --shell`). */
 function windowGeometry(windowId) {
   const result = spawnSync('xdotool', ['getwindowgeometry', '--shell', windowId], {
     encoding: 'utf8',
@@ -181,20 +183,20 @@ function windowGeometry(windowId) {
   return values;
 }
 
-/** Origem padrão da app servida pelo `cloud-up.sh`. */
+/** Default origin of the app served by `cloud-up.sh`. */
 const APP_ORIGIN = 'http://localhost:8080';
 
 /**
- * Escolhe a aba da app entre `pages` (`{ url, title? }`): a da origem cujo caminho não começa por
- * `/guia/`. Com zero ou mais de uma, lança com as URLs e os títulos achados em vez de escolher em
- * silêncio. Pura.
+ * Picks the app's tab among `pages` (`{ url, title? }`): the one of the origin whose path does not
+ * start with `/guide/` (or `/guia/`). With zero or more than one, throws with the URLs and titles
+ * found instead of choosing silently. Pure.
  */
 export function pickAppPage(pages, { origin = APP_ORIGIN } = {}) {
   const wanted = new URL(origin).origin;
   const matches = pages.filter((candidate) => {
     try {
       const url = new URL(candidate.url);
-      return url.origin === wanted && !url.pathname.startsWith('/guia/');
+      return url.origin === wanted && !/^\/gui(de|a)\//.test(url.pathname);
     } catch {
       return false;
     }
@@ -207,25 +209,25 @@ export function pickAppPage(pages, { origin = APP_ORIGIN } = {}) {
   if (matches.length === 0) {
     throw new Error(
       pages.length === 0
-        ? `Nenhuma aba encontrada no Chrome conectado por CDP (esperava a app em ${wanted}).`
-        : `Nenhuma aba da app (${wanted}, fora de /guia/) encontrada. Abas achadas:\n${list(pages)}`,
+        ? `No tab found in the Chrome connected over CDP (expected the app at ${wanted}).`
+        : `No app tab (${wanted}, outside /guide/) found. Tabs found:\n${list(pages)}`,
     );
   }
   throw new Error(
-    `${matches.length} abas da app abertas:\n${list(matches)}\nDica: feche as abas a mais (receita 3).`,
+    `${matches.length} app tabs open:\n${list(matches)}\nHint: close the extra tabs (recipe 3).`,
   );
 }
 
 /**
- * Escolhe a aba do guia entre `pages` (`{ url, title? }`): a da origem cujo caminho começa por
- * `/guia/`. Com zero ou mais de uma, lança com as URLs e os títulos achados. Pura.
+ * Picks the guide's tab among `pages` (`{ url, title? }`): the one of the origin whose path starts
+ * with `/guide/` (or `/guia/`). With zero or more than one, throws with the URLs and titles found. Pure.
  */
 function pickGuidePage(pages, { origin = APP_ORIGIN } = {}) {
   const wanted = new URL(origin).origin;
   const matches = pages.filter((candidate) => {
     try {
       const url = new URL(candidate.url);
-      return url.origin === wanted && url.pathname.startsWith('/guia/');
+      return url.origin === wanted && /^\/gui(de|a)\//.test(url.pathname);
     } catch {
       return false;
     }
@@ -237,14 +239,14 @@ function pickGuidePage(pages, { origin = APP_ORIGIN } = {}) {
       .join('\n');
   throw new Error(
     matches.length === 0
-      ? `Nenhuma aba do guia (${wanted}/guia/) encontrada. Abas achadas:\n${list(pages)}`
-      : `${matches.length} abas do guia abertas:\n${list(matches)}\nDica: feche as abas a mais (receita 3).`,
+      ? `No guide tab (${wanted}/guide/) found. Tabs found:\n${list(pages)}`
+      : `${matches.length} guide tabs open:\n${list(matches)}\nHint: close the extra tabs (recipe 3).`,
   );
 }
 
 /**
- * Conecta no Chrome por CDP, escolhe a aba com `pick`, aplica o timeout curto e registra console
- * e erros de página em `<apoioDir>/console.log`. Base de `connect` e `connectGuide`.
+ * Connects to Chrome over CDP, picks the tab with `pick`, applies the short timeout and logs
+ * console and page errors to `<apoioDir>/console.log`. Basis of `connect` and `connectGuide`.
  */
 async function connectTab(apoioDir, cdpUrl, pick, options) {
   const { timeoutMs, navigationTimeoutMs, origin, connectOverCDP } = options;
@@ -261,7 +263,7 @@ async function connectTab(apoioDir, cdpUrl, pick, options) {
   try {
     ({ page } = pick(described, { origin }));
   } catch (error) {
-    // Sem fechar a conexão CDP o processo `node` do script não sai.
+    // Without closing the CDP connection the script's `node` process does not exit.
     await browser.close().catch(() => undefined);
     throw error;
   }
@@ -286,18 +288,18 @@ const CONNECT_DEFAULTS = {
 };
 
 /**
- * Conecta no Chrome por CDP (receita 4 do apêndice A), acha a aba da app (`pickAppPage`),
- * aplica o timeout curto (`timeoutMs` 5 s nas ações, `navigationTimeoutMs` 15 s nas navegações;
- * espera longa passa `{ timeout }` na própria chamada) e registra console e erros de página em
- * `<apoioDir>/console.log`. Devolve `{ browser, page }`.
+ * Connects to Chrome over CDP (recipe 4 of Appendix A), finds the app's tab (`pickAppPage`),
+ * applies the short timeout (`timeoutMs` 5 s on actions, `navigationTimeoutMs` 15 s on
+ * navigations; a long wait passes `{ timeout }` in the call itself) and logs console and page
+ * errors to `<apoioDir>/console.log`. Returns `{ browser, page }`.
  */
 export async function connect(apoioDir, cdpUrl = 'http://localhost:9222', options = {}) {
   return connectTab(apoioDir, cdpUrl, pickAppPage, { ...CONNECT_DEFAULTS, ...options });
 }
 
 /**
- * Como o `connect()`, mas escolhe a aba do guia (`/guia/`) em vez da da app (etapa #482, GT1):
- * os mesmos 5 s e 15 s e o mesmo registro de console. Devolve `{ browser, page }`.
+ * Like `connect()`, but picks the guide's tab (`/guide/`) instead of the app's (stage #482, GT1):
+ * the same 5 s and 15 s and the same console log. Returns `{ browser, page }`.
  */
 export async function connectGuide(
   apoioDir,
@@ -308,11 +310,11 @@ export async function connectGuide(
 }
 
 /**
- * Clique por papel e nome que pode abrir um diálogo nativo, sem esperar depois (receita 4).
- * Nomes acessíveis se repetem na página ("Adicionar imagens", "Local", "Ajuda", "Rejeitar"):
- * `scope` (um `Locator` ou um seletor CSS) restringe a busca a um container e `exact` vai para o
- * `getByRole`. Conta os candidatos antes de clicar e só clica com exatamente 1; nunca escolhe um
- * em silêncio (etapa #405, decisão 3).
+ * Click by role and name that may open a native dialog, without waiting afterwards (recipe 4).
+ * Accessible names repeat on the page ("Add images", "Local", "Help", "Reject"): `scope` (a
+ * `Locator` or a CSS selector) restricts the search to a container and `exact` goes to
+ * `getByRole`. Counts the candidates before clicking and only clicks with exactly 1; never picks
+ * one silently (stage #405, decision 3).
  */
 export async function clickNoWait(page, name, { scope, exact } = {}) {
   const root = typeof scope === 'string' ? page.locator(scope) : (scope ?? page);
@@ -321,7 +323,7 @@ export async function clickNoWait(page, name, { scope, exact } = {}) {
   const count = await target.count();
   if (count !== 1) {
     throw new Error(
-      `clickNoWait: o botão "${name}" casou com ${count} candidato(s); passe \`scope\` (um container) ou \`exact: true\`.`,
+      `clickNoWait: the button "${name}" matched ${count} candidate(s); pass \`scope\` (a container) or \`exact: true\`.`,
     );
   }
   await target.click({ noWaitAfter: true });
@@ -329,38 +331,38 @@ export async function clickNoWait(page, name, { scope, exact } = {}) {
 
 export const OPEN_DIALOG_TITLES = [
   'Selecione onde este site pode salvar mudanças',
-  // Seletor de leitura: Aplicar pasta…, Atualizar de pasta… e Abrir biblioteca (etapa #482).
+  // Read picker: Apply folder…, Update from folder… and Open library (stage #482).
   'Selecione uma pasta que este site pode ver',
   'Abrir arquivos',
   'Abrir arquivo',
 ];
 
-/** Digita o caminho no seletor GTK já ativo (ctrl+l, depois o caminho). */
+/** Types the path into the already active GTK picker (ctrl+l, then the path). */
 function typePathIntoDialog(windowId, targetPath) {
   execFileSync('xdotool', ['windowactivate', '--sync', windowId]);
   execFileSync('xdotool', ['key', '--clearmodifiers', 'ctrl+l']);
-  // O campo pode já ter texto (o GTK guarda o caminho da vez anterior e o `ctrl+l` não o
-  // seleciona): sem limpar, o caminho saía dobrado ("…/migracao/tmp/…/migracao"). O `ctrl+a`
-  // não seleciona tudo; `Home`, `shift+End` e `BackSpace` sim (como no "Salvar como").
+  // The field may already have text (GTK keeps the path from the previous time and `ctrl+l` does
+  // not select it): without clearing, the path came out doubled ("…/migracao/tmp/…/migracao").
+  // `ctrl+a` does not select everything; `Home`, `shift+End` and `BackSpace` do (as in "Save as").
   execFileSync('xdotool', ['key', '--clearmodifiers', 'Home', 'shift+End', 'BackSpace']);
   execFileSync('xdotool', ['type', '--delay', '20', targetPath]);
-  // Quando a pasta digitada tem exatamente uma subpasta que casa, o GTK completa a barra de
-  // caminho sozinho com o nome dela, já selecionado (sem janela de autocompletar à parte); um
-  // "Delete" apaga só esse texto selecionado. Sem seleção (nenhuma ou várias subpastas casando,
-  // que abre a janela de autocompletar de verdade), o cursor já está no fim e o Delete não apaga
-  // nada: é seguro mandá-lo sempre.
+  // When the typed folder has exactly one matching subfolder, GTK completes the path bar by
+  // itself with its name, already selected (no separate autocomplete window); a "Delete" erases
+  // only that selected text. Without a selection (none or several matching subfolders, which opens
+  // the real autocomplete window), the cursor is already at the end and Delete erases nothing:
+  // it is safe to always send it.
   execFileSync('xdotool', ['key', '--clearmodifiers', 'Delete']);
 }
 
-/** Altura máxima (px) de uma janela de autocompletar: ~48 px com 1 sugestão, 94 px com 4. */
+/** Maximum height (px) of an autocomplete window: ~48 px with 1 suggestion, 94 px with 4. */
 const AUTOCOMPLETE_MAX_HEIGHT = 400;
 
 /**
- * Entre `windows` (`{ id, name }`), acha a janela de autocompletar do GTK aberta sobre o seletor:
- * uma janela de nome "chromium" (a principal do Chrome e o seletor têm título próprio)
- * e baixa, cuja altura cresce com o número de sugestões (pastas irmãs com o mesmo começo, como
- * `migracao` e `migracao10`, dão ~94 px; o limite antigo de 70 px não as via). Devolve
- * `{ window, geometry }` ou null. Pura: `geometryOf(id)` é injetável para o teste.
+ * Among `windows` (`{ id, name }`), finds the GTK autocomplete window open over the picker:
+ * a window named "chromium" (Chrome's main window and the picker have their own title)
+ * and short, whose height grows with the number of suggestions (sibling folders with the same
+ * start, like `migracao` and `migracao10`, give ~94 px; the old 70 px limit did not see them).
+ * Returns `{ window, geometry }` or null. Pure: `geometryOf(id)` is injectable for the test.
  */
 export function pickAutocompletePopup(windows, geometryOf, dialogWindowId) {
   for (const window of windows) {
@@ -374,16 +376,17 @@ export function pickAutocompletePopup(windows, geometryOf, dialogWindowId) {
   return null;
 }
 
-/** Janela de autocompletar do GTK aberta sobre o seletor (`pickAutocompletePopup`), ou null. */
+/** GTK autocomplete window open over the picker (`pickAutocompletePopup`), or null. */
 function findAutocompletePopup(dialogWindowId) {
   return pickAutocompletePopup(listWindows(), windowGeometry, dialogWindowId);
 }
 
 /**
- * Pontos de tela onde clicar no botão **Open** do GTK, dada a geometria `{ X, Y, WIDTH, HEIGHT }`
- * do seletor. O centro medido (seletor de 1124 × 822: o botão fica em (1312, 893), a 50 px da
- * borda direita e 45 px da base) vem primeiro; os outros dois sobem e descem uns 8 px, para o caso
- * de o clique cair na borda do botão (com 28 px da base, que era o valor antigo, errava).
+ * Screen points where to click the GTK **Open** button, given the picker's geometry
+ * `{ X, Y, WIDTH, HEIGHT }`. The measured center (picker of 1124 × 822: the button sits at
+ * (1312, 893), 50 px from the right edge and 45 px from the bottom) comes first; the other two go
+ * up and down about 8 px, in case the click lands on the button's edge (with 28 px from the
+ * bottom, the old value, it missed).
  */
 export function openButtonPoints(geometry) {
   const x = geometry.X + geometry.WIDTH - 50;
@@ -392,9 +395,9 @@ export function openButtonPoints(geometry) {
 }
 
 /**
- * Clica no botão **Open** do GTK por coordenada, dentro da janela do seletor (receita 5, pasta com
- * conteúdo). O primeiro clique só fecha a lista de autocompletar e mantém o caminho: repete com
- * outro ponto do botão enquanto a lista continuar aberta (até 3 pontos).
+ * Clicks the GTK **Open** button by coordinate, inside the picker's window (recipe 5, folder with
+ * content). The first click only closes the autocomplete list and keeps the path: repeats with
+ * another point of the button while the list stays open (up to 3 points).
  */
 async function clickOpenButtonByCoordinate(dialogWindowId) {
   for (const point of openButtonPoints(windowGeometry(dialogWindowId))) {
@@ -414,9 +417,9 @@ async function clickOpenButtonByCoordinate(dialogWindowId) {
 }
 
 /**
- * Receita 5 do apêndice A: seletor GTK de pasta ou de arquivo. Ache a janela pelo título,
- * digite o caminho e confirme com alt+o — resolvendo sozinho a lista de autocompletar do GTK
- * quando a pasta já tem conteúdo (ela some da lista do `xdotool`, não some como o seletor).
+ * Recipe 5 of Appendix A: GTK folder or file picker. Find the window by title, type the path and
+ * confirm with alt+o — resolving the GTK autocomplete list by itself when the folder already has
+ * content (it disappears from the `xdotool` list, it does not disappear like the picker).
  */
 async function runOpenDialog(
   targetPath,
@@ -424,8 +427,8 @@ async function runOpenDialog(
 ) {
   const windowId = await waitForWindow(OPEN_DIALOG_TITLES, { timeoutMs });
   typePathIntoDialog(windowId, targetPath);
-  // Dá tempo para o GTK decidir se abre a lista de autocompletar (ela só aparece quando a
-  // pasta digitada já tem conteúdo que casa com o que foi digitado).
+  // Gives GTK time to decide whether to open the autocomplete list (it only appears when the
+  // typed folder already has content that matches what was typed).
   const popup = await waitUntil(() => findAutocompletePopup(windowId), {
     timeoutMs: 1500,
     stepMs: 100,
@@ -433,7 +436,7 @@ async function runOpenDialog(
   if (popup) {
     await clickOpenButtonByCoordinate(windowId);
   } else if (expectAutocomplete) {
-    throw new Error('Lista de autocompletar do GTK esperada, mas não apareceu.');
+    throw new Error('GTK autocomplete list expected, but it did not appear.');
   }
   xdotoolKey(windowId, 'alt+o');
   const closed = await waitUntil(() => !findWindow(OPEN_DIALOG_TITLES), {
@@ -442,35 +445,33 @@ async function runOpenDialog(
   if (!closed) {
     if (findAutocompletePopup(windowId)) {
       throw new Error(
-        'O seletor de arquivo/pasta continuou aberto: lista de autocompletar aberta (pastas irmãs com o mesmo começo).',
+        'The file/folder picker stayed open: autocomplete list open (sibling folders with the same start).',
       );
     }
-    throw new Error('O seletor de arquivo/pasta continuou aberto depois do alt+o.');
+    throw new Error('The file/folder picker stayed open after alt+o.');
   }
   return { hadAutocomplete: Boolean(popup) };
 }
 
 /**
- * Caminho relativo (etapa #1256, decisão 8): o diretório do `run` não é a pasta de trabalho, então
- * não se resolve sozinho. Fecha o seletor aberto com Cancelar (`alt+c`, receita 8), sem digitar o
- * caminho, e lança o erro que diz o que fazer. Sem caminho relativo, não faz nada.
+ * Relative path (stage #1256, decision 8): the `run` directory is not the working folder, so it
+ * does not resolve by itself. Closes the open picker with Cancel (`alt+c`, recipe 8), without
+ * typing the path, and throws the error that says what to do. Without a relative path, does nothing.
  */
 async function rejectRelativePath(apoioDir, targetPath, cancel) {
   if (path.isAbsolute(targetPath)) return;
   try {
     await cancel(apoioDir);
   } catch {
-    // Sem seletor aberto: o erro do caminho é o que importa.
+    // No picker open: the path error is what matters.
   }
-  throw new Error(
-    `caminho relativo '${targetPath}': passe o caminho absoluto (path.resolve)`,
-  );
+  throw new Error(`relative path '${targetPath}': pass the absolute path (path.resolve)`);
 }
 
 /**
- * `select_folder` dos roteiros: abre o seletor de pasta, resolve a lista de autocompletar do
- * GTK quando a pasta já tem conteúdo e, em seguida, trata o pedido de permissão (receita 6).
- * Caminho relativo: cancela o seletor e lança (decisão 8 da #1256).
+ * `select_folder` of the test scripts: opens the folder picker, resolves the GTK autocomplete list
+ * when the folder already has content and then handles the permission prompt (recipe 6).
+ * Relative path: cancels the picker and throws (decision 8 of #1256).
  */
 export async function selectFolder(
   apoioDir,
@@ -484,7 +485,7 @@ export async function selectFolder(
   return { ...dialogResult, permission: permissionResult };
 }
 
-/** `open_file` dos roteiros: seletor de arquivo, sem o passo de permissão. */
+/** `open_file` of the test scripts: file picker, without the permission step. */
 export async function openFile(
   apoioDir,
   targetPath,
@@ -496,8 +497,8 @@ export async function openFile(
 }
 
 /**
- * Receita 7 do apêndice A: "Salvar como" (Exportar › Baixar). Recusa-se a sobrescrever um
- * arquivo que já existe, porque o GTK sobrescreve sem perguntar.
+ * Recipe 7 of Appendix A: "Save as" (Export › Download). Refuses to overwrite a file that
+ * already exists, because GTK overwrites without asking.
  */
 export async function saveFile(
   apoioDir,
@@ -508,7 +509,7 @@ export async function saveFile(
   loadEnv(apoioDir);
   if (fs.existsSync(targetPath)) {
     throw new Error(
-      `saveFile: ${targetPath} já existe no disco; o GTK sobrescreveria sem perguntar.`,
+      `saveFile: ${targetPath} already exists on disk; GTK would overwrite without asking.`,
     );
   }
   let windowId;
@@ -516,14 +517,14 @@ export async function saveFile(
     windowId = await waitForWindow(['Aviso: este site'], { timeoutMs });
   } catch {
     throw new Error(
-      `saveFile: o diálogo de salvar ("Aviso: este site…") não apareceu; confira se o Exportar › Baixar foi acionado (janela ativa: "${activeWindowTitle()}").`,
+      `saveFile: the save dialog ("Aviso: este site…") did not appear; check that Export › Download was triggered (active window: "${activeWindowTitle()}").`,
     );
   }
   execFileSync('xdotool', ['windowactivate', '--sync', windowId]);
   execFileSync('xdotool', ['key', '--clearmodifiers', 'Home', 'shift+End', 'BackSpace']);
   execFileSync('xdotool', ['type', '--delay', '20', targetPath]);
-  // A lista de autocompletar aparece quando o nome digitado casa com um arquivo da pasta; um
-  // só Escape a fecha sem cancelar o diálogo (dois Escapes cancelariam).
+  // The autocomplete list appears when the typed name matches a file in the folder; a single
+  // Escape closes it without cancelling the dialog (two Escapes would cancel).
   const popup = await waitUntil(() => findAutocompletePopup(windowId), {
     timeoutMs: 1000,
     stepMs: 100,
@@ -536,7 +537,7 @@ export async function saveFile(
     timeoutMs: 4000,
   });
   if (!closed) {
-    // "alt+s que não salva" (apêndice A): espera e repete uma única vez.
+    // "alt+s that does not save" (Appendix A): waits and repeats just once.
     await new Promise((resolve) => setTimeout(resolve, 2000));
     if (findWindow(['Aviso: este site'])) {
       xdotoolKey(windowId, 'alt+s');
@@ -545,10 +546,10 @@ export async function saveFile(
 }
 
 /**
- * Receita 8 do apêndice A: cancela o diálogo nativo em foco (`alt+c`). O diálogo nativo é a
- * janela visível que não é a janela principal do Chrome (cujo título sempre termina em
- * "Google Chrome for Testing"); essa é a única forma estável achada nesta fase, já que o título
- * do diálogo varia ("Aviso: este site…", "Selecione onde…", "Abrir arquivos…").
+ * Recipe 8 of Appendix A: cancels the focused native dialog (`alt+c`). The native dialog is the
+ * visible window that is not Chrome's main window (whose title always ends in
+ * "Google Chrome for Testing"); this is the only stable way found in this phase, since the
+ * dialog's title varies ("Aviso: este site…", "Selecione onde…", "Abrir arquivos…").
  */
 export async function cancelDialog(apoioDir, { timeoutMs = DIALOG_TIMEOUT_MS } = {}) {
   loadEnv(apoioDir);
@@ -558,40 +559,39 @@ export async function cancelDialog(apoioDir, { timeoutMs = DIALOG_TIMEOUT_MS } =
   );
   if (!windowId) {
     throw new Error(
-      `Nenhum diálogo nativo encontrado para cancelar em ${timeoutMs} ms (janela ativa: "${activeWindowTitle()}").`,
+      `No native dialog found to cancel within ${timeoutMs} ms (active window: "${activeWindowTitle()}").`,
     );
   }
   fs.appendFileSync(
     path.join(apoioDir, 'console.log'),
-    `[cancelDialog] alt+c em ${windowId}\n`,
+    `[cancelDialog] alt+c on ${windowId}\n`,
   );
   xdotoolKey(windowId, 'alt+c');
 }
 
-/** Uma chamada a `atspi-allow.py`; código 1 ("nenhum botão de permitir") também é sucesso. */
+/** One call to `atspi-allow.py`; code 1 ("no allow button") is also a success. */
 async function runAllowPermissionOnce(scriptPath) {
   try {
     const { stdout } = await execFileAsync('/usr/bin/python3.12', [scriptPath]);
     return stdout.trim();
   } catch (error) {
-    if (error.code === 1)
-      return (error.stdout ?? '').trim() || 'nenhum botão de permitir';
+    if (error.code === 1) return (error.stdout ?? '').trim() || 'no allow button';
     throw new Error(
-      `allowPermission falhou (código ${error.code}): ${(error.stdout ?? '').trim()} ${(error.stderr ?? '').trim()}`,
+      `allowPermission failed (code ${error.code}): ${(error.stdout ?? '').trim()} ${(error.stderr ?? '').trim()}`,
       { cause: error },
     );
   }
 }
 
 /**
- * Receita 6 do apêndice A: pedido de permissão pelo AT-SPI. Chama `atspi-allow.py`; tanto
- * "clicou" quanto "nenhum botão de permitir" contam como sucesso (a app já tinha a permissão,
- * ou o diálogo já fechou). Decisão desta fase: ativa a janela do Chrome antes de clicar — o
- * `do_action` do AT-SPI devolve sucesso mesmo com a janela do Chrome sem foco (ex.: logo depois
- * de fechar o seletor GTK, que fica com o foco), mas o clique não tem efeito nenhum nesse caso;
- * ativando a janela primeiro, o clique passou a surtir efeito de primeira em todas as tentativas
- * desta fase. Mesmo assim, repete até o diálogo sumir de verdade ("nenhum botão de permitir"
- * numa chamada seguinte) ou até o limite de tentativas, como rede de segurança.
+ * Recipe 6 of Appendix A: permission prompt through AT-SPI. Calls `atspi-allow.py`; both
+ * "clicked" and "no allow button" count as success (the app already had the permission,
+ * or the dialog already closed). Decision of this phase: activates the Chrome window before
+ * clicking — AT-SPI's `do_action` returns success even with the Chrome window unfocused (e.g.
+ * right after closing the GTK picker, which keeps the focus), but the click has no effect at all
+ * in that case; by activating the window first, the click started to work on the first try in
+ * every attempt of this phase. Even so, repeats until the dialog really disappears ("no allow
+ * button" in a following call) or until the attempt limit, as a safety net.
  */
 export async function allowPermission(apoioDir) {
   loadEnv(apoioDir);
@@ -606,14 +606,14 @@ export async function allowPermission(apoioDir) {
     if (chromeWindowId) {
       execFileSync('xdotool', ['windowactivate', '--sync', chromeWindowId]);
     }
-    // O Chrome ignora cliques nos primeiros instantes do pedido de permissão (proteção contra
-    // clique acidental logo que um elemento aparece); sem essa espera, as tentativas rápidas
-    // batem nessa janela e o clique do AT-SPI não tem efeito nenhuma vez (visto nesta fase).
+    // Chrome ignores clicks in the first instants of the permission prompt (protection against
+    // accidental clicks right after an element appears); without this wait, the quick attempts
+    // hit that window and the AT-SPI click has no effect at all (seen in this phase).
     await new Promise((resolve) => setTimeout(resolve, 1000));
     for (let i = 0; i < 6; i += 1) {
       const out = await runAllowPermissionOnce(scriptPath);
       attempts.push(out);
-      if (out.startsWith('nenhum botão')) break;
+      if (out.startsWith('no allow button')) break;
       await new Promise((resolve) => setTimeout(resolve, 600));
     }
     const summary = attempts.join('; ');
@@ -622,7 +622,7 @@ export async function allowPermission(apoioDir) {
   } catch (error) {
     fs.appendFileSync(
       logFile,
-      `[allowPermission] falhou depois de ${attempts.length} tentativa(s) (${attempts.join('; ')}): ${error.message}\n`,
+      `[allowPermission] failed after ${attempts.length} attempt(s) (${attempts.join('; ')}): ${error.message}\n`,
     );
     throw error;
   }
@@ -638,7 +638,7 @@ export async function screenshot(apoioDir, name) {
   return file;
 }
 
-/** `Control+Shift+Digit<n>` pelo teclado do Playwright (Control+Shift+1 não funciona). */
+/** `Control+Shift+Digit<n>` through Playwright's keyboard (Control+Shift+1 does not work). */
 export async function windowShortcut(page, n) {
   await page.keyboard.press(`Control+Shift+Digit${n}`);
 }
@@ -646,20 +646,21 @@ export async function windowShortcut(page, n) {
 const CADASTRO_HTML = `<!doctype html>
 <meta charset="utf-8" />
 <body style="font: 20px sans-serif; width: 420px; margin: 0; padding: 32px">
-  <h1>Crie sua conta</h1>
+  <h1>Create your account</h1>
   <form>
-    <p>Nome<br /><input style="width: 340px; font: inherit" /></p>
-    <p>Idade<br /><input style="width: 340px; font: inherit" /></p>
-    <p>E-mail<br /><input style="width: 340px; font: inherit" /></p>
-    <p><button style="font: inherit; padding: 12px 32px">Cadastrar</button></p>
+    <p>Name<br /><input style="width: 340px; font: inherit" /></p>
+    <p>Age<br /><input style="width: 340px; font: inherit" /></p>
+    <p>Email<br /><input style="width: 340px; font: inherit" /></p>
+    <p><button style="font: inherit; padding: 12px 32px">Sign up</button></p>
   </form>
 </body>`;
 
 /**
- * Gera `cadastro.png` (docs/TESTING.md, R0, seção "Prepare o print da tela de cadastro"): o
- * HTML vem embutido aqui (o mesmo do guia, não há `cadastro.html` pronto no repositório), aberto
- * num Chromium headless à parte (sempre `/opt/pw-browsers/chromium`, o único caminho que o
- * `chromium.launch()` acha neste ambiente) e capturado com `page.screenshot({ fullPage: true })`.
+ * Generates `cadastro.png` (docs/TESTING.md, R0, section "Prepare the sign-up screen screenshot"):
+ * the HTML is embedded here (the same as the guide's, there is no ready-made `cadastro.html` in
+ * the repository), opened in a separate headless Chromium (always `/opt/pw-browsers/chromium`,
+ * the only path `chromium.launch()` finds in this environment) and captured with
+ * `page.screenshot({ fullPage: true })`.
  */
 export async function makeCadastroPng(dest) {
   const browser = await chromium.launch({
@@ -667,8 +668,8 @@ export async function makeCadastroPng(dest) {
     headless: true,
   });
   try {
-    // Viewport pequeno (o guia estima ~484 px de largura a 100%) para o PNG sair recortado no
-    // conteúdo, e não do tamanho padrão do viewport do Playwright (1280×720).
+    // Small viewport (the guide estimates ~484 px wide at 100%) so the PNG comes out cropped to
+    // the content, and not at the default size of Playwright's viewport (1280×720).
     const page = await browser.newPage({ viewport: { width: 484, height: 450 } });
     await page.setContent(CADASTRO_HTML);
     await page.screenshot({ path: dest, fullPage: true });
@@ -677,18 +678,18 @@ export async function makeCadastroPng(dest) {
   }
 }
 
-/** Acrescenta `<roteiro> <start|end> <hora UTC ISO 8601>` a `<apoioDir>/tempos.log`. */
+/** Appends `<script> <start|end> <UTC time ISO 8601>` to `<apoioDir>/tempos.log`. */
 export function mark(apoioDir, roteiro, fase) {
   if (fase !== 'start' && fase !== 'end') {
-    throw new Error(`mark: fase precisa ser "start" ou "end", recebi "${fase}".`);
+    throw new Error(`mark: the phase must be "start" or "end", got "${fase}".`);
   }
   const file = path.join(apoioDir, 'tempos.log');
   fs.appendFileSync(file, `${roteiro} ${fase} ${new Date().toISOString()}\n`);
 }
 
 /**
- * Lê o texto de um `runs.log` (`<hora ISO> run=<n> codigo=<c> checks=<k> falhas=<f>` por linha,
- * gravado pelo `cloud.mjs run`) e devolve `{ t, checks, falhas }` por linha válida. Pura.
+ * Reads the text of a `runs.log` (`<ISO time> run=<n> codigo=<c> checks=<k> falhas=<f>` per line,
+ * written by `cloud.mjs run`) and returns `{ t, checks, falhas }` per valid line. Pure.
  */
 function runsFromLog(text) {
   const runs = [];
@@ -704,8 +705,8 @@ function runsFromLog(text) {
 }
 
 /**
- * Os trechos `[start, end]` de um nome quando as marcas, em ordem de hora, alternam `start`, `end`,
- * `start`, `end` (começam em `start`, terminam em `end`, cada end não antes do seu start); senão `null`.
+ * The `[start, end]` spans of a name when the marks, in time order, alternate `start`, `end`,
+ * `start`, `end` (begin with `start`, finish with `end`, each end not before its start); else `null`.
  */
 function trechosAlternados(marcas) {
   const ordem = [...marcas].sort((a, b) => a.t - b.t);
@@ -720,15 +721,16 @@ function trechosAlternados(marcas) {
 }
 
 /**
- * Lê o texto de um `tempos.log` (`<nome> <start|end> <hora ISO>` por linha) e devolve, por nome,
- * a duração do primeiro `start` ao último `end`, o total e os avisos (etapa #482, decisão 8).
- * Marca repetida vira aviso; nome sem par (ou com o fim antes do início) fica com `segundos: null`.
- * Com o texto do `runs.log` (etapa #1533, decisão 7), cada item traz também `runs` e `checks`: os
- * `run` gravados entre o primeiro `start` e o último `end` do roteiro.
- * Trechos (etapa #1712, decisão 6): se as marcas de um nome, em ordem de hora, alternam
- * `start`, `end`, `start`, `end` (começam em `start` e terminam em `end`, como no `ambiente` quando o
- * `cloud-up.sh` roda duas vezes), a duração é a soma dos trechos, `runs` e `checks` contam os `run`
- * de dentro de qualquer trecho e não há aviso. Fora desse padrão vale a regra acima.
+ * Reads the text of a `tempos.log` (`<name> <start|end> <ISO time>` per line) and returns, per
+ * name, the duration from the first `start` to the last `end`, the total and the warnings (stage
+ * #482, decision 8). A repeated mark becomes a warning; a name without a pair (or with the end
+ * before the start) gets `segundos: null`. With the text of `runs.log` (stage #1533, decision 7),
+ * each item also carries `runs` and `checks`: the `run`s recorded between the script's first
+ * `start` and last `end`.
+ * Spans (stage #1712, decision 6): if a name's marks, in time order, alternate `start`, `end`,
+ * `start`, `end` (begin with `start` and finish with `end`, as in `ambiente` when `cloud-up.sh`
+ * runs twice), the duration is the sum of the spans, `runs` and `checks` count the `run`s inside
+ * any span and there is no warning. Outside that pattern the rule above applies.
  */
 export function temposFromLog(text, runsText) {
   const nomes = new Map();
@@ -738,7 +740,7 @@ export function temposFromLog(text, runsText) {
     if (!nome || (fase !== 'start' && fase !== 'end')) continue;
     const t = Date.parse(hora ?? '');
     if (Number.isNaN(t)) {
-      avisos.push(`${nome} ${fase}: hora inválida "${hora ?? ''}" (linha ignorada)`);
+      avisos.push(`${nome} ${fase}: invalid time "${hora ?? ''}" (line ignored)`);
       continue;
     }
     const e = nomes.get(nome) ?? { start: [], end: [], marcas: [] };
@@ -755,7 +757,7 @@ export function temposFromLog(text, runsText) {
     for (const fase of ['start', 'end']) {
       if (!trechos && e[fase].length > 1) {
         avisos.push(
-          `${nome} ${fase}: marca repetida (${e[fase].length} vezes); valem o primeiro start e o último end`,
+          `${nome} ${fase}: repeated mark (${e[fase].length} times); the first start and the last end count`,
         );
       }
     }
@@ -766,9 +768,9 @@ export function temposFromLog(text, runsText) {
       segundos = Math.round(trechos.reduce((soma, [a, b]) => soma + (b - a), 0) / 1000);
       totalSegundos += segundos;
     } else if (ini === null || fim === null) {
-      avisos.push(`${nome}: falta a marca de ${ini === null ? 'start' : 'end'}`);
+      avisos.push(`${nome}: missing the ${ini === null ? 'start' : 'end'} mark`);
     } else if (fim < ini) {
-      avisos.push(`${nome}: o end vem antes do start`);
+      avisos.push(`${nome}: the end comes before the start`);
     } else {
       segundos = Math.round((fim - ini) / 1000);
       totalSegundos += segundos;
@@ -794,11 +796,11 @@ export function temposFromLog(text, runsText) {
   return result;
 }
 
-/** `<apoioDir>/tempos.log` lido por `temposFromLog`, com o `runs.log` quando existe; sem o arquivo, não há nada medido. */
+/** `<apoioDir>/tempos.log` read by `temposFromLog`, with `runs.log` when it exists; without the file, nothing was measured. */
 export function temposFromDir(apoioDir) {
   const file = path.join(apoioDir, 'tempos.log');
   if (!fs.existsSync(file)) {
-    return { itens: [], avisos: ['sem tempos.log: tempo não medido'], totalSegundos: 0 };
+    return { itens: [], avisos: ['no tempos.log: time not measured'], totalSegundos: 0 };
   }
   const runsFile = path.join(apoioDir, 'runs.log');
   return temposFromLog(
@@ -809,28 +811,28 @@ export function temposFromDir(apoioDir) {
 
 const fmtDuracao = (s) => `${Math.floor(s / 60)}min${String(s % 60).padStart(2, '0')}s`;
 
-/** O texto que a CLI imprime e que o relato copia no "Tempo por roteiro". */
+/** The text the CLI prints and that the report copies into "Time per script". */
 export function formatTempos({ itens, avisos, totalSegundos, totalRuns, totalChecks }) {
   const largura = Math.max(5, ...itens.map((i) => i.nome.length));
   const contagem = (runs, checks) =>
     runs === undefined ? '' : `  ${runs} run, ${checks} checks`;
   const linhas = itens.map(
     (i) =>
-      `${i.nome.padEnd(largura)}  ${i.segundos === null ? 'tempo não medido' : fmtDuracao(i.segundos)}${contagem(i.runs, i.checks)}`,
+      `${i.nome.padEnd(largura)}  ${i.segundos === null ? 'time not measured' : fmtDuracao(i.segundos)}${contagem(i.runs, i.checks)}`,
   );
   if (itens.length)
     linhas.push(
       `${'total'.padEnd(largura)}  ${fmtDuracao(totalSegundos)}${contagem(totalRuns, totalChecks)}`,
     );
-  for (const a of avisos) linhas.push(`aviso: ${a}`);
+  for (const a of avisos) linhas.push(`warning: ${a}`);
   return linhas.join('\n');
 }
 
 // ---------------------------------------------------------------------------------------------
-// state(): agir e conferir numa chamada (etapa #421, decisão 6)
+// state(): act and check in one call (stage #421, decision 6)
 // ---------------------------------------------------------------------------------------------
 
-/** Compara dois JSON e lista o que mudou (pura). Ver `diffJson`. */
+/** Compares two JSON values and lists what changed (pure). See `diffJson`. */
 function collectDiff(before, after, where, out) {
   const isObj = (v) => v !== null && typeof v === 'object';
   const show = (v) => (typeof v === 'string' ? JSON.stringify(v) : String(v));
@@ -838,9 +840,9 @@ function collectDiff(before, after, where, out) {
     if (before !== after) {
       if (isObj(before) || isObj(after))
         out.push(
-          `~ ${where || '(raiz)'}: ${isObj(before) ? 'estrutura' : show(before)} → ${isObj(after) ? 'estrutura' : show(after)}`,
+          `~ ${where || '(root)'}: ${isObj(before) ? 'structure' : show(before)} → ${isObj(after) ? 'structure' : show(after)}`,
         );
-      else out.push(`~ ${where || '(raiz)'}: ${show(before)} → ${show(after)}`);
+      else out.push(`~ ${where || '(root)'}: ${show(before)} → ${show(after)}`);
     }
     return;
   }
@@ -880,31 +882,32 @@ function collectDiff(before, after, where, out) {
 }
 
 /**
- * Lista caminhos alterados (`~ a.b: antigo → novo`), acrescentados (`+ a[id]`) e removidos
- * (`- a.b`) entre dois JSON; itens de array com `id` são casados pelo id. Passando de `limit`,
- * a última linha diz `+N mudanças além do limite`. Pura.
+ * Lists changed paths (`~ a.b: old → new`), added (`+ a[id]`) and removed (`- a.b`) between two
+ * JSON values; array items with `id` are matched by id. Past `limit`, the last line says
+ * `+N changes beyond the limit`. Pure.
  */
 export function diffJson(before, after, { limit = 20 } = {}) {
   const lines = [];
   collectDiff(before, after, '', lines);
   if (lines.length <= limit) return lines;
-  return [...lines.slice(0, limit), `+${lines.length - limit} mudanças além do limite`];
+  return [...lines.slice(0, limit), `+${lines.length - limit} changes beyond the limit`];
 }
 
-const SELECTION_WORD = { marking: 'marcação', image: 'container', arrow: 'seta' };
+const SELECTION_WORD = { marking: 'marking', image: 'container', arrow: 'arrow' };
 
-/** A linha `Seleção:` do `formatState` (etapa #1076, decisão 11). */
+/** The `Selection:` line of `formatState` (stage #1076, decision 11). */
 function formatSelection(selection) {
-  if (!selection) return 'Seleção: nenhuma';
-  if (selection.name === undefined) return `Seleção: ${selection.type} ${selection.id}`;
+  if (!selection) return 'Selection: none';
+  if (selection.name === undefined) return `Selection: ${selection.type} ${selection.id}`;
   const word = SELECTION_WORD[selection.type] ?? selection.type;
-  return `Seleção: ${word} "${selection.name}" (${selection.id})`;
+  return `Selection: ${word} "${selection.name}" (${selection.id})`;
 }
 
 /**
- * A seleção do `state()` (etapa #1076, decisão 11): do `data-selection` (`"<tipo> <id>"`) e, com o
- * `mapping.json` lido, o nome (`sem nome` se vazio; a seta é `"<origem> → <destino>"`). Sem
- * `json`, ou com o id fora do disco (item da proposta na revisão), fica só o tipo e o id.
+ * The selection of `state()` (stage #1076, decision 11): from the `data-selection` (`"<type> <id>"`)
+ * and, with `mapping.json` read, the name (`No name` if empty; the arrow is
+ * `"<source> → <target>"`). Without `json`, or with the id not on disk (a proposal item under
+ * review), only the type and the id remain.
  */
 function resolveSelection(text, json) {
   if (text === undefined) return undefined;
@@ -912,7 +915,7 @@ function resolveSelection(text, json) {
   const [type, id] = text.split(' ');
   const selection = { type, id };
   if (!json) return selection;
-  const nameOf = (item) => (item.name ? item.name : 'sem nome');
+  const nameOf = (item) => (item.name ? item.name : 'No name');
   if (type === 'arrow') {
     const arrow = (json.arrows ?? []).find((a) => a.id === id);
     if (!arrow) return selection;
@@ -921,7 +924,7 @@ function resolveSelection(text, json) {
     const to = mark(arrow.to);
     return {
       ...selection,
-      name: `${from ? nameOf(from) : 'sem nome'} → ${to ? nameOf(to) : 'sem nome'}`,
+      name: `${from ? nameOf(from) : 'No name'} → ${to ? nameOf(to) : 'No name'}`,
     };
   }
   const list = type === 'image' ? json.containers : json.markings;
@@ -929,39 +932,39 @@ function resolveSelection(text, json) {
   return item ? { ...selection, name: nameOf(item) } : selection;
 }
 
-/** Texto curto do estado (poucas linhas, sem JSON cru). */
+/** Short text of the state (a few lines, no raw JSON). */
 export function formatState(state) {
   const quoted = (items) =>
-    items.length ? items.map((i) => `"${i}"`).join(', ') : 'nenhum';
+    items.length ? items.map((i) => `"${i}"`).join(', ') : 'none';
   const lines = [
-    `Aba: ${state.title} — ${state.url}`,
-    `Diálogos: ${quoted(state.dialogs)}`,
-    `Avisos: ${quoted(state.notices)}`,
-    `Gravação: ${state.saveStatus ?? 'sem indicador'}`,
-    `Foco: ${state.focus ? `${state.focus.role} "${state.focus.name}"` : 'nenhum'}`,
+    `Tab: ${state.title} — ${state.url}`,
+    `Dialogs: ${quoted(state.dialogs)}`,
+    `Notices: ${quoted(state.notices)}`,
+    `Saving: ${state.saveStatus ?? 'no indicator'}`,
+    `Focus: ${state.focus ? `${state.focus.role} "${state.focus.name}"` : 'none'}`,
   ];
   if (state.selection !== undefined) lines.push(formatSelection(state.selection));
-  lines.push(`Janelas nativas: ${quoted(state.windows)}`);
+  lines.push(`Native windows: ${quoted(state.windows)}`);
   const project = state.project;
   if (project) {
-    if (project.dir) lines.push(`Pasta: ${project.dir}`);
+    if (project.dir) lines.push(`Folder: ${project.dir}`);
     if (project.error) {
       lines.push(`mapping.json: ${project.error}`);
     } else if (project.changes === null) {
-      lines.push(`mapping.json: revision ${project.revision} (primeira leitura)`);
+      lines.push(`mapping.json: revision ${project.revision} (first read)`);
     } else if (project.changes.length === 0) {
       lines.push(
-        `mapping.json: revision ${project.revision}, sem mudança desde a última leitura`,
+        `mapping.json: revision ${project.revision}, no change since the last read`,
       );
     } else {
-      lines.push(`mapping.json: revision ${project.revision}; mudou:`);
+      lines.push(`mapping.json: revision ${project.revision}; changed:`);
       for (const change of project.changes) lines.push(`  ${change}`);
     }
   }
   return lines.join('\n');
 }
 
-/** Lê o DOM da app (roda dentro da página): diálogos, avisos, gravação e foco. */
+/** Reads the app's DOM (runs inside the page): dialogs, notices, saving and focus. */
 function readAppDom() {
   const visible = (el) =>
     !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
@@ -982,7 +985,7 @@ function readAppDom() {
       el.getAttribute('aria-label') ||
       labelled(el) ||
       text(el.querySelector('h1,h2,h3') ?? document.createElement('i'));
-    dialogs.push(name || '(sem nome)');
+    dialogs.push(name || '(no name)');
   }
   const notices = [];
   for (const el of document.querySelectorAll(
@@ -1044,22 +1047,22 @@ function readAppDom() {
   };
 }
 
-/** Lê e parseia `<projectDir>/mapping.json`; JSON que não parseia: espera 1 s e lê uma vez mais. */
+/** Reads and parses `<projectDir>/mapping.json`; JSON that does not parse: waits 1 s and reads once more. */
 async function readMapping(projectDir) {
   const file = path.join(projectDir, 'mapping.json');
-  if (!fs.existsSync(file)) return { error: `não existe em ${projectDir}` };
+  if (!fs.existsSync(file)) return { error: `does not exist at ${projectDir}` };
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       return { json: JSON.parse(fs.readFileSync(file, 'utf8')) };
     } catch (error) {
-      if (attempt === 1) return { error: `JSON inválido (${error.message})` };
+      if (attempt === 1) return { error: `invalid JSON (${error.message})` };
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
-  return { error: 'JSON inválido' };
+  return { error: 'invalid JSON' };
 }
 
-/** A pasta que o `state()` lembra (`apoio/state/ultima-pasta.txt`), ou `undefined`. */
+/** The folder that `state()` remembers (`apoio/state/ultima-pasta.txt`), or `undefined`. */
 function lastFolder(apoioDir) {
   try {
     return (
@@ -1071,27 +1074,27 @@ function lastFolder(apoioDir) {
   }
 }
 
-/** Grava `ultima-pasta.txt` só quando o conteúdo muda (a pasta lembrada não fica velha nem é regravada à toa). */
+/** Writes `ultima-pasta.txt` only when the content changes (the remembered folder does not go stale nor get rewritten needlessly). */
 function rememberFolder(file, absolute) {
   try {
     if (fs.readFileSync(file, 'utf8').trim() === absolute) return;
   } catch {
-    // Sem o arquivo: grava.
+    // Without the file: write it.
   }
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, absolute);
 }
 
 /**
- * Estado numa chamada, para agir e conferir sem idas extras ao modelo: aba, diálogos abertos,
- * avisos visíveis, gravação, foco, janelas nativas além do Chrome e, com `projectDir`, a
- * `revision` do `mapping.json` e o que mudou desde a última chamada para a mesma pasta (o
- * retrato anterior fica em `<apoioDir>/state/`). Não muda a app: lê o DOM e o disco.
+ * State in one call, to act and check without extra round trips to the model: tab, open dialogs,
+ * visible notices, saving, focus, native windows besides Chrome and, with `projectDir`, the
+ * `revision` of `mapping.json` and what changed since the last call for the same folder (the
+ * previous snapshot stays in `<apoioDir>/state/`). Does not change the app: reads the DOM and the disk.
  */
 export async function state(page, apoioDir, { projectDir } = {}) {
   loadEnv(apoioDir);
   const lastFolderFile = path.join(apoioDir, 'state', 'ultima-pasta.txt');
-  // `undefined`: a pasta gravada, se houver; `null`: não lê disco (etapa #1256, decisão 9).
+  // `undefined`: the recorded folder, if any; `null`: does not read disk (stage #1256, decision 9).
   const explicitFolder = typeof projectDir === 'string' && projectDir !== '';
   if (projectDir === undefined && fs.existsSync(lastFolderFile)) {
     projectDir = fs.readFileSync(lastFolderFile, 'utf8').trim() || undefined;
@@ -1113,7 +1116,7 @@ export async function state(page, apoioDir, { projectDir } = {}) {
   const result = { ...dom, windows, selection: resolveSelection(dom.selection, null) };
   if (projectDir) {
     const absolute = path.resolve(projectDir);
-    // Pasta explícita: lembrada mesmo se a leitura falha, e só regravada quando muda (#1430 e).
+    // Explicit folder: remembered even if the read fails, and only rewritten when it changes (#1430 e).
     if (explicitFolder) rememberFolder(lastFolderFile, absolute);
     const read = await readMapping(projectDir);
     if (read.error) {
@@ -1143,10 +1146,10 @@ export async function state(page, apoioDir, { projectDir } = {}) {
 }
 
 /**
- * Lê o `data-container-boxes` do `.canvas-host` (etapa #1076, decisão 5): `"<id> <x> <y> <largura>
- * <altura> <escala>"` por container colocado, separados por `;`, em unidades do canvas e na
- * colocação desenhada. Devolve um `Map` de id para `{ x, y, width, height, scale }`; texto vazio ou
- * nulo dá um `Map` vazio; entrada sem os 5 números depois do id lança com o texto.
+ * Reads the `data-container-boxes` of the `.canvas-host` (stage #1076, decision 5): `"<id> <x> <y>
+ * <width> <height> <scale>"` per placed container, separated by `;`, in canvas units and in the
+ * drawn placement. Returns a `Map` from id to `{ x, y, width, height, scale }`; empty or null text
+ * gives an empty `Map`; an entry without the 5 numbers after the id throws with the text.
  */
 export function parseContainerBoxes(text) {
   const boxes = new Map();
@@ -1156,7 +1159,7 @@ export function parseContainerBoxes(text) {
     const [id, ...rest] = trimmed.split(/\s+/);
     const numbers = rest.map(Number);
     if (numbers.length !== 5 || !numbers.every(Number.isFinite)) {
-      throw new Error(`data-container-boxes inválido: "${trimmed}"`);
+      throw new Error(`invalid data-container-boxes: "${trimmed}"`);
     }
     const [x, y, width, height, scale] = numbers;
     boxes.set(id, { x, y, width, height, scale });
@@ -1165,9 +1168,10 @@ export function parseContainerBoxes(text) {
 }
 
 /**
- * A colocação (x, y, escala) de `found` no canvas: a desenhada (`boxes`) vale sobre a do disco e
- * sobre a da perspectiva; sem ela, a da perspectiva (se `found` é raiz dela) ou a do disco.
- * `warn` recebe o aviso quando a perspectiva pedida tem outra posição que a desenhada.
+ * The placement (x, y, scale) of `found` on the canvas: the drawn one (`boxes`) wins over the
+ * disk's and the perspective's; without it, the perspective's (if `found` is its root) or the
+ * disk's. `warn` receives the warning when the requested perspective has a different position
+ * than the drawn one.
  */
 function placementOf(found, { boxes, perspective, mapping, warn }) {
   let named;
@@ -1175,13 +1179,13 @@ function placementOf(found, { boxes, perspective, mapping, warn }) {
     named = (mapping.perspectives ?? []).find(
       (q) => q.name.toLowerCase() === String(perspective).toLowerCase(),
     );
-    if (!named) throw new Error(`perspectiva não encontrada: ${perspective}`);
+    if (!named) throw new Error(`perspective not found: ${perspective}`);
   }
   const item = named?.items.find((i) => i.root === found.id);
   const drawn = found.id ? boxes.get(found.id) : undefined;
   if (drawn) {
     if (item && (item.x !== drawn.x || item.y !== drawn.y)) {
-      warn?.(`a perspectiva ${named.name} não é a desenhada; vale a posição desenhada`);
+      warn?.(`perspective ${named.name} is not the drawn one; the drawn position wins`);
     }
     return { x: drawn.x, y: drawn.y, scale: drawn.scale };
   }
@@ -1190,17 +1194,17 @@ function placementOf(found, { boxes, perspective, mapping, warn }) {
 }
 
 /**
- * Ponto de tela de um ponto em pixels de um container (etapa #841, decisão 5; parte pura, sem CDP).
- * `mapping` é o `mapping.json` já lido; `container` é o nome (sem diferença de caixa) ou o id;
- * `viewport` é o `data-viewport` do `.canvas-host` (`"x y escala"`, px CSS relativos ao canto do
- * host); `host` é o canto do host na página (`boundingBox()`); `perspective`, opcional, é o nome
- * de uma perspectiva cujo item para o container (raiz) troca a posição `x`, `y` dele no canvas;
- * `boxes` (opcional, etapa #1076) é o texto do `data-container-boxes`: a posição desenhada, que vale
- * sobre a do disco e sobre a da perspectiva (com `warn`, avisa a perspectiva que difere dela);
- * `marking` (opcional): `container` é o nome ou id de uma marcação e (x, y) são deslocamentos a partir do
- * canto dela.
- * A fórmula é a da receita "Onde está uma marcação na tela": canvas = placement + ponto × escala
- * do container; tela = host + canvas × escala da vista + (x, y) da vista.
+ * Screen point of a point in a container's pixels (stage #841, decision 5; pure part, no CDP).
+ * `mapping` is the `mapping.json` already read; `container` is the name (case-insensitive) or the
+ * id; `viewport` is the `data-viewport` of the `.canvas-host` (`"x y scale"`, CSS px relative to
+ * the host's corner); `host` is the host's corner on the page (`boundingBox()`); `perspective`,
+ * optional, is the name of a perspective whose item for the container (root) swaps its `x`, `y`
+ * position on the canvas; `boxes` (optional, stage #1076) is the text of `data-container-boxes`:
+ * the drawn position, which wins over the disk's and the perspective's (with `warn`, warns about
+ * the perspective that differs from it); `marking` (optional): `container` is the name or id of a
+ * marking and (x, y) are offsets from its corner.
+ * The formula is that of the recipe "Where a marking is on screen": canvas = placement + point ×
+ * container scale; screen = host + canvas × view scale + (x, y) of the view.
  */
 export function containerScreenPoint({
   mapping,
@@ -1222,21 +1226,22 @@ export function containerScreenPoint({
   let found;
   let origin = { x: 0, y: 0 };
   if (marking) {
-    // (x, y) são deslocamentos a partir do canto de cima à esquerda da marcação, nos pixels do
-    // container dela (no canvas, com a colocação identidade, se `containerId` for nulo).
+    // (x, y) are offsets from the top-left corner of the marking, in the pixels of its
+    // container (on the canvas, with the identity placement, if `containerId` is null).
     const marks = byName(mapping.markings);
-    if (marks.length === 0) throw new Error(`marcação não encontrada: ${container}`);
-    if (marks.length > 1) throw new Error(`mais de uma marcação se chama ${container}`);
+    if (marks.length === 0) throw new Error(`marking not found: ${container}`);
+    if (marks.length > 1) throw new Error(`more than one marking is named ${container}`);
     const mark = marks[0];
     origin = { x: mark.rect.x, y: mark.rect.y };
     found = mark.containerId
       ? (mapping.containers ?? []).find((c) => c.id === mark.containerId)
       : { id: null, placement: { x: 0, y: 0, scale: 1 } };
-    if (!found) throw new Error(`container da marcação não encontrado: ${container}`);
+    if (!found) throw new Error(`marking's container not found: ${container}`);
   } else {
     const matches = byName(mapping.containers);
-    if (matches.length === 0) throw new Error(`container não encontrado: ${container}`);
-    if (matches.length > 1) throw new Error(`mais de um container se chama ${container}`);
+    if (matches.length === 0) throw new Error(`container not found: ${container}`);
+    if (matches.length > 1)
+      throw new Error(`more than one container is named ${container}`);
     found = matches[0];
   }
   const drawn = boxes instanceof Map ? boxes : parseContainerBoxes(boxes);
@@ -1252,7 +1257,7 @@ export function containerScreenPoint({
   });
   const [vx, vy, vs] = String(viewport).trim().split(/\s+/).map(Number);
   if (![vx, vy, vs].every(Number.isFinite) || vs <= 0) {
-    throw new Error(`data-viewport inválido: ${viewport}`);
+    throw new Error(`invalid data-viewport: ${viewport}`);
   }
   const canvasX = px + (origin.x + x) * scale;
   const canvasY = py + (origin.y + y) * scale;
@@ -1262,7 +1267,7 @@ export function containerScreenPoint({
   };
 }
 
-/** Espera dois quadros, para os `data-*` lidos depois serem os do quadro desenhado. */
+/** Waits two frames, so the `data-*` read afterwards are those of the drawn frame. */
 function nextFrames(page) {
   return page.evaluate(
     () =>
@@ -1272,10 +1277,10 @@ function nextFrames(page) {
   );
 }
 
-/** Roda na página: o ponto cai no `.canvas-host`? Devolve `{ ok, element }` (ver `onCanvas`). */
+/** Runs on the page: does the point fall on the `.canvas-host`? Returns `{ ok, element }` (see `onCanvas`). */
 function onCanvasInPage({ x, y }) {
   const target = document.elementFromPoint(x, y);
-  if (!target) return { ok: false, element: 'nada' };
+  if (!target) return { ok: false, element: 'nothing' };
   const label = `${target.tagName.toLowerCase()}${target.classList.length ? `.${target.classList[0]}` : ''}`;
   const named = target.closest('[aria-label],[aria-labelledby]');
   let name = named?.getAttribute('aria-label') ?? '';
@@ -1293,21 +1298,21 @@ function onCanvasInPage({ x, y }) {
 }
 
 /**
- * O ponto de tela cai no canvas (etapa #1076, decisão 7)? `ok` é verdadeiro quando o elemento no
- * ponto (`elementFromPoint`) está dentro do `.canvas-host`; o minimapa, uma janela ou a barra por
- * cima dão falso. `element` descreve o que está lá: a tag, a primeira classe e o nome acessível do
- * ancestral mais próximo que tem um (`div.dock "Janelas"`). É a conferência única do `ponto`, do
- * `drag` e do `paletteDrag`.
+ * Does the screen point fall on the canvas (stage #1076, decision 7)? `ok` is true when the
+ * element at the point (`elementFromPoint`) is inside the `.canvas-host`; the minimap, a window or
+ * the bar on top give false. `element` describes what is there: the tag, the first class and the
+ * accessible name of the closest ancestor that has one (`div.dock "Windows"`). It is the single
+ * check of `ponto`, `drag` and `paletteDrag`.
  */
 export async function onCanvas(page, point) {
   return page.evaluate(onCanvasInPage, { x: point.x, y: point.y });
 }
 
 /**
- * Lê o `data-viewport`, o `data-container-boxes` e o canto do `.canvas-host` pela página (CDP) e
- * converte (ver acima). A posição que vale é a desenhada; com `perspective` diferente dela, avisa
- * (`warn`, padrão stderr) e usa a desenhada. Ponto que não cai no canvas (`onCanvas`) também avisa,
- * e o ponto é devolvido do mesmo jeito.
+ * Reads the `data-viewport`, the `data-container-boxes` and the corner of the `.canvas-host` through
+ * the page (CDP) and converts (see above). The position that counts is the drawn one; with a
+ * `perspective` different from it, warns (`warn`, default stderr) and uses the drawn one. A point
+ * that does not fall on the canvas (`onCanvas`) also warns, and the point is returned all the same.
  */
 export async function ponto(
   page,
@@ -1325,7 +1330,9 @@ export async function ponto(
   const boxes = await host.getAttribute('data-container-boxes');
   const box = await host.boundingBox();
   if (!viewport || !box)
-    throw new Error('o .canvas-host não tem data-viewport (a app abriu o projeto?)');
+    throw new Error(
+      'the .canvas-host has no data-viewport (did the app open the project?)',
+    );
   const at = containerScreenPoint({
     mapping: read.json,
     container,
@@ -1341,16 +1348,16 @@ export async function ponto(
   const on = await onCanvas(page, at);
   if (!on.ok) {
     warn(
-      `o ponto (${at.x}, ${at.y}) não cai no canvas (${on.element}); o .canvas-host ocupa ${box.x}, ${box.y}, ${box.width} × ${box.height}`,
+      `the point (${at.x}, ${at.y}) does not fall on the canvas (${on.element}); the .canvas-host occupies ${box.x}, ${box.y}, ${box.width} × ${box.height}`,
     );
   }
   return at;
 }
 
 /**
- * O centro da vista (etapa #1076, decisão 9): `x` e `y` são o ponto de tela (px do viewport, o que
- * o `page.mouse` aceita) do centro do `.canvas-host`; `canvas` é o mesmo ponto em unidades do
- * canvas, `((largura / 2 − vx) / escala, (altura / 2 − vy) / escala)`, com o `data-viewport`.
+ * The center of the view (stage #1076, decision 9): `x` and `y` are the screen point (viewport px,
+ * what `page.mouse` accepts) of the center of the `.canvas-host`; `canvas` is the same point in
+ * canvas units, `((width / 2 − vx) / scale, (height / 2 − vy) / scale)`, with the `data-viewport`.
  */
 export async function viewCenter(page) {
   const host = page.locator('.canvas-host');
@@ -1358,10 +1365,12 @@ export async function viewCenter(page) {
   const viewport = await host.getAttribute('data-viewport');
   const box = await host.boundingBox();
   if (!viewport || !box)
-    throw new Error('o .canvas-host não tem data-viewport (a app abriu o projeto?)');
+    throw new Error(
+      'the .canvas-host has no data-viewport (did the app open the project?)',
+    );
   const [vx, vy, vs] = viewport.trim().split(/\s+/).map(Number);
   if (![vx, vy, vs].every(Number.isFinite) || vs <= 0) {
-    throw new Error(`data-viewport inválido: ${viewport}`);
+    throw new Error(`invalid data-viewport: ${viewport}`);
   }
   const round = (n) => Math.round(n * 100) / 100;
   return {
@@ -1375,9 +1384,9 @@ export async function viewCenter(page) {
 }
 
 /**
- * Lê o `data-arrow-handles` (etapa #1076, decisão 10; parte pura): entradas `"<nome> <x> <y>"`
- * separadas por `;`, em px CSS relativos ao canto do host. Devolve o objeto do nome (`center`,
- * `from`, `to`, `point0`, `mid0`, `segment0` …) para o ponto de tela (o canto `host` somado).
+ * Reads the `data-arrow-handles` (stage #1076, decision 10; pure part): entries `"<name> <x> <y>"`
+ * separated by `;`, in CSS px relative to the host's corner. Returns the object from the name
+ * (`center`, `from`, `to`, `point0`, `mid0`, `segment0` …) to the screen point (the `host` corner added).
  */
 export function parseArrowHandles(text, host) {
   const handles = {};
@@ -1386,7 +1395,7 @@ export function parseArrowHandles(text, host) {
     if (!trimmed) continue;
     const [name, x, y, ...extra] = trimmed.split(/\s+/);
     if (extra.length > 0 || !Number.isFinite(Number(x)) || !Number.isFinite(Number(y))) {
-      throw new Error(`data-arrow-handles inválido: "${trimmed}"`);
+      throw new Error(`invalid data-arrow-handles: "${trimmed}"`);
     }
     handles[name] = {
       x: Math.round((host.x + Number(x)) * 100) / 100,
@@ -1397,9 +1406,9 @@ export function parseArrowHandles(text, host) {
 }
 
 /**
- * Os pontos de tela do meio (`center`) e das alças da seta selecionada (etapa #1076, decisão 10),
- * ou `null` sem seta selecionada e desenhada. Releia depois de abrir ou fechar uma janela (o host
- * muda de tamanho) e depois de pan e zoom.
+ * The screen points of the middle (`center`) and of the handles of the selected arrow (stage #1076,
+ * decision 10), or `null` without a selected and drawn arrow. Re-read after opening or closing a
+ * window (the host changes size) and after pan and zoom.
  */
 export async function arrowHandlesOf(page) {
   const host = page.locator('.canvas-host');
@@ -1411,13 +1420,14 @@ export async function arrowHandlesOf(page) {
   return parseArrowHandles(text, { x: box.x, y: box.y });
 }
 
-/** Prazo do `settle` que o `state()` faz antes de ler (abaixo dos 3 s do estado do `runStep`). */
+/** Timeout of the `settle` that `state()` does before reading (below the 3 s of `runStep`'s state). */
 const STATE_SETTLE_MS = 2000;
 
 /**
- * Roda na página (etapa #1148, decisão 7): espera a barra de status sem "Salvando…", dois quadros e
- * o DOM sem mutação por 200 ms. Devolve `null` ao cumprir tudo, ou o texto da condição que faltou
- * ao estourar `timeoutMs`. Não usa nada fora do próprio corpo (o Playwright a serializa).
+ * Runs on the page (stage #1148, decision 7): waits for the status bar without "Saving…", two
+ * frames and the DOM without mutation for 200 ms. Returns `null` when all is met, or the text of
+ * the condition that was missing when `timeoutMs` runs out. Uses nothing outside its own body
+ * (Playwright serializes it).
  */
 function settleInPage({ timeoutMs, savingPattern }) {
   return new Promise((resolve) => {
@@ -1447,9 +1457,9 @@ function settleInPage({ timeoutMs, savingPattern }) {
       const quiet = Date.now() - lastMutation >= 200;
       if (frames >= 2 && quiet && !isSaving()) return finish(null);
       if (Date.now() - started >= timeoutMs) {
-        if (isSaving()) return finish('a barra de status continuou em "Salvando…"');
-        if (!quiet) return finish('o DOM continuou mudando (sem 200 ms de silêncio)');
-        return finish('os dois quadros não se completaram');
+        if (isSaving()) return finish('the status bar stayed on "Saving…"');
+        if (!quiet) return finish('the DOM kept changing (no 200 ms of silence)');
+        return finish('the two frames did not complete');
       }
       globalThis.requestAnimationFrame(tick);
     };
@@ -1458,9 +1468,9 @@ function settleInPage({ timeoutMs, savingPattern }) {
 }
 
 /**
- * Espera a app assentar (etapa #1148, decisão 7): sem "Salvando…", dois quadros e 200 ms sem
- * mutação do DOM. Estouro do prazo não é erro: devolve e escreve (`warn`) o aviso com a condição
- * que faltou. Devolve `null` quando assentou. Use no lugar de `waitForTimeout`.
+ * Waits for the app to settle (stage #1148, decision 7): without "Saving…", two frames and 200 ms
+ * without DOM mutation. Running out of time is not an error: returns and writes (`warn`) the
+ * warning with the missing condition. Returns `null` when it settled. Use instead of `waitForTimeout`.
  */
 export async function settle(
   page,
@@ -1471,12 +1481,12 @@ export async function settle(
     savingPattern: 'Salvando…|Saving…',
   });
   if (!unmet) return null;
-  const message = `Aviso: settle esgotou ${timeoutMs} ms: ${unmet}`;
+  const message = `Warning: settle timed out after ${timeoutMs} ms: ${unmet}`;
   warn(message);
   return message;
 }
 
-/** Ids das janelas de ferramenta (`src/store/toolWindows.ts`), os de `[data-strip-window]`. */
+/** Ids of the tool windows (`src/store/toolWindows.ts`), those of `[data-strip-window]`. */
 export const TOOL_WINDOW_IDS = [
   'tree',
   'layers',
@@ -1492,7 +1502,7 @@ export const TOOL_WINDOW_IDS = [
 
 async function setWindowOpen(page, id, wanted) {
   if (!TOOL_WINDOW_IDS.includes(id)) {
-    throw new Error(`janela desconhecida: ${id}. Ids: ${TOOL_WINDOW_IDS.join(', ')}`);
+    throw new Error(`unknown window: ${id}. Ids: ${TOOL_WINDOW_IDS.join(', ')}`);
   }
   const button = page.locator(`[data-strip-window="${id}"]`);
   const pressed = (await button.getAttribute('aria-pressed')) === 'true';
@@ -1502,23 +1512,23 @@ async function setWindowOpen(page, id, wanted) {
     .waitFor({ state: wanted ? 'visible' : 'hidden' });
 }
 
-/** Abre a janela de ferramenta `id` só se estiver fechada (idempotente; nunca alterna). */
+/** Opens the tool window `id` only if it is closed (idempotent; never toggles). */
 export async function openWindow(page, id) {
   await setWindowOpen(page, id, true);
 }
 
-/** Fecha a janela de ferramenta `id` só se estiver aberta (idempotente; nunca alterna). */
+/** Closes the tool window `id` only if it is open (idempotent; never toggles). */
 export async function closeWindow(page, id) {
   await setWindowOpen(page, id, false);
 }
 
-/** Raio de acerto da alça do container na app (`HANDLE_HIT_RADIUS`, `src/canvas/input/intents.ts`). */
+/** Hit radius of the container's handle in the app (`HANDLE_HIT_RADIUS`, `src/canvas/input/intents.ts`). */
 const HANDLE_MAX_RADIUS = 22;
 const HANDLE_MIN_RADIUS = 12;
 
 /**
- * Raio (px de tela) da alça de uma caixa: `handleHitRadius` de `src/canvas/markingGeometry.ts` para
- * marcação; o container usa sempre o fixo (`HANDLE_HIT_RADIUS` em `intents.ts`).
+ * Radius (screen px) of a box's handle: `handleHitRadius` of `src/canvas/markingGeometry.ts` for a
+ * marking; the container always uses the fixed one (`HANDLE_HIT_RADIUS` in `intents.ts`).
  */
 function handleRadius(box, container = false) {
   if (container) return HANDLE_MAX_RADIUS;
@@ -1527,10 +1537,11 @@ function handleRadius(box, container = false) {
 }
 
 /**
- * Nome do canto (`nw`, `ne`, `sw`, `se`) da caixa (`{ x, y, width, height }` em px de tela) que a
- * app pegaria em `point`, ou `null` (etapa #1256, decisão 10). Igual à app: só os quatro cantos
- * (`CORNERS`), distância em xadrez (`cornerAt`) e raio `clamp(min(largura, altura) / 3, 12, 22)`.
- * Um ponto fora da caixa também conta (o rótulo do container fica acima da borda). Pura.
+ * Name of the corner (`nw`, `ne`, `sw`, `se`) of the box (`{ x, y, width, height }` in screen px)
+ * that the app would grab at `point`, or `null` (stage #1256, decision 10). Same as the app: only
+ * the four corners (`CORNERS`), chessboard distance (`cornerAt`) and radius
+ * `clamp(min(width, height) / 3, 12, 22)`. A point outside the box also counts (the container's
+ * label sits above the border). Pure.
  */
 export function nearHandle(box, point, { container = false } = {}) {
   const radius = handleRadius(box, container);
@@ -1553,18 +1564,20 @@ export function nearHandle(box, point, { container = false } = {}) {
 }
 
 /**
- * Arrasta de `de` até `para` (pontos de tela `{ x, y }`, por exemplo do `ponto`; etapa #1148,
- * decisão 9): clica em `de` para selecionar (com `select`), espera `settle`, `mouse.down`, um
- * quadro, `mouse.move` em `steps` passos e `mouse.up`. Se `de` cair no raio de uma alça da
- * `data-selection-box` (o da app, `nearHandle`), avisa (`warn`) que o arrasto pode redimensionar, e segue.
- * Etapa #1076 (decisão 8): `de` que não cai no canvas (`onCanvas`) lança antes de qualquer ação do
- * mouse, salvo com `allowOffCanvas: true` (o `para` não se confere: o arrasto pode sair do canvas
- * de propósito); o clique de seleção que deixa o `data-selection` vazio avisa que não selecionou nada.
+ * Drags from `de` to `to` (screen points `{ x, y }`, for example from `ponto`; stage #1148,
+ * decision 9): clicks on `de` to select (with `select`), waits for `settle`, `mouse.down`, one
+ * frame, `mouse.move` in `steps` steps and `mouse.up`. If `de` falls within the radius of a handle
+ * of the `data-selection-box` (the app's, `nearHandle`), warns (`warn`) that the drag may resize,
+ * and carries on.
+ * Stage #1076 (decision 8): a `de` that does not fall on the canvas (`onCanvas`) throws before any
+ * mouse action, except with `allowOffCanvas: true` (`to` is not checked: the drag may leave the
+ * canvas on purpose); the selection click that leaves `data-selection` empty warns that nothing
+ * was selected.
  */
 export async function drag(
   page,
   de,
-  para,
+  to,
   {
     select = true,
     steps = 10,
@@ -1576,7 +1589,7 @@ export async function drag(
     const on = await onCanvas(page, de);
     if (!on.ok) {
       throw new Error(
-        `drag: o ponto de partida (${de.x}, ${de.y}) não cai no canvas (${on.element})`,
+        `drag: the starting point (${de.x}, ${de.y}) does not fall on the canvas (${on.element})`,
       );
     }
   }
@@ -1584,7 +1597,7 @@ export async function drag(
     await page.mouse.click(de.x, de.y);
     await settle(page);
     if (!(await page.locator('.canvas-host').getAttribute('data-selection'))) {
-      warn(`o clique em (${de.x}, ${de.y}) não selecionou nada`);
+      warn(`the click at (${de.x}, ${de.y}) selected nothing`);
     }
   }
   const host = page.locator('.canvas-host');
@@ -1592,8 +1605,9 @@ export async function drag(
   const hostBox = text ? await host.boundingBox() : null;
   if (text && hostBox) {
     const [l, t, w, h] = text.split(' ').map(Number);
-    // A caixa não diz se é container ou marcação: vale o raio maior (o do container), que contém
-    // o da marcação; avisar a mais é inofensivo, avisar a menos deixa o arrasto redimensionar.
+    // The box does not say whether it is a container or a marking: the larger radius (the
+    // container's) applies, which contains the marking's; warning too much is harmless, warning
+    // too little lets the drag resize.
     const handle = nearHandle(
       { x: hostBox.x + l, y: hostBox.y + t, width: w, height: h },
       de,
@@ -1601,7 +1615,7 @@ export async function drag(
     );
     if (handle) {
       warn(
-        `perto da alça ${handle}: o arrasto pode redimensionar (a alça pega até ${Math.round(handleRadius({ width: w, height: h }, true))} px do canto; parta de mais longe)`,
+        `near handle ${handle}: the drag may resize (the handle grabs up to ${Math.round(handleRadius({ width: w, height: h }, true))} px from the corner; start farther away)`,
       );
     }
   }
@@ -1612,14 +1626,14 @@ export async function drag(
   );
   for (let i = 1; i <= steps; i += 1) {
     await page.mouse.move(
-      de.x + ((para.x - de.x) * i) / steps,
-      de.y + ((para.y - de.y) * i) / steps,
+      de.x + ((to.x - de.x) * i) / steps,
+      de.y + ((to.y - de.y) * i) / steps,
     );
   }
   await page.mouse.up();
 }
 
-/** Roda na página: os grupos (`aria-label` das `section.library-group`) que têm um item com o nome exato do tipo. */
+/** Runs on the page: the groups (`aria-label` of the `section.library-group`) that have an item with the type's exact name. */
 function paletteGroupsOf({ tipo }) {
   return [...document.querySelectorAll('section.library-group')]
     .filter((group) =>
@@ -1631,12 +1645,12 @@ function paletteGroupsOf({ tipo }) {
 }
 
 /**
- * Dispara o arrasto da Paleta por eventos (roda na página): `dragstart`, `dragover`, `drop`,
- * `dragend`. Devolve `{ ok: true }` ou `{ motivo }`: "o item '<tipo>' sumiu da Paleta" ou "o ponto
- * (x, y) não cai no canvas (<elemento>)" (sem elemento no ponto; a conferência de estar dentro do
- * `.canvas-host` é a do `onCanvas`, feita pelo `paletteDrag` antes).
+ * Fires the Palette drag through events (runs on the page): `dragstart`, `dragover`, `drop`,
+ * `dragend`. Returns `{ ok: true }` or `{ motivo }`: "the item '<type>' disappeared from the
+ * Palette" or "the point (x, y) does not fall on the canvas (<element>)" (no element at the point;
+ * the check of being inside the `.canvas-host` is `onCanvas`'s, done by `paletteDrag` beforehand).
  */
-function syntheticPaletteDrag({ tipo, para, grupo }) {
+function syntheticPaletteDrag({ tipo, to, grupo }) {
   const groups = grupo
     ? [...document.querySelectorAll('section.library-group')].filter(
         (g) => g.getAttribute('aria-label') === grupo,
@@ -1645,10 +1659,12 @@ function syntheticPaletteDrag({ tipo, para, grupo }) {
   const item = groups
     .flatMap((root) => [...root.querySelectorAll('li.library-type')])
     .find((li) => li.querySelector('.library-type-name')?.textContent?.trim() === tipo);
-  if (!item) return { motivo: `o item '${tipo}' sumiu da Paleta` };
-  const target = document.elementFromPoint(para.x, para.y);
+  if (!item) return { motivo: `the item '${tipo}' disappeared from the Palette` };
+  const target = document.elementFromPoint(to.x, to.y);
   if (!target)
-    return { motivo: `o ponto (${para.x}, ${para.y}) não cai no canvas (nada)` };
+    return {
+      motivo: `the point (${to.x}, ${to.y}) does not fall on the canvas (nothing)`,
+    };
   const data = new DataTransfer();
   const fire = (el, type) =>
     el.dispatchEvent(
@@ -1656,8 +1672,8 @@ function syntheticPaletteDrag({ tipo, para, grupo }) {
         bubbles: true,
         cancelable: true,
         dataTransfer: data,
-        clientX: para.x,
-        clientY: para.y,
+        clientX: to.x,
+        clientY: to.y,
       }),
     );
   fire(item, 'dragstart');
@@ -1667,10 +1683,10 @@ function syntheticPaletteDrag({ tipo, para, grupo }) {
   return { ok: true };
 }
 
-/** Quanto o `paletteDrag` espera o autosave gravar a marcação nova antes de dar o arrasto por falho. */
+/** How long `paletteDrag` waits for the autosave to write the new marking before giving the drag up as failed. */
 const PALETTE_WAIT_MS = 2000;
 
-/** Espera (até `waitMs`) o `mapping.json` passar de `before` marcações: o autosave grava depois do `settle`. */
+/** Waits (up to `waitMs`) for `mapping.json` to exceed `before` markings: the autosave writes after the `settle`. */
 async function markingsGrewTo(projectDir, before, waitMs) {
   const start = Date.now();
   for (;;) {
@@ -1680,50 +1696,51 @@ async function markingsGrewTo(projectDir, before, waitMs) {
   }
 }
 
-/** Número de marcações do `mapping.json` da pasta (a medida do `paletteDrag`); lança se não lê. */
+/** Number of markings in the folder's `mapping.json` (`paletteDrag`'s measure); throws if it cannot be read. */
 async function countMarkings(projectDir) {
   const read = await readMapping(projectDir);
   if (read.error) {
-    throw new Error(`paletteDrag: não consegui ler o mapping.json (${read.error})`);
+    throw new Error(`paletteDrag: could not read mapping.json (${read.error})`);
   }
   return Array.isArray(read.json.markings) ? read.json.markings.length : 0;
 }
 
 /**
- * Arrasta um tipo da Paleta aberta até um ponto de tela (etapa #1256, decisão 7; #1533, decisões 9
- * e 10). Acha o item pelo `.library-type-name` com o texto exato (dois grupos com o mesmo tipo:
- * lança com a lista dos grupos; `{ grupo }`, o `aria-label` da `section.library-group`, escolhe),
- * faz o arrasto nativo pelo mouse do Playwright (`move` no item, `down`, `move` em `steps` passos
- * até `para`, `up`) e confere que o `mapping.json` da pasta do projeto ganhou uma marcação. Sem
- * marcação nova, refaz por eventos (`dragstart` no item; `dragover`, `drop` e `dragend` sob o
- * ponto, que tem de estar no `.canvas-host`); se o nativo criou, o sintético não roda. Sem nenhuma,
- * lança "o arrasto da Paleta não criou a instância"; o sintético que não pôde rodar lança o motivo.
- * `projectDir` é obrigatório (no corpo do `run`, vale a pasta do `run`): sem ela lança
- * "paletteDrag precisa da pasta do projeto".
- * `capture` (caminho de PNG) grava o recorte do canvas antes de soltar, com o destino aceso.
- * `waitMs` (padrão 2000) é quanto espera o autosave gravar a marcação nova antes de dar o arrasto
- * por falho. Devolve `{ via: 'nativo' | 'sintetico' }`.
+ * Drags a type from the open Palette to a screen point (stage #1256, decision 7; #1533, decisions
+ * 9 and 10). Finds the item by the `.library-type-name` with the exact text (two groups with the
+ * same type: throws with the list of groups; `{ grupo }`, the `aria-label` of the
+ * `section.library-group`, chooses), does the native drag through Playwright's mouse (`move` on
+ * the item, `down`, `move` in `steps` steps to `to`, `up`) and checks that the project folder's
+ * `mapping.json` gained a marking. Without a new marking, redoes it through events (`dragstart` on
+ * the item; `dragover`, `drop` and `dragend` under the point, which must be on the `.canvas-host`);
+ * if the native one created it, the synthetic one does not run. With none, throws "the Palette
+ * drag did not create the instance"; a synthetic one that could not run throws the reason.
+ * `projectDir` is required (in the `run` body, the `run` folder applies): without it throws
+ * "paletteDrag needs the project folder".
+ * `capture` (PNG path) writes the canvas crop before dropping, with the target lit.
+ * `waitMs` (default 2000) is how long it waits for the autosave to write the new marking before
+ * giving the drag up as failed. Returns `{ via: 'nativo' | 'sintetico' }`.
  */
 export async function paletteDrag(
   page,
   tipo,
-  para,
+  to,
   { capture, steps = 10, grupo, projectDir, waitMs = PALETTE_WAIT_MS } = {},
 ) {
-  if (!projectDir) throw new Error('paletteDrag precisa da pasta do projeto');
+  if (!projectDir) throw new Error('paletteDrag needs the project folder');
   const groups = await page.evaluate(paletteGroupsOf, { tipo });
   if (groups.length === 0) {
-    throw new Error(`paletteDrag: o tipo '${tipo}' não está na Paleta aberta`);
+    throw new Error(`paletteDrag: the type '${tipo}' is not in the open Palette`);
   }
   const list = groups.map((g) => `'${g}'`).join(', ');
   if (grupo !== undefined && !groups.includes(grupo)) {
     throw new Error(
-      `paletteDrag: o grupo '${grupo}' não tem o tipo '${tipo}'; grupos que têm: ${list}`,
+      `paletteDrag: the group '${grupo}' does not have the type '${tipo}'; groups that do: ${list}`,
     );
   }
   if (grupo === undefined && groups.length > 1) {
     throw new Error(
-      `paletteDrag: o tipo '${tipo}' está em mais de um grupo (${list}); passe { grupo }`,
+      `paletteDrag: the type '${tipo}' is in more than one group (${list}); pass { grupo }`,
     );
   }
   const chosen = grupo ?? groups[0];
@@ -1736,42 +1753,42 @@ export async function paletteDrag(
     .filter({ has: page.locator('.library-type-name').getByText(tipo, { exact: true }) });
   await item.scrollIntoViewIfNeeded();
   const box = await item.boundingBox();
-  if (!box) throw new Error(`paletteDrag: o tipo '${tipo}' não está na Paleta aberta`);
+  if (!box) throw new Error(`paletteDrag: the type '${tipo}' is not in the open Palette`);
   const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   for (let i = 1; i <= steps; i += 1) {
     await page.mouse.move(
-      from.x + ((para.x - from.x) * i) / steps,
-      from.y + ((para.y - from.y) * i) / steps,
+      from.x + ((to.x - from.x) * i) / steps,
+      from.y + ((to.y - from.y) * i) / steps,
     );
   }
   if (capture) await host.screenshot({ path: capture });
   await page.mouse.up();
   await settle(page);
   if (await markingsGrewTo(projectDir, before, waitMs)) return { via: 'nativo' };
-  const on = await onCanvas(page, para);
+  const on = await onCanvas(page, to);
   if (!on.ok) {
     throw new Error(
-      `paletteDrag: o ponto (${para.x}, ${para.y}) não cai no canvas (${on.element})`,
+      `paletteDrag: the point (${to.x}, ${to.y}) does not fall on the canvas (${on.element})`,
     );
   }
   const synthetic = await page.evaluate(syntheticPaletteDrag, {
     tipo,
-    para,
+    to,
     grupo: chosen,
   });
   if (synthetic?.motivo) throw new Error(`paletteDrag: ${synthetic.motivo}`);
   await settle(page);
   if (await markingsGrewTo(projectDir, before, waitMs)) return { via: 'sintetico' };
-  throw new Error('o arrasto da Paleta não criou a instância');
+  throw new Error('the Palette drag did not create the instance');
 }
 
 /**
- * Ajusta a janela do Chrome para o `innerWidth × innerHeight` pedido (etapa #1148, decisão 10):
- * CDP `Browser.getWindowForTarget` + `Browser.setWindowBounds` somando a moldura medida
- * (`outerWidth − innerWidth`, `outerHeight − innerHeight`). Erro com os valores obtidos se a
- * janela não deu o pedido.
+ * Sets the Chrome window to the requested `innerWidth × innerHeight` (stage #1148, decision 10):
+ * CDP `Browser.getWindowForTarget` + `Browser.setWindowBounds` adding the measured frame
+ * (`outerWidth − innerWidth`, `outerHeight − innerHeight`). Throws with the obtained values if the
+ * window did not give what was requested.
  */
 export async function setViewport(page, largura, altura) {
   const session = await page.context().newCDPSession(page);
@@ -1801,12 +1818,12 @@ export async function setViewport(page, largura, altura) {
   }));
   if (got.innerWidth !== largura || got.innerHeight !== altura) {
     throw new Error(
-      `setViewport: pedido ${largura}×${altura}, a janela deu ${got.innerWidth}×${got.innerHeight}`,
+      `setViewport: requested ${largura}×${altura}, the window gave ${got.innerWidth}×${got.innerHeight}`,
     );
   }
 }
 
-/** Roda na página: até 10 elementos cujo nome acessível contém `needle` (papel, nome, região). */
+/** Runs on the page: up to 10 elements whose accessible name contains `needle` (role, name, region). */
 function findInPage({ needle }) {
   const implicit = {
     BUTTON: 'button',
@@ -1865,29 +1882,29 @@ function findInPage({ needle }) {
 }
 
 /**
- * Os candidatos que o localizador devia ter achado (etapa #1148, decisão 11): até 10 elementos
- * visíveis cujo nome acessível contém `texto` (sem diferença de caixa), cada um com papel, nome e
- * região (o `aria-label` do diálogo, da janela ou do landmark mais próximo).
+ * The candidates the locator should have found (stage #1148, decision 11): up to 10 visible
+ * elements whose accessible name contains `texto` (case-insensitive), each with role, name and
+ * region (the `aria-label` of the closest dialog, window or landmark).
  */
 export async function find(page, texto) {
   return page.evaluate(findInPage, { needle: String(texto).toLowerCase() });
 }
 
-/** Texto da lista de `find`, uma linha por candidato (`papel "nome" em região`). */
+/** Text of the `find` list, one line per candidate (`role "name" in region`). */
 export function formatCandidates(candidates, texto) {
   if (!candidates || candidates.length === 0) {
-    return `nenhum candidato com "${texto}" no nome na tela`;
+    return `no candidate with "${texto}" in the name on screen`;
   }
   const lines = candidates.map(
-    (c) => `  ${c.role} "${c.name}"${c.region ? ` em ${c.region}` : ''}`,
+    (c) => `  ${c.role} "${c.name}"${c.region ? ` in ${c.region}` : ''}`,
   );
-  return [`candidatos com "${texto}" (${candidates.length}):`, ...lines].join('\n');
+  return [`candidates with "${texto}" (${candidates.length}):`, ...lines].join('\n');
 }
 
 /**
- * O texto que o localizador do Playwright procurava, tirado da mensagem de um timeout ou de uma
- * violação do modo estrito (`getByRole('button', { name: 'Revisar' })`, `getByText('Conversas')`);
- * `null` se a mensagem não for desse tipo ou não trouxer texto. Pura.
+ * The text the Playwright locator was looking for, taken from the message of a timeout or a
+ * strict mode violation (`getByRole('button', { name: 'Review' })`, `getByText('Threads')`);
+ * `null` if the message is not of that kind or carries no text. Pure.
  */
 export function locatorTextFromError(message) {
   const text = String(message);
@@ -1898,9 +1915,9 @@ export function locatorTextFromError(message) {
 }
 
 /**
- * A pasta de apoio quando `APOIO` não está exportado (etapa #841, decisão 3): a `apoio/` da rodada
- * mais recente em `~/mapping-testes/<AAAA-MM-DD>-<alvo>/apoio`, o mesmo caminho que o `cloud-up.sh`
- * monta. `null` se não houver nenhuma.
+ * The support folder when `APOIO` is not exported (stage #841, decision 3): the `apoio/` of the
+ * most recent round in `~/mapping-testes/<YYYY-MM-DD>-<target>/apoio`, the same path that
+ * `cloud-up.sh` builds. `null` if there is none.
  */
 export function defaultApoioDir(home = os.homedir()) {
   const root = path.join(home, 'mapping-testes');
@@ -1918,10 +1935,10 @@ export function defaultApoioDir(home = os.homedir()) {
   return dirs[0]?.dir ?? null;
 }
 
-/** Prazo padrão (s) do `cloud.mjs run`: abaixo dos 120 s padrão do Bash (etapa #1148, decisão 2). */
+/** Default timeout (s) of `cloud.mjs run`: below Bash's default 120 s (stage #1148, decision 2). */
 const RUN_DEADLINE_SECONDS = 90;
 
-/** O `console` do corpo: manda para o `io` (no servidor, a saída volta ao cliente em vez de ir ao log). */
+/** The body's `console`: sends to `io` (on the server, the output goes back to the client instead of the log). */
 function bodyConsole(io) {
   const text = (args) => util.format(...args);
   return {
@@ -1933,9 +1950,9 @@ function bodyConsole(io) {
 }
 
 /**
- * `check(rotulo, condicao, detalhe?)` do corpo do `run` (etapa #1533, decisão 7). `condicao` é um
- * booleano, uma promessa ou uma função (síncrona ou assíncrona) que devolve verdadeiro ou lança.
- * Não interrompe o corpo: o resultado fica em `results` e o `execStep` espera os pendentes.
+ * `check(rotulo, condicao, detalhe?)` of the `run` body (stage #1533, decision 7). `condicao` is a
+ * boolean, a promise or a function (sync or async) that returns truthy or throws.
+ * Does not interrupt the body: the result stays in `results` and `execStep` waits for the pending ones.
  */
 function makeCheck(results, pending) {
   return (rotulo, condicao, detalhe) => {
@@ -1945,7 +1962,7 @@ function makeCheck(results, pending) {
         if (value) {
           results.push({ rotulo, ok: true, detalhe });
         } else {
-          results.push({ rotulo, ok: false, mensagem: detalhe ?? 'condição falsa' });
+          results.push({ rotulo, ok: false, mensagem: detalhe ?? 'condition false' });
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -1961,7 +1978,7 @@ function makeCheck(results, pending) {
   };
 }
 
-/** Uma linha por check: `✅ <rótulo>` ou `❌ <rótulo> — <mensagem>`. */
+/** One line per check: `✅ <label>` or `❌ <label> — <message>`. */
 function formatChecks(results) {
   return results.map((r) =>
     r.ok
@@ -1971,12 +1988,12 @@ function formatChecks(results) {
 }
 
 /**
- * O executor de um corpo (etapa #1148, decisão 1; #1533, decisões 6 e 7): roda `body` como corpo de
- * uma função assíncrona com `page`, `browser`, `apoioDir`, `projectDir`, `ctx`, `check`, `console`
- * (que vai para `io`) e todos os exports deste módulo em escopo; no fim imprime a linha de cada
- * `check` e o `formatState(...)`. Devolve `{ code, checks }`: 0 sucesso, 1 erro no corpo ou check
- * com falha, 124 prazo esgotado. `connection` (`{ browser, page }`) reaproveita uma conexão (o
- * servidor); sem ela conecta com `connectFn`.
+ * The executor of a body (stage #1148, decision 1; #1533, decisions 6 and 7): runs `body` as the
+ * body of an async function with `page`, `browser`, `apoioDir`, `projectDir`, `ctx`, `check`,
+ * `console` (which goes to `io`) and all the exports of this module in scope; at the end prints
+ * the line of each `check` and `formatState(...)`. Returns `{ code, checks }`: 0 success, 1 error
+ * in the body or failed check, 124 timeout. `connection` (`{ browser, page }`) reuses a
+ * connection (the server); without it connects with `connectFn`.
  */
 async function execStep(
   body,
@@ -2003,7 +2020,7 @@ async function execStep(
       ]);
       io.log(formatState(snapshot));
     } catch {
-      // Conexão sem resposta: o estado não sai.
+      // Connection not responding: the state is not printed.
     }
   };
   let timer;
@@ -2019,9 +2036,9 @@ async function execStep(
       apoioDir,
       projectDir,
       ...exportsOf(),
-      // No corpo, vale a pasta do `run` quando a chamada não passa `{ projectDir }`.
-      paletteDrag: (p, tipo, para, options = {}) =>
-        paletteDrag(p, tipo, para, {
+      // In the body, the `run` folder applies when the call does not pass `{ projectDir }`.
+      paletteDrag: (p, tipo, to, options = {}) =>
+        paletteDrag(p, tipo, to, {
           projectDir: projectDir ?? lastFolder(apoioDir),
           ...options,
         }),
@@ -2035,7 +2052,7 @@ async function execStep(
       deadline,
     ]);
     if (outcome === 'prazo') {
-      io.error(`prazo de ${prazoSeconds} s esgotado no passo`);
+      io.error(`deadline of ${prazoSeconds} s exceeded in the step`);
       code = 124;
     }
   } catch (error) {
@@ -2046,14 +2063,14 @@ async function execStep(
       try {
         io.error(formatCandidates(await find(page, wanted), wanted));
       } catch {
-        // Sem resposta da página: a lista de candidatos não sai.
+        // Page not responding: the candidate list is not printed.
       }
     }
     code = 1;
   } finally {
     clearTimeout(timer);
   }
-  // Checks ainda no ar (o corpo lançou ou estourou o prazo) têm até 2 s para entrar no resumo.
+  // Checks still pending (the body threw or hit the deadline) have up to 2 s to enter the summary.
   await Promise.race([
     Promise.all(pending),
     new Promise((resolve) => setTimeout(resolve, 2000).unref()),
@@ -2065,26 +2082,26 @@ async function execStep(
 }
 
 /**
- * Executa o corpo de um script de passo, sem servidor (conecta, roda, imprime o `check` e o
- * `state()`), e devolve o código de saída (0 sucesso, 1 erro ou check com falha, 124 prazo
- * esgotado); quem chama faz o `process.exit`. É o caminho de reserva do `cloud.mjs run` e o
- * executor que o servidor usa; `ctx` começa vazio.
+ * Runs the body of a step script, without a server (connects, runs, prints the `check` and
+ * `state()`), and returns the exit code (0 success, 1 error or failed check, 124 timeout); the
+ * caller does the `process.exit`. It is the fallback path of `cloud.mjs run` and the executor the
+ * server uses; `ctx` starts empty.
  */
 export async function runStep(body, options = {}) {
   return (await execStep(body, options)).code;
 }
 
 // ---------------------------------------------------------------------------------------------
-// Servidor persistente do `run` (etapa #1533, decisões 6 a 8)
+// Persistent `run` server (stage #1533, decisions 6 to 8)
 // ---------------------------------------------------------------------------------------------
 
 const SOCKET_NAME = 'cloud.sock';
 const PID_NAME = 'cloud.pid';
 const SERVER_START_WAIT_MS = 15000;
-/** Folga do cliente sobre o prazo do `run`: o servidor responde 124 antes; passada a folga, ele travou. */
+/** Client slack over the `run` timeout: the server answers 124 first; past the slack, it hung. */
 const CLIENT_GRACE_MS = 5000;
 
-/** Próximo número de `run` (continua depois de um servidor novo): maior `<n>.js` de `apoio/runs/` + 1. */
+/** Next `run` number (continues after a new server): highest `<n>.js` in `apoio/runs/` + 1. */
 function nextRunNumber(apoioDir) {
   let max = 0;
   try {
@@ -2093,14 +2110,14 @@ function nextRunNumber(apoioDir) {
       if (n > max) max = n;
     }
   } catch {
-    // Sem a pasta: é o primeiro.
+    // Without the folder: it is the first.
   }
   return max + 1;
 }
 
 /**
- * Grava um `run`: `apoio/runs/<n>.js` (o corpo), `<n>.out` (a saída) e uma linha em `apoio/runs.log`
- * (`<hora> run=<n> codigo=<c> checks=<k> falhas=<f>`). É a Reprodução de um ❌ (decisão 8).
+ * Records a `run`: `apoio/runs/<n>.js` (the body), `<n>.out` (the output) and a line in `apoio/runs.log`
+ * (`<time> run=<n> codigo=<c> checks=<k> falhas=<f>`). It is the Reproduction of a ❌ (decision 8).
  */
 function recordRun(apoioDir, { body, code, lines, checks }) {
   try {
@@ -2110,7 +2127,7 @@ function recordRun(apoioDir, { body, code, lines, checks }) {
     fs.writeFileSync(path.join(dir, `${n}.js`), body);
     fs.writeFileSync(
       path.join(dir, `${n}.out`),
-      `${lines.map((l) => l.text).join('\n')}\n[código ${code}]\n`,
+      `${lines.map((l) => l.text).join('\n')}\n[code ${code}]\n`,
     );
     const falhas = checks.filter((c) => !c.ok).length;
     fs.appendFileSync(
@@ -2118,16 +2135,16 @@ function recordRun(apoioDir, { body, code, lines, checks }) {
       `${new Date().toISOString()} run=${n} codigo=${code} checks=${checks.length} falhas=${falhas}\n`,
     );
   } catch {
-    // O registro não derruba o passo.
+    // The recording does not bring the step down.
   }
 }
 
-/** Uma conexão ainda serve? (`connectFn` falso pode não ter `isConnected`/`isClosed`.) */
+/** Is a connection still usable? (A fake `connectFn` may lack `isConnected`/`isClosed`.) */
 function connectionAlive({ browser, page }) {
   return browser.isConnected?.() !== false && page.isClosed?.() !== true;
 }
 
-/** Roda um corpo e devolve `{ code, lines, checks }`, com a saída capturada em ordem (`s`: 'out' ou 'err'). */
+/** Runs a body and returns `{ code, lines, checks }`, with the output captured in order (`s`: 'out' or 'err'). */
 async function captureStep(body, options) {
   const lines = [];
   const io = {
@@ -2147,10 +2164,10 @@ async function captureStep(body, options) {
 }
 
 /**
- * Sobe o servidor do `run` (decisão 6): escuta o soquete Unix `apoio/cloud.sock`, mantém a conexão
- * CDP e o `ctx` entre os `run` e atende um `run` por vez. Prazo esgotado (124): responde, para o
- * servidor e chama `onExit` (o processo `serve` sai). Conexão caída: reconecta no `run` seguinte,
- * com o aviso e o `ctx` vazio. Devolve `{ close }`.
+ * Starts the `run` server (decision 6): listens on the Unix socket `apoio/cloud.sock`, keeps the
+ * CDP connection and the `ctx` between `run`s and serves one `run` at a time. Timeout (124):
+ * answers, stops the server and calls `onExit` (the `serve` process exits). Dropped connection:
+ * reconnects on the next `run`, with the warning and an empty `ctx`. Returns `{ close }`.
  */
 export async function startRunServer({
   apoioDir,
@@ -2160,7 +2177,7 @@ export async function startRunServer({
   const sock = path.join(apoioDir, SOCKET_NAME);
   fs.mkdirSync(apoioDir, { recursive: true });
   if (fs.existsSync(sock) && (await serverAnswers(sock))) {
-    throw new Error('já existe um servidor do run nesta pasta de apoio');
+    throw new Error('a run server already exists in this support folder');
   }
   fs.rmSync(sock, { force: true });
   let connection = null;
@@ -2174,7 +2191,7 @@ export async function startRunServer({
     stopping = true;
     if (closed) return;
     closed = true;
-    // Os `run` que já esperavam na fila recebem o erro antes de os soquetes caírem.
+    // The `run`s already waiting in the queue get the error before the sockets drop.
     await queue.catch(() => {});
     for (const socket of sockets) socket.destroy();
     await new Promise((resolve) => server.close(resolve));
@@ -2183,14 +2200,16 @@ export async function startRunServer({
     try {
       await connection?.browser.close();
     } catch {
-      // Já caída.
+      // Already dropped.
     }
   };
 
   const handle = async (request) => {
     const warnings = [];
     if (connection && !connectionAlive(connection)) {
-      warnings.push('aviso: a conexão com o Chrome caiu; reconectei e o ctx está vazio');
+      warnings.push(
+        'warning: the connection to Chrome dropped; I reconnected and the ctx is empty',
+      );
       connection = null;
     }
     if (!connection) {
@@ -2207,12 +2226,12 @@ export async function startRunServer({
       }
       ctx = {};
     }
-    // Caminhos relativos do corpo valem a partir da pasta de onde o `run` foi chamado.
+    // Relative paths in the body apply from the folder the `run` was called from.
     if (request.cwd) {
       try {
         process.chdir(request.cwd);
       } catch {
-        // A pasta sumiu: fica onde está.
+        // The folder is gone: stay where we are.
       }
     }
     const result = await captureStep(request.body, {
@@ -2255,8 +2274,7 @@ export async function startRunServer({
       }
       queue = queue.then(async () => {
         if (stopping) {
-          const text =
-            'o servidor do run saiu (prazo esgotado no run anterior); rode de novo';
+          const text = 'the run server exited (timeout in the previous run); run again';
           socket.end(
             `${JSON.stringify({ code: 1, lines: [{ s: 'err', text }], checks: [] })}\n`,
           );
@@ -2279,7 +2297,7 @@ export async function startRunServer({
   return { close };
 }
 
-/** Manda uma requisição ao soquete e devolve a resposta; `null` se ninguém atende. */
+/** Sends a request to the socket and returns the response; `null` if nobody answers. */
 function sendToServer(sock, request, timeoutMs) {
   return new Promise((resolve) => {
     const socket = net.createConnection(sock);
@@ -2310,13 +2328,13 @@ function sendToServer(sock, request, timeoutMs) {
         }
       }
     });
-    // `null`: ninguém atende (nada foi enviado); `{ lost }`: o servidor aceitou e caiu sem responder.
+    // `null`: nobody answers (nothing was sent); `{ lost }`: the server accepted and dropped without answering.
     socket.on('error', () => finish(connected ? { lost: true } : null));
     socket.on('close', () => finish(connected ? { lost: true } : null));
   });
 }
 
-/** O soquete responde a uma conexão? (um servidor de pé; o arquivo sozinho pode ser de um servidor morto) */
+/** Does the socket answer a connection? (a live server; the file alone may belong to a dead server) */
 function serverAnswers(sock) {
   return new Promise((resolve) => {
     const socket = net.createConnection(sock);
@@ -2328,21 +2346,21 @@ function serverAnswers(sock) {
   });
 }
 
-/** Para o servidor pelo `apoio/cloud.pid` (travado ou de outra rodada); silencioso se não existe. */
+/** Stops the server through `apoio/cloud.pid` (hung or from another round); silent if it does not exist. */
 function killServer(apoioDir) {
   try {
     const pid = Number(fs.readFileSync(path.join(apoioDir, PID_NAME), 'utf8'));
-    // Só mata se o pid ainda é de um `cloud.mjs` (o número pode ter sido reaproveitado).
+    // Only kills if the pid still belongs to a `cloud.mjs` (the number may have been reused).
     const cmdline = fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8');
     if (pid > 0 && cmdline.includes('cloud.mjs')) process.kill(pid, 'SIGTERM');
   } catch {
-    // Sem servidor.
+    // No server.
   }
   fs.rmSync(path.join(apoioDir, SOCKET_NAME), { force: true });
   fs.rmSync(path.join(apoioDir, PID_NAME), { force: true });
 }
 
-/** Sobe `cloud.mjs serve` solto do terminal (`setsid`, stdin de /dev/null, log em `apoio/cloud-serve.log`). */
+/** Starts `cloud.mjs serve` detached from the terminal (`setsid`, stdin from /dev/null, log in `apoio/cloud-serve.log`). */
 function spawnServeProcess(apoioDir) {
   const log = fs.openSync(path.join(apoioDir, 'cloud-serve.log'), 'a');
   const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'serve'], {
@@ -2355,10 +2373,10 @@ function spawnServeProcess(apoioDir) {
 }
 
 /**
- * O `cloud.mjs run` (decisão 6): manda o corpo ao servidor persistente (sobe um se não houver) e
- * imprime a resposta em `io`; devolve o código (0, 1 ou 124). `novo` reinicia o servidor. Se o
- * servidor não sobe em `socketWaitMs`, cai no caminho de hoje (`runStep`) e avisa.
- * `spawnServer` e `connectFn` são injetáveis para teste.
+ * The `cloud.mjs run` (decision 6): sends the body to the persistent server (starts one if there
+ * is none) and prints the response to `io`; returns the code (0, 1 or 124). `novo` restarts the
+ * server. If the server does not start within `socketWaitMs`, falls back to today's path
+ * (`runStep`) and warns. `spawnServer` and `connectFn` are injectable for tests.
  */
 export async function runViaServer(
   body,
@@ -2393,12 +2411,12 @@ export async function runViaServer(
     ? await sendToServer(sock, request, timeoutMs)
     : null;
   if (response === null) {
-    // Soquete velho (servidor morto) ou nenhum servidor: sobe outro.
+    // Old socket (dead server) or no server: start another.
     fs.rmSync(sock, { force: true });
     try {
       await spawnServer(apoioDir);
     } catch {
-      // Cai na reserva abaixo.
+      // Falls back to the path below.
     }
     const start = Date.now();
     while (!fs.existsSync(sock) && Date.now() - start < socketWaitMs) {
@@ -2408,7 +2426,7 @@ export async function runViaServer(
   }
   if (response === null) {
     io.error(
-      'aviso: o servidor do run não subiu; rodando no caminho direto (sem ctx entre os run)',
+      'warning: the run server did not start; running on the direct path (no ctx between runs)',
     );
     const result = await captureStep(body, {
       apoioDir,
@@ -2421,29 +2439,29 @@ export async function runViaServer(
   }
   if (response.lost) {
     io.error(
-      'o servidor do run caiu durante este run; o corpo pode ter rodado até certo ponto: confira o estado antes de repetir',
+      'the run server dropped during this run; the body may have run up to a point: check the state before repeating',
     );
     return 1;
   }
   if (response.timeout) {
     killServer(apoioDir);
-    io.error(`prazo de ${prazoSeconds} s esgotado no passo`);
+    io.error(`deadline of ${prazoSeconds} s exceeded in the step`);
     return 124;
   }
   return print(response);
 }
 
-/** `cloud.mjs serve`: o processo que o primeiro `run` sobe; sai no prazo esgotado, no `--novo` ou no SIGTERM. */
+/** `cloud.mjs serve`: the process the first `run` starts; exits on timeout, on `--novo` or on SIGTERM. */
 async function runServe(apoioDir) {
-  // Uma promessa solta do corpo não derruba o servidor (e a conexão e o ctx com ele).
+  // A loose promise from the body does not bring the server down (and the connection and ctx with it).
   process.on('unhandledRejection', (error) => {
-    console.error(`rejeição sem tratamento no corpo: ${error?.message ?? error}`);
+    console.error(`unhandled rejection in the body: ${error?.message ?? error}`);
   });
   let server;
   try {
     server = await startRunServer({ apoioDir });
   } catch (error) {
-    // Outro `run` subiu o servidor primeiro: este sai e os dois clientes usam o mesmo.
+    // Another `run` started the server first: this one exits and both clients use the same one.
     console.error(error.message);
     return;
   }
@@ -2453,7 +2471,7 @@ async function runServe(apoioDir) {
   process.on('SIGINT', stop);
 }
 
-/** Os exports de função e valor deste módulo (menos o próprio `runStep`), para o escopo do corpo. */
+/** The function and value exports of this module (except `runStep` itself), for the body's scope. */
 function exportsOf() {
   return {
     connect,
@@ -2506,275 +2524,273 @@ function exportsOf() {
 }
 
 /**
- * Tabela única (etapa #1148, decisão 3): cada comando da CLI e cada export deste módulo, com a
- * assinatura e uma linha de descrição. O `cloud.mjs help` imprime daqui; um teste confere que todo
- * export está na tabela e que o `cloud.d.mts` declara os mesmos nomes.
+ * Single table (stage #1148, decision 3): each CLI command and each export of this module, with
+ * the signature and a one-line description. `cloud.mjs help` prints from here; a test checks that
+ * every export is in the table and that `cloud.d.mts` declares the same names.
  */
 export const HELP = {
   connect: {
     sig: 'connect(apoioDir, cdpUrl?, options?)',
-    desc: 'conecta no Chrome por CDP, acha a aba da app, timeout de 5 s',
+    desc: 'connects to Chrome over CDP, finds the app tab, 5 s timeout',
   },
   connectGuide: {
     sig: 'connectGuide(apoioDir, cdpUrl?, options?)',
-    desc: 'como o connect, mas na aba do guia (/guia/)',
+    desc: 'like connect, but on the guide tab (/guide/)',
   },
   clickNoWait: {
     sig: 'clickNoWait(page, nome, { scope?, exact? })',
-    desc: 'clique por papel e nome sem esperar depois (abre diálogo nativo)',
+    desc: 'click by role and name without waiting afterwards (opens a native dialog)',
   },
   OPEN_DIALOG_TITLES: {
     sig: 'OPEN_DIALOG_TITLES',
-    desc: 'títulos dos seletores de arquivo/pasta do GTK',
+    desc: 'titles of the GTK file/folder pickers',
   },
   pickAutocompletePopup: {
     sig: 'pickAutocompletePopup(windows, geometryOf, dialogWindowId)',
-    desc: 'acha a lista de autocompletar do GTK',
+    desc: 'finds the GTK autocomplete list',
   },
   openButtonPoints: {
     sig: 'openButtonPoints(geometry)',
-    desc: 'pontos candidatos do botão Abrir do seletor',
+    desc: "candidate points of the picker's Open button",
   },
   pickAppPage: {
     sig: 'pickAppPage(pages, { origin? })',
-    desc: 'escolhe a aba da app entre as abertas',
+    desc: 'picks the app tab among the open ones',
   },
   parseEnvFile: {
     sig: 'parseEnvFile(texto)',
-    desc: 'lê o formato do apoio/env.sh (export A=1 B=2)',
+    desc: 'reads the format of apoio/env.sh (export A=1 B=2)',
   },
   loadEnv: {
     sig: 'loadEnv(apoioDir, env?)',
-    desc: 'carrega DISPLAY e D-Bus do apoio/env.sh',
+    desc: 'loads DISPLAY and D-Bus from apoio/env.sh',
   },
   diffJson: {
     sig: 'diffJson(antes, depois, { limit? })',
-    desc: 'linhas de diferença entre dois JSON',
+    desc: 'difference lines between two JSON values',
   },
   formatState: {
     sig: 'formatState(estado)',
-    desc: 'texto do estado (tela, disco e a linha Seleção: o que o clique selecionou)',
+    desc: 'state text (screen, disk and the Selection: line, what the click selected)',
   },
   state: {
     sig: 'state(page, apoioDir, { projectDir? })',
-    desc: 'estado da tela (título, diálogos, avisos, foco, janelas) e do disco; sem projectDir lê a última pasta usada (null: não lê disco)',
+    desc: 'state of the screen (title, dialogs, notices, focus, windows) and of the disk; without projectDir reads the last folder used (null: does not read disk)',
   },
   waitForWindow: {
     sig: 'waitForWindow(nomes, { timeoutMs? })',
-    desc: 'espera um diálogo nativo pelo título',
+    desc: 'waits for a native dialog by title',
   },
   selectFolder: {
     sig: 'selectFolder(apoioDir, caminho, { timeoutMs? })',
-    desc: 'escolhe uma pasta no seletor nativo; caminho absoluto (relativo: cancela e lança)',
+    desc: 'chooses a folder in the native picker; absolute path (relative: cancels and throws)',
   },
   openFile: {
     sig: 'openFile(apoioDir, caminho, { timeoutMs? })',
-    desc: 'abre um arquivo no seletor nativo; caminho absoluto (relativo: cancela e lança)',
+    desc: 'opens a file in the native picker; absolute path (relative: cancels and throws)',
   },
   saveFile: {
     sig: 'saveFile(apoioDir, caminho, { timeoutMs? })',
-    desc: 'salva num "Salvar como" nativo; caminho absoluto (relativo: cancela e lança)',
+    desc: 'saves in a native "Save as"; absolute path (relative: cancels and throws)',
   },
   cancelDialog: {
     sig: 'cancelDialog(apoioDir, { timeoutMs? })',
-    desc: 'cancela o diálogo nativo aberto',
+    desc: 'cancels the open native dialog',
   },
   allowPermission: {
     sig: 'allowPermission(apoioDir)',
-    desc: 'aceita o pedido de permissão do Chrome',
+    desc: "accepts Chrome's permission prompt",
   },
   screenshot: {
     sig: 'screenshot(apoioDir, nome)',
-    desc: 'captura de tela em apoio/anexos',
+    desc: 'screenshot into apoio/anexos',
   },
   windowShortcut: {
     sig: 'windowShortcut(page, n)',
-    desc: 'atalho Ctrl+Shift+N da janela de ferramenta (ALTERNA: prefira openWindow/closeWindow)',
+    desc: 'Ctrl+Shift+N shortcut of the tool window (TOGGLES: prefer openWindow/closeWindow)',
   },
   settle: {
     sig: 'settle(page, { timeoutMs? = 5000, warn? })',
-    desc: 'espera sem "Salvando…", 2 quadros e 200 ms sem mutação; estouro vira aviso (use no lugar de waitForTimeout)',
+    desc: 'waits for no "Saving…", 2 frames and 200 ms without mutation; a timeout becomes a warning (use instead of waitForTimeout)',
   },
   openWindow: {
     sig: 'openWindow(page, id)',
-    desc: 'abre a janela de ferramenta só se fechada (idempotente); id: tree, layers, details, list, incomplete, diagnostics, proposals, notices, comments, catalog',
+    desc: 'opens the tool window only if closed (idempotent); id: tree, layers, details, list, incomplete, diagnostics, proposals, notices, comments, catalog',
   },
   closeWindow: {
     sig: 'closeWindow(page, id)',
-    desc: 'fecha a janela de ferramenta só se aberta (idempotente)',
+    desc: 'closes the tool window only if open (idempotent)',
   },
   TOOL_WINDOW_IDS: {
     sig: 'TOOL_WINDOW_IDS',
-    desc: 'os ids das janelas de ferramenta aceitos por openWindow e closeWindow',
+    desc: 'the tool window ids accepted by openWindow and closeWindow',
   },
   drag: {
-    sig: 'drag(page, de, para, { select? = true, steps? = 10, warn?, allowOffCanvas? })',
-    desc: 'arrasta entre dois pontos de tela ({x, y}); lança se de não cai no canvas (allowOffCanvas segue); avisa se de cair no raio de uma alça (canto) da seleção e se o clique não selecionou nada',
+    sig: 'drag(page, de, to, { select? = true, steps? = 10, warn?, allowOffCanvas? })',
+    desc: 'drags between two screen points ({x, y}); throws if de does not fall on the canvas (allowOffCanvas carries on); warns if de falls within the radius of a handle (corner) of the selection and if the click selected nothing',
   },
   nearHandle: {
     sig: 'nearHandle(box, ponto)',
-    desc: 'canto (nw, ne, sw, se) que a app pegaria no ponto (raio 12 a 22 px, xadrez), ou null',
+    desc: 'corner (nw, ne, sw, se) the app would grab at the point (radius 12 to 22 px, chessboard), or null',
   },
   paletteDrag: {
-    sig: 'paletteDrag(page, tipo, para, { capture?, steps? = 10, grupo?, projectDir?, waitMs? })',
-    desc: 'arrasta um tipo da Paleta aberta até um ponto de tela e confere a marcação nova no mapping.json (projectDir; no run vale a pasta do run); grupo escolhe entre dois grupos com o mesmo tipo; capture = PNG antes de soltar; devolve { via: nativo | sintetico }',
+    sig: 'paletteDrag(page, tipo, to, { capture?, steps? = 10, grupo?, projectDir?, waitMs? })',
+    desc: 'drags a type from the open Palette to a screen point and checks the new marking in mapping.json (projectDir; in run the run folder applies); grupo chooses between two groups with the same type; capture = PNG before dropping; returns { via: nativo | sintetico }',
   },
   setViewport: {
     sig: 'setViewport(page, largura, altura)',
-    desc: 'ajusta a janela do Chrome ao innerWidth × innerHeight pedido (soma a moldura; confere)',
+    desc: 'sets the Chrome window to the requested innerWidth × innerHeight (adds the frame; checks)',
   },
   find: {
     sig: 'find(page, texto)',
-    desc: 'até 10 elementos visíveis cujo nome contém o texto (papel, nome, região)',
+    desc: 'up to 10 visible elements whose name contains the text (role, name, region)',
   },
   formatCandidates: {
     sig: 'formatCandidates(candidatos, texto)',
-    desc: 'texto da lista de find, uma linha por candidato',
+    desc: 'text of the find list, one line per candidate',
   },
   locatorTextFromError: {
     sig: 'locatorTextFromError(mensagem)',
-    desc: 'o texto do localizador num erro de timeout ou de modo estrito, ou null',
+    desc: 'the locator text in a timeout or strict mode error, or null',
   },
   makeCadastroPng: {
     sig: 'makeCadastroPng(destino)',
-    desc: 'gera a imagem de teste "Cadastro"',
+    desc: 'generates the "sign-up" test image (cadastro.png)',
   },
   mark: {
     sig: 'mark(apoioDir, roteiro, "start"|"end")',
-    desc: 'marca início ou fim de um roteiro no tempos.log',
+    desc: 'marks the start or end of a test script in tempos.log',
   },
   temposFromLog: {
     sig: 'temposFromLog(texto, textoDoRunsLog?)',
-    desc: 'durações por roteiro a partir do texto do tempos.log; com o runs.log, o total de run e de checks por roteiro',
+    desc: 'durations per script from the text of tempos.log; with runs.log, the total of runs and checks per script',
   },
   temposFromDir: {
     sig: 'temposFromDir(apoioDir)',
-    desc: 'durações por roteiro da pasta de apoio',
+    desc: 'durations per script from the support folder',
   },
   defaultApoioDir: {
     sig: 'defaultApoioDir(home?)',
-    desc: 'apoio/ da rodada mais recente em ~/mapping-testes',
+    desc: 'apoio/ of the most recent round in ~/mapping-testes',
   },
-  formatTempos: { sig: 'formatTempos(tempos)', desc: 'texto do Tempo por roteiro' },
+  formatTempos: { sig: 'formatTempos(tempos)', desc: 'text of the Time per script' },
   containerScreenPoint: {
     sig: 'containerScreenPoint({ mapping, container, x, y, viewport, host, ... })',
-    desc: 'ponto de tela de um ponto em pixels do container (parte pura)',
+    desc: 'screen point of a point in container pixels (pure part)',
   },
   ponto: {
     sig: 'ponto(page, projectDir, container, x, y, { perspective?, marking?, warn? })',
-    desc: 'ponto de tela de um ponto do container pela posição desenhada (data-container-boxes); avisa a perspectiva que difere dela e o ponto que cai fora do canvas',
+    desc: 'screen point of a container point by the drawn position (data-container-boxes); warns about the perspective that differs from it and about a point that falls outside the canvas',
   },
   parseContainerBoxes: {
     sig: 'parseContainerBoxes(texto)',
-    desc: 'Map de id para { x, y, width, height, scale } a partir do data-container-boxes (parte pura)',
+    desc: 'Map from id to { x, y, width, height, scale } from data-container-boxes (pure part)',
   },
   onCanvas: {
     sig: 'onCanvas(page, { x, y })',
-    desc: 'o ponto de tela cai no canvas? devolve { ok, element } (o que está no ponto)',
+    desc: 'does the screen point fall on the canvas? returns { ok, element } (what is at the point)',
   },
   viewCenter: {
     sig: 'viewCenter(page)',
-    desc: 'centro da vista: { x, y } de tela e canvas: { x, y } em unidades do canvas',
+    desc: 'center of the view: { x, y } on screen and canvas: { x, y } in canvas units',
   },
   arrowHandlesOf: {
     sig: 'arrowHandlesOf(page)',
-    desc: 'pontos de tela do meio (center) e das alças da seta selecionada, ou null',
+    desc: 'screen points of the middle (center) and of the handles of the selected arrow, or null',
   },
   parseArrowHandles: {
     sig: 'parseArrowHandles(texto, host)',
-    desc: 'objeto nome → ponto de tela a partir do data-arrow-handles (parte pura)',
+    desc: 'object name → screen point from data-arrow-handles (pure part)',
   },
   runStep: {
     sig: 'runStep(corpo, { apoioDir, projectDir?, prazoSeconds?, connectFn?, ctx?, io? })',
-    desc: 'executa o corpo de um script de passo sem servidor (o caminho de reserva do run); no corpo valem também ctx, check(rotulo, condicao, detalhe?) e console',
+    desc: 'runs the body of a step script without a server (the fallback path of run); in the body ctx, check(rotulo, condicao, detalhe?) and console are also available',
   },
   startRunServer: {
     sig: 'startRunServer({ apoioDir, connectFn?, onExit? })',
-    desc: 'sobe o servidor persistente do run no soquete apoio/cloud.sock (o que o comando serve usa)',
+    desc: 'starts the persistent run server on the apoio/cloud.sock socket (what the serve command uses)',
   },
   runViaServer: {
     sig: 'runViaServer(corpo, { apoioDir, projectDir?, prazoSeconds?, novo?, socketWaitMs?, spawnServer?, connectFn?, io? })',
-    desc: 'manda o corpo ao servidor persistente (sobe um se faltar) e devolve o código 0, 1 ou 124; sem servidor cai no runStep e avisa',
+    desc: 'sends the body to the persistent server (starts one if missing) and returns code 0, 1 or 124; without a server falls back to runStep and warns',
   },
   HELP: {
     sig: 'HELP',
-    desc: 'esta tabela: comandos e exports com assinatura e descrição',
+    desc: 'this table: commands and exports with signature and description',
   },
-  formatHelp: { sig: 'formatHelp()', desc: 'texto que o comando help imprime' },
+  formatHelp: { sig: 'formatHelp()', desc: 'text that the help command prints' },
 };
 
-/** Comandos da CLI, para o `help`. */
+/** CLI commands, for `help`. */
 const CLI_HELP = [
-  ['mark <roteiro> <start|end>', 'marca início ou fim de um roteiro no tempos.log'],
+  ['mark <script> <start|end>', 'marks the start or end of a test script in tempos.log'],
   [
     'tempos [<apoio>]',
-    'duração por roteiro, do tempos.log, com o total de run e de checks do runs.log',
+    'duration per script, from tempos.log, with the total of runs and checks from runs.log',
   ],
-  ['state [<pasta-do-projeto>]', 'conecta, imprime o estado da tela e do disco e sai'],
+  ['state [<project-folder>]', 'connects, prints the screen and disk state and exits'],
   [
-    'ponto <container> <x> <y> <pasta-do-projeto> [--perspectiva=<nome>] [--marcacao]',
-    'ponto de tela de um ponto do container',
+    'ponto <container> <x> <y> <project-folder> [--perspectiva=<name>] [--marcacao]',
+    'screen point of a container point',
   ],
   [
-    'run [<pasta-do-projeto>] [--prazo=<s>] [--novo]',
-    "executa o corpo do script lido da entrada padrão (heredoc <<'JS') num servidor persistente (a conexão e o ctx ficam entre os run; apoio/cloud.sock), com page, browser, apoioDir, projectDir, ctx, check(rotulo, condicao, detalhe?) e os exports em escopo; imprime uma linha por check e o estado; sai 0, 1 (erro ou check com falha) ou 124 (prazo de 90 s; o servidor sai); --novo reinicia o servidor; cada run fica em apoio/runs/<n>.js e .out e em apoio/runs.log",
+    'run [<project-folder>] [--prazo=<s>] [--novo]',
+    "runs the script body read from standard input (heredoc <<'JS') on a persistent server (the connection and the ctx stay between runs; apoio/cloud.sock), with page, browser, apoioDir, projectDir, ctx, check(rotulo, condicao, detalhe?) and the exports in scope; prints one line per check and the state; exits 0, 1 (error or failed check) or 124 (90 s timeout; the server exits); --novo restarts the server; each run is kept in apoio/runs/<n>.js and .out and in apoio/runs.log",
   ],
   [
     'serve',
-    'o servidor persistente do run (apoio/cloud.sock, log em apoio/cloud-serve.log); o primeiro run o sobe sozinho, o cloud-up.sh --restart-chrome o para',
+    'the persistent run server (apoio/cloud.sock, log in apoio/cloud-serve.log); the first run starts it by itself, cloud-up.sh --restart-chrome stops it',
   ],
   [
-    'find <texto>',
-    'lista até 10 elementos visíveis cujo nome contém o texto (papel, nome, região)',
+    'find <text>',
+    'lists up to 10 visible elements whose name contains the text (role, name, region)',
   ],
   [
-    'passo <item…> [--guia=<arquivo>] [--preparo]',
-    'imprime do guia da rodada (<APOIO>/guia.md) o roteiro (R12), um passo (R12.4) ou uma faixa (R12.1-R12.8), sem abrir o Chrome; com --preparo, só o trecho do roteiro inteiro antes do primeiro passo (título, O que cobre, Preparo e blocos de código: as funções de um roteiro que a faixa não traz); item que o guia da rodada não tem sai do docs/TESTING.md, com a primeira linha dizendo; passa de 25 mil caracteres, corta e diz como continuar',
+    'passo <item…> [--guia=<file>] [--preparo]',
+    'prints from the round guide (<APOIO>/guia.md) a test script (R12), a step (R12.4) or a range (R12.1-R12.8), without opening Chrome; with --preparo, only the part of the whole script before the first step (title, What it covers, Setup and code blocks: the functions of a script that the range does not bring); an item the round guide does not have comes from docs/TESTING.md, with the first line saying so; over 25 thousand characters, cuts and says how to continue',
   ],
   [
-    'secao [<chave…>] [--guia=<arquivo>]',
-    'imprime uma seção sob demanda do guia da rodada (1, 2, 3, 5, 6, 7, A.seletores, B) ou do docs/TESTING-NUVEM-CONSULTA.md (consulta.subagente, consulta.grupos, consulta.passada, consulta.regras, consulta.historico), sem abrir o Chrome; sem chave, lista as chaves com o tamanho e o quando ler; corta em 25 mil caracteres',
+    'secao [<key…>] [--guia=<file>]',
+    'prints an on-demand section of the round guide (1, 2, 3, 5, 6, 7, A.seletores, B) or of docs/TESTING-NUVEM-CONSULTA.md (consulta.subagente, consulta.grupos, consulta.passada, consulta.regras, consulta.historico), without opening Chrome; without a key, lists the keys with the size and when to read; cuts at 25 thousand characters',
   ],
-  ['help', 'esta lista'],
+  ['help', 'this list'],
 ];
 
-/** Texto do `cloud.mjs help`: os comandos da CLI e a assinatura de cada export, uma linha cada. */
+/** Text of `cloud.mjs help`: the CLI commands and the signature of each export, one line each. */
 export function formatHelp() {
-  const lines = ['Comandos (node scripts/testing/cloud.mjs <comando>):'];
+  const lines = ['Commands (node scripts/testing/cloud.mjs <command>):'];
   for (const [usage, desc] of CLI_HELP) lines.push(`  cloud.mjs ${usage}\n      ${desc}`);
   lines.push(
     '',
-    'Exports (import { ... } de cloud.mjs; todos em escopo no corpo do run):',
+    'Exports (import { ... } from cloud.mjs; all in scope in the run body):',
   );
   for (const { sig, desc } of Object.values(HELP)) lines.push(`  ${sig}\n      ${desc}`);
   return lines.join('\n');
 }
 
-/** `APOIO`, ou a pasta padrão com um aviso; `null` (e a explicação no stderr) se não achar. */
+/** `APOIO`, or the default folder with a warning; `null` (and the explanation on stderr) if not found. */
 function resolveApoio(explicit) {
   const apoioDir = explicit ?? process.env.APOIO;
   if (apoioDir) return apoioDir;
   const found = defaultApoioDir();
   if (found) {
-    console.error(
-      `Aviso: APOIO não está definido; usando ${found} (a rodada mais recente).`,
-    );
+    console.error(`Warning: APOIO is not set; using ${found} (the most recent round).`);
     return found;
   }
   console.error(
-    'APOIO (a pasta apoio/ da rodada) não está definido e não há ~/mapping-testes/*/apoio.',
+    "APOIO (the round's apoio/ folder) is not set and there is no ~/mapping-testes/*/apoio.",
   );
   return null;
 }
 
-/** `passo <item…> [--guia=<arquivo>] [--preparo]`: imprime o trecho do guia da rodada (etapa #1232, GL1; `--preparo`, #1639, TC1). */
+/** `passo <item…> [--guia=<file>] [--preparo]`: prints the excerpt of the round guide (stage #1232, GL1; `--preparo`, #1639, TC1). */
 function runPasso(args) {
   const guiaArg = args.find((a) => a.startsWith('--guia='));
   const preparo = args.includes('--preparo');
   const items = args.filter((a) => !a.startsWith('--guia=') && a !== '--preparo');
   if (items.length === 0 || (guiaArg && guiaArg.length === 7)) {
     console.error(
-      'Uso: node cloud.mjs passo <item…> [--guia=<arquivo>]\n     node cloud.mjs passo <Rn…> --preparo   (só o trecho antes do primeiro passo, de roteiros inteiros)',
+      'Usage: node cloud.mjs passo <item…> [--guia=<file>]\n       node cloud.mjs passo <Rn…> --preparo   (only the part before the first step, of whole scripts)',
     );
     process.exitCode = 2;
     return;
@@ -2798,14 +2814,14 @@ function runPasso(args) {
   } catch (error) {
     console.error(
       error.code === 'ENOENT'
-        ? `Não achei o guia da rodada: ${file}. Gere-o com round-guide.mjs --out.`
+        ? `Could not find the round guide: ${file}. Generate it with round-guide.mjs --out.`
         : error.message,
     );
     process.exitCode = 2;
   }
 }
 
-/** O `docs/TESTING.md` do clone (ao lado do `scripts/`), ou `undefined`: o `passo` cai nele para item fora do guia da rodada. */
+/** The clone's `docs/TESTING.md` (next to `scripts/`), or `undefined`: `passo` falls back to it for an item outside the round guide. */
 function readTestingGuide() {
   const file = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -2821,7 +2837,7 @@ function readTestingGuide() {
   }
 }
 
-/** O `docs/TESTING-NUVEM-CONSULTA.md` do clone (ao lado do `scripts/`), ou `undefined` se não existir. */
+/** The clone's `docs/TESTING-NUVEM-CONSULTA.md` (next to `scripts/`), or `undefined` if it does not exist. */
 function readConsulta() {
   const file = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -2837,12 +2853,12 @@ function readConsulta() {
   }
 }
 
-/** `secao [<chave…>] [--guia=<arquivo>]`: imprime seções sob demanda do guia da rodada (etapa #1533, TE1). */
+/** `secao [<key…>] [--guia=<file>]`: prints on-demand sections of the round guide (stage #1533, TE1). */
 function runSecao(args) {
   const guiaArg = args.find((a) => a.startsWith('--guia='));
   const chaves = args.filter((a) => !a.startsWith('--guia='));
   if (guiaArg && guiaArg.length === 7) {
-    console.error('Uso: node cloud.mjs secao [<chave…>] [--guia=<arquivo>]');
+    console.error('Usage: node cloud.mjs secao [<key…>] [--guia=<file>]');
     process.exitCode = 2;
     return;
   }
@@ -2866,14 +2882,14 @@ function runSecao(args) {
   } catch (error) {
     console.error(
       error.code === 'ENOENT'
-        ? `Não achei o guia da rodada: ${file}. Gere-o com round-guide.mjs --out.`
+        ? `Could not find the round guide: ${file}. Generate it with round-guide.mjs --out.`
         : error.message,
     );
     process.exitCode = 2;
   }
 }
 
-/** Roda a CLI (`mark`, `state`, `tempos`, `ponto`, `run`, `serve`, `passo`, `secao` e `help`); lê a pasta de apoio de `APOIO` (ou, sem ela, da rodada mais recente). */
+/** Runs the CLI (`mark`, `state`, `tempos`, `ponto`, `run`, `serve`, `passo`, `secao` and `help`); reads the support folder from `APOIO` (or, without it, from the most recent round). */
 async function runCli(argv) {
   const [command, ...rest] = argv;
   if (command === 'mark') {
@@ -2884,7 +2900,7 @@ async function runCli(argv) {
       return;
     }
     if (!roteiro || !fase) {
-      console.error('Uso: node cloud.mjs mark <roteiro> <start|end>');
+      console.error('Usage: node cloud.mjs mark <script> <start|end>');
       process.exitCode = 2;
       return;
     }
@@ -2918,7 +2934,7 @@ async function runCli(argv) {
       !projectDir
     ) {
       console.error(
-        'Uso: node cloud.mjs ponto <container> <x> <y> <pasta-do-projeto> [--perspectiva=<nome>] [--marcacao]',
+        'Usage: node cloud.mjs ponto <container> <x> <y> <project-folder> [--perspectiva=<name>] [--marcacao]',
       );
       process.exitCode = 2;
       return;
@@ -2947,7 +2963,7 @@ async function runCli(argv) {
     const texto = rest.join(' ').trim();
     const apoioDir = texto ? resolveApoio() : null;
     if (!texto || !apoioDir) {
-      if (!texto) console.error('Uso: node cloud.mjs find <texto>');
+      if (!texto) console.error('Usage: node cloud.mjs find <text>');
       process.exitCode = 2;
       return;
     }
@@ -2987,7 +3003,7 @@ async function runCli(argv) {
     const projectDir = rest.find((a) => !a.startsWith('--'));
     const apoioDir = resolveApoio();
     const usage =
-      "Uso: node cloud.mjs run [<pasta-do-projeto>] [--prazo=<s>] [--novo] <<'JS' ... JS";
+      "Usage: node cloud.mjs run [<project-folder>] [--prazo=<s>] [--novo] <<'JS' ... JS";
     if (!apoioDir || (prazoArg && !(prazo > 0))) {
       if (apoioDir) console.error(usage);
       process.exitCode = 2;
@@ -3010,7 +3026,7 @@ async function runCli(argv) {
   if (command === 'tempos') {
     const apoioDir = resolveApoio(rest[0]);
     if (!apoioDir) {
-      console.error('Uso: node cloud.mjs tempos [<apoio>]');
+      console.error('Usage: node cloud.mjs tempos [<apoio>]');
       process.exitCode = 2;
       return;
     }
@@ -3018,7 +3034,7 @@ async function runCli(argv) {
     return;
   }
   console.error(
-    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto, run, serve, find, passo, secao, help.`,
+    `Unknown command: ${command}. Commands: mark, state, tempos, ponto, run, serve, find, passo, secao, help.`,
   );
   process.exitCode = 2;
 }

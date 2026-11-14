@@ -15,30 +15,30 @@ import {
 } from './types';
 import { reportError } from '../utils/report';
 
-/** Conteúdo de um projeto em memória, no formato da pasta (ver docs/FORMAT.md). */
+/** Contents of a project in memory, in the folder format (see docs/FORMAT.md). */
 export interface ProjectFiles {
   readonly mapping: string;
-  /** Caminho relativo (`images/foto.jpg`) → conteúdo. */
+  /** Relative path (`images/photo.jpg`) → contents. */
   readonly images: ReadonlyMap<string, Blob>;
-  /** Cópias das especializações: caminho relativo (`specs/sdui.json`) → texto. */
+  /** Copies of the specializations: relative path (`specs/sdui.json`) → text. */
   readonly specs: ReadonlyMap<string, string>;
   /**
-   * Os demais arquivos dos pacotes da biblioteca (`specs/<id>/components/a.json`,
-   * `specs/<id>/fonts/Roboto.ttf`…): caminho relativo → bytes, preservados. O arquivo da
-   * especialização do pacote (e qualquer `.json` de `specs/`) vai também em `specs` (texto), e
-   * ao gravar `specs` prevalece. Ausente = nenhum.
+   * The other files of the library packages (`specs/<id>/components/a.json`,
+   * `specs/<id>/fonts/Roboto.ttf`…): relative path → bytes, preserved. The package's
+   * specialization file (and any `.json` in `specs/`) also goes in `specs` (text), and
+   * when writing, `specs` prevails. Absent = none.
    */
   readonly specAssets?: ReadonlyMap<string, Blob>;
-  /** Propostas de alteração: `proposals/<id>/proposal.json` → texto (como está, sem validar). */
+  /** Change proposals: `proposals/<id>/proposal.json` → text (as is, not validated). */
   readonly proposals: ReadonlyMap<string, string>;
   /**
-   * Arquivos que esperam a aceitação de uma proposta: imagens (`proposals/<id>/images/…`) e
-   * pacotes de biblioteca (`proposals/<id>/specs/<pasta>/…`) → conteúdo.
+   * Files waiting for a proposal to be accepted: images (`proposals/<id>/images/…`) and
+   * library packages (`proposals/<id>/specs/<folder>/…`) → contents.
    */
   readonly proposalImages: ReadonlyMap<string, Blob>;
   /**
-   * Conversas: `comments/<id>.json` e `comments/resolved/<id>.json` → texto (como está, sem
-   * validar; o de um arquivo inválido volta idêntico). Ausente = nenhuma.
+   * Threads: `comments/<id>.json` and `comments/resolved/<id>.json` → text (as is, not
+   * validated; that of an invalid file comes back identical). Absent = none.
    */
   readonly threads?: ReadonlyMap<string, string>;
 }
@@ -52,8 +52,8 @@ async function imageBlob(entry: JSZip.JSZipObject, relative: string): Promise<Bl
 }
 
 /**
- * Lê, em paralelo, os arquivos de `<root><dir>/` do zip. `read` recebe o caminho relativo à
- * raiz do projeto e devolve `null` para o que não interessa; o resultado mantém a ordem do zip.
+ * Reads, in parallel, the zip files under `<root><dir>/`. `read` receives the path relative to
+ * the project root and returns `null` for what is not of interest; the result keeps the zip order.
  */
 async function readUnder<T>(
   zip: JSZip,
@@ -75,9 +75,9 @@ type JSZipEntry = JSZip.JSZipObject;
 async function readSpecRow(relative: string, entry: JSZipEntry) {
   return {
     relative,
-    // Todo `.json` de `specs/` entra em `specs` (a leitura do projeto precisa do texto das
-    // especializações, inclusive a de dentro do pacote); o que está em pasta de pacote entra
-    // também em `specAssets`, com os bytes.
+    // Every `.json` in `specs/` goes into `specs` (reading the project needs the text of the
+    // specializations, including the one inside the package); what is in a package folder also
+    // goes into `specAssets`, with the bytes.
     text: isSpecPath(relative) ? await entry.async('string') : null,
     asset: isSpecPackagePath(relative)
       ? new Blob([await entry.async('arraybuffer')])
@@ -96,7 +96,7 @@ async function readProposalRow(relative: string, entry: JSZipEntry) {
   return { relative, text: null, image: new Blob([await entry.async('arraybuffer')]) };
 }
 
-/** O `mapping.json` mais raso do zip (ignora `__MACOSX/`), com a pasta onde ele está. */
+/** The shallowest `mapping.json` in the zip (ignores `__MACOSX/`), with the folder it is in. */
 function findMapping(
   zip: JSZip,
 ): { mappingPath: string; mappingEntry: JSZipEntry } | null {
@@ -110,8 +110,8 @@ function findMapping(
 }
 
 /**
- * Lê um zip de projeto. Aceita o conteúdo na raiz ou dentro de uma pasta
- * (zip feito a partir de "meu-projeto/"): vale o `mapping.json` mais raso.
+ * Reads a project zip. Accepts the contents at the root or inside a folder
+ * (zip made from "my-project/"): the shallowest `mapping.json` wins.
  */
 export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
   let zip: JSZip;
@@ -168,7 +168,7 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
   };
 }
 
-/** Gera o zip com `mapping.json`, `images/`, `specs/`, `proposals/` e `comments/` na raiz. */
+/** Produces the zip with `mapping.json`, `images/`, `specs/`, `proposals/`, `comments/` at the root. */
 export async function writeProjectZip(files: ProjectFiles): Promise<Blob> {
   const zip = new JSZip();
   zip.file(MAPPING_FILE, files.mapping);
@@ -179,7 +179,7 @@ export async function writeProjectZip(files: ProjectFiles): Promise<Blob> {
   for (const [path, text] of files.proposals) zip.file(path, text);
   for (const [path, text] of files.threads ?? []) zip.file(path, text);
   for (const [path, blob] of [...files.images, ...files.proposalImages]) {
-    // Imagens já são comprimidas: guardar sem recomprimir é mais rápido.
+    // Images are already compressed: storing without recompressing is faster.
     zip.file(path, await blob.arrayBuffer(), { compression: 'STORE' });
   }
   const bytes = await zip.generateAsync({
@@ -190,7 +190,7 @@ export async function writeProjectZip(files: ProjectFiles): Promise<Blob> {
   return new Blob([bytes], { type: 'application/zip' });
 }
 
-/** Nome de arquivo seguro para o zip exportado; `fallback` é o nome quando o do projeto é vazio. */
+/** Safe file name for the exported zip; `fallback` is the name when the project's is empty. */
 export function zipFileName(projectName: string, fallback: string): string {
   const safe = [...projectName]
     .map((c) => (c < ' ' || '\\/:*?"<>|'.includes(c) ? '-' : c))

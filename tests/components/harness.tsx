@@ -16,15 +16,15 @@ export interface Harness {
   readonly store: ProjectStore;
   readonly actions: ProjectActions;
   readonly ui: EditorUi;
-  /** Contexto que os componentes do editor leem (`useEditor`). */
+  /** Context that the editor components read (`useEditor`). */
   readonly context: ReturnType<typeof createEditorContextValue>;
-  /** Projeto atual do store (falha se não houver). */
+  /** Current project of the store (fails if there is none). */
   project(): Project;
 }
 
 /**
- * Sessão, store, actions e UI reais (pasta em memória), com o projeto carregado: os
- * componentes mexem no modelo de verdade, lendo tudo do `EditorContext`.
+ * Real session, store, actions and UI (in-memory folder), with the project loaded: the
+ * components change the real model, reading everything from the `EditorContext`.
  */
 export function createHarness(
   project: Project,
@@ -32,12 +32,13 @@ export function createHarness(
   extra: { readonly libraryIssues?: LibraryIssues } = {},
 ): Harness {
   const session = openSession({
-    // `copyId`: toda sessão recebe a cópia (8.4); sem ela a revisão registra no Diagnóstico.
+    // `copyId`: every session receives the copy (8.4); without it the review logs in the Diagnostics.
+    // pt-BR kept: shared fixture data asserted by tests/components (folder name 'projeto')
     storage: createFolderStorage(new MemoryDirectory('projeto'), { copyId: 'harness' }),
     project,
     readOnly,
     ...extra,
-    prepareImage: () => Promise.reject(new Error('imagens não são usadas aqui')),
+    prepareImage: () => Promise.reject(new Error('images are not used here')),
     now: () => '2026-10-02T12:00:00.000Z',
   });
   const context = createEditorContextValue({
@@ -55,7 +56,7 @@ export function createHarness(
     context,
     project() {
       const p = store.project.value;
-      if (!p) throw new Error('sem projeto');
+      if (!p) throw new Error('no project');
       return p;
     },
   };
@@ -68,11 +69,11 @@ function Live({
   readonly harness: Harness;
   readonly children: (project: Project) => ComponentChildren;
 }) {
-  // Ler o signal aqui re-renderiza o componente a cada mudança do projeto, como no Editor.
+  // Reading the signal here re-renders the component on every project change, as in the Editor.
   return <>{children(harness.project())}</>;
 }
 
-/** Renderiza `children` com o projeto sempre atualizado a partir do store. */
+/** Renders `children` with the project always up to date from the store. */
 export function renderLive(
   harness: Harness,
   children: (project: Project) => ComponentChildren,
@@ -86,6 +87,6 @@ export function renderLive(
 
 export function annotationOf(project: Project, id: string) {
   const found = project.annotations.find((a) => a.id === id);
-  if (!found) throw new Error(`anotação ${id} não encontrada`);
+  if (!found) throw new Error(`annotation ${id} not found`);
   return found;
 }

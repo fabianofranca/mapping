@@ -2,57 +2,57 @@ import { signal, type ReadonlySignal } from '@preact/signals';
 import { reportError } from '../utils/report';
 
 /**
- * Debounce entre a última alteração e a gravação. As edições gravam uma vez por ação (campos
- * de texto, inclusive a chave e o valor das anotações livres, ao confirmar com Enter ou ao
- * sair do campo; gestos; painéis): o debounce agrupa ações em sequência, como mover com as
- * setas. Curto para encolher a janela em que uma edição só existe em memória (fechar a aba).
- * Operações caras (imagens, especializações) e sair da página gravam na hora com `flush()`.
+ * Debounce between the last change and the write. Edits write once per action (text fields,
+ * including the key and value of free annotations, on confirming with Enter or on leaving
+ * the field; gestures; panels): the debounce groups actions in sequence, like moving with the
+ * arrows. Short to shrink the window in which an edit exists only in memory (closing the tab).
+ * Expensive operations (images, specializations) and leaving the page write at once with `flush()`.
  */
 export const AUTOSAVE_DELAY_MS = 250;
 
 /**
- * `saving` cobre a espera do debounce, a espera na fila e a gravação em andamento: enquanto
- * há uma gravação rodando o status é sempre `saving`, mesmo que a anterior tenha falhado.
+ * `saving` covers the debounce wait, the wait in the queue and the write in progress: while
+ * a write is running the status is always `saving`, even if the previous one failed.
  */
 export type SaveStatus = 'saved' | 'saving' | 'error';
 
 /**
- * O que `flush` conseguiu: `ok` se não ficou nada pendente (gravou, ou não havia o que
- * gravar). Nunca rejeita: quem não precisa saber (o timer, fechar a aba) ignora o retorno.
+ * What `flush` achieved: `ok` if nothing was left pending (it wrote, or there was nothing to
+ * write). Never rejects: whoever does not need to know (the timer, closing the tab) ignores the return.
  */
 export type FlushResult =
   { readonly ok: true } | { readonly ok: false; readonly error: unknown };
 
 export interface AutoSaver {
   readonly status: ReadonlySignal<SaveStatus>;
-  /** Avisa que houve alteração: grava depois do debounce. */
+  /** Reports that there was a change: writes after the debounce. */
   schedule(): void;
-  /** Enfileira a gravação do pendente agora (ou a nova tentativa após um erro) e diz se gravou. */
+  /** Queues the write of the pending change now (or the retry after an error) and says whether it wrote. */
   flush(): Promise<FlushResult>;
   /**
-   * Enfileira um trabalho que não pode cruzar com uma gravação (conferir o arquivo,
-   * recarregar o projeto, decidir o conflito). O trabalho roda quando a gravação ou o
-   * trabalho anterior terminar, e a gravação seguinte espera por ele. Um trabalho **nunca**
-   * chama `flush()` nem `enqueue()`: a espera ficaria atrás dele mesmo.
+   * Queues a job that cannot cross with a write (checking the file,
+   * reloading the project, deciding the conflict). The job runs when the write or the
+   * previous job finishes, and the next write waits for it. A job **never**
+   * calls `flush()` or `enqueue()`: the wait would be behind itself.
    */
   enqueue<T>(job: () => Promise<T>): Promise<T>;
   /**
-   * Descarta o que estiver pendente (o projeto foi recarregado do disco): cancela o debounce
-   * e a gravação enfileirada ainda não iniciada; uma gravação em curso termina sem mexer no
-   * estado. Volta a `saved` (ou assim que a gravação em curso terminar).
+   * Discards whatever is pending (the project was reloaded from disk): cancels the debounce
+   * and the queued write not yet started; a write in progress finishes without touching the
+   * state. Returns to `saved` (or as soon as the write in progress finishes).
    */
   reset(): void;
   dispose(): void;
 }
 
 /**
- * Salvamento automático com debounce e **uma fila só**: gravações e os trabalhos de
- * `enqueue` nunca rodam em paralelo; uma alteração feita durante a gravação agenda outra.
- * Após um erro, a próxima alteração (ou `flush`) tenta de novo.
+ * Autosave with debounce and **a single queue**: writes and the `enqueue` jobs
+ * never run in parallel; a change made during the write schedules another.
+ * After an error, the next change (or `flush`) tries again.
  *
- * Invariantes (teste em `tests/storage/autosave.test.ts`): `status === 'saved'` ⇒ nenhuma
- * gravação em curso, nada pendente e nenhum timer; gravação em curso ⇒ `status === 'saving'`;
- * `status === 'error'` ⇒ nenhuma gravação em curso.
+ * Invariants (test in `tests/storage/autosave.test.ts`): `status === 'saved'` ⇒ no write
+ * in progress, nothing pending and no timer; write in progress ⇒ `status === 'saving'`;
+ * `status === 'error'` ⇒ no write in progress.
  */
 export function createAutoSaver(
   save: () => Promise<void>,
@@ -60,14 +60,14 @@ export function createAutoSaver(
 ): AutoSaver {
   const status = signal<SaveStatus>('saved');
   let timer: ReturnType<typeof setTimeout> | undefined;
-  // Houve alteração desde a última gravação bem-sucedida.
+  // There was a change since the last successful write.
   let dirty = false;
-  // `save()` rodando agora.
+  // `save()` running now.
   let inFlight = false;
-  // Sobe a cada `reset()`: a gravação em curso naquele momento não mexe mais no estado.
+  // Rises on every `reset()`: the write in progress at that moment no longer touches the state.
   let generation = 0;
   let disposed = false;
-  // A fila: cada trabalho começa quando o anterior termina (bem ou mal).
+  // The queue: each job starts when the previous one ends (well or badly).
   let tail: Promise<unknown> = Promise.resolve();
 
   const enqueue = <T>(job: () => Promise<T>): Promise<T> => {
@@ -81,10 +81,10 @@ export function createAutoSaver(
     timer = undefined;
   };
 
-  /** O trabalho de gravação: grava tudo que está pendente neste instante. */
+  /** The write job: writes everything that is pending at this instant. */
   const write = async (): Promise<FlushResult> => {
     if (!dirty) {
-      // Nada a gravar (o pendente foi gravado ou descartado antes de este trabalho começar).
+      // Nothing to write (the pending change was written or discarded before this job started).
       if (status.value !== 'error') status.value = 'saved';
       return { ok: true };
     }
@@ -102,7 +102,7 @@ export function createAutoSaver(
         dirty = true;
         status.value = 'error';
       } else {
-        // O pendente foi descartado por um `reset()` no meio: a falha dele não conta.
+        // The pending change was discarded by a `reset()` in the middle: its failure does not count.
         status.value = dirty ? 'saving' : 'saved';
       }
       return { ok: false, error: e };

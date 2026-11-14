@@ -15,10 +15,10 @@ import type {
   ProjectSpecialization,
 } from './types';
 
-// Consultas às especializações aplicadas ao projeto (conteúdo em memória).
+// Queries on the specializations applied to the project (in-memory content).
 
-// O resolvedor dos filhos de um tipo (`allowedChildren` com ids e cláusulas) mora em
-// `specChildren.ts`, sem dependência do índice do projeto, porque o validador de `spec.ts` o usa.
+// The resolver of a type's children (`allowedChildren` with ids and clauses) lives in
+// `specChildren.ts`, with no dependency on the project index, because the `spec.ts` validator uses it.
 export {
   childTypeIds,
   isChildTypeAllowed,
@@ -33,7 +33,7 @@ export function getSpecialization(
   return projectIndex(p).specializations.get(specId) ?? null;
 }
 
-/** Conteúdo da especialização aplicada; `null` se não aplicada ou arquivo ausente. */
+/** Content of the applied specialization; `null` if not applied or the file is missing. */
 export function getSpec(p: Project, specId: string): Spec | null {
   return getSpecialization(p, specId)?.spec ?? null;
 }
@@ -44,7 +44,7 @@ export interface ResolvedType {
   readonly type: SpecAnnotationType;
 }
 
-/** Tipo na especialização inteira (os ids de tipo são únicos nela). */
+/** Type in the whole specialization (type ids are unique in it). */
 export function findTypeInSpec(spec: Spec, typeId: string): ResolvedType | null {
   for (const layer of spec.layers) {
     const type = layer.annotationTypes.find((t) => t.id === typeId);
@@ -57,19 +57,19 @@ export function findSpecType(p: Project, ref: AnnotationTypeRef): ResolvedType |
   return projectIndex(p).types.get(typeKey(ref.specId, ref.typeId)) ?? null;
 }
 
-/** Tipo da anotação; `null` se ela é livre ou o tipo não existe mais. */
+/** Type of the annotation; `null` if it is free or the type no longer exists. */
 export function typeOfAnnotation(p: Project, a: Annotation): ResolvedType | null {
   return a.type ? findSpecType(p, a.type) : null;
 }
 
-/** Camada de origem da camada do projeto; `null` para camada livre ou spec ausente. */
+/** Source layer of the project layer; `null` for a free layer or a missing spec. */
 export function specLayerOf(p: Project, layer: Layer): SpecLayer | null {
   if (!layer.spec) return null;
   const { specId, layerId } = layer.spec;
   return projectIndex(p).specLayers.get(typeKey(specId, layerId)) ?? null;
 }
 
-/** Tipos que podem ser criados na camada do projeto (vazio para camada livre). */
+/** Types that can be created in the project layer (empty for a free layer). */
 export function layerAnnotationTypes(
   p: Project,
   layerId: string,
@@ -78,7 +78,7 @@ export function layerAnnotationTypes(
   return (layer && specLayerOf(p, layer)?.annotationTypes) ?? [];
 }
 
-/** Camada do projeto criada a partir da camada `specLayerId` da especialização. */
+/** Project layer created from the specialization's layer `specLayerId`. */
 export function projectLayerFor(
   p: Project,
   specId: string,
@@ -91,7 +91,7 @@ export function fieldOf(type: SpecAnnotationType, key: string): SpecField | null
   return type.fields.find((f) => f.key === key) ?? null;
 }
 
-/** `true` se as duas listas de etiquetas têm alguma em comum. */
+/** `true` if the two tag lists have any tag in common. */
 export function sharesTag(
   a: readonly string[] | undefined,
   b: readonly string[] | undefined,
@@ -99,7 +99,7 @@ export function sharesTag(
   return (a ?? []).some((tag) => (b ?? []).includes(tag));
 }
 
-/** `true` se `owner` pode ser dono de uma anotação do tipo `child` (`allowedChildren`). */
+/** `true` if `owner` can own an annotation of type `child` (`allowedChildren`). */
 export function isAllowedOwner(
   p: Project,
   child: AnnotationTypeRef,
@@ -112,15 +112,15 @@ export function isAllowedOwner(
   );
 }
 
-/** Papéis que o tipo da dona oferece e o rótulo deles (v11, `childRoles`); `null` = dono sem papéis. */
+/** Roles that the owner's type offers and their label (v11, `childRoles`); `null` = owner without roles. */
 export interface OwnerRoles {
   readonly label: string | null;
   readonly roles: readonly SpecChildRole[];
 }
 
 /**
- * Os papéis que o tipo de `owner` oferece aos filhos. `null` quando a dona é livre, de tipo
- * desconhecido ou o tipo dela não declara `childRoles`.
+ * The roles that the type of `owner` offers to the children. `null` when the owner is free, of an
+ * unknown type or its type does not declare `childRoles`.
  */
 export function ownerRolesOf(p: Project, owner: Annotation): OwnerRoles | null {
   const type = typeOfAnnotation(p, owner)?.type;
@@ -130,9 +130,9 @@ export function ownerRolesOf(p: Project, owner: Annotation): OwnerRoles | null {
 }
 
 /**
- * Nome do papel `roleId` entre os que o tipo de `owner` oferece (v11, `childRoles`); o
- * próprio id quando o dono não o oferece, não tem papéis ou não existe (papel que a
- * especialização deixou de declarar não some do texto).
+ * Name of the role `roleId` among those the type of `owner` offers (v11, `childRoles`); the
+ * id itself when the owner does not offer it, has no roles or does not exist (a role the
+ * specialization stopped declaring does not vanish from the text).
  */
 export function roleNameOf(
   p: Project,
@@ -144,8 +144,8 @@ export function roleNameOf(
 }
 
 /**
- * O nome do papel em que `a` se liga ao dono ("Clique"), pelo tipo do dono; o id cru se o
- * dono não o oferece; `null` sem papel.
+ * The name of the role in which `a` links to the owner ("Click"), by the owner's type; the raw id if
+ * the owner does not offer it; `null` without a role.
  */
 export function roleLabelOf(p: Project, a: Annotation): string | null {
   if (a.parentRole === null) return null;

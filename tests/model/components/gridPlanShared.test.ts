@@ -1,5 +1,5 @@
-// CL1 (P3): a conta das extensões das linhas de fluxo e a leitura das chaves de trilha são uma só
-// (`gridPlan.ts`); `layout.ts`, `arrange.ts` e `componentMarkings.ts` a importam em vez de repeti-la.
+// CL1 (P3): the computation of the flow lines extents and the reading of the track keys are one single
+// (`gridPlan.ts`); `layout.ts`, `arrange.ts` and `componentMarkings.ts` import it instead of repeating it.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -14,19 +14,19 @@ const SRC = join(__dirname, '../../../src/model');
 const source = (file: string): string => readFileSync(join(SRC, file), 'utf8');
 
 describe('lineExtents (gridPlan)', () => {
-  it('a extensão de cada linha é a do maior filho dela', () => {
+  it('the extent of each line is that of its largest child', () => {
     const { cells, lines } = placeCells([1, 1, 1, 1, 1], 2);
     expect(lineExtents(cells, lines, [10, 30, 5, 5, 7])).toEqual([30, 5, 7]);
   });
 
-  it('sem filhos não há linha', () => {
+  it('without children there is no line', () => {
     expect(lineExtents([], 0, [])).toEqual([]);
   });
 });
 
-describe('uma só implementação', () => {
+describe('a single implementation', () => {
   it.each(['components/layout.ts', 'components/arrange.ts', 'componentMarkings.ts'])(
-    '%s não repete a conta das linhas de fluxo nem a validação das trilhas',
+    '%s does not repeat the computation of the flow lines nor the validation of the tracks',
     (file) => {
       const text = source(file);
       expect(text).not.toMatch(/function lineExtents\b/);
@@ -35,7 +35,7 @@ describe('uma só implementação', () => {
     },
   );
 
-  it('arrange.ts lê as chaves de trilha de gridPlan', () => {
+  it('arrange.ts reads the track keys from gridPlan', () => {
     expect(source('components/arrange.ts')).toMatch(
       /TRACK_KEYS[\s\S]*from '\.\/gridPlan'/,
     );

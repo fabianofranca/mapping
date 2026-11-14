@@ -7,8 +7,8 @@ import { Roots } from '../../mcp/paths';
 import { loadProject, type ProjectLocation } from '../../mcp/projects';
 import { readInvalidFixture } from '../model/invalidFixtures';
 
-// Projeto inconsistente no MCP: continua recusado (ler nunca grava, nem o reparo), mas a
-// resposta traz a mesma lista de problemas que a app mostra.
+// Inconsistent project in the MCP: still refused (reading never writes, not even the repair), but the
+// response carries the same list of problems that the app shows.
 
 function setup(text: string) {
   const root = mkdtempSync(join(tmpdir(), 'mapping-inconsistent-'));
@@ -19,8 +19,8 @@ function setup(text: string) {
   return { roots: new Roots([root]), dir, location };
 }
 
-describe('loadProject com dados inconsistentes', () => {
-  it('recusa com a lista de problemas (código, entidade, id e nome) e não grava nada', async () => {
+describe('loadProject with inconsistent data', () => {
+  it('refuses with the list of problems (code, entity, id and name) and writes nothing', async () => {
     const text = readInvalidFixture('missing-parent');
     const { roots, dir, location } = setup(text);
     const error = await loadProject(roots, location).then(
@@ -40,7 +40,7 @@ describe('loadProject com dados inconsistentes', () => {
         otherId: 'M9',
       },
     ]);
-    // O resultado do reparo (um projeto inteiro) não vai na resposta.
+    // The repair result (a whole project) does not go in the response.
     expect(JSON.stringify(json)).not.toContain('"markings"');
     expect(readFileSync(join(dir, 'mapping.json'), 'utf8')).toBe(text);
     expect(existsSync(join(dir, 'backups'))).toBe(false);

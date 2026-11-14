@@ -2,23 +2,23 @@ import { fail, type RectTooSmallData } from './errors';
 import type { ArrowPoint, Placement, ProjectContainer, Rect } from './types';
 
 /**
- * Tamanho mínimo de cada lado de uma marcação **comum** (sem componente) nos gestos e no MCP,
- * em pixels da imagem.
+ * Minimum size of each side of a **plain** marking (no component) in gestures and in the MCP,
+ * in image pixels.
  */
 export const MIN_MARKING_SIZE = 8;
 
 /**
- * Mínimo de cada lado de uma marcação com anotação de tipo **com componente** (o `minSize` do
- * componente, se houver, vale por cima) e de qualquer marcação ao ler o `mapping.json`.
+ * Minimum of each side of a marking with an annotation of a type **with a component** (the
+ * component's `minSize`, if any, takes precedence) and of any marking when reading `mapping.json`.
  */
 export const MIN_STORED_MARKING_SIZE = 1;
 
-/** Base do mínimo: 1 px quando há mínimo de componente (`componentMin`), 8 px (`MIN_MARKING_SIZE`) sem ele. */
+/** Base of the minimum: 1 px when there is a component minimum (`componentMin`), 8 px (`MIN_MARKING_SIZE`) without it. */
 export function markingMinBase(componentMin?: Size | null): number {
   return componentMin ? MIN_STORED_MARKING_SIZE : MIN_MARKING_SIZE;
 }
 
-/** Mínimo efetivo por lado: a base (1 ou 8) ou, quando maior, o `minSize` do componente. */
+/** Effective minimum per side: the base (1 or 8) or, when larger, the component's `minSize`. */
 export function effectiveMinSize(componentMin?: Size | null): Size {
   const base = markingMinBase(componentMin);
   return {
@@ -28,10 +28,10 @@ export function effectiveMinSize(componentMin?: Size | null): Size {
 }
 
 /**
- * Falha com `rect-too-small` se algum lado do retângulo ficar abaixo do mínimo: 8 px numa
- * marcação comum, 1 px (ou o `minSize` do componente, se maior) quando `componentMin` é dado,
- * isto é, quando a marcação desenha um componente. O `data` do erro diz o tamanho recebido, o
- * mínimo que valeu e de onde ele veio (`component` quando `componentMin` foi dado).
+ * Fails with `rect-too-small` if any side of the rectangle falls below the minimum: 8 px on a
+ * plain marking, 1 px (or the component's `minSize`, if larger) when `componentMin` is given,
+ * that is, when the marking draws a component. The error's `data` gives the received size, the
+ * minimum that applied and where it came from (`component` when `componentMin` was given).
  */
 export function checkRectSize(
   rect: Pick<Rect, 'width' | 'height'>,
@@ -47,12 +47,12 @@ export function checkRectSize(
   fail('rect-too-small', undefined, data);
 }
 
-/** Tolerância para comparar coordenadas do canvas (ponto flutuante). */
+/** Tolerance for comparing canvas coordinates (floating point). */
 export const EPSILON = 1e-6;
 
 /**
- * Tira o ruído de ponto flutuante: perto de um inteiro (a menos de `eps`) devolve o inteiro,
- * nunca `-0`; fração de verdade (`1868.13`, `0.5`) fica como está. Valor não finito passa.
+ * Removes floating-point noise: near an integer (within `eps`) returns the integer,
+ * never `-0`; a real fraction (`1868.13`, `0.5`) stays as it is. A non-finite value passes through.
  */
 export function snapNearInteger(v: number, eps: number = EPSILON): number {
   if (!Number.isFinite(v)) return v;
@@ -62,10 +62,10 @@ export function snapNearInteger(v: number, eps: number = EPSILON): number {
 }
 
 /**
- * Posição (`x`, `y`) gravada: perto de um inteiro vira o inteiro (`274.9999999` → `275`); senão
- * a fração é cortada a 6 casas (`-739.6551724137931` → `-739.655172`). Nunca devolve `-0`. O desvio
- * (até 5e-7) fica abaixo da folga `EPSILON` do modelo, então nenhum encosto vira sobreposição.
- * Valor não finito passa como está (o `checkPlacement` o recusa depois).
+ * Stored position (`x`, `y`): near an integer becomes the integer (`274.9999999` → `275`); otherwise
+ * the fraction is cut to 6 places (`-739.6551724137931` → `-739.655172`). Never returns `-0`. The deviation
+ * (up to 5e-7) stays below the model's `EPSILON` slack, so no touching becomes an overlap.
+ * A non-finite value passes through as is (`checkPlacement` refuses it later).
  */
 export function snapCoordinate(v: number): number {
   if (!Number.isFinite(v)) return v;
@@ -75,9 +75,9 @@ export function snapCoordinate(v: number): number {
 }
 
 /**
- * Escala gravada: perto de um inteiro >= 1 vira o inteiro (a regra de sempre); senão fica com 12
- * algarismos significativos (`17.24137931034483` → `17.2413793103`), um desvio relativo de 5e-13.
- * Uma escala pequena nunca vira 0. Valor não finito passa como está.
+ * Stored scale: near an integer >= 1 becomes the integer (the usual rule); otherwise it keeps 12
+ * significant digits (`17.24137931034483` → `17.2413793103`), a relative deviation of 5e-13.
+ * A small scale never becomes 0. A non-finite value passes through as is.
  */
 export function snapScale(v: number): number {
   if (!Number.isFinite(v)) return v;
@@ -87,19 +87,19 @@ export function snapScale(v: number): number {
 }
 
 /**
- * Limpa a cauda de ponto flutuante do `placement` de um container (`snapCoordinate` em `x` e `y`,
- * `snapScale` na escala). Todas as portas que gravam posição ou escala de container passam por aqui:
- * - `setContainerPlacement` (mover, redimensionar, `update_container`), `moveContainer` e
+ * Cleans the floating-point tail of a container's `placement` (`snapCoordinate` on `x` and `y`,
+ * `snapScale` on the scale). All the doors that store a container's position or scale go through here:
+ * - `setContainerPlacement` (move, resize, `update_container`), `moveContainer` and
  *   `resizeContainer`;
- * - `moveItems` (arrasto conjunto);
- * - `placementNear` e `placementAtRight` (criar: `addContainer`, `addBackgroundContainer` com e
- *   sem `center`, o **Tamanho da seleção** e o `add_container`);
- * - `replaceContainer` (trocar a imagem, que muda a escala);
- * - o reparo `images-overlap` (`repair.ts`);
- * - as posições das perspectivas (`items[].x/y`, o mesmo que `placement.x/y`), por
- *   `snapCoordinate`: `movedItem`, o item reconciliado, `placeCreatedRoot`, a posição relativa e
- *   `placeInArrivalArea`, e o `base` do redimensionar em `perspectiveGestures.ts`.
- * A raiz que é marcação continua inteira (`Math.round` ou `Math.ceil` antes).
+ * - `moveItems` (joint drag);
+ * - `placementNear` and `placementAtRight` (create: `addContainer`, `addBackgroundContainer` with and
+ *   without `center`, the **Selection size** and `add_container`);
+ * - `replaceContainer` (replace the image, which changes the scale);
+ * - the `images-overlap` repair (`repair.ts`);
+ * - the perspectives' positions (`items[].x/y`, the same as `placement.x/y`), through
+ *   `snapCoordinate`: `movedItem`, the reconciled item, `placeCreatedRoot`, the relative position and
+ *   `placeInArrivalArea`, and the resize `base` in `perspectiveGestures.ts`.
+ * A root that is a marking stays whole (`Math.round` or `Math.ceil` beforehand).
  */
 export function snapPlacement(p: Placement): Placement {
   return { x: snapCoordinate(p.x), y: snapCoordinate(p.y), scale: snapScale(p.scale) };
@@ -117,12 +117,12 @@ export function area(r: Rect): number {
   return r.width * r.height;
 }
 
-/** Os dois retângulos são exatamente iguais (mesmo canto e mesmo tamanho)? */
+/** Are the two rectangles exactly equal (same corner and same size)? */
 export function sameRect(a: Rect, b: Rect): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
-/** `inner` totalmente dentro de `outer` (bordas coincidentes contam como dentro). */
+/** `inner` entirely inside `outer` (coinciding edges count as inside). */
 export function containsRect(outer: Rect, inner: Rect): boolean {
   return (
     inner.x >= outer.x &&
@@ -132,7 +132,7 @@ export function containsRect(outer: Rect, inner: Rect): boolean {
   );
 }
 
-/** Sobreposição com área positiva. Retângulos que só encostam não se sobrepõem. */
+/** Overlap with positive area. Rectangles that only touch do not overlap. */
 export function rectsOverlap(a: Rect, b: Rect): boolean {
   return (
     a.x < right(b) - EPSILON &&
@@ -143,11 +143,11 @@ export function rectsOverlap(a: Rect, b: Rect): boolean {
 }
 
 /**
- * O maior deslocamento de `moving` (retângulos que andam juntos) até `dx`, `dy` sem sobrepor
- * `fixed`: se o destino pedido não sobrepõe um fixo, volta como está; senão encosta e desliza,
- * eixo a eixo (primeiro o x, contra os fixos que o y atual cruza; depois o y, com o x já
- * aplicado). O movimento encosta no obstáculo (borda igual, distância 0) e desliza ao longo dele
- * no outro eixo. Quem já se sobrepõe não limita (não há "passar por dentro" a evitar).
+ * The largest displacement of `moving` (rectangles that move together) up to `dx`, `dy` without overlapping
+ * `fixed`: if the requested destination does not overlap a fixed one, it comes back as is; otherwise it touches and slides,
+ * axis by axis (first x, against the fixed ones the current y crosses; then y, with x already
+ * applied). The movement touches the obstacle (same edge, distance 0) and slides along it
+ * on the other axis. Whoever already overlaps does not limit (there is no "passing through" to avoid).
  */
 export function slideToTouch(
   moving: readonly Rect[],
@@ -156,7 +156,7 @@ export function slideToTouch(
   dy: number,
 ): { readonly dx: number; readonly dy: number } {
   const lands = moving.map((r) => ({ ...r, x: r.x + dx, y: r.y + dy }));
-  // Destino livre: fica como está (inclusive "passando por cima" de um container no caminho).
+  // Free destination: stays as is (including "passing over" a container in the way).
   if (!lands.some((m) => fixed.some((f) => rectsOverlap(m, f)))) return { dx, dy };
   const limitedX = limitX(moving, fixed, dx);
   const flip = (r: Rect): Rect => ({ x: r.y, y: r.x, width: r.height, height: r.width });
@@ -168,7 +168,7 @@ export function slideToTouch(
   return { dx: limitedX, dy: limitedY };
 }
 
-/** O maior deslocamento em x, até `delta`, sem passar de um fixo que o y atual cruza. */
+/** The largest displacement in x, up to `delta`, without passing a fixed one that the current y crosses. */
 function limitX(moving: readonly Rect[], fixed: readonly Rect[], delta: number): number {
   let limit = Math.abs(delta);
   for (const m of moving) {
@@ -182,10 +182,10 @@ function limitX(moving: readonly Rect[], fixed: readonly Rect[], delta: number):
 }
 
 /**
- * O deslocamento de um gesto depois de encostar: com `whole` (há marcação do canvas na seleção)
- * arredonda o pedido; filtra `fixed` pela caixa varrida (a envoltória de `moving` e de `moving`
- * deslocado por `dx`, `dy`, com folga `EPSILON`: um fixo fora dela não limita nenhum eixo, então o
- * resultado é o do cálculo sem filtro); chama `slideToTouch` e, com `whole`, trunca o resultado.
+ * A gesture's displacement after touching: with `whole` (there is a canvas marking in the selection)
+ * it rounds the request; filters `fixed` by the swept box (the envelope of `moving` and of `moving`
+ * displaced by `dx`, `dy`, with `EPSILON` slack: a fixed one outside it limits no axis, so the
+ * result is that of the unfiltered calculation); calls `slideToTouch` and, with `whole`, truncates the result.
  */
 export function touchDelta(
   moving: readonly Rect[],
@@ -237,12 +237,12 @@ export function isIntegerRect(r: Rect): boolean {
   return [r.x, r.y, r.width, r.height].every(Number.isInteger);
 }
 
-/** Retângulo da imagem inteira, em pixels da imagem. */
+/** Rectangle of the whole image, in image pixels. */
 export function imagePixelRect(image: Pick<ProjectContainer, 'width' | 'height'>): Rect {
   return { x: 0, y: 0, width: image.width, height: image.height };
 }
 
-/** Retângulo ocupado pela imagem no canvas, em unidades do canvas. */
+/** Rectangle occupied by the image on the canvas, in canvas units. */
 export function imageCanvasRect(
   image: Pick<ProjectContainer, 'width' | 'height'>,
   placement: Placement,
@@ -260,11 +260,11 @@ export function clamp(value: number, min: number, max: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// Espaços de coordenadas (v13): o de cada container (pixels inteiros dele) e o do canvas
-// (unidades inteiras do canvas). Uma marcação vive num só espaço; o assentar
-// (`hierarchySettle.ts`) decide qual e converte o `rect`.
+// Coordinate spaces (v13): that of each container (its integer pixels) and that of the canvas
+// (integer canvas units). A marking lives in a single space; the settle
+// (`hierarchySettle.ts`) decides which and converts the `rect`.
 
-/** `placement` do espaço do canvas: unidades do canvas são os "pixels" dele. */
+/** `placement` of the canvas space: canvas units are its "pixels". */
 export const IDENTITY_PLACEMENT: Placement = { x: 0, y: 0, scale: 1 };
 
 export interface Size {
@@ -272,7 +272,7 @@ export interface Size {
   readonly height: number;
 }
 
-/** Retângulo de um espaço (`placement` do container ou identidade) em unidades do canvas (decimal). */
+/** Rectangle of a space (container `placement` or identity) in canvas units (decimal). */
 export function toCanvasRect(placement: Placement, rect: Rect): Rect {
   return {
     x: placement.x + rect.x * placement.scale,
@@ -282,7 +282,7 @@ export function toCanvasRect(placement: Placement, rect: Rect): Rect {
   };
 }
 
-/** Ponto de um espaço (pixels do container, ou o canvas com `placement` identidade) em unidades do canvas. */
+/** Point of a space (container pixels, or the canvas with identity `placement`) in canvas units. */
 export function toCanvasPoint(placement: Placement, point: ArrowPoint): ArrowPoint {
   return {
     x: placement.x + point.x * placement.scale,
@@ -290,7 +290,7 @@ export function toCanvasPoint(placement: Placement, point: ArrowPoint): ArrowPoi
   };
 }
 
-/** Ponto do canvas no espaço de `placement`: o inverso de `toCanvasPoint` (sem arredondar). */
+/** Canvas point in the `placement` space: the inverse of `toCanvasPoint` (without rounding). */
 export function fromCanvasPoint(placement: Placement, point: ArrowPoint): ArrowPoint {
   return {
     x: (point.x - placement.x) / placement.scale,
@@ -298,7 +298,7 @@ export function fromCanvasPoint(placement: Placement, point: ArrowPoint): ArrowP
   };
 }
 
-/** `containsRect` com folga de ponto flutuante (coordenadas do canvas, decimais). */
+/** `containsRect` with floating-point slack (canvas coordinates, decimal). */
 export function containsRectApprox(outer: Rect, inner: Rect): boolean {
   return (
     inner.x >= outer.x - EPSILON &&
@@ -308,7 +308,7 @@ export function containsRectApprox(outer: Rect, inner: Rect): boolean {
   );
 }
 
-/** Arredonda um intervalo pelas bordas e garante o mínimo, preso a [min, max) se houver. */
+/** Rounds an interval by its edges and ensures the minimum, bounded to [min, max) if there is one. */
 function roundSpan(
   start: number,
   size: number,
@@ -323,10 +323,10 @@ function roundSpan(
 }
 
 /**
- * Converte um retângulo do canvas (decimal) para o espaço de `placement`, em inteiros:
- * as bordas são arredondadas (o tamanho é o que a pessoa via na tela), cada lado fica com
- * pelo menos o mínimo (`MIN_MARKING_SIZE`, ou 1 px e o `min` do componente quando há `min`) e, com `bounds`, o
- * retângulo fica dentro dele (o container; o canvas não tem limite).
+ * Converts a canvas rectangle (decimal) to the `placement` space, in integers:
+ * the edges are rounded (the size is what the person saw on screen), each side keeps at
+ * least the minimum (`MIN_MARKING_SIZE`, or 1 px and the component's `min` when there is a `min`) and, with `bounds`, the
+ * rectangle stays inside it (the container; the canvas has no limit).
  */
 export function fromCanvasRect(
   placement: Placement,

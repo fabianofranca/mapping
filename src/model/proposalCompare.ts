@@ -3,14 +3,14 @@ import { entityKey, jsonEqual } from './proposalValues';
 import { isRecord } from './refs';
 import type { JsonValue } from './types';
 
-// Comparação entre propostas (etapa 4): quando uma proposta é substituída, cada mudança
-// dela que ficou para trás (sem decisão ou aceita sem aplicar) mostra se a proposta nova
-// traz a mesma coisa, outra coisa ou nada para aquele ponto.
+// Comparison between proposals (stage 4): when a proposal is superseded, each of its changes
+// that was left behind (undecided or accepted without being applied) shows whether the new
+// proposal brings the same thing, something else or nothing for that point.
 
 /**
- * `same`: a nova tem a mesma mudança (mesma entidade, campo, tipo e valor `to`).
- * `different`: a nova mexe no mesmo ponto (ou na mesma entidade) com outro resultado.
- * `missing`: a nova não mexe nele ("não consta na nova").
+ * `same`: the new one has the same change (same entity, field, kind and `to` value).
+ * `different`: the new one touches the same point (or the same entity) with another result.
+ * `missing`: the new one does not touch it ("not in the new one").
  */
 export type ChangeComparison = 'same' | 'different' | 'missing';
 
@@ -31,16 +31,16 @@ function text(value: JsonValue | undefined): string {
 }
 
 /**
- * As criações de uma proposta vistas pelo caminho legível, que não depende dos ids gerados a
- * cada `propose_changes`: imagem pelo nome (ou arquivo); marcação por imagem (ou Canvas) › pai › nome;
- * seta pelas pontas (origem → destino) e nome;
- * anotação por marcação › camada › tipo › nome; camada pelo nome. Entidades que já existem
- * no projeto entram pelo id (é o mesmo nas duas propostas).
+ * The creations of a proposal seen through the readable path, which does not depend on the
+ * ids generated at each `propose_changes`: image by name (or file); marking by image (or
+ * Canvas) › parent › name; arrow by its endpoints (origin → destination) and name;
+ * annotation by marking › layer › type › name; layer by name. Entities that already exist
+ * in the project enter by id (it is the same in both proposals).
  */
 class Created {
   private readonly creates = new Map<string, Change>();
   private readonly paths = new Map<string, string>();
-  /** Id gerado (entidade criada, par da livre, linha de tabela) → forma estável. */
+  /** Generated id (created entity, free-form pair, table row) → stable form. */
   private readonly tokens = new Map<string, string>();
 
   constructor(proposal: Proposal) {
@@ -50,12 +50,12 @@ class Created {
     for (const c of this.creates.values()) this.collectTokens(c);
   }
 
-  /** Caminho da criação; `null` se a mudança não é uma criação. */
+  /** Path of the creation; `null` if the change is not a creation. */
   pathOf(c: Change): string | null {
     return c.kind === 'create' ? this.path(c.entity, c.entityId, new Set()) : null;
   }
 
-  /** O valor com os ids gerados nesta proposta trocados pela forma estável. */
+  /** The value with the ids generated in this proposal replaced by the stable form. */
   canonical(value: JsonValue): JsonValue {
     if (typeof value === 'string') return this.tokens.get(value) ?? value;
     if (Array.isArray(value)) return value.map((v) => this.canonical(v));
@@ -70,10 +70,10 @@ class Created {
     const cached = this.paths.get(key);
     if (cached !== undefined) return cached;
     const c = this.creates.get(key);
-    // Entidade existente (ou ciclo, que uma proposta válida não tem): pelo id.
+    // Existing entity (or a cycle, which a valid proposal does not have): by id.
     if (!c || seen.has(key)) return `#${key}`;
     seen.add(key);
-    // A chave da seta é a da marcação (os ids dividem o espaço): vale a entidade da criação.
+    // The arrow's key is the marking's (the ids share the space): the creation's entity counts.
     const kind = c.entity;
     const to = isRecord(c.to) ? c.to : {};
     const ref = (e: ChangeEntity, value: JsonValue | undefined) =>
@@ -82,11 +82,11 @@ class Created {
     if (kind === 'image') {
       path = `image(${text(to.name) || text(to.file) || `${text(to.background)} ${String(to.width)}x${String(to.height)}`})`;
     } else if (kind === 'marking') {
-      // Container nulo: a marcação do canvas ("Canvas › pai › nome").
+      // Null container: the canvas marking ("Canvas › parent › name").
       const space = to.containerId === null ? 'Canvas' : ref('image', to.containerId);
       path = `marking(${space} › ${ref('marking', to.parentId)} › ${text(to.name)})`;
     } else if (kind === 'arrow') {
-      // A seta pelas pontas (origem → destino) e pelo nome, que não dependem do id gerado.
+      // The arrow by its endpoints (origin → destination) and by name, which do not depend on the generated id.
       path = `arrow(${ref('marking', to.from)} → ${ref('marking', to.to)} › ${text(to.name)})`;
     } else if (kind === 'annotation') {
       const type = isRecord(to.type)
@@ -128,12 +128,13 @@ class Created {
 }
 
 /**
- * Compara cada mudança de `previous` com as de `next`. A mudança correspondente na nova é
- * achada, nesta ordem: na criação de imagem ou marcação com `source`, pela origem (a mesma
- * tela recriada com outro id); pela entidade e campo (ids das entidades existentes e dos
- * itens criados citados de novo); e, nas criações, pelo caminho legível (imagem ou Canvas › pai › nome),
- * uma a uma e na ordem. Os valores são comparados com os ids gerados por cada proposta
- * trocados pelo caminho. Devolve o resultado por id de mudança de `previous`.
+ * Compares each change of `previous` with those of `next`. The corresponding change in the
+ * new one is found, in this order: for an image or marking creation with `source`, by origin
+ * (the same screen recreated with another id); by entity and field (ids of existing entities
+ * and of created items cited again); and, for creations, by the readable path (image or
+ * Canvas › parent › name), one by one and in order. The values are compared with the ids
+ * generated by each proposal replaced by the path. Returns the result per change id of
+ * `previous`.
  */
 export function compareProposals(
   previous: Proposal,
@@ -171,7 +172,7 @@ export function compareProposals(
       unmatched.push(c);
     }
   }
-  // Criações ainda sem par, pelo caminho legível (as já casadas acima ficam de fora).
+  // Creations still without a pair, by the readable path (those already matched above are left out).
   for (const c of next.changes) {
     const path = nextCreated.pathOf(c);
     if (path === null || used.has(c.id)) continue;

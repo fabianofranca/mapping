@@ -9,14 +9,14 @@ import {
   type Rect,
 } from './helpers';
 
-// Etapa 3a.2, num Chromium de verdade: projeto de pasta (uma pasta do OPFS faz o papel da
-// escolhida em `showDirectoryPicker`, com a mesma API de arquivos), mudanças externas no
-// mapping.json e as cópias de referência e de recorte para a área de transferência.
+// Stage 3a.2, in a real Chromium: folder project (an OPFS folder stands in for the one
+// chosen in `showDirectoryPicker`, with the same file API), external changes to
+// mapping.json and the reference and crop copies to the clipboard.
 
-const FOLDER = 'mapeamento-e2e';
+const FOLDER = 'mapping-e2e';
 const MIME = 'application/x-mapping-item+json';
 
-/** Troca o seletor de pasta por uma pasta do OPFS (a API de arquivos é a mesma). */
+/** Replaces the folder picker with an OPFS folder (the file API is the same). */
 async function stubFolderPicker(page: Page): Promise<void> {
   await page.addInitScript((name) => {
     Reflect.set(window, 'showDirectoryPicker', async () => {
@@ -26,14 +26,14 @@ async function stubFolderPicker(page: Page): Promise<void> {
   }, FOLDER);
 }
 
-/** Abre a app, escolhe a "pasta" e cria o projeto nela. */
-async function openFolderProject(page: Page, name = 'Pasta'): Promise<void> {
+/** Opens the app, picks the "folder" and creates the project in it. */
+async function openFolderProject(page: Page, name = 'Folder'): Promise<void> {
   await stubFolderPicker(page);
   await page.goto('/');
-  await page.getByRole('button', { name: /Abrir pasta/ }).click();
+  await page.getByRole('button', { name: /Open folder/ }).click();
   await page.getByRole('textbox').fill(name);
-  await page.getByRole('button', { name: 'Criar' }).click();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await page.getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
 type FolderMapping = Omit<MappingJson, 'markings'> & {
@@ -48,8 +48,8 @@ async function readMapping(page: Page): Promise<FolderMapping> {
   return page.evaluate(async (folder) => {
     const root = await navigator.storage.getDirectory();
     const dir = await root.getDirectoryHandle(folder);
-    // A app pode estar regravando o arquivo nesse instante: o Chrome recusa a leitura
-    // (NotReadableError) se o arquivo muda entre o getFile() e o text(). Tenta de novo.
+    // The app may be rewriting the file at this instant: Chrome refuses the read
+    // (NotReadableError) if the file changes between getFile() and text(). Try again.
     for (let attempt = 0; ; attempt++) {
       try {
         const file = await (await dir.getFileHandle('mapping.json')).getFile();
@@ -68,8 +68,8 @@ async function readMapping(page: Page): Promise<FolderMapping> {
 }
 
 /**
- * Outro programa (o MCP, um editor de texto) reescreve o mapping.json da pasta: sobe a
- * revisão e muda o que for pedido. Sem `eval`: a CSP da app vale para o `evaluate` também.
+ * Another program (the MCP, a text editor) rewrites the folder's mapping.json: bumps the
+ * revision and changes whatever is asked. No `eval`: the app's CSP applies to `evaluate` too.
  */
 async function externalEdit(
   page: Page,
@@ -98,12 +98,12 @@ async function allowClipboard(context: BrowserContext): Promise<void> {
 
 const clipboardText = (page: Page) => page.evaluate(() => navigator.clipboard.readText());
 
-/** Projeto de pasta com uma imagem e uma marcação selecionada. */
+/** Folder project with an image and a selected marking. */
 async function withMarking(page: Page) {
   await openFolderProject(page);
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
-  // O salvamento automático espera o debounce (`AUTOSAVE_DELAY_MS`).
+  // Autosave waits for the debounce (`AUTOSAVE_DELAY_MS`).
   await expect.poll(async () => (await readMapping(page)).markings.length).toBe(1);
   return (await readMapping(page)).markings[0]!;
 }
@@ -111,7 +111,7 @@ async function withMarking(page: Page) {
 const toast = (page: Page, text: string) =>
   page.getByRole('status').filter({ hasText: text });
 
-test('Ctrl+C copia a referência do item selecionado, com os dados do item junto', async ({
+test('Ctrl+C copies the reference of the selected item, with the item data along', async ({
   page,
   context,
 }) => {
@@ -123,13 +123,13 @@ test('Ctrl+C copia a referência do item selecionado, com os dados do item junto
   const marking = (await readMapping(page)).markings[0]!;
 
   await page.keyboard.press('Control+c');
-  await expect(toast(page, 'Referência copiada')).toBeVisible();
+  await expect(toast(page, 'Reference copied')).toBeVisible();
 
   const code = marking.id.replaceAll('-', '').slice(0, 8);
-  // Só a URL, sem o caminho legível.
+  // Only the URL, without the readable path.
   expect(await clipboardText(page)).toBe(`mapping://${FOLDER}/m/${code}`);
 
-  // O formato próprio da app vai junto (só a app o lê; o texto é o que o chat recebe).
+  // The app's own format goes along (only the app reads it; the text is what the chat receives).
   const custom = await page.evaluate(
     async ([mime]) => {
       const [item] = await navigator.clipboard.read();
@@ -147,7 +147,7 @@ test('Ctrl+C copia a referência do item selecionado, com os dados do item junto
   });
 });
 
-test('Ctrl+Alt+C copia o recorte da marcação como PNG, em pixels da imagem original', async ({
+test('Ctrl+Alt+C copies the marking crop as PNG, in pixels of the original image', async ({
   page,
   context,
 }) => {
@@ -158,7 +158,7 @@ test('Ctrl+Alt+C copia o recorte da marcação como PNG, em pixels da imagem ori
   const rect: Rect = await selectedRect(page);
 
   await page.keyboard.press('Control+Alt+c');
-  await expect(toast(page, 'Recorte copiado')).toBeVisible();
+  await expect(toast(page, 'Crop copied')).toBeVisible();
 
   const size = await page.evaluate(async () => {
     const [item] = await navigator.clipboard.read();
@@ -169,7 +169,7 @@ test('Ctrl+Alt+C copia o recorte da marcação como PNG, em pixels da imagem ori
   expect(size).toEqual({ width: rect.width, height: rect.height });
 });
 
-test('com o foco num campo de texto, Ctrl+C copia o texto do campo', async ({
+test('with focus on a text field, Ctrl+C copies the field text', async ({
   page,
   context,
 }) => {
@@ -178,41 +178,41 @@ test('com o foco num campo de texto, Ctrl+C copia o texto do campo', async ({
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
 
-  const name = page.getByLabel('Nome', { exact: true }).first();
-  await name.fill('Porta dianteira');
+  const name = page.getByLabel('Name', { exact: true }).first();
+  await name.fill('Front door');
   await name.press('Control+a');
   await page.keyboard.press('Control+c');
 
-  expect(await clipboardText(page)).toBe('Porta dianteira');
-  await expect(toast(page, 'Referência copiada')).toHaveCount(0);
+  expect(await clipboardText(page)).toBe('Front door');
+  await expect(toast(page, 'Reference copied')).toHaveCount(0);
 });
 
-test('Detalhes: copiar referência e copiar recorte ao lado do ID', async ({
+test('Details: copy reference and copy crop next to the ID', async ({
   page,
   context,
 }) => {
   await allowClipboard(context);
   const marking = await withMarking(page);
-  await page.getByRole('button', { name: 'Copiar referência' }).first().click();
-  await expect(toast(page, 'Referência copiada')).toBeVisible();
+  await page.getByRole('button', { name: 'Copy reference' }).first().click();
+  await expect(toast(page, 'Reference copied')).toBeVisible();
   const code = marking.id.replaceAll('-', '').slice(0, 8);
   expect(await clipboardText(page)).toContain(`mapping://${FOLDER}/m/${code}`);
 
-  await page.getByRole('button', { name: 'Copiar recorte' }).click();
-  await expect(toast(page, 'Recorte copiado')).toBeVisible();
+  await page.getByRole('button', { name: 'Copy crop' }).click();
+  await expect(toast(page, 'Crop copied')).toBeVisible();
 });
 
-test('Detalhes: copiar referência só com clipboard-write não pede permissão e grava o texto', async ({
+test('Details: copy reference with clipboard-write only asks no permission and writes the text', async ({
   page,
   context,
 }) => {
-  // Cenário do dono: a pessoa nunca concedeu "ver texto e imagens copiados" (clipboard-read).
+  // Owner's scenario: the person never granted "see copied text and images" (clipboard-read).
   await context.grantPermissions(['clipboard-write']);
   const marking = await withMarking(page);
-  await page.getByRole('button', { name: 'Copiar referência' }).first().click();
-  await expect(toast(page, 'Referência copiada')).toBeVisible();
+  await page.getByRole('button', { name: 'Copy reference' }).first().click();
+  await expect(toast(page, 'Reference copied')).toBeVisible();
 
-  // Só depois do clique concede a leitura, para conferir o que foi gravado.
+  // Only after the click does it grant reading, to check what was written.
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   const code = marking.id.replaceAll('-', '').slice(0, 8);
   const text = await clipboardText(page);
@@ -220,50 +220,47 @@ test('Detalhes: copiar referência só com clipboard-write não pede permissão 
   expect(text).toMatch(new RegExp(`/m/${code}$`));
 });
 
-test('menu da linha da Árvore (desktop) copia a referência', async ({
-  page,
-  context,
-}) => {
+test('Tree row menu (desktop) copies the reference', async ({ page, context }) => {
   await allowClipboard(context);
   await withMarking(page);
 
-  await page.getByRole('button', { name: /^Ações de images\/tela\.webp/ }).click();
-  await page.getByRole('menuitem', { name: 'Copiar referência' }).click();
-  await expect(toast(page, 'Referência copiada')).toBeVisible();
+  await page.getByRole('button', { name: /^Actions for images\/tela\.webp/ }).click();
+  await page.getByRole('menuitem', { name: 'Copy reference' }).click();
+  await expect(toast(page, 'Reference copied')).toBeVisible();
   expect(await clipboardText(page)).toMatch(/^mapping:\/\/[^/]+\/i\/[0-9a-f]{8}$/);
 });
 
-test('botão direito no canvas seleciona o item e abre o menu de cópia', async ({
+test('right click on the canvas selects the item and opens the copy menu', async ({
   page,
   context,
 }) => {
   await allowClipboard(context);
   await withMarking(page);
   const center = await canvasPoint(page);
-  // Tira a seleção para provar que o clique direito seleciona.
+  // Clears the selection to prove that the right click selects.
   await page.keyboard.press('Escape');
 
   await page.mouse.click(center.x, center.y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Menu do item no canvas' });
+  const menu = page.getByRole('menu', { name: 'Canvas item menu' });
   await expect(menu).toBeVisible();
-  await menu.getByRole('menuitem', { name: 'Copiar referência' }).click();
+  await menu.getByRole('menuitem', { name: 'Copy reference' }).click();
   await expect(menu).toBeHidden();
-  await expect(toast(page, 'Referência copiada')).toBeVisible();
+  await expect(toast(page, 'Reference copied')).toBeVisible();
   expect(await clipboardText(page)).toMatch(/^mapping:\/\/[^/]+\/m\/[0-9a-f]{8}$/);
 });
 
-test('Ajuda → Atalhos lista os dois atalhos de copiar', async ({ page }) => {
+test('Help → Shortcuts lists the two copy shortcuts', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Configurações', exact: true }).click();
-  await page.getByRole('button', { name: 'Ver os atalhos de teclado' }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'View keyboard shortcuts' }).click();
   const help = page.getByRole('dialog');
-  await expect(help.getByText('Copiar a referência do item selecionado')).toBeVisible();
-  await expect(help.getByText('Copiar o recorte da marcação selecionada')).toBeVisible();
+  await expect(help.getByText('Copy the reference of the selected item')).toBeVisible();
+  await expect(help.getByText('Copy the crop of the selected marking')).toBeVisible();
 });
 
-// Antes R6.2 do guia (fechar a aba no meio da gravação): a extensão do navegador não fecha
-// a aba da app, então a cobertura de perda de dados vem daqui.
-test('fechar a página logo depois de editar não perde a marcação (R6.2)', async ({
+// Formerly guide R6.2 (closing the tab in the middle of the write): the browser extension does not close
+// the app tab, so the data-loss coverage comes from here.
+test('closing the page right after editing does not lose the marking (R6.2)', async ({
   page,
   context,
 }) => {
@@ -271,8 +268,8 @@ test('fechar a página logo depois de editar não perde a marcação (R6.2)', as
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
 
-  // Fecha sem esperar o debounce. Se a app avisar ("Sair da página?"), escolhe ficar, espera
-  // o Salvo e fecha de novo; se a gravação do `pagehide` bastar, a página fecha de uma vez.
+  // Closes without waiting for the debounce. If the app warns ("Leave page?"), it chooses to stay, waits
+  // for Saved and closes again; if the `pagehide` write is enough, the page closes at once.
   let warned = false;
   page.on('dialog', (dialog) => {
     if (dialog.type() === 'beforeunload') warned = true;
@@ -280,46 +277,46 @@ test('fechar a página logo depois de editar não perde a marcação (R6.2)', as
   });
   await page.close({ runBeforeUnload: true });
   if (warned && !page.isClosed()) {
-    await expect(page.getByText('Salvo', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Saved', { exact: true }).first()).toBeVisible();
     await page.close({ runBeforeUnload: true });
   }
 
-  // Outra aba do mesmo contexto (mesmo OPFS e mesmos recentes) reabre a pasta.
+  // Another tab of the same context (same OPFS and same recents) reopens the folder.
   const reopened = await context.newPage();
   await stubFolderPicker(reopened);
   await reopened.goto('/');
-  await reopened.getByRole('button', { name: /Abrir pasta/ }).click();
-  await expect(reopened.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await reopened.getByRole('button', { name: /Open folder/ }).click();
+  await expect(reopened.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await expect.poll(async () => (await readMapping(reopened)).markings.length).toBe(1);
   const mapping = await readMapping(reopened);
   expect(mapping.markings[0]?.containerId).toBe(mapping.containers[0]?.id);
 });
 
-// R6.1 do guia: renomear (Enter) e, logo em seguida, começar a arrastar e apertar Esc sem
-// soltar. A gravação do nome sai ~250 ms depois do Enter (debounce da sessão); o arraste
-// cancelado não pode chegar ao disco nem à tela. `lateEsc` espera a gravação antes do arraste.
+// Guide R6.1: rename (Enter) and, right after, start dragging and press Esc without
+// releasing. The name write goes out ~250 ms after Enter (session debounce); the cancelled
+// drag must reach neither the disk nor the screen. `lateEsc` waits for the write before the drag.
 for (const lateEsc of [false, true]) {
-  test(`renomear e cancelar o arraste com Esc deixa o nome novo e o rect antigo (R6.1, Esc ${
-    lateEsc ? 'depois' : 'antes'
-  } da gravação)`, async ({ page }) => {
+  test(`rename and cancel the drag with Esc leaves the new name and the old rect (R6.1, Esc ${
+    lateEsc ? 'after' : 'before'
+  } the write)`, async ({ page }) => {
     const marking = await withMarking(page);
     const center = await canvasPoint(page);
     const before = await selectedRect(page);
     expect(marking.rect).toEqual(before);
     const base = (await readMapping(page)).revision;
 
-    const name = page.getByLabel('Nome', { exact: true });
-    await name.fill('Título R6');
+    const name = page.getByLabel('Name', { exact: true });
+    await name.fill('Title R6');
     await name.press('Enter');
     if (lateEsc) {
       await expect
         .poll(async () => (await readMapping(page)).markings[0]?.name)
-        .toBe('Título R6');
-      await expect(page.getByText('Salvo', { exact: true }).first()).toBeVisible();
+        .toBe('Title R6');
+      await expect(page.getByText('Saved', { exact: true }).first()).toBeVisible();
     }
 
-    // Botão no meio da marcação (longe das alças), desloca bem mais que o limiar e aperta
-    // Esc sem soltar.
+    // Button in the middle of the marking (far from the handles), moves well past the threshold and presses
+    // Esc without releasing.
     await page.mouse.move(center.x, center.y);
     await page.mouse.down();
     await page.mouse.move(center.x + 60, center.y + 40, { steps: 6 });
@@ -328,19 +325,19 @@ for (const lateEsc of [false, true]) {
     await page.mouse.move(center.x + 140, center.y + 90, { steps: 3 });
     await page.mouse.up();
 
-    // Tela: a marcação voltou ao lugar e o nome novo ficou.
-    await expect(name).toHaveValue('Título R6');
+    // Screen: the marking went back to its place and the new name stayed.
+    await expect(name).toHaveValue('Title R6');
     expect(await selectedRect(page)).toEqual(before);
 
-    // Disco: depois de Salvo, nome novo com o rect antigo e uma só gravação de conteúdo novo.
-    await expect(page.getByText('Salvo', { exact: true }).first()).toBeVisible();
+    // Disk: after Saved, new name with the old rect and a single write of new content.
+    await expect(page.getByText('Saved', { exact: true }).first()).toBeVisible();
     await expect
       .poll(async () => (await readMapping(page)).markings[0]?.name)
-      .toBe('Título R6');
+      .toBe('Title R6');
     const saved = await readMapping(page);
     expect(saved.markings[0]?.rect).toEqual(marking.rect);
     expect(saved.revision).toBe(base + 1);
-    // Nada mais é gravado depois (a posição do arraste não aparece).
+    // Nothing else is written afterwards (the drag position does not appear).
     await page.waitForTimeout(800);
     const later = await readMapping(page);
     expect(later.markings[0]?.rect).toEqual(marking.rect);
@@ -348,95 +345,95 @@ for (const lateEsc of [false, true]) {
   });
 }
 
-test.describe('mudanças externas no mapping.json', () => {
-  test('cada gravação sobe a revisão', async ({ page }) => {
+test.describe('external changes to mapping.json', () => {
+  test('each write bumps the revision', async ({ page }) => {
     await withMarking(page);
     await expect.poll(async () => (await readMapping(page)).revision).toBeGreaterThan(0);
     const before = (await readMapping(page)).revision;
-    await page.getByLabel('Nome', { exact: true }).first().fill('Porta');
-    await page.getByLabel('Nome', { exact: true }).first().press('Enter');
+    await page.getByLabel('Name', { exact: true }).first().fill('Door');
+    await page.getByLabel('Name', { exact: true }).first().press('Enter');
     await expect
       .poll(async () => (await readMapping(page)).revision)
       .toBeGreaterThan(before);
   });
 
-  test('editar o arquivo por fora recarrega a app sozinha, com um aviso discreto', async ({
+  test('editing the file from outside reloads the app by itself, with a discreet notice', async ({
     page,
   }) => {
     await withMarking(page);
     await expect.poll(async () => (await readMapping(page)).markings.length).toBe(1);
 
-    await externalEdit(page, { markingName: 'Editada por fora' });
+    await externalEdit(page, { markingName: 'Edited from outside' });
 
-    await expect(toast(page, 'Projeto atualizado por fora')).toBeVisible({
+    await expect(toast(page, 'Project updated from outside')).toBeVisible({
       timeout: 10_000,
     });
-    // A seleção continua na mesma marcação, já com o nome novo.
-    await expect(page.getByLabel('Nome', { exact: true }).first()).toHaveValue(
-      'Editada por fora',
+    // The selection stays on the same marking, now with the new name.
+    await expect(page.getByLabel('Name', { exact: true }).first()).toHaveValue(
+      'Edited from outside',
     );
   });
 
-  test('editar por fora e dos dois lados abre o diálogo; "Manter as minhas" grava por cima', async ({
+  test('editing from outside and on both sides opens the dialog; "Keep mine" writes over it', async ({
     page,
   }) => {
     await withMarking(page);
     await expect.poll(async () => (await readMapping(page)).revision).toBeGreaterThan(0);
-    const name = page.getByLabel('Nome', { exact: true }).first();
+    const name = page.getByLabel('Name', { exact: true }).first();
 
-    // Alteração local ainda não gravada (o salvamento espera o debounce) + alteração externa.
-    await name.fill('Minha marcação');
+    // Local change not yet written (saving waits for the debounce) + external change.
+    await name.fill('My marking');
     await name.press('Enter');
-    await externalEdit(page, { projectName: 'Nome do outro programa' });
+    await externalEdit(page, { projectName: 'Name from the other program' });
     const external = await readMapping(page);
 
-    const dialog = page.getByRole('dialog', { name: 'Projeto alterado fora da app' });
+    const dialog = page.getByRole('dialog', { name: 'Project changed outside the app' });
     await expect(dialog).toBeVisible({ timeout: 10_000 });
-    await dialog.getByRole('button', { name: 'Manter as minhas' }).click();
+    await dialog.getByRole('button', { name: 'Keep mine' }).click();
     await expect(dialog).toBeHidden();
 
     await expect
       .poll(async () => (await readMapping(page)).markings[0]?.name)
-      .toBe('Minha marcação');
+      .toBe('My marking');
     expect((await readMapping(page)).revision).toBe(external.revision + 1);
   });
 
-  test('"Recarregar" descarta as alterações locais e abre o arquivo como está', async ({
+  test('"Reload" discards the local changes and opens the file as it is', async ({
     page,
   }) => {
     await withMarking(page);
     await expect.poll(async () => (await readMapping(page)).revision).toBeGreaterThan(0);
-    const name = page.getByLabel('Nome', { exact: true }).first();
+    const name = page.getByLabel('Name', { exact: true }).first();
 
-    await name.fill('Minha marcação');
+    await name.fill('My marking');
     await name.press('Enter');
-    await externalEdit(page, { markingName: 'Do outro programa' });
+    await externalEdit(page, { markingName: 'From the other program' });
 
-    const dialog = page.getByRole('dialog', { name: 'Projeto alterado fora da app' });
+    const dialog = page.getByRole('dialog', { name: 'Project changed outside the app' });
     await expect(dialog).toBeVisible({ timeout: 10_000 });
-    await dialog.getByRole('button', { name: 'Recarregar' }).click();
+    await dialog.getByRole('button', { name: 'Reload' }).click();
     await expect(dialog).toBeHidden();
 
-    await expect(page.getByLabel('Nome', { exact: true }).first()).toHaveValue(
-      'Do outro programa',
+    await expect(page.getByLabel('Name', { exact: true }).first()).toHaveValue(
+      'From the other program',
     );
-    // Nada foi gravado por cima do arquivo externo.
-    expect((await readMapping(page)).markings[0]?.name).toBe('Do outro programa');
+    // Nothing was written over the external file.
+    expect((await readMapping(page)).markings[0]?.name).toBe('From the other program');
   });
 });
 
-// Fase 6.6: recentes de pasta na tela inicial. Aqui a "pasta" é do OPFS, que o seletor de
-// verdade nunca devolve: a app não a guarda (o Chromium derruba a página ao ler de volta do
-// IndexedDB um handle do OPFS). O fluxo da lista, do clique e do aviso é exercido com uma
-// entrada gravada direto no banco dos recentes, sem handle; o de abrir pelo handle fica nos
-// testes do controller (handles falsos: granted, prompt, denied, NotFoundError).
-test.describe('recentes de pasta', () => {
+// Phase 6.6: folder recents on the home screen. Here the "folder" is from the OPFS, which the
+// real picker never returns: the app does not store it (Chromium crashes the page when reading an
+// OPFS handle back from IndexedDB). The flow of the list, the click and the notice is exercised with an
+// entry written straight into the recents database, without a handle; opening through the handle is in the
+// controller tests (fake handles: granted, prompt, denied, NotFoundError).
+test.describe('folder recents', () => {
   async function closeProject(page: Page): Promise<void> {
-    await page.getByRole('button', { name: /: ações do projeto$/ }).click();
-    await page.getByRole('menuitem', { name: 'Fechar projeto', exact: true }).click();
+    await page.getByRole('button', { name: /: project actions$/ }).click();
+    await page.getByRole('menuitem', { name: 'Close project', exact: true }).click();
   }
 
-  /** Grava uma entrada dos recentes (nome do projeto e da pasta, sem handle) no IndexedDB. */
+  /** Writes a recents entry (project and folder name, no handle) into IndexedDB. */
   async function seedRecentFolder(page: Page, name: string, folderName: string) {
     await page.evaluate(
       async ([projectName, folder]) => {
@@ -448,7 +445,7 @@ test.describe('recentes de pasta', () => {
         await new Promise<void>((resolve, reject) => {
           const tx = db.transaction('folders', 'readwrite');
           tx.objectStore('folders').put({
-            id: 'semeada',
+            id: 'seeded',
             name: projectName,
             folderName: folder,
             usedAt: new Date().toISOString(),
@@ -462,25 +459,25 @@ test.describe('recentes de pasta', () => {
     );
   }
 
-  test('uma pasta do OPFS não entra nos recentes, e a app segue de pé', async ({
+  test('an OPFS folder does not enter the recents, and the app keeps running', async ({
     page,
   }) => {
-    await openFolderProject(page, 'Privada');
+    await openFolderProject(page, 'Private');
     await addImage(page);
     await closeProject(page);
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'Começar' })).toBeVisible();
-    await expect(page.getByRole('row').filter({ hasText: 'Privada' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Get started' })).toBeVisible();
+    await expect(page.getByRole('row').filter({ hasText: 'Private' })).toHaveCount(0);
   });
 
-  test('a 900 px a tabela não quebra selo e botões, não rola e a borda é contínua', async ({
+  test('at 900 px the table does not wrap the badge and buttons, does not scroll and the border is continuous', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 900, height: 720 });
     await stubFolderPicker(page);
     await createProject(page, 'Local');
     await closeProject(page);
-    await seedRecentFolder(page, 'Guardada', 'pasta-guardada');
+    await seedRecentFolder(page, 'Stored', 'stored-folder');
     await page.reload();
     const rows = page.locator('tr[data-recent]');
     await expect(rows).toHaveCount(2);
@@ -500,13 +497,13 @@ test.describe('recentes de pasta', () => {
         expect(await el.evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
       }
     }
-    // Fora da última linha, todas as células, a das ações inclusive, têm a borda inferior.
+    // Outside the last row, all cells, the actions one included, have the bottom border.
     const widths = await rows
       .first()
       .locator('th, td')
       .evaluateAll((cells) => cells.map((c) => getComputedStyle(c).borderBottomWidth));
     expect(widths.every((w) => parseFloat(w) > 0)).toBe(true);
-    // E a base de cada célula coincide com a da linha: a borda é uma linha contínua.
+    // And the bottom of each cell matches the row's: the border is a continuous line.
     for (const row of await rows.all()) {
       const bottoms = await row
         .locator('th, td')
@@ -515,33 +512,33 @@ test.describe('recentes de pasta', () => {
     }
   });
 
-  test('a lista traz a pasta guardada; sem acesso, o aviso tem Localizar pasta… e Remover da lista', async ({
+  test('the list brings the stored folder; without access, the notice has Locate folder… and Remove from list', async ({
     page,
   }) => {
     await stubFolderPicker(page);
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Começar' })).toBeVisible();
-    await seedRecentFolder(page, 'Guardada', 'pasta-guardada');
+    await expect(page.getByRole('heading', { name: 'Get started' })).toBeVisible();
+    await seedRecentFolder(page, 'Stored', 'stored-folder');
 
-    // Outra visita: a lista vem do IndexedDB, com o selo e o nome da pasta.
+    // Another visit: the list comes from IndexedDB, with the badge and the folder name.
     await page.reload();
-    const row = page.getByRole('row').filter({ hasText: 'Guardada' });
-    await expect(row.getByText('Pasta', { exact: true })).toBeVisible();
-    await expect(row.getByText('pasta-guardada')).toBeVisible();
+    const row = page.getByRole('row').filter({ hasText: 'Stored' });
+    await expect(row.getByText('Folder', { exact: true })).toBeVisible();
+    await expect(row.getByText('stored-folder')).toBeVisible();
 
-    await row.getByRole('button', { name: /^Abrir /, exact: false }).click();
-    const dialog = page.getByRole('dialog', { name: 'Pasta indisponível' });
+    await row.getByRole('button', { name: /^Open /, exact: false }).click();
+    const dialog = page.getByRole('dialog', { name: 'Folder unavailable' });
     await expect(dialog).toBeVisible();
 
-    // A pasta escolhida (vazia) não tem mapping.json: o aviso continua, com o motivo.
-    await dialog.getByRole('button', { name: 'Localizar pasta…' }).click();
-    await expect(dialog.getByRole('alert')).toContainText('não tem um mapping.json');
+    // The chosen (empty) folder has no mapping.json: the notice stays, with the reason.
+    await dialog.getByRole('button', { name: 'Locate folder…' }).click();
+    await expect(dialog.getByRole('alert')).toContainText('has no mapping.json');
 
-    await dialog.getByRole('button', { name: 'Remover da lista' }).click();
+    await dialog.getByRole('button', { name: 'Remove from list' }).click();
     await expect(dialog).toBeHidden();
     await expect(row).toHaveCount(0);
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'Começar' })).toBeVisible();
-    await expect(page.getByRole('row').filter({ hasText: 'Guardada' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Get started' })).toBeVisible();
+    await expect(page.getByRole('row').filter({ hasText: 'Stored' })).toHaveCount(0);
   });
 });

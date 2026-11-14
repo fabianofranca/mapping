@@ -1,7 +1,7 @@
-# Esforço sob controle da fila — 2026-11-09 (épico `epic/esforco-subagentes`, PR #1278, MCP 0.28.12, schema v18)
+# Effort under the queue's control — 2026-11-09 (épico `epic/esforco-subagentes`, PR #1278, MCP 0.28.12, schema v18)
 
 ## Alterado
 
-- O `/detalhar-backlog` detalha cada unidade (e o agrupamento) num subagente Opus da ferramenta `Agent`, em segundo plano, com o esforço escolhido pelos critérios da skill (`high` ou `medium`; `alto=` soma, `alto=nenhum` põe tudo em `medium`). Saem a pergunta "Esforço", o prompt pronto para o dono abrir a sessão e as conferências do prompt. Os relatórios voltam pelo retorno do subagente e as respostas do dono, por `SendMessage` ao mesmo subagente.
-- Uma só conferência de reserva de 60 min no detalhamento; na terceira vez sem notícia do mesmo subagente (3 h) o coordenador pergunta ao dono se segue sem ele ou o recria (com as respostas já dadas).
-- A fase cujo coordenador pede esforço `high`, `xhigh` ou `max` roda `/code-review` nesse nível sobre o diff dela antes do PR, e o Resumo do PR traz a linha da revisão (`docs/FLOW.md`, "Para a sessão da fase"; a `/implementar-fila` acrescenta o item).
+- `/detalhar-backlog` details each unit (and the grouping) in an Opus subagent of the `Agent` tool, in the background, with the effort chosen by the skill's criteria (`high` or `medium`; `alto=` adds, `alto=nenhum` puts everything at `medium`). The "Effort" question, the ready prompt for the owner to open the session and the prompt checks are gone. Reports come back through the subagent's return and the owner's answers go by `SendMessage` to the same subagent.
+- A single 60 min backup check in detailing; on the third time without news from the same subagent (3 h) the coordinator asks the owner whether to go on without it or recreate it (with the answers already given).
+- The phase whose coordinator asks for `high`, `xhigh` or `max` effort runs `/code-review` at that level over its diff before the PR, and the PR Summary carries the review line (`docs/FLOW.md`, "For the phase session"; `/implementar-fila` adds the item).

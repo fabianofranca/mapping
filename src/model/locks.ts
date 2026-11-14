@@ -4,33 +4,34 @@ import { projectIndex } from './projectIndex';
 import { findById, updateById } from './project';
 import type { Marking, Placement, Project } from './types';
 
-// Trava (etapa 2.5): `locked` em marcações e imagens bloqueia mover, redimensionar e
-// excluir **o próprio item**. Selecionar, renomear e anotar seguem livres. Trancar um pai
-// trava a geometria dos descendentes sem mexer no `locked` deles. Um descendente trancado
-// nunca impede o pai: mover o pai leva os descendentes trancados junto (a posição relativa
-// se mantém) e excluir o pai exclui os descendentes trancados (a confirmação informa quantos).
-// Na v13 a trava também desce da marcação do canvas para os containers dentro dela: o
-// `placement` deles não muda (`canEditImagePlacement`, `containerLockStates`). A seta (v13) tem
-// trava só dela: não herda das pontas (`canEditArrow`).
+// Lock (stage 2.5): `locked` on markings and images blocks moving, resizing and deleting
+// **the item itself**. Selecting, renaming and annotating stay free. Locking a parent locks
+// the geometry of its descendants without touching their `locked`. A locked descendant never
+// blocks the parent: moving the parent takes the locked descendants along (the relative
+// position is kept) and deleting the parent deletes the locked descendants (the confirmation
+// says how many). In v13 the lock also goes down from the canvas marking to the containers
+// inside it: their `placement` does not change (`canEditImagePlacement`,
+// `containerLockStates`). The arrow (v13) has a lock of its own: it does not inherit from its
+// ends (`canEditArrow`).
 
-/** A marcação ou algum ancestral está trancado: a geometria dela não pode mudar. */
+/** The marking or some ancestor is locked: its geometry cannot change. */
 export function isMarkingGeometryLocked(p: Project, markingId: string): boolean {
   const marking = projectIndex(p).markings.get(markingId) ?? fail('not-found', markingId);
   return marking.locked || ancestorsOf(p, markingId).some((a) => a.locked);
 }
 
-/** Por que a geometria da marcação está travada: trava própria ou herdada de um ancestral. */
+/** Why the marking's geometry is locked: its own lock or one inherited from an ancestor. */
 export type MarkingLockState = 'self' | 'inherited';
 
 /**
- * Estado de trava de cada marcação com a geometria travada (as livres não aparecem),
- * numa passada só: serve à Árvore e ao canvas sem subir a hierarquia a cada linha.
+ * Lock state of each marking with locked geometry (the free ones do not appear),
+ * in a single pass: serves the Tree and the canvas without climbing the hierarchy on each row.
  */
 export function markingLockStates(p: Project): Map<string, MarkingLockState> {
   const children = projectIndex(p).children;
   const states = new Map<string, MarkingLockState>();
-  // Pilha explícita (hierarquia funda não estoura a pilha de chamadas), em pré-ordem: o
-  // primeiro filho sai primeiro, como na recursão.
+  // Explicit stack (a deep hierarchy does not overflow the call stack), in pre-order: the
+  // first child comes out first, as in the recursion.
   const stack: { readonly parentLocked: boolean; readonly marking: Marking }[] = [];
   const pushAll = (parentLocked: boolean, markings: readonly Marking[] | undefined) => {
     for (let i = (markings?.length ?? 0) - 1; i >= 0; i--) {
@@ -51,9 +52,9 @@ export function markingLockStates(p: Project): Map<string, MarkingLockState> {
 }
 
 /**
- * Estado de trava de cada container com o `placement` travado (os livres não aparecem), numa
- * passada só: `self` = o próprio container trancado; `inherited` = uma marcação do canvas que o
- * contém (o pai dele, ou um ancestral dela) está trancada.
+ * Lock state of each container with a locked `placement` (the free ones do not appear), in a
+ * single pass: `self` = the container itself is locked; `inherited` = a canvas marking that
+ * contains it (its parent, or an ancestor of it) is locked.
  */
 export function containerLockStates(p: Project): Map<string, MarkingLockState> {
   const markingStates = markingLockStates(p);
@@ -68,16 +69,16 @@ export function containerLockStates(p: Project): Map<string, MarkingLockState> {
 }
 
 /**
- * Mover ou redimensionar a marcação: só o item ou um ancestral trancado bloqueia. Descendentes
- * trancados não contam: mover o pai os leva junto, e redimensionar o pai não os move.
+ * Moving or resizing the marking: only the item or a locked ancestor blocks. Locked descendants
+ * do not count: moving the parent takes them along, and resizing the parent does not move them.
  */
 export function canEditMarkingGeometry(p: Project, markingId: string): boolean {
   return !isMarkingGeometryLocked(p, markingId);
 }
 
 /**
- * Excluir (leva os descendentes): só a própria marcação trancada bloqueia. A trava de um
- * ancestral é de geometria, e descendentes trancados são excluídos junto com o pai.
+ * Deleting (takes the descendants): only the marking's own lock blocks. An ancestor's lock is
+ * about geometry, and locked descendants are deleted along with the parent.
  */
 export function canDeleteMarking(p: Project, markingId: string): boolean {
   return !(projectIndex(p).markings.get(markingId) ?? fail('not-found', markingId))
@@ -85,42 +86,42 @@ export function canDeleteMarking(p: Project, markingId: string): boolean {
 }
 
 /**
- * Mexer na rota, nas pontas, nos lados ou no estilo da seta, ou excluí-la: só a trava da própria
- * seta impede. A trava das marcações das pontas não conta, e renomear e anotar seguem livres.
+ * Touching the arrow's route, ends, sides or style, or deleting it: only the arrow's own lock
+ * prevents it. The lock of the end markings does not count, and renaming and annotating stay free.
  */
 export function canEditArrow(p: Project, arrowId: string): boolean {
   return !(projectIndex(p).arrows.get(arrowId) ?? fail('not-found', arrowId)).locked;
 }
 
 /**
- * Mover ou redimensionar a imagem no canvas: trava a própria imagem trancada e, subindo a
- * cadeia (o `parentId` do container e depois o das marcações), alguma marcação do canvas que
- * a contém, trancada ou com ancestral trancado. Entrar numa marcação trancada não é editar o
- * `placement` dela, mas mover o que está dentro é.
+ * Moving or resizing the image on the canvas: blocked by the locked image itself and, climbing
+ * the chain (the container's `parentId` and then the markings'), by some canvas marking that
+ * contains it, locked or with a locked ancestor. Entering a locked marking is not editing its
+ * `placement`, but moving what is inside it is.
  */
 export function canEditImagePlacement(p: Project, containerId: string): boolean {
   const index = projectIndex(p);
   const container = index.containers.get(containerId) ?? fail('not-found', containerId);
   if (container.locked) return false;
   if (container.parentId === null) return true;
-  // Pai inexistente (projeto inválido): o reparo resolve; aqui não trava.
+  // Nonexistent parent (invalid project): the repair resolves it; here it does not lock.
   if (!index.markings.has(container.parentId)) return true;
   return !isMarkingGeometryLocked(p, container.parentId);
 }
 
-/** Excluir a imagem leva as marcações, trancadas ou não: só a imagem trancada bloqueia. */
+/** Deleting the image takes the markings, locked or not: only the locked image blocks. */
 export function canDeleteImage(p: Project, containerId: string): boolean {
   return !(projectIndex(p).containers.get(containerId) ?? fail('not-found', containerId))
     .locked;
 }
 
 /**
- * Trocar o arquivo reescala as marcações quando as dimensões mudam: bloqueia se a
- * imagem ou alguma marcação dela estiver trancada (a troca mexeria na geometria de
- * marcações revisadas). Reapontar um arquivo do mesmo tamanho não muda a geometria e
- * fica livre. Com `placement` (o que `replaceContainer` vai gravar), a imagem que muda de lugar
- * ou de escala também precisa poder ser movida no canvas (`canEditImagePlacement`: imagem
- * trancada ou sob marcação trancada).
+ * Replacing the file rescales the markings when the dimensions change: it blocks if the
+ * image or any of its markings is locked (the swap would touch the geometry of reviewed
+ * markings). Repointing a file of the same size does not change the geometry and stays free.
+ * With `placement` (what `replaceContainer` will write), an image that changes place or scale
+ * must also be movable on the canvas (`canEditImagePlacement`: locked image or under a locked
+ * marking).
  */
 export function canReplaceImage(
   p: Project,
@@ -170,7 +171,7 @@ export function setImageLocked(
   };
 }
 
-/** Tranca (ou destranca) todas as marcações da imagem de uma vez: uma operação, uma entrada no histórico. */
+/** Locks (or unlocks) all the image's markings at once: one operation, one history entry. */
 export function setImageMarkingsLocked(
   p: Project,
   containerId: string,
@@ -187,7 +188,7 @@ export function setImageMarkingsLocked(
   };
 }
 
-/** Lança `locked` se a condição de permissão não valer. */
+/** Throws `locked` if the permission condition does not hold. */
 export function requireUnlocked(allowed: boolean): void {
   if (!allowed) fail('locked');
 }

@@ -1,5 +1,5 @@
-// Vínculo entre anotações da mesma camada (formatVersion 13, schema v15): quem pode ser dona,
-// ciclos, papéis, pendências e a planta de código.
+// Link between annotations of the same layer (formatVersion 13, schema v15): who can be an owner,
+// cycles, roles, issues and the code blueprint.
 import { describe, expect, it } from 'vitest';
 import {
   ModelError,
@@ -30,9 +30,9 @@ const codeOf = (fn: () => unknown): string | null => {
     throw e;
   }
 };
-/** Anotações livres `F1` e `F2` numa camada livre (camada de especialização só aceita tipadas). */
+/** Free annotations `F1` and `F2` in a free layer (a specialization layer only accepts typed ones). */
 const free = (p: Project): Project => {
-  let q = addLayer(p, { id: 'LF', name: 'Livre', color: '#757575' });
+  let q = addLayer(p, { id: 'LF', name: 'Free', color: '#757575' });
   for (const id of ['F1', 'F2']) {
     q = addAnnotation(q, { id, markingId: 'M1', layerId: 'LF' });
   }
@@ -40,7 +40,7 @@ const free = (p: Project): Project => {
 };
 const codes = (p: Project, id: string) => getAnnotationIssues(p, id).map((i) => i.code);
 
-/** onClick `C1` → request `R1` → request `R2` (R2 dona R1? não: R1 filha de C1, R2 filha de R1). */
+/** onClick `C1` → request `R1` → request `R2` (R2 owns R1? no: R1 is a child of C1, R2 a child of R1). */
 function chain(): Project {
   let p = sameLayerProject();
   p = add(p, 'B1', 'button');
@@ -50,8 +50,8 @@ function chain(): Project {
   return p;
 }
 
-describe('dona da mesma camada: adicionar', () => {
-  it('passa quando o tipo da dona aceita o tipo da filha', () => {
+describe('same-layer owner: adding', () => {
+  it('passes when the owner type accepts the child type', () => {
     let p = chain();
     p = add(p, 'N1', 'navigate', 'R1', 'onSuccess');
     p = add(p, 'R3', 'request', 'R1', 'onFailure');
@@ -59,7 +59,7 @@ describe('dona da mesma camada: adicionar', () => {
     expect(validateProject(p)).toEqual([]);
   });
 
-  it('dá invalid-annotation-parent quando o tipo da dona não aceita', () => {
+  it('gives invalid-annotation-parent when the owner type does not accept it', () => {
     let p = chain();
     p = add(p, 'N1', 'navigate');
     expect(codeOf(() => add(p, 'N2', 'navigate', 'N1'))).toBe(
@@ -69,27 +69,27 @@ describe('dona da mesma camada: adicionar', () => {
   });
 });
 
-describe('validAnnotationOwners com a mesma camada', () => {
-  it('a tipada oferece donas da mesma camada que o tipo aceita', () => {
+describe('validAnnotationOwners with the same layer', () => {
+  it('a typed one offers same-layer owners that the type accepts', () => {
     const p = add(add(chain(), 'N1', 'navigate'), 'R3', 'request', 'C1');
-    // N1 (navigate): aceita-a só request; B1 (outra camada) não aceita navigate.
+    // N1 (navigate): only request accepts it; B1 (another layer) does not accept navigate.
     expect(ids(validAnnotationOwners(p, 'N1'))).toEqual(['R1', 'R2', 'R3']);
-    // R1 não pode ter como dona a si mesma; onClick e as outras requests aceitam request.
+    // R1 cannot own itself; onClick and the other requests accept request.
     expect(ids(validAnnotationOwners(p, 'R1'))).toEqual(['C1', 'R2', 'R3']);
   });
 
-  it('exclui a própria, as vinculadas a ela (ciclo) e dona que não aceita o tipo', () => {
+  it('excludes itself, the ones linked to it (cycle) and an owner that does not accept the type', () => {
     let p = chain();
     p = setAnnotationParent(p, 'R2', 'R1');
-    // R2 é vinculada a R1: não pode ser dona dela; só C1 sobra.
+    // R2 is linked to R1: it cannot own it; only C1 is left.
     expect(ids(validAnnotationOwners(p, 'R1'))).toEqual(['C1']);
     expect(ids(validAnnotationOwners(p, 'R2'))).toEqual(['C1', 'R1']);
   });
 
-  it('a anotação livre nunca recebe dona da mesma camada', () => {
+  it('a free annotation never gets a same-layer owner', () => {
     let p = chain();
     p = free(p);
-    // F2 está na mesma camada que F1: fica de fora; as tipadas de outras camadas entram.
+    // F2 is in the same layer as F1: it is left out; the typed ones from other layers come in.
     expect(ids(validAnnotationOwners(p, 'F1'))).toEqual(['B1', 'C1', 'R1', 'R2']);
     expect(codeOf(() => setAnnotationParent(p, 'F1', 'F2'))).toBe(
       'invalid-annotation-parent',
@@ -97,8 +97,8 @@ describe('validAnnotationOwners com a mesma camada', () => {
   });
 });
 
-describe('ciclo na mesma camada', () => {
-  it('A→B→A é recusado ao vincular, e A→A também', () => {
+describe('cycle in the same layer', () => {
+  it('A→B→A is refused when linking, and so is A→A', () => {
     let p = chain();
     p = setAnnotationParent(p, 'R2', 'R1');
     expect(codeOf(() => setAnnotationParent(p, 'R1', 'R2'))).toBe(
@@ -116,23 +116,23 @@ describe('ciclo na mesma camada', () => {
     ),
   });
 
-  it('uma proposta que fecharia o ciclo é bloqueada em validateProject', () => {
+  it('a proposal that would close the cycle is blocked in validateProject', () => {
     const p = setAnnotationParent(chain(), 'R2', 'R1');
     expect(validateProject(closed(p)).map((i) => i.code)).toContain('annotation-cycle');
   });
 
-  it('o arquivo com ciclo é recusado ao abrir', () => {
+  it('the file with a cycle is refused when opening', () => {
     const p = setAnnotationParent(chain(), 'R2', 'R1');
     const result = deserialize(serialize(closed(p)), migrations, specFiles(p));
     expect(result.ok).toBe(false);
     if (result.ok || result.error.code !== 'invariant-violation') {
-      throw new Error('esperava violação');
+      throw new Error('expected a violation');
     }
     expect(result.error.issues.map((i) => i.code)).toContain('annotation-cycle');
   });
 });
 
-describe('invariante e pendência', () => {
+describe('invariant and issue', () => {
   const force = (p: Project, id: string, owner: string): Project => ({
     ...p,
     annotations: p.annotations.map((a) =>
@@ -140,12 +140,12 @@ describe('invariante e pendência', () => {
     ),
   });
 
-  it('filha tipada com dona da mesma camada não viola o invariante', () => {
+  it('a typed child with a same-layer owner does not violate the invariant', () => {
     const p = add(chain(), 'N1', 'navigate', 'R1', 'onSuccess');
     expect(validateProject(p)).toEqual([]);
   });
 
-  it('tipo que a dona não aceita vira a pendência owner-not-allowed, não violação', () => {
+  it('a type the owner does not accept becomes the owner-not-allowed issue, not a violation', () => {
     const p = force(add(chain(), 'N1', 'navigate'), 'C1', 'N1');
     expect(validateProject(p).map((i) => i.code)).not.toContain(
       'annotation-parent-same-layer',
@@ -153,7 +153,7 @@ describe('invariante e pendência', () => {
     expect(codes(p, 'C1')).toContain('owner-not-allowed');
   });
 
-  it('a livre com dona da mesma camada segue violando o invariante', () => {
+  it('a free one with a same-layer owner still violates the invariant', () => {
     let p = chain();
     p = free(p);
     expect(validateProject(force(p, 'F1', 'F2')).map((i) => i.code)).toContain(
@@ -162,14 +162,14 @@ describe('invariante e pendência', () => {
   });
 });
 
-describe('papéis com dona da mesma camada', () => {
-  it('dois filhos no mesmo papel ficam na ordem do array', () => {
+describe('roles with a same-layer owner', () => {
+  it('two children in the same role stay in array order', () => {
     let p = chain();
     p = add(p, 'N1', 'navigate', 'R1', 'onSuccess');
     p = add(p, 'N2', 'navigate', 'R1', 'onSuccess');
     p = add(p, 'N3', 'navigate', 'R1', 'onFailure');
     const owner = p.annotations.find((a) => a.id === 'R1');
-    if (!owner) throw new Error('sem R1');
+    if (!owner) throw new Error('no R1');
     const rows = linkedByRole(p, owner)?.rows ?? [];
     expect(rows.map((r) => [r.role.id, r.items.map((a) => a.id)])).toEqual([
       ['onSuccess', ['N1', 'N2']],
@@ -177,21 +177,21 @@ describe('papéis com dona da mesma camada', () => {
     ]);
   });
 
-  it('missing-role e unknown-role funcionam como com dona de outra camada', () => {
+  it('missing-role and unknown-role work as with an owner from another layer', () => {
     let p = add(chain(), 'N1', 'navigate', 'R1');
     expect(codes(p, 'N1')).toEqual(['missing-role']);
     p = {
       ...p,
       annotations: p.annotations.map((a) =>
-        a.id === 'N1' ? { ...a, parentRole: 'sumiu' } : a,
+        a.id === 'N1' ? { ...a, parentRole: 'vanished' } : a,
       ),
     };
     expect(codes(p, 'N1')).toEqual(['unknown-role']);
   });
 });
 
-describe('planta de código com cadeia na mesma camada', () => {
-  it('Clique → requisição → navegação sai aninhado, sem repetir na raiz', () => {
+describe('code blueprint with a chain in the same layer', () => {
+  it('Click → request → navigation comes out nested, without repeating at the root', () => {
     let p = chain();
     p = setAnnotationParent(add(p, 'N1', 'navigate', 'R1', 'onSuccess'), 'C1', 'B1');
     p = setAnnotationParent(p, 'R1', 'C1');
@@ -202,7 +202,7 @@ describe('planta de código com cadeia na mesma camada', () => {
     expect(root.annotations.filter((a) => a.annotationId !== 'R2').map(shape)).toEqual([
       { button: [{ onClick: [{ request: [{ navigate: [] }] }] }] },
     ]);
-    // R2 não tem dona: aparece solta na raiz.
+    // R2 has no owner: it appears loose at the root.
     expect(root.annotations.map((a) => a.annotationId)).toEqual(['B1', 'R2']);
   });
 });

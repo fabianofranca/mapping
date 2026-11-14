@@ -21,8 +21,8 @@ import { Playground } from './Playground';
 import { drawWarningText } from './drawWarnings';
 import type { CatalogRenderer } from './renderer';
 
-// Página de um componente do Catálogo: cabeçalho, documento, propriedades, código por
-// plataforma, origens, galeria e playground. Só apresentação: nada aqui grava ou lê disco.
+// Page of a Catalog component: header, document, properties, code per
+// platform, sources, gallery and playground. Presentation only: nothing here writes or reads disk.
 
 export interface CatalogPageProps {
   readonly catalog: Catalog;
@@ -35,7 +35,7 @@ export interface CatalogPageProps {
   readonly onLink?: (href: string) => void;
   readonly onAddToScreen?: (typeId: string) => void;
   readonly addDisabledReason?: string;
-  /** Acesso às pastas dos repositórios de documentos (os testes injetam um falso). */
+  /** Access to the folders of the documents repositories (tests inject a fake). */
   readonly docAccess?: DocFolderAccess;
 }
 
@@ -103,7 +103,7 @@ function PropertiesTable({ fields }: { readonly fields: readonly CatalogField[] 
   );
 }
 
-/** Caminho de um arquivo do repositório: link quando o `repo` da especialização dá a URL. */
+/** Path of a repository file: a link when the specialization's `repo` gives the URL. */
 function CodePath({
   path,
   href,
@@ -120,7 +120,7 @@ function CodePath({
   );
 }
 
-/** Tabela valor da variante → símbolo (e arquivo), abaixo da base do `code`. */
+/** Variant value → symbol (and file) table, below the `code` base. */
 function VariantsTable({
   variants,
   specId,
@@ -330,7 +330,7 @@ function Gallery({
   readonly renderer: CatalogRenderer;
   readonly fontsEpoch: number;
 }) {
-  // Uma imagem remota que termina de carregar (ou o consentimento que muda) invalida a entrada.
+  // A remote image that finishes loading (or the consent that changes) invalidates the entry.
   const imagesEpoch = renderer.imagesEpoch.value;
   const items = useMemo((): GalleryItem[] => {
     const make = (

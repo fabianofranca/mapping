@@ -1,18 +1,18 @@
-# Arestas do conteúdo fora da imagem — 2026-11-10 (épico `epic/arestas-fora-da-imagem`)
+# Content edges outside the image — 2026-11-10 (épico `epic/arestas-fora-da-imagem`)
 
 ## Pendências
 
-- `.ref-control` (Detalhes, `src/ui/TypedFields.tsx`, `src/ui/RefCell.tsx`): o controle passa a vir dentro do `Tooltip` (no lugar do `title` nativo), com o alvo, a camada e a dica de atalho por inteiro; a âncora do `Tooltip` ocupa a largura do campo. O rótulo do alvo já tem prioridade sobre o nome da camada (`.ref-control-layer` cede primeiro). Sem token novo; nada muda a 1280×720.
-- Célula `ref` da tabela (`.ref-cell`, CL1): sem largura mínima própria, o ✕ desce para a linha de baixo quando a coluna é estreita e o ícone some na tabela (CL2 removeu o token `size-grid-ref-col-min`, que fazia a tabela rolar na horizontal a 1280 e 900 px): a coluna divide a tabela como as outras. O ✕ não estica mais (só a âncora do controle), o controle encolhe dentro da célula e a referência quebrada quebra entre as palavras, sem corte. `.ref-control-layer` passa a encolher com fator `1000000`. Nos temas claro e escuro só usam tokens de cor já existentes.
-- Revisão do épico: no campo `ref` dos Detalhes só a âncora do controle estica (`.ref-field > .tooltip-anchor:first-child`); as dos botões ↗ e ✕ mantêm o tamanho do botão (antes do ajuste, o `Tooltip` esticava cada uma a uma linha inteira). Sem token novo.
+- `.ref-control` (Details, `src/ui/TypedFields.tsx`, `src/ui/RefCell.tsx`): the control now comes inside the `Tooltip` (in place of the native `title`), with the target, the layer and the shortcut hint in full; the `Tooltip` anchor takes the width of the field. The target label already has priority over the layer name (`.ref-control-layer` yields first). No new token; nothing changes at 1280×720.
+- `ref` cell of the table (`.ref-cell`, CL1): with no minimum width of its own, the ✕ drops to the next line when the column is narrow and the icon disappears in the table (CL2 removed the token `size-grid-ref-col-min`, which made the table scroll horizontally at 1280 and 900 px): the column shares the table like the others. The ✕ no longer stretches (only the control's anchor), the control shrinks inside the cell and the broken reference wraps between words, with no clipping. `.ref-control-layer` now shrinks with factor `1000000`. In the light and dark themes they only use color tokens that already exist.
+- Epic review: in the `ref` field of Details only the control's anchor stretches (`.ref-field > .tooltip-anchor:first-child`); those of the ↗ and ✕ buttons keep the button size (before the adjustment, the `Tooltip` stretched each one to a full line). No new token.
 
 ## Sincronização
 
-Não gravado: a ferramenta Artifact foi negada pelo classificador de permissões neste fechamento (ver abaixo). Nenhuma versão do artefato mudou; o índice não foi tocado.
+Not written: the Artifact tool was denied by the permission classifier at this close (see below). No version of the artifact changed; the index was not touched.
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: guia `ReferenceField` (o `Tooltip` no lugar do `title`, a camada que cede primeiro, o botão quebrado que quebra linha) e `bundle.css` (texto, DS3; mudou: a troca do registro vira o texto de hoje, no plano).
-- Passou para o registro do épico `epic/sincronia-ds-2`: guia `RefCell` (`Tooltip`, coluna sem largura mínima, ✕ que desce, texto que quebra) (texto, DS3; mudou: o motivo da pendência agora vai no `Tooltip`).
-- Passou para o registro do épico `epic/sincronia-ds-2`: `lastChange` do índice `design-system.json`: não é pendência (o índice é gravado por quem grava, por último, ver "Quando atualizar" do `docs/DESIGN-SYSTEM.md`).
-- Passou para o registro do épico `epic/sincronia-ds-2`: previews de `ReferenceField` e `RefCell` ainda imitam o `title` nativo do botão `ref-control`: trocar pelo `Tooltip` (prévia, DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `ReferenceField` guide (the `Tooltip` in place of the `title`, the layer that yields first, the broken button that wraps) and `bundle.css` (text, DS3; changed: the record's swap becomes today's text, in the plan).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `RefCell` guide (`Tooltip`, column with no minimum width, ✕ that drops, text that wraps) (text, DS3; changed: the reason for the pending item now goes in the `Tooltip`).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `lastChange` of the `design-system.json` index: not a pending item (the index is written by whoever writes, last, see "When to update" in `docs/DESIGN-SYSTEM.md`).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `ReferenceField` and `RefCell` previews still imitate the native `title` of the `ref-control` button: swap for the `Tooltip` (preview, DS5).

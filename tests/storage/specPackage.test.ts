@@ -17,7 +17,7 @@ const project = {
 } as unknown as Parameters<typeof loadLibraryIssues>[1];
 
 describe('loadLibraryIssues', () => {
-  it('pacote grande demais vira um problema com código, sem texto fixo para a interface', async () => {
+  it('a package that is too big becomes a problem with a code, without fixed text for the interface', async () => {
     const many = Array.from(
       { length: MAX_PACKAGE_FILES + 1 },
       (_, i) => `specs/m3/${i}.md`,
@@ -28,7 +28,7 @@ describe('loadLibraryIssues', () => {
     ]);
   });
 
-  it('lê os pacotes das especializações em série, mantendo a ordem do resultado', async () => {
+  it('reads the specialization packages in series, keeping the result order', async () => {
     const order: string[] = [];
     const storage = {
       listSpecDir: vi.fn(async (dir: string) => {
@@ -55,7 +55,7 @@ describe('loadLibraryIssues', () => {
     expect([...out.keys()]).toEqual(['a', 'b']);
   });
 
-  it('o pico de leituras simultâneas à pasta, com 3 especializações, fica no limite', async () => {
+  it('the peak of simultaneous reads to the folder, with 3 specializations, stays within the limit', async () => {
     let active = 0;
     let peak = 0;
     const storage = {
@@ -83,7 +83,7 @@ describe('loadLibraryIssues', () => {
 });
 
 describe('readSpecPackage', () => {
-  /** Blob de mentira: tamanho declarado e contador de `text()`. */
+  /** Fake Blob: declared size and a counter of `text()`. */
   function fakeBlob(size: number, counter: { texts: number }): Blob {
     return {
       size,
@@ -94,7 +94,7 @@ describe('readSpecPackage', () => {
     } as unknown as Blob;
   }
 
-  it('passou do limite de bytes: devolve null sem ler o conteúdo do resto', async () => {
+  it('went over the byte limit: returns null without reading the content of the rest', async () => {
     const counter = { texts: 0 };
     let opened = 0;
     const size = MAX_PACKAGE_BYTES / 8;
@@ -108,12 +108,12 @@ describe('readSpecPackage', () => {
       },
     } as unknown as ProjectStorage;
     expect(await readSpecPackage(storage, 'specs/m3')).toBeNull();
-    // Estoura no 9º arquivo; mais as tarefas já em curso.
+    // Overflows at the 9th file; plus the tasks already in progress.
     expect(counter.texts).toBeLessThanOrEqual(8 + FOLDER_CONCURRENCY);
     expect(opened).toBeLessThanOrEqual(9 + FOLDER_CONCURRENCY);
   });
 
-  it('dentro do limite: entradas na ordem da listagem, bytes somados, ausente pulado', async () => {
+  it('within the limit: entries in listing order, bytes summed, missing one skipped', async () => {
     const counter = { texts: 0 };
     const paths = [
       'specs/m3/a.json',

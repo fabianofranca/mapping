@@ -38,25 +38,25 @@ afterEach(async () => {
 });
 
 describe('ImageServer', () => {
-  it('padrões exportados', () => {
+  it('exported defaults', () => {
     expect(MAX_ENTRIES).toBe(64);
     expect(MAX_BYTES).toBe(64 * 1024 * 1024);
   });
 
-  it('publica em 127.0.0.1 com token e chave de 32 hex', async () => {
+  it('publishes on 127.0.0.1 with a token and a 32-hex key', async () => {
     const url = await make().publish(bytesOf(1), 'image/png', 'png');
     expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/[0-9a-f]{32}\/[0-9a-f]{32}\.png$/);
     expect(server!.address()?.address).toBe('127.0.0.1');
   });
 
-  it('mesmos bytes, mesma URL; bytes diferentes, outra', async () => {
+  it('same bytes, same URL; different bytes, another one', async () => {
     const s = make();
     const a = await s.publish(bytesOf(1), 'image/png', 'png');
     expect(await s.publish(bytesOf(1), 'image/png', 'png')).toBe(a);
     expect(await s.publish(bytesOf(2), 'image/png', 'png')).not.toBe(a);
   });
 
-  it('GET devolve os bytes e o Content-Type', async () => {
+  it('GET returns the bytes and the Content-Type', async () => {
     const data = Uint8Array.from([1, 2, 3, 4, 5]);
     const url = await make().publish(data, 'image/webp', 'webp');
     const r = await send('GET', url);
@@ -67,7 +67,7 @@ describe('ImageServer', () => {
     expect(r.body.equals(Buffer.from(data))).toBe(true);
   });
 
-  it('HEAD não tem corpo e traz Content-Length', async () => {
+  it('HEAD has no body and brings Content-Length', async () => {
     const url = await make().publish(bytesOf(7, 10), 'image/png', 'png');
     const r = await send('HEAD', url);
     expect(r.status).toBe(200);
@@ -75,7 +75,7 @@ describe('ImageServer', () => {
     expect(r.body.length).toBe(0);
   });
 
-  it('token errado ou caminho desconhecido: 404 vazio', async () => {
+  it('wrong token or unknown path: empty 404', async () => {
     const url = await make().publish(bytesOf(1), 'image/png', 'png');
     const wrongToken = url.replace(/\/[0-9a-f]{32}\//, `/${'0'.repeat(32)}/`);
     for (const bad of [wrongToken, url.replace(/\/[0-9a-f]{32}\.png$/, '/x.png')]) {
@@ -87,25 +87,25 @@ describe('ImageServer', () => {
     expect((await send('GET', `${origin}/`)).status).toBe(404);
   });
 
-  it('outro método: 405', async () => {
+  it('other method: 405', async () => {
     const url = await make().publish(bytesOf(1), 'image/png', 'png');
     expect((await send('POST', url)).status).toBe(405);
   });
 
-  it('LRU por quantidade: descarta a mais antiga e o GET renova', async () => {
+  it('LRU by count: discards the oldest and the GET renews', async () => {
     const s = make({ maxEntries: 2 });
     const a = await s.publish(bytesOf(1), 'image/png', 'png');
     const b = await s.publish(bytesOf(2), 'image/png', 'png');
     await s.publish(bytesOf(3), 'image/png', 'png');
     expect((await send('GET', a)).status).toBe(404);
     expect((await send('GET', b)).status).toBe(200);
-    // b foi renovada: a próxima publicação descarta c, não b.
+    // b was renewed: the next publication discards c, not b.
     const d = await s.publish(bytesOf(4), 'image/png', 'png');
     expect((await send('GET', b)).status).toBe(200);
     expect((await send('GET', d)).status).toBe(200);
   });
 
-  it('LRU por tamanho; item maior que o teto fica sozinho', async () => {
+  it('LRU by size; an item larger than the cap stays alone', async () => {
     const s = make({ maxBytes: 20 });
     const a = await s.publish(bytesOf(1, 10), 'image/png', 'png');
     const b = await s.publish(bytesOf(2, 10), 'image/png', 'png');
@@ -118,7 +118,7 @@ describe('ImageServer', () => {
     expect((await send('GET', big)).status).toBe(200);
   });
 
-  it('close() encerra o servidor', async () => {
+  it('close() shuts the server down', async () => {
     const s = make();
     const url = await s.publish(bytesOf(1), 'image/png', 'png');
     await s.close();

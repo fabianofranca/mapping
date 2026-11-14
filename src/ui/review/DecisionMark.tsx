@@ -1,10 +1,10 @@
 import { t } from '../../i18n';
 import type { LevelState } from '../../model';
 
-// Estado de decisão de um nível (HANDOFF-PROPOSALS 2.1 e 4.2): a FORMA diz o estado e a
-// cor reforça. Círculo tracejado = sem decisão; cheio com ✓ = aceita; cheio com ✕ =
-// rejeitada; metade esquerda cheia = parcial (sempre com as contagens por perto). É só
-// leitura: quem decide é o `DecisionControl`.
+// Decision state of a level (HANDOFF-PROPOSALS 2.1 and 4.2): the SHAPE tells the state and the
+// color reinforces it. Dashed circle = no decision; filled with ✓ = accepted; filled with ✕ =
+// rejected; left half filled = partial (always with the counts nearby). It is
+// read-only: whoever decides is the `DecisionControl`.
 
 export interface DecisionCounts {
   readonly accepted: number;
@@ -12,7 +12,7 @@ export interface DecisionCounts {
   readonly undecided: number;
 }
 
-/** Texto do estado (nome acessível e dica). Parcial leva as contagens. */
+/** Text of the state (accessible name and tooltip). Partial carries the counts. */
 export function decisionLabel(state: LevelState, counts?: DecisionCounts): string {
   if (state === 'partial' && counts) {
     return t('review.state.partialCounts', {
@@ -27,9 +27,9 @@ export function decisionLabel(state: LevelState, counts?: DecisionCounts): strin
 interface DecisionMarkProps {
   readonly state: LevelState;
   readonly counts?: DecisionCounts;
-  /** Texto acessível no lugar do padrão (ex.: "Item rejeitado"). */
+  /** Accessible text in place of the default (e.g. "Item rejected"). */
   readonly label?: string;
-  /** Decorativo (o estado já está escrito ao lado, ex.: nas contagens). */
+  /** Decorative (the state is already written alongside, e.g. in the counts). */
   readonly decorative?: boolean;
 }
 

@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { parseSpec, type Spec, type SpecIssue } from '../../src/model';
 
-// `migrations` da especialização formatVersion 4: só as regras estruturais, que um arquivo
-// sozinho confere (versões, `from` único, chaves por `op`, lado novo existente, lado antigo
-// ausente, `default` do `fill-field`). Quais quebras uma migração cobre é do `diffSpecs`.
+// `migrations` of the formatVersion 4 specialization: only the structural rules, which a file
+// alone can check (versions, unique `from`, keys per `op`, new side existing, old side
+// absent, `default` of `fill-field`). Which breaks a migration covers is up to `diffSpecs`.
 
 const read = (path: string): string => readFileSync(path, 'utf8');
 const jsonSchema = JSON.parse(read('docs/spec.schema.json')) as Record<string, unknown>;
@@ -14,8 +14,8 @@ const jsonValidator = z.fromJSONSchema(jsonSchema as never);
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 /**
- * Versão 3 do pacote: Button (label, style enum, size number, when date, rows table) e Badge
- * (text). Sem migrações; cada teste monta a sua.
+ * Version 3 of the package: Button (label, style enum, size number, when date, rows table) and
+ * Badge (text). No migrations; each test builds its own.
  */
 function base(): Json {
   return {
@@ -27,7 +27,7 @@ function base(): Json {
     layers: [
       {
         id: 'c',
-        name: 'Componentes',
+        name: 'Components',
         color: '#1E88E5',
         annotationTypes: [
           {
@@ -48,7 +48,7 @@ function base(): Json {
   };
 }
 
-/** `base()` com uma migração de 1 para 2 com estes passos. */
+/** `base()` with a migration from 1 to 2 with these steps. */
 function withSteps(...steps: Json[]): Json {
   const spec = base();
   spec.migrations = [{ from: 1, to: 2, steps }];
@@ -57,7 +57,7 @@ function withSteps(...steps: Json[]): Json {
 
 function issuesOf(spec: Json): SpecIssue[] {
   const result = parseSpec(spec);
-  if (result.ok) throw new Error('era para falhar');
+  if (result.ok) throw new Error('should have failed');
   return result.issues.map(({ path, message }) => ({ path, message }));
 }
 
@@ -72,8 +72,8 @@ function expectIssuePath(spec: Json, path: string): void {
 
 const M0 = 'migrations[0]';
 
-describe('migrations: o que é aceito', () => {
-  it('os seis passos, em migrações encadeadas', () => {
+describe('migrations: what is accepted', () => {
+  it('the six steps, in chained migrations', () => {
     const spec = base();
     spec.migrations = [
       {
@@ -81,7 +81,7 @@ describe('migrations: o que é aceito', () => {
         to: 2,
         steps: [
           { op: 'rename-type', from: 'chip', to: 'badge' },
-          { op: 'rename-field', type: 'button', from: 'texto', to: 'label' },
+          { op: 'rename-field', type: 'button', from: 'caption', to: 'label' },
           { op: 'remove-field', type: 'badge', field: 'color' },
           {
             op: 'map-values',
@@ -113,15 +113,15 @@ describe('migrations: o que é aceito', () => {
     });
   });
 
-  it('uma migração que salta várias versões (de 1 a 3)', () => {
+  it('a migration that skips several versions (from 1 to 3)', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0].to = 3;
     expect(parseSpec(spec).ok).toBe(true);
   });
 
-  it('fill-field com default de cada tipo de campo', () => {
+  it('fill-field with a default of each field type', () => {
     for (const [field, value] of [
-      ['label', 'Sem nome'],
+      ['label', 'No name'],
       ['size', 0],
       ['when', '2026-01-31'],
       ['style', 'text'],
@@ -131,48 +131,48 @@ describe('migrations: o que é aceito', () => {
     }
   });
 
-  it('sem migrations é como antes', () => {
+  it('without migrations it is as before', () => {
     expect(parseSpec(base()).ok).toBe(true);
   });
 });
 
-describe('migrations: versões', () => {
-  it('from menor que 1', () => {
+describe('migrations: versions', () => {
+  it('from less than 1', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0].from = 0;
-    expectIssue(spec, `${M0}.from`, 'deve ser >= 1');
+    expectIssue(spec, `${M0}.from`, 'must be >= 1');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it.each(['from', 'to'])('%s não inteiro', (key) => {
+  it.each(['from', 'to'])('%s not an integer', (key) => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0][key] = 1.5;
-    expectIssue(spec, `${M0}.${key}`, 'deve ser inteiro');
+    expectIssue(spec, `${M0}.${key}`, 'must be an integer');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('to que não é maior que from', () => {
+  it('to that is not greater than from', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0].to = 1;
-    expectIssue(spec, `${M0}.to`, 'deve ser maior que "from" (1)');
+    expectIssue(spec, `${M0}.to`, 'must be greater than "from" (1)');
     spec.migrations[0].from = 2;
     spec.migrations[0].to = 1;
-    expectIssue(spec, `${M0}.to`, 'deve ser maior que "from" (2)');
+    expectIssue(spec, `${M0}.to`, 'must be greater than "from" (2)');
   });
 
-  it('to além da version do pacote', () => {
+  it("to beyond the package's version", () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0].to = 4;
-    expectIssue(spec, `${M0}.to`, 'não pode passar de "version" (3)');
+    expectIssue(spec, `${M0}.to`, 'cannot exceed "version" (3)');
   });
 
-  it('to igual à version é aceito', () => {
+  it('to equal to version is accepted', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0].to = 3;
     expect(parseSpec(spec).ok).toBe(true);
   });
 
-  it('from repetido', () => {
+  it('repeated from', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations.push({
       from: 1,
@@ -182,17 +182,17 @@ describe('migrations: versões', () => {
     expectIssue(
       spec,
       'migrations[1].from',
-      'já existe uma migração a partir da versão 1',
+      'there is already a migration from version 1',
     );
   });
 
-  it('steps vazia', () => {
+  it('empty steps', () => {
     const spec = withSteps();
-    expectIssue(spec, `${M0}.steps`, 'não pode ser vazia');
+    expectIssue(spec, `${M0}.steps`, 'cannot be an empty list');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('chave de migração desconhecida', () => {
+  it('unknown migration key', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0].note = 'x';
     expectIssue(spec, M0, 'Unrecognized key: "note"');
@@ -200,18 +200,18 @@ describe('migrations: versões', () => {
   });
 });
 
-describe('migrations: chaves por op', () => {
-  it('op desconhecido', () => {
+describe('migrations: keys per op', () => {
+  it('unknown op', () => {
     const spec = withSteps({ op: 'drop-type', type: 'x' });
     expectIssue(
       spec,
       `${M0}.steps[0].op`,
-      '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" ou "set-role"',
+      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" or "set-role"',
     );
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('passo sem op', () => {
+  it('step without op', () => {
     const spec = withSteps({ type: 'x' });
     expectIssuePath(spec, `${M0}.steps[0].op`);
   });
@@ -219,11 +219,11 @@ describe('migrations: chaves por op', () => {
   it.each([
     ['rename-type', { from: 'a', to: 'badge' }],
     ['remove-type', { type: 'old', mode: 'delete' }],
-    ['rename-field', { type: 'button', from: 'texto', to: 'label' }],
+    ['rename-field', { type: 'button', from: 'caption', to: 'label' }],
     ['remove-field', { type: 'badge', field: 'color' }],
     ['map-values', { type: 'button', field: 'style', values: { a: 'primary' } }],
     ['fill-field', { type: 'button', field: 'size', default: 1 }],
-  ])('%s recusa chave desconhecida', (op, keys) => {
+  ])('%s refuses an unknown key', (op, keys) => {
     const spec = withSteps({ op, ...keys, extra: 1 });
     expectIssue(spec, `${M0}.steps[0]`, 'Unrecognized key: "extra"');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
@@ -232,7 +232,7 @@ describe('migrations: chaves por op', () => {
   it.each([
     ['rename-type', { from: 'a', to: 'badge' }, 'to'],
     ['remove-type', { type: 'old', mode: 'delete' }, 'type'],
-    ['rename-field', { type: 'button', from: 'texto', to: 'label' }, 'from'],
+    ['rename-field', { type: 'button', from: 'caption', to: 'label' }, 'from'],
     ['remove-field', { type: 'badge', field: 'color' }, 'field'],
     [
       'map-values',
@@ -240,7 +240,7 @@ describe('migrations: chaves por op', () => {
       'values',
     ],
     ['fill-field', { type: 'button', field: 'size', default: 1 }, 'default'],
-  ])('%s sem a chave %s', (op, keys, missing) => {
+  ])('%s without the key %s', (op, keys, missing) => {
     const step: Json = { op, ...keys };
     delete step[missing];
     const spec = withSteps(step);
@@ -248,49 +248,49 @@ describe('migrations: chaves por op', () => {
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('remove-type com mode inválido', () => {
+  it('remove-type with an invalid mode', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'drop' });
-    expectIssue(spec, `${M0}.steps[0].mode`, 'use "convert" ou "delete"');
+    expectIssue(spec, `${M0}.steps[0].mode`, 'use "convert" or "delete"');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('fill-field com default que não é texto nem número', () => {
+  it('fill-field with a default that is neither text nor number', () => {
     const spec = withSteps({
       op: 'fill-field',
       type: 'button',
       field: 'size',
       default: true,
     });
-    expectIssue(spec, `${M0}.steps[0].default`, 'deve ser texto ou número');
+    expectIssue(spec, `${M0}.steps[0].default`, 'must be text or a number');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('nomes vazios', () => {
+  it('empty names', () => {
     const spec = withSteps({ op: 'remove-field', type: '', field: 'color' });
-    expectIssue(spec, `${M0}.steps[0].type`, 'não pode ser vazio');
+    expectIssue(spec, `${M0}.steps[0].type`, 'cannot be empty');
   });
 
-  it('map-values com destino vazio', () => {
+  it('map-values with an empty target', () => {
     const spec = withSteps({
       op: 'map-values',
       type: 'button',
       field: 'style',
       values: { filled: '' },
     });
-    expectIssue(spec, `${M0}.steps[0].values.filled`, 'não pode ser vazio');
+    expectIssue(spec, `${M0}.steps[0].values.filled`, 'cannot be empty');
   });
 });
 
-describe('migrations: o lado novo existe nesta versão', () => {
-  it('rename-type.to é um tipo daqui', () => {
+describe('migrations: the new side exists in this version', () => {
+  it('rename-type.to is a type from here', () => {
     const ok = withSteps({ op: 'rename-type', from: 'chip', to: 'badge' });
     expect(parseSpec(ok).ok).toBe(true);
     const spec = withSteps({ op: 'rename-type', from: 'chip', to: 'tag' });
-    expectIssue(spec, `${M0}.steps[0].to`, 'tipo "tag" não existe nesta versão');
+    expectIssue(spec, `${M0}.steps[0].to`, 'type "tag" does not exist in this version');
   });
 
   it.each(['rename-field', 'remove-field', 'map-values', 'fill-field'])(
-    '%s: o tipo precisa existir',
+    '%s: the type must exist',
     (op) => {
       const step: Json =
         op === 'rename-field'
@@ -303,46 +303,54 @@ describe('migrations: o lado novo existe nesta versão', () => {
       expectIssue(
         withSteps(step),
         `${M0}.steps[0].type`,
-        'tipo "ghost" não existe nesta versão',
+        'type "ghost" does not exist in this version',
       );
     },
   );
 
-  it('rename-field.to é um campo do tipo', () => {
+  it('rename-field.to is a field of the type', () => {
     const ok = withSteps({
       op: 'rename-field',
       type: 'button',
-      from: 'texto',
+      from: 'caption',
       to: 'label',
     });
     expect(parseSpec(ok).ok).toBe(true);
     const spec = withSteps({
       op: 'rename-field',
       type: 'button',
-      from: 'texto',
-      to: 'rotulo',
+      from: 'caption',
+      to: 'tagline',
     });
-    expectIssue(spec, `${M0}.steps[0].to`, '"rotulo" não é um campo do tipo "button"');
+    expectIssue(
+      spec,
+      `${M0}.steps[0].to`,
+      '"tagline" is not a field of the type "button"',
+    );
   });
 
-  it('rename-field.to não vale para coluna de table', () => {
+  it('rename-field.to does not apply to a table column', () => {
     const spec = withSteps({
       op: 'rename-field',
       type: 'button',
-      from: 'texto',
+      from: 'caption',
       to: 'col',
     });
-    expectIssue(spec, `${M0}.steps[0].to`, '"col" não é um campo do tipo "button"');
+    expectIssue(spec, `${M0}.steps[0].to`, '"col" is not a field of the type "button"');
   });
 
-  it('map-values: o campo existe e é enum', () => {
+  it('map-values: the field exists and is an enum', () => {
     const missing = withSteps({
       op: 'map-values',
       type: 'button',
-      field: 'cor',
+      field: 'color',
       values: { a: 'primary' },
     });
-    expectIssue(missing, `${M0}.steps[0].field`, '"cor" não é um campo do tipo "button"');
+    expectIssue(
+      missing,
+      `${M0}.steps[0].field`,
+      '"color" is not a field of the type "button"',
+    );
     const notEnum = withSteps({
       op: 'map-values',
       type: 'button',
@@ -352,40 +360,44 @@ describe('migrations: o lado novo existe nesta versão', () => {
     expectIssue(
       notEnum,
       `${M0}.steps[0].field`,
-      '"label" deve ser um campo enum do tipo',
+      '"label" must be an enum field of the type',
     );
   });
 
-  it('map-values: os destinos estão nas options do campo', () => {
+  it("map-values: the targets are in the field's options", () => {
     const spec = withSteps({
       op: 'map-values',
       type: 'button',
       field: 'style',
       values: { filled: 'primary', plain: 'secondary' },
     });
-    expectIssue(spec, `${M0}.steps[0].values.plain`, '"secondary" não está nas options');
+    expectIssue(spec, `${M0}.steps[0].values.plain`, '"secondary" is not in the options');
     expect(issuesOf(spec).filter((i) => i.path.endsWith('values.filled'))).toEqual([]);
   });
 
-  it('fill-field: o campo existe', () => {
+  it('fill-field: the field exists', () => {
     const spec = withSteps({
       op: 'fill-field',
       type: 'button',
-      field: 'cor',
+      field: 'color',
       default: 'x',
     });
-    expectIssue(spec, `${M0}.steps[0].field`, '"cor" não é um campo do tipo "button"');
+    expectIssue(
+      spec,
+      `${M0}.steps[0].field`,
+      '"color" is not a field of the type "button"',
+    );
   });
 
   it.each([
-    ['label', 5, 'deve ser texto'],
-    ['size', 'doze', 'deve ser número'],
-    ['when', '2026-02-30', 'deve ser uma data AAAA-MM-DD válida'],
-    ['when', 'hoje', 'deve ser uma data AAAA-MM-DD válida'],
-    ['style', 'secondary', 'deve ser uma das options'],
-    ['rows', 'x', 'não existe para table'],
+    ['label', 5, 'must be text'],
+    ['size', 'twelve', 'the value must be a number'],
+    ['when', '2026-02-30', 'must be a valid date YYYY-MM-DD'],
+    ['when', 'today', 'must be a valid date YYYY-MM-DD'],
+    ['style', 'secondary', 'must be one of the options'],
+    ['rows', 'x', 'does not exist for table'],
   ])(
-    'fill-field em %s com %j: o default tem de servir ao tipo',
+    'fill-field on %s with %j: the default must suit the type',
     (field, value, message) => {
       const spec = withSteps({ op: 'fill-field', type: 'button', field, default: value });
       expectIssue(spec, `${M0}.steps[0].default`, message);
@@ -393,18 +405,22 @@ describe('migrations: o lado novo existe nesta versão', () => {
   );
 });
 
-describe('migrations: o lado antigo não existe mais nesta versão', () => {
-  it('rename-type.from não pode ser um tipo daqui', () => {
+describe('migrations: the old side no longer exists in this version', () => {
+  it('rename-type.from cannot be a type from here', () => {
     const spec = withSteps({ op: 'rename-type', from: 'button', to: 'badge' });
-    expectIssue(spec, `${M0}.steps[0].from`, 'tipo "button" ainda existe nesta versão');
+    expectIssue(
+      spec,
+      `${M0}.steps[0].from`,
+      'type "button" still exists in this version',
+    );
   });
 
-  it('remove-type.type não pode ser um tipo daqui', () => {
+  it('remove-type.type cannot be a type from here', () => {
     const spec = withSteps({ op: 'remove-type', type: 'badge', mode: 'delete' });
-    expectIssue(spec, `${M0}.steps[0].type`, 'tipo "badge" ainda existe nesta versão');
+    expectIssue(spec, `${M0}.steps[0].type`, 'type "badge" still exists in this version');
   });
 
-  it('rename-field.from não pode ser um campo do tipo', () => {
+  it('rename-field.from cannot be a field of the type', () => {
     const spec = withSteps({
       op: 'rename-field',
       type: 'button',
@@ -414,22 +430,26 @@ describe('migrations: o lado antigo não existe mais nesta versão', () => {
     expectIssue(
       spec,
       `${M0}.steps[0].from`,
-      'campo "size" ainda existe no tipo "button" nesta versão',
+      'field "size" still exists in the type "button" in this version',
     );
   });
 
-  it('remove-field.field não pode ser um campo do tipo (e o tipo precisa existir)', () => {
+  it('remove-field.field cannot be a field of the type (and the type must exist)', () => {
     const spec = withSteps({ op: 'remove-field', type: 'button', field: 'label' });
     expectIssue(
       spec,
       `${M0}.steps[0].field`,
-      'campo "label" ainda existe no tipo "button" nesta versão',
+      'field "label" still exists in the type "button" in this version',
     );
     const ghost = withSteps({ op: 'remove-field', type: 'ghost', field: 'label' });
-    expectIssue(ghost, `${M0}.steps[0].type`, 'tipo "ghost" não existe nesta versão');
+    expectIssue(
+      ghost,
+      `${M0}.steps[0].type`,
+      'type "ghost" does not exist in this version',
+    );
   });
 
-  it('o erro aponta o passo certo quando há vários', () => {
+  it('the error points at the right step when there are several', () => {
     const spec = withSteps(
       { op: 'remove-type', type: 'old', mode: 'delete' },
       { op: 'remove-field', type: 'button', field: 'label' },
@@ -442,7 +462,7 @@ describe('migrations: o lado antigo não existe mais nesta versão', () => {
   });
 });
 
-/** `base()` com a tabela `rows` ganhando as colunas `kind` (enum), `n` (number) e `d` (date). */
+/** `base()` with the `rows` table gaining the columns `kind` (enum), `n` (number) and `d` (date). */
 function withTable(...steps: Json[]): Json {
   const spec = withSteps(...steps);
   const rows = spec.layers[0].annotationTypes[0].fields[4];
@@ -456,169 +476,169 @@ function withTable(...steps: Json[]): Json {
 
 const S0 = `${M0}.steps[0]`;
 
-/** Chaves malformadas: cada uma com a sua mensagem, em qualquer passo que a aceite. */
+/** Malformed keys: each with its own message, in any step that accepts it. */
 const MALFORMED: [string, string][] = [
-  ['a.b.c', '"a.b.c" tem mais de um ponto; use "campo" ou "tabela.coluna"'],
-  ['.col', '".col" tem uma parte vazia; use "campo" ou "tabela.coluna"'],
-  ['rows.', '"rows." tem uma parte vazia; use "campo" ou "tabela.coluna"'],
+  ['a.b.c', '"a.b.c" has more than one dot; use "field" or "table.column"'],
+  ['.col', '".col" has an empty part; use "field" or "table.column"'],
+  ['rows.', '"rows." has an empty part; use "field" or "table.column"'],
 ];
 
-describe('migrations: tabela.coluna em rename-field', () => {
+describe('migrations: table.column in rename-field', () => {
   const rename = (from: string, to: string): Json =>
     withTable({ op: 'rename-field', type: 'button', from, to });
 
-  it('aceita coluna nova (to) e coluna antiga que sumiu (from)', () => {
+  it('accepts a new column (to) and an old column that vanished (from)', () => {
     expect(parseSpec(rename('rows.old', 'rows.col')).ok).toBe(true);
-    // a tabela inteira sumiu: a coluna foi junto
+    // the whole table vanished: the column went with it
     expect(parseSpec(rename('gone.old', 'rows.kind')).ok).toBe(true);
-    // de coluna para campo de nível superior
+    // from a column to a top-level field
     expect(parseSpec(rename('rows.old', 'label')).ok).toBe(true);
     expect(jsonValidator.safeParse(rename('rows.old', 'rows.col')).success).toBe(true);
   });
 
-  it('to: a coluna precisa existir na tabela', () => {
+  it('to: the column must exist in the table', () => {
     expectIssue(
       rename('rows.old', 'rows.nope'),
       `${S0}.to`,
-      '"rows.nope" não é uma coluna da tabela "rows" do tipo "button"',
+      '"rows.nope" is not a column of the table "rows" of the type "button"',
     );
   });
 
-  it('to: a tabela precisa existir', () => {
+  it('to: the table must exist', () => {
     expectIssue(
       rename('rows.old', 'ghost.col'),
       `${S0}.to`,
-      '"ghost" não é um campo do tipo "button"',
+      '"ghost" is not a field of the type "button"',
     );
   });
 
-  it('to: ponto num campo que não é table', () => {
+  it('to: dot in a field that is not a table', () => {
     expectIssue(
       rename('rows.old', 'label.col'),
       `${S0}.to`,
-      '"label" não é uma tabela do tipo "button"',
+      '"label" is not a table of the type "button"',
     );
   });
 
-  it.each(MALFORMED)('to malformado: %s', (key, message) => {
+  it.each(MALFORMED)('malformed to: %s', (key, message) => {
     expectIssue(rename('rows.old', key), `${S0}.to`, message);
   });
 
-  it('from: a coluna não pode mais existir', () => {
+  it('from: the column can no longer exist', () => {
     expectIssue(
       rename('rows.col', 'rows.kind'),
       `${S0}.from`,
-      'coluna "col" ainda existe na tabela "rows" do tipo "button" nesta versão',
+      'column "col" still exists in the table "rows" of the type "button" in this version',
     );
   });
 
-  it('from: ponto num campo que não é table', () => {
+  it('from: dot in a field that is not a table', () => {
     expectIssue(
       rename('label.old', 'rows.kind'),
       `${S0}.from`,
-      '"label" não é uma tabela do tipo "button"',
+      '"label" is not a table of the type "button"',
     );
   });
 
-  it.each(MALFORMED)('from malformado: %s', (key, message) => {
+  it.each(MALFORMED)('malformed from: %s', (key, message) => {
     expectIssue(rename(key, 'rows.kind'), `${S0}.from`, message);
   });
 });
 
-describe('migrations: tabela.coluna em remove-field', () => {
+describe('migrations: table.column in remove-field', () => {
   const remove = (field: string): Json =>
     withTable({ op: 'remove-field', type: 'button', field });
 
-  it('aceita coluna que sumiu e tabela que sumiu', () => {
+  it('accepts a column that vanished and a table that vanished', () => {
     expect(parseSpec(remove('rows.old')).ok).toBe(true);
     expect(parseSpec(remove('gone.old')).ok).toBe(true);
     expect(jsonValidator.safeParse(remove('rows.old')).success).toBe(true);
   });
 
-  it('a coluna não pode mais existir', () => {
+  it('the column can no longer exist', () => {
     expectIssue(
       remove('rows.col'),
       `${S0}.field`,
-      'coluna "col" ainda existe na tabela "rows" do tipo "button" nesta versão',
+      'column "col" still exists in the table "rows" of the type "button" in this version',
     );
   });
 
-  it('ponto num campo que não é table', () => {
+  it('dot in a field that is not a table', () => {
     expectIssue(
       remove('label.col'),
       `${S0}.field`,
-      '"label" não é uma tabela do tipo "button"',
+      '"label" is not a table of the type "button"',
     );
   });
 
-  it.each(MALFORMED)('malformado: %s', (key, message) => {
+  it.each(MALFORMED)('malformed: %s', (key, message) => {
     expectIssue(remove(key), `${S0}.field`, message);
   });
 
-  it('o tipo continua precisando existir', () => {
+  it('the type still needs to exist', () => {
     const spec = withTable({ op: 'remove-field', type: 'ghost', field: 'rows.old' });
-    expectIssue(spec, `${S0}.type`, 'tipo "ghost" não existe nesta versão');
+    expectIssue(spec, `${S0}.type`, 'type "ghost" does not exist in this version');
   });
 });
 
-describe('migrations: tabela.coluna em map-values', () => {
+describe('migrations: table.column in map-values', () => {
   const map = (field: string, values: Record<string, string> = { x: 'a' }): Json =>
     withTable({ op: 'map-values', type: 'button', field, values });
 
-  it('aceita coluna enum com destinos nas options dela', () => {
+  it('accepts an enum column with targets in its options', () => {
     expect(parseSpec(map('rows.kind', { x: 'a', y: 'b' })).ok).toBe(true);
     expect(jsonValidator.safeParse(map('rows.kind')).success).toBe(true);
   });
 
-  it('a coluna precisa existir na tabela', () => {
+  it('the column must exist in the table', () => {
     expectIssue(
       map('rows.nope'),
       `${S0}.field`,
-      '"rows.nope" não é uma coluna da tabela "rows" do tipo "button"',
+      '"rows.nope" is not a column of the table "rows" of the type "button"',
     );
   });
 
-  it('a tabela precisa existir', () => {
+  it('the table must exist', () => {
     expectIssue(
       map('ghost.kind'),
       `${S0}.field`,
-      '"ghost" não é um campo do tipo "button"',
+      '"ghost" is not a field of the type "button"',
     );
   });
 
-  it('ponto num campo que não é table', () => {
+  it('dot in a field that is not a table', () => {
     expectIssue(
       map('label.kind'),
       `${S0}.field`,
-      '"label" não é uma tabela do tipo "button"',
+      '"label" is not a table of the type "button"',
     );
   });
 
-  it.each(MALFORMED)('malformado: %s', (key, message) => {
+  it.each(MALFORMED)('malformed: %s', (key, message) => {
     expectIssue(map(key), `${S0}.field`, message);
   });
 
-  it('a coluna precisa ser enum', () => {
+  it('the column must be an enum', () => {
     expectIssue(
       map('rows.col'),
       `${S0}.field`,
-      '"rows.col" deve ser uma coluna enum da tabela',
+      '"rows.col" must be an enum column of the table',
     );
   });
 
-  it('os destinos estão nas options da coluna (não nas de outro campo)', () => {
-    // "primary" é option do campo "style", não da coluna "rows.kind"
+  it("the targets are in the column's options (not in another field's)", () => {
+    // "primary" is an option of the field "style", not of the column "rows.kind"
     const spec = map('rows.kind', { x: 'a', y: 'primary' });
-    expectIssue(spec, `${S0}.values.y`, '"primary" não está nas options');
+    expectIssue(spec, `${S0}.values.y`, '"primary" is not in the options');
     expect(issuesOf(spec).filter((i) => i.path.endsWith('values.x'))).toEqual([]);
   });
 });
 
-describe('migrations: tabela.coluna em fill-field', () => {
+describe('migrations: table.column in fill-field', () => {
   const fill = (field: string, value: string | number = 1): Json =>
     withTable({ op: 'fill-field', type: 'button', field, default: value });
 
-  it('aceita o default de cada tipo de coluna', () => {
+  it('accepts the default of each column type', () => {
     expect(parseSpec(fill('rows.col', 'x')).ok).toBe(true);
     expect(parseSpec(fill('rows.n', 0)).ok).toBe(true);
     expect(parseSpec(fill('rows.d', '2026-01-31')).ok).toBe(true);
@@ -626,54 +646,54 @@ describe('migrations: tabela.coluna em fill-field', () => {
     expect(jsonValidator.safeParse(fill('rows.n')).success).toBe(true);
   });
 
-  it('a coluna precisa existir na tabela', () => {
+  it('the column must exist in the table', () => {
     expectIssue(
       fill('rows.nope'),
       `${S0}.field`,
-      '"rows.nope" não é uma coluna da tabela "rows" do tipo "button"',
+      '"rows.nope" is not a column of the table "rows" of the type "button"',
     );
   });
 
-  it('a tabela precisa existir', () => {
+  it('the table must exist', () => {
     expectIssue(
       fill('ghost.n'),
       `${S0}.field`,
-      '"ghost" não é um campo do tipo "button"',
+      '"ghost" is not a field of the type "button"',
     );
   });
 
-  it('ponto num campo que não é table', () => {
+  it('dot in a field that is not a table', () => {
     expectIssue(
       fill('label.n'),
       `${S0}.field`,
-      '"label" não é uma tabela do tipo "button"',
+      '"label" is not a table of the type "button"',
     );
   });
 
-  it.each(MALFORMED)('malformado: %s', (key, message) => {
+  it.each(MALFORMED)('malformed: %s', (key, message) => {
     expectIssue(fill(key), `${S0}.field`, message);
   });
 
   it.each([
-    ['rows.col', 5, 'deve ser texto'],
-    ['rows.n', 'doze', 'deve ser número'],
-    ['rows.d', '2026-02-30', 'deve ser uma data AAAA-MM-DD válida'],
-    ['rows.kind', 'z', 'deve ser uma das options'],
-  ])('o default tem de servir ao tipo da coluna: %s com %j', (field, value, message) => {
+    ['rows.col', 5, 'must be text'],
+    ['rows.n', 'twelve', 'the value must be a number'],
+    ['rows.d', '2026-02-30', 'must be a valid date YYYY-MM-DD'],
+    ['rows.kind', 'z', 'must be one of the options'],
+  ])("the default must suit the column's type: %s with %j", (field, value, message) => {
     expectIssue(fill(field, value), `${S0}.default`, message);
   });
 });
 
-describe('migrations: versão do formato', () => {
-  it('em formatVersion 3 é erro, no caminho de migrations', () => {
+describe('migrations: format version', () => {
+  it('in formatVersion 3 it is an error, at the migrations path', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.formatVersion = 3;
     expect(issuesOf(spec)).toEqual([
-      { path: 'migrations', message: 'só é permitido com formatVersion 4' },
+      { path: 'migrations', message: 'only allowed with formatVersion 4' },
     ]);
   });
 
-  it('o JSON Schema e o zod concordam no exemplo mínimo', () => {
+  it('the JSON Schema and zod agree on the minimal example', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     expect(parseSpec(spec).ok).toBe(true);
     expect(jsonValidator.safeParse(spec).success).toBe(true);

@@ -1,6 +1,6 @@
-// Ícones em SVG inline (sem dependências), na cor do texto (`currentColor`).
-// Conjunto original da interface 2.0: grade de 16px, traço de 1,25 e pontas redondas.
-// O tamanho em tela vem do CSS (`--control-icon`: 16px).
+// Inline SVG icons (no dependencies), in the text color (`currentColor`).
+// Original set of interface 2.0: 16px grid, 1.25 stroke and round ends.
+// The on-screen size comes from the CSS (`--control-icon`: 16px).
 import type { JSX } from 'preact';
 import { LOCK_PATHS, UNLOCK_PATHS } from '../utils/lockGlyph';
 import {
@@ -19,19 +19,19 @@ import {
 } from '../utils/reviewGlyphs';
 
 interface IconShape {
-  /** Traços (atributo `d` de cada `<path>`), na grade de 16 x 16. */
+  /** Strokes (the `d` attribute of each `<path>`), on the 16 x 16 grid. */
   readonly d: readonly string[];
-  /** Pontos cheios (centros); os ícones de lista, "mais" e alça usam. */
+  /** Filled dots (centers); the list, "more" and handle icons use them. */
   readonly dots?: readonly (readonly [number, number])[];
 }
 
-/** Círculo como traço (o `Icon` só desenha `<path>` e pontos). */
+/** Circle as a stroke (the `Icon` only draws `<path>` and dots). */
 function circle(cx: number, cy: number, r: number): string {
   return `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z`;
 }
 
 const SHAPES = {
-  // Edição
+  // Editing
   undo: { d: ['M5.5 3 2.5 6l3 3', 'M2.5 6h6a4 4 0 0 1 0 8H7'] },
   redo: { d: ['m10.5 3 3 3-3 3', 'M13.5 6h-6a4 4 0 0 0 0 8H9'] },
   edit: {
@@ -58,7 +58,7 @@ const SHAPES = {
   close: { d: CLOSE_PATHS },
   refresh: { d: ['M13 3.5v3h-3', 'M12.6 6.5A5 5 0 1 0 13 8.5'] },
 
-  // Ferramentas
+  // Tools
   pan: {
     d: [
       'M8 2v12',
@@ -93,7 +93,7 @@ const SHAPES = {
   locate: { d: [circle(8, 8, 4), 'M8 1.5v3', 'M8 11.5v3', 'M1.5 8h3', 'M11.5 8h3'] },
   filter: { d: ['M2.5 3.5h11L9.5 8.5V13l-3-1.5V8.5Z'] },
 
-  // Navegação
+  // Navigation
   menu: { d: ['M2.5 4h11', 'M2.5 8h11', 'M2.5 12h11'] },
   chevronUp: { d: ['m4 10 4-4 4 4'] },
   chevronDown: { d: ['m4 6 4 4 4-4'] },
@@ -118,7 +118,7 @@ const SHAPES = {
   },
   home: { d: ['M2.5 7.5 8 2.5l5.5 5', 'M4 6.5V13h8V6.5', 'M6.5 13V9.5h3V13'] },
 
-  // Janelas e painéis
+  // Windows and panels
   panelLeft: { d: ['M2.5 3h11v10h-11Z', 'M6 3v10'] },
   panelRight: { d: ['M2.5 3h11v10h-11Z', 'M10 3v10'] },
   panelBottom: { d: ['M2.5 3h11v10h-11Z', 'M2.5 10h11'] },
@@ -167,7 +167,7 @@ const SHAPES = {
       'M6 7.5h4',
     ],
   },
-  /** Marcador de "é container": a moldura do ícone `container`, sem o + de "Novo container". */
+  /** "Is a container" marker: the frame of the `container` icon, without the + of "New container". */
   containerMark: {
     d: [
       'M4.5 2.5h7a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z',
@@ -205,7 +205,7 @@ const SHAPES = {
     ],
   },
 
-  // Arquivos e dados
+  // Files and data
   addImage: {
     d: ['M2.5 3.5h7.5v9.5h-7.5Z', 'M2.5 11 5 8.5l3 3', 'M13 2v4', 'M11 4h4'],
   },
@@ -262,7 +262,7 @@ const SHAPES = {
     ],
   },
 
-  // Estado e ajuda
+  // Status and help
   eye: {
     d: ['M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z', circle(8, 8, 2)],
   },
@@ -321,8 +321,8 @@ const SHAPES = {
   },
   moon: { d: ['M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z'] },
 
-  // Revisão de propostas (design system, docs/DESIGN-SYSTEM.md). Os estados de
-  // decisão não são ícones: são o `DecisionMark`.
+  // Proposal review (design system, docs/DESIGN-SYSTEM.md). The decision
+  // states are not icons: they are the `DecisionMark`.
   proposal: {
     d: [
       circle(4, 4, 1.5),
@@ -333,9 +333,9 @@ const SHAPES = {
       'm10 2.5-1.8 2 1.8 2',
     ],
   },
-  // Conversa (etapa Comentários): balão com duas linhas de texto.
+  // Thread (Comments stage): bubble with two lines of text.
   chat: { d: ['M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z', 'M5 6h6', 'M5 8h4'] },
-  // Comentar (colocar uma conversa): o balão com um mais.
+  // Comment (start a thread): the bubble with a plus.
   chatAdd: { d: ['M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z', 'M8 5v4', 'M6 7h4'] },
   moved: { d: MOVED_PATHS },
   changed: { d: CHANGED_PATHS },
@@ -361,7 +361,7 @@ const SHAPES = {
 
 export type IconName = keyof typeof SHAPES;
 
-/** Nomes de todos os ícones (para testes e para a documentação). */
+/** Names of all the icons (for tests and for the documentation). */
 export const ICON_NAMES = Object.keys(SHAPES) as readonly IconName[];
 
 export function Icon({ name }: { readonly name: IconName }): JSX.Element {

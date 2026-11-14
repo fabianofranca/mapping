@@ -1,5 +1,5 @@
-# Avisos que faltam — 2026-11-02 (épico `epic/avisos-faltantes`)
+# Missing notices — 2026-11-02 (épico `epic/avisos-faltantes`)
 
 ## Sincronização
 
-Sem impacto no DS: o aviso novo usa o toast de sempre (`showToast`) e o resto é do servidor MCP. Nada foi gravado no artefato.
+Sem impacto no DS: the new notice uses the usual toast (`showToast`) and the rest belongs to the MCP server. Nothing was written to the artifact.

@@ -3,11 +3,11 @@ import { templateMessage, type ModelMessageTemplateCode } from './messages';
 import type { ModelMessage } from './modelMessage';
 
 /**
- * Problema da biblioteca montado pelo catálogo de mensagens (`src/model/messages/`): o `message`
- * é o texto pt-BR de sempre; `code`, `params` e `detail` seguem para a interface traduzir. O
- * `detail` é a mensagem de outro módulo que entra no `{reason}` do texto de fora. Regra: com
- * `detail`, `params` não leva `reason`; o texto de dentro só entra no `message` (aqui) e fica
- * em `detail`, que a interface traduz.
+ * Library issue built by the message catalog (`src/model/messages/`): the `message` is the
+ * usual default text; `code`, `params` and `detail` go on to the interface to translate. The
+ * `detail` is the message of another module that goes into the `{reason}` of the outer text.
+ * Rule: with `detail`, `params` does not carry `reason`; the inner text only goes into the
+ * `message` (here) and stays in `detail`, which the interface translates.
  */
 export function libraryIssue(
   severity: LibraryIssue['severity'],

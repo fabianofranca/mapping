@@ -3,12 +3,12 @@ import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { sampleProject } from '../model/fixtures';
 
-// Gesto de mover um container sozinho na Principal: a posição vem do viewport (divisão pelo
-// zoom) e pode trazer ruído de ponto flutuante, que não pode chegar ao `placement` gravado.
+// Gesture of moving a container alone on the Main one: the position comes from the viewport (division by the
+// zoom) and may carry floating-point noise, which must not reach the saved `placement`.
 const NOISY = 275.00000000000006;
 
-describe('store: gesto de container sem ruído no placement', () => {
-  it('a prévia e o fim do gesto gravam o inteiro', () => {
+describe('store: container gesture without noise in the placement', () => {
+  it('the preview and the end of the gesture write the integer', () => {
     const store = createProjectStore();
     const actions = createProjectActions(store);
     store.load(sampleProject());
@@ -25,7 +25,7 @@ describe('store: gesto de container sem ruído no placement', () => {
     expect(placementOf()).toEqual({ x: 275, y: 3000, scale: 1 });
   });
 
-  it('a ação setContainerPlacement também grava o inteiro', () => {
+  it('the setContainerPlacement action also writes the integer', () => {
     const store = createProjectStore();
     const actions = createProjectActions(store);
     store.load(sampleProject());

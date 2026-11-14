@@ -9,11 +9,11 @@ import { updateById } from './project';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, ReadingDirection } from './types';
 
-// Modo do desenho (schema v18, etapa "componentes fiéis"): escolhe o modo dos `tokens` das
-// especializações (`light`, `dark`…). É do projeto; o container pode fixar o seu. Não depende do
-// tema claro/escuro da interface. Funções puras, sem DOM.
+// Drawing mode (schema v18, "faithful components" stage): picks the mode of the specializations'
+// `tokens` (`light`, `dark`…). It belongs to the project; the container can pin its own. It does
+// not depend on the interface's light/dark theme. Pure functions, no DOM.
 
-/** Padrão do nome de um modo (o mesmo de `tokens.modes` na especialização). */
+/** Pattern of a mode name (the same as `tokens.modes` in the specialization). */
 const MODE_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
 function checkMode(mode: string): string {
@@ -21,7 +21,7 @@ function checkMode(mode: string): string {
   return mode;
 }
 
-/** Troca o modo do projeto; `null` o remove (volta ao primeiro modo de cada especialização). */
+/** Changes the project's mode; `null` removes it (back to the first mode of each specialization). */
 export function setProjectDrawingMode(p: Project, mode: string | null): Project {
   if (mode === null) {
     if (p.drawingMode === undefined) return p;
@@ -33,7 +33,7 @@ export function setProjectDrawingMode(p: Project, mode: string | null): Project 
   return p.drawingMode === mode ? p : { ...p, drawingMode: mode };
 }
 
-/** Fixa o modo do container; `null` volta a seguir o do projeto. */
+/** Pins the container's mode; `null` goes back to following the project's. */
 export function setContainerDrawingMode(
   p: Project,
   containerId: string,
@@ -53,8 +53,9 @@ export function setContainerDrawingMode(
 }
 
 /**
- * Modo efetivo de um espaço: o que o container fixa, senão o do projeto, senão `undefined` (o
- * primeiro modo de cada especialização). `containerId` nulo = o canvas (segue o projeto).
+ * Effective mode of a space: the one the container pins, otherwise the project's, otherwise
+ * `undefined` (the first mode of each specialization). A null `containerId` = the canvas (follows
+ * the project).
  */
 export function effectiveDrawingMode(
   p: Project,
@@ -67,7 +68,7 @@ export function effectiveDrawingMode(
   return p.drawingMode;
 }
 
-/** A união dos `modes` das especializações (na ordem em que aparecem, sem repetir). */
+/** The union of the specializations' `modes` (in the order they appear, without repeats). */
 export function drawingModesOf(
   tokens: ReadonlyArray<{ readonly modes: readonly string[] } | undefined>,
 ): string[] {
@@ -78,7 +79,7 @@ export function drawingModesOf(
   return out;
 }
 
-/** Modos gravados (do projeto e dos containers) que nenhuma especialização declara. */
+/** Stored modes (of the project and the containers) that no specialization declares. */
 export function undeclaredDrawingMode(p: Project, declared: readonly string[]): string[] {
   const stored = [p.drawingMode, ...p.containers.map((c) => c.drawingMode)];
   const out: string[] = [];
@@ -89,12 +90,12 @@ export function undeclaredDrawingMode(p: Project, declared: readonly string[]): 
 }
 
 /**
- * O componente como o desenho o usa: com cada `$token` trocado pela tabela do modo efetivo do
- * espaço (`resolvedTokensByMode[modo]`; sem modo ou sem a tabela, a de `resolvedTokens`). Arrumar,
- * posicionar e medir passam por aqui antes de ler o slot, para o `gap` e o `padding` em `$token`
- * valerem o mesmo que na tela. `tokens` vai na opção `tokens` do `instantiate`; `direction` é a
- * direção de leitura efetiva do espaço (`effectiveDirection`), que vai na opção `direction` do
- * motor (`drawOptions`).
+ * The component as the drawing uses it: with each `$token` replaced by the table of the space's
+ * effective mode (`resolvedTokensByMode[mode]`; with no mode or no such table, the one in
+ * `resolvedTokens`). Arranging, positioning and measuring go through here before reading the slot,
+ * so that a `gap` and `padding` in `$token` are worth the same as on screen. `tokens` goes in the
+ * `tokens` option of `instantiate`; `direction` is the space's effective reading direction
+ * (`effectiveDirection`), which goes in the engine's `direction` option (`drawOptions`).
  */
 export function componentForDrawing(
   p: Project,
@@ -117,10 +118,11 @@ export function componentForDrawing(
 }
 
 /**
- * A âncora de uma marcação existente na forma que a instância lê (`$anchor.*`), para as MEDIÇÕES
- * (`fitMarking`, o arrumar): a mesma que o desenho recebe (`componentDrawings`), com o `rect` atual
- * da marcação, o lado gravado ou, sem ele, o padrão do componente. `undefined` sem âncora ou sem o
- * alvo. Sem isso o `$anchor.*` fica nulo e um `sizing` que depende do lado mede noutro ramo.
+ * The anchor of an existing marking in the form the instance reads (`$anchor.*`), for the
+ * MEASUREMENTS (`fitMarking`, the arranging): the same one the drawing receives
+ * (`componentDrawings`), with the marking's current `rect`, the stored side or, without it, the
+ * component's default. `undefined` without an anchor or without the target. Without this,
+ * `$anchor.*` stays null and a `sizing` that depends on the side measures in another branch.
  */
 export function measuringAnchor(
   p: Project,
@@ -142,9 +144,9 @@ export function measuringAnchor(
 }
 
 /**
- * As opções do motor que vêm do espaço (`tokens`, `direction` e, numa marcação ancorada, `anchor`):
- * só leva a chave quando há o que passar (`tokens` definidos, direção `rtl`, âncora), então em `ltr`
- * e sem âncora as opções são as de antes.
+ * The engine options that come from the space (`tokens`, `direction` and, on an anchored marking,
+ * `anchor`): it only carries the key when there is something to pass (defined `tokens`, `rtl`
+ * direction, anchor), so in `ltr` and without an anchor the options are the same as before.
  */
 export function drawOptions(drawn: {
   readonly tokens: ResolvedTokens | undefined;

@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "badge",
   "name": "Badge",
-  "description": "Indicador de notificação: pontinho de 6 (small) ou contador de 16 com o texto em onError (large), na cor error. Ancorado ao canto de um ícone pelo BadgedBox.",
+  "description": "Notification indicator: a 6 dot (small) or a 16 counter with the text in onError (large), in the error color. Anchored to the corner of an icon by BadgedBox.",
   "size": {
     "width": 32,
     "height": 16
@@ -40,7 +40,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "pontinho",
+        "name": "dot",
         "width": 6,
         "height": 6,
         "cornerRadius": {
@@ -58,7 +58,7 @@
       },
       {
         "type": "frame",
-        "name": "contador",
+        "name": "counter",
         "clip": false,
         "layout": {
           "type": "row",
@@ -82,7 +82,7 @@
         "children": [
           {
             "type": "text",
-            "name": "número",
+            "name": "number",
             "text": {
               "$field": "count"
             },

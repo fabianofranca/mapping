@@ -1,19 +1,20 @@
 /** @jsxImportSource react */
 /**
- * Demo do visualizador React: hospedeiro React de verdade (`react-dom/client`, sem
- * preact/compat) para o `<MappingViewer/>` embutível. Fora do produto:
- * textos em pt-BR direto no código, sem i18n e sem store.
+ * React viewer demo: a real React host (`react-dom/client`, no preact/compat) for the
+ * embeddable `<MappingViewer/>`. Outside the product:
+ * English text straight in the code, no i18n and no store.
  *
- * O JSON à esquerda é a fonte de verdade da demonstração: cada edição válida vira a `screen` do
- * visualizador (atualização em tempo real); uma edição inválida mostra o erro e mantém a última
- * tela válida. No conjunto "Material 3 (SDUI)" o JSON é o de um backend SDUI: ele vira
- * o `source` do visualizador, a origem declarada na especialização o traduz e a tela calculada
- * volta por `onSource` (alimenta a árvore e as propriedades); os avisos da origem ficam no
- * painel de status, e um `error` do resultado volta ao último `source` que funcionou. O StrictMode é um toggle que recria o root.
+ * The JSON on the left is the demo's source of truth: each valid edit becomes the viewer's
+ * `screen` (real-time update); an invalid edit shows the error and keeps the last valid
+ * screen. In the "Material 3 (SDUI)" set the JSON is that of an SDUI backend: it becomes
+ * the viewer's `source`, the origin declared in the specialization translates it and the computed
+ * screen comes back through `onSource` (it feeds the tree and the properties); the origin's
+ * warnings go in the status panel, and an `error` in the result goes back to the last `source`
+ * that worked. StrictMode is a toggle that recreates the root.
  *
- * A seleção tem duas fontes: o clique no canvas (quando "Seleção pelo canvas" está ligada) e a
- * árvore das instâncias à direita, que também mostra as propriedades (só leitura) da selecionada.
- * O hover idem: o ponteiro no canvas ou o ponteiro sobre a linha da árvore; vence a última fonte.
+ * Selection has two sources: a click on the canvas (when "Canvas selection" is on) and the
+ * instance tree on the right, which also shows the selected one's (read-only) properties.
+ * Hover is the same: the pointer on the canvas or on the tree row; the last source wins.
  */
 import {
   Fragment,
@@ -52,7 +53,7 @@ type Dataset = 'samples' | 'm3' | 'sdui';
 const DATASETS: Record<Dataset, { library: Library; screen: Screen }> = {
   samples: { library: loadLibrary(SAMPLE_FILES), screen: SAMPLE_SCREEN },
   m3: { library: loadLibrary(M3_FILES), screen: M3_SCREEN },
-  // A tela do SDUI nasce do `source` (chega por `onSource`); o `screen` é só o ponto de partida.
+  // The SDUI screen is born from the `source` (it arrives through `onSource`); the `screen` is only the starting point.
   sdui: { library: loadLibrary(M3_FILES), screen: M3_SCREEN },
 };
 const SDUI_TEXT = JSON.stringify(settingsSdui, null, 2);
@@ -63,7 +64,7 @@ interface Click {
   readonly y: number;
 }
 
-/** Linha da árvore selecionada: mantém-na visível quando a seleção veio do canvas. */
+/** The selected tree row: keeps it visible when the selection came from the canvas. */
 function revealRow(el: HTMLElement | null): void {
   if (el && typeof el.scrollIntoView === 'function')
     el.scrollIntoView({ block: 'nearest' });
@@ -71,7 +72,7 @@ function revealRow(el: HTMLElement | null): void {
 
 function valueText(value: FieldValue): string {
   return value === null || value === undefined || String(value).trim() === ''
-    ? '(vazio)'
+    ? '(empty)'
     : String(value);
 }
 
@@ -86,7 +87,7 @@ function InstanceTree({
   onSelect: (id: string) => void;
   onHover: (id: string | undefined) => void;
 }) {
-  if (rows.length === 0) return <p className="react-lab-empty">Nenhuma instância.</p>;
+  if (rows.length === 0) return <p className="react-lab-empty">No instances.</p>;
   return (
     <ul className="react-lab-tree">
       {rows.map(({ instance, label, typeName, depth }) => {
@@ -105,9 +106,7 @@ function InstanceTree({
               onMouseLeave={() => onHover(undefined)}
             >
               <span className="react-lab-tree-label">{label}</span>
-              <span className="react-lab-tree-type">
-                {typeName ?? 'tipo desconhecido'}
-              </span>
+              <span className="react-lab-tree-type">{typeName ?? 'unknown type'}</span>
             </button>
           </li>
         );
@@ -125,7 +124,7 @@ function Properties({
 }) {
   if (!instance)
     return (
-      <p className="react-lab-empty">Clique numa instância na árvore ou no canvas.</p>
+      <p className="react-lab-empty">Click an instance in the tree or on the canvas.</p>
     );
   const { box } = instance;
   return (
@@ -133,15 +132,15 @@ function Properties({
       <div className="react-lab-props-title">{type ? type.name : instance.typeId}</div>
       {type ? null : (
         <p className="react-lab-empty">
-          Tipo desconhecido: a biblioteca não tem o tipo “{instance.typeId}”.
+          Unknown type: the library has no type “{instance.typeId}”.
         </p>
       )}
       <dl>
         <dt>Id</dt>
         <dd>{instance.id}</dd>
-        <dt>Caixa</dt>
+        <dt>Box</dt>
         <dd>
-          x {box.x}, y {box.y}, L {box.width}, A {box.height}
+          x {box.x}, y {box.y}, W {box.width}, H {box.height}
         </dd>
         {(type?.fields ?? []).map((field) => (
           <Fragment key={field.key}>
@@ -165,22 +164,22 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
   const [selection, setSelection] = useState<readonly string[]>([]);
   const [canvasSelect, setCanvasSelect] = useState(true);
   const [direction, setDirection] = useState<'ltr' | 'rtl'>('ltr');
-  /** O JSON do SDUI entregue ao visualizador (só vale no conjunto SDUI). */
+  /** The SDUI JSON handed to the viewer (only applies in the SDUI set). */
   const [source, setSource] = useState<unknown>(settingsSdui);
   const [sourceWarnings, setSourceWarnings] = useState<readonly string[]>([]);
-  /** O `source` mais recente entregue, e o último cujo cálculo deu tela (para voltar em caso de erro). */
+  /** The most recent `source` handed over, and the last one whose computation produced a screen (to go back on error). */
   const shownSource = useRef<unknown>(settingsSdui);
   const goodSource = useRef<unknown>(undefined);
-  /** Voltando ao último `source` bom: o resultado dessa volta não apaga o erro que a causou. */
+  /** Going back to the last good `source`: the result of that return does not clear the error that caused it. */
   const restoring = useRef(false);
   const [warnings, setWarnings] = useState<InstanceWarnings>(new Map());
   const [updateMs, setUpdateMs] = useState<number | undefined>();
-  /** Instante em que a edição entrou (handler); lido depois do commit e do efeito do viewer. */
+  /** Moment the edit came in (handler); read after the commit and the viewer's effect. */
   const startedAt = useRef<number | undefined>(undefined);
   const library = DATASETS[dataset].library;
 
-  // Efeito do PAI: o React roda os efeitos dos filhos antes dos do pai, então este roda depois
-  // do `update` do `<MappingViewer/>`. O desenho do Konva (requestAnimationFrame) fica de fora.
+  // PARENT effect: React runs the children's effects before the parent's, so this one runs after
+  // the `<MappingViewer/>` `update`. Konva's drawing (requestAnimationFrame) is left out.
   useEffect(() => {
     if (startedAt.current === undefined) return;
     setUpdateMs(performance.now() - startedAt.current);
@@ -196,7 +195,7 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
         const json: unknown = JSON.parse(value);
         startedAt.current = started;
         if (dataset === 'sdui') {
-          // A validação do conteúdo é da origem: o resultado (ou o erro) volta por `onSource`.
+          // Validating the content is up to the origin: the result (or the error) comes back through `onSource`.
           shownSource.current = json;
           setSource(json);
           return;
@@ -227,16 +226,16 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
     setHover(undefined);
   };
 
-  // Callbacks novos a cada render de propósito: o invólucro lê por ref e não recria o viewer.
+  // New callbacks on every render on purpose: the wrapper reads them by ref and does not recreate the viewer.
   const onClick = (id: string | undefined, point: { x: number; y: number }): void => {
     setClick({ id, x: Math.round(point.x), y: Math.round(point.y) });
     setSelection((current) => (id === undefined ? [] : current.includes(id) ? [] : [id]));
   };
 
-  /** A tela calculada do `source`: vira a tela da página; erro ou JSON sem tela volta ao último `source` bom. */
+  /** The screen computed from the `source`: it becomes the page's screen; an error or JSON with no screen goes back to the last good `source`. */
   const onSource = (result: SourceResult): void => {
     if (result.error !== undefined || !result.screen) {
-      setError(result.error ?? 'O SDUI não gerou tela.');
+      setError(result.error ?? 'The SDUI did not produce a screen.');
       if (
         goodSource.current !== undefined &&
         goodSource.current !== shownSource.current
@@ -267,10 +266,10 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
   return (
     <div className="react-lab">
       <aside className="react-lab-side">
-        <h1>Visualizador React</h1>
+        <h1>React viewer</h1>
         <p>
-          A demonstração usa a fonte do sistema: as fontes são do hospedeiro (CSS
-          @font-face ou FontFace + <code>fontsVersion</code>).
+          The demo uses the system font: fonts belong to the host (CSS @font-face or
+          FontFace + <code>fontsVersion</code>).
         </p>
         <div className="react-lab-controls">
           <button
@@ -278,7 +277,7 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
             aria-pressed={dataset === 'samples'}
             onClick={() => choose('samples')}
           >
-            Exemplos
+            Examples
           </button>
           <button
             type="button"
@@ -295,7 +294,7 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
             Material 3 (SDUI)
           </button>
           <button type="button" onClick={() => setMounted((m) => !m)}>
-            {mounted ? 'Desmontar' : 'Montar'}
+            {mounted ? 'Unmount' : 'Mount'}
           </button>
           <label className="toggle">
             <input
@@ -311,21 +310,21 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
               checked={canvasSelect}
               onChange={(e) => setCanvasSelect(e.target.checked)}
             />{' '}
-            Seleção pelo canvas
+            Canvas selection
           </label>
           <label className="toggle">
-            Direção{' '}
+            Direction{' '}
             <select
               value={direction}
               onChange={(e) => setDirection(e.target.value === 'rtl' ? 'rtl' : 'ltr')}
             >
-              <option value="ltr">Esquerda para a direita (ltr)</option>
-              <option value="rtl">Direita para a esquerda (rtl)</option>
+              <option value="ltr">Left to right (ltr)</option>
+              <option value="rtl">Right to left (rtl)</option>
             </select>
           </label>
         </div>
         <textarea
-          aria-label={dataset === 'sdui' ? 'SDUI (JSON)' : 'Tela (JSON)'}
+          aria-label={dataset === 'sdui' ? 'SDUI (JSON)' : 'Screen (JSON)'}
           spellCheck={false}
           value={text}
           onChange={edit}
@@ -356,39 +355,38 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
         </div>
         <div className="react-lab-status">
           <div>
-            Tela: {screen.name} ({screen.width} × {screen.height}),{' '}
-            {screen.instances.length} instâncias
+            Screen: {screen.name} ({screen.width} × {screen.height}),{' '}
+            {screen.instances.length} instances
           </div>
           <div>Hover: {hover ?? '—'}</div>
           <div>
-            Último clique:{' '}
-            {click ? `${click.id ?? 'fundo'} em (${click.x}, ${click.y})` : '—'}
+            Last click:{' '}
+            {click ? `${click.id ?? 'background'} at (${click.x}, ${click.y})` : '—'}
           </div>
-          <div>Seleção: {selection.length > 0 ? selection.join(', ') : '—'}</div>
+          <div>Selection: {selection.length > 0 ? selection.join(', ') : '—'}</div>
           <div>
-            Avisos:{' '}
+            Warnings:{' '}
             {warned.length === 0
-              ? 'nenhum'
+              ? 'none'
               : warned.map(([id, list]) => `${id}: ${list.join('; ')}`).join(' | ')}
           </div>
           {dataset === 'sdui' ? (
             <div>
-              Avisos da origem:{' '}
-              {sourceWarnings.length === 0 ? 'nenhum' : sourceWarnings.join(' | ')}
+              Source warnings:{' '}
+              {sourceWarnings.length === 0 ? 'none' : sourceWarnings.join(' | ')}
             </div>
           ) : null}
           <div>
-            Última atualização:{' '}
-            {updateMs === undefined ? '—' : `${updateMs.toFixed(1)} ms`}{' '}
+            Last update: {updateMs === undefined ? '—' : `${updateMs.toFixed(1)} ms`}{' '}
             <span className="react-lab-hint">
-              (aproximado: da edição até o efeito do invólucro, sem o desenho do Konva)
+              (approximate: from the edit to the wrapper's effect, without Konva drawing)
             </span>
           </div>
         </div>
       </main>
       <aside className="react-lab-right">
         <section className="react-lab-section react-lab-section-tree">
-          <h2>Árvore</h2>
+          <h2>Tree</h2>
           <InstanceTree
             rows={rows}
             selected={selectedId}
@@ -397,7 +395,7 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
           />
         </section>
         <section className="react-lab-section">
-          <h2>Propriedades</h2>
+          <h2>Properties</h2>
           <Properties instance={selected?.instance} type={selectedType} />
         </section>
       </aside>
@@ -405,7 +403,7 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
   );
 }
 
-/** Dono do toggle StrictMode: trocar o invólucro remonta toda a árvore (como recriar o root). */
+/** Owner of the StrictMode toggle: swapping the wrapper remounts the whole tree (like recreating the root). */
 function Shell() {
   const [strict, setStrict] = useState(true);
   const app = <App strict={strict} onStrict={setStrict} />;
@@ -417,5 +415,5 @@ function Shell() {
 }
 
 const host = document.getElementById('lab');
-if (!host) throw new Error('#lab não encontrado');
+if (!host) throw new Error('#lab not found');
 createRoot(host).render(<Shell />);

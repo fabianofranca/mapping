@@ -10,9 +10,10 @@ import { AGENT, HUMAN, message, sampleThread } from '../model/threadFixtures';
 import { AWAITING_HUMAN_PATHS } from '../../src/utils/threadStateGlyph';
 import { createHarness } from './harness';
 
+// pt-BR kept: shared fixture data (the email of HUMAN in tests/model/threadFixtures)
 beforeEach(() => {
   localStorage.clear();
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   setIdentity('Marina Alves', 'marina@exemplo.com');
 });
 afterEach(() => {
@@ -42,23 +43,23 @@ function view(texts: readonly string[], proposal: string | null = null) {
 }
 
 describe('ThreadView', () => {
-  it('cada mensagem mostra iniciais, nome, selo de agente e o texto em markdown', () => {
-    view(['**forte** e `código`', 'resposta']);
+  it('each message shows initials, name, agent badge and the text as markdown', () => {
+    view(['**strong** and `code`', 'reply']);
     expect(screen.getByText('MA')).toBeTruthy();
     expect(screen.getByText('AG')).toBeTruthy();
-    expect(screen.getByText('forte').tagName).toBe('STRONG');
+    expect(screen.getByText('strong').tagName).toBe('STRONG');
     expect(screen.getAllByText(t('thread.agent'))).toHaveLength(1);
     expect(document.querySelectorAll('time')).toHaveLength(2);
   });
 
-  it('o link mapping:// aparece como o texto do rótulo, sem virar link', () => {
-    view(['veja [o botão](mapping://project/M1)']);
-    expect(screen.getByText(/o botão/)).toBeTruthy();
+  it('the mapping:// link shows as the label text, without becoming a link', () => {
+    view(['see [the button](mapping://project/M1)']);
+    expect(screen.getByText(/the button/)).toBeTruthy();
     expect(document.querySelector('.markdown a')).toBeNull();
   });
 
-  it('o selo de estado leva o glifo antes do texto, escondido dos leitores de tela', () => {
-    view(['oi', 'ok']);
+  it('the state badge carries the glyph before the text, hidden from screen readers', () => {
+    view(['hi', 'ok']);
     const badge = document.querySelector('.thread-state');
     const svg = badge?.firstElementChild;
     expect(svg?.tagName.toLowerCase()).toBe('svg');
@@ -67,15 +68,15 @@ describe('ThreadView', () => {
     expect(badge?.textContent).toBe(t('thread.state.awaitingHuman'));
   });
 
-  it('o selo de cada estado usa a classe do estado (a cor do pino)', () => {
-    view(['oi', 'ok']);
+  it('each state badge uses the state class (the pin color)', () => {
+    view(['hi', 'ok']);
     expect(
       document.querySelector('.thread-state')?.classList.contains('thread-state-human'),
     ).toBe(true);
   });
 
-  it('mensagem com proposta é renderizada normalmente', () => {
-    view(['texto da mensagem'], 'p-1');
-    expect(screen.getByText('texto da mensagem')).toBeTruthy();
+  it('a message with a proposal renders normally', () => {
+    view(['message text'], 'p-1');
+    expect(screen.getByText('message text')).toBeTruthy();
   });
 });

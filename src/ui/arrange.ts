@@ -5,18 +5,18 @@ import type { EditorContextValue } from './EditorContext';
 import { markingErrorMessage } from './labels';
 import { messageText } from './modelMessage';
 
-// "Arrumar" (etapa Biblioteca, B3): o botão de Detalhes, o item do menu do canvas e o
-// atalho chamam o mesmo caminho, que mostra o resultado num aviso curto.
+// "Arrange" (Library stage, B3): the Details button, the canvas menu item and the
+// shortcut call the same path, which shows the result in a short notice.
 
-/** A marcação tem âncora: o Arrumar também a encosta (R4, decisão 12). */
+/** The marking has an anchor: Arrange also snaps it (R4, decision 12). */
 function isAnchored(project: Project, markingId: string): boolean {
   return projectIndex(project).anchorOf.has(markingId);
 }
 
 /**
- * O Arrumar vale para a marcação (no projeto à vista e no catálogo atual): um container com filhas
- * que se arruma, um componente sem slot com eixo que depende do conteúdo, que se ajusta a ele, ou
- * qualquer marcação com âncora, que se encosta nela.
+ * Arrange applies to the marking (in the project in view and in the current catalog): a container with children
+ * that is arranged, a component without a slot with an axis that depends on the content, which fits to it, or
+ * any marking with an anchor, which snaps to it.
  */
 export function canArrangeMarking(
   editor: EditorContextValue,
@@ -33,8 +33,8 @@ export function canArrangeMarking(
 }
 
 /**
- * A dica do botão: arrumar as de dentro (container com filhas), ajustar ao conteúdo ou, na
- * marcação que só tem âncora, encostar nela.
+ * The button's tooltip: arrange the inner ones (container with children), fit to the content or, on a
+ * marking that only has an anchor, snap to it.
  */
 export function arrangeHintKey(
   editor: EditorContextValue,
@@ -48,7 +48,7 @@ export function arrangeHintKey(
   return isAnchored(project, markingId) ? 'arrange.hintAnchor' : 'arrange.hintFit';
 }
 
-/** Arruma a marcação e avisa: "Arrumado", "Arrumado com N avisos: …" ou "Nada a arrumar". */
+/** Arranges the marking and notifies: "Arranged", "Arranged with N warnings: …" or "Nothing to arrange". */
 export function arrangeMarking(editor: EditorContextValue, markingId: string): void {
   const { actions, review, ui } = editor;
   const before = review.derived.shownProject.peek();
@@ -70,7 +70,7 @@ export function arrangeMarking(editor: EditorContextValue, markingId: string): v
   }
 }
 
-/** "Encostar na âncora": encosta a marcação e avisa: "Encostado", com avisos, ou "Já está encostada". */
+/** "Snap to anchor": snaps the marking and notifies: "Snapped", with warnings, or "Already snapped". */
 export function snapMarking(editor: EditorContextValue, markingId: string): void {
   const { actions, review, ui } = editor;
   const before = review.derived.shownProject.peek();

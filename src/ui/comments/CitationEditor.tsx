@@ -54,24 +54,24 @@ import {
   type Trigger,
 } from './editorDom';
 
-// O editor de citações do compositor (etapa Comentários, CM5, decisão 30): um `contenteditable`
-// no lugar do `TextArea`. O valor continua sendo uma string markdown (`ui.threadDrafts`); a
-// citação `[rótulo](mapping://…)` aparece como chip. Enter quebra a linha, Ctrl/Cmd+Enter envia,
-// `@` abre o seletor de itens, colar entra como texto puro (URLs `mapping://` viram chip).
+// The citation editor of the composer (Comments stage, CM5, decision 30): a `contenteditable`
+// in place of the `TextArea`. The value remains a markdown string (`ui.threadDrafts`); the
+// citation `[label](mapping://…)` appears as a chip. Enter breaks the line, Ctrl/Cmd+Enter sends,
+// `@` opens the item picker, pasting enters as plain text (`mapping://` URLs become a chip).
 
 interface CitationEditorProps {
-  /** Nome acessível do campo (e rótulo visível): "Comentar como …" / "Responder como …". */
+  /** Accessible name of the field (and visible label): "Comment as …" / "Reply as …". */
   readonly label: string;
-  /** O markdown (o rascunho); chega e sai como no `TextArea`. */
+  /** The markdown (the draft); comes in and goes out as in the `TextArea`. */
   readonly value: string;
   readonly onInput: (value: string) => void;
   /** Ctrl/Cmd+Enter. */
   readonly onSubmit?: () => void;
-  /** A âncora da conversa: o grupo "aqui" do `@` são as anotações do item dela. */
+  /** The thread's anchor: the "here" group of `@` is the annotations of its item. */
   readonly anchor: ThreadAnchor | null;
-  /** Numa resposta, a própria conversa não se oferece para citar. */
+  /** In a reply, the thread itself is not offered for citing. */
   readonly excludeThreadId?: string;
-  /** Referência ao campo (o compositor o foca ao montar). */
+  /** Reference to the field (the composer focuses it on mount). */
   readonly editorRef?: Ref<HTMLDivElement>;
 }
 
@@ -90,7 +90,7 @@ function chipSpec(ctx: CitationUiContext | null, url: string, label: string): Ch
   };
 }
 
-/** O chip de um alvo, com o nome de agora; `null` se o alvo não tem URL no projeto. */
+/** The chip of a target, with the current name; `null` if the target has no URL in the project. */
 function chipFor(ctx: CitationUiContext, target: CitationTarget): HTMLElement | null {
   const url = citationUrl(ctx.projectName, ctx.project, ctx.threads, target);
   if (url === null) return null;
@@ -98,7 +98,7 @@ function chipFor(ctx: CitationUiContext, target: CitationTarget): HTMLElement | 
   return createChip(document, chipSpec(ctx, url, label));
 }
 
-/** Atualiza o nome e o estado de todos os chips; devolve se algum mudou. */
+/** Updates the name and state of all chips; returns whether any changed. */
 function refreshChips(root: HTMLElement, ctx: CitationUiContext | null): boolean {
   let changed = false;
   for (const chip of root.querySelectorAll<HTMLElement>('span[data-url]')) {
@@ -109,17 +109,17 @@ function refreshChips(root: HTMLElement, ctx: CitationUiContext | null): boolean
   return changed;
 }
 
-/** O markdown do que está no campo (o chip grava o rótulo vivo). */
+/** The markdown of what is in the field (the chip stores the live label). */
 function readMarkdown(root: HTMLElement): string {
   return composerToMarkdown(readParts(root), citationNameFallback());
 }
 
-// ------------------------------------------------------------------ valor ⇄ DOM
+// ------------------------------------------------------------------ value ⇄ DOM
 
 /**
- * Mantém o DOM e o valor em sintonia: o valor de fora só reconstrói o DOM quando difere do que o
- * próprio campo emitiu por último (senão o cursor se perderia); os nomes dos chips acompanham o
- * projeto. Devolve `emit`, que lê o DOM e avisa quem usa quando o markdown mudou.
+ * Keeps the DOM and the value in sync: the outside value only rebuilds the DOM when it differs from what the
+ * field itself last emitted (otherwise the cursor would be lost); the chip names follow the
+ * project. Returns `emit`, which reads the DOM and notifies the user when the markdown changed.
  */
 function useDocSync(
   root: { readonly current: HTMLElement | null },
@@ -151,15 +151,15 @@ function useDocSync(
         setCaret(el.ownerDocument, endPoint(el));
       }
     } else refreshChips(el, ctx);
-    // Um rascunho antigo, ou um alvo renomeado, grava o rótulo vivo.
+    // An old draft, or a renamed target, stores the live label.
     emit();
-    // `emit` e `root` são estáveis (referências); só o valor e o projeto refazem o DOM.
+    // `emit` and `root` are stable (references); only the value and the project redo the DOM.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, ctx]);
   return emit;
 }
 
-// ------------------------------------------------------------------ o seletor do @
+// ------------------------------------------------------------------ the @ picker
 
 interface PickerState {
   readonly trigger: Trigger;
@@ -170,11 +170,11 @@ interface PickerControl {
   readonly visible: boolean;
   readonly candidates: readonly CiteCandidate[];
   readonly active: number;
-  /** Relê o cursor: abre, atualiza ou fecha o seletor. */
+  /** Rereads the cursor: opens, updates or closes the picker. */
   sync(): void;
   move(step: number): void;
   close(): void;
-  /** Dispensa o `@` de agora até aparecer outro. */
+  /** Dismisses the current `@` until another appears. */
   dismiss(): void;
   pick(candidate: CiteCandidate | undefined): void;
 }
@@ -259,16 +259,16 @@ function usePicker(
   };
 }
 
-// ------------------------------------------------------------------ ponte
+// ------------------------------------------------------------------ bridge
 
-/** Registra o campo na ponte "Citar na conversa" enquanto está montado. */
+/** Registers the field in the "Cite in the thread" bridge while it is mounted. */
 function useBridge(insert: (target: CitationTarget) => void): void {
   const latest = useRef(insert);
   latest.current = insert;
   useEffect(() => registerComposer({ insert: (target) => latest.current(target) }), []);
 }
 
-// ------------------------------------------------------------------ teclado
+// ------------------------------------------------------------------ keyboard
 
 const hasModifier = (e: KeyboardEvent) =>
   e.ctrlKey || e.metaKey || e.altKey || e.shiftKey;
@@ -281,7 +281,7 @@ interface Keys {
   readonly afterEdit: () => void;
 }
 
-/** ↑/↓ movem, Enter escolhe, Esc dispensa, Tab fecha. `true` = a tecla foi do seletor. */
+/** ↑/↓ move, Enter chooses, Esc dismisses, Tab closes. `true` = the key belonged to the picker. */
 function pickerKey(e: KeyboardEvent, keys: Keys): boolean {
   const { picker } = keys;
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -311,7 +311,7 @@ function lineBreak(keys: Keys): void {
   keys.afterEdit();
 }
 
-/** Backspace/Delete colado a um chip apaga o chip inteiro. */
+/** Backspace/Delete next to a chip deletes the whole chip. */
 function deleteChip(e: KeyboardEvent, keys: Keys): void {
   const range = rangeIn(keys.root);
   if (!range?.collapsed) return;
@@ -325,7 +325,7 @@ function deleteChip(e: KeyboardEvent, keys: Keys): void {
   keys.afterEdit();
 }
 
-/** As setas passam sobre o chip como sobre uma palavra só. */
+/** The arrows pass over the chip as over a single word. */
 function crossChip(e: KeyboardEvent, keys: Keys): void {
   const range = rangeIn(keys.root);
   if (!range?.collapsed || hasModifier(e)) return;
@@ -354,9 +354,9 @@ function onEditorKey(e: KeyboardEvent, keys: Keys): void {
   }
 }
 
-// ------------------------------------------------------------------ colar e inserir
+// ------------------------------------------------------------------ paste and insert
 
-/** Para a colagem: o alvo da URL no projeto à vista, com o rótulo vivo e a URL canônica. */
+/** For pasting: the URL's target in the visible project, with the live label and the canonical URL. */
 function pasteResolver(ctx: CitationUiContext | null): PasteResolver {
   return (parsed) => {
     if (ctx === null) return null;
@@ -380,7 +380,7 @@ function partNodes(
   );
 }
 
-/** O ponto de inserção: a seleção do campo (apagando o trecho selecionado) ou o fim dele. */
+/** The insertion point: the field's selection (deleting the selected span) or its end. */
 function insertionPoint(root: HTMLElement, useSelection: boolean): Point {
   const range = useSelection ? rangeIn(root) : null;
   if (!range) return endPoint(root);
@@ -388,7 +388,7 @@ function insertionPoint(root: HTMLElement, useSelection: boolean): Point {
   return { node: range.startContainer, offset: range.startOffset };
 }
 
-// ------------------------------------------------------------------ o componente
+// ------------------------------------------------------------------ the component
 
 function assignRef(
   ref: Ref<HTMLDivElement> | undefined,
@@ -474,7 +474,7 @@ export function CitationEditor({
           afterEdit();
         }}
         onBeforeInput={(e) => {
-          // Sem formatação (negrito, itálico…): o campo só guarda texto e chips.
+          // No formatting (bold, italic…): the field only stores text and chips.
           if (e.inputType.startsWith('format')) e.preventDefault();
         }}
         onKeyDown={(e) => {

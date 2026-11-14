@@ -33,7 +33,7 @@ import {
 } from '../../src/model';
 import { expectValid, marking, sampleProject } from './fixtures';
 
-/** Roda a operação e devolve o código do erro de regra (ou `null` se passou). */
+/** Runs the operation and returns the rule error code (or `null` if it passed). */
 function codeOf(op: () => unknown): string | null {
   try {
     op();
@@ -50,14 +50,14 @@ const image = (p: Project, id: string) => {
   return found;
 };
 
-describe('trava: trancar e destrancar', () => {
-  it('itens novos nascem destrancados', () => {
+describe('lock: locking and unlocking', () => {
+  it('new items are born unlocked', () => {
     const p = sampleProject();
     expect(p.markings.every((m) => !m.locked)).toBe(true);
     expect(p.containers.every((i) => !i.locked)).toBe(true);
   });
 
-  it('tranca e destranca uma marcação sem mexer no resto', () => {
+  it('locks and unlocks a marking without touching the rest', () => {
     const p = sampleProject();
     const locked = setMarkingLocked(p, 'M2', true);
     expect(marking(locked, 'M2').locked).toBe(true);
@@ -67,7 +67,7 @@ describe('trava: trancar e destrancar', () => {
     expectValid(locked);
   });
 
-  it('tranca e destranca uma imagem', () => {
+  it('locks and unlocks an image', () => {
     const p = sampleProject();
     const locked = setImageLocked(p, 'I1', true);
     expect(image(locked, 'I1').locked).toBe(true);
@@ -75,7 +75,7 @@ describe('trava: trancar e destrancar', () => {
     expect(setImageLocked(locked, 'I1', false)).toEqual(p);
   });
 
-  it('repetir o mesmo estado devolve o mesmo projeto (sem entrada de histórico)', () => {
+  it('repeating the same state returns the same project (no history entry)', () => {
     const p = sampleProject();
     expect(setMarkingLocked(p, 'M1', false)).toBe(p);
     expect(setImageLocked(p, 'I1', false)).toBe(p);
@@ -85,14 +85,14 @@ describe('trava: trancar e destrancar', () => {
     expect(setImageLocked(lockedImage, 'I1', true)).toBe(lockedImage);
   });
 
-  it('falha com id inexistente', () => {
+  it('fails with a missing id', () => {
     const p = sampleProject();
     expect(codeOf(() => setMarkingLocked(p, 'X', true))).toBe('not-found');
     expect(codeOf(() => setImageLocked(p, 'X', true))).toBe('not-found');
     expect(codeOf(() => setImageMarkingsLocked(p, 'X', true))).toBe('not-found');
   });
 
-  it('trancar todas as marcações de uma imagem não afeta as de outra nem a imagem', () => {
+  it('locking all the markings of an image does not affect those of another nor the image', () => {
     const p = setImageMarkingsLocked(sampleProject(), 'I1', true);
     expect(['M1', 'M2', 'M3'].every((id) => marking(p, id).locked)).toBe(true);
     expect(marking(p, 'M4').locked).toBe(false);
@@ -101,7 +101,7 @@ describe('trava: trancar e destrancar', () => {
     expect(back).toEqual(sampleProject());
   });
 
-  it('trancar todas quando já estão trancadas devolve o mesmo projeto', () => {
+  it('locking all when they are already locked returns the same project', () => {
     const p = setImageMarkingsLocked(sampleProject(), 'I1', true);
     expect(setImageMarkingsLocked(p, 'I1', true)).toBe(p);
     const empty = sampleProject();
@@ -109,10 +109,10 @@ describe('trava: trancar e destrancar', () => {
   });
 });
 
-describe('trava: marcação trancada', () => {
+describe('lock: locked marking', () => {
   const locked = () => setMarkingLocked(sampleProject(), 'M2', true);
 
-  it('não pode ser movida, redimensionada nem excluída', () => {
+  it('cannot be moved, resized or deleted', () => {
     const p = locked();
     expect(codeOf(() => moveMarking(p, 'M2', 10, 0))).toBe('locked');
     expect(
@@ -125,35 +125,35 @@ describe('trava: marcação trancada', () => {
     expect(codeOf(() => removeMarking(p, 'M2'))).toBe('locked');
   });
 
-  it('mover e redimensionar a mesma marcação destrancada funciona', () => {
+  it('moving and resizing the same unlocked marking works', () => {
     const p = setMarkingLocked(locked(), 'M2', false);
     expect(codeOf(() => moveMarking(p, 'M2', 10, 0))).toBeNull();
     expect(codeOf(() => removeMarking(p, 'M2'))).toBeNull();
   });
 
-  it('continua selecionável e editável: renomear não é bloqueado', () => {
-    const p = renameMarking(locked(), 'M2', 'Outro nome');
-    expect(marking(p, 'M2').name).toBe('Outro nome');
+  it('stays selectable and editable: renaming is not blocked', () => {
+    const p = renameMarking(locked(), 'M2', 'Other name');
+    expect(marking(p, 'M2').name).toBe('Other name');
     expect(marking(p, 'M2').locked).toBe(true);
   });
 
-  it('o ajuste fino que não muda nada não falha', () => {
+  it('a fine adjustment that changes nothing does not fail', () => {
     const p = locked();
     expect(adjustMarkingRect(p, 'M2', 'x', marking(p, 'M2').rect.x)).toBe(p);
   });
 
-  it('geometria igual não é mudança: devolve o projeto como está (achado 14)', () => {
+  it('equal geometry is not a change: returns the project as is (finding 14)', () => {
     const p = locked();
     const rect = marking(p, 'M2').rect;
     expect(setMarkingRect(p, 'M2', { ...rect })).toBe(p);
     expect(moveMarking(p, 'M2', 0, 0)).toBe(p);
-    // Destrancada, idem: sem projeto novo, sem entrada de desfazer nem índice novo.
+    // Unlocked, likewise: no new project, no undo entry and no new index.
     const free = sampleProject();
     expect(setMarkingRect(free, 'M2', { ...marking(free, 'M2').rect })).toBe(free);
     expect(moveMarking(free, 'M2', 0, 0)).toBe(free);
   });
 
-  it('qualquer diferença de geometria continua barrada pela trava', () => {
+  it('any geometry difference is still blocked by the lock', () => {
     const p = locked();
     const rect = marking(p, 'M2').rect;
     for (const changed of [
@@ -168,7 +168,7 @@ describe('trava: marcação trancada', () => {
     expect(codeOf(() => moveMarking(p, 'M2', -1, 0))).toBe('locked');
   });
 
-  it('as funções de consulta refletem a trava', () => {
+  it('the query functions reflect the lock', () => {
     const p = locked();
     expect(canEditMarkingGeometry(p, 'M2')).toBe(false);
     expect(canEditMarkingGeometry(p, 'M2')).toBe(false);
@@ -176,15 +176,15 @@ describe('trava: marcação trancada', () => {
     expect(canEditMarkingGeometry(p, 'M4')).toBe(true);
   });
 
-  it('o impacto da exclusão ainda pode ser calculado', () => {
+  it('the deletion impact can still be computed', () => {
     expect(markingDeletionImpact(locked(), 'M2').descendants).toBe(1);
   });
 });
 
-describe('trava: pai trancado trava a geometria dos descendentes', () => {
+describe('lock: a locked parent locks the geometry of the descendants', () => {
   const parentLocked = () => setMarkingLocked(sampleProject(), 'M1', true);
 
-  it('descendentes não podem ser movidos nem redimensionados', () => {
+  it('descendants cannot be moved or resized', () => {
     const p = parentLocked();
     for (const id of ['M2', 'M3']) {
       expect(isMarkingGeometryLocked(p, id)).toBe(true);
@@ -196,7 +196,7 @@ describe('trava: pai trancado trava a geometria dos descendentes', () => {
     }
   });
 
-  it('com a trava herdada, a geometria igual também passa e devolve o projeto', () => {
+  it('with the inherited lock, equal geometry also passes and returns the project', () => {
     const p = parentLocked();
     for (const id of ['M1', 'M2', 'M3']) {
       const { rect } = marking(p, id);
@@ -205,30 +205,30 @@ describe('trava: pai trancado trava a geometria dos descendentes', () => {
     }
   });
 
-  it('não altera o locked dos descendentes', () => {
+  it('does not change the locked of the descendants', () => {
     const p = parentLocked();
     expect(marking(p, 'M2').locked).toBe(false);
     expect(marking(p, 'M3').locked).toBe(false);
   });
 
-  it('um descendente solto de um pai trancado ainda pode ser excluído', () => {
+  it('a loose descendant of a locked parent can still be deleted', () => {
     const p = parentLocked();
     expect(canDeleteMarking(p, 'M3')).toBe(true);
     const q = removeMarking(p, 'M3');
     expect(q.markings.map((m) => m.id)).not.toContain('M3');
   });
 
-  it('destrancar o pai libera a geometria dos descendentes', () => {
+  it('unlocking the parent frees the geometry of the descendants', () => {
     const p = setMarkingLocked(parentLocked(), 'M1', false);
     expect(isMarkingGeometryLocked(p, 'M3')).toBe(false);
     expect(codeOf(() => moveMarking(p, 'M3', 1, 0))).toBeNull();
   });
 
-  it('marcações de outra imagem não são afetadas', () => {
+  it('markings of another image are not affected', () => {
     expect(isMarkingGeometryLocked(parentLocked(), 'M4')).toBe(false);
   });
 
-  it('criar uma marcação dentro de um pai trancado continua permitido', () => {
+  it('creating a marking inside a locked parent is still allowed', () => {
     const p = createMarking(parentLocked(), {
       id: 'M5',
       containerId: 'I1',
@@ -239,10 +239,10 @@ describe('trava: pai trancado trava a geometria dos descendentes', () => {
   });
 });
 
-describe('trava: descendente trancado não impede o pai', () => {
+describe('lock: a locked descendant does not stop the parent', () => {
   const childLocked = () => setMarkingLocked(sampleProject(), 'M3', true);
 
-  it('o pai e o avô podem ser movidos, e o descendente trancado vai junto', () => {
+  it('the parent and the grandparent can be moved, and the locked descendant goes along', () => {
     const p = childLocked();
     expect(canEditMarkingGeometry(p, 'M1')).toBe(true);
     expect(canEditMarkingGeometry(p, 'M2')).toBe(true);
@@ -257,7 +257,7 @@ describe('trava: descendente trancado não impede o pai', () => {
     }
   });
 
-  it('mover o pai mantém a posição relativa de todos os descendentes, trancados ou não', () => {
+  it('moving the parent keeps the relative position of all descendants, locked or not', () => {
     const p = setMarkingLocked(sampleProject(), 'M2', true);
     const q = moveMarking(p, 'M1', 20, -10);
     const offset = (a: string, b: string, project: Project) => ({
@@ -274,19 +274,19 @@ describe('trava: descendente trancado não impede o pai', () => {
     expectValid(q);
   });
 
-  it('o ajuste fino de x/y do pai também leva o descendente trancado', () => {
+  it('the fine x/y adjustment of the parent also carries the locked descendant', () => {
     const p = childLocked();
     const q = adjustMarkingRect(p, 'M1', 'y', 1010);
     expect(marking(q, 'M1').rect.y).toBe(1010);
     expect(marking(q, 'M3').rect.y).toBe(marking(p, 'M3').rect.y + 10);
   });
 
-  it('o próprio descendente trancado continua sem poder ser movido por conta própria', () => {
+  it('the locked descendant itself still cannot be moved on its own', () => {
     const p = childLocked();
     expect(codeOf(() => moveMarking(p, 'M3', 1, 0))).toBe('locked');
   });
 
-  it('o pai pode ser redimensionado, e o descendente trancado fica onde está', () => {
+  it('the parent can be resized, and the locked descendant stays where it is', () => {
     const p = childLocked();
     const { rect } = marking(p, 'M1');
     const q = setMarkingRect(p, 'M1', { ...rect, width: rect.width + 100 });
@@ -294,7 +294,7 @@ describe('trava: descendente trancado não impede o pai', () => {
     expect(marking(q, 'M3').rect).toEqual(marking(p, 'M3').rect);
   });
 
-  it('o pai e o avô podem ser excluídos, e o descendente trancado é excluído junto', () => {
+  it('the parent and the grandparent can be deleted, and the locked descendant is deleted along', () => {
     const p = childLocked();
     expect(canDeleteMarking(p, 'M1')).toBe(true);
     expect(canDeleteMarking(p, 'M2')).toBe(true);
@@ -306,7 +306,7 @@ describe('trava: descendente trancado não impede o pai', () => {
     expect(all.annotations.map((a) => a.markingId)).not.toContain('M3');
   });
 
-  it('o impacto da exclusão conta os descendentes trancados', () => {
+  it('the deletion impact counts the locked descendants', () => {
     const none = markingDeletionImpact(sampleProject(), 'M1');
     expect(none.lockedDescendants).toBe(0);
     const p = setMarkingLocked(childLocked(), 'M2', true);
@@ -318,27 +318,27 @@ describe('trava: descendente trancado não impede o pai', () => {
       descendants: 1,
       lockedDescendants: 1,
     });
-    // O próprio item não entra na conta, mesmo trancado.
+    // The item itself is not counted, even when locked.
     expect(markingDeletionImpact(p, 'M3').lockedDescendants).toBe(0);
   });
 
-  it('o pai trancado continua travando a geometria do descendente trancado', () => {
+  it('the locked parent still locks the geometry of the locked descendant', () => {
     const p = setMarkingLocked(childLocked(), 'M1', true);
     expect(codeOf(() => moveMarking(p, 'M1', 1, 0))).toBe('locked');
     expect(codeOf(() => moveMarking(p, 'M2', 1, 0))).toBe('locked');
     expect(codeOf(() => removeMarking(p, 'M1'))).toBe('locked');
   });
 
-  it('uma marcação de outra imagem não é afetada', () => {
+  it('a marking of another image is not affected', () => {
     expect(codeOf(() => removeMarking(childLocked(), 'M4'))).toBeNull();
   });
 });
 
-describe('trava: imagem trancada', () => {
+describe('lock: locked image', () => {
   const locked = () => setImageLocked(sampleProject(), 'I2', true);
   const placement = (p: Project) => image(p, 'I2').placement;
 
-  it('não pode ser movida, redimensionada nem excluída', () => {
+  it('cannot be moved, resized or deleted', () => {
     const p = locked();
     expect(codeOf(() => moveContainer(p, 'I2', 5000, 0))).toBe('locked');
     expect(
@@ -349,44 +349,44 @@ describe('trava: imagem trancada', () => {
     expect(codeOf(() => removeContainer(p, 'I2'))).toBe('locked');
   });
 
-  it('destrancada, volta a funcionar', () => {
+  it('unlocked, it works again', () => {
     const p = setImageLocked(locked(), 'I2', false);
     expect(codeOf(() => moveContainer(p, 'I2', 5000, 0))).toBeNull();
     expect(codeOf(() => removeContainer(p, 'I2'))).toBeNull();
   });
 
-  it('as marcações da imagem trancada continuam editáveis', () => {
+  it('the markings of the locked image stay editable', () => {
     expect(codeOf(() => moveMarking(locked(), 'M4', 1, 1))).toBeNull();
   });
 
-  it('o impacto da exclusão ainda pode ser calculado', () => {
+  it('the deletion impact can still be computed', () => {
     expect(containerDeletionImpact(locked(), 'I2').markings).toBe(1);
   });
 
-  it('trocar o arquivo por um de outro tamanho é bloqueado; do mesmo tamanho, não', () => {
+  it('replacing the file with one of another size is blocked; of the same size, it is not', () => {
     const p = locked();
-    const same = { file: 'images/nova.png', width: 1000, height: 1000 };
-    const bigger = { file: 'images/nova.png', width: 2000, height: 2000 };
+    const same = { file: 'images/new.png', width: 1000, height: 1000 };
+    const bigger = { file: 'images/new.png', width: 2000, height: 2000 };
     expect(canReplaceImage(p, 'I2', same)).toBe(true);
     expect(canReplaceImage(p, 'I2', bigger)).toBe(false);
     expect(codeOf(() => replaceContainer(p, 'I2', same))).toBeNull();
     expect(codeOf(() => replaceContainer(p, 'I2', bigger))).toBe('locked');
-    // O replace mantém a trava da imagem.
+    // The replace keeps the image lock.
     expect(image(replaceContainer(p, 'I2', same), 'I2').locked).toBe(true);
   });
 });
 
-describe('trava: imagem com marcação trancada', () => {
+describe('lock: image with a locked marking', () => {
   const p = () => setMarkingLocked(sampleProject(), 'M3', true);
 
-  it('a imagem pode ser excluída, e as marcações trancadas vão junto', () => {
+  it('the image can be deleted, and the locked markings go along', () => {
     expect(canDeleteImage(p(), 'I1')).toBe(true);
     const q = expectValid(removeContainer(p(), 'I1'));
     expect(q.containers.map((i) => i.id)).toEqual(['I2']);
     expect(q.markings.map((m) => m.id)).toEqual(['M4']);
   });
 
-  it('o impacto da exclusão conta as marcações trancadas', () => {
+  it('the deletion impact counts the locked markings', () => {
     expect(containerDeletionImpact(sampleProject(), 'I1').lockedMarkings).toBe(0);
     const locked = setImageMarkingsLocked(sampleProject(), 'I1', true);
     expect(containerDeletionImpact(locked, 'I1')).toMatchObject({
@@ -396,33 +396,33 @@ describe('trava: imagem com marcação trancada', () => {
     expect(containerDeletionImpact(locked, 'I2').lockedMarkings).toBe(0);
   });
 
-  it('a imagem pode ser movida, pois as marcações usam pixels da imagem', () => {
+  it('the image can be moved, since the markings use image pixels', () => {
     expect(codeOf(() => moveContainer(p(), 'I1', 0, 5000))).toBeNull();
   });
 
-  it('trocar por um arquivo de outro tamanho segue bloqueado (a troca reescalaria a marcação revisada)', () => {
-    const bigger = { file: 'images/nova.jpg', width: 8000, height: 6000 };
+  it('replacing with a file of another size is still blocked (the replacement would rescale the reviewed marking)', () => {
+    const bigger = { file: 'images/new.jpg', width: 8000, height: 6000 };
     expect(canReplaceImage(p(), 'I1', bigger)).toBe(false);
     expect(codeOf(() => replaceContainer(p(), 'I1', bigger))).toBe('locked');
-    const same = { file: 'images/nova.jpg', width: 4000, height: 3000 };
+    const same = { file: 'images/new.jpg', width: 4000, height: 3000 };
     expect(codeOf(() => replaceContainer(p(), 'I1', same))).toBeNull();
   });
 
-  it('a imagem sem trava nenhuma é trocada normalmente', () => {
-    const bigger = { file: 'images/nova.jpg', width: 8000, height: 6000 };
+  it('an image with no lock at all is replaced normally', () => {
+    const bigger = { file: 'images/new.jpg', width: 8000, height: 6000 };
     expect(codeOf(() => replaceContainer(sampleProject(), 'I1', bigger))).toBeNull();
   });
 });
 
-// Marcação do canvas (v13): a trava dela desce aos containers dentro dela (decisão 6).
-describe('trava: marcação do canvas trava o placement dos containers dentro dela', () => {
+// Canvas marking (v13): its lock goes down to the containers inside it (decision 6).
+describe('lock: a canvas marking locks the placement of the containers inside it', () => {
   const rect = (x: number, y: number, width: number, height: number) => ({
     x,
     y,
     width,
     height,
   });
-  /** sampleProject: K cerca as duas telas; J (dentro de K) cerca só a I1 (0,0)–(1000,750). */
+  /** sampleProject: K surrounds both screens; J (inside K) surrounds only I1 (0,0)–(1000,750). */
   function withCanvas(): Project {
     let p = createMarking(sampleProject(), {
       id: 'K',
@@ -438,7 +438,7 @@ describe('trava: marcação do canvas trava o placement dos containers dentro de
   }
   const lockedK = () => setMarkingLocked(withCanvas(), 'K', true);
 
-  it('a marcação do canvas trancada não se move, redimensiona nem exclui', () => {
+  it('a locked canvas marking cannot be moved, resized or deleted', () => {
     const p = lockedK();
     expect(codeOf(() => moveMarking(p, 'K', 10, 0))).toBe('locked');
     expect(codeOf(() => setMarkingRect(p, 'K', rect(-200, -200, 2600, 1400)))).toBe(
@@ -446,13 +446,13 @@ describe('trava: marcação do canvas trava o placement dos containers dentro de
     );
     expect(codeOf(() => adjustMarkingRect(p, 'K', 'width', 2600))).toBe('locked');
     expect(codeOf(() => removeMarking(p, 'K'))).toBe('locked');
-    // A marcação do canvas dentro dela herda a trava de geometria, mas pode ser excluída.
+    // The canvas marking inside it inherits the geometry lock, but can be deleted.
     expect(isMarkingGeometryLocked(p, 'J')).toBe(true);
     expect(codeOf(() => moveMarking(p, 'J', 1, 0))).toBe('locked');
     expect(canDeleteMarking(p, 'J')).toBe(true);
   });
 
-  it('o container dentro dela não pode ser movido nem redimensionado; excluir pode', () => {
+  it('the container inside it cannot be moved or resized; deleting can', () => {
     const p = lockedK();
     expect(image(p, 'I1').parentId).toBe('J');
     expect(canEditImagePlacement(p, 'I1')).toBe(false);
@@ -460,25 +460,25 @@ describe('trava: marcação do canvas trava o placement dos containers dentro de
     expect(codeOf(() => resizeContainer(p, 'I1', { x: 0, y: 0, scale: 0.2 }))).toBe(
       'locked',
     );
-    // Excluir a imagem é outra coisa (como a marcação trancada que não impede o pai).
+    // Deleting the image is another matter (like the locked marking that does not stop the parent).
     expect(canDeleteImage(p, 'I1')).toBe(true);
     expect(codeOf(() => removeContainer(p, 'I1'))).toBeNull();
-    // A I2 também é membro de K, direto.
+    // I2 is also a member of K, directly.
     expect(image(p, 'I2').parentId).toBe('K');
     expect(canEditImagePlacement(p, 'I2')).toBe(false);
   });
 
-  it('sobe a cadeia inteira: o pai do container é uma filha, o ancestral trancado é outra', () => {
-    // I1 tem J como pai e J tem K como pai. Trancar só K basta; trancar só J também.
+  it('walks up the whole chain: the container parent is one link, the locked ancestor is another', () => {
+    // I1 has J as parent and J has K as parent. Locking only K is enough; locking only J too.
     expect(image(withCanvas(), 'I1').parentId).toBe('J');
     expect(canEditImagePlacement(lockedK(), 'I1')).toBe(false);
     const onlyJ = setMarkingLocked(withCanvas(), 'J', true);
     expect(canEditImagePlacement(onlyJ, 'I1')).toBe(false);
-    // A I2 só está em K, que não está trancada: livre.
+    // I2 is only in K, which is not locked: free.
     expect(canEditImagePlacement(onlyJ, 'I2')).toBe(true);
   });
 
-  it('o tamanho de um container sem arquivo também é placement', () => {
+  it('the size of a container without a file is also placement', () => {
     let p = createMarking(sampleProject(), {
       id: 'K',
       containerId: null,
@@ -494,13 +494,13 @@ describe('trava: marcação do canvas trava o placement dos containers dentro de
     expect(image(p, 'B1').parentId).toBe('K');
     p = setMarkingLocked(p, 'K', true);
     expect(codeOf(() => setBackgroundContainer(p, 'B1', { width: 400 }))).toBe('locked');
-    // A cor não é geometria.
+    // The color is not geometry.
     expect(
       codeOf(() => setBackgroundContainer(p, 'B1', { background: '#000000' })),
     ).toBeNull();
   });
 
-  it('entrar numa marcação trancada é permitido; depois de dentro, o container fica travado', () => {
+  it('entering a locked marking is allowed; once inside, the container is locked', () => {
     let p = createMarking(sampleProject(), {
       id: 'K',
       containerId: null,
@@ -511,7 +511,7 @@ describe('trava: marcação do canvas trava o placement dos containers dentro de
     p = expectValid(moveContainer(p, 'I2', 1050, 1300));
     expect(image(p, 'I2').parentId).toBe('K');
     expect(codeOf(() => moveContainer(p, 'I2', 1050, 0))).toBe('locked');
-    // Criar marcação dentro da trancada também é permitido.
+    // Creating a marking inside the locked one is also allowed.
     const q = createMarking(p, {
       id: 'N',
       containerId: null,
@@ -520,7 +520,7 @@ describe('trava: marcação do canvas trava o placement dos containers dentro de
     expect(marking(q, 'N').parentId).toBe('K');
   });
 
-  it('a flutuante não é membro: a trava da marcação por baixo não a alcança', () => {
+  it('the floating one is not a member: the lock of the marking underneath does not reach it', () => {
     let p = createMarking(lockedK(), {
       id: 'N',
       containerId: null,
@@ -533,7 +533,7 @@ describe('trava: marcação do canvas trava o placement dos containers dentro de
     expect(marking(p, 'N').rect.x).toBe(105);
   });
 
-  it('markingLockStates cobre as marcações do canvas; containerLockStates, os containers', () => {
+  it('markingLockStates covers the canvas markings; containerLockStates, the containers', () => {
     const p = lockedK();
     expect(markingLockStates(p)).toEqual(
       new Map([
@@ -547,29 +547,29 @@ describe('trava: marcação do canvas trava o placement dos containers dentro de
         ['I2', 'inherited'],
       ]),
     );
-    // A trava da própria imagem vale mais que a herdada.
+    // The image's own lock outweighs the inherited one.
     expect(containerLockStates(setImageLocked(p, 'I1', true)).get('I1')).toBe('self');
-    // Sem nenhuma trava, o mapa é vazio.
+    // With no lock at all, the map is empty.
     expect(containerLockStates(withCanvas()).size).toBe(0);
     expect(containerLockStates(sampleProject()).size).toBe(0);
   });
 
-  it('destrancar a marcação libera os containers', () => {
+  it('unlocking the marking frees the containers', () => {
     const p = setMarkingLocked(lockedK(), 'K', false);
     expect(canEditImagePlacement(p, 'I1')).toBe(true);
     expect(codeOf(() => moveContainer(p, 'I1', 0, 5000))).toBeNull();
   });
 });
 
-describe('trava: seta', () => {
+describe('lock: arrow', () => {
   const withArrow = () =>
     createArrow(sampleProject(), { id: 'R1', from: 'M1', to: 'M4' });
 
-  it('a seta nasce destrancada e a trava é só dela', () => {
+  it('an arrow is born unlocked and the lock is its own', () => {
     const p = withArrow();
     expect(canEditArrow(p, 'R1')).toBe(true);
     expect(canEditArrow(setArrowLocked(p, 'R1', true), 'R1')).toBe(false);
-    // Marcações das pontas trancadas não trancam a seta.
+    // Locked end markings do not lock the arrow.
     const ends = setMarkingLocked(setMarkingLocked(p, 'M1', true), 'M4', true);
     expect(canEditArrow(ends, 'R1')).toBe(true);
     expect(codeOf(() => canEditArrow(p, 'R9'))).toBe('not-found');

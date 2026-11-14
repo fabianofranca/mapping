@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-button",
   "name": "Button",
-  "description": "Common button: filled, tonal, outlined, text ou elevated; 40 dp, forma full.",
+  "description": "Common button: filled, tonal, outlined, text or elevated; 40 dp, full shape.",
   "size": {
     "width": 120,
     "height": 40

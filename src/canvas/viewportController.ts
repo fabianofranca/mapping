@@ -1,5 +1,5 @@
-// Viewport do canvas: tamanho do container, pan, zoom, enquadrar e centralizar.
-// As contas ficam em `viewport.ts` (puras); aqui ficam os signals e o DOM.
+// Canvas viewport: container size, pan, zoom, fit and center.
+// The math lives in `viewport.ts` (pure); the signals and the DOM live here.
 import { batch, signal } from '@preact/signals';
 import type { Project, Rect } from '../model';
 import { ARRIVAL_FIT_EXTRA } from './arrivals';
@@ -24,15 +24,15 @@ export class ViewportController {
   readonly viewport = signal<Viewport>({ x: 0, y: 0, scale: 1 });
   readonly size = signal<Size>({ width: 0, height: 0 });
   private readonly container: HTMLElement;
-  /** O que enquadrar: as imagens e as marcações do canvas do projeto (lido sem assinar). */
+  /** What to fit: the images and markings on the project's canvas (read without subscribing). */
   private readonly content: () =>
     | (Pick<Project, 'containers' | 'markings'> & Partial<Pick<Project, 'arrivals'>>)
     | null;
-  /** Já enquadrou na primeira vez que o container teve tamanho. */
+  /** Already fitted the first time the container had a size. */
   private fitted = false;
-  /** Último tamanho com largura e altura maiores que zero (o 0 do aviso de janela pequena não conta). */
+  /** Last size with width and height above zero (the 0 of the small-window notice does not count). */
   private lastSize: Size | null = null;
-  /** Quantas vezes enquadrou; o canvas publica no container para os testes e2e. */
+  /** How many times it fitted; the canvas publishes it on the container for the e2e tests. */
   fits = 0;
 
   constructor(
@@ -45,7 +45,7 @@ export class ViewportController {
     this.content = content;
   }
 
-  /** Acompanha o tamanho do container. Devolve a função que para de acompanhar. */
+  /** Tracks the container size. Returns the function that stops tracking. */
   observe(): () => void {
     this.measure();
     if (typeof ResizeObserver === 'undefined') return () => undefined;
@@ -54,7 +54,7 @@ export class ViewportController {
     return () => observer.disconnect();
   }
 
-  /** Lê o tamanho do container; na primeira vez com tamanho, enquadra tudo. */
+  /** Reads the container size; the first time it has a size, fits everything. */
   measure(): void {
     const { width, height } = this.readSize();
     if (!this.fitted && width > 0 && height > 0) {
@@ -64,10 +64,10 @@ export class ViewportController {
   }
 
   /**
-   * Enquadra tudo o que está no canvas (imagens e marcações do canvas; ou uma área padrão, com o
-   * canvas vazio). Mede o container
-   * antes: logo depois de uma janela de ferramenta fechar, o `ResizeObserver` ainda não
-   * disparou e o último tamanho medido é o antigo.
+   * Fits everything on the canvas (images and canvas markings; or a default area, with an
+   * empty canvas). Measures the container
+   * first: right after a tool window closes, the `ResizeObserver` has not
+   * fired yet and the last measured size is the old one.
    */
   fitAll(): void {
     const size = this.readSize();
@@ -82,7 +82,7 @@ export class ViewportController {
     );
   }
 
-  /** Enquadra `rect` (canvas) com a folga do `fitAll`, sem passar dos limites de zoom. */
+  /** Fits `rect` (canvas) with the `fitAll` margin, without going past the zoom limits. */
   fitTo(rect: Rect): void {
     const size = this.readSize();
     if (size.width === 0) return;
@@ -90,8 +90,8 @@ export class ViewportController {
   }
 
   /**
-   * Tamanho atual do container; atualiza `size` só se ele mudou. Se mudou de um tamanho não nulo
-   * para outro, depois do primeiro enquadramento, a vista mantém o centro e a escala.
+   * Current container size; updates `size` only if it changed. If it changed from one non-zero
+   * size to another, after the first fit, the view keeps the center and the scale.
    */
   private readSize(): Size {
     const current = this.size.peek();
@@ -111,21 +111,21 @@ export class ViewportController {
     return size;
   }
 
-  /** Centraliza em `rect` (canvas), ajustando o zoom se ele for grande ou pequeno demais. */
+  /** Centers on `rect` (canvas), adjusting the zoom if it is too large or too small. */
   centerOn(rect: Rect): void {
     const size = this.size.peek();
     if (size.width === 0) return;
     this.viewport.value = centerOn(this.viewport.peek(), rect, size);
   }
 
-  /** Pan mínimo até `rect` (canvas) ficar à vista; sem mudar o zoom nem se já está à vista. */
+  /** Minimal pan until `rect` (canvas) is in view; no zoom change, and none if already in view. */
   reveal(rect: Rect): void {
     const size = this.size.peek();
     if (size.width === 0) return;
     this.viewport.value = revealRect(this.viewport.peek(), rect, size);
   }
 
-  /** Centraliza a vista em `point` (canvas), mantendo o zoom (clique no minimapa). */
+  /** Centers the view on `point` (canvas), keeping the zoom (minimap click). */
   centerOnPoint(point: Point): void {
     const size = this.size.peek();
     if (size.width === 0) return;
@@ -137,25 +137,25 @@ export class ViewportController {
     };
   }
 
-  /** Centro da área visível, em unidades do canvas. */
+  /** Center of the visible area, in canvas units. */
   center(): Point {
     this.measure();
     const size = this.size.peek();
     return this.toCanvas({ x: size.width / 2, y: size.height / 2 });
   }
 
-  /** Coordenada da página → ponto da tela relativo ao container. */
+  /** Page coordinate → screen point relative to the container. */
   screenPoint(e: { readonly clientX: number; readonly clientY: number }): Point {
     const box = this.container.getBoundingClientRect();
     return { x: e.clientX - box.left, y: e.clientY - box.top };
   }
 
-  /** Ponto da tela (relativo ao container) → canvas. */
+  /** Screen point (relative to the container) → canvas. */
   toCanvas(p: Point): Point {
     return screenToCanvas(this.viewport.peek(), p);
   }
 
-  /** Pixels de tela por unidade do canvas. */
+  /** Screen pixels per canvas unit. */
   get scale(): number {
     return this.viewport.peek().scale;
   }
@@ -168,7 +168,7 @@ export class ViewportController {
     this.viewport.value = zoomAt(this.viewport.peek(), p, factor);
   }
 
-  /** Pinça: os pontos `a0`/`b0` (tela) foram para `a1`/`b1`. */
+  /** Pinch: points `a0`/`b0` (screen) moved to `a1`/`b1`. */
   pinch(a0: Point, b0: Point, a1: Point, b1: Point): void {
     this.viewport.value = pinch(this.viewport.peek(), a0, b0, a1, b1);
   }

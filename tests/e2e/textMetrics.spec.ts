@@ -1,7 +1,7 @@
-// Medida do texto no Chromium: a altura de linha do canvas contra a do DOM (C4), o centro
-// vertical do texto escalado (C5), `wrap`/`ellipsis`/`maxLines` no Konva de verdade (C1) e o texto
-// rico (`runs`, CF4): a medida por trechos contra o desenho.
-// Não abre a app: monta o medidor (`konvaMeasurer`) e o Konva numa página em branco.
+// Text measurement in Chromium: the canvas line height against the DOM one (C4), the vertical
+// center of scaled text (C5), `wrap`/`ellipsis`/`maxLines` in the real Konva (C1) and rich
+// text (`runs`, CF4): the per-run measurement against the drawing.
+// It does not open the app: it mounts the measurer (`konvaMeasurer`) and Konva on a blank page.
 import { expect, test, type Page } from '@playwright/test';
 import { build } from 'esbuild';
 
@@ -19,7 +19,7 @@ Konva.autoDrawEnabled = false;
 window.measure = konvaMeasurer;
 window.measureRich = (which, runs, base, width) =>
   measureRichText(runs, base, which === 'konva' ? konvaMeasurer : approximateMeasurer, width);
-// Monta o nó de texto rico com o medidor do Konva e o desenha: devolve o layout e as formas.
+// Mounts the rich text node with the Konva measurer and draws it: returns the layout and the shapes.
 window.drawRich = (runs, width, height) => {
   const component = {
     format: 'mapping-component', formatVersion: 4, id: 'r', name: 'R', size: { width, height },
@@ -35,7 +35,7 @@ window.drawRich = (runs, width, height) => {
     .map((shape) => ({ kind: shape.className, text: shape.className === 'Text' ? shape.text() : '', x: shape.x(), y: shape.y(), width: shape.width(), height: shape.height() }));
   return { layout: text.runLayout, shapes };
 };
-// O texto 'H' com baselinePadding.top = 30 desenhado pelo renderScene: o pé da tinta, em px do nó.
+// The text 'H' with baselinePadding.top = 30 drawn by renderScene: the ink foot, in node px.
 window.baselineFoot = (zoom) => {
   const W = 120, H = 60;
   const host = document.body.appendChild(document.createElement('div'));
@@ -69,7 +69,7 @@ window.inkCenter = (zoom, align = 'middle') => {
   const layer = new Layer();
   stage.add(layer);
   if (align === 'cap-middle') {
-    // O mesmo caminho do desenho: o nó da cena com cap-middle, pelo renderScene.
+    // The same path as the drawing: the scene node with cap-middle, through renderScene.
     const component = {
       format: 'mapping-component', formatVersion: 4, id: 'k', name: 'K', size: { width: W, height: H },
       template: { type: 'frame', layout: { type: 'none' }, children: [{
@@ -146,7 +146,7 @@ const FONT = {
   letterSpacing: 0,
 };
 
-/** Altura do mesmo texto num `<div>` do DOM com `line-height` dado. */
+/** Height of the same text in a DOM `<div>` with the given `line-height`. */
 async function domHeight(page: Page, lineHeight: string, text: string): Promise<number> {
   return page.evaluate(
     ([lh, t]) => {
@@ -165,28 +165,28 @@ const measure = (page: Page, lineHeight: number, text: string, maxWidth?: number
     [{ ...FONT, lineHeight }, text, maxWidth] as const,
   ) as Promise<{ width: number; height: number; lines: string[] }>;
 
-test.describe('texto no Chromium', () => {
-  test('C4: parágrafo de 2 linhas com lineHeight em px mede 37, como o DOM', async ({
+test.describe('text in Chromium', () => {
+  test('C4: 2-line paragraph with lineHeight in px measures 37, like the DOM', async ({
     page,
   }) => {
     await load(page);
-    const text = 'Primeira linha\nSegunda linha';
+    const text = 'First line\nSecond line';
     expect(await domHeight(page, '18.5px', text)).toBe(37);
     expect((await measure(page, 18.5, text)).height).toBe(37);
   });
 
-  test('C4: multiplicador 1,4 × 13 não arredonda antes de multiplicar (2 linhas = 36,4)', async ({
+  test('C4: multiplier 1.4 × 13 does not round before multiplying (2 lines = 36.4)', async ({
     page,
   }) => {
     await load(page);
-    const text = 'Primeira linha\nSegunda linha';
+    const text = 'First line\nSecond line';
     const measured = (await measure(page, 1.4 * 13, text)).height;
     expect(measured).toBeCloseTo(36.4, 6);
-    // O DOM guarda a altura em 1/64 px: a diferença para o canvas é menor que 0,1 px.
+    // The DOM keeps the height in 1/64 px: the difference from the canvas is under 0.1 px.
     expect(Math.abs((await domHeight(page, '1.4', text)) - measured)).toBeLessThan(0.1);
   });
 
-  test('C5: o texto escalado a 420% fica no mesmo centro vertical do 100% (≤ 1 px na escala)', async ({
+  test('C5: text scaled at 420% stays at the same vertical center as at 100% (≤ 1 px at the scale)', async ({
     page,
   }) => {
     await load(page);
@@ -197,13 +197,13 @@ test.describe('texto no Chromium', () => {
       );
     const base = await at(1);
     const zoomed = await at(4.2);
-    // A causa conhecida da diferença está no ascent/descent que o navegador entrega ao Konva
-    // (medidas em px inteiros na fonte sem escala, multiplicadas pelo zoom): não vem de
-    // arredondamento do `renderScene`. Aqui o limite documentado é 1 px (na escala do 100%).
+    // The known cause of the difference is in the ascent/descent that the browser hands to Konva
+    // (measured in whole px on the unscaled font, multiplied by the zoom): it does not come from
+    // `renderScene` rounding. Here the documented limit is 1 px (at the 100% scale).
     expect(Math.abs(zoomed - base)).toBeLessThanOrEqual(1);
   });
 
-  test('FX1: cap-middle centra o texto pela maiúscula a ≤ 0,5 px do centro da caixa, a 100% e a 420%', async ({
+  test('FX1: cap-middle centers the text by the capital letter within ≤ 0.5 px of the box center, at 100% and 420%', async ({
     page,
   }) => {
     await load(page);
@@ -220,7 +220,7 @@ test.describe('texto no Chromium', () => {
     expect(Math.abs(await at(4.2))).toBeLessThanOrEqual(0.5);
   });
 
-  test('MC1: a firstBaseline do konvaMeasurer fica a ≤ 0,5 px da linha de base do DOM (sans-serif 13 px, lineHeight 1,2)', async ({
+  test('MC1: the konvaMeasurer firstBaseline is within ≤ 0.5 px of the DOM baseline (sans-serif 13 px, lineHeight 1.2)', async ({
     page,
   }) => {
     await load(page);
@@ -230,7 +230,7 @@ test.describe('texto no Chromium', () => {
       div.style.cssText =
         'font:13px sans-serif;line-height:1.2;position:absolute;top:0;left:0;width:300px';
       div.textContent = 'Hxg';
-      // Uma caixa inline-block vazia assenta o fundo dela na linha de base.
+      // An empty inline-block box settles its bottom on the baseline.
       const probe = div.appendChild(document.createElement('span'));
       probe.style.cssText = 'display:inline-block;width:0;height:0';
       return probe.getBoundingClientRect().bottom - div.getBoundingClientRect().top;
@@ -241,7 +241,7 @@ test.describe('texto no Chromium', () => {
     expect((measured as { lineCount?: number }).lineCount).toBe(1);
   });
 
-  test('MC1: baselinePadding.top 30 põe o pé do "H" a ≤ 0,5 px de 30 do topo, a 100% e a 420%', async ({
+  test('MC1: baselinePadding.top 30 puts the foot of the "H" within ≤ 0.5 px of 30 from the top, at 100% and 420%', async ({
     page,
   }) => {
     await load(page);
@@ -255,7 +255,7 @@ test.describe('texto no Chromium', () => {
     expect(Math.abs((await at(4.2)) - 30)).toBeLessThanOrEqual(0.5);
   });
 
-  test('#941: com maxWidth a largura é a natural do texto, não o limite', async ({
+  test('#941: with maxWidth the width is the natural text width, not the limit', async ({
     page,
   }) => {
     await load(page);
@@ -263,22 +263,27 @@ test.describe('texto no Chromium', () => {
     const bounded = await measure(page, 16, 'OK', 400);
     expect(bounded.width).toBeLessThan(100);
     expect(Math.abs(bounded.width - natural.width)).toBeLessThanOrEqual(1);
-    // Quebrado em várias linhas: a largura é a da linha mais larga, e cabe no limite.
-    const wrapped = await measure(page, 16, 'Texto longo demais para a caixa', 80);
+    // Broken into several lines: the width is that of the widest line, and it fits the limit.
+    const wrapped = await measure(
+      page,
+      16,
+      'Text far too long to fit inside the box',
+      80,
+    );
     expect(wrapped.lines.length).toBeGreaterThan(1);
     expect(wrapped.width).toBeLessThanOrEqual(80);
     expect(wrapped.width).toBeGreaterThan(0);
   });
 
-  test('FX4: um parágrafo com a largura medida do DOM quebra nas mesmas palavras (folga de 0,5 px)', async ({
+  test('FX4: a paragraph with the DOM-measured width wraps at the same words (0.5 px slack)', async ({
     page,
   }) => {
     await load(page);
-    const text = 'Pagar fatura do cartão de crédito com vencimento amanhã cedo';
+    const text = 'Pay the credit card bill due early tomorrow morning';
     const words = text.split(' ');
-    // Para cada prefixo de palavras, a largura do DOM (sem quebra) vira a largura da caixa: o
-    // DOM mantém tudo numa linha, e o medidor do Konva tem de fazer o mesmo (sem tirar a palavra
-    // por uma fração de pixel). Depois, a mesma caixa 3 px menor quebra igual nos dois.
+    // For each word prefix, the DOM width (without wrapping) becomes the box width: the
+    // DOM keeps everything on one line, and the Konva measurer has to do the same (without dropping the word
+    // by a fraction of a pixel). Then, the same box 3 px smaller wraps the same in both.
     const domLines = (width: number) =>
       page.evaluate(
         ([t, w]) => {
@@ -319,18 +324,18 @@ test.describe('texto no Chromium', () => {
       const konva = await measure(page, 16, text, width);
       const dom = await domLines(width);
       expect(konva.lines, `largura ${width} (${n} palavras)`).toEqual(dom);
-      // Uma fração de pixel a menos (a soma das larguras das palavras difere do DOM na ponta
-      // do float) não tira a última palavra da linha: é a folga de 0,5 px.
+      // A fraction of a pixel less (the sum of the word widths differs from the DOM at the tip
+      // of the float) does not take the last word off the line: that is the 0.5 px slack.
       const slack = await measure(page, 16, text, width - 0.3);
       expect(slack.lines, `largura ${width} − 0,3 (${n} palavras)`).toEqual(dom);
     }
   });
 
-  test('C1: wrap none é uma linha só; com ellipsis termina em … e cabe na largura', async ({
+  test('C1: wrap none is a single line; with ellipsis it ends in … and fits the width', async ({
     page,
   }) => {
     await load(page);
-    const text = 'Texto longo demais para a caixa';
+    const text = 'Text far too long to fit inside the box';
     const wrapped = await measure(page, 16, text, 80);
     expect(wrapped.lines.length).toBeGreaterThan(1);
     const measureWith = (extra: Record<string, unknown>) =>
@@ -353,16 +358,16 @@ test.describe('texto no Chromium', () => {
     expect(both.lines[1]!.endsWith('…')).toBe(true);
   });
 
-  test('CF4: konvaMeasurer e approximateMeasurer concordam em ±1 linha num texto rico de 3 trechos', async ({
+  test('CF4: konvaMeasurer and approximateMeasurer agree within ±1 line on a rich text of 3 runs', async ({
     page,
   }) => {
     await load(page);
     const base = { size: 13, lineHeight: 18 };
     const font = { ...FONT, lineHeight: 18 };
     const runs = [
-      { text: 'Vence em ', font },
-      { text: '3 dias úteis ', font: { ...font, weight: 700 } },
-      { text: 'para pagar a fatura do cartão', font },
+      { text: 'Due in ', font },
+      { text: '3 business days ', font: { ...font, weight: 700 } },
+      { text: 'to pay the card bill', font },
     ];
     for (const width of [120, 200, 320]) {
       const rich = (which: 'konva' | 'approx') =>
@@ -375,27 +380,27 @@ test.describe('texto no Chromium', () => {
       const approx = await rich('approx');
       expect(
         Math.abs(konva.lines.length - approx.lines.length),
-        `largura ${width}`,
+        `width ${width}`,
       ).toBeLessThanOrEqual(1);
       expect(konva.height).toBe(konva.lines.length * 18);
     }
   });
 
-  test('CF4: a medida por trechos dá a altura do desenho, e o espaço inicial de " novo" conta', async ({
+  test('CF4: the per-run measurement gives the drawing height, and the leading space of " new" counts', async ({
     page,
   }) => {
     await load(page);
     const chip = { background: '#ffeecc', radius: 4, padding: [2, 4] };
     const runs = [
-      { text: 'Pagamento recebido com sucesso em ' },
-      { text: ' novo', ...chip },
-      { text: ' e conferido', weight: 700 },
+      { text: 'Payment received successfully ' },
+      { text: ' new', ...chip },
+      { text: ' and verified', weight: 700 },
     ];
     const drawn = await page.evaluate(
       ([r]) => (window as never as { drawRich: DrawRich }).drawRich(r, 140, 120),
       [runs] as const,
     );
-    // A medida do modelo com o medidor do Konva é a mesma que o desenho usa.
+    // The model measurement with the Konva measurer is the same one the drawing uses.
     const base = { size: 13, lineHeight: 18 };
     const font = { ...FONT, lineHeight: 18 };
     const measured = await page.evaluate(
@@ -415,15 +420,15 @@ test.describe('texto no Chromium', () => {
     expect(drawn.layout.height).toBeCloseTo(measured.height, 6);
     expect(drawn.layout.lines.length).toBe(measured.lines.length);
     expect(drawn.layout.lines.length).toBeGreaterThan(1);
-    // O fundo mais baixo do desenho termina onde o layout termina.
+    // The lowest bottom of the drawing ends where the layout ends.
     const bottom = Math.max(...drawn.shapes.map((s) => s.y + s.height));
     expect(bottom).toBeLessThanOrEqual(drawn.layout.height + 1e-6);
     expect(bottom).toBeGreaterThan(drawn.layout.height - 18);
-    // O texto do chip é desenhado com o espaço inicial.
-    expect(drawn.shapes.some((s) => s.kind === 'Text' && s.text === ' novo')).toBe(true);
-    // O espaço conta: " novo" mede mais que "novo" no medidor do Konva.
-    const spaced = await measure(page, 18, ' novo');
-    const bare = await measure(page, 18, 'novo');
+    // The chip text is drawn with the leading space.
+    expect(drawn.shapes.some((s) => s.kind === 'Text' && s.text === ' new')).toBe(true);
+    // The space counts: " new" measures more than "new" in the Konva measurer.
+    const spaced = await measure(page, 18, ' new');
+    const bare = await measure(page, 18, 'new');
     expect(spaced.width).toBeGreaterThan(bare.width);
   });
 });

@@ -1,21 +1,21 @@
 import { isOpener, isPunct, skipAngle, unquoteName, type TokenStream } from '../tokens';
 import { positionOf } from '../source';
 
-// Acha as funções `fun nome(…)` de um arquivo, com as anotações que vêm antes (`@Composable`,
-// `@Deprecated`) e o KDoc colado nelas. Não é uma gramática: lê o cabeçalho, o `(` e o `)` dele.
+// Finds the `fun name(…)` functions of a file, with the annotations that come before them
+// (`@Composable`, `@Deprecated`) and the KDoc attached to them. Not a grammar: it reads the header, its `(` and `)`.
 
 export interface FunctionDecl {
   readonly name: string;
-  /** Índice do `(` e do `)` da lista de parâmetros. */
+  /** Index of the `(` and `)` of the parameter list. */
   readonly open: number;
   readonly close: number;
-  /** Índice do token `fun`. */
+  /** Index of the `fun` token. */
   readonly funIndex: number;
-  /** Linha (1 em diante) do `fun`. */
+  /** Line (1-based) of the `fun`. */
   readonly line: number;
   readonly composable: boolean;
   readonly deprecated: boolean;
-  /** O KDoc colado antes da declaração (texto cru), se houver. */
+  /** The KDoc attached before the declaration (raw text), if any. */
   readonly doc?: string;
 }
 
@@ -39,12 +39,12 @@ const MODIFIERS = new Set([
 ]);
 
 interface Annotation {
-  /** Índice do `@`. */
+  /** Index of the `@`. */
   readonly start: number;
   readonly name: string;
 }
 
-/** O índice do primeiro token do nome da anotação (com os `a.b.` na frente e o `alvo:` do `@get:Nome`). */
+/** The index of the first token of the annotation name (with the leading `a.b.` and the `target:` of `@get:Name`). */
 function annotationNameStart(stream: TokenStream, nameIndex: number): number {
   const { tokens } = stream;
   let start = nameIndex;
@@ -54,7 +54,7 @@ function annotationNameStart(stream: TokenStream, nameIndex: number): number {
   return useSite && isPunct(stream, start - 3, '@') ? start - 2 : start;
 }
 
-/** A anotação que termina no token `end` (o nome, ou o `)` dos argumentos), lida de trás para frente. */
+/** The annotation that ends at the token `end` (the name, or the `)` of the arguments), read backwards. */
 function annotationEndingAt(stream: TokenStream, end: number): Annotation | undefined {
   const nameIndex = isPunct(stream, end, ')') ? stream.match[end]! - 1 : end;
   const name = stream.tokens[nameIndex];
@@ -70,7 +70,7 @@ interface Chain {
   readonly names: readonly string[];
 }
 
-/** Os modificadores e as anotações que vêm antes do `fun`: o primeiro token deles e os nomes das anotações. */
+/** The modifiers and annotations that come before the `fun`: their first token and the annotation names. */
 function readChain(stream: TokenStream, funIndex: number): Chain {
   const names: string[] = [];
   let first = funIndex;
@@ -91,7 +91,7 @@ function readChain(stream: TokenStream, funIndex: number): Chain {
   return { first, names };
 }
 
-/** O índice do `(` do cabeçalho que começa no `fun` (pula genéricos e receptor); `undefined` se não é função. */
+/** The index of the `(` of the header that starts at the `fun` (skips generics and receiver); `undefined` if it is not a function. */
 function findOpenParen(stream: TokenStream, funIndex: number): number | undefined {
   const { tokens } = stream;
   let j = funIndex + 1;
@@ -106,7 +106,7 @@ function findOpenParen(stream: TokenStream, funIndex: number): number | undefine
   return undefined;
 }
 
-/** O nome e o `(` do cabeçalho que começa no `fun`. */
+/** The name and the `(` of the header that starts at the `fun`. */
 function readHeader(
   stream: TokenStream,
   funIndex: number,
@@ -119,7 +119,7 @@ function readHeader(
 
 const FUNCTIONS = new WeakMap<TokenStream, FunctionDecl[]>();
 
-/** Todas as funções do arquivo, em ordem de fonte (calculado uma vez por arquivo). */
+/** All the functions of the file, in source order (computed once per file). */
 export function findFunctions(stream: TokenStream): FunctionDecl[] {
   const cached = FUNCTIONS.get(stream);
   if (cached !== undefined) return cached;

@@ -1,9 +1,9 @@
-// MF3: cor herdada (`provide` no slot e `$provided` na filha, formato 4) — validador.
+// MF3: inherited color (`provide` on the slot and `$provided` on the child, format 4) — validator.
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import { validateComponent } from '../../../src/model/components/parseComponent';
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 function withChild(child: Record<string, unknown>, version = 4): unknown {
   return {
@@ -19,8 +19,8 @@ function withChild(child: Record<string, unknown>, version = 4): unknown {
 const slot = (extra: Record<string, unknown> = {}) => ({ type: 'slot', ...extra });
 const text = (color: unknown) => ({ type: 'text', text: 'x', color });
 
-describe('provide no slot (decisão 8)', () => {
-  it('vale no slot, na v4, com texto, número ou expressão', () => {
+describe('provide on the slot (decision 8)', () => {
+  it('applies to the slot, in v4, with text, number or expression', () => {
     const provide = {
       'content-color': { $token: 'on-primary' },
       size: 12,
@@ -30,41 +30,41 @@ describe('provide no slot (decisão 8)', () => {
     expect(validateComponent(withChild(slot({ provide })))).toEqual([]);
   });
 
-  it('numa v1 a v3 é só permitido com formatVersion 4, no caminho da chave', () => {
+  it('in v1 to v3 it is only allowed with formatVersion 4, at the key path', () => {
     for (const version of [1, 2, 3])
       expect(
         validateComponent(withChild(slot({ provide: { ink: '#fff' } }), version)),
       ).toEqual([`template.children[0].provide: ${V4}`]);
   });
 
-  it('só o slot oferece: em outro nó é chave desconhecida', () => {
+  it('only the slot offers: on another node it is an unknown key', () => {
     expect(
       validateComponent(withChild({ type: 'frame', provide: { ink: '#fff' } })),
-    ).toEqual(['template.children[0].provide: chave desconhecida: provide']);
+    ).toEqual(['template.children[0].provide: unknown key: provide']);
   });
 
-  it('nome vazio é erro; o valor é conferido no caminho dele', () => {
+  it('an empty name is an error; the value is checked at its own path', () => {
     expect(validateComponent(withChild(slot({ provide: { '': '#fff' } })))).toEqual([
-      'template.children[0].provide: nome vazio',
+      'template.children[0].provide: empty name',
     ]);
     expect(validateComponent(withChild(slot({ provide: { ink: true } })))).toEqual([
-      'template.children[0].provide.ink: esperava texto ou número',
+      'template.children[0].provide.ink: expected text or a number',
     ]);
     expect(validateComponent(withChild(slot({ provide: 'ink' })))).toEqual([
-      'template.children[0].provide: esperava objeto',
+      'template.children[0].provide: expected an object',
     ]);
   });
 });
 
-describe('$provided na filha (decisão 8)', () => {
-  it('vale onde vale uma Expr, com default (que também é Expr)', () => {
+describe('$provided on the child (decision 8)', () => {
+  it('applies wherever an Expr applies, with default (which is also an Expr)', () => {
     const read = { $provided: 'content-color', default: { $token: 'on-surface' } };
     expect(validateComponent(withChild(text(read)))).toEqual([]);
     expect(validateComponent(withChild({ type: 'rect', fill: read }))).toEqual([]);
   });
 
-  it('só vale em posição de cor: o que muda a geometria não herda', () => {
-    const msg = '$provided só vale onde se espera cor';
+  it('only applies in a color position: what changes geometry does not inherit', () => {
+    const msg = '$provided is only valid where a color is expected';
     expect(
       validateComponent(
         withChild({ type: 'rect', width: { $provided: 'w', default: 10 } }),
@@ -77,8 +77,8 @@ describe('$provided na filha (decisão 8)', () => {
     ).toEqual([`template.children[0].text: ${msg}`]);
   });
 
-  it('sem nome (ou vazio) é erro', () => {
-    const msg = 'esperava nome da cor oferecida (texto não vazio)';
+  it('without a name (or empty) is an error', () => {
+    const msg = 'expected the name of the provided color (non-empty text)';
     expect(validateComponent(withChild(text({ $provided: '' })))).toEqual([
       `template.children[0].color.$provided: ${msg}`,
     ]);
@@ -88,21 +88,21 @@ describe('$provided na filha (decisão 8)', () => {
     ]);
   });
 
-  it('chave desconhecida junto é erro', () => {
-    expect(validateComponent(withChild(text({ $provided: 'a', outra: 1 })))).toEqual([
-      'template.children[0].color.outra: chave desconhecida: outra',
+  it('an unknown key alongside is an error', () => {
+    expect(validateComponent(withChild(text({ $provided: 'a', other: 1 })))).toEqual([
+      'template.children[0].color.other: unknown key: other',
     ]);
   });
 
-  it('o src da imagem continua restrito', () => {
+  it('the image src is still restricted', () => {
     expect(
       validateComponent(withChild({ type: 'image', src: { $provided: 'a' } })),
     ).toEqual([
-      'template.children[0].src: src só aceita texto literal ou { "$field": "<campo>" }',
+      'template.children[0].src: src only accepts literal text or { "$field": "<field>" }',
     ]);
   });
 
-  it('numa v1 a v3 é só permitido com formatVersion 4, no caminho da chave', () => {
+  it('in v1 to v3 it is only allowed with formatVersion 4, at the key path', () => {
     for (const version of [1, 2, 3]) {
       const issues = validateComponent(
         withChild(text({ $provided: 'a', default: '#fff' }), version),

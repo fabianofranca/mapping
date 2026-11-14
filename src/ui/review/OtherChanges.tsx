@@ -11,12 +11,12 @@ import { changeSummary, changeTitle, targetName } from './changeText';
 import { DecisionCounts } from './ProposalRow';
 import { useReviewNames, useReviewNavigate } from './useReview';
 
-// "Outras mudanças" (HANDOFF-REVIEW-DETAILS 5.6, fase 9.6): o que não tem campo no painel
-// normal (origem, trava, troca de imagem da marcação, posição da imagem, camadas,
-// especializações e repositórios) numa linha com o tipo, o resumo e o mesmo marcador e
-// popover dos campos. Substitui os cartões (`ChangeCard`) com uma forma só.
+// "Other changes" (HANDOFF-REVIEW-DETAILS 5.6, phase 9.6): what has no field in the normal
+// panel (source, lock, marking image swap, image position, layers,
+// specializations and repositories) in one row with the type, the summary and the same marker and
+// popover as the fields. It replaces the cards (`ChangeCard`) with a single form.
 
-/** Linhas desenhadas de uma vez (uma importação grande pode ter centenas). */
+/** Rows drawn at once (a large import can have hundreds). */
 const MAX_ROWS = 60;
 
 export function OtherChangeRow({ change }: { readonly change: Change }) {
@@ -36,7 +36,7 @@ export function OtherChangeRow({ change }: { readonly change: Change }) {
   );
 }
 
-/** A seção "Outras mudanças" com uma linha por mudança de `ids`; `null` sem nenhuma. */
+/** The "Other changes" section with one row per change of `ids`; `null` with none. */
 export function OtherChangesSection({ ids }: { readonly ids: readonly string[] }) {
   const { review } = useEditor();
   const names = useReviewNames();
@@ -47,7 +47,7 @@ export function OtherChangesSection({ ids }: { readonly ids: readonly string[] }
     const c = byId.get(id);
     return c ? [c] : [];
   });
-  // A mudança selecionada na janela Propostas nunca fica além do "mostrar mais".
+  // The change selected in the Proposals window never stays beyond "show more".
   const selected = review.selected.value;
   const wanted =
     selected?.level === 'change' ? changes.findIndex((c) => c.id === selected.id) : -1;
@@ -73,7 +73,7 @@ export function OtherChangesSection({ ids }: { readonly ids: readonly string[] }
   );
 }
 
-/** A seção "Imagens" da proposta: uma linha por imagem com mudanças e **Abrir**. */
+/** The "Images" section of the proposal: one row per image with changes and **Open**. */
 export function ImagesSection() {
   const { review } = useEditor();
   const names = useReviewNames();
@@ -81,7 +81,7 @@ export function ImagesSection() {
   const d = review.derived;
   const tree = d.tree.value;
   if (!names || !tree) return null;
-  // O grupo Canvas (marcações do canvas) é irmão dos containers e abre como eles.
+  // The Canvas group (canvas markings) is a sibling of the containers and opens like them.
   const images = tree.root.children.filter(
     (n) => n.level === 'image' || n.level === 'canvas',
   );

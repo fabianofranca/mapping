@@ -1,9 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createProject } from './helpers';
 
-// CE3 (#956): defeitos de carga da página e de ação padrão do navegador, que só o e2e alcança.
+// CE3 (#956): page load defects and browser default action defects, which only e2e reaches.
 
-/** Dispara `type` com um arquivo no seletor e diz se a app cancelou a ação padrão (a navegação). */
+/** Fires `type` with a file on the selector and says whether the app canceled the default action (the navigation). */
 async function fileEventPrevented(
   page: Page,
   selector: string,
@@ -12,9 +12,9 @@ async function fileEventPrevented(
   return page.evaluate(
     ([sel, kind]) => {
       const target = document.querySelector(sel);
-      if (!target) throw new Error(`sem ${sel}`);
+      if (!target) throw new Error(`no ${sel}`);
       const data = new DataTransfer();
-      data.items.add(new File(['x'], 'solto.txt', { type: 'text/plain' }));
+      data.items.add(new File(['x'], 'dropped.txt', { type: 'text/plain' }));
       const event = new DragEvent(kind, {
         dataTransfer: data,
         bubbles: true,
@@ -27,42 +27,42 @@ async function fileEventPrevented(
   );
 }
 
-test.describe('layout guardado malformado (#943)', () => {
+test.describe('malformed saved layout (#943)', () => {
   for (const open of ['"tree"', '5', 'null', '{"tree":true}']) {
-    test(`open=${open} abre a app com o layout padrão`, async ({ page }) => {
+    test(`open=${open} opens the app with the default layout`, async ({ page }) => {
       await page.goto('/');
       await page.evaluate((value) => {
         localStorage.setItem('mapping.toolWindows', `{"open":${value}}`);
       }, open);
       await page.reload();
-      await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
-      await createProject(page, 'Layout malformado');
-      await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+      await expect(page.getByRole('button', { name: /New project/ })).toBeVisible();
+      await createProject(page, 'Malformed layout');
+      await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
     });
   }
 });
 
-test.describe('arquivo solto não tira a pessoa da app (#972)', () => {
-  test('na tela inicial, dragover e drop com arquivo são cancelados e a app segue montada', async ({
+test.describe('a dropped file does not take the person out of the app (#972)', () => {
+  test('on the home screen, dragover and drop with a file are canceled and the app stays mounted', async ({
     page,
   }) => {
     await page.goto('/');
     const url = page.url();
-    await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /New project/ })).toBeVisible();
     expect(await fileEventPrevented(page, 'body', 'dragover')).toBe(true);
     expect(await fileEventPrevented(page, 'body', 'drop')).toBe(true);
     expect(page.url()).toBe(url);
-    await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /New project/ })).toBeVisible();
   });
 
-  test('no editor, fora do canvas (painéis), o arquivo solto também é cancelado', async ({
+  test('in the editor, outside the canvas (panels), the dropped file is also canceled', async ({
     page,
   }) => {
-    await createProject(page, 'Arquivo solto');
+    await createProject(page, 'Dropped file');
     const url = page.url();
     expect(await fileEventPrevented(page, '.app-editor', 'dragover')).toBe(true);
     expect(await fileEventPrevented(page, '.app-editor', 'drop')).toBe(true);
     expect(page.url()).toBe(url);
-    await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+    await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   });
 });

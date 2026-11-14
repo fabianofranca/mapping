@@ -1,21 +1,21 @@
 import { projectIndex } from './projectIndex';
 import type { Layer, Project } from './types';
 
-// Como as marcações aparecem de acordo com as anotações nas
-// camadas visíveis. Funções puras: o canvas só aplica o resultado.
+// How markings appear according to the annotations in the
+// visible layers. Pure functions: the canvas only applies the result.
 
-/** Modos de exibição das marcações (preferência do dispositivo, fora do JSON). */
+/** Display modes of the markings (device preference, outside the JSON). */
 export const MARKING_DISPLAY_MODES = ['all', 'dim', 'hide'] as const;
 export type MarkingDisplayMode = (typeof MARKING_DISPLAY_MODES)[number];
 
-/** Uma camada com anotação própria na marcação. */
+/** A layer with an annotation of its own on the marking. */
 export interface LayerDot {
   readonly layer: Layer;
 }
 
 /**
- * Camadas visíveis com anotação própria em cada marcação, na ordem de `layers`. Marcações sem
- * nenhuma não aparecem no mapa. As setas (v13) entram como as marcações, pelo id delas.
+ * Visible layers with an annotation of their own on each marking, in `layers` order. Markings with
+ * none do not appear on the map. Arrows (v13) come in like markings, by their id.
  */
 export function layerDotsByMarking(
   p: Project,
@@ -47,20 +47,20 @@ export function layerDotsByMarking(
 const NO_ALWAYS_SHOWN: ReadonlySet<string> = new Set();
 
 /**
- * `full`: desenhada normalmente. `dim`: esmaecida. `outline`: só a borda esmaecida,
- * sem texto nem indicadores (ancestral de uma marcação visível, no modo Ocultar).
- * `hidden`: não aparece nem recebe toque.
+ * `full`: drawn normally. `dim`: faded. `outline`: only the faded border,
+ * without text or indicators (ancestor of a visible marking, in Hide mode).
+ * `hidden`: does not appear nor receive touch.
  */
 export type MarkingVisibility = 'full' | 'dim' | 'outline' | 'hidden';
 
 /**
- * Visibilidade de cada marcação segundo o modo. "Sem anotação" = sem anotação
- * própria nem herdada em nenhuma camada visível: `dots` vem de `layerDotsByMarking` com
- * as camadas visíveis. A selecionada
- * sempre aparece por inteiro. No modo Ocultar, o ancestral sem anotação de uma
- * marcação que aparece fica só com a borda, para manter o contexto. `alwaysShown`: marcações
- * que desenham um componente são conteúdo da tela, não "sem anotação": o filtro não as
- * esmaece nem oculta (ficam `full`, como as selecionadas).
+ * Visibility of each marking according to the mode. "Without annotation" = without an annotation
+ * of its own or inherited in any visible layer: `dots` comes from `layerDotsByMarking` with
+ * the visible layers. The selected one
+ * always appears whole. In Hide mode, the ancestor without annotation of a
+ * marking that appears is left with only the border, to keep the context. `alwaysShown`: markings
+ * that draw a component are screen content, not "without annotation": the filter does not
+ * fade or hide them (they stay `full`, like the selected ones).
  */
 export function markingVisibility(
   p: Project,
@@ -82,7 +82,7 @@ export function markingVisibility(
   for (const m of p.markings) {
     if (!shown(m.id)) continue;
     let parentId = m.parentId;
-    // Para ao achar um ancestral já resolvido (o resto da cadeia também está).
+    // Stops on finding an already resolved ancestor (the rest of the chain is too).
     while (parentId !== null && result.get(parentId) === 'hidden') {
       result.set(parentId, 'outline');
       parentId = byId.get(parentId)?.parentId ?? null;

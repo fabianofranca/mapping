@@ -20,29 +20,29 @@ type InputProps = Omit<
 interface CommitInputProps extends InputProps {
   readonly value: string;
   /**
-   * Chamado ao confirmar (Enter ou sair do campo) com um texto diferente do
-   * atual. Devolve `false` para descartar o texto e voltar ao valor atual. O segundo argumento
-   * só vem quando a pessoa escolheu na lista um item com `id` (alvo de `linkedRef`) cujo rótulo
-   * ainda é uma palavra do texto; nesse caso a confirmação acontece mesmo com o texto igual ao atual.
+   * Called on confirm (Enter or leaving the field) with a text different from the
+   * current one. Returns `false` to discard the text and go back to the current value. The second argument
+   * only comes when the person picked from the list an item with an `id` (target of `linkedRef`) whose label
+   * is still a word of the text; in that case the confirmation happens even with the text equal to the current one.
    */
   readonly onCommit: (text: string, chosen?: SuggestionItem) => boolean;
   /**
-   * Sugestões do campo (combobox ARIA). A lista abre (digitando, ↓, Ctrl+Espaço ou clique no campo vazio) com o
-   * primeiro item ativo, que volta ao primeiro a cada filtragem; Enter com ela aberta escolhe o
-   * ativo e não grava (com ela fechada, grava). Escolher troca só a palavra sob o cursor e não
-   * grava: a próxima confirmação grava. Não restringe o valor. Sem elas, ou com o campo
-   * `readOnly`/`disabled`, o campo é o de sempre.
+   * Field suggestions (ARIA combobox). The list opens (typing, ↓, Ctrl+Space or a click on the empty field) with the
+   * first item active, which returns to the first on every filtering; Enter with it open picks the
+   * active one and does not save (with it closed, it saves). Picking replaces only the word under the cursor and does not
+   * save: the next confirmation saves. It does not restrict the value. Without them, or with the field
+   * `readOnly`/`disabled`, the field is the usual one.
    */
   readonly suggestions?: readonly SuggestionInput[];
 }
 
 /**
- * Campo de texto que só grava ao confirmar: digitar não gera uma entrada de
- * desfazer por tecla. Acompanha o valor externo (ex.: após desfazer).
+ * Text field that only saves on confirm: typing does not create an
+ * undo entry per keystroke. It follows the external value (e.g. after an undo).
  *
- * Teclado (`docs/ARCHITECTURE.md`, "Foco e teclado"): Enter confirma e o foco fica no campo
- * (etapa 8, F5); Esc com o que reverter volta ao valor atual e para aí (não fecha o diálogo
- * ou o menu em volta); sem o que reverter, sobe.
+ * Keyboard (`docs/ARCHITECTURE.md`, "Focus and keyboard"): Enter confirms and focus stays on the field
+ * (stage 8, F5); Esc with something to revert goes back to the current value and stops there (it does not close the dialog
+ * or the surrounding menu); with nothing to revert, it bubbles up.
  */
 export function CommitInput({ suggestions, ...props }: CommitInputProps) {
   const enabled =
@@ -58,18 +58,18 @@ export function CommitInput({ suggestions, ...props }: CommitInputProps) {
 }
 
 function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputProps) {
-  // O rascunho vale só enquanto o valor externo for o mesmo de quando foi digitado.
+  // The draft only holds while the external value is the same as when it was typed.
   const [draft, setDraft] = useState({ base: value, text: value });
   const text = draft.base === value ? draft.text : value;
   const setText = (next: string) => setDraft({ base: value, text: next });
-  // A última gravação (sobre qual valor, com qual texto): o `change` que o navegador
-  // dispara depois do Enter, antes da renderização, traz o mesmo texto e não grava de novo.
+  // The last save (over which value, with which text): the `change` the browser
+  // fires after Enter, before rendering, carries the same text and does not save again.
   const combo = suggestions !== undefined;
   const listId = useId();
   const inputEl = useRef<HTMLInputElement>(null);
   const panelEl = useRef<HTMLDivElement>(null);
   const pendingCursor = useRef<number | null>(null);
-  // Lista aberta: a palavra filtrada e o item ativo (sempre o primeiro ao abrir ou filtrar; Enter com a lista aberta escolhe).
+  // Open list: the filtered word and the active item (always the first on open or filter; Enter with the list open picks).
   const [list, setList] = useState<{
     readonly word: string;
     readonly active: number;
@@ -88,8 +88,8 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
         : null,
     );
   };
-  // Itens com `id` escolhidos nesta edição (e sobre qual valor externo): zerados ao confirmar,
-  // no Esc que reverte e quando o valor externo muda.
+  // Items with an `id` picked in this edit (and over which external value): reset on confirm,
+  // on the Esc that reverts and when the external value changes.
   const chosen = useRef<{ readonly item: SuggestionItem; readonly base: string }[]>([]);
   const choose = (item: SuggestionItem) => {
     const el = inputEl.current;
@@ -101,7 +101,7 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
     closeList();
   };
 
-  // A troca do texto pelo JS leva o cursor ao fim: põe depois da sugestão.
+  // Changing the text from JS moves the cursor to the end: put it after the suggestion.
   useLayoutEffect(() => {
     const at = pendingCursor.current;
     if (at === null) return;
@@ -129,17 +129,17 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
   }, [active, visible]);
 
   const committed = useRef<{ readonly base: string; readonly text: string } | null>(null);
-  // A guarda vale só enquanto o valor externo ainda é a base daquela gravação: mudou (a
-  // gravação chegou, normalizada ou não, ou um desfazer), ela é zerada, e o mesmo texto
-  // volta a gravar. Depois da renderização, o campo mostra o valor externo e o `change`
-  // duplicado cai em `typed === value`. Um `onCommit` que aceita sem mudar o valor deixa a
-  // guarda até ele mudar: redigitar o mesmo texto é ignorado, mas não gravaria nada.
+  // The guard only holds while the external value is still the base of that save: if it changed (the
+  // save arrived, normalized or not, or an undo), it is reset, and the same text
+  // saves again. After rendering, the field shows the external value and the duplicated
+  // `change` falls into `typed === value`. An `onCommit` that accepts without changing the value leaves the
+  // guard until it changes: retyping the same text is ignored, but it would not save anything.
   if (committed.current && committed.current.base !== value) committed.current = null;
 
-  // Lê o texto do próprio campo: o `change` pode chegar antes da renderização que
-  // acompanha o `input`, e `text` ainda seria o valor antigo.
+  // Reads the text from the field itself: the `change` may arrive before the rendering that
+  // follows `input`, and `text` would still be the old value.
   const commit = (typed: string) => {
-    // A última escolha cujo rótulo ainda é palavra do texto vale; a lista é zerada em todo caso.
+    // The last pick whose label is still a word of the text holds; the list is reset in any case.
     const picked = chosen.current
       .filter((c) => c.base === value && containsWord(typed, c.item.label))
       .pop()?.item;
@@ -148,8 +148,8 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
       if (typed === value) return;
       if (committed.current?.base === value && committed.current.text === typed) return;
     }
-    // Gravado: o rascunho passa a ser o texto gravado. Sem isto, voltar depois ao valor de
-    // antes (desfazer, limpar por outro botão) reaproveitaria o rascunho antigo.
+    // Saved: the draft becomes the saved text. Without this, going back later to the value from
+    // before (undo, clearing through another button) would reuse the old draft.
     if (picked === undefined ? onCommit(typed) : onCommit(typed, picked)) {
       committed.current = { base: value, text: typed };
       setDraft({ base: typed, text: typed });
@@ -194,8 +194,8 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
         const el = e.currentTarget;
         if (combo) {
           const at = el.selectionStart ?? el.value.length;
-          // Só as teclas sem modificador: Alt+Shift+↑/↓ move a linha da tabela e Alt+Enter
-          // cria uma linha (`TableField`), como sem sugestões.
+          // Only keys without a modifier: Alt+Shift+↑/↓ moves the table row and Alt+Enter
+          // creates a row (`TableField`), as without suggestions.
           const plain = !e.altKey && !e.shiftKey && !e.ctrlKey && !e.metaKey;
           if (plain && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
             e.preventDefault();
@@ -237,7 +237,7 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
             closeList();
           }
         }
-        // Também com Alt (nova linha): grava antes de a linha nova entrar.
+        // Also with Alt (new row): saves before the new row enters.
         if (e.key === 'Enter') commit(el.value);
         if (e.key === 'Escape' && (el.value !== value || chosen.current.length > 0)) {
           chosen.current = [];
@@ -259,7 +259,7 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
           role="listbox"
           aria-label={t('suggestions.listLabel')}
           ref={panelEl}
-          // Sem tirar o foco do campo.
+          // Without taking focus out of the field.
           onMouseDown={(e) => e.preventDefault()}
         >
           {shown.map((item, index) => (

@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "sdui-column",
   "name": "Column",
-  "description": "Container vertical: os filhos se empilham pela ordem, com spacing e padding.",
+  "description": "Vertical container: the children stack in order, with spacing and padding.",
   "size": {
     "width": 380,
     "height": 200

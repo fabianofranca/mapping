@@ -9,14 +9,14 @@ import {
 } from './specLookup';
 import type { Annotation, Project } from './types';
 
-// Vínculos (anotação → anotação dona).
+// Links (annotation → owner annotation).
 
-/** Anotações vinculadas diretamente à dona, na ordem do array. */
+/** Annotations linked directly to the owner, in array order. */
 function directLinked(p: Project, annotationId: string): Annotation[] {
   return [...(projectIndex(p).annotationsByOwner.get(annotationId) ?? [])];
 }
 
-/** Vinculadas a `annotationId`, em qualquer profundidade (sem incluir a própria). */
+/** Linked to `annotationId`, at any depth (not including itself). */
 export function getLinkedAnnotations(
   p: Project,
   annotationId: string,
@@ -38,7 +38,7 @@ export function getLinkedAnnotations(
   return result;
 }
 
-/** Ids da anotação e de todas as vinculadas a ela, recursivamente. */
+/** Ids of the annotation and of all those linked to it, recursively. */
 export function annotationWithLinked(p: Project, annotationId: string): Set<string> {
   const ids = new Set<string>([annotationId]);
   for (const a of getLinkedAnnotations(p, annotationId, { deep: true })) ids.add(a.id);
@@ -46,9 +46,9 @@ export function annotationWithLinked(p: Project, annotationId: string): Set<stri
 }
 
 /**
- * Donas possíveis para a anotação: mesma marcação e sem ciclo (a anotação e suas vinculadas ficam
- * de fora). Anotação livre: só donas de outra camada. Anotação tipada: só donas cujo tipo a liste
- * em `allowedChildren`, de qualquer camada (a da própria, desde a `formatVersion` 13).
+ * Possible owners for the annotation: same marking and no cycle (the annotation and those linked to it are
+ * left out). Free annotation: only owners from another layer. Typed annotation: only owners whose type lists it
+ * in `allowedChildren`, from any layer (including its own, since `formatVersion` 13).
  */
 export function validAnnotationOwners(p: Project, annotationId: string): Annotation[] {
   const annotation = findById(p.annotations, annotationId);
@@ -62,8 +62,8 @@ export function validAnnotationOwners(p: Project, annotationId: string): Annotat
 }
 
 /**
- * Confere um papel (v14) contra o que o dono oferece: sem dono, `role-without-owner`; papel que o
- * dono não oferece (inclusive dono sem `childRoles`), `unknown-role`.
+ * Checks a role (v14) against what the owner offers: with no owner, `role-without-owner`; a role the
+ * owner does not offer (including an owner without `childRoles`), `unknown-role`.
  */
 export function checkRole(
   offered: OwnerRoles | null,
@@ -74,7 +74,7 @@ export function checkRole(
   if (!offered?.roles.some((r) => r.id === role)) fail('unknown-role', role);
 }
 
-/** Papel que sobrevive à troca de dono: o atual, se o novo dono o oferece; senão `null`. */
+/** Role that survives an owner change: the current one, if the new owner offers it; otherwise `null`. */
 function roleAfterOwnerChange(p: Project, role: string | null, ownerId: string | null) {
   if (role === null || ownerId === null) return null;
   const offered = ownerRolesOf(p, findById(p.annotations, ownerId));
@@ -82,9 +82,9 @@ function roleAfterOwnerChange(p: Project, role: string | null, ownerId: string |
 }
 
 /**
- * Define (ou, com `null`, remove) a dona da anotação, respeitando os invariantes. O papel atual
- * fica só se a nova dona o oferece; tirar a dona limpa o papel (tudo na mesma operação). A dona
- * que não muda não é mudança: devolve `p` como está.
+ * Sets (or, with `null`, removes) the annotation's owner, respecting the invariants. The current role
+ * stays only if the new owner offers it; removing the owner clears the role (all in the same operation). An owner
+ * that does not change is not a change: returns `p` as is.
  */
 export function setAnnotationParent(
   p: Project,
@@ -112,8 +112,8 @@ export function setAnnotationParent(
 }
 
 /**
- * Troca o papel da anotação no dono (`null` limpa). O papel precisa existir no dono; sem dono,
- * só `null` vale.
+ * Changes the annotation's role on the owner (`null` clears). The role must exist on the owner; with no owner,
+ * only `null` is valid.
  */
 export function setAnnotationRole(
   p: Project,

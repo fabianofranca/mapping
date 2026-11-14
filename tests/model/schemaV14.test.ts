@@ -1,5 +1,5 @@
-// Schema v14 (etapa #559, PD2): `parentRole` na anotação, `docRepos` no projeto, o invariante
-// do papel e a migração v13 → v14.
+// Schema v14 (stage #559, PD2): `parentRole` on the annotation, `docRepos` on the project, the role
+// invariant and the v13 → v14 migration.
 import { describe, expect, it } from 'vitest';
 import {
   SCHEMA_VERSION,
@@ -26,13 +26,13 @@ function reload(p: Project): Project {
   return load(serialize(p), specFiles(p)).project;
 }
 
-describe('schema v14: leitura e gravação', () => {
-  it('a versão atual é 14 e o projeto novo tem docRepos vazio', () => {
+describe('schema v14: reading and writing', () => {
+  it('the current version is 14 and the new project has empty docRepos', () => {
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(14);
     expect(emptyProject().docRepos).toEqual({});
   });
 
-  it('lê e grava parentRole, e a ordem fixa põe o papel logo depois do dono', () => {
+  it('reads and writes parentRole, and the fixed order puts the role right after the owner', () => {
     const p = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
     const raw = JSON.parse(serialize(p)) as Raw;
     const child = raw.annotations.find((a: Raw) => a.id === 'E1');
@@ -47,7 +47,7 @@ describe('schema v14: leitura e gravação', () => {
     expect(serialize(reload(p))).toBe(serialize(p));
   });
 
-  it('lê e grava docRepos, logo depois de platformRepos', () => {
+  it('reads and writes docRepos, right after platformRepos', () => {
     const p = {
       ...roleProject(withDocRepo),
       docRepos: { 'design-docs': { localPath: '../design-docs' } },
@@ -61,14 +61,14 @@ describe('schema v14: leitura e gravação', () => {
   });
 });
 
-describe('schema v14: docRepos na leitura', () => {
+describe('schema v14: docRepos on reading', () => {
   const read = (docRepos: unknown) => {
     const raw = JSON.parse(serialize(sampleProject())) as Raw;
     raw.docRepos = docRepos;
     return load(JSON.stringify(raw)).project.docRepos;
   };
 
-  it('a entrada sem localPath sai', () => {
+  it('an entry without localPath goes away', () => {
     expect(
       read({
         a: {},
@@ -81,20 +81,20 @@ describe('schema v14: docRepos na leitura', () => {
     });
   });
 
-  it('chave a mais na entrada é descartada', () => {
+  it('an extra key on the entry is discarded', () => {
     expect(read({ a: { localPath: '../a', url: 'x', extra: 1 } })).toEqual({
       a: { localPath: '../a' },
     });
   });
 
-  it('um id que nenhuma especialização declara abre', () => {
-    expect(read({ 'sem-spec': { localPath: '../x' } })).toEqual({
-      'sem-spec': { localPath: '../x' },
+  it('an id that no specialization declares opens', () => {
+    expect(read({ 'no-spec': { localPath: '../x' } })).toEqual({
+      'no-spec': { localPath: '../x' },
     });
   });
 });
 
-describe('schema v14: invariante do papel', () => {
+describe('schema v14: role invariant', () => {
   const open = (edit: (a: Raw) => Raw) => {
     const p = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
     const raw = JSON.parse(serialize(p)) as Raw;
@@ -102,11 +102,11 @@ describe('schema v14: invariante do papel', () => {
     return deserialize(JSON.stringify(raw), migrations, specFiles(p));
   };
 
-  it('um papel sem dono recusa a abertura', () => {
+  it('a role without an owner refuses opening', () => {
     const result = open((a) => ({ ...a, parentAnnotationId: null }));
     expect(result.ok).toBe(false);
     if (result.ok || result.error.code !== 'invariant-violation')
-      throw new Error('esperava violação');
+      throw new Error('expected a violation');
     expect(result.error.issues).toContainEqual(
       expect.objectContaining({
         code: 'role-without-owner',
@@ -116,27 +116,27 @@ describe('schema v14: invariante do papel', () => {
     );
   });
 
-  it('um papel vazio recusa a abertura', () => {
+  it('an empty role refuses opening', () => {
     const result = open((a) => ({ ...a, parentRole: '' }));
     expect(result.ok).toBe(false);
     if (result.ok || result.error.code !== 'invariant-violation')
-      throw new Error('esperava violação');
+      throw new Error('expected a violation');
     expect(result.error.issues).toContainEqual(
       expect.objectContaining({ code: 'empty-role', id: 'E1' }),
     );
   });
 
-  it('o projeto íntegro e um papel que o dono não oferece abrem (é pendência, não erro)', () => {
+  it('the intact project and a role the owner does not offer open (it is an issue, not an error)', () => {
     expect(open((a) => a).ok).toBe(true);
-    expect(open((a) => ({ ...a, parentRole: 'nao-existe' })).ok).toBe(true);
+    expect(open((a) => ({ ...a, parentRole: 'does-not-exist' })).ok).toBe(true);
     expect(
       validateProject(addChild(roleProject(withRoles), 'E1', 'A1', 'click')),
     ).toEqual([]);
   });
 });
 
-describe('migração v13 → v14', () => {
-  /** O projeto como um mapping.json v13: sem `parentRole` nem `docRepos`. */
+describe('migration v13 → v14', () => {
+  /** The project as a v13 mapping.json: without `parentRole` or `docRepos`. */
   function v13Raw(): Raw {
     const raw = JSON.parse(serialize(sampleProject())) as Raw;
     raw.schemaVersion = 13;
@@ -149,11 +149,11 @@ describe('migração v13 → v14', () => {
     return raw;
   }
 
-  it('o registro tem a migração v13 → v14', () => {
+  it('the registry has the v13 → v14 migration', () => {
     expect(migrations.get(13)).toBe(migrateFrom13To14);
   });
 
-  it('toda anotação ganha parentRole: null e o projeto ganha docRepos: {}', () => {
+  it('every annotation gets parentRole: null and the project gets docRepos: {}', () => {
     const raw = v13Raw();
     const result = load(JSON.stringify(raw));
     expect(result.migratedFrom).toBe(13);
@@ -164,7 +164,7 @@ describe('migração v13 → v14', () => {
     expect(result.project.annotations.every((a) => a.parentRole === null)).toBe(true);
   });
 
-  it('os vínculos existentes ficam sem papel e o projeto abre igual ao original', () => {
+  it('existing links stay without a role and the project opens the same as the original', () => {
     const original = sampleProject();
     const migrated = load(JSON.stringify(v13Raw())).project;
     expect(serialize(migrated)).toBe(serialize(original));
@@ -173,7 +173,7 @@ describe('migração v13 → v14', () => {
     );
   });
 
-  it('um valor já presente é preservado e a releitura é estável', () => {
+  it('an existing value is preserved and re-reading is stable', () => {
     const [step] = [migrateFrom13To14];
     const out = step({
       docRepos: { a: { localPath: '../a' } },

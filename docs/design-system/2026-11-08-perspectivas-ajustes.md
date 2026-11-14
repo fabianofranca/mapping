@@ -1,13 +1,13 @@
-# Ajustes da rodada das perspectivas — 2026-11-08 (épico `epic/perspectivas-ajustes`)
+# Perspectives round adjustments — 2026-11-08 (épico `epic/perspectivas-ajustes`)
 
 ## Pendências
 
-Pendências: nenhuma. A AP1 só mudou fluxo e foco (a confirmação de apagar volta ao Gerenciar) e a dedução do aviso e da faixa de chegada; a AP3 só ajustou texto de roteiro e comentário; a AP2 só mudou o foco do `Esc` da legenda, a geometria do arrasto (encosta) e a lista do Diagnóstico. Nenhum componente, token ou ícone do design system muda.
+Pending items: none. AP1 only changed flow and focus (the delete confirmation returns to Manage) and the derivation of the notice and the arrival strip; AP3 only adjusted script text and a comment; AP2 only changed the focus of the legend's `Esc`, the drag geometry (snap) and the Diagnostics list. No design system component, token or icon changes.
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa não tem pendência de design system (só fluxo, foco e texto de roteiro).
+No write to the Mapping artifact in Claude Design: the stage has no design system pending item (only flow, focus and script text).
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

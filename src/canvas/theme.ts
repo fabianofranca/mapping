@@ -1,45 +1,45 @@
 import type { HostFonts } from '../model/components/tokens';
 
-// Tokens do canvas lidos das variáveis CSS do tema (nenhum valor de design fixo
-// no código). Os nomes em `--cv-*`, `--opacity-*`, `--t-cv-*` etc. vêm de
-// `src/theme/tokens.ts`, a fonte única.
+// Canvas tokens read from the theme's CSS variables (no fixed design value
+// in the code). The names in `--cv-*`, `--opacity-*`, `--t-cv-*` etc. come from
+// `src/theme/tokens.ts`, the single source.
 
-/** Estilo de texto do canvas (`--t-cv-*`): fonte e altura de linha em px de tela. */
+/** Canvas text style (`--t-cv-*`): font and line height in screen px. */
 export interface CanvasTextStyle {
   readonly size: number;
   readonly line: number;
-  /** Peso numérico; o Konva recebe-o em `fontStyle`. */
+  /** Numeric weight; Konva receives it in `fontStyle`. */
   readonly weight: number;
 }
 
 export interface CanvasTokens {
-  // Marcações e sobreposições (iguais nos dois temas: ficam sobre a imagem).
-  /** Linha da marcação (cor padrão, sem cor escolhida para a imagem). */
+  // Markings and overlays (the same in both themes: they sit over the image).
+  /** Marking line (default color, no color chosen for the image). */
   readonly line: string;
-  /** Contorno de linhas, nomes e alertas. */
+  /** Outline of lines, names and alerts. */
   readonly halo: string;
-  /** Seleção, alças, rascunho e alvo de soltar. */
+  /** Selection, handles, draft and drop target. */
   readonly select: string;
-  /** Preenchimento do retângulo de seleção (Shift+arrasto). */
+  /** Fill of the selection rectangle (Shift+drag). */
   readonly selectFill: string;
-  /** Contorno dos itens selecionados que não são o primário (seleção múltipla). */
+  /** Outline of the selected items that are not the primary one (multiple selection). */
   readonly selectSecondary: string;
-  /** Gesto inválido. */
+  /** Invalid gesture. */
   readonly invalid: string;
-  /** Borda tracejada da marcação do canvas (sem container, sem cor de container). */
+  /** Dashed border of the canvas marking (no container, no container color). */
   readonly canvasMarking: string;
-  /** Item que será absorvido ao soltar o desenho ou o redimensionamento: traço e preenchimento. */
+  /** Item that will be absorbed when the draw or resize is dropped: stroke and fill. */
   readonly absorb: string;
   readonly absorbFill: string;
-  /** Alerta (⚠) sobre a imagem. */
+  /** Alert (⚠) over the image. */
   readonly warning: string;
   readonly nameTag: string;
   readonly nameTagText: string;
-  /** Fundo dos selos de revisão sobre a foto (`cv-badge`, revisão de propostas). */
+  /** Background of the review badges over the photo (`cv-badge`, proposal review). */
   readonly badge: string;
   /**
-   * Desenho dos componentes (`RenderPalette`): reservado de imagem e seu contorno, o nó
-   * desconhecido, o preenchimento e o texto da caixa de tipo ausente e a opacidade do slot.
+   * Component drawing (`RenderPalette`): image placeholder and its outline, the unknown
+   * node, the fill and text of the missing-type box, and the slot opacity.
    */
   readonly component: {
     readonly placeholderFill: string;
@@ -50,22 +50,22 @@ export interface CanvasTokens {
     readonly labelFontSize: number;
     readonly labelFontFamily: string;
   };
-  // Superfícies do tema (cartão, espaço reservado das imagens, rótulos).
+  // Theme surfaces (card, image placeholder, labels).
   readonly surface: string;
   readonly card: string;
   readonly border: string;
-  /** Borda de controle (`--color-border-control`): a linha de ligação da âncora (R4). */
+  /** Control border (`--color-border-control`): the anchor's link line (R4). */
   readonly borderControl: string;
   readonly text: string;
   readonly textMuted: string;
-  /** Alerta em texto sobre `surface`/`card` (a cor `warning` do canvas não tem contraste ali). */
+  /** Alert as text over `surface`/`card` (the canvas `warning` color has no contrast there). */
   readonly warningText: string;
   readonly opacity: {
-    /** Marcação sem anotação nas camadas visíveis. */
+    /** Marking with no annotation in the visible layers. */
     readonly dimmed: number;
-    /** Borda de contexto dos pais no modo Ocultar. */
+    /** Parents' context border in Hide mode. */
     readonly ancestor: number;
-    /** Elementos esmaecidos (ex.: cadeado de marcação travada). */
+    /** Faded elements (e.g. padlock of a locked marking). */
     readonly inherited: number;
   };
   readonly fontFamily: string;
@@ -73,14 +73,17 @@ export interface CanvasTokens {
     readonly name: CanvasTextStyle;
     readonly image: CanvasTextStyle;
   };
-  /** Lado visível da alça (px de tela): `size-handle`. */
+  /** Visible side of the handle (screen px): `size-handle`. */
   readonly handleSize: number;
-  /** Nível de detalhe (px de tela): abaixo de `lodMinMarking` (largura ou altura) só a borda; abaixo de `lodHideMarking` nas duas medidas, nada. */
+  /**
+   * Level of detail (screen px): below `lodMinMarking` (width or height) only the border;
+   * below `lodHideMarking` on both measures, nothing.
+   */
   readonly lodMinMarking: number;
   readonly lodHideMarking: number;
-  /** Raios (px de tela): `sm` na etiqueta do nome, `md` nos demais cantos arredondados. */
+  /** Radii (screen px): `sm` on the name label, `md` on the other rounded corners. */
   readonly radius: { readonly sm: number; readonly md: number };
-  /** Seta (v13): cores do traço, da seleção e do rótulo; espessuras e ponta (px de tela). */
+  /** Arrow (v13): colors of stroke, selection and label; thicknesses and tip (screen px). */
   readonly arrow: {
     readonly stroke: string;
     readonly select: string;
@@ -90,13 +93,13 @@ export interface CanvasTokens {
     readonly widthSelected: number;
     readonly head: number;
   };
-  /** Emblema do cadeado: fundo, traço e lado (px de tela). */
+  /** Lock badge: background, stroke and side (screen px). */
   readonly lock: {
     readonly fill: string;
     readonly glyph: string;
     readonly size: number;
   };
-  /** Pino das conversas (`cv-pin-*`): fundo por estado, texto, contorno, anel e ponto de não lida. */
+  /** Thread pin (`cv-pin-*`): background by state, text, outline, ring and unread dot. */
   readonly pin: {
     readonly human: string;
     readonly agent: string;
@@ -105,14 +108,17 @@ export interface CanvasTokens {
     readonly halo: string;
     readonly selected: string;
     readonly unread: string;
-    /** Medidas (px de tela): altura, respiro dos lados, glifo do estado, vão glifo-rótulo e largura estimada por letra. */
+    /**
+     * Measures (screen px): height, side padding, state glyph, glyph-label gap and estimated
+     * width per letter.
+     */
     readonly height: number;
     readonly pad: number;
     readonly glyph: number;
     readonly glyphGap: number;
     readonly charWidth: number;
   };
-  /** Selo de chegada (`size-cv-arrival-*`, px de tela): altura, respiro, vãos, faixa do nome e largura por letra. */
+  /** Arrival badge (`size-cv-arrival-*`, screen px): height, padding, gaps, name strip, width per letter. */
   readonly arrival: {
     readonly height: number;
     readonly pad: number;
@@ -123,7 +129,7 @@ export interface CanvasTokens {
   };
 }
 
-/** Lê o valor de um token pelo nome com `--` (ex: `--cv-line`). */
+/** Reads the value of a token by its `--` name (e.g. `--cv-line`). */
 export type TokenReader = (name: string) => string;
 
 function number(read: TokenReader, name: string): number {
@@ -138,7 +144,7 @@ function textStyle(read: TokenReader, name: string): CanvasTextStyle {
   };
 }
 
-/** Monta os tokens do canvas a partir de um leitor (o computed style, ou outro, nos testes). */
+/** Builds the canvas tokens from a reader (the computed style, or another one, in the tests). */
 export function canvasTokensFrom(read: TokenReader): CanvasTokens {
   return {
     line: read('--cv-line'),
@@ -223,7 +229,7 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
   };
 }
 
-/** A fonte do hospedeiro lida do tema: `--font-sans` e `--font-mono`; valor vazio fica ausente. */
+/** The host font read from the theme: `--font-sans` and `--font-mono`; an empty value stays absent. */
 export function hostFontsFrom(read: TokenReader): HostFonts {
   const sans = read('--font-sans');
   const mono = read('--font-mono');
@@ -233,7 +239,7 @@ export function hostFontsFrom(read: TokenReader): HostFonts {
   };
 }
 
-/** `hostFontsFrom` sobre o estilo calculado da página (vazio se não há DOM). */
+/** `hostFontsFrom` over the page's computed style (empty if there is no DOM). */
 export function readHostFonts(root?: HTMLElement): HostFonts {
   try {
     const style = getComputedStyle(root ?? document.documentElement);
@@ -251,8 +257,8 @@ export function readCanvasTokens(
 }
 
 /**
- * Chama `onChange` quando o tema efetivo muda: troca manual (`data-theme` no
- * <html>) ou mudança do tema do sistema.
+ * Calls `onChange` when the effective theme changes: a manual switch (`data-theme` on
+ * <html>) or a change in the system theme.
  */
 export function watchTheme(
   onChange: () => void,

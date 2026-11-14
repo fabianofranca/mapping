@@ -4,7 +4,7 @@ import type { FontRegistry } from '../../src/storage/fonts';
 import { openLibraryPreview } from '../../src/store/libraryPreview';
 import { material3Package } from '../storage/packageFixture';
 
-// B5: biblioteca aberta sem projeto — catálogo e fontes em memória.
+// B5: library opened without a project: catalog and fonts in memory.
 
 function fakeRegistry() {
   const register = vi.fn(async (fonts: readonly LoadedFont[]) =>
@@ -15,7 +15,7 @@ function fakeRegistry() {
 }
 
 describe('openLibraryPreview', () => {
-  it('monta o catálogo do pacote', () => {
+  it('builds the package catalog', () => {
     const { registry } = fakeRegistry();
     const preview = openLibraryPreview(material3Package(), { fonts: registry });
     expect(preview.specId).toBe('material3');
@@ -25,7 +25,7 @@ describe('openLibraryPreview', () => {
     preview.dispose();
   });
 
-  it('registra as fontes do pacote com os bytes, sobe o epoch e tira ao fechar', async () => {
+  it('registers the package fonts with the bytes, bumps the epoch and removes on close', async () => {
     const files = new Map(material3Package());
     const spec = JSON.parse(String(files.get('material3.spec.json'))) as {
       fonts?: { file: string }[];
@@ -42,16 +42,16 @@ describe('openLibraryPreview', () => {
       { path: string; bytes?: ArrayBuffer }[] | undefined;
     const withBytes = registered?.find((f) => f.path === fontFile);
     expect(withBytes?.bytes?.byteLength).toBe(3);
-    // A outra fonte declarada não tem arquivo: vai sem bytes (o registro avisa).
+    // The other declared font has no file: goes without bytes (the registry warns).
     expect(registered?.some((f) => f.bytes === undefined)).toBe(true);
 
     preview.dispose();
     expect(clear).toHaveBeenCalled();
   });
 
-  it('um pacote sem especialização legível devolve o relatório, sem nome', () => {
+  it('a package without a readable specialization returns the report, without a name', () => {
     const { registry } = fakeRegistry();
-    const preview = openLibraryPreview(new Map([['x.md', 'oi']]), { fonts: registry });
+    const preview = openLibraryPreview(new Map([['x.md', 'hi']]), { fonts: registry });
     expect(preview.name).toBe('');
     expect(preview.catalog.report.errors.length).toBeGreaterThan(0);
     preview.dispose();

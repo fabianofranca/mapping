@@ -7,12 +7,12 @@ import { locale } from '../../src/store/settings';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive } from './harness';
 
-// Etapa "Enquadrar a seleção" (EQ1), hipótese H2: a seleção muda entre digitar e confirmar a
-// Posição (ou o tamanho). O Detalhes recria o `MarkingPanel` por marcação (`key`), então o
-// texto digitado não pode ir para a outra marcação nem deslocá-la.
+// Stage "Frame the selection" (EQ1), hypothesis H2: the selection changes between typing and
+// confirming the Position (or the size). The Details recreates the `MarkingPanel` per marking
+// (`key`), so the typed text cannot go to the other marking nor move it.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -32,8 +32,8 @@ function setup() {
   return { harness, rects, user: userEvent.setup() };
 }
 
-describe('H2: seleção trocada entre a edição e o commit da Posição', () => {
-  it('o texto digitado em X não vai para a marcação selecionada depois (blur ou Enter)', async () => {
+describe('H2: selection swapped between the edit and the commit of the Position', () => {
+  it('the text typed in X does not go to the marking selected afterwards (blur or Enter)', async () => {
     const { harness, rects, user } = setup();
     act(() => {
       harness.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -42,7 +42,7 @@ describe('H2: seleção trocada entre a edição e o commit da Posição', () =>
     const x = screen.getByLabelText('X');
     await user.clear(x);
     await user.type(x, '1234');
-    // A seleção muda sem passar pelo campo (clique no canvas, na Árvore, na Paleta...).
+    // The selection changes without going through the field (click on the canvas, the Tree, the Palette...).
     act(() => {
       harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     });
@@ -54,25 +54,25 @@ describe('H2: seleção trocada entre a edição e o commit da Posição', () =>
     expect(rects()).toEqual(before);
   });
 
-  it('o mesmo vale para o tamanho e quando o valor base das duas marcações é igual', async () => {
+  it('the same holds for the size and when the base value of both markings is equal', async () => {
     const { harness, rects, user } = setup();
-    // M1 e M2 passam a ter a mesma largura: o rascunho de uma não pode valer na outra.
+    // M1 and M2 come to have the same width: the draft of one cannot apply to the other.
     act(() => {
       harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     });
-    const same = Number((screen.getByLabelText('Largura') as HTMLInputElement).value);
+    const same = Number((screen.getByLabelText('Width') as HTMLInputElement).value);
     act(() => {
       harness.actions.adjustMarkingRect('M1', 'width', same);
       harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     });
     const before = rects();
-    const width = screen.getByLabelText('Largura');
+    const width = screen.getByLabelText('Width');
     await user.clear(width);
     await user.type(width, '777');
     act(() => {
       harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     });
-    await user.type(screen.getByLabelText('Largura'), '{Enter}');
+    await user.type(screen.getByLabelText('Width'), '{Enter}');
     expect(rects()).toEqual(before);
   });
 });

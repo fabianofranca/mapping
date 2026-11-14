@@ -2,11 +2,11 @@ import type { z } from 'zod';
 import { interpretsParamTargets, paramTarget, FORMAT_PLACEHOLDER } from './codeParams';
 import { addSpecIssue, specMsg } from './specIssueCode';
 
-// Validação da `formatVersion` 16 (etapa #1079): `fieldModels` na raiz e, no `code` de cada
-// plataforma (e em cada caso de `variants`), `signature`, `ignore`, `calls` e `formats`, com `params`
-// por caminho ou posicional, e `signature` nas `sources` do tipo. O formato das chaves (texto,
-// caminho `.json` do pacote) é do zod em `spec.ts`; aqui ficam a versão e os cruzamentos. O que
-// depende do conteúdo da ficha (símbolo, arquivo e parâmetros) é do pacote (`librarySignature.ts`).
+// Validation of `formatVersion` 16 (stage #1079): `fieldModels` at the root and, in the `code` of each
+// platform (and of each case of `variants`), `signature`, `ignore`, `calls` and `formats`, with `params`
+// by path or positional, and `signature` in the type's `sources`. The format of the keys (text,
+// `.json` path in the package) belongs to zod in `spec.ts`; here live the version and the cross-checks. What
+// depends on the content of the signature sheet (symbol, file and parameters) belongs to the package (`librarySignature.ts`).
 
 type Path = (string | number)[];
 type Add = (path: Path, message: string | ReturnType<typeof specMsg>) => void;
@@ -43,7 +43,7 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
 
 const quoted = (keys: readonly string[]): string => keys.map((k) => `"${k}"`).join(', ');
 
-/** Cada entrada de `code` e cada caso de `variants`, com o caminho e a entrada que o contém (a base). */
+/** Each entry of `code` and each case of `variants`, with the path and the entry that contains it (the base). */
 function eachCode(
   type: RawType,
   tp: Path,
@@ -58,7 +58,7 @@ function eachCode(
   }
 }
 
-/** Antes da 16: cada chave nova é erro no caminho exato. */
+/** Before 16: each new key is an error at the exact path. */
 function gateOlder(spec: RawSpec, add: Add): void {
   const only16 = (path: Path) => add(path, specMsg('spec.onlyFormat', { version: '16' }));
   if (spec.fieldModels !== undefined) only16(['fieldModels']);
@@ -76,7 +76,7 @@ function gateOlder(spec: RawSpec, add: Add): void {
   });
 }
 
-/** `like`: `<tipo>.<campo>` de um campo que existe na especialização. */
+/** `like`: `<type>.<field>` of a field that exists in the specialization. */
 function checkLike(
   like: unknown,
   path: Path,
@@ -139,7 +139,7 @@ function checkNonEmptyText(value: unknown, path: Path, add: Add): void {
     add(path, specMsg('spec.mustBeNonEmptyText'));
 }
 
-/** As formas que o modelo declara (`like`, `type`, `expand`, `ignore`); `type` conta com `options` e `format` soltos. */
+/** The shapes the model declares (`like`, `type`, `expand`, `ignore`); `type` counts with loose `options` and `format`. */
 function declaredForms(model: Record<string, unknown>): string[] {
   const forms: string[] = MODEL_FORMS.filter((f) => model[f] !== undefined);
   if (forms.length === 0 && (model.options !== undefined || model.format !== undefined)) {
@@ -199,7 +199,7 @@ function checkFieldModels(spec: RawSpec, add: Add): void {
   }
 }
 
-/** `ignore`, `formats` e os caminhos de `params` de uma entrada de `code` (ou de um caso). */
+/** `ignore`, `formats` and the `params` paths of a `code` entry (or of a case). */
 function checkCodeEntry(
   code: RawCode,
   path: Path,
@@ -230,7 +230,7 @@ function checkCodeEntry(
   }
 }
 
-/** A `formatVersion` 16: a versão das chaves novas e os cruzamentos delas. */
+/** `formatVersion` 16: the version of the new keys and their cross-checks. */
 export function checkSignatureKeys(spec: RawSpec, ctx: z.RefinementCtx): void {
   const add: Add = (path, message) => addSpecIssue(ctx, path, message);
   if (!interpretsParamTargets(spec.formatVersion)) return gateOlder(spec, add);

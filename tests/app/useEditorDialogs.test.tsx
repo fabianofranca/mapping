@@ -27,8 +27,8 @@ function setup() {
   return { harness, hook, marking, image };
 }
 
-describe('useEditorDialogs: pedir exclusão', () => {
-  it('marcação com filhas pede confirmação; sem filhas nem anotações exclui direto', () => {
+describe('useEditorDialogs: requesting deletion', () => {
+  it('marking with children asks for confirmation; without children or annotations deletes directly', () => {
     const { harness, hook, marking } = setup();
     act(() => hook.result.current.requestDeleteMarking(marking('M1')));
     expect(hook.result.current.current).toMatchObject({ kind: 'deleteMarking' });
@@ -39,7 +39,7 @@ describe('useEditorDialogs: pedir exclusão', () => {
     expect(harness.ui.selection.value).toBeNull();
   });
 
-  it('marcação trancada: nem confirma nem exclui', () => {
+  it('locked marking: neither confirms nor deletes', () => {
     const { harness, hook, marking } = setup();
     harness.actions.setMarkingLocked('M3', true);
     act(() => hook.result.current.requestDeleteMarking(marking('M3')));
@@ -47,7 +47,7 @@ describe('useEditorDialogs: pedir exclusão', () => {
     expect(harness.project().markings.some((m) => m.id === 'M3')).toBe(true);
   });
 
-  it('marcação com um descendente trancado pede confirmação (e pode ser excluída)', () => {
+  it('marking with a locked descendant asks for confirmation (and can be deleted)', () => {
     const { harness, hook, marking } = setup();
     harness.actions.setMarkingLocked('M3', true);
     act(() => hook.result.current.requestDeleteMarking(marking('M1')));
@@ -55,7 +55,7 @@ describe('useEditorDialogs: pedir exclusão', () => {
     expect(harness.project().markings).toHaveLength(4);
   });
 
-  it('imagem: pede confirmação, a menos que ela mesma esteja trancada', () => {
+  it('image: asks for confirmation, unless it is itself locked', () => {
     const { harness, hook, image } = setup();
     act(() => hook.result.current.requestDeleteImage(image('I2')));
     expect(hook.result.current.current).toMatchObject({ kind: 'deleteImage' });
@@ -65,7 +65,7 @@ describe('useEditorDialogs: pedir exclusão', () => {
     act(() => hook.result.current.requestDeleteImage(image('I2')));
     expect(hook.result.current.current).toBeNull();
 
-    // Marcações trancadas dentro da imagem não impedem: a confirmação avisa quantas.
+    // Locked markings inside the image do not prevent it: the confirmation says how many.
     harness.actions.setMarkingLocked('M2', true);
     act(() => hook.result.current.requestDeleteImage(image('I1')));
     expect(hook.result.current.current).toMatchObject({ kind: 'deleteImage' });

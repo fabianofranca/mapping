@@ -22,9 +22,9 @@ import {
 } from './params';
 import { readStruct, type InitDecl, type StructMembers } from './struct';
 
-// Leitor SwiftUI (`mapping-signature/swift@1`): a ficha de uma `struct … : View` a partir do texto
-// do arquivo. O `init` explícito (escolhido por `--init` quando há mais de um) ou o memberwise.
-// Regras e limites em signature/README.md.
+// SwiftUI reader (`mapping-signature/swift@1`): the record of a `struct … : View` from the file
+// text. The explicit `init` (chosen by `--init` when there is more than one) or the memberwise.
+// Rules and limits in signature/README.md.
 
 export const SWIFT_EXTRACTOR = 'mapping-signature/swift@1';
 
@@ -32,7 +32,7 @@ function load(file: { name: string; text: string }): TokenStream {
   return tokenize(makeSource(file.name, file.text), SWIFT_DIALECT);
 }
 
-/** O `--symbol`: o nome da struct é o último segmento; o prefixo (módulo ou tipo que a envolve) só desambigua. */
+/** The `--symbol`: the struct name is the last segment; the prefix (module or enclosing type) only disambiguates. */
 function splitSymbol(symbol: string): { prefix: string; name: string } {
   const cut = symbol.lastIndexOf('.');
   return cut < 0
@@ -43,8 +43,9 @@ function splitSymbol(symbol: string): { prefix: string; name: string } {
 function structList(candidates: readonly TypeDecl[]): string {
   return candidates
     .map((decl, i) => {
-      const inside = decl.enclosing.length === 0 ? 'no topo' : decl.enclosing.join('.');
-      return `  ${i}: linha ${decl.line} (dentro de ${inside})`;
+      const inside =
+        decl.enclosing.length === 0 ? 'at top level' : decl.enclosing.join('.');
+      return `  ${i}: line ${decl.line} (inside ${inside})`;
     })
     .join('\n');
 }
@@ -55,24 +56,24 @@ function chooseStruct(stream: TokenStream, symbol: string): TypeDecl {
   const all = findTypeDecls(stream).filter(
     (d) => d.keyword === 'struct' && d.name === name,
   );
-  if (all.length === 0) throw new CliError(`struct ${name} não encontrada em ${where}`);
+  if (all.length === 0) throw new CliError(`struct ${name} not found in ${where}`);
   if (all.length === 1) return all[0]!;
   const wanted = prefix.slice(prefix.lastIndexOf('.') + 1);
   const inside = all.filter((d) => d.enclosing[d.enclosing.length - 1] === wanted);
   const candidates = inside.length === 0 ? all : inside;
   if (candidates.length === 1) return candidates[0]!;
   throw new CliError(
-    `struct ${name} aparece ${candidates.length} vezes em ${where}; qualifique o --symbol com o tipo que a envolve (<Tipo>.${name}):\n${structList(candidates)}`,
+    `struct ${name} appears ${candidates.length} times in ${where}; qualify the --symbol with the enclosing type (<Type>.${name}):\n${structList(candidates)}`,
   );
 }
 
-/** A lista de uma linha por `init`: `  <índice>: linha <n> [deprecated] [private] (_:badge:style:)`. */
+/** The list, one line per `init`: `  <index>: line <n> [deprecated] [private] (_:badge:style:)`. */
 function listInits(stream: TokenStream, inits: readonly InitDecl[]): string {
   return inits
     .map((init, index) => {
       const labels = readInitParams(stream, init.open, init.close).map(callLabel);
       const mark = `${init.deprecated ? ' [deprecated]' : ''}${init.hidden ? ' [private]' : ''}`;
-      return `  ${index}: linha ${init.line}${mark} (${labels.map((l) => `${l}:`).join('')})`;
+      return `  ${index}: line ${init.line}${mark} (${labels.map((l) => `${l}:`).join('')})`;
     })
     .join('\n');
 }
@@ -90,14 +91,14 @@ function chooseInit(
   if (inits.length === 0) {
     if (requested === undefined || requested === 0) return { kind: 'memberwise' };
     throw new CliError(
-      `--init ${requested} fora da lista: ${decl.name} não declara init e só tem o memberwise (índice 0)`,
+      `--init ${requested} is not in the list: ${decl.name} declares no init and only has the memberwise (index 0)`,
     );
   }
   if (requested !== undefined) {
     const chosen = inits[requested];
     if (chosen !== undefined) return { kind: 'init', init: chosen };
     throw new CliError(
-      `--init ${requested} fora da lista: ${decl.name} tem ${inits.length} inits em ${where} (índices de 0 a ${inits.length - 1}):\n${listInits(stream, inits)}`,
+      `--init ${requested} is not in the list: ${decl.name} has ${inits.length} inits in ${where} (indexes 0 to ${inits.length - 1}):\n${listInits(stream, inits)}`,
     );
   }
   const alive = inits.filter((init) => !init.deprecated && !init.hidden);
@@ -105,10 +106,10 @@ function chooseInit(
   const hidden = inits.some((init) => init.hidden);
   const reason =
     alive.length === 0
-      ? `${decl.name} só tem inits deprecated${hidden ? ' ou private' : ''} em ${where}`
-      : `${decl.name} tem ${alive.length} inits (fora os deprecated${hidden ? ' e os private' : ''}) em ${where}`;
+      ? `${decl.name} only has deprecated inits${hidden ? ' or private' : ''} in ${where}`
+      : `${decl.name} has ${alive.length} inits (not counting the deprecated${hidden ? ' and private' : ''} ones) in ${where}`;
   throw new CliError(
-    `init ambíguo: ${reason}; escolha um com --init <n>:\n${listInits(stream, inits)}`,
+    `ambiguous init: ${reason}; pick one with --init <n>:\n${listInits(stream, inits)}`,
   );
 }
 
@@ -121,7 +122,7 @@ function collectEnums(streams: readonly TokenStream[]): EnumTable {
   return all;
 }
 
-/** O texto de cada parâmetro: o `- Parameter` do `init`, o da struct e o `///` da propriedade (nessa ordem). */
+/** The text of each parameter: the `init`'s `- Parameter`, the struct's and the property's `///` (in that order). */
 function buildDoc(
   raws: readonly RawParam[],
   sources: readonly ReadonlyMap<string, string>[],

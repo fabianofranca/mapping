@@ -6,11 +6,11 @@ import {
   markingsCountText,
 } from '../../src/ui/perspectiveContentText';
 
-// DS6 (#1468): "1 containers" saía no seletor, no Gerenciar e no Apagar.
-describe('plural de containers', () => {
+// DS6 (#1468): "1 containers" showed up in the selector, in Manage and in Delete.
+describe('containers plural', () => {
   afterEach(() => setLocale('pt-BR'));
 
-  it('um container é singular; os demais, plural (pt-BR e en-US)', () => {
+  it('one container is singular; the others, plural (pt-BR and en-US)', () => {
     setLocale('pt-BR');
     expect(containersCountText(1)).toBe('1 container');
     expect(containersCountText(3)).toBe('3 containers');
@@ -21,11 +21,11 @@ describe('plural de containers', () => {
   });
 });
 
-// DS7 (#1472, achado 1): "1 marcações" saía no seletor, no Gerenciar e no Apagar.
-describe('plural de marcações', () => {
+// DS7 (#1472, finding 1): "1 marcações" showed up in the selector, in Manage and in Delete.
+describe('markings plural', () => {
   afterEach(() => setLocale('pt-BR'));
 
-  it('uma marcação é singular; as demais, plural (pt-BR e en-US)', () => {
+  it('one marking is singular; the others, plural (pt-BR and en-US)', () => {
     setLocale('pt-BR');
     expect(markingsCountText(1)).toBe('1 marcação');
     expect(markingsCountText(4)).toBe('4 marcações');

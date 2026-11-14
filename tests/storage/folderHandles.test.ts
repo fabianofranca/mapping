@@ -9,11 +9,11 @@ import {
 import { MemoryDirectory } from './memoryFs';
 
 function setup(latencyMs = 0) {
-  const root = new MemoryDirectory('projeto');
+  const root = new MemoryDirectory('project');
   root.latencyMs = latencyMs;
   const calls = createFolderCalls();
   const storage = createFolderStorage(countingDirectory(root, calls));
-  /** Quantas chamadas de cada tipo `fn` fez (só os tipos pedidos). */
+  /** How many calls of each type `fn` made (only the requested types). */
   const measure = async (kinds: FolderCallKind[], fn: () => Promise<unknown>) => {
     const before = kinds.map((kind) => calls.byKind[kind]);
     await fn();
@@ -30,17 +30,17 @@ const DIRS_AND_FILES: FolderCallKind[] = [
   'getFile',
 ];
 
-describe('handles de pasta guardados', () => {
-  it('ler duas vezes proposals/P1/proposal.json resolve cada pasta uma vez só', async () => {
+describe('stored folder handles', () => {
+  it('reading proposals/P1/proposal.json twice resolves each folder only once', async () => {
     const { root, storage, measure } = setup();
-    root.put('proposals/P1/proposal.json', 'um');
+    root.put('proposals/P1/proposal.json', 'one');
     const first = await measure(DIRS_AND_FILES, () => storage.readProposal('P1'));
     const second = await measure(DIRS_AND_FILES, () => storage.readProposal('P1'));
     expect(first).toEqual({ getDirectoryHandle: 2, getFileHandle: 1, getFile: 1 });
     expect(second).toEqual({ getDirectoryHandle: 0, getFileHandle: 1, getFile: 1 });
   });
 
-  it('guarda também as pastas intermediárias (a/b/c guarda a, a/b e a/b/c)', async () => {
+  it('also stores the intermediate folders (a/b/c stores a, a/b and a/b/c)', async () => {
     const { root, storage, measure } = setup();
     root.put('specs/p/sub/x.json', 'x');
     root.put('specs/p/sub/y.json', 'y');
@@ -56,42 +56,42 @@ describe('handles de pasta guardados', () => {
     ).toEqual({ getDirectoryHandle: 0 });
   });
 
-  it('pasta apagada e recriada por fora: a leitura repete a partir da raiz e acha o arquivo novo', async () => {
+  it('folder deleted and recreated from outside: the read repeats from the root and finds the new file', async () => {
     const { root, storage, measure } = setup();
-    root.put('proposals/P1/proposal.json', 'velho');
-    expect(await storage.readProposal('P1')).toBe('velho');
+    root.put('proposals/P1/proposal.json', 'old');
+    expect(await storage.readProposal('P1')).toBe('old');
     root.removeAt('proposals/P1');
-    root.put('proposals/P1/proposal.json', 'novo');
+    root.put('proposals/P1/proposal.json', 'new');
     let text: string | null = null;
     const counts = await measure(DIRS_AND_FILES, async () => {
       text = await storage.readProposal('P1');
     });
-    expect(text).toBe('novo');
-    // O handle guardado falhou (1 getFileHandle) e a raiz foi percorrida de novo
-    // (2 getDirectoryHandle + 1 getFileHandle): é a prova de que havia cache.
+    expect(text).toBe('new');
+    // The stored handle failed (1 getFileHandle) and the root was walked again
+    // (2 getDirectoryHandle + 1 getFileHandle): proof that there was a cache.
     expect(counts).toEqual({ getDirectoryHandle: 2, getFileHandle: 2, getFile: 1 });
   });
 
-  it('pasta de pacote apagada por fora: writeSpecFile recria a pasta e a gravação vale', async () => {
+  it('package folder deleted from outside: writeSpecFile recreates the folder and the write holds', async () => {
     const { root, storage } = setup();
-    await storage.writeSpecFile('specs/s1/a.json', 'um');
+    await storage.writeSpecFile('specs/s1/a.json', 'one');
     root.removeAt('specs/s1');
-    await storage.writeSpecFile('specs/s1/a.json', 'dois');
-    expect(await root.read('specs/s1/a.json')).toBe('dois');
-    expect(await (await storage.readSpecFile('specs/s1/a.json'))?.text()).toBe('dois');
+    await storage.writeSpecFile('specs/s1/a.json', 'two');
+    expect(await root.read('specs/s1/a.json')).toBe('two');
+    expect(await (await storage.readSpecFile('specs/s1/a.json'))?.text()).toBe('two');
   });
 
-  it('as remoções de pasta limpam o mapa antes: gravar de novo recria sem falha nem repetição', async () => {
+  it('folder removals clear the map first: writing again recreates without failure or repetition', async () => {
     const { root, storage, measure } = setup();
-    await storage.writeProposal('P1', 'um');
+    await storage.writeProposal('P1', 'one');
     await storage.removeProposal('P1');
     expect(root.dirs.get('proposals')?.dirs.has('P1')).toBe(false);
     const counts = await measure(DIRS_AND_FILES, () =>
-      storage.writeProposal('P1', 'dois'),
+      storage.writeProposal('P1', 'two'),
     );
-    // `proposals` continua guardada; só P1 é aberta (criada), sem getFileHandle falho.
+    // `proposals` is still stored; only P1 is opened (created), with no failed getFileHandle.
     expect(counts).toEqual({ getDirectoryHandle: 1, getFileHandle: 1, getFile: 0 });
-    expect(await root.read('proposals/P1/proposal.json')).toBe('dois');
+    expect(await root.read('proposals/P1/proposal.json')).toBe('two');
 
     await storage.writeSpecFile('specs/s1/sub/a.json', 'x');
     await storage.removeSpecDir('specs/s1');
@@ -102,33 +102,33 @@ describe('handles de pasta guardados', () => {
     expect(await root.read('specs/s1/sub/a.json')).toBe('y');
   });
 
-  it('duas chamadas simultâneas à mesma pasta abrem-na uma vez só', async () => {
+  it('two simultaneous calls to the same folder open it only once', async () => {
     const { root, storage, measure } = setup(2);
-    root.put('proposals/P1/proposal.json', 'um');
+    root.put('proposals/P1/proposal.json', 'one');
     const counts = await measure(['getDirectoryHandle'], () =>
       Promise.all([storage.readProposal('P1'), storage.readProposal('P1')]),
     );
     expect(counts).toEqual({ getDirectoryHandle: 2 });
   });
 
-  it('pasta inexistente devolve null e não guarda nada', async () => {
+  it('a missing folder returns null and stores nothing', async () => {
     const { root, storage, measure } = setup();
-    root.put('specs/outra/a.json', 'a');
-    expect(await storage.readSpecFile('specs/nada/x.json')).toBeNull();
-    // `specs` ficou guardada e `nada` não. O "não existe" veio de um pai guardado, então a
-    // chamada confere repetindo desde a raiz (specs + nada = 2 chamadas, além da tentativa).
+    root.put('specs/other/a.json', 'a');
+    expect(await storage.readSpecFile('specs/nothing/x.json')).toBeNull();
+    // `specs` was stored and `nothing` was not. The "does not exist" came from a stored parent, so the
+    // call double-checks by repeating from the root (specs + nothing = 2 calls, besides the attempt).
     expect(
       await measure(['getDirectoryHandle'], () =>
-        storage.readSpecFile('specs/nada/x.json'),
+        storage.readSpecFile('specs/nothing/x.json'),
       ),
     ).toEqual({ getDirectoryHandle: 3 });
-    root.put('specs/nada/x.json', 'agora existe');
-    expect(await (await storage.readSpecFile('specs/nada/x.json'))?.text()).toBe(
-      'agora existe',
+    root.put('specs/nothing/x.json', 'exists now');
+    expect(await (await storage.readSpecFile('specs/nothing/x.json'))?.text()).toBe(
+      'exists now',
     );
   });
 
-  it('arquivo que nunca existiu numa pasta recém-resolvida custa o mínimo (sem repetição)', async () => {
+  it('a file that never existed in a freshly resolved folder costs the minimum (no repetition)', async () => {
     const { root, storage, measure } = setup();
     root.put('specs/p/a.json', 'a');
     const counts = await measure(DIRS_AND_FILES, () =>
@@ -137,9 +137,9 @@ describe('handles de pasta guardados', () => {
     expect(counts).toEqual({ getDirectoryHandle: 2, getFileHandle: 1, getFile: 0 });
   });
 
-  it('um erro que não é NotFound/TypeMismatch não repete', async () => {
+  it('an error that is not NotFound/TypeMismatch does not repeat', async () => {
     const { root, storage, measure } = setup();
-    root.put('proposals/P1/proposal.json', 'um');
+    root.put('proposals/P1/proposal.json', 'one');
     await storage.readProposal('P1');
     const p1 = root.dirs.get('proposals')?.dirs.get('P1');
     if (!p1) throw new Error('setup');
@@ -153,9 +153,9 @@ describe('handles de pasta guardados', () => {
     expect(counts).toEqual({ getDirectoryHandle: 0 });
   });
 
-  it('listProposals e listFiles começam do handle guardado', async () => {
+  it('listProposals and listFiles start from the stored handle', async () => {
     const { root, storage, measure } = setup();
-    root.put('proposals/P1/proposal.json', 'um');
+    root.put('proposals/P1/proposal.json', 'one');
     root.put('proposals/P1/img/a.png', 'a');
     await storage.readProposal('P1');
     expect(await measure(['getDirectoryHandle'], () => storage.listProposals())).toEqual({
@@ -169,18 +169,18 @@ describe('handles de pasta guardados', () => {
     expect(counts).toEqual({ getDirectoryHandle: 0 });
   });
 
-  it('pasta guardada apagada por fora: a listagem repete a partir da raiz', async () => {
+  it('stored folder deleted from outside: the listing repeats from the root', async () => {
     const { root, storage } = setup();
-    root.put('proposals/P1/proposal.json', 'um');
+    root.put('proposals/P1/proposal.json', 'one');
     expect(await storage.listProposals()).toEqual(['P1']);
     root.removeAt('proposals');
-    root.put('proposals/P2/proposal.json', 'dois');
+    root.put('proposals/P2/proposal.json', 'two');
     expect(await storage.listProposals()).toEqual(['P2']);
   });
 });
 
-describe('loadMappingStamped e o carimbo depois de gravar', () => {
-  it('uma chamada custa 1 getFile e devolve texto e lastModified do mesmo File', async () => {
+describe('loadMappingStamped and the stamp after writing', () => {
+  it('one call costs 1 getFile and returns text and lastModified of the same File', async () => {
     const { root, storage, measure } = setup();
     root.put('mapping.json', '{"a":1}');
     let stamped: { text: string; lastModified: number } | null = null;
@@ -194,12 +194,12 @@ describe('loadMappingStamped e o carimbo depois de gravar', () => {
     });
   });
 
-  it('devolve null quando o mapping.json não existe', async () => {
+  it('returns null when mapping.json does not exist', async () => {
     const { storage } = setup();
     expect(await storage.loadMappingStamped?.()).toBeNull();
   });
 
-  it('saveMapping seguido de statMapping não resolve o caminho de novo', async () => {
+  it('saveMapping followed by statMapping does not resolve the path again', async () => {
     const { root, storage, measure } = setup();
     await storage.saveMapping('{"a":1}');
     let stamp: number | null = null;
@@ -210,7 +210,7 @@ describe('loadMappingStamped e o carimbo depois de gravar', () => {
     expect(stamp).toBe(root.modified.get('mapping.json'));
   });
 
-  it('arquivo apagado e recriado por fora: o carimbo repete a partir da raiz', async () => {
+  it('file deleted and recreated from outside: the stamp repeats from the root', async () => {
     const { root, storage } = setup();
     await storage.saveMapping('{"a":1}');
     root.files.delete('mapping.json');
@@ -222,7 +222,7 @@ describe('loadMappingStamped e o carimbo depois de gravar', () => {
 });
 
 describe('listProposals', () => {
-  it('confere o proposal.json de várias pastas em paralelo limitado e mantém o resultado', async () => {
+  it('checks the proposal.json of several folders in limited parallel and keeps the result', async () => {
     const { root, storage } = setup(5);
     const ids = ['P8', 'P3', 'P1', 'P6', 'P2', 'P7', 'P4', 'P5'];
     for (const id of ids) root.put(`proposals/${id}/proposal.json`, id);

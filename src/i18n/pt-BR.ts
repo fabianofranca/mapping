@@ -1,9 +1,12 @@
+import type { Dictionary } from './en-US';
 import { catalogPtBR } from './catalog';
 import { modelMessagesPtBR } from './modelMessages';
 import { reviewPtBR } from './review';
 import { perspectivesPtBR } from './perspectives';
 
-export const ptBR = {
+// Values only: the keys and their context (comments) live in `en-US.ts`; `Dictionary` makes the
+// compiler reject a missing or an extra key.
+export const ptBR: Dictionary = {
   ...reviewPtBR,
   ...perspectivesPtBR,
   ...catalogPtBR,
@@ -577,9 +580,9 @@ export const ptBR = {
   'help.guide.intro':
     'Um passeio de 14 passos pelo projeto de exemplo: telas, marcações, camadas, anotações tipadas, containers com Material 3, a revisão de uma proposta e as perspectivas. Funciona sem internet e abre numa aba nova.',
   'help.guide.example':
-    'Para ver o mesmo projeto na app, baixe o arquivo examples/exemplo-completo.zip do repositório (github.com/fabianofranca/mapping) e use Abrir zip na tela inicial (ele cria uma cópia neste dispositivo, sem tocar em nenhuma pasta).',
+    'Para ver o mesmo projeto na app, baixe o arquivo examples/full-example.zip do repositório (github.com/fabianofranca/mapping) e use Abrir zip na tela inicial (ele cria uma cópia neste dispositivo, sem tocar em nenhuma pasta).',
   'help.guide.fileProtocol':
-    'Aberto como arquivo avulso, a app não acha o guia: ele fica em guia/index.html, ao lado do index.html, na pasta dist/ do build e na versão publicada.',
+    'Aberto como arquivo avulso, a app não acha o guia: ele fica em guide/index.html, ao lado do index.html, na pasta dist/ do build e na versão publicada.',
   'help.guide.open': 'Abrir o guia interativo',
   'help.noResults': 'Nada encontrado para "{query}".',
   'help.shortcuts.title': 'Atalhos de teclado',
@@ -750,7 +753,6 @@ export const ptBR = {
   'thread.anchor.missing.annotation': 'Anotação apagada · órfã',
   'thread.anchor.missing.entry': 'Par apagado · órfã',
   'thread.anchor.missing.row': 'Linha apagada · órfã',
-  // CM5-B: citações no compositor e nas mensagens
   'citation.unnamed': '(sem nome)',
   'citation.missing': 'O item citado não existe mais',
   'citation.chipLabel': '{name}, citação',
@@ -762,7 +764,6 @@ export const ptBR = {
   'citation.group.annotation': 'Anotações',
   'citation.group.layer': 'Camadas',
   'citation.group.thread': 'Conversas',
-  // CM5-D: Citada em, filtro da seleção e proposta na conversa
   'thread.citedIn': 'Citada em',
   'comments.filter.citesSelection': 'Citam a seleção',
   'comments.filter.citesSelectionHint':
@@ -775,7 +776,6 @@ export const ptBR = {
   'thread.proposal.removed': 'Proposta removida',
   'proposals.fromThread': 'da conversa',
   'thread.editorHint': 'Enter quebra a linha, Ctrl+Enter envia e @ cita um item.',
-  // CM5-C: citar e copiar referência nos menus
   'cite.insert': 'Citar na conversa',
   'cite.needComposer': 'Abra uma conversa para citar',
   'cite.fieldActions': 'Ações do campo {name}',
@@ -843,8 +843,7 @@ export const ptBR = {
   'help.specs.downloadsHint':
     'Baixe os exemplos e o JSON Schema do formato. O JSON Schema valida só a estrutura; as demais regras são verificadas pela app ao aplicar.',
   'help.specs.download.sdui': 'Baixar exemplo SDUI (sdui.json)',
-  'help.specs.download.data-model':
-    'Baixar exemplo Modelo de dados (modelo-de-dados.json)',
+  'help.specs.download.data-model': 'Baixar exemplo Modelo de dados (data-model.json)',
   'help.specs.download.schema': 'Baixar JSON Schema (spec.schema.json)',
   'help.specs.applyHint':
     'Para usar um exemplo: abra um projeto, escolha Especializações (botão da barra principal) → Aplicar e selecione o arquivo baixado.',
@@ -970,7 +969,6 @@ export const ptBR = {
   'issue.component-overflow': 'O componente não cabe',
   'list.incomplete': 'Só incompletas',
   'list.emptyIncomplete': 'Nenhuma anotação incompleta nas camadas visíveis.',
-  // Detalhes (R5)
   'marking.section': 'Marcação',
   'marking.position': 'Posição',
   'marking.size': 'Tamanho',
@@ -1019,8 +1017,6 @@ export const ptBR = {
   'ref.keyCtrlEnter': 'Ctrl+Enter',
   'ref.keyEsc': 'Esc',
   'ref.keyClose': 'fechar',
-
-  // Trava (etapa 2.5)
   'lock.markingLock': 'Trancar marcação',
   'lock.imageLock': 'Trancar imagem',
   'lock.treeLock': 'Trancar {name}',
@@ -1110,6 +1106,7 @@ export const ptBR = {
     'Schema 11: o endereço dos arquivos saiu do projeto e foi descartado de {platforms} ({templates}). O repositório agora é da especialização: regrave a especialização com repo (formatVersion 5) e atualize-a no projeto.',
   'migration.v13.discardedInherit':
     'Schema 13: a herança de anotações saiu do formato. {count} anotação(ões) valiam também para as marcações descendentes e agora valem só para a própria marcação: {markings}. Nenhuma anotação foi apagada.',
+  'open.repairLog': '{count} reparo(s): {repairs}',
   'repos.title': 'Repositórios',
   'repos.code.title': 'Código',
   'repos.docs.title': 'Documentos',
@@ -1143,8 +1140,6 @@ export const ptBR = {
     'Definição: nos Detalhes de uma anotação tipada, uma linha por plataforma com path, como "Plataforma · Arquivo.ext", com o caminho completo e o símbolo na dica. Vem da especialização e não se edita na app.',
   'help.code.repos':
     'Repositórios: o endereço do repositório de cada plataforma (repo) vem da especialização. Em Configurações (engrenagem), na seção "Repositórios", subseção "Código", informe só o caminho local da raiz do clone, relativo à pasta do projeto. Plataforma em que algum tipo aponta um arquivo, sem repo, gera um aviso na importação da especialização.',
-  // Biblioteca de componentes na app (etapa Biblioteca, B3)
-  // Catálogo: janela do editor e tela da biblioteca sem projeto (etapa Biblioteca, B5)
   'catalog.window.title': 'Catálogo',
   'catalog.window.components': 'Componentes',
   'catalog.window.palette': 'Paleta',
@@ -1213,7 +1208,6 @@ export const ptBR = {
   'arrange.doneWarnings': 'Arrumado com {count} aviso(s): {first}',
   'arrange.nothing': 'Nada a arrumar',
   'arrange.hintAnchor': 'Encosta a marcação na âncora.',
-  // Âncora entre marcações (etapa "direção e âncora", R4)
   'anchor.section': 'Âncora',
   'anchor.target': 'Ancorada a',
   'anchor.targetHint':
@@ -1308,7 +1302,6 @@ export const ptBR = {
   'multi.deleteMessage':
     '{markings} marcação(ões), {containers} container(s) e {annotations} anotação(ões) serão excluídos. Dá para desfazer.',
   'multi.deleteBlocked': 'Destranque os itens trancados para excluir',
-  // Setas (etapa Marcações espaciais, ME4)
   'arrow.label': '{from} → {to}',
   'arrow.missingEnd': 'marcação removida',
   'arrow.section': 'Seta',
@@ -1331,12 +1324,10 @@ export const ptBR = {
     '"{name}" será excluída com {annotations} anotação(ões). Dá para desfazer.',
   'arrow.error.locked': 'A seta está trancada.',
   'arrow.error.generic': 'Não foi possível alterar a seta.',
-  // Perspectivas (etapa #659): erros das operações do modelo
   'perspective.error.name-empty': 'Dê um nome à perspectiva.',
   'perspective.error.name-taken': 'Já existe uma perspectiva com esse nome.',
   'perspective.error.not-root': 'Só itens soltos no canvas entram numa perspectiva.',
   'perspective.error.generic': 'Não foi possível alterar a perspectiva.',
-  // Seção "Ligado por seta" dos Detalhes da marcação (etapa #658)
   'arrowLinks.section': 'Ligado por seta',
   'arrowLinks.out': 'Sai para',
   'arrowLinks.in': 'Chega de',
@@ -1367,6 +1358,4 @@ export const ptBR = {
   'shortcuts.key.click': 'clique',
   'shortcuts.key.drag': 'arrasto',
   'shortcuts.key.doubleClick': 'duplo clique',
-} as const;
-
-export type Dictionary = Record<keyof typeof ptBR, string>;
+};

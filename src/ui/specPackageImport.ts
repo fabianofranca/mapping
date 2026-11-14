@@ -3,9 +3,10 @@ import { MAX_PACKAGE_FILES, isTextPackageFile, packageWithinLimits } from '../mo
 import type { DirectoryHandleLike } from '../storage/folder';
 import type { SpecPackageFiles } from '../store/project';
 
-// Importar um pacote de biblioteca (docs/SPEC-FORMAT.md, "Biblioteca: o pacote") escolhido
-// pelo usuário: lê a pasta (`showDirectoryPicker`) ou o zip para a memória, com os limites
-// de `libraryPackage.ts`, e valida pelos três níveis. A gravação em `specs/<id>/` é da sessão.
+// Import a library package (docs/SPEC-FORMAT.md, "Library: the package") chosen by the user: reads
+// the folder (`showDirectoryPicker`) or the zip into memory, with the limits of
+// `libraryPackage.ts`, and validates through the three levels. Writing to `specs/<id>/` is the
+// session's.
 
 export type PackageReadResult =
   | { readonly ok: true; readonly files: SpecPackageFiles }
@@ -13,12 +14,12 @@ export type PackageReadResult =
 
 type Picker = (options: { mode: 'read' }) => Promise<DirectoryHandleLike>;
 
-/** O navegador oferece `showDirectoryPicker` (Chrome/Edge)? */
+/** Does the browser offer `showDirectoryPicker` (Chrome/Edge)? */
 export function canPickDirectory(): boolean {
   return typeof Reflect.get(globalThis, 'showDirectoryPicker') === 'function';
 }
 
-/** Abre o seletor de pasta (só leitura). `null` se o usuário cancelar. */
+/** Opens the folder picker (read-only). `null` if the user cancels. */
 export async function pickPackageDirectory(): Promise<DirectoryHandleLike | null> {
   const picker: unknown = Reflect.get(globalThis, 'showDirectoryPicker');
   if (typeof picker !== 'function') return null;
@@ -30,17 +31,17 @@ export async function pickPackageDirectory(): Promise<DirectoryHandleLike | null
   }
 }
 
-/** Entradas escondidas (`.git`, `.DS_Store`) e a sobra do macOS nos zips não são do pacote. */
+/** Hidden entries (`.git`, `.DS_Store`) and macOS leftovers in zips are not part of the package. */
 function ignored(path: string): boolean {
   return path.split('/').some((part) => part.startsWith('.') || part === '__MACOSX');
 }
 
-/** Acumula os arquivos respeitando os limites; `false` quando estoura. */
+/** Accumulates the files respecting the limits; `false` when it overflows. */
 class Collector {
   readonly files = new Map<string, string | Blob>();
   private bytes = 0;
 
-  /** Mais um arquivo de `size` bytes ainda cabe? Serve para recusar antes de ler o conteúdo. */
+  /** Does one more file of `size` bytes still fit? Used to refuse before reading the content. */
   fits(size: number): boolean {
     return packageWithinLimits(this.files.size + 1, this.bytes + size);
   }
@@ -55,14 +56,14 @@ class Collector {
 
 const encoder = new TextEncoder();
 
-/** Tamanho em bytes (UTF-8) de um texto lido de arquivo. */
+/** Size in bytes (UTF-8) of a text read from a file. */
 function textBytes(text: string): number {
   return encoder.encode(text).length;
 }
 
 /**
- * Tamanho descomprimido que o zip declara para a entrada (o diretório central), ou `null` se a
- * versão do JSZip não o expõe. O JSZip confere o declarado ao descomprimir.
+ * Uncompressed size that the zip declares for the entry (the central directory), or `null` if the
+ * JSZip version does not expose it. JSZip checks the declared size when decompressing.
  */
 function declaredSize(entry: JSZip.JSZipObject): number | null {
   const data: unknown = Reflect.get(entry, '_data');
@@ -73,7 +74,7 @@ function declaredSize(entry: JSZip.JSZipObject): number | null {
   return typeof size === 'number' && Number.isFinite(size) ? size : null;
 }
 
-/** Se todos os arquivos estão numa única pasta-raiz, tira esse prefixo. */
+/** If all files are in a single root folder, strips that prefix. */
 function stripSingleRoot(files: ReadonlyMap<string, string | Blob>): SpecPackageFiles {
   const roots = new Set<string>();
   for (const path of files.keys()) {
@@ -91,7 +92,7 @@ function finish(collector: Collector): PackageReadResult {
     : { ok: true, files: stripSingleRoot(collector.files) };
 }
 
-/** Copia a pasta para a memória (texto dos `.json` e `.md`, Blob dos demais). */
+/** Copies the folder into memory (text of the `.json` and `.md`, Blob for the rest). */
 export async function readPackageFromDirectory(
   root: DirectoryHandleLike,
 ): Promise<PackageReadResult> {
@@ -105,7 +106,7 @@ export async function readPackageFromDirectory(
         continue;
       }
       const file = await entry.getFile();
-      // O tamanho vem do arquivo: recusa antes de ler o conteúdo.
+      // The size comes from the file: refuses before reading the content.
       if (!collector.fits(file.size)) return false;
       const data = isTextPackageFile(path)
         ? await file.text()
@@ -118,7 +119,7 @@ export async function readPackageFromDirectory(
   return finish(collector);
 }
 
-/** Lê o zip (uma pasta-raiz única é tirada) para a memória. */
+/** Reads the zip (a single root folder is stripped) into memory. */
 export async function readPackageFromZip(zipFile: Blob): Promise<PackageReadResult> {
   const zip = await JSZip.loadAsync(await zipFile.arrayBuffer());
   const names = Object.keys(zip.files).filter(
@@ -129,7 +130,7 @@ export async function readPackageFromZip(zipFile: Blob): Promise<PackageReadResu
   for (const name of names) {
     const entry = zip.files[name];
     if (!entry) continue;
-    // Recusa pelo tamanho declarado, antes de descomprimir (bomba de compressão).
+    // Refuses by the declared size, before decompressing (compression bomb).
     const declared = declaredSize(entry);
     if (declared !== null && !collector.fits(declared)) {
       return { ok: false, reason: 'too-big' };
@@ -146,7 +147,8 @@ export async function readPackageFromZip(zipFile: Blob): Promise<PackageReadResu
   return finish(collector);
 }
 
-// A validação (pura) mora no store, que a usa ao aplicar uma proposta; aqui só se reexporta.
+// The (pure) validation lives in the store, which uses it when applying a proposal; here it is only
+// re-exported.
 export {
   libraryInputFiles,
   readPackageSpec,

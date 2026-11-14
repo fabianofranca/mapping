@@ -6,42 +6,42 @@ import type {
 
 const notFound = (name: string) => new DOMException(`${name} not found`, 'NotFoundError');
 
-/** O que as pastas de uma mesma árvore compartilham (a latência vale para a árvore toda). */
+/** What the folders of one tree share (the latency applies to the whole tree). */
 interface TreeSettings {
   latencyMs: number;
 }
 
-/** Relógio dos arquivos em memória: cada gravação (ou `touch`) avança um tique. */
+/** Clock of the in-memory files: each write (or `touch`) advances one tick. */
 let clock = 1_700_000_000_000;
 
-/** Pasta em memória que imita a File System Access API. */
+/** In-memory folder that imitates the File System Access API. */
 export class MemoryDirectory implements DirectoryHandleLike {
   readonly kind = 'directory';
   readonly files = new Map<string, Blob>();
-  /** `lastModified` de cada arquivo (nome → ms), como o do `File` da File System Access API. */
+  /** `lastModified` of each file (name -> ms), like the `File` one of the File System Access API. */
   readonly modified = new Map<string, number>();
   readonly dirs = new Map<string, MemoryDirectory>();
-  /** Se definido, toda escrita falha com este erro. */
+  /** If set, every write fails with this error. */
   failWrites: Error | null = null;
-  /** Quantas escritas foram descartadas com `abort()` nesta pasta. */
+  /** How many writes were discarded with `abort()` in this folder. */
   abortedWrites = 0;
 
-  /** Compartilhado com as pastas de dentro: a latência escolhida na raiz vale para todas. */
+  /** Shared with the inner folders: the latency chosen at the root applies to all of them. */
   private readonly tree: TreeSettings;
 
   constructor(
     readonly name: string,
     tree?: TreeSettings,
-    /** A pasta que a contém (a raiz não tem). */
+    /** The folder that contains it (the root has none). */
     private readonly parent?: MemoryDirectory,
   ) {
     this.tree = tree ?? { latencyMs: 0 };
   }
 
   /**
-   * A pasta ainda está na árvore? Removida (por `removeEntry`, `removeAt` ou um `dirs.delete`
-   * por fora), um handle antigo dela falha com `NotFoundError`, como na File System Access API,
-   * mesmo que outra pasta de mesmo nome tenha sido criada no lugar.
+   * Is the folder still in the tree? Once removed (by `removeEntry`, `removeAt` or an outside
+   * `dirs.delete`), an old handle to it fails with `NotFoundError`, as in the File System Access API,
+   * even if another folder with the same name was created in its place.
    */
   get attached(): boolean {
     const parent = this.parent;
@@ -49,9 +49,9 @@ export class MemoryDirectory implements DirectoryHandleLike {
   }
 
   /**
-   * Latência por chamada (ms, com `setTimeout`), para imitar uma pasta lenta (tablet, nuvem) nos
-   * testes de orçamento e de conferência adaptativa. Vale para a árvore inteira; 0 (padrão):
-   * nenhuma espera, o comportamento de sempre.
+   * Latency per call (ms, with `setTimeout`), to imitate a slow folder (tablet, cloud) in the
+   * budget and adaptive-check tests. Applies to the whole tree; 0 (default):
+   * no waiting, the usual behavior.
    */
   get latencyMs(): number {
     return this.tree.latencyMs;
@@ -101,7 +101,7 @@ export class MemoryDirectory implements DirectoryHandleLike {
     if (!this.dirs.delete(name)) throw notFound(name);
   }
 
-  /** Atalho para os testes: remove a pasta por caminho, "por fora" da app, os handles antigos dela passam a falhar. */
+  /** Test shortcut: removes the folder by path, "from outside" the app; its old handles start failing. */
   removeAt(path: string): void {
     const parts = path.split('/');
     const name = parts.pop() ?? '';
@@ -166,7 +166,7 @@ export class MemoryDirectory implements DirectoryHandleLike {
     };
   }
 
-  /** Atalho para os testes: lê um arquivo por caminho (`images/a.jpg`). */
+  /** Test shortcut: reads a file by path (`images/a.jpg`). */
   async read(path: string): Promise<string | null> {
     const parts = path.split('/');
     const fileName = parts.pop() ?? '';
@@ -193,7 +193,7 @@ export class MemoryDirectory implements DirectoryHandleLike {
     return next?.dirAt(rest, create);
   }
 
-  /** Atalho para os testes: grava um arquivo por caminho, criando as pastas. */
+  /** Test shortcut: writes a file by path, creating the folders. */
   put(path: string, content: string): void {
     const parts = path.split('/');
     const fileName = parts.pop() ?? '';
@@ -202,7 +202,7 @@ export class MemoryDirectory implements DirectoryHandleLike {
     dir?.modified.set(fileName, ++clock);
   }
 
-  /** Atalho para os testes: muda só o `lastModified` do arquivo (um `touch`). */
+  /** Test shortcut: changes only the file's `lastModified` (a `touch`). */
   touch(path: string): void {
     const parts = path.split('/');
     const fileName = parts.pop() ?? '';
@@ -213,17 +213,17 @@ export class MemoryDirectory implements DirectoryHandleLike {
 export type MemoryPermission = 'granted' | 'prompt' | 'denied';
 
 /**
- * Pasta em memória com a parte de permissão da File System Access API
- * (`queryPermission`/`requestPermission`/`isSameEntry`), para os recentes de pasta.
+ * In-memory folder with the permission part of the File System Access API
+ * (`queryPermission`/`requestPermission`/`isSameEntry`), for the recent folders.
  */
 export class PermissionDirectory extends MemoryDirectory {
-  /** O que `queryPermission` devolve. */
+  /** What `queryPermission` returns. */
   permission: MemoryPermission = 'granted';
-  /** O que `requestPermission` devolve (e passa a valer para as próximas consultas). */
+  /** What `requestPermission` returns (and applies to the next queries). */
   answer: MemoryPermission = 'granted';
-  /** Quantas vezes a app pediu a permissão. */
+  /** How many times the app asked for the permission. */
   requests = 0;
-  /** Pasta movida ou apagada: todo acesso falha com `NotFoundError`. */
+  /** Moved or deleted folder: every access fails with `NotFoundError`. */
   gone = false;
 
   async queryPermission(): Promise<MemoryPermission> {
@@ -252,9 +252,9 @@ export class PermissionDirectory extends MemoryDirectory {
 }
 
 /**
- * O IndexedDB guarda o handle de verdade por clonagem estruturada (o navegador sabe
- * serializar um `FileSystemDirectoryHandle`). A pasta em memória não é serializável:
- * este `structuredClone` mantém as pastas por referência e clona o resto como sempre.
+ * IndexedDB stores the real handle by structured cloning (the browser knows how to
+ * serialize a `FileSystemDirectoryHandle`). The in-memory folder is not serializable:
+ * this `structuredClone` keeps the folders by reference and clones the rest as usual.
  * Uso: `vi.stubGlobal('structuredClone', keepDirectoriesInClone())`.
  */
 export function keepDirectoriesInClone(): typeof structuredClone {

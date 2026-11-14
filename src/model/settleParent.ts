@@ -1,19 +1,19 @@
 import { area, containsRect } from './geometry';
 import type { Marking, Rect } from './types';
 
-// Escolha do pai por geometria dentro de um espaço (regras em `hierarchySettle.ts`): quem pode ser
-// pai de quem, o posto das marcações de retângulo igual (desempate estável, etapa #549) e o pai entre
-// as candidatas. Funções puras, usadas pelo assentar do espaço inteiro e pelo recortado.
+// Choosing the parent by geometry inside a space (rules in `hierarchySettle.ts`): who can be
+// the parent of whom, the rank of markings with an equal rectangle (stable tie-break, stage #549) and the parent among
+// the candidates. Pure functions, used by the settle of the whole space and by the clipped one.
 
-/** Marcação de um espaço com o índice dela no array `markings`. */
+/** A marking of a space with its index in the `markings` array. */
 export interface Entry {
   readonly m: Marking;
   readonly i: number;
 }
 
 /**
- * Pode `outer` (posto `ro`) ser o pai de `inner` (posto `ri`)? Contém e é maior, ou é igual e
- * vem antes na ordem dos retângulos iguais (`equalRectRanks`). Uma ordem estrita: nunca há ciclo.
+ * Can `outer` (rank `ro`) be the parent of `inner` (rank `ri`)? It contains it and is larger, or is equal and
+ * comes earlier in the order of equal rectangles (`equalRectRanks`). A strict order: there is never a cycle.
  */
 export function canContain(outer: Rect, ro: number, inner: Rect, ri: number): boolean {
   if (!containsRect(outer, inner)) return false;
@@ -24,18 +24,18 @@ export function canContain(outer: Rect, ro: number, inner: Rect, ri: number): bo
 
 const rectKey = (r: Rect): string => `${r.x},${r.y},${r.width},${r.height}`;
 
-/** O pai atual de `e` é uma das marcações de `ids` que ainda não foi posta na ordem? */
+/** Is the current parent of `e` one of the markings of `ids` that has not yet been placed in the order? */
 function waitsForParent(e: Entry, ids: ReadonlySet<string>, done: ReadonlySet<string>) {
   const parent = e.m.parentId;
   return parent !== null && ids.has(parent) && !done.has(parent);
 }
 
 /**
- * Ordem de fora para dentro de um grupo de retângulos iguais (em ordem de array): a ordenação
- * topológica dos `parentId` atuais dentro do grupo (o pai antes do filho) e, entre as livres
- * ao mesmo tempo, a que vem antes no array. Quem não tem pai no grupo (nova, ou que chegou
- * agora ao retângulo) entra pelo array, como antes. `parentId` em ciclo (arquivo inválido) é
- * quebrado pela primeira do array. Total e sem ciclo.
+ * Outside-in order of a group of equal rectangles (in array order): the topological
+ * sort of the current `parentId`s inside the group (parent before child) and, among the ones free
+ * at the same time, the one that comes first in the array. Whoever has no parent in the group (new, or just
+ * arrived at the rectangle) enters by the array, as before. A `parentId` in a cycle (invalid file) is
+ * broken by the first one in the array. Total and cycle-free.
  */
 function chainOrder(bucket: readonly Entry[]): Entry[] {
   const ids = new Set(bucket.map((e) => e.m.id));
@@ -52,9 +52,9 @@ function chainOrder(bucket: readonly Entry[]): Entry[] {
 }
 
 /**
- * Posto de cada marcação de um espaço: o índice no array, salvo nos grupos de retângulos
- * iguais, onde as do grupo trocam de lugar entre si na ordem de `chainOrder`. Assim
- * reordenar irmãs (que só troca índices) não muda quem é a de fora.
+ * Rank of each marking of a space: the index in the array, except in groups of equal
+ * rectangles, where the group's members swap places among themselves in `chainOrder` order. This way
+ * reordering siblings (which only swaps indices) does not change which one is the outer one.
  */
 export function equalRectRanks(
   group: readonly Entry[],
@@ -75,8 +75,8 @@ export function equalRectRanks(
 }
 
 /**
- * As candidatas de menor área, com só a de dentro (maior posto) de cada grupo de retângulos
- * iguais.
+ * The candidates of least area, with only the inner one (highest rank) of each group of equal
+ * rectangles.
  */
 function innermostOfLeast(
   candidates: readonly Entry[],
@@ -95,9 +95,9 @@ function innermostOfLeast(
 }
 
 /**
- * Entre as candidatas que contêm (todas válidas pela geometria), o pai: das de menor área
- * (`innermostOfLeast`), o pai atual, se é uma delas; senão, a de maior posto (a que vem
- * depois no array).
+ * Among the candidates that contain it (all valid by geometry), the parent: of those of least area
+ * (`innermostOfLeast`), the current parent, if it is one of them; otherwise, the one of highest rank (the one that comes
+ * later in the array).
  */
 export function pickParent(
   candidates: readonly Entry[],

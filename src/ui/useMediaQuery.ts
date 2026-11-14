@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 
-/** `true` enquanto a media query casar. */
+/** `true` while the media query matches. */
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(
     () => globalThis.matchMedia?.(query).matches ?? false,

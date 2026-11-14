@@ -5,16 +5,16 @@ import { awaiting } from './threadView';
 import type { Project } from './types';
 import { fold } from './fold';
 
-// Filtros da janela Comentários (decisões 21 e 34): status, usuário, texto e "cita a seleção".
-// O padrão de status na interface é `open`, mas a função exige o status explícito.
+// Filters of the Comments window (decisions 21 and 34): status, user, text and "cites the selection".
+// The interface default status is `open`, but the function requires the status explicitly.
 
 export type ThreadStatusFilter =
   'all' | 'open' | 'awaitingAgent' | 'awaitingHuman' | 'resolved';
 
 /**
- * "Só as que citam a seleção" (decisão 34): o item selecionado (marcação, container ou seta) e,
- * por conversa, os ids dos alvos que ela cita. O id citado é o do item ou o da anotação que
- * contém a parte citada (campo, par, linha); as citações vêm de quem as extrai das mensagens.
+ * "Only the ones that cite the selection" (decision 34): the selected item (marking, container or arrow) and,
+ * per thread, the ids of the targets it cites. The cited id is that of the item or of the annotation that
+ * contains the cited part (field, pair, row); the citations come from whoever extracts them from the messages.
  */
 export interface ThreadSelectionFilter {
   readonly itemId: string;
@@ -23,9 +23,9 @@ export interface ThreadSelectionFilter {
 
 export interface ThreadFilter {
   readonly status: ThreadStatusFilter;
-  /** Chave de `userKey`: alguma mensagem da conversa é desse usuário. */
+  /** Key of `userKey`: some message of the thread is from that user. */
   readonly user?: string;
-  /** Todas as palavras, sem diferença de caixa nem de acento, no texto das mensagens. */
+  /** All the words, ignoring case and accents, in the text of the messages. */
   readonly text?: string;
   readonly selection?: ThreadSelectionFilter;
 }
@@ -72,7 +72,7 @@ function anchoredIn(
   }
 }
 
-/** O item e as anotações dele (as partes: campos, pares e linhas moram nelas). */
+/** The item and its annotations (the parts: fields, pairs and rows live in them). */
 function selectionTargets(project: Project, itemId: string): ReadonlySet<string> {
   const owned = projectIndex(project).annotationsByMarking.get(itemId) ?? [];
   return new Set([itemId, ...owned.map((a) => a.id)]);
@@ -88,7 +88,7 @@ function selectionMatcher(
     (selection.cites.get(t.id) ?? []).some((id) => targets.has(id));
 }
 
-/** Aplica os filtros em conjunto (E), mantendo a ordem da entrada. */
+/** Applies the filters together (AND), keeping the input order. */
 export function filterThreads(
   threads: readonly Thread[],
   project: Project,

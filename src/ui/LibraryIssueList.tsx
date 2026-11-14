@@ -8,12 +8,12 @@ import { messageText } from './modelMessage';
 import { specIssueText } from './specIssueText';
 import type { AppLibraryIssue } from '../storage/specPackage';
 
-/** A mensagem com código do catálogo: o `detail` (de outro módulo) entra no `{reason}`. */
+/** The message with a catalog code: the `detail` (from another module) goes into `{reason}`. */
 function coded(issue: AppLibraryIssue, code: ModelMessageTemplateCode): string {
   return messageText(modelMessage(code, issue.params ?? {}, issue.message, issue.detail));
 }
 
-/** Texto do problema: os que têm código saem traduzidos; o resto vem do validador. */
+/** Text of the problem: those with a code come translated; the rest comes from the validator. */
 export function issueText(issue: AppLibraryIssue): string {
   if (issue.code === 'package-too-big') return t('library.packageTooBig');
   if (issue.code !== undefined && isModelMessageTemplateCode(issue.code)) {
@@ -22,7 +22,7 @@ export function issueText(issue: AppLibraryIssue): string {
   return specIssueText(issue);
 }
 
-/** Agrupa por arquivo, na ordem em que cada arquivo aparece pela primeira vez. */
+/** Groups by file, in the order in which each file first appears. */
 function groupByFile(
   issues: readonly AppLibraryIssue[],
 ): readonly (readonly [string, readonly AppLibraryIssue[]])[] {
@@ -36,9 +36,9 @@ function groupByFile(
 }
 
 /**
- * Problemas de uma biblioteca (erros e avisos) em lista compacta: um grupo por arquivo, com
- * o caminho dentro do arquivo e a mensagem. A lista rola sozinha, então 42 avisos não
- * esticam o diálogo nem o Diagnóstico.
+ * Problems of a library (errors and warnings) in a compact list: one group per file, with
+ * the path inside the file and the message. The list scrolls by itself, so 42 warnings do not
+ * stretch the dialog nor Diagnostics.
  */
 export function LibraryIssueList({
   issues,

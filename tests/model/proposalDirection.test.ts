@@ -22,21 +22,21 @@ import {
   type Proposal,
 } from '../../src/model';
 
-// Direção numa proposta (schema v20): o campo `direction` do container e do projeto e a
-// `formatVersion` 8, gravada só quando a proposta o usa (uma app anterior recusa a 8 em vez de
-// descartar o campo).
+// Direction in a proposal (schema v20): the `direction` field of the container and the project, and
+// `formatVersion` 8, written only when the proposal uses it (an earlier app refuses 8 instead of
+// dropping the field).
 
 const AT = '2026-11-13T10:00:00.000Z';
 const base = addBackgroundContainer(
   createProject({
-    name: 'Teste',
+    name: 'Test',
     now: AT,
-    firstLayer: { id: 'l1', name: 'Camada 1', color: '#FF0000' },
+    firstLayer: { id: 'l1', name: 'Layer 1', color: '#FF0000' },
   }),
   { id: 'c1', width: 100, height: 80, background: '#FFFFFF' },
 );
 const build = (after: Project, from: Project = base): Proposal =>
-  buildProposal(from, after, { title: 'Direção', createdAt: AT });
+  buildProposal(from, after, { title: 'Direction', createdAt: AT });
 
 function accept(from: Project, proposal: Proposal): Project {
   const decided = decide(
@@ -48,12 +48,12 @@ function accept(from: Project, proposal: Proposal): Project {
   );
   if (!decided.ok) throw new Error(decided.reason);
   const applied = applyAccepted(from, { ...proposal, decisions: decided.decisions }, AT);
-  if (!applied.ok) throw new Error('bloqueada');
+  if (!applied.ok) throw new Error('blocked');
   return applied.project;
 }
 
-describe('proposta com a direção de leitura', () => {
-  it('sem direção a proposta continua na formatVersion 4', () => {
+describe('proposal with the reading direction', () => {
+  it('without direction the proposal stays on formatVersion 4', () => {
     const proposal = build(base);
     expect(proposal.formatVersion).toBe(PROPOSAL_FORMAT_VERSION);
     expect(proposalUsesDirection(proposal.changes)).toBe(false);
@@ -61,7 +61,7 @@ describe('proposta com a direção de leitura', () => {
     expect(PROPOSAL_DIRECTION_FORMAT_VERSION).toBe(8);
   });
 
-  it('a direção do container é o campo direction; a proposta grava a 8; ida e volta', () => {
+  it('the container direction is the direction field; the proposal writes 8; round trip', () => {
     const proposal = build(setContainerDirection(base, 'c1', 'rtl'));
     expect(proposal.formatVersion).toBe(PROPOSAL_DIRECTION_FORMAT_VERSION);
     expect(proposal.changes).toMatchObject([
@@ -70,7 +70,7 @@ describe('proposta com a direção de leitura', () => {
     expect(parseProposal(JSON.parse(serializeProposal(proposal))).ok).toBe(true);
   });
 
-  it('aceitar e aplicar grava a direção do container; voltar a seguir o projeto a tira', () => {
+  it('accepting and applying writes the container direction; going back to following the project removes it', () => {
     const fixed = setContainerDirection(base, 'c1', 'rtl');
     expect(accept(base, build(fixed)).containers[0]?.direction).toBe('rtl');
     const back = build(base, fixed);
@@ -79,7 +79,7 @@ describe('proposta com a direção de leitura', () => {
     expect(accept(fixed, back).containers[0]?.direction ?? null).toBeNull();
   });
 
-  it('a direção do projeto é um campo da entidade project; aplicar a grava e a tira', () => {
+  it('the project direction is a field of the project entity; applying it writes and removes it', () => {
     const rtl = setProjectDirection(base, 'rtl');
     const proposal = build(rtl);
     expect(proposal.formatVersion).toBe(PROPOSAL_DIRECTION_FORMAT_VERSION);
@@ -100,7 +100,7 @@ describe('proposta com a direção de leitura', () => {
     expect(accept(rtl, back).direction).toBeUndefined();
   });
 
-  it('trocar só o modo do desenho num projeto rtl não perde a direção', () => {
+  it('changing only the drawing mode in an rtl project does not lose the direction', () => {
     const rtl = setProjectDirection(base, 'rtl');
     const proposal = build(setProjectDrawingMode(rtl, 'dark'), rtl);
     expect(proposal.changes).toMatchObject([
@@ -115,7 +115,7 @@ describe('proposta com a direção de leitura', () => {
     expect(applied.direction).toBe('rtl');
   });
 
-  it('proposta antiga do projeto (sem direction no from nem no to) mantém a direção atual', () => {
+  it('old project proposal (without direction in from or to) keeps the current direction', () => {
     const rtl = setProjectDirection(base, 'rtl');
     const proposal = build(setProjectDrawingMode(base, 'dark'), base);
     expect(proposal.changes).toMatchObject([
@@ -127,20 +127,20 @@ describe('proposta com a direção de leitura', () => {
     expect(applied.direction).toBe('rtl');
   });
 
-  it('direction fora de ltr/rtl (container ou projeto) é recusada ao ler', () => {
+  it('direction outside ltr/rtl (container or project) is refused on read', () => {
     const container = JSON.parse(
       serializeProposal(build(setContainerDirection(base, 'c1', 'rtl'))),
     );
-    container.changes[0].to = 'cima';
+    container.changes[0].to = 'up';
     expect(parseProposal(container).ok).toBe(false);
     const project = JSON.parse(
       serializeProposal(build(setProjectDirection(base, 'rtl'))),
     );
-    project.changes[0].to.direction = 'cima';
+    project.changes[0].to.direction = 'up';
     expect(parseProposal(project).ok).toBe(false);
   });
 
-  it('um container criado com direction na proposta leva a 8', () => {
+  it('a container created with direction in the proposal carries 8', () => {
     const after = setContainerDirection(
       addBackgroundContainer(base, {
         id: 'c2',
@@ -159,7 +159,7 @@ describe('proposta com a direção de leitura', () => {
     );
   });
 
-  it('a versão escolhida é monótona: a 8 não desce e a densidade sozinha continua 7', () => {
+  it('the chosen version is monotonic: 8 does not go down and density alone stays 7', () => {
     const density = build(setContainerDensity(base, 'c1', 2));
     expect(density.formatVersion).toBe(PROPOSAL_DENSITY_FORMAT_VERSION);
     expect(proposalFormatVersionFor(density.changes, 5, 8)).toBe(8);

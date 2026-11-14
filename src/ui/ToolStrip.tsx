@@ -7,12 +7,12 @@ import { openCountText } from './comments/commentsText';
 import { toggleToolWindowFocus } from './toolWindowLayout';
 import { toolWindowMeta, toolWindowShortcut, windowsOfSide } from './toolWindowMeta';
 
-// Faixas de 40px nas laterais: um botão por janela de ferramenta, com o atalho na
-// dica. O nome acessível é fixo (o título da janela, mais o sufixo informativo); o estado
-// aberto/fechado fica só no `aria-pressed`. Na esquerda, as janelas laterais ficam em cima e as da janela inferior
-// embaixo (seção Layouts do DS 2.0).
+// 40px strips on the sides: one button per tool window, with the shortcut in the
+// hint. The accessible name is fixed (the window title, plus the informative suffix); the
+// open/closed state lives only in `aria-pressed`. On the left, the side windows sit on top and those of the bottom window
+// below (Layouts section of DS 2.0).
 
-/** Texto acessível a mais do botão: erro novo, propostas novas ou conversas abertas. */
+/** Extra accessible text of the button: new error, new proposals or open threads. */
 function stripExtra(alert: boolean, fresh: number, openThreads: number): string {
   if (alert) return ` (${t('diagnostics.unseen')})`;
   if (fresh > 0) return ` (${t('proposals.newCount', { count: fresh })})`;
@@ -24,11 +24,11 @@ function StripButton({ id }: { readonly id: ToolWindowId }) {
   const { icon, title } = toolWindowMeta(id);
   const name = title();
   const open = isToolWindowOpen(id);
-  // Erro novo no registro e a janela Diagnóstico fechada: ponto de alerta (B4).
+  // New error in the log and the Diagnostics window closed: alert dot (B4).
   const alert = id === 'diagnostics' && diagnosticsUnseen.value && !open;
-  // Propostas novas: selo numérico informativo (`mp-sb__badge--info`).
+  // New proposals: informative numeric badge (`mp-sb__badge--info`).
   const fresh = id === 'proposals' ? review.derived.freshIds.value.length : 0;
-  // Conversas abertas: selo numérico na janela Comentários.
+  // Open threads: numeric badge on the Comments window.
   const openThreads = id === 'comments' ? derived.threads.openCount.value : 0;
   const extra = stripExtra(alert, fresh, openThreads);
   const badge = fresh > 0 ? fresh : openThreads;
@@ -48,7 +48,7 @@ function StripButton({ id }: { readonly id: ToolWindowId }) {
   );
 }
 
-/** Faixa de uma lateral. A esquerda também abre as janelas da faixa inferior. */
+/** Strip of one side. The left one also opens the bottom strip's windows. */
 export function ToolStrip({ side }: { readonly side: 'left' | 'right' }) {
   const windows = windowsOfSide(side);
   const bottom: readonly ToolWindowId[] = side === 'left' ? windowsOfSide('bottom') : [];

@@ -1,10 +1,10 @@
 /**
- * Motor dos componentes (etapa Biblioteca): a biblioteca, lida de arquivos. A especialização (`mapping-spec`)
- * aponta, em cada tipo de anotação, para o arquivo do componente (`component`, caminho relativo
- * ao arquivo da especialização); cada componente é validado por `parseComponent`.
+ * Component engine (Library stage): the library, read from files. The specialization
+ * (`mapping-spec`) points, in each annotation type, to the component file (`component`, path
+ * relative to the specialization file); each component is validated by `parseComponent`.
  *
- * As fontes dos arquivos (exemplos embutidos, `<input type="file" multiple>`, pasta pelo
- * `showDirectoryPicker`) viram a mesma lista `{ path, text }` antes de chegar aqui.
+ * The sources of the files (embedded examples, `<input type="file" multiple>`, folder via
+ * `showDirectoryPicker`) become the same `{ path, text }` list before reaching here.
  */
 import type { ComponentFile, FieldValue } from './componentFormat';
 import { findSlot } from './arrange';
@@ -25,15 +25,15 @@ import { resolveTokens, type HostFonts, type SpecTokens } from './tokens';
 import { isRecord } from '../isRecord';
 
 export interface TextFile {
-  /** Caminho relativo à raiz escolhida, com `/`. */
+  /** Path relative to the chosen root, with `/`. */
   readonly path: string;
-  /** Conteúdo dos `.json` (ausente nos arquivos binários). */
+  /** Content of the `.json` files (absent in binary files). */
   readonly text?: string;
-  /** Bytes dos arquivos de fonte (`.ttf`, `.otf`, `.woff`, `.woff2`). */
+  /** Bytes of the font files (`.ttf`, `.otf`, `.woff`, `.woff2`). */
   readonly bytes?: ArrayBuffer;
 }
 
-/** Extensões lidas como bytes (fontes do design system). */
+/** Extensions read as bytes (design system fonts). */
 export const FONT_EXTENSIONS = ['.ttf', '.otf', '.woff', '.woff2'] as const;
 
 export function isFontPath(path: string): boolean {
@@ -41,13 +41,13 @@ export function isFontPath(path: string): boolean {
   return FONT_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
-/** Fonte declarada na especialização (`fonts`), com os bytes quando o arquivo veio junto. */
+/** Font declared in the specialization (`fonts`), with the bytes when the file came along. */
 export interface LoadedFont {
   readonly family: string;
-  /** Peso CSS: `"400"`, `"500"` ou uma faixa de fonte variável, `"100 900"`. */
+  /** CSS weight: `"400"`, `"500"` or a variable-font range, `"100 900"`. */
   readonly weight: string;
   readonly style: 'normal' | 'italic';
-  /** Caminho resolvido, relativo à raiz. */
+  /** Resolved path, relative to the root. */
   readonly path: string;
   readonly bytes?: ArrayBuffer;
 }
@@ -62,7 +62,7 @@ export interface FieldDef {
   readonly options?: readonly string[];
   readonly default?: FieldValue;
   readonly description?: string;
-  /** Origens do campo (`sources`); numa origem executável o `path` é o caminho dentro de `props`. */
+  /** Origins of the field (`sources`); in an executable origin the `path` is the path inside `props`. */
   readonly sources: readonly FieldSource[];
 }
 
@@ -74,11 +74,11 @@ export interface TypeDef {
   readonly layerColor: string;
   readonly labelField?: string;
   readonly fields: readonly FieldDef[];
-  /** Caminho do arquivo do componente, como está na especialização. */
+  /** Path of the component file, as it is in the specialization. */
   readonly componentPath?: string;
-  /** O componente carregado (ausente quando o arquivo faltou ou era inválido). */
+  /** The loaded component (absent when the file was missing or invalid). */
   readonly component?: ComponentFile;
-  /** Elementos de sistemas externos a que o tipo corresponde (`sources`). */
+  /** Elements of external systems the type corresponds to (`sources`). */
   readonly sources: readonly TypeSource[];
 }
 
@@ -87,15 +87,15 @@ export interface Library {
   readonly specName: string;
   readonly specPath: string;
   readonly types: readonly TypeDef[];
-  /** Fontes declaradas pela especialização (`fonts`), com bytes quando o arquivo existe. */
+  /** Fonts declared by the specialization (`fonts`), with bytes when the file exists. */
   readonly fonts: readonly LoadedFont[];
-  /** Origens executáveis declaradas (`origins`): como ler um JSON externo como tela. */
+  /** Declared executable origins (`origins`): how to read an external JSON as a screen. */
   readonly origins: readonly Origin[];
-  /** `tokens` da especialização (lidos sem validar; o validador da biblioteca confere). */
+  /** `tokens` of the specialization (read without validating; the library validator checks them). */
   readonly tokens?: SpecTokens;
-  /** Conjunto de ícones da especialização (`icons`), quando o arquivo existe e é válido. */
+  /** The specialization's icon set (`icons`), when the file exists and is valid. */
   readonly icons?: IconSet;
-  /** O que não carregou: arquivo ausente, componente inválido, tipo sem componente. */
+  /** What did not load: missing file, invalid component, type without a component. */
   readonly problems: readonly string[];
 }
 
@@ -104,15 +104,15 @@ function parseJson(file: TextFile): unknown {
     return JSON.parse(file.text ?? '');
   } catch (error) {
     throw new Error(
-      `${file.path}: JSON inválido (${error instanceof Error ? error.message : String(error)})`,
+      `${file.path}: invalid JSON (${error instanceof Error ? error.message : String(error)})`,
       { cause: error },
     );
   }
 }
 
 /**
- * Resolve `ref` relativo ao diretório de `from` (`a/b/spec.json` + `components/x.json` →
- * `a/b/components/x.json`). Devolve `undefined` quando um `..` sai da raiz da biblioteca.
+ * Resolves `ref` relative to the directory of `from` (`a/b/spec.json` + `components/x.json` →
+ * `a/b/components/x.json`). Returns `undefined` when a `..` leaves the library root.
  */
 export function resolvePathChecked(from: string, ref: string): string | undefined {
   const dir = from.includes('/') ? from.slice(0, from.lastIndexOf('/') + 1) : '';
@@ -126,8 +126,8 @@ export function resolvePathChecked(from: string, ref: string): string | undefine
 }
 
 /**
- * Como `resolvePathChecked`, mas um `..` que sai da raiz é descartado. Quem valida a biblioteca
- * (`loadLibrary`) usa a versão conferida e registra o problema.
+ * Like `resolvePathChecked`, but a `..` that leaves the root is discarded. Whoever validates the
+ * library (`loadLibrary`) uses the checked version and records the problem.
  */
 export function resolvePath(from: string, ref: string): string {
   const dir = from.includes('/') ? from.slice(0, from.lastIndexOf('/') + 1) : '';
@@ -142,16 +142,16 @@ export function resolvePath(from: string, ref: string): string {
 
 type PathResolver = (from: string, ref: string) => string | undefined;
 
-/** Opções de `loadLibrary`. */
+/** Options of `loadLibrary`. */
 export interface LoadLibraryOptions {
   /**
-   * Um `..` que sai da raiz é descartado em vez de virar problema (`resolvePath`). Só para
-   * quem carrega por URL, onde `../` é relativo à URL da especialização e não à biblioteca.
+   * A `..` that leaves the root is discarded instead of becoming a problem (`resolvePath`). Only for
+   * whoever loads by URL, where `../` is relative to the specialization's URL and not the library's.
    */
   readonly allowOutside?: boolean;
 }
 
-const outsideLibrary = (ref: string): string => `caminho fora da biblioteca: ${ref}`;
+const outsideLibrary = (ref: string): string => `path outside the library: ${ref}`;
 
 function readField(
   raw: unknown,
@@ -160,7 +160,7 @@ function readField(
   systems: ReadonlySet<string>,
 ): FieldDef | undefined {
   if (!isRecord(raw) || typeof raw.key !== 'string' || typeof raw.type !== 'string') {
-    problems.push(`${path}: campo sem key/type`);
+    problems.push(`${path}: field without key/type`);
     return undefined;
   }
   const type = raw.type as FieldType;
@@ -175,23 +175,23 @@ function readField(
     const at = `${path}.sources[${index}]`;
     if (source.values) {
       if (type !== 'enum') {
-        problems.push(`${at}.values: só vale em campo enum`);
+        problems.push(`${at}.values: only valid on an enum field`);
       } else {
         for (const [from, to] of Object.entries(source.values)) {
           if (!options?.includes(to)) {
-            problems.push(`${at}.values.${from}: destino fora de options: ${to}`);
+            problems.push(`${at}.values.${from}: target outside options: ${to}`);
           }
         }
       }
     }
-    // Numa origem executável o `path` é o caminho dentro de `props` (sem `[*]`) e é obrigatório.
+    // In an executable origin the `path` is the path inside `props` (without `[*]`) and is required.
     if (systems.has(source.system)) {
       if (source.path === undefined) {
-        problems.push(`${at}.path: obrigatório em sistema declarado em origins`);
+        problems.push(`${at}.path: required in a system declared in origins`);
       } else {
         const parsed = parsePath(source.path);
         if (!parsed.ok || parsed.segments.includes(null)) {
-          problems.push(`${at}.path: caminho inválido "${source.path}"`);
+          problems.push(`${at}.path: invalid path "${source.path}"`);
         }
       }
     }
@@ -208,7 +208,7 @@ function readField(
   };
 }
 
-/** Confere o `slot` das origens do tipo contra o slot do componente. */
+/** Checks the `slot` of the type's origins against the component's slot. */
 function checkTypeSources(
   id: string,
   sources: readonly TypeSource[],
@@ -220,16 +220,16 @@ function checkTypeSources(
   sources.forEach((source, index) => {
     if (source.slot === undefined) return;
     const at = `${id}.sources[${index}].slot`;
-    if (!slot) problems.push(`${at}: o componente não tem slot`);
+    if (!slot) problems.push(`${at}: the component has no slot`);
     else if (slot.name !== source.slot) {
       problems.push(
-        `${at}: o slot do componente é "${slot.name ?? ''}", não "${source.slot}"`,
+        `${at}: the component's slot is "${slot.name ?? ''}", not "${source.slot}"`,
       );
     }
   });
 }
 
-/** O componente do tipo: arquivo fora da biblioteca, ausente ou inválido vira problema. */
+/** The type's component: a file outside the library, missing or invalid becomes a problem. */
 function loadComponent(
   typeId: string,
   componentPath: string,
@@ -245,7 +245,7 @@ function loadComponent(
   }
   const json = parsed.get(full);
   if (json === undefined) {
-    problems.push(`${typeId}: arquivo do componente não encontrado: ${full}`);
+    problems.push(`${typeId}: component file not found: ${full}`);
     return undefined;
   }
   const result = parseComponent(json);
@@ -255,7 +255,7 @@ function loadComponent(
   return undefined;
 }
 
-/** O `scrim` de cada raiz de tela precisa ser um tipo da biblioteca. */
+/** The `scrim` of each screen root must be a type of the library. */
 function checkScrims(
   origins: readonly Origin[],
   typeIds: ReadonlySet<string>,
@@ -265,7 +265,7 @@ function checkScrims(
     origin.screen.roots.forEach((root, ri) => {
       if (root.scrim !== undefined && !typeIds.has(root.scrim)) {
         problems.push(
-          `origins[${oi}].screen.roots[${ri}].scrim: tipo inexistente: ${root.scrim}`,
+          `origins[${oi}].screen.roots[${ri}].scrim: nonexistent type: ${root.scrim}`,
         );
       }
     });
@@ -273,9 +273,9 @@ function checkScrims(
 }
 
 /**
- * Monta a biblioteca a partir dos arquivos. Acha a especialização (o arquivo com
- * `"format": "mapping-spec"`; se houver mais de uma, usa a primeira e avisa) e carrega cada
- * componente referenciado. Lança só quando não há especialização.
+ * Builds the library from the files. Finds the specialization (the file with
+ * `"format": "mapping-spec"`; if there is more than one, uses the first and warns) and loads each
+ * referenced component. Throws only when there is no specialization.
  */
 export function loadLibrary(
   files: readonly TextFile[],
@@ -298,11 +298,11 @@ export function loadLibrary(
   const first = specs[0];
   if (!first) {
     throw new Error(
-      'Nenhuma especialização encontrada: a pasta precisa de um arquivo com "format": "mapping-spec".',
+      'No specialization found: the folder needs a file with "format": "mapping-spec".',
     );
   }
   if (specs.length > 1) {
-    problems.push(`há ${specs.length} especializações; usando ${first[0]}`);
+    problems.push(`there are ${specs.length} specializations; using ${first[0]}`);
   }
   const [specPath, specJson] = first;
   const spec = specJson as Record<string, unknown>;
@@ -322,7 +322,7 @@ export function loadLibrary(
       : [];
     annotationTypes.forEach((type, ti) => {
       if (!isRecord(type) || typeof type.id !== 'string') {
-        problems.push(`layers[${li}].annotationTypes[${ti}]: tipo sem id`);
+        problems.push(`layers[${li}].annotationTypes[${ti}]: type without id`);
         return;
       }
       const fieldsRaw = Array.isArray(type.fields) ? type.fields : [];
@@ -361,7 +361,7 @@ export function loadLibrary(
   return withHostTokens(
     {
       specId: typeof spec.id === 'string' ? spec.id : 'spec',
-      specName: typeof spec.name === 'string' ? spec.name : 'Especialização',
+      specName: typeof spec.name === 'string' ? spec.name : 'Specialization',
       specPath,
       types,
       fonts,
@@ -374,7 +374,7 @@ export function loadLibrary(
   );
 }
 
-/** O conjunto de ícones apontado por `icons` (arquivo ausente ou inválido vira problema). */
+/** The set of icons pointed to by `icons` (a missing or invalid file becomes a problem). */
 function readIcons(
   raw: unknown,
   specPath: string,
@@ -390,7 +390,7 @@ function readIcons(
   }
   const json = parsed.get(path);
   if (json === undefined) {
-    problems.push(`arquivo de ícones não encontrado: ${path}`);
+    problems.push(`icon file not found: ${path}`);
     return undefined;
   }
   const result = parseIconsFile(json);
@@ -400,7 +400,7 @@ function readIcons(
   return undefined;
 }
 
-/** `tokens` do JSON da especialização, na forma mínima (modos texto e valores texto, número ou por modo). */
+/** `tokens` of the specialization JSON, in the minimal form (text modes and text, number or per-mode values). */
 function readTokens(raw: unknown): SpecTokens | undefined {
   if (!isRecord(raw) || !Array.isArray(raw.modes) || !isRecord(raw.values))
     return undefined;
@@ -411,8 +411,8 @@ function readTokens(raw: unknown): SpecTokens | undefined {
 }
 
 /**
- * A biblioteca com os componentes levando os tokens do modo (`resolvedTokens`): `font-sans` e
- * `font-mono` valem a fonte do hospedeiro, a menos que a especialização os redefina.
+ * The library with the components carrying the mode's tokens (`resolvedTokens`): `font-sans` and
+ * `font-mono` take the host's font, unless the specialization redefines them.
  */
 export function withHostTokens(
   library: Library,
@@ -439,9 +439,9 @@ export function withHostTokens(
 }
 
 /**
- * `fonts` da especialização: `[{ "family": "Roboto", "file": "fonts/Roboto-Regular.ttf",
- * "weight": 400, "style": "normal" }]`. `weight` aceita número ou faixa (`"100 900"`, fonte
- * variável). Arquivo ausente não é problema da biblioteca: aparece no status das fontes.
+ * `fonts` of the specialization: `[{ "family": "Roboto", "file": "fonts/Roboto-Regular.ttf",
+ * "weight": 400, "style": "normal" }]`. `weight` accepts a number or a range (`"100 900"`, variable
+ * font). A missing file is not a library problem: it shows up in the font status.
  */
 function readFonts(
   raw: unknown,
@@ -452,11 +452,11 @@ function readFonts(
 ): LoadedFont[] {
   if (raw === undefined) return [];
   if (!Array.isArray(raw)) {
-    problems.push('fonts: esperava uma lista');
+    problems.push('fonts: expected a list');
     return [];
   }
   const byPath = new Map(files.filter((f) => f.bytes).map((f) => [f.path, f.bytes]));
-  // Arquivos escolhidos soltos ("Abrir arquivos…") chegam só com o nome: vale o nome do arquivo.
+  // Files chosen loose ("Open files…") arrive with only the name: the file name counts.
   const byName = new Map(
     files
       .filter((f) => f.bytes)
@@ -469,7 +469,7 @@ function readFonts(
       typeof entry.family !== 'string' ||
       typeof entry.file !== 'string'
     ) {
-      problems.push(`fonts[${index}]: precisa de family e file`);
+      problems.push(`fonts[${index}]: needs family and file`);
       return;
     }
     const weight =
@@ -490,7 +490,7 @@ function readFonts(
   return out;
 }
 
-/** Valores iniciais de uma instância nova: `preview` do componente, senão o `default` do campo. */
+/** Initial values of a new instance: the component's `preview`, otherwise the field's `default`. */
 export function initialValues(type: TypeDef): Record<string, FieldValue> {
   const values: Record<string, FieldValue> = {};
   for (const field of type.fields) {
@@ -500,14 +500,14 @@ export function initialValues(type: TypeDef): Record<string, FieldValue> {
   return values;
 }
 
-/** Rótulo de uma instância: `labelField` preenchido, senão o nome do tipo. */
+/** Label of an instance: filled `labelField`, otherwise the type's name. */
 export function instanceLabel(
   type: TypeDef,
   values: Readonly<Record<string, FieldValue>>,
 ): string {
   const key = type.labelField;
   const value = key ? values[key] : undefined;
-  // Só texto e número entram no rótulo; valor de tabela (lista) conta como vazio.
+  // Only text and number enter the label; a table value (list) counts as empty.
   const text =
     typeof value === 'string' || typeof value === 'number' ? String(value) : '';
   return text.trim() === '' ? type.name : text;

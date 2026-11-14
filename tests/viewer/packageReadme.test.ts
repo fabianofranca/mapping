@@ -1,17 +1,18 @@
 // @vitest-environment node
-// A versão do pacote citada no guia de uso vem do manifesto: subir `VIEWER_VERSION` sem atualizar
-// o `PACKAGE-README.md` (o `npm pack` e o `npm install ./…tgz` dos exemplos) quebra aqui.
+// The package version quoted in the usage guide comes from the manifest: bumping `VIEWER_VERSION`
+// without updating `PACKAGE-README.md` (the `npm pack` and `npm install ./…tgz` of the examples)
+// breaks here.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-// @ts-expect-error módulo .mjs do build, sem declarações
+// @ts-expect-error build .mjs module, without declarations
 import { VIEWER_VERSION } from '../../viewer/packageManifest.mjs';
 
 const version = VIEWER_VERSION as string;
 const readme = readFileSync(join(__dirname, '../../viewer/PACKAGE-README.md'), 'utf8');
 
 describe('PACKAGE-README.md', () => {
-  it('cita a versão do manifesto em todo nome de pacote', () => {
+  it('quotes the manifest version in every package name', () => {
     const versions = [...readme.matchAll(/mapping-viewer-(\d+\.\d+\.\d+)\.tgz/g)].map(
       (match) => match[1],
     );

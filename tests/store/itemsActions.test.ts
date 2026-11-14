@@ -5,9 +5,9 @@ import { createProjectActions } from '../../src/store/project';
 import { NOW } from '../model/fixtures';
 import { multiProjectAnnotated } from '../model/multiSelectionFixtures';
 
-// Seleção múltipla (ME2): o arrasto conjunto é um gesto com N operações por prévia sobre a base,
-// "tudo ou nada", e uma entrada de desfazer no fim; excluir e trancar a seleção são uma entrada.
-// Fixture: ver tests/model/multiSelectionFixtures.ts (A, B, C, D, E; G, G2, H e a flutuante N).
+// Multiple selection (ME2): the joint drag is a gesture with N operations per preview over the base,
+// "all or nothing", and one undo entry at the end; deleting and locking the selection are one entry.
+// Fixture: see tests/model/multiSelectionFixtures.ts (A, B, C, D, E; G, G2, H and the floating N).
 
 const img = (id: string): ItemRef => ({ kind: 'image', id });
 const mark = (id: string): ItemRef => ({ kind: 'marking', id });
@@ -25,7 +25,7 @@ function setup() {
 type Store = ReturnType<typeof createProjectStore>;
 
 const project = (store: Store): Project => {
-  if (!store.project.value) throw new Error('sem projeto');
+  if (!store.project.value) throw new Error('no project');
   return store.project.value;
 };
 const container = (store: Store, id: string) =>
@@ -33,16 +33,16 @@ const container = (store: Store, id: string) =>
 const marking = (store: Store, id: string) =>
   project(store).markings.find((m) => m.id === id);
 
-describe('store: passo das setas', () => {
+describe('store: arrow step', () => {
   const items = [img('A'), mark('N'), mark('b1')];
 
-  it('prévias somam o deslocamento do começo do gesto e a final grava uma entrada', () => {
+  it('previews add up the offset from the start of the gesture and the final one writes one entry', () => {
     const { store, actions } = setup();
     const before = project(store);
     expect(actions.beginGesture().ok).toBe(true);
     expect(actions.previewItemsNudge(items, 1, 0).ok).toBe(true);
     expect(actions.previewItemsNudge(items, 3, 0).ok).toBe(true);
-    // b1 anda 3 px da imagem de B (escala 2), N e A andam 3 unidades do canvas.
+    // b1 moves 3 px of B image (scale 2), N and A move 3 canvas units.
     expect(marking(store, 'b1')?.rect.x).toBe(53);
     expect(marking(store, 'N')?.rect.x).toBe(103);
     expect(container(store, 'A')?.placement.x).toBe(3);
@@ -56,10 +56,10 @@ describe('store: passo das setas', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('tudo ou nada: o passo que não cabe fica na última prévia válida', () => {
+  it('all or nothing: the step that does not fit stays at the last valid preview', () => {
     const { store, actions } = setup();
     actions.beginGesture();
-    // c1 está colada na borda de C: o passo inteiro é recusado.
+    // c1 is glued to the edge of C: the whole step is refused.
     expect(actions.previewItemsNudge([mark('N'), mark('c1')], 1, 0)).toEqual({
       ok: false,
       error: 'rect-out-of-image',
@@ -70,11 +70,11 @@ describe('store: passo das setas', () => {
   });
 });
 
-describe('store: arrasto conjunto', () => {
-  // A (container), N (flutuante, no canvas) e b1 (marcação do container B, escala 2).
+describe('store: joint drag', () => {
+  // A (container), N (floating, on the canvas) and b1 (marking of container B, scale 2).
   const items = [img('A'), mark('N'), mark('b1')];
 
-  it('várias prévias, uma inválida no meio, e uma entrada de desfazer no fim', () => {
+  it('several previews, one invalid in the middle, and one undo entry at the end', () => {
     const { store, actions } = setup();
     const before = project(store);
     expect(actions.beginGesture().ok).toBe(true);
@@ -84,10 +84,10 @@ describe('store: arrasto conjunto', () => {
     expect(actions.previewItemsMove(items, 100, 50).ok).toBe(true);
     expect(marking(store, 'N')?.rect).toMatchObject({ x: 200, y: 1350 });
     expect(marking(store, 'b1')?.rect).toMatchObject({ x: 100, y: 75 });
-    // O pertencimento fica congelado durante o arrasto.
+    // Membership stays frozen during the drag.
     expect(container(store, 'A')?.parentId).toBe('G2');
 
-    // b1 sairia de B (500 px): recusada, e a prévia inteira fica na última posição válida.
+    // b1 would leave B (500 px): refused, and the whole preview stays at the last valid position.
     expect(actions.previewItemsMove(items, 1500, 0)).toEqual({
       ok: false,
       error: 'rect-out-of-image',
@@ -95,13 +95,13 @@ describe('store: arrasto conjunto', () => {
     expect(container(store, 'A')?.placement).toEqual({ x: 100, y: 50, scale: 1 });
     expect(marking(store, 'N')?.rect).toMatchObject({ x: 200, y: 1350 });
 
-    // Nada entrou no histórico nem no confirmado, até soltar.
+    // Nothing entered the history nor the confirmed one, until release.
     expect(store.canUndo.value).toBe(false);
     expect(store.committed.value).toBe(before);
     expect(store.revision.value).toBe(0);
 
     expect(actions.finishItemsMove(items, 100, 50).ok).toBe(true);
-    // O assentar refez o pertencimento: A passou da borda de G2 e ficou em G.
+    // The settle redid the membership: A went past the edge of G2 and ended up in G.
     expect(container(store, 'A')?.parentId).toBe('G');
     actions.commitGesture();
 
@@ -109,24 +109,24 @@ describe('store: arrasto conjunto', () => {
     expect(validateProject(project(store))).toEqual([]);
     expect(container(store, 'A')?.placement).toEqual({ x: 100, y: 50, scale: 1 });
 
-    // Um undo volta tudo: containers, marcação do canvas e marcação do outro container.
+    // One undo brings everything back: containers, canvas marking and the marking of the other container.
     expect(store.undo()).toBe(true);
     expect(project(store).containers).toBe(before.containers);
     expect(project(store).markings).toBe(before.markings);
     expect(store.canUndo.value).toBe(false);
-    // Refazer volta ao resultado do gesto inteiro.
+    // Redo goes back to the result of the whole gesture.
     expect(store.redo()).toBe(true);
     expect(container(store, 'A')?.placement).toEqual({ x: 100, y: 50, scale: 1 });
     expect(marking(store, 'b1')?.rect).toMatchObject({ x: 100, y: 75 });
   });
 
-  it('a final que sobreporia um container fixo encosta nele e assenta, numa entrada', () => {
+  it('a final that would overlap a fixed container touches it and settles, in one entry', () => {
     const { store, actions } = setup();
     const before = project(store);
     const pair = [img('A'), mark('N')];
     actions.beginGesture();
     expect(actions.previewItemsMove(pair, 100, 50).ok).toBe(true);
-    // A final pede 1500, que poria A sobre B (que não se move): A encosta em B (x = 1000).
+    // The final one asks for 1500, which would put A over B (which does not move): A touches B (x = 1000).
     expect(actions.finishItemsMove(pair, 1500, 0).ok).toBe(true);
     expect(container(store, 'A')?.placement).toEqual({ x: 1000, y: 0, scale: 1 });
     actions.commitGesture();
@@ -136,7 +136,7 @@ describe('store: arrasto conjunto', () => {
     expect(project(store).containers).toBe(before.containers);
   });
 
-  it('o assentar da final tira os containers de dentro da marcação, numa entrada só', () => {
+  it('the settle of the final one takes the containers out of the marking, in a single entry', () => {
     const { store, actions } = setup();
     const before = project(store);
     const two = [img('A'), img('B')];
@@ -154,7 +154,7 @@ describe('store: arrasto conjunto', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('item travado: a prévia falha, nada muda e o gesto sem mudança não entra no histórico', () => {
+  it('locked item: the preview fails, nothing changes and the gesture without a change does not enter the history', () => {
     const { store, actions } = setup();
     actions.setMarkingLocked('N', true);
     const locked = project(store);
@@ -166,12 +166,12 @@ describe('store: arrasto conjunto', () => {
     expect(project(store)).toBe(locked);
     actions.commitGesture();
     expect(project(store)).toBe(locked);
-    // Só a trava (uma entrada): o gesto não acrescentou nenhuma.
+    // Only the lock (one entry): the gesture added none.
     expect(store.undo()).toBe(true);
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('cancelar volta ao início sem histórico', () => {
+  it('cancelling goes back to the start without history', () => {
     const { store, actions } = setup();
     const before = project(store);
     actions.beginGesture();
@@ -181,7 +181,7 @@ describe('store: arrasto conjunto', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('marcação de container que sairia do container: a prévia é recusada', () => {
+  it('a container marking that would leave the container: the preview is refused', () => {
     const { actions } = setup();
     actions.beginGesture();
     expect(actions.previewItemsMove([mark('c1')], 10, 0)).toEqual({
@@ -192,15 +192,15 @@ describe('store: arrasto conjunto', () => {
   });
 });
 
-describe('store: excluir e trancar a seleção', () => {
-  it('removeItems exclui tudo numa entrada de desfazer', () => {
+describe('store: delete and lock the selection', () => {
+  it('removeItems deletes everything in one undo entry', () => {
     const { store, actions } = setup();
     const before = project(store);
     const result = actions.removeItems([mark('G'), img('A'), mark('a1'), img('B')]);
     expect(result.ok).toBe(true);
     const after = project(store);
     expect(after.containers.map((c) => c.id)).toEqual(['C', 'D', 'E']);
-    // O assentar tirou C da marcação que saiu.
+    // The settle took C out of the marking that left.
     expect(after.containers.map((c) => c.parentId)).toEqual([null, null, null]);
     expect(after.markings.map((m) => m.id)).toEqual(['c1', 'e1', 'N', 'H']);
     expect(validateProject(after)).toEqual([]);
@@ -213,7 +213,7 @@ describe('store: excluir e trancar a seleção', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('removeItems com um item trancado falha sem entrada; inexistentes não fazem nada', () => {
+  it('removeItems with a locked item fails without an entry; nonexistent ones do nothing', () => {
     const { store, actions } = setup();
     actions.setMarkingLocked('a1', true);
     const locked = project(store);
@@ -224,11 +224,11 @@ describe('store: excluir e trancar a seleção', () => {
     expect(project(store)).toBe(locked);
     expect(actions.removeItems([mark('nada')]).ok).toBe(true);
     expect(project(store)).toBe(locked);
-    expect(store.undo()).toBe(true); // só a trava
+    expect(store.undo()).toBe(true); // only the lock
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('setItemsLocked tranca e destranca a seleção numa entrada cada; sem mudança não há entrada', () => {
+  it('setItemsLocked locks and unlocks the selection in one entry each; without a change there is no entry', () => {
     const { store, actions } = setup();
     const before = project(store);
     const items = [mark('G'), img('A'), mark('a1')];
@@ -238,7 +238,7 @@ describe('store: excluir e trancar a seleção', () => {
     expect(marking(store, 'a1')?.locked).toBe(true);
     expect(marking(store, 'a2')?.locked).toBe(false);
     expect(store.revision.value).toBe(1);
-    // Repetir não muda nada: sem nova entrada.
+    // Repeating changes nothing: no new entry.
     expect(actions.setItemsLocked(items, true).ok).toBe(true);
     expect(store.revision.value).toBe(1);
 
@@ -252,7 +252,7 @@ describe('store: excluir e trancar a seleção', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('wrapItems cria a marcação pai, devolve o id e é uma entrada de desfazer', () => {
+  it('wrapItems creates the parent marking, returns the id and is one undo entry', () => {
     const { store, actions } = setup();
     const before = project(store);
     const result = actions.wrapItems([mark('a1'), mark('a3')]);
@@ -267,7 +267,7 @@ describe('store: excluir e trancar a seleção', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('wrapItems sem nada que entre falha sem entrada', () => {
+  it('wrapItems with nothing that fits in fails without an entry', () => {
     const { store, actions } = setup();
     expect(actions.wrapItems([mark('N')])).toEqual({
       ok: false,
@@ -276,7 +276,7 @@ describe('store: excluir e trancar a seleção', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('as actions respeitam o bloqueio de gesto', () => {
+  it('the actions respect the gesture lock', () => {
     const { store, actions } = setup();
     store.beginGesture();
     expect(actions.removeItems([mark('H')])).toEqual({
@@ -291,19 +291,19 @@ describe('store: excluir e trancar a seleção', () => {
   });
 });
 
-describe('store: o arrasto que encosta (R12.10)', () => {
-  // B (2000..3000 no canvas) contra C (4000), que não se move: o ponteiro pede 1500, cabem 1000.
-  it('o B sozinho termina encostado no C, numa entrada de desfazer', () => {
+describe('store: the drag that touches (R12.10)', () => {
+  // B (2000..3000 on the canvas) against C (4000), which does not move: the pointer asks for 1500, 1000 fit.
+  it('B alone ends up touching C, in one undo entry', () => {
     const { store, actions } = setup();
     const before = project(store);
     actions.beginGesture();
     expect(actions.previewItemsMove([img('B')], 800, 0).ok).toBe(true);
-    // O ponteiro passou do C: a prévia segue o maior deslocamento sem sobreposição.
+    // The pointer went past C: the preview follows the largest offset without overlap.
     expect(actions.previewItemsMove([img('B')], 1500, 0).ok).toBe(true);
     expect(container(store, 'B')?.placement.x).toBe(3000);
     expect(actions.finishItemsMove([img('B')], 1500, 0).ok).toBe(true);
     actions.commitGesture();
-    // Bordas iguais: a direita do B (3000 + 1000) é a esquerda do C.
+    // Equal edges: the right of B (3000 + 1000) is the left of C.
     expect(container(store, 'B')?.placement.x).toBe(3000);
     expect(container(store, 'C')?.placement.x).toBe(4000);
     expect(validateProject(project(store))).toEqual([]);
@@ -313,7 +313,7 @@ describe('store: o arrasto que encosta (R12.10)', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('o B na seleção (com o A e uma marcação) encosta no C, numa entrada só', () => {
+  it('B in the selection (with A and a marking) touches C, in a single entry', () => {
     const { store, actions } = setup();
     const items = [img('A'), img('B'), mark('N')];
     actions.beginGesture();
@@ -327,7 +327,7 @@ describe('store: o arrasto que encosta (R12.10)', () => {
     expect(store.revision.value).toBe(1);
   });
 
-  it('desliza: encosta em x e o y pedido continua', () => {
+  it('slides: touches in x and the asked y continues', () => {
     const { store, actions } = setup();
     actions.beginGesture();
     expect(actions.previewItemsMove([img('B')], 1500, 200).ok).toBe(true);
@@ -336,10 +336,10 @@ describe('store: o arrasto que encosta (R12.10)', () => {
     expect(container(store, 'B')?.placement).toMatchObject({ x: 3000, y: 200 });
   });
 
-  it('o arrasto do container sozinho (previewImagePlacement) também encosta', () => {
+  it('the drag of the container alone (previewImagePlacement) also touches', () => {
     const { store, actions } = setup();
     const start = container(store, 'B')?.placement;
-    if (!start) throw new Error('sem B');
+    if (!start) throw new Error('no B');
     actions.beginGesture();
     expect(actions.previewImagePlacement('B', { ...start, x: 3500 }).ok).toBe(true);
     expect(actions.finishImagePlacement('B').ok).toBe(true);

@@ -1,84 +1,84 @@
 # FAB
 
-Botão de ação flutuante para a ação principal da tela. Small, regular ou large.
+A floating action button for the screen's main action. Small, regular or large.
 
-Tipo de anotação: `fab` (camada Componentes).
+Annotation type: `fab` (Components layer).
 
-## Campos
+## Fields
 
-| Chave                | Rótulo       | Tipo   | Obrigatório | Opções                                                         | Padrão             | Descrição                                                                                                                                                                                                                                        |
-| -------------------- | ------------ | ------ | ----------- | -------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `icon`               | Ícone        | string | sim         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) | `Add`              | Ícone do botão.                                                                                                                                                                                                                                  |
-| `contentDescription` | Descrição    | string | não         |                                                                |                    | Texto de acessibilidade do botão.                                                                                                                                                                                                                |
-| `size`               | Tamanho      | enum   | não         | `small`, `regular`, `large`                                    | `regular`          | small (40 dp), regular (56 dp) ou large (96 dp).                                                                                                                                                                                                 |
-| `containerColor`     | Cor do botão | enum   | não         | papéis do `ColorScheme`                                        | `primaryContainer` | Papel de cor do tema usado no fundo do botão.                                                                                                                                                                                                    |
-| `interaction`        | Interação    | enum   | não         | `none`, `hovered`, `focused`, `pressed`                        | `none`             | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O FAB não tem desabilitado (sem enabled): o estado sempre desenha. |
+| Key                  | Label        | Type   | Required | Options                                                   | Default            | Description                                                                                                                                                                                                                   |
+| -------------------- | ------------ | ------ | -------- | --------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `icon`               | Icon         | string | yes      | free text; icon suggestions (`Home`, `Search`, `Person`…) | `Add`              | Icon of the button.                                                                                                                                                                                                           |
+| `contentDescription` | Description  | string | no       |                                                           |                    | Accessibility text of the button.                                                                                                                                                                                             |
+| `size`               | Size         | enum   | no       | `small`, `regular`, `large`                               | `regular`          | small (40 dp), regular (56 dp) or large (96 dp).                                                                                                                                                                              |
+| `containerColor`     | Button color | enum   | no       | `ColorScheme` roles                                       | `primaryContainer` | Theme color role used for the button background.                                                                                                                                                                              |
+| `interaction`        | Interaction  | enum   | no       | `none`, `hovered`, `focused`, `pressed`                   | `none`             | Resting appearance of the interaction state: hovered, focused or pressed; none = no state layer. It only changes the drawing, it does not go in the code. The FAB has no disabled state (no enabled): the state always draws. |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.FloatingActionButton`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButton.kt`
-- O campo `size` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.FloatingActionButton`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButton.kt`
+- The `size` field chooses the symbol; values without their own case use the base one.
 
-| `size`           | Símbolo                     |
+| `size`           | Symbol                      |
 | ---------------- | --------------------------- |
 | `regular` (base) | `FloatingActionButton`      |
 | `small`          | `SmallFloatingActionButton` |
 | `large`          | `LargeFloatingActionButton` |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
-FloatingActionButton(    // size small: SmallFloatingActionButton, large: LargeFloatingActionButton
-    onClick = { /* lógica da tela */ },
+FloatingActionButton( // size small: SmallFloatingActionButton, large: LargeFloatingActionButton
+    onClick = { /* screen logic */ },
     containerColor = MaterialTheme.colorScheme.primaryContainer,
 ) {
-    Icon(Icons.Filled.Add, contentDescription = "Adicionar")
+    Icon(Icons.Filled.Add, contentDescription = "Add")
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> O ícone vai em `content = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }` e `onClick` liga à lógica da tela. `size` troca o composable (Small, regular, Large). Dentro de um Scaffold, o FAB vai em `floatingActionButton`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.
+> The icon goes in `content = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }` and `onClick` connects to the screen logic. `size` swaps the composable (Small, regular, Large). Inside a Scaffold, the FAB goes in `floatingActionButton`. Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`.
 
-## Exemplos
+## Examples
 
-- **Adicionar**: icon=Add, contentDescription=Adicionar, size=regular
-- **Pequeno terciário**: icon=Edit, size=small, containerColor=tertiaryContainer
-- **Grande**: icon=Add, size=large
-- **Mouse sobre**: icon=Add, size=regular, interaction=hovered
-- **Com foco**: icon=Edit, size=small, containerColor=tertiaryContainer, interaction=focused
-- **Pressionado**: icon=Add, size=large, interaction=pressed
+- **Add**: icon=Add, contentDescription=Add, size=regular
+- **Small tertiary**: icon=Edit, size=small, containerColor=tertiaryContainer
+- **Large**: icon=Add, size=large
+- **Hovered**: icon=Add, size=regular, interaction=hovered
+- **Focused**: icon=Edit, size=small, containerColor=tertiaryContainer, interaction=focused
+- **Pressed**: icon=Add, size=large, interaction=pressed
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButton.kt`: o `FloatingActionButton` (linhas 109 a 132: `shape`, `containerColor`, `contentColor = contentColorFor(containerColor)`, `elevation`), o corpo comum (linhas 134 a 169: um `Surface` com `shadowElevation` e um `Box` com `defaultMinSize` e conteúdo centralizado), o `SmallFloatingActionButton` (linhas 199 a 224, mínimo `FabSmallTokens`), o `LargeFloatingActionButton` (linhas 254 a 280, mínimo `FabLargeTokens`) e `FloatingActionButtonDefaults` (linhas 507 a 555: `LargeIconSize = 36.dp` na linha 510, as formas nas linhas 513 a 523, `containerColor` na 530 e `elevation()` com os valores de `FabPrimaryContainerTokens`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FabBaselineTokens.kt` (56 dp, `CornerLarge`, ícone 24), `FabSmallTokens.kt` (40 dp, `CornerMedium`, ícone 24) e `FabLargeTokens.kt` (96 dp, `CornerExtraLarge`, ícone 32).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FabPrimaryContainerTokens.kt` (linhas 21 a 31: `ContainerColor = PrimaryContainer`, `ContainerElevation = Level3`, `IconColor = OnPrimaryContainer`) e `ElevationTokens.kt` (`Level3 = 6.dp`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ColorScheme.kt` (linhas 1064 a 1092: `contentColorFor`, que casa o papel do contêiner com o da cor de conteúdo; linhas 1112 a 1115: o `contentColorFor` composable, que cai no `LocalContentColor`).
-- `ColorLightTokens.kt` e `ColorDarkTokens.kt` (os papéis de `containerColor`) e `ShapeTokens.kt` (`corner-medium` 12, `corner-large` 16, `corner-extra-large` 28).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButton.kt`: the `FloatingActionButton` (lines 109 to 132: `shape`, `containerColor`, `contentColor = contentColorFor(containerColor)`, `elevation`), the common body (lines 134 to 169: a `Surface` with `shadowElevation` and a `Box` with `defaultMinSize` and centered content), the `SmallFloatingActionButton` (lines 199 to 224, minimum `FabSmallTokens`), the `LargeFloatingActionButton` (lines 254 to 280, minimum `FabLargeTokens`) and `FloatingActionButtonDefaults` (lines 507 to 555: `LargeIconSize = 36.dp` on line 510, the shapes on lines 513 to 523, `containerColor` on 530 and `elevation()` with the values of `FabPrimaryContainerTokens`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FabBaselineTokens.kt` (56 dp, `CornerLarge`, icon 24), `FabSmallTokens.kt` (40 dp, `CornerMedium`, icon 24) and `FabLargeTokens.kt` (96 dp, `CornerExtraLarge`, icon 32).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FabPrimaryContainerTokens.kt` (lines 21 to 31: `ContainerColor = PrimaryContainer`, `ContainerElevation = Level3`, `IconColor = OnPrimaryContainer`) and `ElevationTokens.kt` (`Level3 = 6.dp`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ColorScheme.kt` (lines 1064 to 1092: `contentColorFor`, which matches the container role with the content color role; lines 1112 to 1115: the composable `contentColorFor`, which falls back to `LocalContentColor`).
+- `ColorLightTokens.kt` and `ColorDarkTokens.kt` (the `containerColor` roles) and `ShapeTokens.kt` (`corner-medium` 12, `corner-large` 16, `corner-extra-large` 28).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- O regular tem 56 e `corner-large`; o small, `corner-medium`; o large, `corner-extra-large` (a caixa vem da marcação, o desenho só escolhe o raio pelo campo `size`).
-- A cor de fundo é o papel de `containerColor` (padrão `primary-container`), nos dois modos pelo token do papel. O ícone usa a cor de conteúdo que o `contentColorFor` devolve para o papel (`primary-container` -> `on-primary-container`, `primary` -> `on-primary`, `inverse-surface` -> `inverse-on-surface`, `surface-container-*` -> `on-surface`…); os papéis que o Compose não casa caem em `on-surface`, o `LocalContentColor` do tema.
-- O ícone é o nó `icon` do conjunto da biblioteca, com o nome do Compose (`Add`) trocado pelo nome do conjunto (`add`) num `$switch` que cobre as sugestões do campo; tem 24, e 36 no large (`LargeIconSize` dos `Defaults`, que o próprio `.kt` marca como diferente do token de 32).
-- A sombra é a do nível 3 de elevação (`ContainerElevation`, 6 dp): as duas sombras do nível 3 (ponto: `y` 1, `blur` 3; ambiente: `y` 4, `blur` 8, `spread` 3; tokens `elevation-3-point-*` e `elevation-3-ambient-*`). Valores da elevação do Material 3 para a web: `elevation/internal/_elevation.scss` do `material-components/material-web` (versão 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), fonte de fora do Compose, que no Android entrega a elevação à plataforma e não traz os números: sombra de ponto em preto a 30% e sombra ambiente em preto a 15%, com `y`, `blur` e `spread` por nível (tokens `elevation-<n>-point-*` e `elevation-<n>-ambient-*`).
+- The regular is 56 with `corner-large`; the small, `corner-medium`; the large, `corner-extra-large` (the box comes from the marking, the drawing only picks the radius by the `size` field).
+- The background color is the `containerColor` role (default `primary-container`), in both modes through the role's token. The icon uses the content color that `contentColorFor` returns for the role (`primary-container` -> `on-primary-container`, `primary` -> `on-primary`, `inverse-surface` -> `inverse-on-surface`, `surface-container-*` -> `on-surface`…); roles that Compose does not match fall back to `on-surface`, the theme's `LocalContentColor`.
+- The icon is the `icon` node of the library's set, with the Compose name (`Add`) swapped for the set's name (`add`) in a `$switch` that covers the field's suggestions; it is 24, and 36 in the large (`LargeIconSize` of the `Defaults`, which the `.kt` itself marks as different from the 32 token).
+- The shadow is that of elevation level 3 (`ContainerElevation`, 6 dp): the two level 3 shadows (point: `y` 1, `blur` 3; ambient: `y` 4, `blur` 8, `spread` 3; tokens `elevation-3-point-*` and `elevation-3-ambient-*`). Material 3 elevation values for the web: `elevation/internal/_elevation.scss` of `material-components/material-web` (version 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), a source outside Compose, which on Android hands the elevation to the platform and does not carry the numbers: point shadow in black at 30% and ambient shadow in black at 15%, with `y`, `blur` and `spread` per level (tokens `elevation-<n>-point-*` and `elevation-<n>-ambient-*`).
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado, como o `size` escolhe o tamanho; não entra no `code` nem nas `variants`. As opções são `none` e os estados que o `FabPrimaryContainerTokens.kt` do commit define: `hovered`, `focused` e `pressed` (não há `Dragged*` nos tokens do FAB, então não há `dragged`). O FAB do Compose não tem `enabled`, então não há desabilitado: o estado sempre desenha.
+The field chooses the resting appearance of a state, as `size` chooses the size; it does not go in the `code` or in the `variants`. The options are `none` and the states that the commit's `FabPrimaryContainerTokens.kt` defines: `hovered`, `focused` and `pressed` (there is no `Dragged*` in the FAB tokens, so there is no `dragged`). Compose's FAB has no `enabled`, so there is no disabled state: the state always draws.
 
-- **Camada de estado:** o nó `estado` é um `rect` da forma do botão (a mesma de cada `size`: `corner-medium`, `corner-large` ou `corner-extra-large`), entre o fundo e o ícone, com a cor de conteúdo do `containerColor` (a mesma do ícone: `on-primary-container` no padrão; `FocusedIconColor`, `HoveredIconColor` e `PressedIconColor` repetem `OnPrimaryContainer` nas linhas 25, 27 e 30 de `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FabPrimaryContainerTokens.kt`) e `opacity` pelos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10), que espelham `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
-- **Elevação por estado** (`FabPrimaryContainerTokens.kt`, linhas 23 a 29): o mouse sobre sobe do nível 3 para o 4 (`HoveredContainerElevation = Level4`, linha 26; `ElevationTokens.kt`, linha 28: 8 dp); foco e pressionado ficam no nível 3 (`FocusedContainerElevation` e `PressedContainerElevation`, linhas 24 e 29). A sombra aceita `$token` em `y` e `blur`, mas não expressão, então a do nível 4 (as duas sombras de `elevation-4-point-*` e `elevation-4-ambient-*`) é de um nó à parte (`sombra elevada`, com o mesmo fundo e a mesma forma, visível só no mouse sobre) e a sombra do contêiner some nesse estado. Foco e pressionado desenham iguais (mesma opacidade, 0,10, e mesmo nível).
+- **State layer:** the `state` node is a `rect` in the button's shape (the same as each `size`: `corner-medium`, `corner-large` or `corner-extra-large`), between the background and the icon, with the content color of the `containerColor` (the same as the icon: `on-primary-container` by default; `FocusedIconColor`, `HoveredIconColor` and `PressedIconColor` repeat `OnPrimaryContainer` on lines 25, 27 and 30 of `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FabPrimaryContainerTokens.kt`) and `opacity` from the tokens `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10), which mirror `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
+- **Elevation per state** (`FabPrimaryContainerTokens.kt`, lines 23 to 29): hovered rises from level 3 to 4 (`HoveredContainerElevation = Level4`, line 26; `ElevationTokens.kt`, line 28: 8 dp); focused and pressed stay at level 3 (`FocusedContainerElevation` and `PressedContainerElevation`, lines 24 and 29). The shadow accepts `$token` in `y` and `blur`, but not an expression, so the level 4 one (the two shadows of `elevation-4-point-*` and `elevation-4-ambient-*`) belongs to a separate node (`elevated shadow`, with the same background and the same shape, visible only when hovered) and the container's shadow disappears in that state. Focused and pressed draw the same (same opacity, 0.10, and same level).
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- As duas sombras vêm dos tokens `elevation-3-point-*` e `elevation-3-ambient-*` (a do nó `sombra elevada`, de `elevation-4-*`), por `$token`: trocar esses tokens na especialização chega ao desenho.
-- A sombra tem as duas luzes (ponto e ambiente), como a elevação do Material 3 para a web; a elevação tonal do `FloatingActionButton` sobre o contêiner não é desenhada.
-- Sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
-- O ícone vem de uma lista fixa de nomes; o `FloatingActionButton` aceita qualquer `@Composable` no conteúdo.
+- The two shadows come from the tokens `elevation-3-point-*` and `elevation-3-ambient-*` (that of the `elevated shadow` node, from `elevation-4-*`), by `$token`: changing these tokens in the specialization reaches the drawing.
+- The shadow has both lights (point and ambient), like Material 3 elevation for the web; the `FloatingActionButton`'s tonal elevation over the container is not drawn.
+- No animated ripple and no transition between states (the drawing is a still frame). Compose defines no focus ring for this type at the pinned commit (none of its `*Tokens.kt` has `FocusIndicatorColor`): none is drawn.
+- The icon comes from a fixed list of names; the `FloatingActionButton` accepts any `@Composable` as content.

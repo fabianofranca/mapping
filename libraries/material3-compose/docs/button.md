@@ -1,29 +1,29 @@
 # Button
 
-Botão de ação. Filled é a ênfase alta, tonal e elevated a média, outlined e text a baixa.
+Action button. Filled is high emphasis, tonal and elevated medium, outlined and text low.
 
-Tipo de anotação: `button` (camada Componentes).
+Annotation type: `button` (Components layer).
 
-## Campos
+## Fields
 
-| Chave         | Rótulo        | Tipo   | Obrigatório | Opções                                                         | Padrão   | Descrição                                                                                                                                                                                                                                |
-| ------------- | ------------- | ------ | ----------- | -------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `label`       | Rótulo        | string | sim         |                                                                |          | Texto do botão.                                                                                                                                                                                                                          |
-| `style`       | Estilo        | enum   | não         | `filled`, `tonal`, `outlined`, `text`, `elevated`              | `filled` | filled (Button), tonal (FilledTonalButton), outlined, text ou elevated.                                                                                                                                                                  |
-| `enabled`     | Habilitado    | enum   | não         | `true`, `false`                                                | `true`   | false desabilita o botão.                                                                                                                                                                                                                |
-| `interaction` | Interação     | enum   | não         | `none`, `hovered`, `focused`, `pressed`                        | `none`   | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence). |
-| `icon`        | Ícone         | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |          | Ícone antes do texto. Vazio = só texto.                                                                                                                                                                                                  |
-| `width`       | Largura       | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).                                                                                                                                    |
-| `height`      | Altura        | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).                                                                                                                                      |
-| `weight`      | Peso (weight) | number | não         |                                                                |          | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                                                                                                                                                        |
+| Key           | Label       | Type   | Required | Options                                                   | Default  | Description                                                                                                                                                                                            |
+| ------------- | ----------- | ------ | -------- | --------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `label`       | Label       | string | yes      |                                                           |          | Button text.                                                                                                                                                                                           |
+| `style`       | Style       | enum   | no       | `filled`, `tonal`, `outlined`, `text`, `elevated`         | `filled` | filled (Button), tonal (FilledTonalButton), outlined, text or elevated.                                                                                                                                |
+| `enabled`     | Enabled     | enum   | no       | `true`, `false`                                           | `true`   | false disables the button.                                                                                                                                                                             |
+| `interaction` | Interaction | enum   | no       | `none`, `hovered`, `focused`, `pressed`                   | `none`   | Still appearance of the interaction state: hovered, focused or pressed; none = no state layer. Only changes the drawing, does not enter the code. With enabled false it draws nothing (disabled wins). |
+| `icon`        | Icon        | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |          | Icon before the text. Empty = text only.                                                                                                                                                               |
+| `width`       | Width       | enum   | no       | `wrap`, `fill`, `fixed`                                   | `wrap`   | wrap fits the content, fill takes all the available width and fixed uses the marking width (dp).                                                                                                       |
+| `height`      | Height      | enum   | no       | `wrap`, `fill`, `fixed`                                   | `wrap`   | wrap fits the content, fill takes all the available height and fixed uses the marking height (dp).                                                                                                     |
+| `weight`      | Weight      | number | no       |                                                           |          | Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.                                                                                                                   |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.Button`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt`
-- O campo `style` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.Button`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt`
+- The `style` field chooses the symbol; values without their own case use the base one.
 
-| `style`         | Símbolo             |
+| `style`         | Symbol              |
 | --------------- | ------------------- |
 | `filled` (base) | `Button`            |
 | `tonal`         | `FilledTonalButton` |
@@ -31,66 +31,66 @@ Tipo de anotação: `button` (camada Componentes).
 | `text`          | `TextButton`        |
 | `elevated`      | `ElevatedButton`    |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in the `code`):
 
 ```kotlin
 Button(    // style tonal: FilledTonalButton, outlined: OutlinedButton, text: TextButton, elevated: ElevatedButton
-    onClick = { /* lógica da tela */ },
+    onClick = { /* screen logic */ },
     enabled = true,
     modifier = Modifier.fillMaxWidth(),    // width = fill
 ) {
-    Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))   // só com icon
+    Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))   // only with icon
     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-    Text("Adicionar")
+    Text("Add")
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from the `code` (what the tool hands to the agent):
 
-> `onClick` liga à lógica da tela e o texto vai em `content = { Text(<label>) }`. Com `icon` preenchido, ponha antes do texto `Icon(Icons.Filled.<icon>, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))` e `Spacer(Modifier.size(ButtonDefaults.IconSpacing))`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> `onClick` connects to the screen logic and the text goes in `content = { Text(<label>) }`. With `icon` filled in, put `Icon(Icons.Filled.<icon>, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))` and `Spacer(Modifier.size(ButtonDefaults.IconSpacing))` before the text. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).
 
-## Exemplos
+## Examples
 
-- **Preenchido**: label=Salvar, style=filled
-- **Contornado**: label=Cancelar, style=outlined
-- **Com ícone**: label=Adicionar, style=tonal, icon=Add
-- **Mouse sobre**: label=Salvar, style=filled, interaction=hovered
-- **Com foco**: label=Salvar, style=elevated, interaction=focused
-- **Pressionado**: label=Salvar, style=tonal, interaction=pressed
-- **Rótulo longo**: label=Salvar tudo, style=filled
+- **Filled**: label=Save, style=filled
+- **Outlined**: label=Cancel, style=outlined
+- **With icon**: label=Add, style=tonal, icon=Add
+- **Hovered**: label=Save, style=filled, interaction=hovered
+- **Focused**: label=Save, style=elevated, interaction=focused
+- **Pressed**: label=Save, style=tonal, interaction=pressed
+- **Long label**: label=Save all, style=filled
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt` (linhas 143 a 148: o `Row` com `defaultMinSize(58, 40)` e o `padding(contentPadding)`, o `contentPadding` e o estilo `labelLarge`; 479 a 543: `ContentPadding` 24/8, `ButtonWithIconContentPadding` com início 16, `TextButtonContentPadding` 12, `TextButtonWithIconContentPadding` 12/16, `MinWidth` 58, `MinHeight` 40, `IconSize` 18 e `IconSpacing` 8; 550 em diante: a forma `corner-full`; 598 a 790: as cores padrão de cada estilo; 805 a 880: as elevações; 898 a 910: `outlinedButtonBorder`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ButtonSmallTokens.kt` (`ContainerHeight` 40, `ContainerShapeRound` = `CornerFull`, `IconLabelSpace` 8, `OutlinedOutlineWidth` 1), `tokens/BaselineButtonTokens.kt` (`LeadingSpace` e `TrailingSpace` 24).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FilledButtonTokens.kt`, `ElevatedButtonTokens.kt`, `FilledTonalButtonTokens.kt`, `OutlinedButtonTokens.kt` e `TextButtonTokens.kt`: papéis de cor, opacidades do desabilitado (0,1; 0,12 no tonal; 0,38 no conteúdo) e `ContainerElevation` (nível 1 só no elevated).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt` (lines 143 to 148: the `Row` with `defaultMinSize(58, 40)` and the `padding(contentPadding)`, the `contentPadding` and the `labelLarge` style; 479 to 543: `ContentPadding` 24/8, `ButtonWithIconContentPadding` with start 16, `TextButtonContentPadding` 12, `TextButtonWithIconContentPadding` 12/16, `MinWidth` 58, `MinHeight` 40, `IconSize` 18 and `IconSpacing` 8; 550 onward: the `corner-full` shape; 598 to 790: the default colors of each style; 805 to 880: the elevations; 898 to 910: `outlinedButtonBorder`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ButtonSmallTokens.kt` (`ContainerHeight` 40, `ContainerShapeRound` = `CornerFull`, `IconLabelSpace` 8, `OutlinedOutlineWidth` 1), `tokens/BaselineButtonTokens.kt` (`LeadingSpace` and `TrailingSpace` 24).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FilledButtonTokens.kt`, `ElevatedButtonTokens.kt`, `FilledTonalButtonTokens.kt`, `OutlinedButtonTokens.kt` and `TextButtonTokens.kt`: color roles, disabled opacities (0.1; 0.12 on the tonal; 0.38 on the content) and `ContainerElevation` (level 1 only on the elevated).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Largura mínima 58, altura mínima 40 e forma `corner-full`; o contêiner é um retângulo atrás do conteúdo, que fica centrado.
-- **Altura pelas linhas do rótulo:** `sizing.height` é `hug` e a raiz leva o mínimo de 40 (`minHeight`). O quadro `conteúdo` e o nó `rótulo` abraçam a altura, como o `Row(Modifier.defaultMinSize(58, 40).padding(contentPadding))` do `Button.kt` (linhas 143 a 148; o padding vertical `ButtonVerticalPadding` é 8, linha 469, e o `ContentPadding`, linhas 479 a 485): uma linha dá 8 + 20 + 8 = 36, que o mínimo leva a 40, e duas linhas dão 8 + 40 + 8 = 56. O Arrumar e o `fit_marking` mantêm a largura da marcação e levam a altura a esse valor.
-- **O rótulo quebra no que sobra da largura:** o `maxWidth` do nó `rótulo` é a largura da instância (`$size.width`) menos os paddings dos lados e, com ícone, o ícone de 18 e os 8 de espaço (48; 24 no `text`; 66 com ícone, 54 no `text` com ícone). Um rótulo que passa disso quebra por palavra, como o `Text` do Compose dentro do `Row`.
-- Padding do conteúdo: 24 dos lados e 8 em cima e embaixo (16 no início com ícone); no `text`, 12 (12 no início e 16 no fim com ícone).
-- Ícone de 18 desenhado pelo nó `icon` (nome do Compose para o nome do conjunto, como no `icon`), 8 de espaço até o rótulo. O rótulo usa os tokens `label-large-*` (14, peso 500, linha 20, espaçamento 0,1) e a fonte do tema (`font-sans`), sem `family` no arquivo.
-- O rótulo centra pela altura da maiúscula (`font.verticalAlign: "cap-middle"`): o nó abraça a altura da linha (20) e o quadro `conteúdo` fica centrado na altura do botão, então o centro da letra cai no centro da caixa de 40, qualquer que seja a fonte; com várias linhas, o bloco inteiro fica centrado. O `Text` do Compose centra pela caixa de linha da fonte; com a Roboto as duas coincidem a menos de 1 px.
-- Cores (iguais nos dois modos, com os valores de cada um): filled `primary` / `on-primary`; tonal `secondary-container` / `on-secondary-container`; elevated `surface-container-low` / `primary`, com as duas sombras do nível 1 (ponto: `y` 1, `blur` 2; ambiente: `y` 1, `blur` 3, `spread` 1; tokens `elevation-1-point-*` e `elevation-1-ambient-*`); outlined sem fundo, conteúdo `on-surface-variant` e contorno de 1 em `outline-variant`; text sem fundo e conteúdo `primary` (o `defaultTextButtonColors` do commit usa `Primary`, não o token `OnSurfaceVariant`).
-- Desabilitado: o contêiner vira `on-surface` a 0,1 (`state-disabled-container-filled`; 0,12 no tonal, `state-disabled-container`) e o conteúdo, a 0,38 (`state-disabled-content`), em `on-surface-variant` (em `on-surface` no tonal); o outlined tem o contorno a 0,1; o elevated perde a sombra.
+- Minimum width 58, minimum height 40 and `corner-full` shape; the container is a rectangle behind the content, which stays centered.
+- **Height from the label lines:** `sizing.height` is `hug` and the root carries the minimum of 40 (`minHeight`). The `content` frame and the `label` node hug the height, like the `Row(Modifier.defaultMinSize(58, 40).padding(contentPadding))` in `Button.kt` (lines 143 to 148; the vertical padding `ButtonVerticalPadding` is 8, line 469, and the `ContentPadding`, lines 479 to 485): one line gives 8 + 20 + 8 = 36, which the minimum takes to 40, and two lines give 8 + 40 + 8 = 56. Arrange and `fit_marking` keep the marking width and take the height to that value.
+- **The label wraps in the remaining width:** the `maxWidth` of the `label` node is the instance width (`$size.width`) minus the side paddings and, with an icon, the 18 icon and the 8 of space (48; 24 on `text`; 66 with an icon, 54 on `text` with an icon). A label that exceeds that wraps by word, like Compose's `Text` inside the `Row`.
+- Content padding: 24 on the sides and 8 on top and bottom (16 at the start with an icon); on `text`, 12 (12 at the start and 16 at the end with an icon).
+- 18 icon drawn by the `icon` node (Compose name to set name, as in `icon`), 8 of space to the label. The label uses the `label-large-*` tokens (14, weight 500, line 20, spacing 0.1) and the theme font (`font-sans`), with no `family` in the file.
+- The label is centered by the capital letter height (`font.verticalAlign: "cap-middle"`): the node hugs the line height (20) and the `content` frame stays centered in the button height, so the center of the letter falls at the center of the 40 box, whatever the font; with several lines, the whole block stays centered. Compose's `Text` centers by the font's line box; with Roboto the two coincide to within 1 px.
+- Colors (the same in both modes, with each mode's values): filled `primary` / `on-primary`; tonal `secondary-container` / `on-secondary-container`; elevated `surface-container-low` / `primary`, with the two level 1 shadows (point: `y` 1, `blur` 2; ambient: `y` 1, `blur` 3, `spread` 1; tokens `elevation-1-point-*` and `elevation-1-ambient-*`); outlined with no background, content `on-surface-variant` and a 1 outline in `outline-variant`; text with no background and content `primary` (the commit's `defaultTextButtonColors` uses `Primary`, not the `OnSurfaceVariant` token).
+- Disabled: the container becomes `on-surface` at 0.1 (`state-disabled-container-filled`; 0.12 on the tonal, `state-disabled-container`) and the content at 0.38 (`state-disabled-content`), in `on-surface-variant` (in `on-surface` on the tonal); the outlined has the outline at 0.1; the elevated loses the shadow.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o desabilitado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que os `*ButtonTokens.kt` do commit definem para o botão: `hovered`, `focused` e `pressed` (não há `Dragged*` nos tokens do botão, então não há `dragged`).
+The field chooses the still appearance of a state, as `enabled` chooses the disabled one; it does not enter the `code` or the `variants`. The options are `none` and the states that the commit's `*ButtonTokens.kt` define for the button: `hovered`, `focused` and `pressed` (there is no `Dragged*` in the button tokens, so there is no `dragged`).
 
-- **Camada de estado:** o nó `estado` é um `rect` da forma do botão (`corner-full`), entre o contorno e o conteúdo, com a cor do conteúdo do estilo (`on-primary` no filled, `on-secondary-container` no tonal, `primary` no elevated e no text, `on-surface-variant` no outlined; as `*ButtonTokens.kt` repetem a cor do conteúdo em `Hovered*`, `Focused*` e `Pressed*`) e `opacity` pelos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10), que espelham `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
-- **Elevação por estado** (`$if` sobre o `interaction` na sombra do contêiner, `FilledButtonTokens.kt`, `FilledTonalButtonTokens.kt` e `ElevatedButtonTokens.kt`, linhas `*ContainerElevation`): filled e tonal sobem para o nível 1 com o mouse (`HoveredContainerElevation`) e ficam no 0 no foco e pressionado; o elevated vai de 1 para 2 com o mouse e fica em 1 no foco e pressionado; outlined e text não têm sombra.
-- **Desabilitado vence:** com `enabled` `false` o nó `estado` fica invisível e a elevação some, então o desenho é o do desabilitado, qualquer que seja o `interaction`.
-- **Cor do contorno** (outlined): `OutlineVariant` nos três estados, igual ao padrão.
+- **State layer:** the `state` node is a `rect` with the button's shape (`corner-full`), between the outline and the content, with the content color of the style (`on-primary` on filled, `on-secondary-container` on tonal, `primary` on elevated and text, `on-surface-variant` on outlined; the `*ButtonTokens.kt` repeat the content color in `Hovered*`, `Focused*` and `Pressed*`) and `opacity` from the tokens `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10), which mirror `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
+- **Elevation per state** (`$if` on `interaction` in the container shadow, `FilledButtonTokens.kt`, `FilledTonalButtonTokens.kt` and `ElevatedButtonTokens.kt`, `*ContainerElevation` lines): filled and tonal rise to level 1 on hover (`HoveredContainerElevation`) and stay at 0 on focus and pressed; the elevated goes from 1 to 2 on hover and stays at 1 on focus and pressed; outlined and text have no shadow.
+- **Disabled wins:** with `enabled` `false` the `state` node is invisible and the elevation goes away, so the drawing is the disabled one, whatever the `interaction`.
+- **Outline color** (outlined): `OutlineVariant` in the three states, the same as the default.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- Sem a forma `pressed` do Material expressivo, sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
-- A sombra lê os tokens de elevação (`$token` em `shadow.y` e `shadow.blur`: `elevation-1-*` na raiz e, no nível 2 do elevated com o mouse, `elevation-2-*`). O `y` e o `blur` não aceitam expressão, então a sombra do nível 2 é de um nó à parte (`sombra elevada`), visível só no elevated com o mouse sobre.
-- A medida pelo conteúdo (etapa #898) cobre a altura e a quebra do rótulo; a largura de partida do rótulo é a da marcação: sem retângulo (instância nova, tela arrumada pelo `layoutScreen`) vale o `size` de 136, então um rótulo mais largo que isso quebra em vez de alargar o botão, onde o Compose, sem limite do pai, não quebra. O exemplo "Rótulo longo" ("Salvar tudo") é o rótulo mais longo que cabe em uma linha no `size` (136 × 40): um rótulo que quebra (como "Salvar alterações e continuar editando") passa da caixa de 40 até o Arrumar levá-la a 16 + 20 × linhas, porque a marcação só muda por ação, e a prova de desenho avisa `conteúdo maior que a caixa` nessa marcação.
+- No Material expressive `pressed` shape, no animated ripple and no transition between states (the drawing is a still frame). Compose defines no focus ring for this type in the pinned commit (none of its `*Tokens.kt` carries `FocusIndicatorColor`): none is drawn.
+- The shadow reads the elevation tokens (`$token` in `shadow.y` and `shadow.blur`: `elevation-1-*` on the root and, at level 2 of the elevated on hover, `elevation-2-*`). `y` and `blur` do not accept an expression, so the level 2 shadow is a separate node (`elevated shadow`), visible only on the hovered elevated.
+- Measuring by the content (stage #898) covers the height and the label wrapping; the starting width of the label is that of the marking: with no rectangle (new instance, screen arranged by `layoutScreen`) the `size` of 136 applies, so a label wider than that wraps instead of widening the button, where Compose, with no limit from the parent, does not wrap. The "Long label" example ("Save all") is the longest label that fits on one line in the `size` (136 × 40): a label that wraps (like "Save changes and keep editing") goes past the 40 box until Arrange takes it to 16 + 20 × lines, because the marking only changes by action, and the library's drawing check warns `content larger than the box` on that marking.

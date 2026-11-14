@@ -4,11 +4,11 @@ import { locale } from '../../../src/store/settings';
 import { richScenario } from '../../store/proposalHarness';
 import { showReviewPanel } from './reviewHarness';
 
-// Etapa #954, fase 4 (item 65): trocar de item leva o foco ao contêiner dos Detalhes só se o
-// foco estava dentro dele; clicar no fundo (focusout sem `relatedTarget`) zera isso.
+// Stage #954, phase 4 (item 65): switching item moves focus to the Details container only if
+// focus was inside it; clicking the background (focusout without `relatedTarget`) resets that.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
@@ -22,22 +22,22 @@ async function mount() {
     { level: 'item', id: 'M1' },
   );
   const button = host().querySelector<HTMLElement>('button, [tabindex]');
-  if (!button) throw new Error('sem elemento focável nos Detalhes');
+  if (!button) throw new Error('no focusable element in the Details');
   return { h, button };
 }
 
-describe('ReviewPanel › foco ao trocar de item', () => {
-  it('com o foco dentro, trocar de item mantém o foco no contêiner', async () => {
+describe('ReviewPanel › focus on switching item', () => {
+  it('with focus inside, switching item keeps focus on the container', async () => {
     const { h, button } = await mount();
     button.focus();
     expect(host().contains(document.activeElement)).toBe(true);
-    // O elemento focado some ao trocar de item: o foco cai no `body` e volta ao contêiner.
+    // The focused element disappears on switching item: focus falls to the `body` and returns to the container.
     button.blur();
     act(() => h.review.select({ level: 'item', id: 'M4' }));
     expect(document.activeElement).toBe(host());
   });
 
-  it('depois de clicar no fundo (relatedTarget nulo), trocar de item não puxa o foco', async () => {
+  it('after clicking the background (null relatedTarget), switching item does not pull focus', async () => {
     const { h, button } = await mount();
     button.focus();
     fireEvent.focusOut(button, { relatedTarget: null });

@@ -1,19 +1,19 @@
-# Passada visual dos Detalhes — 2026-11-10 (épico `epic/detalhes-visual`)
+# Visual pass on Details — 2026-11-10 (épico `epic/detalhes-visual`)
 
 ## Pendências
 
-- **`Choice` na Lista (`DataGrid`):** a caixa **Só incompletas** passa a levar o ícone `warning` (SVG de contorno) no rótulo, no lugar do glifo ⚠ fixo. Arquivos: `src/ui/ListView.tsx`, `tests/components/bottomWindows.test.tsx`.
-- **Diálogo de tipo dos Detalhes (`TypePicker`):** a lista vazia mostra a mensagem do motivo (`emptyMessage`, chaves `typed.empty.*`) no lugar do aviso genérico; o `LinkDialog` não muda. Arquivos: `src/ui/TypePicker.tsx`, `src/ui/AnnotationsPanel.tsx`, `src/ui/offeredTypes.ts`.
+- **`Choice` in the List (`DataGrid`):** the **Incomplete only** checkbox now carries the `warning` icon (outline SVG) in the label, in place of the fixed ⚠ glyph. Files: `src/ui/ListView.tsx`, `tests/components/bottomWindows.test.tsx`.
+- **Details type dialog (`TypePicker`):** the empty list shows the reason message (`emptyMessage`, keys `typed.empty.*`) in place of the generic notice; the `LinkDialog` does not change. Files: `src/ui/TypePicker.tsx`, `src/ui/AnnotationsPanel.tsx`, `src/ui/offeredTypes.ts`.
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-10: versão 73 (`1794311275-062c`), numa publicação só, com o índice por último e `lastChange` "Claude Code (épico detalhes-visual, DV1)":
+Gravado no artefato **Mapping** on 2026-11-10: version 73 (`1794311275-062c`), in a single publication, with the index last and `lastChange` "Claude Code (épico detalhes-visual, DV1)":
 
-- `components/DataGrid/preview.html`: a caixa **Só incompletas** passa a levar o ícone `warning` (SVG de contorno, os mesmos paths do código) no lugar do glifo ⚠; o nome acessível continua sendo o texto "Só incompletas".
-- `components/DataGrid/README.md` (item em "Estados" sobre o ícone e o nome acessível) e `components/Choice/README.md` (o ícone `warning` como exemplo de rótulo em nó).
-- `components/Dialog/README.md`: a escolha de tipo da nova anotação descreve a lista vazia com a mensagem do motivo (`emptyMessage`; o aviso genérico `typed.noTypes` só sem motivo) e os textos pt-BR das cinco chaves `typed.empty.*`.
-- Conferência visual: a prévia do `DataGrid` aberta num Chrome local nos temas claro e escuro, sem barra horizontal a 900 px; o ícone herda a cor do texto.
+- `components/DataGrid/preview.html`: the **Incomplete only** checkbox now carries the `warning` icon (outline SVG, the same paths as in the code) in place of the ⚠ glyph; the accessible name remains the text "Incomplete only".
+- `components/DataGrid/README.md` (item in "States" about the icon and the accessible name) and `components/Choice/README.md` (the `warning` icon as an example of a node label).
+- `components/Dialog/README.md`: the type choice of the new annotation describes the empty list with the reason message (`emptyMessage`; the generic notice `typed.noTypes` only with no reason) and the pt-BR texts of the five `typed.empty.*` keys.
+- Visual check: the `DataGrid` preview opened in a local Chrome in the light and dark themes, with no horizontal bar at 900 px; the icon inherits the text color.
 
 ## Ficou sem gravar
 
-- Prévia do diálogo de tipo dos Detalhes (`TypePicker`) com a lista vazia. Motivo: o DS não tem componente `TypePicker` (ele está na lista dos 9 componentes "sem componente no DS" aprovada pelo dono); o texto ficou só no guia do `Dialog`.
+- Preview of the Details type dialog (`TypePicker`) with the empty list. Motivo: the DS has no `TypePicker` component (it is on the list of the 9 components "without a component in the DS" approved by the owner); the text stayed only in the `Dialog` guide.

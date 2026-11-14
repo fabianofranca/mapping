@@ -1,38 +1,38 @@
 import type { SettleDelta } from './settleDelta';
 import type { Marking, Rect } from './types';
 
-// Posições (índices em `markings`) e caixas das marcações de cada espaço, guardadas por array de
-// marcações assentado (#882): o assentar recortado varre só o espaço que a operação mexeu, em números
-// contíguos, sem olhar o projeto inteiro nem cada objeto. A tabela é parcial e enche sob demanda: um
-// espaço sem entrada é desconhecido (não vazio) e é achado varrendo uma vez. A tabela de uma operação
-// sai da anterior quando ela só acrescentou no fim ou trocou objetos (`SettleDelta.stable`); nos demais
-// casos a próxima enche de novo. Puro.
+// Positions (indices into `markings`) and boxes of the markings of each space, kept per settled
+// markings array (#882): the clipped settle scans only the space the operation touched, in
+// contiguous numbers, without looking at the whole project or at each object. The table is partial
+// and fills on demand: a space with no entry is unknown (not empty) and is found by scanning once.
+// An operation's table comes from the previous one when it only appended at the end or swapped
+// objects (`SettleDelta.stable`); in the other cases the next one fills again. Pure.
 
 /**
- * As marcações (não flutuantes) de um espaço. Os vetores são compartilhados entre as versões de um
- * espaço que só cresce no fim: cada entrada enxerga os primeiros `count` itens, e acrescentar não
- * copia nada (só quem está na ponta acrescenta no lugar; quem não está, copia).
+ * The (non-floating) markings of a space. The vectors are shared among the versions of a space
+ * that only grows at the end: each entry sees the first `count` items, and appending copies
+ * nothing (only the one at the tip appends in place; the one that is not, copies).
  */
 export interface SpaceEntry {
-  /** Quantas marcações a entrada enxerga. */
+  /** How many markings the entry sees. */
   readonly count: number;
-  /** Posições crescentes no array `markings`; vale o prefixo de `count`. */
+  /** Increasing positions in the `markings` array; the prefix of `count` is what counts. */
   readonly positions: number[];
-  /** `x, y, x2, y2` de cada uma, na mesma ordem; vale o prefixo de `4 × count`. */
+  /** `x, y, x2, y2` of each one, in the same order; the prefix of `4 × count` is what counts. */
   readonly boxes: Float64Array;
 }
 
-/** Entradas de alguns espaços: o id do container ou `null` para o canvas. */
+/** Entries of some spaces: the container id or `null` for the canvas. */
 export type PositionTable = ReadonlyMap<string | null, SpaceEntry>;
 
 const tables = new WeakMap<readonly Marking[], PositionTable>();
 
-/** A tabela do array, se alguém a guardou. */
+/** The array's table, if someone stored it. */
 export function knownPositions(markings: readonly Marking[]): PositionTable | undefined {
   return tables.get(markings);
 }
 
-/** Guarda a tabela do array. */
+/** Stores the array's table. */
 export function rememberPositions(
   markings: readonly Marking[],
   table: PositionTable,
@@ -44,7 +44,7 @@ function boxOf(rect: Rect): [number, number, number, number] {
   return [rect.x, rect.y, rect.x + rect.width, rect.y + rect.height];
 }
 
-/** Varre o array e monta a entrada do espaço (com folga para crescer). */
+/** Scans the array and builds the space's entry (with room to grow). */
 export function scanSpaceEntry(
   list: readonly Marking[],
   space: string | null,
@@ -62,12 +62,12 @@ export function scanSpaceEntry(
   return { count: found.length, positions, boxes };
 }
 
-/** A entrada com mais uma marcação no fim. */
+/** The entry with one more marking at the end. */
 function appended(entry: SpaceEntry, i: number, rect: Rect): SpaceEntry {
   const { count } = entry;
   let { positions, boxes } = entry;
   if (positions.length !== count) {
-    // Outro ramo (desfazer e refazer) já acrescentou depois de `count`: cópia própria.
+    // Another branch (undo and redo) already appended after `count`: own copy.
     positions = positions.slice(0, count);
     boxes = boxes.slice(0, count * 4);
   }
@@ -82,9 +82,10 @@ function appended(entry: SpaceEntry, i: number, rect: Rect): SpaceEntry {
 }
 
 /**
- * A tabela de `now` a partir da de `was` (a operação só acrescentou no fim ou trocou objetos de lugar),
- * só com os espaços que `known` já tinha: o espaço de uma marcação trocada sai da tabela (volta a ser
- * desconhecido) e as acrescentadas entram no fim da entrada do espaço delas.
+ * The table of `now` from that of `was` (the operation only appended at the end or swapped objects
+ * in place), with only the spaces `known` already had: the space of a swapped marking leaves the
+ * table (becomes unknown again) and the appended ones go at the end of their space's entry.
+
  */
 export function advancePositions(
   known: PositionTable,

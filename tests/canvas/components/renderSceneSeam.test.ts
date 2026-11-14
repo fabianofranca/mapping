@@ -1,5 +1,5 @@
-// Faixas coladas de um `row` (pesos 1:2:1) não deixam fio claro na emenda: as bordas dos
-// retângulos sólidos sem canto arredondado caem em pixels inteiros do dispositivo, em qualquer zoom.
+// Glued strips of a `row` (weights 1:2:1) leave no light thread at the seam: the edges of the
+// solid rectangles without rounded corners fall on whole device pixels, at any zoom.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -38,12 +38,12 @@ interface Recorded {
   readonly rects: { x: number; y: number; width: number; height: number }[];
 }
 
-/** Desenha o retângulo `id` num contexto falso com a matriz de `scale` e `pixelRatio`, gravando o `rect`. */
+/** Draws the rectangle `id` in a fake context with the `scale` and `pixelRatio` matrix, recording the `rect`. */
 function drawn(id: string, scale: number, offset: number, pixelRatio = 1): Recorded {
   const { byId } = renderScene({ root: row, warnings: [] });
   const shape = byId.get(id)!.findOne('Rect')!;
   const m = { a: scale * pixelRatio, b: 0, c: 0, d: scale * pixelRatio, e: offset, f: 0 };
-  // Matriz do nó dentro da cena (a translação do `bar`) e a do mundo (escala + deslocamento).
+  // The node matrix inside the scene (the `bar` translation) and the world one (scale + offset).
   const node = byId.get(id)!;
   const world = {
     ...m,
@@ -64,7 +64,7 @@ function drawn(id: string, scale: number, offset: number, pixelRatio = 1): Recor
   return out;
 }
 
-/** As bordas esquerda e direita do retângulo, em pixels do dispositivo. */
+/** The left and right edges of the rectangle, in device pixels. */
 function deviceEdges(id: string, scale: number, offset: number, pixelRatio = 1) {
   const [r] = drawn(id, scale, offset, pixelRatio).rects;
   const node = renderScene({ root: row, warnings: [] }).byId.get(id)!;
@@ -73,19 +73,19 @@ function deviceEdges(id: string, scale: number, offset: number, pixelRatio = 1) 
   return [e + a * r!.x, e + a * (r!.x + r!.width)];
 }
 
-describe('renderScene: emenda entre retângulos sólidos vizinhos', () => {
+describe('renderScene: seam between neighboring solid rectangles', () => {
   for (const scale of [1, 1.37, 0.83, 2.2]) {
-    it(`bordas em pixels inteiros do dispositivo (zoom ${scale})`, () => {
+    it(`edges on whole device pixels (zoom ${scale})`, () => {
       const edges = ['a', 'b', 'c'].map((id) => deviceEdges(id, scale, 10.3));
       for (const edge of edges.flat())
         expect(Math.abs(edge - Math.round(edge))).toBeLessThan(1e-6);
-      // A emenda é a mesma borda: o fim de uma faixa é o começo da seguinte.
+      // The seam is the same edge: the end of one strip is the start of the next.
       expect(edges[0]![1]).toBeCloseTo(edges[1]![0]!, 6);
       expect(edges[1]![1]).toBeCloseTo(edges[2]![0]!, 6);
     });
   }
 
-  it('sem matriz legível (jsdom), desenha o retângulo da cena', () => {
+  it('without a readable matrix (jsdom), draws the scene rectangle', () => {
     const { byId } = renderScene({ root: row, warnings: [] });
     const shape = byId.get('b')!.findOne('Rect') as Konva.Rect;
     const seen: number[][] = [];

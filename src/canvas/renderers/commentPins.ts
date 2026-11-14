@@ -1,8 +1,8 @@
-// Pinos das conversas (etapa Comentários, CM4): uma pílula por item que hospeda a âncora, com as
-// iniciais e o número de mensagens (ou a contagem), a cor do estado mais urgente, o anel do
-// selecionado e o ponto da não lida. No molde do `ReviewRenderer`: um pool de nós por chave, o
-// tamanho em px de tela (escala inversa do zoom) e os nós que sobram destruídos. Cores e fonte só
-// dos tokens; o desenho é do quadro de sempre (sem `requestAnimationFrame` próprio).
+// Thread pins (Comments stage, CM4): one pill per item that hosts the anchor, with the
+// initials and the message number (or the count), the color of the most urgent state, the ring of the
+// selected one and the unread dot. In the mold of `ReviewRenderer`: a pool of nodes per key, the
+// size in screen px (inverse scale of the zoom) and the leftover nodes destroyed. Colors and font only
+// from the tokens; the drawing belongs to the usual frame (no `requestAnimationFrame` of its own).
 import Konva from 'konva/lib/Core';
 import { Circle as KonvaCircle } from 'konva/lib/shapes/Circle';
 import { Path as KonvaPath } from 'konva/lib/shapes/Path';
@@ -22,15 +22,15 @@ import type { CanvasTokens } from '../theme';
 import type { Point } from '../viewport';
 import { HALO_WIDTH, fontStyle } from './metrics';
 
-/** Raio do ponto de não lida (px de tela). */
+/** Radius of the unread dot (screen px). */
 const UNREAD_RADIUS = 4;
 const SELECTED_STROKE = 2;
 const DRAFT_DASH = [3, 2];
 const DRAFT_KEY = 'draft';
-/** O glifo é desenhado na grade de 16 unidades do ícone, com traço um pouco mais grosso. */
+/** The glyph is drawn on the icon's 16-unit grid, with a slightly thicker stroke. */
 const GLYPH_GRID = 16;
 const GLYPH_STROKE = 2;
-/** Os estados que o glifo marca, na ordem em que o `data-pin-states` os lista; o rascunho é o último. */
+/** The states the glyph marks, in the order `data-pin-states` lists them; the draft is the last. */
 const MAX_GLYPH_PATHS = Math.max(
   ...Object.values(THREAD_STATE_GLYPHS).map((paths) => paths.length),
 );
@@ -44,13 +44,13 @@ interface PinNode {
   readonly group: Konva.Group;
   readonly box: KonvaRect;
   readonly label: KonvaText;
-  /** Glifo do estado (um `KonvaPath` por traço); escondido no rascunho. */
+  /** State glyph (one `KonvaPath` per stroke); hidden on the draft. */
   readonly glyph: Konva.Group;
   readonly unread: KonvaCircle;
 }
 
 function createGlyph(): Konva.Group {
-  // Posição e escala do glifo vêm das medidas do token e são postas a cada desenho (`paint`).
+  // Position and scale of the glyph come from the token measures and are set on each draw (`paint`).
   const glyph = new Konva.Group({ visible: false });
   for (let i = 0; i < MAX_GLYPH_PATHS; i++) {
     glyph.add(
@@ -93,12 +93,12 @@ export class CommentPinRenderer {
     this.layer = layer;
   }
 
-  /** Quantos pinos estão desenhados (os testes e2e esperam por ele). */
+  /** How many pins are drawn (the e2e tests wait for it). */
   get size(): number {
     return this.nodes.size;
   }
 
-  /** Os estados dos pinos desenhados, na ordem de desenho (o rascunho, `draft`, por último). */
+  /** The states of the drawn pins, in draw order (the draft, `draft`, last). */
   get states(): readonly string[] {
     return this.drawnStates;
   }
@@ -107,7 +107,7 @@ export class CommentPinRenderer {
     return this.nodes.get(key);
   }
 
-  /** Desenha os pinos do quadro (e o tracejado do rascunho); os que sobram são destruídos. */
+  /** Draws the frame's pins (and the draft's dashes); the leftover ones are destroyed. */
   render(frame: CommentPinFrame): void {
     const { pins, tokens, draftPin } = frame;
     const zoom = frame.viewport.scale;
@@ -167,7 +167,7 @@ export class CommentPinRenderer {
     });
   }
 
-  /** O pino tracejado da conversa nova num ponto (rascunho): nada gravado ainda. */
+  /** The dashed pin of the new thread at a point (draft): nothing recorded yet. */
   private drawDraft(at: Point, zoom: number, tokens: CanvasTokens): void {
     const node = this.nodeFor(DRAFT_KEY);
     const label = '+';
@@ -194,7 +194,7 @@ export class CommentPinRenderer {
     style: {
       readonly selected: boolean;
       readonly dashed: boolean;
-      /** O estado do glifo; `null` no rascunho, que não tem. */
+      /** The glyph's state; `null` on the draft, which has none. */
       readonly glyph: PinColor | null;
     },
   ): void {
@@ -232,7 +232,7 @@ export class CommentPinRenderer {
   }
 }
 
-/** Põe os traços do estado no glifo, na cor do texto do pino; sem estado (rascunho), esconde. */
+/** Sets the state's strokes on the glyph, in the pin text color; without a state (draft), hides it. */
 function paintGlyph(glyph: Konva.Group, state: PinColor | null, color: string): void {
   glyph.visible(state !== null);
   const paths = state === null ? [] : glyphPaths(state);

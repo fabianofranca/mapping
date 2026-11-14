@@ -14,15 +14,15 @@ function ok(text: string, registry?: ReadonlyMap<number, Migration>) {
   return result;
 }
 
-describe('serialização', () => {
-  it('ida e volta preserva a ordem das chaves dos values aninhados', () => {
+describe('serialization', () => {
+  it('a round trip preserves the key order of the nested values', () => {
     const base = sampleProject();
     const [first, ...rest] = base.annotations;
     if (!first) throw new Error('fixture');
     const values = {
       zeta: 1,
-      alfa: { z: 'a', b: [{ y: 1, a: 2 }], m: null },
-      meio: { k2: true, k1: false },
+      alpha: { z: 'a', b: [{ y: 1, a: 2 }], m: null },
+      middle: { k2: true, k1: false },
     };
     const p = {
       ...base,
@@ -35,12 +35,12 @@ describe('serialização', () => {
     const again = serialize(ok(text).project);
     expect(again).toBe(text);
     const read = ok(text).project.annotations[0]?.values;
-    expect(Object.keys(read ?? {})).toEqual(['zeta', 'alfa', 'meio']);
-    expect(Object.keys((read?.alfa ?? {}) as object)).toEqual(['z', 'b', 'm']);
-    expect(Object.keys((read?.meio ?? {}) as object)).toEqual(['k2', 'k1']);
+    expect(Object.keys(read ?? {})).toEqual(['zeta', 'alpha', 'middle']);
+    expect(Object.keys((read?.alpha ?? {}) as object)).toEqual(['z', 'b', 'm']);
+    expect(Object.keys((read?.middle ?? {}) as object)).toEqual(['k2', 'k1']);
   });
 
-  it('round-trip do JSON é idêntico', () => {
+  it('the JSON round-trip is identical', () => {
     const text = serialize(sampleProject());
     const loaded = ok(text);
     expect(loaded.readOnly).toBe(false);
@@ -49,7 +49,7 @@ describe('serialização', () => {
     expect(loaded.project).toEqual(sampleProject());
   });
 
-  it('usa 2 espaços, ordem fixa de chaves e quebra de linha final', () => {
+  it('uses 2 spaces, a fixed key order and a trailing newline', () => {
     const text = serialize(emptyProject());
     expect(text.endsWith('}\n')).toBe(true);
     expect(text.split('\n')[1]).toBe('  "schemaVersion": 20,');
@@ -72,7 +72,7 @@ describe('serialização', () => {
     ]);
   });
 
-  it('a ordem das chaves de entrada não importa', () => {
+  it('the order of the input keys does not matter', () => {
     const p = sampleProject();
     const shuffled = JSON.stringify({
       annotations: p.annotations,
@@ -91,14 +91,15 @@ describe('serialização', () => {
     expect(serialize(ok(shuffled).project)).toBe(serialize(p));
   });
 
-  it('preserva unicode e strings vazias', () => {
+  it('preserves unicode and empty strings', () => {
     const text = serialize(sampleProject());
+    // pt-BR kept: unicode (accents) is the object of the test, in the shared sampleProject entries
     expect(text).toContain('"gravidade"');
     expect(text).toContain('"média"');
     expect(ok(text).project.annotations[0]?.entries[1]?.value).toBe('média');
   });
 
-  it('rejeita JSON inválido, schema inválido e invariantes violados', () => {
+  it('rejects invalid JSON, an invalid schema and violated invariants', () => {
     expect(deserialize('{')).toEqual({ ok: false, error: { code: 'invalid-json' } });
     expect(deserialize('[]')).toMatchObject({
       ok: false,
@@ -106,7 +107,7 @@ describe('serialização', () => {
     });
 
     const data = JSON.parse(serialize(sampleProject()));
-    data.layers[0].color = 'vermelho';
+    data.layers[0].color = 'red';
     expect(deserialize(JSON.stringify(data))).toMatchObject({
       ok: false,
       error: { code: 'invalid-schema' },
@@ -120,7 +121,7 @@ describe('serialização', () => {
     });
   });
 
-  it('versão ausente ou inválida', () => {
+  it('missing or invalid version', () => {
     const data = JSON.parse(serialize(emptyProject()));
     delete data.schemaVersion;
     expect(deserialize(JSON.stringify(data))).toMatchObject({
@@ -129,7 +130,7 @@ describe('serialização', () => {
     });
   });
 
-  it('versão mais nova abre em modo somente leitura', () => {
+  it('a newer version opens in read-only mode', () => {
     const data = {
       ...JSON.parse(serialize(sampleProject())),
       schemaVersion: 99,
@@ -140,8 +141,8 @@ describe('serialização', () => {
     expect(loaded.project.markings).toHaveLength(4);
   });
 
-  it('versão mais nova incompatível é rejeitada', () => {
-    const data = { schemaVersion: 99, tudoDiferente: true };
+  it('an incompatible newer version is rejected', () => {
+    const data = { schemaVersion: 99, allDifferent: true };
     expect(deserialize(JSON.stringify(data))).toMatchObject({
       ok: false,
       error: { code: 'unsupported-version', version: 99 },
@@ -149,12 +150,12 @@ describe('serialização', () => {
   });
 });
 
-describe('nome do produto (app)', () => {
+describe('product name (app)', () => {
   it('grava `app: "mapping"`', () => {
     expect(JSON.parse(serialize(emptyProject())).app).toBe('mapping');
   });
 
-  it('lê o valor antigo `mapeador-imagens` e a próxima gravação usa `mapping`', () => {
+  it('reads the old value `mapeador-imagens` and the next write uses `mapping`', () => {
     const legacy = JSON.stringify({
       ...JSON.parse(serialize(emptyProject())),
       app: 'mapeador-imagens',
@@ -164,22 +165,22 @@ describe('nome do produto (app)', () => {
     expect(JSON.parse(serialize(loaded.project)).app).toBe('mapping');
   });
 
-  it('rejeita um `app` desconhecido', () => {
+  it('rejects an unknown `app`', () => {
     const other = JSON.stringify({
       ...JSON.parse(serialize(emptyProject())),
-      app: 'outro',
+      app: 'other',
     });
     expect(deserialize(other).ok).toBe(false);
   });
 });
 
-describe('migrações', () => {
-  it('registro atual não tem migrações pendentes', () => {
+describe('migrations', () => {
+  it('the current registry has no pending migrations', () => {
     expect(SCHEMA_VERSION).toBe(20);
     expect(migrate({ a: 1 }, 20)).toEqual({ ok: true, data: { a: 1 } });
   });
 
-  it('aplica as migrações registradas em sequência', () => {
+  it('applies the registered migrations in sequence', () => {
     const registry = new Map<number, Migration>([
       [1, (d) => ({ ...d, v2: true })],
       [2, (d) => ({ ...d, v3: d.v2 === true })],

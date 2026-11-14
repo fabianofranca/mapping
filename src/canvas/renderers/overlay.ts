@@ -1,5 +1,5 @@
-// Sobreposições: contorno e alças da seleção, destaque do item pego, rascunho
-// do desenho e alvo de um arrastar-e-soltar de arquivos.
+// Overlays: selection outline and handles, highlight of the picked item, draft
+// of the drawing and target of a file drag-and-drop.
 import Konva from 'konva/lib/Core';
 import { Circle as KonvaCircle } from 'konva/lib/shapes/Circle';
 import { Line as KonvaLine } from 'konva/lib/shapes/Line';
@@ -39,11 +39,11 @@ import {
   intersectRects,
 } from './metrics';
 
-/** Etiqueta do nome (px de tela): recuo interno, vão até a borda e largura máxima. */
+/** Name tag (screen px): inner padding, gap to the edge and maximum width. */
 const NAME_TAG_PADDING = 4;
 const NAME_TAG_GAP = 2;
 const NAME_TAG_MAX_WIDTH = 240;
-/** Vão entre o título da imagem e a borda de cima dela (o mesmo de `images.ts`). */
+/** Gap between the image title and its top edge (the same as `images.ts`). */
 const IMAGE_TITLE_GAP = 4;
 const NO_HEADERS: HeaderLookup = { get: () => undefined };
 
@@ -69,62 +69,62 @@ export type OverlayFrame = Pick<
   | 'size'
 >;
 
-/** Ligação da ancorada até a âncora (R4): o halo por baixo e o traço tracejado por cima. */
+/** Link from the anchored one to the anchor (R4): the halo underneath and the dashed stroke on top. */
 interface AnchorLink {
   readonly halo: KonvaLine;
   readonly line: KonvaLine;
 }
 
-/** Realce de uma seta selecionada: o traço e a ponta, por cima do desenho dela. */
+/** Highlight of a selected arrow: the stroke and the tip, on top of its drawing. */
 interface ArrowHighlight {
   readonly line: KonvaLine;
   readonly head: KonvaLine;
 }
 
 export class OverlayRenderer {
-  /** Recebe a classe `canvas-host--drop` quando o alvo de soltar é a área vazia. */
+  /** Gets the class `canvas-host--drop` when the drop target is the empty area. */
   private readonly container: HTMLElement;
   readonly selectionOutline = new KonvaRect({ visible: false });
   readonly draftRect = new KonvaRect({ visible: false });
   readonly dropRect = new KonvaRect({ visible: false });
-  /** Retângulo da seleção por Shift+arrasto (Shift+arrasto soma o que estiver dentro). */
+  /** Selection rectangle by Shift+drag (Shift+drag adds what is inside). */
   readonly marqueeRect = new KonvaRect({ visible: false, listening: false });
-  /** Halo `cv-halo` por baixo da borda do retângulo, como o da seleção e o do rascunho. */
+  /** `cv-halo` halo under the rectangle's border, like that of the selection and the draft. */
   readonly marqueeHalo = new KonvaRect({
     visible: false,
     listening: false,
     fillEnabled: false,
   });
-  /** Destaques dos itens que o desenho ou o redimensionamento absorveria ao soltar (um reaproveitado por item). */
+  /** Highlights of the items that drawing or resizing would absorb on release (one reused per item). */
   private readonly absorbRects: KonvaRect[] = [];
-  /** Contornos dos itens selecionados que não são o primário (um reaproveitado por item). */
+  /** Outlines of the selected items that are not the primary (one reused per item). */
   private readonly secondaryRects: KonvaRect[] = [];
   private readonly layer: Konva.Layer;
   readonly handles = new Map<Corner, KonvaRect>();
-  /** Etiqueta com o nome da marcação selecionada, acima do canto superior esquerdo. */
+  /** Tag with the name of the selected marking, above the top-left corner. */
   readonly nameTag = new Konva.Group({ visible: false });
   readonly nameTagBox = new KonvaRect();
   readonly nameTagText = new KonvaText({ wrap: 'none', ellipsis: true });
-  /** Risco do nome quando a marcação selecionada é a removida da revisão. */
+  /** Strike-through of the name when the selected marking is the one removed in the review. */
   private readonly nameTagStrike: KonvaLine = new KonvaLine({
     name: 'name-tag-strike',
     visible: false,
   });
-  /** Emblema do cadeado: um no item selecionado e outro no item trancado sob o mouse. */
+  /** Lock badge: one on the selected item and another on the locked item under the mouse. */
   readonly selectionLock = new LockBadge();
   readonly hoverLockBadge = new LockBadge();
-  /** Realces das setas selecionadas (um reaproveitado por seta). */
+  /** Highlights of the selected arrows (one reused per arrow). */
   private readonly arrowHighlights: ArrowHighlight[] = [];
-  /** Ligações das ancoradas selecionada e sob o mouse (um par reaproveitado por ligação). */
+  /** Links of the selected and under-the-mouse anchored ones (one pair reused per link). */
   private readonly anchorLinks: AnchorLink[] = [];
-  /** Alças da seta selecionada: pontas, pontos de passagem e meios dos trechos. */
+  /** Handles of the selected arrow: ends, waypoints and segment midpoints. */
   private readonly arrowHandleNodes: KonvaCircle[] = [];
-  /** Alça de ligação da marcação selecionada: puxar dela cria uma seta. */
+  /** Link handle of the selected marking: pulling from it creates an arrow. */
   readonly linkHandle: KonvaCircle = new KonvaCircle({
     visible: false,
     listening: false,
   });
-  /** Seta provisória do gesto de criar (ou de trocar a ponta). */
+  /** Provisional arrow of the create gesture (or of swapping the end). */
   readonly arrowDraftLine: KonvaLine = new KonvaLine({
     visible: false,
     listening: false,
@@ -161,32 +161,32 @@ export class OverlayRenderer {
     );
   }
 
-  /** Os nós dos realces das setas selecionadas (reaproveitados; os que não servem ficam invisíveis). */
+  /** The nodes of the selected arrows' highlights (reused; the ones not needed stay invisible). */
   arrowHighlightNodes(): readonly ArrowHighlight[] {
     return this.arrowHighlights;
   }
 
-  /** Os nós das ligações da âncora (reaproveitados; os que não servem ficam invisíveis). */
+  /** The nodes of the anchor links (reused; the ones not needed stay invisible). */
   anchorLinkNodes(): readonly AnchorLink[] {
     return this.anchorLinks;
   }
 
-  /** Os nós das alças da seta selecionada (reaproveitados; os que não servem ficam invisíveis). */
+  /** The nodes of the selected arrow's handles (reused; the ones not needed stay invisible). */
   arrowHandleCircles(): readonly KonvaCircle[] {
     return this.arrowHandleNodes;
   }
 
-  /** Os nós dos destaques de absorção (reaproveitados; os que não servem ficam invisíveis). */
+  /** The nodes of the absorption highlights (reused; the ones not needed stay invisible). */
   absorbHighlights(): readonly KonvaRect[] {
     return this.absorbRects;
   }
 
-  /** Os nós dos contornos de seleção secundários (reaproveitados; os que não servem ficam invisíveis). */
+  /** The nodes of the secondary selection outlines (reused; the ones not needed stay invisible). */
   secondaryHighlights(): readonly KonvaRect[] {
     return this.secondaryRects;
   }
 
-  /** Há algo ancorado na parte visível da tela (a etiqueta do nome, o cadeado): pan precisa redesenhar. */
+  /** Something is anchored to the visible part of the screen (the name tag, the lock): pan must redraw. */
   get followsView(): boolean {
     return (
       this.nameTag.visible() ||
@@ -195,7 +195,7 @@ export class OverlayRenderer {
     );
   }
 
-  /** `headers`: rótulos de nome desenhados pelas marcações (a etiqueta desvia do pai). */
+  /** `headers`: name labels drawn by the markings (the tag dodges the parent). */
   render(
     frame: OverlayFrame,
     placements: ReadonlyMap<string, Placement>,
@@ -213,7 +213,7 @@ export class OverlayRenderer {
     this.renderMarquee(frame);
   }
 
-  /** O retângulo do Shift+arrasto: tracejado azul com preenchimento leve e halo por fora e por dentro. */
+  /** The Shift+drag rectangle: dashed blue with light fill and halo outside and inside. */
   private renderMarquee(frame: OverlayFrame): void {
     const { marquee, tokens } = frame;
     if (!marquee) {
@@ -240,7 +240,7 @@ export class OverlayRenderer {
     });
   }
 
-  /** Cadeado no item trancado sob o mouse (a menos que seja o selecionado, que já tem o dele). */
+  /** Lock on the locked item under the mouse (unless it is the selected one, which already has its own). */
   private renderHoverLock(
     frame: OverlayFrame,
     placements: ReadonlyMap<string, Placement>,
@@ -292,8 +292,8 @@ export class OverlayRenderer {
   }
 
   /**
-   * Itens que seriam absorvidos se o gesto terminasse agora: traço e preenchimento do token
-   * novo, por cima da imagem e abaixo da seleção.
+   * Items that would be absorbed if the gesture ended now: stroke and fill of the new
+   * token, over the image and below the selection.
    */
   private renderAbsorb(frame: OverlayFrame): void {
     const { absorb, tokens } = frame;
@@ -301,7 +301,7 @@ export class OverlayRenderer {
     while (this.absorbRects.length < absorb.length) {
       const rect = new KonvaRect({ visible: false, listening: false });
       this.layer.add(rect);
-      rect.moveToBottom(); // Abaixo do rascunho, da seleção e das alças.
+      rect.moveToBottom(); // Below the draft, the selection and the handles.
       this.absorbRects.push(rect);
     }
     this.absorbRects.forEach((node, i) => {
@@ -321,10 +321,10 @@ export class OverlayRenderer {
   }
 
   /**
-   * Seleção múltipla: os itens selecionados que não são o primário ganham um contorno no
-   * retângulo deles (container ou marcação), sem alças, cadeado nem etiqueta de nome, que são
-   * só do primário. Usa o projeto do quadro (que já tem a prévia do gesto) e as posições dos
-   * containers do quadro, então acompanha o arrasto conjunto.
+   * Multi-select: the selected items that are not the primary get an outline on their
+   * rectangle (container or marking), without handles, lock or name tag, which belong
+   * only to the primary. Uses the frame's project (which already has the gesture preview) and the positions of the
+   * frame's containers, so it follows the joint drag.
    */
   private renderSecondarySelection(
     frame: OverlayFrame,
@@ -354,7 +354,7 @@ export class OverlayRenderer {
     while (this.secondaryRects.length < rects.length) {
       const rect = new KonvaRect({ visible: false, listening: false });
       this.layer.add(rect);
-      rect.moveToBottom(); // Abaixo do rascunho, da seleção e das alças.
+      rect.moveToBottom(); // Below the draft, the selection and the handles.
       this.secondaryRects.push(rect);
     }
     this.secondaryRects.forEach((node, i) => {
@@ -401,10 +401,10 @@ export class OverlayRenderer {
     const { preview, tokens } = frame;
     const zoom = frame.viewport.scale;
     const selected = resolveSelection(frame.project, frame.selection);
-    // Alças só no modo Navegar (em Desenhar, arrastar sempre desenha) e se o item pode mudar.
+    // Handles only in Navigate mode (in Draw, dragging always draws) and if the item can change.
     const handlesAllowed = !frame.readOnly && frame.mode === 'navigate';
-    // A seta selecionada tem o realce e as alças próprios (`renderArrowSelection`): aqui só some
-    // o que é de marcação e de container.
+    // The selected arrow has its own highlight and handles (`renderArrowSelection`): here only
+    // what belongs to markings and containers goes away.
     if (!selected || selected.kind === 'arrow') {
       this.selectionLock.hide();
       this.selectionOutline.visible(false);
@@ -430,13 +430,13 @@ export class OverlayRenderer {
       this.nameTag.visible(false);
       this.linkHandle.visible(false);
     } else {
-      // A borda da marcação selecionada já fica mais grossa; aqui só as alças.
+      // The selected marking's border is already thicker; here only the handles.
       const placement =
         placementOfSpace(placements, selected.marking.containerId) ??
         selected.space.placement;
       rect = markingCanvasRect(placement, selected.marking.rect);
       this.selectionOutline.visible(false);
-      // Sem container (marcação do canvas), não há título de imagem a evitar.
+      // Without a container (canvas marking), there is no image title to avoid.
       const imageTop = selected.image
         ? imageCanvasRect(selected.image, placement).y
         : -Infinity;
@@ -450,7 +450,7 @@ export class OverlayRenderer {
         parentLabel,
         selected.marking.id,
       );
-      // A alça de ligação vale para uma marcação só (criar a seta não a altera: vale trancada).
+      // The link handle applies to a single marking (creating the arrow does not change it: valid when locked).
       this.renderLinkHandle(frame, rect, handlesAllowed && frame.items.length <= 1);
     }
 
@@ -459,7 +459,7 @@ export class OverlayRenderer {
     const lock = frame.project
       ? lockedRect(frame.project, { kind: selected.kind, id: selectedId }, placements)
       : null;
-    // Sem alças no item trancado; com o cadeado na seleção (esmaecido se vem do pai).
+    // No handles on the locked item; with the lock on the selection (dimmed if it comes from the parent).
     const showHandles = handlesAllowed && lock === null;
     if (lock) {
       this.selectionLock.show(
@@ -490,10 +490,10 @@ export class OverlayRenderer {
   }
 
   /**
-   * Ligação da âncora (R4, decisão 13): a marcação ancorada selecionada ou sob o mouse mostra uma
-   * linha tracejada fina do centro dela ao da âncora, na cor do controle e com o halo por baixo.
-   * Só lê as posições do quadro (a prévia do arrasto leva a ancorada junto): pan e zoom não
-   * recalculam nada além da transformação e da espessura.
+   * Anchor link (R4, decision 13): the selected anchored marking, or the one under the mouse, shows a
+   * thin dashed line from its center to the anchor's, in the control color and with the halo underneath.
+   * Only reads the frame's positions (the drag preview carries the anchored one along): pan and zoom do not
+   * recompute anything beyond the transform and the thickness.
    */
   private renderAnchorLinks(
     frame: OverlayFrame,
@@ -534,7 +534,7 @@ export class OverlayRenderer {
     });
   }
 
-  /** Alça de ligação (círculo no meio do lado direito, por fora): puxar dela cria uma seta. */
+  /** Link handle (circle in the middle of the right side, outside): pulling from it creates an arrow. */
   private renderLinkHandle(frame: OverlayFrame, rect: Rect, show: boolean): void {
     if (!show) {
       this.linkHandle.visible(false);
@@ -555,9 +555,9 @@ export class OverlayRenderer {
   }
 
   /**
-   * Setas selecionadas: o realce (traço e ponta na cor da seleção; as secundárias, na da seleção
-   * múltipla) e, na primária que pode ser editada, as alças. Seta trancada: sem alças e com o
-   * cadeado no meio do traço. Só as setas desenhadas (`frame.arrows`) têm realce e alças.
+   * Selected arrows: the highlight (stroke and tip in the selection color; the secondary ones, in that of
+   * the multi-selection) and, on the primary one that can be edited, the handles. Locked arrow: no handles and with the
+   * lock in the middle of the stroke. Only the drawn arrows (`frame.arrows`) have highlight and handles.
    */
   private renderArrowSelection(frame: OverlayFrame): void {
     const { project, items, selection, arrows, tokens } = frame;
@@ -615,7 +615,7 @@ export class OverlayRenderer {
       });
     });
 
-    // Alças: só da primária, no modo Navegar, e se a seta pode mudar.
+    // Handles: only on the primary, in Navigate mode, and if the arrow can change.
     const editable =
       primary !== undefined &&
       project !== null &&
@@ -635,9 +635,9 @@ export class OverlayRenderer {
         circle.visible(false);
         return;
       }
-      // A ponta é cheia na cor da seleção; o ponto de passagem é vazado; o meio do trecho é
-      // menor e esmaecido (só vira ponto quando arrastado); o segmento do canto é vazado e
-      // um pouco menor que o ponto de passagem.
+      // The end is filled in the selection color; the waypoint is hollow; the segment midpoint is
+      // smaller and dimmed (it only becomes a point when dragged); the corner segment is hollow and
+      // a little smaller than the waypoint.
       const common = {
         visible: true,
         x: handle.at.x,
@@ -683,7 +683,7 @@ export class OverlayRenderer {
     }
   }
 
-  /** Seta provisória (criar pela alça ou arrastar uma ponta): tracejada, com a ponta, na cor da seleção. */
+  /** Provisional arrow (create from the handle or drag an end): dashed, with the tip, in the selection color. */
   private renderArrowDraft(frame: OverlayFrame): void {
     const line = frame.arrowDraft?.line;
     if (!line) {
@@ -712,11 +712,11 @@ export class OverlayRenderer {
   }
 
   /**
-   * Nome da marcação selecionada numa etiqueta acima do canto superior esquerdo (por dentro
-   * quando não há espaço acima na tela). Encostada no topo da imagem, sobe acima do título
-   * dela em vez de cobri-lo; sobre o rótulo do pai (`parentLabel`), desce para baixo dele,
-   * como o rótulo da filha não selecionada. Com o canto fora da tela, a etiqueta fica
-   * ancorada na borda visível. Sem nome, sem etiqueta.
+   * Name of the selected marking in a tag above the top-left corner (inside
+   * when there is no room above on screen). Against the top of the image, it goes above its title
+   * instead of covering it; over the parent's label (`parentLabel`), it goes below it,
+   * like the label of the unselected child. With the corner off screen, the tag stays
+   * anchored to the visible edge. Without a name, no tag.
    */
   private renderNameTag(
     frame: OverlayFrame,
@@ -758,10 +758,10 @@ export class OverlayRenderer {
       strokeWidth: HALO_WIDTH,
       cornerRadius: tokens.radius.sm,
     });
-    // Removida na revisão: o nome vai riscado também na etiqueta (que cobre o da revisão).
+    // Removed in the review: the name is struck through in the tag too (which covers the review's).
     const struck = markingId !== null && isRemovedInReview(frame.review, markingId);
     const strikeY = (height - size) / 2 + size * STRIKE_HEIGHT;
-    // O risco acompanha o texto visível: nunca passa da largura da etiqueta (texto cortado).
+    // The strike follows the visible text: it never exceeds the tag's width (cut text).
     const strikeWidth = Math.min(
       this.nameTagText.measureSize(name).width,
       width - 2 * NAME_TAG_PADDING,
@@ -774,7 +774,7 @@ export class OverlayRenderer {
     });
     const view = visibleArea(frame.size, viewport);
     const step = (height + NAME_TAG_GAP) / zoom;
-    // Faixa do título da imagem, logo acima dela: a etiqueta não a cobre.
+    // Band of the image title, just above it: the tag does not cover it.
     const titleTop = imageTop - (tokens.type.image.line + IMAGE_TITLE_GAP) / zoom;
     let aboveY = rect.y - step;
     if (aboveY < imageTop && rect.y - NAME_TAG_GAP / zoom > titleTop) {
@@ -798,16 +798,16 @@ export class OverlayRenderer {
   }
 }
 
-/** As pontas de uma ligação da âncora, em coordenadas do canvas: o centro da ancorada e o da âncora. */
+/** The ends of an anchor link, in canvas coordinates: the center of the anchored one and of the anchor. */
 interface AnchorLinkEnds {
   readonly from: { readonly x: number; readonly y: number };
   readonly to: { readonly x: number; readonly y: number };
 }
 
 /**
- * As ligações a mostrar: a da marcação selecionada (a primária) e a da que está sob o mouse, só
- * das que têm âncora, sem repetir quando são a mesma. O retângulo de cada ponta usa a colocação
- * do quadro (a do container arrastado ou redimensionado), como o resto das sobreposições.
+ * The links to show: that of the selected marking (the primary) and that of the one under the mouse, only
+ * of those with an anchor, without repeating when they are the same. The rectangle of each end uses the placement
+ * of the frame (that of the dragged or resized container), like the rest of the overlays.
  */
 function anchorLinkEnds(
   frame: OverlayFrame,
@@ -842,15 +842,15 @@ function anchorLinkEnds(
   return ends;
 }
 
-/** A marcação é a removida que a revisão mostra riscada (a chave da forma é `marking:<id>`). */
+/** The marking is the removed one that the review shows struck through (the shape key is `marking:<id>`). */
 function isRemovedInReview(review: OverlayFrame['review'], id: string): boolean {
   return review?.removed.some((shape) => shape.key === `marking:${id}`) ?? false;
 }
 
 /**
- * Retângulo (canvas) do item se a geometria dele está travada, com `inherited` quando a trava vem
- * de um ancestral; `null` se ele é livre. Marcação: ela ou um ancestral trancado; imagem: a
- * própria ou uma marcação do canvas que a contém (trancada, ou com ancestral trancado).
+ * Rectangle (canvas) of the item if its geometry is locked, with `inherited` when the lock comes
+ * from an ancestor; `null` if it is free. Marking: it or a locked ancestor; image: its
+ * own or a canvas marking that contains it (locked, or with a locked ancestor).
  */
 function lockedRect(
   project: NonNullable<OverlayFrame['project']>,

@@ -1,24 +1,24 @@
-// Sugestões no campo de texto (etapa Sugestões no campo de texto, decisão 3): funções puras,
-// sem DOM, para achar a palavra sob o cursor, filtrar a lista e trocar só essa palavra.
+// Suggestions in the text field (stage Suggestions in the text field, decision 3): pure functions,
+// with no DOM, to find the word under the cursor, filter the list and replace only that word.
 
-/** Um item da lista: o texto que entra no campo e, opcional, um texto secundário (SG2). */
+/** A list item: the text that goes into the field and, optionally, a secondary text (SG2). */
 export interface SuggestionItem {
   readonly label: string;
   readonly detail?: string;
-  /** Identifica um alvo de `linkedRef`; só os itens com `id` são devolvidos ao confirmar. */
+  /** Identifies a `linkedRef` target; only items with an `id` are returned on confirm. */
   readonly id?: string;
 }
 
-/** Item como o formato entrega (texto simples) ou já com texto secundário. */
+/** Item as the format delivers it (plain text) or already with a secondary text. */
 export type SuggestionInput = string | SuggestionItem;
 
-/** A palavra antes do cursor: onde começa e o texto. */
+/** The word before the cursor: where it starts and its text. */
 export interface WordAtCursor {
   readonly start: number;
   readonly text: string;
 }
 
-// Letras (Unicode), dígitos, `_` e `.`.
+// Letters (Unicode), digits, `_` and `.`.
 const WORD_CHAR = /[\p{L}\p{N}_.]/u;
 
 export function toItems(list: readonly SuggestionInput[]): SuggestionItem[] {
@@ -26,12 +26,12 @@ export function toItems(list: readonly SuggestionInput[]): SuggestionItem[] {
 }
 
 /**
- * A sequência de letras, dígitos, `_` e `.` imediatamente antes do cursor. Cursor fora do
- * texto é limitado a ele; sem palavra, devolve `{ start: cursor, text: '' }`.
+ * The sequence of letters, digits, `_` and `.` immediately before the cursor. A cursor outside the
+ * text is clamped to it; with no word, returns `{ start: cursor, text: '' }`.
  */
 export function wordAtCursor(text: string, cursor: number): WordAtCursor {
   const end = Math.max(0, Math.min(cursor, text.length));
-  // Percorre por pontos de código, para não partir um par substituto.
+  // Walks by code points, so as not to split a surrogate pair.
   const chars = [...text.slice(0, end)];
   let count = 0;
   for (let i = chars.length - 1; i >= 0; i--) {
@@ -43,11 +43,11 @@ export function wordAtCursor(text: string, cursor: number): WordAtCursor {
 }
 
 /**
- * Filtra sem diferenciar maiúsculas: quem começa com a palavra vem antes de quem só a contém,
- * e a ordem original vale dentro de cada grupo. Palavra vazia devolve tudo. Sem
- * correspondência, vazio. Na abertura automática ao digitar, se a única correspondência é idêntica à palavra (mesmas
- * maiúsculas), não há o que completar e a lista fica vazia (fechada); a abertura explícita
- * (`keepExact`: ↓, Ctrl+Espaço, clique) mantém esse item.
+ * Filters case-insensitively: those that start with the word come before those that only contain
+ * it, and the original order holds within each group. An empty word returns everything. With no
+ * match, empty. On the automatic opening while typing, if the only match is identical to the word
+ * (same case), there is nothing to complete and the list is empty (closed); the explicit opening
+ * (`keepExact`: ↓, Ctrl+Space, click) keeps that item.
  */
 export function filterSuggestions(
   items: readonly SuggestionItem[],
@@ -69,8 +69,8 @@ export function filterSuggestions(
 }
 
 /**
- * Troca só a palavra antes do cursor pela sugestão; o cursor fica logo depois dela. O que vem
- * depois do cursor não muda.
+ * Replaces only the word before the cursor with the suggestion; the cursor stays right after it.
+ * What comes after the cursor does not change.
  */
 export function replaceWord(
   text: string,
@@ -86,8 +86,8 @@ export function replaceWord(
 }
 
 /**
- * O rótulo aparece em `text` como palavra: sem caractere de palavra (letra, dígito, `_` ou `.`)
- * colado a ele, à esquerda ou à direita. Maiúsculas contam; rótulo vazio nunca aparece.
+ * The label appears in `text` as a word: with no word character (letter, digit, `_` or `.`)
+ * glued to it, on the left or on the right. Case counts; an empty label never appears.
  */
 export function containsWord(text: string, label: string): boolean {
   if (label === '') return false;
@@ -103,8 +103,8 @@ export function containsWord(text: string, label: string): boolean {
 }
 
 /**
- * Alvos do `linkedRef` primeiro, depois as sugestões fixas; a fixa cujo texto é igual ao de um
- * alvo é descartada (o alvo vence).
+ * `linkedRef` targets first, then the fixed suggestions; a fixed one whose text equals that of a
+ * target is discarded (the target wins).
  */
 export function mergeLinkedItems(
   targets: readonly SuggestionItem[],

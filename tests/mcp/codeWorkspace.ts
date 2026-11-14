@@ -5,49 +5,49 @@ import { serialize, specFiles, type Project } from '../../src/model';
 import { codeProject } from '../model/specFixtures';
 import { PNG_1X1, allIds, uuidFor, withUuids } from './workspace';
 
-// Cenário da 3b.4 (o R3 do guia): o repositório do app com o projeto Mapping dentro
-// (`repo/design/mapeamentos/<projeto>`), como o `.mcp.json` do Claude Code o enxerga:
-// o servidor roda com `repo/` como diretório de trabalho e `--root design/mapeamentos`.
-// O `localPath` do `android` é `../../..` (a raiz do repositório, acima da raiz do servidor).
-// O código citado é o `code.<plataforma>.path` dos tipos da especialização (etapa 9).
+// Scenario of 3b.4 (R3 of the guide): the app's repository with the Mapping project inside
+// (`repo/design/mapeamentos/<project>`), as Claude Code's `.mcp.json` sees it:
+// the server runs with `repo/` as its working directory and `--root design/mapeamentos`.
+// The `android` `localPath` is `../../..` (the repository root, above the server's root).
+// The cited code is the `code.<platform>.path` of the specialization's types (stage 9).
 
 type Doc = Record<string, unknown>;
 
-/** Arquivo do `symbol` do Button no Android (`code.android.path` do exemplo SDUI). */
+/** File of the Button `symbol` on Android (`code.android.path` of the SDUI example). */
 export const DS_BUTTON_KT = 'app/src/main/java/com/app/ds/DSButton.kt';
-/** Arquivo do `symbol` do Input no Android (`code.android.path` do exemplo SDUI); não existe no repositório. */
+/** File of the Input `symbol` on Android (`code.android.path` of the SDUI example); it does not exist in the repository. */
 export const DS_TEXT_FIELD_KT = 'app/src/main/java/com/app/ds/DSTextField.kt';
-/** Arquivo do `symbol` do Button no iOS (`code.ios.path` do exemplo SDUI). */
+/** File of the Button `symbol` on iOS (`code.ios.path` of the SDUI example). */
 export const DS_BUTTON_SWIFT = 'App/DesignSystem/DSButton.swift';
 
-/** Código "vazio" que existe no repositório: só a conferência de existência é testada. */
+/** "Empty" code that exists in the repository: only the existence check is tested. */
 export const EXISTING_CODE_FILES = [DS_BUTTON_KT];
 
 export interface CodeWorkspace {
   readonly base: string;
-  /** Diretório de trabalho do cliente (a raiz do repositório do app). */
+  /** The client's working directory (the app repository's root). */
   readonly repo: string;
-  /** Raiz do servidor: `repo/design/mapeamentos`. */
+  /** The server's root: `repo/design/mapeamentos`. */
   readonly root: string;
   readonly ids: Readonly<Record<string, string>>;
-  /** Pasta de um projeto da raiz. */
+  /** Folder of a project in the root. */
   readonly projectDir: (name: string) => string;
 }
 
-/** Tipo `typeId` da cópia de uma especialização (JSON já lido). */
+/** Type `typeId` of a specialization copy (JSON already read). */
 function specType(spec: Doc, typeId: string): Doc {
   const layers = spec.layers as { annotationTypes: Doc[] }[];
   return layers.flatMap((l) => l.annotationTypes).find((t) => t.id === typeId)!;
 }
 
 /**
- * Projetos (todos com o `codeProject()`: SDUI v2 + Modelo de dados v1, Screen `Cadastro`):
- * - `cadastro`: leitura (`android` com repositório e `localPath`; `ios` sem repositório);
- * - `escrita`: o mesmo, para os testes que gravam;
- * - `escapa`: `localPath` sobe acima do diretório de trabalho (o arquivo existe lá, mas não pode aparecer);
- * - `link`: o `path` do Input no Android passa por um link simbólico do repositório que leva para fora dele;
- * - `antigo`: o mesmo projeto gravado na v8, com o campo de código removido (`implementacao`)
- *   no Screen da cópia da especialização e preenchido na anotação (migra para a v9 na leitura).
+ * Projects (all with the `codeProject()`: SDUI v2 + Data model v1, Screen `Cadastro`):
+ * - `cadastro`: reading (`android` with repository and `localPath`; `ios` without a repository);
+ * - `escrita`: the same, for the tests that write;
+ * - `escapa`: `localPath` climbs above the working directory (the file exists there, but must not show up);
+ * - `link`: the Input's `path` on Android goes through a symbolic link in the repository that leads outside it;
+ * - `antigo`: the same project saved as v8, with the code field removed (`implementacao`)
+ *   on the Screen of the specialization copy and filled in on the annotation (migrates to v9 on read).
  */
 export function createCodeWorkspace(): CodeWorkspace {
   const base = mkdtempSync(join(tmpdir(), 'mapping-mcp-code-'));
@@ -84,7 +84,7 @@ export function createCodeWorkspace(): CodeWorkspace {
   write('cadastro', mappingText());
   write('escrita', mappingText());
 
-  // O `localPath` sobe um nível além do repositório: o arquivo (que existe em `base/`) não pode aparecer.
+  // The `localPath` climbs one level above the repository: the file (which exists in `base/`) must not show up.
   write(
     'escapa',
     mappingText((doc) => {
@@ -95,7 +95,7 @@ export function createCodeWorkspace(): CodeWorkspace {
   mkdirSync(dirname(join(base, DS_BUTTON_KT)), { recursive: true });
   writeFileSync(join(base, DS_BUTTON_KT), '');
 
-  // `repo/saida` é um link simbólico para fora do repositório, onde existe `segredo.kt`.
+  // `repo/saida` is a symbolic link outside the repository, where `segredo.kt` exists.
   write('link', mappingText(), (spec) => {
     const code = specType(spec, 'input').code as Record<string, Doc>;
     code.android!.path = 'saida/segredo.kt';
@@ -104,7 +104,7 @@ export function createCodeWorkspace(): CodeWorkspace {
   writeFileSync(join(base, 'fora', 'segredo.kt'), '');
   symlinkSync(join(base, 'fora'), join(repo, 'saida'), 'dir');
 
-  // Projeto v8 com o campo removido: a cópia declara o campo e a anotação tem o valor.
+  // v8 project with the removed field: the copy declares the field and the annotation has the value.
   write(
     'antigo',
     mappingText((doc) => {
@@ -124,13 +124,13 @@ export function createCodeWorkspace(): CodeWorkspace {
     (spec) => {
       (specType(spec, 'screen').fields as Doc[]).push({
         key: 'implementacao',
-        label: 'implementação',
+        label: 'implementation',
         type: 'codeRef',
       });
     },
   );
 
-  // Os arquivos de código do app: vazios, só para a conferência de existência.
+  // The app's code files: empty, only for the existence check.
   for (const file of EXISTING_CODE_FILES) {
     mkdirSync(dirname(join(repo, file)), { recursive: true });
     writeFileSync(join(repo, file), '');

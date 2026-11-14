@@ -17,8 +17,8 @@ import type { ImageServer } from './imageServer';
 import type { Refs } from './items';
 import type { Roots } from './paths';
 
-// `render_marking` e `render_container` (decisão 32): o desenho dos componentes como PNG, com texto
-// real, no zoom e no modo pedidos. É o desenho do servidor, não uma captura da app.
+// `render_marking` and `render_container` (decision 32): the components' drawing as PNG, with real
+// text, at the requested zoom and mode. It is the server's drawing, not a capture of the app.
 
 export const MIN_ZOOM = 0.05;
 export const MAX_ZOOM = 8;
@@ -26,16 +26,16 @@ export const MAX_ZOOM = 8;
 export interface RenderOptions {
   readonly zoom?: number;
   readonly drawingMode?: string;
-  /** Fixa a direção de leitura na imagem (como o `drawingMode`); ausente = a efetiva de cada container. */
+  /** Pins the reading direction in the image (like `drawingMode`); absent = each container's effective one. */
   readonly direction?: ReadingDirection;
-  /** `image` (padrão): o arquivo do container (ou a cor de fundo, sem arquivo); `none`: transparente. */
+  /** `image` (default): the container's file (or the background color, without a file); `none`: transparent. */
   readonly background?: 'image' | 'none';
-  /** Margem em volta da marcação, em pixels do container (só `render_marking`). */
+  /** Margin around the marking, in container pixels (`render_marking` only). */
   readonly padding?: number;
   readonly format?: ImageFormat;
 }
 
-/** Os ids da marcação e de todas as suas descendentes. */
+/** The ids of the marking and of all its descendants. */
 function subtree(refs: Refs, marking: Marking): Set<string> {
   const children = projectIndex(refs.project).children;
   const ids = new Set<string>();
@@ -53,13 +53,13 @@ function checkMode(refs: Refs, mode: string | undefined): void {
   if (!modes.includes(mode)) {
     throw new ToolError(
       'invalid-arguments',
-      `modo do desenho não declarado por nenhuma especialização aplicada: ${mode}`,
+      `drawing mode not declared by any applied specialization: ${mode}`,
       { drawingMode: mode, declared: modes },
     );
   }
 }
 
-/** O fundo da região: o arquivo do container recortado e escalado, a cor de fundo ou nada. */
+/** The background of the region: the container's file cropped and scaled, the background color or nothing. */
 async function backdrop(
   roots: Roots,
   refs: Refs,
@@ -86,7 +86,7 @@ async function backdrop(
   const source = clampRect(scaled, loaded.raster);
   if (source === null) return { raster: out, warning };
   const cut = crop(loaded.raster, source);
-  // A janela fracionária dentro do recorte inteiro: o fundo alinha com o desenho em qualquer escala.
+  // The fractional window inside the whole-pixel crop: the background aligns with the drawing at any scale.
   const area = {
     x: scaled.x - source.x,
     y: scaled.y - source.y,
@@ -97,7 +97,7 @@ async function backdrop(
   return { raster, warning };
 }
 
-/** Recusa a saída com pixels demais ou o fundo transparente em JPEG. */
+/** Refuses output with too many pixels or a transparent background in JPEG. */
 function checkLimits(
   size: { width: number; height: number; zoom: number },
   background: 'image' | 'none',
@@ -106,14 +106,14 @@ function checkLimits(
   if (size.width * size.height > MAX_PIXELS) {
     throw new ToolError(
       'image-too-large',
-      `imagem com pixels demais (${size.width}×${size.height}; máximo ${MAX_PIXELS}): reduza o zoom ou a região`,
+      `image with too many pixels (${size.width}×${size.height}; maximum ${MAX_PIXELS}): reduce the zoom or the region`,
       size,
     );
   }
   if (background === 'none' && format === 'jpeg') {
     throw new ToolError(
       'invalid-arguments',
-      'fundo transparente (`background: "none"`) pede png ou webp: o jpeg não tem transparência',
+      'a transparent background (`background: "none"`) requires png or webp: jpeg has no transparency',
     );
   }
 }
@@ -175,14 +175,14 @@ async function renderRegion(
       region: rectJson(region),
       drawings: drawn,
       ...(warning === undefined ? {} : { warning }),
-      note: 'desenho do servidor (fonte livre embutida ou a da biblioteca), não uma captura da app; imagem remota vira um reservado e o gradiente vale a primeira cor',
-      ...(await urlFields(images, bytes, format, 'desenho')),
+      note: "the server's drawing (bundled free font or the library's), not a capture of the app; a remote image becomes a placeholder and the gradient takes the first color",
+      ...(await urlFields(images, bytes, format, 'drawing')),
     },
     image: { bytes, mimeType: MIME[format] },
   };
 }
 
-/** `render_marking`: o desenho da marcação e da subárvore dela. */
+/** `render_marking`: the drawing of the marking and its subtree. */
 export async function renderMarking(
   roots: Roots,
   refs: Refs,
@@ -195,7 +195,7 @@ export async function renderMarking(
       ? undefined
       : projectIndex(refs.project).containers.get(marking.containerId);
   if (!container)
-    throw new ToolError('not-found', 'container da marcação não encontrado');
+    throw new ToolError('not-found', "the marking's container was not found");
   const padding = options.padding ?? 0;
   const region = clampRect(
     {
@@ -209,7 +209,7 @@ export async function renderMarking(
   if (!region) {
     throw new ToolError(
       'marking-outside-image',
-      'a marcação está fora do container: nada a desenhar',
+      'the marking is outside the container: nothing to draw',
       {
         rect: rectJson(marking.rect),
         container: { width: container.width, height: container.height },
@@ -231,7 +231,7 @@ export async function renderMarking(
   };
 }
 
-/** `render_container`: o desenho dos componentes do container inteiro. */
+/** `render_container`: the drawing of the components of the whole container. */
 export async function renderContainer(
   roots: Roots,
   refs: Refs,

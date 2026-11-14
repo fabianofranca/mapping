@@ -22,14 +22,14 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// Chegada e busca de lugar das perspectivas (v16, decisão 8). Mundo dos testes (Principal):
+// Arrival and place search of perspectives (v16, decision 8). The tests' world (Main):
 //
-//   S1 (0,0)   S2 (600,0)   S3 (1200,0)     containers de 500×500, escala 1
-//   T  (0,700)                                container de 500×500
-//   m1 em S1, m2 em S2 (50,50,100,100), mT em T; seta r0 de m1 para m2
+//   S1 (0,0)   S2 (600,0)   S3 (1200,0)     500×500 containers, scale 1
+//   T  (0,700)                                500×500 container
+//   m1 in S1, m2 in S2 (50,50,100,100), mT in T; arrow r0 from m1 to m2
 //
-// Raízes criadas "dentro" de uma perspectiva (X, Y, F…) entram na Principal longe de tudo; a
-// chegada as leva ao lugar certo.
+// Roots created "inside" a perspective (X, Y, F…) enter the Main one far from everything; the
+// arrival takes them to the right place.
 
 function container(p: Project, id: string, x: number, y: number, size = 500): Project {
   const added = addBackgroundContainer(p, {
@@ -59,7 +59,7 @@ function world(): Project {
   return createArrow(p, { id: 'r0', from: 'm1', to: 'm2' });
 }
 
-/** Cria o container `id` longe de tudo, com a marcação `${id}m` e uma seta dela até `to`. */
+/** Creates the container `id` far from everything, with the marking `${id}m` and an arrow from it to `to`. */
 function withLinkedContainer(p: Project, id: string, to: string | null): Project {
   let next = mark(container(p, id, 9000, 9000), `${id}m`, id);
   if (to !== null) next = createArrow(next, { id: `ar-${id}`, from: `${id}m`, to });
@@ -69,7 +69,7 @@ function withLinkedContainer(p: Project, id: string, to: string | null): Project
 function perspective(
   items: [string, number, number][],
   id = 'P',
-  name = 'Fluxo',
+  name = 'Flow',
 ): Perspective {
   return {
     id,
@@ -88,8 +88,8 @@ const free = (p: Project, rect: Rect, ...ignore: string[]) =>
     .filter((id) => !ignore.includes(id))
     .every((id) => !rectsOverlap(rect, at(p, id)));
 
-describe('placeRootIn: perto da referência', () => {
-  // X fica abaixo de S2 na perspectiva (700 abaixo), com uma seta de X para m2.
+describe('placeRootIn: near the reference', () => {
+  // X sits below S2 in the perspective (700 below), with an arrow from X to m2.
   const base = withLinkedContainer(world(), 'X', 'm2');
   const from = perspective([
     ['S1', 1000, 1000],
@@ -97,13 +97,13 @@ describe('placeRootIn: perto da referência', () => {
     ['X', 1600, 1700],
   ]);
 
-  it('perto da referência, na mesma distância que tinha dela', () => {
+  it('near the reference, at the same distance it had from it', () => {
     const place = placeRootIn(base, perspectiveView(base, from), 'X');
     expect(place).toEqual({ x: 600, y: 700, kind: 'near', referenceId: 'S2' });
   });
 
-  it('sem ruído de ponto flutuante na posição calculada', () => {
-    // 3000.1 + 2000.3 - 2000.4 = 2999.9999999999995 em ponto flutuante: o lugar sai limpo.
+  it('no floating-point noise in the computed position', () => {
+    // 3000.1 + 2000.3 - 2000.4 = 2999.9999999999995 in floating point: the place comes out clean.
     const far = setContainerPlacement(base, 'S2', { x: 3000.1, y: 0, scale: 1 });
     const noisy = perspective([
       ['S2', 2000.4, 1000],
@@ -113,7 +113,7 @@ describe('placeRootIn: perto da referência', () => {
     expect(place).toEqual({ x: 3000, y: 700, kind: 'near', referenceId: 'S2' });
   });
 
-  it('ocupado: vai ao livre mais próximo, sem sobrepor nada', () => {
+  it('occupied: goes to the nearest free spot, overlapping nothing', () => {
     const busy = container(base, 'B', 550, 650);
     const place = placeRootIn(busy, perspectiveView(busy, from), 'X');
     expect(place.kind).toBe('occupied');
@@ -123,7 +123,7 @@ describe('placeRootIn: perto da referência', () => {
     );
   });
 
-  it('nunca dentro de uma marcação do canvas', () => {
+  it('never inside a canvas marking', () => {
     const frame = createMarking(base, {
       id: 'K',
       containerId: null,
@@ -136,13 +136,13 @@ describe('placeRootIn: perto da referência', () => {
     ).toBe(false);
   });
 
-  it('a primeira seta (na ordem do array) é a referência', () => {
+  it('the first arrow (in array order) is the reference', () => {
     const two = createArrow(base, { id: 'ar-S1', from: 'Xm', to: 'm1' });
     const place = placeRootIn(two, perspectiveView(two, from), 'X');
     expect(place.referenceId).toBe('S2');
   });
 
-  it('flutuante ocupada: a margem do container do alvo, sem sobrepor outras flutuantes', () => {
+  it("occupied floating: the margin of the target's container, overlapping no other floating ones", () => {
     let p = world();
     p = createMarking(p, {
       id: 'F',
@@ -177,8 +177,8 @@ describe('placeRootIn: perto da referência', () => {
   });
 });
 
-describe('placeRootIn: área de chegada', () => {
-  it('sem referência: coluna à direita de tudo, a partir do topo', () => {
+describe('placeRootIn: arrival area', () => {
+  it('no reference: column to the right of everything, from the top', () => {
     const p = withLinkedContainer(world(), 'Y', null);
     const source = perspective([['Y', 50, 50]]);
     const place = placeRootIn(p, perspectiveView(p, source), 'Y', { arrivalsFrom: 'P' });
@@ -190,14 +190,14 @@ describe('placeRootIn: área de chegada', () => {
     });
   });
 
-  it('seta para uma raiz que não está nas duas vistas não é referência', () => {
+  it('an arrow to a root that is not in both views is not a reference', () => {
     const p = withLinkedContainer(world(), 'Y', 'mT');
-    const source = perspective([['Y', 50, 50]]); // T não está na perspectiva
+    const source = perspective([['Y', 50, 50]]); // T is not in the perspective
     const place = placeRootIn(p, perspectiveView(p, source), 'Y', { arrivalsFrom: 'P' });
     expect(place.kind).toBe('arrival-area');
   });
 
-  it('o destino é uma vista: coluna à direita das raízes dela', () => {
+  it('the destination is a view: column to the right of its roots', () => {
     const p = withLinkedContainer(world(), 'Y', null);
     const target = perspectiveView(p, perspective([['S1', 0, 0]]));
     const source = perspectiveView(p, perspective([['Y', 50, 50]]));
@@ -220,17 +220,17 @@ describe('arriveInPrincipal', () => {
     ['Y2', 50, 700],
   ]);
 
-  it('leva a raiz ao lugar, assenta e põe a marca "Veio de…" depois', () => {
+  it('takes the root to the place, settles and puts the "Came from…" mark afterwards', () => {
     const p = withLinkedContainer(world(), 'X', 'm2');
     const r = arriveInPrincipal(p, 'X', from);
     expect(r.kind).toBe('near');
     expect(r.referenceId).toBe('S2');
     expect(at(r.project, 'X')).toMatchObject({ x: 600, y: 700 });
-    expect(r.project.arrivals).toEqual([{ root: 'X', from: 'P', fromName: 'Fluxo' }]);
+    expect(r.project.arrivals).toEqual([{ root: 'X', from: 'P', fromName: 'Flow' }]);
     expect(validateProject(r.project)).toEqual([]);
   });
 
-  it('sem referência, agrupa por origem: a mesma origem empilha, outra abre coluna nova', () => {
+  it('no reference, groups by origin: the same origin stacks, another opens a new column', () => {
     let p = withLinkedContainer(world(), 'Y', null);
     p = arriveInPrincipal(p, 'Y', from).project;
     expect(at(p, 'Y')).toMatchObject({ x: 1750, y: 0 });
@@ -241,7 +241,7 @@ describe('arriveInPrincipal', () => {
     expect(at(second.project, 'Y2')).toMatchObject({ x: 1750, y: 500 + IMAGE_GAP });
 
     p = withLinkedContainer(second.project, 'Z', null);
-    const other = perspective([['Z', 0, 0]], 'Q', 'Outra');
+    const other = perspective([['Z', 0, 0]], 'Q', 'Other');
     const third = arriveInPrincipal(p, 'Z', other);
     expect(at(third.project, 'Z')).toMatchObject({ x: 1750 + 500 + IMAGE_GAP, y: 0 });
     expect(third.project.arrivals.map((a) => [a.root, a.from])).toEqual([
@@ -252,7 +252,7 @@ describe('arriveInPrincipal', () => {
     expect(validateProject(third.project)).toEqual([]);
   });
 
-  it('a flutuante vai por rect, inteiro', () => {
+  it('a floating one goes by rect, integer', () => {
     let p = world();
     p = createMarking(p, {
       id: 'F',
@@ -274,14 +274,14 @@ describe('arriveInPrincipal', () => {
     expect(validateProject(r.project)).toEqual([]);
   });
 
-  it('uma marca anterior da mesma raiz é substituída', () => {
+  it('a previous mark of the same root is replaced', () => {
     let p = withLinkedContainer(world(), 'Y', null);
     p = arriveInPrincipal(p, 'Y', from).project;
-    const again = arriveInPrincipal(p, 'Y', perspective([['Y', 0, 0]], 'Q', 'Outra'));
-    expect(again.project.arrivals).toEqual([{ root: 'Y', from: 'Q', fromName: 'Outra' }]);
+    const again = arriveInPrincipal(p, 'Y', perspective([['Y', 0, 0]], 'Q', 'Other'));
+    expect(again.project.arrivals).toEqual([{ root: 'Y', from: 'Q', fromName: 'Other' }]);
   });
 
-  it('recusa quem não é raiz ou não está na perspectiva de origem', () => {
+  it('refuses what is not a root or is not in the source perspective', () => {
     const p = withLinkedContainer(world(), 'X', 'm2');
     expect(() => arriveInPrincipal(p, 'm1', from)).toThrow(ModelError);
     expect(() => arriveInPrincipal(p, 'zzz', from)).toThrow(ModelError);
@@ -291,54 +291,54 @@ describe('arriveInPrincipal', () => {
   });
 });
 
-describe('marca de chegada', () => {
+describe('arrival mark', () => {
   const from = perspective([['Y', 0, 0]]);
   const arrived = () =>
     arriveInPrincipal(withLinkedContainer(world(), 'Y', null), 'Y', from).project;
 
-  it('mover a raiz na Principal tira a marca', () => {
+  it('moving the root in the Main one removes the mark', () => {
     expect(moveContainer(arrived(), 'Y', 3000, 3000).arrivals).toEqual([]);
   });
 
-  it('dispensar tira a marca; dispensar sem marca devolve o mesmo projeto', () => {
+  it('dismissing removes the mark; dismissing with no mark returns the same project', () => {
     const p = arrived();
     expect(dismissArrival(p, 'Y').arrivals).toEqual([]);
     const clean = dismissArrival(p, 'Y');
     expect(dismissArrival(clean, 'Y')).toBe(clean);
   });
 
-  it('arrivalArea: a caixa das raízes marcadas; sem marca, nada', () => {
+  it('arrivalArea: the box of the marked roots; with no mark, nothing', () => {
     const p = arrived();
     expect(arrivalArea(world())).toBeNull();
     expect(arrivalArea(p)).toEqual({ x: 1750, y: 0, width: 500, height: 500 });
   });
 });
 
-describe('arrivalHasReference (etapa #764, AP1: a chegada deduzida das setas)', () => {
-  it('raiz sem seta para outra raiz não tem referência', () => {
+describe('arrivalHasReference (stage #764, AP1: the arrival deduced from the arrows)', () => {
+  it('a root with no arrow to another root has no reference', () => {
     const p = withLinkedContainer(world(), 'Y', null);
     expect(arrivalHasReference(p, 'Y')).toBe(false);
   });
 
-  it('seta de um membro da raiz para um membro de outra raiz: tem referência', () => {
+  it('an arrow from a member of the root to a member of another root: has a reference', () => {
     const p = withLinkedContainer(world(), 'X', 'm2');
     expect(arrivalHasReference(p, 'X')).toBe(true);
   });
 
-  it('a seta que chega na raiz (a outra ponta é quem aponta) também conta', () => {
+  it('the arrow that arrives at the root (the other end is the one pointing) also counts', () => {
     let p = withLinkedContainer(world(), 'X', null);
     p = createArrow(p, { id: 'in', from: 'm2', to: 'Xm' });
     expect(arrivalHasReference(p, 'X')).toBe(true);
   });
 
-  it('seta entre dois membros da própria raiz não conta', () => {
+  it('an arrow between two members of the root itself does not count', () => {
     let p = withLinkedContainer(world(), 'X', null);
     p = mark(p, 'Xm2', 'X');
     p = createArrow(p, { id: 'self', from: 'Xm', to: 'Xm2' });
     expect(arrivalHasReference(p, 'X')).toBe(false);
   });
 
-  it('uma seta criada ou apagada depois muda o resultado', () => {
+  it('an arrow created or deleted afterwards changes the result', () => {
     const p = withLinkedContainer(world(), 'X', 'm2');
     const without = { ...p, arrows: p.arrows.filter((a) => a.id !== 'ar-X') };
     expect(arrivalHasReference(without, 'X')).toBe(false);

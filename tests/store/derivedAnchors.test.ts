@@ -1,5 +1,5 @@
-// Candidatas a âncora (R4, decisão 13): as marcações do projeto à vista agrupadas por espaço, para
-// a seção Âncora listar só as do mesmo container (ou do canvas) sem varrer o projeto a cada render.
+// Anchor candidates (R4, decision 13): the markings of the project in view grouped by space, so that
+// the Anchor section lists only those of the same container (or the canvas) without scanning the project on every render.
 import { signal } from '@preact/signals';
 import { describe, expect, it } from 'vitest';
 import { addContainer, createMarking, type ComponentCatalog } from '../../src/model';
@@ -29,8 +29,8 @@ function setup() {
 
 const ids = (list: readonly { id: string }[] | undefined) => list?.map((m) => m.id);
 
-describe('derivado: marcações por espaço (candidatas a âncora)', () => {
-  it('agrupa por container, e o canvas fica sob `null`, na ordem do projeto', () => {
+describe('derived: markings by space (anchor candidates)', () => {
+  it('groups by container, and the canvas stays under `null`, in project order', () => {
     const { derived } = setup();
     const spaces = derived.markingsBySpace.value;
     expect(ids(spaces.get('I1'))).toEqual(['A', 'B']);
@@ -38,7 +38,7 @@ describe('derivado: marcações por espaço (candidatas a âncora)', () => {
     expect(ids(spaces.get(null))).toEqual(['F']);
   });
 
-  it('acompanha o projeto e mantém o mesmo objeto enquanto ele não muda', () => {
+  it('follows the project and keeps the same object while it does not change', () => {
     const { store, derived } = setup();
     const first = derived.markingsBySpace.value;
     expect(derived.markingsBySpace.value).toBe(first);

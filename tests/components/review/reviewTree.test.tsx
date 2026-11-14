@@ -18,10 +18,10 @@ import { installFakeCanvas } from '../../canvas/harness';
 import { AT, propose } from '../../model/proposalFixtures';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 
-// Achado 12 do relato de 2026-10-11: na revisão de uma importação nova (projeto sem
-// imagens com uma proposta que cria imagens e marcações), a Árvore dizia "Nenhuma imagem
-// ainda." e o estado vazio do canvas aparecia por cima das imagens propostas, porque os
-// dois liam o projeto atual e não a prévia ("como ficaria") da visão Proposto.
+// Finding 12 of the 2026-10-11 report: in the review of a new import (project without
+// images with a proposal that creates images and markings), the Tree said "No images
+// yet." and the canvas empty state appeared over the proposed images, because both read
+// the current project and not the preview ("how it would look") of the Proposed view.
 
 beforeAll(() => {
   installFakeCanvas();
@@ -29,7 +29,7 @@ beforeAll(() => {
   vi.stubGlobal('cancelAnimationFrame', () => undefined);
 });
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
   showToolWindow('tree');
 });
@@ -39,12 +39,12 @@ afterAll(() => {
   vi.unstubAllGlobals();
 });
 
-/** Projeto recém-criado (sem imagens) e a proposta que cria a primeira imagem com um item. */
+/** Freshly created project (no images) and the proposal that creates the first image with one item. */
 function firstImport() {
   const base = createProject({
-    name: 'Importação',
+    name: 'Import',
     now: AT,
-    firstLayer: { id: 'L1', name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: 'L1', name: 'Layer 1', color: '#D32F2F' },
   });
   let after = addContainer(base, {
     id: 'I1',
@@ -56,16 +56,16 @@ function firstImport() {
     id: 'M1',
     containerId: 'I1',
     rect: { x: 10, y: 10, width: 200, height: 100 },
-    name: 'Formulário',
+    name: 'Form',
   });
-  return { base, proposal: propose(base, after, { id: 'P1', title: 'Importação' }) };
+  return { base, proposal: propose(base, after, { id: 'P1', title: 'Import' }) };
 }
 
-const TREE_EMPTY = 'Nenhuma imagem ainda.';
-const CANVAS_EMPTY = 'Nenhuma imagem ainda. Adicione fotos para montar o canvas.';
+const TREE_EMPTY = 'No images yet.';
+const CANVAS_EMPTY = 'No images yet. Add photos to build the canvas.';
 
-describe('revisão de uma importação nova', () => {
-  it('a Árvore lê a prévia na visão Proposto (imagens e itens criados) e o atual na visão Atual', async () => {
+describe('review of a new import', () => {
+  it('the Tree reads the preview in the Proposed view (created images and items) and the current one in the Current view', async () => {
     const { base, proposal } = firstImport();
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
@@ -74,21 +74,21 @@ describe('revisão de uma importação nova', () => {
     renderInEditor(h, <TreeWindow onSelect={onSelect} />);
     expect(screen.queryByText(TREE_EMPTY)).toBeNull();
     expect(screen.getByRole('button', { name: /^images\/cadastro\.webp/ })).toBeTruthy();
-    const item = screen.getByRole('button', { name: /^Formulário/ });
+    const item = screen.getByRole('button', { name: /^Form/ });
     item.click();
     expect(onSelect).toHaveBeenCalledWith({ kind: 'marking', id: 'M1' });
 
-    // Na visão Atual, o projeto como está: ainda sem imagens.
+    // In the Current view, the project as it is: still without images.
     act(() => h.review.setView('current'));
     expect(screen.getByText(TREE_EMPTY)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /^Formulário/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Form/ })).toBeNull();
 
-    // Fora da revisão, o projeto atual.
+    // Outside the review, the current project.
     act(() => h.review.close());
     expect(screen.getByText(TREE_EMPTY)).toBeTruthy();
   });
 
-  it('o estado vazio do canvas não aparece por cima das imagens propostas', async () => {
+  it('the canvas empty state does not appear over the proposed images', async () => {
     const { base, proposal } = firstImport();
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);

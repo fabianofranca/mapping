@@ -15,9 +15,9 @@
  */
 
 // Trecho de compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Switch.kt
-// do androidx (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff): a assinatura e o KDoc do `Switch`
-// (com o slot `thumbContent`) e as duas sobrecargas de `SwitchDefaults.colors`, sem os corpos.
-// Fixture dos testes do extrator `mapping-signature`; não compila.
+// from androidx (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff): the signature and the KDoc of `Switch`
+// (with the `thumbContent` slot) and the two overloads of `SwitchDefaults.colors`, without the bodies.
+// Fixture of the tests of the `mapping-signature` extractor; it does not compile.
 
 package androidx.compose.material3
 

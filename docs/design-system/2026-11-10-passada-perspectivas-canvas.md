@@ -1,17 +1,17 @@
-# Passada visual das perspectivas e do canvas — 2026-11-10 (épico `epic/passada-perspectivas-canvas`)
+# Visual pass over the perspectives and the canvas — 2026-11-10 (épico `epic/passada-perspectivas-canvas`)
 
 ## Pendências
 
-- **`PerspectivesSection` (Detalhes):** o gatilho do **Enviar para perspectiva…** passa a ter a aparência do `Button` (`font: var(--t-text)`, altura `--control-height`, borda `--color-border-control`, estados de hover e pressionado). Arquivos: `src/ui/PerspectiveSendMenu.tsx`, `src/theme/editor.css`.
-- **`Menu`:** nova variante `menu-popover-control` do `MenuPopover` (gatilho com a aparência do `Button`, em vez da do **projeto ▾**). O `MenuPopover.tsx` não muda; a classe já era aceita.
-- **`CanvasMarking` e seção `Canvas.md`:** o selo "Veio de…" da raiz grande sobe acima da faixa do nome de outra raiz logo abaixo e, em qualquer raiz, escolhe o lugar já puxado para dentro da vista (nunca sobre o título de outra raiz nem sobre o da Área de chegada); o rótulo da Área de chegada fica a `tokens.arrival.pad` (8 px) de cada borda da área visível e ganha reticências quando não cabe. Arquivos: `src/canvas/arrivals.ts`, `src/canvas/renderers/arrivals.ts`.
-- **`Notice`:** os avisos curtos (`ui.toast`) e o de progresso saem do `.canvas-overlay` (topo) e vão para o `.canvas-overlay-foot`: pé do canvas, à esquerda, da largura do texto (quebra em linhas se a coluna for estreita, sem reticências), sem passar sob o minimapa; erros, Somente leitura, reparo e backup seguem no topo. Arquivos: `src/app/CanvasNotices.tsx`, `src/theme/canvas.css`.
-- **`Breadcrumbs`:** na barra do canvas acima de 470 px, os trechos que não são o último encolhem primeiro (`flex-shrink: 20`, mínimo `--space-8`); o último encolhe por último. Até 470 px nada muda (BC1). Arquivo: `src/theme/editor.css`.
+- **`PerspectivesSection` (Details):** the **Send to perspective…** trigger now has the look of the `Button` (`font: var(--t-text)`, height `--control-height`, border `--color-border-control`, hover and pressed states). Files: `src/ui/PerspectiveSendMenu.tsx`, `src/theme/editor.css`.
+- **`Menu`:** new `menu-popover-control` variant of `MenuPopover` (trigger with the look of the `Button`, instead of that of **project ▾**). `MenuPopover.tsx` does not change; the class was already accepted.
+- **`CanvasMarking` and the `Canvas.md` section:** the "Came from…" badge of the large root rises above the name strip of another root right below it and, on any root, picks the spot already pulled into the view (never over the title of another root or over that of the Arrival area); the Arrival area label sits at `tokens.arrival.pad` (8 px) from each edge of the visible area and gets an ellipsis when it does not fit. Files: `src/canvas/arrivals.ts`, `src/canvas/renderers/arrivals.ts`.
+- **`Notice`:** short notices (`ui.toast`) and the progress one leave `.canvas-overlay` (top) and go to `.canvas-overlay-foot`: foot of the canvas, on the left, as wide as the text (wraps onto lines if the column is narrow, no ellipsis), without going under the minimap; errors, Read-only, repair and backup stay at the top. Files: `src/app/CanvasNotices.tsx`, `src/theme/canvas.css`.
+- **`Breadcrumbs`:** in the canvas bar above 470 px, the segments that are not the last shrink first (`flex-shrink: 20`, minimum `--space-8`); the last one shrinks last. Up to 470 px nothing changes (BC1). File: `src/theme/editor.css`.
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-10: versão 78. As cinco pendências acima foram gravadas: `components/Menu/README.md` (variante `menu-popover-control`), `components/PerspectivesSection/README.md` (gatilho com a aparência do `Button`), `Canvas.md` (selo "Veio de…" e rótulo da Área de chegada; o guia `CanvasMarking` não descreve essas marcas, então não mudou), `components/Notice/README.md` (avisos curtos e de progresso no pé do canvas) e `components/Breadcrumbs/README.md` (encolhimento dos trechos na barra larga).
+Gravado no artefato **Mapping** on 2026-11-10: version 78. The five pending items above were written: `components/Menu/README.md` (`menu-popover-control` variant), `components/PerspectivesSection/README.md` (trigger with the look of the `Button`), `Canvas.md` ("Came from…" badge and Arrival area label; the `CanvasMarking` guide does not describe these marks, so it did not change), `components/Notice/README.md` (short and progress notices at the foot of the canvas) and `components/Breadcrumbs/README.md` (segment shrinking in the wide bar).
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

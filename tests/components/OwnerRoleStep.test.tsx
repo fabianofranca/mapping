@@ -11,7 +11,7 @@ import type { Json } from '../model/specV11Fixtures';
 import { createHarness, renderLive } from './harness';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -39,6 +39,7 @@ async function openOwnerStep(edit: (s: Json) => void) {
     );
   });
   const user = userEvent.setup();
+  // pt-BR kept: shared fixture data asserted by tests/model (layer id of specV11Fixtures)
   const eventos = layerOf(harness.project(), 's', 'eventos');
   const layerName = harness.project().layers.find((l) => l.id === eventos)?.name ?? '';
   await user.click(
@@ -48,21 +49,21 @@ async function openOwnerStep(edit: (s: Json) => void) {
   );
   const dialog = await vi.waitFor(() => {
     const el = document.querySelector('dialog');
-    if (!el) throw new Error('sem o diálogo');
+    if (!el) throw new Error('no dialog');
     return el;
   });
   await user.click(
     within(dialog).getByRole('button', { name: /^onClick/, hidden: true }),
   );
   await vi.waitFor(() => {
-    if (!document.querySelector('dialog')?.textContent?.includes('Dono do'))
-      throw new Error('sem o passo do dono');
+    if (!document.querySelector('dialog')?.textContent?.includes('Owner of the'))
+      throw new Error('no owner step');
   });
   return { harness, user };
 }
 
-describe('passo do dono com papel (decisão 18)', () => {
-  it('uma opção por dono e papel; escolher grava o papel numa só entrada de desfazer', async () => {
+describe('owner step with a role (decision 18)', () => {
+  it('one option per owner and role; choosing saves the role in a single undo entry', async () => {
     const { harness, user } = await openOwnerStep((s) => {
       needsOwner(s);
       withRoles(s);
@@ -71,6 +72,7 @@ describe('passo do dono com papel (decisão 18)', () => {
     const names = within(dialog)
       .getAllByRole('button', { hidden: true })
       .map((b) => b.textContent);
+    // pt-BR kept: shared fixture data asserted by tests/model, tests/mcp (role names of roleFixtures)
     expect(names).toContain('Button › Clique');
     expect(names).toContain('Button › Pressionar');
     const before = harness.project().annotations.length;
@@ -90,7 +92,7 @@ describe('passo do dono com papel (decisão 18)', () => {
     expect(harness.project().annotations.length).toBe(before);
   });
 
-  it('sem papéis, um botão por dono e parentRole nulo', async () => {
+  it('without roles, one button per owner and null parentRole', async () => {
     const { harness, user } = await openOwnerStep(needsOwner);
     const dialog = document.querySelector('dialog') as HTMLElement;
     expect(within(dialog).queryByText(/›/)).toBeNull();

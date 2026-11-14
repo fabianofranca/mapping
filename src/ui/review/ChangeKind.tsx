@@ -2,9 +2,9 @@ import { t } from '../../i18n';
 import type { ChangeType } from '../../model';
 import { Icon, type IconName } from '../icons';
 
-// Selo neutro do tipo de mudança (HANDOFF-PROPOSALS 4.1): a forma diz o tipo, nunca a
-// cor (verde e vermelho ficam para aceita e rejeitada). + criada, − removida, ⇄ movida,
-// ∿ alterada, duas molduras para imagem trocada.
+// Neutral seal of the change kind (HANDOFF-PROPOSALS 4.1): the shape says the kind, never the
+// color (green and red are for accepted and rejected). + created, − removed, ⇄ moved,
+// ∿ changed, two frames for a swapped image.
 
 export const CHANGE_KIND_ICONS: Readonly<Record<ChangeType, IconName>> = {
   created: 'plus',
@@ -14,7 +14,7 @@ export const CHANGE_KIND_ICONS: Readonly<Record<ChangeType, IconName>> = {
   replaced: 'replaced',
 };
 
-/** Nome do tipo ("Criada", "Movida"…), para a dica e os filtros. */
+/** Name of the kind ("Created", "Moved"…), for the tooltip and the filters. */
 export function changeKindLabel(type: ChangeType): string {
   return t(`review.kind.${type}`);
 }
@@ -25,9 +25,9 @@ export function ChangeKind({
   decorative,
 }: {
   readonly type: ChangeType;
-  /** `sm`: 18px, nas linhas e cartões. */
+  /** `sm`: 18px, in rows and cards. */
   readonly size?: 'md' | 'sm';
-  /** O tipo já está escrito ao lado (ex.: nos filtros). */
+  /** The kind is already written beside it (e.g. in the filters). */
   readonly decorative?: boolean;
 }) {
   const label = changeKindLabel(type);

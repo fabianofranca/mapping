@@ -6,10 +6,10 @@ import {
 } from '../../../src/ui/review/ReviewLevels';
 
 describe('activeFilterConditions', () => {
-  it('concorda com hasActiveFilters do modelo em cada grupo', () => {
+  it('agrees with the model hasActiveFilters in each group', () => {
     expect(activeFilterGroups(NO_FILTERS)).toBe(0);
     expect(hasActiveFilters(NO_FILTERS)).toBe(false);
-    const ativos = [
+    const active = [
       { decision: 'accepted' as const },
       { types: ['created' as const] },
       { imageId: 'I1' },
@@ -17,7 +17,7 @@ describe('activeFilterConditions', () => {
       { onlyConflicts: true },
       { onlyRevised: true },
     ];
-    for (const patch of ativos) {
+    for (const patch of active) {
       const f = { ...NO_FILTERS, ...patch };
       expect(activeFilterConditions(f).filter(Boolean)).toHaveLength(1);
       expect(hasActiveFilters(f)).toBe(true);

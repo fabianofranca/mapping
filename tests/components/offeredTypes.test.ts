@@ -3,9 +3,9 @@ import type { Project, SpecAnnotationType } from '../../src/model';
 import { offeredTypeChoice } from '../../src/ui/offeredTypes';
 import { notesProject } from '../model/notesFixtures';
 
-// O que o + de uma camada oferece à dona e, sem tipo, o motivo (etapa #1280, decisões 4 e 5).
+// What the + of a layer offers the owner and, with no type, the reason (stage #1280, decisions 4 and 5).
 
-/** `notesProject()` com os tipos da camada Notas (LN) trocados por `map`. */
+/** `notesProject()` with the types of the Notas layer (LN) replaced by `map`. */
 function withTypes(
   map: (types: readonly SpecAnnotationType[]) => SpecAnnotationType[],
 ): Project {
@@ -39,7 +39,7 @@ const plain = (types: readonly SpecAnnotationType[], appliesTo?: 'arrow' | 'mark
   });
 
 describe('offeredTypeChoice', () => {
-  it('marcação comum: os tipos flutuantes saem e o motivo é "floating"', () => {
+  it('plain marking: the floating types drop out and the reason is "floating"', () => {
     const choice = offeredTypeChoice(notesProject(), 'LN', {
       kind: 'marking',
       floating: false,
@@ -48,7 +48,7 @@ describe('offeredTypeChoice', () => {
     expect(choice.empty).toBe('floating');
   });
 
-  it('seta: o motivo também é "floating"', () => {
+  it('arrow: the reason is also "floating"', () => {
     const choice = offeredTypeChoice(notesProject(), 'LN', {
       kind: 'arrow',
       floating: false,
@@ -57,7 +57,7 @@ describe('offeredTypeChoice', () => {
     expect(choice.empty).toBe('floating');
   });
 
-  it('marcação flutuante: a lista fica como hoje (Nota e Tabela)', () => {
+  it('floating marking: the list stays as today (Nota and Tabela)', () => {
     const choice = offeredTypeChoice(notesProject(), 'LN', {
       kind: 'marking',
       floating: true,
@@ -66,12 +66,12 @@ describe('offeredTypeChoice', () => {
     expect(choice.types.map((type) => type.id)).toEqual(['nota', 'tabela']);
   });
 
-  it('camada com especialização que não carrega: "unavailable"', () => {
+  it('layer with a specialization that does not load: "unavailable"', () => {
     const base = notesProject();
     const broken: Project = {
       ...base,
       layers: base.layers.map((l) =>
-        l.id === 'LN' && l.spec ? { ...l, spec: { ...l.spec, layerId: 'nenhuma' } } : l,
+        l.id === 'LN' && l.spec ? { ...l, spec: { ...l.spec, layerId: 'missing' } } : l,
       ),
     };
     expect(offeredTypeChoice(broken, 'LN', { kind: 'marking', floating: false })).toEqual(
@@ -79,14 +79,14 @@ describe('offeredTypeChoice', () => {
     );
   });
 
-  it('camada sem tipos: "no-types"', () => {
+  it('layer without types: "no-types"', () => {
     const project = withTypes(() => []);
     expect(offeredTypeChoice(project, 'LN', { kind: 'marking', floating: true })).toEqual(
       { types: [], empty: 'no-types' },
     );
   });
 
-  it('tipo comum que vale só para marcação: a seta recebe "not-for-arrow"', () => {
+  it('plain type that applies only to markings: the arrow gets "not-for-arrow"', () => {
     const project = withTypes((types) => plain(types, 'marking'));
     const arrow = offeredTypeChoice(project, 'LN', { kind: 'arrow', floating: false });
     expect(arrow).toEqual({ types: [], empty: 'not-for-arrow' });
@@ -98,14 +98,14 @@ describe('offeredTypeChoice', () => {
     expect(marking.types).toHaveLength(2);
   });
 
-  it('tipo comum que vale só para seta: a marcação recebe "not-for-marking"', () => {
+  it('plain type that applies only to arrows: the marking gets "not-for-marking"', () => {
     const project = withTypes((types) => plain(types, 'arrow'));
     expect(
       offeredTypeChoice(project, 'LN', { kind: 'marking', floating: false }),
     ).toEqual({ types: [], empty: 'not-for-marking' });
   });
 
-  it('flutuantes e comuns juntos: a marcação comum fica só com os comuns', () => {
+  it('floating and plain together: the plain marking keeps only the plain ones', () => {
     const project = withTypes((types) =>
       types.map((type, i) => (i === 0 ? type : (plain([type])[0] ?? type))),
     );

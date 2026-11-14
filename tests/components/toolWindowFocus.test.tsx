@@ -26,8 +26,8 @@ import {
 import { sampleProject } from '../model/fixtures';
 import { createHarness } from './harness';
 
-// Foco ao fechar uma janela de ferramenta (etapa #295, FJ1): vai a quem abriu, senão ao
-// botão da faixa, senão ao canvas; só age com o foco dentro da janela.
+// Focus when closing a tool window (stage #295, FJ1): goes to whoever opened it, otherwise to
+// the strip button, otherwise to the canvas; only acts with focus inside the window.
 
 const harness = createHarness(sampleProject());
 
@@ -39,11 +39,11 @@ function Shell() {
     <EditorContext.Provider value={harness.context}>
       <ToolStrip side="left" />
       <main data-canvas-area tabIndex={-1} aria-label="canvas">
-        <button type="button">fundo</button>
+        <button type="button">background</button>
       </main>
       {windows.map((id) => (
         <ToolWindow key={id} id={id}>
-          <button type="button">controle {id}</button>
+          <button type="button">control {id}</button>
         </ToolWindow>
       ))}
       <ToolStrip side="right" />
@@ -56,18 +56,18 @@ const active = () => document.activeElement;
 const stripButton = (id: ToolWindowId) =>
   document.querySelector<HTMLElement>(`[data-strip-window="${id}"]`);
 const control = (id: ToolWindowId) =>
-  screen.getByRole('button', { name: `controle ${id}` });
+  screen.getByRole('button', { name: `control ${id}` });
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   for (const id of TOOL_WINDOWS) hideToolWindow(id);
 });
 afterEach(() => {
   cleanup();
 });
 
-describe('devolver o foco ao fechar', () => {
-  it('Árvore aberta pela faixa, foco no controle, X → botão da faixa', async () => {
+describe('return focus on close', () => {
+  it('Tree opened from the strip, focus on the control, X → strip button', async () => {
     const user = userEvent.setup();
     render(<Shell />);
     await user.click(stripButton('tree') as HTMLElement);
@@ -79,61 +79,61 @@ describe('devolver o foco ao fechar', () => {
     );
     await settle();
     expect(active()).toBe(stripButton('tree'));
-    // Fechada, o botão da faixa reflete isso: aria-pressed "false".
+    // Closed, the strip button reflects it: aria-pressed "false".
     expect(stripButton('tree')?.getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('Árvore aberta por atalho com o foco no canvas, fechar → canvas', async () => {
+  it('Tree opened by shortcut with focus on the canvas, close → canvas', async () => {
     render(<Shell />);
-    const fundo = screen.getByRole('button', { name: 'fundo' });
-    fundo.focus();
+    const background = screen.getByRole('button', { name: 'background' });
+    background.focus();
     showAndFocusToolWindow('tree');
     await settle();
     expect(active()?.getAttribute('data-window')).toBe('tree');
     closeToolWindow('tree');
     await settle();
-    expect(active()).toBe(fundo);
+    expect(active()).toBe(background);
   });
 
   it.each(['details', 'catalog'] as const)(
-    '%s fecha pelo X e volta à origem',
+    '%s closes with the X and goes back to the origin',
     async (id) => {
       render(<Shell />);
-      const fundo = screen.getByRole('button', { name: 'fundo' });
-      fundo.focus();
+      const background = screen.getByRole('button', { name: 'background' });
+      background.focus();
       showAndFocusToolWindow(id);
       await settle();
       control(id).focus();
       closeToolWindow(id);
       await settle();
-      expect(active()).toBe(fundo);
+      expect(active()).toBe(background);
     },
   );
 
-  it('foco fora da janela ao fechar → não muda', async () => {
+  it('focus outside the window on close → does not change', async () => {
     render(<Shell />);
     showToolWindow('tree');
     await settle();
-    const fundo = screen.getByRole('button', { name: 'fundo' });
-    fundo.focus();
+    const background = screen.getByRole('button', { name: 'background' });
+    background.focus();
     closeToolWindow('tree');
     await settle();
-    expect(active()).toBe(fundo);
+    expect(active()).toBe(background);
   });
 
-  it('quem abriu saiu do DOM → botão da faixa', async () => {
+  it('whoever opened it left the DOM → strip button', async () => {
     render(<Shell />);
-    const fundo = screen.getByRole('button', { name: 'fundo' });
-    fundo.focus();
+    const background = screen.getByRole('button', { name: 'background' });
+    background.focus();
     showAndFocusToolWindow('tree');
     await settle();
-    fundo.remove();
+    background.remove();
     closeToolWindow('tree');
     await settle();
     expect(active()).toBe(stripButton('tree'));
   });
 
-  it('janela aberta desde o carregamento → botão da faixa', async () => {
+  it('window open since load → strip button', async () => {
     showToolWindow('tree');
     render(<Shell />);
     await settle();
@@ -143,7 +143,7 @@ describe('devolver o foco ao fechar', () => {
     expect(active()).toBe(stripButton('tree'));
   });
 
-  it('sem botão da faixa → canvas', async () => {
+  it('without a strip button → canvas', async () => {
     showToolWindow('tree');
     render(<Shell />);
     await settle();
@@ -154,7 +154,7 @@ describe('devolver o foco ao fechar', () => {
     expect(active()?.hasAttribute('data-canvas-area')).toBe(true);
   });
 
-  it('abrir o Catálogo com o foco na Árvore não deixa o foco no body', async () => {
+  it('opening the Catalog with focus on the Tree does not leave focus on body', async () => {
     showToolWindow('tree');
     render(<Shell />);
     await settle();
@@ -165,7 +165,7 @@ describe('devolver o foco ao fechar', () => {
     expect(active()).toBe(stripButton('tree'));
   });
 
-  it('trocar de aba da janela inferior leva o foco à aba ativa', async () => {
+  it('switching tabs of the bottom window moves focus to the active tab', async () => {
     const user = userEvent.setup();
     showToolWindow('list');
     render(<Shell />);
@@ -177,7 +177,7 @@ describe('devolver o foco ao fechar', () => {
     expect(active()?.getAttribute('aria-selected')).toBe('true');
   });
 
-  it('trocar de aba pelo atalho, com o foco no canvas ou no conteúdo, foca a aba ativa', async () => {
+  it('switching tabs by shortcut, with focus on the canvas or on the content, focuses the active tab', async () => {
     showToolWindow('list');
     const { rerender } = render(<Shell />);
     await settle();
@@ -197,9 +197,9 @@ describe('devolver o foco ao fechar', () => {
   });
 });
 
-// Esc nas janelas Detalhes e Comentários (etapa #1273, FE1): fecha como o X quando o foco está
-// dentro, fora de um campo de texto e sem um modal ou menu que consuma o Esc.
-describe('Esc fecha Detalhes e Comentários', () => {
+// Esc in the Details and Comments windows (stage #1273, FE1): closes like the X when focus is
+// inside, outside a text field and without a modal or menu that consumes the Esc.
+describe('Esc closes Details and Comments', () => {
   function EscShell({ extra }: { readonly extra?: (id: ToolWindowId) => unknown }) {
     const windows = [...openWindowsOf('left'), ...openWindowsOf('right')];
     const bottom = openWindowOf('bottom');
@@ -210,8 +210,8 @@ describe('Esc fecha Detalhes e Comentários', () => {
         <main data-canvas-area tabIndex={-1} aria-label="canvas" />
         {windows.map((id) => (
           <ToolWindow key={id} id={id}>
-            <button type="button">controle {id}</button>
-            <input aria-label={`campo ${id}`} type="text" />
+            <button type="button">control {id}</button>
+            <input aria-label={`field ${id}`} type="text" />
             {extra?.(id) as never}
           </ToolWindow>
         ))}
@@ -225,7 +225,7 @@ describe('Esc fecha Detalhes e Comentários', () => {
   });
 
   it.each(['details', 'comments'] as const)(
-    '%s: Esc com o foco num botão fecha, foca o botão da faixa e a seleção fica',
+    '%s: Esc with focus on a button closes, focuses the strip button and the selection stays',
     async (id) => {
       const user = userEvent.setup();
       showToolWindow(id);
@@ -241,12 +241,12 @@ describe('Esc fecha Detalhes e Comentários', () => {
     },
   );
 
-  it('Esc num campo de texto dos Detalhes não fecha a janela', async () => {
+  it('Esc in a text field of Details does not close the window', async () => {
     const user = userEvent.setup();
     showToolWindow('details');
     render(<EscShell />);
     await settle();
-    const field = screen.getByRole('textbox', { name: 'campo details' });
+    const field = screen.getByRole('textbox', { name: 'field details' });
     field.focus();
     await user.keyboard('{Escape}');
     await settle();
@@ -254,7 +254,7 @@ describe('Esc fecha Detalhes e Comentários', () => {
     expect(active()).toBe(field);
   });
 
-  it('com um modal aberto dentro dos Detalhes, o Esc é só do modal', async () => {
+  it('with a modal open inside Details, the Esc belongs only to the modal', async () => {
     const user = userEvent.setup();
     showToolWindow('details');
     render(
@@ -264,33 +264,33 @@ describe('Esc fecha Detalhes e Comentários', () => {
             <Dialog
               title="Modal"
               onCancel={() => undefined}
-              actions={<button type="button">Ok do modal</button>}
+              actions={<button type="button">Modal OK</button>}
             />
           ) : null
         }
       />,
     );
     await settle();
-    screen.getByRole('button', { name: 'Ok do modal', hidden: true }).focus();
+    screen.getByRole('button', { name: 'Modal OK', hidden: true }).focus();
     await user.keyboard('{Escape}');
     await settle();
     expect(isToolWindowOpen('details')).toBe(true);
   });
 
-  it('um menu aberto dentro dos Detalhes fecha só o menu', async () => {
+  it('a menu open inside Details closes only the menu', async () => {
     const user = userEvent.setup();
     showToolWindow('details');
     render(
       <EscShell
         extra={(id) =>
           id === 'details' ? (
-            <ActionMenu label="Ações" items={[{ label: 'Item', onSelect: () => {} }]} />
+            <ActionMenu label="Actions" items={[{ label: 'Item', onSelect: () => {} }]} />
           ) : null
         }
       />,
     );
     await settle();
-    await user.click(screen.getByRole('button', { name: 'Ações' }));
+    await user.click(screen.getByRole('button', { name: 'Actions' }));
     await screen.findByRole('menu');
     await user.keyboard('{Escape}');
     await settle();
@@ -298,7 +298,7 @@ describe('Esc fecha Detalhes e Comentários', () => {
     expect(isToolWindowOpen('details')).toBe(true);
   });
 
-  it('Esc na Árvore não fecha a Árvore', async () => {
+  it('Esc in the Tree does not close the Tree', async () => {
     const user = userEvent.setup();
     showToolWindow('tree');
     render(<EscShell />);
@@ -309,13 +309,13 @@ describe('Esc fecha Detalhes e Comentários', () => {
     expect(isToolWindowOpen('tree')).toBe(true);
   });
 
-  it('Shift+Esc continua escondendo a janela em foco', async () => {
+  it('Shift+Esc keeps hiding the focused window', async () => {
     const user = userEvent.setup();
     showToolWindow('details');
     render(<EscShell />);
     await settle();
     control('details').focus();
-    // O Shift+Esc é dos atalhos do editor; o ToolWindow não o trata (a janela segue aberta).
+    // Shift+Esc belongs to the editor shortcuts; ToolWindow does not handle it (the window stays open).
     await user.keyboard('{Shift>}{Escape}{/Shift}');
     await settle();
     expect(isToolWindowOpen('details')).toBe(true);

@@ -1,6 +1,6 @@
-# Código de instanciação — 2026-10-20 (PR #190, MCP 0.6.0, schema v11)
+# Instantiation code — 2026-10-20 (PR #190, MCP 0.6.0, schema v11)
 
 ## Alterado
 
-- O `code` das especializações passa a ser o código com que se cria uma instância do tipo.
-- `platforms[].repo` fica na especialização e o projeto guarda só o clone local (especialização `formatVersion` 5).
+- The `code` of the specializations becomes the code used to create an instance of the type.
+- `platforms[].repo` stays in the specialization and the project keeps only the local clone (specialization `formatVersion` 5).

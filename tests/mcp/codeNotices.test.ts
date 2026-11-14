@@ -26,8 +26,8 @@ import {
   type Connection,
 } from './workspace';
 
-// Etapa #1084 (F2): `notices` em `types[...]` do `get_code_hints` — avisos do tipo, dos campos
-// e das colunas, ordenados por gravidade, com o lugar; só nos tipos com `code` na plataforma.
+// Stage #1084 (F2): `notices` in `types[...]` of `get_code_hints` — notices of the type, the fields
+// and the columns, ordered by severity, with the place; only on types with `code` on the platform.
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -37,7 +37,7 @@ const SPEC = {
   format: 'mapping-spec',
   formatVersion: 10,
   id: 'av',
-  name: 'Avisos',
+  name: 'Notices',
   version: 1,
   platforms: [
     {
@@ -54,27 +54,29 @@ const SPEC = {
       color: '#1E88E5',
       annotationTypes: [
         {
-          id: 'cartao',
-          name: 'Cartão',
+          id: 'card',
+          name: 'Card',
           fields: [
             {
-              key: 'estilo',
+              key: 'style',
               type: 'string',
-              notices: [{ kind: 'deprecated', message: 'compose: use variante.' }],
+              notices: [{ kind: 'deprecated', message: 'compose: use variant.' }],
             },
             {
-              key: 'rascunho',
+              key: 'draft',
               type: 'string',
-              notices: [{ kind: 'removed', message: 'Campo fora do contrato.' }],
+              notices: [{ kind: 'removed', message: 'Field outside the contract.' }],
             },
             {
-              key: 'itens',
+              key: 'items',
               type: 'table',
               columns: [
                 {
-                  key: 'rotulo',
+                  key: 'label',
                   type: 'string',
-                  notices: [{ kind: 'pending', message: 'Coluna sem equivalente.' }],
+                  notices: [
+                    { kind: 'pending', message: 'Column without an equivalent.' },
+                  ],
                 },
               ],
             },
@@ -82,25 +84,25 @@ const SPEC = {
           notices: [
             {
               kind: 'pending',
-              message: 'Falta o slot.',
+              message: 'Missing slot.',
               since: '2026-11-04',
-              ref: 'docs/cartao.md',
+              ref: 'docs/card.md',
             },
-            { kind: 'diverges', message: 'compose: sem weight.', ref: 'docs/cartao.md' },
+            { kind: 'diverges', message: 'compose: no weight.', ref: 'docs/card.md' },
           ],
-          code: code('Cartao'),
+          code: code('Card'),
         },
         {
-          id: 'simples',
-          name: 'Simples',
-          fields: [{ key: 'titulo', type: 'string' }],
-          code: code('Simples'),
+          id: 'simple',
+          name: 'Simple',
+          fields: [{ key: 'title', type: 'string' }],
+          code: code('Simple'),
         },
         {
-          id: 'antigo',
-          name: 'Antigo',
-          fields: [{ key: 'titulo', type: 'string' }],
-          notices: [{ kind: 'removed', message: 'Tipo fora do contrato.' }],
+          id: 'old',
+          name: 'Old',
+          fields: [{ key: 'title', type: 'string' }],
+          notices: [{ kind: 'removed', message: 'Type outside the contract.' }],
         },
       ],
     },
@@ -128,9 +130,9 @@ function build(spec: unknown): Project {
     });
     for (const [k, v] of Object.entries(values)) p = setFieldValue(p, id, k, v);
   };
-  add('CA', 'cartao', 0, { estilo: 'x' });
-  add('SI', 'simples', 100, { titulo: 'S' });
-  add('AN', 'antigo', 200, { titulo: 'A' });
+  add('CA', 'card', 0, { style: 'x' });
+  add('SI', 'simple', 100, { title: 'S' });
+  add('AN', 'old', 200, { title: 'A' });
   return p;
 }
 
@@ -155,16 +157,16 @@ function writeProject(name: string, spec: unknown): void {
 
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), 'mapping-mcp-notices-'));
-  writeProject('avisos', SPEC);
-  const semAvisos = JSON.parse(JSON.stringify(SPEC)) as Json;
-  const types = semAvisos.layers[0].annotationTypes as Json[];
+  writeProject('notices', SPEC);
+  const withoutNotices = JSON.parse(JSON.stringify(SPEC)) as Json;
+  const types = withoutNotices.layers[0].annotationTypes as Json[];
   delete types[0]!.notices;
   for (const f of types[0]!.fields as Json[]) {
     delete f.notices;
     for (const c of f.columns ?? []) delete c.notices;
   }
   delete types[2]!.notices;
-  writeProject('limpo', semAvisos);
+  writeProject('clean', withoutNotices);
   mcp = await connect([root]);
 });
 
@@ -180,48 +182,48 @@ const hints = async (project: string, marking: string) =>
     }),
   );
 
-describe('get_code_hints: notices do tipo', () => {
-  it('traz os avisos do tipo, dos campos e das colunas, por gravidade, com o lugar', async () => {
-    const h = await hints('avisos', 'MCA');
-    expect(h.types['av/cartao'].notices).toEqual([
-      { kind: 'removed', message: 'Campo fora do contrato.', key: 'rascunho' },
-      { kind: 'deprecated', message: 'compose: use variante.', key: 'estilo' },
-      { kind: 'diverges', message: 'compose: sem weight.', ref: 'docs/cartao.md' },
+describe('get_code_hints: notices of the type', () => {
+  it('brings the notices of the type, the fields and the columns, by severity, with the place', async () => {
+    const h = await hints('notices', 'MCA');
+    expect(h.types['av/card'].notices).toEqual([
+      { kind: 'removed', message: 'Field outside the contract.', key: 'draft' },
+      { kind: 'deprecated', message: 'compose: use variant.', key: 'style' },
+      { kind: 'diverges', message: 'compose: no weight.', ref: 'docs/card.md' },
       {
         kind: 'pending',
-        message: 'Falta o slot.',
+        message: 'Missing slot.',
         since: '2026-11-04',
-        ref: 'docs/cartao.md',
+        ref: 'docs/card.md',
       },
       {
         kind: 'pending',
-        message: 'Coluna sem equivalente.',
-        key: 'itens',
-        column: 'rotulo',
+        message: 'Column without an equivalent.',
+        key: 'items',
+        column: 'label',
       },
     ]);
   });
 
-  it('o aviso do campo vem mesmo com o campo vazio', async () => {
-    const h = await hints('avisos', 'MSI');
-    expect(h.types['av/simples']).not.toHaveProperty('notices');
-    const c = await hints('avisos', 'MCA');
-    expect(c.types['av/cartao'].notices).toContainEqual({
+  it('the field notice comes even with an empty field', async () => {
+    const h = await hints('notices', 'MSI');
+    expect(h.types['av/simple']).not.toHaveProperty('notices');
+    const c = await hints('notices', 'MCA');
+    expect(c.types['av/card'].notices).toContainEqual({
       kind: 'removed',
-      message: 'Campo fora do contrato.',
-      key: 'rascunho',
+      message: 'Field outside the contract.',
+      key: 'draft',
     });
   });
 
-  it('tipo sem code na plataforma fica em unmappedTypes, sem notices', async () => {
-    const h = await hints('avisos', 'MAN');
-    expect(h.unmappedTypes).toEqual(['av/antigo']);
+  it('a type without code on the platform goes to unmappedTypes, without notices', async () => {
+    const h = await hints('notices', 'MAN');
+    expect(h.unmappedTypes).toEqual(['av/old']);
     expect(h.types).toEqual({});
-    expect(JSON.stringify(h)).not.toContain('Tipo fora do contrato');
+    expect(JSON.stringify(h)).not.toContain('Type outside the contract');
   });
 
-  it('sem avisos na especialização, a chave notices não existe', async () => {
-    const h = await hints('limpo', 'MCA');
-    expect(h.types['av/cartao']).not.toHaveProperty('notices');
+  it('without notices in the specialization, the notices key does not exist', async () => {
+    const h = await hints('clean', 'MCA');
+    expect(h.types['av/card']).not.toHaveProperty('notices');
   });
 });

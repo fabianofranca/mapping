@@ -27,10 +27,10 @@ import { Refs } from './items';
 import { findProject, loadProject, type LoadedProject } from './projects';
 import type { Roots } from './paths';
 
-// `list_components` e `get_component` (etapa Biblioteca, B2): o que um agente precisa saber de
-// um componente da biblioteca (documento, campos, exemplos, `code`, `sources`) sem abrir os
-// arquivos do pacote. Somente leitura. O pacote vem da cópia aplicada ao projeto
-// (`project` + `specId`, lendo `specs/<pasta>/`) ou de uma pasta qualquer (`path`).
+// `list_components` and `get_component` (Library stage, B2): what an agent needs to know about
+// a library component (document, fields, examples, `code`, `sources`) without opening the
+// package files. Read-only. The package comes from the copy applied to the project
+// (`project` + `specId`, reading `specs/<folder>/`) or from any folder (`path`).
 
 type Json = Record<string, unknown>;
 
@@ -42,7 +42,7 @@ export interface ComponentArgs {
 
 interface OpenedPackage {
   readonly source: PackageSource;
-  /** Projeto que aplica o pacote (`project` + `specId`); `null` ao ler por `path`. */
+  /** Project that applies the package (`project` + `specId`); `null` when reading by `path`. */
   readonly loaded: LoadedProject | null;
 }
 
@@ -51,20 +51,20 @@ async function openPackage(roots: Roots, args: ComponentArgs): Promise<OpenedPac
   if (byPath === (args.project !== undefined)) {
     throw new ToolError(
       'invalid-arguments',
-      'informe `project` + `specId` (a cópia aplicada) ou `path` (a pasta do pacote ou o arquivo da especialização), não os dois',
+      'provide `project` + `specId` (the applied copy) or `path` (the package folder or the specialization file), not both',
     );
   }
   if (args.path !== undefined) {
     return { source: await packageByPath(roots, args.path), loaded: null };
   }
   if (args.specId === undefined) {
-    throw new ToolError('invalid-arguments', 'informe `specId` (veja get_project)');
+    throw new ToolError('invalid-arguments', 'provide `specId` (see get_project)');
   }
   const location = await findProject(roots, args.project!);
   const loaded = await loadProject(roots, location);
   const applied = getSpecialization(loaded.project, args.specId);
   if (!applied) {
-    throw new ToolError('not-found', `especialização não aplicada: ${args.specId}`, {
+    throw new ToolError('not-found', `specialization not applied: ${args.specId}`, {
       applied: loaded.project.specializations.map((s) => s.id),
     });
   }
@@ -72,7 +72,7 @@ async function openPackage(roots: Roots, args: ComponentArgs): Promise<OpenedPac
   if (!spec) {
     throw new ToolError(
       'spec-unavailable',
-      `a cópia da especialização está ausente ou inválida: ${applied.file}`,
+      `the specialization copy is missing or invalid: ${applied.file}`,
       { specId: args.specId, file: applied.file },
     );
   }
@@ -86,7 +86,7 @@ interface LoadedComponent {
   readonly path: string;
   readonly json?: unknown;
   readonly component?: ComponentFile;
-  /** Por que não carregou. */
+  /** Why it did not load. */
   readonly problem?: string;
 }
 
@@ -97,19 +97,19 @@ async function loadComponent(
   if (type.component === undefined) return null;
   const path = source.resolve(type.component);
   const text = await source.read(path);
-  if (text === null) return { path, problem: 'arquivo do componente ausente no pacote' };
+  if (text === null) return { path, problem: 'component file missing from the package' };
   let json: unknown;
   try {
     json = JSON.parse(text);
   } catch {
-    return { path, problem: 'o arquivo do componente não é um JSON válido' };
+    return { path, problem: 'the component file is not valid JSON' };
   }
   const parsed = parseComponent(json);
   if (!parsed.ok) {
     return {
       path,
       json,
-      problem: `componente inválido: ${parsed.errors.slice(0, 3).join('; ')}`,
+      problem: `invalid component: ${parsed.errors.slice(0, 3).join('; ')}`,
     };
   }
   return { path, json, component: parsed.component };
@@ -130,7 +130,7 @@ function typeEntries(
   );
 }
 
-/** `list_components`: um item por tipo com componente. */
+/** `list_components`: one item per type with a component. */
 export async function listComponents(roots: Roots, args: ComponentArgs): Promise<Json> {
   const { source } = await openPackage(roots, args);
   const entries = typeEntries(source.spec);
@@ -164,8 +164,8 @@ export async function listComponents(roots: Roots, args: ComponentArgs): Promise
       ? {
           hint:
             source.spec.formatVersion < 4
-              ? 'a especialização é anterior à formatVersion 4: não tem componentes (use get_specialization para os tipos)'
-              : 'nenhum tipo declara `component`',
+              ? 'the specialization predates formatVersion 4: it has no components (use get_specialization for the types)'
+              : 'no type declares `component`',
         }
       : {}),
   };
@@ -192,18 +192,18 @@ function fieldView(field: SpecAnnotationType['fields'][number]): Json {
   return base;
 }
 
-/** O JSON do exemplo externo, quando pequeno; senão só o aviso. */
+/** The external example's JSON, when small; otherwise only the notice. */
 async function externalExample(source: PackageSource, file: string): Promise<Json> {
   const path = source.resolve(file);
   const text = await source.read(path);
   if (text === null) return { file: path, missing: true };
   if (Buffer.byteLength(text, 'utf8') > MAX_EXAMPLE_JSON_BYTES) {
-    return { file: path, json: null, omitted: 'grande demais; leia o arquivo do pacote' };
+    return { file: path, json: null, omitted: 'too large; read the package file' };
   }
   try {
     return { file: path, json: JSON.parse(text) as unknown };
   } catch {
-    return { file: path, json: null, omitted: 'JSON inválido' };
+    return { file: path, json: null, omitted: 'invalid JSON' };
   }
 }
 
@@ -214,9 +214,9 @@ interface ExternalDocument {
 }
 
 /**
- * O `doc` objeto (v11): o `.md` mora num repositório de `docRepos`. Com o clone do projeto
- * (`docRepos[<id>].localPath`) e o arquivo dentro do diretório de trabalho, devolve o texto;
- * sem eles, o link (`url`, do `urlTemplate`) e a dica do que fazer.
+ * The `doc` object (v11): the `.md` lives in a `docRepos` repository. With the project's clone
+ * (`docRepos[<id>].localPath`) and the file inside the working directory, it returns the text;
+ * without them, the link (`url`, from the `urlTemplate`) and the hint of what to do.
  */
 async function externalDocument(
   roots: Roots,
@@ -259,31 +259,31 @@ function externalDocView(
   };
 }
 
-/** O que fazer quando o documento externo não veio: configurar o clone ou abrir o link (se há). */
+/** What to do when the external document did not come: set up the clone or open the link (if there is one). */
 function externalDocHint(
   doc: { readonly repo: string; readonly path: string },
   found: ExternalDoc | null,
   url: string | null,
 ): string {
-  // Sem urlTemplate não há link: a dica diz só o caminho no repositório.
+  // Without a urlTemplate there is no link: the hint only says the path in the repository.
   const orLink =
     url === null
-      ? `; o documento fica em ${doc.path}, no repositório ${doc.repo}`
-      : `, ou abra o link: ${url}`;
-  const orLinkAfter = url === null ? '' : ` ou o link: ${url}`;
+      ? `; the document is at ${doc.path}, in the repository ${doc.repo}`
+      : `, or open the link: ${url}`;
+  const orLinkAfter = url === null ? '' : ` or the link: ${url}`;
   if (found === null) {
-    return `o documento ${doc.path} está no repositório ${doc.repo}, fora do pacote; leia por um projeto (\`project\` + \`specId\`) com o clone configurado (set_doc_repo)${url === null ? '' : ` ou abra o link: ${url}`}`;
+    return `the document ${doc.path} is in the repository ${doc.repo}, outside the package; read it through a project (\`project\` + \`specId\`) with the clone configured (set_doc_repo)${url === null ? '' : ` or open the link: ${url}`}`;
   }
   if (found.tooLarge) {
-    return `o documento ${doc.path} passa de ${MAX_DOC_BYTES} bytes e não foi lido; abra o arquivo no clone${orLinkAfter}`;
+    return `the document ${doc.path} exceeds ${MAX_DOC_BYTES} bytes and was not read; open the file in the clone${orLinkAfter}`;
   }
   if (found.exists === null) {
-    return `o projeto não configura o clone do repositório ${doc.repo} (ou o caminho sai do diretório de trabalho): informe \`localPath\` com set_doc_repo${orLink}`;
+    return `the project does not configure the clone of the repository ${doc.repo} (or the path leaves the working directory): provide \`localPath\` with set_doc_repo${orLink}`;
   }
-  return `o documento ${doc.path} não está no clone de ${doc.repo} (${found.localFile}); confira a ref do clone${orLink}`;
+  return `the document ${doc.path} is not in the clone of ${doc.repo} (${found.localFile}); check the clone's ref${orLink}`;
 }
 
-/** `get_component`: tudo de um tipo da biblioteca. */
+/** `get_component`: everything about a library type. */
 export async function getComponent(
   roots: Roots,
   args: ComponentArgs & { type: string },
@@ -297,7 +297,7 @@ export async function getComponent(
     matches = entries.filter((e) => e.type.name.toLowerCase() === folded);
   }
   if (matches.length === 0) {
-    throw new ToolError('unknown-type', `tipo não encontrado: ${args.type}`, {
+    throw new ToolError('unknown-type', `type not found: ${args.type}`, {
       type: args.type,
       available: entries.slice(0, 50).map((e) => e.type.id),
     });
@@ -305,7 +305,7 @@ export async function getComponent(
   if (matches.length > 1) {
     throw new ToolError(
       'ambiguous-type',
-      `mais de um tipo chamado "${args.type}": use o id`,
+      `more than one type named "${args.type}": use the id`,
       {
         candidates: matches.map((e) => e.type.id),
       },
@@ -313,7 +313,7 @@ export async function getComponent(
   }
   const { layerId, layerName, type } = matches[0]!;
   const loaded = await loadComponent(source, type);
-  // `doc` objeto: o documento vive em outro repositório, sem texto no pacote.
+  // `doc` object: the document lives in another repository, with no text in the package.
   const docPath = typeof type.doc === 'string' ? source.resolve(type.doc) : null;
   const packageDoc = docPath === null ? null : await source.read(docPath);
   const external =
@@ -334,11 +334,11 @@ export async function getComponent(
   const hint =
     external?.hint ??
     (loaded === null && doc === null && type.doc === undefined
-      ? 'o tipo não tem componente nem documento na biblioteca (só campos); ele não desenha na app'
+      ? 'the type has no component or document in the library (fields only); it does not draw in the app'
       : loaded?.problem !== undefined
-        ? `o componente não carregou: ${loaded.problem}; rode validate_library no pacote`
+        ? `the component did not load: ${loaded.problem}; run validate_library on the package`
         : docPath !== null && doc === null
-          ? 'o documento do tipo está ausente no pacote; rode validate_library'
+          ? "the type's document is missing from the package; run validate_library"
           : undefined);
   return {
     spec: { id: source.spec.id, name: source.spec.name, version: source.spec.version },

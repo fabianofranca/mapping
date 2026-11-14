@@ -9,23 +9,23 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// Biblioteca pequena de componentes que se ajustam ao conteúdo (MC3, decisões 14 a 16 da #898):
-// um botão de rótulo longo (altura `hug`), o mesmo com teto na raiz, um de largura e altura `hug`,
-// um de altura por expressão, um sem eixo ajustável e uma linha com `align: stretch` e outra com slot
-// `none`. Escrita no próprio teste, como a de `componentFixtures.ts`.
+// Small library of components that fit their content (MC3, decisions 14 to 16 of #898):
+// a button with a long label (`hug` height), the same with a cap on the root, one with `hug` width and height,
+// one with a height by expression, one with no fittable axis, and a row with `align: stretch` and another with a
+// `none` slot. Written in the test itself, like the one in `componentFixtures.ts`.
 
 export const FIT_SPEC_FILE = 'specs/fit/fit.spec.json';
 export const FIT_SPEC_ID = 'fit';
 
 type Json = Record<string, unknown>;
 
-/** Rótulo que, no botão de 120 de largura (104 de texto), passa de uma linha no `approximateMeasurer`. */
-export const LONG_LABEL = 'Um rótulo bastante longo que quebra em várias linhas';
+/** A label that, in the 120-wide button (104 of text), goes past one line in the `approximateMeasurer`. */
+export const LONG_LABEL = 'My simple readable label and breaks in better places';
 
 function labelText(): Json {
   return {
     type: 'text',
-    name: 'rótulo',
+    name: 'label',
     text: { $field: 'label', default: '' },
     width: 'fill',
     height: 'hug',
@@ -52,7 +52,7 @@ function button(id: string, size: Json, sizing: Json | undefined, root: Json = {
   };
 }
 
-/** Slot `none` com `align` (vertical) e `justify` (horizontal): cada filha sozinha na caixa do slot. */
+/** `none` slot with `align` (vertical) and `justify` (horizontal): each child alone in the slot box. */
 function overlaid(id: string, align: string, justify: string): Json {
   const base = row(id, 'start', 'none');
   const template = base.template as { children: Json[] };
@@ -93,22 +93,22 @@ function row(id: string, align: string, layoutType = 'row', sizing?: Json): Json
 }
 
 export const FIT_COMPONENTS: Record<string, Json> = {
-  // A altura acompanha o rótulo; a largura fica (sem `sizing` nela).
+  // The height follows the label; the width stays (no `sizing` on it).
   'fit-button': button('fit-button', { width: 120, height: 40 }, { height: 'hug' }),
-  // O mesmo com o teto da raiz em 60 de altura.
+  // The same with the root cap at 60 height.
   'fit-capped': button(
     'fit-capped',
     { width: 120, height: 40 },
     { height: 'hug' },
     { maxHeight: 60 },
   ),
-  // Os dois eixos acompanham o conteúdo.
+  // Both axes follow the content.
   'fit-hug': button(
     'fit-hug',
     { width: 120, height: 40 },
     { width: 'hug', height: 'hug' },
   ),
-  // L4: a largura sem quebra (`max-content`) e pela palavra mais larga (`min-content`).
+  // L4: the width with no wrapping (`max-content`) and by the widest word (`min-content`).
   'fit-max': button(
     'fit-max',
     { width: 120, height: 40 },
@@ -119,7 +119,7 @@ export const FIT_COMPONENTS: Record<string, Json> = {
     { width: 120, height: 40 },
     { width: 'min-content', height: 'hug' },
   ),
-  // A altura vem de um campo: 80 com `tall`, 30 sem ele (e nunca abaixo do mínimo).
+  // The height comes from a field: 80 with `tall`, 30 without it (and never below the minimum).
   'fit-px': button(
     'fit-px',
     { width: 120, height: 40 },
@@ -127,16 +127,16 @@ export const FIT_COMPONENTS: Record<string, Json> = {
       height: { $if: { $field: 'tall' }, then: 80, else: 30 },
     },
   ),
-  // `fill` num eixo e nada no outro: nenhum eixo acompanha o conteúdo.
+  // `fill` on one axis and nothing on the other: no axis follows the content.
   'fit-fill': button('fit-fill', { width: 120, height: 40 }, { width: 'fill' }),
-  // Sem `sizing`: nada a ajustar.
+  // Without `sizing`: nothing to fit.
   'fit-plain': button('fit-plain', { width: 120, height: 40 }, undefined),
-  // Linha que estica as filhas na altura, e linha que não estica.
+  // A row that stretches the children in height, and a row that does not.
   'fit-row-stretch': row('fit-row-stretch', 'stretch'),
   'fit-row-start': row('fit-row-start', 'start'),
-  // Slot sem layout e altura `hug`: com filhas não se arruma nem se ajusta.
+  // Slot with no layout and `hug` height: with children it is neither arranged nor fitted.
   'fit-row-none': row('fit-row-none', 'start', 'none', { height: 'hug' }),
-  // Slot `none` alinhado (v4): `justify` estica na largura, `align` na altura.
+  // Aligned `none` slot (v4): `justify` stretches the width, `align` the height.
   'fit-none-justify': overlaid('fit-none-justify', 'start', 'stretch'),
   'fit-none-align': overlaid('fit-none-align', 'stretch', 'start'),
 };
@@ -150,12 +150,12 @@ export const FIT_SPEC_JSON = {
   format: 'mapping-spec',
   formatVersion: 4,
   id: FIT_SPEC_ID,
-  name: 'Ajuste',
+  name: 'Fit',
   version: 1,
   layers: [
     {
-      id: 'componentes',
-      name: 'Componentes',
+      id: 'components',
+      name: 'Components',
       color: '#6750A4',
       annotationTypes: Object.keys(FIT_COMPONENTS).map((id) => ({
         id,
@@ -187,7 +187,7 @@ export function fitCatalog(): ComponentCatalog {
   return new Map([[FIT_SPEC_ID, loaded]]);
 }
 
-/** Projeto com a especialização `fit` e a imagem `I1` (1000 × 800). */
+/** A project with the `fit` specialization and the image `I1` (1000 × 800). */
 export function fitProject(): Project {
   let p = emptyProject();
   p = applySpecialization(p, fitSpec(), {
@@ -197,5 +197,10 @@ export function fitProject(): Project {
     })(),
     packageSpecName: 'fit.spec.json',
   });
-  return addContainer(p, { id: 'I1', file: 'images/tela.png', width: 1000, height: 800 });
+  return addContainer(p, {
+    id: 'I1',
+    file: 'images/screen.png',
+    width: 1000,
+    height: 800,
+  });
 }

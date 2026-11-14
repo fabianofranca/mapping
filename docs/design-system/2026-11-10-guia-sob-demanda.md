@@ -1,13 +1,13 @@
-# Guia da rodada sob demanda — 2026-11-10 (épico `epic/guia-sob-demanda`)
+# On-demand round guide — 2026-11-10 (épico `epic/guia-sob-demanda`)
 
 ## Pendências
 
-Nenhuma. Impacto no design system: nenhum (só scripts e docs do fluxo de testes).
+None. Impact on the design system: none (only scripts and docs of the testing flow).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: o épico só mudou scripts de teste (`round-guide.mjs`, `cloud.mjs`) e docs do fluxo, sem componentes, tokens nem ícones da app.
+Nothing written to the Claude Design Mapping artifact: the epic only changed test scripts (`round-guide.mjs`, `cloud.mjs`) and flow docs, with no components, tokens or icons of the app.
 
 ## Ficou sem gravar
 
-Nenhuma gravação no artefato Mapping do Claude Design: o épico não mudou componentes, tokens nem ícones da app.
+Nothing written to the Claude Design Mapping artifact: the epic did not change components, tokens or icons of the app.

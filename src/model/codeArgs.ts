@@ -2,36 +2,36 @@ import { applyFormat, interpretsParamTargets, paramTarget } from './codeParams';
 import type { SpecCode, SpecField } from './spec';
 import type { JsonValue } from './types';
 
-// Os argumentos de uma chamada de código (`codeBlueprint`): os `params` do `code` aplicados aos
-// campos preenchidos. Na `formatVersion` 16 o valor de um `param` também é um caminho
-// (`colors.containerColor`: argumento de uma fábrica de `calls`) ou posicional (`#0`), e `formats`
-// dá o molde do valor (`{value}.dp`). Antes da 16 o valor é um texto opaco (o nome do parâmetro).
-// Função pura, sem navegador.
+// The arguments of a code call (`codeBlueprint`): the `params` of the `code` applied to the
+// filled-in fields. In `formatVersion` 16 a `param`'s value is also a path
+// (`colors.containerColor`: argument of a `calls` factory) or positional (`#0`), and `formats`
+// gives the value's mold (`{value}.dp`). Before 16 the value is opaque text (the parameter name).
+// Pure function, no browser.
 
-/** Parâmetro do componente na plataforma (`code.<plataforma>.params`). */
+/** Component parameter on the platform (`code.<platform>.params`). */
 export interface BlueprintParam {
-  /** Campo do tipo; no argumento aninhado de uma fábrica (`call`), o nome do parâmetro. */
+  /** Field of the type; in the nested argument of a factory (`call`), the parameter name. */
   readonly key: string;
-  /** Nome do parâmetro no código; no argumento posicional, o `#n` como escrito. */
+  /** Parameter name in the code; in a positional argument, the `#n` as written. */
   readonly name: string;
   /**
-   * Valor pronto para o código: `enum` traduzido por `code.<plataforma>.values` (sem
-   * tradução, como está) e passado pelo `formats` (`16.dp`); `ref` pelo rótulo do alvo (ex:
-   * `User.name`; quebrada: `null`); `table` com as linhas (só as colunas, sem `_id`; vazia: `[]`);
-   * vazio: `null`. Na fábrica (`call`), sempre `null`: o valor está em `args`.
+   * Value ready for the code: `enum` translated by `code.<platform>.values` (without
+   * a translation, as is) and passed through `formats` (`16.dp`); `ref` by the target's label (e.g.
+   * `User.name`; broken: `null`); `table` with the rows (only the columns, without `_id`; empty: `[]`);
+   * empty: `null`. In the factory (`call`), always `null`: the value is in `args`.
    */
   readonly value: JsonValue;
-  /** O argumento é posicional (`#n` em `params`, só `formatVersion` 16): a posição, de 0. */
+  /** The argument is positional (`#n` in `params`, only `formatVersion` 16): the position, from 0. */
   readonly position?: number;
   /**
-   * O argumento é o resultado de uma fábrica (`code.<plataforma>.calls`, só `formatVersion` 16):
-   * o símbolo dela. Só existe quando algum campo da fábrica está preenchido; `args` traz só eles.
+   * The argument is the result of a factory (`code.<platform>.calls`, only `formatVersion` 16):
+   * its symbol. It only exists when some field of the factory is filled in; `args` carries only those.
    */
   readonly call?: string;
   readonly args?: readonly BlueprintParam[];
 }
 
-/** Monta os argumentos: os simples, os posicionais e as fábricas (um argumento por `calls` usado). */
+/** Builds the arguments: the simple ones, the positional ones and the factories (one argument per `calls` used). */
 class ArgBuilder {
   readonly out: BlueprintParam[] = [];
   private readonly groups = new Map<string, BlueprintParam[]>();
@@ -41,7 +41,7 @@ class ArgBuilder {
     private readonly interprets: boolean,
   ) {}
 
-  /** O valor do campo passado pelo molde de `formats` (valor vazio e objeto ficam como estão). */
+  /** The field's value passed through the `formats` mold (an empty value and an object stay as they are). */
   private formatted(key: string, value: JsonValue): JsonValue {
     const format = this.interprets ? this.code.formats?.[key] : undefined;
     if (format === undefined || value === null || typeof value === 'object') return value;
@@ -62,13 +62,13 @@ class ArgBuilder {
     }
   }
 
-  /** O símbolo da fábrica `call` (só chave própria de `calls`; `constructor` não é fábrica). */
+  /** The symbol of the `call` factory (only an own key of `calls`; `constructor` is not a factory). */
   private callSymbol(call: string): string | undefined {
     const calls = this.code.calls;
     return calls !== undefined && Object.hasOwn(calls, call) ? calls[call] : undefined;
   }
 
-  /** O argumento da fábrica `call` nasce com o primeiro campo preenchido dela. */
+  /** The `call` factory's argument is born with the first filled-in field of it. */
   private addToCall(call: string, arg: BlueprintParam): void {
     let args = this.groups.get(call);
     if (args === undefined) {
@@ -86,7 +86,7 @@ class ArgBuilder {
   }
 }
 
-/** Os argumentos, na ordem dos campos do tipo; vazio sem `code.params`. */
+/** The arguments, in the type's field order; empty without `code.params`. */
 export function blueprintParams(
   fields: readonly SpecField[],
   code: SpecCode | null,

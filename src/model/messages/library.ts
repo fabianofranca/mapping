@@ -1,127 +1,131 @@
-// Mensagens do validador da biblioteca (`library.ts`, `libraryDrawing.ts`, `libraryIcons.ts`):
-// código → modelo do texto pt-BR de hoje, com `{parâmetros}`. O código é a chave sem o prefixo
-// `model.` que a interface usa. Frase que varia por concordância ou por caso vira um código por
-// variante, com o texto inteiro (nunca montada por pedaços).
+// Messages of the library validator (`library.ts`, `libraryDrawing.ts`, `libraryIcons.ts`):
+// code → template of today's pt-BR text, with `{parameters}`. The code is the key without the
+// `model.` prefix that the interface uses. A phrase that varies by agreement or by case becomes one code per
+// variant, with the whole text (never assembled from pieces).
 
 export const libraryMessages = {
-  // Arquivos do pacote
-  'library.notReferenced': 'arquivo não referenciado pela especialização',
-  'library.emptyDoc': 'documento vazio',
-  'library.fileNotFound': 'arquivo não encontrado: {path}',
-  'library.notRead': 'o conteúdo do arquivo não foi lido (esperava o texto)',
-  'library.invalidJson': 'JSON inválido: {detail}',
-  'library.specFileNotFound': 'arquivo da especialização não encontrado: {path}',
+  // Package files
+  'library.notReferenced': 'file not referenced by the specialization',
+  'library.emptyDoc': 'empty document',
+  'library.fileNotFound': 'file not found: {path}',
+  'library.notRead': 'the file content was not read (expected the text)',
+  'library.invalidJson': 'invalid JSON: {detail}',
+  'library.specFileNotFound': 'specialization file not found: {path}',
   'library.specNotFound':
-    'nenhuma especialização encontrada: o pacote precisa de um arquivo .json com "format": "mapping-spec"',
+    'no specialization found: the package needs a .json file with "format": "mapping-spec"',
   'library.specAmbiguous':
-    'há {count} especializações no pacote ({files}): indique qual validar',
-  'library.paramOutsideSignature': 'parâmetro fora da ficha: "{name}"',
-  // Fichas `mapping-signature` do pacote (`librarySignature.ts`)
-  'library.signatureNotRead': 'arquivo não pôde ser lido: {path}',
+    'there are {count} specializations in the package ({files}): say which one to validate',
+  'library.paramOutsideSignature': 'parameter outside the signature: "{name}"',
+  // `mapping-signature` sheets of the package (`librarySignature.ts`)
+  'library.signatureNotRead': 'file could not be read: {path}',
   'library.signatureInvalid': '{reason}',
-  'library.signatureNotCode': 'a ficha do code precisa ser de código',
-  'library.signatureNotDesign': 'a ficha precisa ser de design do sistema "{system}"',
+  'library.signatureNotCode': 'the signature of a code entry must be a code signature',
+  'library.signatureNotDesign':
+    'the signature must be a design signature of the system "{system}"',
   'library.signaturePlatformMismatch':
-    'a ficha é da plataforma "{found}", mas o code é da plataforma "{expected}"',
+    'the signature is for the platform "{found}", but the code is for the platform "{expected}"',
   'library.signatureSymbolMismatch':
-    'o símbolo da ficha ("{found}") difere do symbol do code ("{expected}")',
+    'the signature symbol ("{found}") differs from the code symbol ("{expected}")',
   'library.signaturePathMismatch':
-    'o arquivo da ficha ("{found}") difere do path do code ("{expected}")',
-  // Componente e especialização
-  'library.componentAlreadyUsed': 'o arquivo {path} já é o componente do tipo "{typeId}"',
-  'library.noSlot': 'o componente {path} não tem slot',
-  'library.slotMismatch': 'o slot do componente {path} é "{slot}", não "{expected}"',
+    'the signature file ("{found}") differs from the code path ("{expected}")',
+  // Component and specialization
+  'library.componentAlreadyUsed':
+    'the file {path} is already the component of the type "{typeId}"',
+  'library.noSlot': 'the component {path} has no slot',
+  'library.slotMismatch':
+    'the slot of the component {path} is "{slot}", not "{expected}"',
   'library.fieldUndeclared':
-    'o desenho usa o campo "{key}", que o tipo "{typeId}" não declara',
+    'the drawing uses the field "{key}", which the type "{typeId}" does not declare',
   'library.fieldUnused':
-    'o campo "{key}" do tipo "{typeId}" não é usado pelo desenho do componente {path}',
-  'library.previewNoField': 'o tipo "{typeId}" não tem o campo "{key}"',
+    'the field "{key}" of the type "{typeId}" is not used by the drawing of the component {path}',
+  'library.previewNoField': 'the type "{typeId}" has no field "{key}"',
   'library.previewNotTable':
-    '"{key}" não é uma table do tipo "{typeId}"; o preview dele deve ser um valor simples',
+    '"{key}" is not a table of the type "{typeId}"; its preview must be a simple value',
   'library.previewTableNotList':
-    '"{key}" é uma table do tipo "{typeId}"; o preview dele deve ser uma lista de linhas',
+    '"{key}" is a table of the type "{typeId}"; its preview must be a list of rows',
   'library.previewColumnUnknown':
-    '"{column}" não é coluna da table "{key}" do tipo "{typeId}"',
+    '"{column}" is not a column of the table "{key}" of the type "{typeId}"',
   'library.repeatNotTable':
-    'o repeat repete as linhas de "{key}", que é um campo {fieldType} do tipo "{typeId}", não uma table',
+    'the repeat repeats the rows of "{key}", which is a {fieldType} field of the type "{typeId}", not a table',
   'library.repeatRowUnknownColumn':
-    'o desenho da linha usa "{name}", que não é coluna da table "{key}" nem campo do tipo "{typeId}"',
+    'the row drawing uses "{name}", which is neither a column of the table "{key}" nor a field of the type "{typeId}"',
   'library.repeatRowUnknown':
-    'o desenho da linha usa "{name}", que o tipo "{typeId}" não declara',
+    'the row drawing uses "{name}", which the type "{typeId}" does not declare',
   'library.rowsNotTable':
-    '$rows conta as linhas de "{key}", que é um campo {fieldType} do tipo "{typeId}", não uma table',
+    '$rows counts the rows of "{key}", which is a {fieldType} field of the type "{typeId}", not a table',
   'library.imageColumnNotString':
-    'o src da imagem lê a coluna "{key}" da table "{table}" do tipo "{typeId}", que é {fieldType}, não string',
+    'the image src reads the column "{key}" of the table "{table}" of the type "{typeId}", which is {fieldType}, not string',
   'library.imageFieldNotString':
-    'o src da imagem lê "{key}", que é um campo {fieldType} do tipo "{typeId}", não string',
+    'the image src reads "{key}", which is a {fieldType} field of the type "{typeId}", not string',
   'library.fontMissing':
-    'arquivo da fonte "{family}" não encontrado: {path}; o desenho usa a fonte do sistema',
-  'library.scrimMissing': 'o tipo "{typeId}" não existe na especialização',
-  // Tokens: um código por par (tipo do token, tipo esperado; `TOKEN_KIND_NAMES`)
-  'library.tokenMissing': 'o token "{name}" não existe nos tokens da especialização',
+    'file of the font "{family}" not found: {path}; the drawing uses the system font',
+  'library.scrimMissing': 'the type "{typeId}" does not exist in the specialization',
+  // Tokens: one code per pair (token type, expected type; `TOKEN_KIND_NAMES`)
+  'library.tokenMissing':
+    'the token "{name}" does not exist in the specialization tokens',
   'library.tokenWrongKind.color.number':
-    'o token "{name}" é cor, mas aqui se espera número',
+    'the token "{name}" is a color, but a number is expected here',
   'library.tokenWrongKind.color.family':
-    'o token "{name}" é cor, mas aqui se espera família de fonte',
+    'the token "{name}" is a color, but a font family is expected here',
   'library.tokenWrongKind.number.color':
-    'o token "{name}" é número, mas aqui se espera cor',
+    'the token "{name}" is a number, but a color is expected here',
   'library.tokenWrongKind.number.family':
-    'o token "{name}" é número, mas aqui se espera família de fonte',
+    'the token "{name}" is a number, but a font family is expected here',
   'library.tokenWrongKind.family.color':
-    'o token "{name}" é família de fonte, mas aqui se espera cor',
+    'the token "{name}" is a font family, but a color is expected here',
   'library.tokenWrongKind.family.number':
-    'o token "{name}" é família de fonte, mas aqui se espera número',
-  // Contrato de versão
+    'the token "{name}" is a font family, but a number is expected here',
+  // Version contract
   'library.versionOtherSpec':
-    'a versão anterior é da especialização "{previous}", não "{id}"',
+    'the previous version is of the specialization "{previous}", not "{id}"',
   'library.versionNotGrown':
-    'a versão não cresceu: a anterior é {previous} e esta é {version}',
-  'library.typeNotInVersion': 'o tipo "{typeId}" não existia na versão {version}',
+    'the version did not grow: the previous one is {previous} and this one is {version}',
+  'library.typeNotInVersion': 'the type "{typeId}" did not exist in version {version}',
   'library.roleNotInVersion':
-    'o papel "{role}" do tipo "{typeId}" não existia na versão {version}',
+    'the role "{role}" of the type "{typeId}" did not exist in version {version}',
   'library.fieldNotInVersion':
-    'o campo "{key}" do tipo "{typeId}" não existia na versão {version}',
+    'the field "{key}" of the type "{typeId}" did not exist in version {version}',
   'library.optionNotInVersion':
-    '"{value}" não era opção do campo "{field}" na versão {version}',
-  // Ícones
-  'library.iconMissing': 'o ícone "{name}" não existe no conjunto de ícones ({path})',
+    '"{value}" was not an option of the field "{field}" in version {version}',
+  // Icons
+  'library.iconMissing': 'the icon "{name}" does not exist in the icon set ({path})',
   'library.iconUnverifiable':
-    'o ícone "{name}" não pode ser conferido: a especialização não declara icons',
+    'the icon "{name}" cannot be checked: the specialization does not declare icons',
   'library.iconOptionMissing':
-    'a opção "{option}" do campo "{key}" não está no conjunto de ícones; o desenho cai no reservado',
-  // Prova de desenho: um código por caso (valores padrão, preview, exemplo), com e sem modo.
-  // A mensagem de dentro (o aviso do motor, com código) entra em `{reason}`.
+    'the option "{option}" of the field "{key}" is not in the icon set; the drawing falls back to the placeholder',
+  // Drawing proof: one code per case (default values, preview, example), with and without mode.
+  // The inner message (the engine's warning, with a code) goes into `{reason}`.
   'library.draw.defaults':
-    'tipo "{typeId}", os valores padrão, tamanho inicial {size}: {reason}',
+    'type "{typeId}", the default values, initial size {size}: {reason}',
   'library.draw.defaultsMode':
-    'tipo "{typeId}", os valores padrão, modo {mode}, tamanho inicial {size}: {reason}',
-  'library.draw.preview': 'tipo "{typeId}", o preview, tamanho inicial {size}: {reason}',
+    'type "{typeId}", the default values, mode {mode}, initial size {size}: {reason}',
+  'library.draw.preview': 'type "{typeId}", the preview, initial size {size}: {reason}',
   'library.draw.previewMode':
-    'tipo "{typeId}", o preview, modo {mode}, tamanho inicial {size}: {reason}',
+    'type "{typeId}", the preview, mode {mode}, initial size {size}: {reason}',
   'library.draw.example':
-    'tipo "{typeId}", o exemplo "{name}", tamanho inicial {size}: {reason}',
+    'type "{typeId}", the example "{name}", initial size {size}: {reason}',
   'library.draw.exampleMode':
-    'tipo "{typeId}", o exemplo "{name}", modo {mode}, tamanho inicial {size}: {reason}',
-  // O mesmo caso no tamanho ajustado ao conteúdo (o ajuste da decisão 14 da #898).
+    'type "{typeId}", the example "{name}", mode {mode}, initial size {size}: {reason}',
+  // The same case at the size fitted to the content (the fit of decision 14 of #898).
   'library.drawFitted.defaults':
-    'tipo "{typeId}", os valores padrão, tamanho ajustado {size}: {reason}',
+    'type "{typeId}", the default values, fitted size {size}: {reason}',
   'library.drawFitted.defaultsMode':
-    'tipo "{typeId}", os valores padrão, modo {mode}, tamanho ajustado {size}: {reason}',
+    'type "{typeId}", the default values, mode {mode}, fitted size {size}: {reason}',
   'library.drawFitted.preview':
-    'tipo "{typeId}", o preview, tamanho ajustado {size}: {reason}',
+    'type "{typeId}", the preview, fitted size {size}: {reason}',
   'library.drawFitted.previewMode':
-    'tipo "{typeId}", o preview, modo {mode}, tamanho ajustado {size}: {reason}',
+    'type "{typeId}", the preview, mode {mode}, fitted size {size}: {reason}',
   'library.drawFitted.example':
-    'tipo "{typeId}", o exemplo "{name}", tamanho ajustado {size}: {reason}',
+    'type "{typeId}", the example "{name}", fitted size {size}: {reason}',
   'library.drawFitted.exampleMode':
-    'tipo "{typeId}", o exemplo "{name}", modo {mode}, tamanho ajustado {size}: {reason}',
-  'library.drawFailed': 'falha ao desenhar: {error}',
+    'type "{typeId}", the example "{name}", mode {mode}, fitted size {size}: {reason}',
+  'library.drawFailed': 'failed to draw: {error}',
   'library.buildFailed':
-    'não foi possível montar a biblioteca para provar os exemplos de sistema externo: {reason}',
+    'could not build the library to prove the external system examples: {reason}',
   'library.buildFailedUnknown':
-    'não foi possível montar a biblioteca para provar os exemplos de sistema externo: motivo desconhecido',
-  'library.systemExample': 'exemplo "{name}" do sistema "{system}": {reason}',
+    'could not build the library to prove the external system examples: unknown reason',
+  'library.systemExample': 'example "{name}" of the system "{system}": {reason}',
   'library.systemExampleType':
-    'exemplo "{name}" do sistema "{system}": o nó corresponde ao tipo "{found}", não a "{typeId}"',
-  'library.originScreen': 'tela de exemplo "{name}" do sistema "{system}": {reason}',
+    'example "{name}" of the system "{system}": the node matches the type "{found}", not "{typeId}"',
+  'library.originScreen': 'example screen "{name}" of the system "{system}": {reason}',
 } as const;

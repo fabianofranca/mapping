@@ -4,8 +4,8 @@ import { z } from 'zod';
 import type { Threads } from './threads';
 import { WAIT_DEFAULT_SECONDS, WAIT_MAX_SECONDS } from './threads';
 
-// As tools de conversa (etapa Comentários, CM6). O servidor lê a caixa de entrada, abre
-// conversas e responde com a guarda `after`; nunca resolve, reabre nem apaga.
+// The conversation tools (Comments stage, CM6). The server reads the inbox, opens
+// conversations and replies with the `after` guard; it never resolves, reopens or deletes.
 
 type Json = Record<string, unknown>;
 
@@ -26,20 +26,20 @@ const WRITES = {
 const threadRefArg = z
   .string()
   .describe(
-    'Referência da conversa (`mapping://projeto/c/3f2a9c1e`, a que list_threads e open_thread devolvem), `c/3f2a9c1e` (com `project`) ou o id completo.',
+    'Reference of the conversation (`mapping://project/c/3f2a9c1e`, the one list_threads and open_thread return), `c/3f2a9c1e` (with `project`) or the full id.',
   );
 
 const anchorArg = z
   .union([z.string(), z.record(z.string(), z.unknown())])
   .describe(
-    'Onde a conversa fica: qualquer referência do projeto (marcação ou seta `…/m/…`, container `…/i/…`, anotação `…/a/…`, camada `…/l/…`, campo `…/a/<código>/f/<campo>`, par `…/a/<código>/e/<código>`, linha `…/a/<código>/f/<campo>/r/<código>`) ou um ponto solto `{ point: { container, x, y } }` (`container` é a referência de um container, com x e y em pixels dele, ou null para o canvas).',
+    'Where the conversation sits: any reference in the project (marking or arrow `…/m/…`, container `…/i/…`, annotation `…/a/…`, layer `…/l/…`, field `…/a/<code>/f/<field>`, entry `…/a/<code>/e/<code>`, row `…/a/<code>/f/<field>/r/<code>`) or a loose point `{ point: { container, x, y } }` (`container` is the reference of a container, with x and y in its pixels, or null for the canvas).',
   );
 
 const authorArg = z
   .string()
   .optional()
   .describe(
-    'Nome com que a mensagem aparece (padrão: o nome do cliente MCP, ou "agente"). A autoria é sempre de agente: não existe assinar como pessoa.',
+    'Name the message appears under (default: the name of the MCP client, or "agent"). Authorship is always an agent\'s: there is no signing as a person.',
   );
 
 export function registerThreadTools(server: McpServer, deps: ThreadToolDeps): void {
@@ -49,7 +49,7 @@ export function registerThreadTools(server: McpServer, deps: ThreadToolDeps): vo
     'list_threads',
     {
       description:
-        'A caixa de entrada de conversas do projeto. Sem nenhum filtro, traz as conversas ABERTAS que aguardam você (a última mensagem é de pessoa); com `text` ou `anchor` (ou só `status`/`awaiting`), o que você não informar é `status: open` e `awaiting: any`. `status`: `open`, `resolved` ou `all`; `awaiting`: `agent` (a última mensagem é de pessoa), `human` (é de agente) ou `any`; `anchor`: só as ancoradas num item, camada, campo, par, linha ou ponto (e nas partes dele); `text`: busca no texto das mensagens, sem diferença de caixa nem de acento. Cada linha traz `ref` (`mapping://projeto/c/código`), `anchor` (a referência, ou `{ point }`), `path`, `orphan` (o item da âncora foi apagado), `status`, `awaiting`, `messages`, `subject` e `last` (a última mensagem, com as `cites` resolvidas). Paginação por `limit` (padrão 50, máximo 200) e `offset`; `total` é o número que casa. `broken` lista arquivos de conversa ilegíveis. Para ler a conversa inteira use get_thread.',
+        "The project's conversation inbox. Without any filter, it brings the OPEN conversations awaiting you (the last message is from a person); with `text` or `anchor` (or just `status`/`awaiting`), whatever you do not give is `status: open` and `awaiting: any`. `status`: `open`, `resolved` or `all`; `awaiting`: `agent` (the last message is from a person), `human` (it is from an agent) or `any`; `anchor`: only those anchored to an item, layer, field, entry, row or point (and to its parts); `text`: searches the text of the messages, accent- and case-insensitive. Each row carries `ref` (`mapping://project/c/code`), `anchor` (the reference, or `{ point }`), `path`, `orphan` (the anchor's item was deleted), `status`, `awaiting`, `messages`, `subject` and `last` (the last message, with the `cites` resolved). Pagination by `limit` (default 50, maximum 200) and `offset`; `total` is the number that matches. `broken` lists unreadable conversation files. To read the whole conversation use get_thread.",
       inputSchema: {
         project: projectArg,
         status: z.enum(['open', 'resolved', 'all']).optional(),
@@ -68,7 +68,7 @@ export function registerThreadTools(server: McpServer, deps: ThreadToolDeps): vo
     'get_thread',
     {
       description:
-        'Uma conversa inteira: o estado (`status`, `awaiting`, quem resolveu), a âncora resolvida (`ref`, `kind`, `path`, `name` e, em campo ou par, o `value` de agora; `orphan` se o item foi apagado), as mensagens em ordem (autor, hora, texto em markdown, a proposta ligada e as `cites`: cada link `mapping://` do texto resolvido com `kind`, `ref`, `path`, `label`, `value` e `broken`), `citedIn` (as conversas que citam esta) e `proposals` (as propostas ligadas, com estado e progresso). Responda com post_message usando o `id` da ÚLTIMA mensagem como `after`.',
+        'A whole conversation: the state (`status`, `awaiting`, who resolved it), the resolved anchor (`ref`, `kind`, `path`, `name` and, on a field or entry, the current `value`; `orphan` if the item was deleted), the messages in order (author, time, text in markdown, the linked proposal and the `cites`: each `mapping://` link in the text resolved with `kind`, `ref`, `path`, `label`, `value` and `broken`), `citedIn` (the conversations that cite this one) and `proposals` (the linked proposals, with state and progress). Reply with post_message using the `id` of the LAST message as `after`.',
       inputSchema: { ref: threadRefArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -79,11 +79,11 @@ export function registerThreadTools(server: McpServer, deps: ThreadToolDeps): vo
     'open_thread',
     {
       description:
-        'Abre uma conversa ancorada num item do projeto, com a sua primeira mensagem (markdown, até 10.000 caracteres), e devolve a `ref` dela. Use diante de uma ambiguidade que a especialização não decide, em vez de adivinhar ou largar a tarefa; siga com o resto do trabalho: a pessoa responde na app, no item. Cite itens, campos e outras conversas no texto como links markdown `[nome](mapping://projeto/…)`; citação que não resolve é gravada assim mesmo, com o aviso `broken-cite`. Grava só `comments/<id>.json`, num arquivo novo (nunca sobrescreve); o `mapping.json` não muda. O servidor não resolve conversa: quem resolve é uma pessoa, na app.',
+        'Opens a conversation anchored to an item of the project, with its first message (markdown, up to 10,000 characters), and returns its `ref`. Use it when facing an ambiguity the specialization does not settle, instead of guessing or dropping the task; carry on with the rest of the work: the person answers in the app, on the item. Cite items, fields and other conversations in the text as markdown links `[name](mapping://project/…)`; a citation that does not resolve is saved anyway, with the `broken-cite` warning. Writes only `comments/<id>.json`, as a new file (never overwrites); `mapping.json` does not change. The server does not resolve conversations: a person does, in the app.',
       inputSchema: {
         project: projectArg,
         anchor: anchorArg,
-        text: z.string().describe('Primeira mensagem, em markdown.'),
+        text: z.string().describe('First message, in markdown.'),
         author: authorArg,
       },
       annotations: WRITES,
@@ -95,13 +95,13 @@ export function registerThreadTools(server: McpServer, deps: ThreadToolDeps): vo
     'post_message',
     {
       description:
-        'Responde numa conversa aberta. `after` é OBRIGATÓRIO: o id da última mensagem que você leu (get_thread). Se entrou mensagem depois dela, a tool recusa com `stale-thread`, sem gravar nada, e devolve as `newMessages`: leia-as, ajuste a resposta e chame de novo. Numa conversa resolvida recusa com `thread-resolved` (a dica manda abrir outra conversa que cite esta). A mensagem é sempre de agente. Responda só ao que lhe é pedido e nunca resolva a conversa (não há tool para isso).',
+        'Replies in an open conversation. `after` is REQUIRED: the id of the last message you read (get_thread). If a message came in after it, the tool refuses with `stale-thread`, writing nothing, and returns the `newMessages`: read them, adjust the reply and call again. In a resolved conversation it refuses with `thread-resolved` (the hint says to open another conversation that cites this one). The message is always from an agent. Reply only to what is asked of you and never resolve the conversation (there is no tool for that).',
       inputSchema: {
         ref: threadRefArg,
-        text: z.string().describe('A mensagem, em markdown (até 10.000 caracteres).'),
+        text: z.string().describe('The message, in markdown (up to 10,000 characters).'),
         after: z
           .string()
-          .describe('Id da última mensagem que você leu na conversa (get_thread).'),
+          .describe('Id of the last message you read in the conversation (get_thread).'),
         project: optionalProjectArg,
         author: authorArg,
       },
@@ -113,7 +113,7 @@ export function registerThreadTools(server: McpServer, deps: ThreadToolDeps): vo
   server.registerTool(
     'wait_for_comment',
     {
-      description: `Espera até ${WAIT_MAX_SECONDS} s por uma conversa do projeto que PASSE a aguardar você (uma mensagem nova de pessoa, ou uma conversa nova com a última mensagem de pessoa) e devolve a primeira em \`thread\` (como uma linha de list_threads); no prazo sem novidade devolve \`{ changed: false }\` e você repete a chamada. Só vale o que mudou depois de começar a espera: leia antes a caixa de entrada com list_threads. O limite de ${WAIT_MAX_SECONDS} s existe porque o Claude Code corta qualquer tool em 60 s. Envia progresso a cada 15 s quando o cliente manda \`progressToken\`.`,
+      description: `Waits up to ${WAIT_MAX_SECONDS} s for a conversation of the project that STARTS awaiting you (a new message from a person, or a new conversation whose last message is from a person) and returns the first in \`thread\` (like a row of list_threads); if the time runs out with nothing new it returns \`{ changed: false }\` and you repeat the call. Only what changed after the wait started counts: read the inbox first with list_threads. The limit of ${WAIT_MAX_SECONDS} s exists because Claude Code cuts any tool at 60 s. Sends progress every 15 s when the client sends \`progressToken\`.`,
       inputSchema: {
         project: projectArg,
         timeoutSeconds: z
@@ -123,7 +123,7 @@ export function registerThreadTools(server: McpServer, deps: ThreadToolDeps): vo
           .max(WAIT_MAX_SECONDS)
           .optional()
           .describe(
-            `Segundos de espera (padrão ${WAIT_DEFAULT_SECONDS}, máximo ${WAIT_MAX_SECONDS}).`,
+            `Seconds to wait (default ${WAIT_DEFAULT_SECONDS}, maximum ${WAIT_MAX_SECONDS}).`,
           ),
       },
       annotations: READ_ONLY,
@@ -142,7 +142,7 @@ export function registerThreadTools(server: McpServer, deps: ThreadToolDeps): vo
                     params: {
                       progressToken: token,
                       progress: seconds,
-                      message: 'aguardando uma conversa',
+                      message: 'waiting for a conversation',
                     },
                   });
                 },

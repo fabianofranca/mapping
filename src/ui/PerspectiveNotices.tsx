@@ -3,9 +3,9 @@ import { t } from '../i18n';
 import { showToast } from '../store/ui';
 import { useEditor } from './EditorContext';
 
-// Avisos de troca forçada para a Principal (etapa #659, PE3): a perspectiva aberta sumiu ou a
-// revisão de uma proposta abriu a Principal. O aviso sai como o aviso curto do canvas
-// (`showToast`) e o signal da store é limpo, para não repetir.
+// Warnings of a forced switch to Main (stage #659, PE3): the open perspective disappeared or the
+// review of a proposal opened Main. The warning goes out as the canvas's short warning
+// (`showToast`) and the store signal is cleared, so it does not repeat.
 
 export function PerspectiveNotices() {
   const { session, ui } = useEditor();

@@ -17,11 +17,11 @@ import { SelectionPanel } from '../../src/ui/SelectionPanel';
 import { emptyProject } from '../model/fixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// D2: o campo Densidade nos Detalhes do container (sugestão, Aplicar, Personalizada) e no
-// diálogo Novo container.
+// D2: the Density field in the container Details (suggestion, Apply, Custom) and in the
+// New container dialog.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -32,7 +32,7 @@ const SPEC: Spec = {
   name: 'Design System',
   version: 1,
   containers: [
-    { id: 'phone', name: 'Celular', width: 360, height: 800 },
+    { id: 'phone', name: 'Phone', width: 360, height: 800 },
     { id: 'tablet', name: 'Tablet', width: 800, height: 1280, background: '#EEEEEE' },
   ],
   layers: [],
@@ -55,7 +55,7 @@ const options = (select: HTMLElement) =>
     .getAllByRole('option', { hidden: true })
     .map((o) => o.textContent);
 
-describe('Detalhes do container: campo Densidade', () => {
+describe('Container Details: Density field', () => {
   function setup(project = screenProject(), readOnly = false) {
     const harness = createHarness(project, readOnly);
     renderLive(harness, (p) => {
@@ -77,23 +77,24 @@ describe('Detalhes do container: campo Densidade', () => {
     screen.getByLabelText<HTMLSelectElement>(t('density.label'), { selector: 'select' });
   const custom = () => screen.getByLabelText<HTMLInputElement>(t('density.customLabel'));
   const density = (h: Harness) => h.project().containers[0]?.density;
-  const hint = () => screen.queryByText('Sugestão: 3x (Celular 360 × 800)');
+  const hint = () => screen.queryByText('Suggestion: 3x (Phone 360 × 800)');
   const apply = () => screen.queryByRole('button', { name: t('density.apply') });
 
-  it('o Select mostra 1x a 4x e Personalizada, com 1x no container sem densidade', () => {
+  it('the Select shows 1x to 4x and Custom, with 1x on a container without density', () => {
     setup();
-    expect(options(select())).toEqual(['1x', '1,5x', '2x', '3x', '4x', 'Personalizada']);
+    expect(options(select())).toEqual(['1x', '1.5x', '2x', '3x', '4x', 'Custom']);
     expect(select().value).toBe('1');
     expect(screen.queryByLabelText(t('density.customLabel'))).toBeNull();
   });
 
-  it('em en-US o separador decimal é o ponto', () => {
-    locale.value = 'en-US';
+  it('in pt-BR the decimal separator is the comma (pt-BR)', () => {
+    // pt-BR kept: the decimal separator of the Portuguese locale is the object of this test
+    locale.value = 'pt-BR';
     setup();
-    expect(options(select())).toEqual(['1x', '1.5x', '2x', '3x', '4x', 'Custom']);
+    expect(options(select())).toEqual(['1x', '1,5x', '2x', '3x', '4x', 'Personalizada']);
   });
 
-  it('a dica da sugestão aparece quando difere do valor e some quando igual', async () => {
+  it('the suggestion hint appears when it differs from the value and disappears when equal', async () => {
     const { harness, user } = setup();
     expect(hint()).toBeTruthy();
     expect(apply()).toBeTruthy();
@@ -105,13 +106,13 @@ describe('Detalhes do container: campo Densidade', () => {
     expect(hint()).toBeTruthy();
   });
 
-  it('sem tamanho pronto que explique a largura não há dica nem Aplicar', () => {
+  it('with no ready size that explains the width there is no hint or Apply', () => {
     setup(screenProject(1000, 2000));
-    expect(screen.queryByText(/Sugestão/)).toBeNull();
+    expect(screen.queryByText(/Suggestion/)).toBeNull();
     expect(apply()).toBeNull();
   });
 
-  it('Aplicar grava a sugestão e Ctrl+Z volta numa entrada só', async () => {
+  it('Apply saves the suggestion and Ctrl+Z reverts it in a single entry', async () => {
     const { harness, user } = setup();
     await user.click(apply()!);
     expect(density(harness)).toBe(3);
@@ -122,14 +123,14 @@ describe('Detalhes do container: campo Densidade', () => {
     expect(harness.store.canUndo.value).toBe(false);
   });
 
-  it('escolher 1x remove a densidade (volta ao padrão)', async () => {
+  it('choosing 1x removes the density (back to the default)', async () => {
     const { harness, user } = setup(setContainerDensity(screenProject(), 'C1', 3));
     expect(select().value).toBe('3');
     await user.selectOptions(select(), '1');
     expect('density' in (harness.project().containers[0] ?? {})).toBe(false);
   });
 
-  it('Personalizada aceita 2,625 (e 2.5) ao confirmar e mostra o valor fora da lista', async () => {
+  it('Custom accepts 2,625 (and 2.5) on confirm and shows the value outside the list', async () => {
     const { harness, user } = setup();
     await user.selectOptions(select(), 'custom');
     expect(density(harness)).toBeUndefined();
@@ -137,7 +138,7 @@ describe('Detalhes do container: campo Densidade', () => {
     await user.type(custom(), '2,625{Enter}');
     expect(density(harness)).toBe(2.625);
     expect(select().value).toBe('custom');
-    expect(custom().value).toBe('2,625');
+    expect(custom().value).toBe('2.625');
     expect(harness.store.undo()).toBe(true);
     expect(density(harness)).toBeUndefined();
     await waitFor(() => expect(custom().value).toBe('1'));
@@ -146,7 +147,7 @@ describe('Detalhes do container: campo Densidade', () => {
     expect(density(harness)).toBe(2.5);
   });
 
-  it('Personalizada recusa 0,2 e 9 com aviso e não grava', async () => {
+  it('Custom refuses 0,2 and 9 with a warning and does not save', async () => {
     const { harness, user } = setup();
     await user.selectOptions(select(), 'custom');
     await user.clear(custom());
@@ -161,18 +162,18 @@ describe('Detalhes do container: campo Densidade', () => {
     expect(density(harness)).toBeUndefined();
   });
 
-  it('um valor gravado fora da lista (1,25) abre direto em Personalizada', () => {
+  it('a stored value outside the list (1.25) opens directly on Custom', () => {
     setup(setContainerDensity(screenProject(), 'C1', 1.25));
     expect(select().value).toBe('custom');
-    expect(custom().value).toBe('1,25');
+    expect(custom().value).toBe('1.25');
   });
 
-  it('um valor com mais de 3 casas (o agente grava 2,6254) aparece inteiro no campo', () => {
+  it('a value with more than 3 decimal places (the agent saves 2.6254) appears whole in the field', () => {
     setup(setContainerDensity(screenProject(), 'C1', 2.6254));
-    expect(custom().value).toBe('2,6254');
+    expect(custom().value).toBe('2.6254');
   });
 
-  it('o aviso some ao voltar a digitar no campo', async () => {
+  it('the warning disappears when typing in the field again', async () => {
     const { harness, user } = setup(setContainerDensity(screenProject(), 'C1', 1.25));
     await user.clear(custom());
     await user.type(custom(), '0,2{Enter}');
@@ -182,15 +183,15 @@ describe('Detalhes do container: campo Densidade', () => {
     expect(density(harness)).toBe(1.25);
   });
 
-  it('somente leitura desabilita o campo e o Aplicar', () => {
+  it('read-only disables the field and Apply', () => {
     setup(screenProject(), true);
     expect(select().disabled).toBe(true);
     expect(apply()?.hasAttribute('disabled')).toBe(true);
   });
 });
 
-describe('Detalhes: troca de container', () => {
-  it('o aviso e o campo Personalizada de um container não passam para o outro', async () => {
+describe('Details: container switch', () => {
+  it('the warning and the Custom field of one container do not carry over to the other', async () => {
     const two = addBackgroundContainer(screenProject(), {
       id: 'C2',
       width: 360,
@@ -233,7 +234,7 @@ describe('Detalhes: troca de container', () => {
   });
 });
 
-describe('diálogo Novo container: campo Densidade', () => {
+describe('New container dialog: Density field', () => {
   const dialogEl = () => document.querySelector('dialog') as HTMLElement;
   const inDialog = () => within(dialogEl());
 
@@ -261,7 +262,7 @@ describe('diálogo Novo container: campo Densidade', () => {
   const named = (user: ReturnType<typeof userEvent.setup>) =>
     user.type(inDialog().getByLabelText(t('container.name')), 'Login');
 
-  it('existe, vem em 1x e não grava density quando fica em 1x', async () => {
+  it('exists, starts at 1x and does not save density when it stays at 1x', async () => {
     const harness = createHarness(screenProject());
     const user = renderDialog(harness);
     expect(select().value).toBe('1');
@@ -272,7 +273,7 @@ describe('diálogo Novo container: campo Densidade', () => {
     expect('density' in (created ?? {})).toBe(false);
   });
 
-  it('grava density quando diferente de 1 (uma entrada: desfazer remove o container)', async () => {
+  it('saves density when different from 1 (one entry: undo removes the container)', async () => {
     const harness = createHarness(screenProject());
     const user = renderDialog(harness);
     await user.selectOptions(select(), '3');
@@ -283,7 +284,7 @@ describe('diálogo Novo container: campo Densidade', () => {
     expect(harness.project().containers).toHaveLength(1);
   });
 
-  it('trocar o tamanho pronto não muda a densidade escolhida', async () => {
+  it('switching the ready size does not change the chosen density', async () => {
     const harness = createHarness(screenProject());
     const user = renderDialog(harness);
     await user.selectOptions(select(), '2');
@@ -294,7 +295,7 @@ describe('diálogo Novo container: campo Densidade', () => {
     expect(select().value).toBe('2');
   });
 
-  it('Personalizada inválida avisa na hora, sem esperar o Criar container', async () => {
+  it('an invalid Custom warns right away, without waiting for Create container', async () => {
     const harness = createHarness(screenProject());
     const user = renderDialog(harness);
     await user.selectOptions(select(), 'custom');
@@ -308,7 +309,7 @@ describe('diálogo Novo container: campo Densidade', () => {
     expect(inDialog().queryByRole('alert')).toBeNull();
   });
 
-  it('Personalizada inválida bloqueia a criação com o aviso', async () => {
+  it('an invalid Custom blocks the creation with the warning', async () => {
     const harness = createHarness(screenProject());
     const user = renderDialog(harness);
     await user.selectOptions(select(), 'custom');

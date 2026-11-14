@@ -1,9 +1,10 @@
-// Documentação Swift: o texto de cada `- Parameter nome: …` e de cada item de `- Parameters:`, e o
-// resumo (o primeiro parágrafo). Entra o `///` (linhas coladas, já unidas pelo tokenizador) e o
-// `/** */`. As linhas de continuação se recolhem num texto só; outras listas (`- Returns:`) encerram.
+// Swift documentation: the text of each `- Parameter name: …` and of each item of `- Parameters:`,
+// and the summary (the first paragraph). Both `///` (attached lines, already joined by the
+// tokenizer) and `/** */` are read. Continuation lines collapse into a single text; other lists
+// (`- Returns:`) end it.
 
-// As linhas do comentário sem os marcadores (a barra tripla, a abertura e o fechamento do bloco e o
-// asterisco da margem), com a indentação do que vem depois.
+// The comment lines without the markers (the triple slash, the block opening and closing and the
+// margin asterisk), keeping the indentation of what follows.
 function lines(raw: string): string[] {
   const block = raw.trimStart().startsWith('/*');
   return raw.split('\n').map((line) =>
@@ -24,7 +25,7 @@ const NAMED = /^`?(\w+)`?\s*:\s*(.*)$/;
 interface Reading {
   docs: Map<string, string>;
   current: string | undefined;
-  /** A indentação do `- Parameters:` aberto; -1 quando não há. */
+  /** The indentation of the open `- Parameters:`; -1 when there is none. */
   group: number;
 }
 
@@ -46,7 +47,7 @@ function readBullet(state: Reading, indent: number, body: string): void {
   state.group = GROUP.test(body) ? indent : -1;
 }
 
-/** Nome do parâmetro → texto, na ordem em que aparecem. */
+/** Parameter name → text, in the order they appear. */
 export function parseParamDocs(raw: string | undefined): Map<string, string> {
   const state: Reading = { docs: new Map(), current: undefined, group: -1 };
   if (raw === undefined) return state.docs;
@@ -63,7 +64,7 @@ export function parseParamDocs(raw: string | undefined): Map<string, string> {
   return state.docs;
 }
 
-/** O primeiro parágrafo (até a primeira linha em branco ou lista), numa linha só; `undefined` se não há. */
+/** The first paragraph (up to the first blank line or list), on a single line; `undefined` if there is none. */
 export function summaryOf(raw: string | undefined): string | undefined {
   if (raw === undefined) return undefined;
   const paragraph: string[] = [];

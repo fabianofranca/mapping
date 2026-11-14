@@ -27,12 +27,12 @@ import { emptyProject, image, sampleProject } from './fixtures';
 import { multiProject } from './multiSelectionFixtures';
 import { idGen } from './specFixtures';
 
-// Ruído de ponto flutuante no `placement` (`275.00000000000006`): nenhuma operação do modelo o grava.
+// Floating-point noise in `placement` (`275.00000000000006`): no model operation writes it.
 const NOISY = 275.00000000000006;
 const TINY = 5.6843418860808e-14;
 
 describe('snapPlacement', () => {
-  it('inteiro passa como está', () => {
+  it('an integer passes as it is', () => {
     expect(snapPlacement({ x: 10, y: -20, scale: 2 })).toEqual({
       x: 10,
       y: -20,
@@ -40,7 +40,7 @@ describe('snapPlacement', () => {
     });
   });
 
-  it('ruído dos dois lados de um inteiro vira o inteiro', () => {
+  it('noise on both sides of an integer becomes the integer', () => {
     expect(
       snapPlacement({ x: NOISY, y: 274.99999999999994, scale: 1.0000000000000002 }),
     ).toEqual({
@@ -50,7 +50,7 @@ describe('snapPlacement', () => {
     });
   });
 
-  it('fração de verdade fica como está', () => {
+  it('a real fraction stays as it is', () => {
     expect(snapPlacement({ x: 1868.13, y: 0.5, scale: 0.25 })).toEqual({
       x: 1868.13,
       y: 0.5,
@@ -58,20 +58,20 @@ describe('snapPlacement', () => {
     });
   });
 
-  it('o negativo perto de zero dá 0, e não -0', () => {
+  it('a negative near zero gives 0, not -0', () => {
     const p = snapPlacement({ x: -TINY, y: TINY, scale: 1 });
     expect(Object.is(p.x, 0)).toBe(true);
     expect(Object.is(p.y, 0)).toBe(true);
   });
 
-  it('a escala pequena nunca vira 0 nem inteiro menor que 1', () => {
+  it('a small scale never becomes 0 nor an integer below 1', () => {
     expect(snapPlacement({ x: 0, y: 0, scale: 1e-9 }).scale).toBe(1e-9);
     expect(snapPlacement({ x: 0, y: 0, scale: 0.4 }).scale).toBe(0.4);
   });
 });
 
-describe('placement sem ruído nas operações do modelo', () => {
-  it('setContainerPlacement, moveContainer e resizeContainer gravam o inteiro', () => {
+describe('placement without noise in the model operations', () => {
+  it('setContainerPlacement, moveContainer and resizeContainer write the integer', () => {
     const p = sampleProject();
     const id = 'I2';
     const a = setContainerPlacement(p, id, { x: NOISY, y: 3000 + TINY, scale: 1 });
@@ -82,8 +82,8 @@ describe('placement sem ruído nas operações do modelo', () => {
     expect(image(c, id).placement.scale).toBe(1);
   });
 
-  it('criar com `center` que dá ruído grava o inteiro', () => {
-    // 100 x 100 entra com escala 10 (lado maior = 1000): x = 275.00000000000006 - 500
+  it('creating with a `center` that gives noise writes the integer', () => {
+    // 100 x 100 enters at scale 10 (longer side = 1000): x = 275.00000000000006 - 500
     const size = { id: 'N1', file: 'images/n.jpg', width: 100, height: 100 };
     const p = addContainer(emptyProject(), {
       ...size,
@@ -100,10 +100,10 @@ describe('placement sem ruído nas operações do modelo', () => {
     expect(image(bg, 'N2').placement).toEqual({ x: -225, y: -400, scale: 10 });
   });
 
-  it('criar à direita de um container com ruído grava o inteiro', () => {
+  it('creating to the right of a container with noise writes the integer', () => {
     const base = sampleProject();
     const first = base.containers[0]!;
-    // simula um projeto antigo, gravado com ruído
+    // simulates an old project, saved with noise
     const noisy = {
       ...base,
       containers: base.containers.map((c) =>
@@ -121,8 +121,8 @@ describe('placement sem ruído nas operações do modelo', () => {
   });
 });
 
-// Decisão 2 da etapa #1190: toda porta de escrita de posição de container (e de posição de
-// perspectiva) grava `x`/`y` com no máximo 6 casas e a escala com no máximo 12 algarismos.
+// Decision 2 of stage #1190: every write path for a container position (and a perspective
+// position) writes `x`/`y` with at most 6 decimal places and the scale with at most 12 digits.
 const clean6 = (v: number) => expect(v).toBe(Number(v.toFixed(6)));
 const clean12 = (v: number) => expect(v).toBe(Number(v.toPrecision(12)));
 const placementIsClean = (p: { x: number; y: number; scale: number }) => {
@@ -131,7 +131,7 @@ const placementIsClean = (p: { x: number; y: number; scale: number }) => {
   clean12(p.scale);
 };
 
-/** Troca o `placement` direto, sem passar pelo modelo (simula entrada ruidosa ou arquivo antigo). */
+/** Swaps the `placement` directly, bypassing the model (simulates noisy input or an old file). */
 function rawPlacement(
   p: Project,
   id: string,
@@ -150,8 +150,8 @@ const persp = (id: string, items: [string, number, number][]): Perspective => ({
   items: items.map(([root, x, y]) => ({ root, x, y })),
 });
 
-describe('portas de escrita: a cauda de ponto flutuante some (6 casas, escala com 12 algarismos)', () => {
-  it('setContainerPlacement, moveContainer e resizeContainer', () => {
+describe('write paths: the floating-point tail disappears (6 decimal places, scale with 12 digits)', () => {
+  it('setContainerPlacement, moveContainer and resizeContainer', () => {
     const p = sampleProject();
     const a = setContainerPlacement(p, 'I2', {
       x: -188.75000000000006,
@@ -184,7 +184,7 @@ describe('portas de escrita: a cauda de ponto flutuante some (6 casas, escala co
     });
   });
 
-  it('addBackgroundContainer com center (o Tamanho da seleção, 58 × 40) e sem center', () => {
+  it('addBackgroundContainer with center (the selection Size, 58 × 40) and without center', () => {
     const withCenter = addBackgroundContainer(emptyProject(), {
       id: 'B1',
       width: 58,
@@ -195,7 +195,7 @@ describe('portas de escrita: a cauda de ponto flutuante some (6 casas, escala co
     placementIsClean(image(withCenter, 'B1').placement);
     expect(image(withCenter, 'B1').placement.scale).toBe(17.2413793103);
     expect(image(withCenter, 'B1').placement.x).toBe(-399.876543);
-    // sem `center`: à direita do que existe, com a escala fracionária limpa
+    // without `center`: to the right of what exists, with the fractional scale cleaned
     const next = addBackgroundContainer(withCenter, {
       id: 'B2',
       width: 58,
@@ -205,7 +205,7 @@ describe('portas de escrita: a cauda de ponto flutuante some (6 casas, escala co
     placementIsClean(image(next, 'B2').placement);
   });
 
-  it('addContainer do primeiro container (sem outro à vista) grava a escala com 12 algarismos', () => {
+  it('addContainer of the first container (with no other in view) writes the scale with 12 digits', () => {
     const first = addBackgroundContainer(emptyProject(), {
       id: 'F1',
       width: 390,
@@ -215,17 +215,17 @@ describe('portas de escrita: a cauda de ponto flutuante some (6 casas, escala co
     expect(image(first, 'F1').placement).toEqual({ x: 0, y: 0, scale: 1.18483412322 });
   });
 
-  it('replaceContainer (a escala da troca de imagem)', () => {
+  it('replaceContainer (the scale of the image swap)', () => {
     const p = sampleProject();
     const replaced = replaceContainer(p, 'I2', {
-      file: 'images/nova.jpg',
+      file: 'images/new.jpg',
       width: 580,
       height: 580,
     });
     expect(image(replaced, 'I2').placement.scale).toBe(1.72413793103);
   });
 
-  it('o reparo images-overlap', () => {
+  it('the images-overlap repair', () => {
     const p = rawPlacement(sampleProject(), 'I1', {
       x: 0.1234567891,
       y: 0,
@@ -238,7 +238,7 @@ describe('portas de escrita: a cauda de ponto flutuante some (6 casas, escala co
     expect(image(result.project, 'I2').placement.x).toBe(1250.123457);
   });
 
-  it('movedItem (mover a raiz na perspectiva)', () => {
+  it('movedItem (moving the root in the perspective)', () => {
     const p: Project = {
       ...sampleProject(),
       perspectives: [persp('P', [['I2', 0.1234567891, 10]])],
@@ -249,7 +249,7 @@ describe('portas de escrita: a cauda de ponto flutuante some (6 casas, escala co
     expect(next.perspectives[0]?.items).toEqual([{ root: 'I2', x: 100.423457, y: 9.7 }]);
   });
 
-  it('o item reconciliado (o filho que vira raiz entra onde estava)', () => {
+  it('the reconciled item (the child that becomes a root enters where it was)', () => {
     const base = multiProject();
     const fractional = rawPlacement(base, 'A', {
       x: 0.1234567891,
@@ -274,7 +274,7 @@ describe('portas de escrita: a cauda de ponto flutuante some (6 casas, escala co
     });
   });
 
-  it('a posição relativa e a área de chegada (placeRootIn)', () => {
+  it('the relative position and the arrival area (placeRootIn)', () => {
     let p = multiProject();
     p = createMarking(p, {
       id: 'd1',
@@ -289,19 +289,19 @@ describe('portas de escrita: a cauda de ponto flutuante some (6 casas, escala co
         ['E', 9000, 0],
       ]),
     );
-    // com referência: a mesma distância de D
+    // with a reference: the same distance from D
     const target = perspectiveView(p, persp('T', [['D', 7000.1234567891, 0.9876543219]]));
     const near = placeRootIn(target, source, 'E');
     expect(near).toMatchObject({ kind: 'near', x: 9000.123457, y: 0.987654 });
-    // sem referência: a coluna à direita de tudo
+    // no reference: the column to the right of everything
     const lone = perspectiveView(p, persp('L', [['D', 7000.1234567891, 0]]));
     const alone = placeRootIn(lone, perspectiveView(p, persp('S2', [['E', 0, 0]])), 'E');
     expect(alone).toMatchObject({ kind: 'arrival-area', x: 8050.123457 });
   });
 });
 
-describe('placeRootIn: o lugar livre mais próximo (ocupado) também sai sem cauda', () => {
-  it('a raiz container que cai em cima de outra vai ao livre mais próximo, com 6 casas', () => {
+describe('placeRootIn: the nearest free spot (occupied) also comes out with no tail', () => {
+  it('a root container that lands on top of another goes to the nearest free spot, with 6 decimal places', () => {
     let p = multiProject();
     p = createMarking(p, {
       id: 'd1',
@@ -322,7 +322,7 @@ describe('placeRootIn: o lugar livre mais próximo (ocupado) também sai sem cau
         ['E', 9000, 0],
       ]),
     );
-    // Q fica onde E cairia (9000.1234567891, 0.9876543219): o livre mais próximo é fracionário
+    // Q sits where E would land (9000.1234567891, 0.9876543219): the nearest free spot is fractional
     const target = perspectiveView(
       p,
       persp('T', [
@@ -337,8 +337,8 @@ describe('placeRootIn: o lugar livre mais próximo (ocupado) também sai sem cau
   });
 });
 
-describe('encostar em bordas fracionárias não cria sobreposição nem muda pertencimento', () => {
-  it('dois containers encostados por slideToTouch: depois de gravar não se sobrepõem', () => {
+describe('touching fractional edges creates no overlap and does not change containment', () => {
+  it('two containers touched by slideToTouch: after saving they do not overlap', () => {
     const p = rawPlacement(multiProject(), 'D', {
       x: 7000.1234567891,
       y: 0.9876543219,
@@ -346,7 +346,7 @@ describe('encostar em bordas fracionárias não cria sobreposição nem muda per
     });
     const items = [{ kind: 'image', id: 'E' }] as const;
     const wanted = limitItemsMove(p, items, -1500, 0.5);
-    expect(wanted.dx).toBeGreaterThan(-1500); // encostou em D
+    expect(wanted.dx).toBeGreaterThan(-1500); // touched D
     const moved = moveItems(p, items, wanted.dx, wanted.dy);
     const e = image(moved, 'E');
     const d = image(moved, 'D');
@@ -356,8 +356,8 @@ describe('encostar em bordas fracionárias não cria sobreposição nem muda per
     placementIsClean(e.placement);
   });
 
-  it('o assentar mantém o pai de um container encostado na borda de uma marcação do canvas', () => {
-    // K (3000 × 1000, escala 1/3) ocupa 1000 × 333,33…: encostado na borda direita de W.
+  it('the settle keeps the parent of a container touching the edge of a canvas marking', () => {
+    // K (3000 × 1000, scale 1/3) occupies 1000 × 333.33…: touching the right edge of W.
     let p = emptyProject();
     p = addBackgroundContainer(p, {
       id: 'K',
@@ -376,8 +376,8 @@ describe('encostar em bordas fracionárias não cria sobreposição nem muda per
   });
 });
 
-describe('setContainerPlacement: no-op com cauda antiga', () => {
-  it('container salvo com cauda de ponto flutuante: placement equivalente devolve o mesmo projeto', () => {
+describe('setContainerPlacement: no-op with an old tail', () => {
+  it('container saved with a floating-point tail: an equivalent placement returns the same project', () => {
     const base = sampleProject();
     const tailed: Project = {
       ...base,

@@ -3,37 +3,38 @@ import { fail } from './errors';
 import type { ItemKind } from './itemRef';
 import type { Annotation, Arrow, Marking, Project, ProjectContainer } from './types';
 
-// Dados que o Ctrl+C grava na área de transferência além do texto da referência, num formato
-// próprio da app (formato web personalizado, ignorado por outros programas; os dados vão junto
-// do texto apenas quando a permissão `clipboard-read` já está concedida, senão só o texto). Hoje só viaja:
-// a ideia é, no futuro, duplicar itens com Ctrl+C / Ctrl+V dentro da app. Funções puras.
+// Data that Ctrl+C writes to the clipboard besides the reference text, in an app-specific format
+// (custom web format, ignored by other programs; the data travels with the text only when the
+// `clipboard-read` permission is already granted, otherwise only the text). For now it only
+// travels: the idea is, in the future, to duplicate items with Ctrl+C / Ctrl+V inside the app.
+// Pure functions.
 
-/** Tipo MIME do formato próprio; no `ClipboardItem` ele vai com o prefixo `web `. */
+/** MIME type of the app-specific format; in the `ClipboardItem` it goes with the `web ` prefix. */
 export const ITEM_CLIPBOARD_MIME = 'application/x-mapping-item+json';
 
-/** Identificador do formato, para quem ler os dados colados reconhecê-los. */
+/** Format identifier, so that whoever reads the pasted data can recognize it. */
 export const ITEM_CLIPBOARD_FORMAT = 'mapping-item';
 
 export interface ItemClipboardData {
   readonly format: typeof ITEM_CLIPBOARD_FORMAT;
   readonly version: 1;
-  /** Nome da pasta do projeto de onde o item saiu. */
+  /** Name of the project folder the item came from. */
   readonly project: string;
-  /** Referência `mapping://…` copiada junto. */
+  /** The `mapping://…` reference copied along. */
   readonly ref: string;
   readonly kind: ItemKind;
-  /** O item copiado. */
+  /** The copied item. */
   readonly item: ProjectContainer | Marking | Arrow | Annotation;
-  /** Imagem: todas as suas marcações. Marcação: as descendentes dela. */
+  /** Container: all its markings. Marking: its descendants. */
   readonly markings: readonly Marking[];
-  /** Anotações do item copiado e de tudo o que ele leva consigo. */
+  /** Annotations of the copied item and of everything it carries with it. */
   readonly annotations: readonly Annotation[];
 }
 
 /**
- * O item e o que ele carrega: uma imagem leva as marcações e anotações dela; uma marcação,
- * as descendentes e as anotações de todas; uma seta (ela divide o `kind` `m` com as marcações),
- * ela e as anotações dela; uma anotação, só ela.
+ * The item and what it carries: a container carries its markings and annotations; a marking,
+ * its descendants and the annotations of all; an arrow (it shares the `kind` `m` with the
+ * markings), itself and its annotations; an annotation, only itself.
  */
 export function itemClipboardData(
   p: Project,

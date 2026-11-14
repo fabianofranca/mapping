@@ -1,6 +1,6 @@
 /**
- * Motor dos componentes (etapa Biblioteca): avaliação das expressões do template contra os valores dos
- * campos da anotação (`componentFormat.ts`). Funções puras, sem DOM.
+ * Component engine (Library stage): evaluation of the template expressions against the values of the
+ * annotation's fields (`componentFormat.ts`). Pure functions, no DOM.
  */
 import type {
   BoolExpr,
@@ -10,7 +10,7 @@ import type {
   FieldValues,
 } from './componentFormat';
 
-/** Operações numéricas (formato 4): a chave e a aridade (lista de `min` ou mais, ou fixa). */
+/** Numeric operations (format 4): the key and the arity (list of `min` or more, or fixed). */
 export const NUMERIC_OPS: Readonly<
   Record<string, { readonly min: number; readonly max: number | null }>
 > = {
@@ -29,22 +29,22 @@ export const NUMERIC_OPS: Readonly<
   $sin: { min: 1, max: 1 },
   $cos: { min: 1, max: 1 },
 };
-/** A chave é uma operação numérica (só as próprias: `constructor` e afins não contam). */
+/** The key is a numeric operation (only its own: `constructor` and the like do not count). */
 export function isNumericOp(key: string): boolean {
   return Object.hasOwn(NUMERIC_OPS, key);
 }
-/** Comparações numéricas: `[a, b]`. */
+/** Numeric comparisons: `[a, b]`. */
 export const COMPARISON_OPS = ['$gt', '$gte', '$lt', '$lte'] as const;
 
 const FALSY_TEXT = new Set(['', 'não', 'nao', 'false', '0', 'off', 'no']);
 
-/** Vazio: `null`, `undefined`, texto só com espaços ou uma tabela sem linhas. */
+/** Empty: `null`, `undefined`, text with only spaces, or a table with no rows. */
 export function isEmpty(value: FieldValue): boolean {
   if (Array.isArray(value)) return value.length === 0;
   return value === null || value === undefined || String(value).trim() === '';
 }
 
-/** "Verdadeiro" para campos booleanos gravados como enum (`sim`/`não`) ou texto. */
+/** "True" for boolean fields stored as enum (`sim`/`não`) or text. */
 export function truthy(value: FieldValue): boolean {
   if (isEmpty(value)) return false;
   if (Array.isArray(value)) return true;
@@ -52,7 +52,7 @@ export function truthy(value: FieldValue): boolean {
   return !FALSY_TEXT.has(String(value).trim().toLowerCase());
 }
 
-/** O número de um operando avaliado, ou nenhum: vazio, texto não numérico (a vírgula não vale) e não finito. */
+/** The number of an evaluated operand, or none: empty, non-numeric text (a comma does not count) and non-finite. */
 export function toNumber(value: unknown): number | undefined {
   if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
   if (typeof value !== 'string' || value.trim() === '') return undefined;
@@ -60,31 +60,31 @@ export function toNumber(value: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-/** Arredonda o ruído de ponto flutuante da trigonometria (`cos(90°)` vale 0, não 6e-17). */
+/** Rounds off the floating-point noise of trigonometry (`cos(90°)` is 0, not 6e-17). */
 function snap(n: number): number {
   return Math.round(n * 1e12) / 1e12 + 0;
 }
 
 const RAD = Math.PI / 180;
 
-/** O campo de valores onde o motor entrega o tamanho da instância (`$size`). */
+/** The values field where the engine delivers the instance's size (`$size`). */
 export function sizeKey(axis: 'width' | 'height'): string {
   return `$size:${axis}`;
 }
 
-/** O campo de valores onde o motor entrega o número de linhas medidas do nó text `name` (`$lines`). */
+/** The values field where the engine delivers the number of measured lines of the text node `name` (`$lines`). */
 export function linesKey(name: string): string {
   return `$lines:${name}`;
 }
 
 const LINES_SCOPE = /^\$r\d+_\d+:/;
 
-/** O nome do nó text de uma chave de `$lines` (sem o escopo da linha de um `repeat`, `$r0_1:`). */
+/** The name of the text node of a `$lines` key (without the row scope of a `repeat`, `$r0_1:`). */
 export function linesNodeName(key: string): string {
   return key.replace(LINES_SCOPE, '');
 }
 
-/** Os nomes que as expressões `$lines` da árvore citam (em qualquer profundidade). */
+/** The names that the `$lines` expressions of the tree cite (at any depth). */
 export function linesCitations(tree: unknown, out: Set<string> = new Set()): Set<string> {
   if (Array.isArray(tree)) {
     for (const item of tree) linesCitations(item, out);
@@ -98,24 +98,24 @@ export function linesCitations(tree: unknown, out: Set<string> = new Set()): Set
   return out;
 }
 
-/** Valores oferecidos pelos slots dos ancestrais (cor herdada, v4), pelo nome, já resolvidos. */
+/** Values offered by the ancestors' slots (inherited color, v4), by name, already resolved. */
 export type ProvidedValues = Readonly<Record<string, string | number>>;
 
-/** O campo de valores onde o motor entrega o valor herdado `name` (`$provided`). */
+/** The values field where the engine delivers the inherited value `name` (`$provided`). */
 export function providedKey(name: string): string {
   return `$provided:${name}`;
 }
 
-/** O nome de campo do índice da linha de um `repeat` (`{ "$field": "$index" }`). */
+/** The field name of a `repeat` row's index (`{ "$field": "$index" }`). */
 export const INDEX_FIELD = '$index';
 
-/** O campo de valores onde o motor entrega a direção da instância (`{ "$direction": … }` fora de um nó). */
+/** The values field where the engine delivers the instance's direction (`{ "$direction": … }` outside a node). */
 export const DIRECTION_FIELD = '$direction';
 
-/** O prefixo dos pseudo-campos da âncora (`$anchor.side`, `$anchor.x`…; v4). */
+/** The prefix of the anchor pseudo-fields (`$anchor.side`, `$anchor.x`…; v4). */
 export const ANCHOR_PREFIX = '$anchor.';
 
-/** Os pseudo-campos da âncora que o motor entrega (o resto de `$anchor.*` não existe). */
+/** The anchor pseudo-fields that the engine delivers (the rest of `$anchor.*` does not exist). */
 export const ANCHOR_FIELDS = [
   '$anchor.side',
   '$anchor.x',
@@ -124,17 +124,17 @@ export const ANCHOR_FIELDS = [
   '$anchor.height',
 ] as const;
 
-/** O nome é de um pseudo-campo da âncora (válido ou não: o prefixo basta)? */
+/** Is the name that of an anchor pseudo-field (valid or not: the prefix is enough)? */
 export function isAnchorFieldName(name: string): boolean {
   return name.startsWith(ANCHOR_PREFIX);
 }
 
-/** As linhas de um campo `table` (valor que não é lista conta 0). */
+/** The rows of a `table` field (a value that is not a list counts 0). */
 function rowCount(value: FieldValue): number {
   return Array.isArray(value) ? value.length : 0;
 }
 
-/** `$rows`, `$lines` e `$size`: o número que a expressão produz, ou nenhum. */
+/** `$rows`, `$lines` and `$size`: the number the expression produces, or none. */
 function evaluateCount(
   expr: Record<string, unknown>,
   values: FieldValues,
@@ -170,7 +170,7 @@ function applyNumeric(op: string, n: readonly number[]): number | undefined {
   return NUMERIC_FNS[op]?.(n);
 }
 
-/** Avalia uma operação numérica (`$add`…): o número, ou nenhum se algum operando não tem valor. */
+/** Evaluates a numeric operation (`$add`…): the number, or none if some operand has no value. */
 function evaluateNumeric(
   op: string,
   operand: unknown,
@@ -198,7 +198,7 @@ function compare(op: string, operand: unknown, values: FieldValues): boolean {
   return op === '$lt' ? a < b : a <= b;
 }
 
-/** Texto de um número: inteiro como é; não inteiro com até 6 casas, sem zeros à direita. */
+/** Text of a number: an integer as is; a non-integer with up to 6 decimals, no trailing zeros. */
 export function formatNumber(n: number): string {
   return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(6)));
 }
@@ -208,9 +208,9 @@ function partText(value: unknown): string {
 }
 
 /**
- * As condições folha, na ordem em que a `evaluateCondition` as consulta: comparação, `$field`,
- * `$eq` e `$has`. `undefined` quando a condição não é nenhuma delas (as de combinar e a `$direction`
- * ficam na `evaluateCondition`, que mantém a ordem de antes).
+ * The leaf conditions, in the order in which `evaluateCondition` consults them: comparison, `$field`,
+ * `$eq` and `$has`. `undefined` when the condition is none of them (the combining ones and `$direction`
+ * stay in `evaluateCondition`, which keeps the previous order).
  */
 function evaluateLeaf(condition: Condition, values: FieldValues): boolean | undefined {
   for (const op of COMPARISON_OPS)
@@ -238,7 +238,7 @@ export function evaluateCondition(condition: Condition, values: FieldValues): bo
   return false;
 }
 
-/** Chaves que marcam um objeto como expressão (as operações numéricas à parte, em `NUMERIC_OPS`). */
+/** Keys that mark an object as an expression (the numeric operations apart, in `NUMERIC_OPS`). */
 const EXPR_KEYS = [
   '$field',
   '$if',
@@ -256,9 +256,9 @@ function isExprObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Avalia uma expressão. `fallback` é usado quando a expressão não produz valor (campo vazio
- * sem `default`, `$if` sem `else`, `$switch` sem caso nem `default`). O tipo do resultado não
- * é conferido aqui: os literais vêm do arquivo validado por `parseComponent`.
+ * Evaluates an expression. `fallback` is used when the expression produces no value (empty field
+ * without `default`, `$if` without `else`, `$switch` with no case and no `default`). The result type is not
+ * checked here: the literals come from the file validated by `parseComponent`.
  */
 export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T {
   if (!isExprObject(expr)) return expr as T;
@@ -330,7 +330,7 @@ function isCondition(value: unknown): value is Condition {
   );
 }
 
-/** `$field` booleano: campo vazio vale o `default` (se houver; senão falso); preenchido, a veracidade. */
+/** Boolean `$field`: an empty field takes the `default` (if any; otherwise false); a filled one, its truthiness. */
 function fieldBoolean(expr: Record<string, unknown>, values: FieldValues): boolean {
   const value = values[expr.$field as string];
   if (!isEmpty(value) || !('default' in expr)) return truthy(value);
@@ -343,8 +343,8 @@ function fieldBoolean(expr: Record<string, unknown>, values: FieldValues): boole
 }
 
 /**
- * Avalia uma expressão booleana (`visible`, `italic`): condição direta, `$field` por
- * veracidade (`"sim"`/`"não"`), `$if`/`$switch` com ramos booleanos ou o literal.
+ * Evaluates a boolean expression (`visible`, `italic`): direct condition, `$field` by
+ * truthiness (`"sim"`/`"não"`), `$if`/`$switch` with boolean branches or the literal.
  */
 export function evaluateBoolean(
   expr: BoolExpr,
@@ -360,7 +360,7 @@ export function evaluateBoolean(
   return fallback;
 }
 
-/** Texto para exibir: números viram texto; vazio vira `fallback`. */
+/** Text to display: numbers become text; empty becomes `fallback`. */
 export function evaluateText(
   expr: Expr<string | number>,
   values: FieldValues,
@@ -371,8 +371,8 @@ export function evaluateText(
 }
 
 /**
- * Chaves citadas dentro do `template` dos nós `repeat` (colunas da linha ou campos do tipo),
- * ordenadas na ordem em que aparecem, sem repetição. `referencedFields` não as inclui.
+ * Keys cited inside the `template` of the `repeat` nodes (row columns or type fields),
+ * sorted in order of appearance, without repetition. `referencedFields` does not include them.
  */
 export function repeatInnerFields(
   node: unknown,
@@ -392,7 +392,7 @@ export function repeatInnerFields(
   return out;
 }
 
-/** Campos citados pela expressão ou condição (para saber o que redesenha o quê). */
+/** Fields cited by the expression or condition (to know what redraws what). */
 export function referencedFields(
   expr: unknown,
   out: Set<string> = new Set(),
@@ -405,8 +405,8 @@ export function referencedFields(
   const record = expr as Record<string, unknown>;
   const isRepeat = record.type === 'repeat';
   for (const [key, value] of Object.entries(record)) {
-    // `repeat`: conta o campo `table` e as expressões do próprio nó; o `template` lê as colunas
-    // da linha (`repeatInnerFields`), não os campos do tipo.
+    // `repeat`: counts the `table` field and the expressions of the node itself; the `template` reads the columns
+    // of the row (`repeatInnerFields`), not the type's fields.
     if (isRepeat && key === 'template') continue;
     if (isRepeat && key === 'field' && typeof value === 'string') {
       out.add(value);
@@ -414,7 +414,7 @@ export function referencedFields(
       (key === '$field' || key === '$has' || key === '$switch' || key === '$rows') &&
       typeof value === 'string'
     ) {
-      // `$index` é o índice da linha de um `repeat` e `$anchor.*` vêm da âncora: não são campos do tipo.
+      // `$index` is a `repeat` row's index and `$anchor.*` come from the anchor: they are not type fields.
       if (key === '$rows' || (value !== INDEX_FIELD && !isAnchorFieldName(value)))
         out.add(value);
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {

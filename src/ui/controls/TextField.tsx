@@ -9,31 +9,31 @@ type NativeInput = Omit<
 >;
 
 interface CommonProps {
-  /** Rótulo visível (o campo fica dentro do `<label>`); sem ele, passe `aria-label`. */
+  /** Visible label (the field sits inside the `<label>`); without it, pass `aria-label`. */
   readonly label?: ComponentChildren;
   readonly value: string;
-  /** Estado inválido: borda e fundo de erro, e `aria-invalid`. */
+  /** Invalid state: error border and background, and `aria-invalid`. */
   readonly invalid?: boolean;
-  /** Controle compacto do desktop (24px). */
+  /** Compact desktop control (24px). */
   readonly size?: 'md' | 'sm';
 }
 
-/** `<input>` comum: o valor muda a cada tecla (`onInput`). */
+/** Plain `<input>`: the value changes on every keystroke (`onInput`). */
 type PlainProps = CommonProps &
   NativeInput & {
     readonly onCommit?: undefined;
-    /** Referência ao `<input>` (ex.: para focar ao montar). */
+    /** Reference to the `<input>` (e.g. to focus on mount). */
     readonly inputRef?: Ref<HTMLInputElement>;
   };
 
-/** Só grava ao confirmar (Enter ou sair do campo), como o `CommitInput`. */
+/** Only saves on confirm (Enter or leaving the field), like `CommitInput`. */
 type CommitProps = CommonProps &
   Omit<NativeInput, 'onInput' | 'onChange' | 'onKeyDown'> & {
-    /** O segundo argumento é o item de `linkedRef` escolhido e ainda presente no texto. */
+    /** The second argument is the chosen `linkedRef` item that is still present in the text. */
     readonly onCommit: (text: string, chosen?: SuggestionItem) => boolean;
     /**
-     * Sugestões ao digitar (só neste modo): lista flutuante de combobox que completa a
-     * palavra sob o cursor; não restringe o valor. Texto simples ou `{ label, detail? }`.
+     * Suggestions while typing (only in this mode): floating combobox list that completes the
+     * word under the cursor; does not restrict the value. Plain text or `{ label, detail? }`.
      */
     readonly suggestions?: readonly SuggestionInput[];
   };
@@ -41,8 +41,8 @@ type CommitProps = CommonProps &
 type TextFieldProps = PlainProps | CommitProps;
 
 /**
- * Campo de texto, número ou data, com todos os estados (hover, foco, inválido, somente
- * leitura e desabilitado).
+ * Text, number or date field, with all states (hover, focus, invalid, read-only
+ * and disabled).
  */
 export function TextField(props: TextFieldProps) {
   const { label, invalid, size = 'md', ...rest } = props;
@@ -76,19 +76,19 @@ type NativeTextArea = Omit<
 >;
 
 interface TextAreaProps extends NativeTextArea {
-  /** Rótulo visível; sem ele, passe `aria-label`. */
+  /** Visible label; without it, pass `aria-label`. */
   readonly label?: ComponentChildren;
   readonly value: string;
   readonly invalid?: boolean;
   readonly onInput?: (text: string) => void;
-  /** Ao sair do campo (grava a nota, por exemplo). */
+  /** On leaving the field (saves the note, for example). */
   readonly onCommit?: (text: string) => void;
   readonly textAreaRef?: Ref<HTMLTextAreaElement>;
 }
 
 /**
- * Campo de texto em várias linhas (variante `mp-field--area` do TextField, revisão de
- * propostas): mesma borda, foco e estados do campo de uma linha, altura livre.
+ * Multi-line text field (`mp-field--area` variant of TextField, proposal review): same border,
+ * focus and states as the single-line field, free height.
  */
 export function TextArea({
   label,

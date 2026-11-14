@@ -15,7 +15,7 @@ import {
 } from '../../src/model';
 
 describe('planOutputSize', () => {
-  it('reduz o lado maior para 2560 mantendo a proporção', () => {
+  it('reduces the longer side to 2560 keeping the aspect ratio', () => {
     expect(planOutputSize({ width: 4000, height: 3000 })).toEqual({
       width: 2560,
       height: 1920,
@@ -27,7 +27,7 @@ describe('planOutputSize', () => {
       resized: true,
     });
   });
-  it('nunca amplia e não marca como reduzida no limite', () => {
+  it('never enlarges and does not mark as reduced at the limit', () => {
     expect(planOutputSize({ width: 800, height: 600 }).resized).toBe(false);
     expect(planOutputSize({ width: MAX_IMAGE_SIDE, height: 10 })).toEqual({
       width: MAX_IMAGE_SIDE,
@@ -35,13 +35,13 @@ describe('planOutputSize', () => {
       resized: false,
     });
   });
-  it('mantém pelo menos 1 px', () => {
+  it('keeps at least 1 px', () => {
     expect(planOutputSize({ width: 100000, height: 1 }).height).toBe(1);
   });
 });
 
 describe('chooseOutputFormat', () => {
-  it('foto: WebP com perdas, ou JPEG sem WebP', () => {
+  it('photo: lossy WebP, or JPEG without WebP', () => {
     expect(chooseOutputFormat({ isPng: false }, true)).toMatchObject({
       mime: 'image/webp',
       quality: 0.85,
@@ -52,7 +52,7 @@ describe('chooseOutputFormat', () => {
       extension: 'jpg',
     });
   });
-  it('PNG: WebP sem perdas, ou PNG sem WebP', () => {
+  it('PNG: lossless WebP, or PNG without WebP', () => {
     expect(chooseOutputFormat({ isPng: true }, true)).toMatchObject({
       mime: 'image/webp',
       quality: 1,
@@ -66,23 +66,23 @@ describe('chooseOutputFormat', () => {
 
 describe('shouldUseEncoded', () => {
   const base = { resized: false, needsRotation: false, originalBytes: 100 };
-  it('reduzida: sempre usa o recodificado', () => {
+  it('reduced: always uses the re-encoded one', () => {
     expect(shouldUseEncoded({ ...base, resized: true, encodedBytes: 500 })).toBe(true);
   });
-  it('sem redução: só se ficar menor', () => {
+  it('without reduction: only if it ends up smaller', () => {
     expect(shouldUseEncoded({ ...base, encodedBytes: 99 })).toBe(true);
     expect(shouldUseEncoded({ ...base, encodedBytes: 100 })).toBe(false);
     expect(shouldUseEncoded({ ...base, encodedBytes: 150 })).toBe(false);
   });
-  it('foto que precisa girar (EXIF): usa o recodificado mesmo maior', () => {
+  it('photo that needs rotating (EXIF): uses the re-encoded one even if larger', () => {
     expect(shouldUseEncoded({ ...base, needsRotation: true, encodedBytes: 150 })).toBe(
       true,
     );
   });
 });
 
-describe('nomes de arquivo', () => {
-  it('img-AAAAMMDD-HHMMSS.ext', () => {
+describe('file names', () => {
+  it('img-YYYYMMDD-HHMMSS.ext', () => {
     expect(pastedFileName(new Date(2026, 8, 30, 12, 29, 15), 'webp')).toBe(
       'img-20260930-122915.webp',
     );
@@ -90,7 +90,7 @@ describe('nomes de arquivo', () => {
       'img-20260102-030405.png',
     );
   });
-  it('extensão pelo tipo MIME', () => {
+  it('extension by MIME type', () => {
     expect(extensionForMime('image/jpeg')).toBe('jpg');
     expect(extensionForMime('image/webp')).toBe('webp');
     expect(extensionForMime('image/png')).toBe('png');
@@ -113,7 +113,7 @@ describe('placementNear', () => {
       height: 1000,
     });
 
-  it('usa o ponto pedido quando está livre', () => {
+  it('uses the requested point when it is free', () => {
     const p = withImage();
     const placement = placementNear(p, { width: 100, height: 100 }, 1, {
       x: 2000,
@@ -121,19 +121,19 @@ describe('placementNear', () => {
     });
     expect(placement).toEqual({ x: 1950, y: 250, scale: 1 });
   });
-  it('sobrepondo, vai para o espaço livre mais próximo', () => {
-    const p = withImage(); // ocupa 0..1000
+  it('when overlapping, goes to the nearest free space', () => {
+    const p = withImage(); // takes 0..1000
     const placement = placementNear(p, { width: 200, height: 200 }, 1, {
       x: 900,
       y: 500,
     });
-    // Centro pedido dentro da imagem: o encaixe mais próximo é à direita dela.
+    // Requested center inside the image: the nearest fit is to its right.
     expect(placement.x).toBeGreaterThanOrEqual(1000);
     expect(placement.x >= 1000 || placement.y >= 1000 || placement.x + 200 <= 0).toBe(
       true,
     );
   });
-  it('addImage com center posiciona sem sobrepor', () => {
+  it('addImage with center positions without overlapping', () => {
     const p = addContainer(withImage(), {
       id: 'I2',
       file: 'images/b.png',
@@ -151,21 +151,21 @@ describe('placementNear', () => {
   });
 });
 
-describe('nomes e origem do arquivo', () => {
-  it('withExtension troca ou acrescenta a extensão', () => {
-    expect(withExtension('foto.png', 'webp')).toBe('foto.webp');
+describe('file names and source', () => {
+  it('withExtension replaces or adds the extension', () => {
+    expect(withExtension('photo.png', 'webp')).toBe('photo.webp');
     expect(withExtension('a.b.jpeg', 'webp')).toBe('a.b.webp');
-    expect(withExtension('semextensao', 'webp')).toBe('semextensao.webp');
-    expect(withExtension('.oculto', 'png')).toBe('.oculto.png');
+    expect(withExtension('noextension', 'webp')).toBe('noextension.webp');
+    expect(withExtension('.hidden', 'png')).toBe('.hidden.png');
   });
 
-  it('isPngSource e isJpegSource olham o tipo MIME e a extensão', () => {
+  it('isPngSource and isJpegSource look at the MIME type and the extension', () => {
     expect(isPngSource({ type: 'image/png', name: 'x' })).toBe(true);
     expect(isPngSource({ type: '', name: 'Print.PNG' })).toBe(true);
     expect(isPngSource({ type: 'image/jpeg', name: 'x.jpg' })).toBe(false);
     expect(isJpegSource({ type: 'image/jpeg', name: 'x' })).toBe(true);
-    expect(isJpegSource({ type: '', name: 'foto.JPEG' })).toBe(true);
-    expect(isJpegSource({ type: '', name: 'foto.jpg' })).toBe(true);
+    expect(isJpegSource({ type: '', name: 'photo.JPEG' })).toBe(true);
+    expect(isJpegSource({ type: '', name: 'photo.jpg' })).toBe(true);
     expect(isJpegSource({ type: 'image/png', name: 'x.png' })).toBe(false);
   });
 });

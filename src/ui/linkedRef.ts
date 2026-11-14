@@ -11,13 +11,13 @@ import {
 import type { SuggestionItem } from './suggestions';
 import { labelTexts } from './typedText';
 
-// `linkedRef` (SG2): os alvos que o `ref` irmão aceita viram itens da lista de sugestões do
-// campo/coluna `string`. Sem Preact: a UI só liga o resultado ao editor.
+// `linkedRef` (SG2): the targets that the sibling `ref` accepts become items of the suggestions
+// list of the `string` field/column. No Preact: the UI only connects the result to the editor.
 
 export interface LinkedTargets {
-  /** Os alvos como itens da lista (texto do alvo, nome do tipo e identificador). */
+  /** The targets as list items (target text, type name and identifier). */
   readonly items: readonly SuggestionItem[];
-  /** A referência do item de `id` dado; `null` se ele não existe mais. */
+  /** The reference of the item with the given `id`; `null` if it no longer exists. */
   find(id: string): RefValue | null;
 }
 
@@ -41,7 +41,7 @@ function toTargets(
   return { items, find: (id) => refs.get(id) ?? null };
 }
 
-/** Alvos do campo `ref` `linkedRef` da anotação. */
+/** Targets of the annotation's `ref` field `linkedRef`. */
 export function linkedFieldTargets(
   project: Project,
   annotation: Annotation,
@@ -53,7 +53,7 @@ export function linkedFieldTargets(
   );
 }
 
-/** Alvos da coluna `ref` `linkedRef` da tabela `tableKey` da anotação. */
+/** Targets of the `ref` column `linkedRef` of the annotation's table `tableKey`. */
 export function linkedCellTargets(
   project: Project,
   annotation: Annotation,

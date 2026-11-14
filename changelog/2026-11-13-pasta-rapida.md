@@ -1,10 +1,10 @@
-# Pasta rápida — 2026-11-13 (épico `epic/pasta-rapida`, PR #1796, MCP sem mudança, schema v19)
+# Fast folder — 2026-11-13 (épico `epic/pasta-rapida`, PR #1796, MCP unchanged, schema v19)
 
 ## Adicionado
 
-- O texto copiado do Diagnóstico, com projeto em pasta, traz a linha `folder:` com as chamadas à pasta e o tempo da última operação de cada tipo (abrir, gravar, gravar com pacote de biblioteca, decidir, aplicar proposta e conferir alterações externas); sem projeto em pasta, a linha não existe.
+- The text copied from Diagnostics, with a project in a folder, carries the `folder:` line with the folder calls and the time of the last operation of each kind (open, write, write with a library bundle, decide, apply proposal and check external changes); without a project in a folder, the line does not exist.
 
 ## Alterado
 
-- Numa pasta lenta, a conferência de alterações externas espaça sozinha (de 3 s até 30 s) e não roda no meio de uma gravação; as propostas aplicadas ou retiradas são conferidas ao voltar à app ou em **Verificar a pasta agora**.
-- Abrir um projeto em pasta, gravar, aceitar uma proposta e aplicar ou atualizar uma especialização acessam bem menos a pasta (mais rápido em pastas lentas, como a do Android e as sincronizadas com a nuvem): cada pasta é resolvida uma vez e reaproveitada, o `mapping.json` é conferido com uma leitura só, os arquivos independentes são lidos e gravados quatro de cada vez, e atualizar uma especialização só confere de novo a biblioteca dela.
+- On a slow folder, the check for external changes spaces itself out (from 3 s up to 30 s) and does not run in the middle of a write; applied or withdrawn proposals are checked when returning to the app or on **Check the folder now**.
+- Opening a project in a folder, saving, accepting a proposal and applying or updating a specialization access the folder far less (faster on slow folders, such as Android's and the ones synced with the cloud): each folder is resolved once and reused, `mapping.json` is checked with a single read, independent files are read and written four at a time, and updating a specialization only re-checks its own library.

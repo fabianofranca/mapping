@@ -1,12 +1,12 @@
 import { memoByProject, projectIndex, type ProjectIndex } from './projectIndex';
 import type { Marking, Project } from './types';
 
-// Fim do assentar: a âncora exige o mesmo espaço (`anchor-other-space`). Quando a geometria
-// deixa a ancorada e o alvo em espaços diferentes, a relação é solta (`anchor: null`). Não
-// mexe em `parentId` (a âncora não entra no pertencimento) e devolve o mesmo projeto quando
-// nada é solto.
+// End of the settle: the anchor requires the same space (`anchor-other-space`). When the geometry
+// leaves the anchored marking and the target in different spaces, the relation is released
+// (`anchor: null`). It does not touch `parentId` (the anchor takes no part in membership) and
+// returns the same project when nothing is released.
 
-/** Ids de quem está ancorado num alvo de outro espaço, olhando `ids` e as ancoradas neles. */
+/** Ids of whoever is anchored to a target in another space, looking at `ids` and those anchored to them. */
 function stranded(
   p: Project,
   ids: Iterable<string>,
@@ -29,14 +29,14 @@ function stranded(
 }
 
 /**
- * Alguma marcação tem âncora. Uma varredura barata por versão (sem montar o índice): quem edita
- * um projeto sem âncoras não paga a montagem do índice a cada operação.
+ * Does any marking have an anchor? A cheap scan per version (without building the index): whoever
+ * edits a project with no anchors does not pay for building the index on every operation.
  */
 export const hasAnchors = memoByProject((p: Project): boolean =>
   p.markings.some((m) => m.anchor != null),
 );
 
-/** Ids mexidos (em `p`) que têm relação de âncora: a própria, ou ancoradas nelas em `before`. */
+/** Touched ids (in `p`) that have an anchor relation: their own, or markings anchored to them in `before`. */
 function touchedAnchorIds(
   p: Project,
   touched: readonly number[],
@@ -54,11 +54,12 @@ function touchedAnchorIds(
 }
 
 /**
- * Solta a âncora de quem ficou noutro espaço que o alvo. `touched` são as posições (em
- * `p.markings`) das marcações que a operação mexeu; `null` confere o projeto inteiro (só as
- * ancoradas). Com `touched`, o índice de `before` dá as ancoradas de cada alvo mexido, e só é
- * montado quando `before` tem alguma âncora; sem âncora em `before`, só importam as mexidas que
- * já nascem com uma. O índice de `p` só é montado quando alguma marcação mexida tem relação de âncora.
+ * Releases the anchor of whoever ended up in a different space than the target. `touched` are the
+ * positions (in `p.markings`) of the markings the operation touched; `null` checks the whole
+ * project (only the anchored ones). With `touched`, the index of `before` gives the markings
+ * anchored to each touched target, and it is only built when `before` has some anchor; without an
+ * anchor in `before`, only the touched markings that are born with one matter. The index of `p`
+ * is only built when some touched marking has an anchor relation.
  */
 export function releaseStrandedAnchors(
   p: Project,
@@ -86,9 +87,9 @@ export function releaseStrandedAnchors(
 }
 
 /**
- * As marcações com a âncora tirada de quem apontava para uma que sai (`removed`): elas ficam, sem
- * âncora. Devolve o mesmo array quando nada aponta para quem sai. Serve à exclusão de uma
- * marcação (`removeMarking`) e à da seleção (`removeItems`).
+ * The markings with the anchor removed from whoever pointed to one that leaves (`removed`): they
+ * stay, with no anchor. Returns the same array when nothing points to whoever leaves. It serves
+ * the deletion of one marking (`removeMarking`) and of the selection (`removeItems`).
  */
 export function releasedAnchors(
   p: Project,

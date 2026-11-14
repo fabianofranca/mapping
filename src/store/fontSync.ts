@@ -2,21 +2,23 @@ import type { LoadedFont } from '../model/components/library';
 import type { FontRegistry, FontStatus } from '../storage/fonts';
 import { reportError } from '../utils/report';
 
-// O registro de fontes de um catálogo: lê os bytes de cada fonte declarada (uma falha de leitura
-// só deixa a fonte sem bytes), registra em série e só avisa se a rodada ainda é a mais nova.
+// The font registry of a catalog: reads the bytes of each declared font (a read failure
+// only leaves the font without bytes), registers in series and only notifies if the round is
+// still the newest.
 
 export interface FontSyncDeps {
   readonly registry: FontRegistry;
-  /** `true` depois do `dispose` do dono: nada mais é registrado nem avisado. */
+  /** `true` after the owner's `dispose`: nothing else is registered or notified. */
   readonly isDisposed: () => boolean;
-  /** Chamado com a situação das fontes quando o registro de uma rodada vigente termina. */
+  /** Called with the fonts' status when the registration of a current round finishes. */
   readonly onRegistered: (status: readonly FontStatus[]) => void;
 }
 
 export interface FontSync {
   /**
-   * Abre uma rodada nova (a anterior fica velha: se ainda não registrou, nem registra) e lê os
-   * bytes de cada item, em paralelo e na ordem. `read` devolve os bytes da fonte ou `null`.
+   * Opens a new round (the previous one becomes stale: if it has not registered yet, it does
+   * not even register) and reads the bytes of each item, in parallel and in order. `read` returns
+   * the font's bytes or `null`.
    */
   start<T>(
     items: readonly T[],
@@ -27,7 +29,7 @@ export interface FontSync {
 
 export function createFontSync(deps: FontSyncDeps): FontSync {
   let fontRun = 0;
-  // Os registros correm um depois do outro: o de uma rodada velha nem começa.
+  // Registrations run one after the other: a stale round's does not even start.
   let registerChain: Promise<unknown> = Promise.resolve();
 
   async function loadFont<T>(

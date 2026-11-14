@@ -5,11 +5,11 @@ import { Section } from './DetailsSection';
 import { useEditor } from './EditorContext';
 import { PerspectiveSendMenu } from './PerspectiveSendMenu';
 
-// Seção "Perspectivas" dos Detalhes (etapa #659, PE3): em quais perspectivas a RAIZ do item
-// aparece (a Principal sempre) e o botão "Enviar para perspectiva…". Para um item que não é raiz,
-// mostra onde a raiz dele aparece.
+// "Perspectives" section of Details (stage #659, PE3): in which perspectives the item's ROOT
+// appears (the Main one always) and the "Send to perspective…" button. For an item that is not a root,
+// it shows where its root appears.
 
-/** O comando só vale na Principal e há uma perspectiva aberta? (a interface o desabilita) */
+/** Does the command apply only on the Main one, with a perspective open? (the interface disables it) */
 export function usePrincipalOnly(
   command: PrincipalOnlyCommand,
   targets: readonly string[] = [],

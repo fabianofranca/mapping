@@ -15,17 +15,17 @@ import { Flag, type FlagTone } from './Flag';
 import { formatFullDate, formatWhen, joinParts } from './format';
 import { ProposalThreadLink } from './ProposalThreadLink';
 
-// Linha da lista de propostas (HANDOFF-PROPOSALS 5.1 e componente ProposalRow): estado do
-// conjunto, título com o status, contexto (origem · autor · data), contagens e a linha
-// "N aceitas aguardando aplicação"; ação Revisar, Continuar ou Ver. Só lê o derivado; a
-// regra do status é `proposalListStatus`, do modelo.
+// Proposal list row (HANDOFF-PROPOSALS 5.1 and the ProposalRow component): set
+// state, title with the status, context (origin · author · date), counts and the
+// "N accepted awaiting application" line; Review, Continue or View action. It only reads the derived state; the
+// status rule is `proposalListStatus`, from the model.
 
 export type ProposalAction = 'review' | 'continue' | 'view';
 
 export interface ProposalStatusView {
   readonly flag: { readonly tone: FlagTone; readonly text: string } | null;
   readonly action: ProposalAction;
-  /** A ação é a principal da janela (a proposta que chegou e ninguém abriu). */
+  /** The action is the window's main one (the proposal that arrived and nobody opened). */
   readonly primary: boolean;
 }
 
@@ -38,8 +38,8 @@ const FLAG_TONES: Record<ProposalListFlag, FlagTone> = {
 };
 
 /**
- * Status mostrado e ação de uma linha: toda linha `fresh` leva o selo "Nova" e a ação
- * principal (a mesma verdade da contagem da barra de status; fase 8.2, P4).
+ * Status shown and action of a row: every `fresh` row carries the "New" seal and the
+ * main action (the same truth as the status bar count; phase 8.2, P4).
  */
 export function proposalStatus(row: ProposalRowData): ProposalStatusView {
   const status = proposalListStatus(row.proposal, row.progress, row.fresh);
@@ -51,7 +51,7 @@ export function proposalStatus(row: ProposalRowData): ProposalStatusView {
   };
 }
 
-/** "2 aceitas e 4 sem decisão ficaram para trás" (proposta substituída). */
+/** "2 accepted and 4 undecided were left behind" (superseded proposal). */
 export function leftBehindText(row: ProposalRowData): string | null {
   const behind = row.leftBehind;
   if (!behind) return null;
@@ -63,7 +63,7 @@ export function leftBehindText(row: ProposalRowData): string | null {
   return t('proposals.leftBehind', { accepted, undecided });
 }
 
-/** "N aceitas aguardando aplicação" (com o singular). */
+/** "N accepted awaiting application" (with the singular). */
 export function awaitingText(count: number): string {
   return count === 1
     ? t('proposals.awaitingOne')
@@ -88,7 +88,7 @@ function Count({
   );
 }
 
-/** Contagens pendentes · aceitas · rejeitadas · conflitos, com o estado pela forma. */
+/** Counts pending · accepted · rejected · conflicts, with the state shown by shape. */
 export function DecisionCounts({
   undecided,
   accepted,
@@ -124,17 +124,17 @@ export function DecisionCounts({
 
 interface ProposalRowProps {
   readonly row: ProposalRowData;
-  /** Agora (para a data relativa). */
+  /** Now (for the relative date). */
   readonly now: Date;
   readonly onAction: (row: ProposalRowData, action: ProposalAction) => void;
-  /** "Abrir a nova": a proposta que substituiu esta (`row.supersededBy`). */
+  /** "Open the new one": the proposal that superseded this one (`row.supersededBy`). */
   readonly onOpenNewer: (proposalId: string) => void;
   /**
-   * "Apagar proposta…" do menu ⋯ (fase 9.2). Só nas linhas que não estão abertas, e só se
-   * a janela passa o callback: a lista passa, a revisão não tem linhas de proposta.
+   * "Delete proposal…" of the ⋯ menu (phase 9.2). Only on rows that are not open, and only if
+   * the window passes the callback: the list passes it, the review has no proposal rows.
    */
   readonly onRemove?: (row: ProposalRowData) => void;
-  /** O menu ⋯ fica desabilitado (projeto somente leitura). */
+  /** The ⋯ menu is disabled (read-only project). */
   readonly removeDisabled?: boolean;
 }
 
@@ -156,8 +156,8 @@ export function ProposalRow({
       ? awaitingText(progress.acceptedPending)
       : null;
   const actionLabel = t(`proposals.action.${status.action}`);
-  // Quem a substituiu vem do `supersedes` da nova, não do status desta: uma proposta já
-  // aplicada é histórico e continua "Aplicada · substituída por …" (achado 13).
+  // Who superseded it comes from the new one's `supersedes`, not from this one's status: an already
+  // applied proposal is history and stays "Applied · superseded by …" (finding 13).
   const newer = row.supersededBy;
   return (
     <div class="proposal-row" role="listitem" data-proposal={p.id} data-status={p.status}>

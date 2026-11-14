@@ -21,17 +21,17 @@ import { annotationErrorMessage } from './labels';
 import { moveKeyDelta, useRowDrag, type RowDrag } from './rowDrag';
 import { BacklinkList } from './FieldEditors';
 
-// KeyValueGrid do DS 2.0: pares da anotação livre numa grade com edição na célula,
-// alça de arraste (P6) e menu ⋯ por linha.
+// DS 2.0 KeyValueGrid: pairs of the free annotation in a grid with in-cell editing,
+// drag handle (P6) and a ⋯ menu per row.
 
-/** Alt+Enter: novo par ou nova linha (DS 2.0, seção Atalhos). */
+/** Alt+Enter: new pair or new row (DS 2.0, Shortcuts section). */
 export function isNewRowKey(e: KeyboardEvent): boolean {
   return e.key === 'Enter' && e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
 }
 
 /**
- * A alça da linha `index` (o foco segue a linha movida). Pedido com `useFocusRequest`, ela
- * é lida no commit que desenha a lista na ordem nova.
+ * The handle of row `index` (focus follows the moved row). Requested with `useFocusRequest`, it
+ * is read in the commit that draws the list in the new order.
  */
 export function gripAt(container: HTMLElement | null, index: number): HTMLElement | null {
   return (
@@ -41,38 +41,38 @@ export function gripAt(container: HTMLElement | null, index: number): HTMLElemen
   );
 }
 
-/** O alvo do evento é a alça da linha (as setas sozinhas movem a linha). */
+/** The event target is the row handle (the arrow keys alone move the row). */
 export function isGrip(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && target.hasAttribute('data-grip');
 }
 
 interface EntryRowProps {
-  /** `null` = par novo, ainda não gravado (só existe na tela até ter chave válida). */
+  /** `null` = new pair, not saved yet (it only exists on screen until it has a valid key). */
   readonly entry: Entry | null;
   readonly index: number;
   readonly count: number;
   readonly annotationId: string;
   readonly readOnly: boolean;
   readonly drag: RowDrag;
-  /** Move o par gravado para `to` (botões do menu, teclado). */
+  /** Moves the saved pair to `to` (menu buttons, keyboard). */
   readonly onMove: (to: number) => void;
-  /** Descarta o par novo. */
+  /** Discards the new pair. */
   readonly onDiscard: () => void;
-  /** Par novo gravado. */
+  /** New pair saved. */
   readonly onCreated: () => void;
-  /** Remove o par gravado (com confirmação se ele for alvo de referências). */
+  /** Removes the saved pair (with confirmation if it is the target of references). */
   readonly onRemove: () => void;
   /**
-   * No lugar do menu ⋯ da linha (ponto de extensão dos Detalhes: o marcador da revisão);
-   * `undefined`, o menu.
+   * In place of the row's ⋯ menu (extension point of the Details: the review marker);
+   * `undefined`, the menu.
    */
   readonly aside?: ComponentChildren;
   readonly children?: ComponentChildren;
 }
 
 /**
- * Um par chave-valor. Grava ao sair do campo. Se a chave for vazia ou repetida,
- * mostra o erro na linha e mantém o texto digitado, sem gravar o par.
+ * A key-value pair. Saves on leaving the field. If the key is empty or repeated,
+ * shows the error on the row and keeps the typed text, without saving the pair.
  */
 function EntryRow({
   entry,
@@ -96,8 +96,9 @@ function EntryRow({
     key: entry?.key ?? '',
     value: entry?.value ?? '',
   });
-  // O erro é do par (pelo id; o par novo, sem id, usa `null`), não da posição: ao remover uma
-  // linha, a mensagem não passa para o par que ocupa o lugar dela.
+  // The error belongs to the pair (by id; the new pair, with no id, uses `null`), not to the
+  // position: when removing a
+  // row, the message does not pass to the pair that takes its place.
   const owner = entry?.id ?? null;
   const [errorState, setErrorState] = useState<{
     readonly owner: string | null;
@@ -106,7 +107,7 @@ function EntryRow({
   const error = errorState?.owner === owner ? errorState.message : null;
   const setError = (message: string | null) =>
     setErrorState(message === null ? null : { owner, message });
-  // O rascunho vale só enquanto o par gravado for o mesmo (ex.: some após desfazer).
+  // The draft only counts while the saved pair is the same (e.g. it disappears after an undo).
   const current =
     draft.base === base
       ? draft
@@ -115,11 +116,11 @@ function EntryRow({
   const edit = (patch: Partial<Pick<typeof draft, 'key' | 'value'>>) =>
     setDraft({ ...current, ...patch });
 
-  // A última gravação (sobre qual par, com qual texto): o `change` que o navegador dispara
-  // depois do Enter, antes da renderização, traz o mesmo texto e não grava de novo (uma
-  // entrada de desfazer). A guarda vale só enquanto o par gravado (`''` no par novo) ainda é
-  // a base dela: mudou (a gravação chegou, ou um desfazer), ela é zerada, como no
-  // `CommitInput`; depois da renderização, o `change` duplicado sai pela primeira linha.
+  // The last save (on which pair, with which text): the `change` that the browser fires
+  // after Enter, before rendering, carries the same text and does not save again (one
+  // undo entry). The guard only holds while the saved pair (`''` in the new pair) is still
+  // its base: if it changed (the save arrived, or an undo), it is reset, as in
+  // `CommitInput`; after rendering, the duplicate `change` exits through the first line.
   const committed = useRef<{
     readonly base: string;
     readonly key: string;
@@ -136,7 +137,7 @@ function EntryRow({
       committed.current.value === current.value
     )
       return;
-    // Par novo ainda vazio: nada a gravar nem a reclamar.
+    // New pair still empty: nothing to save or to complain about.
     if (!entry && current.key.trim() === '' && current.value === '') return;
     const next = { key: current.key, value: current.value };
     const result = entry
@@ -144,8 +145,8 @@ function EntryRow({
       : actions.addEntry(annotationId, next);
     if (result.ok) {
       committed.current = { base, ...next };
-      // Gravado: o rascunho passa a ser o par gravado. Sem isto, desfazer (o par volta ao
-      // de antes) reaproveitaria o rascunho, como no `CommitInput`.
+      // Saved: the draft becomes the saved pair. Without this, undo (the pair returns to the
+      // previous one) would reuse the draft, as in `CommitInput`.
       setDraft({ base: `${next.key}\u0000${next.value}`, ...next });
       setError(null);
       if (!entry) onCreated();
@@ -155,8 +156,9 @@ function EntryRow({
   };
 
   /**
-   * Enter grava e o foco fica no campo; Esc com o que reverter volta ao par gravado (no par
-   * novo, descarta a linha) e para aí; sem o que reverter, sobe (etapa 8, F5).
+   * Enter saves and the focus stays in the field; Esc with something to revert returns to the
+   * saved pair (in the new pair, discards the row) and stops there; with nothing to revert, it
+   * bubbles up (stage 8, F5).
    */
   const onFieldKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.altKey) commit();
@@ -222,7 +224,8 @@ function EntryRow({
           onInput={(e) => edit({ key: e.currentTarget.value })}
           onChange={commit}
           onKeyDown={(e) => {
-            // Enter na Chave grava (ao sair do campo) e segue para o Valor da mesma linha.
+            // Enter on the Key saves (on leaving the field) and moves to the Value of the same
+            // row.
             if (e.key === 'Enter' && !e.altKey) {
               const row = e.currentTarget.closest('[role="row"]');
               const value = row?.querySelector<HTMLElement>('[data-kv-value]');
@@ -305,7 +308,7 @@ interface KeyValueGridProps {
   readonly onRemoveEntry: (entryId: string) => void;
 }
 
-/** Um par que saiu (ponto de extensão dos Detalhes): riscado, no lugar onde estava. */
+/** A pair that left (extension point of the Details): struck through, where it used to be. */
 function RemovedEntryRow({
   entry,
   aside,
@@ -329,7 +332,7 @@ function RemovedEntryRow({
   );
 }
 
-/** As referências recebidas, agrupadas pelo id do par (uma vez por render, não uma por par). */
+/** Received references, grouped by pair id (once per render, not once per pair). */
 function backlinksByEntry(backlinks: readonly Backlink[]): Map<string, Backlink[]> {
   const byEntry = new Map<string, Backlink[]>();
   for (const b of backlinks) {
@@ -341,7 +344,7 @@ function backlinksByEntry(backlinks: readonly Backlink[]): Map<string, Backlink[
   return byEntry;
 }
 
-/** Pares de uma anotação livre, com as referências recebidas por par. */
+/** Pairs of a free annotation, with the references received per pair. */
 export function KeyValueGrid({
   project,
   annotation,
@@ -367,7 +370,7 @@ export function KeyValueGrid({
   };
   const drag = useRowDrag(grid, (from, to) => move(from, to, false));
 
-  // Par novo: o foco vai para a chave, no commit que desenha a linha.
+  // New pair: the focus goes to the key, in the commit that draws the row.
   useLayoutEffect(() => {
     if (!adding) return;
     grid.current?.querySelector<HTMLElement>('[data-new-row] input')?.focus();
@@ -377,8 +380,8 @@ export function KeyValueGrid({
     if (!readOnly) setAdding(true);
   };
 
-  // Lista única, com o par novo na posição que terá depois de gravado: a linha
-  // mantém a mesma chave (e o foco) quando a chave é gravada ao passar para o valor.
+  // Single list, with the new pair at the position it will have once saved: the row
+  // keeps the same key (and the focus) when the key is saved and focus moves on to the value.
   const receivedByEntry = backlinksByEntry(backlinks);
   const rows = annotation.entries.map((entry, index) => {
     const received = receivedByEntry.get(entry.id) ?? [];
@@ -409,7 +412,7 @@ export function KeyValueGrid({
       </EntryRow>
     );
   });
-  // Os pares que saíram, riscados no lugar onde estavam.
+  // The pairs that left, struck through where they used to be.
   for (const removed of ext?.removedEntries(annotation.id) ?? []) {
     rows.splice(
       Math.min(removed.index, rows.length),
@@ -434,7 +437,7 @@ export function KeyValueGrid({
         onMove={() => undefined}
         onDiscard={() => {
           setAdding(false);
-          // A linha descartada levava o foco: ele fica no "+ Par".
+          // The discarded row had the focus: it stays on the "+ Pair" button.
           requestFocus(() => addButton.current);
         }}
         onCreated={() => setAdding(false)}

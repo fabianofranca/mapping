@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "switch",
   "name": "Switch",
-  "description": "Switch: trilho 52 × 32, alça de 24 (ligado, ou com ícone) ou 16 (desligado) e rótulo opcional ao lado.",
+  "description": "Switch: 52 × 32 track, 24 handle (on, or with icon) or 16 (off) and optional label beside it.",
   "size": {
     "width": 200,
     "height": 32
@@ -13,7 +13,7 @@
     "height": 32
   },
   "preview": {
-    "label": "Notificações",
+    "label": "Notifications",
     "checked": "true",
     "enabled": "true",
     "thumbIcon": "false"
@@ -29,7 +29,7 @@
     "children": [
       {
         "type": "text",
-        "name": "rótulo",
+        "name": "label",
         "text": {
           "$field": "label"
         },
@@ -66,7 +66,7 @@
       },
       {
         "type": "frame",
-        "name": "chave",
+        "name": "switch",
         "width": 52,
         "height": 32,
         "layout": {
@@ -75,7 +75,7 @@
         "children": [
           {
             "type": "rect",
-            "name": "trilho",
+            "name": "track",
             "cornerRadius": {
               "$token": "corner-full"
             },
@@ -569,7 +569,7 @@
           },
           {
             "type": "rect",
-            "name": "contorno",
+            "name": "outline",
             "cornerRadius": {
               "$token": "corner-full"
             },
@@ -1073,7 +1073,7 @@
           },
           {
             "type": "rect",
-            "name": "anel de foco",
+            "name": "focus ring",
             "cornerRadius": {
               "$token": "corner-full"
             },
@@ -1101,7 +1101,7 @@
           },
           {
             "type": "ellipse",
-            "name": "estado",
+            "name": "state",
             "width": 32,
             "height": 32,
             "fill": {
@@ -1157,7 +1157,7 @@
           },
           {
             "type": "frame",
-            "name": "curso",
+            "name": "travel",
             "layout": {
               "type": "row",
               "padding": {
@@ -1188,7 +1188,7 @@
             "children": [
               {
                 "type": "frame",
-                "name": "área da alça",
+                "name": "handle area",
                 "width": {
                   "$if": {
                     "$and": [
@@ -1227,7 +1227,7 @@
                 "children": [
                   {
                     "type": "ellipse",
-                    "name": "alça",
+                    "name": "handle",
                     "width": {
                       "$if": {
                         "$and": [

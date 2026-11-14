@@ -1,8 +1,9 @@
-// Interação do pertencimento por geometria (etapa Marcações espaciais, ME1): o encaixe de uma
-// marcação movida num container e a absorção de quem fica quase dentro de uma marcação
-// desenhada ou redimensionada. O modelo só conhece "dentro = totalmente contido"; a tolerância
-// vive aqui, na interação, com um limiar único e sem opção para a pessoa (docs/ARCHITECTURE.md, "Espaços, pertencimento e gestos").
-// Funções puras, sem DOM nem Konva, testadas em `tests/canvas/containment.test.ts`.
+// Containment interaction by geometry (Spatial markings stage, ME1): snapping a moved
+// marking into a container and absorbing whatever is almost inside a drawn or resized
+// marking. The model only knows "inside = fully contained"; the tolerance
+// lives here, in the interaction, with a single threshold and no user option (docs/ARCHITECTURE.md,
+// "Spaces, containment and gestures").
+// Pure functions, without DOM or Konva, tested in `tests/canvas/containment.test.ts`.
 import {
   bottom,
   containsRect,
@@ -17,17 +18,17 @@ import {
 } from '../model';
 
 /**
- * Quanto uma parte de fora pode medir (px de tela) para ainda contar como "dentro": o encaixe
- * de uma marcação solta quase inteira num container e a absorção de um item que cruza a
- * marcação desenhada ou redimensionada. Convertida pelo zoom e pela escala do container no
- * momento de soltar (`spaceTolerance`). Sem opção para a pessoa. A ordem de `TAP_REPEAT_DISTANCE`.
+ * How much an outside part may measure (screen px) and still count as "inside": the snap
+ * of a marking dropped almost whole into a container and the absorption of an item that crosses the
+ * drawn or resized marking. Converted by the zoom and the container's scale at the
+ * moment of dropping (`spaceTolerance`). No user option. The order of `TAP_REPEAT_DISTANCE`.
  */
 export const ABSORB_TOLERANCE = 12;
 
-/** Folga de ponto flutuante ao arredondar para fora (coordenadas do canvas, decimais). */
+/** Floating-point slack when rounding outward (canvas coordinates, decimals). */
 const SLACK = 1e-6;
 
-/** A tolerância em px de tela, em unidades do espaço (pixels do container ou do canvas). */
+/** The tolerance in screen px, in units of the space (container pixels or canvas). */
 export function spaceTolerance(zoom: number, scale: number): number {
   return ABSORB_TOLERANCE / (zoom * scale);
 }
@@ -35,30 +36,30 @@ export function spaceTolerance(zoom: number, scale: number): number {
 // ---------------------------------------------------------------------------
 // Encaixe
 
-/** Onde a marcação movida vai ficar e quanto deslocar para ela caber nesse container. */
+/** Where the moved marking will end up and how much to shift for it to fit in that container. */
 export interface SnapTarget {
-  /** Container que vai ter a marcação (a contém ou a recebe pelo encaixe). */
+  /** Container that will hold the marking (it contains it or receives it by snapping). */
   readonly containerId: string;
-  /** Deslocamento extra, inteiro, no espaço de origem da marcação (zero se já está dentro). */
+  /** Extra shift, whole, in the marking's origin space (zero if it is already inside). */
   readonly dx: number;
   readonly dy: number;
 }
 
 /**
- * Container que fica com a marcação ao soltar, e o deslocamento que a leva para dentro dele.
- * `canvas`: o retângulo dela em unidades do canvas, já com o deslocamento do ponteiro; `from`:
- * posição do espaço em que o `rect` está (container de origem ou identidade, onde o deslocamento
- * é medido); `tolerance`: `ABSORB_TOLERANCE` em unidades do canvas (px de tela / zoom).
+ * Container that keeps the marking when dropped, and the shift that takes it inside.
+ * `canvas`: its rectangle in canvas units, already with the pointer shift; `from`:
+ * position of the space the `rect` is in (origin container or identity, where the shift
+ * is measured); `tolerance`: `ABSORB_TOLERANCE` in canvas units (screen px / zoom).
  *
- * - Inteira dentro de um container: ele, sem deslocamento.
- * - Quase inteira (a parte de fora não passa de `tolerance` em nenhum lado) e cabendo nele: o
- *   deslocamento a leva para dentro. O deslocamento é calculado em unidades do canvas e
- *   convertido de volta ao espaço de origem arredondando **para dentro** (`ceil` a quem precisa
- *   ir para a direita/baixo, `floor` à esquerda/cima); se mesmo assim não ficar dentro (marcação
- *   quase do tamanho do container), não encaixa.
- * - Maior que o container, ou longe: nada.
+ * - Whole inside a container: it, with no shift.
+ * - Almost whole (the outside part does not exceed `tolerance` on any side) and fitting in it: the
+ *   shift takes it inside. The shift is computed in canvas units and
+ *   converted back to the origin space rounding **inward** (`ceil` for what needs to
+ *   go right/down, `floor` left/up); if even so it does not end up inside (a marking
+ *   almost the size of the container), it does not snap.
+ * - Bigger than the container, or far: nothing.
  *
- * Com mais de um candidato (containers lado a lado), vence o de menor deslocamento.
+ * With more than one candidate (side-by-side containers), the one with the smallest shift wins.
  */
 export function snapTarget(
   canvas: Rect,
@@ -76,7 +77,7 @@ export function snapTarget(
     const outTop = box.y - canvas.y;
     const outBottom = bottom(canvas) - bottom(box);
     if (Math.max(outLeft, outRight, outTop, outBottom) > tolerance) continue;
-    // Quanto deslocar (canvas) por eixo: para a direita se passa à esquerda, e vice-versa.
+    // How much to shift (canvas) per axis: right if it passes on the left, and vice versa.
     const shiftX = outLeft > 0 ? outLeft : outRight > 0 ? -outRight : 0;
     const shiftY = outTop > 0 ? outTop : outBottom > 0 ? -outBottom : 0;
     const dx = toSpaceInside(shiftX, from.scale);
@@ -96,35 +97,36 @@ export function snapTarget(
   return best && { containerId: best.containerId, dx: best.dx, dy: best.dy };
 }
 
-/** Deslocamento do canvas em unidades inteiras do espaço, arredondado para o lado que entra. */
+/** Canvas shift in whole units of the space, rounded to the side that goes in. */
 function toSpaceInside(canvasShift: number, scale: number): number {
   const value = canvasShift / scale;
   return value > 0 ? Math.ceil(value - SLACK) : Math.floor(value + SLACK);
 }
 
 // ---------------------------------------------------------------------------
-// Absorção
+// Absorption
 
-/** Item que uma marcação pode absorver: marcação do espaço ou, no canvas, um container. */
+/** Item a marking can absorb: a marking of the space or, on the canvas, a container. */
 export interface AbsorbCandidate {
   readonly kind: 'marking' | 'container';
   readonly id: string;
-  /** No espaço da marcação (pixels do container ou unidades do canvas). */
+  /** In the marking's space (container pixels or canvas units). */
   readonly rect: Rect;
 }
 
 export interface Absorption {
-  /** O retângulo depois de crescer para envolver o que absorveu (inteiro). */
+  /** The rectangle after growing to wrap what it absorbed (whole). */
   readonly rect: Rect;
-  /** O que foi absorvido, na ordem (do menor excesso ao maior). */
+  /** What was absorbed, in order (from the smallest excess to the largest). */
   readonly absorbed: readonly AbsorbCandidate[];
 }
 
 /**
- * Itens que a marcação de um espaço pode absorver: as marcações do mesmo espaço (menos as
- * flutuantes e as de `exclude`: ela mesma e os ancestrais) e, no canvas (`containerId` nulo),
- * também os containers (retângulo no canvas). Os que já contêm o retângulo ficam de fora em
- * `absorbInto`, que os vê no momento.
+ * Items that a space's marking can absorb: the markings of the same space (minus the
+ * floating ones and those in `exclude`: itself and its ancestors) and, on the canvas (`containerId`
+ * null), also the containers (rectangle on the canvas). Those that already contain the rectangle
+ * are left out in
+ * `absorbInto`, which sees them at the moment.
  */
 export function absorbCandidates(
   project: Project,
@@ -144,7 +146,7 @@ export function absorbCandidates(
   return out;
 }
 
-/** Quanto do item passa de cada lado da marcação (zero quando não passa). */
+/** How much of the item passes on each side of the marking (zero when it does not pass). */
 function overflowOf(rect: Rect, item: Rect) {
   return {
     left: Math.max(0, rect.x - item.x),
@@ -154,7 +156,9 @@ function overflowOf(rect: Rect, item: Rect) {
   };
 }
 
-/** O retângulo que envolve `rect` e `item`, em inteiros: `floor` à esquerda/em cima, `ceil` à direita/embaixo. */
+/**
+ * The rectangle that wraps `rect` and `item`, in integers: `floor` left/top, `ceil` right/bottom.
+ */
 function growToCover(rect: Rect, item: Rect): Rect {
   const x0 = Math.floor(Math.min(rect.x, item.x) + SLACK);
   const y0 = Math.floor(Math.min(rect.y, item.y) + SLACK);
@@ -164,13 +168,14 @@ function growToCover(rect: Rect, item: Rect): Rect {
 }
 
 /**
- * Absorção: os itens que **cruzam** `rect` sem estar inteiros dentro nem conter o retângulo, e
- * cuja parte de fora não passa de `tolerance` (unidades do espaço) em nenhum lado, são
- * envolvidos: o retângulo cresce até cobri-los. Um a um, do menor excesso ao maior (o excesso
- * é o maior lado de fora; depois, a soma), reavaliando a cada crescimento. Com `limit` (o
- * container, numa marcação de container) o crescimento não sai dele: o item que não cabe não é
- * absorvido. Quem chama tira os ancestrais e as flutuantes de `candidates`; um item que **contém**
- * o retângulo (um pai possível) nunca é absorvido, nem no empate. Nunca falha.
+ * Absorption: the items that **cross** `rect` without being wholly inside or containing the
+ * rectangle, and whose outside part does not exceed `tolerance` (units of the space) on any side,
+ * are wrapped: the rectangle grows until it covers them. One by one, from the smallest excess to
+ * the largest (the excess is the largest outside side; then, the sum), reevaluating at each growth.
+ * With `limit` (the container, for a container marking) the growth does not leave it: an item that
+ * does not fit is not absorbed. The caller removes the ancestors and the floating ones from
+ * `candidates`; an item that **contains** the rectangle (a possible parent) is never absorbed, not
+ * even on a tie. It never fails.
  */
 export function absorbInto(
   rect: Rect,

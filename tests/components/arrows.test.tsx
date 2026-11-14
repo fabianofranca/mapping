@@ -27,11 +27,12 @@ import { sampleProject } from '../model/fixtures';
 import { descriptionOf } from './describedBy';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// Setas na interface (ME4, decisão 14): Detalhes da seta, "Ligar a…", Árvore, exclusão com a
-// contagem de setas, seleção múltipla, trilha e o interruptor "Mostrar setas".
+// Arrows in the interface (ME4, decision 14): arrow Details, "Link to…", Tree, deletion with the
+// arrow count, multi-selection, breadcrumb and the "Show arrows" switch.
+// pt-BR kept: shared fixture data (Porta, Maçaneta) asserted by tests/model
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   showToolWindow('tree');
 });
 afterEach(() => {
@@ -39,17 +40,17 @@ afterEach(() => {
   theme.value = 'system';
 });
 
-/** A amostra com uma seta A1 de M1 (Porta) para M4, com uma anotação dela. */
+/** The sample with an arrow A1 from M1 (Porta) to M4, with an annotation of it. */
 function withArrow(): Harness {
   const harness = createHarness(sampleProject());
   const result = harness.actions.addArrow('M1', 'M4');
-  if (!result.ok) throw new Error('addArrow falhou');
+  if (!result.ok) throw new Error('addArrow failed');
   return harness;
 }
 
 const arrowOf = (p: Project): Arrow => {
   const arrow = p.arrows[0];
-  if (!arrow) throw new Error('sem seta');
+  if (!arrow) throw new Error('no arrow');
   return arrow;
 };
 
@@ -66,8 +67,8 @@ function renderArrowPanel(harness: Harness) {
   return userEvent.setup();
 }
 
-describe('Detalhes da seta', () => {
-  it('mostra nome, origem, destino, estilo e a trava', () => {
+describe('Arrow Details', () => {
+  it('shows name, origin, destination, style and the lock', () => {
     const harness = withArrow();
     renderArrowPanel(harness);
     expect(screen.getByLabelText(t('arrow.name'))).toBeTruthy();
@@ -84,15 +85,15 @@ describe('Detalhes da seta', () => {
     expect(screen.getByRole('button', { name: t('arrow.lock') })).toBeTruthy();
   });
 
-  it('o nome é editável e vira o rótulo', async () => {
+  it('the name is editable and becomes the label', async () => {
     const harness = withArrow();
     const user = renderArrowPanel(harness);
     const field = screen.getByLabelText(t('arrow.name'));
-    await user.type(field, 'Abre a tela{Enter}');
-    expect(arrowOf(harness.project()).name).toBe('Abre a tela');
+    await user.type(field, 'Opens the screen{Enter}');
+    expect(arrowOf(harness.project()).name).toBe('Opens the screen');
   });
 
-  it('origem e destino selecionam a marcação', async () => {
+  it('origin and destination select the marking', async () => {
     const harness = withArrow();
     const user = renderArrowPanel(harness);
     await user.click(
@@ -101,7 +102,7 @@ describe('Detalhes da seta', () => {
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
   });
 
-  it('troca o estilo em uma entrada de desfazer', async () => {
+  it('switches the style in one undo entry', async () => {
     const harness = withArrow();
     const user = renderArrowPanel(harness);
     await user.click(screen.getByRole('button', { name: t('arrow.style.elbow') }));
@@ -110,20 +111,22 @@ describe('Detalhes da seta', () => {
     expect(arrowOf(harness.project()).style).toBe('curve');
   });
 
-  it('trancada, o estilo e a exclusão ficam desabilitados, mas o nome segue livre', async () => {
+  it('locked, the style and the deletion are disabled, but the name stays free', async () => {
     const harness = withArrow();
     const user = renderArrowPanel(harness);
     await user.click(screen.getByRole('button', { name: t('arrow.lock') }));
     expect(arrowOf(harness.project()).locked).toBe(true);
-    // Decisão 8 da #353: sem o aviso embaixo do cabeçalho; o ícone de ajuda ao lado do cadeado.
+    // Decision 8 of #353: no notice under the header; the help icon next to the padlock.
     expect(document.querySelector('.notice')).toBeNull();
-    const help = screen.getByRole('button', { name: 'Sobre a trava' });
+    const help = screen.getByRole('button', {
+      name: t('help.about', { name: t('lock.helpName') }),
+    });
     expect(descriptionOf(help)).toBe(t('arrow.lockNotice'));
-    // O ícone e o cadeado ficam juntos em qualquer largura (um só bloco que não quebra).
+    // The icon and the padlock stay together at any width (a single block that does not wrap).
     const lockButton = screen.getByRole('button', { name: t('arrow.lock') });
     expect(help.closest('.identity-lock')).not.toBeNull();
     expect(help.closest('.identity-lock')).toBe(lockButton.closest('.identity-lock'));
-    // SN2: o nome e a dica não mudam; o estado fica no aria-pressed.
+    // SN2: the name and the hint do not change; the state stays in aria-pressed.
     const lock = screen.getByRole('button', { name: t('arrow.lock') });
     expect(lock.getAttribute('aria-pressed')).toBe('true');
     expect(lock.parentElement?.querySelector('[data-tooltip]')?.textContent).toContain(
@@ -139,7 +142,7 @@ describe('Detalhes da seta', () => {
     expect(screen.getByLabelText<HTMLInputElement>(t('arrow.name')).disabled).toBe(false);
   });
 
-  it('Excluir chama o pedido de exclusão com a seta', async () => {
+  it('Delete calls the delete request with the arrow', async () => {
     const harness = withArrow();
     const onDelete = vi.fn();
     renderLive(harness, (p) => (
@@ -155,21 +158,21 @@ describe('Detalhes da seta', () => {
     expect(onDelete).toHaveBeenCalledWith(arrowOf(harness.project()));
   });
 
-  it('as anotações por camada são as de sempre, com a seta como dona', async () => {
+  it('the annotations per layer are the usual ones, with the arrow as the owner', async () => {
     const harness = withArrow();
     const user = renderArrowPanel(harness);
     const arrow = arrowOf(harness.project());
     const add = screen.getAllByRole('button', {
       name: (name) => name.startsWith(t('annotation.addIn', { layer: '' }).trim()),
     })[0];
-    if (!add) throw new Error('sem botão de anotação');
+    if (!add) throw new Error('no annotation button');
     await user.click(add);
     const created = harness.project().annotations.filter((a) => a.markingId === arrow.id);
     expect(created).toHaveLength(1);
   });
 });
 
-describe('Ligar a…', () => {
+describe('Link to…', () => {
   function renderMarking(harness: Harness, id: string) {
     renderLive(harness, (p) => {
       const marking = p.markings.find((m) => m.id === id) as Marking;
@@ -188,7 +191,7 @@ describe('Ligar a…', () => {
     return userEvent.setup();
   }
 
-  it('o seletor lista marcações sem a própria; escolher cria a seta e a seleciona', async () => {
+  it('the picker lists markings without the own one; choosing creates the arrow and selects it', async () => {
     const harness = createHarness(sampleProject());
     const user = renderMarking(harness, 'M1');
     await user.click(screen.getByRole('button', { name: t('arrow.linkTo') }));
@@ -207,7 +210,7 @@ describe('Ligar a…', () => {
     expect(harness.ui.selection.value).toEqual({ kind: 'arrow', id: arrow.id });
   });
 
-  it('depois de escolher, o foco fica na janela Detalhes (que troca para a seta), e não no primeiro controle da app', async () => {
+  it('after choosing, focus stays in the Details window (which switches to the arrow), not on the first control of the app', async () => {
     const harness = createHarness(sampleProject());
     renderLive(harness, (p) => {
       const sel = harness.ui.selection.value;
@@ -216,8 +219,8 @@ describe('Ligar a…', () => {
       const image = p.containers.find((c) => c.id === marking.containerId) ?? null;
       return (
         <div data-focus-root>
-          <button type="button">antes de tudo</button>
-          <section data-window="details" tabIndex={-1} aria-label="Detalhes">
+          <button type="button">before everything</button>
+          <section data-window="details" tabIndex={-1} aria-label="Details">
             {arrow ? (
               <ArrowPanel
                 project={p}
@@ -254,7 +257,7 @@ describe('Ligar a…', () => {
     expect(document.activeElement).toBe(details);
   });
 
-  it('desabilitado somente leitura', () => {
+  it('disabled when read-only', () => {
     const harness = createHarness(sampleProject(), true);
     renderLive(harness, (p) => (
       <MarkingPanel
@@ -272,7 +275,7 @@ describe('Ligar a…', () => {
   });
 });
 
-describe('Árvore com setas', () => {
+describe('Tree with arrows', () => {
   function renderTree(harness: Harness, onSelect = vi.fn()) {
     render(
       <EditorContext.Provider value={harness.context}>
@@ -286,14 +289,14 @@ describe('Árvore com setas', () => {
     return onSelect;
   }
 
-  it('a seta aparece sob a origem como "→ destino"; clicar a seleciona', async () => {
+  it('the arrow shows under the origin as "→ destination"; clicking selects it', async () => {
     const harness = withArrow();
     const onSelect = renderTree(harness);
     const row = screen.getByRole('button', {
       name: t('arrow.treeItem', { name: t('marking.unnamed') }),
     });
     expect(row.textContent).toContain(`→ ${t('marking.unnamed')}`);
-    // Sob a Porta (M1): dentro da lista que a segue.
+    // Under the Porta (M1): inside the list that follows it.
     expect(row.closest('li')?.parentElement?.closest('li')?.textContent).toContain(
       'Porta',
     );
@@ -304,14 +307,14 @@ describe('Árvore com setas', () => {
     });
   });
 
-  it('o nome da seta substitui o destino', () => {
+  it('the arrow name replaces the destination', () => {
     const harness = withArrow();
-    harness.actions.setArrowName(arrowOf(harness.project()).id, 'Abre');
+    harness.actions.setArrowName(arrowOf(harness.project()).id, 'Opens');
     renderTree(harness);
-    expect(screen.getByText('Abre')).toBeTruthy();
+    expect(screen.getByText('Opens')).toBeTruthy();
   });
 
-  it('Shift+clique alterna a seta na seleção múltipla', async () => {
+  it('Shift+click toggles the arrow in the multi-selection', async () => {
     const harness = withArrow();
     const arrowId = arrowOf(harness.project()).id;
     harness.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -328,7 +331,7 @@ describe('Árvore com setas', () => {
     ]);
   });
 
-  it('o cadeado da linha tranca a seta', async () => {
+  it('the row padlock locks the arrow', async () => {
     const harness = withArrow();
     renderTree(harness);
     await userEvent.click(
@@ -342,7 +345,7 @@ describe('Árvore com setas', () => {
   });
 });
 
-describe('exclusão com setas', () => {
+describe('deletion with arrows', () => {
   function Probe({
     run,
   }: {
@@ -352,7 +355,7 @@ describe('exclusão com setas', () => {
     return (
       <>
         <button type="button" onClick={() => run(dialogs)}>
-          ir
+          go
         </button>
         <EditorDialogs dialogs={dialogs} />
       </>
@@ -360,7 +363,7 @@ describe('exclusão com setas', () => {
   }
   const dialog = () => document.querySelector('dialog') as HTMLElement;
 
-  it('excluir uma marcação sem filhas nem anotações, mas com seta, pede confirmação com a contagem', async () => {
+  it('deleting a marking without children or annotations, but with an arrow, asks for confirmation with the count', async () => {
     const harness = createHarness(sampleProject());
     harness.actions.addArrow('M3', 'M4');
     const user = userEvent.setup();
@@ -375,7 +378,7 @@ describe('exclusão com setas', () => {
         />
       </EditorContext.Provider>,
     );
-    await user.click(screen.getByRole('button', { name: 'ir' }));
+    await user.click(screen.getByRole('button', { name: 'go' }));
     expect(dialog().textContent).toContain(t('marking.deleteArrows', { arrows: 1 }));
     await user.click(
       within(dialog()).getByRole('button', { name: t('common.delete'), hidden: true }),
@@ -383,7 +386,7 @@ describe('exclusão com setas', () => {
     expect(harness.project().arrows).toHaveLength(0);
   });
 
-  it('a confirmação da seção mostra as anotações que saem com a seta', async () => {
+  it('the confirmation shows the annotations that leave with the arrow', async () => {
     const harness = withArrow();
     const arrow = arrowOf(harness.project());
     harness.actions.addAnnotation(arrow.id, 'L1');
@@ -393,7 +396,7 @@ describe('exclusão com setas', () => {
         <Probe run={(d) => d.requestDeleteArrow(arrowOf(harness.project()))} />
       </EditorContext.Provider>,
     );
-    await user.click(screen.getByRole('button', { name: 'ir' }));
+    await user.click(screen.getByRole('button', { name: 'go' }));
     expect(dialog().textContent).toContain(
       t('arrow.deleteMessage', {
         name: 'Porta → ' + t('marking.unnamed'),
@@ -409,7 +412,7 @@ describe('exclusão com setas', () => {
     );
   });
 
-  it('a seta sem anotação é excluída direto; a trancada não faz nada', async () => {
+  it('the arrow without an annotation is deleted directly; the locked one does nothing', async () => {
     const harness = withArrow();
     const user = userEvent.setup();
     render(
@@ -418,14 +421,14 @@ describe('exclusão com setas', () => {
       </EditorContext.Provider>,
     );
     harness.actions.setArrowLocked(arrowOf(harness.project()).id, true);
-    await user.click(screen.getByRole('button', { name: 'ir' }));
+    await user.click(screen.getByRole('button', { name: 'go' }));
     expect(harness.project().arrows).toHaveLength(1);
     harness.actions.setArrowLocked(arrowOf(harness.project()).id, false);
-    await user.click(screen.getByRole('button', { name: 'ir' }));
+    await user.click(screen.getByRole('button', { name: 'go' }));
     expect(harness.project().arrows).toHaveLength(0);
   });
 
-  it('a exclusão da seleção conta as setas ligadas', async () => {
+  it('deleting the selection counts the linked arrows', async () => {
     const harness = withArrow();
     const user = userEvent.setup();
     render(
@@ -433,13 +436,13 @@ describe('exclusão com setas', () => {
         <Probe run={(d) => d.requestDeleteItems([{ kind: 'marking', id: 'M4' }])} />
       </EditorContext.Provider>,
     );
-    await user.click(screen.getByRole('button', { name: 'ir' }));
+    await user.click(screen.getByRole('button', { name: 'go' }));
     expect(dialog().textContent).toContain(t('multi.deleteArrows', { arrows: 1 }));
   });
 });
 
-describe('seleção múltipla e trilha', () => {
-  it('o painel conta as setas e tranca todas', async () => {
+describe('multi-selection and breadcrumb', () => {
+  it('the panel counts the arrows and locks all of them', async () => {
     const harness = withArrow();
     const arrowId = arrowOf(harness.project()).id;
     const items = [
@@ -461,7 +464,7 @@ describe('seleção múltipla e trilha', () => {
     act(() => selectItems(harness.ui, []));
   });
 
-  it('a trilha da seta é "Canvas › Origem → Destino"', () => {
+  it('the arrow breadcrumb is "Canvas › Origin → Destination"', () => {
     const harness = withArrow();
     const arrow = arrowOf(harness.project());
     const crumbs = crumbsOf(harness.project(), { kind: 'arrow', id: arrow.id });
@@ -473,8 +476,8 @@ describe('seleção múltipla e trilha', () => {
   });
 });
 
-describe('Mostrar setas', () => {
-  it('o interruptor liga e desliga a preferência', async () => {
+describe('Show arrows', () => {
+  it('the switch turns the preference on and off', async () => {
     localStorage.clear();
     setShowArrows(true);
     render(<SettingsBar />);

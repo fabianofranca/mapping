@@ -1,109 +1,111 @@
 /**
- * Motor dos componentes (etapa #747, CF4): layout puro do texto rico (`runs`).
+ * Component engine (stage #747, CF4): pure layout of rich text (`runs`).
  *
- * Os trechos de um nó `text` quebram linha como UM texto só, pela palavra. O layout é derivado de
- * qualquer `TextMeasurer`: cada pedaço de uma linha é medido com `measure(pedaço, fonteDoTrecho)`
- * sem `maxWidth` (a largura de uma linha), de modo que o medidor aproximado e o do canvas ganham a
- * medida por trechos sem código duplicado, e o desenho usa o mesmo layout que a medida.
+ * The runs of a `text` node wrap as ONE single text, by word. The layout is derived from any
+ * `TextMeasurer`: each piece of a line is measured with `measure(piece, runFont)` without
+ * `maxWidth` (the width of one line), so the approximate measurer and the canvas one get the
+ * per-run measurement without duplicated code, and the drawing uses the same layout as the
+ * measurement.
  *
- * Regras:
- * - Oportunidades de quebra: os espaços dentro de trechos **sem fundo** e as bordas de uma caixa
- *   em linha (chip, o trecho com fundo). Uma palavra que atravessa trechos sem espaço entre eles
- *   (`"Pa"` + `"gar"`) é uma palavra só. `\n` num trecho sem fundo força a quebra; num chip vira
- *   espaço.
- * - No começo da linha os espaços de trechos sem fundo são descartados (como no CSS); o texto do
- *   chip não: é desenhado inteiro, com o espaço inicial. Espaços no fim da linha não contam.
- * - Chip: átomo inquebrável de largura `texto + 2·h` e altura `linha do trecho + 2·v`. Maior que a
- *   linha, fica sozinho e passa da largura; que não cabe no resto da linha, vai inteiro para a
- *   linha de baixo. Uma palavra maior que a largura também fica sozinha na linha.
- * - Altura de linha de um trecho = `lineHeight` do nó × (tamanho do trecho / tamanho do nó); a
- *   altura da linha é o máximo entre a `lineHeight` do nó e a altura dos pedaços (o chip inclui o
- *   respiro vertical). Limite: os pedaços ficam centrados verticalmente na linha, não alinhados
- *   pela linha de base.
- * - `wrap: none` só quebra em `\n`; `maxLines` mantém as N primeiras linhas; `ellipsis` (na linha
- *   cortada por `maxLines`, ou na que passa da caixa) tira caracteres do fim do último pedaço de
- *   texto (no meio de um trecho, se preciso; um chip sai inteiro) até a linha mais o `…` caber, e o
- *   `…` usa a fonte do último pedaço que sobrou.
- * - `align` vale por linha, contra a largura da caixa (quando houver).
- * - `direction: 'rtl'` inverte a ordem dos pedaços dentro da linha (o primeiro na borda direita).
+ * Rules:
+ * - Break opportunities: the spaces inside runs **without a background** and the edges of an
+ *   inline box (chip, the run with a background). A word that crosses runs with no space between
+ *   them (`"Pa"` + `"yment"`) is a single word. `\n` in a run without a background forces the
+ *   break; in a chip it becomes a space.
+ * - At the start of a line the spaces of runs without a background are discarded (as in CSS); the
+ *   chip's text is not: it is drawn whole, with the leading space. Spaces at the end of the line
+ *   do not count.
+ * - Chip: unbreakable atom of width `text + 2·h` and height `run line + 2·v`. Larger than the
+ *   line, it stays alone and overflows the width; one that does not fit in the rest of the line
+ *   goes whole to the next line. A word larger than the width also stays alone on the line.
+ * - Line height of a run = the node's `lineHeight` × (run size / node size); the line height is
+ *   the maximum between the node's `lineHeight` and the height of the pieces (the chip includes
+ *   the vertical padding). Limit: the pieces are vertically centered on the line, not aligned
+ *   by the baseline.
+ * - `wrap: none` only breaks at `\n`; `maxLines` keeps the first N lines; `ellipsis` (on the line
+ *   cut by `maxLines`, or on the one that exceeds the box) removes characters from the end of the
+ *   last text piece (in the middle of a run if needed; a chip leaves whole) until the line plus
+ *   the `…` fits, and the `…` uses the font of the last piece that remained.
+ * - `align` applies per line, against the box width (when there is one).
+ * - `direction: 'rtl'` reverses the order of the pieces within the line (the first at the right edge).
  *
- * Funções puras, sem DOM. As posições (`x`, `y`) são relativas ao canto da caixa do texto, antes do
- * `verticalAlign` (o desenho aplica o deslocamento vertical).
+ * Pure functions, no DOM. The positions (`x`, `y`) are relative to the corner of the text box,
+ * before `verticalAlign` (the drawing applies the vertical offset).
  */
 import type { MeasureFont, TextMeasurer, TextMetrics } from './instantiate';
 
 const EPS = 1e-9;
 
-/** Um trecho já resolvido: o texto, a fonte e, quando tem fundo, o respiro da caixa em linha. */
+/** A resolved run: the text, the font and, when it has a background, the inline box's padding. */
 export interface RichRun {
   readonly text: string;
   /**
-   * A fonte do trecho (família, tamanho, peso, itálico e espaçamento entre letras). A
-   * `lineHeight`, o `wrap`, o `ellipsis` e o `maxLines` do trecho são ignorados: valem os do nó.
+   * The run's font (family, size, weight, italic and letter spacing). The run's `lineHeight`,
+   * `wrap`, `ellipsis` and `maxLines` are ignored: the node's apply.
    */
   readonly font: MeasureFont;
-  /** Presente = o trecho tem fundo (chip): `padding` é `[vertical, horizontal]` em px. */
+  /** Present = the run has a background (chip): `padding` is `[vertical, horizontal]` in px. */
   readonly chip?: { readonly padding: readonly [number, number] };
 }
 
-/** O que é do nó, não dos trechos. */
+/** What belongs to the node, not to the runs. */
 export interface RichBase {
-  /** Tamanho da fonte do nó (px): a referência da escala da altura de linha dos trechos. */
+  /** The node's font size (px): the reference for scaling the runs' line height. */
   readonly size: number;
-  /** Altura de linha do nó, em px. */
+  /** The node's line height, in px. */
   readonly lineHeight: number;
   readonly wrap?: 'word' | 'none';
   readonly ellipsis?: boolean;
-  /** Inteiro ≥ 1. */
+  /** Integer ≥ 1. */
   readonly maxLines?: number;
-  /** Alinhamento de cada linha contra a largura da caixa (padrão `left`). */
+  /** Alignment of each line against the box width (default `left`). */
   readonly align?: 'left' | 'center' | 'right';
   /**
-   * `rtl` = o texto lê da direita para a esquerda: os pedaços de cada linha correm da direita para
-   * a esquerda (o primeiro, na borda direita do conteúdo). A ordem na lista, a largura e a quebra
-   * não mudam; a ordem dos glifos dentro de um pedaço é de quem desenha. Ausente = `ltr`.
+   * `rtl` = the text reads right to left: the pieces of each line run right to left (the first at
+   * the right edge of the content). The order in the list, the width and the wrapping do not
+   * change; the order of the glyphs within a piece is up to whoever draws. Absent = `ltr`.
    */
   readonly direction?: 'rtl';
 }
 
-/** Um pedaço de uma linha: texto de um só trecho (ou a caixa inteira de um chip). */
+/** A piece of a line: text from a single run (or the whole box of a chip). */
 export interface RunPiece {
-  /** Índice do trecho na lista de origem. */
+  /** Index of the run in the source list. */
   readonly run: number;
-  /** O texto a desenhar (no chip, inclui o espaço inicial, se houver). */
+  /** The text to draw (in the chip, includes the leading space, if any). */
   readonly text: string;
-  /** Posição horizontal na caixa do texto (com o `align` aplicado). */
+  /** Horizontal position in the text box (with the `align` applied). */
   readonly x: number;
-  /** Largura do pedaço; no chip, a da caixa (texto + 2·h). */
+  /** Width of the piece; in the chip, the box's (text + 2·h). */
   readonly width: number;
-  /** Altura do pedaço; no chip, a da caixa (linha do trecho + 2·v). */
+  /** Height of the piece; in the chip, the box's (run line + 2·v). */
   readonly height: number;
-  /** `true` = caixa em linha (desenha o fundo; o texto fica `padding` horizontal para dentro). */
+  /** `true` = inline box (draws the background; the text sits the horizontal `padding` inward). */
   readonly chip: boolean;
 }
 
 export interface RunLine {
-  /** Topo da linha na caixa do texto. */
+  /** Top of the line in the text box. */
   readonly y: number;
   readonly height: number;
-  /** Largura do conteúdo da linha (sem espaços do fim). */
+  /** Width of the line's content (without trailing spaces). */
   readonly width: number;
   readonly pieces: readonly RunPiece[];
 }
 
 export interface RunLayout {
-  /** A linha mais larga. */
+  /** The widest line. */
   readonly width: number;
-  /** Soma das alturas das linhas. */
+  /** Sum of the line heights. */
   readonly height: number;
   readonly lines: readonly RunLine[];
 }
 
 // ---------------------------------------------------------------------------------------
-// Contexto de medida
+// Measurement context
 // ---------------------------------------------------------------------------------------
 
-/** Um segmento de texto de um trecho com a largura já medida (no chip, a da caixa). */
+/** A text segment of a run with its width already measured (in the chip, the box's). */
 interface Seg {
   readonly run: number;
   readonly text: string;
@@ -119,14 +121,14 @@ type Atom =
 interface Context {
   readonly runs: readonly RichRun[];
   readonly base: RichBase;
-  /** Altura de linha do trecho (com o respiro vertical do chip). */
+  /** Line height of the run (with the chip's vertical padding). */
   readonly heightOf: (run: number) => number;
-  /** Largura do texto do trecho numa linha só (sem o respiro do chip). */
+  /** Width of the run's text on a single line (without the chip's padding). */
   readonly textWidth: (run: number, text: string) => number;
   readonly seg: (run: number, text: string) => Seg;
 }
 
-/** A altura de linha de um trecho: a do nó escalada pelo tamanho do trecho. */
+/** The line height of a run: the node's, scaled by the run's size. */
 function runLineHeight(base: RichBase, font: MeasureFont): number {
   return base.size > 0 ? (base.lineHeight * font.size) / base.size : base.lineHeight;
 }
@@ -171,17 +173,17 @@ function createContext(
 }
 
 // ---------------------------------------------------------------------------------------
-// Átomos: palavras, espaços, quebras forçadas e chips
+// Atoms: words, spaces, forced breaks and chips
 // ---------------------------------------------------------------------------------------
 
-/** Pedaços de um texto sem fundo: `\n`, sequência de espaços ou sequência de não-espaços. */
+/** Pieces of a text without a background: `\n`, a sequence of spaces or a sequence of non-spaces. */
 const TOKEN = /\n|[ \t]+|[^ \t\n]+/g;
 
 function wordAtom(segs: readonly Seg[]): Atom {
   return { kind: 'word', segs, width: segs.reduce((sum, seg) => sum + seg.width, 0) };
 }
 
-/** Quebra os trechos em átomos; a palavra que atravessa trechos vira um átomo só. */
+/** Splits the runs into atoms; a word that crosses runs becomes a single atom. */
 function toAtoms(ctx: Context): Atom[] {
   const atoms: Atom[] = [];
   let word: Seg[] = [];
@@ -213,10 +215,10 @@ function toAtoms(ctx: Context): Atom[] {
 }
 
 // ---------------------------------------------------------------------------------------
-// Quebra de linhas
+// Line breaking
 // ---------------------------------------------------------------------------------------
 
-/** Distribui os átomos em linhas (guloso); `limit` infinito = só as quebras forçadas. */
+/** Distributes the atoms into lines (greedy); infinite `limit` = only the forced breaks. */
 function breakLines(atoms: readonly Atom[], limit: number): Seg[][] {
   const lines: Seg[][] = [];
   let line: Seg[] = [];
@@ -234,7 +236,7 @@ function breakLines(atoms: readonly Atom[], limit: number): Seg[][] {
     if (atom.kind === 'break') {
       endLine();
     } else if (atom.kind === 'space') {
-      // espaço no começo da linha é descartado; os demais esperam a palavra seguinte
+      // a space at the start of the line is discarded; the others wait for the next word
       if (line.length > 0) {
         pending.push(atom.seg);
         pendingWidth += atom.seg.width;
@@ -252,7 +254,7 @@ function breakLines(atoms: readonly Atom[], limit: number): Seg[][] {
 }
 
 // ---------------------------------------------------------------------------------------
-// maxLines e ellipsis
+// maxLines and ellipsis
 // ---------------------------------------------------------------------------------------
 
 const sumWidths = (segs: readonly Seg[]): number =>
@@ -261,14 +263,14 @@ const sumWidths = (segs: readonly Seg[]): number =>
 const isBlank = (seg: Seg | undefined): boolean =>
   seg !== undefined && !seg.chip && seg.text.trim() === '';
 
-/** Tira o último ponto de código (emoji e pares substitutos saem inteiros). */
+/** Removes the last code point (emoji and surrogate pairs go whole). */
 export function dropLastChar(text: string): string {
   return [...text].slice(0, -1).join('');
 }
 
 /**
- * Tira do fim da linha (chips inteiros, letras do último texto) até a linha + `…` caber em
- * `limit`; o `…` usa a fonte do último pedaço que sobrou.
+ * Removes from the end of the line (whole chips, letters of the last text) until the line + `…`
+ * fits in `limit`; the `…` uses the font of the last piece that remained.
  */
 function ellipsize(line: readonly Seg[], ctx: Context, limit: number): Seg[] {
   const kept = [...line];
@@ -286,7 +288,7 @@ function ellipsize(line: readonly Seg[], ctx: Context, limit: number): Seg[] {
   return [...kept, { run, text: '…', width: ctx.textWidth(run, '…'), chip: false }];
 }
 
-/** Aplica `maxLines` e `ellipsis` às linhas já quebradas. */
+/** Applies `maxLines` and `ellipsis` to the already-broken lines. */
 function clipLines(
   lines: readonly Seg[][],
   ctx: Context,
@@ -305,10 +307,10 @@ function clipLines(
 }
 
 // ---------------------------------------------------------------------------------------
-// Saída
+// Output
 // ---------------------------------------------------------------------------------------
 
-/** Junta os segmentos vizinhos do mesmo trecho (sem fundo) num pedaço só, já medido. */
+/** Joins neighboring segments of the same run (without a background) into a single, already measured piece. */
 function mergePieces(line: readonly Seg[], ctx: Context): Omit<RunPiece, 'x'>[] {
   const groups: { run: number; text: string; chip: boolean; width: number }[] = [];
   for (const seg of line) {
@@ -325,7 +327,7 @@ function mergePieces(line: readonly Seg[], ctx: Context): Omit<RunPiece, 'x'>[] 
   }));
 }
 
-/** Deslocamento horizontal da linha contra a largura da caixa. */
+/** Horizontal offset of the line against the box width. */
 function alignOffset(
   align: RichBase['align'],
   boxWidth: number,
@@ -354,7 +356,7 @@ function buildLayout(
     const rtl = ctx.base.direction === 'rtl';
     let x = 0;
     const pieces = merged.map((piece): RunPiece => {
-      // Em rtl o pedaço ocupa o mesmo trecho da linha, medido a partir da borda direita do conteúdo.
+      // In rtl the piece takes the same stretch of the line, measured from the content's right edge.
       const placed = { ...piece, x: start + (rtl ? width - x - piece.width : x) };
       x += piece.width;
       return placed;
@@ -368,8 +370,8 @@ function buildLayout(
 }
 
 /**
- * O layout dos trechos numa caixa de largura `maxWidth` (ausente = sem limite: só as quebras
- * forçadas). `measure` é qualquer `TextMeasurer`; ele só é chamado sem `maxWidth`.
+ * The layout of the runs in a box of width `maxWidth` (absent = no limit: only the forced
+ * breaks). `measure` is any `TextMeasurer`; it is only called without `maxWidth`.
  */
 export function layoutRuns(
   runs: readonly RichRun[],
@@ -385,8 +387,8 @@ export function layoutRuns(
 }
 
 /**
- * Mede o texto rico como um `TextMeasurer` mede um texto: largura da linha mais larga, altura
- * somada e o texto de cada linha (os pedaços juntados, já com o `…`).
+ * Measures rich text the way a `TextMeasurer` measures a text: width of the widest line, summed
+ * height and the text of each line (the pieces joined, already with the `…`).
  */
 export function measureRichText(
   runs: readonly RichRun[],
@@ -403,9 +405,10 @@ export function measureRichText(
 }
 
 /**
- * O `min-content` do texto rico: o maior pedaço inquebrável, a palavra mais larga (uma palavra que
- * atravessa trechos é uma só) ou o chip inteiro, que é atômico. Com `wrap: none` o texto não quebra:
- * vale a linha mais larga. Como `layoutRuns`, só chama o medidor sem `maxWidth`.
+ * The `min-content` of rich text: the largest unbreakable piece, the widest word (a word that
+ * crosses runs is a single one) or the whole chip, which is atomic. With `wrap: none` the text does
+ * not wrap: the widest line counts. Like `layoutRuns`, it only calls the measurer without `maxWidth`.
+
  */
 export function minContentRuns(
   runs: readonly RichRun[],

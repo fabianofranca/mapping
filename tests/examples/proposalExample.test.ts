@@ -11,15 +11,15 @@ import {
   fixtureZip,
 } from '../e2e/proposalFixture';
 
-// `examples/proposta-exemplo.zip`: um projeto com uma proposta de alteração para testar a
-// revisão sem o agente ("Abrir zip", no desktop e no celular). O zip é gerado de
-// `tests/e2e/proposalFixture.ts` (o mesmo do e2e); este teste confere que ele continua
-// igual ao gerador. Para gerar de novo: `UPDATE_EXAMPLES=1 npx vitest run tests/examples`.
+// `examples/proposal-example.zip`: a project with a change proposal to test the review
+// without the agent ("Open zip", on desktop and phone). The zip is generated from
+// `tests/e2e/proposalFixture.ts` (the same as the e2e); this test checks that it still
+// matches the generator. To regenerate: `UPDATE_EXAMPLES=1 npx vitest run tests/examples`.
 
-const EXAMPLE = 'examples/proposta-exemplo.zip';
+const EXAMPLE = 'examples/proposal-example.zip';
 
-describe('zip de exemplo com proposta', () => {
-  it('a proposta é válida e aplicável sobre o projeto', () => {
+describe('example zip with a proposal', () => {
+  it('the proposal is valid and applicable on the project', () => {
     const project = fixtureProject();
     const proposal = fixtureProposal(project);
     expect(proposal.changes.length).toBeGreaterThan(10);
@@ -36,14 +36,14 @@ describe('zip de exemplo com proposta', () => {
     ]) {
       expect(types, t).toContain(t);
     }
-    // Aceitar tudo dá um projeto válido.
+    // Accepting everything gives a valid project.
     const all = Object.fromEntries(
       proposal.changes.map((c) => [c.id, { state: 'accepted' as const, at: 'x' }]),
     );
     expect(validateAccepted(project, { ...proposal, decisions: all }).ok).toBe(true);
   });
 
-  it('examples/proposta-exemplo.zip está em dia com o gerador', async () => {
+  it('examples/proposal-example.zip is up to date with the generator', async () => {
     if (process.env.UPDATE_EXAMPLES === '1') writeFileSync(EXAMPLE, await fixtureZip());
     const zip = await JSZip.loadAsync(readFileSync(EXAMPLE));
     const expected = fixtureFiles();
@@ -61,7 +61,7 @@ describe('zip de exemplo com proposta', () => {
     }
   });
 
-  it('a app lê o zip com a proposta e as imagens que esperam a aceitação', async () => {
+  it('the app reads the zip with the proposal and the images that await acceptance', async () => {
     const read = await readProjectZip(new Blob([readFileSync(EXAMPLE)]));
     if (!read.ok) throw new Error(read.error);
     const { files } = read;
@@ -69,8 +69,8 @@ describe('zip de exemplo com proposta', () => {
     const text = files.proposals.get(`proposals/${FIXTURE_PROPOSAL_ID}/proposal.json`);
     expect(text && parseProposalText(text).ok).toBe(true);
     expect([...files.proposalImages.keys()].sort()).toEqual([
-      `proposals/${FIXTURE_PROPOSAL_ID}/images/carrinho-v2.png`,
-      `proposals/${FIXTURE_PROPOSAL_ID}/images/confirmacao.png`,
+      `proposals/${FIXTURE_PROPOSAL_ID}/images/cart-v2.png`,
+      `proposals/${FIXTURE_PROPOSAL_ID}/images/confirmation.png`,
     ]);
   });
 });

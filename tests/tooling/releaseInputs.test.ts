@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Etapa #920, fase RA1, decisão 6: a lista fixa de entradas da release
-// (`scripts/release/releaseInputs.mjs`) cobre tudo o que o esbuild do `build:mcp` empacota e as
-// fontes dos arquivos do workspace. Se um arquivo novo entra no bundle fora da lista, este teste falha.
+// Stage #920, phase RA1, decision 6: the fixed list of release inputs
+// (`scripts/release/releaseInputs.mjs`) covers everything the `build:mcp` esbuild bundles and the
+// sources of the workspace files. If a new file enters the bundle outside the list, this test fails.
 import { readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { build } from 'esbuild';
@@ -16,7 +16,7 @@ import { WORKSPACE_SOURCES } from '../../scripts/release/workspaceAssets.mjs';
 
 const ROOT = resolve('.');
 
-/** Entradas do bundle do servidor (como `mcp/build.mjs`, mas sem gravar nem ler wasm/fonte). */
+/** Server bundle inputs (like `mcp/build.mjs`, but without writing or reading wasm/font). */
 async function bundleInputs(): Promise<string[]> {
   const result = await build({
     entryPoints: ['mcp/main.ts'],
@@ -66,7 +66,7 @@ async function bundleInputs(): Promise<string[]> {
     .filter((path) => !path.startsWith('wasm:') && !path.startsWith('stub:'));
 }
 
-/** Entradas do bundle do extrator (`signature/main.ts`), fora de node_modules. */
+/** Signature extractor bundle inputs (`signature/main.ts`), outside node_modules. */
 async function signatureInputs(): Promise<string[]> {
   const result = await build({
     entryPoints: ['signature/main.ts'],
@@ -82,8 +82,8 @@ async function signatureInputs(): Promise<string[]> {
     .map((key) => (key.startsWith('/') ? relative(ROOT, key) : key));
 }
 
-describe('entradas da release do MCP', () => {
-  it('o extrator de assinaturas: tudo o que o esbuild empacota e a pasta signature/ estão na lista', async () => {
+describe('MCP release inputs', () => {
+  it('the signature extractor: everything esbuild bundles and the signature/ folder are in the list', async () => {
     const { readdirSync, statSync } = await import('node:fs');
     const inputs = await signatureInputs();
     expect(inputs).toContain('signature/main.ts');
@@ -97,26 +97,26 @@ describe('entradas da release do MCP', () => {
     for (const path of walk('signature')) expect(isReleaseInput(path), path).toBe(true);
   }, 60_000);
 
-  it('a lista cobre tudo o que o esbuild empacota (fora de node_modules)', async () => {
+  it('the list covers everything esbuild bundles (outside node_modules)', async () => {
     const inputs = await bundleInputs();
     expect(inputs.length).toBeGreaterThan(100);
     const uncovered = inputs.filter((path) => !isReleaseInput(path));
     expect(uncovered).toEqual([]);
   }, 60_000);
 
-  it('a lista cobre as fontes dos arquivos do workspace', () => {
+  it('the list covers the sources of the workspace files', () => {
     expect(WORKSPACE_SOURCES.length).toBe(4);
     for (const path of WORKSPACE_SOURCES) expect(isReleaseInput(path), path).toBe(true);
   });
 
-  it('as fontes do workspace vêm de WORKSPACE_SOURCES, sem lista duplicada no arquivo', async () => {
+  it('the workspace sources come from WORKSPACE_SOURCES, with no duplicated list in the file', async () => {
     const { readFileSync } = await import('node:fs');
     const source = readFileSync('scripts/release/releaseInputs.mjs', 'utf8');
     for (const path of WORKSPACE_SOURCES) expect(source, path).not.toContain(`'${path}'`);
     for (const path of WORKSPACE_SOURCES) expect(RELEASE_INPUTS).toContain(path);
   });
 
-  it('o que não vai na release fica fora (app, store, docs de processo, lockfile)', () => {
+  it('what does not go in the release stays out (app, store, process docs, lockfile)', () => {
     for (const path of [
       'src/store/history.ts',
       'src/canvas/CanvasController.ts',
@@ -132,14 +132,14 @@ describe('entradas da release do MCP', () => {
     }
   });
 
-  it('releaseInputsIn filtra a lista de arquivos mudados', () => {
+  it('releaseInputsIn filters the list of changed files', () => {
     expect(releaseInputsIn(['README.md', 'mcp/tools.ts', 'src/model/a.ts'])).toEqual([
       'mcp/tools.ts',
       'src/model/a.ts',
     ]);
   });
 
-  it('todo item da lista existe no repositório', async () => {
+  it('every item of the list exists in the repository', async () => {
     const { existsSync } = await import('node:fs');
     for (const entry of RELEASE_INPUTS) expect(existsSync(entry), entry).toBe(true);
   });

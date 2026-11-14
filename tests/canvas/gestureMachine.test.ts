@@ -29,13 +29,13 @@ const down = (direct: DragMode = 'pan'): GestureEvent => ({
 });
 
 describe('clique', () => {
-  it('soltar sem mover é um clique', () => {
+  it('releasing without moving is a click', () => {
     const { effects, state } = run([down(), { type: 'up' }]);
     expect(effects).toEqual([{ kind: 'tap', at: at(100, 100) }]);
     expect(state).toEqual(IDLE);
   });
 
-  it('um tremor pequeno ainda é clique', () => {
+  it('a small tremor is still a click', () => {
     const { effects } = run([
       down(),
       { type: 'move', point: at(103, 102) },
@@ -46,7 +46,7 @@ describe('clique', () => {
 });
 
 describe('arrastar', () => {
-  it('abaixo do limiar ainda não decide', () => {
+  it('below the threshold it does not decide yet', () => {
     const { effects, state } = run([
       down(),
       { type: 'move', point: at(100 + DRAG_THRESHOLD - 1, 100) },
@@ -56,7 +56,7 @@ describe('arrastar', () => {
   });
 
   it.each<DragMode>(['pan', 'move', 'resize', 'draw'])(
-    '%s: arrasto direto a partir do limiar',
+    '%s: direct drag from the threshold',
     (mode) => {
       const { effects, state } = run([
         down(mode),
@@ -67,7 +67,7 @@ describe('arrastar', () => {
     },
   );
 
-  it('soltar depois de arrastar encerra o gesto, sem clique', () => {
+  it('releasing after dragging ends the gesture, without a click', () => {
     const { effects, state } = run([
       down('move'),
       { type: 'move', point: at(120, 100) },
@@ -78,8 +78,8 @@ describe('arrastar', () => {
   });
 });
 
-describe('pinça e cancelamento', () => {
-  it('um segundo ponteiro encerra o gesto e entra em pinça até todos saírem', () => {
+describe('pinch and cancel', () => {
+  it('a second pointer ends the gesture and enters pinch until all leave', () => {
     const first = run([down(), { type: 'second-pointer' }]);
     expect(first.state).toEqual({ phase: 'pinch' });
     expect(first.effects).toEqual([{ kind: 'end' }]);
@@ -88,7 +88,7 @@ describe('pinça e cancelamento', () => {
     expect(run([{ type: 'all-released' }], first.state).state).toEqual(IDLE);
   });
 
-  it('cancelar volta a ocioso, sem clique', () => {
+  it('cancelling returns to idle, without a click', () => {
     const { effects, state } = run([down(), { type: 'cancel' }]);
     expect(effects).toEqual([{ kind: 'end' }]);
     expect(state).toEqual(IDLE);

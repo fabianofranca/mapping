@@ -1,12 +1,12 @@
-// R3 (#1096, decisões 10 e 11): a validação do `anchor` da raiz do componente e dos pseudo-campos
-// `$anchor.*` do molde (versão 4 só; nome fora do conjunto é erro).
+// R3 (#1096, decisions 10 and 11): validation of the component root's `anchor` and of the template's
+// `$anchor.*` pseudo-fields (version 4 only; a name outside the set is an error).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { checkSchema } from '../../support/jsonSchema';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import { validateComponent } from '../../../src/model/components/parseComponent';
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 function file(extra: Record<string, unknown>, version = 4): unknown {
   return {
@@ -34,8 +34,8 @@ const rect = (extra: Record<string, unknown>) => ({
   ...extra,
 });
 
-describe('anchor na raiz do componente', () => {
-  it('vale na v4, completo ou com campos ausentes', () => {
+describe('anchor on the component root', () => {
+  it('is valid in v4, complete or with missing fields', () => {
     expect(
       validateComponent(
         file({
@@ -48,34 +48,34 @@ describe('anchor na raiz do componente', () => {
     expect(validateComponent(file({ anchor: { offset: { main: 4 } } }))).toEqual([]);
   });
 
-  it('side e align fora do conjunto: esperava um de', () => {
+  it('side and align outside the set: expected one of', () => {
     expect(validateComponent(file({ anchor: { side: 'left' } }))).toEqual([
-      'anchor.side: esperava um de: top, bottom, start, end',
+      'anchor.side: expected one of: top, bottom, start, end',
     ]);
     expect(validateComponent(file({ anchor: { align: 'top' } }))).toEqual([
-      'anchor.align: esperava um de: start, center, end',
+      'anchor.align: expected one of: start, center, end',
     ]);
   });
 
-  it('chave desconhecida e offset inválido', () => {
+  it('unknown key and invalid offset', () => {
     expect(validateComponent(file({ anchor: { gap: 1 } }))).toEqual([
-      'anchor.gap: chave desconhecida: gap',
+      'anchor.gap: unknown key: gap',
     ]);
     expect(
       validateComponent(file({ anchor: { offset: { main: 'x', depth: 1 } } })),
     ).toEqual([
-      'anchor.offset.depth: chave desconhecida: depth',
-      'anchor.offset.main: esperava número',
+      'anchor.offset.depth: unknown key: depth',
+      'anchor.offset.main: expected a number',
     ]);
     expect(validateComponent(file({ anchor: { offset: 3 } }))).toEqual([
-      'anchor.offset: esperava objeto',
+      'anchor.offset: expected an object',
     ]);
     expect(validateComponent(file({ anchor: 'top' }))).toEqual([
-      'anchor: esperava objeto',
+      'anchor: expected an object',
     ]);
   });
 
-  it('numa versão 1 a 3, o erro de versão no caminho da chave', () => {
+  it('in a version 1 to 3, the version error on the key path', () => {
     for (const version of [1, 2, 3])
       expect(validateComponent(file({ anchor: { side: 'top' } }, version))).toEqual([
         `anchor: ${V4}`,
@@ -83,10 +83,10 @@ describe('anchor na raiz do componente', () => {
   });
 });
 
-describe('pseudo-campos $anchor.*', () => {
+describe('$anchor.* pseudo-fields', () => {
   const names = ['side', 'x', 'y', 'width', 'height'];
 
-  it('valem em $field, $switch, $eq, $has e nas operações numéricas', () => {
+  it('are valid in $field, $switch, $eq, $has and in the numeric operations', () => {
     for (const name of names) {
       const key = `$anchor.${name}`;
       expect(
@@ -103,8 +103,8 @@ describe('pseudo-campos $anchor.*', () => {
     }
   });
 
-  it('outro $anchor.* é campo que não existe, no caminho da citação', () => {
-    const msg = 'campo não existe: $anchor.foo';
+  it('another $anchor.* is a field that does not exist, on the citation path', () => {
+    const msg = 'field does not exist: $anchor.foo';
     expect(
       validateComponent(
         withChild(rect({ anchors: { left: { $field: '$anchor.foo' } } })),
@@ -120,10 +120,10 @@ describe('pseudo-campos $anchor.*', () => {
       validateComponent(
         withChild(rect({ fill: { $switch: '$anchor.', cases: { a: '#000000' } } })),
       ),
-    ).toEqual([`template.children[0].fill.$switch: campo não existe: $anchor.`]);
+    ).toEqual([`template.children[0].fill.$switch: field does not exist: $anchor.`]);
   });
 
-  it('numa versão 1 a 3, o erro de versão no caminho da citação', () => {
+  it('in a version 1 to 3, the version error on the citation path', () => {
     for (const version of [1, 2, 3])
       expect(
         validateComponent(
@@ -132,7 +132,7 @@ describe('pseudo-campos $anchor.*', () => {
       ).toEqual([`template.children[0].visible.$eq[0]: ${V4}`]);
   });
 
-  it('o texto "$anchor.x" em literal não é citação', () => {
+  it('the text "$anchor.x" in a literal is not a citation', () => {
     expect(
       validateComponent(
         withChild({
@@ -146,12 +146,12 @@ describe('pseudo-campos $anchor.*', () => {
   });
 });
 
-describe('docs/component.schema.json e o anchor da raiz', () => {
+describe('docs/component.schema.json and the root anchor', () => {
   const schema: Record<string, unknown> = JSON.parse(
     readFileSync(new URL('../../../docs/component.schema.json', import.meta.url), 'utf8'),
   );
 
-  it('aceita o anchor válido e recusa valor e chave fora do conjunto', () => {
+  it('accepts the valid anchor and rejects a value and key outside the set', () => {
     expect(
       checkSchema(
         schema,
@@ -162,7 +162,7 @@ describe('docs/component.schema.json e o anchor da raiz', () => {
       '$.anchor.side',
     );
     expect(checkSchema(schema, file({ anchor: { gap: 1 } })).join('\n')).toContain(
-      '$.anchor.gap: chave desconhecida',
+      '$.anchor.gap: unknown key',
     );
   });
 });

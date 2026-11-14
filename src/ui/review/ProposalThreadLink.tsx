@@ -5,8 +5,8 @@ import { useCitationContext } from '../comments/citationContext';
 import { useEditor } from '../EditorContext';
 
 /**
- * "da conversa <chip>" na linha da proposta (decisão 36): a primeira conversa que a ligou a uma
- * mensagem. O chip abre a conversa. Some quando nenhuma conversa a ligou.
+ * "from the thread <chip>" on the proposal row (decision 36): the first thread that linked it to a
+ * message. The chip opens the thread. Goes away when no thread linked it.
  */
 export function ProposalThreadLink({ proposalId }: { readonly proposalId: string }) {
   const { derived } = useEditor();

@@ -1,4 +1,4 @@
-// Fontes do design system: FontFace a partir dos bytes, sem rede; o registro é de quem o cria.
+// Design system fonts: FontFace from the bytes, no network; the registry belongs to whoever creates it.
 import { describe, expect, it, vi } from 'vitest';
 import type { LoadedFont } from '../../src/model/components/library';
 import { createFontRegistry } from '../../src/storage/fonts';
@@ -12,7 +12,7 @@ class FakeFace {
     readonly descriptors?: { weight?: string; style?: string },
   ) {}
   load = vi.fn(async () => {
-    if (this.family === 'Ruim') throw new Error('formato inválido');
+    if (this.family === 'Bad') throw new Error('invalid format');
     return this;
   });
 }
@@ -39,20 +39,20 @@ const font = (family: string, extra: Partial<LoadedFont> = {}): LoadedFont => ({
   ...extra,
 });
 
-describe('registro de fontes', () => {
-  it('cria FontFace dos bytes, substitui as faces anteriores e reporta ausentes e falhas', async () => {
+describe('font registry', () => {
+  it('creates FontFace from the bytes, replaces the previous faces and reports missing ones and failures', async () => {
     const { host, added, deleted } = fakeHost();
     const registry = createFontRegistry(host);
     const first = await registry.register([
       font('Roboto'),
       font('Roboto', { weight: '500', path: 'fonts/b.ttf', bytes: undefined }),
-      font('Ruim', { style: 'italic' }),
+      font('Bad', { style: 'italic' }),
     ]);
     expect(first.map((s) => s.status)).toEqual(['loaded', 'missing', 'failed']);
     expect(first[1]?.problem).toEqual({ code: 'missing', path: 'fonts/b.ttf' });
     expect(first[2]?.problem).toEqual({
       code: 'load-failed',
-      message: 'formato inválido',
+      message: 'invalid format',
     });
     expect(added).toHaveLength(1);
     expect((added[0] as FakeFace).descriptors).toEqual({
@@ -65,7 +65,7 @@ describe('registro de fontes', () => {
     expect(deleted).toEqual([added[0]]);
   });
 
-  it('clear tira as faces do registro e não mexe nas de outro registro', async () => {
+  it('clear removes the faces of the registry and does not touch those of another registry', async () => {
     const { host, added, deleted } = fakeHost();
     const a = createFontRegistry(host);
     const b = createFontRegistry(host);
@@ -76,12 +76,12 @@ describe('registro de fontes', () => {
     expect(deleted).toEqual([added[0]]);
     a.clear();
     expect(deleted).toHaveLength(1);
-    // Registrar de novo em `b` tira só a face dele.
+    // Registering again in `b` removes only its own face.
     await b.register([]);
     expect(deleted).toEqual([added[0], added[1]]);
   });
 
-  it('sem FontFace no ambiente, o status é "failed" com explicação', async () => {
+  it('without FontFace in the environment, the status is "failed" with an explanation', async () => {
     const out = await createFontRegistry({}).register([font('Roboto')]);
     expect(out[0]).toMatchObject({ status: 'failed', problem: { code: 'no-fontface' } });
   });

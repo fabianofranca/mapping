@@ -9,9 +9,9 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// Biblioteca de teste da âncora (R3, #1096): um tooltip (corpo 100 × 40, seta de 16 × 8 sob o centro
-// da âncora, escolhida por `$switch` em `$anchor.side`) e um botão sem `anchor` na raiz. Os `anchor`
-// da raiz do tooltip valem `top`, `center` e `offset.main` 4 (unidades).
+// Test library for the anchor (R3, #1096): a tooltip (100 × 40 body, 16 × 8 arrow under the center
+// of the anchor, chosen by `$switch` on `$anchor.side`) and a button without `anchor` at the root. The `anchor`s
+// at the tooltip root are `top`, `center` and `offset.main` 4 (units).
 
 export const TIP_SPEC_FILE = 'specs/tip/tip.spec.json';
 export const TIP_SPEC_ID = 'tip';
@@ -39,7 +39,7 @@ export const TOOLTIP_COMPONENT = {
         visible: { $has: '$anchor.side' },
         fill: '#000000',
       },
-      { type: 'rect', name: 'corpo', width: 100, height: 40, fill: '#ffffff' },
+      { type: 'rect', name: 'body', width: 100, height: 40, fill: '#ffffff' },
     ],
   },
 };
@@ -48,12 +48,12 @@ const BUTTON_COMPONENT = {
   format: 'mapping-component',
   formatVersion: 4,
   id: 'botao',
-  name: 'Botão',
+  name: 'Button',
   size: { width: 80, height: 32 },
   template: {
     type: 'frame',
     layout: { type: 'none' },
-    children: [{ type: 'rect', name: 'corpo', width: 80, height: 32, fill: '#eeeeee' }],
+    children: [{ type: 'rect', name: 'body', width: 80, height: 32, fill: '#eeeeee' }],
   },
 };
 
@@ -105,7 +105,7 @@ export function tipCatalog(): ComponentCatalog {
   return new Map([[TIP_SPEC_ID, loaded]]);
 }
 
-/** Projeto com a especialização `tip` e a imagem `I1` (1000 × 800). */
+/** Project with the `tip` specialization and the image `I1` (1000 × 800). */
 export function tipProject(): Project {
   let p = emptyProject();
   p = applySpecialization(p, tipSpec(), {

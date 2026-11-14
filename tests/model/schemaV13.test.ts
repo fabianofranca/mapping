@@ -11,13 +11,13 @@ import {
 } from '../../src/model';
 import { marking, sampleProject } from './fixtures';
 
-// Schema v13 (etapa Marcações espaciais). ME0: a anotação perde `inherit` ("vale para todos os
-// descendentes da marcação"); a migração v12 → v13 apaga o campo e não remove nenhuma anotação.
-// ME4: o projeto ganha a coleção `arrows` (setas); a migração grava `arrows: []` e nunca cria
-// uma seta, e um v13 gravado antes das setas abre com `[]`.
-// ME1: a marcação ganha `floating` e `containerId` nulo (marcação do canvas, `rect` em unidades
-// do canvas, `x`/`y` negativos), o container ganha `parentId`; a migração grava `floating:
-// false` e `parentId: null` sem assentar, e um v13 gravado antes desses campos abre como está.
+// Schema v13 (stage Spatial markings). ME0: the annotation loses `inherit` ("applies to all
+// descendants of the marking"); the v12 → v13 migration erases the field and removes no annotation.
+// ME4: the project gains the `arrows` collection; the migration writes `arrows: []` and never creates
+// an arrow, and a v13 written before the arrows opens with `[]`.
+// ME1: the marking gains `floating` and a null `containerId` (canvas marking, `rect` in canvas
+// units, negative `x`/`y`), the container gains `parentId`; the migration writes `floating:
+// false` and `parentId: null` without settling, and a v13 written before these fields opens as is.
 
 function load(text: string) {
   const result = deserialize(text, migrations, new Map());
@@ -27,12 +27,12 @@ function load(text: string) {
 
 type Raw = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-/** O sampleProject como um mapping.json v12: A1 e A3 herdam, A2 e A4 não; sem os campos da ME1. */
+/** The sampleProject as a v12 mapping.json: A1 and A3 inherit, A2 and A4 do not; without the ME1 fields. */
 function v12Raw(): Raw {
   const data = JSON.parse(serialize(sampleProject())) as Raw;
   const inherit: Record<string, boolean> = { A1: true, A2: false, A3: true, A4: false };
   data.schemaVersion = 12;
-  // Um v12 não tinha a coleção de setas.
+  // A v12 had no arrows collection.
   delete data.arrows;
   data.annotations = data.annotations.map((a: Raw) => ({
     ...a,
@@ -51,7 +51,7 @@ function v12Raw(): Raw {
   return data;
 }
 
-/** O sampleProject como um v13 gravado antes dos campos de pertencimento (preview da ME0). */
+/** The sampleProject as a v13 written before the membership fields (ME0 preview). */
 function v13Me0Raw(): Raw {
   const data = v12Raw();
   data.schemaVersion = 13;
@@ -63,13 +63,13 @@ function v13Me0Raw(): Raw {
   return data;
 }
 
-describe('migração v12 → v13 (sem herança)', () => {
-  it('o registro tem a migração v12 → v13', () => {
+describe('migration v12 → v13 (no inheritance)', () => {
+  it('the registry has the v12 → v13 migration', () => {
     expect(SCHEMA_VERSION).toBe(20);
     expect(migrations.get(12)).toBe(migrateFrom12To13);
   });
 
-  it('abre o v12, migra, não perde anotação e o objeto lido não tem `inherit`', () => {
+  it('opens the v12, migrates, loses no annotation and the read object has no `inherit`', () => {
     const raw = v12Raw();
     const result = load(JSON.stringify(raw));
     expect(result.migratedFrom).toBe(12);
@@ -82,7 +82,7 @@ describe('migração v12 → v13 (sem herança)', () => {
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('serialize não grava `inherit` e a releitura é estável', () => {
+  it('serialize does not write `inherit` and re-reading is stable', () => {
     const result = load(JSON.stringify(v12Raw()));
     const saved = serialize(result.project);
     const data = JSON.parse(saved) as Raw;
@@ -94,7 +94,7 @@ describe('migração v12 → v13 (sem herança)', () => {
     expect(serialize(again.project)).toBe(saved);
   });
 
-  it('a migração apaga `inherit` e acrescenta `floating` e `parentId`, sem mexer no resto', () => {
+  it('the migration erases `inherit` and adds `floating` and `parentId`, without touching the rest', () => {
     const raw = v12Raw();
     const out = migrateFrom12To13(raw, { specs: new Map() }) as Raw;
     expect(out.annotations).toEqual(
@@ -113,7 +113,7 @@ describe('migração v12 → v13 (sem herança)', () => {
     expect(out.layers).toEqual(raw.layers);
   });
 
-  it('a migração preserva o que já existe e ignora item que não é objeto', () => {
+  it('the migration preserves what already exists and ignores an item that is not an object', () => {
     const out = migrateFrom12To13({
       containers: [{ id: 'I1', parentId: 'K' }, 7],
       markings: [{ id: 'M1', floating: true }, null],
@@ -123,8 +123,8 @@ describe('migração v12 → v13 (sem herança)', () => {
     expect(out.markings).toEqual([{ id: 'M1', floating: true }, null]);
   });
 
-  it('a migração não assenta: o `parentId` das marcações fica como está, o dos containers é nulo', () => {
-    // No v12 o pai era um dado escolhido: M3 aponta para M1 mesmo com M2 (menor) a contendo.
+  it("the migration does not settle: the markings' `parentId` stays as is, the containers' is null", () => {
+    // In v12 the parent was a chosen datum: M3 points to M1 even with M2 (smaller) containing it.
     const raw = v12Raw();
     raw.markings = raw.markings.map((m: Raw) =>
       m.id === 'M3' ? { ...m, parentId: 'M1' } : m,
@@ -136,7 +136,7 @@ describe('migração v12 → v13 (sem herança)', () => {
     expect(result.project.containers.every((c) => c.parentId === null)).toBe(true);
   });
 
-  it('o v12 migrado grava `parentId` do container e `floating` da marcação, na ordem fixa', () => {
+  it('the migrated v12 writes the container `parentId` and the marking `floating`, in the fixed order', () => {
     const saved = serialize(load(JSON.stringify(v12Raw())).project);
     const data = JSON.parse(saved) as Raw;
     expect(Object.keys(data.containers[0]).slice(4, 8)).toEqual([
@@ -161,20 +161,20 @@ describe('migração v12 → v13 (sem herança)', () => {
   });
 });
 
-describe('abertura de um v13 (anterior aos campos de pertencimento)', () => {
-  it('sem `floating` nem `parentId` de container (v13 da ME0): abre com os padrões (migra só v13 → v16)', () => {
+describe('opening a v13 (earlier than the membership fields)', () => {
+  it('without `floating` or container `parentId` (ME0 v13): opens with the defaults (migrates only v13 → v16)', () => {
     const result = load(JSON.stringify(v13Me0Raw()));
     expect(result.migratedFrom).toBe(13);
     expect(result.project).toEqual(sampleProject());
     expect(result.project.markings.every((m) => m.floating === false)).toBe(true);
     expect(result.project.containers.every((c) => c.parentId === null)).toBe(true);
-    // A próxima gravação já traz os campos.
+    // The next write already carries the fields.
     const saved = JSON.parse(serialize(result.project)) as Raw;
     expect(saved.markings.every((m: Raw) => m.floating === false)).toBe(true);
     expect(saved.containers.every((c: Raw) => c.parentId === null)).toBe(true);
   });
 
-  it('com os campos: marcação do canvas com `x` e `y` negativos, flutuante e container com pai', () => {
+  it('with the fields: canvas marking with negative `x` and `y`, floating one and container with a parent', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     const base = {
       parentId: null,
@@ -187,7 +187,7 @@ describe('abertura de um v13 (anterior aos campos de pertencimento)', () => {
         ...base,
         id: 'K',
         containerId: null,
-        name: 'Cerca a I1',
+        name: 'Encloses I1',
         rect: { x: -100, y: -100, width: 1200, height: 1000 },
         floating: false,
       },
@@ -195,7 +195,7 @@ describe('abertura de um v13 (anterior aos campos de pertencimento)', () => {
         ...base,
         id: 'N',
         containerId: null,
-        name: 'Nota',
+        name: 'Note',
         rect: { x: -800, y: -600, width: 300, height: 200 },
         floating: true,
       },
@@ -216,13 +216,13 @@ describe('abertura de um v13 (anterior aos campos de pertencimento)', () => {
       rect: { x: -800, y: -600, width: 300, height: 200 },
     });
     expect(result.project.containers.map((c) => c.parentId)).toEqual(['K', null]);
-    // Round-trip estável.
+    // Stable round-trip.
     const saved = serialize(result.project);
     expect(serialize(load(saved).project)).toBe(saved);
     expect(JSON.parse(saved).markings.at(-1).floating).toBe(true);
   });
 
-  it('um v13 não assenta na leitura: pai válido que não é o menor abre como está', () => {
+  it('a v13 does not settle on reading: a valid parent that is not the smallest opens as is', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     data.markings = data.markings.map((m: Raw) =>
       m.id === 'M3' ? { ...m, parentId: 'M1' } : m,
@@ -231,7 +231,7 @@ describe('abertura de um v13 (anterior aos campos de pertencimento)', () => {
     expect(marking(result.project, 'M3').parentId).toBe('M1');
   });
 
-  it('marcação de container com `x` negativo deixa de ser erro de schema: é a invariante `rect-out-of-image`, reparável', () => {
+  it('a container marking with a negative `x` is no longer a schema error: it is the `rect-out-of-image` invariant, repairable', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     data.markings = data.markings.map((m: Raw) =>
       m.id === 'M4' ? { ...m, rect: { x: -20, y: 0, width: 100, height: 100 } } : m,
@@ -239,7 +239,7 @@ describe('abertura de um v13 (anterior aos campos de pertencimento)', () => {
     const result = deserialize(JSON.stringify(data), migrations, new Map());
     expect(result.ok).toBe(false);
     if (result.ok || result.error.code !== 'invariant-violation') {
-      throw new Error('esperava invariant-violation');
+      throw new Error('expected invariant-violation');
     }
     expect(result.error.issues.map((i) => i.code)).toEqual(['rect-out-of-image']);
     expect(result.repair?.unrepaired).toEqual([]);
@@ -251,9 +251,9 @@ describe('abertura de um v13 (anterior aos campos de pertencimento)', () => {
     });
   });
 
-  it('`floating` e `parentId` de container com tipo errado são erro de schema', () => {
+  it('`floating` and container `parentId` with the wrong type are a schema error', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
-    data.markings[0].floating = 'sim';
+    data.markings[0].floating = 'yes';
     expect(deserialize(JSON.stringify(data), migrations, new Map())).toMatchObject({
       ok: false,
       error: { code: 'invalid-schema' },
@@ -268,7 +268,7 @@ describe('abertura de um v13 (anterior aos campos de pertencimento)', () => {
 });
 
 describe('discardedOnMigrationTo13', () => {
-  it('lista só as `inherit: true`, na ordem do array, com o nome da marcação', () => {
+  it('lists only the `inherit: true` ones, in array order, with the marking name', () => {
     const raw = v12Raw();
     const nameOf = (id: string) =>
       (raw.markings as Raw[]).find((m) => m.id === id)?.name ?? null;
@@ -281,12 +281,12 @@ describe('discardedOnMigrationTo13', () => {
     expect(discardedOnMigrationTo13(raw).some((d) => d.markingName !== null)).toBe(true);
   });
 
-  it('markingName é null quando a marcação não tem nome ou não existe', () => {
+  it('markingName is null when the marking has no name or does not exist', () => {
     const raw = {
       markings: [
         { id: 'MA', name: null },
         { id: 'MB', name: '' },
-        { id: 'MC', name: 'Porta' },
+        { id: 'MC', name: 'Door' },
       ],
       annotations: [
         { id: 'A1', markingId: 'MA', inherit: true },
@@ -300,18 +300,18 @@ describe('discardedOnMigrationTo13', () => {
     expect(discardedOnMigrationTo13(raw)).toEqual([
       { annotationId: 'A1', markingId: 'MA', markingName: null },
       { annotationId: 'A2', markingId: 'MB', markingName: null },
-      { annotationId: 'A3', markingId: 'MC', markingName: 'Porta' },
+      { annotationId: 'A3', markingId: 'MC', markingName: 'Door' },
       { annotationId: 'A4', markingId: 'MX', markingName: null },
     ]);
   });
 
-  it('sem `annotations` válido, devolve lista vazia', () => {
+  it('without a valid `annotations`, returns an empty list', () => {
     expect(discardedOnMigrationTo13({})).toEqual([]);
     expect(discardedOnMigrationTo13({ annotations: 'x' })).toEqual([]);
     expect(discardedOnMigrationTo13({ annotations: {} })).toEqual([]);
   });
 
-  it('deserialize devolve o mesmo em `discardedInherit`; vazio para um v13', () => {
+  it('deserialize returns the same in `discardedInherit`; empty for a v13', () => {
     const raw = v12Raw();
     const result = load(JSON.stringify(raw));
     expect(result.discardedInherit).toEqual(discardedOnMigrationTo13(raw));
@@ -320,8 +320,8 @@ describe('discardedOnMigrationTo13', () => {
   });
 });
 
-describe('aviso de herança só para quem migra', () => {
-  it('um v15 editado à mão com `inherit` não ganha o aviso falso', () => {
+describe('inheritance warning only for those who migrate', () => {
+  it('a hand-edited v15 with `inherit` does not get the false warning', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     data.schemaVersion = 15;
     data.annotations = data.annotations.map((a: Raw) => ({ ...a, inherit: true }));
@@ -330,7 +330,7 @@ describe('aviso de herança só para quem migra', () => {
     expect(result.discardedInherit).toEqual([]);
   });
 
-  it('um v14 com `urlTemplate` em platformRepos não ganha o aviso do v11', () => {
+  it('a v14 with `urlTemplate` in platformRepos does not get the v11 warning', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     data.schemaVersion = 14;
     data.platformRepos = {
@@ -342,8 +342,8 @@ describe('aviso de herança só para quem migra', () => {
   });
 });
 
-describe('v13 cru com `inherit` extra', () => {
-  it('é lido sem falhar, ignora a chave e não regrava', () => {
+describe('raw v13 with an extra `inherit`', () => {
+  it('is read without failing, ignores the key and does not rewrite', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     data.annotations = data.annotations.map((a: Raw) => ({ ...a, inherit: true }));
     const result = load(JSON.stringify(data));
@@ -354,24 +354,24 @@ describe('v13 cru com `inherit` extra', () => {
   });
 });
 
-describe('setas (ME4)', () => {
+describe('arrows (ME4)', () => {
   type Mutable = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-  /** O sampleProject com duas setas, uma delas com rota. */
+  /** The sampleProject with two arrows, one of them with a route. */
   function withArrows() {
     let p = createArrow(sampleProject(), {
       id: 'R1',
       from: 'M1',
       to: 'M4',
       style: 'elbow',
-      name: 'abre',
+      name: 'opens',
       fromSide: 'bottom',
     });
     p = createArrow(p, { id: 'R2', from: 'M2', to: 'M3' });
     return setArrowRoute(p, 'R2', [{ x: 1250, y: 1500.5 }]);
   }
 
-  it('a migração v12 → v13 grava `arrows: []` e nunca cria seta', () => {
+  it('the v12 → v13 migration writes `arrows: []` and never creates an arrow', () => {
     const raw = v12Raw();
     expect(raw).not.toHaveProperty('arrows');
     const out = migrateFrom12To13(raw, { specs: new Map() }) as Raw;
@@ -382,23 +382,23 @@ describe('setas (ME4)', () => {
     expect(JSON.parse(serialize(result.project)).arrows).toEqual([]);
   });
 
-  it('a migração preserva as setas que já existem (um v13 reaberto)', () => {
+  it('the migration preserves the arrows that already exist (a reopened v13)', () => {
     const arrows = [{ id: 'R1', from: 'M1', to: 'M2' }];
     expect(migrateFrom12To13({ arrows }).arrows).toBe(arrows);
   });
 
-  it('um v13 sem `arrows` (anterior às setas) abre com [], sem migrar', () => {
+  it('a v13 without `arrows` (earlier than the arrows) opens with [], without migrating', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     delete data.arrows;
     const result = load(JSON.stringify(data));
     expect(result.migratedFrom).toBeNull();
     expect(result.project.arrows).toEqual([]);
     expect(result.project).toEqual(sampleProject());
-    // A próxima gravação já traz a coleção.
+    // The next write already carries the collection.
     expect(JSON.parse(serialize(result.project)).arrows).toEqual([]);
   });
 
-  it('serializa as setas na ordem fixa, entre as marcações e as anotações, e a releitura é estável', () => {
+  it('serializes the arrows in a fixed order, between the markings and the annotations, and re-reading is stable', () => {
     const p = withArrows();
     const text = serialize(p);
     const data = JSON.parse(text) as Raw;
@@ -421,7 +421,7 @@ describe('setas (ME4)', () => {
       fromSide: 'bottom',
       toSide: null,
       style: 'elbow',
-      name: 'abre',
+      name: 'opens',
       locked: false,
       points: [],
     });
@@ -432,7 +432,7 @@ describe('setas (ME4)', () => {
     expect(serialize(again.project)).toBe(text);
   });
 
-  it('os opcionais da seta que faltam entram com o padrão', () => {
+  it('the missing optional arrow fields get the default', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     data.arrows = [{ id: 'R1', from: 'M1', to: 'M4' }];
     const result = load(JSON.stringify(data));
@@ -451,7 +451,7 @@ describe('setas (ME4)', () => {
     ]);
   });
 
-  it('estilo, lado ou ponto fora do formato são erro de schema', () => {
+  it('a style, side or point outside the format is a schema error', () => {
     const base = { id: 'R1', from: 'M1', to: 'M4' };
     const bad: Mutable[] = [
       { ...base, style: 'zigzag' },
@@ -459,7 +459,7 @@ describe('setas (ME4)', () => {
       { ...base, toSide: 7 },
       { ...base, points: [{ x: 1 }] },
       { ...base, points: [{ x: 'a', y: 2 }] },
-      { ...base, locked: 'sim' },
+      { ...base, locked: 'yes' },
       { id: 'R1', from: 'M1' },
     ];
     for (const arrow of bad) {
@@ -472,7 +472,7 @@ describe('setas (ME4)', () => {
     }
   });
 
-  it('seta sem ponta é violação de invariante, reparável: a seta e as anotações saem', () => {
+  it('an arrow without an endpoint is an invariant violation, repairable: the arrow and the annotations go away', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     data.arrows = [{ id: 'R1', from: 'M1', to: 'M9' }];
     data.annotations.push({
@@ -489,7 +489,7 @@ describe('setas (ME4)', () => {
     const result = deserialize(JSON.stringify(data), migrations, new Map());
     expect(result.ok).toBe(false);
     if (result.ok || result.error.code !== 'invariant-violation') {
-      throw new Error('esperava invariant-violation');
+      throw new Error('expected invariant-violation');
     }
     expect(result.error.issues.map((i) => i.code)).toEqual(['arrow-endpoint-missing']);
     expect(result.repair?.unrepaired).toEqual([]);

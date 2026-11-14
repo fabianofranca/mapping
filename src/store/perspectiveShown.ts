@@ -3,11 +3,11 @@ import { perspectiveView, type Perspective, type Project } from '../model';
 import type { ProjectStore } from './history';
 import { openPerspectiveIn } from './perspectives';
 
-// O projeto à vista de uma perspectiva (etapa #659, PE2, decisão 3): quem desenha ou lista lê
-// `perspectiveView`, memoizado por projeto e objeto de perspectiva, então nada aqui depende do
-// viewport (pan e zoom não recalculam).
+// The project in view of a perspective (stage #659, PE2, decision 3): whoever draws or lists reads
+// `perspectiveView`, memoized by project and perspective object, so nothing here depends on the
+// viewport (pan and zoom do not recompute).
 
-/** `p` como a perspectiva aberta (`id`) o mostra; a Principal (`null`) ou um id sem perspectiva é o próprio `p`. */
+/** `p` as the open perspective (`id`) shows it; Main (`null`) or an id without a perspective is `p` itself. */
 export function projectInPerspective(p: Project, id: string | null): Project;
 export function projectInPerspective(
   p: Project | null,
@@ -20,12 +20,12 @@ export function projectInPerspective(
   return p && id !== null ? perspectiveView(p, openPerspectiveIn(p, id)) : p;
 }
 
-/** Sem perspectiva aberta: o padrão de quem não conhece perspectivas (testes do editor). */
+/** No open perspective: the default for whoever does not know perspectives (editor tests). */
 export const NO_PERSPECTIVE: ReadonlySignal<Perspective | null> = computed(() => null);
 
 /**
- * A perspectiva aberta do projeto confirmado (`null` = a Principal). O mesmo objeto enquanto a
- * perspectiva não muda: quem depende dela só recalcula quando ela muda de fato.
+ * The open perspective of the confirmed project (`null` = Main). The same object while the
+ * perspective does not change: whoever depends on it only recomputes when it really changes.
  */
 export function createOpenPerspective(
   store: ProjectStore,

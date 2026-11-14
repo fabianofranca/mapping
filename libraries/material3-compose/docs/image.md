@@ -1,72 +1,72 @@
 # Image
 
-Imagem com escala e descrição. Use para fotos, capas e ilustrações, de recurso local ou de uma URL.
+An image with scale and description. Use it for photos, covers and illustrations, from a local resource or from a URL.
 
-Tipo de anotação: `image` (camada Conteúdo).
+Annotation type: `image` (Content layer).
 
-## Campos
+## Fields
 
-| Chave                | Rótulo        | Tipo   | Obrigatório | Opções                                                                   | Padrão | Descrição                                                                                                           |
-| -------------------- | ------------- | ------ | ----------- | ------------------------------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------- |
-| `url`                | URL da imagem | string | sim         |                                                                          |        | Endereço https:// da imagem. O componente a exibe no canvas; no código ela passa pelo carregador de imagens do app. |
-| `contentDescription` | Descrição     | string | não         |                                                                          |        | Texto de acessibilidade da imagem. Vazio = decorativa (null).                                                       |
-| `contentScale`       | Escala        | enum   | não         | `Crop`, `Fit`, `FillBounds`, `FillWidth`, `FillHeight`, `Inside`, `None` | `Fit`  | Como a imagem preenche o espaço (ContentScale).                                                                     |
-| `width`              | Largura       | enum   | não         | `wrap`, `fill`, `fixed`                                                  | `wrap` | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).               |
-| `height`             | Altura        | enum   | não         | `wrap`, `fill`, `fixed`                                                  | `wrap` | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).                 |
-| `weight`             | Peso (weight) | number | não         |                                                                          |        | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                                   |
+| Key                  | Label       | Type   | Required | Options                                                                  | Default | Description                                                                                                          |
+| -------------------- | ----------- | ------ | -------- | ------------------------------------------------------------------------ | ------- | -------------------------------------------------------------------------------------------------------------------- |
+| `url`                | Image URL   | string | yes      |                                                                          |         | https:// address of the image. The component shows it on the canvas; in code it goes through the app's image loader. |
+| `contentDescription` | Description | string | no       |                                                                          |         | Accessibility text of the image. Empty = decorative (null).                                                          |
+| `contentScale`       | Scale       | enum   | no       | `Crop`, `Fit`, `FillBounds`, `FillWidth`, `FillHeight`, `Inside`, `None` | `Fit`   | How the image fills the space (ContentScale).                                                                        |
+| `width`              | Width       | enum   | no       | `wrap`, `fill`, `fixed`                                                  | `wrap`  | wrap fits the content, fill takes all the available width and fixed uses the marking width (dp).                     |
+| `height`             | Height      | enum   | no       | `wrap`, `fill`, `fixed`                                                  | `wrap`  | wrap fits the content, fill takes all the available height and fixed uses the marking height (dp).                   |
+| `weight`             | Weight      | number | no       |                                                                          |         | Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.                                 |
 
 ## Compose
 
-- Símbolo: `androidx.compose.foundation.Image`
-- Arquivo (`path`): `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/Image.kt`
+- Symbol: `androidx.compose.foundation.Image`
+- File (`path`): `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/Image.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
-// recurso local
+// local resource
 Image(
-    painter = painterResource(R.drawable.capa),
-    contentDescription = "Capa do álbum",
+    painter = painterResource(R.drawable.cover),
+    contentDescription = "Album cover",
     contentScale = ContentScale.Crop,
     modifier = Modifier.fillMaxWidth().height(180.dp),
 )
 
-// url remota: carregador do app (aqui, Coil), fora do androidx
+// remote url: the app's loader (here, Coil), outside androidx
 AsyncImage(
-    model = "https://example.com/capa.jpg",
-    contentDescription = "Capa do álbum",
+    model = "https://example.com/cover.jpg",
+    contentDescription = "Album cover",
     contentScale = ContentScale.Crop,
     modifier = Modifier.fillMaxWidth().height(180.dp),
 )
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> `Image` recebe um `Painter`: imagem local é `Image(painter = painterResource(R.drawable.x), contentDescription, contentScale)`; a `url` remota usa o carregador de imagens do app (por exemplo Coil `AsyncImage(model = <url>, contentDescription, contentScale)`), que fica fora do androidx e desta biblioteca. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> `Image` takes a `Painter`: a local image is `Image(painter = painterResource(R.drawable.x), contentDescription, contentScale)`; the remote `url` uses the app's image loader (for example Coil `AsyncImage(model = <url>, contentDescription, contentScale)`), which lives outside androidx and this library. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside a Row, Column or FlowRow).
 
-## Exemplos
+## Examples
 
-- **Capa recortada**: url=https://example.com/capa.jpg, contentDescription=Capa do álbum, contentScale=Crop, width=fill, height=fixed
-- **Ilustração inteira**: url=https://example.com/ilustracao.png, contentScale=Fit, width=fill
+- **Cropped cover**: url=https://example.com/cover.jpg, contentDescription=Album cover, contentScale=Crop, width=fill, height=fixed
+- **Whole illustration**: url=https://example.com/illustration.png, contentScale=Fit, width=fill
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `foundation` do commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (a biblioteca fixa o Compose `material3` 1.4.0 nesse commit). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). O `image` é do Foundation (`Image` e, para URL, o `AsyncImage` do carregador de imagens do app): o Material 3 não tem tokens de imagem, e este desenho não tem valores de tokens do `material3` a seguir.
+Reference: Compose `foundation` of commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (the library pins Compose `material3` 1.4.0 at that commit). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The `image` is from Foundation (`Image` and, for a URL, the `AsyncImage` of the app's image loader): Material 3 has no image tokens, and this drawing has no `material3` token values to follow.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/Image.kt` (`Image(painter, contentDescription, modifier, alignment, contentScale, alpha, colorFilter)`; o padrão de `contentScale` é `ContentScale.Fit`).
-- `compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/layout/ContentScale.kt` (`Crop`, `Fit`, `FillBounds`, `FillWidth`, `FillHeight`, `Inside` e `None`).
+- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/Image.kt` (`Image(painter, contentDescription, modifier, alignment, contentScale, alpha, colorFilter)`; the default `contentScale` is `ContentScale.Fit`).
+- `compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/layout/ContentScale.kt` (`Crop`, `Fit`, `FillBounds`, `FillWidth`, `FillHeight`, `Inside` and `None`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Cada `contentScale` vai ao `fit` do nó `image` do formato 4: `Crop` em `cover`, `Fit` em `contain`, `FillBounds` em `fill`, `FillWidth` em `fill-width`, `FillHeight` em `fill-height`, `Inside` em `scale-down` e `None` em `none` (`ContentScale.kt`). `None` e `scale-down` usam o tamanho natural da imagem baixada.
-- A imagem vem de uma URL `https` pelo nó `image` do formato; o fundo atrás dela (e o reservado, antes de carregar) usa o token `surface-variant`, que muda com o modo claro e escuro. Não há cor literal.
-- Sem URL, a legenda mostra a descrição e as medidas, em `on-surface-variant`, com o estilo `label-small` dos tokens (sem `family`).
+- Each `contentScale` goes to the `fit` of the format 4 `image` node: `Crop` to `cover`, `Fit` to `contain`, `FillBounds` to `fill`, `FillWidth` to `fill-width`, `FillHeight` to `fill-height`, `Inside` to `scale-down` and `None` to `none` (`ContentScale.kt`). `None` and `scale-down` use the natural size of the downloaded image.
+- The image comes from an `https` URL through the format's `image` node; the background behind it (and the placeholder, before it loads) uses the `surface-variant` token, which changes with light and dark mode. There is no literal color.
+- Without a URL, the caption shows the description and the measures, in `on-surface-variant`, with the `label-small` style of the tokens (no `family`).
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O servidor MCP desenha o reservado da imagem (sem a imagem de verdade), então os `fit` novos só aparecem na app e no visualizador.
-- `alpha` é campo e código, mas o desenho não o usa; sem `alignment` nem `colorFilter` (não são campos do tipo).
-- A imagem só é pedida à rede com a permissão da origem na app, e o servidor MCP desenha sempre o reservado; o Compose carrega a imagem pelo carregador do app.
-- O fundo `surface-variant` é uma escolha de desenho: o `Image` do Compose não tem fundo nem reservado.
+- The MCP server draws the image placeholder (without the real image), so the new `fit` values only show in the app and in the viewer.
+- `alpha` is a field and code, but the drawing does not use it; there is no `alignment` or `colorFilter` (they are not fields of the type).
+- The image is only requested from the network with the origin's permission in the app, and the MCP server always draws the placeholder; Compose loads the image through the app's loader.
+- The `surface-variant` background is a drawing choice: Compose's `Image` has no background or placeholder.

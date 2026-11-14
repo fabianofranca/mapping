@@ -1,7 +1,7 @@
-// Fichas de teste (decisão 4 da etapa #1079).
+// Test signatures (decision 4 of stage #1079).
 export type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-/** A ficha do exemplo da decisão 4. */
+/** The signature of the example of decision 4. */
 export function buttonSignature(edit?: (s: Json) => void): Json {
   const s: Json = {
     format: 'mapping-signature',

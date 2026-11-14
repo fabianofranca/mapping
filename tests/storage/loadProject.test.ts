@@ -8,7 +8,7 @@ import { loadExample } from '../model/specFixtures';
 import { MemoryDirectory } from './memoryFs';
 
 describe('loadProject', () => {
-  it('lê o mapping.json e devolve o projeto e o texto original', async () => {
+  it('reads mapping.json and returns the project and the original text', async () => {
     const root = new MemoryDirectory('p');
     const text = serialize({ ...sampleProject(), revision: 3 });
     root.put('mapping.json', text);
@@ -17,21 +17,21 @@ describe('loadProject', () => {
     expect(loaded.ok && loaded.project.revision).toBe(3);
   });
 
-  it('sem mapping.json: not-found', async () => {
+  it('without mapping.json: not-found', async () => {
     const loaded = await loadProject(createFolderStorage(new MemoryDirectory('p')));
     expect(loaded).toEqual({ ok: false, error: 'not-found' });
   });
 
-  it('JSON inválido: invalid-json', async () => {
+  it('invalid JSON: invalid-json', async () => {
     const root = new MemoryDirectory('p');
-    root.put('mapping.json', '{ nada');
+    root.put('mapping.json', '{ nothing');
     expect(await loadProject(createFolderStorage(root))).toEqual({
       ok: false,
       error: 'invalid-json',
     });
   });
 
-  it('um arquivo de schema antigo é migrado e informa a versão de origem', async () => {
+  it('an old schema file is migrated and reports the source version', async () => {
     const root = new MemoryDirectory('p');
     const v5 = JSON.parse(serialize(emptyProject())) as Record<string, unknown>;
     v5.schemaVersion = 5;
@@ -42,7 +42,7 @@ describe('loadProject', () => {
     expect(loaded.ok && loaded.project.revision).toBe(0);
   });
 
-  it('lê as cópias de specs/ citadas pelo projeto', async () => {
+  it('reads the specs/ copies cited by the project', async () => {
     const root = new MemoryDirectory('p');
     const sdui = loadExample('sdui');
     const { applySpecialization } = await import('../../src/model');

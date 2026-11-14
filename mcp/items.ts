@@ -24,36 +24,36 @@ import {
 } from './projects';
 import type { Roots } from './paths';
 
-/** Nome do container sem nome (o MCP não usa `t()`). */
+/** Name of an unnamed container (the MCP does not use `t()`). */
 export const CONTAINER_LABEL = 'Container';
 export const CANVAS_LABEL = 'Canvas';
-/** Primeiro trecho do caminho legível de uma seta. */
-export const ARROW_LABEL = 'Seta';
+/** First segment of an arrow's readable path. */
+export const ARROW_LABEL = 'Arrow';
 
-/** Nomes dos tipos de item. A letra `i` das referências é o container (não mudou por compatibilidade). */
+/** Names of the item kinds. The `i` letter of references is the container (unchanged for compatibility). */
 export const KIND_NAMES: Record<ItemKind, string> = {
-  m: 'marcação',
+  m: 'marking',
   i: 'container',
-  a: 'anotação',
+  a: 'annotation',
 };
 
-/** O tipo com artigo indefinido (`uma marcação`, `um container`), para as mensagens. */
+/** The kind with an indefinite article (`a marking`, `a container`), for messages. */
 export const KIND_WITH_ARTICLE: Record<ItemKind, string> = {
-  m: 'uma marcação',
-  i: 'um container',
-  a: 'uma anotação',
+  m: 'a marking',
+  i: 'a container',
+  a: 'an annotation',
 };
 
-/** `marcação não encontrada`, `container não encontrado`: a concordância muda com o tipo. */
+/** `marking not found`, `container not found`: the message names the kind. */
 export const KIND_NOT_FOUND: Record<ItemKind, string> = {
-  m: 'marcação não encontrada',
-  i: 'container não encontrado',
-  a: 'anotação não encontrada',
+  m: 'marking not found',
+  i: 'container not found',
+  a: 'annotation not found',
 };
 
 const PATH_SEPARATOR = ' › ';
 
-/** Referências `mapping://` e rótulos legíveis dos itens de um projeto carregado. */
+/** `mapping://` references and readable labels of the items of a loaded project. */
 export class Refs {
   readonly project: Project;
 
@@ -65,7 +65,7 @@ export class Refs {
     return this.loaded.location.name;
   }
 
-  /** Rótulo do container; marcação do canvas (`null`) é "Canvas". */
+  /** Label of the container; a canvas marking (`null`) is "Canvas". */
   imageLabel(containerId: string | null): string {
     if (containerId === null) return CANVAS_LABEL;
     const image = projectIndex(this.project).containers.get(containerId);
@@ -73,7 +73,7 @@ export class Refs {
     return refImageLabel(image) ?? CONTAINER_LABEL;
   }
 
-  /** `imageLabel` sem o índice do projeto (o lote do MCP rotula a marcação que acabou de criar sem reconstruí-lo). */
+  /** `imageLabel` without the project index (the MCP batch labels the marking it just created without rebuilding it). */
   imageLabelNoIndex(containerId: string | null): string {
     if (containerId === null) return CANVAS_LABEL;
     const image = this.project.containers.find((c) => c.id === containerId);
@@ -81,21 +81,21 @@ export class Refs {
     return refImageLabel(image) ?? CONTAINER_LABEL;
   }
 
-  /** Texto da seta: o nome dela ou "Origem → Destino" ("Seta <código>" se uma ponta sumiu). */
+  /** Arrow text: its name or "From → To" ("Arrow <code>" if an end is gone). */
   arrowName(arrowId: string): string {
     const arrow = projectIndex(this.project).arrows.get(arrowId);
     if (!arrow) return arrowId;
     if (arrow.name !== null) return arrow.name;
     const markings = projectIndex(this.project).markings;
     if (!markings.has(arrow.from) || !markings.has(arrow.to)) {
-      return `Seta ${shortCode(this.project, 'm', arrowId)}`;
+      return `Arrow ${shortCode(this.project, 'm', arrowId)}`;
     }
     return `${this.markingName(arrow.from)} → ${this.markingName(arrow.to)}`;
   }
 
   /**
-   * Nome da marcação; sem nome, "<Tipo> <código>" se ela desenha um tipo de componente (uma
-   * instância nasce sem nome), senão "Marcação <código>". O código mantém o nome único.
+   * Name of the marking; unnamed, "<Type> <code>" if it draws a component type (an instance is
+   * born unnamed), otherwise "Marking <code>". The code keeps the name unique.
    */
   markingName(markingId: string): string {
     if (projectIndex(this.project).arrows.has(markingId))
@@ -104,12 +104,12 @@ export class Refs {
     if (!marking) return markingId;
     if (marking.name !== null) return marking.name;
     const code = shortCode(this.project, 'm', markingId);
-    return `${markingTypeName(this.project, markingId) ?? 'Marcação'} ${code}`;
+    return `${markingTypeName(this.project, markingId) ?? 'Marking'} ${code}`;
   }
 
-  /** `Container › Pai › Marcação` (`Canvas › Pai › Marcação` no canvas). */
+  /** `Container › Parent › Marking` (`Canvas › Parent › Marking` on the canvas). */
   markingPath(markingId: string): string[] {
-    // A seta (ME4) divide o espaço de ids das marcações e não tem container nem pai.
+    // The arrow (ME4) shares the marking id space and has no container or parent.
     if (projectIndex(this.project).arrows.has(markingId)) {
       return [ARROW_LABEL, this.arrowName(markingId)];
     }
@@ -134,7 +134,7 @@ export class Refs {
     ].join(PATH_SEPARATOR);
   }
 
-  /** Referência `mapping://<projeto>/<m|i|a>/<código>`: só a URL, sem caminho legível. */
+  /** Reference `mapping://<project>/<m|i|a>/<code>`: only the URL, with no readable path. */
   ref(kind: ItemKind, id: string): string {
     return formatRef({
       project: this.projectName,
@@ -148,25 +148,25 @@ export interface ResolvedItem {
   readonly loaded: LoadedProject;
   readonly refs: Refs;
   readonly kind: ItemKind;
-  /** Com uma sub-referência (campo, par ou linha), o id é o da anotação que a contém. */
+  /** With a sub-reference (field, pair or row), the id is that of the annotation that contains it. */
   readonly id: string;
-  /** A parte da anotação que a referência designa (`/f/`, `/e/` ou `/r/`); ausente na referência de item. */
+  /** The part of the annotation the reference designates (`/f/`, `/e/` or `/r/`); absent in an item reference. */
   readonly sub?: SubRef;
 }
 
-/** Dica do `invalid-ref`: o formato estrito e o que fazer com o antigo. */
+/** Hint of `invalid-ref`: the strict format and what to do with the old one. */
 export const INVALID_REF_HINT =
-  'use a referência mapping://<projeto>/<m|i|a|p>/<código>, só a URL, com o projeto codificado (ex: mapping://Meu%20Projeto/m/3f2a9c1e); referências com o caminho entre parênteses são do formato antigo: copie de novo na app';
+  'use the reference mapping://<project>/<m|i|a|p>/<code>, the URL only, with the project encoded (e.g. mapping://My%20Project/m/3f2a9c1e); references with the path in parentheses are of the old format: copy again from the app';
 
 const ACCEPTED_FORMATS = [
-  'mapping://projeto/m/3f2a9c1e',
-  'm/3f2a9c1e (com o projeto informado à parte)',
-  'o id completo do item (com o projeto informado à parte)',
+  'mapping://project/m/3f2a9c1e',
+  'm/3f2a9c1e (with the project given separately)',
+  'the full id of the item (with the project given separately)',
 ];
 
 /**
- * Os projetos em que procurar: o da referência, o do argumento `project` (iguais, se os dois
- * vierem) ou todos os das raízes. Projetos diferentes na referência e no argumento: `project-mismatch`.
+ * The projects to search: the reference's, the `project` argument's (the same, if both are
+ * given) or all of those in the roots. Different projects in the reference and in the argument: `project-mismatch`.
  */
 export async function candidateLocations(
   roots: Roots,
@@ -181,7 +181,7 @@ export async function candidateLocations(
     if (fromRef.dir !== fromArg.dir) {
       throw new ToolError(
         'project-mismatch',
-        `a referência é do projeto "${fromRef.name}", mas \`project\` indica "${fromArg.name}"`,
+        `the reference is from project "${fromRef.name}", but \`project\` indicates "${fromArg.name}"`,
       );
     }
     return [fromRef];
@@ -190,21 +190,21 @@ export async function candidateLocations(
   if (named !== undefined) return [await findProject(roots, named)];
   const all = await discoverProjects(roots);
   if (all.length === 0) {
-    throw new ToolError('project-not-found', 'nenhum projeto nas raízes configuradas');
+    throw new ToolError('project-not-found', 'no project in the configured roots');
   }
   return all;
 }
 
 const WHAT_IS: Record<string, string> = {
-  l: 'uma camada',
-  c: 'uma conversa',
-  part: 'uma parte de anotação (campo, par ou linha)',
+  l: 'a layer',
+  c: 'a conversation',
+  part: 'an annotation part (field, pair or row)',
 };
 
 /**
- * A gramática completa (decisão 27): campo, par e linha valem como a anotação que os contém
- * (com a parte em `sub`); camada (`l`) e conversa (`c`) não são itens, e as tools de item as
- * recusam com `wrong-kind`.
+ * The full grammar (decision 27): field, pair and row count as the annotation that contains them
+ * (with the part in `sub`); layer (`l`) and conversation (`c`) are not items, and the item tools
+ * refuse them with `wrong-kind`.
  */
 function readExtended(
   refText: string,
@@ -217,38 +217,38 @@ function readExtended(
     if (ref.kind !== 'l' && ref.kind !== 'c') return null;
     throw new ToolError(
       'wrong-kind',
-      `a referência é de ${WHAT_IS[ref.kind]}, não de ${expected ? KIND_WITH_ARTICLE[expected] : 'um item'}`,
+      `the reference is to ${WHAT_IS[ref.kind]}, not ${expected ? KIND_WITH_ARTICLE[expected] : 'an item'}`,
       { kind: ref.kind },
     );
   }
   if (expected && expected !== 'a') {
     throw new ToolError(
       'wrong-kind',
-      `a referência é de ${WHAT_IS.part}, não de ${KIND_WITH_ARTICLE[expected]}`,
+      `the reference is to ${WHAT_IS.part}, not ${KIND_WITH_ARTICLE[expected]}`,
       { kind: 'a' },
     );
   }
   return { project: any.project, code: ref.annotation, sub: ref };
 }
 
-/** A parte (campo, par ou linha) tem de existir na anotação; senão `not-found`. */
+/** The part (field, pair or row) must exist in the annotation; otherwise `not-found`. */
 function checkSub(project: Project, sub: SubRef, refText: string): void {
   const resolution = resolveCitation({ project, threads: [], proposals: [] }, sub);
   if (resolution.found) return;
   throw new ToolError(
     resolution.reason === 'ambiguous' ? 'ambiguous-ref' : 'not-found',
     resolution.reason === 'ambiguous'
-      ? 'o código curto serve a mais de um par ou linha: use um código mais longo'
-      : `a anotação não tem o campo, par ou linha de ${refText}`,
+      ? 'the short code matches more than one pair or row: use a longer code'
+      : `the annotation has no field, pair or row of ${refText}`,
     { ref: refText },
   );
 }
 
 /**
- * Interpreta o que o agente colou (`ref`) e acha o item. Aceita a referência completa, só
- * `m/código` com `project`, ou o id completo. Sem projeto na referência nem em `project`, procura
- * em todos os das raízes. Ambiguidade (código curto, projetos homônimos) devolve as candidatas.
- * Campo, par e linha (`…/a/<código>/f/<campo>`, `/e/`, `/r/`) valem como a anotação que os contém.
+ * Interprets what the agent pasted (`ref`) and finds the item. Accepts the full reference, just
+ * `m/code` with `project`, or the full id. With no project in the reference or in `project`, it searches
+ * all those in the roots. Ambiguity (short code, homonymous projects) returns the candidates.
+ * Field, pair and row (`…/a/<code>/f/<field>`, `/e/`, `/r/`) count as the annotation that contains them.
  */
 export async function resolveItem(
   roots: Roots,
@@ -262,7 +262,7 @@ export async function resolveItem(
     : parseRef(refText);
   const sub = extended?.sub ?? null;
   if (!parsed) {
-    throw new ToolError('invalid-ref', `referência inválida: ${refText}`, {
+    throw new ToolError('invalid-ref', `invalid reference: ${refText}`, {
       accepted: ACCEPTED_FORMATS,
       hint: INVALID_REF_HINT,
     });
@@ -270,7 +270,7 @@ export async function resolveItem(
   if (expected && parsed.kind && parsed.kind !== expected) {
     throw new ToolError(
       'wrong-kind',
-      `a referência é de ${KIND_WITH_ARTICLE[parsed.kind]}, não de ${KIND_WITH_ARTICLE[expected]}`,
+      `the reference is to ${KIND_WITH_ARTICLE[parsed.kind]}, not ${KIND_WITH_ARTICLE[expected]}`,
       { kind: parsed.kind },
     );
   }
@@ -303,7 +303,7 @@ export async function resolveItem(
     return { ...only!, refs, ...(sub ? { sub } : {}) };
   }
   if (found.length === 0) {
-    throw new ToolError('not-found', `nenhum item corresponde a ${refText}`, {
+    throw new ToolError('not-found', `no item matches ${refText}`, {
       ref: refText,
       searched: locations.map((l) => l.path),
       ...(unreadable.length > 0 ? { unreadable } : {}),
@@ -311,7 +311,7 @@ export async function resolveItem(
   }
   throw new ToolError(
     'ambiguous-ref',
-    `${found.length} itens começam com esse código: use a referência completa de um deles`,
+    `${found.length} items start with that code: use the full reference of one of them`,
     {
       ref: refText,
       candidates: found.slice(0, 20).map((c) => {

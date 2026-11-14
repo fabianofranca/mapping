@@ -17,9 +17,9 @@ import { buttonSignature } from '../model/signatures/fixtures';
 import { PNG_1X1, allIds, uuidFor, withUuids } from './workspace';
 import { connect, type Connection } from './workspace';
 
-// `get_code_hints` e as vistas do `code` com `calls`, `formats`, caminhos, posicionais e o
-// `unmapped` da ficha (formatVersion 16; etapa #1079, S1), pelo dist-mcp/mapping-mcp.js por stdio.
-// O servidor lê só a ficha (JSON) do pacote, nunca o código.
+// `get_code_hints` and the `code` views with `calls`, `formats`, paths, positionals and the
+// `unmapped` of the sheet (formatVersion 16; stage #1079, S1), through dist-mcp/mapping-mcp.js over stdio.
+// The server reads only the sheet (JSON) of the package, never the code.
 
 type Doc = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -152,8 +152,8 @@ afterAll(async () => {
   rmSync(base, { recursive: true, force: true });
 });
 
-describe('get_code_hints com calls, formats, posicionais e unmapped', () => {
-  it('monta a fábrica só com o campo preenchido, o 16.dp e o argumento posicional', async () => {
+describe('get_code_hints with calls, formats, positionals and unmapped', () => {
+  it('builds the factory only with the filled field, the 16.dp and the positional argument', async () => {
     const { data, isError } = await mcp.call<Hints>('get_code_hints', {
       ref: markingRef,
       platform: 'compose',
@@ -171,7 +171,7 @@ describe('get_code_hints com calls, formats, posicionais e unmapped', () => {
     ]);
   });
 
-  it('types traz o calls e o unmapped da ficha (sem o ignore e sem o que tem campo)', async () => {
+  it('types brings the calls and the unmapped of the sheet (without the ignore and without what has a field)', async () => {
     const { data } = await mcp.call<Hints>('get_code_hints', {
       ref: markingRef,
       platform: 'compose',
@@ -203,7 +203,7 @@ describe('get_code_hints com calls, formats, posicionais e unmapped', () => {
     ]);
   });
 
-  it('get_annotation traz o code com o unmapped', async () => {
+  it('get_annotation brings the code with the unmapped', async () => {
     const { data } = await mcp.call<{ code?: Record<string, { unmapped?: unknown[] }> }>(
       'get_annotation',
       { ref: annotationRef },

@@ -10,7 +10,7 @@ import {
 } from '../../src/model';
 import { expectValid, sampleProject } from './fixtures';
 
-/** I1 com as irmãs S1..S4 no nível da imagem, depois da Porta M1 (M2 e M3 são filhas dela). */
+/** I1 with the siblings S1..S4 at the image level, after the M1 Door (M2 and M3 are its children). */
 function withSiblings(): Project {
   let p = sampleProject();
   for (const [id, x] of [
@@ -32,24 +32,24 @@ const order = (p: Project, ids: string[]) =>
   p.markings.map((m) => m.id).filter((id) => ids.includes(id));
 
 describe('siblingPosition', () => {
-  it('posição entre as irmãs da mesma imagem e do mesmo pai', () => {
+  it('position among the siblings of the same image and the same parent', () => {
     const p = withSiblings();
-    // Nível da imagem I1: M1, S1..S4 (M2 e M3 são filhas).
+    // Image level I1: M1, S1..S4 (M2 and M3 are children).
     expect(siblingPosition(p, 'M1')).toEqual({ index: 0, count: 5 });
     expect(siblingPosition(p, 'S3')).toEqual({ index: 3, count: 5 });
-    // Outra imagem tem as próprias irmãs.
+    // Another image has its own siblings.
     expect(siblingPosition(p, 'M4')).toEqual({ index: 0, count: 1 });
-    // Filha de M1.
+    // Child of M1.
     expect(siblingPosition(p, 'M2')).toEqual({ index: 0, count: 1 });
   });
 
-  it('marcação inexistente falha com not-found', () => {
+  it('a missing marking fails with not-found', () => {
     expect(() => siblingPosition(withSiblings(), 'X')).toThrow('not-found');
   });
 });
 
 describe('reorderMarking', () => {
-  it('sobe e desce entre as irmãs, mantendo a ordem relativa das demais', () => {
+  it('moves up and down among the siblings, keeping the relative order of the others', () => {
     const p = withSiblings();
     const up = reorderMarking(p, 'S1', 4);
     expect(order(up, ['M1', 'S1', 'S2', 'S3', 'S4'])).toEqual([
@@ -79,7 +79,7 @@ describe('reorderMarking', () => {
     expectValid(middle);
   });
 
-  it('as marcações que não são irmãs ficam onde estavam no array', () => {
+  it('the markings that are not siblings stay where they were in the array', () => {
     const p = withSiblings();
     const next = reorderMarking(p, 'S1', 4);
     for (const id of ['M2', 'M3', 'M4']) {
@@ -90,42 +90,42 @@ describe('reorderMarking', () => {
     expect(next.markings).toHaveLength(p.markings.length);
   });
 
-  it('só reordena entre as irmãs: filhas de pais diferentes não se misturam', () => {
+  it('only reorders among siblings: children of different parents do not mix', () => {
     let p = withSiblings();
     p = createMarking(p, {
       id: 'C1',
       containerId: 'I1',
       rect: { x: 1010, y: 1010, width: 30, height: 30 },
     });
-    // C1 cabe em M1 › M2? (1200..) não; cabe em M1 mas fora de M2: pai = M1.
+    // Does C1 fit in M1 › M2? (1200..) no; it fits in M1 but outside M2: parent = M1.
     expect(siblingPosition(p, 'C1')).toEqual({ index: 1, count: 2 });
     const next = reorderMarking(p, 'C1', 0);
     expect(order(next, ['M2', 'C1'])).toEqual(['C1', 'M2']);
   });
 
-  it('mesma posição devolve o mesmo projeto', () => {
+  it('the same position returns the same project', () => {
     const p = withSiblings();
     expect(reorderMarking(p, 'S2', 2)).toBe(p);
   });
 
-  it('índice fora de [0, count - 1] falha com invalid-index', () => {
+  it('an index outside [0, count - 1] fails with invalid-index', () => {
     const p = withSiblings();
     expect(() => reorderMarking(p, 'S1', 5)).toThrow('invalid-index');
     expect(() => reorderMarking(p, 'S1', -1)).toThrow('invalid-index');
     expect(() => reorderMarking(p, 'S1', 1.5)).toThrow('invalid-index');
   });
 
-  it('a trava não impede reordenar', () => {
+  it('the lock does not prevent reordering', () => {
     let p = withSiblings();
     p = setMarkingLocked(p, 'S1', true);
     expect(order(reorderMarking(p, 'S1', 4), ['S1', 'S4'])).toEqual(['S4', 'S1']);
   });
 });
 
-describe('tamanho mínimo (minSize)', () => {
+describe('minimum size (minSize)', () => {
   const minSize = { width: 60, height: 40 };
 
-  it('createMarking recusa o retângulo menor que o mínimo', () => {
+  it('createMarking refuses a rectangle smaller than the minimum', () => {
     const p = sampleProject();
     const args = {
       id: 'N1',
@@ -149,7 +149,7 @@ describe('tamanho mínimo (minSize)', () => {
     ).toHaveLength(p.markings.length + 1);
   });
 
-  it('sem a opção nada muda', () => {
+  it('without the option nothing changes', () => {
     const p = sampleProject();
     const next = createMarking(p, {
       id: 'N1',
@@ -159,7 +159,7 @@ describe('tamanho mínimo (minSize)', () => {
     expect(next.markings.at(-1)?.rect.width).toBe(10);
   });
 
-  it('setMarkingRect recusa abaixo do mínimo e aceita o mínimo', () => {
+  it('setMarkingRect refuses below the minimum and accepts the minimum', () => {
     const p = sampleProject();
     const rect = { x: 0, y: 0, width: 59, height: 100 };
     expect(() => setMarkingRect(p, 'M4', rect, { minSize })).toThrow('rect-too-small');
@@ -167,7 +167,7 @@ describe('tamanho mínimo (minSize)', () => {
     expect(ok.markings.find((m) => m.id === 'M4')?.rect.width).toBe(60);
   });
 
-  it('setMarkingRect sem a opção segue as regras de sempre', () => {
+  it('setMarkingRect without the option follows the usual rules', () => {
     const p = sampleProject();
     expect(() =>
       setMarkingRect(p, 'M4', { x: 0, y: 0, width: 8, height: 8 }),
@@ -177,7 +177,7 @@ describe('tamanho mínimo (minSize)', () => {
     );
   });
 
-  it('o retângulo atual continua não sendo mudança, mesmo abaixo do mínimo', () => {
+  it('the current rectangle is still not a change, even below the minimum', () => {
     const p = sampleProject();
     const rect = { ...p.markings.find((m) => m.id === 'M4')!.rect };
     expect(setMarkingRect(p, 'M4', rect, { minSize: { width: 500, height: 500 } })).toBe(
@@ -185,18 +185,18 @@ describe('tamanho mínimo (minSize)', () => {
     );
   });
 
-  it('adjustMarkingRect limita largura e altura por baixo ao mínimo', () => {
+  it('adjustMarkingRect bounds width and height from below at the minimum', () => {
     const p = sampleProject();
     const wide = adjustMarkingRect(p, 'M4', 'width', 20, { minSize });
     expect(wide.markings.find((m) => m.id === 'M4')?.rect.width).toBe(60);
     const tall = adjustMarkingRect(p, 'M4', 'height', 20, { minSize });
     expect(tall.markings.find((m) => m.id === 'M4')?.rect.height).toBe(40);
-    // Sem a opção, o mínimo é o das marcações.
+    // Without the option, the minimum is the markings'.
     const plain = adjustMarkingRect(p, 'M4', 'width', 20);
     expect(plain.markings.find((m) => m.id === 'M4')?.rect.width).toBe(20);
   });
 
-  it('adjustMarkingRect: se o mínimo não cabe no pai, recusa', () => {
+  it('adjustMarkingRect: if the minimum does not fit in the parent, it refuses', () => {
     const p = sampleProject();
     expect(() =>
       adjustMarkingRect(p, 'M3', 'width', 20, { minSize: { width: 5000, height: 10 } }),

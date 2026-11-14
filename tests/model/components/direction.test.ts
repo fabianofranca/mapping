@@ -1,6 +1,6 @@
-// R1 (#1106, decisões 4 a 8 da #1096): a direção de leitura no motor. A mesma cena em `ltr` e em
-// `rtl`: cada filho sem `mirror` fica em x' = largura − x − w; `start`/`end` lógicos, `left`/`right`
-// físicos; `font.align`; `direction` por nó; `$direction`; `mirror` do ícone e do caminho.
+// R1 (#1106, decisions 4 to 8 of #1096): the reading direction in the engine. The same scene in `ltr` and in
+// `rtl`: each child without `mirror` ends at x' = width − x − w; logical `start`/`end`, physical `left`/`right`;
+// `font.align`; `direction` per node; `$direction`; `mirror` of the icon and of the path.
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import type { IconSet } from '../../../src/model/components/icons';
@@ -41,7 +41,7 @@ function build(
   const nodes = [...walk(result.root)];
   const find = (name: string): SceneNode => {
     const node = nodes.find((n) => n.name === name);
-    if (node === undefined) throw new Error(`sem nó ${name}`);
+    if (node === undefined) throw new Error(`no node ${name}`);
     return node;
   };
   const at = (name: string) => {
@@ -75,10 +75,10 @@ const host = (layout: Json, children: Json[], extra: Json = {}): Json => ({
   ...extra,
 });
 
-/** Espelha na horizontal: x' = largura − x − w. */
+/** Mirrors horizontally: x' = width − x − w. */
 const mirrored = (b: { x: number; width: number }) => W - b.x - b.width;
 
-/** A mesma cena nos dois sentidos: cada filho sem `mirror` fica espelhado. */
+/** The same scene in both directions: each child without `mirror` is mirrored. */
 function expectMirrored(template: Json, names: string[]): void {
   const ltr = build(template, 'ltr');
   const rtl = build(template, 'rtl');
@@ -91,19 +91,19 @@ function expectMirrored(template: Json, names: string[]): void {
   }
 }
 
-describe('direção no motor: o espelho das fileiras, colunas, none, grade e quebra', () => {
+describe('direction in the engine: the mirror of rows, columns, none, grid and wrap', () => {
   const three = [rect('a', 40), rect('b', 60), rect('c', 80)];
 
-  it("row: o primeiro filho fica à direita (x' = largura − x − w)", () => {
+  it("row: the first child stays on the right (x' = width − x − w)", () => {
     const t = host({ type: 'row', gap: 10 }, three);
     expect(build(t, 'ltr').at('a').x).toBe(0);
     expect(build(t, 'rtl').at('a').x).toBe(W - 40);
     expectMirrored(t, ['a', 'b', 'c']);
   });
 
-  it('row: justify start encosta à direita, end à esquerda; padding continua físico', () => {
+  it('row: justify start hugs the right, end the left; padding stays physical', () => {
     const t = host({ type: 'row', justify: 'start', padding: [0, 8, 0, 30] }, three);
-    // padding [top, right, bottom, left] físico: o primeiro filho encosta no right (8).
+    // physical padding [top, right, bottom, left]: the first child hugs the right (8).
     expect(build(t, 'rtl').at('a').x).toBe(W - 8 - 40);
     const e = host({ type: 'row', justify: 'end', padding: [0, 8, 0, 30] }, three);
     expect(build(e, 'rtl').at('c').x).toBe(30);
@@ -114,17 +114,17 @@ describe('direção no motor: o espelho das fileiras, colunas, none, grade e que
     ]);
   });
 
-  it('row: reverse compõe (volta à ordem da esquerda para a direita)', () => {
+  it('row: reverse composes (back to the left-to-right order)', () => {
     const t = host({ type: 'row', reverse: true, gap: 10 }, three);
     const ltr = build(t, 'ltr');
     const rtl = build(t, 'rtl');
-    // em ltr o reverse põe o primeiro filho no fim; em rtl, de novo no início (esquerda).
+    // in ltr reverse puts the first child at the end; in rtl, at the start again (left).
     expect(ltr.at('a').x).toBeGreaterThan(ltr.at('c').x);
     expect(rtl.at('a').x).toBeLessThan(rtl.at('c').x);
     expect(rtl.at('a').x).toBe(0);
   });
 
-  it('column: align start vai à direita, end à esquerda, o eixo vertical não muda', () => {
+  it('column: align start goes to the right, end to the left, the vertical axis does not change', () => {
     const t = host({ type: 'column', align: 'start', gap: 5 }, three);
     expect(build(t, 'rtl').at('a').x).toBe(W - 40);
     expect(build(t, 'rtl').at('b').y).toBe(25);
@@ -134,14 +134,14 @@ describe('direção no motor: o espelho das fileiras, colunas, none, grade e que
     expectMirrored(host({ type: 'column', align: 'center' }, three), ['a', 'b']);
   });
 
-  it('none alinhado: justify start/end e as âncoras lógicas espelham', () => {
+  it('aligned none: justify start/end and the logical anchors mirror', () => {
     const t = host({ type: 'none', justify: 'start' }, [rect('a', 40)]);
     expect(build(t, 'rtl').at('a').x).toBe(W - 40);
     const e = host({ type: 'none', justify: 'end' }, [rect('a', 40)]);
     expect(build(e, 'rtl').at('a').x).toBe(0);
   });
 
-  it('anchors.start/end lógicos; left/right físicos', () => {
+  it('anchors.start/end logical; left/right physical', () => {
     const t = host({ type: 'none' }, [
       rect('s', 40, 20, { anchors: { start: 10, top: 0 } }),
       rect('e', 40, 20, { anchors: { end: 12, top: 30 } }),
@@ -154,12 +154,12 @@ describe('direção no motor: o espelho das fileiras, colunas, none, grade e que
     expect(ltr.at('e').x).toBe(W - 12 - 40);
     expect(rtl.at('s').x).toBe(W - 10 - 40);
     expect(rtl.at('e').x).toBe(12);
-    // físicos: iguais nos dois sentidos
+    // physical: equal in both directions
     expect(rtl.at('l').x).toBe(10);
     expect(rtl.at('r').x).toBe(W - 12 - 40);
   });
 
-  it('anchors.start com end estica entre as duas, nos dois sentidos', () => {
+  it('anchors.start with end stretches between the two, in both directions', () => {
     const t = host({ type: 'none' }, [
       rect('a', 10, 20, { anchors: { start: 10, end: 30 } }),
     ]);
@@ -167,49 +167,49 @@ describe('direção no motor: o espelho das fileiras, colunas, none, grade e que
     expect(build(t, 'rtl').at('a')).toMatchObject({ x: 30, width: W - 40 });
   });
 
-  it('grid vertical: as trilhas preenchem da direita para a esquerda', () => {
+  it('vertical grid: the tracks fill from right to left', () => {
     const cells = [rect('a', 20), rect('b', 20), rect('c', 20), rect('d', 20)];
     const t = host({ type: 'grid', columns: 2, gap: 10, justify: 'start' }, cells);
     expectMirrored(t, ['a', 'b', 'c', 'd']);
     expect(build(t, 'rtl').at('a').x).toBeGreaterThan(build(t, 'rtl').at('b').x);
   });
 
-  it('grid horizontal: as linhas de fluxo correm da direita para a esquerda', () => {
+  it('horizontal grid: the flow lines run from right to left', () => {
     const cells = [rect('a', 20, 20), rect('b', 20, 20), rect('c', 20, 20)];
     const t = host({ type: 'grid', rows: 1, lineGap: 6 }, cells);
     expectMirrored(t, ['a', 'b', 'c']);
   });
 
-  it('wrap em row: cada linha corre da direita para a esquerda', () => {
+  it('wrap in row: each line runs from right to left', () => {
     const kids = [0, 1, 2, 3, 4].map((i) => rect(`k${i}`, 100));
     const t = host({ type: 'row', wrap: 'wrap', gap: 8, lineGap: 12 }, kids);
     expectMirrored(t, ['k0', 'k1', 'k2', 'k3', 'k4']);
     expect(build(t, 'rtl').at('k0').x).toBe(W - 100);
   });
 
-  it('wrap em column: as colunas empilham da direita para a esquerda', () => {
+  it('wrap in column: the columns stack from right to left', () => {
     const kids = [0, 1, 2, 3].map((i) => rect(`k${i}`, 50, 90));
     const t = host({ type: 'column', wrap: 'wrap', gap: 4, lineGap: 10 }, kids);
     expectMirrored(t, ['k0', 'k1', 'k2', 'k3']);
   });
 
-  it('em ltr nada muda: a cena sem direction é a de ltr', () => {
+  it('in ltr nothing changes: the scene without direction is the ltr one', () => {
     const t = host({ type: 'row', gap: 10 }, three);
     const a = build(t, undefined);
     const b = build(t, 'ltr');
     expect(JSON.stringify(a.root)).toBe(JSON.stringify(b.root));
   });
 
-  it('o eixo vertical e o eixo cruzado de uma row não mudam', () => {
+  it('the vertical axis and the cross axis of a row do not change', () => {
     const t = host({ type: 'row', align: 'end' }, three);
     expect(build(t, 'rtl').at('a').y).toBe(build(t, 'ltr').at('a').y);
   });
 });
 
-describe('direção por nó e $direction', () => {
+describe('direction per node and $direction', () => {
   const kids = [rect('a', 40), rect('b', 60)];
 
-  it('direction: "ltr" num quadro trava a subárvore (o quadro ainda é posto pelo pai rtl)', () => {
+  it('direction: "ltr" on a frame locks the subtree (the frame is still placed by the rtl parent)', () => {
     const inner = host({ type: 'row' }, [rect('x', 30), rect('y', 30)], {
       name: 'inner',
       direction: 'ltr',
@@ -219,12 +219,12 @@ describe('direção por nó e $direction', () => {
     const t = host({ type: 'row' }, [inner, rect('z', 20)]);
     const rtl = build(t, 'rtl');
     expect(rtl.at('inner').x).toBe(W - 100);
-    // dentro do `inner`, a ordem é a de ltr: x à esquerda de y
+    // inside `inner`, the order is the ltr one: x to the left of y
     expect(rtl.at('x').x).toBe(W - 100);
     expect(rtl.at('y').x).toBe(W - 100 + 30);
   });
 
-  it('direction: "rtl" num quadro espelha só a subárvore, mesmo em ltr', () => {
+  it('direction: "rtl" on a frame mirrors only the subtree, even in ltr', () => {
     const t = host({ type: 'row' }, [
       host({ type: 'row' }, kids, { name: 'inner', direction: 'rtl', width: 200 }),
     ]);
@@ -233,7 +233,7 @@ describe('direção por nó e $direction', () => {
     expect(ltr.at('a').x).toBe(200 - 40);
   });
 
-  it('{ "$direction": "rtl" } em visible vale onde vale uma condição', () => {
+  it('{ "$direction": "rtl" } in visible applies where a condition applies', () => {
     const t = host({ type: 'row' }, [
       rect('only-rtl', 10, 10, { visible: { $direction: 'rtl' } }),
       rect('only-ltr', 10, 10, { visible: { $direction: 'ltr' } }),
@@ -250,7 +250,7 @@ describe('direção por nó e $direction', () => {
     expect([ltr.has('not-rtl'), rtl.has('not-rtl')]).toEqual([true, false]);
   });
 
-  it('$direction num $if escolhe o valor e vê a direção travada da subárvore', () => {
+  it('$direction in an $if chooses the value and sees the locked direction of the subtree', () => {
     const t = host({ type: 'column' }, [
       {
         type: 'text',
@@ -281,11 +281,11 @@ describe('direção por nó e $direction', () => {
   });
 });
 
-describe('texto: font.align start/end e TextStyle.direction', () => {
+describe('text: font.align start/end and TextStyle.direction', () => {
   const text = (align?: string, extra: Json = {}): Json => ({
     type: 'text',
     name: 't',
-    text: 'olá',
+    text: 'hello',
     width: 'fill',
     font: { size: 12, ...(align === undefined ? {} : { align }) },
     ...extra,
@@ -297,13 +297,13 @@ describe('texto: font.align start/end e TextStyle.direction', () => {
       }
     ).style;
 
-  it('o padrão é start: left em ltr, right em rtl', () => {
+  it('the default is start: left in ltr, right in rtl', () => {
     const t = host({ type: 'column' }, [text()]);
     expect(style(t, 'ltr').align).toBe('left');
     expect(style(t, 'rtl').align).toBe('right');
   });
 
-  it('start e end resolvem pelo sentido; left, center e right continuam físicos', () => {
+  it('start and end resolve by the direction; left, center and right stay physical', () => {
     const at = (align: string, d: 'ltr' | 'rtl') =>
       style(host({ type: 'column' }, [text(align)]), d).align;
     expect([at('start', 'ltr'), at('start', 'rtl')]).toEqual(['left', 'right']);
@@ -315,7 +315,7 @@ describe('texto: font.align start/end e TextStyle.direction', () => {
     ]);
   });
 
-  it('a cena marca direction: "rtl" no texto, e só nele', () => {
+  it('the scene marks direction: "rtl" on the text, and only on it', () => {
     const t = host({ type: 'column' }, [text()]);
     expect(style(t, 'rtl').direction).toBe('rtl');
     expect('direction' in style(t, 'ltr')).toBe(false);
@@ -325,7 +325,7 @@ describe('texto: font.align start/end e TextStyle.direction', () => {
   });
 });
 
-describe('espelho: icon e path com mirror', () => {
+describe('mirror: icon and path with mirror', () => {
   const icons: IconSet = {
     viewBox: [24, 24],
     icons: {
@@ -351,7 +351,7 @@ describe('espelho: icon e path com mirror', () => {
   });
   const IDENTITY_ICON = [1, 0, 0, 1];
 
-  /** O `transform` dos caminhos do ícone `name` (o grupo tem os filhos). */
+  /** The `transform` of the paths of the icon `name` (the group has the children). */
   const childMatrix = (template: Json, d: 'ltr' | 'rtl') => {
     const group = build(template, d, { icons }).find('back') as unknown as {
       transform: number[];
@@ -361,18 +361,18 @@ describe('espelho: icon e path com mirror', () => {
     return { group: group.transform, child: group.children[0]!.transform };
   };
 
-  it('o mirror do conjunto espelha o ícone em rtl e a identidade fica em ltr', () => {
+  it('the set mirror mirrors the icon in rtl and the identity stays in ltr', () => {
     const t = host({ type: 'row' }, [iconNode('back', { name: 'back' })]);
     const ltr = childMatrix(t, 'ltr');
     const rtl = childMatrix(t, 'rtl');
     expect(ltr.child.slice(0, 4)).toEqual(IDENTITY_ICON);
     expect(rtl.child[0]).toBe(-1);
     expect(rtl.child[3]).toBe(1);
-    // o ícone espelhado continua na mesma caixa: x' + escala negativa cobre [0, w]
+    // the mirrored icon stays in the same box: x' + negative scale covers [0, w]
     expect(rtl.child[4]).toBe(24);
   });
 
-  it('o ícone sem mirror não espelha, e o mirror do nó vence o do conjunto', () => {
+  it('the icon without mirror does not mirror, and the node mirror wins over the set one', () => {
     const plain = build(host({ type: 'row' }, [iconNode('plain')]), 'rtl', {
       icons,
     }).find('plain') as unknown as { children: { transform: number[] }[] };
@@ -391,7 +391,7 @@ describe('espelho: icon e path com mirror', () => {
     expect(on.children[0]!.transform[0]).toBe(-1);
   });
 
-  it('o mirror do nó vale com expressão e com $direction', () => {
+  it('the node mirror applies with an expression and with $direction', () => {
     const t = host({ type: 'row' }, [
       iconNode('back', { name: 'back', mirror: { $direction: 'rtl' } }),
     ]);
@@ -399,22 +399,22 @@ describe('espelho: icon e path com mirror', () => {
     expect(childMatrix(t, 'ltr').child[0]).toBe(1);
   });
 
-  it('path: mirror leva a matriz [-sx, 0, 0, sy, x + w, y] em rtl e a identidade em ltr', () => {
+  it('path: mirror takes the matrix [-sx, 0, 0, sy, x + w, y] in rtl and the identity in ltr', () => {
     const t = host({ type: 'row' }, [pathNode({ mirror: true })]);
     const ltr = build(t, 'ltr').find('p') as unknown as { transform: number[] };
     const rtl = build(t, 'rtl').find('p') as unknown as { transform: number[] };
     expect(ltr.transform).toEqual([2, 0, 0, 2, 0, 0]);
-    // em rtl o nó fica à direita: x = 300, w = 20 → x + w = 320
+    // in rtl the node stays on the right: x = 300, w = 20 → x + w = 320
     expect(rtl.transform).toEqual([-2, 0, 0, 2, 320, 0]);
   });
 
-  it('path sem mirror (o padrão é false) não espelha', () => {
+  it('path without mirror (the default is false) does not mirror', () => {
     const t = host({ type: 'row' }, [pathNode()]);
     const rtl = build(t, 'rtl').find('p') as unknown as { transform: number[] };
     expect(rtl.transform[0]).toBe(2);
   });
 
-  it('mirror só vale com a direção efetiva do nó: direction "ltr" trava e não espelha', () => {
+  it('mirror only applies with the effective direction of the node: direction "ltr" locks and does not mirror', () => {
     const t = host({ type: 'row' }, [pathNode({ mirror: true, direction: 'ltr' })]);
     const rtl = build(t, 'rtl').find('p') as unknown as { transform: number[] };
     expect(rtl.transform[0]).toBe(2);

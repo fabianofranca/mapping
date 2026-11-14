@@ -1,4 +1,4 @@
-// FX4 no desenho da app: stroke.offset, wrap "none" cortado por pixel e quatro sides (decisões 17, 19 e 21).
+// FX4 in the app drawing: stroke.offset, wrap "none" cut by pixel and four sides (decisions 17, 19 and 21).
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -47,7 +47,7 @@ const frameOf = (children: SceneNode[], extra: Partial<FrameNode> = {}): Scene =
 const shapesOf = (scene: Scene) => renderScene(scene).root.find('Shape') as Konva.Shape[];
 
 describe('stroke.offset', () => {
-  it('o anel de um retângulo de raio 8 fica afastado 2: caixa crescida e raio 8 + 2', () => {
+  it('the ring of a rectangle with radius 8 stays 2 away: grown box and radius 8 + 2', () => {
     const [ring] = shapesOf(
       frameOf([], { cornerRadius: 8, stroke: stroke({ align: 'center', offset: 2 }) }),
     );
@@ -56,7 +56,7 @@ describe('stroke.offset', () => {
     expect(rect.cornerRadius()).toEqual(10);
   });
 
-  it('o align vale em relação ao contorno afastado (outside: mais meia largura)', () => {
+  it('the align is relative to the offset outline (outside: plus half the width)', () => {
     const [ring] = shapesOf(
       frameOf([], { cornerRadius: 8, stroke: stroke({ align: 'outside', offset: 2 }) }),
     );
@@ -65,12 +65,12 @@ describe('stroke.offset', () => {
     expect(rect.cornerRadius()).toEqual(11);
   });
 
-  it('raio 0 continua reto (como o outline-offset do CSS)', () => {
+  it('radius 0 stays straight (like the CSS outline-offset)', () => {
     const [ring] = shapesOf(frameOf([], { stroke: stroke({ offset: 3 }) }));
     expect((ring as Konva.Rect).cornerRadius()).toEqual(0);
   });
 
-  it('numa elipse os dois raios crescem o offset', () => {
+  it('on an ellipse both radii grow by the offset', () => {
     const ellipse: SceneNode = {
       ...baseNode({ id: 'e', name: 'e', width: 40, height: 20 }),
       type: 'ellipse',
@@ -82,7 +82,7 @@ describe('stroke.offset', () => {
     expect([shape.radiusX(), shape.radiusY()]).toEqual([22, 12]);
   });
 
-  it('com sides, o afastamento vale só nos lados pedidos', () => {
+  it('with sides, the offset applies only to the requested sides', () => {
     const shapes = shapesOf(
       frameOf([], { stroke: stroke({ sides: ['bottom'], offset: 4, align: 'center' }) }),
     );
@@ -90,8 +90,8 @@ describe('stroke.offset', () => {
   });
 });
 
-describe('stroke.sides com os quatro lados', () => {
-  // A cena nunca traz os quatro lados (o `instantiate` os normaliza, MC0): o caminho é o do modelo.
+describe('stroke.sides with all four sides', () => {
+  // The scene never carries all four sides (`instantiate` normalizes them, MC0): the path is the model one.
   const sceneWith = (sides?: StrokeSide[]): Scene =>
     instantiate(
       {
@@ -118,7 +118,7 @@ describe('stroke.sides com os quatro lados', () => {
       { measure: approximateMeasurer },
     );
 
-  it('desenha o contorno com raio, igual ao sides ausente', () => {
+  it('draws the outline with radius, same as an absent sides', () => {
     const all = shapesOf(sceneWith(['top', 'right', 'bottom', 'left']));
     const none = shapesOf(sceneWith());
     expect(all.map((s) => s.className)).toEqual(none.map((s) => s.className));
@@ -134,7 +134,7 @@ describe('wrap "none" sem ellipsis', () => {
   const text = (align: 'left' | 'center' | 'right'): TextNode => ({
     ...baseNode({ id: 't', name: 't', width: 30, height: 20 }),
     type: 'text',
-    text: 'Texto bem comprido',
+    text: 'Text quite lengthy',
     fills: [{ type: 'solid', color: '#000000' }],
     style: {
       fontFamily: 'Roboto',
@@ -149,7 +149,7 @@ describe('wrap "none" sem ellipsis', () => {
   });
 
   it.each(['left', 'center', 'right'] as const)(
-    'align %s: o Text não leva width e o grupo recorta na caixa',
+    'align %s: the Text carries no width and the group clips at the box',
     (align) => {
       const result = renderScene(frameOf([text(align)]));
       const group = result.byId.get('t') as Konva.Group;
@@ -168,7 +168,7 @@ describe('wrap "none" sem ellipsis', () => {
     },
   );
 
-  it('com ellipsis o Text continua com a largura, mais a folga da quebra (o Konva põe o …)', () => {
+  it('with ellipsis the Text keeps the width, plus the wrap slack (Konva puts the …)', () => {
     const node = text('left');
     const withEllipsis: TextNode = { ...node, style: { ...node.style, ellipsis: true } };
     const group = renderScene(frameOf([withEllipsis])).byId.get('t') as Konva.Group;
@@ -177,12 +177,12 @@ describe('wrap "none" sem ellipsis', () => {
   });
 });
 
-describe('texto cortado de vários parágrafos (MC0, decisão 30)', () => {
-  // O canvas falso mede 6 px por caractere: a 1ª linha tem 108 px, a 2ª 30; a caixa, 50.
+describe('cut text of several paragraphs (MC0, decision 30)', () => {
+  // The fake canvas measures 6 px per character: the 1st line is 108 px, the 2nd 30; the box, 50.
   const two = (align: 'center' | 'right'): TextNode => ({
     ...baseNode({ id: 't', name: 't', width: 50, height: 40 }),
     type: 'text',
-    text: 'Texto bem comprido\ncurto',
+    text: 'Text quite lengthy\nshort',
     fills: [{ type: 'solid', color: '#000000' }],
     style: {
       fontFamily: 'Roboto',
@@ -197,14 +197,14 @@ describe('texto cortado de vários parágrafos (MC0, decisão 30)', () => {
   });
 
   it.each(['center', 'right'] as const)(
-    'align %s: o começo de cada linha é o do cutLineLeft',
+    'align %s: the start of each line is the cutLineLeft one',
     (align) => {
       const group = renderScene(frameOf([two(align)])).byId.get('t') as Konva.Group;
       const shape = group.find('Text')[0] as Konva.Text;
       const block = shape.width();
       expect(shape.textArr.map((line) => line.width)).toEqual([108, 30]);
       for (const line of shape.textArr) {
-        // O Konva alinha cada linha dentro do bloco (a largura do Text) e o Text começa em x.
+        // Konva aligns each line inside the block (the Text width) and the Text starts at x.
         const inBlock =
           align === 'center' ? (block - line.width) / 2 : block - line.width;
         expect(shape.x() + inBlock).toBeCloseTo(
@@ -216,8 +216,8 @@ describe('texto cortado de vários parágrafos (MC0, decisão 30)', () => {
   );
 });
 
-describe('visibleLineCount contra o textArr do Konva em alturas limítrofes (MC0, decisão 31)', () => {
-  // lineHeight 14,3 / fontSize 11: a soma acumulada em ponto flutuante não é n × lineHeight.
+describe('visibleLineCount against the Konva textArr at borderline heights (MC0, decision 31)', () => {
+  // lineHeight 14.3 / fontSize 11: the floating-point running sum is not n × lineHeight.
   const node = (height: number): TextNode => ({
     ...baseNode({ id: 't', name: 't', width: 100, height }),
     type: 'text',
@@ -236,12 +236,12 @@ describe('visibleLineCount contra o textArr do Konva em alturas limítrofes (MC0
   const lh = konvaLineHeight(14.3, 11);
 
   it.each([1, 2, 3, 4, 5])(
-    'a caixa de %i linhas (e um pouco menos ou mais) tem as linhas do visibleLineCount',
+    'the box of %i lines (and a bit less or more) has the lines of visibleLineCount',
     (k) => {
       for (const height of [k * lh - 0.01, k * lh, k * lh + 0.01, (k + 0.5) * lh]) {
         const group = renderScene(frameOf([node(height)])).byId.get('t') as Konva.Group;
         const shape = group.find('Text')[0] as Konva.Text;
-        expect(shape.textArr.length, `altura ${height}`).toBe(
+        expect(shape.textArr.length, `height ${height}`).toBe(
           visibleLineCount(6, height, lh),
         );
       }
@@ -249,7 +249,7 @@ describe('visibleLineCount contra o textArr do Konva em alturas limítrofes (MC0
   );
 });
 
-describe('só as linhas que cabem na altura (MC0, decisão 31)', () => {
+describe('only the lines that fit in the height (MC0, decision 31)', () => {
   const lines = (height: number): TextNode => ({
     ...baseNode({ id: 't', name: 't', width: 100, height }),
     type: 'text',
@@ -271,7 +271,7 @@ describe('só as linhas que cabem na altura (MC0, decisão 31)', () => {
     [40, 2],
     [50, 2],
   ])(
-    'a caixa de %i px tem %i linhas no textArr, como o visibleLineCount',
+    'the box of %i px has %i lines in textArr, like visibleLineCount',
     (height, count) => {
       const group = renderScene(frameOf([lines(height)])).byId.get('t') as Konva.Group;
       const shape = group.find('Text')[0] as Konva.Text;
@@ -281,12 +281,12 @@ describe('só as linhas que cabem na altura (MC0, decisão 31)', () => {
   );
 });
 
-describe('palavra mais larga que a caixa: as outras linhas quebram na caixa, como no modelo (code review #1078)', () => {
-  // O canvas falso mede 6 px por caractere: a palavra longa tem 126 px, a caixa 60.
+describe('word wider than the box: the other lines wrap at the box, as in the model (code review #1078)', () => {
+  // The fake canvas measures 6 px per character: the long word is 126 px, the box 60.
   const long: TextNode = {
     ...baseNode({ id: 't', name: 't', width: 60, height: 60 }),
     type: 'text',
-    text: 'Supercalifragilistico ab cd ef gh',
+    text: 'Supercalifragilistics ab cd ef gh',
     fills: [{ type: 'solid', color: '#000000' }],
     style: {
       fontFamily: 'Roboto',
@@ -299,7 +299,7 @@ describe('palavra mais larga que a caixa: as outras linhas quebram na caixa, com
     },
   };
 
-  it('o desenho dá as mesmas linhas que o measureLines do modelo', () => {
+  it('the drawing gives the same lines as the model measureLines', () => {
     const group = renderScene(frameOf([long])).byId.get('t') as Konva.Group;
     const shape = group.find('Text')[0] as Konva.Text;
     const font = {
@@ -311,7 +311,7 @@ describe('palavra mais larga que a caixa: as outras linhas quebram na caixa, com
       letterSpacing: 0,
     };
     const model = measureLines(long.text, font, 60, (s) => s.length * 6).lines;
-    expect(model).toEqual(['Supercalifragilistico', 'ab cd ef', 'gh']);
+    expect(model).toEqual(['Supercalifragilistics', 'ab cd ef', 'gh']);
     expect(shape.textArr.map((line) => line.text)).toEqual(model);
   });
 });

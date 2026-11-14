@@ -13,12 +13,12 @@ import { Button } from './controls';
 import { useEditor } from './EditorContext';
 import { openToolWindow } from './toolWindowLayout';
 
-// "Citar na conversa", "Comentar" e "Copiar referência" nos menus de um alvo (etapa Comentários,
-// CM5, decisão 32): campo, par, linha, anotação, item, camada e conversa. Uma só definição de
-// cada ação serve aos dois desenhos de menu da app: os botões do `Popover` (`CiteItem`,
-// `CommentItem`, `CopyReferenceItem`) e a lista do `ActionMenu` (`useCiteMenuItems`).
+// "Cite in the conversation", "Comment" and "Copy reference" in the menus of a target (Comments stage,
+// CM5, decision 32): field, pair, row, annotation, item, layer and thread. A single definition of
+// each action serves the app's two menu designs: the `Popover` buttons (`CiteItem`,
+// `CommentItem`, `CopyReferenceItem`) and the `ActionMenu` list (`useCiteMenuItems`).
 
-/** Uma ação de menu: o rótulo, se vale agora, a dica de quando não vale e o que faz. */
+/** A menu action: the label, whether it applies now, the hint for when it does not and what it does. */
 interface MenuAction {
   readonly label: string;
   readonly disabled: boolean;
@@ -27,17 +27,17 @@ interface MenuAction {
 }
 
 interface CiteActions {
-  /** Projeto de pasta: só nele a referência tem um `<projeto>` que o MCP encontra. */
+  /** Folder project: only there does the reference have a `<project>` that the MCP finds. */
   readonly copyable: boolean;
-  /** Insere o alvo no compositor aberto; desabilitado sem um (ou sem gravar: não depende de pasta). */
+  /** Inserts the target in the open composer; disabled without one (or without saving: it does not depend on a folder). */
   cite(target: CitationTarget): MenuAction;
-  /** Abre o rascunho de uma conversa ancorada em `anchor`; desabilitado no somente leitura e na revisão. */
+  /** Opens the draft of a thread anchored at `anchor`; disabled in read-only mode and in review. */
   comment(anchor: ThreadAnchor): MenuAction;
-  /** Copia a URL do alvo (só em projeto de pasta). */
+  /** Copies the target's URL (only in a folder project). */
   copy(target: CopyTarget): MenuAction;
 }
 
-/** As ações dos menus, lidas do estado de agora (re-renderiza quando o compositor abre ou fecha). */
+/** The menu actions, read from the current state (re-renders when the composer opens or closes). */
 export function useCiteActions(): CiteActions {
   const editor = useEditor();
   const { ui, store, review } = editor;
@@ -91,7 +91,7 @@ function ActionItem({
   );
 }
 
-/** "Citar na conversa": habilitado só com um compositor aberto; vale também fora de uma pasta. */
+/** "Cite in the conversation": enabled only with an open composer; also applies outside a folder. */
 export function CiteItem({
   target,
   close,
@@ -103,7 +103,7 @@ export function CiteItem({
   return <ActionItem action={actions.cite(citationTargetOf(target))} close={close} />;
 }
 
-/** "Comentar" no alvo; desabilitado no somente leitura e na revisão. */
+/** "Comment" on the target; disabled in read-only mode and in review. */
 export function CommentItem({
   anchor,
   close,
@@ -115,7 +115,7 @@ export function CommentItem({
   return <ActionItem action={actions.comment(anchor)} close={close} />;
 }
 
-/** "Copiar referência" da camada, da conversa ou de qualquer alvo; some fora de uma pasta. */
+/** "Copy reference" of the layer, the thread or any target; disappears outside a folder. */
 export function CopyReferenceItem({
   target,
   close,
@@ -138,8 +138,8 @@ function asMenuItem(action: MenuAction): ActionMenuItem {
 }
 
 /**
- * Os itens do `ActionMenu` de uma propriedade: Copiar referência (só em pasta), Citar na
- * conversa e, com `anchor`, Comentar. Chame a função devolvida uma vez por linha.
+ * The items of a property's `ActionMenu`: Copy reference (only in a folder), Cite in the
+ * conversation and, with `anchor`, Comment. Call the returned function once per row.
  */
 export function useCiteMenuItems(): (
   target: CopyTarget,

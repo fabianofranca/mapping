@@ -2,17 +2,17 @@ import { signal } from '@preact/signals';
 import { z } from 'zod';
 import { readSetting, writeSetting } from '../utils/safeStorage';
 
-// "Não lida" por dispositivo (etapa Comentários, decisão 16): o `lastReadAt` de cada conversa,
-// por cópia do projeto (`ProjectStorage.copyId`, como o `mapping.reviewResume`), num blob
-// versionado e validado do `localStorage`, sempre pelo `safeStorage`. Nunca vai para o arquivo
-// da conversa nem para o projeto. Versão desconhecida, texto corrompido ou formato errado são
-// descartados (a conversa volta a contar como não lida), não migrados.
+// "Unread" per device (Comments stage, decision 16): the `lastReadAt` of each thread,
+// per project copy (`ProjectStorage.copyId`, like `mapping.reviewResume`), in a versioned,
+// validated `localStorage` blob, always through `safeStorage`. It never goes into the thread
+// file or the project. An unknown version, corrupted text or wrong format are
+// discarded (the thread goes back to counting as unread), not migrated.
 
 const READS_KEY = 'mapping.threadReads';
 const READS_VERSION = 1;
-/** Conversas lembradas por cópia (as lidas mais recentemente). */
+/** Threads remembered per copy (the most recently read). */
 export const MAX_READS_PER_COPY = 500;
-/** Cópias de projeto lembradas (as tocadas mais recentemente; etapa #940, decisão 15). */
+/** Project copies remembered (the most recently touched; stage #940, decision 15). */
 export const MAX_COPIES = 20;
 
 const blobSchema = z.object({
@@ -35,8 +35,8 @@ function parseBlob(raw: string | null): Reads {
 const reads = signal<Reads>(parseBlob(readSetting(READS_KEY)));
 
 /**
- * O que a pessoa leu, por cópia e conversa. Ler `.value` num `computed` ou componente faz o
- * "não lida" se atualizar quando `markThreadRead` grava.
+ * What the person has read, per copy and thread. Reading `.value` in a `computed` or component
+ * makes "unread" update when `markThreadRead` writes.
  */
 export const threadReads: { readonly value: Reads } = {
   get value() {
@@ -45,10 +45,10 @@ export const threadReads: { readonly value: Reads } = {
 };
 
 /**
- * Aplica `change` à cópia sobre o blob relido do armazenamento (etapa #940, decisão 15): outra
- * aba pode ter gravado desde a nossa leitura, e juntar por chave não apaga a lida dela. Sem
- * armazenamento legível, parte do que a sessão já sabe. A cópia tocada vai para o fim e o limite
- * tira as mais antigas.
+ * Applies `change` to the copy over the blob re-read from the storage (stage #940, decision 15):
+ * another tab may have written since our read, and merging by key does not erase its read
+ * mark. With no readable storage, it starts from what the session already knows. The touched
+ * copy goes to the end and the limit drops the oldest.
  */
 function update(
   copyId: string,
@@ -64,17 +64,17 @@ function update(
   writeSetting(READS_KEY, JSON.stringify({ v: READS_VERSION, reads: next }));
 }
 
-/** Quando a pessoa leu a conversa por último nesta cópia, ou `null` se nunca. */
+/** When the person last read the thread in this copy, or `null` if never. */
 export function lastReadAt(copyId: string, threadId: string): string | null {
   return reads.value[copyId]?.[threadId] ?? null;
 }
 
-/** Marca a conversa como lida em `at`. Nunca recua: uma data anterior à guardada é ignorada. */
+/** Marks the thread as read at `at`. Never goes back: a date before the stored one is ignored. */
 export function markThreadRead(copyId: string, threadId: string, at: string): void {
   const previous = reads.peek()[copyId]?.[threadId];
   if (previous !== undefined && Date.parse(previous) >= Date.parse(at)) return;
   update(copyId, (copy) => {
-    // Reinsere no fim: a ordem das chaves é a da leitura mais recente, e o limite tira as mais antigas.
+    // Reinserts at the end: key order is the most recent read first, and the limit drops the oldest.
     const others = Object.entries(copy).filter(([id]) => id !== threadId);
     return Object.fromEntries(
       [...others, [threadId, at] as const].slice(-MAX_READS_PER_COPY),
@@ -82,7 +82,7 @@ export function markThreadRead(copyId: string, threadId: string, at: string): vo
   });
 }
 
-/** Esquece a conversa (apagada): ela não deixa entrada no blob. */
+/** Forgets the thread (deleted): it leaves no entry in the blob. */
 export function forgetThreadRead(copyId: string, threadId: string): void {
   const copy = reads.peek()[copyId];
   if (copy === undefined || !(threadId in copy)) return;

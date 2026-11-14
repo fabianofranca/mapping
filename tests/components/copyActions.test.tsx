@@ -13,11 +13,12 @@ import { SelectionPanel } from '../../src/ui/SelectionPanel';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// Etapa 3a.2: "Copiar referência" e "Copiar recorte" nos menus da Árvore, de Detalhes e do
-// canvas. Só existem em projetos abertos de uma pasta (a do harness se chama "projeto").
+// Stage 3a.2: "Copy reference" and "Copy crop" in the menus of the Tree, of the Details and of the
+// canvas. They only exist in projects opened from a folder (the harness one is named "projeto").
+// pt-BR kept: shared fixture data asserted by tests/model (sampleProject names 'Maçaneta', 'images/frente.jpg' and the harness folder 'projeto')
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   showToolWindow('tree');
 });
 afterEach(() => {
@@ -26,8 +27,8 @@ afterEach(() => {
 });
 
 /**
- * O `userEvent.setup()` instala a própria área de transferência em `navigator.clipboard`:
- * o mock entra depois dele.
+ * `userEvent.setup()` installs its own clipboard in `navigator.clipboard`:
+ * the mock goes in after it.
  */
 function setupClipboard() {
   const user = userEvent.setup();
@@ -42,7 +43,7 @@ function setupClipboard() {
   return { user, writeText };
 }
 
-/** Tira o nome da pasta do armazenamento: o projeto passa a ser "fora de uma pasta". */
+/** Removes the folder name from the storage: the project becomes "outside a folder". */
 function makeNotAFolder(harness: Harness) {
   Object.defineProperty(harness.context.session.storage, 'folderName', {
     value: undefined,
@@ -59,8 +60,8 @@ function renderTree(harness: Harness) {
   ));
 }
 
-describe('menu da linha da Árvore', () => {
-  it('copia a referência da marcação', async () => {
+describe('Tree row menu', () => {
+  it('copies the marking reference', async () => {
     const { user, writeText } = setupClipboard();
     const harness = createHarness(sampleProject());
     renderTree(harness);
@@ -74,11 +75,11 @@ describe('menu da linha da Árvore', () => {
 
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     expect(copied(writeText)).toEqual({ project: 'projeto', kind: 'm', code: 'm2' });
-    // O menu fecha ao escolher.
+    // The menu closes on choosing.
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('a imagem só oferece a referência (o recorte é da marcação)', async () => {
+  it('the image only offers the reference (the crop belongs to the marking)', async () => {
     const { user, writeText } = setupClipboard();
     const harness = createHarness(sampleProject());
     renderTree(harness);
@@ -95,11 +96,11 @@ describe('menu da linha da Árvore', () => {
     expect(copied(writeText)).toMatchObject({ kind: 'i', code: 'i2' });
   });
 
-  it('fora de uma pasta, a Árvore não copia: a imagem só tem Envolver e a marcação, selecionar e Envolver', async () => {
+  it('outside a folder, the Tree does not copy: the image only has Wrap and the marking, select and Wrap', async () => {
     const harness = createHarness(sampleProject());
     makeNotAFolder(harness);
     renderTree(harness);
-    // A imagem não copia fora de pasta, mas o ⋯ dela traz o Envolver (a imagem é container).
+    // The image does not copy outside a folder, but its ⋯ brings the Wrap (the image is a container).
     await userEvent.click(
       screen.getByRole('button', {
         name: t('copy.itemActions', { name: 'images/frente.jpg' }),
@@ -125,7 +126,7 @@ describe('menu da linha da Árvore', () => {
   });
 });
 
-describe('Detalhes', () => {
+describe('Details', () => {
   function renderMarking(harness: Harness, id: string) {
     renderLive(harness, (p) => {
       const m = p.markings.find((x) => x.id === id);
@@ -144,18 +145,18 @@ describe('Detalhes', () => {
     });
   }
 
-  it('a marcação tem copiar referência e copiar recorte ao lado do ID', async () => {
+  it('the marking has copy reference and copy crop next to the ID', async () => {
     const { user, writeText } = setupClipboard();
     const harness = createHarness(sampleProject());
     renderMarking(harness, 'M2');
     expect(screen.getAllByRole('button', { name: t('copy.crop') })).toHaveLength(1);
-    // A primeira é a da marcação; as demais são das anotações dela.
+    // The first one is the marking's; the others belong to its annotations.
     await user.click(screen.getAllByRole('button', { name: t('copy.reference') })[0]!);
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     expect(copied(writeText)).toMatchObject({ kind: 'm', code: 'm2' });
   });
 
-  it('cada cartão de anotação copia a referência dela', async () => {
+  it('each annotation card copies its reference', async () => {
     const { user, writeText } = setupClipboard();
     const harness = createHarness(sampleProject());
     renderMarking(harness, 'M1');
@@ -166,7 +167,7 @@ describe('Detalhes', () => {
     expect(within(card).queryByRole('button', { name: t('copy.crop') })).toBeNull();
   });
 
-  it('a imagem só tem copiar referência', async () => {
+  it('the image only has copy reference', async () => {
     const { user, writeText } = setupClipboard();
     const harness = createHarness(sampleProject());
     renderLive(harness, (p) => {
@@ -188,7 +189,7 @@ describe('Detalhes', () => {
     expect(copied(writeText)).toMatchObject({ kind: 'i', code: 'i1' });
   });
 
-  it('fora de uma pasta, Detalhes não oferece copiar', () => {
+  it('outside a folder, the Details does not offer copy', () => {
     const harness = createHarness(sampleProject());
     makeNotAFolder(harness);
     renderMarking(harness, 'M2');
@@ -197,7 +198,7 @@ describe('Detalhes', () => {
   });
 });
 
-describe('menu de contexto do canvas', () => {
+describe('canvas context menu', () => {
   function renderMenu(harness: Harness) {
     return render(
       <EditorContext.Provider value={harness.context}>
@@ -206,12 +207,12 @@ describe('menu de contexto do canvas', () => {
     );
   }
 
-  it('não aparece sem `canvasMenu`', () => {
+  it('does not appear without `canvasMenu`', () => {
     renderMenu(createHarness(sampleProject()));
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('abre com as duas ações para uma marcação e copia ao escolher', async () => {
+  it('opens with both actions for a marking and copies on choosing', async () => {
     const { user, writeText } = setupClipboard();
     const harness = createHarness(sampleProject());
     renderMenu(harness);
@@ -227,7 +228,7 @@ describe('menu de contexto do canvas', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('para uma imagem, só a referência', async () => {
+  it('for an image, only the reference', async () => {
     setupClipboard();
     const harness = createHarness(sampleProject());
     renderMenu(harness);
@@ -239,7 +240,7 @@ describe('menu de contexto do canvas', () => {
     ).toBeTruthy();
   });
 
-  it('fecha com Esc e com clique fora', async () => {
+  it('closes with Esc and with a click outside', async () => {
     const { user } = setupClipboard();
     const harness = createHarness(sampleProject());
     renderMenu(harness);
@@ -254,13 +255,13 @@ describe('menu de contexto do canvas', () => {
     expect(harness.ui.canvasMenu.value).toBeNull();
   });
 
-  it('fora de uma pasta, a imagem só tem "Envolver" (sem copiar) e a marcação "selecionar" e "Envolver"', async () => {
+  it('outside a folder, the image only has "Wrap" (no copy) and the marking "select" and "Wrap"', async () => {
     const harness = createHarness(sampleProject());
     makeNotAFolder(harness);
     renderMenu(harness);
     harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'i', id: 'I1' } };
     const imageItems = await screen.findAllByRole('menuitem');
-    // Citar na conversa vale também fora de uma pasta (o Comentar é do menu de comentar do canvas).
+    // Citing in the thread also works outside a folder (Comment belongs to the canvas comment menu).
     expect(imageItems.map((i) => i.textContent)).toEqual([
       t('cite.insert'),
       `${t('multi.wrap')}Ctrl+G`,
@@ -272,7 +273,7 @@ describe('menu de contexto do canvas', () => {
     expect(items.map((i) => i.textContent)).toEqual([
       t('cite.insert'),
       t('multi.selectWithContents'),
-      // Envolver (EV1): a entrada nova do menu, com o atalho.
+      // Wrap (EV1): the new menu entry, with the shortcut.
       `${t('multi.wrap')}Ctrl+G`,
     ]);
   });

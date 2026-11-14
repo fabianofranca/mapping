@@ -14,13 +14,13 @@ import { typedAnnotations } from './largeTypedProject';
 import { specProject } from './specFixtures';
 
 interface ScaleProjectOptions {
-  /** Total de marcações; múltiplo de 25 (um bloco). Os testes de escala usam 1.250 e 5.000. */
+  /** Total of markings; a multiple of 25 (one block). The scale tests use 1,250 and 5,000. */
   readonly markings?: number;
 }
 
-/** Marcações por bloco: 4 do canvas (2 aninhadas, 1 flutuante, 1 solta) e 21 no container. */
+/** Markings per block: 4 on the canvas (2 nested, 1 floating, 1 loose) and 21 in the container. */
 const BLOCK = 25;
-/** Setas por bloco: 0,4 por marcação. */
+/** Arrows per block: 0.4 per marking. */
 const ARROWS_PER_BLOCK = 10;
 const CELL = 1500;
 const STYLES: readonly ArrowStyle[] = ['straight', 'curve', 'elbow'];
@@ -49,17 +49,17 @@ function marking(
   };
 }
 
-/** Um bloco: ids e marcações do canvas e do container, no quadrado `CELL × CELL` de `(bx, by)`. */
+/** One block: ids and markings of the canvas and of the container, in the `CELL × CELL` square at `(bx, by)`. */
 function block(b: number, bx: number, by: number) {
   const g = `B${b}-g`;
   const g2 = `B${b}-g2`;
   const container = `K${b}`;
   const canvas = [
-    // Marcação do canvas que cerca a segunda, que cerca o container (2 níveis, container com pai).
-    marking(g, null, rect(bx, by, 1200, 1200), { name: `Grupo ${b}` }),
+    // Canvas marking that surrounds the second one, which surrounds the container (2 levels, container with a parent).
+    marking(g, null, rect(bx, by, 1200, 1200), { name: `Group ${b}` }),
     marking(g2, null, rect(bx + 50, by + 50, 1100, 1100), { parentId: g }),
     marking(`B${b}-f`, null, rect(bx + 1250, by, 100, 100), { floating: true }),
-    marking(`B${b}-h`, null, rect(bx + 1250, by + 200, 100, 100), { name: `Solta ${b}` }),
+    marking(`B${b}-h`, null, rect(bx + 1250, by + 200, 100, 100), { name: `Loose ${b}` }),
   ];
   const inside: Marking[] = [];
   for (let group = 0; group < 4; group++) {
@@ -82,7 +82,7 @@ function block(b: number, bx: number, by: number) {
       );
     }
   }
-  // Origem externa (Figma) numa marcação por bloco e num container a cada três: `find_by_source` as acha.
+  // External source (Figma) on one marking per block and on one container out of three: `find_by_source` finds them.
   inside.push(
     marking(`B${b}-s`, container, rect(910, 910, 60, 60), {
       source: { system: 'figma', id: `N${b}`, url: null },
@@ -90,8 +90,8 @@ function block(b: number, bx: number, by: number) {
   );
   const placed: ProjectContainer = {
     id: container,
-    name: b % 5 === 0 ? `Tela ${b}` : null,
-    file: b % 2 === 0 ? `images/escala-${b}.jpg` : null,
+    name: b % 5 === 0 ? `Screen ${b}` : null,
+    file: b % 2 === 0 ? `images/scale-${b}.jpg` : null,
     width: 1000,
     height: 1000,
     placement: { x: bx + 100, y: by + 100, scale: 1 },
@@ -107,7 +107,7 @@ function block(b: number, bx: number, by: number) {
 function arrowsOf(b: number, blocks: number, inside: readonly Marking[]): Arrow[] {
   return Array.from({ length: ARROWS_PER_BLOCK }, (_, k) => {
     const from = inside[(k * 2) % inside.length]!;
-    // A última de cada bloco vai para o bloco seguinte (a perspectiva que não mostra os dois a esconde).
+    // The last one of each block goes to the next block (a perspective that does not show both hides it).
     const crossing = k === ARROWS_PER_BLOCK - 1 && b < blocks - 1;
     const to = crossing
       ? `B${b + 1}-s`
@@ -120,25 +120,25 @@ function arrowsOf(b: number, blocks: number, inside: readonly Marking[]): Arrow[
       toSide: k % 2 === 0 ? 'left' : null,
       points: [],
       style: STYLES[k % STYLES.length]!,
-      name: k % 5 === 0 ? `Fluxo ${b}-${k}` : null,
+      name: k % 5 === 0 ? `Flow ${b}-${k}` : null,
       locked: false,
     };
   });
 }
 
 /**
- * Projeto de escala (#881), válido e já assentado, com `markings` marcações (múltiplo de 25): por
- * bloco de 25, uma marcação do canvas que cerca outra, que cerca um container (container com pai);
- * uma flutuante e uma solta; 21 marcações no container (4 grupos de mãe e 4 filhas, mais uma solta); 10
- * setas (0,4 por marcação); anotações em duas camadas (metade tipadas, com referências, como o
- * `buildLargeTypedProject`) e 2 perspectivas "Para todos" que dividem as raízes (blocos pares e
- * ímpares). É montado à mão e assentado de uma vez: nenhuma operação por marcação.
+ * Scale project (#881), valid and already settled, with `markings` markings (a multiple of 25): per
+ * block of 25, a canvas marking that surrounds another, which surrounds a container (container with a parent);
+ * one floating and one loose; 21 markings in the container (4 groups of a parent and 4 children, plus one loose); 10
+ * arrows (0.4 per marking); annotations in two layers (half typed, with references, like
+ * `buildLargeTypedProject`) and 2 "For everyone" perspectives that split the roots (even and
+ * odd blocks). It is assembled by hand and settled at once: no per-marking operation.
  */
 export function buildScaleProject({
   markings = 1250,
 }: ScaleProjectOptions = {}): Project {
   if (!Number.isInteger(markings) || markings <= 0 || markings % BLOCK !== 0) {
-    throw new RangeError(`markings deve ser um múltiplo de ${BLOCK}: ${markings}`);
+    throw new RangeError(`markings must be a multiple of ${BLOCK}: ${markings}`);
   }
   const blocks = markings / BLOCK;
   const cols = Math.ceil(Math.sqrt(blocks));
@@ -158,7 +158,7 @@ export function buildScaleProject({
     containers.push(container);
     all.push(...canvas, ...inside);
     arrows.push(...arrowsOf(b, blocks, inside));
-    // Raízes do bloco: a cerca de fora, a flutuante e a solta; a perspectiva muda a posição delas.
+    // Block roots: the outer enclosure, the floating one and the loose one; the perspective changes their position.
     const view = items[b % 2]!;
     const shift = b % 2 === 0 ? 50 : -50;
     for (const m of [canvas[0]!, canvas[2]!, canvas[3]!]) {
@@ -173,30 +173,30 @@ export function buildScaleProject({
       id: `RA${i}`,
       markingId: a.id,
       layerId: 'L1',
-      name: `Rota ${i}`,
+      name: `Route ${i}`,
       parentAnnotationId: null,
       parentRole: null,
       type: null,
       values: null,
-      entries: [{ id: `RA${i}-e1`, key: 'tipo', value: 'fluxo' }],
+      entries: [{ id: `RA${i}-e1`, key: 'kind', value: 'flow' }],
     });
   });
 
   const perspectives: Perspective[] = [
-    { id: 'PV1', name: 'Pares', hiddenLayers: [], items: items[0] },
-    { id: 'PV2', name: 'Ímpares', hiddenLayers: ['LM'], items: items[1] },
+    { id: 'PV1', name: 'Even', hiddenLayers: [], items: items[0] },
+    { id: 'PV2', name: 'Odd', hiddenLayers: ['LM'], items: items[1] },
   ];
   return { ...spec, containers, markings: all, arrows, annotations, perspectives };
 }
 
-/** Instante `n` minutos depois de 2026-11-01T10:00Z. */
+/** The instant `n` minutes after 2026-11-01T10:00Z. */
 const minute = (n: number): string =>
   new Date(Date.parse('2026-11-01T10:00:00.000Z') + n * 60_000).toISOString();
 
 /**
- * Conversas do projeto de escala (#881), uma por bloco de 25 marcações, todas abertas e esperando o agente
- * (a última mensagem é de pessoa): nas pares, ancorada na marcação solta do container; nas ímpares, num
- * ponto do container. É o que `list_threads` lê da pasta `comments/`.
+ * Threads of the scale project (#881), one per block of 25 markings, all open and waiting for the agent
+ * (the last message is from a person): on the even ones, anchored to the loose marking of the container; on the odd ones, on a
+ * point of the container. It is what `list_threads` reads from the `comments/` folder.
  */
 export function buildScaleThreads(p: Project): Thread[] {
   const blocks = p.markings.length / BLOCK;
@@ -207,7 +207,8 @@ export function buildScaleThreads(p: Project): Thread[] {
         b % 2 === 0
           ? { kind: 'marking', id: `B${b}-s` }
           : { kind: 'point', containerId: `K${b}`, x: 100, y: 100 },
-      author: { kind: 'human', name: 'Marina Alves', email: 'marina@exemplo.com' },
+      author: { kind: 'human', name: 'Marina Alves', email: 'marina@example.com' },
+      // pt-BR kept: shared fixture data asserted by tests/scale/mcp (mcpGrowth expects 'Dúvida')
       text: `Dúvida ${b}: esta área está certa?`,
       at: minute(b),
       messageId: `T${b}-m1`,

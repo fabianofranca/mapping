@@ -9,11 +9,11 @@ import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { arrowText, imageLabel, markingLabel } from './labels';
 
-// Caminho da seleção acima do canvas (B11): Imagem › Marcação › Marcação. Clicar num
-// nível seleciona aquele item; Alt+↑ e Alt+↓ andam no caminho (ver `app/shortcuts.ts`).
+// Selection path above the canvas (B11): Image › Marking › Marking. Clicking a
+// level selects that item; Alt+↑ and Alt+↓ walk along the path (see `app/shortcuts.ts`).
 
 interface Crumb {
-  /** O que o clique seleciona; `null` no nível Canvas, que só rotula. */
+  /** What the click selects; `null` at the Canvas level, which only labels. */
   readonly selection: Selection;
   readonly label: string;
   readonly name: string;
@@ -41,7 +41,7 @@ function canvasCrumb(): Crumb {
   return { selection: null, name: t('canvas.name'), label: t('crumbs.canvas') };
 }
 
-/** Marcações do canvas que contêm o container, da mais externa à mais interna. */
+/** Canvas markings that contain the container, from the outermost to the innermost. */
 function canvasChain(project: Project, parentId: string | null): Marking[] {
   if (parentId === null) return [];
   return [
@@ -51,13 +51,13 @@ function canvasChain(project: Project, parentId: string | null): Marking[] {
 }
 
 /**
- * Caminho da seleção: Canvas › marcações do canvas › container › marcações. O primeiro nível
- * (Canvas) só rotula: não há item do canvas para selecionar.
+ * Selection path: Canvas › canvas markings › container › markings. The first level
+ * (Canvas) only labels: there is no canvas item to select.
  */
 export function crumbsOf(project: Project | null, selection: Selection): Crumb[] {
   const resolved = resolveSelection(project, selection);
   if (!project || !resolved) return [];
-  // A seta é uma folha: o caminho dela é "Origem → Destino" (o nome, se houver).
+  // The arrow is a leaf: its path is "Origin → Target" (the name, if any).
   if (resolved.kind === 'arrow') {
     const name = arrowText(project, resolved.arrow);
     return [
@@ -93,8 +93,8 @@ export function crumbsOf(project: Project | null, selection: Selection): Crumb[]
 }
 
 /**
- * O "…" do caminho recolhido: o CSS esconde os trechos do meio e mostra este botão na barra
- * estreita (container query); o menu lista o caminho inteiro e cada nível seleciona o seu.
+ * The "…" of the collapsed path: the CSS hides the middle segments and shows this button in the
+ * narrow bar (container query); the menu lists the whole path and each level selects its own.
  */
 function PathMenu({
   crumbs,
@@ -131,7 +131,7 @@ function crumbIcon(kind: NonNullable<Selection>['kind']): 'image' | 'arrow' | 'm
   return kind === 'arrow' ? 'arrow' : 'marking';
 }
 
-/** Um trecho do caminho; os do meio (nem o primeiro nem o último) saem na barra estreita. */
+/** A path segment; the middle ones (neither the first nor the last) go away in the narrow bar. */
 function CrumbItem({
   crumb,
   first,
@@ -182,8 +182,9 @@ export function Breadcrumbs({
   readonly onSelect: (selection: NonNullable<Selection>) => void;
 }) {
   const { review, store, ui } = useEditor();
-  // O projeto à vista: na visão Proposto da revisão, o item que só existe na proposta
-  // também tem caminho (fase 8.2, P1), e o de uma criação rejeitada, pela prévia sem decisões.
+  // The project in view: in the review's Proposed view, an item that only exists in the proposal
+  // also has a path (phase 8.2, P1), and that of a rejected creation, through the preview without
+  // decisions.
   const selection = ui.selection.value;
   const crumbs = crumbsOf(selectionProject(review, selection), selection);
   const hint = drawHintVisible({

@@ -8,18 +8,18 @@ import {
   sideWidth,
 } from '../store/toolWindows';
 
-// Espaço disponível para as janelas, medido no DOM. Fica fora dos componentes para o
-// arrasto da divisória e o Ctrl+Shift+setas usarem a mesma conta (B2).
+// Space available for the windows, measured in the DOM. It lives outside the components so that
+// the divider drag and Ctrl+Shift+arrows use the same calculation (B2).
 
 /**
- * Elemento que contém as janelas e o canvas (sem as faixas laterais): a classe é do CSS; a
- * medida acha o elemento pelo `data-panes` (seletor por classe atravessa componentes).
+ * Element that holds the windows and the canvas (without the side strips): the class belongs to the CSS; the
+ * measurement finds the element by `data-panes` (a class selector crosses components).
  */
 export const PANES_CLASS = 'editor-panes';
 
 /**
- * Espaço do lado a partir de um elemento dentro das janelas. Sem DOM medido (testes,
- * primeiro quadro), cai para a janela do navegador, que é um limite seguro.
+ * Space on the side from an element inside the windows. Without a measured DOM (tests,
+ * first frame), it falls back to the browser window, which is a safe limit.
  */
 export function spaceFor(el: Element | null, side: ToolWindowSide): LayoutSpace {
   const panes = el?.closest('[data-panes]');
@@ -32,18 +32,18 @@ export function spaceFor(el: Element | null, side: ToolWindowSide): LayoutSpace 
   };
 }
 
-/** Foca a janela de ferramenta (a seção dela é focável), se ela estiver desenhada. */
+/** Focuses the tool window (its section is focusable), if it is drawn. */
 export function focusToolWindow(id: ToolWindowId): void {
   document.querySelector<HTMLElement>(`[data-window="${id}"]`)?.focus();
 }
 
 /**
- * Quem tinha o foco quando cada janela abriu. Mora aqui (UI), nunca no store; não é
- * persistido: uma janela aberta desde o carregamento não tem nada guardado.
+ * Who had focus when each window opened. It lives here (UI), never in the store; it is not
+ * persisted: a window open since load has nothing stored.
  */
 const openers = new Map<ToolWindowId, Element>();
 
-/** Atributos que marcam o botão da faixa e a área do canvas (alvos de reserva). */
+/** Attributes that mark the strip button and the canvas area (fallback targets). */
 const STRIP_BUTTON_ATTR = 'data-strip-window';
 const CANVAS_AREA_ATTR = 'data-canvas-area';
 
@@ -59,7 +59,7 @@ function focusIfOutside(el: Element | null | undefined, scope: Element): boolean
   return document.activeElement === el;
 }
 
-/** Leva o foco à área do canvas (o alvo de reserva de quem fecha algo com o foco nele). */
+/** Moves focus to the canvas area (the fallback target of whoever closes something with focus in it). */
 export function focusCanvasArea(): boolean {
   const canvas = document.querySelector<HTMLElement>(`[${CANVAS_AREA_ATTR}]`);
   canvas?.focus();
@@ -67,8 +67,8 @@ export function focusCanvasArea(): boolean {
 }
 
 /**
- * Se o foco está dentro da janela `id`, leva-o, ainda com a janela no DOM, a: quem abriu →
- * botão da janela na faixa → canvas. Síncrono: não há quadro com o foco no `body`.
+ * If focus is inside window `id`, moves it, with the window still in the DOM, to: whoever opened →
+ * window button in the strip → canvas. Synchronous: no frame has focus on `body`.
  */
 function releaseFocus(id: ToolWindowId): void {
   const el = windowElement(id);
@@ -79,7 +79,7 @@ function releaseFocus(id: ToolWindowId): void {
   focusIfOutside(document.querySelector(`[${CANVAS_AREA_ATTR}]`), el);
 }
 
-/** Aba ativa da janela inferior, para onde o foco vai quando a troca remonta a janela. */
+/** Active tab of the bottom window, where focus goes when the switch remounts the window. */
 function focusActiveTab(id: ToolWindowId): void {
   windowElement(id)
     ?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
@@ -87,10 +87,10 @@ function focusActiveTab(id: ToolWindowId): void {
 }
 
 /**
- * Abre a janela (faixa, aba, atalho). Guarda quem tem o foco, se a janela estava fechada, e
- * trata as janelas que saem por causa dela (decisões 3 e 4): o foco que estava nelas vai ao
- * destino da ordem acima; na janela inferior, à aba ativa da nova (a troca remonta a seção,
- * então isso espera a renderização, na mesma exceção de `showAndFocusToolWindow`).
+ * Opens the window (strip, tab, shortcut). Stores who has focus, if the window was closed, and
+ * handles the windows that leave because of it (decisions 3 and 4): the focus that was in them goes to the
+ * destination of the order above; in the bottom window, to the new one's active tab (the switch remounts the section,
+ * so this waits for rendering, under the same exception as `showAndFocusToolWindow`).
  */
 export function openToolWindow(id: ToolWindowId): void {
   const active = document.activeElement;
@@ -114,8 +114,8 @@ export function openToolWindow(id: ToolWindowId): void {
 }
 
 /**
- * Fecha a janela e devolve o foco, se ele estava dentro dela (decisão 1). Único dono do
- * fechamento: o X, `hide-window`, `toggle-window` e o clique na faixa passam por aqui.
+ * Closes the window and returns focus, if it was inside it (decision 1). Sole owner of
+ * closing: the X, `hide-window`, `toggle-window` and the strip click all go through here.
  */
 export function closeToolWindow(id: ToolWindowId): void {
   releaseFocus(id);
@@ -123,22 +123,22 @@ export function closeToolWindow(id: ToolWindowId): void {
   hideToolWindow(id);
 }
 
-/** Alterna pela faixa ou pelo atalho: abre guardando a origem, ou fecha devolvendo o foco. */
+/** Toggles from the strip or the shortcut: opens storing the origin, or closes returning focus. */
 export function toggleToolWindowFocus(id: ToolWindowId): void {
   if (isToolWindowOpen(id)) closeToolWindow(id);
   else openToolWindow(id);
 }
 
 /**
- * Abre a janela e leva o foco para ela (o chip da camada ativa e o Ctrl+L). O foco
- * espera a janela ser desenhada: abrir é só uma mudança de signal, e a renderização que
- * ele agenda roda numa microtarefa anterior a esta. É uma das duas exceções documentadas ao
- * idioma `useFocusRequest` (função de módulo, sem componente; `docs/ARCHITECTURE.md`,
- * "Foco e teclado").
+ * Opens the window and moves focus to it (the active layer chip and Ctrl+L). Focus
+ * waits for the window to be drawn: opening is just a signal change, and the rendering that
+ * it schedules runs in a microtask before this one. It is one of the two documented exceptions to the
+ * `useFocusRequest` idiom (module function, no component; `docs/ARCHITECTURE.md`,
+ * "Focus and keyboard").
  */
 export function showAndFocusToolWindow(id: ToolWindowId): void {
-  // Trocar de aba na janela inferior já aberta: o foco vai à aba ativa (decisão 3), não à
-  // seção, de onde quer que ele venha (aba, conteúdo ou canvas).
+  // Switching tabs in the already open bottom window: focus goes to the active tab (decision 3), not to the
+  // section, wherever it comes from (tab, content or canvas).
   const switchesBottomTab =
     WINDOW_SIDE[id] === 'bottom' &&
     TOOL_WINDOWS.some(
@@ -150,9 +150,9 @@ export function showAndFocusToolWindow(id: ToolWindowId): void {
 }
 
 /**
- * Alvo do foco ao sair da revisão (etapa #515, FN1): sair tira da tela o botão clicado
- * (a faixa da revisão), então o foco vai ao botão da proposta (Revisar ou Continuar) na
- * janela Propostas, se ela estiver aberta; senão, ao canvas.
+ * Focus target when leaving the review (stage #515, FN1): leaving removes the clicked button from the screen
+ * (the review strip), so focus goes to the proposal button (Review or Continue) in the
+ * Proposals window, if it is open; otherwise, to the canvas.
  */
 export function reviewExitTarget(proposalId: string | null): HTMLElement | null {
   if (proposalId !== null) {
@@ -169,10 +169,10 @@ const EXIT_FOCUS_TRIES = 30;
 const EXIT_FOCUS_STEP_MS = 16;
 
 /**
- * Leva o foco ao alvo da saída, ainda com a faixa no DOM (nenhum quadro no `body`).
- * Ao fechar a revisão, a janela Propostas só troca a árvore pela lista na renderização
- * seguinte: o botão da proposta ainda não existe. O foco vai ao canvas já e passa ao
- * botão quando ele aparece (até ~0,5 s), se a pessoa não o tiver levado a outro lugar.
+ * Moves focus to the exit target, with the strip still in the DOM (no frame on `body`).
+ * When the review closes, the Proposals window only swaps the tree for the list in the next
+ * render: the proposal button does not exist yet. Focus goes to the canvas now and moves on to the
+ * button when it appears (up to ~0.5 s), if the person has not moved it elsewhere.
  */
 export function focusReviewExitTarget(proposalId: string | null): void {
   const first = reviewExitTarget(proposalId);

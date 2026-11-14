@@ -6,8 +6,8 @@ import { perspectiveContentText } from './perspectiveContentText';
 import { useState } from 'preact/hooks';
 
 /**
- * Apagar perspectiva: confirmação que diz o que continua no projeto (tudo, na Principal) e o
- * que some. "Cancelar" tem o foco inicial (é o primeiro botão do rodapé).
+ * Delete perspective: confirmation saying what stays in the project (everything, on Main) and
+ * what goes away. "Cancel" has the initial focus (it is the first button in the footer).
  */
 export function DeletePerspectiveDialog({
   id,
@@ -15,11 +15,11 @@ export function DeletePerspectiveDialog({
   onDeleted,
 }: {
   readonly id: string;
-  /** Cancelar, Esc ou o X: nada foi apagado. */
+  /** Cancel, Esc or the X: nothing was deleted. */
   readonly onClose: () => void;
   /**
-   * Depois de apagar. `next` é a perspectiva que ficou no lugar da apagada (a de baixo; sem ela,
-   * a de cima), ou `null` se não sobrou nenhuma. Sem este callback vale `onClose`.
+   * After deleting. `next` is the perspective that took the place of the deleted one (the one
+   * below; without it, the one above), or `null` if none is left. Without this callback `onClose` applies.
    */
   readonly onDeleted?: (next: string | null) => void;
 }) {

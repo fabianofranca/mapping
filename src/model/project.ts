@@ -8,12 +8,12 @@ import {
 } from './types';
 
 export interface NewProjectArgs {
-  /** Identidade do projeto (UUID). Padrão: um novo; gerador determinístico passa um fixo. */
+  /** Project identity (UUID). Default: a new one; a deterministic generator passes a fixed one. */
   readonly id?: string;
   readonly name: string;
-  /** Data ISO 8601 usada em `createdAt` e `updatedAt`. */
+  /** ISO 8601 date used in `createdAt` and `updatedAt`. */
   readonly now: string;
-  /** Camada inicial ("Camada 1" / "Layer 1", conforme o idioma). Sempre livre. */
+  /** Initial layer ("Camada 1" / "Layer 1", depending on the language). Always free. */
   readonly firstLayer: Omit<Layer, 'spec'>;
 }
 
@@ -50,18 +50,18 @@ export function renameProject(p: Project, name: string): Project {
   return { ...p, project: { ...p.project, name: trimmed } };
 }
 
-/** Atualiza `updatedAt`. Chamado pelo store a cada alteração. */
+/** Updates `updatedAt`. Called by the store on every change. */
 export function touchProject(p: Project, now: string): Project {
   return { ...p, project: { ...p.project, updatedAt: now } };
 }
 
-/** Nome sem espaços nas pontas; vazio vira `null`. */
+/** Name without surrounding spaces; empty becomes `null`. */
 export function normalizeOptionalName(name: string | null): string | null {
   const trimmed = name?.trim() ?? '';
   return trimmed === '' ? null : trimmed;
 }
 
-/** Substitui o item de id `id` pelo resultado de `update`. Falha se o id não existir. */
+/** Replaces the item with id `id` by the result of `update`. Fails if the id does not exist. */
 export function updateById<T extends { readonly id: string }>(
   list: readonly T[],
   id: string,
@@ -84,7 +84,7 @@ export function findById<T extends { readonly id: string }>(
   return list.find((item) => item.id === id) ?? fail('not-found', id);
 }
 
-/** Move o item de `from` para `to` numa lista (ordem = ordem de exibição). */
+/** Moves the item from `from` to `to` in a list (order = display order). */
 export function moveItem<T>(list: readonly T[], from: number, to: number): T[] {
   if (!Number.isInteger(from) || from < 0 || from >= list.length) fail('invalid-index');
   if (!Number.isInteger(to) || to < 0 || to >= list.length) fail('invalid-index');

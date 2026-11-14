@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/component.schema.json",
-  "title": "Mapping — componente (mapping-component, formatVersion 1, 2, 3 e 4)",
-  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta rotation (qualquer nó menos a raiz, o que o schema não confere: é do parseComponent; graus, sentido horário, em volta do centro da caixa, só desenho), stroke.cap, stroke.join e stroke.sides, minWidth, maxWidth, minHeight e maxHeight (qualquer nó), repeat.distribute e expressão em width, height, layout.type, layout.align e layout.justify (numa versão menor é erro do parseComponent; o literal nessas cinco chaves vale em todas as versões). O schema não confere que minWidth não é maior que maxWidth. A formatVersion 4 também acrescenta stroke.offset (frame, rect e ellipse), stroke.dash por expressão, $token em shadow.x, shadow.y e shadow.blur e em cada item de cornerRadius e de stroke.dash, layout.justify space-around e space-evenly, layout.reverse e alpha no $token de cor (o schema não confere a versão nem o tipo da posição: isso é do parseComponent). A formatVersion 4 também acrescenta stroke.gap (frame e rect, sem sides; o nó citado precisa existir no template, o que o schema não confere), shadow como lista de 1 a 4 sombras e shadow.spread (o schema não confere a versão: isso é do parseComponent). A formatVersion 4 também acrescenta font.align justify, over no $token de cor (a cor composta sobre outra, opaca) e os fit fill-width, fill-height, scale-down e none da imagem (o schema não confere a versão nem a posição: isso é do parseComponent). A formatVersion 4 também aceita { \"$token\": \"nome\" } onde se espera cor, número ou família de fonte (o schema deixa a expressão nas chaves de tipo compatível, mas não confere a posição nem que o token existe nos tokens da especialização: isso é do parseComponent e do validate_library). A formatVersion 4 também acrescenta layout.wrap, layout.lineGap, layout.maxPerLine e layout.maxLines (quadro e slot) e wrap, lineGap, maxPerLine e maxLines no repeat (a quebra de fileira; o schema não confere a versão nem que lineGap, maxPerLine e maxLines só valem com wrap: isso é do parseComponent). A formatVersion 4 também acrescenta align e justify no layout none (start, center, end ou stretch, literal ou expressão), clip no slot e clip do quadro por expressão (o schema não confere a versão: isso é do parseComponent). A formatVersion 4 também acrescenta provide no slot (nome → expressão de texto ou número, resolvida no pai; o schema não confere o nome vazio) e { \"$provided\": \"nome\", \"default\": … } nas expressões (a cor herdada do ancestral mais próximo que oferece o nome; só vale em posição de cor, o que o schema não confere; o schema não confere a versão nem o src da image, que continua só literal ou $field: isso é do parseComponent). A formatVersion 4 também acrescenta variáveis: let no quadro (nome → expressão, vale no quadro e nos descendentes) e { \"$var\": \"nome\" } onde vale uma expressão ou condição (o schema confere o nome e a forma, não que a variável existe, o ciclo nem o tipo do conteúdo no lugar do uso: isso é do parseComponent).",
+  "title": "Mapping — component (mapping-component, formatVersion 1, 2, 3 and 4)",
+  "description": "Validates only the structure of the component file. The source of truth is the code (src/model/components/parseComponent.ts), which also checks what the schema does not see: fields cited by the expressions that exist in the specialization's type, minSize not greater than size, the template root being required to be of type frame, the single slot, and the drawing proof. See COMPONENT-FORMAT.md. The repeat node (the drawn table) is valid from formatVersion 2: in formatVersion 1 it is a parseComponent error; the repeat cannot have a repeat or slot inside it, and the schema does not check that the cited field is a table of the type. The image node (remote image) exists only in formatVersion 3: in a 1 or 2 it is a parseComponent error; the schema checks that src is an https:// literal or exactly {\"$field\"}, but not that the bound field is of type string nor the full shape of the URL (no username and password, up to 2048 characters). formatVersion 4 adds rotation (any node except the root, which the schema does not check: that is parseComponent's job; degrees, clockwise, around the center of the box, drawing only), stroke.cap, stroke.join and stroke.sides, minWidth, maxWidth, minHeight and maxHeight (any node), repeat.distribute and an expression in width, height, layout.type, layout.align and layout.justify (in a lower version it is a parseComponent error; the literal in those five keys is valid in all versions). The schema does not check that minWidth is not greater than maxWidth. formatVersion 4 also adds stroke.offset (frame, rect and ellipse), stroke.dash by expression, $token in shadow.x, shadow.y and shadow.blur and in each item of cornerRadius and of stroke.dash, layout.justify space-around and space-evenly, layout.reverse and alpha in the color $token (the schema does not check the version nor the type of the position: that is parseComponent's job). formatVersion 4 also adds stroke.gap (frame and rect, without sides; the cited node must exist in the template, which the schema does not check), shadow as a list of 1 to 4 shadows and shadow.spread (the schema does not check the version: that is parseComponent's job). formatVersion 4 also adds font.align justify, over in the color $token (the color composited over another, opaque) and the image fit values fill-width, fill-height, scale-down and none (the schema does not check the version nor the position: that is parseComponent's job). formatVersion 4 also accepts { \"$token\": \"name\" } where a color, number or font family is expected (the schema leaves the expression in keys of a compatible type, but does not check the position nor that the token exists in the specialization's tokens: that is the job of parseComponent and validate_library). formatVersion 4 also adds layout.wrap, layout.lineGap, layout.maxPerLine and layout.maxLines (frame and slot) and wrap, lineGap, maxPerLine and maxLines in the repeat (the row break; the schema does not check the version nor that lineGap, maxPerLine and maxLines are valid only with wrap: that is parseComponent's job). formatVersion 4 also adds align and justify in the none layout (start, center, end or stretch, literal or expression), clip on the slot and clip of the frame by expression (the schema does not check the version: that is parseComponent's job). formatVersion 4 also adds provide on the slot (name → text or number expression, resolved in the parent) and { \"$provided\": \"name\", \"default\": … } in expressions (the color inherited from the nearest ancestor that offers the name; valid only in a color position, which the schema does not check; the schema does not check the version nor the src of the image, which remains only literal or $field: that is parseComponent's job). formatVersion 4 also adds variables: let on the frame (name → expression, valid in the frame and in the descendants) and { \"$var\": \"name\" } where an expression or condition is valid (the schema checks the name and the shape, not that the variable exists, the cycle, nor the type of the content at the place of use: that is parseComponent's job).",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "size", "template"],
@@ -51,7 +51,7 @@
           ]
         }
       },
-      "description": "formatVersion 4, só na raiz. O template é desenhado no size do componente em pixels de tela, em qualquer zoom, ancorado no ponto anchor (padrão center) do retângulo da marcação; o desenho pode passar do retângulo (sem a pendência 'não cabe'). Numa formatVersion menor o parseComponent recusa com 'só é permitido com formatVersion 4'."
+      "description": "formatVersion 4, root only. The template is drawn at the component's size in screen pixels, at any zoom, anchored at the anchor point (default center) of the marking's rectangle; the drawing may extend beyond the rectangle (without the 'does not fit' pending item). In a lower formatVersion parseComponent refuses with 'only allowed with formatVersion 4'."
     },
     "anchor": {
       "type": "object",
@@ -66,10 +66,10 @@
             "main": { "type": "number" },
             "cross": { "type": "number" }
           },
-          "description": "Em unidades do componente (a densidade do container as converte em pixels). Ausentes valem 0."
+          "description": "In component units (the container's density converts them to pixels). When absent they are 0."
         }
       },
-      "description": "formatVersion 4, só na raiz. Como o tipo prefere encostar na âncora de uma marcação: side (padrão top), align (padrão center) e offset (padrão 0, 0). Tudo opcional. Numa formatVersion menor o parseComponent recusa com 'só é permitido com formatVersion 4'."
+      "description": "formatVersion 4, root only. How the type prefers to sit against a marking's anchor: side (default top), align (default center) and offset (default 0, 0). All optional. In a lower formatVersion parseComponent refuses with 'only allowed with formatVersion 4'."
     },
     "preview": {
       "type": "object",
@@ -80,7 +80,7 @@
           },
           {
             "type": "array",
-            "description": "Linhas de um campo table (formatVersion 2, nó repeat): uma coluna por chave.",
+            "description": "Rows of a table field (formatVersion 2, repeat node): one column per key.",
             "items": {
               "type": "object",
               "additionalProperties": {
@@ -230,7 +230,7 @@
       "enum": ["none", "underline", "line-through"]
     },
     "expr_number": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_number"
@@ -315,7 +315,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -330,7 +330,7 @@
       ]
     },
     "expr_nonNegative": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_nonNegative"
@@ -415,7 +415,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -430,7 +430,7 @@
       ]
     },
     "expr_unit": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_unit"
@@ -515,7 +515,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -530,7 +530,7 @@
       ]
     },
     "expr_weight": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_weight"
@@ -615,7 +615,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -630,7 +630,7 @@
       ]
     },
     "expr_string": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_string"
@@ -712,7 +712,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -727,7 +727,7 @@
       ]
     },
     "expr_textOrNumber": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_textOrNumber"
@@ -802,7 +802,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -817,7 +817,7 @@
       ]
     },
     "expr_color": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_color"
@@ -892,7 +892,7 @@
               "$ref": "#/$defs/tokenName"
             },
             "alpha": {
-              "description": "Só em posição de cor (formatVersion 4): multiplica o alfa da cor; número de 0 a 1 ou $token de número.",
+              "description": "Only in a color position (formatVersion 4): multiplies the color's alpha; a number from 0 to 1 or a number $token.",
               "anyOf": [
                 {
                   "type": "number",
@@ -905,7 +905,7 @@
               ]
             },
             "over": {
-              "description": "Só em posição de cor (formatVersion 4): compõe a cor (já com o alpha) sobre esta e a deixa opaca sobre uma base opaca (a base translúcida passa o alfa dela); nome de um token de cor ou cor literal.",
+              "description": "Only in a color position (formatVersion 4): composites the color (already with the alpha) over this one and makes it opaque over an opaque base (a translucent base passes its alpha through); name of a color token or a literal color.",
               "type": "string",
               "minLength": 1
             }
@@ -917,7 +917,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -932,7 +932,7 @@
       ]
     },
     "expr_boolean": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_boolean"
@@ -1007,7 +1007,7 @@
       ]
     },
     "expr_fill": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_fill"
@@ -1082,7 +1082,7 @@
               "$ref": "#/$defs/tokenName"
             },
             "alpha": {
-              "description": "Só em posição de cor (formatVersion 4): multiplica o alfa da cor; número de 0 a 1 ou $token de número.",
+              "description": "Only in a color position (formatVersion 4): multiplies the color's alpha; a number from 0 to 1 or a number $token.",
               "anyOf": [
                 {
                   "type": "number",
@@ -1095,7 +1095,7 @@
               ]
             },
             "over": {
-              "description": "Só em posição de cor (formatVersion 4): compõe a cor (já com o alpha) sobre esta e a deixa opaca; nome de um token de cor ou cor literal.",
+              "description": "Only in a color position (formatVersion 4): composites the color (already with the alpha) over this one and makes it opaque; name of a color token or a literal color.",
               "type": "string",
               "minLength": 1
             }
@@ -1107,7 +1107,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -1122,7 +1122,7 @@
       ]
     },
     "expr_cornerRadius": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_cornerRadius"
@@ -1207,7 +1207,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -1222,7 +1222,7 @@
       ]
     },
     "expr_padding": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_padding"
@@ -1307,7 +1307,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -1322,7 +1322,7 @@
       ]
     },
     "expr_runPadding": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_runPadding"
@@ -1407,7 +1407,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -1422,7 +1422,7 @@
       ]
     },
     "expr_layoutAlign": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_layoutAlign"
@@ -1494,7 +1494,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -1509,7 +1509,7 @@
       ]
     },
     "expr_noneAlign": {
-      "description": "Alinhamento de um quadro none (formatVersion 4): start, center, end ou stretch, literal ou expressão ($field, $if, $switch, $concat). align é o eixo vertical e justify o horizontal.",
+      "description": "Alignment of a none frame (formatVersion 4): start, center, end or stretch, literal or expression ($field, $if, $switch, $concat). align is the vertical axis and justify the horizontal one.",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_noneAlign"
@@ -1581,7 +1581,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -1596,7 +1596,7 @@
       ]
     },
     "expr_layoutWrap": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_layoutWrap"
@@ -1668,7 +1668,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -1683,7 +1683,7 @@
       ]
     },
     "expr_justify": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_justify"
@@ -1755,7 +1755,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -1770,7 +1770,7 @@
       ]
     },
     "expr_fontAlign": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_fontAlign"
@@ -1842,7 +1842,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -1857,7 +1857,7 @@
       ]
     },
     "expr_verticalAlign": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_verticalAlign"
@@ -1929,7 +1929,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -1944,7 +1944,7 @@
       ]
     },
     "expr_decoration": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_decoration"
@@ -2016,7 +2016,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -2031,7 +2031,7 @@
       ]
     },
     "condition": {
-      "description": "Condição: exatamente um operador.",
+      "description": "Condition: exactly one operator.",
       "anyOf": [
         {
           "type": "object",
@@ -2218,7 +2218,7 @@
       }
     },
     "size_noHug": {
-      "description": "Tamanho do nó image: px, \"fill\" ou \"NN%\" (hug é erro, a arrumação não depende da imagem baixada).",
+      "description": "Size of the image node: px, \"fill\" or \"NN%\" (hug is an error, the layout does not depend on the downloaded image).",
       "anyOf": [
         {
           "type": "number",
@@ -2234,7 +2234,7 @@
       ]
     },
     "size": {
-      "description": "Tamanho de nó: px, \"fill\", \"hug\", \"min-content\", \"max-content\" (formatVersion 4) ou \"NN%\".",
+      "description": "Node size: px, \"fill\", \"hug\", \"min-content\", \"max-content\" (formatVersion 4) or \"NN%\".",
       "anyOf": [
         {
           "type": "number",
@@ -2265,7 +2265,7 @@
       }
     },
     "sizing": {
-      "description": "Dimensionamento sem retângulo. Cada eixo: px (>= 0), \"fill\", \"hug\", \"min-content\", \"max-content\" (formatVersion 4) ou, na formatVersion 4, uma expressão que dá um deles, avaliada com os valores da instância ($size e $lines não valem aqui; % e $token o parseComponent recusa).",
+      "description": "Sizing without a rectangle. Each axis: px (>= 0), \"fill\", \"hug\", \"min-content\", \"max-content\" (formatVersion 4) or, in formatVersion 4, an expression that yields one of them, evaluated with the instance's values ($size and $lines are not valid here; parseComponent refuses % and $token).",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -2306,7 +2306,7 @@
           "$ref": "#/$defs/expr_boolean"
         }
       },
-      "description": "Âncoras no pai com layout none. Na formatVersion 4 cada valor pode ser uma expressão (centerX e centerY aceitam condições); a que não produz número vale como âncora ausente. A expressão em versão anterior à 4 é recusada pelo parseComponent. Na formatVersion 4, start e end são as âncoras lógicas do eixo horizontal (start é a esquerda em ltr e a direita em rtl); start junto de left, e end junto de right, são recusados pelo parseComponent."
+      "description": "Anchors in the parent with layout none. In formatVersion 4 each value can be an expression (centerX and centerY accept conditions); one that does not produce a number counts as an absent anchor. An expression in a version earlier than 4 is refused by parseComponent. In formatVersion 4, start and end are the logical anchors of the horizontal axis (start is the left in ltr and the right in rtl); start together with left, and end together with right, are refused by parseComponent."
     },
     "stroke": {
       "type": "object",
@@ -2326,7 +2326,7 @@
           "$ref": "#/$defs/expr_dash"
         },
         "offset": {
-          "description": "Afastamento do traço da forma, em px (formatVersion 4, só em frame, rect e ellipse).",
+          "description": "Offset of the stroke from the shape, in px (formatVersion 4, only in frame, rect and ellipse).",
           "anyOf": [
             {
               "type": "number",
@@ -2348,13 +2348,13 @@
         },
         "scale": {
           "type": "boolean",
-          "description": "true (padrão): a largura escala com o zoom; false: a largura é em pixels de tela, em qualquer zoom."
+          "description": "true (default): the width scales with the zoom; false: the width is in screen pixels, at any zoom."
         },
         "gap": {
           "type": "object",
           "additionalProperties": false,
           "required": ["node"],
-          "description": "O contorno interrompido sobre a caixa de um nó do template (formatVersion 4; só em frame e rect, e não junto com sides: o parseComponent confere, o schema não). node é o nome de um nó do template (o padrão é o tipo dele); padding (padrão 0) é a folga em cada lado do trecho coberto.",
+          "description": "The interrupted outline over the box of a template node (formatVersion 4; only in frame and rect, and not together with sides: parseComponent checks it, the schema does not). node is the name of a template node (the default is its type); padding (default 0) is the clearance on each side of the covered stretch.",
           "properties": {
             "node": {
               "type": "string",
@@ -2366,10 +2366,10 @@
           }
         }
       },
-      "description": "cap, join, sides, scale, offset e gap só existem na formatVersion 4, e a expressão em dash (a lista literal vale em todas) (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4'). sides só vale em frame e rect (em ellipse e path é erro do parseComponent, que o schema não confere)."
+      "description": "cap, join, sides, scale, offset and gap exist only in formatVersion 4, and so does the expression in dash (the literal list is valid in all) (in a 1, 2 or 3 parseComponent refuses with 'only allowed with formatVersion 4'). sides is valid only in frame and rect (in ellipse and path it is a parseComponent error, which the schema does not check)."
     },
     "shadow": {
-      "description": "Uma sombra (objeto) ou, na formatVersion 4, uma lista de 1 a 4 sombras (a primeira fica por cima, como o box-shadow do CSS). A lista numa versão menor é erro do parseComponent ('só é permitido com formatVersion 4', no caminho de shadow); o schema não confere a versão. Só frame, rect e ellipse desenham a lista inteira e o spread: nos outros tipos vale só a primeira sombra.",
+      "description": "One shadow (object) or, in formatVersion 4, a list of 1 to 4 shadows (the first sits on top, like CSS box-shadow). The list in a lower version is a parseComponent error ('only allowed with formatVersion 4', at the path of shadow); the schema does not check the version. Only frame, rect and ellipse draw the whole list and the spread: in the other types only the first shadow applies.",
       "oneOf": [
         {
           "$ref": "#/$defs/shadow_item"
@@ -2424,7 +2424,7 @@
           ]
         },
         "spread": {
-          "description": "Quanto a forma da sombra cresce (ou encolhe, se negativo) em cada lado, em px (formatVersion 4; só em frame, rect e ellipse).",
+          "description": "How much the shadow shape grows (or shrinks, if negative) on each side, in px (formatVersion 4; only in frame, rect and ellipse).",
           "anyOf": [
             {
               "type": "number"
@@ -2435,7 +2435,7 @@
           ]
         }
       },
-      "description": "x, y, blur e spread aceitam { \"$token\": \"nome\" } de número na formatVersion 4. O spread só existe na formatVersion 4 (numa versão menor o parseComponent recusa com 'só é permitido com formatVersion 4')."
+      "description": "x, y, blur and spread accept a number { \"$token\": \"name\" } in formatVersion 4. The spread exists only in formatVersion 4 (in a lower version parseComponent refuses with 'only allowed with formatVersion 4')."
     },
     "font": {
       "type": "object",
@@ -2469,21 +2469,21 @@
           "$ref": "#/$defs/expr_decoration"
         },
         "wrap": {
-          "description": "formatVersion 4. word (padrão) quebra por palavra; none é uma linha por parágrafo.",
+          "description": "formatVersion 4. word (default) breaks by word; none is one line per paragraph.",
           "$ref": "#/$defs/expr_wrap"
         },
         "ellipsis": {
-          "description": "formatVersion 4. O texto que não cabe (na largura com wrap none, ou além de maxLines) termina em …",
+          "description": "formatVersion 4. Text that does not fit (in the width with wrap none, or beyond maxLines) ends in …",
           "$ref": "#/$defs/expr_boolean"
         },
         "maxLines": {
-          "description": "formatVersion 4. Inteiro maior ou igual a 1; a última linha permitida leva o … (com ellipsis) ou é cortada.",
+          "description": "formatVersion 4. Integer greater than or equal to 1; the last allowed line gets the … (with ellipsis) or is cut off.",
           "$ref": "#/$defs/expr_positiveInteger"
         }
       }
     },
     "run": {
-      "description": "formatVersion 4. Um trecho do texto rico (runs): quebra linha junto com os outros como um texto só. weight, italic, family, size e decoration sobrepõem o font do nó; color sobrepõe o color do nó. Com background o trecho é uma caixa em linha (chip) inquebrável, com radius e padding.",
+      "description": "formatVersion 4. A stretch of the rich text (runs): it wraps together with the others as a single text. weight, italic, family, size and decoration override the node's font; color overrides the node's color. With background the stretch is an unbreakable inline box (chip), with radius and padding.",
       "type": "object",
       "additionalProperties": false,
       "required": ["text"],
@@ -2510,20 +2510,20 @@
           "$ref": "#/$defs/expr_number"
         },
         "background": {
-          "description": "Cor de fundo da caixa em linha; none = sem caixa.",
+          "description": "Background color of the inline box; none = no box.",
           "$ref": "#/$defs/expr_color"
         },
         "radius": {
           "$ref": "#/$defs/expr_nonNegative"
         },
         "padding": {
-          "description": "Número (os dois eixos) ou [vertical, horizontal].",
+          "description": "A number (both axes) or [vertical, horizontal].",
           "$ref": "#/$defs/expr_runPadding"
         }
       }
     },
     "layout": {
-      "description": "Distribuição dos filhos: none (âncoras), row, column ou grid. Na formatVersion 4, type, align e justify aceitam expressão, justify também space-around e space-evenly, reverse inverte a ordem dos filhos no eixo principal (o start passa a ser o fim) e wrap (none, wrap ou wrap-reverse), lineGap, maxPerLine e maxLines quebram a fileira em linhas (lineGap, maxPerLine e maxLines só valem com wrap, o que o schema não confere: é do parseComponent); com type literal \"grid\" (formatVersion 4; o schema não confere a versão nem que exatamente uma das quatro trilhas columns, minColumnWidth, rows e minRowHeight está presente (ou várias, quando todas são expressão e da mesma orientação: vale a primeira que tem valor), nem que as chaves de trilha só valem em grid: isso é do parseComponent) valem gap, lineGap, padding, align e justify (start, center, end ou stretch, na célula), reverse e uma trilha: columns e rows (inteiro maior ou igual a 1) ou minColumnWidth e minRowHeight (número maior que 0); wrap, maxPerLine e maxLines não valem na grade; com type literal \"none\" só type, align e justify valem (formatVersion 4; align é o eixo vertical e justify o horizontal, com start, center, end ou stretch; o schema não confere a versão: isso é do parseComponent).",
+      "description": "Distribution of the children: none (anchors), row, column or grid. In formatVersion 4, type, align and justify accept an expression, justify also space-around and space-evenly, reverse inverts the order of the children on the main axis (the start becomes the end) and wrap (none, wrap or wrap-reverse), lineGap, maxPerLine and maxLines break the row into lines (lineGap, maxPerLine and maxLines are valid only with wrap, which the schema does not check: that is parseComponent's job); with literal type \"grid\" (formatVersion 4; the schema does not check the version nor that exactly one of the four tracks columns, minColumnWidth, rows and minRowHeight is present (or several, when all are expressions and of the same orientation: the first that has a value wins), nor that the track keys are valid only in grid: that is parseComponent's job) gap, lineGap, padding, align and justify (start, center, end or stretch, within the cell), reverse and one track are valid: columns and rows (integer greater than or equal to 1) or minColumnWidth and minRowHeight (number greater than 0); wrap, maxPerLine and maxLines are not valid in the grid; with literal type \"none\" only type, align and justify are valid (formatVersion 4; align is the vertical axis and justify the horizontal one, with start, center, end or stretch; the schema does not check the version: that is parseComponent's job).",
       "anyOf": [
         {
           "type": "object",
@@ -2641,7 +2641,7 @@
           "const": "frame"
         },
         "let": {
-          "description": "formatVersion 4: variáveis do quadro, nome → expressão (qualquer valor que caiba onde a variável for usada). Valem nas chaves do quadro e nas dos descendentes (inclusive o template de um repeat); o let de dentro esconde o de fora. Use com { \"$var\": \"nome\" }. O parseComponent troca os $var pelo conteúdo e devolve o quadro sem let; variável sem uso não é conferida. Numa formatVersion menor, ou em nó que não é quadro, o parseComponent recusa.",
+          "description": "formatVersion 4: the frame's variables, name → expression (any value that fits where the variable is used). They are valid in the frame's keys and in those of the descendants (including the template of a repeat); the inner let hides the outer one. Use with { \"$var\": \"name\" }. parseComponent replaces the $var with the content and returns the frame without let; an unused variable is not checked. In a lower formatVersion, or on a node that is not a frame, parseComponent refuses.",
           "type": "object",
           "propertyNames": {
             "pattern": "^[a-z][a-zA-Z0-9]*$"
@@ -2661,7 +2661,7 @@
           "$ref": "#/$defs/expr_number"
         },
         "direction": {
-          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
         "width": {
@@ -2683,11 +2683,11 @@
           "$ref": "#/$defs/expr_nonNegative"
         },
         "span": {
-          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: how many tracks the child occupies in a grid (integer greater than or equal to 1, default 1); the literal is valid only on a child of a grid layout, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveInteger"
         },
         "weight": {
-          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: weight of the fill child on the main axis of row or column (number greater than 0, default 1); what is left over is divided in proportion to the weights. The literal is valid only on a fill child on the main axis, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
@@ -2706,7 +2706,7 @@
           "$ref": "#/$defs/expr_cornerRadius"
         },
         "clip": {
-          "description": "Booleano em todas as versões; expressão a partir da formatVersion 4 (o schema não confere a versão: isso é do parseComponent).",
+          "description": "Boolean in all versions; expression from formatVersion 4 (the schema does not check the version: that is parseComponent's job).",
           "$ref": "#/$defs/expr_boolean"
         },
         "layout": {
@@ -2741,7 +2741,7 @@
           "$ref": "#/$defs/expr_number"
         },
         "direction": {
-          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
         "width": {
@@ -2763,11 +2763,11 @@
           "$ref": "#/$defs/expr_nonNegative"
         },
         "span": {
-          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: how many tracks the child occupies in a grid (integer greater than or equal to 1, default 1); the literal is valid only on a child of a grid layout, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveInteger"
         },
         "weight": {
-          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: weight of the fill child on the main axis of row or column (number greater than 0, default 1); what is left over is divided in proportion to the weights. The literal is valid only on a fill child on the main axis, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
@@ -2808,7 +2808,7 @@
           "$ref": "#/$defs/expr_number"
         },
         "direction": {
-          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
         "width": {
@@ -2830,11 +2830,11 @@
           "$ref": "#/$defs/expr_nonNegative"
         },
         "span": {
-          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: how many tracks the child occupies in a grid (integer greater than or equal to 1, default 1); the literal is valid only on a child of a grid layout, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveInteger"
         },
         "weight": {
-          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: weight of the fill child on the main axis of row or column (number greater than 0, default 1); what is left over is divided in proportion to the weights. The literal is valid only on a fill child on the main axis, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
@@ -2855,7 +2855,7 @@
       }
     },
     "node_text": {
-      "description": "Exatamente um de text e runs (runs só na formatVersion 4).",
+      "description": "Exactly one of text and runs (runs only in formatVersion 4).",
       "type": "object",
       "additionalProperties": false,
       "required": ["type"],
@@ -2884,7 +2884,7 @@
           "$ref": "#/$defs/expr_number"
         },
         "direction": {
-          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
         "width": {
@@ -2906,11 +2906,11 @@
           "$ref": "#/$defs/expr_nonNegative"
         },
         "span": {
-          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: how many tracks the child occupies in a grid (integer greater than or equal to 1, default 1); the literal is valid only on a child of a grid layout, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveInteger"
         },
         "weight": {
-          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: weight of the fill child on the main axis of row or column (number greater than 0, default 1); what is left over is divided in proportion to the weights. The literal is valid only on a fill child on the main axis, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
@@ -2932,7 +2932,7 @@
           "$ref": "#/$defs/expr_textOrNumber"
         },
         "runs": {
-          "description": "formatVersion 4. Lista não vazia de trechos com estilo próprio (no lugar de text).",
+          "description": "formatVersion 4. Non-empty list of stretches with their own style (in place of text).",
           "type": "array",
           "minItems": 1,
           "items": {
@@ -2946,7 +2946,7 @@
           "$ref": "#/$defs/expr_color"
         },
         "baselinePadding": {
-          "description": "formatVersion 4. Distâncias pela linha de base, como o paddingFromBaseline do Compose: top, do topo da caixa do nó à primeira linha de base; bottom, da última linha de base ao fundo da caixa (px ≥ 0). O top não combina com font.verticalAlign literal.",
+          "description": "formatVersion 4. Distances from the baseline, like Compose's paddingFromBaseline: top, from the top of the node's box to the first baseline; bottom, from the last baseline to the bottom of the box (px ≥ 0). The top does not combine with a literal font.verticalAlign.",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -2981,7 +2981,7 @@
           "$ref": "#/$defs/expr_number"
         },
         "direction": {
-          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
         "width": {
@@ -3003,11 +3003,11 @@
           "$ref": "#/$defs/expr_nonNegative"
         },
         "span": {
-          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: how many tracks the child occupies in a grid (integer greater than or equal to 1, default 1); the literal is valid only on a child of a grid layout, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveInteger"
         },
         "weight": {
-          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: weight of the fill child on the main axis of row or column (number greater than 0, default 1); what is left over is divided in proportion to the weights. The literal is valid only on a fill child on the main axis, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
@@ -3041,7 +3041,7 @@
           "enum": ["nonzero", "evenodd"]
         },
         "mirror": {
-          "description": "formatVersion 4: em rtl o caminho é espelhado na horizontal dentro da caixa do nó (padrão false). Em ltr não muda nada.",
+          "description": "formatVersion 4: in rtl the path is mirrored horizontally inside the node's box (default false). In ltr nothing changes.",
           "$ref": "#/$defs/expr_boolean"
         }
       }
@@ -3067,7 +3067,7 @@
           "$ref": "#/$defs/expr_number"
         },
         "direction": {
-          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
         "width": {
@@ -3089,11 +3089,11 @@
           "$ref": "#/$defs/expr_nonNegative"
         },
         "span": {
-          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: how many tracks the child occupies in a grid (integer greater than or equal to 1, default 1); the literal is valid only on a child of a grid layout, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveInteger"
         },
         "weight": {
-          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: weight of the fill child on the main axis of row or column (number greater than 0, default 1); what is left over is divided in proportion to the weights. The literal is valid only on a fill child on the main axis, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
@@ -3118,11 +3118,11 @@
           "$ref": "#/$defs/layout"
         },
         "clip": {
-          "description": "formatVersion 4, padrão false: as marcações filhas desenhadas dentro do slot são recortadas pela caixa do slot (booleano ou expressão; o schema não confere a versão: isso é do parseComponent).",
+          "description": "formatVersion 4, default false: the child markings drawn inside the slot are clipped by the slot's box (boolean or expression; the schema does not check the version: that is parseComponent's job).",
           "$ref": "#/$defs/expr_boolean"
         },
         "provide": {
-          "description": "Cores ou valores que o slot oferece às marcações filhas (formatVersion 4): nome livre, não vazio (o schema não confere o nome vazio: isso é do parseComponent) → expressão de texto ou número, resolvida no pai. Só no slot. A filha lê com { \"$provided\": \"nome\", \"default\": … }.",
+          "description": "Colors or values that the slot offers to the child markings (formatVersion 4): free, non-empty name (the schema does not check the empty name: that is parseComponent's job) → text or number expression, resolved in the parent. Only on the slot. The child reads with { \"$provided\": \"name\", \"default\": … }.",
           "type": "object",
           "additionalProperties": {
             "$ref": "#/$defs/provide_value"
@@ -3131,7 +3131,7 @@
       }
     },
     "node": {
-      "description": "Nó do template, discriminado por type.",
+      "description": "Template node, discriminated by type.",
       "oneOf": [
         {
           "$ref": "#/$defs/node_frame"
@@ -3165,7 +3165,7 @@
     "node_icon": {
       "type": "object",
       "additionalProperties": false,
-      "description": "formatVersion 4. Ícone do conjunto da biblioteca (icons da especialização, formatVersion 15). O name é o nome do ícone no conjunto (literal ou expressão; aqui não há nome de nó). color pinta os caminhos sem cor própria e os que pedem a cor do nó (fill/stroke true); strokeWidth (unidades do viewBox) troca a largura dos traços. hug mede o viewBox do ícone. Nome fora do conjunto: reservado com o aviso ícone desconhecido; literal fora do conjunto é erro do validador da biblioteca.",
+      "description": "formatVersion 4. Icon from the library's set (icons of the specialization, formatVersion 15). The name is the name of the icon in the set (literal or expression; there is no node name here). color paints the paths without their own color and those that ask for the node's color (fill/stroke true); strokeWidth (viewBox units) replaces the stroke width. hug measures the icon's viewBox. A name outside the set: reserved with the unknown icon notice; a literal outside the set is a library validator error.",
       "required": ["type", "name"],
       "properties": {
         "type": {
@@ -3184,7 +3184,7 @@
           "$ref": "#/$defs/expr_number"
         },
         "direction": {
-          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
         "width": {
@@ -3206,11 +3206,11 @@
           "$ref": "#/$defs/expr_nonNegative"
         },
         "span": {
-          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: how many tracks the child occupies in a grid (integer greater than or equal to 1, default 1); the literal is valid only on a child of a grid layout, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveInteger"
         },
         "weight": {
-          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: weight of the fill child on the main axis of row or column (number greater than 0, default 1); what is left over is divided in proportion to the weights. The literal is valid only on a fill child on the main axis, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
@@ -3235,7 +3235,7 @@
           "$ref": "#/$defs/expr_nonNegative"
         },
         "mirror": {
-          "description": "formatVersion 4: em rtl o ícone é espelhado na horizontal dentro da caixa do nó. Sem a chave vale o mirror do ícone no conjunto (mapping-icons formatVersion 2), que vale false.",
+          "description": "formatVersion 4: in rtl the icon is mirrored horizontally inside the node's box. Without the key, the icon's mirror in the set applies (mapping-icons formatVersion 2), which is false.",
           "$ref": "#/$defs/expr_boolean"
         }
       }
@@ -3243,7 +3243,7 @@
     "node_image": {
       "type": "object",
       "additionalProperties": false,
-      "description": "formatVersion 3. Imagem remota: o src é um literal https:// ou exatamente { \"$field\": campo } (sem default, $concat, $if nem $switch). O campo ligado precisa ser string; o schema não confere isso, o validador da biblioteca sim. O fill é o fundo atrás da imagem.",
+      "description": "formatVersion 3. Remote image: src is an https:// literal or exactly { \"$field\": field } (without default, $concat, $if or $switch). The bound field must be a string; the schema does not check this, the library validator does. fill is the background behind the image.",
       "required": ["type", "src"],
       "properties": {
         "type": {
@@ -3262,7 +3262,7 @@
           "$ref": "#/$defs/expr_number"
         },
         "direction": {
-          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
         "width": {
@@ -3284,11 +3284,11 @@
           "$ref": "#/$defs/expr_nonNegative"
         },
         "span": {
-          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: how many tracks the child occupies in a grid (integer greater than or equal to 1, default 1); the literal is valid only on a child of a grid layout, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveInteger"
         },
         "weight": {
-          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: weight of the fill child on the main axis of row or column (number greater than 0, default 1); what is left over is divided in proportion to the weights. The literal is valid only on a fill child on the main axis, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
@@ -3340,7 +3340,7 @@
     "node_repeat": {
       "type": "object",
       "additionalProperties": false,
-      "description": "formatVersion 2. Repete o template (o desenho de uma linha) por linha do campo table do tipo. Dentro do template, $field/$has/$eq/$switch leem a coluna da linha, que sombreia o campo do tipo de mesmo nome. Quadro hug no eixo das linhas e fill no outro. Com count (formatVersion 4) o template se repete por contagem, sem campo table.",
+      "description": "formatVersion 2. Repeats the template (the drawing of one row) per row of the type's table field. Inside the template, $field/$has/$eq/$switch read the row's column, which shadows the type's field of the same name. Frame hug on the rows' axis and fill on the other. With count (formatVersion 4) the template repeats by count, without a table field.",
       "required": ["type", "template"],
       "properties": {
         "type": {
@@ -3377,11 +3377,11 @@
           "$ref": "#/$defs/expr_nonNegative"
         },
         "span": {
-          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: how many tracks the child occupies in a grid (integer greater than or equal to 1, default 1); the literal is valid only on a child of a grid layout, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveInteger"
         },
         "weight": {
-          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "description": "formatVersion 4: weight of the fill child on the main axis of row or column (number greater than 0, default 1); what is left over is divided in proportion to the weights. The literal is valid only on a fill child on the main axis, which the schema does not check: that is parseComponent's job.",
           "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
@@ -3397,7 +3397,7 @@
           "$ref": "#/$defs/expr_nonNegative"
         },
         "layout": {
-          "description": "formatVersion 4: o layout completo do quadro gerado (row, column ou grid) no lugar de direction e gap; não combina com direction nem gap, e distribute fill não vale com grid (o schema não confere: é do parseComponent).",
+          "description": "formatVersion 4: the full layout of the generated frame (row, column or grid) in place of direction and gap; it does not combine with direction or gap, and distribute fill is not valid with grid (the schema does not check: that is parseComponent's job).",
           "$ref": "#/$defs/layout"
         },
         "wrap": {
@@ -3414,13 +3414,13 @@
         },
         "distribute": {
           "enum": ["none", "fill"],
-          "description": "formatVersion 4: \"fill\" faz o repeat ocupar o eixo do pai e dividir o eixo das linhas igualmente (menos os gaps); \"none\" (padrão) é hug no eixo das linhas. Só literal."
+          "description": "formatVersion 4: \"fill\" makes the repeat occupy the parent's axis and divide the rows' axis equally (minus the gaps); \"none\" (default) is hug on the rows' axis. Literal only."
         },
         "template": {
           "$ref": "#/$defs/node_frame"
         },
         "count": {
-          "description": "formatVersion 4: o template se repete max(0, floor(count)) vezes, até 1000 (acima, 1000 linhas com o aviso \"repeat limitado a 1000 linhas: <nó>\"); literal negativo ou não inteiro é recusado pelo parseComponent. Dentro do template, { \"$field\": \"$index\" } é o índice da linha (0, 1, …), também no repeat por field. Exatamente um de field e count.",
+          "description": "formatVersion 4: the template repeats max(0, floor(count)) times, up to 1000 (above that, 1000 rows with the notice \"repeat limited to 1000 rows: <node>\"); a negative or non-integer literal is refused by parseComponent. Inside the template, { \"$field\": \"$index\" } is the row index (0, 1, …), also in the repeat by field. Exactly one of field and count.",
           "$ref": "#/$defs/expr_nonNegative"
         }
       },
@@ -3445,10 +3445,10 @@
       "items": {
         "enum": ["top", "right", "bottom", "left"]
       },
-      "description": "Lista não vazia de lados. A ausência de repetição é conferida pelo parseComponent, não pelo schema."
+      "description": "Non-empty list of sides. The absence of repetition is checked by parseComponent, not by the schema."
     },
     "expr_cap": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_cap"
@@ -3520,7 +3520,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -3535,7 +3535,7 @@
       ]
     },
     "expr_join": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_join"
@@ -3607,7 +3607,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -3622,7 +3622,7 @@
       ]
     },
     "expr_sides": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_sides"
@@ -3695,7 +3695,7 @@
       }
     },
     "expr_dash": {
-      "description": "Lista de números ≥ 0 (formatVersion 4: também expressão $field, $if e $switch, e $token de número em cada item).",
+      "description": "List of numbers ≥ 0 (formatVersion 4: also a $field, $if and $switch expression, and a number $token in each item).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_dash"
@@ -3760,7 +3760,7 @@
       "enum": ["row", "column"]
     },
     "expr_layoutType": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_layoutType"
@@ -3832,7 +3832,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -3847,7 +3847,7 @@
       ]
     },
     "expr_layoutFlow": {
-      "description": "Tipo do layout de um quadro ou slot que não é o literal \"none\": row ou column, ou uma expressão cujos ramos são none, row ou column (formatVersion 4).",
+      "description": "Layout type of a frame or slot that is not the literal \"none\": row or column, or an expression whose branches are none, row or column (formatVersion 4).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_layoutFlow"
@@ -3919,7 +3919,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -3934,7 +3934,7 @@
       ]
     },
     "expr_size": {
-      "description": "Tamanho de nó: literal (px, \"fill\", \"hug\", \"min-content\", \"max-content\" ou \"NN%\") ou expressão ($field, $if, $switch, $concat, $token). A expressão vale a partir da formatVersion 4 (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4').",
+      "description": "Node size: literal (px, \"fill\", \"hug\", \"min-content\", \"max-content\" or \"NN%\") or expression ($field, $if, $switch, $concat, $token). The expression is valid from formatVersion 4 (in a 1, 2 or 3 parseComponent refuses with 'only allowed with formatVersion 4').",
       "anyOf": [
         {
           "$ref": "#/$defs/size"
@@ -4019,7 +4019,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -4034,7 +4034,7 @@
       ]
     },
     "expr_sizeNoHug": {
-      "description": "Tamanho do nó image: literal (px, \"fill\" ou \"NN%\", sem hug) ou expressão, formatVersion 4.",
+      "description": "Size of the image node: literal (px, \"fill\" or \"NN%\", without hug) or expression, formatVersion 4.",
       "anyOf": [
         {
           "$ref": "#/$defs/size_noHug"
@@ -4119,7 +4119,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -4145,7 +4145,7 @@
       "exclusiveMinimum": 0
     },
     "expr_wrap": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal or expression ($field, $if, $switch, $concat).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_wrap"
@@ -4217,7 +4217,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -4232,7 +4232,7 @@
       ]
     },
     "expr_positiveInteger": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_positiveInteger"
@@ -4317,7 +4317,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -4332,7 +4332,7 @@
       ]
     },
     "expr_positiveNumber": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_positiveNumber"
@@ -4417,7 +4417,7 @@
           "required": ["$provided"],
           "properties": {
             "$provided": {
-              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
               "type": "string",
               "minLength": 1
             },
@@ -4432,7 +4432,7 @@
       ]
     },
     "tokenRef": {
-      "description": "{ \"$token\": \"nome\" } de número (formatVersion 4), nas posições que eram só literais.",
+      "description": "A number { \"$token\": \"name\" } (formatVersion 4), in positions that used to be literal only.",
       "type": "object",
       "additionalProperties": false,
       "required": ["$token"],
@@ -4443,16 +4443,16 @@
       }
     },
     "tokenName": {
-      "description": "Nome de um token da especialização (formatVersion 15 da especialização; formatVersion 4 do componente).",
+      "description": "Name of a token of the specialization (specialization formatVersion 15; component formatVersion 4).",
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*$"
     },
     "operand": {
-      "description": "Operando de uma operação ou comparação (formatVersion 4): número, $field, $token, outra operação, $if ou $switch.",
+      "description": "Operand of an operation or comparison (formatVersion 4): number, $field, $token, another operation, $if or $switch.",
       "$ref": "#/$defs/expr_number"
     },
     "numericOps": {
-      "description": "Operações numéricas (formatVersion 4): $add, $sub, $mul, $div, $mod, $round, $floor, $ceil, $abs, $min, $max, $clamp, $sin e $cos (em graus). Operando sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor. $rows (número de linhas de um campo table; sem linhas, 0), $size (\"width\" ou \"height\" da instância em px da imagem; na prova de desenho e no hug, o size do componente) e $lines (o número de linhas medidas de um nó text) também produzem número.",
+      "description": "Numeric operations (formatVersion 4): $add, $sub, $mul, $div, $mod, $round, $floor, $ceil, $abs, $min, $max, $clamp, $sin and $cos (in degrees). An operand with no value (empty, non-numeric text, division by zero) makes the operation produce no value. $rows (number of rows of a table field; with no rows, 0), $size (\"width\" or \"height\" of the instance in image px; in the drawing proof and in hug, the component's size) and $lines (the number of measured lines of a text node) also produce a number.",
       "anyOf": [
         {
           "type": "object",
@@ -4656,7 +4656,7 @@
           "required": ["$lines"],
           "properties": {
             "$lines": {
-              "description": "Nome de um nó text único do template: o número de linhas medidas dele (no máximo maxLines; texto vazio, 0). O motor arruma em duas passagens (formatVersion 4).",
+              "description": "Name of a unique text node of the template: its number of measured lines (at most maxLines; empty text, 0). The engine lays out in two passes (formatVersion 4).",
               "type": "string",
               "minLength": 1
             }
@@ -4665,7 +4665,7 @@
       ]
     },
     "provide_value": {
-      "description": "Valor de um provide: expressão de texto ou número, ou de cor ($token de cor, com alpha e over).",
+      "description": "Value of a provide: text or number expression, or color ($token of a color, with alpha and over).",
       "anyOf": [
         {
           "$ref": "#/$defs/expr_textOrNumber"
@@ -4676,7 +4676,7 @@
       ]
     },
     "varRef": {
-      "description": "Referência a uma variável (formatVersion 4): { \"$var\": \"nome\" } vale onde vale uma expressão ou condição e é trocada, na leitura, pelo conteúdo do let do quadro (ou de um ancestral) que a define. O nome é conferido pelo schema; que a variável existe, que não há ciclo e o tipo do conteúdo no lugar do uso são do parseComponent.",
+      "description": "Reference to a variable (formatVersion 4): { \"$var\": \"name\" } is valid where an expression or condition is valid and is replaced, on reading, by the content of the let of the frame (or of an ancestor) that defines it. The name is checked by the schema; that the variable exists, that there is no cycle and the type of the content at the place of use are parseComponent's job.",
       "type": "object",
       "additionalProperties": false,
       "required": ["$var"],

@@ -1,20 +1,20 @@
-// Zoom semântico: quando a marcação mostra o nome. Função pura: o
-// CanvasController só desenha o resultado (linha de cabeçalho com o nome).
+// Semantic zoom: when the marking shows the name. Pure function: the
+// CanvasController only draws the result (header line with the name).
 
-/** Tamanho mínimo na tela (px) da marcação para o cabeçalho aparecer. Ajustáveis. */
+/** Minimum size on screen (px) of the marking for the header to appear. Adjustable. */
 export const SEMANTIC_MIN_WIDTH = 180;
 export const SEMANTIC_MIN_HEIGHT = 100;
 
-/** `none`: sem texto. `header`: a linha de cabeçalho (nome + indicadores). */
+/** `none`: no text. `header`: the header line (name + indicators). */
 export type SemanticMode = 'none' | 'header';
 
 export interface SemanticInput {
-  /** Tamanho do retângulo da marcação na tela, em px. */
+  /** Size of the marking's rectangle on screen, in px. */
   readonly screenWidth: number;
   readonly screenHeight: number;
 }
 
-/** Avaliado por marcação: o cabeçalho aparece quando ela é grande o bastante na tela. */
+/** Evaluated per marking: the header appears when it is large enough on screen. */
 export function semanticMode(input: SemanticInput): SemanticMode {
   return input.screenWidth >= SEMANTIC_MIN_WIDTH &&
     input.screenHeight >= SEMANTIC_MIN_HEIGHT

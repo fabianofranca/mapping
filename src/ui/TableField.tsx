@@ -36,12 +36,12 @@ import { RefCell } from './RefCell';
 import type { ActionResult } from '../store/history';
 import { issueMessage, issuesOf, refButtonName } from './typedText';
 
-// DataGrid do DS 2.0 para campos `table`: coluna # numerada, alça de arraste (P6),
-// edição na célula e menu ⋯ por linha.
+// DS 2.0 DataGrid for `table` fields: numbered # column, drag handle (P6),
+// in-cell editing and a ⋯ menu per row.
 
 type TableFieldDef = Extract<SpecField, { type: 'table' }>;
 
-/** Campo `table` dos Detalhes: liga o editor às actions do projeto. */
+/** `table` field of the Details: connects the editor to the project actions. */
 export function TableField({
   field,
   ...ctx
@@ -54,7 +54,7 @@ export function TableField({
   const issues = issuesOf(project, annotation.id).filter(
     (i) => i.key === field.key && i.rowId !== undefined,
   );
-  // Os alvos de cada coluna com `linkedRef`, calculados uma vez por renderização.
+  // The targets of each column with `linkedRef`, computed once per render.
   const targetsByColumn = new Map<string, LinkedTargets>();
 
   return (
@@ -143,11 +143,11 @@ export function TableField({
   );
 }
 
-/** O que a tabela entrega para desenhar uma célula de coluna `ref` (só nos Detalhes). */
+/** What the table hands over to draw a cell of a `ref` column (only in the Details). */
 export interface RefCellContext {
   readonly row: TableRow;
   readonly column: SpecRefColumn;
-  /** Nome acessível: a coluna e a linha. */
+  /** Accessible name: the column and the row. */
   readonly label: string;
   readonly invalid: boolean;
   readonly title: string | undefined;
@@ -157,42 +157,42 @@ export interface TableEditorProps {
   readonly field: TableFieldDef;
   readonly rows: readonly TableRow[];
   readonly readOnly: boolean;
-  /** Acrescenta uma linha vazia; `false` se não coube. */
+  /** Adds an empty row; `false` if it did not fit. */
   readonly onAddRow: () => boolean;
   readonly onSetCell: (rowId: string, column: string, value: JsonValue) => ActionResult;
   readonly onMoveRow: (rowId: string, toIndex: number) => unknown;
   readonly onRemoveRow: (rowId: string) => unknown;
-  /** Quantas referências quebram ao remover a linha (> 0 pede confirmação). */
+  /** How many references break when the row is removed (> 0 asks for confirmation). */
   readonly brokenByRemoving?: (row: TableRow) => number;
-  /** Motivo da pendência de uma célula (a célula fica inválida). */
+  /** Reason for a cell's pending item (the cell becomes invalid). */
   readonly cellIssue?: (row: TableRow, column: string) => string | undefined;
-  /** Nota embaixo da linha (referências recebidas). */
+  /** Note below the row (received references). */
   readonly rowNote?: (row: TableRow) => ComponentChildren;
-  /** Anotação dos Detalhes: liga o ponto de extensão da revisão (ausente fora deles). */
+  /** Annotation of the Details: connects the review extension point (absent outside them). */
   readonly annotationId?: string;
   /**
-   * Desenha a célula de uma coluna `ref` (precisa do projeto, que o editor não tem). Sem ele
-   * (o formulário de criação), a célula mostra o seletor indisponível.
+   * Draws the cell of a `ref` column (needs the project, which the editor does not have). Without it
+   * (the creation form), the cell shows the unavailable selector.
    */
   readonly renderRefCell?: (cell: RefCellContext) => ComponentChildren;
   /**
-   * `linkedRef` de uma coluna `string` (precisa do projeto): devolve os alvos e a gravação
-   * conjunta da célula. Sem ele (o formulário de criação), só valem as sugestões fixas.
+   * `linkedRef` of a `string` column (needs the project): returns the targets and the joint
+   * write of the cell. Without it (the creation form), only the fixed suggestions apply.
    */
   readonly linkedCell?: (
     row: TableRow,
     column: SpecSimpleColumn,
   ) => SimpleEditorProps['linked'];
   /**
-   * Itens a mais no menu ⋯ da linha (Copiar referência, Citar, Comentar), só nos Detalhes. Com
-   * eles o menu abre também no somente leitura (mover e remover ficam desabilitados).
+   * Extra items in the row's ⋯ menu (Copy reference, Cite, Comment), only in the Details. With
+   * them the menu also opens in read-only mode (move and remove stay disabled).
    */
   readonly rowMenuItems?: (row: TableRow) => readonly ActionMenuItem[];
 }
 
 /**
- * Editor de campos `table`, independente do projeto: recebe as linhas e devolve as
- * edições por callbacks. Usado pelos Detalhes (`TableField`) e pelo `TypedForm`.
+ * `table` field editor, independent of the project: receives the rows and returns the
+ * edits through callbacks. Used by the Details (`TableField`) and by `TypedForm`.
  */
 export function TableEditor({
   field,
@@ -215,8 +215,8 @@ export function TableEditor({
   const grid = useRef<HTMLDivElement>(null);
   const extra =
     ext && annotationId !== undefined ? ext.tableRows(annotationId, field.key) : null;
-  // As linhas da última renderização e os botões de ações e "+ Linha": o retorno do foco
-  // do "Referências vão quebrar" é lido ao fechar, já com a tabela nova.
+  // The rows of the last render and the actions and "+ Row" buttons: the focus return
+  // of "References will break" is read on close, already with the new table.
   const rowsNow = useRef(rows);
   rowsNow.current = rows;
   const menuButtons = useRef(new Map<string, HTMLButtonElement>());
@@ -228,8 +228,8 @@ export function TableEditor({
     count: number;
   } | null>(null);
   const label = fieldLabel(field);
-  // A linha da confirmação, achada por `_id` nas linhas de agora (uma recarga externa troca o
-  // objeto); se ela saiu, vale a de quando o diálogo abriu.
+  // The confirmation row, found by `_id` among the current rows (an external reload swaps the
+  // object); if it left, the one from when the dialog opened applies.
   const confirmFound = confirm ? rows.findIndex((r) => r._id === confirm.row._id) : -1;
   const confirmIndex = confirmFound >= 0 ? confirmFound : (confirm?.index ?? 0);
   const confirmRow = (confirmFound >= 0 ? rows[confirmFound] : confirm?.row) ?? null;
@@ -241,9 +241,9 @@ export function TableEditor({
   };
 
   /**
-   * Foco ao fechar o "Referências vão quebrar" (o menu da linha fecha antes de o diálogo
-   * abrir): o botão de ações da linha; se ela saiu, o da linha que ficou no lugar (ou da
-   * anterior, na última); sem linhas, o "+ Linha" da tabela (etapa 7, achado A1).
+   * Focus on closing "References will break" (the row menu closes before the dialog
+   * opens): the row's actions button; if the row left, that of the row that took its place (or of the
+   * previous one, for the last); with no rows, the table's "+ Row" (stage 7, finding A1).
    */
   const focusAfterConfirm = (row: TableRow, index: number) => () => {
     const current = rowsNow.current;
@@ -270,7 +270,7 @@ export function TableEditor({
   const addRow = () => {
     if (readOnly) return;
     if (!onAddRow()) return;
-    // A linha nova recebe o foco na primeira célula, no commit que a desenha.
+    // The new row gets focus in the first cell, in the commit that draws it.
     requestFocus(() => {
       const all = grid.current?.querySelectorAll<HTMLElement>('[data-drag-row]');
       return all?.[all.length - 1]?.querySelector<HTMLElement>(
@@ -393,7 +393,7 @@ export function TableEditor({
               >
                 <span class="grid-cell grid-cell-grip" role="cell">
                   {!readOnly && (
-                    /* Exceção ao Button: alça de arraste da linha (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+                    /* Exception to Button: row drag handle (docs/DESIGN-SYSTEM.md, "Loose buttons") */
                     <button
                       type="button"
                       class="grid-grip"
@@ -444,7 +444,7 @@ export function TableEditor({
                             title: issue,
                           })
                         ) : (
-                          /* Exceção ao Button: campo de referência (cara de select), desabilitado (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+                          /* Exception to Button: reference field (select look), disabled (docs/DESIGN-SYSTEM.md, "Loose buttons") */
                           <button
                             type="button"
                             class="ref-control is-empty"
@@ -476,7 +476,7 @@ export function TableEditor({
                   );
                 })}
                 <span class="grid-cell grid-cell-menu" role="cell">
-                  {/* Com a extensão (revisão), a coluna de ações fica vazia: o marcador é do campo. */}
+                  {/* With the extension (review), the actions column is left empty: the marker belongs to the field. */}
                   {!ext && (
                     <ActionMenu
                       label={t('typed.rowActions', { row: name })}

@@ -10,10 +10,10 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// Reordenação no lote junto de um empate de retângulo (etapa #549, item 1 e decisão 3): a
-// âncora da criada respeita o desempate, então aplicar as mudanças dá os mesmos pais do projeto
-// proposto, com ou sem `move_marking` no lote. Antes da correção, a âncora saía do array final
-// do proposto, já reordenado, e o aplicado invertia o empate (M2 na raiz e W filha de M2).
+// Reordering in the batch together with a rectangle tie (stage #549, item 1 and decision 3): the
+// anchor of the created one respects the tiebreak, so applying the changes gives the same parents as the
+// proposed project, with or without `move_marking` in the batch. Before the fix, the anchor came from the final array
+// of the proposed project, already reordered, and the applied result inverted the tie (M2 at the root and W a child of M2).
 
 const rect = (x: number, y: number, width: number, height: number) => ({
   x,
@@ -22,7 +22,7 @@ const rect = (x: number, y: number, width: number, height: number) => ({
   height,
 });
 
-/** Container C 100×100 com M1 e M4 dentro de M2, que o preenche (criadas na ordem M1, M2, M4). */
+/** Container C 100×100 with M1 and M4 inside M2, which fills it (created in the order M1, M2, M4). */
 function base(): Project {
   let p = addContainer(emptyProject(), {
     id: 'C',
@@ -49,19 +49,19 @@ const wrap = (p: Project) =>
 const parents = (p: Project) =>
   Object.fromEntries(p.markings.map((m) => [m.id, m.parentId]));
 
-describe('proposta v4: empate de retângulo com reordenação (#549)', () => {
-  it('controle: sem reordenação o empate aplica a hierarquia do plano', () => {
+describe('proposal v4: rectangle tie with reordering (#549)', () => {
+  it('control: without reordering the tie applies the hierarchy of the plan', () => {
     const start = base();
     expect(parents(start)).toMatchObject({ M1: 'M2', M2: null, M4: 'M2' });
     const after = wrap(start);
-    // O plano: W (mesmo retângulo de M2) na raiz, M2 filha de W.
+    // The plan: W (same rectangle as M2) at the root, M2 a child of W.
     expect(parents(after)).toMatchObject({ W: null, M2: 'W' });
     const applied = patchProject(start, computeChanges(start, after));
     expect(applied.problems).toEqual([]);
     expect(parents(applied.project)).toEqual(parents(after));
   });
 
-  it('com move_marking no mesmo lote, o aplicado tem os pais do plano', () => {
+  it('with move_marking in the same batch, the applied result has the parents of the plan', () => {
     const start = base();
     const after = reorderMarking(wrap(start), 'M1', 1);
     expect(parents(after)).toMatchObject({ W: null, M2: 'W' });
@@ -70,7 +70,7 @@ describe('proposta v4: empate de retângulo com reordenação (#549)', () => {
     expect(parents(applied.project)).toEqual(parents(after));
   });
 
-  it('duas envolventes do mesmo item e um move_marking de outra para 0', () => {
+  it('two wrappers of the same item and a move_marking of another to 0', () => {
     const start = base();
     let after = wrap(start);
     after = wrapItems(
@@ -79,7 +79,7 @@ describe('proposta v4: empate de retângulo com reordenação (#549)', () => {
       { settle: true },
     );
     after = reorderMarking(after, 'M4', 0);
-    // Três retângulos iguais (W, W2 e M2), de fora para dentro.
+    // Three equal rectangles (W, W2 and M2), from outside to inside.
     expect(parents(after)).toMatchObject({ W: null, W2: 'W', M2: 'W2' });
     const applied = patchProject(start, computeChanges(start, after));
     expect(applied.problems).toEqual([]);

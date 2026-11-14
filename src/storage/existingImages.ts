@@ -4,7 +4,7 @@ import { IMAGES_DIR, type ProjectStorage } from './types';
 import { reportError } from '../utils/report';
 
 export interface ImportExistingDeps {
-  /** Dimensões com a orientação EXIF aplicada (ver `readImageSize`). */
+  /** Dimensions with the EXIF orientation applied (see `readImageSize`). */
   readonly readSize: (
     data: Blob,
     name: string,
@@ -14,15 +14,15 @@ export interface ImportExistingDeps {
 
 export interface ImportExistingResult {
   readonly project: Project;
-  /** Imagens que não puderam ser lidas; ficam onde estavam. */
+  /** Images that could not be read; they stay where they were. */
   readonly skipped: readonly string[];
 }
 
 /**
- * Adiciona ao projeto as imagens que já estavam na pasta, posicionadas
- * automaticamente. As de `images/` ficam onde estão; as da raiz são movidas
- * para `images/` (com sufixo `-2`, `-3`… em caso de colisão). Os arquivos não
- * são recodificados: as dimensões já consideram a orientação EXIF.
+ * Adds to the project the images that were already in the folder, positioned
+ * automatically. Those in `images/` stay where they are; those at the root are moved
+ * to `images/` (with suffix `-2`, `-3`… on collision). Files are not
+ * re-encoded: the dimensions already account for the EXIF orientation.
  */
 export async function importExistingImages(
   storage: ProjectStorage,
@@ -33,7 +33,7 @@ export async function importExistingImages(
   let p = project;
   const skipped: string[] = [];
   const isInImages = (path: string) => path.startsWith(`${IMAGES_DIR}/`);
-  // Arquivos de `images/` que não entrarem no projeto continuam ocupando o nome.
+  // Files in `images/` that do not enter the project keep occupying the name.
   const taken = new Set(images.map((i) => i.path).filter(isInImages));
   for (const image of images) {
     try {
@@ -45,8 +45,8 @@ export async function importExistingImages(
       const next = addContainer(p, { id: deps.newId(), file, ...size });
       if (!inImages) {
         await storage.writeImage(file, data);
-        // A cópia já está em `images/`: o container entra no projeto mesmo que o original não
-        // possa ser apagado (sem perda; o original fica onde estava e a falha vai ao Diagnóstico).
+        // The copy is already in `images/`: the container enters the project even if the original cannot
+        // be deleted (no loss; the original stays where it was and the failure goes to Diagnostics).
         await storage.removeImage(image.path).catch((e: unknown) => {
           reportError('folder.importExisting.remove', e);
         });

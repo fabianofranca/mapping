@@ -9,7 +9,7 @@ import { openWholeProject, stubFrames } from './wholeProjectScenario';
 
 const ALL = ['components', 'floating', 'images', 'markings', 'overlay'];
 
-/** Nomes das camadas que o quadro redesenhou (contagem > 0). */
+/** Names of the layers that the frame redrew (count > 0). */
 function redrawn(counts: Record<string, number>): string[] {
   return Object.entries(counts)
     .filter(([, n]) => n > 0)
@@ -23,10 +23,10 @@ afterEach(() => {
   textMeasurer.value = approximateMeasurer;
 });
 
-// Decisão 3 da etapa canvas-escala: o quadro só redesenha as camadas cujo renderizador mexeu em
-// algum nó; pan, zoom e mudança de tamanho sujam todas.
-describe('camadas redesenhadas por quadro (projeto inteiro à vista, 2.000 marcações)', () => {
-  it('pan e zoom redesenham as 5; edição, seleção e hover só as que mudaram', () => {
+// Decision 3 of the canvas-scale stage: the frame only redraws the layers whose renderer touched
+// some node; pan, zoom and size change dirty all of them.
+describe('layers redrawn per frame (whole project in view, 2,000 markings)', () => {
+  it('pan and zoom redraw all 5; edit, selection and hover only the ones that changed', () => {
     const s = openWholeProject(2000);
     const first = s.project.markings.find((m) => m.parentId === null);
     if (!first) throw new Error('fixture');
@@ -39,20 +39,20 @@ describe('camadas redesenhadas por quadro (projeto inteiro à vista, 2.000 marca
     s.flush();
     expect(redrawn(s.drawnLayers())).toEqual(ALL);
 
-    // Editar o nome: marcações e sobreposições; nem as imagens nem os componentes.
-    s.actions.renameMarking(first.id, 'Renomeada');
+    // Editing the name: markings and overlays; neither the images nor the components.
+    s.actions.renameMarking(first.id, 'Renamed');
     s.flush();
     const edit = redrawn(s.drawnLayers());
     expect(edit).toContain('markings');
     expect(edit).not.toContain('images');
     expect(edit).not.toContain('components');
 
-    // Selecionar: só as sobreposições e as marcações (pela borda da selecionada).
+    // Selecting: only the overlays and the markings (through the selected one border).
     s.ui.selection.value = { kind: 'marking', id: first.id };
     s.flush();
     expect(redrawn(s.drawnLayers())).toEqual(['markings', 'overlay']);
 
-    // Hover numa marcação sem desenho de componente: nem imagens nem componentes.
+    // Hover on a marking without a component drawing: neither images nor components.
     const state = (
       s.controller as unknown as {
         state: { hoverMarking: Signal<string | null> };
@@ -66,7 +66,7 @@ describe('camadas redesenhadas por quadro (projeto inteiro à vista, 2.000 marca
     s.destroy();
   }, 120_000);
 
-  it('um quadro sem mudança não redesenha nenhuma camada', () => {
+  it('a frame without change redraws no layer', () => {
     const s = openWholeProject(500);
     s.ui.selection.value = { kind: 'marking', id: s.project.markings[0]?.id ?? '' };
     s.flush();
@@ -78,7 +78,7 @@ describe('camadas redesenhadas por quadro (projeto inteiro à vista, 2.000 marca
   });
 });
 
-describe('camadas redesenhadas: componentes', () => {
+describe('layers redrawn: components', () => {
   function setup() {
     installFakeCanvas();
     const flush = stubFrames();
@@ -98,15 +98,15 @@ describe('camadas redesenhadas: componentes', () => {
     return { ...editor, controller, container, flush, meter };
   }
 
-  it('mudar o desenho de um componente redesenha a camada dos componentes', () => {
+  it('changing the drawing of a component redraws the components layer', () => {
     const s = setup();
-    expect(s.actions.setFieldValue('A_T1', 'label', 'Outro texto').ok).toBe(true);
+    expect(s.actions.setFieldValue('A_T1', 'label', 'Other text').ok).toBe(true);
     s.flush();
     expect(redrawn(s.meter.take())).toContain('components');
     s.controller.destroy();
   });
 
-  it('a seleção não redesenha a camada dos componentes nem a das imagens', () => {
+  it('the selection does not redraw the components layer nor the images one', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'T2' };
     s.flush();

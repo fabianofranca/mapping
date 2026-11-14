@@ -5,21 +5,22 @@ import { reportError } from '../utils/report';
 import type { ProjectStore } from './history';
 import type { PerspectiveStateHandle } from './perspectives';
 
-// As perspectivas "Só eu" na sessão (etapa #659, PE2): junção com o projeto ao abrir e ao
-// recarregar, e a sincronia com o IndexedDB. Na memória elas vivem em `project.perspectives`,
-// junto com as "Para todos"; o que as distingue é `PerspectiveState.localIds`.
+// The "Only me" perspectives in the session (stage #659, PE2): merging with the project on open and
+// on reload, and syncing with IndexedDB. In memory they live in `project.perspectives`,
+// together with the "For everyone" ones; what tells them apart is `PerspectiveState.localIds`.
 
-/** O projeto com as "Só eu" juntas e o conjunto dos ids delas. */
+/** The project with the "Only me" ones merged in and the set of their ids. */
 export interface WithLocals {
   readonly project: Project;
   readonly ids: ReadonlySet<string>;
 }
 
 /**
- * Junta as "Só eu" ao projeto (no fim da lista). Cada uma passa por `reconcilePerspective` de
- * `before` (o projeto em que ela valia) para `project`: ao abrir, `before === project` (só limpa);
- * numa recarga externa, `before` é o projeto da memória de antes. O id que o arquivo já tem
- * é descartado (vale o do arquivo), e id repetido na lista também.
+ * Merges the "Only me" ones into the project (at the end of the list). Each one goes through
+ * `reconcilePerspective` from
+ * `before` (the project it was valid in) to `project`: on open, `before === project` (it only
+ * cleans); on an external reload, `before` is the in-memory project from before. An id the file
+ * already has is discarded (the file's wins), and so is an id repeated in the list.
  */
 export function mergeLocalPerspectives(
   project: Project,
@@ -43,8 +44,9 @@ export function mergeLocalPerspectives(
 }
 
 /**
- * O projeto da recarga externa (`loaded`, o que o disco tem) com as "Só eu" da memória
- * (`previous`). Se o arquivo novo é de outro projeto (`project.id` diferente), não junta nada.
+ * The project of the external reload (`loaded`, what the disk has) with the in-memory "Only me"
+ * ones (`previous`). If the new file is from another project (different `project.id`), it merges
+ * nothing.
  */
 export function carryLocalPerspectives(
   previous: Project | null,
@@ -67,27 +69,31 @@ export interface LocalSyncDeps {
   readonly state: PerspectiveStateHandle;
   readonly localStore: LocalPerspectiveStore | null;
   readonly projectId: string;
-  /** O que o IndexedDB tinha ao abrir (para só gravar quando a lista de agora difere). */
+  /** What IndexedDB had on open (to write only when the current list differs). */
   readonly initial: readonly Perspective[];
 }
 
 export interface LocalSync {
-  /** Mantém o id no IndexedDB mesmo fora de `localIds` (a ida ao arquivo ainda não foi gravada). */
+  /**
+   * Keeps the id in IndexedDB even outside `localIds` (the trip to the file is not yet written).
+   */
   hold(id: string): void;
-  /** Solta o `hold`; o IndexedDB passa a refletir só as "Só eu". */
+  /** Releases the `hold`; IndexedDB now reflects only the "Only me" ones. */
   release(id: string): void;
-  /** Grava já (e espera) a lista das "Só eu" com `id` junto. `false` se não gravou. */
+  /**
+   * Writes now (and waits for) the "Only me" list with `id` included. `false` if it did not write.
+   */
   persistIncluding(id: string): Promise<boolean>;
-  /** Espera as gravações no IndexedDB que estão na fila. */
+  /** Waits for the IndexedDB writes that are in the queue. */
   settled(): Promise<void>;
-  /** Para de observar e espera a fila. */
+  /** Stops watching and waits for the queue. */
   dispose(): Promise<void>;
 }
 
 /**
- * Liga o projeto confirmado ao IndexedDB: sempre que a lista das "Só eu" (por identidade dos
- * objetos) muda, grava `save(project.id, lista)`, em fila, sem bloquear. Erro vai para o
- * Diagnóstico e a próxima mudança tenta de novo. Sem a loja (`null`), não faz nada.
+ * Connects the confirmed project to IndexedDB: whenever the "Only me" list (by identity of the
+ * objects) changes, it writes `save(project.id, list)`, queued, without blocking. An error goes to
+ * the Diagnostics and the next change tries again. Without the store (`null`), it does nothing.
  */
 export function attachLocalSync(deps: LocalSyncDeps): LocalSync {
   const { store, state, localStore, projectId } = deps;
@@ -100,7 +106,7 @@ export function attachLocalSync(deps: LocalSyncDeps): LocalSync {
       (x) => state.localIds.peek().has(x.id) || held.has(x.id) || x.id === extra,
     );
 
-  /** Enfileira a gravação; diz se deu certo. Falha esquece `lastSaved` para tentar de novo. */
+  /** Queues the write; says whether it worked. A failure forgets `lastSaved` to try again. */
   const write = (list: readonly Perspective[]): Promise<boolean> => {
     if (localStore === null) return Promise.resolve(false);
     lastSaved = list;
@@ -108,7 +114,7 @@ export function attachLocalSync(deps: LocalSyncDeps): LocalSync {
     const outcome = job.then(
       () => true,
       () => {
-        // O `save` já registrou a falha no Diagnóstico.
+        // `save` already recorded the failure in the Diagnostics.
         if (lastSaved === list) lastSaved = null;
         return false;
       },
@@ -125,7 +131,7 @@ export function attachLocalSync(deps: LocalSyncDeps): LocalSync {
   };
 
   const stop = effect(() => {
-    // Lê os dois para ser reavaliado; `sync` usa `peek`.
+    // Reads both to be reevaluated; `sync` uses `peek`.
     void store.committed.value;
     void state.localIds.value;
     sync();

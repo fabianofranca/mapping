@@ -1,5 +1,5 @@
-// Módulos WebAssembly dos codecs de imagem (@jsquash), por nome virtual (`import bytes from 'wasm:png'`).
-// Compartilhado pelo build do servidor (mcp/build.mjs) e pelo Vitest (vite.config.ts).
+// WebAssembly modules of the image codecs (@jsquash), by virtual name (`import bytes from 'wasm:png'`).
+// Shared by the server build (mcp/build.mjs) and by Vitest (vite.config.ts).
 export const wasmFiles = {
   'wasm:png': '@jsquash/png/codec/pkg/squoosh_png_bg.wasm',
   'wasm:jpeg-decoder': '@jsquash/jpeg/codec/dec/mozjpeg_dec.wasm',

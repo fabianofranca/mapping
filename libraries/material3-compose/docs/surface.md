@@ -1,26 +1,26 @@
 # Surface
 
-Superfície com cor, forma e elevação tonal que agrupa conteúdo. Use para painéis, cartões simples e áreas com fundo próprio.
+Surface with color, shape and tonal elevation that groups content. Use it for panels, simple cards and areas with their own background.
 
-Tipo de anotação: `surface` (camada Layout).
+Annotation type: `surface` (layer Layout).
 
-## Campos
+## Fields
 
-| Chave            | Rótulo              | Tipo   | Obrigatório | Opções                                                         | Padrão    | Descrição                                                                                             |
-| ---------------- | ------------------- | ------ | ----------- | -------------------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------- |
-| `color`          | Cor                 | enum   | não         | papéis do `ColorScheme`                                        | `surface` | Papel de cor do tema usado como cor da superfície.                                                    |
-| `shape`          | Forma               | enum   | não         | `none`, `extraSmall`, `small`, `medium`, `large`, `extraLarge` | `none`    | Forma do recorte da superfície. none = retângulo.                                                     |
-| `tonalElevation` | Elevação tonal (dp) | number | não         |                                                                |           | Elevação tonal em dp (tonalElevation). Vazio = 0.                                                     |
-| `width`          | Largura             | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`    | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp). |
-| `height`         | Altura              | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`    | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).   |
-| `weight`         | Peso (weight)       | number | não         |                                                                |           | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                     |
+| Key              | Label                | Type   | Required | Options                                                        | Default   | Description                                                                                        |
+| ---------------- | -------------------- | ------ | -------- | -------------------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------- |
+| `color`          | Color                | enum   | no       | `ColorScheme` roles                                            | `surface` | Theme color role used as the surface color.                                                        |
+| `shape`          | Shape                | enum   | no       | `none`, `extraSmall`, `small`, `medium`, `large`, `extraLarge` | `none`    | Shape of the surface clip. none = rectangle.                                                       |
+| `tonalElevation` | Tonal elevation (dp) | number | no       |                                                                |           | Tonal elevation in dp (tonalElevation). Empty = 0.                                                 |
+| `width`          | Width                | enum   | no       | `wrap`, `fill`, `fixed`                                        | `wrap`    | wrap fits the content, fill takes all the available width and fixed uses the marking width (dp).   |
+| `height`         | Height               | enum   | no       | `wrap`, `fill`, `fixed`                                        | `wrap`    | wrap fits the content, fill takes all the available height and fixed uses the marking height (dp). |
+| `weight`         | Weight               | number | no       |                                                                |           | Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.               |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.Surface`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Surface.kt`
+- Symbol: `androidx.compose.material3.Surface`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Surface.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 Surface(
@@ -29,39 +29,39 @@ Surface(
     tonalElevation = 1.dp,
     modifier = Modifier.fillMaxWidth(),
 ) {
-    Column { /* um só nó raiz */ }
+    Column { /* a single root node */ }
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+`code` notes (what the tool hands to the agent):
 
-> Os filhos vão no `content`, que aceita um só nó raiz (use Row, Column ou Box para vários). `tonalElevation` entra como `tonalElevation = <tonalElevation>.dp` só quando preenchido. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> The children go in the `content`, which accepts a single root node (use Row, Column or Box for several). `tonalElevation` goes in as `tonalElevation = <tonalElevation>.dp` only when filled. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).
 
-## Exemplos
+## Examples
 
-- **Painel**: color=surfaceContainer, shape=medium, tonalElevation=1
-- **Tela cheia**: color=background, shape=none, width=fill, height=fill
+- **Panel**: color=surfaceContainer, shape=medium, tonalElevation=1
+- **Full screen**: color=background, shape=none, width=fill, height=fill
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Surface.kt` (linhas 96 a 105: `Surface(shape = RectangleShape, color = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp, shadowElevation = 0.dp)`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ColorScheme.kt` (linhas 1125 a 1129: `surfaceColorAtElevation`, que cobre a cor `surface` com o `surfaceTint` na opacidade `(4,5 × ln(elevação + 1) + 2) / 100`; linhas 1540 a 1547: `applyTonalElevation`, que só aplica a elevação tonal quando a cor é `surface`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ShapeTokens.kt`: os raios `CornerExtraSmall` (4), `CornerSmall` (8), `CornerMedium` (12), `CornerLarge` (16) e `CornerExtraLarge` (28).
-- `ColorLightTokens.kt` e `ColorDarkTokens.kt`: os papéis de `color` e o `surface-tint`.
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Surface.kt` (lines 96 to 105: `Surface(shape = RectangleShape, color = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp, shadowElevation = 0.dp)`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ColorScheme.kt` (lines 1125 to 1129: `surfaceColorAtElevation`, which covers the `surface` color with the `surfaceTint` at opacity `(4.5 × ln(elevation + 1) + 2) / 100`; lines 1540 to 1547: `applyTonalElevation`, which only applies tonal elevation when the color is `surface`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ShapeTokens.kt`: the radii `CornerExtraSmall` (4), `CornerSmall` (8), `CornerMedium` (12), `CornerLarge` (16) and `CornerExtraLarge` (28).
+- `ColorLightTokens.kt` and `ColorDarkTokens.kt`: the `color` roles and the `surface-tint`.
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- A forma lê `corner-extra-small` a `corner-extra-large`; `none` é `corner-none` (retângulo).
-- A elevação tonal é a sobreposição do `surface-tint` sobre a cor `surface`, com a opacidade da fórmula acima (0,051 em 1 dp até 0,136 em 12 dp), e **só aparece quando `color` é `surface`**, como no `applyTonalElevation`. As outras cores ficam como são.
-- Nos dois modos a mesma fórmula vale; a cor de base e o `surface-tint` mudam com o modo.
+- The shape reads `corner-extra-small` to `corner-extra-large`; `none` is `corner-none` (rectangle).
+- Tonal elevation is the `surface-tint` overlaid on the `surface` color, with the opacity of the formula above (0.051 at 1 dp up to 0.136 at 12 dp), and **only appears when `color` is `surface`**, as in `applyTonalElevation`. The other colors stay as they are.
+- The same formula applies in both modes; the base color and the `surface-tint` change with the mode.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- A elevação tonal é uma tabela por inteiro de 1 a 12 dp (a fórmula usa `ln`, que o formato de expressões não calcula); outro valor usa 0,14.
-- Cor do conteúdo herdada (decisão 14): o `surface` e o `scaffold` oferecem o `contentColorFor` da cor de fundo no slot (`provide` de `content-color`; `ColorScheme.kt`, linhas 1064 a 1092, `ColorScheme.contentColorFor`, e 1112 a 1115, que cai no `LocalContentColor` herdado quando a cor não tem par); `Surface.kt`, linhas 100 e 108 (`contentColor = contentColorFor(color)` e `LocalContentColor provides contentColor`). O texto, o ícone e o botão de ícone dentro dele leem esse valor (ver `text`, `icon`, `icon-button` e `icon-toggle-button`); cor sem par (`outline`, `scrim`, os papéis `on-*`…) herda o que o pai ofereceu, e sem pai vale `on-surface`.
-- `onClick` do `Surface` não é campo do tipo.
-- Decisão da etapa Material 3 com estados de interação (decisão 12, 2026-11-08): fica a leitura do `Surface.kt` do commit fixado (o `surface-tint` sobre `surface`, pela `tonalElevation`), que a M1 seguiu. A decisão 8 da etapa Material 3 fiel (os papéis `surface-container-*`) vale para os componentes que usam esses papéis (`card`, `list-item`, `navigation-bar`, entre outros), não para a elevação tonal do `surface`. O componente não muda.
+- Tonal elevation is a table by integer from 1 to 12 dp (the formula uses `ln`, which the expression format does not compute); another value uses 0.14.
+- Inherited content color (decision 14): the `surface` and the `scaffold` offer the `contentColorFor` of the background color in the slot (`provide` of `content-color`; `ColorScheme.kt`, lines 1064 to 1092, `ColorScheme.contentColorFor`, and 1112 to 1115, which falls back to the inherited `LocalContentColor` when the color has no pair); `Surface.kt`, lines 100 and 108 (`contentColor = contentColorFor(color)` and `LocalContentColor provides contentColor`). The text, the icon and the icon button inside it read this value (see `text`, `icon`, `icon-button` and `icon-toggle-button`); a color with no pair (`outline`, `scrim`, the `on-*` roles…) inherits what the parent offered, and with no parent it is `on-surface`.
+- `onClick` of the `Surface` is not a field of the type.
+- Decision of the Material 3 with interaction states stage (decision 12, 2026-11-08): the reading of the pinned commit's `Surface.kt` stays (the `surface-tint` over `surface`, by the `tonalElevation`), which M1 followed. Decision 8 of the faithful Material 3 stage (the `surface-container-*` roles) applies to the components that use those roles (`card`, `list-item`, `navigation-bar`, among others), not to the tonal elevation of the `surface`. The component does not change.

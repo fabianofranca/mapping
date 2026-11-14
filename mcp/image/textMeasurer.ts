@@ -15,14 +15,14 @@ import {
   MEASURE_CACHE_LIMIT,
 } from '../../src/model/components/measureCache';
 
-// Medidor do servidor (decisão 31): mede com o opentype.js e uma fonte livre embutida (Mapping
-// Sans/Mono, subconjunto das Liberation, OFL; ver mcp/fonts/LICENSE.txt). As `fonts` da biblioteca
-// (com bytes) valem no lugar da embutida quando a família do texto as cita. O desenho (sceneRaster)
-// usa as mesmas fontes para os glifos, então medida e desenho andam juntos.
+// Server measurer (decision 31): measures with opentype.js and an embedded free font (Mapping
+// Sans/Mono, a subset of Liberation, OFL; see mcp/fonts/LICENSE.txt). The library's `fonts`
+// (with bytes) apply in place of the embedded one when the text's family cites them. The drawing (sceneRaster)
+// uses the same fonts for the glyphs, so measuring and drawing go together.
 
-/** Peso a partir do qual a fonte negrito entra. */
+/** Weight from which the bold font kicks in. */
 const BOLD_FROM = 600;
-/** Famílias que pedem a fonte monoespaçada embutida. */
+/** Families that ask for the embedded monospaced font. */
 const MONO_FAMILY =
   /^(monospace|ui-monospace|mono|courier|courier new|consolas|menlo|monaco|sf mono|cascadia mono|cascadia code|source code pro|fira code|jetbrains mono|roboto mono|dejavu sans mono|liberation mono)$/i;
 
@@ -49,7 +49,7 @@ function builtinFonts() {
   return builtin;
 }
 
-/** Nomes de família de uma pilha CSS (`"Inter", sans-serif`), sem aspas. */
+/** Family names of a CSS stack (`"Inter", sans-serif`), without quotes. */
 export function familyNames(family: string): string[] {
   return family
     .split(',')
@@ -74,15 +74,15 @@ function weightRange(weight: string): [number, number] {
   return [low, parts[1] ?? low];
 }
 
-/** A distância de um peso a um intervalo (0 se estiver dentro). */
+/** The distance from a weight to a range (0 if inside it). */
 const gap = (weight: number, c: Candidate) =>
   weight < c.low ? c.low - weight : weight > c.high ? weight - c.high : 0;
 
-/** Um leitor de fontes: a embutida e as da biblioteca (`fonts` com bytes). */
+/** A font reader: the embedded one and the library's (`fonts` with bytes). */
 export interface FontBook {
-  /** A fonte que desenha/mede `family` com o peso e o estilo pedidos. */
+  /** The font that draws/measures `family` with the requested weight and style. */
   fontFor(family: string, weight: number, italic: boolean): Font;
-  /** Há alguma fonte da biblioteca (`fonts`) lida; senão tudo é medido com a embutida. */
+  /** Whether any library font (`fonts`) was read; otherwise everything is measured with the embedded one. */
   readonly hasLibraryFonts: boolean;
 }
 
@@ -100,7 +100,7 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
         font: parse(entry.bytes),
       });
     } catch {
-      // Fonte ilegível (woff2, por exemplo): vale a embutida.
+      // Unreadable font (woff2, for example): the embedded one applies.
     }
   }
   const fromLibrary = (name: string, weight: number, italic: boolean): Font | null => {
@@ -128,7 +128,7 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
   };
   return {
     hasLibraryFonts: candidates.length > 0,
-    // Cache por família/peso/itálico: o medidor pede a fonte uma vez por palavra.
+    // Cache by family/weight/italic: the measurer asks for the font once per word.
     fontFor(family, weight, italic) {
       const key = `${family}|${weight}|${italic}`;
       let font = resolved.get(key);
@@ -141,7 +141,7 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
   };
 }
 
-/** Largura de um texto de uma linha com a fonte e o espaçamento entre letras. */
+/** Width of a one-line text with the font and the letter spacing. */
 export function textWidth(
   book: FontBook,
   text: string,
@@ -154,13 +154,13 @@ export function textWidth(
 
 const measurers = new WeakMap<FontBook, TextMeasurer>();
 
-/** O `TextMeasurer` do servidor, sobre um leitor de fontes (o mesmo para o mesmo leitor). */
+/** The server's `TextMeasurer`, over a font reader (the same one for the same reader). */
 export function measurerFor(book: FontBook): TextMeasurer {
   let measure = measurers.get(book);
   if (measure === undefined) {
-    // As linhas de base saem do `fontExtents` da fonte que desenha (a mesma do `lineInk`).
-    // O medidor memoiza por (texto, fonte, limite): as fontes de um `FontBook` não mudam, então
-    // a medida vale enquanto o leitor existir (decisão 19 da #1078).
+    // The baselines come from the `fontExtents` of the font that draws (the same as `lineInk`'s).
+    // The measurer memoizes by (text, font, limit): the fonts of a `FontBook` do not change, so
+    // the measurement holds as long as the reader exists (decision 19 of #1078).
     measure = cachedMeasurer(
       (text, font, maxWidth) =>
         measureLines(
@@ -177,14 +177,14 @@ export function measurerFor(book: FontBook): TextMeasurer {
   return measure;
 }
 
-/** Medidor com a fonte embutida e, se houver, as `fonts` da biblioteca. */
+/** Measurer with the embedded font and, if any, the library's `fonts`. */
 export function createMeasurer(extra: readonly LoadedFont[] = []): TextMeasurer {
   return measurerFor(createFontBook(extra));
 }
 
 let shared: FontBook | undefined;
 
-/** O leitor só com as fontes embutidas (projetos sem `fonts`). */
+/** The reader with only the embedded fonts (projects without `fonts`). */
 export function builtinFontBook(): FontBook {
   shared ??= createFontBook();
   return shared;

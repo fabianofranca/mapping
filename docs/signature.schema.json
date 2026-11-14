@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/fabianofranca/mapping/blob/main/docs/signature.schema.json",
   "title": "mapping-signature (formatVersion 1)",
-  "description": "A ficha de assinatura de um componente: os parâmetros de uma função @Composable, o init de uma view SwiftUI ou as propriedades de um componente do Figma, numa forma neutra. O texto de SIGNATURE-FORMAT.md é a referência; a unicidade dos nomes de parâmetro é conferida pelo validador da app.",
+  "description": "The signature sheet of a component: the parameters of a @Composable function, the init of a SwiftUI view, or the properties of a Figma component, in a neutral form. The text of SIGNATURE-FORMAT.md is the reference; the uniqueness of parameter names is checked by the app validator.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "source", "params"],
@@ -38,12 +38,12 @@
             "path": {
               "type": "string",
               "minLength": 1,
-              "description": "Arquivo que define o símbolo, relativo à raiz do repositório."
+              "description": "File that defines the symbol, relative to the repository root."
             },
             "ref": {
               "type": "string",
               "minLength": 1,
-              "description": "Commit, tag ou branch lido."
+              "description": "Commit, tag, or branch that was read."
             },
             "extractor": {
               "$ref": "#/$defs/extractor"
@@ -90,21 +90,21 @@
       "items": {
         "$ref": "#/$defs/param"
       },
-      "description": "Na ordem da fonte."
+      "description": "In source order."
     },
     "doc": {
       "type": "object",
       "additionalProperties": {
         "type": "string"
       },
-      "description": "Nome do parâmetro → documentação (KDoc @param, /// do Swift, description do Figma)."
+      "description": "Parameter name → documentation (KDoc @param, Swift ///, Figma description)."
     }
   },
   "$defs": {
     "extractor": {
       "type": "string",
       "pattern": "^(agent|mapping-signature/[a-z0-9-]+@[0-9]+)$",
-      "description": "mapping-signature/<leitor>@<versão> ou agent."
+      "description": "mapping-signature/<reader>@<version> or agent."
     },
     "value": {
       "type": "object",
@@ -122,11 +122,11 @@
             "color",
             "opaque"
           ],
-          "description": "dimension é em unidades do componente (1 dp, 1 pt ou 1 px CSS a 1x)."
+          "description": "dimension is in component units (1 dp, 1 pt, or 1 CSS px at 1x)."
         },
         "default": {
           "type": ["string", "number", "boolean"],
-          "description": "Só quando o padrão é um literal representável."
+          "description": "Only when the default is a representable literal."
         },
         "options": {
           "type": "array",
@@ -135,10 +135,10 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Só em enum: as constantes, no texto da fonte."
+          "description": "Only on enum: the constants, as text in the source."
         }
       },
-      "description": "options é obrigatório em enum e proibido nos outros kinds (conferido pelo validador da app)."
+      "description": "options is required on enum and forbidden on the other kinds (checked by the app validator)."
     },
     "param": {
       "type": "object",
@@ -152,12 +152,12 @@
         "label": {
           "type": "string",
           "minLength": 1,
-          "description": "Rótulo externo do Swift; _ é posicional."
+          "description": "Swift external label; _ is positional."
         },
         "id": {
           "type": "string",
           "minLength": 1,
-          "description": "Id do parâmetro na fonte (o sufixo #<id> do nome no Figma)."
+          "description": "Parameter id in the source (the #<id> suffix of the name in Figma)."
         },
         "role": {
           "enum": ["value", "slot", "callback", "modifier", "state", "other"]
@@ -165,11 +165,11 @@
         "type": {
           "type": "string",
           "minLength": 1,
-          "description": "O texto do tipo na fonte, normalizado só nos espaços."
+          "description": "The type text in the source, normalized only in whitespace."
         },
         "default": {
           "type": "string",
-          "description": "O texto do padrão na fonte."
+          "description": "The default text in the source."
         },
         "required": {
           "type": "boolean"
@@ -186,7 +186,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["call", "params"],
-      "description": "A fábrica do padrão, num nível só: os parâmetros dela não têm factory.",
+      "description": "The default's factory, one level only: its parameters have no factory.",
       "properties": {
         "call": {
           "type": "string",
@@ -206,12 +206,12 @@
               "label": {
                 "type": "string",
                 "minLength": 1,
-                "description": "Rótulo externo do Swift; _ é posicional."
+                "description": "Swift external label; _ is positional."
               },
               "id": {
                 "type": "string",
                 "minLength": 1,
-                "description": "Id do parâmetro na fonte (o sufixo #<id> do nome no Figma)."
+                "description": "Parameter id in the source (the #<id> suffix of the name in Figma)."
               },
               "role": {
                 "enum": ["value", "slot", "callback", "modifier", "state", "other"]
@@ -219,11 +219,11 @@
               "type": {
                 "type": "string",
                 "minLength": 1,
-                "description": "O texto do tipo na fonte, normalizado só nos espaços."
+                "description": "The type text in the source, normalized only in whitespace."
               },
               "default": {
                 "type": "string",
-                "description": "O texto do padrão na fonte."
+                "description": "The default text in the source."
               },
               "required": {
                 "type": "boolean"

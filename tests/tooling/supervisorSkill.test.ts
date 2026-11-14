@@ -1,6 +1,6 @@
 // @vitest-environment node
-// Fase FM8 (etapa #1532, decisões 19 e 20): a skill `supervisionar-fila`, o `custo.py` e a seção
-// `## Supervisão da fila` do `docs/FLOW.md`.
+// Phase FM8 (stage #1532, decisions 19 and 20): the `supervisionar-fila` skill, `custo.py` and the
+// `## Queue supervision` section of `docs/FLOW.md`.
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -14,11 +14,11 @@ const SKILL = readFileSync(`${DIR}/SKILL.md`, 'utf8');
 const QUEUE = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
 const FLOW = readFileSync('docs/FLOW.md', 'utf8');
 
-/** Os itens "- …" da lista do tipo A, até a primeira linha em branco depois dela. */
+/** The "- …" items of the type A list, up to the first blank line after it. */
 function typeAItems(text: string): string[] {
   const lines = text.split('\n');
-  const start = lines.findIndex((l) => l.startsWith('**Tipo A**'));
-  if (start < 0) throw new Error('lista do tipo A não achada');
+  const start = lines.findIndex((l) => l.startsWith('**Type A**'));
+  if (start < 0) throw new Error('type A list not found');
   const items: string[] = [];
   for (let i = start + 1; i < lines.length; i++) {
     const l = lines[i]!;
@@ -28,8 +28,8 @@ function typeAItems(text: string): string[] {
   return items;
 }
 
-describe('skill supervisionar-fila (decisão 19)', () => {
-  it('tem o frontmatter com name e description', () => {
+describe('skill supervisionar-fila (decision 19)', () => {
+  it('has the frontmatter with name and description', () => {
     const m = SKILL.match(/^---\nname: supervisionar-fila\ndescription: (.+)\n---\n/);
     expect(m).not.toBeNull();
     expect(m![1]!.length).toBeGreaterThan(40);
@@ -57,31 +57,31 @@ describe('skill supervisionar-fila (decisão 19)', () => {
     'varredura desde=',
     'create_new_session_on_fire',
     'SUP-<n>',
-  ])('cita %s', (text) => {
+  ])('cites %s', (text) => {
     expect(SKILL).toContain(text);
   });
 
-  it('não tem mais o critério dos ~150k nem os limites de ~25% e ~250k (decisão 7)', () => {
+  it('no longer has the ~150k criterion nor the ~25% and ~250k limits (decision 7)', () => {
     expect(SKILL).not.toContain('~150k');
     expect(SKILL).not.toContain('~25%');
     expect(SKILL).not.toContain('~250k');
   });
 
-  it('o description diz o que a retomada sem argumentos faz, em até ~500 caracteres', () => {
+  it('the description says what the resume with no arguments does, in up to ~500 characters', () => {
     const d = SKILL.match(
       /^---\nname: supervisionar-fila\ndescription: (.+)\n---\n/,
     )![1]!;
     expect(d.length).toBeLessThanOrEqual(500);
-    expect(d).toContain('sem argumentos');
-    expect(d).toContain('troca');
+    expect(d).toContain('with no arguments');
+    expect(d).toContain('switch');
     expect(d).toContain('~50%');
     expect(d).toContain('Supervisão da fila');
     expect(d).toContain('database');
   });
 
-  it('## Argumentos mostra a forma sem argumentos e lista os argumentos que seguem valendo (decisão 1)', () => {
-    const s = section(SKILL, '## Argumentos');
-    expect(s).toContain('/supervisionar-fila` sem argumentos');
+  it('## Arguments shows the form with no arguments and lists the arguments that still apply (decision 1)', () => {
+    const s = section(SKILL, '## Arguments');
+    expect(s).toContain('/supervisionar-fila` with no arguments');
     expect(s).toContain(
       '/supervisionar-fila [retomar] [anterior=<id>] [painel=<url>] [custo] [varredura desde=<ISO>]',
     );
@@ -94,61 +94,61 @@ describe('skill supervisionar-fila (decisão 19)', () => {
     ]) {
       expect(s).toContain(`- \`${arg}`);
     }
-    expect(s).toContain('o `roles`');
+    expect(s).toContain('`roles` prevails');
   });
 
-  it('## Papel e limites: o último item lê a linha `esta sessão:` do roles --sessao (decisão 3)', () => {
-    const items = section(SKILL, '## Papel e limites')
+  it('## Role and limits: the last item reads the `esta sessão:` line of roles --sessao (decision 3)', () => {
+    const items = section(SKILL, '## Role and limits')
       .split('\n')
       .filter((l) => l.startsWith('- '));
     const last = items[items.length - 1]!;
     expect(last).toContain('esta sessão:');
     expect(last).toContain('roles --sessao');
-    expect(last).toContain('https://claude.ai/code/<id');
+    expect(last).toContain('https://claude.ai/code/<current supervisor');
     expect(last).toContain(
       'este chat é o coordenador; abra uma sessão nova para a supervisão',
     );
   });
 
-  it('## Pedidos ao coordenador: a leitura de cada turno é a da decisão 13', () => {
-    const s = section(SKILL, '## Pedidos ao coordenador');
-    const leitura = s.split('\n').find((l) => l.startsWith('- **Leitura:**'))!;
-    expect(leitura).toContain('ArtifactData');
-    expect(leitura).toContain('datasets');
-    expect(leitura).toContain('out_dir');
-    expect(leitura).toContain('requests --desde');
-    expect(leitura).toContain('roles --sessao');
+  it('## Requests to the coordinator: the reading of each turn is that of decision 13', () => {
+    const s = section(SKILL, '## Requests to the coordinator');
+    const reading = s.split('\n').find((l) => l.startsWith('- **Reading:**'))!;
+    expect(reading).toContain('ArtifactData');
+    expect(reading).toContain('datasets');
+    expect(reading).toContain('out_dir');
+    expect(reading).toContain('requests --desde');
+    expect(reading).toContain('roles --sessao');
   });
 
-  it('## Leitura das fontes: o meta nunca entra no contexto e o painel se acha pelo fixado (decisões 2 e 13)', () => {
-    const s = section(SKILL, '## Leitura das fontes');
-    expect(s).not.toContain('JSON pequeno');
-    expect(s).toContain('nunca');
+  it('## Reading the sources: the meta never enters the context and the panel is found by the pinned one (decisions 2 and 13)', () => {
+    const s = section(SKILL, '## Reading the sources');
+    expect(s).not.toContain('small JSON');
+    expect(s).toContain('never');
     expect(s).toContain('Mapping Fila');
     expect(s).toContain('Fila de desenvolvimento');
     expect(s).toContain('limit: 50');
-    expect(s).toContain('`get_session` do antecessor');
+    expect(s).toContain("predecessor's `get_session`");
   });
 
-  it('## Troca de sessão: tamanho, base, lembrete, troca no retorno e os cinco estados (decisões 3 e 6 a 8)', () => {
-    const s = section(SKILL, '## Troca de sessão');
+  it('## Session switch: size, baseline, reminder, switch on return and the five states (decisions 3 and 6 to 8)', () => {
+    const s = section(SKILL, '## Session switch');
     for (const state of ['registrada', 'sucessora', 'antiga', 'coordenador', 'nova']) {
       expect(s).toContain(`\`${state}`);
     }
-    // Achado CL1.5: o script como instrução e o `used_tokens` só como proibição.
+    // Finding CL1.5: the script as the instruction and `used_tokens` only as a prohibition.
     expect(
-      scriptMeasureProblems(between(s, '**Tamanho e base.**', '**Troca no retorno')),
+      scriptMeasureProblems(between(s, '**Size and baseline.**', '**Switch on return')),
     ).toEqual([]);
-    expect(s).toContain('no fim do primeiro turno');
-    expect(s).toContain('120 mil');
-    expect(s).toContain('2× a base');
+    expect(s).toContain("at the end of this session's first turn");
+    expect(s).toContain('120 thousand');
+    expect(s).toContain('2× the baseline');
     expect(s).toContain('Contexto: <n> mil, mais de 2× a base (<b> mil).');
-    expect(s).toContain('mais de 1 h');
+    expect(s).toContain('more than 1 h');
     expect(s).toContain('claude-opus-5-5');
-    expect(s).toContain('acima de ~50%');
-    expect(s).toContain('A troca não tem turno de passagem');
+    expect(s).toContain('above ~50%');
+    expect(s).toContain('The switch has no handoff turn');
     expect(s).toContain(
-      '/supervisionar-fila retomar anterior=<id desta sessão> painel=<url>',
+      "/supervisionar-fila retomar anterior=<this session's id> painel=<url>",
     );
     expect(s).toContain('archive_session');
     expect(s).toContain('delete_trigger');
@@ -156,8 +156,8 @@ describe('skill supervisionar-fila (decisão 19)', () => {
     expect(s).toContain('kind=supervisor');
   });
 
-  it('## Passagem: coleção, quatro tipos, if_version e migração (decisões 9 e 10)', () => {
-    const s = section(SKILL, '## Passagem');
+  it('## Handoff: collection, four types, if_version and migration (decisions 9 and 10)', () => {
+    const s = section(SKILL, '## Handoff');
     expect(s).toContain('`passagem`');
     for (const tipo of ['decisao', 'issue', 'agendamento', 'licao']) {
       expect(s).toContain(`\`${tipo}\``);
@@ -167,45 +167,45 @@ describe('skill supervisionar-fila (decisão 19)', () => {
     expect(s).toContain('artifact-design');
     expect(s).toContain('migra');
     expect(s).toContain('capabilities: {db: {}}');
-    expect(s).toContain('no mesmo turno');
+    expect(s).toContain('in the same turn');
     expect(s).toContain('delete');
-    expect(SKILL.indexOf('## Passagem')).toBeGreaterThan(
-      SKILL.indexOf('## Troca de sessão'),
+    expect(SKILL.indexOf('## Handoff')).toBeGreaterThan(
+      SKILL.indexOf('## Session switch'),
     );
   });
 
-  it('revisão: migração na primeira retomada, agendamentos de vigia, nova e leitura completa', () => {
-    const troca = section(SKILL, '## Troca de sessão');
-    const passagem = section(SKILL, '## Passagem');
-    // a primeira retomada depois do merge ainda lê o Markdown e migra depois do registro
-    expect(troca).toContain('ainda é o Markdown');
-    // só os agendamentos presos à sessão do antecessor são recriados; os de vigia ficam
-    expect(troca).toContain('persistent_session_id');
-    expect(troca).toContain('create_new_session_on_fire');
-    // a nova escreve o mínimo antes do registro e não duplica o artefato
-    expect(passagem).toContain('Artifact` `list`');
-    expect(passagem).toContain('antes do registro');
-    // a migração tem um marcador durável: a coleção vazia sozinha não basta
-    expect(passagem).toContain('o artefato ainda é o Markdown');
-    // documento novo não tem if_version, e a leitura segue o cursor
-    expect(passagem).toContain('documento novo');
-    expect(passagem).toContain('next_cursor');
-    // a notificação sem vaga na linhagem vai uma vez só
-    expect(troca).toContain('uma só vez');
+  it('review: migration on the first resume, watch schedules, new session and full read', () => {
+    const switching = section(SKILL, '## Session switch');
+    const handoff = section(SKILL, '## Handoff');
+    // the first resume after the merge still reads the Markdown and migrates after the registration
+    expect(switching).toContain('still the old Markdown');
+    // only the schedules tied to the predecessor's session are recreated; the watch ones stay
+    expect(switching).toContain('persistent_session_id');
+    expect(switching).toContain('create_new_session_on_fire');
+    // the new session writes the minimum before the registration and does not duplicate the artifact
+    expect(handoff).toContain('Artifact` `list`');
+    expect(handoff).toContain('before the registration');
+    // the migration has a durable marker: the empty collection alone is not enough
+    expect(handoff).toContain('the artifact is still the Markdown');
+    // a new document has no if_version, and the read follows the cursor
+    expect(handoff).toContain('a new document');
+    expect(handoff).toContain('next_cursor');
+    // the notification with no lineage slot goes only once
+    expect(switching).toContain('only once');
   });
 
-  it('## Subagentes: o briefing pede o retorno em até 10 linhas (decisão 13)', () => {
-    const s = section(SKILL, '## Subagentes');
-    expect(s).toContain('até 10 linhas');
+  it('## Subagents: the briefing asks for the return in up to 10 lines (decision 13)', () => {
+    const s = section(SKILL, '## Subagents');
+    expect(s).toContain('up to 10 lines');
   });
 
-  it('## Vigiar uma condição: descreve o observador real, mudado só pelo dono na tela (etapa #1694)', () => {
-    const s = section(SKILL, '## Vigiar uma condição');
+  it('## Watching a condition: describes the real observer, changed only by the owner on the screen (stage #1694)', () => {
+    const s = section(SKILL, '## Watching a condition');
     for (const text of [
       'Mapping - Workflow Insights',
       'trig_01YXXNz6596nCkk9vsyrvPgp',
       'CRON_TZ=America/Sao_Paulo 0 12 * * *',
-      '12:00 de Brasília',
+      '12:00 Brasilia time',
       'created_via: http_api',
       'https://claude.ai/code/routines/trig_01YXXNz6596nCkk9vsyrvPgp',
       'get_trigger',
@@ -215,47 +215,47 @@ describe('skill supervisionar-fila (decisão 19)', () => {
     ]) {
       expect(s, text).toContain(text);
     }
-    // o horário antigo e as chaves do prompt agendado (a fonte do prompt é o get_trigger)
-    expect(s).not.toContain('a cada 6 h');
+    // the old schedule and the scheduled prompt's keys (the prompt's source is get_trigger)
+    expect(s).not.toContain('every 6 h');
     for (const key of ['testador-acima-teto', 'fase-acima-teto', 'supervisor-trocas']) {
       expect(s, key).not.toContain(key);
     }
-    // o agendamento que não existe mais não aparece em lugar nenhum da skill
+    // the schedule that no longer exists appears nowhere in the skill
     expect(SKILL).not.toContain('trig_01WCuidEK7f4DFiyDB69XNG6');
   });
 
-  it('a lista do tipo A é igual, item por item, à de "Pedidos do supervisor" do implementar-fila', () => {
-    const queue = typeAItems(section(QUEUE, '## Pedidos do supervisor'));
+  it('the type A list is equal, item by item, to that of "Supervisor requests" in implementar-fila', () => {
+    const queue = typeAItems(section(QUEUE, '## Supervisor requests'));
     expect(queue.length).toBeGreaterThanOrEqual(5);
     expect(typeAItems(SKILL)).toEqual(queue);
   });
 
-  it('aponta para a Leitura do CI do FLOW.md sem repetir a definição', () => {
-    expect(SKILL).toContain('Leitura do CI');
+  it('points to the Reading CI of FLOW.md without repeating the definition', () => {
+    expect(SKILL).toContain('Reading CI');
     expect(SKILL).not.toContain('`check`, `e2e`');
   });
 
-  it('transcripts só por subagente Sonnet e sem conferências periódicas', () => {
-    expect(SKILL).toMatch(/transcripts?[^.]*subagente Sonnet/i);
-    expect(SKILL).toContain('sem conferências periódicas');
+  it('transcripts only by a Sonnet subagent and no periodic checks', () => {
+    expect(SKILL).toMatch(/transcripts?[^.]*Sonnet subagent/i);
+    expect(SKILL).toContain('no periodic checks');
   });
 
-  it('não repete o FLOW.md nem o PROCESS.md: aponta para eles', () => {
+  it('does not repeat FLOW.md nor PROCESS.md: points to them', () => {
     expect(SKILL).toContain('docs/FLOW.md');
     expect(SKILL).toContain('docs/PROCESS.md');
   });
 });
 
-describe('docs/FLOW.md: ## Supervisão da fila', () => {
-  it('tem a seção e cita /supervisionar-fila', () => {
-    const s = section(FLOW, '## Supervisão da fila');
+describe('docs/FLOW.md: ## Queue supervision', () => {
+  it('has the section and cites /supervisionar-fila', () => {
+    const s = section(FLOW, '## Queue supervision');
     expect(s).toContain('/supervisionar-fila');
   });
 
-  it('abre e retoma sem argumentos, troca ao voltar depois de mais de 1 h e só troca sozinha acima de ~50% (decisões 6 e 7)', () => {
-    const s = section(FLOW, '## Supervisão da fila');
-    expect(s).toContain('/supervisionar-fila` sem argumentos');
-    expect(s).toContain('mais de 1 h');
+  it('opens and resumes with no arguments, switches on return after more than 1 h and only switches by itself above ~50% (decisions 6 and 7)', () => {
+    const s = section(FLOW, '## Queue supervision');
+    expect(s).toContain('/supervisionar-fila` with no arguments');
+    expect(s).toContain('more than 1 h');
     expect(s).toContain('~50%');
     expect(s).toContain('Supervisão da fila');
     expect(s).toContain('database');
@@ -263,22 +263,22 @@ describe('docs/FLOW.md: ## Supervisão da fila', () => {
   });
 });
 
-describe('passagem/index.html: a página do artefato "Supervisão da fila" (decisão 9)', () => {
+describe('passagem/index.html: the page of the "Supervisão da fila" artifact (decision 9)', () => {
   const PAGE_PATH = `${DIR}/passagem/index.html`;
   const page = existsSync(PAGE_PATH) ? readFileSync(PAGE_PATH, 'utf8') : '';
 
-  it('existe e tem o título do artefato', () => {
+  it('exists and has the artifact title', () => {
     expect(existsSync(PAGE_PATH)).toBe(true);
     expect(page).toContain('<title>Supervisão da fila</title>');
   });
 
-  it('abre a database e lê a coleção passagem em tempo real', () => {
+  it('opens the database and reads the passagem collection in real time', () => {
     expect(page).toMatch(/claude\.use\(\s*['"]db['"]\s*\)/);
     expect(page).toContain('passagem');
     expect(page).toContain('onSnapshot');
   });
 
-  it('mostra os quatro tipos de regra e só lê', () => {
+  it('shows the four rule types and only reads', () => {
     for (const tipo of ['decisao', 'issue', 'agendamento', 'licao']) {
       expect(page).toContain(tipo);
     }
@@ -286,12 +286,12 @@ describe('passagem/index.html: a página do artefato "Supervisão da fila" (deci
       expect(page).not.toContain(w);
   });
 
-  it('espera o window.claude até o prazo e mostra os documentos de tipo desconhecido', () => {
+  it('waits for window.claude until the deadline and shows documents of unknown type', () => {
     expect(page).toContain('setTimeout(tentar');
-    expect(page).toContain('Outras regras');
+    expect(page).toContain('Other rules');
   });
 
-  it('tem tema escuro e não usa innerHTML, fetch nem script externo', () => {
+  it('has a dark theme and uses no innerHTML, fetch nor external script', () => {
     expect(page).toContain('prefers-color-scheme: dark');
     expect(page).not.toContain('innerHTML');
     expect(page).not.toContain('fetch(');
@@ -299,7 +299,7 @@ describe('passagem/index.html: a página do artefato "Supervisão da fila" (deci
   });
 });
 
-describe('custo.py (decisão 19)', () => {
+describe('custo.py (decision 19)', () => {
   let tmp = '';
   beforeEach(() => {
     tmp = mkdtempSync(path.join(tmpdir(), 'custo-'));
@@ -319,12 +319,12 @@ describe('custo.py (decisão 19)', () => {
     });
   }
 
-  it('agrega o JSONL nos grupos da linha de base, com sessões, US$, mediana e % por modelo', () => {
+  it('aggregates the JSONL into the baseline groups, with sessions, US$, median and % per model', () => {
     const rows = [
       session('Testador — #1532, bloco 1 de 5', 4, 'claude-sonnet-5-5'),
       session('Testador — #1532, bloco 2 de 5', 6, 'claude-sonnet-5-5'),
       session('Testador — reteste #1532', 2, 'claude-sonnet-5-5'),
-      session('FM3 — Custo e esforço (#1537)', 2, 'claude-sonnet-5-5'),
+      session('FM3 — Cost and effort (#1537)', 2, 'claude-sonnet-5-5'),
       session('FM4 — Troca do coordenador (#1538)', 4, 'claude-sonnet-5-5'),
       session('FM4-C — Correção (#1538)', 1, 'claude-sonnet-5-5'),
       session('FM9 — Fechamento (#1550)', 1, 'claude-sonnet-5-5'),
@@ -353,7 +353,7 @@ describe('custo.py (decisão 19)', () => {
     expect(out).toContain('claude-fable-5-2: 2.0%');
   });
 
-  it('aceita o get_session sem o envelope ccr e ignora linha vazia', () => {
+  it('accepts the get_session without the ccr envelope and ignores an empty line', () => {
     const file = path.join(tmp, 's.jsonl');
     writeFileSync(
       file,
@@ -368,7 +368,7 @@ describe('custo.py (decisão 19)', () => {
     expect(r.stdout).toContain('Supervisão: 1 sessões, US$ 3.00');
   });
 
-  it('sessão sem custo não entra nas contas e campos de tipo errado não derrubam o script', () => {
+  it('a session with no cost stays out of the sums and wrong-type fields do not break the script', () => {
     const file = path.join(tmp, 's.jsonl');
     writeFileSync(
       file,
@@ -385,15 +385,15 @@ describe('custo.py (decisão 19)', () => {
     expect(r.stdout).toContain('Supervisão: 1 sessões, US$ 3.00, mediana US$ 3.00');
   });
 
-  it('erro de uso ou linha que não é JSON sai com 2', () => {
+  it('a usage error or a non-JSON line exits with 2', () => {
     const none = spawnSync('python3', ['-I', `${DIR}/custo.py`], { encoding: 'utf8' });
     expect(none.status).toBe(2);
     const file = path.join(tmp, 'ruim.jsonl');
-    writeFileSync(file, 'isto não é json\n');
+    writeFileSync(file, 'this is not json\n');
     const bad = spawnSync('python3', ['-I', `${DIR}/custo.py`, file], {
       encoding: 'utf8',
     });
     expect(bad.status).toBe(2);
-    expect(bad.stderr).toContain('linha 1');
+    expect(bad.stderr).toContain('line 1');
   });
 });

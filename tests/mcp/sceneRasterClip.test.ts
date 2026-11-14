@@ -1,5 +1,5 @@
-// L2 (#1078): o raster do MCP recorta a filha de um slot com `clip` pela caixa do slot (a mesma
-// que a camada de componentes do canvas usa); sem `clip` o desenho é o de sempre.
+// L2 (#1078): the MCP raster clips the child of a slot with `clip` by the slot's box (the same
+// one the canvas components layer uses); without `clip` the drawing is the usual one.
 import { describe, expect, it } from 'vitest';
 import { createRaster, type Raster } from '../../mcp/image/raster';
 import { paintScene, type SceneDrawing } from '../../mcp/image/sceneRaster';
@@ -38,28 +38,28 @@ const inked = (r: Raster, x: number, y: number): boolean => green(r, x, y) < 10;
 
 const CLIP = { x: 20, y: 5, width: 30, height: 30 };
 
-describe('recorte da filha de um slot com clip (raster)', () => {
-  it('só aparece o que está dentro da caixa do slot', () => {
+describe('clip of a slot child with clip (raster)', () => {
+  it('only what is inside the slot box shows', () => {
     const r = paint([{ root: red(10), clip: CLIP }]);
     expect(inked(r, 30, 20)).toBe(true);
-    expect(inked(r, 15, 20)).toBe(false); // a filha começa em 10, o slot em 20
-    expect(inked(r, 60, 20)).toBe(false); // passa do slot (50)
-    expect(inked(r, 30, 40)).toBe(false); // abaixo do slot (35)
+    expect(inked(r, 15, 20)).toBe(false); // the child starts at 10, the slot at 20
+    expect(inked(r, 60, 20)).toBe(false); // goes past the slot (50)
+    expect(inked(r, 30, 40)).toBe(false); // below the slot (35)
   });
 
-  it('sem clip a filha inteira aparece', () => {
+  it('without clip the whole child shows', () => {
     const r = paint([{ root: red(10) }]);
     expect(inked(r, 15, 20)).toBe(true);
     expect(inked(r, 60, 20)).toBe(true);
     expect(inked(r, 105, 20)).toBe(true);
   });
 
-  it('a filha totalmente fora da caixa some', () => {
+  it('a child entirely outside the box disappears', () => {
     const r = paint([{ root: red(60, 40), clip: CLIP }]);
     for (let x = 0; x < r.width; x++) expect(inked(r, x, 20)).toBe(false);
   });
 
-  it('a caixa do recorte acompanha a escala da imagem (paridade ≤ 0,5 px)', () => {
+  it('the clip box follows the image scale (parity ≤ 0.5 px)', () => {
     const r = paint([{ root: red(10), clip: CLIP }], 2);
     const row = 40;
     let first = -1;
@@ -73,7 +73,7 @@ describe('recorte da filha de um slot com clip (raster)', () => {
     expect(Math.abs(last - 100)).toBeLessThanOrEqual(0.5);
   });
 
-  it('desenho em pixels de tela ignora o clip', () => {
+  it('drawing in screen pixels ignores the clip', () => {
     const screen = {
       anchor: 'top-left' as const,
       rect: { x: 0, y: 0, width: 100, height: 40 },

@@ -1,13 +1,13 @@
-// Medida de contexto da própria sessão (etapa #1699): o uso da última chamada ao modelo, lido no
-// transcript local do Claude Code. Só Node, sem dependências. O `used_tokens` do `get_session` só
-// muda no fim de um turno (vale 0 no primeiro); o transcript acompanha cada chamada.
-//   node scripts/ci/contextUsage.mjs [--teto <n>] [--max <n>] [--arquivo <caminho>]
-//     Lê `$CLAUDE_CONFIG_DIR` (ou `~/.claude`), `projects/*/$CLAUDE_CODE_SESSION_ID.jsonl`. Sem a
-//     variável, o `.jsonl` mais recente direto em `projects/*/` (nunca os de `subagents/`).
-//     `--arquivo` lê esse arquivo. Escreve, uma chave por linha: `contexto=<n>`, `mil=<n/1000 para
-//     cima>`, `acima=<true|false>` (`n` > `--teto`, padrão 300000), `fonte=<sessao|recente|arquivo>`,
-//     `arquivo=<caminho>` e, com `--max <n>`, `pct=<100·contexto/n para cima>`.
-//     Código 0 com medida; 1 sem medida (`contexto=?` e `motivo=<texto>`); 2 em erro de uso.
+// Context measure of the session itself (stage #1699): the usage of the last model call, read from
+// the local Claude Code transcript. Node only, no dependencies. The `used_tokens` of `get_session`
+// only changes at the end of a turn (it is 0 in the first one); the transcript follows every call.
+//   node scripts/ci/contextUsage.mjs [--teto <n>] [--max <n>] [--arquivo <path>]
+//     Reads `$CLAUDE_CONFIG_DIR` (or `~/.claude`), `projects/*/$CLAUDE_CODE_SESSION_ID.jsonl`. Without the
+//     variable, the most recent `.jsonl` directly in `projects/*/` (never those in `subagents/`).
+//     `--arquivo` reads that file. Writes, one key per line: `contexto=<n>`, `mil=<n/1000 rounded
+//     up>`, `acima=<true|false>` (`n` > `--teto`, default 300000), `fonte=<sessao|recente|arquivo>`,
+//     `arquivo=<path>` and, with `--max <n>`, `pct=<100·contexto/n rounded up>`.
+//     Exit code 0 with a measure; 1 without one (`contexto=?` and `motivo=<text>`); 2 on a usage error.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -22,7 +22,7 @@ function count(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
-/** Soma das entradas de uma linha do transcript que vale como medida, ou `null`. */
+/** Sum of the inputs of a transcript line that counts as a measurement, or `null`. */
 function lineContext(line) {
   let entry;
   try {
@@ -44,7 +44,7 @@ function lineContext(line) {
   return total > 0 ? total : null;
 }
 
-/** Contexto da última mensagem do fio principal do transcript, ou `null` sem nenhuma que valha. */
+/** Context of the last main-thread message of the transcript, or `null` with none that counts. */
 export function lastContext(text) {
   const lines = text.split('\n');
   for (let i = lines.length - 1; i >= 0; i--) {
@@ -62,7 +62,7 @@ function safeDirs(path) {
   }
 }
 
-// Os `.jsonl` direto em cada pasta de `<config>/projects`, sem descer em `<id>/subagents`.
+// The `.jsonl` files directly in each folder of `<config>/projects`, without descending into `<id>/subagents`.
 function transcripts(config) {
   const found = [];
   for (const folder of safeDirs(join(config, 'projects'))) {
@@ -86,7 +86,7 @@ function mtime(path) {
   }
 }
 
-/** `{ path, fonte }` do transcript a medir, ou `{ motivo }` quando não há arquivo. */
+/** `{ path, fonte }` of the transcript to measure, or `{ motivo }` when there is no file. */
 export function locate({ config, sessionId, arquivo }) {
   if (arquivo) return { path: arquivo, fonte: 'arquivo' };
   const all = transcripts(config);
@@ -95,7 +95,7 @@ export function locate({ config, sessionId, arquivo }) {
     const matches = all.filter(
       (p) => p.endsWith(`/${wanted}`) || p.endsWith(`\\${wanted}`),
     );
-    // O mesmo id pode existir em mais de uma pasta (sessão retomada de outro cwd): vale o mais novo.
+    // The same id may exist in more than one folder (session resumed from another cwd): the newest wins.
     matches.sort((a, b) => mtime(b) - mtime(a));
     if (matches.length > 0) return { path: matches[0], fonte: 'sessao' };
     return { motivo: `transcript ${wanted} não achado em ${join(config, 'projects')}` };
@@ -116,8 +116,8 @@ function positive(raw, name) {
 
 const FLAGS = new Set(['--teto', '--max', '--arquivo']);
 
-// Lê da esquerda para a direita: cada flag leva um valor, uma vez só. Erro de uso lança com a
-// causa dita (token solto, flag desconhecida, repetida ou sem valor).
+// Reads left to right: each flag takes one value, once only. A usage error throws with the
+// cause stated (stray token, unknown, repeated or valueless flag).
 function parseArgs(argv) {
   const values = new Map();
   for (let i = 0; i < argv.length; i++) {
@@ -128,7 +128,7 @@ function parseArgs(argv) {
     const value = argv[i + 1];
     if (value === undefined || value.startsWith('--'))
       throw new Error(
-        `${flag} pede um valor, mas veio ${value === undefined ? 'nada' : `"${value}"`} (caminho que começa com "--": use "./"). ${USAGE}`,
+        `${flag} needs a value, but got ${value === undefined ? 'nothing' : `"${value}"`} (a path that starts with "--": use "./"). ${USAGE}`,
       );
     values.set(flag, value);
     i++;
@@ -145,7 +145,7 @@ function noMeasure(motivo) {
   return 1;
 }
 
-/** Roda a CLI e devolve o código de saída; erro de uso lança. */
+/** Runs the CLI and returns the exit code; a usage error throws. */
 export function run(argv, env = process.env) {
   const { teto, max, arquivo } = parseArgs(argv);
   const config = env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude');

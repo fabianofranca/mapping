@@ -1,9 +1,9 @@
 // @vitest-environment node
-// Fase DN1 (etapa #1826, decisões 1 a 6 e 8): "chamar o dono" é definido uma vez no "Orquestrador —
-// passo a passo" (parágrafo `**Chamar o dono:**`), a fase e o testador que não avisam seguem a escada
-// do skill `implementar-fila` antes de o dono ser chamado, as "Limitações conhecidas" do revisor não
-// repetem os comandos do item 6 da mensagem, e a regra `code-review` sai da lista de "## 1. Candidatas".
-// Teste só de texto (leitura do `docs/FLOW.md` e do skill `detalhar-backlog`).
+// Phase DN1 (stage #1826, decisions 1 to 6 and 8): "calling the owner" is defined once in the
+// "Orchestrator — step by step" (paragraph `**Call the owner:**`), the phase and the tester that do not
+// notify follow the ladder of the `implementar-fila` skill before the owner is called, the reviewer's
+// "Known limitations" do not repeat the commands of item 6 of the message, and the `code-review` rule
+// leaves the list of "## 1. Candidates". Text-only test (reads `docs/FLOW.md` and the `detalhar-backlog` skill).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
@@ -11,210 +11,209 @@ import { between, section } from '../support/textSlice';
 const flow = readFileSync('docs/FLOW.md', 'utf8');
 const skill = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
 
-const orquestrador = section(flow, '## Orquestrador — passo a passo');
-const correcao = section(flow, '## Fase de correção');
-const grupos = section(flow, '## Rodada dirigida em grupos');
-const cincoBlocos = section(flow, '## Rodada completa em 5 blocos');
-const limitacoes = section(flow, '### Limitações conhecidas');
-const candidatas = section(skill, '## 1. Candidatas');
+const orchestrator = section(flow, '## Orchestrator — step by step');
+const fixPhase = section(flow, '## Fix phase');
+const groups = section(flow, '## Directed round in groups');
+const fiveBlocks = section(flow, '## Full round in 5 blocks');
+const limitations = section(flow, '### Known limitations');
+const candidates = section(skill, '## 1. Candidates');
 
-/** Parágrafo (bloco de linhas até a linha em branco) que começa por `start`. */
+/** Paragraph (block of lines up to the blank line) that starts with `start`. */
 function paragraph(text: string, start: string): string {
   const from = text.indexOf(start);
-  if (from < 0) throw new Error(`âncora não achada: ${start}`);
+  if (from < 0) throw new Error(`anchor not found: ${start}`);
   const end = text.indexOf('\n\n', from);
   return text.slice(from, end < 0 ? undefined : end);
 }
 
-const limites = (): string => paragraph(orquestrador, '**Limites:**');
-const chamarODono = (): string => paragraph(orquestrador, '**Chamar o dono:**');
+const limits = (): string => paragraph(orchestrator, '**Limits:**');
+const callTheOwner = (): string => paragraph(orchestrator, '**Call the owner:**');
 
-describe('DN1 — "Chamar o dono" definido uma vez (#1826, decisão 1)', () => {
-  it('o parágrafo `**Chamar o dono:**` vem logo depois do **Limites**', () => {
-    const depois = orquestrador.indexOf('\n\n', orquestrador.indexOf('**Limites:**'));
-    expect(orquestrador.slice(depois + 2).startsWith('**Chamar o dono:**')).toBe(true);
+describe('DN1 — "Call the owner" defined once (#1826, decision 1)', () => {
+  it('the `**Call the owner:**` paragraph comes right after **Limits**', () => {
+    const after = orchestrator.indexOf('\n\n', orchestrator.indexOf('**Limits:**'));
+    expect(orchestrator.slice(after + 2).startsWith('**Call the owner:**')).toBe(true);
   });
 
-  it('diz PushNotification, AskUserQuestion com a recomendada primeiro, o item 8 e a fila', () => {
-    const p = chamarODono();
+  it('says PushNotification, AskUserQuestion with the recommended one first, item 8 and the queue', () => {
+    const p = callTheOwner();
     expect(p).toContain('`PushNotification`');
-    expect(p).toContain('com o motivo e o link');
+    expect(p).toContain('with the reason and the link');
     expect(p).toContain('`AskUserQuestion`');
-    expect(p).toContain('com a opção recomendada primeiro');
-    expect(p).toContain('item 8 da "Para a sessão da fase"');
-    expect(p).toContain('a pergunta é da fase, no chat dela');
+    expect(p).toContain('with the recommended option first');
+    expect(p).toContain('item 8 of "For the phase session"');
+    expect(p).toContain('the question belongs to the phase, in its chat');
     expect(p).toContain('`implementar-fila`');
-    expect(p).toContain('regras 1 e 2 de "Regras desta fila"');
+    expect(p).toContain('rules 1 and 2 of "Rules of this queue"');
   });
 });
 
-describe('DN1 — a fase que não avisa segue a escada antes de chamar o dono (decisão 2)', () => {
-  it('o **Limites** traz a escada: working, send_message de retomada, recriar uma vez, Chamar o dono', () => {
-    const p = limites();
+describe('DN1 — the phase that does not notify follows the ladder before calling the owner (decision 2)', () => {
+  it('**Limits** carries the ladder: working, resume send_message, recreate once, Call the owner', () => {
+    const p = limits();
     expect(p).toContain('`implementar-fila`');
     expect(p).toContain('`working`');
-    expect(p).toContain('outra conferência de reserva');
-    expect(p).toContain('`review_ready` ou `idle` sem `send_later` pendente da fase');
+    expect(p).toContain('another fallback check');
+    expect(p).toContain(
+      '`review_ready` or `idle` with no pending `send_later` of the phase',
+    );
     expect(p).toContain(
       '"Conferência do orquestrador: a fase não avisou. Retome do ponto em que parou (CI do PR, merge, aviso) e avise o coordenador."',
     );
-    expect(p).toContain('cria a sessão de novo **uma vez**');
+    expect(p).toContain('creates the session again **once**');
     expect(p).toContain('a sessão anterior (<id>) parou em: <o que os eventos mostram>');
-    expect(p).toMatch(/se acontecer de novo, chama o dono \("Chamar o dono"/);
+    expect(p).toMatch(/if it happens again, calls the owner \("Call the owner"/);
   });
 
-  it('a falha ou sessão parada não chama mais o dono de imediato', () => {
-    expect(limites()).not.toContain(
-      'com falha ou sessão parada, o orquestrador chama o dono',
+  it('a failure or stopped session no longer calls the owner at once', () => {
+    expect(limits()).not.toContain(
+      'with a failure or a stopped session, the orchestrator calls the owner',
     );
   });
 
-  it('a pergunta da fase parada é lida "antes de avisar o dono"', () => {
-    expect(limites()).toContain('antes de avisar o dono');
-    expect(limites()).not.toContain('antes de chamar o dono');
+  it('the question of the stopped phase is read "before notifying the owner"', () => {
+    expect(limits()).toContain('before notifying the owner');
+    expect(limits()).not.toContain('before calling the owner');
   });
 });
 
-describe('DN1 — o testador que não avisa segue o mesmo (decisão 3)', () => {
-  const reserva = (secao: string): string => {
-    const linha = secao
-      .split('\n')
-      .find((l) => l.startsWith('- **Conferência de reserva:**'));
-    if (!linha) throw new Error('Conferência de reserva não achada');
-    return linha;
+describe('DN1 — the tester that does not notify follows the same (decision 3)', () => {
+  const fallback = (text: string): string => {
+    const line = text.split('\n').find((l) => l.startsWith('- **Fallback check:**'));
+    if (!line) throw new Error('Fallback check not found');
+    return line;
   };
 
-  it('Rodada dirigida em grupos cita o **Limites** e mantém o send_later e os n avisos', () => {
-    const l = reserva(grupos);
-    expect(l).toContain('`send_later` de 60 min');
-    expect(l).toContain('**n avisos**');
+  it('Directed round in groups cites **Limits** and keeps the send_later and the n notices', () => {
+    const l = fallback(groups);
+    expect(l).toContain('60 min `send_later`');
+    expect(l).toContain('**n notices**');
     expect(l).toContain(
-      'o mesmo da fase que não avisa (parágrafo **Limites** do "Orquestrador — passo a passo")',
+      'same as the phase that does not report (**Limits** paragraph of "Orchestrator — step by step")',
     );
-    expect(l).not.toMatch(/chama o dono/i);
+    expect(l).not.toMatch(/calls the owner/i);
   });
 
-  it('Rodada completa em 5 blocos cita o **Limites** e mantém o send_later e os cinco avisos', () => {
-    const l = reserva(cincoBlocos);
-    expect(l).toContain('`send_later` de 60 min');
-    expect(l).toContain('**cinco avisos**');
+  it('Full round in 5 blocks cites **Limits** and keeps the send_later and the five notices', () => {
+    const l = fallback(fiveBlocks);
+    expect(l).toContain('60 min `send_later`');
+    expect(l).toContain('**five notices**');
     expect(l).toContain(
-      'o mesmo da fase que não avisa (parágrafo **Limites** do "Orquestrador — passo a passo")',
+      'same as the phase that does not report (**Limits** paragraph of "Orchestrator — step by step")',
     );
-    expect(l).not.toMatch(/chama o dono/i);
+    expect(l).not.toMatch(/calls the owner/i);
   });
 });
 
-describe('DN1 — a correção que falha de novo cita "Chamar o dono" com os mesmos três casos (decisão 4)', () => {
+describe('DN1 — the fix that fails again cites "Call the owner" with the same three cases (decision 4)', () => {
   const item = (): string => {
-    const linha = orquestrador.split('\n').find((l) => l.startsWith('- **com ❌**'));
-    if (!linha) throw new Error('item "com ❌" não achado');
-    return linha;
+    const line = orchestrator.split('\n').find((l) => l.startsWith('- **with ❌**'));
+    if (!line) throw new Error('item "with ❌" not found');
+    return line;
   };
-  const ultimaFrase = (): string => {
-    const de = correcao.lastIndexOf('Na segunda falha');
-    if (de < 0) throw new Error('última frase da Fase de correção não achada');
-    return correcao.slice(de).trimEnd();
+  const lastSentence = (): string => {
+    const from = fixPhase.lastIndexOf('On the second failure');
+    if (from < 0) throw new Error('last sentence of the Fix phase not found');
+    return fixPhase.slice(from).trimEnd();
   };
 
-  it('o item "com ❌" do orquestrador', () => {
+  it('the "with ❌" item of the orchestrator', () => {
     const l = item();
-    expect(l).toMatch(/Chama o dono \("Chamar o dono"[^)]*\) se falhar de novo, /);
+    expect(l).toMatch(/calls the owner \("Call the owner"[^)]*\) if it fails again, /);
     expect(l).toContain(
-      'se o achado for de perda de dados, integridade do `mapping.json` ou segurança',
+      'if the finding is about data loss, `mapping.json` integrity or security',
     );
-    expect(l).toContain('ou se a correção pedir decisão de produto');
+    expect(l).toContain('or if the fix requires a product decision');
   });
 
-  it('a última frase da "Fase de correção"', () => {
-    const f = ultimaFrase();
-    expect(f).toContain('Na segunda falha');
-    expect(f).toContain('perda de dados, integridade do `mapping.json` ou segurança');
-    expect(f).toContain('decisão de produto');
-    expect(f).toMatch(/o orquestrador chama o dono \("Chamar o dono"/);
+  it('the last sentence of the "Fix phase"', () => {
+    const f = lastSentence();
+    expect(f).toContain('On the second failure');
+    expect(f).toContain('data loss, `mapping.json` integrity or security');
+    expect(f).toContain('product decision');
+    expect(f).toMatch(/the orchestrator calls the owner \("Call the owner"/);
   });
 });
 
-describe('DN1 — todo "chama o dono" do docs/FLOW.md cita "Chamar o dono" (decisão 1 e aceite)', () => {
-  it('cada ocorrência, até o próximo ". ", ";" ou fim de linha, cita "Chamar o dono"', () => {
-    const faltam: string[] = [];
+describe('DN1 — every "calls the owner" of docs/FLOW.md cites "Call the owner" (decision 1 and acceptance)', () => {
+  it('each occurrence, up to the next ". ", ";" or end of line, cites "Call the owner"', () => {
+    const missing: string[] = [];
     const lines = flow.split('\n');
-    lines.forEach((linha, i) => {
-      for (const m of linha.matchAll(/chama o dono/gi)) {
-        const resto = linha.slice(m.index);
-        const fim = resto.search(/\. |;|$/);
-        const trecho = resto.slice(0, fim < 0 ? undefined : fim);
-        if (!trecho.includes('"Chamar o dono"')) faltam.push(`linha ${i + 1}: ${trecho}`);
+    lines.forEach((line, i) => {
+      for (const m of line.matchAll(/calls the owner/gi)) {
+        const rest = line.slice(m.index);
+        const end = rest.search(/\. |;|$/);
+        const excerpt = rest.slice(0, end < 0 ? undefined : end);
+        if (!excerpt.includes('"Call the owner"'))
+          missing.push(`line ${i + 1}: ${excerpt}`);
       }
     });
-    expect(faltam).toEqual([]);
+    expect(missing).toEqual([]);
   });
 
-  it('há ocorrências no texto (o teste não passa vazio)', () => {
-    expect((flow.match(/chama o dono/gi) ?? []).length).toBeGreaterThanOrEqual(3);
+  it('there are occurrences in the text (the test does not pass empty)', () => {
+    expect((flow.match(/calls the owner/gi) ?? []).length).toBeGreaterThanOrEqual(3);
   });
 });
 
-describe('DN1 — "Limitações conhecidas" não repete o item 6 do revisor (decisão 5)', () => {
+describe('DN1 — "Known limitations" does not repeat item 6 of the reviewer (decision 5)', () => {
   const item = (): string => {
-    const linha = limitacoes.split('\n').find((l) => l.includes('API REST'));
-    if (!linha) throw new Error('item da API REST não achado');
-    return linha;
+    const line = limitations.split('\n').find((l) => l.includes('REST API'));
+    if (!line) throw new Error('REST API item not found');
+    return line;
   };
 
-  it('diz só a limitação e aponta para o item 6 de "Para o revisor do CR por épico"', () => {
+  it('states only the limitation and points to item 6 of "For the per-epic CR reviewer"', () => {
     const l = item();
-    expect(l).not.toMatch(/^- Use a API REST/);
-    expect(l).toContain('`gh issue create`, `gh repo clone` e GraphQL');
-    expect(l).toContain('item 6 de "Para o revisor do CR por épico"');
+    expect(l).not.toMatch(/^- Use the REST API/);
+    expect(l).toContain('`gh issue create`, `gh repo clone` and GraphQL');
+    expect(l).toContain('item 6 of "For the per-epic CR reviewer"');
   });
 
-  it('sem os comandos `gh api -X POST` nem a frase do `-X GET`', () => {
+  it('without the `gh api -X POST` commands nor the `-X GET` sentence', () => {
     const l = item();
     expect(l).not.toContain('-X POST');
     expect(l).not.toContain('-X GET');
     expect(l).not.toContain('gh api');
   });
 
-  it('o item 6 da mensagem do revisor continua com os comandos', () => {
-    const mensagem = section(flow, '### Para o revisor do CR por épico');
-    const item6 = between(mensagem, '\n6. ', '\n7. ');
+  it('item 6 of the reviewer message keeps the commands', () => {
+    const message = section(flow, '### For the per-epic CR reviewer');
+    const item6 = between(message, '\n6. ', '\n7. ');
     expect(item6).toContain('gh api -X POST repos/fabianofranca/mapping/issues');
     expect(item6).toContain('gh api -X GET search/issues');
   });
 
-  it('o item da busca (search/issues, 30 chamadas por minuto) continua', () => {
-    expect(limitacoes).toContain(
-      'A busca (`search/issues`) aceita 30 chamadas por minuto',
-    );
+  it('the search item (search/issues, 30 calls per minute) remains', () => {
+    expect(limitations).toContain('Search (`search/issues`) accepts 30 calls per minute');
   });
 });
 
-describe('DN1 — "## 1. Candidatas" do detalhar-backlog (decisão 6)', () => {
-  const passos = (): string[] => candidatas.split('\n').filter((l) => /^\d+\. /.test(l));
+describe('DN1 — "## 1. Candidates" of detalhar-backlog (decision 6)', () => {
+  const steps = (): string[] => candidates.split('\n').filter((l) => /^\d+\. /.test(l));
 
-  it('tem 4 passos numerados e "Sem candidatas" é o 4', () => {
-    const p = passos();
+  it('has 4 numbered steps and "With no candidates" is the 4th', () => {
+    const p = steps();
     expect(p).toHaveLength(4);
-    expect(p[3]).toBe('4. Sem candidatas, diga isso e termine.');
+    expect(p[3]).toBe('4. With no candidates, say so and finish.');
   });
 
-  it('os passos 1 a 3 continuam (o queuePanel lê o passo 2 entre "2. " e "\\n3. ")', () => {
-    const p = passos();
+  it('steps 1 to 3 remain (queuePanel reads step 2 between "2. " and "\\n3. ")', () => {
+    const p = steps();
     expect(p[0]).toMatch(/^1\. `list_issues`/);
-    expect(p[1]).toMatch(/^2\. Fique só com as que \*\*não\*\* têm `ready`/);
-    expect(p[2]).toMatch(/^3\. Ordem: /);
+    expect(p[1]).toMatch(/^2\. Keep only those that have \*\*neither\*\* `ready`/);
+    expect(p[2]).toMatch(/^3\. Order: /);
   });
 
-  it('o parágrafo `**Issues do revisor de código**` vem depois da lista, com o texto da regra', () => {
-    const depoisDaLista = candidatas.slice(candidatas.indexOf('4. Sem candidatas'));
-    const p = paragraph(depoisDaLista, '**Issues do revisor de código**');
-    expect(depoisDaLista.split('\n\n')[1]).toBe(p);
-    expect(p).toContain('(rótulo `code-review`, `docs/PROCESS.md` "Revisão de código")');
+  it('the `**Code reviewer issues**` paragraph comes after the list, with the text of the rule', () => {
+    const afterList = candidates.slice(candidates.indexOf('4. With no candidates'));
+    const p = paragraph(afterList, '**Code reviewer issues**');
+    expect(afterList.split('\n\n')[1]).toBe(p);
+    expect(p).toContain('(label `code-review`, `docs/PROCESS.md` "Code review")');
     expect(p).toContain(
-      'cada defeito high ou medium dela já tem a sua issue `bug`, citada no corpo',
+      'each high or medium defect in it already has its own `bug` issue, cited in the body',
     );
-    expect(p).toContain('cobre só os achados que **não** apontam para um `bug`');
-    expect(p).toContain('sem detalhar o mesmo achado duas vezes');
+    expect(p).toContain('covers only the findings that do **not** point to a `bug`');
+    expect(p).toContain('without detailing the same finding twice');
   });
 });

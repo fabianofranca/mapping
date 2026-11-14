@@ -1,16 +1,16 @@
-# Densidade da captura — 2026-11-12 (épico `epic/densidade-captura`, PR #1693, MCP 0.37.0, schema v19)
+# Capture density — 2026-11-12 (épico `epic/densidade-captura`, PR #1693, MCP 0.37.0, schema v19)
 
 ## Adicionado
 
-- Densidade do container (#1085, D1): `containers[].density` (de 0,5 a 8; padrão 1) diz quantos pixels da imagem vale uma unidade do componente (dp, pt, px a 1x). Numa captura 3x, um `button` de 174 × 120 desenha o rótulo de 14 unidades com 42 px, igual ao mesmo botão em 58 × 40 num container 1x a `zoom` 3.
-- `minSize` do componente, tamanho inicial da instância, Arrumar e ajuste ao conteúdo valem em unidades e se gravam em pixels da imagem (× densidade).
-- MCP: `add_container` e `update_container` aceitam `density` (`null` volta a 1; fora de 0,5 a 8 é `container-density`); `get_container`, `get_project` e `get_marking` devolvem `density`; `component-overflow.missing` continua em pixels da imagem.
-- Schema v19 (a migração só sobe o número) e proposta `formatVersion` 7 (campo `density` do container).
-- Densidade na app (#1085, D2): o campo **Densidade** nos Detalhes do container (1x, 1,5x, 2x, 3x, 4x ou **Personalizada** de 0,5 a 8, que aceita 2,625) e no diálogo **Novo container** (padrão 1x). Com um tamanho pronto da especialização que explique a largura (1080 = 3 × 360), os Detalhes mostram "Sugestão: 3x (Celular 360 × 800)" e o botão **Aplicar**; a app nunca aplica sozinha, e o Aplicar é uma entrada só de desfazer.
-- A revisão de proposta mostra a mudança de densidade de um container como "Densidade: 1 → 3".
+- Container density (#1085, D1): `containers[].density` (from 0.5 to 8; default 1) says how many pixels of the image one component unit is worth (dp, pt, px at 1x). In a 3x capture, a 174 × 120 `button` draws the 14-unit label at 42 px, the same as the same button at 58 × 40 in a 1x container at `zoom` 3.
+- The component's `minSize`, the instance's initial size, Arrange and fit to content apply in units and are saved in image pixels (× density).
+- MCP: `add_container` and `update_container` accept `density` (`null` goes back to 1; outside 0.5 to 8 is `container-density`); `get_container`, `get_project` and `get_marking` return `density`; `component-overflow.missing` stays in image pixels.
+- Schema v19 (the migration only bumps the number) and proposal `formatVersion` 7 (the container's `density` field).
+- Density in the app (#1085, D2): the **Density** field in the container Details (1x, 1.5x, 2x, 3x, 4x or **Custom** from 0.5 to 8, which accepts 2.625) and in the **New container** dialog (default 1x). With a ready-made size from the specialization that explains the width (1080 = 3 × 360), the Details show "Suggestion: 3x (Phone 360 × 800)" and the **Apply** button; the app never applies on its own, and Apply is a single undo entry.
+- The proposal review shows a container's density change as "Density: 1 → 3".
 
 ## Alterado
 
-- Teto do `dist/index.html` subiu 16 KiB, de 2.097.152 para 2.113.536, pela regra do orçamento.
-- Material 3 (Compose) na versão 10 (#1085, D3): a Fidelidade dos 50 documentos diz "1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem" (antes, "1 dp = 1 px do componente"). Aditiva, sem passo novo em `migrations` (os trechos `from → to` existentes passam a terminar na 10). Pacote `examples/material3-compose.zip`, exemplo completo e guia regenerados.
-- Roteiros: o `docs/TESTING.md` fala do schema v19 e, no R3.14 a R3.17, a cadeia do Material 3 passa a `mat-v11` a `mat-v14` (a biblioteca está na versão 10); o R17 ganha o R17.39 (o `button` de 174 × 120 num container 3x igual ao de 58 × 40 a `zoom` 3) e o R17.40 (`component-overflow` com `density` 3 e `container-density` com 12).
+- `dist/index.html` ceiling raised by 16 KiB, from 2,097,152 to 2,113,536, by the budget rule.
+- Material 3 (Compose) at version 10 (#1085, D3): the Fidelity of the 50 documents says "1 dp = 1 component unit; the container density converts to image pixels" (before, "1 dp = 1 component px"). Additive, with no new step in `migrations` (the existing `from → to` spans now end at 10). The `examples/material3-compose.zip` package, the full example and the guide are regenerated.
+- Test scripts: `docs/TESTING.md` talks about schema v19 and, in R3.14 to R3.17, the Material 3 chain becomes `mat-v11` to `mat-v14` (the library is at version 10); R17 gains R17.39 (the 174 × 120 `button` in a 3x container equal to the 58 × 40 one at `zoom` 3) and R17.40 (`component-overflow` with `density` 3 and `container-density` with 12).

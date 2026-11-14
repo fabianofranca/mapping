@@ -1,18 +1,19 @@
-// Foco ao voltar à tela inicial depois do Catálogo da biblioteca (etapa #515, FN1; #497).
-// O botão "Voltar" some junto com a tela e a tela inicial é uma instância nova, então o
-// pedido atravessa a troca: `CatalogScreen` pede, a `Home` cumpre no commit em que monta.
+// Focus on returning to the home screen after the library Catalog (stage #515, FN1; #497).
+// The "Back" button disappears with the screen and the home screen is a new instance, so the
+// request crosses the switch: `CatalogScreen` makes it, `Home` fulfills it in the commit where
+// it mounts.
 
 let pending = false;
 
-/** Chamada por quem fecha o Catálogo: a próxima tela inicial leva o foco. */
+/** Called by whoever closes the Catalog: the next home screen gets the focus. */
 export function requestHomeFocus(): void {
   pending = true;
 }
 
-/** Alvo do foco: o controle que abriu a biblioteca; se não existir, o primeiro controle. */
+/** Focus target: the control that opened the library; if it does not exist, the first control. */
 export const HOME_LIBRARY_BUTTON = '[data-home-open-library]';
 
-/** A tela inicial, já montada, cumpre o pedido (uma vez). Devolve se havia pedido. */
+/** The home screen, already mounted, fulfills the request (once). Returns whether there was one. */
 export function fulfillHomeFocus(root: ParentNode, firstControl: string): boolean {
   if (!pending) return false;
   pending = false;

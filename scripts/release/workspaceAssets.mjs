@@ -1,12 +1,12 @@
-// Arquivos do workspace que cada release do MCP publica junto com o `mapping-mcp.js`
-// (etapa #681, decisão 1; etapa #735, decisão 1): `setup.sh`, `SKILL.md` (a skill `spec-author`),
-// `AGENTS.mapping.md` (o bloco gerenciado do `examples/workspace/AGENTS.md`) e `watch-comments.mjs`
-// (o watcher de conversas), cada um com o seu `.sha256`.
-// Os três jobs de publicação (snapshot, rc e estável) usam este script, sem repetir a lista.
-//   node scripts/release/workspaceAssets.mjs <pasta de saída> [--root <raiz do repositório>]
-// Imprime os arquivos gravados, um por linha, com a pasta de saída na frente. Só Node, sem
-// dependências. Sai com código ≠ 0 e uma mensagem em stderr se faltar origem ou se o esqueleto
-// do `AGENTS.md` não tiver exatamente um bloco, com os marcadores na ordem.
+// Workspace files that each MCP release publishes along with `mapping-mcp.js`
+// (stage #681, decision 1; stage #735, decision 1): `setup.sh`, `SKILL.md` (the `spec-author` skill),
+// `AGENTS.mapping.md` (the managed block of `examples/workspace/AGENTS.md`) and `watch-comments.mjs`
+// (the conversation watcher), each with its `.sha256`.
+// The three publishing jobs (snapshot, rc and stable) use this script, without repeating the list.
+//   node scripts/release/workspaceAssets.mjs <output folder> [--root <repository root>]
+// Prints the files written, one per line, with the output folder in front. Node only, no
+// dependencies. Exits with a code ≠ 0 and a message on stderr if a source is missing or if the
+// `AGENTS.md` skeleton does not have exactly one block, with the markers in order.
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -19,7 +19,7 @@ export const BLOCK_END = '<!-- mapping:end -->';
 
 const AGENTS_PATH = 'examples/workspace/AGENTS.md';
 
-/** Origens (relativas à raiz) dos arquivos publicados: `releaseInputs.mjs` as espalha na lista de entradas. */
+/** Sources (relative to the root) of the published files: `releaseInputs.mjs` spreads them into the inputs list. */
 export const WORKSPACE_SOURCES = [
   'examples/workspace/setup.sh',
   '.claude/skills/spec-author/SKILL.md',
@@ -27,30 +27,30 @@ export const WORKSPACE_SOURCES = [
   'examples/workspace/watch-comments.mjs',
 ];
 
-/** Quantas vezes `needle` aparece em `text`. */
+/** How many times `needle` appears in `text`. */
 function occurrences(text, needle) {
   return text.split(needle).length - 1;
 }
 
-/** Extrai o bloco gerenciado (marcadores inclusive) do `AGENTS.md` do esqueleto. */
+/** Extracts the managed block (markers included) from the skeleton `AGENTS.md`. */
 export function extractBlock(agents) {
   const begins = occurrences(agents, BLOCK_BEGIN);
   const ends = occurrences(agents, BLOCK_END);
   if (begins === 0 && ends === 0) {
     throw new Error(
-      `${AGENTS_PATH}: nenhum bloco gerenciado (faltam os marcadores mapping:begin e mapping:end).`,
+      `${AGENTS_PATH}: no managed block (the mapping:begin and mapping:end markers are missing).`,
     );
   }
   if (begins !== 1 || ends !== 1) {
     throw new Error(
-      `${AGENTS_PATH}: esperado exatamente um bloco (um mapping:begin e um mapping:end), achei ${begins} e ${ends}.`,
+      `${AGENTS_PATH}: expected exactly one block (one mapping:begin and one mapping:end), found ${begins} and ${ends}.`,
     );
   }
   const start = agents.indexOf(BLOCK_BEGIN);
   const end = agents.indexOf(BLOCK_END);
   if (end < start) {
     throw new Error(
-      `${AGENTS_PATH}: mapping:end vem antes do começo do bloco (marcadores fora de ordem).`,
+      `${AGENTS_PATH}: mapping:end comes before the start of the block (markers out of order).`,
     );
   }
   return agents.slice(start, end + BLOCK_END.length);
@@ -60,16 +60,16 @@ function readSource(root, path) {
   try {
     return readFileSync(join(root, path), 'utf8');
   } catch {
-    throw new Error(`Origem não encontrada: ${path}`);
+    throw new Error(`Source not found: ${path}`);
   }
 }
 
-/** Linha do `.sha256` no formato do `sha256sum` (lido também por `shasum -a 256 -c`). */
+/** `.sha256` line in the `sha256sum` format (also read by `shasum -a 256 -c`). */
 export function checksumLine(name, content) {
   return `${createHash('sha256').update(content).digest('hex')}  ${name}\n`;
 }
 
-/** Grava os arquivos em `outDir` e devolve os caminhos, na ordem de publicação. */
+/** Writes the files to `outDir` and returns the paths, in publishing order. */
 export function buildWorkspaceAssets(outDir, root) {
   const files = [
     ['setup.sh', readSource(root, WORKSPACE_SOURCES[0])],
@@ -102,7 +102,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   try {
     if (!out)
       throw new Error(
-        'Uso: node scripts/release/workspaceAssets.mjs <pasta de saída> [--root <raiz>]',
+        'Usage: node scripts/release/workspaceAssets.mjs <output folder> [--root <root>]',
       );
     process.stdout.write(`${buildWorkspaceAssets(out, root).join('\n')}\n`);
   } catch (error) {

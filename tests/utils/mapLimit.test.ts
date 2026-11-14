@@ -5,7 +5,7 @@ import { mapLimit } from '../../src/utils/mapLimit';
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 describe('mapLimit', () => {
-  it('devolve os resultados na ordem dos itens, mesmo terminando fora de ordem', async () => {
+  it('returns the results in item order, even when they finish out of order', async () => {
     const out = await mapLimit([30, 5, 20, 1], 4, async (ms) => {
       await sleep(ms);
       return ms * 2;
@@ -13,7 +13,7 @@ describe('mapLimit', () => {
     expect(out).toEqual([60, 10, 40, 2]);
   });
 
-  it('nunca roda mais de `limit` tarefas ao mesmo tempo', async () => {
+  it('never runs more than `limit` tasks at the same time', async () => {
     let running = 0;
     let peak = 0;
     const out = await mapLimit(
@@ -31,7 +31,7 @@ describe('mapLimit', () => {
     expect(peak).toBe(3);
   });
 
-  it('o primeiro erro rejeita depois das tarefas em curso e nenhuma outra começa', async () => {
+  it('the first error rejects after the in-progress tasks and no other starts', async () => {
     const started: number[] = [];
     const finished: number[] = [];
     const boom = new Error('boom');
@@ -46,25 +46,25 @@ describe('mapLimit', () => {
       return i;
     });
     await expect(run).rejects.toBe(boom);
-    // A tarefa 1 estava em curso e terminou antes da rejeição; ninguém além delas começou.
+    // Task 1 was in progress and finished before the rejection; nobody besides them started.
     expect(finished).toEqual([1]);
     expect(started).toEqual([0, 1]);
   });
 
-  it('lista vazia devolve [] sem chamar fn', async () => {
+  it('an empty list returns [] without calling fn', async () => {
     const fn = vi.fn(async () => 1);
     expect(await mapLimit([], 4, fn)).toEqual([]);
     expect(fn).not.toHaveBeenCalled();
   });
 
-  it('funciona com limit maior que a lista', async () => {
+  it('works with a limit larger than the list', async () => {
     expect(await mapLimit(['a', 'b'], 10, async (s) => s.toUpperCase())).toEqual([
       'A',
       'B',
     ]);
   });
 
-  it('fn recebe (item, index)', async () => {
+  it('fn receives (item, index)', async () => {
     expect(await mapLimit(['x', 'y', 'z'], 2, async (s, i) => `${i}${s}`)).toEqual([
       '0x',
       '1y',

@@ -8,9 +8,9 @@ import { actionErrorText } from './commentsText';
 import { impactText } from './deleteText';
 import { localDayStart } from './localDay';
 
-// Apagar conversas em lote (decisão 23): "Só as resolvidas" (marcado) e, opcional, "Com a última
-// mensagem antes de". Os critérios são só esses dois; o filtro da janela não entra. O foco volta
-// ao ⋯ que abriu (o `Dialog`).
+// Delete threads in bulk (decision 23): "Only the resolved ones" (checked) and, optionally, "With
+// the last message before". The criteria are only these two; the window's filter does not apply.
+// Focus returns to the ⋯ that opened it (the `Dialog`).
 
 interface BulkDeleteDialogProps {
   readonly threads: readonly Thread[];

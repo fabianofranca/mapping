@@ -1,39 +1,39 @@
 # Button
 
-Common button: filled, tonal, outlined, text ou elevated; 40 dp, forma full.
+Common button: filled, tonal, outlined, text or elevated; 40 dp, full shape.
 
-Tipo de anotação: `m3-button` (Button).
+Annotation type: `m3-button` (Button).
 
-## Tamanho
+## Size
 
-- Inicial: 120 × 40 px
-- Mínimo: 48 × 40 px
-- Dimensionamento: largura hug, altura 40
+- Initial: 120 × 40 px
+- Minimum: 48 × 40 px
+- Sizing: width hug, height 40
 
-## Campos
+## Fields
 
-| Chave      | Rótulo   | Tipo   | Obrigatório | Opções                                                                                               | Padrão | Descrição |
-| ---------- | -------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------ | --------- |
-| `label`    | Label    | string | sim         |                                                                                                      |        |           |
-| `variant`  | Variant  | enum   | não         | filled, tonal, outlined, text, elevated                                                              | filled |           |
-| `icon`     | Icon     | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
-| `disabled` | Disabled | enum   | não         | sim, não                                                                                             | não    |           |
+| Key        | Label    | Type   | Required | Options                                                                                              | Default | Description |
+| ---------- | -------- | ------ | -------- | ---------------------------------------------------------------------------------------------------- | ------- | ----------- |
+| `label`    | Label    | string | yes      |                                                                                                      |         |             |
+| `variant`  | Variant  | enum   | no       | filled, tonal, outlined, text, elevated                                                              | filled  |             |
+| `icon`     | Icon     | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |             |
+| `disabled` | Disabled | enum   | no       | sim, não                                                                                             | não     |             |
 
-## Exemplos
+## Examples
 
-- **Padrão**: label=Label, variant=filled, disabled=não
+- **Default**: label=Label, variant=filled, disabled=não
 - **Tonal**: label=Label, variant=tonal, disabled=não
-- **Contornado**: label=Label, variant=outlined, disabled=não
+- **Outlined**: label=Label, variant=outlined, disabled=não
 
-## Origem externa
+## External origin
 
-Sistema `sdui`: tipo externo `Button`.
+System `sdui`: external type `Button`.
 
-- Props ignoradas: `contentDescription`
+- Ignored props: `contentDescription`
 
-| Campo      | Caminho em `props` |
-| ---------- | ------------------ |
-| `label`    | `text`             |
-| `variant`  | `style`            |
-| `icon`     | `icon`             |
-| `disabled` | `disabled`         |
+| Field      | Path in `props` |
+| ---------- | --------------- |
+| `label`    | `text`          |
+| `variant`  | `style`         |
+| `icon`     | `icon`          |
+| `disabled` | `disabled`      |

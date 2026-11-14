@@ -1,13 +1,13 @@
-# CI preso na fila: fechar e reabrir o PR com o "sim" do dono — 2026-11-11 (épico `epic/ci-preso-na-fila`)
+# CI stuck in the queue: close and reopen the PR with the owner's "yes" — 2026-11-11 (épico `epic/ci-preso-na-fila`)
 
 ## Pendências
 
-Nenhuma. O épico só mexe no script `scripts/ci/ciRerun.mjs`, no `docs/FLOW.md`, no skill `implementar-fila` e nos testes do fluxo de entrega; não há UI da app, e nenhum componente, token ou ícone do design system muda.
+None. The epic only touches the script `scripts/ci/ciRerun.mjs`, `docs/FLOW.md`, the `implementar-fila` skill and the delivery-flow tests; there is no app UI, and no component, token or icon of the design system changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não muda componente, token nem ícone da app.
+Nothing to write to the **Mapping** artifact: the epic changes no component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

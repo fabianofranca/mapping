@@ -7,7 +7,7 @@ import { annotationOf, createHarness, renderLive } from './harness';
 import { noticeProject } from './noticeFixtures';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -29,34 +29,35 @@ function setup(annotationId: string, readOnly = false, emptyLegacy = false) {
   ));
 }
 
-describe('Detalhes — avisos da especialização', () => {
-  it('o aviso do tipo fica no topo, com since e ref (ref em mono)', () => {
+describe('Details — specialization notices', () => {
+  it('the type notice stays on top, with since and ref (ref in mono)', () => {
     setup('AA');
     const block = document.querySelector('.notice-block.notice-pending');
-    if (!block) throw new Error('sem o bloco do tipo');
-    expect(block.textContent).toContain('Pendente');
+    if (!block) throw new Error('no type block');
+    expect(block.textContent).toContain('Pending');
+    // pt-BR kept: shared fixture data asserted by tests/model, tests/components (message of noticeFixtures)
     expect(block.textContent).toContain('O contrato aceita avatarVariant');
     expect(block.textContent).toContain('2026-11-04');
     expect(block.querySelector('.notice-ref')?.textContent).toBe('cross/sdui/alert.md');
-    // O bloco vem antes dos campos.
+    // The block comes before the fields.
     const grid = document.querySelector('.props');
     expect(
       block.compareDocumentPosition(grid as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
-  it('o cabeçalho traz o selo do tipo (maior gravidade)', () => {
+  it('the header carries the type badge (highest severity)', () => {
     setup('AA');
     const header = document.querySelector('.annotation-header') as HTMLElement;
     expect(
-      within(header).getByRole('img', { name: /^Aviso Obsoleto: Use variant\./ }),
+      within(header).getByRole('img', { name: /^Notice Deprecated: Use variant\./ }),
     ).toBeTruthy();
   });
 
-  it('o aviso do campo fica abaixo do controle e o rótulo ganha o ícone do kind', () => {
+  it('the field notice stays below the control and the label gets the kind icon', () => {
     setup('AA');
     const line = document.querySelector('.notice-line.notice-deprecated');
-    if (!line) throw new Error('sem a linha do campo');
+    if (!line) throw new Error('no field line');
     expect(line.textContent).toContain('Use variant.');
     const value = line.closest('.props-value') as HTMLElement;
     expect(value.querySelector('input, textarea')).not.toBeNull();
@@ -64,20 +65,20 @@ describe('Detalhes — avisos da especialização', () => {
     expect(
       label.closest('.props-label-cell')?.querySelector('.notice-label-icon'),
     ).not.toBeNull();
-    // Campo sem aviso: nem a célula do rótulo ganha ícone.
+    // Field without a notice: the label cell does not get an icon either.
     const plain = screen.getByText('variant', { selector: 'label' });
     expect(
       plain.closest('.props-label-cell')?.querySelector('.notice-label-icon') ?? null,
     ).toBeNull();
   });
 
-  it('o campo vazio com aviso continua mostrando a linha e o ícone (decisão 2 da #513)', () => {
-    // A contagem e a janela Avisos só contam o campo com valor; os Detalhes informam antes.
+  it('the empty field with a notice still shows the line and the icon (decision 2 of #513)', () => {
+    // The count and the Notices window only count the field with a value; the Details inform earlier.
     setup('AA', false, true);
     const input = screen.getByLabelText('legacyStyle') as HTMLInputElement;
     expect(input.value).toBe('');
     const line = document.querySelector('.notice-line.notice-deprecated');
-    if (!line) throw new Error('sem a linha do campo vazio');
+    if (!line) throw new Error('no empty field line');
     expect(line.textContent).toContain('Use variant.');
     const label = screen.getByText('legacyStyle', { selector: 'label' });
     expect(
@@ -85,11 +86,12 @@ describe('Detalhes — avisos da especialização', () => {
     ).not.toBeNull();
   });
 
-  it('o aviso da coluna fica abaixo da tabela e cita a coluna', () => {
+  it('the column notice stays below the table and cites the column', () => {
     setup('AA');
     const line = document.querySelector('.notice-line.notice-diverges');
-    if (!line) throw new Error('sem a linha da coluna');
+    if (!line) throw new Error('no column line');
     expect(line.textContent).toContain('handler');
+    // pt-BR kept: shared fixture data asserted by tests/model, tests/components (message of noticeFixtures)
     expect(line.textContent).toContain('Nome diferente no contrato.');
     const table = screen.getByRole('table', { name: 'events' });
     expect(
@@ -97,21 +99,21 @@ describe('Detalhes — avisos da especialização', () => {
     ).toBeTruthy();
   });
 
-  it('os avisos aparecem também em só leitura', () => {
+  it('the notices also appear in read-only mode', () => {
     setup('AA', true);
     expect(document.querySelector('.notice-block.notice-pending')).not.toBeNull();
     expect(document.querySelector('.notice-line.notice-deprecated')).not.toBeNull();
     expect(document.querySelector('.notice-line.notice-diverges')).not.toBeNull();
   });
 
-  it('o tipo removido mostra o bloco e a anotação não ganha o selo Incompleta', () => {
+  it('the removed type shows the block and the annotation does not get the Incomplete badge', () => {
     setup('AG');
     expect(document.querySelector('.notice-block.notice-removed')).not.toBeNull();
-    expect(screen.queryByText('Incompleta')).toBeNull();
+    expect(screen.queryByText('Incomplete')).toBeNull();
     expect(document.querySelector('.issue-badge')).toBeNull();
   });
 
-  it('o tipo sem aviso não mostra nada', () => {
+  it('the type without a notice shows nothing', () => {
     setup('AP');
     expect(
       document.querySelector('.notice-block, .notice-line, .notice-badge'),

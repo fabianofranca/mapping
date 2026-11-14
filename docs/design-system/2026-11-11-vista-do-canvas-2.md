@@ -1,13 +1,13 @@
-# Vista do canvas para o testador — 2026-11-11 (épico `epic/vista-do-canvas-2`)
+# Canvas view for the tester — 2026-11-11 (épico `epic/vista-do-canvas-2`)
 
 ## Pendências
 
-Nenhuma. O épico só publica atributos de teste (`data-*`) no `.canvas-host` e muda auxiliares e documentos do testador; nenhum componente, token, ícone ou desenho do canvas muda.
+None. The epic only publishes test attributes (`data-*`) on `.canvas-host` and changes tester helpers and documents; no component, token, icon or canvas drawing changes.
 
 ## Sincronização
 
-Sem impacto: nada a gravar no artefato **Mapping**.
+Sem impacto: nothing to write to the **Mapping** artifact.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

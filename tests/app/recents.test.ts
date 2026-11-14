@@ -1,4 +1,4 @@
-// Fase 8.4: a lista única da tela inicial (função pura por trás de `recentProjects`).
+// Phase 8.4: the single list of the home screen (pure function behind `recentProjects`).
 import { describe, expect, it } from 'vitest';
 import { toRecentProjects } from '../../src/app/recents';
 import type { LocalProjectMeta, StoredFolder } from '../../src/storage/local';
@@ -15,18 +15,18 @@ const localMeta = (id: string, name: string, updatedAt: string, openedAt?: strin
   }) satisfies LocalProjectMeta;
 
 describe('toRecentProjects', () => {
-  it('junta locais e pastas, do uso mais recente ao mais antigo', () => {
+  it('merges local projects and folders, from the most recent use to the oldest', () => {
     const list = toRecentProjects(
       [
-        localMeta('l1', 'Antigo', '2026-01-01T00:00:00.000Z'),
+        localMeta('l1', 'Old', '2026-01-01T00:00:00.000Z'),
         localMeta(
           'l2',
-          'Reaberto',
+          'Reopened',
           '2026-01-01T00:00:00.000Z',
           '2026-03-01T00:00:00.000Z',
         ),
       ],
-      [folder('f1', 'Pasta', 'pasta', '2026-02-01T00:00:00.000Z')],
+      [folder('f1', 'Folder', 'folder', '2026-02-01T00:00:00.000Z')],
     );
     expect(list.map((p) => [p.kind, p.id, p.usedAt])).toEqual([
       ['local', 'l2', '2026-03-01T00:00:00.000Z'],
@@ -35,25 +35,25 @@ describe('toRecentProjects', () => {
     ]);
   });
 
-  // R7: duas pastas com o mesmo nome de projeto ganham o nome da pasta embaixo, o que as
-  // distingue quando as pastas têm nomes diferentes (`loja` × `loja-2`). Limite (8.7): com o
-  // mesmo nome de projeto **e** de pasta (o mesmo zip descompactado em dois lugares), as duas
-  // linhas continuam iguais, porque o navegador não dá o caminho; a coluna Último uso as
-  // distingue (`docs/ARCHITECTURE.md`, recentes).
-  it('showFolderName: pasta com outro nome, ou outra pasta com o mesmo nome de projeto', () => {
+  // R7: two folders with the same project name get the folder name underneath, which tells
+  // them apart when the folders have different names (`shop` × `shop-2`). Limit (8.7): with the
+  // same project name **and** folder name (the same zip unpacked in two places), the two
+  // rows stay identical, because the browser does not give the path; the Last used column
+  // tells them apart (`docs/ARCHITECTURE.md`, recents).
+  it('showFolderName: folder with another name, or another folder with the same project name', () => {
     const list = toRecentProjects(
-      [localMeta('l1', 'Loja', '2026-01-01T00:00:00.000Z')],
+      [localMeta('l1', 'Shop', '2026-01-01T00:00:00.000Z')],
       [
-        folder('a', 'Loja', 'loja', '2026-02-01T00:00:00.000Z'),
-        folder('b', 'Loja', 'loja-2', '2026-02-02T00:00:00.000Z'),
-        folder('c', 'carro', 'carro', '2026-02-03T00:00:00.000Z'),
-        folder('d', 'Moto', 'motos', '2026-02-04T00:00:00.000Z'),
+        folder('a', 'Shop', 'shop', '2026-02-01T00:00:00.000Z'),
+        folder('b', 'Shop', 'shop-2', '2026-02-02T00:00:00.000Z'),
+        folder('c', 'car', 'car', '2026-02-03T00:00:00.000Z'),
+        folder('d', 'Bike', 'bikes', '2026-02-04T00:00:00.000Z'),
       ],
     );
     const shown = Object.fromEntries(
       list.flatMap((p) => (p.kind === 'folder' ? [[p.id, p.showFolderName]] : [])),
     );
-    // O projeto local com o mesmo nome não conta: o selo da origem já distingue.
+    // The local project with the same name does not count: the origin badge already tells them apart.
     expect(shown).toEqual({ a: true, b: true, c: false, d: true });
   });
 });

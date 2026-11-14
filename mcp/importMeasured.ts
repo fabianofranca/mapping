@@ -3,9 +3,9 @@ import type { Project } from '../src/model';
 import { ToolError } from './errors';
 import type { Operation } from './operations';
 
-// `import_measured` (etapa Componentes fiéis, CF11, decisão 29): lê a árvore medida (inline ou de
-// um `.json` dentro das raízes) e a traduz em marcações pelas `sources` dos tipos da origem
-// `measured`. A criação de cada marcação é do lote (`create_marking`); aqui só se prepara a lista.
+// `import_measured` (Faithful components stage, CF11, decision 29): reads the measured tree (inline or from
+// a `.json` inside the roots) and translates it into markings through the `sources` of the types of the `measured`
+// origin. Creating each marking is the batch's job (`create_marking`); here only the list is prepared.
 
 type ImportOp = Extract<Operation, { op: 'import_measured' }>;
 
@@ -15,18 +15,18 @@ interface TreeIo {
   ): Promise<{ readonly bytes: Uint8Array; readonly name: string }>;
 }
 
-/** A árvore da operação: `tree` inline ou o `.json` de `file` (dentro das raízes). */
+/** The operation's tree: inline `tree` or the `.json` of `file` (inside the roots). */
 export async function measuredTree(op: ImportOp, io: TreeIo): Promise<unknown> {
   if ((op.tree === undefined) === (op.file === undefined)) {
     throw new ToolError(
       'invalid-arguments',
-      'informe `tree` (a árvore inline) ou `file` (um .json dentro das raízes), um dos dois',
+      'provide `tree` (the inline tree) or `file` (a .json inside the roots), one of the two',
     );
   }
   if (op.tree !== undefined) return op.tree;
   const file = op.file!;
   if (!file.toLowerCase().endsWith('.json')) {
-    throw new ToolError('invalid-arguments', `\`file\` deve ser um .json: ${file}`);
+    throw new ToolError('invalid-arguments', `\`file\` must be a .json: ${file}`);
   }
   const { bytes } = await io.readSource(file);
   try {
@@ -34,12 +34,12 @@ export async function measuredTree(op: ImportOp, io: TreeIo): Promise<unknown> {
   } catch (error) {
     throw new ToolError(
       'invalid-arguments',
-      `${file}: JSON inválido (${error instanceof Error ? error.message : String(error)})`,
+      `${file}: invalid JSON (${error instanceof Error ? error.message : String(error)})`,
     );
   }
 }
 
-/** A árvore → as marcações a criar; falha de origem ou de árvore vira `invalid-arguments`. */
+/** The tree → the markings to create; a failure of the origin or of the tree becomes `invalid-arguments`. */
 export function planMeasured(
   project: Project,
   op: ImportOp,

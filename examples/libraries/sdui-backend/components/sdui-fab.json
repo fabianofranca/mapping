@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "sdui-fab",
   "name": "FAB",
-  "description": "Botão de ação flutuante de 56 px, com o ícone de mais ou de anel. O anel usa a regra de preenchimento par-ímpar.",
+  "description": "Floating action button of 56 px, with the plus or the ring icon. The ring uses the even-odd fill rule.",
   "size": {
     "width": 56,
     "height": 56
@@ -44,7 +44,7 @@
     "children": [
       {
         "type": "path",
-        "name": "mais",
+        "name": "plus",
         "width": 24,
         "height": 24,
         "viewBox": [24, 24],
@@ -57,7 +57,7 @@
       },
       {
         "type": "path",
-        "name": "anel",
+        "name": "ring",
         "width": 24,
         "height": 24,
         "viewBox": [24, 24],

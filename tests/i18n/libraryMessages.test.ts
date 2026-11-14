@@ -6,6 +6,7 @@ import { TOKEN_KIND_NAMES, type TokenKind } from '../../src/model/components/tok
 import {
   isModelMessageTemplateCode,
   MODEL_MESSAGE_TEMPLATES,
+  fillTemplate,
   templateMessage,
   type ModelMessageTemplateCode,
 } from '../../src/model/messages';
@@ -15,13 +16,15 @@ import { loadSpecComponents } from '../../src/model/componentCatalog';
 import { COMPONENTS, SPEC_FILE, testSpec } from '../model/componentFixtures';
 import type { ModelMessage } from '../../src/model/modelMessage';
 import { modelMessagesEnUS } from '../../src/i18n/modelMessages';
+import { templatePtBR } from '../../src/i18n/modelMessagesTemplatesPtBR';
+import { ptBRText } from '../support/modelText';
 import { locale } from '../../src/store/settings';
 import { issueText } from '../../src/ui/LibraryIssueList';
 import { messageText } from '../../src/ui/modelMessage';
 
-// MB1 (#1356): toda mensagem montada pelo validador da biblioteca tem código e sai na língua da
-// app. Em pt-BR o texto é idêntico ao `message`; em en-US não tem caractere do português fora
-// dos parâmetros (caminhos, ids e o texto do motor de desenho, que a MB5 traduz, são dados).
+// MB1 (#1356): every message built by the library validator has a code and comes out in the app
+// language. In pt-BR the text is identical to `message`; in en-US there is no Portuguese character
+// outside the parameters (paths, ids and the drawing engine text, which MB5 translates, are data).
 
 afterEach(() => {
   locale.value = 'pt-BR';
@@ -34,7 +37,7 @@ const ICONS_DIR = 'tests/fixtures/icons';
 const readIcons = (path: string): string => readFileSync(join(ICONS_DIR, path), 'utf8');
 const SPEC = 'icons.spec.json';
 
-/** O pacote de ícones de teste (válido) com problemas de vários grupos de uma vez. */
+/** The test icon pack (valid) with problems from several groups at once. */
 function noisyPackage(): { files: Files; previous: ReturnType<typeof previousSpec> } {
   const spec: Raw = JSON.parse(readIcons(SPEC));
   const types = spec.layers[0].annotationTypes as Raw[];
@@ -100,7 +103,7 @@ function tokenPackage(children: Raw[]): Files {
   ];
 }
 
-/** Um componente `hug` na altura com `maxHeight`: o texto não cabe nem no tamanho ajustado (MC2). */
+/** A `hug` component in height with `maxHeight`: the text does not fit even at the adjusted size (MC2). */
 function fittedPackage(): Files {
   const component = {
     format: 'mapping-component',
@@ -182,28 +185,38 @@ const EXPECTED_CODES = [
 
 const PORTUGUESE = /[ãõçáéíóúâêô]/i;
 
-describe('mensagens do validador da biblioteca', () => {
-  it('produz os códigos esperados, sem `target`', () => {
+describe('library validator messages', () => {
+  it('produces the expected codes, without `target`', () => {
     const issues = allIssues();
     const codes = new Set(issues.map((i) => i.code));
     for (const code of EXPECTED_CODES) expect(codes, code).toContain(code);
     expect(issues.some((i) => 'target' in i)).toBe(false);
   });
 
-  it('o aviso de desenho leva o texto do motor em `detail`', () => {
+  it('the drawing warning carries the engine text in `detail`', () => {
     const drawing = allIssues().find((i) => i.code === 'library.draw.preview');
-    expect(drawing?.detail?.text).toContain('ícone desconhecido');
+    expect(drawing?.detail?.text).toContain('unknown icon');
   });
 
-  it('pt-BR: o texto mostrado é igual ao `message`', () => {
-    locale.value = 'pt-BR';
+  it('pt-BR: the text shown is the pt-BR template filled in; en-US shows `message`', () => {
     for (const issue of allIssues()) {
       if (issue.code === undefined) continue;
+      const template = (templatePtBR as Readonly<Record<string, string | undefined>>)[
+        `model.${issue.code}`
+      ];
+      if (template === undefined) continue;
+      locale.value = 'pt-BR';
+      const params =
+        issue.detail === undefined
+          ? (issue.params ?? {})
+          : { ...issue.params, reason: ptBRText(issue.detail) };
+      expect(issueText(issue), issue.message).toBe(fillTemplate(template, params));
+      locale.value = 'en-US';
       expect(issueText(issue), issue.message).toBe(issue.message);
     }
   });
 
-  it('en-US: nenhuma palavra em português fora dos parâmetros', () => {
+  it('en-US: no Portuguese word outside the parameters', () => {
     locale.value = 'en-US';
     for (const issue of allIssues()) {
       if (issue.code === undefined) continue;
@@ -215,7 +228,7 @@ describe('mensagens do validador da biblioteca', () => {
     }
   });
 
-  it('en-US: os textos que o roteiro R8.4 confere', () => {
+  it('en-US: the texts that script R8.4 checks', () => {
     locale.value = 'en-US';
     const issues = allIssues();
     const text = (code: string) => {
@@ -229,7 +242,7 @@ describe('mensagens do validador da biblioteca', () => {
     expect(text('library.fileNotFound')).toMatch(/^file not found: /);
   });
 
-  it('`{detail}` só fica em `library.invalidJson` (a mensagem de dentro entra em `{reason}`)', () => {
+  it('`{detail}` only stays in `library.invalidJson` (the inner message goes into `{reason}`)', () => {
     const withDetail = (entries: [string, string][]) =>
       entries.filter(([, text]) => text.includes('{detail}')).map(([code]) => code);
     expect(withDetail(Object.entries(MODEL_MESSAGE_TEMPLATES))).toEqual([
@@ -240,7 +253,7 @@ describe('mensagens do validador da biblioteca', () => {
     ]);
   });
 
-  it('en-US: o `library.draw.*` com a mensagem de dentro sai com ela traduzida', () => {
+  it('en-US: `library.draw.*` with the inner message comes out with it translated', () => {
     locale.value = 'en-US';
     const drawing = allIssues().find((i) => i.code === 'library.draw.preview');
     expect(drawing?.detail).toBeDefined();
@@ -252,7 +265,7 @@ describe('mensagens do validador da biblioteca', () => {
     expect(text).not.toContain('{detail}');
   });
 
-  it('há um código de token por par de tipos, com o texto de `TOKEN_KIND_NAMES`', () => {
+  it('there is one token code per pair of types, with the text of `TOKEN_KIND_NAMES`', () => {
     const kinds = Object.keys(TOKEN_KIND_NAMES) as TokenKind[];
     for (const found of kinds) {
       for (const expected of kinds) {
@@ -262,14 +275,14 @@ describe('mensagens do validador da biblioteca', () => {
         expect(
           templateMessage(code as ModelMessageTemplateCode, { name: 'x' }).text,
         ).toBe(
-          `o token "x" é ${TOKEN_KIND_NAMES[found]}, mas aqui se espera ${TOKEN_KIND_NAMES[expected]}`,
+          `the token "x" is a ${TOKEN_KIND_NAMES[found]}, but a ${TOKEN_KIND_NAMES[expected]} is expected here`,
         );
       }
     }
   });
 });
 
-describe('regra do `detail` (decisão 9 da #1589)', () => {
+describe('the `detail` rule (decision 9 of #1589)', () => {
   const materials = (): readonly ModelMessage[] => {
     const read = (path: string): string | undefined => {
       if (path.endsWith('text.json')) return JSON.stringify({ format: 'outro' });
@@ -286,7 +299,7 @@ describe('regra do `detail` (decisão 9 da #1589)', () => {
     return loaded.problemMessages;
   };
 
-  it('components.invalid e icons.invalid com `detail` não levam `reason` em params', () => {
+  it('components.invalid and icons.invalid with `detail` do not carry `reason` in params', () => {
     const withDetail = materials().filter((m) => m.detail !== undefined);
     expect(withDetail.map((m) => m.code).sort()).toEqual(
       expect.arrayContaining(['components.invalid', 'icons.invalid']),
@@ -294,7 +307,7 @@ describe('regra do `detail` (decisão 9 da #1589)', () => {
     for (const m of withDetail) expect(m.params, m.code).not.toHaveProperty('reason');
   });
 
-  it('catalog.invalidProblem com `detail` não leva `reason` em params', () => {
+  it('catalog.invalidProblem with `detail` does not carry `reason` in params', () => {
     const root = join('tests/fixtures/material3');
     const files = readdirSync(root, { recursive: true, encoding: 'utf8' })
       .map((p) => p.split('\\').join('/'))
@@ -315,7 +328,7 @@ describe('regra do `detail` (decisão 9 da #1589)', () => {
     expect(problem?.params).not.toHaveProperty('reason');
   });
 
-  it('o texto en-US mostrado é o mesmo de antes (o `detail` traduzido no {reason})', () => {
+  it('the en-US text shown is the same as before (the translated `detail` in {reason})', () => {
     locale.value = 'en-US';
     const m = materials().find((x) => x.code === 'icons.invalid');
     expect(m).toBeDefined();

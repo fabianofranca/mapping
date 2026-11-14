@@ -1,7 +1,7 @@
 import type { Project } from '../../src/model';
 import { codeProject } from '../model/specFixtures';
 
-/** O projeto de testes com `light` e `dark` declarados nos `tokens` da primeira especialização. */
+/** The test project with `light` and `dark` declared in the `tokens` of the first specialization. */
 export function projectWithModes(modes: readonly string[] = ['light', 'dark']): Project {
   const p = codeProject();
   let done = false;

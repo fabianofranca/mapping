@@ -1,15 +1,15 @@
-// Decisão do `ci-rerun.yml` (etapa #1325): o job morreu por runner abandonado? Só Node, sem
-// dependências. O YAML só junta os dados (o `ci.yml` da `main` e a lista de jobs da execução).
-//   decide --ci <ci.yml> --jobs <arquivo> [--output <arquivo>]
-//     Lê os jobs esperados do `ci.yml` e a resposta de `actions/runs/<id>/jobs` e escreve
-//     `rerun=true|false`, `abandoned=<lista>` e `reason=<motivo>` em `--output` (o
-//     `$GITHUB_OUTPUT`; sem ele, no stdout).
-//   queued --runs <arquivo> --jobs <arquivo> --head <sha> [--now <ISO>] [--output <arquivo>]
-//     Etapa #1669: a execução do CI mais recente do commit está presa em `queued` sem jobs há
-//     mais de 15 min? Lê `actions/workflows/ci.yml/runs?head_sha=…` (`--runs`) e
-//     `actions/runs/<id da mais recente>/jobs` (`--jobs`) e escreve sete linhas (`preso`, `run`,
-//     `link`, `minutos`, `execucoes`, `reaberto`, `reason`) em `--output`; sem ele, no stdout.
-//     Quem lê o CI (a fase, o coordenador) usa esta resposta e não a impressão de quem lê.
+// Decision of `ci-rerun.yml` (stage #1325): did the job die because of an abandoned runner? Node
+// only, no dependencies. The YAML only gathers the data (the `main` `ci.yml` and the run's job list).
+//   decide --ci <ci.yml> --jobs <file> [--output <file>]
+//     Reads the expected jobs from `ci.yml` and the `actions/runs/<id>/jobs` response and writes
+//     `rerun=true|false`, `abandoned=<list>` and `reason=<reason>` to `--output` (the
+//     `$GITHUB_OUTPUT`; without it, to stdout).
+//   queued --runs <file> --jobs <file> --head <sha> [--now <ISO>] [--output <file>]
+//     Stage #1669: is the commit's latest CI run stuck in `queued` with no jobs for more than
+//     15 min? Reads `actions/workflows/ci.yml/runs?head_sha=…` (`--runs`) and
+//     `actions/runs/<id of the latest>/jobs` (`--jobs`) and writes seven lines (`preso`, `run`,
+//     `link`, `minutos`, `execucoes`, `reaberto`, `reason`) to `--output`; without it, to stdout.
+//     Whoever reads the CI (the phase, the coordinator) uses this answer, not the reader's impression.
 import { appendFileSync, readFileSync } from 'node:fs';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
@@ -18,7 +18,7 @@ const AGGREGATOR = 'check';
 const COVERAGE = 'coverage';
 const TEST_PREFIX = 'test (';
 
-/** Blocos dos jobs de primeiro nível: `[nome, texto]` na ordem do arquivo. */
+/** Blocks of the top-level jobs: `[name, text]` in file order. */
 function jobBlocks(yaml) {
   const start = yaml.search(/^jobs:\s*$/m);
   if (start < 0) throw new Error('ci.yml sem a chave jobs:.');
@@ -33,13 +33,13 @@ function jobBlocks(yaml) {
   return blocks.map(([name, body]) => [name, body.join('\n')]);
 }
 
-/** Nomes dos jobs que a execução do `ci.yml` deve ter (a matriz de uma lista vira `job (valor)`). */
+/** Names of the jobs the `ci.yml` run must have (a list matrix becomes `job (value)`). */
 export function expectedJobs(yaml) {
   const names = [];
   for (const [name, body] of jobBlocks(yaml)) {
     if (/^ {4}name:/m.test(body)) {
       throw new Error(
-        `O job ${name} do ci.yml tem name: próprio; o ci-rerun não sabe lê-lo.`,
+        `Job ${name} of ci.yml has its own name:; ci-rerun cannot read it.`,
       );
     }
     if (!/^ {6}matrix:/m.test(body)) {
@@ -51,7 +51,7 @@ export function expectedJobs(yaml) {
     );
     if (!matrix) {
       throw new Error(
-        `A matriz do job ${name} não é uma lista simples (chave: [a, b]); o ci-rerun não sabe lê-la.`,
+        `The matrix of job ${name} is not a simple list (key: [a, b]); ci-rerun cannot read it.`,
       );
     }
     for (const value of matrix[2].split(',')) names.push(`${name} (${value.trim()})`);
@@ -60,9 +60,9 @@ export function expectedJobs(yaml) {
 }
 
 /**
- * `expected`: nomes esperados; `jobs`: `[{ name, conclusion }]` da execução.
- * Abandonado = esperado que não aparece. Falha legítima = job presente que não terminou em
- * `success`/`skipped`, salvo o agregador `check` e o `coverage` quando algum `test (n)` sumiu.
+ * `expected`: expected names; `jobs`: `[{ name, conclusion }]` of the run.
+ * Abandoned = expected but missing. Legitimate failure = present job that did not end in
+ * `success`/`skipped`, except the `check` aggregator and `coverage` when some `test (n)` is missing.
  */
 export function decideRerun({ expected, jobs }) {
   const seen = new Map(jobs.map((job) => [job.name, job.conclusion]));
@@ -83,10 +83,10 @@ export function decideRerun({ expected, jobs }) {
   return { rerun: true, abandoned, reason: `abandonados ${abandoned.join(', ')}` };
 }
 
-/** Limite da execução na fila sem jobs: mais de 900 s desde o `created_at` (decisão 1 da #1669). */
+/** Limit for a run queued with no jobs: more than 900 s since `created_at` (decision 1 of #1669). */
 const QUEUED_LIMIT_SECONDS = 900;
 
-/** Execuções do commit e a mais recente delas (maior `created_at`); `latest` é nulo sem execução. */
+/** The commit's runs and the latest of them (greatest `created_at`); `latest` is null with no run. */
 export function latestRunOfCommit(runs, head) {
   const ofCommit = runs.filter((run) => run.head_sha === head);
   let latest = null;
@@ -100,10 +100,10 @@ export function latestRunOfCommit(runs, head) {
 }
 
 /**
- * `runs`: execuções do `ci.yml` (`workflow_runs`); `jobsTotal`: `total_count` dos jobs da mais
- * recente do commit; `head`: o `head.sha` do PR; `now`: ISO (ou `Date`).
- * Preso = a execução mais recente do commit (maior `created_at`) em `queued`, sem jobs, há mais de
- * 15 min. `reaberto` = o commit já tem 2 ou mais execuções (o PR já foi fechado e reaberto).
+ * `runs`: runs of `ci.yml` (`workflow_runs`); `jobsTotal`: `total_count` of the jobs of the commit's
+ * latest run; `head`: the PR's `head.sha`; `now`: ISO (or `Date`).
+ * Stuck = the commit's latest run (greatest `created_at`) in `queued`, with no jobs, for more than
+ * 15 min. `reaberto` = the commit already has 2 or more runs (the PR was already closed and reopened).
  */
 export function decideQueued({ runs, jobsTotal, head, now }) {
   const { ofCommit, latest } = latestRunOfCommit(runs, head);
@@ -132,9 +132,9 @@ export function decideQueued({ runs, jobsTotal, head, now }) {
   if (latest.status !== 'queued')
     return { ...decision, reason: `status ${latest.status}` };
   if (seconds <= QUEUED_LIMIT_SECONDS) {
-    return { ...decision, reason: `há ${minutos} min (limite 15)` };
+    return { ...decision, reason: `${minutos} min (limit 15)` };
   }
-  return { ...decision, preso: true, reason: `na fila sem jobs há ${minutos} min` };
+  return { ...decision, preso: true, reason: `queued with no jobs for ${minutos} min` };
 }
 
 function option(argv, name) {
@@ -184,11 +184,11 @@ function runQueued(argv) {
     const latestId = String(latest.id);
     const payload = JSON.parse(readFileSync(jobsFile, 'utf8'));
     if (!Array.isArray(payload.jobs) || typeof payload.total_count !== 'number')
-      throw new Error('O arquivo de jobs não tem total_count nem a lista jobs.');
+      throw new Error('The jobs file has neither total_count nor the jobs list.');
     const other = payload.jobs.find((job) => String(job.run_id) !== latestId);
     if (other)
       throw new Error(
-        `O job ${other.name ?? '?'} tem run_id ${other.run_id}, diferente da execução mais recente do commit (${latestId}).`,
+        `Job ${other.name ?? '?'} has run_id ${other.run_id}, different from the commit's latest run (${latestId}).`,
       );
     jobsTotal = payload.total_count;
   }

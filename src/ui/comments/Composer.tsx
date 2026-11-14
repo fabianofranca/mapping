@@ -19,15 +19,15 @@ export type ComposerTarget =
 
 interface ComposerProps {
   readonly target: ComposerTarget;
-  /** Abre as Configurações (o aviso sem identidade leva até lá). */
+  /** Opens Settings (the notice with no identity leads there). */
   readonly onOpenSettings?: () => void;
-  /** Foca o campo ao montar (a conversa nova pedida pelo botão Nova). */
+  /** Focuses the field on mount (the new thread requested by the New button). */
   readonly autoFocus?: boolean;
-  /** Descarta o rascunho de conversa nova ainda não enviada. */
+  /** Discards the draft of a new thread not yet sent. */
   readonly onCancel?: () => void;
 }
 
-/** A âncora da conversa a que o compositor pertence (rascunho novo ou resposta). */
+/** The anchor of the thread the composer belongs to (new draft or reply). */
 function useReplyAnchor(target: ComposerTarget): ThreadAnchor | null {
   const { session } = useEditor();
   const threads = session.threads.list.value;
@@ -36,10 +36,10 @@ function useReplyAnchor(target: ComposerTarget): ThreadAnchor | null {
 }
 
 /**
- * Compositor das conversas: o editor de citações (várias linhas, chips e `@`) com o rascunho
- * guardado por conversa (`ui.threadDrafts`, sempre uma string markdown), Enter quebra a linha e
- * Ctrl/Cmd+Enter envia. Sem identidade mostra o aviso com o atalho para as Configurações; só
- * leitura e revisão não mostram nada.
+ * Composer of the threads: the citation editor (several lines, chips and `@`) with the draft kept
+ * per thread (`ui.threadDrafts`, always a markdown string), Enter breaks the line and
+ * Ctrl/Cmd+Enter sends. With no identity it shows the notice with the shortcut to Settings;
+ * read-only and review show nothing.
  */
 export function Composer({ target, onOpenSettings, autoFocus, onCancel }: ComposerProps) {
   const { ui, session, review } = useEditor();
@@ -50,7 +50,7 @@ export function Composer({ target, onOpenSettings, autoFocus, onCancel }: Compos
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const field = useRef<HTMLDivElement>(null);
-  // A âncora do `@` ("aqui"): a do rascunho ou a da conversa que se responde.
+  // The anchor of the `@` ("here"): the draft's or that of the thread being replied to.
   const replyAnchor = useReplyAnchor(target);
   useEffect(() => {
     if (autoFocus) field.current?.focus();
@@ -70,7 +70,7 @@ export function Composer({ target, onOpenSettings, autoFocus, onCancel }: Compos
 
   const send = async () => {
     const project = review.derived.shownProject.peek();
-    // O rascunho de agora (o atalho pode chegar antes da renderização da última tecla).
+    // The current draft (the shortcut can arrive before the last key's render).
     const draft = draftOf(ui, key);
     if (busy || draft.trim() === '' || !project) return;
     setBusy(true);

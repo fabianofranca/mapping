@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "card",
   "name": "Card",
-  "description": "Card do Material 3 (CardDefaults): forma medium (12), mídia opcional no topo, título, subtítulo e texto; filled (surface container highest), elevated (surface container low, elevação 1) ou outlined (surface com contorno outline variant de 1).",
+  "description": "Material 3 card (CardDefaults): medium shape (12), optional media at the top, title, subtitle and text; filled (surface container highest), elevated (surface container low, elevation 1) or outlined (surface with a 1 outline variant outline).",
   "size": {
     "width": 360,
     "height": 244
@@ -15,7 +15,7 @@
   "preview": {
     "title": "Praia do Rosa",
     "subtitle": "Santa Catarina",
-    "supportingText": "Fim de semana de sol.",
+    "supportingText": "Sunny weekend.",
     "media": "https://example.com/praia.jpg",
     "style": "elevated"
   },
@@ -182,7 +182,7 @@
     "children": [
       {
         "type": "rect",
-        "name": "sombra nível 2",
+        "name": "level 2 shadow",
         "fill": {
           "$switch": "style",
           "cases": {
@@ -243,7 +243,7 @@
       },
       {
         "type": "rect",
-        "name": "sombra nível 3",
+        "name": "level 3 shadow",
         "fill": {
           "$switch": "style",
           "cases": {
@@ -324,7 +324,7 @@
       },
       {
         "type": "rect",
-        "name": "sombra nível 4",
+        "name": "level 4 shadow",
         "fill": {
           "$switch": "style",
           "cases": {
@@ -385,7 +385,7 @@
       },
       {
         "type": "frame",
-        "name": "recorte",
+        "name": "clip",
         "cornerRadius": {
           "$token": "corner-medium"
         },
@@ -397,7 +397,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "corpo",
+            "name": "body",
             "width": "fill",
             "height": "hug",
             "layout": {
@@ -407,7 +407,7 @@
             "children": [
               {
                 "type": "image",
-                "name": "mídia",
+                "name": "media",
                 "src": {
                   "$field": "media"
                 },
@@ -423,7 +423,7 @@
               },
               {
                 "type": "frame",
-                "name": "conteúdo",
+                "name": "content",
                 "width": "fill",
                 "height": "hug",
                 "layout": {
@@ -434,7 +434,7 @@
                 "children": [
                   {
                     "type": "text",
-                    "name": "título",
+                    "name": "title",
                     "text": {
                       "$field": "title",
                       "default": "Title"
@@ -460,7 +460,7 @@
                   },
                   {
                     "type": "text",
-                    "name": "subtítulo",
+                    "name": "subtitle",
                     "text": {
                       "$field": "subtitle"
                     },
@@ -488,7 +488,7 @@
                   },
                   {
                     "type": "text",
-                    "name": "apoio",
+                    "name": "supporting",
                     "text": {
                       "$field": "supportingText"
                     },
@@ -522,7 +522,7 @@
       },
       {
         "type": "rect",
-        "name": "estado",
+        "name": "state",
         "fill": {
           "$token": "on-surface"
         },
@@ -555,7 +555,7 @@
       },
       {
         "type": "rect",
-        "name": "anel de foco",
+        "name": "focus ring",
         "cornerRadius": {
           "$token": "corner-medium"
         },

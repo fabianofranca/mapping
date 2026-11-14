@@ -1,7 +1,7 @@
-# Registros por épico — 2026-11-04 (épico `epic/registros-por-epico`, PR #500, MCP 0.14.0, schema v13)
+# Records per epic — 2026-11-04 (épico `epic/registros-por-epico`, PR #500, MCP 0.14.0, schema v13)
 
 ## Alterado
 
-- **Tabelas largas do guia de teste (`docs/TESTING.md`) e do registro do DS (`docs/DESIGN-SYSTEM.md`) sem alinhamento.** Acrescentar ou mudar um passo muda só a linha dele, em vez de realinhar a tabela inteira; o `docs/TESTING.md` encolhe cerca de 43%.
-- **O changelog passa a ser um arquivo por épico em `changelog/`, e o `CHANGELOG.md` da raiz sai.** Dois épicos abertos ao mesmo tempo não conflitam mais no changelog; `ls changelog/` lista as entradas em ordem cronológica e a primeira linha de cada arquivo traz o épico, o PR, o MCP e o schema. A regra está em `changelog/README.md`.
-- **O registro do design system passa a ser um arquivo por épico em `docs/design-system/`** (`<nome>.md` durante o épico, `AAAA-MM-DD-<nome>.md` depois do fechamento). O histórico de sincronização e as pendências por épico do `docs/DESIGN-SYSTEM.md` migraram para lá, sem perder texto; o `docs/DESIGN-SYSTEM.md` fica com o mapa, as regras e as pendências gerais.
+- **Wide tables of the test guide (`docs/TESTING.md`) and of the DS record (`docs/DESIGN-SYSTEM.md`) without alignment.** Adding or changing a step changes only its row, instead of realigning the whole table; `docs/TESTING.md` shrinks by about 43%.
+- **The changelog becomes one file per epic in `changelog/`, and the root `CHANGELOG.md` goes away.** Two epics open at the same time no longer conflict in the changelog; `ls changelog/` lists the entries in chronological order and the first line of each file carries the epic, the PR, the MCP and the schema. The rule is in `changelog/README.md`.
+- **The design system record becomes one file per epic in `docs/design-system/`** (`<name>.md` during the epic, `YYYY-MM-DD-<name>.md` after closing). The sync history and the per-epic pending items of `docs/DESIGN-SYSTEM.md` migrated there, without losing text; `docs/DESIGN-SYSTEM.md` keeps the map, the rules and the general pending items.

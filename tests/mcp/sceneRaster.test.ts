@@ -19,8 +19,8 @@ import {
   textBars,
 } from '../../mcp/image/sceneRaster';
 
-// Desenho simplificado de uma cena em pixels (get_marking_image num container): formas
-// preenchidas, traço, recorte do frame, texto em barras e composição com transparência.
+// Simplified drawing of a scene in pixels (get_marking_image on a container): filled shapes,
+// stroke, frame clip, text as bars and compositing with transparency.
 
 const WHITE = [255, 255, 255, 255];
 
@@ -65,7 +65,7 @@ function paint(raster: Raster, root: SceneNode, scale = 1) {
 }
 
 describe('cor', () => {
-  it('lê #rgb, #rrggbb, #rrggbbaa e rgba()', () => {
+  it('reads #rgb, #rrggbb, #rrggbbaa and rgba()', () => {
     expect(parseColor('#f00')).toEqual({ rgb: [255, 0, 0], alpha: 1 });
     expect(parseColor('#336699')).toEqual({ rgb: [0x33, 0x66, 0x99], alpha: 1 });
     expect(parseColor('#00000080')?.alpha).toBeCloseTo(0.5, 2);
@@ -79,7 +79,7 @@ describe('cor', () => {
 });
 
 describe('caminho SVG', () => {
-  it('flags de arco sem separador são lidas como no SVG (achado 5 da CR)', () => {
+  it('arc flags without a separator are read as in SVG (CR finding 5)', () => {
     const spaced = flattenPath('M0 0 a5 5 0 1 1 10 0');
     expect(spaced[0]?.points.at(-1)).toEqual({ x: 10, y: 0 });
     expect(flattenPath('M0 0 a5 5 0 1110 0')).toEqual(spaced);
@@ -88,13 +88,13 @@ describe('caminho SVG', () => {
     );
   });
 
-  it('número solto depois de Z termina o caminho em vez de travar', () => {
+  it('a stray number after Z ends the path instead of hanging', () => {
     const closed = flattenPath('M0 0 L10 0 L10 10 Z');
     expect(flattenPath('M0 0 L10 0 L10 10 Z 5')).toEqual(closed);
     expect(flattenPath('M0 0 L10 0 L10 10 z 5 6 L1 1')).toEqual(closed);
   }, 2000);
 
-  it('achata M L H V Z e curvas em segmentos', () => {
+  it('flattens M L H V Z and curves into segments', () => {
     const [square] = flattenPath('M 0 0 H 10 V 10 L 0 10 Z');
     expect(square?.closed).toBe(true);
     expect(square?.points).toEqual([
@@ -117,8 +117,8 @@ describe('caminho SVG', () => {
   });
 });
 
-describe('arcos do caminho SVG (achado 4 do relato da #838)', () => {
-  it('o arco a5 5 0 0 1 10 0 é o semicírculo de raio 5, não a reta até o ponto final', () => {
+describe('SVG path arcs (finding 4 of the #838 report)', () => {
+  it('the arc a5 5 0 0 1 10 0 is the radius-5 semicircle, not the straight line to the end point', () => {
     const [arc] = flattenPath('M0 0 a5 5 0 0 1 10 0');
     const points = arc!.points;
     expect(points.length).toBeGreaterThan(8);
@@ -128,22 +128,22 @@ describe('arcos do caminho SVG (achado 4 do relato da #838)', () => {
     for (const p of points) {
       expect(Math.hypot(p.x - 5, p.y)).toBeCloseTo(5, 1);
     }
-    // sweep-flag 1 passa por cima (y negativo) com a direção de x crescente
+    // sweep-flag 1 goes over the top (negative y) with the direction of increasing x
     expect(Math.min(...points.map((p) => p.y))).toBeCloseTo(-5, 1);
   });
 
-  it('large-arc e sweep escolhem entre os quatro arcos possíveis', () => {
+  it('large-arc and sweep choose among the four possible arcs', () => {
     const ys = (d: string) => flattenPath(d)[0]!.points.map((p) => p.y);
     expect(Math.max(...ys('M0 0 a6 6 0 0 0 10 0'))).toBeCloseTo(2.68, 1);
     expect(Math.min(...ys('M0 0 a6 6 0 1 1 10 0'))).toBeLessThan(-8);
   });
 
-  it('raio pequeno demais é ampliado até caber nos dois pontos', () => {
+  it('a radius that is too small is enlarged until it fits the two points', () => {
     const [arc] = flattenPath('M0 0 a1 1 0 0 1 10 0');
     expect(Math.min(...arc!.points.map((p) => p.y))).toBeCloseTo(-5, 1);
   });
 
-  it('a lupa do ícone Search sai com a lente vazada', () => {
+  it('the magnifier of the Search icon comes out with the lens hollow', () => {
     const d =
       'M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z';
     const raster = canvas(24, 24);
@@ -161,14 +161,14 @@ describe('arcos do caminho SVG (achado 4 do relato da #838)', () => {
     };
     paint(raster, node);
     const at = (x: number, y: number) => raster.data[(y * 24 + x) * 4]!;
-    expect(at(9, 9)).toBe(255); // dentro da lente: fundo branco
-    expect(at(4, 9)).toBeLessThan(80); // aro da lente
+    expect(at(9, 9)).toBe(255); // inside the lens: white background
+    expect(at(4, 9)).toBeLessThan(80); // lens rim
     expect(at(18, 18)).toBeLessThan(80); // cabo
   });
 });
 
-describe('pintura da cena', () => {
-  it('retângulo sólido na posição, com a escala', () => {
+describe('scene painting', () => {
+  it('solid rectangle at the position, with the scale', () => {
     const raster = canvas(40, 40);
     const rect: SceneNode = {
       ...baseNode({
@@ -189,7 +189,7 @@ describe('pintura da cena', () => {
     expect(pixel(raster, 31, 31)).toEqual(WHITE);
   });
 
-  it('retângulo com raio de canto deixa o canto no fundo', () => {
+  it('rectangle with a corner radius leaves the corner on the background', () => {
     const raster = canvas(30, 30);
     const rect: SceneNode = {
       ...baseNode({
@@ -226,7 +226,7 @@ describe('pintura da cena', () => {
     expect(pixel(raster, 38, 18)).toEqual(WHITE);
   });
 
-  it('caminho: triângulo preenchido; par-ímpar deixa o furo, não-zero não', () => {
+  it('path: filled triangle; even-odd leaves the hole, non-zero does not', () => {
     const triangle: SceneNode = {
       ...baseNode({
         id: 'p',
@@ -253,7 +253,7 @@ describe('pintura da cena', () => {
         fills: [solid('#000000')],
       }),
       type: 'path',
-      // Dois quadrados do mesmo sentido: o de dentro só some no par-ímpar.
+      // Two squares of the same direction: the inner one only disappears in even-odd.
       d: 'M0 0 H30 V30 H0 Z M10 10 H20 V20 H10 Z',
       fillRule,
     });
@@ -266,7 +266,7 @@ describe('pintura da cena', () => {
     expect(pixel(nonZero, 15, 15)).toEqual([0, 0, 0, 255]);
   });
 
-  it('linha aberta só tem traço; o traço tem a largura pedida', () => {
+  it('an open line only has a stroke; the stroke has the requested width', () => {
     const line: SceneNode = {
       ...baseNode({ id: 'l', name: 'l', width: 40, height: 0 }),
       type: 'line',
@@ -285,7 +285,7 @@ describe('pintura da cena', () => {
     expect(pixel(raster, 20, 15)).toEqual(WHITE);
   });
 
-  it('gradiente vira a cor do primeiro stop e imagem vira reservado cinza', () => {
+  it('gradient becomes the color of the first stop and image becomes a gray placeholder', () => {
     const gradient: SceneNode = {
       ...baseNode({
         id: 'g',
@@ -329,7 +329,7 @@ describe('pintura da cena', () => {
     expect(r).toBeGreaterThan(150);
   });
 
-  it('transparência: opacidade do nó e do preenchimento se compõem sobre o fundo', () => {
+  it('transparency: node and fill opacity compose over the background', () => {
     const rect = (opacity: number, paintOpacity?: number): SceneNode => ({
       ...baseNode({
         id: 'r',
@@ -351,13 +351,13 @@ describe('pintura da cena', () => {
     paint(quarter, rect(0.5, 0.5));
     expect(pixel(quarter, 5, 5)[0]).toBeGreaterThanOrEqual(191);
     expect(pixel(quarter, 5, 5)[0]).toBeLessThanOrEqual(192);
-    // Fundo transparente: a cor sai e a opacidade fica no canal alfa.
+    // Transparent background: the color comes out and the opacity stays in the alpha channel.
     const clear = createRaster(10, 10);
     paint(clear, rect(0.5));
     expect(pixel(clear, 5, 5)).toEqual([0, 0, 0, 128]);
   });
 
-  it('nó invisível não é pintado e o frame com clip recorta os filhos', () => {
+  it('an invisible node is not painted and the frame with clip crops the children', () => {
     const hidden: SceneNode = {
       ...baseNode({
         id: 'h',
@@ -390,7 +390,7 @@ describe('pintura da cena', () => {
     expect(pixel(raster, 20, 20)).toEqual(WHITE);
   });
 
-  it('só pinta dentro da região (clip) e ignora a cena que não a cruza', () => {
+  it('only paints inside the region (clip) and ignores the scene that does not cross it', () => {
     const rect: SceneNode = {
       ...baseNode({
         id: 'r',
@@ -426,7 +426,7 @@ describe('pintura da cena', () => {
   });
 });
 
-describe('texto em barras', () => {
+describe('text as bars', () => {
   const text = (extra: Partial<TextNode> = {}, width = 100): TextNode => ({
     ...baseNode({
       id: 't',
@@ -436,7 +436,7 @@ describe('texto em barras', () => {
       fills: [solid('#112233')],
     }),
     type: 'text',
-    text: 'Entrar agora',
+    text: 'Submit today',
     style: {
       fontFamily: 'Roboto',
       fontSize: 10,
@@ -449,19 +449,19 @@ describe('texto em barras', () => {
     ...extra,
   });
 
-  it('uma barra por linha medida, com 60% da altura da linha', () => {
-    // 0,55 × 10 px por caractere: "Entrar agora" (12) tem 66 px e cabe em 100.
+  it('one bar per measured line, at 60% of the line height', () => {
+    // 0.55 × 10 px per character: "Submit today" (12) is 66 px and fits in 100.
     const one = textBars(text(), approximateMeasurer);
     expect(one).toHaveLength(1);
     expect(one[0]).toMatchObject({ x: 0, width: 66, height: 12 });
     expect(one[0]!.y).toBeCloseTo(4, 5);
-    // Em 40 px quebra por palavras: "Entrar" (33) e "agora" (27,5).
+    // At 40 px it breaks by words: "Submit" (33) and "today" (27.5).
     const two = textBars(text({}, 40), approximateMeasurer);
     expect(two).toHaveLength(2);
     expect(two[1]!.y).toBeCloseTo(24, 5);
   });
 
-  it('alinhamento horizontal e vertical', () => {
+  it('horizontal and vertical alignment', () => {
     const centered = textBars(
       text({
         style: {
@@ -481,7 +481,7 @@ describe('texto em barras', () => {
     expect(right[0]!.x).toBeCloseTo(34, 5);
   });
 
-  it('pinta a barra na cor do texto e deixa o resto do fundo', () => {
+  it('paints the bar in the text color and leaves the rest of the background', () => {
     const raster = canvas(100, 40);
     paint(raster, text());
     expect(pixel(raster, 30, 10)).toEqual([0x11, 0x22, 0x33, 255]);
@@ -490,7 +490,7 @@ describe('texto em barras', () => {
   });
 });
 
-describe('texto rico em barras (runs)', () => {
+describe('rich text as bars (runs)', () => {
   const rich = (verticalAlign: 'top' | 'middle' | 'bottom' = 'top'): TextNode => {
     const font = {
       family: 'Roboto',
@@ -501,7 +501,7 @@ describe('texto rico em barras (runs)', () => {
       letterSpacing: 0,
     };
     const runs = [
-      { text: 'Vence em ', font },
+      { text: 'Expires: ', font },
       { text: 'ok', font, chip: { padding: [2, 4] as const } },
     ];
     const base = { size: 10, lineHeight: 12 };
@@ -514,7 +514,7 @@ describe('texto rico em barras (runs)', () => {
         fills: [solid('#000000')],
       }),
       type: 'text',
-      text: 'Vence em ok',
+      text: 'Expires: ok',
       style: {
         fontFamily: 'Roboto',
         fontSize: 10,
@@ -526,7 +526,7 @@ describe('texto rico em barras (runs)', () => {
       },
       runs: [
         {
-          text: 'Vence em ',
+          text: 'Expires: ',
           fontFamily: 'Roboto',
           fontSize: 10,
           fontWeight: 400,
@@ -549,14 +549,14 @@ describe('texto rico em barras (runs)', () => {
     };
   };
 
-  it('uma barra por pedaço de texto na cor do trecho e o fundo do chip como retângulo', () => {
+  it('one bar per piece of text in the run color and the chip background as a rectangle', () => {
     const bars = textBars(rich(), approximateMeasurer);
     expect(bars).toHaveLength(3);
-    // "Vence em " (9 × 5,5) numa linha de 16 (a do chip): centrado, a barra tem 60% de 12.
+    // "Expires: " (9 × 5.5) on a line of 16 (the chip's): centered, the bar is 60% of 12.
     expect(bars[0]).toMatchObject({ x: 0, width: 49.5, color: '#112233' });
     expect(bars[0]!.height).toBeCloseTo(7.2, 5);
     expect(bars[0]!.y).toBeCloseTo(2 + 2.4, 5);
-    // O fundo do chip é a caixa inteira (11 + 2·4 de largura, 12 + 2·2 de altura).
+    // The chip background is the whole box (11 + 2·4 wide, 12 + 2·2 tall).
     expect(bars[1]).toMatchObject({
       x: 49.5,
       y: 0,
@@ -564,13 +564,13 @@ describe('texto rico em barras (runs)', () => {
       height: 16,
       color: '#00ff00',
     });
-    // O texto do chip fica 4 para dentro e 2 para baixo, na cor do trecho.
+    // The chip text sits 4 inward and 2 down, in the run's color.
     expect(bars[2]).toMatchObject({ x: 53.5, width: 11, color: '#ff0000' });
     expect(bars[2]!.height).toBeCloseTo(7.2, 5);
     expect(bars[2]!.y).toBeCloseTo(2 + 2.4, 5);
   });
 
-  it('o verticalAlign desloca todas as barras pela folga da caixa', () => {
+  it('verticalAlign shifts all the bars by the slack of the box', () => {
     const top = textBars(rich(), approximateMeasurer);
     const middle = textBars(rich('middle'), approximateMeasurer);
     const bottom = textBars(rich('bottom'), approximateMeasurer);
@@ -580,17 +580,17 @@ describe('texto rico em barras (runs)', () => {
     });
   });
 
-  it('pinta o fundo do chip e a barra do trecho, cada um na sua cor', () => {
+  it('paints the chip background and the run bar, each in its own color', () => {
     const raster = canvas(100, 40);
     paint(raster, rich());
     expect(pixel(raster, 20, 5)).toEqual([0x11, 0x22, 0x33, 255]);
-    // No chip: o fundo verde aparece fora da barra do texto; a barra é vermelha.
+    // In the chip: the green background shows outside the text bar; the bar is red.
     expect(pixel(raster, 51, 1)).toEqual([0, 255, 0, 255]);
     expect(pixel(raster, 58, 5)).toEqual([255, 0, 0, 255]);
     expect(pixel(raster, 90, 5)).toEqual(WHITE);
   });
 
-  it('sem runLayout nada muda: o texto de um estilo só', () => {
+  it('without runLayout nothing changes: the single-style text', () => {
     const plain = { ...rich(), runs: undefined, runLayout: undefined } as TextNode;
     const bars = textBars(plain, approximateMeasurer);
     expect(bars).toHaveLength(1);
@@ -598,23 +598,23 @@ describe('texto rico em barras (runs)', () => {
   });
 });
 
-describe('imagem remota de um componente', () => {
-  it('um componente com o nó image desenha a cor do reservado, sem rede', () => {
+describe('remote image of a component', () => {
+  it('a component with the image node draws the placeholder color, without network', () => {
     const parsed = parseComponent({
       format: 'mapping-component',
       formatVersion: 3,
-      id: 'foto',
-      name: 'Foto',
+      id: 'photo',
+      name: 'Photo',
       size: { width: 20, height: 10 },
       template: {
         type: 'frame',
-        children: [{ type: 'image', src: { $field: 'foto' } }],
+        children: [{ type: 'image', src: { $field: 'photo' } }],
       },
     });
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
     const { root } = instantiate(
       parsed.component,
-      { foto: 'https://cdn.exemplo.com/a.png' },
+      { photo: 'https://cdn.example.com/a.png' },
       { x: 0, y: 0, width: 20, height: 10 },
       { measure: approximateMeasurer },
     );
@@ -631,7 +631,7 @@ describe('imagem remota de um componente', () => {
   });
 });
 
-describe('traço com cap, join e sides (formato 4)', () => {
+describe('stroke with cap, join and sides (format 4)', () => {
   const INK = '#FF00FF';
 
   function openLine(
@@ -649,7 +649,7 @@ describe('traço com cap, join e sides (formato 4)', () => {
 
   const isInk = (p: number[]): boolean => p[0] === 255 && p[1] === 0 && p[2] === 255;
 
-  it('cap square pinta 2 px a mais em cada ponta; butt não pinta; round pinta a ponta redonda', () => {
+  it('cap square paints 2 px more at each end; butt does not; round paints the round end', () => {
     const points = [
       { x: 10, y: 10 },
       { x: 30, y: 10 },
@@ -676,7 +676,7 @@ describe('traço com cap, join e sides (formato 4)', () => {
     expect(pixel(round, 8, 7)).toEqual(WHITE);
   });
 
-  it('join miter pinta o canto de fora; bevel o corta; round o arredonda', () => {
+  it('join miter paints the outer corner; bevel cuts it; round rounds it', () => {
     const corner = [
       { x: 5, y: 10 },
       { x: 20, y: 10 },
@@ -697,7 +697,7 @@ describe('traço com cap, join e sides (formato 4)', () => {
     expect(pixel(round, 21, 9)).not.toEqual(WHITE);
   });
 
-  it('sides ["bottom"] pinta só a borda de baixo do retângulo', () => {
+  it('sides ["bottom"] paints only the bottom edge of the rectangle', () => {
     const rect: SceneNode = {
       ...baseNode({ id: 'r', name: 'r', width: 30, height: 20 }),
       type: 'rect',
@@ -712,7 +712,7 @@ describe('traço com cap, join e sides (formato 4)', () => {
     expect(pixel(raster, 29, 10)).toEqual(WHITE);
   });
 
-  it('o recorte ampliado (clipBox) deixa o traço que sai da caixa aparecer', () => {
+  it('the enlarged clip (clipBox) lets the stroke that leaves the box show', () => {
     const child: SceneNode = {
       ...baseNode({ id: 'c', name: 'c', width: 20, height: 20 }),
       type: 'rect',
@@ -734,7 +734,7 @@ describe('traço com cap, join e sides (formato 4)', () => {
   });
 });
 
-describe('achados 4, 6 e 7 da CR do MCP', () => {
+describe('findings 4, 6 and 7 of the MCP CR', () => {
   const INK = '#FF00FF';
   const isInk = (p: number[]): boolean => p[0] === 255 && p[1] === 0 && p[2] === 255;
 
@@ -752,7 +752,7 @@ describe('achados 4, 6 e 7 da CR do MCP', () => {
     };
   }
 
-  it('caminho fechado com o último ponto igual ao primeiro tem o canto inicial como o sem repetição', () => {
+  it('a closed path whose last point equals the first has the same start corner as the one without repetition', () => {
     const a = { x: 10, y: 10 };
     const b = { x: 30, y: 10 };
     const c = { x: 10, y: 30 };
@@ -765,7 +765,7 @@ describe('achados 4, 6 e 7 da CR do MCP', () => {
     expect(repeated.data).toEqual(plain.data);
   });
 
-  it('stroke.scale === false mantém a largura em pixels de saída, em qualquer escala', () => {
+  it('stroke.scale === false keeps the width in output pixels, at any scale', () => {
     const line = [
       { x: 2, y: 10 },
       { x: 30, y: 10 },
@@ -783,7 +783,7 @@ describe('achados 4, 6 e 7 da CR do MCP', () => {
     expect(countInk(fixed)).toBe(2);
   });
 
-  it('limites com mais de 200 mil pontos não estouram a pilha', () => {
+  it('bounds with more than 200 thousand points do not overflow the stack', () => {
     const points = Array.from({ length: 300_000 }, (_, i) => ({ x: i % 1000, y: i % 7 }));
     expect(bounds(points)).toEqual({ x: 0, y: 0, width: 999, height: 6 });
   });
@@ -792,7 +792,7 @@ describe('achados 4, 6 e 7 da CR do MCP', () => {
 describe('rotation (EX3)', () => {
   const RED = [255, 0, 0, 255];
 
-  /** Instancia um componente v4 de 100×100 com os filhos dados e pinta a cena. */
+  /** Instantiates a 100×100 v4 component with the given children and paints the scene. */
   function drawn(children: unknown[], extra: Record<string, unknown> = {}): Raster {
     const parsed = parseComponent({
       format: 'mapping-component',
@@ -827,9 +827,9 @@ describe('rotation (EX3)', () => {
     ...(rotation === undefined ? {} : { rotation }),
   });
 
-  it('90° desenha a barra vertical 10×40 centrada no mesmo ponto', () => {
+  it('90° draws the 10×40 vertical bar centered on the same point', () => {
     const raster = drawn([bar(90)]);
-    // centro em (50, 50): a barra ocupa x 45..55 e y 30..70
+    // center at (50, 50): the bar spans x 45..55 and y 30..70
     expect(pixel(raster, 50, 31)).toEqual(RED);
     expect(pixel(raster, 50, 68)).toEqual(RED);
     expect(pixel(raster, 46, 50)).toEqual(RED);
@@ -840,10 +840,10 @@ describe('rotation (EX3)', () => {
     expect(pixel(raster, 60, 50)).toEqual(WHITE);
   });
 
-  it('45°: pontos dentro e fora da forma girada, a até 1 px da borda', () => {
+  it('45°: points inside and outside the rotated shape, up to 1 px from the edge', () => {
     const raster = drawn([bar(45)]);
     const rad = Math.PI / 4;
-    // distância do centro do pixel aos eixos do retângulo girado
+    // distance from the pixel center to the axes of the rotated rectangle
     const along = (x: number, y: number) =>
       (x + 0.5 - 50) * Math.cos(rad) + (y + 0.5 - 50) * Math.sin(rad);
     const across = (x: number, y: number) =>
@@ -867,7 +867,7 @@ describe('rotation (EX3)', () => {
     expect(outside).toBeGreaterThan(9000);
   });
 
-  it('o recorte do quadro gira com ele; o conteúdo fora do quadrado girado some', () => {
+  it('the frame clip rotates with it; the content outside the rotated square disappears', () => {
     const raster = drawn([
       {
         type: 'frame',
@@ -879,16 +879,16 @@ describe('rotation (EX3)', () => {
         children: [{ type: 'rect', width: 200, height: 200, fill: '#0000ff' }],
       },
     ]);
-    // o quadrado de 40 girado 45° é um losango de raio ~28 em torno de (50, 50)
+    // the 40 square rotated 45° is a diamond of radius ~28 around (50, 50)
     expect(pixel(raster, 50, 50)).toEqual([0, 0, 255, 255]);
     expect(pixel(raster, 50, 25)).toEqual([0, 0, 255, 255]);
-    // o canto do quadrado sem giro (30, 30) fica fora do losango
+    // the corner of the unrotated square (30, 30) is outside the diamond
     expect(pixel(raster, 31, 31)).toEqual(WHITE);
     expect(pixel(raster, 50, 20)).toEqual(WHITE);
     expect(pixel(raster, 80, 50)).toEqual(WHITE);
   });
 
-  it('sem rotation, ou com 0, o desenho é o mesmo de antes', () => {
+  it('without rotation, or with 0, the drawing is the same as before', () => {
     const plain = drawn([bar()]);
     expect([...drawn([bar(0)]).data]).toEqual([...plain.data]);
     expect(pixel(plain, 50, 50)).toEqual(RED);

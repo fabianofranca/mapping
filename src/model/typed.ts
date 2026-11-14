@@ -42,18 +42,18 @@ import type {
   TypedValues,
 } from './types';
 
-// Anotações tipadas: criação com defaults, edição de valores, linhas de tabela,
-// vínculos com `allowedChildren`/`requiresOwner` e conversão em anotação livre. Ver
-// docs/SPEC-FORMAT.md e docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas".
+// Typed annotations: creation with defaults, value editing, table rows,
+// links with `allowedChildren`/`requiresOwner` and conversion to a free annotation. See
+// docs/SPEC-FORMAT.md and docs/ARCHITECTURE.md, "Specializations in the project and typed annotations".
 
-/** Campo vazio: `null`, ausente ou texto vazio. */
+/** Empty field: `null`, absent or empty text. */
 export function isEmptyValue(value: JsonValue | undefined): boolean {
   return value === undefined || value === null || value === '';
 }
 
 export type ValueProblem = 'invalid-value' | 'unknown-option';
 
-/** Confere um valor não vazio contra um campo simples (ou coluna). */
+/** Checks a non-empty value against a simple field (or column). */
 export function checkSimpleValue(
   field: SpecSimpleColumn,
   value: JsonValue,
@@ -71,19 +71,19 @@ export function checkSimpleValue(
   }
 }
 
-/** Valor inicial do campo: o `default`, `[]` para `table` e `null` no resto. */
+/** Initial value of the field: the `default`, `[]` for `table` and `null` for the rest. */
 export function defaultFieldValue(field: SpecField): JsonValue {
   if (field.type === 'table') return [];
   if (field.type === 'ref') return null;
   return field.default ?? null;
 }
 
-/** Valores iniciais de uma anotação do tipo: todos os campos, na ordem do tipo. */
+/** Initial values of an annotation of the type: all the fields, in the type's order. */
 export function defaultValues(type: SpecAnnotationType): TypedValues {
   return Object.fromEntries(type.fields.map((f) => [f.key, defaultFieldValue(f)]));
 }
 
-/** Valor inicial de uma célula: o `default` da coluna; `null` na coluna `ref` e sem default. */
+/** Initial value of a cell: the column's `default`; `null` in a `ref` column and with no default. */
 export function defaultColumnValue(column: SpecColumn): JsonValue {
   return column.type === 'ref' ? null : (column.default ?? null);
 }
@@ -95,7 +95,7 @@ function newRow(columns: readonly SpecColumn[], rowId: string): TableRow {
   };
 }
 
-/** Donos possíveis para uma nova anotação do tipo na marcação (mesma marcação). */
+/** Possible owners for a new annotation of the type on the marking (same marking). */
 export function validTypedOwners(
   p: Project,
   markingId: string,
@@ -109,11 +109,11 @@ export function validTypedOwners(
 export interface ChildType {
   readonly type: AnnotationTypeRef;
   readonly definition: SpecAnnotationType;
-  /** Camada do projeto onde o filho é criado (a do tipo filho). */
+  /** Project layer where the child is created (the child type's). */
   readonly layer: Layer | null;
 }
 
-/** Tipos que podem ser vinculados à anotação (botões "+ onClick", "+ onHold"…). */
+/** Types that can be linked to the annotation ("+ onClick", "+ onHold"… buttons). */
 export function childTypesOf(p: Project, annotationId: string): ChildType[] {
   const owner = findById(p.annotations, annotationId);
   const resolved = typeOfAnnotation(p, owner);
@@ -132,7 +132,7 @@ export function childTypesOf(p: Project, annotationId: string): ChildType[] {
   return result;
 }
 
-/** Tipo da anotação tipada; falha se ela for livre ou o tipo não existir mais. */
+/** Type of the typed annotation; fails if it is free or the type no longer exists. */
 function requireType(p: Project, a: Annotation): ResolvedType {
   if (!a.type || !a.values) fail('not-typed', a.id);
   return (
@@ -146,13 +146,13 @@ export interface NewTypedAnnotationArgs {
   readonly layerId: string;
   readonly type: AnnotationTypeRef;
   readonly name?: string | null;
-  /** Dono (obrigatório quando o tipo tem `requiresOwner`). */
+  /** Owner (required when the type has `requiresOwner`). */
   readonly parentAnnotationId?: string | null;
-  /** Papel no dono (id de um `childRoles` do tipo do dono); só com dono. */
+  /** Role in the owner (id of a `childRoles` of the owner's type); only with an owner. */
   readonly parentRole?: string | null;
 }
 
-/** Cria a anotação tipada com os `default` dos campos. */
+/** Creates the typed annotation with the fields' `default`s. */
 export function addTypedAnnotation(p: Project, args: NewTypedAnnotationArgs): Project {
   if (p.annotations.some((a) => a.id === args.id)) fail('duplicate-id', args.id);
   requireAnnotationOwner(p, args.markingId);
@@ -217,7 +217,7 @@ function updateValues(
   };
 }
 
-/** Normaliza (texto vazio → `null`) e valida o valor de um campo simples. */
+/** Normalizes (empty text → `null`) and validates the value of a simple field. */
 function checkedSimple(field: SpecSimpleColumn, value: JsonValue): JsonValue {
   if (isEmptyValue(value)) return null;
   const problem = checkSimpleValue(field, value);
@@ -226,8 +226,8 @@ function checkedSimple(field: SpecSimpleColumn, value: JsonValue): JsonValue {
 }
 
 /**
- * Valor de uma referência (campo `ref` ou célula de coluna `ref`): `null` limpa; senão precisa
- * ser uma referência existente, que não seja a própria anotação, aceita pelo `accepts`.
+ * Value of a reference (`ref` field or `ref` column cell): `null` clears; otherwise it must be an
+ * existing reference, other than the annotation itself, accepted by `accepts`.
  */
 function checkedRef(
   p: Project,
@@ -244,9 +244,9 @@ function checkedRef(
 }
 
 /**
- * Define o valor de um campo simples ou `ref` (`null` limpa). `table` usa as operações de
- * linha. A referência precisa existir e ser aceita pelo campo. Uma chave que não é campo do
- * tipo falha com `unknown-field`.
+ * Sets the value of a simple or `ref` field (`null` clears). `table` uses the row operations.
+ * The reference must exist and be accepted by the field. A key that is not a field of the type
+ * fails with `unknown-field`.
  */
 export function setFieldValue(
   p: Project,
@@ -257,7 +257,7 @@ export function setFieldValue(
   return setFieldValues(p, annotationId, { [key]: value });
 }
 
-/** Valor já validado de um campo simples ou `ref` do tipo (`table` e chave desconhecida falham). */
+/** Already validated value of a simple or `ref` field of the type (`table` and an unknown key fail). */
 function fieldValueOf(
   p: Project,
   type: SpecAnnotationType,
@@ -273,8 +273,8 @@ function fieldValueOf(
 }
 
 /**
- * Define vários campos de uma vez (uma só atualização do projeto, uma entrada no desfazer),
- * com as mesmas regras de `setFieldValue` para cada valor. Se algum falhar, nada é gravado.
+ * Sets several fields at once (a single project update, one undo entry), with the same rules as
+ * `setFieldValue` for each value. If any fails, nothing is written.
  */
 export function setFieldValues(
   p: Project,
@@ -296,7 +296,7 @@ function tableField(type: SpecAnnotationType, key: string) {
   return field;
 }
 
-/** Itens do valor da tabela (mantém itens inválidos, para não perder dados). */
+/** Items of the table value (keeps invalid items, so as not to lose data). */
 function rawRows(values: TypedValues, key: string): readonly JsonValue[] {
   const value = values[key];
   return Array.isArray(value) ? value : [];
@@ -308,7 +308,7 @@ function rowIndex(rows: readonly JsonValue[], rowId: string): number {
   return index;
 }
 
-/** Adiciona uma linha (com os `default` das colunas) no fim da tabela. */
+/** Adds a row (with the columns' `default`s) at the end of the table. */
 export function addTableRow(
   p: Project,
   annotationId: string,
@@ -323,7 +323,7 @@ export function addTableRow(
   });
 }
 
-/** Define uma célula da linha `rowId` (`null` limpa). */
+/** Sets a cell of the row `rowId` (`null` clears). */
 export function setTableCell(
   p: Project,
   annotationId: string,
@@ -336,8 +336,8 @@ export function setTableCell(
 }
 
 /**
- * Define várias células da linha `rowId` de uma vez (uma só atualização do projeto), com as
- * mesmas regras de `setTableCell` para cada valor. Se alguma falhar, nada é gravado.
+ * Sets several cells of the row `rowId` at once (a single project update), with the same rules as
+ * `setTableCell` for each value. If any fails, nothing is written.
  */
 export function setTableCells(
   p: Project,
@@ -380,7 +380,7 @@ export function removeTableRow(
   });
 }
 
-/** Reordena a linha `rowId` para a posição `toIndex`. */
+/** Reorders the row `rowId` to the position `toIndex`. */
 export function moveTableRow(
   p: Project,
   annotationId: string,
@@ -396,7 +396,7 @@ export function moveTableRow(
 }
 
 // ---------------------------------------------------------------------------
-// Conversão em anotação livre
+// Conversion to a free annotation
 
 export interface ConvertOptions {
   readonly newId?: () => string;
@@ -410,9 +410,9 @@ export function valueText(value: JsonValue): string {
 }
 
 /**
- * Pares equivalentes aos valores da anotação tipada (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"): na ordem dos
- * campos; `number` e `date` como texto; vazios omitidos; `table` achatada como
- * `parametros[1].nome`; `ref` como `→ User.name`. Chaves fora do tipo vêm no fim.
+ * Pairs equivalent to the typed annotation's values (docs/ARCHITECTURE.md, "Specializations in the
+ * project and typed annotations"): in field order; `number` and `date` as text; empties omitted;
+ * `table` flattened as `parameters[1].name`; `ref` as `→ User.name`. Keys outside the type come last.
  */
 export function typedValuesToPairs(
   p: Project,
@@ -447,7 +447,7 @@ export function typedValuesToPairs(
         for (const col of cols) {
           const cell = row[col];
           if (cell === undefined || isEmptyValue(cell)) continue;
-          // Célula `ref` (ou, sem tipo, no formato de referência): `→ User.name`, como o campo.
+          // `ref` cell (or, with no type, in the reference format): `→ User.name`, like the field.
           const cellRef =
             refColumns.has(col) || columns === null ? parseRefValue(cell) : null;
           const text = cellRef
@@ -466,8 +466,8 @@ export function typedValuesToPairs(
 }
 
 /**
- * Versão livre da anotação tipada: pares a partir dos valores, `name` vazio
- * preenchido com o rótulo da instância ou o nome do tipo; vínculo mantido.
+ * Free version of the typed annotation: pairs from the values, empty `name`
+ * filled with the instance label or the type name; link kept.
  */
 export function freeVersionOf(
   p: Project,
@@ -489,7 +489,7 @@ export function freeVersionOf(
   };
 }
 
-/** Converte a anotação tipada em livre (ex.: tipo removido numa atualização). */
+/** Converts the typed annotation to a free one (e.g. type removed in an update). */
 export function convertAnnotationToFree(
   p: Project,
   annotationId: string,
@@ -504,7 +504,7 @@ export function convertAnnotationToFree(
   };
 }
 
-/** Ids das anotações tipadas da especialização mais as vinculadas a elas. */
+/** Ids of the specialization's typed annotations plus those linked to them. */
 export function annotationsOfSpec(p: Project, specId: string): Set<string> {
   const ids = new Set<string>();
   const layerIds = new Set(
@@ -512,7 +512,8 @@ export function annotationsOfSpec(p: Project, specId: string): Set<string> {
   );
   for (const a of p.annotations) {
     if (a.type?.specId !== specId && !layerIds.has(a.layerId)) continue;
-    if (ids.has(a.id)) continue; // já veio na subárvore de outra
+    if (ids.has(a.id)) continue; // already came in another one's subtree
+
     for (const id of annotationWithLinked(p, a.id)) ids.add(id);
   }
   return ids;

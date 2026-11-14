@@ -18,9 +18,9 @@ import {
   legacySduiText,
 } from './specFixtures';
 
-// Schema v9 (etapa 9): o campo de código removido (`codeRef`, onde a instância foi
-// implementada) sai do formato. A migração v8 → v9 descarta os valores desses campos, pelo
-// tipo que a cópia da especialização aplicada declara; o resto do projeto não muda.
+// Schema v9 (stage 9): the removed code field (`codeRef`, where the instance was
+// implemented) leaves the format. The v8 → v9 migration discards the values of those fields, by the
+// type that the applied specialization copy declares; the rest of the project does not change.
 
 function load(text: string, specs: ReadonlyMap<string, string>) {
   const result = deserialize(text, migrations, specs);
@@ -28,15 +28,15 @@ function load(text: string, specs: ReadonlyMap<string, string>) {
   return result;
 }
 
-/** Um mapping.json v8 do projeto, sem nada além da versão diferente. */
+/** A v8 mapping.json of the project, with nothing but the version different. */
 function v8Text(p: Project): string {
   return JSON.stringify({ ...legacyJson(p), schemaVersion: 8 });
 }
 
 const screenValues = (p: Project) => p.annotations.find((a) => a.id === 'AS')?.values;
 
-describe('migração v8 → v9 (campo de código removido)', () => {
-  it('descarta os valores do campo removido e mantém o resto do projeto', () => {
+describe('migration v8 → v9 (removed code field)', () => {
+  it('discards the values of the removed field and keeps the rest of the project', () => {
     const { text, specs } = legacyCodeFiles();
     const result = load(text, specs);
     expect(result.migratedFrom).toBe(8);
@@ -44,12 +44,12 @@ describe('migração v8 → v9 (campo de código removido)', () => {
     expect(result.specWarnings).toEqual([]);
     expect(result.project.schemaVersion).toBe(20);
     expect(screenValues(result.project)).toEqual({ nome: 'Cadastro', rota: '/cadastro' });
-    // O mesmo projeto de antes do campo, com a cópia lida sem ele.
+    // The same project as before the field, with the copy read without it.
     expect(result.project).toEqual(codeProject());
     expect(getAnnotationIssues(result.project, 'AS')).toEqual([]);
   });
 
-  it('grava a versão atual sem os valores, e a releitura é estável (com a cópia antiga em specs/)', () => {
+  it('writes the current version without the values, and re-reading is stable (with the old copy in specs/)', () => {
     const { text, specs } = legacyCodeFiles();
     const saved = serialize(load(text, specs).project);
     expect(JSON.parse(saved).schemaVersion).toBe(20);
@@ -60,25 +60,25 @@ describe('migração v8 → v9 (campo de código removido)', () => {
     expect(serialize(again.project)).toBe(saved);
   });
 
-  it('projeto v8 sem o campo migra sem mudar mais nada', () => {
+  it('a v8 project without the field migrates without changing anything else', () => {
     for (const p of [sampleProject(), codeProject()]) {
       const result = load(v8Text(p), specFiles(p));
       expect(result.migratedFrom).toBe(8);
       expect(result.project).toEqual(p);
     }
-    // A cópia com o campo declarado, mas sem valor gravado na anotação: nada a descartar.
+    // The copy with the field declared, but without a value stored on the annotation: nothing to discard.
     const p = codeProject();
     const specs = specFiles(p);
     specs.set('specs/sdui.json', legacySduiText());
     expect(load(v8Text(p), specs).project).toEqual(p);
   });
 
-  it('só descarta as chaves que a cópia declara com o tipo removido, nos tipos dela', () => {
+  it('only discards the keys that the copy declares with the removed type, in its types', () => {
     const { text, specs } = legacyCodeFiles();
     const data = JSON.parse(text) as {
       annotations: { id: string; values: Record<string, unknown> | null }[];
     };
-    // A mesma chave num tipo que não a declara (o Button) fica, e vira pendência.
+    // The same key on a type that does not declare it (the Button) stays, and becomes an issue.
     const button = data.annotations.find((a) => a.id === 'AB')!;
     button.values!.implementacao = LEGACY_CODE_VALUE;
     const result = load(JSON.stringify(data), specs);
@@ -91,18 +91,18 @@ describe('migração v8 → v9 (campo de código removido)', () => {
     });
   });
 
-  it('sem a cópia (ausente, ilegível ou de outro id) os valores ficam', () => {
+  it('without the copy (missing, unreadable or of another id) the values stay', () => {
     const { text, specs } = legacyCodeFiles();
     const variants: [string, Map<string, string>][] = [
-      ['ausente', new Map([...specs].filter(([file]) => file !== 'specs/sdui.json'))],
-      ['ilegível', new Map([...specs, ['specs/sdui.json', '{ não é JSON']])],
+      ['missing', new Map([...specs].filter(([file]) => file !== 'specs/sdui.json'))],
+      ['unreadable', new Map([...specs, ['specs/sdui.json', '{ not JSON']])],
       [
-        'outro id',
+        'another id',
         new Map([
           ...specs,
           [
             'specs/sdui.json',
-            JSON.stringify({ ...JSON.parse(legacySduiText()), id: 'outra' }),
+            JSON.stringify({ ...JSON.parse(legacySduiText()), id: 'another' }),
           ],
         ]),
       ],
@@ -118,7 +118,7 @@ describe('migração v8 → v9 (campo de código removido)', () => {
         label,
       ).toEqual(['sdui']);
     }
-    // Com a cópia de volta (já na v9), a chave aparece como "chave que não existe no tipo".
+    // With the copy back (already on v9), the key shows up as "a key that does not exist on the type".
     const missing = variants[0]![1];
     const saved = serialize(load(text, missing).project);
     const reopened = load(saved, specs);
@@ -128,7 +128,7 @@ describe('migração v8 → v9 (campo de código removido)', () => {
     ]);
   });
 
-  it('a função da migração: sem contexto não muda nada; preserva itens que não são objetos', () => {
+  it('the migration function: without context it changes nothing; preserves items that are not objects', () => {
     const data = {
       specializations: [{ id: 'sdui', version: 2, file: 'specs/sdui.json' }, 3],
       annotations: [
@@ -138,7 +138,7 @@ describe('migração v8 → v9 (campo de código removido)', () => {
           values: { nome: 'X', implementacao: [] },
         },
         { id: 'A2', type: null, values: null },
-        'texto',
+        'text',
       ],
     };
     expect(migrateFrom8To9(data)).toBe(data);
@@ -148,11 +148,11 @@ describe('migração v8 → v9 (campo de código removido)', () => {
     expect(migrated.annotations).toEqual([
       { id: 'A1', type: { specId: 'sdui', typeId: 'screen' }, values: { nome: 'X' } },
       { id: 'A2', type: null, values: null },
-      'texto',
+      'text',
     ]);
   });
 
-  it('o registro tem as migrações de cada versão até a v9', () => {
+  it('the registry has the migrations of each version up to v9', () => {
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(9);
     expect([...migrations.keys()].slice(0, 8)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(migrations.get(8)).toBe(migrateFrom8To9);

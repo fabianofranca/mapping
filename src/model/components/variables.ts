@@ -1,49 +1,49 @@
 /**
- * Variáveis do componente (formatVersion 4, etapa #1504): `"let": { "nome": <expressão> }` num
- * `frame` e `{ "$var": "nome" }` onde vale uma expressão ou condição.
+ * Component variables (formatVersion 4, stage #1504): `"let": { "name": <expression> }` in a
+ * `frame` and `{ "$var": "name" }` where an expression or condition is valid.
  *
- * A expansão acontece na leitura, antes da conferência (`parseComponent`): cada `$var` é trocado
- * pelo conteúdo da variável, como uma macro, e o componente devolvido não tem `let` nem `$var`.
- * Por isso `$index`, as colunas de linha (`$field` dentro de um `repeat`) e `$size` dentro de uma
- * variável são os do lugar do uso, e o conteúdo é conferido onde é usado, com o tipo que a posição
- * espera. Variável sem uso não é conferida. Sem DOM.
+ * Expansion happens at read time, before the check (`parseComponent`): each `$var` is replaced
+ * by the variable's content, like a macro, and the returned component has no `let` or `$var`.
+ * Hence `$index`, the row columns (`$field` inside a `repeat`) and `$size` inside a variable are
+ * those of the place of use, and the content is checked where it is used, with the type the
+ * position expects. A variable with no use is not checked. No DOM.
  *
- * Escopo: a variável vale nas chaves do próprio `frame` e nas dos descendentes (inclusive o
- * `template` de um `repeat`). O `let` de dentro esconde o de fora; dentro de um mesmo `let` a ordem
- * é livre (um `$var` aponta para o `let` do mesmo quadro, mesmo declarado depois, antes de subir aos
- * de fora).
+ * Scope: the variable is valid in the keys of the `frame` itself and in those of the descendants
+ * (including the `template` of a `repeat`). An inner `let` hides the outer one; within the same
+ * `let` the order is free (a `$var` points to the `let` of the same frame, even if declared
+ * later, before going up to the outer ones).
  */
 import { isRecord } from '../isRecord';
 
 type Rec = Record<string, unknown>;
 
-/** O nome de uma variável. */
+/** The name of a variable. */
 export const VARIABLE_NAME_PATTERN = /^[a-z][a-zA-Z0-9]*$/;
 
-/** O teto de nós que a troca das variáveis cria (o resto do arquivo não conta). */
+/** The node ceiling that variable substitution may create (the rest of the file is not counted). */
 export const MAX_EXPANDED_NODES = 100000;
 
-/** Quantas variáveis podem estar sendo expandidas uma dentro da outra (a pilha não estoura). */
+/** How many variables can be expanded one inside another (the stack does not overflow). */
 const MAX_CHAIN = 500;
 
-/** Um problema da expansão: caminho no componente expandido (`rewrite` o leva ao do arquivo). */
+/** An expansion problem: path in the expanded component (`rewrite` takes it to the file's). */
 export interface VariableIssue {
   readonly path: string;
   readonly message: string;
 }
 
 export interface VariableExpansion {
-  /** O `template` sem `let` nem `$var` (a mesma referência quando não havia nenhum). */
+  /** The `template` without `let` or `$var` (the same reference when there were none). */
   readonly value: unknown;
   readonly issues: VariableIssue[];
-  /** Leva um caminho do componente expandido ao do arquivo, com o `$var(<nome>)` do lugar do uso. */
+  /** Takes a path of the expanded component to the file's, with the `$var(<name>)` where used. */
   readonly rewrite: (path: string) => string;
 }
 
 interface Scope {
   readonly vars: Rec;
   readonly parent: Scope | null;
-  /** Caminho do `let` (`template.children[0].let`). */
+  /** Path of the `let` (`template.children[0].let`). */
   readonly path: string;
 }
 
@@ -58,18 +58,18 @@ interface State {
   readonly marks: Map<string, string[]>;
   readonly active: Active[];
   nodes: number;
-  /** Quantas variáveis estão sendo expandidas agora: dentro delas a cópia é sempre nova. */
+  /** How many variables are being expanded now: inside them the copy is always new. */
   depth: number;
   over: boolean;
 }
 
-const EXPECTED_NAME = 'esperava nome de variável ([a-z][a-zA-Z0-9]*)';
+const EXPECTED_NAME = 'expected a variable name ([a-z][a-zA-Z0-9]*)';
 
 function join(path: string, key: string): string {
   return path === '' ? key : `${path}.${key}`;
 }
 
-/** `out[key] = value`, sem que a chave `__proto__` de um arquivo JSON troque o protótipo da cópia. */
+/** `out[key] = value`, without a JSON file's `__proto__` key replacing the copy's prototype. */
 function put(out: Rec, key: string, value: unknown): void {
   if (key === '__proto__')
     Object.defineProperty(out, key, {
@@ -88,7 +88,7 @@ function report(st: State, path: string, message: string): void {
   st.issues.push({ path, message });
 }
 
-/** Insere `.$var(<nome>)` depois de cada prefixo do caminho que foi o lugar de um `$var`. */
+/** Inserts `.$var(<name>)` after each path prefix that was the place of a `$var`. */
 function rewritePath(
   path: string,
   marks: ReadonlyMap<string, readonly string[]>,
@@ -116,7 +116,7 @@ function lookup(scope: Scope | null, name: string): Scope | null {
 
 function substitute(use: Rec, path: string, scope: Scope | null, st: State): unknown {
   const extra = Object.keys(use).filter((key) => key !== '$var');
-  for (const key of extra) report(st, join(path, key), `chave desconhecida: ${key}`);
+  for (const key of extra) report(st, join(path, key), `unknown key: ${key}`);
   if (extra.length > 0) return use;
   const name = use.$var;
   if (typeof name !== 'string' || !VARIABLE_NAME_PATTERN.test(name)) {
@@ -125,13 +125,13 @@ function substitute(use: Rec, path: string, scope: Scope | null, st: State): unk
   }
   const owner = lookup(scope, name);
   if (owner === null) {
-    report(st, path, `variável não definida: ${name}`);
+    report(st, path, `undefined variable: ${name}`);
     return use;
   }
   const start = st.active.findIndex((a) => a.scope === owner && a.name === name);
   if (start >= 0) {
     const chain = [...st.active.slice(start).map((a) => a.name), name];
-    report(st, join(owner.path, name), `ciclo de variáveis: ${chain.join(' → ')}`);
+    report(st, join(owner.path, name), `variable cycle: ${chain.join(' → ')}`);
     return use;
   }
   if (st.active.length >= MAX_CHAIN) {
@@ -178,7 +178,7 @@ function expandEntries(
   return changed ? out : value;
 }
 
-/** Conta o nó criado pela troca (só dentro de uma variável) e para no teto de nós. */
+/** Counts the node created by the substitution (only inside a variable); stops at the ceiling. */
 function count(st: State): void {
   if (st.depth === 0) return;
   st.nodes++;
@@ -188,14 +188,10 @@ function count(st: State): void {
 function tooBig(st: State): void {
   if (st.over) return;
   st.over = true;
-  report(
-    st,
-    '',
-    `expansão das variáveis grande demais (mais de ${MAX_EXPANDED_NODES} nós)`,
-  );
+  report(st, '', `variable expansion too large (more than ${MAX_EXPANDED_NODES} nodes)`);
 }
 
-/** Um valor (expressão, condição, literal ou objeto de estilo) com os `$var` trocados. */
+/** A value (expression, condition, literal or style object) with the `$var`s replaced. */
 function expandValue(
   value: unknown,
   path: string,
@@ -210,7 +206,7 @@ function expandValue(
   return expandEntries(value, path, scope, st);
 }
 
-/** O escopo que o `let` do quadro abre (conferindo-o); `null` quando o nó não tem `let` de quadro. */
+/** The scope the frame's `let` opens (checking it); `null` when the node has no frame `let`. */
 function openScope(
   node: Rec,
   path: string,
@@ -220,7 +216,7 @@ function openScope(
   if (node.type !== 'frame' || !('let' in node)) return null;
   const at = join(path, 'let');
   if (!isRecord(node.let)) {
-    report(st, at, 'esperava objeto');
+    report(st, at, 'expected an object');
     return null;
   }
   for (const name of Object.keys(node.let))
@@ -228,7 +224,7 @@ function openScope(
   return { vars: node.let, parent, path: at };
 }
 
-/** Os filhos de `children` e o `template` são nós; o resto das chaves é valor. */
+/** The children of `children` and the `template` are nodes; the rest of the keys is a value. */
 function expandKey(
   key: string,
   value: unknown,
@@ -249,7 +245,7 @@ function expandKey(
   return changed ? out : value;
 }
 
-/** Um nó com o `let` aplicado e os `$var` das chaves (e dos descendentes) trocados. */
+/** A node with the `let` applied and the `$var`s of the keys (and of the descendants) replaced. */
 function expandNode(
   node: unknown,
   path: string,
@@ -272,9 +268,9 @@ function expandNode(
 }
 
 /**
- * Troca os `$var` do `template` pelo conteúdo das variáveis e tira os `let` dos quadros. Os
- * problemas (nome inválido, variável não definida, ciclo, teto) vêm em `issues`, e então `value`
- * não deve ser conferido (a árvore está incompleta).
+ * Replaces the `template`'s `$var`s with the variables' content and removes the frames' `let`s.
+ * The problems (invalid name, undefined variable, cycle, ceiling) come in `issues`, and then
+ * `value` must not be checked (the tree is incomplete).
  */
 export function expandVariables(template: unknown, path = 'template'): VariableExpansion {
   const st: State = {
@@ -291,9 +287,9 @@ export function expandVariables(template: unknown, path = 'template'): VariableE
 }
 
 /**
- * Os caminhos de todo `let` de quadro e de todo `{ "$var" }` do `template` como estão escritos
- * (inclusive no conteúdo de variáveis sem uso): a conferência de versão usa-os numa
- * `formatVersion` anterior à 4.
+ * The paths of every frame `let` and every `{ "$var" }` of the `template` as they are written
+ * (including in the content of unused variables): the version check uses them in a
+ * `formatVersion` earlier than 4.
  */
 export function variableSyntaxPaths(node: unknown, path = 'template'): string[] {
   if (Array.isArray(node))

@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-// Ajuda › Atalhos: a linha de cada janela cabe numa linha a 900 px, com o nome mais
-// longo (Árvore de marcações). jsdom não tem layout; a medição é no Chromium.
+// Help › Shortcuts: each window's row fits on one line at 900 px, with the longest
+// name (Marking tree). jsdom has no layout; the measurement is in Chromium.
 
 const CASES = [
+  // pt-BR kept: the object of the test is the width of the pt-BR text of the shortcuts row
   { locale: 'pt-BR', text: 'Ir para Árvore de marcações (com o foco, esconde)' },
   { locale: 'en-US', text: 'Go to Marking tree (hides when focused)' },
 ] as const;
@@ -12,10 +13,12 @@ for (const { locale, text } of CASES) {
   test.describe(locale, () => {
     test.use({ locale, viewport: { width: 900, height: 720 } });
 
-    test(`a linha da Árvore cabe numa linha em ${locale}`, async ({ page }) => {
+    test(`the Tree row fits on one line in ${locale}`, async ({ page }) => {
       await page.goto('/');
+      // pt-BR kept: the same spec runs in pt-BR, where the button is `Configurações`
       await page.getByRole('button', { name: /^(Configurações|Settings)$/ }).click();
       await page
+        // pt-BR kept: the same spec runs in pt-BR
         .getByRole('button', {
           name: /^(Ver os atalhos de teclado|View keyboard shortcuts)$/,
         })

@@ -1,20 +1,20 @@
 # Avatar
 
-A foto redonda de uma pessoa com o nome ao lado, para telas com lista de contatos, perfil ou comentários.
+The round photo of a person with the name beside it, for screens with a contact list, profile or comments.
 
-## Campos
+## Fields
 
-- **Nome** (obrigatório): o nome da pessoa como aparece na tela.
-- **Foto**: a URL `https://` da foto, copiada da origem do trabalho. Não invente a URL: se a origem não a tem, deixe o campo vazio.
+- **Nome** (required): the name of the person as it appears on the screen.
+- **Foto**: the `https://` URL of the photo, copied from the work source. Do not make up the URL: if the source does not have it, leave the field empty.
 
-## Como a foto aparece
+## How the photo appears
 
-A foto é uma imagem remota. Ela só é pedida à rede depois de a pessoa permitir aquela origem na app; até lá, e se a URL for recusada ou falhar, o avatar mostra o reservado (a caixa cinza com um X). Nada além da URL é gravado no projeto.
+The photo is a remote image. It is only requested from the network after the person allows that origin in the app; until then, and if the URL is refused or fails, the avatar shows the placeholder (the gray box with an X). Nothing but the URL is saved in the project.
 
-## Exemplo
+## Example
 
-Nome `Ana Souza` e foto `https://exemplo.invalid/ana.png` (um endereço de exemplo, que nunca carrega).
+Name `Ana Souza` and photo `https://exemplo.invalid/ana.png` (an example address, which never loads).
 
-## Para o agente
+## For the agent
 
-Leia o avatar por `get_marking`: `nome` e `foto` estão nos valores da anotação do tipo `avatar`. Preencha `foto` só com a URL `https://` que a origem dá; o servidor MCP nunca baixa a imagem.
+Read the avatar with `get_marking`: `nome` and `foto` are in the values of the `avatar` annotation type. Fill `foto` only with the `https://` URL that the source gives; the MCP server never downloads the image.

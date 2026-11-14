@@ -1,13 +1,13 @@
-# Coordenador da fila enxuto — 2026-11-09 (épico `epic/fila-contexto`)
+# Lean queue coordinator — 2026-11-09 (épico `epic/fila-contexto`)
 
 ## Pendências
 
-- FC1: nenhuma (só ferramenta do fluxo de entrega).
+- FC1: nenhuma (delivery flow tooling only).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só ajustou o skill `/implementar-fila`, o script do painel e uma linha do `docs/FLOW.md`.
+No write to the Mapping artifact in Claude Design: the stage only adjusted the `/implementar-fila` skill, the panel script and one line of `docs/FLOW.md`.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

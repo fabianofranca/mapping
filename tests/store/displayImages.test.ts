@@ -10,34 +10,34 @@ class FakeBitmap {
   }
 }
 
-describe('bitmaps de exibição', () => {
-  it('carrega uma vez, marca ausentes e erros', async () => {
+describe('display bitmaps', () => {
+  it('loads once, flags missing ones and errors', async () => {
     const load = vi.fn(async (path: string) => {
-      if (path === 'ausente') return null;
-      if (path === 'quebrada') throw new Error('decode');
+      if (path === 'missing') return null;
+      if (path === 'broken') throw new Error('decode');
       return new FakeBitmap(path);
     });
     const display = createDisplayImages(load);
 
     display.ensure('a');
     display.ensure('a');
-    display.ensure('ausente');
-    display.ensure('quebrada');
+    display.ensure('missing');
+    display.ensure('broken');
     expect(display.images.value.get('a')).toEqual({ status: 'loading' });
     await vi.waitFor(() =>
-      expect(display.images.value.get('quebrada')?.status).toBe('error'),
+      expect(display.images.value.get('broken')?.status).toBe('error'),
     );
 
     expect(load).toHaveBeenCalledTimes(3);
     expect(display.images.value.get('a')?.status).toBe('ready');
-    expect(display.images.value.get('ausente')).toEqual({ status: 'missing' });
+    expect(display.images.value.get('missing')).toEqual({ status: 'missing' });
   });
 
-  it('libera os bitmaps ao invalidar e ao descartar, inclusive os que chegam tarde', async () => {
+  it('releases the bitmaps on invalidate and on dispose, including the ones that arrive late', async () => {
     let resolveLate: (b: FakeBitmap) => void = () => undefined;
-    const late = new FakeBitmap('tarde');
+    const late = new FakeBitmap('late');
     const display = createDisplayImages(async (path: string) =>
-      path === 'tarde'
+      path === 'late'
         ? new Promise<FakeBitmap>((resolve) => (resolveLate = resolve))
         : new FakeBitmap(path),
     );
@@ -50,7 +50,7 @@ describe('bitmaps de exibição', () => {
     await vi.waitFor(() => expect(a?.status === 'ready' && a.bitmap.closed).toBe(true));
 
     display.ensure('b');
-    display.ensure('tarde');
+    display.ensure('late');
     await vi.waitFor(() => expect(display.images.value.get('b')?.status).toBe('ready'));
     const b = display.images.value.get('b');
     display.dispose();
@@ -60,7 +60,7 @@ describe('bitmaps de exibição', () => {
     expect(display.images.value.size).toBe(0);
   });
 
-  it('retain libera os bitmaps fora do conjunto e recarrega sob demanda', async () => {
+  it('retain releases the bitmaps outside the set and reloads on demand', async () => {
     const created: FakeBitmap[] = [];
     const display = createDisplayImages(async (path: string) => {
       const bitmap = new FakeBitmap(path);
@@ -73,8 +73,8 @@ describe('bitmaps de exibição', () => {
     await vi.waitFor(() => expect(display.images.value.get('a')?.status).toBe('ready'));
 
     display.retain(new Set(['b']));
-    // O mapa solta o bitmap na hora; o `close()` fica para o quadro seguinte, porque o
-    // canvas ainda pode desenhar o quadro que o referencia (achado 10).
+    // The map drops the bitmap right away; `close()` is left for the next frame, because the
+    // canvas may still draw the frame that references it (finding 10).
     expect([...display.images.value.keys()]).toEqual(['b']);
     expect(created.map((b) => [b.path, b.closed])).toEqual([
       ['a', false],
@@ -87,24 +87,24 @@ describe('bitmaps de exibição', () => {
       ]),
     );
 
-    // O arquivo volta (desfazer): carrega de novo.
+    // The file comes back (undo): loads again.
     display.ensure('a');
     await vi.waitFor(() => expect(display.images.value.get('a')?.status).toBe('ready'));
     expect(created).toHaveLength(3);
     expect(created[2]?.closed).toBe(false);
   });
 
-  it('retain descarta o carregamento em andamento: o bitmap que chega é fechado', async () => {
+  it('retain discards the load in progress: the bitmap that arrives is closed', async () => {
     let resolve: (b: FakeBitmap) => void = () => undefined;
-    const late = new FakeBitmap('tarde');
+    const late = new FakeBitmap('late');
     const display = createDisplayImages(
       () => new Promise<FakeBitmap>((r) => (resolve = r)),
     );
-    display.ensure('tarde');
+    display.ensure('late');
     display.retain(new Set());
-    expect(display.images.value.has('tarde')).toBe(false);
+    expect(display.images.value.has('late')).toBe(false);
     resolve(late);
     await vi.waitFor(() => expect(late.closed).toBe(true));
-    expect(display.images.value.has('tarde')).toBe(false);
+    expect(display.images.value.has('late')).toBe(false);
   });
 });

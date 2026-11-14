@@ -7,7 +7,7 @@ import { projectIndex } from './projectIndex';
 import { countBrokenRefs } from './refs';
 import type { Annotation, Entry, Project } from './types';
 
-/** Par a gravar; sem `id`, ganha um novo (`crypto.randomUUID()`). */
+/** Entry to save; without `id`, it gets a new one (`crypto.randomUUID()`). */
 export interface EntryInput {
   readonly id?: string;
   readonly key: string;
@@ -15,8 +15,9 @@ export interface EntryInput {
 }
 
 /**
- * Valida e normaliza os pares (chaves sem espaços nas pontas; todo par com `id`). O `id`
- * do par é único no projeto inteiro: não pode repetir o de um par de outra anotação.
+ * Validates and normalizes the entries (keys without surrounding spaces; every entry with an
+ * `id`). The entry's `id` is unique across the whole project: it cannot repeat that of an
+ * entry of another annotation.
  */
 function checkEntries(
   p: Project,
@@ -49,8 +50,8 @@ export interface NewAnnotationArgs {
 }
 
 /**
- * Cria uma anotação livre na marcação ou na seta (`markingId`: os ids dividem o espaço).
- * Camadas de especialização só aceitam tipadas (`addTypedAnnotation`).
+ * Creates a free annotation on the marking or the arrow (`markingId`: the ids share the space).
+ * Specialization layers only accept typed ones (`addTypedAnnotation`).
  */
 export function addAnnotation(p: Project, args: NewAnnotationArgs): Project {
   if (p.annotations.some((a) => a.id === args.id)) fail('duplicate-id', args.id);
@@ -86,7 +87,7 @@ export function renameAnnotation(
   };
 }
 
-/** Exclui a anotação e, em cascata, as vinculadas a ela (recursivamente). */
+/** Deletes the annotation and, in cascade, those linked to it (recursively). */
 export function removeAnnotation(p: Project, annotationId: string): Project {
   findById(p.annotations, annotationId);
   const doomed = annotationWithLinked(p, annotationId);
@@ -94,8 +95,8 @@ export function removeAnnotation(p: Project, annotationId: string): Project {
 }
 
 /**
- * Quantas anotações saem junto na exclusão (inclui a própria) e quantas
- * referências de outras anotações vão quebrar.
+ * How many annotations go along with the deletion (including itself) and how many
+ * references from other annotations will break.
  */
 export function annotationDeletionImpact(
   p: Project,
@@ -128,7 +129,7 @@ function entryIndex(entries: readonly Entry[], entryId: string): number {
   return index;
 }
 
-/** Substitui todos os pares de uma vez (pares com `id` mantêm a identidade). */
+/** Replaces all entries at once (entries with `id` keep their identity). */
 export function setEntries(
   p: Project,
   annotationId: string,
@@ -141,7 +142,7 @@ export function addEntry(p: Project, annotationId: string, entry: EntryInput): P
   return updateEntries(p, annotationId, (entries) => [...entries, entry]);
 }
 
-/** Altera chave e valor do par; o `id` continua o mesmo (as referências seguem valendo). */
+/** Changes the entry's key and value; the `id` stays the same (references remain valid). */
 export function updateEntry(
   p: Project,
   annotationId: string,
@@ -163,7 +164,7 @@ export function removeEntry(p: Project, annotationId: string, entryId: string): 
   });
 }
 
-/** Move o par para a posição `to` (índice final na lista). */
+/** Moves the entry to position `to` (final index in the list). */
 export function moveEntry(
   p: Project,
   annotationId: string,
@@ -175,7 +176,7 @@ export function moveEntry(
   );
 }
 
-/** Anotações da marcação na camada, na ordem de exibição. */
+/** The marking's annotations in the layer, in display order. */
 export function annotationsOf(
   p: Project,
   markingId: string,

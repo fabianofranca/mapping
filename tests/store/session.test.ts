@@ -24,7 +24,7 @@ import { MemoryDirectory } from '../storage/memoryFs';
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
-/** "Decodificador" fake: o conteúdo do arquivo é "LxA"; "ruim" falha. */
+/** Fake "decoder": the file content is "LxA"; "bad" fails. */
 async function prepareImage(file: File): Promise<PreparedImage> {
   const text = await file.text();
   const match = /^(\d+)x(\d+)$/.exec(text);
@@ -56,20 +56,20 @@ function start(root: MemoryDirectory, project = emptyProject(), readOnly = false
 async function savedProject(root: MemoryDirectory) {
   const text = await root.read('mapping.json');
   const parsed = deserialize(text ?? '');
-  if (!parsed.ok) throw new Error(`mapping inválido: ${text}`);
+  if (!parsed.ok) throw new Error(`invalid mapping: ${text}`);
   return parsed.project;
 }
 
 const file = (name: string, content: string) => new File([content], name);
 
-describe('sessão de projeto', () => {
+describe('project session', () => {
   let session: ProjectSession | null = null;
   afterEach(async () => {
     await session?.close();
     session = null;
   });
 
-  it('grava e remove a cópia em specs/ ao aplicar, remover e desfazer', async () => {
+  it('writes and removes the copy in specs/ on apply, remove and undo', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
     const sdui = loadExample('sdui');
@@ -95,7 +95,7 @@ describe('sessão de projeto', () => {
     expect(files.specs.get('specs/sdui.json')).toBe(copy);
   });
 
-  it('adiciona imagens: grava o arquivo, cria a entrada e salva o mapping sem esperar o debounce', async () => {
+  it('adds images: writes the file, creates the entry and saves the mapping without waiting for the debounce', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
     const result = await session.addImages([
@@ -106,31 +106,31 @@ describe('sessão de projeto', () => {
     expect(result).toEqual({ added: ['images/a.jpg', 'images/a-2.jpg'], failed: [] });
     expect(await root.read('images/a.jpg')).toBe('400x300');
     expect(await root.read('images/a-2.jpg')).toBe('100x100');
-    // Operação cara (fase 5.5): a importação inteira grava uma vez, ao terminar.
+    // Expensive operation (phase 5.5): the whole import writes once, when it finishes.
     expect(session.saveStatus.value).toBe('saved');
     const saved = await savedProject(root);
     expect(saved.containers.map((i) => [i.file, i.width, i.height])).toEqual([
       ['images/a.jpg', 400, 300],
       ['images/a-2.jpg', 100, 100],
     ]);
-    // Cada imagem é uma entrada de desfazer.
+    // Each image is one undo entry.
     session.store.undo();
     expect(session.store.project.value?.containers).toHaveLength(1);
   });
 
-  it('informa as imagens que não puderam ser importadas', async () => {
+  it('reports the images that could not be imported', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
     const result = await session.addImages([
-      file('ruim.jpg', 'ruim'),
+      file('bad.jpg', 'bad'),
       file('b.png', '8x8'),
     ]);
-    expect(result).toEqual({ added: ['images/b.png'], failed: ['ruim.jpg'] });
-    expect(await root.read('images/ruim.jpg')).toBeNull();
+    expect(result).toEqual({ added: ['images/b.png'], failed: ['bad.jpg'] });
+    expect(await root.read('images/bad.jpg')).toBeNull();
   });
 
-  describe('nome livre de verdade ao importar e substituir', () => {
-    it('apagar o container, importar outro foo.png e desfazer: a original volta intacta', async () => {
+  describe('truly free name when importing and replacing', () => {
+    it('delete the container, import another foo.png and undo: the original comes back intact', async () => {
       const root = new MemoryDirectory('p');
       session = start(root);
       await session.addImages([file('foo.png', '400x300')]);
@@ -144,14 +144,14 @@ describe('sessão de projeto', () => {
       expect(result.added).toEqual(['images/foo-2.png']);
       await session.flush();
 
-      session.store.undo(); // desfaz a importação
-      session.store.undo(); // desfaz a remoção
+      session.store.undo(); // undoes the import
+      session.store.undo(); // undoes the removal
       await session.flush();
       expect(await root.read('images/foo.png')).toBe('400x300');
       expect(await root.read('images/foo-2.png')).toBeNull();
     });
 
-    it('duas importações concorrentes com o mesmo nome gravam arquivos diferentes', async () => {
+    it('two concurrent imports with the same name write different files', async () => {
       const root = new MemoryDirectory('p');
       session = start(root);
       const [a, b] = await Promise.all([
@@ -170,23 +170,23 @@ describe('sessão de projeto', () => {
       expect(contents.sort()).toEqual(['100x100', '200x200']);
     });
 
-    it('um arquivo solto em images/ (mesmo com outra caixa) não é sobrescrito', async () => {
+    it('a loose file in images/ (even with another case) is not overwritten', async () => {
       const root = new MemoryDirectory('p');
-      root.put('images/Solto.png', 'do usuario');
+      root.put('images/Loose.png', 'user data');
       session = start(root);
-      const result = await session.addImages([file('solto.png', '100x100')]);
-      expect(result.added).toEqual(['images/solto-2.png']);
+      const result = await session.addImages([file('loose.png', '100x100')]);
+      expect(result.added).toEqual(['images/loose-2.png']);
       await session.flush();
-      expect(await root.read('images/Solto.png')).toBe('do usuario');
-      expect(await root.read('images/solto-2.png')).toBe('100x100');
+      expect(await root.read('images/Loose.png')).toBe('user data');
+      expect(await root.read('images/loose-2.png')).toBe('100x100');
     });
 
-    it('replaceImage escolhe o nome pela mesma regra', async () => {
+    it('replaceImage picks the name by the same rule', async () => {
       const root = new MemoryDirectory('p');
       session = start(root);
       await session.addImages([file('a.png', '400x300')]);
       await session.flush();
-      root.put('images/B.png', 'do usuario');
+      root.put('images/B.png', 'user data');
       const containerId = session.store.project.value?.containers[0]?.id ?? '';
       const outcome = await session.replaceImage(
         containerId,
@@ -195,20 +195,20 @@ describe('sessão de projeto', () => {
       );
       expect(outcome).toBe('replaced');
       expect(session.store.project.value?.containers[0]?.file).toBe('images/b-2.png');
-      expect(await root.read('images/B.png')).toBe('do usuario');
+      expect(await root.read('images/B.png')).toBe('user data');
     });
 
-    it('o nome reservado é liberado quando a gravação falha', async () => {
+    it('the reserved name is released when the write fails', async () => {
       const root = new MemoryDirectory('p');
       session = start(root);
-      const failed = await session.addImages([file('x.png', 'ruim')]);
+      const failed = await session.addImages([file('x.png', 'bad')]);
       expect(failed.failed).toEqual(['x.png']);
       const ok = await session.addImages([file('x.png', '10x10')]);
       expect(ok.added).toEqual(['images/x.png']);
     });
   });
 
-  it('remove a imagem excluída só depois de salvar e a restaura no desfazer', async () => {
+  it('removes the deleted image only after saving and restores it on undo', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
     await session.addImages([file('a.jpg', '400x300')]);
@@ -220,7 +220,7 @@ describe('sessão de projeto', () => {
     await session.flush();
     expect(await root.read('images/a.jpg')).toBeNull();
     expect((await savedProject(root)).containers).toEqual([]);
-    // Enquanto isso, a sessão ainda consegue ler a imagem (para exibir no desfazer).
+    // Meanwhile, the session can still read the image (to display it on undo).
     expect(await (await session.readImage('images/a.jpg'))?.text()).toBe('400x300');
 
     session.store.undo();
@@ -231,7 +231,7 @@ describe('sessão de projeto', () => {
     ]);
   });
 
-  describe('trocar imagem', () => {
+  describe('swap image', () => {
     async function withImage(content = '400x300') {
       const root = new MemoryDirectory('p');
       const s = start(root);
@@ -248,11 +248,11 @@ describe('sessão de projeto', () => {
     }
     const current = (s: ProjectSession) => {
       const p = s.store.project.value;
-      if (!p) throw new Error('sem projeto');
+      if (!p) throw new Error('no project');
       return p;
     };
 
-    it('mesma proporção: reescala sem perguntar e troca o arquivo', async () => {
+    it('same aspect ratio: rescales without asking and swaps the file', async () => {
       const { root, s, containerId } = await withImage();
       const confirm = vi.fn(async () => true);
       expect(await s.replaceImage(containerId, file('b.jpg', '800x600'), confirm)).toBe(
@@ -274,14 +274,14 @@ describe('sessão de projeto', () => {
       expect(await root.read('images/b.jpg')).toBe('800x600');
       expect(await root.read('images/a.jpg')).toBeNull();
 
-      // Desfazer volta ao arquivo antigo, que é restaurado no disco.
+      // Undo goes back to the old file, which is restored on disk.
       s.store.undo();
       await s.flush();
       expect(current(s).containers[0]?.file).toBe('images/a.jpg');
       expect(await root.read('images/a.jpg')).toBe('400x300');
     });
 
-    it('proporção diferente: pergunta e marca as marcações para revisão', async () => {
+    it('different aspect ratio: asks and marks the markings for review', async () => {
       const { s, containerId } = await withImage();
       const confirm = vi.fn(async () => true);
       expect(await s.replaceImage(containerId, file('b.jpg', '400x400'), confirm)).toBe(
@@ -294,7 +294,7 @@ describe('sessão de projeto', () => {
       expect(current(s).markings[0]?.needsReview).toBe(true);
     });
 
-    it('proporção diferente recusada: não grava nem altera nada', async () => {
+    it('different aspect ratio refused: writes and changes nothing', async () => {
       const { root, s, containerId } = await withImage();
       const before = current(s);
       const result = await s.replaceImage(
@@ -307,7 +307,7 @@ describe('sessão de projeto', () => {
       expect(await root.read('images/b.jpg')).toBeNull();
     });
 
-    it('imagem trancada: trocar por outro tamanho é recusado sem perguntar nem gravar; do mesmo tamanho, não', async () => {
+    it('locked image: swapping for another size is refused without asking or writing; for the same size, it is not', async () => {
       const { root, s, containerId } = await withImage();
       s.actions.setImageLocked(containerId, true);
       const before = current(s);
@@ -327,7 +327,7 @@ describe('sessão de projeto', () => {
       });
     });
 
-    it('marcação trancada: trocar por outro tamanho é recusado', async () => {
+    it('locked marking: swapping for another size is refused', async () => {
       const { s, containerId } = await withImage();
       s.actions.setMarkingLocked(current(s).markings[0]?.id ?? '', true);
       expect(
@@ -335,16 +335,16 @@ describe('sessão de projeto', () => {
       ).toBe('locked');
     });
 
-    it('arquivo ilegível falha sem alterar o projeto', async () => {
+    it('unreadable file fails without changing the project', async () => {
       const { s, containerId } = await withImage();
       const before = current(s);
       expect(
-        await s.replaceImage(containerId, file('b.jpg', 'ruim'), async () => true),
+        await s.replaceImage(containerId, file('b.jpg', 'bad'), async () => true),
       ).toBe('failed');
       expect(current(s)).toBe(before);
     });
 
-    it('reaponta uma imagem ausente', async () => {
+    it('repoints a missing image', async () => {
       const { root, s, containerId } = await withImage();
       await root.getDirectoryHandle('images').then((d) => d.removeEntry('a.jpg'));
       expect(await s.readImage('images/a.jpg')).toBeNull();
@@ -361,7 +361,7 @@ describe('sessão de projeto', () => {
     });
   });
 
-  describe('memória: conteúdo das imagens removidas', () => {
+  describe('memory: content of the removed images', () => {
     async function removedImage() {
       const root = new MemoryDirectory('p');
       const s = start(root);
@@ -374,10 +374,10 @@ describe('sessão de projeto', () => {
       return { root, s };
     }
     const bump = (s: ProjectSession, n: number) => {
-      for (let i = 0; i < n; i++) s.actions.renameProject(`nome ${i}`);
+      for (let i = 0; i < n; i++) s.actions.renameProject(`name ${i}`);
     };
 
-    it('mantém o conteúdo enquanto o desfazer ainda restauraria a imagem', async () => {
+    it('keeps the content while undo would still restore the image', async () => {
       const { root, s } = await removedImage();
       bump(s, 5);
       await s.flush();
@@ -388,11 +388,11 @@ describe('sessão de projeto', () => {
       expect(await root.read('images/a.jpg')).toBe('400x300');
     });
 
-    it('guarda uma cópia em memória: num disco real o arquivo lido some junto com o arquivo', async () => {
+    it('keeps an in-memory copy: on a real disk the read file disappears along with the file', async () => {
       const root = new MemoryDirectory('p');
       const real = createFolderStorage(root);
       const gone = new Set<string>();
-      // Como o `File` de uma pasta: depois que o arquivo é removido, ler o conteúdo falha.
+      // Like a folder's `File`: after the file is removed, reading the content fails.
       const storage: typeof real = {
         ...real,
         readImage: async (path) => {
@@ -430,22 +430,22 @@ describe('sessão de projeto', () => {
       expect(await root.read('images/a.jpg')).toBe('400x300');
     });
 
-    it('solta o conteúdo quando nenhum snapshot do histórico referencia o arquivo', async () => {
+    it('releases the content when no history snapshot references the file', async () => {
       const { s } = await removedImage();
       expect(await s.readImage('images/a.jpg')).not.toBeNull();
-      // Passa do limite do histórico: o snapshot com a imagem sai de `past`.
+      // Past the history limit: the snapshot with the image leaves `past`.
       bump(s, HISTORY_LIMIT + 1);
       await s.flush();
       expect(await s.readImage('images/a.jpg')).toBeNull();
     });
 
-    it('solta o conteúdo quando uma nova alteração descarta o "refazer"', async () => {
+    it('releases the content when a new change discards the "redo"', async () => {
       const root = new MemoryDirectory('p');
       const s = start(root);
       session = s;
       await s.addImages([file('a.jpg', '400x300')]);
       await s.flush();
-      // Desfaz a adição: a imagem sai do projeto, mas o "refazer" ainda a restauraria.
+      // Undoes the addition: the image leaves the project, but the "redo" would still restore it.
       s.store.undo();
       await s.flush();
       expect(await root.read('images/a.jpg')).toBeNull();
@@ -461,7 +461,7 @@ describe('sessão de projeto', () => {
       expect(await s.readImage('images/a.jpg')).toBeNull();
     });
 
-    it('não chega a guardar o conteúdo de um arquivo que o histórico nunca restauraria', async () => {
+    it('does not even keep the content of a file that the history would never restore', async () => {
       const root = new MemoryDirectory('p');
       const s = start(root);
       session = s;
@@ -474,38 +474,38 @@ describe('sessão de projeto', () => {
     });
   });
 
-  it('registra no Diagnóstico a falha de gravação e a de importação', async () => {
+  it('records the write failure and the import failure in Diagnostics', async () => {
     clearReportedErrors();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const root = new MemoryDirectory('p');
     session = start(root);
-    await session.addImages([file('ruim.jpg', 'ruim')]);
-    session.actions.renameProject('Outro nome');
-    root.failWrites = new Error('sem permissão');
+    await session.addImages([file('bad.jpg', 'bad')]);
+    session.actions.renameProject('Other name');
+    root.failWrites = new Error('no permission');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(reportedErrors.value.map((e) => [e.context, e.message])).toEqual([
       ['session.addImage', 'decode'],
-      ['save', 'sem permissão'],
+      ['save', 'no permission'],
     ]);
     root.failWrites = null;
     vi.restoreAllMocks();
   });
 
-  it('com erro de gravação mostra o status e tenta de novo', async () => {
+  it('with a write error shows the status and tries again', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
-    session.actions.renameProject('Outro nome');
-    root.failWrites = new Error('sem permissão');
+    session.actions.renameProject('Other name');
+    root.failWrites = new Error('no permission');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.saveStatus.value).toBe('error');
 
     root.failWrites = null;
     await session.flush();
     expect(session.saveStatus.value).toBe('saved');
-    expect((await savedProject(root)).project.name).toBe('Outro nome');
+    expect((await savedProject(root)).project.name).toBe('Other name');
   });
 
-  it('falha na limpeza depois do mapping.json não é erro de gravação (fase 5.2)', async () => {
+  it('a cleanup failure after mapping.json is not a write error (phase 5.2)', async () => {
     clearReportedErrors();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const root = new MemoryDirectory('p');
@@ -518,7 +518,7 @@ describe('sessão de projeto', () => {
 
     const remove = vi
       .spyOn(storage, 'removeImage')
-      .mockRejectedValue(new Error('arquivo em uso'));
+      .mockRejectedValue(new Error('file in use'));
     session.actions.removeContainer(containerId);
     const flushed = await session.flush();
     expect(session.saveStatus.value).toBe('saved');
@@ -526,12 +526,12 @@ describe('sessão de projeto', () => {
     expect((await savedProject(root)).revision).toBe(revision + 1);
     expect((await savedProject(root)).containers).toEqual([]);
     expect(reportedErrors.value.map((e) => [e.context, e.message])).toEqual([
-      ['session.cleanup', 'arquivo em uso'],
+      ['session.cleanup', 'file in use'],
     ]);
 
-    // A próxima gravação sobe só uma revisão e tenta a remoção de novo.
+    // The next write bumps only one revision and tries the removal again.
     remove.mockRestore();
-    session.actions.renameProject('Outro nome');
+    session.actions.renameProject('Other name');
     await session.flush();
     expect(session.saveStatus.value).toBe('saved');
     expect((await savedProject(root)).revision).toBe(revision + 2);
@@ -539,7 +539,7 @@ describe('sessão de projeto', () => {
     vi.restoreAllMocks();
   });
 
-  it('não grava nada ao abrir, nem em modo somente leitura', async () => {
+  it('writes nothing on open, not even in read-only mode', async () => {
     const root = new MemoryDirectory('p');
     session = start(root, sampleProject(), true);
     await vi.advanceTimersByTimeAsync(2000);
@@ -552,7 +552,7 @@ describe('sessão de projeto', () => {
     expect(root.dirs.size).toBe(0);
   });
 
-  it('collectFiles grava o pendente e junta mapping e imagens existentes', async () => {
+  it('collectFiles writes the pending one and joins the mapping and existing images', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
     await session.addImages([file('a.jpg', '400x300')]);
@@ -562,8 +562,8 @@ describe('sessão de projeto', () => {
     expect([...files.images.keys()]).toEqual(['images/a.jpg']);
   });
 
-  describe('gesto em andamento (fase 5.1)', () => {
-    /** Sessão sobre a pasta, contando as gravações do `mapping.json`. */
+  describe('gesture in progress (phase 5.1)', () => {
+    /** Session over the folder, counting the writes of `mapping.json`. */
     function startCounting(root: MemoryDirectory) {
       const storage = createFolderStorage(root);
       let saves = 0;
@@ -586,11 +586,11 @@ describe('sessão de projeto', () => {
     const m4x = (p: { markings: readonly { id: string; rect: { x: number } }[] }) =>
       p.markings.find((m) => m.id === 'M4')?.rect.x;
 
-    it('timer no meio do gesto cancelado: o disco fica igual ao confirmado', async () => {
+    it('timer in the middle of the gesture canceled: the disk stays equal to the committed state', async () => {
       const root = new MemoryDirectory('p');
       const counting = startCounting(root);
       session = counting.session;
-      session.actions.renameProject('Renomeado');
+      session.actions.renameProject('Renamed');
       expect(session.actions.beginGesture().ok).toBe(true);
       expect(session.actions.previewMarkingMove('M4', 50, 0).ok).toBe(true);
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
@@ -598,17 +598,17 @@ describe('sessão de projeto', () => {
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
 
       const saved = await savedProject(root);
-      expect(saved.project.name).toBe('Renomeado');
+      expect(saved.project.name).toBe('Renamed');
       expect(m4x(saved)).toBe(0);
       const committed = session.store.committed.value;
-      if (!committed) throw new Error('sem projeto');
+      if (!committed) throw new Error('no project');
       expect(await root.read('mapping.json')).toBe(
         serialize({ ...committed, revision: saved.revision }),
       );
       expect(session.saveStatus.value).toBe('saved');
     });
 
-    it('gesto confirmado grava uma vez, com a geometria final', async () => {
+    it('committed gesture writes once, with the final geometry', async () => {
       const root = new MemoryDirectory('p');
       const counting = startCounting(root);
       session = counting.session;
@@ -623,10 +623,10 @@ describe('sessão de projeto', () => {
       expect(m4x(await savedProject(root))).toBe(50);
     });
 
-    it('flush durante o gesto grava o confirmado, não a prévia', async () => {
+    it('flush during the gesture writes the committed state, not the preview', async () => {
       const root = new MemoryDirectory('p');
       session = start(root, sampleProject());
-      session.actions.renameProject('Renomeado');
+      session.actions.renameProject('Renamed');
       session.actions.beginGesture();
       session.actions.previewMarkingMove('M4', 50, 0);
       await session.flush();
@@ -636,30 +636,31 @@ describe('sessão de projeto', () => {
       expect(m4x(await savedProject(root))).toBe(50);
     });
 
-    it('collectFiles durante o gesto exporta o confirmado', async () => {
+    it('collectFiles during the gesture exports the committed state', async () => {
       const root = new MemoryDirectory('p');
       session = start(root, sampleProject());
       session.actions.beginGesture();
       session.actions.previewMarkingMove('M4', 50, 0);
       const files = await session.collectFiles();
       const parsed = deserialize(files.mapping);
-      if (!parsed.ok) throw new Error('mapping inválido');
+      if (!parsed.ok) throw new Error('invalid mapping.json');
       expect(m4x(parsed.project)).toBe(0);
       session.actions.cancelGesture();
     });
   });
 
-  it('collectFiles lista as imagens ausentes no armazenamento', async () => {
+  it('collectFiles lists the images missing from the storage', async () => {
     const root = new MemoryDirectory('p');
     session = start(root, sampleProject());
+    // pt-BR kept: shared fixture data asserted by tests/model (sampleProject images 'images/frente.jpg' and 'images/lateral.jpg')
     root.put('images/frente.jpg', 'jpg');
     const files = await session.collectFiles();
     expect([...files.images.keys()]).toEqual(['images/frente.jpg']);
     expect(files.missingImages).toEqual(['images/lateral.jpg']);
   });
 
-  describe('operações caras gravam sem debounce (fase 5.5)', () => {
-    /** Sessão sobre a pasta, medindo quantas gravações do `mapping.json` correm ao mesmo tempo. */
+  describe('expensive operations write without debounce (phase 5.5)', () => {
+    /** Session over the folder, measuring how many `mapping.json` writes run at the same time. */
     function startTracking(
       root: MemoryDirectory,
       project = emptyProject(),
@@ -689,7 +690,7 @@ describe('sessão de projeto', () => {
       return { session: s, saves: () => saves, maxParallel: () => maxParallel };
     }
 
-    it('adicionar imagem grava o mapping.json sem esperar o timer', async () => {
+    it('adding an image writes mapping.json without waiting for the timer', async () => {
       const root = new MemoryDirectory('p');
       const t = startTracking(root);
       session = t.session;
@@ -701,20 +702,20 @@ describe('sessão de projeto', () => {
       expect(t.saves()).toBe(1);
     });
 
-    it('trocar imagem grava sem esperar o timer', async () => {
+    it('swapping an image writes without waiting for the timer', async () => {
       const root = new MemoryDirectory('p');
       root.put('images/lateral.jpg', 'jpg');
       session = startTracking(root, sampleProject()).session;
-      const result = await session.replaceImage('I1', file('nova.jpg', '4000x3000'), () =>
+      const result = await session.replaceImage('I1', file('new.jpg', '4000x3000'), () =>
         Promise.resolve(true),
       );
       expect(result).toBe('replaced');
       expect((await savedProject(root)).containers.find((i) => i.id === 'I1')?.file).toBe(
-        'images/nova.jpg',
+        'images/new.jpg',
       );
     });
 
-    it('remover imagem e aplicar, atualizar ou remover especialização gravam sem esperar o timer', async () => {
+    it('removing an image and applying, updating or removing a specialization write without waiting for the timer', async () => {
       const root = new MemoryDirectory('p');
       session = startTracking(root, sampleProject()).session;
       const sdui = loadExample('sdui');
@@ -742,17 +743,17 @@ describe('sessão de projeto', () => {
       expect((await savedProject(root)).containers.map((i) => i.id)).toEqual(['I1']);
     });
 
-    it('duas operações caras seguidas não gravam em paralelo', async () => {
+    it('two expensive operations in a row do not write in parallel', async () => {
       const root = new MemoryDirectory('p');
       let release = () => {};
       const gate = new Promise<void>((resolve) => (release = resolve));
       const t = startTracking(root, sampleProject(), gate);
       session = t.session;
-      // Libera a gravação mesmo se uma conferência falhar, para o `close` do afterEach terminar.
+      // Releases the write even if a check fails, so that the afterEach `close` can finish.
       try {
         expect(session.actions.applySpecialization(loadExample('sdui')).ok).toBe(true);
         await vi.advanceTimersByTimeAsync(0);
-        // A primeira gravação está em andamento quando a segunda operação chega.
+        // The first write is in progress when the second operation arrives.
         expect(t.saves()).toBe(1);
         expect(session.actions.removeContainer('I2').ok).toBe(true);
         await vi.advanceTimersByTimeAsync(0);
@@ -771,37 +772,37 @@ describe('sessão de projeto', () => {
       }
     });
 
-    it('uma edição comum chega ao disco em até 250 ms', async () => {
+    it('an ordinary edit reaches the disk within 250 ms', async () => {
       const root = new MemoryDirectory('p');
       session = startTracking(root).session;
-      session.actions.renameProject('Rápido');
+      session.actions.renameProject('Fast');
       await vi.advanceTimersByTimeAsync(250);
-      expect((await savedProject(root)).project.name).toBe('Rápido');
+      expect((await savedProject(root)).project.name).toBe('Fast');
     });
 
-    it('edições comuns continuam esperando o debounce', async () => {
+    it('ordinary edits keep waiting for the debounce', async () => {
       const root = new MemoryDirectory('p');
       session = startTracking(root).session;
-      session.actions.renameProject('Devagar');
+      session.actions.renameProject('Slow');
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS - 1);
       expect(await root.read('mapping.json')).toBeNull();
       await vi.advanceTimersByTimeAsync(1);
-      expect((await savedProject(root)).project.name).toBe('Devagar');
+      expect((await savedProject(root)).project.name).toBe('Slow');
     });
   });
 
-  it('fechar grava o que estiver pendente', async () => {
+  it('closing writes whatever is pending', async () => {
     const root = new MemoryDirectory('p');
     const s = start(root);
-    s.actions.renameProject('Fechado');
+    s.actions.renameProject('Closed');
     await s.close();
-    expect((await savedProject(root)).project.name).toBe('Fechado');
+    expect((await savedProject(root)).project.name).toBe('Closed');
     expect(s.store.project.value).toBeNull();
   });
 
-  // Fase 8.1: `onChanged` (S4, S8), imagens órfãs ao recarregar (S6) e `collectFiles().saved`.
-  describe('o que mudou no armazenamento e os arquivos órfãos (fase 8.1)', () => {
-    /** Outro processo grava o `mapping.json`: muda o nome e sobe a revisão. */
+  // Phase 8.1: `onChanged` (S4, S8), orphan images on reload (S6) and `collectFiles().saved`.
+  describe('what changed in the storage and the orphan files (phase 8.1)', () => {
+    /** Another process writes `mapping.json`: changes the name and bumps the revision. */
     function externalWrite(root: MemoryDirectory, project: Project, name: string) {
       const next = {
         ...project,
@@ -812,7 +813,7 @@ describe('sessão de projeto', () => {
       return next;
     }
 
-    /** Sessão sobre a pasta, com `onChanged` contado e a próxima gravação do mapping segurável. */
+    /** Session over the folder, with `onChanged` counted and the next mapping write holdable. */
     function hookedStart(root: MemoryDirectory, project: Project) {
       const storage = createFolderStorage(root);
       const gates: { resolve: () => void; promise: Promise<void> }[] = [];
@@ -851,7 +852,7 @@ describe('sessão de projeto', () => {
     beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => undefined));
     afterEach(() => vi.restoreAllMocks());
 
-    it('gravar uma proposta chama onChanged, sem gravar o mapping.json (S4)', async () => {
+    it('writing a proposal calls onChanged, without writing mapping.json (S4)', async () => {
       const root = new MemoryDirectory('p');
       const { proposal, ids: changeIds } = richScenario();
       const project = sampleProject();
@@ -880,24 +881,24 @@ describe('sessão de projeto', () => {
       expect(await root.read('mapping.json')).toBe(text);
     });
 
-    it('Recarregar depois de adicionar uma imagem com a gravação recusada apaga o arquivo órfão (S6)', async () => {
+    it('Reload after adding an image with the write refused deletes the orphan file (S6)', async () => {
       const root = new MemoryDirectory('p');
       const project = sampleProject();
       root.put('mapping.json', serialize(project));
       session = start(root, project);
-      externalWrite(root, project, 'De fora');
+      externalWrite(root, project, 'From outside');
       const added = await session.addImages([file('a.jpg', '400x300')]);
       expect(added.added).toEqual(['images/a.jpg']);
       expect(await root.read('images/a.jpg')).toBe('400x300');
       expect(session.conflict.value).not.toBeNull();
 
       await session.resolveConflict('reload');
-      expect(session.store.project.value?.project.name).toBe('De fora');
-      // O arquivo que só a gravação recusada citaria não fica para sempre na pasta.
+      expect(session.store.project.value?.project.name).toBe('From outside');
+      // The file that only the refused write would cite does not stay in the folder forever.
       expect(await root.read('images/a.jpg')).toBeNull();
     });
 
-    it('um arquivo citado por um mapping.json já gravado não é apagado no Recarregar (S6)', async () => {
+    it('a file cited by an already written mapping.json is not deleted on Reload (S6)', async () => {
       const root = new MemoryDirectory('p');
       const project = sampleProject();
       root.put('mapping.json', serialize(project));
@@ -906,15 +907,15 @@ describe('sessão de projeto', () => {
       const saved = await savedProject(root);
       expect(saved.containers.map((i) => i.file)).toContain('images/a.jpg');
 
-      session.actions.renameProject('Pendente');
-      // Alguém de fora regrava o arquivo sem a imagem: ela virou órfã por decisão de fora.
+      session.actions.renameProject('Pending');
+      // Someone outside rewrites the file without the image: it became an orphan by an outside decision.
       externalWrite(
         root,
         {
           ...saved,
           containers: saved.containers.filter((i) => i.file !== 'images/a.jpg'),
         },
-        'De fora',
+        'From outside',
       );
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(session.conflict.value).not.toBeNull();
@@ -922,17 +923,17 @@ describe('sessão de projeto', () => {
       expect(await root.read('images/a.jpg')).toBe('400x300');
     });
 
-    it('imagem adicionada durante uma gravação em curso, gravação seguinte recusada, Recarregar: o arquivo é apagado (S6, A3)', async () => {
+    it('image added during a write in progress, next write refused, Reload: the file is deleted (S6, A3)', async () => {
       const root = new MemoryDirectory('p');
       const project = sampleProject();
       root.put('mapping.json', serialize(project));
       const h = hookedStart(root, project);
       session = h.session;
-      session.actions.renameProject('Um');
+      session.actions.renameProject('One');
       const first = h.holdSave();
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       await vi.waitFor(() => expect(h.savesStarted()).toBe(1));
-      // A imagem entra enquanto a primeira gravação (que não a cita) está parada.
+      // The image comes in while the first write (which does not cite it) is stopped.
       const adding = session.addImages([file('a.jpg', '400x300')]);
       await vi.waitFor(async () =>
         expect(await root.read('images/a.jpg')).toBe('400x300'),
@@ -940,7 +941,7 @@ describe('sessão de projeto', () => {
       const second = h.holdSave();
       first.resolve();
       await vi.waitFor(() => expect(h.savesStarted()).toBe(2));
-      // A segunda gravação (a que citaria a imagem) falha no disco.
+      // The second write (the one that would cite the image) fails on disk.
       root.failWrites = new Error('NoModificationAllowedError');
       second.resolve();
       await adding;
@@ -948,21 +949,21 @@ describe('sessão de projeto', () => {
       root.failWrites = null;
 
       const onDisk = await savedProject(root);
-      expect(onDisk.project.name).toBe('Um');
-      externalWrite(root, onDisk, 'De fora');
+      expect(onDisk.project.name).toBe('One');
+      externalWrite(root, onDisk, 'From outside');
       expect(await session.sync()).toBe('conflict');
       await session.resolveConflict('reload');
-      expect(session.store.project.value?.project.name).toBe('De fora');
+      expect(session.store.project.value?.project.name).toBe('From outside');
       expect(await root.read('images/a.jpg')).toBeNull();
     });
 
-    it('imagem adicionada durante uma gravação em curso: a primeira não a cita e a apaga; a segunda a regrava antes de citar (auditoria §6.2)', async () => {
+    it('image added during a write in progress: the first does not cite it and deletes it; the second rewrites it before citing (audit §6.2)', async () => {
       const root = new MemoryDirectory('p');
       const project = sampleProject();
       root.put('mapping.json', serialize(project));
       const h = hookedStart(root, project);
       session = h.session;
-      session.actions.renameProject('Um');
+      session.actions.renameProject('One');
       const first = h.holdSave();
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       await vi.waitFor(() => expect(h.savesStarted()).toBe(1));
@@ -973,9 +974,9 @@ describe('sessão de projeto', () => {
       const second = h.holdSave();
       first.resolve();
       await vi.waitFor(() => expect(h.savesStarted()).toBe(2));
-      // A primeira gravação não cita a imagem; a segunda já a regravou (está parada no saveMapping).
+      // The first write does not cite the image; the second already rewrote it (it is stopped at saveMapping).
       const between = await savedProject(root);
-      expect(between.project.name).toBe('Um');
+      expect(between.project.name).toBe('One');
       expect(between.containers.map((i) => i.file)).not.toContain('images/a.jpg');
       expect(await root.read('images/a.jpg')).toBe('400x300');
       second.resolve();
@@ -986,13 +987,13 @@ describe('sessão de projeto', () => {
       expect(await root.read('images/a.jpg')).toBe('400x300');
     });
 
-    it('imagem adicionada durante uma gravação, desfeita antes da seguinte e refeita: o disco nunca cita arquivo ausente (auditoria §6.2)', async () => {
+    it('image added during a write, undone before the next one and redone: the disk never cites a missing file (audit §6.2)', async () => {
       const root = new MemoryDirectory('p');
       const project = sampleProject();
       root.put('mapping.json', serialize(project));
       const h = hookedStart(root, project);
       session = h.session;
-      session.actions.renameProject('Um');
+      session.actions.renameProject('One');
       const first = h.holdSave();
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       await vi.waitFor(() => expect(h.savesStarted()).toBe(1));
@@ -1005,13 +1006,13 @@ describe('sessão de projeto', () => {
       await adding;
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS * 2);
       expect(session.saveStatus.value).toBe('saved');
-      // Nada a gravar depois do desfazer (o disco já tem 'Um'); a limpeza da primeira apagou o arquivo.
+      // Nothing to write after the undo (the disk already has 'One'); the first one's cleanup deleted the file.
       expect(h.savesStarted()).toBe(1);
       expect((await savedProject(root)).containers.map((i) => i.file)).not.toContain(
         'images/a.jpg',
       );
       expect(await root.read('images/a.jpg')).toBeNull();
-      // Refazer: a imagem volta da lixeira em memória antes do mapping.json que a cita.
+      // Redo: the image comes back from the in-memory trash before the mapping.json that cites it.
       expect(session.store.redo()).toBe(true);
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS * 2);
       await vi.waitFor(() => expect(h.session.saveStatus.value).toBe('saved'));
@@ -1022,12 +1023,12 @@ describe('sessão de projeto', () => {
       expect(await root.read('images/a.jpg')).toBe('400x300');
     });
 
-    it('collectFiles com a gravação em erro devolve saved: false e leva o confirmado (S8)', async () => {
+    it('collectFiles with the write in error returns saved: false and carries the committed state (S8)', async () => {
       const root = new MemoryDirectory('p');
       const h = hookedStart(root, emptyProject());
       session = h.session;
-      session.actions.renameProject('Não gravado');
-      root.failWrites = new Error('sem permissão');
+      session.actions.renameProject('Not saved');
+      root.failWrites = new Error('no permission');
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(session.saveStatus.value).toBe('error');
 
@@ -1035,42 +1036,42 @@ describe('sessão de projeto', () => {
       expect(files.saved).toBe(false);
       expect(deserialize(files.mapping)).toMatchObject({
         ok: true,
-        project: { project: { name: 'Não gravado' } },
+        project: { project: { name: 'Not saved' } },
       });
       root.failWrites = null;
       expect((await session.collectFiles()).saved).toBe(true);
     });
 
-    it('a gravação que enfim passa com o conteúdo já exportado não chama onChanged; a de um projeto diferente chama (S8)', async () => {
+    it('the write that finally goes through with the already exported content does not call onChanged; the one of a different project does (S8)', async () => {
       const root = new MemoryDirectory('p');
       const h = hookedStart(root, emptyProject());
       session = h.session;
-      session.actions.renameProject('Exportado');
-      root.failWrites = new Error('sem permissão');
+      session.actions.renameProject('Exported');
+      root.failWrites = new Error('no permission');
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(session.saveStatus.value).toBe('error');
       expect(h.onChanged).not.toHaveBeenCalled();
 
-      // A exportação só conta quando o arquivo saiu (8.7): o controller chama noteExported
-      // no mesmo ponto do markExported.
+      // The export only counts when the file went out (8.7): the controller calls noteExported
+      // at the same point as markExported.
       const files = await session.collectFiles();
       session.noteExported(files.snapshot);
       root.failWrites = null;
       expect(await session.flush()).toEqual({ ok: true });
       expect(h.onChanged).not.toHaveBeenCalled();
 
-      session.actions.renameProject('Outro');
+      session.actions.renameProject('Other');
       expect(await session.flush()).toEqual({ ok: true });
       expect(h.onChanged).toHaveBeenCalledTimes(1);
     });
-    // Etapa 8 (8.7), decisão do dono: gerar o zip (`collectFiles`) sem o download não marca
-    // nada como exportado; a gravação que enfim passa com o mesmo conteúdo chama onChanged.
-    it('collectFiles sem noteExported: a gravação do mesmo conteúdo chama onChanged', async () => {
+    // Stage 8 (8.7), owner's decision: generating the zip (`collectFiles`) without the download marks
+    // nothing as exported; the write that finally goes through with the same content calls onChanged.
+    it('collectFiles without noteExported: the write of the same content calls onChanged', async () => {
       const root = new MemoryDirectory('p');
       const h = hookedStart(root, emptyProject());
       session = h.session;
-      session.actions.renameProject('Cancelado');
-      root.failWrites = new Error('sem permissão');
+      session.actions.renameProject('Cancelled');
+      root.failWrites = new Error('no permission');
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(session.saveStatus.value).toBe('error');
 
@@ -1081,12 +1082,12 @@ describe('sessão de projeto', () => {
     });
   });
 
-  describe('backup antes de gravar um projeto migrado', () => {
+  describe('backup before writing a migrated project', () => {
     const v1Text = readFileSync(
       new URL('../fixtures/mapping-v1.json', import.meta.url),
       'utf8',
     );
-    // NOW = 2026-09-30T12:00:00Z; o nome usa o horário local.
+    // NOW = 2026-09-30T12:00:00Z; the name uses local time.
     const backupPath = () => {
       const d = new Date(NOW);
       const pad = (n: number) => String(n).padStart(2, '0');
@@ -1094,7 +1095,7 @@ describe('sessão de projeto', () => {
       return `backups/mapping.v1.${stamp}.json`;
     };
 
-    /** Abre o v1 de teste numa pasta, como o controller faz. */
+    /** Opens the test v1 in a folder, as the controller does. */
     function openV1(root: MemoryDirectory, log: string[] = []) {
       root.files.set('mapping.json', new Blob([v1Text]));
       const loaded = deserialize(v1Text);
@@ -1120,7 +1121,7 @@ describe('sessão de projeto', () => {
       });
     }
 
-    it('abrir o v1 não grava nada; o primeiro salvamento guarda o original e só então grava o v4', async () => {
+    it('opening the v1 writes nothing; the first save keeps the original and only then writes the v4', async () => {
       const root = new MemoryDirectory('p');
       const log: string[] = [];
       session = openV1(root, log);
@@ -1128,7 +1129,7 @@ describe('sessão de projeto', () => {
       expect(log).toEqual([]);
       expect(session.backupSaved.value).toBeNull();
 
-      session.actions.renameProject('Migrado');
+      session.actions.renameProject('Migrated');
       await session.flush();
       expect(log).toEqual([`backup ${backupPath().slice('backups/'.length)}`, 'mapping']);
       expect(await root.read(backupPath())).toBe(v1Text);
@@ -1136,11 +1137,11 @@ describe('sessão de projeto', () => {
         schemaVersion: number;
       };
       expect(saved.schemaVersion).toBe(SCHEMA_VERSION);
-      expect((await savedProject(root)).project.name).toBe('Migrado');
+      expect((await savedProject(root)).project.name).toBe('Migrated');
       expect(session.backupSaved.value).toBe(1);
 
-      // Só uma vez por abertura.
-      session.actions.renameProject('De novo');
+      // Only once per opening.
+      session.actions.renameProject('Again');
       await session.flush();
       expect(log).toEqual([
         `backup ${backupPath().slice('backups/'.length)}`,
@@ -1149,62 +1150,62 @@ describe('sessão de projeto', () => {
       ]);
     });
 
-    it('arquivo migrado regravado no schema atual por fora antes da primeira edição: não cria backup nem avisa', async () => {
+    it('migrated file rewritten in the current schema outside before the first edit: creates no backup and does not warn', async () => {
       const root = new MemoryDirectory('p');
       const log: string[] = [];
       session = openV1(root, log);
       const current = session.store.project.value;
-      if (!current) throw new Error('projeto');
-      // Outro programa grava o arquivo já no schema atual.
+      if (!current) throw new Error('project');
+      // Another program writes the file already in the current schema.
       root.put(
         'mapping.json',
         serialize({
           ...current,
           revision: current.revision + 1,
-          project: { ...current.project, name: 'De fora' },
+          project: { ...current.project, name: 'From outside' },
         }),
       );
-      session.actions.renameProject('Meu');
+      session.actions.renameProject('Mine');
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(session.conflict.value).not.toBeNull();
       await session.resolveConflict('reload');
-      expect(session.store.project.value?.project.name).toBe('De fora');
+      expect(session.store.project.value?.project.name).toBe('From outside');
 
-      session.actions.renameProject('Depois');
+      session.actions.renameProject('Afterwards');
       await session.flush();
       expect(log.filter((entry) => entry.startsWith('backup'))).toEqual([]);
       expect(root.dirs.has('backups')).toBe(false);
       expect(session.backupSaved.value).toBeNull();
     });
 
-    it('se o backup falhar, o mapping original não é sobrescrito', async () => {
+    it('if the backup fails, the original mapping is not overwritten', async () => {
       const root = new MemoryDirectory('p');
       session = openV1(root);
-      session.actions.renameProject('Migrado');
-      root.failWrites = new Error('sem permissão');
+      session.actions.renameProject('Migrated');
+      root.failWrites = new Error('no permission');
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(session.saveStatus.value).toBe('error');
       expect(await root.read('mapping.json')).toBe(v1Text);
       expect(session.backupSaved.value).toBeNull();
 
-      // A pasta backups/ criada na tentativa herdou a falha (memoryFs).
+      // The backups/ folder created in the attempt inherited the failure (memoryFs).
       root.failWrites = null;
       const backups = root.dirs.get('backups');
       if (backups) backups.failWrites = null;
       await session.flush();
       expect(session.saveStatus.value).toBe('saved');
       expect(await root.read(backupPath())).toBe(v1Text);
-      expect((await savedProject(root)).project.name).toBe('Migrado');
+      expect((await savedProject(root)).project.name).toBe('Migrated');
     });
 
-    it('projeto migrado: editar e desfazer até o início ainda grava o formato novo (A2)', async () => {
+    it('migrated project: editing and undoing to the start still writes the new format (A2)', async () => {
       const root = new MemoryDirectory('p');
       const log: string[] = [];
       session = openV1(root, log);
-      session.actions.renameProject('Migrado');
+      session.actions.renameProject('Migrated');
       session.store.undo();
       await session.flush();
-      // O que está em memória (v8) difere do disco (v1): a gravação acontece, com o backup.
+      // What is in memory (v8) differs from the disk (v1): the write happens, with the backup.
       expect(log).toEqual([`backup ${backupPath().slice('backups/'.length)}`, 'mapping']);
       const saved = JSON.parse((await root.read('mapping.json')) ?? '') as {
         schemaVersion: number;
@@ -1213,7 +1214,7 @@ describe('sessão de projeto', () => {
       expect(await root.read(backupPath())).toBe(v1Text);
     });
 
-    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v16', async () => {
+    it('v6 project: the original goes to backups/mapping.v6.… and the save writes v16', async () => {
       const root = new MemoryDirectory('p');
       const project = cadastroProject();
       const data = JSON.parse(serialize(project)) as Record<string, unknown>;
@@ -1250,7 +1251,7 @@ describe('sessão de projeto', () => {
       expect(session.backupSaved.value).toBe(6);
     });
 
-    it('projeto v8 com o campo de código removido: backup do original e grava v16 sem os valores', async () => {
+    it('v8 project with the code field removed: backup of the original and writes v16 without the values', async () => {
       const root = new MemoryDirectory('p');
       const { text: v8Text, specs } = legacyCodeFiles();
       root.put('mapping.json', v8Text);
@@ -1259,6 +1260,7 @@ describe('sessão de projeto', () => {
       if (!loaded.ok || loaded.migratedFrom !== 8) throw new Error('fixture v8');
       expect(
         loaded.project.annotations.find((a) => a.id === 'AS')?.values,
+        // pt-BR kept: legacy field name 'implementacao' of the v8 fixture (migration data)
       ).not.toHaveProperty('implementacao');
       session = openSession({
         storage: createFolderStorage(root),
@@ -1271,7 +1273,7 @@ describe('sessão de projeto', () => {
       await vi.advanceTimersByTimeAsync(2000);
       expect(root.dirs.has('backups')).toBe(false);
 
-      session.actions.renameProject('Cadastro v9');
+      session.actions.renameProject('Registry v9');
       await session.flush();
       const backup = backupPath().replace('mapping.v1.', 'mapping.v8.');
       expect(await root.read(backup)).toBe(v8Text);
@@ -1279,16 +1281,17 @@ describe('sessão de projeto', () => {
       const saved = JSON.parse(savedText) as { schemaVersion: number; revision: number };
       expect(saved.schemaVersion).toBe(20);
       expect(saved.revision).toBe(1);
+      // pt-BR kept: legacy field name 'implementacao' of the v8 fixture (migration data)
       expect(savedText).not.toContain('implementacao');
-      // A cópia antiga em specs/ continua como estava (a leitura ignora o campo).
+      // The old copy in specs/ stays as it was (the read ignores the field).
       expect(await root.read('specs/sdui.json')).toBe(specs.get('specs/sdui.json'));
       expect(session.backupSaved.value).toBe(8);
-      // Reaberto, o projeto gravado não passa mais pela migração.
+      // Reopened, the saved project no longer goes through the migration.
       const reopened = deserialize(savedText, undefined, specs);
       expect(reopened.ok && reopened.migratedFrom).toBeNull();
     });
 
-    it('projeto v10 com urlTemplate: o original vai para backups/mapping.v10.… e o salvamento grava v16 sem o endereço', async () => {
+    it('v10 project with urlTemplate: the original goes to backups/mapping.v10.… and the save writes v16 without the address', async () => {
       const root = new MemoryDirectory('p');
       const project = cadastroProject();
       const data = JSON.parse(serialize(project)) as Record<string, unknown>;
@@ -1323,7 +1326,7 @@ describe('sessão de projeto', () => {
       await vi.advanceTimersByTimeAsync(2000);
       expect(root.dirs.has('backups')).toBe(false);
 
-      session.actions.renameProject('Cadastro v11');
+      session.actions.renameProject('Registry v11');
       await session.flush();
       const backup = backupPath().replace('mapping.v1.', 'mapping.v10.');
       expect(await root.read(backup)).toBe(v10Text);
@@ -1340,10 +1343,10 @@ describe('sessão de projeto', () => {
       expect(session.backupSaved.value).toBe(10);
     });
 
-    it('projeto já na versão atual não gera backup', async () => {
+    it('project already at the current version does not generate a backup', async () => {
       const root = new MemoryDirectory('p');
       session = start(root);
-      session.actions.renameProject('Outro');
+      session.actions.renameProject('Other');
       await session.flush();
       expect(root.dirs.has('backups')).toBe(false);
       expect(session.backupSaved.value).toBeNull();

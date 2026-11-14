@@ -1,3 +1,3 @@
 # .agents/skills/
 
-Skills no formato Agent Skills (`<nome>/SKILL.md`), lidas pelas ferramentas que adotaram o padrão. O `setup.sh` traz para cá a `spec-author`, da mesma release do servidor (`SKILL.md`, com `sha256`), e mantém o link `.claude/skills/spec-author` para o Claude Code (ou, onde link não existe, uma cópia, que ele atualiza a cada execução). Para atualizar a skill, rode o `setup.sh` de novo.
+Skills in the Agent Skills format (`<name>/SKILL.md`), read by the tools that adopted the standard. `setup.sh` brings `spec-author` here, from the same release as the server (`SKILL.md`, with `sha256`), and keeps the `.claude/skills/spec-author` link for Claude Code (or, where links do not exist, a copy, which it updates on every run). To update the skill, run `setup.sh` again.

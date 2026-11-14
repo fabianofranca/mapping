@@ -1,55 +1,55 @@
 # Class
 
-Classe Kotlin comum (class).
+Regular Kotlin class (class).
 
-## Quando usar
+## When to use
 
-- Serviços, repositórios, casos de uso, view models e implementações de interface.
-- Tipos com identidade e comportamento; para dados puros prefira data class.
+- Services, repositories, use cases, view models and interface implementations.
+- Types with identity and behavior; for pure data prefer data class.
 
-## O que não confundir
+## What not to confuse
 
-- **Class × data class:** a data class gera `equals`, `hashCode`, `copy` e `toString` a partir do construtor; a class comum não.
-- **Class × object:** o object é instância única; a class se instancia quantas vezes for preciso.
+- **Class × data class:** the data class generates `equals`, `hashCode`, `copy` and `toString` from the constructor; a regular class does not.
+- **Class × object:** the object is a single instance; the class can be instantiated as many times as needed.
 
-## Campos principais
+## Main fields
 
-- **Nome** (obrigatório): nome simples da declaração; leva a etiqueta `kotlin-type`, então supertipos e tipos de propriedade de outras marcações podem apontar para ela.
-- **Pacote**, **Visibilidade**, **Anotações** e **Descrição** (KDoc), **Parâmetros de tipo**.
-- `modality` é `final` (padrão), `open` ou `abstract`.
-- `inner` só faz sentido numa classe aninhada que usa a instância da externa.
+- **Name** (required): simple name of the declaration; it carries the `kotlin-type` tag, so supertypes and property types of other markings can point to it.
+- **Package**, **Visibility**, **Annotations** and **Description** (KDoc), **Type parameters**.
+- `modality` is `final` (default), `open` or `abstract`.
+- `inner` only makes sense in a nested class that uses the outer instance.
 
-## Como o subtipo se liga
+## How a subtype is linked
 
-Cada linha de `supertypes` traz o tipo como escrito no código e, em **Tipo mapeado** (`typeRef`), a declaração mapeada com a etiqueta `kotlin-type`. É assim que um subtipo se liga à sealed class ou interface: as subclasses são as declarações cujo `supertypes` aponta para ela.
+Each line of `supertypes` holds the type as written in the code and, in **Mapped type** (`typeRef`), the mapped declaration with the `kotlin-type` tag. This is how a subtype is linked to the sealed class or interface: the subclasses are the declarations whose `supertypes` points to it.
 
-## Declaração aninhada
+## Nested declaration
 
-Uma declaração aninhada (nested, inner ou companion) se liga à externa pelo campo **Declarada em** (`outer`, etiqueta `kotlin-type`). O agente lê a ligação em `refs` (na aninhada) e `backlinks` (na externa). Desenhar a marcação dentro da externa é só arrumação visual e opcional: o pertencimento do canvas (`parent`/`members`) não define o aninhamento no código.
+A nested declaration (nested, inner or companion) is linked to its outer declaration through the **Declared in** field (`outer`, tag `kotlin-type`). The agent reads the link in `refs` (on the nested one) and `backlinks` (on the outer one). Drawing the marking inside the outer one is only an optional visual tidy-up: the canvas membership (`parent`/`members`) does not define the nesting in the code.
 
-Exemplo de `inner class`: a classe externa `Pedido` e a inner `Item`.
+Example of an `inner class`: the outer class `Order` and the inner `Item`.
 
 ```kotlin
-class Pedido {
+class Order {
     inner class Item(val sku: String)
 }
 ```
 
-1. Crie a marcação **Class** `Pedido` (Modalidade final).
-2. Crie a marcação **Class** `Item`, com **Inner** = sim.
-3. Em `Item`, preencha **Declarada em** = `Pedido` (o campo aceita a etiqueta `kotlin-type`).
-4. Opcional: arrume `Item` dentro de `Pedido` no canvas, só para ler melhor.
+1. Create the **Class** marking `Order` (Modality final).
+2. Create the **Class** marking `Item`, with **Inner** = sim (yes).
+3. In `Item`, fill **Declared in** = `Order` (the field accepts the `kotlin-type` tag).
+4. Optional: arrange `Item` inside `Order` on the canvas, just to read it better.
 
-## Sugestões de tipo
+## Type suggestions
 
-Ao digitar no **Tipo** das propriedades e o **Retorno** das funções, aparecem os tipos básicos do Kotlin (`String`, `Int`, `Boolean`, `List`, `Map`...). No **Tipo** das propriedades e dos supertipos aparecem também as declarações mapeadas (com o tipo delas ao lado), e escolher uma preenche junto o **Tipo mapeado**. É só uma ajuda: qualquer texto continua valendo, como `String?` ou `List<Endereco>`.
+When typing in the **Type** of properties and the **Return type** of functions, the basic Kotlin types appear (`String`, `Int`, `Boolean`, `List`, `Map`...). In the **Type** of properties and supertypes the mapped declarations appear too (with their kind next to them), and choosing one also fills in the **Mapped type**. It is only a help: any text is still valid, such as `String?` or `List<Address>`.
 
-## Referências às propriedades
+## References to properties
 
-- Outras anotações apontam para uma linha de `properties` por um campo `ref` que aceita `data-field` ou `kotlin-property`.
-- Funções (`functions`) têm a etiqueta `kotlin-function`.
+- Other annotations point to a line of `properties` through a `ref` field that accepts `data-field` or `kotlin-property`.
+- Functions (`functions`) carry the `kotlin-function` tag.
 
-## Exemplo
+## Example
 
 ```kotlin
 @Singleton

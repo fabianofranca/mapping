@@ -1,13 +1,13 @@
-# Skill de detalhamento do backlog — 2026-11-08 (épico `epic/skill-detalhar`)
+# Backlog detailing skill — 2026-11-08 (épico `epic/skill-detalhar`)
 
 ## Pendências
 
-- SD1: nenhuma (só ferramenta do fluxo de entrega).
+- SD1: nenhuma (delivery flow tooling only).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só acrescentou um skill do Claude Code.
+No write to the Mapping artifact in Claude Design: the stage only added a Claude Code skill.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

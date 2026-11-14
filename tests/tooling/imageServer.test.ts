@@ -1,15 +1,15 @@
 // @vitest-environment node
-// O servidor de imagens do roteiro R15: responde o PNG sem CORS, anota cada pedido (com o
-// `Origin`) e encerra em /parar.
+// The image server of test script R15: serves the PNG without CORS, logs each request (with the
+// `Origin`) and shuts down on /parar.
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
-// @ts-expect-error módulo .mjs sem declaração de tipos
-import { createImageServer } from '../../scripts/servidor-imagens.mjs';
+// @ts-expect-error .mjs module without type declarations
+import { createImageServer } from '../../scripts/image-server.mjs';
 
-const png = readFileSync('public/imagens-teste/foto.png');
+const png = readFileSync('public/test-images/foto.png');
 let stop: (() => void) | undefined;
 
 afterEach(() => stop?.());
@@ -28,11 +28,11 @@ async function start() {
   return { base, logFile, dir };
 }
 
-describe('scripts/servidor-imagens.mjs', () => {
-  it('serve o foto.png sem nenhum cabeçalho de CORS e anota o pedido com o Origin', async () => {
+describe('scripts/image-server.mjs', () => {
+  it('serves foto.png without any CORS header and logs the request with the Origin', async () => {
     const { base, logFile } = await start();
     const withOrigin = await fetch(`${base}/foto.png`, {
-      headers: { origin: 'https://exemplo.test' },
+      headers: { origin: 'https://example.test' },
     });
     expect(withOrigin.status).toBe(200);
     expect(withOrigin.headers.get('content-type')).toBe('image/png');
@@ -41,18 +41,18 @@ describe('scripts/servidor-imagens.mjs', () => {
     await fetch(`${base}/foto.png`);
     const lines = readFileSync(logFile, 'utf8').trim().split('\n');
     expect(lines).toHaveLength(2);
-    expect(lines[0]).toMatch(/GET \/foto\.png origin=https:\/\/exemplo\.test$/);
+    expect(lines[0]).toMatch(/GET \/foto\.png origin=https:\/\/example\.test$/);
     expect(lines[1]).toMatch(/GET \/foto\.png origin=none$/);
   });
 
-  it('outro caminho é 404 e /parar encerra o servidor', async () => {
+  it('any other path is 404 and /parar shuts the server down', async () => {
     const { base } = await start();
     expect((await fetch(`${base}/outra.png`)).status).toBe(404);
-    expect(await (await fetch(`${base}/parar`)).text()).toBe('parado');
+    expect(await (await fetch(`${base}/parar`)).text()).toBe('stopped');
     await expect(fetch(`${base}/foto.png`)).rejects.toThrow();
   });
 
-  it('foto.png ausente responde 404 com mensagem e o servidor segue de pé (item 60)', async () => {
+  it('missing foto.png answers 404 with a message and the server stays up (item 60)', async () => {
     const { base, dir } = await start();
     rmSync(join(dir, 'foto.png'));
     const missing = await fetch(`${base}/foto.png`);

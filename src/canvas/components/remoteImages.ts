@@ -1,6 +1,6 @@
-// A ponte entre o desenho e as imagens remotas (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador"): resolve cada
-// URL pelas duas portas da app (política de URL e consentimento) e, liberada, pelo carregador.
-// Usada pelo canvas principal e pela galeria do Catálogo; o `renderScene` só recebe o resultado.
+// The bridge between the drawing and remote images (docs/ARCHITECTURE.md, "Remote images: policy,
+// consent and loader"): resolves each URL through the app's two gates (URL policy and consent) and,
+// once allowed, through the loader. Used by the main canvas and the Catalog gallery.
 import { computed, type ReadonlySignal } from '@preact/signals';
 import { allowNoCors, remoteImageGate } from '../../store/imagePermissions';
 import { reportRemoteImageIssue, resolveRemoteImageIssue } from '../../store/diagnostics';
@@ -11,18 +11,18 @@ import {
   sharedRemoteImageLoader,
 } from './imageLoader';
 
-/** O que o canvas e a galeria precisam para desenhar imagens remotas. */
+/** What the canvas and the gallery need to draw remote images. */
 export interface RemoteImageSource {
-  /** O estado da URL (inicia a carga se for preciso; nunca lança). */
+  /** The URL's state (starts the load if needed; never throws). */
   resolve(url: string): RemoteImageView;
-  /** Avisa (com a URL) quando o estado de uma imagem muda no carregador. */
+  /** Notifies (with the URL) when an image's state changes in the loader. */
   subscribe(listener: (url: string) => void): () => void;
   /**
-   * Muda (outro valor) quando o consentimento ou um interruptor muda: tudo que usa imagem
-   * remota precisa ser refeito. Lido dentro de `effect`/`computed`.
+   * Changes (another value) when the consent or a switch changes: everything that uses a remote
+   * image must be redone. Read inside `effect`/`computed`.
    */
   readonly gate: ReadonlySignal<unknown>;
-  /** Sobe quando uma imagem termina de carregar. */
+  /** Rises when an image finishes loading. */
   readonly epoch: ReadonlySignal<number>;
 }
 
@@ -42,9 +42,9 @@ export function createRemoteImageSource(
   const noCorsSignal = deps.allowNoCors ?? allowNoCors;
   const report = deps.report ?? reportRemoteImageIssue;
   const resolved = deps.resolved ?? resolveRemoteImageIssue;
-  // O carregador usa a URL normalizada pela política; o desenho, a do campo: o aviso traduz.
-  // Limitado como as falhas do carregador (as mais antigas saem; uma URL fora do mapa avisa com a
-  // normalizada).
+  // The loader uses the URL normalized by the policy; the drawing, the field's: the notice translates.
+  // Bounded like the loader's failures (the oldest drop out; a URL outside the map notifies with the
+  // normalized one).
   const rawUrls = new Map<string, Set<string>>();
   const remember = (normalized: string, raw: string): void => {
     const known = rawUrls.get(normalized) ?? new Set<string>();
@@ -59,7 +59,7 @@ export function createRemoteImageSource(
   };
   return {
     resolve(url) {
-      // `peek`: o desenho roda fora de `effect`; quem precisa reagir lê `gate`.
+      // `peek`: the drawing runs outside `effect`; whoever needs to react reads `gate`.
       const gate = gateSignal.peek()(url);
       if (!gate.allowed) {
         report(url, gate.state);
@@ -84,7 +84,7 @@ export function createRemoteImageSource(
 
 let shared: RemoteImageSource | null = null;
 
-/** A fonte de produção, única para o canvas e a galeria. */
+/** The production source, single for the canvas and the gallery. */
 export function sharedRemoteImageSource(): RemoteImageSource {
   shared ??= createRemoteImageSource();
   return shared;

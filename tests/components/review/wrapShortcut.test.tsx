@@ -5,17 +5,17 @@ import { selectItems } from '../../../src/store/ui';
 import { richScenario } from '../../store/proposalHarness';
 import { PanelWithShortcuts, openReviewHarness, renderInEditor } from './reviewHarness';
 
-// Ctrl/Cmd+G (Envolver) não vale na revisão de propostas: o projeto é só leitura e o evento
-// segue para o navegador (EV1, decisão 2).
+// Ctrl/Cmd+G (Wrap) does not apply in proposal review: the project is read-only and the event
+// goes on to the browser (EV1, decision 2).
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
 
-describe('Ctrl+G na revisão', () => {
-  it('não envolve nem chama preventDefault', async () => {
+describe('Ctrl+G in the review', () => {
+  it('does not wrap nor call preventDefault', async () => {
     const { proposal } = richScenario();
     const h = await openReviewHarness({ proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);

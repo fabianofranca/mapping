@@ -1,4 +1,4 @@
-// Etapa #945, fase 5 (#1019): defeitos 36, 37, 39 e 40 das propostas.
+// Stage #945, phase 5 (#1019): defects 36, 37, 39 and 40 of the proposals.
 import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
@@ -17,8 +17,8 @@ import {
 import { emptyProject } from './fixtures';
 import { propose } from './proposalFixtures';
 
-describe('36: position + remove da mesma camada', () => {
-  it('o position da camada que sai é ignorado e a ordem das outras não muda', () => {
+describe('36: position + remove of the same layer', () => {
+  it('the position of the layer being removed is ignored and the order of the others does not change', () => {
     let base = emptyProject();
     for (const id of ['L2', 'L3']) {
       base = addLayer(base, { id, name: id, color: '#ff0000' });
@@ -52,8 +52,8 @@ describe('36: position + remove da mesma camada', () => {
   });
 });
 
-describe('37: placeCreatedMarkings com a âncora igual ao próprio id', () => {
-  it('a âncora do próprio id é ignorada', () => {
+describe('37: placeCreatedMarkings with an anchor equal to its own id', () => {
+  it('the anchor on its own id is ignored', () => {
     const mk = (id: string) => ({ id }) as Marking;
     const list = [mk('a'), mk('b'), mk('c'), mk('x')];
     const placed = placeCreatedMarkings(list, new Map([['b', 'b']]));
@@ -61,8 +61,8 @@ describe('37: placeCreatedMarkings com a âncora igual ao próprio id', () => {
   });
 });
 
-describe('39: anotação removida sem parentRole no from', () => {
-  it('não vira conflito falso, mesmo na ida e volta de uma proposta anterior à v14', () => {
+describe('39: annotation removed without parentRole in from', () => {
+  it('does not become a false conflict, even on the round trip of a proposal older than v14', () => {
     let base = addContainer(emptyProject(), {
       id: 'I1',
       file: 'a.png',
@@ -92,7 +92,7 @@ describe('39: anotação removida sem parentRole no from', () => {
     ) as Change;
     expect(changeStatuses(read.proposal, base).get(change.id)?.conflict).toBe(false);
 
-    // Também sem passar pela leitura: o `from` sem a chave.
+    // Also without going through reading: the `from` without the key.
     const bare = {
       ...change,
       from: { ...(change.from as object) } as Record<string, never>,
@@ -103,8 +103,8 @@ describe('39: anotação removida sem parentRole no from', () => {
   });
 });
 
-describe('40: campo herdado de Object.prototype', () => {
-  it('computeChanges não cai com o campo toString ausente', () => {
+describe('40: field inherited from Object.prototype', () => {
+  it('computeChanges does not fail with the toString field absent', () => {
     let base = addContainer(emptyProject(), {
       id: 'I1',
       file: 'a.png',

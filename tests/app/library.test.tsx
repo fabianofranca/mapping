@@ -15,9 +15,9 @@ import { locale } from '../../src/store/settings';
 import { material3Package } from '../storage/packageFixture';
 import { MemoryDirectory } from '../storage/memoryFs';
 
-// B5: abrir uma biblioteca sem projeto (pasta ou zip) e a tela do Catálogo.
+// B5: opening a library without a project (folder or zip) and the Catalog screen.
 
-// O desenho da página usa o Konva, que o jsdom não roda.
+// The page drawing uses Konva, which jsdom does not run.
 vi.mock('../../src/ui/catalog/renderer', async (original) => {
   const real = await original<typeof import('../../src/ui/catalog/renderer')>();
   const { approximateMeasurer } = await import('../../src/model');
@@ -29,7 +29,7 @@ vi.mock('../../src/ui/catalog/renderer', async (original) => {
 });
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(() => {
   cleanup();
@@ -53,7 +53,7 @@ async function memoryDir(files: ReadonlyMap<string, string | Blob>) {
 function fakePicker(dir: MemoryDirectory | null) {
   Object.defineProperty(globalThis, 'showDirectoryPicker', {
     value: vi.fn(async () => {
-      if (!dir) throw new DOMException('cancelado', 'AbortError');
+      if (!dir) throw new DOMException('cancelled', 'AbortError');
       return dir;
     }),
     configurable: true,
@@ -64,11 +64,11 @@ function fakePicker(dir: MemoryDirectory | null) {
 async function zipOf(files: ReadonlyMap<string, string | Blob>): Promise<File> {
   const zip = new JSZip();
   for (const [path, data] of files) zip.file(path, data);
-  return new File([await zip.generateAsync({ type: 'blob' })], 'pacote.zip');
+  return new File([await zip.generateAsync({ type: 'blob' })], 'package.zip');
 }
 
 describe('openLibraryPackage', () => {
-  it('abre a pasta do pacote e monta o catálogo', async () => {
+  it('opens the package folder and builds the catalog', async () => {
     fakePicker(await memoryDir(material3Package()));
     expect(await openLibraryPackage({ kind: 'folder' })).toEqual({ kind: 'opened' });
     const library = openLibrary.value;
@@ -77,19 +77,19 @@ describe('openLibraryPackage', () => {
     expect(library?.catalog.layers.length).toBeGreaterThan(0);
   });
 
-  it('abre o zip do pacote', async () => {
+  it('opens the package zip', async () => {
     const file = await zipOf(material3Package());
     expect(await openLibraryPackage({ kind: 'zip', file })).toEqual({ kind: 'opened' });
     expect(openLibrary.value?.specId).toBe('material3');
   });
 
-  it('cancelar o seletor não abre nada', async () => {
+  it('cancelling the picker opens nothing', async () => {
     fakePicker(null);
     expect(await openLibraryPackage({ kind: 'folder' })).toEqual({ kind: 'cancelled' });
     expect(openLibrary.value).toBeNull();
   });
 
-  it('pacote vazio e pacote grande demais', async () => {
+  it('empty package and package too big', async () => {
     expect(
       await openLibraryPackage({ kind: 'zip', file: await zipOf(new Map()) }),
     ).toEqual({ kind: 'failed', reason: 'empty' });
@@ -102,15 +102,15 @@ describe('openLibraryPackage', () => {
     expect(openLibrary.value).toBeNull();
   });
 
-  it('um arquivo que não é zip não abre', async () => {
-    const file = new File(['isto não é um zip'], 'x.zip');
+  it('a file that is not a zip does not open', async () => {
+    const file = new File(['this is not a zip'], 'x.zip');
     expect(await openLibraryPackage({ kind: 'zip', file })).toEqual({
       kind: 'failed',
       reason: 'unreadable',
     });
   });
 
-  it('um pacote com erros ainda abre, com os problemas no catálogo', async () => {
+  it('a package with errors still opens, with the problems in the catalog', async () => {
     const files = new Map(material3Package());
     files.set('material3.spec.json', '{ "format": "mapping-spec"');
     expect(await openLibraryPackage({ kind: 'zip', file: await zipOf(files) })).toEqual({
@@ -120,8 +120,8 @@ describe('openLibraryPackage', () => {
   });
 });
 
-describe('tela do Catálogo (sem projeto)', () => {
-  it('mostra a biblioteca no lugar da tela inicial e o Voltar fecha', async () => {
+describe('Catalog screen (no project)', () => {
+  it('shows the library in place of the home screen and Back closes it', async () => {
     fakePicker(await memoryDir(material3Package()));
     await openLibraryPackage({ kind: 'folder' });
     render(<App />);
@@ -129,7 +129,7 @@ describe('tela do Catálogo (sem projeto)', () => {
     expect(
       screen.getByRole('heading', { name: 'Material Design 3 (baseline)' }),
     ).toBeTruthy();
-    // Sem projeto não há onde adicionar.
+    // Without a project there is nowhere to add to.
     expect(
       screen.queryByRole('button', { name: t('catalog.page.addToScreen') }),
     ).toBeNull();
@@ -139,9 +139,9 @@ describe('tela do Catálogo (sem projeto)', () => {
     expect(screen.queryByRole('main', { name: t('catalog.home.screen') })).toBeNull();
   });
 
-  // Etapa #515 (FN1, #497 parte 1): o Voltar some com a tela; o foco vai ao controle da
-  // tela inicial que abriu a biblioteca, nunca ao body.
-  it('voltar por Enter leva o foco ao "Abrir biblioteca" da tela inicial', async () => {
+  // Stage #515 (FN1, #497 part 1): Back disappears with the screen; focus goes to the home
+  // screen control that opened the library, never to the body.
+  it('Back by Enter moves the focus to the home screen "Open library"', async () => {
     features.value = { folder: true, local: true, fileProtocol: false };
     fakePicker(await memoryDir(material3Package()));
     await openLibraryPackage({ kind: 'folder' });

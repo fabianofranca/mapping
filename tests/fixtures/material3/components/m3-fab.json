@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-fab",
   "name": "FAB",
-  "description": "Floating action button: 56 dp, forma large (16), primary container; extended com rótulo.",
+  "description": "Floating action button: 56 dp, large shape (16), primary container; extended with a label.",
   "size": {
     "width": 56,
     "height": 56

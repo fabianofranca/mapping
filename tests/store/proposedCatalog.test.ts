@@ -29,8 +29,8 @@ import { changeOf, propose } from '../model/proposalFixtures';
 import { openHarness, type Harness } from './proposalHarness';
 import { proposalFilePath, serializeProposal } from '../../src/model';
 
-// Etapa Proposto com componentes (PC1): na visão Proposto o catálogo inclui os pacotes que a
-// proposta cria ou atualiza, lidos de `proposals/<id>/<pasta>/`, sem gravar nada em `specs/`.
+// Proposed-with-components stage (PC1): in the Proposed view the catalog includes the packages that the
+// proposal creates or updates, read from `proposals/<id>/<folder>/`, without writing anything to `specs/`.
 
 beforeEach(() => localStorage.clear());
 afterEach(() => clearReportedErrors());
@@ -40,7 +40,7 @@ const rect = { x: 100, y: 100, width: 100, height: 40 };
 function baseProject(): Project {
   return addContainer(emptyProject(), {
     id: 'I1',
-    file: 'images/tela.png',
+    file: 'images/screen.png',
     width: 1000,
     height: 800,
   });
@@ -84,7 +84,7 @@ function withMarking(p: Project, id: string, specId: string): Project {
   );
 }
 
-/** Texto de cada arquivo do pacote de `specs/<dir>/` no disco (`prefix` = onde ele espera). */
+/** Text of each file of the `specs/<dir>/` package on disk (`prefix` = where it waits). */
 function packageFiles(
   dir: string,
   prefix = '',
@@ -108,7 +108,7 @@ function setup(h: Harness) {
   return { derived, components: h.review.components };
 }
 
-/** Abre a revisão e espera os pacotes (e a biblioteca) carregarem. */
+/** Opens the review and waits for the packages (and the library) to load. */
 async function open(h: Harness, view: 'current' | 'proposed') {
   expect(h.review.open('P1').ok).toBe(true);
   h.review.setView(view);
@@ -116,7 +116,7 @@ async function open(h: Harness, view: 'current' | 'proposed') {
   await h.review.components.whenIdle();
 }
 
-/** Proposta que cria `extra` (pacote em `proposals/P1/`) e uma marcação dele sobre `base`. */
+/** Proposal that creates `extra` (package in `proposals/P1/`) and a marking of it over `base`. */
 function createsExtra(base: Project, id = 'extra'): { proposal: Proposal } {
   const after = withMarking(withSpec(base, specOf(id, 1), `${id}.spec.json`), 'E1', id);
   return { proposal: propose(base, after, { id: 'P1' }) };
@@ -136,8 +136,8 @@ async function specsOnDisk(h: Harness, dir: string): Promise<string[]> {
   return h.storage.listSpecDir(dir);
 }
 
-describe('catálogo do Proposto: especialização criada pela proposta', () => {
-  it('Proposto tem os tipos do pacote e desenha a marcação criada; Atual não; nada vai a specs/', async () => {
+describe('catalog of the Proposed view: specialization created by the proposal', () => {
+  it('Proposed has the package types and draws the created marking; Current does not; nothing goes to specs/', async () => {
     const base = baseProject();
     const { proposal } = createsExtra(base);
     const h = await openHarness({
@@ -165,7 +165,7 @@ describe('catálogo do Proposto: especialização criada pela proposta', () => {
     expect(h.session.components.catalog.value.size).toBe(0);
   });
 
-  it('enquanto o pacote carrega, a marcação fica sem desenho', async () => {
+  it('while the package loads, the marking has no drawing', async () => {
     const base = baseProject();
     const { proposal } = createsExtra(base);
     const h = await openHarness({
@@ -181,7 +181,7 @@ describe('catálogo do Proposto: especialização criada pela proposta', () => {
     expect(derived.componentScenes.value.has('E1')).toBe(true);
   });
 
-  it('pacote sem os arquivos: entrada com o motivo, sem desenho e sem nova leitura', async () => {
+  it('package without the files: entry with the reason, no drawing and no new read', async () => {
     const base = baseProject();
     const { proposal } = createsExtra(base);
     const h = await openHarness({ project: base, proposals: [proposal] });
@@ -199,10 +199,10 @@ describe('catálogo do Proposto: especialização criada pela proposta', () => {
   });
 });
 
-describe('catálogo do Proposto: especialização atualizada pela proposta', () => {
+describe('catalog of the Proposed view: specialization updated by the proposal', () => {
   const v2Text = {
     ...(COMPONENTS.text as Record<string, unknown>),
-    name: 'Texto v2',
+    name: 'Text v2',
   };
 
   async function updating() {
@@ -228,7 +228,7 @@ describe('catálogo do Proposto: especialização atualizada pela proposta', () 
     return { h, proposal };
   }
 
-  it('Proposto usa os componentes da versão proposta; Atual, os da aplicada', async () => {
+  it('Proposed uses the components of the proposed version; Current, those of the applied one', async () => {
     const { h } = await updating();
     const { derived, components } = setup(h);
     await open(h, 'current');
@@ -241,8 +241,8 @@ describe('catálogo do Proposto: especialização atualizada pela proposta', () 
     h.review.setView('proposed');
     const proposed = components.catalog.value.get(SPEC_ID);
     expect(proposed?.version).toBe(2);
-    expect(proposed?.byType.get('text')?.name).toBe('Texto v2');
-    expect(applied?.byType.get('text')?.name).not.toBe('Texto v2');
+    expect(proposed?.byType.get('text')?.name).toBe('Text v2');
+    expect(applied?.byType.get('text')?.name).not.toBe('Text v2');
     expect(derived.componentScenes.value.get('T1')).toBeDefined();
     expect(derived.componentScenes.value.get('T1')).not.toBe(sceneV1);
 
@@ -251,7 +251,7 @@ describe('catálogo do Proposto: especialização atualizada pela proposta', () 
   });
 });
 
-describe('catálogo do Proposto: identidade e leituras', () => {
+describe('catalog of the Proposed view: identity and reads', () => {
   async function withExtra(given?: { proposal: Proposal }) {
     const base = withMarking(
       withSpec(baseProject(), specOf(SPEC_ID, 1), 'test.spec.json'),
@@ -271,7 +271,7 @@ describe('catálogo do Proposto: identidade e leituras', () => {
     return { h, proposal };
   }
 
-  it('o que a proposta não muda é o mesmo objeto da base', async () => {
+  it('what the proposal does not change is the same object as the base', async () => {
     const { h } = await withExtra();
     const { components } = setup(h);
     await open(h, 'proposed');
@@ -281,9 +281,9 @@ describe('catálogo do Proposto: identidade e leituras', () => {
     expect(components.catalog.value).toBe(catalog);
   });
 
-  it('proposta sem pacote: o catálogo é o objeto da base nas duas visões', async () => {
+  it('proposal without a package: the catalog is the base object in both views', async () => {
     const base = withSpec(baseProject(), specOf(SPEC_ID, 1), 'test.spec.json');
-    const after = { ...base, project: { ...base.project, name: 'Outro' } };
+    const after = { ...base, project: { ...base.project, name: 'Other' } };
     const h = await openHarness({
       project: base,
       proposals: [propose(base, after, { id: 'P1' })],
@@ -299,7 +299,7 @@ describe('catálogo do Proposto: identidade e leituras', () => {
     expect(components.catalog.value).toBe(h.session.components.catalog.value);
   });
 
-  it('trocar de visão e decidir não leem de novo nem reinstanciam as outras marcações', async () => {
+  it('switching view and deciding neither re-read nor re-instantiate the other markings', async () => {
     const { h, proposal } = await withExtra();
     const { derived, components } = setup(h);
     const reads = countReads(h);
@@ -316,7 +316,7 @@ describe('catálogo do Proposto: identidade e leituras', () => {
     h.review.setView('proposed');
     expect(components.catalog.value).toBe(catalog);
     expect(derived.componentScenes.value.get('T1')).toBe(t1);
-    // E1 só existe no Proposto: o cache a soltou na Atual, e a de agora vale até decidir.
+    // E1 only exists in Proposed: the cache dropped it in Current, and the current one holds until deciding.
     const e1 = derived.componentScenes.value.get('E1');
     expect(e1).toBeDefined();
 
@@ -339,7 +339,7 @@ describe('catálogo do Proposto: identidade e leituras', () => {
     expect(derived.componentScenes.value.get('E1')).toBe(e1);
   });
 
-  it('revise_proposal na revisão aberta (mesmo id@versão, spec e arquivos novos) relê o pacote', async () => {
+  it('revise_proposal on the open review (same id@version, new spec and files) re-reads the package', async () => {
     const base = baseProject();
     const { proposal } = createsExtra(base);
     const h = await openHarness({
@@ -351,12 +351,12 @@ describe('catálogo do Proposto: identidade e leituras', () => {
     const reads = countReads(h);
     await open(h, 'proposed');
     expect(components.catalog.value.get('extra')?.byType.get('text')?.name).not.toBe(
-      'Texto revisado',
+      'Revised text',
     );
     const n = reads.length;
 
-    // O agente revisa a proposta: mesma especialização e versão, outro conteúdo.
-    const revisedSpec: Spec = { ...specOf('extra', 1), name: 'extra revisada' };
+    // The agent revises the proposal: same specialization and version, other content.
+    const revisedSpec: Spec = { ...specOf('extra', 1), name: 'extra revised' };
     const after = withMarking(
       withSpec(base, revisedSpec, 'extra.spec.json'),
       'E1',
@@ -366,7 +366,7 @@ describe('catálogo do Proposto: identidade e leituras', () => {
     const staged = packageFiles('extra', 'proposals/P1/', {
       'specs/test/components/text.json': JSON.stringify({
         ...(COMPONENTS.text as Record<string, unknown>),
-        name: 'Texto revisado',
+        name: 'Revised text',
       }),
     });
     for (const [path, text] of Object.entries(staged)) h.root.put(path, text);
@@ -376,14 +376,14 @@ describe('catálogo do Proposto: identidade e leituras', () => {
 
     expect(reads.length).toBeGreaterThan(n);
     expect(components.catalog.value.get('extra')?.byType.get('text')?.name).toBe(
-      'Texto revisado',
+      'Revised text',
     );
   });
 
-  it('especialização rejeitada com a marcação pendente: a marcação fica sem desenho', async () => {
+  it('specialization rejected with the marking pending: the marking has no drawing', async () => {
     const { proposal } = await withExtra();
     const specChange = changeOf(proposal, 'specialization', 'extra').id;
-    // A decisão vem gravada por fora: decidir pela app rejeitaria a marcação junto (dependência).
+    // The decision comes recorded outside: deciding through the app would reject the marking too (dependency).
     const rejected: Proposal = {
       ...proposal,
       decisions: { [specChange]: { state: 'rejected', at: proposal.createdAt } },
@@ -392,7 +392,7 @@ describe('catálogo do Proposto: identidade e leituras', () => {
     const { derived, components } = setup(h);
     const reads = countReads(h);
     await open(h, 'proposed');
-    // O pacote carrega do mesmo jeito: a decisão não impede a leitura.
+    // The package loads the same way: the decision does not prevent the read.
     expect(reads.length).toBeGreaterThan(0);
     const shown = h.review.derived.shownProject.value;
     expect(shown?.markings.some((m) => m.id === 'E1')).toBe(true);
@@ -403,7 +403,7 @@ describe('catálogo do Proposto: identidade e leituras', () => {
   });
 });
 
-describe('catálogo do Proposto: fontes', () => {
+describe('catalog of the Proposed view: fonts', () => {
   function fakeRegistry() {
     const register = vi.fn(async (fonts: readonly LoadedFont[]) =>
       fonts.map((font) => ({ font, status: 'loaded' as const })),
@@ -412,7 +412,7 @@ describe('catálogo do Proposto: fontes', () => {
     return { register, clear, registry: { register, clear } as unknown as FontRegistry };
   }
 
-  it('registra as fontes do pacote ao abrir, não troca com a visão e limpa ao fechar', async () => {
+  it('registers the package fonts on open, does not change with the view and clears on close', async () => {
     const withFont: Spec = {
       ...specOf('extra', 1),
       fonts: [{ family: 'Test Sans', file: 'fonts/test.ttf', weight: 400 }],
@@ -429,7 +429,7 @@ describe('catálogo do Proposto: fontes', () => {
       },
     });
     const fake = fakeRegistry();
-    // Pelo estado da revisão: a proposta abre, as fontes entram; a visão não mexe nelas.
+    // By the review state: the proposal opens, the fonts come in; the view does not touch them.
     const own = createProposedComponents({
       base: h.session.components,
       proposal: h.review.derived.proposal,
@@ -461,8 +461,8 @@ describe('catálogo do Proposto: fontes', () => {
   });
 });
 
-describe('catálogo do Proposto: fontes após revise_proposal', () => {
-  it('a fonte nova de uma proposta revisada (mesmo id@versão) é registrada de novo', async () => {
+describe('catalog of the Proposed view: fonts after revise_proposal', () => {
+  it('the new font of a revised proposal (same id@version) is registered again', async () => {
     const register = vi.fn(async (fonts: readonly LoadedFont[]) =>
       fonts.map((font) => ({ font, status: 'loaded' as const })),
     );
@@ -498,19 +498,19 @@ describe('catálogo do Proposto: fontes após revise_proposal', () => {
     await own.whenIdle();
     expect(register).toHaveBeenCalledTimes(1);
 
-    h.root.put(proposalFilePath('P1'), serializeProposal(build('Outra Sans')));
+    h.root.put(proposalFilePath('P1'), serializeProposal(build('Other Sans')));
     await h.session.proposals.scan();
     await own.whenIdle();
     expect(register).toHaveBeenCalledTimes(2);
     expect((register.mock.calls[1]?.[0] ?? []).map((f) => f.family)).toEqual([
-      'Outra Sans',
+      'Other Sans',
     ]);
     own.dispose();
   });
 });
 
-describe('imagens remotas no Proposto (RI3)', () => {
-  it('a origem do pacote criado pela proposta só entra na visão Proposto', async () => {
+describe('remote images in the Proposed view (RI3)', () => {
+  it('the origin of the package created by the proposal only enters the Proposed view', async () => {
     const imageText = {
       format: 'mapping-component',
       formatVersion: 3,
@@ -524,7 +524,7 @@ describe('imagens remotas no Proposto (RI3)', () => {
         children: [
           {
             type: 'image',
-            src: 'https://cdn.proposta.example/x.png',
+            src: 'https://cdn.proposal.example/x.png',
             width: 100,
             height: 40,
           },
@@ -543,7 +543,7 @@ describe('imagens remotas no Proposto (RI3)', () => {
     const { derived } = setup(h);
     await open(h, 'proposed');
     expect(derived.pendingImageOrigins.value.map((o) => o.origin)).toEqual([
-      'https://cdn.proposta.example',
+      'https://cdn.proposal.example',
     ]);
     h.review.setView('current');
     expect(derived.pendingImageOrigins.value).toEqual([]);

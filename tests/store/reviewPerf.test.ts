@@ -14,15 +14,15 @@ import { openHarness } from './proposalHarness';
 beforeEach(() => localStorage.clear());
 
 const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
-/** Uma repetição separa ruído do runner de regressão (ver tests/model/performance.test.ts). */
+/** One repetition separates runner noise from regression (see tests/model/performance.test.ts). */
 const BUDGET_OPTIONS = { retry: 1 };
 
-/** Uma imagem com `n` marcações; a proposta renomeia todas e cria uma anotação em cada. */
+/** An image with `n` markings; the proposal renames all of them and creates an annotation on each. */
 function bigScenario(n: number) {
   let base: Project = createProject({
-    name: 'Grande',
+    name: 'Large',
     now: '2026-09-30T12:00:00.000Z',
-    firstLayer: { id: 'L1', name: 'Camada', color: '#D32F2F' },
+    firstLayer: { id: 'L1', name: 'Layer', color: '#D32F2F' },
   });
   base = addContainer(base, {
     id: 'I1',
@@ -40,17 +40,17 @@ function bigScenario(n: number) {
   }
   let after = base;
   for (let i = 0; i < n; i++) {
-    after = renameMarking(after, `M${i}`, `novo ${i}`);
+    after = renameMarking(after, `M${i}`, `new ${i}`);
     after = addAnnotation(after, { id: `A${i}`, markingId: `M${i}`, layerId: 'L1' });
   }
   return { base, proposal: propose(base, after, { id: 'P1' }) };
 }
 
-// Proposta grande (HANDOFF 5.4): milhares de mudanças. Estes limites são largos de propósito:
-// pegam um recálculo quadrático (a revisão ficaria inutilizável), não o tempo exato da máquina.
-describe('revisão de uma proposta grande', () => {
+// Large proposal (HANDOFF 5.4): thousands of changes. These limits are wide on purpose:
+// they catch a quadratic recomputation (the review would become unusable), not the exact time of the machine.
+describe('review of a large proposal', () => {
   budgetIt(
-    'abrir, decidir e ler o estado derivado de 2000 mudanças continua rápido',
+    'opening, deciding and reading the derived state of 2000 changes stays fast',
     BUDGET_OPTIONS,
     async () => {
       const { base, proposal } = bigScenario(1000);
@@ -84,11 +84,11 @@ describe('revisão de uma proposta grande', () => {
     },
   );
 
-  // Detalhes na revisão (fase 9.6): o índice "mudanças por entidade e campo", que os marcadores
-  // e o cabeçalho leem, depende só das mudanças. Decidir não o recalcula (a mesma referência),
-  // e montá-lo para milhares de mudanças custa uma passada.
+  // Details in the review (phase 9.6): the "changes by entity and field" index, which the markers
+  // and the header read, depends only on the changes. Deciding does not recompute it (the same reference),
+  // and building it for thousands of changes costs one pass.
   budgetIt(
-    'o índice por campo de 2000 mudanças é montado uma vez e não muda a cada decisão',
+    'the per-field index of 2000 changes is built once and does not change on each decision',
     BUDGET_OPTIONS,
     async () => {
       const { base, proposal } = bigScenario(1000);
@@ -99,7 +99,7 @@ describe('revisão de uma proposta grande', () => {
       const start = performance.now();
       const index = d.fieldIndex.value;
       const build = performance.now() - start;
-      // 1000 marcações renomeadas e 1000 anotações criadas.
+      // 1000 markings renamed and 1000 annotations created.
       expect(index.entities.size).toBe(2000);
       expect(index.annotationsOf.size).toBe(1000);
 
@@ -114,7 +114,7 @@ describe('revisão de uma proposta grande', () => {
       }
       await review.decide({ level: 'proposal', id: null }, 'accepted');
       expect(d.fieldIndex.value).toBe(index);
-      // Só a leitura inicial: nenhuma decisão o notificou de novo.
+      // Only the initial read: no decision notified it again.
       expect(notified).toBe(1);
       stop();
       expect(build).toBeLessThan(1000);

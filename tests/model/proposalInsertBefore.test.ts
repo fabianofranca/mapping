@@ -18,10 +18,10 @@ import {
 import { emptyProject } from './fixtures';
 import { AT, decided, propose } from './proposalFixtures';
 
-// Proposta formatVersion 4: a marcação criada carrega `insertBefore` (a âncora no array da
-// base), e aplicar todas as mudanças dá os mesmos pais e a mesma ordem entre irmãs do projeto
-// proposto (docs/PROPOSAL-FORMAT.md, "Garantia"); sem reordenação no lote, também a mesma ordem
-// do array `markings`. Com reordenação e empate, ver proposalReorderLimit.test.ts e o fuzz
+// Proposal formatVersion 4: the created marking carries `insertBefore` (the anchor in the array of the
+// base), and applying all the changes gives the same parents and the same order among siblings as the
+// proposed project (docs/PROPOSAL-FORMAT.md, "Guarantee"); without reordering in the batch, also the same order
+// of the `markings` array. With reordering and a tie, see proposalReorderLimit.test.ts and the fuzz
 // proposalFidelityFuzz.test.ts (#549).
 
 const rect = (x: number, y: number, width: number, height: number) => ({
@@ -31,7 +31,7 @@ const rect = (x: number, y: number, width: number, height: number) => ({
   height,
 });
 
-/** Container C 300×200 com A (preenche), B (dentro de A), D e E (irmãs de A, fora dele não cabem). */
+/** Container C 300×200 with A (fills it), B (inside A), D and E (siblings of A, they do not fit outside it). */
 function tieBase(): Project {
   let p = addContainer(emptyProject(), {
     id: 'C',
@@ -45,7 +45,7 @@ function tieBase(): Project {
   return p;
 }
 
-/** Quatro marcações lado a lado, sem pertencimento entre elas: P, Q, R, S. */
+/** Four markings side by side, with no containment among them: P, Q, R, S. */
 function rowBase(): Project {
   let p = addContainer(emptyProject(), {
     id: 'C',
@@ -71,7 +71,7 @@ const parents = (p: Project) =>
     ...p.containers.map((c) => [c.id, c.parentId]),
   ]);
 
-/** Aplica todas as mudanças da base ao proposto e confere a ordem e os pais. */
+/** Applies all the changes from the base to the proposed project and checks the order and the parents. */
 function expectApplied(base: Project, after: Project): Project {
   const applied = patchProject(base, computeChanges(base, after));
   expect(applied.problems).toEqual([]);
@@ -87,8 +87,8 @@ const wrap = (base: Project, id: string, items: string[]) =>
     { settle: true },
   );
 
-describe('proposta v4: aplicado = proposto (ordem e pais)', () => {
-  it('o empate de retângulo: W sem pai, A filha de W, B filha de A', () => {
+describe('proposal v4: applied = proposed (order and parents)', () => {
+  it('the rectangle tie: W without a parent, A child of W, B child of A', () => {
     const base = tieBase();
     const after = wrap(base, 'W', ['A']);
     expect(parents(after)).toMatchObject({ W: null, A: 'W', B: 'A' });
@@ -96,25 +96,25 @@ describe('proposta v4: aplicado = proposto (ordem e pais)', () => {
     expect(parents(applied)).toMatchObject({ W: null, A: 'W', B: 'A' });
   });
 
-  it('envolver sem empate (o retângulo cresce)', () => {
+  it('wrapping without a tie (the rectangle grows)', () => {
     const base = tieBase();
     expectApplied(base, wrap(base, 'W', ['B', 'D']));
   });
 
-  it('envolver uma marcação com irmãs antes e depois dela', () => {
+  it('wrapping a marking with siblings before and after it', () => {
     const base = rowBase();
     const after = wrap(base, 'W', ['Q']);
     expect(ids(after)).toEqual(['P', 'W', 'Q', 'R', 'S']);
     expectApplied(base, after);
   });
 
-  it('envolver duas marcações de lugares diferentes do array', () => {
+  it('wrapping two markings from different places of the array', () => {
     const base = rowBase();
     const after = wrap(base, 'W', ['Q', 'S']);
     expectApplied(base, after);
   });
 
-  it('um create_marking simples vai para o fim', () => {
+  it('a plain create_marking goes to the end', () => {
     const base = rowBase();
     const after = createMarking(base, {
       id: 'N',
@@ -127,7 +127,7 @@ describe('proposta v4: aplicado = proposto (ordem e pais)', () => {
     expect(ids(expectApplied(base, after)).at(-1)).toBe('N');
   });
 
-  it('duas criadas com a mesma âncora ficam na ordem do proposto', () => {
+  it('two created with the same anchor stay in the proposed order', () => {
     const base = rowBase();
     let after = wrap(base, 'W1', ['R']);
     after = wrap(after, 'W2', ['R']);
@@ -139,7 +139,7 @@ describe('proposta v4: aplicado = proposto (ordem e pais)', () => {
     expectApplied(base, after);
   });
 
-  it('envolver junto com a remoção da marcação que seria a âncora', () => {
+  it('wrapping together with the removal of the marking that would be the anchor', () => {
     const base = rowBase();
     const after = removeMarking(wrap(base, 'W', ['Q']), 'Q');
     const changes = computeChanges(base, after);
@@ -148,10 +148,10 @@ describe('proposta v4: aplicado = proposto (ordem e pais)', () => {
     expectApplied(base, after);
   });
 
-  it('envolver junto com uma troca de ordem (reorderMarking), sem empate: mesmos pais e mesma ordem entre as irmãs', () => {
-    // O `position` só ordena irmãs (as irmãs trocam de casa no array e as outras ficam): onde
-    // uma filha cai no array entre elas não é expressável, então a ordem exata do array só é
-    // garantida sem troca de ordem. Com ela, valem os pais e a ordem relativa das irmãs.
+  it('wrapping together with an order change (reorderMarking), without a tie: same parents and same order among siblings', () => {
+    // The `position` only orders siblings (the siblings swap places in the array and the others stay): where
+    // a child lands in the array among them is not expressible, so the exact order of the array is only
+    // guaranteed without an order change. With it, the parents and the relative order of siblings hold.
     const base = rowBase();
     const roots = (p: Project) =>
       p.markings.filter((m) => m.parentId === null).map((m) => m.id);
@@ -168,15 +168,15 @@ describe('proposta v4: aplicado = proposto (ordem e pais)', () => {
     }
   });
 
-  it('o empate junto com uma troca de ordem das irmãs', () => {
+  it('the tie together with an order change of the siblings', () => {
     const base = tieBase();
     const after = reorderMarking(wrap(base, 'W', ['A']), 'D', 0);
     expectApplied(base, after);
   });
 });
 
-describe('proposta v4: aceitação parcial', () => {
-  it('rejeitar a criação da envolvente e aceitar o resto aplica sem erro', () => {
+describe('proposal v4: partial acceptance', () => {
+  it('rejecting the creation of the wrapper and accepting the rest applies without error', () => {
     const base = rowBase();
     const after = removeMarking(wrap(base, 'W', ['Q']), 'S');
     const p = propose(base, after);
@@ -198,7 +198,7 @@ describe('proposta v4: aceitação parcial', () => {
     if (result.ok) expect(result.project.markings.some((m) => m.id === 'W')).toBe(false);
   });
 
-  it('com a âncora removida por uma mudança aceita, a criada vai para o fim', () => {
+  it('with the anchor removed by an accepted change, the created one goes to the end', () => {
     const base = rowBase();
     const wrapped = wrap(base, 'W', ['Q']);
     const changes = computeChanges(base, wrapped);
@@ -223,7 +223,7 @@ describe('proposta v4: aceitação parcial', () => {
     expect(ids(result.project)).not.toContain('Q');
   });
 
-  it('âncora que não existe na base: a criada vai para o fim, sem problema', () => {
+  it('an anchor that does not exist in the base: the created one goes to the end, without a problem', () => {
     const base = rowBase();
     const changes = computeChanges(base, wrap(base, 'W', ['Q']));
     const create = changes.find(
@@ -235,21 +235,21 @@ describe('proposta v4: aceitação parcial', () => {
   });
 });
 
-describe('proposta v4: sem position redundante', () => {
-  it('o envolver em empate não traz position para a criada nem para a envolvida', () => {
+describe('proposal v4: no redundant position', () => {
+  it('wrapping in a tie brings no position for the created nor the wrapped one', () => {
     const base = tieBase();
     const changes = computeChanges(base, wrap(base, 'W', ['A']));
     expect(changes.filter((c) => c.field === 'position')).toEqual([]);
   });
 
-  it('o envolver sem empate também não', () => {
+  it('wrapping without a tie does not either', () => {
     const base = rowBase();
     const changes = computeChanges(base, wrap(base, 'W', ['Q']));
     expect(changes.filter((c) => c.field === 'position')).toEqual([]);
   });
 });
 
-describe('proposta v4: leitura e gravação', () => {
+describe('proposal v4: reading and writing', () => {
   const build = () => {
     const base = rowBase();
     const p = propose(base, wrap(base, 'W', ['Q']));
@@ -258,7 +258,7 @@ describe('proposta v4: leitura e gravação', () => {
   const changesOf = (data: Record<string, unknown>) =>
     data.changes as Record<string, unknown>[];
 
-  it('a proposta nova sai na formatVersion 4, com insertBefore na criação', () => {
+  it('the new proposal comes out on formatVersion 4, with insertBefore on creation', () => {
     const { p, data } = build();
     expect(PROPOSAL_FORMAT_VERSION).toBe(4);
     expect(p.formatVersion).toBe(4);
@@ -270,9 +270,9 @@ describe('proposta v4: leitura e gravação', () => {
     expect(parsed.ok).toBe(true);
   });
 
-  it('insertBefore em outra mudança é erro de leitura, com o caminho', () => {
+  it('insertBefore in another change is a read error, with the path', () => {
     const base = rowBase();
-    const p = propose(base, renameMarking(wrap(base, 'W', ['Q']), 'P', 'Primeira'));
+    const p = propose(base, renameMarking(wrap(base, 'W', ['Q']), 'P', 'First'));
     const data = JSON.parse(serializeProposal(p)) as Record<string, unknown>;
     const list = changesOf(data);
     const index = list.findIndex((c) => c.kind === 'update');
@@ -287,7 +287,7 @@ describe('proposta v4: leitura e gravação', () => {
     }
   });
 
-  it('insertBefore que não é id nem null é erro de leitura', () => {
+  it('insertBefore that is neither an id nor null is a read error', () => {
     const { data } = build();
     const index = changesOf(data).findIndex(
       (c) => c.kind === 'create' && c.entity === 'marking',
@@ -305,19 +305,19 @@ describe('proposta v4: leitura e gravação', () => {
     }
   });
 
-  it('insertBefore null é lido; âncora que não existe na base não é erro de leitura', () => {
+  it('insertBefore null is read; an anchor that does not exist in the base is not a read error', () => {
     const { data } = build();
     const index = changesOf(data).findIndex(
       (c) => c.kind === 'create' && c.entity === 'marking',
     );
-    for (const value of [null, 'nao-existe']) {
+    for (const value of [null, 'does-not-exist']) {
       const ok = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
       changesOf(ok)[index] = { ...changesOf(ok)[index], insertBefore: value };
       expect(parseProposalText(JSON.stringify(ok)).ok).toBe(true);
     }
   });
 
-  it('as versões 1 a 3 continuam lidas, sem o campo (ignorado se aparecer)', () => {
+  it('versions 1 to 3 are still read, without the field (ignored if it appears)', () => {
     const { data } = build();
     for (const version of [1, 2, 3]) {
       const old = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
@@ -333,7 +333,7 @@ describe('proposta v4: leitura e gravação', () => {
     }
   });
 
-  it('a app regrava as decisões mantendo a versão do arquivo (uma v3)', () => {
+  it("the app rewrites the decisions keeping the file's version (a v3)", () => {
     const { base, data } = build();
     const v3 = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
     v3.formatVersion = 3;
@@ -350,7 +350,7 @@ describe('proposta v4: leitura e gravação', () => {
     expect(changesOf(again).every((c) => !('insertBefore' in c))).toBe(true);
   });
 
-  it('a v4 regravada mantém o insertBefore', () => {
+  it('the rewritten v4 keeps insertBefore', () => {
     const { base, p } = build();
     const decidedP = decided(p, base, { level: 'proposal', id: null }, 'accepted');
     const again = JSON.parse(serializeProposal(decidedP)) as Record<string, unknown>;

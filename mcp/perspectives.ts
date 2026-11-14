@@ -8,13 +8,13 @@ import {
 import { ToolError } from './errors';
 import type { Refs } from './items';
 
-// Perspectivas (v16, etapa #659): o MCP só lê. A Principal é o próprio projeto e não aparece em
-// `perspectives` (sempre existe, mostra tudo). As perspectivas "Só eu" ficam no navegador e não
-// existem aqui. Nada neste arquivo grava o `mapping.json`.
+// Perspectives (v16, stage #659): the MCP only reads. The Main one is the project itself and does not appear in
+// `perspectives` (it always exists, shows everything). The "Only me" perspectives stay in the browser and do not
+// exist here. Nothing in this file writes `mapping.json`.
 
 type Json = Record<string, unknown>;
 
-/** Referência da raiz: container (`i`) ou marcação (`m`). */
+/** Reference of the root: container (`i`) or marking (`m`). */
 function rootRef(refs: Refs, root: string): string {
   const isContainer = projectIndex(refs.project).containers.has(root);
   return refs.ref(isContainer ? 'i' : 'm', root);
@@ -34,7 +34,7 @@ function countRoots(p: Project, perspective: Perspective): number {
   return count;
 }
 
-/** `perspectives` do `get_project`: id, nome, quantas raízes e as camadas escondidas. */
+/** `perspectives` of `get_project`: id, name, how many roots and the hidden layers. */
 export function perspectiveSummaries(refs: Refs): Json[] {
   const p = refs.project;
   return p.perspectives.map((perspective) => ({
@@ -45,7 +45,7 @@ export function perspectiveSummaries(refs: Refs): Json[] {
   }));
 }
 
-/** `arrivals` do `get_project`: as marcas "Veio de…" que a Principal ainda mostra. */
+/** `arrivals` of `get_project`: the "Came from…" marks that the Main one still shows. */
 export function arrivalsView(refs: Refs): Json[] {
   const p = refs.project;
   const index = projectIndex(p);
@@ -62,19 +62,19 @@ export function arrivalsView(refs: Refs): Json[] {
   });
 }
 
-/** Acha a perspectiva pelo id ou, na falta dele, pelo nome (sem diferença de caixa). */
+/** Finds the perspective by id or, failing that, by name (case-insensitive). */
 export function findPerspective(p: Project, query: string): Perspective {
   const lower = query.trim().toLocaleLowerCase();
   const found =
     p.perspectives.find((x) => x.id === query) ??
     p.perspectives.find((x) => x.name.toLocaleLowerCase() === lower);
   if (found) return found;
-  throw new ToolError('not-found', `perspectiva não encontrada: ${query}`, {
-    hint: 'veja `perspectives` em get_project; a Principal não é uma perspectiva gravada (é o próprio projeto) e as "Só eu" ficam no navegador',
+  throw new ToolError('not-found', `perspective not found: ${query}`, {
+    hint: 'see `perspectives` in get_project; the Main perspective is not a saved perspective (it is the project itself) and the "Only me" ones stay in the browser',
   });
 }
 
-/** `get_perspective`: as raízes com a posição e as camadas escondidas. */
+/** `get_perspective`: the roots with their position and the hidden layers. */
 export function perspectiveDetail(refs: Refs, perspective: Perspective): Json {
   const p = refs.project;
   const index = projectIndex(p);
@@ -104,7 +104,7 @@ export function perspectiveDetail(refs: Refs, perspective: Perspective): Json {
   };
 }
 
-/** Em que perspectivas a raiz aparece, com a posição dela em cada uma. */
+/** In which perspectives the root appears, with its position in each one. */
 export function perspectivesOfRoot(p: Project, root: string): Json[] {
   return p.perspectives.flatMap((perspective) => {
     const item = perspective.items.find((x) => x.root === root);
@@ -114,14 +114,14 @@ export function perspectivesOfRoot(p: Project, root: string): Json[] {
   });
 }
 
-/** Em que perspectivas a seta aparece (as duas pontas na vista). */
+/** In which perspectives the arrow appears (both ends in the view). */
 export function perspectivesOfArrow(p: Project, arrowId: string): Json[] {
   return p.perspectives
     .filter((perspective) => arrowShownIn(p, perspective, arrowId))
     .map((perspective) => ({ id: perspective.id, name: perspective.name }));
 }
 
-/** `root` (referência) e `perspectives` de um item (container ou marcação). */
+/** `root` (reference) and `perspectives` of an item (container or marking). */
 export function rootInfo(refs: Refs, itemId: string): Json {
   const p = refs.project;
   const root = projectIndex(p).rootOf.get(itemId);

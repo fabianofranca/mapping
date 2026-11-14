@@ -1,4 +1,4 @@
-// A camada de componentes: diff por identidade dos desenhos, ordem, visibilidade e posição da imagem.
+// The component layer: diff by identity of the drawings, order, visibility and image position.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -52,7 +52,7 @@ const PLACEMENTS: ReadonlyMap<string, Placement> = new Map([
 function setup() {
   const parent = new Konva.Group();
   const layer = new ComponentLayerRenderer(parent);
-  /** Nós dos desenhos de uma imagem, na ordem de desenho. */
+  /** Nodes of the drawings of an image, in drawing order. */
   const nodes = (containerId: string): Konva.Node[] => {
     const group = parent
       .getChildren()
@@ -64,7 +64,7 @@ function setup() {
 }
 
 describe('ComponentLayerRenderer', () => {
-  it('não desenha contorno tracejado para o slot de um container', () => {
+  it('does not draw a dashed outline for the slot of a container', () => {
     const { layer, nodes } = setup();
     const base = drawing('row');
     const slot: SceneNode = {
@@ -84,7 +84,7 @@ describe('ComponentLayerRenderer', () => {
     expect(rects.some((r) => (r.dash() ?? []).length > 0)).toBe(false);
   });
 
-  it('cria um grupo por imagem posicionado pelo placement, sem eventos', () => {
+  it('creates one group per image positioned by the placement, without events', () => {
     const { parent, layer, nodes } = setup();
     const changed = layer.render(
       toMap(drawing('a'), drawing('b', 'img-2'), drawing('c')),
@@ -100,12 +100,12 @@ describe('ComponentLayerRenderer', () => {
     expect(first?.listening()).toBe(false);
     expect(nodes('img-1').map((n) => n.getAttr('markingId'))).toEqual(['a', 'c']);
     expect(nodes('img-2').map((n) => n.getAttr('markingId'))).toEqual(['b']);
-    // Cada nó é a cena da marcação, nas coordenadas da imagem.
+    // Each node is the marking scene, in the image coordinates.
     expect(nodes('img-1')[0]?.listening()).toBe(false);
     expect(nodes('img-1')[0]?.position()).toEqual({ x: 0, y: 10 });
   });
 
-  it('o mesmo Map devolve false e não mexe nos nós', () => {
+  it('the same Map returns false and does not touch the nodes', () => {
     const { layer, nodes } = setup();
     const drawings = toMap(drawing('a'), drawing('b'));
     layer.render(drawings, all, PLACEMENTS);
@@ -114,7 +114,7 @@ describe('ComponentLayerRenderer', () => {
     nodes('img-1').forEach((n, i) => expect(n).toBe(before[i]));
   });
 
-  it('refaz só o desenho cujo objeto mudou (identidade)', () => {
+  it('redoes only the drawing whose object changed (identity)', () => {
     const { layer, nodes } = setup();
     const a = drawing('a');
     const b = drawing('b');
@@ -128,13 +128,13 @@ describe('ComponentLayerRenderer', () => {
     expect(after[0]).toBe(na);
     expect(after[2]).toBe(nc);
     expect(after[1]).not.toBe(nb);
-    // O novo nó ficou na mesma posição da ordem de desenho.
+    // The new node stayed at the same position in the drawing order.
     expect(after[1]?.getAttr('markingId')).toBe('b');
     expect(after[1]?.x()).toBe(7);
     expect(nb?.getParent()).toBeNull();
   });
 
-  it('refazer um desenho cria os nós só dele', () => {
+  it('redoing a drawing creates only its nodes', () => {
     const add = vi.spyOn(Konva.Group.prototype, 'add');
     const { layer } = setup();
     const a = drawing('a');
@@ -142,12 +142,12 @@ describe('ComponentLayerRenderer', () => {
     layer.render(toMap(a, b), all, PLACEMENTS);
     add.mockClear();
     layer.render(toMap(a, drawing('b', 'img-1', 1)), all, PLACEMENTS);
-    // Um `add` do preenchimento dentro da cena de b + um da cena dentro do grupo da imagem.
+    // An `add` of the fill inside the scene of b + one of the scene inside the image group.
     expect(add).toHaveBeenCalledTimes(2);
     add.mockRestore();
   });
 
-  it('destrói o desenho que sumiu e o grupo da imagem que ficou vazia', () => {
+  it('destroys the drawing that disappeared and the image group that became empty', () => {
     const { parent, layer, nodes } = setup();
     layer.render(toMap(drawing('a'), drawing('b', 'img-2')), all, PLACEMENTS);
     const [nb] = nodes('img-2');
@@ -157,7 +157,7 @@ describe('ComponentLayerRenderer', () => {
     expect(nodes('img-2')).toEqual([]);
   });
 
-  it('a ordem do Map é a ordem de desenho; reordenar refaz a ordem sem refazer os nós', () => {
+  it('the Map order is the drawing order; reordering redoes the order without redoing the nodes', () => {
     const { layer, nodes } = setup();
     const a = drawing('a');
     const b = drawing('b');
@@ -172,7 +172,7 @@ describe('ComponentLayerRenderer', () => {
     expect(layer.render(toMap(c, a, b), all, PLACEMENTS)).toBe(false);
   });
 
-  it('visible esconde (destrói) e volta a desenhar', () => {
+  it('visible hides (destroys) and goes back to drawing', () => {
     const { layer, nodes } = setup();
     const drawings = toMap(drawing('a'), drawing('b'));
     layer.render(drawings, all, PLACEMENTS);
@@ -182,7 +182,7 @@ describe('ComponentLayerRenderer', () => {
     expect(nodes('img-1').map((n) => n.getAttr('markingId'))).toEqual(['a', 'b']);
   });
 
-  it('mudar o placement move o grupo sem refazer os desenhos; imagem sem placement não desenha', () => {
+  it('changing the placement moves the group without redoing the drawings; an image without a placement does not draw', () => {
     const { parent, layer, nodes } = setup();
     const drawings = toMap(drawing('a'), drawing('b', 'img-2'));
     layer.render(drawings, all, PLACEMENTS);
@@ -200,7 +200,7 @@ describe('ComponentLayerRenderer', () => {
     expect(parent.getChildren()).toHaveLength(1);
   });
 
-  it('uma marcação que muda de imagem é refeita no grupo novo', () => {
+  it('a marking that changes image is redone in the new group', () => {
     const { layer, nodes } = setup();
     layer.render(toMap(drawing('a')), all, PLACEMENTS);
     layer.render(toMap(drawing('a', 'img-2')), all, PLACEMENTS);
@@ -208,7 +208,7 @@ describe('ComponentLayerRenderer', () => {
     expect(nodes('img-2').map((n) => n.getAttr('markingId'))).toEqual(['a']);
   });
 
-  it('destroy remove os grupos da camada e deixa o pai', () => {
+  it('destroy removes the layer groups and leaves the parent', () => {
     const { parent, layer } = setup();
     layer.render(toMap(drawing('a')), all, PLACEMENTS);
     layer.destroy();
@@ -216,7 +216,7 @@ describe('ComponentLayerRenderer', () => {
     expect(layer.render(new Map(), all, PLACEMENTS)).toBe(false);
   });
 
-  it('passa a paleta do tema ao reservado', () => {
+  it('passes the theme palette to the placeholder', () => {
     const parent = new Konva.Group();
     const layer = new ComponentLayerRenderer(parent, {
       placeholder: { unknownLine: '#00aa00' },
@@ -241,9 +241,9 @@ describe('ComponentLayerRenderer', () => {
   });
 });
 
-// Marcação do canvas (v13): `containerId` nulo, o grupo dela usa a posição identidade.
-describe('ComponentLayerRenderer: espaço do canvas', () => {
-  it('desenha no grupo do canvas com a posição identidade, sem precisar de `placements`', () => {
+// Canvas marking (v13): null `containerId`, its group uses the identity position.
+describe('ComponentLayerRenderer: canvas space', () => {
+  it('draws in the canvas group with the identity position, without needing `placements`', () => {
     const { parent, layer } = setup();
     const canvasGroup = () =>
       parent.getChildren().find((n: Konva.Node) => n.getAttr('containerId') === '') as
@@ -256,7 +256,7 @@ describe('ComponentLayerRenderer: espaço do canvas', () => {
     expect(group?.x()).toBe(0);
     expect(group?.y()).toBe(0);
     expect(group?.scaleX()).toBe(1);
-    // Os containers continuam com o placement deles, e o diff por identidade vale nos dois.
+    // The containers keep their placement, and the identity diff holds in both.
     const inImage = drawing('m1');
     layer.render(toMap(note, inImage), all, PLACEMENTS);
     expect(layer.size).toBe(2);
@@ -264,7 +264,7 @@ describe('ComponentLayerRenderer: espaço do canvas', () => {
     expect(canvasGroup()?.getChildren()).toHaveLength(1);
   });
 
-  it('o grupo do canvas some quando não há mais desenho dele', () => {
+  it('the canvas group disappears when there is no drawing of it anymore', () => {
     const { parent, layer } = setup();
     layer.render(toMap(drawing('note', null), drawing('m1')), all, PLACEMENTS);
     expect(parent.getChildren()).toHaveLength(2);
@@ -273,7 +273,7 @@ describe('ComponentLayerRenderer: espaço do canvas', () => {
     expect(layer.size).toBe(1);
   });
 
-  it('a mesma marcação que passa do container ao canvas é redesenhada no grupo novo', () => {
+  it('the same marking that moves from the container to the canvas is redrawn in the new group', () => {
     const { parent, layer } = setup();
     layer.render(toMap(drawing('m1')), all, PLACEMENTS);
     layer.render(toMap(drawing('m1', null)), all, PLACEMENTS);
@@ -283,7 +283,7 @@ describe('ComponentLayerRenderer: espaço do canvas', () => {
     expect(owner?.getAttr('containerId')).toBe('');
   });
 
-  it('o filtro de visibilidade separa as flutuantes das demais (duas camadas)', () => {
+  it('the visibility filter separates the floating ones from the others (two layers)', () => {
     const lower = new Konva.Group();
     const upper = new Konva.Group();
     const below = new ComponentLayerRenderer(lower);
@@ -294,7 +294,7 @@ describe('ComponentLayerRenderer: espaço do canvas', () => {
     above.render(drawings, (d) => floating.has(d.markingId), PLACEMENTS);
     expect(below.size).toBe(1);
     expect(above.size).toBe(1);
-    // A flutuante deixa de ser: o desenho muda de camada.
+    // The floating one stops being one: the drawing changes layer.
     floating.clear();
     below.render(drawings, (d) => !floating.has(d.markingId), PLACEMENTS);
     above.render(drawings, (d) => floating.has(d.markingId), PLACEMENTS);
@@ -302,10 +302,10 @@ describe('ComponentLayerRenderer: espaço do canvas', () => {
     expect(above.size).toBe(0);
   });
 
-  describe('imagens remotas', () => {
-    const A = 'https://cdn.exemplo.com/a.png';
-    const B = 'https://cdn.exemplo.com/b.png';
-    /** Desenho de uma marcação com uma imagem remota (o nó `image` do componente). */
+  describe('remote images', () => {
+    const A = 'https://cdn.example.com/a.png';
+    const B = 'https://cdn.example.com/b.png';
+    /** Drawing of a marking with a remote image (the `image` node of the component). */
     function withImage(markingId: string, url?: string): LayerDrawing {
       const base = drawing(markingId);
       const image: SceneNode = {
@@ -335,14 +335,14 @@ describe('ComponentLayerRenderer: espaço do canvas', () => {
       return { states, resolve, layer, nodeOf, parent };
     }
 
-    it('pede a imagem à função ao desenhar e mostra o reservado enquanto carrega', () => {
+    it('asks the function for the image when drawing and shows the placeholder while it loads', () => {
       const { resolve, layer, nodeOf } = imageSetup();
       layer.render(toMap(withImage('a', A)), all, PLACEMENTS);
       expect(resolve).toHaveBeenCalledWith(A);
       expect(nodeOf('a').find('Image')).toHaveLength(0);
     });
 
-    it('refreshImages refaz só as marcações da URL, na mesma posição da ordem', () => {
+    it('refreshImages redoes only the markings of the URL, at the same position in the order', () => {
       const { states, resolve, layer, nodeOf, parent } = imageSetup();
       layer.render(
         toMap(withImage('a', A), withImage('b', B), withImage('c', A), withImage('d')),
@@ -354,7 +354,7 @@ describe('ComponentLayerRenderer: espaço do canvas', () => {
       states.set(A, ready);
       expect(layer.refreshImages(new Set([A]))).toBe(true);
       expect(resolve).toHaveBeenCalledTimes(2);
-      // b (outra URL) e d (sem imagem) ficam; a e c são nós novos, já com a imagem.
+      // b (another URL) and d (no image) stay; a and c are new nodes, already with the image.
       expect(nodeOf('b')).toBe(before[1]);
       expect(nodeOf('d')).toBe(before[3]);
       expect(nodeOf('a')).not.toBe(before[0]);
@@ -366,7 +366,7 @@ describe('ComponentLayerRenderer: espaço do canvas', () => {
       ).toEqual(['a', 'b', 'c', 'd']);
     });
 
-    it('com null refaz todas as que usam imagem (o consentimento mudou)', () => {
+    it('with null redoes all that use an image (the consent changed)', () => {
       const { resolve, layer } = imageSetup();
       layer.render(
         toMap(withImage('a', A), withImage('b', B), withImage('d')),
@@ -378,17 +378,17 @@ describe('ComponentLayerRenderer: espaço do canvas', () => {
       expect(resolve.mock.calls.map(([u]) => u).sort()).toEqual([A, B]);
     });
 
-    it('URL que nenhuma marcação usa não refaz nada', () => {
+    it('a URL that no marking uses redoes nothing', () => {
       const { resolve, layer } = imageSetup();
       layer.render(toMap(withImage('a', A), withImage('d')), all, PLACEMENTS);
       resolve.mockClear();
-      expect(layer.refreshImages(new Set(['https://outra.exemplo.com/x.png']))).toBe(
+      expect(layer.refreshImages(new Set(['https://other.example.com/x.png']))).toBe(
         false,
       );
       expect(resolve).not.toHaveBeenCalled();
     });
 
-    it('sem a função de imagem, a camada desenha o reservado e refreshImages refaz sem lançar', () => {
+    it('without the image function, the layer draws the placeholder and refreshImages redoes without throwing', () => {
       const parent = new Konva.Group();
       const layer = new ComponentLayerRenderer(parent);
       layer.render(toMap(withImage('a', A)), all, PLACEMENTS);

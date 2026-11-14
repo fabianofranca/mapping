@@ -1,4 +1,4 @@
-// Primeiro de todos: a política `default` de Trusted Types precisa existir antes de qualquer código da app.
+// First of all: the `default` Trusted Types policy must exist before any app code.
 import './app/trustedTypes';
 import { render } from 'preact';
 import './utils/zodConfig';
@@ -22,7 +22,8 @@ import { attachManifest, bindInstallPrompt, registerServiceWorker } from './app/
 import { bindDocumentSettings } from './theme/apply';
 import { listenForUncaughtErrors } from './utils/report';
 
-// Antes de tudo: o que escapar dos handlers (promessa solta, erro não capturado) vai para o Diagnóstico.
+// Before everything: whatever escapes the handlers (a loose promise, an uncaught error) goes to the
+// Diagnostics.
 listenForUncaughtErrors(window);
 bindDocumentSettings();
 void initApp();

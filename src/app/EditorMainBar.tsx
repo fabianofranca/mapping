@@ -18,10 +18,10 @@ import { Flag } from '../ui/review/Flag';
 import type { EditorDialogs } from './useEditorDialogs';
 import type { ProjectCommands } from './useProjectCommands';
 
-// Barra principal (40px, seção Layouts do DS 2.0): ícone, projeto ▾,
-// ferramentas, camada ativa, Especializações, Exportar, Ajuda e Configurações.
-// Fechar foi para o menu do projeto; o estado do salvamento, para a barra de status;
-// Lista virou janela e "Texto no canvas" foi para a barra dos breadcrumbs.
+// Main bar (40px, Layouts section of DS 2.0): icon, project ▾,
+// tools, active layer, Specializations, Export, Help and Settings.
+// Close moved to the project menu; the save state, to the status bar;
+// List became a window and "Text on canvas" moved to the breadcrumbs bar.
 
 interface EditorMainBarProps {
   readonly busy: boolean;

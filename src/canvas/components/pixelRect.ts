@@ -1,12 +1,12 @@
 /**
- * Retângulo sólido sem canto arredondado cujas bordas caem em pixels inteiros do dispositivo.
+ * Solid rectangle without rounded corners whose edges fall on whole device pixels.
  *
- * Duas faixas coladas (um `row` de pesos 1:2:1, por exemplo) dividem a mesma borda; com o zoom e o
- * deslocamento do canvas ela cai no meio de um pixel, cada `Rect` cobre metade dele com
- * antialiasing e o fundo transparece pela outra metade (um fio claro de 1 px). Alinhar as bordas
- * ao pixel faz o fim de uma faixa e o começo da seguinte serem a mesma linha, sem mistura.
- * Só vale com a matriz sem giro nem inclinação; fora disso (ou sem a matriz legível, como em
- * jsdom) desenha o retângulo da cena.
+ * Two adjacent bands (a `row` of 1:2:1 weights, for example) share the same edge; with the zoom and the
+ * canvas offset it falls in the middle of a pixel, each `Rect` covers half of it with
+ * antialiasing and the background shows through the other half (a light 1 px line). Aligning the edges
+ * to the pixel makes the end of one band and the start of the next the same line, with no blending.
+ * Only applies with a matrix without rotation or skew; otherwise (or without a readable matrix, as in
+ * jsdom) it draws the scene's rectangle.
  */
 import { Rect, type RectConfig } from 'konva/lib/shapes/Rect';
 import type { Context } from 'konva/lib/Context';
@@ -36,7 +36,7 @@ function deviceMatrix(context: Context): DeviceMatrix | undefined {
   return straight ? m : undefined;
 }
 
-/** Arredonda `from..to` (no dispositivo) para pixels inteiros, com ao menos 1 pixel se havia área. */
+/** Rounds `from..to` (in the device) to whole pixels, with at least 1 pixel if there was area. */
 function snap(from: number, to: number): [number, number] {
   const lo = Math.round(from);
   const hi = Math.round(to);

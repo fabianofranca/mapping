@@ -35,63 +35,76 @@ import { projectIndex } from './projectIndex';
 import { multiply, type FrameNode, type Matrix } from './components/scene';
 import type { AnchorSide, Marking, Project, ReadingDirection, Rect } from './types';
 
-// Desenhos dos componentes (etapa Biblioteca, B3): a cena instanciada de cada marcação que
-// tem componente, derivada do projeto (retângulo da marcação, tipo e valores da anotação,
-// molde da especialização) e nunca gravada. O cache só reinstancia a marcação cujas entradas
-// mudaram e devolve o **mesmo objeto** nas demais: o canvas compara por identidade.
+// Component drawings (Library stage, B3): the instantiated scene of each marking that has a
+// component, derived from the project (the marking's rectangle, the annotation's type and
+// values, the specialization's template) and never saved. The cache only re-instantiates the
+// marking whose inputs changed and returns the **same object** for the rest: the canvas
+// compares by identity.
 
 export interface ComponentDrawing {
   readonly markingId: string;
-  /** Container da marcação; `null` = marcação do canvas (retângulo em unidades do canvas). */
+  /** Marking's container; `null` = canvas marking (rectangle in canvas units). */
   readonly containerId: string | null;
   readonly annotationId: string;
-  /** Camada (do projeto) da anotação que desenha: o modo visualização tira o desenho por ela. */
+  /**
+   * Layer (of the project) of the annotation that draws: the view mode removes the drawing by
+   * it.
+   */
   readonly layerId: string;
   /**
-   * Cena instanciada na caixa da marcação **em unidades do componente**; a matriz da raiz leva
-   * `translate(rect.x, rect.y) · scale(density)`, então o que se desenha sai em pixels da imagem
-   * (ou unidades do canvas, onde a densidade é 1).
+   * Scene instantiated in the marking's box **in component units**; the root's matrix carries
+   * `translate(rect.x, rect.y) · scale(density)`, so what is drawn comes out in image pixels
+   * (or canvas units, where the density is 1).
    */
   readonly root: FrameNode;
-  /** Avisos do motor (sem código, em texto) e das referências dos valores (com código). */
+  /**
+   * Warnings from the engine (without a code, as text) and from the values' references (with
+   * a code).
+   */
   readonly warnings: readonly ModelMessage[];
-  /** Não cabe: aviso "conteúdo maior que a caixa" do motor ou filha fora da caixa do slot. */
+  /**
+   * Does not fit: the engine's "content larger than the box" warning or a child outside the
+   * slot's box.
+   */
   readonly overflow: boolean;
   /**
-   * Quanto falta (px da imagem) em cada "não cabe", pela mensagem do aviso do motor (em unidades
-   * × a densidade); a filha fora do slot entra como `SLOT_OVERFLOW`. Vazio quando cabe ou quando o desenho é em pixels de tela.
+   * How much is missing (image px) in each "does not fit", from the engine warning's message (in
+   * units × the density); the child outside the slot enters as `SLOT_OVERFLOW`. Empty when it
+   * fits or when the drawing is in screen pixels.
    */
   readonly shortfalls: Readonly<Record<string, number>>;
   /**
-   * Componente com `screen`: `root` mede o `size` do componente na origem, em pixels de tela, e o
-   * canvas o ancora em `anchor` no `rect` (retângulo da marcação, nos pixels da imagem).
+   * Component with `screen`: `root` measures the component's `size` at the origin, in screen
+   * pixels, and the canvas anchors it at `anchor` in the `rect` (the marking's rectangle, in
+   * image pixels).
    */
   readonly screen?: { readonly anchor: ScreenAnchor; readonly rect: Rect };
   /**
-   * Recorte da filha de um slot com `clip` (v4): a caixa do slot da mãe, no mesmo espaço do
-   * `root.transform` (pixels da imagem ou unidades do canvas). O desenho só aparece dentro dela.
+   * Clip of the child of a slot with `clip` (v4): the parent's slot box, in the same space as
+   * `root.transform` (image pixels or canvas units). The drawing only shows inside it.
    */
   readonly clip?: Rect;
   /**
-   * Âncora da marcação (v20): o lado gravado (ausente = o padrão do componente) e o retângulo da
-   * marcação-alvo, no mesmo espaço do `rect` (pixels do container ou unidades do canvas). É o que
-   * o motor lê nos pseudo-campos `$anchor.*` (R3, parte 2); ausente sem âncora.
+   * The marking's anchor (v20): the stored side (absent = the component's default) and the
+   * target marking's rectangle, in the same space as the `rect` (container pixels or canvas
+   * units). It is what the engine reads in the `$anchor.*` pseudo-fields (R3, part 2); absent
+   * without an anchor.
    */
   readonly anchor?: DrawingAnchor;
 }
 
-/** O lado e o retângulo da âncora de um desenho (ver `ComponentDrawing.anchor`). */
+/** The side and rectangle of a drawing's anchor (see `ComponentDrawing.anchor`). */
 export interface DrawingAnchor {
   readonly side?: AnchorSide;
   readonly rect: Rect;
 }
 
-/** Por id de marcação, inserido em ordem de desenho (pais antes das filhas; irmãs na ordem do array). */
+/** By marking id, inserted in drawing order (parents before children; siblings in array order). */
 export type ComponentDrawings = ReadonlyMap<string, ComponentDrawing>;
 
 export const NO_DRAWINGS: ComponentDrawings = new Map();
 
-/** Tolerância (px) entre a caixa do slot (decimal) e o retângulo inteiro de uma filha. */
+/** Tolerance (px) between the slot's box (decimal) and the integer rectangle of a child. */
 const SLOT_TOLERANCE = 1;
 
 export type DrawingCache = (
@@ -99,7 +112,7 @@ export type DrawingCache = (
   catalog: ComponentCatalog,
   measure: TextMeasurer,
   epoch: number,
-  /** Rótulo de anotação livre sem nome nos valores `ref`; o padrão é o do MCP (pt-BR). */
+  /** Label of an unnamed free annotation in `ref` values; the default is the MCP's. */
   untitled?: string,
 ) => ComponentDrawings;
 
@@ -113,25 +126,31 @@ interface Entry {
   readonly valueWarnings: readonly ModelMessage[];
   readonly measure: TextMeasurer;
   readonly epoch: number;
-  /** Modo do desenho efetivo da marcação (`undefined` = o primeiro modo). */
+  /** Effective drawing mode of the marking (`undefined` = the first mode). */
   readonly mode: string | undefined;
-  /** Densidade do container da marcação (1 no canvas). */
+  /** Density of the marking's container (1 on the canvas). */
   readonly density: number;
-  /** Direção de leitura efetiva da marcação (`ltr` por padrão): `rtl` espelha o desenho. */
+  /** Effective reading direction of the marking (`ltr` by default): `rtl` mirrors the drawing. */
   readonly direction: ReadingDirection;
-  /** A âncora da marcação (lado e retângulo do alvo); `undefined` sem âncora (decisão 15). */
+  /**
+   * The marking's anchor (side and target rectangle); `undefined` without an anchor (decision
+   * 15).
+   */
   readonly anchor: DrawingAnchor | undefined;
-  /** Retângulos das filhas diretas (só containers). */
+  /** Rectangles of the direct children (containers only). */
   readonly childRects: readonly Rect[];
-  /** Cor herdada: só os valores oferecidos pelos ancestrais que o componente lê (`$provided`). */
+  /**
+   * Inherited color: only the values offered by the ancestors that the component reads
+   * (`$provided`).
+   */
   readonly provided: ProvidedValues;
-  /** O que o slot desta marcação oferece às filhas (`provide`), já resolvido. */
+  /** What this marking's slot offers to its children (`provide`), already resolved. */
   readonly offers: ProvidedValues | undefined;
-  /** O recorte que esta marcação impõe às filhas (caixa do slot com `clip`), se houver. */
+  /** The clip this marking imposes on its children (slot box with `clip`), if any. */
   readonly slotClip: Rect | undefined;
-  /** O recorte que ela recebe da mãe (o `childClip` da mãe, mesmo objeto). */
+  /** The clip it receives from its parent (the parent's `childClip`, the same object). */
   readonly clip: Rect | undefined;
-  /** O recorte que as filhas recebem: o `slotClip` dentro do `clip` recebido (interseção). */
+  /** The clip the children receive: the `slotClip` inside the received `clip` (intersection). */
   readonly childClip: Rect | undefined;
   readonly drawing: ComponentDrawing;
 }
@@ -140,7 +159,10 @@ function sameRect(a: Rect, b: Rect): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
-/** A âncora de um desenho: o lado gravado e o retângulo do alvo; `undefined` sem âncora ou sem alvo. */
+/**
+ * A drawing's anchor: the stored side and the target rectangle; `undefined` without an anchor
+ * or target.
+ */
 function anchorOfMarking(
   marking: Marking,
   markings: ReadonlyMap<string, Marking>,
@@ -162,7 +184,7 @@ function sameRects(a: readonly Rect[], b: readonly Rect[]): boolean {
   return a.length === b.length && a.every((r, i) => sameRect(r, b[i] as Rect));
 }
 
-/** Mesmo valor; as linhas de uma tabela (listas recriadas a cada leitura) comparam célula a célula. */
+/** Same value; the rows of a table (lists recreated on every read) compare cell by cell. */
 function sameFieldValue(a: FieldValues[string], b: FieldValues[string]): boolean {
   if (Object.is(a, b)) return true;
   if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
@@ -184,14 +206,14 @@ function shallowEqual(a: FieldValues, b: FieldValues): boolean {
   return keysA.every((key) => key in b && sameFieldValue(a[key], b[key]));
 }
 
-/** O retângulo anterior quando é igual ao novo (o canvas compara o recorte por identidade). */
+/** The previous rectangle when it equals the new one (the canvas compares the clip by identity). */
 function stableRect(before: Rect | undefined, next: Rect | undefined): Rect | undefined {
   return before !== undefined && next !== undefined && sameRect(before, next)
     ? before
     : next;
 }
 
-/** O mesmo desenho com outro recorte da mãe (sem a chave quando não há). */
+/** The same drawing with another clip from the parent (without the key when there is none). */
 function withClip(drawing: ComponentDrawing, clip: Rect | undefined): ComponentDrawing {
   const copy: { -readonly [K in keyof ComponentDrawing]: ComponentDrawing[K] } = {
     ...drawing,
@@ -201,7 +223,10 @@ function withClip(drawing: ComponentDrawing, clip: Rect | undefined): ComponentD
   return copy;
 }
 
-/** O que situa o desenho: a âncora de tela (`screen`) ou, senão, o recorte da mãe (`clip`). */
+/**
+ * What situates the drawing: the screen anchor (`screen`) or, otherwise, the parent's clip
+ * (`clip`).
+ */
 function placement(
   screen: ComponentFile['screen'],
   rect: Rect,
@@ -212,15 +237,15 @@ function placement(
   return clip === undefined ? {} : { clip };
 }
 
-/** A matriz da raiz da cena em unidades: `translate(rect.x, rect.y) · scale(density)`. */
+/** The matrix of the scene root in units: `translate(rect.x, rect.y) · scale(density)`. */
 function rootMatrix(rect: Rect, density: number): Matrix {
   return [density, 0, 0, density, rect.x, rect.y];
 }
 
-/** Chave de `shortfalls` para a filha que passa da caixa do slot. */
-export const SLOT_OVERFLOW = 'conteúdo maior que a caixa: slot';
+/** Key of `shortfalls` for the child that goes past the slot's box. */
+export const SLOT_OVERFLOW = 'content larger than the box: slot';
 
-/** O quanto a pior filha passa da caixa do slot (com a tolerância do arredondamento); 0 = cabe. */
+/** How much the worst child goes past the slot's box (with the rounding tolerance); 0 = fits. */
 function slotExcess(
   root: FrameNode,
   childRects: readonly Rect[],
@@ -242,7 +267,10 @@ function slotExcess(
   return worst > 0 ? worst + SLOT_TOLERANCE : 0;
 }
 
-/** Os "não cabe" do desenho: o aviso do motor (com quanto falta) e a filha fora do slot. */
+/**
+ * The drawing's "does not fit": the engine's warning (with how much is missing) and the child
+ * outside the slot.
+ */
 function overflowsOf(
   overflowWarnings: readonly string[],
   shortfalls: Readonly<Record<string, number>>,
@@ -257,7 +285,10 @@ function overflowsOf(
   return found;
 }
 
-/** A âncora na forma que a instância lê (`$anchor.*`, em unidades); `undefined` sem âncora. */
+/**
+ * The anchor in the form the instance reads (`$anchor.*`, in units); `undefined` without an
+ * anchor.
+ */
 function instanceAnchor(
   anchor: DrawingAnchor | undefined,
   rect: Rect,
@@ -274,7 +305,10 @@ function instanceAnchor(
   });
 }
 
-/** As opções do `instantiate` de uma marcação: só leva `tokens`, `provided`, `direction` e `anchor` quando há. */
+/**
+ * The `instantiate` options of a marking: only carries `tokens`, `provided`, `direction` and
+ * `anchor` when present.
+ */
 function instantiateOptions(
   markingId: string,
   measure: TextMeasurer,
@@ -293,7 +327,7 @@ function instantiateOptions(
   };
 }
 
-/** Os "não cabe" de uma cena instanciada, em pixels da imagem. */
+/** The "does not fit" of an instantiated scene, in image pixels. */
 function overflowsOfScene(
   instantiated: ReturnType<typeof instantiate>,
   childRects: readonly Rect[],
@@ -308,7 +342,10 @@ function overflowsOfScene(
   );
 }
 
-/** O recorte que a caixa do slot impõe às filhas, em pixels da imagem (sem recorte com `screen`). */
+/**
+ * The clip that the slot's box imposes on the children, in image pixels (no clip with
+ * `screen`).
+ */
 function slotClipOf(
   screen: ComponentFile['screen'],
   root: FrameNode,
@@ -318,7 +355,10 @@ function slotClipOf(
   return unitClip === undefined ? undefined : space.toPixels(unitClip);
 }
 
-/** A cena com a escala da densidade na raiz; com densidade 1 a própria cena (já em pixels). */
+/**
+ * The scene with the density scale at the root; with density 1 the scene itself (already in
+ * pixels).
+ */
 function withRootMatrix(root: FrameNode, rect: Rect, density: number): FrameNode {
   return density === 1
     ? root
@@ -348,8 +388,8 @@ function draw(
   const tokens =
     mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
   const screen = mc.component.screen;
-  // Em pixels de tela o desenho mede o `size` do componente, na origem (o canvas o ancora) e não
-  // escala com a densidade, como não escala com o zoom.
+  // In screen pixels the drawing measures the component's `size`, at the origin (the canvas anchors
+  // it) and does not scale with the density, just as it does not scale with the zoom.
   const space = unitSpaceOf(rect, screen === undefined ? density : 1);
   const box: Rect =
     screen === undefined ? space.box : { x: 0, y: 0, ...mc.component.size };
@@ -367,7 +407,8 @@ function draw(
     ),
   );
   const { messages, provides } = instantiated;
-  // Com `screen` o desenho pode passar do retângulo da marcação: não há pendência "não cabe".
+  // With `screen` the drawing may go past the marking's rectangle: there is no "does not fit"
+  // pending item.
   const found =
     screen === undefined ? overflowsOfScene(instantiated, childRects, space) : {};
   const root = withRootMatrix(instantiated.root, rect, space.density);
@@ -383,18 +424,20 @@ function draw(
     ...placement(screen, rect, clip),
     ...(anchor === undefined ? {} : { anchor }),
   };
-  // Com `screen` a cena está na origem (pixels de tela): a caixa do slot não está no espaço das filhas.
+  // With `screen` the scene is at the origin (screen pixels): the slot's box is not in the
+  // children's space.
   const slotClip = slotClipOf(screen, instantiated.root, space);
   return { drawing, offers: provides, slotClip };
 }
 
 /**
- * Cache dos desenhos de um projeto. A cada chamada devolve, em ordem de desenho, um desenho
- * por marcação com componente. Uma marcação só é reinstanciada quando muda algo de que o
- * desenho dela depende: o retângulo, o componente (por identidade), os valores resolvidos
- * (comparação rasa), o medidor, a época das fontes, o modo, a densidade e a direção efetivos, a âncora
- * (lado e retângulo do alvo; só as ancoradas dependem dela) e,
- * nos containers, os retângulos das filhas; senão volta o mesmo `ComponentDrawing`. Mesmas entradas devolvem o mesmo `Map`.
+ * Cache of a project's drawings. On each call it returns, in drawing order, one drawing per
+ * marking with a component. A marking is only re-instantiated when something its drawing
+ * depends on changes: the rectangle, the component (by identity), the resolved values (shallow
+ * comparison), the measurer, the fonts epoch, the effective mode, density and direction, the
+ * anchor (side and target rectangle; only the anchored ones depend on it) and, in containers,
+ * the children's rectangles; otherwise the same `ComponentDrawing` comes back. The same inputs
+ * return the same `Map`.
  */
 export function createDrawingCache(): DrawingCache {
   let entries = new Map<string, Entry>();
@@ -427,11 +470,11 @@ export function createDrawingCache(): DrawingCache {
     const { children, markings: markingsById } = projectIndex(p);
     const next = new Map<string, Entry>();
     const drawings = new Map<string, ComponentDrawing>();
-    // Cor herdada: o que as filhas de cada marcação herdam (o do pai, com o que ele oferece por
-    // cima), de cima para baixo; o mais próximo vale e quem não oferece é atravessado.
+    // Inherited color: what each marking's children inherit (the parent's, with what it offers
+    // on top), from top to bottom; the closest one wins and one that offers nothing is crossed.
     const scopes = new Map<string, ProvidedValues>();
-    // Recorte das filhas de cada marcação: a caixa do slot com `clip` dentro do recorte que a
-    // própria marcação recebe (o recorte desce às netas).
+    // Clip of each marking's children: the slot box with `clip` inside the clip that the marking
+    // itself receives (the clip goes down to the grandchildren).
     const clips = new Map<string, Rect | undefined>();
     const scopeOf = (parentId: string | null): ProvidedValues =>
       parentId === null ? NO_PROVIDED : (scopes.get(parentId) ?? NO_PROVIDED);
@@ -545,7 +588,7 @@ export function createDrawingCache(): DrawingCache {
     }
     entries = next;
 
-    // Nada mudou nos desenhos (mesmos objetos, mesma ordem): mantém o mesmo mapa.
+    // Nothing changed in the drawings (same objects, same order): keeps the same map.
     const previous = last?.result;
     let result: ComponentDrawings = drawings.size === 0 ? NO_DRAWINGS : drawings;
     if (previous !== undefined && previous.size === drawings.size) {

@@ -1,26 +1,27 @@
 import { fail } from './errors';
 import type { Project } from './types';
 
-// Referência copiável de um item do projeto (etapa 3a): `mapping://<projeto>/<m|i|a>/<código>`,
-// só a URL (projeto codificado). A app copia, o agente (MCP) cola. Funções puras, sem DOM nem Node.
-// Não confundir com `refs.ts`, que trata das referências fortes entre anotações.
+// Copyable reference to a project item (stage 3a): `mapping://<project>/<m|i|a>/<code>`,
+// the URL only (project encoded). The app copies, the agent (MCP) pastes. Pure functions, no DOM
+// or Node. Not to be confused with `refs.ts`, which handles the strong references between
+// annotations.
 
 /**
- * `m` = marcação (e seta: os ids das setas e os das marcações dividem o espaço, ME4), `i` =
- * container, `a` = anotação.
+ * `m` = marking (and arrow: arrow ids and marking ids share the space, ME4), `i` =
+ * container, `a` = annotation.
  */
 export type ItemKind = 'm' | 'i' | 'a';
 
 export const ITEM_KINDS: readonly ItemKind[] = ['m', 'i', 'a'];
 
-/** Esquema das referências copiáveis. */
+/** Scheme of the copyable references. */
 export const REF_SCHEME = 'mapping://';
 
-/** Tamanho inicial do código; cresce de 4 em 4 caracteres se houver colisão. */
+/** Initial length of the code; it grows 4 characters at a time on a collision. */
 export const SHORT_CODE_LENGTH = 8;
 const SHORT_CODE_STEP = 4;
 
-/** Id sem hífens e em minúsculas: a forma em que o código é cortado e comparado. */
+/** Id without hyphens and in lowercase: the form in which the code is cut and compared. */
 export function normalizeId(id: string): string {
   return id.replaceAll('-', '').toLowerCase();
 }
@@ -44,9 +45,9 @@ const cache = new WeakMap<
 >();
 
 /**
- * Código curto de cada id de uma lista, numa passada (O(n log n)): os 8 primeiros
- * caracteres do id normalizado; se outro id da lista começar igual, 12, depois 16 e assim
- * por diante, até ficar único. Serve a qualquer conjunto de ids (itens do projeto, propostas).
+ * Short code of each id in a list, in one pass (O(n log n)): the first 8 characters of
+ * the normalized id; if another id in the list starts the same, 12, then 16 and so on,
+ * until it is unique. It serves any set of ids (project items, proposals).
  */
 export function shortCodesFor(ids: readonly string[]): ReadonlyMap<string, string> {
   const entries = ids
@@ -54,7 +55,7 @@ export function shortCodesFor(ids: readonly string[]): ReadonlyMap<string, strin
     .sort((a, b) => (a.norm < b.norm ? -1 : a.norm > b.norm ? 1 : 0));
   const codes = new Map<string, string>();
   entries.forEach((entry, index) => {
-    // Em ordem alfabética, o maior prefixo em comum de um item é com um vizinho.
+    // In alphabetical order, an item's longest common prefix is with a neighbor.
     const shared = Math.max(
       index > 0 ? commonPrefix(entry.norm, entries[index - 1]!.norm) : 0,
       index < entries.length - 1 ? commonPrefix(entry.norm, entries[index + 1]!.norm) : 0,
@@ -67,8 +68,8 @@ export function shortCodesFor(ids: readonly string[]): ReadonlyMap<string, strin
 }
 
 /**
- * Código curto de todos os itens de um tipo (`shortCodesFor` sobre os ids do tipo).
- * Memoizado por projeto.
+ * Short code of all the items of a kind (`shortCodesFor` over the kind's ids).
+ * Memoized per project.
  */
 export function shortCodes(p: Project, kind: ItemKind): ReadonlyMap<string, string> {
   const slot = cache.get(p) ?? {};
@@ -80,15 +81,15 @@ export function shortCodes(p: Project, kind: ItemKind): ReadonlyMap<string, stri
   return codes;
 }
 
-/** Código curto do item `id`, único entre os itens do mesmo tipo. Falha com `not-found` se o id não existir. */
+/** Short code of the item `id`, unique among the items of the same kind. Fails with `not-found` if the id does not exist. */
 export function shortCode(p: Project, kind: ItemKind, id: string): string {
   return shortCodes(p, kind).get(id) ?? fail('not-found', id);
 }
 
 /**
- * Ids que o código designa: o id cujo normalizado é exatamente o código (vence,
- * para ids curtos que são prefixo de outros) ou, na falta dele, todos os que
- * começam com o código. `kind: null` procura nos três tipos.
+ * Ids the code designates: the id whose normalized form is exactly the code (it wins,
+ * for short ids that are a prefix of others) or, failing that, all those that
+ * start with the code. `kind: null` searches all three kinds.
  */
 export function matchShortCode(
   p: Project,
@@ -107,9 +108,10 @@ export function matchShortCode(
 }
 
 /**
- * Nome da imagem que o MCP usa nos rótulos legíveis (`imageLabel`, `resolve`): o nome dado
- * ou, sem nome, o nome do arquivo sem a pasta (`images/cadastro.webp` → `cadastro.webp`). Container sem arquivo sem nome: `null` (quem chama
- * decide o texto, a app pela tradução e o MCP em português).
+ * Name of the image that the MCP uses in readable labels (`imageLabel`, `resolve`): the given
+ * name or, with no name, the file name without the folder (`images/signup.webp` →
+ * `signup.webp`). A container with no file and no name: `null` (the caller decides the text,
+ * the app through the translation and the MCP in Portuguese).
  */
 export function refImageLabel(image: {
   readonly name: string | null;
@@ -120,17 +122,17 @@ export function refImageLabel(image: {
 }
 
 export interface FormatRefArgs {
-  /** Nome da pasta do projeto. */
+  /** Name of the project's folder. */
   readonly project: string;
   readonly kind: ItemKind;
-  /** Resultado de `shortCode`. */
+  /** Result of `shortCode`. */
   readonly code: string;
 }
 
 /**
- * Segmento de URL só com o conjunto *unreserved* da RFC 3986 (`A-Z a-z 0-9 - . _ ~`): todo o
- * resto vira `%XX` maiúsculo (UTF-8). É o `encodeURIComponent` com `! ' ( ) *` também
- * codificados (`(` e `)` quebram link markdown).
+ * URL segment with only the *unreserved* set of RFC 3986 (`A-Z a-z 0-9 - . _ ~`): everything
+ * else becomes uppercase `%XX` (UTF-8). It is `encodeURIComponent` with `! ' ( ) *` also
+ * encoded (`(` and `)` break markdown links).
  */
 export function encodeRefSegment(segment: string): string {
   return encodeURIComponent(segment).replace(
@@ -139,21 +141,21 @@ export function encodeRefSegment(segment: string): string {
   );
 }
 
-/** `mapping://<projeto>/<m|i|a>/<código>`: só a URL, com o projeto codificado. */
+/** `mapping://<project>/<m|i|a>/<code>`: the URL only, with the project encoded. */
 export function formatRef({ project, kind, code }: FormatRefArgs): string {
   return `${REF_SCHEME}${encodeRefSegment(project)}/${kind}/${code}`;
 }
 
 export interface ParsedRef {
-  /** Nome da pasta do projeto; `null` quando a referência não o traz. */
+  /** Name of the project's folder; `null` when the reference does not carry it. */
   readonly project: string | null;
-  /** `null` quando só veio um código ou id: vale para qualquer tipo. */
+  /** `null` when only a code or id came: it applies to any kind. */
   readonly kind: ItemKind | null;
-  /** Código curto ou id completo, normalizado (sem hífens, minúsculo). */
+  /** Short code or full id, normalized (no hyphens, lowercase). */
   readonly code: string;
 }
 
-/** Decodifica o segmento; `null` se o `%` for inválido ou não der UTF-8. */
+/** Decodes the segment; `null` if the `%` is invalid or it is not valid UTF-8. */
 function decodeSegment(segment: string): string | null {
   try {
     return decodeURIComponent(segment);
@@ -168,11 +170,11 @@ const FULL_REF =
 const SHORT_REF = /^([mia])\/([0-9a-zA-Z_-]+)$/;
 
 /**
- * Interpreta o que o usuário ou o agente colou. Aceita:
- * - a URL estrita `mapping://projeto/m/3f2a9c1e` (projeto codificado, nada depois do código);
- * - `m/3f2a9c1e`, com o projeto informado à parte;
- * - só o código ou o id completo (com ou sem hífens).
- * Devolve `null` se o texto não tiver nenhum desses formatos.
+ * Interprets what the user or the agent pasted. It accepts:
+ * - the strict URL `mapping://project/m/3f2a9c1e` (project encoded, nothing after the code);
+ * - `m/3f2a9c1e`, with the project given separately;
+ * - just the code or the full id (with or without hyphens).
+ * Returns `null` if the text has none of these formats.
  */
 export function parseRef(text: string): ParsedRef | null {
   const input = text.trim();

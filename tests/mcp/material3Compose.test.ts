@@ -25,10 +25,10 @@ import {
   type Connection,
 } from './workspace';
 
-// Etapa Biblioteca Material 3 (MD5): o que o roteiro R17 do docs/TESTING.md confere. Uma tela
-// mapeada com a biblioteca `libraries/material3-compose/` (Scaffold, Top app bar, LazyColumn com
-// List items, um Button outlined e um FAB): `get_code_hints` devolve a árvore com os composables
-// certos, e `find_by_code` acha a variante pelo símbolo resolvido.
+// Material 3 Library stage (MD5): what script R17 of docs/TESTING.md checks. A screen
+// mapped with the library `libraries/material3-compose/` (Scaffold, Top app bar, LazyColumn with
+// List items, an outlined Button and a FAB): `get_code_hints` returns the tree with the right
+// composables, and `find_by_code` finds the variant by its resolved symbol.
 
 const LIB = join(__dirname, '../../libraries/material3-compose');
 const M3 = 'androidx.compose.material3';
@@ -61,26 +61,26 @@ let mcp: Connection;
 const ids: Record<string, string> = {};
 
 const NAMES: Record<string, string> = {
-  SC: 'Tela',
-  TB: 'Barra',
-  LC: 'Lista',
+  SC: 'Screen',
+  TB: 'Bar',
+  LC: 'List',
   L1: 'Ana',
   L2: 'Bruno',
-  BT: 'Cancelar',
-  FB: 'Novo',
+  BT: 'Cancel',
+  FB: 'New',
 };
 
-/** Tela de 360 × 800 com a árvore: Scaffold ⊃ (Top app bar, LazyColumn ⊃ 2 List items, Button, FAB). */
+/** 360 × 800 screen with the tree: Scaffold ⊃ (Top app bar, LazyColumn ⊃ 2 List items, Button, FAB). */
 function screen(): Project {
   const spec = parseSpecText(
     readFileSync(join(LIB, 'material3-compose.spec.json'), 'utf8'),
   );
-  if (!spec.ok) throw new Error('biblioteca ilegível');
+  if (!spec.ok) throw new Error('unreadable library');
   let p = applySpecialization(emptyProject(), spec.spec, {
     newId: idGen('LM'),
     packageSpecName: 'material3-compose.spec.json',
   });
-  p = addContainer(p, { id: 'TELA', file: 'images/a.png', width: 360, height: 800 });
+  p = addContainer(p, { id: 'SCREEN', file: 'images/a.png', width: 360, height: 800 });
   const add = (
     id: string,
     typeId: string,
@@ -88,7 +88,7 @@ function screen(): Project {
     rect: { x: number; y: number; width: number; height: number },
     values: Record<string, string>,
   ): void => {
-    p = createMarking(p, { id: `M${id}`, containerId: 'TELA', rect, name: NAMES[id] });
+    p = createMarking(p, { id: `M${id}`, containerId: 'SCREEN', rect, name: NAMES[id] });
     p = addTypedAnnotation(p, {
       id,
       markingId: `M${id}`,
@@ -105,12 +105,12 @@ function screen(): Project {
     height,
   });
   add('SC', 'scaffold', 'layout', r(0, 0, 360, 800), {});
-  add('TB', 'top-app-bar', 'components', r(0, 0, 360, 64), { title: 'Contatos' });
+  add('TB', 'top-app-bar', 'components', r(0, 0, 360, 64), { title: 'Contacts' });
   add('LC', 'lazy-column', 'layout', r(0, 64, 360, 560), {});
   add('L1', 'list-item', 'components', r(0, 70, 360, 56), { headlineContent: 'Ana' });
   add('L2', 'list-item', 'components', r(0, 130, 360, 56), { headlineContent: 'Bruno' });
   add('BT', 'button', 'components', r(16, 640, 140, 48), {
-    label: 'Cancelar',
+    label: 'Cancel',
     style: 'outlined',
   });
   add('FB', 'fab', 'components', r(280, 700, 56, 56), { icon: 'Add' });
@@ -121,7 +121,7 @@ beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), 'mapping-mcp-m3-'));
   const source = screen();
   for (const id of allIds(source)) ids[id] = uuidFor(id);
-  const dir = join(root, 'projetos', 'contatos');
+  const dir = join(root, 'projetos', 'contacts');
   mkdirSync(join(dir, 'images'), { recursive: true });
   writeFileSync(join(dir, 'images', 'a.png'), PNG_1X1);
   writeFileSync(
@@ -136,24 +136,24 @@ afterAll(async () => {
   await mcp?.close();
 });
 
-const mRef = (key: string) => `mapping://contatos/m/${codeOf(ids[key]!)}`;
+const mRef = (key: string) => `mapping://contacts/m/${codeOf(ids[key]!)}`;
 
 function flatten(node: HintNode): HintAnnotation[] {
   return [...(node.annotations ?? []), ...(node.children ?? []).flatMap(flatten)];
 }
 
-describe('tela mapeada com a biblioteca Material 3 (Compose)', () => {
-  it('get_code_hints devolve a árvore da tela com os composables certos', async () => {
+describe('screen mapped with the Material 3 (Compose) library', () => {
+  it('get_code_hints returns the screen tree with the right composables', async () => {
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', { ref: mRef('MSC'), platform: 'compose' }),
     );
-    // O símbolo vem do `types` (a base) e, nos tipos com `variants`, do `code` da anotação.
+    // The symbol comes from `types` (the base) and, on types with `variants`, from the annotation's `code`.
     const symbolOf = (a: HintAnnotation) => a.code?.symbol ?? hints.types[a.type]?.symbol;
     const tree = (node: HintNode): unknown => ({
       composable: (node.annotations ?? []).map((a) => symbolOf(a)).join(','),
       ...(node.children?.length ? { children: node.children.map(tree) } : {}),
     });
-    // A hierarquia vem da geometria: o Scaffold envolve tudo e o LazyColumn envolve os itens.
+    // The hierarchy comes from geometry: the Scaffold wraps everything and the LazyColumn wraps the items.
     expect(tree(hints.tree)).toEqual({
       composable: `${M3}.Scaffold`,
       children: [
@@ -168,7 +168,7 @@ describe('tela mapeada com a biblioteca Material 3 (Compose)', () => {
     });
   });
 
-  it('o Button outlined resolve para OutlinedButton no mesmo arquivo da base; types traz o cru', async () => {
+  it('the outlined Button resolves to OutlinedButton in the same file as the base; types brings the raw one', async () => {
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', { ref: mRef('MBT'), platform: 'compose' }),
     );
@@ -182,10 +182,10 @@ describe('tela mapeada com a biblioteca Material 3 (Compose)', () => {
     });
   });
 
-  it('find_by_code acha o botão outlined pelo símbolo da variante, e não pelo da base', async () => {
+  it('find_by_code finds the outlined button by the variant symbol, not the base one', async () => {
     const found = ok(
       await mcp.call<{ matches: { annotations: unknown[] }[] }>('find_by_code', {
-        project: 'contatos',
+        project: 'contacts',
         symbol: `${M3}.OutlinedButton`,
       }),
     );
@@ -193,7 +193,7 @@ describe('tela mapeada com a biblioteca Material 3 (Compose)', () => {
     expect(found.matches[0]!.annotations).toHaveLength(1);
     const base = ok(
       await mcp.call<{ matches: { annotations: unknown[] }[] }>('find_by_code', {
-        project: 'contatos',
+        project: 'contacts',
         symbol: `${M3}.Button`,
       }),
     );
@@ -201,13 +201,13 @@ describe('tela mapeada com a biblioteca Material 3 (Compose)', () => {
   });
 });
 
-describe('Top app bar sem rect: nasce com a altura do estilo (TB1, decisão 1 da #1335)', () => {
-  // A tela `TELA` tem 360 × 800. O lote vai por `propose_changes` (o mesmo lote preparado do
-  // `plan_changes`), e o retângulo da marcação nova se lê na proposta.
+describe('Top app bar without rect: born with the style height (TB1, decision 1 of #1335)', () => {
+  // The `SCREEN` screen is 360 × 800. The batch goes through `propose_changes` (the same prepared batch as
+  // `plan_changes`), and the new marking's rectangle is read from the proposal.
   const topAppBar = (extra: Record<string, unknown> = {}, values?: unknown) => ({
     op: 'create_marking',
-    as: '$barra',
-    container: `mapping://contatos/i/${codeOf(ids['TELA']!)}`,
+    as: '$bar',
+    container: `mapping://contacts/i/${codeOf(ids['SCREEN']!)}`,
     annotation: {
       type: 'material3-compose/top-app-bar',
       ...(values ? { values } : {}),
@@ -215,10 +215,10 @@ describe('Top app bar sem rect: nasce com a altura do estilo (TB1, decisão 1 da
     ...extra,
   });
   const created = async (operation: unknown) => {
-    const proposed = await propose(mcp, 'contatos', [operation]);
+    const proposed = await propose(mcp, 'contacts', [operation]);
     expect(proposed.errors ?? []).toEqual([]);
     const proposal = readProposal(
-      join(root, 'projetos', 'contatos'),
+      join(root, 'projetos', 'contacts'),
       proposed.proposal.id,
     );
     const marking = proposal.changes.find(
@@ -227,7 +227,7 @@ describe('Top app bar sem rect: nasce com a altura do estilo (TB1, decisão 1 da
     return (marking?.to ?? {}) as { rect?: { width: number; height: number } };
   };
 
-  it('sem rect, o estilo small nasce com altura 64 e a largura presa aos 360 da tela', async () => {
+  it('without rect, the small style is born with height 64 and the width tied to the screen 360', async () => {
     const m = await created(topAppBar());
     expect(m.rect).toMatchObject({ width: 360, height: 64 });
   });
@@ -235,12 +235,12 @@ describe('Top app bar sem rect: nasce com a altura do estilo (TB1, decisão 1 da
   it.each([
     ['medium', 112],
     ['large', 152],
-  ])('o estilo %s nasce com altura %i', async (style, height) => {
+  ])('the %s style is born with height %i', async (style, height) => {
     const m = await created(topAppBar({}, { style }));
     expect(m.rect).toMatchObject({ width: 360, height });
   });
 
-  it('com rect explícito, o rect manda', async () => {
+  it('with an explicit rect, the rect wins', async () => {
     const rect = { x: 0, y: 700, width: 360, height: 90 };
     const m = await created(topAppBar({ rect }));
     expect(m.rect).toEqual(rect);

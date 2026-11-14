@@ -1,5 +1,5 @@
 import schemaText from '../../docs/spec.schema.json?raw';
-import modelText from '../../examples/specs/modelo-de-dados.json?raw';
+import modelText from '../../examples/specs/data-model.json?raw';
 import sduiText from '../../examples/specs/sdui.json?raw';
 import { downloadFile } from '../storage/share';
 
@@ -9,10 +9,10 @@ export interface HelpAsset {
   readonly text: string;
 }
 
-/** Arquivos embutidos no build (a app é um único index.html, sem rede). */
+/** Files embedded in the build (the app is a single index.html, with no network). */
 export const HELP_ASSETS: readonly HelpAsset[] = [
   { id: 'sdui', fileName: 'sdui.json', text: sduiText },
-  { id: 'data-model', fileName: 'modelo-de-dados.json', text: modelText },
+  { id: 'data-model', fileName: 'data-model.json', text: modelText },
   { id: 'schema', fileName: 'spec.schema.json', text: schemaText },
 ];
 

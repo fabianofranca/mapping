@@ -1,18 +1,18 @@
 import { positionOf, syntaxError, type SourceFile } from './source';
 import type { Token, TokenKind, TokenStream } from './tokens';
 
-// Tokenizador comum das listas de parâmetros (só o que os leitores precisam, não uma gramática):
-// identificadores, números, strings (`"…"` com escape, `"""…"""`, `${…}` aninhado), caracteres,
-// comentários (o KDoc e o `///` do Swift são guardados para o `doc`) e pontuação. Os delimitadores
-// `()`, `[]` e `{}` são conferidos no arquivo inteiro; `<>` não (é genérico ou comparação).
+// Shared tokenizer of the parameter lists (only what the readers need, not a grammar):
+// identifiers, numbers, strings (`"…"` with escapes, `"""…"""`, nested `${…}`), characters,
+// comments (KDoc and Swift's `///` are kept for `doc`) and punctuation. The delimiters
+// `()`, `[]` and `{}` are checked across the whole file; `<>` is not (generic or comparison).
 
-/** O que muda de uma linguagem para outra no que o tokenizador lê. */
+/** What changes from one language to the other in what the tokenizer reads. */
 export interface Dialect {
-  /** `///` colado numa declaração é documentação (Swift); no Kotlin é um comentário comum. */
+  /** `///` attached to a declaration is documentation (Swift); in Kotlin it is a plain comment. */
   readonly lineDocs: boolean;
-  /** O que abre uma interpolação dentro de uma string: `${` (Kotlin) ou `\(` (Swift). */
+  /** What opens an interpolation inside a string: `${` (Kotlin) or `\(` (Swift). */
   readonly interpolation: '${' | '\\(';
-  /** `'x'` é um caractere (Kotlin); no Swift o apóstrofo não é nada. */
+  /** `'x'` is a character (Kotlin); in Swift the apostrophe means nothing. */
   readonly chars: boolean;
 }
 
@@ -32,20 +32,20 @@ const NUMBER =
   /(?:0[xX][0-9a-fA-F_]+|0[bB][01_]+|\d[\d_]*(?:\.\d[\d_]*)?(?:[eE][+-]?\d+)?)[fFlLuU]*/y;
 const OPEN_FOR: Readonly<Record<string, string>> = { ')': '(', ']': '[', '}': '{' };
 
-/** Casa o regex sticky em `pos` e devolve o fim, ou `pos` se não casar. */
+/** Matches the sticky regex at `pos` and returns the end, or `pos` if it does not match. */
 function endOf(regex: RegExp, text: string, pos: number): number {
   regex.lastIndex = pos;
   return regex.test(text) ? regex.lastIndex : pos;
 }
 
-/** Fim da string `"…"` ou `"""…"""` que abre em `start` (índice depois do fechamento). */
+/** End of the string `"…"` or `"""…"""` that opens at `start` (index after the closing). */
 function scanString(src: SourceFile, start: number, dialect: Dialect): number {
   return src.text.startsWith('"""', start)
     ? scanRaw(src, start, dialect)
     : scanPlain(src, start, dialect);
 }
 
-/** O tamanho do que abre uma interpolação em `i` (`${` ou `\(`), ou 0 se não abre. */
+/** The length of what opens an interpolation at `i` (`${` or `\(`), or 0 if none opens. */
 function interpolationAt(text: string, i: number, dialect: Dialect): number {
   return text.startsWith(dialect.interpolation, i) ? 2 : 0;
 }
@@ -61,7 +61,7 @@ function scanPlain(src: SourceFile, start: number, dialect: Dialect): number {
     else if (c === '\\') i += 2;
     else i++;
   }
-  throw syntaxError(src, start, 'string não terminada');
+  throw syntaxError(src, start, 'unterminated string');
 }
 
 function scanRaw(src: SourceFile, start: number, dialect: Dialect): number {
@@ -77,10 +77,10 @@ function scanRaw(src: SourceFile, start: number, dialect: Dialect): number {
     if (open > 0) i = scanTemplate(src, i + open, start, dialect);
     else i++;
   }
-  throw syntaxError(src, start, 'string não terminada');
+  throw syntaxError(src, start, 'unterminated string');
 }
 
-/** Fim da interpolação (`${…}` ou `\(…)`; índice depois do fechamento), a partir do que vem depois da abertura. */
+/** End of the interpolation (`${…}` or `\(…)`; index after the closing), from what follows the opening. */
 function scanTemplate(
   src: SourceFile,
   from: number,
@@ -102,10 +102,10 @@ function scanTemplate(
       else if (c === closer && --depth === 0) return i;
     }
   }
-  throw syntaxError(src, stringStart, 'string não terminada');
+  throw syntaxError(src, stringStart, 'unterminated string');
 }
 
-/** Fim do caractere `'x'` que abre em `start`. */
+/** End of the character `'x'` that opens at `start`. */
 function scanChar(src: SourceFile, start: number): number {
   const text = src.text;
   let i = start + 1;
@@ -114,10 +114,10 @@ function scanChar(src: SourceFile, start: number): number {
     else if (text[i] === "'") return i + 1;
     else i++;
   }
-  throw syntaxError(src, start, 'caractere não terminado');
+  throw syntaxError(src, start, 'unterminated character');
 }
 
-/** Fim do comentário de bloco (que aninha, como no Kotlin) que abre em `start`. */
+/** End of the block comment (which nests, as in Kotlin) that opens at `start`. */
 function scanBlockComment(src: SourceFile, start: number): number {
   const text = src.text;
   let depth = 0;
@@ -132,7 +132,7 @@ function scanBlockComment(src: SourceFile, start: number): number {
       if (depth === 0) return i;
     } else i++;
   }
-  throw syntaxError(src, start, 'comentário não terminado');
+  throw syntaxError(src, start, 'unterminated comment');
 }
 
 class Lexer {
@@ -152,7 +152,7 @@ class Lexer {
     const unclosed = this.opened[this.opened.length - 1];
     if (unclosed !== undefined) {
       const token = this.tokens[unclosed]!;
-      throw syntaxError(this.src, token.start, `"${token.text}" não fechado`);
+      throw syntaxError(this.src, token.start, `"${token.text}" not closed`);
     }
     return { src: this.src, tokens: this.tokens, match: this.match };
   }
@@ -176,7 +176,7 @@ class Lexer {
     else this.readPunct(c);
   }
 
-  /** Pula o comentário de linha; no Swift, `///` (e não `////`) soma ao `doc` que vai no próximo token. */
+  /** Skips the line comment; in Swift, `///` (not `////`) adds to the `doc` that goes on the next token. */
   private readLineComment(): void {
     const end = this.src.text.indexOf('\n', this.pos);
     const stop = end < 0 ? this.src.text.length : end;
@@ -198,7 +198,7 @@ class Lexer {
   private scanBacktick(): number {
     const end = this.src.text.indexOf('`', this.pos + 1);
     if (end < 0 || this.src.text.slice(this.pos, end).includes('\n')) {
-      throw syntaxError(this.src, this.pos, 'identificador entre crases não terminado');
+      throw syntaxError(this.src, this.pos, 'unterminated backtick identifier');
     }
     return end + 1;
   }
@@ -219,12 +219,12 @@ class Lexer {
     const open = this.opened.pop();
     const expected = OPEN_FOR[c]!;
     if (open === undefined)
-      throw syntaxError(this.src, token.start, `"${c}" sem abertura`);
+      throw syntaxError(this.src, token.start, `"${c}" has no opening`);
     if (this.tokens[open]!.text !== expected) {
       throw syntaxError(
         this.src,
         token.start,
-        `"${c}" não combina com o "${this.tokens[open]!.text}" aberto na linha ${this.lineOf(open)}`,
+        `"${c}" does not match the "${this.tokens[open]!.text}" opened on line ${this.lineOf(open)}`,
       );
     }
     this.match[open] = index;
@@ -250,7 +250,7 @@ class Lexer {
   }
 }
 
-/** Tokeniza o arquivo; um delimitador, string ou comentário não fechado vira erro com linha e coluna. */
+/** Tokenizes the file; an unclosed delimiter, string or comment becomes an error with line and column. */
 export function tokenize(
   src: SourceFile,
   dialect: Dialect = KOTLIN_DIALECT,

@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "dropdown-menu",
   "name": "Dropdown menu",
-  "description": "Menu em surface container com raio 4 e itens de 48; no estilo exposed, vem precedido do campo de texto (56, com rótulo, valor e seta) a que está preso.",
+  "description": "Menu on surface container with radius 4 and 48 items; in the exposed style, it is preceded by the text field (56, with label, value and arrow) it is attached to.",
   "size": {
     "width": 200,
     "height": 160
@@ -33,21 +33,21 @@
     "value": "",
     "items": [
       {
-        "text": "Editar",
+        "text": "Edit",
         "leadingIcon": "Edit",
         "trailingIcon": "",
         "enabled": "true",
         "selected": "false"
       },
       {
-        "text": "Compartilhar",
+        "text": "Share",
         "leadingIcon": "Share",
         "trailingIcon": "",
         "enabled": "true",
         "selected": "false"
       },
       {
-        "text": "Excluir",
+        "text": "Delete",
         "leadingIcon": "Delete",
         "trailingIcon": "",
         "enabled": "true",
@@ -65,7 +65,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "campo",
+        "name": "field",
         "width": "fill",
         "height": 56,
         "clip": true,
@@ -78,7 +78,7 @@
         "children": [
           {
             "type": "rect",
-            "name": "fundo",
+            "name": "background",
             "anchors": {
               "left": 0,
               "right": 0,
@@ -101,7 +101,7 @@
           },
           {
             "type": "rect",
-            "name": "indicador",
+            "name": "indicator",
             "anchors": {
               "left": 0,
               "right": 0,
@@ -142,7 +142,7 @@
           },
           {
             "type": "frame",
-            "name": "linha",
+            "name": "row",
             "anchors": {
               "left": 0,
               "right": 0,
@@ -158,7 +158,7 @@
             "children": [
               {
                 "type": "frame",
-                "name": "textos",
+                "name": "texts",
                 "width": "fill",
                 "height": "hug",
                 "layout": {
@@ -167,7 +167,7 @@
                 "children": [
                   {
                     "type": "text",
-                    "name": "rótulo",
+                    "name": "label",
                     "text": {
                       "$field": "label"
                     },
@@ -236,7 +236,7 @@
                   },
                   {
                     "type": "frame",
-                    "name": "valor (recorte)",
+                    "name": "value (clipped)",
                     "width": "fill",
                     "height": "hug",
                     "clip": true,
@@ -249,7 +249,7 @@
                     "children": [
                       {
                         "type": "text",
-                        "name": "valor",
+                        "name": "value",
                         "text": {
                           "$field": "value"
                         },
@@ -367,7 +367,7 @@
         "children": [
           {
             "type": "repeat",
-            "name": "itens",
+            "name": "items",
             "field": "items",
             "direction": "column",
             "width": "fill",
@@ -401,7 +401,7 @@
               "children": [
                 {
                   "type": "frame",
-                  "name": "conteúdo",
+                  "name": "content",
                   "width": "fill",
                   "height": "hug",
                   "minHeight": 48,
@@ -629,7 +629,7 @@
                     },
                     {
                       "type": "text",
-                      "name": "texto",
+                      "name": "text",
                       "text": {
                         "$field": "text"
                       },
@@ -934,7 +934,7 @@
                 },
                 {
                   "type": "rect",
-                  "name": "estado",
+                  "name": "state",
                   "fill": {
                     "$token": "on-secondary-container"
                   },
@@ -970,7 +970,7 @@
                 },
                 {
                   "type": "rect",
-                  "name": "anel de foco",
+                  "name": "focus ring",
                   "fill": "none",
                   "stroke": {
                     "color": {

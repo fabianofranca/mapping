@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "icon",
   "name": "Icon",
-  "description": "Ícone de 24 dp do conjunto Material Icons (Filled) da biblioteca, na cor de tint; nome fora do conjunto desenha o reservado e avisa.",
+  "description": "24 dp icon from the library's Material Icons set (Filled), in the tint color; a name outside the set draws the placeholder and warns.",
   "size": {
     "width": 24,
     "height": 24

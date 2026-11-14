@@ -4,15 +4,15 @@ import { describeCitation, useCitationContext } from './citationContext';
 import { goToCitation } from './citationNav';
 
 interface CitationChipProps {
-  /** O destino `mapping://…` da citação, como está no texto. */
+  /** The citation's `mapping://…` target, as it is in the text. */
   readonly url: string;
-  /** O rótulo entre colchetes: a reserva de quando o alvo não existe mais. */
+  /** The label in brackets: the fallback for when the target no longer exists. */
   readonly label: string;
 }
 
 /**
- * O chip vivo de uma citação numa mensagem (decisões 28 e 29): mostra o nome de agora do alvo
- * e leva até ele ao clicar. Alvo apagado: chip riscado com o rótulo de reserva e a dica.
+ * The live chip of a citation in a message (decisions 28 and 29): shows the target's current name
+ * and goes to it on click. Deleted target: struck-through chip with the fallback label and the tip.
  */
 export function CitationChip({ url, label }: CitationChipProps) {
   const editor = useEditor();

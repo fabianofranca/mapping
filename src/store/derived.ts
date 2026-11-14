@@ -85,112 +85,114 @@ import {
 } from './threadDerived';
 import { visibleLayers, type EditorUi } from './ui';
 
-// Estado derivado do editor (docs/ARCHITECTURE.md, "Desempenho"): calculado uma vez a partir do projeto
-// e da UI e lido por canvas, painel e lista. Nada aqui depende do viewport, então
-// pan e zoom não recalculam nada disto.
+// Derived editor state (docs/ARCHITECTURE.md, "Performance"): computed once from the project
+// and the UI and read by the canvas, panel and list. Nothing here depends on the viewport, so
+// pan and zoom recompute none of it.
 
 export interface EditorDerived {
-  /** A perspectiva aberta (`null` = a Principal): a interface lê o nome e as camadas dela. */
+  /** The open perspective (`null` = the Main one): the interface reads its name and layers. */
   readonly perspective: ReadonlySignal<Perspective | null>;
   /**
-   * Camadas visíveis, na ordem do projeto (podem ser nenhuma). Com perspectiva aberta, as
-   * escondidas são as dela; na Principal, as da interface (`ui.hiddenLayers`).
+   * Visible layers, in project order (there may be none). With a perspective open, the
+   * hidden ones are its own; in the Main one, the interface's (`ui.hiddenLayers`).
    */
   readonly visibleLayers: ReadonlySignal<readonly Layer[]>;
-  /** Pendências por anotação (só as incompletas). */
+  /** Pending items per annotation (only the incomplete ones). */
   readonly issues: ReadonlySignal<ReadonlyMap<string, readonly AnnotationIssue[]>>;
-  /** Anotações de cada marcação, na ordem do projeto. */
+  /** Annotations of each marking, in project order. */
   readonly annotationsByMarking: ReadonlySignal<
     ReadonlyMap<string, readonly Annotation[]>
   >;
   /**
-   * As marcações do projeto à vista por espaço (o id do container; `null` = o canvas), na ordem
-   * do projeto: as candidatas a âncora de uma marcação são as do mesmo espaço (`canAnchorTo`).
-   * O mesmo mapa enquanto o projeto não muda.
+   * The markings of the project in view by space (the container id; `null` = the canvas), in
+   * project order: the candidates for a marking's anchor are those of the same space (`canAnchorTo`).
+   * The same map while the project does not change.
    */
   readonly markingsBySpace: ReadonlySignal<
     ReadonlyMap<string | null, readonly Marking[]>
   >;
-  /** Indicadores (bolinhas) de cada marcação nas camadas visíveis. */
+  /** Indicators (dots) of each marking in the visible layers. */
   readonly layerDots: ReadonlySignal<ReadonlyMap<string, readonly LayerDot[]>>;
-  /** Visibilidade de cada marcação segundo o modo de exibição e as camadas visíveis. */
+  /** Visibility of each marking according to the display mode and the visible layers. */
   readonly markingVisibility: ReadonlySignal<ReadonlyMap<string, MarkingVisibility>>;
   /**
-   * A visibilidade que o canvas desenha. Fora do modo visualização é `markingVisibility`; no modo
-   * todas as marcações são inteiras (o filtro não vale e esconder o contorno não esconde a
-   * marcação para a seta): quem decide o que aparece é o painel.
+   * The visibility the canvas draws. Outside view mode it is `markingVisibility`; in view mode
+   * all markings are whole (the filter does not apply and hiding the outline does not hide the
+   * marking for the arrow): the panel decides what appears.
    */
   readonly canvasVisibility: ReadonlySignal<ReadonlyMap<string, MarkingVisibility>>;
-  /** Marcações com anotação incompleta numa camada visível (alerta no canvas). */
+  /** Markings with an incomplete annotation in a visible layer (alert on the canvas). */
   readonly incompleteMarkings: ReadonlySignal<ReadonlySet<string>>;
-  /** Marcações com a geometria travada (própria ou herdada do pai); as livres não aparecem. */
+  /** Markings with locked geometry (own or inherited from the parent); free ones do not appear. */
   readonly markingLocks: ReadonlySignal<ReadonlyMap<string, MarkingLockState>>;
-  /** Há alguma imagem ou marcação com a geometria travada (atalho para não calcular à toa). */
+  /** Whether any image or marking has locked geometry (shortcut to avoid computing needlessly). */
   readonly hasLocks: ReadonlySignal<boolean>;
-  /** Dados da Visão de Lista, com os filtros dela. */
+  /** List View data, with its filters. */
   readonly listing: ReadonlySignal<readonly ListedImage[]>;
-  /** Pendências agrupadas por imagem, para a janela Incompletas (B5). */
+  /** Pending items grouped by image, for the Incomplete window (B5). */
   readonly incompleteList: ReadonlySignal<readonly IncompleteImage[]>;
-  /** Quantas anotações estão incompletas no projeto (todas as camadas). */
+  /** How many annotations are incomplete in the project (all layers). */
   readonly incompleteCount: ReadonlySignal<number>;
-  /** Avisos da especialização com as anotações afetadas, para a janela Avisos (etapa #486). */
+  /** Specialization notices with the affected annotations, for the Notices window (stage #486). */
   readonly noticeList: ReadonlySignal<readonly NoticeGroup[]>;
-  /** Contagens de anotações com aviso (por `kind` e no total), com os filtros da janela. */
+  /** Counts of annotations with a notice (by `kind` and in total), with the window's filters. */
   readonly noticeCounts: ReadonlySignal<NoticeCounts>;
-  /** Quantas anotações têm algum aviso (aba da janela e barra de status; sem filtros). */
+  /** How many annotations have some notice (window tab and status bar; without filters). */
   readonly noticedCount: ReadonlySignal<number>;
-  /** Conversas ancoradas (etapa Comentários): linhas da janela, contagens e conversas por item. */
+  /** Anchored threads (Comments stage): window rows, counts and threads per item. */
   readonly threads: ThreadDerived;
   /**
-   * Sugestão de densidade de cada container pelos tamanhos prontos das especializações aplicadas
-   * (`suggestDensity`; só os containers com sugestão aparecem). Depende só dos containers e das
-   * especializações, nunca do viewport: pan e zoom não a recalculam, e a mesma tabela volta
-   * enquanto nada disso muda.
+   * Density suggestion for each container from the ready-made sizes of the applied specializations
+   * (`suggestDensity`; only containers with a suggestion appear). It depends only on the containers and
+   * specializations, never on the viewport: pan and zoom do not recompute it, and the same table
+   * comes back
+   * while none of that changes.
    */
   readonly densitySuggestions: ReadonlySignal<ReadonlyMap<string, DensitySuggestion>>;
-  /** Componentes das especializações aplicadas ao projeto (vazio enquanto não carregam). */
+  /** Components of the specializations applied to the project (empty while they load). */
   readonly catalog: ReadonlySignal<ComponentCatalog>;
   /**
-   * Desenhos dos componentes do projeto à vista, por marcação, em ordem de desenho. Uma edição
-   * reinstancia só a marcação mudada; as demais mantêm o mesmo objeto (o canvas compara por
-   * identidade). Segue o desfazer, a recarga externa e a visão Proposto da revisão.
+   * Drawings of the components of the project in view, per marking, in drawing order. An edit
+   * re-instantiates only the changed marking; the others keep the same object (the canvas compares by
+   * identity). It follows undo, external reload and the review's Proposed view.
    */
   readonly componentScenes: ReadonlySignal<ComponentDrawings>;
   /**
-   * Desenhos de `p` (o canvas desenha o projeto com a prévia do gesto). O projeto à vista
-   * devolve `componentScenes`; outro projeto usa o mesmo cache, e só a marcação que mudou
-   * é reinstanciada. Lê os mesmos sinais: pode ser chamada dentro de um `computed`.
+   * Drawings of `p` (the canvas draws the project with the gesture preview). The project in view
+   * returns `componentScenes`; another project uses the same cache, and only the marking that changed
+   * is re-instantiated. It reads the same signals: it can be called inside a `computed`.
    */
   drawingsOf(p: Project | null): ComponentDrawings;
   /**
-   * Marcações cujo desenho está visível: têm desenho, a imagem é um container sem arquivo ou a pessoa
-   * ligou "desenhar sobre fotos", e a visibilidade delas não é `hidden`.
+   * Markings whose drawing is visible: they have a drawing, the image is a container without a file
+   * or the person
+   * turned on "draw over photos", and their visibility is not `hidden`.
    */
   readonly drawnMarkings: ReadonlySignal<ReadonlySet<string>>;
   /**
-   * Camadas do projeto que desenham: as que têm algum tipo com componente (`componentTypes`),
-   * na ordem do projeto. Livres e só de dados não entram. Lista do painel do modo visualização.
+   * Layers of the project that draw: those with some type with a component (`componentTypes`),
+   * in project order. Free and data-only ones do not enter. List of the view mode panel.
    */
   readonly drawingLayers: ReadonlySignal<readonly Layer[]>;
-  /** Tamanho mínimo de cada marcação que desenha componente: o `minSize` dele ou 1×1. */
+  /** Minimum size of each marking that draws a component: its `minSize` or 1×1. */
   readonly componentMinSizes: ReadonlySignal<
     ReadonlyMap<string, { readonly width: number; readonly height: number }>
   >;
   /**
-   * Marcações flutuantes do projeto à vista (v13): desenhadas acima de tudo. O mesmo conjunto
-   * enquanto nenhuma muda, para o canvas não refazer a camada de componentes à toa.
+   * Floating markings of the project in view (v13): drawn above everything. The same set
+   * while none changes, so the canvas does not rebuild the components layer needlessly.
    */
   readonly floatingMarkings: ReadonlySignal<ReadonlySet<string>>;
   /**
-   * Origens das imagens remotas usadas pelos componentes do projeto à vista (a política da URL
-   * com os interruptores atuais já aplicada). Segue a visão Proposto da revisão.
+   * Origins of the remote images used by the components of the project in view (the URL policy
+   * with the current switches already applied). It follows the review's Proposed view.
    */
   readonly remoteImageOrigins: ReadonlySignal<readonly RemoteImageOrigin[]>;
-  /** As origens de `remoteImageOrigins` que ainda pedem consentimento e não foram dispensadas. */
+  /** The origins of `remoteImageOrigins` that still ask for consent and were not dismissed. */
   readonly pendingImageOrigins: ReadonlySignal<readonly RemoteImageOrigin[]>;
-  /** Tipos com componente das especializações aplicadas, para a paleta. */
+  /** Types with a component from the applied specializations, for the palette. */
   readonly componentTypes: ReadonlySignal<readonly ComponentType[]>;
-  /** Avisos do desenho de cada marcação que tem algum (Diagnóstico). */
+  /** Drawing notices of each marking that has any (Diagnostics). */
   readonly componentWarnings: ReadonlySignal<
     readonly {
       readonly markingId: string;
@@ -199,18 +201,18 @@ export interface EditorDerived {
   >;
 }
 
-/** Uma origem de imagem remota usada pelo projeto. */
+/** A remote image origin used by the project. */
 export interface RemoteImageOrigin {
   readonly origin: string;
-  /** Rede local: sempre pede consentimento próprio. */
+  /** Local network: always asks for its own consent. */
   readonly local: boolean;
-  /** `http:` (sem criptografia). */
+  /** `http:` (unencrypted). */
   readonly insecure: boolean;
 }
 
 const NO_IMAGE_ORIGINS: readonly RemoteImageOrigin[] = [];
 
-/** URLs remotas por desenho (a cena é imutável): evita varrer o projeto a cada edição. */
+/** Remote URLs per drawing (the scene is immutable): avoids sweeping the project on every edit. */
 const sceneUrls = new WeakMap<object, readonly string[]>();
 function urlsOfScene(root: SceneNode): readonly string[] {
   let urls = sceneUrls.get(root);
@@ -221,10 +223,10 @@ function urlsOfScene(root: SceneNode): readonly string[] {
   return urls;
 }
 
-/** O que a sessão entrega ao derivado sobre os componentes (`session.components`). */
+/** What the session hands to the derived state about the components (`session.components`). */
 export interface ComponentSources {
   readonly catalog: ReadonlySignal<ComponentCatalog>;
-  /** Sobe a cada registro de fontes: os desenhos remedem. */
+  /** Rises on every font registration: the drawings are remeasured. */
   readonly fontsEpoch: ReadonlySignal<number>;
 }
 
@@ -237,14 +239,14 @@ function hiddenVisibility(p: Project): ReadonlyMap<string, MarkingVisibility> {
   return new Map(p.markings.map((m) => [m.id, 'hidden' as const]));
 }
 
-/** Todas as marcações inteiras, uma vez por versão do projeto (o modo visualização). */
+/** All the whole markings, once per project version (view mode). */
 const fullVisibility = memoByProject(
   (p: Project): ReadonlyMap<string, MarkingVisibility> =>
     new Map(p.markings.map((m) => [m.id, 'full' as const])),
 );
 const NO_LAYER_IDS: ReadonlySet<string> = new Set();
 
-/** As camadas do projeto de onde veio algum dos tipos com componente (na ordem do projeto). */
+/** The project's layers from which any of the component types came (in project order). */
 function layersWithDrawing(
   layers: readonly Layer[],
   types: readonly ComponentType[],
@@ -256,9 +258,9 @@ function layersWithDrawing(
 }
 
 /**
- * Marcações cujo desenho pode aparecer: o do canvas (sem foto por baixo) sempre; o de um container
- * sem arquivo sempre; o de uma foto só com a opção ligada. `hiddenLayers`: camadas com desenho
- * desmarcadas no modo visualização.
+ * Markings whose drawing may appear: the canvas's (no photo underneath) always; that of a container
+ * without a file always; that of a photo only with the option on. `hiddenLayers`: layers with drawings
+ * unchecked in view mode.
  */
 function drawnIds(
   all: ComponentDrawings,
@@ -269,8 +271,8 @@ function drawnIds(
   const result = new Set<string>();
   for (const [id, drawing] of all) {
     if (hiddenLayers.has(drawing.layerId)) continue;
-    // Marcação do canvas (v13): sem foto por baixo do espaço dela, o desenho aparece sempre
-    // (a flutuante, em especial, "sobre tudo, inclusive sobre fotos").
+    // Canvas marking (v13): no photo under its space, the drawing always appears
+    // (the floating one, in particular, "over everything, including over photos").
     if (drawing.containerId === null) {
       result.add(id);
       continue;
@@ -365,20 +367,21 @@ function sameComponentTypes(
   );
 }
 
-/** Mesmos itens na mesma ordem. */
+/** Same items in the same order. */
 function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
   return a.length === b.length && a.every((item, i) => item === b[i]);
 }
 
 /**
- * `shown`: o projeto à vista (`review.derived.shownProject`): na visão Proposto da revisão,
- * o "como ficaria"; senão, o confirmado. Sem ele (testes do editor sem revisão), o
- * confirmado. Nunca o projeto com a prévia do gesto: nada daqui depende de geometria,
- * então arrastar/redimensionar não recalcula nada (`drawingsOf` é a exceção: o canvas pede os
- * desenhos do projeto com a prévia do gesto). `components`: catálogo e época das fontes da
- * sessão; sem ele, o catálogo é vazio e nenhuma marcação tem desenho. `perspective`: a perspectiva
- * aberta (`null` = a Principal); sem ela, a Principal. O projeto à vista (`shown`) já vem recortado
- * por ela (`review.derived.shownProject`); aqui ela decide as camadas escondidas.
+ * `shown`: the project in view (`review.derived.shownProject`): in the review's Proposed view,
+ * the "as it would be"; otherwise, the confirmed one. Without it (editor tests without a review), the
+ * confirmed one. Never the project with the gesture preview: nothing here depends on geometry,
+ * so dragging/resizing recomputes nothing (`drawingsOf` is the exception: the canvas asks for the
+ * drawings of the project with the gesture preview). `components`: catalog and fonts epoch of the
+ * session; without it, the catalog is empty and no marking has a drawing. `perspective`: the open
+ * perspective (`null` = the Main one); without it, the Main one. The project in view (`shown`)
+ * already comes clipped
+ * by it (`review.derived.shownProject`); here it decides the hidden layers.
  */
 export function createEditorDerived(
   store: ProjectStore,
@@ -390,8 +393,8 @@ export function createEditorDerived(
 ): EditorDerived {
   const project = shown;
 
-  // Devolve a lista anterior quando as camadas são as mesmas: quem depende dela
-  // (indicadores, cartões do canvas) não recalcula a cada edição que não mexe nelas.
+  // Returns the previous list when the layers are the same: whoever depends on it
+  // (indicators, canvas cards) does not recompute on every edit that does not touch them.
   let lastVisible: readonly Layer[] = [];
   const visible = computed(() => {
     const open = perspective.value;
@@ -401,12 +404,13 @@ export function createEditorDerived(
     return lastVisible;
   });
 
-  // Um só cache para os desenhos do projeto à vista e os do projeto com a prévia do gesto:
-  // a marcação arrastada é a única reinstanciada, e as demais mantêm o mesmo objeto.
+  // A single cache for the drawings of the project in view and those of the project with the
+  // gesture preview:
+  // the dragged marking is the only one re-instantiated, and the others keep the same object.
   const drawingCache = createDrawingCache();
   const drawings = (p: Project | null): ComponentDrawings => {
     const catalog = components.catalog.value;
-    // Sem componentes (a maioria dos projetos) não há o que percorrer a cada edição.
+    // Without components (most projects) there is nothing to traverse on every edit.
     if (catalog.size === 0) return NO_DRAWINGS;
     return drawingCache(
       p,
@@ -420,8 +424,9 @@ export function createEditorDerived(
   const drawingsOf = (p: Project | null): ComponentDrawings =>
     p === project.value ? scenes.value : drawings(p);
 
-  // Pendências do modelo mais "o componente não cabe" (só o desenho sabe). Sem desenho que
-  // transborde, é o mapa do modelo; com ele, o mapa anterior se nada mudou.
+  // Model pending items plus "the component does not fit" (only the drawing knows). Without a
+  // drawing that
+  // overflows, it is the model's map; with one, the previous map if nothing changed.
   let lastIssues: ReadonlyMap<string, readonly AnnotationIssue[]> = NO_ISSUES;
   const issues = computed(() => {
     const p = project.value;
@@ -460,22 +465,25 @@ export function createEditorDerived(
     return p ? layerDotsByMarking(p, visible.value) : NO_DOTS;
   });
 
-  // Camadas com desenho desmarcadas no painel do modo visualização; vazio fora do modo. O mesmo
-  // conjunto enquanto a pessoa não marca camada: mudar contorno, nome ou setas não passa por aqui.
+  // Layers with drawings unchecked in the view mode panel; empty outside the mode. The same
+  // set while the person does not check a layer: changing outline, name or arrows does not pass
+  // through here.
   const hiddenDrawingLayers = computed(() =>
     ui.viewMode.value ? ui.viewShow.value.hiddenDrawingLayers : NO_LAYER_IDS,
   );
 
-  // Marcações cujo desenho pode aparecer: container sem arquivo, ou foto com a opção ligada. Não depende
-  // da visibilidade: ao contrário, o filtro "sem anotação" não esconde o que desenha. No modo
-  // visualização, as camadas desmarcadas no painel tiram os desenhos delas (o cache não muda).
+  // Markings whose drawing may appear: container without a file, or a photo with the option on. It
+  // does not depend
+  // on visibility: on the contrary, the "no annotation" filter does not hide what draws. In view
+  // mode, the layers unchecked in the panel remove their drawings (the cache does not change).
   const drawn = computed((): ReadonlySet<string> => {
     const all = scenes.value;
     const p = project.value;
     const hiddenLayers = hiddenDrawingLayers.value;
     if (!p) return NO_DRAWN;
-    // Marcação de tipo estrutural (v15): não desenha, mas conta como desenhada para o contorno
-    // (só com mouse ou seleção) e para o nome (sem cabeçalho); o resto do canvas não muda.
+    // Structural-type marking (v15): it does not draw, but counts as drawn for the outline
+    // (only with mouse or selection) and for the name (without a header); the rest of the canvas
+    // does not change.
     const structural = structuralMarkingIds(p);
     if (all.size === 0 && structural.size === 0) return NO_DRAWN;
     const ids = drawnIds(
@@ -517,8 +525,8 @@ export function createEditorDerived(
   const visibility = computed(() => {
     const p = project.value;
     if (!p) return NO_VISIBILITY;
-    // Modo visualização: nada se seleciona, então nenhuma marcação aparece ao toque (os
-    // componentes desenhados seguem em `drawn`; o que o canvas desenha é `canvasVisibility`).
+    // View mode: nothing is selected, so no marking appears on touch (the
+    // drawn components stay in `drawn`; what the canvas draws is `canvasVisibility`).
     if (ui.viewMode.value) return hiddenVisibility(p);
     const selection = ui.selection.value;
     return markingVisibility(
@@ -530,8 +538,9 @@ export function createEditorDerived(
     );
   });
 
-  // O que o canvas desenha: igual ao filtro fora do modo; no modo, todas inteiras (o filtro não
-  // vale, e esconder o contorno não esconde a marcação para a seta).
+  // What the canvas draws: equal to the filter outside the mode; in the mode, all whole (the filter
+  // does not
+  // apply, and hiding the outline does not hide the marking for the arrow).
   const canvasVisibility = computed(() => {
     const p = project.value;
     if (!ui.viewMode.value) return visibility.value;
@@ -572,7 +581,7 @@ export function createEditorDerived(
     });
   });
 
-  // Com "Só camadas visíveis" a lista acompanha o filtro de camadas do canvas.
+  // With "Visible layers only" the list follows the canvas layer filter.
   const incompleteList = computed((): readonly IncompleteImage[] => {
     const p = project.value;
     if (!p) return [];
@@ -585,8 +594,8 @@ export function createEditorDerived(
 
   const incompleteCount = computed(() => issues.value.size);
 
-  // Avisos da especialização (etapa #486): lidos de `model/noticeList.ts`, memoizado pela versão
-  // do projeto; só a escolha dos filtros e das camadas visíveis é recalculada, nunca pan ou zoom.
+  // Specialization notices (stage #486): read from `model/noticeList.ts`, memoized by the project
+  // version; only the choice of filters and visible layers is recomputed, never pan or zoom.
   const noticeFilters = computed(() => ({
     inUseOnly: ui.noticesInUseOnly.value,
     onlyLayers: ui.noticesVisibleOnly.value ? visible.value : undefined,
@@ -689,8 +698,8 @@ export function createEditorDerived(
     return lastTypes;
   });
 
-  // Camadas do projeto com algum tipo com componente (livres e só de dados ficam de fora). A
-  // lista anterior volta enquanto são as mesmas camadas: o painel do modo não redesenha à toa.
+  // Project layers with some type with a component (free and data-only ones are left out). The
+  // previous list comes back while they are the same layers: the mode panel does not redraw needlessly.
   let lastDrawingLayers = NO_LAYERS;
   const drawingLayers = computed((): readonly Layer[] => {
     const p = project.value;
@@ -701,9 +710,9 @@ export function createEditorDerived(
     return lastDrawingLayers;
   });
 
-  // As duas listas em computeds próprios: edição que não troca nenhuma delas (a maioria) não
-  // recalcula nada. A tabela anterior volta enquanto as sugestões são as mesmas: o painel dos
-  // Detalhes não redesenha a cada edição que não mexe nos containers.
+  // The two lists in their own computeds: an edit that changes neither of them (most) does not
+  // recompute anything. The previous table comes back while the suggestions are the same: the
+  // Details panel does not redraw on every edit that does not touch the containers.
   const containersOnly = computed(() => project.value?.containers);
   const specializationsOnly = computed(() => project.value?.specializations);
   let lastSuggestions = NO_DENSITY_SUGGESTIONS;
@@ -773,104 +782,107 @@ export function createEditorDerived(
 }
 
 // ---------------------------------------------------------------------------
-// Revisão de propostas (etapa 4)
+// Proposal review (stage 4)
 
-/** Visão do canvas (e da Árvore) na revisão: o projeto como está ou "como ficaria". */
+/** Canvas (and Tree) view in the review: the project as it is or "as it would be". */
 export type ReviewView = 'current' | 'proposed';
 
 /**
- * De onde o estado derivado da revisão lê: as propostas da sessão e o que a interface
- * escolheu (proposta aberta, visão, filtros, propostas que este dispositivo já abriu).
+ * Where the review's derived state reads from: the session's proposals and what the interface
+ * chose (open proposal, view, filters, proposals this device has already opened).
  */
 export interface ReviewSources {
   readonly proposals: ReadonlySignal<readonly Proposal[]>;
   readonly proposalId: ReadonlySignal<string | null>;
   readonly view: ReadonlySignal<ReviewView>;
   readonly filters: ReadonlySignal<ReviewFilters>;
-  /** Propostas já abertas neste dispositivo (ids), para a marca "Nova". */
+  /** Proposals already opened on this device (ids), for the "New" mark. */
   readonly seen: ReadonlySignal<ReadonlySet<string>>;
   /**
-   * Id da perspectiva aberta (`session.perspective.id`; `null` = a Principal). Sem ele, a
-   * Principal. A revisão trava a Principal, então ele é `null` enquanto há proposta aberta.
+   * Id of the open perspective (`session.perspective.id`; `null` = the Main one). Without it, the
+   * Main one. The review locks the Main one, so it is `null` while a proposal is open.
    */
   readonly perspectiveId?: ReadonlySignal<string | null>;
 }
 
-/** Contagens da proposta aberta (a faixa de revisão e a janela Propostas). */
+/** Counts of the open proposal (the review strip and the Proposals window). */
 export interface ReviewCounts {
   readonly total: number;
-  /** Sem decisão. */
+  /** Undecided. */
   readonly undecided: number;
-  /** Aceitas (inclui as já aplicadas). */
+  /** Accepted (includes those already applied). */
   readonly accepted: number;
   readonly rejected: number;
   readonly applied: number;
-  /** Aceitas aguardando aplicação ("5 aceitas aguardando aplicação"). */
+  /** Accepted and awaiting application ("5 accepted awaiting application"). */
   readonly acceptedPending: number;
   readonly conflicts: number;
-  /** Revisadas pelo agente e ainda sem decisão (a marca "Revisada"). */
+  /** Reviewed by the agent and still undecided (the "Reviewed" mark). */
   readonly revised: number;
 }
 
-/** O que uma mudança é no projeto atual, sem a decisão (que muda a cada clique). */
+/** What a change is in the current project, without the decision (which changes on every click). */
 export type ChangeSituation = Omit<ChangeStatus, 'decision'>;
 
-/** Uma proposta substituída: quem a substituiu, o que ficou para trás e como se compara. */
+/** A superseded proposal: who superseded it, what was left behind and how it compares. */
 export interface Supersession {
-  /** A proposta que a substitui; `null` se ela não está mais na pasta. */
+  /** The proposal that supersedes it; `null` if it is no longer in the folder. */
   readonly by: Proposal | null;
   readonly leftBehind: LeftBehind;
-  /** Cada mudança da antiga em relação à nova (igual, diferente ou não consta); `null` sem a nova. */
+  /**
+   * Each change of the old one relative to the new one (equal, different or absent); `null` without
+   * the new one.
+   */
   readonly comparison: ReadonlyMap<string, ChangeComparison> | null;
 }
 
-/** Uma linha da janela Propostas. */
+/** A row of the Proposals window. */
 export interface ProposalRow {
   readonly proposal: Proposal;
   readonly progress: ReviewProgress;
   readonly conflicts: number;
-  /** Aberta e ainda sem decisões, notas nem abertura neste dispositivo: a que acabou de chegar. */
+  /** Open and still without decisions, notes or opening on this device: the one that just arrived. */
   readonly fresh: boolean;
-  /** Mudanças com a marca "Revisada" e sem decisão numa proposta aberta (etapa #644). */
+  /** Changes with the "Reviewed" mark and without a decision in an open proposal (stage #644). */
   readonly revised: number;
-  /** Substituída: o que ficou para trás (`null` nas demais). */
+  /** Superseded: what was left behind (`null` for the others). */
   readonly leftBehind: LeftBehind | null;
   /**
-   * A proposta que aponta `supersedes` para esta, se estiver na pasta: derivado da nova,
-   * qualquer que seja o status desta (uma aplicada é histórico e não muda de status).
+   * The proposal that `supersedes` points to this one, if it is in the folder: derived from the new one,
+   * whatever this one's status is (an applied one is history and does not change status).
    */
   readonly supersededBy: Proposal | null;
 }
 
 /**
- * Mudanças de uma entidade (marcação, imagem, anotação ou camada), para os marcadores dos
- * Detalhes na revisão: a criação ou a remoção dela inteira e as alterações por campo.
+ * Changes of an entity (marking, image, annotation or layer), for the markers of the
+ * Details in the review: the creation or removal of the whole entity and the per-field changes.
  */
 export interface EntityChanges {
   readonly entity: ChangeEntity;
-  /** Criação ou remoção da entidade inteira; `null` se só há alterações de campo. */
+  /** Creation or removal of the whole entity; `null` if there are only field changes. */
   readonly whole: Change | null;
   /**
-   * Alterações por campo, como em `Change.field`: `name`, `rect`, `parentId`, `file`,
+   * Per-field changes, as in `Change.field`: `name`, `rect`, `parentId`, `file`,
    * `markingColor`, `parentAnnotationId`, `markingId`, `layerId`, `type`,
-   * `values.<chave>` (campo da tipada) e `entries.<id>` (par da livre).
+   * `values.<key>` (typed annotation field) and `entries.<id>` (free annotation pair).
    */
   readonly fields: ReadonlyMap<string, Change>;
 }
 
 /**
- * Índice "mudanças por entidade e campo" da proposta aberta (fase 9.5): só depende das
- * mudanças, então decidir não o recalcula. Especialização e repositório (sem painel nos
- * Detalhes) ficam de fora.
+ * "Changes by entity and field" index of the open proposal (phase 9.5): it only depends on the
+ * changes, so deciding does not recompute it. Specialization and repository (no panel in the
+ * Details) are left out.
  */
 export interface FieldChangeIndex {
-  /** Por id da entidade. */
+  /** By entity id. */
   readonly entities: ReadonlyMap<string, EntityChanges>;
-  /** Mudanças de anotação de cada marcação em que aparecem (`Change.markingId`), na ordem da proposta. */
+  /** Annotation changes of each marking they appear in (`Change.markingId`), in proposal order. */
   readonly annotationsOf: ReadonlyMap<string, readonly Change[]>;
   /**
-   * Anotações que saem de cada marcação (pelo id da marcação de antes): a remoção e a troca
-   * de marcação (`markingId`). São os "fantasmas" da visão Proposto.
+   * Annotations leaving each marking (by the id of the marking before): the removal and the swap
+   * of marking (`markingId`). They are the "ghosts" of the Proposed view.
    */
   readonly leaving: ReadonlyMap<string, readonly Change[]>;
 }
@@ -889,14 +901,14 @@ const NO_FIELD_INDEX: FieldChangeIndex = {
   leaving: new Map(),
 };
 
-/** Acrescenta `item` à lista de `key` no mapa. */
+/** Adds `item` to the `key` list in the map. */
 function pushTo<K, V>(map: Map<K, V[]>, key: K, item: V): void {
   const list = map.get(key);
   if (list) list.push(item);
   else map.set(key, [item]);
 }
 
-/** Monta o índice "mudanças por entidade e campo" (função pura das mudanças). */
+/** Builds the "changes by entity and field" index (a pure function of the changes). */
 export function fieldChangeIndex(changes: readonly Change[]): FieldChangeIndex {
   const entities = new Map<
     string,
@@ -912,7 +924,7 @@ export function fieldChangeIndex(changes: readonly Change[]): FieldChangeIndex {
       entities.set(c.entityId, entry);
     }
     if (c.kind === 'update' && c.field !== null) {
-      // Um campo, uma mudança: a primeira vale (uma proposta editada à mão pode repetir).
+      // One field, one change: the first one counts (a hand-edited proposal may repeat).
       if (!entry.fields.has(c.field)) entry.fields.set(c.field, c);
     } else if (entry.whole === null) {
       entry.whole = c;
@@ -928,82 +940,86 @@ export function fieldChangeIndex(changes: readonly Change[]): FieldChangeIndex {
 }
 
 export interface ReviewDerived {
-  /** Proposta aberta na revisão (a versão mais recente da sessão). */
+  /** Proposal open in the review (the session's newest version). */
   readonly proposal: ReadonlySignal<Proposal | null>;
-  /** Todas as propostas com contagens, para a janela Propostas, a mais nova primeiro. */
+  /** All the proposals with counts, for the Proposals window, newest first. */
   readonly rows: ReadonlySignal<readonly ProposalRow[]>;
-  /** Propostas novas (ainda sem decisão, nota nem abertura): o selo e o aviso. */
+  /** New proposals (still without a decision, note or opening): the badge and the notice. */
   readonly freshIds: ReadonlySignal<readonly string[]>;
-  /** Níveis Projeto → Imagem → Item (memoizado pelas mudanças e pelo projeto, não pelas decisões). */
+  /** Levels Project → Image → Item (memoized by the changes and the project, not by the decisions). */
   readonly tree: ReadonlySignal<ReviewTree | null>;
-  /** Posição de cada mudança na proposta. */
+  /** Position of each change in the proposal. */
   readonly order: ReadonlySignal<ReadonlyMap<string, number>>;
-  /** Tipo de cada mudança. */
+  /** Kind of each change. */
   readonly changeTypes: ReadonlySignal<ReadonlyMap<string, ChangeType>>;
-  /** Tipo dominante de cada nível (`reviewKey`), para os selos da Árvore e da lista. */
+  /** Dominant kind of each level (`reviewKey`), for the Tree and list badges. */
   readonly levelTypes: ReadonlySignal<ReadonlyMap<string, ChangeType>>;
-  /** Conflito, valor atual e aviso de item trancado de cada mudança. */
+  /** Conflict, current value and locked-item warning of each change. */
   readonly situation: ReadonlySignal<ReadonlyMap<string, ChangeSituation>>;
   readonly conflictIds: ReadonlySignal<ReadonlySet<string>>;
-  /** Mudanças com a marca "Revisada" e sem decisão (`visibleRevisedChanges`). */
+  /** Changes with the "Reviewed" mark and without a decision (`visibleRevisedChanges`). */
   readonly revisedIds: ReadonlySignal<ReadonlySet<string>>;
-  /** A revisão mais nova da proposta aberta (para a faixa), ou `null`. */
+  /** The newest review of the open proposal (for the strip), or `null`. */
   readonly revisionSummary: ReadonlySignal<ReturnType<
     typeof latestRevisionSummary
   > | null>;
-  /** Decisões de três estados com "parcial" e contagens, por nível (`reviewKey`, inclui `proposal:`). */
+  /** Three-state decisions with "partial" and counts, per level (`reviewKey`, includes `proposal:`). */
   readonly levels: ReadonlySignal<ReadonlyMap<string, LevelSummary>>;
   readonly progress: ReadonlySignal<ReviewProgress | null>;
   readonly counts: ReadonlySignal<ReviewCounts>;
-  /** Conferência do conjunto aceito (o que bloqueia "Aplicar aceitas"); `null` sem proposta. */
+  /** Check of the accepted set (what blocks "Apply accepted"); `null` without a proposal. */
   readonly validation: ReadonlySignal<AcceptedValidation | null>;
-  /** Mudanças aceitas que causam o problema e as sem decisão que podem resolvê-lo. */
+  /** Accepted changes that cause the problem and the undecided ones that may resolve it. */
   readonly invalid: ReadonlySignal<{
     readonly changeIds: ReadonlySet<string>;
     readonly related: ReadonlySet<string>;
   }>;
   /**
-   * Dá para aplicar agora: há aceitas pendentes, o conjunto é válido, o projeto não é só
-   * leitura e nenhum aplicar desta proposta está em curso.
+   * Can be applied now: there are pending accepted ones, the set is valid, the project is not
+   * read-only and no apply of this proposal is in progress.
    */
   readonly canApply: ReadonlySignal<boolean>;
-  /** Um aplicar da proposta aberta está em curso (`hold`): a revisão não reavalia. */
+  /** An apply of the open proposal is in progress (`hold`): the review does not reevaluate. */
   readonly applying: ReadonlySignal<boolean>;
   /**
-   * Segura a reavaliação da proposta aberta enquanto o aplicar dela roda: `validation`,
-   * `conflictIds` e `situation` (e o que deriva deles) ficam com o valor de agora, só
-   * enquanto ela é a proposta aberta. Devolve a função que solta (as chamadas se somam).
+   * Holds the reevaluation of the open proposal while its apply runs: `validation`,
+   * `conflictIds` and `situation` (and what derives from them) keep the current value, only
+   * while it is the open proposal. Returns the function that releases (calls add up).
    */
   hold(): () => void;
-  /** O projeto "como ficaria" (atual + mudanças não rejeitadas e não aplicadas); lido só quando a interface pede. */
+  /**
+   * The "as it would be" project (current + changes not rejected and not applied); read only when
+   * the interface asks.
+   */
   readonly preview: ReadonlySignal<PatchResult | null>;
   /**
-   * O projeto que a interface mostra: o "como ficaria" na visão Proposto da revisão; o
-   * atual (`store.committed`) na visão Atual e fora da revisão. A Árvore e o estado vazio
-   * do canvas leem daqui (uma importação nova tem imagens só na prévia).
+   * The project the interface shows: the "as it would be" in the review's Proposed view; the
+   * current one (`store.committed`) in the Current view and outside the review. The Tree and the
+   * empty state
+   * of the canvas read from here (a new import has images only in the preview).
    */
   readonly shownProject: ReadonlySignal<Project | null>;
   /**
-   * O "como ficaria" com todas as mudanças ainda não aplicadas, sem olhar as decisões: o
-   * que uma criação rejeitada propunha (os Detalhes a mostram mesmo fora das duas visões).
-   * Memoizado pelas mudanças, pelas aplicadas e pelo projeto; lido só quando a interface pede.
+   * The "as it would be" with all the changes not yet applied, ignoring the decisions: what
+   * a rejected creation proposed (the Details show it even outside the two views).
+   * Memoized by the changes, the applied ones and the project; read only when the interface asks.
    */
   readonly fullPreview: ReadonlySignal<Project | null>;
-  /** Mudanças por entidade e campo (os marcadores dos Detalhes); memoizado pelas mudanças. */
+  /** Changes by entity and field (the Details markers); memoized by the changes. */
   readonly fieldIndex: ReadonlySignal<FieldChangeIndex>;
-  /** Mudanças que passam pelos filtros, na ordem da proposta. */
+  /** Changes that pass the filters, in proposal order. */
   readonly visibleIds: ReadonlySignal<readonly string[]>;
-  /** Sem decisão (todas, na ordem da proposta). */
+  /** Undecided (all, in proposal order). */
   readonly pendingIds: ReadonlySignal<readonly string[]>;
-  /** Notas por alvo (`reviewKey`). */
+  /** Notes per target (`reviewKey`). */
   readonly notes: ReadonlySignal<ReadonlyMap<string, readonly ProposalNote[]>>;
-  /** Se a proposta aberta foi substituída: o que ficou para trás. */
+  /** Whether the open proposal was superseded: what was left behind. */
   readonly supersession: ReadonlySignal<Supersession | null>;
 }
 
 const NO_SITUATIONS: ReadonlyMap<string, ChangeSituation> = new Map();
 
-/** O retrato da revisão de uma proposta enquanto o aplicar dela roda (`hold`). */
+/** The snapshot of a proposal's review while its apply runs (`hold`). */
 interface HeldReview {
   readonly count: number;
   readonly situation: ReadonlyMap<string, ChangeSituation>;
@@ -1030,13 +1046,13 @@ const NO_COUNTS: ReviewCounts = {
 const NO_INVALID = { changeIds: NO_ID_SET, related: NO_ID_SET };
 const NO_DECISIONS: Proposal['decisions'] = {};
 
-/** Conflitos de cada proposta por (mudanças, aplicadas, projeto): decidir não os recalcula. */
+/** Conflicts of each proposal by (changes, applied, project): deciding does not recompute them. */
 const conflictCache = new WeakMap<
   readonly Change[],
   { project: Project; applied: ProposalApplied; ids: ReadonlySet<string> }
 >();
 
-/** Proposta aberta que ninguém decidiu, anotou nem viu. */
+/** Open proposal that nobody decided on, annotated or saw. */
 function isFresh(p: Proposal, seen: ReadonlySet<string>): boolean {
   return (
     p.status === 'open' &&
@@ -1061,10 +1077,10 @@ function conflictsOf(p: Proposal, project: Project): ReadonlySet<string> {
 }
 
 /**
- * Estado derivado da revisão de propostas: níveis, contagens, conflitos, "como ficaria",
- * aceitas aguardando aplicação e proposta substituída. Memoizado pela versão do projeto
- * (`store.committed`) e da proposta: o que só depende das mudanças e do projeto (níveis,
- * conflitos, tipos) não é recalculado a cada decisão. Nada aqui depende do viewport.
+ * Derived state of the proposal review: levels, counts, conflicts, "as it would be",
+ * accepted awaiting application and superseded proposal. Memoized by the project version
+ * (`store.committed`) and the proposal's: what only depends on the changes and the project (levels,
+ * conflicts, kinds) is not recomputed on every decision. Nothing here depends on the viewport.
  */
 export function createReviewDerived(
   store: ProjectStore,
@@ -1078,7 +1094,7 @@ export function createReviewDerived(
       ? null
       : (sources.proposals.value.find((p) => p.id === id) ?? null);
   });
-  // Signals derivados só notificam quando o valor muda: decidir não troca `changes` nem `applied`.
+  // Derived signals only notify when the value changes: deciding does not swap `changes` or `applied`.
   const changesOf = computed(() => proposal.value?.changes ?? null);
   const appliedOf = computed(() => proposal.value?.applied ?? null);
 
@@ -1105,8 +1121,8 @@ export function createReviewDerived(
     }));
   });
 
-  // Sem `rows`: ela calcula os conflitos de todas as propostas, e `freshIds` é lido
-  // (faixa, barra de status) com a janela Propostas fechada, a cada edição.
+  // Without `rows`: it computes the conflicts of all proposals, and `freshIds` is read
+  // (strip, status bar) with the Proposals window closed, on every edit.
   const freshIds = computed(() => {
     const seen = sources.seen.value;
     return sources.proposals.value.filter((p) => isFresh(p, seen)).map((p) => p.id);
@@ -1129,7 +1145,7 @@ export function createReviewDerived(
     return changes ? new Map(changes.map((c) => [c.id, changeType(c)])) : NO_TYPES;
   });
 
-  // Tipo de cada nível (a regra é `levelType`, do modelo); memoizado pela árvore.
+  // Kind of each level (the rule is `levelType`, from the model); memoized by the tree.
   const levelTypes = computed((): ReadonlyMap<string, ChangeType> => {
     const t = tree.value;
     const changes = changesOf.value;
@@ -1175,12 +1191,13 @@ export function createReviewDerived(
     return changes && current && p ? conflictsOf(p, current) : NO_ID_SET;
   });
 
-  // Aplicar em curso (devolução do portão da 8.2): entre o `store.apply` e a publicação do
-  // `proposal.json` com `applied`, o projeto já tem as aceitas e a proposta ainda não as dá
-  // como aplicadas. Reavaliar nessa janela acusaria conflitos e um conjunto inválido que
-  // não existem. `hold()` guarda o retrato de antes, preso à proposta aberta: os valores
-  // exportados só o usam enquanto ela é a aberta, e o retrato some ao soltar (nada dele
-  // fica guardado), então um conflito real surgido na janela aparece ao soltar.
+  // Apply in progress (return of the 8.2 gate): between `store.apply` and the publication of
+  // `proposal.json` with `applied`, the project already has the accepted ones and the proposal does
+  // not yet give them
+  // as applied. Reevaluating in that window would report conflicts and an invalid set that
+  // do not exist. `hold()` keeps the earlier snapshot, tied to the open proposal: the exported
+  // values only use it while it is the open one, and the snapshot goes away on release (none of it
+  // stays stored), so a real conflict that arose in the window appears on release.
   const held = signal<ReadonlyMap<string, HeldReview>>(NO_HOLDS);
   const heldNow = computed((): HeldReview | null => {
     const id = sources.proposalId.value;
@@ -1242,7 +1259,7 @@ export function createReviewDerived(
     const p = proposal.value;
     const current = project.value;
     if (!p || !current) return null;
-    // Sem aceitas pendentes não há o que validar (e `validateProject` custa).
+    // Without pending accepted ones there is nothing to validate (and `validateProject` is costly).
     if (
       acceptedPending(p).length === 0 &&
       (p.status === 'open' || p.status === 'superseded')
@@ -1297,7 +1314,7 @@ export function createReviewDerived(
   });
 
   const canApply = computed(() => {
-    // Enquanto aplica, o retrato diz "válido": não deixa aplicar de novo.
+    // While applying, the snapshot says "valid": it does not allow applying again.
     if (applying.value) return false;
     const v = validation.value;
     return v !== null && v.ok && v.changeIds.length > 0 && !store.readOnly.value;
@@ -1309,9 +1326,9 @@ export function createReviewDerived(
     return p && current ? previewProject(current, p) : null;
   });
 
-  // O projeto à vista: o confirmado ou o "como ficaria" da proposta, recortado pela perspectiva
-  // aberta (decisão 3). `projectInPerspective` é memoizado por projeto e perspectiva, e nada
-  // aqui lê o viewport: pan e zoom não recalculam.
+  // The project in view: the confirmed one or the proposal's "as it would be", clipped by the open
+  // perspective (decision 3). `projectInPerspective` is memoized by project and perspective, and nothing
+  // here reads the viewport: pan and zoom do not recompute.
   const shownProject = computed((): Project | null => {
     const base =
       sources.proposalId.value === null || sources.view.value === 'current'

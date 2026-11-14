@@ -1,10 +1,10 @@
-// Operações de pixel em RGBA 8 bits, em TypeScript puro: recorte, redução com média por área
-// e contorno de retângulos. A decodificação e a codificação (WebAssembly) ficam em `codecs.ts`.
+// Pixel operations on 8-bit RGBA, in plain TypeScript: crop, area-average downscaling
+// and rectangle outlines. Decoding and encoding (WebAssembly) live in `codecs.ts`.
 
 export interface Raster {
   readonly width: number;
   readonly height: number;
-  /** RGBA, 4 bytes por pixel, linha após linha. */
+  /** RGBA, 4 bytes per pixel, row after row. */
   readonly data: Uint8ClampedArray;
 }
 
@@ -21,7 +21,7 @@ export function createRaster(width: number, height: number): Raster {
   return { width, height, data: new Uint8ClampedArray(width * height * 4) };
 }
 
-/** Interseção de `rect` com a imagem inteira; `null` se vazia. */
+/** Intersection of `rect` with the whole image; `null` if empty. */
 export function clampRect(rect: PixelRect, bounds: { width: number; height: number }) {
   const x0 = Math.max(0, Math.floor(rect.x));
   const y0 = Math.max(0, Math.floor(rect.y));
@@ -31,7 +31,7 @@ export function clampRect(rect: PixelRect, bounds: { width: number; height: numb
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
 
-/** Copia a região `rect` (já dentro da imagem). */
+/** Copies the `rect` region (already inside the image). */
 export function crop(source: Raster, rect: PixelRect): Raster {
   const out = createRaster(rect.width, rect.height);
   for (let row = 0; row < rect.height; row++) {
@@ -41,7 +41,7 @@ export function crop(source: Raster, rect: PixelRect): Raster {
   return out;
 }
 
-/** Lado maior reduzido a `maxSize`, sem nunca ampliar. */
+/** Longest side reduced to `maxSize`, never enlarging. */
 export function fitSize(
   width: number,
   height: number,
@@ -58,10 +58,10 @@ export function fitSize(
 }
 
 /**
- * Reduz a `width`×`height` pela média ponderada da área coberta por cada pixel de saída
- * (filtro de caixa, sem serrilhado). A cor é ponderada pela opacidade, então regiões
- * transparentes não escurecem as bordas. `area` (padrão: a imagem inteira, em pixels da origem,
- * pode ser fracionária) é a janela que vira a saída.
+ * Downscales to `width`×`height` by the weighted average of the area covered by each output pixel
+ * (box filter, no aliasing). The color is weighted by opacity, so transparent
+ * regions do not darken the edges. `area` (default: the whole image, in source pixels,
+ * may be fractional) is the window that becomes the output.
  */
 export function resize(
   source: Raster,
@@ -72,8 +72,8 @@ export function resize(
   const whole = area.width === source.width && area.height === source.height;
   if (whole && width === source.width && height === source.height) return source;
   const { data } = source;
-  // Passada horizontal: colunas de saída × linhas de origem, com as cores já multiplicadas
-  // pela opacidade (ponto flutuante).
+  // Horizontal pass: output columns × source rows, with the colors already multiplied
+  // by the opacity (floating point).
   const mid = new Float32Array(width * source.height * 4);
   const xRatio = area.width / width;
   const rowFrom = Math.max(0, Math.floor(area.y));
@@ -107,7 +107,7 @@ export function resize(
       mid[to + 3] = a / weight;
     }
   }
-  // Passada vertical, devolvendo as cores sem a multiplicação pela opacidade.
+  // Vertical pass, returning the colors without the multiplication by opacity.
   const out = createRaster(width, height);
   const yRatio = area.height / height;
   for (let oy = 0; oy < height; oy++) {
@@ -180,10 +180,10 @@ function strokeRect(raster: Raster, rect: PixelRect, thickness: number, color: R
 export const HALO_COLOR: Rgb = [0, 0, 0];
 
 /**
- * Desenha o contorno de `rect` (em pixels do `raster`, que o recorta nas bordas), por dentro
- * do retângulo, com um halo escuro de 1 px dos dois lados, para aparecer sobre qualquer fundo.
+ * Draws the outline of `rect` (in `raster` pixels, which clips it at the edges), inside
+ * the rectangle, with a dark 1 px halo on both sides, so it shows on any background.
  */
-/** Espessura padrão (pixels) do contorno de `outlineRect`. */
+/** Default thickness (pixels) of the `outlineRect` outline. */
 export const OUTLINE_THICKNESS = 2;
 
 export function outlineRect(
@@ -193,7 +193,7 @@ export function outlineRect(
   thickness = OUTLINE_THICKNESS,
 ): void {
   const halo = 1;
-  // Halo externo, linha colorida e halo interno: três contornos concêntricos.
+  // Outer halo, colored line and inner halo: three concentric outlines.
   strokeRect(
     raster,
     {
@@ -222,7 +222,7 @@ export function outlineRect(
   }
 }
 
-/** Funde sobre branco (para JPEG, que não tem transparência). */
+/** Flattens onto white (for JPEG, which has no transparency). */
 export function flattenOnWhite(source: Raster): Raster {
   const out = createRaster(source.width, source.height);
   for (let i = 0; i < source.data.length; i += 4) {

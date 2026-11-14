@@ -18,14 +18,15 @@ import { closeToolWindow, openToolWindow } from '../../../src/ui/toolWindowLayou
 import { cadastroProject } from '../../model/specFixtures';
 import { createHarness, type Harness } from '../harness';
 
-// "Ir à anotação" em Incompletas abre Detalhes guardando o item focado como origem
-// (o `goTo` de `EditorWindows`); fechar Detalhes devolve o foco, nunca ao body.
+// "Go to annotation" in Incomplete opens Details keeping the focused item as the origin
+// (the `goTo` of `EditorWindows`); closing Details returns focus, never to the body.
+// pt-BR kept: shared fixture data asserted by tests/model (annotation name Título from cadastroProject)
 
 function Shell() {
   const windows = [...openWindowsOf('left'), ...openWindowsOf('right')];
   const bottom = openWindowOf('bottom');
   if (bottom) windows.push(bottom);
-  // Mesmo `goTo` do caso 'incomplete' de EditorWindows.
+  // Same `goTo` as the 'incomplete' case of EditorWindows.
   const goTo = () => {
     openToolWindow('details');
   };
@@ -40,7 +41,7 @@ function Shell() {
           </ToolWindow>
         ) : (
           <ToolWindow key={id} id={id}>
-            <button type="button">controle {id}</button>
+            <button type="button">control {id}</button>
           </ToolWindow>
         ),
       )}
@@ -53,7 +54,7 @@ const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 const stripButton = (id: ToolWindowId) =>
   document.querySelector<HTMLElement>(`[data-strip-window="${id}"]`);
 const control = (id: ToolWindowId) =>
-  screen.getByRole('button', { name: `controle ${id}` });
+  screen.getByRole('button', { name: `control ${id}` });
 const item = () =>
   screen.getByRole('button', { name: t('incomplete.go', { name: 'Título' }) });
 
@@ -66,14 +67,14 @@ function mount(harness: Harness) {
 }
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
   for (const id of TOOL_WINDOWS) hideToolWindow(id);
 });
 afterEach(cleanup);
 
-describe('goTo de Incompletas devolve o foco ao fechar Detalhes', () => {
-  it('ir à anotação, focar em Detalhes e fechar → item de Incompletas', async () => {
+describe('goTo of Incomplete returns focus on closing Details', () => {
+  it('go to the annotation, focus in Details and close → the Incomplete item', async () => {
     const harness = createHarness(cadastroProject());
     showToolWindow('incomplete');
     mount(harness);
@@ -87,7 +88,7 @@ describe('goTo de Incompletas devolve o foco ao fechar Detalhes', () => {
     expect(document.activeElement).toBe(button);
   });
 
-  it('com o item fora do DOM (lista remontada) → botão da faixa, nunca ao body', async () => {
+  it('with the item out of the DOM (remounted list) → strip button, never the body', async () => {
     const harness = createHarness(cadastroProject());
     showToolWindow('incomplete');
     mount(harness);

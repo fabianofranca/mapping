@@ -1,8 +1,8 @@
-// A palavra mais larga que a caixa fica inteira na linha (como no modelo e no PNG do MCP): o
-// medidor e o desenho alargam o `Text` do Konva até ela, e o Konva só quebra entre palavras.
+// A word wider than the box stays whole on the line (as in the model and in the MCP PNG): the
+// measurer and the drawing widen the Konva `Text` up to it, and Konva only breaks between words.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// 6 px por letra: o canvas só de medida do `wordSafeWidth` (o jsdom não tem 2D).
+// 6 px per letter: the measure-only canvas of `wordSafeWidth` (jsdom has no 2D).
 vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
   () => ({ font: '', measureText: (t: string) => ({ width: t.length * 6 }) }) as never,
 );
@@ -15,7 +15,7 @@ vi.mock('konva/lib/shapes/Text', () => ({
       this.config = config;
       configs.push(config);
     }
-    // 6 px por letra (o texto sem `width`: a largura natural).
+    // 6 px per letter (the text without `width`: the natural width).
     getTextWidth = () => (this.config.text ?? '').length * 6;
     width = () => this.config.width ?? 0;
     height = () => 20;
@@ -55,41 +55,41 @@ beforeEach(() => {
 });
 
 describe('wordSafeWidth', () => {
-  it('devolve a largura da palavra mais larga quando ela passa da caixa', () => {
-    expect(wordSafeWidth('Confirmar compra', face, 10)).toBe(54);
+  it('returns the width of the widest word when it goes past the box', () => {
+    expect(wordSafeWidth('Authorize payment', face, 10)).toBe(54);
     expect(wordSafeWidth('Salvar', face, 10)).toBe(36);
   });
 
-  it('devolve a largura pedida quando toda palavra cabe', () => {
+  it('returns the requested width when every word fits', () => {
     expect(wordSafeWidth('Salvar', face, 100)).toBe(100);
     expect(wordSafeWidth('', face, 40)).toBe(40);
   });
 
-  it('o espaço inseparável (NBSP) não divide a palavra, como no Konva e no modelo', () => {
-    // "R$ 100.000,00" com NBSP: 13 letras de 6 px, uma palavra só.
+  it('the non-breaking space (NBSP) does not split the word, as in Konva and in the model', () => {
+    // "R$ 100.000,00" with NBSP: 13 letters of 6 px, a single word.
     expect(wordSafeWidth('R$\u00a0100.000,00', face, 30)).toBe(78);
   });
 });
 
-describe('konvaMeasurer: palavra mais larga que a caixa', () => {
-  it('o Text leva a largura da palavra mais larga (mais a folga), não a da caixa', () => {
+describe('konvaMeasurer: word wider than the box', () => {
+  it('the Text gets the width of the widest word (plus the slack), not the box one', () => {
     konvaMeasurer('Salvar', { ...font }, 10);
     expect(configs.at(-1)?.width).toBe(36.5);
   });
 
-  it('com a palavra cabendo, a largura é a da caixa mais a folga', () => {
+  it('with the word fitting, the width is the box one plus the slack', () => {
     konvaMeasurer('Salvar', { ...font }, 100);
     expect(configs.at(-1)?.width).toBe(100.5);
   });
 
-  it('alargado pela palavra longa, o texto já vai quebrado onde o modelo quebra', () => {
-    // 6 px por letra numa caixa de 60: o modelo dá a palavra longa, "ab cd ef" e "gh".
-    konvaMeasurer('Supercalifragilistico ab cd ef gh', { ...font }, 60);
-    expect(configs.at(-1)?.text).toBe('Supercalifragilistico\nab cd ef\ngh');
+  it('widened by the long word, the text already goes broken where the model breaks', () => {
+    // 6 px per letter in a box of 60: the model gives the long word, "ab cd ef" and "gh".
+    konvaMeasurer('Supercalifragilistics ab cd ef gh', { ...font }, 60);
+    expect(configs.at(-1)?.text).toBe('Supercalifragilistics\nab cd ef\ngh');
     expect(configs.at(-1)?.width).toBe(126.5);
   });
 
-  it('com reticências, o corte é da caixa: a largura não se alarga', () => {
+  it('with ellipsis, the cut is the box one: the width is not widened', () => {
     konvaMeasurer('Salvar', { ...font, ellipsis: true }, 10);
     expect(configs.at(-1)?.width).toBe(10.5);
   });

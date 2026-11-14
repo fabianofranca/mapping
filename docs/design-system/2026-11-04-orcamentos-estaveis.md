@@ -1,5 +1,5 @@
-# Orçamentos estáveis — 2026-11-04 (épico `epic/orcamentos-estaveis`)
+# Stable budgets — 2026-11-04 (épico `epic/orcamentos-estaveis`)
 
 ## Sincronização
 
-Sem impacto: a etapa só mudou o teste do orçamento das 200 setas, os projetos do Vitest no `vite.config.ts` e documentação, sem tocar em `src/`. Nada foi gravado no artefato.
+Sem impacto: the stage only changed the 200-arrows budget test, the Vitest projects in `vite.config.ts` and documentation, without touching `src/`. Nothing was written to the artifact.

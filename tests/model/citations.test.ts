@@ -23,17 +23,18 @@ import {
 import { build } from './refColumnFixtures';
 import { message, sampleThread, T0 } from './threadFixtures';
 
-// Projeto: I1 (a.png) com M1, M2, M3 (sem nome); AM (modelo "Cliente", tabela campos com as
-// linhas R1 "cpf" e R2 "nome"), AL (lista, tabela alvos com a linha L1 sem rótulo) e AF (livre
-// "Glossário" com o par E1 "termo"). Aqui M2 vira "Botão" e entra a seta R1 de M1 para M2.
+// pt-BR kept: the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture)
+// Project: I1 (a.png) with M1, M2, M3 (unnamed); AM (model "Cliente", table campos with the
+// rows R1 "cpf" and R2 "nome"), AL (list, table alvos with the row L1 without a label) and AF (free
+// "Glossário" with the pair E1 "termo"). Here M2 becomes "Button" and the arrow R1 from M1 to M2 is added.
 function baseProject(): Project {
   let p = build();
-  p = renameMarking(p, 'M2', 'Botão');
-  p = createArrow(p, { id: 'R1', from: 'M1', to: 'M2', name: 'Fluxo' });
+  p = renameMarking(p, 'M2', 'Button');
+  p = createArrow(p, { id: 'R1', from: 'M1', to: 'M2', name: 'Flow' });
   return p;
 }
 
-const PROPOSALS = [{ id: 'prop-20261106-ab', title: 'Renomear o botão' }];
+const PROPOSALS = [{ id: 'prop-20261106-ab', title: 'Rename the button' }];
 
 function thread(id: string, texts: readonly string[], overrides: Partial<Thread> = {}) {
   return sampleThread({
@@ -46,8 +47,8 @@ function thread(id: string, texts: readonly string[], overrides: Partial<Thread>
 }
 
 const THREADS: readonly Thread[] = [
-  thread('c1b2', ['Primeira conversa sobre o botão']),
-  thread('c9f0', ['Outra conversa']),
+  thread('c1b2', ['First conversation about the button']),
+  thread('c9f0', ['Another conversation']),
 ];
 
 function ctxOf(
@@ -58,28 +59,29 @@ function ctxOf(
   return { project, threads, proposals: PROPOSALS, ...extra };
 }
 
-/** Referência de qualquer forma; a pasta da URL não importa (decisão 28). */
-function refOf(path: string, folder = 'qualquer-pasta'): AnyRef {
+/** A reference of any form; the URL folder does not matter (decision 28). */
+function refOf(path: string, folder = 'any-folder'): AnyRef {
   const parsed = parseAnyRef(`mapping://${folder}/${path}`);
-  if (!parsed) throw new Error(`referência inválida: ${path}`);
+  if (!parsed) throw new Error(`invalid reference: ${path}`);
   return parsed.ref;
 }
 
-const url = (path: string) => `mapping://pasta/${path}`;
+const url = (path: string) => `mapping://folder/${path}`;
 
+// pt-BR kept: the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture)
 describe('extractCitations', () => {
-  it('devolve vazio para texto sem link', () => {
-    expect(extractCitations('só texto, sem nada')).toEqual([]);
+  it('returns empty for text without a link', () => {
+    expect(extractCitations('just text, nothing else')).toEqual([]);
     expect(extractCitations('')).toEqual([]);
   });
 
-  it('extrai os links mapping:// em ordem, com rótulo, url e referência', () => {
-    const text = `Veja [Botão](${url('m/m2')}) e depois [titulo](${url('a/am/f/titulo')}).`;
+  it('extracts the mapping:// links in order, with label, url and reference', () => {
+    const text = `See [Button](${url('m/m2')}) and then [titulo](${url('a/am/f/titulo')}).`;
     const found = extractCitations(text);
-    expect(found.map((c) => c.label)).toEqual(['Botão', 'titulo']);
+    expect(found.map((c) => c.label)).toEqual(['Button', 'titulo']);
     expect(found.map((c) => c.url)).toEqual([url('m/m2'), url('a/am/f/titulo')]);
     expect(found[0]!.ref).toEqual({
-      project: 'pasta',
+      project: 'folder',
       ref: { type: 'item', kind: 'm', code: 'm2' },
     });
     expect(found[1]!.ref?.ref).toEqual({
@@ -89,10 +91,10 @@ describe('extractCitations', () => {
     });
   });
 
-  it('ignora link comum, âncora e link de biblioteca', () => {
+  it('ignores a plain link, an anchor and a library link', () => {
     const text = [
-      '[site](https://exemplo.com/m/m1)',
-      '[ancora](#secao)',
+      '[site](https://example.com/m/m1)',
+      '[anchor](#section)',
       '[Button](mapping://button)',
       '[Button](mapping://spec/button)',
       `[ok](${url('l/ls1')})`,
@@ -100,7 +102,7 @@ describe('extractCitations', () => {
     expect(extractCitations(text).map((c) => c.label)).toEqual(['ok']);
   });
 
-  it('mantém o link mapping:// que não fecha a gramática, com ref null', () => {
+  it('keeps the mapping:// link that does not fit the grammar, with a null ref', () => {
     const found = extractCitations(
       [
         `[a](${url('m/m1/extra')})`,
@@ -112,46 +114,46 @@ describe('extractCitations', () => {
     expect(found.map((c) => c.label)).toEqual(['a', 'b', 'c']);
   });
 
-  it('decodifica o campo codificado da URL', () => {
-    const [c] = extractCitations(`[x](${url('a/am/f/Tabela%20de%20dados')})`);
+  it('decodes the URL-encoded field', () => {
+    const [c] = extractCitations(`[x](${url('a/am/f/Data%20table')})`);
     expect(c!.ref?.ref).toEqual({
       type: 'field',
       annotation: 'am',
-      key: 'Tabela de dados',
+      key: 'Data table',
     });
   });
 
-  it('ignora o que está em código em linha e em bloco de código', () => {
+  it('ignores what is in inline code and in a code block', () => {
     const text = [
-      `Isto não é citação: \`[x](${url('m/m1')})\``,
+      `This is not a citation: \`[x](${url('m/m1')})\``,
       '',
       '```',
       `[y](${url('m/m1')})`,
       '```',
       '',
-      `Esta é: [z](${url('m/m1')})`,
+      `This is: [z](${url('m/m1')})`,
     ].join('\n');
     expect(extractCitations(text).map((c) => c.label)).toEqual(['z']);
   });
 
-  it('acha links em lista, citação, título, tabela e ênfase', () => {
+  it('finds links in a list, quote, heading, table and emphasis', () => {
     const text = [
-      `# Título [h](${url('m/m1')})`,
+      `# Heading [h](${url('m/m1')})`,
       '',
       `- item [l](${url('m/m2')})`,
       '',
-      `> citado [q](${url('m/m3')})`,
+      `> quoted [q](${url('m/m3')})`,
       '',
       '| a | b |',
       '| - | - |',
       `| [t](${url('i/i1')}) | x |`,
       '',
-      `**forte [s](${url('l/ls1')})**`,
+      `**strong [s](${url('l/ls1')})**`,
     ].join('\n');
     expect(extractCitations(text).map((c) => c.label)).toEqual(['h', 'l', 'q', 't', 's']);
   });
 
-  it('lê o rótulo com [, ] e \\ escapados', () => {
+  it('reads the label with escaped [, ] and \\', () => {
     const [c] = extractCitations(`[a\\[1\\] \\\\ b](${url('m/m1')})`);
     expect(c!.label).toBe('a[1] \\ b');
     expect(c!.ref?.ref).toEqual({ type: 'item', kind: 'm', code: 'm1' });
@@ -159,56 +161,57 @@ describe('extractCitations', () => {
 });
 
 describe('escapeCitationLabel / formatCitation', () => {
-  it('escapa [, ] e \\', () => {
+  it('escapes [, ] and \\', () => {
     expect(escapeCitationLabel('a[b]c\\d')).toBe('a\\[b\\]c\\\\d');
-    expect(escapeCitationLabel('sem nada')).toBe('sem nada');
+    expect(escapeCitationLabel('nothing here')).toBe('nothing here');
   });
 
-  it('escapa *, _ e crase: o rótulo relido não perde os caracteres', () => {
-    for (const label of ['a*b*c', '_x_ e __y__', 'use `code` aqui', '**negrito**']) {
+  it('escapes *, _ and backtick: the re-read label does not lose characters', () => {
+    for (const label of ['a*b*c', '_x_ and __y__', 'use `code` here', '**bold**']) {
       const [c] = extractCitations(formatCitation(label, url('m/m2')));
       expect(c!.label).toBe(label);
     }
   });
 
-  it('formata [rótulo escapado](url)', () => {
-    expect(formatCitation('Botão [x]', url('m/m2'))).toBe(
-      `[Botão \\[x\\]](${url('m/m2')})`,
+  it('formats [escaped label](url)', () => {
+    expect(formatCitation('Button [x]', url('m/m2'))).toBe(
+      `[Button \\[x\\]](${url('m/m2')})`,
     );
   });
 
   it.each([
-    'Botão',
+    'Button',
     'a[1]',
     ']',
     '[',
     '\\',
     '\\]',
     '\\\\[',
-    'duas [de] três ]]',
-    'com (parênteses)',
-    'Cliente · Comprar',
-  ])('round-trip com extractCitations: %j', (label) => {
-    const text = `antes ${formatCitation(label, url('m/m2'))} depois`;
+    'two [of] three ]]',
+    'with (parentheses)',
+    'Customer · Buy',
+  ])('round-trip with extractCitations: %j', (label) => {
+    const text = `before ${formatCitation(label, url('m/m2'))} after`;
     const found = extractCitations(text);
     expect(found).toHaveLength(1);
     expect(found[0]!.label).toBe(label);
     expect(found[0]!.url).toBe(url('m/m2'));
   });
 
-  it('round-trip com vários links na mesma linha', () => {
+  it('round-trip with several links on the same line', () => {
     const text = `${formatCitation('a]', url('m/m1'))}, ${formatCitation('[b', url('m/m2'))}`;
     expect(extractCitations(text).map((c) => c.label)).toEqual(['a]', '[b']);
   });
 });
 
+// pt-BR kept: the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture)
 describe('resolveCitation', () => {
   const ctx = ctxOf();
 
   const found = (path: string, folder?: string) =>
     resolveCitation(ctx, refOf(path, folder));
 
-  it('marcação, seta, container, anotação e camada', () => {
+  it('marking, arrow, container, annotation and layer', () => {
     expect(found('m/m2')).toEqual({ found: true, target: { kind: 'marking', id: 'M2' } });
     expect(found('m/r1')).toEqual({ found: true, target: { kind: 'arrow', id: 'R1' } });
     expect(found('i/i1')).toEqual({
@@ -226,7 +229,7 @@ describe('resolveCitation', () => {
     });
   });
 
-  it('conversa e proposta', () => {
+  it('conversation and proposal', () => {
     expect(found('c/c1b2')).toEqual({
       found: true,
       target: { kind: 'thread', id: 'c1b2' },
@@ -237,21 +240,21 @@ describe('resolveCitation', () => {
     });
   });
 
-  it('proposta resolve só pelo id exato, nunca por prefixo (decisão 11)', () => {
-    const proposals = [{ id: 'botoes-2', title: 'Botões' }];
+  it('a proposal resolves only by the exact id, never by prefix (decision 11)', () => {
+    const proposals = [{ id: 'buttons-2', title: 'Buttons' }];
     const exact = (path: string) => resolveCitation({ ...ctx, proposals }, refOf(path));
-    expect(exact('p/botoes-2')).toEqual({
+    expect(exact('p/buttons-2')).toEqual({
       found: true,
-      target: { kind: 'proposal', id: 'botoes-2' },
+      target: { kind: 'proposal', id: 'buttons-2' },
     });
-    expect(exact('p/botoes')).toEqual({ found: false, reason: 'missing' });
+    expect(exact('p/buttons')).toEqual({ found: false, reason: 'missing' });
     expect(exact('p/prop2026')).toEqual({ found: false, reason: 'missing' });
   });
 
-  it('proposta resolve pelo código curto que o MCP emite (8 hex), nunca por prefixo livre', () => {
+  it('a proposal resolves by the short code the MCP emits (8 hex), never by free prefix', () => {
     const proposals = [
-      { id: '3f2a9c1e-5b7d-4e21-9a10-0c8d2f6b7a44', title: 'Botões' },
-      { id: 'botoes-2', title: 'Outra' },
+      { id: '3f2a9c1e-5b7d-4e21-9a10-0c8d2f6b7a44', title: 'Buttons' },
+      { id: 'buttons-2', title: 'Other' },
     ];
     const at = (path: string) => resolveCitation({ ...ctx, proposals }, refOf(path));
     expect(at('p/3f2a9c1e')).toEqual({
@@ -259,15 +262,15 @@ describe('resolveCitation', () => {
       target: { kind: 'proposal', id: '3f2a9c1e-5b7d-4e21-9a10-0c8d2f6b7a44' },
     });
     expect(at('p/3f2a')).toEqual({ found: false, reason: 'missing' });
-    expect(at('p/botoes')).toEqual({ found: false, reason: 'missing' });
+    expect(at('p/buttons')).toEqual({ found: false, reason: 'missing' });
   });
 
-  it('campo de anotação sem tipo não vem do protótipo', () => {
+  it('an annotation field without a type does not come from the prototype', () => {
     const p = ctx.project;
     const untyped: Project = {
       ...p,
       annotations: p.annotations.map((a) =>
-        a.id === 'AM' ? { ...a, type: { specId: 'nenhuma', typeId: 'nada' } } : a,
+        a.id === 'AM' ? { ...a, type: { specId: 'none', typeId: 'nothing' } } : a,
       ),
     };
     const at = (path: string) =>
@@ -276,7 +279,7 @@ describe('resolveCitation', () => {
     expect(at('a/am/f/toString')).toEqual({ found: false, reason: 'missing' });
   });
 
-  it('campo tipado, par da anotação livre e linha de table', () => {
+  it('typed field, free annotation pair and table row', () => {
     expect(found('a/am/f/titulo')).toEqual({
       found: true,
       target: { kind: 'field', annotationId: 'AM', key: 'titulo' },
@@ -291,18 +294,18 @@ describe('resolveCitation', () => {
     });
   });
 
-  it('ignora o <projeto> da URL', () => {
-    const a = found('m/m2', 'pasta-antiga');
-    const b = found('m/m2', 'outro-nome-qualquer');
+  it('ignores the <project> of the URL', () => {
+    const a = found('m/m2', 'old-folder');
+    const b = found('m/m2', 'any-other-name');
     expect(a).toEqual(b);
     expect(a.found).toBe(true);
   });
 
-  it('aceita o código com o id completo ou prefixo, em qualquer caixa', () => {
+  it('accepts the code with the full id or a prefix, in any case', () => {
     expect(found('m/M2')).toEqual({ found: true, target: { kind: 'marking', id: 'M2' } });
   });
 
-  it('código inexistente: alvo ausente', () => {
+  it('nonexistent code: missing target', () => {
     for (const path of [
       'm/zzz',
       'i/zzz',
@@ -317,21 +320,21 @@ describe('resolveCitation', () => {
     }
   });
 
-  it('campo, par e linha inexistentes ou de outra natureza: ausente', () => {
+  it('nonexistent field, pair and row, or of another kind: missing', () => {
     for (const path of [
-      'a/am/f/inexistente', // campo que o tipo não tem
-      'a/af/f/titulo', // anotação livre não tem campos
-      'a/af/e/zzz', // par inexistente
-      'a/am/e/e1', // anotação tipada não tem pares
-      'a/am/f/campos/r/zzz', // linha inexistente
-      'a/am/f/titulo/r/r1', // titulo não é table
+      'a/am/f/inexistente', // a field the type does not have
+      'a/af/f/titulo', // a free annotation has no fields
+      'a/af/e/zzz', // nonexistent pair
+      'a/am/e/e1', // a typed annotation has no pairs
+      'a/am/f/campos/r/zzz', // nonexistent row
+      'a/am/f/titulo/r/r1', // titulo is not a table
       'a/am/f/solto/r/r1',
     ]) {
       expect(found(path)).toEqual({ found: false, reason: 'missing' });
     }
   });
 
-  it('código ambíguo: alvo ausente, com o motivo', () => {
+  it('ambiguous code: missing target, with the reason', () => {
     let p = createMarking(baseProject(), {
       id: 'abc1',
       containerId: 'I1',
@@ -354,7 +357,7 @@ describe('resolveCitation', () => {
     });
   });
 
-  it('o id inteiro vence o prefixo de outro', () => {
+  it('the whole id wins over the prefix of another', () => {
     const p = createMarking(baseProject(), {
       id: 'M22',
       containerId: 'I1',
@@ -367,120 +370,121 @@ describe('resolveCitation', () => {
   });
 });
 
+// pt-BR kept: the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture)
 describe('liveLabel', () => {
-  const resolve = (ctx: CitationContext, path: string, fallback = 'reserva') => {
+  const resolve = (ctx: CitationContext, path: string, fallback = 'fallback') => {
     const res = resolveCitation(ctx, refOf(path));
     return liveLabel(ctx, res, fallback);
   };
 
-  it('marcação, seta e container: o nome', () => {
+  it('marking, arrow and container: the name', () => {
     const ctx = ctxOf();
-    expect(resolve(ctx, 'm/m2')).toEqual({ label: 'Botão', broken: false });
-    expect(resolve(ctx, 'm/r1')).toEqual({ label: 'Fluxo', broken: false });
-    // O container sem nome mostra o nome do arquivo.
+    expect(resolve(ctx, 'm/m2')).toEqual({ label: 'Button', broken: false });
+    expect(resolve(ctx, 'm/r1')).toEqual({ label: 'Flow', broken: false });
+    // The unnamed container shows the file name.
     expect(resolve(ctx, 'i/i1')).toEqual({ label: 'a.png', broken: false });
   });
 
-  it('sem nome: rótulo nulo (a interface traduz) e não quebrada', () => {
+  it('no name: null label (the interface translates) and not broken', () => {
     expect(resolve(ctxOf(), 'm/m1')).toEqual({ label: null, broken: false });
   });
 
-  it('anotação: o nome ou o rótulo da instância, senão o nome do tipo', () => {
+  it('annotation: the name or the instance label, otherwise the type name', () => {
     const ctx = ctxOf();
     expect(resolve(ctx, 'a/af').label).toBe('Glossário');
     expect(resolve(ctx, 'a/am').label).toBe('Cliente');
     expect(resolve(ctx, 'a/al').label).toBe('Lista');
-    const renamed = ctxOf(renameAnnotation(ctx.project, 'AM', 'Outro nome'));
-    expect(resolve(renamed, 'a/am').label).toBe('Outro nome');
+    const renamed = ctxOf(renameAnnotation(ctx.project, 'AM', 'Another name'));
+    expect(resolve(renamed, 'a/am').label).toBe('Another name');
   });
 
-  it('campo: o label da especialização, senão a key', () => {
+  it('field: the label from the specialization, otherwise the key', () => {
     const ctx = ctxOf();
     expect(resolve(ctx, 'a/al/f/alvos')).toEqual({ label: 'Alvos', broken: false });
     expect(resolve(ctx, 'a/am/f/titulo')).toEqual({ label: 'titulo', broken: false });
   });
 
-  it('par: a key', () => {
+  it('pair: the key', () => {
     expect(resolve(ctxOf(), 'a/af/e/e1')).toEqual({ label: 'termo', broken: false });
   });
 
-  it('linha: a coluna do rowLabel; sem rowLabel, a posição', () => {
+  it('row: the rowLabel column; without rowLabel, the position', () => {
     const ctx = ctxOf();
     expect(resolve(ctx, 'a/am/f/campos/r/r1').label).toBe('cpf');
     expect(resolve(ctx, 'a/am/f/campos/r/r2').label).toBe('nome');
     expect(resolve(ctx, 'a/al/f/alvos/r/l1').label).toBe('#1');
   });
 
-  it('camada, conversa e proposta', () => {
+  it('layer, conversation and proposal', () => {
     const ctx = ctxOf();
     const layer = ctx.project.layers.find((l) => l.spec !== null)!;
     expect(resolve(ctx, `l/${layer.id.toLowerCase()}`).label).toBe(layer.name);
-    expect(resolve(ctx, 'p/prop-20261106-ab').label).toBe('Renomear o botão');
+    expect(resolve(ctx, 'p/prop-20261106-ab').label).toBe('Rename the button');
   });
 
-  it('conversa: o assunto injetado (ou a primeira linha, sem injeção)', () => {
-    expect(resolve(ctxOf(), 'c/c1b2').label).toBe('Primeira conversa sobre o botão');
-    const ctx = ctxOf(undefined, undefined, { subjectOf: (t) => `assunto ${t.id}` });
-    expect(resolve(ctx, 'c/c1b2').label).toBe('assunto c1b2');
+  it('conversation: the injected subject (or the first line, without injection)', () => {
+    expect(resolve(ctxOf(), 'c/c1b2').label).toBe('First conversation about the button');
+    const ctx = ctxOf(undefined, undefined, { subjectOf: (t) => `subject ${t.id}` });
+    expect(resolve(ctx, 'c/c1b2').label).toBe('subject c1b2');
   });
 
-  it('acompanha a renomeação do alvo', () => {
+  it('follows the renaming of the target', () => {
     const before = ctxOf();
-    const after = ctxOf(renameMarking(before.project, 'M2', 'Botão novo'));
-    expect(resolve(before, 'm/m2').label).toBe('Botão');
-    expect(resolve(after, 'm/m2').label).toBe('Botão novo');
+    const after = ctxOf(renameMarking(before.project, 'M2', 'New button'));
+    expect(resolve(before, 'm/m2').label).toBe('Button');
+    expect(resolve(after, 'm/m2').label).toBe('New button');
   });
 
-  it('alvo ausente: o rótulo de reserva, quebrada', () => {
+  it('missing target: the fallback label, broken', () => {
     const ctx = ctxOf();
-    expect(resolve(ctx, 'm/zzz', 'Botão antigo')).toEqual({
-      label: 'Botão antigo',
+    expect(resolve(ctx, 'm/zzz', 'Old button')).toEqual({
+      label: 'Old button',
       broken: true,
     });
-    expect(resolve(ctx, 'a/am/f/inexistente', 'campo antigo')).toEqual({
-      label: 'campo antigo',
+    expect(resolve(ctx, 'a/am/f/inexistente', 'old field')).toEqual({
+      label: 'old field',
       broken: true,
     });
   });
 });
 
 describe('liveCitation', () => {
-  it('junta a resolução e o rótulo de uma citação extraída', () => {
+  it('joins the resolution and the label of an extracted citation', () => {
     const ctx = ctxOf();
     const [ok, gone, bad] = extractCitations(
       [
-        `[Botão velho](${url('m/m2')})`,
-        `[Apagado](${url('m/zzz')})`,
-        `[Torto](${url('m/m1/extra')})`,
+        `[Stale button](${url('m/m2')})`,
+        `[Deleted](${url('m/zzz')})`,
+        `[Crooked](${url('m/m1/extra')})`,
       ].join(' '),
     ).map((c) => liveCitation(ctx, c));
-    expect(ok).toMatchObject({ label: 'Botão', broken: false });
+    expect(ok).toMatchObject({ label: 'Button', broken: false });
     expect(ok!.resolution).toEqual({
       found: true,
       target: { kind: 'marking', id: 'M2' },
     });
-    expect(gone).toMatchObject({ label: 'Apagado', broken: true });
-    expect(bad).toMatchObject({ label: 'Torto', broken: true });
+    expect(gone).toMatchObject({ label: 'Deleted', broken: true });
+    expect(bad).toMatchObject({ label: 'Crooked', broken: true });
     expect(bad!.resolution).toEqual({ found: false, reason: 'invalid' });
   });
 });
 
 describe('backlinks', () => {
-  const A = thread('aaaa1111', ['sem citação']);
+  const A = thread('aaaa1111', ['no citation']);
   const B = thread('bbbb2222', [
-    `Veja [A](${url('c/aaaa1111')}) e de novo [A](${url('c/aaaa1111')})`,
+    `See [A](${url('c/aaaa1111')}) and again [A](${url('c/aaaa1111')})`,
   ]);
   const C = thread('cccc3333', [
-    `Eu mesma [C](${url('c/cccc3333')}), outra [A](${url('c/aaaa')}) e [B](${url('c/bbbb2222')})`,
-    `Segunda mensagem cita [A](${url('c/aaaa1111')})`,
+    `Myself [C](${url('c/cccc3333')}), another [A](${url('c/aaaa')}) and [B](${url('c/bbbb2222')})`,
+    `Second message cites [A](${url('c/aaaa1111')})`,
   ]);
   const D = thread(
     'dddd4444',
-    [`Resolvida cita [A](${url('c/aaaa1111')}) e [item](${url('m/m1')})`],
-    { resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T0 } },
+    [`Resolved cites [A](${url('c/aaaa1111')}) and [item](${url('m/m1')})`],
+    { resolved: { by: { name: 'Marina Alves', email: 'marina@example.com' }, at: T0 } },
   );
 
-  it('mapa conversa → conversas que a citam, sem duplicar nem auto-citação', () => {
+  it('map conversation → conversations that cite it, without duplicates or self-citation', () => {
     const map = backlinks([A, B, C, D]);
     expect(map.get('aaaa1111')).toEqual(['bbbb2222', 'cccc3333', 'dddd4444']);
     expect(map.get('bbbb2222')).toEqual(['cccc3333']);
@@ -488,32 +492,33 @@ describe('backlinks', () => {
     expect(map.has('dddd4444')).toBe(false);
   });
 
-  it('ignora citação quebrada e referência a outro tipo', () => {
+  it('ignores a broken citation and a reference to another kind', () => {
     const X = thread('xxxx5555', [
-      `[sumiu](${url('c/nao-existe')}) [m](${url('m/m1')}) [p](${url('p/xyz')})`,
+      `[gone](${url('c/does-not-exist')}) [m](${url('m/m1')}) [p](${url('p/xyz')})`,
     ]);
     expect(backlinks([A, X]).size).toBe(0);
   });
 
-  it('uma citação com código ambíguo não vira backlink', () => {
+  it('a citation with an ambiguous code does not become a backlink', () => {
     const ambiguous = thread('tt-aa', ['x']);
     const other = thread('tt-ab', ['y']);
     const cites = thread('zzzz', [`[?](${url('c/tt')})`]);
     expect(backlinks([ambiguous, other, cites]).size).toBe(0);
   });
 
-  it('lista vazia', () => {
+  it('empty list', () => {
     expect(backlinks([]).size).toBe(0);
   });
 });
 
+// pt-BR kept: the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture)
 describe('citedTargets / citationTargetKey', () => {
-  it('alvos citados, achados e sem repetição, na ordem do texto', () => {
+  it('cited targets, found and without repetition, in text order', () => {
     const ctx = ctxOf();
     const t = thread('c1b2', [
-      `Veja [Botão](${url('m/m2')}) e [titulo](${url('a/am/f/titulo')})`,
-      `Outra vez [Botão](${url('m/m2')}), [linha](${url('a/am/f/campos/r/r1')}) e [c](${url('c/c9f0')})`,
-      `Quebrado [x](${url('m/zzz')}), biblioteca [Button](mapping://button), https [s](https://a.com) e [p](${url('p/prop-20261106-ab')})`,
+      `See [Button](${url('m/m2')}) and [titulo](${url('a/am/f/titulo')})`,
+      `Again [Button](${url('m/m2')}), [row](${url('a/am/f/campos/r/r1')}) and [c](${url('c/c9f0')})`,
+      `Broken [x](${url('m/zzz')}), library [Button](mapping://button), https [s](https://a.com) and [p](${url('p/prop-20261106-ab')})`,
     ]);
     const targets = citedTargets(t, ctx);
     expect(targets).toEqual<CitationTarget[]>([
@@ -525,11 +530,11 @@ describe('citedTargets / citationTargetKey', () => {
     ]);
   });
 
-  it('conversa sem citação: vazio', () => {
-    expect(citedTargets(thread('c1b2', ['nada']), ctxOf())).toEqual([]);
+  it('conversation without a citation: empty', () => {
+    expect(citedTargets(thread('c1b2', ['nothing']), ctxOf())).toEqual([]);
   });
 
-  it('a chave identifica o alvo', () => {
+  it('the key identifies the target', () => {
     const keys = [
       { kind: 'marking', id: 'M2' },
       { kind: 'arrow', id: 'M2' },

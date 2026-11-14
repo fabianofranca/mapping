@@ -3,18 +3,18 @@ import { t } from '../i18n';
 import { IconButton } from './controls';
 
 interface BannerProps {
-  /** `warning` para avisos permanentes do canal; `info` para novidades. */
+  /** `warning` for permanent channel notices; `info` for news. */
   readonly tone: 'warning' | 'info';
   readonly role?: 'note' | 'status';
   readonly class?: string;
   readonly children: ComponentChildren;
-  /** Ação ao lado do texto (ex.: "Atualizar"). */
+  /** Action beside the text (e.g. "Update"). */
   readonly action?: ComponentChildren;
-  /** Com ele, a faixa ganha o botão de dispensar. */
+  /** With it, the strip gains the dismiss button. */
   readonly onDismiss?: () => void;
 }
 
-/** Faixa no topo da tela (`mp-banner` do DS 2.0): texto, ação opcional e dispensar. */
+/** Strip at the top of the screen (`mp-banner` of DS 2.0): text, optional action and dismiss. */
 export function Banner({
   tone,
   role = 'note',

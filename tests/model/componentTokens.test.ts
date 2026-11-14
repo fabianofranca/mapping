@@ -1,4 +1,4 @@
-// CF5: o catálogo e a biblioteca põem os tokens do modo (e a fonte do hospedeiro) no componente.
+// CF5: the catalog and the library put the mode tokens (and the host font) into the component.
 import { describe, expect, it } from 'vitest';
 import { loadLibrary, withHostTokens } from '../../src/model/components/library';
 import { loadSpecComponents } from '../../src/model';
@@ -7,20 +7,20 @@ import { SPEC_FILE, packageTexts, testSpec } from './componentFixtures';
 const texts = packageTexts();
 const read = (path: string) => texts.get(path) ?? undefined;
 
-describe('loadSpecComponents com a fonte do hospedeiro', () => {
-  it('cada componente leva os tokens do modo, com font-sans e font-mono do hospedeiro', () => {
+describe('loadSpecComponents with the host font', () => {
+  it('each component carries the mode tokens, with the host font-sans and font-mono', () => {
     const loaded = loadSpecComponents(testSpec(), SPEC_FILE, 1, read, {
-      fonts: { sans: 'Tema Sans', mono: 'Tema Mono' },
+      fonts: { sans: 'Theme Sans', mono: 'Theme Mono' },
     });
     const files = [...loaded.byType.values()];
     expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
-      expect(file.resolvedTokens?.['font-sans']).toBe('Tema Sans');
-      expect(file.resolvedTokens?.['font-mono']).toBe('Tema Mono');
+      expect(file.resolvedTokens?.['font-sans']).toBe('Theme Sans');
+      expect(file.resolvedTokens?.['font-mono']).toBe('Theme Mono');
     }
   });
 
-  it('sem hospedeiro os padrões são sans-serif e monospace', () => {
+  it('without a host the defaults are sans-serif and monospace', () => {
     const loaded = loadSpecComponents(testSpec(), SPEC_FILE, 1, read);
     const file = [...loaded.byType.values()][0];
     expect(file?.resolvedTokens).toMatchObject({
@@ -29,7 +29,7 @@ describe('loadSpecComponents com a fonte do hospedeiro', () => {
     });
   });
 
-  it('os tokens da especialização entram no modo pedido (ou no primeiro)', () => {
+  it('the specialization tokens go in the requested mode (or the first one)', () => {
     const spec = {
       ...testSpec(),
       tokens: {
@@ -80,17 +80,17 @@ describe('loadLibrary e withHostTokens', () => {
     },
   ];
 
-  it('a biblioteca guarda os tokens da especialização', () => {
+  it('the library keeps the specialization tokens', () => {
     expect(loadLibrary(files).tokens?.modes).toEqual(['light', 'dark']);
   });
 
-  it('withHostTokens põe a fonte do hospedeiro e a da especialização vence', () => {
+  it('withHostTokens sets the host font and the specialization one wins', () => {
     const lib = withHostTokens(loadLibrary(files), {
-      sans: 'Tema Sans',
-      mono: 'Tema Mono',
+      sans: 'Theme Sans',
+      mono: 'Theme Mono',
     });
     const tokens = lib.types[0]?.component?.resolvedTokens;
     expect(tokens?.['font-sans']).toBe('Spec Sans');
-    expect(tokens?.['font-mono']).toBe('Tema Mono');
+    expect(tokens?.['font-mono']).toBe('Theme Mono');
   });
 });

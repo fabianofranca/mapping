@@ -5,11 +5,11 @@ import { ToolError } from './errors';
 import { operationSchema, type Operation } from './operations';
 import type { Roots } from './paths';
 
-// `operationsFile` (etapa Componentes fiéis, CF10, decisão 28): o lote de `plan_changes` e
-// `propose_changes` pode vir de um `.json` dentro das raízes, no lugar de `operations` inline
-// (uma tela medida tem centenas de operações, grandes demais para a chamada da ferramenta).
+// `operationsFile` (Faithful components stage, CF10, decision 28): the batch of `plan_changes` and
+// `propose_changes` can come from a `.json` inside the roots, in place of inline `operations`
+// (a measured screen has hundreds of operations, too large for the tool call).
 
-/** Limite do arquivo de operações (o inline tem no máximo 1000 operações). */
+/** Size limit of the operations file (the inline batch has at most 1000 operations). */
 const MAX_OPERATIONS_BYTES = 32 * 1024 * 1024;
 
 export const operationsListSchema = z.array(operationSchema).min(1).max(1000);
@@ -27,7 +27,7 @@ function parseOperations(text: string, file: string): Operation[] {
     const detail = error instanceof Error ? error.message : String(error);
     throw new ToolError(
       'invalid-arguments',
-      `operationsFile ${basename(file)}: JSON inválido (${detail})`,
+      `operationsFile ${basename(file)}: invalid JSON (${detail})`,
       { path: file },
     );
   }
@@ -35,15 +35,15 @@ function parseOperations(text: string, file: string): Operation[] {
   if (parsed.success) return parsed.data;
   const issues = parsed.error.issues
     .slice(0, 5)
-    .map((i) => `${i.path.join('.') || '(raiz)'}: ${i.message}`);
+    .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`);
   throw new ToolError(
     'invalid-arguments',
-    `operationsFile ${basename(file)}: lote inválido; ${issues.join('; ')}`,
+    `operationsFile ${basename(file)}: invalid batch; ${issues.join('; ')}`,
     { path: file },
   );
 }
 
-/** As operações do lote: as inline ou as do arquivo (os dois juntos, ou nenhum, é erro). */
+/** The operations of the batch: the inline ones or the file's (both together, or neither, is an error). */
 export async function resolveOperations(
   roots: Roots,
   args: OperationsArgs,
@@ -52,14 +52,14 @@ export async function resolveOperations(
   if (operations !== undefined && operationsFile !== undefined) {
     throw new ToolError(
       'invalid-arguments',
-      'informe `operations` ou `operationsFile`, não os dois',
+      'provide `operations` or `operationsFile`, not both',
     );
   }
   if (operationsFile === undefined) {
     if (operations === undefined) {
       throw new ToolError(
         'invalid-arguments',
-        'informe `operations` (o lote inline) ou `operationsFile` (um .json dentro das raízes)',
+        'provide `operations` (the inline batch) or `operationsFile` (a .json inside the roots)',
       );
     }
     return operations;
@@ -67,12 +67,12 @@ export async function resolveOperations(
   const { real } = await roots.resolveExisting(operationsFile);
   const info = await stat(real);
   if (!info.isFile()) {
-    throw new ToolError('not-a-file', `não é um arquivo: ${operationsFile}`, {
+    throw new ToolError('not-a-file', `not a file: ${operationsFile}`, {
       path: operationsFile,
     });
   }
   if (info.size > MAX_OPERATIONS_BYTES) {
-    throw new ToolError('file-too-large', `arquivo grande demais: ${operationsFile}`, {
+    throw new ToolError('file-too-large', `file too large: ${operationsFile}`, {
       path: operationsFile,
     });
   }

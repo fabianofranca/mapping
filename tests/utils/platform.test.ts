@@ -15,16 +15,16 @@ const WINDOWS =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0';
 
 describe('detectPlatform', () => {
-  it('reconhece iPhone e Android', () => {
+  it('recognizes iPhone and Android', () => {
     expect(detectPlatform(IPHONE, 5)).toBe('ios');
     expect(detectPlatform(ANDROID, 5)).toBe('android');
   });
 
-  it('reconhece iPad que se apresenta como Mac (tem toque)', () => {
+  it('recognizes an iPad that presents itself as a Mac (has touch)', () => {
     expect(detectPlatform(MAC, 5)).toBe('ios');
   });
 
-  it('Mac e Windows de verdade são "other"', () => {
+  it('a real Mac and Windows are "other"', () => {
     expect(detectPlatform(MAC, 0)).toBe('other');
     expect(detectPlatform(WINDOWS, 0)).toBe('other');
   });
@@ -38,7 +38,7 @@ describe('isApplePlatform e isMultiSelectClick', () => {
     ...init,
   });
 
-  it('reconhece o macOS pela plataforma ou pelo user agent', () => {
+  it('recognizes macOS by the platform or by the user agent', () => {
     expect(isApplePlatform('', 'MacIntel')).toBe(true);
     expect(isApplePlatform('Mozilla/5.0 (Macintosh; Intel Mac OS X)', '')).toBe(true);
     expect(isApplePlatform('Mozilla/5.0 (X11; Linux x86_64)', 'Linux x86_64')).toBe(
@@ -47,7 +47,7 @@ describe('isApplePlatform e isMultiSelectClick', () => {
     expect(isApplePlatform('Mozilla/5.0 (Windows NT 10.0)', 'Win32')).toBe(false);
   });
 
-  it('Shift e Cmd juntam sempre; Ctrl só fora do macOS', () => {
+  it('Shift and Cmd always add to the selection; Ctrl only outside macOS', () => {
     expect(isMultiSelectClick(click({ shiftKey: true }), true)).toBe(true);
     expect(isMultiSelectClick(click({ metaKey: true }), true)).toBe(true);
     expect(isMultiSelectClick(click({ ctrlKey: true }), false)).toBe(true);

@@ -1,6 +1,6 @@
-// Cenário "projeto inteiro à vista" (etapa canvas-escala): projeto grande com setas,
-// store + derivados + CanvasController e o viewport de Enquadrar tudo. Reutilizado pelos
-// testes de camadas redesenhadas, nível de detalhe, grupo de arrasto e nós sob demanda.
+// "Whole project in view" scenario (canvas-scale stage): large project with arrows,
+// store + derived + CanvasController and the Fit all viewport. Reused by the
+// tests of redrawn layers, level of detail, drag group and on-demand nodes.
 import { vi } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
 import { createCanvasViewState } from '../../src/canvas/viewState';
@@ -14,18 +14,18 @@ import { createEditorUi } from '../../src/store/ui';
 import { material3Catalog, scenarioProject } from '../model/scenarioProject';
 import { componentSources, installFakeCanvas, layerDrawMeter, stageOf } from './harness';
 
-// A fila é do módulo: o Konva guarda a fila dos seus quadros por janela (`animQueues`), então um
-// quadro agendado num teste e perdido por outra fila deixaria as camadas sem desenhar no seguinte.
+// The queue belongs to the module: Konva keeps the queue of its frames per window (`animQueues`), so a
+// frame scheduled in one test and lost by another queue would leave the layers undrawn in the next.
 const frames: FrameRequestCallback[] = [];
 
-/** Troca o `requestAnimationFrame` por uma fila manual e devolve o `flush` (tempo gasto em ms; `NaN` sem quadro). */
+/** Swaps `requestAnimationFrame` for a manual queue and returns the `flush` (time spent in ms; `NaN` without a frame). */
 export function stubFrames(): () => number {
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
     frames.push(cb);
     return frames.length;
   });
   vi.stubGlobal('cancelAnimationFrame', () => undefined);
-  // O quadro do controller agenda o do Konva (`batchDraw`): esvazia a fila até acabar.
+  // The controller frame schedules Konva's (`batchDraw`): empties the queue until it is done.
   return () => {
     const start = performance.now();
     let ran = 0;
@@ -39,22 +39,22 @@ export function stubFrames(): () => number {
   };
 }
 
-/** Tamanhos medidos: número de marcações (as setas são metade). */
+/** Measured sizes: number of markings (arrows are half). */
 export type ScenarioSize = 500 | 2000 | 5000;
 
-/** Opções do cenário (etapa canvas-desempenho, CD1); sem nenhuma, é o cenário de sempre. */
+/** Scenario options (canvas-performance stage, CD1); with none, it is the usual scenario. */
 export interface ScenarioOptions {
-  /** Número de setas; padrão metade das marcações. */
+  /** Number of arrows; default half of the markings. */
   readonly arrows?: number;
-  /** Acrescenta, em cada container, as 21 instâncias da tela `M3_SCREEN` (biblioteca Material 3). */
+  /** Adds, in each container, the 21 instances of the `M3_SCREEN` screen (Material 3 library). */
   readonly components?: boolean;
-  /** Marcações por container; padrão 100 (maior que isso a receita gera marcações de largura 0). */
+  /** Markings per container; default 100 (above that the recipe generates markings of width 0). */
   readonly perImage?: number;
-  /** Projeto já montado (o teste de crescimento monta uma vez e abre várias); ignora as outras opções. */
+  /** Already assembled project (the growth test assembles once and opens several); ignores the other options. */
   readonly project?: Project;
 }
 
-/** Projeto grande com `size` marcações e, por padrão, `size / 2` setas entre marcações vizinhas. */
+/** Large project with `size` markings and, by default, `size / 2` arrows between neighboring markings. */
 export function wholeProject(size: number, options: ScenarioOptions = {}): Project {
   return scenarioProject({ size, ...options });
 }
@@ -67,18 +67,18 @@ export interface WholeProjectScenario {
   readonly derived: ReturnType<typeof createEditorDerived>;
   readonly controller: CanvasController;
   readonly container: HTMLElement;
-  /** Tempo do primeiro quadro (cria os nós; ms). */
+  /** Time of the first frame (creates the nodes; ms). */
   readonly firstFrameMs: number;
-  /** Roda os quadros agendados e devolve quanto levaram (ms); `NaN` se não havia quadro. */
+  /** Runs the scheduled frames and returns how long they took (ms); `NaN` if there was no frame. */
   flush(): number;
-  /** Camadas redesenhadas (por nome) desde a última chamada. */
+  /** Layers redrawn (by name) since the last call. */
   drawnLayers(): Record<string, number>;
   destroy(): void;
 }
 
 /**
- * Monta o cenário e desenha o primeiro quadro já enquadrado (Enquadrar tudo). Quem chama
- * precisa ter `installFakeCanvas()` e o stub de `requestAnimationFrame` (veja `openScenario`).
+ * Assembles the scenario and draws the first frame already framed (Fit all). Whoever calls
+ * needs `installFakeCanvas()` and the `requestAnimationFrame` stub (see `openScenario`).
  */
 export function openWholeProject(
   size: number,
@@ -91,7 +91,7 @@ export function openWholeProject(
   const project = options.project ?? wholeProject(size, options);
   const store = createProjectStore({ now: () => '2026-10-02T12:00:00.000Z' });
   store.load(project, { readOnly: false });
-  // Com componentes, o catálogo do Material 3 vai nas fontes do estado derivado e nas ações, como a sessão faz.
+  // With components, the Material 3 catalog goes into the derived state sources and the actions, as the session does.
   const sources = options.components ? componentSources(material3Catalog()) : undefined;
   const actions = createProjectActions(
     store,

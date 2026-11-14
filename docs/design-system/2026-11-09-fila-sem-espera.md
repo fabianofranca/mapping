@@ -1,13 +1,13 @@
-# Fila sem espera — 2026-11-09 (épico `epic/fila-sem-espera`)
+# Queue without waiting — 2026-11-09 (épico `epic/fila-sem-espera`)
 
 ## Pendências
 
-Nenhuma. O épico só mexe no fluxo de entrega (skills da fila e do detalhamento, docs e o painel da fila); nenhum componente, token ou ícone do design system muda.
+None. The epic only touches the delivery flow (the queue and detailing skills, docs and the queue panel); no design system component, token or icon changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**.
+Nothing to write to the **Mapping** artifact.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

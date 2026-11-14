@@ -1,14 +1,14 @@
-# Foco que não se perde e nomes acessíveis estáveis — 2026-11-05 (épico `epic/foco-e-nomes`)
+# Focus that is not lost and stable accessible names — 2026-11-05 (épico `epic/foco-e-nomes`)
 
 ## Pendências
 
-- **Legenda das marcas (`ReviewLegend`):** o X do cabeçalho passa a se chamar "Fechar legenda" / "Close legend" (antes "Fechar diálogo"). Sem mudança visual.
-- Nenhum token, ícone ou componente novo; nenhuma cor mudou.
+- **Marks legend (`ReviewLegend`):** the header X is now named "Close legend" (before "Close dialog"). No visual change.
+- No new token, icon or component; no color changed.
 
 ## Sincronização
 
-Sem impacto no artefato **Mapping** (conferido em 2026-11-05, versão `1793843833-410c`): o DS não tem componente nem preview da `ReviewLegend` e nenhuma menção ao X "Fechar diálogo" da legenda. As menções que existem à legenda (`Revisao.md`, `Atalhos.md`, `Layouts.md`, `README.md`, o preview do `HelpDialog` e o CSS `.review-legend` do `bundle.css`) continuam corretas. O `Esc` da legenda e a devolução do foco ao botão que a abre são comportamento local, fora da lista de atalhos do DS. Nada gravado; nenhuma versão nova.
+Sem impacto on the **Mapping** artifact (checked on 2026-11-05, version `1793843833-410c`): the DS has no `ReviewLegend` component or preview and no mention of the legend's "Close dialog" X. The existing mentions of the legend (`Revisao.md`, `Atalhos.md`, `Layouts.md`, `README.md`, the `HelpDialog` preview and the `.review-legend` CSS in `bundle.css`) remain correct. The legend's `Esc` and the return of focus to the button that opens it are local behavior, outside the DS shortcut list. Nothing written; no new version.
 
 ## Ficou sem gravar
 
-Nada. Quando o DS ganhar um componente ou preview da legenda, o nome acessível "Fechar legenda" / "Close legend" e o `Esc` com devolução do foco já são o comportamento a descrever.
+Nothing. When the DS gets a legend component or preview, the accessible name "Close legend" and the `Esc` with focus return are already the behavior to describe.

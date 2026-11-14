@@ -1,4 +1,4 @@
-// O medidor e o desenho usam a mesma função de família: o mesmo valor para a mesma entrada.
+// The measurer and the drawing use the same family function: the same value for the same input.
 import { describe, expect, it, vi } from 'vitest';
 
 const configs: Array<{ fontFamily?: string }> = [];
@@ -7,12 +7,12 @@ vi.mock('konva/lib/shapes/Text', () => ({
     constructor(config: { fontFamily?: string }) {
       configs.push(config);
     }
-    // Como o Konva: `width()` devolve a largura fixada (o `maxWidth`) e `getTextWidth()`, a natural.
+    // Like Konva: `width()` returns the fixed width (the `maxWidth`) and `getTextWidth()`, the natural one.
     width = () => 400;
     getTextWidth = () => 10;
     height = () => 10;
     textArr: { text: string }[] = [{ text: 'OK' }];
-    // Para a linha de base (`capMetricsOf`): ascent 12, descent 4 e `H` de 10 em qualquer corpo.
+    // For the baseline (`capMetricsOf`): ascent 12, descent 4 and `H` of 10 at any size.
     fontSize = () => 14;
     measureSize = () => ({
       width: 0,
@@ -29,7 +29,7 @@ import { konvaMeasurer } from '../../../src/canvas/components/konvaMeasurer';
 import { canvasFontFamily } from '../../../src/model/components/fontFamily';
 
 describe('konvaMeasurer', () => {
-  it('a largura é a natural do texto, limitada ao maxWidth', () => {
+  it('the width is the natural one of the text, limited to maxWidth', () => {
     const font = {
       family: 'Roboto',
       size: 14,
@@ -44,11 +44,11 @@ describe('konvaMeasurer', () => {
   });
 
   it.each(['Roboto', 'system-ui', 'system-ui, "Segoe UI", sans-serif', '"Segoe UI, x'])(
-    'mede com a família %s igual ao desenho',
+    'measures with the family %s the same as the drawing',
     (family) => {
       configs.length = 0;
       konvaMeasurer(
-        'Olá',
+        'Hello',
         {
           family,
           size: 14,
@@ -64,7 +64,7 @@ describe('konvaMeasurer', () => {
   );
 });
 
-describe('konvaMeasurer: linha de base (MC1, decisão 2)', () => {
+describe('konvaMeasurer: baseline (MC1, decision 2)', () => {
   const font = {
     family: 'Roboto',
     size: 14,
@@ -74,9 +74,9 @@ describe('konvaMeasurer: linha de base (MC1, decisão 2)', () => {
     letterSpacing: 0,
   };
 
-  it('devolve firstBaseline, lastBaseline e lineCount pela lineBaseline do canvas', () => {
+  it('returns firstBaseline, lastBaseline and lineCount from the canvas lineBaseline', () => {
     const m = konvaMeasurer('OK', font, 400);
-    // centro da linha (10) + (ascent 12 − descent 4) / 2
+    // line center (10) + (ascent 12 − descent 4) / 2
     expect(m.firstBaseline).toBe(14);
     expect(m.lastBaseline).toBe(14);
     expect(m.lineCount).toBe(1);

@@ -5,18 +5,18 @@ import { Icon, type IconName } from '../icons';
 export interface TabItem<T extends string> {
   readonly id: T;
   readonly label: string;
-  /** Ícone antes do rótulo. */
+  /** Icon before the label. */
   readonly icon?: IconName;
-  /** Nome acessível quando o rótulo é vazio (aba só com ícone e contador). */
+  /** Accessible name when the label is empty (icon-only tab with counter). */
   readonly ariaLabel?: string;
-  /** Dica nativa (`title`). */
+  /** Native hint (`title`). */
   readonly title?: string;
   readonly disabled?: boolean;
-  /** Contador ao lado do rótulo (ex.: quantas pendências). */
+  /** Counter beside the label (e.g. how many pending items). */
   readonly badge?: string;
-  /** `info`: contador que avisa uma novidade (ex.: propostas novas), em destaque. */
+  /** `info`: counter that announces something new (e.g. new proposals), highlighted. */
   readonly badgeTone?: 'muted' | 'info';
-  /** Ponto de alerta ao lado do rótulo (ex.: erro novo). */
+  /** Alert dot beside the label (e.g. new error). */
   readonly alert?: boolean;
 }
 
@@ -24,13 +24,13 @@ interface TabsProps<T extends string> {
   readonly tabs: readonly TabItem<T>[];
   readonly value: T;
   readonly onChange: (id: T) => void;
-  /** Nome acessível da lista de abas. */
+  /** Accessible name of the tab list. */
   readonly label: string;
 }
 
 /**
- * Abas com sublinhado (2px). Setas, Home e End movem entre
- * as abas (o foco e a seleção andam juntos); só a aba escolhida entra na ordem do Tab.
+ * Underlined tabs (2px). Arrows, Home and End move among
+ * the tabs (focus and selection go together); only the chosen tab enters the Tab order.
  */
 export function Tabs<T extends string>({
   tabs,
@@ -39,8 +39,8 @@ export function Tabs<T extends string>({
   label,
 }: TabsProps<T>): JSX.Element {
   const listRef = useRef<HTMLDivElement>(null);
-  // Lista que rola (janela estreita): a aba escolhida nunca fica fora da faixa visível,
-  // ao trocar de aba e também quando a própria lista é redimensionada.
+  // Scrolling list (narrow window): the chosen tab never stays outside the visible strip,
+  // on switching tabs and also when the list itself is resized.
   const reveal = (): void => {
     const list = listRef.current;
     const tab = list?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');

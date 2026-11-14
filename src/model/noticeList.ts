@@ -7,22 +7,22 @@ import { groupRootsByContainer } from './listing';
 import { isEmptyValue } from './typed';
 import type { Annotation, Arrow, JsonValue, Layer, Marking, Project } from './types';
 
-// Lista da janela Avisos (etapa #486, AV3): cada aviso da especialização com as anotações do
-// projeto que ele afeta, e as contagens da aba e da barra de status. Puro e sem APIs de
-// navegador; a derivação reativa fica em `store/derived.ts`.
+// List of the Notices window (stage #486, AV3): each specialization notice with the project
+// annotations it affects, and the counts of the tab and the status bar. Pure and without
+// browser APIs; the reactive derivation lives in `store/derived.ts`.
 
-/** Onde a anotação está: a marcação (ou a de origem da seta), o caminho até ela e a camada. */
+/** Where the annotation is: the marking (or the arrow's source one), the path to it and the layer. */
 interface Place {
   readonly annotation: Annotation;
   readonly marking: Marking;
   readonly path: readonly Marking[];
   readonly layer: Layer;
   readonly arrow?: Arrow;
-  /** Posição na ordem da janela (imagens, marcações em profundidade, anotações). */
+  /** Position in the window's order (containers, markings depth-first, annotations). */
   readonly order: number;
 }
 
-/** Lugar de cada anotação (por id), na ordem de Incompletas: o canvas, depois cada imagem. */
+/** Place of each annotation (by id), in Incomplete order: the canvas, then each container. */
 const annotationPlaces: (p: Project) => ReadonlyMap<string, Place> = memoByProject(
   (p) => {
     const index = projectIndex(p);
@@ -64,7 +64,7 @@ const annotationPlaces: (p: Project) => ReadonlyMap<string, Place> = memoByProje
   },
 );
 
-/** Os avisos que afetam cada anotação do projeto (só as que têm algum), na ordem do arquivo. */
+/** The notices that affect each project annotation (only those that have any), in file order. */
 export const noticesByAnnotation: (
   p: Project,
 ) => ReadonlyMap<string, readonly NoticeUsage[]> = memoByProject((p) => {
@@ -79,7 +79,7 @@ export const noticesByAnnotation: (
   return map;
 });
 
-/** Os avisos que afetam a anotação (vazio se nenhum). */
+/** The notices that affect the annotation (empty if none). */
 export function annotationNotices(
   p: Project,
   annotationId: string,
@@ -87,36 +87,36 @@ export function annotationNotices(
   return noticesByAnnotation(p).get(annotationId) ?? [];
 }
 
-/** Uma anotação afetada por um aviso, com o contexto para achá-la e o valor no campo. */
+/** An annotation affected by a notice, with the context to find it and the value in the field. */
 export interface NoticeRow {
   readonly annotation: Annotation;
-  /** A marcação; numa anotação de seta, a marcação de origem dela. */
+  /** The marking; for an arrow annotation, the arrow's source marking. */
   readonly marking: Marking;
-  /** Da marcação raiz até ela mesma (o último item é `marking`). */
+  /** From the root marking down to itself (the last item is `marking`). */
   readonly path: readonly Marking[];
   readonly layer: Layer;
   readonly arrow?: Arrow;
   /**
-   * O valor da anotação onde o aviso incide: o do campo (aviso de campo); as células não vazias
-   * da coluna (aviso de coluna); `undefined` no aviso de tipo.
+   * The annotation value the notice applies to: the field's (field notice); the non-empty cells
+   * of the column (column notice); `undefined` for a type notice.
    */
   readonly value: JsonValue | undefined;
 }
 
-/** Um aviso (grupo da janela) com as anotações que ele afeta. */
+/** A notice (window group) with the annotations it affects. */
 export interface NoticeGroup {
   readonly usage: NoticeUsage;
-  /** Quantas anotações o aviso afeta (as linhas que passam pelos filtros). */
+  /** How many annotations the notice affects (the rows that pass the filters). */
   readonly count: number;
   readonly rows: readonly NoticeRow[];
 }
 
 export interface NoticeFilters {
-  /** Só os avisos deste tipo; sem ele, todos. */
+  /** Only notices of this kind; without it, all. */
   readonly kind?: SpecNoticeKind | null;
-  /** Só o aviso com anotação afetada (padrão `true`); `false` inclui os que nenhuma usa. */
+  /** Only notices with an affected annotation (default `true`); `false` includes those no annotation uses. */
   readonly inUseOnly?: boolean;
-  /** Só as anotações destas camadas (as visíveis); sem ele, todas. */
+  /** Only the annotations of these layers (the visible ones); without it, all. */
   readonly onlyLayers?: readonly Layer[];
 }
 
@@ -129,7 +129,7 @@ function usageValue(usage: NoticeUsage, a: Annotation): JsonValue | undefined {
   return cells;
 }
 
-/** Lugares das anotações que o aviso afeta (e que passam pelo filtro de camadas), na ordem da janela. */
+/** Places of the annotations the notice affects (and that pass the layer filter), in window order. */
 function placesOf(
   usage: NoticeUsage,
   places: ReadonlyMap<string, Place>,
@@ -161,15 +161,16 @@ function rowsOf(
   );
 }
 
-/** Prefere a gravidade; dentro do `kind`, a ordem do arquivo (a ordenação é estável). */
+/** Prefers severity; within the `kind`, file order (the sort is stable). */
 function byKind(a: NoticeUsage, b: NoticeUsage): number {
   return NOTICE_KINDS.indexOf(a.notice.kind) - NOTICE_KINDS.indexOf(b.notice.kind);
 }
 
 /**
- * Os grupos da janela Avisos: um por aviso, do mais grave ao menos (`removed`, `deprecated`,
- * `diverges`, `pending`) e, no mesmo `kind`, na ordem das especializações, camadas e tipos. As
- * linhas seguem a ordem de Incompletas (imagens, marcações em profundidade).
+ * The groups of the Notices window: one per notice, from most to least severe (`removed`,
+ * `deprecated`, `diverges`, `pending`) and, within the same `kind`, in the order of
+ * specializations, layers and types. The rows follow Incomplete order (containers, markings
+ * depth-first).
  */
 export function buildNoticeList(p: Project, filters: NoticeFilters): NoticeGroup[] {
   const { kind = null, inUseOnly = true, onlyLayers } = filters;
@@ -186,21 +187,21 @@ export function buildNoticeList(p: Project, filters: NoticeFilters): NoticeGroup
 }
 
 export interface NoticeCounts {
-  /** O que os números contam: anotações com aviso, ou avisos listados (`inUseOnly` desmarcado). */
+  /** What the numbers count: annotations with a notice, or listed notices (`inUseOnly` unchecked). */
   readonly unit: 'annotations' | 'notices';
-  /** Total de `unit` (não depende do filtro de `kind`). */
+  /** Total of `unit` (does not depend on the `kind` filter). */
   readonly total: number;
-  /** O mesmo, de cada `kind`. */
+  /** The same, for each `kind`. */
   readonly byKind: Readonly<Record<SpecNoticeKind, number>>;
-  /** Os `kind` que têm aviso na especialização (com anotação ou não, conforme `inUseOnly`). */
+  /** The `kind`s that have a notice in the specialization (with an annotation or not, per `inUseOnly`). */
   readonly present: readonly SpecNoticeKind[];
 }
 
 /**
- * Contagens por `kind` e no total, com os mesmos filtros de `buildNoticeList` (o `kind` não
- * conta: os botões do `Segmented` mostram todos). Com `inUseOnly` marcado contam anotações
- * com aviso; desmarcado a lista traz um grupo por aviso (mesmo sem anotação), e o botão conta
- * esses grupos.
+ * Counts by `kind` and in total, with the same filters as `buildNoticeList` (the `kind` does not
+ * count: the `Segmented` buttons show all of them). With `inUseOnly` checked, annotations with a
+ * notice are counted; unchecked, the list brings one group per notice (even without an
+ * annotation), and the button counts those groups.
  */
 export function noticeCounts(p: Project, filters: NoticeFilters): NoticeCounts {
   const inUseOnly = filters.inUseOnly ?? true;
@@ -227,7 +228,7 @@ interface Tally {
   groups: number;
 }
 
-/** As anotações e os grupos (avisos listados) que passam pelos filtros, no total e por `kind`. */
+/** The annotations and groups (listed notices) that pass the filters, in total and by `kind`. */
 function tallyNotices(p: Project, filters: NoticeFilters): Tally {
   const { inUseOnly = true, onlyLayers } = filters;
   const places = annotationPlaces(p);
@@ -254,16 +255,17 @@ function tallyNotices(p: Project, filters: NoticeFilters): Tally {
   return tally;
 }
 
-/** Quantas anotações do projeto têm algum aviso (aba da janela e barra de status). */
+/** How many project annotations have some notice (window tab and status bar). */
 export function noticedCount(p: Project): number {
   return noticesByAnnotation(p).size;
 }
 
 /**
- * Os avisos que uma mudança de proposta traz (etapa #486, decisão 10), lidos de `p`, o projeto
- * com a mudança aplicada (a prévia): a criação da anotação (`field` vazio) traz todos os que
- * ela passa a ter; a troca de tipo (`type`), os do tipo; o valor de um campo (`values.<chave>`),
- * os do campo e os das colunas dele. Remoções, outras entidades e outros campos não trazem.
+ * The notices that a proposal change brings (stage #486, decision 10), read from `p`, the
+ * project with the change applied (the preview): creating the annotation (empty `field`) brings
+ * all those it comes to have; changing the type (`type`), those of the type; a field's value
+ * (`values.<key>`), those of the field and of its columns. Removals, other entities and other
+ * fields bring none.
  */
 export function changeNotices(
   p: Project,

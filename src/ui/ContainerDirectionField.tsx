@@ -12,8 +12,8 @@ interface ContainerDirectionFieldProps {
 }
 
 /**
- * Direção de leitura do container (v20): "Segue o projeto" (valor vazio, `null`) ou uma das
- * duas direções. Diferente do modo do desenho, aparece sempre: não depende de especialização.
+ * Reading direction of the container (v20): "Follows the project" (empty value, `null`) or one of the
+ * two directions. Unlike the drawing mode, it always appears: it does not depend on a specialization.
  */
 export function ContainerDirectionField({
   image,

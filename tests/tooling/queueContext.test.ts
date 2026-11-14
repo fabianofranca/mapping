@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Etapa #1874, fase CX1: `painel.py context --medir --max <n>` mede o contexto com o `contextUsage.mjs` e grava
-// o `pct` com a fonte; o número à mão continua aceito (fonte `manual`, ou `get_session`), e o `show` diz a fonte e
-// acusa a medida à mão e a medida velha (mais de 70 min).
+// Stage #1874, phase CX1: `painel.py context --medir --max <n>` measures the context with `contextUsage.mjs` and writes
+// the `pct` with the source; the by-hand number is still accepted (source `manual`, or `get_session`), and `show` states the source
+// and flags the by-hand measure and the stale measure (over 70 min).
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,7 +12,7 @@ const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
 const NOW = '2026-11-10T10:00:00Z';
 const MEDIR = ['--medir', '--max', '1000000'];
 const AVISO_MAO = ' — medido à mão: meça com context --medir';
-// Testes que sobem vários subprocessos do painel.py: folga para o CI sob carga.
+// Tests that spawn several painel.py subprocesses: headroom for CI under load.
 const TEMPO = 30_000;
 
 let dir = '';
@@ -33,7 +33,7 @@ function runAt(
   });
 }
 
-/** Roda com o transcript de fixture e a sessão `abc`; `sessao: false` tira a variável da sessão. */
+/** Runs with the fixture transcript and the `abc` session; `sessao: false` removes the session variable. */
 function ctx(
   args: string[],
   opts: { now?: string; sessao?: boolean; config?: string } = {},
@@ -106,8 +106,8 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-describe('painel.py context --medir (CX1, decisões 1, 2 e 4 da #1874)', () => {
-  it('mede o transcript da sessão: grava pct, fonte sessao e contextAt, e imprime medido:', () => {
+describe('painel.py context --medir (CX1, decisions 1, 2 and 4 of #1874)', () => {
+  it('measures the session transcript: writes pct, source sessao and contextAt, and prints medido:', () => {
     const r = ctx(['context', dir, ...MEDIR]);
     expect(r.status, r.stderr).toBe(0);
     expect(r.stdout).toContain('medido: pct=12 contexto=112697 fonte=sessao');
@@ -129,7 +129,7 @@ describe('painel.py context --medir (CX1, decisões 1, 2 e 4 da #1874)', () => {
     expect(meta().context).toBe(100);
   });
 
-  it('sem transcript: código 2, o motivo do script e o caminho de exceção no stderr, meta sem mudança', () => {
+  it('without a transcript: code 2, the script reason and the exception path on stderr, meta unchanged', () => {
     const antes = readFileSync(path.join(dir, 'meta.json'), 'utf8');
     const r = ctx(['context', dir, ...MEDIR], {
       config: path.join(scratch, 'nao-existe'),
@@ -141,17 +141,17 @@ describe('painel.py context --medir (CX1, decisões 1, 2 e 4 da #1874)', () => {
   });
 });
 
-describe('painel.py context — erros de uso e número à mão (CX1, decisões 1 e 3)', () => {
+describe('painel.py context — usage errors and by-hand number (CX1, decisions 1 and 3)', () => {
   const casos: Array<[string, string[]]> = [
-    ['--medir sem --max', ['--medir']],
-    ['--max sem --medir', ['20', '--max', '1000000']],
-    ['--medir com <pct>', ['20', ...MEDIR]],
-    ['nem <pct> nem --medir', []],
-    ['--fonte com --medir', [...MEDIR, '--fonte', 'get_session']],
-    ['--fonte com outro valor', ['20', '--fonte', 'sessao']],
-    ['--max com dígito Unicode', ['--medir', '--max', '²']],
+    ['--medir without --max', ['--medir']],
+    ['--max without --medir', ['20', '--max', '1000000']],
+    ['--medir with <pct>', ['20', ...MEDIR]],
+    ['neither <pct> nor --medir', []],
+    ['--fonte with --medir', [...MEDIR, '--fonte', 'get_session']],
+    ['--fonte with another value', ['20', '--fonte', 'sessao']],
+    ['--max with a Unicode digit', ['--medir', '--max', '²']],
   ];
-  it.each(casos)('%s: código 2 e nada gravado', (_nome, args) => {
+  it.each(casos)('%s: code 2 and nothing written', (_nome, args) => {
     const antes = readFileSync(path.join(dir, 'meta.json'), 'utf8');
     const r = ctx(['context', dir, ...args]);
     expect(r.status, r.stdout).toBe(2);
@@ -176,8 +176,8 @@ describe('painel.py context — erros de uso e número à mão (CX1, decisões 1
   });
 });
 
-describe('painel.py show — avisos do contexto (CX1, decisão 5)', () => {
-  it('medida velha: 70 min exatos não é, 71 min é', () => {
+describe('painel.py show — context warnings (CX1, decision 5)', () => {
+  it('stale measure: exactly 70 min is not, 71 min is', () => {
     ctx(['context', dir, ...MEDIR]);
     expect(line('2026-11-10T11:10:00Z')).toBe(`contexto: 12% (${NOW}, sessao)`);
     expect(line('2026-11-10T11:11:00Z')).toBe(
@@ -202,7 +202,7 @@ describe('painel.py show — avisos do contexto (CX1, decisão 5)', () => {
   });
 });
 
-describe('painel.py apply com context --medir (CX1, decisão 2)', () => {
+describe('painel.py apply with context --medir (CX1, decision 2)', () => {
   it(
     'a linha context --medir --max grava como o comando solto',
     () => {

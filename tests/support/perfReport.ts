@@ -3,25 +3,25 @@ import { runInNewContext } from 'node:vm';
 import { expect } from 'vitest';
 
 /**
- * Confere um orçamento de tempo e imprime a medida com `console.info`, para registrar a linha de
- * base e comparar depois (`npm run test:perf`). O limite não muda: o `expect` é o mesmo de antes.
- * `label` distingue as medidas de um mesmo teste; o nome do teste vai junto.
+ * Checks a time budget and prints the measure with `console.info`, to record the baseline
+ * and compare later (`npm run test:perf`). The limit does not change: the `expect` is the same as before.
+ * `label` tells apart the measures of the same test; the test name goes along.
  */
 export function expectBelow(value: number, limit: number, label?: string): void {
   const test = expect.getState().currentTestName ?? '';
   const name = label === undefined ? test : `${test} › ${label}`;
-  console.info(`[perf] ${name}: ${value.toFixed(3)} ms (limite ${limit} ms)`);
+  console.info(`[perf] ${name}: ${value.toFixed(3)} ms (limit ${limit} ms)`);
   expect(value, label).toBeLessThan(limit);
 }
 
 let gcFunction: (() => void) | undefined;
 
 /**
- * Força uma coleta de lixo, para que ela não caia dentro de uma amostra de tempo (etapa #1698).
- * Usa `globalThis.gc` quando existe; senão liga `--expose-gc` em tempo de execução
- * (`v8.setFlagsFromString`) e pega a função com `vm.runInNewContext('gc')`, uma vez só.
- * O `execArgv: ['--expose-gc']` da #1095 não serve: o projeto `perf-app` roda em `vmThreads`
- * (worker threads), e o Node recusa flags do V8 no `execArgv` de um worker
+ * Forces a garbage collection, so it does not fall inside a time sample (stage #1698).
+ * Uses `globalThis.gc` when it exists; otherwise turns on `--expose-gc` at run time
+ * (`v8.setFlagsFromString`) and gets the function with `vm.runInNewContext('gc')`, only once.
+ * The `execArgv: ['--expose-gc']` of #1095 does not work: the `perf-app` project runs in `vmThreads`
+ * (worker threads), and Node refuses V8 flags in the `execArgv` of a worker
  * (`ERR_WORKER_INVALID_EXEC_ARGV`).
  */
 export function collectGarbage(): void {
@@ -48,24 +48,24 @@ export interface BudgetOptions {
 }
 
 export interface BudgetMeasure {
-  /** Menor mediana entre as levas: é a que vale para o teto. */
+  /** Smallest median among the batches: it is the one that counts for the limit. */
   median: number;
-  /** Quartis da leva que deu a menor mediana (só para o registro). */
+  /** Quartiles of the batch that gave the smallest median (only for the record). */
   p25: number;
   p75: number;
-  /** A mediana de cada leva, na ordem em que rodaram (só para o registro). */
+  /** The median of each batch, in the order they ran (only for the record). */
   medians: number[];
 }
 
 /**
- * Mede `run` para um orçamento de tempo apertado (etapa #1698): `warmup` execuções sem medir
- * (10 por padrão) e `rounds` levas (3) de `samples` amostras (41; sempre ímpar). A cada amostra,
- * `collect()` fora do tempo (gc por padrão) antes de ler o relógio. Instanciar e desenhar no Konva
- * aloca muito, e a cauda de tempo vinha de coletas e da disputa de CPU dentro das amostras. Sob
- * disputa, a fase ruim do runner cobria as 41 amostras seguidas e a mediana de uma leva só passava
- * dos 4 ms (fase CL1); por isso vale a menor mediana entre as levas, que acompanha o custo do
- * código e não a fase da máquina (uma regressão real sobe todas). Para o teto vale a `median`; os
- * quartis e `medians` servem só para o registro.
+ * Measures `run` for a tight time budget (stage #1698): `warmup` unmeasured runs
+ * (10 by default) and `rounds` batches (3) of `samples` samples (41; always odd). At each sample,
+ * `collect()` outside the timing (gc by default) before reading the clock. Instantiating and drawing in Konva
+ * allocates a lot, and the time tail came from collections and CPU contention inside the samples. Under
+ * contention, the bad phase of the runner covered the 41 samples in a row and the median of a single batch only went past
+ * 4 ms (phase CL1); so the smallest median among the batches counts, which follows the cost of the
+ * code and not the phase of the machine (a real regression raises all of them). For the limit the `median` counts; the
+ * quartiles and `medians` serve only for the record.
  */
 export function measureBudget(
   run: () => void,

@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Etapa #920, fase RA1: a decisão de publicar a estável do MCP no merge do épico (job `decide`
-// do `mcp-release.yml`) e a trava da versão no PR do épico (job `epic` do `ci.yml`) vivem em
-// `scripts/release/stableRelease.mjs`; o YAML só junta os dados e chama o script.
+// Stage #920, phase RA1: the decision to publish the MCP stable release on the epic merge (job
+// `decide` of `mcp-release.yml`) and the version lock on the epic PR (job `epic` of `ci.yml`) live
+// in `scripts/release/stableRelease.mjs`; the YAML only gathers the data and calls the script.
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -19,7 +19,7 @@ import {
 const TAGS = ['mcp-v0.27.0', 'mcp-v0.28.1', 'mcp-v0.28.2', 'mcp-v0.28.2-rc.1'];
 
 describe('parseTags', () => {
-  it('lê a saída de `git ls-remote --tags` e de `git tag -l`, sem o ^{}', () => {
+  it('reads the output of `git ls-remote --tags` and `git tag -l`, without the ^{}', () => {
     const text = [
       'abc123\trefs/tags/mcp-v0.28.1',
       'def456\trefs/tags/mcp-v0.28.1^{}',
@@ -30,46 +30,46 @@ describe('parseTags', () => {
   });
 });
 
-describe('versões', () => {
-  it('compara por número, não por texto', () => {
+describe('versions', () => {
+  it('compares by number, not by text', () => {
     expect(compareVersions('0.28.10', '0.28.2')).toBeGreaterThan(0);
     expect(compareVersions('0.28.2', '0.28.2')).toBe(0);
     expect(compareVersions('0.9.0', '0.28.0')).toBeLessThan(0);
   });
 
-  it('a última estável ignora rc e snapshot', () => {
+  it('the latest stable ignores rc and snapshot', () => {
     expect(latestStable(TAGS)).toBe('0.28.2');
     expect(latestStable(['mcp-v0.29.0-rc.1', 'mcp-snapshot-pr12'])).toBeNull();
   });
 
-  it('lê SERVER_VERSION do mcp/version.ts', () => {
+  it('reads SERVER_VERSION from mcp/version.ts', () => {
     expect(readServerVersion("export const SERVER_VERSION = '0.28.2';")).toBe('0.28.2');
-    expect(() => readServerVersion('nada')).toThrow(/SERVER_VERSION/);
+    expect(() => readServerVersion('nothing')).toThrow(/SERVER_VERSION/);
   });
 });
 
-describe('decideRelease (job decide, push na main)', () => {
-  it('versão nova publica e devolve a tag', () => {
+describe('decideRelease (job decide, push to main)', () => {
+  it('a new version publishes and returns the tag', () => {
     const r = decideRelease({ version: '0.29.0', tags: TAGS });
     expect(r.publish).toBe(true);
     expect(r.tag).toBe('mcp-v0.29.0');
   });
 
-  it('tag existente pula, com o aviso de já publicada', () => {
+  it('an existing tag skips, with the already-published notice', () => {
     const r = decideRelease({ version: '0.28.2', tags: TAGS });
     expect(r.publish).toBe(false);
     expect(r.level).toBe('notice');
-    expect(r.message).toBe('mcp-v0.28.2 já publicada; nada a fazer');
+    expect(r.message).toBe('mcp-v0.28.2 already published; nothing to do');
   });
 
-  it('rc da mesma versão não conta como estável', () => {
+  it('an rc of the same version does not count as stable', () => {
     const r = decideRelease({ version: '0.29.0', tags: ['mcp-v0.29.0-rc.1'] });
     expect(r.publish).toBe(true);
   });
 });
 
-describe('checkEpicVersion (job epic do ci.yml)', () => {
-  it('versão nova maior que a última estável passa', () => {
+describe('checkEpicVersion (job epic of ci.yml)', () => {
+  it('a new version greater than the latest stable passes', () => {
     const r = checkEpicVersion({
       version: '0.29.0',
       tags: TAGS,
@@ -78,7 +78,7 @@ describe('checkEpicVersion (job epic do ci.yml)', () => {
     expect(r.ok).toBe(true);
   });
 
-  it('versão nova menor que a última estável falha', () => {
+  it('a new version lower than the latest stable fails', () => {
     const r = checkEpicVersion({ version: '0.28.0', tags: TAGS, changed: [] });
     expect(r.ok).toBe(false);
     expect(r.level).toBe('error');
@@ -86,12 +86,12 @@ describe('checkEpicVersion (job epic do ci.yml)', () => {
     expect(r.message).toContain('0.28.2');
   });
 
-  it('versão nova igual à última estável (tag existente) cai no caso da tag existente', () => {
+  it('a new version equal to the latest stable (existing tag) falls into the existing-tag case', () => {
     const r = checkEpicVersion({ version: '0.28.2', tags: TAGS, changed: [] });
     expect(r.ok).toBe(true);
   });
 
-  it('tag existente e entrada da release mudada falha, com a mensagem e até 5 arquivos', () => {
+  it('existing tag and changed release input fails, with the message and up to 5 files', () => {
     const changed = [
       'README.md',
       'mcp/a.ts',
@@ -105,11 +105,11 @@ describe('checkEpicVersion (job epic do ci.yml)', () => {
     expect(r.ok).toBe(false);
     expect(r.level).toBe('error');
     expect(r.message).toBe(
-      'O épico muda o que vai na release do MCP (mcp/a.ts, mcp/b.ts, src/model/c.ts, src/model/d.ts, docs/AGENT-GUIDE.md e mais 1) e mantém a versão 0.28.2, que já tem a estável mcp-v0.28.2. Suba SERVER_VERSION em mcp/version.ts (e os docs que a citam).',
+      'The epic changes what goes in the MCP release (mcp/a.ts, mcp/b.ts, src/model/c.ts, src/model/d.ts, docs/AGENT-GUIDE.md and 1 more) and keeps version 0.28.2, which already has the stable mcp-v0.28.2. Raise SERVER_VERSION in mcp/version.ts (and the docs that cite it).',
     );
   });
 
-  it('tag existente sem entrada mudada passa com aviso de que o merge não publica', () => {
+  it('existing tag with no changed input passes with a notice that the merge does not publish', () => {
     const r = checkEpicVersion({
       version: '0.28.2',
       tags: TAGS,
@@ -117,7 +117,7 @@ describe('checkEpicVersion (job epic do ci.yml)', () => {
     });
     expect(r.ok).toBe(true);
     expect(r.level).toBe('notice');
-    expect(r.message).toContain('não publica');
+    expect(r.message).toContain('does not publish');
   });
 });
 
@@ -137,7 +137,7 @@ describe('CLI', () => {
     expect(r.status, r.stderr).toBe(0);
   };
 
-  /** Repositório de teste com `mcp-v0.28.2` no primeiro commit e um arquivo mudado depois. */
+  /** Test repository with `mcp-v0.28.2` on the first commit and a file changed afterwards. */
   function repo(changedAfterTag: string): string {
     const dir = mkdtempSync(join(tmpdir(), 'stable-'));
     dirs.push(dir);
@@ -148,58 +148,58 @@ describe('CLI', () => {
     );
     git(dir, 'init', '-q', '-b', 'main');
     git(dir, 'add', '.');
-    git(dir, 'commit', '-q', '-m', 'um');
+    git(dir, 'commit', '-q', '-m', 'one');
     git(dir, 'tag', 'mcp-v0.28.2');
     mkdirSync(join(dir, changedAfterTag, '..'), { recursive: true });
     writeFileSync(join(dir, changedAfterTag), 'x\n');
     git(dir, 'add', '.');
-    git(dir, 'commit', '-q', '-m', 'dois');
+    git(dir, 'commit', '-q', '-m', 'two');
     return dir;
   }
 
   const run = (cwd: string, ...args: string[]) =>
     spawnSync('node', [SCRIPT, ...args], { cwd, encoding: 'utf8' });
 
-  it('epic: falha com ::error:: quando muda entrada da release e mantém a versão', () => {
+  it('epic: fails with ::error:: when a release input changes and the version stays', () => {
     const dir = repo('mcp/novo.ts');
     const r = run(dir, 'epic', '--version-file', 'mcp/version.ts');
     expect(r.status).toBe(1);
     expect(r.stdout).toContain(
-      '::error::O épico muda o que vai na release do MCP (mcp/novo.ts)',
+      '::error::The epic changes what goes in the MCP release (mcp/novo.ts)',
     );
   });
 
-  it('epic: entrada da release renomeada para fora da lista conta pelo caminho antigo', () => {
+  it('epic: a release input renamed out of the list counts by the old path', () => {
     const dir = repo('docs/outro.md');
-    // `mcp/antigo.ts` entra no commit do tag e sai renomeado: sem `--no-renames` o diff
-    // só mostraria o caminho novo (fora da lista) e a mudança passaria sem subir a versão.
+    // `mcp/antigo.ts` enters the tag commit and leaves renamed: without `--no-renames` the diff
+    // would only show the new path (outside the list) and the change would pass without bumping the version.
     mkdirSync(join(dir, 'mcp'), { recursive: true });
     writeFileSync(join(dir, 'mcp/antigo.ts'), 'export const a = 1;\n');
     git(dir, 'add', '.');
-    git(dir, 'commit', '-q', '-m', 'tres');
+    git(dir, 'commit', '-q', '-m', 'three');
     git(dir, 'tag', '-f', 'mcp-v0.28.2');
     git(dir, 'mv', 'mcp/antigo.ts', 'docs/antigo.md');
-    git(dir, 'commit', '-q', '-m', 'quatro');
+    git(dir, 'commit', '-q', '-m', 'four');
     const r = run(dir, 'epic', '--version-file', 'mcp/version.ts');
     expect(r.status).toBe(1);
     expect(r.stdout).toContain('mcp/antigo.ts');
   });
 
-  it('version: imprime a SERVER_VERSION do arquivo, sem sed nos workflows', () => {
+  it('version: prints the SERVER_VERSION of the file, without sed in the workflows', () => {
     const dir = repo('docs/outro.md');
     const r = run(dir, 'version', '--version-file', 'mcp/version.ts');
     expect(r.status, r.stderr).toBe(0);
     expect(r.stdout).toBe('0.28.2\n');
   });
 
-  it('epic: passa com ::notice:: quando nada da release mudou', () => {
+  it('epic: passes with ::notice:: when nothing in the release changed', () => {
     const dir = repo('docs/outro.md');
     const r = run(dir, 'epic', '--version-file', 'mcp/version.ts');
     expect(r.status).toBe(0);
     expect(r.stdout).toContain('::notice::');
   });
 
-  it('decide: escreve publish, tag e sha no arquivo de saída', () => {
+  it('decide: writes publish, tag and sha to the output file', () => {
     const dir = repo('docs/outro.md');
     writeFileSync(
       join(dir, 'mcp/version.ts'),
@@ -223,7 +223,7 @@ describe('CLI', () => {
     expect(readFileSync(out, 'utf8')).toBe('tag=mcp-v0.29.0\nsha=abc123\npublish=true\n');
   });
 
-  it('decide: tag existente termina verde com o aviso e publish=false', () => {
+  it('decide: an existing tag ends green with the notice and publish=false', () => {
     const dir = repo('docs/outro.md');
     writeFileSync(join(dir, 'tags.txt'), 'abc\trefs/tags/mcp-v0.28.2\n');
     const out = join(dir, 'out.txt');
@@ -240,7 +240,7 @@ describe('CLI', () => {
       out,
     );
     expect(r.status, r.stderr).toBe(0);
-    expect(r.stdout).toContain('::notice::mcp-v0.28.2 já publicada; nada a fazer');
+    expect(r.stdout).toContain('::notice::mcp-v0.28.2 already published; nothing to do');
     expect(readFileSync(out, 'utf8')).toContain('publish=false');
   });
 });

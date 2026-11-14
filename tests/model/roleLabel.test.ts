@@ -1,5 +1,5 @@
-// Nome do papel do vínculo (etapa #559, PD4, decisão 22): o texto da Lista e da revisão
-// mostra o nome que o dono dá ao papel ("Clique"), não o id.
+// Role name of the link (stage #559, PD4, decision 22): the text of the List and of the review
+// shows the name the owner gives the role ("Clique"), not the id.
 import { describe, expect, it } from 'vitest';
 import { roleLabelOf, roleNameOf, type Annotation } from '../../src/model';
 import { addChild, roleProject, withRoles } from './roleFixtures';
@@ -11,19 +11,20 @@ const annotation = (p: ReturnType<typeof roleProject>, id: string): Annotation =
   return found;
 };
 
+// pt-BR kept: shared fixture data asserted by tests/mcp (role names from roleFixtures)
 describe('roleNameOf', () => {
   const p = roleProject(withRoles);
 
-  it('devolve o nome do papel que o tipo do dono oferece', () => {
+  it('returns the name of the role the owner type offers', () => {
     expect(roleNameOf(p, annotation(p, 'A1'), 'click')).toBe('Clique');
     expect(roleNameOf(p, annotation(p, 'A1'), 'hold')).toBe('Pressionar');
   });
 
-  it('id que o dono não oferece: o próprio id', () => {
+  it('an id the owner does not offer: the id itself', () => {
     expect(roleNameOf(p, annotation(p, 'A1'), 'zzz')).toBe('zzz');
   });
 
-  it('dono sem papéis ou ausente: o próprio id', () => {
+  it('owner without roles or absent: the id itself', () => {
     const plain = roleProject();
     expect(roleNameOf(plain, annotation(plain, 'A1'), 'click')).toBe('click');
     expect(roleNameOf(p, undefined, 'click')).toBe('click');
@@ -31,12 +32,12 @@ describe('roleNameOf', () => {
 });
 
 describe('roleLabelOf', () => {
-  it('o nome do papel da anotação, pelo tipo do dono', () => {
+  it('the name of the annotation role, by the owner type', () => {
     const p = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
     expect(roleLabelOf(p, annotation(p, 'E1'))).toBe('Clique');
   });
 
-  it('papel desconhecido: o id cru', () => {
+  it('unknown role: the raw id', () => {
     const p = forceRole(
       addChild(roleProject(withRoles), 'E1', 'A1', 'click'),
       'E1',
@@ -45,7 +46,7 @@ describe('roleLabelOf', () => {
     expect(roleLabelOf(p, annotation(p, 'E1'))).toBe('gone');
   });
 
-  it('sem papel ou sem dono: null', () => {
+  it('without a role or without an owner: null', () => {
     const p = addChild(roleProject(withRoles), 'E1', 'A1', null);
     expect(roleLabelOf(p, annotation(p, 'E1'))).toBeNull();
     expect(roleLabelOf(p, annotation(p, 'A1'))).toBeNull();

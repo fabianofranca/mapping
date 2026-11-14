@@ -23,8 +23,8 @@ import { emptyProject } from './fixtures';
 import { idGen, loadExample } from './specFixtures';
 import { material3Package, material3Spec } from '../storage/packageFixture';
 
-describe('caminhos do pacote', () => {
-  it('packageDirOf e isPackageFile distinguem pasta de arquivo único', () => {
+describe('package paths', () => {
+  it('packageDirOf and isPackageFile tell a folder from a single file', () => {
     expect(packageDirOf('specs/material3/material3.spec.json')).toBe('specs/material3');
     expect(packageDirOf('specs/a/b/c.json')).toBe('specs/a');
     expect(packageDirOf('specs/sdui.json')).toBeNull();
@@ -33,27 +33,27 @@ describe('caminhos do pacote', () => {
     expect(isPackageFile('specs/sdui.json')).toBe(false);
   });
 
-  it('.json e .md são texto; o resto é binário', () => {
+  it('.json and .md are text; the rest is binary', () => {
     expect(isTextPackageFile('components/a.json')).toBe(true);
     expect(isTextPackageFile('docs/A.MD')).toBe(true);
     expect(isTextPackageFile('fonts/Roboto.ttf')).toBe(false);
-    expect(isTextPackageFile('fonts/LEIA-ME.txt')).toBe(false);
+    expect(isTextPackageFile('fonts/README.txt')).toBe(false);
   });
 
-  it('limites', () => {
+  it('limits', () => {
     expect(packageWithinLimits(MAX_PACKAGE_FILES, MAX_PACKAGE_BYTES)).toBe(true);
     expect(packageWithinLimits(MAX_PACKAGE_FILES + 1, 0)).toBe(false);
     expect(packageWithinLimits(0, MAX_PACKAGE_BYTES + 1)).toBe(false);
   });
 
-  it('toLibraryFiles tira a pasta do caminho, mantém texto e marca binário', () => {
+  it('toLibraryFiles strips the folder from the path, keeps text and marks binary', () => {
     expect(
       toLibraryFiles('specs/m3', [
         { path: 'specs/m3/m3.spec.json', text: '{}' },
         { path: 'specs/m3/docs/a.md', text: '# a' },
         { path: 'specs/m3/fonts/R.ttf' },
-        { path: 'specs/m3/docs/sem-texto.md' },
-        { path: 'specs/outro/x.json', text: '{}' },
+        { path: 'specs/m3/docs/no-text.md' },
+        { path: 'specs/other/x.json', text: '{}' },
         { path: 'specs/m3/', text: '' },
       ]),
     ).toEqual([
@@ -63,20 +63,20 @@ describe('caminhos do pacote', () => {
     ]);
   });
 
-  it('packageSpecNameOf acha o arquivo da especialização na raiz do pacote', () => {
+  it('packageSpecNameOf finds the specialization file at the package root', () => {
     const files = material3Package();
     expect(packageSpecNameOf(files, 'material3')).toBe('material3.spec.json');
-    expect(packageSpecNameOf(files, 'outro')).toBe('outro.spec.json');
+    expect(packageSpecNameOf(files, 'other')).toBe('other.spec.json');
     expect(packageSpecNameOf(new Map(), 'x')).toBe('x.spec.json');
   });
 });
 
-describe('specFileFor com pacote', () => {
-  it('v1 a v3 continuam specs/<id>.json', () => {
+describe('specFileFor with a package', () => {
+  it('v1 to v3 stay specs/<id>.json', () => {
     expect(specFileFor(emptyProject(), 'sdui')).toBe('specs/sdui.json');
   });
 
-  it('pacote: specs/<id>/<arquivo>, id limpo e sem colidir', () => {
+  it('package: specs/<id>/<file>, clean id and no collision', () => {
     const p = applySpecialization(emptyProject(), material3Spec(), {
       newId: idGen('L'),
       packageSpecName: 'material3.spec.json',
@@ -85,7 +85,7 @@ describe('specFileFor com pacote', () => {
     expect(specFileFor(emptyProject(), 'a b/c', 'x.spec.json')).toBe(
       'specs/a-b-c/x.spec.json',
     );
-    // Outro id que limpa para a mesma pasta ganha sufixo.
+    // Another id that cleans to the same folder gets a suffix.
     const first = {
       ...p.specializations[0]!,
       id: 'a b',
@@ -96,7 +96,7 @@ describe('specFileFor com pacote', () => {
     expect(specFileFor(base, 'a?b', 'm.spec.json')).toBe('specs/a-b-2/m.spec.json');
   });
 
-  it('atualizar acompanha o layout: pacote mantém a pasta; sem pacote volta ao arquivo único', () => {
+  it('updating follows the layout: a package keeps the folder; without a package it goes back to the single file', () => {
     const v1 = { ...material3Spec(), version: 1 };
     const v2 = { ...v1, version: 2 };
     const applied = applySpecialization(emptyProject(), v1, {
@@ -123,8 +123,8 @@ describe('specFileFor com pacote', () => {
   });
 });
 
-describe('validateLibrary sobre os arquivos lidos do pacote', () => {
-  it('o Material 3 em specs/material3/ monta a entrada do validador', () => {
+describe('validateLibrary over the files read from the package', () => {
+  it('Material 3 in specs/material3/ builds the validator input', () => {
     const entries = [...material3Package()].map(([path, data]) => ({
       path: `specs/material3/${path}`,
       ...(typeof data === 'string' ? { text: data } : {}),
@@ -159,16 +159,16 @@ describe('usesPackageFiles', () => {
       }
     ).annotationTypes[0] as Record<string, unknown>;
 
-  it('v1 a v3 e v4 sem nenhum arquivo do pacote valem isoladas', () => {
+  it('v1 to v3 and v4 with no package file stand alone', () => {
     expect(usesPackageFiles(sduiAs(2))).toBe(false);
     expect(usesPackageFiles(sduiAs(4))).toBe(false);
   });
 
-  it('migrations não conta', () => {
+  it('migrations does not count', () => {
     expect(usesPackageFiles(sduiAs(4, (raw) => (raw.migrations = [])))).toBe(false);
   });
 
-  it('component, doc, examples ou fonts pedem o pacote', () => {
+  it('component, doc, examples or fonts require the package', () => {
     const doc = sduiAs(4, (raw) => (firstType(raw).doc = 'docs/a.md'));
     expect(usesPackageFiles(doc)).toBe(true);
     const component = sduiAs(
@@ -186,13 +186,13 @@ describe('usesPackageFiles', () => {
     expect(usesPackageFiles(fonts)).toBe(true);
   });
 
-  it('o material3 (pacote) usa arquivos do pacote', () => {
+  it('material3 (package) uses package files', () => {
     expect(usesPackageFiles(material3Spec())).toBe(true);
   });
 });
 
-describe('specFileFor sem diferenciar maiúsculas e minúsculas', () => {
-  it('Material já no projeto: material ganha outro arquivo', () => {
+describe('specFileFor ignoring letter case', () => {
+  it('Material already in the project: material gets another file', () => {
     const base = {
       ...emptyProject(),
       specializations: [{ id: 'Material', file: 'specs/Material.json' }] as never,
@@ -200,7 +200,7 @@ describe('specFileFor sem diferenciar maiúsculas e minúsculas', () => {
     expect(specFileFor(base, 'material')).toBe('specs/material-2.json');
   });
 
-  it('a pasta do pacote também ignora a caixa', () => {
+  it('the package folder also ignores case', () => {
     const base = {
       ...emptyProject(),
       specializations: [{ id: 'Material', file: 'specs/Material/m.spec.json' }] as never,

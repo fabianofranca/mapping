@@ -1,8 +1,8 @@
-// Marcas de chegada no canvas (etapa #659, PE3, decisão 8): o selo "Veio de <nome>" sobre cada raiz
-// que chegou à Principal de outra perspectiva e a faixa tracejada "Área de chegada". Função pura
-// sobre o projeto desenhado, memoizada por versão dele (o objeto do projeto): pan e zoom não passam
-// por aqui; o tamanho do selo (em pixels de tela) entra só em `arrivalBadgeSpot`, na hora de
-// desenhar. O renderer só desenha.
+// Arrival marks on the canvas (stage #659, PE3, decision 8): the "Came from <name>" badge on each root
+// that arrived in Main from another perspective and the dashed "Arrival area" strip. Pure function
+// over the drawn project, memoized by its version (the project object): pan and zoom do not go
+// through here; the badge size (in screen pixels) enters only in `arrivalBadgeSpot`, at draw
+// time. The renderer only draws.
 import {
   arrivalHasReference,
   boundingBox,
@@ -16,22 +16,22 @@ import {
 import type { CanvasTokens } from './theme';
 import type { Point } from './viewport';
 
-/** As medidas do selo (px de tela), dos tokens do canvas (`size-cv-arrival-*`). */
+/** The badge measures (screen px), from the canvas tokens (`size-cv-arrival-*`). */
 export type ArrivalMetrics = CanvasTokens['arrival'];
 
-/** Folga da faixa em volta das raízes com marca (unidades do canvas). */
+/** Slack of the strip around the roots with a mark (canvas units). */
 export const ARRIVAL_BAND_PAD = 24;
-/** Folga a mais (px de tela) que Enquadrar tudo deixa em volta quando há faixa: cabe o rótulo dela. */
+/** Extra slack (screen px) that Fit all leaves around when there is a strip: its label fits. */
 export const ARRIVAL_FIT_EXTRA = 48;
 
-/** Um selo a desenhar: a raiz, o nome da perspectiva de origem e a pegada da raiz (canvas). */
+/** A badge to draw: the root, the name of the source perspective and the root's footprint (canvas). */
 export interface ArrivalBadge {
   readonly root: string;
   readonly name: string;
   readonly rect: Rect;
 }
 
-/** Uma raiz do canvas: o id (para a raiz não se bloquear a si mesma) e a pegada dela. */
+/** A canvas root: the id (so the root does not block itself) and its footprint. */
 export interface ArrivalRoot {
   readonly id: string;
   readonly rect: Rect;
@@ -39,19 +39,19 @@ export interface ArrivalRoot {
 
 export interface ArrivalMarks {
   readonly badges: readonly ArrivalBadge[];
-  /** A faixa "Área de chegada" (canvas, com folga); `null` quando não há o que envolver. */
+  /** The "Arrival area" strip (canvas, with slack); `null` when there is nothing to wrap. */
   readonly band: Rect | null;
-  /** A pegada de cada raiz (canvas): o selo de uma raiz pequena foge delas. */
+  /** The footprint of each root (canvas): the badge of a small root avoids them. */
   readonly roots: readonly ArrivalRoot[];
 }
 
 /**
- * A faixa: `project.arrivals` não grava se a raiz foi para a área de chegada ou para perto da
- * referência; isso se deduz das setas de agora (`arrivalHasReference`, a mesma regra da busca de
- * lugar), na sessão e depois de recarregar. Ela envolve só as raízes com marca **sem referência**
- * (`orphans`) e só existe quando a caixa delas fica à direita de todas as outras raízes, com ou
- * sem marca (é onde a área de chegada abre colunas, `perspectivePlace.ts`); as com referência
- * levam só o selo.
+ * The strip: `project.arrivals` does not record whether the root went to the arrival area or near the
+ * reference; that is deduced from the current arrows (`arrivalHasReference`, the same rule as the place
+ * search), in the session and after reloading. It wraps only the roots with a mark **without a reference**
+ * (`orphans`) and only exists when their box is to the right of all the other roots, with or
+ * without a mark (that is where the arrival area opens columns, `perspectivePlace.ts`); those with a reference
+ * get only the badge.
  */
 function bandOf(project: Project, orphans: ReadonlySet<string>): Rect | null {
   const rects: Rect[] = [];
@@ -95,30 +95,30 @@ function compute(project: Project): ArrivalMarks | null {
 
 const memo = new WeakMap<Project, ArrivalMarks | null>();
 
-/** As marcas de chegada do projeto desenhado; `null` sem nenhuma (nada a desenhar). */
+/** The arrival marks of the drawn project; `null` with none (nothing to draw). */
 export function arrivalMarks(project: Project | null): ArrivalMarks | null {
   if (!project || project.arrivals.length === 0) return null;
   if (!memo.has(project)) memo.set(project, compute(project));
   return memo.get(project) ?? null;
 }
 
-/** Largura do selo (px de tela): cresce com o texto. */
+/** Badge width (screen px): grows with the text. */
 export function arrivalBadgeWidth(text: string, metrics: ArrivalMetrics): number {
   return text.length * metrics.charWidth + 2 * metrics.pad;
 }
 
 /**
- * Onde o selo fica (canto de cima à esquerda dele, em unidades do canvas). Nunca no topo da raiz,
- * onde ficam o nome do container e o título da faixa. Raiz grande: por dentro do canto de baixo à
- * esquerda; se isso cruza a faixa do nome (ou o corpo) de outra raiz, subido até logo acima dela;
- * depois, os lugares da raiz pequena (abaixo, à direita, à esquerda). Vale o primeiro sem bloqueio;
- * sem nenhum livre, o de menor interseção. `self` é o id da raiz do selo: ela não se bloqueia.
- * Tamanho e vão em px de tela. Com `view` (a área visível, em unidades do canvas) o selo é puxado
- * para dentro dela; com `avoid` (um retângulo sobreposto ao canvas, como o minimapa) ele sai de
- * baixo dele. Os dois ajustes valem para cada candidato antes da escolha (um lugar empurrado para
- * dentro da vista não pode cair sobre o título de outra raiz), e `extra` são outros retângulos a
- * evitar, como o título da faixa (CL1, achados 1.2 e 2.1). Raiz pequena sem lugar livre ainda
- * tenta o canto de dentro dela, o único que só cobre a própria raiz.
+ * Where the badge goes (its top-left corner, in canvas units). Never at the top of the root,
+ * where the container name and the strip title are. Large root: inside the bottom-left
+ * corner; if that crosses the name band (or the body) of another root, raised to just above it;
+ * then, the places of the small root (below, right, left). The first without a block wins;
+ * with none free, the one with the smallest intersection. `self` is the id of the badge's root: it does not block itself.
+ * Size and gap in screen px. With `view` (the visible area, in canvas units) the badge is pulled
+ * into it; with `avoid` (a rectangle overlaid on the canvas, like the minimap) it moves out from
+ * under it. Both adjustments apply to each candidate before the choice (a place pushed
+ * into the view cannot land on another root's title), and `extra` are other rectangles to
+ * avoid, like the strip title (CL1, findings 1.2 and 2.1). A small root with no free place still
+ * tries its inner corner, the only one that covers just its own root.
  */
 export function arrivalBadgeSpot(
   rect: Rect,
@@ -154,14 +154,14 @@ export function arrivalBadgeSpot(
   return pickSpot(candidates, w, h, blockers);
 }
 
-/** O candidato puxado para dentro da área visível e para fora do minimapa, quando há. */
+/** The candidate pulled into the visible area and out of the minimap, when there is one. */
 function fitToView(at: Point, w: number, h: number, view?: Rect, avoid?: Rect): Point {
   if (!view) return at;
   const inside = keepInside(at, w, h, view);
   return avoid ? clearOf(inside, w, h, view, avoid) : inside;
 }
 
-/** Por dentro da raiz, no canto de baixo; subido acima do que o cobre. */
+/** Inside the root, at the bottom corner; raised above what covers it. */
 function insideCandidates(
   rect: Rect,
   zoom: number,
@@ -181,7 +181,7 @@ function insideCandidates(
   return list;
 }
 
-/** Raiz pequena: abaixo do canto de baixo à esquerda, à direita da raiz e à esquerda dela. */
+/** Small root: below the bottom-left corner, to the right of the root and to its left. */
 function smallCandidates(
   rect: Rect,
   zoom: number,
@@ -197,14 +197,14 @@ function smallCandidates(
   ];
 }
 
-/** Área da interseção do selo em `at` (w × h) com `r`. */
+/** Area of the intersection of the badge at `at` (w × h) with `r`. */
 function overlapArea(at: Point, w: number, h: number, r: Rect): number {
   const dx = Math.min(at.x + w, right(r)) - Math.max(at.x, r.x);
   const dy = Math.min(at.y + h, bottom(r)) - Math.max(at.y, r.y);
   return dx > 0 && dy > 0 ? dx * dy : 0;
 }
 
-/** O primeiro candidato sem interseção com `blockers`; sem nenhum, o de menor área (empate: o primeiro). */
+/** The first candidate with no intersection with `blockers`; with none, the smallest area (tie: the first). */
 function pickSpot(
   candidates: readonly Point[],
   w: number,
@@ -227,7 +227,7 @@ function pickSpot(
 const hits = (at: Point, w: number, h: number, r: Rect): boolean =>
   at.x < right(r) && at.x + w > r.x && at.y < bottom(r) && at.y + h > r.y;
 
-/** Tira o selo de debaixo de `avoid` (o minimapa): para a esquerda dele; sem espaço, para cima. */
+/** Takes the badge out from under `avoid` (the minimap): to its left; with no room, upward. */
 function clearOf(at: Point, w: number, h: number, view: Rect, avoid: Rect): Point {
   if (!hits(at, w, h, avoid)) return at;
   const left = { x: avoid.x - w, y: at.y };
@@ -246,12 +246,12 @@ function keepInside(at: Point, w: number, h: number, view: Rect): Point {
   };
 }
 
-/** O que falta de folga (px de tela) entre a faixa e a linha do nome dos containers. */
+/** The slack that is missing (screen px) between the strip and the line of the container names. */
 function nameClearance(zoom: number, nameClear: number): number {
   return Math.max(0, nameClear - ARRIVAL_BAND_PAD * zoom);
 }
 
-/** A área visível (unidades do canvas) menos a margem de `tokens.arrival.pad` em cada lado. */
+/** The visible area (canvas units) minus the margin of `tokens.arrival.pad` on each side. */
 function labelArea(view: Rect, zoom: number, pad: number): Rect {
   const m = pad / zoom;
   return {
@@ -263,9 +263,9 @@ function labelArea(view: Rect, zoom: number, pad: number): Rect {
 }
 
 /**
- * A largura (px de tela) que o rótulo da faixa passa a ter quando o texto, de `textWidth`, não
- * cabe na área visível menos as duas margens (título e dica ganham `width`, `wrap: 'none'` e
- * reticências); `null` quando cabe.
+ * The width (screen px) the strip's label takes when the text, of `textWidth`, does not
+ * fit in the visible area minus the two margins (title and hint get `width`, `wrap: 'none'` and
+ * ellipsis); `null` when it fits.
  */
 export function arrivalBandLabelFit(
   textWidth: number,
@@ -278,12 +278,12 @@ export function arrivalBandLabelFit(
 }
 
 /**
- * Onde o rótulo da faixa ("Área de chegada" e a dica) fica (canto de cima à esquerda dele, em
- * unidades do canvas). `size` é o tamanho dele em px de tela e `nameClear` a altura (px de tela) do
- * nome dos containers, que fica logo acima do conteúdo. A folga da faixa é em unidades do canvas e
- * encolhe com o zoom; por isso o rótulo sobe o que faltar para ficar acima da linha do nome, nunca
- * sobre ela. Sem espaço em cima na área visível, vai para baixo da faixa; em qualquer caso é puxado
- * para dentro de `view`, a `metrics.pad` de cada borda; mais largo que isso, usa a largura que sobra.
+ * Where the strip's label ("Arrival area" and the hint) goes (its top-left corner, in
+ * canvas units). `size` is its size in screen px and `nameClear` the height (screen px) of the
+ * container names, which sit just above the content. The strip's slack is in canvas units and
+ * shrinks with the zoom; that is why the label rises as much as needed to stay above the name line, never
+ * over it. With no room above in the visible area, it goes below the strip; in any case it is pulled
+ * into `view`, `metrics.pad` from each edge; wider than that, it uses the width that is left.
  */
 export function arrivalBandLabelSpot(
   band: Rect,

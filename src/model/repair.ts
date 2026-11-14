@@ -1,5 +1,6 @@
-// Reparo mecânico de um projeto que viola invariantes (docs/FORMAT.md, "Arquivos
-// inconsistentes"). Função pura: quem grava o reparado (e o backup do original) é a sessão.
+// Mechanical repair of a project that violates invariants (docs/FORMAT.md, "Inconsistent
+// files"). Pure function: whoever writes the repaired one (and the backup of the original) is
+// the session.
 import {
   IDENTITY_PLACEMENT,
   fromCanvasRect,
@@ -29,30 +30,30 @@ import type {
   Rect,
 } from './types';
 
-/** O que o reparo fez com o item. */
+/** What the repair did to the item. */
 export type RepairAction =
   'new-id' | 'clipped' | 'removed' | 'made-root' | 'moved' | 'renamed' | 'released';
 
 export interface RepairRecord {
   readonly action: RepairAction;
-  /** Invariante que motivou o reparo. */
+  /** The invariant that motivated the repair. */
   readonly code: InvariantCode;
   readonly entity: InvariantEntity;
   readonly id: string;
-  /** Nome do item, quando houver (na imagem sem rótulo, o arquivo). */
+  /** Name of the item, when there is one (for an image without a label, the file). */
   readonly name?: string;
 }
 
 export interface RepairResult {
-  /** O projeto reparado; só é válido com `unrepaired` vazio. */
+  /** The repaired project; it is only valid with `unrepaired` empty. */
   readonly project: Project;
-  /** Cada reparo feito, na ordem. */
+  /** Each repair made, in order. */
   readonly repaired: readonly RepairRecord[];
-  /** Problemas sem reparo mecânico inequívoco: com algum, o projeto continua recusado. */
+  /** Problems with no unambiguous mechanical repair: with any, the project is still refused. */
   readonly unrepaired: readonly InvariantIssue[];
 }
 
-/** Invariantes com reparo mecânico. Todo o resto fica em `unrepaired`. */
+/** Invariants with a mechanical repair. Everything else stays in `unrepaired`. */
 const REPAIRABLE: ReadonlySet<InvariantCode> = new Set<InvariantCode>([
   'duplicate-entry-id',
   'rect-out-of-image',
@@ -69,7 +70,7 @@ const REPAIRABLE: ReadonlySet<InvariantCode> = new Set<InvariantCode>([
   'parent-floating',
   'arrow-endpoint-missing',
   'arrow-self',
-  'duplicate-id', // só o de perspectiva (ver `isRepairable`)
+  'duplicate-id', // only the perspective one (see `isRepairable`)
   'perspective-root-missing',
   'perspective-root-not-root',
   'perspective-root-duplicate',
@@ -85,8 +86,8 @@ const REPAIRABLE: ReadonlySet<InvariantCode> = new Set<InvariantCode>([
 ]);
 
 /**
- * O `duplicate-id` só tem reparo na perspectiva (nada aponta para ela por id além da chegada,
- * que guarda o nome); nas outras entidades a referência seria ambígua.
+ * The `duplicate-id` is only repairable on the perspective (nothing points to it by id besides
+ * the arrival, which keeps the name); on the other entities the reference would be ambiguous.
  */
 function isRepairable(issue: InvariantIssue): boolean {
   if (issue.code === 'duplicate-id') return issue.entity === 'perspective';
@@ -94,26 +95,29 @@ function isRepairable(issue: InvariantIssue): boolean {
 }
 
 /**
- * Um reparo pode deixar outro à mostra (ex.: a marcação removida deixa as anotações dela
- * sem marcação e os filhos sem pai); cada rodada resolve o que a anterior expôs.
+ * One repair can expose another (e.g. the removed marking leaves its annotations without a
+ * marking and its children without a parent); each round resolves what the previous one exposed.
  */
 const MAX_ROUNDS = 8;
 
 /**
- * Repara o que é mecânico e inequívoco: par com id repetido → id novo; `rect` de marcação de
- * container fora da imagem → recortado aos limites (sem área → marcação removida); marcação de
- * imagem inexistente e anotação de marcação ou camada inexistente → removidas (a anotação leva
- * as que ela possui); pai inexistente, flutuante ou ciclo na hierarquia → a marcação vira
- * raiz; pai de container ausente, que não é do canvas ou que não o contém → o container fica
- * sem pai; flutuante com container ou pai → vai para o canvas, com o `rect` convertido;
- * imagens sobrepostas → a de maior índice vai para a direita das anteriores; seta com ponta
- * inexistente (ou que não é uma marcação) ou ligada a ela mesma → removida, e as anotações dela
- * saem na rodada seguinte (a dona deixou de existir); perspectiva (v16): item de raiz inexistente,
- * que não é raiz ou repetido → removido, camada escondida inexistente → tirada da lista, id
- * repetido → a repetida ganha id novo, nome repetido → a repetida ganha " (2)", " (3)"…; chegada
- * de raiz inexistente, que não é raiz ou repetida → removida; âncora (v20) com alvo inexistente, nela mesma, noutro espaço ou em ciclo → a marcação fica sem âncora (`anchor: null`). Só torna o
- * projeto válido: não assenta (quem assenta é a próxima operação de geometria). O que sobra
- * depois dos reparos (`validateProject` de novo) é `unrepaired`.
+ * Repairs what is mechanical and unambiguous: a pair with a repeated id → new id; `rect` of a
+ * container marking outside the image → clipped to the bounds (no area → marking removed);
+ * marking of a nonexistent image and annotation of a nonexistent marking or layer → removed (the
+ * annotation takes along the ones it owns); nonexistent parent, floating parent or cycle in the
+ * hierarchy → the marking becomes a root; missing container parent, one that is not on the
+ * canvas or that does not contain it → the container is left without a parent; floating with a
+ * container or parent → goes to the canvas, with the `rect` converted; overlapping images → the
+ * one with the higher index goes to the right of the previous ones; arrow with a nonexistent
+ * endpoint (or one that is not a marking) or linked to itself → removed, and its annotations go
+ * in the next round (the owner stopped existing); perspective (v16): nonexistent root item, one
+ * that is not a root or repeated → removed, nonexistent hidden layer → dropped from the list,
+ * repeated id → the repeated one gets a new id, repeated name → the repeated one gets " (2)",
+ * " (3)"…; arrival of a nonexistent root, one that is not a root or repeated → removed; anchor
+ * (v20) with a nonexistent target, itself, in another space or in a cycle → the marking is left
+ * without an anchor (`anchor: null`). It only makes the project valid: it does not settle (the
+ * next geometry operation does). What remains after the repairs (`validateProject` again) is
+ * `unrepaired`.
  */
 export function repairProject(
   project: Project,
@@ -146,7 +150,7 @@ function record(
   out.push({ action, code, entity, id: item.id, ...(name === null ? {} : { name }) });
 }
 
-/** Recorte de `rect` aos limites da imagem; `null` se não sobra área. */
+/** Clipping of `rect` to the image bounds; `null` if no area is left. */
 function clipToImage(rect: Rect, image: ProjectContainer): Rect | null {
   const bounds = imagePixelRect(image);
   const x = Math.max(rect.x, bounds.x);
@@ -156,7 +160,7 @@ function clipToImage(rect: Rect, image: ProjectContainer): Rect | null {
   return width > 0 && height > 0 ? { x, y, width, height } : null;
 }
 
-/** A marcação faz parte do ciclo (subindo pelos pais, volta a ela mesma)? */
+/** Is the marking part of the cycle (going up through the parents, it returns to itself)? */
 function inCycle(m: Marking, markings: ReadonlyMap<string, Marking>): boolean {
   const visited = new Set<string>();
   let parentId = m.parentId;
@@ -176,9 +180,9 @@ const ANCHOR_CODES: readonly InvariantCode[] = [
 ];
 
 /**
- * Âncora (v20) que quebra uma invariante (alvo inexistente, a própria marcação, outro espaço ou
- * ciclo): a marcação fica onde está, sem âncora. Num ciclo, todas as que a cadeia alcança de volta
- * são soltas (cada uma é reportada).
+ * Anchor (v20) that breaks an invariant (nonexistent target, the marking itself, another space
+ * or a cycle): the marking stays where it is, without an anchor. In a cycle, all those the chain
+ * reaches back are released (each one is reported).
  */
 function releaseBrokenAnchor(
   m: Marking,
@@ -208,8 +212,8 @@ function repairRound(
   const has = (entity: InvariantEntity, id: string, code: InvariantCode) =>
     codesOf.get(`${entity}:${id}`)?.has(code) ?? false;
 
-  // Marcações: removidas (imagem inexistente, recorte sem área), recortadas ou viradas raiz.
-  // A marcação do canvas (`containerId` nulo) não tem imagem: nunca é órfã nem é recortada.
+  // Markings: removed (nonexistent image, clip with no area), clipped or made root.
+  // A canvas marking (null `containerId`) has no image: it is never an orphan nor clipped.
   const containers = new Map(p.containers.map((i) => [i.id, i]));
   const byId = new Map(p.markings.map((m) => [m.id, m]));
   const markings: Marking[] = [];
@@ -221,7 +225,8 @@ function repairRound(
     let next = m;
     const image = m.containerId === null ? undefined : containers.get(m.containerId);
     if (has('marking', m.id, 'floating-in-container')) {
-      // A flutuante vive só no canvas: sai do container, com o `rect` como a pessoa o vê.
+      // A floating one lives only on the canvas: it leaves the container, with the `rect` as
+      // the person sees it.
       const rect = image
         ? fromCanvasRect(IDENTITY_PLACEMENT, toCanvasRect(image.placement, m.rect), null)
         : m.rect;
@@ -250,8 +255,8 @@ function repairRound(
   }
   const anchored = markings.map((m) => releaseBrokenAnchor(m, has, out));
 
-  // Setas: sem uma das pontas ou ligadas a si mesmas, não há o que ligar. As anotações delas
-  // saem na rodada seguinte, como as de qualquer dona que deixou de existir.
+  // Arrows: without one of the endpoints or linked to themselves, there is nothing to link. Their
+  // annotations go in the next round, like those of any owner that stopped existing.
   const arrows: Arrow[] = [];
   for (const a of p.arrows) {
     const code = (['arrow-endpoint-missing', 'arrow-self'] as const).find((c) =>
@@ -261,7 +266,7 @@ function repairRound(
     else arrows.push(a);
   }
 
-  // Anotações: as de marcação ou camada inexistente saem, com as que elas possuem.
+  // Annotations: those of a nonexistent marking or layer go, along with the ones they own.
   const removed = new Set<string>();
   const kept: Annotation[] = [];
   for (const a of p.annotations) {
@@ -276,7 +281,7 @@ function repairRound(
     }
   }
   if (removed.size > 0) {
-    // As possuídas podem vir antes da dona na lista: repete até não achar mais nenhuma.
+    // The owned ones may come before the owner in the list: repeat until none is found.
     let grew = true;
     while (grew) {
       grew = false;
@@ -297,7 +302,7 @@ function repairRound(
       kept.push(a);
       continue;
     }
-    // O primeiro par com o id fica com ele (as referências seguem apontando para ele).
+    // The first pair with the id keeps it (the references keep pointing to it).
     let renewed = false;
     const entries = a.entries.map((e) => {
       if (!seenEntries.has(e.id)) {
@@ -310,12 +315,12 @@ function repairRound(
       renewed = true;
       return { ...e, id };
     });
-    // O id de entrada pode ter colidido só com uma anotação removida: então nada mudou.
+    // The incoming id may have collided only with a removed annotation: then nothing changed.
     if (renewed) record(out, 'new-id', 'duplicate-entry-id', 'annotation', a);
     kept.push(renewed ? { ...a, entries } : a);
   }
 
-  // Imagens sobrepostas: cada uma que encosta numa anterior vai para a direita de todas elas.
+  // Overlapping images: each one that touches a previous one goes to the right of all of them.
   let projectImages = p.containers;
   if (issues.some((i) => i.code === 'images-overlap')) {
     const placed: Rect[] = [];
@@ -333,7 +338,7 @@ function repairRound(
     });
   }
 
-  // Pai de container ausente, que não é uma marcação do canvas ou que não o contém: sem pai.
+  // Container parent missing, not a canvas marking or not containing it: no parent.
   const orphanCodes: readonly InvariantCode[] = [
     'container-parent-missing',
     'container-parent-not-canvas',
@@ -356,7 +361,7 @@ function repairRound(
   };
 }
 
-/** Nome livre entre os já usados (comparação sem caixa): `Nome (2)`, `Nome (3)`… */
+/** A name free among those already used (case-insensitive comparison): `Name (2)`, `Name (3)`… */
 function numberedName(name: string, taken: ReadonlySet<string>): string {
   const base = name.trim();
   for (let n = 2; ; n++) {
@@ -365,7 +370,7 @@ function numberedName(name: string, taken: ReadonlySet<string>): string {
   }
 }
 
-/** Sem as camadas escondidas inexistentes e sem os itens de raiz inválida ou repetida. */
+/** Without the nonexistent hidden layers and without the items with an invalid or repeated root. */
 function cleanPerspective(
   x: Perspective,
   badRoots: ReadonlySet<string>,
@@ -383,7 +388,7 @@ function cleanPerspective(
   };
 }
 
-/** `id` e nome únicos: a primeira perspectiva fica com os dela; a repetida muda (nada some). */
+/** Unique `id` and name: the first perspective keeps its own; a repeated one changes (none vanishes). */
 function uniquePerspectives(
   list: readonly Perspective[],
   newId: () => string,
@@ -412,9 +417,9 @@ function uniquePerspectives(
 }
 
 /**
- * Reparo das perspectivas e chegadas (v16). A raiz ou a camada inválida vem no `otherId` do
- * problema (a da chegada, no `id`). Cada problema vira um registro; sem problema de perspectiva
- * ou chegada, devolve as listas como estão.
+ * Repair of the perspectives and arrivals (v16). The invalid root or layer comes in the
+ * problem's `otherId` (the arrival's, in `id`). Each problem becomes a record; with no
+ * perspective or arrival problem, it returns the lists as they are.
  */
 function repairPerspectives(
   p: Project,
@@ -425,8 +430,8 @@ function repairPerspectives(
   const badRoots = new Set<string>();
   const badLayers = new Set<string>();
   const badArrivals = new Set<string>();
-  // O que cada código manda tirar (a raiz repetida e o id e nome repetidos não entram: não há
-  // valor inválido, só o segundo uso).
+  // What each code says to remove (the repeated root and the repeated id and name are not here:
+  // there is no invalid value, only the second use).
   const drop: Partial<Record<InvariantCode, Set<string>>> = {
     'perspective-root-missing': badRoots,
     'perspective-root-not-root': badRoots,
@@ -451,7 +456,7 @@ function repairPerspectives(
       p.perspectives.map((x) => cleanPerspective(x, badRoots, badLayers)),
       newId,
     ),
-    // A chegada repetida (mesma raiz) perde a segunda.
+    // The repeated arrival (same root) loses the second one.
     arrivals: p.arrivals.filter(({ root }) => {
       if (badArrivals.has(root) || seen.has(root)) return false;
       seen.add(root);
@@ -460,12 +465,12 @@ function repairPerspectives(
   };
 }
 
-/** Problema de perspectiva ou de chegada, com reparo (o `duplicate-id` só vale na perspectiva). */
+/** Perspective or arrival problem with a repair (`duplicate-id` only applies to the perspective). */
 function isPerspectiveIssue(i: InvariantIssue): boolean {
   return (i.entity === 'perspective' || i.entity === 'arrival') && isRepairable(i);
 }
 
-/** Ação de cada código; o que não está aqui remove o item. */
+/** Action of each code; whatever is not here removes the item. */
 const PERSPECTIVE_ACTIONS: Partial<Record<InvariantCode, RepairAction>> = {
   'duplicate-id': 'new-id',
   'perspective-duplicate-name': 'renamed',

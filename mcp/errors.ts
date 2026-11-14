@@ -1,11 +1,11 @@
 import type { ModelErrorCode } from '../src/model';
 
 /**
- * Registro dos códigos de erro próprios do servidor (os que aparecem em `new ToolError('…'`).
- * Todo código daqui está documentado em `docs/AGENT-GUIDE.md` ("Erros") ou `docs/MCP.md`, e
- * todo código daqui é usado em `mcp/**` (`tests/mcp/errorCodes.test.ts`). Alguns repetem o
- * nome de um `ModelErrorCode` (`not-found`, `invalid-name`…): o nome é o contrato com os
- * agentes e não muda; a documentação explica os contextos.
+ * Registry of the server's own error codes (the ones that appear in `new ToolError('…'`).
+ * Every code here is documented in `docs/AGENT-GUIDE.md` ("Errors") or `docs/MCP.md`, and
+ * every code here is used in `mcp/**` (`tests/mcp/errorCodes.test.ts`). Some repeat the
+ * name of a `ModelErrorCode` (`not-found`, `invalid-name`…): the name is the contract with
+ * agents and does not change; the documentation explains the contexts.
  */
 export const MCP_ERROR_CODES = [
   'alias-unavailable',
@@ -90,10 +90,10 @@ export const MCP_ERROR_CODES = [
 
 export type McpErrorCode = (typeof MCP_ERROR_CODES)[number];
 
-/** Código de uma falha de tool: um do servidor ou uma regra do modelo (`modelErrors.ts`). */
+/** Code of a tool failure: one of the server's or a model rule's (`modelErrors.ts`). */
 export type ToolErrorCode = McpErrorCode | ModelErrorCode;
 
-/** Erro esperado de uma tool: vira uma resposta `isError` com o código e os detalhes, sem derrubar o servidor. */
+/** Expected error of a tool: becomes an `isError` response with the code and details, without bringing the server down. */
 export class ToolError extends Error {
   constructor(
     readonly code: ToolErrorCode,

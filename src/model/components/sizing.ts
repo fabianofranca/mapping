@@ -1,10 +1,10 @@
 /**
- * Motor dos componentes (MC2, decisões 9 e 10 da #898): o `sizing` avaliado e o tamanho ajustado ao
- * conteúdo. O `sizing` de um eixo é literal (px, `"fill"` ou `"hug"`) ou, na v4, uma expressão
- * avaliada com os valores da instância (`$switch` pelo estilo, `$if` pelo campo…); valor que não dá
- * px ≥ 0, `fill`, `hug`, `min-content` nem `max-content` cai no `size` daquele eixo com o aviso
- * `valor inválido em sizing.<eixo>`.
- * Funções puras, sem DOM.
+ * Component engine (MC2, decisions 9 and 10 of #898): the evaluated `sizing` and the size fitted to the
+ * content. An axis's `sizing` is a literal (px, `"fill"` or `"hug"`) or, in v4, an expression
+ * evaluated with the instance's values (`$switch` by style, `$if` by field…); a value that is not
+ * px ≥ 0, `fill`, `hug`, `min-content` or `max-content` falls back to that axis's `size` with the warning
+ * `invalid value in sizing.<axis>`.
+ * Pure functions, no DOM.
  */
 import { templateMessage } from '../messages';
 import type { ModelMessage } from '../modelMessage';
@@ -27,7 +27,7 @@ import {
 
 export type SizingAxis = 'width' | 'height';
 
-/** De onde veio o valor do eixo: o `size` (sem `sizing`, ou valor inválido), o literal ou a expressão. */
+/** Where the axis value came from: the `size` (no `sizing`, or an invalid value), the literal or the expression. */
 export type SizingSource = 'size' | 'literal' | 'expression';
 
 export interface ResolvedAxis {
@@ -38,18 +38,18 @@ export interface ResolvedAxis {
 export interface ResolvedSizing {
   readonly width: ResolvedAxis;
   readonly height: ResolvedAxis;
-  /** Um aviso por eixo com valor inválido, na ordem `width`, `height`. */
+  /** One warning per axis with an invalid value, in the order `width`, `height`. */
   readonly messages: readonly ModelMessage[];
 }
 
 function plainSpec(value: unknown): InstanceSizeSpec | undefined {
   const spec = parseSizeSpec(value);
-  // O `sizing` não tem porcentagem (`"50%"`): é valor inválido.
+  // `sizing` has no percentage (`"50%"`): it is an invalid value.
   const known = spec === 'fill' || spec === 'hug' || isIntrinsicSize(spec);
   return typeof spec === 'string' && !known ? undefined : spec;
 }
 
-/** O `sizing` do componente, avaliado com `values`; o eixo sem `sizing` vale o `size`. */
+/** The component's `sizing`, evaluated with `values`; an axis without `sizing` takes the `size`. */
 export function resolveSizing(
   component: ComponentFile,
   values: FieldValues,
@@ -78,17 +78,17 @@ export function resolveSizing(
 
 export interface FitOptions {
   readonly base?: { readonly width: number; readonly height: number };
-  /** Eixos que acompanham o `sizing` (padrão: os que o `sizing` avaliado manda `hug` ou px por expressão). */
+  /** Axes that follow the `sizing` (default: those where the evaluated `sizing` says `hug` or px by expression). */
   readonly auto?: Partial<Record<SizingAxis, boolean>>;
   /**
-   * Limite da largura medida no eixo `hug` (o espaço até a borda da imagem ou do pai): se o conteúdo
-   * pede mais, a largura vale o limite e a altura é medida de novo para essa largura (o texto quebra).
-   * É só limite de medida: não muda o `size` do componente nem os limites da raiz.
+   * Limit of the width measured on the `hug` axis (the space to the edge of the image or parent): if the content
+   * asks for more, the width is the limit and the height is measured again for that width (the text wraps).
+   * It is only a measuring limit: it does not change the component's `size` or the root's limits.
    */
   readonly maxWidth?: number;
 }
 
-/** O px que o eixo dá por expressão (o literal em px não conta); `undefined` se não dá. */
+/** The px that the axis gives by expression (a literal px does not count); `undefined` if it gives none. */
 export function expressionPx(axis: ResolvedAxis): number | undefined {
   return axis.source === 'expression' && typeof axis.spec === 'number'
     ? axis.spec
@@ -96,8 +96,8 @@ export function expressionPx(axis: ResolvedAxis): number | undefined {
 }
 
 /**
- * Os eixos que o `sizing` avaliado faz acompanhar o conteúdo (`hug`, `min-content` ou `max-content`)
- * ou a expressão (px).
+ * The axes that the evaluated `sizing` makes follow the content (`hug`, `min-content` or `max-content`)
+ * or the expression (px).
  */
 export function followedAxes(resolved: ResolvedSizing): Record<SizingAxis, boolean> {
   const follows = (a: ResolvedAxis): boolean =>
@@ -105,23 +105,23 @@ export function followedAxes(resolved: ResolvedSizing): Record<SizingAxis, boole
   return { width: follows(resolved.width), height: follows(resolved.height) };
 }
 
-/** Arredonda para cima, sem deixar o ruído de ponto flutuante subir um px. */
+/** Rounds up, without letting floating-point noise raise a px. */
 const ceilFit = (value: number): number => Math.ceil(value - 1e-6);
 
 type AxisKind = 'hug' | 'px' | 'keep';
 
-/** O que o eixo faz no ajuste: vale o px da expressão, mede o conteúdo (`auto` ligado) ou fica como está. */
+/** What the axis does in the fit: the expression's px applies, it measures the content (`auto` on) or stays as it is. */
 function axisKind(axis: ResolvedAxis, auto: boolean | undefined): AxisKind {
   if (!auto) return 'keep';
   return expressionPx(axis) === undefined ? 'hug' : 'px';
 }
 
 /**
- * O tamanho que o componente tem com o conteúdo de `values`, pelo `sizing` avaliado: o eixo `hug` é
- * medido (inteiro para cima, entre os limites da raiz) e o eixo de px por expressão vale o px, os dois
- * nunca abaixo do `minSize` nem de `MIN_STORED_MARKING_SIZE`, como no Arrumar; os
- * demais ficam no `base` (padrão: o `size`). É a função de medida do ajuste (decisão 10) e a que o
- * `fitMarking` da MC3 usa. Sem eixo que dependa do conteúdo, devolve `undefined`.
+ * The size the component has with the content of `values`, by the evaluated `sizing`: the `hug` axis is
+ * measured (integer rounded up, between the root's limits) and the px-by-expression axis takes the px, both
+ * never below `minSize` or `MIN_STORED_MARKING_SIZE`, as in Arrange; the
+ * others stay at `base` (default: the `size`). It is the fit's measuring function (decision 10) and the one MC3's
+ * `fitMarking` uses. With no axis that depends on the content, returns `undefined`.
  */
 export function fitComponentSize(
   component: ComponentFile,
@@ -163,25 +163,25 @@ export function fitComponentSize(
   };
 }
 
-/** O tamanho final do eixo: o medido (inteiro para cima) no `hug`, senão o dado. */
+/** The final size of the axis: the measured one (integer rounded up) on `hug`, otherwise the given one. */
 function axisSize(hug: boolean, given: number, measured: number | undefined): number {
   return hug && measured !== undefined ? ceilFit(measured) : given;
 }
 
-/** A medida intrínseca que o `sizing` pede no eixo (`min-content`/`max-content`); nenhuma = `hug`. */
+/** The intrinsic measure the `sizing` asks for on the axis (`min-content`/`max-content`); none = `hug`. */
 function intrinsicOf(axis: ResolvedAxis): IntrinsicSize | null {
   return intrinsicModeOf(axis.spec);
 }
 
-/** Os eixos medidos (`hug`) e, entre eles, os que pedem a medida intrínseca em vez do `hug`. */
+/** The measured axes (`hug`) and, among them, those that ask for the intrinsic measure instead of `hug`. */
 interface MeasuredAxes {
   readonly hug: Record<SizingAxis, boolean>;
   readonly modes: Record<SizingAxis, IntrinsicSize | null>;
 }
 
 /**
- * Mede o componente nos eixos `hug` (o eixo que não é `hug` vale o `given`); sem eixo `hug`, não mede.
- * `min-content`/`max-content` medem a raiz sem espaço limite: o `maxWidth` da medida só vale no `hug`.
+ * Measures the component on the `hug` axes (an axis that is not `hug` takes the `given`); with no `hug` axis, it does not measure.
+ * `min-content`/`max-content` measure the root without a limiting space: the measure's `maxWidth` only applies on `hug`.
  */
 function measureHug(
   component: ComponentFile,
@@ -207,8 +207,8 @@ function measureHug(
   ) {
     return free;
   }
-  // A largura pedida não cabe: mede a altura para a largura que sobra, mas nunca abaixo do maior
-  // pedaço inquebrável (o rótulo `wrap: none` de um segmento não passa da trilha por falta de espaço).
+  // The requested width does not fit: measure the height for the remaining width, but never below the largest
+  // unbreakable piece (the `wrap: none` label of a segment does not exceed the track for lack of space).
   const unbreakable = measureComponent(
     component,
     values,

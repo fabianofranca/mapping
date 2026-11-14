@@ -1,13 +1,13 @@
-# Toca por arquivo e seção na ficha da fila — 2026-11-13 (épico `epic/toca-por-arquivo`)
+# Touches by file and section in the queue sheet — 2026-11-13 (épico `epic/toca-por-arquivo`)
 
 ## Pendências
 
-Sem impacto. O épico só mexe no fluxo de entrega (painel da fila, skill `implementar-fila`, `docs/FLOW.md`, `docs/PROCESS.md`); nenhum componente, token ou ícone da app muda.
+No impact. The epic only touches the delivery flow (queue panel, `implementar-fila` skill, `docs/FLOW.md`, `docs/PROCESS.md`); no component, token or icon of the app changes.
 
 ## Sincronização
 
-Sem impacto: nada a gravar no artefato **Mapping** do Claude Design.
+Sem impacto: nothing to write to the **Mapping** artifact of Claude Design.
 
 ## Ficou sem gravar
 
-Sem impacto.
+No impact.

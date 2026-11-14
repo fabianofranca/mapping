@@ -13,8 +13,8 @@ import { cadastroProject } from './specFixtures';
 const update = process.env.UPDATE_FIXTURES === '1';
 const cases = INVALID_CASES.map((c) => [c.name, c] as const);
 
-describe('fixtures inconsistentes (tests/fixtures/invalid)', () => {
-  it.each(cases)('%s.json é o gerado a partir do roteiro 13.9', (_, c) => {
+describe('inconsistent fixtures (tests/fixtures/invalid)', () => {
+  it.each(cases)('%s.json is the one generated from script 13.9', (_, c) => {
     const text = serialize(buildInvalidCase(c));
     if (update) {
       mkdirSync(INVALID_FIXTURES_DIR, { recursive: true });
@@ -23,13 +23,13 @@ describe('fixtures inconsistentes (tests/fixtures/invalid)', () => {
     expect(readInvalidFixture(c.name)).toBe(text);
   });
 
-  it('o projeto do roteiro 13.9 íntegro abre sem passar pelo reparo', () => {
+  it('the intact project of script 13.9 opens without going through the repair', () => {
     const result = deserialize(serialize(cadastroProject()));
     expect(result.ok).toBe(true);
     expect(result.ok ? null : result.repair).toBeNull();
   });
 
-  it.each(cases)('%s.json: recusado com a lista exata', (_, c) => {
+  it.each(cases)('%s.json: refused with the exact list', (_, c) => {
     const result = deserialize(readInvalidFixture(c.name));
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -42,16 +42,16 @@ describe('fixtures inconsistentes (tests/fixtures/invalid)', () => {
     }
   });
 
-  it.each(cases)('%s.json: abre reparado ou fica só a lista', (_, c) => {
+  it.each(cases)('%s.json: opens repaired or only the list remains', (_, c) => {
     const result = deserialize(readInvalidFixture(c.name));
-    if (result.ok) throw new Error('deveria ser recusado');
+    if (result.ok) throw new Error('should have been refused');
     const repair = result.repair;
-    if (!repair) throw new Error('sem resultado do reparo');
+    if (!repair) throw new Error('no repair result');
     if (c.repairable) {
       expect(repair.unrepaired).toEqual([]);
       expect(repair.repaired.length).toBeGreaterThan(0);
       expect(validateProject(repair.project)).toEqual([]);
-      // O reparado grava e relê sem passar de novo pelo reparo.
+      // The repaired one saves and reloads without going through the repair again.
       expect(deserialize(serialize(repair.project)).ok).toBe(true);
     } else {
       expect(repair.unrepaired.map((i) => i.code)).toContain(c.code);

@@ -1,13 +1,13 @@
-# Correções no motor de componentes — 2026-11-09 (épico `epic/correcoes-componentes`)
+# Fixes in the component engine — 2026-11-09 (épico `epic/correcoes-componentes`)
 
 ## Pendências
 
-Nenhuma: a etapa não toca em componente, token nem ícone do design system.
+None: the stage does not touch any design system component, token or icon.
 
 ## Sincronização
 
-Sem impacto: sem pendência, nada foi gravado no artefato Mapping (nenhum componente, token, ícone, texto visível ou layout do design system mudou).
+Sem impacto: no pending item, nothing was written to the Mapping artifact (no design system component, token, icon, visible text or layout changed).
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

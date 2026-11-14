@@ -5,15 +5,15 @@ import { Select } from './controls';
 import { useEditor } from './EditorContext';
 import { declaredDrawingModes, drawingModeLabel } from './drawingModes';
 
-// Modo do desenho do projeto (schema v18), nas Configurações do editor: escolhe o modo dos
-// `tokens` das especializações aplicadas. Não depende do tema claro/escuro da interface.
+// Drawing mode of the project (schema v18), in the editor Settings: chooses the mode of the
+// `tokens` of the applied specializations. It does not depend on the interface's light/dark theme.
 
 interface DrawingModeSettingsProps {
   readonly project: Project;
   readonly readOnly: boolean;
 }
 
-/** `true` se há o que mostrar: algum modo declarado ou um modo gravado no projeto. */
+/** `true` if there is something to show: some declared mode or a mode saved in the project. */
 export function hasDrawingModes(project: Project): boolean {
   return declaredDrawingModes(project).length > 0 || project.drawingMode !== undefined;
 }
@@ -25,7 +25,7 @@ export function DrawingModeSettings({ project, readOnly }: DrawingModeSettingsPr
   const stored = project.drawingMode;
   if (!hasDrawingModes(project)) return null;
   const undeclared = stored !== undefined && !declared.includes(stored);
-  // Sem modo gravado vale o primeiro (o padrão das especializações).
+  // Without a saved mode the first one applies (the specializations' default).
   const value = stored ?? declared[0] ?? '';
   return (
     <section class="repos" aria-labelledby={titleId}>

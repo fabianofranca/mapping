@@ -1,4 +1,4 @@
-// A biblioteca e as fichas dos testes do importador (etapa #1079, S2).
+// The library and the signatures of the importer tests (stage #1079, S2).
 import { parseSignature, type Signature } from '../../../src/model/signatures';
 import { parseSpec, type Spec } from '../../../src/model/spec';
 import type { Json } from './fixtures';
@@ -6,7 +6,7 @@ import type { Json } from './fixtures';
 export const BUTTON_PATH = 'compose/Button.kt';
 export const BUTTON_SYMBOL = 'androidx.compose.material3.Button';
 
-/** Os modelos de campo da `fieldModels.compose` da biblioteca de teste. */
+/** The field models of `fieldModels.compose` of the test library. */
 const COMPOSE_MODELS: Json = {
   Color: { like: 'surface.color' },
   Dp: { type: 'number', format: '{value}.dp' },
@@ -34,7 +34,7 @@ const SURFACE: Json = {
   },
 };
 
-/** Uma biblioteca de teste com `surface` (a cor de papéis) e o `button` vazio (tipo novo). */
+/** A test library with `surface` (the roles color) and an empty `button` (new type). */
 export function librarySpec(edit?: (s: Json) => void): Spec {
   const raw: Json = {
     format: 'mapping-spec',
@@ -67,7 +67,7 @@ export const buttonOf = (raw: Json): Json =>
 
 const value = (kind: string, extra: Json = {}): Json => ({ kind, ...extra });
 
-/** Uma ficha de Compose do `Button` com os parâmetros dados. */
+/** A Compose signature of `Button` with the given parameters. */
 export function composeSignature(params: Json[], edit?: (s: Json) => void): Signature {
   const raw: Json = {
     format: 'mapping-signature',

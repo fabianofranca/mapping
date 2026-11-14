@@ -1,5 +1,5 @@
-// Formato 4, etapa "extensões" (FX3): justify space-around/space-evenly e layout.reverse no slot
-// (arrange.ts: layoutChildren e dropIndex) e na arrumação da tela (layout.ts: layoutScreen).
+// Format 4, "extensions" stage (FX3): justify space-around/space-evenly and layout.reverse in the slot
+// (arrange.ts: layoutChildren and dropIndex) and in the screen arrangement (layout.ts: layoutScreen).
 import { describe, expect, it } from 'vitest';
 import {
   dropIndex,
@@ -19,8 +19,8 @@ import type { Screen } from '../../../src/model/components/screen';
 const slotWith = (layout: Record<string, unknown>): SlotTemplate =>
   ({ type: 'slot', layout }) as unknown as SlotTemplate;
 
-describe('resolveSlotLayout: justify e reverse', () => {
-  it('lê space-around, space-evenly e reverse (literal e por campo)', () => {
+describe('resolveSlotLayout: justify and reverse', () => {
+  it('reads space-around, space-evenly and reverse (literal and by field)', () => {
     expect(
       resolveSlotLayout(slotWith({ type: 'row', justify: 'space-around' }), {}),
     ).toMatchObject({ justify: 'space-around', reverse: false });
@@ -31,11 +31,11 @@ describe('resolveSlotLayout: justify e reverse', () => {
       ),
     ).toMatchObject({ justify: 'space-evenly', reverse: true });
     const byField = slotWith({ type: 'column', reverse: { $field: 'rtl' } });
-    expect(resolveSlotLayout(byField, { rtl: 'sim' }).reverse).toBe(true);
-    expect(resolveSlotLayout(byField, { rtl: 'não' }).reverse).toBe(false);
+    expect(resolveSlotLayout(byField, { rtl: 'yes' }).reverse).toBe(true);
+    expect(resolveSlotLayout(byField, { rtl: 'no' }).reverse).toBe(false);
   });
 
-  it('type none ignora reverse', () => {
+  it('type none ignores reverse', () => {
     expect(resolveSlotLayout(slotWith({ type: 'none' }), {}).reverse).toBe(false);
   });
 });
@@ -60,27 +60,27 @@ function layout(over: Partial<ResolvedSlotLayout>): ResolvedSlotLayout {
 const xs = (over: Partial<ResolvedSlotLayout>) =>
   layoutChildren(slotBox, layout(over), kids).map((b) => b.x);
 
-describe('layoutChildren (slot): justify e reverse', () => {
-  it('space-around e space-evenly', () => {
-    // livre 40: around → 6,67 nas pontas e 13,33 entre; evenly → 10 em cada vão
+describe('layoutChildren (slot): justify and reverse', () => {
+  it('space-around and space-evenly', () => {
+    // free 40: around → 6.67 at the ends and 13.33 between; evenly → 10 in each gap
     expect(xs({ justify: 'space-evenly' })).toEqual([10, 30, 60]);
     expect(xs({ justify: 'space-around' })).toEqual([7, 30, 63]);
   });
 
-  it('um filho só: os dois centram', () => {
+  it('a single child: both center', () => {
     const one = [{ box: { x: 0, y: 0, width: 10, height: 10 } }];
     for (const justify of ['space-around', 'space-evenly'] as const)
       expect(layoutChildren(slotBox, layout({ justify }), one)[0]?.x).toBe(45);
   });
 
-  it('reverse em row: o primeiro filho vai para o fim', () => {
+  it('reverse in row: the first child goes to the end', () => {
     expect(xs({ reverse: true })).toEqual([90, 70, 40]);
     expect(xs({ reverse: true, justify: 'end' })).toEqual([50, 30, 0]);
     expect(xs({ reverse: true, gap: 4 })).toEqual([90, 66, 32]);
     expect(xs({ reverse: true, justify: 'space-evenly' })).toEqual([80, 50, 10]);
   });
 
-  it('reverse em column e com padding', () => {
+  it('reverse in column and with padding', () => {
     const tall = [10, 20, 30].map((h) => ({ box: { x: 0, y: 0, width: 10, height: h } }));
     const ys = layoutChildren(
       slotBox,
@@ -91,12 +91,12 @@ describe('layoutChildren (slot): justify e reverse', () => {
       }),
       tall,
     ).map((b) => b.y);
-    // conteúdo de 5 a 95; o primeiro (10) termina em 95
+    // content from 5 to 95; the first (10) ends at 95
     expect(ys).toEqual([85, 65, 35]);
   });
 });
 
-describe('dropIndex com reverse', () => {
+describe('dropIndex with reverse', () => {
   const screen = {
     id: 's',
     name: 'S',
@@ -122,7 +122,7 @@ describe('dropIndex com reverse', () => {
     ],
   } as unknown as Screen;
 
-  it('em reverse, o índice conta os irmãos cujo centro vem depois do ponto', () => {
+  it('in reverse, the index counts the siblings whose center comes after the point', () => {
     expect(dropIndex(screen, 'p', layout({ reverse: true }), { x: 95, y: 0 })).toBe(0);
     expect(dropIndex(screen, 'p', layout({ reverse: true }), { x: 5, y: 0 })).toBe(2);
     expect(dropIndex(screen, 'p', layout({ reverse: true }), { x: 80, y: 0 })).toBe(1);
@@ -207,7 +207,7 @@ function xsOf(type: string): number[] {
   const result = layoutScreen(
     {
       id: 's',
-      name: 'Tela',
+      name: 'Screen',
       width: 100,
       height: 200,
       background: '#FFF',
@@ -235,19 +235,19 @@ function xsOf(type: string): number[] {
   );
 }
 
-describe('layoutScreen: justify e reverse', () => {
-  it('a biblioteca carrega sem problemas', () => {
+describe('layoutScreen: justify and reverse', () => {
+  it('the library loads without problems', () => {
     expect(library.problems).toEqual([]);
   });
 
-  it('space-evenly e space-around', () => {
+  it('space-evenly and space-around', () => {
     expect(xsOf('row-evenly')).toEqual([10, 30, 60]);
     const around = xsOf('row-around');
     expect(around[0]).toBeCloseTo(20 / 3, 6);
     expect(around[1]).toBeCloseTo(20 / 3 + 10 + 40 / 3, 6);
   });
 
-  it('reverse: o primeiro filho no fim; justify end vira o começo', () => {
+  it('reverse: the first child at the end; justify end becomes the start', () => {
     expect(xsOf('row-rev')).toEqual([90, 70, 40]);
     expect(xsOf('row-rev-end')).toEqual([50, 30, 0]);
   });

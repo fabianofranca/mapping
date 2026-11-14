@@ -9,12 +9,12 @@ import { createEditorUi } from '../../src/store/ui';
 import { sampleProject } from '../model/fixtures';
 import { sampleThread } from '../model/threadFixtures';
 
-// Etapa #940, decisão 3 (item 42): mudar a seleção esquece a conversa escolhida e o rascunho.
+// Stage #940, decision 3 (item 42): changing the selection forgets the chosen thread and the draft.
 
 const POINT = { kind: 'point', containerId: null, x: 5, y: 6 } as const;
 
-describe('conversa de ponto solto e a seleção', () => {
-  it('a conversa escolhida não volta ao clicar num item e depois no vazio', () => {
+describe('loose point thread and the selection', () => {
+  it('the chosen thread does not come back when clicking an item and then the empty area', () => {
     const ui = createEditorUi();
     const project = sampleProject();
     selectThread(ui, project, sampleThread({ id: 'p', anchor: POINT }));
@@ -24,16 +24,16 @@ describe('conversa de ponto solto e a seleção', () => {
     expect(selectedThreadId(ui)).toBeNull();
   });
 
-  it('o rascunho de conversa nova não volta, mas o texto continua em threadDrafts', () => {
+  it('the new thread draft does not come back, but the text stays in threadDrafts', () => {
     const ui = createEditorUi();
     const project = sampleProject();
     startComposing(ui, project, POINT);
-    ui.threadDrafts.value = new Map([[`new:${JSON.stringify(POINT)}`, 'texto']]);
+    ui.threadDrafts.value = new Map([[`new:${JSON.stringify(POINT)}`, 'text']]);
     expect(composingAnchor(ui)).toEqual(POINT);
     ui.selection.value = { kind: 'marking', id: 'M1' };
     ui.selection.value = null;
     expect(composingAnchor(ui)).toBeNull();
-    expect(ui.threadDrafts.value.get(`new:${JSON.stringify(POINT)}`)).toBe('texto');
+    expect(ui.threadDrafts.value.get(`new:${JSON.stringify(POINT)}`)).toBe('text');
     startComposing(ui, project, POINT);
     expect(composingAnchor(ui)).toEqual(POINT);
   });

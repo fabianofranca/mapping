@@ -1,5 +1,5 @@
-// Sugestões no campo de texto (SG1, decisão 3): combobox do TextField no modo commit e as
-// três superfícies que o ligam (campo dos Detalhes, célula de tabela, formulário do Catálogo).
+// Suggestions in the text field (SG1, decision 3): the TextField combobox in commit mode and the
+// three surfaces that wire it (Details field, table cell, Catalog form).
 import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,7 +11,7 @@ import { TableEditor } from '../../src/ui/TableField';
 import { TypedForm } from '../../src/ui/TypedForm';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -29,17 +29,17 @@ function setup(
   render(
     <>
       <TextField
-        aria-label="tipo"
+        aria-label="type"
         value={props.value ?? ''}
         readOnly={props.readOnly}
         disabled={props.disabled}
         suggestions={'suggestions' in props ? props.suggestions : LIST}
         onCommit={onCommit}
       />
-      <button type="button">depois</button>
+      <button type="button">after</button>
     </>,
   );
-  const input = screen.getByLabelText<HTMLInputElement>('tipo');
+  const input = screen.getByLabelText<HTMLInputElement>('type');
   return { input, onCommit, user: userEvent.setup() };
 }
 
@@ -47,14 +47,14 @@ function render2(suggestions: string[]) {
   const onCommit = vi.fn(() => true);
   render(
     <TextField
-      aria-label="tipo"
+      aria-label="type"
       value=""
       suggestions={suggestions}
       onCommit={onCommit}
     />,
   );
   return {
-    input: screen.getByLabelText<HTMLInputElement>('tipo'),
+    input: screen.getByLabelText<HTMLInputElement>('type'),
     onCommit,
     user: userEvent.setup(),
   };
@@ -62,8 +62,8 @@ function render2(suggestions: string[]) {
 
 const options = () => screen.queryAllByRole('option').map((o) => o.textContent);
 
-describe('TextField com sugestões', () => {
-  it('digitar uma palavra com correspondência abre a lista filtrada, com ARIA de combobox', async () => {
+describe('TextField with suggestions', () => {
+  it('typing a word with a match opens the filtered list, with combobox ARIA', async () => {
     const { input, user } = setup();
     expect(input.getAttribute('role')).toBe('combobox');
     expect(input.getAttribute('aria-autocomplete')).toBe('list');
@@ -71,19 +71,19 @@ describe('TextField com sugestões', () => {
     await user.type(input, 'li');
     expect(options()).toEqual(['List', 'MutableList']);
     expect(input.getAttribute('aria-expanded')).toBe('true');
-    const list = screen.getByRole('listbox', { name: 'Sugestões' });
+    const list = screen.getByRole('listbox', { name: 'Suggestions' });
     expect(input.getAttribute('aria-controls')).toBe(list.id);
     expect(screen.getAllByRole('option').every((o) => o.id !== '')).toBe(true);
     expect(document.activeElement).toBe(input);
   });
 
-  it('sem correspondência a lista fica fechada', async () => {
+  it('with no match the list stays closed', async () => {
     const { user, input } = setup();
     await user.type(input, 'zzz');
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('↓/↑ navegam (aria-activedescendant/aria-selected) e Enter escolhe sem gravar', async () => {
+  it('↓/↑ navigate (aria-activedescendant/aria-selected) and Enter chooses without saving', async () => {
     const { input, onCommit, user } = setup();
     await user.type(input, 'List<Mu');
     expect(options()).toEqual(['MutableList']);
@@ -96,15 +96,15 @@ describe('TextField com sugestões', () => {
     expect(input.selectionStart).toBe('List<MutableList'.length);
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(onCommit).not.toHaveBeenCalled();
-    // A confirmação seguinte grava o texto escolhido.
+    // The next confirmation saves the chosen text.
     await user.keyboard('{Enter}');
     expect(onCommit).toHaveBeenCalledWith('List<MutableList');
   });
 
-  it('navega com ↑ e ↓ entre os itens', async () => {
+  it('navigates with ↑ and ↓ between the items', async () => {
     const { input, user } = setup();
     await user.type(input, 'li');
-    // Abre com o primeiro item ativo.
+    // Opens with the first item active.
     expect(screen.getAllByRole('option')[0]?.getAttribute('aria-selected')).toBe('true');
     await user.keyboard('{ArrowDown}');
     expect(screen.getAllByRole('option')[1]?.getAttribute('aria-selected')).toBe('true');
@@ -112,7 +112,7 @@ describe('TextField com sugestões', () => {
     expect(input.value).toBe('MutableList');
   });
 
-  it('troca só a palavra sob o cursor, mantendo o resto do texto', async () => {
+  it('replaces only the word under the cursor, keeping the rest of the text', async () => {
     const { input, user } = setup({ value: 'Map<Str, Int>' });
     input.focus();
     input.setSelectionRange(7, 7);
@@ -123,7 +123,7 @@ describe('TextField com sugestões', () => {
     expect(input.selectionStart).toBe('Map<String'.length);
   });
 
-  it('Enter com a lista aberta escolhe o primeiro item e não grava', async () => {
+  it('Enter with the list open chooses the first item and does not save', async () => {
     const { input, onCommit, user } = setup();
     await user.type(input, 'Str');
     expect(screen.getAllByRole('option')[0]?.getAttribute('aria-selected')).toBe('true');
@@ -134,7 +134,7 @@ describe('TextField com sugestões', () => {
     expect(onCommit).toHaveBeenCalledWith('String');
   });
 
-  it('a filtragem volta o ativo ao primeiro item', async () => {
+  it('filtering resets the active one to the first item', async () => {
     const { input, user } = setup();
     await user.type(input, 'li{ArrowDown}');
     expect(screen.getAllByRole('option')[1]?.getAttribute('aria-selected')).toBe('true');
@@ -142,7 +142,7 @@ describe('TextField com sugestões', () => {
     expect(screen.getAllByRole('option')[0]?.getAttribute('aria-selected')).toBe('true');
   });
 
-  it('abertura explícita (Ctrl+Espaço, ↓) mostra o item idêntico que a automática fecha', async () => {
+  it('explicit opening (Ctrl+Space, ↓) shows the identical item that the automatic one closes', async () => {
     const { input, user } = setup({ value: 'String' });
     await user.click(input);
     await user.keyboard('{End}');
@@ -154,7 +154,7 @@ describe('TextField com sugestões', () => {
     expect(options()).toEqual(['String']);
   });
 
-  it('Enter com a lista fechada grava como hoje', async () => {
+  it('Enter with the list closed saves as before', async () => {
     const { input, onCommit, user } = setup();
     await user.type(input, 'String?');
     expect(screen.queryByRole('listbox')).toBeNull();
@@ -162,7 +162,7 @@ describe('TextField com sugestões', () => {
     expect(onCommit).toHaveBeenCalledWith('String?');
   });
 
-  it('o item idêntico fica quando há outras correspondências: Enter escolhe sem mudar o texto', async () => {
+  it('the identical item stays when there are other matches: Enter chooses without changing the text', async () => {
     const { input, onCommit, user } = render2(['UInt', 'Int']);
     await user.type(input, 'Int');
     expect(options()).toEqual(['Int', 'UInt']);
@@ -173,7 +173,7 @@ describe('TextField com sugestões', () => {
     expect(onCommit).toHaveBeenCalledWith('Int');
   });
 
-  it('clique numa opção escolhe sem tirar o foco nem gravar', async () => {
+  it('clicking an option chooses without taking the focus or saving', async () => {
     const { input, onCommit, user } = setup();
     await user.type(input, 'in');
     await user.click(screen.getByRole('option', { name: 'Int' }));
@@ -184,7 +184,7 @@ describe('TextField com sugestões', () => {
     expect(onCommit).toHaveBeenCalledWith('Int');
   });
 
-  it('Esc fecha sem mudar nada e o Esc seguinte reverte o texto', async () => {
+  it('Esc closes without changing anything and the next Esc reverts the text', async () => {
     const { input, user } = setup({ value: 'x<' });
     await user.click(input);
     await user.keyboard('{Escape}');
@@ -197,13 +197,13 @@ describe('TextField com sugestões', () => {
     expect(input.value).toBe('x<');
   });
 
-  it('Esc com a lista aberta não sobe para quem está em volta', async () => {
+  it('Esc with the list open does not bubble to the surroundings', async () => {
     const outer = vi.fn();
     const { user } = (() => {
       render(
         <div onKeyDown={outer}>
           <TextField
-            aria-label="tipo"
+            aria-label="type"
             value=""
             suggestions={LIST}
             onCommit={() => true}
@@ -212,23 +212,23 @@ describe('TextField com sugestões', () => {
       );
       return { user: userEvent.setup() };
     })();
-    const input = screen.getByLabelText('tipo');
+    const input = screen.getByLabelText('type');
     await user.type(input, 'li');
     outer.mockClear();
     await user.keyboard('{Escape}');
     expect(outer).not.toHaveBeenCalled();
   });
 
-  it('Tab fecha e mantém o texto digitado, sem aceitar a sugestão', async () => {
+  it('Tab closes and keeps the typed text, without accepting the suggestion', async () => {
     const { input, onCommit, user } = setup();
     await user.type(input, 'li');
     await user.keyboard('{ArrowDown}{Tab}');
     expect(screen.queryByRole('listbox')).toBeNull();
-    // O texto digitado segue (e é o que grava ao sair), não a sugestão ativa.
+    // The typed text stays (and is what saves on leaving), not the active suggestion.
     expect(onCommit).toHaveBeenCalledWith('li');
   });
 
-  it('clique no campo vazio mostra tudo; Ctrl+Espaço abre com a palavra atual', async () => {
+  it('clicking the empty field shows everything; Ctrl+Space opens with the current word', async () => {
     const { input, user } = setup();
     await user.click(input);
     expect(options()).toEqual(LIST);
@@ -239,14 +239,14 @@ describe('TextField com sugestões', () => {
     expect(options()).toEqual(['Unit']);
   });
 
-  it('a lista fecha ao sair do campo', async () => {
+  it('the list closes when leaving the field', async () => {
     const { user, input } = setup();
     await user.type(input, 'li');
     await user.tab();
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('somente leitura ou desabilitado: sem lista e sem papel de combobox', async () => {
+  it('read-only or disabled: no list and no combobox role', async () => {
     const a = setup({ readOnly: true, value: 'x' });
     await a.user.click(a.input);
     await a.user.keyboard('{ArrowDown}');
@@ -258,7 +258,7 @@ describe('TextField com sugestões', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('sem sugestões (ausente ou vazia) o campo é o de sempre', async () => {
+  it('without suggestions (absent or empty) the field is the usual one', async () => {
     for (const suggestions of [undefined, []]) {
       const { input, onCommit, user } = setup({ suggestions });
       expect(input.getAttribute('role')).toBeNull();
@@ -270,20 +270,20 @@ describe('TextField com sugestões', () => {
     }
   });
 
-  it('aceita itens com texto secundário', async () => {
+  it('accepts items with secondary text', async () => {
     render(
       <TextField
-        aria-label="tipo"
+        aria-label="type"
         value=""
-        suggestions={[{ label: 'Usuario', detail: 'Classe' }, 'Int']}
+        suggestions={[{ label: 'User', detail: 'Class' }, 'Int']}
         onCommit={() => true}
       />,
     );
-    await userEvent.setup().type(screen.getByLabelText('tipo'), 'usu');
-    expect(screen.getByRole('option').textContent).toBe('UsuarioClasse');
+    await userEvent.setup().type(screen.getByLabelText('type'), 'use');
+    expect(screen.getByRole('option').textContent).toBe('UserClass');
   });
 
-  it('o rascunho digitado depois de escolher não se perde ao render', async () => {
+  it('the draft typed after choosing is not lost on render', async () => {
     const { input, user } = setup();
     await user.type(input, 'li');
     fireEvent.mouseDown(screen.getByRole('option', { name: 'List' }));
@@ -293,26 +293,26 @@ describe('TextField com sugestões', () => {
   });
 });
 
-describe('sugestões nas superfícies de edição', () => {
+describe('suggestions on the editing surfaces', () => {
   const string: SpecField = {
-    key: 'tipo',
+    key: 'type',
     type: 'string',
     suggestions: ['String', 'Int'],
   };
 
-  it('campo dos Detalhes (StringEditor) e editor simples', async () => {
+  it('Details field (StringEditor) and simple editor', async () => {
     const onSet = vi.fn(() => ({ ok: true as const }));
     render(
       <StringEditor
         field={string as never}
         value=""
-        label="Tipo"
+        label="Type"
         readOnly={false}
         onSet={onSet as never}
       />,
     );
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText('Tipo'), 'st');
+    await user.type(screen.getByLabelText('Type'), 'st');
     expect(options()).toEqual(['String']);
     await user.keyboard('{ArrowDown}{Enter}{Enter}');
     expect(onSet).toHaveBeenCalledWith('String');
@@ -321,16 +321,16 @@ describe('sugestões nas superfícies de edição', () => {
       <SimpleEditor
         field={string as never}
         value=""
-        label="Tipo"
+        label="Type"
         readOnly
         onSet={onSet as never}
       />,
     );
-    await user.click(screen.getByLabelText('Tipo'));
+    await user.click(screen.getByLabelText('Type'));
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('célula de tabela', async () => {
+  it('table cell', async () => {
     const onSetCell = vi.fn(() => ({ ok: true as const }));
     render(
       <TableEditor
@@ -338,14 +338,14 @@ describe('sugestões nas superfícies de edição', () => {
           {
             key: 'props',
             type: 'table',
-            rowLabel: 'nome',
+            rowLabel: 'name',
             columns: [
-              { key: 'nome', type: 'string' },
-              { key: 'tipo', type: 'string', suggestions: ['String', 'Int'] },
+              { key: 'name', type: 'string' },
+              { key: 'type', type: 'string', suggestions: ['String', 'Int'] },
             ],
           } as never
         }
-        rows={[{ _id: 'r1', nome: 'a', tipo: '' }]}
+        rows={[{ _id: 'r1', name: 'a', type: '' }]}
         readOnly={false}
         onAddRow={() => true}
         onSetCell={onSetCell as never}
@@ -356,35 +356,35 @@ describe('sugestões nas superfícies de edição', () => {
     const user = userEvent.setup();
     await user.click(screen.getAllByRole('combobox')[0] as HTMLElement);
     expect(options()).toEqual(['String', 'Int']);
-    // A outra coluna string, sem sugestões, não abre lista.
+    // The other string column, without suggestions, does not open a list.
     await user.keyboard('{Escape}');
     await user.click(screen.getAllByRole('textbox')[0] as HTMLElement);
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('formulário do Catálogo (campo e coluna da tabela)', async () => {
+  it('Catalog form (field and table column)', async () => {
     const onChange = vi.fn();
     render(
       <TypedForm
         fields={[
           string,
           {
-            key: 'itens',
+            key: 'items',
             type: 'table',
-            rowLabel: 'nome',
-            columns: [{ key: 'nome', type: 'string', suggestions: ['Alfa'] }],
+            rowLabel: 'name',
+            columns: [{ key: 'name', type: 'string', suggestions: ['Alpha'] }],
           } as never,
         ]}
-        values={{ itens: [{ _id: 'r1', nome: '' }] }}
+        values={{ items: [{ _id: 'r1', name: '' }] }}
         onChange={onChange}
         readOnly={false}
       />,
     );
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText('tipo'), 'in');
+    await user.type(screen.getByLabelText('type'), 'in');
     expect(options()).toEqual(['Int', 'String']);
     await user.keyboard('{Escape}');
-    await user.click(screen.getByLabelText(/^nome/i));
-    expect(options()).toEqual(['Alfa']);
+    await user.click(screen.getByLabelText(/^name/i));
+    expect(options()).toEqual(['Alpha']);
   });
 });

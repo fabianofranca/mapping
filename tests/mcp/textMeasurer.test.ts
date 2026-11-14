@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createMeasurer } from '../../mcp/image/textMeasurer';
 import type { MeasureFont } from '../../src/model/components/instantiate';
 
-// CF9 (decisão 31): o medidor do servidor mede com o opentype.js e a fonte livre embutida.
+// CF9 (decision 31): the server measurer measures with opentype.js and the embedded free font.
 
 const sans = parse(
   new Uint8Array(readFileSync('mcp/fonts/MappingSans-Regular.ttf')).buffer as ArrayBuffer,
@@ -19,24 +19,24 @@ const font: MeasureFont = {
   letterSpacing: 0,
 };
 
-describe('medidor com opentype.js', () => {
+describe('measurer with opentype.js', () => {
   const measure = createMeasurer();
 
-  it('"Pagar fatura" em sans 14 px mede a largura do glifo (±0,5 px)', () => {
-    const expected = sans.getAdvanceWidth('Pagar fatura', 14, { kerning: true });
+  it('"Pay invoice" in sans 14 px measures the glyph width (±0.5 px)', () => {
+    const expected = sans.getAdvanceWidth('Pay invoice', 14, { kerning: true });
     expect(expected).toBeGreaterThan(50);
-    expect(Math.abs(measure('Pagar fatura', font).width - expected)).toBeLessThan(0.5);
+    expect(Math.abs(measure('Pay invoice', font).width - expected)).toBeLessThan(0.5);
   });
 
-  it('uma caixa de 60 px quebra "Pagar fatura" em 2 linhas', () => {
-    const result = measure('Pagar fatura', font, 60);
-    expect(result.lines).toEqual(['Pagar', 'fatura']);
+  it('a 60 px box breaks "Pay invoice" into 2 lines', () => {
+    const result = measure('Pay invoice', font, 60);
+    expect(result.lines).toEqual(['Pay', 'invoice']);
     expect(result.height).toBe(40);
   });
 
-  it('wrap: none + ellipsis termina em … dentro da largura', () => {
+  it('wrap: none + ellipsis ends in … within the width', () => {
     const result = measure(
-      'Pagar fatura do cartão de crédito',
+      'Pay invoice of the credit card',
       { ...font, wrap: 'none', ellipsis: true },
       90,
     );
@@ -46,16 +46,16 @@ describe('medidor com opentype.js', () => {
     expect(result.width).toBeLessThanOrEqual(90 + 1e-6);
   });
 
-  it('peso ≥ 600 usa a fonte negrito (mais larga); mono mede mais que sans nos mesmos caracteres', () => {
-    const regular = measure('Salvar alterações', font).width;
-    expect(measure('Salvar alterações', { ...font, weight: 700 }).width).toBeGreaterThan(
+  it('weight ≥ 600 uses the bold font (wider); mono measures more than sans for the same characters', () => {
+    const regular = measure('Save changes', font).width;
+    expect(measure('Save changes', { ...font, weight: 700 }).width).toBeGreaterThan(
       regular,
     );
     const mono = measure('iiiiiiii', { ...font, family: 'monospace' }).width;
     expect(mono).toBeGreaterThan(measure('iiiiiiii', font).width);
   });
 
-  it('fonte da biblioteca vale no lugar da embutida', () => {
+  it('the library font takes the place of the embedded one', () => {
     const bold = new Uint8Array(readFileSync('mcp/fonts/MappingMono-Bold.ttf'));
     const custom = createMeasurer([
       {
@@ -78,21 +78,21 @@ describe('medidor com opentype.js', () => {
   });
 });
 
-describe('medidor com opentype.js: linha de base (MC1, decisão 2)', () => {
+describe('measurer with opentype.js: baseline (MC1, decision 2)', () => {
   const measure = createMeasurer();
 
-  it('a primeira linha de base é a do lineInk: centro da linha + (ascent − descent) / 2', () => {
+  it('the first baseline is the lineInk one: line center + (ascent − descent) / 2', () => {
     const k = 14 / sans.unitsPerEm;
     const ascent = sans.ascender * k;
     const descent = -sans.descender * k;
-    const m = measure('Pagar', font);
+    const m = measure('Pay', font);
     expect(m.firstBaseline).toBeCloseTo(10 + (ascent - descent) / 2, 6);
     expect(m.lastBaseline).toBeCloseTo(m.firstBaseline ?? 0, 6);
     expect(m.lineCount).toBe(1);
   });
 
-  it('com duas linhas a última está uma altura de linha abaixo da primeira', () => {
-    const m = measure('Pagar fatura', font, 60);
+  it('with two lines the last one is one line height below the first', () => {
+    const m = measure('Pay invoice', font, 60);
     expect(m.lineCount).toBe(2);
     expect((m.lastBaseline ?? 0) - (m.firstBaseline ?? 0)).toBeCloseTo(20, 6);
   });

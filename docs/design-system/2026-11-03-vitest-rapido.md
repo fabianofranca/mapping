@@ -1,5 +1,5 @@
-# Vitest rápido — 2026-11-03 (épico `epic/vitest-rapido`)
+# Faster Vitest — 2026-11-03 (épico `epic/vitest-rapido`)
 
 ## Sincronização
 
-Sem impacto: a etapa só mudou o `vite.config.ts`, o job `test` do `ci.yml`, o sequenciador e os tempos dos testes, testes de configuração e documentação, sem tocar em `src/`. Nada foi gravado no artefato.
+Sem impacto: the stage only changed `vite.config.ts`, the `test` job in `ci.yml`, the sequencer and the test timings, configuration tests and documentation, without touching `src/`. Nothing was written to the artifact.

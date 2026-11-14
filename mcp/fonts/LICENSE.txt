@@ -1,14 +1,14 @@
-Mapping Sans e Mapping Mono (mcp/fonts/*.ttf)
+Mapping Sans and Mapping Mono (mcp/fonts/*.ttf)
 
-São subconjuntos (Latim: ASCII, Latin-1, Latim Estendido-A e pontuação comum), sem hinting,
-das fontes Liberation Sans e Liberation Mono 2.x, renomeados como exige a SIL Open Font
-License 1.1 para versões modificadas (o nome reservado "Liberation" não é usado).
+They are subsets (Latin: ASCII, Latin-1, Latin Extended-A and common punctuation), without hinting,
+of the Liberation Sans and Liberation Mono 2.x fonts, renamed as the SIL Open Font
+License 1.1 requires for modified versions (the reserved name "Liberation" is not used).
 
 Digitized data copyright (c) 2010 Google Corporation with Reserved Font Arimo, Tinos and Cousine.
 Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation.
 
-Licença: SIL Open Font License, Version 1.1 — http://scripts.sil.org/OFL
-Texto completo: https://openfontlicense.org/open-font-license-official-text/
+License: SIL Open Font License, Version 1.1 — http://scripts.sil.org/OFL
+Full text: https://openfontlicense.org/open-font-license-official-text/
 
-As fontes podem ser usadas, estudadas, modificadas e redistribuídas livremente, inclusive embutidas
-em software, desde que não sejam vendidas sozinhas e que derivadas fiquem sob a mesma licença.
+The fonts may be used, studied, modified and redistributed freely, including embedded
+in software, as long as they are not sold by themselves and derivatives stay under the same license.

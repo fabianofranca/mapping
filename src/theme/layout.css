@@ -13,7 +13,7 @@
   align-self: flex-start;
 }
 
-/* Tela do Catálogo de uma biblioteca, sem projeto (etapa Biblioteca, B5). */
+/* Catalog screen of a library, without a project (Library stage, B5). */
 .catalog-screen {
   flex: 1;
   min-height: 0;
@@ -47,7 +47,7 @@
   flex-direction: column;
 }
 
-/* Tela inicial (B10): coluna lateral e tabela. */
+/* Home screen (B10): side column and table. */
 .home {
   flex: 1;
   min-height: 0;
@@ -106,7 +106,7 @@
   background: var(--color-hover);
 }
 
-/* O item que é um link (Guia interativo): mesma aparência dos botões do menu */
+/* The item that is a link (Interactive guide): same look as the menu buttons */
 a.home-nav-item {
   text-decoration: none;
 }
@@ -178,7 +178,7 @@ a.home-nav-item {
   width: 100%;
 }
 
-/* Tabela de projetos */
+/* Projects table */
 .project-table {
   width: 100%;
   border-collapse: collapse;
@@ -218,7 +218,7 @@ a.home-nav-item {
   overflow-wrap: anywhere;
 }
 
-/* O flex fica num div dentro do <td>: o display da célula tiraria a borda da linha. */
+/* The flex sits on a div inside the <td>: the cell's display would remove the row's border. */
 .project-actions {
   display: flex;
   justify-content: flex-end;
@@ -241,7 +241,7 @@ a.home-nav-item {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  /* Recorta sem virar contêiner de rolagem: levar um controle à vista não o desloca. */
+  /* Clips without becoming a scroll container: bringing a control into view does not shift it. */
   overflow: clip;
 }
 
@@ -257,7 +257,7 @@ a.home-nav-item {
   display: flex;
 }
 
-/* Só desktop: abaixo da largura mínima, a tela fica escondida atrás do aviso. */
+/* Desktop only: below the minimum width, the screen is hidden behind the notice. */
 .editor[hidden],
 .home[hidden] {
   display: none;
@@ -285,8 +285,8 @@ a.home-nav-item {
 }
 
 /*
- * Desktop estreito: botões da barra só com ícone, para o título do projeto caber.
- * O texto continua no DOM (só fora da vista): é dele que vem o nome acessível.
+ * Narrow desktop: toolbar buttons with only an icon, so the project title fits.
+ * The text stays in the DOM (just out of view): the accessible name comes from it.
  */
 @media (max-width: 1199px) {
   .toolbar .icon-button-text {
@@ -303,8 +303,8 @@ a.home-nav-item {
   }
 }
 
-/* Camadas e anotações */
-/* Faixa no topo (`mp-banner` do DS 2.0): aviso do canal de preview e nova versão. */
+/* Layers and annotations */
+/* Banner at the top (`mp-banner` of DS 2.0): preview channel notice and new version. */
 .banner {
   flex: none;
   display: flex;
@@ -334,14 +334,14 @@ a.home-nav-item {
   background: var(--color-surface);
 }
 
-/* Build de preview: a faixa acompanha a rolagem da tela inicial (ver utils/channel.ts). */
+/* Preview build: the banner follows the home screen's scroll (see utils/channel.ts). */
 .preview-banner {
   position: sticky;
   top: var(--space-1);
   z-index: var(--z-banner);
 }
 
-/* Selo PREVIEW permanente (barra principal e tela inicial). */
+/* Permanent PREVIEW badge (main bar and home screen). */
 .badge {
   flex: none;
   padding: 0 var(--space-1-5);
@@ -363,7 +363,7 @@ a.home-nav-item {
   margin-top: 0;
 }
 
-/* Repositórios (código por plataforma e documentos; Configurações do editor) */
+/* Repositories (code per platform and documents; editor Settings) */
 .repos {
   display: flex;
   flex-direction: column;
@@ -447,7 +447,7 @@ a.home-nav-item {
   margin: 0;
 }
 
-/* Configurações › Privacidade */
+/* Settings › Privacy */
 .privacy-subtitle {
   margin: 0;
   font: var(--t-text-small);

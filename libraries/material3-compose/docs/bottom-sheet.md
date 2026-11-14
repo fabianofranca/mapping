@@ -1,52 +1,52 @@
 # Bottom sheet
 
-Folha que sobe da parte de baixo da tela. Modal cobre a tela com um scrim e se dispensa; standard fica ao lado do conteúdo.
+Sheet that slides up from the bottom of the screen. Modal covers the screen with a scrim and is dismissed; standard stays beside the content.
 
-Tipo de anotação: `bottom-sheet` (camada Componentes).
+Annotation type: `bottom-sheet` (Components layer).
 
-## Campos
+## Fields
 
-| Chave             | Rótulo                | Tipo   | Obrigatório | Opções              | Padrão  | Descrição                                                            |
-| ----------------- | --------------------- | ------ | ----------- | ------------------- | ------- | -------------------------------------------------------------------- |
-| `title`           | Título                | string | não         |                     |         | Título no topo da folha.                                             |
-| `style`           | Estilo                | enum   | não         | `modal`, `standard` | `modal` | modal (ModalBottomSheet) ou standard (BottomSheetScaffold).          |
-| `dragHandle`      | Alça de arraste       | enum   | não         | `true`, `false`     | `true`  | false remove a alça no topo da folha.                                |
-| `sheetPeekHeight` | Altura recolhida (dp) | number | não         |                     | `56`    | Altura visível da folha recolhida em dp. Só vale no estilo standard. |
-| `items`           | Itens                 | table  | não         | ver Colunas abaixo  |         | Ações da folha, uma por linha.                                       |
+| Key               | Label            | Type   | Required | Options             | Default | Description                                                                      |
+| ----------------- | ---------------- | ------ | -------- | ------------------- | ------- | -------------------------------------------------------------------------------- |
+| `title`           | Title            | string | no       |                     |         | Title at the top of the sheet.                                                   |
+| `style`           | Style            | enum   | no       | `modal`, `standard` | `modal` | modal (ModalBottomSheet) or standard (BottomSheetScaffold).                      |
+| `dragHandle`      | Drag handle      | enum   | no       | `true`, `false`     | `true`  | false removes the handle at the top of the sheet.                                |
+| `sheetPeekHeight` | Peek height (dp) | number | no       |                     | `56`    | Visible height of the collapsed sheet in dp. Only applies in the standard style. |
+| `items`           | Items            | table  | no       | see Columns below   |         | Sheet actions, one per row.                                                      |
 
-Colunas de `items` (uma linha por item):
+Columns of `items` (one row per item):
 
-| Chave   | Rótulo | Tipo   | Obrigatório | Opções                                                         | Padrão |
-| ------- | ------ | ------ | ----------- | -------------------------------------------------------------- | ------ |
-| `label` | Rótulo | string | sim         |                                                                |        |
-| `icon`  | Ícone  | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |        |
+| Key     | Label | Type   | Required | Options                                                   | Default |
+| ------- | ----- | ------ | -------- | --------------------------------------------------------- | ------- |
+| `label` | Label | string | yes      |                                                           |         |
+| `icon`  | Icon  | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.ModalBottomSheet`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ModalBottomSheet.kt`
-- O campo `style` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.ModalBottomSheet`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ModalBottomSheet.kt`
+- The `style` field chooses the symbol; values without their own case use the base one.
 
-| `style`        | Símbolo                                                  |
-| -------------- | -------------------------------------------------------- |
-| `modal` (base) | `ModalBottomSheet`                                       |
-| `standard`     | `BottomSheetScaffold` (arquivo `BottomSheetScaffold.kt`) |
+| `style`        | Symbol                                                |
+| -------------- | ----------------------------------------------------- |
+| `modal` (base) | `ModalBottomSheet`                                    |
+| `standard`     | `BottomSheetScaffold` (file `BottomSheetScaffold.kt`) |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in the `code`):
 
 ```kotlin
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Folha(onDismiss: () -> Unit) {
+fun Sheet(onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(),
-        // dragHandle = null quando dragHandle = false
+        // dragHandle = null when dragHandle = false
     ) {
         Column {
-            Text("Compartilhar", style = MaterialTheme.typography.titleLarge)
-            ListItem(    // uma por linha de items
-                headlineContent = { Text("Copiar link") },
+            Text("Share", style = MaterialTheme.typography.titleLarge)
+            ListItem(    // one per row of items
+                headlineContent = { Text("Copy link") },
                 leadingContent = { Icon(Icons.Filled.Share, contentDescription = null) },
             )
         }
@@ -57,51 +57,51 @@ fun Folha(onDismiss: () -> Unit) {
 BottomSheetScaffold(
     scaffoldState = rememberBottomSheetScaffoldState(),
     sheetPeekHeight = 96.dp,
-    sheetContent = { Column { /* title e items, como acima */ } },
+    sheetContent = { Column { /* title and items, as above */ } },
 ) { innerPadding ->
-    /* conteúdo da tela atrás da folha */
+    /* screen content behind the sheet */
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from the `code` (what the tool hands to the agent):
 
-> Exige @OptIn(ExperimentalMaterial3Api::class). `onDismissRequest` e `sheetState = rememberModalBottomSheetState()` ligam à lógica da tela, e o scrim é desenhado pelo próprio composable. O `content` (uma Column) traz o `title` em `Text` com `MaterialTheme.typography.titleLarge` e, para cada linha de `items`, `ListItem(headlineContent = { Text(<label>) }, leadingContent = { Icon(Icons.Filled.<icon>, contentDescription = null) })`. Com `dragHandle` em `false`, passe `dragHandle = null`.
+> Requires @OptIn(ExperimentalMaterial3Api::class). `onDismissRequest` and `sheetState = rememberModalBottomSheetState()` connect to the screen logic, and the scrim is drawn by the composable itself. The `content` (a Column) carries the `title` in a `Text` with `MaterialTheme.typography.titleLarge` and, for each row of `items`, `ListItem(headlineContent = { Text(<label>) }, leadingContent = { Icon(Icons.Filled.<icon>, contentDescription = null) })`. With `dragHandle` set to `false`, pass `dragHandle = null`.
 
-Variante `standard`: Exige @OptIn(ExperimentalMaterial3Api::class). O conteúdo da folha vai em `sheetContent = { … }` (uma Column com o `title` e os `items`, como no modal) e `sheetPeekHeight = <sheetPeekHeight>.dp`; o conteúdo da tela atrás da folha vai em `content = { innerPadding -> … }`. Com `dragHandle` em `false`, passe `sheetDragHandle = null`; `scaffoldState = rememberBottomSheetScaffoldState()` liga à lógica da tela.
+`standard` variant: Requires @OptIn(ExperimentalMaterial3Api::class). The sheet content goes in `sheetContent = { … }` (a Column with the `title` and the `items`, as in the modal) and `sheetPeekHeight = <sheetPeekHeight>.dp`; the screen content behind the sheet goes in `content = { innerPadding -> … }`. With `dragHandle` set to `false`, pass `sheetDragHandle = null`; `scaffoldState = rememberBottomSheetScaffoldState()` connects to the screen logic.
 
-## Exemplos
+## Examples
 
-- **Modal**: title=Compartilhar, style=modal, dragHandle=true
-- **Standard recolhida**: title=Detalhes, style=standard, sheetPeekHeight=96
+- **Modal**: title=Share, style=modal, dragHandle=true
+- **Collapsed standard**: title=Details, style=standard, sheetPeekHeight=96
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente, nenhum nó de texto declara `family` (todos herdam `font-sans`) e o ícone dos itens é o nó `icon` do conjunto da biblioteca, pelo `$switch` do nome do Compose para o do conjunto, sem caminho SVG no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or opacity is literal in the component, no text node declares `family` (all inherit `font-sans`) and the icon of the items is the `icon` node of the library set, through the `$switch` from the Compose name to the set one, with no SVG path in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ModalBottomSheet.kt` (linhas 123 a 137: `ModalBottomSheet`, `sheetMaxWidth`, `shape`, `containerColor`, `tonalElevation` e `dragHandle` padrão; 266 a 358: o `Surface` com `widthIn(max = sheetMaxWidth)` e `fillMaxWidth()` (280), a forma, a cor e o `tonalElevation` sem `shadowElevation`; 361 a 431: a `Column` com a alça no topo, centralizada por `DragHandleWithTooltip`, e depois o `content`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/BottomSheetScaffold.kt` (linhas 118 a 139: `BottomSheetScaffold`, `sheetPeekHeight`, `sheetShape`, `sheetTonalElevation` 0 e `sheetShadowElevation` = `BottomSheetDefaults.Elevation`; 262 a 322: o `Surface` com `widthIn(max = sheetMaxWidth)`, `requiredHeightIn(min = peekHeight)` (270) e `shadowElevation` (322)).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SheetDefaults.kt` (linhas 373 a 402: `BottomSheetDefaults`, `ExpandedShape`, `ContainerColor`, `Elevation`, `ScrimColor`, `SheetPeekHeight` 56, `SheetMaxWidth` 640 e `windowInsets`; 410 a 431: `DragHandle`, a forma `MaterialTheme.shapes.extraLarge`, a cor do token e o `padding(vertical = DragHandleVerticalPadding)`; 543: `DragHandleVerticalPadding` 22).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SheetBottomTokens.kt` (linhas 24 a 31: contêiner `SurfaceContainerLow`, forma `CornerExtraLargeTop`, alça `OnSurfaceVariant` de 32 × 4, `DockedMinimizedContainerShape` `CornerNone`, elevações `Level1` do modal e do standard), `ShapeTokens.kt` (linhas 31 a 37: `CornerExtraLargeTop`, 28 em cima e 0 embaixo) e `ElevationTokens.kt` (`Level1` 1 dp).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ListItem.kt` e `tokens/ListTokens.kt`, para os itens (ver `list-item.md`): contêiner `Surface` (`ListItemContainerColor`, linha 27), altura de uma linha 56 (linha 62), título em `BodyLarge` e `OnSurface`, ícone inicial de 24 em `OnSurfaceVariant` (linhas 54 e 55), respiro de 16 (`ListItemStartPadding`) e 16 até o texto (`LeadingContentEndPadding`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt` (`TitleLarge` 22/28/400/0 e `BodyLarge` 16/24/400/0,5).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ModalBottomSheet.kt` (lines 123 to 137: `ModalBottomSheet`, `sheetMaxWidth`, `shape`, `containerColor`, `tonalElevation` and the default `dragHandle`; 266 to 358: the `Surface` with `widthIn(max = sheetMaxWidth)` and `fillMaxWidth()` (280), the shape, the color and the `tonalElevation` without `shadowElevation`; 361 to 431: the `Column` with the handle at the top, centered by `DragHandleWithTooltip`, and then the `content`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/BottomSheetScaffold.kt` (lines 118 to 139: `BottomSheetScaffold`, `sheetPeekHeight`, `sheetShape`, `sheetTonalElevation` 0 and `sheetShadowElevation` = `BottomSheetDefaults.Elevation`; 262 to 322: the `Surface` with `widthIn(max = sheetMaxWidth)`, `requiredHeightIn(min = peekHeight)` (270) and `shadowElevation` (322)).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SheetDefaults.kt` (lines 373 to 402: `BottomSheetDefaults`, `ExpandedShape`, `ContainerColor`, `Elevation`, `ScrimColor`, `SheetPeekHeight` 56, `SheetMaxWidth` 640 and `windowInsets`; 410 to 431: `DragHandle`, the shape `MaterialTheme.shapes.extraLarge`, the token color and the `padding(vertical = DragHandleVerticalPadding)`; 543: `DragHandleVerticalPadding` 22).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SheetBottomTokens.kt` (lines 24 to 31: container `SurfaceContainerLow`, shape `CornerExtraLargeTop`, handle `OnSurfaceVariant` of 32 × 4, `DockedMinimizedContainerShape` `CornerNone`, `Level1` elevations of the modal and the standard), `ShapeTokens.kt` (lines 31 to 37: `CornerExtraLargeTop`, 28 on top and 0 on the bottom) and `ElevationTokens.kt` (`Level1` 1 dp).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ListItem.kt` and `tokens/ListTokens.kt`, for the items (see `list-item.md`): `Surface` container (`ListItemContainerColor`, line 27), one-line height 56 (line 62), title in `BodyLarge` and `OnSurface`, 24 leading icon in `OnSurfaceVariant` (lines 54 and 55), padding of 16 (`ListItemStartPadding`) and 16 to the text (`LeadingContentEndPadding`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt` (`TitleLarge` 22/28/400/0 and `BodyLarge` 16/24/400/0.5).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Folha em `surface-container-low` com os cantos de cima de 28 (`CornerExtraLargeTop`, o `corner-extra-large`) e os de baixo retos. O modal não projeta sombra (o `Level1` dele é só `tonalElevation`, que não pinta quando a cor não é `surface`), e o standard tem a sombra do nível 1 (`sheetShadowElevation`, as duas sombras do nível 1 (ponto: `y` 1, `blur` 2; ambiente: `y` 1, `blur` 3, `spread` 1; tokens `elevation-1-point-*` e `elevation-1-ambient-*`)).
-- Alça de 32 × 4 em `on-surface-variant` com a forma `corner-extra-large` (a cápsula do `shapes.extraLarge`), numa área de 48 (22 + 4 + 22), centralizada. A cor é cheia: o `DragHandle` do commit usa o token sem a opacidade 0,4 que o desenho tinha. Com `dragHandle: false` a área some.
-- Título em `title-large` (22/28, peso 400) em `on-surface` e uma linha por item como `ListItem` de uma linha: 56 de altura mínima, contêiner `surface`, ícone do conjunto de 24 em `on-surface-variant` a 16 da borda, 16 até o rótulo e rótulo em `body-large` (16/24) em `on-surface`, numa linha só com `…` (a convenção do `list-item`). O item sem ícone começa a 16.
-- Largura máxima de 640 (`SheetMaxWidth`, o `maxWidth` da raiz) e, no standard, altura mínima de `sheetPeekHeight` (`requiredHeightIn(min = peekHeight)`, o `minHeight` da raiz lido do campo). O modal não tem altura mínima.
-- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `rótulo` de cada item (o `título` fica como está) usa `font.verticalAlign: "cap-middle"` e segue `hug` na altura, porque o pai também mede pelo texto; a caixa do texto é a linha, centrada no pai. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
+- Sheet in `surface-container-low` with the top corners of 28 (`CornerExtraLargeTop`, the `corner-extra-large`) and the bottom ones square. The modal casts no shadow (its `Level1` is only `tonalElevation`, which does not paint when the color is not `surface`), and the standard has the level 1 shadow (`sheetShadowElevation`, the two level 1 shadows (point: `y` 1, `blur` 2; ambient: `y` 1, `blur` 3, `spread` 1; tokens `elevation-1-point-*` and `elevation-1-ambient-*`)).
+- 32 × 4 handle in `on-surface-variant` with the `corner-extra-large` shape (the capsule of `shapes.extraLarge`), in a 48 area (22 + 4 + 22), centered. The color is solid: the commit's `DragHandle` uses the token without the 0.4 opacity that the drawing had. With `dragHandle: false` the area disappears.
+- Title in `title-large` (22/28, weight 400) in `on-surface` and one row per item as a one-line `ListItem`: 56 minimum height, `surface` container, 24 icon from the set in `on-surface-variant` 16 from the edge, 16 to the label and label in `body-large` (16/24) in `on-surface`, on a single line with `…` (the `list-item` convention). An item without an icon starts at 16.
+- Maximum width of 640 (`SheetMaxWidth`, the root's `maxWidth`) and, in the standard, a minimum height of `sheetPeekHeight` (`requiredHeightIn(min = peekHeight)`, the root's `minHeight` read from the field). The modal has no minimum height.
+- Single-line label centered by the capital letter (`cap-middle`): the `label` node of each item (the `title` stays as it is) uses `font.verticalAlign: "cap-middle"` and stays `hug` in height, because the parent also measures by the text; the text box is the line, centered in the parent. Compose's `Text` centers by the font's line box (ascent and descent); the drawing centers the capital height in the box, and with Roboto the two coincide to within 1 px.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O conteúdo da folha é livre (`ColumnScope.() -> Unit`): o título, o espaço dele e o de baixo não são constantes do composable. O desenho usa 16 nas laterais do título (o `ListItemStartPadding`), 8 em cima e 16 embaixo, e 16 de respiro embaixo da lista no lugar do `contentWindowInsets` (a barra do sistema), que são convenções do desenho e não valores do código.
-- O `ListItem` sem `colors` pinta o contêiner de `surface`, e é o que o desenho faz; a faixa fica um pouco mais clara que a folha em `surface-container-low`. Quem passa `ListItemDefaults.colors(containerColor = Color.Transparent)` não vê a faixa, e o tipo não tem campo para isso.
-- Os cantos de cima são a lista `[corner-extra-large, corner-extra-large, 0, 0]` (a lista de raios aceita `$token` por item), então seguem o token se a especialização mudar.
-- A sombra do standard são as duas do nível 1 (ponto a 30% e ambiente a 15%, pelos tokens `elevation-1-point-*` e `elevation-1-ambient-*`); a tonal do Compose não é desenhada. Com 1 dp elas quase não aparecem no topo da folha.
-- O desenho é o estado aberto e estático: sem o `scrim` (a película do `scrim` a 32%, do composable), sem arrastar, sem os estados recolhido, parcial e escondido (a forma `CornerNone` do `DockedMinimizedContainerShape` não é desenhada), sem a dica da alça (`DragHandleWithTooltip`), sem a animação e sem o recuo do sistema.
-- O standard recolhido não corta o conteúdo na altura de `sheetPeekHeight`: o Compose mostra só esse trecho da folha, e o desenho a mostra inteira, com essa altura como mínimo.
+- The sheet content is free-form (`ColumnScope.() -> Unit`): the title, its spacing and the bottom one are not constants of the composable. The drawing uses 16 on the sides of the title (the `ListItemStartPadding`), 8 on top and 16 at the bottom, and 16 of breathing room below the list in place of `contentWindowInsets` (the system bar), which are drawing conventions and not code values.
+- A `ListItem` without `colors` paints the container in `surface`, and that is what the drawing does; the strip is slightly lighter than the `surface-container-low` sheet. Whoever passes `ListItemDefaults.colors(containerColor = Color.Transparent)` does not see the strip, and the type has no field for that.
+- The top corners are the list `[corner-extra-large, corner-extra-large, 0, 0]` (the radius list accepts `$token` per item), so they follow the token if the specialization changes.
+- The standard's shadow is the two level 1 ones (point at 30% and ambient at 15%, through the tokens `elevation-1-point-*` and `elevation-1-ambient-*`); Compose's tonal one is not drawn. At 1 dp they barely show at the top of the sheet.
+- The drawing is the open, static state: no `scrim` (the 32% `scrim` film, from the composable), no dragging, no collapsed, partial and hidden states (the `CornerNone` shape of `DockedMinimizedContainerShape` is not drawn), no handle tooltip (`DragHandleWithTooltip`), no animation and no system inset.
+- The collapsed standard does not cut the content at the height of `sheetPeekHeight`: Compose shows only that part of the sheet, and the drawing shows all of it, with that height as the minimum.
 
-- O `SheetBottomTokens.kt` define `FocusIndicatorColor` (linha 32), mas o tipo não tem `interaction`: o anel de foco não é desenhado.
+- `SheetBottomTokens.kt` defines `FocusIndicatorColor` (line 32), but the type has no `interaction`: the focus ring is not drawn.

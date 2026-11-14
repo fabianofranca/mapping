@@ -21,8 +21,8 @@ import {
 } from './libraryMigrationFixtures';
 import { idGen } from './specFixtures';
 
-// `updateSpecialization` com o contrato de versão e a execução das migrações, e o impacto
-// (`additive`, `refused`, `steps`, `losses`, `pending`). Os passos em si: libraryMigrations.test.ts.
+// `updateSpecialization` with the version contract and the execution of the migrations, and the impact
+// (`additive`, `refused`, `steps`, `losses`, `pending`). The steps themselves: libraryMigrations.test.ts.
 
 function codeOf(fn: () => unknown): string | null {
   try {
@@ -37,7 +37,7 @@ function codeOf(fn: () => unknown): string | null {
 const update = (p: Parameters<typeof updateSpecialization>[0], next: Spec) =>
   updateSpecialization(p, next, { newId: idGen('N') });
 
-/** O projeto da v1 com algumas anotações de cada tipo. */
+/** The v1 project with a few annotations of each type. */
 function project1() {
   const p = libProject(libSpec(1), [
     {
@@ -54,18 +54,18 @@ function project1() {
       id: 'B2',
       type: 'button',
       marking: 'M2',
-      values: { label: 'Cancelar', style: 'text' },
+      values: { label: 'Cancel', style: 'text' },
     },
-    { id: 'C1', type: 'chip', parent: 'B1', values: { a: 'um', b: 'dois' } },
-    { id: 'G1', type: 'badge', marking: 'M2', values: { text: 'novo' } },
+    { id: 'C1', type: 'chip', parent: 'B1', values: { a: 'one', b: 'two' } },
+    { id: 'G1', type: 'badge', marking: 'M2', values: { text: 'new' } },
   ]);
   return setRaw(p, 'G1', {
-    text: 'novo',
+    text: 'new',
     target: { annotationId: 'B1', key: 'label' },
   });
 }
 
-/** A v2 da quebra completa: renomeia, mapeia, preenche e remove. */
+/** The v2 of the full break: renames, maps, fills and removes. */
 function breakingV2(): Spec {
   const button = buttonType({
     fields: [
@@ -100,7 +100,7 @@ function breakingV2(): Spec {
               field: 'style',
               values: { primary: 'filled' },
             },
-            { op: 'fill-field', type: 'button', field: 'tooltip', default: 'dica' },
+            { op: 'fill-field', type: 'button', field: 'tooltip', default: 'tip' },
             { op: 'remove-field', type: 'button', field: 'size' },
           ],
         },
@@ -109,8 +109,8 @@ function breakingV2(): Spec {
   );
 }
 
-describe('updateSpecialization: contrato de versão', () => {
-  it('v4 aditiva aplica direto, sem tocar nos valores', () => {
+describe('updateSpecialization: version contract', () => {
+  it('an additive v4 applies directly, without touching the values', () => {
     const p = project1();
     const button = buttonType();
     const extended: SpecAnnotationType = {
@@ -138,7 +138,7 @@ describe('updateSpecialization: contrato de versão', () => {
     expect(validateProject(after)).toEqual([]);
   });
 
-  it('quebra sem migração: spec-missing-migrations; o impacto não lança e diz refused', () => {
+  it('a break without a migration: spec-missing-migrations; the impact does not throw and says refused', () => {
     const p = project1();
     const button = buttonType();
     const next = libSpec(2, {
@@ -154,14 +154,14 @@ describe('updateSpecialization: contrato de versão', () => {
     expect(impact.additive).toBe(false);
     expect(impact.missingMigrations).toHaveLength(1);
     expect(impact.steps).toEqual([]);
-    // o que aconteceria sem a recusa: o valor fica e vira pendência
+    // what would happen without the refusal: the value stays and becomes a pending item
     expect(impact.pending).toContainEqual({
       annotationId: 'B1',
       issue: { code: 'unknown-field', key: 'label' },
     });
   });
 
-  it('versão que não cresceu continua spec-not-newer, antes do contrato', () => {
+  it('a version that did not grow is still spec-not-newer, before the contract', () => {
     const p = project1();
     expect(codeOf(() => update(p, libSpec(1)))).toBe('spec-not-newer');
     expect(codeOf(() => specializationUpdateImpact(p, libSpec(1)))).toBe(
@@ -169,7 +169,7 @@ describe('updateSpecialization: contrato de versão', () => {
     );
   });
 
-  it('quebra com migração: valores seguem o campo novo e o projeto fica válido', () => {
+  it('a break with a migration: values follow the new field and the project stays valid', () => {
     const p = project1();
     const next = breakingV2();
     const impact = specializationUpdateImpact(p, next);
@@ -184,7 +184,7 @@ describe('updateSpecialization: contrato de versão', () => {
         ['remove-field', 2, 2, 0],
       ],
     );
-    // o tamanho preenchido de B1 se perde; o de B2 era vazio
+    // the filled size of B1 is lost; B2's was empty
     expect(impact.losses).toEqual([
       {
         reason: 'removed-field',
@@ -202,11 +202,11 @@ describe('updateSpecialization: contrato de versão', () => {
     expect(valuesOf(after, 'B1')).toMatchObject({
       title: 'OK',
       style: 'filled',
-      tooltip: 'dica',
+      tooltip: 'tip',
     });
     expect('label' in valuesOf(after, 'B1')).toBe(false);
     expect('size' in valuesOf(after, 'B1')).toBe(false);
-    expect(valuesOf(after, 'B2')).toMatchObject({ title: 'Cancelar', style: 'text' });
+    expect(valuesOf(after, 'B2')).toMatchObject({ title: 'Cancel', style: 'text' });
     expect(valuesOf(after, 'G1').target).toEqual({ annotationId: 'B1', key: 'title' });
     expect(after.specializations[0]).toMatchObject({ version: 2, spec: next });
     expect(validateProject(after)).toEqual([]);
@@ -215,7 +215,7 @@ describe('updateSpecialization: contrato de versão', () => {
     }
   });
 
-  it('remove-type delete leva as vinculadas e o projeto continua válido', () => {
+  it('remove-type delete takes the linked ones and the project stays valid', () => {
     const p = project1();
     const next = libSpec(
       2,
@@ -240,7 +240,7 @@ describe('updateSpecialization: contrato de versão', () => {
     expect(validateProject(after)).toEqual([]);
   });
 
-  it('remove-type convert: vira livre e a pendência layer-mismatch avisa', () => {
+  it('remove-type convert: it becomes free and the layer-mismatch pending item warns', () => {
     const p = project1();
     const next = libSpec(
       2,
@@ -263,15 +263,15 @@ describe('updateSpecialization: contrato de versão', () => {
     const after = update(p, next);
     expect(annotationOf(after, 'C1').type).toBeNull();
     expect(annotationOf(after, 'C1').entries.map((e) => [e.key, e.value])).toEqual([
-      ['a', 'um'],
-      ['b', 'dois'],
+      ['a', 'one'],
+      ['b', 'two'],
     ]);
     expect(validateProject(after)).toEqual([]);
   });
 
-  it('a camada que some converte com a especialização nova quando o tipo resolve nela', () => {
+  it('a layer that disappears converts with the new specialization when the type resolves in it', () => {
     const p = project1();
-    // `chip` muda da camada `e` (que some) para `c`, com os campos em outra ordem.
+    // `chip` moves from layer `e` (which disappears) to `c`, with the fields in another order.
     const next = libSpec(2, {
       c: [
         buttonType(),
@@ -290,7 +290,7 @@ describe('updateSpecialization: contrato de versão', () => {
     expect(chip.entries.map((e) => e.key)).toEqual(['b', 'a']);
   });
 
-  it('v3 com quebra continua aceita: o que ficar inválido vira pendência', () => {
+  it('a v3 with a break is still accepted: what becomes invalid becomes a pending item', () => {
     const v1 = libSpec(1, undefined, { formatVersion: 3 });
     const p = libProject(v1, [{ id: 'B1', type: 'button', values: { label: 'OK' } }]);
     const button = buttonType();
@@ -316,7 +316,7 @@ describe('updateSpecialization: contrato de versão', () => {
     ]);
   });
 
-  it('cópia aplicada indisponível: não há contrato a conferir', () => {
+  it('applied copy unavailable: there is no contract to check', () => {
     const p = project1();
     const noCopy = {
       ...p,
@@ -329,8 +329,8 @@ describe('updateSpecialization: contrato de versão', () => {
   });
 });
 
-describe('specializationUpdateImpact: pendências', () => {
-  it('campo obrigatório novo sem fill-field: required-empty em cada anotação', () => {
+describe('specializationUpdateImpact: pending items', () => {
+  it('a new required field without fill-field: required-empty on each annotation', () => {
     const p = project1();
     const button = buttonType();
     const next = libSpec(2, {
@@ -351,7 +351,7 @@ describe('specializationUpdateImpact: pendências', () => {
     ]);
   });
 
-  it('map-values incompleto: o valor sem destino vira unknown-option; as pendências antigas não contam', () => {
+  it('incomplete map-values: a value without a destination becomes unknown-option; the old pending items do not count', () => {
     let p = libProject(
       libSpec(1, {
         c: [
@@ -368,8 +368,8 @@ describe('specializationUpdateImpact: pendências', () => {
         { id: 'B3', type: 'button', values: { style: 'text' } },
       ],
     );
-    // B3 já nascia com uma pendência: ela não entra entre as novas.
-    p = setRaw(p, 'B3', { style: 'text', antigo: 1 });
+    // B3 already had a pending item: it is not among the new ones.
+    p = setRaw(p, 'B3', { style: 'text', old: 1 });
     const next = libSpec(
       2,
       {
@@ -403,9 +403,9 @@ describe('specializationUpdateImpact: pendências', () => {
     ]);
   });
 
-  it('valor inválido trocado pelo fill-field é perda, não pendência', () => {
+  it('an invalid value replaced by fill-field is a loss, not a pending item', () => {
     const p = libProject(libSpec(1), [
-      { id: 'B1', type: 'button', values: { size: 'grande' } },
+      { id: 'B1', type: 'button', values: { size: 'large' } },
     ]);
     const button = buttonType();
     const next = libSpec(
@@ -435,7 +435,7 @@ describe('specializationUpdateImpact: pendências', () => {
     const impact = specializationUpdateImpact(p, next);
     expect(impact.refused).toBe(false);
     expect(impact.losses.map((l) => [l.reason, l.value])).toEqual([
-      ['replaced-value', 'grande'],
+      ['replaced-value', 'large'],
     ]);
     expect(impact.pending).toEqual([]);
   });

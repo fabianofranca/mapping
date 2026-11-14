@@ -30,27 +30,27 @@ import {
 } from '../../src/model';
 import { arrowProject, withArrow } from '../model/arrowFixtures';
 
-// r1: a1 (100,100,300,300) → a3 (600,600,200,200), as duas no container A (escala 1, em 0,0).
-// Lado automático: saída pela direita de a1 (400,250) e chegada pela esquerda de a3 (600,700).
+// r1: a1 (100,100,300,300) → a3 (600,600,200,200), both in container A (scale 1, at 0,0).
+// Automatic side: exit through the right of a1 (400,250) and arrival through the left of a3 (600,700).
 const NONE = new Map();
 
 function shapeOf(p: Project, id = 'r1') {
   const arrow = p.arrows.find((a) => a.id === id);
-  if (!arrow) throw new Error('seta');
+  if (!arrow) throw new Error('arrow');
   const shape = arrowShape(p, arrow);
   if (!shape) throw new Error('forma');
   return shape;
 }
 
-describe('distâncias', () => {
-  it('ponto ao segmento: perpendicular, ponta e segmento degenerado', () => {
+describe('distances', () => {
+  it('point to segment: perpendicular, tip and degenerate segment', () => {
     expect(distanceToSegment({ x: 5, y: 3 }, { x: 0, y: 0 }, { x: 10, y: 0 })).toBe(3);
     expect(distanceToSegment({ x: -4, y: 3 }, { x: 0, y: 0 }, { x: 10, y: 0 })).toBe(5);
     expect(distanceToSegment({ x: 13, y: 4 }, { x: 0, y: 0 }, { x: 10, y: 0 })).toBe(5);
     expect(distanceToSegment({ x: 3, y: 4 }, { x: 0, y: 0 }, { x: 0, y: 0 })).toBe(5);
   });
 
-  it('ponto ao traço: o menor dos segmentos', () => {
+  it('point to the stroke: the smallest of the segments', () => {
     const path = [
       { x: 0, y: 0 },
       { x: 10, y: 0 },
@@ -62,8 +62,8 @@ describe('distâncias', () => {
   });
 });
 
-describe('traço', () => {
-  it('reta e canto: os pontos da rota; as âncoras são o meio dos lados', () => {
+describe('stroke', () => {
+  it('straight and corner: the route points; the anchors are the middle of the sides', () => {
     const p = setArrowStyle(arrowProject(), 'r1', 'straight');
     const shape = shapeOf(p);
     expect(shape.path).toEqual([
@@ -74,7 +74,7 @@ describe('traço', () => {
     expect(shape.bounds).toEqual({ x: 400, y: 250, width: 200, height: 450 });
   });
 
-  it('canto: a polilinha ortogonal do roteador (Z com a pista no meio), meios por trecho', () => {
+  it('corner: the orthogonal polyline of the router (Z with the track in the middle), midpoints per stretch', () => {
     const elbow = shapeOf(setArrowStyle(arrowProject(), 'r1', 'elbow'));
     expect(elbow.path).toEqual([
       { x: 400, y: 250 },
@@ -91,24 +91,24 @@ describe('traço', () => {
     expect(elbow.bounds).toEqual({ x: 400, y: 250, width: 200, height: 450 });
   });
 
-  it('curva: sai perpendicular ao lado, passa pelos pontos e termina na âncora', () => {
+  it('curve: leaves perpendicular to the side, passes through the points and ends at the anchor', () => {
     const shape = shapeOf(arrowProject());
     expect(shape.arrow.style).toBe('curve');
     const { path } = shape;
     expect(path[0]).toEqual({ x: 400, y: 250 });
     expect(path[path.length - 1]).toEqual({ x: 600, y: 700 });
-    // Saída pela direita (+x) e chegada pela esquerda: as duas tangentes são horizontais.
+    // Exit through the right (+x) and arrival through the left: both tangents are horizontal.
     expect(path[1]?.x).toBeGreaterThan(400);
     expect(Math.abs((path[1]?.y ?? 0) - 250)).toBeLessThan(10);
     expect(headDirection(path).x).toBeGreaterThan(0.95);
-    // O meio da curva é o do Bézier: (500, 475), simétrico em torno do centro da corda.
+    // The middle of the curve is the Bezier one: (500, 475), symmetric around the center of the chord.
     expect(shape.mids[0]?.x).toBeCloseTo(500);
     expect(shape.mids[0]?.y).toBeCloseTo(475);
     expect(shape.label.x).toBeCloseTo(500, 0);
     expect(shape.label.y).toBeCloseTo(475, 0);
   });
 
-  it('curva com pontos de passagem: passa por eles', () => {
+  it('curve with waypoints: passes through them', () => {
     const p = setArrowRoute(arrowProject(), 'r1', [{ x: 700, y: 300 }]);
     const shape = shapeOf(p);
     expect(shape.route.points[1]).toEqual({ x: 700, y: 300 });
@@ -118,7 +118,7 @@ describe('traço', () => {
     expect(ends.mids).toHaveLength(2);
   });
 
-  it('meio do traço pelo comprimento', () => {
+  it('middle of the stroke by length', () => {
     expect(pathMidpoint([])).toEqual({ x: 0, y: 0 });
     expect(
       pathMidpoint([
@@ -129,7 +129,7 @@ describe('traço', () => {
     ).toEqual({ x: 10, y: 10 });
   });
 
-  it('ponta: direção do último trecho e triângulo com a ponta no destino', () => {
+  it('tip: direction of the last stretch and a triangle with the tip at the destination', () => {
     expect(
       headDirection([
         { x: 0, y: 0 },
@@ -150,7 +150,7 @@ describe('traço', () => {
     ).toEqual([1, 2, 3, 4]);
   });
 
-  it('afina o traço: pontos a menos de `spacing` do anterior saem; as pontas ficam', () => {
+  it('thins the stroke: points less than `spacing` from the previous one are dropped; the ends stay', () => {
     const path = [0, 1, 2, 3, 10, 11, 20].map((x) => ({ x, y: 0 }));
     expect(thinPath(path, 5).map((p) => p.x)).toEqual([0, 10, 20]);
     expect(thinPath(path, 0).map((p) => p.x)).toEqual([0, 1, 2, 3, 10, 11, 20]);
@@ -158,7 +158,7 @@ describe('traço', () => {
     expect(thinPath([], 5)).toEqual([]);
   });
 
-  it('tira o fim do traço pelo comprimento da ponta', () => {
+  it('trims the end of the stroke by the tip length', () => {
     const path = [
       { x: 0, y: 0 },
       { x: 10, y: 0 },
@@ -177,24 +177,24 @@ describe('traço', () => {
   });
 });
 
-describe('formas do projeto', () => {
-  it('a forma de uma seta é guardada enquanto a seta e as pontas são as mesmas', () => {
+describe('project shapes', () => {
+  it('the shape of an arrow is kept while the arrow and the ends are the same', () => {
     const p = arrowProject();
     const first = shapeOf(p);
     expect(shapeOf(p)).toBe(first);
-    // Outra versão do projeto, a mesma seta e as mesmas marcações e containers: mesma forma.
+    // Another project version, the same arrow and the same markings and containers: same shape.
     expect(shapeOf({ ...p })).toBe(first);
-    // Mudar a seta (estilo) refaz a forma.
+    // Changing the arrow (style) redoes the shape.
     expect(shapeOf(setArrowStyle(p, 'r1', 'straight'))).not.toBe(first);
   });
 
-  it('seta de ponta inexistente não tem forma', () => {
+  it('an arrow with a nonexistent end has no shape', () => {
     const p = arrowProject();
     const broken = { ...p, markings: p.markings.filter((m) => m.id !== 'a3') };
     expect(arrowShape(broken, p.arrows[0] as never)).toBeNull();
   });
 
-  it('só as setas com as duas pontas à vista; o mesmo array enquanto nada muda', () => {
+  it('only the arrows with both ends in view; the same array while nothing changes', () => {
     const p = arrowProject();
     const all = visibleArrowShapes(p, NONE);
     expect(all.map((s) => s.arrow.id)).toEqual(['r1']);
@@ -203,7 +203,7 @@ describe('formas do projeto', () => {
     expect(visibleArrowShapes(p, new Map([['a1', 'dim' as const]]))).toHaveLength(1);
     expect(visibleArrowShapes(null, NONE)).toEqual([]);
     const base = visibleArrowShapes(p, NONE);
-    // Uma edição que não mexe nas setas devolve o mesmo array (a camada não se refaz).
+    // An edit that does not touch the arrows returns the same array (the layer is not redone).
     const renamed = {
       ...p,
       markings: p.markings.map((m) => (m.id === 'a2' ? { ...m, name: 'x' } : m)),
@@ -211,28 +211,28 @@ describe('formas do projeto', () => {
     expect(visibleArrowShapes(renamed, new Map())).toBe(base);
   });
 
-  it('a ordem do projeto é a de desenho', () => {
+  it('the project order is the drawing order', () => {
     const p = withArrow(arrowProject(), 'r2', 'a3', 'b2');
     expect(visibleArrowShapes(p, NONE).map((s) => s.arrow.id)).toEqual(['r1', 'r2']);
   });
 });
 
-describe('toque', () => {
+describe('touch', () => {
   const straight = () => setArrowStyle(arrowProject(), 'r1', 'straight');
 
-  it('pega a seta a até 7 px de tela do traço e não além', () => {
+  it('picks the arrow up to 7 screen px from the stroke and not beyond', () => {
     const shapes = visibleArrowShapes(straight(), NONE);
-    // A reta de (400,250) a (600,700): passa por (500,475).
+    // The line from (400,250) to (600,700): passes through (500,475).
     expect(arrowsAt(shapes, { x: 500, y: 475 }, 1)).toHaveLength(1);
     expect(arrowsAt(shapes, { x: 505, y: 475 }, 1)).toHaveLength(1);
     expect(arrowsAt(shapes, { x: 520, y: 475 }, 1)).toHaveLength(0);
-    // Com zoom 4, o mesmo deslocamento em unidades do canvas já é longe; em px de tela, perto.
+    // With zoom 4, the same offset in canvas units is already far; in screen px, near.
     expect(arrowsAt(shapes, { x: 501, y: 475 }, 4)).toHaveLength(1);
     expect(arrowsAt(shapes, { x: 506, y: 475 }, 4)).toHaveLength(0);
     expect(arrowsAt(shapes, { x: 0, y: 0 }, 1)).toHaveLength(0);
   });
 
-  it('a mais perto primeiro; no empate, a de cima', () => {
+  it('the closest first; on a tie, the top one', () => {
     const p = withArrow(straight(), 'r2', 'a1', 'a3', { style: 'straight' });
     const shapes = visibleArrowShapes(p, NONE);
     expect(arrowsAt(shapes, { x: 500, y: 475 }, 1).map((s) => s.arrow.id)).toEqual([
@@ -240,18 +240,18 @@ describe('toque', () => {
       'r1',
     ]);
     const q = withArrow(straight(), 'r3', 'a1', 'b2', { style: 'straight' });
-    // r3 passa a uma distância diferente do mesmo ponto: o de menor distância vem antes.
+    // r3 passes at a different distance from the same point: the one with the smallest distance comes first.
     const near = arrowsAt(visibleArrowShapes(q, NONE), { x: 500, y: 475 }, 1);
     expect(near.map((s) => s.arrow.id)).toContain('r1');
   });
 });
 
-describe('alças do canto', () => {
-  // r1 em canto: (400,250) → (500,250) → (500,700) → (600,700); a pista é o trecho vertical.
+describe('corner handles', () => {
+  // r1 on a corner: (400,250) → (500,250) → (500,700) → (600,700); the track is the vertical stretch.
   const elbow = (points: { x: number; y: number }[] = []): Project =>
     setArrowStyle(setArrowRoute(arrowProject(), 'r1', points), 'r1', 'elbow');
 
-  it('as pontas e o meio do segmento do meio; sem pontos de passagem nem meios soltos', () => {
+  it('the ends and the middle of the middle segment; without waypoints nor loose midpoints', () => {
     const handles = arrowHandles(shapeOf(elbow()), 1);
     expect(handles.map((h) => h.kind)).toEqual(['end', 'end', 'segment']);
     expect(handles[0]).toMatchObject({ end: 'from', at: { x: 400, y: 250 } });
@@ -264,7 +264,7 @@ describe('alças do canto', () => {
     });
   });
 
-  it('o segmento curto na tela não ganha a alça do meio, mas continua pegando o toque', () => {
+  it('the segment that is short on the screen does not get the middle handle, but still catches the touch', () => {
     const shape = shapeOf(elbow());
     expect(arrowHandles(shape, (ARROW_MID_HANDLE_MIN - 1) / 450)).toHaveLength(2);
     expect(arrowHandleAt(shape, { x: 503, y: 300 }, 1)).toMatchObject({
@@ -274,7 +274,7 @@ describe('alças do canto', () => {
     });
   });
 
-  it('o segmento inteiro pega o toque; a ponta tem prioridade; fora dele, nada', () => {
+  it('the whole segment catches the touch; the tip has priority; outside it, nothing', () => {
     const shape = shapeOf(elbow());
     expect(arrowHandleAt(shape, { x: 496, y: 600 }, 1)).toMatchObject({
       kind: 'segment',
@@ -283,16 +283,16 @@ describe('alças do canto', () => {
       kind: 'end',
       end: 'from',
     });
-    // O primeiro e o último trecho não são segmentos do meio: sem alça.
+    // The first and the last stretch are not middle segments: no handle.
     expect(arrowHandleAt(shape, { x: 450, y: 250 }, 1)).toBeNull();
     expect(arrowHandleAt(shape, { x: 520, y: 475 }, 1)).toBeNull();
-    // O alcance é em px de tela: com zoom 2 ele é a metade em unidades do canvas.
+    // The reach is in screen px: with zoom 2 it is half in canvas units.
     expect(arrowHandleAt(shape, { x: 500 + 5, y: 600 }, 2)).toBeNull();
     expect(arrowHandleAt(shape, { x: 500 + 3, y: 600 }, 2)).not.toBeNull();
   });
 
-  it('segmento de comprimento zero não pega o toque nem ganha alça', () => {
-    // a1 e z na mesma altura: o Z vira uma reta e a pista não tem comprimento.
+  it('a zero-length segment neither catches the touch nor gets a handle', () => {
+    // a1 and z at the same height: the Z becomes a straight line and the track has no length.
     const base = createMarking(arrowProject(), {
       id: 'z',
       containerId: null,
@@ -307,38 +307,38 @@ describe('alças do canto', () => {
     expect(arrowHandleAt(shape, { x: 600, y: 250 }, 1)).toBeNull();
   });
 
-  it('pontos de passagem do canto: os gravados quando casam, senão o meio de cada segmento', () => {
+  it('corner waypoints: the recorded ones when they match, otherwise the middle of each segment', () => {
     const container = { x: 0, y: 0, scale: 1 };
     expect(elbowLanePoints(shapeOf(elbow()), container)).toEqual([{ x: 500, y: 475 }]);
     const stored = [{ x: 520, y: 400 }];
     expect(elbowLanePoints(shapeOf(elbow(stored)), container)).toEqual(stored);
-    // Uma quantidade que não casa com os lados é ignorada: a rota é a padrão.
+    // A quantity that does not match the sides is ignored: the route is the default.
     const odd = elbow([
       { x: 520, y: 400 },
       { x: 530, y: 410 },
     ]);
     expect(elbowLanePoints(shapeOf(odd), container)).toEqual([{ x: 500, y: 475 }]);
-    // Num espaço escalado, o meio do segmento volta para os pixels do container.
+    // In a scaled space, the middle of the segment goes back to the container pixels.
     expect(elbowLanePoints(shapeOf(elbow()), { x: 100, y: 50, scale: 2 })).toEqual([
       { x: 200, y: 213 },
     ]);
   });
 
-  it('o desenho separa as setas de canto (cantos vivos) das demais', () => {
+  it('the drawing separates the corner arrows (sharp corners) from the others', () => {
     const mixed = visibleArrowShapes(
       setArrowStyle(withArrow(arrowProject(), 'r2', 'a3', 'b2'), 'r2', 'elbow'),
       NONE,
     );
     const strokes = arrowStrokes(mixed, 1, 10);
-    expect(strokes.bodies).toHaveLength(1); // a curva r1
-    expect(strokes.corners).toHaveLength(1); // o canto r2
-    // O canto não é afinado: todos os cantos da rota estão no traço.
+    expect(strokes.bodies).toHaveLength(1); // the curve r1
+    expect(strokes.corners).toHaveLength(1); // the corner r2
+    // The corner is not thinned: all the corners of the route are on the stroke.
     expect((strokes.corners[0] as number[]).length).toBeGreaterThanOrEqual(8);
   });
 });
 
-describe('alças', () => {
-  it('pontas, pontos de passagem e meios dos trechos, nessa ordem', () => {
+describe('handles', () => {
+  it('ends, waypoints and stretch midpoints, in that order', () => {
     const p = setArrowStyle(
       setArrowRoute(arrowProject(), 'r1', [{ x: 700, y: 300 }]),
       'r1',
@@ -347,22 +347,22 @@ describe('alças', () => {
     const handles = arrowHandles(shapeOf(p), 1);
     expect(handles.map((h) => h.kind)).toEqual(['end', 'end', 'point', 'mid', 'mid']);
     expect(handles[0]).toMatchObject({ end: 'from', at: { x: 400, y: 250 } });
-    // Com o ponto de passagem acima de a3, a seta chega pelo lado de cima: (700, 600).
+    // With the waypoint above a3, the arrow arrives through the top side: (700, 600).
     expect(handles[1]).toMatchObject({ end: 'to', at: { x: 700, y: 600 } });
     expect(handles[2]).toMatchObject({ index: 0, at: { x: 700, y: 300 } });
-    // O meio do primeiro trecho entra na posição 0; o do segundo, na 1.
+    // The midpoint of the first stretch goes at position 0; that of the second, at 1.
     expect(handles[3]).toMatchObject({ index: 0, at: { x: 550, y: 275 } });
     expect(handles[4]).toMatchObject({ index: 1, at: { x: 700, y: 450 } });
   });
 
-  it('o meio de um trecho curto na tela não ganha alça', () => {
+  it('the midpoint of a stretch that is short on the screen does not get a handle', () => {
     const shape = shapeOf(setArrowStyle(arrowProject(), 'r1', 'straight'));
     const length = Math.hypot(200, 450);
     expect(arrowHandles(shape, (ARROW_MID_HANDLE_MIN - 1) / length)).toHaveLength(2);
     expect(arrowHandles(shape, ARROW_MID_HANDLE_MIN / length)).toHaveLength(3);
   });
 
-  it('acha a alça sob o ponto: ponta antes de ponto, antes de meio', () => {
+  it('finds the handle under the point: end before point, before midpoint', () => {
     const p = setArrowStyle(
       setArrowRoute(arrowProject(), 'r1', [{ x: 700, y: 300 }]),
       'r1',
@@ -382,13 +382,13 @@ describe('alças', () => {
       index: 0,
     });
     expect(arrowHandleAt(shape, { x: 500, y: 100 }, 1)).toBeNull();
-    // O raio é em px de tela: com zoom 2 o alcance em unidades do canvas é a metade.
+    // The radius is in screen px: with zoom 2 the reach in canvas units is half.
     const reach = ARROW_HANDLE_HIT_RADIUS;
     expect(arrowHandleAt(shape, { x: 700 + reach / 2 - 1, y: 300 }, 2)).not.toBeNull();
     expect(arrowHandleAt(shape, { x: 700 + reach / 2 + 1, y: 300 }, 2)).toBeNull();
   });
 
-  it('alça de ligação: fora da borda direita, no meio do lado', () => {
+  it('link handle: outside the right edge, at the middle of the side', () => {
     const rect = { x: 100, y: 100, width: 300, height: 300 };
     expect(linkHandlePoint(rect, 1)).toEqual({ x: 414, y: 250 });
     expect(linkHandlePoint(rect, 2)).toEqual({ x: 407, y: 250 });
@@ -396,13 +396,13 @@ describe('alças', () => {
     expect(isOnLinkHandle(rect, { x: 380, y: 250 }, 1)).toBe(false);
   });
 
-  it('lado mais perto do ponteiro, de dentro e de fora', () => {
+  it('closest side to the pointer, from inside and from outside', () => {
     const rect = { x: 0, y: 0, width: 100, height: 50 };
     expect(nearestSide(rect, { x: 50, y: -20 })).toBe('top');
     expect(nearestSide(rect, { x: 140, y: 25 })).toBe('right');
     expect(nearestSide(rect, { x: 50, y: 80 })).toBe('bottom');
     expect(nearestSide(rect, { x: -30, y: 25 })).toBe('left');
-    // Dentro: o lado de borda mais perto.
+    // Inside: the closest border side.
     expect(nearestSide(rect, { x: 90, y: 25 })).toBe('right');
     expect(nearestSide(rect, { x: 50, y: 5 })).toBe('top');
   });

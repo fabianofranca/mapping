@@ -14,11 +14,11 @@ import {
 } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// Superfície de containers do MCP 0.8.0, por stdio: `add_container` com arquivo e com fundo,
-// `update_container`, `replace_container` e `delete_container`, e as operações antigas
-// (`add_image`, `add_blank_image`, `update_image`, `replace_image`, `delete_image`, o
-// argumento `image` de `create_marking`) aceitas com aviso `deprecated-op`, inclusive numa
-// proposta gravada com o formato 1 ou 2.
+// Container surface of MCP 0.8.0, over stdio: `add_container` with a file and with a background,
+// `update_container`, `replace_container` and `delete_container`, and the old operations
+// (`add_image`, `add_blank_image`, `update_image`, `replace_image`, `delete_image`, the
+// `image` argument of `create_marking`) accepted with a `deprecated-op` warning, including in a
+// proposal written with format 1 or 2.
 
 interface Plan {
   valid: boolean;
@@ -60,9 +60,9 @@ afterAll(async () => {
   rmSync(root, { recursive: true, force: true });
 });
 
-/** Um projeto vazio novo (cada teste usa o seu, para a revisão não depender dos outros). */
+/** A new empty project (each test uses its own, so the revision does not depend on the others). */
 async function newProject(): Promise<{ name: string; dir: string }> {
-  const name = `caixas-${++counter}`;
+  const name = `boxes-${++counter}`;
   ok(await mcp.call('create_project', { path: `projetos/${name}`, name }));
   return { name, dir: join(root, 'projetos', name) };
 }
@@ -73,15 +73,15 @@ const plan = async (project: string, operations: unknown[]) =>
 const warningOps = (data: { warnings?: Record<string, unknown>[] }) =>
   (data.warnings ?? []).map((w) => [w.op, w.code]);
 
-describe('add_container: com arquivo e com fundo', () => {
-  it('o arquivo dá a largura e a altura; o fundo traz as dele; nenhum aviso', async () => {
+describe('add_container: with a file and with a background', () => {
+  it('the file gives the width and the height; the background brings its own; no warning', async () => {
     const { name, dir } = await newProject();
     const operations = [
-      { op: 'add_container', as: '$foto', file: 'fontes/foto.png', name: 'Foto' },
+      { op: 'add_container', as: '$foto', file: 'fontes/foto.png', name: 'Photo' },
       {
         op: 'add_container',
         as: '$cartao',
-        name: 'Cartão',
+        name: 'Card',
         width: 320,
         height: 200,
         background: '#ffffff',
@@ -104,10 +104,10 @@ describe('add_container: com arquivo e com fundo', () => {
     expect(result.valid).toBe(true);
     expect(result.warnings).toBeUndefined();
     expect(result.summary[0]).toMatch(
-      /^0\. Adicionar o container "Foto" com a imagem images\/foto\.webp \(300×200 px, /,
+      /^0\. Add the container "Photo" with the image images\/foto\.webp \(300×200 px, /,
     );
     expect(result.summary[1]).toBe(
-      '1. Adicionar o container "Cartão" (320×200 px, fundo #FFFFFF)',
+      '1. Add the container "Card" (320×200 px, background #FFFFFF)',
     );
     expect(result.changes).toMatchObject({
       containers: { created: 2 },
@@ -116,16 +116,16 @@ describe('add_container: com arquivo e com fundo', () => {
     expect(result.created.filter((c) => c.kind === 'container')).toHaveLength(2);
 
     const proposed = await propose(mcp, name, operations);
-    // Sem aviso, e o `mapping.json` só muda quando o usuário aplica.
+    // No warning, and the `mapping.json` only changes when the user applies.
     expect(proposed.warnings).toBeUndefined();
     const saved = acceptAllAndApply(dir, proposed.proposal.id);
     expect(
       saved.containers.map((c) => [c.name, c.file, c.width, c.height, c.background]),
     ).toEqual([
-      ['Foto', 'images/foto.webp', 300, 200, null],
-      ['Cartão', null, 320, 200, '#FFFFFF'],
+      ['Photo', 'images/foto.webp', 300, 200, null],
+      ['Card', null, 320, 200, '#FFFFFF'],
     ]);
-    // A marcação grava `containerId` (nunca `imageId`) nos valores da proposta.
+    // The marking writes `containerId` (never `imageId`) in the proposal values.
     const markingChanges = readProposal(dir, proposed.proposal.id).changes.filter(
       (c) => c.entity === 'marking' && c.kind === 'create',
     );
@@ -138,7 +138,7 @@ describe('add_container: com arquivo e com fundo', () => {
       saved.containers.map((c) => c.id).sort(),
     );
 
-    // As tools novas leem os dois.
+    // The new tools read both.
     const [photoRef, boxRef] = proposed.created
       .filter((c) => c.kind === 'container')
       .map((c) => c.ref!);
@@ -165,7 +165,7 @@ describe('add_container: com arquivo e com fundo', () => {
     );
   });
 
-  it('recusa a combinação ambígua e a que falta, com mensagem clara', async () => {
+  it('refuses the ambiguous combination and the missing one, with a clear message', async () => {
     const { name } = await newProject();
     const result = await plan(name, [
       { op: 'add_container', file: 'fontes/foto.png', width: 100, height: 100 },
@@ -180,20 +180,22 @@ describe('add_container: com arquivo e com fundo', () => {
       [2, 'invalid-arguments'],
       [3, 'invalid-arguments'],
     ]);
-    expect(result.errors![0]!.message).toMatch(/ambígua.*`file`.*`width`/);
-    expect(result.errors![2]!.message).toMatch(/faltam: `width`, `height`, `background`/);
-    expect(result.errors![3]!.message).toMatch(/faltam: `height`/);
+    expect(result.errors![0]!.message).toMatch(/ambiguous.*`file`.*`width`/);
+    expect(result.errors![2]!.message).toMatch(
+      /missing: `width`, `height`, `background`/,
+    );
+    expect(result.errors![3]!.message).toMatch(/missing: `height`/);
   });
 });
 
-describe('update_container, replace_container e delete_container', () => {
-  it('os nomes novos (argumento `container`) não geram aviso', async () => {
+describe('update_container, replace_container and delete_container', () => {
+  it('the new names (`container` argument) generate no warning', async () => {
     const { name, dir } = await newProject();
     const created = await propose(mcp, name, [
-      { op: 'add_container', file: 'fontes/foto.png', name: 'Foto' },
+      { op: 'add_container', file: 'fontes/foto.png', name: 'Photo' },
       {
         op: 'add_container',
-        name: 'Cartão',
+        name: 'Card',
         width: 320,
         height: 200,
         background: '#FFFFFF',
@@ -203,25 +205,25 @@ describe('update_container, replace_container e delete_container', () => {
     const [photo, box] = created.created.map((c) => c.ref!);
 
     const result = await plan(name, [
-      { op: 'update_container', container: box, name: 'Cartão 2', background: '#000000' },
+      { op: 'update_container', container: box, name: 'Card 2', background: '#000000' },
       { op: 'replace_container', container: photo, base64: replacement },
       { op: 'delete_container', container: box },
     ]);
     expect(result.errors).toBeUndefined();
     expect(result.valid).toBe(true);
     expect(result.warnings).toBeUndefined();
-    expect(result.summary[0]).toMatch(/^0\. Alterar o container ".*": nome "Cartão 2"/);
-    expect(result.summary[1]).toMatch(/^1\. Trocar a imagem do container /);
-    expect(result.summary[2]).toMatch(/^2\. Excluir o container /);
+    expect(result.summary[0]).toMatch(/^0\. Change the container ".*": name "Card 2"/);
+    expect(result.summary[1]).toMatch(/^1\. Replace the image of the container /);
+    expect(result.summary[2]).toMatch(/^2\. Delete the container /);
     expect(result.changes).toMatchObject({ containers: { updated: 1, deleted: 1 } });
   });
 
-  it('update_container com x ruidoso grava o inteiro; add_container com centro ruidoso também', async () => {
+  it('update_container with a noisy x writes the integer; add_container with a noisy center too', async () => {
     const { name, dir } = await newProject();
     const created = await propose(mcp, name, [
       {
         op: 'add_container',
-        name: 'Cartão',
+        name: 'Card',
         width: 100,
         height: 100,
         background: '#FFFFFF',
@@ -234,7 +236,7 @@ describe('update_container, replace_container e delete_container', () => {
     const update = await plan(name, [
       { op: 'update_container', container: box, x: 275.00000000000006 },
     ]);
-    expect(update.summary[0]).toContain('posição (275, -400)');
+    expect(update.summary[0]).toContain('position (275, -400)');
     const changed = await propose(mcp, name, [
       { op: 'update_container', container: box, x: 275.00000000000006 },
     ]);
@@ -242,12 +244,12 @@ describe('update_container, replace_container e delete_container', () => {
     expect(written.containers[0]!.placement.x).toBe(275);
   });
 
-  it('update_container com x fracionário grava 6 casas e o texto mostra o valor gravado; add_container com centro fracionário grava sem cauda', async () => {
+  it('update_container with a fractional x writes 6 decimal places and the text shows the written value; add_container with a fractional center writes without a tail', async () => {
     const { name, dir } = await newProject();
     const created = await propose(mcp, name, [
       {
         op: 'add_container',
-        name: 'Cartão',
+        name: 'Card',
         width: 100,
         height: 100,
         background: '#FFFFFF',
@@ -264,7 +266,7 @@ describe('update_container, replace_container e delete_container', () => {
     const update = await plan(name, [
       { op: 'update_container', container: box, x: 100.1234567 },
     ]);
-    expect(update.summary[0]).toContain('posição (100.123457, -449.012346)');
+    expect(update.summary[0]).toContain('position (100.123457, -449.012346)');
     const changed = await propose(mcp, name, [
       { op: 'update_container', container: box, x: 100.1234567 },
     ]);
@@ -272,13 +274,13 @@ describe('update_container, replace_container e delete_container', () => {
     expect(written.containers[0]!.placement.x).toBe(100.123457);
   });
 
-  it('as antigas update_image, replace_image e delete_image seguem valendo, com aviso', async () => {
+  it('the old update_image, replace_image and delete_image still work, with a warning', async () => {
     const { name, dir } = await newProject();
     const created = await propose(mcp, name, [
-      { op: 'add_container', file: 'fontes/foto.png', name: 'Foto' },
+      { op: 'add_container', file: 'fontes/foto.png', name: 'Photo' },
       {
         op: 'add_container',
-        name: 'Cartão',
+        name: 'Card',
         width: 320,
         height: 200,
         background: '#FFFFFF',
@@ -288,7 +290,7 @@ describe('update_container, replace_container e delete_container', () => {
     const [photo, box] = created.created.map((c) => c.ref!);
 
     const result = await plan(name, [
-      { op: 'update_image', image: box, name: 'Cartão 2' },
+      { op: 'update_image', image: box, name: 'Card 2' },
       { op: 'replace_image', image: photo, base64: replacement },
       { op: 'delete_image', image: box },
     ]);
@@ -304,17 +306,17 @@ describe('update_container, replace_container e delete_container', () => {
       expect.stringContaining('replace_container'),
       expect.stringContaining('delete_container'),
     ]);
-    // O resultado é o mesmo das operações novas.
-    expect(result.summary[0]).toMatch(/^0\. Alterar o container ".*": nome "Cartão 2"/);
+    // The result is the same as the new operations'.
+    expect(result.summary[0]).toMatch(/^0\. Change the container ".*": name "Card 2"/);
     expect(result.changes).toMatchObject({ containers: { updated: 1, deleted: 1 } });
 
     const proposed = await propose(mcp, name, [{ op: 'delete_image', image: box }]);
     expect(warningOps(proposed)).toEqual([[0, 'deprecated-op']]);
     const saved = acceptAllAndApply(dir, proposed.proposal.id);
-    expect(saved.containers.map((c) => c.name)).toEqual(['Foto']);
+    expect(saved.containers.map((c) => c.name)).toEqual(['Photo']);
   });
 
-  it('update_container tem os mesmos erros: fundo e tamanho só em container sem arquivo', async () => {
+  it('update_container has the same errors: background and size only on a container without a file', async () => {
     const { name, dir } = await newProject();
     const created = await propose(mcp, name, [
       { op: 'add_container', file: 'fontes/foto.png' },
@@ -328,17 +330,17 @@ describe('update_container, replace_container e delete_container', () => {
       },
     ]);
     expect(result.errors?.map((e) => e.code)).toEqual(['container-has-file']);
-    expect(result.errors![0]!.message).toMatch(/tem arquivo de imagem/);
+    expect(result.errors![0]!.message).toMatch(/has an image file/);
   });
 });
 
-describe('as antigas add_image e add_blank_image, e o argumento image', () => {
+describe('the old add_image and add_blank_image, and the image argument', () => {
   const OLD_OPS = [
-    { op: 'add_image', as: '$foto', file: 'fontes/foto.png', name: 'Foto' },
+    { op: 'add_image', as: '$foto', file: 'fontes/foto.png', name: 'Photo' },
     {
       op: 'add_blank_image',
       as: '$cartao',
-      name: 'Cartão',
+      name: 'Card',
       width: 320,
       height: 200,
       background: '#FFFFFF',
@@ -350,7 +352,7 @@ describe('as antigas add_image e add_blank_image, e o argumento image', () => {
     },
   ];
 
-  it('seguem aceitas, cada uma com o aviso que diz o que usar no lugar', async () => {
+  it('are still accepted, each with the warning that says what to use instead', async () => {
     const { name } = await newProject();
     const result = await plan(name, OLD_OPS);
     expect(result.errors).toBeUndefined();
@@ -371,7 +373,7 @@ describe('as antigas add_image e add_blank_image, e o argumento image', () => {
     });
   });
 
-  it('informar `container` e `image` na mesma marcação é erro', async () => {
+  it('giving `container` and `image` on the same marking is an error', async () => {
     const { name } = await newProject();
     const result = await plan(name, [
       {
@@ -395,7 +397,7 @@ describe('as antigas add_image e add_blank_image, e o argumento image', () => {
   });
 
   it.each([1, 2])(
-    'uma proposta gravada com o formato %i e essas operações abre e aplica',
+    'a proposal written with format %i and these operations opens and applies',
     async (formatVersion) => {
       const { name, dir } = await newProject();
       const proposed = await propose(mcp, name, OLD_OPS);
@@ -404,7 +406,7 @@ describe('as antigas add_image e add_blank_image, e o argumento image', () => {
         [1, 'deprecated-op'],
         [2, 'deprecated-op'],
       ]);
-      // Reescreve o arquivo com o formato antigo; as `operations` guardadas são as antigas.
+      // Rewrites the file with the old format; the stored `operations` are the old ones.
       const file = join(dir, 'proposals', proposed.proposal.id, 'proposal.json');
       const json = JSON.parse(readFileSync(file, 'utf8')) as {
         formatVersion: number;
@@ -428,16 +430,16 @@ describe('as antigas add_image e add_blank_image, e o argumento image', () => {
       expect(got.levels.containers).toHaveLength(2);
       const saved = acceptAllAndApply(dir, proposed.proposal.id);
       expect(saved.containers.map((c) => [c.name, c.file === null])).toEqual([
-        ['Foto', false],
-        ['Cartão', true],
+        ['Photo', false],
+        ['Card', true],
       ]);
       expect(saved.markings).toHaveLength(1);
     },
   );
 });
 
-describe('as tools antigas get_image e get_image_file', () => {
-  it('seguem respondendo, com warnings deprecated-tool, e as novas não têm aviso', async () => {
+describe('the old tools get_image and get_image_file', () => {
+  it('still respond, with deprecated-tool warnings, and the new ones have no warning', async () => {
     const { name, dir } = await newProject();
     const created = await propose(mcp, name, [
       { op: 'add_container', file: 'fontes/foto.png' },
@@ -468,13 +470,13 @@ describe('as tools antigas get_image e get_image_file', () => {
   });
 });
 
-describe('leitura sempre em português, sem JSON bruto de erro', () => {
-  it('container-without-file e container-has-file têm mensagem clara', async () => {
+describe('reading always in plain language, without raw error JSON', () => {
+  it('container-without-file and container-has-file have a clear message', async () => {
     const { name, dir } = await newProject();
     const created = await propose(mcp, name, [
       {
         op: 'add_container',
-        name: 'Cartão',
+        name: 'Card',
         width: 100,
         height: 100,
         background: '#FFFFFF',
@@ -485,7 +487,7 @@ describe('leitura sempre em português, sem JSON bruto de erro', () => {
       await mcp.call('get_container_file', { ref: created.created[0]!.ref! }),
     );
     expect(error.code).toBe('container-without-file');
-    expect(error.message).toMatch(/não tem arquivo de imagem/);
+    expect(error.message).toMatch(/has no image file/);
     expect(error.message).not.toMatch(/[{}]/);
     expect(readProject(dir).containers).toHaveLength(1);
   });

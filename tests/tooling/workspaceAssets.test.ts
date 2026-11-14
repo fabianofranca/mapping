@@ -1,6 +1,6 @@
 // @vitest-environment node
-// Etapa #681, fase WA1: cada release do MCP traz os arquivos do workspace (`setup.sh`, `SKILL.md`
-// e `AGENTS.mapping.md`, com `sha256`), montados por `scripts/release/workspaceAssets.mjs`.
+// Stage #681, phase WA1: each MCP release ships the workspace files (`setup.sh`, `SKILL.md`
+// and `AGENTS.mapping.md`, with `sha256`), assembled by `scripts/release/workspaceAssets.mjs`.
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -23,14 +23,14 @@ const tmp = (): string => {
   return dir;
 };
 
-/** Esqueleto mínimo (setup.sh, skill e AGENTS.md) numa pasta de teste. */
+/** Minimal skeleton (setup.sh, skill and AGENTS.md) in a test folder. */
 function fakeRoot(agents: string): string {
   const root = tmp();
   mkdirSync(join(root, 'examples/workspace'), { recursive: true });
   mkdirSync(join(root, '.claude/skills/spec-author'), { recursive: true });
   writeFileSync(
     join(root, 'examples/workspace/setup.sh'),
-    '#!/usr/bin/env bash\necho oi\n',
+    '#!/usr/bin/env bash\necho hi\n',
   );
   writeFileSync(join(root, '.claude/skills/spec-author/SKILL.md'), '# skill\n');
   writeFileSync(join(root, 'examples/workspace/watch-comments.mjs'), '// watcher\n');
@@ -43,43 +43,43 @@ function run(out: string, root?: string) {
   return spawnSync('node', args, { encoding: 'utf8' });
 }
 
-describe('o esqueleto examples/workspace/AGENTS.md', () => {
+describe('the examples/workspace/AGENTS.md skeleton', () => {
   const text = read('examples/workspace/AGENTS.md');
   const count = (s: string): number => text.split(s).length - 1;
 
-  it('tem exatamente um bloco gerenciado, com os marcadores na ordem', () => {
+  it('has exactly one managed block, with the markers in order', () => {
     expect(count(BEGIN)).toBe(1);
     expect(count(END)).toBe(1);
     expect(text.indexOf(BEGIN)).toBeLessThan(text.indexOf(END));
   });
 
-  it('"Para que servem estes mapeamentos" fica fora do bloco, depois do título', () => {
-    const purpose = text.indexOf('## Para que servem estes mapeamentos');
-    expect(purpose).toBeGreaterThan(text.indexOf('# Mapeamentos'));
+  it('"What these mappings are for" stays outside the block, after the title', () => {
+    const purpose = text.indexOf('## What these mappings are for');
+    expect(purpose).toBeGreaterThan(text.indexOf('# Mappings'));
     expect(purpose).toBeLessThan(text.indexOf(BEGIN));
   });
 
-  it('o bloco vai da introdução até o fim de "Fluxo típico"', () => {
+  it('the block goes from the introduction to the end of "Typical flow"', () => {
     const block = text.slice(text.indexOf(BEGIN), text.indexOf(END) + END.length);
-    expect(block).toContain('Esta pasta centraliza');
-    expect(block).toContain('## Fluxo típico');
-    expect(block).not.toContain('Para que servem');
+    expect(block).toContain('This folder centralizes');
+    expect(block).toContain('## Typical flow');
+    expect(block).not.toContain('What these mappings are for');
     expect(text.slice(text.indexOf(END) + END.length).trim()).toBe('');
   });
 
-  it('o bloco manda aplicar a biblioteca por proposta, com a pasta, e não diz que ela é recusada', () => {
+  it('the block says to apply the library by proposal, with the folder, and does not say it is refused', () => {
     const block = text.slice(text.indexOf(BEGIN), text.indexOf(END) + END.length);
     expect(block).not.toContain('recusa pacote v4');
     const item =
-      block.split('\n').find((l) => l.startsWith('- **Especializações nascem')) ?? '';
+      block.split('\n').find((l) => l.startsWith('- **Specializations start')) ?? '';
     expect(item).toContain('`apply_specialization`');
     expect(item).toContain('`update_specialization`');
-    expect(item).toMatch(/`file`\s*=\s*a pasta/);
+    expect(item).toMatch(/`file`\s*=\s*the folder/);
   });
 });
 
 describe('scripts/release/workspaceAssets.mjs', () => {
-  it('grava os quatro arquivos e os quatro .sha256, e imprime a lista (um por linha)', () => {
+  it('writes the four files and the four .sha256, and prints the list (one per line)', () => {
     const out = tmp();
     const result = run(out);
     expect(result.status, result.stderr).toBe(0);
@@ -97,7 +97,7 @@ describe('scripts/release/workspaceAssets.mjs', () => {
     for (const file of files) expect(read(file).length).toBeGreaterThan(0);
   });
 
-  it('cada .sha256 confere com sha256sum -c na pasta de saída', () => {
+  it('each .sha256 matches sha256sum -c in the output folder', () => {
     const out = tmp();
     expect(run(out).status).toBe(0);
     for (const name of [
@@ -115,7 +115,7 @@ describe('scripts/release/workspaceAssets.mjs', () => {
     }
   });
 
-  it('setup.sh, SKILL.md e watch-comments.mjs são cópias, e o AGENTS.mapping.md é o trecho entre os marcadores (inclusive)', () => {
+  it('setup.sh, SKILL.md and watch-comments.mjs are copies, and AGENTS.mapping.md is the part between the markers (inclusive)', () => {
     const out = tmp();
     expect(run(out).status).toBe(0);
     expect(read(join(out, 'setup.sh'))).toBe(read('examples/workspace/setup.sh'));
@@ -128,33 +128,33 @@ describe('scripts/release/workspaceAssets.mjs', () => {
     expect(read(join(out, 'AGENTS.mapping.md'))).toBe(`${block}\n`);
   });
 
-  it('cria a pasta de saída se ela não existe', () => {
-    const out = join(tmp(), 'novo/dist-mcp');
+  it('creates the output folder if it does not exist', () => {
+    const out = join(tmp(), 'new/dist-mcp');
     expect(run(out).status).toBe(0);
     expect(read(join(out, 'setup.sh'))).toContain('#!');
   });
 
-  it('falha, com mensagem clara, se o esqueleto não tem bloco', () => {
-    const result = run(tmp(), fakeRoot('# Mapeamentos\n\ntexto\n'));
+  it('fails, with a clear message, if the skeleton has no block', () => {
+    const result = run(tmp(), fakeRoot('# Mappings\n\ntext\n'));
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('AGENTS.md');
-    expect(result.stderr).toMatch(/nenhum bloco|sem bloco/i);
+    expect(result.stderr).toMatch(/no managed block/i);
   });
 
-  it('falha se o esqueleto tem dois blocos', () => {
-    const block = `${BEGIN}\nregras\n${END}\n`;
+  it('fails if the skeleton has two blocks', () => {
+    const block = `${BEGIN}\nrules\n${END}\n`;
     const result = run(tmp(), fakeRoot(`# T\n\n${block}\n${block}`));
     expect(result.status).not.toBe(0);
-    expect(result.stderr).toMatch(/exatamente um bloco/i);
+    expect(result.stderr).toMatch(/exactly one block/i);
   });
 
-  it('falha se o fim vem antes do começo', () => {
-    const result = run(tmp(), fakeRoot(`# T\n\n${END}\nregras\n${BEGIN}\n`));
+  it('fails if the end comes before the beginning', () => {
+    const result = run(tmp(), fakeRoot(`# T\n\n${END}\nrules\n${BEGIN}\n`));
     expect(result.status).not.toBe(0);
-    expect(result.stderr).toMatch(/ordem|antes do começo/i);
+    expect(result.stderr).toMatch(/out of order|before the start/i);
   });
 
-  it('falha, citando o arquivo, se falta o watch-comments.mjs de origem', () => {
+  it('fails, naming the file, if the source watch-comments.mjs is missing', () => {
     const root = fakeRoot(`${BEGIN}\nx\n${END}\n`);
     rmSync(join(root, 'examples/workspace/watch-comments.mjs'));
     const result = run(tmp(), root);
@@ -162,7 +162,7 @@ describe('scripts/release/workspaceAssets.mjs', () => {
     expect(result.stderr).toContain('watch-comments.mjs');
   });
 
-  it('falha se falta um arquivo de origem', () => {
+  it('fails if a source file is missing', () => {
     const root = fakeRoot(`${BEGIN}\nx\n${END}\n`);
     rmSync(join(root, '.claude/skills/spec-author/SKILL.md'));
     const result = run(tmp(), root);
@@ -171,7 +171,7 @@ describe('scripts/release/workspaceAssets.mjs', () => {
   });
 });
 
-describe('os workflows de release publicam os arquivos do workspace', () => {
+describe('the release workflows publish the workspace files', () => {
   const commandsOf = (yaml: string, verb: string): string[] =>
     yaml
       .split(/\n(?=\s*(?:- name:|- run:|- uses:))/)
@@ -188,7 +188,7 @@ describe('os workflows de release publicam os arquivos do workspace', () => {
       ['create', 'upload'],
     ],
     ['rc', '.github/workflows/mcp-prerelease.yml', 'rc-publish', ['create']],
-    ['estável', '.github/workflows/mcp-release.yml', 'release', ['create', 'upload']],
+    ['stable', '.github/workflows/mcp-release.yml', 'release', ['create', 'upload']],
   ];
 
   const jobOf = (yaml: string, name: string): string => {
@@ -198,7 +198,7 @@ describe('os workflows de release publicam os arquivos do workspace', () => {
     return end < 0 ? rest : rest.slice(0, end + 1);
   };
 
-  it('cada job que compila roda o script uma vez, depois do Checksum, em release-assets/', () => {
+  it('each building job runs the script once, after Checksum, into release-assets/', () => {
     const call = 'node scripts/release/workspaceAssets.mjs release-assets';
     const prerelease = read('.github/workflows/mcp-prerelease.yml');
     const release = read('.github/workflows/mcp-release.yml');
@@ -213,7 +213,7 @@ describe('os workflows de release publicam os arquivos do workspace', () => {
       expect(job).toContain(
         'cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/',
       );
-      // O extrator (S3 da #1079) vai junto, com o hash, e é testado fora do repositório.
+      // The extractor (S3 of #1079) goes along, with its hash, and is tested outside the repository.
       expect(job).toContain(
         'cp dist-mcp/mapping-signature.mjs dist-mcp/mapping-signature.mjs.sha256 release-assets/',
       );
@@ -226,7 +226,7 @@ describe('os workflows de release publicam os arquivos do workspace', () => {
 
   for (const [job, file, name, verbs] of cases) {
     for (const verb of verbs) {
-      it(`${job}: gh release ${verb} leva tudo o que está em release-assets/`, () => {
+      it(`${job}: gh release ${verb} carries everything in release-assets/`, () => {
         const chunk = jobOf(read(file), name);
         const commands = commandsOf(chunk, verb);
         expect(commands.length).toBeGreaterThan(0);
@@ -236,7 +236,7 @@ describe('os workflows de release publicam os arquivos do workspace', () => {
     }
   }
 
-  it('as notas das releases citam a linha da transição', () => {
+  it('the release notes quote the transition line', () => {
     for (const file of [
       '.github/workflows/mcp-prerelease.yml',
       '.github/workflows/mcp-release.yml',

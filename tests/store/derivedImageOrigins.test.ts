@@ -26,7 +26,7 @@ import {
   testCatalog,
 } from '../model/componentFixtures';
 
-// Origens das imagens remotas dos componentes à vista e as que ainda pedem consentimento (RI3).
+// Origins of the remote images of the shown components and the ones that still ask for consent (RI3).
 
 const imageText = {
   format: 'mapping-component',
@@ -97,14 +97,14 @@ afterEach(() => localStorage.clear());
 
 const origins = (list: readonly { origin: string }[]) => list.map((o) => o.origin);
 
-describe('remoteImageOrigins e pendingImageOrigins', () => {
-  it('projeto sem imagem remota: nada', () => {
+describe('remoteImageOrigins and pendingImageOrigins', () => {
+  it('project without a remote image: nothing', () => {
     const { derived } = setup(withMarking(componentProject(), 'M1', null));
     expect(derived.remoteImageOrigins.value).toEqual([]);
     expect(derived.pendingImageOrigins.value).toEqual([]);
   });
 
-  it('origens novas ficam pendentes; permitida some; revogar volta', () => {
+  it('new origins stay pending; allowed goes away; revoking brings it back', () => {
     let p = withMarking(componentProject(), 'M1', 'https://a.com/x.png');
     p = withMarking(p, 'M2', 'https://b.com/y.png');
     p = withMarking(p, 'M3', 'https://a.com/z.png');
@@ -124,7 +124,7 @@ describe('remoteImageOrigins e pendingImageOrigins', () => {
     expect(origins(derived.pendingImageOrigins.value)).toHaveLength(2);
   });
 
-  it('nova origem depois de uma edição e depois de recarga externa', () => {
+  it('new origin after an edit and after an external reload', () => {
     const { derived, actions, store } = setup(
       withMarking(componentProject(), 'M1', 'https://a.com/x.png'),
     );
@@ -136,15 +136,15 @@ describe('remoteImageOrigins e pendingImageOrigins', () => {
     expect(origins(derived.pendingImageOrigins.value)).toEqual(['https://c.com']);
   });
 
-  it('trocar a URL por endereço não aceito ou vazio esvazia as pendentes na hora', () => {
+  it('swapping the URL for an unaccepted or empty address empties the pending ones right away', () => {
     const { derived, actions } = setup(
       withMarking(componentProject(), 'M1', 'https://a.com/x.png'),
     );
     expect(origins(derived.pendingImageOrigins.value)).toEqual(['https://a.com']);
     for (const next of [
-      'http://127.0.0.1:8765/foto.png',
-      'https://192.168.0.10/foto.png',
-      'isto não é um endereço',
+      'http://127.0.0.1:8765/photo.png',
+      'https://192.168.0.10/photo.png',
+      'this is not an address',
       null,
     ]) {
       expect(actions.setFieldValue('A_M1', 'label', 'https://a.com/x.png').ok).toBe(true);
@@ -154,16 +154,16 @@ describe('remoteImageOrigins e pendingImageOrigins', () => {
     }
   });
 
-  it('sem edição que mude as origens, a lista é o mesmo objeto', () => {
+  it('without an edit that changes the origins, the list is the same object', () => {
     const { derived, actions } = setup(
       withMarking(componentProject(), 'M1', 'https://a.com/x.png'),
     );
     const before = derived.pendingImageOrigins.value;
-    actions.setFieldValue('A_M1', 'label', 'https://a.com/outra.png');
+    actions.setFieldValue('A_M1', 'label', 'https://a.com/other.png');
     expect(derived.pendingImageOrigins.value).toBe(before);
   });
 
-  it('http só aparece com o interruptor, marcado como sem criptografia', () => {
+  it('http only shows with the switch on, marked as unencrypted', () => {
     const { derived } = setup(
       withMarking(componentProject(), 'M1', 'http://a.com/x.png'),
     );
@@ -176,7 +176,7 @@ describe('remoteImageOrigins e pendingImageOrigins', () => {
     expect(origins(derived.pendingImageOrigins.value)).toEqual(['http://a.com']);
   });
 
-  it('"qualquer origem" esconde as não locais, mas não a local', () => {
+  it('"any origin" hides the non-local ones, but not the local one', () => {
     let p = withMarking(componentProject(), 'M1', 'https://a.com/x.png');
     p = withMarking(p, 'M2', 'http://192.168.0.2:8080/y.png');
     const { derived } = setup(p);
@@ -192,7 +192,7 @@ describe('remoteImageOrigins e pendingImageOrigins', () => {
     ]);
   });
 
-  it('dispensar some só nesta sessão e uma origem nova volta sozinha', () => {
+  it('dismissing hides only in this session and a new origin comes back on its own', () => {
     const { derived, actions } = setup(
       withMarking(componentProject(), 'M1', 'https://a.com/x.png'),
     );

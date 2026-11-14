@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "top-app-bar",
   "name": "Top app bar",
-  "description": "Barra do topo: small e center com 64 de altura; medium (112) e large (152) com o título grande embaixo.",
+  "description": "Top bar: small and center with 64 height; medium (112) and large (152) with the large title below.",
   "size": {
     "width": 412,
     "height": 152
@@ -22,7 +22,7 @@
     }
   },
   "preview": {
-    "title": "Início",
+    "title": "Home",
     "style": "small",
     "navigationIcon": "Menu",
     "actionIcon1": "Search",
@@ -153,7 +153,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "barra",
+        "name": "bar",
         "width": "fill",
         "height": 64,
         "anchors": {
@@ -169,7 +169,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "navegação",
+            "name": "navigation",
             "width": 48,
             "height": 48,
             "visible": {
@@ -481,7 +481,7 @@
           },
           {
             "type": "frame",
-            "name": "título (caixa)",
+            "name": "title (box)",
             "width": "fill",
             "height": "fill",
             "visible": {
@@ -517,7 +517,7 @@
             "children": [
               {
                 "type": "text",
-                "name": "título",
+                "name": "title",
                 "text": {
                   "$field": "title",
                   "default": "Title"
@@ -667,7 +667,7 @@
               },
               {
                 "type": "text",
-                "name": "subtítulo",
+                "name": "subtitle",
                 "text": {
                   "$field": "subtitle"
                 },
@@ -815,7 +815,7 @@
           },
           {
             "type": "frame",
-            "name": "espaço",
+            "name": "space",
             "width": "fill",
             "height": 1,
             "visible": {
@@ -836,7 +836,7 @@
           },
           {
             "type": "frame",
-            "name": "ação 1",
+            "name": "action 1",
             "width": 48,
             "height": 48,
             "visible": {
@@ -1148,7 +1148,7 @@
           },
           {
             "type": "frame",
-            "name": "ação 2",
+            "name": "action 2",
             "width": 48,
             "height": 48,
             "visible": {
@@ -1462,7 +1462,7 @@
       },
       {
         "type": "frame",
-        "name": "título centralizado (caixa)",
+        "name": "centered title (box)",
         "anchors": {
           "left": 0,
           "right": 0,
@@ -1512,7 +1512,7 @@
         "children": [
           {
             "type": "text",
-            "name": "título centralizado",
+            "name": "centered title",
             "text": {
               "$field": "title",
               "default": "Title"
@@ -1659,7 +1659,7 @@
       },
       {
         "type": "text",
-        "name": "título grande",
+        "name": "large title",
         "text": {
           "$field": "title",
           "default": "Title"
@@ -1812,7 +1812,7 @@
       },
       {
         "type": "text",
-        "name": "título grande",
+        "name": "large title",
         "text": {
           "$field": "title",
           "default": "Title"

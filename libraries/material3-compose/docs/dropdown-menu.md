@@ -1,60 +1,60 @@
 # Dropdown menu
 
-Menu suspenso com uma lista de ações ou de opções. Menu abre sobre um elemento âncora (um botão de ícone, por exemplo); exposed fica preso a um campo de texto e escolhe um valor entre as opções.
+A drop-down menu with a list of actions or options. Menu opens over an anchor element (an icon button, for example); exposed is attached to a text field and picks a value among the options.
 
-Tipo de anotação: `dropdown-menu` (camada Componentes).
+Annotation type: `dropdown-menu` (Components layer).
 
-## Campos
+## Fields
 
-| Chave         | Rótulo          | Tipo   | Obrigatório | Opções                       | Padrão | Descrição                                                                                                                                                                                                                                                                                                                                                          |
-| ------------- | --------------- | ------ | ----------- | ---------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `style`       | Estilo          | enum   | não         | `menu`, `exposed`            | `menu` | menu (DropdownMenu, popup ancorado a um elemento) ou exposed (ExposedDropdownMenuBox, campo de texto com o menu preso a ele; exige opt-in).                                                                                                                                                                                                                        |
-| `items`       | Itens           | table  | sim         | ver Colunas abaixo           |        | Um item por linha, na ordem em que aparecem no menu.                                                                                                                                                                                                                                                                                                               |
-| `expanded`    | Aberto          | enum   | não         | `true`, `false`              | `true` | true mostra o menu; false o esconde (no exposed sobra só o campo). No código é o estado `expanded` da tela.                                                                                                                                                                                                                                                        |
-| `label`       | Rótulo do campo | string | não         |                              |        | Rótulo do campo de texto do exposed. Vazio = sem rótulo. Só vale em exposed.                                                                                                                                                                                                                                                                                       |
-| `value`       | Valor do campo  | string | não         |                              |        | Opção escolhida, mostrada no campo de texto do exposed. Só vale em exposed.                                                                                                                                                                                                                                                                                        |
-| `interaction` | Interação       | enum   | não         | `none`, `hovered`, `focused` | `none` | Aparência parada do estado de interação, no campo exposto (mouse sobre ou foco: indicador de 2 em primary e rótulo em primary) e no item selecionado do menu aberto (camada de estado); none = sem destaque. Só muda o desenho, não entra no código. O menu não tem enabled no tipo (sem enabled): o campo sempre desenha; o item desabilitado não ganha a camada. |
+| Key           | Label       | Type   | Required | Options                      | Default | Description                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------- | ----------- | ------ | -------- | ---------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `style`       | Style       | enum   | no       | `menu`, `exposed`            | `menu`  | menu (DropdownMenu, a popup anchored to an element) or exposed (ExposedDropdownMenuBox, a text field with the menu attached to it; requires an opt-in).                                                                                                                                                                                                                                        |
+| `items`       | Items       | table  | yes      | see Columns below            |         | One item per row, in the order they appear in the menu.                                                                                                                                                                                                                                                                                                                                        |
+| `expanded`    | Open        | enum   | no       | `true`, `false`              | `true`  | true shows the menu; false hides it (in exposed only the field is left). In code it is the screen's `expanded` state.                                                                                                                                                                                                                                                                          |
+| `label`       | Field label | string | no       |                              |         | Label of the exposed text field. Empty = no label. Only applies to exposed.                                                                                                                                                                                                                                                                                                                    |
+| `value`       | Field value | string | no       |                              |         | Chosen option, shown in the exposed text field. Only applies to exposed.                                                                                                                                                                                                                                                                                                                       |
+| `interaction` | Interaction | enum   | no       | `none`, `hovered`, `focused` | `none`  | Resting appearance of the interaction state, on the exposed field (hovered or focused: 2 indicator in primary and label in primary) and on the selected item of the open menu (state layer); none = no highlight. It only changes the drawing, it does not go in the code. The menu has no enabled in the type (no enabled): the field always draws; the disabled item does not get the layer. |
 
-Colunas de `items` (uma linha por item):
+Columns of `items` (one row per item):
 
-| Chave          | Rótulo           | Tipo   | Obrigatório | Opções                                                         | Padrão  |
-| -------------- | ---------------- | ------ | ----------- | -------------------------------------------------------------- | ------- |
-| `text`         | Texto            | string | sim         |                                                                |         |
-| `leadingIcon`  | Ícone à esquerda | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |         |
-| `trailingIcon` | Ícone à direita  | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |         |
-| `enabled`      | Habilitado       | enum   | não         | `true`, `false`                                                | `true`  |
-| `selected`     | Selecionado      | enum   | não         | `true`, `false`                                                | `false` | true marca o item (fundo secondary-container). É o item que recebe o estado de interação do menu. |
+| Key            | Label         | Type   | Required | Options                                                   | Default |
+| -------------- | ------------- | ------ | -------- | --------------------------------------------------------- | ------- |
+| `text`         | Text          | string | yes      |                                                           |         |
+| `leadingIcon`  | Leading icon  | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
+| `trailingIcon` | Trailing icon | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
+| `enabled`      | Enabled       | enum   | no       | `true`, `false`                                           | `true`  |
+| `selected`     | Selected      | enum   | no       | `true`, `false`                                           | `false` | true marks the item (secondary-container background). It is the item that receives the menu's interaction state. |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.DropdownMenu`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Menu.kt`
-- O campo `style` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.DropdownMenu`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Menu.kt`
+- The `style` field chooses the symbol; values without their own case use the base one.
 
-| `style`       | Símbolo                  |
+| `style`       | Symbol                   |
 | ------------- | ------------------------ |
 | `menu` (base) | `DropdownMenu`           |
 | `exposed`     | `ExposedDropdownMenuBox` |
 
-O caso `exposed` também troca o arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ExposedDropdownMenu.kt`.
+The `exposed` case also swaps the file (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ExposedDropdownMenu.kt`.
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
-// style menu: DropdownMenu ancorado a um IconButton
+// style menu: DropdownMenu anchored to an IconButton
 Box {
     IconButton(onClick = { expanded = true }) {
-        Icon(Icons.Filled.MoreVert, contentDescription = "Mais opções")
+        Icon(Icons.Filled.MoreVert, contentDescription = "More options")
     }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-        // uma linha de items vira um DropdownMenuItem
+        // a row of items becomes a DropdownMenuItem
         DropdownMenuItem(
-            text = { Text("Editar") },
+            text = { Text("Edit") },
             onClick = { expanded = false },
             leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
         )
         DropdownMenuItem(
-            text = { Text("Excluir") },
+            text = { Text("Delete") },
             onClick = { expanded = false },
             leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
             enabled = false,
@@ -65,16 +65,16 @@ Box {
 // style exposed: ExposedDropdownMenuBox (@OptIn(ExperimentalMaterial3Api::class))
 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
     TextField(
-        value = "Português",
+        value = "English",
         onValueChange = {},
         readOnly = true,
-        label = { Text("Idioma") },
+        label = { Text("Language") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
     )
     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
         DropdownMenuItem(
-            text = { Text("Português") },
+            text = { Text("English") },
             onClick = { expanded = false },
             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
         )
@@ -82,55 +82,55 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> Estável, sem opt-in. O menu é um popup ancorado ao composable onde é declarado: ponha-o num `Box` junto do elemento âncora (o `IconButton` que o abre) e ligue `expanded` a um estado da tela (`var expanded by remember { mutableStateOf(<expanded>) }`), com `onDismissRequest = { expanded = false }`. Dentro, um `DropdownMenuItem` por linha de `items`: `text = { Text(<text>) }`, `onClick = { expanded = false; … }`, `leadingIcon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = null) }` e `trailingIcon = { Icon(Icons.Filled.<trailingIcon>, contentDescription = null) }` só quando preenchidos, e `enabled = <enabled>`. A largura vai de 112 a 280 dp pelo conteúdo. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`. Ancorado (`anchor`, lado `bottom`, alinhamento `start`), o menu abre logo abaixo do elemento, alinhado ao início dele: é o `DropdownMenu` declarado junto do elemento, com o `offset` padrão `DpOffset(0.dp, 0.dp)`.
+> Stable, no opt-in. The menu is a popup anchored to the composable where it is declared: put it in a `Box` next to the anchor element (the `IconButton` that opens it) and connect `expanded` to a screen state (`var expanded by remember { mutableStateOf(<expanded>) }`), with `onDismissRequest = { expanded = false }`. Inside, one `DropdownMenuItem` per row of `items`: `text = { Text(<text>) }`, `onClick = { expanded = false; … }`, `leadingIcon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = null) }` and `trailingIcon = { Icon(Icons.Filled.<trailingIcon>, contentDescription = null) }` only when filled, and `enabled = <enabled>`. The width goes from 112 to 280 dp by the content. Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`. Anchored (`anchor`, side `bottom`, alignment `start`), the menu opens right below the element, aligned to its start: it is the `DropdownMenu` declared next to the element, with the default `offset` `DpOffset(0.dp, 0.dp)`.
 
-Variante `exposed`: Exige @OptIn(ExperimentalMaterial3Api::class) (o `ExposedDropdownMenuBox` e o `ExposedDropdownMenu` são experimentais no commit fixado). `ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) { … }`, com `expanded` ligado a um estado da tela (`var expanded by remember { mutableStateOf(<expanded>) }`). Dentro vão um `TextField` (ou `OutlinedTextField`, como no tipo text-field) com `value = <value>`, `onValueChange = {}`, `readOnly = true`, `label = { Text(<label>) }`, `trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }` e `Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)` (o `menuAnchor()` sem argumentos está `@Deprecated`), e depois `ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) { … }`, extensão do `ExposedDropdownMenuBoxScope`, com um `DropdownMenuItem` por linha de `items` (`onClick` guarda a escolha, atualiza `<value>` e fecha com `expanded = false`; `contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding`). O menu tem a largura do campo (`matchAnchorWidth = true`, o padrão).
+`exposed` variant: Requires @OptIn(ExperimentalMaterial3Api::class) (the `ExposedDropdownMenuBox` and the `ExposedDropdownMenu` are experimental at the pinned commit). `ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) { … }`, with `expanded` connected to a screen state (`var expanded by remember { mutableStateOf(<expanded>) }`). Inside go a `TextField` (or `OutlinedTextField`, as in the text-field type) with `value = <value>`, `onValueChange = {}`, `readOnly = true`, `label = { Text(<label>) }`, `trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }` and `Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)` (the `menuAnchor()` without arguments is `@Deprecated`), and then `ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) { … }`, an extension of the `ExposedDropdownMenuBoxScope`, with one `DropdownMenuItem` per row of `items` (`onClick` stores the choice, updates `<value>` and closes with `expanded = false`; `contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding`). The menu has the width of the field (`matchAnchorWidth = true`, the default).
 
-## Exemplos
+## Examples
 
-- **Menu aberto**: style=menu, expanded=true
-- **Campo exposto fechado**: style=exposed, expanded=false, label=País, value=Brasil
-- **Campo exposto aberto**: style=exposed, expanded=true, label=Idioma, value=Português
-- **Mouse sobre**: style=exposed, expanded=false, label=País, value=Brasil, interaction=hovered
-- **Com foco**: style=exposed, expanded=true, label=Idioma, value=Português, interaction=focused
-- **Itens de larguras diferentes**: style=menu, expanded=true
+- **Open menu**: style=menu, expanded=true
+- **Closed exposed field**: style=exposed, expanded=false, label=Country, value=Brazil
+- **Open exposed field**: style=exposed, expanded=true, label=Language, value=English
+- **Hovered**: style=exposed, expanded=false, label=Country, value=Brazil, interaction=hovered
+- **Focused**: style=exposed, expanded=true, label=Language, value=English, interaction=focused
+- **Items of different widths**: style=menu, expanded=true
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente, nenhum nó de texto declara `family` (todos herdam `font-sans`) e os ícones são o nó `icon` do conjunto da biblioteca (os do item pelo `$switch` do campo, a seta do campo pelo estado `expanded`), sem caminho SVG no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component, no text node declares `family` (all inherit `font-sans`) and the icons are the `icon` node of the library's set (the item's through the field's `$switch`, the field's arrow through the `expanded` state), with no SVG path in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Menu.kt` (linhas 181 a 258: `MenuDefaults`, `ShadowElevation` = `MenuTokens.ContainerElevation`, a forma, a cor do contêiner e `itemColors()` pelos `ListTokens`, `DropdownMenuItemContentPadding` de 12 na horizontal; 359 a 417: `DropdownMenuContent`, o `Surface` e o `Column` com `padding(vertical = DropdownMenuVerticalPadding)` e `width(IntrinsicSize.Max)`; 419 a 505: `DropdownMenuItemContent`, a `Row` com `sizeIn(minWidth = 112, maxWidth = 280, minHeight = 48)`, `padding(contentPadding)`, `ProvideTextStyle(labelLarge)` na linha 450, o ícone inicial e o final em `Box` de largura mínima 24 e o texto com 12 de cada lado que tem ícone; 523 a 528: as constantes 48, 12, 8, 112 e 280).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/MenuTokens.kt` (`ContainerColor` `SurfaceContainer`, `ContainerElevation` `Level2` = 3, `ContainerShape` `CornerExtraSmall`) e `tokens/ListTokens.kt` (`ListItemLabelTextColor` `OnSurface`, `ListItemLeadingIconColor` e `ListItemTrailingIconColor` `OnSurfaceVariant`, as cores do desabilitado `OnSurface` com opacidade 0,38, ícones de 24) e `tokens/ElevationTokens.kt` (`Level2` 3 dp).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ExposedDropdownMenu.kt` (linhas 137 a 150: `ExposedDropdownMenuBox`; 310 a 365: o `ExposedDropdownMenu` com `matchAnchorWidth = true` e `exposedDropdownSize`; 512 a 514: `TrailingIcon`, o `Icons.Filled.ArrowDropDown` girado 180 graus quando aberto; 844 e 845: `ItemContentPadding`; 1536: `ExposedDropdownMenuItemHorizontalPadding` 16) e `tokens/FilledAutocompleteTokens.kt` (campo `SurfaceContainerHighest` com forma `CornerExtraSmallTop`, indicador de 1 em `OnSurfaceVariant`, rótulo e texto `BodyLarge`, ícone final de 24 em `OnSurfaceVariant`, menu `SurfaceContainer`, `Level2` e `CornerExtraSmall`). O campo segue o `TextField` filled descrito em `text-field.md`.
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/MenuTokens.kt` (linhas 24 a 29: `FocusIndicatorColor` e os papéis `ListItemSelected*`: `ListItemSelectedContainerColor` `SecondaryContainer`, `ListItemSelectedLabelTextColor` e `ListItemSelectedLeadingTrailingIconColor` `OnSecondaryContainer`), `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FilledTextFieldTokens.kt` (linhas 45 a 73, o campo exposto é um `TextField` filled) e `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ListTokens.kt`.
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Menu.kt` (lines 181 to 258: `MenuDefaults`, `ShadowElevation` = `MenuTokens.ContainerElevation`, the shape, the container color and `itemColors()` by the `ListTokens`, `DropdownMenuItemContentPadding` of 12 horizontally; 359 to 417: `DropdownMenuContent`, the `Surface` and the `Column` with `padding(vertical = DropdownMenuVerticalPadding)` and `width(IntrinsicSize.Max)`; 419 to 505: `DropdownMenuItemContent`, the `Row` with `sizeIn(minWidth = 112, maxWidth = 280, minHeight = 48)`, `padding(contentPadding)`, `ProvideTextStyle(labelLarge)` on line 450, the leading and trailing icon in a `Box` of minimum width 24 and the text with 12 on each side that has an icon; 523 to 528: the constants 48, 12, 8, 112 and 280).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/MenuTokens.kt` (`ContainerColor` `SurfaceContainer`, `ContainerElevation` `Level2` = 3, `ContainerShape` `CornerExtraSmall`) and `tokens/ListTokens.kt` (`ListItemLabelTextColor` `OnSurface`, `ListItemLeadingIconColor` and `ListItemTrailingIconColor` `OnSurfaceVariant`, the disabled colors `OnSurface` with opacity 0.38, 24 icons) and `tokens/ElevationTokens.kt` (`Level2` 3 dp).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ExposedDropdownMenu.kt` (lines 137 to 150: `ExposedDropdownMenuBox`; 310 to 365: the `ExposedDropdownMenu` with `matchAnchorWidth = true` and `exposedDropdownSize`; 512 to 514: `TrailingIcon`, the `Icons.Filled.ArrowDropDown` rotated 180 degrees when open; 844 and 845: `ItemContentPadding`; 1536: `ExposedDropdownMenuItemHorizontalPadding` 16) and `tokens/FilledAutocompleteTokens.kt` (field `SurfaceContainerHighest` with shape `CornerExtraSmallTop`, 1 indicator in `OnSurfaceVariant`, label and text `BodyLarge`, 24 trailing icon in `OnSurfaceVariant`, menu `SurfaceContainer`, `Level2` and `CornerExtraSmall`). The field follows the filled `TextField` described in `text-field.md`.
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/MenuTokens.kt` (lines 24 to 29: `FocusIndicatorColor` and the `ListItemSelected*` roles: `ListItemSelectedContainerColor` `SecondaryContainer`, `ListItemSelectedLabelTextColor` and `ListItemSelectedLeadingTrailingIconColor` `OnSecondaryContainer`), `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FilledTextFieldTokens.kt` (lines 45 to 73, the exposed field is a filled `TextField`) and `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ListTokens.kt`.
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Menu: `surface-container`, forma `corner-extra-small` (4), as duas sombras do nível 2 (ponto: `y` 1, `blur` 2; ambiente: `y` 2, `blur` 6, `spread` 2; tokens `elevation-2-point-*` e `elevation-2-ambient-*`), padding de 8 em cima e embaixo e itens a partir do topo. A largura é a do item mais largo (o texto, os ícones e o padding), entre 112 e 280, como o `IntrinsicSize.Max` do `Column` e o `sizeIn` dos itens: o `sizing.width` é `hug` no estilo `menu` (e `fill` no `exposed`, que segue o campo), com os `minWidth` e `maxWidth` na raiz, que valem ao ajustar, e no quadro do menu, que valem com a caixa dada (o menu ocupa a caixa dentro do mesmo intervalo); fechado (`expanded: false`) o menu não se desenha.
-- Item: altura mínima de 48 (`minHeight`), que cresce com o texto quando ele quebra; padding horizontal de 12 no menu e de 16 no exposed (`ItemContentPadding`). Texto em `label-large` (14/20, peso 500, espaçamento 0,1, o `labelLarge` do `ProvideTextStyle`) em `on-surface`; ícone à esquerda e à direita de 24 em `on-surface-variant`, com 12 entre o ícone e o texto (o texto fica entre os ícones, pelas âncoras `left` e `right` do quadro do item, e é o item mais largo que decide a largura do menu). Desabilitado: texto e ícones em `on-surface` a 0,38 (`state-disabled-content`).
-- Exposed: o campo de 56 é o filled do `TextField`: fundo `surface-container-highest` com o raio superior de `corner-extra-small`, indicador de 1 só embaixo (`stroke.sides: ["bottom"]`) em `on-surface-variant`, rótulo em `body-large` quando não há valor e em `body-small` sobre o valor quando há, valor em `body-large` numa linha, seta de 24 em `on-surface-variant` a 12 da borda (`arrow_drop_down` fechado e `arrow_drop_up` aberto, o `ArrowDropDown` girado 180 graus). O menu vem logo abaixo, com a largura do campo (`matchAnchorWidth`).
-- Rótulo, valor e texto dos itens (uma linha) centram pela altura da maiúscula (`font.verticalAlign: "cap-middle"`). O `Text` do Compose centra pela caixa de linha da fonte; com Roboto as duas coincidem a menos de 1 px.
+- Menu: `surface-container`, shape `corner-extra-small` (4), the two level 2 shadows (point: `y` 1, `blur` 2; ambient: `y` 2, `blur` 6, `spread` 2; tokens `elevation-2-point-*` and `elevation-2-ambient-*`), padding of 8 on top and bottom and items from the top. The width is that of the widest item (the text, the icons and the padding), between 112 and 280, like the `Column`'s `IntrinsicSize.Max` and the items' `sizeIn`: the `sizing.width` is `hug` in the `menu` style (and `fill` in `exposed`, which follows the field), with the `minWidth` and `maxWidth` on the root, which apply when fitting, and on the menu frame, which apply with the given box (the menu fills the box within the same range); closed (`expanded: false`) the menu is not drawn.
+- Item: minimum height of 48 (`minHeight`), which grows with the text when it wraps; horizontal padding of 12 in the menu and 16 in exposed (`ItemContentPadding`). Text in `label-large` (14/20, weight 500, spacing 0.1, the `ProvideTextStyle`'s `labelLarge`) in `on-surface`; leading and trailing icon of 24 in `on-surface-variant`, with 12 between the icon and the text (the text sits between the icons, by the `left` and `right` anchors of the item frame, and the widest item decides the menu width). Disabled: text and icons in `on-surface` at 0.38 (`state-disabled-content`).
+- Exposed: the 56 field is the filled `TextField`: background `surface-container-highest` with the top radius of `corner-extra-small`, 1 indicator only at the bottom (`stroke.sides: ["bottom"]`) in `on-surface-variant`, label in `body-large` when there is no value and in `body-small` over the value when there is one, value in `body-large` on one line, 24 arrow in `on-surface-variant` 12 from the edge (`arrow_drop_down` closed and `arrow_drop_up` open, the `ArrowDropDown` rotated 180 degrees). The menu comes right below, with the width of the field (`matchAnchorWidth`).
+- Label, value and item text (one line) are centered by the capital letter height (`font.verticalAlign: "cap-middle"`). Compose's `Text` centers by the font's line box; with Roboto the two coincide within 1 px.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `variants`. As opções são `none`, `hovered` e `focused`: o campo exposto é um `TextField` filled, que define `Hover*` e `Focus*` (sem `Pressed*` nem `Dragged*`), e os tokens do menu (`MenuTokens.kt`) não definem estado de pressionado nem de arrastado. O estado vale para **dois lugares** (decisão 6 da etapa):
+The field chooses the resting appearance of a state; it does not go in the `code` or in the `variants`. The options are `none`, `hovered` and `focused`: the exposed field is a filled `TextField`, which defines `Hover*` and `Focus*` (no `Pressed*` or `Dragged*`), and the menu tokens (`MenuTokens.kt`) define no pressed or dragged state. The state applies in **two places** (decision 6 of the stage):
 
-- **Campo exposto** (estilo `exposed`): o mesmo desenho do `text-field` filled. Com foco, o indicador passa a 2 de espessura em `primary` e o rótulo vai a `primary` (`FilledTextFieldTokens.FocusActiveIndicatorColor`, `FocusActiveIndicatorHeight` e `FocusLabelColor`, linhas 63, 64 e 66); com o mouse, o indicador vai a `on-surface` (`HoverActiveIndicatorColor`, linha 70) e o rótulo fica `on-surface-variant`. O campo do menu não tem erro nem desabilitado, então não há as cores `Error*`.
-- **Item selecionado do menu aberto:** a coluna `selected` da tabela `items` marca o item. Ele leva o fundo `secondary-container`, o texto e os ícones em `on-secondary-container` (`ListItemSelectedContainerColor`, `ListItemSelectedLabelTextColor` e `ListItemSelectedLeadingTrailingIconColor`, linhas 26 a 28) e, com `hovered` ou `focused`, o nó `estado`: um `rect` do tamanho do item, na cor do rótulo selecionado, `on-secondary-container`, com `opacity` pelos tokens `state-hover` (0,08) e `state-focus` (0,10). Os tokens do menu **não nomeiam** a camada: é a convenção do `card`, a cor do conteúdo.
-- **Sem item selecionado** o menu não desenha camada (como o `segmented-button`, sem segmento selecionado). A decisão 6 manda usar o primeiro item nesse caso, mas isso pede o índice no `repeat`, que o formato 4 não tem (#897).
-- **Item desabilitado** (`enabled` `false` na linha) não recebe a camada nem o fundo `secondary-container`: o desabilitado vence, mesmo selecionado.
+- **Exposed field** (`exposed` style): the same drawing as the filled `text-field`. When focused, the indicator goes to 2 thick in `primary` and the label goes to `primary` (`FilledTextFieldTokens.FocusActiveIndicatorColor`, `FocusActiveIndicatorHeight` and `FocusLabelColor`, lines 63, 64 and 66); with the mouse, the indicator goes to `on-surface` (`HoverActiveIndicatorColor`, line 70) and the label stays `on-surface-variant`. The menu's field has no error or disabled state, so there are no `Error*` colors.
+- **Selected item of the open menu:** the `selected` column of the `items` table marks the item. It gets the `secondary-container` background, the text and icons in `on-secondary-container` (`ListItemSelectedContainerColor`, `ListItemSelectedLabelTextColor` and `ListItemSelectedLeadingTrailingIconColor`, lines 26 to 28) and, with `hovered` or `focused`, the `state` node: a `rect` the size of the item, in the selected label color, `on-secondary-container`, with `opacity` from the tokens `state-hover` (0.08) and `state-focus` (0.10). The menu tokens **do not name** the layer: it is the `card` convention, the content color.
+- **Without a selected item** the menu draws no layer (like the `segmented-button`, with no selected segment). Decision 6 says to use the first item in that case, but that requires the index in `repeat`, which format 4 does not have (#897).
+- **Disabled item** (`enabled` `false` in the row) gets neither the layer nor the `secondary-container` background: disabled wins, even when selected.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O texto de um item que passa do que cabe nos 280 quebra em linhas, e a largura medida é a da linha mais larga depois de quebrar (a regra do `hug` em duas passagens), então o menu pode medir um pouco menos de 280; o Compose usa os 280 inteiros nesse caso.
-- O menu aparece no desenho logo abaixo do campo (exposed) ou sozinho (menu): o popup do Compose é posicionado pela âncora, pela janela e pelo `offset` (padrão `DpOffset(0, 0)`), e a animação de escala e alfa da abertura não existe. Aqui a posição é a âncora da marcação: a raiz declara `anchor` `bottom`/`start`, com `offset` 0 (o menu logo abaixo do elemento, alinhado ao início dele, em `rtl` pela direita), e o Encostar na âncora o põe sob o campo. O menu não acompanha a largura da âncora (`matchAnchorWidth`): a âncora só posiciona. O Compose também inverte o menu para cima quando falta janela embaixo (`MenuVerticalMargin`); o desenho fica no lado pedido.
-- O `interaction` é um quadro parado: sem ripple animado, cursor e seleção por teclado. O anel de foco (`FocusIndicatorColor`, `secondary`, `MenuTokens.kt` linha 25) é desenhado no item selecionado do menu aberto, em `focused`: o anel de 3 em `secondary`, afastado 2 da forma (`stroke.offset`), por fora da caixa (a largura e o afastamento são os da decisão da etapa; o `*Tokens.kt` só traz a cor). A coluna `selected` e o fundo `secondary-container` do item selecionado são desenho do M3 por `MenuTokens.ListItemSelected*`; o `DropdownMenuItem` do Compose 1.4.0 não tem `selected`, e a coluna não entra no `code`. Linhas de projetos anteriores, sem a coluna `selected`, desenham com o aviso "campo não informado: selected" (o motor só escopa as colunas que alguma linha traz, como já acontece com `enabled` e `trailingIcon`).
-- As duas sombras (ponto e ambiente) vêm dos tokens `elevation-2-point-*` e `elevation-2-ambient-*` (`$token` em `shadow`, lista de duas sombras com `spread`); a tonal da elevação não é desenhada. Valores da elevação do Material 3 para a web: `elevation/internal/_elevation.scss` do `material-components/material-web` (versão 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), fonte de fora do Compose, que no Android entrega a elevação à plataforma e não traz os números: sombra de ponto em preto a 30% e sombra ambiente em preto a 15%, com `y`, `blur` e `spread` por nível (tokens `elevation-2-point-*` e `elevation-2-ambient-*`).
-- O raio superior do campo do exposed é a lista `[corner-extra-small, corner-extra-small, 0, 0]` (`$token` por item), sem retângulo mais alto recortado.
-- O valor do campo do exposed fica numa linha (recortado), como o `singleLine`; o `TextField` do Compose sem `singleLine` quebra e cresce. Sem rolagem do menu (`verticalScroll`) quando os itens passam da altura disponível.
-- Sem `leadingIcon` e `trailingIcon` livres (`composable`), `contentPadding` próprio, `DropdownMenuItem` com `colors` próprio, `onDismissRequest`, e `ExposedDropdownMenuBox` com `OutlinedTextField` ou editável (`menuAnchor` de entrada).
+- The text of an item that exceeds what fits in 280 wraps into lines, and the measured width is that of the widest line after wrapping (the two-pass `hug` rule), so the menu may measure slightly less than 280; Compose uses the full 280 in that case.
+- The menu appears in the drawing right below the field (exposed) or alone (menu): Compose's popup is positioned by the anchor, the window and the `offset` (default `DpOffset(0, 0)`), and the opening scale and alpha animation does not exist. Here the position is the marking's anchor: the root declares `anchor` `bottom`/`start`, with `offset` 0 (the menu right below the element, aligned to its start, in `rtl` on the right), and Snap to anchor puts it under the field. The menu does not follow the anchor's width (`matchAnchorWidth`): the anchor only positions. Compose also flips the menu upward when there is no window space below (`MenuVerticalMargin`); the drawing stays on the requested side.
+- The `interaction` is a still frame: no animated ripple, cursor or keyboard selection. The focus ring (`FocusIndicatorColor`, `secondary`, `MenuTokens.kt` line 25) is drawn on the selected item of the open menu, in `focused`: a 3 ring in `secondary`, 2 away from the shape (`stroke.offset`), outside the box (the width and the offset are those of the stage decision; the `*Tokens.kt` only carries the color). The `selected` column and the `secondary-container` background of the selected item are M3 drawing through `MenuTokens.ListItemSelected*`; Compose 1.4.0's `DropdownMenuItem` has no `selected`, and the column does not go in the `code`. Rows from earlier projects, without the `selected` column, draw with the warning "field not provided: selected" (the engine only scopes the columns that some row carries, as already happens with `enabled` and `trailingIcon`).
+- The two shadows (point and ambient) come from the tokens `elevation-2-point-*` and `elevation-2-ambient-*` (`$token` in `shadow`, a list of two shadows with `spread`); the tonal elevation is not drawn. Material 3 elevation values for the web: `elevation/internal/_elevation.scss` of `material-components/material-web` (version 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), a source outside Compose, which on Android hands the elevation to the platform and does not carry the numbers: point shadow in black at 30% and ambient shadow in black at 15%, with `y`, `blur` and `spread` per level (tokens `elevation-2-point-*` and `elevation-2-ambient-*`).
+- The top radius of the exposed field is the list `[corner-extra-small, corner-extra-small, 0, 0]` (`$token` per item), without a taller clipped rectangle.
+- The exposed field's value stays on one line (clipped), like `singleLine`; Compose's `TextField` without `singleLine` wraps and grows. No menu scrolling (`verticalScroll`) when the items exceed the available height.
+- No free `leadingIcon` and `trailingIcon` (`composable`), custom `contentPadding`, `DropdownMenuItem` with custom `colors`, `onDismissRequest`, and `ExposedDropdownMenuBox` with `OutlinedTextField` or an editable one (input `menuAnchor`).

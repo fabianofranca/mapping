@@ -1,5 +1,5 @@
-// Seleção por retângulo (SM2): quais itens o retângulo de Shift+arrasto soma à seleção.
-// Funções puras (sem DOM nem Konva), testadas em `tests/canvas/input/marquee.test.ts`.
+// Rectangle selection (SM2): which items the Shift+drag rectangle adds to the selection.
+// Pure functions (no DOM or Konva), tested in `tests/canvas/input/marquee.test.ts`.
 import {
   arrowsOf,
   containsRect,
@@ -17,15 +17,15 @@ import type { SelectionItem } from '../../store/ui';
 import type { ArrowShape } from '../arrowGeometry';
 import type { Point } from '../viewport';
 
-/** O que o retângulo enxerga além do projeto: a visibilidade e as setas desenhadas. */
+/** What the rectangle sees beyond the project: the visibility and the drawn arrows. */
 export interface MarqueeView {
-  /** Visibilidade de cada marcação (o mesmo mapa do clique): `hidden` não entra. */
+  /** Visibility of each marking (the same map as the click): `hidden` is not included. */
   readonly visibility: ReadonlyMap<string, MarkingVisibility>;
-  /** As setas desenhadas; sem "Mostrar setas" ou no modo visualização, a lista vai vazia. */
+  /** The drawn arrows; without "Show arrows" or in view mode, the list is empty. */
   readonly arrows: readonly ArrowShape[];
 }
 
-/** O retângulo com os cantos `a` e `b` (canvas), em qualquer direção, sem arredondar. */
+/** The rectangle with the corners `a` and `b` (canvas), in any direction, without rounding. */
 export function rectFromCorners(a: Point, b: Point): Rect {
   const x = Math.min(a.x, b.x);
   const y = Math.min(a.y, b.y);
@@ -33,11 +33,11 @@ export function rectFromCorners(a: Point, b: Point): Rect {
 }
 
 /**
- * Todos os itens na ordem da janela Árvore (`src/ui/MarkingTree.tsx`): primeiro o canvas, com
- * cada marcação do canvas seguida das filhas, dos containers que ela contém e das setas que saem
- * dela (as flutuantes são marcações do canvas, na ordem do array); depois os containers sem pai,
- * cada um com as marcações da raiz dele. A seta não tem lugar próprio: vem sob a marcação de
- * origem, como na Árvore.
+ * All items in the order of the Tree window (`src/ui/MarkingTree.tsx`): first the canvas, with
+ * each canvas marking followed by its children, the containers it contains and the arrows leaving
+ * it (floating ones are canvas markings, in array order); then the containers without a parent,
+ * each with the markings of its root. The arrow has no place of its own: it comes under the
+ * source marking, as in the Tree.
  */
 export function treeOrder(project: Project): SelectionItem[] {
   const index = projectIndex(project);
@@ -73,18 +73,18 @@ export function treeOrder(project: Project): SelectionItem[] {
   return out;
 }
 
-/** Todos os pontos do traço da seta cabem em `rect`. */
+/** All the points of the arrow's stroke fit in `rect`. */
 function arrowInside(rect: Rect, shape: ArrowShape): boolean {
   const points = [...shape.route.points, ...shape.path];
   return points.every((p) => containsRect(rect, { x: p.x, y: p.y, width: 0, height: 0 }));
 }
 
 /**
- * Os itens que o retângulo `rect` (canvas) soma à seleção: os **inteiramente dentro** dele
- * (a borda que cruza deixa de fora), visíveis (`visibility`; trancado entra) e só os de fora: o
- * que o arrasto conjunto não levaria sozinho (`movingItems`) não entra, porque quem o leva é o
- * item que o contém (marcação de container que entrou, descendente de marcação que entrou). No
- * canvas nada leva nada. As setas ficam. Ordem da Árvore (`treeOrder`).
+ * The items that the rectangle `rect` (canvas) adds to the selection: those **entirely inside** it
+ * (a border that crosses leaves it out), visible (`visibility`; locked is included) and only the outermost: what
+ * the joint drag would not carry on its own (`movingItems`) is not included, because whoever carries it is the
+ * item that contains it (container marking that came in, descendant of a marking that came in). On the
+ * canvas nothing carries anything. The arrows stay. Tree order (`treeOrder`).
  */
 export function marqueeItems(
   project: Project,

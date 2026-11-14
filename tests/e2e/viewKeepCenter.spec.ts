@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { addImage, createProject, drawMarking, canvasPoint } from './helpers';
 
-// A vista mantém o centro e a escala quando o canvas muda de tamanho (#1337): abrir ou fechar
-// a Árvore ou os Detalhes não muda o zoom nem o que está no meio do canvas.
+// The view keeps its center and scale when the canvas changes size (#1337): opening or closing
+// the Tree or the Details does not change the zoom or what is in the middle of the canvas.
 
 const TREE = 'Control+Shift+Digit1';
 const DETAILS = 'Control+Shift+Digit3';
@@ -22,7 +22,7 @@ async function reading(page: Page) {
   };
 }
 
-/** Espera dois quadros de animação: o canvas desenha no máximo uma vez por quadro. */
+/** Waits two animation frames: the canvas draws at most once per frame. */
 async function frames(page: Page) {
   await page.evaluate(
     () =>
@@ -32,7 +32,7 @@ async function frames(page: Page) {
   );
 }
 
-/** Lê a vista só depois que duas leituras seguidas (separadas por quadros) coincidem. */
+/** Reads the view only after two consecutive readings (separated by frames) match. */
 async function settled(page: Page) {
   let last = '';
   await expect
@@ -48,30 +48,30 @@ async function settled(page: Page) {
   return reading(page);
 }
 
-test('abrir e fechar a Árvore e os Detalhes mantém a escala e o centro', async ({
+test('opening and closing the Tree and the Details keeps the scale and the center', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1400, height: 860 });
-  await createProject(page, 'Centro');
+  await createProject(page, 'Center');
   await addImage(page);
   const spot = await canvasPoint(page, 0.3);
   await drawMarking(page, { x: spot.x - 40, y: spot.y }, { width: 60, height: 40 });
   const host = page.locator('.canvas-host');
-  const tree = page.getByRole('region', { name: 'Árvore' });
+  const tree = page.getByRole('region', { name: 'Tree' });
   const details = page.locator('section[data-window="details"]');
 
-  // Começa sem janelas, com o foco no canvas.
+  // Starts with no windows, with focus on the canvas.
   const canvas = page.locator('main[data-canvas-area]');
   if (await tree.isVisible())
-    await tree.getByRole('button', { name: /Fechar.*Árvore/ }).click();
+    await tree.getByRole('button', { name: /Close.*Marking tree/ }).click();
   if (await details.isVisible())
-    await details.getByRole('button', { name: /Fechar.*Detalhes/ }).click();
+    await details.getByRole('button', { name: /Close.*Details/ }).click();
   await canvas.focus();
   await page.keyboard.press('Control+=');
   await page.keyboard.press('Control+=');
   await expect(host).toHaveAttribute('data-viewport', /.+/);
 
-  // Os dois zooms só valem depois de desenhados: lê a vista quando ela para de mudar.
+  // The two zooms only count once drawn: reads the view when it stops changing.
   const start = await settled(page);
   expect(start.scale).toBeGreaterThan(0);
 
@@ -87,18 +87,18 @@ test('abrir e fechar a Árvore e os Detalhes mantém a escala e o centro', async
       await expect(details).toBeVisible();
     },
     async () => {
-      await tree.getByRole('button', { name: /Fechar.*Árvore/ }).click();
+      await tree.getByRole('button', { name: /Close.*Marking tree/ }).click();
       await expect(tree).toBeHidden();
     },
     async () => {
-      await details.getByRole('button', { name: /Fechar.*Detalhes/ }).click();
+      await details.getByRole('button', { name: /Close.*Details/ }).click();
       await expect(details).toBeHidden();
     },
   ];
   const widths = new Set<number>([start.width]);
   for (const step of steps) {
     await step();
-    // Espera o canvas assentar no tamanho novo antes de ler.
+    // Waits for the canvas to settle at the new size before reading.
     const now = await settled(page);
     widths.add(now.width);
     expect(now.scale).toBeCloseTo(start.scale, 6);

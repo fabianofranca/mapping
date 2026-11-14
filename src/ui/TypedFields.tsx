@@ -33,8 +33,8 @@ import { issueReason, issuesOf, labelTexts, refButtonName } from './typedText';
 export type { FieldContext } from './FieldEditors';
 
 /**
- * Um campo da anotação tipada, numa linha da grade de propriedades (a tabela ocupa
- * a largura toda). Pendência no campo: estado inválido e o motivo embaixo.
+ * A field of the typed annotation, in a row of the properties grid (the table takes
+ * the full width). Pending item on the field: invalid state and the reason below.
  */
 export function TypedField({
   field,
@@ -56,9 +56,9 @@ export function TypedField({
     (i) => i.key === field.key && i.rowId === undefined && i.code !== 'unknown-field',
   );
   const label = fieldLabel(field);
-  // Texto livre: o campo da anotação aceita várias linhas; a célula de tabela, não.
+  // Free text: the annotation field accepts several lines; the table cell does not.
   const Editor = field.type === 'string' ? StringEditor : SimpleEditor;
-  // `linkedRef`: alvos do `ref` irmão na lista, gravados junto com o texto.
+  // `linkedRef`: targets of the sibling `ref` in the list, saved together with the text.
   const linkedKey = field.type === 'string' ? field.linkedRef : undefined;
   const targets =
     linkedKey === undefined ? null : linkedFieldTargets(project, annotation, linkedKey);
@@ -87,7 +87,7 @@ export function TypedField({
       focusKey={field.key}
       fieldKey={field.key}
       menu={
-        // Na revisão a coluna do rótulo é do marcador da mudança: sem o menu.
+        // In the review the label column belongs to the change marker: no menu.
         ext ? undefined : (
           <ActionMenu
             label={t('cite.fieldActions', { name: label })}
@@ -126,7 +126,7 @@ export function TypedField({
   );
 }
 
-/** Ctrl+B (Cmd+B no macOS): escolher o alvo da referência em foco. */
+/** Ctrl+B (Cmd+B on macOS): choose the target of the focused reference. */
 function isPickKey(e: KeyboardEvent): boolean {
   return (
     e.key.toLowerCase() === 'b' && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey
@@ -134,9 +134,9 @@ function isPickKey(e: KeyboardEvent): boolean {
 }
 
 /**
- * ReferenceField do DS 2.0: o botão mostra o alvo (ou "Escolher…", ou a referência
- * quebrada) e abre o seletor (também com Ctrl+B); Ctrl+clique ou ↗ vai até o alvo;
- * ✕ limpa.
+ * DS 2.0 ReferenceField: the button shows the target (or "Choose…", or the broken
+ * reference) and opens the picker (also with Ctrl+B); Ctrl+click or ↗ goes to the target;
+ * ✕ clears.
  */
 function RefField({
   id,
@@ -164,7 +164,8 @@ function RefField({
   const layer = target
     ? projectIndex(project).layers.get(target.annotation.layerId)
     : undefined;
-  // O ícone de seta já marca a referência no campo; a seta em texto fica só na dica (O2).
+  // The arrow icon already marks the reference in the field; the text arrow stays only in the
+  // tooltip (O2).
   const tip = hasValue && !broken ? `→ ${text}` : text;
 
   const goTo = () => {
@@ -183,11 +184,11 @@ function RefField({
         open();
       }}
     >
-      {/* O valor pode sair cortado no campo ("→ User.no…"): o texto inteiro vai no Tooltip. */}
+      {/* The value may be cut off in the field ("→ User.no…"): the full text goes in the Tooltip. */}
       <Tooltip
         label={`${tip}${layer ? ` (${layer.name})` : ''} · ${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
       >
-        {/* Exceção ao Button: campo de referência (cara de select) (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
+        {/* Exception to Button: reference field (looks like a select) (docs/DESIGN-SYSTEM.md, "Loose buttons") */}
         <button
           ref={button}
           id={id}
@@ -239,7 +240,8 @@ function RefField({
           project={project}
           annotation={annotation}
           field={field}
-          // O seletor devolve o foco ao campo ao fechar (com ele aberto, o campo é inerte).
+          // The picker returns the focus to the field on close (while it is open, the field is
+          // inert).
           returnFocus={() => button.current}
           onClose={() => setPicking(false)}
           onPick={(picked, andGo) => {

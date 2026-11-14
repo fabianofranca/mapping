@@ -21,8 +21,8 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe('canal de preview (B9, P8)', () => {
-  it('selo PREVIEW sempre na barra, mesmo com a faixa dispensada', async () => {
+describe('preview channel (B9, P8)', () => {
+  it('PREVIEW badge always in the bar, even with the banner dismissed', async () => {
     render(
       <>
         <PreviewBadge />
@@ -35,18 +35,18 @@ describe('canal de preview (B9, P8)', () => {
     expect(screen.getByText(t('pwa.previewBadge'))).toBeTruthy();
   });
 
-  it('a faixa mostra o aviso e pode ser dispensada na sessão', async () => {
+  it('the banner shows the notice and can be dismissed for the session', async () => {
     const { rerender } = render(<PreviewBanner />);
     expect(screen.getByRole('note').textContent).toContain(t('pwa.previewBanner'));
     await userEvent.click(screen.getByRole('button', { name: t('editor.dismiss') }));
     expect(previewBannerDismissed.value).toBe(true);
     expect(screen.queryByRole('note')).toBeNull();
-    // Montar de novo (ex.: voltar à tela inicial) mantém dispensada.
+    // Mounting again (e.g. going back to the home screen) keeps it dismissed.
     rerender(<PreviewBanner />);
     expect(screen.queryByRole('note')).toBeNull();
   });
 
-  it('na versão principal não aparece nada', () => {
+  it('on the main version nothing shows up', () => {
     channel.isPreview = false;
     render(
       <>

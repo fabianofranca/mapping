@@ -1,6 +1,6 @@
-// Imagens remotas do visualizador embutível (RI4, decisão 9): desligadas por padrão (nada é
-// pedido à rede); ligadas, valem a política de URL e a função `allowOrigin` do hospedeiro
-// (padrão: recusar tudo). A rede é um `Image` falso que registra cada `src` pedido.
+// Remote images of the embeddable viewer (RI4, decision 9): off by default (nothing is
+// requested from the network); on, the URL policy and the host `allowOrigin` function apply
+// (default: refuse everything). The network is a fake `Image` that records each requested `src`.
 import Konva from 'konva';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -13,6 +13,7 @@ import { type Viewer, type ViewerOptions, createViewer } from '../../viewer';
 
 beforeAll(() => installFakeCanvas());
 
+// pt-BR kept: shared fixture data (folder, type ids and field names) used by the viewer tests
 const ROOT = join(__dirname, '../../tests/fixtures/pessoas');
 
 function listDisk(dir: string): string[] {
@@ -27,8 +28,8 @@ const library = loadLibrary(
   listDisk(ROOT).map((path) => ({ path, text: readFileSync(join(ROOT, path), 'utf8') })),
 );
 
-const CDN = 'https://cdn.exemplo.com';
-const OTHER = 'https://outra.exemplo.com';
+const CDN = 'https://cdn.example.com';
+const OTHER = 'https://other.example.com';
 
 function screenOf(photos: readonly string[]): Screen {
   return {
@@ -41,12 +42,12 @@ function screenOf(photos: readonly string[]): Screen {
       id: `i${index}`,
       typeId: 'avatar',
       box: { x: 0, y: index * 100, width: 220, height: 56 },
-      values: { nome: `Pessoa ${index}`, foto },
+      values: { nome: `Person ${index}`, foto },
     })),
   };
 }
 
-/** `Image` falso: guarda quem foi criado e o `src` que recebeu (é o "pedido à rede"). */
+/** Fake `Image`: keeps who was created and the `src` it received (it is the "network request"). */
 class FakeImage {
   static created: FakeImage[] = [];
   onload: (() => void) | null = null;
@@ -96,8 +97,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('imagens remotas do visualizador', () => {
-  it('desligadas por padrão: nenhuma imagem é criada nem pedida', () => {
+describe('remote images of the viewer', () => {
+  it('off by default: no image is created or requested', () => {
     vi.stubGlobal('Image', FakeImage);
     const allowOrigin = vi.fn(() => true);
     make({ allowOrigin }, [`${CDN}/a.png`]);
@@ -106,14 +107,14 @@ describe('imagens remotas do visualizador', () => {
     expect(konvaImages()).toEqual([]);
   });
 
-  it('ligadas sem allowOrigin: recusa tudo e desenha o reservado', () => {
+  it('on without allowOrigin: refuses everything and draws the placeholder', () => {
     vi.stubGlobal('Image', FakeImage);
     make({ remoteImages: true }, [`${CDN}/a.png`, `${OTHER}/b.png`]);
     expect(FakeImage.requested()).toEqual([]);
     expect(konvaImages()).toEqual([]);
   });
 
-  it('ligadas com allowOrigin: só pede as origens aceitas', () => {
+  it('on with allowOrigin: only requests the accepted origins', () => {
     vi.stubGlobal('Image', FakeImage);
     const allowOrigin = vi.fn((origin: string) => origin === CDN);
     make({ remoteImages: true, allowOrigin }, [`${CDN}/a.png`, `${OTHER}/b.png`]);
@@ -125,28 +126,28 @@ describe('imagens remotas do visualizador', () => {
     expect(image?.referrerPolicy).toBe('no-referrer');
   });
 
-  it('a política vem antes: http, rede local, credenciais e lixo nem chegam ao allowOrigin', () => {
+  it('the policy comes first: http, local network, credentials and garbage never reach allowOrigin', () => {
     vi.stubGlobal('Image', FakeImage);
     const allowOrigin = vi.fn(() => true);
     make({ remoteImages: true, allowOrigin }, [
-      'http://cdn.exemplo.com/a.png',
+      'http://cdn.example.com/a.png',
       'https://localhost/a.png',
       'https://192.168.0.10/a.png',
-      'https://user:senha@cdn.exemplo.com/a.png',
+      'https://user:secret@cdn.example.com/a.png',
       'javascript:alert(1)',
-      'não é url',
+      'not a url',
     ]);
     expect(allowOrigin).not.toHaveBeenCalled();
     expect(FakeImage.requested()).toEqual([]);
   });
 
-  it('allowOrigin que lança equivale a recusar', () => {
+  it('an allowOrigin that throws is the same as refusing', () => {
     vi.stubGlobal('Image', FakeImage);
     make(
       {
         remoteImages: true,
         allowOrigin: () => {
-          throw new Error('falhou');
+          throw new Error('failed');
         },
       },
       [`${CDN}/a.png`],
@@ -154,19 +155,19 @@ describe('imagens remotas do visualizador', () => {
     expect(FakeImage.requested()).toEqual([]);
   });
 
-  it('a imagem que termina de carregar entra no desenho da instância', () => {
+  it('the image that finishes loading enters the instance drawing', () => {
     vi.stubGlobal('Image', FakeImage);
     make({ remoteImages: true, allowOrigin: () => true }, [`${CDN}/a.png`]);
     expect(konvaImages()).toEqual([]);
     const [image] = FakeImage.created;
-    if (!image) throw new Error('a imagem não foi pedida');
+    if (!image) throw new Error('the image was not requested');
     image.naturalWidth = 64;
     image.naturalHeight = 64;
     image.onload?.();
     return vi.waitFor(() => expect(konvaImages()).toHaveLength(1));
   });
 
-  it('falha de carga mantém o reservado e não pede de novo', () => {
+  it('a load failure keeps the placeholder and does not request again', () => {
     vi.stubGlobal('Image', FakeImage);
     const viewer = make({ remoteImages: true, allowOrigin: () => true }, [
       `${CDN}/a.png`,
@@ -177,12 +178,12 @@ describe('imagens remotas do visualizador', () => {
     expect(FakeImage.requested()).toEqual([`${CDN}/a.png`]);
   });
 
-  it('com mais URLs distintas que o cache (64), não entra em recarga contínua', async () => {
+  it('with more distinct URLs than the cache (64), it does not enter continuous reloading', async () => {
     vi.stubGlobal('Image', FakeImage);
     const urls = Array.from({ length: 70 }, (_, i) => `${CDN}/p${i}.png`);
     make({ remoteImages: true, allowOrigin: () => true }, urls);
     const loaded = new Set<FakeImage>();
-    // Termina de carregar tudo o que foi pedido, rodada a rodada, até não haver mais pedidos.
+    // Finishes loading everything that was requested, round by round, until there are no more requests.
     for (let round = 0; round < 40; round += 1) {
       const waiting = FakeImage.created.filter(
         (image) => image.src !== '' && !loaded.has(image),
@@ -199,7 +200,7 @@ describe('imagens remotas do visualizador', () => {
     expect(FakeImage.requested()).toHaveLength(70);
   });
 
-  it('dispose cancela o que está em andamento', () => {
+  it('dispose cancels what is in progress', () => {
     vi.stubGlobal('Image', FakeImage);
     const viewer = make({ remoteImages: true, allowOrigin: () => true }, [
       `${CDN}/a.png`,

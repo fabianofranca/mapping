@@ -35,13 +35,13 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe('faixa de consentimento de imagens remotas', () => {
-  it('sem origens pendentes, não aparece', () => {
+describe('remote images consent banner', () => {
+  it('without pending origins, it does not appear', () => {
     renderBanner();
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('lista as origens por extenso, marcando http e rede local, e não permite sozinha', () => {
+  it('lists the origins in full, marking http and local network, and does not allow by itself', () => {
     pending.value = [
       { origin: 'https://cdn.a.com', local: false, insecure: false },
       { origin: 'http://b.com', local: false, insecure: true },
@@ -58,7 +58,7 @@ describe('faixa de consentimento de imagens remotas', () => {
     expect(allowedOrigins.value).toEqual([]);
   });
 
-  it('Permitir estas grava as origens neste navegador', async () => {
+  it('Allow these saves the origins in this browser', async () => {
     const user = userEvent.setup();
     pending.value = [
       { origin: 'https://a.com', local: false, insecure: false },
@@ -69,7 +69,7 @@ describe('faixa de consentimento de imagens remotas', () => {
     expect(allowedOrigins.value).toEqual(['https://a.com', 'https://b.com']);
   });
 
-  it('Agora não dispensa só na sessão, sem gravar permissão', async () => {
+  it('Not now dismisses only for the session, without saving a permission', async () => {
     const user = userEvent.setup();
     pending.value = [{ origin: 'https://a.com', local: false, insecure: false }];
     renderBanner();
@@ -81,12 +81,12 @@ describe('faixa de consentimento de imagens remotas', () => {
   });
 });
 
-// NE1 (#538, item 3): fechar a faixa devolve o foco a quem o tinha quando ela apareceu.
-describe('foco ao fechar a faixa de consentimento', () => {
+// NE1 (#538, item 3): closing the banner returns the focus to whoever had it when it appeared.
+describe('focus when closing the consent banner', () => {
   let field: HTMLInputElement;
   let canvas: HTMLElement;
 
-  /** O campo já tem o foco quando a faixa aparece (o caso do R15.3). */
+  /** The field already has the focus when the banner appears (the R15.3 case). */
   function appear(origin = 'https://a.com') {
     renderBanner();
     field.focus();
@@ -98,7 +98,7 @@ describe('foco ao fechar a faixa de consentimento', () => {
   let stopFilter: () => void;
 
   beforeEach(() => {
-    // Como o derivado real: origem dispensada ou permitida sai da lista de pendentes.
+    // Like the real derived state: a dismissed or allowed origin leaves the pending list.
     stopFilter = effect(() => {
       const dismissed = dismissedOrigins.value;
       const allowed = allowedOrigins.value;
@@ -119,7 +119,7 @@ describe('foco ao fechar a faixa de consentimento', () => {
   });
 
   it.each(['imageConsent.dismiss', 'imageConsent.allow'] as const)(
-    '%s devolve o foco ao campo, nunca ao body',
+    '%s returns the focus to the field, never to the body',
     async (key) => {
       const user = userEvent.setup();
       for (let i = 0; i < 3; i += 1) {
@@ -134,7 +134,7 @@ describe('foco ao fechar a faixa de consentimento', () => {
     },
   );
 
-  it('sem o campo no DOM, o foco vai ao canvas', async () => {
+  it('without the field in the DOM, the focus goes to the canvas', async () => {
     const user = userEvent.setup();
     appear();
     field.remove();
@@ -142,17 +142,17 @@ describe('foco ao fechar a faixa de consentimento', () => {
     expect(document.activeElement).toBe(canvas);
   });
 
-  // CL1 (#1144): URL com mais de 60 caracteres troca o campo de `input` para `textarea`
-  // (mesmo id) enquanto a faixa está aberta; o foco volta ao campo novo, não ao canvas.
+  // CL1 (#1144): a URL longer than 60 characters swaps the field from `input` to `textarea`
+  // (same id) while the banner is open; the focus returns to the new field, not to the canvas.
   it.each([
-    ['com o foco já no campo novo', true],
-    ['com o campo novo ainda sem foco', false],
-  ] as const)('campo trocado por um textarea %s', async (_name, focusNew) => {
+    ['with the focus already on the new field', true],
+    ['with the new field still unfocused', false],
+  ] as const)('field swapped for a textarea %s', async (_name, focusNew) => {
     const user = userEvent.setup();
-    field.id = 'url-da-imagem';
+    field.id = 'image-url';
     appear();
     const area = document.createElement('textarea');
-    area.id = 'url-da-imagem';
+    area.id = 'image-url';
     field.replaceWith(area);
     if (focusNew) area.focus();
     await user.click(screen.getByRole('button', { name: t('imageConsent.dismiss') }));
@@ -160,7 +160,7 @@ describe('foco ao fechar a faixa de consentimento', () => {
     area.remove();
   });
 
-  it('se o foco não estava na faixa, nada é mexido', () => {
+  it('if the focus was not on the banner, nothing is touched', () => {
     appear();
     const other = document.createElement('input');
     document.body.append(other);

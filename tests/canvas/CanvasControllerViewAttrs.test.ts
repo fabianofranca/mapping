@@ -8,8 +8,8 @@ import { selectItems } from '../../src/store/ui';
 import { arrowProject } from '../model/arrowFixtures';
 import { editorFor, installFakeCanvas } from './harness';
 
-// `data-viewport` e `data-selection-box` no host do canvas (etapa #842): a vista do stage e a caixa
-// da seleção primária em pixels de tela, só leitura para os testes e2e.
+// `data-viewport` and `data-selection-box` on the canvas host (stage #842): the stage view and the box
+// of the primary selection in screen pixels, read-only for the e2e tests.
 
 describe('CanvasController: data-viewport e data-selection-box', () => {
   const frames: FrameRequestCallback[] = [];
@@ -52,7 +52,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
   const boxOf = (el: HTMLElement) =>
     (el.dataset.selectionBox ?? '').split(' ').map(Number);
 
-  it('publica a vista e a acompanha em pan e zoom', () => {
+  it('publishes the view and follows it on pan and zoom', () => {
     const { container, controller } = setup();
     const first = viewportOf(container);
     expect(first.scale).toBeGreaterThan(0);
@@ -65,13 +65,13 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     controller.destroy();
   });
 
-  it('a caixa de uma marcação do canvas bate com a vista', () => {
+  it('the box of a canvas marking matches the view', () => {
     const { container, controller, ui } = setup();
     selectItems(ui, [{ kind: 'marking', id: 'H' }]);
     flush();
     const v = viewportOf(container);
     const [l, t, w, h] = boxOf(container);
-    // H: (400,1300,200,100) no canvas
+    // H: (400,1300,200,100) on the canvas
     expect(l).toBeCloseTo(400 * v.scale + v.x, 1);
     expect(t).toBeCloseTo(1300 * v.scale + v.y, 1);
     expect(w).toBeCloseTo(200 * v.scale, 1);
@@ -79,13 +79,13 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     controller.destroy();
   });
 
-  it('a caixa de uma marcação dentro de um container soma a colocação dele', () => {
+  it('the box of a marking inside a container adds its placement', () => {
     const { container, controller, ui } = setup();
     selectItems(ui, [{ kind: 'marking', id: 'b1' }]);
     flush();
     const v = viewportOf(container);
     const [l, t, w, h] = boxOf(container);
-    // b1 no container B (2000,0, escala 2): canvas (2100,100,200,200)
+    // b1 in container B (2000,0, scale 2): canvas (2100,100,200,200)
     expect(l).toBeCloseTo(2100 * v.scale + v.x, 1);
     expect(t).toBeCloseTo(100 * v.scale + v.y, 1);
     expect(w).toBeCloseTo(200 * v.scale, 1);
@@ -97,7 +97,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     controller.destroy();
   });
 
-  it('a caixa de um container e a de uma flutuante', () => {
+  it('the box of a container and that of a floating one', () => {
     const { container, controller, ui } = setup();
     selectItems(ui, [{ kind: 'image', id: 'B' }]);
     flush();
@@ -114,7 +114,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     controller.destroy();
   });
 
-  it('some sem seleção e com seta selecionada; seleção múltipla usa a primária', () => {
+  it('disappears without selection and with a selected arrow; multiple selection uses the primary one', () => {
     const { container, controller, ui } = setup();
     expect(container.dataset.selectionBox).toBeUndefined();
     selectItems(ui, [{ kind: 'marking', id: 'a1' }]);
@@ -135,7 +135,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     expect(container.dataset.selectionBox).toBeUndefined();
     controller.destroy();
   });
-  it('data-selection acompanha a seleção primária e some sem seleção', () => {
+  it('data-selection follows the primary selection and disappears without selection', () => {
     const { container, controller, ui } = setup();
     expect(container.dataset.selection).toBeUndefined();
     selectItems(ui, [{ kind: 'marking', id: 'a1' }]);
@@ -164,7 +164,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
         }),
     );
 
-  it('data-arrow-handles: só com a seta selecionada, center no meio e acompanha o zoom', () => {
+  it('data-arrow-handles: only with the arrow selected, center in the middle and follows the zoom', () => {
     const { container, controller, ui, store } = setup();
     expect(container.dataset.arrowHandles).toBeUndefined();
     selectItems(ui, [{ kind: 'arrow', id: 'r1' }]);
@@ -187,7 +187,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     controller.destroy();
   });
 
-  it('data-arrow-handles some com Mostrar setas desligado', () => {
+  it('data-arrow-handles disappears with Show arrows off', () => {
     const { container, controller, ui } = setup();
     selectItems(ui, [{ kind: 'arrow', id: 'r1' }]);
     flush();
@@ -201,7 +201,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     controller.destroy();
   });
 
-  it('data-container-boxes traz as colocações e não muda com zoom nem pan', () => {
+  it('data-container-boxes brings the placements and does not change with zoom nor pan', () => {
     const { container, controller } = setup();
     const text = container.dataset.containerBoxes ?? '';
     const b = text.split(';').find((e) => e.startsWith('B '));
@@ -214,7 +214,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     controller.destroy();
   });
 
-  it('data-container-boxes se refaz ao redimensionar um container', () => {
+  it('data-container-boxes is rebuilt when resizing a container', () => {
     const { container, controller, store } = setup();
     const before = container.dataset.containerBoxes;
     store.apply((p) => moveContainer(p, 'B', 3000, 0));

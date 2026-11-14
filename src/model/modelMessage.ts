@@ -1,23 +1,24 @@
-// Mensagem do modelo para a interface: código + parâmetros (a interface traduz por `t()`) e o
-// texto em pt-BR de sempre (o que o MCP e os testes do modelo continuam lendo). Sem DOM.
+// Model message for the interface: code + parameters (the interface translates through `t()`)
+// and the default English text (what the MCP and the model tests keep reading). No DOM.
 
 export interface ModelMessage {
-  /** Identifica a mensagem; `'raw'` = sem tradução, vale só o `text`. */
+  /** Identifies the message; `'raw'` = no translation, only the `text` counts. */
   readonly code: string;
-  /** Valores que entram no texto traduzido, por nome (`{label}`). */
+  /** Values that go into the translated text, by name (`{label}`). */
   readonly params: Readonly<Record<string, string | number>>;
-  /** Texto em pt-BR (idêntico ao que o modelo devolvia como `string`). */
+  /** Default English text (identical to what the model used to return as a `string`). */
   readonly text: string;
   /**
-   * Mensagem de dentro (o motivo de outro módulo): a interface a traduz e a põe em `{reason}`.
-   * Regra: com `detail`, `params` não leva `reason` (o texto de dentro mora só aqui).
+   * Inner message (the reason from another module): the interface translates it and puts it in
+   * `{reason}`. Rule: with `detail`, `params` does not carry `reason` (the inner text lives only
+   * here).
    */
   readonly detail?: ModelMessage;
 }
 
 export const RAW_MESSAGE_CODE = 'raw';
 
-/** Mensagem com código e parâmetros; `text` é o pt-BR já montado. */
+/** Message with code and parameters; `text` is the already assembled English text. */
 export function modelMessage(
   code: string,
   params: Readonly<Record<string, string | number>>,
@@ -27,7 +28,7 @@ export function modelMessage(
   return detail === undefined ? { code, params, text } : { code, params, text, detail };
 }
 
-/** Um problema de um parser (componente, ícones): caminho, texto pt-BR e o código que o traduz. */
+/** A parser issue (component, icons): path, English text and the code that translates it. */
 export interface IssueLike {
   readonly path: string;
   readonly message: string;
@@ -36,11 +37,11 @@ export interface IssueLike {
 }
 
 /**
- * O problema do parser como pedaços de uma mensagem de fora: `at` é o caminho com `": "`
- * (vazio sem caminho), `reason` o texto pt-BR e `detail` o motivo com código (quando há), que a
- * interface traduz e põe no lugar de `{reason}`. `reasonParam` é o que entra nos `params`:
- * `{ reason }` sem `detail` e `{}` com `detail` (a regra de `ModelMessage.detail`); `reason`
- * segue servindo para montar o `text` pt-BR.
+ * The parser issue as pieces of an outer message: `at` is the path with `": "` (empty without
+ * a path), `reason` the English text and `detail` the reason with a code (when there is one),
+ * which the interface translates and puts in place of `{reason}`. `reasonParam` is what goes
+ * into the `params`: `{ reason }` without `detail` and `{}` with `detail` (the rule of
+ * `ModelMessage.detail`); `reason` still serves to assemble the English `text`.
  */
 export function issueParts(issue: IssueLike): {
   readonly at: string;
@@ -60,7 +61,7 @@ export function issueParts(issue: IssueLike): {
   };
 }
 
-/** Mensagem sem tradução (vinda do motor, de um parser ou de texto livre): segue em texto. */
+/** Message without translation (from the engine, a parser or free text): stays as text. */
 export function rawMessage(text: string): ModelMessage {
   return { code: RAW_MESSAGE_CODE, params: {}, text };
 }

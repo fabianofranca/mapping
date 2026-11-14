@@ -16,39 +16,46 @@ import { findById } from '../model/project';
 import type { ActionResult, ProjectStore } from './history';
 import { openPerspectiveIn, type PerspectiveStateHandle } from './perspectives';
 
-// Ações das perspectivas (etapa #659, PE2). Cada uma é uma entrada do desfazer (`store.apply`),
-// menos `setPerspectiveLocal`, que mexe em onde a perspectiva mora (arquivo ou navegador) e não
-// no projeto. As "Para todos" e as "Só eu" vivem juntas em `project.perspectives`; o Quem vê é o
-// conjunto `localIds` do estado.
+// Perspective actions (stage #659, PE2). Each one is an undo entry (`store.apply`),
+// except `setPerspectiveLocal`, which changes where the perspective lives (file or browser) and not
+// the project. The "For everyone" and the "Only me" ones live together in `project.perspectives`;
+// "Who sees" is the
+// `localIds` set of the state.
 
-/** De onde a perspectiva nova começa: a Principal (`null`), vazia ou a cópia de uma (por id). */
+/**
+ * Where the new perspective starts from: the Main one (`null`), an empty one or a copy of one (by
+ * id).
+ */
 export type NewPerspectiveStart = null | 'empty' | string;
 
 export interface NewPerspectiveArgs {
   readonly name: string;
   readonly startFrom: NewPerspectiveStart;
-  /** `true` = "Só eu" (fica no navegador); `false` = "Para todos" (vai no `mapping.json`). */
+  /**
+   * `true` = "Only me" (stays in the browser); `false` = "For everyone" (goes in the
+   * `mapping.json`).
+   */
   readonly local: boolean;
   readonly hiddenLayers?: readonly string[];
 }
 
 export interface PerspectiveActions {
-  /** Cria e devolve o id. `local` sem IndexedDB falha com `local-unavailable`. */
+  /** Creates and returns the id. `local` without IndexedDB fails with `local-unavailable`. */
   createPerspective(args: NewPerspectiveArgs): ActionResult<string>;
   renamePerspective(id: string, name: string): ActionResult;
-  /** A cópia herda o Quem vê da original. Devolve o id da cópia. */
+  /** The copy inherits the original's Who sees. Returns the copy's id. */
   duplicatePerspective(id: string, name: string): ActionResult<string>;
   removePerspective(id: string): ActionResult;
-  /** Envia raízes; a fonte é a perspectiva aberta (ou a Principal). */
+  /** Sends roots; the source is the open perspective (or the Main one). */
   sendRootsToPerspective(targetId: string, rootIds: readonly string[]): ActionResult;
   removeRootsFromPerspective(id: string, rootIds: readonly string[]): ActionResult;
   setPerspectiveHiddenLayers(id: string, layerIds: readonly string[]): ActionResult;
-  /** Tira a marca "Veio de…" da raiz (as chegadas da última operação também). */
+  /** Removes the "Came from…" mark from the root (the arrivals of the last operation too). */
   dismissArrival(rootId: string): ActionResult;
   /**
-   * Quem vê: `local = false` leva ao `mapping.json` (espera a gravação) e só então tira do
-   * navegador; `local = true` grava no navegador primeiro e deixa o arquivo ser regravado sem
-   * ela. Não entra no desfazer.
+   * Who sees: `local = false` takes it to the `mapping.json` (waits for the write) and only then
+   * removes it from the browser; `local = true` writes to the browser first and lets the file be
+   * rewritten without it. It does not enter undo.
    */
   setPerspectiveLocal(id: string, local: boolean): Promise<ActionResult>;
 }
@@ -60,7 +67,9 @@ export interface PerspectiveActionDeps {
   readonly setPerspectiveLocal: (id: string, local: boolean) => Promise<ActionResult>;
 }
 
-/** A perspectiva-origem de "Começar de": a Principal, vazia ou uma do projeto (por id). */
+/**
+ * The source perspective of "Start from": the Main one, an empty one or one of the project (by id).
+ */
 function startOf(p: Project, startFrom: NewPerspectiveStart): PerspectiveStart {
   if (startFrom === null || startFrom === 'empty') return startFrom;
   return findById(p.perspectives, startFrom);
@@ -72,8 +81,8 @@ export function createPerspectiveActions(
   const { store, state, newId } = deps;
 
   /**
-   * Cria a perspectiva `id` com o Quem vê dado: o id entra em `localIds` junto com o projeto
-   * (no mesmo lote), para o `mapping.json` nunca chegar a citar uma "Só eu".
+   * Creates the perspective `id` with the given Who sees: the id enters `localIds` together with
+   * the project (in the same batch), so the `mapping.json` never ends up citing an "Only me".
    */
   const applyNew = (
     id: string,

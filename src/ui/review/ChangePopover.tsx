@@ -35,24 +35,24 @@ import { RevisedBefore } from './RevisedBefore';
 import { replaceChangeOf } from './ReviewCanvasControls';
 import { useDecide, useReviewNames } from './useReview';
 
-// Conteúdo do popover de um marcador (HANDOFF-REVIEW-DETAILS 2.1 e 5.3, fases 9.5 e 9.6):
-// título com o tipo e o campo, os valores (o outro lado primeiro; em conflito, Atual, Antes
-// e Depois), a ajuda do efeito e o rodapé com a decisão do campo (Aceitar, Rejeitar,
-// Limpar; em conflito, Sobrescrever e Manter atual), a nota da mudança e Comparar. Só
-// existe aberto: o painel desenha os marcadores, nunca popovers fechados.
+// Content of a marker's popover (HANDOFF-REVIEW-DETAILS 2.1 and 5.3, phases 9.5 and 9.6):
+// title with the kind and the field, the values (the other side first; in conflict, Current,
+// Before and After), the effect help and the footer with the field's decision (Accept, Reject,
+// Clear; in conflict, Overwrite and Keep current), the change note and Compare. It only
+// exists open: the panel draws the markers, never closed popovers.
 
-/** O que um marcador representa: uma mudança, ou um campo da entidade criada ou removida. */
+/** What a marker represents: a change, or a field of the created or removed entity. */
 export interface MarkSubject {
   readonly change: Change;
-  /** Campo mostrado: o da mudança, um campo da entidade (parte) ou `''` (a entidade). */
+  /** Field shown: the change's, a field of the entity (part) or `''` (the entity). */
   readonly field: string;
-  /** Campo de uma entidade criada ou removida: sem decisão própria. */
+  /** Field of a created or removed entity: no decision of its own. */
   readonly part: boolean;
-  /** Na parte: o valor do campo na entidade mostrada, na forma de `from`/`to`. */
+  /** In the part: the field's value in the entity shown, in the form of `from`/`to`. */
   readonly value?: JsonValue;
 }
 
-/** Linhas do corpo em conflito: Atual, Antes e Depois (as duas últimas só quando existem). */
+/** Body rows in conflict: Current, Before and After (the last two only when they exist). */
 export function diffRows(
   names: ReviewNames,
   c: Change,
@@ -83,13 +83,13 @@ export function diffRows(
   return rows;
 }
 
-/** Até quantos caracteres (ou linhas) um valor aparece inteiro antes do "Ver tudo". */
+/** Up to how many characters (or lines) a value shows in full before "Show all". */
 const LONG_TEXT = 240;
 const LONG_LINES = 6;
-/** Até quantas linhas de uma tabela aparecem antes do "Ver tudo". */
+/** Up to how many rows of a table show before "Show all". */
 const TABLE_ROWS = 5;
 
-/** Tipo do marcador: o da mudança; num par livre, novo ou removido pelo lado vazio. */
+/** Marker kind: the change's; in a free pair, new or removed by the empty side. */
 export function markType(subject: MarkSubject): ChangeType {
   const c = subject.change;
   if (c.kind === 'update' && c.field?.startsWith(ENTRIES_FIELD_PREFIX)) {
@@ -99,24 +99,24 @@ export function markType(subject: MarkSubject): ChangeType {
   return changeType(c);
 }
 
-/** Glifo do tipo (o mesmo do `ChangeKind`). */
+/** Glyph of the kind (the same as `ChangeKind`). */
 export function markGlyph(type: ChangeType): IconName {
   return CHANGE_KIND_ICONS[type];
 }
 
-/** A mudança vista como a alteração de um campo (para títulos e valores de uma parte). */
+/** The change seen as the alteration of a field (for the titles and values of a part). */
 function asField(subject: MarkSubject): Change {
   const { change, field, value } = subject;
   if (!subject.part) return change;
   return { ...change, kind: 'update', field, from: null, to: value ?? null };
 }
 
-/** Nome do campo ("Nome", "Posição", "estilo · Button"); `''`: o título da mudança. */
+/** Field name ("Name", "Position", "style · Button"); `''`: the change's title. */
 export function markFieldLabel(names: ReviewNames, subject: MarkSubject): string {
   return changeTitle(names, asField(subject));
 }
 
-/** Os dois lados de um marcador: o valor atual e o proposto, em partes. */
+/** The two sides of a marker: the current and the proposed value, in parts. */
 export function markSides(
   names: ReviewNames,
   subject: MarkSubject,
@@ -155,7 +155,7 @@ export function markSides(
   };
 }
 
-/** Tabela dos dois lados: as linhas que saem riscadas no atual, as novas em negrito. */
+/** Table of the two sides: the rows that leave are struck through in the current, new ones bold. */
 function TableSides({
   current,
   proposed,
@@ -212,13 +212,13 @@ function TableSides({
   );
 }
 
-/** O texto passa do limite do popover fechado (o resto vem por "Ver tudo"). */
+/** The text exceeds the closed popover's limit (the rest comes through "Show all"). */
 function isLong(parts: readonly ValuePart[]): boolean {
   const value = partsText(parts);
   return value.length > LONG_TEXT || value.split('\n').length > LONG_LINES;
 }
 
-/** Onde decidir um campo que faz parte da criação ou da remoção da entidade. */
+/** Where to decide a field that is part of the entity's creation or removal. */
 function partHint(c: Change): string {
   const create = c.kind === 'create';
   if (c.entity === 'image') {
@@ -236,7 +236,7 @@ function partHint(c: Change): string {
   return t(create ? 'review.pop.decideOnItem.create' : 'review.pop.decideOnItem.remove');
 }
 
-/** Ajuda do efeito: o conflito, a posição (decidida junto) ou a tabela (um campo só). */
+/** Effect help: the conflict, the position (decided together) or the table (a single field). */
 function effectHint(
   names: ReviewNames,
   subject: MarkSubject,
@@ -255,7 +255,7 @@ function effectHint(
   return null;
 }
 
-/** Título do popover ("Nome · alterado"): o mesmo nome do diálogo. */
+/** Popover title ("Name · changed"): the same name as the dialog. */
 export function popoverTitle(names: ReviewNames, subject: MarkSubject): string {
   return t('review.pop.title', {
     field: markFieldLabel(names, subject),
@@ -263,7 +263,7 @@ export function popoverTitle(names: ReviewNames, subject: MarkSubject): string {
   });
 }
 
-/** Ações do rodapé: a decisão do campo. Em conflito, os rótulos dizem o efeito. */
+/** Footer actions: the field's decision. In conflict, the labels state the effect. */
 function PopoverDecision({
   subject,
   names,
@@ -279,7 +279,7 @@ function PopoverDecision({
   readonly decision: DecisionValue;
   readonly disabled: boolean;
   readonly reasonId: string;
-  /** Rejeitou com o mouse: a nota é sugerida (campo vazio com o foco). */
+  /** Rejected with the mouse: the note is suggested (empty field with focus). */
   readonly onRejectedByMouse: () => void;
 }) {
   const decide = useDecide();
@@ -288,15 +288,15 @@ function PopoverDecision({
   const reject = useRef<HTMLButtonElement>(null);
   const acceptClick = useClickSource();
   const rejectClick = useClickSource();
-  // Decidir pelo teclado pode remontar o popover (o cartão da anotação criada é trocado) e
-  // tirar o botão focado do DOM: o par novo recupera o foco no equivalente, ao montar.
+  // Deciding by keyboard can remount the popover (the created annotation's card is swapped) and
+  // take the focused button out of the DOM: the new pair regains focus on the equivalent, on mount.
   useLayoutEffect(() => {
     const which = review.takeControlFocus(subject.change.id, 'popover');
     if (!which) return;
     const active = document.activeElement;
     if (active && active !== document.body && active.isConnected) return;
     (which === 'accept' ? accept : reject).current?.focus();
-    // Só ao montar.
+    // Only on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const c = subject.change;
@@ -304,8 +304,8 @@ function PopoverDecision({
   const conflict = situation?.conflict === true;
   const apply = (state: DecisionValue) => decide({ level: 'change', id: c.id }, state);
   const conflictId = useId();
-  // Nome = "<texto visível>: <campo>" (WCAG 2.5.3); o estado fica no `aria-pressed` e o
-  // efeito do conflito na descrição, junto com o motivo de estar desabilitado.
+  // Name = "<visible text>: <field>" (WCAG 2.5.3); the state stays in `aria-pressed` and the
+  // conflict's effect in the description, along with the reason it is disabled.
   const acceptShown = conflict ? t('review.pop.overwrite') : t('review.accept');
   const rejectShown = conflict ? t('review.pop.keepCurrent') : t('review.reject');
   const acceptLabel = t('review.decide.named', { text: acceptShown, name: field });
@@ -359,8 +359,8 @@ function PopoverDecision({
         {...rejectClick.handlers}
         onClick={() => {
           const next = decision === 'rejected' ? null : 'rejected';
-          // Tudo que não veio do teclado conta como mouse e sugere a nota; o teclado não
-          // abre a nota (o botão de nota abre) e mantém o foco no Rejeitar.
+          // Everything that did not come from the keyboard counts as mouse and suggests the note;
+          // the keyboard does not open the note (the note button does) and keeps focus on Reject.
           const byKeyboard = rejectClick.takeKeyboard();
           if (byKeyboard) review.requestControlFocus(c.id, 'popover', 'reject');
           apply(next);
@@ -386,7 +386,7 @@ function PopoverDecision({
           variant="ghost"
           aria-keyshortcuts={ariaKeys(REVIEW_KEYS.clear)}
           onClick={() => {
-            // O botão sai do DOM ao limpar: o foco vai ao Aceitar, que fica (nunca ao body).
+            // The button leaves the DOM on clear: focus goes to Accept, which stays (never body).
             accept.current?.focus();
             apply(null);
           }}
@@ -403,7 +403,7 @@ export function ChangePopover({
   close,
 }: {
   readonly subject: MarkSubject;
-  /** Fecha o popover devolvendo o foco ao marcador (o `Popover` passa). */
+  /** Closes the popover returning focus to the marker (the `Popover` passes it). */
   readonly close: () => void;
 }) {
   const { review, ui } = useEditor();
@@ -413,11 +413,11 @@ export function ChangePopover({
   const [noteFocus, setNoteFocus] = useState(0);
   const reasonId = useId();
   const hasNote = useHasNote({ level: 'change', id: subject.change.id });
-  // Rejeitar com o mouse pede a nota sugerida pelo store (`review.requestNote`): a decisão
-  // pode trocar o cartão da anotação criada e remontar o marcador, e o popover novo (que
-  // reabre pelo `OpenMarkContext`) cumpre o pedido no commit que o desenha, com o foco no
-  // campo. Cada instância passa o pedido para o próprio estado; quem o apaga é o fechar
-  // do popover, a nota que sai vazia, outra seleção ou sair da revisão.
+  // Rejecting with the mouse asks for the note suggested by the store (`review.requestNote`): the
+  // decision can swap the created annotation's card and remount the marker, and the new popover
+  // (which reopens through `OpenMarkContext`) fulfils the request in the commit that draws it,
+  // with focus on the field. Each instance hands the request to its own state; what erases it
+  // is the popover's close, a note that leaves empty, another selection or leaving the review.
   const noteAsk = review.noteRequest.value;
   const asked = noteAsk?.changeId === subject.change.id ? noteAsk.seq : 0;
   useLayoutEffect(() => {
@@ -425,7 +425,7 @@ export function ChangePopover({
     setNoteShown(true);
     setNoteFocus((n) => n + 1);
   }, [asked]);
-  // O estado "mudou de decisão" é anunciado (região `status`), venha de onde vier.
+  // The "changed decision" state is announced (`status` region), wherever it comes from.
   const decisionNow = names?.proposal.decisions[subject.change.id]?.state ?? null;
   const lastDecision = useRef(decisionNow);
   const [announce, setAnnounce] = useState('');
@@ -460,7 +460,7 @@ export function ChangePopover({
     c.field === 'file' &&
     replaceChangeOf(p, c.entityId);
 
-  // Tabela: as linhas dos dois lados (uma tabela é um campo só, decidido inteiro).
+  // Table: the rows of both sides (a table is a single field, decided whole).
   const tableValue = c.kind === 'update' && c.field?.startsWith(VALUES_FIELD_PREFIX);
   const fromRows = !subject.part && tableValue ? tableLines(names, c.from) : null;
   const toRows = !subject.part && tableValue ? tableLines(names, c.to) : null;
@@ -484,8 +484,8 @@ export function ChangePopover({
     : rows.some((row) => isLong(row.parts));
   const hint = effectHint(names, subject, situation, table);
 
-  // Decidir só numa proposta aberta e numa mudança ainda não aplicada (o motivo vai no
-  // `aria-describedby` dos botões desabilitados).
+  // Decide only in an open proposal and on a change not yet applied (the reason goes in the
+  // `aria-describedby` of the disabled buttons).
   const open = p.status === 'open';
   const disabled = !open || applied;
   const reason = applied
@@ -493,7 +493,7 @@ export function ChangePopover({
     : p.status === 'superseded' && decision === null
       ? t('review.pop.supersededPending')
       : t('review.closedReason');
-  // Aplicada ou retirada: o popover só mostra a decisão e as datas, sem botões.
+  // Applied or withdrawn: the popover only shows the decision and the dates, without buttons.
   const closedForGood = p.status === 'applied' || p.status === 'withdrawn';
   const appliedAt = p.applied[c.id]?.at;
   const when = (iso: string) => formatFullDate(iso, locale.value);

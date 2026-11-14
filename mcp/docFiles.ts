@@ -12,25 +12,25 @@ import type { LibraryIssue } from '../src/model/library';
 import type { LocalFile, LocalFileChecker } from './codeFiles';
 import { isWithin, type Roots } from './paths';
 
-// Documento de um tipo em repositório externo (etapa #559, PD6). Diferente do código de
-// instanciação (que o servidor nunca lê: `codeFiles.ts`), o documento é um `.md` de
-// documentação que o agente precisa ler, e por isso este é o outro módulo do `mcp/` que lê um
-// arquivo por caminho vindo do projeto. A proteção é a mesma do `codeFiles.ts`: o
-// `LocalFileChecker` confina o caminho (e o real, depois dos links simbólicos) ao diretório de
-// trabalho do cliente antes de qualquer leitura; aqui só entram o tamanho e o `readFile`.
-// Também confere, no `validate_library`, se o documento existe num clone (só metadados).
+// Document of a type in an external repository (stage #559, PD6). Unlike the instantiation code
+// (which the server never reads: `codeFiles.ts`), the document is a documentation `.md` that
+// the agent needs to read, and that is why this is the other `mcp/` module that reads a file
+// by a path that comes from the project. The protection is the same as in `codeFiles.ts`: the
+// `LocalFileChecker` confines the path (and the real one, after symlinks) to the client's
+// working directory before any read; only the size and the `readFile` come in here.
+// It also checks, in `validate_library`, whether the document exists in a clone (metadata only).
 
-/** Um documento maior que isto não é lido (vai só o link). */
+/** A document larger than this is not read (only the link goes). */
 export const MAX_DOC_BYTES = 1024 * 1024;
 
 export interface ExternalDoc extends LocalFile {
-  /** Texto do `.md`; `null` sem clone, sem arquivo, fora do diretório de trabalho ou grande demais. */
+  /** Text of the `.md`; `null` with no clone, no file, outside the working directory or too large. */
   readonly text: string | null;
-  /** Presente quando o arquivo existe mas passa de `MAX_DOC_BYTES`. */
+  /** Present when the file exists but exceeds `MAX_DOC_BYTES`. */
   readonly tooLarge?: true;
 }
 
-/** Caminho do documento relativo à pasta do projeto, pelo `localPath` do clone; `null` se não dá. */
+/** Path of the document relative to the project folder, through the clone's `localPath`; `null` if not possible. */
 export function docLocalPath(p: Project, repoId: string, docPath: string): string | null {
   const localPath = docRepoOf(p, repoId)?.localPath ?? null;
   if (localPath === null || !isValidLocalPath(localPath)) return null;
@@ -38,7 +38,7 @@ export function docLocalPath(p: Project, repoId: string, docPath: string): strin
   return posix.join(localPath, docPath);
 }
 
-/** Lê o documento externo pelo clone do projeto, confinado ao diretório de trabalho. */
+/** Reads the external document through the project's clone, confined to the working directory. */
 export async function readExternalDoc(
   checker: LocalFileChecker,
   workDir: string,
@@ -61,9 +61,9 @@ export async function readExternalDoc(
 }
 
 // ---------------------------------------------------------------------------
-// validate_library: o documento existe no clone?
+// validate_library: does the document exist in the clone?
 
-/** `true` o arquivo está no clone, `false` não está, `null` não há clone para conferir. */
+/** `true` the file is in the clone, `false` it is not, `null` there is no clone to check. */
 export type DocChecker = (repo: string, path: string) => Promise<boolean | null>;
 
 async function fileInside(root: string, file: string): Promise<boolean> {
@@ -75,7 +75,7 @@ async function fileInside(root: string, file: string): Promise<boolean> {
   }
 }
 
-/** Conferência pelos clones do pedido (`docClones`: repositório → pasta dentro das raízes). */
+/** Check through the request's clones (`docClones`: repository → folder inside the roots). */
 export async function docClonesChecker(
   roots: Roots,
   docClones: Readonly<Record<string, string>> | undefined,
@@ -92,7 +92,7 @@ export async function docClonesChecker(
   };
 }
 
-/** Conferência pelo `localPath` do projeto (`plan_library_update`). */
+/** Check through the project's `localPath` (`plan_library_update`). */
 export function projectDocChecker(
   p: Project,
   checker: LocalFileChecker,
@@ -107,13 +107,13 @@ export function projectDocChecker(
 
 const unverified = (repo: string, count: number) =>
   count === 1
-    ? `1 documento de ${repo} não conferido (sem clone)`
-    : `${count} documentos de ${repo} não conferidos (sem clone)`;
+    ? `1 document of ${repo} not checked (no clone)`
+    : `${count} documents of ${repo} not checked (no clone)`;
 
 /**
- * Avisos dos documentos externos da especialização: um por documento que o clone não tem
- * ("documento não encontrado em <repo>"; aviso, e não erro, porque o clone pode estar noutra
- * `ref`) e um por repositório sem clone, com a contagem dos documentos não conferidos.
+ * Warnings for the specialization's external documents: one per document that the clone does
+ * not have ("document not found in <repo>"; a warning, not an error, because the clone may be on
+ * another `ref`) and one per repository without a clone, with the count of unchecked documents.
  */
 export async function externalDocWarnings(
   spec: Spec,
@@ -132,7 +132,7 @@ export async function externalDocWarnings(
         missing.push({
           file,
           path: `layers[${i}].annotationTypes[${j}].doc`,
-          message: `documento não encontrado em ${doc.repo}: ${doc.path}`,
+          message: `document not found in ${doc.repo}: ${doc.path}`,
           severity: 'warning',
         });
       }

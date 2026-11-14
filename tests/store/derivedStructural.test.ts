@@ -1,4 +1,4 @@
-// Tipo estrutural (CF8): a marcação conta como "com desenho" só para o contorno e o nome.
+// Structural type (CF8): the marking counts as "with a drawing" only for the outline and the name.
 import { signal } from '@preact/signals';
 import { describe, expect, it } from 'vitest';
 import {
@@ -26,11 +26,11 @@ function project(structural: boolean): Project {
         id: 'l',
         name: 'L',
         color: '#112233',
-        annotationTypes: [{ id: 'group', name: 'Grupo', structural, fields: [] }],
+        annotationTypes: [{ id: 'group', name: 'Group', structural, fields: [] }],
       },
     ],
   });
-  if (!parsed.ok) throw new Error('spec inválida');
+  if (!parsed.ok) throw new Error('invalid spec');
   const applied = applySpecialization(emptyProject(), parsed.spec, {
     newId: () => 'LS1',
     packageSpecName: 's.spec.json',
@@ -55,16 +55,16 @@ function derivedOf(p: Project) {
   return createEditorDerived(store, createEditorUi(), undefined, sources);
 }
 
-describe('derivado: marcação de tipo estrutural', () => {
-  it('conta como marcação com desenho (contorno só com mouse ou seleção; sem nome)', () => {
+describe('derived: marking of a structural type', () => {
+  it('counts as a marking with a drawing (outline only with mouse or selection; no name)', () => {
     expect([...derivedOf(project(true)).drawnMarkings.value]).toEqual(['M1']);
   });
 
-  it('tipo comum sem componente não conta', () => {
+  it('a plain type without a component does not count', () => {
     expect(derivedOf(project(false)).drawnMarkings.value.size).toBe(0);
   });
 
-  it('não vira pendência nem esmaece a marcação sem anotação', () => {
+  it('does not become an issue nor fade the marking without an annotation', () => {
     const d = derivedOf(project(true));
     expect(d.issues.value.size).toBe(0);
   });

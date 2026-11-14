@@ -11,7 +11,7 @@ import { REVIEW_ERROR_MS } from '../ui/review/useReviewCommands';
 import type { ProposalActionError } from '../store/proposalActions';
 import { SHORTCUT_LABELS } from './shortcuts';
 
-// Botões de ferramenta da barra principal e da barra dos breadcrumbs.
+// Tool buttons of the main bar and of the breadcrumbs bar.
 
 /** Navegar | Desenhar. */
 export function ModeButtons() {
@@ -52,7 +52,7 @@ export function AddImagesButton({
   );
 }
 
-/** Novo container: ao lado de "Adicionar imagens". */
+/** New container: next to "Add images". */
 export function AddContainerButton({ onAdd }: { readonly onAdd: () => void }) {
   const { store } = useEditor();
   return (
@@ -67,9 +67,9 @@ export function AddContainerButton({ onAdd }: { readonly onAdd: () => void }) {
 }
 
 /**
- * Comentar (decisão 25), ao lado de Novo container: liga os pinos e arma um clique no canvas (num
- * item, a conversa fica no item; num lugar vazio, num ponto). Desabilitado no somente leitura, na
- * revisão e no modo visualização.
+ * Comment (decision 25), next to New container: turns the pins on and arms a click on the canvas
+ * (on an item, the thread stays on the item; on an empty place, on a point). Disabled in read-only,
+ * in review and in view mode.
  */
 export function CommentButton() {
   const { store, ui, review } = useEditor();
@@ -90,8 +90,8 @@ export function CommentButton() {
 }
 
 /**
- * Conversas (decisão 24), na barra do canvas ao lado do Visualizar: liga e desliga os pinos. Desligado,
- * mostra a contagem das conversas que aguardam humano e um ponto se há mensagem não lida.
+ * Threads (decision 24), in the canvas bar next to View: turns the pins on and off. When off,
+ * it shows the count of the threads awaiting a human and a dot if there is an unread message.
  */
 function usePinsState() {
   const { ui, derived } = useEditor();
@@ -128,7 +128,7 @@ export function PinsButton() {
 /** Desfazer e refazer. */
 export function HistoryButtons() {
   const { store, ui } = useEditor();
-  // A gravação da proposta falhou ao desfazer/refazer uma aplicação: o passo foi revertido.
+  // Saving the proposal failed when undoing/redoing an application: the step was reverted.
   const failure = store.linkFailure.value;
   useEffect(() => {
     if (failure) {
@@ -159,7 +159,7 @@ export function HistoryButtons() {
   );
 }
 
-/** Enquadrar tudo: na barra dos breadcrumbs. */
+/** Fit all: in the breadcrumbs bar. */
 export function FitButton() {
   const { canvas } = useEditor();
   return (
@@ -172,7 +172,7 @@ export function FitButton() {
   );
 }
 
-/** Enquadrar seleção: zoom e centro nos itens selecionados; desabilitado sem seleção. */
+/** Fit selection: zoom and center on the selected items; disabled without a selection. */
 export function FitSelectionButton() {
   const { canvas, ui } = useEditor();
   const empty = selectedItems(ui).length === 0;
@@ -187,14 +187,14 @@ export function FitSelectionButton() {
   );
 }
 
-/** Visualizar: liga o modo visualização, o canvas só para ver (Alt+H). */
+/** View: turns on view mode, the canvas just for looking (Alt+H). */
 export function ViewModeButton() {
   const { ui } = useEditor();
   const button = viewModeButton;
   const on = ui.viewMode.value;
   const wasOn = useRef(on);
-  // Ao sair do modo o botão "Mostrar no canvas" fica desabilitado e o painel some: se o foco
-  // estava neles (ou se perdeu no body), vai ao Visualizar.
+  // On leaving the mode the "Show on canvas" button gets disabled and the panel goes away: if the
+  // focus was on them (or got lost on the body), it goes to View.
   useEffect(() => {
     if (wasOn.current && !on) {
       const active = document.activeElement;
@@ -221,9 +221,9 @@ export function ViewModeButton() {
 }
 
 /**
- * O "⋯" da barra do canvas estreita na revisão (BC2): guarda os controles que a barra esconde
- * (Conversas, Visualizar, Mostrar no canvas, Enquadrar tudo e seleção), com as mesmas ações e
- * textos dos botões, e o selo e o ponto das conversas. Só o CSS o mostra.
+ * The "⋯" of the canvas bar narrowed in review (BC2): it holds the controls the bar hides
+ * (Threads, View, Show on canvas, Fit all and selection), with the same actions and
+ * texts as the buttons, and the thread badge and dot. Only the CSS shows it.
  */
 export function OverflowMenu() {
   const { ui, canvas } = useEditor();

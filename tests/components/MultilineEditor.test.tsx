@@ -8,7 +8,7 @@ import { cadastroProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -20,7 +20,7 @@ function setup(text: string) {
     const field = typeOfAnnotation(p, annotation)?.type.fields.find(
       (f) => f.key === 'texto',
     );
-    if (!field) throw new Error('campo texto não existe');
+    if (!field) throw new Error('field texto does not exist');
     return (
       <TypedField
         field={field}
@@ -37,8 +37,8 @@ function setup(text: string) {
 const stored = (h: { project(): Project }) =>
   annotationOf(h.project(), 'AB').values?.texto;
 
-describe('MultilineEditor — valor externo (#956)', () => {
-  it('segue o valor do projeto mudado por fora e o blur não regrava o valor velho', async () => {
+describe('MultilineEditor — external value (#956)', () => {
+  it('follows the project value changed from outside and the blur does not rewrite the old value', async () => {
     const { harness, user } = setup('A\nB');
     const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
     await user.click(area);
@@ -55,7 +55,7 @@ describe('MultilineEditor — valor externo (#956)', () => {
     expect(stored(harness)).toBe('C\nD');
   });
 
-  it('blur sem edição não grava nada', async () => {
+  it('blur without editing saves nothing', async () => {
     const { harness, user } = setup('A\nB');
     const set = vi.spyOn(harness.actions, 'setFieldValue');
     await user.click(screen.getByLabelText('texto'));
@@ -65,8 +65,8 @@ describe('MultilineEditor — valor externo (#956)', () => {
   });
 });
 
-describe('MultilineEditor — foco só ao montar (#955)', () => {
-  it('Shift+Enter: o cursor fica depois do caractere digitado no meio e o foco não volta', async () => {
+describe('MultilineEditor — focus only on mount (#955)', () => {
+  it('Shift+Enter: the cursor stays after the character typed in the middle and the focus does not come back', async () => {
     const { user } = setup('abc');
     const input = screen.getByLabelText('texto');
     await user.click(input);
@@ -79,27 +79,27 @@ describe('MultilineEditor — foco só ao montar (#955)', () => {
     expect(area.selectionStart).toBe(area.value.indexOf('X') + 1);
     expect(area.selectionStart).not.toBe(area.value.length);
 
-    // Sair do campo: renderizar de novo não devolve o foco.
+    // Leaving the field: rendering again does not give the focus back.
     area.blur();
     fireEvent.input(area, { target: { value: `${area.value}Y` } });
     expect(document.activeElement).not.toBe(area);
   });
 });
 
-describe('MultilineEditor — Shift+Enter com texto não confirmado (CE4, #956)', () => {
-  it('digita no campo de uma linha, Shift+Enter e continua: as duas linhas ficam', async () => {
+describe('MultilineEditor — Shift+Enter with unconfirmed text (CE4, #956)', () => {
+  it('types in the single-line field, Shift+Enter and continues: both lines stay', async () => {
     const { user } = setup('');
     const input = screen.getByLabelText('texto');
     await user.click(input);
-    await user.keyboard('Linha 1');
+    await user.keyboard('Line 1');
     await user.keyboard('{Shift>}{Enter}{/Shift}');
-    // O Chrome dispara o change do input que saiu do DOM: o campo de uma linha grava o texto.
+    // Chrome fires the change of the input that left the DOM: the single-line field saves the text.
     act(() => {
       fireEvent.change(input);
     });
-    await user.keyboard('Linha 2');
+    await user.keyboard('Line 2');
     const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
     expect(area.tagName).toBe('TEXTAREA');
-    expect(area.value).toBe('Linha 1\nLinha 2');
+    expect(area.value).toBe('Line 1\nLine 2');
   });
 });

@@ -22,13 +22,13 @@ interface ListViewProps {
   readonly onSelect: (selection: NonNullable<Selection>) => void;
 }
 
-/** Uma linha da tabela: uma anotação de uma marcação. */
+/** One table row: an annotation of a marking. */
 type ListRow =
   | { readonly kind: 'own'; readonly layer: Layer; readonly annotation: Annotation }
-  /** Marcação sem anotação nas camadas visíveis (só com "mostrar sem anotação"). */
+  /** Marking without an annotation in the visible layers (only with "show without annotation"). */
   | { readonly kind: 'empty' };
 
-/** Linhas da marcação, na ordem das camadas. */
+/** Rows of the marking, in layer order. */
 function rowsOf({ sections }: ListedMarking): readonly ListRow[] {
   const rows: ListRow[] = [
     ...sections.flatMap(({ layer, annotations }) =>
@@ -38,7 +38,7 @@ function rowsOf({ sections }: ListedMarking): readonly ListRow[] {
   return rows.length > 0 ? rows : [{ kind: 'empty' }];
 }
 
-/** A etiqueta da camada (bolinha e nome) das tabelas da Lista, das Incompletas e dos Avisos. */
+/** The layer tag (dot and name) of the List, Incomplete and Warnings tables. */
 export function LayerCell({ layer }: { readonly layer: Layer }) {
   return (
     <span class="list-layer-tag" style={{ '--layer-color': layer.color }}>
@@ -48,7 +48,7 @@ export function LayerCell({ layer }: { readonly layer: Layer }) {
   );
 }
 
-/** Caminho de pertencimento da marcação, com a seta (se houver) no fim: "Origem › → Destino". */
+/** Membership path of the marking, with the arrow (if any) at the end: "Origin › → Destination". */
 export function markingPathLabel(
   project: Project,
   path: readonly Marking[],
@@ -61,16 +61,16 @@ export function markingPathLabel(
 }
 
 interface MarkingCellProps {
-  /** O texto visível (caminho ou nome). */
+  /** The visible text (path or name). */
   readonly label: string;
-  /** O nome acessível do botão. */
+  /** The button's accessible name. */
   readonly name: string;
   readonly arrow?: boolean;
   readonly current?: boolean;
   readonly needsReview?: boolean;
 }
 
-/** O botão da primeira coluna: a marcação (ou a seta) que a linha descreve. */
+/** The first column's button: the marking (or arrow) that the row describes. */
 export function MarkingCell({
   label,
   name,
@@ -96,7 +96,7 @@ export function MarkingCell({
   );
 }
 
-/** "↳ de Button" e, no vínculo por papel, "↳ de Button (Clique)". */
+/** "↳ of Button" and, in the role link, "↳ of Button (Click)". */
 function linkedText(project: Project, a: Annotation, owner: Annotation): string {
   const name = annotationDisplayName(project, owner);
   const role = roleLabelOf(project, a);
@@ -116,7 +116,7 @@ function AnnotationCell({
   const owner = a.parentAnnotationId
     ? projectIndex(project).annotations.get(a.parentAnnotationId)
     : undefined;
-  // Sem nome nem tipo, mostra só o selo de pendência.
+  // With no name or type, shows only the pending badge.
   const named = a.type !== null || a.name !== null;
   return (
     <>
@@ -131,27 +131,27 @@ function AnnotationCell({
 }
 
 /**
- * Janela Lista (P7): tabela Marcação | Camada | Anotação | Conteúdo, agrupada por
- * imagem, com uma linha por anotação. Escolher uma linha seleciona a marcação. Os
- * filtros são as camadas visíveis (compartilhadas com o canvas e o painel), "marcações
- * sem anotação" e "só incompletas".
+ * List window (P7): table Marking | Layer | Annotation | Content, grouped by
+ * image, with one row per annotation. Choosing a row selects the marking. The
+ * filters are the visible layers (shared with the canvas and the panel), "markings
+ * without annotation" and "incomplete only".
  */
 export function ListView({ onSelect }: ListViewProps) {
-  // Camadas visíveis (a lista respeita esse filtro) e os dados já montados da lista.
+  // Visible layers (the list respects this filter) and the list's already assembled data.
   const { review, ui, derived, layers: layerVisibility } = useEditor();
-  // O projeto à vista, o mesmo de `derived.listing` (na visão Proposto, o "como ficaria").
+  // The project in view, the same as `derived.listing` (in the Proposed view, the "as it would be").
   const project = review.derived.shownProject.value;
   const selection: Selection = ui.selection.value;
   const showEmpty = ui.listShowEmpty.value;
   const incompleteOnly = ui.listIncompleteOnly.value;
   const layers = derived.visibleLayers.value;
   const listing = derived.listing.value;
-  // A seta selecionada destaca a linha dela (os ids de setas e marcações não se repetem).
+  // The selected arrow highlights its row (arrow and marking ids do not repeat).
   const selectedId =
     selection?.kind === 'marking' || selection?.kind === 'arrow' ? selection.id : null;
   const root = useRef<HTMLDivElement>(null);
 
-  // Seleção feita no canvas (ou na árvore): mantém a linha da lista à vista.
+  // Selection made on the canvas (or in the tree): keeps the list row in view.
   useEffect(() => {
     if (!selectedId) return;
     const el = [...(root.current?.querySelectorAll<HTMLElement>('[data-marking]') ?? [])];
@@ -227,7 +227,7 @@ export function ListView({ onSelect }: ListViewProps) {
                 </tr>
                 {markings.flatMap((listed) => {
                   const { marking, path, arrow } = listed;
-                  // Linha de seta: o dono é a seta ("→ Destino", ou o nome dela).
+                  // Arrow row: the owner is the arrow ("→ Destination", or its name).
                   const ownerId = arrow?.id ?? marking.id;
                   const label = arrow
                     ? arrowShort(project, arrow)

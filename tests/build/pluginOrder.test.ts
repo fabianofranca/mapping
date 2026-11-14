@@ -8,10 +8,10 @@ import { verifyCsp } from '../../pwa/csp';
 
 type Bundle = Rollup.OutputBundle;
 
-/** Embute os chunks e o CSS no index.html, como o vite-plugin-singlefile. */
+/** Embeds the chunks and the CSS in index.html, like vite-plugin-singlefile. */
 function inline(bundle: Bundle): void {
   const html = bundle['index.html'];
-  if (html?.type !== 'asset') throw new Error('index.html ausente');
+  if (html?.type !== 'asset') throw new Error('index.html missing');
   let source = String(html.source);
   for (const [name, file] of Object.entries(bundle)) {
     if (name === 'index.html') continue;
@@ -34,7 +34,7 @@ function inline(bundle: Bundle): void {
   html.source = source;
 }
 
-/** Simula o vite-plugin-singlefile: a 2.3.3 embute na fase normal; a 2.3.4, em `order: 'post'`. */
+/** Simulates vite-plugin-singlefile: 2.3.3 embeds in the normal phase; 2.3.4, in `order: 'post'`. */
 function fakeSingleFile(version: '2.3.3' | '2.3.4'): Plugin {
   const hook = (_o: unknown, bundle: Bundle) => inline(bundle);
   return {
@@ -55,7 +55,7 @@ beforeAll(() => {
     join(root, 'index.html'),
     '<!doctype html><html><head><meta name="referrer" content="no-referrer" /></head><body><div id="app"></div><script type="module" src="/src/main.js"></script></body></html>',
   );
-  writeFileSync(join(root, 'src/main.js'), "import './style.css';\nconsole.log('oi');\n");
+  writeFileSync(join(root, 'src/main.js'), "import './style.css';\nconsole.log('hi');\n");
   writeFileSync(join(root, 'src/style.css'), 'body{margin:0}\n');
 });
 
@@ -67,7 +67,7 @@ async function runBuild(version: '2.3.3' | '2.3.4'): Promise<Map<string, string>
     configFile: false,
     logLevel: 'silent',
     base: './',
-    // Mesma lista do vite.config.ts: singlefile, CSP, sw.
+    // Same list as vite.config.ts: singlefile, CSP, sw.
     plugins: [fakeSingleFile(version), contentSecurityPolicy(), serviceWorker('main')],
     build: { write: false, minify: false, cssCodeSplit: false },
   });
@@ -82,14 +82,14 @@ async function runBuild(version: '2.3.3' | '2.3.4'): Promise<Map<string, string>
 }
 
 describe.each(['2.3.3', '2.3.4'] as const)(
-  'ordem dos plugins do build com o singlefile %s',
+  'build plugin order with singlefile %s',
   (version) => {
-    it('o index.html final tem JS e CSS embutidos e a CSP sobre eles, e o sw.js leva o hash desse HTML', async () => {
+    it('the final index.html has embedded JS and CSS and the CSP over them, and sw.js carries the hash of that HTML', async () => {
       const files = await runBuild(version);
       const html = files.get('index.html') ?? '';
       expect(html).not.toMatch(/<script[^>]*\ssrc=/);
       expect(html).not.toMatch(/<link[^>]*rel="stylesheet"/);
-      expect(html).toMatch(/console\.log\(["']oi["']\)/);
+      expect(html).toMatch(/console\.log\(["']hi["']\)/);
       expect(html).toContain('body{margin:0}');
       expect(html).toContain('Content-Security-Policy');
       expect(html).not.toContain('unsafe-inline');
@@ -101,8 +101,8 @@ describe.each(['2.3.3', '2.3.4'] as const)(
   },
 );
 
-describe('hash do sw.js', () => {
-  it('é o mesmo nas duas versões do singlefile', async () => {
+describe('sw.js hash', () => {
+  it('is the same in both singlefile versions', async () => {
     const [a, b] = [await runBuild('2.3.3'), await runBuild('2.3.4')];
     expect(a.get('index.html')).toBe(b.get('index.html'));
     expect(a.get('sw.js')).toBe(b.get('sw.js'));

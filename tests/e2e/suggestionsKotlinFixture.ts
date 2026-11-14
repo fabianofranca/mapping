@@ -20,20 +20,20 @@ import {
 } from '../../src/model';
 import { solidPng } from './png';
 
-// Etapa Sugestões no campo de texto: o projeto "Sugestões Kotlin" (biblioteca Kotlin aplicada e
-// duas data classes) para o roteiro R14 do `docs/TESTING.md`. O zip sai daqui
-// (`scripts/suggestionsKotlin.mjs`) e o teste `tests/examples/suggestionsKotlin.test.ts`
-// confere que `examples/sugestoes-kotlin.zip` está em dia.
+// Text-field Suggestions stage: the "Kotlin Suggestions" project (Kotlin library applied and
+// two data classes) for script R14 of `docs/TESTING.md`. The zip comes from here
+// (`scripts/suggestionsKotlin.mjs`) and the test `tests/examples/suggestionsKotlin.test.ts`
+// checks that `examples/suggestions-kotlin.zip` is up to date.
 
 export const PACKAGE_DIR = 'libraries/kotlin';
 export const NOW = '2026-10-28T12:00:00.000Z';
-/** Data fixa nas entradas do zip: o mesmo conteúdo gera sempre os mesmos bytes. */
+/** Fixed date on the zip entries: the same content always generates the same bytes. */
 const ENTRY_DATE = new Date('2026-10-28T00:00:00Z');
-export const IMAGE_FILE = 'images/telas.png';
-export const NAMES = { user: 'Usuario', address: 'Endereco' } as const;
-export const ANNOTATION_IDS = { user: 'A_USUARIO', address: 'A_ENDERECO' } as const;
+export const IMAGE_FILE = 'images/screens.png';
+export const NAMES = { user: 'User', address: 'Address' } as const;
+export const ANNOTATION_IDS = { user: 'A_USER', address: 'A_ADDRESS' } as const;
 
-/** Todos os arquivos de texto do pacote Kotlin (caminho relativo → texto), ordenados. */
+/** All text files of the Kotlin package (relative path → text), sorted. */
 export function packageTexts(): Map<string, string> {
   const out = new Map<string, string>();
   const walk = (dir: string): void => {
@@ -65,28 +65,28 @@ const PROPERTIES: Record<
 > = {
   user: [
     { name: 'id', type: 'Long' },
-    { name: 'nome', type: 'String' },
+    { name: 'name', type: 'String' },
     { name: 'email', type: 'String?' },
-    { name: 'endereco', type: 'Endereco' },
-    // Tipo vazio: o roteiro R14 o preenche.
-    { name: 'ativo', type: null },
+    { name: 'address', type: 'Address' },
+    // Empty type: script R14 fills it in.
+    { name: 'active', type: null },
   ],
   address: [
-    { name: 'rua', type: 'String' },
-    { name: 'cidade', type: 'String' },
+    { name: 'street', type: 'String' },
+    { name: 'city', type: 'String' },
   ],
 };
 
-/** O projeto: imagem, biblioteca Kotlin aplicada e as data classes `Usuario` e `Endereco`. */
+/** The project: image, applied Kotlin library and the data classes `User` and `Address`. */
 export function project(): Project {
   const spec = loadKotlinSpec();
   const texts = packageTexts();
   let n = 0;
   let p = createProject({
     id: '00000000-0000-4000-8000-000000000e2e',
-    name: 'Sugestões Kotlin',
+    name: 'Kotlin Suggestions',
     now: NOW,
-    firstLayer: { id: 'L1', name: 'Notas', color: '#1e88e5' },
+    firstLayer: { id: 'L1', name: 'Notes', color: '#1e88e5' },
   });
   p = applySpecialization(p, spec, {
     newId: () => `LS${++n}`,
@@ -105,8 +105,8 @@ export function project(): Project {
     ],
   ]);
   for (const [key, name, markingId, x, y] of [
-    ['user', NAMES.user, 'M_USUARIO', 220, 300],
-    ['address', NAMES.address, 'M_ENDERECO', 580, 300],
+    ['user', NAMES.user, 'M_USER', 220, 300],
+    ['address', NAMES.address, 'M_ADDRESS', 580, 300],
   ] as const) {
     const annotationId = ANNOTATION_IDS[key];
     p = addComponentMarking(
@@ -136,7 +136,7 @@ export function project(): Project {
   return p;
 }
 
-/** Os arquivos do zip: `mapping.json`, `specs/` com o pacote Kotlin e a imagem. */
+/** The zip files: `mapping.json`, `specs/` with the Kotlin package and the image. */
 export function files(): Map<string, string | Buffer> {
   const out = new Map<string, string | Buffer>();
   const p = project();
@@ -150,7 +150,7 @@ export function files(): Map<string, string | Buffer> {
   return out;
 }
 
-/** Os bytes de `examples/sugestoes-kotlin.zip` (determinísticos). */
+/** The bytes of `examples/suggestions-kotlin.zip` (deterministic). */
 export async function suggestionsZip(): Promise<Buffer> {
   const all = files();
   const zip = new JSZip();

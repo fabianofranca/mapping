@@ -9,11 +9,12 @@ import { useEditor } from '../EditorContext';
 import { actionErrorText } from './commentsText';
 import { impactText } from './deleteText';
 
-// Apagar uma conversa (decisão 23): direto quando todas as mensagens são da própria pessoa; com o
-// diálogo (alerta) quando há mensagem de outra pessoa ou de agente. Quem usa põe `dialog` na
-// árvore e chama `request(thread)` do menu ⋯. O foco volta ao controle que abriu (o `Dialog`).
-// Se a gravação falha (#959), o erro aparece: no diálogo, que fica aberto, ou, no caminho direto,
-// como aviso no próprio `dialog`. O diálogo só fecha no sucesso.
+// Delete a thread (decision 23): directly when all the messages are the person's own; with the
+// dialog (alert) when there is a message from someone else or from an agent. Whoever uses it
+// puts `dialog` in the tree and calls `request(thread)` from the ⋯ menu. The focus returns to
+// the control that opened (the `Dialog`). If the save fails (#959), the error shows: in the
+// dialog, which stays open, or, on the direct path,
+// as a notice in `dialog` itself. The dialog only closes on success.
 
 export interface DeleteThread {
   readonly request: (thread: Thread) => void;
@@ -24,7 +25,7 @@ export function useDeleteThread(): DeleteThread {
   const { session } = useEditor();
   const [pending, setPending] = useState<Thread | null>(null);
   const [error, setError] = useState<string | null>(null);
-  /** Apaga e devolve se deu certo; o erro, se houve, fica em `error`. */
+  /** Deletes and returns whether it worked; the error, if any, stays in `error`. */
   const run = async (thread: Thread): Promise<boolean> => {
     const result = await session.threadActions.remove(thread.id);
     setError(result.ok ? null : actionErrorText(result.error));

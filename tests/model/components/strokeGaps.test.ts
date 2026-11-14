@@ -1,5 +1,5 @@
-// MF2: a geometria do contorno com vão (`gapOutlines`): o contorno de sempre, com o raio de cada
-// canto, interrompido nos trechos do `Stroke.gaps`; compartilhada pelo Konva e pelo raster.
+// MF2: the geometry of the outline with a gap (`gapOutlines`): the usual outline, with the radius of each
+// corner, interrupted at the runs of `Stroke.gaps`; shared by Konva and by the raster.
 import { describe, expect, it } from 'vitest';
 import { gapOutlines } from '../../../src/model/components/strokeGaps';
 import type { Stroke } from '../../../src/model/components/scene';
@@ -17,7 +17,7 @@ describe('gapOutlines', () => {
   const gapped = stroke({ gaps: [{ side: 'top', from: 20, to: 50 }] });
   const lines = gapOutlines(gapped, 100, 40, 6);
 
-  it('com um vão, o contorno é uma linha aberta só: começa onde o vão termina e termina onde ele começa', () => {
+  it('with one gap, the outline is a single open line: starts where the gap ends and ends where it begins', () => {
     expect(lines).toHaveLength(1);
     const line = lines[0]!;
     expect(near(line[0]!.x, 50) && near(line[0]!.y, 0)).toBe(true);
@@ -25,14 +25,14 @@ describe('gapOutlines', () => {
     expect(near(last.x, 20) && near(last.y, 0)).toBe(true);
   });
 
-  it('nenhum ponto do lado de cima cai dentro do vão', () => {
+  it('no point of the top side falls inside the gap', () => {
     for (const p of lines.flat())
       expect(near(p.y, 0) && p.x > 20 + 1e-6 && p.x < 50 - 1e-6).toBe(false);
   });
 
-  it('os quatro cantos seguem o raio (arcos, não pontas retas)', () => {
+  it('the four corners follow the radius (arcs, not straight tips)', () => {
     const points = lines.flat();
-    // O ponto do arco a 45° do canto inferior direito: (100 - 6 + 6·cos45°, 40 - 6 + 6·sin45°).
+    // The arc point at 45° of the bottom-right corner: (100 - 6 + 6·cos45°, 40 - 6 + 6·sin45°).
     const k = 6 * Math.SQRT1_2;
     const corners = [
       [6 - k, 6 - k],
@@ -44,7 +44,7 @@ describe('gapOutlines', () => {
       expect(
         points.some((p) => Math.abs(p.x - x!) < 0.1 && Math.abs(p.y - y!) < 0.1),
       ).toBe(true);
-    // e nenhum ponto passa do retângulo
+    // and no point goes beyond the rectangle
     for (const p of points) {
       expect(p.x).toBeGreaterThanOrEqual(-1e-6);
       expect(p.y).toBeGreaterThanOrEqual(-1e-6);
@@ -53,7 +53,7 @@ describe('gapOutlines', () => {
     }
   });
 
-  it('dois vãos em lados diferentes dão duas linhas abertas', () => {
+  it('two gaps on different sides give two open lines', () => {
     const two = gapOutlines(
       stroke({
         gaps: [
@@ -68,7 +68,7 @@ describe('gapOutlines', () => {
     expect(two).toHaveLength(2);
   });
 
-  it('o align inside leva o contorno meia largura para dentro', () => {
+  it('the align inside takes the outline half a width inwards', () => {
     const inside = gapOutlines(
       stroke({ align: 'inside', gaps: [{ side: 'top', from: 20, to: 50 }] }),
       100,
@@ -80,7 +80,7 @@ describe('gapOutlines', () => {
     for (const p of top) expect(near(p.y, 1)).toBe(true);
   });
 
-  it('uma pílula (lados retos de tamanho 0) com vão em cima continua uma linha só', () => {
+  it('a pill (straight sides of size 0) with a gap on top is still a single line', () => {
     const pill = gapOutlines(
       stroke({ gaps: [{ side: 'top', from: 30, to: 60 }] }),
       100,
@@ -90,7 +90,7 @@ describe('gapOutlines', () => {
     expect(pill).toHaveLength(1);
   });
 
-  it('sem nenhum trecho cortado, não há linhas (vale o contorno de sempre)', () => {
+  it('without any cut run, there are no lines, the usual outline applies', () => {
     expect(
       gapOutlines(stroke({ gaps: [{ side: 'top', from: 200, to: 300 }] }), 100, 40, 6),
     ).toEqual([]);

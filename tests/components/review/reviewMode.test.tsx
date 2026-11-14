@@ -13,11 +13,11 @@ import { ProposalsWindow } from '../../../src/ui/review/ProposalsWindow';
 import { NEW_IMAGE_PATH, richScenario } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor, type ReviewHarness } from './reviewHarness';
 
-// Modo revisão (HANDOFF-PROPOSALS 5.2, passo 4 da seção 9): a faixa com as quatro ações,
-// os níveis com a decisão de três estados, os filtros e o teclado da lista.
+// Review mode (HANDOFF-PROPOSALS 5.2, step 4 of section 9): the strip with the four actions,
+// the levels with the three-state decision, the filters and the list keyboard.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(() => {
@@ -29,7 +29,7 @@ async function openRich(): Promise<ReviewHarness> {
   const { proposal } = richScenario();
   const h = await openReviewHarness({
     proposals: [{ ...proposal, title: 'Checkout' }],
-    files: { [NEW_IMAGE_PATH]: 'imagem' },
+    files: { [NEW_IMAGE_PATH]: 'image' },
   });
   expect(h.review.open('P1').ok).toBe(true);
   return h;
@@ -37,54 +37,55 @@ async function openRich(): Promise<ReviewHarness> {
 
 const rowOf = (name: string | RegExp) => screen.getByRole('treeitem', { name });
 
-describe('níveis da proposta', () => {
-  it('Proposta → Imagem → Item → Mudança, com a decisão em cada nível', async () => {
+describe('proposal levels', () => {
+  it('Proposal → Image → Item → Change, with the decision at each level', async () => {
     const h = await openRich();
     renderInEditor(h, <ProposalsWindow onHelp={() => {}} />);
+    // pt-BR kept: shared fixture data (item 'Botão') asserted by tests/store and tests/components
     const proposal = rowOf('Checkout');
     expect(proposal.getAttribute('aria-level')).toBe('1');
-    // A imagem nova e o item criado nela, com o selo do tipo.
+    // The new image and the item created in it, with the kind badge.
     const image = rowOf('images/nova.webp');
     expect(image.getAttribute('aria-level')).toBe('2');
-    expect(within(image).getByRole('img', { name: 'Criada' })).toBeTruthy();
+    expect(within(image).getByRole('img', { name: 'Created' })).toBeTruthy();
     expect(rowOf('Botão').getAttribute('aria-level')).toBe('3');
-    // A mudança de posição de M4 com o resumo "antes → depois".
-    const moved = rowOf('Posição');
-    expect(within(moved).getByRole('img', { name: 'Movida' })).toBeTruthy();
+    // The position change of M4 with the "before → after" summary.
+    const moved = rowOf('Position');
+    expect(within(moved).getByRole('img', { name: 'Moved' })).toBeTruthy();
     expect(moved.textContent).toContain('→');
-    expect(within(proposal).getByRole('img', { name: 'Sem decisão' })).toBeTruthy();
+    expect(within(proposal).getByRole('img', { name: 'Undecided' })).toBeTruthy();
   });
 
-  it('decidir uma imagem decide tudo abaixo e a proposta fica parcial', async () => {
+  it('deciding an image decides everything below it and the proposal becomes partial', async () => {
     const h = await openRich();
     renderInEditor(h, <ProposalsWindow onHelp={() => {}} />);
     fireEvent.click(
       within(rowOf('images/nova.webp')).getByRole('button', {
-        name: 'Aceitar images/nova.webp',
+        name: 'Accept images/nova.webp',
       }),
     );
     await waitFor(() =>
       expect(
-        within(rowOf('Checkout')).getByRole('img', { name: /^Parcial: 3 aceitas/ }),
+        within(rowOf('Checkout')).getByRole('img', { name: /^Partial: 3 accepted/ }),
       ).toBeTruthy(),
     );
     expect(
-      within(rowOf('Botão')).getByRole('button', { name: 'Aceita: Botão' }),
+      within(rowOf('Botão')).getByRole('button', { name: 'Accepted: Botão' }),
     ).toBeTruthy();
-    // Apertar o marcado limpa a decisão.
+    // Pressing the marked one clears the decision.
     fireEvent.click(
       within(rowOf('images/nova.webp')).getByRole('button', {
-        name: 'Aceita: images/nova.webp',
+        name: 'Accepted: images/nova.webp',
       }),
     );
     await waitFor(() =>
       expect(
-        within(rowOf('Checkout')).getByRole('img', { name: 'Sem decisão' }),
+        within(rowOf('Checkout')).getByRole('img', { name: 'Undecided' }),
       ).toBeTruthy(),
     );
   });
 
-  it('filtro por tipo mostra só as mudanças dele; Aceitar tudo vira "visíveis"', async () => {
+  it('filter by kind shows only its changes; Accept all becomes "shown"', async () => {
     const h = await openRich();
     renderInEditor(
       h,
@@ -93,22 +94,22 @@ describe('níveis da proposta', () => {
         <ProposalsWindow onHelp={() => {}} />
       </>,
     );
-    expect(screen.getByRole('button', { name: /Aceitar tudo/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /^Filtros/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^Movida/ }));
+    expect(screen.getByRole('button', { name: /Accept all changes/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Moved/ }));
     expect(screen.queryByRole('treeitem', { name: 'images/nova.webp' })).toBeNull();
-    expect(rowOf('Posição')).toBeTruthy();
-    expect(screen.getByText('Filtros ativos')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Aceitar 1 visíveis/ }));
+    expect(rowOf('Position')).toBeTruthy();
+    expect(screen.getByText('Filters on')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Accept 1 shown/ }));
     await waitFor(() => expect(h.review.derived.counts.value.accepted).toBe(1));
-    fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
     expect(rowOf('images/nova.webp')).toBeTruthy();
   });
 
-  it('teclado: setas andam nos níveis; ← e → recolhem e expandem', async () => {
+  it('keyboard: arrows move through the levels; ← and → collapse and expand', async () => {
     const h = await openRich();
     renderInEditor(h, <ProposalsWindow onHelp={() => {}} />);
-    const tree = screen.getByRole('tree', { name: 'Níveis da proposta' });
+    const tree = screen.getByRole('tree', { name: 'Proposal levels' });
     act(() => h.review.select({ level: 'image', id: 'I3' }));
     fireEvent.keyDown(tree, { key: 'ArrowLeft' });
     expect(screen.queryByRole('treeitem', { name: 'Botão' })).toBeNull();
@@ -119,8 +120,8 @@ describe('níveis da proposta', () => {
   });
 });
 
-describe('faixa de revisão', () => {
-  it('Aplicar aceitas · N: desabilitado sem aceitas; aplicar efetiva só as aceitas', async () => {
+describe('review strip', () => {
+  it('Apply accepted · N: disabled without accepted ones; applying takes effect only for the accepted ones', async () => {
     const h = await openRich();
     renderInEditor(
       h,
@@ -129,16 +130,16 @@ describe('faixa de revisão', () => {
         <ProposalsWindow onHelp={() => {}} />
       </>,
     );
-    const bar = screen.getByRole('region', { name: 'Revisão da proposta' });
+    const bar = screen.getByRole('region', { name: 'Proposal review' });
     expect(within(bar).getByText('Checkout')).toBeTruthy();
-    const apply = within(bar).getByRole('button', { name: /Aplicar aceitas · 0/ });
+    const apply = within(bar).getByRole('button', { name: /Apply accepted · 0/ });
     expect((apply as HTMLButtonElement).disabled).toBe(true);
-    expect(apply.getAttribute('title')).toBe('Nada aceito ainda  Ctrl+Enter');
+    expect(apply.getAttribute('title')).toBe('Nothing accepted yet  Ctrl+Enter');
 
     fireEvent.click(
-      within(rowOf('Posição')).getByRole('button', { name: 'Aceitar Posição' }),
+      within(rowOf('Position')).getByRole('button', { name: 'Accept Position' }),
     );
-    const ready = await within(bar).findByRole('button', { name: /Aplicar aceitas · 1/ });
+    const ready = await within(bar).findByRole('button', { name: /Apply accepted · 1/ });
     await waitFor(() => expect((ready as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(ready);
     await waitFor(() =>
@@ -151,7 +152,7 @@ describe('faixa de revisão', () => {
         height: 100,
       }),
     );
-    // O que não foi decidido continua pendente na mesma proposta.
+    // What was not decided stays pending in the same proposal.
     expect(h.review.derived.counts.value.undecided).toBeGreaterThan(0);
   });
 });

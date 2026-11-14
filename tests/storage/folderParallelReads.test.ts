@@ -16,7 +16,7 @@ import { sampleProject } from '../model/fixtures';
 import { propose } from '../model/proposalFixtures';
 import { sampleThread } from '../model/threadFixtures';
 
-/** Mede o pico de chamadas simultâneas e a ordem em que elas começaram. */
+/** Measures the peak of simultaneous calls and the order in which they started. */
 function probe(delayMs = 3) {
   const state = { inFlight: 0, peak: 0, started: [] as string[] };
   const run = async <T>(label: string, value: () => T): Promise<T> => {
@@ -30,8 +30,8 @@ function probe(delayMs = 3) {
   return { state, run };
 }
 
-describe('leituras em lote com limite (FA2, decisão 10)', () => {
-  it('readSpecPackage: 12 arquivos, pico de 4 leituras, ordem e bytes iguais', async () => {
+describe('batch reads with a limit (FA2, decision 10)', () => {
+  it('readSpecPackage: 12 files, peak of 4 reads, same order and bytes', async () => {
     const { state, run } = probe();
     const paths = Array.from({ length: 12 }, (_, i) => `specs/p/f${i}.md`);
     const storage = {
@@ -45,7 +45,7 @@ describe('leituras em lote com limite (FA2, decisão 10)', () => {
     expect(pkg?.bytes).toBe(paths.reduce((n, p) => n + `t:${p}`.length, 0));
   });
 
-  it('readSpecPackage: arquivo ausente é pulado e a ordem segue a listagem', async () => {
+  it('readSpecPackage: a missing file is skipped and the order follows the listing', async () => {
     const { run } = probe();
     const paths = ['specs/p/a.md', 'specs/p/b.md', 'specs/p/c.md'];
     const storage = {
@@ -57,7 +57,7 @@ describe('leituras em lote com limite (FA2, decisão 10)', () => {
     expect(pkg?.entries.map((e) => e.path)).toEqual([paths[0], paths[2]]);
   });
 
-  it('loadProposals: 6 propostas, pico de 4 leituras, ordem dos ids', async () => {
+  it('loadProposals: 6 proposals, peak of 4 reads, order of the ids', async () => {
     const { state, run } = probe();
     const base = sampleProject();
     const ids = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'];
@@ -88,7 +88,7 @@ describe('leituras em lote com limite (FA2, decisão 10)', () => {
     expect([...(loaded.problemTexts?.keys() ?? [])]).toEqual(['P4']);
   });
 
-  it('loadThreads: pico de 4 leituras; comments/ antes de resolved/, ids em ordem', async () => {
+  it('loadThreads: peak of 4 reads; comments/ before resolved/, ids in order', async () => {
     const { state, run } = probe();
     const open = ['T1', 'T2', 'T3', 'T4', 'T5'];
     const resolved = ['T6', 'T7', 'T8'];
@@ -116,7 +116,7 @@ describe('leituras em lote com limite (FA2, decisão 10)', () => {
     ]);
   });
 
-  it('loadProject: as cópias de specs/ são lidas com pico de 4', async () => {
+  it('loadProject: the specs/ copies are read with a peak of 4', async () => {
     const { state, run } = probe();
     const files = Array.from({ length: 8 }, (_, i) => `specs/s${i}.json`);
     const text = JSON.stringify({ specializations: files.map((file) => ({ file })) });

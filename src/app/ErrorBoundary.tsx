@@ -5,11 +5,11 @@ import { openProject } from './controller';
 import { reportError } from '../utils/report';
 import { Button } from '../ui/controls';
 
-/** Último recurso: em vez de uma tela em branco, avisa e oferece recarregar. */
+/** Last resort: instead of a blank screen, warns and offers to reload. */
 export function ErrorBoundary({ children }: { readonly children: ComponentChildren }) {
   const [error] = useErrorBoundary((caught) => {
     reportError('crash', caught);
-    // Tenta gravar o que já estava no projeto antes de o usuário recarregar.
+    // Tries to write what was already in the project before the user reloads.
     void openProject.value?.session
       .flush()
       .catch((e: unknown) => reportError('crash.flush', e));

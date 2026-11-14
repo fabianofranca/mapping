@@ -1,5 +1,5 @@
-// M2, grupo A (scaffold, box, row, column): os valores que o Compose fixa no commit 5113b82
-// (`Scaffold.kt`, `Box.kt`, `Row.kt`, `Column.kt`) contra o que a biblioteca desenha.
+// M2, group A (scaffold, box, row, column): the values Compose fixes at commit 5113b82
+// (`Scaffold.kt`, `Box.kt`, `Row.kt`, `Column.kt`) against what the library draws.
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { findSlot, resolveSlotLayout } from '../../src/model/components/arrange';
@@ -22,9 +22,9 @@ function slotLayoutOf(id: string, values: Record<string, string | number>) {
   return resolveSlotLayout(slot, { ...defaultValues(entry.type), ...values });
 }
 
-describe('M2 grupo A — scaffold', () => {
-  it('o fundo é o papel containerColor (padrão background) nos dois modos, como o Surface do Scaffold.kt', () => {
-    // Scaffold.kt linha 90: containerColor = MaterialTheme.colorScheme.background
+describe('M2 group A — scaffold', () => {
+  it('the background is the containerColor role (default background) in both modes, like the Surface of Scaffold.kt', () => {
+    // Scaffold.kt line 90: containerColor = MaterialTheme.colorScheme.background
     expect(fillOf('scaffold', {}, 'light')).toBe(token('background', 'light'));
     expect(fillOf('scaffold', {}, 'dark')).toBe(token('background', 'dark'));
     expect(fillOf('scaffold', {}, 'dark')).toBe('#141218');
@@ -39,8 +39,8 @@ describe('M2 grupo A — scaffold', () => {
   });
 });
 
-describe('M2 grupo A — box', () => {
-  it('o fundo (Modifier.background) segue o papel nos dois modos, none é sem fundo e o padding recua o conteúdo', () => {
+describe('M2 group A — box', () => {
+  it('the background (Modifier.background) follows the role in both modes, none means no background and the padding insets the content', () => {
     for (const mode of ['light', 'dark'] as const) {
       expect(fillOf('box', { background: 'primaryContainer' }, mode)).toBe(
         token('primary-container', mode),
@@ -78,8 +78,8 @@ describe.each([
     crossEnd: 'End',
     type: 'column',
   },
-])('M2 grupo A — $id', ({ id, main, cross, crossCenter, crossEnd, type }) => {
-  it('o fundo segue o papel nos dois modos e none é sem fundo', () => {
+])('M2 group A — $id', ({ id, main, cross, crossCenter, crossEnd, type }) => {
+  it('the background follows the role in both modes and none means no background', () => {
     for (const mode of ['light', 'dark'] as const) {
       expect(fillOf(id, { background: 'surfaceContainerHigh' }, mode)).toBe(
         token('surface-container-high', mode),
@@ -88,8 +88,8 @@ describe.each([
     expect(fillOf(id, { background: 'none' }, 'dark')).toBeUndefined();
   });
 
-  it('a distribuição e o alinhamento escolhidos viram justify e align do layout (padrão Start/Top)', () => {
-    // Row.kt/Column.kt: Arrangement.Start/Top e Alignment.Top/Start são os padrões
+  it('the chosen arrangement and alignment become the justify and align of the layout (default Start/Top)', () => {
+    // Row.kt/Column.kt: Arrangement.Start/Top and Alignment.Top/Start are the defaults
     expect(slotLayoutOf(id, {})).toMatchObject({
       type,
       align: 'start',

@@ -1,13 +1,13 @@
-# Guia da nuvem — 2026-11-06 (épico `epic/guia-da-nuvem`)
+# Cloud guide — 2026-11-06 (épico `epic/guia-da-nuvem`)
 
 ## Pendências
 
-Nenhuma. O épico só mexe no guia de testes, no auxiliar da nuvem e nos testes; nenhum componente, token ou ícone do design system muda.
+None. The epic only touches the testing guide, the cloud helper and the tests; no design system component, token or icon changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não mudou componente, token nem ícone.
+Nothing to write to the **Mapping** artifact: the epic changed no component, token or icon.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

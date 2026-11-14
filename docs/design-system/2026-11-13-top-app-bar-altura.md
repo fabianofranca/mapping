@@ -1,13 +1,13 @@
-# Top app bar nasce com a altura do estilo — 2026-11-13 (épico `epic/top-app-bar-altura`)
+# Top app bar is born with the style's height — 2026-11-13 (épico `epic/top-app-bar-altura`)
 
 ## Pendências
 
-Pendências: nenhuma. O épico só acrescenta testes e ajusta o roteiro; nenhum componente, token ou ícone do design system da app muda.
+Pending items: none. The epic only adds tests and adjusts the script; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componente, token nem ícone da app.
+Sem impacto on the Claude Design Mapping artifact: nothing was written, since the epic changes no component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

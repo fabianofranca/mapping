@@ -4,8 +4,8 @@ import { createRaster, type Raster } from '../../mcp/image/raster';
 import { setFieldValue } from '../../src/model';
 import { add, baseProject, cat } from '../model/providedFixtures';
 
-// MF3 (decisões 8 e 9): o PNG do MCP de uma filha sozinha (`render_marking`: `markingIds`) usa o
-// valor oferecido pelo ancestral (o cache calcula o projeto inteiro), e sem ancestral vale o default.
+// MF3 (decisions 8 and 9): the MCP PNG of a lone child (`render_marking`: `markingIds`) uses the
+// value offered by the ancestor (the cache computes the whole project), and without an ancestor the default applies.
 
 function paint(project: ReturnType<typeof baseProject>, only: string): Raster {
   const raster = createRaster(1000, 800);
@@ -20,7 +20,7 @@ function paint(project: ReturnType<typeof baseProject>, only: string): Raster {
   return raster;
 }
 
-/** Quantos pixels têm o canal `channel` (0 = R, 2 = B) dominante sobre os outros dois. */
+/** How many pixels have the `channel` channel (0 = R, 2 = B) dominant over the other two. */
 function dominant(raster: Raster, channel: 0 | 1 | 2): number {
   let count = 0;
   for (let i = 0; i < raster.data.length; i += 4) {
@@ -31,8 +31,8 @@ function dominant(raster: Raster, channel: 0 | 1 | 2): number {
   return count;
 }
 
-describe('render_marking de uma filha com cor herdada', () => {
-  it('a filha sozinha usa a cor do ancestral e acompanha a troca do campo dele', () => {
+describe('render_marking of a child with an inherited color', () => {
+  it('the lone child uses the ancestor color and follows the change of its field', () => {
     let p = add(baseProject(), 'P', 'panel', {
       rect: { x: 100, y: 100, width: 300, height: 100 },
     });
@@ -44,7 +44,7 @@ describe('render_marking de uma filha com cor herdada', () => {
     expect(dominant(paint(p, 'L'), 2)).toBe(0);
   });
 
-  it('sem ancestral que ofereça vale o default (cinza: nem vermelho nem azul)', () => {
+  it('without an ancestor that offers one the default applies (gray: neither red nor blue)', () => {
     const p = add(baseProject(), 'L', 'label');
     const raster = paint(p, 'L');
     expect(dominant(raster, 0)).toBe(0);

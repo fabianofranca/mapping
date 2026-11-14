@@ -1,4 +1,4 @@
-# Revisão de propostas — 2026-11-09 (épico `epic/revisao-propostas`, PR #1158, MCP 0.28.8, schema v18)
+# Proposal review — 2026-11-09 (épico `epic/revisao-propostas`, PR #1158, MCP 0.28.8, schema v18)
 
 ## Adicionado
 
@@ -6,16 +6,16 @@
 
 ## Corrigido
 
-- Revisão de propostas: remover uma imagem deixou de aparecer como conflito falso quando a proposta é lida do disco (o `parentId`, derivado da geometria, não entra mais na comparação).
-- Atualizar uma especialização cuja camada some (as anotações tipadas dela viram livres) deixou de ser anunciada como "aditiva": a janela mostra as camadas que viram livres e o `plan_library_update` devolve `additive: false` com a `hint` de confirmar com a pessoa.
-- Visão Proposto: depois de um `revise_proposal` na revisão aberta, os componentes e as fontes do pacote proposto são relidos e registrados de novo, sem fechar e reabrir a revisão (MCP 0.28.8).
-- Revisão de propostas, árvore dos níveis: Enter, Espaço e as setas nos botões ✓/✕ de uma linha agora decidem (ou nada fazem) sem mover a seleção nem o foco; as teclas da árvore só valem com o foco nela.
-- Revisão de propostas: o leitor de tela anuncia a linha selecionada da árvore (`aria-activedescendant`, com posição e total do nível, também na lista virtualizada).
-- Revisão de propostas: "Aceitar as N que faltam" e "Rejeitar as N que causam" decidem tudo numa gravação só, e o Desfazer do aviso devolve todas ao estado anterior; um erro é relatado uma vez.
-- Revisão de propostas, comparação de imagem no modo Deslizar: a alça anuncia "{N}% do antes" (era "do depois", que contradizia o recorte); `Home` mostra só o depois e `End` só o antes. O modo Sobrepor continua "do depois".
-- Revisão de propostas: o aviso "O agente revisou…" (e o de proposta alterada) deixou de ficar na tela depois de abrir a revisão pela janela Propostas; abrir a revisão tira da fila todos os avisos daquela proposta.
-- Revisão de propostas: o título dos Detalhes não quebra mais no meio da palavra a 900×720 (os botões descem para a linha de baixo).
-- Revisão de propostas, comparação de imagem no modo Deslizar: a alça aparece inteira com a divisória em 0% e em 100%, em vez de cortada pela metade.
-- Revisão de propostas: o aviso "Aplicar bloqueado" por marcação sem imagem diz "depende de uma imagem que não está no projeto", sem o código interno.
-- Revisão de propostas: a coluna Resumo da lista mostra os três contadores inteiros a 900×720 (os contadores ficam mais compactos e a coluna do nome cede espaço).
-- Revisão de propostas, diálogo Comparar: "Aceitar a troca" e "Rejeitar a troca" ficam no rodapé fixo do diálogo, sem precisar rolar o corpo.
+- Proposal review: removing an image no longer shows up as a false conflict when the proposal is read from disk (the `parentId`, derived from geometry, no longer takes part in the comparison).
+- Updating a specialization whose layer goes away (its typed annotations become free) is no longer announced as "additive": the window shows the layers that become free and `plan_library_update` returns `additive: false` with the `hint` to confirm with the person.
+- Proposed view: after a `revise_proposal` on the open review, the components and sources of the proposed package are reread and registered again, without closing and reopening the review.
+- Proposal review, level tree: Enter, Space and the arrows on the ✓/✕ buttons of a row now decide (or do nothing) without moving the selection or the focus; the tree keys only apply with focus on it.
+- Proposal review: the screen reader announces the selected row of the tree (`aria-activedescendant`, with position and total of the level, also in the virtualized list).
+- Proposal review: "Accept the missing one(s)" and "Reject the cause" decide everything in a single write, and the notice's Undo returns all of them to the previous state; an error is reported once.
+- Proposal review, image comparison in Slide mode: the handle announces "{N}% of the before" (it was "of the after", which contradicted the crop); `Home` shows only the after and `End` only the before. Overlay mode is still "of the after".
+- Proposal review: the "The agent revised…" notice (and the changed-proposal one) no longer stays on screen after opening the review from the Proposals window; opening the review removes all notices of that proposal from the queue.
+- Proposal review: the Details title no longer breaks in the middle of a word at 900×720 (the buttons drop to the line below).
+- Proposal review, image comparison in Slide mode: the handle appears whole with the divider at 0% and at 100%, instead of cut in half.
+- Proposal review: the "Apply is blocked" notice for a marking without an image says "depends on an image that is not in the project", without the internal code.
+- Proposal review: the Summary column of the list shows all three counters at 900×720 (the counters are more compact and the name column gives up space).
+- Proposal review, Compare dialog: "Accept the replacement" and "Reject the replacement" stay in the dialog's fixed footer, with no need to scroll the body.

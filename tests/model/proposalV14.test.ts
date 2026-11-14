@@ -1,5 +1,5 @@
-// Propostas e a v14 (etapa #559, PD2, decisão 16): o `parentRole` é campo da anotação e o
-// `docRepo` é uma entidade; o formato da proposta continua 4.
+// Proposals and v14 (stage #559, PD2, decision 16): `parentRole` is an annotation field and
+// `docRepo` is an entity; the proposal format stays 4.
 import { describe, expect, it } from 'vitest';
 import {
   PROPOSAL_FORMAT_VERSION,
@@ -26,8 +26,8 @@ function apply(project: Project, p: Proposal): Project {
   return result.project;
 }
 
-describe('o formato da proposta continua 4', () => {
-  it('PROPOSAL_FORMAT_VERSION e a proposta gravada', () => {
+describe('the proposal format stays 4', () => {
+  it('PROPOSAL_FORMAT_VERSION and the written proposal', () => {
     expect(PROPOSAL_FORMAT_VERSION).toBe(4);
     const base = roleProject(withRoles);
     const p = propose(base, addChild(base, 'E1', 'A1', 'click'));
@@ -35,8 +35,8 @@ describe('o formato da proposta continua 4', () => {
   });
 });
 
-describe('parentRole: comparado, decidido e aplicado', () => {
-  it('trocar o papel gera uma mudança de campo e aplica', () => {
+describe('parentRole: compared, decided and applied', () => {
+  it('changing the role generates a field change and applies', () => {
     const base = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
     const after = setAnnotationRole(base, 'E1', 'hold');
     const p = propose(base, after);
@@ -48,14 +48,14 @@ describe('parentRole: comparado, decidido e aplicado', () => {
     );
   });
 
-  it('limpar o papel (null) também é uma mudança', () => {
+  it('clearing the role (null) is also a change', () => {
     const base = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
     const p = propose(base, setAnnotationRole(base, 'E1', null));
     expect(changeOf(p, 'annotation', 'E1', 'parentRole').to).toBeNull();
     expect(apply(base, p).annotations.find((a) => a.id === 'E1')?.parentRole).toBeNull();
   });
 
-  it('trocar o dono sem mudar o papel não gera mudança de papel; limpando, gera as duas', () => {
+  it('changing the owner without changing the role generates no role change; clearing, it generates both', () => {
     const base = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
     const moved = setAnnotationParent(base, 'E1', 'A2');
     expect(propose(base, moved).changes.some((c) => c.field === 'parentRole')).toBe(
@@ -71,7 +71,7 @@ describe('parentRole: comparado, decidido e aplicado', () => {
     });
   });
 
-  it('criar a anotação já vinculada leva o papel dentro do valor da criação', () => {
+  it('creating the annotation already linked carries the role inside the creation value', () => {
     const base = roleProject(withRoles);
     const after = addChild(base, 'E1', 'A1', 'hold');
     const p = propose(base, after);
@@ -84,7 +84,7 @@ describe('parentRole: comparado, decidido e aplicado', () => {
     );
   });
 
-  it('a proposta lida do disco volta igual, e a criação sem parentRole (agente antiga) vale sem papel', () => {
+  it('the proposal read from disk comes back the same, and a creation without parentRole (old agent) counts as having no role', () => {
     const base = roleProject(withRoles);
     const p = propose(base, addChild(base, 'E1', 'A1', 'hold'));
     const parsed = parseProposalText(serializeProposal(p));
@@ -102,7 +102,7 @@ describe('parentRole: comparado, decidido e aplicado', () => {
     expect(applied.annotations.find((a) => a.id === 'E1')?.parentRole).toBeNull();
   });
 
-  it('um parentRole vazio no campo é recusado na leitura', () => {
+  it('an empty parentRole in the field is refused on read', () => {
     const base = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
     const p = propose(base, setAnnotationRole(base, 'E1', 'hold'));
     const raw = JSON.parse(serializeProposal(p)) as {
@@ -113,8 +113,8 @@ describe('parentRole: comparado, decidido e aplicado', () => {
   });
 });
 
-describe('docRepo: entidade da proposta', () => {
-  it('cria, altera e remove', () => {
+describe('docRepo: proposal entity', () => {
+  it('creates, updates and removes', () => {
     const base = roleProject(withDocRepo);
     const created = setDocRepo(base, 'design-docs', { localPath: '../a' });
     const pc = propose(base, created);
@@ -140,7 +140,7 @@ describe('docRepo: entidade da proposta', () => {
     expect(apply(created, pr).docRepos).toEqual({});
   });
 
-  it('a mudança é de nível de projeto e a proposta gravada é lida de volta', () => {
+  it('the change is project-level and the written proposal is read back', () => {
     const base = roleProject(withDocRepo);
     const p = propose(base, setDocRepo(base, 'design-docs', { localPath: '../a' }), {
       createdAt: AT,
@@ -151,7 +151,7 @@ describe('docRepo: entidade da proposta', () => {
     expect(parseProposalText(serializeProposal(p)).ok).toBe(true);
   });
 
-  it('id de repositório inválido é recusado na leitura', () => {
+  it('an invalid repository id is refused on read', () => {
     const base = roleProject(withDocRepo);
     const p = propose(base, setDocRepo(base, 'design-docs', { localPath: '../a' }));
     const raw = JSON.parse(serializeProposal(p)) as { changes: { entityId: string }[] };

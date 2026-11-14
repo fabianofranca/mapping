@@ -13,18 +13,18 @@ import { droppedChangeSummary } from './changeText';
 import { useReviewNames } from './useReview';
 import { useReviewCommands } from './useReviewCommands';
 
-// Nota para o agente (HANDOFF-REVIEW-DETAILS 5.5, fase 9.6): um campo de texto que grava ao
-// sair dele, no cabeçalho do item (a nota do item) e no popover de uma mudança (a nota da
-// mudança). Texto vazio apaga a nota; num campo novo que fica vazio, o campo some. As
-// decisões e as notas moram na proposta: nada aqui guarda estado fora dela.
+// Note for the agent (HANDOFF-REVIEW-DETAILS 5.5, phase 9.6): a text field that saves on
+// leaving it, in the item header (the item note) and in a change's popover (the change
+// note). Empty text deletes the note; a new field that stays empty disappears. The
+// decisions and notes live in the proposal: nothing here keeps state outside it.
 
 interface NoteAreaProps {
   readonly target: ReviewTarget;
   readonly note: ProposalNote | null;
   readonly readOnly: boolean;
-  /** Cada valor novo leva o foco ao campo (o botão de nota, a rejeição pelo mouse). */
+  /** Each new value takes the focus to the field (the note button, rejection by mouse). */
   readonly focusSeq: number;
-  /** O campo foi gravado e saiu: `empty` quando ficou sem texto. */
+  /** The field was saved and left: `empty` when it ended up without text. */
   readonly onSettled: (empty: boolean) => void;
 }
 
@@ -33,10 +33,12 @@ function NoteArea({ target, note, readOnly, focusSeq, onSettled }: NoteAreaProps
   const { report } = useReviewCommands();
   const [text, setText] = useState(note?.text ?? '');
   const area = useRef<HTMLTextAreaElement>(null);
-  // O campo sai do DOM com o foco dentro (a decisão troca o cartão e remonta o popover): o
-  // navegador dispara o `blur` na remoção, e esse não é "a pessoa saiu do campo". Gravar o
-  // texto vale; esconder o campo e apagar o pedido da nota sugerida não, senão o campo novo
-  // (que cumpre o pedido ao montar) nasce sem pedido. O cleanup roda antes de o DOM sair.
+  // The field leaves the DOM with the focus inside it (the decision swaps the card and remounts
+  // the popover): the
+  // browser fires `blur` on removal, and that is not "the person left the field". Saving the
+  // text is fine; hiding the field and clearing the suggested-note request is not, otherwise
+  // the new field (which fulfils the request on mount) is born without a request. The cleanup
+  // runs before the DOM goes away.
   const leaving = useRef(false);
   useLayoutEffect(
     () => () => {
@@ -44,7 +46,7 @@ function NoteArea({ target, note, readOnly, focusSeq, onSettled }: NoteAreaProps
     },
     [],
   );
-  // O foco vai ao campo no commit que o desenha, nunca depois (modelo de foco da etapa 8).
+  // The focus goes to the field in the commit that draws it, never later (stage 8 focus model).
   useLayoutEffect(() => {
     if (focusSeq > 0) area.current?.focus();
   }, [focusSeq]);
@@ -78,7 +80,7 @@ function NoteArea({ target, note, readOnly, focusSeq, onSettled }: NoteAreaProps
   );
 }
 
-/** "Da mudança retirada: <resumo>" numa nota que subiu de uma mudança que o agente retirou. */
+/** "From the withdrawn change: <summary>" on a note carried up from a change the agent withdrew. */
 function DroppedOrigin({ noteId }: { readonly noteId: string }) {
   const names = useReviewNames();
   const origin = names ? droppedNoteOrigin(names.proposal, noteId) : null;
@@ -89,14 +91,14 @@ function DroppedOrigin({ noteId }: { readonly noteId: string }) {
 
 interface NoteFieldProps {
   readonly target: ReviewTarget;
-  /** O campo foi aberto pelo botão de nota (mesmo sem nota ainda). */
+  /** The field was opened by the note button (even without a note yet). */
   readonly show: boolean;
   readonly focusSeq: number;
-  /** Um campo novo que ficou vazio, ou uma nota apagada: quem abriu o esconde. */
+  /** A new field that stayed empty, or a deleted note: whoever opened it hides it. */
   readonly onHide: () => void;
 }
 
-/** As notas do alvo (e um campo novo, se `show`); nada se não há o que mostrar. */
+/** The target's notes (and a new field, if `show`); nothing if there is nothing to show. */
 export function NoteField({ target, show, focusSeq, onHide }: NoteFieldProps) {
   const { review } = useEditor();
   const notes = review.derived.notes.value.get(reviewKey(target)) ?? [];
@@ -124,7 +126,7 @@ export function NoteField({ target, show, focusSeq, onHide }: NoteFieldProps) {
   );
 }
 
-/** A mudança ou o nível tem nota? (o botão de nota fica marcado) */
+/** Does the change or level have a note? (the note button is marked) */
 export function useHasNote(target: ReviewTarget): boolean {
   const { review } = useEditor();
   return (review.derived.notes.value.get(reviewKey(target))?.length ?? 0) > 0;

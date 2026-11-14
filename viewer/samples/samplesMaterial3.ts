@@ -1,17 +1,17 @@
 /**
- * Design system público escrito no formato de componente: **Material Design 3** (baseline,
- * tema claro), a partir das especificações em m3.material.io e dos tokens padrão do Compose e
- * do Flutter. Serve para ver se o formato genérico representa um design system de verdade.
+ * Public design system written in the component format: **Material Design 3** (baseline,
+ * light theme), from the specifications at m3.material.io and the default Compose and
+ * Flutter tokens. It shows whether the generic format represents a real design system.
  *
  * Tokens (md.sys.color, tema claro baseline): primary #6750A4, on-primary #FFFFFF,
  * primary-container #EADDFF, on-primary-container #21005D, secondary-container #E8DEF8,
  * on-secondary-container #1D192B, surface #FEF7FF, surface-container #F3EDF7,
  * surface-container-low #F7F2FA, surface-container-highest #E6E0E9, on-surface #1D1B20,
  * on-surface-variant #49454F, outline #79747E, outline-variant #CAC4D0, error #B3261E.
- * Tipografia Roboto: title-large 22/28 400, title-medium 16/24 500, body-large 16/24 400,
+ * Roboto typography: title-large 22/28 400, title-medium 16/24 500, body-large 16/24 400,
  * body-medium 14/20 400, body-small 12/16 400, label-large 14/20 500, label-medium 12/16 500.
- * Formas: extra-small 4, small 8, medium 12, large 16, full.
- * Ícones: caminhos dos Material Icons (Apache 2.0), viewBox 24.
+ * Shapes: extra-small 4, small 8, medium 12, large 16, full.
+ * Icons: paths of the Material Icons (Apache 2.0), viewBox 24.
  */
 import {
   COMPONENT_FORMAT,
@@ -45,7 +45,7 @@ const C = {
   outline: '#79747E',
   outlineVariant: '#CAC4D0',
   error: '#B3261E',
-  /** on-surface a 12 % (contêiner desabilitado) e a 38 % (conteúdo desabilitado). */
+  /** on-surface at 12 % (disabled container) and at 38 % (disabled content). */
   disabledContainer: 'rgba(29, 27, 32, 0.12)',
   disabledContent: 'rgba(29, 27, 32, 0.38)',
   transparent: 'rgba(0, 0, 0, 0)',
@@ -86,7 +86,7 @@ export const ICONS: Readonly<Record<string, string>> = {
 };
 export const ICON_NAMES = Object.keys(ICONS);
 
-/** Ícone por campo: o `d` do caminho sai de um `$switch` sobre o nome do ícone. */
+/** Icon per field: the path's `d` comes from a `$switch` on the icon name. */
 function icon(
   field: string,
   size: number,
@@ -95,7 +95,7 @@ function icon(
 ): PathTemplate {
   return {
     type: 'path',
-    name: 'ícone',
+    name: 'icon',
     width: size,
     height: size,
     viewBox: [24, 24],
@@ -132,11 +132,11 @@ export const M3_BUTTON: ComponentFile = {
   id: 'm3-button',
   name: 'Button',
   description:
-    'Common button: filled, tonal, outlined, text ou elevated; 40 dp, forma full.',
+    'Common button: filled, tonal, outlined, text or elevated; 40 dp, full shape.',
   size: { width: 120, height: 40 },
   minSize: { width: 48, height: 40 },
   sizing: { width: 'hug', height: 40 },
-  preview: { label: 'Label', variant: 'filled', icon: '', disabled: 'não' },
+  preview: { label: 'Label', variant: 'filled', icon: '', disabled: 'no' },
   template: {
     type: 'frame',
     name: 'button',
@@ -195,7 +195,7 @@ export const M3_FAB: ComponentFile = {
   id: 'm3-fab',
   name: 'FAB',
   description:
-    'Floating action button: 56 dp, forma large (16), primary container; extended com rótulo.',
+    'Floating action button: 56 dp, large shape (16), primary container; extended with label.',
   size: { width: 56, height: 56 },
   minSize: { width: 40, height: 40 },
   sizing: { width: 56, height: 56 },
@@ -235,7 +235,7 @@ export const M3_TOP_APP_BAR: ComponentFile = {
   id: 'm3-top-app-bar',
   name: 'Top app bar',
   description:
-    'Small top app bar: 64 dp, surface, ícone de navegação, título title-large e ação.',
+    'Small top app bar: 64 dp, surface, navigation icon, title-large title and action.',
   size: { width: 412, height: 64 },
   minSize: { width: 200, height: 48 },
   sizing: { width: 'fill', height: 64 },
@@ -248,7 +248,7 @@ export const M3_TOP_APP_BAR: ComponentFile = {
     children: [
       {
         type: 'frame',
-        name: 'navegação',
+        name: 'navigation',
         width: 48,
         height: 48,
         visible: { $has: 'navigation' },
@@ -257,13 +257,13 @@ export const M3_TOP_APP_BAR: ComponentFile = {
       },
       {
         type: 'frame',
-        name: 'título',
+        name: 'title',
         width: 'fill',
         height: 'fill',
         layout: { type: 'row', padding: [0, 12], align: 'center' },
         children: [
           text(
-            'título',
+            'title',
             { $field: 'title', default: 'Title' },
             T.titleLarge,
             C.onSurface,
@@ -283,7 +283,7 @@ export const M3_TOP_APP_BAR: ComponentFile = {
       },
       {
         type: 'frame',
-        name: 'ação',
+        name: 'action',
         width: 48,
         height: 48,
         visible: { $has: 'action' },
@@ -310,7 +310,7 @@ export const M3_TEXT_FIELD: ComponentFile = {
   id: 'm3-text-field',
   name: 'Text field',
   description:
-    'Outlined text field: caixa de 56 dp, forma extra-small (4), rótulo flutuante e texto de apoio.',
+    'Outlined text field: 56 dp box, extra-small shape (4), floating label and supporting text.',
   size: { width: 280, height: 80 },
   minSize: { width: 120, height: 56 },
   sizing: { width: 'fill', height: 56 },
@@ -330,7 +330,7 @@ export const M3_TEXT_FIELD: ComponentFile = {
     children: [
       {
         type: 'frame',
-        name: 'contêiner',
+        name: 'container',
         width: 'fill',
         height: 56,
         clip: false,
@@ -350,18 +350,18 @@ export const M3_TEXT_FIELD: ComponentFile = {
           },
           {
             type: 'frame',
-            name: 'rótulo',
+            name: 'label',
             anchors: { left: 12, top: 0 },
             width: 'hug',
             height: 'hug',
             layout: { type: 'row', padding: [0, 4] },
             fill: C.surface,
             visible: { $has: 'label' },
-            children: [text('rótulo', { $field: 'label' }, T.bodySmall, fieldLabelColor)],
+            children: [text('label', { $field: 'label' }, T.bodySmall, fieldLabelColor)],
           },
           {
             type: 'frame',
-            name: 'conteúdo',
+            name: 'content',
             anchors: { left: 16, right: 12, top: 8, bottom: 0 },
             layout: { type: 'row', gap: 12, align: 'center' },
             children: [
@@ -404,18 +404,17 @@ export const M3_SWITCH: ComponentFile = {
   ...base,
   id: 'm3-switch',
   name: 'Switch',
-  description:
-    'Switch: trilho 52 × 32, alça 24 (ligado) ou 16 (desligado); rótulo opcional.',
+  description: 'Switch: 52 × 32 track, 24 handle (on) or 16 (off); optional label.',
   size: { width: 200, height: 32 },
   minSize: { width: 52, height: 32 },
   sizing: { width: 'fill', height: 32 },
-  preview: { label: 'Label', selected: 'sim', icon: 'não' },
+  preview: { label: 'Label', selected: 'yes', icon: 'no' },
   template: {
     type: 'frame',
     name: 'switch',
     layout: { type: 'row', gap: 16, align: 'center' },
     children: [
-      text('rótulo', { $field: 'label' }, T.bodyLarge, C.onSurface, {
+      text('label', { $field: 'label' }, T.bodyLarge, C.onSurface, {
         visible: { $has: 'label' },
         width: 'fill',
       }),
@@ -439,7 +438,7 @@ export const M3_SWITCH: ComponentFile = {
         children: [
           {
             type: 'ellipse',
-            name: 'alça ligada',
+            name: 'handle on',
             visible: { $field: 'selected' },
             width: 24,
             height: 24,
@@ -448,7 +447,7 @@ export const M3_SWITCH: ComponentFile = {
           },
           {
             type: 'ellipse',
-            name: 'alça desligada',
+            name: 'handle off',
             visible: { $not: { $field: 'selected' } },
             width: 16,
             height: 16,
@@ -457,7 +456,7 @@ export const M3_SWITCH: ComponentFile = {
           },
           {
             type: 'frame',
-            name: 'ícone',
+            name: 'icon',
             visible: { $and: [{ $field: 'selected' }, { $field: 'icon' }] },
             width: 24,
             height: 24,
@@ -485,11 +484,11 @@ export const M3_CHECKBOX: ComponentFile = {
   ...base,
   id: 'm3-checkbox',
   name: 'Checkbox',
-  description: 'Checkbox de 18 dp (forma 2) com rótulo body-large.',
+  description: '18 dp checkbox (shape 2) with a body-large label.',
   size: { width: 200, height: 40 },
   minSize: { width: 40, height: 24 },
   sizing: { width: 'fill', height: 40 },
-  preview: { label: 'Label', checked: 'sim', error: 'não' },
+  preview: { label: 'Label', checked: 'yes', error: 'no' },
   template: {
     type: 'frame',
     name: 'checkbox',
@@ -529,7 +528,7 @@ export const M3_CHECKBOX: ComponentFile = {
           },
         ],
       },
-      text('rótulo', { $field: 'label' }, T.bodyLarge, C.onSurface, {
+      text('label', { $field: 'label' }, T.bodyLarge, C.onSurface, {
         visible: { $has: 'label' },
         width: 'fill',
       }),
@@ -542,11 +541,11 @@ export const M3_CHIP: ComponentFile = {
   id: 'm3-chip',
   name: 'Chip',
   description:
-    'Assist/filter chip: 32 dp, forma small (8), outline; filtro selecionado em secondary container com check.',
+    'Assist/filter chip: 32 dp, small shape (8), outline; selected filter in secondary container with a check.',
   size: { width: 96, height: 32 },
   minSize: { width: 40, height: 32 },
   sizing: { width: 'hug', height: 32 },
-  preview: { label: 'Label', selected: 'não', icon: '' },
+  preview: { label: 'Label', selected: 'no', icon: '' },
   template: {
     type: 'frame',
     name: 'chip',
@@ -576,7 +575,7 @@ export const M3_CHIP: ComponentFile = {
       icon('icon', 18, C.primary, {
         visible: { $and: [{ $has: 'icon' }, { $not: { $field: 'selected' } }] },
       }),
-      text('rótulo', { $field: 'label', default: 'Label' }, T.labelLarge, {
+      text('label', { $field: 'label', default: 'Label' }, T.labelLarge, {
         $if: { $field: 'selected' },
         then: C.onSecondaryContainer,
         else: C.onSurfaceVariant,
@@ -590,7 +589,7 @@ export const M3_CARD: ComponentFile = {
   id: 'm3-card',
   name: 'Card',
   description:
-    'Card elevated, filled ou outlined; forma medium (12); headline, subhead, texto de apoio e espaço para ações.',
+    'Elevated, filled or outlined card; medium shape (12); headline, subhead, supporting text and space for actions.',
   size: { width: 360, height: 200 },
   minSize: { width: 160, height: 96 },
   sizing: { width: 'fill', height: 'hug' },
@@ -646,10 +645,10 @@ export const M3_CARD: ComponentFile = {
       }),
       {
         type: 'slot',
-        name: 'ações',
+        name: 'actions',
         width: 'fill',
         height: 'fill',
-        label: 'ações',
+        label: 'actions',
         layout: { type: 'row', gap: 8, justify: 'end' },
       },
     ],
@@ -661,7 +660,7 @@ export const M3_LIST_ITEM: ComponentFile = {
   id: 'm3-list-item',
   name: 'List item',
   description:
-    'Item de lista de uma ou duas linhas: avatar ou ícone à esquerda, headline, texto de apoio e ícone à direita.',
+    'One- or two-line list item: avatar or icon on the left, headline, supporting text and icon on the right.',
   size: { width: 412, height: 72 },
   minSize: { width: 120, height: 48 },
   sizing: { width: 'fill', height: 72 },
@@ -756,7 +755,7 @@ function destination(n: 1 | 2 | 3) {
           }),
         ],
       },
-      text('rótulo', { $field: `label${n}`, default: `Label ${n}` }, T.labelMedium, {
+      text('label', { $field: `label${n}`, default: `Label ${n}` }, T.labelMedium, {
         $if: { $eq: ['active', n] },
         then: C.onSurface,
         else: C.onSurfaceVariant,
@@ -770,7 +769,7 @@ export const M3_NAVIGATION_BAR: ComponentFile = {
   id: 'm3-navigation-bar',
   name: 'Navigation bar',
   description:
-    'Navigation bar de 80 dp com três destinos; indicador ativo 64 × 32 em secondary container.',
+    '80 dp navigation bar with three destinations; 64 × 32 active indicator in secondary container.',
   size: { width: 412, height: 80 },
   minSize: { width: 240, height: 64 },
   sizing: { width: 'fill', height: 80 },
@@ -807,7 +806,7 @@ function sheetItem(n: 1 | 2 | 3) {
     },
     children: [
       icon(`icon${n}`, 24, C.onSurfaceVariant, { visible: { $has: `icon${n}` } }),
-      text(`rótulo ${n}`, { $field: `item${n}` }, T.bodyLarge, C.onSurface, {
+      text(`label ${n}`, { $field: `item${n}` }, T.bodyLarge, C.onSurface, {
         width: 'fill',
       }),
     ],
@@ -819,13 +818,13 @@ export const M3_BOTTOM_SHEET: ComponentFile = {
   id: 'm3-bottom-sheet',
   name: 'Bottom sheet',
   description:
-    'Modal bottom sheet: surface-container-low, cantos superiores extra-large (28), alça de 32 × 4 a 22 dp do topo, título e itens de lista.',
+    'Modal bottom sheet: surface-container-low, extra-large top corners (28), 32 × 4 handle 22 dp from the top, title and list items.',
   size: { width: 412, height: 320 },
   minSize: { width: 240, height: 96 },
   sizing: { width: 'fill', height: 'hug' },
   preview: {
     title: 'Title',
-    handle: 'sim',
+    handle: 'yes',
     item1: 'Item one',
     icon1: 'favorite',
     item2: 'Item two',
@@ -843,14 +842,14 @@ export const M3_BOTTOM_SHEET: ComponentFile = {
     children: [
       {
         type: 'frame',
-        name: 'área da alça',
+        name: 'handle area',
         width: 'fill',
         height: 48,
         layout: { type: 'row', align: 'center', justify: 'center' },
         children: [
           {
             type: 'rect',
-            name: 'alça',
+            name: 'handle',
             visible: { $field: 'handle' },
             width: 32,
             height: 4,
@@ -861,13 +860,13 @@ export const M3_BOTTOM_SHEET: ComponentFile = {
       },
       {
         type: 'frame',
-        name: 'cabeçalho',
+        name: 'header',
         width: 'fill',
         height: 'hug',
         visible: { $has: 'title' },
         layout: { type: 'row', padding: [8, 24, 16, 24] },
         children: [
-          text('título', { $field: 'title' }, T.titleLarge, C.onSurface, {
+          text('title', { $field: 'title' }, T.titleLarge, C.onSurface, {
             width: 'fill',
           }),
         ],
@@ -884,7 +883,7 @@ export const M3_SCRIM: ComponentFile = {
   id: 'm3-scrim',
   name: 'Scrim',
   description:
-    'Película que escurece a tela atrás de um modal: scrim (#000) a 32 %. Cobre a tela inteira, por baixo da folha.',
+    'Overlay that darkens the screen behind a modal: scrim (#000) at 32 %. Covers the whole screen, below the sheet.',
   size: { width: 412, height: 917 },
   minSize: { width: 16, height: 16 },
   sizing: { width: 'fill', height: 'fill' },
@@ -897,7 +896,7 @@ export const M3_SCRIM: ComponentFile = {
   },
 };
 
-/** Preenchimento e forma dos containers do Compose (Box, Row, Column), por campo. */
+/** Fill and shape of the Compose containers (Box, Row, Column), per field. */
 const containerFill: Expr<Color> = {
   $switch: 'background',
   cases: {
@@ -929,7 +928,7 @@ function container(
           type: layout.type,
           gap: { $field: 'spacing', default: 8 } as Expr<number>,
           padding: { $field: 'padding', default: 0 } as Expr<number>,
-          // Compose: Arrangement no eixo principal, Alignment no cruzado.
+          // Compose: Arrangement on the main axis, Alignment on the cross axis.
           align: 'start' as const,
           justify: 'start' as const,
         };
@@ -965,9 +964,9 @@ function container(
 export const M3_BOX = container(
   'm3-box',
   'Box',
-  'Container livre do Compose: os filhos ficam onde o retângulo deles diz.',
+  'Free Compose container: the children stay where their rectangle says.',
   { type: 'none' },
-  // Sem `padding`: com `layout: none` o slot não tem padding, e o tipo não declara o campo.
+  // No `padding`: with `layout: none` the slot has no padding, and the type does not declare the field.
   { background: 'none', shape: 'none' },
   { width: 200, height: 120 },
 );
@@ -975,10 +974,10 @@ export const M3_BOX = container(
 export const M3_ROW = container(
   'm3-row',
   'Row',
-  'Container horizontal do Compose: os filhos se enfileiram pela ordem, com spacing e padding.',
+  'Horizontal Compose container: the children line up in order, with spacing and padding.',
   { type: 'row' },
-  // Sem `alignment`/`arrangement`: o template fixa `align`/`justify` em `start` e os tipos não
-  // declaram esses campos (campo ligado ao alinhamento fica para quando o template o ler).
+  // No `alignment`/`arrangement`: the template fixes `align`/`justify` at `start` and the types do
+  // not declare those fields (an alignment-bound field waits until the template reads it).
   { background: 'none', shape: 'none', spacing: 8, padding: 0 },
   { width: 380, height: 48 },
 );
@@ -986,9 +985,9 @@ export const M3_ROW = container(
 export const M3_COLUMN = container(
   'm3-column',
   'Column',
-  'Container vertical do Compose: os filhos se empilham pela ordem, com spacing e padding.',
+  'Vertical Compose container: the children stack in order, with spacing and padding.',
   { type: 'column' },
-  // Idem ao Row: sem `alignment`/`arrangement` enquanto o template não os lê.
+  // Same as Row: no `alignment`/`arrangement` while the template does not read them.
   { background: 'none', shape: 'none', spacing: 8, padding: 0 },
   { width: 380, height: 200 },
 );
@@ -1011,19 +1010,19 @@ export const M3_COMPONENTS: readonly ComponentFile[] = [
   M3_COLUMN,
 ];
 
-/** Sistema da origem executável que a especialização declara (`origins`): o SDUI do backend. */
+/** System of the executable origin that the specialization declares (`origins`): the backend's SDUI. */
 const SDUI = 'sdui';
 
-/** `sources` de um campo: o caminho (`path`) dentro de `props` do nó SDUI (e a tradução de valores). */
+/** A field's `sources`: the path (`path`) inside the SDUI node's `props` (and the value translation). */
 const fromProp = (path: string, values?: Record<string, string>) => ({
   sources: [{ system: SDUI, path, ...(values ? { values } : {}) }],
 });
 
-const yesNo = (key: string, label: string, def: 'sim' | 'não', prop?: string) => ({
+const yesNo = (key: string, label: string, def: 'yes' | 'no', prop?: string) => ({
   key,
   label,
   type: 'enum',
-  options: ['sim', 'não'],
+  options: ['yes', 'no'],
   default: def,
   ...(prop ? fromProp(prop) : {}),
 });
@@ -1057,7 +1056,7 @@ const choice = (
   prop: string,
 ) => ({ key, label, type: 'enum', options, default: def, ...fromProp(prop) });
 
-/** `external`: o tipo do nó SDUI a que o tipo corresponde (e o slot, e as props aceitas e não desenhadas). */
+/** `external`: the SDUI node type the type corresponds to (and the slot, and the accepted, undrawn props). */
 const type = (
   id: string,
   name: string,
@@ -1093,7 +1092,7 @@ const BACKGROUNDS = [
 ];
 const SHAPES = ['none', 'small', 'medium', 'large', 'extra-large'];
 
-/** Campos de fundo e forma dos containers (Box, Row, Column). */
+/** Background and shape fields of the containers (Box, Row, Column). */
 const containerStyle = () => [
   choice('background', 'Background', BACKGROUNDS, 'none', 'background'),
   choice('shape', 'Shape', SHAPES, 'none', 'shape'),
@@ -1106,15 +1105,15 @@ export const M3_SPEC = {
   name: 'Material Design 3 (baseline)',
   version: 1,
   description:
-    'Componentes do Material 3, tema claro baseline, escritos no formato de componente do laboratório.',
-  // Fontes do DS, por arquivo na pasta (`material3/fonts/`): Roboto (Apache 2.0) nos pesos que o
-  // M3 usa aqui. Uma fonte variável serviria com `"weight": "100 900"`.
+    'Material 3 components, baseline light theme, written in the lab component format.',
+  // The DS fonts, by file in the folder (`material3/fonts/`): Roboto (Apache 2.0) in the weights
+  // M3 uses here. A variable font would work with `"weight": "100 900"`.
   fonts: [
     { family: 'Roboto', file: 'fonts/Roboto-Regular.ttf', weight: 400 },
     { family: 'Roboto', file: 'fonts/Roboto-Medium.ttf', weight: 500 },
   ],
-  // Origem executável: como ler o JSON do SDUI (`sdui/settings.sdui.json`) como tela. O
-  // mapeamento de cada tipo e de cada campo está nas `sources` abaixo (sistema `sdui`).
+  // Executable origin: how to read the SDUI JSON (`sdui/settings.sdui.json`) as a screen. The
+  // mapping of each type and each field is in the `sources` below (system `sdui`).
   origins: [
     {
       system: SDUI,
@@ -1141,13 +1140,13 @@ export const M3_SPEC = {
           { path: 'modal', anchor: 'bottom', scrim: 'm3-scrim' },
         ],
       },
-      booleans: { true: 'sim', false: 'não' },
+      booleans: { true: 'yes', false: 'no' },
     },
   ],
   layers: [
     {
-      id: 'componentes',
-      name: 'Componentes',
+      id: 'components',
+      name: 'Components',
       color: '#6750A4',
       annotationTypes: [
         type(
@@ -1176,7 +1175,7 @@ export const M3_SPEC = {
               'style',
             ),
             iconField('icon', 'Icon', '', 'icon'),
-            yesNo('disabled', 'Disabled', 'não', 'disabled'),
+            yesNo('disabled', 'Disabled', 'no', 'disabled'),
           ],
           { name: 'Button', ignore: ['contentDescription'] },
         ),
@@ -1223,8 +1222,8 @@ export const M3_SPEC = {
           'label',
           [
             str('label', 'Label', false, 'label'),
-            yesNo('selected', 'Selected', 'não', 'checked'),
-            yesNo('icon', 'Icon', 'não', 'showIcon'),
+            yesNo('selected', 'Selected', 'no', 'checked'),
+            yesNo('icon', 'Icon', 'no', 'showIcon'),
           ],
           { name: 'Switch' },
         ),
@@ -1234,8 +1233,8 @@ export const M3_SPEC = {
           'label',
           [
             str('label', 'Label', false, 'label'),
-            yesNo('checked', 'Checked', 'não', 'checked'),
-            yesNo('error', 'Error', 'não', 'error'),
+            yesNo('checked', 'Checked', 'no', 'checked'),
+            yesNo('error', 'Error', 'no', 'error'),
           ],
           { name: 'Checkbox' },
         ),
@@ -1245,7 +1244,7 @@ export const M3_SPEC = {
           'label',
           [
             str('label', 'Label', true, 'text'),
-            yesNo('selected', 'Selected', 'não', 'selected'),
+            yesNo('selected', 'Selected', 'no', 'selected'),
             iconField('icon', 'Icon', '', 'icon'),
           ],
           { name: 'Chip' },
@@ -1266,7 +1265,7 @@ export const M3_SPEC = {
               'style',
             ),
           ],
-          { name: 'Card', slot: 'ações' },
+          { name: 'Card', slot: 'actions' },
         ),
         type(
           'm3-list-item',
@@ -1298,7 +1297,7 @@ export const M3_SPEC = {
               type: 'enum',
               options: ['1', '2', '3'],
               default: '1',
-              // O SDUI conta a partir de 0; o campo, a partir de 1.
+              // The SDUI counts from 0; the field, from 1.
               ...fromProp('selectedIndex', { '0': '1', '1': '2', '2': '3' }),
             },
           ],
@@ -1310,7 +1309,7 @@ export const M3_SPEC = {
           'title',
           [
             str('title', 'Title', false, 'title'),
-            yesNo('handle', 'Drag handle', 'sim', 'dragHandle'),
+            yesNo('handle', 'Drag handle', 'yes', 'dragHandle'),
             str('item1', 'Item 1', false, 'items[0].label'),
             iconField('icon1', 'Icon 1', '', 'items[0].icon'),
             str('item2', 'Item 2', false, 'items[1].label'),
@@ -1320,7 +1319,7 @@ export const M3_SPEC = {
           ],
           { name: 'BottomSheet' },
         ),
-        // Película do modal: desenhada pela origem (`scrim`), não corresponde a um nó do SDUI.
+        // The modal overlay: drawn by the origin (`scrim`), it does not correspond to an SDUI node.
         type('m3-scrim', 'Scrim', null, []),
         type('m3-box', 'Box', null, containerStyle(), { name: 'Box' }),
         type(
@@ -1368,7 +1367,7 @@ const i = (
   values: Record<string, string | number>,
 ) => ({ id, typeId, box: { x, y, width, height }, values });
 
-/** Instância dentro de um container (`parentId`); a posição é recalculada pelo layout do slot. */
+/** Instance inside a container (`parentId`); the position is recalculated by the slot's layout. */
 const ic = (
   parentId: string,
   id: string,
@@ -1380,7 +1379,7 @@ const ic = (
   values: Record<string, string | number>,
 ) => ({ ...i(id, typeId, x, y, width, height, values), parentId });
 
-/** Tela de configurações num Pixel (412 × 917), só com instâncias do Material 3. */
+/** Settings screen on a Pixel (412 × 917), with Material 3 instances only. */
 export const M3_SCREEN: Screen = {
   id: 'm3-settings',
   name: 'Material 3 — Settings',
@@ -1410,17 +1409,17 @@ export const M3_SCREEN: Screen = {
     }),
     ic('m-row-chips', 'm-chip1', 'm3-chip', 16, 168, 96, 32, {
       label: 'All',
-      selected: 'sim',
+      selected: 'yes',
       icon: '',
     }),
     ic('m-row-chips', 'm-chip2', 'm3-chip', 120, 168, 120, 32, {
       label: 'Network',
-      selected: 'não',
+      selected: 'no',
       icon: 'settings',
     }),
     ic('m-row-chips', 'm-chip3', 'm3-chip', 248, 168, 132, 32, {
       label: 'Privacy',
-      selected: 'não',
+      selected: 'no',
       icon: 'notifications',
     }),
     i('m-card', 'm3-card', 16, 216, 380, 148, {
@@ -1433,7 +1432,7 @@ export const M3_SCREEN: Screen = {
       label: 'Clean up',
       variant: 'text',
       icon: '',
-      disabled: 'não',
+      disabled: 'no',
     }),
     i('m-item1', 'm3-list-item', 0, 380, 412, 72, {
       headline: 'Network & internet',
@@ -1458,18 +1457,18 @@ export const M3_SCREEN: Screen = {
     }),
     i('m-switch1', 'm3-switch', 16, 612, 380, 32, {
       label: 'Dark theme',
-      selected: 'sim',
-      icon: 'sim',
+      selected: 'yes',
+      icon: 'yes',
     }),
     i('m-switch2', 'm3-switch', 16, 660, 380, 32, {
       label: 'Battery saver',
-      selected: 'não',
-      icon: 'não',
+      selected: 'no',
+      icon: 'no',
     }),
     i('m-check', 'm3-checkbox', 16, 708, 380, 40, {
       label: 'Send usage & diagnostics',
-      checked: 'sim',
-      error: 'não',
+      checked: 'yes',
+      error: 'no',
     }),
     i('m-row-actions', 'm3-row', 16, 764, 380, 40, {
       spacing: 12,
@@ -1481,13 +1480,13 @@ export const M3_SCREEN: Screen = {
       label: 'Reset options',
       variant: 'outlined',
       icon: '',
-      disabled: 'não',
+      disabled: 'no',
     }),
     ic('m-row-actions', 'm-btn2', 'm3-button', 212, 764, 184, 40, {
       label: 'Save',
       variant: 'filled',
       icon: 'check',
-      disabled: 'não',
+      disabled: 'no',
     }),
     i('m-fab', 'm3-fab', 340, 684, 56, 56, { icon: 'edit', label: '', color: 'primary' }),
     i('m-nav', 'm3-navigation-bar', 0, 837, 412, 80, {
@@ -1502,7 +1501,7 @@ export const M3_SCREEN: Screen = {
     i('m-scrim', 'm3-scrim', 0, 0, 412, 917, {}),
     i('m-sheet', 'm3-bottom-sheet', 0, 597, 412, 320, {
       title: 'Sort by',
-      handle: 'sim',
+      handle: 'yes',
       item1: 'Name',
       icon1: 'person',
       item2: 'Date modified',

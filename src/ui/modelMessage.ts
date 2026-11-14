@@ -2,8 +2,8 @@ import { t, type TranslationKey } from '../i18n';
 import type { ModelMessageCode } from '../i18n/modelMessages';
 import { MODEL_MESSAGE_TEMPLATES, RAW_MESSAGE_CODE, type ModelMessage } from '../model';
 
-// Texto de uma mensagem do modelo no idioma da interface: o código conhecido vira
-// `t('model.<código>', params)`; `raw` (e qualquer código sem tradução) segue em texto.
+// Text of a model message in the interface language: the known code becomes
+// `t('model.<code>', params)`; `raw` (and any code without a translation) stays as text.
 
 const HAND_WRITTEN: readonly ModelMessageCode[] = [
   'catalog.fileMissing',
@@ -26,7 +26,7 @@ const HAND_WRITTEN: readonly ModelMessageCode[] = [
   'icons.invalidFallback',
 ];
 
-// Os do catálogo do modelo (`src/model/messages/`) são lidos de lá, não listados à mão.
+// Those of the model catalog (`src/model/messages/`) are read from there, not listed by hand.
 const CODES: ReadonlySet<string> = new Set<string>([
   ...HAND_WRITTEN,
   ...Object.keys(MODEL_MESSAGE_TEMPLATES),

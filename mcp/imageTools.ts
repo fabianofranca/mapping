@@ -48,7 +48,7 @@ export interface ImageFileOptions {
   readonly format?: ImageFormat;
 }
 
-/** Texto (JSON) e a imagem que a tool devolve. */
+/** Text (JSON) and the image the tool returns. */
 export interface ImageResult {
   readonly json: Record<string, unknown>;
   readonly image: { readonly bytes: Uint8Array; readonly mimeType: string };
@@ -58,10 +58,10 @@ export interface LoadedImage {
   readonly raster: Raster;
   readonly bytes: Uint8Array;
   readonly format: ImageFormat;
-  /** Orientação EXIF do arquivo (1 = sem rotação); o `raster` já está girado. */
+  /** The file's EXIF orientation (1 = no rotation); the `raster` is already rotated. */
   readonly orientation: ExifOrientation;
   readonly file: string | null;
-  /** Razão arquivo / projeto: ≠ 1 se o arquivo não tem as dimensões gravadas no `mapping.json`. */
+  /** File / project ratio: ≠ 1 if the file does not have the dimensions saved in `mapping.json`. */
   readonly scaleX: number;
   readonly scaleY: number;
 }
@@ -73,8 +73,8 @@ export const EXTENSION: Record<ImageFormat, string> = {
 };
 
 /**
- * `url` (HTTP local) e `markdown` da imagem devolvida. Sem servidor, ou se ele não subir
- * (aviso no stderr), a tool responde sem esses campos.
+ * `url` (local HTTP) and `markdown` of the returned image. Without a server, or if it does not
+ * start (warning on stderr), the tool responds without these fields.
  */
 export async function urlFields(
   images: ImageServer | null,
@@ -89,17 +89,18 @@ export async function urlFields(
     return { url, markdown: `![${cleanAlt}](${url})` };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`mapping-mcp: servidor de imagens indisponível: ${message}\n`);
+    process.stderr.write(`mapping-mcp: image server unavailable: ${message}\n`);
     return {};
   }
 }
 
-/** Mais pixels que isso, o container sem arquivo é rasterizado reduzido (é uma cor só). */
+/** Above this many pixels, a container without a file is rasterized downscaled (it is a single color). */
 const MAX_BACKGROUND_PIXELS = 4096 * 4096;
 
 /**
- * Container sem arquivo: um raster liso com a cor `background`, no tamanho da imagem
- * (o desenho dos componentes é pintado por cima depois, só na região pedida) (reduzido se for enorme: `scaleX`/`scaleY` ≠ 1 já são tratados).
+ * Container without a file: a flat raster with the `background` color, the size of the image
+ * (the components' drawing is painted over it afterwards, only in the requested region) (downscaled
+ * if huge: `scaleX`/`scaleY` ≠ 1 are already handled).
  */
 function backgroundImage(image: ProjectContainer): LoadedImage {
   const shrink = Math.min(
@@ -138,7 +139,7 @@ export async function loadImage(
   if (absolute === null) {
     throw new ToolError(
       'image-file-missing',
-      `o arquivo da imagem não existe (ou está fora das raízes): ${image.file}`,
+      `the image file does not exist (or is outside the roots): ${image.file}`,
       { image: refs.ref('i', image.id), file: image.file },
     );
   }
@@ -156,7 +157,7 @@ export async function loadImage(
   };
 }
 
-/** Formato de saída padrão: JPEG para fotos (origem JPEG), PNG nos demais (prints e texto, sem perdas). */
+/** Default output format: JPEG for photos (JPEG source), PNG otherwise (screenshots and text, lossless). */
 function outputFormat(requested: ImageFormat | undefined, source: ImageFormat) {
   return requested ?? (source === 'jpeg' ? 'jpeg' : 'png');
 }
@@ -174,7 +175,7 @@ export const sizeWarning = (loaded: LoadedImage, image: ProjectContainer) =>
   (loaded.scaleX === 1 && loaded.scaleY === 1) || loaded.file === null
     ? {}
     : {
-        warning: `o arquivo tem ${loaded.raster.width}×${loaded.raster.height}, mas o projeto registra ${image.width}×${image.height}: as coordenadas foram proporcionalmente ajustadas`,
+        warning: `the file is ${loaded.raster.width}×${loaded.raster.height}, but the project records ${image.width}×${image.height}: the coordinates were proportionally adjusted`,
       };
 
 export const rectJson = (r: PixelRect) => ({
@@ -184,7 +185,7 @@ export const rectJson = (r: PixelRect) => ({
   height: r.height,
 });
 
-/** `get_marking_image`: recorte da marcação, ou a imagem inteira com ela destacada. */
+/** `get_marking_image`: crop of the marking, or the whole image with it highlighted. */
 export async function markingImage(
   roots: Roots,
   refs: Refs,
@@ -196,11 +197,11 @@ export async function markingImage(
   if (marking.containerId === null) {
     throw new ToolError(
       'invalid-arguments',
-      'marcação do canvas não tem imagem própria: use get_container_file dos containers sob ela',
+      'a canvas marking has no image of its own: use get_container_file of the containers under it',
     );
   }
   const image = index.containers.get(marking.containerId);
-  if (!image) throw new ToolError('not-found', 'container da marcação não encontrado');
+  if (!image) throw new ToolError('not-found', "the marking's container was not found");
   const mode = options.mode ?? 'crop';
   const padding = options.padding ?? 0;
   const maxSize = options.maxSize ?? DEFAULT_MAX_SIZE;
@@ -222,7 +223,7 @@ export async function markingImage(
   if (!region) {
     throw new ToolError(
       'marking-outside-image',
-      'a marcação está fora do container: nada a recortar',
+      'the marking is outside the container: nothing to crop',
       {
         rect: rectJson(marking.rect),
         container: { width: image.width, height: image.height },
@@ -230,8 +231,8 @@ export async function markingImage(
     );
   }
 
-  // Container sem arquivo: pinta o desenho dos componentes (o mesmo de `render_container`, com a
-  // fonte embutida ou a da biblioteca) na região que a saída mostra.
+  // Container without a file: paints the components' drawing (the same as `render_container`, with the
+  // bundled font or the library's) in the region the output shows.
   const bgContainer = isBackgroundContainer(image);
   if (bgContainer) {
     paintContainerDrawings(
@@ -298,17 +299,17 @@ export async function markingImage(
         ? {
             drawing: 'rendered',
             drawingNote:
-              'desenho dos componentes com texto real (fonte embutida ou a da biblioteca), sombra, tracejado e ícones; sem gradiente (vale a primeira cor) e imagem remota (vira um reservado)',
+              "drawing of the components with real text (bundled font or the library's), shadow, dashes and icons; no gradient (the first color applies) and no remote image (it becomes a placeholder)",
           }
         : {}),
       format,
       width: composed.raster.width,
       height: composed.raster.height,
       scale: composed.scale,
-      // A região da imagem original que a saída mostra (pixels da imagem; x = y = 0 na imagem inteira).
+      // The region of the original image the output shows (image pixels; x = y = 0 on the whole image).
       region: rectJson(composed.region),
       padding,
-      // Onde a marcação ficou na saída (pixels da imagem devolvida).
+      // Where the marking ended up in the output (pixels of the returned image).
       markingInOutput: rectJson(markingInOutput),
       ...(mode === 'context'
         ? { markingOutline: { color: MARKING_OUTLINE, thickness: OUTLINE_THICKNESS } }
@@ -331,7 +332,7 @@ export async function markingImage(
   };
 }
 
-/** `get_container_file`: a imagem inteira do container, reduzida se passar de `maxSize`. */
+/** `get_container_file`: the container's whole image, scaled down if it exceeds `maxSize`. */
 export async function imageFile(
   roots: Roots,
   refs: Refs,
@@ -342,7 +343,7 @@ export async function imageFile(
   if (isBackgroundContainer(image)) {
     throw new ToolError(
       'container-without-file',
-      'O container não tem arquivo de imagem (só cor de fundo): use get_marking_image para ver o desenho.',
+      'The container has no image file (background color only): use get_marking_image to see the drawing.',
       { container: refs.ref('i', image.id) },
     );
   }
@@ -351,13 +352,13 @@ export async function imageFile(
   const { raster } = loaded;
   const target = fitSize(raster.width, raster.height, maxSize);
 
-  // Com orientação EXIF os bytes do arquivo contradizem as dimensões já giradas do JSON: recodifica.
+  // With EXIF orientation the file's bytes contradict the JSON's already-rotated dimensions: re-encode.
   const same =
     target.scale === 1 &&
     loaded.orientation === 1 &&
     (!options.format || options.format === loaded.format);
   const format = outputFormat(options.format, loaded.format);
-  // Cabe e o formato não mudou: devolve o arquivo como está, sem recodificar.
+  // It fits and the format did not change: returns the file as is, without re-encoding.
   const bytes = same
     ? loaded.bytes
     : await encodeImage(

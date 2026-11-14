@@ -12,60 +12,61 @@ const items = toItems(['String', 'Int', 'MutableList', 'List', 'Unit', 'Pair']);
 const labels = (word: string) => filterSuggestions(items, word).map((i) => i.label);
 
 describe('wordAtCursor', () => {
-  it('pega letras, dígitos, _ e . antes do cursor', () => {
-    expect(wordAtCursor('List<Usu', 8)).toEqual({ start: 5, text: 'Usu' });
+  it('picks up letters, digits, _ and . before the cursor', () => {
+    expect(wordAtCursor('List<Acc', 8)).toEqual({ start: 5, text: 'Acc' });
     expect(wordAtCursor('a.b_c9', 6)).toEqual({ start: 0, text: 'a.b_c9' });
+    // pt-BR kept: accented Portuguese letters are the object (Unicode word characters)
     expect(wordAtCursor('Ação', 4)).toEqual({ start: 0, text: 'Ação' });
   });
 
-  it('vazia quando o caractere antes do cursor não é de palavra', () => {
+  it('empty when the character before the cursor is not a word character', () => {
     expect(wordAtCursor('List<', 5)).toEqual({ start: 5, text: '' });
     expect(wordAtCursor('', 0)).toEqual({ start: 0, text: '' });
   });
 
-  it('ignora o que vem depois do cursor e limita o cursor ao texto', () => {
+  it('ignores what comes after the cursor and clamps the cursor to the text', () => {
     expect(wordAtCursor('Str Int', 3)).toEqual({ start: 0, text: 'Str' });
     expect(wordAtCursor('abc', 99)).toEqual({ start: 0, text: 'abc' });
   });
 });
 
 describe('filterSuggestions', () => {
-  it('palavra vazia devolve tudo', () => {
+  it('an empty word returns everything', () => {
     expect(labels('')).toHaveLength(items.length);
   });
 
-  it('ignora maiúsculas; quem começa vem antes de quem contém, na ordem original', () => {
+  it('ignores case; what starts with comes before what contains, in the original order', () => {
     expect(labels('li')).toEqual(['List', 'MutableList']);
     expect(labels('IN')).toEqual(['Int', 'String']);
   });
 
-  it('sem correspondência, vazio', () => {
+  it('no match, empty', () => {
     expect(labels('zzz')).toEqual([]);
   });
 
-  it('fecha quando a única correspondência é idêntica à palavra', () => {
+  it('closes when the only match is identical to the word', () => {
     expect(labels('Pair')).toEqual([]);
     expect(labels('pair')).toEqual(['Pair']);
     expect(labels('List')).toEqual(['List', 'MutableList']);
     expect(filterSuggestions(items, 'Pair', true).map((i) => i.label)).toEqual(['Pair']);
   });
 
-  it('mantém o texto secundário', () => {
-    const found = filterSuggestions([{ label: 'Usuario', detail: 'Classe' }], 'usu');
-    expect(found).toEqual([{ label: 'Usuario', detail: 'Classe' }]);
+  it('keeps the secondary text', () => {
+    const found = filterSuggestions([{ label: 'Account', detail: 'Class' }], 'acc');
+    expect(found).toEqual([{ label: 'Account', detail: 'Class' }]);
   });
 });
 
 describe('replaceWord', () => {
-  it('troca só a palavra antes do cursor', () => {
-    expect(replaceWord('List<Usu', 8, 'Usuario')).toEqual({
-      text: 'List<Usuario',
+  it('replaces only the word before the cursor', () => {
+    expect(replaceWord('List<Acc', 8, 'Account')).toEqual({
+      text: 'List<Account',
       cursor: 12,
     });
     expect(replaceWord('Str', 3, 'String')).toEqual({ text: 'String', cursor: 6 });
   });
 
-  it('com palavra vazia insere no cursor e preserva o resto', () => {
+  it('with an empty word inserts at the cursor and preserves the rest', () => {
     expect(replaceWord('List<>', 5, 'Int')).toEqual({ text: 'List<Int>', cursor: 8 });
     expect(replaceWord('Str, x', 3, 'String')).toEqual({
       text: 'String, x',
@@ -75,36 +76,37 @@ describe('replaceWord', () => {
 });
 
 describe('containsWord', () => {
-  it('o rótulo precisa estar solto de caracteres de palavra dos dois lados', () => {
-    expect(containsWord('Usuario', 'Usuario')).toBe(true);
-    expect(containsWord('List<Usuario>', 'Usuario')).toBe(true);
-    expect(containsWord('Map<Usuario, Int>', 'Usuario')).toBe(true);
-    expect(containsWord('Usuario?', 'Usuario')).toBe(true);
-    expect(containsWord('UsuarioDto', 'Usuario')).toBe(false);
-    expect(containsWord('MeuUsuario', 'Usuario')).toBe(false);
-    expect(containsWord('Usuario_1', 'Usuario')).toBe(false);
-    expect(containsWord('a.Usuario', 'Usuario')).toBe(false);
-    expect(containsWord('Usuario2', 'Usuario')).toBe(false);
+  it('the label must be free of word characters on both sides', () => {
+    expect(containsWord('Account', 'Account')).toBe(true);
+    expect(containsWord('List<Account>', 'Account')).toBe(true);
+    expect(containsWord('Map<Account, Int>', 'Account')).toBe(true);
+    expect(containsWord('Account?', 'Account')).toBe(true);
+    expect(containsWord('AccountDto', 'Account')).toBe(false);
+    expect(containsWord('MyAccount', 'Account')).toBe(false);
+    expect(containsWord('Account_1', 'Account')).toBe(false);
+    expect(containsWord('a.Account', 'Account')).toBe(false);
+    expect(containsWord('Account2', 'Account')).toBe(false);
   });
 
-  it('procura nas outras ocorrências e diferencia maiúsculas', () => {
-    expect(containsWord('UsuarioDto Usuario', 'Usuario')).toBe(true);
-    expect(containsWord('usuario', 'Usuario')).toBe(false);
-    expect(containsWord('Pessoa', '')).toBe(false);
-    expect(containsWord('', 'Usuario')).toBe(false);
+  it('looks at the other occurrences and is case sensitive', () => {
+    expect(containsWord('AccountDto Account', 'Account')).toBe(true);
+    expect(containsWord('account', 'Account')).toBe(false);
+    expect(containsWord('Person', '')).toBe(false);
+    expect(containsWord('', 'Account')).toBe(false);
   });
 
-  it('trata letras Unicode como parte da palavra', () => {
+  it('treats Unicode letters as part of the word', () => {
+    // pt-BR kept: accented Portuguese letters are the object (Unicode word characters)
     expect(containsWord('Endereço', 'Endere')).toBe(false);
     expect(containsWord('List<Endereço>', 'Endereço')).toBe(true);
   });
 });
 
 describe('mergeLinkedItems', () => {
-  it('alvos primeiro; a fixa de mesmo texto é descartada', () => {
-    const targets = [{ label: 'Usuario', detail: 'Classe', id: '1' }];
-    expect(mergeLinkedItems(targets, ['String', 'Usuario', { label: 'Int' }])).toEqual([
-      { label: 'Usuario', detail: 'Classe', id: '1' },
+  it('targets first; the fixed one with the same text is dropped', () => {
+    const targets = [{ label: 'Account', detail: 'Class', id: '1' }];
+    expect(mergeLinkedItems(targets, ['String', 'Account', { label: 'Int' }])).toEqual([
+      { label: 'Account', detail: 'Class', id: '1' },
       { label: 'String' },
       { label: 'Int' },
     ]);

@@ -1,8 +1,8 @@
 import { findBodyOpen, isPunct, isWord, topLevel, type TokenStream } from '../tokens';
 
-// `enum class Nome { A, B(1), C { … }; … }`: as constantes, na ordem da declaração.
+// `enum class Name { A, B(1), C { … }; … }`: the constants, in declaration order.
 
-/** Pula as anotações de uma constante (`@Deprecated("x") A`): o índice do primeiro token que não é anotação. */
+/** Skips a constant's annotations (`@Deprecated("x") A`): the index of the first token that is not an annotation. */
 function skipEntryAnnotations(stream: TokenStream, from: number): number {
   let j = from;
   while (isPunct(stream, j, '@')) {
@@ -13,7 +13,7 @@ function skipEntryAnnotations(stream: TokenStream, from: number): number {
   return j;
 }
 
-/** As constantes do corpo do enum que abre em `open`. */
+/** The constants of the enum body that opens at `open`. */
 function readEntries(stream: TokenStream, open: number): string[] {
   const close = stream.match[open]!;
   const entries: string[] = [];
@@ -37,7 +37,7 @@ function readEntries(stream: TokenStream, open: number): string[] {
   return entries;
 }
 
-/** Nome do `enum class` → constantes (a primeira declaração de cada nome vale). */
+/** `enum class` name → constants (the first declaration of each name wins). */
 export function findEnums(stream: TokenStream): Map<string, string[]> {
   const enums = new Map<string, string[]>();
   stream.tokens.forEach((token, i) => {

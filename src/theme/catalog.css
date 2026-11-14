@@ -1,4 +1,4 @@
-/* Catálogo da biblioteca (etapa Biblioteca, B5): validação, lista, página do componente. */
+/* Library catalog (Library stage, B5): validation, list, component page. */
 .catalog {
   display: flex;
   flex-direction: column;
@@ -91,7 +91,7 @@
 }
 
 .catalog-entry-name {
-  /* O nome nunca parte no meio (CL1, 1.3): sem espaço ao lado, o selo desce para a linha de baixo. */
+  /* The name never breaks in the middle (CL1, 1.3): with no room beside it, the badge drops to the line below. */
   flex: 1 1 auto;
   overflow-wrap: break-word;
 }
@@ -103,7 +103,7 @@
   overflow-y: auto;
 }
 
-/* Janela estreita: só a lista ocupa o espaço; a página abre num diálogo. */
+/* Narrow window: only the list takes the space; the page opens in a dialog. */
 .catalog-list-layout .catalog-list {
   flex: 1;
   width: auto;
@@ -113,7 +113,7 @@
   min-width: 0;
 }
 
-/* Sempre à vista no topo da área que rola, sem tirar o leitor do lugar. */
+/* Always in view at the top of the scrolling area, without moving the reader from their place. */
 .catalog-notice {
   position: sticky;
   top: 0;
@@ -170,9 +170,9 @@
   word-break: normal;
 }
 
-/* Cabeçalhos e colunas curtas (chave, tipo, obrigatório) numa linha só: "enum" e
-   `preferredItemWidth` nunca partem. O rótulo (2ª coluna) é texto com espaços e quebra entre
-   palavras, para a tabela caber no diálogo sem cortar a descrição. */
+/* Headers and short columns (key, type, required) on a single line: "enum" and
+   `preferredItemWidth` never break. The label (2nd column) is text with spaces and wraps between
+   words, so the table fits in the dialog without cutting off the description. */
 .catalog-table th,
 .catalog-table td:nth-child(3),
 .catalog-table td:nth-child(4),
@@ -187,13 +187,13 @@
 .catalog-table td:last-child {
   min-width: calc(var(--space-4) * 10);
   white-space: normal;
-  /* Só a última coluna (descrição, símbolo) parte um identificador longo: sem isso ela alarga
-     a tabela além do diálogo e o texto fica cortado na borda direita. */
+  /* Only the last column (description, symbol) breaks a long identifier: without this it widens
+     the table beyond the dialog and the text is cut off at the right edge. */
   overflow-wrap: anywhere;
 }
 
-/* Só a última coluna parte um identificador longo (como na tabela Campos); as outras não partem a
-   palavra, senão o navegador as espreme ("enu/m"; CL1, 1.3) e a moldura rola na horizontal. */
+/* Only the last column breaks a long identifier (as in the Fields table); the others do not break
+   the word, otherwise the browser squeezes them ("enu/m"; CL1, 1.3) and the frame scrolls horizontally. */
 .catalog-page .markdown td {
   overflow-wrap: normal;
 }
@@ -312,21 +312,21 @@
   min-height: var(--size-toolbar);
   padding: var(--space-2);
   overflow: auto;
-  /* Superfície, não o fundo do canvas: o trilho inativo do Slider (#E8DEF8) some sobre o
-     cinza do canvas claro (1,04:1) e aparece sobre a superfície. */
+  /* Surface, not the canvas background: the Slider's inactive track (#E8DEF8) disappears over the
+     gray of the light canvas (1.04:1) and shows over the surface. */
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
-/* A imagem é gerada em 2x; mostra o tamanho natural. */
+/* The image is generated at 2x; shows the natural size. */
 .catalog-image {
   display: block;
   max-width: none;
   zoom: 0.5;
-  /* Margem automática no lugar de `justify-content: center` no quadro: centra o que cabe e,
-     quando a imagem é mais larga que o quadro, encosta na borda esquerda (alcançável pela
-     rolagem) em vez de cortá-la. */
+  /* Automatic margin in place of `justify-content: center` on the frame: centers what fits and,
+     when the image is wider than the frame, touches the left edge (reachable by
+     scrolling) instead of cutting it off. */
   margin-inline: auto;
   flex: none;
 }
@@ -371,7 +371,7 @@
   min-width: 0;
 }
 
-/* Marcador de container (ícone sem pílula); a palavra vem na dica e no nome acessível. */
+/* Container marker (icon without a pill); the word comes in the hint and the accessible name. */
 .container-mark {
   display: inline-flex;
   flex: none;
@@ -384,7 +384,7 @@
   height: var(--control-icon);
 }
 
-/* Documento externo (decisões 23 a 25 da #559): estados, ações e link para o repositório. */
+/* External document (decisions 23 to 25 of #559): states, actions and link to the repository. */
 .external-doc {
   display: flex;
   flex-direction: column;

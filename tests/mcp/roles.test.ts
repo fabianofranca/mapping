@@ -4,8 +4,8 @@ import { createRoleWorkspace, type RoleWorkspace } from './roleWorkspace';
 import { connect, type Connection } from './workspace';
 import { join } from 'node:path';
 
-// Etapa #559, PD6 (MCP 0.18.0): `role` em create_annotation e update_annotation, as vistas com o
-// `parentRole` e os filhos por papel, e set_doc_repo / remove_doc_repo, por stdio.
+// Stage #559, PD6 (MCP 0.18.0): `role` in create_annotation and update_annotation, the views with the
+// `parentRole` and the children by role, and set_doc_repo / remove_doc_repo, over stdio.
 
 interface Plan {
   valid: boolean;
@@ -40,8 +40,8 @@ const plan = (operations: unknown[], project = ws.project) =>
 const dir = () => join(ws.root, ws.project);
 const eventsType = { type: 's/onClick' };
 
-describe('create_annotation com role', () => {
-  it('com owner e um role que o dono oferece, o plano é válido e diz o papel', async () => {
+describe('create_annotation with role', () => {
+  it('with owner and a role the owner offers, the plan is valid and states the role', async () => {
     const result = ok(
       await plan([
         {
@@ -54,10 +54,10 @@ describe('create_annotation com role', () => {
       ]),
     );
     expect(result.valid).toBe(true);
-    expect(result.summary[0]).toContain('papel "Pressionar"');
+    expect(result.summary[0]).toContain('role "Pressionar"');
   });
 
-  it('um role que o dono não oferece falha com unknown-role', async () => {
+  it('a role the owner does not offer fails with unknown-role', async () => {
     const result = ok(
       await plan([
         {
@@ -71,10 +71,10 @@ describe('create_annotation com role', () => {
     );
     expect(result.valid).toBe(false);
     expect(result.errors![0]!.code).toBe('unknown-role');
-    expect(result.errors![0]!.message).toContain('o dono não oferece este papel');
+    expect(result.errors![0]!.message).toContain('the owner does not offer this role');
   });
 
-  it('um role sem owner falha com role-without-owner', async () => {
+  it('a role without owner fails with role-without-owner', async () => {
     const result = ok(
       await plan([
         {
@@ -88,7 +88,7 @@ describe('create_annotation com role', () => {
     expect(result.errors![0]!.code).toBe('role-without-owner');
   });
 
-  it('sem role num dono com papéis o lote vale, e o plano devolve missing-role em issues', async () => {
+  it('without a role on an owner with roles the batch is valid, and the plan returns missing-role in issues', async () => {
     const result = ok(
       await plan([
         {
@@ -103,11 +103,11 @@ describe('create_annotation com role', () => {
     expect(JSON.stringify(result.issues.new)).toContain('missing-role');
   });
 
-  it('o lote proposto e aplicado grava o parentRole', async () => {
+  it('the proposed and applied batch writes the parentRole', async () => {
     const proposed = await propose(mcp, ws.project, [
       {
         op: 'create_annotation',
-        as: '$novo',
+        as: '$new',
         marking: ws.ref('M1', 'm'),
         ...eventsType,
         owner: ws.ref('A2'),
@@ -121,8 +121,8 @@ describe('create_annotation com role', () => {
   });
 });
 
-describe('update_annotation com role', () => {
-  it('troca o role, limpa com null, e um role que o dono não oferece falha', async () => {
+describe('update_annotation with role', () => {
+  it('changes the role, clears with null, and a role the owner does not offer fails', async () => {
     const bad = ok(
       await plan([{ op: 'update_annotation', annotation: ws.ref('C1'), role: 'tap' }]),
     );
@@ -139,7 +139,7 @@ describe('update_annotation com role', () => {
     expect(role('C1')).toBeNull();
   });
 
-  it('trocar o owner para um dono sem o papel limpa o papel', async () => {
+  it('changing the owner to an owner without the role clears the role', async () => {
     const proposed = await propose(mcp, ws.project, [
       { op: 'update_annotation', annotation: ws.ref('C2'), owner: ws.ref('A3') },
     ]);
@@ -149,7 +149,7 @@ describe('update_annotation com role', () => {
     expect(c2.parentRole).toBeNull();
   });
 
-  it('trocar o owner e o role no mesmo passo confere o role contra o novo dono', async () => {
+  it('changing the owner and the role in the same step checks the role against the new owner', async () => {
     const result = ok(
       await plan([
         {
@@ -164,17 +164,17 @@ describe('update_annotation com role', () => {
   });
 });
 
-describe('aviso role-cleared: a troca de dono que limpa o papel', () => {
+describe('role-cleared warning: the owner change that clears the role', () => {
   const cleared = (r: Plan) =>
     (r.warnings ?? []).filter((w) => w.code === 'role-cleared');
-  // Testes anteriores gravam alterações em C1 e C2: o passo 0 põe o papel de C1 de volta.
+  // Previous tests write changes to C1 and C2: step 0 puts the role of C1 back.
   const clickOnC1 = () => ({
     op: 'update_annotation',
     annotation: ws.ref('C1'),
     role: 'click',
   });
 
-  it('dona que não oferece o papel: nota no passo e um aviso estruturado', async () => {
+  it('owner that does not offer the role: note in the step and a structured warning', async () => {
     const result = ok(
       await plan([
         clickOnC1(),
@@ -182,7 +182,7 @@ describe('aviso role-cleared: a troca de dono que limpa o papel', () => {
       ]),
     );
     expect(result.valid).toBe(true);
-    expect(result.summary[1]).toMatch(/dona .*; papel "Clique" limpo$/);
+    expect(result.summary[1]).toMatch(/owner .*; role "Clique" cleared$/);
     expect(cleared(result)).toEqual([
       {
         code: 'role-cleared',
@@ -191,13 +191,13 @@ describe('aviso role-cleared: a troca de dono que limpa o papel', () => {
         role: 'click',
         roleName: 'Clique',
         message: expect.stringMatching(
-          /^o papel "Clique" de .* é limpo: a nova dona não o oferece$/,
+          /^the role "Clique" of .* is cleared: the new owner does not offer it$/,
         ),
       },
     ]);
   });
 
-  it('owner null num filho sem requiresOwner: sem dona e o aviso diz isso', async () => {
+  it('owner null on a child without requiresOwner: no owner and the warning says so', async () => {
     const result = ok(
       await plan([
         clickOnC1(),
@@ -205,14 +205,16 @@ describe('aviso role-cleared: a troca de dono que limpa o papel', () => {
       ]),
     );
     expect(result.valid).toBe(true);
-    expect(result.summary[1]).toMatch(/sem dona; papel "Clique" limpo$/);
+    expect(result.summary[1]).toMatch(/no owner; role "Clique" cleared$/);
     const [warning] = cleared(result);
     expect(cleared(result)).toHaveLength(1);
     expect(warning).toMatchObject({ op: 1, annotation: ws.ref('C1'), role: 'click' });
-    expect(warning!.message).toMatch(/é limpo: a anotação fica sem dona$/);
+    expect(warning!.message).toMatch(
+      /is cleared: the annotation is left without an owner$/,
+    );
   });
 
-  it('sem aviso: sem papel antes, dona que oferece o mesmo papel, ou role no mesmo passo', async () => {
+  it('no warning: no role before, owner that offers the same role, or role in the same step', async () => {
     const result = ok(
       await plan([
         { op: 'update_annotation', annotation: ws.ref('C2'), owner: ws.ref('A3') },
@@ -238,21 +240,21 @@ describe('aviso role-cleared: a troca de dono que limpa o papel', () => {
     for (const line of result.summary) expect(line).not.toContain('limpo');
   });
 
-  it('o propose_changes avisa igual e continua gravando a proposta', async () => {
+  it('propose_changes warns the same and still writes the proposal', async () => {
     const proposed = await propose(mcp, ws.project, [
       clickOnC1(),
       { op: 'update_annotation', annotation: ws.ref('C1'), owner: ws.ref('A3') },
     ]);
     expect(proposed.valid).toBe(true);
     expect(proposed.proposed).toBe(true);
-    expect(proposed.summary[1]).toMatch(/; papel "Clique" limpo$/);
+    expect(proposed.summary[1]).toMatch(/; role "Clique" cleared$/);
     const warnings = (proposed as unknown as Plan).warnings ?? [];
     expect(warnings.filter((w) => w.code === 'role-cleared')).toHaveLength(1);
   });
 });
 
-describe('vistas: parentRole e filhos por papel', () => {
-  it('get_annotation do filho mostra o parentRole e o do dono agrupa os filhos por papel', async () => {
+describe('views: parentRole and children by role', () => {
+  it('get_annotation of the child shows the parentRole and the owner one groups the children by role', async () => {
     const child = ok(await mcp.call('get_annotation', { ref: ws.ref('C2') }));
     expect(child.owner).toBe(ws.ref('A3'));
     const withRole = await propose(mcp, ws.project, [
@@ -294,18 +296,18 @@ describe('vistas: parentRole e filhos por papel', () => {
     expect((owner.linked as string[]).length).toBe(2);
   });
 
-  it('a árvore de get_marking leva o parentRole de cada vinculada', async () => {
+  it('the get_marking tree carries the parentRole of each linked one', async () => {
     const marking = ok(await mcp.call('get_marking', { ref: ws.ref('M1', 'm') }));
     expect(JSON.stringify(marking)).toContain('"parentRole":"hold"');
   });
 });
 
-describe('set_doc_repo e remove_doc_repo', () => {
-  it('valida as operações pelos erros do modelo', async () => {
+describe('set_doc_repo and remove_doc_repo', () => {
+  it('validates the operations through the model errors', async () => {
     const result = ok(
       await plan([
         { op: 'set_doc_repo', repo: 'design-docs', localPath: '../clone' },
-        { op: 'set_doc_repo', repo: 'nao-existe', localPath: '..' },
+        { op: 'set_doc_repo', repo: 'does-not-exist', localPath: '..' },
         { op: 'set_doc_repo', repo: 'wiki' },
         { op: 'set_doc_repo', repo: 'wiki', localPath: '/abs/olute' },
         { op: 'remove_doc_repo', repo: 'wiki' },
@@ -319,13 +321,11 @@ describe('set_doc_repo e remove_doc_repo', () => {
     ]);
   });
 
-  it('o plano conta a mudança docRepos, e a proposta aplicada grava o localPath', async () => {
+  it('the plan counts the docRepos change, and the applied proposal writes the localPath', async () => {
     const operations = [{ op: 'set_doc_repo', repo: 'wiki', localPath: '../wiki' }];
     const result = ok(await plan(operations));
     expect(result.valid).toBe(true);
-    expect(result.summary[0]).toContain(
-      'clone local do repositório de documentos "wiki"',
-    );
+    expect(result.summary[0]).toContain('local clone of the documents repository "wiki"');
     expect(result.changes.docRepos).toEqual({ created: 1, updated: 0, deleted: 0 });
 
     const proposed = await propose(mcp, ws.project, operations);
@@ -344,7 +344,7 @@ describe('set_doc_repo e remove_doc_repo', () => {
     });
   });
 
-  it('o resumo do projeto lista os docRepos com o localPath', async () => {
+  it('the project summary lists the docRepos with the localPath', async () => {
     const project = ok(
       await mcp.call<{ docRepos: Record<string, unknown>[] }>('get_project', {
         project: ws.project,
@@ -373,7 +373,7 @@ describe('set_doc_repo e remove_doc_repo', () => {
     ]);
   });
 
-  it('errorOf continua disponível para erros de chamada', async () => {
+  it('errorOf remains available for call errors', async () => {
     expect(
       errorOf(await mcp.call('get_annotation', { ref: 'mapping://proj/a/zzzzzzzz' }))
         .code,

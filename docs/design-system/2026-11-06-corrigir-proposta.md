@@ -1,31 +1,31 @@
-# Correção na mesma proposta — 2026-11-06 (épico `epic/corrigir-proposta`)
+# Correction in the same proposal — 2026-11-06 (épico `epic/corrigir-proposta`)
 
 ## Pendências
 
-- **CP1 e CP2** (modelo e MCP): nenhuma.
-- **CP3** (a revisão na app):
-  - **Selo "Revisada" / "Nova na revisão"** (`src/ui/review/RevisedFlag.tsx`): `Flag` de tom `new` com `Tooltip`, na linha da mudança, do item e da imagem; o nome acessível da linha ganha o sufixo.
-  - **Bloco "Antes da revisão"** nos Detalhes da mudança (`RevisedBefore.tsx`, classe `.revised-before` em `src/theme/review.css`, só tokens): `DiffValue` do que o agente tinha proposto e a decisão de antes.
-  - **Linha "Revisada · N para conferir"** da janela Propostas (`ProposalRow.tsx`).
-  - **Aviso de revisão nova** (`ProposalNotices.tsx`, `RevisedNotice`): texto com contagens e o botão **Revisar**, ausente com a revisão dela aberta.
-  - **Filtro "Só revisadas (N)"** no menu Filtros (`Choice`), a linha "Revisada pelo agente em …" no cabeçalho (`ReviewHeader`) e "Da mudança retirada: …" nas notas (`NoteField`).
-  - Nenhum token, ícone ou controle novo.
+- **CP1 and CP2** (model and MCP): none.
+- **CP3** (the review in the app):
+  - **"Revised" / "New in the revision" badge** (`src/ui/review/RevisedFlag.tsx`): `Flag` with `new` tone and `Tooltip`, on the change, item and image row; the row's accessible name gets the suffix.
+  - **"Before the revision" block** in the change Details (`RevisedBefore.tsx`, class `.revised-before` in `src/theme/review.css`, tokens only): `DiffValue` of what the agent had proposed and the earlier decision.
+  - **"Revised · N to check" row** of the Proposals window (`ProposalRow.tsx`).
+  - **New-revision notice** (`ProposalNotices.tsx`, `RevisedNotice`): text with counts and the **Review** button, absent with its review open.
+  - **"Revised only (N)" filter** in the Filters menu (`Choice`), the "Revised by the agent on …" row in the header (`ReviewHeader`) and "From the withdrawn change: …" in the notes (`NoteField`).
+  - No new token, icon or control.
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-06, no fechamento do épico (versão 48, `1794004854-9fe3`; o índice por último, com `lastChange`). CP1 e CP2 sem impacto. Da CP3, só guias e `Revisao.md`:
+Gravado no artefato **Mapping** on 2026-11-06, when closing the epic (version 48, `1794004854-9fe3`; the index last, with `lastChange`). CP1 and CP2 with no impact. From CP3, only guides and `Revisao.md`:
 
-- `Flag` (guia): o selo `Revisada` / `Nova na revisão`, tom `new`, com `Tooltip`, na linha da mudança, do item e da imagem; o nome acessível da linha ganha o sufixo.
-- `ChangePopover` (guia): o bloco **Antes da revisão** (`RevisedBefore.tsx`, `.revised-before`), com o `DiffValue` do que o agente tinha proposto e a decisão de antes.
-- `ProposalRow` (guia): a linha **Revisada · N para conferir**, o aviso de revisão nova (`RevisedNotice` em `ProposalNotices.tsx`, com **Revisar**, ausente com a revisão dela aberta) e o filtro **Só revisadas (N)** no menu Filtros.
-- `ReviewHeader` (guia): a linha "Revisada pelo agente em …". `NoteField` (guia): "Da mudança retirada: …".
-- `ReviewRow` (guia): a menção ao filtro **Só revisadas (N)** da lista.
-- `Revisao.md`: a seção nova "Revisão do agente na mesma proposta".
-- `project/design-system.json`: só o `lastChange`.
+- `Flag` (guide): the `Revised` / `New in the revision` badge, `new` tone, with `Tooltip`, on the change, item and image row; the row's accessible name gets the suffix.
+- `ChangePopover` (guide): the **Before the revision** block (`RevisedBefore.tsx`, `.revised-before`), with the `DiffValue` of what the agent had proposed and the earlier decision.
+- `ProposalRow` (guide): the **Revised · N to check** row, the new-revision notice (`RevisedNotice` in `ProposalNotices.tsx`, with **Review**, absent with its review open) and the **Revised only (N)** filter in the Filters menu.
+- `ReviewHeader` (guide): the "Revised by the agent on …" row. `NoteField` (guide): "From the withdrawn change: …".
+- `ReviewRow` (guide): the mention of the **Revised only (N)** filter of the list.
+- `Revisao.md`: the new section "Agent revision in the same proposal".
+- `project/design-system.json`: only the `lastChange`.
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: os estados novos (selo Revisada, linha Revisada · N para conferir, bloco Antes da revisão, linha de revisão no cabeçalho, nota da mudança retirada, filtro Só revisadas) nas prévias de `Flag`, `ProposalRow`, `ChangePopover`, `ReviewHeader`, `NoteField` e `ReviewRow`, e três correções de guia (filtro, cabeçalho, selo).
-- Passou para o registro do épico `epic/sincronia-ds-2`: sem componente próprio: `RevisedBefore.tsx` entra na lista "Com forma visível e sem componente no DS"; o aviso de revisão nova (`ProposalNotices.tsx`) já estava nela; criar componente fica com o dono.
-- Passou para o registro do épico `epic/sincronia-ds-2`: a conferência de contraste do selo `new` e do bloco `.revised-before` nos dois temas.
-- Passou para o registro do épico `epic/sincronia-ds-2`: a regra `.revised-before` (e `.revised-before-title`) no `bundle.css`.
+- Passou para o registro do épico `epic/sincronia-ds-2`: the new states (Revised badge, Revised · N to check row, Before the revision block, revision row in the header, withdrawn-change note, Revised only filter) in the `Flag`, `ProposalRow`, `ChangePopover`, `ReviewHeader`, `NoteField` and `ReviewRow` previews, and three guide corrections (filter, header, badge).
+- Passou para o registro do épico `epic/sincronia-ds-2`: no component of its own: `RevisedBefore.tsx` goes into the "With a visible shape and no component in the DS" list; the new-revision notice (`ProposalNotices.tsx`) was already in it; creating a component is up to the owner.
+- Passou para o registro do épico `epic/sincronia-ds-2`: the contrast check of the `new` badge and of the `.revised-before` block in both themes.
+- Passou para o registro do épico `epic/sincronia-ds-2`: the `.revised-before` rule (and `.revised-before-title`) in `bundle.css`.

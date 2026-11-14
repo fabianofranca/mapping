@@ -1,13 +1,13 @@
-# Revisor de código — 2026-11-08 (épico `epic/revisor-codigo`)
+# Code reviewer — 2026-11-08 (épico `epic/revisor-codigo`)
 
 ## Pendências
 
-- RC1: nenhuma (só fluxo de entrega e documentação).
+- RC1: nenhuma (only delivery flow and documentation).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: o épico só documentou o fluxo do revisor e ajustou uma skill do Claude Code.
+No write to the Mapping artifact in Claude Design: the epic only documented the reviewer flow and adjusted a Claude Code skill.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

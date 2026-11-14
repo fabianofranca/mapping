@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-chip",
   "name": "Chip",
-  "description": "Assist/filter chip: 32 dp, forma small (8), outline; filtro selecionado em secondary container com check.",
+  "description": "Assist/filter chip: 32 dp, small shape (8), outline; selected filter in secondary container with check.",
   "size": {
     "width": 96,
     "height": 32

@@ -5,8 +5,8 @@ import type { SpecNotice } from '../model';
 import { HelpTip } from './controls';
 import { NoticeLabelIcon, NoticeLines } from './NoticeBadge';
 
-// PropertyGrid do DS 2.0: rótulo à esquerda (coluna `--size-label-col`) e controle à
-// direita. Os estados vêm dos controles.
+// DS 2.0 PropertyGrid: label on the left (`--size-label-col` column) and control on the
+// right. The states come from the controls.
 
 export function PropertyGrid({ children }: { readonly children: ComponentChildren }) {
   return <div class="props">{children}</div>;
@@ -14,45 +14,45 @@ export function PropertyGrid({ children }: { readonly children: ComponentChildre
 
 interface PropertyProps {
   readonly label: ComponentChildren;
-  /** `id` do controle: o rótulo vira `<label for>` (clicar nele foca o campo). */
+  /** `id` of the control: the label becomes `<label for>` (clicking it focuses the field). */
   readonly for?: string;
   readonly required?: boolean;
   /**
-   * Explicação do campo: um `HelpTip` ao lado do rótulo (nome "Sobre {rótulo}") e, com
-   * `for`, a descrição acessível do controle (`aria-describedby`). Pede `label` em texto.
+   * Explanation of the field: a `HelpTip` next to the label (named "About {label}") and, with
+   * `for`, the control's accessible description (`aria-describedby`). Needs a text `label`.
    */
   readonly hint?: string;
-  /** O assunto do `HelpTip` quando o rótulo não é texto simples ("Sobre {hintName}"). */
+  /** The subject of the `HelpTip` when the label is not plain text ("About {hintName}"). */
   readonly hintName?: string;
-  /** Erro de uma edição recusada, abaixo do controle (anunciado). */
+  /** Error of a refused edit, below the control (announced). */
   readonly error?: string | null;
-  /** Pendência do valor gravado (ex.: obrigatório vazio), abaixo do controle. */
+  /** Pending issue of the stored value (e.g. empty required), below the control. */
   readonly issue?: string | null;
-  /** Aviso de estado abaixo do controle (ex.: lista sem opção): fica sempre visível. */
+  /** State warning below the control (e.g. list without options): always visible. */
   readonly status?: ComponentChildren;
-  /** Alvo do link de uma pendência (`data-focus`). */
+  /** Target of the link of a pending issue (`data-focus`). */
   readonly focusKey?: string;
   /**
-   * A chave do campo tipado de uma anotação (`data-field`): é por ela que o Ctrl+C acha a
-   * propriedade em foco e copia a referência `…/f/<campo>`.
+   * The key of an annotation's typed field (`data-field`): it is how Ctrl+C finds the
+   * focused property and copies the `…/f/<field>` reference.
    */
   readonly fieldKey?: string;
-  /** O menu ⋯ do campo, no fim da coluna do rótulo (Copiar referência, Citar, Comentar). */
+  /** The ⋯ menu of the field, at the end of the label column (Copy reference, Cite, Comment). */
   readonly menu?: ComponentChildren;
   /**
-   * Peça no fim da coluna do rótulo (o marcador da revisão, pelo ponto de extensão dos
-   * Detalhes). Com ela o rótulo fica numa célula própria: um botão não pode ir dentro do
+   * Piece at the end of the label column (the review marker, via the Details extension
+   * point). With it the label sits in its own cell: a button cannot go inside the
    * `<label>`.
    */
   readonly mark?: ComponentChildren;
-  /** Linha embaixo do controle (a nota da mudança, na revisão), pelo ponto de extensão. */
+  /** Row below the control (the change note, in the review), via the extension point. */
   readonly below?: ComponentChildren;
-  /** Avisos da especialização do campo: o ícone no rótulo e uma linha embaixo do controle. */
+  /** Warnings from the field's specialization: the icon on the label and a row below the control. */
   readonly notices?: readonly SpecNotice[];
   readonly children: ComponentChildren;
 }
 
-/** Acrescenta (ou tira) um `id` em `aria-describedby` do controle, sem pisar no que já há. */
+/** Adds (or removes) an `id` in the control's `aria-describedby`, keeping what is already there. */
 function describeControl(
   root: HTMLElement | null,
   controlId: string,
@@ -77,7 +77,7 @@ function describeControl(
   };
 }
 
-/** Texto do rótulo (como texto simples, para o nome do `HelpTip`). */
+/** Label text (as plain text, for the `HelpTip` name). */
 function plainLabel(label: ComponentChildren): string {
   return typeof label === 'string' || typeof label === 'number' ? String(label) : '';
 }
@@ -95,7 +95,7 @@ interface LabelProps {
   readonly notices?: readonly SpecNotice[];
 }
 
-/** Há algo ao lado do rótulo (explicação, marcador da revisão ou aviso do campo)? */
+/** Is there something next to the label (explanation, review marker or field warning)? */
 function hasLabelExtras(
   hint: string | undefined,
   extras: readonly ComponentChildren[],
@@ -105,7 +105,7 @@ function hasLabelExtras(
   return Boolean(hint) || present || (notices?.length ?? 0) > 0;
 }
 
-/** A célula do rótulo: o texto, o `HelpTip` da explicação e o marcador da revisão. */
+/** The label cell: the text, the explanation `HelpTip` and the review marker. */
 function LabelCell({
   label,
   htmlFor,
@@ -157,7 +157,7 @@ function LabelCell({
   );
 }
 
-/** Uma linha da grade: rótulo e controle (com erro e aviso embaixo). */
+/** A grid row: label and control (with error and warning below). */
 export function Property({
   label,
   for: htmlFor,
@@ -178,8 +178,8 @@ export function Property({
   const descriptionId = useId();
   const valueRef = useRef<HTMLDivElement>(null);
   const described = htmlFor !== undefined && hint !== undefined && hint !== '';
-  // O controle (de qualquer tipo) ganha a explicação como descrição acessível, sem que
-  // cada chamador repita o `aria-describedby`.
+  // The control (of any type) gets the explanation as its accessible description, so that
+  // each caller does not repeat the `aria-describedby`.
   useLayoutEffect(() => {
     if (!described) return undefined;
     return describeControl(valueRef.current, htmlFor, descriptionId);

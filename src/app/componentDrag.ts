@@ -1,7 +1,8 @@
-// Tipo da paleta em arrasto. O `dataTransfer` só é legível no `drop`, então o `dragover` do canvas
-// lê o tipo daqui. A paleta grava no `dragstart` e limpa no `dragend`.
+// Type of the palette item being dragged. `dataTransfer` is only readable on `drop`, so the
+// canvas `dragover` reads the type from here. The palette sets it on `dragstart` and clears
+// it on `dragend`.
 
-/** MIME do arrasto de um tipo da paleta (JSON `{ specId, typeId }`). */
+/** MIME of dragging a palette type (JSON `{ specId, typeId }`). */
 export const COMPONENT_DRAG_MIME = 'application/x-mapping-component';
 
 export interface DraggedComponent {
@@ -19,7 +20,7 @@ export function draggedComponent(): DraggedComponent | null {
   return dragged;
 }
 
-/** O arrasto em curso traz um tipo da paleta? */
+/** Does the drag in progress carry a palette type? */
 export function dragHasComponent(data: DataTransfer | null | undefined): boolean {
   return (
     data !== null && data !== undefined && [...data.types].includes(COMPONENT_DRAG_MIME)

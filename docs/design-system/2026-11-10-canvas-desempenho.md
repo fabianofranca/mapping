@@ -1,13 +1,13 @@
-# Desempenho do canvas — 2026-11-10 (épico `epic/canvas-desempenho`)
+# Canvas performance — 2026-11-10 (épico `epic/canvas-desempenho`)
 
 ## Pendências
 
-- **`Arrow` e `Canvas.md` (CD3, nível de detalhe das setas):** de longe a seta tem três níveis pelo tamanho na tela. Abaixo de `size-lod-min-marking` (24 px de comprimento) é **só o traço**: sem halo, sem ponta e sem rótulo. Ligando duas marcações invisíveis (abaixo de `size-lod-hide-marking`, 2 px, nas duas medidas) a seta **some**. A selecionada (inclusive na seleção múltipla) e as ligadas a uma marcação selecionada ou sob o mouse ficam **inteiras**, como as marcações. A seta fora da área visível não é desenhada. Nenhum token novo.
+- **`Arrow` and `Canvas.md` (CD3, arrow level of detail):** from afar the arrow has three levels by its size on screen. Below `size-lod-min-marking` (24 px long) it is **the stroke only**: no halo, no tip and no label. Connecting two invisible markings (below `size-lod-hide-marking`, 2 px, in both measures) the arrow **disappears**. The selected one (including in multi-selection) and those connected to a selected marking or one under the mouse stay **complete**, like the markings. An arrow outside the visible area is not drawn. No new token.
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-10: versões 75 e 76 (a 76 é o índice, com `lastChange`). `project/Canvas.md` (seção Setas: nível de detalhe) e `project/components/Arrow/README.md` (parágrafo "De longe (nível de detalhe)").
+Gravado no artefato **Mapping** on 2026-11-10: versions 75 and 76 (76 is the index, with `lastChange`). `project/Canvas.md` (Arrows section: level of detail) and `project/components/Arrow/README.md` ("From afar (level of detail)" paragraph).
 
 ## Ficou sem gravar
 
-Nada: a única pendência foi gravada.
+Nothing: the only pending item was written.

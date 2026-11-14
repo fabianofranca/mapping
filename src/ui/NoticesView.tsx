@@ -17,13 +17,13 @@ import { arrowText } from './labels';
 import { NoticeBadge, noticeKindLabel } from './NoticeBadge';
 
 interface NoticesViewProps {
-  /** Leva à anotação (mostra a camada, seleciona a marcação e rola o painel até ela). */
+  /** Goes to the annotation (shows the layer, selects the marking and scrolls the panel to it). */
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 
 type KindFilter = SpecNoticeKind | 'all';
 
-/** O valor do campo (ou as células da coluna) como texto de uma linha. */
+/** The field's value (or the column's cells) as a one-line text. */
 function valueText(value: JsonValue | undefined): string {
   if (value === undefined || value === null) return '';
   if (Array.isArray(value)) return value.map(valueText).filter(Boolean).join(', ');
@@ -32,7 +32,7 @@ function valueText(value: JsonValue | undefined): string {
   return JSON.stringify(value);
 }
 
-/** O lugar do aviso: "Alert" (tipo), "Alert › legacyStyle" (campo), "Alert › events › handler". */
+/** The notice's place: "Alert" (type), "Alert › legacyStyle" (field), "Alert › events › x". */
 function placeText(project: Project, usage: NoticeUsage): string {
   const type = findSpecType(project, {
     specId: usage.specId,
@@ -43,7 +43,7 @@ function placeText(project: Project, usage: NoticeUsage): string {
     .join(' › ');
 }
 
-/** O cabeçalho do grupo: selo, lugar, escopo, mensagem, `since` e quantas anotações afeta. */
+/** The group's header: badge, place, scope, message, `since` and affected annotation count. */
 function GroupHead({
   project,
   group,
@@ -91,13 +91,13 @@ function kindItems(
 }
 
 /**
- * Janela Avisos (etapa #486, AV3): os avisos da especialização agrupados por aviso (do mais
- * grave ao menos), cada um com as anotações que afeta. Escolher uma linha leva à anotação.
- * Os filtros (`kind`, "Só avisos em uso" e "Só camadas visíveis") são estado da UI.
+ * Notices window (stage #486, AV3): the specialization's notices grouped by notice (from most
+ * to least severe), each with the annotations it affects. Choosing a row goes to the annotation.
+ * The filters (`kind`, "Only notices in use" and "Visible layers only") are UI state.
  */
 export function NoticesView({ onGoToAnnotation }: NoticesViewProps) {
   const { review, ui, derived } = useEditor();
-  // O projeto à vista, o mesmo de `derived.noticeList` (na visão Proposto, a prévia).
+  // The project in view, the same as `derived.noticeList` (in the Proposed view, the preview).
   const project = review.derived.shownProject.value;
   const kind = ui.noticeKind.value;
   const list = derived.noticeList.value;

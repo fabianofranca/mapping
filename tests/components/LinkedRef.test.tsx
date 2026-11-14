@@ -1,5 +1,5 @@
-// `linkedRef` (SG2): os alvos do `ref` irmão na lista de sugestões do campo/coluna `string` e a
-// gravação conjunta de texto e `ref` (campo dos Detalhes e célula de tabela).
+// `linkedRef` (SG2): the targets of the sibling `ref` in the suggestion list of the `string` field/column and the
+// joint saving of text and `ref` (Details field and table cell).
 import { cleanup, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -11,37 +11,38 @@ import { E1, R1, R2, build, type Raw } from '../model/refColumnFixtures';
 import { annotationOf, createHarness, renderLive, type Harness } from './harness';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
+// pt-BR kept: shared fixture data asserted by tests/model, tests/store (refColumnFixtures: cpf, nome, termo and the `*Modelo` targets)
 const FIXED = ['String', 'Int', 'cpf'];
 
-/** Especialização v8: o campo `tipo` (liga a `principal`) e a coluna `nota` (liga a `alvo`). */
+/** Specialization v8: the `kind` field (links to `principal`) and the `nota` column (links to `alvo`). */
 function edit(raw: Raw) {
   raw.formatVersion = 8;
-  const lista = raw.layers[1].annotationTypes[0];
-  lista.fields.push({
-    key: 'tipo',
-    label: 'Tipo',
+  const list = raw.layers[1].annotationTypes[0];
+  list.fields.push({
+    key: 'kind',
+    label: 'Kind',
     type: 'string',
     suggestions: FIXED,
     linkedRef: 'principal',
   });
-  const nota = lista.fields[1].columns[0];
-  nota.label = 'Nota';
-  nota.suggestions = FIXED;
-  nota.linkedRef = 'alvo';
+  const note = list.fields[1].columns[0];
+  note.label = 'Note';
+  note.suggestions = FIXED;
+  note.linkedRef = 'alvo';
 }
 
-function setup(fieldKey: 'tipo' | 'alvos') {
+function setup(fieldKey: 'kind' | 'alvos') {
   const harness = createHarness(build(1, edit));
   renderLive(harness, (p) => {
     const annotation = annotationOf(p, 'AL');
     const field = typeOfAnnotation(p, annotation)?.type.fields.find(
       (f) => f.key === fieldKey,
     );
-    if (!field) throw new Error(`campo ${fieldKey} não existe`);
+    if (!field) throw new Error(`field ${fieldKey} does not exist`);
     return (
       <TypedField
         field={field}
@@ -63,48 +64,48 @@ const pick = async (user: ReturnType<typeof userEvent.setup>, label: string) => 
   const option = screen
     .getAllByRole('option')
     .find((o) => o.querySelector('.suggestion-label')?.textContent === label);
-  if (!option) throw new Error(`sem opção ${label}`);
+  if (!option) throw new Error(`no option ${label}`);
   await user.click(option);
 };
 
 describe.each([
   {
-    name: 'campo dos Detalhes',
-    key: 'tipo' as const,
-    label: 'Tipo',
+    name: 'Details field',
+    key: 'kind' as const,
+    label: 'Kind',
     refOf: (h: Harness) => values(h).principal,
-    textOf: (h: Harness) => values(h).tipo,
+    textOf: (h: Harness) => values(h).kind,
     presetRef: (h: Harness) => h.actions.setFieldValue('AL', 'principal', R2),
-    presetText: (h: Harness, text: string) => h.actions.setFieldValue('AL', 'tipo', text),
+    presetText: (h: Harness, text: string) => h.actions.setFieldValue('AL', 'kind', text),
     targets: ['cpfModelo', 'nomeModelo', 'String', 'Int'],
   },
   {
-    name: 'célula de tabela',
+    name: 'table cell',
     key: 'alvos' as const,
-    label: 'Nota (Linha 1)',
+    label: 'Note (Row 1)',
     refOf: (h: Harness) => row(h).alvo,
     textOf: (h: Harness) => row(h).nota,
     presetRef: (h: Harness) => h.actions.setTableCell('AL', 'alvos', 'L1', 'alvo', R2),
     presetText: (h: Harness, text: string) =>
       h.actions.setTableCell('AL', 'alvos', 'L1', 'nota', text),
-    targets: ['cpfModelo', 'nomeModelo', 'termolivre', 'String', 'Int'],
+    targets: ['cpfModelo', 'nomeModelo', 'termofree', 'String', 'Int'],
   },
 ])(
   'linkedRef: $name',
   ({ key, label, refOf, textOf, presetRef, presetText, targets }) => {
     const field = () => screen.getByLabelText<HTMLInputElement>(label);
 
-    it('(a) a lista mostra os alvos antes das fixas, com o tipo como texto secundário', async () => {
+    it('(a) the list shows the targets before the fixed ones, with the type as secondary text', async () => {
       const { user } = setup(key);
       await user.click(field());
       expect(options()).toEqual(targets);
     });
 
-    it('(b) escolher e confirmar grava texto e ref numa entrada; um undo volta os dois', async () => {
+    it('(b) choosing and confirming saves text and ref in one entry; one undo reverts both', async () => {
       const { harness, user } = setup(key);
       await user.type(field(), 'cp');
       await pick(user, 'cpf');
-      // Escolher não grava.
+      // Choosing does not save.
       expect(textOf(harness)).toBeFalsy();
       expect(refOf(harness)).toBeFalsy();
       await user.keyboard('{Enter}');
@@ -115,7 +116,7 @@ describe.each([
       expect(refOf(harness) ?? null).toBeNull();
     });
 
-    it('(b) sair do campo também grava os dois', async () => {
+    it('(b) leaving the field also saves both', async () => {
       const { harness, user } = setup(key);
       await user.type(field(), 'cp');
       await pick(user, 'cpf');
@@ -124,7 +125,7 @@ describe.each([
       expect(refOf(harness)).toEqual(R1);
     });
 
-    it('(c) o rótulo no meio de um texto maior ainda grava o ref', async () => {
+    it('(c) the label in the middle of a longer text still saves the ref', async () => {
       const { harness, user } = setup(key);
       await user.type(field(), 'List<cp');
       await pick(user, 'cpf');
@@ -134,7 +135,7 @@ describe.each([
       expect(refOf(harness)).toEqual(R1);
     });
 
-    it('(d) Esc descarta o texto e a escolha', async () => {
+    it('(d) Esc discards the text and the choice', async () => {
       const { harness, user } = setup(key);
       await user.type(field(), 'cp');
       await pick(user, 'cpf');
@@ -143,14 +144,14 @@ describe.each([
       await user.tab();
       expect(textOf(harness) ?? null).toBeNull();
       expect(refOf(harness) ?? null).toBeNull();
-      // A escolha descartada não volta numa edição seguinte.
+      // The discarded choice does not come back in a following edit.
       await user.click(field());
       await user.keyboard('{Escape}cpf{Enter}');
       expect(textOf(harness)).toBe('cpf');
       expect(refOf(harness) ?? null).toBeNull();
     });
 
-    it('(e) digitar o nome à mão não mexe no ref, e apagar o texto não o limpa', async () => {
+    it('(e) typing the name by hand does not touch the ref, and erasing the text does not clear it', async () => {
       const { harness, user } = setup(key);
       presetRef(harness);
       await user.type(field(), 'cpf{Enter}');
@@ -162,7 +163,7 @@ describe.each([
       expect(refOf(harness)).toEqual(R2);
     });
 
-    it('(f) escolher e depois apagar o rótulo grava só o texto', async () => {
+    it('(f) choosing and then erasing the label saves only the text', async () => {
       const { harness, user } = setup(key);
       await user.type(field(), 'cp');
       await pick(user, 'cpf');
@@ -172,7 +173,7 @@ describe.each([
       expect(refOf(harness) ?? null).toBeNull();
     });
 
-    it('(g) escolher o alvo cujo texto já é o valor atual ainda grava o ref', async () => {
+    it('(g) choosing the target whose text is already the current value still saves the ref', async () => {
       const { harness, user } = setup(key);
       presetText(harness, 'cpf');
       await user.click(field());
@@ -183,7 +184,7 @@ describe.each([
       expect(refOf(harness)).toEqual(R1);
     });
 
-    it('(h) um ref já preenchido com outro alvo é trocado; vale a última escolha', async () => {
+    it('(h) a ref already filled with another target is replaced; the last choice wins', async () => {
       const { harness, user } = setup(key);
       presetRef(harness);
       await user.type(field(), 'cp');
@@ -196,7 +197,7 @@ describe.each([
       expect(refOf(harness)).toEqual(R2);
     });
 
-    it('a lista de escolhidos é zerada depois de confirmar', async () => {
+    it('the list of chosen ones is reset after confirming', async () => {
       const { harness, user } = setup(key);
       await user.type(field(), 'cp');
       await pick(user, 'cpf');
@@ -209,52 +210,52 @@ describe.each([
   },
 );
 
-describe('linkedRef: alvo da tupla livre', () => {
-  it('a célula aceita a tupla livre e grava o ref dela', async () => {
+describe('linkedRef: free tuple target', () => {
+  it('the cell accepts the free tuple and saves its ref', async () => {
     const { harness, user } = setup('alvos');
-    await user.type(screen.getByLabelText('Nota (Linha 1)'), 'ter');
+    await user.type(screen.getByLabelText('Note (Row 1)'), 'ter');
     await pick(user, 'termo');
     await user.keyboard('{Enter}');
     expect(row(harness).alvo).toEqual(E1);
   });
 });
 
-describe('linkedRef sem projeto', () => {
+describe('linkedRef without a project', () => {
   const fields = () => {
     const annotation = annotationOf(build(1, edit), 'AL');
     const project = build(1, edit);
     return typeOfAnnotation(project, annotation)?.type.fields ?? [];
   };
 
-  it('o formulário do Catálogo mostra só as sugestões fixas', async () => {
+  it('the Catalog form shows only the fixed suggestions', async () => {
     const project: Project = build(1, edit);
     expect(project).toBeTruthy();
     render(
       <TypedForm
-        fields={fields().filter((f) => f.key === 'tipo' || f.key === 'alvos')}
+        fields={fields().filter((f) => f.key === 'kind' || f.key === 'alvos')}
         values={{ alvos: [{ _id: 'L1', nota: '' }] }}
         onChange={() => undefined}
         readOnly={false}
       />,
     );
     const user = userEvent.setup();
-    await user.click(screen.getByLabelText('Tipo'));
+    await user.click(screen.getByLabelText('Kind'));
     expect(options()).toEqual(FIXED);
     await user.keyboard('{Escape}');
-    await user.click(screen.getByLabelText('Nota (Linha 1)'));
+    await user.click(screen.getByLabelText('Note (Row 1)'));
     expect(options()).toEqual(FIXED);
   });
 
-  it('somente leitura: sem lista', async () => {
+  it('read-only: no list', async () => {
     render(
       <TypedForm
-        fields={fields().filter((f) => f.key === 'tipo')}
+        fields={fields().filter((f) => f.key === 'kind')}
         values={{}}
         onChange={() => undefined}
         readOnly
       />,
     );
-    await userEvent.setup().click(screen.getByLabelText('Tipo'));
+    await userEvent.setup().click(screen.getByLabelText('Kind'));
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 });

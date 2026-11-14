@@ -1,13 +1,13 @@
-# Vínculo na mesma camada — 2026-11-07 (épico `epic/vinculo-mesma-camada`)
+# Link in the same layer — 2026-11-07 (épico `epic/vinculo-mesma-camada`)
 
 ## Pendências
 
-Nenhuma.
+None.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: nenhuma fase teve impacto no DS (só MCP, modelo, documentação e textos de ajuda; o `title` do **Vinculada a** não muda componente, token nem ícone). O artefato não foi aberto.
+Nothing to write to the **Mapping** artifact: no phase had DS impact (only MCP, model, documentation and help texts; the `title` of **Linked to** changes no component, token or icon). The artifact was not opened.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

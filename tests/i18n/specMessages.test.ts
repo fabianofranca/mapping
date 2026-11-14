@@ -9,12 +9,13 @@ import { SPEC_PATTERN_CODES, specCodeForText } from '../../src/model/messages/te
 import { specMessages } from '../../src/model/messages/spec';
 import { specMsg } from '../../src/model/specIssueCode';
 import { issueText } from '../../src/ui/LibraryIssueList';
+import { ptBRText } from '../support/modelText';
 
-// MB2 (#1357): os problemas da especialização até `layerShape` (campos, sugestões, `code`,
-// exemplos, `appliesTo`, filhos, documentos, papéis, grupos, tipos e camadas) e os textos padrão
-// do zod têm código e saem na língua da app. Em pt-BR o texto é igual ao `message`, salvo os
-// textos padrão do zod (decisão 6: o `message` segue o do zod, em inglês, e o pt-BR é uma
-// tradução); em en-US não há palavra do português fora dos parâmetros.
+// MB2 (#1357): the specialization problems up to `layerShape` (fields, suggestions, `code`,
+// examples, `appliesTo`, children, documents, roles, groups, types and layers) and the default
+// zod texts have a code and come out in the app's language. In pt-BR the text equals the `message`, except for the
+// default zod texts (decision 6: the `message` follows zod's, in English, and the pt-BR is a
+// translation); in en-US there is no Portuguese word outside the parameters.
 
 afterEach(() => {
   locale.value = 'pt-BR';
@@ -56,7 +57,7 @@ const container = (extra: Raw): Raw => ({
 });
 const font = (extra: Raw): Raw => ({ family: 'F', file: 'fonts/a.ttf', ...extra });
 
-/** Uma migração 1 → 2 com o passo dado (a versão da especialização sobe para 2). */
+/** A 1 → 2 migration with the given step (the specialization version goes up to 2). */
 function steps(step: Raw): (s: Raw) => void {
   return (s) => {
     s.version = 2;
@@ -64,7 +65,7 @@ function steps(step: Raw): (s: Raw) => void {
   };
 }
 
-/** O tipo `t` ganha a tabela `tb` com a coluna string `c`. */
+/** Type `t` gains table `tb` with string column `c`. */
 function tableOf(s: Raw): void {
   type(s).fields = [
     { key: 'k', type: 'string' },
@@ -72,7 +73,7 @@ function tableOf(s: Raw): void {
   ];
 }
 
-/** O tipo `t` ganha `allowedChildren` e o papel `r1`. */
+/** Type `t` gains `allowedChildren` and role `r1`. */
 function withRoles(s: Raw): void {
   type(s).allowedChildren = ['u'];
   type(s).childRoles = [{ id: 'r1', name: 'R1' }];
@@ -80,19 +81,19 @@ function withRoles(s: Raw): void {
   layer(s).annotationTypes.push({ id: 'w', name: 'W', fields: [] });
 }
 
-/** Origem declarada em `origins`; o campo cita o sistema sem `path`. */
+/** Origin declared in `origins`; the field cites the system without `path`. */
 function withOrigin(s: Raw, origin: Raw): void {
   s.origins = [origin];
   field(s).sources = [{ system: origin.system }];
 }
 
-/** O campo cita o sistema declarado com o `path` dado. */
+/** The field cites the declared system with the given `path`. */
 function fieldPath(s: Raw, path: string): void {
   s.origins = [{ system: 'sys' }];
   field(s).sources = [{ system: 'sys', path }];
 }
 
-/** Cada caso: o código esperado e a mudança que o produz a partir da especialização válida. */
+/** Each case: the expected code and the change that produces it from the valid specialization. */
 const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
   ['spec.notEmpty', (s) => (layer(s).id = '')],
   ['spec.colorInvalid', (s) => (layer(s).color = 'red')],
@@ -440,7 +441,7 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
       (type(s).notices = [{ kind: 'removed', message: 'm' }])
     ),
   ],
-  // MB3: repositórios, plataformas, containers, fontes e migrações (formas do arquivo).
+  // MB3: repositories, platforms, containers, sources and migrations (file shapes).
   [
     'spec.urlInvalid',
     (s) => (s.platforms = [{ id: 'a', name: 'A', repo: { url: 'x' } }]),
@@ -484,7 +485,7 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     'spec.onlyFormat',
     (s) => ((s.formatVersion = 1), (s.platforms = [{ id: 'a', name: 'A' }])),
   ],
-  // Fontes externas e origens
+  // External sources and origins
   [
     'spec.sourceOnlyOrigins',
     (s) => (field(s).sources = [{ system: 'figma', name: 'n', path: 'a' }]),
@@ -524,7 +525,7 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     'spec.typeIdRepeated',
     (s) => layer(s).annotationTypes.push({ id: 't', name: 'X', fields: [] }),
   ],
-  // Migrações
+  // Migrations
   [
     'spec.migrationFromRepeated',
     (s) => (
@@ -599,7 +600,7 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     'spec.columnStillExists',
     (s) => (tableOf(s), steps({ op: 'remove-field', type: 't', field: 'tb.c' })(s)),
   ],
-  // Filhos permitidos, grupos, repositórios de documento e dono
+  // Allowed children, groups, document repositories and owner
   ['spec.layerNotFound', (s) => (type(s).allowedChildren = [{ layer: 'zz' }])],
   [
     'spec.layerIsOwn',
@@ -620,7 +621,7 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     'spec.ownerOnlySelf',
     (s) => ((type(s).allowedChildren = ['t']), (type(s).requiresOwner = true)),
   ],
-  // Tokens e ícones
+  // Tokens and icons
   ['spec.tokensShape', (s) => (s.tokens = 'x')],
   ['spec.tokenKeyUnknown', (s) => (s.tokens = { modes: ['a'], values: {}, zz: 1 })],
   ['spec.tokenModesEmpty', (s) => (s.tokens = { modes: [], values: {} })],
@@ -660,7 +661,7 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
       type(s).code = { a: { symbol: 'S', params: { k: 'border.color' } } };
     },
   ],
-  // Os textos padrão do zod, um por código que a especialização produz.
+  // The default zod texts, one per code the specialization produces.
   ['spec.zod.invalid_type', (s) => (s.name = 3)],
   ['spec.zod.unrecognized_keys', (s) => (layer(s).zz = 1)],
   ['spec.zod.too_small', (s) => (field(s).label = '')],
@@ -677,7 +678,7 @@ const ZOD_CODES = [
   'spec.zod.too_small',
 ];
 
-/** Uma especialização v16 com o modelo de campo dado em `fieldModels.a.X` (a plataforma `a`). */
+/** A v16 specialization with the field model given in `fieldModels.a.X` (platform `a`). */
 function v16Models(model: unknown): (s: Raw) => void {
   return (s) => {
     s.formatVersion = 16;
@@ -694,10 +695,12 @@ function issuesOf(mutate: (s: Raw) => void): SpecIssue[] {
   return parsed.issues;
 }
 
+function asModelMessage(issue: SpecIssue) {
+  return modelMessage(issue.code ?? 'raw', issue.params ?? {}, issue.message);
+}
+
 function shown(issue: SpecIssue): string {
-  return messageText(
-    modelMessage(issue.code ?? 'raw', issue.params ?? {}, issue.message),
-  );
+  return messageText(asModelMessage(issue));
 }
 
 const PORTUGUESE = /[ãõçáéíóúâêô]/i;
@@ -709,16 +712,16 @@ function withoutParams(text: string, issue: SpecIssue): string {
   return out;
 }
 
-describe('mensagens da especialização (até layerShape)', () => {
+describe('specialization messages (up to layerShape)', () => {
   it.each(CASES.map(([code, mutate], i) => [`${i} ${code}`, code, mutate] as const))(
-    'produz o código: %s',
+    'produces the code: %s',
     (_name, code, mutate) => {
       const codes = issuesOf(mutate).map((i) => i.code);
       expect(codes).toContain(code);
     },
   );
 
-  it('todo código do catálogo `spec` (menos os do zod) é produzido por um caso', () => {
+  it("every code in the `spec` catalog (except zod's) is produced by a case", () => {
     const produced = new Set(CASES.map(([code]) => code));
     const catalog = Object.keys(MODEL_MESSAGE_TEMPLATES).filter(
       (c) => c.startsWith('spec.') && !c.startsWith('spec.zod.'),
@@ -727,7 +730,7 @@ describe('mensagens da especialização (até layerShape)', () => {
     for (const code of catalog) expect(produced, code).toContain(code);
   });
 
-  it('cada texto fixo do catálogo `spec` é de um código só (o código é achado pelo texto)', () => {
+  it('each fixed text in the `spec` catalog belongs to a single code (the code is found by the text)', () => {
     const fixed = Object.entries(MODEL_MESSAGE_TEMPLATES).filter(
       ([code, text]) =>
         code.startsWith('spec.') &&
@@ -738,28 +741,38 @@ describe('mensagens da especialização (até layerShape)', () => {
     expect(new Set(texts).size).toBe(texts.length);
   });
 
-  it('o `input` não sai do modelo', () => {
+  it('the `input` does not leave the model', () => {
     for (const [, mutate] of CASES) {
       for (const issue of issuesOf(mutate)) expect('input' in issue).toBe(false);
     }
   });
 
-  it('pt-BR: o texto mostrado é igual ao `message`, salvo os textos padrão do zod', () => {
+  it('pt-BR: the text shown is the pt-BR template filled in (never the English `message`, even for the default zod texts)', () => {
     locale.value = 'pt-BR';
     for (const [, mutate] of CASES) {
       for (const issue of issuesOf(mutate)) {
         if (issue.code === undefined) continue;
-        if (ZOD_CODES.includes(issue.code)) {
-          // Exceção declarada (decisão 6): o `message` é o do zod, em inglês; o pt-BR é traduzido.
+        expect(shown(issue), issue.message).toBe(ptBRText(asModelMessage(issue)));
+        // The `message` of the zod codes is zod's own English text; the pt-BR is translated (decision 6).
+        if (ZOD_CODES.includes(issue.code))
           expect(shown(issue), issue.message).not.toBe(issue.message);
-          continue;
-        }
+      }
+    }
+  });
+
+  it('en-US: the text shown is the English `message` itself', () => {
+    locale.value = 'en-US';
+    for (const [, mutate] of CASES) {
+      for (const issue of issuesOf(mutate)) {
+        if (issue.code === undefined) continue;
+        // The zod codes may differ in the plural ("Unrecognized keys"): the template is the base text.
+        if (ZOD_CODES.includes(issue.code)) continue;
         expect(shown(issue), issue.message).toBe(issue.message);
       }
     }
   });
 
-  it('en-US: nenhuma palavra em português fora dos parâmetros', () => {
+  it('en-US: no Portuguese word outside the parameters', () => {
     locale.value = 'en-US';
     for (const [, mutate] of CASES) {
       for (const issue of issuesOf(mutate)) {
@@ -769,7 +782,7 @@ describe('mensagens da especialização (até layerShape)', () => {
     }
   });
 
-  it('invalid_type leva `expected` e `received` (nomes do formato)', () => {
+  it('invalid_type carries `expected` and `received` (format names)', () => {
     const hit = issuesOf((s) => (s.name = 3)).find(
       (i) => i.code === 'spec.zod.invalid_type',
     );
@@ -785,7 +798,7 @@ describe('mensagens da especialização (até layerShape)', () => {
     expect(list?.params).toEqual({ expected: 'array', received: 'object' });
   });
 
-  it('o validador da biblioteca repassa o código e traduz a linha da especialização', () => {
+  it('the library validator passes on the code and translates the specialization line', () => {
     locale.value = 'en-US';
     const spec = base();
     type(spec).fields = [
@@ -803,44 +816,44 @@ describe('mensagens da especialização (até layerShape)', () => {
   });
 });
 
-// Item 2 da #1530 (decisões 2 e 7): o código da mensagem da especialização não vem de um regex
-// do texto pt-BR, salvo os três textos que o zod monta com o valor recebido.
-describe('código da mensagem da especialização sem falso casamento', () => {
-  it('texto que só parece com um modelo com parâmetro não ganha código', () => {
-    expect(specCodeForText('deve ser "a" ou "b"')).toBeUndefined();
-    expect(specCodeForText('nome "a" e "b" repetido')).toBeUndefined();
-    expect(specCodeForText('só é permitido com formatVersion 4')).toBeUndefined();
+// Item 2 of #1530 (decisions 2 and 7): the specialization message code does not come from a regex
+// of the pt-BR text, except for the three texts that zod builds with the received value.
+describe('specialization message code without false matches', () => {
+  it('text that merely resembles a template with a parameter gets no code', () => {
+    expect(specCodeForText('must be "a" ou "b"')).toBeUndefined();
+    expect(specCodeForText('nome "a" e "b" repeated')).toBeUndefined();
+    expect(specCodeForText('only allowed with formatVersion 4')).toBeUndefined();
   });
 
-  it('o padrão vale só para os três códigos dos enums', () => {
-    expect(specCodeForText('"x" inválido; use "marking" ou "arrow"')).toEqual({
+  it('the pattern applies only to the three enum codes', () => {
+    expect(specCodeForText('"x" is invalid; use "marking" or "arrow"')).toEqual({
       code: 'spec.appliesToInvalid',
       params: { value: 'x' },
     });
     expect(
       specCodeForText(
-        '"x" inválido; use "removed", "deprecated", "diverges" ou "pending"',
+        '"x" is invalid; use "removed", "deprecated", "diverges" or "pending"',
       ),
     ).toEqual({ code: 'spec.noticeKindInvalid', params: { value: 'x' } });
     expect(
       specCodeForText(
-        '"x" inválido; use "string", "number", "date", "enum", "table" ou "ref"',
+        '"x" is invalid; use "string", "number", "date", "enum", "table" or "ref"',
       ),
     ).toEqual({ code: 'spec.fieldTypeInvalid', params: { value: 'x' } });
   });
 
-  it('o texto exato de um modelo sem parâmetro segue achando o código', () => {
-    expect(specCodeForText('obrigatório')).toEqual({ code: 'spec.required' });
+  it('the exact text of a template without a parameter still finds the code', () => {
+    expect(specCodeForText('required')).toEqual({ code: 'spec.required' });
   });
 
-  // O mesmo `code` e os mesmos `params` de antes, um caso por grupo da decisão 2.
+  // The same `code` and the same `params` as before, one case per group of decision 2.
   const GROUPS: readonly (readonly [
     string,
     (s: Raw) => void,
     string,
     Record<string, string | number> | undefined,
   ])[] = [
-    // padrão (os três enums)
+    // pattern (the three enums)
     ['padrão', (s) => (field(s).type = 'foo'), 'spec.fieldTypeInvalid', { value: 'foo' }],
     [
       'padrão',
@@ -854,7 +867,7 @@ describe('código da mensagem da especialização sem falso casamento', () => {
       'spec.appliesToInvalid',
       { value: 'x' },
     ],
-    // `known` (mensagens do zod com valores constantes)
+    // `known` (zod messages with constant values)
     ['known', (s) => (s.format = 'x'), 'spec.formatInvalid', { format: 'mapping-spec' }],
     [
       'known',
@@ -874,7 +887,7 @@ describe('código da mensagem da especialização sem falso casamento', () => {
       'spec.fontWeightInvalid',
       { min: '100', max: '1000' },
     ],
-    // emissor
+    // emitter
     [
       'emissor',
       (s) => ((s.formatVersion = 1), (s.platforms = [{ id: 'a', name: 'A' }])),
@@ -906,7 +919,7 @@ describe('código da mensagem da especialização sem falso casamento', () => {
       'spec.urlTemplateNeedsPath',
       { path: '{path}' },
     ],
-    // o código que se perdia no caminho
+    // the code that used to get lost along the way
     [
       'perdido',
       (s) => (s.tokens = { modes: ['a'], values: {}, zz: 1 }),
@@ -932,7 +945,7 @@ describe('código da mensagem da especialização sem falso casamento', () => {
   ];
 
   it.each(GROUPS.map((g, i) => [`${i} ${g[0]}: ${g[2]}`, g] as const))(
-    'parseSpec devolve o code e os params de antes: %s',
+    'parseSpec returns the same code and params as before: %s',
     (_name, [, mutate, code, params]) => {
       const hit = issuesOf(mutate).find((i) => i.code === code);
       expect(hit, code).toBeDefined();
@@ -946,27 +959,27 @@ describe('código da mensagem da especialização sem falso casamento', () => {
     },
   );
 
-  it('o formatVersion que não existe e o lado do container levam os números no texto', () => {
+  it('the nonexistent formatVersion and the container side carry the numbers in the text', () => {
     const version = issuesOf((s) => (s.formatVersion = 99)).find(
       (i) => i.code === 'spec.formatVersionInvalid',
     );
     expect(version?.message).toBe(
-      `deve ser ${version?.params?.versions} ou ${version?.params?.last}`,
+      `must be ${version?.params?.versions} or ${version?.params?.last}`,
     );
     const side = issuesOf((s) => (s.containers = [container({ width: 999999 })])).find(
       (i) => i.code === 'spec.containerSideMax',
     );
-    expect(side?.message).toBe(`deve ser <= ${side?.params?.max}`);
+    expect(side?.message).toBe(`must be <= ${side?.params?.max}`);
     const only = issuesOf(
       (s) => ((s.formatVersion = 1), (s.platforms = [{ id: 'a', name: 'A' }])),
     ).find((i) => i.code === 'spec.onlyFormat');
     expect(only?.message).toBe(
-      `só é permitido com formatVersion ${only?.params?.version}`,
+      `only allowed with formatVersion ${only?.params?.version}`,
     );
   });
 });
 
-describe('contrato de SPEC_PATTERN_CODES (decisão 6 da #1589)', () => {
+describe('SPEC_PATTERN_CODES contract (decision 6 of #1589)', () => {
   const HOSTILE = 'x" inválido; use "marking';
   const MUTATE: Readonly<Record<string, (s: Raw, value: string) => void>> = {
     'spec.fieldTypeInvalid': (s, value) => (field(s).type = value),
@@ -975,12 +988,12 @@ describe('contrato de SPEC_PATTERN_CODES (decisão 6 da #1589)', () => {
     'spec.appliesToInvalid': (s, value) => (type(s).appliesTo = [value]),
   };
 
-  it('cada código tem um mutador neste teste', () => {
+  it('each code has a mutator in this test', () => {
     expect(Object.keys(MUTATE).sort()).toEqual([...SPEC_PATTERN_CODES].sort());
   });
 
   it.each(SPEC_PATTERN_CODES.map((code) => [code]))(
-    '%s: o modelo pt-BR tem exatamente um {…}',
+    '%s: the pt-BR template has exactly one {…}',
     (code) => {
       const text = (specMessages as Readonly<Record<string, string>>)[code] ?? '';
       expect(text.match(/\{\w+\}/g)).toHaveLength(1);
@@ -988,7 +1001,7 @@ describe('contrato de SPEC_PATTERN_CODES (decisão 6 da #1589)', () => {
   );
 
   it.each(SPEC_PATTERN_CODES.map((code) => [code]))(
-    '%s: o valor hostil volta inteiro em params.value, com o texto do catálogo',
+    '%s: the hostile value comes back whole in params.value, with the catalog text',
     (code) => {
       const issue = issuesOf((s) => MUTATE[code]?.(s, HOSTILE)).find(
         (i) => i.code === code,

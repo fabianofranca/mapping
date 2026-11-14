@@ -5,8 +5,8 @@ import { Select } from './controls';
 import { useEditor } from './EditorContext';
 import { directionLabel } from './readingDirections';
 
-// Direção de leitura do projeto (schema v20), nas Configurações do editor: a que os componentes
-// seguem, salvo nos containers que fixam a sua. Nenhuma marcação muda de lugar.
+// Project reading direction (schema v20), in the editor Settings: the one the components
+// follow, except in containers that fix their own. No marking moves.
 
 interface ProjectDirectionSettingsProps {
   readonly project: Project;
@@ -27,7 +27,7 @@ export function ProjectDirectionSettings({
       <p class="muted">{t('direction.intro')}</p>
       <Select
         label={t('direction.label')}
-        // Sem direção gravada vale `ltr`.
+        // With no saved direction, `ltr` applies.
         value={project.direction ?? 'ltr'}
         disabled={readOnly}
         onChange={(e) => {

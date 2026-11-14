@@ -24,11 +24,12 @@ import { lastReadAt, threadReads } from './threadReads';
 import { selectedThreadId } from './threadUi';
 import type { EditorUi } from './ui';
 
-// Estado derivado das conversas (etapa Comentários): a janela Comentários, a seção Conversas dos
-// Detalhes e a barra de status leem daqui, sem recalcular. Depende só das conversas, do projeto à
-// vista, da identidade e dos filtros da janela; pan e zoom não passam por aqui.
+// Derived thread state (Comments stage): the Comments window, the Threads section of the
+// Details and the status bar read from here, without recomputing. It depends only on the
+// threads, the project in view, the identity and the window filters; pan and zoom do not go
+// through here.
 
-/** Uma conversa com o lugar dela no projeto à vista. */
+/** A thread with its place in the project in view. */
 export interface ThreadEntry {
   readonly thread: Thread;
   readonly resolution: AnchorResolution;
@@ -36,40 +37,40 @@ export interface ThreadEntry {
 
 export interface ThreadSources {
   readonly threads: ReadonlySignal<readonly Thread[]>;
-  /** A cópia do projeto (onde o "lida" fica); `null` fora de uma sessão. */
+  /** The project copy (where the "read" mark is kept); `null` outside a session. */
   readonly copyId: string | null;
   readonly identity: ReadonlySignal<Identity | null>;
-  /** As propostas carregadas (id e título), para resolver as citações; sem elas, nenhuma. */
+  /** The loaded proposals (id and title), to resolve the citations; without them, none. */
   readonly proposals?: ReadonlySignal<readonly CitationProposal[]>;
 }
 
 export interface ThreadDerived {
-  /** Todas as conversas (abertas e resolvidas), a mais nova primeiro, com a âncora resolvida. */
+  /** All threads (open and resolved), newest first, with the anchor resolved. */
   readonly entries: ReadonlySignal<readonly ThreadEntry[]>;
-  /** Conversas por item que as hospeda (marcação, container ou seta), com as das partes dele. */
+  /** Threads by the item that hosts them (marking, container or arrow), with those of its parts. */
   readonly byItem: ReadonlySignal<ReadonlyMap<string, readonly ThreadEntry[]>>;
   readonly openCount: ReadonlySignal<number>;
   readonly awaitingAgentCount: ReadonlySignal<number>;
   readonly awaitingHumanCount: ReadonlySignal<number>;
   readonly resolvedCount: ReadonlySignal<number>;
-  /** Ids das conversas com mensagem não lida (decisão 16). */
+  /** Ids of the threads with an unread message (decision 16). */
   readonly unreadIds: ReadonlySignal<ReadonlySet<string>>;
   /**
-   * Grupos dos pinos do canvas (decisão 24), um por item que hospeda a âncora: com os pinos
-   * ligados, as conversas abertas e a resolvida selecionada; desligados, só a selecionada. Não
-   * depende do viewport (pan e zoom não os recalculam).
+   * Groups of the canvas pins (decision 24), one per item that hosts the anchor: with the pins
+   * on, the open threads and the selected resolved one; off, only the selected one. It does
+   * not depend on the viewport (pan and zoom do not recompute them).
    */
   readonly pins: ReadonlySignal<readonly PinGroup[]>;
-  /** Usuários das conversas (filtro Usuário). */
+  /** Users of the threads (User filter). */
   readonly users: ReadonlySignal<readonly ThreadUser[]>;
-  /** As linhas da janela: as conversas depois dos filtros de status, usuário, busca e seleção. */
+  /** The window rows: the threads after the status, user, search and selection filters. */
   readonly rows: ReadonlySignal<readonly ThreadEntry[]>;
   /**
-   * "Citada em" (decisão 33): para cada conversa citada por outra, os ids das que a citam
-   * (abertas e resolvidas).
+   * "Cited in" (decision 33): for each thread cited by another, the ids of the ones that cite
+   * it (open and resolved).
    */
   readonly citedIn: ReadonlySignal<ReadonlyMap<string, readonly string[]>>;
-  /** Proposta → a primeira conversa que a ligou (decisão 36). */
+  /** Proposal → the first thread that linked it (decision 36). */
   readonly proposalThreads: ReadonlySignal<ReadonlyMap<string, string>>;
 }
 
@@ -84,7 +85,7 @@ export const NO_THREAD_SOURCES = NO_SOURCES;
 const NO_PINS: readonly PinGroup[] = [];
 const NO_PROPOSALS = signal<readonly CitationProposal[]>([]);
 
-/** O item (marcação, container ou seta) onde a conversa mora, se houver. */
+/** The item (marking, container or arrow) where the thread lives, if any. */
 export function itemHostId(entry: ThreadEntry, project: Project): string | null {
   const host = hostOf(project, entry.thread.anchor);
   return host !== null && host.kind !== 'point' ? host.id : null;
@@ -121,7 +122,7 @@ export function createThreadDerived(
 
   const unreadIds = computed((): ReadonlySet<string> => {
     const me = sources.identity.value;
-    // Ler o blob aqui faz o "não lida" se atualizar quando `markThreadRead` grava.
+    // Reading the blob here makes the "unread" state update when `markThreadRead` writes.
     void threadReads.value;
     const copy = sources.copyId;
     const ids = new Set<string>();
@@ -151,9 +152,9 @@ export function createThreadDerived(
   const citedIn = computed(() => backlinks(sources.threads.value));
   const proposalThreadMap = computed(() => proposalThreads(sources.threads.value));
 
-  // Os itens que cada conversa cita (o filtro da seleção): só depende do projeto, das conversas
-  // e das propostas, então pan, zoom e troca de seleção não o recalculam. Lazy: só roda com o
-  // filtro ligado.
+  // The items each thread cites (the selection filter): it depends only on the project, the
+  // threads and the proposals, so pan, zoom and selection changes do not recompute it. Lazy:
+  // it only runs with the filter on.
   const citesByThread = computed((): ReadonlyMap<string, readonly string[]> => {
     const p = project.value;
     const map = new Map<string, readonly string[]>();

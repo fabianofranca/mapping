@@ -1,5 +1,5 @@
-// R25.75 ao R25.78: o componente que o `scripts/testing/rot.mjs` grava é válido e desenha o que
-// os passos do roteiro esperam (a barra por `$size`/`$mul` e o retângulo girado 45°).
+// R25.75 to R25.78: the component that `scripts/testing/rot.mjs` writes is valid and draws what
+// the script steps expect (the bar by `$size`/`$mul` and the rectangle rotated 45°).
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -38,8 +38,8 @@ function drawCard(width: number, height: number, scale = 1) {
       const i = (Math.round(y * scale) * w + Math.round(x * scale)) * 4;
       return [...raster.data.subarray(i, i + 3)];
     };
-    // Largura e altura, em unidades, da tinta de `color` (como o `tinta` do TESTING.md, com
-    // `FUZZ` em fração de 255).
+    // Width and height, in units, of the ink of `color` (like the `tinta` of TESTING.md, with
+    // `FUZZ` as a fraction of 255).
     const inkSize = (color: number[], fuzz: number) => {
       let x0 = w,
         y0 = h,
@@ -69,25 +69,25 @@ const BLUE = [0x19, 0x76, 0xd2];
 const RED = [0xd3, 0x2f, 0x2f];
 const WHITE = [255, 255, 255];
 
-describe('rot.mjs (R25.75 ao R25.78)', () => {
-  it('a barra tem metade da largura da instância e o retângulo gira em volta do centro', () => {
+describe('rot.mjs (R25.75 to R25.78)', () => {
+  it('the bar is half the instance width and the rectangle rotates around the center', () => {
     const at = drawCard(300, 120);
     expect(at(100, 25)).toEqual(BLUE);
     expect(at(168, 25)).toEqual(BLUE);
     expect(at(172, 25)).toEqual(WHITE);
     expect(at(230, 70)).toEqual(RED);
-    expect(at(244, 84)).toEqual(RED); // dentro só girado
-    expect(at(201, 61)).toEqual(WHITE); // canto do retângulo sem giro, fora do girado
+    expect(at(244, 84)).toEqual(RED); // inside only when rotated
+    expect(at(201, 61)).toEqual(WHITE); // corner of the unrotated rectangle, outside the rotated one
     expect(at(258, 62)).toEqual(WHITE);
   });
 
-  it('a barra segue a largura da instância', () => {
+  it('the bar follows the instance width', () => {
     const at = drawCard(200, 120);
     expect(at(118, 25)).toEqual(BLUE);
     expect(at(122, 25)).toEqual(WHITE);
   });
 
-  it('R25.78: na app (escala não inteira) o vermelho girado mede 55 a 58 com FUZZ=15', () => {
+  it('R25.78: in the app (non-integer scale) the rotated red measures 55 to 58 with FUZZ=15', () => {
     for (const scale of [1.76, 2.08, 2.8, 4.2]) {
       const { width, height } = drawCard(300, 120, scale).inkSize(RED, 0.15);
       expect(width).toBeGreaterThanOrEqual(55);

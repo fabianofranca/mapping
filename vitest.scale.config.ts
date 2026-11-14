@@ -2,30 +2,30 @@ import { defineConfig } from 'vitest/config';
 import { fontBytes, wasmBytes } from './tests/support/mcpVitePlugins';
 
 /**
- * Testes de escala (#881): provam que o projeto grande cresce linear (n e 4n marcações, razão < 6×, n e 4n intercalados; o mesmo auxiliar e o mesmo teto valem para os casos de crescimento do `npm run test:perf`).
- * Ficam fora do `npm test` e do `npm run test:coverage` (o `vite.config.ts` não os enxerga: os arquivos
- * são `tests/scale/*.scale.ts`, sem o sufixo `.test`) e não entram nos shards do CI nem em
- * `tests/support/durations.json`. `npm run test:scale` os roda, um arquivo por vez e sem cobertura
- * (o código instrumentado é mais lento e a razão perderia o sentido).
+ * Scale tests (#881): they prove that the large project grows linearly (n and 4n markings, ratio < 6×, n and 4n interleaved; the same helper and the same ceiling apply to the growth cases of `npm run test:perf`).
+ * They stay out of `npm test` and `npm run test:coverage` (`vite.config.ts` does not see them: the files
+ * are `tests/scale/*.scale.ts`, without the `.test` suffix) and are not part of the CI shards or of
+ * `tests/support/durations.json`. `npm run test:scale` runs them, one file at a time and without coverage
+ * (instrumented code is slower and the ratio would lose its meaning).
  */
 export default defineConfig({
   test: {
     projects: [
       {
-        // src/model/ roda em Node puro; a fase 2 acrescenta o projeto de jsdom (sessão, estado derivado, visualizador).
+        // src/model/ runs in plain Node; phase 2 adds the jsdom project (session, derived state, viewer).
         test: {
           name: 'scale-model',
           environment: 'node',
           include: ['tests/scale/model/**/*.scale.ts'],
           fileParallelism: false,
-          // O auxiliar coleta o lixo antes de cada rodada medida (`globalThis.gc`); o semi-espaço grande evita que o
-          // scavenge do V8 (que copia o que está vivo, e o vivo cresce com n) entorte a razão sem que o código seja quadrático.
+          // The helper collects garbage before each measured round (`globalThis.gc`); the large semi-space prevents
+          // V8's scavenge (which copies what is alive, and what is alive grows with n) from bending the ratio when the code is not quadratic.
           execArgv: ['--expose-gc', '--max-semi-space-size=128'],
           testTimeout: 60_000,
         },
       },
       {
-        // Sessão, estado derivado e visualizador: o DOM (jsdom) e o armazenamento falso.
+        // Session, derived state and viewer: the DOM (jsdom) and the fake storage.
         test: {
           name: 'scale-app',
           environment: 'jsdom',
@@ -37,7 +37,7 @@ export default defineConfig({
         },
       },
       {
-        // As tools de leitura do MCP em processo (createServer + InMemoryTransport), em Node.
+        // The MCP read tools in process (createServer + InMemoryTransport), in Node.
         plugins: [wasmBytes(), fontBytes()],
         test: {
           name: 'scale-mcp',

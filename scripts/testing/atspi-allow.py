@@ -1,16 +1,16 @@
 #!/usr/bin/env python3.12
-"""Clica em "Permitir"/"Permitir em todas as visitas" no pedido de permissão do Chrome
-(docs/TESTING.md, apêndice A, receita 6 da nuvem), pelo AT-SPI.
+"""Clicks "Allow"/"Allow on every visit" in Chrome's permission prompt
+(docs/TESTING.md, appendix A, cloud recipe 6), through AT-SPI.
 
-Uso: /usr/bin/python3.12 scripts/testing/atspi-allow.py
+Usage: /usr/bin/python3.12 scripts/testing/atspi-allow.py
 
-Use sempre /usr/bin/python3.12: o `python3` do PATH quebra o `gi` neste ambiente.
+Always use /usr/bin/python3.12: the `python3` on the PATH breaks `gi` in this environment.
 
-Saída e código de saída:
-  - "clicou <botão> <ação>", 0: achou e acionou o botão.
-  - "nenhum botão de permitir", 1: nenhum botão achado (o navegador já tinha a permissão;
-    tão sucesso quanto clicar, na prática, mas o código de saída continua 1).
-  - "sem ação <lista>", 2: achou o botão, mas nenhuma ação conhecida nele (erro real).
+Output and exit code:
+  - "clicked <button> <action>", 0: found and triggered the button.
+  - "no allow button", 1: no button found (the browser already had the permission;
+    as good as clicking, in practice, but the exit code is still 1).
+  - "no action <list>", 2: found the button, but no known action on it (a real error).
 """
 import sys
 
@@ -19,6 +19,7 @@ import gi
 gi.require_version('Atspi', '2.0')
 from gi.repository import Atspi  # noqa: E402
 
+# Chrome's own button labels, in the browser's pt-BR and en-US locales.
 NAMES = ['Permitir em todas as visitas', 'Permitir', 'Allow on every visit', 'Allow']
 
 
@@ -53,12 +54,12 @@ def main():
             None,
         )
         if index is None:
-            print('sem ação', action_names)
+            print('no action', action_names)
             sys.exit(2)
         action_iface.do_action(index)
-        print('clicou', wanted, action_names[index])
+        print('clicked', wanted, action_names[index])
         sys.exit(0)
-    print('nenhum botão de permitir')
+    print('no allow button')
     sys.exit(1)
 
 

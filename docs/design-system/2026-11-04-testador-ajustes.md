@@ -1,5 +1,5 @@
-# Auxiliares da nuvem e guia corrigidos — 2026-11-04 (épico `epic/testador-ajustes`)
+# Cloud helpers and guide fixed — 2026-11-04 (épico `epic/testador-ajustes`)
 
 ## Sincronização
 
-Sem impacto: a etapa só mudou `scripts/testing/cloud.mjs`, testes de ferramenta e de componente (a revisão não foi alterada) e `docs/TESTING.md`, sem tocar em `src/`. Nada foi gravado no artefato.
+Sem impacto: the stage only changed `scripts/testing/cloud.mjs`, tool and component tests (review was not changed) and `docs/TESTING.md`, without touching `src/`. Nothing was written to the artifact.

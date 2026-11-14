@@ -1,36 +1,36 @@
 # Changelog
 
-Um arquivo por épico (ou etapa) mesclado na `main`, com o que mudou para quem usa a app e o servidor MCP, em pt-BR. Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
+One file per epic (or stage) merged into `main`, with what changed for people who use the app and the MCP server, in English. Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The details of each stage are in the closed issues with the `in-progress` label (`em-andamento` until 2026-11-03) and, before them, in the git history.
 
-## Regra
+## Rule
 
-- O épico cria `changelog/<nome>.md`, onde `<nome>` é o branch sem `epic/`, com a data `[Não lançado]` no título.
-- O fechamento renomeia o arquivo para `changelog/AAAA-MM-DD-<nome>.md` (`git mv`) e põe a mesma data no título.
-- O job `epic` do `ci.yml` falha se o PR de `epic/<nome>` para a `main` não trouxer um dos dois nomes.
+- The epic creates `changelog/<name>.md`, where `<name>` is the branch without `epic/`, with `[Não lançado]` in the title in place of the date.
+- The closing renames the file to `changelog/AAAA-MM-DD-<name>.md` (`git mv`) and puts the same date in the title.
+- The `epic` job of `ci.yml` fails if the PR from `epic/<name>` to `main` does not carry one of the two names.
 
-## Formato
+## Format
 
-A primeira linha é:
+The first line is:
 
 ```
-# <Etapa> — <AAAA-MM-DD | [Não lançado]> (épico `epic/<nome>`, PR #<n>, MCP <versão>, schema v<n>)
+# <Stage> — <AAAA-MM-DD | [Não lançado]> (épico `epic/<name>`, PR #<n>, MCP <version>, schema v<n>)
 ```
 
-Depois vêm as categorias `## Adicionado`, `## Alterado` e `## Corrigido` (só as que têm itens), com bullets voltados a quem usa a app e o MCP. O épico que só mexe no fluxo de entrega (skills do fluxo, CI, `docs/FLOW.md`, regras do `CLAUDE.md`) escreve as categorias para quem conduz o fluxo (o dono e os agentes). Entradas antigas, de antes dos épicos, mantêm só os campos que tinham.
+Then come the categories `## Adicionado`, `## Alterado` and `## Corrigido` (only the ones that have items), with bullets aimed at people who use the app and the MCP. An epic that only touches the delivery workflow (workflow skills, CI, `docs/FLOW.md`, `CLAUDE.md` rules) writes the categories for those who run the workflow (the owner and the agents). Old entries, from before the epics, keep only the fields they had.
 
-## Ordem
+## Order
 
-- `ls changelog/` sai em ordem cronológica, com os não lançados no fim.
-- Épicos do mesmo dia ficam em ordem alfabética. A ordem exata do merge é a de `git log --first-parent main`.
+- `ls changelog/` comes out in chronological order, with the unreleased ones at the end.
+- Epics of the same day are in alphabetical order. The exact merge order is that of `git log --first-parent main`.
 
-## Achar a versão do MCP de um épico
+## Finding the MCP version of an epic
 
-A versão está na primeira linha do arquivo: `grep -m1 '^# ' changelog/*<nome>.md`, ou `grep -h '^# ' changelog/*.md` para todos.
+The version is in the first line of the file: `grep -m1 '^# ' changelog/*<name>.md`, or `grep -h '^# ' changelog/*.md` for all of them.
 
-## Épico aberto antes desta regra
+## Epic opened before this rule
 
-Se um épico abriu com a seção no antigo `CHANGELOG.md`:
+If an epic opened with its section in the old `CHANGELOG.md`:
 
-- a seção dele vira `changelog/<nome>.md` (títulos um nível acima: `##` → `#`, `###` → `##`);
-- a linha ou as pendências dele no `DESIGN-SYSTEM.md` viram `docs/design-system/<nome>.md`;
-- conflito numa tabela do `docs/TESTING.md`: fica a versão do épico, e roda-se `npx prettier --write docs/TESTING.md`.
+- its section becomes `changelog/<name>.md` (headings one level up: `##` → `#`, `###` → `##`);
+- its row or its pending items in `DESIGN-SYSTEM.md` become `docs/design-system/<name>.md`;
+- a conflict in a table of `docs/TESTING.md`: the epic's version stays, and `npx prettier --write docs/TESTING.md` is run.

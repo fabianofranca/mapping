@@ -1,8 +1,8 @@
-// Marcas de revisão no canvas (HANDOFF-PROPOSALS 4): o que desenhar sobre o projeto
-// "como ficaria" (visão Proposto) ou o atual (visão Atual). A forma da linha e o selo
-// dizem o tipo; a cor nunca é a única pista. Função pura sobre o estado derivado da
-// revisão (tipos, conflitos, conjunto inválido) e os dois projetos; os renderers só
-// desenham o resultado.
+// Review marks on the canvas (HANDOFF-PROPOSALS 4): what to draw over the "how it would
+// look" project (Proposed view) or the current one (Current view). The line shape and the badge
+// tell the kind; color is never the only cue. Pure function over the derived review
+// state (kinds, conflicts, invalid set) and the two projects; the renderers only
+// draw the result.
 import {
   IDENTITY_PLACEMENT,
   changeImageFile,
@@ -24,27 +24,28 @@ import {
 
 export type ReviewView = 'current' | 'proposed';
 
-/** Selo no canto superior direito (no máximo dois por marcação). */
+/** Badge at the top-right corner (at most two per marking). */
 export type ReviewBadge = ChangeType | 'conflict' | 'invalid' | 'rejected';
 
 /**
- * Linha da marcação: criada tracejada, alterada dupla, inválida tracejada em `cv-invalid`,
- * rejeitada pontilhada (a existente, só na visão Atual; a criação rejeitada vira só o fantasma, nas duas).
+ * The marking's line: created dashed, changed double, invalid dashed in `cv-invalid`,
+ * rejected dotted (the existing one, only in the Current view; a rejected creation becomes just
+ * the ghost, in both).
  */
 export type ReviewLine = 'created' | 'changed' | 'invalid' | 'rejected';
 
 export interface MarkingReviewMark {
   readonly line: ReviewLine | null;
-  /** Esmaecida (rejeitada, na visão Atual). */
+  /** Faded (rejected, in the Current view). */
   readonly dim: boolean;
   readonly badges: readonly ReviewBadge[];
 }
 
-/** Retângulo desenhado à parte: fantasma da outra posição, item removido ou rejeitado. */
+/** Rectangle drawn separately: ghost of the other position, removed or rejected item. */
 export interface ReviewShape {
   readonly key: string;
   readonly placement: Placement;
-  /** Em pixels da imagem. */
+  /** In image pixels. */
   readonly rect: Rect;
   readonly name: string | null;
   readonly badges: readonly ReviewBadge[];
@@ -59,9 +60,9 @@ export interface ReviewCanvas {
   readonly view: ReviewView;
   readonly markings: ReadonlyMap<string, MarkingReviewMark>;
   readonly images: ReadonlyMap<string, ImageReviewMark>;
-  /** Fantasmas pontilhados: a posição antiga (Proposto) ou a nova (Atual), e as rejeitadas. */
+  /** Dotted ghosts: the old position (Proposed) or the new one (Current), and the rejected ones. */
   readonly ghosts: readonly ReviewShape[];
-  /** Removidas (hachura e nome riscado): marcações e imagens inteiras. */
+  /** Removed (hatching and struck-through name): whole markings and images. */
   readonly removed: readonly ReviewShape[];
 }
 
@@ -70,12 +71,12 @@ export interface ReviewMarksInput {
   readonly tree: ReviewTree;
   readonly types: ReadonlyMap<string, ChangeType>;
   readonly conflicts: ReadonlySet<string>;
-  /** Mudanças aceitas que formam o conjunto inválido. */
+  /** Accepted changes that make up the invalid set. */
   readonly invalid: ReadonlySet<string>;
   readonly view: ReviewView;
-  /** Projeto atual. */
+  /** Current project. */
   readonly current: Project;
-  /** Projeto desenhado (o atual ou o "como ficaria"). */
+  /** Drawn project (the current one or the "how it would look"). */
   readonly drawn: Project;
 }
 
@@ -93,7 +94,7 @@ const asRect = (value: JsonValue | undefined): Rect | null => {
 const textOf = (value: JsonValue | undefined): string | null =>
   typeof value === 'string' ? value : null;
 
-/** Até dois selos: o alerta (inválida ou conflito) e o tipo. */
+/** Up to two badges: the alert (invalid or conflict) and the kind. */
 function badgesOf(
   type: ReviewBadge | null,
   conflict: boolean,
@@ -118,8 +119,8 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
     currentIndex.containers.get(imageId)?.placement ??
     null;
   /**
-   * Nome do tipo de componente de uma criação rejeitada sem `name` (a instância nasce sem
-   * nome): o da anotação tipada que a proposta cria para a marcação, como a Árvore mostra.
+   * Name of the component type of a rejected creation with no `name` (the instance is born with
+   * no name): that of the typed annotation the proposal creates for the marking, as the Tree shows.
    */
   const createdTypeName = (markingId: string): string | null => {
     for (const c of p.changes) {
@@ -134,14 +135,15 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
     }
     return null;
   };
-  /** Posição de um espaço: a do container ou, no canvas (`null`), a identidade. */
+  /** Position in a space: the container's or, on the canvas (`null`), the identity. */
   const spacePlacement = (containerId: JsonValue | undefined): Placement | null =>
     containerId === null
       ? IDENTITY_PLACEMENT
       : typeof containerId === 'string'
         ? placementOf(containerId)
         : null;
-  /** Retângulo e posição de um dos lados de `rect` ou da composta `space` (`{ containerId, rect }`). */
+  /** Rectangle and position of one side of `rect` or of the composite `space`
+   * (`{ containerId, rect }`). */
   const sideOf = (
     change: Change,
     value: JsonValue | undefined,
@@ -172,8 +174,8 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
     const self = (c: Change) => c.entity === entity && c.entityId === id;
     const create = own.find((c) => self(c) && c.kind === 'create');
     const remove = own.find((c) => self(c) && c.kind === 'remove');
-    // Tipo pela própria entidade; o que muda dentro (anotações) faz "alterada", e
-    // "movida" só quando a posição é a única coisa que muda (a mesma regra dos níveis).
+    // Kind by the entity itself; what changes inside (annotations) makes "changed", and
+    // "moved" only when the position is the only thing that changes (the same rule as the levels).
     const ownLive = live.filter(self);
     const ownType = dominantChangeType(
       ownLive.map((c) => types.get(c.id)).filter((x): x is ChangeType => x !== undefined),
@@ -212,7 +214,7 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
       continue;
     }
 
-    // Item (marcação com tudo que mudou nela). O espaço dela: o container ou, `null`, o canvas.
+    // Item (marking with everything that changed in it). Its space: the container or the canvas (`null`).
     const marking = currentIndex.markings.get(id);
     const rectChange = own.find(
       (c) =>
@@ -235,7 +237,8 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
           });
         }
       } else if (placement) {
-        // Criação rejeitada: só o fantasma, nas duas visões (a marcação não existe no "como ficaria").
+        // Rejected creation: only the ghost, in both views (the marking does not exist in the
+        // "how it would look").
         const record = isRecord(create.to) ? create.to : null;
         const rect = asRect(record?.rect);
         if (rect) {
@@ -273,7 +276,7 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
     }
 
     if (live.length === 0) {
-      // Tudo rejeitado: só aparece na visão Atual (fantasma e ✕), nunca na Proposto.
+      // Everything rejected: only shows in the Current view (ghost and ✕), never in the Proposed.
       if (view === 'current') {
         markings.set(id, { line: 'rejected', dim: true, badges: ['rejected'] });
         const ghost = rectChange ? sideOf(rectChange, rectChange.to, placement) : null;
@@ -299,7 +302,7 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
       dim: false,
       badges: badgesOf(liveType, conflict, isInvalid),
     });
-    // Movida: fantasma na posição antiga (Proposto) ou na nova (Atual), no espaço em que ela estava.
+    // Moved: ghost at the old position (Proposed) or at the new one (Current), in its space.
     if (rectChange && !rejected(rectChange)) {
       const ghost = sideOf(
         rectChange,
@@ -314,7 +317,7 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
   return { view, markings, images, ghosts, removed };
 }
 
-/** Selos que continuam à vista com a marcação pequena na tela (zoom baixo, muitas marcas). */
+/** Badges that stay in view when the marking is small on screen (low zoom, many marks). */
 export function importantBadge(badge: ReviewBadge): boolean {
   return (
     badge === 'changed' ||
@@ -327,9 +330,9 @@ export function importantBadge(badge: ReviewBadge): boolean {
 const displayCache = new WeakMap<Project, { proposal: Proposal; project: Project }>();
 
 /**
- * O "como ficaria" pronto para desenhar: as imagens novas ou trocadas pela proposta (ainda
- * não aplicadas) apontam para o arquivo que espera em `proposals/<id>/images/…`. Só para a
- * exibição; nada disto vai para o projeto.
+ * The "how it would look" ready to draw: the images new or replaced by the proposal (not yet
+ * applied) point to the file waiting at `proposals/<id>/images/…`. For display
+ * only; none of this goes into the project.
  */
 export function proposedDisplay(preview: Project, p: Proposal): Project {
   const cached = displayCache.get(preview);

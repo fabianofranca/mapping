@@ -4,33 +4,33 @@ import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 import reactHooks from 'eslint-plugin-react-hooks';
 
-// src/model/ roda também em Node (servidor MCP): proíbe globais só de navegador
-// (o que existe em `globals.browser` e não em Node) e dependências de UI/storage.
+// src/model/ also runs on Node (MCP server): it forbids browser-only globals
+// (what exists in `globals.browser` and not in Node) and UI/storage dependencies.
 const nodeGlobals = { ...globals.node, ...globals.nodeBuiltin };
 const browserOnlyGlobals = Object.keys(globals.browser).filter(
   (name) => !(name in nodeGlobals),
 );
-// Node 22 expõe estes nomes, mas eles não têm o comportamento do navegador.
+// Node 22 exposes these names, but they do not behave like the browser's.
 const browserStorageGlobals = ['localStorage', 'sessionStorage', 'navigator'];
 const restrictedGlobals = [
   ...new Set([...browserOnlyGlobals, ...browserStorageGlobals]),
 ].map((name) => ({
   name,
-  message: 'src/model/ não pode depender de APIs de navegador (veja CLAUDE.md).',
+  message: 'src/model/ must not depend on browser APIs (see CLAUDE.md).',
 }));
 
-// Grupos de import do src/model/ (o bloco do subdiretório muda só o alcance do relativo).
+// Import groups of src/model/ (the subdirectory block only changes the reach of the relative one).
 const modelPackageGroup = {
   group: ['konva', 'konva/*', 'idb', 'jszip', 'preact', 'preact/*', '@preact/*'],
-  message: 'src/model/ não pode importar UI, canvas nem storage.',
+  message: 'src/model/ must not import UI, canvas or storage.',
 };
 const modelRelativeGroup = (group) => ({
   group: [group],
-  message: 'src/model/ só pode importar arquivos do próprio model.',
+  message: 'src/model/ may only import files of the model itself.',
 });
-// mcp/ roda só no Node e não faz rede: ele lê e grava só arquivos locais (docs/ARCHITECTURE.md, "mcp/").
+// mcp/ runs only on Node and does no networking: it only reads and writes local files (docs/ARCHITECTURE.md, "mcp/").
 const networkGlobals = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map(
-  (name) => ({ name, message: 'mcp/ não faz requisições de rede.' }),
+  (name) => ({ name, message: 'mcp/ does not make network requests.' }),
 );
 const mcpOnlyFromModel = [
   'ui',
@@ -43,12 +43,12 @@ const mcpOnlyFromModel = [
   'utils',
 ];
 
-// Etapa 8 (8.3): seletor por classe em `querySelector(All)` atravessa componentes (a
-// classe é do CSS de outro componente); dentro do próprio `ref`, use `[data-…]` ou `[role=…]`.
-// Vale também para `closest(...)` (8.7, resíduo 5 da auditoria): subir até a classe de outro
-// componente é o mesmo contrato invisível.
+// Stage 8 (8.3): a class selector in `querySelector(All)` crosses components (the
+// class belongs to another component's CSS); inside the `ref` itself, use `[data-…]` or `[role=…]`.
+// It also applies to `closest(...)` (8.7, audit leftover 5): climbing up to another component's
+// class is the same invisible contract.
 const classSelectorMessage =
-  'Seletor por classe atravessa componentes: use um ref ou [data-…]/[role=…] dentro do próprio ref (docs/ARCHITECTURE.md, "Foco e teclado").';
+  'Class selector crosses components: use a ref or [data-…]/[role=…] inside the ref itself (docs/ARCHITECTURE.md, "Focus and keyboard").';
 const classSelectorRules = [
   {
     selector:
@@ -61,85 +61,85 @@ const classSelectorRules = [
     message: classSelectorMessage,
   },
 ];
-// Consulta global ao DOM em src/ui e src/app: um contrato invisível entre componentes.
+// Global DOM query in src/ui and src/app: an invisible contract between components.
 const focusSyntaxRules = [
   {
     selector:
       "CallExpression[callee.object.name='document'][callee.property.name=/^(querySelector|querySelectorAll|getElementById|getElementsByClassName|getElementsByTagName|getElementsByName)$/]",
     message:
-      'Consulta global ao DOM: use um ref, returnFocus, buttonRef/triggerRef ou um signal (docs/ARCHITECTURE.md, "Foco e teclado").',
+      'Global DOM query: use a ref, returnFocus, buttonRef/triggerRef or a signal (docs/ARCHITECTURE.md, "Focus and keyboard").',
   },
   ...classSelectorRules,
 ];
-// Exceções nominais da consulta global: o último recurso do retorno do foco
-// (`data-focus-root`) e a janela de ferramenta pelo `data-window` (função de módulo).
+// Named exceptions to the global query: the last resort of focus return
+// (`data-focus-root`) and the tool window by `data-window` (module function).
 const focusGlobalQueryExceptions = ['src/ui/focus.ts', 'src/ui/toolWindowLayout.ts'];
 
-// Diretórios da app que não falam com o Konva (src/model/ tem regra própria, mais estrita).
+// App directories that do not talk to Konva (src/model/ has its own, stricter rule).
 const konvaImportPattern = {
   group: ['konva', 'konva/*'],
-  message: 'Konva fica só em src/canvas/ (veja CLAUDE.md).',
+  message: 'Konva stays only in src/canvas/ (see CLAUDE.md).',
 };
 const rawToolWindowPattern = {
   group: ['**/store/toolWindows'],
   importNames: ['showToolWindow', 'hideToolWindow', 'toggleToolWindow'],
   message:
-    'Abra e feche janelas por openToolWindow/closeToolWindow/toggleToolWindowFocus (src/ui/toolWindowLayout.ts): eles guardam e devolvem o foco.',
+    'Open and close windows through openToolWindow/closeToolWindow/toggleToolWindowFocus (src/ui/toolWindowLayout.ts): they save and restore focus.',
 };
 const konvaFreeDirs = ['ui', 'app', 'store', 'storage', 'i18n', 'theme', 'utils'];
 
-// Só a sessão (src/store/session.ts) lê e grava o mapping.json de um projeto aberto: a
-// conferência de alteração externa (revisão e conteúdo) depende de todo acesso passar por ela
-// (fase 8.1; veja docs/ARCHITECTURE.md, "Sessão e gravação"). As exceções: `loadProject.ts`
-// (abrir e recarregar) e, no controller, as conferências de existência e a criação da pasta.
-// Os seletores ficam em constantes nomeadas porque `no-restricted-syntax` de um bloco
-// posterior SUBSTITUI o anterior nos arquivos em comum: outro conjunto para `src/ui/**` ou
-// `src/app/**` (ex.: o do foco, fase 8.3, ou `imageCreationSyntaxRules`, a decisão 14 das
-// imagens remotas, que vale em todo `src/**` menos nas exceções) precisa ser juntado ao mesmo
-// bloco (`[...sessionStorageSyntaxRules, ...imageCreationSyntaxRules, ...outros]`). `tests/tooling/sessionStorageLint.test.ts`
-// prova que a regra pega o padrão antigo em `src/app/` e `src/ui/`.
+// Only the session (src/store/session.ts) reads and writes the mapping.json of an open project: the
+// external-change check (revision and content) depends on every access going through it
+// (phase 8.1; see docs/ARCHITECTURE.md, "Session and saving"). The exceptions: `loadProject.ts`
+// (open and reload) and, in the controller, the existence checks and the folder creation.
+// The selectors live in named constants because `no-restricted-syntax` of a later block
+// REPLACES the earlier one in the files they share: another set for `src/ui/**` or
+// `src/app/**` (e.g. the focus one, phase 8.3, or `imageCreationSyntaxRules`, decision 14 of
+// remote images, which applies to all of `src/**` except the exceptions) must be merged into the same
+// block (`[...sessionStorageSyntaxRules, ...imageCreationSyntaxRules, ...others]`). `tests/tooling/sessionStorageLint.test.ts`
+// proves that the rule catches the old pattern in `src/app/` and `src/ui/`.
 const mappingCall = (method) =>
   `CallExpression[callee.type='MemberExpression'][callee.property.name='${method}']`;
 const onlyInFunction = (method, kind, name) =>
   `${mappingCall(method)}:not(${kind}[id.name='${name}'] CallExpression)`;
 export const sessionStorageSyntaxRules = ['loadMapping', 'saveMapping'].map((method) => ({
   selector: mappingCall(method),
-  message: `Só a sessão (src/store/session.ts) lê e grava o mapping.json de um projeto aberto; use session.sync()/flush() (veja docs/ARCHITECTURE.md).`,
+  message: `Only the session (src/store/session.ts) reads and writes the mapping.json of an open project; use session.sync()/flush() (see docs/ARCHITECTURE.md).`,
 }));
 const sessionFileSyntaxRules = [
   {
     selector: onlyInFunction('loadMapping', 'VariableDeclarator', 'readMapping'),
     message:
-      'Em session.ts, storage.loadMapping() só dentro de readMapping (o único ponto de leitura).',
+      'In session.ts, storage.loadMapping() only inside readMapping (the single read point).',
   },
   {
     selector: onlyInFunction('saveMapping', 'VariableDeclarator', 'writeProject'),
     message:
-      'Em session.ts, storage.saveMapping() só dentro de writeProject (o único ponto de gravação).',
+      'In session.ts, storage.saveMapping() only inside writeProject (the single write point).',
   },
 ];
-// Fase 8.4: o controller confere se a pasta tem projeto por `hasMappingFile` (storage/folder.ts),
-// sem `loadMapping`; ele só grava o mapping.json ao criar o projeto em pasta.
+// Phase 8.4: the controller checks whether the folder has a project through `hasMappingFile` (storage/folder.ts),
+// without `loadMapping`; it only writes the mapping.json when creating the project in a folder.
 const controllerFileSyntaxRules = [
   {
     selector: onlyInFunction('saveMapping', 'FunctionDeclaration', 'createFolderProject'),
     message:
-      'No controller, saveMapping() só na criação do projeto em pasta (createFolderProject); o resto é da sessão.',
+      'In the controller, saveMapping() only when creating the project in a folder (createFolderProject); the rest belongs to the session.',
   },
   {
     selector: mappingCall('loadMapping'),
     message:
-      'No controller, use hasMappingFile (storage/folder.ts) para conferir a pasta; ler o mapping.json é da sessão e do loadProject.',
+      'In the controller, use hasMappingFile (storage/folder.ts) to check the folder; reading the mapping.json belongs to the session and loadProject.',
   },
 ];
 
-// Fase 8.4: o armazenamento do navegador só passa por `utils/safeStorage.ts` (try/catch e a
-// chave do canal) e por `storage/local.ts` (os bancos IndexedDB). O `src/model/` fica fora
-// deste bloco: a regra da arquitetura dele já proíbe esses nomes (e mais), e um segundo
-// `no-restricted-globals` nos mesmos arquivos substituiria aquele.
-// `tests/tooling/storageGlobalsLint.test.ts` prova as duas regras.
+// Phase 8.4: browser storage only goes through `utils/safeStorage.ts` (try/catch and the
+// channel key) and `storage/local.ts` (the IndexedDB databases). `src/model/` is left out of
+// this block: its architecture rule already forbids these names (and more), and a second
+// `no-restricted-globals` on the same files would replace that one.
+// `tests/tooling/storageGlobalsLint.test.ts` proves both rules.
 const storageGlobalsMessage =
-  'Use readSetting/writeSetting (utils/safeStorage.ts) ou storage/local.ts: o acesso direto ao armazenamento do navegador pode lançar (modo privado, file://).';
+  'Use readSetting/writeSetting (utils/safeStorage.ts) or storage/local.ts: direct access to browser storage can throw (private mode, file://).';
 const storageGlobalNames = ['localStorage', 'sessionStorage', 'indexedDB'];
 const storageGlobals = storageGlobalNames.map((name) => ({
   name,
@@ -154,12 +154,12 @@ const storageGlobalProperties = ['window', 'globalThis', 'self'].flatMap((object
 );
 const storageGlobalExceptions = ['src/utils/safeStorage.ts', 'src/storage/local.ts'];
 
-// Um só criador de imagem (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador"). Nenhum código monta
-// URL de imagem por fora da política de URL e do consentimento; só o carregador
-// (`src/canvas/components/imageLoader.ts`) e `src/storage/**` (imagens do projeto, por `blob:`)
-// podem criar `Image`, elemento `img` ou atribuir `src`. Vale em `src/**` e `viewer/**`.
+// A single image creator (docs/ARCHITECTURE.md, "Remote images: policy, consent and loader"). No code builds an
+// image URL outside the URL policy and consent; only the loader
+// (`src/canvas/components/imageLoader.ts`) and `src/storage/**` (project images, via `blob:`)
+// may create `Image`, an `img` element or assign `src`. Applies to `src/**` and `viewer/**`.
 const imageCreationMessage =
-  'Nenhum código monta URL de imagem por fora da política de URL e do consentimento: use o carregador (src/canvas/components/imageLoader.ts); imagens do projeto ficam em src/storage/ (docs/ARCHITECTURE.md, "Imagens remotas").';
+  'No code builds an image URL outside the URL policy and consent: use the loader (src/canvas/components/imageLoader.ts); project images live in src/storage/ (docs/ARCHITECTURE.md, "Remote images").';
 const imageCreationSyntaxRules = [
   { selector: "NewExpression[callee.name='Image']", message: imageCreationMessage },
   {
@@ -187,21 +187,21 @@ const imageCreationSyntaxRules = [
     message: imageCreationMessage,
   },
 ];
-// Arquivos que podem criar imagem (cada um recebe só as regras da sessão, não estas).
+// Files that may create images (each one gets only the session rules, not these).
 const imageCreationExceptions = [
   'src/canvas/components/imageLoader.ts',
   'src/storage/**',
 ];
 
-// Restrições de import do mcp/ (ver o bloco "Servidor MCP" abaixo).
+// Import restrictions of mcp/ (see the "MCP server" block below).
 const mcpImportPatterns = [
   {
     group: mcpOnlyFromModel.flatMap((dir) => [`**/src/${dir}`, `**/src/${dir}/**`]),
-    message: 'mcp/ só pode importar src/model/ (docs/ARCHITECTURE.md, "mcp/").',
+    message: 'mcp/ may only import src/model/ (docs/ARCHITECTURE.md, "mcp/").',
   },
   {
     group: ['konva', 'konva/*', 'idb', 'jszip', 'preact', 'preact/*', '@preact/*'],
-    message: 'mcp/ não pode importar UI, canvas nem storage.',
+    message: 'mcp/ must not import UI, canvas or storage.',
   },
   {
     group: [
@@ -213,17 +213,17 @@ const mcpImportPatterns = [
       'node:dns',
       'node:dgram',
     ],
-    message: 'mcp/ não faz requisições de rede.',
+    message: 'mcp/ does not make network requests.',
   },
 ];
-// Os mesmos patterns sem o grupo de rede (só `mcp/imageServer.ts`, abaixo).
+// The same patterns without the network group (only `mcp/imageServer.ts`, below).
 const mcpImportPatternsWithoutNetwork = mcpImportPatterns.filter(
-  (pattern) => pattern.message !== 'mcp/ não faz requisições de rede.',
+  (pattern) => pattern.message !== 'mcp/ does not make network requests.',
 );
 
-// Fase 8.5 (M8): só três módulos do mcp/ gravam no disco (`paths.ts`, `createProject.ts`,
-// `proposalStore.ts`); nos outros, as funções de escrita do `node:fs` não podem ser importadas.
-// O teste `tests/mcp/staticGuards.test.ts` é a regra completa (pega também `fs.promises.x`).
+// Phase 8.5 (M8): only three mcp/ modules write to disk (`paths.ts`, `createProject.ts`,
+// `proposalStore.ts`); in the others, the `node:fs` write functions cannot be imported.
+// The test `tests/mcp/staticGuards.test.ts` is the full rule (it also catches `fs.promises.x`).
 const fsWriters = [
   'writeFile',
   'appendFile',
@@ -246,26 +246,26 @@ const mcpWriterImports = ['node:fs', 'node:fs/promises', 'fs', 'fs/promises'].ma
     name,
     importNames: [...fsWriters, ...fsWriters.map((fn) => `${fn}Sync`)],
     message:
-      'mcp/ só grava em paths.ts, createProject.ts, proposalStore.ts e threadStore.ts (o mapping.json é da app).',
+      'mcp/ only writes in paths.ts, createProject.ts, proposalStore.ts and threadStore.ts (the mapping.json belongs to the app).',
   }),
 );
 
-// signature/ (extrator de assinaturas, etapa #1079 S3) roda só no Node e não faz rede: lê o
-// arquivo de código que lhe dão e só grava o `--out` (módulo `cli.ts`). Do app, só `src/model/`.
+// signature/ (signature extractor, stage #1079 S3) runs only on Node and does no networking: it reads the
+// code file it is given and only writes the `--out` (module `cli.ts`). From the app, only `src/model/`.
 const signatureNetworkGlobals = [
   'fetch',
   'XMLHttpRequest',
   'WebSocket',
   'EventSource',
-].map((name) => ({ name, message: 'signature/ não faz requisições de rede.' }));
+].map((name) => ({ name, message: 'signature/ does not make network requests.' }));
 const signatureImportPatterns = [
   {
     group: mcpOnlyFromModel.flatMap((dir) => [`**/src/${dir}`, `**/src/${dir}/**`]),
-    message: 'signature/ só pode importar src/model/.',
+    message: 'signature/ may only import src/model/.',
   },
   {
     group: ['konva', 'konva/*', 'idb', 'jszip', 'preact', 'preact/*', '@preact/*'],
-    message: 'signature/ não pode importar UI, canvas nem storage.',
+    message: 'signature/ must not import UI, canvas or storage.',
   },
   {
     group: [
@@ -280,12 +280,12 @@ const signatureImportPatterns = [
       'node:worker_threads',
       'node:cluster',
     ],
-    message: 'signature/ não faz requisições de rede nem abre processos.',
+    message: 'signature/ does not make network requests or spawn processes.',
   },
 ];
 const signatureWriterImports = mcpWriterImports.map((entry) => ({
   ...entry,
-  message: 'signature/ só grava em cli.ts (o `--out`).',
+  message: 'signature/ only writes in cli.ts (the `--out`).',
 }));
 
 export default tseslint.config(
@@ -299,7 +299,7 @@ export default tseslint.config(
       'coverage',
       'playwright-report',
       'test-results',
-      // Worktrees locais do Claude Code (`.claude/worktrees/`): cópias do repositório.
+      // Local Claude Code worktrees (`.claude/worktrees/`): copies of the repository.
       '.claude/worktrees',
       // Mapping workspace (project data and pipeline scripts, outside the app's code).
       'mappings-workspace',
@@ -312,8 +312,8 @@ export default tseslint.config(
     languageOptions: { globals: globals.browser },
     rules: { '@typescript-eslint/no-explicit-any': 'error' },
   },
-  // Só as duas regras clássicas; as regras do React Compiler (preset
-  // `recommended` da v7) não se aplicam ao Preact.
+  // Only the two classic rules; the React Compiler rules (preset
+  // `recommended` of v7) do not apply to Preact.
   {
     files: ['src/**/*.{ts,tsx}'],
     plugins: { 'react-hooks': reactHooks },
@@ -322,16 +322,16 @@ export default tseslint.config(
       'react-hooks/exhaustive-deps': 'error',
     },
   },
-  // Konva fica isolado em src/canvas/ (CanvasController e CanvasHost; veja CLAUDE.md).
+  // Konva stays isolated in src/canvas/ (CanvasController and CanvasHost; see CLAUDE.md).
   {
     files: [`src/{${konvaFreeDirs.join(',')}}/**/*.{ts,tsx}`],
     rules: {
       'no-restricted-imports': ['error', { patterns: [konvaImportPattern] }],
     },
   },
-  // Etapa #323 (FC1): quem abre, fecha ou alterna janela de ferramenta na UI passa por
-  // `src/ui/toolWindowLayout.ts` (guarda e devolve o foco). Os comandos crus do store só
-  // entram lá. Este bloco substitui o anterior em src/ui e src/app, então repete o Konva.
+  // Stage #323 (FC1): whoever opens, closes or toggles a tool window in the UI goes through
+  // `src/ui/toolWindowLayout.ts` (saves and restores focus). The raw store commands only
+  // go in there. This block replaces the previous one in src/ui and src/app, so it repeats Konva.
   {
     files: ['src/{ui,app}/**/*.{ts,tsx}'],
     ignores: ['src/ui/toolWindowLayout.ts'],
@@ -342,9 +342,9 @@ export default tseslint.config(
       ],
     },
   },
-  // Só a sessão lê e grava o mapping.json (fase 8.1) e só o carregador cria imagem (decisão 14
-  // das imagens remotas); constantes definidas acima. Os arquivos permitidos a criar imagem
-  // (`imageCreationExceptions`) recebem só as regras da sessão.
+  // Only the session reads and writes the mapping.json (phase 8.1) and only the loader creates images (decision 14
+  // of remote images); constants defined above. The files allowed to create images
+  // (`imageCreationExceptions`) get only the session rules.
   {
     files: ['src/**/*.{ts,tsx}'],
     ignores: [
@@ -386,12 +386,12 @@ export default tseslint.config(
       ],
     },
   },
-  // O visualizador também não cria imagem por fora (sem as regras da sessão, que são do app).
+  // The viewer does not create images from outside either (without the session rules, which belong to the app).
   {
     files: ['viewer/**/*.{ts,tsx}'],
     rules: { 'no-restricted-syntax': ['error', ...imageCreationSyntaxRules] },
   },
-  // Armazenamento do navegador (fase 8.4; constantes definidas acima).
+  // Browser storage (phase 8.4; constants defined above).
   {
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/model/**', ...storageGlobalExceptions],
@@ -400,8 +400,8 @@ export default tseslint.config(
       'no-restricted-properties': ['error', ...storageGlobalProperties],
     },
   },
-  // Fase 8.4: sinal do próximo god-module (o controller tinha 713 linhas e oito
-  // responsabilidades). Aviso, não erro: dividir é decisão de desenho, não de lint.
+  // Phase 8.4: signal of the next god-module (the controller had 713 lines and eight
+  // responsibilities). A warning, not an error: splitting is a design decision, not a lint one.
   {
     files: ['src/app/**/*.{ts,tsx}'],
     rules: {
@@ -421,8 +421,8 @@ export default tseslint.config(
       ],
     },
   },
-  // src/model/components/ (motor dos componentes, fase B1): continua valendo tudo do bloco
-  // anterior; só o alcance do import relativo muda, porque daqui `../x` ainda é o model.
+  // src/model/components/ (component engine, phase B1): everything from the previous block still applies;
+  // only the reach of the relative import changes, because from here `../x` is still the model.
   {
     files: ['src/model/*/**/*.ts'],
     rules: {
@@ -434,7 +434,7 @@ export default tseslint.config(
       ],
     },
   },
-  // Servidor MCP: Node puro. Do app só pode importar `src/model/`.
+  // MCP server: pure Node. From the app it may only import `src/model/`.
   {
     files: ['mcp/**/*.{ts,mjs}'],
     languageOptions: { globals: globals.node },
@@ -446,7 +446,7 @@ export default tseslint.config(
       ],
     },
   },
-  // Extrator de assinaturas: Node puro; só `cli.ts` e o `build.mjs` gravam no disco.
+  // Signature extractor: pure Node; only `cli.ts` and `build.mjs` write to disk.
   {
     files: ['signature/**/*.{ts,mjs}'],
     languageOptions: { globals: globals.node },
@@ -472,20 +472,20 @@ export default tseslint.config(
   { files: ['tests/mcp/**/*.ts'], languageOptions: { globals: globals.node } },
   { files: ['pwa/**/*.js'], languageOptions: { globals: globals.serviceworker } },
   { files: ['*.config.{js,ts}'], languageOptions: { globals: globals.node } },
-  // Fase 8.5: o gancho de disco dos testes do MCP (`tests/mcp/fsHooks.mjs`) roda no Node.
+  // Phase 8.5: the disk hook of the MCP tests (`tests/mcp/fsHooks.mjs`) runs on Node.
   { files: ['tests/mcp/**/*.mjs'], languageOptions: { globals: globals.node } },
-  // Cliente MCP por stdio do agente testador (docs/TESTING.md, apêndice A): roda no Node.
+  // MCP stdio client of the tester agent (docs/TESTING.md, appendix A): runs on Node.
   { files: ['scripts/testing/**/*.mjs'], languageOptions: { globals: globals.node } },
   {
     files: ['scripts/perf/*.mjs'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
-  // Watcher de conversas do workspace de exemplo (etapa #645, CM6): roda no Node.
+  // Conversation watcher of the example workspace (stage #645, CM6): runs on Node.
   { files: ['examples/workspace/*.mjs'], languageOptions: { globals: globals.node } },
-  // Fase 8.5: os três módulos do servidor que gravam, e o script de build (`build.mjs`, que gera
-  // o `dist-mcp/` e não entra no bundle). No flat config, este bloco substitui a regra do bloco
-  // "Servidor MCP" nesses arquivos: repete as restrições antigas (`mcpImportPatterns`) e só
-  // tira as de escrita do `node:fs`.
+  // Phase 8.5: the three server modules that write, and the build script (`build.mjs`, which generates
+  // `dist-mcp/` and is not part of the bundle). In the flat config, this block replaces the rule of the
+  // "MCP server" block in those files: it repeats the old restrictions (`mcpImportPatterns`) and only
+  // removes the `node:fs` write ones.
   {
     files: [
       'mcp/paths.ts',
@@ -498,8 +498,8 @@ export default tseslint.config(
       'no-restricted-imports': ['error', { patterns: mcpImportPatterns }],
     },
   },
-  // `mcp/imageServer.ts` escuta só em 127.0.0.1 para entregar as imagens das tools ao chat do
-  // cliente; nenhuma requisição de saída. Por isso só ele pode importar `node:http`.
+  // `mcp/imageServer.ts` listens only on 127.0.0.1 to deliver the tool images to the client's
+  // chat; no outgoing requests. That is why only it may import `node:http`.
   {
     files: ['mcp/imageServer.ts'],
     rules: {
@@ -509,22 +509,22 @@ export default tseslint.config(
       ],
     },
   },
-  // Etapa teste-primeiro (TP2): complexidade ciclomática por função, até 10. O legado acima
-  // disso está em `eslint-suppressions.json` (a contagem por arquivo só cai; reduzir uma função
-  // pede `npx eslint --prune-suppressions` no mesmo PR). Fora: viewer/, scripts/, pwa/ e tests/.
-  // `tests/tooling/complexityLint.test.ts` prova a regra.
+  // Test-first stage (TP2): cyclomatic complexity per function, up to 10. The legacy above
+  // that is in `eslint-suppressions.json` (the per-file count only goes down; reducing a function
+  // requires `npx eslint --prune-suppressions` in the same PR). Out: viewer/, scripts/, pwa/ and tests/.
+  // `tests/tooling/complexityLint.test.ts` proves the rule.
   {
     files: ['src/**/*.{ts,tsx}', 'mcp/**/*.ts', 'signature/**/*.ts'],
     rules: { complexity: ['error', 10] },
   },
   prettier,
-  // Etapa 8 (8.3), foco e teclado: nenhum componente acha outro pelo DOM global nem pela
-  // classe de outro componente (`docs/ARCHITECTURE.md`, "Foco e teclado"). No flat config o
-  // último bloco vence por regra, então estes blocos repetem os seletores da sessão (8.1)
-  // para os mesmos arquivos: `sessionStorageSyntaxRules` em src/ui e src/app e
-  // `controllerFileSyntaxRules` no controller (exceção da 8.1), mais `imageCreationSyntaxRules`
-  // (decisão 14 das imagens remotas) em todos eles. Outra fase que use
-  // `no-restricted-syntax` nestes arquivos junta os seletores dela aqui.
+  // Stage 8 (8.3), focus and keyboard: no component finds another through the global DOM or through the
+  // class of another component (`docs/ARCHITECTURE.md`, "Focus and keyboard"). In the flat config the
+  // last block wins per rule, so these blocks repeat the session selectors (8.1)
+  // for the same files: `sessionStorageSyntaxRules` in src/ui and src/app and
+  // `controllerFileSyntaxRules` in the controller (8.1 exception), plus `imageCreationSyntaxRules`
+  // (decision 14 of remote images) in all of them. Another phase that uses
+  // `no-restricted-syntax` in these files merges its selectors here.
   {
     files: ['src/{ui,app}/**/*.{ts,tsx}'],
     ignores: [...focusGlobalQueryExceptions, 'src/app/controller.ts'],

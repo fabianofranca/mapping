@@ -1,5 +1,5 @@
-// Conversões entre a tela (pixels CSS do container) e o canvas (unidades do canvas).
-// Funções puras, testadas em `tests/canvas/`.
+// Conversions between the screen (CSS pixels of the container) and the canvas (canvas units).
+// Pure functions, tested in `tests/canvas/`.
 import type { Rect } from '../model';
 
 export interface Point {
@@ -13,8 +13,8 @@ export interface Size {
 }
 
 /**
- * Transformação do canvas para a tela: `tela = canvas * scale + (x, y)`.
- * `scale` = pixels de tela por unidade do canvas.
+ * Transformation from the canvas to the screen: `screen = canvas * scale + (x, y)`.
+ * `scale` = screen pixels per canvas unit.
  */
 export interface Viewport {
   readonly x: number;
@@ -24,9 +24,9 @@ export interface Viewport {
 
 export const MIN_ZOOM = 0.005;
 export const MAX_ZOOM = 50;
-/** Margem, em pixels de tela, ao enquadrar. */
+/** Margin, in screen pixels, when framing. */
 export const FIT_PADDING = 24;
-/** Área enquadrada quando o canvas está vazio (unidades do canvas). */
+/** Area framed when the canvas is empty (canvas units). */
 export const EMPTY_CANVAS_RECT: Rect = { x: 0, y: 0, width: 1000, height: 1000 };
 
 export function screenToCanvas(v: Viewport, p: Point): Point {
@@ -41,7 +41,7 @@ export function clampZoom(scale: number): number {
   return Math.min(Math.max(scale, MIN_ZOOM), MAX_ZOOM);
 }
 
-/** Aplica o zoom `factor` mantendo fixo o ponto de tela `anchor`. */
+/** Applies the `factor` zoom keeping the screen point `anchor` fixed. */
 export function zoomAt(v: Viewport, anchor: Point, factor: number): Viewport {
   const scale = clampZoom(v.scale * factor);
   const k = scale / v.scale;
@@ -53,8 +53,8 @@ export function zoomAt(v: Viewport, anchor: Point, factor: number): Viewport {
 }
 
 /**
- * Viewport depois de o canvas mudar de tamanho de `from` para `to`: o ponto do canvas que estava
- * no centro continua no centro, com a mesma escala. Sem mudança, devolve o próprio `v`.
+ * Viewport after the canvas changes size from `from` to `to`: the canvas point that was
+ * at the center stays at the center, with the same scale. With no change, returns `v` itself.
  */
 export function keepCenter(v: Viewport, from: Size, to: Size): Viewport {
   if (from.width === to.width && from.height === to.height) return v;
@@ -69,7 +69,7 @@ export function panBy(v: Viewport, dx: number, dy: number): Viewport {
   return { x: v.x + dx, y: v.y + dy, scale: v.scale };
 }
 
-/** Enquadra `rect` (canvas) numa tela de tamanho `size`, centralizado. */
+/** Frames `rect` (canvas) in a screen of size `size`, centered. */
 export function fitRect(rect: Rect, size: Size, padding = FIT_PADDING): Viewport {
   const availW = Math.max(1, size.width - 2 * padding);
   const availH = Math.max(1, size.height - 2 * padding);
@@ -84,8 +84,8 @@ export function fitRect(rect: Rect, size: Size, padding = FIT_PADDING): Viewport
 }
 
 /**
- * Pinça: dados os dois dedos antes (`a0`, `b0`) e depois (`a1`, `b1`), aplica o
- * zoom pela razão das distâncias e o pan pelo deslocamento do ponto médio.
+ * Pinch: given the two fingers before (`a0`, `b0`) and after (`a1`, `b1`), applies the
+ * zoom by the ratio of the distances and the pan by the displacement of the midpoint.
  */
 export function pinch(v: Viewport, a0: Point, b0: Point, a1: Point, b1: Point): Viewport {
   const d0 = Math.hypot(b0.x - a0.x, b0.y - a0.y);
@@ -96,13 +96,13 @@ export function pinch(v: Viewport, a0: Point, b0: Point, a1: Point, b1: Point): 
   return d0 > 0 ? zoomAt(panned, m1, d1 / d0) : panned;
 }
 
-/** Fator de zoom para um evento de roda (`ctrlKey` = pinça do trackpad). */
+/** Zoom factor for a wheel event (`ctrlKey` = trackpad pinch). */
 export function wheelZoomFactor(
   deltaY: number,
   deltaMode: number,
   ctrlKey: boolean,
 ): number {
-  // deltaMode 1 = linhas, 2 = páginas; normaliza para pixels.
+  // deltaMode 1 = lines, 2 = pages; normalizes to pixels.
   const pixels = deltaMode === 1 ? deltaY * 16 : deltaMode === 2 ? deltaY * 400 : deltaY;
   const sensitivity = ctrlKey ? 0.01 : 0.0015;
   const limited = Math.max(-200, Math.min(200, pixels));
@@ -110,8 +110,8 @@ export function wheelZoomFactor(
 }
 
 /**
- * Pan mínimo para `rect` (canvas) ficar inteiro à vista, sem mudar o zoom. Se `rect` já está
- * à vista, devolve `v` (mesma referência). Se não cabe num eixo, alinha pelo início dele.
+ * Minimum pan for `rect` (canvas) to be fully in view, without changing the zoom. If `rect` is already
+ * in view, returns `v` (same reference). If it does not fit on an axis, aligns by its start.
  */
 export function revealRect(
   v: Viewport,
@@ -137,8 +137,8 @@ export function revealRect(
 }
 
 /**
- * Centraliza `rect` (canvas) na tela. Mantém o zoom se o retângulo ocupar
- * entre `minFraction` e `maxFraction` da tela; senão, ajusta para metade dela.
+ * Centers `rect` (canvas) on the screen. Keeps the zoom if the rectangle occupies
+ * between `minFraction` and `maxFraction` of the screen; otherwise, adjusts to half of it.
  */
 export function centerOn(
   v: Viewport,

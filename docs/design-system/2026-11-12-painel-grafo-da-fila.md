@@ -1,13 +1,13 @@
-# Grafo de dependências no painel da fila — 2026-11-12 (épico `epic/painel-grafo-da-fila`)
+# Dependency graph in the queue panel — 2026-11-12 (épico `epic/painel-grafo-da-fila`)
 
 ## Pendências
 
-Sem impacto. A página do painel da fila não é a app: o épico só mexe em `.claude/skills/implementar-fila/`, nos testes de `tests/tooling/` e nos registros.
+No impact. The queue panel page is not the app: the epic only touches `.claude/skills/implementar-fila/`, the tests in `tests/tooling/` and the records.
 
 ## Sincronização
 
-Sem impacto: nada a gravar no artefato **Mapping**.
+Sem impacto: nothing to write to the **Mapping** artifact.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

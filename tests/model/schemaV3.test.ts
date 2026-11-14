@@ -12,7 +12,7 @@ import { legacyJson } from './legacyShape';
 const without = (item: Record<string, unknown>, keys: string[]) =>
   Object.fromEntries(Object.entries(item).filter(([key]) => !keys.includes(key)));
 
-/** Um mapping.json v2 (sem `markingColor` nas imagens nem os campos da v4). */
+/** A v2 mapping.json (without `markingColor` on the images nor the v4 fields). */
 function v2Text(): string {
   const data = legacyJson(sampleProject());
   const images = (data.images as Record<string, unknown>[]).map((i) =>
@@ -34,7 +34,7 @@ function v2Text(): string {
   });
 }
 
-/** Projeto sem os ids das tuplas (gerados na migração v3 → v4). */
+/** Project without the tuple ids (generated in the v3 → v4 migration). */
 function withoutEntryIds(p: Project) {
   return {
     ...p,
@@ -51,25 +51,25 @@ function load(text: string): Project {
   return result.project;
 }
 
-describe('migração v2 → v3', () => {
-  it('abre um v2 como v16 com markingColor nulo e sem perder nada', () => {
+describe('migration v2 → v3', () => {
+  it('opens a v2 as v16 with null markingColor and without losing anything', () => {
     const result = deserialize(v2Text());
-    if (!result.ok) throw new Error('falhou');
+    if (!result.ok) throw new Error('failed');
     expect(result.migratedFrom).toBe(2);
     expect(result.project.schemaVersion).toBe(20);
     expect(result.project.containers.every((i) => i.markingColor === null)).toBe(true);
     expect(withoutEntryIds(result.project)).toEqual(withoutEntryIds(sampleProject()));
   });
 
-  it('salvar o v2 migrado gera v16 estável (round-trip)', () => {
+  it('saving the migrated v2 yields a stable v16 (round-trip)', () => {
     const saved = serialize(load(v2Text()));
     expect(JSON.parse(saved).schemaVersion).toBe(20);
     expect(serialize(load(saved))).toBe(saved);
   });
 });
 
-describe('cor da borda das marcações', () => {
-  it('define (normalizando para maiúsculas) e limpa a cor da imagem', () => {
+describe('marking border color', () => {
+  it('sets (normalizing to uppercase) and clears the image color', () => {
     let p = setContainerMarkingColor(sampleProject(), 'I1', '#ffeb3b');
     expect(p.containers[0]?.markingColor).toBe('#FFEB3B');
     expect(p.containers[1]?.markingColor).toBeNull();
@@ -77,16 +77,16 @@ describe('cor da borda das marcações', () => {
     expect(p.containers[0]?.markingColor).toBeNull();
   });
 
-  it('rejeita cor inválida e imagem inexistente', () => {
-    expect(() => setContainerMarkingColor(sampleProject(), 'I1', 'vermelho')).toThrow(
+  it('rejects an invalid color and a nonexistent image', () => {
+    expect(() => setContainerMarkingColor(sampleProject(), 'I1', 'red')).toThrow(
       ModelError,
     );
-    expect(() => setContainerMarkingColor(sampleProject(), 'nada', '#FFFFFF')).toThrow(
+    expect(() => setContainerMarkingColor(sampleProject(), 'nothing', '#FFFFFF')).toThrow(
       ModelError,
     );
   });
 
-  it('sobrevive ao round-trip do JSON', () => {
+  it('survives the JSON round-trip', () => {
     const p = setContainerMarkingColor(sampleProject(), 'I2', '#00E5FF');
     expect(load(serialize(p)).containers[1]?.markingColor).toBe('#00E5FF');
   });

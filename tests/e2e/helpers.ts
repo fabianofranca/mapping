@@ -8,7 +8,7 @@ export interface Point {
   readonly y: number;
 }
 
-/** O que os testes leem do `mapping.json` exportado. */
+/** What the tests read from the exported `mapping.json`. */
 export interface MappingJson {
   readonly schemaVersion: number;
   readonly specializations: readonly { readonly id: string; readonly version: number }[];
@@ -23,9 +23,9 @@ export interface MappingJson {
     readonly width: number;
     readonly height: number;
     readonly locked: boolean;
-    /** Pixels da imagem por unidade do componente (v19); ausente vale 1. */
+    /** Image pixels per component unit (v19); absent means 1. */
     readonly density?: number;
-    /** A marcação do canvas que contém o container (v13); `null` = nenhuma. */
+    /** The canvas marking that contains the container (v13); `null` = none. */
     readonly parentId: string | null;
     readonly placement: {
       readonly x: number;
@@ -35,9 +35,9 @@ export interface MappingJson {
   }[];
   readonly markings: readonly {
     readonly id: string;
-    /** `null` = marcação do canvas (v13): `rect` em unidades do canvas. */
+    /** `null` = canvas marking (v13): `rect` in canvas units. */
     readonly containerId: string | null;
-    /** Quem contém a marcação no mesmo espaço (derivado da geometria pela app); `null` = ninguém. */
+    /** What contains the marking in the same space (derived from the geometry by the app); `null` = nothing. */
     readonly parentId: string | null;
     readonly floating: boolean;
     readonly name: string;
@@ -66,19 +66,19 @@ export interface Rect {
   readonly height: number;
 }
 
-/** Abre a app e cria um projeto local (guardado no IndexedDB do navegador de teste). */
+/** Opens the app and creates a local project (stored in the test browser's IndexedDB). */
 export async function createProject(page: Page, name: string, url = '/'): Promise<void> {
   await page.goto(url);
-  await page.getByRole('button', { name: /Novo projeto/ }).click();
+  await page.getByRole('button', { name: /New project/ }).click();
   await page.getByRole('textbox').fill(name);
-  await page.getByRole('button', { name: 'Criar' }).click();
-  // O editor aberto é reconhecido pelo canvas.
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await page.getByRole('button', { name: 'Create' }).click();
+  // The open editor is recognized by the canvas.
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
-/** Adiciona uma imagem sólida (gerada na hora) pelo seletor de arquivos do editor. */
+/** Adds a solid image (generated on the fly) through the editor's file picker. */
 export async function addImage(page: Page, width = 400, height = 800): Promise<void> {
-  // O canvas publica no container o que já desenhou: enquadramentos e imagens prontas.
+  // The canvas publishes on the container what it has already drawn: fits and ready images.
   const host = page.locator('.canvas-host');
   const drawn = async () => ({
     fits: Number((await host.getAttribute('data-fits')) ?? 0),
@@ -86,12 +86,13 @@ export async function addImage(page: Page, width = 400, height = 800): Promise<v
   });
   const before = await drawn();
   await page.locator('input[type=file][accept="image/*"][multiple]').setInputFiles({
+    // pt-BR kept: shared fixture data (file name 'tela.png') asserted by tests/e2e specs outside this batch
     name: 'tela.png',
     mimeType: 'image/png',
     buffer: solidPng(width, height),
   });
   await expect(page.getByText('images/tela.webp').first()).toBeVisible();
-  // Espera o quadro com a imagem nova desenhada e enquadrada.
+  // Waits for the frame with the new image drawn and fitted.
   await expect
     .poll(async () => {
       const now = await drawn();
@@ -101,18 +102,18 @@ export async function addImage(page: Page, width = 400, height = 800): Promise<v
 }
 
 export async function canvasBox(page: Page): Promise<Rect> {
-  const box = await page.getByRole('main', { name: 'Canvas do projeto' }).boundingBox();
-  if (!box) throw new Error('canvas sem tamanho');
+  const box = await page.getByRole('main', { name: 'Project canvas' }).boundingBox();
+  if (!box) throw new Error('canvas has no size');
   return box;
 }
 
-/** Ponto dentro da imagem, na altura `fy` (0 a 1) do canvas. */
+/** A point inside the image, at height `fy` (0 to 1) of the canvas. */
 export async function canvasPoint(page: Page, fy = 1 / 3): Promise<Point> {
   const box = await canvasBox(page);
   return { x: box.x + box.width / 2, y: box.y + box.height * fy };
 }
 
-/** Arrasta com o mouse de `from` até `to`, em alguns passos. */
+/** Drags the mouse from `from` to `to`, in a few steps. */
 export async function drag(page: Page, from: Point, to: Point): Promise<void> {
   const steps = 8;
   await page.mouse.move(from.x, from.y);
@@ -126,83 +127,83 @@ export async function drag(page: Page, from: Point, to: Point): Promise<void> {
   await page.mouse.up();
 }
 
-export async function setMode(page: Page, mode: 'Desenhar' | 'Navegar'): Promise<void> {
+export async function setMode(page: Page, mode: 'Draw' | 'Navigate'): Promise<void> {
   await page.getByRole('button', { name: mode, exact: true }).click();
 }
 
-/** Desenha uma marcação de `width` × `height` px de tela centrada em `center`. */
+/** Draws a marking of `width` × `height` screen px centered on `center`. */
 export async function drawMarking(
   page: Page,
   center: Point,
   size = { width: 120, height: 80 },
 ): Promise<void> {
-  await setMode(page, 'Desenhar');
+  await setMode(page, 'Draw');
   await drag(
     page,
     { x: center.x - size.width / 2, y: center.y - size.height / 2 },
     { x: center.x + size.width / 2, y: center.y + size.height / 2 },
   );
-  await setMode(page, 'Navegar');
+  await setMode(page, 'Navigate');
 }
 
-/** Posição e tamanho da marcação selecionada, lidos do painel (pixels da imagem). */
+/** Position and size of the selected marking, read from the panel (image pixels). */
 export async function selectedRect(page: Page): Promise<Rect> {
   const read = async (label: string) =>
     Number(await page.getByLabel(label, { exact: true }).inputValue());
   const rect = {
     x: await read('X'),
     y: await read('Y'),
-    width: await read('Largura'),
-    height: await read('Altura'),
+    width: await read('Width'),
+    height: await read('Height'),
   };
   return rect;
 }
 
-/** Aciona uma ação do projeto na barra principal (R4). */
+/** Triggers a project action on the main bar (R4). */
 export async function projectAction(page: Page, name: string): Promise<void> {
   await page.locator('.main-bar').getByRole('button', { name, exact: true }).click();
 }
 
-/** Abre o diálogo Exportar (o zip já está pronto nele). */
+/** Opens the Export dialog (the zip is already ready in it). */
 export async function openExport(page: Page): Promise<void> {
-  await projectAction(page, 'Exportar');
-  await expect(page.getByRole('button', { name: 'Baixar' })).toBeVisible();
+  await projectAction(page, 'Export');
+  await expect(page.getByRole('button', { name: 'Download' })).toBeVisible();
 }
 
 /**
- * Exportar → Baixar: devolve o zip baixado. Tira o `showSaveFilePicker` (o Chromium do
- * teste o tem) antes de abrir o diálogo, para a app usar o `<a download>`, que o
- * Playwright captura; o caminho do seletor tem os próprios testes em `flows.spec.ts`.
+ * Export → Download: returns the downloaded zip. Removes `showSaveFilePicker` (the test
+ * Chromium has it) before opening the dialog, so the app uses the `<a download>`, which
+ * Playwright captures; the picker path has its own tests in `flows.spec.ts`.
  */
 export async function exportZip(page: Page): Promise<JSZip> {
   await page.evaluate(() => Reflect.set(window, 'showSaveFilePicker', undefined));
   await openExport(page);
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Baixar' }).click();
+  await page.getByRole('button', { name: 'Download' }).click();
   const path = await (await download).path();
   return JSZip.loadAsync(await readFile(path));
 }
 
-/** Exportar → Baixar: devolve o conteúdo do `mapping.json` do zip e os arquivos dele. */
+/** Export → Download: returns the content of the zip's `mapping.json` and its files. */
 export async function exportMapping(
   page: Page,
 ): Promise<{ readonly mapping: MappingJson; readonly files: readonly string[] }> {
   const zip = await exportZip(page);
   const text = await zip.file('mapping.json')?.async('string');
-  if (text === undefined) throw new Error('o zip não tem mapping.json');
+  if (text === undefined) throw new Error('the zip has no mapping.json');
   return { mapping: JSON.parse(text) as MappingJson, files: Object.keys(zip.files) };
 }
 
-/** Especializações → Aplicar: escolhe o arquivo e fecha o diálogo. */
+/** Specializations → Apply: picks the file and closes the dialog. */
 export async function applySpecialization(page: Page, file: string): Promise<void> {
-  await projectAction(page, 'Especializações');
+  await projectAction(page, 'Specializations');
   await page
     .locator('input[type=file][accept=".json,application/json"]')
     .setInputFiles(file);
-  await expect(page.getByRole('status').filter({ hasText: 'aplicada' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'applied' })).toBeVisible();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: 'Fechar', exact: true })
+    .getByRole('button', { name: 'Close', exact: true })
     .click();
 }
 
@@ -212,8 +213,8 @@ export interface Violation {
 }
 
 /**
- * Registra os `securitypolicyviolation` de todos os documentos da página (inclusive depois
- * de navegar ou recarregar). O script de inicialização do Playwright não sofre a CSP.
+ * Records the `securitypolicyviolation` events of all documents on the page (including after
+ * navigating or reloading). Playwright's init script is not subject to the CSP.
  */
 export async function watchViolations(page: Page): Promise<() => readonly Violation[]> {
   const found: Violation[] = [];

@@ -1,13 +1,16 @@
-// MF4 (etapa #899): regressão da cena dos exemplos dos tipos que a fase toca. A cena de antes da fase
-// (`tests/fixtures/material3-mf4-before.json`, gravada com a biblioteca v6) fica igual a ≤ 0,5 px por nó,
-// menos onde a mudança é o propósito (EXCEPTIONS: sombra, cor herdada, vão, justificado, desabilitado e
-// número sob a alça).
+// MF4 (stage #899): scene regression of the examples of the types the phase touches. The scene from before the phase
+// (`tests/fixtures/material3-mf4-before.json`, recorded with library v6) stays equal within ≤ 0.5 px per node,
+// except where the change is the purpose (EXCEPTIONS: shadow, inherited color, gap, justified, disabled and
+// number under the handle).
+// pt-BR kept: the frozen fixture tests/fixtures/material3-mf4-before.json holds the Portuguese node and example names
+// (EXCEPTIONS, L2_EXAMPLES): they are mapped to the English ones the library draws now (tests/support/material3OldNames.ts)
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import type { SceneNode } from '../../src/model/components/scene';
 import { drawIn, files } from '../support/material3Library';
+import { currentExampleName, currentNodeName } from '../support/material3OldNames';
 
 const TOUCHED = [
   'surface',
@@ -38,13 +41,13 @@ const TOUCHED = [
 type Rec = [string, string, number, number, number, number];
 
 /**
- * Onde a mudança da fase é o propósito (a lista abaixo é a das exceções do aceite): a cena dos outros
- * nós fica igual a ≤ 0,5 px. Sombra (duas por nível), cor herdada, desabilitado opaco, justificado e
- * `over` não mudam caixa nenhuma; só o vão arredondado e o número sob a alça mudam nós.
+ * Where the change of the phase is the purpose (the list below is the acceptance exceptions): the scene of the other
+ * nodes stays equal within ≤ 0.5 px. Shadow (two per level), inherited color, opaque disabled, justified and
+ * `over` change no box; only the rounded gap and the number under the handle change nodes.
  */
 const EXCEPTIONS = {
-  // Vão arredondado: o contorno é um nó só (`contorno`, com `stroke.gap`); saem o `contorno (lados)` e
-  // o `trecho final`, o `trecho inicial` vira o `recuo` (só espaço) e o rótulo da borda ganha nome próprio.
+  // Rounded gap: the outline is a single node (`contorno`, with `stroke.gap`); `contorno (lados)` and
+  // `trecho final` go away, `trecho inicial` becomes `recuo` (spacing only) and the border label gets its own name.
   'text-field': {
     rename: {
       'contorno (lados)': 'contorno',
@@ -61,52 +64,153 @@ const EXCEPTIONS = {
     },
     drop: ['trecho final'],
   },
-  // Número sob a alça: o `valor selecionado` sai e a cópia dos números entra dentro da `alça`.
+  // Number under the handle: `valor selecionado` goes away and the copy of the numbers enters inside the `alça`.
   'time-picker': { rename: {}, drop: ['valor selecionado'] },
-  // MC5 (#1033): o rótulo sob o ícone passou da estimativa do Roboto 14/20 (texto a 12 do fundo) à linha de base do
-  // Compose (`baselinePadding`): o nó vira `rótulo empilhado` e a caixa dele inclui as distâncias da linha de base
-  // (29 de altura em vez de 20). Quem confere a posição é `material3Mc5GrupoB.test.ts`; o resto da cena fica igual.
+  // MC5 (#1033): the label under the icon moved from the Roboto 14/20 estimate (text 12 above the bottom) to the Compose
+  // baseline (`baselinePadding`): the node becomes `rótulo empilhado` and its box includes the baseline distances
+  // (29 high instead of 20). `material3Mc5GrupoB.test.ts` checks the position; the rest of the scene stays equal.
   tabs: { rename: {}, drop: ['rótulo', 'rótulo empilhado', 'rótulo empilhado rolável'] },
-  // MC5 (#1033): o tooltip rico passou da estimativa do Roboto 14/20 (13, 9, 4 e 16 de padding) às distâncias da
-  // linha de base do Compose (`baselinePadding`): as caixas do título, do texto e da ação mudam de lugar e a altura
-  // do cartão com título passa de 73 para 78 (`TooltipTest.kt` linha 260: o texto fica 24 abaixo do FIM da caixa do
-  // título, e não da base). Quem confere as posições é `material3Mc5GrupoA.test.ts`; o `plain` fica igual.
+  // MC5 (#1033): the rich tooltip moved from the Roboto 14/20 estimate (13, 9, 4 and 16 of padding) to the Compose
+  // baseline distances (`baselinePadding`): the boxes of the title, the text and the action change place and the height
+  // of the card with a title goes from 73 to 78 (`TooltipTest.kt` line 260: the text sits 24 below the END of the title
+  // box, not its base). `material3Mc5GrupoA.test.ts` checks the positions; the `plain` one stays equal.
   tooltip: {
     rename: {},
     drop: ['rich', 'título', 'corpo', 'texto', 'ação', 'botão da ação', 'rótulo da ação'],
   },
-  // MC5 (#1033, grupo C): o rótulo e o quadro `conteúdo` do button, do extended-fab e do chip passaram a abraçar a
-  // altura das linhas (`hug`, como o `Row` com `defaultMinSize` do Compose) em vez de ocupar a caixa inteira: a caixa
-  // deles encolhe e o chip abraça a largura. O centro do rótulo de uma linha segue o mesmo (confere
-  // `material3Mc5GrupoC.test.ts`); o resto da cena (contêiner, ícones, sombras) fica igual.
+  // MC5 (#1033, group C): the label and the `conteúdo` frame of the button, the extended-fab and the chip now hug the
+  // height of the lines (`hug`, like the Compose `Row` with `defaultMinSize`) instead of filling the whole box: their box
+  // shrinks and the chip hugs the width. The center of a one-line label stays the same (checked by
+  // `material3Mc5GrupoC.test.ts`); the rest of the scene (container, icons, shadows) stays equal.
   button: { rename: {}, drop: ['conteúdo', 'rótulo'] },
   'extended-fab': { rename: {}, drop: ['conteúdo', 'texto'] },
   chip: { rename: {}, drop: ['conteúdo', 'rótulo'] },
-  // MC6 (#1034): o texto do item do menu passou a ficar entre os ícones pelas âncoras `left` e `right` do quadro do item
-  // (`none`), no lugar do quadro `texto (caixa)` com o `padding`: sai o quadro e o texto fica no mesmo lugar (a caixa
-  // do menu é a mesma, a 200 de largura). A largura do menu pelo item mais largo confere `material3Mc6.test.ts`.
+  // MC6 (#1034): the menu item text now sits between the icons through the `left` and `right` anchors of the item frame
+  // (`none`), instead of the `texto (caixa)` frame with the `padding`: the frame goes away and the text stays in the same
+  // place (the menu box is the same, 200 wide). The menu width by the widest item is checked by `material3Mc6.test.ts`.
   'dropdown-menu': { rename: {}, drop: ['texto (caixa)'] },
-  // L2 (#1078): nenhum nó passa da caixa do pai (aviso `conteúdo maior que a caixa`). A camada de estado do switch passou de
-  // 40 a 32 (a altura do trilho, no quadro `chave`) e, no pressionado, a área da alça cresce de 24 a 28 para caber a alça de 28;
-  // o resto da cena (trilho, curso, alça, ícones) fica igual.
+  // L2 (#1078): no node exceeds the parent box (warning `content larger than the box`). The switch state layer went from
+  // 40 to 32 (the rail height, in the `chave` frame) and, when pressed, the handle area grows from 24 to 28 to fit the 28 handle;
+  // the rest of the scene (rail, travel, handle, icons) stays equal.
   switch: { rename: {}, drop: ['estado', 'área da alça'] },
-  // Card: o quadro `recorte` (cantos de cima da mídia pelo raio do Card, mesmo com a sombra alargando o recorte
-  // reto da raiz) envolve o `corpo`, na mesma caixa dele; o resto da cena fica igual (confere
+  // Card: the `recorte` frame (top corners of the media by the Card radius, even with the shadow widening the straight
+  // clip of the root) wraps the `corpo`, in the same box as it; the rest of the scene stays equal (checked by
   // `material3CardMediaCorners.test.ts`).
   card: { rename: {}, drop: ['recorte'] },
 } as Record<string, { rename: Record<string, string>; drop: string[] }>;
 
 /**
- * L2 (#1078): exemplos cujos valores mudaram para caber na caixa do `size` (o texto, que passa da caixa de 32 de altura) ou que
- * saíram porque o `size` não os comporta (o tooltip `rich`, que mede de 28 a mais de 100 de altura em 24).
+ * L2 (#1078): examples whose values changed to fit the `size` box (the text, which exceeds the 32-high box) or that
+ * were removed because the `size` cannot hold them (the `rich` tooltip, which measures from 28 to over 100 high at 24).
  */
 const L2_EXAMPLES: Record<string, string[]> = {
   text: ['Título de tela', 'Parágrafo', 'Parágrafo justificado'],
   tooltip: ['Rich com título', 'Rich com ação'],
 };
 
-/** Número sob a alça: a `alça` ganha a cópia dos números (`números sob a alça`) no lugar do `valor selecionado`. */
-const SKIP_CHILDREN = { 'time-picker': ['alça'] } as Record<string, string[]>;
+/** Number under the handle: the `handle` gets the copy of the numbers (`números sob a alça`) in place of the `valor selecionado`. */
+const SKIP_CHILDREN = { 'time-picker': ['handle'] } as Record<string, string[]>;
+
+/**
+ * The text values the examples had when the frozen scene was recorded (Portuguese): the text width moves the boxes of the
+ * label, the icon beside it and the tab, so the current scene is drawn with these values to compare against the fixture.
+ * By component and example name (old). Only the fields the translation changed, only in the scenes that depend on the width.
+ */
+const RECORDED_VALUES: Record<string, Record<string, Record<string, unknown>>> = {
+  button: {
+    'Com ícone': { label: 'Adicionar' },
+  },
+  'extended-fab': {
+    preview: { text: 'Criar' },
+    Criar: { text: 'Criar' },
+    'Mouse sobre': { text: 'Criar' },
+    'Com foco': { text: 'Editar' },
+  },
+  'dropdown-menu': {
+    'Campo exposto aberto': { label: 'Idioma', value: 'Português' },
+    'Com foco': { label: 'Idioma', value: 'Português' },
+  },
+  snackbar: {
+    'Com ação': { message: 'Mensagem arquivada', actionLabel: 'Desfazer' },
+    'Com ação e fechar': { message: 'Sem conexão', actionLabel: 'Tentar de novo' },
+  },
+  tooltip: {
+    Plain: { text: 'Adicionar aos favoritos' },
+  },
+  'text-field': {
+    'Contornado com dica': { label: 'E-mail', placeholder: 'nome@exemplo.com' },
+    'Em erro': { label: 'Senha', supportingText: 'Mínimo de 8 caracteres' },
+    'Com foco': { label: 'E-mail', value: 'nome@exemplo.com' },
+  },
+  'secure-text-field': {
+    'Contornado com texto': { label: 'Senha' },
+    'Em erro': { label: 'Senha', supportingText: 'Senha incorreta' },
+    'Mouse sobre': { label: 'Senha' },
+  },
+  'time-picker': {
+    preview: { title: 'Selecionar horário' },
+    'Relógio, horas': { title: 'Selecionar horário' },
+    'Relógio, minutos em 12 horas': { title: 'Selecionar horário' },
+    Campos: { title: 'Informe o horário' },
+    '24 horas, campos': { title: 'Informe o horário' },
+    '10:37 em 24 horas, minutos': { title: 'Selecionar horário' },
+    '22:05 em 12 horas (PM)': { title: 'Selecionar horário' },
+    'Mouse sobre': { title: 'Selecionar horário' },
+    'Com foco': { title: 'Selecionar horário' },
+    Pressionado: { title: 'Informe o horário' },
+  },
+  tabs: {
+    preview: {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    'Primárias com ícone acima': {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    'Secundárias com ícone à esquerda': {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    'Primárias roláveis': {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    'Mouse sobre': {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    'Com foco': {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    Pressionado: {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+  },
+};
 
 function flatten(
   node: SceneNode,
@@ -122,12 +226,24 @@ function flatten(
     for (const c of node.children) flatten(c, x, y, out, skip);
 }
 
+/** The scene recorded in the frozen fixture, with the Portuguese node names mapped to the current English ones. */
+const translated = (id: string, recs: Rec[]): Rec[] =>
+  recs.map((r): Rec => [r[0], currentNodeName(id, r[1]), r[2], r[3], r[4], r[5]]);
+
 function normalize(id: string, recs: Rec[]): Rec[] {
   const ex = EXCEPTIONS[id];
   if (ex === undefined) return recs;
+  // the EXCEPTIONS are written with the names of the fixture: they follow the same mapping
+  const drop = ex.drop.map((n) => currentNodeName(id, n));
+  const rename = Object.fromEntries(
+    Object.entries(ex.rename).map(([from, to]) => [
+      currentNodeName(id, from),
+      currentNodeName(id, to),
+    ]),
+  );
   return recs
-    .filter((r) => !ex.drop.includes(r[1]))
-    .map((r): Rec => [r[0], ex.rename[r[1]] ?? r[1], r[2], r[3], r[4], r[5]]);
+    .filter((r) => !drop.includes(r[1]))
+    .map((r): Rec => [r[0], rename[r[1]] ?? r[1], r[2], r[3], r[4], r[5]]);
 }
 
 function sceneOf(
@@ -143,7 +259,11 @@ function sceneOf(
         .filter((e) => e.mode === 'values')
         .map((e): [string, Record<string, unknown>] => [e.name, e.values ?? {}]),
     ];
-    for (const [name, values] of cases) {
+    for (const [name, current] of cases) {
+      const recorded = Object.entries(RECORDED_VALUES[id] ?? {}).find(
+        ([old]) => currentExampleName(id, old) === name,
+      );
+      const values = { ...current, ...recorded?.[1] };
       const recs: Rec[] = [];
       flatten(
         drawIn(catalog, entry!, values as never, mode).root,
@@ -161,10 +281,10 @@ function sceneOf(
 const FIXTURE = join(__dirname, '../fixtures/material3-mf4-before.json');
 const TOLERANCE = 0.5;
 
-/** Diferenças entre a cena de antes e a de agora: nó a mais ou a menos, ou caixa fora da tolerância. */
+/** Differences between the scene from before and the current one: an extra or missing node, or a box outside the tolerance. */
 function diffScene(before: Rec[], now: Rec[]): string[] {
   const out: string[] = [];
-  if (before.length !== now.length) out.push(`nós: ${before.length} → ${now.length}`);
+  if (before.length !== now.length) out.push(`nodes: ${before.length} → ${now.length}`);
   const byName = new Map<string, Rec[]>();
   for (const r of now) byName.set(r[1], [...(byName.get(r[1]) ?? []), r]);
   const used = new Map<string, number>();
@@ -174,7 +294,7 @@ function diffScene(before: Rec[], now: Rec[]): string[] {
     used.set(b[1], at + 1);
     const n = list[at];
     if (n === undefined) {
-      out.push(`sumiu: ${b[1]}`);
+      out.push(`gone: ${b[1]}`);
       continue;
     }
     for (let k = 2; k < 6; k++)
@@ -184,11 +304,11 @@ function diffScene(before: Rec[], now: Rec[]): string[] {
   return out;
 }
 
-describe('MF4: regressão da cena dos tipos tocados', () => {
+describe('MF4: scene regression of the touched types', () => {
   const catalog = buildCatalog(files);
   const before = JSON.parse(readFileSync(FIXTURE, 'utf8')) as Record<string, Rec[]>;
   it.each(TOUCHED)(
-    '%s: a cena dos exemplos fica igual a ≤ 0,5 px por nó, fora as exceções',
+    '%s: the examples scene stays equal within ≤ 0.5 px per node, except the exceptions',
     (id) => {
       const now = sceneOf(catalog, id);
       const keys = Object.keys(before).filter(
@@ -196,8 +316,13 @@ describe('MF4: regressão da cena dos tipos tocados', () => {
       );
       expect(keys.length).toBeGreaterThan(0);
       for (const key of keys) {
-        expect(now[key], key).toBeDefined();
-        expect(diffScene(normalize(id, before[key]!), now[key]!), key).toEqual([]);
+        const [kid, mode, example] = key.split('|') as [string, string, string];
+        const nowKey = `${kid}|${mode}|${currentExampleName(id, example)}`;
+        expect(now[nowKey], nowKey).toBeDefined();
+        expect(
+          diffScene(normalize(id, translated(id, before[key]!)), now[nowKey]!),
+          key,
+        ).toEqual([]);
       }
     },
   );

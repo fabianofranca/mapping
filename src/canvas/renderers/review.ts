@@ -1,8 +1,8 @@
-// Marcas de revisão de propostas no canvas (HANDOFF-PROPOSALS 4): selos de tipo no canto
-// superior direito (sobre `cv-badge`), fantasmas pontilhados, removidas com hachura e
-// nome riscado, e a moldura tracejada da imagem criada. A linha das marcações (tracejada,
-// dupla, pontilhada, inválida) fica no `MarkingRenderer`. Tudo em px de tela, na escala
-// inversa do zoom; cores e fontes só dos tokens.
+// Proposal review marks on the canvas (HANDOFF-PROPOSALS 4): kind badges in the upper
+// right corner (over `cv-badge`), dotted ghosts, removed ones with hatching and a
+// struck-through name, and the dashed frame of the created image. The markings' line (dashed,
+// double, dotted, invalid) stays in `MarkingRenderer`. All in screen px, at the
+// inverse of the zoom scale; colors and fonts only from the tokens.
 import Konva from 'konva/lib/Core';
 import { Line as KonvaLine } from 'konva/lib/shapes/Line';
 import { Path as KonvaPath } from 'konva/lib/shapes/Path';
@@ -30,21 +30,21 @@ import {
   intersectRects,
 } from './metrics';
 
-/** Selo (px de tela): lado, vão entre selos e distância da borda. */
+/** Badge (screen px): side, gap between badges and distance from the edge. */
 export const REVIEW_KIND_BADGE = 16;
 const BADGE_GAP = 3;
 const BADGE_INSET = 3;
-/** O traço ocupa esta fração do selo (grade de 16 unidades). */
+/** The stroke takes up this fraction of the badge (16-unit grid). */
 const GLYPH_RATIO = 0.72;
 const GLYPH_GRID = 16;
 const GLYPH_STROKE = 1.75;
-/** Abaixo deste lado na tela, só os selos importantes; abaixo do selo, nenhum. */
+/** Below this side on screen, only the important badges; below the badge size, none. */
 const SMALL_SIDE = 3 * REVIEW_KIND_BADGE;
-/** Hachura das removidas (px de tela): faixa clara e escura. */
+/** Hatching of the removed ones (screen px): light and dark band. */
 const HATCH_LIGHT = 2;
 const HATCH_DARK = 4;
 const GHOST_DASH = [1.5, 3];
-/** Fantasma da criação rejeitada: um pouco mais fechado que o da movida. */
+/** Ghost of the rejected creation: a little tighter than that of the moved one. */
 const REJECTED_GHOST_DASH = [1.5, 2.5];
 const CREATED_DASH = [6, 4];
 
@@ -77,7 +77,7 @@ interface ShapeNode {
   readonly halo: KonvaRect;
   readonly line: KonvaRect;
   readonly name: KonvaText;
-  /** Risco do nome da removida: halo por baixo e linha por cima (o do Konva some no texto). */
+  /** Strike of the removed one's name: halo underneath and line on top (Konva's disappears on the text). */
   readonly strikeHalo: KonvaLine;
   readonly strike: KonvaLine;
   readonly badges: readonly BadgeNode[];
@@ -100,7 +100,7 @@ function badgeColor(kind: ReviewBadge, tokens: CanvasTokens): string {
   return tokens.line;
 }
 
-/** Desenha o selo `kind` com o canto superior esquerdo em `x`,`y` (canvas). */
+/** Draws the `kind` badge with the upper left corner at `x`,`y` (canvas). */
 function drawBadge(
   node: BadgeNode,
   kind: ReviewBadge,
@@ -139,8 +139,8 @@ function drawBadge(
 }
 
 /**
- * Selos no canto superior direito de `rect` (canvas), por dentro. Com a marcação pequena
- * na tela só os importantes (alterada, removida, conflito); menor que um selo, nenhum.
+ * Badges in the upper right corner of `rect` (canvas), on the inside. With the marking small
+ * on screen only the important ones (changed, removed, conflict); smaller than a badge, none.
  */
 export function visibleBadges(
   badges: readonly ReviewBadge[],
@@ -175,9 +175,9 @@ function placeBadges(
 }
 
 /**
- * Hachura da marcação removida: diagonais de período fixo (\\x + y = c\\), só as que cruzam a
- * interseção do retângulo com a área visível (`view`, canvas), e não as do retângulo inteiro:
- * com zoom alto e uma marcação enorme seriam milhares de traços a cada quadro de pan.
+ * Hatching of the removed marking: diagonals of fixed period (\\x + y = c\\), only those crossing the
+ * intersection of the rectangle with the visible area (`view`, canvas), and not those of the whole rectangle:
+ * with high zoom and a huge marking there would be thousands of strokes per pan frame.
  */
 function hatchRemoved(
   ctx: Konva.Context,
@@ -187,7 +187,7 @@ function hatchRemoved(
   light: string,
   dark: string,
 ): void {
-  // A janela visível em coordenadas locais da forma (origem no canto dela).
+  // The visible window in the shape's local coordinates (origin at its corner).
   const x0 = Math.max(0, view.x - rect.x);
   const y0 = Math.max(0, view.y - rect.y);
   const x1 = Math.min(rect.width, view.x + view.width - rect.x);
@@ -203,7 +203,7 @@ function hatchRemoved(
     [light, HATCH_LIGHT / zoom, (HATCH_DARK + HATCH_LIGHT) / 2 / zoom],
   ] as const) {
     ctx.beginPath();
-    // Diagonais `x + y = c`, com `c = k·período + shift` (a mesma grade de sempre).
+    // Diagonals `x + y = c`, with `c = k·period + shift` (the same grid as always).
     const first = Math.ceil((x0 + y0 - width - shift) / period);
     for (let c = first * period + shift; c <= x1 + y1 + width; c += period) {
       ctx.moveTo(c - y1, y1);
@@ -226,7 +226,7 @@ export class ReviewRenderer {
     this.layer = layer;
   }
 
-  /** Desenha as marcas da revisão; sem revisão, esconde tudo. */
+  /** Draws the review marks; without a review, hides everything. */
   render(frame: ReviewFrame, placements: ReadonlyMap<string, Placement>): void {
     const { review, project, tokens } = frame;
     const zoom = frame.viewport.scale;
@@ -237,7 +237,7 @@ export class ReviewRenderer {
 
     if (review && project) {
       const index = projectIndex(project);
-      // Removidas (hachura) por baixo dos fantasmas.
+      // Removed ones (hatching) underneath the ghosts.
       for (const [shapes, removed] of [
         [review.removed, true],
         [review.ghosts, false],
@@ -303,7 +303,7 @@ export class ReviewRenderer {
     return nodes;
   }
 
-  /** Moldura tracejada da imagem criada pela proposta. */
+  /** Dashed frame of the image created by the proposal. */
   private drawFrame(id: string, rect: Rect, zoom: number, tokens: CanvasTokens): void {
     let node = this.frames.get(id);
     if (!node) {
@@ -355,7 +355,7 @@ export class ReviewRenderer {
       this.shapes.set(shape.key, node);
     }
     const rejected = shape.badges.includes('rejected');
-    // Fantasma (posição antiga ou rejeitada): pontilhado e esmaecido.
+    // Ghost (old or rejected position): dotted and faded.
     node.group.opacity(removed ? 1 : tokens.opacity.ancestor);
     const dash = removed
       ? []
@@ -383,7 +383,7 @@ export class ReviewRenderer {
     } else {
       node.hatch.visible(false);
     }
-    // Nome riscado (removida) ou do item rejeitado, acima da caixa.
+    // Struck-through name (removed) or of the rejected item, above the box.
     const name = removed || rejected ? shape.name : null;
     if (name) {
       const size = tokens.type.name.size / zoom;
@@ -411,9 +411,9 @@ export class ReviewRenderer {
   }
 
   /**
-   * Risco do nome da removida. O `line-through` do Konva usa o preenchimento do texto, com
-   * ~0,8 px: branco sobre o texto branco, some. Aqui é um traço próprio (linha do canvas
-   * com halo por baixo), do tamanho do texto.
+   * Strike of the removed one's name. Konva's `line-through` uses the text fill, with
+   * ~0.8 px: white over white text, it disappears. Here it is its own stroke (canvas line
+   * with a halo underneath), the size of the text.
    */
   private drawStrike(
     node: ShapeNode,

@@ -17,19 +17,20 @@ import {
   renderInEditor,
 } from './reviewHarness';
 
-// R4.5 do docs/TESTING.md (etapa #405, decisão 4): rejeitar a criação de uma marcação, com a
-// marcação selecionada, leva a anotação dependente junto. A app mostra DOIS avisos diferentes
-// (o do canto do canvas e o do cabeçalho de Detalhes) e a marca "junto" do cartão é só ícone,
-// com "decidido junto" no nome acessível; o selo com texto fica na lista da revisão.
+// R4.5 of docs/TESTING.md (stage #405, decision 4): rejecting the creation of a marking, with
+// the marking selected, takes the dependent annotation along. The app shows TWO different
+// notices (the one in the canvas corner and the one in the Details header) and the card's
+// "together" mark is only an icon, with "decided together" in the accessible name; the
+// badge with text stays in the review list.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
 
-describe('R4.5: rejeitar a criação com uma anotação dependente', () => {
-  it('mostra o aviso do canto, o do cabeçalho com Desfazer e a marca "junto" do cartão', async () => {
+describe('R4.5: rejecting the creation with a dependent annotation', () => {
+  it('shows the corner notice, the header one with Undo and the "together" mark of the card', async () => {
     const { base, proposal } = firstImport();
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
@@ -48,34 +49,32 @@ describe('R4.5: rejeitar a criação com uma anotação dependente', () => {
       await h.review.decide({ level: 'change', id: marking.id }, 'rejected');
     });
 
-    // Aviso do canto do canvas: `review.undo.rejected` + `review.undo.cascaded`.
+    // Canvas corner notice: `review.undo.rejected` + `review.undo.cascaded`.
     const corner = within(screen.getByTestId('corner'));
     expect(
-      corner.getByText(
-        /mudança\(s\) rejeitada\(s\)\..*mudou\(aram\) junto, pelas dependências\./,
-      ),
+      corner.getByText(/change\(s\) rejected\..*changed along, by the dependencies\./),
     ).toBeTruthy();
 
-    // Aviso do cabeçalho de Detalhes: `review.panel.together.rejected`, com o nome e Desfazer.
-    const headerNotice = screen.getByText(/^1 mudança\(s\) rejeitada\(s\) junto: /);
-    expect(headerNotice.textContent).toContain('Anotação onClick criada');
+    // Details header notice: `review.panel.together.rejected`, with the name and Undo.
+    const headerNotice = screen.getByText(/^1 change\(s\) rejected together: /);
+    expect(headerNotice.textContent).toContain('Annotation onClick created');
     expect(
       within(headerNotice.closest('.notice-box') as HTMLElement).getByRole('button', {
-        name: 'Desfazer',
+        name: 'Undo',
       }),
     ).toBeTruthy();
 
-    // Cartão da anotação: a marca é só ícone; "decidido junto" fica no nome acessível.
+    // Annotation card: the mark is only an icon; "decided together" is in the accessible name.
     const mark = screen.getByRole('button', {
-      name: /^Anotação onClick criada: novo, rejeitado, decidido junto/,
+      name: /^Annotation onClick created: new, rejected, decided together/,
     });
     expect(mark.textContent?.trim()).toBe('');
 
     fireEvent.click(
       within(headerNotice.closest('.notice-box') as HTMLElement).getByRole('button', {
-        name: 'Desfazer',
+        name: 'Undo',
       }),
     );
-    await waitFor(() => expect(screen.queryByText(/rejeitada\(s\) junto/)).toBeNull());
+    await waitFor(() => expect(screen.queryByText(/rejected together/)).toBeNull());
   });
 });

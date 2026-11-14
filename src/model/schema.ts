@@ -13,10 +13,10 @@ import {
   type ProjectFile,
 } from './types';
 
-// Schema zod do mapping.json na versão atual (`SCHEMA_VERSION`, em `types.ts`). Valida a forma; os invariantes entre coleções
-// (referências, contenção, sobreposição) ficam em `invariants.ts`. Os valores das
-// anotações tipadas são JSON livre aqui: a conferência contra o tipo vira pendência
-// (`issues.ts`).
+// Zod schema of mapping.json at the current version (`SCHEMA_VERSION`, in `types.ts`). It
+// validates the shape; the invariants across collections (references, containment, overlap) live
+// in `invariants.ts`. The values of typed annotations are free JSON here: the check against the
+// type becomes an issue (`issues.ts`).
 
 const id = z.string().min(1);
 const hexColor = z.string().regex(HEX_COLOR_RE);
@@ -29,20 +29,20 @@ export const anchorSchema = z.object({
   offset: z.object({ main: finite, cross: finite }).optional(),
 });
 
-/** Data ISO 8601 como gravada pela app: UTC com `Z`; com fuso, normalizada para UTC. */
+/** ISO 8601 date as written by the app: UTC with `Z`; with a time zone, normalized to UTC. */
 export function normalizeIsoDate(value: string): string {
   return value.endsWith('Z') ? value : new Date(value).toISOString();
 }
 
-/** Data ISO 8601, com `Z` ou com fuso (escrita por ferramenta externa); sai em UTC `Z`. */
+/** ISO 8601 date, with `Z` or a time zone (written by an external tool); comes out in UTC `Z`. */
 export const isoDateTime = z.iso.datetime({ offset: true }).transform(normalizeIsoDate);
 
 /**
- * Retângulo de inteiros. `x` e `y` aceitam negativos porque a marcação do canvas (v13,
- * `containerId` nulo) vive em unidades do canvas, onde não há borda. Quem é marcação de
- * container continua dentro da imagem: o schema não sabe de qual espaço o retângulo é, então
- * a recusa fica na invariante `rect-out-of-image` (que só vale com `containerId` não nulo, e
- * tem reparo: o recorte).
+ * Integer rectangle. `x` and `y` accept negatives because the canvas marking (v13, null
+ * `containerId`) lives in canvas units, where there is no edge. A container marking still stays
+ * inside the image: the schema does not know which space the rectangle belongs to, so the
+ * rejection lives in the `rect-out-of-image` invariant (which only applies with a non-null
+ * `containerId`, and has a repair: the clipping).
  */
 export const rectSchema = z.object({
   x: z.number().int(),
@@ -57,7 +57,7 @@ export const placementSchema = z.object({
   scale: finite.positive(),
 });
 
-/** Identidade no sistema de origem (v8): `system` e `id` não vazios, `url` opcional (`null`). */
+/** Identity in the origin system (v8): non-empty `system` and `id`, optional `url` (`null`). */
 export const sourceSchema = z.object({
   system: z.string().min(1),
   id: z.string().min(1),
@@ -79,43 +79,43 @@ export const containerSchema = z.object({
   height: z.number().int().positive(),
   placement: placementSchema,
   /**
-   * Marcação do canvas que contém o container (v13). Um `mapping.json` v13 gravado antes
-   * deste campo (preview da ME0) não o tem e abre sem migração, como `null`.
+   * Canvas marking that contains the container (v13). A v13 `mapping.json` written before this
+   * field (ME0 preview) does not have it and opens without migration, as `null`.
    */
   parentId: id.nullable().default(null),
   markingColor: hexColor.nullable(),
   locked: z.boolean(),
   source: sourceSchema.nullable(),
   background: hexColor.nullable(),
-  /** Modo do desenho que o container fixa (v18); ausente ou `null` = segue o projeto. */
+  /** Drawing mode the container pins (v18); absent or `null` = follows the project. */
   drawingMode: z.string().min(1).nullable().optional(),
-  /** Direção de leitura que o container fixa (v20); ausente ou `null` = segue o projeto. */
+  /** Reading direction the container pins (v20); absent or `null` = follows the project. */
   direction: readingDirection.nullable().optional(),
-  /** Densidade do container (v19); a faixa de 0,5 a 8 é a invariante `container-density`. */
+  /** Container density (v19); the 0.5 to 8 range is the `container-density` invariant. */
   density: z.number().nullable().optional(),
 });
 
 export const markingSchema = z.object({
   id,
-  /** `null` = marcação do canvas (v13): `rect` em unidades do canvas. */
+  /** `null` = canvas marking (v13): `rect` in canvas units. */
   containerId: id.nullable(),
   parentId: id.nullable(),
   name: z.string().nullable(),
   rect: rectSchema,
   needsReview: z.boolean(),
   locked: z.boolean(),
-  /** Flutuante (v13). Ausente num v13 anterior a este campo: `false`. */
+  /** Floating (v13). Absent in a v13 from before this field: `false`. */
   floating: z.boolean().default(false),
   source: sourceSchema.nullable(),
-  /** Âncora (v20); ausente ou `null` = sem âncora. */
+  /** Anchor (v20); absent or `null` = no anchor. */
   anchor: anchorSchema.nullable().optional(),
 });
 
 const pointSchema = z.object({ x: finite, y: finite });
 
 /**
- * Seta (v13, ME4). Os opcionais podem faltar no arquivo (escrito à mão ou por um v13 anterior
- * às setas) e entram com o padrão.
+ * Arrow (v13, ME4). The optional ones may be missing from the file (hand-written or by a v13 from
+ * before arrows) and come in with the default.
  */
 export const arrowSchema = z.object({
   id,
@@ -129,10 +129,10 @@ export const arrowSchema = z.object({
   locked: z.boolean().default(false),
 });
 
-/** Posição de uma raiz numa perspectiva (v16). */
+/** Position of a root in a perspective (v16). */
 export const perspectiveItemSchema = z.object({ root: id, x: finite, y: finite });
 
-/** Perspectiva "Para todos" (v16). A unicidade do nome e a validade das raízes são invariantes. */
+/** "For everyone" perspective (v16). Name uniqueness and root validity are invariants. */
 export const perspectiveSchema = z.object({
   id,
   name: z.string(),
@@ -140,12 +140,12 @@ export const perspectiveSchema = z.object({
   items: z.array(perspectiveItemSchema),
 });
 
-/** Marca "Veio de…" (v16). */
+/** "Came from…" mark (v16). */
 export const arrivalSchema = z.object({ root: id, from: id, fromName: z.string() });
 
 export const entrySchema = z.object({ id, key: z.string(), value: z.string() });
 
-/** Qualquer valor JSON. A conferência contra o tipo vira pendência (`issues.ts`), não erro. */
+/** Any JSON value. The check against the type becomes an issue (`issues.ts`), not an error. */
 export const jsonValue: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
     z.string(),
@@ -164,26 +164,26 @@ export const annotationSchema = z
     layerId: id,
     name: z.string().nullable(),
     parentAnnotationId: id.nullable(),
-    // Texto vazio passa aqui e é recusado pelo invariante `empty-role` (com a mensagem).
+    // Empty text passes here and is rejected by the `empty-role` invariant (with the message).
     parentRole: z.string().nullable(),
     type: z.object({ specId: id, typeId: id }).nullable(),
     values: z.record(z.string(), jsonValue).nullable(),
     entries: z.array(entrySchema),
   })
   .superRefine((a, ctx) => {
-    // Livre: `type` e `values` nulos. Tipada: os dois preenchidos e sem pares.
+    // Free: `type` and `values` null. Typed: both filled in and no entries.
     if ((a.type === null) !== (a.values === null)) {
       ctx.addIssue({
         code: 'custom',
         path: ['values'],
-        message: 'type e values devem ser ambos null ou ambos preenchidos',
+        message: 'type and values must both be null or both filled in',
       });
     }
     if (a.type !== null && a.entries.length > 0) {
       ctx.addIssue({
         code: 'custom',
         path: ['entries'],
-        message: 'anotação tipada não tem entries',
+        message: 'a typed annotation has no entries',
       });
     }
   });
@@ -194,18 +194,18 @@ const specializationSchema = z.object({
   file: z.string().min(1),
 });
 
-/** Sobreposição local de uma plataforma (v11); chave desconhecida é descartada na leitura. */
+/** Local override of a platform (v11); an unknown key is discarded on read. */
 export const platformRepoSchema = z.object({
   localPath: z.string().nullable(),
 });
 
 /**
- * Clone local de um repositório de documentos (v14): `localPath` texto não vazio; chave
- * desconhecida é descartada na leitura.
+ * Local clone of a documents repository (v14): `localPath` non-empty text; an unknown key is
+ * discarded on read.
  */
 export const docRepoSchema = z.object({ localPath: z.string().min(1) });
 
-/** `docRepos` lido: a entrada sem `localPath` válido sai (o arquivo não guarda entrada vazia). */
+/** `docRepos` as read: an entry without a valid `localPath` is dropped (the file keeps no empty entry). */
 const docReposSchema = z
   .record(z.string().regex(PLATFORM_ID_RE), z.unknown())
   .transform((entries) =>
@@ -220,13 +220,13 @@ const docReposSchema = z
 export const projectSchema: z.ZodType<ProjectFile> = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   revision: z.number().int().min(0),
-  // Aceita o valor antigo e normaliza: a próxima gravação já sai como `APP_ID`.
+  // Accepts the old value and normalizes it: the next write already comes out as `APP_ID`.
   app: z
     .union([z.literal(APP_ID), z.literal(LEGACY_APP_ID)])
     .transform((): typeof APP_ID => APP_ID),
   coordinateSystem: z.literal(COORDINATE_SYSTEM),
   project: z.object({
-    /** Identidade do projeto (v16): UUID criado na migração e na criação. */
+    /** Project identity (v16): UUID created on migration and on creation. */
     id,
     name: z.string(),
     createdAt: isoDateTime,
@@ -235,16 +235,16 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   specializations: z.array(specializationSchema),
   platformRepos: z.record(z.string().regex(PLATFORM_ID_RE), platformRepoSchema),
   docRepos: docReposSchema,
-  /** Modo do desenho do projeto (v18); ausente = o primeiro modo de cada especialização. */
+  /** Project drawing mode (v18); absent = the first mode of each specialization. */
   drawingMode: z.string().min(1).optional(),
-  /** Direção de leitura do projeto (v20); ausente = `ltr`. */
+  /** Project reading direction (v20); absent = `ltr`. */
   direction: readingDirection.optional(),
   layers: z.array(layerSchema),
   containers: z.array(containerSchema),
   markings: z.array(markingSchema),
-  /** Ausente num v13 anterior às setas (previews da ME0 a ME3): `[]`. */
+  /** Absent in a v13 from before arrows (ME0 to ME3 previews): `[]`. */
   arrows: z.array(arrowSchema).default([]),
-  /** Ausentes: `[]` (o arquivo escrito à mão não precisa declará-las). */
+  /** Absent: `[]` (a hand-written file does not need to declare them). */
   perspectives: z.array(perspectiveSchema).default([]),
   arrivals: z.array(arrivalSchema).default([]),
   annotations: z.array(annotationSchema),

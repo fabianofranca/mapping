@@ -1,15 +1,15 @@
-# Planejamento nas issues — 2026-11-02 (épico `epic/fluxo-issues`, PR #307, MCP 0.12.0, schema v13)
+# Planning in issues — 2026-11-02 (épico `epic/fluxo-issues`, PR #307, MCP 0.12.0, schema v13)
 
 ## Alterado
 
-- O roadmap e o plano das etapas passam a viver em issues do GitHub: os itens futuros têm o rótulo `roadmap`, a etapa em andamento tem o rótulo `etapa`, com uma sub-issue (rótulo `fase`) por fase; a issue fechada é o histórico.
-- `PLAN.md` e `docs/ROADMAP.md` saíram do repositório. O histórico da etapa Marcação pai foi arquivado em `docs/history/PLAN-etapa-marcacao-pai.md`, o último no formato antigo.
-- O índice da documentação de referência está no `README.md` e o do histórico, em `docs/history/README.md`.
-- Limpeza do repositório: saíram `docs/history/` (planos das etapas, prompts antigos, auditoria e relatos de teste), `docs/redesign/` e `docs/sdui/`; o git guarda essa história. As regras que o código ainda citava foram para o `docs/ARCHITECTURE.md` ou para o próprio comentário.
-- O visualizador embutível mudou de `lab/viewer/` para `viewer/`, com a demonstração em React em `viewer/demo/` (`npm run dev:viewer`) e as bibliotecas de exemplo em `viewer/samples/`. O pacote `mapping-viewer`, o `npm run build:viewer` e o `dist-viewer/` não mudam.
-- O laboratório de componentes saiu, com o `dist/lab/` publicado ao lado da app e os scripts `dev:lab`, `dev:lab:react` e `build:lab`.
-- O testador da nuvem (sessão do Claude Code no ambiente "Mapping - testes") é o único agente testador: o prompt do Cowork (`docs/TESTING-COWORK.md`) saiu, o `docs/TESTING-NUVEM.md` passou a valer sozinho, junto com o `docs/TESTING.md`, e a cobertura de Windows/Edge por agente deixou de existir. Os roteiros sob demanda continuam manuais, feitos pelo dono.
-- O relato de uma rodada de teste passa a ser um comentário na sub-issue da fase testada (em partes, se passar de 65 mil caracteres), com aviso ao coordenador; não há mais PR de relato.
-- Fluxo automatizado com três chats (roadmap, detalhamento e implementação): o chat de implementação orquestra uma sessão por fase, e cada uma mescla o próprio PR no épico com o CI verde; depois chama o testador, corrige uma vez se houver ❌ e só chama o dono para confirmar o merge do épico na `main`. As mensagens prontas estão em `docs/FLOW.md`.
-- A tabela de modelos da etapa ganha a linha Orquestrador (padrão Sonnet).
-- Nada muda na app nem no servidor MCP.
+- The roadmap and the stage plan now live in GitHub issues: future items have the `roadmap` label, the stage in progress has the `etapa` label, with a sub-issue (label `fase`) per phase; the closed issue is the history.
+- `PLAN.md` and `docs/ROADMAP.md` left the repository. The history of the Parent marking stage was archived in `docs/history/PLAN-etapa-marcacao-pai.md`, the last one in the old format.
+- The index of the reference documentation is in `README.md` and the history's is in `docs/history/README.md`.
+- Repository cleanup: `docs/history/` (stage plans, old prompts, audit and test reports), `docs/redesign/` and `docs/sdui/` left; git keeps that history. The rules that the code still cited went to `docs/ARCHITECTURE.md` or into the comment itself.
+- The embeddable viewer moved from `lab/viewer/` to `viewer/`, with the React demo in `viewer/demo/` (`npm run dev:viewer`) and the example libraries in `viewer/samples/`. The `mapping-viewer` package, `npm run build:viewer` and `dist-viewer/` do not change.
+- The component lab left, along with the `dist/lab/` published next to the app and the `dev:lab`, `dev:lab:react` and `build:lab` scripts.
+- The cloud tester (a Claude Code session in the "Mapping - testes" environment) is the only tester agent: the Cowork prompt (`docs/TESTING-COWORK.md`) left, `docs/TESTING-NUVEM.md` now stands on its own, together with `docs/TESTING.md`, and Windows/Edge coverage by an agent no longer exists. The on-demand scripts remain manual, done by the owner.
+- The report of a test round is now a comment on the sub-issue of the tested phase (in parts, if it exceeds 65 thousand characters), with a notice to the coordinator; there is no report PR anymore.
+- Automated flow with three chats (roadmap, detailing and implementation): the implementation chat orchestrates one session per phase, and each one merges its own PR into the epic with green CI; then it calls the tester, fixes once if there is a ❌ and only calls the owner to confirm the epic's merge into `main`. The ready-made messages are in `docs/FLOW.md`.
+- The stage's model table gains the Orchestrator row (default Sonnet).
+- Nothing changes in the app or in the MCP server.

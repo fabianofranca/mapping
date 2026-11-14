@@ -1,5 +1,5 @@
-// Nós sob demanda (DA5, decisão 8 da etapa canvas-escala): o nó do Konva de uma marcação só nasce
-// no primeiro quadro em que ela é desenhada e fica até ela sair do projeto.
+// Nodes on demand (DA5, decision 8 of the canvas-scale stage): a marking's Konva node is only born
+// in the first frame in which it is drawn and stays until it leaves the project.
 import { afterEach, describe, expect, it } from 'vitest';
 import type { MarkingRenderer } from '../../src/canvas/renderers/markings';
 import { openWholeProject, type WholeProjectScenario } from './wholeProjectScenario';
@@ -16,8 +16,8 @@ afterEach(() => {
   scenario = null;
 });
 
-describe('nós das marcações sob demanda (2.000 marcações)', () => {
-  it('aproximado num canto, só as marcações à vista têm nó', () => {
+describe('marking nodes on demand (2,000 markings)', () => {
+  it('zoomed in on a corner, only the markings in view have a node', () => {
     const s = (scenario = openWholeProject(2000, 'close'));
     const all = s.project.markings.length;
     s.controller.zoomTo(1);
@@ -26,13 +26,13 @@ describe('nós das marcações sob demanda (2.000 marcações)', () => {
     const created = withNode(s).length;
     expect(created).toBeGreaterThan(0);
     expect(created).toBeLessThan(all);
-    // O atributo do host conta as marcações desenhadas (os passos do R12 leem dele).
+    // The host attribute counts the drawn markings (the R12 steps read it).
     expect(Number(s.container.dataset.drawnMarkings)).toBe(
       withNode(s).filter((m) => nodeOf(s, m.id)?.group.visible()).length,
     );
   }, 120_000);
 
-  it('rolar cria os nós da outra parte e voltar não recria os primeiros', () => {
+  it('scrolling creates the nodes of the other part and going back does not recreate the first ones', () => {
     const s = (scenario = openWholeProject(2000, 'close'));
     const first = withNode(s);
     const nodes = first.map((m) => nodeOf(s, m.id));
@@ -46,7 +46,7 @@ describe('nós das marcações sob demanda (2.000 marcações)', () => {
     expect(lastId).not.toBe('');
   }, 120_000);
 
-  it('afastado ao mínimo as menores que 2 px não ganham nó; aproximar cria', () => {
+  it('zoomed out to the minimum, the ones smaller than 2 px get no node; zooming in creates them', () => {
     const s = (scenario = openWholeProject(2000));
     s.controller.zoomBy(0.0001);
     s.flush();
@@ -56,10 +56,10 @@ describe('nós das marcações sob demanda (2.000 marcações)', () => {
     expect(withNode(s).length).toBeGreaterThanOrEqual(before);
   }, 120_000);
 
-  it('apagar destrói o nó; selecionar uma sem nó leva o canvas até ela e cria o nó', () => {
+  it('deleting destroys the node; selecting one without a node takes the canvas to it and creates the node', () => {
     const s = (scenario = openWholeProject(2000, 'close'));
     const live = withNode(s)[0];
-    if (!live) throw new Error('nó');
+    if (!live) throw new Error('node');
     const node = nodeOf(s, live.id);
     s.actions.removeMarking(live.id);
     s.flush();
@@ -69,16 +69,16 @@ describe('nós das marcações sob demanda (2.000 marcações)', () => {
     const far = s.store.project
       .peek()
       ?.markings.find((m) => nodeOf(s, m.id) === undefined);
-    if (!far) throw new Error('marcação sem nó');
+    if (!far) throw new Error('marking without a node');
     s.ui.selection.value = { kind: 'marking', id: far.id };
     s.controller.centerSelection();
     s.flush();
     expect(nodeOf(s, far.id)).toBeDefined();
   }, 120_000);
 
-  // Linha de base da DA1 (jsdom, 2.000): 223 ms. Aberto aproximado, só as marcações à vista ganham
-  // nó (~50 ms). Enquadrar tudo cria todos (nenhuma passa a ser menor que 2 px): fora deste orçamento.
-  it('o primeiro quadro ao abrir aproximado cabe na metade da linha de base (223 ms)', () => {
+  // DA1 baseline (jsdom, 2,000): 223 ms. Opened zoomed in, only the markings in view get a node
+  // (~50 ms). Fit all creates all of them (none becomes smaller than 2 px): outside this budget.
+  it('the first frame when opening zoomed in fits in half the baseline (223 ms)', () => {
     const s = (scenario = openWholeProject(2000, 'close'));
     expect(s.firstFrameMs).toBeLessThan(223 / 2);
   }, 120_000);

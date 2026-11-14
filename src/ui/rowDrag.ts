@@ -1,13 +1,13 @@
 import { useRef, useState } from 'preact/hooks';
 
-// Reordenar linhas por arrasto (P6): pares da anotação livre e linhas das tabelas
-// tipadas. A alça usa eventos de ponteiro (mouse, caneta e toque); a lista só muda ao
-// soltar, com uma única action do store, então o gesto gera uma entrada de desfazer.
+// Reorder rows by dragging (P6): pairs of the free annotation and rows of the typed
+// tables. The handle uses pointer events (mouse, pen and touch); the list only changes on
+// drop, with a single store action, so the gesture produces one undo entry.
 
 /**
- * Posição final da linha arrastada (`from`) ao soltar em `y`: quantas das outras
- * linhas têm o centro acima do ponteiro. `mids` são os centros verticais das linhas,
- * na ordem atual. Função pura: `tests/ui/rowDrag.test.ts`.
+ * Final position of the dragged row (`from`) when dropped at `y`: how many of the other
+ * rows have their center above the pointer. `mids` are the rows' vertical centers,
+ * in the current order. Pure function: `tests/ui/rowDrag.test.ts`.
  */
 export function dropIndex(mids: readonly number[], y: number, from: number): number {
   let slot = 0;
@@ -18,27 +18,27 @@ export function dropIndex(mids: readonly number[], y: number, from: number): num
 }
 
 /**
- * Linha (na ordem atual) antes da qual a arrastada vai entrar; `count` = depois da
- * última. Serve para desenhar a linha de destino.
+ * Row (in the current order) before which the dragged one will enter; `count` = after the
+ * last. Used to draw the target line.
  */
 export function dropBefore(from: number, to: number): number {
   return to < from ? to : to + 1;
 }
 
 export interface RowDrag {
-  /** Arrasto em andamento: linha pega e posição final prevista. */
+  /** Drag in progress: picked-up row and expected final position. */
   readonly state: { readonly from: number; readonly to: number } | null;
-  /** Atributos da alça da linha `index`. */
+  /** Attributes of the handle of row `index`. */
   handle(index: number): {
     onPointerDown: (e: PointerEvent) => void;
   };
-  /** Atributo de destino da linha `index` (`before`/`after`) durante o arrasto. */
+  /** Target attribute of row `index` (`before`/`after`) during the drag. */
   drop(index: number, count: number): 'before' | 'after' | undefined;
 }
 
 /**
- * Arrasto pela alça. As linhas são os elementos com `data-drag-row` dentro de
- * `container`; ao soltar numa posição diferente, chama `onMove(from, to)`.
+ * Drag by the handle. The rows are the elements with `data-drag-row` inside
+ * `container`; on drop at a different position, calls `onMove(from, to)`.
  */
 export function useRowDrag(
   container: { readonly current: HTMLElement | null },
@@ -65,7 +65,7 @@ export function useRowDrag(
         try {
           grip.setPointerCapture(e.pointerId);
         } catch {
-          // Sem captura (ex.: ponteiro já solto): o arrasto termina no próximo evento.
+          // Without capture (e.g. pointer already released): the drag ends at the next event.
         }
         const move = (ev: PointerEvent) => {
           const next = dropIndex(mids, ev.clientY, index);
@@ -97,7 +97,7 @@ export function useRowDrag(
   };
 }
 
-/** Alt+Shift+↑/↓ (e ↑/↓ na alça): deslocamento pedido pela tecla, ou 0. */
+/** Alt+Shift+↑/↓ (and ↑/↓ on the handle): offset requested by the key, or 0. */
 export function moveKeyDelta(e: KeyboardEvent, onGrip: boolean): -1 | 0 | 1 {
   if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return 0;
   const chord = e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey;

@@ -2,11 +2,11 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { mcpSources } from './sources';
 
-// Guardas estáticas da escrita do servidor (fase 8.5, M8): varrem `mcp/**/*.ts` inteiro, então
-// um módulo novo em qualquer subpasta que grave no disco ou cite o `mapping.json` falha aqui.
-// Mudar a lista é uma decisão: o servidor só grava o projeto vazio e `proposals/`.
+// Static guards on the server's writing (phase 8.5, M8): they scan all of `mcp/**/*.ts`, so
+// a new module in any subfolder that writes to disk or cites `mapping.json` fails here.
+// Changing the list is a decision: the server only writes the empty project and `proposals/`.
 
-/** Funções do `node:fs` que alteram o disco (com ou sem `Sync`). */
+/** `node:fs` functions that change the disk (with or without `Sync`). */
 const WRITERS = [
   'writeFile',
   'appendFile',
@@ -26,14 +26,14 @@ const WRITERS = [
 ];
 const WRITER_CALL = new RegExp(`(?<![\\w$])(${WRITERS.join('|')})(?:Sync)?\\s*\\(`, 'g');
 
-describe('quem grava no disco (mcp/**)', () => {
+describe('who writes to disk (mcp/**)', () => {
   const sources = mcpSources();
 
-  it('a varredura desce às subpastas', () => {
+  it('the scan descends into subfolders', () => {
     expect(sources.map((s) => s.file)).toContain('image/codecs.ts');
   });
 
-  it('só paths.ts, createProject.ts, proposalStore.ts e threadStore.ts chamam funções que gravam, e só estas', () => {
+  it('only paths.ts, createProject.ts, proposalStore.ts and threadStore.ts call functions that write, and only these', () => {
     const calls: Record<string, string[]> = {};
     for (const { file, code } of sources) {
       const names = [...new Set([...code.matchAll(WRITER_CALL)].map((m) => m[1]!))];
@@ -47,7 +47,7 @@ describe('quem grava no disco (mcp/**)', () => {
     });
   });
 
-  it('writeFileAtomic só em createProject.ts, proposalStore.ts e threadStore.ts; sobre o mapping.json (writeFileAtomic ou writeNewFile), só no create_project', () => {
+  it('writeFileAtomic only in createProject.ts, proposalStore.ts and threadStore.ts; on mapping.json (writeFileAtomic or writeNewFile), only in create_project', () => {
     const callers = sources
       .filter(({ file, code }) => file !== 'paths.ts' && /writeFileAtomic\(/.test(code))
       .map((s) => s.file);
@@ -60,15 +60,15 @@ describe('quem grava no disco (mcp/**)', () => {
     expect(onMapping).toEqual(['createProject.ts']);
   });
 
-  it('o mapping.json só é citado por projects.ts e changes.ts (leitura) e createProject.ts', () => {
+  it('mapping.json is only cited by projects.ts and changes.ts (reading) and createProject.ts', () => {
     const citing = sources
-      // Literal de caminho ('mapping.json' ou "mapping.json"); o nome em texto corrido não conta.
+      // Path literal ('mapping.json' or "mapping.json"); the name in running text does not count.
       .filter(({ code }) => /MAPPING_FILE|(['"])mapping\.json\1/.test(code))
       .map((s) => s.file);
     expect(citing).toEqual(['changes.ts', 'createProject.ts', 'projects.ts']);
   });
 
-  it('o gancho de disco dos testes não entra no bundle', () => {
+  it("the tests' disk hook does not enter the bundle", () => {
     const bundle = readFileSync('dist-mcp/mapping-mcp.js', 'utf8');
     expect(bundle).not.toContain('MAPPING_MCP_FS_HOOKS');
     expect(bundle).not.toContain('fsHooks');

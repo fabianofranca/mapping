@@ -11,10 +11,10 @@ import { sampleProject } from '../model/fixtures';
 import { projectWithModes } from './drawingModeFixtures';
 import { createHarness, renderLive } from './harness';
 
-// CF6: o modo do desenho nas Configurações, nos Detalhes do container e no Diagnóstico.
+// CF6: the drawing mode in the Settings, in the container Details and in the Diagnostics.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -23,7 +23,7 @@ const options = (select: HTMLElement) =>
     .getAllByRole('option', { hidden: true })
     .map((o) => o.textContent);
 
-describe('Configurações: modo do desenho do projeto', () => {
+describe('Settings: project drawing mode', () => {
   function setup(project = projectWithModes(), readOnly = false) {
     const harness = createHarness(project, readOnly);
     renderLive(harness, (p) => <DrawingModeSettings project={p} readOnly={readOnly} />);
@@ -34,26 +34,26 @@ describe('Configurações: modo do desenho do projeto', () => {
       selector: 'select',
     });
 
-  it('lista a união dos modos declarados e troca o modo pela action', async () => {
+  it('lists the union of the declared modes and switches the mode through the action', async () => {
     const { harness, user } = setup();
-    expect(options(select())).toEqual(['Claro', 'Escuro']);
+    expect(options(select())).toEqual(['Light', 'Dark']);
     expect(select().value).toBe('light');
     await user.selectOptions(select(), 'dark');
     expect(harness.project().drawingMode).toBe('dark');
     expect(select().value).toBe('dark');
   });
 
-  it('modo gravado que nenhuma especialização declara aparece marcado', () => {
+  it('a stored mode that no specialization declares appears marked', () => {
     setup({ ...projectWithModes(), drawingMode: 'solar' });
     expect(options(select())).toEqual([
-      'Claro',
-      'Escuro',
+      'Light',
+      'Dark',
       t('drawingMode.undeclared', { mode: 'solar' }),
     ]);
     expect(select().value).toBe('solar');
   });
 
-  it('sem modo declarado nem gravado não mostra nada; somente leitura desabilita', () => {
+  it('with no declared or stored mode it shows nothing; read-only disables', () => {
     const { harness } = setup(sampleProject());
     expect(screen.queryByLabelText(t('drawingMode.label'))).toBeNull();
     expect(harness.project().drawingMode).toBeUndefined();
@@ -62,24 +62,28 @@ describe('Configurações: modo do desenho do projeto', () => {
     expect(select().disabled).toBe(true);
   });
 
-  it('em en-US as opções também vêm de t(), com inicial maiúscula', () => {
-    locale.value = 'en-US';
+  it('in pt-BR the options also come from t(), with a capital initial (pt-BR)', () => {
+    locale.value = 'pt-BR';
     setup();
-    expect(options(select())).toEqual(['Light', 'Dark']);
+    // pt-BR kept: the pt-BR option labels are the object of this test
+    expect(options(select())).toEqual(['Claro', 'Escuro']);
   });
 
-  it('os textos existem nos dois idiomas', () => {
+  it('the texts exist in both languages', () => {
+    locale.value = 'pt-BR';
     setup();
+    // pt-BR kept: the test checks the title in both languages
     expect(screen.getByText('Modo do desenho', { selector: 'h3' })).toBeTruthy();
     cleanup();
     locale.value = 'en-US';
     setup();
     expect(screen.getByText('Drawing mode', { selector: 'h3' })).toBeTruthy();
+    // pt-BR kept: the English text must differ from the Portuguese one
     expect(t('drawingMode.followProject')).not.toBe('Seguir o projeto');
   });
 });
 
-describe('Detalhes do container: modo do desenho', () => {
+describe('Container Details: drawing mode', () => {
   function setup(project = projectWithModes()) {
     const harness = createHarness(project);
     const id = harness.project().containers[0]?.id ?? '';
@@ -105,13 +109,9 @@ describe('Detalhes do container: modo do desenho', () => {
       selector: 'select',
     });
 
-  it('"Seguir o projeto" é a primeira opção; trocar fixa o modo e voltar remove', async () => {
+  it('"Follow the project" is the first option; switching fixes the mode and going back removes it', async () => {
     const { harness, user } = setup();
-    expect(options(select())).toEqual([
-      t('drawingMode.followProject'),
-      'Claro',
-      'Escuro',
-    ]);
+    expect(options(select())).toEqual([t('drawingMode.followProject'), 'Light', 'Dark']);
     expect(select().value).toBe('');
     await user.selectOptions(select(), 'dark');
     expect(harness.project().containers[0]?.drawingMode).toBe('dark');
@@ -119,14 +119,14 @@ describe('Detalhes do container: modo do desenho', () => {
     expect(harness.project().containers[0]?.drawingMode).toBeNull();
   });
 
-  it('sem modos declarados o campo não aparece', () => {
+  it('with no declared modes the field does not appear', () => {
     setup(sampleProject());
     expect(screen.queryByLabelText(t('drawingMode.label'))).toBeNull();
   });
 });
 
-describe('Diagnóstico: modo do desenho', () => {
-  it('modo gravado e não declarado é avisado e continua gravado', () => {
+describe('Diagnostics: drawing mode', () => {
+  it('a stored, undeclared mode is warned about and stays stored', () => {
     const harness = createHarness({ ...projectWithModes(), drawingMode: 'solar' });
     render(
       <EditorContext.Provider value={harness.context}>
@@ -141,7 +141,7 @@ describe('Diagnóstico: modo do desenho', () => {
     expect(harness.project().drawingMode).toBe('solar');
   });
 
-  it('sem modo não declarado a seção não aparece', () => {
+  it('with no undeclared mode the section does not appear', () => {
     const harness = createHarness(projectWithModes());
     render(
       <EditorContext.Provider value={harness.context}>

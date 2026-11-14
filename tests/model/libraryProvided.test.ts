@@ -1,5 +1,5 @@
-// MF3 (decisão 8): a prova de desenho e o Catálogo usam o `default` do `$provided` (sem ancestral),
-// e o `provide` cita campos do tipo como qualquer expressão.
+// MF3 (decision 8): the drawing proof and the Catalog use the `default` of `$provided` (no ancestor),
+// and `provide` cites type fields like any expression.
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, exampleDrawing, findEntry } from '../../src/model/catalog';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
@@ -9,15 +9,15 @@ const head = { format: 'mapping-component', formatVersion: 4 };
 const READER = {
   ...head,
   id: 'reader',
-  name: 'Leitor',
+  name: 'Reader',
   size: { width: 120, height: 40 },
   template: {
     type: 'frame',
     children: [
       {
         type: 'text',
-        name: 'texto',
-        text: 'Olá',
+        name: 'text',
+        text: 'Hello',
         color: { $provided: 'ink', default: '#123456' },
       },
     ],
@@ -26,7 +26,7 @@ const READER = {
 const giver = (provide: unknown) => ({
   ...head,
   id: 'giver',
-  name: 'Oferece',
+  name: 'Provider',
   size: { width: 200, height: 80 },
   template: {
     type: 'frame',
@@ -71,13 +71,13 @@ function pack(provide: unknown): LibraryFile[] {
     { path: 'lite.spec.json', text: JSON.stringify(spec) },
     { path: 'components/reader.json', text: JSON.stringify(READER) },
     { path: 'components/giver.json', text: JSON.stringify(giver(provide)) },
-    { path: 'docs/reader.md', text: '# Leitor\n' },
-    { path: 'docs/giver.md', text: '# Oferece\n' },
+    { path: 'docs/reader.md', text: '# Reader\n' },
+    { path: 'docs/giver.md', text: '# Provider\n' },
   ];
 }
 
-describe('biblioteca com cor herdada', () => {
-  it('é válida e a prova de desenho não avisa nada', () => {
+describe('library with an inherited color', () => {
+  it('is valid and the drawing proof warns of nothing', () => {
     const report = validateLibrary({
       files: pack({ ink: { $field: 'ink', default: '#abcdef' } }),
     });
@@ -87,7 +87,7 @@ describe('biblioteca com cor herdada', () => {
     );
   });
 
-  it('o Catálogo desenha o leitor com o default (nenhum ancestral oferece)', () => {
+  it('the Catalog draws the reader with the default (no ancestor provides one)', () => {
     const catalog = buildCatalog(pack({ ink: '#abcdef' }));
     const entry = findEntry(catalog, 'reader')!;
     const drawing = exampleDrawing(catalog, entry, undefined, approximateMeasurer);
@@ -97,8 +97,10 @@ describe('biblioteca com cor herdada', () => {
     expect(text?.fills?.[0]?.color).toBe('#123456');
   });
 
-  it('o provide que cita um campo que o tipo não tem é erro', () => {
-    const report = validateLibrary({ files: pack({ ink: { $field: 'nao-existe' } }) });
-    expect(JSON.stringify(report.errors)).toContain('nao-existe');
+  it('a provide that cites a field the type does not have is an error', () => {
+    const report = validateLibrary({
+      files: pack({ ink: { $field: 'does-not-exist' } }),
+    });
+    expect(JSON.stringify(report.errors)).toContain('does-not-exist');
   });
 });

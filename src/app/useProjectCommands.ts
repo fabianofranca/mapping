@@ -5,9 +5,9 @@ import type { EditorDialogs } from './useEditorDialogs';
 import type { EditorNotices } from './useEditorNotices';
 
 export interface ProjectCommands {
-  /** Gera o zip e abre o diálogo de exportação. */
+  /** Generates the zip and opens the export dialog. */
   exportProject(): Promise<void>;
-  /** Grava o que falta e fecha o projeto (com confirmação se o salvamento falhou). */
+  /** Writes what is pending and closes the project (with confirmation if saving failed). */
   closeProject(): Promise<void>;
 }
 

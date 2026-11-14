@@ -20,18 +20,18 @@ import {
   type ThreadAuthor,
 } from '../../src/model';
 
-// Apoio dos testes das conversas pelo servidor MCP: grava e lê `comments/` como a app faz, com as
-// mesmas funções puras de `src/model/`.
+// Support for the conversation tests through the MCP server: writes and reads `comments/` like the app does, with the
+// same pure functions from `src/model/`.
 
 export const HUMAN: ThreadAuthor = {
   kind: 'human',
   name: 'Marina Alves',
-  email: 'marina@exemplo.com',
+  email: 'marina@example.com',
 };
 
 export const AGENT: ThreadAuthor = { kind: 'agent', name: 'Claude Code', email: null };
 
-/** Instante `n` minutos depois de 2026-11-01T10:00Z. */
+/** The instant `n` minutes after 2026-11-01T10:00Z. */
 export const at = (n: number): string =>
   new Date(Date.parse('2026-11-01T10:00:00.000Z') + n * 60_000).toISOString();
 
@@ -41,18 +41,18 @@ export const sha = (path: string): string =>
 export interface Seed {
   readonly id?: string;
   readonly anchor: ThreadAnchor;
-  /** Mensagens na ordem; a primeira abre a conversa. */
+  /** Messages in order; the first opens the conversation. */
   readonly messages: readonly {
     by: 'human' | 'agent';
     text: string;
     proposal?: string;
   }[];
   readonly resolved?: boolean;
-  /** Minuto da primeira mensagem (cada mensagem seguinte anda 1 minuto). */
+  /** Minute of the first message (each following message advances 1 minute). */
   readonly start?: number;
 }
 
-/** Grava uma conversa em `comments/` (ou `comments/resolved/`) e devolve o modelo. */
+/** Writes a conversation to `comments/` (or `comments/resolved/`) and returns the model. */
 export function seedThread(projectDir: string, seed: Seed): Thread {
   const id = seed.id ?? randomUUID();
   const start = seed.start ?? 0;
@@ -88,7 +88,7 @@ export function seedThread(projectDir: string, seed: Seed): Thread {
   return thread;
 }
 
-/** Lê o arquivo da conversa (aberta ou resolvida) como a app: validado pelo modelo. */
+/** Reads the conversation file (open or resolved) like the app: validated by the model. */
 export function readThread(projectDir: string, id: string): Thread {
   for (const resolved of [false, true]) {
     const path = join(projectDir, threadFilePath(id, resolved));
@@ -97,10 +97,10 @@ export function readThread(projectDir: string, id: string): Thread {
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
     return parsed.thread;
   }
-  throw new Error(`sem arquivo da conversa ${id}`);
+  throw new Error(`no file for conversation ${id}`);
 }
 
-/** Imita a app: acrescenta uma mensagem de pessoa à conversa aberta (`revision + 1`). */
+/** Imitates the app: appends a person's message to the open conversation (`revision + 1`). */
 export function humanReplies(
   projectDir: string,
   id: string,
@@ -118,7 +118,7 @@ export function humanReplies(
   return thread;
 }
 
-/** Imita a app resolvendo: grava em `resolved/` e remove o arquivo de `comments/`. */
+/** Imitates the app resolving: writes to `resolved/` and removes the file from `comments/`. */
 export function humanResolves(projectDir: string, id: string, minute: number): Thread {
   const thread = resolveThread(
     readThread(projectDir, id),
@@ -131,7 +131,7 @@ export function humanResolves(projectDir: string, id: string, minute: number): T
   return thread;
 }
 
-/** Nomes dos arquivos em `comments/` (sem as subpastas). */
+/** Names of the files in `comments/` (without the subfolders). */
 export function commentFiles(projectDir: string): string[] {
   const dir = join(projectDir, 'comments');
   if (!existsSync(dir)) return [];

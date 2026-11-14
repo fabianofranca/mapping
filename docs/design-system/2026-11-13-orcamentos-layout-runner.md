@@ -1,13 +1,13 @@
-# Orçamentos do layout medidos no runner — 2026-11-13 (épico `epic/orcamentos-layout-runner`)
+# Layout budgets measured on the runner — 2026-11-13 (épico `epic/orcamentos-layout-runner`)
 
 ## Pendências
 
-Pendências: nenhuma (só testes de desempenho e a seção "Desempenho" do `docs/ARCHITECTURE.md`; sem UI, tokens, componentes nem ícones).
+Pending items: none (only performance tests and the "Performance" section of `docs/ARCHITECTURE.md`; no UI, tokens, components or icons).
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componentes, tokens nem ícones da app.
+Sem impacto on the Claude Design Mapping artifact: nothing was written, since the epic changes no components, tokens or icons of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

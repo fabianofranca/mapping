@@ -11,15 +11,15 @@ import {
 } from '../../src/model';
 import { sampleProject } from './fixtures';
 
-describe('visão de lista', () => {
+describe('list view', () => {
   const p = sampleProject();
   const both = p.layers;
 
-  it('agrupa Imagem → Marcação → Camada, com o caminho completo', () => {
+  it('groups Image → Marking → Layer, with the full path', () => {
     const listing = buildListing(p, both, { showEmpty: false });
     expect(listing.map((i) => i.image?.id)).toEqual(['I1', 'I2']);
     const [i1] = listing;
-    // M3 não tem anotação: fica de fora. M2 tem, e o caminho passa pelo pai.
+    // M3 has no annotation: it is left out. M2 has one, and the path goes through the parent.
     expect(i1?.markings.map((m) => m.marking.id)).toEqual(['M1', 'M2']);
     expect(i1?.markings[1]?.path.map((m) => m.id)).toEqual(['M1', 'M2']);
     const m1 = i1?.markings[0];
@@ -31,7 +31,7 @@ describe('visão de lista', () => {
     );
   });
 
-  it('respeita as camadas visíveis', () => {
+  it('respects the visible layers', () => {
     const onlyL2 = both.filter((l) => l.id === 'L2');
     const listing = buildListing(p, onlyL2, { showEmpty: false });
     expect(listing.flatMap((i) => i.markings.map((m) => m.marking.id))).toEqual([
@@ -41,19 +41,19 @@ describe('visão de lista', () => {
     expect(listing[0]?.markings[0]?.sections.map((s) => s.layer.id)).toEqual(['L2']);
   });
 
-  it('sem camadas visíveis a lista fica vazia (a menos que mostre as vazias)', () => {
+  it('with no visible layers the list is empty (unless it shows the empty ones)', () => {
     expect(buildListing(p, [], { showEmpty: false })).toEqual([]);
     const all = buildListing(p, [], { showEmpty: true });
     expect(all.flatMap((i) => i.markings)).toHaveLength(4);
   });
 
-  it('"mostrar marcações sem anotação" inclui as vazias, em profundidade', () => {
+  it('"Show markings without annotations" includes the empty ones, depth first', () => {
     const listing = buildListing(p, both, { showEmpty: true });
     expect(listing[0]?.markings.map((m) => m.marking.id)).toEqual(['M1', 'M2', 'M3']);
     expect(listing[0]?.markings[2]?.sections).toEqual([]);
   });
 
-  it('imagem sem marcações só aparece com "mostrar vazias"', () => {
+  it('an image without markings only appears with "show empty"', () => {
     const q = removeMarking(p, 'M4');
     expect(buildListing(q, both, { showEmpty: false }).map((i) => i.image?.id)).toEqual([
       'I1',
@@ -64,7 +64,7 @@ describe('visão de lista', () => {
     ]);
   });
 
-  it('marcação com anotação aparece mesmo quando o pai não tem', () => {
+  it('a marking with an annotation appears even when the parent has none', () => {
     const q = addAnnotation(p, { id: 'A9', markingId: 'M3', layerId: 'L1' });
     const inOnlyL1 = buildListing(
       q,
@@ -76,7 +76,7 @@ describe('visão de lista', () => {
     expect(m3?.path.map((m) => m.id)).toEqual(['M1', 'M2', 'M3']);
   });
 
-  it('o grupo Canvas vem primeiro, com as marcações do canvas e as anotações delas', () => {
+  it('the Canvas group comes first, with the canvas markings and their annotations', () => {
     let q = createMarking(p, {
       id: 'C1',
       containerId: null,
@@ -86,11 +86,11 @@ describe('visão de lista', () => {
     const listing = buildListing(q, both, { showEmpty: false });
     expect(listing.map((i) => i.image?.id ?? null)).toEqual([null, 'I1', 'I2']);
     expect(listing[0]?.markings.map((m) => m.marking.id)).toEqual(['C1']);
-    // Sem marcação do canvas, o grupo não aparece, nem com "mostrar vazias".
+    // Without a canvas marking, the group does not appear, not even with "show empty".
     expect(buildListing(p, both, { showEmpty: true })[0]?.image?.id).toBe('I1');
   });
 
-  it('layerSections segue a ordem das camadas dadas', () => {
+  it('layerSections follows the order of the given layers', () => {
     const index = annotationsByMarking(p);
     const reversed = [...both].reverse();
     expect(layerSections(index, 'M1', reversed).map((s) => s.layer.id)).toEqual([
@@ -101,16 +101,16 @@ describe('visão de lista', () => {
   });
 });
 
-describe('lista de incompletas', () => {
+describe('incomplete list', () => {
   const p = sampleProject();
-  // A2 (M1/L2) e A3 (M2/L1) em I1; A4 (M4/L2) em I2.
+  // A2 (M1/L2) and A3 (M2/L1) in I1; A4 (M4/L2) in I2.
   const issues = new Map([
     ['A4', [{ code: 'layer-mismatch' as const }]],
     ['A3', [{ code: 'required-empty' as const, key: 'id' }]],
     ['A2', [{ code: 'unknown-type' as const }]],
   ]);
 
-  it('agrupa por imagem, em profundidade, com camada e motivos', () => {
+  it('groups by image, depth first, with layer and reasons', () => {
     const list = buildIncompleteList(p, issues);
     expect(list.map((i) => i.image?.id)).toEqual(['I1', 'I2']);
     expect(
@@ -123,14 +123,14 @@ describe('lista de incompletas', () => {
     expect(list[0]?.items[1]?.issues).toEqual([{ code: 'required-empty', key: 'id' }]);
   });
 
-  it('só nas camadas dadas (as visíveis); imagem sem pendência some', () => {
+  it('only in the given layers (the visible ones); an image without pending items disappears', () => {
     const l1 = p.layers.filter((l) => l.id === 'L1');
     const list = buildIncompleteList(p, issues, l1);
     expect(list.map((i) => i.items.map((x) => x.annotation.id))).toEqual([['A3']]);
     expect(buildIncompleteList(p, issues, [])).toEqual([]);
   });
 
-  it('pendência de marcação do canvas entra no grupo Canvas', () => {
+  it('a pending item of a canvas marking goes in the Canvas group', () => {
     let q = createMarking(p, {
       id: 'C1',
       containerId: null,
@@ -145,7 +145,7 @@ describe('lista de incompletas', () => {
     expect(list[0]?.items[0]?.marking.id).toBe('C1');
   });
 
-  it('anotação numa camada que não existe também é listada (o contador e a lista concordam)', () => {
+  it('an annotation in a layer that does not exist is also listed (the counter and the list agree)', () => {
     const orphan = {
       ...(p.annotations.find((x) => x.id === 'A3') as (typeof p.annotations)[number]),
       id: 'AX',
@@ -159,7 +159,7 @@ describe('lista de incompletas', () => {
     expect(
       list.flatMap((i) => i.items.map((x) => [x.annotation.id, x.layer.id])),
     ).toEqual([['AX', 'LX']]);
-    // Com "Só camadas visíveis" ela fica de fora: a camada não existe, não está visível.
+    // With "Visible layers only" it is left out: the layer does not exist, so it is not visible.
     expect(
       buildIncompleteList(
         q,
@@ -169,19 +169,19 @@ describe('lista de incompletas', () => {
     ).toEqual([]);
   });
 
-  it('sem pendências a lista é vazia', () => {
+  it('with no pending items the list is empty', () => {
     expect(buildIncompleteList(p, new Map())).toEqual([]);
   });
 });
 
-describe('setas na lista (ME4)', () => {
+describe('arrows in the list (ME4)', () => {
   function withArrow() {
     let q = createArrow(sampleProject(), { id: 'AR1', from: 'M1', to: 'M4' });
     q = addAnnotation(q, { id: 'AA', markingId: 'AR1', layerId: 'L1' });
     return q;
   }
 
-  it('a seta com anotação aparece logo depois da marcação de origem', () => {
+  it('an arrow with an annotation appears right after the origin marking', () => {
     const q = withArrow();
     const listing = buildListing(q, q.layers, { showEmpty: false });
     const rows = listing[0]?.markings.map((m) => [m.marking.id, m.arrow?.id ?? null]);
@@ -196,7 +196,7 @@ describe('setas na lista (ME4)', () => {
     ]);
   });
 
-  it('a seta sem anotação só entra com "mostrar sem anotação"', () => {
+  it('an arrow without an annotation only enters with "show without annotation"', () => {
     const q = createArrow(sampleProject(), { id: 'AR1', from: 'M1', to: 'M4' });
     const plain = buildListing(q, q.layers, { showEmpty: false });
     expect(plain.flatMap((i) => i.markings).some((m) => m.arrow)).toBe(false);
@@ -206,7 +206,7 @@ describe('setas na lista (ME4)', () => {
     );
   });
 
-  it('a pendência da anotação da seta vem com a origem e a seta', () => {
+  it('the pending item of the arrow annotation comes with the origin and the arrow', () => {
     const q = withArrow();
     const list = buildIncompleteList(
       q,

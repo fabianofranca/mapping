@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-box",
   "name": "Box",
-  "description": "Container livre do Compose: os filhos ficam onde o retângulo deles diz.",
+  "description": "Free-form Compose container: children stay where their rectangle says.",
   "size": {
     "width": 200,
     "height": 120

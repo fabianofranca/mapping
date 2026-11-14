@@ -13,9 +13,9 @@ import {
 } from '../../model';
 import { annotationLabel, arrowText, imageLabel, markingLabel } from '../labels';
 
-// Rótulo de uma âncora de conversa (etapa Comentários): "Button › variante", "Camada Dados",
-// "Canvas · ponto solto", "Marcação apagada · órfã". Texto puro, sem ícone; usado pela seção
-// Conversas dos Detalhes e pela coluna Âncora da janela Comentários.
+// Label of a thread anchor (Comments stage): "Button › variant", "Layer Data",
+// "Canvas · loose point", "Deleted marking · orphan". Plain text, no icon; used by the
+// Threads section of the Details and by the Anchor column of the Comments window.
 
 const MISSING: Record<ThreadMissingKind, TranslationKey> = {
   marking: 'thread.anchor.missing.marking',
@@ -43,7 +43,7 @@ function fieldText(project: Project, annotation: Annotation, key: string): strin
   return field ? fieldLabel(field) : key;
 }
 
-/** "Anotação › campo" (campo e linha) ou "Anotação › chave do par". */
+/** "Annotation › field" (field and row) or "Annotation › pair key". */
 function partLabel(
   project: Project,
   anchor: Extract<ThreadAnchor, { annotationId: string }>,
@@ -82,7 +82,7 @@ function itemLabel(project: Project, anchor: ItemAnchor): string {
   return found[anchor.kind]();
 }
 
-/** Onde a conversa mora, em texto; a órfã diz o que sumiu. */
+/** Where the thread lives, as text; the orphan says what vanished. */
 export function anchorLabel(project: Project, anchor: ThreadAnchor): string {
   const resolved = resolveAnchor(project, anchor);
   if (resolved.orphan) return t(MISSING[resolved.missing]);

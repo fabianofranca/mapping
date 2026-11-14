@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "secure-text-field",
   "name": "Secure text field",
-  "description": "Campo de senha: filled (fundo e indicador) ou outlined (contorno com o rótulo na borda). O texto digitado aparece mascarado (••••••••); aceita ícones, texto de apoio e estado de erro.",
+  "description": "Password field: filled (background and indicator) or outlined (outline with the label on the border). The typed text appears masked (••••••••); supports icons, supporting text and error state.",
   "size": {
     "width": 280,
     "height": 84
@@ -55,7 +55,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "contêiner",
+        "name": "container",
         "clip": true,
         "width": "fill",
         "height": "fill",
@@ -79,7 +79,7 @@
         "children": [
           {
             "type": "rect",
-            "name": "fundo",
+            "name": "background",
             "anchors": {
               "left": 0,
               "right": 0,
@@ -107,7 +107,7 @@
           },
           {
             "type": "rect",
-            "name": "indicador",
+            "name": "indicator",
             "anchors": {
               "left": 0,
               "right": 0,
@@ -203,7 +203,7 @@
           },
           {
             "type": "rect",
-            "name": "contorno",
+            "name": "outline",
             "anchors": {
               "left": 0,
               "right": 0,
@@ -284,7 +284,7 @@
               },
               "align": "inside",
               "gap": {
-                "node": "rótulo minimizado",
+                "node": "minimized label",
                 "padding": 4
               }
             },
@@ -303,7 +303,7 @@
           },
           {
             "type": "frame",
-            "name": "conteúdo",
+            "name": "content",
             "anchors": {
               "left": 0,
               "right": 0,
@@ -323,7 +323,7 @@
             "children": [
               {
                 "type": "frame",
-                "name": "linha",
+                "name": "row",
                 "width": "fill",
                 "height": "fill",
                 "layout": {
@@ -553,7 +553,7 @@
                   },
                   {
                     "type": "frame",
-                    "name": "textos",
+                    "name": "texts",
                     "width": "fill",
                     "height": "hug",
                     "layout": {
@@ -562,7 +562,7 @@
                     "children": [
                       {
                         "type": "text",
-                        "name": "rótulo",
+                        "name": "label",
                         "text": {
                           "$field": "label"
                         },
@@ -734,7 +734,7 @@
                       },
                       {
                         "type": "frame",
-                        "name": "valor (recorte)",
+                        "name": "value (clip)",
                         "width": "fill",
                         "height": "hug",
                         "clip": true,
@@ -747,7 +747,7 @@
                         "children": [
                           {
                             "type": "text",
-                            "name": "prefixo",
+                            "name": "prefix",
                             "text": {
                               "$field": "prefix"
                             },
@@ -787,7 +787,7 @@
                           },
                           {
                             "type": "text",
-                            "name": "valor",
+                            "name": "value",
                             "text": "••••••••",
                             "font": {
                               "size": {
@@ -822,7 +822,7 @@
                           },
                           {
                             "type": "text",
-                            "name": "sufixo",
+                            "name": "suffix",
                             "text": {
                               "$field": "suffix"
                             },
@@ -864,7 +864,7 @@
                       },
                       {
                         "type": "text",
-                        "name": "dica",
+                        "name": "hint",
                         "text": {
                           "$field": "placeholder"
                         },
@@ -1141,7 +1141,7 @@
           },
           {
             "type": "frame",
-            "name": "borda superior",
+            "name": "top border",
             "clip": false,
             "anchors": {
               "left": 0,
@@ -1175,14 +1175,14 @@
             "children": [
               {
                 "type": "rect",
-                "name": "recuo",
+                "name": "inset",
                 "width": 12,
                 "height": 8,
                 "fill": "none"
               },
               {
                 "type": "frame",
-                "name": "rótulo na borda",
+                "name": "border label",
                 "width": "hug",
                 "height": "hug",
                 "layout": {
@@ -1192,7 +1192,7 @@
                 "children": [
                   {
                     "type": "text",
-                    "name": "rótulo minimizado",
+                    "name": "minimized label",
                     "text": {
                       "$field": "label"
                     },
@@ -1288,7 +1288,7 @@
       },
       {
         "type": "frame",
-        "name": "apoio (linha)",
+        "name": "support (row)",
         "width": "fill",
         "height": "hug",
         "visible": {
@@ -1301,7 +1301,7 @@
         "children": [
           {
             "type": "text",
-            "name": "apoio",
+            "name": "support",
             "text": {
               "$field": "supportingText"
             },

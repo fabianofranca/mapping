@@ -3,26 +3,26 @@ import { normalizeIsoDate } from './schema';
 import { PROPOSAL_ID_RE } from './proposal';
 import { formatSpecPath, type SpecIssue } from './spec';
 
-// Formato da conversa ancorada (etapa Comentários): um arquivo por conversa, aberta em
-// `comments/<id>.json` ou resolvida em `comments/resolved/<id>.json`. O zod daqui é a fonte da
-// verdade; a leitura devolve os erros com o caminho exato (`messages[2].author.email: …`).
-// Puro: sem DOM nem Node. Quem grava (a sessão da app, o servidor MCP) fica fora do modelo.
+// Format of the anchored thread (Comments stage): one file per thread, open at
+// `comments/<id>.json` or resolved at `comments/resolved/<id>.json`. The zod schema here is the
+// source of truth; reading returns the errors with the exact path (`messages[2].author.email: …`).
+// Pure: no DOM or Node. Whoever writes (the app session, the MCP server) stays outside the model.
 
 export const THREAD_FORMAT = 'mapping-thread';
 export const THREAD_FORMAT_VERSION = 1;
-/** Pasta das conversas abertas, relativa à raiz do projeto. */
+/** Folder of the open threads, relative to the project root. */
 export const COMMENTS_DIR = 'comments';
-/** Pasta das conversas resolvidas. */
+/** Folder of the resolved threads. */
 export const RESOLVED_DIR = 'comments/resolved';
-/** Tamanho máximo do texto de uma mensagem (unidades de `String.length`). */
+/** Maximum length of a message's text (in `String.length` units). */
 export const THREAD_MESSAGE_MAX = 10000;
 
-/** Id da conversa: vira nome de arquivo, então a mesma regra do id de proposta. */
+/** Thread id: it becomes a file name, so the same rule as the proposal id. */
 export const THREAD_ID_RE = PROPOSAL_ID_RE;
 
 export type ThreadAuthorKind = 'human' | 'agent';
 
-/** `email` é obrigatório na pessoa e `null` no agente. */
+/** `email` is required for a person and `null` for an agent. */
 export interface ThreadAuthor {
   readonly kind: ThreadAuthorKind;
   readonly name: string;
@@ -34,13 +34,13 @@ export interface ThreadMessage {
   readonly author: ThreadAuthor;
   /** ISO 8601 em UTC. */
   readonly at: string;
-  /** Markdown, não vazio, até `THREAD_MESSAGE_MAX`. */
+  /** Markdown, non-empty, up to `THREAD_MESSAGE_MAX`. */
   readonly text: string;
-  /** Id da proposta ligada à mensagem (só o servidor MCP preenche) ou `null`. */
+  /** Id of the proposal linked to the message (only the MCP server fills it) or `null`. */
   readonly proposal: string | null;
 }
 
-/** Quem resolveu e quando. */
+/** Who resolved it and when. */
 export interface ThreadResolver {
   readonly name: string;
   readonly email: string;
@@ -51,7 +51,7 @@ export interface ThreadResolved {
   readonly at: string;
 }
 
-/** Âncora por id: acompanha o item que se move ou troca de pai (decisão 4). */
+/** Anchor by id: follows the item that moves or changes parent (decision 4). */
 export type ThreadAnchor =
   | {
       readonly kind: 'marking' | 'container' | 'annotation' | 'arrow' | 'layer';
@@ -67,7 +67,7 @@ export type ThreadAnchor =
     }
   | {
       readonly kind: 'point';
-      /** `null`: o ponto está nas unidades do canvas. */
+      /** `null`: the point is in canvas units. */
       readonly containerId: string | null;
       readonly x: number;
       readonly y: number;
@@ -93,19 +93,19 @@ export interface Thread {
   readonly id: string;
   readonly anchor: ThreadAnchor;
   readonly createdAt: string;
-  /** Contador de gravações do arquivo (mesma conferência do `mapping.json`). */
+  /** Write counter of the file (same check as `mapping.json`). */
   readonly revision: number;
   readonly resolved: ThreadResolved | null;
-  /** Ordenadas por `at` e, no empate, por `id`. */
+  /** Sorted by `at` and, on a tie, by `id`. */
   readonly messages: readonly ThreadMessage[];
 }
 
-/** `comments/<id>.json` ou, resolvida, `comments/resolved/<id>.json`. */
+/** `comments/<id>.json` or, when resolved, `comments/resolved/<id>.json`. */
 export function threadFilePath(threadId: string, resolved: boolean): string {
   return `${resolved ? RESOLVED_DIR : COMMENTS_DIR}/${threadId}.json`;
 }
 
-/** Ordem canônica das mensagens: pelo instante (`at`) e, no empate, pelo `id`. */
+/** Canonical order of the messages: by instant (`at`) and, on a tie, by `id`. */
 export function compareThreadMessages(a: ThreadMessage, b: ThreadMessage): number {
   const byTime = Date.parse(a.at) - Date.parse(b.at);
   if (byTime !== 0) return byTime;
@@ -113,7 +113,7 @@ export function compareThreadMessages(a: ThreadMessage, b: ThreadMessage): numbe
   return a.id < b.id ? -1 : 1;
 }
 
-/** A primeira mensagem na ordem canônica, sem ordenar todas (`undefined` numa conversa vazia). */
+/** The first message in canonical order, without sorting all (`undefined` in an empty thread). */
 export function firstThreadMessage(thread: Thread): ThreadMessage | undefined {
   let first: ThreadMessage | undefined;
   for (const m of thread.messages) {
@@ -122,7 +122,7 @@ export function firstThreadMessage(thread: Thread): ThreadMessage | undefined {
   return first;
 }
 
-/** Cópia ordenada (a entrada não muda). */
+/** Sorted copy (the input does not change). */
 export function sortThreadMessages(
   messages: readonly ThreadMessage[],
 ): readonly ThreadMessage[] {
@@ -130,21 +130,21 @@ export function sortThreadMessages(
 }
 
 // ---------------------------------------------------------------------------
-// Validação (zod)
+// Validation (zod)
 
-const id = z.string().min(1, 'não pode ser vazio');
+const id = z.string().min(1, 'cannot be empty');
 const isoDate = z.iso
-  .datetime({ offset: true, error: 'data inválida; use ISO 8601 (UTC)' })
+  .datetime({ offset: true, error: 'invalid date; use ISO 8601 (UTC)' })
   .transform(normalizeIsoDate);
-const nonEmptyName = z.string().trim().min(1, 'não pode ser vazio');
+const nonEmptyName = z.string().trim().min(1, 'cannot be empty');
 
 const threadId = z
   .string()
-  .regex(THREAD_ID_RE, 'id inválido; use [A-Za-z0-9._-], sem começar com ponto');
+  .regex(THREAD_ID_RE, 'invalid id; use [A-Za-z0-9._-], not starting with a dot');
 
 export const threadAuthorSchema = z
   .object({
-    kind: z.enum(['human', 'agent'], { error: 'deve ser "human" ou "agent"' }),
+    kind: z.enum(['human', 'agent'], { error: 'must be "human" or "agent"' }),
     name: nonEmptyName,
     email: z.string().nullable(),
   })
@@ -153,25 +153,25 @@ export const threadAuthorSchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['email'],
-        message: 'obrigatório na pessoa',
+        message: 'required for a person',
       });
     }
     if (a.kind === 'agent' && a.email !== null) {
       ctx.addIssue({
         code: 'custom',
         path: ['email'],
-        message: 'deve ser null no agente',
+        message: 'must be null for an agent',
       });
     }
   });
 
 const messageText = z.string().superRefine((text, ctx) => {
   if (text.trim() === '') {
-    ctx.addIssue({ code: 'custom', message: 'não pode ser vazio' });
+    ctx.addIssue({ code: 'custom', message: 'cannot be empty' });
   } else if (text.length > THREAD_MESSAGE_MAX) {
     ctx.addIssue({
       code: 'custom',
-      message: `no máximo ${THREAD_MESSAGE_MAX} caracteres`,
+      message: `at most ${THREAD_MESSAGE_MAX} characters`,
     });
   }
 });
@@ -184,7 +184,7 @@ export const threadMessageSchema = z.object({
   proposal: id.nullable(),
 });
 
-const kindError = `deve ser ${THREAD_ANCHOR_KINDS.map((k) => `"${k}"`).join(', ')}`;
+const kindError = `must be ${THREAD_ANCHOR_KINDS.map((k) => `"${k}"`).join(', ')}`;
 
 export const threadAnchorSchema = z.discriminatedUnion(
   'kind',
@@ -209,23 +209,23 @@ export const threadAnchorSchema = z.discriminatedUnion(
 
 export const threadResolverSchema = z.object({
   name: nonEmptyName,
-  email: z.string().trim().min(1, 'não pode ser vazio'),
+  email: z.string().trim().min(1, 'cannot be empty'),
 });
 
 export const threadResolvedSchema = z.object({ by: threadResolverSchema, at: isoDate });
 
 export const threadSchema = z
   .object({
-    format: z.literal(THREAD_FORMAT, { error: `deve ser "${THREAD_FORMAT}"` }),
+    format: z.literal(THREAD_FORMAT, { error: `must be "${THREAD_FORMAT}"` }),
     formatVersion: z.literal(THREAD_FORMAT_VERSION, {
-      error: `deve ser ${THREAD_FORMAT_VERSION}`,
+      error: `must be ${THREAD_FORMAT_VERSION}`,
     }),
     id: threadId,
     anchor: threadAnchorSchema,
     createdAt: isoDate,
     revision: z.number().int().min(0),
     resolved: threadResolvedSchema.nullable(),
-    messages: z.array(threadMessageSchema).min(1, 'deve ter ao menos uma mensagem'),
+    messages: z.array(threadMessageSchema).min(1, 'must have at least one message'),
   })
   .superRefine((t, ctx) => {
     const seen = new Set<string>();
@@ -234,7 +234,7 @@ export const threadSchema = z
         ctx.addIssue({
           code: 'custom',
           path: ['messages', i, 'id'],
-          message: `id "${m.id}" repetido`,
+          message: `duplicate id "${m.id}"`,
         });
       }
       seen.add(m.id);
@@ -246,12 +246,12 @@ export type ThreadParseResult =
   | {
       readonly ok: true;
       readonly thread: Thread;
-      /** Avisos da leitura (nenhum na formatVersion 1; o campo existe para as próximas). */
+      /** Warnings from reading (none in formatVersion 1; the field exists for the next ones). */
       readonly warnings: readonly string[];
     }
   | { readonly ok: false; readonly issues: SpecIssue[]; readonly errors: string[] };
 
-/** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
+/** Validates an already parsed JSON; errors in the format `path: message`. */
 export function parseThread(data: unknown): ThreadParseResult {
   const result = threadSchema.safeParse(data);
   if (result.success) {
@@ -268,13 +268,13 @@ export function parseThread(data: unknown): ThreadParseResult {
   };
 }
 
-/** Lê o texto de um arquivo de conversa. */
+/** Reads the text of a thread file. */
 export function parseThreadText(text: string): ThreadParseResult {
   let data: unknown;
   try {
     data = JSON.parse(text);
   } catch (e) {
-    const message = `JSON inválido: ${e instanceof Error ? e.message : String(e)}`;
+    const message = `invalid JSON: ${e instanceof Error ? e.message : String(e)}`;
     return { ok: false, issues: [{ path: '', message }], errors: [message] };
   }
   return parseThread(data);
@@ -306,8 +306,8 @@ function serializeMessage(m: ThreadMessage) {
 }
 
 /**
- * Texto do arquivo da conversa: chaves sempre na mesma ordem, mensagens na ordem canônica
- * (`at`, `id`), indentação de 2 espaços e quebra de linha no final.
+ * Text of the thread file: keys always in the same order, messages in canonical order
+ * (`at`, `id`), 2-space indentation and a line break at the end.
  */
 export function serializeThread(t: Thread): string {
   const canonical = {

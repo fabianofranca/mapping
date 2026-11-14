@@ -1,8 +1,8 @@
-// Pinos das conversas no canvas (etapa Comentários, CM4, decisão 24): onde cada grupo de pinos fica,
-// o tamanho da caixa e o acerto do clique. Função pura sobre o projeto desenhado e os grupos do
-// estado derivado (`derived.threads.pins`), no molde de `reviewMarks.ts`; o renderer só desenha. Pan e
-// zoom não passam por aqui: a posição é do projeto, e o tamanho (em pixels de tela) entra só em
-// `pinBox`, na hora de desenhar e de tocar.
+// Thread pins on the canvas (Comments stage, CM4, decision 24): where each group of pins sits,
+// the box size and the click hit-testing. A pure function over the drawn project and the groups of the
+// derived state (`derived.threads.pins`), modeled on `reviewMarks.ts`; the renderer only draws. Pan and
+// zoom do not go through here: the position belongs to the project, and the size (in screen pixels) enters only in
+// `pinBox`, when drawing and touching.
 import {
   imageCanvasRect,
   markingCanvasRectOf,
@@ -16,21 +16,21 @@ import { visibleArrowShapes } from './arrowGeometry';
 import type { CanvasTokens } from './theme';
 import type { Point } from './viewport';
 
-/** As medidas do pino (px de tela), dos tokens do canvas (`size-cv-pin-*`). */
+/** The pin's measurements (screen px), from the canvas tokens (`size-cv-pin-*`). */
 export type PinMetrics = Pick<
   CanvasTokens['pin'],
   'height' | 'pad' | 'glyph' | 'glyphGap' | 'charWidth'
 >;
 
-/** O que o glifo do estado acrescenta à largura do pino. */
+/** What the state glyph adds to the pin's width. */
 export function pinGlyphExtra(pin: PinMetrics): number {
   return pin.glyph + pin.glyphGap;
 }
 
-/** `corner`: o pino fica fora do item, com o canto de baixo à esquerda no canto de cima à direita. */
+/** `corner`: the pin sits outside the item, with its lower-left corner at the upper-right corner. */
 export type PinAlign = 'corner' | 'center';
 
-/** Um pino a desenhar: o grupo, o ponto de referência (canvas) e como a caixa se alinha a ele. */
+/** A pin to draw: the group, the reference point (canvas) and how the box aligns to it. */
 export interface PinPlace {
   readonly key: string;
   readonly group: PinGroup;
@@ -39,15 +39,15 @@ export interface PinPlace {
 }
 
 /**
- * Largura do pino (px de tela): cresce com o rótulo e, quando há, com o glifo do estado (o rascunho
- * não tem: `glyph` falso), nunca menos que a altura.
+ * Pin width (screen px): grows with the label and, when there is one, with the state glyph (the draft
+ * has none: `glyph` false), never less than the height.
  */
 export function pinWidth(label: string, pin: PinMetrics, glyph = true): number {
   const extra = glyph ? pinGlyphExtra(pin) : 0;
   return Math.max(pin.height, label.length * pin.charWidth + 2 * pin.pad + extra);
 }
 
-/** O ponto `x`,`y` de um container (pixels dele) ou do canvas (`containerId` nulo), em unidades do canvas. */
+/** The point `x`,`y` of a container (its pixels) or of the canvas (null `containerId`), in canvas units. */
 export function pointCanvas(
   project: Project,
   containerId: string | null,
@@ -68,8 +68,8 @@ function topRight(rect: Rect): Point {
 type Host = PinGroup['host'];
 
 /**
- * Onde o pino de um ponto fica. Um ponto do canvas não é de nenhuma raiz: só a Principal o tem
- * (decisão 15). O de um container segue o container, que a vista já traz (ou não).
+ * Where the pin of a point sits. A canvas point belongs to no root: only the Main one has it
+ * (decision 15). That of a container follows the container, which the view already brings (or not).
  */
 function pointPlace(
   project: Project,
@@ -81,7 +81,7 @@ function pointPlace(
   return origin ? { origin, align: 'center' } : null;
 }
 
-/** Onde o pino de `host` fica: o ponto e o alinhamento; `null` se o item não está à vista. */
+/** Where the pin of `host` sits: the point and the alignment; `null` if the item is not in view. */
 function placeOf(
   project: Project,
   host: Host,
@@ -114,9 +114,9 @@ function placeOf(
 }
 
 /**
- * Os pinos do quadro, na ordem dos grupos. Uma marcação escondida, uma seta sem as duas pontas à
- * vista e um item que sumiu não têm pino. `principal`: `false` com uma perspectiva aberta, onde a
- * conversa num ponto do canvas (fora de container) não aparece; o padrão é a Principal.
+ * The frame's pins, in group order. A hidden marking, an arrow without both ends in
+ * view and an item that disappeared have no pin. `principal`: `false` with a perspective open, where the
+ * thread on a canvas point (outside a container) does not appear; the default is the Main one.
  */
 export function pinPlaces(
   project: Project,
@@ -139,7 +139,7 @@ export function pinPlaces(
   return places;
 }
 
-/** A caixa do pino em unidades do canvas, com o tamanho fixo em pixels de tela (`zoom`). */
+/** The pin's box in canvas units, with a fixed size in screen pixels (`zoom`). */
 export function pinBox(place: PinPlace, zoom: number, pin: PinMetrics): Rect {
   const width = pinWidth(place.group.label, pin) / zoom;
   const height = pin.height / zoom;
@@ -148,7 +148,7 @@ export function pinBox(place: PinPlace, zoom: number, pin: PinMetrics): Rect {
     : { x: place.origin.x - width / 2, y: place.origin.y - height / 2, width, height };
 }
 
-/** O pino sob `c` (canvas); o último desenhado ganha. */
+/** The pin under `c` (canvas); the last drawn wins. */
 export function pinHit(
   places: readonly PinPlace[],
   c: Point,

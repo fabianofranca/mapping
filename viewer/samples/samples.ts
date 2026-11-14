@@ -1,7 +1,7 @@
 /**
- * Exemplos embutidos da demo do visualizador: uma especialização com seis tipos, cada um
- * apontando para o próprio arquivo de componente, e uma tela montada só com instâncias (sem
- * imagem). Os mesmos arquivos podem ser baixados como pasta (zip) para editar e reabrir.
+ * Built-in examples of the viewer demo: a specialization with six types, each one
+ * pointing to its own component file, and a screen made only of instances (no
+ * image). The same files can be downloaded as a folder (zip) to edit and reopen.
  */
 import {
   COMPONENT_FORMAT,
@@ -25,7 +25,7 @@ const DANGER = '#D32F2F';
 const WHITE = '#FFFFFF';
 const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
-/** Cor do texto do botão por variante. */
+/** Button text color per variant. */
 const buttonText: Expr<Color> = {
   $switch: 'variant',
   cases: { secondary: BLUE, ghost: BLUE },
@@ -35,14 +35,14 @@ const buttonText: Expr<Color> = {
 export const BUTTON: ComponentFile = {
   ...base,
   id: 'button',
-  name: 'Botão',
-  description: 'Ação principal ou secundária; rótulo e ícone opcional.',
+  name: 'Button',
+  description: 'Primary or secondary action; label and optional icon.',
   size: { width: 132, height: 44 },
   minSize: { width: 56, height: 32 },
-  preview: { label: 'Entrar', variant: 'primary', icon: 'não', disabled: 'não' },
+  preview: { label: 'Sign in', variant: 'primary', icon: 'no', disabled: 'no' },
   template: {
     type: 'frame',
-    name: 'botão',
+    name: 'button',
     layout: { type: 'row', gap: 8, padding: [0, 20], align: 'center', justify: 'center' },
     cornerRadius: 10,
     opacity: { $if: { $field: 'disabled' }, then: 0.4, else: 1 },
@@ -58,7 +58,7 @@ export const BUTTON: ComponentFile = {
     children: [
       {
         type: 'path',
-        name: 'ícone',
+        name: 'icon',
         visible: { $field: 'icon' },
         width: 16,
         height: 16,
@@ -69,8 +69,8 @@ export const BUTTON: ComponentFile = {
       },
       {
         type: 'text',
-        name: 'rótulo',
-        text: { $field: 'label', default: 'Botão' },
+        name: 'label',
+        text: { $field: 'label', default: 'Button' },
         font: { size: 14, weight: 600 },
         color: buttonText,
       },
@@ -81,25 +81,25 @@ export const BUTTON: ComponentFile = {
 export const TEXT_FIELD: ComponentFile = {
   ...base,
   id: 'text-field',
-  name: 'Campo de texto',
-  description: 'Rótulo, caixa com valor ou dica, e texto de ajuda ou erro.',
+  name: 'Text field',
+  description: 'Label, box with a value or hint, and help or error text.',
   size: { width: 280, height: 72 },
   minSize: { width: 120, height: 44 },
   preview: {
-    label: 'E-mail',
-    placeholder: 'nome@exemplo.com',
+    label: 'Email',
+    placeholder: 'name@example.com',
     value: '',
     state: 'normal',
     help: '',
   },
   template: {
     type: 'frame',
-    name: 'campo',
+    name: 'field',
     layout: { type: 'column', gap: 6 },
     children: [
       {
         type: 'text',
-        name: 'rótulo',
+        name: 'label',
         visible: { $has: 'label' },
         text: { $field: 'label' },
         font: { size: 12, weight: 600 },
@@ -107,7 +107,7 @@ export const TEXT_FIELD: ComponentFile = {
       },
       {
         type: 'frame',
-        name: 'caixa',
+        name: 'box',
         width: 'fill',
         height: 40,
         layout: { type: 'row', padding: [0, 12], align: 'center' },
@@ -124,7 +124,7 @@ export const TEXT_FIELD: ComponentFile = {
         children: [
           {
             type: 'text',
-            name: 'valor',
+            name: 'value',
             width: 'fill',
             text: {
               $if: { $has: 'value' },
@@ -138,7 +138,7 @@ export const TEXT_FIELD: ComponentFile = {
       },
       {
         type: 'text',
-        name: 'ajuda',
+        name: 'help',
         visible: { $has: 'help' },
         text: { $field: 'help' },
         font: { size: 11 },
@@ -151,14 +151,14 @@ export const TEXT_FIELD: ComponentFile = {
 export const CARD: ComponentFile = {
   ...base,
   id: 'card',
-  name: 'Cartão',
-  description: 'Superfície com título, subtítulo e um espaço para conteúdo.',
+  name: 'Card',
+  description: 'Surface with a title, a subtitle and a space for content.',
   size: { width: 320, height: 200 },
   minSize: { width: 160, height: 96 },
-  preview: { title: 'Título', subtitle: 'Subtítulo do cartão', elevated: 'sim' },
+  preview: { title: 'Title', subtitle: 'Card subtitle', elevated: 'yes' },
   template: {
     type: 'frame',
-    name: 'cartão',
+    name: 'card',
     layout: { type: 'column', gap: 8, padding: 16 },
     fill: WHITE,
     cornerRadius: 16,
@@ -178,15 +178,15 @@ export const CARD: ComponentFile = {
     children: [
       {
         type: 'text',
-        name: 'título',
+        name: 'title',
         width: 'fill',
-        text: { $field: 'title', default: 'Título' },
+        text: { $field: 'title', default: 'Title' },
         font: { size: 18, weight: 600 },
         color: TEXT,
       },
       {
         type: 'text',
-        name: 'subtítulo',
+        name: 'subtitle',
         width: 'fill',
         visible: { $has: 'subtitle' },
         text: { $field: 'subtitle' },
@@ -195,10 +195,10 @@ export const CARD: ComponentFile = {
       },
       {
         type: 'slot',
-        name: 'conteúdo',
+        name: 'content',
         width: 'fill',
         height: 'fill',
-        label: 'conteúdo',
+        label: 'content',
       },
     ],
   },
@@ -208,10 +208,10 @@ export const AVATAR: ComponentFile = {
   ...base,
   id: 'avatar',
   name: 'Avatar',
-  description: 'Círculo com iniciais e indicador de presença.',
+  description: 'Circle with initials and a presence indicator.',
   size: { width: 48, height: 48 },
   minSize: { width: 24, height: 24 },
-  preview: { initials: 'MS', color: 'azul', online: 'sim' },
+  preview: { initials: 'MS', color: 'blue', online: 'yes' },
   template: {
     type: 'frame',
     name: 'avatar',
@@ -220,12 +220,12 @@ export const AVATAR: ComponentFile = {
     children: [
       {
         type: 'ellipse',
-        name: 'fundo',
+        name: 'background',
         anchors: { left: 0, right: 0, top: 0, bottom: 0 },
         fill: {
           $switch: 'color',
           cases: {
-            azul: {
+            blue: {
               type: 'linear',
               angle: 45,
               stops: [
@@ -233,7 +233,7 @@ export const AVATAR: ComponentFile = {
                 { offset: 1, color: '#1A63CC' },
               ],
             },
-            roxo: {
+            purple: {
               type: 'linear',
               angle: 45,
               stops: [
@@ -241,7 +241,7 @@ export const AVATAR: ComponentFile = {
                 { offset: 1, color: '#7E57C2' },
               ],
             },
-            verde: {
+            green: {
               type: 'linear',
               angle: 45,
               stops: [
@@ -249,7 +249,7 @@ export const AVATAR: ComponentFile = {
                 { offset: 1, color: '#2E7D32' },
               ],
             },
-            laranja: {
+            orange: {
               type: 'linear',
               angle: 45,
               stops: [
@@ -263,7 +263,7 @@ export const AVATAR: ComponentFile = {
       },
       {
         type: 'text',
-        name: 'iniciais',
+        name: 'initials',
         anchors: { centerX: true, centerY: true },
         text: { $field: 'initials', default: '?' },
         font: { size: 16, weight: 600 },
@@ -271,7 +271,7 @@ export const AVATAR: ComponentFile = {
       },
       {
         type: 'ellipse',
-        name: 'presença',
+        name: 'presence',
         visible: { $field: 'online' },
         width: 12,
         height: 12,
@@ -286,20 +286,20 @@ export const AVATAR: ComponentFile = {
 export const APP_BAR: ComponentFile = {
   ...base,
   id: 'app-bar',
-  name: 'Barra do app',
-  description: 'Barra superior com voltar, título e ações.',
+  name: 'App bar',
+  description: 'Top bar with back, title and actions.',
   size: { width: 390, height: 56 },
   minSize: { width: 200, height: 40 },
-  preview: { title: 'Título da tela', back: 'sim', actions: 'sim' },
+  preview: { title: 'Screen title', back: 'yes', actions: 'yes' },
   template: {
     type: 'frame',
-    name: 'barra',
+    name: 'bar',
     layout: { type: 'row', gap: 12, padding: [0, 16], align: 'center' },
     fill: BLUE,
     children: [
       {
         type: 'path',
-        name: 'voltar',
+        name: 'back',
         visible: { $field: 'back' },
         width: 24,
         height: 24,
@@ -310,15 +310,15 @@ export const APP_BAR: ComponentFile = {
       },
       {
         type: 'text',
-        name: 'título',
+        name: 'title',
         width: 'fill',
-        text: { $field: 'title', default: 'Título' },
+        text: { $field: 'title', default: 'Title' },
         font: { size: 18, weight: 600 },
         color: WHITE,
       },
       {
         type: 'path',
-        name: 'ações',
+        name: 'actions',
         visible: { $field: 'actions' },
         width: 24,
         height: 24,
@@ -333,19 +333,19 @@ export const APP_BAR: ComponentFile = {
 export const SWITCH: ComponentFile = {
   ...base,
   id: 'switch',
-  name: 'Interruptor',
-  description: 'Ligado/desligado com rótulo.',
+  name: 'Switch',
+  description: 'On/off with a label.',
   size: { width: 200, height: 28 },
   minSize: { width: 48, height: 24 },
-  preview: { label: 'Lembrar de mim', on: 'sim' },
+  preview: { label: 'Remember me', on: 'yes' },
   template: {
     type: 'frame',
-    name: 'interruptor',
+    name: 'switch',
     layout: { type: 'row', gap: 12, align: 'center' },
     children: [
       {
         type: 'frame',
-        name: 'trilho',
+        name: 'track',
         width: 48,
         height: 28,
         layout: { type: 'none' },
@@ -354,7 +354,7 @@ export const SWITCH: ComponentFile = {
         children: [
           {
             type: 'ellipse',
-            name: 'botão desligado',
+            name: 'button off',
             visible: { $not: { $field: 'on' } },
             width: 22,
             height: 22,
@@ -363,7 +363,7 @@ export const SWITCH: ComponentFile = {
           },
           {
             type: 'ellipse',
-            name: 'botão ligado',
+            name: 'button on',
             visible: { $field: 'on' },
             width: 22,
             height: 22,
@@ -374,7 +374,7 @@ export const SWITCH: ComponentFile = {
       },
       {
         type: 'text',
-        name: 'rótulo',
+        name: 'label',
         visible: { $has: 'label' },
         width: 'fill',
         text: { $field: 'label' },
@@ -394,41 +394,40 @@ export const SAMPLE_COMPONENTS: readonly ComponentFile[] = [
   TEXT_FIELD,
 ];
 
-const yesNo = (key: string, label: string, def: 'sim' | 'não') => ({
+const yesNo = (key: string, label: string, def: 'yes' | 'no') => ({
   key,
   label,
   type: 'enum',
-  options: ['sim', 'não'],
+  options: ['yes', 'no'],
   default: def,
 });
 
 /**
- * Especialização de exemplo: `formatVersion` 4 (experimental) só pela chave `component` em cada
- * tipo. O resto segue `docs/SPEC-FORMAT.md`.
+ * Example specialization: `formatVersion` 4 (experimental) only through the `component` key in each
+ * type. The rest follows `docs/SPEC-FORMAT.md`.
  */
 export const SAMPLE_SPEC = {
   format: 'mapping-spec',
   formatVersion: 4,
   id: 'lab-components',
-  name: 'Laboratório de componentes',
+  name: 'Component lab',
   version: 1,
-  description:
-    'Componentes genéricos desenhados por template; cada um no próprio arquivo.',
+  description: 'Generic components drawn from a template; each in its own file.',
   layers: [
     {
-      id: 'componentes',
-      name: 'Componentes',
+      id: 'components',
+      name: 'Components',
       color: '#1E88E5',
       annotationTypes: [
         {
           id: 'app-bar',
-          name: 'Barra do app',
+          name: 'App bar',
           labelField: 'title',
           component: 'components/app-bar.json',
           fields: [
-            { key: 'title', label: 'Título', type: 'string', required: true },
-            yesNo('back', 'Botão voltar', 'sim'),
-            yesNo('actions', 'Menu de ações', 'não'),
+            { key: 'title', label: 'Title', type: 'string', required: true },
+            yesNo('back', 'Back button', 'yes'),
+            yesNo('actions', 'Actions menu', 'no'),
           ],
         },
         {
@@ -437,79 +436,79 @@ export const SAMPLE_SPEC = {
           labelField: 'initials',
           component: 'components/avatar.json',
           fields: [
-            { key: 'initials', label: 'Iniciais', type: 'string', required: true },
+            { key: 'initials', label: 'Initials', type: 'string', required: true },
             {
               key: 'color',
-              label: 'Cor',
+              label: 'Color',
               type: 'enum',
-              options: ['azul', 'roxo', 'verde', 'laranja'],
-              default: 'azul',
+              options: ['blue', 'purple', 'green', 'orange'],
+              default: 'blue',
             },
-            yesNo('online', 'Online', 'não'),
+            yesNo('online', 'Online', 'no'),
           ],
         },
         {
           id: 'button',
-          name: 'Botão',
+          name: 'Button',
           labelField: 'label',
           component: 'components/button.json',
           fields: [
-            { key: 'label', label: 'Rótulo', type: 'string', required: true },
+            { key: 'label', label: 'Label', type: 'string', required: true },
             {
               key: 'variant',
-              label: 'Variante',
+              label: 'Variant',
               type: 'enum',
               options: ['primary', 'secondary', 'danger', 'ghost'],
               default: 'primary',
             },
-            yesNo('icon', 'Ícone', 'não'),
-            yesNo('disabled', 'Desabilitado', 'não'),
+            yesNo('icon', 'Icon', 'no'),
+            yesNo('disabled', 'Disabled', 'no'),
             {
               key: 'action',
-              label: 'Ação',
+              label: 'Action',
               type: 'string',
-              description: 'Só dado: não aparece no desenho.',
+              description: 'Data only: does not appear in the drawing.',
             },
           ],
         },
         {
           id: 'card',
-          name: 'Cartão',
+          name: 'Card',
           labelField: 'title',
           component: 'components/card.json',
           fields: [
-            { key: 'title', label: 'Título', type: 'string', required: true },
-            { key: 'subtitle', label: 'Subtítulo', type: 'string' },
-            yesNo('elevated', 'Elevado', 'sim'),
+            { key: 'title', label: 'Title', type: 'string', required: true },
+            { key: 'subtitle', label: 'Subtitle', type: 'string' },
+            yesNo('elevated', 'Elevated', 'yes'),
           ],
         },
         {
           id: 'switch',
-          name: 'Interruptor',
+          name: 'Switch',
           labelField: 'label',
           component: 'components/switch.json',
           fields: [
-            { key: 'label', label: 'Rótulo', type: 'string' },
-            yesNo('on', 'Ligado', 'não'),
+            { key: 'label', label: 'Label', type: 'string' },
+            yesNo('on', 'On', 'no'),
           ],
         },
         {
           id: 'text-field',
-          name: 'Campo de texto',
+          name: 'Text field',
           labelField: 'label',
           component: 'components/text-field.json',
           fields: [
-            { key: 'label', label: 'Rótulo', type: 'string', required: true },
-            { key: 'placeholder', label: 'Dica', type: 'string' },
-            { key: 'value', label: 'Valor', type: 'string' },
+            { key: 'label', label: 'Label', type: 'string', required: true },
+            { key: 'placeholder', label: 'Hint', type: 'string' },
+            { key: 'value', label: 'Value', type: 'string' },
             {
               key: 'state',
-              label: 'Estado',
+              label: 'State',
               type: 'enum',
               options: ['normal', 'focus', 'error', 'disabled'],
               default: 'normal',
             },
-            { key: 'help', label: 'Ajuda ou erro', type: 'string' },
+            { key: 'help', label: 'Help or error', type: 'string' },
           ],
         },
       ],
@@ -517,7 +516,7 @@ export const SAMPLE_SPEC = {
   ],
 };
 
-/** Arquivos como ficariam na pasta: a especialização e um componente por arquivo. */
+/** Files as they would be in the folder: the specialization and one component per file. */
 export const SAMPLE_FILES: readonly { readonly path: string; readonly text: string }[] = [
   { path: 'lab-components.spec.json', text: JSON.stringify(SAMPLE_SPEC, null, 2) },
   ...SAMPLE_COMPONENTS.map((c) => ({
@@ -526,10 +525,10 @@ export const SAMPLE_FILES: readonly { readonly path: string; readonly text: stri
   })),
 ];
 
-/** Tela de login montada só com instâncias: cada uma é um retângulo com valores de campos. */
+/** Login screen made only of instances: each one is a rectangle with field values. */
 export const SAMPLE_SCREEN: Screen = {
   id: 'login',
-  name: 'Entrar',
+  name: 'Sign in',
   width: 390,
   height: 844,
   background: '#F6F7FB',
@@ -538,22 +537,22 @@ export const SAMPLE_SCREEN: Screen = {
       id: 'i-bar',
       typeId: 'app-bar',
       box: { x: 0, y: 0, width: 390, height: 56 },
-      values: { title: 'Entrar', back: 'não', actions: 'sim' },
+      values: { title: 'Sign in', back: 'no', actions: 'yes' },
     },
     {
       id: 'i-avatar',
       typeId: 'avatar',
       box: { x: 155, y: 96, width: 80, height: 80 },
-      values: { initials: 'MS', color: 'roxo', online: 'sim' },
+      values: { initials: 'MS', color: 'purple', online: 'yes' },
     },
     {
       id: 'i-card',
       typeId: 'card',
       box: { x: 20, y: 208, width: 350, height: 372 },
       values: {
-        title: 'Bem-vinda de volta',
-        subtitle: 'Use seu e-mail e senha para continuar.',
-        elevated: 'sim',
+        title: 'Welcome back',
+        subtitle: 'Use your email and password to continue.',
+        elevated: 'yes',
       },
     },
     {
@@ -561,9 +560,9 @@ export const SAMPLE_SCREEN: Screen = {
       typeId: 'text-field',
       box: { x: 36, y: 292, width: 318, height: 66 },
       values: {
-        label: 'E-mail',
-        placeholder: 'nome@exemplo.com',
-        value: 'maria@exemplo.com',
+        label: 'Email',
+        placeholder: 'name@example.com',
+        value: 'maria@example.com',
         state: 'normal',
         help: '',
       },
@@ -573,40 +572,40 @@ export const SAMPLE_SCREEN: Screen = {
       typeId: 'text-field',
       box: { x: 36, y: 368, width: 318, height: 84 },
       values: {
-        label: 'Senha',
+        label: 'Password',
         placeholder: '••••••••',
         value: '',
         state: 'error',
-        help: 'Senha incorreta. Tente de novo.',
+        help: 'Wrong password. Try again.',
       },
     },
     {
       id: 'i-remember',
       typeId: 'switch',
       box: { x: 36, y: 462, width: 200, height: 28 },
-      values: { label: 'Lembrar de mim', on: 'sim' },
+      values: { label: 'Remember me', on: 'yes' },
     },
     {
       id: 'i-enter',
       typeId: 'button',
       box: { x: 36, y: 508, width: 318, height: 44 },
-      values: { label: 'Entrar', variant: 'primary', icon: 'sim', disabled: 'não' },
+      values: { label: 'Sign in', variant: 'primary', icon: 'yes', disabled: 'no' },
     },
     {
       id: 'i-create',
       typeId: 'button',
       box: { x: 36, y: 612, width: 318, height: 44 },
-      values: { label: 'Criar conta', variant: 'ghost', icon: 'não', disabled: 'não' },
+      values: { label: 'Create account', variant: 'ghost', icon: 'no', disabled: 'no' },
     },
     {
       id: 'i-forgot',
       typeId: 'button',
       box: { x: 36, y: 664, width: 318, height: 44 },
       values: {
-        label: 'Esqueci a senha',
+        label: 'Forgot password',
         variant: 'secondary',
-        icon: 'não',
-        disabled: 'não',
+        icon: 'no',
+        disabled: 'no',
       },
     },
   ],

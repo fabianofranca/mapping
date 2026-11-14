@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Fase TR1 (etapa #359): os auxiliares da nuvem em `scripts/testing/` (decisão 2) existem, o
-// `cloud.mjs` importa sem efeito colateral e exporta os nomes certos, o guia aponta para eles
-// (decisão 4) e a parte pura de `cloud.mjs` (`mark`) tem teste unitário.
+// Phase TR1 (stage #359): the cloud helpers in `scripts/testing/` (decision 2) exist, `cloud.mjs`
+// imports without side effects and exports the right names, the guide points to them
+// (decision 4) and the pure part of `cloud.mjs` (`mark`) has a unit test.
 import { spawnSync } from 'node:child_process';
 import {
   chmodSync,
@@ -24,7 +24,7 @@ import { handleHitRadius } from '../../src/canvas/markingGeometry';
 
 const read = (file: string): string => readFileSync(file, 'utf8');
 
-/** Linhas de código, sem as que são só comentário (`#`, `//` ou `"""`/`'''` de docstring). */
+/** Code lines, without the ones that are only a comment (`#`, `//` or a docstring's `"""`/`'''`). */
 function codeLines(text: string): string {
   return text
     .split('\n')
@@ -89,19 +89,19 @@ const EXPECTED_EXPORTS = [
   'locatorTextFromError',
 ].sort();
 
-describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
-  it('os três auxiliares existem', () => {
+describe('scripts/testing/: cloud helpers (TR1)', () => {
+  it('the three helpers exist', () => {
     for (const file of HELPERS) {
       expect(existsSync(file), file).toBe(true);
     }
   });
 
-  it('cloud.mjs importa sem efeito colateral e exporta os nomes da decisão 2', async () => {
+  it('cloud.mjs imports without side effects and exports the names of decision 2', async () => {
     const mod: Record<string, unknown> = await import('../../scripts/testing/cloud.mjs');
     expect(Object.keys(mod).sort()).toEqual(EXPECTED_EXPORTS);
   });
 
-  it('nenhum auxiliar registra listener de filechooser nem usa setInputFiles (código, fora de comentário)', () => {
+  it('no helper registers a filechooser listener nor uses setInputFiles (code, outside comments)', () => {
     for (const file of HELPERS) {
       const code = codeLines(read(file));
       expect(code, file).not.toMatch(/filechooser/i);
@@ -109,15 +109,16 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
     }
   });
 
-  it('cloud-up.sh nunca roda pkill -f chrome como comando (fecha pelo CDP, receita 3)', () => {
+  it('cloud-up.sh never runs pkill -f chrome as a command (closes through CDP, recipe 3)', () => {
     expect(codeLines(read(CLOUD_UP))).not.toContain('pkill -f chrome');
     expect(read(CLOUD_UP)).toContain('Browser.close');
   });
 
-  it('cloud-up.sh: nenhum subshell em segundo plano segura o pipe de quem o chamou (TS1, decisão 5)', () => {
+  it('cloud-up.sh: no background subshell holds the pipe of its caller (TS1, decision 5)', () => {
     const lines = codeLines(read(CLOUD_UP)).split('\n');
-    // `(cd dist && … &)`: a redireção de dentro só vale para o comando, e o subshell que o espera
-    // fica com o stdout do script (o `| tail` nunca fecha). A redireção vai no grupo todo.
+    // `(cd dist && … &)`: the redirection inside only applies to the command, and the subshell
+    // that waits for it keeps the script's stdout (the `| tail` never closes). The redirection
+    // goes on the whole group.
     const server = lines.find((line) => line.includes('http.server'));
     expect(server).toBeDefined();
     expect(server).toMatch(/\)\s*<\/dev\/null\s*>"\$S\/http\.log"\s*2>&1\s*&/);
@@ -130,27 +131,27 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
     }
   });
 
-  describe('containerScreenPoint (auxiliar ponto, etapa #841 RB2)', () => {
+  describe('containerScreenPoint (ponto helper, stage #841 RB2)', () => {
     const mapping = {
       containers: [
-        { id: 'c1', name: 'Cadastro', placement: { x: 100, y: 50, scale: 2 } },
-        { id: 'c2', name: 'Outro', placement: { x: 0, y: 0, scale: 1 } },
+        { id: 'c1', name: 'Sign-up', placement: { x: 100, y: 50, scale: 2 } },
+        { id: 'c2', name: 'Other', placement: { x: 0, y: 0, scale: 1 } },
       ],
       markings: [
-        { id: 'm1', name: 'Botão', containerId: 'c1', rect: { x: 10, y: 20 } },
-        { id: 'm2', name: 'Solta', containerId: null, rect: { x: 5, y: 6 } },
+        { id: 'm1', name: 'Button', containerId: 'c1', rect: { x: 10, y: 20 } },
+        { id: 'm2', name: 'Loose', containerId: null, rect: { x: 5, y: 6 } },
       ],
       perspectives: [{ name: 'Dev mobile', items: [{ root: 'c1', x: 400, y: 300 }] }],
     };
     const host = { x: 10, y: 20 };
 
-    it('converte o ponto do container em ponto de tela e acompanha o zoom', async () => {
+    it('converts the container point into a screen point and follows the zoom', async () => {
       const mod = await import('../../scripts/testing/cloud.mjs');
       // canvas = (100 + 5*2, 50 + 7*2) = (110, 64)
       expect(
         mod.containerScreenPoint({
           mapping,
-          container: 'cadastro',
+          container: 'sign-up',
           x: 5,
           y: 7,
           viewport: '30 40 1',
@@ -169,7 +170,7 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       ).toEqual({ x: 10 + 110 * 2.5 - 20, y: 20 + 64 * 2.5 + 8.5 });
     });
 
-    it('container com name nulo (imagem do seletor) não derruba a busca por id ou nome', async () => {
+    it('a container with a null name (picker image) does not break the lookup by id or name', async () => {
       const mod = await import('../../scripts/testing/cloud.mjs');
       const withNull = {
         ...mapping,
@@ -190,17 +191,17 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
           ...(marking ? { marking: true } : {}),
         });
       expect(point('c3')).toEqual({ x: 11, y: 21 });
-      expect(point('cadastro')).toEqual({ x: 10 + 102, y: 20 + 52 });
+      expect(point('sign-up')).toEqual({ x: 10 + 102, y: 20 + 52 });
       expect(point('m3', true)).toEqual({ x: 10 + 102, y: 20 + 52 });
     });
 
-    it('com marcacao, soma o canto da marcação e a colocação do container dela', async () => {
+    it('with marcacao, adds the marking corner and the placement of its container', async () => {
       const mod = await import('../../scripts/testing/cloud.mjs');
       // canvas = (100 + (10+3)*2, 50 + (20+4)*2) = (126, 98)
       expect(
         mod.containerScreenPoint({
           mapping,
-          container: 'Botão',
+          container: 'Button',
           x: 3,
           y: 4,
           viewport: '0 0 2',
@@ -221,12 +222,12 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       ).toEqual({ x: 6, y: 7 });
     });
 
-    it('usa a posição da perspectiva e recusa container inexistente ou vista inválida', async () => {
+    it('uses the perspective position and refuses a missing container or an invalid view', async () => {
       const mod = await import('../../scripts/testing/cloud.mjs');
       expect(
         mod.containerScreenPoint({
           mapping,
-          container: 'Cadastro',
+          container: 'Sign-up',
           x: 0,
           y: 0,
           viewport: '0 0 1',
@@ -237,27 +238,27 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       const bad = (over: object) => () =>
         mod.containerScreenPoint({
           mapping,
-          container: 'Cadastro',
+          container: 'Sign-up',
           x: 0,
           y: 0,
           viewport: '0 0 1',
           host,
           ...over,
         });
-      expect(bad({ container: 'Nada' })).toThrow('container não encontrado');
-      expect(bad({ viewport: 'a b c' })).toThrow('data-viewport inválido');
-      expect(bad({ perspective: 'Nenhuma' })).toThrow('perspectiva não encontrada');
+      expect(bad({ container: 'Nothing' })).toThrow('container not found');
+      expect(bad({ viewport: 'a b c' })).toThrow('invalid data-viewport');
+      expect(bad({ perspective: 'None' })).toThrow('perspective not found');
     });
   });
 
-  describe('mark (parte pura de cloud.mjs)', () => {
+  describe('mark (pure part of cloud.mjs)', () => {
     let apoioDir: string;
 
     afterEach(() => {
       if (apoioDir) rmSync(apoioDir, { recursive: true, force: true });
     });
 
-    it('acrescenta "<roteiro> <fase> <hora UTC ISO 8601>" a tempos.log', async () => {
+    it('appends "<script> <phase> <UTC ISO 8601 time>" to tempos.log', async () => {
       apoioDir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-mark-'));
       const { mark } = await import('../../scripts/testing/cloud.mjs');
       mark(apoioDir, 'ambiente', 'start');
@@ -265,18 +266,18 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       const lines = read(path.join(apoioDir, 'tempos.log')).trim().split('\n');
       expect(lines).toHaveLength(2);
       const iso = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-      const [roteiro1, fase1, hora1] = lines[0]!.split(' ');
-      expect(roteiro1).toBe('ambiente');
-      expect(fase1).toBe('start');
-      expect(hora1).toMatch(iso);
-      const [, fase2, hora2] = lines[1]!.split(' ');
-      expect(fase2).toBe('end');
-      expect(hora2).toMatch(iso);
-      // Ordem cronológica: start antes de end.
-      expect(Date.parse(hora1!)).toBeLessThanOrEqual(Date.parse(hora2!));
+      const [script1, phase1, time1] = lines[0]!.split(' ');
+      expect(script1).toBe('ambiente');
+      expect(phase1).toBe('start');
+      expect(time1).toMatch(iso);
+      const [, phase2, time2] = lines[1]!.split(' ');
+      expect(phase2).toBe('end');
+      expect(time2).toMatch(iso);
+      // Chronological order: start before end.
+      expect(Date.parse(time1!)).toBeLessThanOrEqual(Date.parse(time2!));
     });
 
-    it('tempos: duração do primeiro start ao último end, aviso de marca repetida e "tempo não medido"', async () => {
+    it('tempos: duration from the first start to the last end, repeated-mark warning and "time not measured"', async () => {
       const { temposFromLog, formatTempos } =
         await import('../../scripts/testing/cloud.mjs');
       const log = [
@@ -284,12 +285,12 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
         'ambiente end 2026-11-04T10:02:15.000Z',
         'R0 start 2026-11-04T10:03:00.000Z',
         'R0 end 2026-11-04T10:12:42.000Z',
-        // R1 com marcas repetidas: vale o primeiro start e o último end.
+        // R1 with repeated marks: the first start and the last end count.
         'R1 start 2026-11-04T10:13:00.000Z',
         'R1 start 2026-11-04T10:14:00.000Z',
         'R1 end 2026-11-04T10:20:00.000Z',
         'R1 end 2026-11-04T10:26:30.000Z',
-        // secao6 sem o end e visual sem o start: tempo não medido.
+        // secao6 without the end and visual without the start: time not measured.
         'secao6 start 2026-11-04T10:30:00.000Z',
         'visual end 2026-11-04T10:40:00.000Z',
       ].join('\n');
@@ -306,13 +307,13 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       expect(r.avisos.join('\n')).toMatch(/R1.*end.*2/);
       const out = formatTempos(r);
       expect(out).toMatch(/R1\s+13min30s/);
-      expect(out).toMatch(/secao6\s+tempo não medido/);
-      expect(out).toMatch(/visual\s+tempo não medido/);
+      expect(out).toMatch(/secao6\s+time not measured/);
+      expect(out).toMatch(/visual\s+time not measured/);
       expect(out).toMatch(/total\s+25min27s/);
-      expect(out).toMatch(/aviso.*R1/i);
+      expect(out).toMatch(/warning.*R1/i);
     });
 
-    it('tempos: trechos alternados (start/end/start/end) somam os trechos, sem aviso, e contam os run de dentro (etapa #1712, decisão 6)', async () => {
+    it('tempos: alternating spans (start/end/start/end) add the spans up, without a warning, and count the runs inside (stage #1712, decision 6)', async () => {
       const { temposFromLog, formatTempos } =
         await import('../../scripts/testing/cloud.mjs');
       const log = [
@@ -320,7 +321,7 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
         'ambiente end 2026-11-04T10:02:00.000Z',
         'ambiente start 2026-11-04T10:10:00.000Z',
         'ambiente end 2026-11-04T10:11:00.000Z',
-        // dois start e dois end seguidos: vale a regra de antes, com o aviso.
+        // two starts and two ends in a row: the earlier rule applies, with the warning.
         'R1 start 2026-11-04T10:13:00.000Z',
         'R1 start 2026-11-04T10:14:00.000Z',
         'R1 end 2026-11-04T10:20:00.000Z',
@@ -328,7 +329,7 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       ].join('\n');
       const runs = [
         '2026-11-04T10:01:00.000Z run=1 codigo=0 checks=2 falhas=0',
-        // entre os trechos: não conta.
+        // between the spans: does not count.
         '2026-11-04T10:05:00.000Z run=2 codigo=0 checks=7 falhas=0',
         '2026-11-04T10:10:30.000Z run=3 codigo=0 checks=3 falhas=0',
       ].join('\n');
@@ -344,27 +345,27 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       expect(formatTempos(r)).toMatch(/ambiente\s+3min00s/);
     });
 
-    it('tempos: sem o arquivo, a CLI avisa "tempo não medido"', async () => {
+    it('tempos: without the file, the CLI says "time not measured"', async () => {
       apoioDir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-tempos-'));
       const { temposFromDir, formatTempos } =
         await import('../../scripts/testing/cloud.mjs');
-      expect(formatTempos(temposFromDir(apoioDir))).toMatch(/tempo não medido/);
+      expect(formatTempos(temposFromDir(apoioDir))).toMatch(/time not measured/);
     });
 
-    it('rejeita uma fase que não seja start/end', async () => {
+    it('rejects a phase that is not start/end', async () => {
       apoioDir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-mark-'));
       const { mark } = await import('../../scripts/testing/cloud.mjs');
-      // Valor fora de "start" | "end" só é possível em runtime (ex.: argumento da CLI); o
-      // `as unknown` imita isso sem usar `any`.
-      const fase = 'meio' as unknown as 'start' | 'end';
-      expect(() => mark(apoioDir, 'ambiente', fase)).toThrow();
+      // A value outside "start" | "end" is only possible at runtime (e.g. a CLI argument); the
+      // `as unknown` imitates that without using `any`.
+      const phase = 'middle' as unknown as 'start' | 'end';
+      expect(() => mark(apoioDir, 'ambiente', phase)).toThrow();
       expect(existsSync(path.join(apoioDir, 'tempos.log'))).toBe(false);
     });
   });
 });
 
-describe('waitForWindow (etapa #405, decisão 2)', () => {
-  it('devolve o id quando a janela aparece na 3ª tentativa', async () => {
+describe('waitForWindow (stage #405, decision 2)', () => {
+  it('returns the id when the window shows up on the 3rd attempt', async () => {
     const { waitForWindow } = await import('../../scripts/testing/cloud.mjs');
     let calls = 0;
     const id = await waitForWindow(['Abrir arquivos'], {
@@ -379,7 +380,7 @@ describe('waitForWindow (etapa #405, decisão 2)', () => {
     expect(calls).toBe(3);
   });
 
-  it('lança depois do prazo, com os títulos esperados e o título da janela ativa', async () => {
+  it('throws after the deadline, with the expected titles and the active window title', async () => {
     const { waitForWindow } = await import('../../scripts/testing/cloud.mjs');
     const error = await waitForWindow(['Abrir arquivos', 'Abrir arquivo'], {
       timeoutMs: 30,
@@ -392,19 +393,19 @@ describe('waitForWindow (etapa #405, decisão 2)', () => {
     expect(message).toContain('Abrir arquivos');
     expect(message).toContain('Abrir arquivo');
     expect(message).toContain('Mapping: Google Chrome for Testing');
-    expect(message).not.toContain('aba ativa da janela não é a da app');
+    expect(message).not.toContain("the window's active tab is not the app's");
   });
 
-  it('com outra aba ativa, a mensagem traz a frase das duas abas', async () => {
+  it('with another tab active, the message carries the two-tabs sentence', async () => {
     const { waitForWindow } = await import('../../scripts/testing/cloud.mjs');
     const error = await waitForWindow(['Abrir arquivos'], {
       timeoutMs: 30,
       stepMs: 5,
       find: () => null,
-      activeTitle: () => 'Guia do Mapping: Google Chrome for Testing',
+      activeTitle: () => 'Guide of Mapping: Google Chrome for Testing',
     }).catch((e: unknown) => e);
     expect((error as Error).message).toContain(
-      'a aba ativa da janela não é a da app; o seletor nativo só abre com ela em foco no sistema (feche a outra aba)',
+      "the window's active tab is not the app's; the native picker only opens with it focused in the system (close the other tab)",
     );
   });
 });
@@ -444,36 +445,34 @@ function fakePage(counts: { page: number; scope: number }) {
   return { page, clicks, roleCalls, scopeLocator };
 }
 
-describe('clickNoWait (etapa #405, decisão 3)', () => {
-  it('com 2 candidatos lança com o nome, a contagem e a dica, sem clicar', async () => {
+describe('clickNoWait (stage #405, decision 3)', () => {
+  it('with 2 candidates throws with the name, the count and the hint, without clicking', async () => {
     const { clickNoWait } = await import('../../scripts/testing/cloud.mjs');
     const fake = fakePage({ page: 2, scope: 1 });
-    const error = await clickNoWait(fake.page, 'Adicionar imagens').catch(
-      (e: unknown) => e,
-    );
+    const error = await clickNoWait(fake.page, 'Add images').catch((e: unknown) => e);
     expect(error).toBeInstanceOf(Error);
     const message = (error as Error).message;
-    expect(message).toContain('Adicionar imagens');
+    expect(message).toContain('Add images');
     expect(message).toContain('2');
-    expect(message).toContain('passe `scope` (um container) ou `exact: true`');
+    expect(message).toContain('pass `scope` (a container) or `exact: true`');
     expect(fake.clicks).toEqual([]);
   });
 
-  it('com 0 candidatos também lança, sem clicar', async () => {
+  it('with 0 candidates it also throws, without clicking', async () => {
     const { clickNoWait } = await import('../../scripts/testing/cloud.mjs');
     const fake = fakePage({ page: 0, scope: 0 });
-    await expect(clickNoWait(fake.page, 'Nada')).rejects.toThrow(/0/);
+    await expect(clickNoWait(fake.page, 'Nothing')).rejects.toThrow(/0/);
     expect(fake.clicks).toEqual([]);
   });
 
-  it('com 1 candidato clica com noWaitAfter', async () => {
+  it('with 1 candidate clicks with noWaitAfter', async () => {
     const { clickNoWait } = await import('../../scripts/testing/cloud.mjs');
     const fake = fakePage({ page: 1, scope: 1 });
-    await clickNoWait(fake.page, 'Abrir pasta');
+    await clickNoWait(fake.page, 'Open folder');
     expect(fake.clicks).toEqual([{ where: 'page', options: { noWaitAfter: true } }]);
   });
 
-  it('exact é repassado ao getByRole', async () => {
+  it('exact is passed on to getByRole', async () => {
     const { clickNoWait } = await import('../../scripts/testing/cloud.mjs');
     const fake = fakePage({ page: 1, scope: 1 });
     await clickNoWait(fake.page, 'Local', { exact: true });
@@ -484,62 +483,62 @@ describe('clickNoWait (etapa #405, decisão 3)', () => {
     });
   });
 
-  it('scope (seletor CSS ou Locator) restringe a busca ao container', async () => {
+  it('scope (CSS selector or Locator) restricts the search to the container', async () => {
     const { clickNoWait } = await import('../../scripts/testing/cloud.mjs');
     const css = fakePage({ page: 2, scope: 1 });
-    await clickNoWait(css.page, 'Adicionar imagens', { scope: '.canvas-empty' });
+    await clickNoWait(css.page, 'Add images', { scope: '.canvas-empty' });
     expect(css.clicks).toEqual([{ where: 'scope', options: { noWaitAfter: true } }]);
     expect(css.roleCalls.map((c) => c.where)).toEqual(['locator:.canvas-empty', 'scope']);
 
     const loc = fakePage({ page: 2, scope: 1 });
-    await clickNoWait(loc.page, 'Adicionar imagens', { scope: loc.scopeLocator });
+    await clickNoWait(loc.page, 'Add images', { scope: loc.scopeLocator });
     expect(loc.clicks).toEqual([{ where: 'scope', options: { noWaitAfter: true } }]);
     expect(loc.roleCalls.map((c) => c.where)).toEqual(['scope']);
   });
 });
 
-describe('docs/TESTING.md e docs/TESTING-NUVEM.md apontam para os auxiliares (decisão 4)', () => {
+describe('docs/TESTING.md and docs/TESTING-NUVEM.md point to the helpers (decision 4)', () => {
   const guide = read('docs/TESTING.md');
   const cloud = read('docs/TESTING-NUVEM.md');
   const appendixA = guide.slice(
-    guide.indexOf('## Apêndice A'),
-    guide.indexOf('## Apêndice B'),
+    guide.indexOf('## Appendix A'),
+    guide.indexOf('## Appendix B'),
   );
 
-  it('o apêndice A cita cloud-up.sh e cloud.mjs e cada receita 1 a 8 diz o que o auxiliar faz', () => {
+  it('appendix A cites cloud-up.sh and cloud.mjs and each recipe 1 to 8 says what the helper does', () => {
     expect(appendixA).toContain('cloud-up.sh');
     expect(appendixA).toContain('cloud.mjs');
-    // Índice da primeira menção de cada receita (1 a 9, a última como limite do bloco da 8ª);
-    // o bloco de uma receita vai até a próxima, cobrindo as linhas "continuação" que algumas têm.
+    // Index of the first mention of each recipe (1 to 9, the last as the limit of the 8th's block);
+    // a recipe's block runs to the next one, covering the "continuation" lines that some have.
     const starts = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) =>
-      appendixA.indexOf(`Receita ${n} (nuvem)`),
+      appendixA.indexOf(`Recipe ${n} (cloud)`),
     );
     for (const [i, start] of starts.slice(0, 8).entries()) {
-      const marker = `Receita ${i + 1} (nuvem)`;
+      const marker = `Recipe ${i + 1} (cloud)`;
       expect(start, marker).toBeGreaterThanOrEqual(0);
       const block = appendixA.slice(start, starts[i + 1]);
-      expect(block, marker).toMatch(/o auxiliar faz isto: `/i);
+      expect(block, marker).toMatch(/the helper does this: `/i);
     }
   });
 
-  it('os "Primeiros 10 minutos" chamam o cloud-up.sh (itens 4 a 7)', () => {
-    const start = cloud.indexOf('## Primeiros 10 minutos');
+  it('the "First 10 minutes" call cloud-up.sh (items 4 to 7)', () => {
+    const start = cloud.indexOf('## First 10 minutes');
     const end = cloud.indexOf('## ', start + 1);
     const section = cloud.slice(start, end);
     expect(section).toContain('cloud-up.sh');
   });
 
-  it('"Como agir" diz que se usam os auxiliares e script próprio só para o que falta', () => {
-    const start = cloud.indexOf('## Como agir');
+  it('"How to act" says to use the helpers and a script of your own only for what is missing', () => {
+    const start = cloud.indexOf('## How to act');
     const end = cloud.indexOf('## ', start + 1);
     const section = cloud.slice(start, end);
     expect(section).toContain('scripts/testing/cloud');
-    expect(section).toContain('O que atrapalhou');
+    expect(section).toContain('What got in the way');
   });
 });
 
-describe('scripts/testing/ listado no repositório', () => {
-  it('os auxiliares, o cliente MCP por stdio e o guia da rodada existem na pasta', () => {
+describe('scripts/testing/ listed in the repository', () => {
+  it('the helpers, the MCP stdio client and the round guide exist in the folder', () => {
     const files = readdirSync('scripts/testing').sort();
     expect(files).toEqual(
       [
@@ -567,11 +566,11 @@ describe('scripts/testing/ listado no repositório', () => {
   });
 });
 
-describe('ambiente e aba dos auxiliares (etapa #421, TS1, decisões 3 e 4)', () => {
+describe('environment and tab of the helpers (stage #421, TS1, decisions 3 and 4)', () => {
   const ENV_LINE =
     'export DISPLAY=:99 DBUS_SESSION_BUS_ADDRESS=unix:path=/tmp/dbus-abc,guid=0123\n';
 
-  it('parseEnvFile lê a linha que o cloud-up.sh grava', async () => {
+  it('parseEnvFile reads the line that cloud-up.sh writes', async () => {
     const { parseEnvFile } = await import('../../scripts/testing/cloud.mjs');
     expect(parseEnvFile(ENV_LINE)).toEqual({
       DISPLAY: ':99',
@@ -579,7 +578,7 @@ describe('ambiente e aba dos auxiliares (etapa #421, TS1, decisões 3 e 4)', () 
     });
   });
 
-  it('loadEnv preenche só o que falta e não sobrescreve variável já definida', async () => {
+  it('loadEnv fills in only what is missing and does not overwrite a variable already set', async () => {
     const { loadEnv } = await import('../../scripts/testing/cloud.mjs');
     const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-env-'));
     try {
@@ -589,21 +588,21 @@ describe('ambiente e aba dos auxiliares (etapa #421, TS1, decisões 3 e 4)', () 
       expect(env.DISPLAY).toBe(':7');
       expect(env.DBUS_SESSION_BUS_ADDRESS).toBe('unix:path=/tmp/dbus-abc,guid=0123');
       expect(env.APOIO).toBe(dir);
-      const outro: Record<string, string | undefined> = { APOIO: '/x' };
-      loadEnv(dir, outro);
-      expect(outro.APOIO).toBe('/x');
-      expect(outro.DISPLAY).toBe(':99');
+      const other: Record<string, string | undefined> = { APOIO: '/x' };
+      loadEnv(dir, other);
+      expect(other.APOIO).toBe('/x');
+      expect(other.DISPLAY).toBe(':99');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('loadEnv sem o arquivo e sem DISPLAY lança a dica do cloud-up.sh', async () => {
+  it('loadEnv without the file and without DISPLAY throws the cloud-up.sh hint', async () => {
     const { loadEnv } = await import('../../scripts/testing/cloud.mjs');
     const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-env-'));
     try {
       expect(() => loadEnv(dir, {})).toThrow(
-        'apoio/env.sh não existe: rode o cloud-up.sh',
+        'apoio/env.sh does not exist: run cloud-up.sh',
       );
       expect(() => loadEnv(dir, { DISPLAY: ':1' })).not.toThrow();
     } finally {
@@ -612,36 +611,36 @@ describe('ambiente e aba dos auxiliares (etapa #421, TS1, decisões 3 e 4)', () 
   });
 
   const app = { url: 'http://localhost:8080/', title: 'Mapping' };
-  const guia = { url: 'http://localhost:8080/guia/index.html', title: 'Guia' };
+  const guide = { url: 'http://localhost:8080/guide/index.html', title: 'Guide' };
 
-  it('pickAppPage com a app e o guia abertos devolve a app', async () => {
+  it('pickAppPage with the app and the guide open returns the app', async () => {
     const { pickAppPage } = await import('../../scripts/testing/cloud.mjs');
-    expect(pickAppPage([guia, app])).toBe(app);
-    expect(pickAppPage([guia, { url: 'about:blank' }, app])).toBe(app);
+    expect(pickAppPage([guide, app])).toBe(app);
+    expect(pickAppPage([guide, { url: 'about:blank' }, app])).toBe(app);
   });
 
-  it('pickAppPage com duas abas da app lança com as duas URLs e a dica da receita 3', async () => {
+  it('pickAppPage with two app tabs throws with both URLs and the recipe 3 hint', async () => {
     const { pickAppPage } = await import('../../scripts/testing/cloud.mjs');
-    const outra = { url: 'http://localhost:8080/?x=1', title: 'Mapping 2' };
-    expect(() => pickAppPage([app, outra])).toThrow(
-      /http:\/\/localhost:8080\/[\s\S]*\?x=1[\s\S]*feche as abas a mais \(receita 3\)/,
+    const second = { url: 'http://localhost:8080/?x=1', title: 'Mapping 2' };
+    expect(() => pickAppPage([app, second])).toThrow(
+      /http:\/\/localhost:8080\/[\s\S]*\?x=1[\s\S]*close the extra tabs \(recipe 3\)/,
     );
   });
 
-  it('pickAppPage sem nenhuma aba da app lança com o que achou', async () => {
+  it('pickAppPage with no app tab throws with what it found', async () => {
     const { pickAppPage } = await import('../../scripts/testing/cloud.mjs');
-    expect(() => pickAppPage([guia])).toThrow(/guia\/index\.html/);
-    expect(() => pickAppPage([])).toThrow(/Nenhuma aba/);
+    expect(() => pickAppPage([guide])).toThrow(/No app tab[\s\S]*guide\/index\.html/);
+    expect(() => pickAppPage([])).toThrow(/No tab found/);
   });
 
-  it('pickAppPage respeita a origem informada', async () => {
+  it('pickAppPage respects the given origin', async () => {
     const { pickAppPage } = await import('../../scripts/testing/cloud.mjs');
-    const other = { url: 'http://localhost:9000/', title: 'Outra' };
+    const other = { url: 'http://localhost:9000/', title: 'Another' };
     expect(pickAppPage([app, other], { origin: 'http://localhost:9000' })).toBe(other);
   });
 });
 
-describe('connect com timeout curto (etapa #421, TS1, decisão 2)', () => {
+describe('connect with a short timeout (stage #421, TS1, decision 2)', () => {
   function fakeBrowser(urls: string[]) {
     const calls: [string, number][] = [];
     const pages = urls.map((url) => ({
@@ -660,11 +659,14 @@ describe('connect com timeout curto (etapa #421, TS1, decisão 2)', () => {
     return { calls, pages, connectOverCDP: async () => browser };
   }
 
-  it('chama setDefaultTimeout(5000) e setDefaultNavigationTimeout(15000) na aba da app', async () => {
+  it('calls setDefaultTimeout(5000) and setDefaultNavigationTimeout(15000) on the app tab', async () => {
     const { connect } = await import('../../scripts/testing/cloud.mjs');
     const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-connect-'));
     try {
-      const fake = fakeBrowser(['http://localhost:8080/guia/', 'http://localhost:8080/']);
+      const fake = fakeBrowser([
+        'http://localhost:8080/guide/',
+        'http://localhost:8080/',
+      ]);
       const { page } = await connect(dir, undefined, {
         connectOverCDP: fake.connectOverCDP,
       });
@@ -678,7 +680,7 @@ describe('connect com timeout curto (etapa #421, TS1, decisão 2)', () => {
     }
   });
 
-  it('respeita timeoutMs e navigationTimeoutMs', async () => {
+  it('respects timeoutMs and navigationTimeoutMs', async () => {
     const { connect } = await import('../../scripts/testing/cloud.mjs');
     const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-connect-'));
     try {
@@ -697,7 +699,7 @@ describe('connect com timeout curto (etapa #421, TS1, decisão 2)', () => {
     }
   });
 
-  it('com duas abas da app, connect lança com as URLs', async () => {
+  it('with two app tabs, connect throws with the URLs', async () => {
     const { connect } = await import('../../scripts/testing/cloud.mjs');
     const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-connect-'));
     try {
@@ -705,7 +707,7 @@ describe('connect com timeout curto (etapa #421, TS1, decisão 2)', () => {
       await expect(
         connect(dir, undefined, { connectOverCDP: fake.connectOverCDP }),
       ).rejects.toThrow(/\?b=1/);
-      // Sem fechar a conexão CDP, o processo `node` do script não sairia.
+      // Without closing the CDP connection, the script's `node` process would not exit.
       expect(fake.calls).toEqual([['close', 0]]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -713,8 +715,8 @@ describe('connect com timeout curto (etapa #421, TS1, decisão 2)', () => {
   });
 });
 
-describe('diffJson e formatState (etapa #421, TS1, decisão 6)', () => {
-  it('escalar alterado mostra antigo → novo', async () => {
+describe('diffJson and formatState (stage #421, TS1, decision 6)', () => {
+  it('a changed scalar shows old → new', async () => {
     const { diffJson } = await import('../../scripts/testing/cloud.mjs');
     const lines = diffJson(
       { revision: 3, a: { b: 'x' } },
@@ -723,7 +725,7 @@ describe('diffJson e formatState (etapa #421, TS1, decisão 6)', () => {
     expect(lines).toEqual(['~ revision: 3 → 4']);
   });
 
-  it('item acrescentado num array com id aparece pelo id', async () => {
+  it('an item added to an array with ids shows up by id', async () => {
     const { diffJson } = await import('../../scripts/testing/cloud.mjs');
     const lines = diffJson(
       { markings: [{ id: 'm1', x: 1 }] },
@@ -738,7 +740,7 @@ describe('diffJson e formatState (etapa #421, TS1, decisão 6)', () => {
     expect(lines[0]).toMatch(/^\+ markings\[m2\]/);
   });
 
-  it('alteração dentro de item de array pelo id e chave removida', async () => {
+  it('a change inside an array item by id and a removed key', async () => {
     const { diffJson } = await import('../../scripts/testing/cloud.mjs');
     const lines = diffJson(
       { markings: [{ id: 'm1', x: 1 }], name: 'n' },
@@ -748,7 +750,7 @@ describe('diffJson e formatState (etapa #421, TS1, decisão 6)', () => {
     expect(lines.some((l) => /^- name/.test(l))).toBe(true);
   });
 
-  it('além do limite vira "+N"', async () => {
+  it('beyond the limit becomes "+N"', async () => {
     const { diffJson } = await import('../../scripts/testing/cloud.mjs');
     const before: Record<string, number> = {};
     const after: Record<string, number> = {};
@@ -761,28 +763,28 @@ describe('diffJson e formatState (etapa #421, TS1, decisão 6)', () => {
     expect(lines[20]).toMatch(/^\+5\b/);
   });
 
-  it('sem diferença devolve lista vazia', async () => {
+  it('no difference returns an empty list', async () => {
     const { diffJson } = await import('../../scripts/testing/cloud.mjs');
     expect(diffJson({ a: [1, 2] }, { a: [1, 2] })).toEqual([]);
   });
 
-  it('formatState imprime poucas linhas, sem JSON cru', async () => {
+  it('formatState prints few lines, without raw JSON', async () => {
     const { formatState } = await import('../../scripts/testing/cloud.mjs');
     const text = formatState({
       title: 'Mapping',
       url: 'http://localhost:8080/',
-      dialogs: ['Excluir marcação'],
-      notices: ['Projeto aberto'],
-      saveStatus: 'Salvo',
-      focus: { role: 'button', name: 'Cancelar' },
+      dialogs: ['Delete marking'],
+      notices: ['Project opened'],
+      saveStatus: 'Saved',
+      focus: { role: 'button', name: 'Cancel' },
       windows: [],
       project: { revision: 8, changes: ['~ revision: 7 → 8', '+ markings[m2]'] },
     });
     expect(text).not.toContain('{');
     expect(text.split('\n').length).toBeLessThanOrEqual(12);
-    expect(text).toContain('Excluir marcação');
-    expect(text).toContain('Salvo');
-    expect(text).toContain('button "Cancelar"');
+    expect(text).toContain('Delete marking');
+    expect(text).toContain('Saved');
+    expect(text).toContain('button "Cancel"');
     expect(text).toContain('revision 8');
     expect(text).toContain('+ markings[m2]');
     const first = formatState({
@@ -795,24 +797,24 @@ describe('diffJson e formatState (etapa #421, TS1, decisão 6)', () => {
       windows: [],
       project: { revision: 1, changes: null },
     });
-    expect(first).toContain('primeira leitura');
+    expect(first).toContain('first read');
   });
 });
 
-describe('seletor de leitura e connectGuide (etapa #482, GT1)', () => {
-  it('OPEN_DIALOG_TITLES inclui o seletor de leitura (Aplicar pasta…, Abrir biblioteca)', async () => {
+describe('read picker and connectGuide (stage #482, GT1)', () => {
+  it('OPEN_DIALOG_TITLES includes the read picker (Apply folder…, Open library)', async () => {
     const { OPEN_DIALOG_TITLES, waitForWindow } =
       await import('../../scripts/testing/cloud.mjs');
     const reading = 'Selecione uma pasta que este site pode ver';
     expect(OPEN_DIALOG_TITLES).toContain(reading);
-    // Com a busca de janelas injetada: só uma janela com esse título existe.
+    // With the window lookup injected: only one window with that title exists.
     const find = (names: string[]) => (names.includes(reading) ? '42' : null);
     await expect(
       waitForWindow(OPEN_DIALOG_TITLES, { timeoutMs: 50, stepMs: 10, find }),
     ).resolves.toBe('42');
   });
 
-  it('connectGuide escolhe a aba /guia/ com os mesmos 5 s e 15 s', async () => {
+  it('connectGuide picks the /guide/ tab with the same 5 s and 15 s', async () => {
     const { connectGuide } = await import('../../scripts/testing/cloud.mjs');
     const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-guide-'));
     try {
@@ -825,7 +827,10 @@ describe('seletor de leitura e connectGuide (etapa #482, GT1)', () => {
         setDefaultTimeout: (ms: number) => calls.push(['timeout', ms]),
         setDefaultNavigationTimeout: (ms: number) => calls.push(['nav', ms]),
       });
-      const pages = [make('http://localhost:8080/'), make('http://localhost:8080/guia/')];
+      const pages = [
+        make('http://localhost:8080/'),
+        make('http://localhost:8080/guide/'),
+      ];
       const browser = { contexts: () => [{ pages: () => pages }], close: async () => {} };
       const { page } = await connectGuide(dir, undefined, {
         connectOverCDP: async () => browser,
@@ -841,7 +846,7 @@ describe('seletor de leitura e connectGuide (etapa #482, GT1)', () => {
     }
   });
 
-  it('connectGuide sem a aba do guia lança com as abas achadas e fecha a conexão', async () => {
+  it('connectGuide without the guide tab throws with the tabs found and closes the connection', async () => {
     const { connectGuide } = await import('../../scripts/testing/cloud.mjs');
     const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-guide-'));
     try {
@@ -861,7 +866,7 @@ describe('seletor de leitura e connectGuide (etapa #482, GT1)', () => {
       };
       await expect(
         connectGuide(dir, undefined, { connectOverCDP: async () => browser }),
-      ).rejects.toThrow(/guia/);
+      ).rejects.toThrow(/guide/);
       expect(closed).toBe(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -869,9 +874,10 @@ describe('seletor de leitura e connectGuide (etapa #482, GT1)', () => {
   });
 });
 
-describe('lista de autocompletar do GTK com pastas irmãs (etapa #482, GT1)', () => {
-  // Geometrias medidas no Chrome de verdade: a lista de uma pasta só tem ~48 px de altura e a de
-  // `migracao` com `migracao10..12` ao lado, 94 px (cresce com o número de sugestões).
+describe('GTK autocomplete list with sibling folders (stage #482, GT1)', () => {
+  // Geometries measured in a real Chrome: the list for a single folder is only ~48 px tall and
+  // the one for `migracao` with `migracao10..12` beside it, 94 px (it grows with the number of
+  // suggestions).
   const dialog = { id: '6301026', name: 'Selecione uma pasta que este site pode ver' };
   const main = { id: '4194307', name: 'Mapping: Google Chrome for Testing' };
   const geometries: Record<string, { HEIGHT: number }> = {
@@ -882,7 +888,7 @@ describe('lista de autocompletar do GTK com pastas irmãs (etapa #482, GT1)', ()
   };
   const geometryOf = (id: string) => geometries[id] ?? { HEIGHT: 0 };
 
-  it('acha a lista de 94 px (quatro sugestões), não só a de 48 px', async () => {
+  it('finds the 94 px list (four suggestions), not only the 48 px one', async () => {
     const { pickAutocompletePopup } = await import('../../scripts/testing/cloud.mjs');
     const popup = { id: '6302837', name: 'chromium' };
     expect(pickAutocompletePopup([main, dialog, popup], geometryOf, dialog.id)).toEqual({
@@ -895,15 +901,15 @@ describe('lista de autocompletar do GTK com pastas irmãs (etapa #482, GT1)', ()
     ).toBe(small);
   });
 
-  it('não confunde com o seletor nem com a janela principal do Chrome', async () => {
+  it('does not mistake it for the picker nor for the main Chrome window', async () => {
     const { pickAutocompletePopup } = await import('../../scripts/testing/cloud.mjs');
     expect(pickAutocompletePopup([main, dialog], geometryOf, dialog.id)).toBeNull();
     expect(pickAutocompletePopup([], geometryOf, dialog.id)).toBeNull();
   });
 
-  it('openButtonPoints: o centro do Open medido (a ~45 px da base) vem primeiro, com variações', async () => {
+  it('openButtonPoints: the measured center of Open (~45 px from the base) comes first, with variations', async () => {
     const { openButtonPoints } = await import('../../scripts/testing/cloud.mjs');
-    // Seletor medido: X=238 Y=116 de 1124 × 822; o botão Open fica em (1312, 893) na tela.
+    // Measured picker: X=238 Y=116 of 1124 × 822; the Open button is at (1312, 893) on screen.
     const points = openButtonPoints({ X: 238, Y: 116, WIDTH: 1124, HEIGHT: 822 });
     expect(points[0]).toEqual({ x: 1312, y: 893 });
     expect(points.length).toBeGreaterThanOrEqual(3);
@@ -914,18 +920,18 @@ describe('lista de autocompletar do GTK com pastas irmãs (etapa #482, GT1)', ()
   });
 });
 
-describe('janela da nuvem passa do mínimo da app (etapa #604, GN1, decisão 1)', () => {
+describe('the cloud window exceeds the app minimum (stage #604, GN1, decision 1)', () => {
   const guide = read('docs/TESTING.md');
   const appendixA = guide.slice(
-    guide.indexOf('## Apêndice A'),
-    guide.indexOf('## Apêndice B'),
+    guide.indexOf('## Appendix A'),
+    guide.indexOf('## Appendix B'),
   );
   const recipe2 = appendixA.slice(
-    appendixA.indexOf('Receita 2 (nuvem), `source` só na shell'),
-    appendixA.indexOf('Receita 3 (nuvem), reiniciar'),
+    appendixA.indexOf('Recipe 2 (cloud), `source` only in the shell'),
+    appendixA.indexOf('Recipe 3 (cloud), restart'),
   );
 
-  /** Tamanhos do Xvfb (`-screen 0 LxAx24`) e do Chrome (`--window-size=L,A`) no texto. */
+  /** Sizes of Xvfb (`-screen 0 WxHx24`) and of Chrome (`--window-size=W,H`) in the text. */
   function sizes(text: string): { xvfb: string[]; chrome: string[] } {
     const xvfb = [...text.matchAll(/-screen 0 (\d+x\d+)x24/g)].map((m) => m[1] ?? '');
     const chrome = [...text.matchAll(/--window-size=(\d+),(\d+)/g)].map(
@@ -936,9 +942,9 @@ describe('janela da nuvem passa do mínimo da app (etapa #604, GN1, decisão 1)'
 
   it.each([
     ['scripts/testing/cloud-up.sh', read(CLOUD_UP)],
-    ['receita 2 do apêndice A', recipe2],
+    ['recipe 2 of appendix A', recipe2],
   ])(
-    '%s: Xvfb e Chrome têm o mesmo tamanho, com altura de pelo menos 1100',
+    '%s: Xvfb and Chrome have the same size, with a height of at least 1100',
     (name, text) => {
       const { xvfb, chrome } = sizes(text);
       expect(xvfb, name).toHaveLength(1);
@@ -949,13 +955,13 @@ describe('janela da nuvem passa do mínimo da app (etapa #604, GN1, decisão 1)'
     },
   );
 
-  it('o cloud-up.sh e a receita 2 usam o mesmo tamanho', () => {
+  it('cloud-up.sh and recipe 2 use the same size', () => {
     expect(sizes(read(CLOUD_UP)).xvfb).toEqual(sizes(recipe2).xvfb);
   });
 });
 
-// Etapa #841 (RB1, decisão 3): `mark` e `tempos` sem `APOIO` exportado acham a pasta padrão.
-describe('cloud.mjs sem APOIO exportado (RB1, decisão 3)', () => {
+// Stage #841 (RB1, decision 3): `mark` and `tempos` without an exported `APOIO` find the default folder.
+describe('cloud.mjs without an exported APOIO (RB1, decision 3)', () => {
   let home: string;
 
   afterEach(() => {
@@ -976,10 +982,10 @@ describe('cloud.mjs sem APOIO exportado (RB1, decisão 3)', () => {
     return { status: r.status, stdout: r.stdout, stderr: r.stderr };
   }
 
-  it('mark grava na pasta apoio/ da rodada mais recente e avisa', () => {
+  it('mark writes to the apoio/ folder of the most recent round and warns', () => {
     home = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-home-'));
-    const old = path.join(home, 'mapping-testes', '2026-01-01-velha', 'apoio');
-    const recent = path.join(home, 'mapping-testes', '2026-02-02-nova', 'apoio');
+    const old = path.join(home, 'mapping-testes', '2026-01-01-old', 'apoio');
+    const recent = path.join(home, 'mapping-testes', '2026-02-02-new', 'apoio');
     mkdirSync(old, { recursive: true });
     mkdirSync(recent, { recursive: true });
     utimesSync(old, new Date('2026-01-01'), new Date('2026-01-01'));
@@ -990,9 +996,9 @@ describe('cloud.mjs sem APOIO exportado (RB1, decisão 3)', () => {
     expect(read(path.join(recent, 'tempos.log'))).toMatch(/^R1 start \d{4}-/);
   });
 
-  it('tempos sem APOIO lê a mesma pasta; sem nenhuma pasta, falha com a explicação', () => {
+  it('tempos without APOIO reads the same folder; with no folder, fails with the explanation', () => {
     home = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-home-'));
-    const apoio = path.join(home, 'mapping-testes', '2026-02-02-nova', 'apoio');
+    const apoio = path.join(home, 'mapping-testes', '2026-02-02-new', 'apoio');
     mkdirSync(apoio, { recursive: true });
     writeFileSync(
       path.join(apoio, 'tempos.log'),
@@ -1009,8 +1015,8 @@ describe('cloud.mjs sem APOIO exportado (RB1, decisão 3)', () => {
   });
 });
 
-// Etapa #1148 (TR1, decisões 1 a 3): `cloud.mjs run`, `--prazo` e `help`.
-describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
+// Stage #1148 (TR1, decisions 1 to 3): `cloud.mjs run`, `--prazo` and `help`.
+describe('cloud.mjs run, --prazo and help (stage #1148, TR1)', () => {
   let apoio: string;
 
   afterEach(() => {
@@ -1042,7 +1048,7 @@ describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
     };
   }
 
-  it('run: o corpo vê page, browser, apoioDir, projectDir e os exports; imprime o state() e sai 0', async () => {
+  it('run: the body sees page, browser, apoioDir, projectDir and the exports; prints the state() and exits 0', async () => {
     apoio = mkdtempSync(path.join(tmpdir(), 'mapping-run-'));
     process.env.DISPLAY ??= ':99';
     const mod = await import('../../scripts/testing/cloud.mjs');
@@ -1052,28 +1058,28 @@ describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
       { apoioDir: apoio, connectFn: fakeConnect, io: c.io },
     );
     expect(code).toBe(0);
-    // `typeof settleLike` é undefined: só os exports reais estão em escopo.
+    // `typeof settleLike` is undefined: only the real exports are in scope.
     const logged = String((globalThis as { __runSeen?: string }).__runSeen);
     expect(logged).toMatch(/function\|function\|true\|\|function\|function\|/);
     expect(c.out.join('\n')).toContain('Mapping');
   });
 
-  it('run: erro no corpo imprime a mensagem e o estado e sai 1', async () => {
+  it('run: an error in the body prints the message and the state and exits 1', async () => {
     apoio = mkdtempSync(path.join(tmpdir(), 'mapping-run-'));
     process.env.DISPLAY ??= ':99';
     const mod = await import('../../scripts/testing/cloud.mjs');
     const c = capture();
-    const code = await mod.runStep(`throw new Error('deu ruim no passo')`, {
+    const code = await mod.runStep(`throw new Error('failed in the step')`, {
       apoioDir: apoio,
       connectFn: fakeConnect,
       io: c.io,
     });
     expect(code).toBe(1);
-    expect(c.err.join('\n')).toContain('deu ruim no passo');
+    expect(c.err.join('\n')).toContain('failed in the step');
     expect(c.out.join('\n')).toContain('Mapping');
   });
 
-  it('run --prazo: script preso sai 124 com "prazo de <n> s esgotado no passo"', async () => {
+  it('run --prazo: a stuck script exits 124 with "deadline of <n> s exceeded in the step"', async () => {
     apoio = mkdtempSync(path.join(tmpdir(), 'mapping-run-'));
     process.env.DISPLAY ??= ':99';
     const mod = await import('../../scripts/testing/cloud.mjs');
@@ -1085,21 +1091,21 @@ describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
       io: c.io,
     });
     expect(code).toBe(124);
-    expect(c.err.join('\n')).toContain('prazo de 0.05 s esgotado no passo');
+    expect(c.err.join('\n')).toContain('deadline of 0.05 s exceeded in the step');
     expect(c.out.join('\n')).toContain('Mapping');
   });
 
-  it('run pela CLI sem corpo na entrada falha com o uso', () => {
+  it('run through the CLI with no body on stdin fails with the usage', () => {
     const r = spawnSync('node', ['scripts/testing/cloud.mjs', 'run'], {
       input: '',
       encoding: 'utf8',
       env: { ...process.env, APOIO: tmpdir() },
     });
     expect(r.status).toBe(2);
-    expect(r.stderr).toMatch(/Uso: .*cloud\.mjs run/);
+    expect(r.stderr).toMatch(/Usage: .*cloud\.mjs run/);
   });
 
-  it('help lista todo export (tabela única) e o cloud.d.mts declara os mesmos nomes', async () => {
+  it('help lists every export (single table) and cloud.d.mts declares the same names', async () => {
     const mod: Record<string, unknown> = await import('../../scripts/testing/cloud.mjs');
     const help = mod.HELP as Record<string, { sig: string; desc: string }>;
     const names = Object.keys(mod).sort();
@@ -1148,9 +1154,9 @@ describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
   });
 });
 
-// Etapa #1148 (TR1, decisões 4 e 5): `env.sh` e o log do build.
-describe('cloud-up.sh: env.sh e build.log (etapa #1148, TR1)', () => {
-  it('grava e lê apoio/env.sh (sem o nome antigo)', () => {
+// Stage #1148 (TR1, decisions 4 and 5): `env.sh` and the build log.
+describe('cloud-up.sh: env.sh and build.log (stage #1148, TR1)', () => {
+  it('writes and reads apoio/env.sh (without the old name)', () => {
     const up = read(CLOUD_UP);
     expect(up).toContain('"$S/env.sh"');
     expect(up).not.toMatch(/\$S\/env["\s]/);
@@ -1158,7 +1164,7 @@ describe('cloud-up.sh: env.sh e build.log (etapa #1148, TR1)', () => {
     expect(read(CLOUD_MJS)).not.toMatch(/apoio\/env\b(?!\.sh)/);
   });
 
-  it('manda npm ci, build e build:mcp para apoio/build.log e mostra as últimas 40 linhas ao falhar', () => {
+  it('sends npm ci, build and build:mcp to apoio/build.log and shows the last 40 lines on failure', () => {
     const up = read(CLOUD_UP);
     expect(up).toContain('build.log');
     expect(up).toMatch(/tail -n 40/);
@@ -1168,8 +1174,8 @@ describe('cloud-up.sh: env.sh e build.log (etapa #1148, TR1)', () => {
   });
 });
 
-// Etapa #1148 (TR2, decisões 7 a 11): esperas e gestos que não falham.
-describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () => {
+// Stage #1148 (TR2, decisions 7 to 11): waits and gestures that do not fail.
+describe('settle, openWindow, drag, setViewport and find (stage #1148, TR2)', () => {
   type Fn = (...args: unknown[]) => unknown;
   type Mod = {
     TOOL_WINDOW_IDS: string[];
@@ -1219,35 +1225,35 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       evaluate: (fn: Fn, arg: unknown) => fn(arg),
     };
 
-    it('sem "Salvando…" e sem mutação devolve null depois de ~200 ms', async () => {
+    it('without "Saving…" and without mutation returns null after ~200 ms', async () => {
       const mod = await load();
-      stub('Salvo', false);
+      stub('Saved', false);
       const t0 = Date.now();
       const warning = await mod.settle(pageRunning, { timeoutMs: 2000 });
       expect(warning).toBeNull();
       expect(Date.now() - t0).toBeGreaterThanOrEqual(190);
     });
 
-    it('"Salvando…" que não sai estoura o prazo com aviso que cita a condição', async () => {
+    it('"Saving…" that does not go away times out with a warning that cites the condition', async () => {
       const mod = await load();
-      stub('Salvando…', false);
+      stub('Saving…', false);
       const warnings: string[] = [];
       const warning = await mod.settle(pageRunning, {
         timeoutMs: 300,
         warn: (m: string) => warnings.push(m),
       });
-      expect(String(warning)).toMatch(/Salvando/);
+      expect(String(warning)).toMatch(/Saving/);
       expect(warnings).toHaveLength(1);
     });
 
-    it('DOM que não para de mudar estoura o prazo com aviso de mutação', async () => {
+    it('a DOM that keeps changing times out with a mutation warning', async () => {
       const mod = await load();
-      stub('Salvo', true);
+      stub('Saved', true);
       const warning = await mod.settle(pageRunning, { timeoutMs: 400, warn: () => {} });
-      expect(String(warning)).toMatch(/mud/);
+      expect(String(warning)).toMatch(/kept changing/);
     });
 
-    it('state() espera o settle antes de ler o DOM', async () => {
+    it('state() waits for the settle before reading the DOM', async () => {
       const mod = await load();
       const calls: unknown[] = [];
       const page = {
@@ -1269,7 +1275,7 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
     });
   });
 
-  describe('openWindow e closeWindow', () => {
+  describe('openWindow and closeWindow', () => {
     function fakeWindowPage(initial: Record<string, string>) {
       const pressed = { ...initial };
       const clicks: string[] = [];
@@ -1293,7 +1299,7 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       return { page, clicks, waits };
     }
 
-    it('openWindow só clica quando a janela está fechada (idempotente)', async () => {
+    it('openWindow only clicks when the window is closed (idempotent)', async () => {
       const mod = await load();
       const a = fakeWindowPage({ tree: 'false' });
       await mod.openWindow(a.page, 'tree');
@@ -1302,7 +1308,7 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       expect(a.waits[0]).toContain('visible');
     });
 
-    it('closeWindow só clica quando a janela está aberta e espera sumir', async () => {
+    it('closeWindow only clicks when the window is open and waits for it to disappear', async () => {
       const mod = await load();
       const a = fakeWindowPage({ layers: 'true' });
       await mod.closeWindow(a.page, 'layers');
@@ -1311,16 +1317,16 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       expect(a.waits[0]).toContain('hidden');
     });
 
-    it('id desconhecido dá erro com a lista dos ids', async () => {
+    it('an unknown id gives an error with the list of ids', async () => {
       const mod = await load();
       const a = fakeWindowPage({});
-      await expect(mod.openWindow(a.page, 'arvore')).rejects.toThrow(
-        /arvore.*tree.*layers.*details.*list.*incomplete.*diagnostics.*proposals.*notices.*comments.*catalog/s,
+      await expect(mod.openWindow(a.page, 'unknown')).rejects.toThrow(
+        /unknown.*tree.*layers.*details.*list.*incomplete.*diagnostics.*proposals.*notices.*comments.*catalog/s,
       );
       expect(a.clicks).toEqual([]);
     });
 
-    it('os ids são os de src/store/toolWindows.ts', async () => {
+    it('the ids are the ones in src/store/toolWindows.ts', async () => {
       const mod = await load();
       const src = read('src/store/toolWindows.ts');
       const block = /TOOL_WINDOWS = \[([^\]]+)\]/.exec(src)?.[1] ?? '';
@@ -1329,7 +1335,7 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
     });
   });
 
-  describe('drag e nearHandle', () => {
+  describe('drag and nearHandle', () => {
     function fakeDragPage(
       selectionBox: string | null,
       {
@@ -1352,7 +1358,7 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
         }),
         evaluate: async (_fn: unknown, arg?: Record<string, unknown>) => {
           if (arg && 'x' in arg && 'y' in arg) {
-            events.push(`confere ${String(arg.x)},${String(arg.y)}`);
+            events.push(`check ${String(arg.x)},${String(arg.y)}`);
             return onCanvas;
           }
           return null;
@@ -1361,11 +1367,11 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       return { page, events };
     }
 
-    it('clica, segura, move em `steps` passos até `para` e solta', async () => {
+    it('clicks, holds, moves in `steps` steps to the target and releases', async () => {
       const mod = await load();
       const d = fakeDragPage(null);
       await mod.drag(d.page, { x: 300, y: 300 }, { x: 340, y: 380 }, { steps: 4 });
-      expect(d.events[0]).toBe('confere 300,300');
+      expect(d.events[0]).toBe('check 300,300');
       expect(d.events[1]).toBe('click 300,300');
       expect(d.events[2]).toBe('move 300,300');
       expect(d.events[3]).toBe('down');
@@ -1378,21 +1384,21 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       expect(d.events[8]).toBe('up');
     });
 
-    it('select: false não clica antes', async () => {
+    it('select: false does not click first', async () => {
       const mod = await load();
       const d = fakeDragPage(null);
       await mod.drag(d.page, { x: 1, y: 2 }, { x: 3, y: 4 }, { select: false, steps: 1 });
       expect(d.events.slice(1, 3)).toEqual(['move 1,2', 'down']);
     });
 
-    it('`de` fora do canvas lança antes de qualquer ação do mouse; allowOffCanvas segue', async () => {
+    it('a start point outside the canvas throws before any mouse action; allowOffCanvas proceeds', async () => {
       const mod = await load();
-      const off = { ok: false, element: 'div.dock "Janelas"' };
+      const off = { ok: false, element: 'div.dock "Windows"' };
       const d = fakeDragPage(null, { onCanvas: off });
       await expect(
         mod.drag(d.page, { x: 300, y: 300 }, { x: 340, y: 380 }, { steps: 1 }),
       ).rejects.toThrow(
-        'drag: o ponto de partida (300, 300) não cai no canvas (div.dock "Janelas")',
+        'drag: the starting point (300, 300) does not fall on the canvas (div.dock "Windows")',
       );
       expect(d.events.some((e) => /^(click|move|down|up)/.test(e))).toBe(false);
       const e = fakeDragPage(null, { onCanvas: off });
@@ -1405,7 +1411,7 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       expect(e.events).toContain('up');
     });
 
-    it('o clique de seleção sem data-selection avisa "não selecionou nada" e segue', async () => {
+    it('the selection click without data-selection warns "selected nothing" and proceeds', async () => {
       const mod = await load();
       const warnings: string[] = [];
       const d = fakeDragPage(null, { selection: null });
@@ -1415,7 +1421,7 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
         { x: 340, y: 380 },
         { steps: 1, warn: (m: string) => warnings.push(m) },
       );
-      expect(warnings.join('')).toContain('o clique em (300, 300) não selecionou nada');
+      expect(warnings.join('')).toContain('the click at (300, 300) selected nothing');
       expect(d.events).toContain('up');
       const ok = fakeDragPage(null);
       const quiet: string[] = [];
@@ -1426,7 +1432,7 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
         { steps: 1, warn: (m: string) => quiet.push(m) },
       );
       expect(quiet).toEqual([]);
-      // sem `select`, não há clique e nada a conferir
+      // without `select`, there is no click and nothing to check
       const free = fakeDragPage(null, { selection: null });
       const none: string[] = [];
       await mod.drag(
@@ -1438,9 +1444,9 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       expect(none).toEqual([]);
     });
 
-    it('avisa quando `de` cai a até 8 px de uma alça da caixa da seleção', async () => {
+    it('warns when the start point falls within 8 px of a handle of the selection box', async () => {
       const mod = await load();
-      // caixa da seleção (relativa ao host): 100 100 200 100 → canto nw na tela: (200, 150)
+      // selection box (relative to the host): 100 100 200 100 → nw corner on screen: (200, 150)
       const d = fakeDragPage('100 100 200 100');
       const warnings: string[] = [];
       await mod.drag(
@@ -1452,36 +1458,36 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
           warn: (m: string) => warnings.push(m),
         },
       );
-      expect(warnings.join('')).toMatch(/perto da alça nw: o arrasto pode redimensionar/);
+      expect(warnings.join('')).toMatch(/near handle nw: the drag may resize/);
       expect(d.events).toContain('up');
     });
 
-    it('não avisa longe das alças; nearHandle devolve o nome do canto ou null', async () => {
+    it('does not warn far from the handles; nearHandle returns the corner name or null', async () => {
       const mod = await load();
       const box = { x: 200, y: 150, width: 200, height: 100 };
       expect(mod.nearHandle(box, { x: 300, y: 200 })).toBeNull();
       expect(mod.nearHandle(box, { x: 400, y: 250 })).toBe('se');
-      // A app não tem alça no meio das bordas (CORNERS): o meio do lado de cima não avisa.
+      // The app has no handle in the middle of the edges (CORNERS): the middle of the top side does not warn.
       expect(mod.nearHandle(box, { x: 300, y: 146 })).toBeNull();
       expect(mod.nearHandle(box, { x: 209, y: 200 })).toBeNull();
     });
 
-    it('nearHandle usa o raio e a distância em xadrez da app (handleHitRadius, HANDLE_HIT_RADIUS)', async () => {
+    it("nearHandle uses the app's radius and chessboard distance (handleHitRadius, HANDLE_HIT_RADIUS)", async () => {
       const mod = await load();
-      // Caixa grande (>= 66 px de lado menor): o raio é o fixo do container.
+      // Big box (>= 66 px on the shorter side): the radius is the container's fixed one.
       const big = { x: 200, y: 150, width: 200, height: 100 };
       expect(handleHitRadius(100)).toBe(HANDLE_HIT_RADIUS);
       const r = HANDLE_HIT_RADIUS;
       expect(mod.nearHandle(big, { x: 200 + r, y: 150 })).toBe('nw');
       expect(mod.nearHandle(big, { x: 200 + r + 1, y: 150 })).toBeNull();
-      // Xadrez: o canto do quadrado r × r conta, ainda que a distância euclidiana passe de r.
+      // Chessboard: the corner of the r × r square counts, even if the Euclidean distance exceeds r.
       expect(mod.nearHandle(big, { x: 200 + r, y: 150 + r })).toBe('nw');
       expect(mod.nearHandle(big, { x: 400 - r, y: 150 + r })).toBe('ne');
       expect(mod.nearHandle(big, { x: 200 + r, y: 250 - r })).toBe('sw');
-      // Fora da caixa também conta (o rótulo do container fica acima da borda).
+      // Outside the box also counts (the container label sits above the edge).
       expect(mod.nearHandle(big, { x: 200, y: 150 - r })).toBe('nw');
       expect(mod.nearHandle(big, { x: 200, y: 150 - r - 1 })).toBeNull();
-      // Caixa pequena: raio clamp(min / 3, 12, 22).
+      // Small box: radius clamp(min / 3, 12, 22).
       const small = { x: 0, y: 0, width: 30, height: 90 };
       const rs = handleHitRadius(30);
       expect(rs).toBe(12);
@@ -1494,15 +1500,15 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       expect(mod.nearHandle(mid, { x: 45 + rm + 1, y: 90 })).toBeNull();
     });
 
-    it('o container tem raio fixo de 22 px mesmo com a caixa pequena (HANDLE_HIT_RADIUS)', async () => {
+    it('the container has a fixed 22 px radius even with a small box (HANDLE_HIT_RADIUS)', async () => {
       const mod = await load();
       const small = { x: 0, y: 0, width: 30, height: 90 };
       const r = HANDLE_HIT_RADIUS;
-      // Marcação: clamp(30 / 3, 12, 22) = 12; container: sempre 22.
+      // Marking: clamp(30 / 3, 12, 22) = 12; container: always 22.
       expect(mod.nearHandle(small, { x: 0, y: r })).toBeNull();
       expect(mod.nearHandle(small, { x: 0, y: r }, { container: true })).toBe('nw');
       expect(mod.nearHandle(small, { x: 0, y: r + 1 }, { container: true })).toBeNull();
-      // O drag não sabe se o selecionado é container ou marcação: avisa pelo raio maior.
+      // The drag does not know whether the selection is a container or a marking: it warns by the larger radius.
       const d = fakeDragPage('100 100 30 90');
       const warnings: string[] = [];
       await mod.drag(
@@ -1511,21 +1517,21 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
         { x: 260, y: 168 },
         { steps: 1, warn: (m: string) => warnings.push(m) },
       );
-      expect(warnings.join('')).toMatch(/perto da alça nw/);
+      expect(warnings.join('')).toMatch(/near handle nw/);
     });
 
-    it('drag avisa perto do canto fora da caixa, como o rótulo do container', async () => {
+    it('drag warns near the corner outside the box, like the container label', async () => {
       const mod = await load();
       const d = fakeDragPage('100 100 200 100');
       const warnings: string[] = [];
-      // canto nw na tela: (200, 150); o ponto está 20 px acima dele.
+      // nw corner on screen: (200, 150); the point is 20 px above it.
       await mod.drag(
         d.page,
         { x: 205, y: 130 },
         { x: 260, y: 130 },
         { steps: 1, select: false, warn: (m: string) => warnings.push(m) },
       );
-      expect(warnings.join('')).toMatch(/perto da alça nw/);
+      expect(warnings.join('')).toMatch(/near handle nw/);
       expect(warnings.join('')).toMatch(/22 px/);
     });
   });
@@ -1551,7 +1557,7 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       return { page, sent };
     }
 
-    it('soma a moldura medida e confere innerWidth/innerHeight', async () => {
+    it('adds the measured frame and checks innerWidth/innerHeight', async () => {
       const mod = await load();
       const p = fakeCdpPage([
         { outerWidth: 1300, innerWidth: 1284, outerHeight: 840, innerHeight: 700 },
@@ -1567,7 +1573,7 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       expect(bounds.bounds.height).toBe(720 + 140);
     });
 
-    it('erro com os valores obtidos quando a janela não deu o pedido', async () => {
+    it('errors with the values obtained when the window did not give what was asked', async () => {
       const mod = await load();
       const p = fakeCdpPage([
         { outerWidth: 1300, innerWidth: 1284, outerHeight: 840, innerHeight: 700 },
@@ -1579,43 +1585,43 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
     });
   });
 
-  describe('find e localizador que diz o que existe', () => {
+  describe('find and a locator that says what exists', () => {
     const candidates = [
-      { role: 'button', name: 'Revisar', region: 'Propostas' },
-      { role: 'button', name: 'Revisar proposta', region: 'Janelas de ferramenta' },
+      { role: 'button', name: 'Review', region: 'Proposals' },
+      { role: 'button', name: 'Review proposal', region: 'Tool windows' },
     ];
 
-    it('find devolve os candidatos da página; formatCandidates os lista', async () => {
+    it('find returns the candidates of the page; formatCandidates lists them', async () => {
       const mod = await load();
       const page = {
         evaluate: async (_fn: Fn, arg: { needle: string }) => {
-          expect(arg.needle).toBe('revisar');
+          expect(arg.needle).toBe('review');
           return candidates;
         },
       };
-      const found = await mod.find(page, 'Revisar');
+      const found = await mod.find(page, 'Review');
       expect(found).toEqual(candidates);
-      const text = String(mod.formatCandidates(found, 'Revisar'));
-      expect(text).toContain('button "Revisar" em Propostas');
-      expect(mod.formatCandidates([], 'Nada')).toMatch(/nenhum candidato.*Nada/);
+      const text = String(mod.formatCandidates(found, 'Review'));
+      expect(text).toContain('button "Review" in Proposals');
+      expect(mod.formatCandidates([], 'Nothing')).toMatch(/no candidate.*Nothing/);
     });
 
-    it('locatorTextFromError tira o nome do localizador da mensagem do Playwright', async () => {
+    it("locatorTextFromError extracts the locator name from Playwright's message", async () => {
       const mod = await load();
       expect(
         mod.locatorTextFromError(
-          "locator.click: Timeout 5000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Revisar' })",
+          "locator.click: Timeout 5000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Review' })",
         ),
-      ).toBe('Revisar');
+      ).toBe('Review');
       expect(
         mod.locatorTextFromError(
-          "strict mode violation: getByText('Conversas') resolved to 2 elements",
+          "strict mode violation: getByText('Threads') resolved to 2 elements",
         ),
-      ).toBe('Conversas');
-      expect(mod.locatorTextFromError('algum outro erro')).toBeNull();
+      ).toBe('Threads');
+      expect(mod.locatorTextFromError('some other error')).toBeNull();
     });
 
-    it('run: timeout de localizador é seguido da lista de candidatos', async () => {
+    it('run: a locator timeout is followed by the list of candidates', async () => {
       const mod = await load();
       const page = {
         evaluate: async (_fn: Fn, arg: { needle?: string; timeoutMs?: number }) => {
@@ -1629,7 +1635,7 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       const err: string[] = [];
       try {
         const code = await mod.runStep(
-          `throw new Error("locator.click: Timeout 5000ms exceeded.\\n  - waiting for getByRole('button', { name: 'Revisar' })")`,
+          `throw new Error("locator.click: Timeout 5000ms exceeded.\\n  - waiting for getByRole('button', { name: 'Review' })")`,
           {
             apoioDir: apoio,
             connectFn: async () => ({ browser: { close: async () => {} }, page }),
@@ -1642,12 +1648,12 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       }
       const all = err.join('\n');
       expect(all).toContain('Timeout 5000ms');
-      expect(all).toContain('button "Revisar" em Propostas');
+      expect(all).toContain('button "Review" in Proposals');
     });
   });
 });
 
-describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', () => {
+describe('paletteDrag, absolute path and remembered folder (stage #1256, RT2)', () => {
   type Fn = (...args: unknown[]) => unknown;
   type Mod = {
     paletteDrag: Fn;
@@ -1664,18 +1670,18 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
   };
 
   /**
-   * Página falsa: a instância nasce no `mapping.json` da pasta do projeto, no `mouse.up`
-   * (nativo) ou no `evaluate` do sintético; `groups` são os grupos da Paleta que têm o tipo.
+   * Fake page: the instance is born in the `mapping.json` of the project folder, at `mouse.up`
+   * (native) or at the synthetic `evaluate`; `groups` are the Palette groups that have the type.
    */
   function fakePalettePage(
     rises: 'nativo' | 'sintetico' | 'nenhum',
     {
-      groups = ['Biblioteca'],
+      groups = ['Library'],
       syntheticReason,
     }: { groups?: string[]; syntheticReason?: string } = {},
   ) {
-    const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-palette-'));
-    const file = path.join(projeto, 'mapping.json');
+    const project = mkdtempSync(path.join(tmpdir(), 'mapping-palette-'));
+    const file = path.join(project, 'mapping.json');
     writeFileSync(file, JSON.stringify({ markings: [{ id: 'm1' }] }));
     const addMarking = () => {
       const json = JSON.parse(readFileSync(file, 'utf8')) as { markings: unknown[] };
@@ -1685,7 +1691,7 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
     const events: string[] = [];
     const selectors: string[] = [];
     const item = {
-      scrollIntoViewIfNeeded: async () => events.push('rola'),
+      scrollIntoViewIfNeeded: async () => events.push('scroll'),
       boundingBox: async () => ({ x: 10, y: 100, width: 200, height: 40 }),
     };
     const generic = (selector: string): Record<string, unknown> => ({
@@ -1693,7 +1699,7 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
       getByText: () => ({ text: selector }),
       getAttribute: async () => '0',
       screenshot: async ({ path: out }: { path: string }) =>
-        events.push(`captura ${out}`),
+        events.push(`capture ${out}`),
     });
     const page = {
       mouse: {
@@ -1710,8 +1716,8 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
       },
       evaluate: async (_fn: Fn, arg: Record<string, unknown>) => {
         if (arg && 'timeoutMs' in arg) return null;
-        if (arg && 'x' in arg && !('para' in arg)) return { ok: true, element: 'canvas' };
-        if (arg && 'para' in arg) {
+        if (arg && 'x' in arg && !('to' in arg)) return { ok: true, element: 'canvas' };
+        if (arg && 'to' in arg) {
           events.push('sintetico');
           if (syntheticReason) return { motivo: syntheticReason };
           if (rises === 'sintetico') addMarking();
@@ -1720,32 +1726,32 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
         return groups;
       },
     };
-    return { page, events, selectors, projeto, file };
+    return { page, events, selectors, project, file };
   }
 
-  describe('paletteDrag (decisões 9 e 10)', () => {
+  describe('paletteDrag (decisions 9 and 10)', () => {
     const cleanup: string[] = [];
     afterEach(() => {
       for (const dir of cleanup.splice(0)) rmSync(dir, { recursive: true, force: true });
     });
     const setup = (...args: Parameters<typeof fakePalettePage>) => {
       const d = fakePalettePage(...args);
-      cleanup.push(d.projeto);
+      cleanup.push(d.project);
       return d;
     };
 
-    it('o arrasto nativo cria a instância (marcações do disco): via nativo, sem o evento sintético', async () => {
+    it('the native drag creates the instance (markings on disk): via nativo, without the synthetic event', async () => {
       const mod = await load();
       const d = setup('nativo');
       const result = await mod.paletteDrag(
         d.page,
         'Button',
         { x: 500, y: 300 },
-        { steps: 2, projectDir: d.projeto },
+        { steps: 2, projectDir: d.project },
       );
       expect(result).toEqual({ via: 'nativo' });
       expect(d.events).toEqual([
-        'rola',
+        'scroll',
         'move 110,120',
         'down',
         'move 305,210',
@@ -1754,20 +1760,20 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
       ]);
     });
 
-    it('sem marcação nova no nativo, refaz pelo evento sintético: via sintetico', async () => {
+    it('without a new marking from the native drag, redoes it through the synthetic event: via sintetico', async () => {
       const mod = await load();
       const d = setup('sintetico');
       const result = await mod.paletteDrag(
         d.page,
         'Box',
         { x: 500, y: 300 },
-        { steps: 1, projectDir: d.projeto, waitMs: 20 },
+        { steps: 1, projectDir: d.project, waitMs: 20 },
       );
       expect(result).toEqual({ via: 'sintetico' });
       expect(d.events.at(-1)).toBe('sintetico');
     });
 
-    it('a marcação que chega ao disco depois do settle (autosave) ainda conta como nativa', async () => {
+    it('a marking that reaches the disk after the settle (autosave) still counts as native', async () => {
       const mod = await load();
       const d = setup('nenhum');
       const up = d.page.mouse.up;
@@ -1777,7 +1783,7 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
           const json = JSON.parse(readFileSync(d.file, 'utf8')) as {
             markings: unknown[];
           };
-          json.markings.push({ id: 'tarde' });
+          json.markings.push({ id: 'late' });
           writeFileSync(d.file, JSON.stringify(json));
         }, 120);
       };
@@ -1785,20 +1791,20 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
         d.page,
         'Button',
         { x: 500, y: 300 },
-        { steps: 1, projectDir: d.projeto, waitMs: 1000 },
+        { steps: 1, projectDir: d.project, waitMs: 1000 },
       );
       expect(result).toEqual({ via: 'nativo' });
       expect(d.events).not.toContain('sintetico');
     });
 
-    it('o nativo criou: o sintético não roda (sem instância duplicada)', async () => {
+    it('the native drag created it: the synthetic one does not run (no duplicate instance)', async () => {
       const mod = await load();
       const d = setup('nativo');
       await mod.paletteDrag(
         d.page,
         'Box',
         { x: 500, y: 300 },
-        { steps: 1, projectDir: d.projeto },
+        { steps: 1, projectDir: d.project },
       );
       expect(d.events).not.toContain('sintetico');
       expect(
@@ -1806,7 +1812,7 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
       ).toHaveLength(2);
     });
 
-    it('sem nenhuma das duas, lança que o arrasto não criou a instância', async () => {
+    it('with neither, throws that the drag did not create the instance', async () => {
       const mod = await load();
       const d = setup('nenhum');
       await expect(
@@ -1814,110 +1820,110 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
           d.page,
           'Button',
           { x: 500, y: 300 },
-          { steps: 1, projectDir: d.projeto, waitMs: 20 },
+          { steps: 1, projectDir: d.project, waitMs: 20 },
         ),
-      ).rejects.toThrow('o arrasto da Paleta não criou a instância');
+      ).rejects.toThrow('the Palette drag did not create the instance');
     });
 
-    it('sem a pasta do projeto, lança "paletteDrag precisa da pasta do projeto"', async () => {
+    it('without the project folder, throws "paletteDrag needs the project folder"', async () => {
       const mod = await load();
       const d = setup('nativo');
       await expect(
         mod.paletteDrag(d.page, 'Button', { x: 500, y: 300 }, { steps: 1 }),
-      ).rejects.toThrow('paletteDrag precisa da pasta do projeto');
+      ).rejects.toThrow('paletteDrag needs the project folder');
       expect(d.events).toEqual([]);
     });
 
-    it('o motivo do sintético vira a mensagem: item sumiu e ponto fora do canvas', async () => {
+    it('the synthetic reason becomes the message: item disappeared and point outside the canvas', async () => {
       const mod = await load();
-      for (const motivo of [
-        "o item 'Button' sumiu da Paleta",
-        'o ponto (500, 300) não cai no canvas (div.dock)',
+      for (const reason of [
+        "the item 'Button' disappeared from the Palette",
+        'the point (500, 300) does not fall on the canvas (div.dock)',
       ]) {
-        const d = setup('nenhum', { syntheticReason: motivo });
+        const d = setup('nenhum', { syntheticReason: reason });
         await expect(
           mod.paletteDrag(
             d.page,
             'Button',
             { x: 500, y: 300 },
-            { steps: 1, projectDir: d.projeto },
+            { steps: 1, projectDir: d.project },
           ),
-        ).rejects.toThrow(motivo);
+        ).rejects.toThrow(reason);
       }
     });
 
-    it('tipo repetido em dois grupos lança com os grupos; { grupo } escolhe', async () => {
+    it('a type repeated in two groups throws with the groups; { grupo } chooses', async () => {
       const mod = await load();
-      const d = setup('nativo', { groups: ['Material', 'Ícones'] });
+      const d = setup('nativo', { groups: ['Material', 'Icons'] });
       await expect(
         mod.paletteDrag(
           d.page,
           'Button',
           { x: 500, y: 300 },
-          { steps: 1, projectDir: d.projeto },
+          { steps: 1, projectDir: d.project },
         ),
-      ).rejects.toThrow(/mais de um grupo.*Material.*Ícones/);
+      ).rejects.toThrow(/more than one group.*Material.*Icons/);
       const result = await mod.paletteDrag(
         d.page,
         'Button',
         { x: 500, y: 300 },
-        { steps: 1, projectDir: d.projeto, grupo: 'Ícones' },
+        { steps: 1, projectDir: d.project, grupo: 'Icons' },
       );
       expect(result).toEqual({ via: 'nativo' });
-      expect(d.selectors.some((s) => s.includes('aria-label="Ícones"'))).toBe(true);
+      expect(d.selectors.some((s) => s.includes('aria-label="Icons"'))).toBe(true);
       await expect(
         mod.paletteDrag(
           d.page,
           'Button',
           { x: 500, y: 300 },
-          { steps: 1, projectDir: d.projeto, grupo: 'Outro' },
+          { steps: 1, projectDir: d.project, grupo: 'Other' },
         ),
-      ).rejects.toThrow(/Outro.*Material.*Ícones/);
+      ).rejects.toThrow(/Other.*Material.*Icons/);
     });
 
-    it('tipo que nenhum grupo tem: lança que não está na Paleta aberta', async () => {
+    it('a type that no group has: throws that it is not in the open Palette', async () => {
       const mod = await load();
       const d = setup('nativo', { groups: [] });
       await expect(
         mod.paletteDrag(
           d.page,
-          'Nada',
+          'Nothing',
           { x: 500, y: 300 },
-          { steps: 1, projectDir: d.projeto },
+          { steps: 1, projectDir: d.project },
         ),
-      ).rejects.toThrow("o tipo 'Nada' não está na Paleta aberta");
+      ).rejects.toThrow("paletteDrag: the type 'Nothing' is not in the open Palette");
     });
 
-    it('capture grava o recorte do canvas antes de soltar', async () => {
+    it('capture saves the canvas crop before releasing', async () => {
       const mod = await load();
       const d = setup('nativo');
       await mod.paletteDrag(
         d.page,
         'Box',
         { x: 500, y: 300 },
-        { steps: 1, capture: '/tmp/destino.png', projectDir: d.projeto },
+        { steps: 1, capture: '/tmp/target.png', projectDir: d.project },
       );
-      const shot = d.events.indexOf('captura /tmp/destino.png');
+      const shot = d.events.indexOf('capture /tmp/target.png');
       expect(shot).toBeGreaterThan(d.events.indexOf('down'));
       expect(shot).toBeLessThan(d.events.indexOf('up'));
     });
   });
 
-  describe('caminho absoluto (decisão 8)', () => {
+  describe('absolute path (decision 8)', () => {
     for (const name of ['selectFolder', 'openFile', 'saveFile'] as const) {
-      it(`${name} com caminho relativo cancela o seletor (alt+c) e diz o que fazer`, async () => {
+      it(`${name} with a relative path cancels the picker (alt+c) and says what to do`, async () => {
         const mod = await load();
         const apoio = mkdtempSync(path.join(tmpdir(), 'mapping-rel-'));
         let cancelled = 0;
         try {
           await expect(
-            mod[name](apoio, 'pasta/rel', {
+            mod[name](apoio, 'folder/rel', {
               cancel: async () => {
                 cancelled += 1;
               },
             }),
           ).rejects.toThrow(
-            "caminho relativo 'pasta/rel': passe o caminho absoluto (path.resolve)",
+            "relative path 'folder/rel': pass the absolute path (path.resolve)",
           );
         } finally {
           rmSync(apoio, { recursive: true, force: true });
@@ -1927,7 +1933,7 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
     }
   });
 
-  describe('pasta lembrada no state() (decisão 9)', () => {
+  describe('folder remembered by state() (decision 9)', () => {
     const dom = { title: 'Mapping', url: 'x', dialogs: [], notices: [], focus: null };
     const page = {
       evaluate: async (_fn: Fn, arg: unknown) =>
@@ -1935,116 +1941,116 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
     };
     const setup = () => {
       const apoio = mkdtempSync(path.join(tmpdir(), 'mapping-lem-'));
-      const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-proj-'));
-      writeFileSync(path.join(projeto, 'mapping.json'), JSON.stringify({ revision: 7 }));
-      return { apoio, projeto };
+      const project = mkdtempSync(path.join(tmpdir(), 'mapping-proj-'));
+      writeFileSync(path.join(project, 'mapping.json'), JSON.stringify({ revision: 7 }));
+      return { apoio, project };
     };
 
-    it('com projectDir grava o caminho absoluto em state/ultima-pasta.txt', async () => {
+    it('with projectDir writes the absolute path to state/ultima-pasta.txt', async () => {
       const mod = await load();
-      const { apoio, projeto } = setup();
+      const { apoio, project } = setup();
       try {
-        await mod.state(page, apoio, { projectDir: projeto });
+        await mod.state(page, apoio, { projectDir: project });
         expect(
           readFileSync(path.join(apoio, 'state', 'ultima-pasta.txt'), 'utf8').trim(),
-        ).toBe(path.resolve(projeto));
+        ).toBe(path.resolve(project));
       } finally {
         rmSync(apoio, { recursive: true, force: true });
-        rmSync(projeto, { recursive: true, force: true });
+        rmSync(project, { recursive: true, force: true });
       }
     });
 
-    it('sem projectDir usa a pasta gravada e devolve o caminho lido', async () => {
+    it('without projectDir uses the saved folder and returns the path read', async () => {
       const mod = await load();
-      const { apoio, projeto } = setup();
+      const { apoio, project } = setup();
       try {
-        await mod.state(page, apoio, { projectDir: projeto });
+        await mod.state(page, apoio, { projectDir: project });
         const result = (await mod.state(page, apoio)) as {
           project: { revision: number; dir: string };
         };
         expect(result.project.revision).toBe(7);
-        expect(result.project.dir).toBe(path.resolve(projeto));
+        expect(result.project.dir).toBe(path.resolve(project));
       } finally {
         rmSync(apoio, { recursive: true, force: true });
-        rmSync(projeto, { recursive: true, force: true });
+        rmSync(project, { recursive: true, force: true });
       }
     });
 
-    it('pasta explícita sem mapping.json também é gravada como a última (a leitura falha, #1430 e)', async () => {
+    it('an explicit folder without mapping.json is also saved as the last one (the read fails, #1430 e)', async () => {
       const mod = await load();
-      const { apoio, projeto } = setup();
+      const { apoio, project } = setup();
       try {
-        const vazia = path.join(apoio, 'nao-existe');
-        const result = (await mod.state(page, apoio, { projectDir: vazia })) as {
+        const empty = path.join(apoio, 'does-not-exist');
+        const result = (await mod.state(page, apoio, { projectDir: empty })) as {
           project: { error: string };
         };
-        expect(result.project.error).toContain('não existe');
+        expect(result.project.error).toContain('does not exist');
         expect(
           readFileSync(path.join(apoio, 'state', 'ultima-pasta.txt'), 'utf8').trim(),
-        ).toBe(path.resolve(vazia));
+        ).toBe(path.resolve(empty));
       } finally {
         rmSync(apoio, { recursive: true, force: true });
-        rmSync(projeto, { recursive: true, force: true });
+        rmSync(project, { recursive: true, force: true });
       }
     });
 
-    it('o ultima-pasta.txt só é regravado quando o conteúdo muda; a pasta lembrada não o regrava', async () => {
+    it('ultima-pasta.txt is only rewritten when the content changes; the remembered folder does not rewrite it', async () => {
       const mod = await load();
-      const { apoio, projeto } = setup();
+      const { apoio, project } = setup();
       try {
         const file = path.join(apoio, 'state', 'ultima-pasta.txt');
-        await mod.state(page, apoio, { projectDir: projeto });
+        await mod.state(page, apoio, { projectDir: project });
         const old = new Date('2020-01-01T00:00:00Z');
         utimesSync(file, old, old);
-        await mod.state(page, apoio, { projectDir: projeto });
+        await mod.state(page, apoio, { projectDir: project });
         await mod.state(page, apoio);
         expect(statSync(file).mtimeMs).toBe(old.getTime());
-        const outra = mkdtempSync(path.join(tmpdir(), 'mapping-proj2-'));
+        const another = mkdtempSync(path.join(tmpdir(), 'mapping-proj2-'));
         try {
-          await mod.state(page, apoio, { projectDir: outra });
+          await mod.state(page, apoio, { projectDir: another });
           expect(statSync(file).mtimeMs).not.toBe(old.getTime());
-          expect(readFileSync(file, 'utf8').trim()).toBe(path.resolve(outra));
+          expect(readFileSync(file, 'utf8').trim()).toBe(path.resolve(another));
         } finally {
-          rmSync(outra, { recursive: true, force: true });
+          rmSync(another, { recursive: true, force: true });
         }
       } finally {
         rmSync(apoio, { recursive: true, force: true });
-        rmSync(projeto, { recursive: true, force: true });
+        rmSync(project, { recursive: true, force: true });
       }
     });
 
-    it('sem pasta gravada, nada é lido; com projectDir null, não lê disco', async () => {
+    it('without a saved folder, nothing is read; with projectDir null, the disk is not read', async () => {
       const mod = await load();
-      const { apoio, projeto } = setup();
+      const { apoio, project } = setup();
       try {
         expect(((await mod.state(page, apoio)) as { project?: unknown }).project).toBe(
           undefined,
         );
-        await mod.state(page, apoio, { projectDir: projeto });
+        await mod.state(page, apoio, { projectDir: project });
         expect(
           ((await mod.state(page, apoio, { projectDir: null })) as { project?: unknown })
             .project,
         ).toBe(undefined);
       } finally {
         rmSync(apoio, { recursive: true, force: true });
-        rmSync(projeto, { recursive: true, force: true });
+        rmSync(project, { recursive: true, force: true });
       }
     });
 
-    it('formatState imprime a pasta lida', async () => {
+    it('formatState prints the folder read', async () => {
       const mod = await load();
       const text = mod.formatState({
         ...dom,
         saveStatus: null,
         windows: [],
-        project: { revision: 3, changes: null, dir: '/tmp/espaco' },
+        project: { revision: 3, changes: null, dir: '/tmp/workspace' },
       }) as string;
-      expect(text).toContain('Pasta: /tmp/espaco');
+      expect(text).toContain('Folder: /tmp/workspace');
     });
   });
 });
 
-// Etapa #1232 (GL1): `cloud.mjs passo` imprime o trecho do guia da rodada, sem abrir o Chrome.
+// Stage #1232 (GL1): `cloud.mjs passo` prints the excerpt of the round guide, without opening Chrome.
 describe('cloud.mjs passo (#1232, GL1)', () => {
   let apoio: string;
 
@@ -2058,7 +2064,7 @@ describe('cloud.mjs passo (#1232, GL1)', () => {
 
   afterAll(() => rmSync(apoio, { recursive: true, force: true }));
 
-  function passo(
+  function runPasso(
     args: string[],
     env: Record<string, string | undefined> = { APOIO: apoio },
   ) {
@@ -2069,20 +2075,20 @@ describe('cloud.mjs passo (#1232, GL1)', () => {
     return { status: r.status, stdout: r.stdout, stderr: r.stderr };
   }
 
-  it('R22.4 imprime o cabeçalho da tabela e a linha do passo', () => {
-    const r = passo(['R22.4']);
+  it('R22.4 prints the table header and the step row', () => {
+    const r = runPasso(['R22.4']);
     expect(r.status).toBe(0);
     const lines = r.stdout.trimEnd().split('\n');
     expect(lines.slice(0, 2)).toEqual([
-      '| Passo | Ação | Esperado |',
+      '| Step | Action | Expected |',
       '| --- | --- | --- |',
     ]);
     expect(lines[2]).toMatch(/^\| R22\.4 \|/);
     expect(lines).toHaveLength(3);
   });
 
-  it('vários itens, em ordem, separados por ---; --guia aponta outro arquivo', () => {
-    const r = passo(['R22.4', 'R0.1', `--guia=${path.join(apoio, 'guia.md')}`], {
+  it('several items, in order, separated by ---; --guia points to another file', () => {
+    const r = runPasso(['R22.4', 'R0.1', `--guia=${path.join(apoio, 'guia.md')}`], {
       APOIO: undefined,
     });
     expect(r.status).toBe(0);
@@ -2090,43 +2096,43 @@ describe('cloud.mjs passo (#1232, GL1)', () => {
     expect(r.stdout).toContain('\n---\n');
   });
 
-  it('R22.99 sai com 2 e diz o que o guia tem; sem item sai com 2 e mostra o uso', () => {
-    const bad = passo(['R22.99']);
+  it('R22.99 exits 2 and says what the guide has; with no item it exits 2 and shows the usage', () => {
+    const bad = runPasso(['R22.99']);
     expect(bad.status).toBe(2);
     expect(bad.stdout).toBe('');
     expect(bad.stderr).toContain(
-      'R22.99 não está no guia da rodada; o R22 tem R22.1 a R22.22',
+      'R22.99 is not in the round guide; R22 has R22.1 to R22.22',
     );
-    const none = passo([]);
+    const none = runPasso([]);
     expect(none.status).toBe(2);
-    expect(none.stderr).toContain('Uso: node cloud.mjs passo <item…> [--guia=<arquivo>]');
+    expect(none.stderr).toContain('Usage: node cloud.mjs passo <item…> [--guia=<file>]');
   });
 
-  it('passo R22 --preparo imprime só o trecho antes do primeiro passo (#1639, TC1)', () => {
-    const r = passo(['R22', '--preparo']);
+  it('passo R22 --preparo prints only the part before the first step (#1639, TC1)', () => {
+    const r = runPasso(['R22', '--preparo']);
     expect(r.status).toBe(0);
     expect(r.stdout.split('\n')[0]).toMatch(/^### R22\b/);
     expect(r.stdout).not.toMatch(/^\| R22\./m);
-    expect(r.stdout).not.toMatch(/^\| Passo\b/m);
+    expect(r.stdout).not.toMatch(/^\| Step\b/m);
   });
 
-  it('passo --preparo com item que não é roteiro inteiro sai com 2 e mostra o uso', () => {
-    const r = passo(['R22.4', '--preparo']);
+  it('passo --preparo with an item that is not a whole script exits 2 and shows the usage', () => {
+    const r = runPasso(['R22.4', '--preparo']);
     expect(r.status).toBe(2);
     expect(r.stdout).toBe('');
     expect(r.stderr).toContain('--preparo');
-    const none = passo(['--preparo']);
+    const none = runPasso(['--preparo']);
     expect(none.status).toBe(2);
   });
 
-  it('guia que não existe sai com 2 e diz como gerá-lo', () => {
-    const r = passo(['R0'], { APOIO: path.join(apoio, 'nada') });
+  it('a guide that does not exist exits 2 and says how to generate it', () => {
+    const r = runPasso(['R0'], { APOIO: path.join(apoio, 'nothing') });
     expect(r.status).toBe(2);
     expect(r.stderr).toContain('round-guide.mjs');
   });
 });
 
-// Etapa #1533 (TE1, decisão 2): `cloud.mjs secao` imprime uma seção do guia da rodada, sem abrir o Chrome.
+// Stage #1533 (TE1, decision 2): `cloud.mjs secao` prints a section of the round guide, without opening Chrome.
 describe('cloud.mjs secao (#1533, TE1)', () => {
   let apoio: string;
 
@@ -2151,14 +2157,14 @@ describe('cloud.mjs secao (#1533, TE1)', () => {
     return { status: r.status, stdout: r.stdout, stderr: r.stderr };
   }
 
-  it('secao 7 imprime a seção 7 e só ela', () => {
+  it('secao 7 prints section 7 and only it', () => {
     const r = secao(['7']);
     expect(r.status).toBe(0);
-    expect(r.stdout.startsWith('## 7. Como relatar um problema')).toBe(true);
-    expect(r.stdout).not.toContain('## 8. Roteiros');
+    expect(r.stdout.startsWith('## 7. How to report a problem')).toBe(true);
+    expect(r.stdout).not.toContain('## 8. Test scripts');
   });
 
-  it('secao xyz sai com 2 e lista as chaves', () => {
+  it('secao xyz exits 2 and lists the keys', () => {
     const r = secao(['xyz']);
     expect(r.status).toBe(2);
     expect(r.stdout).toBe('');
@@ -2175,30 +2181,30 @@ describe('cloud.mjs secao (#1533, TE1)', () => {
     }
   });
 
-  it('sem chave lista as chaves com o tamanho e o "quando ler"', () => {
+  it('without a key lists the keys with the size and the "when to read"', () => {
     const r = secao([]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^5\b.*\d+.*\S/m);
     expect(r.stdout).toContain('consulta.historico');
   });
 
-  it('as chaves consulta.* leem o docs/TESTING-NUVEM-CONSULTA.md do clone', () => {
+  it("the consulta.* keys read the clone's docs/TESTING-NUVEM-CONSULTA.md", () => {
     const r = secao(['consulta.passada']);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain('Passada visual');
+    expect(r.stdout).toContain('Visual pass');
   });
 
-  it('--guia aponta outro arquivo; guia que não existe sai com 2', () => {
+  it('--guia points to another file; a guide that does not exist exits 2', () => {
     const r = secao(['1', `--guia=${path.join(apoio, 'guia.md')}`], { APOIO: undefined });
     expect(r.status).toBe(0);
-    const bad = secao(['1'], { APOIO: path.join(apoio, 'nada') });
+    const bad = secao(['1'], { APOIO: path.join(apoio, 'nothing') });
     expect(bad.status).toBe(2);
     expect(bad.stderr).toContain('round-guide.mjs');
   });
 });
 
-// Etapa #1533 (TE2, decisões 6 a 8): servidor persistente do `run`, `check`, `runs.log` e `apoio/runs/`.
-describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () => {
+// Stage #1533 (TE2, decisions 6 to 8): persistent `run` server, `check`, `runs.log` and `apoio/runs/`.
+describe('persistent run server, check and runs.log (stage #1533, TE2)', () => {
   type Mod = {
     startRunServer: (o: {
       apoioDir: string;
@@ -2273,21 +2279,21 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
     return { code, out: out.join('\n'), err: err.join('\n') };
   }
 
-  it('dois run seguidos usam a mesma conexão e veem o mesmo ctx', async () => {
-    const a = await run('ctx.n = 41; console.log("um")');
+  it('two runs in a row use the same connection and see the same ctx', async () => {
+    const a = await run('ctx.n = 41; console.log("one")');
     const b = await run('console.log("n=" + (ctx.n + 1))');
     expect([a.code, b.code]).toEqual([0, 0]);
-    expect(a.out).toContain('um');
+    expect(a.out).toContain('one');
     expect(b.out).toContain('n=42');
     expect(connections).toHaveLength(1);
     expect(spawned).toBe(1);
   });
 
-  it('o prazo esgotado sai 124, o servidor sai e o run seguinte sobe outro (ctx vazio)', async () => {
+  it('a deadline exceeded exits 124, the server exits and the next run starts another (empty ctx)', async () => {
     await run('ctx.n = 1');
     const slow = await run('await new Promise(() => {})', { prazoSeconds: 0.05 });
     expect(slow.code).toBe(124);
-    expect(slow.err).toContain('prazo de 0.05 s esgotado no passo');
+    expect(slow.err).toContain('deadline of 0.05 s exceeded in the step');
     expect(exits).toBe(1);
     const next = await run('console.log("ctx=" + JSON.stringify(ctx))');
     expect(next.code).toBe(0);
@@ -2296,25 +2302,25 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
     expect(connections).toHaveLength(2);
   });
 
-  it('uma conexão caída reconecta no run seguinte, com o aviso e o ctx vazio', async () => {
+  it('a dropped connection reconnects on the next run, with the warning and an empty ctx', async () => {
     await run('ctx.n = 1');
     connections[0]!.connected = false;
     const b = await run('console.log("ctx=" + JSON.stringify(ctx))');
     expect(b.code).toBe(0);
     expect(b.out).toContain('ctx={}');
-    expect(b.err).toMatch(/aviso: .*reconect/);
+    expect(b.err).toMatch(/warning: .*reconnected/);
     expect(connections).toHaveLength(2);
     expect(spawned).toBe(1);
   });
 
-  it('run --novo reinicia o servidor', async () => {
+  it('run --novo restarts the server', async () => {
     await run('ctx.n = 1');
     const b = await run('console.log("ctx=" + JSON.stringify(ctx))', { novo: true });
     expect(b.out).toContain('ctx={}');
     expect(spawned).toBe(2);
   });
 
-  it('um run por vez: o segundo espera o primeiro', async () => {
+  it('one run at a time: the second waits for the first', async () => {
     const order: string[] = [];
     const first = run(
       'await new Promise((r) => setTimeout(r, 120)); ctx.log = (ctx.log ?? []).concat("a")',
@@ -2326,7 +2332,7 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
     expect(b.out).toContain('log=a');
   });
 
-  it('sem servidor que suba, cai no caminho de hoje e avisa', async () => {
+  it('with no server that starts, falls back to the direct path and warns', async () => {
     const r = await run('console.log("direto")', {
       spawnServer: async () => {},
       socketWaitMs: 100,
@@ -2334,10 +2340,10 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
     });
     expect(r.code).toBe(0);
     expect(r.out).toContain('direto');
-    expect(r.err).toMatch(/aviso: .*servidor/);
+    expect(r.err).toMatch(/warning: .*run server/);
   });
 
-  it('resposta perdida (o servidor caiu no meio do run) não repete o corpo em outro servidor', async () => {
+  it('a lost response (the server dropped mid-run) does not repeat the body on another server', async () => {
     const net = await import('node:net');
     let requests = 0;
     const raw = net.createServer((socket) => {
@@ -2352,7 +2358,7 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
     try {
       const r = await run('1');
       expect(r.code).toBe(1);
-      expect(r.err).toMatch(/servidor do run caiu/);
+      expect(r.err).toMatch(/run server dropped/);
       expect(requests).toBe(1);
       expect(spawned).toBe(0);
     } finally {
@@ -2360,91 +2366,91 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
     }
   });
 
-  it('o corpo e a saída com acentos passam inteiros mesmo acima de um pedaço do soquete', async () => {
+  it('the body and the output with accents go through whole even above a socket chunk', async () => {
     const filler = 'ãé✅'.repeat(60000);
-    const r = await run(`/* ${filler} */ console.log("fim ${'ç'.repeat(70000)}")`);
+    const r = await run(`/* ${filler} */ console.log("end ${'ç'.repeat(70000)}")`);
     expect(r.code).toBe(0);
-    expect(r.out).toContain(`fim ${'ç'.repeat(70000)}`);
+    expect(r.out).toContain(`end ${'ç'.repeat(70000)}`);
     expect(readFileSync(path.join(apoio, 'runs', '1.js'), 'utf8')).toContain(filler);
   });
 
-  it('run na fila atrás de um prazo esgotado recebe o erro e o corpo dele não roda', async () => {
+  it('a run queued behind an exceeded deadline gets the error and its body does not run', async () => {
     const slow = run('await new Promise(() => {})', { prazoSeconds: 0.3 });
     await new Promise((r) => setTimeout(r, 50));
-    const queued = await run('globalThis.__naoDeveRodar = true');
+    const queued = await run('globalThis.__mustNotRun = true');
     expect((await slow).code).toBe(124);
     expect(queued.code).toBe(1);
-    expect(queued.err).toMatch(/prazo|saiu/);
-    expect((globalThis as { __naoDeveRodar?: boolean }).__naoDeveRodar).toBeUndefined();
+    expect(queued.err).toMatch(/deadline|exited/);
+    expect((globalThis as { __mustNotRun?: boolean }).__mustNotRun).toBeUndefined();
   });
 
-  it('um segundo servidor na mesma pasta não sobe (o primeiro segue de pé)', async () => {
+  it('a second server in the same folder does not start (the first stays up)', async () => {
     const mod = await load();
     await run('ctx.n = 1');
     await expect(
       mod.startRunServer({ apoioDir: apoio, connectFn, onExit: () => {} }),
-    ).rejects.toThrow(/já existe um servidor/);
+    ).rejects.toThrow(/a run server already exists/);
     const b = await run('console.log("n=" + ctx.n)');
     expect(b.out).toContain('n=1');
   });
 
-  it('paletteDrag no corpo do run usa a pasta do run e, sem ela, a última pasta lembrada', async () => {
-    const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-srv-proj-'));
+  it('paletteDrag in the run body uses the run folder and, without it, the last remembered folder', async () => {
+    const project = mkdtempSync(path.join(tmpdir(), 'mapping-srv-proj-'));
     try {
       mkdirSync(path.join(apoio, 'state'), { recursive: true });
-      writeFileSync(path.join(apoio, 'state', 'ultima-pasta.txt'), projeto);
-      const body = `try { await paletteDrag(page, 'X', { x: 1, y: 1 }); } catch (e) { console.log('ERRO ' + e.message); }`;
-      const lembrada = await run(body);
-      expect(lembrada.out).toContain('ERRO');
-      expect(lembrada.out).not.toContain('precisa da pasta');
+      writeFileSync(path.join(apoio, 'state', 'ultima-pasta.txt'), project);
+      const body = `try { await paletteDrag(page, 'X', { x: 1, y: 1 }); } catch (e) { console.log('ERROR ' + e.message); }`;
+      const remembered = await run(body);
+      expect(remembered.out).toContain('ERROR');
+      expect(remembered.out).not.toContain('needs the project folder');
     } finally {
-      rmSync(projeto, { recursive: true, force: true });
+      rmSync(project, { recursive: true, force: true });
     }
     rmSync(path.join(apoio, 'state'), { recursive: true, force: true });
-    const sem = await run(
-      `try { await paletteDrag(page, 'X', { x: 1, y: 1 }); } catch (e) { console.log('ERRO ' + e.message); }`,
+    const without = await run(
+      `try { await paletteDrag(page, 'X', { x: 1, y: 1 }); } catch (e) { console.log('ERROR ' + e.message); }`,
     );
-    expect(sem.out).toContain('ERRO paletteDrag precisa da pasta do projeto');
+    expect(without.out).toContain('ERROR paletteDrag needs the project folder');
   });
 
   describe('check', () => {
-    it('um check com falha não interrompe o corpo, sai uma linha por check antes do estado e o run sai 1', async () => {
+    it('a failing check does not interrupt the body, one line per check comes out before the state and the run exits 1', async () => {
       const r = await run(`
         check('R4.2', true);
-        check('R4.3', false, 'faltou o aviso');
-        check('R4.4', async () => { throw new Error('não achei o botão'); });
+        check('R4.3', false, 'missing the notice');
+        check('R4.4', async () => { throw new Error('could not find the button'); });
         check('R4.5', () => true);
         check('R4.6', Promise.resolve(true));
         check('R4.7', () => false);
-        console.log('corpo seguiu');
+        console.log('body went on');
       `);
       expect(r.code).toBe(1);
       const lines = r.out.split('\n');
-      expect(lines).toContain('corpo seguiu');
+      expect(lines).toContain('body went on');
       expect(lines).toContain('✅ R4.2');
-      expect(lines).toContain('❌ R4.3 — faltou o aviso');
-      expect(lines).toContain('❌ R4.4 — não achei o botão');
+      expect(lines).toContain('❌ R4.3 — missing the notice');
+      expect(lines).toContain('❌ R4.4 — could not find the button');
       expect(lines).toContain('✅ R4.5');
       expect(lines).toContain('✅ R4.6');
-      expect(lines.find((l) => l.startsWith('❌ R4.7'))).toMatch(/condição falsa/);
+      expect(lines.find((l) => l.startsWith('❌ R4.7'))).toMatch(/condition false/);
       const stateAt = lines.findIndex((l) => l.includes('Mapping'));
-      expect(stateAt).toBeGreaterThan(lines.indexOf('❌ R4.7 — condição falsa'));
-      expect(lines.indexOf('corpo seguiu')).toBeLessThan(lines.indexOf('✅ R4.2'));
+      expect(stateAt).toBeGreaterThan(lines.indexOf('❌ R4.7 — condition false'));
+      expect(lines.indexOf('body went on')).toBeLessThan(lines.indexOf('✅ R4.2'));
     });
 
-    it('corpo que lança ou passa do prazo ainda imprime os checks pendentes', async () => {
+    it('a body that throws or exceeds the deadline still prints the pending checks', async () => {
       const r = await run(`
-        check('R9.1', async () => { await new Promise((r) => setTimeout(r, 30)); return false; }, 'tarde');
-        throw new Error('quebrou depois');
+        check('R9.1', async () => { await new Promise((r) => setTimeout(r, 30)); return false; }, 'late');
+        throw new Error('broke later');
       `);
       expect(r.code).toBe(1);
-      expect(r.out).toContain('❌ R9.1 — tarde');
+      expect(r.out).toContain('❌ R9.1 — late');
       expect(readFileSync(path.join(apoio, 'runs.log'), 'utf8')).toMatch(
         /checks=1 falhas=1/,
       );
     });
 
-    it('todos passando: o run sai 0; check sem await também é esperado', async () => {
+    it('all passing: the run exits 0; a check without await is also awaited', async () => {
       const r = await run(
         `check('ok', async () => { await new Promise((r) => setTimeout(r, 30)); return true; })`,
       );
@@ -2453,9 +2459,9 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
     });
   });
 
-  describe('runs.log e apoio/runs/', () => {
-    it('cada run grava uma linha em runs.log e o corpo e a saída em runs/<n>.js e .out', async () => {
-      await run(`check('a', true); console.log('primeiro')`);
+  describe('runs.log and apoio/runs/', () => {
+    it('each run writes a line to runs.log and the body and output to runs/<n>.js and .out', async () => {
+      await run(`check('a', true); console.log('first')`);
       await run(`check('b', false, 'x'); check('c', true)`);
       const log = readFileSync(path.join(apoio, 'runs.log'), 'utf8').trim().split('\n');
       expect(log).toHaveLength(2);
@@ -2464,17 +2470,15 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
       );
       expect(log[1]).toMatch(/ run=2 codigo=1 checks=2 falhas=1$/);
       expect(readFileSync(path.join(apoio, 'runs', '1.js'), 'utf8')).toContain(
-        "console.log('primeiro')",
+        "console.log('first')",
       );
-      expect(readFileSync(path.join(apoio, 'runs', '1.out'), 'utf8')).toContain(
-        'primeiro',
-      );
+      expect(readFileSync(path.join(apoio, 'runs', '1.out'), 'utf8')).toContain('first');
       expect(readFileSync(path.join(apoio, 'runs', '2.out'), 'utf8')).toContain(
         '❌ b — x',
       );
     });
 
-    it('o contador continua depois de um servidor novo', async () => {
+    it('the counter continues after a new server', async () => {
       await run('1');
       await run('await new Promise(() => {})', { prazoSeconds: 0.05 });
       await run('1');
@@ -2488,7 +2492,7 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
       ]);
     });
 
-    it('o caminho de reserva também grava', async () => {
+    it('the fallback path also records', async () => {
       await run('1', { spawnServer: async () => {}, socketWaitMs: 50, connectFn });
       expect(readFileSync(path.join(apoio, 'runs.log'), 'utf8')).toMatch(
         /run=1 codigo=0/,
@@ -2496,8 +2500,8 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
     });
   });
 
-  describe('tempos com run e checks', () => {
-    it('conta os run e os checks de cada roteiro pelas marcas do tempos.log', async () => {
+  describe('tempos with runs and checks', () => {
+    it('counts the runs and checks of each script by the marks in tempos.log', async () => {
       const mod = await load();
       const tempos = [
         'R4 start 2026-11-11T10:00:00.000Z',
@@ -2515,12 +2519,12 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
       expect(out).toMatch(/R4 +10min00s +2 run, 5 checks/);
       expect(out).toMatch(/R5 +9min30s +1 run, 4 checks/);
       expect(out).toMatch(/total +19min30s +3 run, 9 checks/);
-      // Sem runs.log o texto de antes não muda.
+      // Without runs.log the earlier text does not change.
       expect(mod.formatTempos(mod.temposFromLog(tempos))).not.toMatch(/run/);
     });
   });
 
-  it('o cloud-up.sh --restart-chrome para o servidor do run antes de fechar o Chrome', () => {
+  it('cloud-up.sh --restart-chrome stops the run server before closing Chrome', () => {
     const up = read(CLOUD_UP);
     const stop = up.indexOf('"$S/cloud.pid"');
     expect(stop).toBeGreaterThan(-1);
@@ -2529,8 +2533,8 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
   });
 });
 
-// Etapa #1533 (TE3, decisão 12): pré-conferência dos pacotes com retry e código 14.
-describe('cloud-up.sh --check-packages (etapa #1533, TE3)', () => {
+// Stage #1533 (TE3, decision 12): package pre-check with retry and exit code 14.
+describe('cloud-up.sh --check-packages (stage #1533, TE3)', () => {
   const BASIC = [
     'bash',
     'sh',
@@ -2567,14 +2571,14 @@ describe('cloud-up.sh --check-packages (etapa #1533, TE3)', () => {
   });
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
-  /** Um comando falso: `body` é o corpo do script. */
+  /** A fake command: `body` is the script body. */
   function fake(name: string, body = 'exit 0'): void {
     const file = path.join(dir, 'bin', name);
     writeFileSync(file, `#!/bin/bash\n${body}\n`);
     chmodSync(file, 0o755);
   }
 
-  /** Tudo instalado, menos o que `missing` lista. */
+  /** Everything installed, except what `missing` lists. */
   function setup(missing: string[], { chrome = true } = {}): void {
     for (const name of ['xdotool', 'openbox', 'import', 'python3']) {
       if (!missing.includes(name)) fake(name);
@@ -2584,7 +2588,7 @@ describe('cloud-up.sh --check-packages (etapa #1533, TE3)', () => {
     if (chrome) writeFileSync(path.join(dir, 'chromium'), '');
   }
 
-  /** `apt-get` falso: falha `fails` vezes e na seguinte instala (cria `xdotool`). */
+  /** Fake `apt-get`: fails `fails` times and installs on the next one (creates `xdotool`). */
   function fakeApt(fails: number): void {
     const counter = path.join(dir, 'apt-count');
     fake(
@@ -2602,25 +2606,21 @@ exit 0`,
     stdout: string;
     stderr: string;
   } {
-    const r = spawnSync(
-      'bash',
-      [CLOUD_UP, path.join(dir, 'rodada'), '--check-packages'],
-      {
-        env: {
-          PATH: path.join(dir, 'bin'),
-          HOME: dir,
-          CLOUD_UP_RETRY_SLEEP: '0',
-          CLOUD_UP_ATSPI_LAUNCHER: path.join(dir, 'launcher'),
-          CLOUD_UP_CHROME: path.join(dir, 'chromium'),
-          ...extraEnv,
-        },
-        encoding: 'utf8',
+    const r = spawnSync('bash', [CLOUD_UP, path.join(dir, 'round'), '--check-packages'], {
+      env: {
+        PATH: path.join(dir, 'bin'),
+        HOME: dir,
+        CLOUD_UP_RETRY_SLEEP: '0',
+        CLOUD_UP_ATSPI_LAUNCHER: path.join(dir, 'launcher'),
+        CLOUD_UP_CHROME: path.join(dir, 'chromium'),
+        ...extraEnv,
       },
-    );
+      encoding: 'utf8',
+    });
     return { status: r.status, stdout: r.stdout, stderr: r.stderr };
   }
 
-  it('tudo instalado: sai 0 sem chamar o apt-get', () => {
+  it('everything installed: exits 0 without calling apt-get', () => {
     setup([]);
     fakeApt(0);
     const r = checkPackages();
@@ -2628,7 +2628,7 @@ exit 0`,
     expect(existsSync(path.join(dir, 'apt-log'))).toBe(false);
   });
 
-  it('falta o xdotool: o apt-get falha duas vezes, instala na terceira e sai 0', () => {
+  it('xdotool missing: apt-get fails twice, installs on the third and exits 0', () => {
     setup(['xdotool']);
     fakeApt(2);
     const r = checkPackages();
@@ -2641,7 +2641,7 @@ exit 0`,
     );
   });
 
-  it('o apt-get falha sempre: sai 14 com a lista do que falta', () => {
+  it('apt-get always fails: exits 14 with the list of what is missing', () => {
     setup(['xdotool', 'openbox']);
     fakeApt(99);
     const r = checkPackages();
@@ -2653,7 +2653,7 @@ exit 0`,
     expect(log.match(/apt-get update/g)).toHaveLength(5);
   });
 
-  it('o pyatspi só existe no /usr/bin/python3.12 (o python3 do PATH não o carrega): sai 0 sem o apt-get (achado 4.1)', () => {
+  it('pyatspi only exists in /usr/bin/python3.12 (the PATH python3 does not load it): exits 0 without apt-get (finding 4.1)', () => {
     setup([]);
     fake('python3', 'exit 1');
     fake('python312', 'exit 0');
@@ -2663,7 +2663,7 @@ exit 0`,
     expect(existsSync(path.join(dir, 'apt-log'))).toBe(false);
   });
 
-  it('sem o pyatspi em nenhum python: sai 14 e lista python3 pyatspi', () => {
+  it('without pyatspi in any python: exits 14 and lists python3 pyatspi', () => {
     setup([]);
     fake('python3', 'exit 1');
     fake('python312', 'exit 1');
@@ -2673,7 +2673,7 @@ exit 0`,
     expect(r.stderr).toMatch(/python3 pyatspi/);
   });
 
-  it('sem o Chrome: sai 14 direto, sem chamar o apt-get', () => {
+  it('without Chrome: exits 14 right away, without calling apt-get', () => {
     setup([], { chrome: false });
     fakeApt(0);
     const r = checkPackages();
@@ -2683,50 +2683,50 @@ exit 0`,
   });
 });
 
-describe('cloud.mjs passo: item fora do guia da rodada (etapa #1533, TE3, decisão 14 (4))', () => {
+describe('cloud.mjs passo: item outside the round guide (stage #1533, TE3, decision 14 (4))', () => {
   let dir = '';
   let guide = '';
   beforeAll(() => {
-    dir = mkdtempSync(path.join(tmpdir(), 'passo-fora-'));
+    dir = mkdtempSync(path.join(tmpdir(), 'step-outside-'));
     guide = path.join(dir, 'guia.md');
     spawnSync('node', ['scripts/testing/round-guide.mjs', 'R0', 'R22', '--out', guide]);
   });
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
-  const passo = (...itens: string[]) =>
+  const runPasso = (...items: string[]) =>
     spawnSync(
       'node',
-      ['scripts/testing/cloud.mjs', 'passo', ...itens, `--guia=${guide}`],
+      ['scripts/testing/cloud.mjs', 'passo', ...items, `--guia=${guide}`],
       {
         encoding: 'utf8',
       },
     );
 
-  it('R12.4 sem o R12 no guia imprime o passo do docs/TESTING.md, com a primeira linha dizendo', () => {
-    const r = passo('R12.4');
+  it('R12.4 without R12 in the guide prints the step from docs/TESTING.md, with the first line saying so', () => {
+    const r = runPasso('R12.4');
     expect(r.status).toBe(0);
     const lines = r.stdout.split('\n');
-    expect(lines[0]).toBe('fora do guia da rodada (lido do docs/TESTING.md)');
+    expect(lines[0]).toBe('outside the round guide (read from docs/TESTING.md)');
     expect(r.stdout).toMatch(/^\| R12\.4 \|/m);
   });
 
-  it('um item do guia e outro de fora saem juntos, cada um com a sua marca', () => {
-    const r = passo('R22.4', 'R12.4');
+  it('an item from the guide and another from outside come out together, each with its own mark', () => {
+    const r = runPasso('R22.4', 'R12.4');
     expect(r.status).toBe(0);
-    expect(r.stdout.match(/fora do guia da rodada/g)).toHaveLength(1);
-    expect(r.stdout.indexOf('R22.4')).toBeLessThan(r.stdout.indexOf('fora do guia'));
+    expect(r.stdout.match(/outside the round guide/g)).toHaveLength(1);
+    expect(r.stdout.indexOf('R22.4')).toBeLessThan(r.stdout.indexOf('outside the'));
   });
 
-  it('item que o guia inteiro também não tem sai com código 2', () => {
-    const r = passo('R99.1');
+  it('an item that the whole guide does not have either exits with code 2', () => {
+    const r = runPasso('R99.1');
     expect(r.status).toBe(2);
-    expect(r.stderr).toMatch(/R99\.1 não está/);
-    expect(passo('R12.999').status).toBe(2);
+    expect(r.stderr).toMatch(/R99\.1 is not in the round guide/);
+    expect(runPasso('R12.999').status).toBe(2);
   });
 });
 
-// Etapa #1076 (VC2): ponto pela posição desenhada, onCanvas, viewCenter, alças da seta e `Seleção:`.
-describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
+// Stage #1076 (VC2): ponto by the drawn position, onCanvas, viewCenter, arrow handles and `Selection:`.
+describe('canvas view for the tester (stage #1076, VC2)', () => {
   type Fn = (...args: unknown[]) => unknown;
   type Mod = Record<
     | 'parseContainerBoxes'
@@ -2747,7 +2747,7 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
   };
 
   describe('parseContainerBoxes', () => {
-    it('devolve um Map de id para { x, y, width, height, scale }', async () => {
+    it('returns a Map from id to { x, y, width, height, scale }', async () => {
       const mod = await load();
       const map = mod.parseContainerBoxes('c1 10 20.5 300 200 2;c2 -5 0 100 50 1') as Map<
         string,
@@ -2765,39 +2765,39 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
       expect((mod.parseContainerBoxes(null) as Map<string, unknown>).size).toBe(0);
     });
 
-    it('entrada inválida lança com o texto', async () => {
+    it('invalid input throws with the text', async () => {
       const mod = await load();
       expect(() => mod.parseContainerBoxes('c1 10 20 300')).toThrow(
-        'data-container-boxes inválido: "c1 10 20 300"',
+        'invalid data-container-boxes: "c1 10 20 300"',
       );
       expect(() => mod.parseContainerBoxes('c1 10 20 300 200 x')).toThrow(
-        'data-container-boxes inválido: "c1 10 20 300 200 x"',
+        'invalid data-container-boxes: "c1 10 20 300 200 x"',
       );
     });
   });
 
-  describe('containerScreenPoint com boxes', () => {
+  describe('containerScreenPoint with boxes', () => {
     const mapping = {
       containers: [
-        { id: 'c1', name: 'Cadastro', placement: { x: 100, y: 50, scale: 2 } },
-        { id: 'c2', name: 'Outro', placement: { x: 0, y: 0, scale: 1 } },
+        { id: 'c1', name: 'Sign-up', placement: { x: 100, y: 50, scale: 2 } },
+        { id: 'c2', name: 'Other', placement: { x: 0, y: 0, scale: 1 } },
       ],
-      markings: [{ id: 'm1', name: 'Botão', containerId: 'c1', rect: { x: 10, y: 20 } }],
+      markings: [{ id: 'm1', name: 'Button', containerId: 'c1', rect: { x: 10, y: 20 } }],
       perspectives: [{ name: 'Dev mobile', items: [{ root: 'c1', x: 400, y: 300 }] }],
     };
     const base = { mapping, viewport: '0 0 1', host: { x: 0, y: 0 } };
 
-    it('a posição de boxes vale sobre a do disco e sobre a da perspectiva', async () => {
+    it('the boxes position wins over the disk one and over the perspective one', async () => {
       const mod = await load();
-      // boxes: x=1000, y=900, escala 4 → canvas = (1000 + 5*4, 900 + 7*4)
+      // boxes: x=1000, y=900, scale 4 → canvas = (1000 + 5*4, 900 + 7*4)
       const boxes = 'c1 1000 900 300 200 4';
       expect(
-        mod.containerScreenPoint({ ...base, container: 'Cadastro', x: 5, y: 7, boxes }),
+        mod.containerScreenPoint({ ...base, container: 'Sign-up', x: 5, y: 7, boxes }),
       ).toEqual({ x: 1020, y: 928 });
       expect(
         mod.containerScreenPoint({
           ...base,
-          container: 'Cadastro',
+          container: 'Sign-up',
           x: 5,
           y: 7,
           boxes,
@@ -2806,13 +2806,13 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
       ).toEqual({ x: 1020, y: 928 });
     });
 
-    it('a marcação usa a caixa do container dela', async () => {
+    it("the marking uses its container's box", async () => {
       const mod = await load();
       // canvas = (1000 + (10+3)*4, 900 + (20+4)*4) = (1052, 996)
       expect(
         mod.containerScreenPoint({
           ...base,
-          container: 'Botão',
+          container: 'Button',
           x: 3,
           y: 4,
           marking: true,
@@ -2821,12 +2821,12 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
       ).toEqual({ x: 1052, y: 996 });
     });
 
-    it('sem o container em boxes, vale a conta de hoje', async () => {
+    it('without the container in boxes, the usual computation applies', async () => {
       const mod = await load();
       expect(
         mod.containerScreenPoint({
           ...base,
-          container: 'Cadastro',
+          container: 'Sign-up',
           x: 5,
           y: 7,
           boxes: 'c2 1000 900 300 200 4',
@@ -2835,7 +2835,7 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
       expect(
         mod.containerScreenPoint({
           ...base,
-          container: 'Cadastro',
+          container: 'Sign-up',
           x: 5,
           y: 7,
           boxes: '',
@@ -2844,12 +2844,12 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
       ).toEqual({ x: 410, y: 314 });
     });
 
-    it('avisa (warn) quando a perspectiva pedida difere da desenhada', async () => {
+    it('warns when the requested perspective differs from the drawn one', async () => {
       const mod = await load();
       const warnings: string[] = [];
       mod.containerScreenPoint({
         ...base,
-        container: 'Cadastro',
+        container: 'Sign-up',
         x: 0,
         y: 0,
         boxes: 'c1 1000 900 300 200 4',
@@ -2857,12 +2857,12 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
         warn: (m: string) => warnings.push(m),
       });
       expect(warnings).toEqual([
-        'a perspectiva Dev mobile não é a desenhada; vale a posição desenhada',
+        'perspective Dev mobile is not the drawn one; the drawn position wins',
       ]);
       const same: string[] = [];
       mod.containerScreenPoint({
         ...base,
-        container: 'Cadastro',
+        container: 'Sign-up',
         x: 0,
         y: 0,
         boxes: 'c1 400 300 300 200 4',
@@ -2873,7 +2873,7 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
     });
   });
 
-  describe('ponto (página falsa)', () => {
+  describe('ponto (fake page)', () => {
     const cleanup: string[] = [];
     afterEach(() => {
       for (const dir of cleanup.splice(0)) rmSync(dir, { recursive: true, force: true });
@@ -2899,7 +2899,7 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
         path.join(dir, 'mapping.json'),
         JSON.stringify({
           containers: [
-            { id: 'c1', name: 'Cadastro', placement: { x: 100, y: 50, scale: 2 } },
+            { id: 'c1', name: 'Sign-up', placement: { x: 100, y: 50, scale: 2 } },
           ],
           markings: [],
           perspectives: [{ name: 'Dev', items: [{ root: 'c1', x: 400, y: 300 }] }],
@@ -2908,44 +2908,44 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
       return dir;
     }
 
-    it('usa a posição desenhada e avisa quando a perspectiva é outra', async () => {
+    it('uses the drawn position and warns when the perspective is another', async () => {
       const mod = await load();
       const warnings: string[] = [];
       const at = await mod.ponto(
         fakePage({ ok: true, element: 'canvas' }),
         project(),
-        'Cadastro',
+        'Sign-up',
         5,
         7,
         { perspective: 'Dev', warn: (m: string) => warnings.push(m) },
       );
       expect(at).toEqual({ x: 10 + 1020, y: 20 + 928 });
       expect(warnings).toEqual([
-        'a perspectiva Dev não é a desenhada; vale a posição desenhada',
+        'perspective Dev is not the drawn one; the drawn position wins',
       ]);
     });
 
-    it('o ponto fora do canvas avisa, com a caixa do host, e devolve o ponto', async () => {
+    it('a point outside the canvas warns, with the host box, and returns the point', async () => {
       const mod = await load();
       const warnings: string[] = [];
       const at = await mod.ponto(
-        fakePage({ ok: false, element: 'div.dock "Janelas"' }),
+        fakePage({ ok: false, element: 'div.dock "Windows"' }),
         project(),
-        'Cadastro',
+        'Sign-up',
         5,
         7,
         { warn: (m: string) => warnings.push(m) },
       );
       expect(at).toEqual({ x: 1030, y: 948 });
       expect(warnings.join('\n')).toContain(
-        'o ponto (1030, 948) não cai no canvas (div.dock "Janelas")',
+        'the point (1030, 948) does not fall on the canvas (div.dock "Windows")',
       );
       expect(warnings.join('\n')).toContain('10, 20, 800 × 600');
     });
   });
 
   describe('viewCenter', () => {
-    it('dá o ponto de tela do centro do host e o mesmo ponto no canvas', async () => {
+    it('gives the screen point of the host center and the same point on the canvas', async () => {
       const mod = await load();
       const page = {
         locator: () => ({
@@ -2962,8 +2962,8 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
     });
   });
 
-  describe('parseArrowHandles e arrowHandlesOf', () => {
-    it('soma o canto do host a cada alça', async () => {
+  describe('parseArrowHandles and arrowHandlesOf', () => {
+    it('adds the host corner to each handle', async () => {
       const mod = await load();
       expect(
         mod.parseArrowHandles('center 50 60;from 10.5 20;to 90 100', { x: 100, y: 200 }),
@@ -2973,11 +2973,11 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
         to: { x: 190, y: 300 },
       });
       expect(() => mod.parseArrowHandles('center 50', { x: 0, y: 0 })).toThrow(
-        'data-arrow-handles inválido: "center 50"',
+        'invalid data-arrow-handles: "center 50"',
       );
     });
 
-    it('arrowHandlesOf sem o atributo devolve null; com ele, os pontos de tela', async () => {
+    it('arrowHandlesOf without the attribute returns null; with it, the screen points', async () => {
       const mod = await load();
       const make = (text: string | null) => ({
         locator: () => ({
@@ -2995,7 +2995,7 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
   });
 
   describe('onCanvas', () => {
-    it('devolve { ok, element } da conferência feita na página', async () => {
+    it('returns { ok, element } from the check made on the page', async () => {
       const mod = await load();
       const seen: unknown[] = [];
       const page = {
@@ -3012,13 +3012,13 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
     });
   });
 
-  describe('paletteDrag usa a mesma conferência do ponto no canvas', () => {
-    it('ponto fora do canvas lança antes do arrasto sintético', async () => {
+  describe('paletteDrag uses the same point-on-canvas check', () => {
+    it('a point outside the canvas throws before the synthetic drag', async () => {
       const mod = await load();
-      const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-palette-onc-'));
+      const project = mkdtempSync(path.join(tmpdir(), 'mapping-palette-onc-'));
       try {
         writeFileSync(
-          path.join(projeto, 'mapping.json'),
+          path.join(project, 'mapping.json'),
           JSON.stringify({ markings: [{ id: 'm1' }] }),
         );
         const fired: string[] = [];
@@ -3040,12 +3040,12 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
           }),
           evaluate: async (_fn: unknown, arg: Record<string, unknown>) => {
             if (arg && 'timeoutMs' in arg) return null;
-            if (arg && 'para' in arg) {
+            if (arg && 'to' in arg) {
               fired.push('sintetico');
               return { ok: true };
             }
             if (arg && 'x' in arg) return { ok: false, element: 'div.dock' };
-            return ['Biblioteca'];
+            return ['Library'];
           },
         };
         await expect(
@@ -3055,19 +3055,21 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
             { x: 500, y: 300 },
             {
               steps: 1,
-              projectDir: projeto,
+              projectDir: project,
               waitMs: 20,
             },
           ),
-        ).rejects.toThrow('o ponto (500, 300) não cai no canvas (div.dock)');
+        ).rejects.toThrow(
+          'paletteDrag: the point (500, 300) does not fall on the canvas (div.dock)',
+        );
         expect(fired).toEqual([]);
       } finally {
-        rmSync(projeto, { recursive: true, force: true });
+        rmSync(project, { recursive: true, force: true });
       }
     });
   });
 
-  describe('formatState: linha Seleção', () => {
+  describe('formatState: Selection line', () => {
     const base = {
       title: 'Mapping',
       url: 'x',
@@ -3077,22 +3079,22 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
       focus: null,
       windows: [],
     };
-    it('com o nome vindo do disco', async () => {
+    it('with the name coming from the disk', async () => {
       const mod = await load();
       const text = (selection: unknown) =>
         mod.formatState({ ...base, selection }) as string;
-      expect(text({ type: 'marking', id: 'm1', name: 'Lado' })).toContain(
-        'Seleção: marcação "Lado" (m1)',
+      expect(text({ type: 'marking', id: 'm1', name: 'Side' })).toContain(
+        'Selection: marking "Side" (m1)',
       );
       expect(text({ type: 'arrow', id: 'a1', name: 'A → B' })).toContain(
-        'Seleção: seta "A → B" (a1)',
+        'Selection: arrow "A → B" (a1)',
       );
-      expect(text({ type: 'image', id: 'c1', name: 'Tela' })).toContain(
-        'Seleção: container "Tela" (c1)',
+      expect(text({ type: 'image', id: 'c1', name: 'Screen' })).toContain(
+        'Selection: container "Screen" (c1)',
       );
-      expect(text(null)).toContain('Seleção: nenhuma');
+      expect(text(null)).toContain('Selection: none');
     });
-    it('vem depois do Foco; sem disco, mostra o tipo e o id; sem o campo, não imprime', async () => {
+    it('comes after Focus; without the disk, shows the type and the id; without the field, does not print', async () => {
       const mod = await load();
       const lines = (
         mod.formatState({
@@ -3100,20 +3102,20 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
           selection: { type: 'marking', id: 'm1' },
         }) as string
       ).split('\n');
-      const focus = lines.findIndex((l) => l.startsWith('Foco:'));
-      expect(lines[focus + 1]).toBe('Seleção: marking m1');
-      expect(mod.formatState(base) as string).not.toContain('Seleção:');
+      const focus = lines.findIndex((l) => l.startsWith('Focus:'));
+      expect(lines[focus + 1]).toBe('Selection: marking m1');
+      expect(mod.formatState(base) as string).not.toContain('Selection:');
     });
   });
 
-  describe('state() lê a seleção', () => {
+  describe('state() reads the selection', () => {
     const run = async (selection: string | null, mapping: object | null) => {
       const mod = await load();
       const apoio = mkdtempSync(path.join(tmpdir(), 'mapping-sel-apoio-'));
-      const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-sel-proj-'));
+      const project = mkdtempSync(path.join(tmpdir(), 'mapping-sel-proj-'));
       try {
         if (mapping) {
-          writeFileSync(path.join(projeto, 'mapping.json'), JSON.stringify(mapping));
+          writeFileSync(path.join(project, 'mapping.json'), JSON.stringify(mapping));
         }
         const page = {
           evaluate: async (_fn: unknown, arg: unknown) =>
@@ -3132,48 +3134,48 @@ describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
         const result = (await mod.state(
           page,
           apoio,
-          mapping ? { projectDir: projeto } : { projectDir: null },
+          mapping ? { projectDir: project } : { projectDir: null },
         )) as { selection: unknown };
         return result.selection;
       } finally {
         rmSync(apoio, { recursive: true, force: true });
-        rmSync(projeto, { recursive: true, force: true });
+        rmSync(project, { recursive: true, force: true });
       }
     };
     const mapping = {
       revision: 1,
-      containers: [{ id: 'c1', name: 'Tela' }],
+      containers: [{ id: 'c1', name: 'Screen' }],
       markings: [
-        { id: 'm1', name: 'Lado' },
+        { id: 'm1', name: 'Side' },
         { id: 'm2', name: null },
       ],
       arrows: [{ id: 'a1', from: 'm1', to: 'm2' }],
     };
 
-    it('resolve o nome pelo mapping.json lido', async () => {
+    it('resolves the name from the mapping.json read', async () => {
       expect(await run('marking m1', mapping)).toEqual({
         type: 'marking',
         id: 'm1',
-        name: 'Lado',
+        name: 'Side',
       });
       expect(await run('marking m2', mapping)).toEqual({
         type: 'marking',
         id: 'm2',
-        name: 'sem nome',
+        name: 'No name',
       });
       expect(await run('image c1', mapping)).toEqual({
         type: 'image',
         id: 'c1',
-        name: 'Tela',
+        name: 'Screen',
       });
       expect(await run('arrow a1', mapping)).toEqual({
         type: 'arrow',
         id: 'a1',
-        name: 'Lado → sem nome',
+        name: 'Side → No name',
       });
     });
 
-    it('sem pasta ou com o id fora do disco, fica só o tipo e o id; sem seleção, null', async () => {
+    it('without a folder or with an id missing from the disk, only the type and the id remain; without a selection, null', async () => {
       expect(await run('marking m1', null)).toEqual({ type: 'marking', id: 'm1' });
       expect(await run('marking zz', mapping)).toEqual({ type: 'marking', id: 'zz' });
       expect(await run(null, mapping)).toBeNull();

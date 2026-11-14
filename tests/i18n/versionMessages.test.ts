@@ -8,11 +8,12 @@ import { validateLibrary } from '../../src/model/library';
 import { locale } from '../../src/store/settings';
 import { messageText } from '../../src/ui/modelMessage';
 import { issueText } from '../../src/ui/LibraryIssueList';
+import { ptBRText } from '../support/modelText';
 
-// MB3 (#1358): os avisos da especialização (`specWarnings`) e as quebras sem migração
-// (`specVersions`) têm código e saem na língua da app. Em pt-BR o texto é igual ao `message`; em
-// en-US não há palavra do português fora dos parâmetros. As frases que concordam com o gênero
-// ("o campo" / "a coluna") são um código por variante, e o teste produz as duas.
+// MB3 (#1358): the specialization warnings (`specWarnings`) and the breaks without migration
+// (`specVersions`) have a code and come out in the app's language. In pt-BR the text equals the `message`; in
+// en-US there is no Portuguese word outside the parameters. The phrases that agree in gender
+// ("o campo" / "a coluna") are one code per variant, and the test produces both.
 
 afterEach(() => {
   locale.value = 'pt-BR';
@@ -40,7 +41,7 @@ function spec(over: Raw, types: Raw[]): Raw {
   };
 }
 
-// --- avisos da especialização ---------------------------------------------------------------
+// --- specialization warnings ---------------------------------------------------------------
 
 function warningSpecs(): { spec: Spec; ignored: Ignored }[] {
   const legacy = parsed(
@@ -102,14 +103,14 @@ interface Said {
   readonly messageParams?: Record<string, string | number> | undefined;
 }
 
-const shown = (item: Said): string =>
-  messageText(
-    modelMessage(item.messageCode ?? 'raw', item.messageParams ?? {}, item.message),
-  );
+const asModelMessage = (item: Said) =>
+  modelMessage(item.messageCode ?? 'raw', item.messageParams ?? {}, item.message);
+
+const shown = (item: Said): string => messageText(asModelMessage(item));
 
 const warnings = () => warningSpecs().flatMap((s) => specWarnings(s.spec, s.ignored));
 
-// --- quebras e aditivas ---------------------------------------------------------------------
+// --- breaks and additive ones ---------------------------------------------------------------------
 
 const BASE_TYPE = (): Raw => ({
   id: 't',
@@ -189,8 +190,8 @@ function next(): Spec {
 
 const changes = () => diffSpecs(previous(), next());
 
-describe('mensagens de versão da especialização (MB3)', () => {
-  it('os avisos produzem o código de cada variante de aviso', () => {
+describe('specialization version messages (MB3)', () => {
+  it('the warnings produce the code of each warning variant', () => {
     const codes = new Set(warnings().map((w) => w.messageCode));
     for (const code of [
       'versions.legacyFormat',
@@ -206,7 +207,7 @@ describe('mensagens de versão da especialização (MB3)', () => {
     }
   });
 
-  it('as diferenças produzem o código de cada variante (campo e coluna, um por gênero)', () => {
+  it('the differences produce the code of each variant (field and column, one per gender)', () => {
     const codes = new Set(changes().map((c) => c.messageCode));
     const catalog = Object.keys(MODEL_MESSAGE_TEMPLATES).filter(
       (c) => c.startsWith('versions.') && !warnings().some((w) => w.messageCode === c),
@@ -215,23 +216,37 @@ describe('mensagens de versão da especialização (MB3)', () => {
     for (const code of catalog) expect(codes, code).toContain(code);
   });
 
-  it('as frases por concordância são códigos diferentes (campo ≠ coluna)', () => {
+  it('the phrases by agreement are different codes (field ≠ column)', () => {
     const byPath = (code: string) => changes().filter((c) => c.messageCode === code);
     expect(byPath('versions.fieldRemoved')[0]?.message).toBe(
-      'o campo "rm" do tipo "t" foi removido; declare um passo "remove-field" ou "rename-field" em migrations',
+      'the field "rm" of the type "t" was removed; declare a "remove-field" or "rename-field" step in migrations',
     );
     expect(byPath('versions.columnRemoved')[0]?.message).toBe(
-      'a coluna "c" do campo "tb" do tipo "t" foi removida; declare um passo "remove-field" ou "rename-field" em migrations com field "tb.c"',
+      'the column "c" of the field "tb" of the type "t" was removed; declare a "remove-field" or "rename-field" step in migrations with field "tb.c"',
     );
     expect(byPath('versions.columnNewRequired')[0]?.message).toBe(
-      'a coluna "nr" do campo "tb" do tipo "t" é nova e já obrigatória; declare um passo "fill-field" em migrations com field "tb.nr"',
+      'the column "nr" of the field "tb" of the type "t" is new and already required; declare a "fill-field" step in migrations with field "tb.nr"',
     );
     expect(byPath('versions.fieldBecameRequired')[0]?.message).toBe(
+      'the field "req" of the type "t" became required; declare a "fill-field" step in migrations',
+    );
+    // The Portuguese keeps the gender agreement (the reason for one code per variant).
+    locale.value = 'pt-BR';
+    expect(shown(byPath('versions.fieldRemoved')[0] as never)).toBe(
+      'o campo "rm" do tipo "t" foi removido; declare um passo "remove-field" ou "rename-field" em migrations',
+    );
+    expect(shown(byPath('versions.columnRemoved')[0] as never)).toBe(
+      'a coluna "c" do campo "tb" do tipo "t" foi removida; declare um passo "remove-field" ou "rename-field" em migrations com field "tb.c"',
+    );
+    expect(shown(byPath('versions.columnNewRequired')[0] as never)).toBe(
+      'a coluna "nr" do campo "tb" do tipo "t" é nova e já obrigatória; declare um passo "fill-field" em migrations com field "tb.nr"',
+    );
+    expect(shown(byPath('versions.fieldBecameRequired')[0] as never)).toBe(
       'o campo "req" do tipo "t" passou a ser obrigatório; declare um passo "fill-field" em migrations',
     );
   });
 
-  it('missingMigrations devolve só quebras, com o código', () => {
+  it('missingMigrations returns only breaks, with the code', () => {
     const missing = missingMigrations(previous(), next());
     expect(missing.length).toBeGreaterThan(8);
     for (const change of missing) {
@@ -240,25 +255,26 @@ describe('mensagens de versão da especialização (MB3)', () => {
     }
   });
 
-  it('pt-BR: o texto mostrado é igual ao `message`', () => {
-    locale.value = 'pt-BR';
+  it('pt-BR: the text shown is the pt-BR template filled in; en-US shows the `message`', () => {
     for (const item of [...warnings(), ...changes()]) {
+      locale.value = 'pt-BR';
+      expect(shown(item), item.message).toBe(ptBRText(asModelMessage(item)));
+      locale.value = 'en-US';
       expect(shown(item), item.message).toBe(item.message);
     }
   });
 
-  it('en-US: nenhuma palavra em português fora dos parâmetros', () => {
+  it('en-US: no Portuguese word outside the parameters', () => {
     locale.value = 'en-US';
     for (const item of [...warnings(), ...changes()]) {
       const text = shown(item);
-      expect(text, item.message).not.toBe(item.message);
       expect(withoutParams(text, item.messageParams ?? {}), item.message).not.toMatch(
         PORTUGUESE,
       );
     }
   });
 
-  it('o validador da biblioteca repassa o código dos avisos e das quebras sem migração', () => {
+  it('the library validator passes on the code of the warnings and of the breaks without migration', () => {
     locale.value = 'en-US';
     const files = (s: Spec) => [{ path: 's.spec.json', text: JSON.stringify(s) }];
     const report = validateLibrary({

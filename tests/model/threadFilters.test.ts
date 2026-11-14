@@ -7,20 +7,22 @@ const p = viewProject();
 const BY = { name: 'Marina Alves', email: 'marina@exemplo.com' };
 const JOAO = { ...HUMAN, name: 'João', email: 'joao@exemplo.com' };
 
-// aberta aguardando agente (última de pessoa)
+// open, awaiting agent (last one from a person)
 const waitingAgent = sampleThread({
   id: 'wa',
+  // pt-BR kept: accent-insensitive search is the object of the text filter tests below
   messages: [message('m1', T0, HUMAN, 'Qual a ação?')],
 });
-// aberta aguardando humano (última de agente)
+// open, awaiting human (last one from an agent)
 const waitingHuman = sampleThread({
   id: 'wh',
+  // pt-BR kept: accent-insensitive search is the object of the text filter tests below
   messages: [message('m1', T0, JOAO, 'olá'), message('m2', T1, AGENT, 'Resposta')],
 });
 const resolved = sampleThread({
   id: 'rs',
   resolved: { by: BY, at: T3 },
-  messages: [message('m1', T0, HUMAN, 'feito')],
+  messages: [message('m1', T0, HUMAN, 'done')],
 });
 const all: readonly Thread[] = [waitingAgent, waitingHuman, resolved];
 const ids = (ts: readonly Thread[]) => ts.map((t) => t.id);
@@ -36,8 +38,8 @@ describe('filterThreads: status', () => {
   it('resolved', () => expect(run('resolved')).toEqual(['rs']));
 });
 
-describe('filterThreads: usuário e texto', () => {
-  it('usuário: algum autor da conversa', () => {
+describe('filterThreads: user and text', () => {
+  it('user: some author of the thread', () => {
     expect(ids(filterThreads(all, p, { status: 'all', user: userKey(JOAO) }))).toEqual([
       'wh',
     ]);
@@ -50,13 +52,14 @@ describe('filterThreads: usuário e texto', () => {
     ]);
   });
 
-  it('usuário sem conversa: nenhuma', () => {
-    expect(filterThreads(all, p, { status: 'all', user: 'human:ninguem@x.com' })).toEqual(
+  it('user without a thread: none', () => {
+    expect(filterThreads(all, p, { status: 'all', user: 'human:nobody@x.com' })).toEqual(
       [],
     );
   });
 
-  it('texto: sem diferença de caixa nem de acento, em qualquer mensagem', () => {
+  // pt-BR kept: the object is the accent/case-insensitive match of Portuguese text
+  it('text (pt-BR): no difference of case or accent, in any message', () => {
     expect(ids(filterThreads(all, p, { status: 'all', text: 'ACAO' }))).toEqual(['wa']);
     expect(ids(filterThreads(all, p, { status: 'all', text: 'resposta' }))).toEqual([
       'wh',
@@ -66,18 +69,18 @@ describe('filterThreads: usuário e texto', () => {
     ]);
   });
 
-  it('texto vazio ou só espaços não filtra', () => {
+  it('empty text or only spaces does not filter', () => {
     expect(filterThreads(all, p, { status: 'all', text: '   ' })).toHaveLength(3);
   });
 
-  it('os filtros se combinam (E)', () => {
+  it('the filters combine (AND)', () => {
     expect(
       filterThreads(all, p, { status: 'open', user: userKey(HUMAN), text: 'acao' }),
     ).toEqual([waitingAgent]);
     expect(filterThreads(all, p, { status: 'resolved', text: 'acao' })).toEqual([]);
   });
 
-  it('não altera a entrada e mantém a ordem', () => {
+  it('does not change the input and keeps the order', () => {
     const input = [resolved, waitingAgent];
     const out = filterThreads(input, p, { status: 'all' });
     expect(ids(out)).toEqual(['rs', 'wa']);
@@ -85,7 +88,7 @@ describe('filterThreads: usuário e texto', () => {
   });
 });
 
-describe('filterThreads: cita a seleção (decisão 34)', () => {
+describe('filterThreads: cites the selection (decision 34)', () => {
   const anchored = (id: string, anchor: Thread['anchor']) => sampleThread({ id, anchor });
   const threads = [
     anchored('on-a1', { kind: 'marking', id: 'a1' }),
@@ -107,25 +110,25 @@ describe('filterThreads: cita a seleção (decisão 34)', () => {
       }),
     );
 
-  it('mostra as ancoradas no item e nas partes dele (anotação, campo, par)', () => {
+  it('shows those anchored on the item and on its parts (annotation, field, pair)', () => {
     expect(run('a1')).toEqual(['on-a1', 'on-n1', 'on-field', 'on-entry']);
   });
 
-  it('a seta conta as anotações dela', () => {
+  it('the arrow counts its annotations', () => {
     expect(run('r1')).toEqual(['on-ra1', 'on-arrow']);
   });
 
-  it('mostra também as que citam o item ou uma parte dele', () => {
+  it('also shows those that cite the item or a part of it', () => {
     expect(
-      run('a1', { 'on-a2': ['a1'], 'on-t1': ['n1'], 'on-layer': ['outro'] }),
+      run('a1', { 'on-a2': ['a1'], 'on-t1': ['n1'], 'on-layer': ['other'] }),
     ).toEqual(['on-a1', 'on-n1', 'on-field', 'on-entry', 'on-a2', 'on-t1']);
   });
 
-  it('um item sem nada ancorado nem citado: nenhuma', () => {
+  it('an item with nothing anchored or cited: none', () => {
     expect(run('c1')).toEqual([]);
   });
 
-  it('combina com os outros filtros', () => {
+  it('combines with the other filters', () => {
     const only = filterThreads(threads, p, {
       status: 'resolved',
       selection: { itemId: 'a1', cites: new Map() },

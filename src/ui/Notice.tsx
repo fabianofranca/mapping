@@ -4,12 +4,12 @@ import { classes } from './controls/classes';
 import { IconButton, Tooltip } from './controls';
 import { Icon, type IconName } from './icons';
 
-// Aviso em caixa (Notice do DS 2.0), com as variantes da revisão de propostas
-// (HANDOFF-PROPOSALS 2.2): `info` (fundo `color-selection`, ícone no acento) para a
-// proposta nova e as dependências, e `sm` para os avisos compactos dentro das janelas
-// (item trancado, aplicar bloqueado), e `line` para o aviso de uma linha só (ícone, texto
-// curto com reticências e a frase completa na dica, ação e X). O texto curto `.notice` das
-// sobreposições do canvas continua como está.
+// Boxed notice (DS 2.0 Notice), with the proposal review variants
+// (HANDOFF-PROPOSALS 2.2): `info` (`color-selection` background, accent icon) for the
+// new proposal and the dependencies, `sm` for compact notices inside the windows
+// (locked item, apply blocked), and `line` for a single-line notice (icon, short text
+// with an ellipsis and the full sentence in the tooltip, action and X). The short `.notice`
+// text of the canvas overlays stays as it is.
 
 export type NoticeTone = 'info' | 'warning' | 'error' | 'success';
 
@@ -22,19 +22,19 @@ const ICONS: Readonly<Record<NoticeTone, IconName>> = {
 
 interface NoticeProps {
   readonly tone: NoticeTone;
-  /** Compacto (dentro das janelas): padding e texto menores. */
+  /** Compact (inside the windows): smaller padding and text. */
   readonly size?: 'md' | 'sm' | 'line';
   /**
-   * Só em `line`: a frase completa. Vai na dica do texto curto e, escondida, no aviso,
-   * para o leitor de tela.
+   * `line` only: the full sentence. It goes in the short text's tooltip and, hidden, in the notice,
+   * for the screen reader.
    */
   readonly hint?: string;
   readonly title?: string;
   readonly icon?: IconName;
   readonly children?: ComponentChildren;
-  /** Botões de ação, à direita (ou embaixo, no compacto). */
+  /** Action buttons, on the right (or below, in compact). */
   readonly actions?: ComponentChildren;
-  /** Mostra o "fechar" do aviso. */
+  /** Shows the notice's "close". */
   readonly onDismiss?: () => void;
   readonly role?: 'status' | 'alert';
   readonly class?: string;

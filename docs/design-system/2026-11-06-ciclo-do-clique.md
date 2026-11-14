@@ -1,13 +1,13 @@
-# Ciclo do clique — 2026-11-06 (épico `epic/ciclo-do-clique`)
+# Click cycle — 2026-11-06 (épico `epic/ciclo-do-clique`)
 
 ## Pendências
 
-Nenhuma. O épico só mexe no ponteiro do canvas (ciclo do clique) e no guia de testes; nenhum componente, token ou ícone do design system muda.
+None. The epic only touches the canvas pointer (click cycle) and the test guide; no design system component, token or icon changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não mudou componente, token nem ícone.
+Nothing to write to the **Mapping** artifact: the epic did not change any component, token or icon.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

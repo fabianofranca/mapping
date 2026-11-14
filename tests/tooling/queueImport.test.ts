@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Fase FM7 (etapa #1532, decisões 17 e 25): troca a quente no painel existente (`upgrade`) e migração opcional
-// para um painel novo (`import`, `importar=`). A pasta antiga é montada aqui, no formato do painel atual (os três JSON
-// sem nenhum campo novo: sem `exclusive` nas linhas e sem `sessions`, `requests`, `rules`, `roles` nem `unpublished`).
+// Phase FM7 (stage #1532, decisions 17 and 25): hot switch on the existing panel (`upgrade`) and optional migration
+// to a new panel (`import`, `importar=`). The old folder is built here, in the format of the current panel (the three JSON
+// files with no new field: no `exclusive` on the rows and no `sessions`, `requests`, `rules`, `roles` or `unpublished`).
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,14 +12,14 @@ import { section } from '../support/textSlice';
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
 const SKILL = '.claude/skills/implementar-fila/SKILL.md';
 const NOW = '2026-11-11T10:00:00Z';
-const TEMPO_SUBPROCESSOS = 30_000;
-const HOLD_VAZIA = 'ordem do dono (só com a fila vazia)';
+const SUBPROCESS_TIMEOUT = 30_000;
+const HOLD_EMPTY = 'ordem do dono (só com a fila vazia)';
 
-type Linha = Record<string, unknown>;
+type Row = Record<string, unknown>;
 
-let raiz = '';
-let antiga = '';
-let nova = '';
+let root = '';
+let oldDir = '';
+let newDir = '';
 
 function run(...args: string[]): string {
   return execFileSync('python3', [SCRIPT, '--now', NOW, ...args], { encoding: 'utf8' });
@@ -29,13 +29,13 @@ function runRaw(...args: string[]) {
   return spawnSync('python3', [SCRIPT, '--now', NOW, ...args], { encoding: 'utf8' });
 }
 
-function json(dir: string, name: string): Linha[] {
-  return JSON.parse(readFileSync(path.join(dir, `${name}.json`), 'utf8')) as Linha[];
+function json(dir: string, name: string): Row[] {
+  return JSON.parse(readFileSync(path.join(dir, `${name}.json`), 'utf8')) as Row[];
 }
 
-function linha(dir: string, issue: string): Linha {
+function row(dir: string, issue: string): Row {
   const r = json(dir, 'queue').find((x) => x.issue === issue);
-  if (!r) throw new Error(`${issue} não está na fila de ${dir}`);
+  if (!r) throw new Error(`${issue} is not in the queue of ${dir}`);
   return r;
 }
 
@@ -43,8 +43,8 @@ function logTexts(dir: string): string[] {
   return json(dir, 'log').map((e) => String(e.text));
 }
 
-/** Linha no formato do painel atual: todos os campos de antes, nenhum dos novos (`exclusive`). */
-function velha(over: Linha): Linha {
+/** Row in the format of the current panel: every earlier field, none of the new ones (`exclusive`). */
+function legacyRow(over: Row): Row {
   return {
     order: 0,
     issue: '',
@@ -71,7 +71,7 @@ function velha(over: Linha): Linha {
   };
 }
 
-function gravar(dir: string, queue: Linha[], meta: Linha, log: Linha[]) {
+function writeQueue(dir: string, queue: Row[], meta: Row, log: Row[]) {
   mkdirSync(dir, { recursive: true });
   writeFileSync(path.join(dir, 'queue.json'), JSON.stringify(queue, null, 1));
   writeFileSync(path.join(dir, 'meta.json'), JSON.stringify([meta], null, 1));
@@ -81,81 +81,81 @@ function gravar(dir: string, queue: Linha[], meta: Linha, log: Linha[]) {
 const FICHA = (dep: string, toca: string) =>
   `dep=${dep} | nivel=impact: low | mcp=não | schema=não | epico=epic/x | fases=A1:#9:high | toca=${toca}`;
 
-/** A fila de exemplo do aceite da fase, no formato antigo. */
-function filaAntiga(): Linha[] {
+/** The phase's acceptance example queue, in the old format. */
+function oldQueue(): Row[] {
   return [
-    velha({
+    legacyRow({
       order: 1,
       issue: '#883',
-      title: 'Páginas',
+      title: 'Pages',
       status: 'aguardando',
-      hold: HOLD_VAZIA,
+      hold: HOLD_EMPTY,
       plan: FICHA('nenhuma', 'a.ts'),
     }),
-    velha({
+    legacyRow({
       order: 2,
       issue: '#898',
-      title: 'Pausada',
+      title: 'Paused',
       status: 'aguardando',
       hold: 'pausada pelo dono',
       plan: FICHA('nenhuma', 'b.ts'),
     }),
-    velha({
+    legacyRow({
       order: 3,
       issue: '#900',
-      title: 'Concluída',
+      title: 'Done',
       status: 'concluída',
       pr: 'PR #90',
       started: '2026-11-10T09:00:00Z',
       ended: '2026-11-10T11:00:00Z',
       plan: FICHA('nenhuma', 'c.ts'),
     }),
-    velha({
+    legacyRow({
       order: 4,
       issue: '#905',
-      title: 'Em andamento',
+      title: 'In progress',
       kind: 'bug',
       status: 'em andamento',
       stage: 'Fases',
-      step: 'fase 2',
+      step: 'phase 2',
       pr: 'PR #91',
       started: '2026-11-10T12:00:00Z',
       phases: 'A1:ok|A2:open',
       phasesTotal: 2,
       phasesDone: 1,
       plan: FICHA('nenhuma', 'd.ts'),
-      child: 'session_filha',
+      child: 'session_child',
       childAt: '2026-11-11T09:30:00Z',
-      wait: 'pergunta',
+      wait: 'question',
       ciWait: 'PR #91',
       ciWaitAt: '2026-11-11T09:40:00Z',
-      sessions: 'session_filha session_velha',
+      sessions: 'session_child session_old',
       ended: '2026-11-10T13:00:00Z',
     }),
-    velha({
+    legacyRow({
       order: 5,
       issue: '#910',
-      title: 'Esperando',
+      title: 'Waiting',
       status: 'esperando dono',
-      step: 'escolha',
+      step: 'choice',
       stage: 'Testador',
       started: '2026-11-10T08:00:00Z',
       hold: 'esperando dono (merge)',
       child: 'session_x',
       sessions: 'session_x',
     }),
-    velha({
+    legacyRow({
       order: 6,
       issue: '#911',
-      title: 'Falhou',
+      title: 'Failed',
       status: 'falhou',
       step: 'CI',
       started: '2026-11-10T07:00:00Z',
     }),
-    velha({
+    legacyRow({
       order: 7,
       issue: '#920',
-      title: 'Última',
+      title: 'Last',
       status: 'aguardando',
       hold: 'ordem do dono (aguarda a #905)',
       plan: FICHA('#905:aberta', 'e.ts'),
@@ -163,13 +163,13 @@ function filaAntiga(): Linha[] {
   ];
 }
 
-function metaAntiga(): Linha {
+function oldMeta(): Row {
   return {
     runStart: '2026-11-10T08:00:00Z',
     waitingSince: '2026-11-10T08:00:00Z',
     updatedAt: '2026-11-11T09:50:00Z',
-    current: 'rodando a #905',
-    reserve: 'trig_antigo',
+    current: 'running #905',
+    reserve: 'trig_old',
     context: 40,
     contextAt: '2026-11-11T09:00:00Z',
     paralelo: 3,
@@ -180,42 +180,42 @@ function metaAntiga(): Linha {
   };
 }
 
-function montarAntiga() {
-  gravar(antiga, filaAntiga(), metaAntiga(), [
+function buildOld() {
+  writeQueue(oldDir, oldQueue(), oldMeta(), [
     { at: '2026-11-10T08:00:00Z', text: 'Execução iniciada' },
-    { at: '2026-11-10T21:06:00Z', text: 'regra do dono: orçamento revisado' },
+    { at: '2026-11-10T21:06:00Z', text: 'owner rule: budget revised' },
   ]);
 }
 
 beforeEach(() => {
-  raiz = mkdtempSync(path.join(tmpdir(), 'queue-import-'));
-  antiga = path.join(raiz, 'antiga');
-  nova = path.join(raiz, 'nova');
-  montarAntiga();
+  root = mkdtempSync(path.join(tmpdir(), 'queue-import-'));
+  oldDir = path.join(root, 'old');
+  newDir = path.join(root, 'new');
+  buildOld();
 });
 
 afterEach(() => {
-  rmSync(raiz, { recursive: true, force: true });
+  rmSync(root, { recursive: true, force: true });
 });
 
-describe('painel.py — troca a quente num painel sem os campos novos (FM7, decisão 25)', () => {
+describe('painel.py — hot switch on a panel without the new fields (FM7, decision 25)', () => {
   it(
-    'show, row, apply, cost, role, sup, rule e costs funcionam, e o show mostra "—" ou "nenhum" onde falta dado',
+    'show, row, apply, cost, role, sup, rule and costs work, and show prints "—" or "nenhum" where data is missing',
     () => {
-      const show = run('show', antiga);
+      const show = run('show', oldDir);
       expect(show).toContain('custo: ');
       expect(show).toContain('pedidos do supervisor: ');
       expect(show).toMatch(/regras em vigor:/);
       expect(show).toContain('não publicado: nenhum');
-      expect(run('roles', antiga)).toContain('—');
-      expect(run('costs', antiga)).toBeTruthy();
-      expect(run('requests', antiga)).toBeTruthy();
+      expect(run('roles', oldDir)).toContain('—');
+      expect(run('costs', oldDir)).toBeTruthy();
+      expect(run('requests', oldDir)).toBeTruthy();
 
-      run('row', antiga, '#883', 'step=ok');
+      run('row', oldDir, '#883', 'step=ok');
       run(
         'cost',
-        antiga,
-        'session_nova',
+        oldDir,
+        'session_new',
         'usd=1.5',
         'ctx=100',
         'model=claude-sonnet-5-5',
@@ -225,111 +225,111 @@ describe('painel.py — troca a quente num painel sem os campos novos (FM7, deci
       );
       run(
         'role',
-        antiga,
+        oldDir,
         'coordenador',
         'session_c1',
         'link=https://claude.ai/code/session_c1',
       );
-      run('sup', antiga, 'SUP-1', 'tipo=A', 'pedido=segurar a #920', 'estado=enviado');
-      run('rule', antiga, 'add', 'não começar nada às 3h', 'origem=dono');
-      const lote = path.join(raiz, 'lote.txt');
-      writeFileSync(lote, "row '#883' 'step=de novo'\nlog 'dentro do lote'\n");
-      run('apply', antiga, lote);
-      const meta = json(antiga, 'meta')[0]!;
+      run('sup', oldDir, 'SUP-1', 'tipo=A', 'pedido=hold #920', 'estado=enviado');
+      run('rule', oldDir, 'add', 'do not start anything at 3am', 'origem=dono');
+      const batchFile = path.join(root, 'batch.txt');
+      writeFileSync(batchFile, "row '#883' 'step=again'\nlog 'inside the batch'\n");
+      run('apply', oldDir, batchFile);
+      const meta = json(oldDir, 'meta')[0]!;
       expect(meta.roles).toBeTruthy();
       expect(meta.rules).toHaveLength(1);
       expect(meta.requests).toHaveLength(1);
-      expect(linha(antiga, '#883').step).toBe('de novo');
+      expect(row(oldDir, '#883').step).toBe('again');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 });
 
-describe('painel.py upgrade (FM7, decisões 17 e 25)', () => {
+describe('painel.py upgrade (FM7, decisions 17 and 25)', () => {
   it(
-    'troca o hold da fila vazia por exclusive=sim, deixa os outros holds e registra no log',
+    'replaces the empty-queue hold with exclusive=sim, leaves the other holds and records it in the log',
     () => {
-      const out = run('upgrade', antiga);
+      const out = run('upgrade', oldDir);
       expect(out).toContain('alterados: ');
-      const a = linha(antiga, '#883');
+      const a = row(oldDir, '#883');
       expect(a.exclusive).toBe('sim');
       expect(a.hold).toBe('');
-      expect(linha(antiga, '#898').hold).toBe('pausada pelo dono');
-      expect(linha(antiga, '#898').exclusive ?? '').toBe('');
-      expect(linha(antiga, '#910').hold).toBe('esperando dono (merge)');
-      expect(linha(antiga, '#920').hold).toBe('ordem do dono (aguarda a #905)');
-      const log = logTexts(antiga);
+      expect(row(oldDir, '#898').hold).toBe('pausada pelo dono');
+      expect(row(oldDir, '#898').exclusive ?? '').toBe('');
+      expect(row(oldDir, '#910').hold).toBe('esperando dono (merge)');
+      expect(row(oldDir, '#920').hold).toBe('ordem do dono (aguarda a #905)');
+      const log = logTexts(oldDir);
       expect(log).toHaveLength(3);
       expect(log[2]).toMatch(/upgrade/);
       expect(log[2]).toContain('#883');
       expect(log[2]).toContain('exclusive=sim');
-      const meta = json(antiga, 'meta')[0]!;
+      const meta = json(oldDir, 'meta')[0]!;
       expect((meta.unpublished as { files: string[] }).files).toContain('queue.json');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'é idempotente: rodado de novo não muda nada nem escreve no log',
+    'is idempotent: run again it changes nothing and writes nothing to the log',
     () => {
-      run('upgrade', antiga);
-      const antes = ['queue', 'meta', 'log'].map((n) =>
-        readFileSync(path.join(antiga, `${n}.json`), 'utf8'),
+      run('upgrade', oldDir);
+      const before = ['queue', 'meta', 'log'].map((n) =>
+        readFileSync(path.join(oldDir, `${n}.json`), 'utf8'),
       );
-      const out = run('upgrade', antiga);
+      const out = run('upgrade', oldDir);
       expect(out).toContain('alterados: nenhum');
-      const depois = ['queue', 'meta', 'log'].map((n) =>
-        readFileSync(path.join(antiga, `${n}.json`), 'utf8'),
+      const after = ['queue', 'meta', 'log'].map((n) =>
+        readFileSync(path.join(oldDir, `${n}.json`), 'utf8'),
       );
-      expect(depois).toEqual(antes);
+      expect(after).toEqual(before);
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'sem nenhum hold da fila vazia, não muda nada',
+    'with no empty-queue hold, it changes nothing',
     () => {
-      run('row', antiga, '#883', 'hold=');
-      const antes = readFileSync(path.join(antiga, 'queue.json'), 'utf8');
-      expect(run('upgrade', antiga)).toContain('alterados: nenhum');
-      expect(readFileSync(path.join(antiga, 'queue.json'), 'utf8')).toBe(antes);
-      expect(logTexts(antiga).filter((t) => /upgrade/.test(t))).toEqual([]);
+      run('row', oldDir, '#883', 'hold=');
+      const before = readFileSync(path.join(oldDir, 'queue.json'), 'utf8');
+      expect(run('upgrade', oldDir)).toContain('alterados: nenhum');
+      expect(readFileSync(path.join(oldDir, 'queue.json'), 'utf8')).toBe(before);
+      expect(logTexts(oldDir).filter((t) => /upgrade/.test(t))).toEqual([]);
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'a etapa exclusiva convertida só começa com a fila vazia (o show já a trata)',
+    'the converted exclusive stage only starts with the queue empty (show already handles it)',
     () => {
-      run('upgrade', antiga);
-      expect(run('show', antiga)).toContain('exclusiva');
+      run('upgrade', oldDir);
+      expect(run('show', oldDir)).toContain('exclusiva');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'entra no lote do apply',
+    'goes in the apply batch',
     () => {
-      const lote = path.join(raiz, 'lote.txt');
-      writeFileSync(lote, 'upgrade\nlog "depois do upgrade"\n');
-      run('apply', antiga, lote);
-      expect(linha(antiga, '#883').exclusive).toBe('sim');
-      expect(logTexts(antiga).at(-1)).toBe('depois do upgrade');
+      const batchFile = path.join(root, 'batch.txt');
+      writeFileSync(batchFile, 'upgrade\nlog "after the upgrade"\n');
+      run('apply', oldDir, batchFile);
+      expect(row(oldDir, '#883').exclusive).toBe('sim');
+      expect(logTexts(oldDir).at(-1)).toBe('after the upgrade');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 });
 
-describe('painel.py import (FM7, decisão 17)', () => {
+describe('painel.py import (FM7, decision 17)', () => {
   beforeEach(() => {
-    run('init', nova);
+    run('init', newDir);
   });
 
   it(
-    'traz aguardando, em andamento, esperando dono e falhou, na ordem e renumeradas de 1 a n, com a ficha',
+    'brings aguardando, em andamento, esperando dono and falhou, in order and renumbered from 1 to n, with the ficha',
     () => {
-      run('import', nova, antiga);
-      const q = json(nova, 'queue');
+      run('import', newDir, oldDir);
+      const q = json(newDir, 'queue');
       expect(q.map((r) => r.issue)).toEqual([
         '#883',
         '#898',
@@ -339,61 +339,61 @@ describe('painel.py import (FM7, decisão 17)', () => {
         '#920',
       ]);
       expect(q.map((r) => r.order)).toEqual([1, 2, 3, 4, 5, 6]);
-      const r = linha(nova, '#905');
+      const r = row(newDir, '#905');
       expect(r).toMatchObject({
         issue: '#905',
-        title: 'Em andamento',
+        title: 'In progress',
         kind: 'bug',
         plan: FICHA('nenhuma', 'd.ts'),
         phases: 'A1:ok|A2:open',
         phasesTotal: 2,
         phasesDone: 1,
         stage: 'Fases',
-        step: 'fase 2',
+        step: 'phase 2',
         pr: 'PR #91',
         started: '2026-11-10T12:00:00Z',
         hold: '',
         status: 'em andamento',
       });
-      expect(linha(nova, '#911').status).toBe('falhou');
-      expect(linha(nova, '#910').status).toBe('esperando dono');
-      expect(linha(nova, '#920').status).toBe('aguardando');
+      expect(row(newDir, '#911').status).toBe('falhou');
+      expect(row(newDir, '#910').status).toBe('esperando dono');
+      expect(row(newDir, '#920').status).toBe('aguardando');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'as em andamento levam child, childAt, wait, ciWait, ciWaitAt e sessions; o ended não vem',
+    'the em andamento rows carry child, childAt, wait, ciWait, ciWaitAt and sessions; ended does not come',
     () => {
-      run('import', nova, antiga);
-      const r = linha(nova, '#905');
+      run('import', newDir, oldDir);
+      const r = row(newDir, '#905');
       expect(r).toMatchObject({
-        child: 'session_filha',
+        child: 'session_child',
         childAt: '2026-11-11T09:30:00Z',
-        wait: 'pergunta',
+        wait: 'question',
         ciWait: 'PR #91',
         ciWaitAt: '2026-11-11T09:40:00Z',
-        sessions: 'session_filha session_velha',
+        sessions: 'session_child session_old',
       });
       expect(r.ended).toBe('');
-      // as que não estão em andamento não levam os campos de acompanhamento
-      expect(linha(nova, '#910').child).toBe('');
-      expect(linha(nova, '#910').sessions).toBe('');
+      // the rows that are not em andamento do not carry the tracking fields
+      expect(row(newDir, '#910').child).toBe('');
+      expect(row(newDir, '#910').sessions).toBe('');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'não traz do meta: sessions, requests, current, paralelo, reserve, context, roles e unpublished anteriores; nem o log',
+    'does not bring from the meta: previous sessions, requests, current, paralelo, reserve, context, roles and unpublished; nor the log',
     () => {
-      const meta = json(antiga, 'meta')[0]!;
+      const meta = json(oldDir, 'meta')[0]!;
       meta.sessions = [{ id: 'session_a', issue: '#1', kind: 'fase' }];
       meta.requests = [{ id: 'SUP-1', estado: 'enviado' }];
       meta.roles = { coordenador: { id: 'session_c', n: 2 } };
       meta.unpublished = { since: '2026-11-11T09:00:00Z', files: ['log.json'] };
-      writeFileSync(path.join(antiga, 'meta.json'), JSON.stringify([meta]));
-      run('import', nova, antiga);
-      const m = json(nova, 'meta')[0]!;
+      writeFileSync(path.join(oldDir, 'meta.json'), JSON.stringify([meta]));
+      run('import', newDir, oldDir);
+      const m = json(newDir, 'meta')[0]!;
       for (const k of [
         'sessions',
         'requests',
@@ -412,185 +412,188 @@ describe('painel.py import (FM7, decisão 17)', () => {
         'meta.json',
         'log.json',
       ]);
-      const log = logTexts(nova);
+      const log = logTexts(newDir);
       expect(log).toHaveLength(1);
       expect(log[0]).not.toContain('Execução iniciada');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'apaga o "pausada pelo dono", converte o da fila vazia em exclusive=sim e mantém os outros holds',
+    'erases the "pausada pelo dono", converts the empty-queue one into exclusive=sim and keeps the other holds',
     () => {
-      run('import', nova, antiga);
-      expect(linha(nova, '#898').hold).toBe('');
-      expect(linha(nova, '#883').hold).toBe('');
-      expect(linha(nova, '#883').exclusive).toBe('sim');
-      expect(linha(nova, '#920').hold).toBe('ordem do dono (aguarda a #905)');
-      expect(linha(nova, '#910').hold).toBe('esperando dono (merge)');
+      run('import', newDir, oldDir);
+      expect(row(newDir, '#898').hold).toBe('');
+      expect(row(newDir, '#883').hold).toBe('');
+      expect(row(newDir, '#883').exclusive).toBe('sim');
+      expect(row(newDir, '#920').hold).toBe('ordem do dono (aguarda a #905)');
+      expect(row(newDir, '#910').hold).toBe('esperando dono (merge)');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'as concluídas vão para meta.merged junto com o merged antigo, sem repetir; a #900 não vira linha',
+    'the concluída ones go to meta.merged together with the old merged, without repeating; #900 does not become a row',
     () => {
-      run('import', nova, antiga);
-      const m = json(nova, 'meta')[0]!;
+      run('import', newDir, oldDir);
+      const m = json(newDir, 'meta')[0]!;
       expect(m.merged).toEqual(['#500', '#900']);
-      expect(json(nova, 'queue').some((r) => r.issue === '#900')).toBe(false);
-      const meta = json(antiga, 'meta')[0]!;
+      expect(json(newDir, 'queue').some((r) => r.issue === '#900')).toBe(false);
+      const meta = json(oldDir, 'meta')[0]!;
       meta.merged = ['#500'];
-      writeFileSync(path.join(antiga, 'meta.json'), JSON.stringify([meta]));
-      run('init', '--force', nova);
-      run('import', nova, antiga);
-      expect(json(nova, 'meta')[0]!.merged).toEqual(['#500', '#900']);
+      writeFileSync(path.join(oldDir, 'meta.json'), JSON.stringify([meta]));
+      run('init', '--force', newDir);
+      run('import', newDir, oldDir);
+      expect(json(newDir, 'meta')[0]!.merged).toEqual(['#500', '#900']);
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'traz as regras em vigor de meta.rules, com a origem, e deixa as encerradas',
+    'brings the rules in force from meta.rules, with the origem, and leaves the ended ones',
     () => {
-      const meta = json(antiga, 'meta')[0]!;
+      const meta = json(oldDir, 'meta')[0]!;
       meta.rules = [
-        { id: 'R1', texto: 'regra viva', origem: 'dono', at: '2026-11-10T10:00:00Z' },
+        { id: 'R1', texto: 'live rule', origem: 'dono', at: '2026-11-10T10:00:00Z' },
         {
           id: 'R2',
-          texto: 'regra morta',
+          texto: 'dead rule',
           origem: 'SUP-3',
           at: '2026-11-10T11:00:00Z',
           endedAt: '2026-11-10T12:00:00Z',
         },
       ];
-      writeFileSync(path.join(antiga, 'meta.json'), JSON.stringify([meta]));
-      run('import', nova, antiga);
-      const rules = json(nova, 'meta')[0]!.rules as Linha[];
+      writeFileSync(path.join(oldDir, 'meta.json'), JSON.stringify([meta]));
+      run('import', newDir, oldDir);
+      const rules = json(newDir, 'meta')[0]!.rules as Row[];
       expect(rules).toHaveLength(1);
-      expect(rules[0]).toMatchObject({ texto: 'regra viva', origem: 'dono' });
-      expect(run('show', nova)).toContain('regra viva');
+      expect(rules[0]).toMatchObject({ texto: 'live rule', origem: 'dono' });
+      expect(run('show', newDir)).toContain('live rule');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'com a pasta nova não vazia, sai com código 2 e não grava',
+    'with a non-empty new folder, exits with code 2 and writes nothing',
     () => {
-      run('row', nova, '#1', 'title=Já tem');
-      const antes = readFileSync(path.join(nova, 'queue.json'), 'utf8');
-      const r = runRaw('import', nova, antiga);
+      run('row', newDir, '#1', 'title=Already has');
+      const before = readFileSync(path.join(newDir, 'queue.json'), 'utf8');
+      const r = runRaw('import', newDir, oldDir);
       expect(r.status).toBe(2);
       expect(r.stderr).toMatch(/erro:/);
-      expect(readFileSync(path.join(nova, 'queue.json'), 'utf8')).toBe(antes);
+      expect(readFileSync(path.join(newDir, 'queue.json'), 'utf8')).toBe(before);
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'pasta antiga ou nova sem os arquivos: código 2',
+    'old or new folder without the files: code 2',
     () => {
-      expect(runRaw('import', nova, path.join(raiz, 'nao-existe')).status).toBe(2);
-      expect(runRaw('import', path.join(raiz, 'sem-init'), antiga).status).toBe(2);
+      expect(runRaw('import', newDir, path.join(root, 'does-not-exist')).status).toBe(2);
+      expect(runRaw('import', path.join(root, 'no-init'), oldDir).status).toBe(2);
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'não altera a pasta antiga',
+    'does not change the old folder',
     () => {
-      const antes = ['queue', 'meta', 'log'].map((n) =>
-        readFileSync(path.join(antiga, `${n}.json`), 'utf8'),
+      const before = ['queue', 'meta', 'log'].map((n) =>
+        readFileSync(path.join(oldDir, `${n}.json`), 'utf8'),
       );
-      run('import', nova, antiga);
-      const depois = ['queue', 'meta', 'log'].map((n) =>
-        readFileSync(path.join(antiga, `${n}.json`), 'utf8'),
+      run('import', newDir, oldDir);
+      const after = ['queue', 'meta', 'log'].map((n) =>
+        readFileSync(path.join(oldDir, `${n}.json`), 'utf8'),
       );
-      expect(depois).toEqual(antes);
+      expect(after).toEqual(before);
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'registra no log "importado de <pasta antiga>: <n> linhas (<k> em andamento); exclusivas …; holds …; merged <m>"',
+    'records in the log "importado de <old folder>: <n> linhas (<k> em andamento); exclusivas …; holds …; merged <m>"',
     () => {
-      run('import', nova, antiga);
-      const log = logTexts(nova);
+      run('import', newDir, oldDir);
+      const log = logTexts(newDir);
       expect(log).toHaveLength(1);
       expect(log[0]).toBe(
-        `importado de ${antiga}: 6 linhas (1 em andamento); exclusivas #883; holds #898 apagado, #910 mantido, ` +
+        `importado de ${oldDir}: 6 linhas (1 em andamento); exclusivas #883; holds #898 apagado, #910 mantido, ` +
           '#920 mantido; merged 2',
       );
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'a fila importada marca o que falta publicar e as vagas são recalculadas',
+    'the imported queue marks what is left to publish and the vagas are recomputed',
     () => {
-      run('import', nova, antiga);
-      const m = json(nova, 'meta')[0]!;
+      run('import', newDir, oldDir);
+      const m = json(newDir, 'meta')[0]!;
       expect((m.unpublished as { files: string[] }).files).toEqual([
         'queue.json',
         'meta.json',
         'log.json',
       ]);
       expect(typeof m.vagas).toBe('string');
-      const show = run('show', nova);
+      const show = run('show', newDir);
       expect(show).toContain('fila: 6 linhas');
-      // as linhas sem ficha no painel antigo (#910 e #911) entram nas fichas a refazer
+      // the rows without a ficha on the old panel (#910 and #911) go into the fichas a refazer
       expect(show).toContain('fichas a refazer: #910 #911');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'o import não entra no lote do apply',
+    'import does not go in the apply batch',
     () => {
-      const lote = path.join(raiz, 'lote.txt');
-      writeFileSync(lote, `import ${antiga}\n`);
-      const r = runRaw('apply', nova, lote);
+      const batchFile = path.join(root, 'batch.txt');
+      writeFileSync(batchFile, `import ${oldDir}\n`);
+      const r = runRaw('apply', newDir, batchFile);
       expect(r.status).toBe(2);
       expect(r.stderr).toContain('linha 1');
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 });
 
-describe('SKILL.md — troca a quente e importar= (FM7)', () => {
+describe('SKILL.md — hot switch and importar= (FM7)', () => {
   const skill = readFileSync(SKILL, 'utf8');
 
-  it('"Na sessão nova" cita upgrade, a troca da página e o role', () => {
-    const s = section(skill, '## Troca de sessão');
-    const nova1 = s.slice(s.indexOf('**Na sessão nova**'));
-    expect(nova1).toContain('painel.py upgrade');
-    expect(nova1).toMatch(/files\/index\.html/);
-    expect(nova1).toMatch(/página/);
-    expect(nova1).toContain('role <pasta> coordenador');
+  it('"In the new session" cites upgrade, the page swap and the role', () => {
+    const s = section(skill, '## Session switch');
+    const newSession = s.slice(s.indexOf('**In the new session**'));
+    expect(newSession).toContain('painel.py upgrade');
+    expect(newSession).toMatch(/files\/index\.html/);
+    expect(newSession).toMatch(/page/);
+    expect(newSession).toContain('role <folder> coordenador');
   });
 
-  it('"Argumentos" cita importar= como opcional', () => {
-    const s = section(skill, '## Argumentos');
-    expect(s).toContain('importar=<url do painel antigo>');
-    expect(s).toMatch(/importar=[^\n]*opcional/);
+  it('"Arguments" cites importar= as optional', () => {
+    const s = section(skill, '## Arguments');
+    expect(s).toContain('importar=<old panel url>');
+    expect(s).toMatch(/importar=[^\n]*optional/);
   });
 
-  it('"Painel" descreve o caminho do importar', () => {
-    const s = section(skill, '## Painel');
+  it('"Panel" describes the import path', () => {
+    const s = section(skill, '## Panel');
     expect(s).toContain('importar=');
     expect(s).toContain('painel.py import');
     expect(s).toMatch(/datasets/);
     expect(s).toContain('init');
   });
 
-  it('o passo 3 de "Fila" pede a ficha de todas as linhas importadas', () => {
-    const s = section(skill, '## 2. Fila');
-    const passo3 = s.slice(s.indexOf('3. Peça a ficha'), s.indexOf('4. **Ordem:**'));
-    expect(passo3).toMatch(/importar=/);
-    expect(passo3).toMatch(/todas as linhas importadas/);
+  it('step 3 of "Queue" asks for the ficha of all the imported rows', () => {
+    const s = section(skill, '## 2. Queue');
+    const step3 = s.slice(
+      s.indexOf('3. Ask **one** subagent'),
+      s.indexOf('4. **Order:**'),
+    );
+    expect(step3).toMatch(/importar=/);
+    expect(step3).toMatch(/all the imported rows/);
   });
 
-  it('quem importa com etapa em andamento é o coordenador que as tem e avisa as filhas', () => {
-    const s = section(skill, '## Painel');
+  it('whoever imports with a stage in progress is the coordinator that has it and notifies the child sessions', () => {
+    const s = section(skill, '## Panel');
     expect(s).toMatch(/em andamento/);
     expect(s).toContain('O coordenador mudou');
   });

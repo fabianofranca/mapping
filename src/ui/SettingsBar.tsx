@@ -15,7 +15,7 @@ import {
 } from '../store/settings';
 import { Choice, Segmented, Select } from './controls';
 
-/** Idioma, tema (segmentado) componentes sobre fotos e setas. Vive no diálogo Configurações. */
+/** Language, theme (segmented), components over photos and arrows. Lives in the Settings dialog. */
 export function SettingsBar() {
   return (
     <div class="settings" role="group" aria-label={t('settings.title')}>

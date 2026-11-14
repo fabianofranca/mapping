@@ -1,194 +1,202 @@
 ---
 name: detalhar-backlog
-description: Coordena subagentes Opus (ferramenta `Agent`, com esforço high ou medium pelos critérios da skill) que detalham, como etapas `ready`, todas as issues abertas `roadmap` e `bug` do fabianofranca/mapping que ainda não estão `ready` nem `in-progress`. Antes de detalhar, um subagente de agrupamento propõe juntar issues num épico só (menos versões pequenas do MCP, uma rodada do testador para várias) e o dono decide. As perguntas dos subagentes chegam ao dono sempre pelo seletor de perguntas, com uma opção recomendada. Use quando o dono pedir para detalhar o backlog, as roadmap, os bugs pendentes ou "tudo que não está ready", ou rodar /detalhar-backlog.
+description: Coordinates Opus subagents (the `Agent` tool, at high or medium effort by the skill's criteria) that detail, as `ready` stages, every open `roadmap` and `bug` issue of fabianofranca/mapping that is not yet `ready` or `in-progress`. Before detailing, a grouping subagent proposes merging issues into a single epic (fewer small MCP versions, one tester round for several) and the owner decides. The subagents' questions always reach the owner through the question picker, with a recommended option. Use when the owner asks to detail the backlog, the roadmap issues, the pending bugs or "everything that is not ready", or runs /detalhar-backlog.
 ---
 
-# Detalhar o backlog
+# Detail the backlog
 
-Esta sessão é o **coordenador**. Ela não detalha nada sozinha: cria os subagentes Opus (ferramenta `Agent`), leva as perguntas deles ao dono, devolve as respostas e confere o resultado. Quem detalha segue o `docs/PROCESS.md` ("Detalhar uma etapa", "Impacto", "Bugs e evidência visual", "Uso de modelos" e "Fluxo automatizado", item 2).
+This session is the **coordinator**. It details nothing on its own: it creates the Opus subagents (the `Agent` tool), takes their questions to the owner, hands the answers back and checks the result. Whoever details follows `docs/PROCESS.md` ("Detailing a stage", "Impact", "Bugs and visual evidence", "Model use" and "Automated flow", item 2).
 
-Rode este chat no modo **Auto**: um subagente que pede permissão fica parado, porque ninguém está olhando (`docs/PROCESS.md`, "Limitações"). O coordenador pode rodar em Sonnet; o julgamento fica com os subagentes, que rodam em Opus.
+Run this chat in **Auto** mode: a subagent that asks for permission stays stuck, because nobody is watching (`docs/PROCESS.md`, "Limitations"). The coordinator may run on Sonnet; the judgment stays with the subagents, which run on Opus.
 
-A ferramenta `Agent` aceita `model` e `effort`. **Esta skill é o pedido explícito de esforço:** todo subagente nasce com `subagent_type: general-purpose`, `model: opus`, `run_in_background: true` e `effort` explícito, `medium` no agrupamento e `high` ou `medium` por unidade, pelos critérios de "Esforço do detalhamento". Cada subagente faz a unidade inteira (lê, rascunha, confere, pergunta pelo coordenador e grava as issues), então todo o julgamento fica no esforço pedido. Nenhum prompt manual para o dono abrir sessão.
+The `Agent` tool accepts `model` and `effort`. **This skill is the explicit effort request:** every subagent is born with `subagent_type: general-purpose`, `model: opus`, `run_in_background: true` and an explicit `effort`, `medium` for the grouping and `high` or `medium` per unit, by the criteria in "Detailing effort". Each subagent does the whole unit (reads, drafts, checks, asks through the coordinator and writes the issues), so all the judgment runs at the requested effort. No manual prompt for the owner to open a session.
 
-## Argumentos
+## Arguments
 
 `/detalhar-backlog [#n ...] [paralelo=N] [sem-agrupar] [alto=#a,#b|nenhum]`
 
-- `#n ...`: detalha só essas issues. Sem a lista, detalha todas as candidatas.
-- `paralelo=N`: quantos subagentes de detalhamento rodam ao mesmo tempo. O padrão é **3**.
-- `sem-agrupar`: pula o agrupamento, e cada issue vira a sua própria etapa.
-- `alto=#a,#b`: essas issues (ou os grupos que as contêm) pedem esforço high, além das que os critérios apontarem. `alto=nenhum`: nenhuma unidade é tratada como high, e todas rodam em `effort: medium`.
+- `#n ...`: details only these issues. Without the list, it details all the candidates.
+- `paralelo=N`: how many detailing subagents run at the same time. The default is **3**.
+- `sem-agrupar`: skips the grouping, and each issue becomes its own stage.
+- `alto=#a,#b`: these issues (or the groups that contain them) call for high effort, on top of those the criteria point to. `alto=nenhum`: no unit is treated as high, and all of them run at `effort: medium`.
 
-## Regra das perguntas ao dono
+## Rule for questions to the owner
 
-Toda pergunta ao dono passa pela ferramenta de perguntas (`AskUserQuestion`), **nunca** por texto solto no chat:
+Every question to the owner goes through the questions tool (`AskUserQuestion`), **never** through loose text in the chat:
 
-- cada pergunta se sustenta sozinha, porque o dono pode ver só o diálogo: ela começa por `#<n> — ` e cita o que precisa da issue;
-- tem de 2 a 4 opções, e a **recomendada** vem primeiro, com " (Recomendado)" no fim do rótulo;
-- o cabeçalho tem no máximo 12 caracteres;
-- vão no máximo 4 perguntas por chamada. Se houver mais, faça outra chamada, uma issue (ou grupo) por chamada sempre que der;
-- a resposta em "Outro" e as notas do dono vão para o subagente **sem mudar nenhuma palavra**.
+- each question stands on its own, because the owner may see only the dialog: it starts with `#<n> — ` and cites what it needs from the issue;
+- it has 2 to 4 options, and the **recommended** one comes first, with " (Recomendado)" at the end of the label;
+- the header has at most 12 characters;
+- at most 4 questions go in each call. If there are more, make another call, one issue (or group) per call whenever possible;
+- the answer in "Other" and the owner's notes go to the subagent **without changing a single word**.
 
-Antes de cada chamada, mande um `PushNotification` curto, por exemplo "Detalhamento: 2 perguntas da #896". O dono usa o celular e pode não estar olhando o chat. Carregue o `PushNotification` com o `ToolSearch` se ainda não estiver carregado; o `AskUserQuestion` só se ele aparecer na lista de ferramentas adiadas.
+Before each call, send a short `PushNotification`, for example "Detalhamento: 2 perguntas da #896". The owner uses a phone and may not be looking at the chat. Load `PushNotification` with `ToolSearch` if it is not loaded yet; `AskUserQuestion` only if it appears in the list of deferred tools.
 
-## Esforço do detalhamento
+## Detailing effort
 
-O detalhamento de uma unidade roda em `effort: high` quando o plano depende de julgamento fino, e um erro nele custa caro na implementação. Pede high a unidade que:
+The detailing of a unit runs at `effort: high` when the plan depends on fine judgment, and a mistake in it is costly in the implementation. A unit calls for high when it:
 
-- mexe em schema, num formato (`docs/FORMAT.md`, `docs/SPEC-FORMAT.md`, `docs/COMMENT-FORMAT.md`) ou numa migração;
-- toca a gravação ou a integridade do `mapping.json` (`src/store/session.ts`, revisão, conflito), perda de dados ou segurança (CSP, Trusted Types);
-- mexe em regra de arquitetura transversal: o assentar da hierarquia (`src/model/hierarchySettle.ts`), o store e o desfazer, o `projectIndex`, o `CanvasController`, o contrato das tools do MCP;
-- deve passar de umas 5 fases, ou junta 4 ou mais issues;
-- inclui uma `ready` cujo plano muda (replanejamento), ou é uma rodada `code-review` com muitos achados a planejar.
+- touches a schema, a format (`docs/FORMAT.md`, `docs/SPEC-FORMAT.md`, `docs/COMMENT-FORMAT.md`) or a migration;
+- touches the saving or the integrity of `mapping.json` (`src/store/session.ts`, revision, conflict), data loss or security (CSP, Trusted Types);
+- touches a cross-cutting architecture rule: the hierarchy settling (`src/model/hierarchySettle.ts`), the store and undo, the `projectIndex`, the `CanvasController`, the contract of the MCP tools;
+- should go past about 5 phases, or merges 4 or more issues;
+- includes a `ready` whose plan changes (replanning), or is a `code-review` round with many findings to plan.
 
-Quanto às **fases** da tabela de modelos e esforço (decisão 11 da #1324): a fase que toca a infraestrutura do fluxo ou algo crítico recebe coordenador **high com `/code-review high`**, qualquer que seja o tamanho. Gatilhos de risco:
+As for the **phases** of the models and effort table (decision 11 of #1324): a phase that touches the flow infrastructure or something critical gets a **high** coordinator **with `/code-review high`**, whatever its size. Risk triggers:
 
-- os skills `implementar-fila`, `detalhar-backlog`, `supervisionar-fila` e `via-rapida`, o `painel.py`, ou uma regra (não só o texto) do `docs/FLOW.md` ou do `docs/PROCESS.md`;
-- `.github/workflows/`, `scripts/release/`, `scripts/ci/distBudget.mjs` (as guardas do teto; o `scripts/ci/dist-budget.json`, que a subida grava, não conta) ou `mcp/version.ts`;
-- a versão do schema ou do formato (`formatVersion`);
-- a gravação do `mapping.json` (`src/store/session.ts`) ou a CSP (`pwa/csp.ts`).
+- the skills `implementar-fila`, `detalhar-backlog`, `supervisionar-fila` and `via-rapida`, the `painel.py`, or a rule (not just the text) of `docs/FLOW.md` or `docs/PROCESS.md`;
+- `.github/workflows/`, `scripts/release/`, `scripts/ci/distBudget.mjs` (the ceiling guards; `scripts/ci/dist-budget.json`, which the raise writes, does not count) or `mcp/version.ts`;
+- the schema or format version (`formatVersion`);
+- the saving of `mapping.json` (`src/store/session.ts`) or the CSP (`pwa/csp.ts`).
 
-No fechamento do épico, `scripts/ci/riskTriggers.mjs` confere os mesmos gatilhos no diff; quem muda esta lista muda o script no mesmo PR.
+At the epic closing, `scripts/ci/riskTriggers.mjs` checks the same triggers on the diff; whoever changes this list changes the script in the same PR.
 
-A linha da fase diz qual gatilho a fez high (por exemplo, "Sonnet high, com `/code-review high` (gatilho: skill implementar-fila)"). Quem acrescenta uma decisão a uma etapa em andamento **reclassifica** o esforço das fases que ainda não terminaram; se uma passar a high, a fase é avisada de que a `/code-review high` passa a valer.
+The phase line says which trigger made it high (for example, "Sonnet high, with `/code-review high` (trigger: skill implementar-fila)"). Whoever adds a decision to a stage in progress **reclassifies** the effort of the phases that are not finished yet; if one becomes high, the phase is told that `/code-review high` now applies.
 
-O resto roda em `effort: medium`. Na dúvida, recomende high (`docs/PROCESS.md`: na dúvida, vale o maior), com o motivo. O argumento `alto=` soma unidades ou desliga a regra.
+Everything else runs at `effort: medium`. When in doubt, recommend high (`docs/PROCESS.md`: when in doubt, the higher one wins), with the reason. The `alto=` argument adds units or turns the rule off.
 
-## 1. Candidatas
+## 1. Candidates
 
-1. `list_issues` (`state: OPEN`, `fields: [number, title, labels]`, sem `body`, porque o corpo de todas passa do limite) uma vez com `labels: [roadmap]` e uma com `labels: [bug]`.
-2. Fique só com as que **não** têm `ready`, `in-progress` nem `step`, e deixe de fora as issues cujo título começa por "Teto do dist/index.html acima dos limites" (o `bug` da subida do teto, etapa #1802: é um pedido de revisão do dono, não um defeito a planejar, e fica com a revisão dele no chat do supervisor; diga isso ao listar o que ficou de fora). Com a lista `#n ...`, use a interseção dela com as candidatas e diga quais números ficaram de fora e por quê.
-3. Ordem: `severity: high` e `impact: high` primeiro, depois `medium`, depois `low`; no empate, o menor número vem antes. A ordem do Project "Mapping - Backlog" é do dono, e as ferramentas não alcançam o Project.
-4. Sem candidatas, diga isso e termine.
+1. `list_issues` (`state: OPEN`, `fields: [number, title, labels]`, no `body`, because the body of all of them exceeds the limit) once with `labels: [roadmap]` and once with `labels: [bug]`.
+2. Keep only those that have **neither** `ready`, `in-progress` nor `step`, and leave out the issues whose title starts with "Teto do dist/index.html acima dos limites" (the `bug` of the ceiling raise, stage #1802: it is a review request for the owner, not a defect to plan, and stays with their review in the supervisor's chat; say so when listing what was left out). With the `#n ...` list, use its intersection with the candidates and say which numbers were left out and why.
+3. Order: `severity: high` and `impact: high` first, then `medium`, then `low`; on a tie, the lower number comes first. The order of the Project "Mapping - Backlog" is the owner's, and the tools cannot reach the Project.
+4. With no candidates, say so and finish.
 
-**Issues do revisor de código** (rótulo `code-review`, `docs/PROCESS.md` "Revisão de código"): a da rodada (`roadmap`, título "CR base …" ou "CR épico …") lista muitos achados, e cada defeito high ou medium dela já tem a sua issue `bug`, citada no corpo. O detalhamento da rodada cobre só os achados que **não** apontam para um `bug`. Passe isso ao subagente de agrupamento, para ela juntar cada `bug` com a rodada ou com outras candidatas da mesma área, ou separar a rodada por área, sem detalhar o mesmo achado duas vezes.
+**Code reviewer issues** (label `code-review`, `docs/PROCESS.md` "Code review"): the round's issue (`roadmap`, title "CR base …" or "CR épico …") lists many findings, and each high or medium defect in it already has its own `bug` issue, cited in the body. The detailing of the round covers only the findings that do **not** point to a `bug`. Pass this on to the grouping subagent, so it merges each `bug` with the round or with other candidates of the same area, or splits the round by area, without detailing the same finding twice.
 
-## 2. Agrupamento (um subagente Opus)
+## 2. Grouping (one Opus subagent)
 
-Pule este passo com `sem-agrupar` ou com uma candidata só.
+Skip this step with `sem-agrupar` or with a single candidate.
 
-Crie **um** subagente de agrupamento com a ferramenta `Agent`:
+Create **one** grouping subagent with the `Agent` tool:
 
 - `subagent_type`: `general-purpose`, `model`: `opus`, `effort`: `medium`, `run_in_background`: `true`;
 - `description`: "Agrupamento do backlog".
 
-Mensagem:
+Message:
+
+<!-- portuguese-guard:begin frozen report format that the coordinator parses -->
 
 ```text
-Você é um subagente do coordenador: não pergunte nada ao dono, e o seu relatório final é a mensagem ao coordenador. Você é o agente de agrupamento do backlog do `fabianofranca/mapping`. Não edite issue, não crie branch nem PR.
+You are a subagent of the coordinator: do not ask the owner anything, and your final report is the message to the coordinator. You are the backlog grouping agent of `fabianofranca/mapping`. Do not edit any issue, do not create a branch or a PR.
 
-1. Leia o `CLAUDE.md`, o `docs/PROCESS.md`, as candidatas <lista #n — título — rótulos> (corpo e comentários) e as issues `ready` abertas (corpo; as sub-issues `step` só quando precisar). Não proponha mexer nas `in-progress`.
-2. Proponha grupos: candidatas que valem mais num épico só do que em épicos separados. Nas issues `code-review`, um achado da rodada que aponta para um `bug` pertence a esse `bug`; a rodada, que é uma lista longa, pode ser dividida por área entre vários grupos (diga quais itens vão para cada um). Pese:
-   - versão do MCP: várias etapas que subiriam o MCP cada uma (minor ou patch) viram uma versão só;
-   - rodada do testador: roteiros iguais ou próximos rodam numa rodada só (`docs/TESTING-NUVEM.md`);
-   - mesma área, os mesmos arquivos ou a mesma ordem proposta: menos conflito e menos merge da `main` no épico;
-   - mesmo formato ou schema: uma subida de versão e uma migração só;
-   - o custo de juntar: o épico grande demora mais a chegar à `main` e uma falha segura todo mundo. Recomende no máximo umas 8 fases por épico e não junte o que tem condição de entrada não cumprida.
-   - grupo com algum `bug`: a principal é o `bug` de maior severidade (no empate, o menor número), porque a etapa fica `bug` com a maior severidade do grupo.
-3. Diga também quais issues `ready` (não `in-progress`) entrariam bem num grupo. Juntar uma `ready` muda um plano já fechado, e isso é do dono: proponha, não decida.
-4. Marque como bloqueada a candidata com condição de entrada não cumprida (dependência externa, decisão anterior pendente), com o motivo.
-5. Para cada grupo e cada sozinha, diga se o detalhamento pede esforço high, pelos critérios de "Esforço do detalhamento" do skill `.claude/skills/detalhar-backlog/SKILL.md`, com o motivo em uma linha. Avalie o grupo como ficaria se o dono o aprovasse.
-6. Termine com a proposta como relatório final, exatamente neste formato:
+1. Read `CLAUDE.md`, `docs/PROCESS.md`, the candidates <list #n — title — labels> (body and comments) and the open `ready` issues (body; the `step` sub-issues only when you need them). Do not propose touching the `in-progress` ones.
+2. Propose groups: candidates that are worth more in a single epic than in separate epics. In the `code-review` issues, a finding of the round that points to a `bug` belongs to that `bug`; the round, which is a long list, may be split by area among several groups (say which items go to each). Weigh:
+   - MCP version: several stages that would each raise the MCP (minor or patch) become a single version;
+   - tester round: equal or close scripts run in a single round (`docs/TESTING-NUVEM.md`);
+   - same area, same files or same proposed order: fewer conflicts and fewer merges of `main` into the epic;
+   - same format or schema: a single version raise and a single migration;
+   - the cost of merging: the big epic takes longer to reach `main` and one failure holds everyone back. Recommend at most about 8 phases per epic and do not merge anything with an unmet entry condition.
+   - group with any `bug`: the main one is the `bug` of the highest severity (on a tie, the lowest number), because the stage becomes a `bug` with the group's highest severity.
+3. Also say which `ready` issues (not `in-progress`) would fit well in a group. Merging a `ready` changes an already closed plan, and that is the owner's call: propose, do not decide.
+4. Mark as blocked the candidate with an unmet entry condition (external dependency, earlier pending decision), with the reason.
+5. For each group and each standalone one, say whether the detailing calls for high effort, by the criteria in "Detailing effort" of the skill `.claude/skills/detalhar-backlog/SKILL.md`, with the reason in one line. Evaluate the group as it would be if the owner approved it.
+6. End with the proposal as the final report, exactly in this format:
 
 AGRUPAMENTO
-G1. <nome curto> — #a, #b, #c<, + ready #d>
-  Por quê: <versões e rodada que economiza, área comum, riscos>
-  Principal: #a (a que vira a etapa; as outras fecham como duplicadas dela; em grupo com `bug`, o `bug` de maior severidade e, no empate, o de menor número)
-  Pergunta: #a, #b, #c — <pergunta autossuficiente> | Cabeçalho: <até 12 caracteres>
-    - <opção recomendada> (Recomendado): <consequência>
-    - <outra opção>: <consequência>
-SOZINHAS: #e, #f (cada uma vira a sua própria etapa)
-BLOQUEADAS: #g — <motivo>
-ESFORÇO HIGH: G1 — <motivo>; #e — <motivo>   (ou "ESFORÇO HIGH: nenhuma")
-ORDEM: <ordem sugerida de implementação dos grupos e das sozinhas, com o porquê em uma linha cada>
+G1. <short name> — #a, #b, #c<, + ready #d>
+  Por quê: <versions and round it saves, common area, risks>
+  Principal: #a (the one that becomes the stage; the others close as duplicates of it; in a group with a `bug`, the `bug` of the highest severity and, on a tie, the lowest number)
+  Pergunta: #a, #b, #c — <self-contained question> | Cabeçalho: <up to 12 characters>
+    - <recommended option> (Recomendado): <consequence>
+    - <other option>: <consequence>
+SOZINHAS: #e, #f (each becomes its own stage)
+BLOQUEADAS: #g — <reason>
+ESFORÇO HIGH: G1 — <reason>; #e — <reason>   (or "ESFORÇO HIGH: nenhuma")
+ORDEM: <suggested implementation order of the groups and standalone ones, with the why in one line each>
 ```
 
-Com o `AGRUPAMENTO`:
+<!-- portuguese-guard:end -->
 
-- uma pergunta por grupo, com as opções que o subagente deu, e no fim uma pergunta para as bloqueadas, com as opções "Pular (Recomendado)" e "Detalhar mesmo assim";
-- a resposta do dono fecha os grupos. Uma opção "Outro" que muda um grupo vale como foi escrita. Se ela for ambígua, faça mais uma pergunta;
-- guarde a `ORDEM` para o resumo final e o `ESFORÇO HIGH` para o passo 3. Se o dono desfez ou mudou um grupo, reavalie o esforço das unidades que resultaram, pelos critérios.
+With the `AGRUPAMENTO`:
 
-Sem agrupamento (`sem-agrupar` ou uma candidata só), leia o corpo de cada candidata (`issue_read`) e aplique você mesmo os critérios de "Esforço do detalhamento".
+- one question per group, with the options the subagent gave, and at the end a question for the blocked ones, with the options "Pular (Recomendado)" and "Detalhar mesmo assim";
+- the owner's answer closes the groups. An "Other" option that changes a group stands as it was written. If it is ambiguous, ask one more question;
+- keep the `ORDEM` for the final summary and the `ESFORÇO HIGH` for step 3. If the owner undid or changed a group, reassess the effort of the resulting units, by the criteria.
 
-O término do subagente acorda o coordenador, que lê o relatório na notificação. Vale a conferência de reserva de "4. Durante". Se o agrupamento ficar sem notícia por 3 h, pergunte ao dono se segue sem agrupar ("Seguir sem agrupar (Recomendado)" / "Recriar o subagente").
+Without grouping (`sem-agrupar` or a single candidate), read the body of each candidate (`issue_read`) and apply the criteria of "Detailing effort" yourself.
 
-## 3. Detalhamento (subagentes Opus, `paralelo` por vez)
+The subagent finishing wakes the coordinator, which reads the report in the notification. The fallback check of "4. During" applies. If the grouping goes 3 h without news, ask the owner whether to continue without grouping ("Seguir sem agrupar (Recomendado)" / "Recriar o subagente").
 
-Cada **unidade** é um grupo aprovado ou uma issue sozinha. Todas rodam em subagentes; o esforço de cada uma (`high` ou `medium`) vem do `ESFORÇO HIGH` do agrupamento, dos critérios e do `alto=` (se o dono desfez ou mudou um grupo, reavalie).
+## 3. Detailing (Opus subagents, `paralelo` at a time)
 
-### Subagentes
+Each **unit** is an approved group or a standalone issue. All of them run in subagents; the effort of each (`high` or `medium`) comes from the grouping's `ESFORÇO HIGH`, the criteria and `alto=` (if the owner undid or changed a group, reassess).
 
-Siga a `ORDEM`. A dependência não segura o detalhamento: o `Depende de` ordena a implementação, e duas unidades que dependem uma da outra podem ser detalhadas ao mesmo tempo. Só espere a outra ficar pronta quando o plano de uma precisa do plano da outra (por exemplo, para usar um auxiliar que a outra cria). Crie até `paralelo` subagentes com a ferramenta `Agent` (`subagent_type: general-purpose`, `model: opus`, `run_in_background: true`, `effort: high` ou `medium` da unidade, `description` "Detalhamento — #<principal> <título curto>"). Quando um termina, o próximo começa. Guarde o id de cada subagente: as `RESPOSTAS` voltam por ele.
+### Subagents
 
-Mensagem:
+Follow the `ORDEM`. Dependency does not hold back the detailing: the `Depende de` orders the implementation, and two units that depend on each other may be detailed at the same time. Only wait for the other one to be ready when the plan of one needs the plan of the other (for example, to use a helper that the other creates). Create up to `paralelo` subagents with the `Agent` tool (`subagent_type: general-purpose`, `model: opus`, `run_in_background: true`, `effort: high` or `medium` of the unit, `description` "Detalhamento — #<main> <short title>"). When one finishes, the next one starts. Keep the id of each subagent: the `RESPOSTAS` go back through it.
+
+Message:
+
+<!-- portuguese-guard:begin frozen report format that the coordinator parses -->
 
 ```text
-Você é um subagente do coordenador: não pergunte nada ao dono, e o seu relatório final é a mensagem ao coordenador. Você é o agente de detalhamento <da issue #n | do grupo #a (principal), #b, #c> do `fabianofranca/mapping` (docs/PROCESS.md, "Detalhar uma etapa" e "Fluxo automatizado", item 2). Não use a ferramenta de perguntas. Não crie branch, commit nem PR: o detalhamento só mexe em issues ("Nenhum PR existe só para mexer em plano").
+You are a subagent of the coordinator: do not ask the owner anything, and your final report is the message to the coordinator. You are the detailing agent <of issue #n | of group #a (main), #b, #c> of `fabianofranca/mapping` (docs/PROCESS.md, "Detailing a stage" and "Automated flow", item 2). Do not use the questions tool. Do not create a branch, a commit or a PR: the detailing only touches issues ("No PR exists just to touch a plan").
 
-1. Leia o `CLAUDE.md`, o `docs/PROCESS.md`, as issues da unidade com os comentários, as que elas citam e os títulos das `ready` e `in-progress` abertas, para achar sobreposição. Leia o código e os docs que o plano vai tocar: o "Toca em:" de cada fase cita arquivos que existem.
-<Só em grupo: 2. O grupo foi aprovado pelo dono: <decisão, com as palavras do dono se ele escreveu>. A #a vira a etapa. O conteúdo de cada outra entra no corpo como item numerado, com a origem, o rótulo e a severidade ou o impacto. As outras fecham como duplicadas da #a (`state_reason: duplicate`, `duplicate_of`), cada uma com um comentário que diz para onde foi. Grupo com algum `bug`: a etapa é `bug`, com a maior severidade do grupo e sem `impact:`; se um absorvido tem severidade maior que a da principal, troque o `severity:` dela e diga por quê no comentário; o impacto de cada `roadmap` absorvida fica em "Absorvidas". Grupo sem `bug`: a etapa fica com o tipo e o rótulo da #a. Em "Absorvidas", o corpo lista a severidade ou o impacto de cada uma. Um `bug` absorvido mantém os passos para reproduzir e a evidência. <Se o grupo traz uma `ready`: o plano dela muda; diga isso num comentário nela, com o porquê e a decisão do dono. Sub-issues `step` abertas: (a) de uma `ready` absorvida, a fase que continua no plano novo passa para a principal (`sub_issue_write` `add` com `replace_parent: true`) e tem o corpo atualizado, e a que sai fecha `not_planned` com um comentário que aponta a principal; (b) de uma `ready` principal cujo plano muda, a fase que continua tem o corpo atualizado, a que sai fecha `not_planned` com o comentário, e as novas são criadas e postas na ordem (`sub_issue_write` `reprioritize`). No fim, nenhuma `step` aberta fica pendurada numa issue fechada.>>
-3. Rascunhe o plano inteiro antes de criar qualquer coisa: objetivo, o que fica fora, decisões numeradas, épico (`epic/<nome>`), versões (schema, formatos e MCP: **uma** versão do MCP para a etapa toda, escrita como o tipo da subida — `MCP: minor`, `MCP: patch` ou `MCP: sem mudança` — e nunca como número, porque outras etapas detalhadas em paralelo pegariam o mesmo; o número é escolhido no fechamento do épico, na próxima versão livre da `origin/main`), registros (changelog e DS), a linha `Impacto:` (ou a severidade) e a tabela de modelos e esforço (linha Orquestrador, uma linha por fase e a coluna Testador). Para cada fase: a linha da tabela, o "Toca em:" (arquivos, ou padrão com prefixo como `tests/storage/folder*.test.ts`, e seções, **nunca pasta nem documento com seções inteiro**; dê nome a todo arquivo novo que a fase cria, com "(novo)" depois, como `src/model/direction.ts (novo)`; cita o `docs/TESTING.md` por roteiro, `docs/TESTING.md#R12`, e o resto dele pelo `##`, como `docs/TESTING.md#7-como-relatar-um-problema`; todo `docs/*.md`, os `.md` da raiz e os `.claude/skills/*/SKILL.md` por seção `##`, `docs/ARCHITECTURE.md#desempenho`, `CLAUDE.md#regras-de-arquitetura` e `.claude/skills/implementar-fila/SKILL.md#<slug>` (slug: título em minúsculas, sem acento, `-` entre as sequências, como `para-o-dono-nos-tres-chats`; um `###` conta como o `##` que o contém; o texto antes do primeiro `##` é `#inicio`); e a tabela de blocos como `docs/TESTING-NUVEM.md#blocos`; os outros arquivos, inclusive os `.md` de outras pastas, sem âncora), os checkboxes e o aceite. Antes de gravar, rode `python3 .claude/skills/implementar-fila/painel/painel.py toca "<o Toca em: de cada fase, separado por vírgula>"`: só vale com `ok`, e a citação que ele diz inválida (`inválida: <citação> — <motivo>`) se corrige. A última fase traz a seção **Testador**, com os roteiros e a linha "Passada visual: <lista>" (ou "nenhuma"). Com várias issues, junte os roteiros numa rodada só.
-   Antes de seguir, confira o rascunho contra o código da `main` (Grep e Read), item por item, e corrija o que não bater:
-   - todo arquivo, função, teste, passo do `docs/TESTING.md` e versão citada existe e diz o que o plano afirma (os valores atuais de schema, `formatVersion`, MCP e `version` das bibliotecas, lidos no código);
-   - nenhuma decisão admite duas implementações razoáveis diferentes; o que admitir vira decisão numerada ou pergunta ao dono;
-   - cada fase cabe numa sessão (um PR revisável) e nenhuma depende de uma posterior;
-   - roteiro novo é "o próximo número livre", entra num bloco da rodada completa (`docs/TESTING-NUVEM.md`) e o testador da nuvem consegue executá-lo sozinho;
-   - a "Sobreposição" cita as `ready` e `in-progress` que mexem nos mesmos arquivos, roteiros ou versões, com o estado atual delas (não o de quando foram citadas).
-4. Acrescente no corpo a linha `**Depende de:** #x, #y` (ou `**Depende de:** nenhuma`): a etapa ou o que precisa estar na `main` antes de ela começar. O skill que implementa as etapas em sequência lê essa linha. Ela é **obrigatória** sobre cada `ready` ou `in-progress` aberta cujo "Toca em:" tem arquivo em comum com o do plano novo: a etapa nova depende da que já existe. "Arquivo em comum" segue a comparação do `painel.py` (decisões 4 a 6 da #1440): o `docs/TESTING.md` se compara por roteiro (`docs/TESTING.md#R12` não conflita com `docs/TESTING.md#R6`; sem âncora conflita com qualquer citação do arquivo, e a citação antiga das outras `ready` (pasta, documento inteiro) conta como hoje: cobre o que está debaixo dela e conflita com toda seção), e todo `docs/*.md`, os `.md` da raiz (`CLAUDE.md`, `README.md`) e os `.claude/skills/*/SKILL.md`, por seção `##` do mesmo jeito (`docs/ARCHITECTURE.md#desempenho` não conflita com `docs/ARCHITECTURE.md#sessao-e-gravacao`, nem `CLAUDE.md#regras-de-arquitetura` com `CLAUDE.md#fluxo-de-trabalho-resumo`; os outros arquivos, inclusive os `.md` de outras pastas, contam inteiros), e não contam o `docs/TESTING-NUVEM.md#blocos`, os registros de cada épico (`changelog/<nome>.md`, `docs/design-system/<nome>.md`) nem `mcp/version.ts`. Se a ordem do dono for outra, pergunte ao dono (passo 5); não edite a outra issue.
-   Toda issue que você criar (o que separar em `roadmap` ou `bug`) leva no corpo a linha `Origem: etapa #<n>` (a etapa que você detalha).
-5. Decisão de produto (docs/PROCESS.md: o esperado não está em issue, doc nem spec; há mais de uma leitura razoável; muda uma decisão já tomada; mexe em schema ou formato): não decida sozinho. Junte as perguntas num relatório final, neste formato, e termine. A resposta chega depois, como uma mensagem "RESPOSTAS #<principal>", e você retoma daí, com o contexto que já tem.
+1. Read `CLAUDE.md`, `docs/PROCESS.md`, the unit's issues with their comments, the ones they cite and the titles of the open `ready` and `in-progress` issues, to find overlap. Read the code and docs that the plan will touch: the "Toca em:" of each phase cites files that exist.
+<Group only: 2. The group was approved by the owner: <decision, in the owner's words if they wrote it>. #a becomes the stage. The content of each other goes into the body as a numbered item, with the origin, the label and the severity or impact. The others close as duplicates of #a (`state_reason: duplicate`, `duplicate_of`), each with a comment that says where it went. Group with any `bug`: the stage is a `bug`, with the group's highest severity and without `impact:`; if an absorbed one has a higher severity than the main one's, change its `severity:` and say why in the comment; the impact of each absorbed `roadmap` stays in "Absorvidas". Group without a `bug`: the stage keeps the type and label of #a. In "Absorvidas", the body lists the severity or impact of each. An absorbed `bug` keeps the steps to reproduce and the evidence. <If the group brings a `ready`: its plan changes; say so in a comment on it, with the why and the owner's decision. Open `step` sub-issues: (a) of an absorbed `ready`, the phase that continues in the new plan moves to the main one (`sub_issue_write` `add` with `replace_parent: true`) and has its body updated, and the one that drops out closes `not_planned` with a comment that points to the main one; (b) of a main `ready` whose plan changes, the phase that continues has its body updated, the one that drops out closes `not_planned` with the comment, and the new ones are created and put in order (`sub_issue_write` `reprioritize`). In the end, no open `step` is left hanging on a closed issue.>>
+3. Draft the whole plan before creating anything: goal, what stays out, numbered decisions, epic (`epic/<name>`), versions (schema, formats and MCP: **one** MCP version for the whole stage, written as the type of the raise — `MCP: minor`, `MCP: patch` or `MCP: sem mudança` — and never as a number, because other stages detailed in parallel would pick the same one; the number is chosen at the epic closing, at the next free version of `origin/main`), records (changelog and DS), the `Impacto:` line (or the severity) and the models and effort table (an **Orquestrador** row, one row per phase and a Tester column). For each phase: the table row, the "Toca em:" (files, or a pattern with a prefix such as `tests/storage/folder*.test.ts`, and sections, **never a folder or a whole document with sections**; name every new file the phase creates, with "(novo)" after it, such as `src/model/direction.ts (novo)`; cite `docs/TESTING.md` by script, `docs/TESTING.md#R12`, and the rest of it by the `##`, such as `docs/TESTING.md#7-how-to-report-a-problem`; every `docs/*.md`, the root `.md` files and the `.claude/skills/*/SKILL.md` by `##` section, `docs/ARCHITECTURE.md#performance`, `CLAUDE.md#architecture-rules` and `.claude/skills/implementar-fila/SKILL.md#<slug>` (slug: title in lowercase, without accents, `-` between the sequences, such as `for-the-owner-in-the-three-chats`; a `###` counts as the `##` that contains it; the text before the first `##` is `#inicio`); and the blocks table as `docs/TESTING-NUVEM.md#full-round-in-blocks`; the other files, including the `.md` files of other folders, without an anchor), the checkboxes and the acceptance. Before writing, run `python3 .claude/skills/implementar-fila/painel/painel.py toca "<the Toca em: of each phase, comma-separated>"`: it only counts with `ok`, and the citation it calls invalid (`inválida: <citation> — <reason>`) gets fixed. The last phase carries the **Tester** section (`Testador`), with the scripts and the line "Passada visual: <list>" (or "nenhuma"). With several issues, merge the scripts into a single round.
+   Before moving on, check the draft against the `main` code (Grep and Read), item by item, and fix whatever does not match:
+   - every file, function, test, `docs/TESTING.md` step and version cited exists and says what the plan claims (the current values of schema, `formatVersion`, MCP and the libraries' `version`, read in the code);
+   - no decision admits two different reasonable implementations; whatever admits them becomes a numbered decision or a question to the owner;
+   - each phase fits in one session (one reviewable PR) and none depends on a later one;
+   - a new script is "the next free number", goes into a block of the full round (`docs/TESTING-NUVEM.md`) and the cloud tester can run it on its own;
+   - the "Sobreposição" cites the `ready` and `in-progress` issues that touch the same files, scripts or versions, with their current state (not the state from when they were cited).
+4. Add to the body the line `**Depende de:** #x, #y` (or `**Depende de:** nenhuma`): the stage or what must be on `main` before it starts. The skill that implements the stages in sequence reads this line. It is **mandatory** for every open `ready` or `in-progress` whose "Toca em:" has a file in common with the new plan's: the new stage depends on the one that already exists. "File in common" follows the `painel.py` comparison (decisions 4 to 6 of #1440): `docs/TESTING.md` is compared by script (`docs/TESTING.md#R12` does not conflict with `docs/TESTING.md#R6`; without an anchor it conflicts with any citation of the file, and the old citation of the other `ready` issues (folder, whole document) counts as it does today: it covers what is under it and conflicts with every section), and every `docs/*.md`, the root `.md` files (`CLAUDE.md`, `README.md`) and the `.claude/skills/*/SKILL.md`, by `##` section in the same way (`docs/ARCHITECTURE.md#performance` does not conflict with `docs/ARCHITECTURE.md#session-and-saving`, nor `CLAUDE.md#architecture-rules` with `CLAUDE.md#workflow-summary`; the other files, including the `.md` files of other folders, count whole), and do not count `docs/TESTING-NUVEM.md#full-round-in-blocks`, each epic's records (`changelog/<name>.md`, `docs/design-system/<name>.md`) or `mcp/version.ts`. If the owner's order is different, ask the owner (step 5); do not edit the other issue.
+   Every issue you create (what you split off into `roadmap` or `bug`) carries in its body the line `Origem: etapa #<n>` (the stage you are detailing).
+5. Product decision (docs/PROCESS.md: the expected behavior is not in an issue, doc or spec; there is more than one reasonable reading; it changes a decision already made; it touches a schema or format): do not decide alone. Gather the questions in a final report, in this format, and finish. The answer arrives later, as a message "RESPOSTAS #<main>", and you resume from there, with the context you already have.
 
-PERGUNTAS #<principal>
-P1. #<principal> — <pergunta autossuficiente, com o contexto que o dono precisa> | Cabeçalho: <até 12 caracteres>
-  - <opção recomendada> (Recomendado): <consequência>
-  - <outra opção>: <consequência>
-(de 2 a 4 opções, a recomendada primeiro; até 4 perguntas por mensagem; com mais, mande em rodadas)
+PERGUNTAS #<main>
+P1. #<main> — <self-contained question, with the context the owner needs> | Cabeçalho: <up to 12 characters>
+  - <recommended option> (Recomendado): <consequence>
+  - <other option>: <consequence>
+(2 to 4 options, the recommended one first; up to 4 questions per message; with more, send them in rounds)
 
-   Decisão pequena você toma, segue e registra como decisão numerada. Não crie nada no GitHub antes das respostas.
-6. Antes de criar, confira se uma tentativa anterior já criou sub-issues `step` ou trocou rótulos nesta unidade; complete o que falta, sem duplicar. Com as respostas: edite o corpo da issue principal com o plano, crie cada fase como sub-issue `step` (`issue_write` e depois `sub_issue_write` com a principal como pai), na ordem, troque `roadmap` por `ready` (o `issue_write` com `labels` substitui todos os rótulos da issue: leia os atuais e envie a lista completa, sem `roadmap` e com `ready`, e depois confira que `bug`, `severity:`, `impact:`, `code-review` e `observador-da-fila` continuam; o `bug` e o `severity:` ficam; o `impact:` fica numa `roadmap` sem `bug` no grupo, e a etapa que é `bug` não o leva; uma `ready` que não é `bug` leva o `impact:`) e registre num comentário as decisões do dono, com a data e o porquê.
-7. Todo texto que você escreve no GitHub termina com o rodapé de atribuição. Nunca escreva o número de um PR ou de uma issue que ainda não existe (o do PR do épico, por exemplo): diga "o PR do épico", e quem o abrir põe o número.
-8. Ao terminar, termine com uma destas mensagens como relatório final:
+   A small decision you make yourself, move on and record as a numbered decision. Create nothing on GitHub before the answers.
+6. Before creating, check whether a previous attempt already created `step` sub-issues or swapped labels on this unit; complete what is missing, without duplicating. With the answers: edit the main issue's body with the plan, create each phase as a `step` sub-issue (`issue_write` and then `sub_issue_write` with the main one as parent), in order, swap `roadmap` for `ready` (`issue_write` with `labels` replaces all the issue's labels: read the current ones and send the full list, without `roadmap` and with `ready`, and then check that `bug`, `severity:`, `impact:`, `code-review` and `observador-da-fila` are still there; `bug` and `severity:` stay; `impact:` stays on a `roadmap` without a `bug` in the group, and the stage that is a `bug` does not carry it; a `ready` that is not a `bug` carries the `impact:`) and record the owner's decisions in a comment, with the date and the why.
+7. Every text you write on GitHub ends with the attribution footer. Never write the number of a PR or an issue that does not exist yet (the epic's PR, for example): say "the epic's PR", and whoever opens it puts the number.
+8. When done, end with one of these messages as the final report:
 
-PRONTA #<principal> — <link>
-  Épico: epic/<nome> · Fases: <n> · MCP: <minor, patch ou "sem mudança"> · Schema: <v ou "sem mudança">
-  Modelos: Orquestrador <modelo>; <fase: modelo/esforço>; Testador <modelo/esforço>
-  Depende de: <#x ou nenhuma>
-  Absorvidas: <#b, #c ou nenhuma>
-  Decisões do dono aplicadas: <lista curta ou nenhuma>
-  Sobreposição: <arquivos ou roteiros em comum com outras ready, ou nenhuma>
-  Conferência: <o que a conferência do passo 3 corrigiu, ou "nada a corrigir">
-  Issues novas: <o que você separou em roadmap ou bug, ou nenhuma>
+PRONTA #<main> — <link>
+  Épico: epic/<name> · Fases: <n> · MCP: <minor, patch or "sem mudança"> · Schema: <v or "sem mudança">
+  Modelos: Orchestrator <model>; <phase: model/effort>; Tester <model/effort>
+  Depende de: <#x or nenhuma>
+  Absorvidas: <#b, #c or nenhuma>
+  Decisões do dono aplicadas: <short list or nenhuma>
+  Sobreposição: <files or scripts in common with other ready issues, or nenhuma>
+  Conferência: <what the check of step 3 fixed, or "nada a corrigir">
+  Issues novas: <what you split off into roadmap or bug, or nenhuma>
 
-BLOQUEADA #<principal> — <motivo>   (condição de entrada não cumprida; não comente na issue)
-FALHOU #<principal> — <o que travou e o que ficou feito>
+BLOQUEADA #<main> — <reason>   (entry condition not met; do not comment on the issue)
+FALHOU #<main> — <what got stuck and what was done>
 
-<Em paralelo com você: #x, #y. Se o seu plano tocar o mesmo que eles, diga em "Sobreposição"; não combine com eles sozinho.>
+<In parallel with you: #x, #y. If your plan touches the same things as theirs, say so in "Sobreposição"; do not coordinate with them on your own.>
 ```
 
-## 4. Durante
+<!-- portuguese-guard:end -->
 
-O término de um subagente acorda o coordenador, que lê o relatório na notificação. Para cada relatório:
+## 4. During
 
-- **`PERGUNTAS #n`**: notificação, depois `AskUserQuestion` com as perguntas como vieram. Responda ao **mesmo** subagente por `SendMessage` (`to` = o id dele) com `RESPOSTAS #n` e, para cada `Pk`, o rótulo escolhido e as notas do dono, ou o texto dele em "Outro". Se chegarem perguntas de dois subagentes juntas, faça uma chamada por issue.
-- **`PRONTA #n`**: confira com `issue_read` que a issue tem `ready` e não tem `roadmap` (e que `bug`, `severity:`, `impact:`, `code-review` e `observador-da-fila` de antes continuam; o `issue_write` com `labels` substitui todos os rótulos, então a troca leva a lista completa), que as sub-issues `step` existem (`issue_read` das sub-issues) e, em grupo, que as absorvidas fecharam como duplicadas e não têm `step` aberta (nem as de uma `ready` absorvida), e que o relatório traz a linha `Conferência:`. Se faltar algo, mande ao subagente o que falta por `SendMessage` e espere de novo. Com tudo certo, compare a "Sobreposição" com as prontas já recebidas da rodada (que o subagente não vê): com arquivo em comum (mesma regra do passo 4 da mensagem) e nenhuma dependência entre elas, acrescente `Depende de` na que vem depois na `ORDEM`, desde que a dependência (direta ou transitiva, lendo o `Depende de` das duas e das que elas citam) não feche um ciclo; se fechar, não edite e pergunte ao dono (corpo editado e um comentário com o porquê, terminado com o rodapé de atribuição). Depois **arquive a sessão do subagente de detalhamento** (`archive_session`, com o id que a ferramenta devolveu, se for uma sessão; subagente `Agent` em segundo plano não tem o que arquivar) e anote isso para o resumo final. Depois, comece a próxima unidade.
-- **`PERGUNTAS #n` respondidas e decisão registrada:** o mesmo vale para o agrupamento: depois de o dono decidir os grupos, arquive a sessão do subagente de agrupamento (`archive_session`) e anote no resumo final.
-- **`BLOQUEADA #n`** ou **`FALHOU #n`**: anote e comece a próxima. Uma falha vai para o resumo final; não tente de novo sem perguntar ao dono.
+A subagent finishing wakes the coordinator, which reads the report in the notification. For each report:
 
-**Se o `SendMessage` não alcançar o subagente** (sessão reiniciada, subagente perdido), crie um subagente novo com a mesma mensagem da unidade e, no fim dela, as `RESPOSTAS` já dadas. É seguro: o passo 5 da mensagem proíbe criar qualquer coisa no GitHub antes das respostas, e o passo 6 manda completar o que uma tentativa anterior deixou.
+- **`PERGUNTAS #n`**: notification, then `AskUserQuestion` with the questions as they came. Answer the **same** subagent through `SendMessage` (`to` = its id) with `RESPOSTAS #n` and, for each `Pk`, the chosen label and the owner's notes, or their text in "Other". If questions from two subagents arrive together, make one call per issue.
+- **`PRONTA #n`**: check with `issue_read` that the issue has `ready` and does not have `roadmap` (and that `bug`, `severity:`, `impact:`, `code-review` and `observador-da-fila` from before are still there; `issue_write` with `labels` replaces all the labels, so the swap carries the full list), that the `step` sub-issues exist (`issue_read` of the sub-issues) and, in a group, that the absorbed ones closed as duplicates and have no open `step` (not even those of an absorbed `ready`), and that the report carries the `Conferência:` line. If anything is missing, send the subagent what is missing through `SendMessage` and wait again. With everything right, compare the "Sobreposição" with the ready reports already received in the round (which the subagent does not see): with a file in common (same rule as step 4 of the message) and no dependency between them, add `Depende de` to the one that comes later in the `ORDEM`, as long as the dependency (direct or transitive, reading the `Depende de` of both and of the ones they cite) does not close a cycle; if it does, do not edit and ask the owner (edited body and a comment with the why, ending with the attribution footer). Then **archive the detailing subagent's session** (`archive_session`, with the id the tool returned, if it is a session; a background `Agent` subagent has nothing to archive) and note this for the final summary. Then start the next unit.
+- **`PERGUNTAS #n` answered and decision recorded:** the same goes for the grouping: after the owner decides the groups, archive the grouping subagent's session (`archive_session`) and note it in the final summary.
+- **`BLOQUEADA #n`** or **`FALHOU #n`**: note it and start the next one. A failure goes into the final summary; do not try again without asking the owner.
 
-**Conferência de reserva:** uma só, de 60 min (`send_later`), enquanto houver subagente rodando sem relatório. Quando ela disparar:
+**If `SendMessage` does not reach the subagent** (session restarted, subagent lost), create a new subagent with the same unit message and, at the end of it, the `RESPOSTAS` already given. It is safe: step 5 of the message forbids creating anything on GitHub before the answers, and step 6 says to complete what a previous attempt left behind.
 
-- subagente sem notícia: agende de novo. Na terceira vez sem notícia do mesmo subagente (3 h), pergunte ao dono: "Seguir sem a #n (Recomendado)" / "Recriar o subagente" (o recriar segue o parágrafo acima);
-- subagente esperando `RESPOSTAS` que o dono ainda não deu não é falha: `PushNotification` ("N unidades esperando suas respostas: #a, #b") e agende de novo.
+**Fallback check:** a single one, of 60 min (`send_later`), while there is a subagent running without a report. When it fires:
 
-Cancele (`delete_trigger`) a conferência quando não houver mais subagente sem relatório.
+- subagent with no news: schedule again. On the third time without news from the same subagent (3 h), ask the owner: "Seguir sem a #n (Recomendado)" / "Recriar o subagente" (the recreate follows the paragraph above);
+- a subagent waiting for `RESPOSTAS` that the owner has not given yet is not a failure: `PushNotification` ("N unidades esperando suas respostas: #a, #b") and schedule again.
 
-## 5. Resumo final
+Cancel (`delete_trigger`) the check when there is no subagent left without a report.
 
-Quando todos os subagentes terminarem:
+## 5. Final summary
 
-1. Responda no chat com uma tabela: unidade, issue com link, resultado (pronta, bloqueada ou falhou), esforço (`medium` ou `high`), épico, fases, versão do MCP e "Depende de". Depois, as sobreposições entre as etapas prontas, as issues novas que os subagentes criaram (elas **não** foram detalhadas nesta rodada), as unidades que ainda esperam resposta do dono e a ordem de implementação sugerida (a `ORDEM` do agrupamento, ajustada pelos "Depende de").
-2. No resumo, diga também quais sessões de detalhamento e de agrupamento foram arquivadas.
-3. Mande um `PushNotification` com o total ("Backlog detalhado: 5 prontas, 1 bloqueada").
+When all the subagents have finished:
+
+1. Answer in the chat with a table: unit, issue with link, result (ready, blocked or failed), effort (`medium` or `high`), epic, phases, MCP version and "Depende de". Then, the overlaps among the ready stages, the new issues the subagents created (they were **not** detailed in this round), the units still waiting for the owner's answer and the suggested implementation order (the grouping's `ORDEM`, adjusted by the "Depende de" lines).
+2. In the summary, also say which detailing and grouping sessions were archived.
+3. Send a `PushNotification` with the total ("Backlog detalhado: 5 prontas, 1 bloqueada").

@@ -1,0 +1,56 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 12,
+  "id": "roles-migration",
+  "name": "Roles in migration",
+  "version": 2,
+  "layers": [
+    {
+      "id": "components",
+      "name": "Components",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "allowedChildren": ["interaction"],
+          "childRolesLabel": "Trigger",
+          "childRoles": [{ "id": "click", "name": "Click" }],
+          "fields": [{ "key": "text", "type": "string", "required": true }]
+        },
+        {
+          "id": "slider",
+          "name": "Slider",
+          "allowedChildren": ["interaction"],
+          "childRolesLabel": "Trigger",
+          "childRoles": [{ "id": "change", "name": "Change" }],
+          "fields": [{ "key": "text", "type": "string", "required": true }]
+        }
+      ]
+    },
+    {
+      "id": "events",
+      "name": "Events",
+      "color": "#E53935",
+      "annotationTypes": [
+        {
+          "id": "interaction",
+          "name": "Interaction",
+          "requiresOwner": true,
+          "fields": []
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "steps": [
+        { "op": "rename-role", "type": "button", "from": "tap", "to": "click" },
+        { "op": "remove-role", "type": "button", "role": "hold", "mode": "clear" },
+        { "op": "remove-role", "type": "slider", "role": "drag", "mode": "unlink" }
+      ]
+    }
+  ]
+}

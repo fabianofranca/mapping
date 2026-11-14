@@ -1,18 +1,18 @@
-# Tabela
+# Table
 
-Uma tabela de chave e valor no canvas, no estilo do post-it, para o que é uma lista de dados e não cabe num texto: as propriedades de um evento de analytics, os parâmetros de uma chamada, os campos que uma tela mostra.
+A key-value table on the canvas, in the sticky-note style, for what is a list of data and does not fit in a text: the properties of an analytics event, the parameters of a call, the fields a screen shows.
 
-## Campos
+## Fields
 
-- **Título** (opcional): o resumo, em negrito no topo (o nome do evento, por exemplo).
-- **Linhas**: uma linha por registro, com a **Chave** (obrigatória) e o **Valor**. A ordem das linhas é a ordem do desenho; arraste a alça de uma linha para reordenar.
+- **Title** (optional): the summary, in bold at the top (the event name, for example).
+- **Rows**: one row per record, with the **Key** (required) and the **Value**. The order of the rows is the drawing order; drag a row's handle to reorder.
 
-## Como a tabela se comporta
+## How the table behaves
 
-- É uma marcação **flutuante**, como a nota: vive só no canvas, é desenhada acima de tudo e nunca pertence a uma tela nem a outra marcação. Mover uma tela não move as tabelas ao lado dela.
-- A ligação com o que a tabela descreve é uma **seta**, não um campo: puxe uma seta da tabela (ou do elemento) até a marcação do botão, do campo ou da tela. O dado fica na tabela; quem lê o mapeamento chega a ela pelas setas que saem do elemento.
-- A altura não cresce sozinha com as linhas: se a tabela passar da caixa, o desenho é cortado e a marcação ganha a pendência de que o componente não cabe. Aumente a marcação.
+- It is a **floating** marking, like the note: it lives only on the canvas, is drawn above everything and never belongs to a screen or to another marking. Moving a screen does not move the tables beside it.
+- The link to what the table describes is an **arrow**, not a field: pull an arrow from the table (or from the element) to the marking of the button, the field or the screen. The data stays in the table; whoever reads the mapping reaches it through the arrows that leave the element.
+- The height does not grow on its own with the rows: if the table exceeds the box, the drawing is clipped and the marking gets the pending item that the component does not fit. Enlarge the marking.
 
-## Para o agente
+## For the agent
 
-Leia a tabela por `get_marking`: o título e as linhas (`chave` e `valor`) estão nos valores da anotação do tipo `tabela`, e `floating` é `true`. Para saber de qual elemento ela fala, olhe as setas da marcação, em `arrows`. Para criar uma, faça `create_marking` no canvas (com `near` para ficar ao lado do container), uma anotação do tipo `tabela` com as `linhas`, e ligue-a ao alvo com `create_arrow`. Uma tabela é comentário humano ou dado auxiliar: use-a como contexto, não como especificação de interface.
+Read the table with `get_marking`: the title and the rows (`chave` and `valor`) are in the values of the `tabela` annotation, and `floating` is `true`. To know which element it talks about, look at the marking's arrows, in `arrows`. To create one, do `create_marking` on the canvas (with `near` to sit beside the container), an annotation of the `tabela` type with the `linhas`, and link it to the target with `create_arrow`. A table is a human comment or auxiliary data: use it as context, not as an interface specification.

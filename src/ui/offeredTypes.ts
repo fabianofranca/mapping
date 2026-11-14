@@ -6,16 +6,16 @@ import {
   type SpecAnnotationType,
 } from '../model';
 
-/** Quem recebe a anotação: uma marcação ou uma seta (os dois guardam anotações por camada). */
+/** Who receives the annotation: a marking or an arrow (both keep annotations per layer). */
 export type AnnotationOwnerKind = 'marking' | 'arrow';
 
-/** A dona da anotação: o tipo dela e se é uma marcação flutuante (a Nota). */
+/** The annotation's owner: its type and whether it is a floating marking (the Note). */
 export interface OfferedOwner {
   readonly kind: AnnotationOwnerKind;
   readonly floating: boolean;
 }
 
-/** Por que a lista do + ficou vazia (etapa #1280, decisão 5). */
+/** Why the + list ended up empty (stage #1280, decision 5). */
 export type OfferedTypesEmpty =
   'unavailable' | 'no-types' | 'floating' | 'not-for-arrow' | 'not-for-marking';
 
@@ -39,9 +39,9 @@ function emptyReason(
 }
 
 /**
- * Os tipos de anotação que a camada oferece à dona: só os que se aplicam a ela (`appliesTo`;
- * padrão, marcação) e, para marcação comum e seta, sem os flutuantes (a Nota nasce pela
- * Paleta). Sem tipo, `empty` diz o motivo.
+ * The annotation types that the layer offers the owner: only those that apply to it (`appliesTo`;
+ * default, marking) and, for a regular marking and an arrow, without the floating ones (the Note is born from the
+ * Palette). With no type, `empty` gives the reason.
  */
 export function offeredTypeChoice(
   project: Project,

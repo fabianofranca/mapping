@@ -19,40 +19,42 @@ export type LoadProjectResult =
   | {
       readonly ok: true;
       readonly project: Project;
-      /** Versão mais nova que a da app: abre só para leitura. */
+      /** Version newer than the app's: opens read-only only. */
       readonly readOnly: boolean;
-      /** Versão de origem, se o arquivo foi migrado. */
+      /** Source version, if the file was migrated. */
       readonly migratedFrom: number | null;
-      /** `urlTemplate` descartados pela migração para o schema 11 (vazio se não houve). */
+      /** `urlTemplate`s discarded by the migration to schema 11 (empty if there were none). */
       readonly discardedUrlTemplates: readonly DiscardedUrlTemplate[];
-      /** Anotações que perderam a herança na migração para o schema 13 (vazio se não houve). */
+      /**
+       * Annotations that lost inheritance in the migration to schema 13 (empty if there were none).
+       */
       readonly discardedInherit: readonly DiscardedInherit[];
-      /** O `mapping.json` como estava no armazenamento. */
+      /** The `mapping.json` as it was in the storage. */
       readonly text: string;
       /**
-       * Problemas da biblioteca das especializações aplicadas em pasta (níveis 1 e 2), para o
-       * Diagnóstico. Nunca bloqueia a abertura.
+       * Problems in the library of the specializations applied from a folder (levels 1 and 2), for
+       * the Diagnostics. It never blocks opening.
        */
       readonly libraryIssues: LibraryIssues;
     }
   | {
       readonly ok: false;
       readonly error: DeserializeError['code'] | 'not-found';
-      /** Em `invariant-violation`: a lista de problemas e o reparo possível. */
+      /** In `invariant-violation`: the list of problems and the possible repair. */
       readonly inconsistent?: InconsistentLoad;
     };
 
-/** `mapping.json` com dados inconsistentes, como lido (nada foi gravado). */
+/** `mapping.json` with inconsistent data, as read (nothing was written). */
 export interface InconsistentLoad {
   readonly issues: readonly InvariantIssue[];
   readonly repair: RepairedLoad;
-  /** O `mapping.json` original: vai para `backups/` se o reparo for aceito. */
+  /** The original `mapping.json`: goes to `backups/` if the repair is accepted. */
   readonly text: string;
 }
 
 /**
- * Lê o `mapping.json` e as cópias de `specs/` que ele cita e valida tudo. Usado ao
- * abrir um projeto e ao recarregá-lo depois de uma alteração externa.
+ * Reads the `mapping.json` and the `specs/` copies it cites and validates everything. Used when
+ * opening a project and when reloading it after an external change.
  */
 export async function loadProject(storage: ProjectStorage): Promise<LoadProjectResult> {
   const text = await storage.loadMapping();

@@ -10,9 +10,9 @@ import {
 import { Tooltip } from './controls';
 import { Icon, type IconName } from './icons';
 
-// Aviso da especialização (formatVersion 10, etapa #486): o selo (pílula com ícone e rótulo),
-// o bloco do tipo e a linha do campo ou da coluna. A cor vem do `kind` (tokens, no CSS) e vai
-// sempre com ícone e texto. Só informa: nada aqui bloqueia nem vira pendência.
+// Specialization notice (formatVersion 10, stage #486): the badge (pill with icon and label),
+// the type block and the field or column row. The color comes from the `kind` (tokens, in the CSS)
+// and always goes with icon and text. It only informs: nothing here blocks or becomes a pending item.
 
 const ICONS: Record<SpecNoticeKind, IconName> = {
   removed: 'blocked',
@@ -21,17 +21,17 @@ const ICONS: Record<SpecNoticeKind, IconName> = {
   pending: 'info',
 };
 
-/** O ícone do `kind` (o mesmo no selo, no bloco e no rótulo do campo). */
+/** The icon of the `kind` (the same on the badge, the block and the field label). */
 export function noticeIcon(kind: SpecNoticeKind): IconName {
   return ICONS[kind];
 }
 
-/** O rótulo traduzido do `kind`. */
+/** The translated label of the `kind`. */
 export function noticeKindLabel(kind: SpecNoticeKind): string {
   return t(`notice.kind.${kind}` as TranslationKey);
 }
 
-/** Nome acessível do aviso: "Aviso <rótulo>: <mensagem>". */
+/** Accessible name of the notice: "Notice <label>: <message>". */
 export function noticeName(notice: SpecNotice): string {
   return t('notice.badge', {
     kind: noticeKindLabel(notice.kind),
@@ -41,11 +41,11 @@ export function noticeName(notice: SpecNotice): string {
 
 interface BadgeProps {
   readonly notice: SpecNotice;
-  /** Texto da dica; sem ele, a mensagem do aviso. */
+  /** Tooltip text; without it, the notice's message. */
   readonly tip?: string;
 }
 
-/** O selo: pílula do `kind`; a dica traz a mensagem. */
+/** The badge: pill of the `kind`; the tooltip carries the message. */
 export function NoticeBadge({ notice, tip }: BadgeProps) {
   return (
     <Tooltip label={tip ?? notice.message}>
@@ -62,8 +62,8 @@ export function NoticeBadge({ notice, tip }: BadgeProps) {
 }
 
 /**
- * O selo de um tipo: o aviso de maior gravidade entre o do tipo, os dos campos e os das
- * colunas; a dica lista todos. Nada num tipo sem aviso.
+ * The badge of a type: the highest-severity notice among the type's, the fields' and the
+ * columns'; the tooltip lists all of them. Nothing on a type without a notice.
  */
 export function TypeNoticeBadge({ type }: { readonly type: SpecAnnotationType }) {
   const top = highestNotice(type);
@@ -74,7 +74,7 @@ export function TypeNoticeBadge({ type }: { readonly type: SpecAnnotationType })
   return <NoticeBadge notice={top} tip={tip} />;
 }
 
-/** `since` e `ref` do aviso (o `ref` em fonte mono). */
+/** `since` and `ref` of the notice (the `ref` in a mono font). */
 function NoticeOrigin({ notice }: { readonly notice: SpecNotice }) {
   return (
     <>
@@ -90,7 +90,7 @@ function NoticeOrigin({ notice }: { readonly notice: SpecNotice }) {
   );
 }
 
-/** O aviso do tipo no topo da anotação: ícone, rótulo, mensagem e, se houver, `since` e `ref`. */
+/** The type's notice at the top of the annotation: icon, label, message and, if present, `since` and `ref`. */
 export function NoticeBlock({ notice }: { readonly notice: SpecNotice }) {
   return (
     <div
@@ -108,7 +108,7 @@ export function NoticeBlock({ notice }: { readonly notice: SpecNotice }) {
   );
 }
 
-/** O aviso de um campo, ou de uma coluna (com `column`): uma linha com o fundo do `kind`. */
+/** The notice of a field, or of a column (with `column`): a row with the `kind`'s background. */
 export function NoticeLine({
   notice,
   column,
@@ -132,7 +132,7 @@ export function NoticeLine({
   );
 }
 
-/** As linhas de aviso de um campo e das suas colunas (tabela), na ordem de exibição. */
+/** The notice rows of a field and of its columns (table), in display order. */
 export function NoticeLines({
   notices,
   column,
@@ -150,7 +150,7 @@ export function NoticeLines({
   );
 }
 
-/** O ícone do aviso mais grave no rótulo do campo. */
+/** The icon of the most severe notice on the field label. */
 export function NoticeLabelIcon({
   notices,
 }: {

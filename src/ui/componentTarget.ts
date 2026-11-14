@@ -23,47 +23,50 @@ import { resolveSelection } from '../store/ui';
 import type { EditorContextValue } from './EditorContext';
 import { imageLabel, markingLabel } from './labels';
 
-// Onde a Biblioteca coloca o componente novo: seleção primeiro (componente com slot, container
-// ou marcação de container, marcação do canvas); sem seleção, o container sob o centro da vista
-// ou, sem container, o canvas. Função de leitura: lê os sinais com `.value`, então dentro de um
-// `computed` ela segue a seleção, o projeto e o viewport; chamada num clique, só lê.
+// Where the Library puts the new component: selection first (component with a slot, container or
+// container marking, canvas marking); with no selection, the container under the view center or,
+// with no container, the canvas. Read function: reads the signals with `.value`, so inside a
+// `computed` it follows the selection, the project and the viewport; called in a click, it only
+// reads.
 
 /**
- * Para onde vai o componente: container (`null` = canvas), marcação pai com slot (ou `null`) e
- * centro no espaço do destino (pixels do container ou unidades do canvas).
+ * Where the component goes: container (`null` = canvas), parent marking with a slot (or `null`) and
+ * center in the target's space (container pixels or canvas units).
  */
 export interface ComponentTarget {
   readonly containerId: string | null;
   readonly parentId: string | null;
   readonly center?: { readonly x: number; readonly y: number };
-  /** Tipo flutuante com container ou marcação selecionado: nasce perto dele (`placeFloatingNear`). */
+  /** Floating type with a container or marking selected: born near it (`placeFloatingNear`). */
   readonly near?: FloatingNearTarget;
   /**
-   * Tipo com `anchor` na raiz e marcação selecionada: a instância nasce ancorada nela e encostada
-   * (R4, decisão 13), em vez de dentro dela ou centrada.
+   * Type with `anchor` at the root and a marking selected: the instance is born anchored to it and
+   * adjacent (R4, decision 13), instead of inside it or centered.
    */
   readonly anchorTo?: string;
-  /** Como o rótulo do botão descreve o destino. */
+  /** How the button label describes the target. */
   readonly destination:
     | { readonly kind: 'slot' | 'container' | 'anchor'; readonly name: string }
     | { readonly kind: 'canvas' };
 }
 
 /**
- * Alvo do "Adicionar" da paleta (sempre existe: sem container, é o canvas).
+ * Target of the palette's "Add" (always exists: with no container, it is the canvas).
  *
- * 1. A seleção é uma marcação que desenha um componente com slot: entra nela.
- * 2. A seleção é um container ou uma marcação de container: nele. Se o centro do viewport
- *    cai nele, o componente nasce centrado nesse ponto; senão, no centro do próprio container.
- * 3. A seleção é uma marcação do canvas sem slot: no canvas.
- * 4. Sem seleção: o container sob o centro do viewport; sem container, o canvas, no centro.
+ * 1. The selection is a marking that draws a component with a slot: goes into it.
+ * 2. The selection is a container or a container marking: into it. If the viewport center
+ *    falls inside it, the component is born centered at that point; otherwise, at the center
+ *    of the container itself.
+ * 3. The selection is a canvas marking without a slot: onto the canvas.
+ * 4. No selection: the container under the viewport center; with no container, the canvas, at the
+ *    center.
  *
- * Um tipo flutuante (`floating`, decisão 10) vive só no canvas: o alvo é sempre o canvas, no
- * centro da vista; com um container ou uma marcação selecionado, leva também `near` (ME4) e
- * nasce perto dele.
+ * A floating type (`floating`, decision 10) lives only on the canvas: the target is always the
+ * canvas, at the view center; with a container or a marking selected, it also carries `near` (ME4)
+ * and is born near it.
  *
- * Um tipo que declara `anchor` na raiz (`anchored`) com uma marcação selecionada nasce ancorado
- * nela (`anchorTo`), antes de a regra 1 e das demais valerem (R4, decisão 13).
+ * A type that declares `anchor` at the root (`anchored`) with a marking selected is born anchored
+ * to it (`anchorTo`), before rule 1 and the others apply (R4, decision 13).
  */
 export function componentTarget(
   editor: EditorContextValue,
@@ -98,7 +101,7 @@ export function componentTarget(
     }
   }
 
-  // Ler o viewport faz o alvo acompanhar o pan e o zoom.
+  // Reading the viewport makes the target follow pan and zoom.
   void view.viewport.value;
   const point = canvas.current?.viewportCenter();
   const inContainer = (image: ProjectContainer): ComponentTarget =>
@@ -122,7 +125,7 @@ export function componentTarget(
   });
 
   if (options.floating === true) {
-    // ME4: com um container ou uma marcação selecionado, a flutuante nasce perto dele.
+    // ME4: with a container or a marking selected, the floating one is born near it.
     if (selected?.kind === 'image') {
       return { ...onCanvas(), near: { kind: 'container', id: selected.image.id } };
     }
@@ -131,7 +134,7 @@ export function componentTarget(
     }
     return onCanvas();
   }
-  // ME4: a seta selecionada não é destino de componente (UI): cai no centro da vista.
+  // ME4: the selected arrow is not a component target (UI): falls back to the view center.
   if (selected && selected.kind !== 'arrow') {
     if (selected.image) return inContainer(selected.image);
     return onCanvas();
@@ -142,8 +145,8 @@ export function componentTarget(
 }
 
 /**
- * Nome do componente com slot no rótulo do Adicionar: o rótulo da marcação (o nome; sem nome,
- * o do tipo que ela desenha, "Card"; sem tipo, o padrão).
+ * Name of the component with a slot in the Add label: the marking's label (the name; with no name,
+ * that of the type it draws, "Card"; with no type, the default).
  */
 export function slotTargetName(
   project: Project,
@@ -152,7 +155,7 @@ export function slotTargetName(
   return markingLabel(project, marking);
 }
 
-/** Rótulo do botão Adicionar com o destino ("Adicionar dentro de Lista"). */
+/** Label of the Add button with the target ("Add inside List"). */
 export function addLabel(target: ComponentTarget | null): string {
   const destination = target?.destination;
   if (!destination) return t('library.add');
@@ -169,9 +172,9 @@ export function addLabel(target: ComponentTarget | null): string {
 }
 
 // ---------------------------------------------------------------------------
-// Soltar um tipo da paleta no canvas (etapa Marcações espaciais, ME2)
+// Dropping a palette type on the canvas (stage Spatial markings, ME2)
 
-/** Destino de um tipo da paleta solto no canvas, mais o que acender enquanto se arrasta. */
+/** Target of a palette type dropped on the canvas, plus what to light up while dragging. */
 export interface ComponentDropTarget {
   readonly containerId: string | null;
   readonly parentId: string | null;
@@ -183,18 +186,19 @@ export interface ComponentDropInput {
   readonly project: Project;
   readonly catalog: ComponentCatalog;
   readonly visibility: ReadonlyMap<string, MarkingVisibility>;
-  /** Ponteiro, em unidades do canvas. */
+  /** Pointer, in canvas units. */
   readonly point: Point;
   readonly zoom: number;
   readonly type: ComponentType;
 }
 
 /**
- * Onde um componente solto em `point` nasce: no slot da marcação mais interna sob o ponteiro
- * que desenha um componente com slot; senão no container sob o ponteiro (centrado nele); senão,
- * no vazio, no container em que o retângulo do componente centrado no ponteiro fica quase
- * inteiro (encaixe); senão no canvas. Sem absorção. Um tipo flutuante nasce sempre no canvas,
- * onde cai, sem slot, container nem encaixe (decisão 10).
+ * Where a component dropped at `point` is born: in the slot of the innermost marking under the
+ * pointer that draws a component with a slot; otherwise in the container under the pointer
+ * (centered in it); otherwise, in the empty space, in the container where the rectangle of the
+ * component centered on the pointer fits almost entirely (snap); otherwise on the canvas. No
+ * absorption. A floating type is always born on the canvas, where it falls, with no slot, container
+ * or snap (decision 10).
  */
 export function componentDropTarget(input: ComponentDropInput): ComponentDropTarget {
   const { project, catalog, visibility, point, zoom, type } = input;
@@ -210,7 +214,7 @@ export function componentDropTarget(input: ComponentDropInput): ComponentDropTar
   }
 
   for (const hit of hitChain(project, visibility, point)) {
-    if (hit.kind === 'image') break; // o container vence os ancestrais dele
+    if (hit.kind === 'image') break; // the container wins over its ancestors
     const marking = byId.get(hit.id);
     if (!marking) continue;
     const drawn = markingComponent(project, catalog, marking.id);

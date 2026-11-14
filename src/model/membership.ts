@@ -1,10 +1,10 @@
 import type { Project } from './types';
 
-// Quem mudou de pai ou de espaço entre dois projetos. O pertencimento é decidido só pela
-// geometria (`settleHierarchy`); aqui só se compara o resultado, por `parentId` e `containerId`
-// de cada item, sem olhar a ordem do array (ela pode diferir só pelo lugar das filhas).
+// Who changed parent or space between two projects. Membership is decided only by
+// geometry (`settleHierarchy`); here only the result is compared, by each item's `parentId` and `containerId`,
+// without looking at array order (it may differ only by where the children sit).
 
-/** Onde o item está: o pai (marcação) e, só na marcação, o espaço (`null` = canvas). */
+/** Where the item is: the parent (marking) and, only on a marking, the space (`null` = canvas). */
 export interface MembershipPlace {
   readonly parentId: string | null;
   readonly containerId?: string | null;
@@ -45,8 +45,8 @@ function diff(
 }
 
 /**
- * Marcações e containers que já existiam na base e cujo pai ou espaço muda no projeto
- * proposto, marcações primeiro, na ordem do projeto proposto.
+ * Markings and containers that already existed in the base and whose parent or space changes in the proposed
+ * project, markings first, in the proposed project's order.
  */
 export function membershipChanges(base: Project, after: Project): MembershipChange[] {
   return [

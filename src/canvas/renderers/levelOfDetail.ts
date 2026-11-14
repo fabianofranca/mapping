@@ -1,15 +1,15 @@
-// Nível de detalhe da marcação pelo tamanho dela na tela (etapa canvas-escala, decisão 4).
+// Marking level of detail by its size on screen (canvas-scale stage, decision 4).
 export type LevelOfDetail = 'full' | 'border' | 'hidden';
 
 export interface LevelOfDetailInput {
-  /** Tamanho da marcação na tela (px). */
+  /** Marking size on screen (px). */
   readonly screenWidth: number;
   readonly screenHeight: number;
-  /** Selecionada (inclusive na seleção múltipla), sob o mouse ou com marca da revisão: sempre completa. */
+  /** Selected (including in multi-select), under the mouse or with a review mark: always complete. */
   readonly always: boolean;
-  /** `size-lod-min-marking`: abaixo disto (largura ou altura) só a borda. */
+  /** `size-lod-min-marking`: below this (width or height) only the border. */
   readonly minFull: number;
-  /** `size-lod-hide-marking`: abaixo disto nas duas medidas, nada. */
+  /** `size-lod-hide-marking`: below this in both measures, nothing. */
   readonly hide: number;
 }
 

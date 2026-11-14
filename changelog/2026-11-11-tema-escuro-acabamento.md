@@ -1,5 +1,5 @@
-# Tema escuro e acabamentos — 2026-11-11 (épico `epic/tema-escuro-acabamento`, PR #1566, MCP 0.33.1 sem mudança, schema v18)
+# Dark theme and finishing touches — 2026-11-11 (épico `epic/tema-escuro-acabamento`, PR #1566, MCP 0.33.1 unchanged, schema v18)
 
 ## Corrigido
 
-- O selo "Veio de…" e o título dos containers ficam legíveis no tema escuro e sobre a imagem de qualquer raiz; a célula "(referência quebrada)" quebra entre palavras a 900 px; as linhas de projetos recentes de mesmo nome e mesmo minuto têm descrições diferentes para o leitor de tela.
+- The "Came from…" badge and the container titles are legible in the dark theme and over the image of any root; the "(broken reference)" cell breaks between words at 900 px; the recent-project rows with the same name and the same minute have different descriptions for the screen reader.

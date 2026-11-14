@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "horizontal-pager",
   "name": "HorizontalPager",
-  "description": "Páginas lado a lado com rolagem horizontal: cada filha é uma página, com pageSpacing e contentPadding.",
+  "description": "Pages side by side with horizontal scrolling: each child is a page, with pageSpacing and contentPadding.",
   "size": {
     "width": 360,
     "height": 240
@@ -63,7 +63,7 @@
               "$if": {
                 "$eq": ["userScrollEnabled", "false"]
               },
-              "then": " · sem rolagem",
+              "then": " · no scroll",
               "else": ""
             },
             {

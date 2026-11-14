@@ -1,5 +1,5 @@
-// MC5 (#1033, etapa #898): desenho da biblioteca Material 3 (Compose) no tamanho ajustado ao conteúdo,
-// a medida que o Arrumar, o `fit_marking` e a instância nova usam (`fitComponentSize`).
+// MC5 (#1033, stage #898): drawing of the Material 3 (Compose) library at the size fitted to the content,
+// the measure that Arrange, `fit_marking` and the new instance use (`fitComponentSize`).
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { instantiate } from '../../src/model/components/instantiate';
 import { fitComponentSize } from '../../src/model/components/sizing';
@@ -11,19 +11,19 @@ export const catalog = buildCatalog(files);
 export type Mode = 'light' | 'dark';
 export type Values = Readonly<Record<string, unknown>>;
 
-/** O tipo no catálogo (falha se não existir). */
+/** The type in the catalog (fails if it does not exist). */
 export function entryOf(id: string): NonNullable<ReturnType<typeof findEntry>> {
   const entry = findEntry(catalog, id);
   if (entry === undefined || entry.component === null)
-    throw new Error(`tipo ${id} ausente`);
+    throw new Error(`type ${id} missing`);
   return entry;
 }
 
 const optionsOf = (mode: Mode) => instantiateOptions(catalog, mode);
 
 /**
- * O tamanho que o componente tem com o conteúdo de `values` (o do ajuste, com o medidor aproximado):
- * o `size` quando nenhum eixo depende do conteúdo. Devolve também os avisos da medida.
+ * The size the component has with the content of `values` (the fit one, with the approximate measurer):
+ * the `size` when no axis depends on the content. Also returns the warnings of the measure.
  */
 export function fittedSize(id: string, values: Values, mode: Mode = 'light') {
   const entry = entryOf(id);
@@ -41,7 +41,7 @@ export function fittedSize(id: string, values: Values, mode: Mode = 'light') {
   };
 }
 
-/** Desenha o componente no tamanho ajustado ao conteúdo (a largura dada, quando o eixo não é medido). */
+/** Draws the component at the size fitted to the content (the given width, when the axis is not measured). */
 export function drawFitted(
   id: string,
   values: Values,
@@ -64,7 +64,7 @@ export function drawFitted(
   return { box, drawing };
 }
 
-/** Um nó do template (por nome e tipo) com o `baselinePadding` declarado, em qualquer ramo do template. */
+/** A template node (by name and type) with the declared `baselinePadding`, in any branch of the template. */
 export function templateNodes(
   id: string,
   name: string,

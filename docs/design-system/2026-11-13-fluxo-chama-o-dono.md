@@ -1,13 +1,13 @@
-# "Chamar o dono" no fluxo de entrega — 2026-11-13 (épico `epic/fluxo-chama-o-dono`)
+# "Call the owner" in the delivery flow — 2026-11-13 (épico `epic/fluxo-chama-o-dono`)
 
 ## Pendências
 
-Pendências: nenhuma (sem UI do app; o épico só muda o texto do fluxo de entrega e um teste de ferramentas).
+Pending items: none (no app UI; the epic only changes the delivery-flow text and a tool test).
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componente, token nem ícone da app.
+Sem impacto on the Claude Design Mapping artifact: nothing was written, since the epic changes no component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

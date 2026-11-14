@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Fase CV3 (etapa #1466, decisões 16 e 17): o painel guarda o PR cujo CI espera o coordenador
-// (`ciWait`, `ciWaitAt`), o `show` o lista, a página o mostra na coluna "Passo atual" e o SKILL.md
-// manda gravar, conferir de hora em hora e citar no pior caso de detecção.
+// Phase CV3 (stage #1466, decisions 16 and 17): the panel keeps the PR whose CI the coordinator
+// is waiting for (`ciWait`, `ciWaitAt`), `show` lists it, the page shows it in the "Current step"
+// column and SKILL.md says to record it, check it hourly and cite it in the worst case of detection.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -30,7 +30,7 @@ function queue(): Array<Record<string, unknown>> {
   >;
 }
 
-describe('painel.py: CI esperando o coordenador (CV3, decisão 16)', () => {
+describe('painel.py: CI waiting for the coordinator (CV3, decision 16)', () => {
   beforeEach(() => {
     dir = mkdtempSync(path.join(tmpdir(), 'painel-ciwait-'));
     runAt('2026-11-10T10:00:00Z', 'init', dir);
@@ -40,13 +40,13 @@ describe('painel.py: CI esperando o coordenador (CV3, decisão 16)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('ciWait e ciWaitAt=now gravam os dois campos', () => {
+  it('ciWait and ciWaitAt=now write both fields', () => {
     runAt('2026-11-10T10:00:00Z', 'row', dir, '#10', 'ciWait=PR #7', 'ciWaitAt=now');
     expect(queue()[0]?.ciWait).toBe('PR #7');
     expect(queue()[0]?.ciWaitAt).toBe('2026-11-10T10:00:00Z');
   });
 
-  it('o show imprime a linha com os minutos desde o --now, ou "nenhuma"', () => {
+  it('show prints the line with the minutes since --now, or "nenhuma"', () => {
     expect(runAt('2026-11-10T10:00:00Z', 'show', dir)).toContain(
       'CI esperando o coordenador: nenhuma',
     );
@@ -59,7 +59,7 @@ describe('painel.py: CI esperando o coordenador (CV3, decisão 16)', () => {
     expect(out).not.toContain('CI esperando o coordenador: nenhuma');
   });
 
-  it('ciWait novo sem ciWaitAt grava o horário de agora (não herda o do PR anterior)', () => {
+  it("a new ciWait without ciWaitAt writes the current time (does not inherit the previous PR's)", () => {
     runAt('2026-11-10T10:00:00Z', 'row', dir, '#10', 'ciWait=PR #7', 'ciWaitAt=now');
     runAt('2026-11-10T10:30:00Z', 'row', dir, '#10', 'ciWait=PR #9');
     expect(queue()[0]?.ciWaitAt).toBe('2026-11-10T10:30:00Z');
@@ -67,14 +67,14 @@ describe('painel.py: CI esperando o coordenador (CV3, decisão 16)', () => {
     expect(queue()[1]?.ciWaitAt).toBe('2026-11-10T10:31:00Z');
   });
 
-  it('ended= (linha encerrada) limpa o ciWait esquecido', () => {
+  it('ended= (finished row) clears a forgotten ciWait', () => {
     runAt('2026-11-10T10:00:00Z', 'row', dir, '#10', 'ciWait=PR #7', 'ciWaitAt=now');
     runAt('2026-11-10T10:05:00Z', 'row', dir, '#10', 'ended=now');
     expect(queue()[0]?.ciWait).toBe('');
     expect(queue()[0]?.ciWaitAt).toBe('');
   });
 
-  it('ciWait= limpa o ciWaitAt e o show volta a "nenhuma"', () => {
+  it('ciWait= clears ciWaitAt and show goes back to "nenhuma"', () => {
     runAt('2026-11-10T10:00:00Z', 'row', dir, '#10', 'ciWait=PR #7', 'ciWaitAt=now');
     runAt('2026-11-10T10:05:00Z', 'row', dir, '#10', 'ciWait=');
     expect(queue()[0]?.ciWait).toBe('');
@@ -84,7 +84,7 @@ describe('painel.py: CI esperando o coordenador (CV3, decisão 16)', () => {
     );
   });
 
-  it('child= (vazio) e a troca de child não mexem no ciWait', () => {
+  it('child= (empty) and changing child do not touch ciWait', () => {
     runAt('2026-11-10T10:00:00Z', 'row', dir, '#10', 'child=session_a', 'childAt=now');
     runAt('2026-11-10T10:00:00Z', 'row', dir, '#10', 'ciWait=PR #7', 'ciWaitAt=now');
     runAt('2026-11-10T10:01:00Z', 'row', dir, '#10', 'child=session_b');
@@ -95,7 +95,7 @@ describe('painel.py: CI esperando o coordenador (CV3, decisão 16)', () => {
     expect(queue()[0]?.ciWaitAt).toBe('2026-11-10T10:00:00Z');
   });
 
-  it('status concluída ou falhou limpa o ciWait esquecido; esperando dono não', () => {
+  it('status concluída or falhou clears a forgotten ciWait; esperando dono does not', () => {
     runAt('2026-11-10T10:00:00Z', 'row', dir, '#10', 'ciWait=PR #7', 'ciWaitAt=now');
     runAt('2026-11-10T10:01:00Z', 'row', dir, '#10', 'status=esperando dono');
     expect(queue()[0]?.ciWait).toBe('PR #7');
@@ -114,8 +114,10 @@ describe('painel.py: CI esperando o coordenador (CV3, decisão 16)', () => {
     expect(queue()[1]?.ciWait).toBe('');
   });
 
-  it('ciWaitAt inválido é recusado, como o childAt', () => {
-    expect(() => run('row', dir, '#10', 'ciWaitAt=ontem')).toThrow(/horário inválido/);
+  it('an invalid ciWaitAt is refused, like childAt', () => {
+    expect(() => run('row', dir, '#10', 'ciWaitAt=yesterday')).toThrow(
+      /horário inválido/,
+    );
   });
 
   it("o show '#n' mostra o campo", () => {
@@ -126,38 +128,34 @@ describe('painel.py: CI esperando o coordenador (CV3, decisão 16)', () => {
   });
 });
 
-describe('implementar-fila: página e SKILL.md citam o ciWait (CV3, decisões 16 e 17)', () => {
-  it('a página lê ciWait na célula do passo, com textContent', () => {
+describe('implementar-fila: page and SKILL.md cite ciWait (CV3, decisions 16 and 17)', () => {
+  it('the page reads ciWait in the step cell, with textContent', () => {
     expect(page).toMatch(/r\.ciWait/);
     expect(page).toContain('· CI: ');
   });
 
-  it('o parágrafo "PR que espera o coordenador" grava e limpa o ciWait', () => {
-    const para = between(
+  it('the "PR that waits for the coordinator" paragraph writes and clears ciWait', () => {
+    const section = between(
       skill,
-      '**PR que espera o coordenador:**',
-      'Quando a fase avisar',
+      '**PR that waits for the coordinator:**',
+      'When the phase notifies',
     );
-    expect(para).toContain('ciWait="PR #<n>"');
-    expect(para).toContain('ciWaitAt=now');
-    expect(para).toContain('ciWait=');
+    expect(section).toContain('ciWait="PR #<n>"');
+    expect(section).toContain('ciWaitAt=now');
+    expect(section).toContain('ciWait=');
   });
 
-  it('"Conferências de reserva" confere cada PR do ciWait e cita o ciWait no pior caso', () => {
-    const reserva = between(
-      skill,
-      '**Conferências de reserva:**',
-      '**CI vermelho no PR do épico**',
-    );
-    expect(reserva).toContain('CI esperando o coordenador');
-    expect(reserva).toMatch(/sem esses PRs/);
-    const pior = between(reserva, '- **Pior caso de detecção:**', '\n\n');
-    expect(pior).toContain('ciWait');
+  it('"Fallback checks" checks each PR of the ciWait and cites ciWait in the worst case', () => {
+    const fallback = between(skill, '**Fallback checks:**', '**Red CI on the epic PR**');
+    expect(fallback).toContain('CI esperando o coordenador');
+    expect(fallback).toMatch(/none of those PRs/);
+    const worst = between(fallback, '- **Worst case of detection:**', '\n\n');
+    expect(worst).toContain('ciWait');
   });
 
-  it('"Painel" lista o comando e descreve a linha do show', () => {
-    const painel = section(skill, '## Painel');
-    expect(painel).toContain('ciWait="PR #<n>" ciWaitAt=now');
-    expect(painel).toContain('CI esperando o coordenador');
+  it('"Panel" lists the command and describes the show line', () => {
+    const panel = section(skill, '## Panel');
+    expect(panel).toContain('ciWait="PR #<n>" ciWaitAt=now');
+    expect(panel).toContain('CI esperando o coordenador');
   });
 });

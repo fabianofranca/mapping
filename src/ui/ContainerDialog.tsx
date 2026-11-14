@@ -16,9 +16,9 @@ import { DensityControl } from './DensityControl';
 import { containerErrorMessage } from './labels';
 
 /**
- * Novo container: nome, tamanho (Personalizado, Tamanho da seleção e os presets das
- * especializações aplicadas) e cor de fundo. O container nasce no centro da vista, fica
- * selecionado e enquadrado.
+ * New container: name, size (Custom, Selection size and the presets of the applied
+ * specializations) and background color. The container is born at the center of the view, gets
+ * selected and framed.
  */
 export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
   const { actions, canvas, ui, store } = useEditor();
@@ -33,7 +33,7 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
   const [background, setBackground] = useState(
     first?.background ?? DEFAULT_CONTAINER_BACKGROUND,
   );
-  // `null`: o número digitado em "Personalizada" não vale.
+  // `null`: the number typed in "Custom" is not valid.
   const [density, setDensity] = useState<number | null>(1);
   const densityId = useId();
   const [error, setError] = useState<string | null>(null);

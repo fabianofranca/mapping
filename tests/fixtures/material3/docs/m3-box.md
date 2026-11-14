@@ -1,37 +1,37 @@
 # Box
 
-Container livre do Compose: os filhos ficam onde o retângulo deles diz.
+Free-form Compose container: the children stay where their own rectangle says.
 
-Tipo de anotação: `m3-box` (Box).
+Annotation type: `m3-box` (Box).
 
-## Tamanho
+## Size
 
-- Inicial: 200 × 120 px
-- Mínimo: 24 × 24 px
-- Dimensionamento: largura fill, altura hug
+- Initial: 200 × 120 px
+- Minimum: 24 × 24 px
+- Sizing: width fill, height hug
 
-## Campos
+## Fields
 
-| Chave        | Rótulo     | Tipo | Obrigatório | Opções                                                                   | Padrão | Descrição |
-| ------------ | ---------- | ---- | ----------- | ------------------------------------------------------------------------ | ------ | --------- |
-| `background` | Background | enum | não         | none, surface, surface-container, primary-container, secondary-container | none   |           |
-| `shape`      | Shape      | enum | não         | none, small, medium, large, extra-large                                  | none   |           |
+| Key          | Label      | Type | Required | Options                                                                  | Default | Description |
+| ------------ | ---------- | ---- | -------- | ------------------------------------------------------------------------ | ------- | ----------- |
+| `background` | Background | enum | no       | none, surface, surface-container, primary-container, secondary-container | none    |             |
+| `shape`      | Shape      | enum | no       | none, small, medium, large, extra-large                                  | none    |             |
 
 ## Slot
 
-Este componente tem um slot que recebe os filhos.
+This component has a slot that receives the children.
 
-## Exemplos
+## Examples
 
-- **Padrão**: background=none, shape=none
-- **Fundo primário**: background=primary-container, shape=none
-- **Cantos grandes**: background=none, shape=large
+- **Default**: background=none, shape=none
+- **Primary background**: background=primary-container, shape=none
+- **Large corners**: background=none, shape=large
 
-## Origem externa
+## External origin
 
-Sistema `sdui`: tipo externo `Box`.
+System `sdui`: external type `Box`.
 
-| Campo        | Caminho em `props` |
-| ------------ | ------------------ |
-| `background` | `background`       |
-| `shape`      | `shape`            |
+| Field        | Path in `props` |
+| ------------ | --------------- |
+| `background` | `background`    |
+| `shape`      | `shape`         |

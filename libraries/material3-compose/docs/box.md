@@ -1,26 +1,26 @@
 # Box
 
-Empilha os filhos uns sobre os outros e os posiciona por alinhamento. Use para sobreposições, ícones sobre imagens e áreas de fundo.
+Stacks its children on top of each other and positions them by alignment. Use it for overlays, icons over images and background areas.
 
-Tipo de anotação: `box` (camada Layout).
+Annotation type: `box` (Layout layer).
 
-## Campos
+## Fields
 
-| Chave              | Rótulo                  | Tipo   | Obrigatório | Opções                                                                                                              | Padrão     | Descrição                                                                                             |
-| ------------------ | ----------------------- | ------ | ----------- | ------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------- |
-| `contentAlignment` | Alinhamento do conteúdo | enum   | não         | `TopStart`, `TopCenter`, `TopEnd`, `CenterStart`, `Center`, `CenterEnd`, `BottomStart`, `BottomCenter`, `BottomEnd` | `TopStart` | Onde os filhos ficam dentro do Box (Alignment).                                                       |
-| `background`       | Fundo                   | enum   | não         | `none` e papéis do `ColorScheme`                                                                                    | `none`     | Papel de cor do tema usado como fundo (Modifier.background). none = sem fundo.                        |
-| `padding`          | Margem interna (dp)     | number | não         |                                                                                                                     |            | Modifier.padding em dp. Vazio = 0.                                                                    |
-| `width`            | Largura                 | enum   | não         | `wrap`, `fill`, `fixed`                                                                                             | `wrap`     | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp). |
-| `height`           | Altura                  | enum   | não         | `wrap`, `fill`, `fixed`                                                                                             | `wrap`     | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).   |
-| `weight`           | Peso (weight)           | number | não         |                                                                                                                     |            | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                     |
+| Key                | Label             | Type   | Required | Options                                                                                                             | Default    | Description                                                                                        |
+| ------------------ | ----------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------- |
+| `contentAlignment` | Content alignment | enum   | no       | `TopStart`, `TopCenter`, `TopEnd`, `CenterStart`, `Center`, `CenterEnd`, `BottomStart`, `BottomCenter`, `BottomEnd` | `TopStart` | Where the children sit inside the Box (Alignment).                                                 |
+| `background`       | Background        | enum   | no       | `none` and `ColorScheme` roles                                                                                      | `none`     | Theme color role used as the background (Modifier.background). none = no background.               |
+| `padding`          | Padding (dp)      | number | no       |                                                                                                                     |            | Modifier.padding in dp. Empty = 0.                                                                 |
+| `width`            | Width             | enum   | no       | `wrap`, `fill`, `fixed`                                                                                             | `wrap`     | wrap fits the content, fill takes all the available width and fixed uses the marking width (dp).   |
+| `height`           | Height            | enum   | no       | `wrap`, `fill`, `fixed`                                                                                             | `wrap`     | wrap fits the content, fill takes all the available height and fixed uses the marking height (dp). |
+| `weight`           | Weight            | number | no       |                                                                                                                     |            | Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.               |
 
 ## Compose
 
-- Símbolo: `androidx.compose.foundation.layout.Box`
-- Arquivo (`path`): `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Box.kt`
+- Symbol: `androidx.compose.foundation.layout.Box`
+- File (`path`): `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Box.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in the `code`):
 
 ```kotlin
 Box(
@@ -31,39 +31,39 @@ Box(
         .background(MaterialTheme.colorScheme.primaryContainer)
         .padding(16.dp),
 ) {
-    /* filhas empilhadas; cada uma pode ter Modifier.align(...) */
+    /* stacked children; each can have Modifier.align(...) */
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from the `code` (what the tool hands to the agent):
 
-> Os filhos vão no `content`, empilhados na ordem; cada um pode ter `Modifier.align(...)`. `background` vira `Modifier.background(<cor>)` (omita com `none`) e `padding` vira `Modifier.padding(<padding>.dp)`, nessa ordem depois do tamanho. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> The children go in the `content`, stacked in order; each can have `Modifier.align(...)`. `background` becomes `Modifier.background(<color>)` (omit it with `none`) and `padding` becomes `Modifier.padding(<padding>.dp)`, in that order after the size. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).
 
-## Exemplos
+## Examples
 
-- **Sobreposição centralizada**: contentAlignment=Center, background=primaryContainer, padding=16, width=fill, height=fixed
-- **Cantinho**: contentAlignment=TopEnd, background=none
+- **Centered overlay**: contentAlignment=Center, background=primaryContainer, padding=16, width=fill, height=fixed
+- **Corner**: contentAlignment=TopEnd, background=none
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Box.kt` (linhas 65 a 70: `Box(contentAlignment = Alignment.TopStart, propagateMinConstraints = false)`; sem `Defaults` de tamanho: o Box mede o conteúdo).
-  `ColorLightTokens.kt` e `ColorDarkTokens.kt`: os papéis de cor do tema, lidos como tokens (`$token`) nos dois modos.
+- `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Box.kt` (lines 65 to 70: `Box(contentAlignment = Alignment.TopStart, propagateMinConstraints = false)`; no size `Defaults`: the Box measures the content).
+  `ColorLightTokens.kt` and `ColorDarkTokens.kt`: the theme color roles, read as tokens (`$token`) in both modes.
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- `background` e o fundo seguem o papel do tema nos dois modos; `none` não desenha fundo (o `Modifier.background` é opcional).
-- O `padding` recua a área do conteúdo (o fundo cobre o Box inteiro, como `Modifier.background(...).padding(...)`).
-- O padrão de `contentAlignment` é `TopStart`, o do `Box.kt`.
-- `contentAlignment` vira o `align` (vertical) e o `justify` (horizontal) do slot, que agora é um `layout: none` alinhado (formato 4): `Top*`, `Center*` e `Bottom*` dão `start`, `center` e `end` na altura, e `*Start`, `*Center` e `*End` dão o mesmo na largura, por `$switch` sobre o campo. O **Arrumar** põe cada filha sozinha na caixa do slot pelo alinhamento (as filhas continuam sobrepostas, como no `BoxMeasurePolicy`, `Box.kt` linhas 80 a 90 e 124 a 220, onde `Alignment.align` posiciona cada filha); com `TopStart` o Arrumar não mexe nas filhas, cada uma fica onde a pessoa a marcou.
-- `height` `fill` ou `fixed` mantém a altura da marcação no Arrumar, que é onde o alinhamento vertical aparece; com `wrap` (o padrão) o Box abraça as filhas e a altura é a da maior.
+- `background` and the fill follow the theme role in both modes; `none` draws no background (`Modifier.background` is optional).
+- The `padding` insets the content area (the background covers the whole Box, like `Modifier.background(...).padding(...)`).
+- The default of `contentAlignment` is `TopStart`, that of `Box.kt`.
+- `contentAlignment` becomes the slot's `align` (vertical) and `justify` (horizontal), which is now an aligned `layout: none` (format 4): `Top*`, `Center*` and `Bottom*` give `start`, `center` and `end` in height, and `*Start`, `*Center` and `*End` give the same in width, through a `$switch` on the field. **Arrange** puts each child alone in the slot box by the alignment (the children remain overlapped, as in `BoxMeasurePolicy`, `Box.kt` lines 80 to 90 and 124 to 220, where `Alignment.align` positions each child); with `TopStart` Arrange does not move the children, each stays where the person marked it.
+- `height` `fill` or `fixed` keeps the marking height in Arrange, which is where the vertical alignment shows; with `wrap` (the default) the Box hugs the children and the height is that of the tallest.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O alinhamento só age quando a pessoa pede o **Arrumar**: ao marcar uma filha nova, ela fica onde foi marcada, e mover uma filha à mão a tira do alinhamento até o próximo Arrumar. O Compose alinha a cada medição.
-- O `Modifier.align(...)` por filha (`BoxScope.align`, `Box.kt` linha 249) não existe: o `contentAlignment` vale para todas as filhas; para uma filha fora da regra, deixe o `TopStart` e posicione-a à mão.
-- O `weight` só aparece no rótulo: o Arrumar não lê campos das filhas (o `weight` do formato é de nós do template).
-- `propagateMinConstraints` é campo e código, mas o desenho não o usa; as restrições mínimas do pai não são campos do tipo.
+- The alignment only acts when the person asks for **Arrange**: when marking a new child, it stays where it was marked, and moving a child by hand takes it out of the alignment until the next Arrange. Compose aligns at every measurement.
+- The per-child `Modifier.align(...)` (`BoxScope.align`, `Box.kt` line 249) does not exist: `contentAlignment` applies to all the children; for a child outside the rule, leave `TopStart` and position it by hand.
+- `weight` only shows in the label: Arrange does not read the children's fields (the format's `weight` belongs to template nodes).
+- `propagateMinConstraints` is a field and code, but the drawing does not use it; the parent's minimum constraints are not fields of the type.

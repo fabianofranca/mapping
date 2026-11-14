@@ -1,41 +1,42 @@
 import type { LibraryFile } from './library';
 import type { Spec, SpecAnnotationType } from './spec';
 
-// O pacote da biblioteca no projeto: a pasta da especialização copiada para
-// `specs/<id>/` (docs/SPEC-FORMAT.md, "Biblioteca: o pacote"). Funções puras sobre caminhos;
-// quem lê e grava os arquivos é o armazenamento (`src/storage/`).
+// The library package in the project: the specialization folder copied to
+// `specs/<id>/` (docs/SPEC-FORMAT.md, "Library: the package"). Pure functions over paths;
+// storage (`src/storage/`) is what reads and writes the files.
 
-/** Pasta das cópias das especializações, relativa à raiz do projeto. */
+/** Folder of the specialization copies, relative to the project root. */
 const SPECS_ROOT = 'specs';
 
-/** Mais arquivos que isto num pacote: recusado (e não lido ao abrir o projeto). */
+/** More files than this in a package: refused (and not read when opening the project). */
 export const MAX_PACKAGE_FILES = 500;
-/** Mais bytes que isto num pacote (soma dos arquivos): recusado. */
+/** More bytes than this in a package (sum of the files): refused. */
 export const MAX_PACKAGE_BYTES = 64 * 1024 * 1024;
 
 const PACKAGE_FILE_RE = /^specs\/([^/]+)\/.+$/;
 
 /**
- * `specs/<base>` para o arquivo da especialização de um pacote (`specs/material3/m3.spec.json`);
- * `null` para a cópia única da v1 a v3 (`specs/sdui.json`) ou qualquer outro caminho.
+ * `specs/<base>` for a package's specialization file (`specs/material3/m3.spec.json`);
+ * `null` for the single copy of v1 to v3 (`specs/sdui.json`) or any other path.
  */
 export function packageDirOf(file: string): string | null {
   const base = PACKAGE_FILE_RE.exec(file)?.[1];
   return base === undefined ? null : `${SPECS_ROOT}/${base}`;
 }
 
-/** O `file` da especialização aponta para dentro de uma pasta de pacote? */
+/** Does the specialization's `file` point inside a package folder? */
 export function isPackageFile(file: string): boolean {
   return packageDirOf(file) !== null;
 }
 
 /**
- * A especialização cita arquivos do pacote? Só então ela precisa da pasta inteira. Cita quando
- * é `formatVersion` 4 ou mais e tem algum tipo com `component`, `doc` em texto ou `examples`,
- * ou `fonts`, `origins` ou `icons` na raiz, ou alguma ficha de assinatura (`signature` no `code`,
- * num caso de `variants` ou nas `sources` do tipo; v16). `migrations` não conta (é só o contrato de versão), nem o
- * `doc` objeto (`{ repo, path }`, o documento vive em outro repositório). As v1 a v3 nunca
- * citam. Quem não cita vale como arquivo isolado (`specs/<id>.json`), como a v1 a v3.
+ * Does the specialization cite package files? Only then does it need the whole folder. It cites
+ * when it is `formatVersion` 4 or higher and has some type with `component`, a text `doc` or
+ * `examples`, or `fonts`, `origins` or `icons` at the root, or some signature sheet (`signature`
+ * in `code`, in a `variants` case or in the type's `sources`; v16). `migrations` does not count
+ * (it is only the version contract), nor does the object `doc` (`{ repo, path }`, the document
+ * lives in another repository). v1 to v3 never cite. One that does not cite counts as a
+ * standalone file (`specs/<id>.json`), like v1 to v3.
  */
 export function usesPackageFiles(spec: Spec): boolean {
   if (spec.formatVersion < 4) return false;
@@ -53,7 +54,7 @@ export function usesPackageFiles(spec: Spec): boolean {
   );
 }
 
-/** O tipo cita uma ficha de assinatura (no `code`, num caso de `variants` ou nas `sources`)? */
+/** Does the type cite a signature sheet (in `code`, in a `variants` case or in `sources`)? */
 function citesSignature(type: SpecAnnotationType): boolean {
   return (
     Object.values(type.code ?? {}).some(
@@ -64,28 +65,28 @@ function citesSignature(type: SpecAnnotationType): boolean {
   );
 }
 
-/** `.json` e `.md` são texto (lidos pelo validador); o resto (fontes) é binário. */
+/** `.json` and `.md` are text (read by the validator); the rest (fonts) is binary. */
 export function isTextPackageFile(path: string): boolean {
   const lower = path.toLowerCase();
   return lower.endsWith('.json') || lower.endsWith('.md');
 }
 
-/** O pacote cabe nos limites (`MAX_PACKAGE_FILES` e `MAX_PACKAGE_BYTES`)? */
+/** Does the package fit the limits (`MAX_PACKAGE_FILES` and `MAX_PACKAGE_BYTES`)? */
 export function packageWithinLimits(fileCount: number, totalBytes: number): boolean {
   return fileCount <= MAX_PACKAGE_FILES && totalBytes <= MAX_PACKAGE_BYTES;
 }
 
-/** Um arquivo do pacote como o armazenamento o entrega, com o caminho a partir da raiz do projeto. */
+/** A package file as storage delivers it, with the path from the project root. */
 export interface PackageEntry {
   readonly path: string;
-  /** Conteúdo dos arquivos de texto (`isTextPackageFile`). */
+  /** Content of the text files (`isTextPackageFile`). */
   readonly text?: string;
 }
 
 /**
- * Monta `LibraryInput.files` a partir dos arquivos de `specs/<id>/`: o caminho passa a ser
- * relativo à pasta do pacote. Arquivos fora de `dir` são ignorados; um arquivo de texto sem
- * `text` (não lido) não entra; os demais entram como binário presente.
+ * Builds `LibraryInput.files` from the files of `specs/<id>/`: the path becomes relative to the
+ * package folder. Files outside `dir` are ignored; a text file without `text` (not read) is
+ * left out; the others enter as a present binary.
  */
 export function toLibraryFiles(
   dir: string,
@@ -106,9 +107,9 @@ export function toLibraryFiles(
 }
 
 /**
- * Nome (na raiz do pacote) do arquivo da especialização `specId`, entre os `.json` da raiz
- * cujo texto (valor `string` do mapa; binários não contam) declara `"format": "mapping-spec"`
- * e esse `id`. Sem exatamente um, `<specId>.spec.json`.
+ * Name (at the package root) of the file of specialization `specId`, among the root `.json`
+ * files whose text (the map's `string` value; binaries do not count) declares
+ * `"format": "mapping-spec"` and that `id`. Without exactly one, `<specId>.spec.json`.
  */
 export function packageSpecNameOf(
   files: ReadonlyMap<string, unknown>,
@@ -127,7 +128,7 @@ export function packageSpecNameOf(
         found.push(path);
       }
     } catch {
-      // Não é JSON: não é candidato.
+      // Not JSON: not a candidate.
     }
   }
   return found.length === 1 && found[0] !== undefined ? found[0] : `${specId}.spec.json`;

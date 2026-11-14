@@ -12,25 +12,25 @@ import { IconButton, IconLink, Tooltip } from './controls';
 import { Property } from './PropertyGrid';
 import { useCopyResult } from './useCopyResult';
 
-// "Definição" de uma anotação tipada (etapa 9): o arquivo que define o símbolo do `code` do
-// tipo em cada plataforma, com "Abrir no repositório" e "Copiar caminho". Os nomes de
-// plataforma vêm da especialização; nada aqui conhece uma plataforma em particular.
+// "Definition" of a typed annotation (stage 9): the file that defines the symbol of the type's
+// `code` on each platform, with "Open in repository" and "Copy path". The platform
+// names come from the specialization; nothing here knows a particular platform.
 
-/** Texto da definição: "<plataforma> · <arquivo>". */
+/** Definition text: "<platform> · <file>". */
 export function codeDefinitionText(
   definition: Pick<CodeDefinition, 'platformName' | 'fileName'>,
 ): string {
   return `${definition.platformName} · ${definition.fileName}`;
 }
 
-/** Caminho completo e o símbolo, para a dica. */
+/** Full path and the symbol, for the tooltip. */
 export function codeDefinitionTooltip(
   definition: Pick<CodeDefinition, 'path' | 'symbol'>,
 ): string {
   return `${definition.path} · ${definition.symbol}`;
 }
 
-/** Copia o caminho: ícone de confirmação por um instante e a dica diz o resultado. */
+/** Copies the path: confirmation icon for a moment and the tooltip says the result. */
 export function CopyPathButton({ path }: { readonly path: string }) {
   const { result: state, copy } = useCopyResult();
 
@@ -61,8 +61,8 @@ interface CodeDefinitionActionsProps {
 }
 
 /**
- * "Abrir no repositório" (um link comum, só quando `codeLink` devolve a URL) e
- * "Copiar caminho".
+ * "Open in repository" (a plain link, only when `codeLink` returns the URL) and
+ * "Copy path".
  */
 export function CodeDefinitionActions({
   project,
@@ -85,9 +85,9 @@ export function CodeDefinitionActions({
 }
 
 /**
- * Linha "Definição" de uma anotação tipada: uma entrada por plataforma cujo `code` do tipo
- * tem `path` ("<plataforma> · <arquivo>"), com as ações. Só leitura (vem da especialização);
- * sem `urlTemplate` no `repo` dela, mostra o caminho sem o link.
+ * "Definition" row of a typed annotation: one entry per platform whose type `code`
+ * has a `path` ("<platform> · <file>"), with the actions. Read-only (comes from the specialization);
+ * without a `urlTemplate` in its `repo`, it shows the path without the link.
  */
 export function CodeDefinitions({
   project,
@@ -96,10 +96,10 @@ export function CodeDefinitions({
   values,
 }: {
   readonly project: Project;
-  /** Especialização dona do tipo: o `repo` dela dá o link. */
+  /** Specialization that owns the type: its `repo` gives the link. */
   readonly specId: string;
   readonly type: SpecAnnotationType;
-  /** Valores da anotação: escolhem o caso de `variants` (o `path` do caso). */
+  /** Annotation values: pick the `variants` case (the case's `path`). */
   readonly values?: Readonly<Record<string, JsonValue>> | null;
 }) {
   const definitions = typeCodeDefinitions(project, specId, type, values);

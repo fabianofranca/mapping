@@ -3,7 +3,7 @@ import { rawValueLines, typeOfAnnotation, type Annotation, type Project } from '
 import { Icon } from './icons';
 import { annotationDisplayName, displayLines, issueMessage, issuesOf } from './typedText';
 
-/** Ícone de alerta de anotação incompleta, com os motivos no `title`. */
+/** Alert icon for an incomplete annotation, with the reasons in the `title`. */
 export function IssueBadge({
   project,
   annotation,
@@ -29,14 +29,14 @@ export function IssueBadge({
 interface AnnotationLinesProps {
   readonly project: Project;
   readonly annotation: Annotation;
-  /** Classe de cada linha (a Lista e as Herdadas têm estilos próprios). */
+  /** Class of each row (the List and the Inherited ones have their own styles). */
   readonly lineClass: string;
   readonly keyClass?: string;
 }
 
 /**
- * Valores da anotação, somente leitura: na tipada, os campos na ordem do tipo
- * (tabelas completas, referências como `→ User.name`); na livre, os pares.
+ * Annotation values, read-only: for a typed one, the fields in the type's order
+ * (full tables, references as `→ User.name`); for a free one, the pairs.
  */
 export function AnnotationLines({
   project,
@@ -109,7 +109,7 @@ export function AnnotationLines({
   );
 }
 
-/** Título da anotação: tipo + rótulo na tipada; nome (ou primeiro par) na livre. */
+/** Annotation title: type + label for a typed one; name (or first pair) for a free one. */
 export function AnnotationTitle({
   project,
   annotation,

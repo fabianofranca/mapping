@@ -19,9 +19,9 @@ import { listStored } from './proposalStore';
 import { stateOf } from './proposalViews';
 import { isRecord } from './shared';
 
-// Identidade externa (etapa 4.2): do elemento de um sistema de origem para o que o projeto já
-// tem (`find_by_source`) e para o tipo de anotação que o representa (`find_types_by_source`).
-// O núcleo não interpreta `system` nem os nomes: só compara textos.
+// External identity (stage 4.2): from the element of a source system to what the project already
+// has (`find_by_source`) and to the annotation type that represents it (`find_types_by_source`).
+// The core does not interpret `system` or the names: it only compares text.
 
 type Json = Record<string, unknown>;
 
@@ -29,7 +29,7 @@ async function locationsOf(roots: Roots, project?: string): Promise<ProjectLocat
   if (project !== undefined) return [await findProject(roots, project)];
   const all = await discoverProjects(roots);
   if (all.length === 0) {
-    throw new ToolError('project-not-found', 'nenhum projeto nas raízes configuradas');
+    throw new ToolError('project-not-found', 'no project in the configured roots');
   }
   return all;
 }
@@ -38,7 +38,7 @@ function sameSource(value: unknown, system: string, id: string): boolean {
   return isRecord(value) && value.system === system && value.id === id;
 }
 
-/** A mudança cria o elemento com essa origem, ou passa a dar essa origem a ele. */
+/** The change creates the element with that origin, or comes to give that origin to it. */
 function givesSource(c: Change, system: string, id: string): boolean {
   if (c.entity !== 'image' && c.entity !== 'marking') return false;
   if (c.kind === 'create') return isRecord(c.to) && sameSource(c.to.source, system, id);
@@ -52,7 +52,7 @@ export async function findBySourceResult(
   const system = args.system.trim();
   const id = args.id.trim();
   if (system === '' || id === '') {
-    throw new ToolError('missing-query', 'informe `system` e `id` não vazios');
+    throw new ToolError('missing-query', 'provide non-empty `system` and `id`');
   }
   const locations = await locationsOf(roots, args.project);
   const searchingAll = args.project === undefined;
@@ -96,8 +96,8 @@ export async function findBySourceResult(
         });
       }
     }
-    // Elementos que propostas ainda abertas criam com essa origem: uma nova proposta não
-    // deve duplicá-los (use `supersedes` ou espere a revisão).
+    // Elements that still-open proposals create with that origin: a new proposal
+    // must not duplicate them (use `supersedes` or wait for the review).
     const stored = await listStored(roots, location);
     const proposalRefs = new ProposalRefs(location.name, stored);
     for (const s of stored.proposals) {
@@ -129,7 +129,7 @@ export async function findBySourceResult(
   };
 }
 
-/** As propriedades de origem de um campo (e das colunas de uma tabela), só as do sistema pedido. */
+/** The origin properties of a field (and of a table's columns), only those of the requested system. */
 function fieldView(field: SpecField | SpecColumn, system: string): Json | null {
   const sources = (field.sources ?? []).filter((s) => s.system === system);
   const columns =
@@ -165,11 +165,11 @@ export async function findTypesBySourceResult(
   },
 ): Promise<Json> {
   const system = args.system.trim();
-  if (system === '') throw new ToolError('missing-query', 'informe `system` não vazio');
+  if (system === '') throw new ToolError('missing-query', 'provide a non-empty `system`');
   if (args.id === undefined && args.name === undefined) {
     throw new ToolError(
       'missing-query',
-      'informe `id` e/ou `name` do elemento de origem',
+      'provide `id` and/or `name` of the source element',
     );
   }
   const location = await findProject(roots, args.project);

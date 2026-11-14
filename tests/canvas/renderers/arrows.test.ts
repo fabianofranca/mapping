@@ -11,7 +11,7 @@ afterAll(() => vi.restoreAllMocks());
 
 const NONE = new Map();
 
-/** Grava as chamadas de pintura: `[operação, ...argumentos]`. */
+/** Records the paint calls: `[operation, ...arguments]`. */
 function recorder() {
   const calls: unknown[][] = [];
   const painter: ArrowPainter = {
@@ -26,7 +26,7 @@ function recorder() {
   return { calls, painter };
 }
 
-/** Os valores gravados de um atributo do contexto (`lineWidth`, `strokeStyle`, …), em ordem. */
+/** The recorded values of a context attribute (`lineWidth`, `strokeStyle`, …), in order. */
 const attr = (calls: unknown[][], name: string) =>
   calls.filter((c) => c[0] === 'set' && c[1] === name).map((c) => c[2]);
 
@@ -34,7 +34,7 @@ function setup(project: Project = arrowProject()) {
   const layer = new Konva.Layer();
   const renderer = new ArrowRenderer(layer);
   const editor = editorFor(project);
-  // A tela é grande de propósito: a seta fora da área visível não é pintada (CD3, decisão 7).
+  // The screen is large on purpose: an arrow outside the visible area is not painted (CD3, decision 7).
   const render = (overrides: Parameters<typeof frameOf>[1] = {}) =>
     renderer.render(
       frameOf(editor, { size: { width: 20_000, height: 20_000 }, ...overrides }),
@@ -48,22 +48,22 @@ function setup(project: Project = arrowProject()) {
 }
 
 describe('ArrowRenderer', () => {
-  it('todas as setas são um só nó, entre a camada e os rótulos', () => {
+  it('all arrows are a single node, between the layer and the labels', () => {
     const { layer, renderer, render } = setup(
       withArrow(arrowProject(), 'r2', 'a3', 'b2'),
     );
     render();
     expect(renderer.size).toBe(2);
-    expect(layer.getChildren()).toHaveLength(2); // o nó das setas e o grupo dos rótulos
+    expect(layer.getChildren()).toHaveLength(2); // the arrows node and the labels group
     expect(layer.getChildren()[0]).toBe(renderer.node);
     expect(renderer.node.listening()).toBe(false);
   });
 
-  it('pinta o halo, o traço e a ponta com as cores do tema', () => {
+  it('paints the halo, the stroke and the head with the theme colors', () => {
     const { render, paint } = setup();
     render();
     const calls = paint();
-    // Halo (traço e ponta), depois o traço e a ponta na cor da seta.
+    // Halo (stroke and head), then the stroke and the head in the arrow color.
     expect(attr(calls, 'strokeStyle')).toEqual([
       TOKENS.halo,
       TOKENS.halo,
@@ -74,22 +74,22 @@ describe('ArrowRenderer', () => {
     const widths = attr(calls, 'lineWidth') as number[];
     expect(widths[2]).toBe(TOKENS.arrow.width);
     expect(widths[0]).toBeGreaterThan(widths[2] as number);
-    // A ponta é um triângulo fechado cuja ponta está na âncora de chegada (600, 700).
+    // The head is a closed triangle whose tip is at the arrival anchor (600, 700).
     const closes = calls.filter((c) => c[0] === 'closePath');
     expect(closes).toHaveLength(2);
     expect(calls).toContainEqual(['moveTo', 600, 700]);
-    // O traço termina antes da ponta: nenhum lineTo do traço passa de x = 600.
+    // The stroke ends before the head: no stroke lineTo goes past x = 600.
     const firstStroke = calls.findIndex((c) => c[0] === 'stroke');
     const body = calls.slice(0, firstStroke).filter((c) => c[0] === 'lineTo');
     expect(Math.max(...body.map((c) => c[1] as number))).toBeLessThan(600);
   });
 
-  it('espessura, halo e ponta têm tamanho de tela: dividem pelo zoom', () => {
+  it('thickness, halo and head have screen size: they divide by the zoom', () => {
     const { render, paint } = setup();
     render({ viewport: { x: 0, y: 0, scale: 2 } });
     const calls = paint();
     expect((attr(calls, 'lineWidth') as number[])[2]).toBe(TOKENS.arrow.width / 2);
-    // A ponta (10 px de tela) tem 5 unidades do canvas de comprimento.
+    // The head (10 screen px) is 5 canvas units long.
     const strokes = arrowStrokes(visibleArrowShapes(arrowProject(), NONE), 2, 10);
     const head = strokes.heads[0] as number[];
     const baseX = ((head[2] as number) + (head[4] as number)) / 2;
@@ -98,14 +98,14 @@ describe('ArrowRenderer', () => {
     expect((attr(paint(), 'lineWidth') as number[])[2]).toBe(TOKENS.arrow.width / 0.5);
   });
 
-  it('sem setas (ou sem tema), não pinta nada', () => {
+  it('without arrows (or without a theme), it paints nothing', () => {
     const { render, paint } = setup();
     expect(paint()).toEqual([]);
     render({ arrows: [] });
     expect(paint()).toEqual([]);
   });
 
-  it('o desenho é calculado uma vez por zoom: repintar (pan) reaproveita', () => {
+  it('the drawing is computed once per zoom: repainting (pan) reuses it', () => {
     const { render, paint, renderer } = setup();
     render();
     const first = paint();
@@ -120,32 +120,32 @@ describe('ArrowRenderer', () => {
     expect(paint()).not.toEqual(first);
   });
 
-  it('só as setas do quadro; muda o conjunto, muda o desenho', () => {
+  it('only the arrows in the frame; the set changes, the drawing changes', () => {
     const project = withArrow(arrowProject(), 'r2', 'a3', 'b2');
     const { renderer, render, paint } = setup(project);
     render();
     const both = paint().filter((c) => c[0] === 'closePath').length;
     expect(both).toBe(4);
-    // Ponta oculta pelo modo de exibição: a seta não é desenhada.
+    // Head hidden by the display mode: the arrow is not drawn.
     render({ arrows: visibleArrowShapes(project, new Map([['b2', 'hidden']])) });
     expect(renderer.size).toBe(1);
     expect(paint().filter((c) => c[0] === 'closePath')).toHaveLength(2);
-    // Sem setas à vista ("Mostrar setas" desligado, Ver limpo): nada.
+    // No arrows in view ("Show arrows" off, Clean view): nothing.
     render({ arrows: [] });
     expect(renderer.size).toBe(0);
   });
 
-  it('curva: muitas amostras no traço; reta e canto: os pontos da rota', () => {
+  it('curve: many samples in the stroke; straight and corner: the route points', () => {
     const curve = setup();
     curve.render();
     const curvePoints = curve.paint().filter((c) => c[0] === 'lineTo').length;
     expect(curvePoints).toBeGreaterThan(20);
     const straight = setup(setArrowStyle(arrowProject(), 'r1', 'straight'));
     straight.render();
-    // Dois pontos na rota: o traço (um lineTo) e dois lineTo da ponta, em cada passagem.
+    // Two points on the route: the stroke (one lineTo) and two lineTo for the head, on each pass.
     const lines = straight.paint().filter((c) => c[0] === 'lineTo').length;
     expect(lines).toBeLessThan(curvePoints);
-    // O canto tem quatro pontos na rota (três trechos): dois lineTo a mais que a reta por passagem.
+    // The corner has four points on the route (three segments): two more lineTo than the straight one per pass.
     const elbow = setup(setArrowStyle(arrowProject(), 'r1', 'elbow'));
     elbow.render();
     const elbowLines = elbow.paint().filter((c) => c[0] === 'lineTo').length;
@@ -153,14 +153,14 @@ describe('ArrowRenderer', () => {
     expect(elbowLines).toBeLessThan(curvePoints);
   });
 
-  it('o canto é traçado com junção em esquadro (cantos vivos); a curva e a reta, redonda', () => {
+  it('the corner is stroked with a miter join (sharp corners); the curve and the straight one, round', () => {
     const joins = (project: Project) => {
       const { render, paint } = setup(project);
       render();
       return attr(paint(), 'lineJoin');
     };
     expect(joins(arrowProject())).toEqual(['round', 'round']);
-    // Halo e traço em esquadro, voltando à junção redonda para as pontas.
+    // Halo and stroke with a miter join, going back to the round join for the heads.
     expect(joins(setArrowStyle(arrowProject(), 'r1', 'elbow'))).toEqual([
       'round',
       'miter',
@@ -172,14 +172,14 @@ describe('ArrowRenderer', () => {
   });
 });
 
-describe('ArrowRenderer: rótulo', () => {
-  it('no meio do traço quando há name, centrado, em tamanho de tela', () => {
-    const named = setArrowName(arrowProject(), 'r1', 'Abre');
+describe('ArrowRenderer: label', () => {
+  it('in the middle of the stroke when there is a name, centered, at screen size', () => {
+    const named = setArrowName(arrowProject(), 'r1', 'Opens');
     const { renderer, render } = setup(named);
     render();
     const label = renderer.label('r1');
-    if (!label) throw new Error('sem rótulo');
-    expect(label.text.text()).toBe('Abre');
+    if (!label) throw new Error('no label');
+    expect(label.text.text()).toBe('Opens');
     expect(label.text.fill()).toBe(TOKENS.arrow.label);
     expect(label.box.fill()).toBe(TOKENS.arrow.labelBg);
     const width = label.box.width();
@@ -187,12 +187,12 @@ describe('ArrowRenderer: rótulo', () => {
     expect(label.group.y() + label.box.height() / 2).toBeCloseTo(475, 0);
     render({ viewport: { x: 0, y: 0, scale: 2 } });
     expect(label.group.scaleX()).toBe(0.5);
-    // Centrado no mesmo ponto com o zoom: a metade da largura de tela vale metade no canvas.
+    // Centered on the same point with the zoom: half the screen width is half on the canvas.
     expect(label.group.x() + width / 2 / 2).toBeCloseTo(500, 0);
   });
 
-  it('sem name não há rótulo; o rótulo some com a seta ou com o nome', () => {
-    const named = setArrowName(withArrow(arrowProject(), 'r2', 'a3', 'b2'), 'r2', 'Vai');
+  it('without a name there is no label; the label disappears with the arrow or with the name', () => {
+    const named = setArrowName(withArrow(arrowProject(), 'r2', 'a3', 'b2'), 'r2', 'Goes');
     const { renderer, render, editor } = setup(named);
     render();
     expect(renderer.label('r1')).toBeUndefined();
@@ -200,15 +200,15 @@ describe('ArrowRenderer: rótulo', () => {
     editor.actions.setArrowName('r2', null);
     render();
     expect(renderer.label('r2')).toBeUndefined();
-    editor.actions.setArrowName('r2', 'Outra');
+    editor.actions.setArrowName('r2', 'Other');
     render();
-    expect(renderer.label('r2')?.text.text()).toBe('Outra');
+    expect(renderer.label('r2')?.text.text()).toBe('Other');
     render({ arrows: [] });
     expect(renderer.label('r2')).toBeUndefined();
   });
 
-  it('o mesmo quadro não refaz o rótulo', () => {
-    const { renderer, render } = setup(setArrowName(arrowProject(), 'r1', 'Abre'));
+  it('the same frame does not redo the label', () => {
+    const { renderer, render } = setup(setArrowName(arrowProject(), 'r1', 'Opens'));
     render();
     const group = renderer.label('r1')?.group;
     const x = group?.x();

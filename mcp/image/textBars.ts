@@ -16,12 +16,12 @@ import {
 } from '../../src/model/components/textWrap';
 import type { PixelRect } from './raster';
 
-// Barras do texto de uma cena no servidor (o desenho simplificado, sem fonte): uma por linha medida.
+// Text bars of a scene on the server (the simplified drawing, without a font): one per measured line.
 
-/** Altura da barra de texto em relação à altura da linha. */
+/** Height of the text bar relative to the line height. */
 const BAR_RATIO = 0.6;
 
-/** Quebra por palavras no `node.width` (o padrão, sem `wrap`/`ellipsis`/`maxLines`). */
+/** Breaks by words at `node.width` (the default, without `wrap`/`ellipsis`/`maxLines`). */
 export function breakLines(node: TextNode, widthOf: (text: string) => number): string[] {
   const lines: string[] = [];
   for (const paragraph of node.text.split('\n')) {
@@ -46,9 +46,9 @@ export function breakLines(node: TextNode, widthOf: (text: string) => number): s
 }
 
 /**
- * O `maxLines` que o medidor recebe: o do estilo e, com `ellipsis` numa caixa com altura, o menor
- * deste com as linhas que cabem (decisão 31 da #898): o corte pela altura vale como um `maxLines`
- * igual a elas, e a última linha desenhada termina em `…`, como o Konva faz.
+ * The `maxLines` the measurer receives: the style's and, with `ellipsis` in a box with a height, the smaller
+ * of this and the lines that fit (decision 31 of #898): the cut by height counts as a `maxLines`
+ * equal to them, and the last line drawn ends in `…`, as Konva does.
  */
 function ellipsisMaxLines(node: TextNode): number | undefined {
   const { style } = node;
@@ -58,14 +58,14 @@ function ellipsisMaxLines(node: TextNode): number | undefined {
     node.height,
     konvaLineHeight(lineHeightOf(style), style.fontSize),
   );
-  // Altura de linha sem sentido (0): nada cabe por conta, vale o `maxLines` do estilo.
+  // Meaningless line height (0): nothing fits by itself, the style's `maxLines` applies.
   if (!Number.isFinite(fit)) return style.maxLines;
   return style.maxLines === undefined ? fit : Math.min(style.maxLines, fit);
 }
 
 /**
- * Com `wrap`, `ellipsis` ou `maxLines`, as linhas vêm do medidor (que já corta e põe o `…`);
- * `undefined` = quebra de sempre.
+ * With `wrap`, `ellipsis` or `maxLines`, the lines come from the measurer (which already cuts and adds the `…`);
+ * `undefined` = the usual breaking.
  */
 export function customLines(
   node: TextNode,
@@ -93,14 +93,14 @@ export function customLines(
   return lines === undefined ? undefined : [...lines];
 }
 
-/** Uma barra do texto; `color` só no texto rico, onde cada barra tem a sua. */
+/** A text bar; `color` only in rich text, where each bar has its own. */
 export interface TextBar extends PixelRect {
   readonly color?: string;
 }
 
 /**
- * Deslocamento vertical do texto rico na caixa do nó (`verticalAlign`). No `cap-middle` vale o
- * `capHeight` da fonte base do nó (`metrics`) e as linhas de base da primeira e da última linha.
+ * Vertical shift of rich text in the node's box (`verticalAlign`). In `cap-middle` the node's
+ * base font `capHeight` (`metrics`) and the baselines of the first and last line apply.
  */
 export function richShift(
   node: TextNode,
@@ -130,7 +130,7 @@ export function richShift(
   return node.style.verticalAlign === 'bottom' ? free : 0;
 }
 
-/** O fundo (se for chip) e a barra do texto de um pedaço, com o topo do pedaço em `top`. */
+/** The background (if it is a chip) and the text bar of a run, with the run's top at `top`. */
 function pieceBars(piece: RunPiece, run: SceneTextRun, top: number): TextBar[] {
   const [padV, padH] = piece.chip ? (run.padding ?? [0, 0]) : [0, 0];
   const textHeight = piece.height - 2 * (padV ?? 0);
@@ -148,8 +148,8 @@ function pieceBars(piece: RunPiece, run: SceneTextRun, top: number): TextBar[] {
 }
 
 /**
- * Barras do texto rico (`runLayout`): para cada pedaço, o fundo do chip (a caixa inteira, na cor do
- * `background`) e uma barra do texto na cor do trecho, com o `verticalAlign` do nó aplicado.
+ * Bars of rich text (`runLayout`): for each run, the chip's background (the whole box, in the
+ * `background` color) and a text bar in the run's color, with the node's `verticalAlign` applied.
  */
 function richBars(
   node: TextNode,
@@ -168,13 +168,13 @@ function richBars(
 
 type LineStyle = TextNode['style'];
 
-/** Altura da linha do nó: a do estilo ou 1,2 vez o corpo. */
+/** The node's line height: the style's or 1.2 times the body. */
 export const lineHeightOf = (style: LineStyle): number =>
   style.lineHeight ?? style.fontSize * 1.2;
 
 /**
- * Topo do bloco de `count` linhas no nó, pelo `verticalAlign`. No `cap-middle`, `metrics` são as da
- * fonte do nó (sem elas, as proporções de reserva das barras).
+ * Top of the block of `count` lines in the node, by `verticalAlign`. In `cap-middle`, `metrics` are those of the
+ * node's font (without them, the bars' fallback proportions).
  */
 export function blockTop(
   node: TextNode,
@@ -201,8 +201,8 @@ const wordCount = (text: string): number =>
   text.split(' ').filter((w) => w !== '').length;
 
 /**
- * Parágrafos das linhas do medidor (`wrap: none`, `…`, `maxLines`): uma linha fecha o parágrafo
- * quando as palavras dela completam as do `\\n` corrente; a última linha sempre fecha.
+ * Paragraphs of the measurer's lines (`wrap: none`, `…`, `maxLines`): a line closes the paragraph
+ * when its words complete those of the current `\\n`; the last line always closes.
  */
 function customEnds(node: TextNode, lines: readonly string[]): boolean[] {
   if (node.style.wrap === 'none') return lines.map(() => true);
@@ -220,9 +220,9 @@ function customEnds(node: TextNode, lines: readonly string[]): boolean[] {
 }
 
 /**
- * Para cada linha, se ela fecha um parágrafo (a última linha de cada `\n`, que o `justify` deixa à
- * esquerda, como o Konva). As linhas do medidor (`wrap: none`, `…`, `maxLines`) fecham o texto
- * inteiro: com `wrap: none` cada linha é um parágrafo; nos outros casos só a última fecha.
+ * For each line, whether it closes a paragraph (the last line of each `\n`, which `justify` leaves at the
+ * left, like Konva). The measurer's lines (`wrap: none`, `…`, `maxLines`) close the whole
+ * text: with `wrap: none` each line is a paragraph; in the other cases only the last one closes.
  */
 export function paragraphEnds(
   node: TextNode,
@@ -239,7 +239,7 @@ export function paragraphEnds(
   return ends;
 }
 
-/** A fonte do nó para o medidor (a mesma na quebra e na largura de cada linha). */
+/** The node's font for the measurer (the same for the breaking and for each line's width). */
 export function measureFontOf(style: TextNode['style']): Parameters<TextMeasurer>[1] {
   return {
     family: style.fontFamily,
@@ -252,8 +252,8 @@ export function measureFontOf(style: TextNode['style']): Parameters<TextMeasurer
 }
 
 /**
- * As linhas que o texto simples desenha, já cortadas pela altura da caixa (decisão 31 da #898: só as
- * que o Konva guarda), e quais delas fecham um parágrafo (só com `justify`).
+ * The lines that plain text draws, already cut by the box's height (decision 31 of #898: only those
+ * Konva keeps), and which of them close a paragraph (only with `justify`).
  */
 export function plainLines(
   node: TextNode,
@@ -272,19 +272,19 @@ export function plainLines(
   const lines = all.slice(0, count);
   if (style.align !== 'justify') return { lines, ends: [] };
   const ends = paragraphEnds(node, all, custom, widthOf).slice(0, count);
-  // Como o Konva: a última linha guardada fecha o parágrafo, mesmo cortada no meio dele.
+  // Like Konva: the last kept line closes the paragraph, even if cut in the middle of it.
   if (count < all.length && count > 0) ends[count - 1] = true;
   return { lines, ends };
 }
 
 /**
- * Posição horizontal de uma linha de largura `width` no nó, pelo `align`. No texto cortado
- * (`cutsText`), `width` é a da linha inteira e `blockWidth`, a da mais larga: as linhas se alinham
- * pelo bloco (`cutLineLeft`, decisão 30).
+ * Horizontal position of a line of width `width` in the node, by `align`. In cut text
+ * (`cutsText`), `width` is that of the whole line and `blockWidth` that of the widest: the lines align
+ * by the block (`cutLineLeft`, decision 30).
  *
- * O `align` já é físico (o motor resolveu `start`/`end` pela direção), então o texto `rtl` cai no
- * lado certo sem ler `style.direction`. Limite conhecido: os glifos saem na ordem do texto, sem
- * bidi (nem reordenação nem forma contextual do árabe); só o Konva (o navegador) faz o bidi.
+ * `align` is already physical (the engine resolved `start`/`end` by direction), so `rtl` text lands on the
+ * right side without reading `style.direction`. Known limit: the glyphs come out in the text's order, without
+ * bidi (neither reordering nor contextual Arabic shaping); only Konva (the browser) does the bidi.
  */
 export function lineLeft(node: TextNode, width: number, blockWidth = width): number {
   const { align } = node.style;
@@ -294,7 +294,7 @@ export function lineLeft(node: TextNode, width: number, blockWidth = width): num
   return align === 'right' ? node.width - clamped : 0;
 }
 
-/** Barras do texto no espaço local do nó: uma por linha medida (uma por pedaço, no texto rico). */
+/** Text bars in the node's local space: one per measured line (one per run, in rich text). */
 export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
   if (node.runLayout && node.runs) return richBars(node, node.runLayout, node.runs);
   const { style } = node;
@@ -309,7 +309,7 @@ export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
   const bars: TextBar[] = [];
   lines.forEach((line, i) => {
     if (line === '') return;
-    // Como o Konva: só se estica uma linha que tem espaço (a palavra sozinha fica no tamanho dela).
+    // Like Konva: only a line that has a space is stretched (a lone word keeps its size).
     const justified =
       style.align === 'justify' &&
       ends[i] === false &&

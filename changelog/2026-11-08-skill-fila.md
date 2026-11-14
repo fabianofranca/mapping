@@ -1,9 +1,9 @@
-# Skill de implementação da fila — 2026-11-08 (épico `epic/skill-fila`, PR #979, MCP 0.28.3, schema v18)
+# Queue implementation skill — 2026-11-08 (épico `epic/skill-fila`, PR #979, MCP 0.28.3, schema v18)
 
 ## Adicionado
 
-- Skill `/implementar-fila` do Claude Code (`.claude/skills/implementar-fila/`), para o fluxo de entrega. Um coordenador implementa em sequência as issues `ready`, na ordem de "Depende de", severidade e impacto, com até 2 épicos em paralelo quando os arquivos que tocam são disjuntos. Ele cria as sessões das fases e do testador, roda correções até zerar os ❌, faz o fechamento, pede ao dono o merge de cada épico na `main` (ou mescla sozinho com `mesclar=auto` escrito pelo dono na chamada) e mantém o painel "Fila de desenvolvimento" atualizado a cada passo. Quando o contexto enche, passa a coordenação para uma sessão nova.
+- Claude Code skill `/implementar-fila` (`.claude/skills/implementar-fila/`), for the delivery flow. A coordinator implements the `ready` issues in sequence, in the order of "Depende de", severity and impact, with up to 2 epics in parallel when the files they touch are disjoint. It creates the phase and tester sessions, runs fixes until the ❌ are zero, does the closing, asks the owner for the merge of each epic into `main` (or merges by itself with `mesclar=auto` written by the owner in the call) and keeps the "Fila de desenvolvimento" panel updated at every step. When the context fills up, it hands the coordination over to a new session.
 
 ## Alterado
 
-- `/detalhar-backlog`: a versão do MCP de cada etapa sai como o tipo da subida (minor, patch ou sem mudança), e o número é fixado só quando o épico começa, para etapas detalhadas em paralelo não pegarem o mesmo. A dependência entre etapas não segura mais o detalhamento, só a ordem da implementação. As filhas não escrevem número de PR que ainda não existe, e o coordenador avisa quando há filhas esperando resposta do dono.
+- `/detalhar-backlog`: the MCP version of each stage comes out as the type of the bump (minor, patch or no change), and the number is fixed only when the epic starts, so stages detailed in parallel do not take the same one. The dependency between stages no longer holds back the detailing, only the order of implementation. The children do not write a PR number that does not exist yet, and the coordinator warns when there are children waiting for an answer from the owner.

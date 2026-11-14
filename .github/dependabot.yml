@@ -1,5 +1,5 @@
-# Atualizações semanais de dependências, em poucos PRs para o dono aprovar pelo celular:
-# minor e patch agrupados num PR por ecossistema; major chega em PR próprio.
+# Weekly dependency updates, in few PRs for the owner to approve from the phone:
+# minor and patch grouped in one PR per ecosystem; major comes in its own PR.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -11,14 +11,14 @@ updates:
       minor-and-patch:
         update-types: [minor, patch]
     ignore:
-      # Os tipos acompanham a versão mínima de Node suportada (.nvmrc; o MCP promete
-      # Node ≥ 20), não a mais nova: tipos de um Node acima deixam passar APIs que não
-      # existem onde o código roda. Patches e minors da linha atual continuam chegando.
+      # The types follow the minimum supported Node version (.nvmrc; the MCP promises
+      # Node ≥ 20), not the newest: types of a higher Node let through APIs that do not
+      # exist where the code runs. Patches and minors of the current line keep arriving.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
-      # Migrações adiadas, cada uma numa issue com o rótulo `roadmap` no GitHub (TypeScript 7 e Preact 11):
-      # TypeScript 7 (typescript-eslint ainda exige TS < 6.1) e Preact 11 (tipos JSX dos
-      # controles mudaram). Cada uma entra como fase própria; retire a regra ao começar.
+      # Postponed migrations, each in a GitHub issue with the `roadmap` label (TypeScript 7 and Preact 11):
+      # TypeScript 7 (typescript-eslint still requires TS < 6.1) and Preact 11 (the JSX types of the
+      # controls changed). Each one comes in as its own phase; remove the rule when starting.
       - dependency-name: typescript
         update-types: ['version-update:semver-major']
       - dependency-name: preact

@@ -20,8 +20,8 @@ import {
 } from '../../src/model';
 import { expectValid, image, marking, sampleProject } from './fixtures';
 
-// sampleProject: I1 (4000×3000, escala 0,25) ocupa (0,0)–(1000,750) no canvas, com M1 › M2 › M3;
-// I2 (1000×1000, escala 1) ocupa (1050,0)–(2050,1000), com M4.
+// sampleProject: I1 (4000×3000, scale 0.25) occupies (0,0)–(1000,750) on the canvas, with M1 › M2 › M3;
+// I2 (1000×1000, scale 1) occupies (1050,0)–(2050,1000), with M4.
 
 const rect = (x: number, y: number, width: number, height: number) => ({
   x,
@@ -30,13 +30,13 @@ const rect = (x: number, y: number, width: number, height: number) => ({
   height,
 });
 
-/** Marcação do canvas no vazio abaixo das duas telas (y ≥ 1200). */
+/** Canvas marking in the empty space below the two screens (y ≥ 1200). */
 function withCanvas(id = 'K', r = rect(100, 1200, 400, 300)): Project {
   return createMarking(sampleProject(), { id, containerId: null, rect: r });
 }
 
-describe('marcações: criar', () => {
-  it('pai automático = marcação mais interna que contém o retângulo', () => {
+describe('markings: create', () => {
+  it('automatic parent = innermost marking that contains the rectangle', () => {
     const p = sampleProject();
     expect(marking(p, 'M1').parentId).toBeNull();
     expect(marking(p, 'M2').parentId).toBe('M1');
@@ -50,8 +50,8 @@ describe('marcações: criar', () => {
     expect(marking(q, 'M5').name).toBeNull();
   });
 
-  it('só considera marcações da mesma imagem', () => {
-    // Em I1 este retângulo cairia dentro de M1; em I2 não tem pai.
+  it('only considers markings of the same image', () => {
+    // In I1 this rectangle would fall inside M1; in I2 it has no parent.
     const p = createMarking(sampleProject(), {
       id: 'M5',
       containerId: 'I2',
@@ -66,7 +66,7 @@ describe('marcações: criar', () => {
     expect(marking(q, 'M5').parentId).toBe('M4');
   });
 
-  it('valida inteiros, tamanho mínimo e limites da imagem', () => {
+  it('validates integers, minimum size and image bounds', () => {
     const p = sampleProject();
     const make = (r: { x: number; y: number; width: number; height: number }) => () =>
       createMarking(p, { id: 'X', containerId: 'I2', rect: r });
@@ -77,7 +77,7 @@ describe('marcações: criar', () => {
     expect(make({ x: 992, y: 992, width: 8, height: 8 })).not.toThrow();
   });
 
-  it('id repetido e container inexistente', () => {
+  it('duplicate id and missing container', () => {
     const p = sampleProject();
     const make = (id: string, containerId: string | null) => () =>
       createMarking(p, { id, containerId, rect: rect(0, 0, 10, 10) });
@@ -85,30 +85,30 @@ describe('marcações: criar', () => {
     expect(make('X', 'ZZ')).toThrow('not-found');
   });
 
-  it('no canvas (containerId nulo): qualquer posição inteira, negativa inclusive', () => {
+  it('on the canvas (null containerId): any integer position, negative included', () => {
     const p = expectValid(
       createMarking(sampleProject(), {
         id: 'K',
         containerId: null,
         rect: rect(-500, -300, 200, 100),
-        name: ' Fora ',
+        name: ' Outside ',
       }),
     );
     expect(marking(p, 'K')).toMatchObject({
       containerId: null,
       parentId: null,
       floating: false,
-      name: 'Fora',
+      name: 'Outside',
       rect: rect(-500, -300, 200, 100),
     });
-    // A forma continua conferida.
+    // The shape is still checked.
     const make = (r: ReturnType<typeof rect>) => () =>
       createMarking(sampleProject(), { id: 'X', containerId: null, rect: r });
     expect(make(rect(0.5, 0, 10, 10))).toThrow('rect-not-integer');
     expect(make(rect(0, 0, 7, 10))).toThrow('rect-too-small');
   });
 
-  it('não escolhe o pai: assenta (o pai é a menor marcação do mesmo espaço)', () => {
+  it('does not choose the parent: it settles (the parent is the smallest marking of the same space)', () => {
     const outer = withCanvas('K', rect(0, 1200, 1000, 800));
     const p = createMarking(outer, {
       id: 'J',
@@ -116,7 +116,7 @@ describe('marcações: criar', () => {
       rect: rect(100, 1300, 300, 200),
     });
     expect(marking(expectValid(p), 'J').parentId).toBe('K');
-    // Mesmo retângulo de J: a mais nova fica dentro da primeira (empate pelo array).
+    // Same rectangle as J: the newest ends up inside the first one (tie broken by the array).
     const q = createMarking(p, {
       id: 'L',
       containerId: null,
@@ -125,8 +125,8 @@ describe('marcações: criar', () => {
     expect(marking(q, 'L').parentId).toBe('J');
   });
 
-  it('marcação do canvas inteira dentro de um container já nasce dele, convertida', () => {
-    // I2 está em (1050,0) com escala 1.
+  it('a canvas marking entirely inside a container is born in it, converted', () => {
+    // I2 is at (1050,0) with scale 1.
     const p = createMarking(sampleProject(), {
       id: 'K',
       containerId: null,
@@ -138,7 +138,7 @@ describe('marcações: criar', () => {
     });
   });
 
-  it('flutuante: só no canvas, e nunca vira marcação de container', () => {
+  it('floating: only on the canvas, and never becomes a container marking', () => {
     const p = createMarking(sampleProject(), {
       id: 'N',
       containerId: null,
@@ -161,7 +161,7 @@ describe('marcações: criar', () => {
     ).toThrow('invalid-space');
   });
 
-  it('minSize do componente vale na criação e ao converter', () => {
+  it('the component minSize applies on creation and when converting', () => {
     expect(() =>
       createMarking(
         sampleProject(),
@@ -169,7 +169,7 @@ describe('marcações: criar', () => {
         { minSize: { width: 40, height: 40 } },
       ),
     ).toThrow('rect-too-small');
-    // No canvas, 40×40 caindo dentro de I2 (escala 1): fica 40×40 pixels dele.
+    // On the canvas, 40×40 falling inside I2 (scale 1): it becomes 40×40 pixels of it.
     const p = createMarking(
       sampleProject(),
       { id: 'X', containerId: null, rect: rect(1100, 100, 40, 40) },
@@ -181,7 +181,7 @@ describe('marcações: criar', () => {
     });
   });
 
-  it('settle: false cria sem assentar (prévia de gesto)', () => {
+  it('settle: false creates without settling (gesture preview)', () => {
     const p = createMarking(
       sampleProject(),
       { id: 'M5', containerId: 'I1', rect: rect(1700, 1700, 100, 100) },
@@ -191,17 +191,17 @@ describe('marcações: criar', () => {
   });
 });
 
-describe('marcações: alterar', () => {
-  it('renomeia (vazio vira null)', () => {
-    let p = renameMarking(sampleProject(), 'M1', '  Porta dianteira ');
-    expect(marking(p, 'M1').name).toBe('Porta dianteira');
+describe('markings: change', () => {
+  it('renames (empty becomes null)', () => {
+    let p = renameMarking(sampleProject(), 'M1', '  Front door ');
+    expect(marking(p, 'M1').name).toBe('Front door');
     p = renameMarking(p, 'M1', '   ');
     expect(marking(p, 'M1').name).toBeNull();
   });
 
-  it('a filha pode sair do pai: não há limite do pai, o pai é refeito pela geometria', () => {
+  it('the child can leave the parent: there is no parent limit, the parent is redone by the geometry', () => {
     const p = sampleProject();
-    // M3 passa a ocupar x 1300–1700: sai de M2 (até 1600), mas cabe em M1.
+    // M3 now occupies x 1300–1700: it leaves M2 (up to 1600), but fits in M1.
     const q = expectValid(
       setMarkingRect(p, 'M3', { x: 1300, y: 1250, width: 400, height: 50 }),
     );
@@ -209,10 +209,10 @@ describe('marcações: alterar', () => {
     expect(marking(q, 'M3').parentId).toBe('M1');
   });
 
-  it('redimensionar o pai por cima de uma filha é aceito e a filha sai do pertencimento', () => {
+  it('resizing the parent over a child is accepted and the child leaves the membership', () => {
     const p = sampleProject();
     expect(marking(p, 'M2').parentId).toBe('M1');
-    // M1 passa a começar em x 1250: M2 (a partir de 1200) deixa de caber nela; M3 continua em M2.
+    // M1 now starts at x 1250: M2 (from 1200) no longer fits in it; M3 stays in M2.
     const q = expectValid(
       setMarkingRect(p, 'M1', { x: 1250, y: 1000, width: 800, height: 800 }),
     );
@@ -222,14 +222,14 @@ describe('marcações: alterar', () => {
     expect(marking(q, 'M3').parentId).toBe('M2');
   });
 
-  it('o pai do tamanho da filha: a filha fica dentro dele (empate pelo array)', () => {
+  it('a parent the size of the child: the child stays inside it (tie broken by the array)', () => {
     const p = sampleProject();
     const q = setMarkingRect(p, 'M1', { x: 1200, y: 1200, width: 400, height: 200 });
     expect(marking(expectValid(q), 'M1').rect).toEqual(marking(p, 'M2').rect);
     expect(marking(q, 'M2').parentId).toBe('M1');
   });
 
-  it('marcação de container fica dentro da imagem', () => {
+  it('a container marking stays inside the image', () => {
     expect(() =>
       setMarkingRect(sampleProject(), 'M1', { x: 3500, y: 0, width: 600, height: 1000 }),
     ).toThrow('rect-out-of-image');
@@ -238,20 +238,20 @@ describe('marcações: alterar', () => {
     ).toThrow('rect-out-of-image');
   });
 
-  it('marcação do canvas redimensiona sem limite', () => {
+  it('a canvas marking resizes without limit', () => {
     const p = withCanvas();
     const q = expectValid(setMarkingRect(p, 'K', rect(-3000, -3000, 9000, 6000)));
     expect(marking(q, 'K').rect).toEqual(rect(-3000, -3000, 9000, 6000));
-    // Cerca as duas telas: elas passam a ser membros.
+    // It surrounds the two screens: they become members.
     expect(image(q, 'I1').parentId).toBe('K');
     expect(image(q, 'I2').parentId).toBe('K');
   });
 
-  it('mesmo retângulo devolve o mesmo projeto, sem conferir a trava; forma e trava nas mudanças', () => {
+  it('the same rectangle returns the same project, without checking the lock; shape and lock on changes', () => {
     const p = setMarkingLocked(sampleProject(), 'M1', true);
     expect(setMarkingRect(p, 'M1', marking(p, 'M1').rect)).toBe(p);
     expect(() => setMarkingRect(p, 'M1', rect(1000, 1000, 900, 900))).toThrow('locked');
-    // Filha de marcação trancada: geometria herdada.
+    // Child of a locked marking: inherited geometry.
     expect(() => setMarkingRect(p, 'M2', rect(1200, 1200, 300, 200))).toThrow('locked');
     expect(() => setMarkingRect(sampleProject(), 'M1', rect(0.5, 0, 10, 10))).toThrow(
       'rect-not-integer',
@@ -266,14 +266,14 @@ describe('marcações: alterar', () => {
     ).toThrow('rect-too-small');
   });
 
-  it('settle: false só troca o retângulo (prévia): o pai congela', () => {
+  it('settle: false only swaps the rectangle (preview): the parent freezes', () => {
     const p = sampleProject();
     const q = setMarkingRect(p, 'M3', rect(1300, 1250, 400, 50), { settle: false });
     expect(marking(q, 'M3').rect).toEqual(rect(1300, 1250, 400, 50));
     expect(marking(q, 'M3').parentId).toBe('M2');
   });
 
-  it('markingBounds: o container em pixels dele; nulo no canvas', () => {
+  it('markingBounds: the container in its own pixels; null on the canvas', () => {
     const p = withCanvas();
     expect(markingBounds(p, 'M1')).toEqual(rect(0, 0, 4000, 3000));
     expect(markingBounds(p, 'M4')).toEqual(rect(0, 0, 1000, 1000));
@@ -282,8 +282,8 @@ describe('marcações: alterar', () => {
   });
 });
 
-describe('marcações: mover', () => {
-  it('dentro do container, mover o pai move todos os descendentes', () => {
+describe('markings: move', () => {
+  it('inside the container, moving the parent moves all the descendants', () => {
     const p = sampleProject();
     const q = expectValid(moveMarking(p, 'M1', 100, -50));
     expect(marking(q, 'M1').rect).toMatchObject({ x: 1100, y: 950 });
@@ -294,27 +294,27 @@ describe('marcações: mover', () => {
     expect(marking(q, 'M3').parentId).toBe('M2');
   });
 
-  it('descendentes trancados vão junto; a filha trancada não impede o pai', () => {
+  it('locked descendants go along; the locked child does not stop the parent', () => {
     let p = setMarkingLocked(sampleProject(), 'M2', true);
     p = expectValid(moveMarking(p, 'M1', 50, 0));
     expect(marking(p, 'M2').rect.x).toBe(1250);
     expect(marking(p, 'M3').rect.x).toBe(1350);
   });
 
-  it('sem prender: a filha pode sair do pai e o pai passa a ser outro', () => {
+  it('without trapping: the child can leave the parent and the parent becomes another', () => {
     const p = sampleProject();
-    // M3 (1300–1350) 300 px à direita: sai de M2 (até 1600) e continua em M1.
+    // M3 (1300–1350) 300 px to the right: it leaves M2 (up to 1600) and stays in M1.
     const q = expectValid(moveMarking(p, 'M3', 300, 0));
     expect(marking(q, 'M3').rect).toMatchObject({ x: 1600, y: 1250 });
     expect(marking(q, 'M3').parentId).toBe('M1');
-    // Mais longe, sai de M1 também.
+    // Farther away, it leaves M1 too.
     const r = expectValid(moveMarking(p, 'M3', 1500, 0));
     expect(marking(r, 'M3').parentId).toBeNull();
     expect(marking(r, 'M3').containerId).toBe('I1');
   });
 
-  it('para fora do container no vazio vira marcação do canvas, com as descendentes junto', () => {
-    // 4000 px para baixo (1000 unidades do canvas): o grupo inteiro cai no vazio abaixo das telas.
+  it('out of the container into the empty space becomes a canvas marking, with the descendants along', () => {
+    // 4000 px down (1000 canvas units): the whole group falls into the empty space below the screens.
     const q = expectValid(moveMarking(sampleProject(), 'M1', 0, 4000));
     expect(marking(q, 'M1')).toMatchObject({
       containerId: null,
@@ -334,21 +334,21 @@ describe('marcações: mover', () => {
     ).toEqual(['M2', 'M3']);
   });
 
-  it('para dentro de outro container converte, mantendo o tamanho que se via na tela', () => {
-    // M4 (100×100 de I2, canvas x 1050). 1000 px à esquerda: canvas x 50, dentro de I1 (escala 0,25).
+  it('into another container converts, keeping the size seen on screen', () => {
+    // M4 (100×100 of I2, canvas x 1050). 1000 px to the left: canvas x 50, inside I1 (scale 0.25).
     const q = expectValid(moveMarking(sampleProject(), 'M4', -1000, 100));
     expect(marking(q, 'M4')).toMatchObject({
       containerId: 'I1',
       parentId: null,
       rect: rect(200, 400, 400, 400),
     });
-    // Dentro da imagem de destino, o pai é o que a geometria dá: nada a contém aqui.
+    // Inside the destination image, the parent is whatever the geometry gives: nothing contains it here.
     const r = expectValid(moveMarking(sampleProject(), 'M4', -1000, 300));
     expect(marking(r, 'M4').containerId).toBe('I1');
   });
 
-  it('o mínimo do componente vale ao converter para o espaço novo (minSize e minSizeOf)', () => {
-    // M4 (100×100 de I2) vira 400×400 na I1; o mínimo do componente é maior.
+  it('the component minimum applies when converting to the new space (minSize and minSizeOf)', () => {
+    // M4 (100×100 of I2) becomes 400×400 in I1; the component minimum is larger.
     const viaMinSize = moveMarking(sampleProject(), 'M4', -1000, 100, {
       minSize: { width: 500, height: 450 },
     });
@@ -365,7 +365,7 @@ describe('marcações: mover', () => {
     });
   });
 
-  it('marcação do canvas move só a si mesma (não leva os membros)', () => {
+  it('a canvas marking moves only itself (it does not carry the members)', () => {
     let p = withCanvas('K', rect(0, 1200, 1000, 800));
     p = createMarking(p, { id: 'J', containerId: null, rect: rect(100, 1300, 300, 200) });
     expect(marking(p, 'J').parentId).toBe('K');
@@ -375,14 +375,14 @@ describe('marcações: mover', () => {
     expect(marking(q, 'J').parentId).toBeNull();
   });
 
-  it('o container sai e entra da marcação do canvas que o move sozinha', () => {
+  it('the container leaves and enters the canvas marking that moves it by itself', () => {
     const p = withCanvas('K', rect(-100, -100, 1200, 1000));
     expect(image(p, 'I1').parentId).toBe('K');
     const q = expectValid(moveMarking(p, 'K', 0, 4000));
     expect(image(q, 'I1').parentId).toBeNull();
   });
 
-  it('flutuante move só a si mesma e nunca muda de espaço', () => {
+  it('a floating one moves only itself and never changes space', () => {
     let p = createMarking(sampleProject(), {
       id: 'N',
       containerId: null,
@@ -390,7 +390,7 @@ describe('marcações: mover', () => {
       floating: true,
     });
     p = expectValid(moveMarking(p, 'N', 1100, 0));
-    // Agora sobre a I2, e continua do canvas.
+    // Now over I2, and it stays a canvas one.
     expect(marking(p, 'N')).toMatchObject({
       containerId: null,
       parentId: null,
@@ -399,7 +399,7 @@ describe('marcações: mover', () => {
     });
   });
 
-  it('deslocamento zero devolve o mesmo projeto, sem conferir a trava; não inteiro falha', () => {
+  it('a zero offset returns the same project, without checking the lock; a non-integer fails', () => {
     const p = setMarkingLocked(sampleProject(), 'M1', true);
     expect(moveMarking(p, 'M1', 0, 0)).toBe(p);
     expect(() => moveMarking(p, 'M1', 1, 0)).toThrow('locked');
@@ -408,7 +408,7 @@ describe('marcações: mover', () => {
     expect(() => moveMarking(sampleProject(), 'ZZ', 1, 0)).toThrow('not-found');
   });
 
-  it('settle: false desloca sem assentar nem converter (prévia de gesto)', () => {
+  it('settle: false offsets without settling or converting (gesture preview)', () => {
     const p = sampleProject();
     const q = moveMarking(p, 'M1', 0, 4000, { settle: false });
     expect(marking(q, 'M1')).toMatchObject({
@@ -419,8 +419,8 @@ describe('marcações: mover', () => {
   });
 });
 
-describe('marcações: floating', () => {
-  it('ida: sai do container, convertida para o canvas; as filhas ficam e são reparentadas', () => {
+describe('markings: floating', () => {
+  it('going: it leaves the container, converted to the canvas; the children stay and are reparented', () => {
     const p = sampleProject();
     const q = expectValid(setMarkingFloating(p, 'M1', true));
     expect(marking(q, 'M1')).toMatchObject({
@@ -429,13 +429,13 @@ describe('marcações: floating', () => {
       floating: true,
       rect: rect(250, 250, 250, 250),
     });
-    // M2 e M3 não se mexem: sem a M1 por perto, M2 fica sem pai e M3 continua em M2.
+    // M2 and M3 do not move: without M1 nearby, M2 has no parent and M3 stays in M2.
     expect(marking(q, 'M2')).toMatchObject({ containerId: 'I1', parentId: null });
     expect(marking(q, 'M2').rect).toEqual(marking(p, 'M2').rect);
     expect(marking(q, 'M3').parentId).toBe('M2');
   });
 
-  it('volta: ao deixar de ser flutuante, cabendo inteira num container, vira dele e é mãe de novo', () => {
+  it('returning: when it stops floating, fitting entirely in a container, it becomes its own and is a parent again', () => {
     const p = sampleProject();
     const q = setMarkingFloating(setMarkingFloating(p, 'M1', true), 'M1', false);
     expect(marking(expectValid(q), 'M1')).toMatchObject({
@@ -447,36 +447,36 @@ describe('marcações: floating', () => {
     expect(marking(q, 'M2').parentId).toBe('M1');
   });
 
-  it('desligar fora de qualquer container fica no canvas', () => {
+  it('turning it off outside any container leaves it on the canvas', () => {
     const p = setMarkingFloating(withCanvas(), 'K', true);
     expect(marking(p, 'K').floating).toBe(true);
     const q = expectValid(setMarkingFloating(p, 'K', false));
     expect(marking(q, 'K')).toMatchObject({ containerId: null, floating: false });
   });
 
-  it('mesmo valor devolve o mesmo projeto; a trava de geometria impede nos dois sentidos', () => {
+  it('the same value returns the same project; the geometry lock prevents it in both directions', () => {
     const p = sampleProject();
     expect(setMarkingFloating(p, 'M1', false)).toBe(p);
     const locked = setMarkingLocked(p, 'M1', true);
     expect(() => setMarkingFloating(locked, 'M1', true)).toThrow('locked');
-    // Herdada do ancestral trancado.
+    // Inherited from the locked ancestor.
     expect(() => setMarkingFloating(locked, 'M2', true)).toThrow('locked');
-    // Já flutuante e trancada: desligar também é geometria.
+    // Already floating and locked: turning it off is geometry too.
     const floating = setMarkingLocked(setMarkingFloating(p, 'M1', true), 'M1', true);
     expect(() => setMarkingFloating(floating, 'M1', false)).toThrow('locked');
   });
 
-  it('o mínimo do componente vale na conversão para o canvas', () => {
+  it('the component minimum applies in the conversion to the canvas', () => {
     const q = setMarkingFloating(sampleProject(), 'M3', true, {
       minSize: { width: 40, height: 30 },
     });
-    // 50×50 pixels na escala 0,25 = 12,5 no canvas: sobe ao mínimo do componente.
+    // 50×50 pixels at scale 0.25 = 12.5 on the canvas: it rises to the component minimum.
     expect(marking(q, 'M3').rect).toMatchObject({ width: 40, height: 30 });
   });
 });
 
-describe('marcações: ajuste fino pelo painel', () => {
-  it('x/y movem a marcação com os descendentes', () => {
+describe('markings: fine adjustment from the panel', () => {
+  it('x/y move the marking with the descendants', () => {
     const p = sampleProject();
     const q = expectValid(adjustMarkingRect(p, 'M1', 'x', 1100));
     expect(marking(q, 'M1').rect).toMatchObject({ x: 1100, y: 1000 });
@@ -484,9 +484,9 @@ describe('marcações: ajuste fino pelo painel', () => {
     expect(marking(q, 'M3').rect).toMatchObject({ x: 1400, y: 1250 });
   });
 
-  it('x/y de marcação de container param no limite do container (o painel não ejeta)', () => {
+  it('x/y of a container marking stop at the container limit (the panel does not eject)', () => {
     const p = sampleProject();
-    // M3 pode passar do pai (M2): só o container limita.
+    // M3 may go past the parent (M2): only the container limits it.
     expect(marking(adjustMarkingRect(p, 'M3', 'x', 0), 'M3').rect.x).toBe(0);
     expect(marking(adjustMarkingRect(p, 'M3', 'y', 9999), 'M3').rect.y).toBe(2950);
     expect(marking(adjustMarkingRect(p, 'M1', 'x', -50), 'M1').rect.x).toBe(0);
@@ -496,20 +496,20 @@ describe('marcações: ajuste fino pelo painel', () => {
     ).toBeNull();
   });
 
-  it('no canvas, x/y são livres', () => {
+  it('on the canvas, x/y are free', () => {
     const p = withCanvas();
     expect(marking(adjustMarkingRect(p, 'K', 'x', -9000), 'K').rect.x).toBe(-9000);
     expect(marking(adjustMarkingRect(p, 'K', 'y', 99999), 'K').rect.y).toBe(99999);
   });
 
-  it('largura/altura ficam entre o mínimo e o limite do container; sem máximo no canvas', () => {
+  it('width/height stay between the minimum and the container limit; no maximum on the canvas', () => {
     const p = sampleProject();
     expect(marking(adjustMarkingRect(p, 'M3', 'width', 1), 'M3').rect.width).toBe(8);
-    // Até a borda da imagem (4000 − 1300), não até a borda do pai.
+    // Up to the image edge (4000 − 1300), not up to the parent edge.
     expect(marking(adjustMarkingRect(p, 'M3', 'width', 99999), 'M3').rect.width).toBe(
       2700,
     );
-    // O pai pode encolher abaixo da caixa das filhas.
+    // The parent may shrink below the box of its children.
     const shrunk = expectValid(adjustMarkingRect(p, 'M1', 'width', 10));
     expect(marking(shrunk, 'M1').rect.width).toBe(10);
     expect(marking(shrunk, 'M2').parentId).toBeNull();
@@ -523,7 +523,7 @@ describe('marcações: ajuste fino pelo painel', () => {
     expect(marking(adjustMarkingRect(k, 'K', 'height', 1), 'K').rect.height).toBe(8);
   });
 
-  it('o mínimo do componente limita por baixo', () => {
+  it('the component minimum bounds from below', () => {
     const p = sampleProject();
     const q = adjustMarkingRect(p, 'M3', 'width', 20, {
       minSize: { width: 40, height: 10 },
@@ -531,22 +531,22 @@ describe('marcações: ajuste fino pelo painel', () => {
     expect(marking(q, 'M3').rect.width).toBe(40);
   });
 
-  it('sem mudança devolve o mesmo projeto; não inteiro falha', () => {
+  it('no change returns the same project; a non-integer fails', () => {
     const p = sampleProject();
     expect(adjustMarkingRect(p, 'M3', 'x', 1300)).toBe(p);
     expect(adjustMarkingRect(p, 'M3', 'width', 50)).toBe(p);
     expect(() => adjustMarkingRect(p, 'M3', 'x', 1.5)).toThrow('rect-not-integer');
   });
 
-  it('respeita a trava', () => {
+  it('respects the lock', () => {
     const p = setMarkingLocked(sampleProject(), 'M1', true);
     expect(() => adjustMarkingRect(p, 'M1', 'x', 1100)).toThrow('locked');
     expect(() => adjustMarkingRect(p, 'M2', 'width', 500)).toThrow('locked');
   });
 });
 
-describe('marcações: excluir e revisão', () => {
-  it('exclui em cascata descendentes e anotações', () => {
+describe('markings: delete and review', () => {
+  it('deletes descendants and annotations in cascade', () => {
     const p = sampleProject();
     expect(markingDeletionImpact(p, 'M1')).toEqual({
       descendants: 2,
@@ -569,8 +569,8 @@ describe('marcações: excluir e revisão', () => {
     expect(q.annotations.map((a) => a.id)).toEqual(['A1', 'A2', 'A4']);
   });
 
-  it('excluir marcação do canvas não exclui containers: o impacto conta os que ficam', () => {
-    // K cerca as duas telas; J (dentro de K) cerca só a I1.
+  it('deleting a canvas marking does not delete containers: the impact counts the ones that stay', () => {
+    // K surrounds both screens; J (inside K) surrounds only I1.
     let p = withCanvas('K', rect(-200, -200, 2600, 1400));
     p = createMarking(p, {
       id: 'J',
@@ -580,7 +580,7 @@ describe('marcações: excluir e revisão', () => {
     expect(image(p, 'I1').parentId).toBe('J');
     expect(image(p, 'I2').parentId).toBe('K');
     expect(marking(p, 'J').parentId).toBe('K');
-    // K tem J como descendente e dois containers (um deles de J).
+    // K has J as a descendant and two containers (one of them J's).
     expect(markingDeletionImpact(p, 'K')).toMatchObject({
       descendants: 1,
       containers: 2,
@@ -590,11 +590,11 @@ describe('marcações: excluir e revisão', () => {
       containers: 1,
     });
 
-    // Excluir J: os containers dele passam ao pai dela (K).
+    // Deleting J: its containers go to its parent (K).
     const q = expectValid(removeMarking(p, 'J'));
     expect(q.containers.map((c) => c.id)).toEqual(['I1', 'I2']);
     expect(image(q, 'I1').parentId).toBe('K');
-    // Excluir K leva J, mas os containers ficam sem pai e as marcações deles não se mexem.
+    // Deleting K takes J, but the containers are left without a parent and their markings do not move.
     const r = expectValid(removeMarking(p, 'K'));
     expect(r.markings.map((m) => m.id)).toEqual(['M1', 'M2', 'M3', 'M4']);
     expect(r.containers.map((c) => [c.id, c.parentId])).toEqual([
@@ -603,12 +603,12 @@ describe('marcações: excluir e revisão', () => {
     ]);
   });
 
-  it('excluir marcação do canvas tranca como as demais: só a própria trava impede', () => {
+  it('deleting a canvas marking is locked like the others: only its own lock prevents it', () => {
     const p = setMarkingLocked(withCanvas(), 'K', true);
     expect(() => removeMarking(p, 'K')).toThrow('locked');
   });
 
-  it('confirmar posição limpa needsReview', () => {
+  it('confirming position clears needsReview', () => {
     let p = replaceContainer(
       sampleProject(),
       'I2',
@@ -621,8 +621,8 @@ describe('marcações: excluir e revisão', () => {
   });
 });
 
-describe('hierarquia', () => {
-  it('descendentes e ordem de cima para baixo', () => {
+describe('hierarchy', () => {
+  it('descendants and top-to-bottom order', () => {
     const p = sampleProject();
     expect(
       descendantsOf(p, 'M1')
@@ -634,8 +634,8 @@ describe('hierarquia', () => {
   });
 });
 
-describe('irmãs: mesmo pai e mesmo espaço', () => {
-  it('as do canvas são um grupo à parte (null com null), separado das de cada container', () => {
+describe('siblings: same parent and same space', () => {
+  it('the canvas ones are a separate group (null with null), apart from those of each container', () => {
     let p = withCanvas('K1', rect(0, 1200, 200, 200));
     p = createMarking(p, {
       id: 'K2',
@@ -649,7 +649,7 @@ describe('irmãs: mesmo pai e mesmo espaço', () => {
     });
     expect(siblingPosition(p, 'K1')).toEqual({ index: 0, count: 3 });
     expect(siblingPosition(p, 'K3')).toEqual({ index: 2, count: 3 });
-    // M1 e M4 são raízes de containers diferentes: não são irmãs das do canvas nem entre si.
+    // M1 and M4 are roots of different containers: they are not siblings of the canvas ones nor of each other.
     expect(siblingPosition(p, 'M1')).toEqual({ index: 0, count: 1 });
     expect(siblingPosition(p, 'M4')).toEqual({ index: 0, count: 1 });
 

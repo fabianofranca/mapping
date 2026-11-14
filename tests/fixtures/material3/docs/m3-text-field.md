@@ -1,41 +1,41 @@
 # Text field
 
-Outlined text field: caixa de 56 dp, forma extra-small (4), rótulo flutuante e texto de apoio.
+Outlined text field: 56 dp box, extra-small shape (4), floating label and supporting text.
 
-Tipo de anotação: `m3-text-field` (Text field).
+Annotation type: `m3-text-field` (Text field).
 
-## Tamanho
+## Size
 
-- Inicial: 280 × 80 px
-- Mínimo: 120 × 56 px
-- Dimensionamento: largura fill, altura 56
+- Initial: 280 × 80 px
+- Minimum: 120 × 56 px
+- Sizing: width fill, height 56
 
-## Campos
+## Fields
 
-| Chave         | Rótulo          | Tipo   | Obrigatório | Opções                                                                                               | Padrão  | Descrição |
-| ------------- | --------------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------- | --------- |
-| `label`       | Label           | string | sim         |                                                                                                      |         |           |
-| `value`       | Input text      | string | não         |                                                                                                      |         |           |
-| `placeholder` | Placeholder     | string | não         |                                                                                                      |         |           |
-| `supporting`  | Supporting text | string | não         |                                                                                                      |         |           |
-| `state`       | State           | enum   | não         | enabled, focused, error, disabled                                                                    | enabled |           |
-| `trailing`    | Trailing icon   | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |           |
+| Key           | Label           | Type   | Required | Options                                                                                              | Default | Description |
+| ------------- | --------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------- | ------- | ----------- |
+| `label`       | Label           | string | yes      |                                                                                                      |         |             |
+| `value`       | Input text      | string | no       |                                                                                                      |         |             |
+| `placeholder` | Placeholder     | string | no       |                                                                                                      |         |             |
+| `supporting`  | Supporting text | string | no       |                                                                                                      |         |             |
+| `state`       | State           | enum   | no       | enabled, focused, error, disabled                                                                    | enabled |             |
+| `trailing`    | Trailing icon   | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |             |
 
-## Exemplos
+## Examples
 
-- **Padrão**: label=Label, value=Input text, supporting=Supporting text, state=enabled
-- **Focado**: label=Label, value=Input text, supporting=Supporting text, state=focused
-- **Com erro**: label=Label, value=Input text, supporting=Supporting text, state=error
+- **Default**: label=Label, value=Input text, supporting=Supporting text, state=enabled
+- **Focused**: label=Label, value=Input text, supporting=Supporting text, state=focused
+- **With error**: label=Label, value=Input text, supporting=Supporting text, state=error
 
-## Origem externa
+## External origin
 
-Sistema `sdui`: tipo externo `TextField`.
+System `sdui`: external type `TextField`.
 
-| Campo         | Caminho em `props` |
-| ------------- | ------------------ |
-| `label`       | `label`            |
-| `value`       | `value`            |
-| `placeholder` | `placeholder`      |
-| `supporting`  | `supportingText`   |
-| `state`       | `state`            |
-| `trailing`    | `trailingIcon`     |
+| Field         | Path in `props`  |
+| ------------- | ---------------- |
+| `label`       | `label`          |
+| `value`       | `value`          |
+| `placeholder` | `placeholder`    |
+| `supporting`  | `supportingText` |
+| `state`       | `state`          |
+| `trailing`    | `trailingIcon`   |

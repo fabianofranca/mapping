@@ -2,12 +2,12 @@ import { t } from '../i18n';
 import type { Spec } from '../model';
 import type { TokenValue } from '../model/components/tokens';
 
-// O desenho da biblioteca na janela Especializações (decisão 16 da etapa "componentes fiéis"):
-// os modos, os tokens (com o valor de cada modo) e o arquivo do conjunto de ícones. Só leitura.
+// The library's design in the Specializations window (decision 16 of the "faithful components"
+// stage): the modes, the tokens (with the value of each mode) and the icon set file. Read-only.
 
 type TokenEntry = readonly [string, TokenValue | Readonly<Record<string, TokenValue>>];
 
-/** "light #1a73e8 · dark #8ab4f8" para um valor por modo; o próprio valor quando vale em todos. */
+/** "light #1a73e8 · dark #8ab4f8" for a per-mode value; the value itself when it holds in all. */
 function valueText(value: TokenEntry[1], modes: readonly string[]): string {
   if (typeof value !== 'object') return String(value);
   return modes

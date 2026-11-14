@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as model from '../../src/model';
 import { openHarness, richScenario } from './proposalHarness';
 
-// `freshIds` (sempre inscrito pela faixa, pela barra de status e pela ToolStrip) não pode
-// pagar o cálculo de conflitos das propostas: ele só sai quando a lista de propostas pede.
+// `freshIds` (always subscribed by the strip, the status bar and the ToolStrip) must not
+// pay for the proposals conflict computation: it only comes out when the proposals list asks.
 vi.mock('../../src/model', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/model')>();
   return { ...actual, changeStatus: vi.fn(actual.changeStatus) };
@@ -12,8 +12,8 @@ vi.mock('../../src/model', async (importOriginal) => {
 
 afterEach(() => vi.clearAllMocks());
 
-describe('freshIds sem calcular conflitos', () => {
-  it('uma edição com a janela Propostas fechada não chama changeStatus', async () => {
+describe('freshIds without computing conflicts', () => {
+  it('an edit with the Proposals window closed does not call changeStatus', async () => {
     const { proposal } = richScenario();
     const { session, review } = await openHarness({ proposals: [proposal] });
     const seen: string[][] = [];
@@ -23,7 +23,7 @@ describe('freshIds sem calcular conflitos', () => {
     });
     try {
       vi.mocked(model.changeStatus).mockClear();
-      session.actions.renameProject('Outro nome');
+      session.actions.renameProject('Another name');
       expect(seen.at(-1)).toEqual(['P1']);
       expect(model.changeStatus).not.toHaveBeenCalled();
     } finally {

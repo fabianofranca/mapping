@@ -9,9 +9,9 @@ import { CatalogWindow } from '../../src/ui/CatalogWindow';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { libraryHarness, type LibraryHarness } from './libraryHarness';
 
-// B5: a janela Catálogo dentro do projeto (abas Componentes e Paleta).
+// B5: the Catalog window inside the project (Components and Palette tabs).
 
-// O desenho da página usa o Konva, que o jsdom não roda: o rasterizador é falso.
+// The page drawing uses Konva, which jsdom does not run: the rasterizer is fake.
 vi.mock('../../src/ui/catalog/renderer', async (original) => {
   const real = await original<typeof import('../../src/ui/catalog/renderer')>();
   return {
@@ -22,7 +22,7 @@ vi.mock('../../src/ui/catalog/renderer', async (original) => {
 });
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(() => {
   cleanup();
@@ -38,21 +38,21 @@ function renderWindow(harness: LibraryHarness, onOpenSpecs = vi.fn()) {
   return { user: userEvent.setup(), onOpenSpecs };
 }
 
-/** Abre a página do Button (a lista abre a página num diálogo). */
+/** Opens the Button page (the list opens the page in a dialog). */
 async function openButtonPage(user: ReturnType<typeof userEvent.setup>) {
   const entry = await screen.findByRole('button', { name: /^Button/ });
   await user.click(entry);
   return screen.findByRole('dialog');
 }
 
-describe('janela Catálogo', () => {
-  it('tem as abas Componentes (padrão) e Paleta', async () => {
+describe('Catalog window', () => {
+  it('has the Components (default) and Palette tabs', async () => {
     const harness = await libraryHarness();
     const { user } = renderWindow(harness);
     const components = screen.getByRole('tab', { name: t('catalog.window.components') });
     const palette = screen.getByRole('tab', { name: t('catalog.window.palette') });
     expect(components.getAttribute('aria-selected')).toBe('true');
-    // Os catálogos são lidos ao abrir a aba: aparecem os componentes do Material 3.
+    // The catalogs are read when the tab opens: the Material 3 components appear.
     expect(await screen.findByRole('button', { name: /^Button/ })).toBeTruthy();
 
     await user.click(palette);
@@ -64,7 +64,7 @@ describe('janela Catálogo', () => {
     ).toBeTruthy();
   });
 
-  it('Adicionar à tela, na página do componente, cria a marcação com a anotação', async () => {
+  it('Add to screen, on the component page, creates the marking with the annotation', async () => {
     const harness = await libraryHarness();
     const { user } = renderWindow(harness);
     const before = harness.project().markings.length;
@@ -84,7 +84,7 @@ describe('janela Catálogo', () => {
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: created?.id });
   });
 
-  it('sem container sob o centro, Adicionar fica habilitado (vai para o canvas)', async () => {
+  it('with no container under the center, Add stays enabled (goes to the canvas)', async () => {
     const harness = await libraryHarness();
     harness.canvas.viewportCenter.mockReturnValue({ x: -5000, y: -5000 });
     const { user } = renderWindow(harness);
@@ -95,7 +95,7 @@ describe('janela Catálogo', () => {
     expect(add.disabled).toBe(false);
   });
 
-  it('somente leitura: Adicionar à tela desabilitado', async () => {
+  it('read-only: Add to screen disabled', async () => {
     const harness = await libraryHarness({ readOnly: true });
     const { user } = renderWindow(harness);
     const dialog = await openButtonPage(user);
@@ -106,7 +106,7 @@ describe('janela Catálogo', () => {
     expect(add.title).toBe(t('library.readOnly'));
   });
 
-  it('sem pacote aplicado: estado vazio com atalho para as Especializações', async () => {
+  it('no package applied: empty state with a shortcut to the Specializations', async () => {
     const harness = await libraryHarness({ apply: false });
     const { user, onOpenSpecs } = renderWindow(harness);
     expect(screen.getByText(t('library.empty'))).toBeTruthy();
@@ -114,7 +114,7 @@ describe('janela Catálogo', () => {
     expect(onOpenSpecs).toHaveBeenCalledOnce();
   });
 
-  it('não lê os catálogos enquanto a aba Componentes não monta', async () => {
+  it('does not read the catalogs until the Components tab mounts', async () => {
     const harness = await libraryHarness();
     expect(harness.context.session.catalogs.entries.peek()).toBeNull();
     const { user } = renderWindow(harness);
@@ -123,7 +123,7 @@ describe('janela Catálogo', () => {
     await user.click(screen.getByRole('tab', { name: t('catalog.window.palette') }));
   });
 
-  it('invalidar (recarga externa) lê o pacote de novo', async () => {
+  it('invalidating (external reload) reads the package again', async () => {
     const harness = await libraryHarness();
     renderWindow(harness);
     await screen.findByRole('button', { name: /^Button/ });

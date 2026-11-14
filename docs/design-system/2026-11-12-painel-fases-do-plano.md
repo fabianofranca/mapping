@@ -1,13 +1,13 @@
-# Painel da fila com todas as fases do plano — 2026-11-12 (épico `epic/painel-fases-do-plano`)
+# Queue panel with all the plan's phases — 2026-11-12 (épico `epic/painel-fases-do-plano`)
 
 ## Pendências
 
-Sem impacto. A página do painel da fila não é a app: o épico só mexe em `.claude/skills/implementar-fila/`, nos testes de `tests/tooling/` e nos registros.
+No impact. The queue panel page is not the app: the epic only touches `.claude/skills/implementar-fila/`, the tests in `tests/tooling/` and the records.
 
 ## Sincronização
 
-Sem impacto: nada a gravar no artefato **Mapping**.
+Sem impacto: nothing to write to the **Mapping** artifact.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

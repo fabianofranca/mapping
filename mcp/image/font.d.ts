@@ -1,5 +1,5 @@
-// `import bytes from 'font:sans'` devolve os bytes do TTF embutido: o plugin do esbuild
-// (mcp/build.mjs) os embute no arquivo único.
+// `import bytes from 'font:sans'` returns the bytes of the embedded TTF: the esbuild plugin
+// (mcp/build.mjs) embeds them in the single file.
 declare module 'font:*' {
   const bytes: Uint8Array;
   export default bytes;

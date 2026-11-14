@@ -1,7 +1,7 @@
-// M3 da etapa "Material 3 fiel", grupo A: checkbox, radio-button, switch e progress-indicator contra o que
-// `Checkbox.kt`, `RadioButton.kt`, `Switch.kt`, `ProgressIndicator.kt` e os arquivos de tokens fixam no commit
-// 5113b82a. As cores esperadas saem dos tokens da especialização (light e dark); a geometria, das constantes
-// do Compose (dp = px do componente).
+// M3 of the "faithful Material 3" stage, group A: checkbox, radio-button, switch and progress-indicator against what
+// `Checkbox.kt`, `RadioButton.kt`, `Switch.kt`, `ProgressIndicator.kt` and the token files fix at commit
+// 5113b82a. The expected colors come from the specialization tokens (light and dark); the geometry, from the
+// Compose constants (dp = component px).
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
@@ -20,7 +20,7 @@ const both = (id: string, values: Values) => ({
 });
 
 const tokens = spec.tokens!.values as Record<string, unknown>;
-/** Valor do token da especialização no modo (cor ou número). */
+/** Value of the specialization token in the mode (color or number). */
 const tok = (name: string, mode: Mode): string => {
   const value = tokens[name] as string | Record<Mode, string>;
   return typeof value === 'string' ? value : value[mode];
@@ -32,7 +32,7 @@ const named = (d: Drawing, name: string): SceneNode | undefined => {
 };
 const box = (d: Drawing, name: string) => {
   const node = named(d, name);
-  if (node === undefined) throw new Error(`nó ausente: ${name}`);
+  if (node === undefined) throw new Error(`missing node: ${name}`);
   return { node, ...absoluteBoxes(d.root).get(node.id)! };
 };
 const fillOf = (d: Drawing, name: string): string | undefined =>
@@ -46,27 +46,27 @@ const iconOf = (d: Drawing, name: string) => {
 };
 const label = (d: Drawing): TextNode => findText(d.root)!;
 
-describe('M3 grupo A — checkbox', () => {
-  it('caixa de 20 com raio 2 (CheckboxSize e RadiusSize), centrada na área de 48 do toque mínimo', () => {
-    const c = both('checkbox', { label: 'Aceito', state: 'checked' }).light;
-    const caixa = box(c, 'caixa');
-    expect([caixa.width, caixa.height]).toEqual([20, 20]);
-    expect('cornerRadius' in caixa.node && caixa.node.cornerRadius).toBe(2);
-    // Checkbox(onClick != null): minimumInteractiveComponentSize 48 com a caixa no centro
-    const area = box(c, 'área');
+describe('M3 group A — checkbox', () => {
+  it('20 box with radius 2 (CheckboxSize and RadiusSize), centered in the 48 minimum touch area', () => {
+    const c = both('checkbox', { label: 'Accepted', state: 'checked' }).light;
+    const square = box(c, 'box');
+    expect([square.width, square.height]).toEqual([20, 20]);
+    expect('cornerRadius' in square.node && square.node.cornerRadius).toBe(2);
+    // Checkbox(onClick != null): minimumInteractiveComponentSize 48 with the box in the center
+    const area = box(c, 'area');
     expect([area.width, area.x]).toEqual([48, 0]);
-    expect(caixa.x - area.x).toBe(14);
-    expect(box(c, 'rótulo').x).toBe(48);
+    expect(square.x - area.x).toBe(14);
+    expect(box(c, 'label').x).toBe(48);
   });
 
-  it('marcada: caixa primary e check on-primary de 2 com ponta quadrada, em light e dark', () => {
+  it('checked: primary box and on-primary check of 2 with square cap, in light and dark', () => {
     const c = both('checkbox', { state: 'checked' });
     for (const mode of ['light', 'dark'] as const) {
       const d = c[mode];
-      expect(fillOf(d, 'caixa')).toBe(tok('primary', mode));
-      expect(named(d, 'caixa')?.stroke).toBeUndefined();
+      expect(fillOf(d, 'box')).toBe(tok('primary', mode));
+      expect(named(d, 'box')?.stroke).toBeUndefined();
       const check = named(d, 'check') as PathNode;
-      // drawCheck: (0.2, 0.5) -> (0.4, 0.7) -> (0.8, 0.3) da caixa de 20
+      // drawCheck: (0.2, 0.5) -> (0.4, 0.7) -> (0.8, 0.3) of the 20 box
       expect(
         check.d
           .replace(/[A-Za-z]/g, ' ')
@@ -77,27 +77,27 @@ describe('M3 grupo A — checkbox', () => {
       expect(check.fills).toEqual([]);
       expect(solid(check.stroke?.paints ?? [])).toBe(tok('on-primary', mode));
       expect(check.stroke).toMatchObject({ width: 2, cap: 'square', align: 'center' });
-      expect(named(d, 'traço')).toBeUndefined();
+      expect(named(d, 'dash')).toBeUndefined();
     }
   });
 
-  it('desmarcada: sem fundo e contorno de 2 por dentro em on-surface-variant; sem check', () => {
+  it('unchecked: no fill and a 2 inner outline in on-surface-variant; no check', () => {
     const c = both('checkbox', { state: 'unchecked' });
     for (const mode of ['light', 'dark'] as const) {
-      const caixa = named(c[mode], 'caixa')!;
-      expect(caixa.fills).toEqual([]);
-      expect(strokeOf(c[mode], 'caixa')).toBe(tok('on-surface-variant', mode));
-      expect(caixa.stroke).toMatchObject({ width: 2, align: 'inside' });
+      const square = named(c[mode], 'box')!;
+      expect(square.fills).toEqual([]);
+      expect(strokeOf(c[mode], 'box')).toBe(tok('on-surface-variant', mode));
+      expect(square.stroke).toMatchObject({ width: 2, align: 'inside' });
       expect(named(c[mode], 'check')).toBeUndefined();
-      expect(named(c[mode], 'traço')).toBeUndefined();
+      expect(named(c[mode], 'dash')).toBeUndefined();
     }
   });
 
-  it('indeterminada: caixa primary e traço horizontal de 12 (cruz no centro) com ponta quadrada', () => {
+  it('indeterminate: primary box and a 12 horizontal dash (cross at the center) with square cap', () => {
     const c = both('checkbox', { state: 'indeterminate' });
     for (const mode of ['light', 'dark'] as const) {
-      expect(fillOf(c[mode], 'caixa')).toBe(tok('primary', mode));
-      const dash = named(c[mode], 'traço') as PathNode;
+      expect(fillOf(c[mode], 'box')).toBe(tok('primary', mode));
+      const dash = named(c[mode], 'dash') as PathNode;
       expect(
         dash.d
           .replace(/[A-Za-z]/g, ' ')
@@ -111,27 +111,27 @@ describe('M3 grupo A — checkbox', () => {
     }
   });
 
-  it('desabilitado: caixa on-surface a 0,38 (marcada, indeterminada e contorno); o check continua on-primary', () => {
+  it('disabled: on-surface box at 0.38 (checked, indeterminate and outline); the check stays on-primary', () => {
     for (const state of ['checked', 'indeterminate'] as const) {
       const c = both('checkbox', { state, enabled: 'false' });
       for (const mode of ['light', 'dark'] as const) {
-        expect(fillOf(c[mode], 'caixa')).toBe(tok('on-surface', mode));
-        expect(named(c[mode], 'caixa')?.opacity).toBe(0.38);
-        const mark = named(c[mode], state === 'checked' ? 'check' : 'traço')!;
+        expect(fillOf(c[mode], 'box')).toBe(tok('on-surface', mode));
+        expect(named(c[mode], 'box')?.opacity).toBe(0.38);
+        const mark = named(c[mode], state === 'checked' ? 'check' : 'dash')!;
         expect(solid(mark.stroke?.paints ?? [])).toBe(tok('on-primary', mode));
         expect(mark.opacity).toBe(1);
       }
     }
     const off = both('checkbox', { state: 'unchecked', enabled: 'false' });
     for (const mode of ['light', 'dark'] as const) {
-      expect(named(off[mode], 'caixa')?.fills).toEqual([]);
-      expect(strokeOf(off[mode], 'caixa')).toBe(tok('on-surface', mode));
-      expect(named(off[mode], 'caixa')?.opacity).toBe(0.38);
+      expect(named(off[mode], 'box')?.fills).toEqual([]);
+      expect(strokeOf(off[mode], 'box')).toBe(tok('on-surface', mode));
+      expect(named(off[mode], 'box')?.opacity).toBe(0.38);
     }
   });
 
-  it('rótulo em body-large pelos tokens e on-surface; sem family', () => {
-    const c = both('checkbox', { label: 'Lembrar de mim', state: 'checked' });
+  it('label in body-large by tokens and on-surface; no family', () => {
+    const c = both('checkbox', { label: 'Remember me', state: 'checked' });
     const style = label(c.light).style;
     expect([
       style.fontSize,
@@ -146,61 +146,61 @@ describe('M3 grupo A — checkbox', () => {
   });
 });
 
-describe('M3 grupo A — radio-button', () => {
-  it('anel de 20 com traço de 2 por dentro e ponto de 10 (raio 6 menos meio traço), centrados na área de 24 (padding 2)', () => {
-    const r = both('radio-button', { label: 'Cartão', selected: 'true' });
-    const area = box(r.light, 'área');
-    // RadioButton(onClick = null) numa Row selecionável: padding 2 + 20 + 2, sem o toque mínimo de 48
+describe('M3 group A — radio-button', () => {
+  it('20 ring with a 2 inner stroke and a 10 dot (radius 6 minus half a stroke), centered in the 24 area (padding 2)', () => {
+    const r = both('radio-button', { label: 'Card', selected: 'true' });
+    const area = box(r.light, 'area');
+    // RadioButton(onClick = null) in a selectable Row: padding 2 + 20 + 2, without the 48 minimum touch
     expect([area.width, area.x]).toEqual([24, 0]);
-    const ring = box(r.light, 'anel');
+    const ring = box(r.light, 'ring');
     expect([ring.width, ring.height]).toEqual([20, 20]);
     expect(ring.x - area.x).toBe(2);
     expect(ring.node.stroke).toMatchObject({ width: 2, align: 'inside' });
     expect(ring.node.fills).toEqual([]);
-    const dot = box(r.light, 'ponto');
+    const dot = box(r.light, 'dot');
     // drawCircle(radius = RadioButtonDotSize / 2 - strokeWidth / 2) = 5
     expect([dot.width, dot.height]).toEqual([10, 10]);
     expect(dot.x + dot.width / 2).toBe(ring.x + ring.width / 2);
     expect(dot.y + dot.height / 2).toBe(ring.y + ring.height / 2);
-    expect(box(r.light, 'rótulo').x).toBe(24);
+    expect(box(r.light, 'label').x).toBe(24);
   });
 
-  it('cores pelos tokens: selecionado primary, não selecionado on-surface-variant, em light e dark', () => {
+  it('colors by tokens: selected primary, unselected on-surface-variant, in light and dark', () => {
     const on = both('radio-button', { selected: 'true' });
     const off = both('radio-button', { selected: 'false' });
     for (const mode of ['light', 'dark'] as const) {
-      expect(strokeOf(on[mode], 'anel')).toBe(tok('primary', mode));
-      expect(fillOf(on[mode], 'ponto')).toBe(tok('primary', mode));
-      expect(strokeOf(off[mode], 'anel')).toBe(tok('on-surface-variant', mode));
-      expect(named(off[mode], 'ponto')).toBeUndefined();
+      expect(strokeOf(on[mode], 'ring')).toBe(tok('primary', mode));
+      expect(fillOf(on[mode], 'dot')).toBe(tok('primary', mode));
+      expect(strokeOf(off[mode], 'ring')).toBe(tok('on-surface-variant', mode));
+      expect(named(off[mode], 'dot')).toBeUndefined();
     }
   });
 
-  it('desabilitado: anel e ponto em on-surface a 0,38, selecionado ou não', () => {
+  it('disabled: ring and dot in on-surface at 0.38, selected or not', () => {
     for (const selected of ['true', 'false']) {
       const d = both('radio-button', { selected, enabled: 'false' });
       for (const mode of ['light', 'dark'] as const) {
-        expect(strokeOf(d[mode], 'anel')).toBe(tok('on-surface', mode));
-        expect(named(d[mode], 'anel')?.opacity).toBe(0.38);
+        expect(strokeOf(d[mode], 'ring')).toBe(tok('on-surface', mode));
+        expect(named(d[mode], 'ring')?.opacity).toBe(0.38);
         if (selected === 'true') {
-          expect(fillOf(d[mode], 'ponto')).toBe(tok('on-surface', mode));
-          expect(named(d[mode], 'ponto')?.opacity).toBe(0.38);
+          expect(fillOf(d[mode], 'dot')).toBe(tok('on-surface', mode));
+          expect(named(d[mode], 'dot')?.opacity).toBe(0.38);
         }
       }
     }
   });
 });
 
-describe('M3 grupo A — switch', () => {
+describe('M3 group A — switch', () => {
   const geometry = (d: Drawing, name: string) => {
-    const track = box(d, 'trilho');
+    const track = box(d, 'track');
     const part = box(d, name);
     return { x: part.x - track.x, y: part.y - track.y, w: part.width, h: part.height };
   };
 
-  it('trilho 52 x 32 na forma full; alça de 24 ligada (a 4 da borda direita), 16 desligada (a 8 da esquerda), 24 com ícone (a 4)', () => {
+  it('track 52 x 32 in the full shape; 24 thumb when on (4 from the right edge), 16 when off (8 from the left), 24 with icon (4)', () => {
     const on = both('switch', { checked: 'true' }).light;
-    const track = box(on, 'trilho');
+    const track = box(on, 'track');
     expect([track.width, track.height]).toEqual([52, 32]);
     expect(
       track.node.type === 'rect' || track.node.type === 'frame'
@@ -208,34 +208,34 @@ describe('M3 grupo A — switch', () => {
         : 0,
     ).toBeGreaterThanOrEqual(16);
     // thumbPathLength = (SwitchWidth - ThumbDiameter) - ThumbPadding = 24
-    expect(geometry(on, 'alça')).toEqual({ x: 24, y: 4, w: 24, h: 24 });
+    expect(geometry(on, 'handle')).toEqual({ x: 24, y: 4, w: 24, h: 24 });
     // minBound = (SwitchHeight - size) / 2
     const off = both('switch', { checked: 'false' }).light;
-    expect(geometry(off, 'alça')).toEqual({ x: 8, y: 8, w: 16, h: 16 });
+    expect(geometry(off, 'handle')).toEqual({ x: 8, y: 8, w: 16, h: 16 });
     const icon = both('switch', { checked: 'false', thumbIcon: 'true' }).light;
-    expect(geometry(icon, 'alça')).toEqual({ x: 4, y: 4, w: 24, h: 24 });
-    // a alça é uma elipse (HandleShape = CornerFull)
-    expect(named(on, 'alça')?.type).toBe('ellipse');
+    expect(geometry(icon, 'handle')).toEqual({ x: 4, y: 4, w: 24, h: 24 });
+    // the thumb is an ellipse (HandleShape = CornerFull)
+    expect(named(on, 'handle')?.type).toBe('ellipse');
   });
 
-  it('ligado: trilho primary sem contorno e alça on-primary; desligado: trilho surface-container-highest com contorno de 2 em outline e alça outline', () => {
+  it('on: primary track with no outline and on-primary thumb; off: surface-container-highest track with a 2 outline in outline and outline thumb', () => {
     const on = both('switch', { checked: 'true' });
     const off = both('switch', { checked: 'false' });
     for (const mode of ['light', 'dark'] as const) {
-      expect(fillOf(on[mode], 'trilho')).toBe(tok('primary', mode));
-      expect(named(on[mode], 'contorno')).toBeUndefined();
-      expect(fillOf(on[mode], 'alça')).toBe(tok('on-primary', mode));
-      expect(fillOf(off[mode], 'trilho')).toBe(tok('surface-container-highest', mode));
-      expect(strokeOf(off[mode], 'contorno')).toBe(tok('outline', mode));
-      expect(named(off[mode], 'contorno')?.stroke).toMatchObject({
+      expect(fillOf(on[mode], 'track')).toBe(tok('primary', mode));
+      expect(named(on[mode], 'outline')).toBeUndefined();
+      expect(fillOf(on[mode], 'handle')).toBe(tok('on-primary', mode));
+      expect(fillOf(off[mode], 'track')).toBe(tok('surface-container-highest', mode));
+      expect(strokeOf(off[mode], 'outline')).toBe(tok('outline', mode));
+      expect(named(off[mode], 'outline')?.stroke).toMatchObject({
         width: 2,
         align: 'inside',
       });
-      expect(fillOf(off[mode], 'alça')).toBe(tok('outline', mode));
+      expect(fillOf(off[mode], 'handle')).toBe(tok('outline', mode));
     }
   });
 
-  it('ícone da alça: 16, check on-primary-container ligado e close surface-container-highest desligado', () => {
+  it('thumb icon: 16, on-primary-container check when on and surface-container-highest close when off', () => {
     const on = both('switch', { checked: 'true', thumbIcon: 'true' });
     const off = both('switch', { checked: 'false', thumbIcon: 'true' });
     for (const mode of ['light', 'dark'] as const) {
@@ -246,8 +246,8 @@ describe('M3 grupo A — switch', () => {
       );
       expect(iconOf(off[mode], 'close').node?.height).toBe(16);
     }
-    // o ícone fica centrado na alça
-    const thumb = box(on.light, 'alça');
+    // the icon is centered on the thumb
+    const thumb = box(on.light, 'handle');
     const icon = box(on.light, 'check');
     expect(icon.x + icon.width / 2).toBe(thumb.x + thumb.width / 2);
     expect(icon.y + icon.height / 2).toBe(thumb.y + thumb.height / 2);
@@ -256,7 +256,7 @@ describe('M3 grupo A — switch', () => {
     ).toBeUndefined();
   });
 
-  it('desabilitado: cores compostas sobre surface (compositeOver) com 0,12 no trilho e no contorno e 0,38 na alça desligada e nos ícones', () => {
+  it('disabled: colors composited over surface (compositeOver) with 0.12 on the track and outline and 0.38 on the off thumb and the icons', () => {
     const on = both('switch', { checked: 'true', thumbIcon: 'true', enabled: 'false' });
     const off = both('switch', { checked: 'false', thumbIcon: 'true', enabled: 'false' });
     for (const mode of ['light', 'dark'] as const) {
@@ -264,30 +264,30 @@ describe('M3 grupo A — switch', () => {
         compositeOver(tok(top, mode), alpha, tok('surface', mode));
       const container = tokens['state-disabled-container'] as number;
       const content = tokens['state-disabled-content'] as number;
-      // ligado: trilho on-surface a 0,12 sobre surface (cor opaca, sem camada de opacidade); alça surface; ícone on-surface a 0,38
-      expectComposite(fillOf(on[mode], 'trilho'), over('on-surface', container));
-      expect(named(on[mode], 'trilho')?.opacity).toBe(1);
-      expect(named(on[mode], 'trilho desabilitado')).toBeUndefined();
-      expect(named(on[mode], 'contorno')).toBeUndefined();
-      expect(fillOf(on[mode], 'alça')).toBe(tok('surface', mode));
-      expect(named(on[mode], 'alça')?.opacity).toBe(1);
-      expect(named(on[mode], 'alça desabilitada')).toBeUndefined();
+      // on: on-surface track at 0.12 over surface (opaque color, no opacity layer); surface thumb; on-surface icon at 0.38
+      expectComposite(fillOf(on[mode], 'track'), over('on-surface', container));
+      expect(named(on[mode], 'track')?.opacity).toBe(1);
+      expect(named(on[mode], 'disabled track')).toBeUndefined();
+      expect(named(on[mode], 'outline')).toBeUndefined();
+      expect(fillOf(on[mode], 'handle')).toBe(tok('surface', mode));
+      expect(named(on[mode], 'handle')?.opacity).toBe(1);
+      expect(named(on[mode], 'disabled handle')).toBeUndefined();
       expect(iconOf(on[mode], 'check').color).toBe(tok('on-surface', mode));
       expect(iconOf(on[mode], 'check').node?.opacity).toBe(0.38);
-      // desligado: trilho surface-container-highest a 0,12, contorno on-surface a 0,12 e alça on-surface a 0,38, todos sobre surface
+      // off: surface-container-highest track at 0.12, on-surface outline at 0.12 and on-surface thumb at 0.38, all over surface
       expectComposite(
-        fillOf(off[mode], 'trilho'),
+        fillOf(off[mode], 'track'),
         over('surface-container-highest', container),
       );
-      expect(named(off[mode], 'trilho')?.opacity).toBe(1);
-      expect(named(off[mode], 'trilho desabilitado')).toBeUndefined();
-      expectComposite(strokeOf(off[mode], 'contorno'), over('on-surface', container));
-      expect(named(off[mode], 'contorno')?.opacity).toBe(1);
-      expect(named(off[mode], 'contorno desabilitado')).toBeUndefined();
-      expectComposite(fillOf(off[mode], 'alça'), over('on-surface', content));
-      expect(named(off[mode], 'alça')?.opacity).toBe(1);
-      expect(named(off[mode], 'alça desabilitada')).toBeUndefined();
-      // ícone desligado: base surface opaca + surface-container-highest a 0,38 por cima
+      expect(named(off[mode], 'track')?.opacity).toBe(1);
+      expect(named(off[mode], 'disabled track')).toBeUndefined();
+      expectComposite(strokeOf(off[mode], 'outline'), over('on-surface', container));
+      expect(named(off[mode], 'outline')?.opacity).toBe(1);
+      expect(named(off[mode], 'disabled outline')).toBeUndefined();
+      expectComposite(fillOf(off[mode], 'handle'), over('on-surface', content));
+      expect(named(off[mode], 'handle')?.opacity).toBe(1);
+      expect(named(off[mode], 'disabled handle')).toBeUndefined();
+      // off icon: opaque surface base + surface-container-highest at 0.38 on top
       const closes = [...walk(off[mode].root)].filter((n) => n.name === 'close');
       expect(closes).toHaveLength(2);
       expect(closes.map((n) => n.opacity)).toEqual([1, 0.38]);
@@ -297,17 +297,17 @@ describe('M3 grupo A — switch', () => {
     }
   });
 
-  it('rótulo em body-large pelos tokens, antes da chave', () => {
-    const d = both('switch', { label: 'Modo avião', checked: 'true' }).light;
+  it('label in body-large by tokens, before the switch', () => {
+    const d = both('switch', { label: 'Airplane mode', checked: 'true' }).light;
     expect([label(d).style.fontSize, label(d).style.letterSpacing]).toEqual([16, 0.5]);
     expect(solid(label(d).fills)).toBe(tok('on-surface', 'light'));
-    expect(box(d, 'rótulo').x).toBeLessThan(box(d, 'trilho').x);
-    expect(box(d, 'trilho').x + 52).toBe(200);
+    expect(box(d, 'label').x).toBeLessThan(box(d, 'track').x);
+    expect(box(d, 'track').x + 52).toBe(200);
   });
 });
 
-describe('M3 grupo A — progress-indicator', () => {
-  // CircularIndicatorDiameter 40, traço 4 (TrackThickness), gap 4 + traço 4 (ponta redonda), começa às 12h
+describe('M3 group A — progress-indicator', () => {
+  // CircularIndicatorDiameter 40, stroke 4 (TrackThickness), gap 4 + stroke 4 (round cap), starts at 12 o'clock
   const D = 40;
   const R = (D - 4) / 2;
   const GAP_SWEEP = (8 / (Math.PI * D)) * 360;
@@ -315,7 +315,7 @@ describe('M3 grupo A — progress-indicator', () => {
     D / 2 + R * Math.cos((deg * Math.PI) / 180),
     D / 2 + R * Math.sin((deg * Math.PI) / 180),
   ];
-  /** Lê `M x y A rx ry 0 large sweep x y` (um arco) do `d`. */
+  /** Reads `M x y A rx ry 0 large sweep x y` (one arc) from `d`. */
   const parseArc = (d: string) => {
     const n = d
       .replace(/[A-Za-z]/g, ' ')
@@ -345,27 +345,27 @@ describe('M3 grupo A — progress-indicator', () => {
     expect(got[1]).toBeCloseTo(want[1]!, 1);
   };
 
-  it('circular determinado: 40 x 40, traço de 4 com ponta redonda, indicador primary a partir das 12h e trilho secondary-container', () => {
+  it("circular determinate: 40 x 40, stroke 4 with round cap, primary indicator from 12 o'clock and secondary-container track", () => {
     const p = both('progress-indicator', { shape: 'circular', progress: 0.6 });
     for (const mode of ['light', 'dark'] as const) {
       const d = p[mode];
       const circular = box(d, 'circular');
       expect([circular.width, circular.height]).toEqual([40, 40]);
-      const indicator = named(d, 'indicador') as PathNode;
-      const track = named(d, 'trilho arco') as PathNode;
+      const indicator = named(d, 'indicator') as PathNode;
+      const track = named(d, 'arc track') as PathNode;
       expect(solid(indicator.stroke?.paints ?? [])).toBe(tok('primary', mode));
       expect(solid(track.stroke?.paints ?? [])).toBe(tok('secondary-container', mode));
       for (const arc of [indicator, track]) {
         expect(arc.stroke).toMatchObject({ width: 4, cap: 'round', align: 'center' });
         expect(arc.fills).toEqual([]);
       }
-      // desenhado ao centro do traço: raio (40 - 4) / 2
+      // drawn at the center of the stroke: radius (40 - 4) / 2
       expect(parseArc(indicator.d).radius).toEqual([R, R]);
     }
   });
 
   it.each([0.01, 0.1, 0.25, 0.5, 0.6, 0.75, 0.9, 0.99])(
-    'circular a %s: o arco do indicador vai de 270 a 270 + 360 x progresso e o do trilho começa depois do gap',
+    'circular at %s: the indicator arc goes from 270 to 270 + 360 x progress and the track arc starts after the gap',
     (progress) => {
       const d = drawIn(
         catalog,
@@ -375,15 +375,15 @@ describe('M3 grupo A — progress-indicator', () => {
       );
       const sweep = progress * 360;
       const gap = Math.min(sweep, GAP_SWEEP);
-      const ind = parseArc((named(d, 'indicador') as PathNode).d);
+      const ind = parseArc((named(d, 'indicator') as PathNode).d);
       expectPoint(ind.start, at(270));
       expectPoint(ind.end, at(270 + sweep));
       expect(ind.large).toBe(sweep > 180 ? 1 : 0);
       expect(ind.sweep).toBe(1);
-      // trilho: começa em 270 + sweep + gap e cobre 360 - sweep - 2 gap
+      // track: starts at 270 + sweep + gap and covers 360 - sweep - 2 gap
       const trackSweep = 360 - sweep - gap * 2;
-      // EX6: o trilho é o arco desenhado a partir das 12h e girado (`rotation`) em volta do centro
-      const trackNode = named(d, 'trilho arco') as PathNode;
+      // EX6: the track is the arc drawn from 12 o'clock and rotated (`rotation`) around the center
+      const trackNode = named(d, 'arc track') as PathNode;
       const trk = parseArc(trackNode.d);
       const turn = ((trackNode.rotation ?? 0) * Math.PI) / 180;
       const rotated = (pt: number[]) => [
@@ -397,35 +397,33 @@ describe('M3 grupo A — progress-indicator', () => {
     },
   );
 
-  it('circular em 0 e em 1: só o trilho inteiro, ou só o anel do indicador', () => {
+  it('circular at 0 and at 1: only the whole track, or only the indicator ring', () => {
     const zero = both('progress-indicator', { shape: 'circular', progress: 0 });
     const full = both('progress-indicator', { shape: 'circular', progress: 1 });
     for (const mode of ['light', 'dark'] as const) {
-      const ring = named(zero[mode], 'trilho completo')!;
+      const ring = named(zero[mode], 'full track')!;
       expect(ring.type).toBe('ellipse');
-      expect(strokeOf(zero[mode], 'trilho completo')).toBe(
-        tok('secondary-container', mode),
-      );
-      expect(named(zero[mode], 'indicador')).toBeUndefined();
-      expect(named(zero[mode], 'trilho arco')).toBeUndefined();
-      expect(strokeOf(full[mode], 'anel completo')).toBe(tok('primary', mode));
-      expect(named(full[mode], 'anel completo')?.stroke).toMatchObject({
+      expect(strokeOf(zero[mode], 'full track')).toBe(tok('secondary-container', mode));
+      expect(named(zero[mode], 'indicator')).toBeUndefined();
+      expect(named(zero[mode], 'arc track')).toBeUndefined();
+      expect(strokeOf(full[mode], 'full ring')).toBe(tok('primary', mode));
+      expect(named(full[mode], 'full ring')?.stroke).toMatchObject({
         width: 4,
         align: 'inside',
       });
-      expect(named(full[mode], 'indicador')).toBeUndefined();
+      expect(named(full[mode], 'indicator')).toBeUndefined();
     }
   });
 
-  it('circular indeterminado: só o arco primary, sem trilho (circularIndeterminateTrackColor é transparente)', () => {
+  it('circular indeterminate: only the primary arc, no track (circularIndeterminateTrackColor is transparent)', () => {
     const p = both('progress-indicator', { shape: 'circular' });
     for (const mode of ['light', 'dark'] as const) {
-      const arc = named(p[mode], 'indicador indeterminado') as PathNode;
+      const arc = named(p[mode], 'indeterminate indicator') as PathNode;
       expect(solid(arc.stroke?.paints ?? [])).toBe(tok('primary', mode));
       expect(arc.stroke).toMatchObject({ width: 4, cap: 'round' });
-      expect(named(p[mode], 'trilho arco')).toBeUndefined();
-      expect(named(p[mode], 'trilho completo')).toBeUndefined();
-      // a meio caminho da animação: (0,1 + 0,87) / 2 de volta
+      expect(named(p[mode], 'arc track')).toBeUndefined();
+      expect(named(p[mode], 'full track')).toBeUndefined();
+      // halfway through the animation: (0.1 + 0.87) / 2 back
       const a = parseArc(arc.d);
       expectPoint(a.start, at(270));
       expectPoint(a.end, at(270 + ((0.1 + 0.87) / 2) * 360));
@@ -445,55 +443,55 @@ describe('M3 grupo A — progress-indicator', () => {
     return [b.x, b.x + b.width];
   };
 
-  it('linear determinado: altura 4, ponta redonda (+2), gap de 4 até o trilho e parada de 4 no fim', () => {
+  it('linear determinate: height 4, round cap (+2), gap of 4 to the track and stop of 4 at the end', () => {
     for (const mode of ['light', 'dark'] as const) {
       const d = linear(0.3, mode);
-      const bar = box(d, 'barra');
+      const bar = box(d, 'bar');
       expect(bar.height).toBe(4);
-      // drawLinearIndicator: a ponta redonda passa meio traço do fim da barra
-      expect(edges(d, 'barra')).toEqual([0, 0.3 * W + 2]);
+      // drawLinearIndicator: the round cap extends half a stroke past the end of the bar
+      expect(edges(d, 'bar')).toEqual([0, 0.3 * W + 2]);
       expect(bar.node.type === 'rect' && bar.node.cornerRadius).toBeGreaterThanOrEqual(2);
-      // gap = LinearIndicatorTrackGapSize 4 entre as pontas redondas
-      const gap = edges(d, 'faixa')[0]! - edges(d, 'barra')[1]!;
+      // gap = LinearIndicatorTrackGapSize 4 between the round caps
+      const gap = edges(d, 'segment')[0]! - edges(d, 'bar')[1]!;
       expect(gap).toBe(4);
-      expect(edges(d, 'faixa')[1]).toBe(W);
-      expect(fillOf(d, 'barra')).toBe(tok('primary', mode));
-      expect(fillOf(d, 'faixa')).toBe(tok('secondary-container', mode));
-      // parada (StopSize 4), circular, no fim do trilho, em primary
-      const stop = box(d, 'parada');
+      expect(edges(d, 'segment')[1]).toBe(W);
+      expect(fillOf(d, 'bar')).toBe(tok('primary', mode));
+      expect(fillOf(d, 'segment')).toBe(tok('secondary-container', mode));
+      // stop (StopSize 4), circular, at the end of the track, in primary
+      const stop = box(d, 'stop');
       expect([stop.width, stop.height, stop.x + stop.width]).toEqual([4, 4, W]);
       expect(stop.node.type).toBe('ellipse');
-      expect(fillOf(d, 'parada')).toBe(tok('primary', mode));
+      expect(fillOf(d, 'stop')).toBe(tok('primary', mode));
     }
   });
 
-  it('linear em 0 e em 1: só o trilho inteiro (com a parada) ou só a barra cheia', () => {
+  it('linear at 0 and at 1: only the whole track (with the stop) or only the full bar', () => {
     const zero = linear(0);
-    expect(named(zero, 'barra')).toBeUndefined();
-    expect(edges(zero, 'faixa total')).toEqual([0, W]);
-    expect(named(zero, 'faixa')).toBeUndefined();
-    expect(box(zero, 'parada').x + 4).toBe(W);
+    expect(named(zero, 'bar')).toBeUndefined();
+    expect(edges(zero, 'full segment')).toEqual([0, W]);
+    expect(named(zero, 'segment')).toBeUndefined();
+    expect(box(zero, 'stop').x + 4).toBe(W);
     const full = linear(1);
-    expect(named(full, 'trilho')).toBeUndefined();
-    // a ponta passa 2 do fim; a raiz recorta em 240
-    expect(edges(full, 'barra')[0]).toBe(0);
-    expect(edges(full, 'barra')[1]).toBeGreaterThanOrEqual(W);
+    expect(named(full, 'track')).toBeUndefined();
+    // the cap extends 2 past the end; the root clips at 240
+    expect(edges(full, 'bar')[0]).toBe(0);
+    expect(edges(full, 'bar')[1]).toBeGreaterThanOrEqual(W);
   });
 
-  it('linear indeterminado: uma barra entre 30% e 70% com trilho dos dois lados e gap de 4', () => {
+  it('linear indeterminate: a bar between 30% and 70% with a track on both sides and gap of 4', () => {
     const d = linear();
-    expect(named(d, 'barra')).toBeUndefined();
-    const bar = edges(d, 'barra indeterminada');
+    expect(named(d, 'bar')).toBeUndefined();
+    const bar = edges(d, 'indeterminate bar');
     expect(bar).toEqual([0.3 * W - 2, 0.7 * W + 2]);
-    expect(edges(d, 'faixa antes')[0]).toBe(0);
-    expect(bar[0]! - edges(d, 'faixa antes')[1]!).toBe(4);
-    expect(edges(d, 'faixa')[0]! - bar[1]!).toBe(4);
-    expect(edges(d, 'faixa')[1]).toBe(W);
-    expect(fillOf(d, 'faixa antes')).toBe(tok('secondary-container', 'light'));
-    expect(fillOf(d, 'barra indeterminada')).toBe(tok('primary', 'light'));
+    expect(edges(d, 'segment before')[0]).toBe(0);
+    expect(bar[0]! - edges(d, 'segment before')[1]!).toBe(4);
+    expect(edges(d, 'segment')[0]! - bar[1]!).toBe(4);
+    expect(edges(d, 'segment')[1]).toBe(W);
+    expect(fillOf(d, 'segment before')).toBe(tok('secondary-container', 'light'));
+    expect(fillOf(d, 'indeterminate bar')).toBe(tok('primary', 'light'));
   });
 
-  it('progresso entre os centésimos (0,655) desenha o arco exato, sem aviso (EX6: sem tabela)', () => {
+  it('progress between hundredths (0.655) draws the exact arc, without a warning (EX6: no table)', () => {
     const d = drawIn(
       catalog,
       entryOf('progress-indicator'),
@@ -501,12 +499,12 @@ describe('M3 grupo A — progress-indicator', () => {
       'light',
     );
     expect(d.warnings).toEqual([]);
-    const ind = parseArc((named(d, 'indicador') as PathNode).d);
+    const ind = parseArc((named(d, 'indicator') as PathNode).d);
     expectPoint(ind.end, at(270 + 0.655 * 360));
-    expect(named(d, 'indicador indeterminado')).toBeUndefined();
+    expect(named(d, 'indeterminate indicator')).toBeUndefined();
   });
 
-  it('cada centésimo de 0 a 1 desenha sem aviso', () => {
+  it('every hundredth from 0 to 1 draws without a warning', () => {
     for (const shape of ['circular', 'linear']) {
       for (let i = 0; i <= 100; i++) {
         const progress = i / 100;
@@ -524,8 +522,8 @@ describe('M3 grupo A — progress-indicator', () => {
   });
 });
 
-describe('M3 grupo A — todos os estados desenham sem aviso', () => {
-  it.each(['light', 'dark'] as const)('em %s', (mode) => {
+describe('M3 group A — all states draw without warnings', () => {
+  it.each(['light', 'dark'] as const)('in %s', (mode) => {
     for (const state of ['unchecked', 'checked', 'indeterminate']) {
       for (const enabled of ['true', 'false']) {
         const d = drawIn(
@@ -542,7 +540,7 @@ describe('M3 grupo A — todos os estados desenham sem aviso', () => {
         const d = drawIn(
           catalog,
           entryOf('radio-button'),
-          { label: 'Opção', selected, enabled },
+          { label: 'Option', selected, enabled },
           mode,
         );
         expect(d.warnings, `radio ${selected} ${enabled}`).toEqual([]);

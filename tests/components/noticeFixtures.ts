@@ -13,9 +13,11 @@ import {
 import { emptyProject } from '../model/fixtures';
 import { idGen, layerOf } from '../model/specFixtures';
 
-// Especialização v10 de teste com os quatro `kind` (etapa #486, AV2): `alert` tem aviso no
-// tipo (pending, com since e ref), no campo `legacyStyle` (deprecated) e na coluna `handler` da
-// tabela `events` (diverges); `gone` é um tipo `removed`; `plain` não tem aviso.
+// Test v10 specialization with the four `kind`s (stage #486, AV2): `alert` has a notice on
+// the type (pending, with since and ref), on the field `legacyStyle` (deprecated) and on the
+// column `handler` of the table `events` (diverges); `gone` is a `removed` type; `plain` has
+// no notice.
+// pt-BR kept: shared fixture data asserted by tests/components and tests/model (spec id, names and notice messages)
 export function noticeSpec(): Spec {
   const result = parseSpec({
     format: 'mapping-spec',
@@ -78,7 +80,7 @@ export function noticeSpec(): Spec {
   return result.spec;
 }
 
-/** Projeto com a especialização aplicada e uma anotação de cada tipo (AA, AG, AP) numa marcação. */
+/** Project with the specialization applied and one annotation of each type (AA, AG, AP) on a marking. */
 export function noticeProject(): Project {
   let p = emptyProject();
   p = addContainer(p, { id: 'I1', file: 'a.png', width: 1000, height: 1000 });

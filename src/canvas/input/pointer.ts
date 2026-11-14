@@ -1,6 +1,6 @@
-// Entrada de ponteiro e roda do canvas: eventos → `gestureMachine` → intenções
-// → actions do store. Pan, zoom e pinça vão para o `ViewportController`; a
-// prévia dos gestos vai para o `InteractionState`, que as sobreposições desenham.
+// Pointer and wheel input of the canvas: events → `gestureMachine` → intents
+// → store actions. Pan, zoom and pinch go to the `ViewportController`; the
+// gesture preview goes to the `InteractionState`, which the overlays draw.
 import {
   IDENTITY_PLACEMENT,
   MIN_MARKING_SIZE,
@@ -89,21 +89,21 @@ export interface PointerInputOptions {
   readonly derived: EditorDerived;
   readonly viewport: ViewportController;
   readonly state: InteractionState;
-  /** Espaço pressionado (arrastar faz pan). */
+  /** Space pressed (dragging pans). */
   readonly spaceDown: () => boolean;
-  /** Projeto desenhado (o "como ficaria" na revisão); padrão: o do store. */
+  /** Drawn project (the "how it would look" in review); default: the store's. */
   readonly project?: () => Project | null;
-  /** Revisão aberta: tudo é somente leitura e o menu de contexto não abre. */
+  /** Review open: everything is read-only and the context menu does not open. */
   readonly reviewing?: () => boolean;
-  /** Há uma perspectiva aberta: o que é "só na Principal" não começa (ver `IntentContext`). */
+  /** A perspective is open: what is "Main only" does not start (see `IntentContext`). */
   readonly perspectiveOpen?: () => boolean;
-  /** Retângulos dos nomes acima dos containers (canvas), medidos pelo renderer. */
+  /** Rectangles of the names above the containers (canvas), measured by the renderer. */
   readonly containerTitles?: () => ReadonlyMap<string, Rect>;
-  /** O pino das conversas sob o ponto do canvas (ganha da marcação embaixo); `null` se nenhum. */
+  /** The thread pin under the canvas point (wins over the marking below); `null` if none. */
   readonly pinAt?: (c: Point) => PinPlace | null;
 }
 
-/** Gestos que arrastam itens: o cursor é o de mover. */
+/** Gestures that drag items: the cursor is the move one. */
 const MOVE_GESTURES: ReadonlySet<Gesture['kind']> = new Set([
   'move-image',
   'move-marking',
@@ -111,14 +111,14 @@ const MOVE_GESTURES: ReadonlySet<Gesture['kind']> = new Set([
   'arrow-route',
 ]);
 
-/** Gestos de seta que puxam uma linha até uma marcação: o cursor é o de mirar. */
+/** Arrow gestures that pull a line to a marking: the cursor is the aim one. */
 const AIM_GESTURES: ReadonlySet<Gesture['kind']> = new Set([
   'arrow-link',
   'arrow-end',
   'select-rect',
 ]);
 
-/** Gestos sem o store que Esc cancela (o store tem o `cancelGesture`). */
+/** Gestures without the store that Esc cancels (the store has `cancelGesture`). */
 const CANCELLABLE_GESTURES: ReadonlySet<Gesture['kind']> = new Set([
   'draw',
   'arrow-link',
@@ -133,21 +133,22 @@ export class PointerInput {
   private readonly o: PointerInputOptions;
   private readonly pointers = new Map<number, Point>();
   private gesture: Gesture | null = null;
-  /** Classificação do gesto em andamento (clique / pan / mover / …). */
+  /** Classification of the gesture in progress (click / pan / move / …). */
   private gestureState: GestureState = IDLE;
   /**
-   * Último clique (canvas), para o ciclo "clicar de novo sobe para o pai". Só vale para cliques
-   * seguidos: todo toque que deixa de ser clique (arrasto, cancelamento, pinça) o zera.
+   * Last click (canvas), for the "click again goes up to the parent" cycle. Only valid for
+   * consecutive clicks: every touch that stops being a click (drag, cancel, pinch) resets it.
    */
   private lastTap: Point | null = null;
-  /** Tipo do último ponteiro apertado: o `contextmenu` de um toque demorado não é do mouse. */
+  /** Type of the last pointer pressed: the `contextmenu` of a long touch is not the mouse's. */
   private lastPointerType = 'mouse';
-  /** O modificador da seleção múltipla (Shift, Cmd ou, fora do macOS, Ctrl) estava apertado quando o ponteiro desceu: o toque (sem arrasto) alterna o item. */
+  /** The multi-select modifier (Shift, Cmd or, outside macOS, Ctrl) was pressed when the pointer
+  went down: the touch (no drag) toggles the item. */
   private pressShift = false;
   /**
-   * Seleção primária de antes do último toque. O segundo toque de um duplo clique, por cair no
-   * mesmo ponto, já subiu um degrau na cadeia; o alvo do duplo clique é o que o primeiro toque
-   * selecionou, ou seja, a seleção de antes do segundo.
+   * Primary selection from before the last touch. The second touch of a double click, landing
+   * on the same point, already went up one step in the chain; the double click's target is what
+   * the first touch selected, that is, the selection from before the second.
    */
   private selectionBeforeTap: Selection = null;
 
@@ -155,12 +156,12 @@ export class PointerInput {
     this.o = options;
   }
 
-  /** Projeto em que o toque procura os itens (o desenhado). */
+  /** Project in which the touch looks for items (the drawn one). */
   private project(): Project | null {
     return this.o.project ? this.o.project() : this.o.store.project.peek();
   }
 
-  /** Escuta os eventos do container. Devolve a função que para de escutar. */
+  /** Listens to the container's events. Returns the function that stops listening. */
   bind(): () => void {
     const el = this.o.container;
     const cleanups: (() => void)[] = [];
@@ -187,23 +188,23 @@ export class PointerInput {
     };
   }
 
-  /** Há um gesto de ponteiro em andamento (ponteiro apertado, arrasto ou pinça). */
+  /** A pointer gesture is in progress (pointer pressed, drag or pinch). */
   isInteracting(): boolean {
     return this.gesture !== null;
   }
 
-  /** Cancela o gesto de mover/redimensionar/desenhar em andamento. `true` se havia um. */
+  /** Cancels the move/resize/draw gesture in progress. `true` if there was one. */
   cancelInteraction(): boolean {
     const g = this.gesture;
     if (!isStoreGesture(g) && !(g && CANCELLABLE_GESTURES.has(g.kind))) return false;
     if (isStoreGesture(g)) this.o.actions.cancelGesture();
     this.clearTransient();
-    this.gesture = { kind: 'pinch' }; // Ignora o resto do arrasto até soltar.
+    this.gesture = { kind: 'pinch' }; // Ignores the rest of the drag until release.
     this.gestureState = { phase: 'pinch' };
     return true;
   }
 
-  /** Apaga a prévia, o rascunho e os destaques do gesto (destino do encaixe, itens a absorver). */
+  /** Clears the preview, the draft and the gesture highlights (snap target, items to absorb). */
   private clearTransient(): void {
     const { state } = this.o;
     state.preview.value = null;
@@ -214,12 +215,12 @@ export class PointerInput {
     if (state.absorb.peek().length > 0) state.absorb.value = [];
   }
 
-  /** Desfaz um gesto do store pela metade. */
+  /** Undoes a half-done store gesture. */
   destroy(): void {
     if (isStoreGesture(this.gesture)) this.o.actions.cancelGesture();
   }
 
-  /** Cursor do mouse: o do gesto em andamento ou o da intenção sob `p` (tela). */
+  /** Mouse cursor: that of the gesture in progress or that of the intent under `p` (screen). */
   updateCursor(p: Point | null): void {
     const g = this.gesture;
     let cursor: string;
@@ -238,7 +239,7 @@ export class PointerInput {
     return {
       project,
       readOnly: store.readOnly.peek() || (this.o.reviewing?.() ?? false),
-      // O modo visualização nunca desenha, mesmo que o modo ainda seja Desenhar.
+      // View mode never draws, even if the mode is still Draw.
       mode: ui.viewMode.peek() ? 'navigate' : ui.mode.peek(),
       selection: ui.selection.peek(),
       items: existingItems(project, peekSelectedItems(ui)),
@@ -252,23 +253,23 @@ export class PointerInput {
     };
   }
 
-  /** As setas que o toque alcança: as desenhadas ("Mostrar setas" ligado, fora do modo visualização). */
+  /** The arrows the touch reaches: the drawn ones ("Show arrows" on, outside view mode). */
   private arrowShapes(project: Project | null): readonly ArrowShape[] {
     if (this.o.ui.viewMode.peek() || !showArrows.peek()) return [];
     return visibleArrowShapes(project, this.o.derived.markingVisibility.peek());
   }
 
-  /** As setas e o zoom para a cadeia do toque (`hitChain`). */
+  /** The arrows and the zoom for the touch chain (`hitChain`). */
   private arrowHit(project: Project | null): ArrowHit {
     return { shapes: this.arrowShapes(project), zoom: this.o.viewport.scale };
   }
 
-  /** Intenção de um arrasto começando em `p` (tela); `rectSelect`: Shift apertado com o mouse. */
+  /** Intent of a drag starting at `p` (screen); `rectSelect`: Shift pressed with the mouse. */
   private intentAt(p: Point, rectSelect = false): Intent {
     return intentAt(this.context(rectSelect), this.o.viewport.toCanvas(p));
   }
 
-  /** Shift+arrasto do mouse (botão esquerdo) fora da revisão faz o retângulo de seleção. */
+  /** Mouse Shift+drag (left button) outside review makes the selection rectangle. */
   private wantsRectSelect(e: PointerEvent): boolean {
     return (
       e.pointerType === 'mouse' &&
@@ -278,14 +279,15 @@ export class PointerInput {
     );
   }
 
-  /** O que o arrasto que começa com `e` (em `p`, tela) faria. */
+  /** What the drag starting with `e` (at `p`, screen) would do. */
   private pressIntent(e: PointerEvent, p: Point): Intent {
     if (e.button === 1) return { kind: 'pan' };
-    // O pino ganha da marcação embaixo, e o clique do Comentar não começa gesto: arrastar faz pan.
+    // The pin wins over the marking below, and the Comment click does not start a gesture:
+    // dragging pans.
     if (this.o.ui.commentArm.peek() !== null || this.pinUnder(p)) return { kind: 'pan' };
     const intent = this.intentAt(p, this.wantsRectSelect(e));
-    // Numa tela de toque, arrastar sobre um item (livre ou trancado) faz pan, como rolar a
-    // página; alças (resize) e o modo Desenhar continuam diretos, e o mouse não muda.
+    // On a touch screen, dragging over an item (free or locked) pans, like scrolling the
+    // page; handles (resize) and Draw mode stay direct, and the mouse does not change.
     const dragsItem =
       intent.kind === 'locked' ||
       intent.kind === 'move-marking' ||
@@ -303,12 +305,12 @@ export class PointerInput {
     try {
       this.o.container.setPointerCapture(e.pointerId);
     } catch {
-      // Sem captura, o gesto termina se o ponteiro sair do canvas.
+      // Without capture, the gesture ends if the pointer leaves the canvas.
     }
 
     if (this.pointers.size >= 2) {
       this.cancelInteraction();
-      this.lastTap = null; // A pinça recomeça o ciclo do clique.
+      this.lastTap = null; // The pinch restarts the click cycle.
       this.gesture = { kind: 'pinch' };
       this.gestureState = stepGesture(this.gestureState, {
         type: 'second-pointer',
@@ -359,7 +361,7 @@ export class PointerInput {
         const step = stepGesture(this.gestureState, { type: 'move', point: p });
         this.gestureState = step.state;
         if (step.effect.kind === 'start-drag') {
-          this.lastTap = null; // Deixou de ser clique: o próximo clique recomeça o ciclo.
+          this.lastTap = null; // Stopped being a click: the next click restarts the cycle.
           this.gesture = this.startDrag(g.pointerId, g.start, g.intent);
           this.onPointerMove(e);
         }
@@ -385,9 +387,9 @@ export class PointerInput {
         return;
       }
       case 'move-items': {
-        // Deslocamento em unidades do canvas, sem arredondar (o modelo arredonda o que precisa).
-        // Tudo ou nada: se algum item não pode ir, a prévia fica na última posição válida e é
-        // essa posição que `dx`, `dy` guardam para o soltar.
+        // Displacement in canvas units, not rounded (the model rounds what it needs).
+        // All or nothing: if any item cannot go, the preview stays at the last valid position and
+        // that position is what `dx`, `dy` keep for the release.
         const c = viewport.toCanvas(p);
         const dx = c.x - g.startCanvas.x;
         const dy = c.y - g.startCanvas.y;
@@ -411,8 +413,8 @@ export class PointerInput {
         return;
       }
       case 'move-marking': {
-        // O deslocamento do canvas vira unidades do espaço da marcação; nada prende a marcação
-        // ao container (o espaço novo é decidido ao soltar).
+        // The canvas displacement becomes units of the marking's space; nothing ties the marking
+        // to the container (the new space is decided on release).
         const c = viewport.toCanvas(p);
         g.dx = Math.round((c.x - g.startCanvas.x) / g.scale);
         g.dy = Math.round((c.y - g.startCanvas.y) / g.scale);
@@ -447,12 +449,12 @@ export class PointerInput {
         return;
       }
       case 'arrow-route': {
-        // O ponto vai para onde o ponteiro está, no espaço dos pontos (pixels do container
-        // arredondados, ou unidades do canvas): um ponto novo (`mid`) entra na posição `index`.
+        // The point goes where the pointer is, in the points' space (rounded container pixels,
+        // or canvas units): a new point (`mid`) enters at position `index`.
         const at = fromCanvasPoint(g.placement, viewport.toCanvas(p));
         const point = { x: Math.round(at.x), y: Math.round(at.y) };
         if (g.mode === 'segment') {
-          // O segmento anda em paralelo: só a coordenada perpendicular a ele segue o ponteiro.
+          // The segment moves in parallel: only the coordinate perpendicular to it follows the pointer.
           actions.previewArrowRoute(
             g.arrowId,
             g.base.map((q, i) =>
@@ -492,7 +494,7 @@ export class PointerInput {
     }
   }
 
-  /** O retângulo da seleção vai do início do arrasto até o ponteiro. */
+  /** The selection rectangle goes from the drag start to the pointer. */
   private moveMarquee(g: Extract<Gesture, { kind: 'select-rect' }>, p: Point): void {
     this.o.state.marquee.value = rectFromCorners(
       g.startCanvas,
@@ -501,8 +503,9 @@ export class PointerInput {
   }
 
   /**
-   * Soltar o retângulo soma à seleção os itens inteiramente dentro dele (sem tirar nenhum); o
-   * projeto não muda. Cancelado, a seleção fica como estava. O retângulo sempre some.
+   * Releasing the rectangle adds to the selection the items entirely inside it (removing none);
+   * the project does not change. Cancelled, the selection stays as it was. The rectangle always
+   * disappears.
    */
   private finishMarquee(
     g: Extract<Gesture, { kind: 'select-rect' }>,
@@ -520,8 +523,8 @@ export class PointerInput {
   }
 
   /**
-   * A marcação sob o ponto do canvas que receberia a ponta de uma seta: a primeira da cadeia do
-   * toque (flutuantes antes, as ocultas de fora), sem a própria `except`. `null` no vazio.
+   * The marking under the canvas point that would receive an arrow's end: the first in the touch
+   * chain (floating ones first, hidden ones left out), without `except` itself. `null` in the void.
    */
   private markingUnder(c: Point, except: string | null): string | null {
     const project = this.project();
@@ -533,9 +536,9 @@ export class PointerInput {
   }
 
   /**
-   * Arrastar uma ponta da seta: sobre outra marcação (que não a outra ponta) a prévia a liga nela
-   * (lado automático); sobre a mesma, no lado mais perto do ponteiro; no vazio, a seta volta ao que
-   * era, mostra a linha provisória e soltar cancela.
+   * Dragging an arrow end: over another marking (other than the other end) the preview links it
+   * to it (automatic side); over the same one, on the side closest to the pointer; in the void,
+   * the arrow goes back to what it was, shows the provisional line and releasing cancels.
    */
   private moveArrowEnd(g: Extract<Gesture, { kind: 'arrow-end' }>, c: Point): void {
     const { actions, state } = this.o;
@@ -556,8 +559,8 @@ export class PointerInput {
     }
     let side: ArrowSide | null = null;
     if (target === g.original.markingId) {
-      // Perto de outro lado da mesma marcação troca o lado; no mesmo, não muda nada (o lado
-      // automático fica automático).
+      // Near another side of the same marking switches the side; on the same one, nothing changes
+      // (the automatic side stays automatic).
       const nearest = nearestSide(markingCanvasRectOf(project, marking), c);
       side = nearest === g.currentSide ? g.original.side : nearest;
     }
@@ -565,15 +568,15 @@ export class PointerInput {
     state.arrowDraft.value = { line: null, target };
   }
 
-  /** A marcação no projeto atual do store (com a prévia do gesto). */
+  /** The marking in the store's current project (with the gesture preview). */
   private markingNow(id: string) {
     const project = this.project();
     return project ? projectIndex(project).markings.get(id) : undefined;
   }
 
   /**
-   * Para onde a marcação arrastada iria se fosse solta agora: o container que a contém ou a
-   * recebe pelo encaixe (`snapTarget`), com o deslocamento extra. A flutuante nunca encaixa.
+   * Where the dragged marking would go if released now: the container that contains it or the
+   * one that receives it by snapping (`snapTarget`), with the extra offset. A floating one never snaps.
    */
   private moveSnap(g: Extract<Gesture, { kind: 'move-marking' }>): {
     readonly snap: SnapTarget | null;
@@ -583,7 +586,7 @@ export class PointerInput {
     const marking = this.markingNow(g.markingId);
     if (!project || !marking) return { snap: null, origin: null };
     if (marking.floating) return { snap: null, origin: marking.containerId };
-    // Numa perspectiva a raiz só anda: o encaixe em container é da Principal (decisão 5).
+    // In a perspective the root only moves: snapping into a container belongs to Main (decision 5).
     if (marking.containerId === null && this.o.perspectiveOpen?.()) {
       return { snap: null, origin: null };
     }
@@ -597,7 +600,7 @@ export class PointerInput {
     return { snap, origin: marking.containerId };
   }
 
-  /** Acende o container de destino enquanto a marcação é arrastada (se não é o de origem). */
+  /** Lights up the target container while the marking is dragged (if it is not the origin one). */
   private updateMoveTarget(g: Extract<Gesture, { kind: 'move-marking' }>): void {
     const { snap, origin } = this.moveSnap(g);
     const next = snap && snap.containerId !== origin ? snap.containerId : null;
@@ -605,8 +608,8 @@ export class PointerInput {
   }
 
   /**
-   * Acende os itens que `rect` absorveria se o gesto terminasse agora (`null` = nenhum). Só
-   * escreve o signal quando o conjunto muda.
+   * Lights up the items that `rect` would absorb if the gesture ended now (`null` = none). Only
+   * writes the signal when the set changes.
    */
   private updateAbsorb(
     rect: Rect | null,
@@ -630,7 +633,7 @@ export class PointerInput {
     this.o.state.absorb.value = next;
   }
 
-  /** Gesto do arrasto; se a intenção não se aplica mais, pan. */
+  /** Drag gesture; if the intent no longer applies, pan. */
   private startDrag(pointerId: number, start: Point, intent: Intent): Gesture {
     const { actions, viewport, state } = this.o;
     const started = startGesture(
@@ -673,18 +676,19 @@ export class PointerInput {
     const step = stepGesture(this.gestureState, { type: cancelled ? 'cancel' : 'up' });
     this.gestureState = step.state;
     if (g.kind === 'pending' && step.effect.kind === 'tap') {
-      // O clique curto do botão do meio é só o começo de um pan: não seleciona nem põe o pino.
+      // The short middle-button click is just the start of a pan: it neither selects nor places the
+      // pin.
       if (g.button !== 1) this.tap(step.effect.at, this.pressShift);
     } else {
-      // Um arrasto (ou cancelamento) no meio de um duplo clique o desfaz e recomeça o ciclo.
+      // A drag (or cancel) in the middle of a double click undoes it and restarts the cycle.
       this.selectionBeforeTap = null;
       this.lastTap = null;
     }
     if (isStoreGesture(g)) {
-      // Cancelado: volta ao projeto de antes do gesto. Senão, a operação final repete a mesma
-      // operação com os valores finais (encaixe, absorção) e assenta o pertencimento; só então
-      // grava uma entrada.
-      // Uma ponta solta fora de uma marcação cancela, como Esc.
+      // Cancelled: back to the project from before the gesture. Otherwise, the final operation
+      // repeats the same operation with the final values (snap, absorption) and settles the
+      // membership; only then records one entry.
+      // A loose end outside a marking cancels, like Esc.
       if (cancelled || (g.kind === 'arrow-end' && !g.valid)) actions.cancelGesture();
       else {
         this.finishStoreGesture(g);
@@ -704,7 +708,7 @@ export class PointerInput {
     if (e.pointerType === 'mouse') this.updateCursor(this.o.viewport.screenPoint(e));
   }
 
-  /** A operação final de um gesto do store, com tudo o que a interação acrescenta ao soltar. */
+  /** The final operation of a store gesture, with everything the interaction adds on release. */
   private finishStoreGesture(g: StoreGesture): void {
     const { actions } = this.o;
     switch (g.kind) {
@@ -713,12 +717,12 @@ export class PointerInput {
         actions.finishImagePlacement(g.containerId);
         return;
       case 'move-items':
-        // Sem encaixe e sem absorção: cada item vai pelo mesmo deslocamento da última prévia
-        // válida, e o pertencimento é assentado uma vez sobre o resultado inteiro.
+        // No snap and no absorption: each item moves by the same displacement as the last valid
+        // preview, and membership is settled once over the whole result.
         actions.finishItemsMove(g.items, g.dx, g.dy);
         return;
       case 'move-marking': {
-        // Encaixe: quase inteira num container, a marcação é levada para dentro dele.
+        // Snap: nearly entirely in a container, the marking is carried into it.
         const { snap } = this.moveSnap(g);
         actions.finishMarkingMove(
           g.markingId,
@@ -729,13 +733,13 @@ export class PointerInput {
       }
       case 'arrow-route':
       case 'arrow-end':
-        // A prévia já é o resultado: o ponto ou a ponta fica onde o ponteiro foi solto.
+        // The preview is already the result: the point or end stays where the pointer was released.
         return;
       case 'resize-marking': {
-        // Absorção: o retângulo cresce até envolver o que cruza dentro da tolerância.
+        // Absorption: the rectangle grows until it wraps what crosses within the tolerance.
         const marking = this.markingNow(g.markingId);
         if (!marking) return;
-        // Terminou onde começou (a alça não chegou a mudar nada): não é um redimensionamento.
+        // Ended where it began (the handle did not change anything): it is not a resize.
         if (sameRect(marking.rect, g.startRect)) {
           actions.finishMarkingRect(g.markingId, g.startRect);
           return;
@@ -753,7 +757,7 @@ export class PointerInput {
     }
   }
 
-  /** Soltou a alça de ligação: sobre uma marcação, cria a seta (uma entrada) e a seleciona. */
+  /** Released the link handle: over a marking, creates the arrow (one entry) and selects it. */
   private finishArrowLink(
     g: Extract<Gesture, { kind: 'arrow-link' }>,
     cancelled: boolean,
@@ -771,7 +775,8 @@ export class PointerInput {
     this.clearTransient();
     if (cancelled || !drawn) return;
     if (!isDrawableRect(drawn.rect)) {
-      // Arrasto real (passou do limiar) solto abaixo do mínimo: avisa em vez de descartar calado.
+      // A real drag (past the threshold) released below the minimum: warns instead of silently
+      // discarding.
       showToast(this.o.ui, t('marking.error.rect-too-small', { min: MIN_MARKING_SIZE }));
       return;
     }
@@ -789,12 +794,12 @@ export class PointerInput {
     if (result.ok) this.o.ui.selection.value = { kind: 'marking', id: result.value };
   }
 
-  /** O pino das conversas sob `p` (tela). */
+  /** The thread pin under `p` (screen). */
   private pinUnder(p: Point): PinPlace | null {
     return this.o.pinAt?.(this.o.viewport.toCanvas(p)) ?? null;
   }
 
-  /** O cursor e a dica dos pinos e do Comentar armado; `null` se nenhum se aplica a `p`. */
+  /** The cursor and hint of the pins and of the armed Comment; `null` if none applies to `p`. */
   private commentCursor(p: Point | null): string | null {
     if (this.o.ui.commentArm.peek() !== null) return 'crosshair';
     const pin = p && this.pinUnder(p);
@@ -802,7 +807,7 @@ export class PointerInput {
     return pin ? 'pointer' : null;
   }
 
-  /** O clique em `c` (canvas) no Comentar armado ou num pino; `true` se o consumiu. */
+  /** The click at `c` (canvas) on the armed Comment or on a pin; `true` if it consumed it. */
   private tapComment(c: Point): boolean {
     const { store } = this.o;
     const project = this.project();
@@ -824,25 +829,26 @@ export class PointerInput {
   }
 
   /**
-   * Seleciona pelo clique em `p` (tela); clicar de novo no mesmo ponto sobe para o pai. Com o modificador
-   * da seleção múltipla (`shift`: Shift, Ctrl ou Cmd), alterna o primeiro item sob o ponto na seleção (sem o ciclo de subir para o pai);
-   * no vazio, Shift não muda nada. Na revisão, Shift+clique é um clique simples.
+   * Selects by the click at `p` (screen); clicking again on the same point goes up to the parent.
+   * With the multi-select modifier (`shift`: Shift, Ctrl or Cmd), toggles the first item under
+   * the point in the selection (without the go-to-parent cycle); in the void, Shift changes
+   * nothing. In review, Shift+click is a simple click.
    */
   private tap(p: Point, shift: boolean): void {
     const { ui, derived, viewport } = this.o;
     const c = viewport.toCanvas(p);
     this.selectionBeforeTap = ui.selection.peek();
     if (this.tapComment(c)) return;
-    // Um clique numa alça (de ligação ou da seta selecionada) não troca a seleção: o clique
-    // duplo num ponto de passagem o remove, e o primeiro clique não pode tirar a seta da seleção.
-    // Com Shift o clique é da seleção múltipla, mesmo sobre uma alça.
+    // A click on a handle (link or of the selected arrow) does not change the selection: the
+    // double click on a waypoint removes it, and the first click must not take the arrow out of
+    // the selection. With Shift the click belongs to multi-select, even over a handle.
     const onHandle = this.intentAt(p).kind;
     if (!shift && (onHandle === 'arrow-link' || onHandle === 'arrow-handle')) {
       this.lastTap = null;
       return;
     }
     if (shift && !(this.o.reviewing?.() ?? false)) {
-      this.lastTap = null; // Um clique simples depois não continua o ciclo.
+      this.lastTap = null; // A later simple click does not continue the cycle.
       const project = this.project();
       const first =
         project &&
@@ -870,10 +876,10 @@ export class PointerInput {
   }
 
   /**
-   * Duplo clique (Navegar, mouse): seleciona a marcação com o conteúdo dela (as marcações que a
-   * cobrem e, numa marcação do canvas, os containers membros com as marcações deles), com a
-   * marcação como primária. Num container, só devolve a seleção a ele (o segundo toque do duplo
-   * clique já tinha subido um degrau na cadeia). O próximo clique recomeça o ciclo.
+   * Double click (Navigate, mouse): selects the marking with its content (the markings that
+   * cover it and, for a canvas marking, the member containers with their markings), with the
+   * marking as primary. On a container, it only returns the selection to it (the second touch of
+   * the double click had already gone up one step in the chain). The next click restarts the cycle.
    */
   private onDoubleClick(e: MouseEvent): void {
     const { ui } = this.o;
@@ -886,7 +892,7 @@ export class PointerInput {
     if (!ui.viewMode.peek() && ui.mode.peek() !== 'navigate') return;
     const index = projectIndex(project);
     if (target.kind === 'arrow') {
-      // A rota da seta (pontos de passagem) é só da Principal.
+      // The arrow's route (waypoints) belongs to Main only.
       if (!this.o.perspectiveOpen?.()) this.removeWaypointAt(e, project, target.id);
       return;
     }
@@ -900,10 +906,10 @@ export class PointerInput {
   }
 
   /**
-   * Clique duplo num ponto de passagem da seta `arrowId`: remove o ponto (uma entrada) e deixa a
-   * seta selecionada (o segundo toque pode tê-la trocado). Num segmento do meio de uma seta
-   * `elbow`, volta à rota padrão (`points` vazio). Fora de um ponto ou segmento, ou com a seta
-   * trancada ou o projeto somente leitura, não faz nada.
+   * Double click on a waypoint of the arrow `arrowId`: removes the point (one entry) and leaves
+   * the arrow selected (the second touch may have swapped it). On a middle segment of an
+   * `elbow` arrow, goes back to the default route (empty `points`). Outside a point or segment,
+   * or with the arrow locked or the project read-only, does nothing.
    */
   private removeWaypointAt(e: MouseEvent, project: Project, arrowId: string): void {
     const { viewport, actions, store, ui } = this.o;
@@ -925,10 +931,10 @@ export class PointerInput {
   }
 
   /**
-   * Botão direito do mouse: seleciona o item sob o cursor (a marcação mais interna, ou a
-   * imagem) e abre o menu de contexto dele. Um item que já está na seleção múltipla não a
-   * desfaz: o menu abre para ele e a seleção fica. Numa tela de toque, um toque demorado também
-   * dispara `contextmenu`; ele não abre o menu (as ações ficam na Árvore e em Detalhes).
+   * Right mouse button: selects the item under the cursor (the innermost marking, or the
+   * image) and opens its context menu. An item already in the multi-selection is not
+   * undone: the menu opens for it and the selection stays. On a touch screen, a long touch also
+   * fires `contextmenu`; it does not open the menu (the actions stay in the Tree and in Details).
    */
   private openContextMenu(e: MouseEvent): void {
     const { ui, derived, viewport } = this.o;
@@ -951,16 +957,16 @@ export class PointerInput {
     if (menu) ui.canvasMenu.value = menu;
   }
 
-  /** Toque demorado, gesto em andamento e revisão (somente leitura) não abrem o menu. */
+  /** Long touch, gesture in progress and review (read-only) do not open the menu. */
   private canOpenContextMenu(): boolean {
     if (this.lastPointerType === 'touch') return false;
-    // Ctrl+clique (macOS) chega como `pointerdown` e `contextmenu`: o gesto ainda pendente é
-    // cancelado, para o `pointerup` seguinte não virar clique. Um arrasto em andamento segue.
+    // Ctrl+click (macOS) arrives as `pointerdown` and `contextmenu`: the still-pending gesture is
+    // cancelled, so the next `pointerup` does not become a click. A drag in progress continues.
     if (this.gesture?.kind === 'pending') this.dropPendingGesture();
     return this.gesture === null && !(this.o.reviewing?.() ?? false);
   }
 
-  /** Descarta o gesto pendente (nada começou): o `pointerup` do ponteiro é ignorado. */
+  /** Discards the pending gesture (nothing started): the pointer's `pointerup` is ignored. */
   private dropPendingGesture(): void {
     const g = this.gesture;
     if (g?.kind !== 'pending') return;

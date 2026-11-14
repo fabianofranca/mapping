@@ -19,14 +19,14 @@ import { TypedForm } from '../TypedForm';
 import { drawWarningText } from './drawWarnings';
 import type { CatalogRenderer } from './renderer';
 
-// Playground do Catálogo: os campos do tipo (TypedForm) ao lado do desenho, que se refaz a
-// cada mudança, no máximo uma vez por quadro. O tamanho vai do `minSize` ao dobro do `size`.
+// Catalog Playground: the type's fields (TypedForm) next to the drawing, which is redone at
+// every change, at most once per frame. The size goes from `minSize` to double the `size`.
 
 interface PlaygroundProps {
   readonly catalog: Catalog;
   readonly entry: CatalogEntry;
   readonly renderer: CatalogRenderer;
-  /** Muda quando as fontes terminam de carregar: refaz o desenho. */
+  /** Changes when the fonts finish loading: redraws. */
   readonly fontsEpoch?: number;
 }
 
@@ -37,11 +37,11 @@ interface Drawn {
 
 export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps) {
   const component = entry.component;
-  // Uma imagem remota que termina de carregar (ou o consentimento que muda) redesenha a prévia.
+  // A remote image that finishes loading (or the consent that changes) redraws the preview.
   const imagesEpoch = renderer.imagesEpoch.value;
   const initial = entry.previewValues ?? {};
   const [values, setValues] = useState<Readonly<Record<string, unknown>>>(initial);
-  // Eixos que o usuário fixou digitando; os `hug` fora daqui acompanham o conteúdo.
+  // Axes the user pinned by typing; the `hug` ones outside this follow the content.
   const [manual, setManual] = useState<{ width?: number; height?: number }>({});
   const hug = useMemo(() => entryHugAxes(entry, values as FieldValues), [entry, values]);
   const autoWidth = hug.width && manual.width === undefined;
@@ -55,7 +55,7 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
         },
         auto: { width: autoWidth, height: autoHeight },
       }),
-    // `fontsEpoch`: as fontes carregadas mudam a medida do texto.
+    // `fontsEpoch`: the loaded fonts change the text measurement.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entry, component, values, manual, autoWidth, autoHeight, renderer, fontsEpoch],
   );

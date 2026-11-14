@@ -1,12 +1,12 @@
-# Revisão em janelas baixas — 2026-11-06 (épico `epic/revisao-janela-baixa`, PR #623, MCP 0.19.0, schema v14)
+# Review in short windows — 2026-11-06 (épico `epic/revisao-janela-baixa`, PR #623, MCP 0.19.0, schema v14)
 
 ## Alterado
 
-- Altura mínima da janela: de 860 px para **720 px** (largura mínima segue 900 px). Abaixo de 900×720 a app mostra o aviso "Abra numa janela maior", agora com 720 no texto.
-- Revisão: os filtros da janela Propostas (decisão, tipo de mudança, imagem, camada e **Só conflitos**) ficam recolhidos no botão **Filtros**, que mostra quantos grupos estão ativos ("Filtros · 2"). O "Mostrando N de M" e o **Limpar filtros** continuam ao lado do botão; escolher um filtro não fecha o painel, e **Esc** fecha e devolve o foco ao botão. O botão do aviso de conflitos novos continua ligando **Só conflitos** sem abrir o painel. Fora da revisão nada muda.
-- Revisão: a janela inferior (Propostas) começa mais baixa, com 240 px (antes 344 px): cabem 3 linhas inteiras da lista e o rodapé de atalhos a 900×720. Quem tinha 344 px guardado passa ao padrão novo; outro valor guardado fica.
-- Revisão: a legenda das marcas deixou de ser cortada pelo canvas. Quando o canvas é mais baixo que ela, a legenda desce por cima da janela Propostas (e do minimapa), inteira e sem rolagem, até o topo da barra de status, sem passar da coluna do canvas nem cobrir as janelas laterais. Dicas, seletores e diálogos ficam por cima dela.
+- Minimum window height: from 860 px to **720 px** (minimum width stays 900 px). Below 900×720 the app shows the "Open in a larger window" notice, now with 720 in the text.
+- Review: the Proposals window filters (decision, change type, image, layer and **Conflicts only**) are collapsed into the **Filters** button, which shows how many groups are active ("Filters · 2"). The "Showing N of M" and **Clear filters** stay beside the button; choosing a filter does not close the panel, and **Esc** closes it and returns focus to the button. The new-conflicts notice button still turns on **Conflicts only** without opening the panel. Outside the review nothing changes.
+- Review: the bottom window (Proposals) starts shorter, at 240 px (before 344 px): 3 whole list rows and the shortcut footer fit at 900×720. Whoever had 344 px stored moves to the new default; any other stored value stays.
+- Review: the mark legend is no longer clipped by the canvas. When the canvas is shorter than it, the legend drops over the Proposals window (and the minimap), whole and without scrolling, down to the top of the status bar, without going past the canvas column or covering the side windows. Tooltips, selectors and dialogs stay on top of it.
 
 ## Corrigido
 
-- Revisão: o atalho **L** fecha a legenda das marcas devolvendo o foco ao botão **Legenda das marcas** também quando o foco estava dentro dela (antes o foco ia para o `body`).
+- Review: the **L** shortcut closes the mark legend returning focus to the **Mark legend** button also when focus was inside it (before focus went to the `body`).

@@ -1,6 +1,6 @@
-// "Copiar referência" e "Copiar recorte": o que o Ctrl+C, o Ctrl+Alt+C e os menus fazem.
-// A referência (`mapping://<pasta>/<m|i|a>/<código>`, só a URL) é o que o dev cola no chat
-// para o agente (MCP) achar o item; só existe em projetos abertos de uma pasta.
+// "Copy reference" and "Copy crop": what Ctrl+C, Ctrl+Alt+C and the menus do.
+// The reference (`mapping://<folder>/<m|i|a>/<code>`, just the URL) is what the dev pastes in the
+// chat for the agent (MCP) to find the item; it only exists in projects opened from a folder.
 import { t } from '../i18n';
 import {
   ITEM_CLIPBOARD_MIME,
@@ -20,19 +20,21 @@ import type { EditorContextValue } from '../ui/EditorContext';
 import { writeClipboardPng, writeClipboardText } from '../utils/clipboard';
 import { reportError } from '../utils/report';
 
-/** Marcação (`m`), container (`i`) ou anotação (`a`): os alvos com dados próprios na cópia. */
+/**
+ * Marking (`m`), container (`i`) or annotation (`a`): the targets with their own data in the copy.
+ */
 export interface ItemCopyTarget {
   readonly kind: ItemKind;
   readonly id: string;
 }
 
-/** Campo tipado, par ou linha de tabela de uma anotação (CM5, decisão 32). */
+/** Typed field, pair or table row of an annotation (CM5, decision 32). */
 export type PropertyCopyTarget = Extract<
   CitationTarget,
   { readonly kind: 'field' | 'entry' | 'row' }
 >;
 
-/** Camada (`l/`) ou conversa (`c/`): só a URL, sem dados do item. */
+/** Layer (`l/`) or thread (`c/`): just the URL, without the item's data. */
 export type NodeCopyTarget = Extract<
   CitationTarget,
   { readonly kind: 'layer' | 'thread' }
@@ -40,7 +42,7 @@ export type NodeCopyTarget = Extract<
 
 export type CopyTarget = ItemCopyTarget | PropertyCopyTarget | NodeCopyTarget;
 
-/** O alvo é um item (marcação, container ou anotação)? */
+/** Is the target an item (marking, container or annotation)? */
 export function isItemTarget(
   target: CopyTarget | CitationTarget,
 ): target is ItemCopyTarget {
@@ -53,14 +55,14 @@ const ITEM_CITATION_KIND = {
   a: 'annotation',
 } as const satisfies Record<ItemKind, 'marking' | 'container' | 'annotation'>;
 
-/** O alvo da cópia como alvo de citação (o que `insertCitation` e `citationUrl` entendem). */
+/** The copy target as a citation target (what `insertCitation` and `citationUrl` understand). */
 export function citationTargetOf(target: CopyTarget | CitationTarget): CitationTarget {
   return isItemTarget(target)
     ? { kind: ITEM_CITATION_KIND[target.kind], id: target.id }
     : target;
 }
 
-/** Só projetos de pasta têm um `<projeto>` que o MCP encontra. */
+/** Only folder projects have a `<project>` that the MCP finds. */
 export function canCopyItems(editor: Pick<EditorContextValue, 'session'>): boolean {
   return editor.session.storage.folderName !== undefined;
 }
@@ -70,22 +72,22 @@ export function targetOfSelection(selection: Selection): ItemCopyTarget | null {
   return { kind: selection.kind === 'image' ? 'i' : 'm', id: selection.id };
 }
 
-/** Anotação em foco: o foco está dentro do cartão dela (fora dos campos, tratados antes). */
+/** Annotation in focus: the focus is inside its card (outside the fields, handled before). */
 export function focusedAnnotationTarget(): ItemCopyTarget | null {
   const card = document.activeElement?.closest('[data-annotation]');
   const id = card?.getAttribute('data-annotation');
   return id ? { kind: 'a', id } : null;
 }
 
-/** O valor do atributo no elemento ou no ancestral mais próximo que o tem. */
+/** The value of the attribute on the element or on the nearest ancestor that has it. */
 function attributeAbove(el: Element | null, attribute: string): string | null {
   return el?.closest(`[${attribute}]`)?.getAttribute(attribute) ?? null;
 }
 
 /**
- * Propriedade em foco, a mais específica: a linha de uma tabela (`data-row-id`) vale mais que o
- * campo (`data-field`) em que está, e o par (`data-entry`) tem a vez do campo. Tudo dentro do
- * cartão da anotação (`data-annotation`); fora dele, ou sem foco, não há alvo.
+ * Property in focus, the most specific: a table row (`data-row-id`) outweighs the
+ * field (`data-field`) it is in, and the pair (`data-entry`) takes precedence over the field. All
+ * inside the annotation card (`data-annotation`); outside it, or with no focus, there is no target.
  */
 export function focusedPropertyTarget(): PropertyCopyTarget | null {
   const active = document.activeElement;
@@ -100,8 +102,9 @@ export function focusedPropertyTarget(): PropertyCopyTarget | null {
 }
 
 /**
- * O Ctrl+C de uma propriedade com o foco num campo de texto: só sem texto selecionado nele
- * (com seleção, é do campo) e nunca no editor de texto formatado (`contentEditable`).
+ * The Ctrl+C of a property with the focus in a text field: only with no text selected in it
+ * (with a selection, it belongs to the field) and never in the rich text editor
+ * (`contentEditable`).
  */
 export function copyKeyBelongsToProperty(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement) || target.isContentEditable) return false;
@@ -111,18 +114,21 @@ export function copyKeyBelongsToProperty(target: EventTarget | null): boolean {
   return true;
 }
 
-/** "Copiar recorte" só existe para marcação de imagem com arquivo (não de container sem arquivo). */
+/**
+ * "Copy crop" only exists for an image marking with a file (not for a container without a file).
+ */
 export function canCopyCrop(project: Project | null, markingId: string): boolean {
   const marking = project?.markings.find((m) => m.id === markingId);
-  // Marcação do canvas (`containerId` nulo): não há imagem para recortar.
+  // Canvas marking (`containerId` null): there is no image to crop.
   if (!marking || marking.containerId === null) return false;
   const image = project?.containers.find((i) => i.id === marking.containerId);
   return image !== undefined && !isBackgroundContainer(image);
 }
 
 /**
- * Texto da referência e os dados do item no formato próprio da app; `null` se o alvo sumiu. A
- * propriedade, a camada e a conversa levam só a URL (`data` vazio): não há item para colar.
+ * Text of the reference and the item's data in the app's own format; `null` if the target vanished.
+ * The property, the layer and the thread carry only the URL (`data` empty): there is no item to
+ * paste.
  */
 export function buildReference(
   project: Project,
@@ -144,7 +150,9 @@ export function buildReference(
   return { text, data: JSON.stringify(data) };
 }
 
-/** Copia a referência do item (e, junto, os dados dele) e avisa. `false` se não copiou. */
+/**
+ * Copies the item's reference (and, with it, its data) and notifies. `false` if it did not copy.
+ */
 export async function copyReference(
   editor: EditorContextValue,
   target: CopyTarget,
@@ -171,7 +179,9 @@ export async function copyReference(
   return ok;
 }
 
-/** Copia como PNG o recorte da marcação (pixels da imagem original, até 2048 px) e avisa. */
+/**
+ * Copies the marking's crop as a PNG (pixels of the original image, up to 2048 px) and notifies.
+ */
 export async function copyCrop(
   editor: EditorContextValue,
   markingId: string,
@@ -180,7 +190,7 @@ export async function copyCrop(
   const project = store.committed.peek();
   const marking = project?.markings.find((m) => m.id === markingId);
   const image = marking && project?.containers.find((i) => i.id === marking.containerId);
-  // Container sem arquivo não tem arquivo para recortar.
+  // A container without a file has no file to crop.
   if (!marking || !image || image.file === null) return false;
   const file = image.file;
   const png = (async () => {
@@ -188,7 +198,7 @@ export async function copyCrop(
     if (!data) throw new Error(`image file missing: ${file}`);
     return cropToPng(data, marking.rect);
   })();
-  // O erro é tratado abaixo; sem isto uma recusa do `write` deixaria a promessa solta.
+  // The error is handled below; without this a refusal of `write` would leave the promise dangling.
   png.catch((e: unknown) => reportError('copy.crop', e));
   const ok = await writeClipboardPng(png);
   showToast(ui, t(ok ? 'copy.cropDone' : 'copy.cropFailed'));
@@ -196,8 +206,8 @@ export async function copyCrop(
 }
 
 /**
- * O que o Ctrl+C copiaria agora: a propriedade em foco (linha, par ou campo), a anotação em foco
- * ou, senão, a seleção.
+ * What Ctrl+C would copy now: the property in focus (row, pair or field), the annotation in focus
+ * or, otherwise, the selection.
  */
 export function copyShortcutTarget(editor: EditorContextValue): CopyTarget | null {
   const property = focusedPropertyTarget();

@@ -10,15 +10,15 @@ import path, {
 } from 'node:path';
 import { ToolError } from './errors';
 
-// Segurança de caminhos: o servidor só lê e grava dentro das raízes configuradas.
-// Rejeita `..`, caminhos absolutos fora das raízes e links simbólicos que levam para fora.
+// Path safety: the server only reads and writes inside the configured roots.
+// It rejects `..`, absolute paths outside the roots and symbolic links that lead outside.
 
-/** O que `isWithin` usa de `node:path` (o teste passa `path.win32`). */
+/** What `isWithin` uses from `node:path` (the test passes `path.win32`). */
 export type PathApi = Pick<PlatformPath, 'relative' | 'sep' | 'isAbsolute'>;
 
 /**
- * `child` é `parent` ou está dentro dele (comparação léxica de caminhos absolutos). `api` é a
- * do sistema; no Windows (`path.win32`) a comparação ignora a caixa e respeita a unidade.
+ * `child` is `parent` or is inside it (lexical comparison of absolute paths). `api` is the
+ * system's; on Windows (`path.win32`) the comparison ignores case and respects the drive.
  */
 export function isWithin(parent: string, child: string, api: PathApi = path): boolean {
   const rel = api.relative(parent, child);
@@ -28,7 +28,7 @@ export function isWithin(parent: string, child: string, api: PathApi = path): bo
   );
 }
 
-/** Algum segmento é `..`. Barras invertidas contam como separador (Windows). */
+/** Some segment is `..`. Backslashes count as a separator (Windows). */
 export function hasParentSegment(value: string): boolean {
   return value.split(/[\\/]/).some((segment) => segment === '..');
 }
@@ -38,54 +38,54 @@ function isNotFound(error: unknown): boolean {
   return code === 'ENOENT' || code === 'ENOTDIR';
 }
 
-/** Caminho como o usuário digitou, validado só na forma (sem tocar no disco). */
+/** Path as the user typed it, validated only in form (without touching the disk). */
 function assertPlainPath(input: string): void {
   if (input === '' || input.includes('\0')) {
-    throw new ToolError('invalid-path', 'caminho vazio ou inválido');
+    throw new ToolError('invalid-path', 'empty or invalid path');
   }
   if (hasParentSegment(input)) {
-    throw new ToolError('outside-roots', `caminho com ".." recusado: ${input}`, {
+    throw new ToolError('outside-roots', `path with ".." refused: ${input}`, {
       path: input,
     });
   }
 }
 
-/** Um caminho real (sem links simbólicos) dentro de uma das raízes. */
+/** A real path (without symbolic links) inside one of the roots. */
 export interface InsideRoot {
-  /** Caminho real do que foi pedido. */
+  /** Real path of what was requested. */
   readonly real: string;
-  /** Raiz como configurada (absoluta). */
+  /** Root as configured (absolute). */
   readonly root: string;
-  /** Caminho real da raiz. */
+  /** Real path of the root. */
   readonly realRoot: string;
 }
 
 export class Roots {
   /**
-   * `roots` já resolvidas (absolutas). `workDir` é o diretório de trabalho do cliente (o do
-   * processo do servidor): os caminhos relativos das raízes valem a partir dele, e é o limite
-   * da conferência de arquivos de código (`codeFiles.ts`).
+   * `roots` already resolved (absolute). `workDir` is the client's working directory (the
+   * server process's): relative root paths are taken from it, and it is the limit
+   * of the code-file check (`codeFiles.ts`).
    */
   constructor(
     readonly roots: readonly string[],
     readonly workDir: string = process.cwd(),
   ) {}
 
-  /** Dentro de uma chamada de tool (`beginCall`), o que já foi resolvido fica aqui. */
+  /** Within a tool call (`beginCall`), what has already been resolved is kept here. */
   private scoped = false;
   private readonly memo = new Map<string, Promise<unknown>>();
 
   /**
-   * Começa uma chamada de tool: o que as raízes resolveram na chamada anterior (caminhos reais,
-   * descoberta de projetos) é descartado e, até a próxima chamada, cada coisa é resolvida uma
-   * vez só. Sem `beginCall` nada fica em cache.
+   * Starts a tool call: what the roots resolved in the previous call (real paths,
+   * project discovery) is discarded and, until the next call, each thing is resolved
+   * only once. Without `beginCall` nothing is cached.
    */
   beginCall(): void {
     this.scoped = true;
     this.memo.clear();
   }
 
-  /** Resolve `compute` uma vez por chamada de tool (a cada vez, sem `beginCall`). */
+  /** Resolves `compute` once per tool call (every time, without `beginCall`). */
   perCall<T>(key: string, compute: () => Promise<T>): Promise<T> {
     if (!this.scoped) return compute();
     let hit = this.memo.get(key) as Promise<T> | undefined;
@@ -96,14 +96,14 @@ export class Roots {
     return hit;
   }
 
-  /** Caminho real de cada raiz; `null` para a que não existe (ela pode ser criada depois da partida). */
+  /** Real path of each root; `null` for one that does not exist (it may be created after startup). */
   realRoots(): Promise<readonly (string | null)[]> {
     return this.perCall('realRoots', () =>
       Promise.all(this.roots.map((root) => realpath(root).catch(() => null))),
     );
   }
 
-  /** O caminho real está dentro de alguma raiz? Devolve qual. */
+  /** Is the real path inside some root? Returns which one. */
   async locate(real: string): Promise<InsideRoot | null> {
     const reals = await this.realRoots();
     for (const [index, realRoot] of reals.entries()) {
@@ -114,13 +114,13 @@ export class Roots {
     return null;
   }
 
-  /** Falha com `outside-roots` se o caminho real não estiver dentro de uma raiz. */
+  /** Fails with `outside-roots` if the real path is not inside a root. */
   async assertInside(real: string, shown: string = real): Promise<InsideRoot> {
     const found = await this.locate(real);
     if (!found) {
       throw new ToolError(
         'outside-roots',
-        `o caminho aponta para fora das raízes configuradas: ${shown}`,
+        `the path points outside the configured roots: ${shown}`,
         { path: shown },
       );
     }
@@ -128,16 +128,16 @@ export class Roots {
   }
 
   /**
-   * Resolve um caminho existente informado pelo agente: relativo a uma raiz ou absoluto
-   * dentro de uma. Recusa `..`, absolutos fora das raízes e links simbólicos que saem delas.
+   * Resolves an existing path given by the agent: relative to a root or absolute
+   * inside one. Refuses `..`, absolute paths outside the roots and symbolic links that leave them.
    */
   async resolveExisting(input: string): Promise<InsideRoot> {
     return (await this.resolveExistingAll(input))[0]!;
   }
 
   /**
-   * Como `resolveExisting`, mas devolve o caminho de cada raiz em que ele existe (na ordem das
-   * raízes): com várias raízes, quem procura algo específico (um projeto) tenta todas.
+   * Like `resolveExisting`, but returns the path under each root where it exists (in root
+   * order): with several roots, whoever looks for something specific (a project) tries them all.
    */
   async resolveExistingAll(input: string): Promise<InsideRoot[]> {
     assertPlainPath(input);
@@ -160,19 +160,19 @@ export class Roots {
     if (leftRoots) {
       throw new ToolError(
         'outside-roots',
-        `o caminho aponta para fora das raízes configuradas: ${input}`,
+        `the path points outside the configured roots: ${input}`,
         { path: input },
       );
     }
-    throw new ToolError('path-not-found', `caminho não encontrado: ${input}`, {
+    throw new ToolError('path-not-found', `path not found: ${input}`, {
       path: input,
     });
   }
 
   /**
-   * Resolve um caminho que ainda pode não existir (criação): o caminho léxico precisa estar
-   * dentro de uma raiz e o ancestral existente mais próximo não pode sair dela por link simbólico.
-   * Devolve o caminho absoluto a criar.
+   * Resolves a path that may not exist yet (creation): the lexical path must be
+   * inside a root and the nearest existing ancestor must not leave it through a symbolic link.
+   * Returns the absolute path to create.
    */
   async resolveNew(input: string, rootHint?: string): Promise<string> {
     assertPlainPath(input);
@@ -187,7 +187,7 @@ export class Roots {
         if (!isNotFound(error)) throw error;
         const parent = dirname(existing);
         if (parent === existing) {
-          throw new ToolError('outside-roots', `caminho fora das raízes: ${input}`, {
+          throw new ToolError('outside-roots', `path outside the roots: ${input}`, {
             path: input,
           });
         }
@@ -203,7 +203,7 @@ export class Roots {
       if (!inside) {
         throw new ToolError(
           'outside-roots',
-          `caminho absoluto fora das raízes configuradas: ${input}`,
+          `absolute path outside the configured roots: ${input}`,
           { path: input },
         );
       }
@@ -214,14 +214,14 @@ export class Roots {
 
   private async newTarget(input: string, rootHint?: string): Promise<string> {
     if (isAbsolute(input)) {
-      // Fora de todas as raízes: `outside-roots` antes de olhar o `root` (a segurança fala primeiro).
+      // Outside all roots: `outside-roots` before looking at `root` (security speaks first).
       const [candidate] = await this.candidates(input);
       if (rootHint !== undefined) {
         const index = await this.resolveRoot(rootHint);
         if (!(await this.isUnderRoot(index, candidate!))) {
           throw new ToolError(
             'invalid-arguments',
-            `o caminho absoluto não fica na raiz indicada em \`root\`: ${input}`,
+            `the absolute path is not under the root given in \`root\`: ${input}`,
             { path: input, root: this.roots[index] },
           );
         }
@@ -234,15 +234,15 @@ export class Roots {
     if (this.roots.length === 1) return join(this.roots[0]!, input);
     throw new ToolError(
       'root-required',
-      'há mais de uma raiz: informe `root` ou um caminho absoluto dentro de uma delas',
+      'there is more than one root: give `root` or an absolute path inside one of them',
       { roots: this.roots },
     );
   }
 
   /**
-   * `path` absoluto (ainda pode não existir) fica dentro da raiz `index`? Compara com a raiz
-   * como configurada e com o seu caminho real, e também o caminho real do ancestral existente
-   * mais próximo (um link simbólico no meio do caminho).
+   * Is the absolute `path` (it may not exist yet) inside root `index`? Compares with the root
+   * as configured and with its real path, and also the real path of the nearest existing
+   * ancestor (a symbolic link in the middle of the path).
    */
   private async isUnderRoot(index: number, target: string): Promise<boolean> {
     const root = this.roots[index]!;
@@ -261,16 +261,16 @@ export class Roots {
   }
 
   /**
-   * Índice da raiz que o `root` do agente indica, na ordem: o caminho como no `--root`
-   * (resolvido a partir do diretório de trabalho, como o `main.ts` faz: relativo, com `./`,
-   * com barra final ou absoluto), o mesmo caminho real (link simbólico para a raiz), ou o nome
-   * da pasta, se só uma raiz o tiver. Nome repetido pede o caminho.
+   * Index of the root the agent's `root` indicates, in order: the path as in `--root`
+   * (resolved from the working directory, as `main.ts` does: relative, with `./`,
+   * with a trailing slash or absolute), the same real path (symbolic link to the root), or the
+   * folder name, if only one root has it. A repeated name asks for the path.
    */
   private async resolveRoot(hint: string): Promise<number> {
     const unknown = (message: string) =>
       new ToolError('unknown-root', message, { roots: this.roots });
     if (hint.trim() === '' || hint.includes('\0')) {
-      throw unknown('raiz vazia ou inválida');
+      throw unknown('empty or invalid root');
     }
     const asPath = resolve(this.workDir, hint);
     const reals = await this.realRoots();
@@ -285,16 +285,16 @@ export class Roots {
     );
     if (byName.length === 1) return byName[0]!;
     if (byName.length > 1) {
-      throw unknown(`o nome "${hint}" casa com mais de uma raiz: use o caminho`);
+      throw unknown(`the name "${hint}" matches more than one root: use the path`);
     }
-    throw unknown(`raiz desconhecida: ${hint}`);
+    throw unknown(`unknown root: ${hint}`);
   }
 }
 
 /**
- * Caminho de um arquivo citado dentro do projeto (`images/foto.png`, `specs/sdui.json`):
- * relativo, sem `..`, sem barra invertida e, depois de resolvidos os links simbólicos,
- * dentro das raízes. `null` se o caminho for inválido ou o arquivo não existir.
+ * Path of a file cited inside the project (`images/photo.png`, `specs/sdui.json`):
+ * relative, without `..`, without a backslash and, once symbolic links are resolved,
+ * inside the roots. `null` if the path is invalid or the file does not exist.
  */
 export async function resolveProjectFile(
   roots: Roots,
@@ -314,7 +314,7 @@ export async function resolveProjectFile(
   }
 }
 
-/** Grava de forma atômica: arquivo temporário na mesma pasta e renomear por cima. */
+/** Writes atomically: a temporary file in the same folder, then renamed over the target. */
 export async function writeFileAtomic(path: string, data: string): Promise<void> {
   const temp = join(
     dirname(path),

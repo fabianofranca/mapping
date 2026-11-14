@@ -8,24 +8,24 @@ import { useEditor } from '../EditorContext';
 import { DecisionMark } from './DecisionMark';
 import { useApplyAccepted } from './useReview';
 
-// Lembrete ao sair da revisão (HANDOFF-PROPOSALS 5.3): com aceitas ainda não aplicadas,
-// sair pergunta (a regra é `needsExitReminder`, do modelo; quem decide mostrar é
-// `app/useExitReview.ts`). Nada se perde em nenhum caso: as decisões e as notas ficam na
-// proposta. Ações: Aplicar agora · N (principal), Sair mesmo assim e Continuar revisando.
+// Reminder when leaving the review (HANDOFF-PROPOSALS 5.3): with accepted changes not yet applied,
+// leaving asks (the rule is `needsExitReminder`, from the model; what decides to show it is
+// `app/useExitReview.ts`). Nothing is lost in any case: the decisions and notes stay in the
+// proposal. Actions: Apply now · N (main), Leave anyway and Keep reviewing.
 
 export function ExitReviewDialog({ onClose }: { readonly onClose: () => void }) {
   const { review } = useEditor();
   const apply = useApplyAccepted();
   const counts = review.derived.counts.value;
   const canApply = review.derived.canApply.value;
-  // A proposta de quando o diálogo abriu: sair zera `proposalId` antes do foco voltar.
+  // The proposal from when the dialog opened: leaving resets `proposalId` before focus returns.
   const proposalId = useRef(review.proposalId.peek());
   const exit = () => {
     onClose();
     review.close();
   };
-  // O clique em "Sair" decidiu pelo estado de antes de uma aplicação em andamento terminar:
-  // se, já aberto, o lembrete deixou de valer (nada aguarda mais), sai sem perguntar.
+  // The click on "Leave" decided from the state before an application in progress finished:
+  // if, once open, the reminder stopped applying (nothing awaits anymore), it leaves without asking.
   const reminder = needsExitReminder(
     review.derived.proposal.value?.status,
     counts.acceptedPending,
@@ -38,7 +38,7 @@ export function ExitReviewDialog({ onClose }: { readonly onClose: () => void }) 
     <Dialog
       title={t('review.exitDialog.title')}
       onCancel={onClose}
-      // "Continuar revisando" volta ao botão da faixa; sair leva ao botão da proposta.
+      // "Keep reviewing" returns to the strip button; leaving goes to the proposal button.
       returnFocus={() => reviewExitTarget(proposalId.current)}
       actions={
         <div class="exit-review-actions">
