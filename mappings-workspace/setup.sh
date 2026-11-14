@@ -409,7 +409,7 @@ migrate_old_agents() {
   } >"$TMP/AGENTS.new"
   backup_agents
   mv "$TMP/AGENTS.new" AGENTS.md
-  AGENTS_SUMMARY="migrado"
+  AGENTS_SUMMARY="migrated"
 }
 
 append_block() {

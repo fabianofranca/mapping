@@ -44,7 +44,7 @@ export const DOC_RESOURCES: readonly DocResource[] = [
     uri: 'mapping-docs://SIGNATURE-FORMAT.md',
     title: 'Signature sheet format',
     description:
-      'Format of a component\'s signature sheet (mapping-signature, formatVersion 1): the source, the parameters with role, type, default and value, the factories and the documentation; the v16 specialization cites it in code.signature.',
+      "Format of a component's signature sheet (mapping-signature, formatVersion 1): the source, the parameters with role, type, default and value, the factories and the documentation; the v16 specialization cites it in code.signature.",
     text: signatureFormat,
   },
   {
