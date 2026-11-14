@@ -1,5 +1,8 @@
-// MF5 (etapa #899): o dia de hoje no `date-picker` e as variantes como campo (`avatar` do `chip`, `contentScale` do
-// `image`, `color`/`insetStart`/`insetEnd` do `divider`, `trackColor`/`strokeCap` do `progress-indicator`).
+// MF5 (stage #899): today's day in the `date-picker` and the variants as a field (`avatar` of the `chip`, `contentScale` of the
+// `image`, `color`/`insetStart`/`insetEnd` of the `divider`, `trackColor`/`strokeCap` of the `progress-indicator`).
+// pt-BR kept: node names ('contorno de hoje', 'célula', 'marcado', 'rótulo', 'faixa', 'barra', 'linha', 'trilho', …), the example names
+// ('Dia de hoje', 'Com avatar', 'Recuo por ponta', 'Trilho colorido e ponta reta', 'Parágrafo justificado', 'Primário') and the
+// word 'relógio' in the code notes are the Portuguese data of libraries/material3-compose
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import type { Spec } from '../../src/model/spec';
@@ -17,7 +20,7 @@ type Values = Record<string, unknown>;
 
 function entryOf(id: string) {
   const entry = findEntry(catalog, id);
-  if (entry === undefined || entry.component === null) throw new Error(`sem ${id}`);
+  if (entry === undefined || entry.component === null) throw new Error(`missing ${id}`);
   return entry;
 }
 const draw = (id: string, values: Values, mode: Mode = 'light') =>
@@ -31,7 +34,7 @@ function findAll(node: SceneNode, name: string, out: SceneNode[] = []): SceneNod
 }
 const visibleOf = (root: SceneNode, name: string) =>
   findAll(root, name).filter((n) => n.visible);
-/** A cor de um preenchimento sólido; `#rrggbbff` (alfa total) vale `#rrggbb`. */
+/** The color of a solid fill; `#rrggbbff` (full alpha) counts as `#rrggbb`. */
 const rgb = (color: string | undefined): string | undefined =>
   color !== undefined && /^#[0-9a-f]{8}$/i.test(color) && color.endsWith('ff')
     ? color.slice(0, 7)
@@ -40,17 +43,17 @@ const solid = (paints: readonly { type: string; color?: string }[] | undefined) 
   const first = paints?.[0];
   return first?.type === 'solid' ? rgb(first.color) : undefined;
 };
-/** Os nós `text` visíveis com o texto dado, na ordem da cena. */
+/** The visible `text` nodes with the given text, in scene order. */
 function texts(node: SceneNode, content: string, out: SceneNode[] = []): SceneNode[] {
   if (node.type === 'text' && node.visible && node.text === content) out.push(node);
   if ('children' in node) for (const child of node.children) texts(child, content, out);
   return out;
 }
-/** `x` do centro da caixa do nó (os nós aqui não giram). */
+/** `x` of the node box center (the nodes here do not rotate). */
 const cx = (n: SceneNode) => n.transform[4] + n.width / 2;
 
-describe('MF5: versão e atualização aditiva', () => {
-  it('continua na versão 7, os campos novos são opcionais e a atualização da 6 é aditiva', () => {
+describe('MF5: version and additive update', () => {
+  it('it stays at version 7, the new fields are optional and the update from 6 is additive', () => {
     expect(spec.version).toBe(14);
     const added: [string, string[]][] = [
       ['date-picker', ['today']],
@@ -64,7 +67,7 @@ describe('MF5: versão e atualização aditiva', () => {
       for (const key of keys) {
         const field = typeOf(id).fields.find((f) => f.key === key);
         expect(field, `${id}.${key}`).toBeDefined();
-        expect(field?.required ?? false, `${id}.${key} opcional`).toBe(false);
+        expect(field?.required ?? false, `${id}.${key} optional`).toBe(false);
       }
       for (const layer of previous.layers)
         for (const type of layer.annotationTypes)
@@ -78,10 +81,10 @@ describe('MF5: versão e atualização aditiva', () => {
   }, 30_000);
 });
 
-describe('MF5: dia de hoje no date-picker (decisão 19)', () => {
-  const base = { selection: 'single', displayedMonth: 'Outubro de 2025' };
+describe('MF5: today in the date-picker (decision 19)', () => {
+  const base = { selection: 'single', displayedMonth: 'October 2025' };
 
-  it('sem month/year, o dia de hoje leva o contorno de 1 em primary e o número em primary', () => {
+  it('without month/year, today gets the 1 outline in primary and the number in primary', () => {
     for (const mode of ['light', 'dark'] as const) {
       const d = draw('date-picker', { ...base, selectedDay: 15, today: 22 }, mode);
       const rings = visibleOf(d.root, 'contorno de hoje');
@@ -89,7 +92,7 @@ describe('MF5: dia de hoje no date-picker (decisão 19)', () => {
       const stroke = rings[0]!.stroke!;
       expect(stroke.width).toBe(1);
       expect(solid(stroke.paints)).toBe(rgb(tokens(mode)['primary'] as string));
-      // O contorno fica na célula do dia 22 (as colunas são de 48): a mesma do número `22`.
+      // The outline sits in the cell of day 22 (the columns are 48 wide): the same as the number `22`.
       const cellOf = (n: SceneNode, name: string): SceneNode | undefined =>
         n.name === name
           ? n
@@ -104,32 +107,32 @@ describe('MF5: dia de hoje no date-picker (decisão 19)', () => {
       const dayCell = texts(d.root, '22');
       expect(dayCell.length).toBeGreaterThan(0);
       for (const t of dayCell)
-        expect(solid(t.fills), `número 22 em ${mode}`).toBe(
+        expect(solid(t.fills), `number 22 in ${mode}`).toBe(
           rgb(tokens(mode)['primary'] as string),
         );
-      // Os outros números seguem em on-surface.
+      // The other numbers stay in on-surface.
       for (const t of texts(d.root, '21'))
         expect(solid(t.fills)).toBe(rgb(tokens(mode)['on-surface'] as string));
     }
   });
 
-  it('sem o campo, nenhum dia leva o contorno e todos os números ficam em on-surface', () => {
+  it('without the field, no day gets the outline and all the numbers stay in on-surface', () => {
     const d = draw('date-picker', { ...base, selectedDay: 15 });
     expect(visibleOf(d.root, 'contorno de hoje')).toHaveLength(0);
     for (const t of texts(d.root, '22'))
       expect(solid(t.fills)).toBe(rgb(tokens('light')['on-surface'] as string));
   });
 
-  it('o dia de hoje selecionado vale a seleção: sem contorno, com o círculo em primary', () => {
+  it('today when selected counts as the selection: no outline, with the circle in primary', () => {
     const d = draw('date-picker', { ...base, selectedDay: 15, today: 15 });
     expect(visibleOf(d.root, 'contorno de hoje')).toHaveLength(0);
     expect(visibleOf(d.root, 'marcado')).toHaveLength(1);
   });
 
-  it('no intervalo, o dia de hoje que é ponta do intervalo vale a seleção', () => {
+  it('in the range, today when it is an end of the range counts as the selection', () => {
     const d = draw('date-picker', {
       selection: 'range',
-      displayedMonth: 'Outubro de 2025',
+      displayedMonth: 'October 2025',
       rangeStartDay: 9,
       rangeEndDay: 16,
       today: 9,
@@ -137,7 +140,7 @@ describe('MF5: dia de hoje no date-picker (decisão 19)', () => {
     expect(visibleOf(d.root, 'contorno de hoje')).toHaveLength(0);
     const e = draw('date-picker', {
       selection: 'range',
-      displayedMonth: 'Outubro de 2025',
+      displayedMonth: 'October 2025',
       rangeStartDay: 9,
       rangeEndDay: 16,
       today: 12,
@@ -145,10 +148,10 @@ describe('MF5: dia de hoje no date-picker (decisão 19)', () => {
     expect(visibleOf(e.root, 'contorno de hoje')).toHaveLength(1);
   });
 
-  it('o dia de hoje dentro da faixa leva o contorno, mas o número segue a cor da faixa (dayContentColor, DatePicker.kt 936 a 950)', () => {
+  it('today inside the band gets the outline, but the number follows the band color (dayContentColor, DatePicker.kt 936 to 950)', () => {
     const d = draw('date-picker', {
       selection: 'range',
-      displayedMonth: 'Outubro de 2025',
+      displayedMonth: 'October 2025',
       rangeStartDay: 9,
       rangeEndDay: 16,
       today: 12,
@@ -158,43 +161,43 @@ describe('MF5: dia de hoje no date-picker (decisão 19)', () => {
       expect(solid(t.fills)).toBe(rgb(tokens('light')['on-surface'] as string));
   });
 
-  it('com month e year, o contorno acompanha a grade do mês e um today fora do mês não desenha nada', () => {
+  it('with month and year, the outline follows the month grid and a today outside the month draws nothing', () => {
     const feb = { ...base, month: 2, year: 2026, selectedDay: 14 };
     expect(
       visibleOf(draw('date-picker', { ...feb, today: 28 }).root, 'contorno de hoje'),
     ).toHaveLength(1);
-    // Fevereiro de 2026 tem 28 dias: o 30 não existe.
+    // February 2026 has 28 days: the 30th does not exist.
     const out = draw('date-picker', { ...feb, today: 30 });
     expect(visibleOf(out.root, 'contorno de hoje')).toHaveLength(0);
     expect(out.warnings).toEqual([]);
-    // Fevereiro de 2028 é bissexto: o 29 existe.
+    // February 2028 is a leap year: the 29th exists.
     const leap = { ...base, month: 2, year: 2028, selectedDay: 3 };
     expect(
       visibleOf(draw('date-picker', { ...leap, today: 29 }).root, 'contorno de hoje'),
     ).toHaveLength(1);
-    // today fora de 1 a 31 também não desenha nada.
+    // a today outside 1 to 31 also draws nothing.
     for (const today of [0, 32])
       expect(
         visibleOf(draw('date-picker', { ...feb, today }).root, 'contorno de hoje'),
       ).toHaveLength(0);
   });
 
-  it('o código diz que o today não é parâmetro (o Compose usa o relógio do aparelho)', () => {
+  it('the code says today is not a parameter (Compose uses the device clock)', () => {
     const notes = JSON.stringify(typeOf('date-picker').code);
     expect(notes).toMatch(/today/);
     expect(notes).toMatch(/relógio/);
   });
 });
 
-describe('MF5: avatar do chip (decisão 20)', () => {
+describe('MF5: chip avatar (decision 20)', () => {
   const input = {
-    label: 'ana@exemplo.com',
+    label: 'ana@example.com',
     style: 'input',
     trailingIcon: 'Close',
     avatar: 'https://example.com/ana.png',
   };
 
-  it('no input, a imagem circular de 24 abre o chip e o ícone inicial sai', () => {
+  it('in the input, the circular 24 image opens the chip and the leading icon goes away', () => {
     const d = draw('chip', { ...input, leadingIcon: 'Home' });
     const avatars = visibleOf(d.root, 'avatar');
     expect(avatars).toHaveLength(1);
@@ -209,7 +212,7 @@ describe('MF5: avatar do chip (decisão 20)', () => {
     expect(image.fills.find((p) => p.type === 'image')).toMatchObject({
       url: 'https://example.com/ana.png',
     });
-    // O avatar tem precedência sobre o leadingIcon (InputChip, Chip.kt 2204 a 2216).
+    // The avatar takes precedence over the leadingIcon (InputChip, Chip.kt 2204 to 2216).
     expect(visibleOf(d.root, 'done')).toHaveLength(0);
     const icons = d.root.children.flatMap((c) =>
       'children' in c ? findAll(c, 'home') : [],
@@ -217,7 +220,7 @@ describe('MF5: avatar do chip (decisão 20)', () => {
     expect(icons.filter((n) => n.visible)).toHaveLength(0);
   });
 
-  it('sem avatar, ou fora do input, o chip fica como era', () => {
+  it('without an avatar, or outside the input, the chip stays as it was', () => {
     expect(
       visibleOf(draw('chip', { ...input, avatar: undefined }).root, 'avatar'),
     ).toHaveLength(0);
@@ -226,23 +229,23 @@ describe('MF5: avatar do chip (decisão 20)', () => {
     ).toHaveLength(0);
   });
 
-  it('o avatar recua o rótulo e abre como o chip sem ícone inicial (inputChipPadding, Chip.kt 2946: início 4 com avatar ou sem ícone)', () => {
+  it('the avatar pushes the label back and opens like the chip without a leading icon (inputChipPadding, Chip.kt 2946: start 4 with an avatar or without an icon)', () => {
     const withAvatar = draw('chip', input);
     const without = draw('chip', { ...input, avatar: undefined });
     const label = (d: ReturnType<typeof draw>) => visibleOf(d.root, 'rótulo')[0]!;
-    // o avatar (24) e o vão (8) empurram o rótulo; o início sem ícone já é o de 12 (4 + 8)
+    // the avatar (24) and the gap (8) push the label; the start without an icon is already 12 (4 + 8)
     expect(cx(label(withAvatar)) - cx(label(without))).toBeGreaterThan(24);
     const avatar = visibleOf(withAvatar.root, 'avatar')[0]!;
     expect(avatar.transform[4]).toBe(12);
   });
 
-  it('o avatar de um chip desabilitado sai a 0,38 (InputChipTokens.DisabledAvatarOpacity)', () => {
+  it('the avatar of a disabled chip comes out at 0.38 (InputChipTokens.DisabledAvatarOpacity)', () => {
     const d = draw('chip', { ...input, enabled: 'false' });
     expect(visibleOf(d.root, 'avatar')[0]!.opacity).toBeCloseTo(0.38, 2);
   });
 });
 
-describe('MF5: contentScale do image (decisão 20)', () => {
+describe('MF5: image contentScale (decision 20)', () => {
   const fits: Record<string, string> = {
     Crop: 'cover',
     Fit: 'contain',
@@ -252,7 +255,7 @@ describe('MF5: contentScale do image (decisão 20)', () => {
     Inside: 'scale-down',
     None: 'none',
   };
-  it.each(Object.entries(fits))('contentScale %s desenha com o fit %s', (scale, fit) => {
+  it.each(Object.entries(fits))('contentScale %s draws with fit %s', (scale, fit) => {
     const d = draw('image', { url: 'https://example.com/a.png', contentScale: scale });
     const images = d.root.children.filter(
       (n) => n.visible && n.fills.some((p) => p.type === 'image'),
@@ -262,7 +265,7 @@ describe('MF5: contentScale do image (decisão 20)', () => {
   });
 });
 
-describe('MF5: divider com cor e recuo por ponta (decisão 20)', () => {
+describe('MF5: divider with color and inset per end (decision 20)', () => {
   const line = (values: Values, mode: Mode = 'light') =>
     visibleOf(draw('divider', values, mode).root, 'linha')[0]!;
   const ends = (values: Values) => {
@@ -270,7 +273,7 @@ describe('MF5: divider com cor e recuo por ponta (decisão 20)', () => {
     return [l.transform[4], 360 - (l.transform[4] + l.width)];
   };
 
-  it('a cor padrão é outline-variant e o campo color troca o papel, em light e dark', () => {
+  it('the default color is outline-variant and the color field swaps the role, in light and dark', () => {
     for (const mode of ['light', 'dark'] as const) {
       expect(solid(line({}, mode).fills)).toBe(
         rgb(tokens(mode)['outline-variant'] as string),
@@ -284,22 +287,22 @@ describe('MF5: divider com cor e recuo por ponta (decisão 20)', () => {
     }
   });
 
-  it('insetStart e insetEnd recuam cada ponta; o inset vale nas duas quando os dois estão vazios', () => {
+  it('insetStart and insetEnd inset each end; the inset applies to both when both are empty', () => {
     expect(ends({})).toEqual([0, 0]);
     expect(ends({ inset: 16 })).toEqual([16, 16]);
     expect(ends({ insetStart: 16 })).toEqual([16, 0]);
     expect(ends({ insetEnd: 24 })).toEqual([0, 24]);
     expect(ends({ insetStart: 8, insetEnd: 24 })).toEqual([8, 24]);
-    // com um dos dois preenchidos o `inset` não vale na ponta vazia
+    // with one of the two filled, the `inset` does not apply to the empty end
     expect(ends({ inset: 16, insetStart: 4 })).toEqual([4, 0]);
-    // 0 preenchido não é vazio: vale o recuo por ponta
+    // a filled 0 is not empty: the per-end inset applies
     expect(ends({ inset: 16, insetStart: 0, insetEnd: 0 })).toEqual([0, 0]);
   });
 
-  it('no vertical os recuos valem no alto (início) e embaixo (fim)', () => {
+  it('in vertical the insets apply at the top (start) and at the bottom (end)', () => {
     const l = line({ orientation: 'vertical', insetStart: 10, insetEnd: 20 });
     expect(l.transform[5]).toBe(10);
-    // a ponta final tem a altura de insetEnd
+    // the end cap has the height of insetEnd
     const root = draw('divider', {
       orientation: 'vertical',
       insetStart: 10,
@@ -309,11 +312,11 @@ describe('MF5: divider com cor e recuo por ponta (decisão 20)', () => {
   });
 });
 
-describe('MF5: progress-indicator com trilho e ponta (decisão 20)', () => {
+describe('MF5: progress-indicator with track and cap (decision 20)', () => {
   const lin = (values: Values, mode: Mode = 'light') =>
     draw('progress-indicator', { shape: 'linear', progress: 0.3, ...values }, mode);
 
-  it('o trilho padrão é secondary-container e o trackColor troca o papel', () => {
+  it('the default track is secondary-container and the trackColor swaps the role', () => {
     for (const mode of ['light', 'dark'] as const) {
       const std = visibleOf(lin({}, mode).root, 'faixa')[0]!;
       expect(solid(std.fills)).toBe(rgb(tokens(mode)['secondary-container'] as string));
@@ -325,7 +328,7 @@ describe('MF5: progress-indicator com trilho e ponta (decisão 20)', () => {
     }
   });
 
-  it('o trackColor também pinta o trilho circular, determinado e indeterminado', () => {
+  it('the trackColor also paints the circular track, determinate and indeterminate', () => {
     const det = draw('progress-indicator', {
       shape: 'circular',
       progress: 0.6,
@@ -340,7 +343,7 @@ describe('MF5: progress-indicator com trilho e ponta (decisão 20)', () => {
       trackColor: 'tertiaryContainer',
     });
     expect(visibleOf(ind.root, 'trilho completo')).toHaveLength(1);
-    // sem trackColor, o indeterminado não leva trilho (circularIndeterminateTrackColor é transparente)
+    // without trackColor, the indeterminate one has no track (circularIndeterminateTrackColor is transparent)
     expect(
       visibleOf(
         draw('progress-indicator', { shape: 'circular' }).root,
@@ -349,7 +352,7 @@ describe('MF5: progress-indicator com trilho e ponta (decisão 20)', () => {
     ).toHaveLength(0);
   });
 
-  it('strokeCap: Round (padrão) arredonda, Butt e Square cortam reto, no linear e no circular', () => {
+  it('strokeCap: Round (default) rounds, Butt and Square cut straight, in the linear and in the circular', () => {
     const radius = (n: SceneNode) => (n.type === 'rect' ? n.cornerRadius : -1);
     const full = tokens('light')['corner-full'];
     expect(radius(visibleOf(lin({}).root, 'barra')[0]!)).toBe(full);
@@ -366,7 +369,7 @@ describe('MF5: progress-indicator com trilho e ponta (decisão 20)', () => {
     expect(cap({ strokeCap: 'Square' })).toBe('square');
   });
 
-  it('o vão entre o indicador e o trilho linear é sempre 4 (o Compose soma a espessura só fora do Butt)', () => {
+  it('the gap between the indicator and the linear track is always 4 (Compose adds the thickness only outside Butt)', () => {
     const absX = (root: SceneNode, target: SceneNode, acc = 0): number | undefined => {
       const here = acc + root.transform[4];
       if (root === target) return here;
@@ -387,16 +390,16 @@ describe('MF5: progress-indicator com trilho e ponta (decisão 20)', () => {
   });
 });
 
-describe('MF5: o code leva o parâmetro quando o campo está preenchido (decisão 20)', () => {
+describe('MF5: the code carries the parameter when the field is filled (decision 20)', () => {
   const params = (id: string) =>
     (typeOf(id).code as { compose?: { params?: Record<string, string> } }).compose
       ?.params ?? {};
-  it('divider.color, progress.trackColor e strokeCap viram parâmetros', () => {
+  it('divider.color, progress.trackColor and strokeCap become parameters', () => {
     expect(params('divider')['color']).toBe('color');
     expect(params('progress-indicator')['trackColor']).toBe('trackColor');
     expect(params('progress-indicator')['strokeCap']).toBe('strokeCap');
   });
-  it('o strokeCap e o color têm tradução dos valores para o Compose', () => {
+  it('strokeCap and color have a translation of the values to Compose', () => {
     const values = (id: string) =>
       (
         typeOf(id).code as {
@@ -415,13 +418,13 @@ describe('MF5: o code leva o parâmetro quando o campo está preenchido (decisã
       'MaterialTheme.colorScheme.errorContainer',
     );
   });
-  it('o avatar e o recuo por ponta aparecem nas notas do code', () => {
+  it('the avatar and the per-end inset appear in the code notes', () => {
     expect(JSON.stringify(typeOf('chip').code)).toMatch(/avatar = \{/);
     expect(JSON.stringify(typeOf('divider').code)).toMatch(/insetStart/);
   });
 });
 
-describe('MF5: exemplos novos (decisão 22)', () => {
+describe('MF5: new examples (decision 22)', () => {
   const NEW: [string, string][] = [
     ['date-picker', 'Dia de hoje'],
     ['chip', 'Com avatar'],
@@ -431,7 +434,7 @@ describe('MF5: exemplos novos (decisão 22)', () => {
     ['surface', 'Primário'],
   ];
   it.each(NEW)(
-    '%s: o exemplo "%s" existe e desenha sem aviso em light e dark',
+    '%s: the "%s" example exists and draws without warnings in light and dark',
     (id, name) => {
       const entry = entryOf(id);
       const example = entry.examples.find((e) => e.name === name);
@@ -442,7 +445,7 @@ describe('MF5: exemplos novos (decisão 22)', () => {
         );
     },
   );
-  it('os exemplos usam os campos novos', () => {
+  it('the examples use the new fields', () => {
     const values = (id: string, name: string) =>
       entryOf(id).examples.find((e) => e.name === name)?.values ?? {};
     expect(values('date-picker', 'Dia de hoje')).toHaveProperty('today');
@@ -458,13 +461,13 @@ describe('MF5: exemplos novos (decisão 22)', () => {
   });
 });
 
-describe('MF5: teste final da etapa (os campos novos não mexem no que a MF4 deixou)', () => {
+describe('MF5: final test of the stage (the new fields do not touch what MF4 left)', () => {
   const t = (mode: Mode) => tokens(mode);
   const opaque = (c: string | undefined) => c !== undefined && /^#[0-9a-f]{6}$/i.test(c);
 
-  it('os tipos tocados desenham, sem os campos novos, o mesmo que desenhavam (nenhum campo novo muda o padrão)', () => {
-    // Sem `today`, `avatar`, `color`, `insetStart`, `insetEnd`, `trackColor` e `strokeCap`, o desenho padrão
-    // tem a cor, o recuo, o trilho e a ponta de antes.
+  it('the touched types draw, without the new fields, the same as before (no new field changes the default)', () => {
+    // Without `today`, `avatar`, `color`, `insetStart`, `insetEnd`, `trackColor` and `strokeCap`, the default drawing
+    // has the color, the inset, the track and the cap from before.
     const divider = draw('divider', { inset: 12 }).root;
     expect(visibleOf(divider, 'linha')[0]!.transform[4]).toBe(12);
     expect(solid(visibleOf(divider, 'linha')[0]!.fills)).toBe(
@@ -480,28 +483,28 @@ describe('MF5: teste final da etapa (os campos novos não mexem no que a MF4 dei
   });
 
   it.each(['light', 'dark'] as const)(
-    'a cor herdada, as duas sombras, o vão e o desabilitado opaco seguem como a MF4 deixou (%s)',
+    'the inherited color, the two shadows, the gap and the opaque disabled state stay as MF4 left them (%s)',
     (mode) => {
-      // cor herdada: o texto sem `color` lê o que o pai ofereceu (on-primary sobre primary)
+      // inherited color: the text without `color` reads what the parent offered (on-primary over primary)
       const inherited = instantiateProvided(mode);
       expect(solid(inherited)).toBe(rgb(t(mode)['on-primary'] as string));
-      // duas sombras no card elevated
+      // two shadows on the elevated card
       expect(draw('card', { style: 'elevated' }, mode).root.effects).toHaveLength(2);
-      // o vão do contorno do text-field outlined com valor
+      // the outline gap of the outlined text-field with a value
       const outline = findAll(
         draw('text-field', { style: 'outlined', label: 'E-mail', value: 'a@b.c' }, mode)
           .root,
         'contorno',
       ).filter((n) => n.visible)[0]!;
       expect(outline.stroke?.gaps).toHaveLength(1);
-      // o switch desabilitado não empilha transparência
+      // the disabled switch does not stack transparency
       const sw = draw('switch', { checked: 'true', enabled: 'false' }, mode).root;
       const track = findAll(sw, 'trilho').filter((n) => n.visible)[0];
       expect(track === undefined || opaque(solid(track.fills))).toBe(true);
     },
   );
 
-  it('às 10:37 o número sob a alça segue na alça, em on-primary', () => {
+  it('at 10:37 the number under the handle stays on the handle, in on-primary', () => {
     const root = draw('time-picker', {
       mode: 'picker',
       hour: 10,
@@ -517,14 +520,14 @@ describe('MF5: teste final da etapa (os campos novos não mexem no que a MF4 dei
   });
 });
 
-/** A cor do `text` sem `color` quando o pai ofereceu o `content-color` (`on-primary` sobre `primary`). */
+/** The color of the `text` without `color` when the parent offered the `content-color` (`on-primary` over `primary`). */
 function instantiateProvided(mode: Mode) {
   const entry = entryOf('text');
   const library = catalog.library!;
   const box = { x: 0, y: 0, ...entry.component!.size };
   const drawing = instantiate(
     entry.component!,
-    { ...defaultValues(entry.type), text: 'Olá' } as never,
+    { ...defaultValues(entry.type), text: 'Hello' } as never,
     box,
     {
       measure: approximateMeasurer,
@@ -535,5 +538,5 @@ function instantiateProvided(mode: Mode) {
       } as never,
     },
   );
-  return texts(drawing.root, 'Olá')[0]?.fills;
+  return texts(drawing.root, 'Hello')[0]?.fills;
 }

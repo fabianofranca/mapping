@@ -24,17 +24,17 @@ function groups(
 const byKey = (gs: readonly PinGroup[], key: string) => gs.find((g) => g.hostKey === key);
 
 describe('pinGroups', () => {
-  it('a conversa do campo fica no pino da marcação, junto com a da própria marcação', () => {
+  it('the thread of the field stays on the marking pin, together with the one of the marking itself', () => {
     const gs = groups([
       on('c1', { kind: 'marking', id: 'a2' }, { messages: waitsAgent }),
       on(
         'c2',
-        { kind: 'field', annotationId: 't1', key: 'variante' },
+        { kind: 'field', annotationId: 't1', key: 'variant' },
         { messages: waitsAgent },
       ),
       on(
         'c3',
-        { kind: 'row', annotationId: 't1', key: 'tabela', rowId: 'w1' },
+        { kind: 'row', annotationId: 't1', key: 'table', rowId: 'w1' },
         { messages: waitsAgent },
       ),
     ]);
@@ -48,7 +48,7 @@ describe('pinGroups', () => {
     });
   });
 
-  it('um grupo por hospedeiro: marcação, container, seta e cada ponto solto', () => {
+  it('one group per host: marking, container, arrow and each loose point', () => {
     const gs = groups([
       on('m', { kind: 'marking', id: 'a1' }),
       on('i', { kind: 'container', id: 'A' }),
@@ -67,7 +67,7 @@ describe('pinGroups', () => {
     ]);
   });
 
-  it('camada e órfã não têm pino', () => {
+  it('layer and orphan have no pin', () => {
     expect(
       groups([
         on('l', { kind: 'layer', id: 'L1' }),
@@ -77,7 +77,7 @@ describe('pinGroups', () => {
     ).toEqual([]);
   });
 
-  it('com uma conversa, o rótulo traz as iniciais de quem abriu e o número de mensagens', () => {
+  it('with one thread, the label shows the initials of who opened it and the number of messages', () => {
     const [g] = groups([
       on(
         'c1',
@@ -90,7 +90,7 @@ describe('pinGroups', () => {
     expect(h).toMatchObject({ label: 'MA 3', initials: 'MA', messages: 3 });
   });
 
-  it('com várias, o rótulo é a contagem', () => {
+  it('with several, the label is the count', () => {
     const [g] = groups([
       on('a', { kind: 'marking', id: 'a1' }),
       on('b', { kind: 'annotation', id: 'n1' }),
@@ -98,7 +98,7 @@ describe('pinGroups', () => {
     expect(g).toMatchObject({ count: 2, label: '2', initials: null, messages: null });
   });
 
-  it('a cor é a da conversa mais urgente: humano, depois agente, depois resolvida', () => {
+  it('the color is that of the most urgent thread: human, then agent, then resolved', () => {
     const anchor = { kind: 'marking', id: 'a1' } as const;
     const agent = on('ag', anchor, { messages: waitsAgent });
     const human = on('hu', anchor, { messages: waitsHuman });
@@ -109,13 +109,13 @@ describe('pinGroups', () => {
     expect(groups([done], 'rs')[0]?.color).toBe('resolved');
   });
 
-  it('a resolvida só tem pino quando é a selecionada', () => {
+  it('the resolved one only has a pin when it is the selected one', () => {
     const done = on('rs', { kind: 'marking', id: 'a1' }, { resolved: RESOLVED });
     expect(groups([done])).toEqual([]);
     expect(groups([done], 'rs')).toHaveLength(1);
   });
 
-  it('a resolvida selecionada entra no grupo da aberta, sem mudar a cor', () => {
+  it('the selected resolved one joins the group of the open one, without changing the color', () => {
     const anchor = { kind: 'marking', id: 'a1' } as const;
     const open = on('op', anchor, { messages: waitsHuman });
     const done = on('rs', anchor, { resolved: RESOLVED });
@@ -127,7 +127,7 @@ describe('pinGroups', () => {
     });
   });
 
-  it('hasUnread vem do predicado', () => {
+  it('hasUnread comes from the predicate', () => {
     const a = on('a', { kind: 'marking', id: 'a1' });
     const b = on('b', { kind: 'container', id: 'A' });
     const gs = groups([a, b], null, (t) => t.id === 'b');
@@ -135,7 +135,7 @@ describe('pinGroups', () => {
     expect(byKey(gs, 'container:A')?.hasUnread).toBe(true);
   });
 
-  it('não altera as entradas', () => {
+  it('does not change the inputs', () => {
     const t = on('a', { kind: 'marking', id: 'a1' });
     const input = [t];
     groups(input);

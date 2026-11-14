@@ -36,21 +36,21 @@ import {
   type Rand,
 } from './proposalFuzzSupport';
 
-// Fuzz da revisão da proposta pelo agente (etapa #644, CP1). Cada caso: uma base aleatória
-// (container e marcações em grade pequena, com anotações livres), uma proposta aleatória
-// (criar, renomear, redimensionar, mover, remover, anotar, reordenar), decisões aleatórias,
-// e uma revisão aleatória (`drop` de 0 a 2 ids e um lote de 0 a 3 operações sobre o proposto
-// inteiro). Confere: mudança aceita no caminho recusa (`change-frozen`) e a proposta não muda;
-// sem aceita, aplicar a revisada ao projeto atual dá o mesmo do lote (valores das entidades,
-// pais e ordem entre irmãs; fora o limite conhecido #625, pelo mesmo predicado do fuzz da
-// fidelidade); as intocadas ficam byte a byte iguais (a criação cuja âncora precisa mudar é
-// trocada, ou recusa se aceita); a revisada lê de volta. Semente fixa.
+// Fuzz of the proposal revision by the agent (stage #644, CP1). Each case: a random base
+// (container and markings on a small grid, with free annotations), a random proposal
+// (create, rename, resize, move, remove, annotate, reorder), random decisions,
+// and a random revision (`drop` of 0 to 2 ids and a batch of 0 to 3 operations over the whole
+// proposed project). Checks: an accepted change in the way refuses (`change-frozen`) and the proposal does not change;
+// without an accepted one, applying the revised one to the current project gives the same as the batch (entity values,
+// parents and order among siblings; except the known limit #625, by the same predicate as the
+// fidelity fuzz); the untouched ones stay byte for byte equal (a creation whose anchor needs to change is
+// replaced, or refused if accepted); the revised one reads back. Fixed seed.
 
 const CASES = 1000;
 const SEED = 644;
 const AT = '2026-11-07T10:00:00.000Z';
 
-/** Uma operação aleatória do modelo; `tag` mantém os ids novos distintos entre as fases. */
+/** A random model operation; `tag` keeps the new ids distinct between the phases. */
 function randomOp(p: Project, r: Rand, tag: string, nextId: () => string): Project {
   const kind = int(r, 8);
   if (kind === 0 || p.markings.length === 0) return create(p, r, `${tag}${nextId()}`);
@@ -58,7 +58,7 @@ function randomOp(p: Project, r: Rand, tag: string, nextId: () => string): Proje
   const inContainer = m.containerId !== null;
   switch (kind) {
     case 1:
-      return renameMarking(p, m.id, `nome-${int(r, 4)}`);
+      return renameMarking(p, m.id, `name-${int(r, 4)}`);
     case 2:
       return tryOp(p, () => setMarkingRect(p, m.id, gridRect(r, inContainer)));
     case 3:
@@ -79,7 +79,7 @@ function randomOp(p: Project, r: Rand, tag: string, nextId: () => string): Proje
     case 6: {
       if (p.annotations.length === 0) return p;
       const a = pick(r, p.annotations);
-      return tryOp(p, () => renameAnnotation(p, a.id, `anot-${int(r, 4)}`));
+      return tryOp(p, () => renameAnnotation(p, a.id, `annot-${int(r, 4)}`));
     }
     default: {
       const { count } = siblingPosition(p, m.id);
@@ -113,7 +113,7 @@ function baseProject(r: Rand): Project {
   return p;
 }
 
-/** Decisões aleatórias sobre algumas mudanças (aceitar, rejeitar ou limpar, com as dependências). */
+/** Random decisions on some changes (accept, reject or clear, with the dependencies). */
 function withDecisions(p: Proposal, base: Project, r: Rand): Proposal {
   let out = p;
   const rounds = int(r, 4);
@@ -139,7 +139,7 @@ function withDecisions(p: Proposal, base: Project, r: Rand): Proposal {
 
 const json = (value: unknown) => JSON.stringify(value);
 
-/** JSON com as chaves em ordem (compara valores, não a ordem em que as chaves foram escritas). */
+/** JSON with the keys in order (compares values, not the order in which the keys were written). */
 function canonical(value: unknown): string {
   return JSON.stringify(value, (_key, v: unknown) =>
     v !== null && typeof v === 'object' && !Array.isArray(v)
@@ -151,7 +151,7 @@ function canonical(value: unknown): string {
 const sorted = <T extends { readonly id: string }>(list: readonly T[]) =>
   [...list].sort((a, b) => a.id.localeCompare(b.id));
 
-/** O projeto sem a ordem global dos arrays e sem `updatedAt`. */
+/** The project without the global order of the arrays and without `updatedAt`. */
 function normalized(p: Project): string {
   return canonical({
     ...p,
@@ -169,8 +169,8 @@ interface Tally {
 }
 
 /**
- * Recusa por classificação: sem decisões a mesma revisão passa, e os ids recusados são
- * exatamente as aceitas que ela trocaria ou retiraria (inclusive pela âncora de uma criação).
+ * Refusal by classification: without decisions the same revision passes, and the refused ids are
+ * exactly the accepted ones it would replace or drop (including through the anchor of a creation).
  */
 function frozenCheck(
   base: Project,
@@ -186,7 +186,7 @@ function frozenCheck(
   );
   if (!clear.ok) {
     return {
-      problem: `frozen mas sem decisões recusa (${clear.error.code})`,
+      problem: `frozen but without decisions refuses (${clear.error.code})`,
       byAnchor: false,
     };
   }
@@ -204,8 +204,8 @@ function frozenCheck(
   return { ...(same ? {} : { problem: 'frozen ids' }), byAnchor: anchor };
 }
 
-describe('revisão da proposta: fuzz (#644)', () => {
-  it(`${CASES} casos: congelada recusa, fidelidade ao lote e intocadas idênticas`, () => {
+describe('proposal revision: fuzz (#644)', () => {
+  it(`${CASES} cases: frozen refuses, fidelity to the batch and untouched ones identical`, () => {
     const r = rng(SEED);
     const tally: Tally = {};
     const count = (key: string) => (tally[key] = (tally[key] ?? 0) + 1);
@@ -216,7 +216,7 @@ describe('revisão da proposta: fuzz (#644)', () => {
       const base = baseProject(r);
       const proposed0 = applyOps(base, r, 'P', 1 + int(r, 4));
       if (json(proposed0) === json(base)) {
-        count('sem-proposta');
+        count('no-proposal');
         continue;
       }
       const built = buildProposal(base, proposed0, {
@@ -225,7 +225,7 @@ describe('revisão da proposta: fuzz (#644)', () => {
         createdAt: AT,
       });
       if (built.changes.length === 0) {
-        count('sem-proposta');
+        count('no-proposal');
         continue;
       }
       const p = withDecisions(built, base, r);
@@ -241,58 +241,59 @@ describe('revisão da proposta: fuzz (#644)', () => {
         if (json(after) === json(prep.proposed)) after = undefined;
       } else if (prep.error.code === 'change-frozen') {
         const closure = [...drop, ...dependentChanges(p, drop)];
-        if (!closure.some(accepted)) failures.push(`${n}: frozen no drop sem aceita`);
+        if (!closure.some(accepted))
+          failures.push(`${n}: frozen on drop without an accepted one`);
       }
 
       const res = reviseProposal(base, p, { drop, ...(after ? { after } : {}), at: AT });
       if (serializeProposal(p) !== before)
-        failures.push(`${n}: a proposta de entrada mudou`);
+        failures.push(`${n}: the input proposal changed`);
 
       if (!res.ok) {
         count(res.error.code);
         if (res.error.code === 'change-frozen') {
           if (!res.error.changeIds.every(accepted))
-            failures.push(`${n}: frozen sem aceita`);
+            failures.push(`${n}: frozen without an accepted one`);
           if (prep.ok) {
             const check = frozenCheck(base, p, drop, after, res.error.changeIds);
             if (check.problem) failures.push(`${n}: ${check.problem}`);
-            if (check.byAnchor) count('frozen-por-ancora');
+            if (check.byAnchor) count('frozen-by-anchor');
           }
         }
         continue;
       }
-      count('revisada');
+      count('revised');
       const { proposal: q, summary } = res;
       if (!after && summary.added.length > 0)
-        failures.push(`${n}: só drop e mudança nova`);
-      if (summary.changed.length > 0) count('com-trocada');
+        failures.push(`${n}: only drop and a new change`);
+      if (summary.changed.length > 0) count('with-replaced');
       for (const id of summary.changed) {
         const was = p.changes.find((c) => c.id === id);
         const now = q.changes.find((c) => c.id === id);
-        if (was && now && json(was.to) === json(now.to)) count('trocada-so-pela-ancora');
+        if (was && now && json(was.to) === json(now.to)) count('replaced-only-by-anchor');
       }
-      if (summary.added.length > 0) count('com-nova');
-      if (summary.dropped.length > 0) count('com-retirada');
+      if (summary.added.length > 0) count('with-new');
+      if (summary.dropped.length > 0) count('with-dropped');
       const touched = new Set([...summary.changed, ...summary.dropped]);
 
-      // Aceitas e intocadas: byte a byte iguais, com a mesma decisão.
+      // Accepted and untouched: byte for byte equal, with the same decision.
       for (const old of p.changes) {
         if (accepted(old.id) && touched.has(old.id))
-          failures.push(`${n}: aceita ${old.id} mexida`);
+          failures.push(`${n}: accepted ${old.id} touched`);
         if (touched.has(old.id)) continue;
         const now = q.changes.find((c) => c.id === old.id);
         if (json(q.decisions[old.id]) !== json(p.decisions[old.id])) {
-          failures.push(`${n}: ${old.id} intocada mudou de decisão`);
+          failures.push(`${n}: ${old.id} untouched changed decision`);
         } else if (json(now) !== json(old)) {
-          failures.push(`${n}: ${old.id} intocada mudou`);
+          failures.push(`${n}: ${old.id} untouched changed`);
         }
       }
       for (const id of summary.changed) {
         if (q.decisions[id] !== undefined)
-          failures.push(`${n}: trocada ${id} com decisão`);
+          failures.push(`${n}: replaced ${id} with a decision`);
       }
 
-      // Fidelidade: aplicar as mudanças da revisada dá o mesmo do lote.
+      // Fidelity: applying the changes of the revised one gives the same as the batch.
       const target = after ?? (prep.ok ? prep.proposed : base);
       const applied = patchProject(base, q.changes);
       const equal =
@@ -303,26 +304,27 @@ describe('revisão da proposta: fuzz (#644)', () => {
         if (applied.problems.length === 0 && unexpressible({ base, after: target })) {
           exception.push(n);
         } else {
-          failures.push(`${n}: fidelidade (${applied.problems.length} problemas)`);
+          failures.push(`${n}: fidelity (${applied.problems.length} problems)`);
         }
       }
 
       const parsed = parseProposal(JSON.parse(serializeProposal(q)));
-      if (!parsed.ok) failures.push(`${n}: não lê de volta: ${parsed.errors[0] ?? ''}`);
+      if (!parsed.ok)
+        failures.push(`${n}: does not read back: ${parsed.errors[0] ?? ''}`);
     }
 
     expect(failures.slice(0, 15)).toEqual([]);
-    // Semente 644 (1.000 casos): 734 revisadas (52 com trocada, 548 com nova, 557 com retirada),
-    // 96 no-changes, 114 change-frozen e 56 sem proposta; nenhuma exceção do #625. A âncora que
-    // precisa mudar aparece em 3 casos: 1 trocada só pela âncora e 2 recusas change-frozen. A maioria
-    // chega a uma revisão de verdade e cada tipo de mudança aparece.
-    expect((tally['revisada'] ?? 0) / CASES).toBeGreaterThan(0.5);
+    // Seed 644 (1,000 cases): 734 revised (52 with replaced, 548 with new, 557 with dropped),
+    // 96 no-changes, 114 change-frozen and 56 without a proposal; no exception of #625. The anchor that
+    // needs to change appears in 3 cases: 1 replaced only by the anchor and 2 change-frozen refusals. Most
+    // reach a real revision and every type of change appears.
+    expect((tally['revised'] ?? 0) / CASES).toBeGreaterThan(0.5);
     expect(tally['change-frozen']).toBeGreaterThan(0);
-    expect(tally['com-trocada']).toBeGreaterThan(0);
-    expect(tally['com-nova']).toBeGreaterThan(0);
-    expect(tally['com-retirada']).toBeGreaterThan(0);
-    expect(tally['trocada-so-pela-ancora']).toBeGreaterThan(0);
-    expect(tally['frozen-por-ancora']).toBeGreaterThan(0);
+    expect(tally['with-replaced']).toBeGreaterThan(0);
+    expect(tally['with-new']).toBeGreaterThan(0);
+    expect(tally['with-dropped']).toBeGreaterThan(0);
+    expect(tally['replaced-only-by-anchor']).toBeGreaterThan(0);
+    expect(tally['frozen-by-anchor']).toBeGreaterThan(0);
     expect(exception).toEqual([]);
   });
 });

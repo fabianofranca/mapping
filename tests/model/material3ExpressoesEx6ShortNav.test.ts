@@ -1,10 +1,10 @@
-// EX6 da etapa "expressões que calculam no formato 4" (#897): a margem do `Centered` da
-// short-navigation-bar sai da largura da instância e do número de itens (`$size` e `$rows`), como
-// `calculateCenteredContentHorizontalPadding` do Compose (20%, 15%, 10% e 5% da largura com 3, 4, 5
-// e 6 itens), e não mais dos 10% fixos de antes; e o item cresce até `largura / itens` quando o
-// conteúdo dele é mais largo que a fatia, com a margem encolhendo pela metade do que cresceu
-// (`CenteredContentMeasurePolicy`). O resto do desenho fica como as cenas de antes da etapa
-// (tests/fixtures/material3-ex6-v1.json) a ≤ 0,5 px por nó.
+// EX6 of the "expressions that compute in format 4" stage (#897): the margin of the `Centered` arrangement of the
+// short-navigation-bar comes from the width of the instance and the number of items (`$size` and `$rows`), like
+// Compose's `calculateCenteredContentHorizontalPadding` (20%, 15%, 10% and 5% of the width with 3, 4, 5
+// and 6 items), and no longer from the fixed 10% of before; and the item grows up to `width / items` when its
+// content is wider than the slice, with the margin shrinking by half of what grew
+// (`CenteredContentMeasurePolicy`). The rest of the drawing stays like the scenes from before the stage
+// (tests/fixtures/material3-ex6-v1.json) within ≤ 0.5 px per node.
 import { describe, expect, it } from 'vitest';
 import { findEntry } from '../../src/model/catalog';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
@@ -20,6 +20,7 @@ import {
   type Values,
 } from '../support/material3Ex6Fixture';
 
+// pt-BR kept: node names of libraries/material3-compose and of tests/fixtures/material3-ex6-v1.json are Portuguese data
 const entry = findEntry(catalog, 'short-navigation-bar')!;
 const ICONS = [
   'Home',
@@ -32,7 +33,7 @@ const ICONS = [
   'Delete',
 ];
 
-/** Rótulos curtos (cabem em qualquer fatia do ícone acima): nenhum item cresce. */
+/** Short labels (fit in any slice with the icon above): no item grows. */
 function items(n: number, label = (i: number) => `T${i + 1}`) {
   return Array.from({ length: n }, (_, i) => ({
     label: label(i),
@@ -41,7 +42,7 @@ function items(n: number, label = (i: number) => `T${i + 1}`) {
   }));
 }
 
-/** Desenha a barra com os itens dados, na largura `width` (a da instância). */
+/** Draws the bar with the given items, at width `width` (the instance's). */
 function drawBar(
   list: ReturnType<typeof items>,
   width: number,
@@ -62,11 +63,11 @@ const rectOf = (d: Drawing, n: SceneNode) => {
   return [b.x, b.y, b.width, b.height] as [number, number, number, number];
 };
 
-/** A margem de cada lado que o Compose usa, em fração da largura (`ShortNavigationBar.kt` 436 a 511). */
+/** The margin of each side that Compose uses, as a fraction of the width (`ShortNavigationBar.kt` 436 to 511). */
 const composePadding = (n: number) => (n > 6 ? 0 : (100 - 10 * (n + 3)) / 2 / 100);
 
-describe('EX6 short-navigation-bar — a margem do Centered pelo número de itens', () => {
-  it('a margem é 20%, 15%, 10% e 5% da largura com 3, 4, 5 e 6 itens', () => {
+describe('EX6 short-navigation-bar — the Centered margin by the number of items', () => {
+  it('the margin is 20%, 15%, 10% and 5% of the width with 3, 4, 5 and 6 items', () => {
     const expected: [number, number][] = [
       [3, 0.2],
       [4, 0.15],
@@ -76,13 +77,13 @@ describe('EX6 short-navigation-bar — a margem do Centered pelo número de iten
     for (const [n, fraction] of expected) {
       const d = drawBar(items(n), 412, { arrangement: 'Centered' });
       const margins = named(d, 'margem');
-      expect(margins, `${n} itens`).toHaveLength(2);
+      expect(margins, `${n} items`).toHaveLength(2);
       for (const m of margins) expect(rectOf(d, m)[2]).toBeCloseTo(412 * fraction, 6);
       expect(composePadding(n)).toBeCloseTo(fraction, 10);
     }
   });
 
-  it('as margens são simétricas e os destinos ocupam o meio, em fatias iguais', () => {
+  it('the margins are symmetric and the destinations fill the middle, in equal slices', () => {
     for (const n of [3, 4, 5, 6]) {
       const d = drawBar(items(n), 412, { arrangement: 'Centered' });
       const [left, right] = named(d, 'margem');
@@ -90,7 +91,7 @@ describe('EX6 short-navigation-bar — a margem do Centered pelo número de iten
       expect(rectOf(d, left!)[0]).toBeCloseTo(0, 6);
       expect(rectOf(d, right!)[0]).toBeCloseTo(412 - pad, 6);
       const slots = named(d, 'destino');
-      expect(slots, `${n} itens`).toHaveLength(n);
+      expect(slots, `${n} items`).toHaveLength(n);
       const slice = (412 - 2 * pad) / n;
       slots.forEach((s, i) => {
         const [x, , w, h] = rectOf(d, s);
@@ -101,7 +102,7 @@ describe('EX6 short-navigation-bar — a margem do Centered pelo número de iten
     }
   });
 
-  it('a margem segue a largura da instância (o $size), não os 412 do tamanho inicial', () => {
+  it('the margin follows the width of the instance ($size), not the 412 of the initial size', () => {
     for (const width of [320, 600, 840]) {
       const d = drawBar(items(4), width, { arrangement: 'Centered' });
       for (const m of named(d, 'margem'))
@@ -113,7 +114,7 @@ describe('EX6 short-navigation-bar — a margem do Centered pelo número de iten
     }
   });
 
-  it('com 7 itens ou mais a margem é 0, como no Compose (itemsCount > 6), e nunca fica negativa', () => {
+  it('with 7 items or more the margin is 0, as in Compose (itemsCount > 6), and never goes negative', () => {
     for (const n of [7, 8]) {
       const d = drawBar(items(n), 412, { arrangement: 'Centered' });
       for (const m of named(d, 'margem')) expect(rectOf(d, m)[2]).toBeCloseTo(0, 6);
@@ -121,13 +122,13 @@ describe('EX6 short-navigation-bar — a margem do Centered pelo número de iten
     }
   });
 
-  it('sem itens a barra fica vazia, sem aviso', () => {
+  it('with no items the bar stays empty, without warnings', () => {
     const d = drawBar([], 412, { arrangement: 'Centered' });
     expect(d.warnings).toEqual([]);
     expect(named(d, 'destino')).toEqual([]);
   });
 
-  it('no EqualWeight não há margem e os destinos dividem a largura toda', () => {
+  it('in EqualWeight there is no margin and the destinations split the whole width', () => {
     for (const n of [3, 4, 5, 6]) {
       const d = drawBar(items(n), 412, { arrangement: 'EqualWeight' });
       expect(named(d, 'margem')).toEqual([]);
@@ -142,11 +143,11 @@ describe('EX6 short-navigation-bar — a margem do Centered pelo número de iten
   });
 });
 
-describe('EX6 short-navigation-bar — o item cresce até largura / itens (CenteredContentMeasurePolicy)', () => {
-  const NAMES = ['Início', 'Buscar', 'Perfil'];
+describe('EX6 short-navigation-bar — the item grows up to width / items (CenteredContentMeasurePolicy)', () => {
+  const NAMES = ['Home', 'Search', 'Profile'];
   const named3 = items(3, (i) => NAMES[i]!);
 
-  it('ícone ao lado, 3 itens: a pílula (60 + rótulo) é mais larga que a fatia de 82,4 e o item cresce até ela, sem aviso', () => {
+  it('icon beside, 3 items: the pill (60 + label) is wider than the 82.4 slice and the item grows up to it, without warnings', () => {
     const d = drawBar(named3, 412, { arrangement: 'Centered', iconPosition: 'Start' });
     expect(d.warnings).toEqual([]);
     const slice = (412 * 0.6) / 3;
@@ -157,53 +158,53 @@ describe('EX6 short-navigation-bar — o item cresce até largura / itens (Cente
     expect(pills).toHaveLength(3);
     pills.forEach((pill, i) => {
       const width = rectOf(d, pill)[2];
-      expect(width, `pílula ${i}`).toBeGreaterThan(slice);
+      expect(width, `pill ${i}`).toBeGreaterThan(slice);
       expect(slots[i]![2], `item ${i}`).toBeCloseTo(width, 6);
     });
-    // a margem encolhe pela metade do que os itens cresceram, dos dois lados
+    // the margin shrinks by half of what the items grew, on both sides
     const grown = slots.reduce((sum, s) => sum + (s[2] - slice), 0);
     const [left, right] = named(d, 'margem').map((m) => rectOf(d, m)[2]);
     expect(left).toBeCloseTo(412 * 0.2 - grown / 2, 6);
     expect(right).toBeCloseTo(left!, 6);
-    // o grupo continua centrado
+    // the group stays centered
     const last = slots[2]!;
     expect(slots[0]![0]).toBeCloseTo(412 - (last[0] + last[2]), 6);
   });
 
-  it('o crescimento para em largura / itens (82,4 → no máximo 137,3 com 3 itens)', () => {
-    const long = items(3, () => 'Configurações avançadas do aplicativo');
+  it('the growth stops at width / items (82.4 → at most 137.3 with 3 items)', () => {
+    const long = items(3, () => 'Advanced application settings');
     const d = drawBar(long, 412, { arrangement: 'Centered', iconPosition: 'Start' });
     for (const s of named(d, 'destino')) expect(rectOf(d, s)[2]).toBeCloseTo(412 / 3, 6);
     for (const m of named(d, 'margem')) expect(rectOf(d, m)[2]).toBeCloseTo(0, 6);
   });
 
-  it('no EqualWeight o item nunca passa da fatia, qualquer que seja o rótulo', () => {
-    const long = items(3, () => 'Configurações avançadas do aplicativo');
+  it('in EqualWeight the item never goes past the slice, whatever the label', () => {
+    const long = items(3, () => 'Advanced application settings');
     const d = drawBar(long, 412, { arrangement: 'EqualWeight', iconPosition: 'Start' });
     for (const s of named(d, 'destino')) expect(rectOf(d, s)[2]).toBeCloseTo(412 / 3, 6);
   });
 });
 
 // ---------------------------------------------------------------------------------------------
-// Regressão: as cenas de antes, a ≤ 0,5 px por nó
+// Regression: the scenes from before, within ≤ 0.5 px per node
 // ---------------------------------------------------------------------------------------------
 
-/** `Centered` com n ≠ 5: a margem mudou de propósito (10% → o do Compose). */
+/** `Centered` with n ≠ 5: the margin changed on purpose (10% → Compose's). */
 const centeredChanged = (values: Values): boolean =>
   values['arrangement'] === 'Centered' && (values['items'] as unknown[]).length !== 5;
 
 /**
- * `Centered` de 5 itens com o ícone ao lado: a pílula (até 110) é mais larga que a fatia de 65,9, e
- * antes o item ficava na fatia, com a pílula saindo dela; agora ele cresce até `largura / itens`
- * (82,4), como no Compose. É a única diferença fora das margens.
+ * `Centered` with 5 items and the icon beside: the pill (up to 110) is wider than the 65.9 slice, and
+ * before the item stayed in the slice, with the pill sticking out of it; now it grows up to `width / items`
+ * (82.4), as in Compose. It is the only difference outside the margins.
  */
 const centeredGrows = (values: Values): boolean =>
   values['arrangement'] === 'Centered' &&
   values['iconPosition'] === 'Start' &&
   (values['items'] as unknown[]).length === 5;
 
-describe('EX6 short-navigation-bar — regressão contra as cenas de antes', () => {
-  it('os 6 exemplos (claro e escuro): tudo igual, exceto o Centered de 3 itens', () => {
+describe('EX6 short-navigation-bar — regression against the scenes from before', () => {
+  it('the 6 examples (light and dark): all equal, except the Centered with 3 items', () => {
     const scenes = oldScenes('short-navigation-bar-');
     expect(scenes).toHaveLength(12);
     let compared = 0;
@@ -212,11 +213,11 @@ describe('EX6 short-navigation-bar — regressão contra as cenas de antes', () 
       expect(missingNodes(draw(s.id, s.values, s.mode), s.nodes), s.key).toEqual([]);
       compared++;
     }
-    // ex1 e ex2 (Centered, 3 itens) saem, nos dois modos
+    // ex1 and ex2 (Centered, 3 items) leave, in both modes
     expect(compared).toBe(8);
   });
 
-  it('3 a 6 itens, EqualWeight e Centered de 5 itens: tudo igual (fora o ícone ao lado com crescimento)', () => {
+  it('3 to 6 items, EqualWeight and Centered with 5 items: all equal (except the icon beside with growth)', () => {
     const scenes = oldScenes('snb-');
     expect(scenes).toHaveLength(32);
     let compared = 0;
@@ -225,12 +226,12 @@ describe('EX6 short-navigation-bar — regressão contra as cenas de antes', () 
       expect(missingNodes(draw(s.id, s.values, s.mode), s.nodes), s.key).toEqual([]);
       compared++;
     }
-    // 32 cenas menos o Centered de 3, 4 e 6 itens (12) e o Centered de 5 com o ícone ao lado (2)
+    // 32 scenes minus the Centered with 3, 4 and 6 items (12) and the Centered with 5 and the icon beside (2)
     expect(compared).toBe(18);
   });
 
-  it('nas cenas que mudaram (Centered de 3, 4 e 6 itens com o ícone acima), o de antes deslocado para a margem nova', () => {
-    // com o ícone acima nenhum item cresce: tudo o que muda é a margem e a fatia
+  it('in the scenes that changed (Centered with 3, 4 and 6 items with the icon above), the one from before shifted to the new margin', () => {
+    // with the icon above no item grows: all that changes is the margin and the slice
     const changed = oldScenes('snb-').filter(
       (o) => centeredChanged(o.values) && o.values['iconPosition'] === 'Top',
     );
@@ -248,7 +249,7 @@ describe('EX6 short-navigation-bar — regressão contra as cenas de antes', () 
         if (o.n === 'margem')
           return { ...o, r: [x === 0 ? 0 : width - newPad, y, newPad, h] };
         if (o.n === 'destinos') return { ...o, r: [newPad, y, width - 2 * newPad, h] };
-        // o resto está dentro de uma fatia, centrado nela: o centro acompanha a fatia nova
+        // the rest is inside a slice, centered in it: the center follows the new slice
         const slot = Math.min(n - 1, Math.floor((x + w / 2 - oldPad) / oldSlice));
         if (o.n === 'destino')
           return { ...o, r: [newPad + slot * newSlice, y, newSlice, h] };
@@ -265,12 +266,12 @@ describe('EX6 short-navigation-bar — regressão contra as cenas de antes', () 
 });
 
 // ---------------------------------------------------------------------------------------------
-// Sem tabelas
+// Without tables
 // ---------------------------------------------------------------------------------------------
 
 /**
- * Cada `$switch` com mais de 12 casos (menos o do nome do ícone, o de 164 casos que traduz o nome
- * do Compose para o id do conjunto: não é conta) e cada `$eq` sobre um campo `number` do tipo.
+ * Each `$switch` with more than 12 cases (except the icon name one, the 164-case one that translates the Compose
+ * name to the set id: it is not a computation) and each `$eq` over a `number` field of the type.
  */
 function offenders(id: 'short-navigation-bar') {
   const numberFields = new Set(
@@ -287,23 +288,23 @@ function offenders(id: 'short-navigation-bar') {
     if ('$switch' in obj && typeof cases === 'object' && cases !== null) {
       const count = Object.keys(cases).length;
       if (count > 12 && obj['$switch'] !== 'icon')
-        found.push(`${path}: $switch de ${count} casos`);
+        found.push(`${path}: $switch of ${count} cases`);
     }
     const eq = obj['$eq'];
     if (Array.isArray(eq) && typeof eq[0] === 'string' && numberFields.has(eq[0]))
-      found.push(`${path}: $eq sobre o campo number ${eq[0]}`);
+      found.push(`${path}: $eq over the number field ${eq[0]}`);
     for (const [k, v] of Object.entries(obj)) visit(v, `${path}.${k}`);
   };
   visit(JSON.parse(text(`components/${id}.json`)), id);
   return found;
 }
 
-describe('EX6 short-navigation-bar — sem tabelas enumeradas', () => {
-  it('não há $switch com mais de 12 casos (fora o do nome do ícone) nem $eq sobre campo number', () => {
+describe('EX6 short-navigation-bar — without enumerated tables', () => {
+  it('there is no $switch with more than 12 cases (except the icon name one) nor $eq over a number field', () => {
     expect(offenders('short-navigation-bar')).toEqual([]);
   });
 
-  it('a fatia do destino é uma conta de $size e $rows, sem lista de casos', () => {
+  it('the destination slice is a computation from $size and $rows, with no list of cases', () => {
     const component = JSON.parse(text('components/short-navigation-bar.json')) as {
       template: { children: { name: string; template?: Record<string, unknown> }[] };
     };

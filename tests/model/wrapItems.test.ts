@@ -13,8 +13,8 @@ import {
 import { expectValid } from './fixtures';
 import { container, mk, multiProject, rect } from './multiSelectionFixtures';
 
-// Envolver a seleção numa marcação pai (docs/ARCHITECTURE.md, "Marcação pai (Envolver)").
-// Fixture: ver tests/model/multiSelectionFixtures.ts.
+// Wrap the selection in a parent marking (docs/ARCHITECTURE.md, "Parent marking (Wrap)").
+// Fixture: see tests/model/multiSelectionFixtures.ts.
 
 const img = (id: string): ItemRef => ({ kind: 'image', id });
 const mark = (id: string): ItemRef => ({ kind: 'marking', id });
@@ -31,22 +31,22 @@ function codeOf(op: () => unknown): string | null {
 
 const get = (p: Project, id: string): Marking => {
   const m = p.markings.find((x) => x.id === id);
-  if (!m) throw new Error(`sem marcação ${id}`);
+  if (!m) throw new Error(`no marking ${id}`);
   return m;
 };
 
-/** `multiProject` com marcações extras no fim, assentado. */
+/** `multiProject` with extra markings at the end, settled. */
 function withMarkings(...extra: Marking[]): Project {
   const p = multiProject();
   return settleHierarchy({ ...p, markings: [...p.markings, ...extra] });
 }
 
 describe('wrapItems', () => {
-  it('a margem é o tamanho mínimo da marcação', () => {
+  it('the margin is the minimum size of the marking', () => {
     expect(WRAP_MARGIN).toBe(8);
   });
 
-  it('duas marcações do mesmo container: a nova é do container, com a margem', () => {
+  it('two markings of the same container: the new one belongs to the container, with the margin', () => {
     const p = multiProject();
     const next = wrapItems(p, { id: 'W', items: [mark('a1'), mark('a3')] });
     expectValid(next);
@@ -63,13 +63,13 @@ describe('wrapItems', () => {
     expect(get(next, 'a1').parentId).toBe('W');
     expect(get(next, 'a3').parentId).toBe('W');
     expect(get(next, 'a2').parentId).toBe('a1');
-    // Entra antes da primeira selecionada.
+    // It enters before the first selected one.
     expect(next.markings.findIndex((m) => m.id === 'W')).toBe(
       next.markings.findIndex((m) => m.id === 'a1') - 1,
     );
   });
 
-  it('a margem é cortada pela borda do container', () => {
+  it('the margin is clipped by the container edge', () => {
     const next = wrapItems(multiProject(), { id: 'W', items: [mark('c1')] });
     expect(get(next, 'W')).toMatchObject({
       containerId: 'C',
@@ -78,7 +78,7 @@ describe('wrapItems', () => {
     expect(get(next, 'c1').parentId).toBe('W');
   });
 
-  it('a margem é cortada pelo pai atual do conjunto', () => {
+  it('the margin is clipped by the current parent of the set', () => {
     const p = withMarkings(
       mk('P', 'A', rect(600, 50, 300, 300)),
       mk('x1', 'A', rect(604, 54, 50, 50)),
@@ -93,7 +93,7 @@ describe('wrapItems', () => {
     expect(get(next, 'x2').parentId).toBe('W');
   });
 
-  it('uma selecionada que já envolve a outra: a nova vira pai da maior', () => {
+  it('one selected marking already wraps the other: the new one becomes the parent of the larger', () => {
     const big = mk('m1', 'A', rect(0, 0, 1000, 1000));
     const p = settleHierarchy({
       ...multiProject(),
@@ -108,7 +108,7 @@ describe('wrapItems', () => {
     expect(get(next, 'm2').parentId).toBe('m1');
   });
 
-  it('retângulo igual ao do pai atual que vem depois: a nova nasce filha dele, antes da selecionada', () => {
+  it('rectangle equal to that of the current parent that comes later: the new one is born as its child, before the selected one', () => {
     const p = settleHierarchy({
       ...multiProject(),
       markings: [
@@ -120,14 +120,14 @@ describe('wrapItems', () => {
     expect(get(p, 'm3').parentId).toBe('m1');
     const next = wrapItems(p, { id: 'W', items: [mark('m3')] });
     expectValid(next);
-    // Desempate estável (#549): a nova entra antes da selecionada e o pai atual continua o de
-    // fora pela relação, não pelo array.
+    // Stable tie-break (#549): the new one enters before the selected one and the current parent remains the outer
+    // one by the relation, not by the array.
     expect(next.markings.map((m) => m.id).slice(0, 3)).toEqual(['W', 'm3', 'm1']);
     expect(get(next, 'W').parentId).toBe('m1');
     expect(get(next, 'm3').parentId).toBe('W');
   });
 
-  it('containers e marcação do canvas: a nova é do canvas e os containers são filhos', () => {
+  it('containers and a canvas marking: the new one belongs to the canvas and the containers are children', () => {
     const next = wrapItems(multiProject(), {
       id: 'W',
       items: [img('D'), img('E'), mark('H')],
@@ -143,24 +143,24 @@ describe('wrapItems', () => {
     expect(get(next, 'H').parentId).toBe('W');
   });
 
-  it('marcações de containers diferentes: a nova é do canvas e envolve os containers', () => {
+  it('markings of different containers: the new one belongs to the canvas and wraps the containers', () => {
     const next = wrapItems(multiProject(), { id: 'W', items: [mark('a1'), mark('b1')] });
     expectValid(next);
-    // No canvas, cada marcação conta pelo container inteiro: A (0,0)–(1000,1000) e
+    // On the canvas, each marking counts by the whole container: A (0,0)–(1000,1000) and
     // B (2000,0)–(3000,1000).
     expect(get(next, 'W')).toMatchObject({
       containerId: null,
       rect: rect(-8, -8, 3016, 1016),
       parentId: 'G',
     });
-    // B passa a ser filho da nova; A segue no G2, que é menor e a nova não envolve.
+    // B becomes a child of the new one; A stays in G2, which is smaller and the new one does not wrap.
     expect(next.containers.find((c) => c.id === 'B')?.parentId).toBe('W');
     expect(next.containers.find((c) => c.id === 'A')?.parentId).toBe('G2');
   });
 
-  it('o canvas arredonda o retângulo para fora', () => {
+  it('the canvas rounds the rectangle outward', () => {
     const p = multiProject();
-    // b1 no canvas: (2100,100) 200×200; um container com escala fracionária desloca o retângulo.
+    // b1 on the canvas: (2100,100) 200×200; a container with a fractional scale shifts the rectangle.
     const shifted = {
       ...p,
       containers: p.containers.map((c) =>
@@ -174,7 +174,7 @@ describe('wrapItems', () => {
     expect(r.x + r.width).toBeGreaterThanOrEqual(3001 + WRAP_MARGIN);
   });
 
-  it('ruído de ponto flutuante no placement conta como inteiro: 8 px de margem', () => {
+  it('floating-point noise in the placement counts as an integer: 8 px margin', () => {
     const base = multiProject();
     const noisy = (id: string, x: number, scale = 1) =>
       container(id, 100, 100, { x, y: 0, scale });
@@ -184,9 +184,9 @@ describe('wrapItems', () => {
         (m) => m.id === 'W',
       )!.rect;
     };
-    // O ruído que o relato achou depois de ir e voltar com um arrasto.
+    // The noise that the report found after going back and forth with a drag.
     expect(wrapOf(-2.2737367544323206e-13)).toEqual(rect(-8, -8, 116, 116));
-    // Ruído abaixo e acima de um inteiro, nas bordas esquerda e direita.
+    // Noise below and above an integer, on the left and right edges.
     const alone = (x: number) =>
       wrapItems(
         { ...base, containers: [noisy('B', x)] },
@@ -194,11 +194,11 @@ describe('wrapItems', () => {
       ).markings.find((m) => m.id === 'W')!.rect;
     expect(alone(211.99999999999977)).toEqual(rect(204, -8, 116, 116));
     expect(alone(100.00000000000023)).toEqual(rect(92, -8, 116, 116));
-    // Fração de verdade: o retângulo inteiro cobre, com margem entre 8 e 9.
+    // A real fraction: the integer rectangle covers, with a margin between 8 and 9.
     expect(alone(1868.13)).toEqual(rect(1860, -8, 117, 116));
   });
 
-  it('só seta e nota flutuante: não dá para envolver', () => {
+  it('only an arrow and a floating note: cannot be wrapped', () => {
     const p = createArrow(multiProject(), { id: 'S', from: 'a1', to: 'a3' });
     const items: ItemRef[] = [{ kind: 'arrow', id: 'S' }, mark('N')];
     expect(canWrapItems(p, items)).toBe(false);
@@ -206,7 +206,7 @@ describe('wrapItems', () => {
     expect(canWrapItems(p, [...items, mark('H')])).toBe(true);
   });
 
-  it('nota e seta misturadas com marcações são ignoradas', () => {
+  it('a note and an arrow mixed with markings are ignored', () => {
     const p = createArrow(multiProject(), { id: 'S', from: 'a1', to: 'a3' });
     const items: ItemRef[] = [
       mark('a1'),
@@ -220,7 +220,7 @@ describe('wrapItems', () => {
     expect(next.arrows).toEqual(p.arrows);
   });
 
-  it('uma marcação não selecionada dentro do retângulo também vira filha', () => {
+  it('an unselected marking inside the rectangle also becomes a child', () => {
     const p = withMarkings(mk('u', 'A', rect(595, 595, 10, 10)));
     expect(get(p, 'u').parentId).toBeNull();
     const next = wrapItems(p, { id: 'W', items: [mark('a3')] });
@@ -228,7 +228,7 @@ describe('wrapItems', () => {
     expect(get(next, 'u').parentId).toBe('W');
   });
 
-  it('id duplicado falha; itens inexistentes não contam', () => {
+  it('a duplicate id fails; nonexistent items do not count', () => {
     const p = multiProject();
     expect(codeOf(() => wrapItems(p, { id: 'a1', items: [mark('a3')] }))).toBe(
       'duplicate-id',
@@ -238,7 +238,7 @@ describe('wrapItems', () => {
     );
   });
 
-  it('não muda as marcações travadas: a trava não impede', () => {
+  it('does not change locked markings: the lock does not prevent it', () => {
     const p = multiProject();
     const locked = {
       ...p,
@@ -249,9 +249,9 @@ describe('wrapItems', () => {
   });
 });
 
-// Um item só (etapa Envolver, EV1, decisão 4): o resultado é o do `wrapItems` de hoje.
-describe('wrapItems com um item só', () => {
-  it('marcação de container: a nova é do container, com a margem', () => {
+// A single item (Wrap stage, EV1, decision 4): the result is that of today `wrapItems`.
+describe('wrapItems with a single item', () => {
+  it('container marking: the new one belongs to the container, with the margin', () => {
     const next = wrapItems(multiProject(), { id: 'W', items: [mark('a3')] });
     expectValid(next);
     expect(get(next, 'W')).toMatchObject({
@@ -262,7 +262,7 @@ describe('wrapItems com um item só', () => {
     expect(get(next, 'a3').parentId).toBe('W');
   });
 
-  it('marcação do canvas: a nova é do canvas, com a margem', () => {
+  it('canvas marking: the new one belongs to the canvas, with the margin', () => {
     const next = wrapItems(multiProject(), { id: 'W', items: [mark('H')] });
     expectValid(next);
     expect(get(next, 'W')).toMatchObject({
@@ -273,7 +273,7 @@ describe('wrapItems com um item só', () => {
     expect(get(next, 'H').parentId).toBe('W');
   });
 
-  it('container: a nova é do canvas e o container vira filho', () => {
+  it('container: the new one belongs to the canvas and the container becomes a child', () => {
     const next = wrapItems(multiProject(), { id: 'W', items: [img('D')] });
     expectValid(next);
     const w = get(next, 'W');
@@ -282,7 +282,7 @@ describe('wrapItems com um item só', () => {
     expect(next.containers.find((c) => c.id === 'D')?.parentId).toBe('W');
   });
 
-  it('marcação que ocupa o container inteiro: a nova tem o mesmo retângulo, sem falhar', () => {
+  it('marking that fills the whole container: the new one has the same rectangle, without failing', () => {
     const full = mk('full', 'D', rect(0, 0, 1000, 1000));
     const p = settleHierarchy({
       ...multiProject(),
@@ -298,7 +298,7 @@ describe('wrapItems com um item só', () => {
     expect(get(next, 'full').parentId).toBe('W');
   });
 
-  it('nota (flutuante) sozinha: não entra e falha com invalid-parent', () => {
+  it('a (floating) note alone: does not enter and fails with invalid-parent', () => {
     const p = multiProject();
     expect(canWrapItems(p, [mark('N')])).toBe(false);
     expect(codeOf(() => wrapItems(p, { id: 'W', items: [mark('N')] }))).toBe(

@@ -8,8 +8,8 @@ import {
   type Spec,
 } from '../../src/model';
 
-// Avisos de uma especialização válida (etapa 4.2; o campo ignorado, etapa 9): não impedem a
-// importação.
+// Warnings of a valid specialization (stage 4.2; the ignored field, stage 9): they do not prevent the
+// import.
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parse(path: string, edit?: (spec: Record<string, any>) => void) {
@@ -25,13 +25,13 @@ function load(path: string, edit?: (spec: Record<string, any>) => void): Spec {
   return parse(path, edit).spec;
 }
 
-/** A SDUI de antes do `repo` (formatVersion 2): plataformas com `path` e sem `repo`. */
+/** The SDUI from before `repo` (formatVersion 2): platforms with `path` and without `repo`. */
 const LEGACY_SDUI = 'tests/fixtures/sdui-v2.json';
 
 describe('specWarnings', () => {
-  it('os exemplos do repositório só têm o aviso do tipo sem code (screen)', () => {
+  it('the repository examples only have the warning for the type without code (screen)', () => {
     expect(specWarnings(load('examples/specs/modelo-de-dados.json'))).toEqual([]);
-    // O SDUI declara o `repo` das três plataformas: nenhum `path-without-repo`.
+    // The SDUI declares the `repo` of the three platforms: no `path-without-repo`.
     const sdui = specWarnings(load('examples/specs/sdui.json'));
     expect(sdui).toEqual([
       expect.objectContaining({
@@ -41,7 +41,7 @@ describe('specWarnings', () => {
     ]);
   });
 
-  it('type-without-code: o texto diz que nenhuma plataforma explica como criar a instância', () => {
+  it('type-without-code: the text says that no platform explains how to create the instance', () => {
     const spec = load('examples/specs/sdui.json');
     const warning = specWarnings(spec).find((w) => w.code === 'type-without-code');
     expect(warning?.message).toBe(
@@ -51,7 +51,7 @@ describe('specWarnings', () => {
 
   describe('path-without-repo', () => {
     const repo = { url: 'https://github.com/acme/android' };
-    /** sdui com os `path` de android (e de ios) e a versão 5, com `repo` só onde pedido. */
+    /** sdui with the android (and ios) `path`s and version 5, with `repo` only where requested. */
     const v5 = (repos: Record<string, unknown>) =>
       load(LEGACY_SDUI, (raw) => {
         raw.formatVersion = 5;
@@ -61,7 +61,7 @@ describe('specWarnings', () => {
     const only = (spec: Spec) =>
       specWarnings(spec).filter((w) => w.code === 'path-without-repo');
 
-    it('plataforma com tipos com path e sem repo: um aviso por plataforma, na ordem', () => {
+    it('platform with types with path and without repo: one warning per platform, in order', () => {
       const warnings = only(v5({}));
       expect(warnings.map((w) => w.path)).toEqual(['platforms[0]', 'platforms[1]']);
       expect(warnings[0]?.message).toMatch(
@@ -69,12 +69,12 @@ describe('specWarnings', () => {
       );
     });
 
-    it('com repo, a plataforma não avisa; as outras seguem avisando', () => {
+    it('with repo, the platform does not warn; the others keep warning', () => {
       expect(only(v5({ android: repo })).map((w) => w.path)).toEqual(['platforms[1]']);
       expect(only(v5({ android: repo, ios: repo }))).toEqual([]);
     });
 
-    it('conta também o path de variants.cases (CR #945, item 47)', () => {
+    it('also counts the path of variants.cases (CR #945, item 47)', () => {
       const parsed = parseSpecText(
         JSON.stringify({
           format: 'mapping-spec',
@@ -118,17 +118,17 @@ describe('specWarnings', () => {
       expect(warnings[0]?.message).toContain('has types with `path` (2)');
     });
 
-    it('plataforma sem tipos com path não avisa (o bff do exemplo)', () => {
+    it('platform without types with path does not warn (the bff of the example)', () => {
       expect(only(v5({})).some((w) => w.path === 'platforms[2]')).toBe(false);
     });
 
-    it('vale também numa v2 (a mensagem orienta a subir para a 5)', () => {
+    it('also applies in a v2 (the message guides upgrading to 5)', () => {
       const spec = load(LEGACY_SDUI);
       expect(spec.formatVersion).toBe(2);
       expect(only(spec).length).toBeGreaterThan(0);
     });
 
-    it('vem depois dos avisos de tipo e de unused-platform', () => {
+    it('comes after the type and unused-platform warnings', () => {
       const spec = load(LEGACY_SDUI, (raw) => {
         raw.platforms.push({ id: 'web', name: 'Web' });
       });
@@ -141,7 +141,7 @@ describe('specWarnings', () => {
     });
   });
 
-  it('plataforma declarada e não usada em code', () => {
+  it('platform declared and not used in code', () => {
     const spec = load(LEGACY_SDUI, (raw) => {
       raw.platforms.push({ id: 'web', name: 'Web' });
     });
@@ -149,12 +149,12 @@ describe('specWarnings', () => {
     expect(unused).toEqual([expect.objectContaining({ path: 'platforms[3]' })]);
   });
 
-  it('campo do tipo removido (codeRef): aviso com o caminho, logo depois do formato antigo', () => {
+  it('removed type field (codeRef): warning with the path, right after the old format', () => {
     const parsed = parse(LEGACY_SDUI, (raw) => {
       raw.format = 'mapeador-spec';
       raw.platforms.push({ id: 'web', name: 'Web' });
       raw.layers[2].annotationTypes[0].fields.push({
-        key: 'implementacao',
+        key: 'implementation',
         type: 'codeRef',
         platforms: ['web'],
       });
@@ -164,17 +164,17 @@ describe('specWarnings', () => {
       ['legacy-format', 'format'],
       ['ignored-field', 'layers[2].annotationTypes[0].fields[2]'],
       ['type-without-code', 'layers[2].annotationTypes[0]'],
-      // O `platforms` do campo ignorado não conta mais como uso da plataforma.
+      // The `platforms` of the ignored field no longer counts as platform usage.
       ['unused-platform', 'platforms[3]'],
       ['path-without-repo', 'platforms[0]'],
       ['path-without-repo', 'platforms[1]'],
     ]);
     expect(warnings[1]?.message).toBe(
-      'the field "implementacao" of the type "screen" is "codeRef", which was removed from the format: it was ignored (its values are not saved); remove it from the file',
+      'the field "implementation" of the type "screen" is "codeRef", which was removed from the format: it was ignored (its values are not saved); remove it from the file',
     );
   });
 
-  it('ignoredFieldWarnings: um aviso por campo, na ordem', () => {
+  it('ignoredFieldWarnings: one warning per field, in order', () => {
     const ignored: IgnoredSpecField[] = [
       { path: 'layers[0].annotationTypes[0].fields[1]', typeId: 'a', key: 'x' },
       { path: 'layers[1].annotationTypes[2].fields[0]', typeId: 'b', key: 'y' },
@@ -186,14 +186,14 @@ describe('specWarnings', () => {
     expect(ignoredFieldWarnings([])).toEqual([]);
   });
 
-  it('sem plataformas declaradas, tipo sem code não é descuido', () => {
+  it('without declared platforms, a type without code is not an oversight', () => {
     const spec = load('examples/specs/modelo-de-dados.json', (raw) => {
       raw.layers[0].annotationTypes[0].code = undefined;
     });
     expect(specWarnings(spec)).toEqual([]);
   });
 
-  it('o format antigo avisa', () => {
+  it('the old format warns', () => {
     const spec = load('examples/specs/modelo-de-dados.json', (raw) => {
       raw.format = 'mapeador-spec';
     });

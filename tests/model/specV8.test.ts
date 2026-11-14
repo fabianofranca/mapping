@@ -1,4 +1,4 @@
-// `formatVersion` 8: `suggestions` em campo e coluna `string` (etapa Sugestões no campo de texto).
+// `formatVersion` 8: `suggestions` on a `string` field and column (Suggestions in the text field stage).
 import { describe, expect, it } from 'vitest';
 import {
   parseSpec,
@@ -17,7 +17,7 @@ function spec(formatVersion: number, field: Json, asColumn = false, version = 1)
         {
           key: 'tabela',
           type: 'table',
-          columns: [{ key: 'nome', type: 'string' }, field],
+          columns: [{ key: 'label', type: 'string' }, field],
         },
       ]
     : [field];
@@ -52,10 +52,10 @@ function parsed(input: unknown): Spec {
   return result.spec;
 }
 
-const str = (extra: Json = {}): Json => ({ key: 'tipo', type: 'string', ...extra });
+const str = (extra: Json = {}): Json => ({ key: 'kind', type: 'string', ...extra });
 
 describe('formatVersion 8: suggestions', () => {
-  it('a versão atual é a 16 e as anteriores continuam aceitas', () => {
+  it('the current version is 16 and the earlier ones are still accepted', () => {
     expect(SPEC_FORMAT_VERSION).toBe(16);
     expect(SPEC_FORMAT_VERSIONS).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
@@ -63,24 +63,24 @@ describe('formatVersion 8: suggestions', () => {
     for (const v of SPEC_FORMAT_VERSIONS) expect(parseSpec(spec(v, str())).ok).toBe(true);
   });
 
-  it('aceita suggestions num campo string e as devolve', () => {
+  it('accepts suggestions on a string field and returns them', () => {
     const s = parsed(spec(8, str({ suggestions: ['String', 'Int'] })));
     expect(s.layers[0]?.annotationTypes[0]?.fields[0]).toMatchObject({
       suggestions: ['String', 'Int'],
     });
   });
 
-  it('aceita suggestions numa coluna string de table', () => {
+  it('accepts suggestions on a string column of a table', () => {
     expect(parseSpec(spec(8, str({ suggestions: ['A'] }), true)).ok).toBe(true);
   });
 
-  it('um default fora da lista é válido', () => {
+  it('a default outside the list is valid', () => {
     expect(
       parseSpec(spec(8, str({ suggestions: ['String'], default: 'Outro' }))).ok,
     ).toBe(true);
   });
 
-  it('numa versão anterior é o erro "only allowed with formatVersion 8", no caminho exato', () => {
+  it('in an earlier version it is the error "only allowed with formatVersion 8", at the exact path', () => {
     for (const v of [1, 4, 7]) {
       expect(issuesOf(spec(v, str({ suggestions: ['A'] })))).toContainEqual({
         path: `${fieldPath}.suggestions`,
@@ -93,7 +93,7 @@ describe('formatVersion 8: suggestions', () => {
     }
   });
 
-  it('em campo ou coluna que não é string é erro, apontando a chave', () => {
+  it('on a field or column that is not a string it is an error, pointing at the key', () => {
     const cases: Json[] = [
       { key: 'n', type: 'number' },
       { key: 'd', type: 'date' },
@@ -122,7 +122,7 @@ describe('formatVersion 8: suggestions', () => {
     });
   });
 
-  it('recusa lista vazia, mais de 200, repetida, item vazio e espaço nas pontas', () => {
+  it('rejects an empty list, more than 200, repeated, an empty item and spaces at the ends', () => {
     const many = Array.from({ length: 201 }, (_, i) => `v${i}`);
     const bad: [unknown[], string][] = [
       [[], 'cannot be empty'],
@@ -145,13 +145,13 @@ describe('formatVersion 8: suggestions', () => {
     expect(parseSpec(spec(8, str({ suggestions: ['List<A>', 'a b'] }))).ok).toBe(true);
   });
 
-  it('item que não é texto é erro', () => {
+  it('an item that is not text is an error', () => {
     expect(parseSpec(spec(8, str({ suggestions: [1] }))).ok).toBe(false);
   });
 });
 
-describe('suggestions e o contrato de versão', () => {
-  it('incluir, mudar ou tirar suggestions não gera diferença, e a 7 passa à 8', () => {
+describe('suggestions and the version contract', () => {
+  it('adding, changing or removing suggestions makes no difference, and 7 moves to 8', () => {
     const before = parsed(spec(7, str(), false, 1));
     const added = parsed(spec(8, str({ suggestions: ['A'] }), false, 2));
     const changed = parsed(spec(8, str({ suggestions: ['A', 'B'] }), false, 3));
@@ -164,18 +164,18 @@ describe('suggestions e o contrato de versão', () => {
   });
 });
 
-describe('suggestions não restringe o valor', () => {
-  it('texto fora da lista não é problema de valor', () => {
+describe('suggestions does not restrict the value', () => {
+  it('text outside the list is not a value problem', () => {
     const s = parsed(spec(8, str({ suggestions: ['String', 'Int'] })));
     const field = s.layers[0]?.annotationTypes[0]?.fields[0];
-    if (field?.type !== 'string') throw new Error('campo string esperado');
+    if (field?.type !== 'string') throw new Error('string field expected');
     expect(checkSimpleValue(field, 'String')).toBeNull();
     expect(checkSimpleValue(field, 'List<Endereco>?')).toBeNull();
     expect(checkSimpleValue(field, 3)).toBe('invalid-value');
   });
 });
 
-// `linkedRef`: liga o texto a um campo/coluna `ref` irmão (mesmo tipo / mesma table).
+// `linkedRef`: links the text to a sibling `ref` field/column (same type / same table).
 function linkedSpec(
   formatVersion: number,
   field: Json,
@@ -184,7 +184,7 @@ function linkedSpec(
   withRef = true,
 ): Json {
   const ref = { key: 'typeRef', type: 'ref', accepts: { free: true } };
-  const siblings = [{ key: 'nome', type: 'string' }, ...(withRef ? [ref] : []), field];
+  const siblings = [{ key: 'label', type: 'string' }, ...(withRef ? [ref] : []), field];
   const fields = asColumn
     ? [{ key: 'tabela', type: 'table', columns: siblings }]
     : siblings;
@@ -197,14 +197,14 @@ function linkedSpec(
 const linkedField = 'layers[0].annotationTypes[0].fields[2]';
 const linkedColumn = 'layers[0].annotationTypes[0].fields[0].columns[2]';
 const linked = (extra: Json = {}): Json => ({
-  key: 'tipo',
+  key: 'kind',
   type: 'string',
   linkedRef: 'typeRef',
   ...extra,
 });
 
 describe('formatVersion 8: linkedRef', () => {
-  it('aceita linkedRef em campo e em coluna string, com ou sem suggestions', () => {
+  it('accepts linkedRef on a string field and column, with or without suggestions', () => {
     expect(
       parsed(linkedSpec(8, linked())).layers[0]?.annotationTypes[0]?.fields[2],
     ).toMatchObject({
@@ -217,7 +217,7 @@ describe('formatVersion 8: linkedRef', () => {
     );
   });
 
-  it('em campo ou coluna que não é string é erro, apontando a chave', () => {
+  it('on a field or column that is not a string it is an error, pointing at the key', () => {
     const cases: Json[] = [
       { key: 'n', type: 'number' },
       { key: 'e', type: 'enum', options: ['a'] },
@@ -236,7 +236,7 @@ describe('formatVersion 8: linkedRef', () => {
     }
   });
 
-  it('chave inexistente é erro', () => {
+  it('a nonexistent key is an error', () => {
     expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'nada' })))).toContainEqual({
       path: `${linkedField}.linkedRef`,
       message: '"nada" is not a field of the type',
@@ -247,18 +247,18 @@ describe('formatVersion 8: linkedRef', () => {
     });
   });
 
-  it('chave que existe mas não é ref é erro', () => {
-    expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'nome' })))).toContainEqual({
+  it('a key that exists but is not a ref is an error', () => {
+    expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'label' })))).toContainEqual({
       path: `${linkedField}.linkedRef`,
-      message: '"nome" must be a ref field',
+      message: '"label" must be a ref field',
     });
-    expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'nome' }), true))).toContainEqual({
+    expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'label' }), true))).toContainEqual({
       path: `${linkedColumn}.linkedRef`,
-      message: '"nome" must be a ref column',
+      message: '"label" must be a ref column',
     });
   });
 
-  it('a coluna não enxerga um campo de fora da tabela', () => {
+  it('the column does not see a field from outside the table', () => {
     const raw = linkedSpec(8, linked(), true, 1, false);
     const layers = raw.layers as { annotationTypes: { fields: Json[] }[] }[];
     const type = layers[0]!.annotationTypes[0]!;
@@ -269,7 +269,7 @@ describe('formatVersion 8: linkedRef', () => {
     });
   });
 
-  it('numa versão anterior é o erro "only allowed with formatVersion 8", no caminho exato', () => {
+  it('in an earlier version it is the error "only allowed with formatVersion 8", at the exact path', () => {
     for (const v of [1, 4, 7]) {
       expect(issuesOf(linkedSpec(v, linked()))).toContainEqual({
         path: `${linkedField}.linkedRef`,
@@ -282,9 +282,9 @@ describe('formatVersion 8: linkedRef', () => {
     }
   });
 
-  it('incluir, mudar ou tirar linkedRef (e suggestions) não gera diferença; a 7 passa à 8', () => {
+  it('adding, changing or removing linkedRef (and suggestions) makes no difference; 7 moves to 8', () => {
     const plain = (v: number, version: number, asColumn = false) =>
-      parsed(linkedSpec(v, { key: 'tipo', type: 'string' }, asColumn, version));
+      parsed(linkedSpec(v, { key: 'kind', type: 'string' }, asColumn, version));
     for (const asColumn of [false, true]) {
       const before = plain(7, 1, asColumn);
       const added = parsed(linkedSpec(8, linked({ suggestions: ['Int'] }), asColumn, 2));

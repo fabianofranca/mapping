@@ -24,24 +24,25 @@ const texts = (p: Project, id: string, tables: 'summary' | 'full' = 'summary') =
     l.kind === 'value' ? `${l.label}: ${l.text}${l.alert ? ' !' : ''}` : `${l.label}[]`,
   );
 
-describe('exibição tipada', () => {
-  it('título: tipo + rótulo da instância (labelField ou name)', () => {
+// pt-BR kept: shared fixture data asserted by tests/mcp, tests/components, tests/examples (cadastroProject/codeProject)
+describe('typed display', () => {
+  it('title: type + instance label (labelField or name)', () => {
     const p = cadastroProject();
     expect(annotationTitle(p, annotation(p, 'AC'))).toBe('Classe · Contato');
     expect(annotationTitle(p, annotation(p, 'AB'))).toBe('Button');
-    const named = renameAnnotation(p, 'AB', 'Comprar');
-    expect(annotationTitle(named, annotation(named, 'AB'))).toBe('Button · Comprar');
+    const named = renameAnnotation(p, 'AB', 'Buy');
+    expect(annotationTitle(named, annotation(named, 'AB'))).toBe('Button · Buy');
     expect(annotationTitle(p, annotation(p, 'AU'))).toBe('User');
   });
 
-  it('rótulo curto de quem referencia: tipo + primeiro texto preenchido', () => {
+  it('short label of the referrer: type + first filled text', () => {
     const p = cadastroProject();
     expect(annotationShortLabel(p, annotation(p, 'AIN'))).toBe('Input input_nome');
     expect(annotationShortLabel(p, annotation(p, 'AC'))).toBe('Classe Contato');
     expect(annotationShortLabel(p, annotation(p, 'AOH'))).toBe('onHold');
   });
 
-  it('valores na ordem dos campos, com label; opcionais vazios omitidos', () => {
+  it('values in field order, with label; empty optionals omitted', () => {
     const p = cadastroProject();
     expect(texts(p, 'AB')).toEqual([
       'id: btn_cadastrar',
@@ -52,7 +53,7 @@ describe('exibição tipada', () => {
     expect(texts(p, 'AOH')).toEqual(['ação: track', 'duração (ms): 500']);
   });
 
-  it('required vazio como "—" em alerta', () => {
+  it('empty required as "—" in alert', () => {
     const p = cadastroProject();
     expect(texts(p, 'AT')).toEqual([
       'id: — !',
@@ -61,17 +62,17 @@ describe('exibição tipada', () => {
     ]);
   });
 
-  it('ref com o rótulo do alvo; renomear a tupla atualiza; quebrada em alerta', () => {
+  it('ref with the target label; renaming the tuple updates; broken one in alert', () => {
     let p = cadastroProject();
     expect(texts(p, 'AIN')).toContain('dado: → User.name');
-    p = updateEntry(p, 'AU', 'EN', { key: 'nome', value: 'string' });
-    expect(texts(p, 'AIN')).toContain('dado: → User.nome');
+    p = updateEntry(p, 'AU', 'EN', { key: 'fullname', value: 'string' });
+    expect(texts(p, 'AIN')).toContain('dado: → User.fullname');
     expect(texts(p, 'AIE')).toContain('dado: → Contato.email');
     p = removeTableRow(p, 'AC', 'atributos', 'R1');
     expect(texts(p, 'AIE')).toContain('dado: → (broken reference) !');
   });
 
-  it('tabela: resumo no zoom semântico e completa no painel/lista', () => {
+  it('table: summary in the semantic zoom and complete in the panel/list', () => {
     const p = cadastroProject();
     expect(texts(p, 'AOC')).toContain('parâmetros: 1 row');
     const full = typedDisplayLines(p, annotation(p, 'AOC'), { tables: 'full' });
@@ -87,12 +88,12 @@ describe('exibição tipada', () => {
     });
   });
 
-  it('anotação livre não tem linhas tipadas', () => {
+  it('a free annotation has no typed lines', () => {
     const p = cadastroProject();
     expect(typedDisplayLines(p, annotation(p, 'AU'), { tables: 'full' })).toEqual([]);
   });
 
-  it('tipos donos possíveis de um filho com requiresOwner', () => {
+  it('possible owner types of a child with requiresOwner', () => {
     const p = cadastroProject();
     expect(
       ownerTypesOf(p, { specId: 'sdui', typeId: 'onClick' }).map((t) => t.name),
@@ -100,8 +101,9 @@ describe('exibição tipada', () => {
   });
 });
 
-describe('Lista: filtro Incompletas', () => {
-  it('só as anotações incompletas, sem herdadas nem marcações vazias', () => {
+// pt-BR kept: shared fixture data asserted by tests/mcp, tests/components, tests/examples (cadastroProject/codeProject)
+describe('List: Incomplete filter', () => {
+  it('only the incomplete annotations, without inherited ones or empty markings', () => {
     const p = cadastroProject();
     const only = new Set(projectIssues(p).keys());
     expect([...only]).toEqual(['AT']);
@@ -115,8 +117,9 @@ describe('Lista: filtro Incompletas', () => {
   });
 });
 
-describe('exibição sem o campo de código removido (etapa 9)', () => {
-  it('Detalhes, Lista e zoom semântico mostram só os campos do tipo', () => {
+// pt-BR kept: shared fixture data asserted by tests/mcp, tests/components, tests/examples (cadastroProject/codeProject)
+describe('display without the removed code field (stage 9)', () => {
+  it('Details, List and semantic zoom show only the type fields', () => {
     const p = codeProject();
     expect(texts(p, 'AS')).toEqual(['nome: Cadastro', 'rota: /cadastro']);
     expect(texts(p, 'AS', 'full')).toEqual(['nome: Cadastro', 'rota: /cadastro']);
@@ -125,7 +128,7 @@ describe('exibição sem o campo de código removido (etapa 9)', () => {
     ).toEqual(['value', 'value']);
   });
 
-  it('um valor que sobrou para uma chave fora do tipo não aparece na exibição tipada', () => {
+  it('a leftover value for a key outside the type does not appear in the typed display', () => {
     const p = codeProject();
     const leftover: Project = {
       ...p,
@@ -135,7 +138,7 @@ describe('exibição sem o campo de código removido (etapa 9)', () => {
               ...a,
               values: {
                 ...(a.values ?? {}),
-                implementacao: [{ _id: 'X1', platform: 'android', path: 'a.kt' }],
+                implementation: [{ _id: 'X1', platform: 'android', path: 'a.kt' }],
               },
             }
           : a,

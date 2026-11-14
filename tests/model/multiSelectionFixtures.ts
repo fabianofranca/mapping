@@ -9,22 +9,22 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// Projeto do arrasto conjunto e da seleção múltipla (ME2), montado à mão e assentado.
+// Project of the joint drag and the multiple selection (ME2), built by hand and settled.
 //
-//   Canvas (unidades do canvas)
-//   G   marcação do canvas (-100,-100)–(5200,1100), cerca A, B e C
-//   G2  marcação do canvas (-50,-50)–(1050,1050), dentro de G, cerca A
-//   H   marcação do canvas (400,1300) 200×100, solta no vazio
-//   N   marcação FLUTUANTE (100,1300) 200×100
+//   Canvas (canvas units)
+//   G   canvas marking (-100,-100)–(5200,1100), encloses A, B and C
+//   G2  canvas marking (-50,-50)–(1050,1050), inside G, encloses A
+//   H   canvas marking (400,1300) 200×100, loose in the empty space
+//   N   FLOATING marking (100,1300) 200×100
 //
-//   Containers (largura × altura em pixels, escala, posição no canvas)
-//   A 1000×1000 escala 1   em (0,0)        marcações a1 › a2 e a3
-//   B  500×500  escala 2   em (2000,0)     (1000×1000 no canvas) marcação b1
-//   C 1000×1000 escala 1   em (4000,0)     marcação c1 colada no canto de baixo à direita
-//   D 1000×1000 escala 1   em (7000,0)     sem marcações (fora de G)
-//   E 2000×2000 escala 0,5 em (9000,0)     (1000×1000 no canvas) marcação e1
+//   Containers (width × height in pixels, scale, position on the canvas)
+//   A 1000×1000 scale 1   at (0,0)        markings a1 › a2 and a3
+//   B  500×500  scale 2   at (2000,0)     (1000×1000 on the canvas) marking b1
+//   C 1000×1000 scale 1   at (4000,0)     marking c1 stuck to the bottom right corner
+//   D 1000×1000 scale 1   at (7000,0)     without markings (outside G)
+//   E 2000×2000 scale 0.5 at (9000,0)     (1000×1000 on the canvas) marking e1
 //
-// Pertencimento assentado: A › G2 › G, B e C › G, D e E sem pai; a2 › a1.
+// Settled membership: A › G2 › G, B and C › G, D and E without a parent; a2 › a1.
 
 export function rect(x: number, y: number, width: number, height: number): Rect {
   return { x, y, width, height };
@@ -97,7 +97,7 @@ export function multiProject(): Project {
   });
 }
 
-/** `multiProject` com anotações livres na camada L1: duas em a1, uma em a2 e uma em b1. */
+/** `multiProject` with free annotations on layer L1: two on a1, one on a2 and one on b1. */
 export function multiProjectAnnotated(): Project {
   let p = multiProject();
   for (const [id, markingId] of [

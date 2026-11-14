@@ -7,7 +7,7 @@ const BY = { name: 'Marina Alves', email: 'marina@exemplo.com' };
 const JOAO = { ...HUMAN, name: 'João', email: 'joao@exemplo.com' };
 
 describe('deleteImpact', () => {
-  it('direto quando todas as mensagens são do mesmo e-mail (sem espaços nem caixa)', () => {
+  it('direct when all messages are from the same email (ignoring spaces and case)', () => {
     const t = sampleThread({
       messages: [
         message('m1', T0, HUMAN),
@@ -18,12 +18,12 @@ describe('deleteImpact', () => {
       direct: true,
       threads: 1,
       messages: 2,
-      // o rótulo é o nome da última mensagem do autor
+      // the label is the name of the author's last message
       authors: [{ key: userKey(HUMAN), label: 'M. Alves', kind: 'human', count: 2 }],
     });
   });
 
-  it('não é direto quando há mensagem de agente', () => {
+  it('not direct when there is an agent message', () => {
     const impact = deleteImpact(sampleThread(), me);
     expect(impact.direct).toBe(false);
     expect(impact.messages).toBe(3);
@@ -33,26 +33,26 @@ describe('deleteImpact', () => {
     ]);
   });
 
-  it('não é direto quando alguma mensagem é de outra pessoa', () => {
+  it('not direct when some message is from another person', () => {
     const t = sampleThread({
       messages: [message('m1', T0, HUMAN), message('m2', T1, JOAO)],
     });
     expect(deleteImpact(t, me).direct).toBe(false);
   });
 
-  it('não é direto sem identidade', () => {
+  it('not direct without an identity', () => {
     const t = sampleThread({ messages: [message('m1', T0, HUMAN)] });
     expect(deleteImpact(t, null).direct).toBe(false);
   });
 
-  it('um agente com o nome igual ao da pessoa nunca é "direto"', () => {
+  it('an agent with the same name as the person is never "direct"', () => {
     const t = sampleThread({
       messages: [message('m1', T0, { ...AGENT, name: 'Marina Alves' })],
     });
     expect(deleteImpact(t, me).direct).toBe(false);
   });
 
-  it('lote: soma de conversas, mensagens e autores (mais mensagens primeiro, empate pelo nome)', () => {
+  it('batch: sum of threads, messages and authors (most messages first, ties by name)', () => {
     const t1 = sampleThread({
       id: 't1',
       messages: [message('m1', T0, JOAO), message('m2', T1, JOAO)],
@@ -77,7 +77,7 @@ describe('deleteImpact', () => {
     });
   });
 
-  it('lote só com mensagens próprias é direto; lote vazio não é', () => {
+  it('a batch with only own messages is direct; an empty batch is not', () => {
     const mine = sampleThread({ messages: [message('m1', T0, HUMAN)] });
     expect(deleteImpact([mine, mine], me).direct).toBe(true);
     expect(deleteImpact([], me)).toEqual({
@@ -103,7 +103,7 @@ describe('bulkDeleteCandidates', () => {
   });
   const all = [open, doneOld, doneNew];
 
-  it('só as resolvidas', () => {
+  it('only the resolved ones', () => {
     const r = bulkDeleteCandidates(all, { onlyResolved: true });
     expect(r.threads.map((t) => t.id)).toEqual(['old', 'new']);
     expect(r.messages).toBe(3);
@@ -113,25 +113,25 @@ describe('bulkDeleteCandidates', () => {
     ]);
   });
 
-  it('sem "só as resolvidas", entram as abertas também', () => {
+  it('without "only the resolved ones", the open ones are included too', () => {
     expect(bulkDeleteCandidates(all, { onlyResolved: false }).threads).toHaveLength(3);
   });
 
-  it('com a última mensagem antes de uma data', () => {
+  it('with the last message before a date', () => {
     const r = bulkDeleteCandidates(all, { onlyResolved: false, lastMessageBefore: T1 });
     expect(r.threads.map((t) => t.id)).toEqual(['open', 'old']);
     const r2 = bulkDeleteCandidates(all, { onlyResolved: true, lastMessageBefore: T3 });
     expect(r2.threads.map((t) => t.id)).toEqual(['old', 'new']);
   });
 
-  it('data inválida não apaga nada (o lado seguro)', () => {
+  it('an invalid date deletes nothing (the safe side)', () => {
     expect(
-      bulkDeleteCandidates(all, { onlyResolved: false, lastMessageBefore: 'ontem' })
+      bulkDeleteCandidates(all, { onlyResolved: false, lastMessageBefore: 'yesterday' })
         .threads,
     ).toEqual([]);
   });
 
-  it('nenhuma candidata: contagens zeradas', () => {
+  it('no candidate: zeroed counts', () => {
     expect(bulkDeleteCandidates([open], { onlyResolved: true })).toEqual({
       threads: [],
       messages: 0,

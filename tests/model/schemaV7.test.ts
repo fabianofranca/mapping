@@ -20,7 +20,7 @@ import { cadastroProject, codeProject, specProject } from './specFixtures';
 const strip = (data: Record<string, unknown>, key: string) =>
   Object.fromEntries(Object.entries(data).filter(([k]) => k !== key));
 
-/** Um mapping.json v6 do projeto: sem `platformRepos`. */
+/** A v6 mapping.json of the project: without `platformRepos`. */
 function v6Text(p: Project): string {
   const data = legacyJson(p);
   return JSON.stringify({ ...strip(data, 'platformRepos'), schemaVersion: 6 });
@@ -32,7 +32,7 @@ function load(text: string, p: Project) {
   return result;
 }
 
-/** Um Screen no Formulário (o tipo do SDUI v2 sem `code`). */
+/** A Screen in the Form (the SDUI v2 type without `code`). */
 function withScreen(p: Project): Project {
   const screen: Annotation = {
     id: 'AS',
@@ -48,8 +48,8 @@ function withScreen(p: Project): Project {
   return { ...p, annotations: [...p.annotations, screen] };
 }
 
-describe('migração v6 → v7 (referências de código)', () => {
-  it('ganha platformRepos: {} e o resto fica igual', () => {
+describe('migration v6 → v7 (code references)', () => {
+  it('gets platformRepos: {} and the rest stays the same', () => {
     const result = load(v6Text(sampleProject()), sampleProject());
     expect(result.migratedFrom).toBe(6);
     expect(result.readOnly).toBe(false);
@@ -58,7 +58,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('projeto com especializações (SDUI v2 e Modelo de dados v1) e trava', () => {
+  it('project with specializations (SDUI v2 and Data model v1) and lock', () => {
     let p = withScreen(cadastroProject());
     p = setMarkingLocked(p, 'MF', true);
     p = setImageLocked(p, 'I1', true);
@@ -67,7 +67,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     expect(result.migratedFrom).toBe(6);
     expect(result.specWarnings).toEqual([]);
     expect(result.project).toEqual({ ...p, platformRepos: {} });
-    // Nada mais muda nos dados.
+    // Nothing else changes in the data.
     const screen = result.project.annotations.find((a) => a.id === 'AS');
     expect(screen?.values).toEqual({ nome: 'Cadastro', rota: null });
     expect(getAnnotationIssues(result.project, 'AS')).toEqual([]);
@@ -75,7 +75,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     expect(result.project.containers[0]?.locked).toBe(true);
   });
 
-  it('o v6 migrado salva como v16 estável (round-trip)', () => {
+  it('the migrated v6 saves as a stable v16 (round-trip)', () => {
     const p = cadastroProject();
     const first = load(v6Text(p), p);
     const saved = serialize(first.project);
@@ -85,15 +85,15 @@ describe('migração v6 → v7 (referências de código)', () => {
     expect(serialize(again.project)).toBe(saved);
   });
 
-  it('é idempotente: preserva um platformRepos que já exista', () => {
+  it('is idempotent: preserves an existing platformRepos', () => {
     const repos = {
       android: { urlTemplate: 'https://x/{path}', localPath: '../app' },
     };
     expect(migrateFrom6To7({ platformRepos: repos })).toEqual({ platformRepos: repos });
     expect(migrateFrom6To7({})).toEqual({ platformRepos: {} });
     expect(migrateFrom6To7(migrateFrom6To7({ a: 1 }))).toEqual(migrateFrom6To7({ a: 1 }));
-    // Um v6 que já trazia o campo (ex: editado à mão) não perde a configuração; na cadeia
-    // até a v11 só o `urlTemplate` sai (o endereço passou a ser da especialização).
+    // A v6 that already carried the field (e.g. hand-edited) does not lose the configuration; along the chain
+    // up to v11 only the `urlTemplate` goes away (the address became the specialization's).
     const p = specProject();
     const data = JSON.parse(serialize(p)) as Record<string, unknown>;
     const text = JSON.stringify({ ...data, schemaVersion: 6, platformRepos: repos });
@@ -102,28 +102,28 @@ describe('migração v6 → v7 (referências de código)', () => {
     });
   });
 
-  it('o registro tem a migração da v6', () => {
+  it('the registry has the v6 migration', () => {
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(7);
     expect(migrations.get(6)).toBe(migrateFrom6To7);
   });
 });
 
 describe('schema v7', () => {
-  it('serializa platformRepos depois de specializations, na ordem gravada', () => {
+  it('serializes platformRepos after specializations, in the stored order', () => {
     const p = codeProject();
     const text = serialize(p);
     const data = JSON.parse(text);
     expect(Object.keys(data).indexOf('platformRepos')).toBe(
       Object.keys(data).indexOf('specializations') + 1,
     );
-    // Desde a v11 o projeto guarda só o clone local; o endereço é da especialização.
+    // Since v11 the project only stores the local clone; the address belongs to the specialization.
     expect(data.platformRepos).toEqual({ android: { localPath: '../../..' } });
     const loaded = load(text, p);
     expect(loaded.project).toEqual(p);
     expect(serialize(loaded.project)).toBe(text);
   });
 
-  it('recusa platformRepos ausente, com id fora do formato ou com campos inválidos', () => {
+  it('refuses missing platformRepos, with an id outside the format or with invalid fields', () => {
     const data = JSON.parse(serialize(sampleProject()));
     const variants: unknown[] = [
       undefined,
@@ -140,13 +140,13 @@ describe('schema v7', () => {
         error: { code: 'invalid-schema' },
       });
     }
-    // Plataforma que nenhuma especialização declara não impede a abertura.
+    // A platform that no specialization declares does not prevent opening.
     const orphan = { web: { localPath: '.' } };
     const loaded = deserialize(JSON.stringify({ ...data, platformRepos: orphan }));
     expect(loaded.ok && loaded.project.platformRepos).toEqual(orphan);
   });
 
-  it('versão mais nova com platformRepos abre somente leitura', () => {
+  it('a newer version with platformRepos opens read-only', () => {
     const p = codeProject();
     const text = JSON.stringify({
       ...JSON.parse(serialize(p)),

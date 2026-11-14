@@ -1,7 +1,7 @@
-// EX6 da etapa "expressões que calculam no formato 4" (#897), decisão 16: os sete componentes que
-// a etapa reescreveu (date-picker, time-picker, slider, progress-indicator, carousel,
-// short-navigation-bar e pull-to-refresh) desenham por conta, sem tabelas enumeradas, e os
-// exemplos deles desenham sem aviso nos dois modos.
+// EX6 of the "expressions that compute in format 4" stage (#897), decision 16: the seven components that
+// the stage rewrote (date-picker, time-picker, slider, progress-indicator, carousel,
+// short-navigation-bar and pull-to-refresh) draw by computing, without enumerated tables, and their
+// examples draw without warnings in both modes.
 import { describe, expect, it } from 'vitest';
 import { findEntry } from '../../src/model/catalog';
 import { drawIn, text, typeOf } from '../support/material3Library';
@@ -18,10 +18,10 @@ const SEVEN = [
 ] as const;
 
 /**
- * Cada `$switch` com mais de 12 casos e cada `$eq` sobre um campo `number` do tipo. A exceção é o
- * `$switch` sobre o campo `icon` (nome do ícone no Compose → id do conjunto de ícones): é uma
- * tradução de nome, não uma tabela de números, e o formato não tem função de texto para ela. O mesmo
- * vale para o `$switch` sobre `trackColor` (MF5): escolhe um papel do ColorScheme.
+ * Each `$switch` with more than 12 cases and each `$eq` over a `number` field of the type. The exception is the
+ * `$switch` over the `icon` field (icon name in Compose → id of the icon set): it is a name
+ * translation, not a table of numbers, and the format has no text function for it. The same
+ * goes for the `$switch` over `trackColor` (MF5): it picks a ColorScheme role.
  */
 function offenders(id: (typeof SEVEN)[number]): string[] {
   const numberFields = new Set(
@@ -43,25 +43,25 @@ function offenders(id: (typeof SEVEN)[number]): string[] {
       cases !== null
     ) {
       const count = Object.keys(cases).length;
-      if (count > 12) found.push(`${path}: $switch de ${count} casos`);
+      if (count > 12) found.push(`${path}: $switch of ${count} cases`);
     }
     const eq = obj['$eq'];
     if (Array.isArray(eq) && typeof eq[0] === 'string' && numberFields.has(eq[0]))
-      found.push(`${path}: $eq sobre o campo number ${eq[0]}`);
+      found.push(`${path}: $eq over the number field ${eq[0]}`);
     for (const [k, v] of Object.entries(obj)) visit(v, `${path}.${k}`);
   };
   visit(JSON.parse(text(`components/${id}.json`)), id);
   return found;
 }
 
-describe('EX6 — os sete componentes sem tabelas enumeradas', () => {
+describe('EX6 — the seven components without enumerated tables', () => {
   for (const id of SEVEN) {
-    it(`${id}: nenhum $switch com mais de 12 casos nem $eq sobre campo number`, () => {
+    it(`${id}: no $switch with more than 12 cases nor $eq over a number field`, () => {
       expect(offenders(id)).toEqual([]);
     });
   }
 
-  it('os campos de valor do slider são number (0 a 1)', () => {
+  it('the value fields of the slider are number (0 to 1)', () => {
     const fields = typeOf('slider').fields;
     for (const key of ['value', 'valueStart', 'valueEnd']) {
       const field = fields.find((f) => f.key === key);
@@ -70,7 +70,7 @@ describe('EX6 — os sete componentes sem tabelas enumeradas', () => {
   });
 });
 
-describe('EX6 — os exemplos dos sete desenham sem aviso, em light e em dark', () => {
+describe('EX6 — the examples of the seven draw without warnings, in light and in dark', () => {
   for (const id of SEVEN) {
     it(id, () => {
       const type = typeOf(id);

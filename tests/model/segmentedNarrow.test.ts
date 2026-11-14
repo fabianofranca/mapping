@@ -1,13 +1,14 @@
-// CL2 (1.4 do reteste): o `fit_marking` de um segmented-button perto da borda do container recebe
-// só a largura que sobra (209 de 360, a marcação em x = 151) e as trilhas iguais (70) ficam menores
-// que o "check + rótulo" do selecionado. O rótulo (`ellipsis`) encolhe dentro da trilha em vez de
-// passar do segmento vizinho, e a linha não acusa "content larger than the box".
+// CL2 (1.4 of the retest): the `fit_marking` of a segmented-button near the container edge gets
+// only the width that is left (209 of 360, the marking at x = 151) and the equal tracks (70) are smaller
+// than the selected one's "check + label". The label (`ellipsis`) shrinks inside the track instead of
+// going past the neighboring segment, and the row does not report "content larger than the box".
+// pt-BR kept: shared fixture data (sdui example fields/layers, Material 3 node names) asserted by other dirs
 import { describe, expect, it } from 'vitest';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import { drawFitted } from '../support/material3Fitted';
 
 const VALUES = {
-  options: ['A', 'Semana inteira', 'Mes'].map((label, i) => ({
+  options: ['A', 'Whole week', 'Mon'].map((label, i) => ({
     label,
     icon: '',
     selected: i === 1 ? 'true' : 'false',
@@ -29,9 +30,9 @@ function rows(width: number, mode: 'light' | 'dark') {
   };
 }
 
-describe('segmented-button em largura menor que o conteúdo (1.4 do reteste)', () => {
+describe('segmented-button at a width smaller than the content (1.4 of the retest)', () => {
   for (const mode of ['light', 'dark'] as const) {
-    it(`209 de largura (${mode}): cada rótulo fica dentro da sua trilha e não há aviso`, () => {
+    it(`209 wide (${mode}): each label stays inside its track and there is no warning`, () => {
       const { rows: found, messages } = rows(209, mode);
       expect(found).toHaveLength(3);
       for (const { cell, text } of found) {

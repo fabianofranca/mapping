@@ -1,17 +1,22 @@
-// Etapa Material 3 com estados de interação (#869), fase ME3 (#915), grupo de seleção: o campo `interaction`
-// do `chip`, do `card` e do `segmented-button` (aparência parada do estado, como o `button` da ME1).
-// Referência: Compose `material3` 1.4.0, commit 5113b82a… (`tokens/*ChipTokens.kt`, `*CardTokens.kt`,
-// `OutlinedSegmentedButtonTokens.kt` e `StateTokens.kt`).
+// Material 3 with interaction states stage (#869), phase ME3 (#915), selection group: the `interaction` field
+// of the `chip`, the `card` and the `segmented-button` (still appearance of the state, like the `button` of ME1).
+// Reference: Compose `material3` 1.4.0, commit 5113b82a… (`tokens/*ChipTokens.kt`, `*CardTokens.kt`,
+// `OutlinedSegmentedButtonTokens.kt` and `StateTokens.kt`).
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import type { SceneNode } from '../../src/model/components/scene';
 import { drawIn, files, typeOf } from '../support/material3Library';
 
+// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
+const NAMES = {
+  state: 'estado',
+} as const;
+
 const catalog = buildCatalog(files);
 const MODES = ['light', 'dark'] as const;
 type Values = Record<string, unknown>;
 
-/** As sombras de nós visíveis (o nó invisível leva a subárvore junto), com y, desfoque, spread e cor. */
+/** The shadows of visible nodes (an invisible node takes its subtree with it), with y, blur, spread and color. */
 function shadows(
   node: SceneNode,
   out: { y: number; blur: number; spread: number; color: string }[] = [],
@@ -22,14 +27,14 @@ function shadows(
   if ('children' in node) node.children.forEach((c) => shadows(c, out));
   return out;
 }
-/** Quantos nós `estado` visíveis há (a camada de estado). */
+/** The visible `estado` nodes (the state layer). */
 function layers(node: SceneNode, out: SceneNode[] = []): SceneNode[] {
   if (!node.visible) return out;
-  if (node.name === 'estado') out.push(node);
+  if (node.name === NAMES.state) out.push(node);
   if ('children' in node) node.children.forEach((c) => layers(c, out));
   return out;
 }
-/** Sombras de um nível de elevação: ponto (preto a 30%) e ambiente (preto a 15%). */
+/** Shadows of an elevation level: point (black at 30%) and ambient (black at 15%). */
 const level = (
   point: [y: number, blur: number, spread: number],
   ambient: [y: number, blur: number, spread: number],
@@ -47,21 +52,23 @@ function interactionField(id: string) {
 }
 function describeField(id: string, options: string[]) {
   const field = interactionField(id);
-  it('é um enum opcional com as opções dos tokens do Compose, padrão none, fora do code', () => {
+  it('is an optional enum with the Compose token options, default none, outside the code', () => {
     expect(field).toMatchObject({
       key: 'interaction',
+      // pt-BR kept: shared library data (field label of libraries/material3-compose)
       label: 'Interação',
       type: 'enum',
       default: 'none',
       options,
     });
     expect(field?.required).not.toBe(true);
-    // `interactionSource` é o parâmetro do Compose que o `ignore` deixa de fora (importação, #1079 S5): não é o campo.
+    // `interactionSource` is the Compose parameter that the `ignore` leaves out (import, #1079 S5): it is not the field.
     expect(
       JSON.stringify(typeOf(id).code ?? {}).replaceAll('interactionSource', ''),
     ).not.toContain('interaction');
   });
-  it('a descrição diz o que acontece com o desabilitado', () => {
+  it('the description says what happens with the disabled state', () => {
+    // pt-BR kept: shared library data (field description of libraries/material3-compose)
     expect(field?.description).toMatch(/habilitado|enabled/i);
     expect(field?.description).toMatch(/desabilitad|false/i);
   });
@@ -72,10 +79,10 @@ function exampleFor(
   states: string[],
 ) {
   it.each(states)(
-    'tem um exemplo para %s que desenha sem aviso nos dois modos',
+    'has an example for %s that draws without a warning in both modes',
     (state) => {
       const example = entry.examples.find((e) => e.values?.interaction === state);
-      expect(example, `exemplo de ${state} em ${id}`).toBeDefined();
+      expect(example, `example of ${state} in ${id}`).toBeDefined();
       for (const mode of MODES) {
         const drawing = drawIn(catalog, entry, example?.values ?? {}, mode);
         expect(drawing.warnings, `${state} ${mode}`).toEqual([]);
@@ -86,13 +93,13 @@ function exampleFor(
 
 // --- chip -----------------------------------------------------------------------------------
 
-describe('chip: campo interaction', () => {
+describe('chip: interaction field', () => {
   describeField('chip', ['none', 'hovered', 'focused', 'pressed', 'dragged']);
   const entry = findEntry(catalog, 'chip')!;
   exampleFor('chip', entry, ['hovered', 'focused', 'pressed', 'dragged']);
 
   const draw = (values: Values, mode: 'light' | 'dark') =>
-    drawIn(catalog, entry, { label: 'Aberto agora', ...values }, mode);
+    drawIn(catalog, entry, { label: 'Open now', ...values }, mode);
   const CASES: [string, string][] = [
     ['assist', 'false'],
     ['assist-elevated', 'false'],
@@ -108,7 +115,7 @@ describe('chip: campo interaction', () => {
   const STATES = ['hovered', 'focused', 'pressed', 'dragged'];
 
   it.each(CASES.flatMap(([s, sel]) => MODES.map((m) => [s, sel, m] as const)))(
-    '%s selected=%s (%s): cada estado difere de none (a camada existe)',
+    '%s selected=%s (%s): each state differs from none (the layer exists)',
     (style, selected, mode) => {
       const base = JSON.stringify(
         draw({ style, selected, interaction: 'none' }, mode).root,
@@ -123,7 +130,7 @@ describe('chip: campo interaction', () => {
   );
 
   it.each(CASES)(
-    '%s selected=%s: com enabled false o interaction não desenha nada',
+    '%s selected=%s: with enabled false the interaction draws nothing',
     (style, selected) => {
       for (const mode of MODES) {
         const off = JSON.stringify(
@@ -141,7 +148,7 @@ describe('chip: campo interaction', () => {
     },
   );
 
-  it('a camada de estado usa a cor do rótulo e a opacidade do estado', () => {
+  it('the state layer uses the label color and the state opacity', () => {
     const color = (values: Values) => {
       const [layer] = layers(draw(values, 'light').root);
       return layer?.type === 'rect' ? layer.fills : undefined;
@@ -163,7 +170,7 @@ describe('chip: campo interaction', () => {
     expect(selected).not.toBe(suggestion);
   });
 
-  it('a elevação do elevated muda por estado: 1 parado, foco e pressionado, 2 no mouse, 4 arrastado', () => {
+  it('the elevation of the elevated one changes per state: 1 at rest, focus and pressed, 2 on mouse over, 4 dragged', () => {
     for (const style of ['assist-elevated', 'filter-elevated', 'suggestion-elevated']) {
       const at = (interaction: string) =>
         shadows(draw({ style, interaction }, 'light').root);
@@ -175,7 +182,7 @@ describe('chip: campo interaction', () => {
     }
   });
 
-  it('o chip plano só tem sombra arrastado, ou no mouse sobre o filter selecionado (nível 1)', () => {
+  it('the flat chip only has a shadow when dragged, or on mouse over the selected filter (level 1)', () => {
     for (const style of ['assist', 'filter', 'input', 'suggestion']) {
       const at = (interaction: string, selected = 'false') =>
         shadows(draw({ style, selected, interaction }, 'light').root);
@@ -192,7 +199,7 @@ describe('chip: campo interaction', () => {
     expect(sel('pressed')).toEqual([]);
   });
 
-  it('o contorno do chip plano muda no foco e some selecionado (FlatFocusOutlineColor)', () => {
+  it('the outline of the flat chip changes on focus and disappears when selected (FlatFocusOutlineColor)', () => {
     const stroke = (values: Values) => JSON.stringify(draw(values, 'light').root.stroke);
     for (const style of ['assist', 'suggestion', 'filter', 'input']) {
       const none = stroke({ style, interaction: 'none' });
@@ -200,14 +207,14 @@ describe('chip: campo interaction', () => {
       for (const interaction of ['hovered', 'pressed', 'dragged'])
         expect(stroke({ style, interaction }), `${style} ${interaction}`).toBe(none);
     }
-    // assist usa on-surface no foco; os outros, on-surface-variant
+    // assist uses on-surface on focus; the others, on-surface-variant
     expect(stroke({ style: 'assist', interaction: 'focused' })).not.toBe(
       stroke({ style: 'suggestion', interaction: 'focused' }),
     );
     expect(stroke({ style: 'filter', interaction: 'focused' })).toBe(
       stroke({ style: 'suggestion', interaction: 'focused' }),
     );
-    // selecionado e elevated não têm contorno: o contorno não muda em estado nenhum
+    // selected and elevated have no outline: the outline does not change in any state
     for (const values of [
       { style: 'filter', selected: 'true' },
       { style: 'input', selected: 'true' },
@@ -225,23 +232,24 @@ describe('chip: campo interaction', () => {
 
 // --- card -----------------------------------------------------------------------------------
 
-describe('card: campo interaction', () => {
+describe('card: interaction field', () => {
   describeField('card', ['none', 'hovered', 'focused', 'pressed', 'dragged']);
   const entry = findEntry(catalog, 'card')!;
   exampleFor('card', entry, ['hovered', 'focused', 'pressed', 'dragged']);
 
   const draw = (values: Values, mode: 'light' | 'dark') =>
-    drawIn(catalog, entry, { title: 'Praia do Rosa', ...values }, mode);
+    drawIn(catalog, entry, { title: 'Rosa Beach', ...values }, mode);
   const STYLES = ['filled', 'elevated', 'outlined'];
   const STATES = ['hovered', 'focused', 'pressed', 'dragged'];
 
-  it('este tipo não tem enabled, então o interaction sempre desenha', () => {
+  it('this type has no enabled, so the interaction always draws', () => {
     expect(typeOf('card').fields.some((f) => f.key === 'enabled')).toBe(false);
+    // pt-BR kept: shared library data (field description of libraries/material3-compose)
     expect(interactionField('card')?.description).toMatch(/não tem enabled/);
   });
 
   it.each(STYLES.flatMap((s) => MODES.map((m) => [s, m] as const)))(
-    '%s (%s): cada estado difere de none (a camada existe)',
+    '%s (%s): each state differs from none (the layer exists)',
     (style, mode) => {
       const base = JSON.stringify(draw({ style, interaction: 'none' }, mode).root);
       for (const interaction of STATES) {
@@ -253,7 +261,7 @@ describe('card: campo interaction', () => {
     },
   );
 
-  it('a camada tem as opacidades dos tokens de estado', () => {
+  it('the layer has the opacities of the state tokens', () => {
     const opacity = (interaction: string) =>
       layers(draw({ style: 'filled', interaction }, 'light').root)[0]?.opacity;
     expect(opacity('hovered')).toBe(0.08);
@@ -262,22 +270,22 @@ describe('card: campo interaction', () => {
     expect(opacity('dragged')).toBe(0.16);
   });
 
-  it('a elevação muda por estado (nível 0, 1, 2, 3 e 4 dos tokens)', () => {
+  it('the elevation changes per state (level 0, 1, 2, 3 and 4 of the tokens)', () => {
     const at = (style: string, interaction: string) =>
       shadows(draw({ style, interaction }, 'light').root);
-    // filled: 0, mouse 1, foco 0, pressionado 0, arrastado 3
+    // filled: 0, mouse 1, focus 0, pressed 0, dragged 3
     expect(at('filled', 'none')).toEqual([]);
     expect(at('filled', 'hovered')).toEqual(L1);
     expect(at('filled', 'focused')).toEqual([]);
     expect(at('filled', 'pressed')).toEqual([]);
     expect(at('filled', 'dragged')).toEqual(L3);
-    // elevated: 1, mouse 2, foco 1, pressionado 1, arrastado 4
+    // elevated: 1, mouse 2, focus 1, pressed 1, dragged 4
     expect(at('elevated', 'none')).toEqual(L1);
     expect(at('elevated', 'hovered')).toEqual(L2);
     expect(at('elevated', 'focused')).toEqual(L1);
     expect(at('elevated', 'pressed')).toEqual(L1);
     expect(at('elevated', 'dragged')).toEqual(L4);
-    // outlined: como o filled
+    // outlined: like the filled one
     expect(at('outlined', 'none')).toEqual([]);
     expect(at('outlined', 'hovered')).toEqual(L1);
     expect(at('outlined', 'focused')).toEqual([]);
@@ -285,7 +293,7 @@ describe('card: campo interaction', () => {
     expect(at('outlined', 'dragged')).toEqual(L3);
   });
 
-  it('o contorno do outlined muda só no foco (OutlinedCardTokens.FocusOutlineColor)', () => {
+  it('the outline of the outlined one changes only on focus (OutlinedCardTokens.FocusOutlineColor)', () => {
     const stroke = (style: string, interaction: string) =>
       JSON.stringify(draw({ style, interaction }, 'light').root.stroke);
     const none = stroke('outlined', 'none');
@@ -296,7 +304,7 @@ describe('card: campo interaction', () => {
       expect(stroke(style, 'focused'), style).toBe(stroke(style, 'none'));
   });
 
-  it('a altura do cartão não muda com o estado', () => {
+  it('the card height does not change with the state', () => {
     for (const style of STYLES) {
       const h = (interaction: string) =>
         draw({ style, interaction }, 'light').root.height;
@@ -307,14 +315,14 @@ describe('card: campo interaction', () => {
 
 // --- segmented-button ------------------------------------------------------------------------
 
-describe('segmented-button: campo interaction', () => {
+describe('segmented-button: interaction field', () => {
   describeField('segmented-button', ['none', 'hovered', 'focused', 'pressed']);
   const entry = findEntry(catalog, 'segmented-button')!;
   exampleFor('segmented-button', entry, ['hovered', 'focused', 'pressed']);
 
   const rows = (...selected: boolean[]) =>
     selected.map((s, i) => ({
-      label: ['Dia', 'Semana', 'Mês'][i],
+      label: ['Day', 'Week', 'Month'][i],
       icon: '',
       selected: s ? 'true' : 'false',
     }));
@@ -323,7 +331,7 @@ describe('segmented-button: campo interaction', () => {
   const STATES = ['hovered', 'focused', 'pressed'];
 
   it.each(['single', 'multi'].flatMap((s) => MODES.map((m) => [s, m] as const)))(
-    '%s (%s): cada estado difere de none e cai no item selecionado',
+    '%s (%s): each state differs from none and lands on the selected item',
     (selection, mode) => {
       const base = JSON.stringify(draw({ selection, interaction: 'none' }, mode).root);
       for (const interaction of STATES) {
@@ -337,7 +345,7 @@ describe('segmented-button: campo interaction', () => {
     },
   );
 
-  it('o estado cai em cada item selecionado (seleção múltipla com dois) e só neles', () => {
+  it('the state lands on each selected item (multiple selection with two) and only on them', () => {
     const two = draw(
       { selection: 'multi', options: rows(true, false, true), interaction: 'hovered' },
       'light',
@@ -350,7 +358,7 @@ describe('segmented-button: campo interaction', () => {
     expect(layers(none.root)).toHaveLength(0);
   });
 
-  it('a camada tem as opacidades dos tokens de estado', () => {
+  it('the layer has the opacities of the state tokens', () => {
     const opacity = (interaction: string) =>
       layers(draw({ interaction }, 'light').root)[0]?.opacity;
     expect(opacity('hovered')).toBe(0.08);
@@ -359,7 +367,7 @@ describe('segmented-button: campo interaction', () => {
   });
 
   it.each(STATES)(
-    '%s com enabled false desenha igual ao desabilitado sem interaction',
+    '%s with enabled false draws the same as the disabled one without interaction',
     (interaction) => {
       for (const mode of MODES) {
         const off = JSON.stringify(

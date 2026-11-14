@@ -10,12 +10,14 @@ import {
   type SpecParseResult,
 } from '../../src/model';
 
-// Especialização formatVersion 3 (etapa 4): `sources` nos tipos e nos campos (inclusive
-// nas colunas de table). v1 e v2 continuam abrindo; `sources` só existe na v3.
+// formatVersion 3 specialization (stage 4): `sources` on types and fields (including
+// on table columns). v1 and v2 still open; `sources` only exists in v3.
+// pt-BR kept: shared fixture data (tests/fixtures/sdui-v2.json and examples/specs/modelo-de-dados.json:
+// layer `componentes`, spec `modelo-dados`, type `classe`), outside this phase
 
 const read = (path: string): string => readFileSync(path, 'utf8');
 const sdui = read('tests/fixtures/sdui-v2.json');
-const modelo = read('examples/specs/modelo-de-dados.json');
+const dataModel = read('examples/specs/modelo-de-dados.json');
 const jsonSchema = JSON.parse(read('docs/spec.schema.json')) as Record<string, unknown>;
 const jsonValidator = z.fromJSONSchema(jsonSchema as never);
 
@@ -24,14 +26,14 @@ type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-ex
 const BUTTON = 'layers[0].annotationTypes[0]';
 const ON_CLICK = 'layers[1].annotationTypes[0]';
 
-/** O SDUI de exemplo em v3, com origens no Button (tipo, campo enum e campo texto) e numa coluna. */
+/** The example SDUI in v3, with sources on the Button (type, enum field and text field) and on a column. */
 function v3(): Json {
   const spec = JSON.parse(sdui) as Json;
   spec.formatVersion = 3;
   const button = spec.layers[0].annotationTypes[0];
   button.sources = [
     { system: 'figma', id: '3f2a9c', name: 'DS/Button' },
-    { system: 'figma', name: 'DS/Button (legado)' },
+    { system: 'figma', name: 'DS/Button (legacy)' },
   ];
   button.fields[1].sources = [{ system: 'figma', name: 'Label' }];
   button.fields[2].sources = [
@@ -48,7 +50,7 @@ function v3(): Json {
 }
 
 function errorsOf(result: SpecParseResult): string[] {
-  if (result.ok) throw new Error('era para falhar');
+  if (result.ok) throw new Error('should have failed');
   return result.errors;
 }
 
@@ -58,18 +60,18 @@ function parsed(data: Json): Spec {
   return result.spec;
 }
 
-describe('especialização formatVersion 3 (sources)', () => {
-  it('a versão atual do formato é a 16', () => {
+describe('formatVersion 3 specialization (sources)', () => {
+  it('the current format version is 16', () => {
     expect(SPEC_FORMAT_VERSION).toBe(16);
   });
 
-  it('aceita sources em tipos, campos e colunas de table, no zod e no JSON Schema', () => {
+  it('accepts sources on types, fields and table columns, in zod and in the JSON Schema', () => {
     const spec = parsed(v3());
     expect(spec.formatVersion).toBe(3);
     const button = spec.layers[0]?.annotationTypes[0];
     expect(button?.sources).toEqual([
       { system: 'figma', id: '3f2a9c', name: 'DS/Button' },
-      { system: 'figma', name: 'DS/Button (legado)' },
+      { system: 'figma', name: 'DS/Button (legacy)' },
     ]);
     expect(button?.fields[2]?.sources?.[0]?.values).toEqual({
       Primary: 'primary',
@@ -83,7 +85,7 @@ describe('especialização formatVersion 3 (sources)', () => {
     expect(jsonValidator.safeParse(v3()).success).toBe(true);
   });
 
-  it('uma v3 sem sources é a v2 (plataformas e code continuam valendo)', () => {
+  it('a v3 without sources is the v2 (platforms and code are still valid)', () => {
     const spec = JSON.parse(sdui) as Json;
     spec.formatVersion = 3;
     const result = parsed(spec);
@@ -91,21 +93,21 @@ describe('especialização formatVersion 3 (sources)', () => {
     expect(jsonValidator.safeParse(spec).success).toBe(true);
   });
 
-  it('values só em campo enum e com destinos que existem nas options', () => {
+  it('values only on an enum field and with targets that exist in the options', () => {
     const cases: [string, (s: Json) => void, string][] = [
       [
-        'destino fora das options',
+        'target outside the options',
         (s) =>
           (s.layers[0].annotationTypes[0].fields[2].sources[0].values.Primary = 'main'),
         `${BUTTON}.fields[2].sources[0].values.Primary: "main" is not in the options`,
       ],
       [
-        'values em campo string',
+        'values on a string field',
         (s) => (s.layers[0].annotationTypes[0].fields[1].sources[0].values = { A: 'a' }),
         `${BUTTON}.fields[1].sources[0].values: only allowed in enum fields`,
       ],
       [
-        'values em coluna string de table',
+        'values on a string column of a table',
         (s) =>
           (s.layers[1].annotationTypes[0].fields[2].columns[0].sources[0].values = {
             A: 'a',
@@ -113,22 +115,22 @@ describe('especialização formatVersion 3 (sources)', () => {
         `${ON_CLICK}.fields[2].columns[0].sources[0].values: only allowed in enum fields`,
       ],
       [
-        'origem de tipo sem id nem name',
+        'type source without id or name',
         (s) => (s.layers[0].annotationTypes[0].sources[1] = { system: 'figma' }),
         `${BUTTON}.sources[1]: needs "id" or "name"`,
       ],
       [
-        'origem de tipo sem system',
+        'type source without system',
         (s) => delete s.layers[0].annotationTypes[0].sources[0].system,
         `${BUTTON}.sources[0].system:`,
       ],
       [
-        'origem de campo sem name',
+        'field source without name',
         (s) => delete s.layers[0].annotationTypes[0].fields[1].sources[0].name,
         `${BUTTON}.fields[1].sources[0].name:`,
       ],
       [
-        'propriedade desconhecida na origem',
+        'unknown property on the source',
         (s) => (s.layers[0].annotationTypes[0].sources[0].extra = 1),
         `${BUTTON}.sources[0]:`,
       ],
@@ -144,7 +146,7 @@ describe('especialização formatVersion 3 (sources)', () => {
     }
   });
 
-  it('o JSON Schema também recusa os erros estruturais das origens', () => {
+  it('the JSON Schema also refuses the structural errors of the sources', () => {
     const structural: ((s: Json) => void)[] = [
       (s) => (s.layers[0].annotationTypes[0].sources[1] = { system: 'figma' }),
       (s) => delete s.layers[0].annotationTypes[0].fields[1].sources[0].name,
@@ -159,7 +161,7 @@ describe('especialização formatVersion 3 (sources)', () => {
     }
   });
 
-  it('sources only allowed with formatVersion 3, apontando cada uso', () => {
+  it('sources only allowed with formatVersion 3, pointing at each use', () => {
     const spec = v3();
     spec.formatVersion = 2;
     const errors = errorsOf(parseSpec(spec));
@@ -174,9 +176,9 @@ describe('especialização formatVersion 3 (sources)', () => {
     );
   });
 
-  it('v1 e v2 continuam abrindo (os exemplos não usam sources)', () => {
+  it('v1 and v2 still open (the examples do not use sources)', () => {
     const v2 = parseSpecText(sdui);
-    const v1 = parseSpecText(modelo);
+    const v1 = parseSpecText(dataModel);
     expect(v2.ok && v2.spec.formatVersion).toBe(2);
     expect(v1.ok && v1.spec.formatVersion).toBe(1);
   });
@@ -185,13 +187,13 @@ describe('especialização formatVersion 3 (sources)', () => {
 describe('findTypesBySource', () => {
   const sduiV3 = () => parsed(v3());
   const other = (): Spec => {
-    const spec = JSON.parse(modelo) as Json;
+    const spec = JSON.parse(dataModel) as Json;
     spec.formatVersion = 3;
     spec.layers[0].annotationTypes[0].sources = [{ system: 'figma', name: 'DS/Button' }];
     return parsed(spec);
   };
 
-  it('acha pelo id e pelo nome, com os de id primeiro', () => {
+  it('finds by id and by name, with the id ones first', () => {
     const byId = findTypesBySource([sduiV3(), other()], 'figma', { id: '3f2a9c' });
     expect(byId.map((m) => [m.specId, m.type.id, m.by])).toEqual([
       ['sdui', 'button', 'id'],
@@ -208,13 +210,13 @@ describe('findTypesBySource', () => {
     expect(both[0]?.source).toEqual({ system: 'figma', id: '3f2a9c', name: 'DS/Button' });
   });
 
-  it('um tipo pode corresponder a vários elementos (variante antiga e nova)', () => {
-    const old = findTypesBySource([sduiV3()], 'figma', { name: 'DS/Button (legado)' });
+  it('a type can match several elements (old and new variant)', () => {
+    const old = findTypesBySource([sduiV3()], 'figma', { name: 'DS/Button (legacy)' });
     expect(old.map((m) => m.type.id)).toEqual(['button']);
     expect(old[0]?.by).toBe('name');
   });
 
-  it('não interpreta o sistema: outro sistema, nome diferente ou busca vazia não acham nada', () => {
+  it('does not interpret the system: another system, a different name or an empty search find nothing', () => {
     expect(findTypesBySource([sduiV3()], 'sketch', { name: 'DS/Button' })).toEqual([]);
     expect(findTypesBySource([sduiV3()], 'figma', { name: 'ds/button' })).toEqual([]);
     expect(findTypesBySource([sduiV3()], 'figma', {})).toEqual([]);

@@ -6,11 +6,11 @@ import {
 } from '../../src/model';
 import { simulateApplied } from '../../src/model/proposalAnchors';
 
-// Auxiliares dos fuzz da proposta (fidelidade, #549; revisão, #644): gerador determinístico,
-// grade pequena de retângulos (para forçar empates), a forma do projeto (pais e ordem entre
-// irmãs) e o predicado do limite conhecido #625.
+// Helpers of the proposal fuzz tests (fidelity, #549; revision, #644): deterministic generator,
+// small grid of rectangles (to force ties), the shape of the project (parents and order among
+// siblings) and the predicate of the known limit #625.
 
-/** Gerador pseudoaleatório determinístico (mulberry32). */
+/** Deterministic pseudorandom generator (mulberry32). */
 export function rng(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -26,14 +26,14 @@ export type Rand = () => number;
 export const int = (r: Rand, n: number) => Math.floor(r() * n);
 export const pick = <T>(r: Rand, list: readonly T[]): T => list[int(r, list.length)] as T;
 
-/** Um intervalo [a, b) da grade `0, step, …, steps·step`. */
+/** An interval [a, b) of the grid `0, step, …, steps·step`. */
 function span(r: Rand, steps: number, step: number): [number, number] {
   const a = int(r, steps);
   const b = a + 1 + int(r, steps - a);
   return [a * step, (b - a) * step];
 }
 
-/** Retângulo na grade do container (100×100, passo 25) ou do canvas (200×200, passo 50). */
+/** Rectangle on the container grid (100×100, step 25) or the canvas grid (200×200, step 50). */
 export function gridRect(r: Rand, inContainer: boolean): Rect {
   const [steps, step] = inContainer ? [4, 25] : [4, 50];
   const [x, width] = span(r, steps, step);
@@ -55,7 +55,7 @@ export const CONTAINER: ProjectContainer = {
   background: '#FFFFFF',
 };
 
-/** Aplica a operação; se o modelo a recusa, devolve o projeto como estava. */
+/** Applies the operation; if the model refuses it, returns the project as it was. */
 export function tryOp(p: Project, op: () => Project): Project {
   try {
     return op();
@@ -78,7 +78,7 @@ export function create(p: Project, r: Rand, id: string): Project {
 const byId = (entries: [string, string | null][]) =>
   Object.fromEntries(entries.sort(([a], [b]) => a.localeCompare(b)));
 
-/** Pais das marcações e dos containers, e as irmãs (mesmo espaço e mesmo pai) em ordem. */
+/** Parents of the markings and containers, and the siblings (same space and same parent) in order. */
 export function shape(p: Project) {
   const groups = new Map<string, string[]>();
   for (const m of p.markings) {
@@ -104,10 +104,10 @@ export const sameParents = (a: Project, b: Project) => {
 };
 
 /**
- * Nenhuma âncora reproduz os pais do proposto: o empate foi decidido por um passo do lote que a
- * proposta não registra (a exceção da "Garantia" em docs/PROPOSAL-FORMAT.md, limite #625). Prova
- * por força bruta: toda escolha de `insertBefore` das criadas, no array e no assentar do
- * aplicador.
+ * No anchor reproduces the proposed parents: the tie was decided by a step of the batch that the
+ * proposal does not record (the "Guarantee" exception in docs/PROPOSAL-FORMAT.md, limit #625). Proof
+ * by brute force: every choice of `insertBefore` of the created ones, in the array and in the
+ * applier's settle.
  */
 export function unexpressible({
   base,
@@ -121,7 +121,7 @@ export function unexpressible({
   const slots = base.markings.filter((m) => afterIds.has(m.id)).map((m) => m.id);
   const created = after.markings.filter((m) => !baseIds.has(m.id)).map((m) => m.id);
   const total = (slots.length + 1) ** created.length;
-  if (total > 100_000) throw new Error('caso grande demais para a força bruta');
+  if (total > 100_000) throw new Error('case too large for brute force');
   for (let k = 0; k < total; k++) {
     const anchors = new Map<string, string>();
     let rest = k;

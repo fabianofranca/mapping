@@ -1,6 +1,6 @@
-// `formatVersion` 16 (etapa #1079, S1): `fieldModels` na raiz e, no `code` de cada plataforma (e
-// em cada caso de `variants`), `signature`, `ignore`, `calls` e `formats`; `params` com caminho
-// (`colors.containerColor`) e posicional (`#0`); `signature` e `ignore` nas `sources` do tipo.
+// `formatVersion` 16 (stage #1079, S1): `fieldModels` at the root and, in each platform's `code` (and
+// in each `variants` case), `signature`, `ignore`, `calls` and `formats`; `params` with a path
+// (`colors.containerColor`) and positional (`#0`); `signature` and `ignore` in the type's `sources`.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
@@ -17,7 +17,7 @@ const jsonValidator = z.fromJSONSchema(jsonSchema as never);
 
 const CODE = 'layers[0].annotationTypes[0].code.compose';
 
-/** Especialização com um `button` e um `surface`, a plataforma `compose` e o `code` completo da v16. */
+/** Specialization with a `button` and a `surface`, the `compose` platform and the full v16 `code`. */
 function v16(edit?: (spec: Json) => void, formatVersion = 16): Json {
   const spec: Json = {
     format: 'mapping-spec',
@@ -39,8 +39,8 @@ function v16(edit?: (spec: Json) => void, formatVersion = 16): Json {
     },
     layers: [
       {
-        id: 'componentes',
-        name: 'Componentes',
+        id: 'components',
+        name: 'Components',
         color: '#112233',
         annotationTypes: [
           {
@@ -110,14 +110,14 @@ const issuesOf = (raw: Json) => {
 
 const ONLY_V16 = 'only allowed with formatVersion 16';
 
-describe('formatVersion 16: versão e contrato', () => {
-  it('a versão atual é 16 e a 15 continua aceita', () => {
+describe('formatVersion 16: version and contract', () => {
+  it('the current version is 16 and 15 is still accepted', () => {
     expect(SPEC_FORMAT_VERSION).toBe(16);
     expect(SPEC_FORMAT_VERSIONS).toContain(15);
     expect(SPEC_FORMAT_VERSIONS.at(-1)).toBe(16);
   });
 
-  it('a especialização v16 com fieldModels, signature, calls, formats, #0 e colors.containerColor vale', () => {
+  it('the v16 specialization with fieldModels, signature, calls, formats, #0 and colors.containerColor is valid', () => {
     expect(issuesOf(v16())).toEqual([]);
     const result = parseSpec(v16());
     expect(result.ok).toBe(true);
@@ -138,12 +138,12 @@ describe('formatVersion 16: versão e contrato', () => {
     }
   });
 
-  it('o JSON Schema aceita a v16 completa', () => {
+  it('the JSON Schema accepts the full v16', () => {
     expect(jsonValidator.safeParse(v16()).success).toBe(true);
     expect(jsonValidator.safeParse(v16(undefined, 15)).success).toBe(true);
   });
 
-  it('numa v15, cada chave nova dá "only allowed with formatVersion 16" no caminho exato', () => {
+  it('in a v15, each new key gives "only allowed with formatVersion 16" at the exact path', () => {
     const issues = issuesOf(v16(undefined, 15));
     for (const path of [
       'fieldModels',
@@ -160,7 +160,7 @@ describe('formatVersion 16: versão e contrato', () => {
     }
   });
 
-  it('numa v15, params com caminho e posicional continuam textos opacos (sem erro)', () => {
+  it('in a v15, params with a path and positional are still opaque texts (no error)', () => {
     const issues = issuesOf(
       v16((spec) => {
         delete spec.fieldModels;
@@ -179,7 +179,7 @@ describe('formatVersion 16: versão e contrato', () => {
     expect(issues).toEqual([]);
   });
 
-  it('numa v15, signature na sources do tipo é erro', () => {
+  it("in a v15, signature in the type's sources is an error", () => {
     const spec = v16((s) => {
       s.layers[0].annotationTypes[0].sources = [
         { system: 'figma', name: 'Button', signature: 'signatures/button.figma.json' },
@@ -192,9 +192,9 @@ describe('formatVersion 16: versão e contrato', () => {
   });
 });
 
-describe('formatVersion 16: validação do que é novo', () => {
-  it('like que não acha o campo é erro', () => {
-    for (const like of ['surface.nope', 'nope.color', 'semponto']) {
+describe('formatVersion 16: validation of what is new', () => {
+  it('like that does not find the field is an error', () => {
+    for (const like of ['surface.nope', 'nope.color', 'nodot']) {
       const issues = issuesOf(v16((s) => (s.fieldModels.compose.Color = { like })));
       expect(
         issues.map((i) => i.path),
@@ -203,7 +203,7 @@ describe('formatVersion 16: validação do que é novo', () => {
     }
   });
 
-  it('format sem {value} é erro, no modelo de campo e em code.formats', () => {
+  it('format without {value} is an error, in the field model and in code.formats', () => {
     expect(
       issuesOf(v16((s) => (s.fieldModels.compose.Dp.format = '16.dp'))).map(
         (i) => i.path,
@@ -216,7 +216,7 @@ describe('formatVersion 16: validação do que é novo', () => {
     ).toEqual([`${CODE}.formats.width`]);
   });
 
-  it('format de um campo que o tipo não tem é erro', () => {
+  it('format of a field that the type does not have is an error', () => {
     expect(
       issuesOf(
         v16(
@@ -226,7 +226,7 @@ describe('formatVersion 16: validação do que é novo', () => {
     ).toEqual([`${CODE}.formats.nope`]);
   });
 
-  it('caminho em params sem o primeiro segmento em calls é erro', () => {
+  it('path in params without the first segment in calls is an error', () => {
     const issues = issuesOf(
       v16((s) => {
         s.layers[0].annotationTypes[0].code.compose.params.containerColor =
@@ -238,7 +238,7 @@ describe('formatVersion 16: validação do que é novo', () => {
     ]);
   });
 
-  it('o calls do caso entra na conta do caminho do caso, e o da base também', () => {
+  it("the case's calls counts for the case's path, and the base's too", () => {
     expect(issuesOf(v16())).toEqual([]);
     const issues = issuesOf(
       v16((s) => {
@@ -252,7 +252,7 @@ describe('formatVersion 16: validação do que é novo', () => {
     ]);
   });
 
-  it('modelo de campo com mais de uma forma, forma desconhecida ou vazio é erro', () => {
+  it('field model with more than one form, an unknown form or empty is an error', () => {
     expect(
       issuesOf(
         v16(
@@ -273,7 +273,7 @@ describe('formatVersion 16: validação do que é novo', () => {
     ).not.toEqual([]);
   });
 
-  it('signature precisa ser um caminho .json do pacote', () => {
+  it('signature must be a .json path of the package', () => {
     expect(
       issuesOf(
         v16((s) => (s.layers[0].annotationTypes[0].code.compose.signature = '../x.json')),
@@ -286,7 +286,7 @@ describe('formatVersion 16: validação do que é novo', () => {
     ).toEqual([`${CODE}.signature`]);
   });
 
-  it('ignore com nome repetido ou vazio é erro', () => {
+  it('ignore with a repeated or empty name is an error', () => {
     expect(
       issuesOf(
         v16((s) => (s.layers[0].annotationTypes[0].code.compose.ignore = ['a', 'a'])),
@@ -294,7 +294,7 @@ describe('formatVersion 16: validação do que é novo', () => {
     ).toEqual([`${CODE}.ignore[1]`]);
   });
 
-  it('um caso de variants só com signature é um caso válido', () => {
+  it('a variants case with only signature is a valid case', () => {
     expect(
       issuesOf(
         v16((s) => {
@@ -306,7 +306,7 @@ describe('formatVersion 16: validação do que é novo', () => {
     ).toEqual([]);
   });
 
-  it('signature na sources do tipo, em v16, vale', () => {
+  it("signature in the type's sources, in v16, is valid", () => {
     const spec = v16((s) => {
       s.layers[0].annotationTypes[0].sources = [
         { system: 'figma', name: 'Button', signature: 'signatures/button.figma.json' },
@@ -317,8 +317,8 @@ describe('formatVersion 16: validação do que é novo', () => {
   });
 });
 
-describe('formatVersion 16: contrato de versão', () => {
-  it('diffSpecs não vê diferença ao incluir ou mudar as chaves novas', () => {
+describe('formatVersion 16: version contract', () => {
+  it('diffSpecs sees no difference when adding or changing the new keys', () => {
     const base = v16((s) => {
       delete s.fieldModels;
       const code = s.layers[0].annotationTypes[0].code.compose;

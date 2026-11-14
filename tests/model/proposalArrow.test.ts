@@ -28,18 +28,18 @@ import {
 import { sampleProject } from './fixtures';
 import { AT, changeOf, decided, propose, stateOf } from './proposalFixtures';
 
-// Mudanças `create-arrow` e `delete-arrow` (ME4, formatVersion 3): a seta é um item da revisão
-// como a marcação (`markingId` = id dela, `imageId` = container da marcação de origem); nenhum
-// campo de uma seta que já existe é proposto, e a rota (`points`) nunca vem de proposta.
+// `create-arrow` and `delete-arrow` changes (ME4, formatVersion 3): the arrow is a review item
+// like the marking (`markingId` = its id, `imageId` = container of the source marking); no
+// field of an arrow that already exists is proposed, and the route (`points`) never comes from a proposal.
 
-/** `sampleProject` (I1: M1 › M2 › M3; I2: M4) com a seta R1 de M1 para M4 e a R2 de M2 para M3. */
+/** `sampleProject` (I1: M1 › M2 › M3; I2: M4) with arrow R1 from M1 to M4 and R2 from M2 to M3. */
 function withArrows(): Project {
   let p = createArrow(sampleProject(), {
     id: 'R1',
     from: 'M1',
     to: 'M4',
     style: 'elbow',
-    name: 'abre',
+    name: 'opens',
   });
   p = createArrow(p, { id: 'R2', from: 'M2', to: 'M3' });
   return p;
@@ -48,14 +48,14 @@ function withArrows(): Project {
 const changesOf = (p: Proposal, entity: Change['entity']) =>
   p.changes.filter((c) => c.entity === entity);
 
-describe('create-arrow e delete-arrow: o cálculo das mudanças', () => {
-  it('uma seta criada é uma mudança, sob o container da marcação de origem', () => {
+describe('create-arrow and delete-arrow: the change computation', () => {
+  it("a created arrow is a change, under the source marking's container", () => {
     const base = sampleProject();
     const after = addAnnotation(withArrows(), {
       id: 'AR1',
       markingId: 'R1',
       layerId: 'L1',
-      name: 'Evento',
+      name: 'Event',
     });
     const p = propose(base, after);
     expect(p.changes.map((c) => [c.entity, c.entityId, c.kind])).toEqual([
@@ -76,18 +76,18 @@ describe('create-arrow e delete-arrow: o cálculo das mudanças', () => {
         fromSide: null,
         toSide: null,
         style: 'elbow',
-        name: 'abre',
+        name: 'opens',
         locked: false,
       },
     });
-    // A anotação da seta usa a mudança de anotação de sempre, sob o mesmo container.
+    // The arrow's annotation uses the usual annotation change, under the same container.
     expect(changeOf(p, 'annotation', 'AR1')).toMatchObject({
       imageId: 'I1',
       markingId: 'R1',
     });
   });
 
-  it('a rota nunca vai na proposta: o valor da seta não tem `points`', () => {
+  it("the route never goes in the proposal: the arrow's value has no `points`", () => {
     const base = sampleProject();
     const after = setArrowRoute(withArrows(), 'R2', [{ x: 1250, y: 1500 }]);
     const p = propose(base, after);
@@ -96,7 +96,7 @@ describe('create-arrow e delete-arrow: o cálculo das mudanças', () => {
     }
   });
 
-  it('uma seta de uma marcação do canvas aparece no grupo Canvas (imageId nulo)', () => {
+  it('an arrow of a canvas marking appears in the Canvas group (null imageId)', () => {
     const base = createMarking(sampleProject(), {
       id: 'K',
       containerId: null,
@@ -109,7 +109,7 @@ describe('create-arrow e delete-arrow: o cálculo das mudanças', () => {
     });
   });
 
-  it('remover a seta é uma mudança de remoção, com o valor de antes', () => {
+  it('removing the arrow is a removal change, with the previous value', () => {
     const base = addAnnotation(withArrows(), {
       id: 'AR1',
       markingId: 'R1',
@@ -124,7 +124,7 @@ describe('create-arrow e delete-arrow: o cálculo das mudanças', () => {
       to: null,
       imageId: 'I1',
       markingId: 'R1',
-      from: { id: 'R1', from: 'M1', to: 'M4', style: 'elbow', name: 'abre' },
+      from: { id: 'R1', from: 'M1', to: 'M4', style: 'elbow', name: 'opens' },
     });
     expect(changeOf(p, 'annotation', 'AR1')).toMatchObject({
       imageId: 'I1',
@@ -132,7 +132,7 @@ describe('create-arrow e delete-arrow: o cálculo das mudanças', () => {
     });
   });
 
-  it('apagar a ponta leva a seta: a remoção dela aparece, sob a origem de antes', () => {
+  it('deleting the end takes the arrow: its removal appears, under the previous source', () => {
     const base = withArrows();
     const p = propose(base, removeMarking(base, 'M4'));
     expect(p.changes.map((c) => [c.entity, c.entityId, c.kind])).toEqual([
@@ -143,21 +143,21 @@ describe('create-arrow e delete-arrow: o cálculo das mudanças', () => {
     expect(changeOf(p, 'arrow', 'R1').imageId).toBe('I1');
   });
 
-  it('estilo, nome, trava, pontas e rota de uma seta que já existe não viram mudança', () => {
+  it('style, name, lock, ends and route of an arrow that already exists do not become a change', () => {
     const base = withArrows();
     let after = setArrowStyle(base, 'R1', 'straight');
-    after = setArrowName(after, 'R1', 'outro nome');
+    after = setArrowName(after, 'R1', 'other name');
     after = setArrowLocked(after, 'R1', true);
     after = setArrowRoute(after, 'R2', [{ x: 1250, y: 1500 }]);
     expect(propose(base, after).changes).toEqual([]);
   });
 });
 
-describe('create-arrow e delete-arrow: a leitura', () => {
+describe('create-arrow and delete-arrow: reading', () => {
   const base = sampleProject();
   const created = () => propose(base, withArrows());
 
-  it('o arquivo relê igual (grava e lê)', () => {
+  it('the file reads back the same (write and read)', () => {
     const p = created();
     const parsed = parseProposal(JSON.parse(serializeProposal(p)));
     expect(parsed.ok).toBe(true);
@@ -167,7 +167,7 @@ describe('create-arrow e delete-arrow: a leitura', () => {
     expect(parsed.proposal.formatVersion).toBe(4);
   });
 
-  it('uma alteração de campo de seta é ignorada, com aviso; o resto da proposta fica', () => {
+  it('an arrow field change is ignored, with a warning; the rest of the proposal stays', () => {
     const p = created();
     const first = changeOf(p, 'arrow', 'R1');
     const edited = {
@@ -194,14 +194,14 @@ describe('create-arrow e delete-arrow: a leitura', () => {
     if (!parsed.ok) return;
     expect(parsed.proposal.changes.map((c) => c.id)).toEqual(p.changes.map((c) => c.id));
     expect(parsed.proposal.decisions).toEqual({});
-    // A nota presa à mudança ignorada passa para a proposta.
+    // The note attached to the ignored change moves to the proposal.
     expect(parsed.proposal.notes[0]?.target).toEqual({ level: 'proposal', id: null });
     expect(parsed.warnings).toHaveLength(1);
     expect(parsed.warnings[0]).toContain('arrow');
     expect(first.entity).toBe('arrow');
   });
 
-  it('o cabeçalho da seta tem de apontar para ela: markingId obrigatório e igual ao id', () => {
+  it("the arrow's header must point to it: markingId required and equal to the id", () => {
     const p = created();
     const json = (patch: Record<string, unknown>) =>
       parseProposal({
@@ -215,7 +215,7 @@ describe('create-arrow e delete-arrow: a leitura', () => {
     expect(json({})).toMatchObject({ ok: true });
   });
 
-  it('o valor da seta é conferido: estilo ou ponta fora do formato', () => {
+  it("the arrow's value is checked: style or end outside the format", () => {
     const p = created();
     const patchTo = (to: Record<string, unknown>) =>
       parseProposal({
@@ -228,20 +228,20 @@ describe('create-arrow e delete-arrow: a leitura', () => {
     expect(patchTo({ style: 'zigzag' })).toMatchObject({ ok: false });
     expect(patchTo({ from: '' })).toMatchObject({ ok: false });
     expect(patchTo({ fromSide: 'middle' })).toMatchObject({ ok: false });
-    // Um `points` que venha escrito à mão não invalida a proposta (é ignorado ao aplicar).
+    // A hand-written `points` does not invalidate the proposal (it is ignored on apply).
     expect(patchTo({ points: [{ x: 1, y: 2 }] })).toMatchObject({ ok: true });
   });
 });
 
-describe('create-arrow e delete-arrow: a árvore da revisão', () => {
-  it('a seta fica sob a marcação de origem quando ela também muda; senão sob o container', () => {
+describe('create-arrow and delete-arrow: the review tree', () => {
+  it('the arrow sits under the source marking when it also changes; otherwise under the container', () => {
     const base = sampleProject();
-    // N1 (nova, em I1) com uma seta de N1 para M4; R2 sai de M2 (sem mudança própria).
+    // N1 (new, in I1) with an arrow from N1 to M4; R2 leaves M2 (with no change of its own).
     let after = createMarking(base, {
       id: 'N1',
       containerId: 'I1',
       rect: { x: 3000, y: 2000, width: 100, height: 100 },
-      name: 'Nova',
+      name: 'New',
     });
     after = createArrow(after, { id: 'R1', from: 'N1', to: 'M4' });
     after = createArrow(after, { id: 'R2', from: 'M2', to: 'M3' });
@@ -250,7 +250,7 @@ describe('create-arrow e delete-arrow: a árvore da revisão', () => {
     const nested = tree.nodes.get('item:R1');
     expect(nested).toMatchObject({ level: 'item', id: 'R1' });
     expect(tree.nodes.get('item:N1')?.children.map((n) => n.id)).toEqual(['R1']);
-    // R2 não tem origem com mudanças: vai direto sob o container I1.
+    // R2's source has no changes: it goes straight under container I1.
     expect(tree.nodes.get('image:I1')?.children.map((n) => n.id)).toEqual(['N1', 'R2']);
     expect(tree.changeIdsOf({ level: 'item', id: 'N1' })).toEqual(
       expect.arrayContaining([
@@ -263,7 +263,7 @@ describe('create-arrow e delete-arrow: a árvore da revisão', () => {
     ]);
   });
 
-  it('a seta de uma marcação do canvas fica sob o grupo Canvas', () => {
+  it('the arrow of a canvas marking sits under the Canvas group', () => {
     const base = createMarking(sampleProject(), {
       id: 'K',
       containerId: null,
@@ -274,7 +274,7 @@ describe('create-arrow e delete-arrow: a árvore da revisão', () => {
     expect(tree.nodes.get('canvas:')?.children.map((n) => n.id)).toEqual(['R1']);
   });
 
-  it('a anotação da seta aparece no item da seta', () => {
+  it("the arrow's annotation appears in the arrow's item", () => {
     const base = sampleProject();
     const after = addAnnotation(withArrows(), {
       id: 'AR1',
@@ -288,7 +288,7 @@ describe('create-arrow e delete-arrow: a árvore da revisão', () => {
     ]);
   });
 
-  it('o tipo do item seta: criada, removida', () => {
+  it("the arrow item's kind: created, removed", () => {
     const base = sampleProject();
     const created = propose(base, withArrows());
     expect(
@@ -303,32 +303,32 @@ describe('create-arrow e delete-arrow: a árvore da revisão', () => {
   });
 });
 
-describe('create-arrow e delete-arrow: dependências entre as mudanças', () => {
-  /** N1 nova em I1 e uma seta de N1 para M4 com uma anotação. */
+describe('create-arrow and delete-arrow: dependencies between the changes', () => {
+  /** New N1 in I1 and an arrow from N1 to M4 with an annotation. */
   function proposeNew() {
     const base = sampleProject();
     let after = createMarking(base, {
       id: 'N1',
       containerId: 'I1',
       rect: { x: 3000, y: 2000, width: 100, height: 100 },
-      name: 'Nova',
+      name: 'New',
     });
     after = createArrow(after, { id: 'R1', from: 'N1', to: 'M4' });
     after = addAnnotation(after, { id: 'AR1', markingId: 'R1', layerId: 'L1' });
     return { base, p: propose(base, after) };
   }
 
-  it('criar a seta exige a criação da marcação nova que é ponta dela', () => {
+  it('creating the arrow requires creating the new marking that is its end', () => {
     const { p } = proposeNew();
     const marking = changeOf(p, 'marking', 'N1').id;
     const arrow = changeOf(p, 'arrow', 'R1').id;
     const note = changeOf(p, 'annotation', 'AR1').id;
     expect(requiredChanges(p, [arrow])).toEqual([marking]);
-    // A anotação da seta exige a seta (e, por ela, a marcação).
+    // The arrow's annotation requires the arrow (and, through it, the marking).
     expect(requiredChanges(p, [note])).toEqual([arrow, marking]);
   });
 
-  it('rejeitar a criação da marcação rejeita a seta e as anotações dela', () => {
+  it("rejecting the marking's creation rejects the arrow and its annotations", () => {
     const { base, p } = proposeNew();
     const next = decided(
       p,
@@ -340,7 +340,7 @@ describe('create-arrow e delete-arrow: dependências entre as mudanças', () => 
     expect(stateOf(next, changeOf(p, 'annotation', 'AR1').id)).toBe('rejected');
   });
 
-  it('aceitar a seta aceita a marcação que ela exige', () => {
+  it('accepting the arrow accepts the marking it requires', () => {
     const { base, p } = proposeNew();
     const next = decided(
       p,
@@ -352,7 +352,7 @@ describe('create-arrow e delete-arrow: dependências entre as mudanças', () => 
     expect(stateOf(next, changeOf(p, 'annotation', 'AR1').id)).toBeNull();
   });
 
-  it('apagar a marcação exige apagar as setas presas a ela; rejeitar a remoção da seta rejeita a da marcação', () => {
+  it("deleting the marking requires deleting the arrows attached to it; rejecting the arrow's removal rejects the marking's", () => {
     const base = withArrows();
     const p = propose(base, removeMarking(base, 'M4'));
     const marking = changeOf(p, 'marking', 'M4').id;
@@ -365,7 +365,7 @@ describe('create-arrow e delete-arrow: dependências entre as mudanças', () => 
   });
 });
 
-describe('create-arrow e delete-arrow: aplicar', () => {
+describe('create-arrow and delete-arrow: applying', () => {
   const allAccepted = (p: Proposal): Proposal => ({
     ...p,
     decisions: Object.fromEntries(
@@ -373,13 +373,13 @@ describe('create-arrow e delete-arrow: aplicar', () => {
     ),
   });
 
-  it('aceitar tudo dá o projeto proposto, com as setas e a anotação delas', () => {
+  it('accepting everything gives the proposed project, with the arrows and their annotation', () => {
     const base = sampleProject();
     const after = addAnnotation(withArrows(), {
       id: 'AR1',
       markingId: 'R1',
       layerId: 'L1',
-      name: 'Evento',
+      name: 'Event',
     });
     const result = applyAccepted(base, allAccepted(propose(base, after)), AT);
     expect(result.ok).toBe(true);
@@ -392,7 +392,7 @@ describe('create-arrow e delete-arrow: aplicar', () => {
     expect(result.proposal.status).toBe('applied');
   });
 
-  it('a seta criada nasce com `points: []`, mesmo que a proposta traga pontos', () => {
+  it('the created arrow starts with `points: []`, even if the proposal brings points', () => {
     const base = sampleProject();
     const p = propose(base, withArrows());
     const tampered: Proposal = {
@@ -412,7 +412,7 @@ describe('create-arrow e delete-arrow: aplicar', () => {
     expect(result.project.arrows.every((a) => a.points.length === 0)).toBe(true);
   });
 
-  it('a criação sem os opcionais usa os padrões do formato', () => {
+  it("creation without the optional fields uses the format's defaults", () => {
     const base = sampleProject();
     const p = propose(base, createArrow(base, { id: 'R1', from: 'M1', to: 'M4' }));
     const slim: Proposal = {
@@ -440,7 +440,7 @@ describe('create-arrow e delete-arrow: aplicar', () => {
     ]);
   });
 
-  it('aceitar só a remoção da marcação, sem a da seta, bloqueia (ponta inexistente)', () => {
+  it("accepting only the marking's removal, without the arrow's, blocks (nonexistent end)", () => {
     const base = withArrows();
     const p = propose(base, removeMarking(base, 'M4'));
     const onlyMarking: Proposal = {
@@ -454,12 +454,12 @@ describe('create-arrow e delete-arrow: aplicar', () => {
     expect(validation.ok).toBe(false);
     const issue = validation.issues.find((i) => i.code === 'arrow-endpoint-missing');
     expect(issue).toMatchObject({ id: 'R1', otherId: 'M4' });
-    // Rejeitar a remoção da marcação resolve (a seta fica aceita ou não).
+    // Rejecting the marking's removal resolves it (the arrow stays accepted or not).
     expect(issue?.changeIds).toContain(changeOf(p, 'marking', 'M4').id);
     expect(applyAccepted(base, onlyMarking, AT).ok).toBe(false);
   });
 
-  it('rejeitar a criação da marcação leva a seta: aplicar o resto dá um projeto válido', () => {
+  it("rejecting the marking's creation takes the arrow: applying the rest gives a valid project", () => {
     const base = sampleProject();
     let after = createMarking(base, {
       id: 'N1',
@@ -488,7 +488,7 @@ describe('create-arrow e delete-arrow: aplicar', () => {
     expect(result.project.markings.some((m) => m.id === 'N1')).toBe(false);
   });
 
-  it('apagar a marcação aceita leva as setas dela', () => {
+  it('deleting the accepted marking takes its arrows', () => {
     const base = withArrows();
     const p = propose(base, removeMarking(base, 'M4'));
     const result = applyAccepted(base, allAccepted(p), AT);
@@ -498,7 +498,7 @@ describe('create-arrow e delete-arrow: aplicar', () => {
     expect(result.project.markings.some((m) => m.id === 'M4')).toBe(false);
   });
 
-  it('remover só a seta: a marcação e as outras setas ficam', () => {
+  it('removing only the arrow: the marking and the other arrows stay', () => {
     const base = withArrows();
     const p = propose(base, removeArrow(base, 'R2'));
     const result = applyAccepted(base, allAccepted(p), AT);
@@ -508,9 +508,9 @@ describe('create-arrow e delete-arrow: aplicar', () => {
     expect(result.project.markings).toEqual(base.markings);
   });
 
-  it('a seta que já existe perde a rota se uma ponta troca de espaço pela proposta', () => {
+  it('an arrow that already exists loses its route if an end changes space through the proposal', () => {
     const base = setArrowRoute(withArrows(), 'R2', [{ x: 1250, y: 1500 }]);
-    // M3 arrastada para fora do container: vira marcação do canvas (mudança `space`).
+    // M3 dragged out of the container: becomes a canvas marking (`space` change).
     const after = moveMarking(base, 'M3', 5000, 0);
     const p = propose(base, after);
     expect(changeOf(p, 'marking', 'M3', 'space').kind).toBe('update');
@@ -519,13 +519,13 @@ describe('create-arrow e delete-arrow: aplicar', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.project.arrows.find((a) => a.id === 'R2')?.points).toEqual([]);
-    // A que não mudou de espaço fica como estava.
+    // The one that did not change space stays as it was.
     expect(result.project.arrows.find((a) => a.id === 'R1')).toEqual(
       base.arrows.find((a) => a.id === 'R1'),
     );
   });
 
-  it('a visão Proposto (previewProject) inclui as setas propostas, menos as rejeitadas', () => {
+  it('the Proposed view (previewProject) includes the proposed arrows, minus the rejected ones', () => {
     const base = sampleProject();
     const p = propose(base, withArrows());
     expect(previewProject(base, p).project.arrows.map((a) => a.id)).toEqual(['R1', 'R2']);
@@ -538,29 +538,29 @@ describe('create-arrow e delete-arrow: aplicar', () => {
   });
 });
 
-describe('create-arrow e delete-arrow: situação no projeto atual', () => {
-  it('remover a seta não entra em conflito se só a rota mudou; entra se outro campo mudou', () => {
+describe('create-arrow and delete-arrow: status in the current project', () => {
+  it('removing the arrow is not a conflict if only the route changed; it is if another field changed', () => {
     const base = withArrows();
     const p = propose(base, removeArrow(base, 'R2'));
     const c = changeOf(p, 'arrow', 'R2');
     expect(changeStatus(p, c, base).conflict).toBe(false);
-    // A pessoa traçou a rota depois: a rota é só dela, sem conflito.
+    // The person drew the route afterwards: the route is theirs alone, with no conflict.
     const routed = setArrowRoute(base, 'R2', [{ x: 1250, y: 1500 }]);
     expect(changeStatus(p, c, routed).conflict).toBe(false);
-    // Mas renomear a seta muda o que a proposta viu.
-    expect(changeStatus(p, c, setArrowName(base, 'R2', 'outro')).conflict).toBe(true);
-    // E a seta que sumiu é conflito.
+    // But renaming the arrow changes what the proposal saw.
+    expect(changeStatus(p, c, setArrowName(base, 'R2', 'other')).conflict).toBe(true);
+    // And an arrow that disappeared is a conflict.
     expect(changeStatus(p, c, removeArrow(base, 'R2')).conflict).toBe(true);
   });
 
-  it('remover uma seta trancada traz o aviso de item trancado; aceitar é permitido', () => {
+  it('removing a locked arrow brings the locked-item notice; accepting is allowed', () => {
     const base = withArrows();
     const p = propose(base, removeArrow(base, 'R2'));
     const c = changeOf(p, 'arrow', 'R2');
     expect(changeStatus(p, c, base).locked).toBe(false);
     const locked = setArrowLocked(base, 'R2', true);
     expect(changeStatus(p, c, locked).locked).toBe(true);
-    // A revisão é uma decisão deliberada: aplicar remove a seta mesmo trancada.
+    // The review is a deliberate decision: applying removes the arrow even if locked.
     const accepted: Proposal = {
       ...p,
       decisions: { [c.id]: { state: 'accepted', at: AT } },
@@ -570,7 +570,7 @@ describe('create-arrow e delete-arrow: situação no projeto atual', () => {
     if (result.ok) expect(result.project.arrows.map((a) => a.id)).toEqual(['R1']);
   });
 
-  it('criar uma seta com id que já existe é conflito', () => {
+  it('creating an arrow with an id that already exists is a conflict', () => {
     const base = sampleProject();
     const p = propose(base, withArrows());
     const c = changeOf(p, 'arrow', 'R1');
@@ -579,11 +579,11 @@ describe('create-arrow e delete-arrow: situação no projeto atual', () => {
   });
 });
 
-describe('create-arrow: comparação entre propostas', () => {
+describe('create-arrow: comparison between proposals', () => {
   const only = (p: Project, id: string, style?: 'straight') =>
     createArrow(p, { id, from: 'M1', to: 'M4', ...(style ? { style } : {}) });
 
-  it('a mesma seta com outro id gerado é a mesma mudança; outro estilo é diferente', () => {
+  it('the same arrow with another generated id is the same change; another style is different', () => {
     const base = sampleProject();
     const previous = propose(base, only(base, 'RA'), { id: 'P1' });
     const same = propose(base, only(base, 'RB'), { id: 'P2' });
@@ -591,19 +591,19 @@ describe('create-arrow: comparação entre propostas', () => {
     const idOf = previous.changes[0]!.id;
     expect(compareProposals(previous, same).get(idOf)).toBe('same');
     expect(compareProposals(previous, different).get(idOf)).toBe('different');
-    // A nova não cria seta nenhuma: não consta.
+    // The new one creates no arrow: it is absent.
     const none = propose(base, base, { id: 'P4' });
     expect(compareProposals(previous, none).get(idOf)).toBe('missing');
   });
 
-  it('a seta que liga marcações criadas na proposta é achada pelo caminho legível', () => {
+  it('the arrow that links markings created in the proposal is found by the readable path', () => {
     const base = sampleProject();
     const build = (markingId: string, arrowId: string) => {
       const m = createMarking(base, {
         id: markingId,
         containerId: 'I1',
         rect: { x: 3000, y: 2000, width: 100, height: 100 },
-        name: 'Nova',
+        name: 'New',
       });
       return createArrow(m, { id: arrowId, from: markingId, to: 'M4' });
     };

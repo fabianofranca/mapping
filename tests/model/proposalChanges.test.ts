@@ -45,18 +45,18 @@ import { cadastroProject, codeProject, idGen, loadExample } from './specFixtures
 
 const FIGMA = { system: 'figma', id: '1:2', url: null };
 
-describe('cálculo das mudanças: marcações', () => {
-  it('projeto igual não gera mudança', () => {
+describe('change computation: markings', () => {
+  it('an identical project produces no change', () => {
     expect(computeChanges(sampleProject(), sampleProject())).toEqual([]);
   });
 
-  it('criação: uma mudança com a entidade inteira e o id definitivo', () => {
+  it('creation: one change with the whole entity and the final id', () => {
     const base = sampleProject();
     const after = createMarking(base, {
       id: 'M9',
       containerId: 'I2',
       rect: { x: 200, y: 200, width: 100, height: 100 },
-      name: 'Novo',
+      name: 'New',
     });
     expect(propose(base, after).changes).toEqual([
       {
@@ -73,7 +73,7 @@ describe('cálculo das mudanças: marcações', () => {
           containerId: 'I2',
           parentId: null,
           floating: false,
-          name: 'Novo',
+          name: 'New',
           rect: { x: 200, y: 200, width: 100, height: 100 },
           needsReview: false,
           locked: false,
@@ -83,7 +83,7 @@ describe('cálculo das mudanças: marcações', () => {
     ]);
   });
 
-  it('remoção: uma mudança por entidade que a cascata do modelo remove', () => {
+  it('removal: one change per entity that the model cascade removes', () => {
     const base = sampleProject();
     const p = propose(base, removeMarking(base, 'M2'));
     expect(p.changes.map((c) => [c.kind, c.entity, c.entityId])).toEqual([
@@ -99,9 +99,9 @@ describe('cálculo das mudanças: marcações', () => {
     });
   });
 
-  it('alteração: uma mudança por campo (nome, rect, trava e origem; o pai não é comparado)', () => {
+  it('update: one change per field (name, rect, lock and source; the parent is not compared)', () => {
     const base = sampleProject();
-    let after = renameMarking(base, 'M4', 'Farol');
+    let after = renameMarking(base, 'M4', 'Headlight');
     after = setMarkingRect(after, 'M4', { x: 10, y: 20, width: 100, height: 100 });
     after = setMarkingLocked(after, 'M1', true);
     after = setMarkingSource(after, 'M1', FIGMA);
@@ -109,7 +109,7 @@ describe('cálculo das mudanças: marcações', () => {
     expect(changeOf(p, 'marking', 'M4', 'name')).toMatchObject({
       kind: 'update',
       from: null,
-      to: 'Farol',
+      to: 'Headlight',
     });
     expect(changeOf(p, 'marking', 'M4', 'rect')).toMatchObject({
       from: { x: 0, y: 0, width: 100, height: 100 },
@@ -127,16 +127,16 @@ describe('cálculo das mudanças: marcações', () => {
     expect(p.changes.map((c) => c.field)).not.toContain('parentId');
   });
 
-  it('o pai derivado muda sem virar mudança (parentId não é comparado)', () => {
+  it('the derived parent changes without becoming a change (parentId is not compared)', () => {
     const base = sampleProject();
-    // M3 sai de M2 pela geometria: só o rect aparece, o pai (M2 → M1) é recalculado.
+    // M3 leaves M2 by geometry: only the rect appears, the parent (M2 → M1) is recomputed.
     const after = moveMarking(base, 'M3', 0, 200);
     expect(after.markings.find((m) => m.id === 'M3')?.parentId).not.toBe('M2');
     const p = propose(base, after);
     expect(p.changes.map((c) => [c.entityId, c.field])).toEqual([['M3', 'rect']]);
   });
 
-  it('flutuante: muda o espaço (container → canvas) e vira uma `space` composta', () => {
+  it('floating: the space changes (container → canvas) and becomes a composite `space`', () => {
     const base = sampleProject();
     const after = setMarkingFloating(base, 'M4', true);
     const p = propose(base, after);
@@ -157,17 +157,17 @@ describe('cálculo das mudanças: marcações', () => {
       from: false,
       to: true,
     });
-    // Sem rect separado: o rect vai dentro da composta.
+    // No separate rect: the rect goes inside the composite.
     expect(p.changes.some((c) => c.field === 'rect')).toBe(false);
   });
 
-  it('marcação do canvas: criação sem container tem imageId nulo e markingId', () => {
+  it('canvas marking: creation without a container has a null imageId and a markingId', () => {
     const base = sampleProject();
     const after = createMarking(base, {
       id: 'C1',
       containerId: null,
       rect: { x: -50, y: -50, width: 100, height: 100 },
-      name: 'Nota',
+      name: 'Note',
     });
     const [change] = propose(base, after).changes;
     expect(change).toMatchObject({
@@ -179,7 +179,7 @@ describe('cálculo das mudanças: marcações', () => {
     });
   });
 
-  it('mover a marcação leva as filhas: uma mudança de rect em cada', () => {
+  it('moving the marking takes its children: one rect change in each', () => {
     const base = sampleProject();
     const p = propose(base, moveMarking(base, 'M1', 10, -5));
     expect(p.changes.map((c) => [c.entityId, c.field])).toEqual([
@@ -190,16 +190,16 @@ describe('cálculo das mudanças: marcações', () => {
   });
 });
 
-describe('cálculo das mudanças: imagens', () => {
-  it('criação, alteração de cada campo e remoção', () => {
+describe('change computation: images', () => {
+  it('creation, update of each field and removal', () => {
     const base = sampleProject();
     let after = addContainer(base, {
       id: 'I3',
-      file: 'images/nova.png',
+      file: 'images/new.png',
       width: 400,
       height: 300,
     });
-    after = renameContainer(after, 'I2', 'Frente');
+    after = renameContainer(after, 'I2', 'Front');
     after = moveContainer(after, 'I2', 5000, 5000);
     after = setContainerMarkingColor(after, 'I2', '#FFEB3B');
     after = setImageLocked(after, 'I2', true);
@@ -209,12 +209,12 @@ describe('cálculo das mudanças: imagens', () => {
       kind: 'create',
       imageId: 'I3',
       markingId: null,
-      to: { id: 'I3', file: 'images/nova.png', width: 400, height: 300, source: null },
+      to: { id: 'I3', file: 'images/new.png', width: 400, height: 300, source: null },
     });
     expect(
       p.changes.filter((c) => c.entityId === 'I2').map((c) => [c.field, c.to]),
     ).toEqual([
-      ['name', 'Frente'],
+      ['name', 'Front'],
       ['placement', { x: 5000, y: 5000, scale: 1 }],
       ['markingColor', '#FFEB3B'],
       ['locked', true],
@@ -229,17 +229,17 @@ describe('cálculo das mudanças: imagens', () => {
     ]);
   });
 
-  it('troca de arquivo: `file` com as dimensões; as marcações reescaladas mudam de rect', () => {
+  it('file replacement: `file` with the dimensions; the rescaled markings change rect', () => {
     const base = sampleProject();
     const after = replaceContainer(base, 'I2', {
-      file: 'images/frente-2.jpg',
+      file: 'images/front-2.jpg',
       width: 2000,
       height: 2000,
     });
     const p = propose(base, after);
     expect(changeOf(p, 'image', 'I2', 'file')).toMatchObject({
       from: { file: 'images/frente.jpg', width: 1000, height: 1000 },
-      to: { file: 'images/frente-2.jpg', width: 2000, height: 2000 },
+      to: { file: 'images/front-2.jpg', width: 2000, height: 2000 },
     });
     expect(changeOf(p, 'image', 'I2', 'placement').to).toMatchObject({ scale: 0.5 });
     expect(changeOf(p, 'marking', 'M4', 'rect').to).toEqual({
@@ -251,25 +251,25 @@ describe('cálculo das mudanças: imagens', () => {
   });
 });
 
-describe('cálculo das mudanças: anotações', () => {
-  it('criação, nome, dona e remoção com as vinculadas', () => {
+describe('change computation: annotations', () => {
+  it('creation, name, owner and removal with the linked ones', () => {
     const base = sampleProject();
     let after = addAnnotation(base, {
       id: 'A9',
       markingId: 'M4',
       layerId: 'L1',
-      entries: [{ id: 'E9', key: 'cor', value: 'azul' }],
+      entries: [{ id: 'E9', key: 'color', value: 'blue' }],
     });
-    after = renameAnnotation(after, 'A3', 'Trinco');
+    after = renameAnnotation(after, 'A3', 'Latch');
     after = setAnnotationParent(after, 'A2', 'A1');
     const p = propose(base, after);
     expect(changeOf(p, 'annotation', 'A9')).toMatchObject({
       kind: 'create',
       imageId: 'I2',
       markingId: 'M4',
-      to: { id: 'A9', entries: [{ id: 'E9', key: 'cor', value: 'azul' }] },
+      to: { id: 'A9', entries: [{ id: 'E9', key: 'color', value: 'blue' }] },
     });
-    expect(changeOf(p, 'annotation', 'A3', 'name').to).toBe('Trinco');
+    expect(changeOf(p, 'annotation', 'A3', 'name').to).toBe('Latch');
     expect(changeOf(p, 'annotation', 'A2', 'parentAnnotationId')).toMatchObject({
       from: null,
       to: 'A1',
@@ -283,20 +283,25 @@ describe('cálculo das mudanças: anotações', () => {
     ]);
   });
 
-  it('pares: uma mudança por par (criado, alterado, removido), pelo id', () => {
+  it('pairs: one change per pair (created, updated, removed), by id', () => {
     const base = sampleProject();
-    let after = addEntry(base, 'A1', { id: 'E7', key: 'lado', value: 'esquerdo' });
-    after = updateEntry(after, 'A1', 'E1', { key: 'tipo', value: 'risco' });
+    let after = addEntry(base, 'A1', { id: 'E7', key: 'side', value: 'left' });
+    after = updateEntry(after, 'A1', 'E1', { key: 'tipo', value: 'scratch' });
     after = removeEntry(after, 'A1', 'E2');
     const p = propose(base, after);
     expect(p.changes.map((c) => [c.field, c.from, c.to])).toEqual([
-      ['entries.E1', { key: 'tipo', value: 'amassado' }, { key: 'tipo', value: 'risco' }],
-      ['entries.E7', null, { key: 'lado', value: 'esquerdo' }],
+      [
+        'entries.E1',
+        { key: 'tipo', value: 'amassado' },
+        { key: 'tipo', value: 'scratch' },
+      ],
+      ['entries.E7', null, { key: 'side', value: 'left' }],
+      // pt-BR kept: shared fixture data (sampleProject entries) asserted by other tests
       ['entries.E2', { key: 'gravidade', value: 'média' }, null],
     ]);
   });
 
-  it('anotação tipada: uma mudança por chave de values', () => {
+  it('typed annotation: one change per key of values', () => {
     const base = cadastroProject();
     let after = setFieldValue(base, 'AB', 'estilo', 'secondary');
     after = setFieldValue(after, 'AB', 'texto', 'Enviar');
@@ -308,7 +313,7 @@ describe('cálculo das mudanças: anotações', () => {
     expect(p.changes[0]).toMatchObject({ imageId: 'I1', markingId: 'MC' });
   });
 
-  it('troca de tipo (anotação convertida em livre): uma mudança `type` com values e entries', () => {
+  it('type change (annotation converted to free): one `type` change with values and entries', () => {
     const base = cadastroProject();
     const after = removeSpecialization(base, 'modelo-dados', 'convert', {
       newId: idGen('X'),
@@ -327,18 +332,22 @@ describe('cálculo das mudanças: anotações', () => {
   });
 });
 
-describe('cálculo das mudanças: grupo Projeto', () => {
-  it('camadas: criação, nome, cor, remoção e posição só de quem muda de ordem relativa', () => {
-    const base = addLayer(sampleProject(), { id: 'L3', name: 'Rodas', color: '#2E7D32' });
-    let after = addLayer(base, { id: 'L4', name: 'Faróis', color: '#E65100' });
-    after = renameLayer(after, 'L1', 'Pintura');
+describe('change computation: Project group', () => {
+  it('layers: creation, name, color, removal and position only for those that change relative order', () => {
+    const base = addLayer(sampleProject(), {
+      id: 'L3',
+      name: 'Wheels',
+      color: '#2E7D32',
+    });
+    let after = addLayer(base, { id: 'L4', name: 'Headlights', color: '#E65100' });
+    after = renameLayer(after, 'L1', 'Paint');
     after = setLayerColor(after, 'L1', '#000000');
     after = moveLayer(after, 'L3', 0);
     const p = propose(base, after);
     expect(changeOf(p, 'layer', 'L4')).toMatchObject({ kind: 'create', imageId: null });
-    expect(changeOf(p, 'layer', 'L1', 'name').to).toBe('Pintura');
+    expect(changeOf(p, 'layer', 'L1', 'name').to).toBe('Paint');
     expect(changeOf(p, 'layer', 'L1', 'color').to).toBe('#000000');
-    // Só L3 mudou de ordem relativa (L1 e L2 continuam na mesma ordem entre si).
+    // Only L3 changed relative order (L1 and L2 keep the same order between them).
     expect(p.changes.filter((c) => c.field === 'position')).toMatchObject([
       { entityId: 'L3', from: 2, to: 0 },
     ]);
@@ -351,7 +360,7 @@ describe('cálculo das mudanças: grupo Projeto', () => {
     ]);
   });
 
-  it('especialização: aplicar, atualizar e remover; uma mudança cada (camadas à parte)', () => {
+  it('specialization: apply, update and remove; one change each (layers apart)', () => {
     const base = sampleProject();
     const spec = loadExample('sdui');
     const applied = applySpecialization(base, spec, { newId: idGen('LS') });
@@ -387,7 +396,7 @@ describe('cálculo das mudanças: grupo Projeto', () => {
     ]);
   });
 
-  it('repositório por plataforma: criar, alterar e remover, uma mudança cada', () => {
+  it('repository per platform: create, update and remove, one change each', () => {
     const base = codeProject();
     const repo = { localPath: '../ios' };
     const created = propose(base, setPlatformRepo(base, 'ios', repo));
@@ -410,17 +419,17 @@ describe('cálculo das mudanças: grupo Projeto', () => {
   });
 });
 
-describe('proposta', () => {
+describe('proposal', () => {
   function bigChange(base: Project): Project {
-    let after = addLayer(base, { id: 'L3', name: 'Rodas', color: '#2E7D32' });
-    after = renameContainer(after, 'I2', 'Frente');
-    after = renameMarking(after, 'M3', 'Chave');
-    after = renameMarking(after, 'M1', 'Porta da frente');
-    after = renameAnnotation(after, 'A1', 'Risco');
+    let after = addLayer(base, { id: 'L3', name: 'Wheels', color: '#2E7D32' });
+    after = renameContainer(after, 'I2', 'Front');
+    after = renameMarking(after, 'M3', 'Key');
+    after = renameMarking(after, 'M1', 'Front door');
+    after = renameAnnotation(after, 'A1', 'Scratch');
     return after;
   }
 
-  it('ordem e ids: Projeto, imagens, marcações e anotações, cada uma na ordem do projeto', () => {
+  it('order and ids: Project, images, markings and annotations, each in project order', () => {
     const base = sampleProject();
     const p = propose(base, bigChange(base));
     expect(p.changes.map((c) => [c.id, c.entity, c.entityId])).toEqual([
@@ -432,20 +441,20 @@ describe('proposta', () => {
     ]);
   });
 
-  it('nasce aberta, com a revision de base e os metadados; texto e leitura são idênticos', () => {
+  it('starts open, with the base revision and the metadata; text and reading are identical', () => {
     const base = { ...sampleProject(), revision: 41 };
     const p = propose(base, bigChange(base), {
-      title: '  Checkout a partir do Figma ',
-      description: 'Telas da página Checkout.',
-      origin: 'Figma: Loja v3 › Checkout',
+      title: '  Checkout from Figma ',
+      description: 'Screens of the Checkout page.',
+      origin: 'Figma: Store v3 › Checkout',
       author: 'Claude Code',
-      operations: [{ op: 'update_marking', marking: 'M3', name: 'Chave' }],
+      operations: [{ op: 'update_marking', marking: 'M3', name: 'Key' }],
     });
     expect(p).toMatchObject({
       format: 'mapping-proposal',
       formatVersion: 4,
       id: 'P1',
-      title: 'Checkout a partir do Figma',
+      title: 'Checkout from Figma',
       createdAt: AT,
       baseRevision: 41,
       supersedes: null,

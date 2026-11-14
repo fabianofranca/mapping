@@ -1,4 +1,4 @@
-// Ficha `mapping-signature` (formatVersion 1; etapa #1079, decisão 4): `parseSignature`.
+// `mapping-signature` sheet (formatVersion 1; stage #1079, decision 4): `parseSignature`.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
@@ -11,7 +11,7 @@ const issuesOf = (raw: unknown) => {
 };
 
 describe('parseSignature', () => {
-  it('a ficha do exemplo da decisão 4 vale', () => {
+  it('the example signature of decision 4 is valid', () => {
     const r = parseSignature(buttonSignature());
     expect(r.ok).toBe(true);
     if (r.ok) {
@@ -27,7 +27,7 @@ describe('parseSignature', () => {
     }
   });
 
-  it('uma ficha de design (Figma) com enum, boolean e texto vale', () => {
+  it('a design signature (Figma) with enum, boolean and text is valid', () => {
     const raw = {
       format: 'mapping-signature',
       formatVersion: 1,
@@ -53,7 +53,7 @@ describe('parseSignature', () => {
     expect(issuesOf(raw)).toEqual([]);
   });
 
-  it('chave desconhecida é erro, com o caminho', () => {
+  it('unknown key is an error, with the path', () => {
     expect(issuesOf(buttonSignature((s) => (s.extra = 1)))).toEqual([
       { path: '', message: 'unknown property: "extra"' },
     ]);
@@ -62,18 +62,18 @@ describe('parseSignature', () => {
     ).toEqual(['params[0]']);
   });
 
-  it('role fora do conjunto é erro, com o caminho', () => {
+  it('role outside the set is an error, with the path', () => {
     const issues = issuesOf(buttonSignature((s) => (s.params[1].role = 'bogus')));
     expect(issues.map((i) => i.path)).toEqual(['params[1].role']);
     expect(issues[0]?.message).toContain('value');
   });
 
-  it('value.kind fora do conjunto é erro, com o caminho', () => {
+  it('value.kind outside the set is an error, with the path', () => {
     const issues = issuesOf(buttonSignature((s) => (s.params[2].value.kind = 'matrix')));
     expect(issues.map((i) => i.path)).toEqual(['params[2].value.kind']);
   });
 
-  it('factory aninhada dois níveis é erro, com o caminho', () => {
+  it('factory nested two levels is an error, with the path', () => {
     const issues = issuesOf(
       buttonSignature((s) => {
         s.params[4].factory.params[0].factory = { call: 'x.y', params: [] };
@@ -82,12 +82,12 @@ describe('parseSignature', () => {
     expect(issues.map((i) => i.path)).toEqual(['params[4].factory.params[0].factory']);
   });
 
-  it('o formato e a versão precisam bater', () => {
+  it('the format and the version must match', () => {
     expect(issuesOf(buttonSignature((s) => (s.format = 'mapping-spec')))).not.toEqual([]);
     expect(issuesOf(buttonSignature((s) => (s.formatVersion = 2)))).not.toEqual([]);
   });
 
-  it('enum sem options e nome de parâmetro repetido são erro', () => {
+  it('enum without options and repeated parameter name are errors', () => {
     expect(
       issuesOf(
         buttonSignature((s) => {
@@ -104,15 +104,15 @@ describe('parseSignature', () => {
     ).toEqual(['params[1].name']);
   });
 
-  it('source de código sem platform ou de design sem system é erro', () => {
+  it('code source without platform or design source without system is an error', () => {
     expect(
       issuesOf(buttonSignature((s) => delete s.source.platform)).map((i) => i.path),
     ).toEqual(['source.platform']);
     expect(issuesOf(buttonSignature((s) => (s.source.kind = 'design')))).not.toEqual([]);
   });
 
-  it('JSON que não é um objeto é erro', () => {
-    expect(issuesOf('texto')).not.toEqual([]);
+  it('JSON that is not an object is an error', () => {
+    expect(issuesOf('text')).not.toEqual([]);
     expect(issuesOf(null)).not.toEqual([]);
   });
 });
@@ -124,7 +124,7 @@ describe('docs/signature.schema.json', () => {
   >;
   const validator = z.fromJSONSchema(schema as never);
 
-  it('aceita a ficha do exemplo e a de design, como o parseSignature', () => {
+  it('accepts the example signature and the design one, like parseSignature', () => {
     expect(validator.safeParse(buttonSignature()).success).toBe(true);
     const design = {
       format: 'mapping-signature',
@@ -149,7 +149,7 @@ describe('docs/signature.schema.json', () => {
     expect(parseSignature(design).ok).toBe(true);
   });
 
-  it('recusa o que o parseSignature recusa: chave, role, kind e factory de dois níveis', () => {
+  it('refuses what parseSignature refuses: key, role, kind and two-level factory', () => {
     const edits: ((s: Json) => void)[] = [
       (s) => (s.extra = 1),
       (s) => (s.params[1].role = 'bogus'),

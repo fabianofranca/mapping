@@ -1,4 +1,4 @@
-// `formatVersion` 10: `notices` em tipo, campo e coluna de table (etapa #486, AV1).
+// `formatVersion` 10: `notices` on a type, field and table column (stage #486, AV1).
 import { describe, expect, it } from 'vitest';
 import {
   parseSpec,
@@ -13,7 +13,7 @@ const TYPE = 'layers[0].annotationTypes[0]';
 const FIELD = `${TYPE}.fields[1]`;
 const COLUMN = `${FIELD}.columns[0]`;
 
-/** Especialização com um tipo, um campo `string` e uma `table` de uma coluna. */
+/** Specialization with one type, a `string` field and a one-column `table`. */
 function spec(formatVersion = 10): Json {
   return {
     format: 'mapping-spec',
@@ -32,7 +32,7 @@ function spec(formatVersion = 10): Json {
             name: 'T',
             fields: [
               { key: 'k', type: 'string' },
-              { key: 'linhas', type: 'table', columns: [{ key: 'c', type: 'string' }] },
+              { key: 'lines', type: 'table', columns: [{ key: 'c', type: 'string' }] },
             ],
           },
         ],
@@ -41,11 +41,11 @@ function spec(formatVersion = 10): Json {
   };
 }
 
-/** A especialização com `notices` no tipo, no campo `k` (índice 0) e na coluna `c`. */
+/** The specialization with `notices` on the type, on the field `k` (index 0) and on the column `c`. */
 function withNotices(
   formatVersion: number,
   where: ('type' | 'field' | 'column')[] = ['type', 'field', 'column'],
-  notices: Json[] = [{ kind: 'deprecated', message: 'use outro' }],
+  notices: Json[] = [{ kind: 'deprecated', message: 'use another' }],
 ): Json {
   const json = spec(formatVersion);
   const type = json.layers[0].annotationTypes[0];
@@ -66,13 +66,13 @@ function parsed(input: unknown): Spec {
   return result.spec;
 }
 
-/** Spec v10 com um único aviso `notice` no tipo. */
+/** v10 spec with a single `notice` on the type. */
 function typeNotice(notice: unknown): Json {
   return withNotices(10, ['type'], [notice as Json]);
 }
 
 describe('formatVersion 10: notices', () => {
-  it('a versão atual é a 16 e v1 a v9 continuam aceitas', () => {
+  it('the current version is 16 and v1 to v9 are still accepted', () => {
     expect(SPEC_FORMAT_VERSION).toBe(16);
     expect(SPEC_FORMAT_VERSIONS).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
@@ -82,15 +82,15 @@ describe('formatVersion 10: notices', () => {
     }
   });
 
-  it('aceita notices no tipo, no campo e na coluna de table e os devolve', () => {
+  it('accepts notices on the type, the field and the table column and returns them', () => {
     const notices = [
       {
         kind: 'removed',
-        message: 'saiu da biblioteca',
+        message: 'left the library',
         since: '2026-03-01',
         ref: 'M3-12',
       },
-      { kind: 'pending', message: 'falta o desenho' },
+      { kind: 'pending', message: 'the drawing is missing' },
     ];
     const result = parsed(withNotices(10, ['type', 'field', 'column'], notices));
     const type = result.layers[0]?.annotationTypes[0];
@@ -102,14 +102,14 @@ describe('formatVersion 10: notices', () => {
     );
   });
 
-  it('notices vazio é aceito; os quatro kinds também', () => {
+  it('empty notices is accepted; so are the four kinds', () => {
     expect(issuesOf(withNotices(10, ['type'], []))).toEqual([]);
     for (const kind of ['removed', 'deprecated', 'diverges', 'pending']) {
       expect(issuesOf(typeNotice({ kind, message: 'x' })), kind).toEqual([]);
     }
   });
 
-  it('notices numa v9 (e anteriores) é erro no caminho do tipo, do campo e da coluna', () => {
+  it('notices in a v9 (and earlier) is an error at the path of the type, the field and the column', () => {
     for (const v of [1, 5, 8, 9]) {
       expect(issuesOf(withNotices(v)), `v${v}`).toEqual([
         { path: `${TYPE}.notices`, message: 'only allowed with formatVersion 10' },
@@ -120,7 +120,7 @@ describe('formatVersion 10: notices', () => {
     expect(issuesOf(spec(9))).toEqual([]);
   });
 
-  it('kind fora da lista ou ausente', () => {
+  it('kind outside the list or missing', () => {
     expect(issuesOf(typeNotice({ kind: 'obsolete', message: 'x' }))).toEqual([
       {
         path: `${TYPE}.notices[0].kind`,
@@ -133,7 +133,7 @@ describe('formatVersion 10: notices', () => {
     ]);
   });
 
-  it('message ausente, vazia ou só de espaços', () => {
+  it('message missing, empty or only spaces', () => {
     expect(issuesOf(typeNotice({ kind: 'pending' }))).toEqual([
       { path: `${TYPE}.notices[0].message`, message: 'required' },
     ]);
@@ -145,12 +145,12 @@ describe('formatVersion 10: notices', () => {
     }
   });
 
-  it('since precisa ser uma data real AAAA-MM-DD', () => {
+  it('since must be a real date YYYY-MM-DD', () => {
     const since = (value: string) =>
       issuesOf(typeNotice({ kind: 'pending', message: 'x', since: value }));
     const path = `${TYPE}.notices[0].since`;
     expect(since('2026-02-30')).toEqual([{ path, message: 'nonexistent date' }]);
-    // O formato errado também reprova a existência (o `dateString` do formato é o mesmo dos campos).
+    // The wrong format also fails the existence check (the format's `dateString` is the same as the fields').
     expect(since('04/11/2026')).toEqual([
       { path, message: 'invalid date; use YYYY-MM-DD' },
       { path, message: 'nonexistent date' },
@@ -158,20 +158,20 @@ describe('formatVersion 10: notices', () => {
     expect(since('2026-02-28')).toEqual([]);
   });
 
-  it('ref vazio é erro', () => {
+  it('empty ref is an error', () => {
     expect(issuesOf(typeNotice({ kind: 'pending', message: 'x', ref: '' }))).toEqual([
       { path: `${TYPE}.notices[0].ref`, message: 'cannot be empty' },
     ]);
   });
 
-  it('propriedade a mais num aviso é erro', () => {
+  it('an extra property in a notice is an error', () => {
     const issues = issuesOf(typeNotice({ kind: 'pending', message: 'x', severity: 1 }));
     expect(issues).toHaveLength(1);
     expect(issues[0]?.path).toBe(`${TYPE}.notices[0]`);
     expect(issues[0]?.message).toContain('severity');
   });
 
-  it('repeated notice (mesmo kind e mesma message) no tipo, no campo e na coluna', () => {
+  it('repeated notice (same kind and same message) on the type, the field and the column', () => {
     const notices = [
       { kind: 'pending', message: 'a' },
       { kind: 'pending', message: 'b' },
@@ -185,7 +185,7 @@ describe('formatVersion 10: notices', () => {
     ]);
   });
 
-  it('notices que não é lista é erro', () => {
+  it('notices that is not a list is an error', () => {
     const json = spec();
     json.layers[0].annotationTypes[0].notices = { kind: 'pending', message: 'x' };
     expect(issuesOf(json)).toHaveLength(1);

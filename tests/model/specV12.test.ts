@@ -1,6 +1,7 @@
-// `formatVersion` 12: passos de migração de papel do vínculo (`rename-role`, `remove-role` e
-// `set-role`; etapa #557). Nível 1 (um arquivo só) em `parseSpec` e nível 2 (contra a versão
-// anterior) em `validateLibrary`. O contrato (`diffSpecs`) está em specVersions.test.ts.
+// `formatVersion` 12: role migration steps of the link (`rename-role`, `remove-role` and
+// `set-role`; stage #557). Level 1 (a single file) in `parseSpec` and level 2 (against the previous
+// version) in `validateLibrary`. The contract (`diffSpecs`) is in specVersions.test.ts.
+// pt-BR kept: shared fixture data (specV11Fixtures: layer `eventos`, asserted in messages), outside this phase
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
@@ -17,16 +18,16 @@ const jsonValidator = z.fromJSONSchema(jsonSchema as never);
 const M0 = 'migrations[0]';
 const ONLY_V12 = 'only allowed with formatVersion 12';
 const ROLES = [
-  { id: 'primary', name: 'Primário' },
-  { id: 'secondary', name: 'Secundário' },
+  { id: 'primary', name: 'Primary' },
+  { id: 'secondary', name: 'Secondary' },
 ];
 
 const owner = (spec: Json) => spec.layers[0].annotationTypes[0] as Json;
 
 /**
- * v11 de teste na `formatVersion` pedida, versão 2 do pacote, com uma migração 1 → 2 com os passos
- * dados. O dono `button` tem os papéis `primary` e `secondary` (de 11 em diante); `image` e `text`
- * não têm papéis.
+ * Test v11 at the requested `formatVersion`, package version 2, with a migration 1 → 2 with the
+ * given steps. The owner `button` has the roles `primary` and `secondary` (from 11 onward); `image`
+ * and `text` have no roles.
  */
 function withSteps(steps: Json[], formatVersion = 12, edit?: (spec: Json) => void): Json {
   return v11Json((spec) => {
@@ -70,8 +71,8 @@ function expectIssue(spec: Json, path: string, message: string): void {
   expect(issuesOf(spec)).toContainEqual({ path, message });
 }
 
-describe('formatVersion 12: passos de papel aceitos', () => {
-  it('os três passos na formatVersion 12, no zod e no JSON Schema', () => {
+describe('formatVersion 12: accepted role steps', () => {
+  it('the three steps in formatVersion 12, in zod and in the JSON Schema', () => {
     const spec = withSteps([
       rename(),
       remove(),
@@ -97,29 +98,29 @@ describe('formatVersion 12: passos de papel aceitos', () => {
     });
   });
 
-  it('remove-role vale num tipo que não tem mais childRoles', () => {
+  it('remove-role is valid on a type that no longer has childRoles', () => {
     expect(issuesOf(withSteps([remove({ type: 'image', role: 'primary' })]))).toEqual([]);
   });
 
-  it('childType que não existe não é erro (o nível 1 só confere o formato)', () => {
-    expect(issuesOf(withSteps([setRole({ childType: 'nao-existe' })]))).toEqual([]);
+  it('a childType that does not exist is not an error (level 1 only checks the format)', () => {
+    expect(issuesOf(withSteps([setRole({ childType: 'does-not-exist' })]))).toEqual([]);
   });
 
-  it('a v11 sem passo de papel continua válida, com e sem migrations', () => {
+  it('a v11 without a role step is still valid, with and without migrations', () => {
     expect(issuesOf(withSteps([], 11, (s) => delete s.migrations))).toEqual([]);
-    const v11 = withSteps([{ op: 'remove-field', type: 'button', field: 'antigo' }], 11);
+    const v11 = withSteps([{ op: 'remove-field', type: 'button', field: 'legacy' }], 11);
     expect(issuesOf(v11)).toEqual([]);
   });
 });
 
-describe('formatVersion 12: passos de papel antes da 12', () => {
+describe('formatVersion 12: role steps before 12', () => {
   it.each([4, 5, 6, 7, 8, 9, 10, 11])(
-    'os três passos dão erro em op com formatVersion %i',
+    'the three steps give an error on op with formatVersion %i',
     (formatVersion) => {
       const spec = withSteps([rename(), remove(), setRole()], formatVersion);
       const issues = issuesOf(spec);
       for (let i = 0; i < 3; i++) {
-        expect(issues, `passo ${i}`).toContainEqual({
+        expect(issues, `step ${i}`).toContainEqual({
           path: `${M0}.steps[${i}].op`,
           message: ONLY_V12,
         });
@@ -127,9 +128,9 @@ describe('formatVersion 12: passos de papel antes da 12', () => {
     },
   );
 
-  it('o passo antigo na mesma lista não dá esse erro', () => {
+  it('the old step in the same list does not give that error', () => {
     const spec = withSteps(
-      [{ op: 'remove-field', type: 'button', field: 'antigo' }, remove()],
+      [{ op: 'remove-field', type: 'button', field: 'legacy' }, remove()],
       11,
     );
     const paths = issuesOf(spec).map((i) => i.path);
@@ -139,7 +140,7 @@ describe('formatVersion 12: passos de papel antes da 12', () => {
 });
 
 describe('formatVersion 12: rename-role', () => {
-  it('type que não existe nesta versão', () => {
+  it('type that does not exist in this version', () => {
     expectIssue(
       withSteps([rename({ type: 'zzz' })]),
       `${M0}.steps[0].type`,
@@ -147,7 +148,7 @@ describe('formatVersion 12: rename-role', () => {
     );
   });
 
-  it('type sem childRoles', () => {
+  it('type without childRoles', () => {
     expectIssue(
       withSteps([rename({ type: 'image' })]),
       `${M0}.steps[0].type`,
@@ -155,15 +156,15 @@ describe('formatVersion 12: rename-role', () => {
     );
   });
 
-  it('to precisa ser um papel do tipo', () => {
+  it('to must be a role of the type', () => {
     expectIssue(
-      withSteps([rename({ to: 'nada' })]),
+      withSteps([rename({ to: 'nothing' })]),
       `${M0}.steps[0].to`,
-      '"nada" is not a role of the type "button"',
+      '"nothing" is not a role of the type "button"',
     );
   });
 
-  it('from não pode ser um papel do tipo', () => {
+  it('from cannot be a role of the type', () => {
     expectIssue(
       withSteps([rename({ from: 'secondary' })]),
       `${M0}.steps[0].from`,
@@ -171,7 +172,7 @@ describe('formatVersion 12: rename-role', () => {
     );
   });
 
-  it('chaves faltando, vazias ou a mais', () => {
+  it('missing, empty or extra keys', () => {
     const spec = withSteps([{ op: 'rename-role', type: 'button', to: '' }]);
     const paths = issuesOf(spec).map((i) => i.path);
     expect(paths).toContain(`${M0}.steps[0].from`);
@@ -188,7 +189,7 @@ describe('formatVersion 12: rename-role', () => {
 });
 
 describe('formatVersion 12: remove-role', () => {
-  it('type que não existe nesta versão', () => {
+  it('type that does not exist in this version', () => {
     expectIssue(
       withSteps([remove({ type: 'zzz' })]),
       `${M0}.steps[0].type`,
@@ -196,7 +197,7 @@ describe('formatVersion 12: remove-role', () => {
     );
   });
 
-  it('role não pode ser um papel do tipo', () => {
+  it('role cannot be a role of the type', () => {
     expectIssue(
       withSteps([remove({ role: 'primary' })]),
       `${M0}.steps[0].role`,
@@ -204,7 +205,7 @@ describe('formatVersion 12: remove-role', () => {
     );
   });
 
-  it('mode inválido ou ausente', () => {
+  it('invalid or missing mode', () => {
     const bad = withSteps([remove({ mode: 'drop' })]);
     expectIssue(bad, `${M0}.steps[0].mode`, 'use "clear" or "unlink"');
     expect(jsonValidator.safeParse(bad).success).toBe(false);
@@ -213,13 +214,13 @@ describe('formatVersion 12: remove-role', () => {
     expect(jsonValidator.safeParse(missing).success).toBe(false);
   });
 
-  it('os dois modos valem', () => {
+  it('both modes are valid', () => {
     for (const mode of ['clear', 'unlink']) {
       expect(issuesOf(withSteps([remove({ mode })])), mode).toEqual([]);
     }
   });
 
-  it('chave a mais', () => {
+  it('extra key', () => {
     const spec = withSteps([remove({ extra: 1 })]);
     expectIssue(spec, `${M0}.steps[0]`, 'Unrecognized key: "extra"');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
@@ -227,7 +228,7 @@ describe('formatVersion 12: remove-role', () => {
 });
 
 describe('formatVersion 12: set-role', () => {
-  it('type que não existe nesta versão', () => {
+  it('type that does not exist in this version', () => {
     expectIssue(
       withSteps([setRole({ type: 'zzz' })]),
       `${M0}.steps[0].type`,
@@ -235,7 +236,7 @@ describe('formatVersion 12: set-role', () => {
     );
   });
 
-  it('type sem childRoles', () => {
+  it('type without childRoles', () => {
     expectIssue(
       withSteps([setRole({ type: 'text' })]),
       `${M0}.steps[0].type`,
@@ -243,22 +244,22 @@ describe('formatVersion 12: set-role', () => {
     );
   });
 
-  it('role precisa ser um papel do tipo', () => {
+  it('role must be a role of the type', () => {
     expectIssue(
-      withSteps([setRole({ role: 'nada' })]),
+      withSteps([setRole({ role: 'nothing' })]),
       `${M0}.steps[0].role`,
-      '"nada" is not a role of the type "button"',
+      '"nothing" is not a role of the type "button"',
     );
   });
 
-  it('childType vazio é erro de formato; ausente é aceito', () => {
+  it('empty childType is a format error; missing is accepted', () => {
     expect(
       issuesOf(withSteps([setRole({ childType: '' })])).map((i) => i.path),
     ).toContain(`${M0}.steps[0].childType`);
     expect(issuesOf(withSteps([setRole()]))).toEqual([]);
   });
 
-  it('chave a mais e role ausente', () => {
+  it('extra key and missing role', () => {
     expectIssue(
       withSteps([setRole({ extra: 1 })]),
       `${M0}.steps[0]`,
@@ -270,11 +271,11 @@ describe('formatVersion 12: set-role', () => {
   });
 });
 
-describe('formatVersion 12: erros no passo certo e op inválido', () => {
-  it('com vários passos, cada erro aponta o seu', () => {
+describe('formatVersion 12: errors on the right step and invalid op', () => {
+  it('with several steps, each error points at its own', () => {
     const spec = withSteps([
       rename(),
-      setRole({ role: 'nada' }),
+      setRole({ role: 'nothing' }),
       remove({ role: 'primary' }),
       remove({ type: 'zzz' }),
     ]);
@@ -286,7 +287,7 @@ describe('formatVersion 12: erros no passo certo e op inválido', () => {
     ]);
   });
 
-  it('op inválido lista os nove passos', () => {
+  it('invalid op lists the nine steps', () => {
     const spec = withSteps([{ op: 'drop-role', type: 'button' }]);
     expectIssue(
       spec,
@@ -297,8 +298,8 @@ describe('formatVersion 12: erros no passo certo e op inválido', () => {
   });
 });
 
-describe('formatVersion 12: schema JSON', () => {
-  it('declara a versão 12 e os três passos', () => {
+describe('formatVersion 12: JSON schema', () => {
+  it('declares version 12 and the three steps', () => {
     const schema = jsonSchema as Json;
     expect(schema.properties.formatVersion.enum).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
@@ -321,18 +322,18 @@ describe('formatVersion 12: schema JSON', () => {
 });
 
 // ---------------------------------------------------------------------------------------
-// Nível 2: o passo cita o que não existia na versão anterior (aviso)
+// Level 2: the step cites what did not exist in the previous version (warning)
 // ---------------------------------------------------------------------------------------
 
-describe('formatVersion 12: nível 2 (papéis que não existiam na versão anterior)', () => {
+describe('formatVersion 12: level 2 (roles that did not exist in the previous version)', () => {
   const SPEC_FILE = 'lib.spec.json';
 
-  /** A v1 (formatVersion 11): `button` com os papéis `old` e `primary`. */
+  /** The v1 (formatVersion 11): `button` with the roles `old` and `primary`. */
   function previous(edit?: (spec: Json) => void): Spec {
     const json = v11Json((spec) => {
       owner(spec).childRoles = [
-        { id: 'old', name: 'Antigo' },
-        { id: 'primary', name: 'Primário' },
+        { id: 'old', name: 'Old' },
+        { id: 'primary', name: 'Primary' },
       ];
       edit?.(spec);
     });
@@ -355,7 +356,7 @@ describe('formatVersion 12: nível 2 (papéis que não existiam na versão anter
     issue.message,
   ];
 
-  it('rename-role.from e remove-role.role que não eram papéis do tipo viram aviso', () => {
+  it('rename-role.from and remove-role.role that were not roles of the type become a warning', () => {
     const spec = withSteps([
       rename(),
       rename({ from: 'ghost', to: 'secondary' }),
@@ -379,7 +380,7 @@ describe('formatVersion 12: nível 2 (papéis que não existiam na versão anter
     ]);
   });
 
-  it('com rename-type do dono no meio, o papel é lido no tipo antigo', () => {
+  it('with a rename-type of the owner in between, the role is read on the old type', () => {
     const before = previous();
     const spec = withSteps(
       [
@@ -404,7 +405,7 @@ describe('formatVersion 12: nível 2 (papéis que não existiam na versão anter
     ]);
   });
 
-  it('tipo que não existia na versão anterior avisa o tipo, não o papel', () => {
+  it('a type that did not exist in the previous version warns about the type, not the role', () => {
     const spec = withSteps(
       [rename({ type: 'newbie', from: 'x', to: 'primary' }), remove({ role: 'old' })],
       12,
@@ -414,7 +415,7 @@ describe('formatVersion 12: nível 2 (papéis que não existiam na versão anter
           name: 'Newbie',
           fields: [],
           allowedChildren: [{ layer: 'eventos' }],
-          childRoles: [{ id: 'primary', name: 'Primário' }],
+          childRoles: [{ id: 'primary', name: 'Primary' }],
         });
       },
     );
@@ -425,10 +426,10 @@ describe('formatVersion 12: nível 2 (papéis que não existiam na versão anter
     ]);
   });
 
-  it('a quebra de papel sem passo é erro do contrato; com o passo, nada', () => {
+  it('a role break without a step is a contract error; with the step, nothing', () => {
     const before = previous();
     const without = withSteps([setRole({ role: 'secondary' })], 12, (s) => {
-      owner(s).childRoles = [{ id: 'secondary', name: 'Secundário' }];
+      owner(s).childRoles = [{ id: 'secondary', name: 'Secondary' }];
     });
     const missing = report(without, before);
     expect(missing.errors.map((e) => e.path)).toEqual([
@@ -445,7 +446,7 @@ describe('formatVersion 12: nível 2 (papéis que não existiam na versão anter
       ],
       12,
       (s) => {
-        owner(s).childRoles = [{ id: 'secondary', name: 'Secundário' }];
+        owner(s).childRoles = [{ id: 'secondary', name: 'Secondary' }];
       },
     );
     const ok = report(covered, before);

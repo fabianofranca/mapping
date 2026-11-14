@@ -82,13 +82,13 @@ function acceptAll(p: Proposal, project: Project): Proposal {
   return decided(p, project, { level: 'proposal', id: null }, 'accepted');
 }
 
-/** Cada cenário: antes → depois pelas operações do modelo. */
+/** Each scenario: before → after through the model operations. */
 const scenarios: [string, () => [Project, Project]][] = [
   [
-    'marcação: nome, rect, flutuante, trava e origem',
+    'marking: name, rect, floating, lock and source',
     () => {
       const base = sampleProject();
-      let after = renameMarking(base, 'M4', 'Farol');
+      let after = renameMarking(base, 'M4', 'Lighthouse');
       after = setMarkingRect(after, 'M4', { x: 10, y: 20, width: 100, height: 100 });
       after = setMarkingFloating(after, 'M3', true);
       after = setMarkingLocked(after, 'M1', true);
@@ -97,11 +97,11 @@ const scenarios: [string, () => [Project, Project]][] = [
     },
   ],
   [
-    'marcação movida com as filhas',
+    'marking moved with its children',
     () => [sampleProject(), moveMarking(sampleProject(), 'M1', 10, -5)],
   ],
   [
-    'marcações e anotações criadas (com vínculo)',
+    'markings and annotations created (with link)',
     () => {
       const base = sampleProject();
       let after = createMarking(base, {
@@ -121,11 +121,11 @@ const scenarios: [string, () => [Project, Project]][] = [
     },
   ],
   [
-    'marcação removida em cascata',
+    'marking removed in cascade',
     () => [sampleProject(), removeMarking(sampleProject(), 'M1')],
   ],
   [
-    'imagem criada e alterada em cada campo',
+    'image created and changed in each field',
     () => {
       const base = sampleProject();
       let after = addContainer(base, {
@@ -134,7 +134,7 @@ const scenarios: [string, () => [Project, Project]][] = [
         width: 400,
         height: 300,
       });
-      after = renameContainer(after, 'I2', 'Frente');
+      after = renameContainer(after, 'I2', 'Front');
       after = moveContainer(after, 'I2', 5000, 5000);
       after = setContainerMarkingColor(after, 'I2', '#FFEB3B');
       after = setImageLocked(after, 'I2', true);
@@ -143,7 +143,7 @@ const scenarios: [string, () => [Project, Project]][] = [
     },
   ],
   [
-    'imagem trocada (marcações reescaladas)',
+    'image swapped (markings rescaled)',
     () => [
       sampleProject(),
       replaceContainer(sampleProject(), 'I2', {
@@ -153,24 +153,25 @@ const scenarios: [string, () => [Project, Project]][] = [
       }),
     ],
   ],
-  ['imagem removida', () => [sampleProject(), removeContainer(sampleProject(), 'I1')]],
+  ['image removed', () => [sampleProject(), removeContainer(sampleProject(), 'I1')]],
   [
-    'anotações: nome, dona, pares e remoção com as vinculadas',
+    'annotations: name, owner, pairs and removal with the linked ones',
     () => {
       const base = setAnnotationParent(sampleProject(), 'A2', 'A1');
-      let after = renameAnnotation(base, 'A3', 'Trinco');
+      let after = renameAnnotation(base, 'A3', 'Latch');
       after = setAnnotationParent(after, 'A2', null);
-      after = addEntry(after, 'A2', { id: 'E7', key: 'lado', value: 'esquerdo' });
-      after = updateEntry(after, 'A2', 'E3', { key: 'tipo', value: 'risco' });
+      after = addEntry(after, 'A2', { id: 'E7', key: 'side', value: 'left' });
+      after = updateEntry(after, 'A2', 'E3', { key: 'kind', value: 'risk' });
       after = removeEntry(after, 'A2', 'E3');
       after = removeAnnotation(after, 'A4');
       return [base, after];
     },
   ],
   [
-    'anotação tipada: valores, tabela e referência',
+    'typed annotation: values, table and reference',
     () => {
       const base = cadastroProject();
+      // pt-BR kept: shared fixture field keys and spec id (specFixtures.ts, other phase)
       let after = setFieldValue(base, 'AB', 'estilo', 'secondary');
       after = setFieldValue(after, 'AIN', 'dado', { annotationId: 'AU', entryId: 'EA' });
       after = setFieldValue(after, 'AT', 'conteudo', null);
@@ -178,7 +179,7 @@ const scenarios: [string, () => [Project, Project]][] = [
     },
   ],
   [
-    'especialização removida convertendo as anotações (troca de tipo)',
+    'specialization removed converting the annotations (type change)',
     () => {
       const base = cadastroProject();
       return [
@@ -188,15 +189,15 @@ const scenarios: [string, () => [Project, Project]][] = [
     },
   ],
   [
-    'camadas: criação, nome, cor, posição e remoção',
+    'layers: creation, name, color, position and removal',
     () => {
       const base = addLayer(sampleProject(), {
         id: 'L3',
-        name: 'Rodas',
+        name: 'Wheels',
         color: '#2E7D32',
       });
-      let after = addLayer(base, { id: 'L4', name: 'Faróis', color: '#E65100' });
-      after = renameLayer(after, 'L1', 'Pintura');
+      let after = addLayer(base, { id: 'L4', name: 'Lights', color: '#E65100' });
+      after = renameLayer(after, 'L1', 'Paint');
       after = setLayerColor(after, 'L1', '#000000');
       after = moveLayer(after, 'L3', 0);
       after = moveLayer(after, 'L4', 1);
@@ -205,30 +206,30 @@ const scenarios: [string, () => [Project, Project]][] = [
     },
   ],
   [
-    'especialização aplicada',
+    'specialization applied',
     () => [
       sampleProject(),
       applySpecialization(sampleProject(), loadExample('sdui'), { newId: idGen('LS') }),
     ],
   ],
   [
-    'especialização atualizada',
+    'specialization updated',
     () => {
       const base = cadastroProject();
-      // Aditiva: o SDUI de partida do `cadastroProject` com a versão seguinte.
+      // Additive: the starting SDUI of `cadastroProject` with the next version.
       const spec = loadLegacySdui();
       return [base, updateSpecialization(base, { ...spec, version: spec.version + 1 })];
     },
   ],
   [
-    'especialização removida com as camadas e anotações',
+    'specialization removed with the layers and annotations',
     () => {
       const base = cadastroProject();
       return [base, removeSpecialization(base, 'modelo-dados', 'delete')];
     },
   ],
   [
-    'repositórios por plataforma',
+    'repositories per platform',
     () => {
       const base = codeProject();
       let after = setPlatformRepo(base, 'ios', { localPath: '../ios' });
@@ -239,7 +240,7 @@ const scenarios: [string, () => [Project, Project]][] = [
   ],
 ];
 
-describe('aplicar a proposta inteira reproduz o projeto proposto', () => {
+describe('applying the whole proposal reproduces the proposed project', () => {
   it.each(scenarios)('%s', (_name, make) => {
     const [base, after] = make();
     const p = acceptAll(propose(base, after), base);
@@ -251,11 +252,11 @@ describe('aplicar a proposta inteira reproduz o projeto proposto', () => {
   });
 });
 
-describe('importação inteira', () => {
-  it('projeto vazio + proposta com tudo (especializações, imagens, marcações, anotações, repositório)', () => {
+describe('whole import', () => {
+  it('empty project + proposal with everything (specializations, images, markings, annotations, repository)', () => {
     const base = emptyProject();
     const after = codeProject();
-    const p = propose(base, after, { title: 'Cadastro a partir das telas' });
+    const p = propose(base, after, { title: 'Signup from the screens' });
     expect(p.changes.every((c) => c.kind === 'create')).toBe(true);
     const result = apply(base, acceptAll(p, base), LATER);
     expect(result.project).toEqual(after);
@@ -276,8 +277,8 @@ describe('importação inteira', () => {
   });
 });
 
-describe('aplicar só as aceitas', () => {
-  /** Duas imagens novas, cada uma com uma marcação e uma anotação. */
+describe('applying only the accepted ones', () => {
+  /** Two new images, each with a marking and an annotation. */
   function twoScreens(): [Project, Project] {
     const base = sampleProject();
     let after = addContainer(base, {
@@ -304,11 +305,11 @@ describe('aplicar só as aceitas', () => {
     });
     after = addAnnotation(after, { id: 'Y1', markingId: 'X1', layerId: 'L1' });
     after = addAnnotation(after, { id: 'Y2', markingId: 'X2', layerId: 'L1' });
-    after = renameMarking(after, 'M1', 'Porta dianteira');
+    after = renameMarking(after, 'M1', 'Front door');
     return [base, after];
   }
 
-  it('aplicação parcial seguida de outra aplicação chega ao projeto proposto', () => {
+  it('a partial application followed by another application reaches the proposed project', () => {
     const [base, after] = twoScreens();
     let p = propose(base, after);
     p = decided(p, base, { level: 'image', id: 'T1' }, 'accepted');
@@ -319,7 +320,7 @@ describe('aplicar só as aceitas', () => {
       { from: 'proposals/P1/images/t1.png', to: 'images/t1.png' },
     ]);
     expect(first.proposal.status).toBe('open');
-    // O que está sem decisão continua pendente; uma nova rodada aplica o resto.
+    // What has no decision stays pending; a new round applies the rest.
     p = decided(
       first.proposal,
       first.project,
@@ -335,7 +336,7 @@ describe('aplicar só as aceitas', () => {
     expect(second.proposal.applied[changeOf(p, 'image', 'T2').id]).toEqual({ at: LATER });
   });
 
-  it('rejeitadas ficam de fora e a proposta fecha quando tudo foi decidido', () => {
+  it('rejected ones are left out and the proposal closes when everything has been decided', () => {
     const [base] = twoScreens();
     const [, after] = twoScreens();
     let p = propose(base, after);
@@ -356,10 +357,10 @@ describe('aplicar só as aceitas', () => {
     expect(done.project.containers.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
   });
 
-  it('aceitar só a posição da filha não bloqueia: o assentar refaz o pai', () => {
+  it("accepting only the child's position does not block: the settle rebuilds the parent", () => {
     const base = sampleProject();
-    // Mover M2 leva M3 junto; aceitar só a posição da filha a tira de M2 (o pai sai da
-    // geometria, não da proposta) e ela passa a ser filha de M1, que ainda a contém.
+    // Moving M2 takes M3 along; accepting only the child's position takes it out of M2 (the parent comes from
+    // the geometry, not from the proposal) and it becomes a child of M1, which still contains it.
     const p0 = propose(base, moveMarking(base, 'M2', 300, 0));
     const m2 = changeOf(p0, 'marking', 'M2', 'rect').id;
     const m3 = changeOf(p0, 'marking', 'M3', 'rect').id;
@@ -375,7 +376,7 @@ describe('aplicar só as aceitas', () => {
     ).toEqual(base);
   });
 
-  it('o placement aceito de um container sai sem cauda de ponto flutuante', () => {
+  it("a container's accepted placement comes out with no floating-point tail", () => {
     const base = sampleProject();
     const p0 = propose(base, moveContainer(base, 'I2', 5000, 5000));
     const placement = changeOf(p0, 'image', 'I2', 'placement');
@@ -395,12 +396,12 @@ describe('aplicar só as aceitas', () => {
     expect(out.placement.x).toBe(5000.123457);
   });
 
-  it('conjunto inválido fica bloqueado e aponta as mudanças envolvidas', () => {
+  it('an invalid set is blocked and points to the changes involved', () => {
     const base = sampleProject();
     const i1 = base.containers.find((c) => c.id === 'I1')!;
     const p0 = propose(base, moveContainer(base, 'I2', 5000, 5000));
     const placement = changeOf(p0, 'image', 'I2', 'placement');
-    // Um placement que põe I2 sobre I1 não é aplicado.
+    // A placement that puts I2 over I1 is not applied.
     const tampered: Proposal = {
       ...p0,
       changes: p0.changes.map((c) =>
@@ -419,19 +420,22 @@ describe('aplicar só as aceitas', () => {
     ).toEqual(base);
   });
 
-  it('conflito: aceitar sobrescreve o valor atual; rejeitar mantém', () => {
+  it('conflict: accepting overwrites the current value; rejecting keeps it', () => {
     const base = sampleProject();
-    const p0 = propose(base, renameMarking(base, 'M4', 'Farol'));
-    const edited = renameMarking(base, 'M4', 'Lanterna');
+    const p0 = propose(base, renameMarking(base, 'M4', 'Lighthouse'));
+    const edited = renameMarking(base, 'M4', 'Lantern');
     const accepted = apply(edited, acceptAll(p0, base));
-    expect(accepted.project.markings.find((m) => m.id === 'M4')?.name).toBe('Farol');
+    expect(accepted.project.markings.find((m) => m.id === 'M4')?.name).toBe('Lighthouse');
     const rejected = decided(p0, base, { level: 'proposal', id: null }, 'rejected');
     expect(apply(edited, rejected).project).toBe(edited);
   });
 
-  it('alteração de item que sumiu bloqueia (entity-missing); remoção de item já removido não faz nada', () => {
+  it('changing an item that disappeared blocks (entity-missing); removing an already removed item does nothing', () => {
     const base = sampleProject();
-    const renamed = acceptAll(propose(base, renameMarking(base, 'M4', 'Farol')), base);
+    const renamed = acceptAll(
+      propose(base, renameMarking(base, 'M4', 'Lighthouse')),
+      base,
+    );
     const gone = removeContainer(base, 'I2');
     const result = applyAccepted(gone, renamed, AT);
     expect(result.ok).toBe(false);
@@ -440,7 +444,7 @@ describe('aplicar só as aceitas', () => {
     expect(apply(gone, removal).project).toEqual(gone);
   });
 
-  it('item trancado: aceitar a mudança de geometria é permitido e a trava continua', () => {
+  it('locked item: accepting the geometry change is allowed and the lock stays', () => {
     const base = setMarkingLocked(sampleProject(), 'M4', true);
     const after = setMarkingLocked(
       setMarkingRect(setMarkingLocked(base, 'M4', false), 'M4', {
@@ -458,7 +462,7 @@ describe('aplicar só as aceitas', () => {
     expect(m4?.locked).toBe(true);
   });
 
-  it('especialização citada que não ficaria aplicada bloqueia (decisões editadas à mão)', () => {
+  it('a cited specialization that would not end up applied blocks (hand-edited decisions)', () => {
     const base = sampleProject();
     const p0 = propose(
       base,
@@ -477,12 +481,12 @@ describe('aplicar só as aceitas', () => {
     ]);
   });
 
-  it('substituída: as aceitas ainda são aplicadas; retirada ou aplicada não aplica mais nada', () => {
+  it('replaced: the accepted ones are still applied; withdrawn or applied applies nothing more', () => {
     const base = sampleProject();
     const after = renameMarking(
-      renameMarking(base, 'M4', 'Farol'),
+      renameMarking(base, 'M4', 'Lighthouse'),
       'M1',
-      'Porta dianteira',
+      'Front door',
     );
     let p = propose(base, after);
     p = decided(p, base, { level: 'image', id: 'I2' }, 'accepted');
@@ -494,19 +498,19 @@ describe('aplicar só as aceitas', () => {
     expect(!withdrawn.ok && withdrawn.issues[0]?.code).toBe('proposal-closed');
   });
 
-  it('visão Proposto: o atual mais as não rejeitadas e não aplicadas', () => {
+  it('Proposed view: the current one plus the non-rejected and non-applied ones', () => {
     const [base, after] = twoScreens();
     let p = propose(base, after);
     expect(previewProject(base, p)).toEqual({ project: after, problems: [] });
     p = decided(p, base, { level: 'image', id: 'T2' }, 'rejected');
     const preview = previewProject(base, p).project;
     expect(preview.containers.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
-    expect(preview.markings.find((m) => m.id === 'M1')?.name).toBe('Porta dianteira');
+    expect(preview.markings.find((m) => m.id === 'M1')?.name).toBe('Front door');
   });
 });
 
-describe('proposta antiga com mudança no campo de código removido (etapa 9)', () => {
-  /** O Screen como era antes da v9: com o valor do campo removido (`implementacao`). */
+describe('old proposal with a change on the removed code field (stage 9)', () => {
+  /** The Screen as it was before v9: with the removed field's value (`implementacao`). */
   function withLegacyValue(p: Project, value: unknown[]): Project {
     return {
       ...p,
@@ -521,26 +525,27 @@ describe('proposta antiga com mudança no campo de código removido (etapa 9)', 
     };
   }
 
-  /** O projeto v8 (com o valor), a proposta feita sobre ele e o projeto atual (migrado, v9). */
+  /** The v8 project (with the value), the proposal made over it and the current project (migrated, v9). */
   function oldProposal() {
-    const entry = { _id: 'C1', platform: 'android', path: 'a/Tela.kt' };
+    const entry = { _id: 'C1', platform: 'android', path: 'a/Screen.kt' };
     const v8 = withLegacyValue(codeProject(), [entry]);
     let after = withLegacyValue(v8, [
       entry,
       { _id: 'C2', platform: 'ios', path: 'B.swift' },
     ]);
-    after = setFieldValue(after, 'AS', 'rota', '/cadastro/novo');
+    // pt-BR kept: shared fixture field keys (codeProject in specFixtures.ts, other phase)
+    after = setFieldValue(after, 'AS', 'rota', '/signup/new');
     const p = propose(v8, after);
     return { p, current: codeProject() };
   }
 
-  it('a mudança do campo removido aparece em conflito e, aceita, bloqueia como "não cabe"', () => {
+  it('the removed field\'s change shows up as a conflict and, when accepted, blocks as "does not fit"', () => {
     const { p, current } = oldProposal();
     const legacy = changeOf(p, 'annotation', 'AS', 'values.implementacao');
-    const rota = changeOf(p, 'annotation', 'AS', 'values.rota');
-    // A revisão monta a árvore e a situação de cada mudança sem erro.
+    const route = changeOf(p, 'annotation', 'AS', 'values.rota');
+    // The review builds the tree and the status of each change with no error.
     expect(reviewTree(p, current).changeIdsOf({ level: 'proposal', id: null })).toEqual(
-      expect.arrayContaining([legacy.id, rota.id]),
+      expect.arrayContaining([legacy.id, route.id]),
     );
     expect(changeStatus(p, legacy, current)).toMatchObject({
       conflict: true,
@@ -555,7 +560,7 @@ describe('proposta antiga com mudança no campo de código removido (etapa 9)', 
     expect(applyAccepted(current, accepted, AT).ok).toBe(false);
   });
 
-  it('rejeitada a mudança do campo removido, o resto aplica sem trazê-lo de volta', () => {
+  it("with the removed field's change rejected, the rest applies without bringing it back", () => {
     const { p, current } = oldProposal();
     const legacy = changeOf(p, 'annotation', 'AS', 'values.implementacao');
     const decisions = decided(
@@ -566,21 +571,23 @@ describe('proposta antiga com mudança no campo de código removido (etapa 9)', 
     );
     const result = apply(current, decisions);
     const screen = result.project.annotations.find((a) => a.id === 'AS');
-    expect(screen?.values).toEqual({ nome: 'Cadastro', rota: '/cadastro/novo' });
+    // pt-BR kept: shared fixture data (cadastroProject/codeProject in specFixtures.ts, other phase)
+    expect(screen?.values).toEqual({ nome: 'Cadastro', rota: '/signup/new' });
     expect(result.proposal.status).toBe('applied');
     expect(validateProject(result.project)).toEqual([]);
   });
 
-  it('a visão Proposto deixa a mudança de fora (problems) e não traz o valor', () => {
+  it('the Proposed view leaves the change out (problems) and does not bring the value', () => {
     const { p, current } = oldProposal();
     const legacy = changeOf(p, 'annotation', 'AS', 'values.implementacao');
     const preview = previewProject(current, p);
     expect(preview.problems).toEqual([{ code: 'field-mismatch', changeId: legacy.id }]);
     const screen = preview.project.annotations.find((a) => a.id === 'AS');
-    expect(screen?.values).toEqual({ nome: 'Cadastro', rota: '/cadastro/novo' });
+    // pt-BR kept: shared fixture data (cadastroProject/codeProject in specFixtures.ts, other phase)
+    expect(screen?.values).toEqual({ nome: 'Cadastro', rota: '/signup/new' });
   });
 
-  it('tipo que não dá para resolver (sem a cópia da especialização) não decide: aplica', () => {
+  it('a type that cannot be resolved (without the specialization copy) does not decide: applies', () => {
     const { p, current } = oldProposal();
     const missing: Project = {
       ...current,
@@ -592,7 +599,7 @@ describe('proposta antiga com mudança no campo de código removido (etapa 9)', 
   });
 });
 
-describe('pacote de biblioteca na proposta (fase B4)', () => {
+describe('library package in the proposal (phase B4)', () => {
   const PKG_SPEC = { ...loadExample('sdui'), formatVersion: 4 } as ReturnType<
     typeof loadExample
   >;
@@ -602,7 +609,7 @@ describe('pacote de biblioteca na proposta (fase B4)', () => {
     return updateOrApply(p, spec);
   }
 
-  /** Aplica (ou sobe) a especialização com o arquivo dentro da pasta `specs/sdui/`. */
+  /** Applies (or raises) the specialization with the file inside the `specs/sdui/` folder. */
   function updateOrApply(p: Project, spec: typeof PKG_SPEC): Project {
     const existing = p.specializations.some((s) => s.id === spec.id);
     return existing
@@ -618,7 +625,7 @@ describe('pacote de biblioteca na proposta (fase B4)', () => {
         });
   }
 
-  it('criar: devolve a pasta, onde os arquivos esperam e a especialização', () => {
+  it('create: returns the folder, where the files wait and the specialization', () => {
     const base = sampleProject();
     const after = withPackage(base, 1);
     const result = apply(base, acceptAll(propose(base, after), base));
@@ -634,7 +641,7 @@ describe('pacote de biblioteca na proposta (fase B4)', () => {
     ]);
   });
 
-  it('atualizar: devolve o pacote da versão nova', () => {
+  it("update: returns the new version's package", () => {
     const base = withPackage(sampleProject(), 1);
     const after = withPackage(base, 2);
     const p = acceptAll(propose(base, after), base);
@@ -645,18 +652,18 @@ describe('pacote de biblioteca na proposta (fase B4)', () => {
     ]);
   });
 
-  it('só as aceitas, e uma só vez: o que não foi aplicado agora não entra', () => {
+  it('only the accepted ones, and only once: what was not applied now is not included', () => {
     const base = sampleProject();
     const p = propose(base, withPackage(base, 1));
     expect(apply(base, p).packages).toEqual([]);
     const accepted = acceptAll(p, base);
     const first = apply(base, accepted);
     expect(first.packages).toHaveLength(1);
-    // Já aplicada: o resto da proposta não repete o pacote.
+    // Already applied: the rest of the proposal does not repeat the package.
     expect(apply(first.project, first.proposal).packages).toEqual([]);
   });
 
-  it('especialização de arquivo único (specs/<id>.json) e remoção não trazem pacote', () => {
+  it('a single-file specialization (specs/<id>.json) and removal bring no package', () => {
     const base = sampleProject();
     const single = applySpecialization(base, loadExample('sdui'), {
       newId: idGen('LS'),
@@ -668,15 +675,15 @@ describe('pacote de biblioteca na proposta (fase B4)', () => {
   });
 });
 
-describe('migração que tira o campo na mesma proposta (remove-field e rename-field)', () => {
-  /** A especialização v1 aplicada, com a anotação `B1` (Button) com o campo `label` preenchido. */
+describe('migration that removes the field in the same proposal (remove-field and rename-field)', () => {
+  /** The v1 specialization applied, with the annotation `B1` (Button) with the `label` field filled in. */
   function before(): Project {
     return libProject(libSpec(1), [
-      { id: 'B1', type: 'button', values: { label: 'teste', size: 3 } },
+      { id: 'B1', type: 'button', values: { label: 'test', size: 3 } },
     ]);
   }
 
-  /** A v2 sem o campo `label` (e `title` no lugar, no rename), com a migração dada. */
+  /** The v2 without the `label` field (and `title` in its place, in the rename), with the given migration. */
   function nextSpec(step: SpecMigrationStep, renamed?: string) {
     const fields = buttonType().fields.filter((f) => f.key !== 'label');
     if (renamed) fields.unshift({ key: renamed, type: 'string', tags: ['x'] });
@@ -707,7 +714,7 @@ describe('migração que tira o campo na mesma proposta (remove-field e rename-f
     to: 'title',
   };
 
-  it('remove-field: a proposta traz o valor indo a null e aceitar tudo aplica, sem a chave', () => {
+  it('remove-field: the proposal brings the value going to null and accepting everything applies, without the key', () => {
     const { base, after, p } = proposeUpdate(REMOVE);
     const clear = changeOf(p, 'annotation', 'B1', 'values.label');
     expect(clear.to).toBeNull();
@@ -725,16 +732,16 @@ describe('migração que tira o campo na mesma proposta (remove-field e rename-f
     expect(valuesOf(after, 'B1')).not.toHaveProperty('label');
   });
 
-  it('rename-field: aceitar tudo deixa o valor no campo novo, sem a chave antiga', () => {
+  it('rename-field: accepting everything leaves the value in the new field, without the old key', () => {
     const { base, p } = proposeUpdate(RENAME, 'title');
     expect(changeOf(p, 'annotation', 'B1', 'values.label').to).toBeNull();
     const result = apply(base, acceptAll(p, base));
-    expect(valuesOf(result.project, 'B1').title).toBe('teste');
+    expect(valuesOf(result.project, 'B1').title).toBe('test');
     expect(valuesOf(result.project, 'B1')).not.toHaveProperty('label');
     expect(getAnnotationIssues(result.project, 'B1')).toEqual([]);
   });
 
-  it('só o valor aceito (sem a especialização): a chave ainda é do tipo antigo e vai a null', () => {
+  it('only the accepted value (without the specialization): the key still belongs to the old type and goes to null', () => {
     const { base, p } = proposeUpdate(REMOVE);
     const clear = changeOf(p, 'annotation', 'B1', 'values.label');
     const only = decided(p, base, { level: 'change', id: clear.id }, 'accepted');
@@ -743,7 +750,7 @@ describe('migração que tira o campo na mesma proposta (remove-field e rename-f
     expect(result.proposal.status).toBe('open');
   });
 
-  it('rejeitar o valor e aceitar a especialização continua aplicando (valor órfão como pendência)', () => {
+  it('rejecting the value and accepting the specialization still applies (orphan value as a pending item)', () => {
     const { base, p } = proposeUpdate(REMOVE);
     const clear = changeOf(p, 'annotation', 'B1', 'values.label');
     const decisions = decided(
@@ -753,26 +760,26 @@ describe('migração que tira o campo na mesma proposta (remove-field e rename-f
       'rejected',
     );
     const result = apply(base, decisions);
-    expect(valuesOf(result.project, 'B1').label).toBe('teste');
+    expect(valuesOf(result.project, 'B1').label).toBe('test');
     expect(getAnnotationIssues(result.project, 'B1')).toEqual([
       { code: 'unknown-field', key: 'label' },
     ]);
   });
 
-  it('visão Proposto: limpar a chave fora do tipo não vira problema', () => {
+  it('Proposed view: clearing the key outside the type is not a problem', () => {
     const { base, p } = proposeUpdate(REMOVE);
     const preview = previewProject(base, p);
     expect(preview.problems).toEqual([]);
     expect(valuesOf(preview.project, 'B1')).not.toHaveProperty('label');
   });
 
-  it('regressão: valor novo numa chave fora do tipo continua field-mismatch', () => {
+  it('regression: a new value on a key outside the type is still field-mismatch', () => {
     const { base, p } = proposeUpdate(REMOVE);
     const clear = changeOf(p, 'annotation', 'B1', 'values.label');
     const stale: Proposal = {
       ...p,
       changes: p.changes.map((c) =>
-        c.id === clear.id ? { ...c, from: 'teste', to: 'novo' } : c,
+        c.id === clear.id ? { ...c, from: 'test', to: 'new' } : c,
       ),
     };
     const accepted = acceptAll(stale, base);
@@ -785,6 +792,6 @@ describe('migração que tira o campo na mesma proposta (remove-field e rename-f
         changeIds: [clear.id],
       }),
     ]);
-    expect(annotationOf(base, 'B1').values).toMatchObject({ label: 'teste' });
+    expect(annotationOf(base, 'B1').values).toMatchObject({ label: 'test' });
   });
 });

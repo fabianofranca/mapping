@@ -15,15 +15,15 @@ import {
   usesDrawingMode,
 } from '../../src/model';
 
-// Fase CF6: o modo do desenho numa proposta (entidade `project`, campo `drawingMode` do container)
-// e a `formatVersion` 6, gravada só quando a proposta o usa.
+// Phase CF6: the drawing mode in a proposal (`project` entity, the container's `drawingMode` field)
+// and `formatVersion` 6, written only when the proposal uses it.
 
 const AT = '2026-11-07T10:00:00.000Z';
 const base = addBackgroundContainer(
   createProject({
-    name: 'Teste',
+    name: 'Test',
     now: AT,
-    firstLayer: { id: 'l1', name: 'Camada 1', color: '#FF0000' },
+    firstLayer: { id: 'l1', name: 'Layer 1', color: '#FF0000' },
   }),
   {
     id: 'c1',
@@ -33,16 +33,16 @@ const base = addBackgroundContainer(
   },
 );
 const build = (after: typeof base) =>
-  buildProposal(base, after, { title: 'Modo', createdAt: AT });
+  buildProposal(base, after, { title: 'Mode', createdAt: AT });
 
-describe('proposta com o modo do desenho', () => {
-  it('sem modo a proposta continua na formatVersion 4', () => {
+describe('proposal with the drawing mode', () => {
+  it('without mode the proposal stays on formatVersion 4', () => {
     const proposal = build(base);
     expect(proposal.formatVersion).toBe(PROPOSAL_FORMAT_VERSION);
     expect(usesDrawingMode(proposal.changes)).toBe(false);
   });
 
-  it('o modo do projeto vira a entidade project e a proposta grava a 6; ida e volta', () => {
+  it('the project mode becomes the project entity and the proposal writes 6; round trip', () => {
     const proposal = build(setProjectDrawingMode(base, 'dark'));
     expect(proposal.formatVersion).toBe(PROPOSAL_DRAWING_MODE_FORMAT_VERSION);
     expect(proposal.changes).toMatchObject([
@@ -59,7 +59,7 @@ describe('proposta com o modo do desenho', () => {
     expect(parsed.ok).toBe(true);
   });
 
-  it('o modo do container é o campo drawingMode; aceitar e aplicar grava e remove', () => {
+  it('the container mode is the drawingMode field; accepting and applying writes and removes', () => {
     const fixed = setContainerDrawingMode(base, 'c1', 'dark');
     const proposal = build(fixed);
     expect(proposal.changes).toMatchObject([
@@ -79,7 +79,7 @@ describe('proposta com o modo do desenho', () => {
       { ...proposal, decisions: decided.decisions },
       AT,
     );
-    if (!applied.ok) throw new Error('bloqueada');
+    if (!applied.ok) throw new Error('blocked');
     expect(applied.project.containers[0]?.drawingMode).toBe('dark');
 
     const back = build(setContainerDrawingMode(fixed, 'c1', null));
@@ -89,10 +89,10 @@ describe('proposta com o modo do desenho', () => {
     ).toBe(true);
   });
 
-  it('a 4 não aceita a entidade project com entityId errado', () => {
+  it('version 4 does not accept the project entity with a wrong entityId', () => {
     const proposal = build(setProjectDrawingMode(base, 'dark'));
     const json = JSON.parse(serializeProposal(proposal));
-    json.changes[0].entityId = 'outro';
+    json.changes[0].entityId = 'other';
     expect(parseProposal(json).ok).toBe(false);
   });
 });

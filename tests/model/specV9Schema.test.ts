@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { parseSpec } from '../../src/model';
 
-// Especialização formatVersion 9 (etapa Biblioteca Material 3): `variants` na entrada de `code`.
-// O JSON Schema (`docs/spec.schema.json`) e o parser da app concordam nas regras estruturais;
-// as conferências contra o tipo (field, cases) são do validador da app (tests/model/specVariants*).
+// Specialization formatVersion 9 (Material 3 library stage): `variants` in the `code` entry.
+// The JSON Schema (`docs/spec.schema.json`) and the app parser agree on the structural rules;
+// the checks against the type (field, cases) belong to the app validator (tests/model/specVariants*).
 
 const jsonSchema = JSON.parse(readFileSync('docs/spec.schema.json', 'utf8')) as Record<
   string,
@@ -25,8 +25,8 @@ function button(): Json {
     platforms: [{ id: 'compose', name: 'Compose', language: 'kotlin' }],
     layers: [
       {
-        id: 'componentes',
-        name: 'Componentes',
+        id: 'components',
+        name: 'Components',
         color: '#1E88E5',
         annotationTypes: [
           {
@@ -55,7 +55,7 @@ function button(): Json {
                       path: 'compose/material3/Button.kt',
                       params: { label: 'text' },
                       values: { style: { text: 'x' } },
-                      notes: 'outra nota',
+                      notes: 'another note',
                     },
                   },
                 },
@@ -71,40 +71,40 @@ function button(): Json {
 const variantsOf = (spec: Json): Json =>
   spec.layers[0].annotationTypes[0].code.compose.variants;
 
-describe('formatVersion 9: variants no code', () => {
-  it('o JSON Schema aceita a 9 com variants, e a app também', () => {
+describe('formatVersion 9: variants in code', () => {
+  it('the JSON Schema accepts 9 with variants, and so does the app', () => {
     const spec = button();
     expect(jsonValidator.safeParse(spec).success).toBe(true);
     expect(parseSpec(spec).ok).toBe(true);
   });
 
   const bad: [string, (s: Json) => void][] = [
-    ['variants sem field', (s) => delete variantsOf(s).field],
-    ['variants sem cases', (s) => delete variantsOf(s).cases],
-    ['cases vazio', (s) => (variantsOf(s).cases = {})],
-    ['caso vazio', (s) => (variantsOf(s).cases.outlined = {})],
-    ['propriedade desconhecida em variants', (s) => (variantsOf(s).extra = 1)],
-    ['propriedade desconhecida no caso', (s) => (variantsOf(s).cases.outlined.extra = 1)],
-    ['symbol vazio no caso', (s) => (variantsOf(s).cases.outlined.symbol = '')],
-    ['path inválido no caso', (s) => (variantsOf(s).cases.text.path = '../Button.kt')],
+    ['variants without field', (s) => delete variantsOf(s).field],
+    ['variants without cases', (s) => delete variantsOf(s).cases],
+    ['empty cases', (s) => (variantsOf(s).cases = {})],
+    ['empty case', (s) => (variantsOf(s).cases.outlined = {})],
+    ['unknown property in variants', (s) => (variantsOf(s).extra = 1)],
+    ['unknown property in the case', (s) => (variantsOf(s).cases.outlined.extra = 1)],
+    ['empty symbol in the case', (s) => (variantsOf(s).cases.outlined.symbol = '')],
+    ['invalid path in the case', (s) => (variantsOf(s).cases.text.path = '../Button.kt')],
     [
-      'variants aninhado no caso',
+      'variants nested in the case',
       (s) => (variantsOf(s).cases.text.variants = variantsOf(s)),
     ],
     [
-      'params com valor vazio no caso',
+      'params with an empty value in the case',
       (s) => (variantsOf(s).cases.text.params.label = ''),
     ],
   ];
 
-  it.each(bad)('o JSON Schema e a app rejeitam: %s', (_name, mutate) => {
+  it.each(bad)('the JSON Schema and the app reject: %s', (_name, mutate) => {
     const spec = button();
     mutate(spec);
     expect(jsonValidator.safeParse(spec).success).toBe(false);
     expect(parseSpec(spec).ok).toBe(false);
   });
 
-  it('o JSON Schema descreve variants na entrada de code e recusa formatVersion 17', () => {
+  it('the JSON Schema describes variants in the code entry and rejects formatVersion 17', () => {
     const defs = (jsonSchema as Json).$defs;
     expect(Object.keys(defs.codeEntry.properties)).toContain('variants');
     expect(Object.keys(defs.codeVariants.properties).sort()).toEqual(['cases', 'field']);
@@ -124,7 +124,7 @@ describe('formatVersion 9: variants no code', () => {
     );
   });
 
-  it('variants numa versão anterior à 9 é erro no caminho exato (validador da app)', () => {
+  it('variants in a version earlier than 9 is an error at the exact path (app validator)', () => {
     const spec = button();
     spec.formatVersion = 8;
     const result = parseSpec(spec);

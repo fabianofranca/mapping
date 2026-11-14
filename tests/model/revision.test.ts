@@ -3,16 +3,16 @@ import { readRevision, serialize } from '../../src/model';
 import { emptyProject } from './fixtures';
 
 describe('readRevision', () => {
-  it('lê o revision de um mapping.json v6', () => {
+  it('reads the revision of a v6 mapping.json', () => {
     expect(readRevision(serialize({ ...emptyProject(), revision: 12 }))).toBe(12);
     expect(readRevision(serialize(emptyProject()))).toBe(0);
   });
 
-  it('arquivo sem o campo (schema anterior ao v6) vale 0, como na migração', () => {
+  it('a file without the field (schema before v6) is worth 0, as in the migration', () => {
     expect(readRevision('{"schemaVersion":5,"project":{}}')).toBe(0);
   });
 
-  it('texto que não é um objeto JSON, ou com revisão inválida, devolve null', () => {
+  it('text that is not a JSON object, or with an invalid revision, returns null', () => {
     expect(readRevision('')).toBeNull();
     expect(readRevision('{ "schemaVersion": 6, ')).toBeNull();
     expect(readRevision('[]')).toBeNull();

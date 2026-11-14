@@ -11,11 +11,12 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// Projeto e catálogo com a biblioteca de notas embutida (tipo `nota`, flutuante) e uma foto I1.
+// Project and catalog with the bundled notes library (type `nota`, floating) and a photo I1.
+// pt-BR kept: shared fixture data asserted by tests/model, tests/components, tests/ui and tests/store: the spec id 'notas', the type id 'nota' and the file name 'images/tela.png'
 
 export const NOTES_SPEC_ID = 'notas';
 
-/** Projeto com a biblioteca de notas aplicada e uma imagem I1 de 1000 x 800. */
+/** Project with the notes library applied and an I1 image of 1000 x 800. */
 export function notesProject(): Project {
   const applied = applyBundledLibrary(emptyProject(), NOTES_LIBRARY, {
     newId: () => 'LN',
@@ -28,11 +29,11 @@ export function notesProject(): Project {
   });
 }
 
-/** O catálogo de componentes da biblioteca de notas. */
+/** The component catalog of the notes library. */
 export function notesCatalog(): ComponentCatalog {
   const project = notesProject();
   const entry = project.specializations.find((s) => s.id === NOTES_SPEC_ID);
-  if (!entry) throw new Error('sem a especialização de notas');
+  if (!entry) throw new Error('missing the notes specialization');
   const parsed = parseSpecText(NOTES_FILES.get(NOTES_SPEC_FILE) ?? '');
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
   const prefix = `specs/${NOTES_SPEC_ID}/`;
@@ -44,8 +45,8 @@ export function notesCatalog(): ComponentCatalog {
 }
 
 /**
- * `base` com a biblioteca de notas aplicada e uma instância de Nota `id` sem nome (flutuante,
- * como a Paleta cria): o rótulo dela é o nome do tipo, "Nota".
+ * `base` with the notes library applied and a Note instance `id` without a name (floating,
+ * as the Palette creates it): its label is the type name, "Nota".
  */
 export function withNoteInstance(base: Project, id = 'N1'): Project {
   const applied = applyBundledLibrary(base, NOTES_LIBRARY, { newId: () => 'LN' });

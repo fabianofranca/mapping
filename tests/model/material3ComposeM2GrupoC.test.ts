@@ -1,5 +1,5 @@
-// M2 da etapa "Material 3 fiel", grupo C (button, icon-button, icon-toggle-button, badge):
-// os valores que o commit fixado do Compose material3 1.4.0 define contra o desenho.
+// M2 of the "faithful Material 3" stage, group C (button, icon-button, icon-toggle-button, badge):
+// the values the pinned Compose material3 1.4.0 commit defines against the drawing.
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { walk } from '../../src/model/components/scene';
@@ -20,7 +20,7 @@ const color = (name: string, mode: Mode): string => {
 const number = (name: string): number => tokens[name] as number;
 
 const catalog = buildCatalog(
-  // reaproveita o catálogo da pasta inteira
+  // reuses the catalog of the whole folder
   (await import('../support/material3Library')).files,
 );
 const draw = (id: string, values: Record<string, string>, mode: Mode) =>
@@ -30,10 +30,10 @@ const named = (root: SceneNode, name: string): SceneNode | undefined =>
 const kinds = (root: SceneNode, type: string): SceneNode[] =>
   [...walk(root)].filter((n) => n.type === type);
 
-describe('M2 grupo C — valores do Compose', () => {
-  it('button: 40 de altura, forma full, rótulo em label-large, ícone de 18 desenhado pelo nó icon', () => {
+describe('M2 group C — Compose values', () => {
+  it('button: height 40, full shape, label in label-large, 18 icon drawn by the icon node', () => {
     for (const mode of MODES) {
-      const d = draw('button', { label: 'Salvar', style: 'filled', icon: 'Add' }, mode);
+      const d = draw('button', { label: 'Save', style: 'filled', icon: 'Add' }, mode);
       expect(d.warnings.filter((w) => /unknown icon/.test(w))).toEqual([]);
       expect(d.root.height).toBe(40);
       const container = named(d.root, 'container');
@@ -42,7 +42,7 @@ describe('M2 grupo C — valores do Compose', () => {
       );
       expect(solid(container?.fills ?? [])).toBe(color('primary', mode));
       const label = findText(d.root) as TextNode;
-      expect(label.text).toBe('Salvar');
+      expect(label.text).toBe('Save');
       expect(label.style.fontSize).toBe(number('label-large-size'));
       expect(label.style.fontWeight).toBe(number('label-large-weight'));
       expect(label.style.lineHeight).toBe(number('label-large-line-height'));
@@ -56,7 +56,7 @@ describe('M2 grupo C — valores do Compose', () => {
     }
   });
 
-  it('button: elevated tem a sombra do nível 1, tonal e text pegam as cores do Defaults, outlined tem contorno outline-variant', () => {
+  it('button: elevated has the level 1 shadow, tonal and text take the Defaults colors, outlined has an outline-variant outline', () => {
     for (const mode of MODES) {
       const elevated = draw('button', { label: 'A', style: 'elevated' }, mode);
       const box = named(elevated.root, 'container')!;
@@ -86,6 +86,7 @@ describe('M2 grupo C — valores do Compose', () => {
       expect(solid(findText(textual.root)!.fills)).toBe(color('primary', mode));
 
       const outlined = draw('button', { label: 'A', style: 'outlined' }, mode);
+      // pt-BR kept: node names of the material3-compose library (libraries/*.json, outside this phase)
       const ring = named(outlined.root, 'contorno')!;
       expect(ring.visible).toBe(true);
       expect(ring.stroke?.width).toBe(1);
@@ -96,7 +97,7 @@ describe('M2 grupo C — valores do Compose', () => {
     }
   });
 
-  it('button: desabilitado usa on-surface a 0,1 no contêiner e 0,38 no conteúdo', () => {
+  it('button: disabled uses on-surface at 0.1 on the container and 0.38 on the content', () => {
     for (const mode of MODES) {
       const d = draw('button', { label: 'A', style: 'filled', enabled: 'false' }, mode);
       const box = named(d.root, 'container')!;
@@ -123,7 +124,7 @@ describe('M2 grupo C — valores do Compose', () => {
     }
   });
 
-  it('icon-button: container de 40, forma full, ícone de 24 centrado, cores por estilo', () => {
+  it('icon-button: 40 container, full shape, centered 24 icon, colors by style', () => {
     for (const mode of MODES) {
       const d = draw('icon-button', { icon: 'Add', style: 'filled' }, mode);
       expect(d.warnings.filter((w) => /unknown icon/.test(w))).toEqual([]);
@@ -157,7 +158,7 @@ describe('M2 grupo C — valores do Compose', () => {
     }
   });
 
-  it('icon-toggle-button: ligado e desligado trocam as cores de cada estilo', () => {
+  it('icon-toggle-button: on and off swap the colors of each style', () => {
     for (const mode of MODES) {
       const v = (style: string, checked: string, enabled = 'true') => ({
         icon: 'Favorite',
@@ -194,13 +195,13 @@ describe('M2 grupo C — valores do Compose', () => {
       const ring = (checked: string): SceneNode | undefined =>
         named(draw('icon-toggle-button', v('outlined', checked), mode).root, 'contorno');
       expect(ring('false')?.visible).toBe(true);
-      // ligado, o contorno some da cena (o Compose passa border = null)
+      // when on, the outline disappears from the scene (Compose passes border = null)
       expect(ring('true')).toBeUndefined();
       expect(box('filled', 'true', 'false').opacity).toBe(0.1);
     }
   });
 
-  it('badge: ponto de 6 e contador de 16 em corner-full, error / on-error e label-small', () => {
+  it('badge: 6 dot and 16 counter in corner-full, error / on-error and label-small', () => {
     for (const mode of MODES) {
       const dot = draw('badge', { style: 'small' }, mode);
       const point = named(dot.root, 'pontinho')!;

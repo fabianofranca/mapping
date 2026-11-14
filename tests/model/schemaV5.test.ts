@@ -6,7 +6,7 @@ import { legacyJson } from './legacyShape';
 const strip = (item: Record<string, unknown>, key: string) =>
   Object.fromEntries(Object.entries(item).filter(([k]) => k !== key));
 
-/** Um mapping.json v4: sem `locked` nas imagens nem nas marcações (nem `platformRepos`). */
+/** A v4 mapping.json: without `locked` on the images or the markings (nor `platformRepos`). */
 function v4Text(): string {
   const data = legacyJson(sampleProject());
   return JSON.stringify({
@@ -17,8 +17,8 @@ function v4Text(): string {
   });
 }
 
-describe('migração v4 → v5 (trava)', () => {
-  it('imagens e marcações ganham locked: false e o resto fica igual', () => {
+describe('migration v4 → v5 (lock)', () => {
+  it('images and markings get locked: false and the rest stays the same', () => {
     const result = deserialize(v4Text());
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(4);
@@ -29,17 +29,17 @@ describe('migração v4 → v5 (trava)', () => {
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('o v4 migrado salva como v16 estável (round-trip)', () => {
+  it('the migrated v4 saves as a stable v16 (round-trip)', () => {
     const first = deserialize(v4Text());
-    if (!first.ok) throw new Error('falhou');
+    if (!first.ok) throw new Error('failed');
     const saved = serialize(first.project);
     expect(JSON.parse(saved).schemaVersion).toBe(20);
     const again = deserialize(saved);
-    if (!again.ok) throw new Error('falhou');
+    if (!again.ok) throw new Error('failed');
     expect(serialize(again.project)).toBe(saved);
   });
 
-  it('preserva um locked que já exista e não toca em itens que não são objetos', () => {
+  it('preserves an existing locked and does not touch items that are not objects', () => {
     const migrated = migrateFrom4To5({
       images: [{ id: 'I1', locked: true }, 7],
       markings: [{ id: 'M1' }],
@@ -48,14 +48,14 @@ describe('migração v4 → v5 (trava)', () => {
     expect(migrated.markings).toEqual([{ id: 'M1', locked: false }]);
   });
 
-  it('serializa locked na ordem fixa, no fim de cada imagem e marcação (antes do source da v8)', () => {
+  it('serializes locked in a fixed order, at the end of each image and marking (before the v8 source)', () => {
     const data = JSON.parse(serialize(sampleProject()));
     expect(Object.keys(data.containers[0]).slice(-3)).toEqual([
       'locked',
       'source',
       'background',
     ]);
-    // `floating` (v13) vem entre `locked` e `source`.
+    // `floating` (v13) comes between `locked` and `source`.
     expect(Object.keys(data.markings[0]).slice(-3)).toEqual([
       'locked',
       'floating',
@@ -63,7 +63,7 @@ describe('migração v4 → v5 (trava)', () => {
     ]);
   });
 
-  it('recusa um arquivo v5 sem locked', () => {
+  it('refuses a v5 file without locked', () => {
     const data = JSON.parse(serialize(sampleProject()));
     delete data.markings[0].locked;
     const result = deserialize(JSON.stringify(data));

@@ -1,12 +1,13 @@
-// Etapa Material 3 com estados de interação (#869), fase ME5 (#917): o campo `interaction` de `tabs`,
-// `navigation-bar`, `short-navigation-bar`, `navigation-rail` e `navigation-drawer`, com o padrão do
-// `button` (ME1, `material3Estados.test.ts`). Referência: Compose `material3` 1.4.0, commit 5113b82a….
+// Material 3 stage with interaction states (#869), phase ME5 (#917): the `interaction` field of `tabs`,
+// `navigation-bar`, `short-navigation-bar`, `navigation-rail` and `navigation-drawer`, following the
+// `button` pattern (ME1, `material3Estados.test.ts`). Reference: Compose `material3` 1.4.0, commit 5113b82a….
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import type { SceneNode } from '../../src/model/components/scene';
 import { drawIn, files, spec, typeOf } from '../support/material3Library';
 
 const catalog = buildCatalog(files);
+// pt-BR kept: node names, labels, example names and descriptions of libraries/material3-compose are Portuguese data
 type Values = Record<string, unknown>;
 type Mode = 'light' | 'dark';
 const MODES: Mode[] = ['light', 'dark'];
@@ -24,7 +25,7 @@ const EXAMPLES = { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressi
 
 function entryOf(id: string) {
   const entry = findEntry(catalog, id);
-  if (entry === undefined) throw new Error(`entrada ${id} ausente`);
+  if (entry === undefined) throw new Error(`entry ${id} missing`);
   return entry;
 }
 const draw = (id: string, values: Values, mode: Mode) =>
@@ -32,7 +33,7 @@ const draw = (id: string, values: Values, mode: Mode) =>
 const json = (id: string, values: Values, mode: Mode): string =>
   JSON.stringify(draw(id, values, mode).root);
 
-/** Os nós de um nome, sem descer por um nó invisível (um estilo de cada vez desenha). */
+/** The nodes with a name, without descending into an invisible node (one style draws at a time). */
 function visibleNamed(node: SceneNode, name: string, out: SceneNode[] = []): SceneNode[] {
   if (!node.visible) return out;
   if (node.name === name) out.push(node);
@@ -51,27 +52,27 @@ const row = (label: string, icon: string, selected: boolean) => ({
   label,
   icon,
   selected: String(selected),
-  badge: '', // a coluna do selo do `navigation-drawer`; os outros tipos a ignoram
+  badge: '', // the badge column of `navigation-drawer`; the other types ignore it
 });
-const items = [row('Início', 'Home', true), row('Buscar', 'Search', false)];
-const unselected = [row('Início', 'Home', false), row('Buscar', 'Search', false)];
+const items = [row('Home', 'Home', true), row('Search', 'Search', false)];
+const unselected = [row('Home', 'Home', false), row('Search', 'Search', false)];
 
 interface Suite {
   id: string;
   variants: Values[];
-  /** Token da cor da camada (a do ripple no Compose). */
+  /** Token of the layer color (the ripple's in Compose). */
   color: (v: Values) => string;
 }
 
 function suite({ id, variants, color }: Suite) {
-  describe(`${id}: campo interaction`, () => {
+  describe(`${id}: interaction field`, () => {
     const field = typeOf(id).fields.find((f) => f.key === 'interaction');
     const entry = entryOf(id);
     const combos = variants.flatMap((v) =>
       MODES.map((m) => [JSON.stringify(v), v, m] as const),
     );
 
-    it('é um enum opcional com as opções dos tokens, padrão none, fora do code', () => {
+    it('is an optional enum with the options of the tokens, default none, outside the code', () => {
       expect(field).toMatchObject({
         key: 'interaction',
         label: 'Interação',
@@ -83,26 +84,26 @@ function suite({ id, variants, color }: Suite) {
       expect(JSON.stringify(typeOf(id).code ?? {})).not.toContain('"interaction"');
     });
 
-    it('a descrição diz que vale para o item selecionado e que o tipo não tem desabilitado', () => {
+    it('the description says it applies to the selected item and that the type has no disabled state', () => {
       expect(field?.description).toMatch(/selecionad/i);
       expect(field?.description).toMatch(/sem enabled|não tem/i);
     });
 
-    it.each(STATES)('tem o exemplo "%s" sem aviso nos dois modos', (state) => {
+    it.each(STATES)('has the example "%s" without warnings in both modes', (state) => {
       const example = entry.examples.find((e) => e.values?.interaction === state);
-      expect(example, `exemplo de ${state}`).toBeDefined();
+      expect(example, `example of ${state}`).toBeDefined();
       expect(example?.name).toBe(EXAMPLES[state as keyof typeof EXAMPLES]);
       for (const mode of MODES)
         expect(drawIn(catalog, entry, example?.values ?? {}, mode).warnings).toEqual([]);
     });
 
-    it.each(combos)('%s (%s): cada estado desenha sem aviso', (_n, values, mode) => {
+    it.each(combos)('%s (%s): each state draws without warnings', (_n, values, mode) => {
       for (const interaction of STATES)
         expect(draw(id, { ...values, interaction }, mode).warnings).toEqual([]);
     });
 
     it.each(combos)(
-      '%s (%s): a camada do selecionado, na cor do conteúdo e com a opacidade do estado',
+      '%s (%s): the selected layer, in the content color and with the state opacity',
       (_n, values, mode) => {
         expect(layers(id, { ...values, interaction: 'none' }, mode)).toEqual([]);
         for (const interaction of STATES) {
@@ -117,16 +118,19 @@ function suite({ id, variants, color }: Suite) {
       },
     );
 
-    it.each(combos)('%s (%s): sem item selecionado nada muda', (_n, values, mode) => {
-      const v = { ...values, items: unselected };
-      const base = json(id, { ...v, interaction: 'none' }, mode);
-      for (const interaction of STATES)
-        expect(json(id, { ...v, interaction }, mode), interaction).toBe(base);
-    });
+    it.each(combos)(
+      '%s (%s): with no selected item nothing changes',
+      (_n, values, mode) => {
+        const v = { ...values, items: unselected };
+        const base = json(id, { ...v, interaction: 'none' }, mode);
+        for (const interaction of STATES)
+          expect(json(id, { ...v, interaction }, mode), interaction).toBe(base);
+      },
+    );
   });
 }
 
-/** O primeiro nó cujo ramo `children` contém o `estado` e o conteúdo (ícone) dele. */
+/** The first node whose `children` branch contains the `estado` and its content (icon). */
 function drawOrder(node: SceneNode, out: string[] = []): string[] {
   if ('children' in node) {
     const names = node.children.filter((c) => c.visible).map((c) => c.name ?? c.type);
@@ -136,7 +140,7 @@ function drawOrder(node: SceneNode, out: string[] = []): string[] {
   return out;
 }
 
-describe('a camada fica atrás do conteúdo onde o Compose a desenha atrás (ripple do indicador)', () => {
+describe('the layer stays behind the content where Compose draws it behind (indicator ripple)', () => {
   const cases: [string, Values][] = [
     ['navigation-bar', { items, interaction: 'pressed' }],
     [
@@ -153,7 +157,7 @@ describe('a camada fica atrás do conteúdo onde o Compose a desenha atrás (rip
       { items, style: 'wide', initialValue: 'Expanded', interaction: 'pressed' },
     ],
   ];
-  it.each(cases)('%s: o estado vem antes do conteúdo', (id, values) => {
+  it.each(cases)('%s: the state comes before the content', (id, values) => {
     for (const mode of MODES) {
       const orders = drawOrder(draw(id, values, mode).root);
       expect(orders, id).toHaveLength(1);
@@ -162,7 +166,7 @@ describe('a camada fica atrás do conteúdo onde o Compose a desenha atrás (rip
   });
 });
 
-describe('o catálogo mostra o estado na prévia (a tabela vem do preview)', () => {
+describe('the catalog shows the state in the preview (the table comes from the preview)', () => {
   it.each([
     'tabs',
     'navigation-bar',
@@ -206,7 +210,7 @@ describe('navigation-bar (NavigationBarTokens.kt)', () => {
     color: () => 'on-surface',
   });
 
-  it('a camada tem o tamanho do indicador, 56 × 32', () => {
+  it('the layer has the size of the indicator, 56 × 32', () => {
     for (const mode of MODES) {
       const [layer] = layers('navigation-bar', { items, interaction: 'pressed' }, mode);
       expect([layer?.width, layer?.height]).toEqual([56, 32]);
@@ -248,7 +252,7 @@ describe('navigation-drawer (NavigationDrawerTokens.kt)', () => {
     color: () => 'on-secondary-container',
   });
 
-  it('a camada cobre o item de 56 e leva o raio full', () => {
+  it('the layer covers the 56 item and takes the full radius', () => {
     for (const mode of MODES) {
       const [layer] = layers(
         'navigation-drawer',

@@ -1,4 +1,4 @@
-// `formatVersion` 9: `variants` na entrada de `code` (etapa Biblioteca Material 3, MD1).
+// `formatVersion` 9: `variants` in the `code` entry (Material 3 library stage, MD1).
 import { describe, expect, it } from 'vitest';
 import {
   parseSpec,
@@ -13,14 +13,14 @@ type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-ex
 const CODE = 'layers[0].annotationTypes[0].code.compose';
 const VARIANTS = `${CODE}.variants`;
 
-/** A especialização de teste (`variantsSpecJson`) com `edit` aplicado ao `code.compose` do Button. */
+/** The test specialization (`variantsSpecJson`) with `edit` applied to the Button's `code.compose`. */
 function spec(edit?: (code: Json) => void, formatVersion = 9): Json {
   const json = variantsSpecJson(formatVersion) as Json;
   if (edit) edit(json.layers[0].annotationTypes[0].code.compose);
   return json;
 }
 
-/** A especialização com `edit` aplicado ao tipo Button inteiro. */
+/** The specialization with `edit` applied to the whole Button type. */
 function withType(edit: (type: Json) => void): Json {
   const json = variantsSpecJson() as Json;
   edit(json.layers[0].annotationTypes[0]);
@@ -39,7 +39,7 @@ function parsed(input: unknown): Spec {
 }
 
 describe('formatVersion 9: variants', () => {
-  it('a versão atual é a 16 e v1 a v9 continuam aceitas, com ou sem code', () => {
+  it('the current version is 16 and v1 to v9 are still accepted, with or without code', () => {
     expect(SPEC_FORMAT_VERSION).toBe(16);
     expect(SPEC_FORMAT_VERSIONS).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
@@ -73,7 +73,7 @@ describe('formatVersion 9: variants', () => {
     }
   });
 
-  it('aceita variants e devolve a entrada com os casos', () => {
+  it('accepts variants and returns the entry with the cases', () => {
     const result = parsed(spec());
     const code = result.layers[0]?.annotationTypes[0]?.code?.compose;
     expect(code?.variants?.field).toBe('style');
@@ -85,11 +85,12 @@ describe('formatVersion 9: variants', () => {
     expect(code?.variants?.cases.text).toEqual({
       symbol: 'androidx.compose.material3.TextButton',
       path: 'compose/material3/TextButton.kt',
+      // pt-BR kept: shared fixture data asserted by tests/mcp, tests/model/codeVariants.test.ts (variantsFixtures)
       notes: 'sem fundo',
     });
   });
 
-  it('variants numa 8 (e na 5 a 7) é erro no caminho exato', () => {
+  it('variants in an 8 (and in 5 to 7) is an error at the exact path', () => {
     for (const v of [5, 6, 7, 8]) {
       expect(issuesOf(spec(undefined, v)), `v${v}`).toEqual([
         { path: VARIANTS, message: 'only allowed with formatVersion 9' },
@@ -98,33 +99,33 @@ describe('formatVersion 9: variants', () => {
     expect(issuesOf(spec((code) => delete code.variants, 8))).toEqual([]);
   });
 
-  it('field ausente, inexistente, não enum e coluna de table', () => {
+  it('field missing, nonexistent, not an enum and a table column', () => {
     expect(issuesOf(spec((c) => delete c.variants.field))).toEqual([
       { path: `${VARIANTS}.field`, message: 'required' },
     ]);
-    expect(issuesOf(spec((c) => (c.variants.field = 'nada')))).toEqual([
-      { path: `${VARIANTS}.field`, message: '"nada" is not a field of the type' },
+    expect(issuesOf(spec((c) => (c.variants.field = 'nothing')))).toEqual([
+      { path: `${VARIANTS}.field`, message: '"nothing" is not a field of the type' },
     ]);
     expect(issuesOf(spec((c) => (c.variants.field = 'label')))).toEqual([
       { path: `${VARIANTS}.field`, message: '"label" must be an enum field of the type' },
     ]);
     const asColumn = withType((type) => {
       type.fields.push({
-        key: 'linhas',
+        key: 'rows',
         type: 'table',
-        columns: [{ key: 'estilo', type: 'enum', options: ['outlined'] }],
+        columns: [{ key: 'look', type: 'enum', options: ['outlined'] }],
       });
       type.code.compose.variants = {
-        field: 'estilo',
+        field: 'look',
         cases: { outlined: { symbol: 'X' } },
       };
     });
     expect(issuesOf(asColumn)).toEqual([
-      { path: `${VARIANTS}.field`, message: '"estilo" is not a field of the type' },
+      { path: `${VARIANTS}.field`, message: '"look" is not a field of the type' },
     ]);
   });
 
-  it('cases ausente, vazio e com chave fora das options', () => {
+  it('cases missing, empty and with a key outside the options', () => {
     expect(issuesOf(spec((c) => delete c.variants.cases))).toEqual([
       { path: `${VARIANTS}.cases`, message: 'required' },
     ]);
@@ -141,7 +142,7 @@ describe('formatVersion 9: variants', () => {
     ]);
   });
 
-  it('caso vazio é erro', () => {
+  it('empty case is an error', () => {
     expect(issuesOf(spec((c) => (c.variants.cases.outlined = {})))).toEqual([
       {
         path: `${VARIANTS}.cases.outlined`,
@@ -150,7 +151,7 @@ describe('formatVersion 9: variants', () => {
     ]);
   });
 
-  it('propriedade desconhecida no variants e no caso', () => {
+  it('unknown property in variants and in the case', () => {
     const unknownVariants = issuesOf(spec((c) => (c.variants.extra = 1)));
     expect(unknownVariants).toHaveLength(1);
     expect(unknownVariants[0]?.path).toBe(VARIANTS);
@@ -159,21 +160,21 @@ describe('formatVersion 9: variants', () => {
     expect(unknownCase[0]?.path).toBe(`${VARIANTS}.cases.outlined`);
   });
 
-  it('params e values de um caso só citam campos (e opções) do tipo', () => {
+  it('params and values of a case only cite fields (and options) of the type', () => {
     expect(
-      issuesOf(spec((c) => (c.variants.cases.outlined.params = { nada: 'x' }))),
+      issuesOf(spec((c) => (c.variants.cases.outlined.params = { nothing: 'x' }))),
     ).toEqual([
       {
-        path: `${VARIANTS}.cases.outlined.params.nada`,
-        message: '"nada" is not a field of the type',
+        path: `${VARIANTS}.cases.outlined.params.nothing`,
+        message: '"nothing" is not a field of the type',
       },
     ]);
     expect(
-      issuesOf(spec((c) => (c.variants.cases.outlined.values = { nada: { a: 'b' } }))),
+      issuesOf(spec((c) => (c.variants.cases.outlined.values = { nothing: { a: 'b' } }))),
     ).toEqual([
       {
-        path: `${VARIANTS}.cases.outlined.values.nada`,
-        message: '"nada" is not a field of the type',
+        path: `${VARIANTS}.cases.outlined.values.nothing`,
+        message: '"nothing" is not a field of the type',
       },
     ]);
     expect(
@@ -194,9 +195,9 @@ describe('formatVersion 9: variants', () => {
     ]);
   });
 
-  it('path inválido no caso usa a mesma regra do path da base', () => {
+  it('invalid path in the case uses the same rule as the base path', () => {
     const [issue, ...others] = issuesOf(
-      spec((c) => (c.variants.cases.outlined.path = '../fora/Button.kt')),
+      spec((c) => (c.variants.cases.outlined.path = '../outside/Button.kt')),
     );
     expect(others).toEqual([]);
     expect(issue?.path).toBe(`${VARIANTS}.cases.outlined.path`);
@@ -206,7 +207,7 @@ describe('formatVersion 9: variants', () => {
     ]);
   });
 
-  it('o campo removido (codeRef) sai também dos params dos casos', () => {
+  it('the removed field (codeRef) also leaves the params of the cases', () => {
     const input = withType((type) => {
       type.fields.push({ key: 'impl', type: 'codeRef' });
       type.code.compose.params.impl = 'impl';
@@ -222,6 +223,7 @@ describe('formatVersion 9: variants', () => {
     expect(code?.variants?.cases.text).toEqual({
       symbol: 'androidx.compose.material3.TextButton',
       path: 'compose/material3/TextButton.kt',
+      // pt-BR kept: shared fixture data asserted by tests/mcp, tests/model/codeVariants.test.ts (variantsFixtures)
       notes: 'sem fundo',
     });
     expect(code?.variants?.field).toBe('style');

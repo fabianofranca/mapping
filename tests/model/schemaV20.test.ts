@@ -1,5 +1,5 @@
-// Schema v20 (direção de leitura): `direction` no projeto e no container. A migração v19 → v20 só
-// muda a versão; a direção ausente é `ltr`.
+// Schema v20 (reading direction): `direction` on the project and on the container. The v19 → v20 migration only
+// changes the version; the missing direction is `ltr`.
 import { describe, expect, it } from 'vitest';
 import {
   SCHEMA_VERSION,
@@ -31,17 +31,17 @@ function open(raw: Raw): Project {
 }
 
 describe('schema v20', () => {
-  it('a versão atual é 20 e o registro tem a migração v19 → v20', () => {
+  it('the current version is 20 and the registry has the v19 → v20 migration', () => {
     expect(SCHEMA_VERSION).toBe(20);
     expect(migrations.get(19)).toBe(migrateFrom19To20);
   });
 
-  it('a migração v19 → v20 não muda os dados', () => {
-    const data = { project: { id: 'fixo', name: 'X' }, extra: 1 };
+  it('the v19 → v20 migration does not change the data', () => {
+    const data = { project: { id: 'fixed', name: 'X' }, extra: 1 };
     expect(migrateFrom19To20(data)).toEqual(data);
   });
 
-  it('um mapping.json v19 migra para v20 sem alterar nada além da versão', () => {
+  it('a v19 mapping.json migrates to v20 without changing anything but the version', () => {
     const result = deserialize(JSON.stringify(v19Raw()), migrations);
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(19);
@@ -53,7 +53,7 @@ describe('schema v20', () => {
     expect((saved.containers as Raw[]).every((c) => !('direction' in c))).toBe(true);
   });
 
-  it('a gravação só escreve a chave quando presente; null no container não é gravado', () => {
+  it('writing only emits the key when present; null on the container is not written', () => {
     const { containers } = sampleProject();
     const id = containers[0]!.id;
     const p = setContainerDirection(
@@ -71,7 +71,7 @@ describe('schema v20', () => {
     expect(open(JSON.parse(serialize(p)) as Raw).direction).toBe('rtl');
   });
 
-  it('a ordem das chaves: direction logo depois de drawingMode, e density depois', () => {
+  it('key order: direction right after drawingMode, and density after it', () => {
     const id = sampleProject().containers[0]!.id;
     let p = setProjectDirection(setProjectDrawingMode(sampleProject(), 'dark'), 'rtl');
     p = setContainerDensity(
@@ -88,10 +88,10 @@ describe('schema v20', () => {
     expect(containerKeys.slice(at)).toEqual(['drawingMode', 'direction', 'density']);
   });
 
-  it('direction fora de ltr/rtl falha', () => {
+  it('a direction outside ltr/rtl fails', () => {
     const raw = v19Raw();
     raw.schemaVersion = 20;
-    raw.direction = 'cima';
+    raw.direction = 'up';
     expect(deserialize(JSON.stringify(raw), migrations).ok).toBe(false);
   });
 });

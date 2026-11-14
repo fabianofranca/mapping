@@ -1,10 +1,18 @@
-// Etapa Material 3 com estados de interação (#869), fase ME3 (#915), grupo dos controles: o campo
-// `interaction` de `checkbox`, `radio-button`, `switch` e `slider`, com o mesmo padrão do `button`
-// (ME1, `material3Estados.test.ts`). Referência: Compose `material3` 1.4.0, commit 5113b82a….
+// Material 3 with interaction states stage (#869), phase ME3 (#915), controls group: the
+// `interaction` field of `checkbox`, `radio-button`, `switch` and `slider`, with the same pattern as the `button`
+// (ME1, `material3Estados.test.ts`). Reference: Compose `material3` 1.4.0, commit 5113b82a….
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import type { SceneNode } from '../../src/model/components/scene';
 import { drawIn, files, typeOf } from '../support/material3Library';
+
+// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
+const NAMES = {
+  state: 'estado',
+  box: 'caixa',
+  ring: 'anel',
+  handle: 'alça',
+} as const;
 
 const catalog = buildCatalog(files);
 type Values = Record<string, string>;
@@ -12,7 +20,7 @@ const MODES = ['light', 'dark'] as const;
 
 function entryOf(id: string) {
   const entry = findEntry(catalog, id);
-  if (entry === undefined) throw new Error(`entrada ${id} ausente`);
+  if (entry === undefined) throw new Error(`missing entry ${id}`);
   return entry;
 }
 const drawer = (id: string) => {
@@ -32,25 +40,26 @@ const visibleNamed = (id: string, values: Values, mode: 'light' | 'dark', name: 
 
 interface Suite {
   id: string;
-  /** Estados que o `*Tokens.kt` define para o tipo, na ordem do campo. */
+  /** States that the `*Tokens.kt` defines for the type, in field order. */
   states: string[];
-  /** Estados que desenham igual ao `none` (o Compose não muda nada neles). */
+  /** States that draw the same as `none` (Compose changes nothing in them). */
   same?: string[];
-  /** Combinações de campos que cobrem os caminhos do desenho. */
+  /** Field combinations that cover the drawing paths. */
   variants: Values[];
-  /** Exemplo esperado por estado (nome pt-BR). */
+  /** Expected example per state (name from the pt-BR library data). */
   examples: Record<string, string>;
 }
 
 function interactionSuite({ id, states, same = [], variants, examples }: Suite) {
-  describe(`${id}: campo interaction`, () => {
+  describe(`${id}: interaction field`, () => {
     const field = typeOf(id).fields.find((f) => f.key === 'interaction');
     const entry = entryOf(id);
     const visual = states.filter((s) => !same.includes(s));
 
-    it('é um enum opcional com as opções dos tokens, padrão none, fora do code', () => {
+    it('is an optional enum with the token options, default none, outside the code', () => {
       expect(field).toMatchObject({
         key: 'interaction',
+        // pt-BR kept: shared library data (field label of libraries/material3-compose)
         label: 'Interação',
         type: 'enum',
         default: 'none',
@@ -60,14 +69,15 @@ function interactionSuite({ id, states, same = [], variants, examples }: Suite) 
       expect(JSON.stringify(typeOf(id).code ?? {})).not.toContain('"interaction"');
     });
 
-    it('a descrição diz que o desabilitado vence', () => {
+    it('the description says the disabled state wins', () => {
+      // pt-BR kept: shared library data (field description of libraries/material3-compose)
       expect(field?.description).toMatch(/habilitado|enabled/i);
       expect(field?.description).toMatch(/desabilitad|false/i);
     });
 
-    it.each(states)('tem o exemplo "%s" sem aviso nos dois modos', (state) => {
+    it.each(states)('has the "%s" example without a warning in both modes', (state) => {
       const example = entry.examples.find((e) => e.values?.interaction === state);
-      expect(example, `exemplo de ${state}`).toBeDefined();
+      expect(example, `example of ${state}`).toBeDefined();
       expect(example?.name).toBe(examples[state]);
       for (const mode of MODES) {
         expect(drawIn(catalog, entry, example?.values ?? {}, mode).warnings).toEqual([]);
@@ -76,14 +86,14 @@ function interactionSuite({ id, states, same = [], variants, examples }: Suite) 
 
     it.each(
       variants.flatMap((v) => MODES.map((m) => [JSON.stringify(v), v, m] as const)),
-    )('%s (%s): cada estado desenha sem aviso', (_name, values, mode) => {
+    )('%s (%s): each state draws without a warning', (_name, values, mode) => {
       for (const interaction of states)
         expect(drawer(id)({ ...values, interaction }, mode).warnings).toEqual([]);
     });
 
     it.each(
       variants.flatMap((v) => MODES.map((m) => [JSON.stringify(v), v, m] as const)),
-    )('%s (%s): os estados visuais diferem de none', (_name, values, mode) => {
+    )('%s (%s): the visual states differ from none', (_name, values, mode) => {
       const base = json(id, { ...values, interaction: 'none' }, mode);
       for (const interaction of visual)
         expect(json(id, { ...values, interaction }, mode), interaction).not.toBe(base);
@@ -92,7 +102,7 @@ function interactionSuite({ id, states, same = [], variants, examples }: Suite) 
     });
 
     it.each(variants.map((v) => [JSON.stringify(v), v] as const))(
-      '%s: com enabled false o interaction não desenha nada',
+      '%s: with enabled false the interaction draws nothing',
       (_name, values) => {
         for (const mode of MODES) {
           const off = json(
@@ -116,21 +126,22 @@ describe('checkbox (CheckboxTokens.kt)', () => {
     id: 'checkbox',
     states: ['hovered', 'focused', 'pressed'],
     variants: [
-      { label: 'Aceito', state: 'unchecked' },
-      { label: 'Aceito', state: 'checked' },
-      { label: 'Aceito', state: 'indeterminate' },
+      { label: 'Accept', state: 'unchecked' },
+      { label: 'Accept', state: 'checked' },
+      { label: 'Accept', state: 'indeterminate' },
     ],
+    // pt-BR kept: shared library data (example names of libraries/material3-compose)
     examples: { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressionado' },
   });
 
-  it('a camada de estado é um círculo de 40 (StateLayerSize) e muda de cor com a seleção', () => {
+  it('the state layer is a 40 circle (StateLayerSize) and changes color with the selection', () => {
     for (const mode of MODES) {
       for (const state of ['unchecked', 'checked']) {
         const layer = visibleNamed(
           'checkbox',
           { state, interaction: 'hovered' },
           mode,
-          'estado',
+          NAMES.state,
         );
         expect(layer).toHaveLength(1);
         expect(layer[0]?.width).toBe(40);
@@ -140,22 +151,22 @@ describe('checkbox (CheckboxTokens.kt)', () => {
         'checkbox',
         { state: 'unchecked', interaction: 'hovered' },
         mode,
-        'estado',
+        NAMES.state,
       );
       const checked = visibleNamed(
         'checkbox',
         { state: 'checked', interaction: 'hovered' },
         mode,
-        'estado',
+        NAMES.state,
       );
       expect(JSON.stringify(unchecked)).not.toBe(JSON.stringify(checked));
-      expect(visibleNamed('checkbox', { interaction: 'none' }, mode, 'estado')).toEqual(
-        [],
-      );
+      expect(
+        visibleNamed('checkbox', { interaction: 'none' }, mode, NAMES.state),
+      ).toEqual([]);
     }
   });
 
-  it('o contorno do desmarcado passa de on-surface-variant a on-surface com o estado', () => {
+  it('the outline of the unchecked one goes from on-surface-variant to on-surface with the state', () => {
     for (const mode of MODES) {
       const stroke = (interaction: string) =>
         JSON.stringify(
@@ -163,7 +174,7 @@ describe('checkbox (CheckboxTokens.kt)', () => {
             'checkbox',
             { state: 'unchecked', interaction },
             mode,
-            'caixa',
+            NAMES.box,
           ).map((n) => ('stroke' in n ? n.stroke : null)),
         );
       expect(stroke('hovered')).not.toBe(stroke('none'));
@@ -181,33 +192,34 @@ describe('radio-button (RadioButtonTokens.kt)', () => {
       { label: 'Pix', selected: 'false' },
       { label: 'Pix', selected: 'true' },
     ],
+    // pt-BR kept: shared library data (example names of libraries/material3-compose)
     examples: { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressionado' },
   });
 
-  it('a camada de estado é um círculo de 24, a largura da área do anel: o StateLayerSize (40) passaria da caixa do componente (L2, #1078)', () => {
+  it('the state layer is a 24 circle, the width of the ring area: the StateLayerSize (40) would exceed the component box (L2, #1078)', () => {
     for (const mode of MODES) {
       for (const selected of ['true', 'false']) {
         const layer = visibleNamed(
           'radio-button',
           { selected, interaction: 'pressed' },
           mode,
-          'estado',
+          NAMES.state,
         );
         expect(layer).toHaveLength(1);
         expect(layer[0]?.width).toBe(24);
         expect(layer[0]?.height).toBe(24);
       }
       expect(
-        visibleNamed('radio-button', { interaction: 'none' }, mode, 'estado'),
+        visibleNamed('radio-button', { interaction: 'none' }, mode, NAMES.state),
       ).toEqual([]);
     }
   });
 
-  it('o anel do não selecionado vai a on-surface com o estado; o selecionado segue primary', () => {
+  it('the ring of the unselected one goes to on-surface with the state; the selected one stays primary', () => {
     for (const mode of MODES) {
       const ring = (selected: string, interaction: string) =>
         JSON.stringify(
-          visibleNamed('radio-button', { selected, interaction }, mode, 'anel').map(
+          visibleNamed('radio-button', { selected, interaction }, mode, NAMES.ring).map(
             (n) => ('stroke' in n ? n.stroke : null),
           ),
         );
@@ -229,30 +241,33 @@ describe('switch (SwitchTokens.kt)', () => {
       { label: 'Wi-Fi', checked: 'true', thumbIcon: 'true' },
       { label: 'Wi-Fi', checked: 'false', thumbIcon: 'true' },
     ],
+    // pt-BR kept: shared library data (example names of libraries/material3-compose)
     examples: { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressionado' },
   });
 
   const handle = (values: Values, mode: 'light' | 'dark') =>
-    visibleNamed('switch', values, mode, 'alça')[0];
+    visibleNamed('switch', values, mode, NAMES.handle)[0];
 
-  it('a camada de estado é um círculo de 32, a altura do trilho, em volta da alça: o StateLayerSize (40) passaria da caixa do componente (L2, #1078)', () => {
+  it('the state layer is a 32 circle, the track height, around the handle: the StateLayerSize (40) would exceed the component box (L2, #1078)', () => {
     for (const mode of MODES) {
       for (const checked of ['true', 'false']) {
         const layer = visibleNamed(
           'switch',
           { checked, interaction: 'focused' },
           mode,
-          'estado',
+          NAMES.state,
         );
         expect(layer).toHaveLength(1);
         expect(layer[0]?.width).toBe(32);
         expect(layer[0]?.height).toBe(32);
       }
-      expect(visibleNamed('switch', { interaction: 'none' }, mode, 'estado')).toEqual([]);
+      expect(visibleNamed('switch', { interaction: 'none' }, mode, NAMES.state)).toEqual(
+        [],
+      );
     }
   });
 
-  it('a alça pressionada vira 28 (PressedHandleWidth) nas duas posições; mouse e foco não mudam o tamanho', () => {
+  it('the pressed handle becomes 28 (PressedHandleWidth) in both positions; mouse and focus do not change the size', () => {
     for (const mode of MODES) {
       for (const checked of ['true', 'false']) {
         expect(handle({ checked, interaction: 'pressed' }, mode)?.width).toBe(28);
@@ -272,7 +287,7 @@ describe('switch (SwitchTokens.kt)', () => {
     }
   });
 
-  it('desabilitado ignora a alça de 28', () => {
+  it('disabled ignores the 28 handle', () => {
     for (const mode of MODES)
       expect(
         handle({ checked: 'true', enabled: 'false', interaction: 'pressed' }, mode)
@@ -280,7 +295,7 @@ describe('switch (SwitchTokens.kt)', () => {
       ).toBe(24);
   });
 
-  it('a cor da alça muda com o estado (primary-container ligada, on-surface-variant desligada) e é a mesma nos três', () => {
+  it('the handle color changes with the state (primary-container when on, on-surface-variant when off) and is the same in all three', () => {
     for (const mode of MODES) {
       for (const checked of ['true', 'false']) {
         const fill = (interaction: string) =>
@@ -297,7 +312,7 @@ describe('slider (SliderTokens.kt)', () => {
   interactionSuite({
     id: 'slider',
     states: ['hovered', 'focused', 'pressed'],
-    // HoverHandleWidth (4) é a largura de sempre e nenhum token de cor muda no mouse sobre.
+    // HoverHandleWidth (4) is the usual width and no color token changes on mouse over.
     same: ['hovered'],
     variants: [
       { type: 'single', value: '0.5' },
@@ -305,13 +320,14 @@ describe('slider (SliderTokens.kt)', () => {
       { type: 'single', value: '0' },
       { type: 'range', valueStart: '0.2', valueEnd: '0.8' },
     ],
+    // pt-BR kept: shared library data (example names of libraries/material3-compose)
     examples: { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressionado' },
   });
 
   const handleWidths = (values: Values, mode: 'light' | 'dark') =>
-    visibleNamed('slider', values, mode, 'alça').map((n) => n.width);
+    visibleNamed('slider', values, mode, NAMES.handle).map((n) => n.width);
 
-  it('com foco ou pressionado a alça passa de 4 para 2 (FocusHandleWidth e PressedHandleWidth)', () => {
+  it('with focus or pressed the handle goes from 4 to 2 (FocusHandleWidth and PressedHandleWidth)', () => {
     for (const mode of MODES) {
       expect(handleWidths({ type: 'single', interaction: 'none' }, mode)).toEqual([4]);
       expect(handleWidths({ type: 'single', interaction: 'hovered' }, mode)).toEqual([4]);
@@ -320,7 +336,7 @@ describe('slider (SliderTokens.kt)', () => {
     }
   });
 
-  it('no range só a alça do fim (a do single) estreita; a do início fica em 4', () => {
+  it('in the range only the end handle (the single one) narrows; the start one stays at 4', () => {
     for (const mode of MODES) {
       const base = { type: 'range', valueStart: '0.2', valueEnd: '0.8' };
       expect(handleWidths({ ...base, interaction: 'none' }, mode).sort()).toEqual([4, 4]);
@@ -330,14 +346,14 @@ describe('slider (SliderTokens.kt)', () => {
     }
   });
 
-  it('desabilitado mantém a alça de 4', () => {
+  it('disabled keeps the 4 handle', () => {
     for (const mode of MODES)
       expect(
         handleWidths({ type: 'single', enabled: 'false', interaction: 'pressed' }, mode),
       ).toEqual([4]);
   });
 
-  it('a alça continua centrada na mesma posição ao estreitar (single, valor 0.5 e 1)', () => {
+  it('the handle stays centered at the same position when narrowing (single, value 0.5 and 1)', () => {
     for (const mode of MODES) {
       for (const value of ['0.5', '1', '0']) {
         const centers = (interaction: string) => {
@@ -345,7 +361,9 @@ describe('slider (SliderTokens.kt)', () => {
             { type: 'single', value, interaction },
             mode,
           ).root;
-          const [node] = allNodes(root).filter((n) => n.name === 'alça' && n.visible);
+          const [node] = allNodes(root).filter(
+            (n) => n.name === NAMES.handle && n.visible,
+          );
           return node === undefined ? null : centerX(root, node);
         };
         expect(centers('pressed'), value).toBeCloseTo(centers('none') ?? Number.NaN, 5);
@@ -354,7 +372,7 @@ describe('slider (SliderTokens.kt)', () => {
   });
 });
 
-/** Centro horizontal do nó na raiz (soma as translações da cadeia de pais). */
+/** Horizontal center of the node in the root (sums the translations of the parent chain). */
 function centerX(root: SceneNode, target: SceneNode): number | null {
   const walk = (node: SceneNode, x: number): number | null => {
     const here = x + node.transform[4];

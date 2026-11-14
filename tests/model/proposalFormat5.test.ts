@@ -8,25 +8,25 @@ import {
 import { sampleProject } from './fixtures';
 import { propose } from './proposalFixtures';
 
-// formatVersion 5: a 4 com `revisions` na raiz, o histórico das revisões do agente
-// (docs/PROPOSAL-FORMAT.md, "Revisão pelo agente"). Aqui: leitura, regravação e as regras.
+// formatVersion 5: version 4 with `revisions` at the root, the history of the agent's revisions
+// (docs/PROPOSAL-FORMAT.md, "Agent revision"). Here: reading, rewriting and the rules.
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-/** Proposta da versão 4 como JSON canônico (chaves na ordem da serialização), com uma mudança c1. */
+/** Version 4 proposal as canonical JSON (keys in serialization order), with one change c1. */
 function base4(): Json {
   const base = sampleProject();
-  const p = propose(base, renameMarking(base, 'M4', 'Farol'));
+  const p = propose(base, renameMarking(base, 'M4', 'Headlight'));
   return JSON.parse(serializeProposal(p)) as Json;
 }
 
-/** Mudança retirada: a mesma forma de `changes`, com outro id. */
+/** Dropped change: the same shape as `changes`, with another id. */
 function droppedChange(): Json {
   const c = base4().changes[0] as Json;
   return { ...c, id: 'c4' };
 }
 
-/** Proposta 5 canônica com uma revisão que preenche changed, added e dropped. */
+/** Canonical version 5 proposal with a revision that fills changed, added and dropped. */
 function sample5(): Json {
   const json = base4();
   json.formatVersion = 5;
@@ -34,7 +34,7 @@ function sample5(): Json {
     {
       id: 'n9',
       target: { level: 'proposal', id: null },
-      text: 'Veio da mudança c4',
+      text: 'Came from change c4',
       at: '2026-11-07T10:00:00.000Z',
     },
   ];
@@ -43,7 +43,7 @@ function sample5(): Json {
       at: '2026-11-07T10:00:00.000Z',
       baseRevision: 43,
       operations: [],
-      changed: { c1: { to: 'Título da tela', state: 'rejected' } },
+      changed: { c1: { to: 'Screen title', state: 'rejected' } },
       added: ['c9'],
       dropped: [{ change: droppedChange(), state: null, notes: ['n2'] }],
     },
@@ -55,12 +55,12 @@ const text = (json: Json) => `${JSON.stringify(json, null, 2)}\n`;
 
 function errorsOf(json: Json): string[] {
   const result = parseProposal(json);
-  if (result.ok) throw new Error('esperava erro');
+  if (result.ok) throw new Error('expected an error');
   return result.errors;
 }
 
-describe('proposta formatVersion 5', () => {
-  it('lê o arquivo com revisions e regrava byte a byte igual', () => {
+describe('proposal formatVersion 5', () => {
+  it('reads the file with revisions and rewrites it byte for byte the same', () => {
     const input = text(sample5());
     const result = parseProposalText(input);
     expect(result.ok).toBe(true);
@@ -70,19 +70,19 @@ describe('proposta formatVersion 5', () => {
     expect(serializeProposal(result.proposal)).toBe(input);
   });
 
-  it('a 4 com revisions dá erro com o caminho', () => {
+  it('version 4 with revisions gives an error with the path', () => {
     const json = sample5();
     json.formatVersion = 4;
     expect(errorsOf(json)).toContain('revisions: only in formatVersion 5 or later');
   });
 
-  it('a 5 sem revisions dá erro', () => {
+  it('version 5 without revisions gives an error', () => {
     const json = sample5();
     delete json.revisions;
     expect(errorsOf(json)).toContain('revisions: required in formatVersion 5');
   });
 
-  it('um id de dropped que está em changes dá erro', () => {
+  it('a dropped id that is in changes gives an error', () => {
     const json = sample5();
     json.revisions[0].dropped[0].change.id = 'c1';
     const errors = errorsOf(json);
@@ -91,7 +91,7 @@ describe('proposta formatVersion 5', () => {
     );
   });
 
-  it('um id repetido em added de duas revisões dá erro no segundo', () => {
+  it('an id repeated in added of two revisions gives an error on the second', () => {
     const json = sample5();
     json.revisions.push({
       at: '2026-11-07T11:00:00.000Z',
@@ -105,7 +105,7 @@ describe('proposta formatVersion 5', () => {
     expect(errors.some((e) => e.startsWith('revisions[1].added[0]: '))).toBe(true);
   });
 
-  it('um id repetido dentro de added da mesma revisão dá erro', () => {
+  it('an id repeated inside added of the same revision gives an error', () => {
     const json = sample5();
     json.revisions[0].added = ['c9', 'c9'];
     const errors = errorsOf(json);
@@ -113,7 +113,7 @@ describe('proposta formatVersion 5', () => {
   });
 
   it.each([1, 2, 3, 4])(
-    'a versão %i continua lida e regravada sem revisions',
+    'version %i is still read and rewritten without revisions',
     (version) => {
       const json = base4();
       json.formatVersion = version;
@@ -131,7 +131,7 @@ describe('proposta formatVersion 5', () => {
     },
   );
 
-  it('dropped[].change é validado como uma mudança', () => {
+  it('dropped[].change is validated as a change', () => {
     const json = sample5();
     json.revisions[0].dropped[0].change.kind = 'move';
     const errors = errorsOf(json);
@@ -140,17 +140,17 @@ describe('proposta formatVersion 5', () => {
     ).toBe(true);
   });
 
-  it('citar em changed, added ou dropped.notes o que já não existe não é erro', () => {
+  it('citing in changed, added or dropped.notes something that no longer exists is not an error', () => {
     const json = sample5();
     json.revisions[0].changed = { c77: { to: 1, state: null } };
     json.revisions[0].added = ['c88'];
-    json.revisions[0].dropped[0].notes = ['n-sumida'];
+    json.revisions[0].dropped[0].notes = ['n-gone'];
     expect(parseProposal(json).ok).toBe(true);
   });
 
-  it('at não ISO dá erro; changed.state só aceita "rejected" ou null', () => {
+  it('a non-ISO at gives an error; changed.state only accepts "rejected" or null', () => {
     const badDate = sample5();
-    badDate.revisions[0].at = 'ontem';
+    badDate.revisions[0].at = 'yesterday';
     expect(errorsOf(badDate).some((e) => e.startsWith('revisions[0].at: '))).toBe(true);
 
     const badState = sample5();

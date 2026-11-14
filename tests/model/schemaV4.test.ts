@@ -42,6 +42,7 @@ import {
   type Project,
   type Spec,
 } from '../../src/model';
+// pt-BR kept: shared fixture data (cadastroProject, specProject, sampleProject: Portuguese field keys, names and values) asserted by tests/mcp, tests/components and others
 import { expectValid, sampleProject } from './fixtures';
 import { legacyJson } from './legacyShape';
 import {
@@ -53,12 +54,12 @@ import {
   specProject,
 } from './specFixtures';
 
-/** Versão do conteúdo do exemplo SDUI (os testes de atualização usam a seguinte). */
+/** Version of the SDUI example content (the update tests use the next one). */
 const SDUI_VERSION = loadLegacySdui().version;
 
 function annotation(p: Project, id: string): Annotation {
   const a = p.annotations.find((x) => x.id === id);
-  if (!a) throw new Error(`anotação ${id} não encontrada`);
+  if (!a) throw new Error(`annotation ${id} not found`);
   return a;
 }
 
@@ -75,15 +76,15 @@ function codeOf(fn: () => unknown): string | null {
 const issueCodes = (p: Project, id: string) =>
   getAnnotationIssues(p, id).map((i) => (i.key ? `${i.code}:${i.key}` : i.code));
 
-/** Copia a especialização com alterações (para simular uma nova versão). */
+/** Copies the specialization with changes (to simulate a new version). */
 function withChanges(spec: Spec, change: (s: Spec) => void): Spec {
   const copy = structuredClone(spec);
   change(copy);
   return copy;
 }
 
-describe('migração v3 → v4', () => {
-  /** Um mapping.json v3: sem `specializations`, `spec`, `type`, `values` nem ids de tupla. */
+describe('migration v3 → v4', () => {
+  /** A v3 mapping.json: without `specializations`, `spec`, `type`, `values` or tuple ids. */
   function v3Text(): string {
     const data = legacyJson(sampleProject());
     delete data.specializations;
@@ -100,7 +101,7 @@ describe('migração v3 → v4', () => {
     return JSON.stringify({ ...data, schemaVersion: 3, layers, annotations });
   }
 
-  it('abre um v3 como v10: camadas livres, anotações livres e ids nas tuplas', () => {
+  it('opens a v3 as v10: free layers, free annotations and ids on the tuples', () => {
     const result = deserialize(v3Text());
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(3);
@@ -113,26 +114,26 @@ describe('migração v3 → v4', () => {
     expect(ids).toHaveLength(3);
     expect(new Set(ids).size).toBe(3);
     expect(ids.every((id) => /^[0-9a-f-]{36}$/.test(id))).toBe(true);
-    // Os pares continuam os mesmos, na mesma ordem.
+    // The pairs stay the same, in the same order.
     expect(annotation(p, 'A1').entries.map((e) => [e.key, e.value])).toEqual([
       ['tipo', 'amassado'],
       ['gravidade', 'média'],
     ]);
   });
 
-  it('o v3 migrado salva como v16 estável', () => {
+  it('the migrated v3 saves as a stable v16', () => {
     const first = deserialize(v3Text());
-    if (!first.ok) throw new Error('falhou');
+    if (!first.ok) throw new Error('failed');
     const saved = serialize(first.project);
     expect(JSON.parse(saved).schemaVersion).toBe(20);
     const again = deserialize(saved);
-    if (!again.ok) throw new Error('falhou');
+    if (!again.ok) throw new Error('failed');
     expect(serialize(again.project)).toBe(saved);
   });
 });
 
-describe('aplicar especialização', () => {
-  it('copia para specs/ e cria as camadas no fim, com cor e nome da especialização', () => {
+describe('applying a specialization', () => {
+  it('copies to specs/ and creates the layers at the end, with the specialization color and name', () => {
     const p = expectValid(specProject());
     expect(
       p.specializations.map(({ id, version, file }) => ({ id, version, file })),
@@ -158,7 +159,7 @@ describe('aplicar especialização', () => {
     expect(layerAnnotationTypes(p, 'LM')).toEqual([]);
   });
 
-  it('mesma especialização: maior versão atualiza; igual ou menor não faz nada', () => {
+  it('same specialization: a higher version updates; equal or lower does nothing', () => {
     const p = specProject();
     const sdui = loadLegacySdui();
     expect(checkSpecApply(sampleProject(), sdui)).toBe('apply');
@@ -167,22 +168,22 @@ describe('aplicar especialização', () => {
     expect(codeOf(() => applySpecialization(p, sdui))).toBe('spec-already-applied');
   });
 
-  it('camadas da especialização: sem renomear nem excluir; cor pode mudar', () => {
+  it('specialization layers: no renaming or deleting; color can change', () => {
     const p = specProject();
-    expect(codeOf(() => renameLayer(p, 'LS1', 'Outro'))).toBe('spec-layer');
+    expect(codeOf(() => renameLayer(p, 'LS1', 'Other'))).toBe('spec-layer');
     expect(codeOf(() => removeLayer(p, 'LS1'))).toBe('spec-layer');
     expect(setLayerColor(p, 'LS1', '#123456').layers[2]?.color).toBe('#123456');
   });
 
-  it('id com caracteres estranhos vira um nome de arquivo seguro', () => {
+  it('an id with odd characters becomes a safe file name', () => {
     const spec = { ...loadLegacySdui(), id: 'a/b c' };
     const p = applySpecialization(sampleProject(), spec, { newId: idGen('X') });
     expect(p.specializations[0]?.file).toBe('specs/a-b-c.json');
   });
 });
 
-describe('anotações tipadas', () => {
-  it('criam com os defaults, todos os campos na ordem do tipo e sem entries', () => {
+describe('typed annotations', () => {
+  it('are created with the defaults, all fields in the type order and no entries', () => {
     const p = cadastroProject();
     const button = annotation(p, 'AB');
     expect(button.type).toEqual({ specId: 'sdui', typeId: 'button' });
@@ -215,7 +216,7 @@ describe('anotações tipadas', () => {
     );
   });
 
-  it('camada e tipo precisam combinar; camada da especialização não aceita livre', () => {
+  it('layer and type must match; a specialization layer does not accept a free one', () => {
     const p = cadastroProject();
     const eventos = layerOf(p, 'sdui', 'eventos');
     const base = { id: 'N', markingId: 'MC' };
@@ -242,7 +243,7 @@ describe('anotações tipadas', () => {
         addTypedAnnotation(p, {
           ...base,
           layerId: 'LS1',
-          type: { specId: 'sdui', typeId: 'nada' },
+          type: { specId: 'sdui', typeId: 'nothing' },
         }),
       ),
     ).toBe('unknown-type');
@@ -251,10 +252,10 @@ describe('anotações tipadas', () => {
     );
   });
 
-  it('id explícito já usado por outra anotação é recusado (duplicate-id)', () => {
+  it('an explicit id already used by another annotation is refused (duplicate-id)', () => {
     const p = cadastroProject();
     const button = annotation(p, 'AB');
-    if (!button.type) throw new Error('AB não é tipada');
+    if (!button.type) throw new Error('AB is not typed');
     const args = {
       markingId: button.markingId,
       layerId: button.layerId,
@@ -267,11 +268,11 @@ describe('anotações tipadas', () => {
     expectValid(addTypedAnnotation(p, { ...args, id: 'N' }));
   });
 
-  it('requiresOwner: sem dono não cria; o dono precisa aceitar o filho', () => {
+  it('requiresOwner: without an owner it is not created; the owner must accept the child', () => {
     const p = cadastroProject();
     const eventos = layerOf(p, 'sdui', 'eventos');
     const onClick = { specId: 'sdui', typeId: 'onClick' };
-    // Na Idade só há um Input, que não aceita onClick.
+    // In Age there is only an Input, which does not accept onClick.
     expect(validTypedOwners(p, 'MI', onClick)).toEqual([]);
     expect(
       codeOf(() =>
@@ -297,7 +298,7 @@ describe('anotações tipadas', () => {
     expect(validTypedOwners(p, 'MC', onClick).map((a) => a.id)).toEqual(['AB']);
   });
 
-  it('botões "+ filho" a partir do dono, na camada do tipo filho', () => {
+  it('"+ child" buttons from the owner, in the child type layer', () => {
     const p = cadastroProject();
     expect(childTypesOf(p, 'AB').map((c) => [c.type.typeId, c.layer?.id])).toEqual([
       ['onClick', 'LS2'],
@@ -308,18 +309,18 @@ describe('anotações tipadas', () => {
     expect(childTypesOf(p, 'AU')).toEqual([]);
   });
 
-  it('vínculos: donas válidas seguem allowedChildren; requiresOwner não pode ficar sem dono', () => {
+  it('links: valid owners follow allowedChildren; requiresOwner cannot be left without an owner', () => {
     let p = cadastroProject();
     expect(validAnnotationOwners(p, 'AOC').map((a) => a.id)).toEqual(['AB']);
     expect(codeOf(() => setAnnotationParent(p, 'AOC', null))).toBe('owner-required');
-    // Livre continua podendo ter qualquer dona de outra camada.
+    // A free one can still have any owner from another layer.
     p = addAnnotation(p, { id: 'NL', markingId: 'MC', layerId: 'LM' });
     expect(validAnnotationOwners(p, 'NL').map((a) => a.id)).toEqual(['AB', 'AOC', 'AOH']);
   });
 
-  it('editar valores: valida o tipo; texto vazio vira null', () => {
+  it('editing values: validates the type; empty text becomes null', () => {
     const p = cadastroProject();
-    expect(codeOf(() => setFieldValue(p, 'AB', 'estilo', 'gigante'))).toBe(
+    expect(codeOf(() => setFieldValue(p, 'AB', 'estilo', 'giant'))).toBe(
       'unknown-option',
     );
     expect(codeOf(() => setFieldValue(p, 'AB', 'texto', 3))).toBe('invalid-value');
@@ -341,13 +342,13 @@ describe('anotações tipadas', () => {
     expect(
       annotation(setFieldValue(p, 'AB', 'texto', ''), 'AB').values?.texto,
     ).toBeNull();
-    // A ordem das chaves se mantém.
+    // The key order is kept.
     expect(
       Object.keys(annotation(setFieldValue(p, 'AB', 'id', 'x'), 'AB').values ?? {}),
     ).toEqual(['id', 'texto', 'estilo', 'habilitado']);
   });
 
-  it('linhas de tabela com _id: adicionar, editar, reordenar e remover', () => {
+  it('table rows with _id: add, edit, reorder and remove', () => {
     let p = cadastroProject();
     p = addTableRow(p, 'AC', 'atributos', 'R2');
     expect(codeOf(() => addTableRow(p, 'AC', 'atributos', 'R2'))).toBe('duplicate-id');
@@ -382,33 +383,33 @@ describe('anotações tipadas', () => {
   });
 });
 
-describe('referências', () => {
-  it('os três formatos resolvem com o rótulo do alvo', () => {
+describe('references', () => {
+  it('the three formats resolve with the target label', () => {
     let p = cadastroProject();
     expect(refLabel(p, { annotationId: 'AU', entryId: 'EN' })).toBe('User.name');
     expect(refLabel(p, { annotationId: 'AC', key: 'atributos', rowId: 'R1' })).toBe(
       'Contato.email',
     );
-    // Campo simples com etiqueta: um "glossário" com o campo `nome` etiquetado.
-    const glossario: Spec = {
+    // Simple field with a tag: a "glossary" with the `name` field tagged.
+    const glossary: Spec = {
       format: 'mapping-spec',
       formatVersion: 1,
-      id: 'glossario',
-      name: 'Glossário',
+      id: 'glossary',
+      name: 'Glossary',
       version: 1,
       layers: [
         {
-          id: 'termos',
-          name: 'Termos',
+          id: 'terms',
+          name: 'Terms',
           color: '#00ACC1',
           annotationTypes: [
             {
-              id: 'termo',
-              name: 'Termo',
+              id: 'term',
+              name: 'Term',
               fields: [
                 {
-                  key: 'nome',
-                  label: 'nome do termo',
+                  key: 'name',
+                  label: 'term name',
                   type: 'string',
                   tags: ['data-field'],
                 },
@@ -418,24 +419,24 @@ describe('referências', () => {
         },
       ],
     };
-    p = applySpecialization(p, glossario, { newId: idGen('LG') });
+    p = applySpecialization(p, glossary, { newId: idGen('LG') });
     p = addTypedAnnotation(p, {
       id: 'AG',
       markingId: 'MT',
       layerId: 'LG1',
-      type: { specId: 'glossario', typeId: 'termo' },
+      type: { specId: 'glossary', typeId: 'term' },
     });
-    const ref = { annotationId: 'AG', key: 'nome' };
-    expect(refLabel(p, ref)).toBe('Termo.nome do termo');
+    const ref = { annotationId: 'AG', key: 'name' };
+    expect(refLabel(p, ref)).toBe('Term.term name');
     expect(resolveRef(p, ref)?.kind).toBe('field');
     p = setFieldValue(p, 'AIN', 'dado', ref);
     expect(getAnnotationIssues(p, 'AIN')).toEqual([]);
     expect(findRefTargets(p, 'AIN', 'dado').map((t) => t.label)).toContain(
-      'Termo.nome do termo',
+      'Term.term name',
     );
   });
 
-  it('o seletor do dado lista só os alvos aceitos (tuplas livres e linhas com data-field)', () => {
+  it('the data selector lists only the accepted targets (free tuples and rows with data-field)', () => {
     const p = cadastroProject();
     expect(
       findRefTargets(p, 'AIN', 'dado').map((t) => [t.label, t.annotation.id]),
@@ -444,17 +445,17 @@ describe('referências', () => {
       ['User.age', 'AU'],
       ['Contato.email', 'AC'],
     ]);
-    // Por que cada alvo é aceito: tupla livre (sem etiqueta) ou a etiqueta da linha.
+    // Why each target is accepted: a free tuple (no tag) or the row tag.
     expect(findRefTargets(p, 'AIN', 'dado').map((t) => t.tags)).toEqual([
       [],
       [],
       ['data-field'],
     ]);
-    // Campo que não é ref não tem alvos.
+    // A field that is not a ref has no targets.
     expect(findRefTargets(p, 'AIN', 'id')).toEqual([]);
   });
 
-  it('accepts só com etiqueta não lista tuplas livres; accepts só free não lista linhas', () => {
+  it('accepts with only a tag does not list free tuples; accepts with only free does not list rows', () => {
     const sdui = withChanges(loadLegacySdui(), (s) => {
       const input = s.layers[0]?.annotationTypes[1];
       const dado = input?.fields.find((f) => f.key === 'dado');
@@ -472,7 +473,7 @@ describe('referências', () => {
       'User.name',
       'User.age',
     ]);
-    // A referência existente para uma tupla livre deixa de ser aceita.
+    // The existing reference to a free tuple is no longer accepted.
     expect(issueCodes(p, 'AIN')).toEqual(['ref-not-accepted:dado']);
     expect(
       codeOf(() =>
@@ -481,7 +482,7 @@ describe('referências', () => {
     ).toBe('ref-not-accepted');
   });
 
-  it('não aceita referência para a própria anotação nem alvo inexistente', () => {
+  it('does not accept a reference to the annotation itself nor a nonexistent target', () => {
     const p = cadastroProject();
     expect(
       codeOf(() => setFieldValue(p, 'AIN', 'dado', { annotationId: 'AIN', key: 'id' })),
@@ -489,7 +490,7 @@ describe('referências', () => {
     expect(
       codeOf(() => setFieldValue(p, 'AIN', 'dado', { annotationId: 'AU', entryId: 'X' })),
     ).toBe('ref-not-accepted');
-    // `{ annotationId }` é o quarto formato (anotação inteira): válido, mas o campo não a aceita.
+    // `{ annotationId }` is the fourth format (whole annotation): valid, but the field does not accept it.
     expect(codeOf(() => setFieldValue(p, 'AIN', 'dado', { annotationId: 'AU' }))).toBe(
       'ref-not-accepted',
     );
@@ -498,16 +499,16 @@ describe('referências', () => {
     ).toBeNull();
   });
 
-  it('a referência sobrevive a renomear a chave da tupla', () => {
+  it('the reference survives renaming the tuple key', () => {
     const p = updateEntry(cadastroProject(), 'AU', 'EN', {
-      key: 'nome',
+      key: 'renamed',
       value: 'string',
     });
-    expect(refLabel(p, annotation(p, 'AIN').values?.dado as never)).toBe('User.nome');
+    expect(refLabel(p, annotation(p, 'AIN').values?.dado as never)).toBe('User.renamed');
     expect(getAnnotationIssues(p, 'AIN')).toEqual([]);
   });
 
-  it('excluir o alvo quebra a referência, sem apagá-la', () => {
+  it('deleting the target breaks the reference, without erasing it', () => {
     const p = cadastroProject();
     const op = (x: Project) => removeTableRow(x, 'AC', 'atributos', 'R1');
     expect(refsBrokenBy(p, op)).toBe(1);
@@ -521,12 +522,12 @@ describe('referências', () => {
     expect(refLabel(after, { annotationId: 'AC', key: 'atributos', rowId: 'R1' })).toBe(
       '(broken reference)',
     );
-    // Excluir a anotação dona das tuplas quebra as duas referências para ela.
+    // Deleting the annotation that owns the tuples breaks the two references to it.
     expect(annotationDeletionImpact(p, 'AU')).toEqual({ annotations: 1, brokenRefs: 2 });
     expect(issueCodes(removeAnnotation(p, 'AU'), 'AII')).toEqual(['broken-ref:dado']);
   });
 
-  it('backlinks: quem aponta para cada tupla ou linha', () => {
+  it('backlinks: who points to each tuple or row', () => {
     const p = cadastroProject();
     expect(
       getBacklinks(p, 'AU').map((b) => [
@@ -543,10 +544,10 @@ describe('referências', () => {
   });
 });
 
-describe('remover especialização', () => {
-  it('apagar dados: camadas, anotações e vinculadas em outras camadas, com contagens', () => {
+describe('removing a specialization', () => {
+  it('delete data: layers, annotations and linked ones in other layers, with counts', () => {
     let p = cadastroProject();
-    // Uma anotação livre vinculada ao Button sai junto.
+    // A free annotation linked to the Button goes along.
     p = addAnnotation(p, { id: 'NL', markingId: 'MC', layerId: 'LM' });
     p = setAnnotationParent(p, 'NL', 'AB');
     const impact = specializationRemovalImpact(p, 'sdui', 'delete');
@@ -564,14 +565,14 @@ describe('remover especialização', () => {
     expect(specFiles(after).has('specs/sdui.json')).toBe(false);
   });
 
-  it('apagar dados do modelo quebra as referências vindas da SDUI', () => {
+  it('deleting the model data breaks the references coming from SDUI', () => {
     const p = cadastroProject();
     expect(specializationRemovalImpact(p, 'modelo-dados', 'delete').brokenRefs).toBe(1);
     const after = removeSpecialization(p, 'modelo-dados', 'delete');
     expect(issueCodes(after, 'AIE')).toEqual(['broken-ref:dado']);
   });
 
-  it('apagar dados não pode deixar o projeto sem camadas', () => {
+  it('deleting data cannot leave the project without layers', () => {
     let p = specProject();
     p = removeLayer(removeLayer(p, 'L1'), 'LM');
     p = removeSpecialization(p, 'modelo-dados', 'delete');
@@ -581,7 +582,7 @@ describe('remover especialização', () => {
     );
   });
 
-  it('converter: camadas e anotações livres, table achatada e ref em texto', () => {
+  it('convert: free layers and annotations, flattened table and ref as text', () => {
     const p = cadastroProject();
     const impact = specializationRemovalImpact(p, 'modelo-dados', 'convert');
     expect(impact.annotations).toBe(2);
@@ -596,11 +597,11 @@ describe('remover especialização', () => {
       color: '#43A047',
       spec: null,
     });
-    const classe = annotation(after, 'AC');
-    expect(classe.name).toBe('Contato');
-    expect(classe.type).toBeNull();
-    expect(classe.values).toBeNull();
-    expect(classe.entries).toEqual([
+    const klass = annotation(after, 'AC');
+    expect(klass.name).toBe('Contato');
+    expect(klass.type).toBeNull();
+    expect(klass.values).toBeNull();
+    expect(klass.entries).toEqual([
       { id: 'EC1', key: 'nome', value: 'Contato' },
       { id: 'EC2', key: 'versao', value: '1' },
       { id: 'EC3', key: 'revisadoEm', value: '2026-10-02' },
@@ -610,13 +611,13 @@ describe('remover especialização', () => {
       { id: 'EC7', key: 'atributos[1].exemplo', value: 'ana@exemplo.com' },
     ]);
     expect(annotation(after, 'AE').name).toBe('Endpoint');
-    // O Input do e-mail quebra; os do nome e da idade apontam para a User livre.
+    // The e-mail Input breaks; the name and age ones point to the free User.
     expect(issueCodes(after, 'AIE')).toEqual(['broken-ref:dado']);
     expect(getAnnotationIssues(after, 'AIN')).toEqual([]);
     expect(getAnnotationIssues(after, 'AII')).toEqual([]);
   });
 
-  it('converter a SDUI: ref vira "→ rótulo" e vínculos são mantidos', () => {
+  it('convert the SDUI: ref becomes "→ label" and links are kept', () => {
     const p = cadastroProject();
     const after = expectValid(
       removeSpecialization(p, 'sdui', 'convert', { newId: idGen('EC') }),
@@ -645,31 +646,31 @@ describe('remover especialização', () => {
   });
 });
 
-describe('atualizar especialização', () => {
-  /** SDUI v2: camada "Estados" nova, "Eventos" removida, "Componentes" renomeada. */
+describe('updating a specialization', () => {
+  /** SDUI v2: new "States" layer, "Eventos" removed, "Componentes" renamed. */
   function sduiV2(): Spec {
     return withChanges(loadLegacySdui(), (s) => {
       s.version = SDUI_VERSION + 1;
       const componentes = s.layers[0];
-      if (!componentes) throw new Error('sem camada');
-      componentes.name = 'Componentes de tela';
+      if (!componentes) throw new Error('no layer');
+      componentes.name = 'Screen components';
       for (const type of componentes.annotationTypes) delete type.allowedChildren;
       s.layers = [
         componentes,
         {
-          id: 'estados',
-          name: 'Estados',
+          id: 'states',
+          name: 'States',
           color: '#5E35B1',
-          annotationTypes: [{ id: 'estado', name: 'Estado', fields: [] }],
+          annotationTypes: [{ id: 'state', name: 'State', fields: [] }],
         },
       ];
     });
   }
 
-  it('cria as novas, mantém cor e anotações das existentes e libera as que sumiram', () => {
+  it('creates the new ones, keeps color and annotations of the existing ones and frees the ones that vanished', () => {
     let p = setLayerColor(cadastroProject(), 'LS1', '#000000');
     const impact = specializationUpdateImpact(p, sduiV2());
-    expect(impact.addedLayers.map((l) => l.id)).toEqual(['estados']);
+    expect(impact.addedLayers.map((l) => l.id)).toEqual(['states']);
     expect(impact.freedLayers.map((l) => l.id)).toEqual(['LS2', 'LS3']);
     p = expectValid(updateSpecialization(p, sduiV2(), { newId: idGen('N') }));
     expect(p.specializations.find((s) => s.id === 'sdui')?.version).toBe(
@@ -680,13 +681,13 @@ describe('atualizar especialização', () => {
         .filter((l) => l.id.startsWith('LS') || l.id.startsWith('N'))
         .map((l) => [l.id, l.name, l.color, l.spec?.layerId ?? null]),
     ).toEqual([
-      ['LS1', 'Componentes de tela', '#000000', 'componentes'],
+      ['LS1', 'Screen components', '#000000', 'componentes'],
       ['LS2', 'Eventos', '#FB8C00', null],
       ['LS3', 'Telas', '#00897B', null],
-      // N1…N8 foram para as tuplas dos eventos convertidos.
-      ['N9', 'Estados', '#5E35B1', 'estados'],
+      // N1…N8 went to the tuples of the converted events.
+      ['N9', 'States', '#5E35B1', 'states'],
     ]);
-    // Eventos viraram livres, mantendo o vínculo com o Button.
+    // Events became free, keeping the link with the Button.
     const click = annotation(p, 'AOC');
     expect(click.type).toBeNull();
     expect(click.name).toBe('onClick');
@@ -695,17 +696,17 @@ describe('atualizar especialização', () => {
     expect(codeOf(() => updateSpecialization(p, sduiV2()))).toBe('spec-not-newer');
   });
 
-  it('anotações que ficaram inválidas não mudam: viram pendências', () => {
+  it('annotations that became invalid do not change: they become issues', () => {
     const v2 = withChanges(loadLegacySdui(), (s) => {
       s.version = SDUI_VERSION + 1;
       const [button, input, , image] = s.layers[0]?.annotationTypes ?? [];
-      if (!button || !input || !image) throw new Error('tipos');
-      // Campo obrigatório novo e opção removida.
-      button.fields.push({ key: 'acessibilidade', type: 'string', required: true });
+      if (!button || !input || !image) throw new Error('types');
+      // New required field and removed option.
+      button.fields.push({ key: 'accessibility', type: 'string', required: true });
       const estilo = button.fields.find((f) => f.key === 'estilo');
       if (estilo?.type === 'enum') estilo.options = ['secondary', 'text'];
       button.allowedChildren = ['onHold'];
-      // Tipo removido.
+      // Removed type.
       const layer = s.layers[0];
       if (layer)
         layer.annotationTypes = layer.annotationTypes.filter((t) => t.id !== 'text');
@@ -715,11 +716,11 @@ describe('atualizar especialização', () => {
     expect(annotation(p, 'AB')).toEqual(annotation(before, 'AB'));
     expect(issueCodes(p, 'AB')).toEqual([
       'unknown-option:estilo',
-      'required-empty:acessibilidade',
+      'required-empty:accessibility',
     ]);
     expect(issueCodes(p, 'AOC')).toEqual(['owner-not-allowed']);
     expect(issueCodes(p, 'AT')).toEqual(['unknown-type']);
-    // Tipo removido: só leitura, com a conversão em livre.
+    // Removed type: read-only, with the conversion to free.
     expect(codeOf(() => setFieldValue(p, 'AT', 'id', 'x'))).toBe('unknown-type');
     const converted = convertAnnotationToFree(p, 'AT', { newId: idGen('E') });
     expect(annotation(converted, 'AT').entries).toEqual([
@@ -728,7 +729,7 @@ describe('atualizar especialização', () => {
     ]);
   });
 
-  it('alvo que perdeu a etiqueta deixa a referência "não aceita"', () => {
+  it('a target that lost its tag leaves the reference "not accepted"', () => {
     const v2 = withChanges(loadExample('modelo-de-dados'), (s) => {
       s.version = SDUI_VERSION + 1;
       const atributos = s.layers[0]?.annotationTypes[0]?.fields.find(
@@ -741,8 +742,8 @@ describe('atualizar especialização', () => {
   });
 });
 
-describe('pendências e invariantes', () => {
-  /** Simula um arquivo externo editado à mão: troca uma anotação. */
+describe('issues and invariants', () => {
+  /** Simulates an external file edited by hand: swaps an annotation. */
   function patch(p: Project, id: string, change: Partial<Annotation>): Project {
     return {
       ...p,
@@ -750,11 +751,11 @@ describe('pendências e invariantes', () => {
     };
   }
 
-  it('cobre todos os motivos da 13.5', () => {
+  it('covers all the reasons of 13.5', () => {
     const p = cadastroProject();
     const values = annotation(p, 'AIE').values ?? {};
     const bad = patch(p, 'AIE', {
-      values: { ...values, maxLength: 'dez', tipo: 'cpf', extra: 1, placeholder: null },
+      values: { ...values, maxLength: 'ten', tipo: 'cpf', extra: 1, placeholder: null },
     });
     expect(issueCodes(bad, 'AIE')).toEqual([
       'unknown-field:extra',
@@ -764,7 +765,7 @@ describe('pendências e invariantes', () => {
     const rows = patch(p, 'AC', {
       values: {
         ...(annotation(p, 'AC').values ?? {}),
-        atributos: [{ _id: 'R1', nome: '', tipo: 'Texto' }],
+        atributos: [{ _id: 'R1', nome: '', tipo: 'Text' }],
       },
     });
     expect(getAnnotationIssues(rows, 'AC')).toEqual([
@@ -781,7 +782,10 @@ describe('pendências e invariantes', () => {
       'layer-mismatch',
     ]);
     expect(
-      issueCodes(patch(p, 'AIN', { type: { specId: 'sdui', typeId: 'sumiu' } }), 'AIN'),
+      issueCodes(
+        patch(p, 'AIN', { type: { specId: 'sdui', typeId: 'vanished' } }),
+        'AIN',
+      ),
     ).toEqual(['unknown-type']);
     expect(
       issueCodes(
@@ -793,7 +797,7 @@ describe('pendências e invariantes', () => {
     ).toEqual(['invalid-value:dado']);
   });
 
-  it('as pendências não impedem a abertura; ids de tupla e linha repetidos sim', () => {
+  it('issues do not prevent opening; repeated tuple and row ids do', () => {
     const p = cadastroProject();
     const external = patch(p, 'AOC', { parentAnnotationId: null, layerId: 'LS1' });
     const loaded = deserialize(serialize(external), migrations, specFiles(external));
@@ -816,8 +820,8 @@ describe('pendências e invariantes', () => {
   });
 });
 
-describe('serialização v4', () => {
-  it('round-trip sem perdas, com valores JSON nativos', () => {
+describe('v4 serialization', () => {
+  it('lossless round-trip, with native JSON values', () => {
     const p = cadastroProject();
     const text = serialize(p);
     const data = JSON.parse(text);
@@ -825,11 +829,11 @@ describe('serialização v4', () => {
       { id: 'sdui', version: SDUI_VERSION, file: 'specs/sdui.json' },
       { id: 'modelo-dados', version: 1, file: 'specs/modelo-dados.json' },
     ]);
-    const classe = data.annotations.find((a: { id: string }) => a.id === 'AC');
-    expect(classe.values.versao).toBe(1);
-    expect(classe.values.revisadoEm).toBe('2026-10-02');
-    expect(classe.values.atributos[0]._id).toBe('R1');
-    expect(classe.entries).toEqual([]);
+    const klass = data.annotations.find((a: { id: string }) => a.id === 'AC');
+    expect(klass.values.versao).toBe(1);
+    expect(klass.values.revisadoEm).toBe('2026-10-02');
+    expect(klass.values.atributos[0]._id).toBe('R1');
+    expect(klass.entries).toEqual([]);
     const user = data.annotations.find((a: { id: string }) => a.id === 'AU');
     expect(user.type).toBeNull();
     expect(user.values).toBeNull();
@@ -856,11 +860,11 @@ describe('serialização v4', () => {
     expect(serialize(loaded.project)).toBe(text);
   });
 
-  it('cópia ausente ou inválida em specs/: abre com aviso e as anotações ficam pendentes', () => {
+  it('missing or invalid copy in specs/: opens with a warning and the annotations become pending', () => {
     const p = cadastroProject();
     const files = specFiles(p);
     files.delete('specs/sdui.json');
-    files.set('specs/modelo-dados.json', '{"format": "outro"}');
+    files.set('specs/modelo-dados.json', '{"format": "other"}');
     const loaded = deserialize(serialize(p), migrations, files);
     if (!loaded.ok) throw new Error(JSON.stringify(loaded.error));
     expect(loaded.specWarnings.map((w) => [w.specId, w.problem])).toEqual([
@@ -871,7 +875,7 @@ describe('serialização v4', () => {
     expect(issueCodes(loaded.project, 'AB')).toEqual(['unknown-type']);
   });
 
-  it('rejeita tipada com entries e livre com values', () => {
+  it('rejects a typed one with entries and a free one with values', () => {
     const data = JSON.parse(serialize(cadastroProject()));
     data.annotations[0].values = {};
     expect(deserialize(JSON.stringify(data))).toMatchObject({

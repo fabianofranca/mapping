@@ -21,8 +21,10 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
+// pt-BR kept: shared fixture data asserted by tests/mcp, tests/components, tests/store, tests/storage, tests/app and tests/model (Portuguese marking names, field keys and values, layer ids)
+
 export function loadExample(name: 'sdui' | 'modelo-de-dados' | 'papeis-migracao'): Spec {
-  // A partir da raiz do projeto: no ambiente jsdom, `import.meta.url` não é `file:`.
+  // From the project root: in the jsdom environment, `import.meta.url` is not `file:`.
   const text = readFileSync(
     join(process.cwd(), 'examples', 'specs', `${name}.json`),
     'utf8',
@@ -33,9 +35,9 @@ export function loadExample(name: 'sdui' | 'modelo-de-dados' | 'papeis-migracao'
 }
 
 /**
- * A SDUI como era antes do `repo` (formatVersion 2, versão 2; `tests/fixtures/sdui-v2.json`): a
- * base dos projetos de teste anteriores ao código de instanciação e das atualizações para a
- * versão atual. O exemplo de verdade é `loadExample('sdui')`.
+ * The SDUI as it was before `repo` (formatVersion 2, version 2; `tests/fixtures/sdui-v2.json`): the
+ * base of the test projects from before the instantiation code and of the updates to the
+ * current version. The real example is `loadExample('sdui')`.
  */
 export function loadLegacySdui(): Spec {
   const text = readFileSync(
@@ -47,20 +49,20 @@ export function loadLegacySdui(): Spec {
   return parsed.spec;
 }
 
-/** Gerador de ids previsíveis: `prefix1`, `prefix2`… */
+/** Predictable id generator: `prefix1`, `prefix2`… */
 export function idGen(prefix: string): () => string {
   let n = 0;
   return () => `${prefix}${++n}`;
 }
 
-/** Id da camada do projeto criada a partir da camada da especialização. */
+/** Id of the project layer created from the specialization's layer. */
 export function layerOf(p: Project, specId: string, specLayerId: string): string {
   const layer = projectLayerFor(p, specId, specLayerId);
-  if (!layer) throw new Error(`camada ${specId}/${specLayerId} não encontrada`);
+  if (!layer) throw new Error(`layer ${specId}/${specLayerId} not found`);
   return layer.id;
 }
 
-/** Projeto com a camada livre Model e as duas especializações aplicadas (passo 1 da 13.9). */
+/** Project with the free layer Model and the two specializations applied (step 1 of 13.9). */
 export function specProject(): Project {
   let p = emptyProject();
   p = addLayer(p, { id: 'LM', name: 'Model', color: '#757575' });
@@ -105,14 +107,14 @@ function typed(
 }
 
 /**
- * Tela de cadastro do roteiro da 13.9 (passos 2 a 7): Formulário › Nome, Idade,
- * E-mail, Cadastrar; e Título. Anotações:
- * - AU (Model, livre, Formulário): User com EN `name: string` e EA `age: number`;
- * - AC (Classe, Formulário): Contato, com a linha R1 `email` em `atributos`;
- * - AIN/AII/AIE: Inputs com `dado` → User.name, User.age e Contato.email;
- * - AB: Button do Cadastrar, com AOC (onClick) e AOH (onHold) vinculados;
- * - AT: Text do Título com `id` vazio (incompleta);
- * - AOE: onChange do E-mail; AE: Endpoint no Formulário.
+ * Sign-up screen of the 13.9 script (steps 2 to 7): Formulário › Nome, Idade,
+ * E-mail, Cadastrar; and Título. Annotations:
+ * - AU (Model, free, Formulário): User with EN `name: string` and EA `age: number`;
+ * - AC (Classe, Formulário): Contato, with the row R1 `email` in `atributos`;
+ * - AIN/AII/AIE: Inputs with `dado` → User.name, User.age and Contato.email;
+ * - AB: Button of Cadastrar, with AOC (onClick) and AOH (onHold) linked;
+ * - AT: Text of the Título with an empty `id` (incomplete);
+ * - AOE: onChange of the E-mail; AE: Endpoint on the Formulário.
  */
 export function cadastroProject(): Project {
   let p = specProject();
@@ -233,14 +235,14 @@ export function cadastroProject(): Project {
   return p;
 }
 
-/** `repo` que a especialização SDUI declara para `android` nos testes de código. */
+/** `repo` that the SDUI specialization declares for `android` in the code tests. */
 export const ANDROID_REPO = {
   url: 'https://github.com/org/app-android',
   urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
   ref: 'v1.2.0',
 } as const;
 
-/** O projeto com o `repo` dado na plataforma da especialização aplicada (vira `formatVersion` 5). */
+/** The project with the given `repo` on the applied specialization's platform (becomes `formatVersion` 5). */
 export function withSpecRepo(
   p: Project,
   specId: string,
@@ -266,7 +268,7 @@ export function withSpecRepo(
   };
 }
 
-/** O projeto sem nenhum `repo` nas plataformas das especializações (o exemplo pode declarar). */
+/** The project without any `repo` on the specializations' platforms (the example may declare one). */
 export function withoutSpecRepos(p: Project): Project {
   return {
     ...p,
@@ -289,9 +291,9 @@ export function withoutSpecRepos(p: Project): Project {
 }
 
 /**
- * `cadastroProject` com o roteiro R3: o Screen `AS` (`Cadastro`, `rota: /cadastro`) no
- * Formulário; a especialização SDUI declara o `repo` de `android` (`ANDROID_REPO`) e o projeto
- * sobrepõe só o clone local (`../../..`).
+ * `cadastroProject` with the R3 script: the Screen `AS` (`Cadastro`, `rota: /cadastro`) on the
+ * Formulário; the SDUI specialization declares the `repo` of `android` (`ANDROID_REPO`) and the
+ * project overrides only the local clone (`../../..`).
  */
 export function codeProject(): Project {
   let p = typed(cadastroProject(), 'AS', 'MF', 'sdui', 'screen', {
@@ -303,14 +305,14 @@ export function codeProject(): Project {
   return p;
 }
 
-/** Campo de código removido na etapa 9, como as especializações antigas o declaravam. */
+/** Code field removed in stage 9, as the old specializations declared it. */
 export const LEGACY_CODE_FIELD = {
   key: 'implementacao',
   label: 'implementação',
   type: 'codeRef',
 } as const;
 
-/** Valor do campo removido no Screen `AS` de um projeto v8 (duas entradas). */
+/** Value of the removed field on the Screen `AS` of a v8 project (two entries). */
 export const LEGACY_CODE_VALUE = [
   {
     _id: 'C1',
@@ -329,8 +331,8 @@ export const LEGACY_CODE_VALUE = [
 ];
 
 /**
- * A cópia do SDUI (texto de `specs/sdui.json`) com o campo removido de volta no Screen e o
- * `repo` de `android` do `codeProject`.
+ * The SDUI copy (text of `specs/sdui.json`) with the removed field put back on the Screen and the
+ * `repo` of `android` from `codeProject`.
  */
 export function legacySduiText(): string {
   const spec = JSON.parse(
@@ -343,18 +345,18 @@ export function legacySduiText(): string {
   const screen = spec.layers
     .flatMap((l) => l.annotationTypes)
     .find((t) => t.id === 'screen');
-  if (!screen) throw new Error('Screen não encontrado no exemplo SDUI');
+  if (!screen) throw new Error('Screen not found in the SDUI example');
   screen.fields.push(LEGACY_CODE_FIELD);
   spec.formatVersion = 5;
   const android = spec.platforms.find((platform) => platform.id === 'android');
-  if (!android) throw new Error('android não encontrado no exemplo SDUI');
+  if (!android) throw new Error('android not found in the SDUI example');
   android.repo = ANDROID_REPO;
   return `${JSON.stringify(spec, null, 2)}\n`;
 }
 
 /**
- * Um projeto v8 como a etapa 3b deixava (o `codeProject` com o Screen `AS` preenchido no
- * campo removido) e as cópias de `specs/` com o campo declarado: o que a migração v8 → v9 lê.
+ * A v8 project as stage 3b left it (the `codeProject` with the Screen `AS` filled in the removed
+ * field) and the copies of `specs/` with the field declared: what the v8 → v9 migration reads.
  */
 export function legacyCodeFiles(p: Project = codeProject()): {
   readonly text: string;
@@ -364,7 +366,7 @@ export function legacyCodeFiles(p: Project = codeProject()): {
     annotations: { id: string; values: Record<string, unknown> | null }[];
   };
   const screen = data.annotations.find((a) => a.id === 'AS');
-  if (!screen?.values) throw new Error('Screen AS não encontrado');
+  if (!screen?.values) throw new Error('Screen AS not found');
   screen.values.implementacao = LEGACY_CODE_VALUE;
   const text = `${JSON.stringify({ ...data, schemaVersion: 8 }, null, 2)}\n`;
   const specs = specFiles(p);

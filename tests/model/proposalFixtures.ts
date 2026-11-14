@@ -14,16 +14,17 @@ import {
 export const AT = '2026-10-09T12:00:00.000Z';
 export const LATER = '2026-10-09T13:00:00.000Z';
 
-/** Proposta aberta `P1` com as mudanças de `base` para `after`. */
+/** Open proposal `P1` with the changes from `base` to `after`. */
 export function propose(
   base: Project,
   after: Project,
   args: Partial<NewProposalArgs> = {},
 ): Proposal {
+  // pt-BR kept: shared fixture data (title 'Teste') asserted by tests/store and tests/app
   return buildProposal(base, after, { id: 'P1', title: 'Teste', createdAt: AT, ...args });
 }
 
-/** A única mudança da entidade (e do campo, se informado); falha se houver zero ou mais de uma. */
+/** The only change of the entity (and of the field, if given); fails if there are zero or more than one. */
 export function changeOf(
   p: Proposal,
   entity: ChangeEntity,
@@ -38,13 +39,13 @@ export function changeOf(
   );
   if (found.length !== 1) {
     throw new Error(
-      `${found.length} mudanças em ${entity}:${entityId}${field ? `.${field}` : ''}`,
+      `${found.length} changes in ${entity}:${entityId}${field ? `.${field}` : ''}`,
     );
   }
   return found[0] as Change;
 }
 
-/** Decide o alvo (falha se a decisão for recusada) e devolve a proposta com as decisões. */
+/** Decides the target (fails if the decision is refused) and returns the proposal with the decisions. */
 export function decided(
   p: Proposal,
   project: Project,

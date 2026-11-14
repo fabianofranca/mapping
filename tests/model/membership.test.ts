@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { membershipChanges, type Project } from '../../src/model';
 
-// Quem mudou de pai ou de espaço entre dois projetos (o `membership` do lote do MCP): compara
-// `parentId` e `containerId` por id, nunca a ordem do array.
+// Who changed parent or space between two projects (the `membership` of the MCP batch): compares
+// `parentId` and `containerId` by id, never the array order.
 
 const marking = (id: string, parentId: string | null, containerId: string | null) => ({
   id,
@@ -34,13 +34,13 @@ const project = (
 ) => ({ markings, containers }) as unknown as Project;
 
 describe('membershipChanges', () => {
-  it('sem mudança de pai nem de espaço, devolve vazio (a ordem do array não conta)', () => {
+  it('without a parent or space change, returns empty (the array order does not count)', () => {
     const a = project([marking('a', null, 'c'), marking('b', 'a', 'c')]);
     const b = project([marking('b', 'a', 'c'), marking('a', null, 'c')]);
     expect(membershipChanges(a, b)).toEqual([]);
   });
 
-  it('marcação que perde o pai', () => {
+  it('marking that loses its parent', () => {
     const before = project([marking('t', null, 'c'), marking('b', 't', 'c')]);
     const after = project([marking('t', null, 'c'), marking('b', null, 'c')]);
     expect(membershipChanges(before, after)).toEqual([
@@ -53,7 +53,7 @@ describe('membershipChanges', () => {
     ]);
   });
 
-  it('marcação que muda de espaço (container para o canvas)', () => {
+  it('marking that changes space (container to the canvas)', () => {
     const before = project([marking('a', null, 'c')]);
     const after = project([marking('a', null, null)]);
     expect(membershipChanges(before, after)).toEqual([
@@ -66,7 +66,7 @@ describe('membershipChanges', () => {
     ]);
   });
 
-  it('container que passa a ter uma marcação do canvas como pai', () => {
+  it('container that gets a canvas marking as its parent', () => {
     const before = project([marking('w', null, null)], [container('c', null)]);
     const after = project([marking('w', null, null)], [container('c', 'w')]);
     expect(membershipChanges(before, after)).toEqual([
@@ -74,7 +74,7 @@ describe('membershipChanges', () => {
     ]);
   });
 
-  it('só os itens que já existiam entram: a criada e a excluída ficam de fora', () => {
+  it('only the items that already existed enter: the created one and the deleted one are left out', () => {
     const before = project([marking('a', null, 'c'), marking('gone', null, 'c')]);
     const after = project([marking('a', 'n', 'c'), marking('n', null, 'c')]);
     const changes = membershipChanges(before, after);

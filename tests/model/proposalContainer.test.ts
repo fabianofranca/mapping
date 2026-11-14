@@ -19,9 +19,9 @@ import {
 import { sampleProject } from './fixtures';
 import { AT, changeOf, decided, propose } from './proposalFixtures';
 
-// Container na proposta (schema v10): a criação leva a entidade inteira com `file: null`
-// (nada para mover de `proposals/<id>/`); `update` ganha `background` e `size`, só na tela em
-// branco; na foto o tamanho continua vindo da troca de arquivo (campo `file`).
+// Container in the proposal (schema v10): creation carries the whole entity with `file: null`
+// (nothing to move from `proposals/<id>/`); `update` gains `background` and `size`, only on the
+// blank screen; on a photo the size still comes from the file replacement (`file` field).
 
 const bgContainer = (p: Project) =>
   addBackgroundContainer(p, {
@@ -36,8 +36,8 @@ function accept(base: Project, p: Proposal): Proposal {
   return decided(p, base, { level: 'proposal', id: null }, 'accepted');
 }
 
-describe('proposta: container', () => {
-  it('criação: a entidade inteira com file nulo, sem arquivo para mover', () => {
+describe('proposal: container', () => {
+  it('creation: the whole entity with a null file, no file to move', () => {
     const base = sampleProject();
     const after = createMarking(bgContainer(base), {
       id: 'MB',
@@ -66,12 +66,12 @@ describe('proposta: container', () => {
     expect(result.project).toEqual(after);
     expect(validateProject(result.project)).toEqual([]);
 
-    // O formato volta igual pelo texto da proposta.
+    // The format comes back the same through the proposal text.
     const again = parseProposalText(serializeProposal(p));
     expect(again.ok).toBe(true);
   });
 
-  it('alteração: cor e tamanho viram `background` e `size`, e aplicam', () => {
+  it('update: color and size become `background` and `size`, and apply', () => {
     const base = bgContainer(sampleProject());
     const after = setBackgroundContainer(base, 'B1', {
       background: '#101010',
@@ -91,7 +91,7 @@ describe('proposta: container', () => {
       from: { width: 390, height: 844 },
       to: { width: 400, height: 900 },
     });
-    // Sem mudança de arquivo: nada a mover.
+    // No file change: nothing to move.
     expect(p.changes.every((c) => changeImageFile(c) === null)).toBe(true);
 
     const result = applyAccepted(base, accept(base, p), AT);
@@ -101,7 +101,7 @@ describe('proposta: container', () => {
     expect(previewProject(base, p).project).toEqual(after);
   });
 
-  it('só a cor: um `background` e nenhum `size`', () => {
+  it('color only: one `background` and no `size`', () => {
     const base = bgContainer(sampleProject());
     const p = propose(
       base,
@@ -110,7 +110,7 @@ describe('proposta: container', () => {
     expect(p.changes.map((c) => c.field)).toEqual(['background']);
   });
 
-  it('o tamanho que deixa marcação de fora não bloqueia: o assentar a leva ao canvas', () => {
+  it('a size that leaves a marking outside does not block: settling takes it to the canvas', () => {
     const base = createMarking(bgContainer(sampleProject()), {
       id: 'MB',
       containerId: 'B1',
@@ -131,7 +131,7 @@ describe('proposta: container', () => {
     expect(validateProject(result.project)).toEqual([]);
   });
 
-  it('imagem trancada: o tamanho avisa trava; a cor não', () => {
+  it('locked image: the size warns about the lock; the color does not', () => {
     const open = bgContainer(sampleProject());
     const base = setImageLocked(open, 'B1', true);
     const after = setImageLocked(
@@ -146,7 +146,7 @@ describe('proposta: container', () => {
     );
   });
 
-  it('`size` e `background` na foto são recusados na aplicação; a troca de arquivo da foto segue igual', () => {
+  it("`size` and `background` on a photo are refused on apply; the photo's file replacement stays the same", () => {
     const base = sampleProject();
     const swapped = replaceContainer(base, 'I2', {
       file: 'images/f2.jpg',
@@ -174,8 +174,8 @@ describe('proposta: container', () => {
     expect(previewProject(base, forged).project).toEqual(base);
   });
 
-  it('troca de arquivo pela proposta: a marcação que cresceu ao mínimo ganha needsReview, como pela app', () => {
-    // I2 (1000×1000) com M4 (100×100) e uma marcação já mínima de 40×40 sem componente.
+  it('file replacement through the proposal: a marking that grew to the minimum gets needsReview, as through the app', () => {
+    // I2 (1000×1000) with M4 (100×100) and an already minimal 40×40 marking without a component.
     const start = createMarking(sampleProject(), {
       id: 'M5',
       containerId: 'I2',
@@ -185,7 +185,7 @@ describe('proposta: container', () => {
     const minSizeOf = (id: string) => (id === 'M4' ? { width: 80, height: 80 } : null);
     const after = replaceContainer(start, 'I2', next, { minSizeOf });
     const byId = (p: Project, id: string) => p.markings.find((m) => m.id === id)!;
-    // Pela app: M4 (50×50 reescalada) cresceu até o mínimo; M5 só foi reescalada.
+    // Through the app: M4 (50×50 rescaled) grew to the minimum; M5 was only rescaled.
     expect(byId(after, 'M4').needsReview).toBe(true);
     expect(byId(after, 'M5').needsReview).toBe(false);
 
@@ -198,7 +198,7 @@ describe('proposta: container', () => {
     expect(byId(previewProject(start, p).project, 'M4').needsReview).toBe(true);
   });
 
-  it('o formato valida os campos novos', () => {
+  it('the format validates the new fields', () => {
     const base = bgContainer(sampleProject());
     const p = propose(
       base,
@@ -216,7 +216,7 @@ describe('proposta: container', () => {
       change.to = to;
       return parseProposal(copy);
     };
-    expect(withTo('background', 'preto').ok).toBe(false);
+    expect(withTo('background', 'black').ok).toBe(false);
     expect(withTo('background', null).ok).toBe(false);
     expect(withTo('size', { width: 0, height: 10 }).ok).toBe(false);
     expect(withTo('size', { width: 10 }).ok).toBe(false);

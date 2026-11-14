@@ -12,13 +12,13 @@ import {
 import { sampleProject } from './fixtures';
 import { AT, decided, propose } from './proposalFixtures';
 
-// Proposta escrita antes do schema v12: a marcação criada ou removida leva `imageId` no valor
-// inteiro e a mudança de campo da marcação se chama `imageId`. A leitura normaliza para
-// `containerId`; o cabeçalho `imageId` da mudança (onde ela aparece na revisão) continua.
+// Proposal written before schema v12: the created or removed marking carries `imageId` in the whole value
+// and the marking's field change is called `imageId`. Reading normalizes to
+// `containerId`; the change's `imageId` header (where it appears in the review) stays.
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-/** Troca `containerId` por `imageId` no valor de uma marcação, como gravava a versão antiga. */
+/** Swaps `containerId` for `imageId` in a marking's value, as the old version wrote it. */
 function legacyValue(value: Json | null): Json | null {
   if (value === null) return null;
   return Object.fromEntries(
@@ -27,8 +27,8 @@ function legacyValue(value: Json | null): Json | null {
 }
 
 /**
- * Proposta no formato antigo: cria M9, remove M3 e muda o campo de container de M4 (I2 → I1),
- * tudo com `imageId` no lugar de `containerId`.
+ * Proposal in the old format: creates M9, removes M3 and changes the container field of M4 (I2 → I1),
+ * all with `imageId` in place of `containerId`.
  */
 function legacyJson(): Json {
   const base = sampleProject();
@@ -64,8 +64,8 @@ function parsed(json: Json): Proposal {
   return result.proposal;
 }
 
-describe('proposta escrita com imageId na marcação (antes da v12)', () => {
-  it('o JSON de partida tem mesmo o formato antigo', () => {
+describe('proposal written with imageId in the marking (before v12)', () => {
+  it('the starting JSON really has the old format', () => {
     const json = legacyJson();
     const create = json.changes.find(
       (c: Json) => c.kind === 'create' && c.entity === 'marking',
@@ -79,7 +79,7 @@ describe('proposta escrita com imageId na marcação (antes da v12)', () => {
     expect(remove.from.containerId).toBeUndefined();
   });
 
-  it('criação, remoção e mudança de campo são lidas com containerId', () => {
+  it('creation, removal and field change are read with containerId', () => {
     const p = parsed(legacyJson());
     const create = p.changes.find((c) => c.kind === 'create' && c.entity === 'marking');
     const remove = p.changes.find((c) => c.kind === 'remove' && c.entity === 'marking');
@@ -91,16 +91,16 @@ describe('proposta escrita com imageId na marcação (antes da v12)', () => {
     expect(field?.field).toBe('containerId');
     expect(field?.from).toBe('I2');
     expect(field?.to).toBe('I1');
-    // O cabeçalho da mudança não muda: diz em que container ela aparece na revisão.
+    // The change's header does not change: it says in which container it appears in the review.
     expect(create?.imageId).toBe('I2');
     expect(remove?.imageId).toBe('I1');
     expect(field?.imageId).toBe('I2');
   });
 
-  it('é igual à proposta já no formato novo e regrava sem imageId nos valores', () => {
+  it('equals the proposal already in the new format and rewrites without imageId in the values', () => {
     const legacy = parsed(legacyJson());
     const modern = legacyJson();
-    // O mesmo conteúdo, escrito no formato novo.
+    // The same content, written in the new format.
     for (const c of modern.changes as Json[]) {
       if (c.entity !== 'marking') continue;
       if (c.field === 'imageId') c.field = 'containerId';
@@ -125,7 +125,7 @@ describe('proposta escrita com imageId na marcação (antes da v12)', () => {
     }
   });
 
-  it('uma proposta que já traz containerId (e imageId só no cabeçalho) segue como está', () => {
+  it('a proposal that already carries containerId (and imageId only in the header) stays as it is', () => {
     const base = sampleProject();
     const after = createMarking(base, {
       id: 'M9',
@@ -136,7 +136,7 @@ describe('proposta escrita com imageId na marcação (antes da v12)', () => {
     expect(parsed(JSON.parse(serializeProposal(p)))).toEqual(p);
   });
 
-  it('aplica: a marcação criada, a removida e o campo de container chegam ao projeto', () => {
+  it('applies: the created marking, the removed one and the container field reach the project', () => {
     const base = sampleProject();
     let p = parsed(legacyJson());
     for (const c of p.changes) {

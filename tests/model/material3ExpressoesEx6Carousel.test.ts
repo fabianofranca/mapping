@@ -1,8 +1,8 @@
-// EX6 da etapa "expressões que calculam no formato 4" (#897): o carousel da material3-compose
-// desenha pela largura da marcação (`$size`), como a estratégia do Compose (Keylines.kt e
-// Arrangement.kt do commit fixado), sem tabelas enumeradas. O oráculo abaixo é uma porta fiel do
-// algoritmo (`multiBrowseKeylineList`, `heroKeylineList`, `Arrangement.findLowestCostArrangement`
-// e `fit`) e a regressão usa as cenas de antes (tests/fixtures/material3-ex6-v1.json).
+// EX6 of the "expressions that compute in format 4" stage (#897): the carousel of material3-compose
+// draws by the width of the marking (`$size`), like the Compose strategy (Keylines.kt and
+// Arrangement.kt of the pinned commit), without enumerated tables. The oracle below is a faithful port of the
+// algorithm (`multiBrowseKeylineList`, `heroKeylineList`, `Arrangement.findLowestCostArrangement`
+// and `fit`) and the regression uses the scenes from before (tests/fixtures/material3-ex6-v1.json).
 import { describe, expect, it } from 'vitest';
 import { findEntry } from '../../src/model/catalog';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
@@ -14,11 +14,12 @@ import { text, typeOf } from '../support/material3Library';
 import { catalog, draw, missingNodes, oldScenes } from '../support/material3Ex6Fixture';
 import type { Drawing, Mode, Values } from '../support/material3Ex6Fixture';
 
+// pt-BR kept: node names of libraries/material3-compose and of tests/fixtures/material3-ex6-v1.json are Portuguese data
 const entry = findEntry(catalog, 'carousel')!;
 const library = catalog.library!;
 const HEIGHT = entry.component!.size.height;
 
-/** Desenha o carousel numa marcação de `width` de largura (a prova de desenho usa o `size`). */
+/** Draws the carousel on a marking of width `width` (the drawing proof uses the `size`). */
 function drawAt(width: number, values: Values, mode: Mode = 'light'): Drawing {
   return instantiate(
     entry.component!,
@@ -50,7 +51,7 @@ const itemBoxes = (d: Drawing): number[][] => {
 };
 const widths = (d: Drawing): number[] => itemBoxes(d).map((r) => r[2]!);
 const near = (a: number, b: number, eps = 0.5) => Math.abs(a - b) <= eps;
-/** As caixas dos itens iguais às esperadas (a divisão do `fill` deixa ruído de 1e-13). */
+/** The item boxes equal to the expected ones (the `fill` division leaves noise of 1e-13). */
 function expectBoxes(actual: number[][], expected: number[][]) {
   expect(actual).toHaveLength(expected.length);
   actual.forEach((box, i) =>
@@ -59,7 +60,7 @@ function expectBoxes(actual: number[][], expected: number[][]) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Oráculo: o algoritmo do Compose (Keylines.kt, Arrangement.kt), em ponto flutuante de 64 bits
+// Oracle: the Compose algorithm (Keylines.kt, Arrangement.kt), in 64-bit floating point
 // ---------------------------------------------------------------------------------------------
 
 interface Arrangement {
@@ -85,7 +86,7 @@ function isValid(a: Arrangement): boolean {
 const cost = (a: Arrangement, target: number) =>
   isValid(a) ? Math.abs(target - a.large) * a.priority : Number.MAX_VALUE;
 
-/** `Arrangement.fit` e `calculateLargeSize` (Arrangement.kt, linhas 150 a 276), com o alvo do médio. */
+/** `Arrangement.fit` and `calculateLargeSize` (Arrangement.kt, lines 150 to 276), with the medium target. */
 function fitFull(
   priority: number,
   space: number,
@@ -134,7 +135,7 @@ function fitFull(
   };
 }
 
-/** `Arrangement.findLowestCostArrangement` (Arrangement.kt, linhas 89 a 130). */
+/** `Arrangement.findLowestCostArrangement` (Arrangement.kt, lines 89 to 130). */
 function findLowest(
   space: number,
   spacing: number,
@@ -170,7 +171,7 @@ function findLowest(
   return best;
 }
 
-/** `multiBrowseKeylineList` (Keylines.kt, linhas 58 a 143): o arranjo no início da rolagem. */
+/** `multiBrowseKeylineList` (Keylines.kt, lines 58 to 143): the arrangement at the start of the scroll. */
 function multiBrowse(
   width: number,
   preferred: number,
@@ -222,7 +223,7 @@ function multiBrowse(
   return a;
 }
 
-/** Os tamanhos por índice do item no início da rolagem; `undefined` onde a estratégia não tem posição. */
+/** The sizes by item index at the start of the scroll; `undefined` where the strategy has no position. */
 function multiBrowseWidths(
   width: number,
   preferred: number,
@@ -250,20 +251,20 @@ const multi = (n: number, extra: Values = {}): Values => ({
   ...extra,
 });
 
-describe('EX6 carousel — multi-browse pela largura da marcação', () => {
-  it('em 360, com 186 preferidos e espaço 8: grande 186, médio 118 e pequeno 40, a partir da borda', () => {
+describe('EX6 carousel — multi-browse by the width of the marking', () => {
+  it('at 360, with 186 preferred and spacing 8: large 186, medium 118 and small 40, from the edge', () => {
     const d = drawAt(360, multi(3));
     expectBoxes(itemBoxes(d), [
       [0, 0, 186, HEIGHT],
       [194, 0, 118, HEIGHT],
       [320, 0, 40, HEIGHT],
     ]);
-    // o primeiro item coincide com os 186 de antes (Arrangement.kt: o médio flexiona 10% e devolve o grande ao alvo)
+    // the first item matches the 186 from before (Arrangement.kt: the medium flexes 10% and returns the large to the target)
     expect(widths(d)[0]).toBeCloseTo(186, 6);
     expect(d.warnings).toEqual([]);
   });
 
-  it('em 600, com 3 itens, o Compose tira o pequeno e refaz: três grandes de 167,31 (Keylines.kt 100 a 123)', () => {
+  it('at 600, with 3 items, Compose drops the small one and redoes it: three larges of 167.31 (Keylines.kt 100 to 123)', () => {
     const d = drawAt(600, multi(3));
     const expected = multiBrowseWidths(600, 186, 8, 3);
     expect(expected.map((w) => Math.round(w! * 100) / 100)).toEqual([
@@ -273,7 +274,7 @@ describe('EX6 carousel — multi-browse pela largura da marcação', () => {
     expect(itemBoxes(d)[1]![0]).toBeCloseTo(167.31 + 8, 1);
   });
 
-  it('em 600, com itens de sobra (8), mostra 2 grandes, o médio e o pequeno, e não desenha o que passa da borda', () => {
+  it('at 600, with spare items (8), shows 2 larges, the medium and the small, and does not draw what goes past the edge', () => {
     const d = drawAt(600, multi(8));
     const w = widths(d);
     expect(w).toHaveLength(4);
@@ -285,7 +286,7 @@ describe('EX6 carousel — multi-browse pela largura da marcação', () => {
     expect(last[0]! + last[2]!).toBeCloseTo(600, 6);
   });
 
-  it('em 240: um grande de 186 e um pequeno de 46 (o 3º item não cabe)', () => {
+  it('at 240: a large of 186 and a small of 46 (the 3rd item does not fit)', () => {
     const d = drawAt(240, multi(3));
     expectBoxes(itemBoxes(d), [
       [0, 0, 186, HEIGHT],
@@ -293,13 +294,13 @@ describe('EX6 carousel — multi-browse pela largura da marcação', () => {
     ]);
   });
 
-  it('preferredItemWidth maior que a marcação: um item grande e o pequeno de 40', () => {
+  it('preferredItemWidth larger than the marking: one large item and the small one of 40', () => {
     const d = drawAt(300, multi(3, { preferredItemWidth: 400 }));
     expect(widths(d)).toEqual([300 - 8 - 40, 40]);
     expect(widths(drawAt(300, multi(1, { preferredItemWidth: 400 })))).toEqual([300]);
   });
 
-  it('o espaço entre itens e a largura preferida mudam o arranjo (não valem só os 186 e 8)', () => {
+  it('the spacing between items and the preferred width change the arrangement (not only the 186 and 8 count)', () => {
     const wide = widths(
       drawAt(500, multi(8, { preferredItemWidth: 150, itemSpacing: 0 })),
     );
@@ -308,11 +309,11 @@ describe('EX6 carousel — multi-browse pela largura da marcação', () => {
     const spaced = itemBoxes(drawAt(420, multi(8, { itemSpacing: 24 })));
     const exp2 = multiBrowseWidths(420, 186, 24, 8).filter((w) => w !== undefined);
     expect(spaced.map((r) => Math.round(r[2]!))).toEqual(exp2.map((w) => Math.round(w!)));
-    // o espaço entre os itens vem de itemSpacing
+    // the spacing between the items comes from itemSpacing
     expect(spaced[1]![0]).toBeCloseTo(spaced[0]![2]! + 24, 6);
   });
 
-  it('as larguras seguem a marcação: mais larga, mais itens grandes', () => {
+  it('the widths follow the marking: wider, more large items', () => {
     const counts = [360, 480, 600, 720, 900].map(
       (w) => widths(drawAt(w, multi(12))).filter((x) => x > 100).length,
     );
@@ -320,12 +321,12 @@ describe('EX6 carousel — multi-browse pela largura da marcação', () => {
   });
 
   /**
-   * Contra o oráculo, numa grade de larguras, larguras preferidas, espaços e números de itens.
-   * Fica de fora a vizinhança de ±3 px de uma troca de arranjo (o limiar da troca é aproximado, ver
-   * docs/carousel.md, "O que ainda difere"); o arranjo apertado do primeiro período, em que o
-   * Compose escolhe `ceil(largura / alvo)` grandes encolhidos, entra na conta e é parte do que erra.
+   * Against the oracle, over a grid of widths, preferred widths, spacings and item counts.
+   * The neighborhood of ±3 px of an arrangement switch is left out (the switch threshold is approximate, see
+   * docs/carousel.md, "What still differs"); the tight arrangement of the first period, in which
+   * Compose picks `ceil(width / target)` shrunken larges, counts and is part of what gets wrong.
    */
-  it('confere a grade de 200 a 900 contra o algoritmo do Compose (≤ 0,5 px, ≥ 96% dos casos)', () => {
+  it('checks the grid from 200 to 900 against the Compose algorithm (≤ 0.5 px, ≥ 96% of the cases)', () => {
     let total = 0;
     let wrong = 0;
     const same = (
@@ -367,10 +368,10 @@ describe('EX6 carousel — multi-browse pela largura da marcação', () => {
               wrong++;
           }
     expect(total).toBeGreaterThan(1000);
-    expect(wrong, `${wrong} de ${total}`).toBeLessThanOrEqual(Math.floor(total * 0.04));
+    expect(wrong, `${wrong} of ${total}`).toBeLessThanOrEqual(Math.floor(total * 0.04));
   }, 30_000);
 
-  it('nas faixas planas (grande no alvo) a conta é exata: 410 a 480 com 5 itens tem 2 grandes de 186 e o pequeno entre 40 e 56', () => {
+  it('in the flat ranges (large on target) the computation is exact: 410 to 480 with 5 items has 2 larges of 186 and the small one between 40 and 56', () => {
     for (const width of [430, 436, 440]) {
       const w = widths(drawAt(width, multi(5)));
       expect(w).toHaveLength(3);
@@ -380,7 +381,7 @@ describe('EX6 carousel — multi-browse pela largura da marcação', () => {
     }
   });
 
-  it('a soma dos itens desenhados mais os espaços cabe na marcação', () => {
+  it('the sum of the drawn items plus the spacings fits in the marking', () => {
     for (const width of [250, 360, 420, 515, 600, 777, 900]) {
       const boxes = itemBoxes(drawAt(width, multi(6)));
       const last = boxes[boxes.length - 1]!;
@@ -394,7 +395,7 @@ describe('EX6 carousel — multi-browse pela largura da marcação', () => {
 // ---------------------------------------------------------------------------------------------
 
 describe('EX6 carousel — uncontained', () => {
-  it('itens do tamanho itemWidth a partir da borda, com o espaço entre eles (Keylines.kt 161 a 200)', () => {
+  it('items of size itemWidth from the edge, with the spacing between them (Keylines.kt 161 to 200)', () => {
     const d = drawAt(360, {
       style: 'uncontained',
       itemWidth: 140,
@@ -404,8 +405,8 @@ describe('EX6 carousel — uncontained', () => {
     expect(itemBoxes(d)).toEqual([
       [0, 0, 140, HEIGHT],
       [152, 0, 140, HEIGHT],
-      // L2 (#1078): o item que cruza a borda direita ganha só a largura que sobra (360 − 304), em vez de
-      // passar da caixa e sair cortado (aviso `content larger than the box`)
+      // L2 (#1078): the item that crosses the right edge gets only the remaining width (360 − 304), instead of
+      // going past the box and being cut off (warning `content larger than the box`)
       [304, 0, 56, HEIGHT],
     ]);
     const wide = itemBoxes(
@@ -431,11 +432,11 @@ const heroValues = (n: number, spacing = 8): Values => ({
 });
 
 /**
- * O hero do Compose sem `maxItemWidth` (Keylines.kt, `heroKeylineList`, linhas 215 a 289, e a mesma
- * `findLowestCostArrangement` do multi-browse): o alvo do grande é a largura toda (linha 235), o do
- * pequeno é um terço dela preso entre 40 e 56 (237), e o `fit` (Arrangement.kt, 198 a 206) encolhe os
- * pequenos até o mínimo de 40 porque o grande não cabe no alvo. `start` é onde o primeiro item
- * começa: depois do pequeno e do espaço, quando o arranjo é centrado (3 itens ou mais).
+ * The Compose hero without `maxItemWidth` (Keylines.kt, `heroKeylineList`, lines 215 to 289, and the same
+ * `findLowestCostArrangement` as multi-browse): the large target is the whole width (line 235), the small
+ * one is a third of it clamped between 40 and 56 (237), and `fit` (Arrangement.kt, 198 to 206) shrinks the
+ * smalls down to the minimum of 40 because the large does not fit the target. `start` is where the first item
+ * begins: after the small one and the spacing, when the arrangement is centered (3 items or more).
  */
 function heroOracle(width: number, spacing: number, items: number) {
   const center = items >= 3;
@@ -467,7 +468,7 @@ function heroOracle(width: number, spacing: number, items: number) {
   return { large: a.large, small: a.small, smallCount: a.smallCount, start };
 }
 
-/** As caixas que o desenho deve ter, pelo oráculo: cada item corta na borda e some quando restam menos de 32 de caixa a partir do seu início. */
+/** The boxes the drawing must have, by the oracle: each item is cut at the edge and disappears when less than 32 of the box remains from its start. */
 function heroBoxes(width: number, spacing: number, items: number): number[][] {
   const { large, start } = heroOracle(width, spacing, items);
   const boxes: number[][] = [];
@@ -479,11 +480,11 @@ function heroBoxes(width: number, spacing: number, items: number): number[][] {
   return boxes;
 }
 
-describe('EX6 carousel — centered-hero pela largura da marcação', () => {
-  it('em 360, com espaço 8: grande 264, pequenos de 40 e o primeiro item depois do pequeno que falta (48), como o Compose', () => {
-    // Sem maxItemWidth o grande é a largura toda e o fit encolhe os pequenos até 40 (Arrangement.kt, 198 a 206):
-    // 360 − 2 × 40 − 2 × 8 = 264. O segundo item ganha só a largura que sobra na caixa (40) e o terceiro,
-    // que ficava fora dela (x = 592), não é desenhado.
+describe('EX6 carousel — centered-hero by the width of the marking', () => {
+  it('at 360, with spacing 8: large 264, smalls of 40 and the first item after the missing small one (48), like Compose', () => {
+    // Without maxItemWidth the large is the whole width and fit shrinks the smalls to 40 (Arrangement.kt, 198 to 206):
+    // 360 − 2 × 40 − 2 × 8 = 264. The second item gets only the width left in the box (40) and the third,
+    // which was outside it (x = 592), is not drawn.
     expect(heroOracle(360, 8, 3)).toMatchObject({ large: 264, small: 40, start: 48 });
     expectBoxes(itemBoxes(drawAt(360, heroValues(3))), [
       [48, 0, 264, HEIGHT],
@@ -491,7 +492,7 @@ describe('EX6 carousel — centered-hero pela largura da marcação', () => {
     ]);
   });
 
-  it('o grande, o pequeno e o recuo seguem a conta do Compose para toda largura e todo itemSpacing', () => {
+  it('the large, the small and the inset follow the Compose computation for every width and every itemSpacing', () => {
     for (const width of [130, 140, 150, 200, 240, 360, 480, 600, 900]) {
       for (const spacing of [0, 4, 8, 12, 16]) {
         for (const items of [3, 4, 6]) {
@@ -503,13 +504,13 @@ describe('EX6 carousel — centered-hero pela largura da marcação', () => {
         }
       }
     }
-    // 360 com espaço 16: pequeno 40, grande 360 − 80 − 32 = 248, recuo 56
+    // 360 with spacing 16: small 40, large 360 − 80 − 32 = 248, inset 56
     expect(itemBoxes(drawAt(360, heroValues(3, 16)))[0]).toEqual([56, 0, 248, HEIGHT]);
-    // 480 com espaço 8: grande 480 − 80 − 16 = 384; o pequeno da direita começa em 480 − 40
+    // 480 with spacing 8: large 480 − 80 − 16 = 384; the small one on the right starts at 480 − 40
     expect(itemBoxes(drawAt(480, heroValues(4)))[1]![0]).toBeCloseTo(480 - 40, 6);
   });
 
-  it('com 1 ou 2 itens o Compose alinha ao início (shouldCenter exige 3): um só pequeno de 40, grande de largura − espaço − 40, sem recuo', () => {
+  it('with 1 or 2 items Compose aligns to the start (shouldCenter requires 3): a single small of 40, large of width − spacing − 40, no inset', () => {
     for (const n of [1, 2]) {
       const boxes = itemBoxes(drawAt(360, heroValues(n, 12)));
       expect(boxes[0]).toEqual([0, 0, 360 - 12 - 40, HEIGHT]);
@@ -519,8 +520,8 @@ describe('EX6 carousel — centered-hero pela largura da marcação', () => {
     expectBoxes(itemBoxes(drawAt(360, heroValues(2, 8))), heroBoxes(360, 8, 2));
   });
 
-  it('os limiares em que só cabe o grande vêm da mesma conta: 130 com 3 itens ou mais, 90 com menos de 3', () => {
-    // fullscreenThreshold = 40 × pequenos + 50 (Keylines.kt, 241 a 244)
+  it('the thresholds at which only the large fits come from the same computation: 130 with 3 items or more, 90 with fewer than 3', () => {
+    // fullscreenThreshold = 40 × smalls + 50 (Keylines.kt, 241 to 244)
     for (const [width, items, only] of [
       [129, 3, true],
       [130, 3, false],
@@ -538,7 +539,7 @@ describe('EX6 carousel — centered-hero pela largura da marcação', () => {
     }
   });
 
-  it('numa marcação estreita (< 130 com 3 itens) cabe só o grande, sem recuo', () => {
+  it('in a narrow marking (< 130 with 3 items) only the large fits, with no inset', () => {
     const d = drawAt(120, heroValues(3));
     expect(widths(d)[0]).toBe(120);
     expect(itemBoxes(d)[0]![0]).toBe(0);
@@ -546,34 +547,34 @@ describe('EX6 carousel — centered-hero pela largura da marcação', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// Regressão: as cenas de antes
+// Regression: the scenes from before
 // ---------------------------------------------------------------------------------------------
 
-/** L2 (#1078): o que passava da caixa de 360 (a faixa de 4000, o item cortado e o que ficava fora) não é mais desenhado como era. */
-const PASSAVA_DA_CAIXA = { skip: (o: { r: number[] }) => o.r[0]! + o.r[2]! > 360.5 };
+/** L2 (#1078): what went past the 360 box (the 4000 band, the cut item and what was outside) is no longer drawn as it was. */
+const WENT_PAST_THE_BOX = { skip: (o: { r: number[] }) => o.r[0]! + o.r[2]! > 360.5 };
 
-describe('EX6 carousel — regressão contra as cenas de antes (≤ 0,5 px por nó)', () => {
-  it('uncontained em 360 (claro e escuro) bate nó a nó, fora o que passava da caixa', () => {
+describe('EX6 carousel — regression against the scenes from before (≤ 0.5 px per node)', () => {
+  it('uncontained at 360 (light and dark) matches node by node, except what went past the box', () => {
     for (const scene of oldScenes('carousel-ex1')) {
       const d = draw(scene.id, scene.values, scene.mode);
-      expect(missingNodes(d, scene.nodes, PASSAVA_DA_CAIXA), scene.key).toEqual([]);
+      expect(missingNodes(d, scene.nodes, WENT_PAST_THE_BOX), scene.key).toEqual([]);
     }
   });
 
-  it('multi-browse em 360: o primeiro item (largura, imagem, véu e rótulo) é o de antes (186)', () => {
+  it('multi-browse at 360: the first item (width, image, scrim and label) is the one from before (186)', () => {
     for (const scene of oldScenes('carousel-ex0')) {
       const d = draw(scene.id, scene.values, scene.mode);
-      // 0 raiz, 1 faixa; 3 a 6 = o primeiro item com a imagem, o véu e o rótulo (2 é o `itens`, que ficou do tamanho da marcação)
+      // 0 root, 1 band; 3 to 6 = the first item with the image, the scrim and the label (2 is `itens`, which stayed the size of the marking)
       const first = [scene.nodes[0]!, scene.nodes[1]!, ...scene.nodes.slice(3, 7)];
-      expect(missingNodes(d, first, PASSAVA_DA_CAIXA), scene.key).toEqual([]);
+      expect(missingNodes(d, first, WENT_PAST_THE_BOX), scene.key).toEqual([]);
     }
   });
 
-  it('centered-hero em 360 (claro e escuro): só o que não depende da largura dos itens bate com as cenas de antes (o hero passou a 264/40, como o Compose)', () => {
-    // #1504: as cenas de antes (tests/fixtures/material3-ex6-v1.json, que não mudam) têm o hero a 232/56/64.
-    // Sem maxItemWidth o Compose dá 264/40/48 (Keylines.kt 235 e Arrangement.kt 198 a 206), então os itens saem
-    // da igualdade: ficam a faixa, o recuo e o que não toca na largura e no x dos itens (a imagem, o véu e o
-    // rótulo seguem o item, então também saem).
+  it('centered-hero at 360 (light and dark): only what does not depend on the item width matches the scenes from before (the hero became 264/40, like Compose)', () => {
+    // #1504: the scenes from before (tests/fixtures/material3-ex6-v1.json, which do not change) have the hero at 232/56/64.
+    // Without maxItemWidth Compose gives 264/40/48 (Keylines.kt 235 and Arrangement.kt 198 to 206), so the items leave
+    // the equality: what stays is the band, the inset and what does not touch the width and x of the items (the image, the
+    // scrim and the label follow the item, so they leave too).
     for (const scene of oldScenes('carousel-ex2')) {
       const d = draw(scene.id, scene.values, scene.mode);
       const rest = scene.nodes.filter(
@@ -589,7 +590,7 @@ describe('EX6 carousel — regressão contra as cenas de antes (≤ 0,5 px por n
     }
   });
 
-  it('as cores (imagem reservada e véu) são as dos tokens, nos dois modos, em todos os estilos', () => {
+  it('the colors (placeholder image and scrim) are those of the tokens, in both modes, in all styles', () => {
     for (const mode of ['light', 'dark'] as const) {
       for (const values of [multi(3), heroValues(3)]) {
         const d = drawAt(360, values, mode);
@@ -602,10 +603,10 @@ describe('EX6 carousel — regressão contra as cenas de antes (≤ 0,5 px por n
 });
 
 // ---------------------------------------------------------------------------------------------
-// Sem tabelas
+// Without tables
 // ---------------------------------------------------------------------------------------------
 
-/** Cada `$switch` com mais de 12 casos e cada `$eq` sobre um campo `number` do tipo. */
+/** Each `$switch` with more than 12 cases and each `$eq` over a `number` field of the type. */
 function offenders(id: 'carousel') {
   const numberFields = new Set(
     typeOf(id)
@@ -620,23 +621,23 @@ function offenders(id: 'carousel') {
     const cases = obj['cases'];
     if ('$switch' in obj && typeof cases === 'object' && cases !== null) {
       const n = Object.keys(cases).length;
-      if (n > 12) found.push(`${path}: $switch de ${n} casos`);
+      if (n > 12) found.push(`${path}: $switch of ${n} cases`);
     }
     const eq = obj['$eq'];
     if (Array.isArray(eq) && typeof eq[0] === 'string' && numberFields.has(eq[0]))
-      found.push(`${path}: $eq sobre o campo number ${eq[0]}`);
+      found.push(`${path}: $eq over the number field ${eq[0]}`);
     for (const [k, v] of Object.entries(obj)) visit(v, `${path}.${k}`);
   };
   visit(JSON.parse(text(`components/${id}.json`)), id);
   return found;
 }
 
-describe('EX6 carousel — sem tabelas enumeradas', () => {
-  it('não tem $switch com mais de 12 casos nem $eq sobre campo number', () => {
+describe('EX6 carousel — without enumerated tables', () => {
+  it('has no $switch with more than 12 cases nor $eq over a number field', () => {
     expect(offenders('carousel')).toEqual([]);
   });
 
-  it('o item usa a largura da marcação, o índice e o número de itens (nada de 4000 ou 232 fixos nas larguras)', () => {
+  it('the item uses the width of the marking, the index and the number of items (no fixed 4000 or 232 in the widths)', () => {
     const source = text('components/carousel.json');
     expect(source).toContain('"$size"');
     expect(source).toContain('"$index"');

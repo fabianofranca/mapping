@@ -23,9 +23,9 @@ import {
 } from '../../src/model';
 import { multiProject } from './multiSelectionFixtures';
 
-// Reconciliação das perspectivas com o projeto (v16, decisão 4). Geometria do `multiProject`
-// (ver tests/model/multiSelectionFixtures.ts): raízes D e E (containers), G (marcação do canvas
-// que cerca A, B e C; G2 dentro dela), H e N (flutuante).
+// Reconciliation of the perspectives with the project (v16, decision 4). Geometry of `multiProject`
+// (see tests/model/multiSelectionFixtures.ts): roots D and E (containers), G (canvas marking
+// that surrounds A, B and C; G2 inside it), H and N (floating).
 
 function persp(
   items: [string, number, number][],
@@ -50,14 +50,14 @@ const itemsOf = (p: Project, id = 'P') =>
     (i) => [i.root, i.x, i.y] as const,
   );
 
-/** Onde a raiz aparece na vista da perspectiva, em unidades do canvas. */
+/** Where the root appears in the perspective's view, in canvas units. */
 function shown(p: Project, id: string, perspectiveId = 'P') {
   const found = p.perspectives.find((x) => x.id === perspectiveId) as Perspective;
   return rootFootprint(perspectiveView(p, found), id);
 }
 
-describe('reconciliação: raiz que sai do projeto', () => {
-  it('a raiz apagada sai da perspectiva', () => {
+describe('reconciliation: root that leaves the project', () => {
+  it('the deleted root leaves the perspective', () => {
     const p = withPerspectives(
       multiProject(),
       persp([
@@ -70,14 +70,14 @@ describe('reconciliação: raiz que sai do projeto', () => {
     expect(itemsOf(next)).toEqual([['N', 100, 1300]]);
   });
 
-  it('a marca de chegada da raiz apagada sai', () => {
+  it('the arrival mark of the deleted root goes away', () => {
     const arrival: Arrival = { root: 'H', from: 'P', fromName: 'Vista P' };
     const p = { ...multiProject(), arrivals: [arrival] };
     expect(removeMarking(p, 'H').arrivals).toEqual([]);
   });
 
-  it('os filhos que viram raiz entram onde estavam na tela', () => {
-    // G (que cerca A, B e C) sai: A, B e C ficam sem pai. G aparece deslocada de (1000, 500).
+  it('the children that become roots enter where they were on screen', () => {
+    // G (which surrounds A, B and C) leaves: A, B and C are left with no parent. G appears shifted by (1000, 500).
     const p = withPerspectives(
       multiProject(),
       persp([
@@ -103,10 +103,10 @@ describe('reconciliação: raiz que sai do projeto', () => {
   });
 });
 
-describe('reconciliação: raiz que deixa de ser raiz', () => {
+describe('reconciliation: root that stops being a root', () => {
   const wrapD = { x: 6900, y: -50, width: 1200, height: 1100 };
 
-  it('a raiz nova (que passou a conter a antiga) entra no lugar sem mover nada na tela', () => {
+  it('the new root (which now contains the old one) takes its place without moving anything on screen', () => {
     const p = withPerspectives(multiProject(), persp([['D', 7300, 20]]));
     const before = shown(p, 'D');
     const next = createMarking(p, { id: 'W', containerId: null, rect: wrapD });
@@ -115,7 +115,7 @@ describe('reconciliação: raiz que deixa de ser raiz', () => {
     expect(shown(next, 'D')).toEqual(before);
   });
 
-  it('a posição da raiz que é marcação é inteira', () => {
+  it('the position of a root that is a marking is an integer', () => {
     const base = multiProject();
     const fractional: Project = {
       ...base,
@@ -131,7 +131,7 @@ describe('reconciliação: raiz que deixa de ser raiz', () => {
     expect(Number.isInteger(item?.y)).toBe(true);
   });
 
-  it('se a raiz nova já está na perspectiva, a antiga só sai', () => {
+  it('if the new root is already in the perspective, the old one just leaves', () => {
     const small = { x: 6900, y: -50, width: 100, height: 100 };
     let p = createMarking(multiProject(), { id: 'W', containerId: null, rect: small });
     p = withPerspectives(
@@ -147,11 +147,11 @@ describe('reconciliação: raiz que deixa de ser raiz', () => {
   });
 });
 
-describe('reconciliação: item que vira raiz', () => {
-  it('entra onde estava na tela, não onde foi parar na Principal', () => {
+describe('reconciliation: item that becomes a root', () => {
+  it('enters where it was on screen, not where it ended up in the Main one', () => {
     const p = withPerspectives(multiProject(), persp([['G', 900, 400]]));
     const before = shown(p, 'B');
-    // B sai de G na Principal; na perspectiva ele continua onde o via.
+    // B leaves G in the Main one; in the perspective it stays where it was seen.
     const next = moveContainer(p, 'B', 2000, 3000);
     expect(projectIndex(next).rootOf.get('B')).toBe('B');
     expect(itemsOf(next)).toEqual([
@@ -161,7 +161,7 @@ describe('reconciliação: item que vira raiz', () => {
     expect(shown(next, 'B')).toEqual(before);
   });
 
-  it('só entra na perspectiva que tinha a raiz de antes', () => {
+  it('only enters the perspective that had the earlier root', () => {
     const p = withPerspectives(
       multiProject(),
       persp([['G', 900, 400]], [], 'P'),
@@ -172,18 +172,18 @@ describe('reconciliação: item que vira raiz', () => {
   });
 });
 
-describe('reconciliação: marca de chegada', () => {
+describe('reconciliation: arrival mark', () => {
   const arrival: Arrival = { root: 'H', from: 'P', fromName: 'Vista P' };
   const withMark = (): Project => ({ ...multiProject(), arrivals: [arrival] });
 
-  it('mover a raiz na Principal tira a marca', () => {
+  it('moving the root in the Main one removes the mark', () => {
     expect(moveMarking(withMark(), 'H', 10, 0).arrivals).toEqual([]);
     expect(moveItems(withMark(), [{ kind: 'marking', id: 'H' }], 0, 20).arrivals).toEqual(
       [],
     );
   });
 
-  it('mexer em outra raiz ou redimensionar sem mudar o canto mantém a marca', () => {
+  it('touching another root or resizing without changing the corner keeps the mark', () => {
     const p = withMark();
     expect(moveMarking(p, 'N', 10, 0).arrivals).toEqual([arrival]);
     expect(
@@ -191,7 +191,7 @@ describe('reconciliação: marca de chegada', () => {
     ).toEqual([arrival]);
   });
 
-  it('a chegada repetida, de raiz inexistente ou que não é raiz sai', () => {
+  it('an arrival that is repeated, of a nonexistent root or of a non-root goes away', () => {
     const p = {
       ...multiProject(),
       arrivals: [
@@ -205,9 +205,9 @@ describe('reconciliação: marca de chegada', () => {
   });
 });
 
-describe('reconciliação: camadas escondidas', () => {
-  it('apagar a camada tira o id de hiddenLayers de todas as perspectivas', () => {
-    let p = addLayer(multiProject(), { id: 'L2', name: 'Dois', color: '#1E88E5' });
+describe('reconciliation: hidden layers', () => {
+  it('deleting the layer removes the id from hiddenLayers of every perspective', () => {
+    let p = addLayer(multiProject(), { id: 'L2', name: 'Two', color: '#1E88E5' });
     p = withPerspectives(
       p,
       persp([['D', 7000, 0]], ['L1', 'L2'], 'P'),
@@ -218,14 +218,14 @@ describe('reconciliação: camadas escondidas', () => {
   });
 });
 
-describe('reconciliação: idempotência e limpeza', () => {
-  it('sem perspectiva nem chegada devolve o mesmo objeto', () => {
+describe('reconciliation: idempotence and cleanup', () => {
+  it('with no perspective or arrival returns the same object', () => {
     const before = multiProject();
     const after = moveMarking(before, 'H', 10, 0);
     expect(reconcilePerspectives(before, after)).toBe(after);
   });
 
-  it('nada a mudar devolve o mesmo objeto, com perspectivas', () => {
+  it('nothing to change returns the same object, with perspectives', () => {
     const p = withPerspectives(
       multiProject(),
       persp([
@@ -239,14 +239,14 @@ describe('reconciliação: idempotência e limpeza', () => {
     expect(settleHierarchy(moved)).toBe(moved);
   });
 
-  it('a prévia de gesto (settle: false) não reconcilia', () => {
+  it('the gesture preview (settle: false) does not reconcile', () => {
     const p = withPerspectives(multiProject(), persp([['H', 400, 1300]]));
     const preview = removeMarking(p, 'H', { settle: false });
     expect(itemsOf(preview)).toEqual([['H', 400, 1300]]);
     expect(itemsOf(settleHierarchy(preview, { before: p }))).toEqual([]);
   });
 
-  it('reconcilePerspective sem before real só limpa: raiz que não existe, repetida, camada inválida', () => {
+  it('reconcilePerspective without a real before only cleans up: nonexistent root, repeated, invalid layer', () => {
     const p = multiProject();
     const dirty = persp(
       [
@@ -255,7 +255,7 @@ describe('reconciliação: idempotência e limpeza', () => {
         ['D', 9, 9],
         ['H', 400.4, 1300],
       ],
-      ['L1', 'fantasma'],
+      ['L1', 'ghost'],
     );
     const clean = reconcilePerspective(p, p, dirty);
     expect(clean.items.map((i) => [i.root, i.x, i.y])).toEqual([
@@ -266,16 +266,16 @@ describe('reconciliação: idempotência e limpeza', () => {
     expect(reconcilePerspective(p, p, clean)).toBe(clean);
   });
 
-  it('o item que não é raiz dá lugar à raiz dele, sem mover nada na tela', () => {
+  it('an item that is not a root gives way to its root, without moving anything on screen', () => {
     const p = multiProject();
-    // B está dentro de G: mostrar B em (3000, 500) é mostrar G em (900, 400).
+    // B is inside G: showing B at (3000, 500) is showing G at (900, 400).
     const clean = reconcilePerspective(p, p, persp([['B', 3000, 500]]));
     expect(clean.items).toEqual([{ root: 'G', x: 900, y: 400 }]);
   });
 });
 
-describe('reconciliação: aplicar uma proposta', () => {
-  it('a raiz removida pela proposta sai da perspectiva e das chegadas', () => {
+describe('reconciliation: applying a proposal', () => {
+  it('the root removed by the proposal leaves the perspective and the arrivals', () => {
     const base: Project = {
       ...withPerspectives(
         multiProject(),

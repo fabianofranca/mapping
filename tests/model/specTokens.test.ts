@@ -1,4 +1,4 @@
-// `formatVersion` 15 (etapa #747, CF5): `tokens` na raiz da especialização.
+// `formatVersion` 15 (stage #747, CF5): `tokens` at the root of the specialization.
 import { describe, expect, it } from 'vitest';
 import { SPEC_FORMAT_VERSION, SPEC_FORMAT_VERSIONS, parseSpec } from '../../src/model';
 
@@ -27,21 +27,21 @@ const GOOD = {
 };
 
 describe('formatVersion 15: tokens', () => {
-  it('a versão atual é 16 e a 14 continua aceita', () => {
+  it('the current version is 16 and 14 is still accepted', () => {
     expect(SPEC_FORMAT_VERSION).toBe(16);
     expect(SPEC_FORMAT_VERSIONS).toContain(14);
   });
 
-  it('tokens com modos, valor por modo e valor simples são válidos', () => {
+  it('tokens with modes, per-mode value and plain value are valid', () => {
     expect(issuesOf(spec(GOOD))).toEqual([]);
   });
 
-  it('valor por modo sem todos os modos falha', () => {
+  it('per-mode value without all the modes fails', () => {
     const bad = { ...GOOD, values: { primary: { light: '#1a73e8' } } };
     expect(issuesOf(spec(bad)).map((i) => i.path)).toContain('tokens.values.primary');
   });
 
-  it('valor por modo com modo não declarado falha', () => {
+  it('per-mode value with an undeclared mode fails', () => {
     const bad = {
       ...GOOD,
       values: { primary: { light: '#1', dark: '#2', contrast: '#3' } },
@@ -49,12 +49,12 @@ describe('formatVersion 15: tokens', () => {
     expect(issuesOf(spec(bad)).map((i) => i.path)).toContain('tokens.values.primary');
   });
 
-  it('modos misturando texto e número num token falham', () => {
+  it('modes mixing text and number in a token fail', () => {
     const bad = { ...GOOD, values: { size: { light: 8, dark: '8' } } };
     expect(issuesOf(spec(bad)).map((i) => i.path)).toContain('tokens.values.size');
   });
 
-  it('chave desconhecida em tokens é erro no caminho dela (CR #945, item 45)', () => {
+  it('unknown key in tokens is an error at its path (CR #945, item 45)', () => {
     const bad = { ...GOOD, extra: 1 };
     const r = parseSpec(spec(bad));
     expect(r.ok).toBe(false);
@@ -62,7 +62,7 @@ describe('formatVersion 15: tokens', () => {
     expect(issue?.message).toBe('unknown key: extra');
   });
 
-  it('modes vazio e modo repetido falham', () => {
+  it('empty modes and repeated mode fail', () => {
     expect(issuesOf(spec({ modes: [], values: {} })).map((i) => i.path)).toContain(
       'tokens.modes',
     );
@@ -71,12 +71,12 @@ describe('formatVersion 15: tokens', () => {
     ).toContain('tokens.modes[1]');
   });
 
-  it('nome com maiúscula falha pelo padrão', () => {
+  it('name with an uppercase letter fails by the pattern', () => {
     const bad = { ...GOOD, values: { Primary: '#fff' } };
     expect(issuesOf(spec(bad)).map((i) => i.path)).toContain('tokens.values.Primary');
   });
 
-  it('tokens numa especialização v14 falha com a mensagem de versão', () => {
+  it('tokens in a v14 specialization fail with the version message', () => {
     expect(issuesOf(spec(GOOD, 14))).toContainEqual({
       path: 'tokens',
       message: 'only allowed with formatVersion 15',

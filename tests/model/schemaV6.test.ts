@@ -6,7 +6,7 @@ import { legacyJson } from './legacyShape';
 const strip = (data: Record<string, unknown>, key: string) =>
   Object.fromEntries(Object.entries(data).filter(([k]) => k !== key));
 
-/** Um mapping.json v5: sem `revision` (nem `platformRepos`, da v7). */
+/** A v5 mapping.json: without `revision` (nor `platformRepos`, from v7). */
 function v5Text(): string {
   const data = legacyJson(sampleProject());
   return JSON.stringify({
@@ -15,8 +15,8 @@ function v5Text(): string {
   });
 }
 
-describe('migração v5 → v6 (revisão)', () => {
-  it('ganha revision: 0 e o resto fica igual', () => {
+describe('migration v5 → v6 (revision)', () => {
+  it('gets revision: 0 and the rest stays the same', () => {
     const result = deserialize(v5Text());
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(5);
@@ -26,33 +26,33 @@ describe('migração v5 → v6 (revisão)', () => {
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('o v5 migrado salva como v16 estável (round-trip)', () => {
+  it('the migrated v5 saves as a stable v16 (round-trip)', () => {
     const first = deserialize(v5Text());
-    if (!first.ok) throw new Error('falhou');
+    if (!first.ok) throw new Error('failed');
     const saved = serialize(first.project);
     expect(JSON.parse(saved).schemaVersion).toBe(20);
     const again = deserialize(saved);
-    if (!again.ok) throw new Error('falhou');
+    if (!again.ok) throw new Error('failed');
     expect(serialize(again.project)).toBe(saved);
   });
 
-  it('preserva uma revision que já exista', () => {
+  it('preserves an existing revision', () => {
     expect(migrateFrom5To6({ revision: 7 })).toEqual({ revision: 7 });
     expect(migrateFrom5To6({})).toEqual({ revision: 0 });
   });
 
-  it('serializa revision logo depois de schemaVersion e mantém o valor no round-trip', () => {
+  it('serializes revision right after schemaVersion and keeps the value in the round-trip', () => {
     const text = serialize({ ...sampleProject(), revision: 12 });
     expect(Object.keys(JSON.parse(text)).slice(0, 2)).toEqual([
       'schemaVersion',
       'revision',
     ]);
     const loaded = deserialize(text);
-    if (!loaded.ok) throw new Error('falhou');
+    if (!loaded.ok) throw new Error('failed');
     expect(loaded.project.revision).toBe(12);
   });
 
-  it('recusa um arquivo v6 sem revision ou com revision inválida', () => {
+  it('refuses a v6 file without revision or with an invalid revision', () => {
     const data = JSON.parse(serialize(sampleProject()));
     delete data.revision;
     expect(deserialize(JSON.stringify(data)).ok).toBe(false);

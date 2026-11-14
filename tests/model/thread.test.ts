@@ -19,7 +19,7 @@ type Json = Record<string, any>;
 
 function errorsOf(data: unknown): readonly string[] {
   const result = parseThread(data);
-  if (result.ok) throw new Error('esperava recusa');
+  if (result.ok) throw new Error('expected rejection');
   return result.errors;
 }
 
@@ -29,8 +29,8 @@ function parsedOf(data: unknown): Thread {
   return result.thread;
 }
 
-describe('constantes e caminhos', () => {
-  it('expõe o formato, a versão e as pastas', () => {
+describe('constants and paths', () => {
+  it('exposes the format, the version and the folders', () => {
     expect(THREAD_FORMAT).toBe('mapping-thread');
     expect(THREAD_FORMAT_VERSION).toBe(1);
     expect(COMMENTS_DIR).toBe('comments');
@@ -38,12 +38,12 @@ describe('constantes e caminhos', () => {
     expect(THREAD_MESSAGE_MAX).toBe(10000);
   });
 
-  it('threadFilePath escolhe a pasta pelo estado', () => {
+  it('threadFilePath picks the folder by state', () => {
     expect(threadFilePath('c1', false)).toBe('comments/c1.json');
     expect(threadFilePath('c1', true)).toBe('comments/resolved/c1.json');
   });
 
-  it('THREAD_ID_RE segue a regra do id de proposta', () => {
+  it('THREAD_ID_RE follows the proposal id rule', () => {
     for (const ok of ['c1', 'A.b_c-d', '0abc', 'f47ac10b-58cc-4372-a567-0e02b2c3d479']) {
       expect(THREAD_ID_RE.test(ok)).toBe(true);
     }
@@ -53,8 +53,8 @@ describe('constantes e caminhos', () => {
   });
 });
 
-describe('leitura', () => {
-  it('lê a conversa de exemplo sem avisos', () => {
+describe('parsing', () => {
+  it('reads the sample thread without warnings', () => {
     const result = parseThread(rawThread());
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -63,19 +63,19 @@ describe('leitura', () => {
     }
   });
 
-  it('recusa JSON inválido no texto', () => {
-    const result = parseThreadText('{ nao é json');
+  it('rejects invalid JSON in the text', () => {
+    const result = parseThreadText('{ not json');
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.errors[0]).toMatch(/^invalid JSON/);
   });
 
-  it('recusa formato e versão diferentes', () => {
-    expect(errorsOf({ ...rawThread(), format: 'outro' })[0]).toMatch(/^format: /);
+  it('rejects a different format and version', () => {
+    expect(errorsOf({ ...rawThread(), format: 'other' })[0]).toMatch(/^format: /);
     expect(errorsOf({ ...rawThread(), formatVersion: 2 })[0]).toMatch(/^formatVersion: /);
   });
 
   it.each(['id', 'anchor', 'createdAt', 'revision', 'resolved', 'messages'])(
-    'campo obrigatório da raiz: %s',
+    'required root field: %s',
     (field) => {
       const raw = rawThread();
       delete raw[field];
@@ -84,7 +84,7 @@ describe('leitura', () => {
   );
 
   it.each(['id', 'author', 'at', 'text', 'proposal'])(
-    'campo obrigatório da mensagem: %s',
+    'required message field: %s',
     (field) => {
       const raw = rawThread();
       delete raw.messages[1][field];
@@ -94,7 +94,7 @@ describe('leitura', () => {
     },
   );
 
-  it.each(['kind', 'name', 'email'])('campo obrigatório do autor: %s', (field) => {
+  it.each(['kind', 'name', 'email'])('required author field: %s', (field) => {
     const raw = rawThread();
     delete raw.messages[2].author[field];
     expect(errorsOf(raw).some((e) => e.startsWith(`messages[2].author.${field}: `))).toBe(
@@ -102,11 +102,11 @@ describe('leitura', () => {
     );
   });
 
-  it.each(['', '.oculto', 'a/b', 'a b'])('recusa o id %j', (bad) => {
+  it.each(['', '.hidden', 'a/b', 'a b'])('rejects the id %j', (bad) => {
     expect(errorsOf({ ...rawThread(), id: bad })[0]).toMatch(/^id: /);
   });
 
-  it('o texto é obrigatório, não só espaços e vai até 10.000 caracteres', () => {
+  it('the text is required, not only spaces, and goes up to 10,000 characters', () => {
     const at = (text: string) => {
       const raw = rawThread();
       raw.messages[0].text = text;
@@ -118,13 +118,13 @@ describe('leitura', () => {
     expect(errorsOf(at('x'.repeat(10001)))[0]).toMatch(/^messages\[0\]\.text: /);
   });
 
-  it('recusa author.kind inválido', () => {
+  it('rejects invalid author.kind', () => {
     const raw = rawThread();
     raw.messages[1].author.kind = 'robot';
     expect(errorsOf(raw)[0]).toMatch(/^messages\[1\]\.author\.kind: /);
   });
 
-  it('o e-mail é obrigatório na pessoa e null no agente', () => {
+  it('the email is required for a person and null for an agent', () => {
     const noEmail = rawThread();
     noEmail.messages[2].author.email = null;
     expect(errorsOf(noEmail)).toEqual([
@@ -136,33 +136,33 @@ describe('leitura', () => {
     expect(errorsOf(emptyEmail)[0]).toMatch(/^messages\[2\]\.author\.email: /);
 
     const agentWithEmail = rawThread();
-    agentWithEmail.messages[1].author.email = 'agente@exemplo.com';
+    agentWithEmail.messages[1].author.email = 'agent@exemplo.com';
     expect(errorsOf(agentWithEmail)[0]).toMatch(/^messages\[1\]\.author\.email: /);
   });
 
-  it('o nome do autor não pode ser vazio', () => {
+  it('the author name cannot be empty', () => {
     const raw = rawThread();
     raw.messages[0].author.name = '';
     expect(errorsOf(raw)[0]).toMatch(/^messages\[0\]\.author\.name: /);
   });
 
-  it('recusa conversa sem mensagem', () => {
+  it('rejects a thread without a message', () => {
     expect(errorsOf({ ...rawThread(), messages: [] })[0]).toMatch(/^messages: /);
   });
 
-  it('recusa ids de mensagem repetidos, com o caminho da segunda', () => {
+  it('rejects repeated message ids, with the path of the second', () => {
     const raw = rawThread();
     raw.messages[2].id = 'm1';
     expect(errorsOf(raw)).toEqual(['messages[2].id: duplicate id "m1"']);
   });
 
-  it('revision é inteiro >= 0', () => {
+  it('revision is an integer >= 0', () => {
     expect(errorsOf({ ...rawThread(), revision: -1 })[0]).toMatch(/^revision: /);
     expect(errorsOf({ ...rawThread(), revision: 1.5 })[0]).toMatch(/^revision: /);
     expect(parseThread({ ...rawThread(), revision: 0 }).ok).toBe(true);
   });
 
-  it('proposal é string ou null', () => {
+  it('proposal is a string or null', () => {
     const raw = rawThread();
     raw.messages[1].proposal = 'P1';
     expect(parsedOf(raw).messages[1]?.proposal).toBe('P1');
@@ -170,9 +170,9 @@ describe('leitura', () => {
     expect(errorsOf(raw)[0]).toMatch(/^messages\[1\]\.proposal: /);
   });
 
-  it('datas ISO inválidas são recusadas com o caminho; as com fuso saem em UTC', () => {
+  it('invalid ISO dates are rejected with the path; those with an offset come out in UTC', () => {
     const raw = rawThread();
-    raw.createdAt = 'ontem';
+    raw.createdAt = 'yesterday';
     raw.messages[0].at = '06/11/2026';
     expect([...errorsOf(raw)].sort()).toEqual([
       expect.stringMatching(/^createdAt: /),
@@ -183,7 +183,7 @@ describe('leitura', () => {
     expect(parsedOf(offset).createdAt).toBe(T0);
   });
 
-  it('resolved: {by:{name,email}, at} ou null', () => {
+  it('resolved: {by:{name,email}, at} or null', () => {
     const raw = rawThread();
     raw.resolved = {
       by: { name: 'Marina Alves', email: 'marina@exemplo.com' },
@@ -204,9 +204,9 @@ function T3(): string {
   return '2026-11-06T13:00:00.000Z';
 }
 
-describe('âncoras', () => {
+describe('anchors', () => {
   it.each(ANCHORS.map((a, i) => [i, a] as const))(
-    'forma %i lida e regravada idêntica (round-trip)',
+    'shape %i read and rewritten identical (round-trip)',
     (_i, anchor) => {
       const thread = sampleThread({ anchor });
       const text = serializeThread(thread);
@@ -218,7 +218,7 @@ describe('âncoras', () => {
     },
   );
 
-  it('recusa kind desconhecido, campo faltando e ponto sem coordenada válida', () => {
+  it('rejects an unknown kind, a missing field and a point without a valid coordinate', () => {
     const bad = (anchor: unknown) => errorsOf({ ...rawThread(), anchor });
     expect(bad({ kind: 'zebra', id: 'x' })[0]).toMatch(/^anchor/);
     expect(bad({ kind: 'marking' })[0]).toMatch(/^anchor\.id: /);
@@ -237,8 +237,8 @@ describe('âncoras', () => {
   });
 });
 
-describe('ordenação e serialização', () => {
-  it('a leitura ordena as mensagens por at e, no empate, por id', () => {
+describe('ordering and serialization', () => {
+  it('parsing sorts the messages by at and, on a tie, by id', () => {
     const raw = rawThread();
     raw.messages = [
       { ...raw.messages[2], id: 'b', at: T2 },
@@ -249,16 +249,16 @@ describe('ordenação e serialização', () => {
     expect(parsedOf(raw).messages.map((m) => m.id)).toEqual(['z', 'c', 'a', 'b']);
   });
 
-  it('compara pelo instante, não pelo texto da data', () => {
+  it('compares by instant, not by the date text', () => {
     const raw = rawThread();
     raw.messages = [
-      { ...raw.messages[0], id: 'tarde', at: '2026-11-06T10:00:01Z' },
-      { ...raw.messages[0], id: 'cedo', at: '2026-11-06T10:00:00.500Z' },
+      { ...raw.messages[0], id: 'late', at: '2026-11-06T10:00:01Z' },
+      { ...raw.messages[0], id: 'early', at: '2026-11-06T10:00:00.500Z' },
     ];
-    expect(parsedOf(raw).messages.map((m) => m.id)).toEqual(['cedo', 'tarde']);
+    expect(parsedOf(raw).messages.map((m) => m.id)).toEqual(['early', 'late']);
   });
 
-  it('serializa com chaves em ordem fixa, indent 2 e newline final', () => {
+  it('serializes with keys in a fixed order, indent 2 and a final newline', () => {
     const text = serializeThread(sampleThread());
     expect(text.endsWith('}\n')).toBe(true);
     expect(text.startsWith('{\n  "format": "mapping-thread",\n')).toBe(true);
@@ -284,7 +284,7 @@ describe('ordenação e serialização', () => {
     expect(text).toBe(JSON.stringify(json, null, 2) + '\n');
   });
 
-  it('grava as mensagens na ordem canônica e a ordem das chaves da âncora', () => {
+  it('writes the messages in canonical order and the anchor keys order', () => {
     const thread = sampleThread({
       anchor: { kind: 'row', annotationId: 'A1', key: 'k', rowId: 'W1' },
       messages: [
@@ -309,7 +309,7 @@ describe('ordenação e serialização', () => {
     expect(Object.keys(json.anchor)).toEqual(['kind', 'annotationId', 'key', 'rowId']);
   });
 
-  it('a conversa resolvida faz round-trip', () => {
+  it('the resolved thread round-trips', () => {
     const thread = sampleThread({
       resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T3() },
     });

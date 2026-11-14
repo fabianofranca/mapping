@@ -1,18 +1,18 @@
-// Defeito herdado da MC5 (#898, fase CL1): o `maxWidth` do rótulo de button/extended-fab/chip,
-// `largura do tipo − folga`, limitava a medida hug ao `size` do tipo (136/142/232): um rótulo
-// comum nascia com 2 linhas. A medida hug não tem o limite do `size`: o rótulo mede uma linha.
+// Defect inherited from MC5 (#898, phase CL1): the `maxWidth` of the label of button/extended-fab/chip,
+// `type width − slack`, limited the hug measure to the type's `size` (136/142/232): an
+// ordinary label was born with 2 lines. The hug measure has no `size` limit: the label measures one line.
 import { describe, expect, it } from 'vitest';
 import { fittedSize } from './../support/material3Fitted';
 
-describe('rótulo comum com hug na largura nasce em uma linha', () => {
+describe('an ordinary label with hug on the width is born on one line', () => {
   it.each([
-    ['button', { label: 'Confirmar compra' }, 40],
-    ['chip', { label: 'Filtro de categoria longa' }, 32],
-    ['extended-fab', { label: 'Criar nova mensagem' }, 56],
+    ['button', { label: 'Confirm purchase' }, 40],
+    ['chip', { label: 'Long category filter' }, 32],
+    ['extended-fab', { label: 'Create new message' }, 56],
   ])('%s', (id, values, height) => {
     const size = fittedSize(id, values);
     expect(size.height).toBe(height);
-    // Uma linha: a largura passa da do tipo (o rótulo não é cortado nela).
+    // One line: the width goes past the type's (the label is not cut off at it).
     expect(size.width).toBeGreaterThan(0);
   });
 });

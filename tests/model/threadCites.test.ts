@@ -2,24 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { citedItemIds, proposalThreads, type CitationTarget } from '../../src/model';
 import { HUMAN, T0, T1, T2, message, sampleThread } from './threadFixtures';
 
-// Ids que o filtro "só as que citam a seleção" compara (decisão 34) e a ligação proposta ↔ conversa
-// da janela Propostas (decisão 36).
+// Ids that the "only those citing the selection" filter compares (decision 34) and the proposal ↔ thread link
+// of the Proposals window (decision 36).
 
 describe('citedItemIds', () => {
-  it('o id do item ou o da anotação que contém a parte citada', () => {
+  it('the id of the item or of the annotation that contains the cited part', () => {
     const targets: CitationTarget[] = [
       { kind: 'marking', id: 'M1' },
       { kind: 'container', id: 'I1' },
       { kind: 'arrow', id: 'R1' },
       { kind: 'annotation', id: 'A1' },
-      { kind: 'field', annotationId: 'A2', key: 'tipo' },
+      { kind: 'field', annotationId: 'A2', key: 'kind' },
       { kind: 'entry', annotationId: 'A3', entryId: 'E1' },
-      { kind: 'row', annotationId: 'A4', key: 'tabela', rowId: 'W1' },
+      { kind: 'row', annotationId: 'A4', key: 'table', rowId: 'W1' },
     ];
     expect(citedItemIds(targets)).toEqual(['M1', 'I1', 'R1', 'A1', 'A2', 'A3', 'A4']);
   });
 
-  it('camada, conversa e proposta não são itens do canvas: ficam de fora', () => {
+  it('layer, thread and proposal are not canvas items: they are left out', () => {
     expect(
       citedItemIds([
         { kind: 'layer', id: 'L1' },
@@ -37,7 +37,7 @@ describe('proposalThreads', () => {
     proposal,
   });
 
-  it('a primeira conversa que ligou a proposta (pela mensagem mais antiga)', () => {
+  it('the first thread that linked the proposal (by the oldest message)', () => {
     const late = sampleThread({
       id: 'late',
       messages: [withProposal('m1', T2, 'P1')],
@@ -56,7 +56,7 @@ describe('proposalThreads', () => {
     expect(map.size).toBe(2);
   });
 
-  it('sem proposta nas mensagens, o mapa é vazio', () => {
+  it('without a proposal in the messages, the map is empty', () => {
     expect(proposalThreads([sampleThread()]).size).toBe(0);
   });
 });

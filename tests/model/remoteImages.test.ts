@@ -18,8 +18,8 @@ function reason(value: unknown, policy: RemoteImagePolicy = STRICT): string | nu
   return result.ok ? null : result.reason;
 }
 
-describe('checkRemoteImageUrl: aceitas', () => {
-  it('aceita uma URL https válida', () => {
+describe('checkRemoteImageUrl: accepted', () => {
+  it('accepts a valid https URL', () => {
     expect(checkRemoteImageUrl('https://cdn.a.com/img/x.png?v=1', STRICT)).toEqual({
       ok: true,
       url: 'https://cdn.a.com/img/x.png?v=1',
@@ -28,22 +28,23 @@ describe('checkRemoteImageUrl: aceitas', () => {
     });
   });
 
-  it('mantém a porta na origem', () => {
+  it('keeps the port in the origin', () => {
     const result = checkRemoteImageUrl('https://a.com:8443/x.png', STRICT);
     expect(result).toMatchObject({ ok: true, origin: 'https://a.com:8443' });
   });
 
-  it('normaliza o host para minúsculas', () => {
+  it('lowercases the host', () => {
     const result = checkRemoteImageUrl('https://CDN.A.COM/x.png', STRICT);
     expect(result).toMatchObject({ ok: true, origin: 'https://cdn.a.com' });
   });
 
-  it('converte IDN para punycode', () => {
+  it('converts IDN to punycode', () => {
+    // pt-BR kept: the accented IDN host (bücher) is the object of the punycode test
     const result = checkRemoteImageUrl('https://bücher.example/a.png', STRICT);
     expect(result).toMatchObject({ ok: true, origin: 'https://xn--bcher-kva.example' });
   });
 
-  it('tira a porta padrão', () => {
+  it('strips the default port', () => {
     expect(checkRemoteImageUrl('https://a.com:443/x.png', STRICT)).toMatchObject({
       ok: true,
       origin: 'https://a.com',
@@ -54,14 +55,14 @@ describe('checkRemoteImageUrl: aceitas', () => {
     });
   });
 
-  it('aparar espaços nas pontas', () => {
+  it('trims whitespace at the ends', () => {
     expect(checkRemoteImageUrl('  https://a.com/x.png \n', STRICT)).toMatchObject({
       ok: true,
       url: 'https://a.com/x.png',
     });
   });
 
-  it('aceita http com allowHttp, com o esquema na origem', () => {
+  it('accepts http with allowHttp, with the scheme in the origin', () => {
     expect(checkRemoteImageUrl('http://a.com:8080/x.png', HTTP)).toEqual({
       ok: true,
       url: 'http://a.com:8080/x.png',
@@ -70,13 +71,13 @@ describe('checkRemoteImageUrl: aceitas', () => {
     });
   });
 
-  it('host público tem local falso', () => {
+  it('a public host has local false', () => {
     expect(checkRemoteImageUrl('https://a.com/x.png', BOTH)).toMatchObject({
       local: false,
     });
   });
 
-  it('aceita exatamente 2048 caracteres', () => {
+  it('accepts exactly 2048 characters', () => {
     const prefix = 'https://a.com/';
     const url = prefix + 'a'.repeat(REMOTE_IMAGE_URL_MAX_LENGTH - prefix.length);
     expect(url).toHaveLength(2048);
@@ -84,7 +85,7 @@ describe('checkRemoteImageUrl: aceitas', () => {
   });
 });
 
-describe('checkRemoteImageUrl: recusadas', () => {
+describe('checkRemoteImageUrl: refused', () => {
   it('empty', () => {
     expect(reason('')).toBe('empty');
     expect(reason('   \t')).toBe('empty');
@@ -103,7 +104,7 @@ describe('checkRemoteImageUrl: recusadas', () => {
     expect(reason('file:///etc/passwd')).toBe('invalid');
   });
 
-  it('insecure: http com allowHttp falso', () => {
+  it('insecure: http with allowHttp false', () => {
     expect(reason('http://a.com/x.png')).toBe('insecure');
     expect(reason('http://a.com/x.png', LOCAL)).toBe('insecure');
     expect(reason('http://127.0.0.1/x.png', LOCAL)).toBe('insecure');
@@ -136,7 +137,7 @@ describe('checkRemoteImageUrl: recusadas', () => {
       'app.localhost',
       'api.internal',
       'nas.home.arpa',
-      'impressora.lan',
+      'printer.lan',
       'wiki.intranet',
     ];
     for (const host of hosts) {
@@ -145,14 +146,14 @@ describe('checkRemoteImageUrl: recusadas', () => {
     }
   });
 
-  it('normaliza IPv4 em outras notações antes de recusar', () => {
+  it('normalizes IPv4 in other notations before refusing', () => {
     expect(reason('https://0x7f.1/x.png')).toBe('private-host');
     expect(reason('https://2130706433/x.png')).toBe('private-host');
   });
 });
 
 describe('checkRemoteImageUrl: allowLocalNetwork', () => {
-  it('aceita hosts locais com local verdadeiro', () => {
+  it('accepts local hosts with local true', () => {
     const hosts = [
       '127.0.0.1',
       '10.0.0.1',
@@ -170,7 +171,7 @@ describe('checkRemoteImageUrl: allowLocalNetwork', () => {
     }
   });
 
-  it('http local exige allowHttp também', () => {
+  it('local http requires allowHttp as well', () => {
     expect(reason('http://127.0.0.1:3000/x.png', LOCAL)).toBe('insecure');
     expect(checkRemoteImageUrl('http://127.0.0.1:3000/x.png', BOTH)).toEqual({
       ok: true,
@@ -182,7 +183,7 @@ describe('checkRemoteImageUrl: allowLocalNetwork', () => {
 });
 
 describe('isLocalNetworkHost', () => {
-  it('reconhece IPs literais, localhost, nomes sem ponto e sufixos locais', () => {
+  it('recognizes literal IPs, localhost, dotless names and local suffixes', () => {
     for (const host of [
       '127.0.0.1',
       '8.8.8.8',
@@ -201,7 +202,7 @@ describe('isLocalNetworkHost', () => {
     }
   });
 
-  it('não marca hosts públicos', () => {
+  it('does not flag public hosts', () => {
     for (const host of [
       'a.com',
       'cdn.a.com',
@@ -224,7 +225,7 @@ describe('sceneRemoteImageUrls', () => {
     height: 10,
     effects: [],
   };
-  it('coleta as URLs dos preenchimentos image, em ordem e sem repetir', () => {
+  it('collects the URLs of the image fills, in order and without repeating', () => {
     const rect = (id: string, url?: string, src?: string): SceneNode => ({
       ...base,
       id,

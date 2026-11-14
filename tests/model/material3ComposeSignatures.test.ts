@@ -1,7 +1,7 @@
-// Material 3 (Compose) importada pela assinatura (etapa #1079, S5, decisões 14 e 17): cada tipo e cada
-// caso de `variants` cita a ficha derivada do androidx no commit fixado (`signatures/`), reimportar a
-// ficha não muda a especialização (a prova de "sem modelagem à mão"), os parâmetros da prova de
-// aceite viraram campos e o desenho segue os campos novos.
+// Material 3 (Compose) imported through the signature (stage #1079, S5, decisions 14 and 17): each type and each
+// `variants` case cites the signature sheet derived from androidx at the pinned commit (`signatures/`), re-importing the
+// sheet does not change the specialization (the proof of "no hand modeling"), the parameters of the
+// acceptance proof became fields and the drawing follows the new fields.
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { parseSignatureText } from '../../src/model/signatures/parseSignature';
@@ -20,9 +20,23 @@ import {
   types,
 } from '../support/material3Library';
 
+// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
+const NAMES = {
+  label: 'rótulo',
+  content: 'conteúdo',
+  line: 'linha',
+  shadowLevel3: 'sombra nível 3',
+  shadowLevel1: 'sombra nível 1',
+  title: 'título',
+  dot: 'ponto',
+  ring: 'anel',
+  track: 'trilho',
+  thumb: 'alça',
+} as const;
+
 const COMMIT = '5113b82a4ed6416d6344efa50e41db8cb65928ff';
 
-/** Todo caminho de ficha que a especialização cita: o do tipo e o de cada caso de `variants`. */
+/** Every signature sheet path the specialization cites: the type's and that of each `variants` case. */
 const cited = types.flatMap((type) => {
   const code = type.code?.compose;
   const base = [
@@ -39,22 +53,22 @@ const cited = types.flatMap((type) => {
 const fieldOf = (type: SpecAnnotationType, key: string): SpecField | undefined =>
   type.fields.find((f) => f.key === key);
 
-const FICHAS = files.filter((f) => f.path.startsWith('signatures/'));
+const SIGNATURE_SHEETS = files.filter((f) => f.path.startsWith('signatures/'));
 
 function readSignature(path: string) {
   const parsed = parseSignatureText(text(path));
   if (!parsed.ok)
-    throw new Error(`${path}: ${parsed.issues[0]?.message ?? 'ficha inválida'}`);
+    throw new Error(`${path}: ${parsed.issues[0]?.message ?? 'invalid signature sheet'}`);
   return parsed.signature;
 }
 
-describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)', () => {
-  it('é a formatVersion 16 e a versão 14 (a version subiu uma vez no épico da #1079, sobre a 12 da main; a 14 é a R5 da #1096)', () => {
+describe('Material 3 (Compose): the signature sheets (decision 14 of #1079)', () => {
+  it('is formatVersion 16 and version 14 (the version went up once in the #1079 epic, over the 12 of main; the 14 is R5 of #1096)', () => {
     expect(spec.formatVersion).toBe(16);
     expect(spec.version).toBe(14);
   });
 
-  it('todo tipo, e todo caso de variants, cita a sua ficha em signatures/', () => {
+  it('every type, and every variants case, cites its sheet in signatures/', () => {
     expect(cited.length).toBeGreaterThan(90);
     for (const { id, variant, path } of cited) {
       const expected =
@@ -65,7 +79,7 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
     }
   });
 
-  it('toda ficha citada existe, é válida e bate com o símbolo, o arquivo e o commit do code', () => {
+  it('every cited sheet exists, is valid and matches the symbol, the file and the commit of the code', () => {
     for (const { id, variant, path } of cited) {
       const name = `${id}${variant === undefined ? '' : `/${variant}`}`;
       expect(text(path ?? ''), name).not.toBe('');
@@ -81,18 +95,19 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
     }
   });
 
-  it('toda ficha do pacote é citada (nenhuma sobra em signatures/)', () => {
+  it('every sheet of the package is cited (none is left over in signatures/)', () => {
     const citedPaths = new Set(cited.map((c) => c.path));
-    expect(FICHAS.length).toBe(citedPaths.size);
-    for (const file of FICHAS) expect(citedPaths.has(file.path), file.path).toBe(true);
+    expect(SIGNATURE_SHEETS.length).toBe(citedPaths.size);
+    for (const file of SIGNATURE_SHEETS)
+      expect(citedPaths.has(file.path), file.path).toBe(true);
   });
 
-  it('o pacote valida sem erro nos três níveis', () => {
+  it('the package validates without an error at the three levels', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
   }, 30_000);
 
-  // Um `it` por ficha: o laço único levava ~1,4 s e estourava os 5 s do teste no shard sob carga do CI (CL2, E-1).
+  // One `it` per sheet: the single loop took ~1.4 s and blew the 5 s of the test in the shard under CI load (CL2, E-1).
   it.each(
     cited.map(({ id, variant, path }) => ({
       name: `${id}${variant === undefined ? '' : `/${variant}`}`,
@@ -100,24 +115,27 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
       variant,
       path,
     })),
-  )('reimportar a ficha $name não muda a especialização (idempotência)', (entry) => {
-    const { name, id, variant, path } = entry;
-    const signature = readSignature(path as string);
-    const result = planSignatureImport(spec, {
-      type: id,
-      target: { platform: 'compose' },
-      ...(variant === undefined ? {} : { variant }),
-      signature,
-      previous: signature,
-    });
-    expect(result.ok, name).toBe(true);
-    if (!result.ok) return;
-    expect(result.plan.spec, name).toEqual(spec);
-    expect(result.plan.changes, name).toEqual([]);
-    expect(result.plan.versionBump, name).toBe(false);
-  });
+  )(
+    're-importing the sheet $name does not change the specialization (idempotence)',
+    (entry) => {
+      const { name, id, variant, path } = entry;
+      const signature = readSignature(path as string);
+      const result = planSignatureImport(spec, {
+        type: id,
+        target: { platform: 'compose' },
+        ...(variant === undefined ? {} : { variant }),
+        signature,
+        previous: signature,
+      });
+      expect(result.ok, name).toBe(true);
+      if (!result.ok) return;
+      expect(result.plan.spec, name).toEqual(spec);
+      expect(result.plan.changes, name).toEqual([]);
+      expect(result.plan.versionBump, name).toBe(false);
+    },
+  );
 
-  it('o fieldModels.compose traz os modelos da prova (decisão 14)', () => {
+  it('fieldModels.compose carries the models of the proof (decision 14)', () => {
     const models = (
       spec as Spec & { fieldModels?: Record<string, Record<string, unknown>> }
     ).fieldModels?.compose;
@@ -139,9 +157,9 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
     ]);
   });
 
-  it('os parâmetros que a prova de aceite lista viraram campos, sem modelagem à mão', () => {
-    // O `PaddingValues` expande em `horizontal`/`vertical` e o `BorderStroke` em `borderWidth`/`borderColor`
-    // (ou `width`/`color`, quando não há colisão); o campo nasce com o nome do parâmetro.
+  it('the parameters the acceptance proof lists became fields, with no hand modeling', () => {
+    // `PaddingValues` expands into `horizontal`/`vertical` and `BorderStroke` into `borderWidth`/`borderColor`
+    // (or `width`/`color`, when there is no collision); the field is born with the parameter name.
     const wanted: Record<string, string[]> = {
       button: [
         'shape',
@@ -167,7 +185,7 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
     }
   });
 
-  it('o button expande o shape, o contentPadding e as cores nos argumentos do código', () => {
+  it('the button expands the shape, the contentPadding and the colors into the code arguments', () => {
     const code = typeOf('button').code?.compose;
     expect(code?.calls).toMatchObject({
       colors: 'androidx.compose.material3.ButtonDefaults.buttonColors',
@@ -187,7 +205,7 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
     });
   });
 
-  it('os parâmetros sem campo deixam rastro: avisos pending com o ref da ficha', () => {
+  it('parameters without a field leave a trace: pending notices with the sheet ref', () => {
     let pending = 0;
     for (const type of types) {
       for (const notice of type.notices ?? []) {
@@ -228,12 +246,12 @@ const textColor = (node: SceneNode, name: string): string | undefined => {
   return found?.type === 'text' ? solid(found.fills) : undefined;
 };
 
-describe('Material 3 (Compose): o desenho segue os campos importados (decisão 14)', () => {
+describe('Material 3 (Compose): the drawing follows the imported fields (decision 14)', () => {
   const catalog = buildCatalog(files);
   const draw = (id: string, values: Record<string, unknown>, mode: 'light' | 'dark') =>
     drawIn(catalog, findEntry(catalog, id)!, values as never, mode);
 
-  it('button: containerColor e contentColor mudam as cores, e o desabilitado vence', () => {
+  it('button: containerColor and contentColor change the colors, and the disabled one wins', () => {
     for (const mode of ['light', 'dark'] as const) {
       const base = draw('button', { label: 'Ok' }, mode);
       const tertiary = draw('button', { label: 'Ok', containerColor: 'tertiary' }, mode);
@@ -242,8 +260,8 @@ describe('Material 3 (Compose): o desenho segue os campos importados (decisão 1
         fillOf(base.root, 'container'),
       );
       const content = draw('button', { label: 'Ok', contentColor: 'error' }, mode);
-      expect(textColor(content.root, 'rótulo'), mode).not.toBe(
-        textColor(base.root, 'rótulo'),
+      expect(textColor(content.root, NAMES.label), mode).not.toBe(
+        textColor(base.root, NAMES.label),
       );
       expect(tertiary.warnings).toEqual([]);
       expect(content.warnings).toEqual([]);
@@ -269,10 +287,12 @@ describe('Material 3 (Compose): o desenho segue os campos importados (decisão 1
     );
     const offBase = draw('button', { label: 'Ok', enabled: 'false' }, 'light');
     expect(fillOf(offOwn.root, 'container')).not.toBe(fillOf(offBase.root, 'container'));
-    expect(textColor(offOwn.root, 'rótulo')).not.toBe(textColor(offBase.root, 'rótulo'));
+    expect(textColor(offOwn.root, NAMES.label)).not.toBe(
+      textColor(offBase.root, NAMES.label),
+    );
   });
 
-  it('button: shape pequeno muda o raio e contentPadding muda a caixa do conteúdo', () => {
+  it('button: a small shape changes the radius and contentPadding changes the content box', () => {
     const base = draw('button', { label: 'Ok' }, 'light');
     const small = draw('button', { label: 'Ok', shape: 'small' }, 'light');
     expect(radiusOf(small.root, 'container')).not.toEqual(
@@ -280,53 +300,55 @@ describe('Material 3 (Compose): o desenho segue os campos importados (decisão 1
     );
     const wide = draw('button', { label: 'Ok', horizontal: 40 }, 'light');
     const narrow = draw('button', { label: 'Ok', horizontal: 4 }, 'light');
-    expect(widthOf(wide.root, 'conteúdo')).toBeGreaterThan(
-      widthOf(narrow.root, 'conteúdo') ?? 0,
+    expect(widthOf(wide.root, NAMES.content)).toBeGreaterThan(
+      widthOf(narrow.root, NAMES.content) ?? 0,
     );
     const tall = draw('button', { label: 'Ok', vertical: 20 }, 'light');
     const flat = draw('button', { label: 'Ok', vertical: 2 }, 'light');
-    const h = (r: SceneNode) => named(r, 'conteúdo')?.height ?? 0;
+    const h = (r: SceneNode) => named(r, NAMES.content)?.height ?? 0;
     expect(h(tall.root)).toBeGreaterThan(h(flat.root));
   });
 
-  it('divider: color muda a cor da linha', () => {
+  it('divider: color changes the line color', () => {
     const base = draw('divider', {}, 'light');
     const primary = draw('divider', { color: 'primary' }, 'light');
-    expect(fillOf(primary.root, 'linha')).not.toBe(fillOf(base.root, 'linha'));
-    expect(fillOf(primary.root, 'linha')).toBe('#6750A4');
+    expect(fillOf(primary.root, NAMES.line)).not.toBe(fillOf(base.root, NAMES.line));
+    expect(fillOf(primary.root, NAMES.line)).toBe('#6750A4');
   });
 
-  it('surface: borderWidth, borderColor e shadowElevation aparecem no desenho', () => {
+  it('surface: borderWidth, borderColor and shadowElevation show up in the drawing', () => {
     const base = draw('surface', {}, 'light');
     const border = draw('surface', { borderWidth: 2, borderColor: 'primary' }, 'light');
     const shadow = draw('surface', { shadowElevation: 6 }, 'light');
     expect(base.root.stroke?.width ?? 0).toBe(0);
     expect(border.root.stroke?.width).toBe(2);
     expect(solid(border.root.stroke?.paints ?? [])).toBe('#6750A4');
-    // a sombra é desenhada pelo nó do nível que a elevação alcança (6 dp: nível 3)
-    expect(named(base.root, 'sombra nível 3')).toBeUndefined();
-    expect(named(shadow.root, 'sombra nível 3')?.effects.length).toBeGreaterThan(0);
+    // the shadow is drawn by the node of the level the elevation reaches (6 dp: level 3)
+    expect(named(base.root, NAMES.shadowLevel3)).toBeUndefined();
+    expect(named(shadow.root, NAMES.shadowLevel3)?.effects.length).toBeGreaterThan(0);
     expect(
-      named(draw('surface', { shadowElevation: 1 }, 'light').root, 'sombra nível 1'),
+      named(draw('surface', { shadowElevation: 1 }, 'light').root, NAMES.shadowLevel1),
     ).toBeDefined();
   });
 
-  it('top-app-bar: subtitle desenha um texto a mais, e as cores mudam o fundo e o título', () => {
-    const base = draw('top-app-bar', { title: 'Título', style: 'small' }, 'light');
+  it('top-app-bar: subtitle draws one more text, and the colors change the background and the title', () => {
+    const base = draw('top-app-bar', { title: 'Title', style: 'small' }, 'light');
     const sub = draw(
       'top-app-bar',
-      { title: 'Título', style: 'small', subtitle: 'Sub' },
+      { title: 'Title', style: 'small', subtitle: 'Sub' },
       'light',
     );
     expect(allText(sub.root)).toContain('Sub');
     expect(allText(base.root)).not.toContain('Sub');
     const colored = draw(
       'top-app-bar',
-      { title: 'Título', containerColor: 'primary', titleContentColor: 'onPrimary' },
+      { title: 'Title', containerColor: 'primary', titleContentColor: 'onPrimary' },
       'light',
     );
     expect(solid(colored.root.fills)).toBe('#6750A4');
-    expect(textColor(colored.root, 'título')).not.toBe(textColor(base.root, 'título'));
+    expect(textColor(colored.root, NAMES.title)).not.toBe(
+      textColor(base.root, NAMES.title),
+    );
     for (const mode of ['light', 'dark'] as const) {
       expect(
         draw('top-app-bar', { title: 'T', subtitle: 'S' }, mode).warnings,
@@ -335,16 +357,16 @@ describe('Material 3 (Compose): o desenho segue os campos importados (decisão 1
     }
   });
 
-  it('radio-button e switch: as cores mudam o desenho', () => {
+  it('radio-button and switch: the colors change the drawing', () => {
     const radio = draw('radio-button', { selected: 'true' }, 'light');
     const radioColored = draw(
       'radio-button',
       { selected: 'true', selectedColor: 'error' },
       'light',
     );
-    expect(fillOf(radioColored.root, 'ponto')).not.toBe(fillOf(radio.root, 'ponto'));
+    expect(fillOf(radioColored.root, NAMES.dot)).not.toBe(fillOf(radio.root, NAMES.dot));
     const ring = (r: SceneNode): string | undefined => {
-      const paints = named(r, 'anel')?.stroke?.paints;
+      const paints = named(r, NAMES.ring)?.stroke?.paints;
       return paints === undefined ? undefined : solid(paints);
     };
     const radioOff = draw(
@@ -362,21 +384,21 @@ describe('Material 3 (Compose): o desenho segue os campos importados (decisão 1
       { checked: 'true', checkedTrackColor: 'tertiary', checkedThumbColor: 'error' },
       'light',
     );
-    expect(fillOf(swColored.root, 'trilho')).not.toBe(fillOf(sw.root, 'trilho'));
-    expect(fillOf(swColored.root, 'alça')).not.toBe(fillOf(sw.root, 'alça'));
+    expect(fillOf(swColored.root, NAMES.track)).not.toBe(fillOf(sw.root, NAMES.track));
+    expect(fillOf(swColored.root, NAMES.thumb)).not.toBe(fillOf(sw.root, NAMES.thumb));
     const swOff = draw(
       'switch',
       { checked: 'false', uncheckedTrackColor: 'error' },
       'light',
     );
-    expect(fillOf(swOff.root, 'trilho')).not.toBe(
-      fillOf(draw('switch', { checked: 'false' }, 'light').root, 'trilho'),
+    expect(fillOf(swOff.root, NAMES.track)).not.toBe(
+      fillOf(draw('switch', { checked: 'false' }, 'light').root, NAMES.track),
     );
   });
 
-  it('text-field: prefix e suffix desenham os textos (e o secure-text-field também)', () => {
+  it('text-field: prefix and suffix draw the texts (and the secure-text-field too)', () => {
     for (const id of ['text-field', 'secure-text-field']) {
-      // o `text-field` mostra o texto digitado (`value`); o `secure-text-field`, as bolinhas (`hasText`)
+      // the `text-field` shows the typed text (`value`); the `secure-text-field`, the dots (`hasText`)
       const typed = id === 'text-field' ? { value: 'abc' } : { hasText: 'true' };
       const base = draw(id, typed, 'light');
       const both = draw(id, { ...typed, prefix: 'R$', suffix: 'kg' }, 'light');
@@ -386,7 +408,7 @@ describe('Material 3 (Compose): o desenho segue os campos importados (decisão 1
     }
   });
 
-  it('todo exemplo dos tipos tocados desenha sem aviso em light e dark', () => {
+  it('every example of the touched types draws without a warning in light and dark', () => {
     for (const id of [
       'button',
       'surface',
