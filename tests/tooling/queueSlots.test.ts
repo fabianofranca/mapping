@@ -258,11 +258,13 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     expect(run('show', dir)).toContain('contexto: —');
     run('context', dir, '35');
     const ok = run('show', dir);
-    expect(ok).toContain(`contexto: 35% (${NOW})`);
+    expect(ok).toContain(
+      `contexto: 35% (${NOW}, manual) — medido à mão: meça com context --medir`,
+    );
     expect(ok).not.toContain('troque de sessão');
     run('context', dir, '36');
     expect(run('show', dir)).toContain(
-      `contexto: 36% (${NOW}) — acima de 35%: troque de sessão agora ("Troca de sessão")`,
+      `contexto: 36% (${NOW}, manual) — acima de 35%: troque de sessão agora ("Troca de sessão") — medido à mão: meça com context --medir`,
     );
   });
 

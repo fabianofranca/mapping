@@ -5,7 +5,10 @@ Arquivos numa pasta: queue.json, meta.json, log.json (listas JSON).
 Cada comando imprime, no fim, `alterados: <arquivos gravados>`.
 A nota "Vagas k/N" (meta.vagas) é recalculada em toda gravação, a partir das fichas (`plan`),
 de `meta.paralelo` (`start --paralelo N`) e de `meta.merged` (`merged`); `context` guarda o contexto
-do coordenador (alerta acima de CONTEXT_LIMIT). `show` imprime `vagas:`, `começar agora:`, `contexto:`.
+do coordenador: `context --medir --max <n>` mede com `scripts/ci/contextUsage.mjs` e grava o `pct` com a fonte
+(`sessao`/`recente`); `context <pct> [--fonte get_session]` é o número à mão (fonte `manual`, ou `get_session`).
+O `show` imprime `vagas:`, `começar agora:`, `contexto: <pct>% (<quando>, <fonte>)`, com o alerta acima de
+CONTEXT_LIMIT e os avisos de medida à mão e de medida velha (mais de CONTEXT_STALE_MINUTES).
 Ficha incompleta (decisão 11 da #1532): `dep`, `toca` ou `fases` em `?` (ou `dep` e `toca` sem o campo) dá o motivo
 `ficha incompleta (<campos>)` e entra em `fichas a refazer:` do `show`; a etapa começada com `toca=?` segue conflitando
 com toda candidata (`arquivo ? com #N`). O `toca=` lista arquivos e seções (#1812): um arquivo, um padrão de arquivos
@@ -127,6 +130,9 @@ STAGES = ["", "Fases", "Testador", "Correção", "Fechamento", "Mesclada"]
 FILES = ["queue", "meta", "log"]
 SESSION_KINDS = ["fase", "correção", "testador", "reteste", "fechamento", "coordenador", "supervisor"]
 CONTEXT_LIMIT = 35
+CONTEXT_STALE_MINUTES = 70  # a medida do contexto mais velha que isso é acusada pelo `show` (decisão 5 da #1874)
+CONTEXT_MEASURE_TIMEOUT = 30  # segundos para o `contextUsage.mjs` responder
+MEASURE_HINT = "meça com context --medir"
 TESTER_CONTEXT_LIMIT = 300000  # teto de contexto final do testador (decisões 8 e 9 da #1639): só se registra, não segura
 TESTER_KINDS = ["testador", "reteste"]
 ROLES = ["coordenador", "supervisor"]
@@ -671,18 +677,77 @@ def cmd_merged(a):
     s.commit()
 
 
+def parse_key_values(text):
+    """As linhas `chave=valor` de uma saída."""
+    values = {}
+    for ln in text.splitlines():
+        k, sep, v = ln.partition("=")
+        if sep and k:
+            values[k] = v
+    return values
+
+
+def measure_context(max_tokens):
+    """Roda `scripts/ci/contextUsage.mjs --max <n>` e devolve as chaves da saída (`pct`, `contexto`, `fonte`);
+    falha com `Erro`, sem gravar nada, sem medida ou com o script quebrado (decisão 2 da #1874)."""
+    root = repo_root()
+    script = os.path.join(root, "scripts", "ci", "contextUsage.mjs") if root else None
+    if not script or not os.path.isfile(script):
+        raise Erro(f"não achei scripts/ci/contextUsage.mjs (procurei em {script or 'nenhuma raiz de repositório'})")
+    try:
+        out = subprocess.run(["node", script, "--max", str(max_tokens)], capture_output=True, text=True,
+                             timeout=CONTEXT_MEASURE_TIMEOUT)
+    except (OSError, subprocess.SubprocessError) as e:
+        raise Erro(f"não consegui rodar {script}: {e}")
+    values = parse_key_values(out.stdout)
+    if out.returncode == 1:
+        raise Erro(f"sem medida ({values.get('motivo', 'sem motivo')}): "
+                   "grave o used_tokens do get_session com context <pasta> <pct> --fonte get_session")
+    if out.returncode != 0 or not re.fullmatch("[0-9]+", values.get("pct", "")):
+        raise Erro(f"a medida falhou (código {out.returncode}): {(out.stderr or out.stdout).strip()}")
+    return values
+
+
+def context_request(a):
+    """O que o `context` grava: `(pct, fonte, medida)`, com a medida só no `--medir` (decisões 1 a 3 da #1874)."""
+    if a.medir == (a.pct is not None):
+        raise Erro("use context <pasta> <pct> [--fonte get_session] ou context <pasta> --medir --max <n>")
+    if not a.medir:
+        if a.max is not None:
+            raise Erro("--max só vale com --medir")
+        if a.fonte not in (None, "get_session"):
+            raise Erro(f"--fonte só aceita get_session, veio '{a.fonte}'")
+        return check_pct(a.pct), a.fonte or "manual", None
+    if a.fonte is not None:
+        raise Erro("--fonte não vale com --medir (a fonte vem do script)")
+    if a.max is None:
+        raise Erro("--medir precisa de --max <max_tokens> (o do get_session sem session_id)")
+    if not re.fullmatch("[0-9]+", a.max) or int(a.max) < 1:
+        raise Erro(f"--max precisa ser um inteiro positivo, veio '{a.max}'")
+    values = measure_context(int(a.max))
+    return min(int(values["pct"]), 100), values.get("fonte", "sessao"), values
+
+
+def check_pct(raw):
+    try:
+        pct = int(raw)
+    except ValueError:
+        raise Erro(f"pct precisa ser inteiro de 0 a 100, veio '{raw}'")
+    if not 0 <= pct <= 100:
+        raise Erro(f"pct precisa ser inteiro de 0 a 100, veio '{raw}'")
+    return pct
+
+
 def cmd_context(a):
     s = open_session(a.dir)
-    try:
-        pct = int(a.pct)
-    except ValueError:
-        raise Erro(f"pct precisa ser inteiro de 0 a 100, veio '{a.pct}'")
-    if not 0 <= pct <= 100:
-        raise Erro(f"pct precisa ser inteiro de 0 a 100, veio '{a.pct}'")
+    pct, fonte, measured = context_request(a)
     m = s.get("meta")[0]
     m["context"] = pct
     m["contextAt"] = now()
+    m["contextFonte"] = fonte
     s.touch("meta")
+    if measured:
+        print(f"medido: pct={pct} contexto={measured.get('contexto', '?')} fonte={fonte}")
     s.commit(quiet=True)  # o contexto sozinho não faz a conferência de hora em hora publicar
 
 
@@ -1570,6 +1635,20 @@ def minutes_since(iso):
     return int((n - t).total_seconds() // 60)
 
 
+def context_notes(meta):
+    """Os avisos da linha `contexto:` do `show`, nesta ordem: o alerta de troca (a ação), a medida à mão e a
+    medida velha (decisão 5 da #1874). Só se o `meta` tem `context`."""
+    notes = []
+    if meta["context"] > CONTEXT_LIMIT:
+        notes.append(f"acima de {CONTEXT_LIMIT}%: troque de sessão agora (\"Troca de sessão\")")
+    if meta.get("contextFonte") in (None, "manual"):
+        notes.append(f"medido à mão: {MEASURE_HINT}")
+    at = meta.get("contextAt")
+    if at and minutes_since(at) > CONTEXT_STALE_MINUTES:
+        notes.append(f"medida velha (há {minutes_since(at)} min): {MEASURE_HINT}")
+    return "".join(f" — {n}" for n in notes)
+
+
 def late_rows(q):
     """Filha sem aviso há mais de 30 min; a que espera o coordenador (`wait`) não conta."""
     return [r for r in q if r.get("child") and r.get("childAt") and not r.get("wait")
@@ -1743,9 +1822,8 @@ def cmd_show(a):
     if ctx is None:
         print("contexto: —")
     else:
-        alert = (f" — acima de {CONTEXT_LIMIT}%: troque de sessão agora (\"Troca de sessão\")"
-                 if ctx > CONTEXT_LIMIT else "")
-        print(f"contexto: {ctx}% ({meta.get('contextAt', '—')}){alert}")
+        print(f"contexto: {ctx}% ({meta.get('contextAt', '—')}, {meta.get('contextFonte') or '—'})"
+              f"{context_notes(meta)}")
     for r in q:
         if r["status"] == "em andamento":
             print(f"  {r['issue']} {r['stage']} · {r['step']} · filhas: {r.get('child') or '—'}")
@@ -1812,8 +1890,11 @@ def build_parser():
     sp.add_argument("pairs", nargs="+")
     sp = add("merged", cmd_merged, "registra uma etapa mesclada na main (sem repetir)")
     sp.add_argument("issue")
-    sp = add("context", cmd_context, "registra o contexto do coordenador (0 a 100)")
-    sp.add_argument("pct")
+    sp = add("context", cmd_context, "registra o contexto do coordenador: <pct> [--fonte get_session] (à mão, fonte manual) ou --medir --max <max_tokens> (mede com scripts/ci/contextUsage.mjs e grava a fonte)")
+    sp.add_argument("pct", nargs="?")
+    sp.add_argument("--medir", action="store_true", help="mede o contexto da própria sessão com o contextUsage.mjs")
+    sp.add_argument("--max", help="max_tokens do get_session sem session_id (só com --medir)")
+    sp.add_argument("--fonte", help="get_session: o pct vem do used_tokens do get_session (só com <pct>)")
     sp = add("role", cmd_role, "registra a sessão atual de um papel (coordenador|supervisor) [link=<url>]; n soma 1; o id já registrado não muda nada")
     sp.add_argument("role")
     sp.add_argument("session")
