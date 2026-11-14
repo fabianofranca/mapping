@@ -1,10 +1,10 @@
 // let.mjs: node let.mjs <library folder> [case]
 // Replaces the `card` of a copy of `m3-tokens` with a format 4 component with variables (`let` and
 // `$var`, R25.121 to R25.126). Without `case`, the card is valid; with `case`, the card comes out with an error:
-//   indefinida  the `$var` of a name that no `let` declares (undefined)
-//   ciclo       two variables that use each other (a → b → a) (cycle)
-//   tipo        a type error inside the variable (text in a calculation) (type)
-//   nome        a variable name outside [a-z][a-zA-Z0-9]* (name)
+//   undefined   the `$var` of a name that no `let` declares
+//   cycle       two variables that use each other (a → b → a)
+//   type        a type error inside the variable (text in a calculation)
+//   name        a variable name outside [a-z][a-zA-Z0-9]*
 //   v3          the same card in formatVersion 3
 // The valid card (300 × 120 units) draws:
 //   - four 20 squares in a row, starting at (20, 20), gap 10 (variable `gap`): the first two red
@@ -100,18 +100,18 @@ const card = {
 const repeat = card.template.children[0].children[0];
 const roots = card.template.let;
 const variants = {
-  indefinida: () => {
+  undefined: () => {
     repeat.gap = { $var: 'space' };
   },
-  ciclo: () => {
+  cycle: () => {
     roots.a = { $add: [{ $var: 'b' }, 1] };
     roots.b = { $mul: [{ $var: 'a' }, 2] };
     repeat.gap = { $var: 'a' };
   },
-  tipo: () => {
-    roots.gap = { $mul: ['larga', 0.5] };
+  type: () => {
+    roots.gap = { $mul: ['wide', 0.5] };
   },
-  nome: () => {
+  name: () => {
     roots.Gap = 10;
   },
   v3: () => {

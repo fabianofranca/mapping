@@ -1267,8 +1267,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   { term: 'abaixo de 2 KiB', source: '.github/workflows/ci.yml', group: 'script-output' },
   { term: 'não tem a CSP', source: 'pwa/csp.ts', group: 'script-output' },
-  { term: 'atributo style', source: 'pwa/csp.ts', group: 'script-output' },
-  { term: 'handler inline', source: 'pwa/csp.ts', group: 'script-output' },
   {
     term: 'o perfil static não pode ter a diretiva',
     source: 'pwa/csp.ts',
@@ -2230,11 +2228,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   { term: 'Exceção ao Button:', source: 'docs/DESIGN-SYSTEM.md', group: 'issue-markers' },
   {
-    term: 'não reexecuta:',
-    source: '.github/workflows/ci-rerun.yml',
-    group: 'script-output',
-  },
-  {
     term: 'Madrugadão',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'names',
@@ -2818,11 +2811,6 @@ export const PORTUGUESE_PATHS: readonly PathException[] = [
   // ID10 sweep: file entries added by area A3
   // ID10 sweep: file entries added by area B
   // ID10 sweep: file entries added by area C
-  {
-    path: 'tests/e2e/fixtures/avisos-demo.spec.json',
-    reason:
-      'fixture data that tests/tooling/testingGuide.test.ts requires equal to the Portuguese JSON block of script R18 in docs/TESTING.md (the notices messages)',
-  },
   {
     path: 'tests/tooling/portugueseAllowlist.ts',
     reason:

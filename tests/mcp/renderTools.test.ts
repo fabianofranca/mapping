@@ -161,7 +161,7 @@ beforeAll(async () => {
   let p = createProject({
     name: 'Telas',
     now: NOW,
-    firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
   });
   p = addContainer(p, { id: PHOTO, file: 'images/foto.png', width: 200, height: 100 });
   p = addContainer(p, { id: SMALL, file: 'images/menor.png', width: 200, height: 100 });

@@ -147,7 +147,7 @@ function writeProject(name: string, card: Doc | null): void {
   let p = createProject({
     name,
     now: NOW,
-    firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
   });
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'lib.spec.json' });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
@@ -205,7 +205,7 @@ beforeAll(async () => {
   writeProject('with-let', null);
   writeProject('without-let', byHand());
   writeLibrary('valid');
-  for (const kind of ['indefinida', 'ciclo', 'tipo', 'nome', 'v3'])
+  for (const kind of ['undefined', 'cycle', 'type', 'name', 'v3'])
     writeLibrary(kind, kind);
   mcp = await connect([base]);
 });
@@ -232,11 +232,11 @@ describe('validate_library with let and $var (real server)', () => {
   });
 
   it.each([
-    ['indefinida', 'template.children[0].children[0].gap', 'undefined variable: space'],
-    ['ciclo', 'template.let.a', 'variable cycle: a → b → a'],
-    ['nome', 'template.let.Gap', 'expected a variable name ([a-z][a-zA-Z0-9]*)'],
+    ['undefined', 'template.children[0].children[0].gap', 'undefined variable: space'],
+    ['cycle', 'template.let.a', 'variable cycle: a → b → a'],
+    ['name', 'template.let.Gap', 'expected a variable name ([a-z][a-zA-Z0-9]*)'],
     [
-      'tipo',
+      'type',
       'template.children[0].children[0].gap.$var(gap).$mul[0]',
       'must be a number',
     ],

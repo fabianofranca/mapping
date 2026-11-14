@@ -12,7 +12,7 @@ describe('scripts/testing/large-project.mjs', () => {
     try {
       const out = execFileSync(
         'node',
-        ['scripts/testing/large-project.mjs', '--marcacoes', '200', '--pasta', dir],
+        ['scripts/testing/large-project.mjs', '--markings', '200', '--folder', dir],
         { encoding: 'utf8' },
       ).trim();
       expect(out).toBe(join(dir, 'mapping.json'));
@@ -33,7 +33,7 @@ describe('scripts/testing/large-project.mjs', () => {
     expect(() =>
       execFileSync(
         'node',
-        ['scripts/testing/large-project.mjs', '--marcacoes', '150', '--pasta', '/tmp/x'],
+        ['scripts/testing/large-project.mjs', '--markings', '150', '--folder', '/tmp/x'],
         { stdio: 'pipe' },
       ),
     ).toThrow();

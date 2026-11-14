@@ -48,7 +48,7 @@ function project(): Project {
   let p = createProject({
     name: 'Screens',
     now: NOW,
-    firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
   });
   p = addContainer(p, { id: PHOTO, file: 'images/photo.png', width: 200, height: 100 });
   return applySpecialization(p, spec, { packageSpecName: 'material3.spec.json' });
@@ -72,7 +72,7 @@ beforeAll(async () => {
   const bare = createProject({
     name: 'Notes',
     now: NOW,
-    firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
   });
   writeFileSync(
     join(notesDir, 'mapping.json'),

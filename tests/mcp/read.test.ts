@@ -856,7 +856,7 @@ describe('create_project', () => {
       projectName: 'Shop',
       schemaVersion: 20,
       revision: 0,
-      // "Camada 1" and the Notas layer of the bundled library (applied by default).
+      // "Layer 1" and the Notas layer of the bundled library (applied by default).
       counts: { containers: 0, markings: 0, annotations: 0, layers: 2 },
     });
     const dir = ws.projectDir('fresh/shop');
@@ -865,7 +865,7 @@ describe('create_project', () => {
     expect(existsSync(join(dir, 'images'))).toBe(false);
     const parsed = deserialize(readFileSync(join(dir, 'mapping.json'), 'utf8'));
     expect(parsed.ok && parsed.project.layers.map((l) => l.name)).toEqual([
-      'Camada 1',
+      'Layer 1',
       'Notes',
     ]);
     // The notes library package, written along with mapping.json.

@@ -964,8 +964,8 @@ describe('ci-rerun.yml', () => {
       'node scripts/ci/ciRerun.mjs decide --ci .github/workflows/ci.yml --jobs',
     );
     expect(rerun).toContain('gh run rerun "$RUN_ID" --failed --repo "$REPO"');
-    expect(rerun).toContain('reexecuta: abandonados');
-    expect(rerun).toContain('não reexecuta:');
+    expect(rerun).toContain('reruns: abandoned');
+    expect(rerun).toContain('does not rerun:');
   });
 
   it('the summary always goes out, even when decide fails', () => {

@@ -12,6 +12,8 @@ import {
 } from '../../src/model';
 import { createFolderStorage, type DirectoryHandleLike } from '../../src/storage/folder';
 import { openSession } from '../../src/store/session';
+import { createEditorDerived } from '../../src/store/derived';
+import { createEditorUi } from '../../src/store/ui';
 import { material3Package, material3Spec } from '../storage/packageFixture';
 import { writeProjectZip } from '../../src/storage/zip';
 import { clearReportedErrors } from '../../src/utils/report';
@@ -522,6 +524,18 @@ describe('import zip', () => {
     expect(project?.markings).toHaveLength(32);
     expect(project?.annotations).toHaveLength(42);
     expect(current.session.proposals.list.value).toHaveLength(1);
+    // R11.4: opens with a single pending item (the Wi-Fi Chip that does not fit); no `style` option
+    // left over from the specialization's `title`/`body`/`caption` options.
+    await current.session.components.whenIdle();
+    const derived = createEditorDerived(
+      current.session.store,
+      createEditorUi(),
+      undefined,
+      current.session.components,
+    );
+    const pending = [...derived.issues.value.values()].flat().map((i) => i.code);
+    expect(pending).toEqual(['component-overflow']);
+    expect(derived.incompleteCount.value).toBe(1);
     // No trace beyond what "Open zip" leaves: one local project, no remembered folder.
     await app.closeProject();
     expect(app.recentProjects.value.map((r) => r.kind)).toEqual(['local']);
@@ -947,6 +961,10 @@ describe('project with inconsistent data', () => {
     // (the controller was loaded again in `load()`: the record is the one of its copy)
     const report = await import('../../src/utils/report');
     expect(report.reportedErrors.value.map((e) => e.context)).toContain('open.repair');
+    // R7.2: the Diagnostics line follows the language (en-US here), not a fixed Portuguese text.
+    expect(
+      report.reportedErrors.value.find((e) => e.context === 'open.repair')?.message,
+    ).toMatch(/^\d+ repair\(s\): /);
 
     session.actions.renameProject('Repaired');
     await session.flush();

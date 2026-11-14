@@ -56,7 +56,6 @@ describe('CSP of index.html (build)', () => {
   });
 
   it("the profiles are not mixed up: each one rejects the other's policy", () => {
-    // pt-BR kept: messages emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(injectCsp(BUILT, 'static'), 'app')).toEqual(
       expect.arrayContaining([
         expect.stringContaining('diretiva img-src'),
@@ -64,7 +63,6 @@ describe('CSP of index.html (build)', () => {
         expect.stringContaining('diretiva trusted-types'),
       ]),
     );
-    // pt-BR kept: messages emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(injectCsp(BUILT, 'app'), 'static')).toEqual(
       expect.arrayContaining([
         expect.stringContaining('diretiva img-src'),
@@ -110,7 +108,6 @@ describe('CSP of index.html (build)', () => {
       'console.log("hi")',
       'console.log("changed")',
     );
-    // pt-BR kept: messages emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(html, 'app')).toEqual(
       expect.arrayContaining([
         expect.stringContaining('bloco <script> embutido sem hash'),
@@ -174,10 +171,9 @@ describe('CSP of index.html (build)', () => {
       '<div id="app"></div>',
       '<div id="app" style="color:red" onclick="x()"></div>',
     );
-    // pt-BR kept: messages emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(attrs, 'app')).toEqual([
-      expect.stringContaining('atributo style'),
-      expect.stringContaining('handler inline'),
+      expect.stringContaining('style="" attribute'),
+      expect.stringContaining('inline handler'),
     ]);
   });
 

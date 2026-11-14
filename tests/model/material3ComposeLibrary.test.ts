@@ -1065,3 +1065,11 @@ describe('reading direction and anchor in the Material 3 (Compose) library (R5, 
     });
   });
 });
+
+describe('Material 3 (Compose) library: preview text of the text field', () => {
+  it('draws the label in English, like the specialization (R9: "Name", not "Nome")', () => {
+    const entry = files.find((f) => f.path.endsWith('components/text-field.json'));
+    const component = JSON.parse(entry?.text ?? '{}') as { preview?: { label?: string } };
+    expect(component.preview?.label).toBe('Name');
+  });
+});

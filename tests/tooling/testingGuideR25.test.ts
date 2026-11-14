@@ -63,8 +63,8 @@ function onlyVersionErrors(
 describe('R25.22 and R25.23: the guide tokens.mjs merges the package tokens', () => {
   const ok = copyPackage('m3-tokens');
   execFileSync('node', [tokensMjs, ok]);
-  const failing = copyPackage('m3-tokens-erro');
-  execFileSync('node', [tokensMjs, failing, 'erro']);
+  const failing = copyPackage('m3-tokens-error');
+  execFileSync('node', [tokensMjs, failing, 'error']);
   const v14 = copyPackage('m3-tokens-v14');
   execFileSync('node', [tokensMjs, v14]);
   editJson(join(v14, 'material3-compose.spec.json'), (s) => {
@@ -79,7 +79,7 @@ describe('R25.22 and R25.23: the guide tokens.mjs merges the package tokens', ()
     // Validates the whole package (229 examples): takes over 5 s with coverage on in CI.
   }, 30_000);
 
-  it('m3-tokens-erro: exactly the two errors of card.json', () => {
+  it('m3-tokens-error: exactly the two errors of card.json', () => {
     const report = validate(failing);
     expect(report.ok).toBe(false);
     expect(report.errors.map((e) => e.file)).toEqual([
@@ -87,7 +87,7 @@ describe('R25.22 and R25.23: the guide tokens.mjs merges the package tokens', ()
       'components/card.json',
     ]);
     expect(report.errors.map((e) => e.message).sort()).toEqual([
-      'the token "inexistente" does not exist in the specialization tokens',
+      'the token "missing" does not exist in the specialization tokens',
       'the token "primary" is a color, but a number is expected here',
     ]);
   }, 30_000);

@@ -46,6 +46,10 @@
   padding: 0 var(--space-2);
 }
 
+.icon-button-text {
+  white-space: nowrap;
+}
+
 .segmented-item {
   border-radius: 0;
 }

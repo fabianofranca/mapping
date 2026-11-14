@@ -43,7 +43,7 @@ function setup() {
   const base = createProject({
     name: 'P',
     now: NOW,
-    firstLayer: { id: 'L1', name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: 'L1', name: 'Layer 1', color: '#D32F2F' },
   });
   const after = addLayer(base, { id: 'L2', name: 'New', color: '#112233' });
   const proposal = buildProposal(base, after, {
@@ -171,7 +171,7 @@ describe('reservedImages', () => {
     const base = createProject({
       name: 'P',
       now: NOW,
-      firstLayer: { id: 'L1', name: 'Camada 1', color: '#D32F2F' },
+      firstLayer: { id: 'L1', name: 'Layer 1', color: '#D32F2F' },
     });
     let after = base;
     for (const [id, file] of [

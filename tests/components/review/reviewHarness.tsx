@@ -49,7 +49,7 @@ export function firstImport() {
   const base = createProject({
     name: 'Importação',
     now: AT,
-    firstLayer: { id: 'L1', name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: 'L1', name: 'Layer 1', color: '#D32F2F' },
   });
   let after = addLayer(base, { id: 'L2', name: 'Eventos', color: '#1E88E5' });
   after = addContainer(after, {

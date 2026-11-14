@@ -179,7 +179,7 @@ function UnassignedRow({
     <div class="linked-role-row linked-role-missing" data-role-row-missing="">
       <span class="linked-role-name">
         {t('typed.linkedNoRole', {
-          label: (byRole.label ?? t('typed.roleDefaultLabel')).toLowerCase(),
+          label: byRole.label ?? t('typed.roleDefaultLabel'),
         })}
         :
       </span>

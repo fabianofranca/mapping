@@ -82,7 +82,7 @@ beforeAll(async () => {
   let p = createProject({
     name: 'Telas',
     now: NOW,
-    firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
   });
   p = addContainer(p, { id: PHOTO, file: 'images/foto.png', width: 800, height: 600 });
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'lib.spec.json' });

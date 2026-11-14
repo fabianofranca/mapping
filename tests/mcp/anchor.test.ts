@@ -68,7 +68,7 @@ function project(): Project {
   let p = createProject({
     name: 'Screens',
     now: NOW,
-    firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
   });
   p = addContainer(p, { id: IMAGE, file: 'images/photo.png', width: 600, height: 400 });
   p = applySpecialization(p, tipSpec(), { packageSpecName: 'tip.spec.json' });

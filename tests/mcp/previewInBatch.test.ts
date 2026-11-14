@@ -55,7 +55,7 @@ function baseProject(): Project {
   const p = createProject({
     name: 'Telas',
     now: NOW,
-    firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
   });
   return addContainer(p, { id: PHOTO, file: 'images/foto.png', width: 400, height: 300 });
 }

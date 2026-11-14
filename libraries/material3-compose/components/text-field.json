@@ -35,7 +35,7 @@
     }
   },
   "preview": {
-    "label": "Nome",
+    "label": "Name",
     "value": "Maria Silva",
     "placeholder": "",
     "supportingText": "",

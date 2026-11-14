@@ -356,7 +356,10 @@ function describeRepairs(records: readonly RepairRecord[]): string {
 async function openRepaired(target: OpenTarget, { repair, text }: InconsistentLoad) {
   reportError(
     'open.repair',
-    `${repair.repaired.length} reparo(s): ${describeRepairs(repair.repaired)}`,
+    t('open.repairLog', {
+      count: repair.repaired.length,
+      repairs: describeRepairs(repair.repaired),
+    }),
   );
   return openLoaded(target, repair.project, {
     readOnly: repair.readOnly,

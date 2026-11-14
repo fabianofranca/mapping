@@ -71,7 +71,7 @@ beforeAll(async () => {
   let p = createProject({
     name: 'Screens',
     now: NOW,
-    firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
   });
   p = addContainer(p, { id: PHOTO, file: 'images/photo.png', width: 400, height: 300 });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));

@@ -124,7 +124,7 @@ beforeAll(async () => {
   let p = createProject({
     name: 'Screens',
     now: NOW,
-    firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
   });
   p = addContainer(p, {
     id: 'dddddddd-0000-4000-8000-000000000001',

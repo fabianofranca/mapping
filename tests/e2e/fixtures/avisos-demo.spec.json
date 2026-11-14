@@ -2,7 +2,7 @@
   "format": "mapping-spec",
   "formatVersion": 10,
   "id": "avisos-demo",
-  "name": "Avisos Demo",
+  "name": "Notices Demo",
   "version": 1,
   "platforms": [
     {
@@ -19,61 +19,65 @@
       "color": "#1E88E5",
       "annotationTypes": [
         {
-          "id": "legado",
-          "name": "Legado",
-          "code": { "demo": { "symbol": "Legado" } },
-          "notices": [{ "kind": "removed", "message": "Saiu do contrato; use Cartao." }],
-          "fields": [{ "key": "titulo", "type": "string" }]
+          "id": "legacy",
+          "name": "Legacy",
+          "code": { "demo": { "symbol": "Legacy" } },
+          "notices": [
+            { "kind": "removed", "message": "Removed from the contract; use Card." }
+          ],
+          "fields": [{ "key": "heading", "type": "string" }]
         },
         {
-          "id": "cartao",
-          "name": "Cartao",
-          "code": { "demo": { "symbol": "Cartao" } },
+          "id": "card",
+          "name": "Card",
+          "code": { "demo": { "symbol": "Card" } },
           "notices": [
             {
               "kind": "pending",
-              "message": "O contrato aceita avatar; o SDK ainda não.",
+              "message": "The contract accepts avatar; the SDK does not yet.",
               "since": "2026-11-04",
-              "ref": "contrato/cartao.md"
+              "ref": "contract/card.md"
             }
           ],
           "fields": [
             {
-              "key": "estilo",
+              "key": "style",
               "type": "string",
-              "notices": [{ "kind": "deprecated", "message": "Use variante." }]
+              "notices": [{ "kind": "deprecated", "message": "Use variant." }]
             },
             {
-              "key": "variante",
+              "key": "variant",
               "type": "string",
               "notices": [
-                { "kind": "diverges", "message": "As fontes discordam do padrão." }
+                { "kind": "diverges", "message": "The sources disagree on the default." }
               ]
             },
             {
-              "key": "itens",
+              "key": "items",
               "type": "table",
               "columns": [
                 {
-                  "key": "rotulo",
+                  "key": "label",
                   "type": "string",
-                  "notices": [{ "kind": "pending", "message": "Coluna ainda sem SDK." }]
+                  "notices": [
+                    { "kind": "pending", "message": "Column not in the SDK yet." }
+                  ]
                 },
-                { "key": "valor", "type": "string" }
+                { "key": "value", "type": "string" }
               ]
             }
           ]
         },
         {
-          "id": "simples",
-          "name": "Simples",
-          "code": { "demo": { "symbol": "Simples" } },
+          "id": "simple",
+          "name": "Simple",
+          "code": { "demo": { "symbol": "Simple" } },
           "fields": [
-            { "key": "texto", "type": "string" },
+            { "key": "text", "type": "string" },
             {
-              "key": "rascunho",
+              "key": "draft",
               "type": "string",
-              "notices": [{ "kind": "removed", "message": "Campo fora do contrato." }]
+              "notices": [{ "kind": "removed", "message": "Field outside the contract." }]
             }
           ]
         }

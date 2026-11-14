@@ -19,7 +19,7 @@ describe('findProject with several roots', () => {
         createProject({
           name: 'Cadastro',
           now: NOW,
-          firstLayer: { id: 'L1', name: 'Camada 1', color: '#D32F2F' },
+          firstLayer: { id: 'L1', name: 'Layer 1', color: '#D32F2F' },
         }),
       ),
     );
