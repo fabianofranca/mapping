@@ -180,10 +180,7 @@ describe('AnnotationEditor — free annotation', () => {
     ]);
     expect(screen.queryByRole('alert')).toBeNull();
     expect(
-      screen
-        .getByLabelText('Key')
-        .closest('[data-entry]')
-        ?.getAttribute('aria-invalid'),
+      screen.getByLabelText('Key').closest('[data-entry]')?.getAttribute('aria-invalid'),
     ).toBeNull();
   });
 
@@ -266,7 +263,9 @@ describe('AnnotationEditor — type description', () => {
           layers: entry.spec.layers.map((layer) => ({
             ...layer,
             annotationTypes: layer.annotationTypes.map((type) =>
-              type.id === 'button' ? { ...type, description: 'Triggers an action.' } : type,
+              type.id === 'button'
+                ? { ...type, description: 'Triggers an action.' }
+                : type,
             ),
           })),
         },

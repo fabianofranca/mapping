@@ -19,11 +19,12 @@ import { sampleProject } from '../model/fixtures';
 import { AGENT, HUMAN, message, sampleThread } from '../model/threadFixtures';
 import { createHarness } from './harness';
 
-// Apagar conversa (#959, decisão 7): o resultado da action aparece; o diálogo só fecha no sucesso.
+// Delete thread (#959, decision 7): the action result is shown; the dialog only closes on success.
 
 beforeEach(() => {
   localStorage.clear();
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
+  // pt-BR kept: shared fixture data (HUMAN author of threadFixtures) asserted by tests/
   setIdentity('Marina Alves', 'marina@exemplo.com');
 });
 afterEach(() => {
@@ -34,13 +35,13 @@ afterEach(() => {
 
 const own = sampleThread({
   id: 'own',
-  messages: [message('m0', '2026-09-01T10:00:00.000Z', HUMAN, 'minha')],
+  messages: [message('m0', '2026-09-01T10:00:00.000Z', HUMAN, 'mine')],
 });
 const mixed = sampleThread({
   id: 'mixed',
   messages: [
-    message('m0', '2026-09-01T10:00:00.000Z', HUMAN, 'minha'),
-    message('m1', '2026-09-01T11:00:00.000Z', AGENT, 'do agente'),
+    message('m0', '2026-09-01T10:00:00.000Z', HUMAN, 'mine'),
+    message('m1', '2026-09-01T11:00:00.000Z', AGENT, 'from the agent'),
   ],
 });
 
@@ -71,8 +72,8 @@ function setup(
   };
 }
 
-describe('useDeleteThread: falha ao apagar', () => {
-  it('com confirmação: o diálogo fica aberto com o erro e o botão volta a funcionar', async () => {
+describe('useDeleteThread: delete failure', () => {
+  it('with confirmation: the dialog stays open with the error and the button works again', async () => {
     const s = setup({ ok: false, error: 'write-failed' });
     s.request(mixed);
     fireEvent.click(
@@ -93,14 +94,14 @@ describe('useDeleteThread: falha ao apagar', () => {
     expect(s.remove).toHaveBeenCalledWith('mixed');
   });
 
-  it('direto: o aviso aparece junto do hook', async () => {
+  it('direct: the notice appears next to the hook', async () => {
     const s = setup({ ok: false, error: 'gone' });
     s.request(own);
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(s.remove).toHaveBeenCalledWith('own');
   });
 
-  it('com confirmação e sucesso: o diálogo fecha, sem aviso', async () => {
+  it('with confirmation and success: the dialog closes, without a notice', async () => {
     const s = setup({ ok: true });
     s.request(mixed);
     fireEvent.click(

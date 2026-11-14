@@ -52,9 +52,7 @@ describe('R4.5: rejecting the creation with a dependent annotation', () => {
     // Canvas corner notice: `review.undo.rejected` + `review.undo.cascaded`.
     const corner = within(screen.getByTestId('corner'));
     expect(
-      corner.getByText(
-        /change\(s\) rejected\..*changed along, by the dependencies\./,
-      ),
+      corner.getByText(/change\(s\) rejected\..*changed along, by the dependencies\./),
     ).toBeTruthy();
 
     // Details header notice: `review.panel.together.rejected`, with the name and Undo.

@@ -167,8 +167,8 @@ describe('"from the thread" in the proposal row', () => {
     const early = proposalThread('tp1', 'P1', 'First', '2026-11-05T09:00:00.000Z');
     await mount([late, early]);
     const row = screen.getByRole('listitem');
-    expect(within(row).getByRole('button', { name: /, citation$/ }).textContent).toContain(
-      'First',
-    );
+    expect(
+      within(row).getByRole('button', { name: /, citation$/ }).textContent,
+    ).toContain('First');
   });
 });

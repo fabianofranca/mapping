@@ -43,7 +43,7 @@ describe('List and inherited (AnnotationLines)', () => {
     ));
     expect(
       Array.from(document.querySelectorAll('.list-entry')).map((l) => l.textContent),
-    // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
+      // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
     ).toEqual(['nome: Cadastro', 'rota: /cadastro']);
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
@@ -130,9 +130,7 @@ describe('Details: type "Definition" line (code.<platform>.path)', () => {
       />
     ));
     expect(screen.queryByRole('link')).toBeNull();
-    expect(screen.getAllByRole('button', { name: /^Copy path/ })).not.toHaveLength(
-      0,
-    );
+    expect(screen.getAllByRole('button', { name: /^Copy path/ })).not.toHaveLength(0);
   });
 
   it('also appears with a read-only project (there is nothing to edit)', () => {

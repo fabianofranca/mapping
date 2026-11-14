@@ -48,9 +48,7 @@ describe('MenuPopover: complete menu', () => {
       'Export',
       'Close',
     ]);
-    expect(document.activeElement).toBe(
-      screen.getByRole('menuitem', { name: 'Export' }),
-    );
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Export' }));
   });
 
   it('↓ and ↑ cycle through the enabled ones', async () => {
@@ -60,9 +58,7 @@ describe('MenuPopover: complete menu', () => {
     await user.keyboard('{ArrowDown}');
     expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Close' }));
     await user.keyboard('{ArrowDown}');
-    expect(document.activeElement).toBe(
-      screen.getByRole('menuitem', { name: 'Export' }),
-    );
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Export' }));
     await user.keyboard('{ArrowUp}');
     expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Close' }));
   });

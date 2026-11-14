@@ -10,6 +10,7 @@ import { showReviewPanel } from './reviewHarness';
 // SA1 (stage #347, decision 3): every button with visible text has an accessible name that
 // starts with that text ("<visible>: <target>"), for voice control (WCAG 2.5.3). The state
 // stays only in `aria-pressed`; the conflict goes into the description.
+// pt-BR kept: shared fixture data asserted by tests/store (names Porta and Porta dianteira from richScenario)
 
 beforeEach(() => {
   locale.value = 'en-US';
@@ -58,7 +59,7 @@ describe('accessible names in the review', () => {
 
   it('conflict: "Overwrite" starts the name and the effect goes into the description', async () => {
     const { proposal } = richScenario();
-    const edited = renameMarking(sampleProject(), 'M1', 'Topo');
+    const edited = renameMarking(sampleProject(), 'M1', 'Top');
     await showReviewPanel(
       { project: edited, proposals: [proposal] },
       { level: 'item', id: 'M1' },
@@ -68,9 +69,9 @@ describe('accessible names in the review', () => {
     );
     const pop = screen.getByRole('dialog');
     const overwrite = within(pop).getByRole('button', { name: /^Overwrite/ });
-    expect(describedText(overwrite)).toContain('overwrites Topo with Porta dianteira');
+    expect(describedText(overwrite)).toContain('overwrites Top with Porta dianteira');
     const keep = within(pop).getByRole('button', { name: /^Keep current/ });
-    expect(describedText(keep)).toContain('keeps Topo');
+    expect(describedText(keep)).toContain('keeps Top');
   });
 });
 

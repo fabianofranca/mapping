@@ -14,14 +14,14 @@ import { libraryHarness } from './libraryHarness';
 import { viewOf } from '../store/perspectiveHarness';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// Detalhes com perspectivas (etapa #659, PE3, frente C2): a seção Perspectivas, o aviso da marca
-// "Veio de…", o selo "fora desta perspectiva" em Ligado por seta e o "só na Principal" de Arrumar
-// e Excluir. Mundo: I1 (com M1 › M2 › M3) e I2 (com M4) são as raízes; a perspectiva V mostra só
-// I1; a W mostra só I2.
+// Details with perspectives (stage #659, PE3, front C2): the Perspectives section, the notice of the
+// "Came from…" mark, the "outside this perspective" badge in Linked by arrow and the "Main only" of Arrange
+// and Delete. World: I1 (with M1 › M2 › M3) and I2 (with M4) are the roots; perspective V shows only
+// I1; W shows only I2.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
-  // A perspectiva aberta fica guardada por projeto neste navegador: cada teste começa na Principal.
+  locale.value = 'en-US';
+  // The open perspective is kept per project in this browser: each test starts on Main.
   localStorage.clear();
 });
 afterEach(cleanup);
@@ -31,11 +31,11 @@ function world(arrivals: readonly Arrival[] = []): Project {
   const v = viewOf(base, { id: 'V', root: 'I1', at: { x: 0, y: 0 } });
   const w = {
     ...viewOf(base, { id: 'W', root: 'I2', at: { x: 0, y: 0 } }),
-    name: 'Outra',
+    name: 'Other',
   };
   return {
     ...createArrow(base, { id: 'R1', from: 'M1', to: 'M4' }),
-    perspectives: [{ ...v, name: 'Vista' }, w],
+    perspectives: [{ ...v, name: 'View' }, w],
     arrivals,
   };
 }
@@ -75,29 +75,29 @@ const open = (h: Harness, id: string | null) => {
   expect(h.context.session.perspective.open(id)).toBe(true);
 };
 
-describe('Detalhes — seção Perspectivas', () => {
-  it('lista a Principal e as perspectivas em que a raiz aparece', () => {
+describe('Details — Perspectives section', () => {
+  it('lists Main and the perspectives in which the root appears', () => {
     const h = createHarness(world());
     panels(h, { image: 'I1' });
     const body = within(section()!);
     expect(body.getByText(t('perspective.principal'))).toBeTruthy();
-    expect(body.getByText('Vista')).toBeTruthy();
-    expect(body.queryByText('Outra')).toBeNull();
+    expect(body.getByText('View')).toBeTruthy();
+    expect(body.queryByText('Other')).toBeNull();
   });
 
-  it('item que não é raiz mostra onde a raiz dele aparece', () => {
+  it('an item that is not a root shows where its root appears', () => {
     const h = createHarness(world());
     panels(h, { marking: 'M3' });
-    expect(within(section()!).getByText('Vista')).toBeTruthy();
+    expect(within(section()!).getByText('View')).toBeTruthy();
   });
 
-  it('Enviar para perspectiva… envia a raiz; marcada, tira', async () => {
+  it('Send to perspective… sends the root; when checked, removes it', async () => {
     const h = createHarness(world());
     const user = panels(h, { image: 'I1' });
     await user.click(
       within(section()!).getByRole('button', { name: t('perspective.section.send') }),
     );
-    await user.click(screen.getByRole('menuitemcheckbox', { name: /Outra/ }));
+    await user.click(screen.getByRole('menuitemcheckbox', { name: /Other/ }));
     expect(
       h
         .project()
@@ -107,7 +107,7 @@ describe('Detalhes — seção Perspectivas', () => {
     await user.click(
       within(section()!).getByRole('button', { name: t('perspective.section.send') }),
     );
-    await user.click(screen.getByRole('menuitemcheckbox', { name: /Vista/ }));
+    await user.click(screen.getByRole('menuitemcheckbox', { name: /View/ }));
     expect(
       h
         .project()
@@ -116,7 +116,7 @@ describe('Detalhes — seção Perspectivas', () => {
     ).toBe(false);
   });
 
-  it('as linhas do menu são caixas (menuitemcheckbox) com aria-checked', async () => {
+  it('the menu rows are checkboxes (menuitemcheckbox) with aria-checked', async () => {
     const h = createHarness(world());
     open(h, 'V');
     const user = panels(h, { image: 'I1' });
@@ -131,13 +131,13 @@ describe('Detalhes — seção Perspectivas', () => {
       'true',
       'false',
     ]);
-    // ↓ continua andando entre os itens habilitados (só a "Outra").
+    // ↓ keeps moving between the enabled items (only "Other").
     expect(document.activeElement).toBe(
-      screen.getByRole('menuitemcheckbox', { name: /Outra/ }),
+      screen.getByRole('menuitemcheckbox', { name: /Other/ }),
     );
   });
 
-  it('a Principal e a perspectiva aberta ficam travadas no menu', async () => {
+  it('Main and the open perspective are locked in the menu', async () => {
     const h = createHarness(world());
     open(h, 'V');
     const user = panels(h, { image: 'I1' });
@@ -149,12 +149,12 @@ describe('Detalhes — seção Perspectivas', () => {
     });
     expect((principal as HTMLButtonElement).disabled).toBe(true);
     expect(
-      (screen.getByRole('menuitemcheckbox', { name: /Vista/ }) as HTMLButtonElement)
+      (screen.getByRole('menuitemcheckbox', { name: /View/ }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
   });
 
-  it('o gatilho do Enviar leva menu-popover-control e a classe .menu-trigger', () => {
+  it('the Send trigger carries menu-popover-control and the .menu-trigger class', () => {
     const h = createHarness(world());
     panels(h, { image: 'I1' });
     const trigger = within(section()!).getByRole('button', {
@@ -166,7 +166,7 @@ describe('Detalhes — seção Perspectivas', () => {
     ).toBe(true);
   });
 
-  it('o CSS dá ao gatilho a fonte, a altura e a borda do Button (só tokens)', () => {
+  it('the CSS gives the trigger the font, height and border of the Button (tokens only)', () => {
     const css = readFileSync('src/theme/editor.css', 'utf8');
     const rule =
       /\.menu-popover-control \.menu-trigger\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
@@ -175,7 +175,7 @@ describe('Detalhes — seção Perspectivas', () => {
     expect(rule).toContain('border: 1px solid var(--color-border-control);');
   });
 
-  it('somente leitura: o botão Enviar fica desabilitado', () => {
+  it('read-only: the Send button is disabled', () => {
     const h = createHarness(world(), true);
     panels(h, { image: 'I1' });
     const button = within(section()!).getByRole('button', {
@@ -185,45 +185,46 @@ describe('Detalhes — seção Perspectivas', () => {
   });
 });
 
-describe('Detalhes — aviso "Veio de…"', () => {
+describe('Details — "Came from…" notice', () => {
   const arrival = (root: string, fromName = 'Analytics'): Arrival => ({
     root,
     from: 'W',
     fromName,
   });
-  const notice = () => screen.queryByText(/Veio de Analytics\./);
+  const notice = () => screen.queryByText(/Came from Analytics\./);
 
-  it('sem info de sessão (depois de recarregar): só "Veio de X."', () => {
+  it('without session info (after reloading): only "Came from X."', () => {
     const h = createHarness(world([arrival('I1')]));
     panels(h, { image: 'I1' });
     expect(notice()).toBeTruthy();
-    expect(screen.queryByText(/Sem referência/)).toBeNull();
-    expect(screen.queryByText(/estava ocupado/)).toBeNull();
+    expect(screen.queryByText(/No reference/)).toBeNull();
+    expect(screen.queryByText(/was taken/)).toBeNull();
   });
 
-  it('sem info de sessão e sem seta para outra raiz: "Sem referência; foi para a área de chegada." (etapa #764, AP1)', () => {
+  it('without session info and without an arrow to another root: "No reference; it went to the arrival area." (stage #764, AP1)', () => {
     const h = createHarness({ ...world([arrival('I1')]), arrows: [] });
     panels(h, { image: 'I1' });
     expect(notice()).toBeTruthy();
     expect(document.body.textContent).toContain(t('perspective.arrival.area'));
   });
 
-  it('com seta para outra raiz a frase de "sem referência" não aparece, mesmo com info de área', () => {
+  it('with an arrow to another root the "no reference" sentence does not appear, even with area info', () => {
     const h = createHarness(world([arrival('I1')]));
     panels(h, { image: 'I1' });
     expect(document.body.textContent).not.toContain(t('perspective.arrival.area'));
   });
 
   it.each([
-    ['near', 'I2', 'Ficou perto de images/frente.jpg, na mesma distância.'],
+    // pt-BR kept: shared fixture data asserted by tests/model (file name images/frente.jpg of sampleProject)
+    ['near', 'I2', 'Stayed near images/frente.jpg, at the same distance.'],
     [
       'occupied',
       'I2',
-      'Ao lado de images/frente.jpg estava ocupado; ficou no espaço livre mais próximo.',
+      'Next to images/frente.jpg was taken; it went to the nearest free space.',
     ],
-    ['arrival-area', null, 'Sem referência; foi para a área de chegada.'],
-  ] as const)('explica o caso %s', (kind, referenceId, text) => {
-    // "Sem referência" vem das setas: o caso da área de chegada é o projeto sem seta entre raízes.
+    ['arrival-area', null, 'No reference; it went to the arrival area.'],
+  ] as const)('explains the %s case', (kind, referenceId, text) => {
+    // "No reference" comes from the arrows: the arrival area case is the project with no arrow between roots.
     const base = world([arrival('I1')]);
     const h = createHarness(kind === 'arrival-area' ? { ...base, arrows: [] } : base);
     h.context.session.perspective.arrivals.value = [
@@ -234,7 +235,7 @@ describe('Detalhes — aviso "Veio de…"', () => {
     expect(document.body.textContent).toContain(text);
   });
 
-  it('Dispensar tira a marca do projeto', async () => {
+  it('Dismiss removes the mark from the project', async () => {
     const h = createHarness(world([arrival('I1'), arrival('I2')]));
     const user = panels(h, { image: 'I1' });
     await user.click(
@@ -244,7 +245,7 @@ describe('Detalhes — aviso "Veio de…"', () => {
     expect(notice()).toBeNull();
   });
 
-  it('Próximo que veio (N) seleciona a próxima raiz com marca, em círculo', async () => {
+  it('Next one that came (N) selects the next root with a mark, in a circle', async () => {
     const h = createHarness(world([arrival('I1'), arrival('I2')]));
     const user = panels(h, { image: 'I1' });
     const next = screen.getByRole('button', {
@@ -254,48 +255,48 @@ describe('Detalhes — aviso "Veio de…"', () => {
     expect(h.ui.selection.value).toEqual({ kind: 'image', id: 'I2' });
   });
 
-  it('não aparece fora da Principal', () => {
+  it('does not appear outside Main', () => {
     const h = createHarness(world([arrival('I1')]));
     open(h, 'V');
     panels(h, { image: 'I1' });
     expect(notice()).toBeNull();
   });
 
-  it('item sem marca não mostra o aviso', () => {
+  it('an item without a mark does not show the notice', () => {
     const h = createHarness(world([arrival('I2')]));
     panels(h, { image: 'I1' });
     expect(notice()).toBeNull();
   });
 });
 
-describe('Detalhes — Ligado por seta fora da perspectiva', () => {
+describe('Details — Linked by arrow outside the perspective', () => {
   const outside = () => t('perspective.arrow.outside');
 
-  it('com perspectiva aberta, a outra ponta fora dela ganha o selo', () => {
+  it('with a perspective open, the other end outside it gets the badge', () => {
     const h = createHarness(world());
     open(h, 'V');
     panels(h, { marking: 'M1' });
     expect(screen.getByText(outside())).toBeTruthy();
   });
 
-  it('na Principal, sem selo', () => {
+  it('on Main, no badge', () => {
     const h = createHarness(world());
     panels(h, { marking: 'M1' });
     expect(screen.queryByText(outside())).toBeNull();
   });
 
-  it('outra ponta na mesma raiz (dentro da perspectiva): sem selo', () => {
+  it('other end on the same root (inside the perspective): no badge', () => {
     const base = world();
     const h = createHarness(createArrow(base, { id: 'R2', from: 'M1', to: 'M2' }));
     open(h, 'V');
     panels(h, { marking: 'M1' });
-    // Só a seta para M4 (fora de V) leva o selo; a para M2 (mesma raiz) não.
+    // Only the arrow to M4 (outside V) carries the badge; the one to M2 (same root) does not.
     expect(screen.getAllByText(outside())).toHaveLength(1);
   });
 });
 
-describe('Detalhes — Ligado por seta com o projeto à vista da perspectiva', () => {
-  it('a seta que sai para fora da perspectiva aparece, com o selo (caminho real do painel)', () => {
+describe('Details — Linked by arrow with the project as seen from the perspective', () => {
+  it("the arrow leaving the perspective appears, with the badge (the panel's real path)", () => {
     const h = createHarness(world());
     open(h, 'V');
     const shown = projectInPerspective(h.store.project.value!, 'V');
@@ -316,8 +317,8 @@ describe('Detalhes — Ligado por seta com o projeto à vista da perspectiva', (
   });
 });
 
-describe('Detalhes — só na Principal', () => {
-  /** Uma coluna com dois botões na I1 (Arrumar existe) e a perspectiva V mostrando a I1. */
+describe('Details — Main only', () => {
+  /** A column with two buttons on I1 (Arrange exists) and perspective V showing I1. */
   async function arrangeable(openId: string | null = null) {
     const h = await libraryHarness();
     const add = (typeId: string, parentId: string | null) => {
@@ -354,27 +355,27 @@ describe('Detalhes — só na Principal', () => {
     return h;
   }
 
-  it('na Principal, Arrumar vale', async () => {
+  it('on Main, Arrange is available', async () => {
     await arrangeable();
     const arrange = screen.getByRole('button', { name: t('arrange.action') });
     expect((arrange as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('numa perspectiva, Arrumar fica desabilitado com a dica', async () => {
+  it('in a perspective, Arrange is disabled with the hint', async () => {
     await arrangeable('V');
     const arrange = screen.getByRole('button', { name: t('arrange.action') });
     expect((arrange as HTMLButtonElement).disabled).toBe(true);
     expect(document.body.textContent).toContain(t('perspective.principalOnly'));
   });
 
-  it('na Principal, Excluir uma marcação vale', () => {
+  it('on Main, Deleting a marking is available', () => {
     const h = createHarness(world());
     panels(h, { marking: 'M1' });
     const del = screen.getByRole('button', { name: t('marking.delete') });
     expect((del as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('numa perspectiva, excluir um container raiz fica desabilitado com a dica', () => {
+  it('in a perspective, deleting a root container is disabled with the hint', () => {
     const h = createHarness(world());
     open(h, 'V');
     panels(h, { image: 'I1' });
@@ -383,7 +384,7 @@ describe('Detalhes — só na Principal', () => {
     expect(del.getAttribute('title')).toBe(t('perspective.principalOnly'));
   });
 
-  it('numa perspectiva, excluir marcação que não é raiz continua valendo', () => {
+  it('in a perspective, deleting a non-root marking is still available', () => {
     const h = createHarness(world());
     open(h, 'V');
     panels(h, { marking: 'M3' });

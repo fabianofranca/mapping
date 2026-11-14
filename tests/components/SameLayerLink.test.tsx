@@ -10,11 +10,11 @@ import { ListView } from '../../src/ui/ListView';
 import { add, sameLayerProject } from '../model/sameLayerFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
 
-// VC3: o vínculo na mesma camada (formatVersion 13) na interface. O resolvedor e
-// `validAnnotationOwners` já decidem; a interface só lê. Estes testes confirmam isso.
+// VC3: the same-layer link (formatVersion 13) in the interface. The resolver and
+// `validAnnotationOwners` already decide; the interface only reads. These tests confirm that.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -45,20 +45,21 @@ function setup(project: Project, annotationId: string) {
   return { harness, user: userEvent.setup() };
 }
 
-const ownerSelect = () => screen.getByLabelText('Vinculada a') as HTMLSelectElement;
+const ownerSelect = () => screen.getByLabelText('Linked to') as HTMLSelectElement;
 const ownerValues = () => [...ownerSelect().options].map((o) => o.value);
 const children = (row: HTMLElement) => [...row.querySelectorAll('.link-button')];
 const openDialog = () => document.querySelector('dialog') as HTMLElement;
 
-describe('Vincular a … — evento dono na mesma camada', () => {
-  it('oferece os tipos da própria camada, inclusive o do dono, e cria o filho no papel escolhido', async () => {
+describe('Link to … — owner event on the same layer', () => {
+  it("offers the types of its own layer, including the owner's, and creates the child in the chosen role", async () => {
     const { harness, user } = setup(chainProject(), 'R1');
     const before = harness.project().annotations.length;
     const row = document.querySelector('[data-role-row="onFailure"]') as HTMLElement;
-    await user.click(within(row).getByRole('button', { name: '+ Vincular…' }));
+    await user.click(within(row).getByRole('button', { name: '+ Link…' }));
     const dialog = openDialog();
+    // pt-BR kept: shared fixture data asserted by tests/model (role name "Falha" of sameLayerFixtures)
     expect(
-      within(dialog).getByRole('heading', { name: 'Vincular a Request › Falha' }),
+      within(dialog).getByRole('heading', { name: 'Link to Request › Falha' }),
     ).toBeTruthy();
     for (const name of [/^onClick/, /^navigate/]) {
       expect(within(dialog).getByRole('button', { name, hidden: true })).toBeTruthy();
@@ -77,18 +78,19 @@ describe('Vincular a … — evento dono na mesma camada', () => {
   });
 });
 
-describe('Vinculadas — evento dono', () => {
-  it('lista os filhos por papel, na ordem do array', () => {
+describe('Linked — owner event', () => {
+  it('lists the children by role, in the array order', () => {
     setup(chainProject(), 'R1');
     const rows = [...document.querySelectorAll<HTMLElement>('[data-role-row]')];
     expect(rows.map((r) => r.dataset.roleRow)).toEqual(['onSuccess', 'onFailure']);
+    // pt-BR kept: shared fixture data asserted by tests/model (role names of sameLayerFixtures)
     expect(within(rows[0] as HTMLElement).getByText('Sucesso:')).toBeTruthy();
     expect(within(rows[1] as HTMLElement).getByText('Falha:')).toBeTruthy();
     expect(children(rows[0] as HTMLElement)).toHaveLength(2);
     expect(children(rows[1] as HTMLElement)).toHaveLength(1);
   });
 
-  it('a cadeia de dois níveis aparece em cada dono', () => {
+  it('the two-level chain appears on each owner', () => {
     let p = chainProject();
     p = add(p, 'R5', 'request', 'R2', 'onFailure');
     const { harness } = setup(p, 'R2');
@@ -104,15 +106,15 @@ describe('Vinculadas — evento dono', () => {
   });
 });
 
-describe('Vinculada a — dona da mesma camada', () => {
-  it('lista a dona da mesma camada quando o tipo aceita', () => {
+describe('Linked to — owner on the same layer', () => {
+  it('lists the owner of the same layer when the type accepts', () => {
     setup(chainProject(), 'R2');
-    // R2 é um request: aceitam request a camada eventos inteira (R1, R3, R4) e o onClick (E1).
+    // R2 is a request: the whole events layer (R1, R3, R4) and the onClick (E1) accept request.
     expect(ownerValues()).toEqual(['', 'E1', 'R1', 'R3', 'R4']);
   });
 
-  it('não lista a que não aceita o tipo', () => {
-    // Aqui o request só aceita navigate: um request não pode ser dono de outro.
+  it('does not list the one that does not accept the type', () => {
+    // Here the request only accepts navigate: a request cannot own another.
     let p = sameLayerProject(13, (s) => {
       s.layers[1].annotationTypes[1].allowedChildren = ['navigate'];
     });
@@ -124,10 +126,10 @@ describe('Vinculada a — dona da mesma camada', () => {
     expect(ownerValues()).toEqual(['', 'E1']);
   });
 
-  it('numa anotação livre, só as de outras camadas (decisão 3)', () => {
-    let p = addLayer(chainProject(), { id: 'LL', name: 'Livre', color: '#abcdef' });
-    p = addAnnotation(p, { id: 'F1', markingId: 'M1', layerId: 'LL', name: 'um' });
-    p = addAnnotation(p, { id: 'F2', markingId: 'M1', layerId: 'LL', name: 'dois' });
+  it('on a free annotation, only those of other layers (decision 3)', () => {
+    let p = addLayer(chainProject(), { id: 'LL', name: 'Free', color: '#abcdef' });
+    p = addAnnotation(p, { id: 'F1', markingId: 'M1', layerId: 'LL', name: 'one' });
+    p = addAnnotation(p, { id: 'F2', markingId: 'M1', layerId: 'LL', name: 'two' });
     setup(p, 'F2');
     const values = ownerValues();
     expect(values).toContain('R1');
@@ -135,7 +137,9 @@ describe('Vinculada a — dona da mesma camada', () => {
     expect(values).not.toContain('F1');
   });
 
-  it('a dica e o estado vazio dizem que a tipada pode ter dona da mesma camada (pt-BR)', () => {
+  it('the hint and the empty state say the typed one can have an owner of the same layer (pt-BR)', () => {
+    locale.value = 'pt-BR';
+    // pt-BR kept: the object of the test is the Portuguese dictionary text
     expect(t('annotation.ownerHelp')).toBe(
       'Só aparecem anotações desta mesma marcação. Nas tipadas, a dona pode ser de outra camada ou da mesma, quando o tipo dela aceita este; nas livres, só de outras camadas.',
     );
@@ -144,7 +148,7 @@ describe('Vinculada a — dona da mesma camada', () => {
     );
   });
 
-  it('os mesmos textos em inglês (en-US)', () => {
+  it('the same texts in English (en-US)', () => {
     locale.value = 'en-US';
     expect(t('annotation.ownerHelp')).toBe(
       'Only annotations of this same marking appear. For typed ones the owner can be in another layer or in the same one, when its type accepts this one; free ones only link to other layers.',
@@ -155,8 +159,8 @@ describe('Vinculada a — dona da mesma camada', () => {
   });
 });
 
-describe('Lista — filho da mesma camada', () => {
-  it('mostra "↳ de …" com o papel, como mostra o de outra camada', () => {
+describe('List — child of the same layer', () => {
+  it('shows "↳ of …" with the role, as it does for the other layer\'s', () => {
     const harness = createHarness(chainProject());
     render(
       <EditorContext.Provider value={harness.context}>
@@ -166,9 +170,9 @@ describe('Lista — filho da mesma camada', () => {
     const owned = [...document.querySelectorAll('.list-linked')].map(
       (e) => e.textContent,
     );
-    expect(owned.some((x) => /^↳ de .*\(Sucesso\)$/.test(x ?? ''))).toBe(true);
-    expect(owned.some((x) => /^↳ de .*\(Falha\)$/.test(x ?? ''))).toBe(true);
-    // E1 é de outra camada que A1 e aparece igual, sem papel.
-    expect(owned.filter((x) => /^↳ de [^(]*$/.test(x ?? '')).length).toBeGreaterThan(0);
+    expect(owned.some((x) => /^↳ of .*\(Sucesso\)$/.test(x ?? ''))).toBe(true);
+    expect(owned.some((x) => /^↳ of .*\(Falha\)$/.test(x ?? ''))).toBe(true);
+    // E1 is on another layer than A1 and appears the same, without a role.
+    expect(owned.filter((x) => /^↳ of [^(]*$/.test(x ?? '')).length).toBeGreaterThan(0);
   });
 });

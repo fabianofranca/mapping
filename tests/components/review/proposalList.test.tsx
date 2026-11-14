@@ -130,17 +130,16 @@ describe('Proposals window: list', () => {
     });
     expect(screen.getAllByText('New')).toHaveLength(1);
     expect(screen.getByRole('button', { name: '1 new proposal(s)' })).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'Review: Fixes' }).className,
-    ).not.toContain('button-primary');
+    expect(screen.getByRole('button', { name: 'Review: Fixes' }).className).not.toContain(
+      'button-primary',
+    );
   });
 
   it('applied with a single change says "1 change applied" (singular)', async () => {
     const { base, proposal } = richScenario();
     const accepted = decided(proposal, base, { level: 'proposal', id: null }, 'accepted');
     const [first, ...rest] = accepted.changes;
-    if (!first || rest.length === 0)
-      throw new Error('scenario needs several changes');
+    if (!first || rest.length === 0) throw new Error('scenario needs several changes');
     const one: Proposal = {
       ...accepted,
       status: 'applied',
@@ -157,9 +156,7 @@ describe('Proposals window: list', () => {
     };
     const h2 = await openReviewHarness({ proposals: [many] });
     renderInEditor(h2, <ProposalList onHelp={noop} onScan={noop} />);
-    expect(
-      screen.getByText(`${accepted.changes.length} changes applied`),
-    ).toBeTruthy();
+    expect(screen.getByText(`${accepted.changes.length} changes applied`)).toBeTruthy();
   });
 
   // Finding 13 (app part): a proposal already reviewed and applied does not change status when
@@ -347,7 +344,9 @@ describe('delete proposal from the ⋯ menu (phase 9.2)', () => {
     expect(body?.textContent).toContain('"Already applied"');
     expect(body?.textContent).toContain('This cannot be undone');
     // The applied one warns that the project does not lose the changes already applied.
-    expect(body?.textContent).toContain('The changes already applied stay in the project');
+    expect(body?.textContent).toContain(
+      'The changes already applied stay in the project',
+    );
 
     await user.click(
       within(dialog).getByRole('button', { name: 'Cancel', hidden: true }),

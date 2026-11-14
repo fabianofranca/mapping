@@ -360,6 +360,7 @@ describe('Diagnostics: file not found in en-US', () => {
 });
 
 describe('Diagnostics: example with table rows (decision 24 of #897)', () => {
+  // pt-BR kept: raw pt-BR fallback messages of the issues; the pt-BR test asserts them as rendered
   const issues = new Map([
     [
       'tabs',
@@ -419,6 +420,7 @@ describe('Diagnostics: example with table rows (decision 24 of #897)', () => {
     // pt-BR kept: the pt-BR rendering of the four example problems is the object of this test
     locale.value = 'pt-BR';
     renderList();
+    // pt-BR kept: the pt-BR rendering is the object of this test
     expect(screen.getByText('campo "table" aceita só a lista de linhas')).toBeTruthy();
     expect(screen.getByText('"nada" não é coluna de "rows"')).toBeTruthy();
     expect(screen.getByText('deve ser um objeto (coluna → valor)')).toBeTruthy();

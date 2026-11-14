@@ -118,7 +118,9 @@ describe('Arrow Details', () => {
     expect(arrowOf(harness.project()).locked).toBe(true);
     // Decision 8 of #353: no notice under the header; the help icon next to the padlock.
     expect(document.querySelector('.notice')).toBeNull();
-    const help = screen.getByRole('button', { name: t('help.about', { name: t('lock.helpName') }) });
+    const help = screen.getByRole('button', {
+      name: t('help.about', { name: t('lock.helpName') }),
+    });
     expect(descriptionOf(help)).toBe(t('arrow.lockNotice'));
     // The icon and the padlock stay together at any width (a single block that does not wrap).
     const lockButton = screen.getByRole('button', { name: t('arrow.lock') });

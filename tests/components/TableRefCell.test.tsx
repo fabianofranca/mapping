@@ -58,9 +58,10 @@ describe('TableField: ref column cell', () => {
     expect(cellButton().getAttribute('aria-label')).toBe('Choose: Alvo (Row 1)');
     expect(cellButton().className).toContain('is-empty');
     expect(screen.getByRole('columnheader', { name: 'Alvo *' })).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'Clear (Alvo (Row 1))' }),
-    ).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Clear (Alvo (Row 1))' })).toHaveProperty(
+      'disabled',
+      true,
+    );
   });
 
   it('opens the compact picker: column title, only the accepted targets, without the shortcut bar', async () => {
@@ -175,9 +176,10 @@ describe('TableField: ref column cell', () => {
   it('read-only: the cell and Clear are disabled', () => {
     setup(setTableCell(build(), 'AL', 'alvos', 'L1', 'alvo', R1), true);
     expect(cellButton()).toHaveProperty('disabled', true);
-    expect(
-      screen.getByRole('button', { name: 'Clear (Alvo (Row 1))' }),
-    ).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Clear (Alvo (Row 1))' })).toHaveProperty(
+      'disabled',
+      true,
+    );
   });
 
   it('an empty required column shows as invalid', () => {

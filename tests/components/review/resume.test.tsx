@@ -34,9 +34,7 @@ describe('reminder on exit', () => {
     const onClose = vi.fn();
     renderInEditor(h, <ExitReviewDialog onClose={onClose} />);
     expect(
-      screen.getByText(
-        'There are 1 accepted change(s) not yet applied to the project.',
-      ),
+      screen.getByText('There are 1 accepted change(s) not yet applied to the project.'),
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Apply now · 1' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Exit anyway' }));
@@ -98,7 +96,9 @@ describe('on reopening', () => {
     expect(screen.getByText('Accepted, not applied')).toBeTruthy();
     expect(screen.getByText('Undecided')).toBeTruthy();
     // Each change says how it stands in the new one (both proposals are equal here).
-    expect(screen.getAllByText('same in the new one').length).toBe(proposal.changes.length);
+    expect(screen.getAllByText('same in the new one').length).toBe(
+      proposal.changes.length,
+    );
     // The pending ones can no longer be decided.
     const accept = screen.getAllByRole('button', { name: /^Accept / })[0];
     expect((accept as HTMLButtonElement).disabled).toBe(true);

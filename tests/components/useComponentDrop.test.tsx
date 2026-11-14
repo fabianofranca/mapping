@@ -6,10 +6,10 @@ import { locale } from '../../src/store/settings';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { libraryHarness } from './libraryHarness';
 
-// ME2: soltar no canvas um tipo arrastado da paleta.
+// ME2: dropping on the canvas a type dragged from the palette.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   setDraggedComponent({ specId: 'material3', typeId: 'm3-button' });
 });
 afterEach(() => {
@@ -44,14 +44,14 @@ async function setup(options: { readOnly?: boolean } = {}) {
     </EditorContext.Provider>,
   );
   const handlers = () => {
-    if (!drop) throw new Error('hook não montou');
+    if (!drop) throw new Error('hook did not mount');
     return drop;
   };
   return { harness, setDropTarget, canvasPointAt, handlers, setMessage };
 }
 
-describe('soltar um tipo da paleta no canvas', () => {
-  it('sobre o container: cria nele, centrado no ponteiro, e seleciona', async () => {
+describe('dropping a palette type on the canvas', () => {
+  it('over the container: creates in it, centered on the pointer, and selects', async () => {
     const s = await setup();
     const image = s.harness.project().containers[0];
     const point = {
@@ -73,7 +73,7 @@ describe('soltar um tipo da paleta no canvas', () => {
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: created?.id });
   });
 
-  it('no vazio longe de tudo: marcação do canvas', async () => {
+  it('in the empty space far from everything: canvas marking', async () => {
     const s = await setup();
     s.handlers().onDrop(event('drop', { x: -5000, y: -5000 }));
     const created = s.harness.project().markings.at(-1);
@@ -81,7 +81,7 @@ describe('soltar um tipo da paleta no canvas', () => {
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: created?.id });
   });
 
-  it('sobre um componente com slot: entra no slot e acende a marcação', async () => {
+  it('over a component with a slot: goes into the slot and lights up the marking', async () => {
     const s = await setup();
     setDraggedComponent({ specId: 'material3', typeId: 'm3-column' });
     const image = s.harness.project().containers[0];
@@ -109,7 +109,7 @@ describe('soltar um tipo da paleta no canvas', () => {
     expect(s.harness.project().markings.at(-1)?.parentId).toBe(column?.id);
   });
 
-  it('somente leitura: não aceita', async () => {
+  it('read-only: does not accept', async () => {
     const s = await setup({ readOnly: true });
     const before = s.harness.project().markings.length;
     const over = event('dragover');
@@ -119,7 +119,7 @@ describe('soltar um tipo da paleta no canvas', () => {
     expect(s.harness.project().markings).toHaveLength(before);
   });
 
-  it('arrasto sem o MIME do componente é ignorado', async () => {
+  it('drag without the component MIME is ignored', async () => {
     const s = await setup();
     const e = new Event('dragover', { cancelable: true }) as DragEvent;
     Object.defineProperty(e, 'dataTransfer', { value: { types: ['Files'] } });

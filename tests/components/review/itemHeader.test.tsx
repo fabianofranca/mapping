@@ -20,12 +20,13 @@ import { changeOf, propose } from '../../model/proposalFixtures';
 import { richScenario } from '../../store/proposalHarness';
 import { firstImport, showReviewPanel, type ReviewHarness } from './reviewHarness';
 
-// O cabeçalho do item (fase 9.6, HANDOFF-REVIEW-DETAILS 5.4): a decisão de três estados com
-// o texto de cada tipo de item, a criação ("+ N anotações criadas"), a remoção (o que sai
-// junto), o "junto" com Desfazer, o item trancado e o conjunto inválido com as duas saídas.
+// The item header (phase 9.6, HANDOFF-REVIEW-DETAILS 5.4): the three-state decision with the
+// text of each kind of item, the creation ("+ N annotations created"), the removal (what goes
+// along), the "together" with Undo, the locked item and the invalid set with both exits.
+// pt-BR kept: shared fixture data asserted by tests/store and tests/model (names Porta, Maçaneta, Vidros, Formulário from richScenario, sampleProject and firstImport)
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
@@ -33,44 +34,44 @@ afterEach(cleanup);
 const stateOf = (h: ReviewHarness, changeId: string): DecisionState | null =>
   h.review.derived.proposal.value?.decisions[changeId]?.state ?? null;
 
-const header = () => screen.getByRole('region', { name: 'Decisão' });
+const header = () => screen.getByRole('region', { name: 'Decision' });
 
-describe('cabeçalho do item', () => {
-  it('marcação alterada: decide o item inteiro, com o texto "Aceitar marcação" e as contagens', async () => {
+describe('item header', () => {
+  it('changed marking: decides the whole item, with the text "Accept marking" and the counts', async () => {
     const { proposal, ids } = richScenario();
     const h = await showReviewPanel(
       { proposals: [proposal] },
       { level: 'item', id: 'M1' },
     );
-    expect(within(header()).getByText('Marcação alterada')).toBeTruthy();
+    expect(within(header()).getByText('Marking changed')).toBeTruthy();
     const accept = within(header()).getByRole('button', {
-      name: 'Aceitar marcação: Porta',
+      name: 'Accept marking: Porta',
     });
-    expect(accept.textContent).toBe('Aceitar marcação');
+    expect(accept.textContent).toBe('Accept marking');
     expect(
-      within(header()).getByRole('button', { name: 'Rejeitar marcação: Porta' })
+      within(header()).getByRole('button', { name: 'Reject marking: Porta' })
         .textContent,
-    ).toBe('Rejeitar marcação');
+    ).toBe('Reject marking');
     expect(
-      within(header()).getByText('0 aceitas, 0 rejeitadas, 1 sem decisão'),
+      within(header()).getByText('0 accepted, 0 rejected, 1 undecided'),
     ).toBeTruthy();
     fireEvent.click(accept);
     await waitFor(() => expect(stateOf(h, ids.name)).toBe('accepted'));
     expect(
-      within(header()).getByText('1 aceitas, 0 rejeitadas, 0 sem decisão'),
+      within(header()).getByText('1 accepted, 0 rejected, 0 undecided'),
     ).toBeTruthy();
-    // O marcador do campo acompanha.
+    // The field marker follows.
     expect(
-      screen.getByRole('button', { name: /^Nome: alterado, aceito\./ }),
+      screen.getByRole('button', { name: /^Name: changed, accepted\./ }),
     ).toBeTruthy();
-    // Apertar de novo o botão marcado volta a "sem decisão".
+    // Pressing the marked button again goes back to "undecided".
     fireEvent.click(
-      within(header()).getByRole('button', { name: /^Aceitar marcação: / }),
+      within(header()).getByRole('button', { name: /^Accept marking: / }),
     );
     await waitFor(() => expect(stateOf(h, ids.name)).toBeNull());
   });
 
-  it('item parcial: mostra o estado e as contagens', async () => {
+  it('partial item: shows the state and the counts', async () => {
     const { base, proposal } = firstImport();
     const h = await showReviewPanel(
       { project: base, proposals: [proposal] },
@@ -82,42 +83,42 @@ describe('cabeçalho do item', () => {
       expect(h.review.derived.levels.value.get('item:M1')?.state).toBe('partial'),
     );
     expect(
-      within(header()).getByText('0 aceitas, 1 rejeitadas, 1 sem decisão'),
+      within(header()).getByText('0 accepted, 1 rejected, 1 undecided'),
     ).toBeTruthy();
-    // Parcial: nenhum dos dois botões do item fica marcado.
+    // Partial: neither of the two item buttons is pressed.
     expect(
       within(header())
-        .getByRole('button', { name: 'Aceitar marcação: Formulário' })
+        .getByRole('button', { name: 'Accept marking: Formulário' })
         .getAttribute('aria-pressed'),
     ).toBe('false');
     expect(
       within(header())
-        .getByRole('button', { name: 'Rejeitar marcação: Formulário' })
+        .getByRole('button', { name: 'Reject marking: Formulário' })
         .getAttribute('aria-pressed'),
     ).toBe('false');
   });
 
-  it('criação: "+ N anotações criadas", a ajuda e o selo "Criada pela proposta"', async () => {
+  it('creation: "+ N annotations created", the help and the "Created by the proposal" seal', async () => {
     const { base, proposal } = firstImport();
     await showReviewPanel(
       { project: base, proposals: [proposal] },
       { level: 'item', id: 'M1' },
     );
-    expect(within(header()).getByText('Marcação criada')).toBeTruthy();
-    expect(within(header()).getByText('+ 1 anotação(ões) criada(s)')).toBeTruthy();
+    expect(within(header()).getByText('Marking created')).toBeTruthy();
+    expect(within(header()).getByText('+ 1 annotation(s) created')).toBeTruthy();
     expect(
       within(header()).getByText(
-        'A criação é uma mudança só: os campos marcados com + entram juntos.',
+        'Creating is one change: the fields marked + come in together.',
       ),
     ).toBeTruthy();
-    expect(screen.getByText('Criada pela proposta')).toBeTruthy();
+    expect(screen.getByText('Created by the proposal')).toBeTruthy();
     expect(
-      within(header()).getByRole('button', { name: 'Aceitar marcação: Formulário' })
+      within(header()).getByRole('button', { name: 'Accept marking: Formulário' })
         .textContent,
-    ).toBe('Aceitar marcação');
+    ).toBe('Accept marking');
   });
 
-  it('a anotação criada tem ✓ ✕ no cabeçalho dela; rejeitada, volta como cartão com a decisão ali', async () => {
+  it('the created annotation has ✓ ✕ in its own header; rejected, it comes back as a card with the decision there', async () => {
     const { base, proposal } = firstImport();
     const h = await showReviewPanel(
       { project: base, proposals: [proposal] },
@@ -126,31 +127,31 @@ describe('cabeçalho do item', () => {
     const annotation = changeOf(proposal, 'annotation', 'A1');
     const card = () => document.querySelector('[data-annotation="A1"]') as HTMLElement;
     fireEvent.click(
-      within(card()).getByRole('button', { name: /^Rejeitar Anotação onClick criada$/ }),
+      within(card()).getByRole('button', { name: /^Reject Annotation onClick created$/ }),
     );
     await waitFor(() => expect(stateOf(h, annotation.id)).toBe('rejected'));
-    // A visão Proposto não tem a anotação rejeitada: o cartão fica no lugar dela.
-    expect(within(card()).getByText('Criação rejeitada')).toBeTruthy();
+    // The Proposed view does not have the rejected annotation: the card takes its place.
+    expect(within(card()).getByText('Creation rejected')).toBeTruthy();
     expect(
       within(card()).getByRole('button', {
-        name: /^Anotação onClick criada: novo, rejeitado/,
+        name: /^Annotation onClick created: new, rejected/,
       }),
     ).toBeTruthy();
-    // A marcação não foi decidida junto: a anotação só depende dela, não o contrário.
+    // The marking was not decided together: the annotation only depends on it, not the other way around.
     expect(stateOf(h, changeOf(proposal, 'marking', 'M1').id)).toBeNull();
-    // E a decisão volta a ser dela (o ✓ do cabeçalho; o clique sem `detail` abriu a nota
-    // sugerida no popover, que também tem um Aceitar).
+    // And the decision goes back to the annotation (the ✓ of the header; the click without
+    // `detail` opened the suggested note in the popover, which also has an Accept).
     fireEvent.click(
       within(card().querySelector('.decision-control') as HTMLElement).getByRole(
         'button',
-        { name: /^Aceitar Anotação onClick criada$/ },
+        { name: /^Accept Annotation onClick created$/ },
       ),
     );
     await waitFor(() => expect(stateOf(h, annotation.id)).toBe('accepted'));
-    expect(within(card()).queryByText('Criação rejeitada')).toBeNull();
+    expect(within(card()).queryByText('Creation rejected')).toBeNull();
   });
 
-  it('rejeitar uma criação leva as dependentes junto: "junto" no marcador e o aviso com Desfazer', async () => {
+  it('rejecting a creation takes the dependents along: "together" on the marker and the notice with Undo', async () => {
     const { base, proposal } = firstImport();
     const h = await showReviewPanel(
       { project: base, proposals: [proposal] },
@@ -162,77 +163,77 @@ describe('cabeçalho do item', () => {
       await h.review.decide({ level: 'change', id: marking.id }, 'rejected');
     });
     expect(stateOf(h, annotation.id)).toBe('rejected');
-    const notice = screen.getByText(/^1 mudança\(s\) rejeitada\(s\) junto: /);
-    expect(notice.textContent).toContain('Anotação onClick criada');
+    const notice = screen.getByText(/^1 change\(s\) rejected together: /);
+    expect(notice.textContent).toContain('Annotation onClick created');
     expect(
       screen.getByRole('button', {
-        name: /^Anotação onClick criada: novo, rejeitado, decidido junto/,
+        name: /^Annotation onClick created: new, rejected, decided together/,
       }),
     ).toBeTruthy();
     fireEvent.click(
       within(notice.closest('.notice-box') as HTMLElement).getByRole('button', {
-        name: 'Desfazer',
+        name: 'Undo',
       }),
     );
     await waitFor(() => expect(stateOf(h, annotation.id)).toBeNull());
     expect(stateOf(h, marking.id)).toBeNull();
-    expect(screen.queryByText(/rejeitada\(s\) junto/)).toBeNull();
+    expect(screen.queryByText(/rejected together/)).toBeNull();
   });
 
-  it('remoção: o nome sai riscado, o cabeçalho lista o que sai junto e rejeitar volta o nome', async () => {
+  it('removal: the name goes struck through, the header lists what goes along and rejecting brings the name back', async () => {
     const base = sampleProject();
     const proposal = propose(base, removeMarking(base, 'M1'));
     const h = await showReviewPanel(
       { project: base, proposals: [proposal] },
       { level: 'item', id: 'M1' },
     );
-    expect(within(header()).getByText('Marcação removida')).toBeTruthy();
+    expect(within(header()).getByText('Marking removed')).toBeTruthy();
     expect(document.querySelector('del.identity-name')?.textContent).toBe('Porta');
-    expect(screen.getAllByText('Será removida').length).toBeGreaterThan(0);
-    // O que sai junto: as filhas (com link) e as anotações por camada.
-    expect(within(header()).getByText('Aceitar remove junto:')).toBeTruthy();
+    expect(screen.getAllByText('Will be removed').length).toBeGreaterThan(0);
+    // What goes along: the children (with a link) and the annotations per layer.
+    expect(within(header()).getByText('Accepting also removes:')).toBeTruthy();
     fireEvent.click(within(header()).getByRole('button', { name: 'Maçaneta' }));
     expect(h.review.selected.value).toEqual({ level: 'item', id: 'M2' });
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     expect(within(header()).getByText(/Vidros/)).toBeTruthy();
     expect(
-      within(header()).getByRole('button', { name: 'Rejeitar remoção: Porta' })
+      within(header()).getByRole('button', { name: 'Reject removal: Porta' })
         .textContent,
-    ).toBe('Rejeitar remoção');
+    ).toBe('Reject removal');
 
-    // Rejeitada, a remoção não vale: o nome deixa de ser riscado.
+    // Rejected, the removal does not apply: the name is no longer struck through.
     fireEvent.click(
-      within(header()).getByRole('button', { name: 'Rejeitar remoção: Porta' }),
+      within(header()).getByRole('button', { name: 'Reject removal: Porta' }),
     );
     await waitFor(() => expect(document.querySelector('del.identity-name')).toBeNull());
     expect(document.querySelector('strong.identity-name')?.textContent).toBe('Porta');
   });
 
-  it('item trancado: o selo, o aviso e o aceitar continua permitido', async () => {
+  it('locked item: the seal, the notice and accepting is still allowed', async () => {
     const base = setMarkingLocked(sampleProject(), 'M4', true);
     const { proposal } = richScenario();
     await showReviewPanel(
       { project: base, proposals: [proposal] },
       { level: 'item', id: 'M4' },
     );
-    expect(within(header()).getByText('Item trancado')).toBeTruthy();
+    expect(within(header()).getByText('Locked item')).toBeTruthy();
     expect(
       within(document.querySelector('.identity-flags') as HTMLElement).getByText(
-        'Trancado',
+        'Locked',
       ),
     ).toBeTruthy();
     expect(
       (
         within(header()).getByRole('button', {
-          name: 'Aceitar marcação: Marcação sem nome',
+          name: 'Accept marking: Unnamed marking',
         }) as HTMLButtonElement
       ).disabled,
     ).toBe(false);
   });
 
-  it('conjunto inválido: o aviso tem as duas saídas, a identidade o selo "Bloqueia aplicar" e o marcador o anel', async () => {
+  it('invalid set: the notice has both exits, the identity has the "Blocks applying" seal and the marker has the ring', async () => {
     const base = sampleProject();
-    const proposal = propose(base, renameLayer(base, 'L2', 'Janelas'));
+    const proposal = propose(base, renameLayer(base, 'L2', 'Windows'));
     const h = await showReviewPanel(
       { project: removeLayer(base, 'L2'), proposals: [proposal] },
       { level: 'proposal', id: null },
@@ -241,27 +242,27 @@ describe('cabeçalho do item', () => {
     const alert = await screen.findByRole('alert');
     expect(
       within(alert).getByText(
-        'O alvo desta mudança (camada) não existe mais no projeto atual.',
+        'The target of this change (layer) no longer exists in the current project.',
       ),
     ).toBeTruthy();
-    expect(screen.getByText('Bloqueia aplicar')).toBeTruthy();
-    // Uma mudança só de cada lado: as saídas dizem qual.
-    const reject = within(alert).getByRole('button', { name: /^Rejeitar: / });
+    expect(screen.getByText('Blocks applying')).toBeTruthy();
+    // One change on each side: the exits say which.
+    const reject = within(alert).getByRole('button', { name: /^Reject: / });
     fireEvent.click(reject);
     await waitFor(() => expect(h.review.derived.validation.value?.ok).toBe(true));
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('o marcador de um campo envolvido no conjunto inválido tem o anel e o diz no nome', async () => {
+  it('the marker of a field involved in the invalid set has the ring and says so in its name', async () => {
     const base = sampleProject();
-    const proposal = propose(base, renameLayer(base, 'L2', 'Janelas'));
+    const proposal = propose(base, renameLayer(base, 'L2', 'Windows'));
     const h = await showReviewPanel(
       { project: removeLayer(base, 'L2'), proposals: [proposal] },
       { level: 'project', id: null },
     );
     await h.review.decide({ level: 'project', id: null }, 'accepted');
     const mark = await screen.findByRole('button', {
-      name: /envolvido no conjunto inválido/,
+      name: /involved in the invalid set/,
     });
     expect(mark.classList.contains('is-invalid')).toBe(true);
   });

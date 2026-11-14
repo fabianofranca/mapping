@@ -5,10 +5,11 @@ import { locale } from '../../../src/store/settings';
 import { richScenario } from '../../store/proposalHarness';
 import { showReviewPanel } from './reviewHarness';
 
-// Desempenho dos Detalhes na revisão (HANDOFF-REVIEW-DETAILS 12): selecionar outra mudança
-// do mesmo item (focar um marcador, as setas da janela Propostas) não refaz o painel normal;
-// só o marcador que deixa de ser o alvo e o que passa a ser. Decidir refaz o painel uma vez
-// (o projeto à vista muda), não uma vez por componente da lista.
+// Performance of the Details in the review (HANDOFF-REVIEW-DETAILS 12): selecting another
+// change of the same item (focusing a marker, the arrows of the Proposals window) does not
+// redo the normal panel; only the marker that stops being the target and the one that becomes
+// it. Deciding redoes the panel once (the project on view changes), not once per list
+// component.
 
 const counts = new Map<string, number>();
 const previousDiffed = options.diffed;
@@ -24,13 +25,13 @@ afterAll(() => {
   options.diffed = previousDiffed;
 });
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
 
-describe('renderizações dos Detalhes na revisão', () => {
-  it('selecionar outra mudança do mesmo item não refaz o painel, só os marcadores envolvidos', async () => {
+describe('renders of the Details in the review', () => {
+  it('selecting another change of the same item does not redo the panel, only the markers involved', async () => {
     const { proposal, ids } = richScenario();
     const h = await showReviewPanel(
       { proposals: [proposal] },
@@ -44,7 +45,7 @@ describe('renderizações dos Detalhes na revisão', () => {
     expect(counts.get('MarkingPanel') ?? 0).toBe(0);
     expect(counts.get('AnnotationsPanel') ?? 0).toBe(0);
     expect(counts.get('PropertyGrid') ?? 0).toBe(0);
-    // O marcador que passa a ser o alvo (e nenhum outro) refaz.
+    // The marker that becomes the target (and no other) redoes.
     expect(counts.get('ChangeMark') ?? 0).toBeLessThanOrEqual(1);
 
     counts.clear();
@@ -53,7 +54,7 @@ describe('renderizações dos Detalhes na revisão', () => {
     expect(counts.get('ChangeMark') ?? 0).toBeLessThanOrEqual(1);
   });
 
-  it('decidir uma mudança refaz o painel uma vez (não uma por decisão encadeada)', async () => {
+  it('deciding a change redoes the panel once (not once per chained decision)', async () => {
     const { proposal, ids } = richScenario();
     const h = await showReviewPanel(
       { proposals: [proposal] },

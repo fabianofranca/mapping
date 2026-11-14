@@ -40,7 +40,8 @@ const WAITING_HUMAN = sampleThread({
 const RESOLVED = sampleThread({
   id: 'tb',
   anchor: { kind: 'container', id: 'I1' },
-  resolved: { by: { name: 'Marina Alves', email: 'marina@example.com' }, at: T2 },
+  // pt-BR kept: shared fixture data asserted by tests/model (threadFixtures HUMAN email)
+  resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T2 },
   messages: [message('b1', T0, HUMAN, 'Title is CORRECT')],
 });
 // Orphan (the marking does not exist), open, by Paulo; the last one is from a person: it awaits the agent.
@@ -91,7 +92,8 @@ const ids = () =>
 beforeEach(() => {
   localStorage.clear();
   clearIdentity();
-  setIdentity('Marina Alves', 'marina@example.com');
+  // pt-BR kept: shared fixture data asserted by tests/model (threadFixtures HUMAN email)
+  setIdentity('Marina Alves', 'marina@exemplo.com');
   locale.value = 'en-US';
   hideToolWindow('details');
 });
@@ -165,7 +167,7 @@ describe.each(['pt-BR', 'en-US'] as const)('Comments window (%s)', (lang) => {
     expect(ids()).toEqual(['ta']);
   });
 
-  it('user filter by the person's e-mail and by the agent name', async () => {
+  it('user filter by the e-mail of the person and by the agent name', async () => {
     const { user, harness } = await mount();
     const select = screen.getByLabelText(t('comments.filter.user'));
     const options = Array.from(select.querySelectorAll('option')).map(
@@ -173,7 +175,8 @@ describe.each(['pt-BR', 'en-US'] as const)('Comments window (%s)', (lang) => {
     );
     expect(options[0]).toBe(t('comments.filter.userAll'));
     expect(options[0]).not.toMatch(/\d/);
-    expect(options.some((o) => o?.includes('marina@example.com'))).toBe(true);
+    // pt-BR kept: shared fixture data asserted by tests/model (threadFixtures HUMAN email)
+    expect(options.some((o) => o?.includes('marina@exemplo.com'))).toBe(true);
     expect(options).toContain(
       t('comments.filter.userAgent', { name: 'Claude Code' }) + ' (1)',
     );
@@ -285,7 +288,7 @@ describe.each(['pt-BR', 'en-US'] as const)('Comments window (%s)', (lang) => {
 });
 
 describe('delete a thread', () => {
-  it('directly when all the messages are the person's', async () => {
+  it('directly when all the messages are by the person', async () => {
     const mine = sampleThread({
       id: 'td',
       messages: [message('d1', T0, HUMAN, 'only mine')],
@@ -327,7 +330,7 @@ describe('delete a thread', () => {
     expect(harness.context.session.threads.list.value).toEqual([]);
   });
 
-  it('Esc and Cancel return the focus to the row's ⋯', async () => {
+  it('Esc and Cancel return the focus to the row ⋯', async () => {
     simulateModalFocus();
     const { user, harness } = await mount([WAITING_HUMAN]);
     const more = screen.getByRole('button', {
@@ -372,7 +375,8 @@ describe('delete a thread', () => {
     ).toBe(true);
     cleanup();
     const ro = await mount([WAITING_HUMAN], true);
-    setIdentity('Marina Alves', 'marina@example.com');
+    // pt-BR kept: shared fixture data asserted by tests/model (threadFixtures HUMAN email)
+    setIdentity('Marina Alves', 'marina@exemplo.com');
     await ro.user.click(
       screen.getByRole('button', {
         name: t('comments.row.more', {
@@ -393,7 +397,8 @@ describe('delete a thread', () => {
 describe('delete threads in bulk', () => {
   const OLD_RESOLVED = sampleThread({
     id: 'te',
-    resolved: { by: { name: 'Marina Alves', email: 'marina@example.com' }, at: T1 },
+    // pt-BR kept: shared fixture data asserted by tests/model (threadFixtures HUMAN email)
+    resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
     messages: [message('e1', '2026-01-01T10:00:00.000Z', HUMAN, 'old')],
   });
   const openMenu = async (user: ReturnType<typeof userEvent.setup>) => {
@@ -444,7 +449,8 @@ describe('delete threads in bulk', () => {
     const late = new Date(2026, 9, 31, 23, 30).toISOString();
     const LATE = sampleThread({
       id: 'tf',
-      resolved: { by: { name: 'Marina Alves', email: 'marina@example.com' }, at: T1 },
+      // pt-BR kept: shared fixture data asserted by tests/model (threadFixtures HUMAN email)
+      resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
       messages: [message('f1', late, HUMAN, 'late')],
     });
     const { user } = await mount([LATE]);
@@ -469,7 +475,7 @@ describe('delete threads in bulk', () => {
     ).toBe(true);
   });
 
-  it('Esc and Cancel return the focus to the window's ⋯', async () => {
+  it('Esc and Cancel return the focus to the window ⋯', async () => {
     simulateModalFocus();
     const { user } = await mount([RESOLVED]);
     const more = screen.getByRole('button', { name: t('comments.windowMore') });
@@ -501,7 +507,8 @@ describe('delete threads in bulk', () => {
       ).disabled,
     ).toBe(true);
     cleanup();
-    setIdentity('Marina Alves', 'marina@example.com');
+    // pt-BR kept: shared fixture data asserted by tests/model (threadFixtures HUMAN email)
+    setIdentity('Marina Alves', 'marina@exemplo.com');
     const ro = await mount([RESOLVED], true);
     await ro.user.click(screen.getByRole('button', { name: t('comments.windowMore') }));
     expect(

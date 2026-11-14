@@ -5,15 +5,16 @@ import { setFieldValue, typeOfAnnotation, type Project } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { MULTILINE_MIN_LENGTH } from '../../src/ui/FieldEditors';
 import { TypedField } from '../../src/ui/TypedFields';
+// pt-BR kept: shared fixture data (cadastroProject: estilo, tipo, dado, atributos, exemplo, texto, Cadastrar) asserted by tests/model, tests/mcp and tests/examples
 import { cadastroProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
-/** Renderiza um campo (`fieldKey`) da anotação tipada `annotationId`. */
+/** Renders a field (`fieldKey`) of the typed annotation `annotationId`. */
 function setup(
   annotationId: string,
   fieldKey: string,
@@ -26,7 +27,7 @@ function setup(
     const field = typeOfAnnotation(p, annotation)?.type.fields.find(
       (f) => f.key === fieldKey,
     );
-    if (!field) throw new Error(`campo ${fieldKey} não existe`);
+    if (!field) throw new Error(`field ${fieldKey} does not exist`);
     return (
       <TypedField
         field={field}
@@ -43,13 +44,13 @@ function setup(
 const valueOf = (h: { project(): Project }, id: string, key: string) =>
   annotationOf(h.project(), id).values?.[key];
 
-describe('TypedFields — campos simples', () => {
-  it('número: aceita vírgula decimal e rejeita texto', async () => {
+describe('TypedFields — simple fields', () => {
+  it('number: accepts a decimal comma and rejects text', async () => {
     const { harness, user } = setup('AII', 'maxLength');
     const before = valueOf(harness, 'AII', 'maxLength');
     const input = screen.getByLabelText('maxLength');
     await user.type(input, 'abc{Enter}');
-    expect(screen.getByRole('alert').textContent).toContain('número');
+    expect(screen.getByRole('alert').textContent).toContain('number');
     expect(valueOf(harness, 'AII', 'maxLength')).toEqual(before);
 
     await user.clear(input);
@@ -57,7 +58,7 @@ describe('TypedFields — campos simples', () => {
     expect(valueOf(harness, 'AII', 'maxLength')).toBe(12.5);
   });
 
-  it('opções (poucas): botões segmentados; tocar de novo na escolhida limpa', async () => {
+  it('options (few): segmented buttons; tapping the chosen one again clears it', async () => {
     const { harness, user } = setup('AB', 'estilo');
     const group = screen.getByRole('group', { name: 'estilo' });
     const secondary = within(group).getByRole('button', { name: 'secondary' });
@@ -68,7 +69,7 @@ describe('TypedFields — campos simples', () => {
     expect(valueOf(harness, 'AB', 'estilo')).toBeNull();
   });
 
-  it('opções (muitas): lista de seleção', async () => {
+  it('options (many): selection list', async () => {
     const { harness, user } = setup('AIE', 'tipo');
     const select = screen.getByLabelText('tipo');
     expect(select).toHaveProperty('value', 'email');
@@ -77,45 +78,45 @@ describe('TypedFields — campos simples', () => {
   });
 });
 
-describe('TypedFields — referência (ref)', () => {
-  /** Botão do campo `dado` (o nome acessível termina no rótulo do campo). */
+describe('TypedFields — reference (ref)', () => {
+  /** Button of the `dado` field (the accessible name ends in the field label). */
   const field = () => screen.getByRole('button', { name: /: dado$/ });
 
-  // SN2 (WCAG 2.5.3): o nome acessível começa pelo texto que o botão mostra.
-  it('nome acessível: valor e camada do alvo primeiro, campo no fim; vazio e quebrado', async () => {
+  // SN2 (WCAG 2.5.3): the accessible name starts with the text the button shows.
+  it('accessible name: target value and layer first, field last; empty and broken', async () => {
     const { user } = setup('AIN', 'dado');
     expect(field().getAttribute('aria-label')).toMatch(/^User\.name .+: dado$/);
-    await user.click(screen.getByRole('button', { name: 'Limpar' }));
-    expect(screen.getByRole('button', { name: 'Escolher: dado' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(screen.getByRole('button', { name: 'Choose: dado' })).toBeTruthy();
   });
 
-  it('mostra o alvo atual e os botões', () => {
+  it('shows the current target and the buttons', () => {
     setup('AIN', 'dado');
     expect(field().textContent).toContain('User.name');
-    expect(screen.getByRole('button', { name: 'Limpar' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: 'Clear' })).toHaveProperty(
       'disabled',
       false,
     );
-    expect(screen.getByRole('button', { name: 'Ir para o alvo' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: 'Go to target' })).toHaveProperty(
       'disabled',
       false,
     );
   });
 
-  // Etapa 6 (6.4), achado 6: o valor cortado ("→ User.no…") fica inteiro na dica.
-  it('o valor da referência vai inteiro no tooltip (o campo corta o texto)', () => {
+  // Stage 6 (6.4), finding 6: the truncated value ("→ User.no…") stays whole in the hint.
+  it('the reference value goes whole in the tooltip (the field truncates the text)', () => {
     setup('AIN', 'dado');
     expect(field().closest('.tooltip-anchor')?.textContent).toContain('→ User.name');
   });
 
-  it('Ir para o alvo navega até a anotação apontada', async () => {
+  it('Go to target navigates to the pointed annotation', async () => {
     const { onGoToAnnotation, user } = setup('AIN', 'dado');
-    await user.click(screen.getByRole('button', { name: 'Ir para o alvo' }));
+    await user.click(screen.getByRole('button', { name: 'Go to target' }));
     expect(onGoToAnnotation).toHaveBeenCalledOnce();
     expect(onGoToAnnotation.mock.calls[0]?.[0]).toMatchObject({ id: 'AU' });
   });
 
-  it('Ctrl+clique no campo vai até o alvo, sem abrir o seletor', async () => {
+  it('Ctrl+click on the field goes to the target, without opening the picker', async () => {
     const { onGoToAnnotation, user } = setup('AIN', 'dado');
     await user.keyboard('{Control>}');
     await user.click(field());
@@ -124,63 +125,63 @@ describe('TypedFields — referência (ref)', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('Limpar remove a referência', async () => {
+  it('Clear removes the reference', async () => {
     const { harness, user } = setup('AIN', 'dado');
-    await user.click(screen.getByRole('button', { name: 'Limpar' }));
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
     expect(valueOf(harness, 'AIN', 'dado')).toBeNull();
-    expect(field().textContent).toContain('Escolher…');
-    expect(screen.getByRole('button', { name: 'Limpar' })).toHaveProperty(
+    expect(field().textContent).toContain('Choose…');
+    expect(screen.getByRole('button', { name: 'Clear' })).toHaveProperty(
       'disabled',
       true,
     );
   });
 
-  it('o seletor lista só os alvos aceitos (tupla livre e linha do tipo com a tag)', async () => {
+  it('the picker lists only the accepted targets (free tuple and type row with the tag)', async () => {
     const { user } = setup('AIN', 'dado');
     await user.click(field());
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('Escolher alvo de "dado"')).toBeTruthy();
+    expect(within(dialog).getByText('Choose the target of "dado"')).toBeTruthy();
     const options = within(dialog)
       .getAllByRole('option')
       .map((o) => o.textContent ?? '');
-    // Tuplas livres de User e a linha `email` da classe Contato.
+    // Free tuples of User and the `email` row of the Contato class.
     expect(options.join('|')).toContain('age');
     expect(options.join('|')).toContain('email');
-    // Nada de campos que não aceitam referência (o `id` do próprio input).
+    // No fields that do not accept a reference (the `id` of the input itself).
     expect(options.join('|')).not.toContain('input_nome');
-    // O alvo atual vem marcado e é o ativo ao abrir.
+    // The current target comes marked and is the active one on opening.
     const active = within(dialog).getByRole('option', { selected: true });
     expect(active.textContent).toContain('User.name');
-    expect(active.textContent).toContain('atual');
+    expect(active.textContent).toContain('current');
   });
 
-  it('abas por etiqueta aceita (P5): Todos, a etiqueta e Livres', async () => {
+  it('tabs by accepted tag (P5): All, the tag and Free', async () => {
     const { user } = setup('AIN', 'dado');
     await user.click(field());
     const dialog = await screen.findByRole('dialog');
     const labels = within(dialog)
       .getAllByRole('tab')
       .map((tab) => tab.textContent);
-    expect(labels).toEqual(['Todos', 'data-field', 'Livres']);
+    expect(labels).toEqual(['All', 'data-field', 'Free']);
     await user.click(within(dialog).getByRole('tab', { name: 'data-field' }));
     expect(
       within(dialog)
         .getAllByRole('option')
         .map((o) => o.textContent),
     ).toEqual([expect.stringContaining('Contato.email')]);
-    await user.click(within(dialog).getByRole('tab', { name: 'Livres' }));
+    await user.click(within(dialog).getByRole('tab', { name: 'Free' }));
     const free = within(dialog).getAllByRole('option');
     expect(free.every((o) => o.textContent?.includes('User.'))).toBe(true);
   });
 
-  it('escolher no seletor grava a referência e fecha o seletor', async () => {
+  it('choosing in the picker writes the reference and closes the picker', async () => {
     const { harness, user } = setup('AIN', 'dado');
     await user.click(field());
     const dialog = await screen.findByRole('dialog');
     const age = within(dialog)
       .getAllByRole('option')
       .find((o) => o.textContent?.includes('age'));
-    if (!age) throw new Error('alvo age não listado');
+    if (!age) throw new Error('target age not listed');
     await user.click(age);
     expect(valueOf(harness, 'AIN', 'dado')).toEqual({
       annotationId: 'AU',
@@ -189,11 +190,11 @@ describe('TypedFields — referência (ref)', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('teclado: ↓ e Enter escolhem; o foco volta ao campo', async () => {
+  it('keyboard: ↓ and Enter choose; focus returns to the field', async () => {
     const { harness, user } = setup('AIN', 'dado');
     await user.click(field());
     await screen.findByRole('dialog');
-    // Abre no atual (User.name); ↓ vai para User.age.
+    // Opens on the current one (User.name); ↓ goes to User.age.
     await user.keyboard('{ArrowDown}{Enter}');
     expect(valueOf(harness, 'AIN', 'dado')).toEqual({
       annotationId: 'AU',
@@ -202,7 +203,7 @@ describe('TypedFields — referência (ref)', () => {
     expect(document.activeElement).toBe(field());
   });
 
-  it('Ctrl+Enter escolhe e vai até o alvo', async () => {
+  it('Ctrl+Enter chooses and goes to the target', async () => {
     const { harness, onGoToAnnotation, user } = setup('AIN', 'dado');
     await user.click(field());
     await screen.findByRole('dialog');
@@ -212,7 +213,7 @@ describe('TypedFields — referência (ref)', () => {
     expect(onGoToAnnotation.mock.calls[0]?.[0]).toMatchObject({ id: 'AC' });
   });
 
-  it('Ctrl+B no campo abre o seletor; Esc fecha e devolve o foco', async () => {
+  it('Ctrl+B on the field opens the picker; Esc closes and returns the focus', async () => {
     const { user } = setup('AIN', 'dado');
     field().focus();
     await user.keyboard('{Control>}b{/Control}');
@@ -223,17 +224,17 @@ describe('TypedFields — referência (ref)', () => {
     expect(document.activeElement).toBe(field());
   });
 
-  // Etapa 7 (7.1), O2: o ícone de seta já marca a referência; o texto não repete "→".
-  it('o valor da referência mostra uma seta só (o ícone)', () => {
+  // Stage 7 (7.1), O2: the arrow icon already marks the reference; the text does not repeat "→".
+  it('the reference value shows a single arrow (the icon)', () => {
     setup('AIN', 'dado');
     expect(field().querySelector('.ref-control-text')?.textContent).toBe('User.name');
     expect(field().querySelectorAll('svg')).toHaveLength(1);
   });
 
-  // Etapa 7 (7.1), achado A1: com o seletor modal aberto, o resto da página está inerte;
-  // focar o campo antes de o seletor fechar não adianta e o foco caía no body.
-  describe('com o seletor modal (inércia do navegador)', () => {
-    it('Enter escolhe o alvo e o foco volta ao campo dado', async () => {
+  // Stage 7 (7.1), finding A1: with the modal picker open, the rest of the page is inert;
+  // focusing the field before the picker closes does not help and the focus fell on the body.
+  describe('with the modal picker (browser inertness)', () => {
+    it('Enter chooses the target and the focus returns to the dado field', async () => {
       const { harness, user } = setup('AIN', 'dado');
       await user.click(field());
       await screen.findByRole('dialog');
@@ -246,7 +247,7 @@ describe('TypedFields — referência (ref)', () => {
       expect(document.activeElement).toBe(field());
     });
 
-    it('Esc fecha e o foco volta ao campo dado', async () => {
+    it('Esc closes and the focus returns to the dado field', async () => {
       const { user } = setup('AIN', 'dado');
       field().focus();
       await user.keyboard('{Control>}b{/Control}');
@@ -257,13 +258,13 @@ describe('TypedFields — referência (ref)', () => {
     });
   });
 
-  it('a busca filtra os alvos e destaca o trecho', async () => {
+  it('the search filters the targets and highlights the match', async () => {
     const { user } = setup('AIN', 'dado');
     await user.click(field());
     const dialog = await screen.findByRole('dialog');
     const search = within(dialog).getByRole('combobox');
     await user.type(search, 'zzz');
-    expect(within(dialog).getByText('Nenhum alvo encontrado para a busca.')).toBeTruthy();
+    expect(within(dialog).getByText('No target matches the search.')).toBeTruthy();
     await user.clear(search);
     await user.type(search, 'email');
     const shown = within(dialog).getAllByRole('option');
@@ -272,7 +273,7 @@ describe('TypedFields — referência (ref)', () => {
     expect(dialog.querySelector('mark')?.textContent).toBe('email');
   });
 
-  it('referência para um alvo que não existe mais aparece como quebrada', () => {
+  it('a reference to a target that no longer exists shows as broken', () => {
     const base = cadastroProject();
     const broken: Project = {
       ...base,
@@ -284,124 +285,122 @@ describe('TypedFields — referência (ref)', () => {
     };
     setup('AIN', 'dado', broken);
     expect(
-      screen.getByRole('button', { name: 'Referência quebrada: dado' }).textContent,
-    ).toContain('(referência quebrada)');
-    expect(screen.getByRole('button', { name: 'Ir para o alvo' })).toHaveProperty(
+      screen.getByRole('button', { name: 'Broken reference: dado' }).textContent,
+    ).toContain('(broken reference)');
+    expect(screen.getByRole('button', { name: 'Go to target' })).toHaveProperty(
       'disabled',
       true,
     );
   });
 });
 
-describe('TypedFields — tabela', () => {
-  it('mostra as linhas e permite editar uma célula', async () => {
+describe('TypedFields — table', () => {
+  it('shows the rows and allows editing a cell', async () => {
     const { harness, user } = setup('AC', 'atributos');
-    expect(screen.getByText('email')).toBeTruthy(); // nome da linha (rowLabel)
+    expect(screen.getByText('email')).toBeTruthy(); // row name (rowLabel)
     const cell = screen.getByLabelText('exemplo (email)');
     await user.clear(cell);
-    await user.type(cell, 'novo@exemplo.com{Enter}');
+    await user.type(cell, 'new@example.com{Enter}');
     const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
-    expect(JSON.stringify(rows)).toContain('novo@exemplo.com');
+    expect(JSON.stringify(rows)).toContain('new@example.com');
   });
 
-  it('adiciona e reordena linhas', async () => {
+  it('adds and reorders rows', async () => {
     const { harness, user } = setup('AC', 'atributos');
-    await user.click(screen.getByRole('button', { name: '+ Linha' }));
+    await user.click(screen.getByRole('button', { name: '+ Row' }));
     const count = () => {
       const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
       return Array.isArray(rows) ? rows.length : 0;
     };
     expect(count()).toBe(2);
-    await user.click(screen.getAllByRole('button', { name: /^Ações da linha/ })[0]!);
-    await user.click(screen.getByRole('menuitem', { name: 'Descer linha' }));
+    await user.click(screen.getAllByRole('button', { name: /^Actions for row/ })[0]!);
+    await user.click(screen.getByRole('menuitem', { name: 'Move row down' }));
     const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
     expect((rows as { _id: string }[]).map((r) => r._id)[1]).toBe('R1');
   });
 
-  it('remover uma linha que é alvo de referência pede confirmação', async () => {
+  it('removing a row that is a reference target asks for confirmation', async () => {
     const { harness, user } = setup('AC', 'atributos');
-    await user.click(screen.getByRole('button', { name: 'Ações da linha email' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Remover linha' }));
-    // Etapa 8 (8.3), F10: confirmação destrutiva, anunciada como alerta.
+    await user.click(screen.getByRole('button', { name: 'Actions for row email' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Remove row' }));
+    // Stage 8 (8.3), F10: destructive confirmation, announced as an alert.
     const dialog = await screen.findByRole('alertdialog');
-    expect(within(dialog).getByText('Referências vão quebrar')).toBeTruthy();
+    expect(within(dialog).getByText('References will break')).toBeTruthy();
     expect(dialog.getAttribute('aria-describedby')).toBeTruthy();
-    await user.click(within(dialog).getByRole('button', { name: 'Excluir' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
     const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
     expect(Array.isArray(rows) ? rows.length : 0).toBe(0);
   });
 
-  // Etapa 7 (7.1), achado A3: a célula corta o texto ("ana@exe"); o valor inteiro vai na dica.
-  it('células e campos de texto levam o valor inteiro no title', () => {
+  // Stage 7 (7.1), finding A3: the cell truncates the text ("ana@exe"); the whole value goes in the hint.
+  it('cells and text fields carry the whole value in the title', () => {
     setup('AC', 'atributos');
     expect(screen.getByLabelText('exemplo (email)').title).toBe('ana@exemplo.com');
     expect(screen.getByLabelText('nome (email)').title).toBe('email');
   });
 
-  // Etapa 7 (7.1), achado A1: a linha excluída levava o botão que abriu o diálogo.
-  // Etapa 8 (8.3), F1: este era o flake ("sem linhas, vai à tabela"). Roda 20 vezes por
-  // rodada (`repeats`), e a espera abaixo é de propósito só "o <dialog> está no DOM", a
-  // condição em que o clique chegava antes de o diálogo abrir.
-  describe('foco depois de Excluir no "Referências vão quebrar"', { repeats: 19 }, () => {
+  // Stage 7 (7.1), finding A1: the deleted row took the button that opened the dialog with it.
+  // Stage 8 (8.3), F1: this was the flake ("no rows, goes to the table"). Runs 20 times per
+  // round (`repeats`), and the wait below is deliberately only "the <dialog> is in the DOM", the
+  // condition in which the click arrived before the dialog opened.
+  describe('focus after Delete in "References will break"', { repeats: 19 }, () => {
     async function removeEmail(user: ReturnType<typeof userEvent.setup>) {
-      await user.click(screen.getByRole('button', { name: 'Ações da linha email' }));
-      await user.click(screen.getByRole('menuitem', { name: 'Remover linha' }));
+      await user.click(screen.getByRole('button', { name: 'Actions for row email' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Remove row' }));
       const dialog = await vi.waitFor(() => {
         const el = document.querySelector('dialog');
-        if (!el) throw new Error('o diálogo ainda não abriu');
+        if (!el) throw new Error('the dialog has not opened yet');
         return el;
       });
       await user.click(
-        within(dialog).getByRole('button', { name: 'Excluir', hidden: true }),
+        within(dialog).getByRole('button', { name: 'Delete', hidden: true }),
       );
       await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
     }
 
-    it('vai ao botão de ações da linha que ficou no lugar', async () => {
+    it('goes to the actions button of the row that stayed in place', async () => {
       const { user } = setup('AC', 'atributos');
-      await user.click(screen.getByRole('button', { name: '+ Linha' }));
-      // A linha nova pega o foco no quadro seguinte.
+      await user.click(screen.getByRole('button', { name: '+ Row' }));
+      // The new row takes the focus in the next frame.
       await vi.waitFor(() => expect(document.activeElement?.tagName).toBe('INPUT'));
       await removeEmail(user);
       expect(document.activeElement).toBe(
-        screen.getByRole('button', { name: /^Ações da linha/ }),
+        screen.getByRole('button', { name: /^Actions for row/ }),
       );
     });
 
-    it('sem linhas, vai à tabela (o botão + Linha)', async () => {
+    it('no rows, goes to the table (the + Row button)', async () => {
       const { user } = setup('AC', 'atributos');
       await removeEmail(user);
-      expect(document.activeElement).toBe(
-        screen.getByRole('button', { name: '+ Linha' }),
-      );
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: '+ Row' }));
     });
 
-    it('Cancelar volta ao botão de ações da própria linha', async () => {
+    it('Cancel returns to the actions button of the row itself', async () => {
       const { user } = setup('AC', 'atributos');
-      await user.click(screen.getByRole('button', { name: 'Ações da linha email' }));
-      await user.click(screen.getByRole('menuitem', { name: 'Remover linha' }));
+      await user.click(screen.getByRole('button', { name: 'Actions for row email' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Remove row' }));
       const dialog = await vi.waitFor(() => {
         const el = document.querySelector('dialog');
-        if (!el) throw new Error('o diálogo ainda não abriu');
+        if (!el) throw new Error('the dialog has not opened yet');
         return el;
       });
       await user.click(
-        within(dialog).getByRole('button', { name: 'Cancelar', hidden: true }),
+        within(dialog).getByRole('button', { name: 'Cancel', hidden: true }),
       );
       await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
       expect(document.activeElement).toBe(
-        screen.getByRole('button', { name: 'Ações da linha email' }),
+        screen.getByRole('button', { name: 'Actions for row email' }),
       );
     });
   });
 
-  it('mostra quem referencia a linha', () => {
+  it('shows who references the row', () => {
     setup('AC', 'atributos');
     expect(screen.getByRole('button', { name: /^← Input input_email/ })).toBeTruthy();
   });
 });
 
-describe('TypedFields: campo de texto (StringEditor)', () => {
+describe('TypedFields: text field (StringEditor)', () => {
   const LONG = 'x'.repeat(MULTILINE_MIN_LENGTH + 1);
   const withText = (text: string | null): Project => {
     const base = cadastroProject();
@@ -409,20 +408,20 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     return p;
   };
 
-  it('texto curto: campo de uma linha', () => {
+  it('short text: single-line field', () => {
     setup('AB', 'texto');
     const field = screen.getByLabelText('texto');
     expect(field.tagName).toBe('INPUT');
   });
 
-  it('texto com quebra de linha: editor de várias linhas', () => {
-    setup('AB', 'texto', withText('um\ndois'));
+  it('text with a line break: multi-line editor', () => {
+    setup('AB', 'texto', withText('one\ntwo'));
     const field = screen.getByLabelText('texto');
     expect(field.tagName).toBe('TEXTAREA');
-    expect((field as HTMLTextAreaElement).value).toBe('um\ndois');
+    expect((field as HTMLTextAreaElement).value).toBe('one\ntwo');
   });
 
-  it('texto com mais de 60 caracteres: editor de várias linhas; com exatamente 60, uma linha', () => {
+  it('text with more than 60 characters: multi-line editor; with exactly 60, single line', () => {
     setup('AB', 'texto', withText(LONG));
     expect(screen.getByLabelText('texto').tagName).toBe('TEXTAREA');
     cleanup();
@@ -430,7 +429,7 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     expect(screen.getByLabelText('texto').tagName).toBe('INPUT');
   });
 
-  it('Shift+Enter troca por várias linhas, com o digitado mais a quebra, foco e cursor no fim', async () => {
+  it('Shift+Enter switches to multi-line, with the typed text plus the break, focus and cursor at the end', async () => {
     const { harness, user } = setup('AB', 'texto');
     const input = screen.getByLabelText('texto');
     await user.clear(input);
@@ -441,23 +440,23 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     expect(area.value).toBe('abc\n');
     expect(document.activeElement).toBe(area);
     expect(area.selectionStart).toBe(4);
-    // Nada foi gravado ainda: sair do campo grava.
+    // Nothing has been saved yet: leaving the field saves.
     expect(valueOf(harness, 'AB', 'texto')).toBe('Cadastrar');
     await user.type(area, 'def');
     await user.tab();
     expect(valueOf(harness, 'AB', 'texto')).toBe('abc\ndef');
   });
 
-  it('Enter simples continua gravando no campo de uma linha', async () => {
+  it('A plain Enter still saves in the single-line field', async () => {
     const { harness, user } = setup('AB', 'texto');
     const input = screen.getByLabelText('texto');
     await user.clear(input);
-    await user.type(input, 'novo{Enter}');
-    expect(valueOf(harness, 'AB', 'texto')).toBe('novo');
+    await user.type(input, 'new{Enter}');
+    expect(valueOf(harness, 'AB', 'texto')).toBe('new');
     expect(screen.getByLabelText('texto').tagName).toBe('INPUT');
   });
 
-  it('Enter que grava um valor longo no campo de uma linha passa o foco ao TEXTAREA, com o cursor no fim', async () => {
+  it('Enter that saves a long value in the single-line field moves the focus to the TEXTAREA, with the cursor at the end', async () => {
     const { harness, user } = setup('AB', 'texto');
     const input = screen.getByLabelText('texto');
     await user.clear(input);
@@ -469,18 +468,18 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     expect(area.selectionStart).toBe(LONG.length);
   });
 
-  it('longo→vazio e curto→curto mantêm o foco no campo de uma linha', async () => {
+  it('long→empty and short→short keep the focus in the single-line field', async () => {
     const { user } = setup('AB', 'texto');
     const input = screen.getByLabelText('texto');
     await user.clear(input);
-    await user.type(input, 'novo{Enter}');
+    await user.type(input, 'new{Enter}');
     expect(document.activeElement).toBe(screen.getByLabelText('texto'));
     await user.clear(screen.getByLabelText('texto'));
     await user.keyboard('{Enter}');
     expect(document.activeElement).toBe(screen.getByLabelText('texto'));
   });
 
-  it('Enter grava o texto longo sem quebra, sem precisar de blur, e o foco fica no campo', async () => {
+  it('Enter saves the long text without a break, without needing blur, and the focus stays in the field', async () => {
     const { harness, user } = setup('AB', 'texto', withText(LONG));
     const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
     await user.clear(area);
@@ -491,19 +490,19 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     expect(document.activeElement).toBe(after);
   });
 
-  it('Enter que grava um valor curto passa o foco ao campo de uma linha, com o cursor no fim', async () => {
+  it('Enter that saves a short value moves the focus to the single-line field, with the cursor at the end', async () => {
     const { harness, user } = setup('AB', 'texto', withText(LONG));
     const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
     await user.clear(area);
-    await user.type(area, 'curto{Enter}');
-    expect(valueOf(harness, 'AB', 'texto')).toBe('curto');
+    await user.type(area, 'short{Enter}');
+    expect(valueOf(harness, 'AB', 'texto')).toBe('short');
     const input = screen.getByLabelText('texto') as HTMLInputElement;
     expect(input.tagName).toBe('INPUT');
     expect(document.activeElement).toBe(input);
     expect(input.selectionStart).toBe(5);
   });
 
-  it('Shift+Enter no editor de várias linhas quebra a linha e não grava', async () => {
+  it('Shift+Enter in the multi-line editor breaks the line and does not save', async () => {
     const { harness, user } = setup('AB', 'texto', withText(LONG));
     const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
     await user.click(area);
@@ -512,7 +511,7 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     expect(valueOf(harness, 'AB', 'texto')).toBe(LONG);
   });
 
-  it('com uma quebra no texto, Enter quebra a linha e o blur grava (a quebra do fim sai)', async () => {
+  it('with a break in the text, Enter breaks the line and blur saves (the trailing break is dropped)', async () => {
     const { harness, user } = setup('AB', 'texto', withText('a\nb'));
     const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
     await user.click(area);
@@ -523,7 +522,7 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     expect(valueOf(harness, 'AB', 'texto')).toBe('a\nb');
   });
 
-  it('durante a composição de IME o Enter não grava', async () => {
+  it('during IME composition Enter does not save', async () => {
     const { harness } = setup('AB', 'texto', withText(LONG));
     const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
     area.focus();
@@ -531,17 +530,17 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     expect(valueOf(harness, 'AB', 'texto')).toBe(LONG);
   });
 
-  it('a quebra de linha no fim não é gravada (Enter de sobra, texto que já tem quebra)', async () => {
-    const { harness, user } = setup('AB', 'texto', withText(`${LONG}\nfim`));
+  it('the trailing line break is not saved (extra Enter, text that already has a break)', async () => {
+    const { harness, user } = setup('AB', 'texto', withText(`${LONG}\nend`));
     const area = screen.getByLabelText('texto');
     await user.click(area);
     await user.keyboard('{Control>}{End}{/Control}{Enter}');
-    expect((area as HTMLTextAreaElement).value).toBe(`${LONG}\nfim\n`);
+    expect((area as HTMLTextAreaElement).value).toBe(`${LONG}\nend\n`);
     await user.tab();
-    expect(valueOf(harness, 'AB', 'texto')).toBe(`${LONG}\nfim`);
+    expect(valueOf(harness, 'AB', 'texto')).toBe(`${LONG}\nend`);
   });
 
-  it('só quebras de linha gravam null; as do meio ficam', async () => {
+  it('only line breaks save null; the middle ones stay', async () => {
     const { harness, user } = setup('AB', 'texto', withText('a\nb'));
     const area = screen.getByLabelText('texto');
     await user.clear(area);
@@ -550,7 +549,7 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     expect(valueOf(harness, 'AB', 'texto')).toBeNull();
   });
 
-  it('sair do editor de várias linhas grava; vazio grava null', async () => {
+  it('leaving the multi-line editor saves; empty saves null', async () => {
     const { harness, user } = setup('AB', 'texto', withText('a\nb'));
     const area = screen.getByLabelText('texto');
     await user.clear(area);

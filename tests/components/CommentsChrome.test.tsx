@@ -78,82 +78,79 @@ describe('Comments window shortcuts', () => {
 });
 
 // pt-BR kept: the strip, tab and status bar are checked in both locales
-describe.each(['pt-BR', 'en-US'] as const)(
-  'strip, tab and status bar (%s)',
-  (lang) => {
-    beforeEach(() => {
-      locale.value = lang;
-    });
+describe.each(['pt-BR', 'en-US'] as const)('strip, tab and status bar (%s)', (lang) => {
+  beforeEach(() => {
+    locale.value = lang;
+  });
 
-    it('the strip and the tab show the count of open threads', async () => {
-      const harness = await harnessWith([OPEN_A, OPEN_B]);
-      showToolWindow('comments');
-      withContext(
-        harness,
-        <>
-          <ToolStrip side="left" />
-          <ToolWindow id="comments">
-            <span>body</span>
-          </ToolWindow>
-        </>,
-      );
-      const strip = document.querySelector<HTMLElement>('[data-strip-window="comments"]');
-      expect(strip?.textContent).toContain('2');
-      expect(strip?.getAttribute('aria-label')).toContain(
-        t('comments.openCount', { count: 2 }),
-      );
-      const tab = screen
-        .getAllByRole('tab')
-        .find((el) => el.getAttribute('aria-label') === t('comments.title'));
-      expect(tab?.textContent).toContain('2');
-    });
+  it('the strip and the tab show the count of open threads', async () => {
+    const harness = await harnessWith([OPEN_A, OPEN_B]);
+    showToolWindow('comments');
+    withContext(
+      harness,
+      <>
+        <ToolStrip side="left" />
+        <ToolWindow id="comments">
+          <span>body</span>
+        </ToolWindow>
+      </>,
+    );
+    const strip = document.querySelector<HTMLElement>('[data-strip-window="comments"]');
+    expect(strip?.textContent).toContain('2');
+    expect(strip?.getAttribute('aria-label')).toContain(
+      t('comments.openCount', { count: 2 }),
+    );
+    const tab = screen
+      .getAllByRole('tab')
+      .find((el) => el.getAttribute('aria-label') === t('comments.title'));
+    expect(tab?.textContent).toContain('2');
+  });
 
-    it('with no open threads there is no badge', async () => {
-      const harness = await harnessWith([]);
-      withContext(harness, <ToolStrip side="left" />);
-      const strip = document.querySelector<HTMLElement>('[data-strip-window="comments"]');
-      expect(strip?.getAttribute('aria-label') ?? '').not.toContain('(');
-    });
+  it('with no open threads there is no badge', async () => {
+    const harness = await harnessWith([]);
+    withContext(harness, <ToolStrip side="left" />);
+    const strip = document.querySelector<HTMLElement>('[data-strip-window="comments"]');
+    expect(strip?.getAttribute('aria-label') ?? '').not.toContain('(');
+  });
 
-    it('the status bar says how many are open and awaiting the agent, and opens the window', async () => {
-      const user = userEvent.setup();
-      const harness = await harnessWith([OPEN_A, OPEN_B]);
-      renderLive(harness, () => (
-        <EditorContext.Provider value={harness.context}>
-          <StatusBar />
-        </EditorContext.Provider>
-      ));
-      const item = screen.getByRole('button', {
-        name: new RegExp(t('comments.statusBar.open', { count: 2 })),
-      });
-      expect(item.textContent).toContain(
-        t('comments.statusBar.awaiting', {
-          open: t('comments.statusBar.open', { count: 2 }),
-          count: 1,
-        }),
-      );
-      await user.click(item);
-      expect(isToolWindowOpen('comments')).toBe(true);
+  it('the status bar says how many are open and awaiting the agent, and opens the window', async () => {
+    const user = userEvent.setup();
+    const harness = await harnessWith([OPEN_A, OPEN_B]);
+    renderLive(harness, () => (
+      <EditorContext.Provider value={harness.context}>
+        <StatusBar />
+      </EditorContext.Provider>
+    ));
+    const item = screen.getByRole('button', {
+      name: new RegExp(t('comments.statusBar.open', { count: 2 })),
     });
+    expect(item.textContent).toContain(
+      t('comments.statusBar.awaiting', {
+        open: t('comments.statusBar.open', { count: 2 }),
+        count: 1,
+      }),
+    );
+    await user.click(item);
+    expect(isToolWindowOpen('comments')).toBe(true);
+  });
 
-    it('singular, and disappears with zero open', async () => {
-      const harness = await harnessWith([OPEN_B]);
-      renderLive(harness, () => (
-        <EditorContext.Provider value={harness.context}>
-          <StatusBar />
-        </EditorContext.Provider>
-      ));
-      expect(screen.getByText(new RegExp(t('comments.statusBar.openOne')))).toBeTruthy();
-      await act(async () => {
-        await harness.context.session.threads.remove('ob');
-      });
-      expect(screen.queryByText(new RegExp(t('comments.statusBar.openOne')))).toBeNull();
-      expect(
-        screen.queryByRole('button', { name: new RegExp(t('comments.statusBar.tip')) }),
-      ).toBeNull();
+  it('singular, and disappears with zero open', async () => {
+    const harness = await harnessWith([OPEN_B]);
+    renderLive(harness, () => (
+      <EditorContext.Provider value={harness.context}>
+        <StatusBar />
+      </EditorContext.Provider>
+    ));
+    expect(screen.getByText(new RegExp(t('comments.statusBar.openOne')))).toBeTruthy();
+    await act(async () => {
+      await harness.context.session.threads.remove('ob');
     });
-  },
-);
+    expect(screen.queryByText(new RegExp(t('comments.statusBar.openOne')))).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: new RegExp(t('comments.statusBar.tip')) }),
+    ).toBeNull();
+  });
+});
 
 describe('Comment in the layer menu', () => {
   it('opens a draft thread anchored to the layer and goes to the Details', async () => {

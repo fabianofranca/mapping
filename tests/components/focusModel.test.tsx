@@ -101,10 +101,14 @@ describe('Dialog outside act (F1)', () => {
     </Dialog>
   );
 
-  it('in the DOM, it is already open and with the focus inside', { repeats: 19 }, async () => {
-    const state = await openThenConfirmBeforeNextFrame(modal);
-    expect(state).toEqual({ open: true, focusInside: true });
-  });
+  it(
+    'in the DOM, it is already open and with the focus inside',
+    { repeats: 19 },
+    async () => {
+      const state = await openThenConfirmBeforeNextFrame(modal);
+      expect(state).toEqual({ open: true, focusInside: true });
+    },
+  );
 
   it(
     'confirmed before the next frame, the focus goes to the target and not to the body',
@@ -133,10 +137,14 @@ describe('RefPicker outside act (F1)', () => {
     />
   );
 
-  it('in the DOM, it is already open and with the focus on the search', { repeats: 19 }, async () => {
-    const state = await openThenConfirmBeforeNextFrame(modal);
-    expect(state).toEqual({ open: true, focusInside: true });
-  });
+  it(
+    'in the DOM, it is already open and with the focus on the search',
+    { repeats: 19 },
+    async () => {
+      const state = await openThenConfirmBeforeNextFrame(modal);
+      expect(state).toEqual({ open: true, focusInside: true });
+    },
+  );
 
   it(
     'chosen before the next frame, the focus goes to the target and not to the body',

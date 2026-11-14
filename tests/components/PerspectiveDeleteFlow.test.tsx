@@ -10,12 +10,12 @@ import { cadastroProject } from '../model/specFixtures';
 import { renderLive } from './harness';
 import { createLocalHarness } from './perspectiveUiHarness';
 
-// Etapa #764, AP1 (decisão 1): a confirmação de apagar, aberta pelo Gerenciar perspectivas, volta
-// ao Gerenciar ao fechar, e o foco vai ao Apagar da mesma linha (Cancelar/Esc) ou da que ficou no
-// lugar (Apagar).
+// Stage #764, AP1 (decision 1): the delete confirmation, opened from Manage perspectives, returns
+// to Manage on close, and the focus goes to the Delete of the same row (Cancel/Esc) or of the one that took
+// its place (Delete).
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -24,7 +24,7 @@ function Host() {
   return (
     <>
       <button type="button" onClick={() => dialogs.show({ kind: 'managePerspectives' })}>
-        abrir-gerenciar
+        open-manage
       </button>
       <EditorDialogs dialogs={dialogs} />
     </>
@@ -39,11 +39,11 @@ async function setup(names: string[]) {
       startFrom: 'empty',
       local: false,
     });
-    if (!r.ok) throw new Error('perspectiva não criada');
+    if (!r.ok) throw new Error('perspective not created');
   }
   renderLive(harness, () => <Host />);
   const user = userEvent.setup();
-  await user.click(screen.getByText('abrir-gerenciar'));
+  await user.click(screen.getByText('open-manage'));
   return { harness, user };
 }
 
@@ -57,8 +57,8 @@ const manageTitle = () =>
 const names = (h: Awaited<ReturnType<typeof setup>>['harness']) =>
   h.project().perspectives.map((p) => p.name);
 
-describe('apagar perspectiva pelo Gerenciar', () => {
-  it('Cancelar volta ao Gerenciar com o foco no Apagar da mesma linha', async () => {
+describe('delete perspective through Manage', () => {
+  it('Cancel returns to Manage with the focus on the Delete of the same row', async () => {
     const { user } = await setup(['A', 'B', 'C']);
     await user.click(deleteButton('B'));
     expect(manageTitle()).toBeNull();
@@ -70,7 +70,7 @@ describe('apagar perspectiva pelo Gerenciar', () => {
     expect(document.activeElement).toBe(deleteButton('B'));
   });
 
-  it('Esc volta ao Gerenciar com o foco no Apagar da mesma linha', async () => {
+  it('Esc returns to Manage with the focus on the Delete of the same row', async () => {
     const { user } = await setup(['A', 'B']);
     await user.click(deleteButton('A'));
     document
@@ -81,7 +81,7 @@ describe('apagar perspectiva pelo Gerenciar', () => {
     expect(document.activeElement).toBe(deleteButton('A'));
   });
 
-  it('Apagar volta ao Gerenciar sem a perspectiva e com o foco no Apagar da linha de baixo', async () => {
+  it('Delete returns to Manage without the perspective and with the focus on the Delete of the row below', async () => {
     const { harness, user } = await setup(['A', 'B', 'C']);
     await user.click(deleteButton('B'));
     await user.click(
@@ -93,7 +93,7 @@ describe('apagar perspectiva pelo Gerenciar', () => {
     expect(document.activeElement).toBe(deleteButton('C'));
   });
 
-  it('Apagar a última linha leva o foco ao Apagar da de cima', async () => {
+  it('Deleting the last row takes the focus to the Delete of the one above', async () => {
     const { user } = await setup(['A', 'B']);
     await user.click(deleteButton('B'));
     await user.click(
@@ -103,7 +103,7 @@ describe('apagar perspectiva pelo Gerenciar', () => {
     expect(document.activeElement).toBe(deleteButton('A'));
   });
 
-  it('Apagar a única perspectiva leva o foco ao Fechar do Gerenciar', async () => {
+  it('Deleting the only perspective takes the focus to the Close of Manage', async () => {
     const { user } = await setup(['A']);
     await user.click(deleteButton('A'));
     await user.click(
@@ -114,7 +114,7 @@ describe('apagar perspectiva pelo Gerenciar', () => {
     expect(document.activeElement).toBe(close);
   });
 
-  it('Fechar o Gerenciar devolve o foco ao botão que o abriu', async () => {
+  it('Closing Manage returns the focus to the button that opened it', async () => {
     const { user } = await setup(['A']);
     await user.click(deleteButton('A'));
     await user.click(
@@ -125,6 +125,6 @@ describe('apagar perspectiva pelo Gerenciar', () => {
     );
     await Promise.resolve();
     expect(manageTitle()).toBeNull();
-    expect(document.activeElement).toBe(screen.getByText('abrir-gerenciar'));
+    expect(document.activeElement).toBe(screen.getByText('open-manage'));
   });
 });

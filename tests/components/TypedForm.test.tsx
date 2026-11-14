@@ -138,7 +138,9 @@ describe('TypedForm: ref column of a table (without a project)', () => {
       {
         key: 'targets',
         type: 'table',
-        columns: [{ key: 'target', label: 'Target', type: 'ref', accepts: { free: true } }],
+        columns: [
+          { key: 'target', label: 'Target', type: 'ref', accepts: { free: true } },
+        ],
       },
     ];
     render(

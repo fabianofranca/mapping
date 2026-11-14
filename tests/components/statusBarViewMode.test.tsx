@@ -9,8 +9,8 @@ import { createHarness, renderLive } from './harness';
 
 afterEach(cleanup);
 
-describe('barra de status: modo visualização', () => {
-  it('diz que o modo é só para ver enquanto ligado, e some ao sair', () => {
+describe('status bar: view mode', () => {
+  it('says the mode is view-only while on, and disappears on exit', () => {
     const h = createHarness(sampleProject());
     renderLive(h, () => (
       <EditorContext.Provider value={h.context}>

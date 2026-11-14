@@ -47,9 +47,7 @@ describe('Details — all layers hidden', () => {
       harness.ui.hiddenLayers.value = new Set(harness.project().layers.map((l) => l.id));
     });
     expect(screen.getByText('All layers are hidden.')).toBeTruthy();
-    expect(
-      screen.queryByRole('button', { name: /^Add annotation in layer/ }),
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Add annotation in layer/ })).toBeNull();
     expect(screen.queryByRole('button', { name: '+ Annotation' })).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Show all' }));
     expect(harness.ui.hiddenLayers.value.size).toBe(0);
@@ -115,7 +113,7 @@ describe('Details — marking', () => {
     const id = screen.getByLabelText('id');
     expect(id.getAttribute('aria-invalid')).toBe('true');
     await user.click(
-      within(notice).getByRole('button', { name: /id: required and empty/ }),
+      within(notice).getByRole('button', { name: /id — required and empty/ }),
     );
     await vi.waitFor(() => expect(document.activeElement).toBe(id));
   });
@@ -332,7 +330,7 @@ describe('Detalhes — DataGrid', () => {
 // Stage 8 (8.3), finding F3: the "type" step is replaced by the "owner" step in the same slot; the new
 // dialog kept as "who opened it" the type button, which had already left, and the focus was lost.
 describe('Details — new typed annotation with owner (F3)', () => {
-  it('type › owner › Cancel goes back to the layer's +', async () => {
+  it('type › owner › Cancel goes back to the + of the layer', async () => {
     const { harness, user } = renderMarking('MC');
     // The + of the Events layer (the only way to add an annotation: there is no button at the top).
     const eventos = layerOf(harness.project(), 'sdui', 'eventos');
@@ -404,7 +402,8 @@ describe('Details — choose and go to the target (F2)', () => {
     await user.click(screen.getByRole('button', { name: /: dado$/ }));
     await vi.waitFor(() => {
       const el = document.querySelector('dialog');
-      if (!el?.contains(document.activeElement)) throw new Error('the picker did not open');
+      if (!el?.contains(document.activeElement))
+        throw new Error('the picker did not open');
     });
     let target: Element | null = null;
     const trail = await focusTrail(async () => {

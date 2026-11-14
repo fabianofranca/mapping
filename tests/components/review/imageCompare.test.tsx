@@ -3,24 +3,24 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { locale } from '../../../src/store/settings';
 import { ImageCompare } from '../../../src/ui/review/ImageCompare';
 
-// ImageCompare (HANDOFF-PROPOSALS 2.1): três modos e a alça como `role="slider"`.
+// ImageCompare (HANDOFF-PROPOSALS 2.1): three modes and the handle as `role="slider"`.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
 describe('ImageCompare', () => {
-  it('deslizar: a alça anda com as setas; Home só o antes, End só o depois', () => {
+  it('slide: the handle moves with the arrows; Home shows only the before, End only the after', () => {
     render(
       <ImageCompare
         before={{ status: 'loading' }}
         after={{ status: 'missing' }}
-        beforeName="images/carrinho.png"
-        afterName="images/carrinho-v2.png"
+        beforeName="images/cart.png"
+        afterName="images/cart-v2.png"
       />,
     );
-    const slider = screen.getByRole('slider', { name: 'Divisória entre antes e depois' });
+    const slider = screen.getByRole('slider', { name: 'Divider between before and after' });
     expect(slider.getAttribute('aria-valuenow')).toBe('50');
     fireEvent.keyDown(slider, { key: 'ArrowRight' });
     expect(slider.getAttribute('aria-valuenow')).toBe('55');
@@ -28,16 +28,16 @@ describe('ImageCompare', () => {
     expect(slider.getAttribute('aria-valuenow')).toBe('0');
     fireEvent.keyDown(slider, { key: 'End' });
     expect(slider.getAttribute('aria-valuenow')).toBe('100');
-    // Os nomes dos arquivos ficam sempre à vista.
+    // The file names are always in view.
     expect(
-      screen.getByText('Antes: images/carrinho.png · Depois: images/carrinho-v2.png'),
+      screen.getByText('Before: images/cart.png · After: images/cart-v2.png'),
     ).toBeTruthy();
     expect(
-      screen.getByRole('img', { name: 'Depois: images/carrinho-v2.png' }).textContent,
-    ).toBe('Imagem indisponível');
+      screen.getByRole('img', { name: 'After: images/cart-v2.png' }).textContent,
+    ).toBe('Image unavailable');
   });
 
-  it('aria-valuetext por modo: Deslizar diz % do antes, Sobrepor % do depois', () => {
+  it('aria-valuetext per mode: Slide says % of the before, Overlay % of the after', () => {
     render(
       <ImageCompare
         before={undefined}
@@ -46,20 +46,20 @@ describe('ImageCompare', () => {
         afterName="b.png"
       />,
     );
-    const slide = screen.getByRole('slider', { name: 'Divisória entre antes e depois' });
+    const slide = screen.getByRole('slider', { name: 'Divider between before and after' });
     const layer = () => document.querySelector<HTMLElement>('.image-compare-before')!;
     fireEvent.keyDown(slide, { key: 'Home' });
-    expect(slide.getAttribute('aria-valuetext')).toBe('0% do antes');
-    expect(layer().style.clipPath).toBe('inset(0 100% 0 0)'); // só o depois
+    expect(slide.getAttribute('aria-valuetext')).toBe('0% of the before');
+    expect(layer().style.clipPath).toBe('inset(0 100% 0 0)'); // only the after
     fireEvent.keyDown(slide, { key: 'End' });
-    expect(slide.getAttribute('aria-valuetext')).toBe('100% do antes');
-    expect(layer().style.clipPath).toBe('inset(0 0% 0 0)'); // só o antes
-    fireEvent.click(screen.getByRole('button', { name: 'Sobrepor' }));
-    const blend = screen.getByRole('slider', { name: 'Mistura entre antes e depois' });
-    expect(blend.getAttribute('aria-valuetext')).toBe('100% do depois');
+    expect(slide.getAttribute('aria-valuetext')).toBe('100% of the before');
+    expect(layer().style.clipPath).toBe('inset(0 0% 0 0)'); // only the before
+    fireEvent.click(screen.getByRole('button', { name: 'Overlay' }));
+    const blend = screen.getByRole('slider', { name: 'Blend between before and after' });
+    expect(blend.getAttribute('aria-valuetext')).toBe('100% of the after');
   });
 
-  it('lado a lado e sobrepor', () => {
+  it('side by side and overlay', () => {
     render(
       <ImageCompare
         before={undefined}
@@ -68,12 +68,12 @@ describe('ImageCompare', () => {
         afterName="b.png"
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Lado a lado' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Side by side' }));
     expect(screen.queryByRole('slider')).toBeNull();
-    expect(screen.getByRole('img', { name: 'Antes: a.png' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Sobrepor' }));
+    expect(screen.getByRole('img', { name: 'Before: a.png' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Overlay' }));
     expect(
-      screen.getByRole('slider', { name: 'Mistura entre antes e depois' }),
+      screen.getByRole('slider', { name: 'Blend between before and after' }),
     ).toBeTruthy();
   });
 });

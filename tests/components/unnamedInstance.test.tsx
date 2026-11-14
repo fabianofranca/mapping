@@ -14,11 +14,12 @@ import { sampleProject } from '../model/fixtures';
 import { withNoteInstance } from '../model/notesFixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// Instância de componente sem nome (a Paleta cria assim): onde a marcação não tem nome, a
-// interface mostra o nome do tipo que ela desenha ("Nota"); nada é gravado.
+// Unnamed component instance (the Palette creates it like this): where the marking has no name, the
+// UI shows the name of the type it draws ("Nota"); nothing is saved.
+// pt-BR kept: shared fixture data (type name 'Nota', marking 'Porta') asserted by tests/
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   showToolWindow('tree');
 });
 afterEach(cleanup);
@@ -27,8 +28,8 @@ function noteHarness(): Harness {
   return createHarness(withNoteInstance(sampleProject()));
 }
 
-describe('Ligar a… com uma nota sem nome', () => {
-  it('o título usa o nome do tipo e a busca casa por ele', async () => {
+describe('Link to… with an unnamed note', () => {
+  it('the title uses the type name and the search matches it', async () => {
     const harness = noteHarness();
     const project = harness.project();
     const source = project.markings.find((m) => m.id === 'N1') as Marking;
@@ -46,21 +47,16 @@ describe('Ligar a… com uma nota sem nome', () => {
     ).toBeTruthy();
   });
 
-  it('a opção da nota tem o nome do tipo e a busca por ele a encontra', async () => {
+  it('the note option has the type name and searching for it finds it', async () => {
     const harness = noteHarness();
     const project = harness.project();
-    const porta = project.markings.find((m) => m.id === 'M1') as Marking;
+    const door = project.markings.find((m) => m.id === 'M1') as Marking;
     expect(markingOptions(project, 'M1').find((o) => o.marking.id === 'N1')?.label).toBe(
       'Nota',
     );
     const onPick = vi.fn();
     render(
-      <MarkingPicker
-        project={project}
-        source={porta}
-        onClose={vi.fn()}
-        onPick={onPick}
-      />,
+      <MarkingPicker project={project} source={door} onClose={vi.fn()} onPick={onPick} />,
     );
     const user = userEvent.setup();
     const input = screen.getByRole('combobox', {
@@ -76,15 +72,15 @@ describe('Ligar a… com uma nota sem nome', () => {
   });
 });
 
-describe('Seta, árvore e trilha com a nota sem nome', () => {
+describe('Arrow, tree and breadcrumbs with the unnamed note', () => {
   function withNoteArrow(): Harness {
     const harness = noteHarness();
     const result = harness.actions.addArrow('N1', 'M1');
-    if (!result.ok) throw new Error('addArrow falhou');
+    if (!result.ok) throw new Error('addArrow failed');
     return harness;
   }
 
-  it('a seção Seta mostra a origem pelo nome do tipo', () => {
+  it('the Arrow section shows the source by the type name', () => {
     const harness = withNoteArrow();
     renderLive(harness, (p) => (
       <ArrowPanel
@@ -103,7 +99,7 @@ describe('Seta, árvore e trilha com a nota sem nome', () => {
     ).toBeTruthy();
   });
 
-  it('a Árvore mostra o nome do tipo, e a trilha também', () => {
+  it('the Tree shows the type name, and so do the breadcrumbs', () => {
     const harness = withNoteArrow();
     render(
       <EditorContext.Provider value={harness.context}>

@@ -16,11 +16,11 @@ import {
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive } from './harness';
 
-// Etapa "direção e âncora" (R2): a direção de leitura nos Detalhes do container, nas
-// Configurações do projeto e no Diagnóstico.
+// "Direction and anchor" stage (R2): the reading direction in the container Details, in the
+// project Settings and in the Diagnostics.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -33,7 +33,7 @@ const label = () => t('direction.label');
 const select = () =>
   screen.getByLabelText<HTMLSelectElement>(label(), { selector: 'select' });
 
-describe('Detalhes do container: direção', () => {
+describe('Container Details: direction', () => {
   function setup(project: Project = sampleProject(), disabled = false) {
     const harness = createHarness(project);
     renderLive(harness, (p) => {
@@ -43,50 +43,51 @@ describe('Detalhes do container: direção', () => {
     return { harness, user: userEvent.setup() };
   }
 
-  it('aparece sempre, com "Segue o projeto" quando o container não fixa direção', () => {
-    setup();
-    expect(options(select())).toEqual([
-      'Segue o projeto',
-      'Da esquerda para a direita',
-      'Da direita para a esquerda',
-    ]);
-    expect(select().value).toBe('');
-  });
-
-  it('mostra a direção fixada e troca pela action, numa entrada de desfazer', async () => {
-    const { harness, user } = setup(setContainerDirection(sampleProject(), 'I1', 'rtl'));
-    expect(select().value).toBe('rtl');
-    await user.selectOptions(select(), 'ltr');
-    // `ltr` explícito: continua gravado, só `null` volta a seguir o projeto.
-    expect(harness.project().containers[0]?.direction).toBe('ltr');
-    expect(harness.store.undo()).toBe(true);
-    expect(harness.project().containers[0]?.direction).toBe('rtl');
-  });
-
-  it('"Segue o projeto" remove a direção fixada do container', async () => {
-    const { harness, user } = setup(setContainerDirection(sampleProject(), 'I1', 'rtl'));
-    await user.selectOptions(select(), '');
-    expect(harness.project().containers[0]?.direction).toBeNull();
-    expect(select().value).toBe('');
-  });
-
-  it('somente leitura desabilita; em en-US os textos vêm de t()', () => {
-    setup(sampleProject(), true);
-    expect(select().disabled).toBe(true);
-    cleanup();
-    locale.value = 'en-US';
+  it('always appears, with "Follows the project" when the container pins no direction', () => {
     setup();
     expect(options(select())).toEqual([
       'Follows the project',
       'Left to right',
       'Right to left',
     ]);
+    expect(select().value).toBe('');
   });
 
-  it('o painel de Detalhes monta o campo', () => {
+  it('shows the pinned direction and changes it through the action, in one undo entry', async () => {
+    const { harness, user } = setup(setContainerDirection(sampleProject(), 'I1', 'rtl'));
+    expect(select().value).toBe('rtl');
+    await user.selectOptions(select(), 'ltr');
+    // An explicit `ltr` stays saved, only `null` goes back to following the project.
+    expect(harness.project().containers[0]?.direction).toBe('ltr');
+    expect(harness.store.undo()).toBe(true);
+    expect(harness.project().containers[0]?.direction).toBe('rtl');
+  });
+
+  it('"Follows the project" removes the pinned direction from the container', async () => {
+    const { harness, user } = setup(setContainerDirection(sampleProject(), 'I1', 'rtl'));
+    await user.selectOptions(select(), '');
+    expect(harness.project().containers[0]?.direction).toBeNull();
+    expect(select().value).toBe('');
+  });
+
+  it('read-only disables; in pt-BR the texts come from t()', () => {
+    setup(sampleProject(), true);
+    expect(select().disabled).toBe(true);
+    cleanup();
+    locale.value = 'pt-BR';
+    setup();
+    // pt-BR kept: the object of this half of the test is the Portuguese dictionary
+    expect(options(select())).toEqual([
+      'Segue o projeto',
+      'Da esquerda para a direita',
+      'Da direita para a esquerda',
+    ]);
+  });
+
+  it('the Details panel mounts the field', () => {
     const harness = createHarness(sampleProject());
     const image = harness.project().containers[0];
-    if (!image) throw new Error('sem container');
+    if (!image) throw new Error('no container');
     render(
       <EditorContext.Provider value={harness.context}>
         <SelectionPanel
@@ -103,7 +104,7 @@ describe('Detalhes do container: direção', () => {
   });
 });
 
-describe('Configurações: direção do projeto', () => {
+describe('Settings: project direction', () => {
   function setup(project: Project = sampleProject(), readOnly = false) {
     const harness = createHarness(project, readOnly);
     renderLive(harness, (p) => (
@@ -112,12 +113,9 @@ describe('Configurações: direção do projeto', () => {
     return { harness, user: userEvent.setup() };
   }
 
-  it('sem direção gravada vale ltr; trocar grava rtl pela action', async () => {
+  it('with no saved direction ltr applies; changing saves rtl through the action', async () => {
     const { harness, user } = setup();
-    expect(options(select())).toEqual([
-      'Da esquerda para a direita',
-      'Da direita para a esquerda',
-    ]);
+    expect(options(select())).toEqual(['Left to right', 'Right to left']);
     expect(select().value).toBe('ltr');
     expect(harness.project().direction).toBeUndefined();
     await user.selectOptions(select(), 'rtl');
@@ -126,23 +124,24 @@ describe('Configurações: direção do projeto', () => {
     expect(harness.project().direction).toBeUndefined();
   });
 
-  it('mostra a direção gravada e desabilita em somente leitura', () => {
+  it('shows the saved direction and disables in read-only', () => {
     setup(setProjectDirection(sampleProject(), 'rtl'), true);
     expect(select().value).toBe('rtl');
     expect(select().disabled).toBe(true);
   });
 
-  it('o título da seção existe nos dois idiomas', () => {
-    setup();
-    expect(screen.getByText('Direção de leitura', { selector: 'h3' })).toBeTruthy();
-    cleanup();
-    locale.value = 'en-US';
+  it('the section title exists in both languages', () => {
     setup();
     expect(screen.getByText('Reading direction', { selector: 'h3' })).toBeTruthy();
+    cleanup();
+    locale.value = 'pt-BR';
+    setup();
+    // pt-BR kept: the object of this half of the test is the Portuguese title
+    expect(screen.getByText('Direção de leitura', { selector: 'h3' })).toBeTruthy();
   });
 });
 
-describe('Diagnóstico: direção de leitura', () => {
+describe('Diagnostics: reading direction', () => {
   const region = () => screen.queryByRole('region', { name: t('diagnostics.direction') });
   function show(project: Project) {
     const harness = createHarness(project);
@@ -153,7 +152,7 @@ describe('Diagnóstico: direção de leitura', () => {
     );
   }
 
-  it('em projeto todo ltr a seção não aparece', () => {
+  it('in an all-ltr project the section does not appear', () => {
     show(sampleProject());
     expect(region()).toBeNull();
     cleanup();
@@ -161,7 +160,7 @@ describe('Diagnóstico: direção de leitura', () => {
     expect(region()).toBeNull();
   });
 
-  it('com o projeto em rtl mostra a direção do projeto', () => {
+  it('with the project in rtl shows the project direction', () => {
     show(setProjectDirection(sampleProject(), 'rtl'));
     const section = region();
     expect(section).not.toBeNull();
@@ -172,7 +171,7 @@ describe('Diagnóstico: direção de leitura', () => {
     ).toBeTruthy();
   });
 
-  it('lista os containers que fixam uma direção diferente da do projeto', () => {
+  it("lists the containers that pin a direction different from the project's", () => {
     let p = setContainerDirection(sampleProject(), 'I2', 'rtl');
     show(p);
     const section = within(region() as HTMLElement);
@@ -184,7 +183,7 @@ describe('Diagnóstico: direção de leitura', () => {
         }),
       ),
     ).toBeTruthy();
-    // O que fixa a mesma direção do projeto não entra na lista.
+    // Whatever pins the same direction as the project is not in the list.
     cleanup();
     p = setContainerDirection(setProjectDirection(p, 'rtl'), 'I1', 'rtl');
     show(p);

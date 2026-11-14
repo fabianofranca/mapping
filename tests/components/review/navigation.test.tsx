@@ -16,15 +16,16 @@ import { changeOf, propose } from '../../model/proposalFixtures';
 import { richScenario } from '../../store/proposalHarness';
 import { PanelWithShortcuts, openReviewHarness, renderInEditor } from './reviewHarness';
 
-// Navegação a partir da janela Propostas (fase 9.6, HANDOFF-REVIEW-DETAILS 6): a mudança
-// selecionada abre a seção, a camada e a anotação que a escondem, rola até o campo e o
-// destaca (`aria-current`); clique ou Enter na linha levam o foco ao marcador e abrem o
-// popover; as setas só rolam e destacam, o foco fica na lista.
+// Navigation from the Proposals window (phase 9.6, HANDOFF-REVIEW-DETAILS 6): the selected
+// change opens the section, layer and annotation that hide it, scrolls to the field and
+// highlights it (`aria-current`); click or Enter on the row move focus to the marker and open
+// the popover; the arrows only scroll and highlight, focus stays in the list.
+// pt-BR kept: shared fixture data asserted by tests/model (names from sampleProject, e.g. Vidros, tipo)
 
 const scrollIntoView = vi.fn();
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
   scrollIntoView.mockClear();
   Object.defineProperty(Element.prototype, 'scrollIntoView', {
@@ -37,21 +38,21 @@ afterEach(() => {
   Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
 });
 
-/** M1 com o par E3 da anotação A2 (camada Vidros) alterado. */
+/** M1 with pair E3 of annotation A2 (layer Vidros) changed. */
 function pairScenario(): { base: Project; after: Project } {
   const base = sampleProject();
-  return { base, after: updateEntry(base, 'A2', 'E3', { key: 'tipo', value: 'quebra' }) };
+  return { base, after: updateEntry(base, 'A2', 'E3', { key: 'tipo', value: 'break' }) };
 }
 
-describe('navegação até a mudança selecionada', () => {
-  it('abre a seção, a camada e a anotação recolhidas, rola até o campo e o destaca', async () => {
+describe('navigation to the selected change', () => {
+  it('opens the collapsed section, layer and annotation, scrolls to the field and highlights it', async () => {
     const { base, after } = pairScenario();
     const proposal = propose(base, after);
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     renderInEditor(h, <PanelHost />);
-    // A pessoa recolheu tudo depois de chegar ao item.
+    // The person collapsed everything after reaching the item.
     act(() => {
       h.ui.collapsed.value = new Set(['annotations', 'layer:L2', 'annotation:A2']);
     });
@@ -60,18 +61,18 @@ describe('navegação até a mudança selecionada', () => {
     const change = proposal.changes[0];
     if (!change) throw new Error('fixture');
     act(() => h.review.select({ level: 'change', id: change.id }));
-    const entry = await screen.findByRole('button', { name: /^tipo · .*: alterado/ });
+    const entry = await screen.findByRole('button', { name: /^tipo · .*: changed/ });
     expect(h.ui.collapsed.value.has('annotations')).toBe(false);
     expect(h.ui.collapsed.value.has('layer:L2')).toBe(false);
     expect(h.ui.collapsed.value.has('annotation:A2')).toBe(false);
     expect(entry.getAttribute('aria-current')).toBe('true');
     expect(scrollIntoView).toHaveBeenCalled();
-    // Selecionar não move o foco nem abre o popover (só o clique e o Enter).
+    // Selecting neither moves focus nor opens the popover (only click and Enter do).
     expect(document.activeElement).not.toBe(entry);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('o resumo da linha da mudança leva o texto inteiro no title', async () => {
+  it('the summary of the change row carries the full text in the title', async () => {
     const { base, after } = pairScenario();
     const proposal = propose(base, after);
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
@@ -86,26 +87,32 @@ describe('navegação até a mudança selecionada', () => {
     expect(text.getAttribute('title')).toBe(text.textContent);
   });
 
-  it('a coluna da marca da grade Chave/Valor segue o idioma', async () => {
+  it('the mark column of the Key/Value grid follows the language (pt-BR)', async () => {
     const { base, after } = pairScenario();
     const proposal = propose(base, after);
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     renderInEditor(h, <PanelHost />);
+    // pt-BR kept: locale switching is the object of the test (column header in both languages)
+    act(() => {
+      locale.value = 'pt-BR';
+    });
     const heads = () =>
       [...document.querySelectorAll('[role="columnheader"].visually-hidden')].map(
         (e) => e.textContent,
       );
+    // pt-BR kept: locale switching is the object of the test (column header in both languages)
     expect(heads()).toContain('Mudança');
     act(() => {
       locale.value = 'en-US';
     });
     await waitFor(() => expect(heads()).toContain('Change'));
+    // pt-BR kept: locale switching is the object of the test (column header in both languages)
     expect(heads()).not.toContain('Mudança');
   });
 
-  it('o clique ou Enter na lista leva o foco ao marcador e abre o popover', async () => {
+  it('click or Enter on the list moves focus to the marker and opens the popover', async () => {
     const { base, after } = pairScenario();
     const proposal = propose(base, after);
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
@@ -115,42 +122,42 @@ describe('navegação até a mudança selecionada', () => {
     const change = proposal.changes[0];
     if (!change) throw new Error('fixture');
 
-    // A linha da mudança na lista (clique).
+    // The change row in the list (click).
     const row = document.querySelector(`[data-row="change:${change.id}"]`) as HTMLElement;
     fireEvent.click(row);
-    const entry = await screen.findByRole('button', { name: /^tipo · .*: alterado/ });
+    const entry = await screen.findByRole('button', { name: /^tipo · .*: changed/ });
     await waitFor(() => expect(document.activeElement).toBe(entry));
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(h.review.markRequest.value).toBeNull();
     expect(h.review.selected.value).toEqual({ level: 'change', id: change.id });
   });
 
-  it('pelas setas só rola e destaca: o foco fica na lista', async () => {
+  it('with the arrows it only scrolls and highlights: focus stays in the list', async () => {
     const { proposal } = richScenario();
     const h = await openReviewHarness({ proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
     act(() => h.review.select({ level: 'proposal', id: null }));
     renderInEditor(h, <PanelHost />);
     const user = userEvent.setup();
-    const tree = screen.getByRole('tree', { name: 'Níveis da proposta' });
+    const tree = screen.getByRole('tree', { name: 'Proposal levels' });
     tree.focus();
-    // Desce até a mudança do nome de M1 (a primeira mudança com campo no painel).
+    // Goes down to the name change of M1 (the first change with a field in the panel).
     const name = changeOf(proposal, 'marking', 'M1', 'name');
     for (let i = 0; i < 20 && h.review.selected.value?.id !== name.id; i++) {
       await user.keyboard('{ArrowDown}');
     }
     expect(h.review.selected.value).toEqual({ level: 'change', id: name.id });
-    const nameMark = await screen.findByRole('button', { name: /^Nome: alterado/ });
+    const nameMark = await screen.findByRole('button', { name: /^Name: changed/ });
     expect(nameMark.getAttribute('aria-current')).toBe('true');
     expect(document.activeElement).toBe(tree);
     expect(screen.queryByRole('dialog')).toBeNull();
-    // Enter na mudança selecionada leva o foco ao marcador e abre o popover.
+    // Enter on the selected change moves focus to the marker and opens the popover.
     await user.keyboard('{Enter}');
     await waitFor(() => expect(document.activeElement).toBe(nameMark));
-    expect(screen.getByRole('dialog', { name: 'Nome · alterado' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Name · changed' })).toBeTruthy();
   });
 
-  it('item grande: abre a camada recolhida e o que passa do "Mostrar mais"', async () => {
+  it('large item: opens the collapsed layer and what goes past "Show more"', async () => {
     const base = sampleProject();
     let after = base;
     for (let i = 1; i <= 15; i++) {
@@ -166,7 +173,7 @@ describe('navegação até a mudança selecionada', () => {
     expect(h.review.open('P1').ok).toBe(true);
     act(() => h.review.select({ level: 'item', id: 'M4' }));
     renderInEditor(h, <PanelHost />);
-    // Camada recolhida e só os 12 primeiros cabeçalhos.
+    // Collapsed layer and only the first 12 headers.
     expect(h.ui.collapsed.value.has('layer:L1')).toBe(true);
     act(() => {
       h.ui.collapsed.value = new Set(
@@ -177,10 +184,10 @@ describe('navegação até a mudança selecionada', () => {
       12,
     );
     expect(
-      screen.getByRole('button', { name: 'Mostrar mais 3 anotação(ões)' }),
+      screen.getByRole('button', { name: 'Show 3 more annotation(s)' }),
     ).toBeTruthy();
 
-    // A 15ª (além do limite) abre sozinha ao ser selecionada.
+    // The 15th (beyond the limit) opens by itself when selected.
     const last = changeOf(proposal, 'annotation', 'N15');
     act(() => h.review.select({ level: 'change', id: last.id }));
     await waitFor(() =>
@@ -189,11 +196,11 @@ describe('navegação até a mudança selecionada', () => {
     expect(h.ui.collapsed.value.has('annotation:N15')).toBe(false);
     const card = document.querySelector('[data-annotation="N15"]') as HTMLElement;
     expect(
-      within(card).getByRole('button', { name: /^Anotação n15 criada: novo/ }),
+      within(card).getByRole('button', { name: /^Annotation n15 created: new/ }),
     ).toBeTruthy();
   });
 
-  it('N e C andam pelas pendentes e abrem o que as esconde', async () => {
+  it('N and C walk through the pending ones and open what hides them', async () => {
     const { base, after } = pairScenario();
     const proposal = propose(base, after);
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
@@ -207,13 +214,13 @@ describe('navegação até a mudança selecionada', () => {
     await user.keyboard('n');
     const change = proposal.changes[0];
     expect(h.review.selected.value).toEqual({ level: 'change', id: change?.id });
-    const entry = await screen.findByRole('button', { name: /^tipo · .*: alterado/ });
+    const entry = await screen.findByRole('button', { name: /^tipo · .*: changed/ });
     expect(entry.getAttribute('aria-current')).toBe('true');
     expect(h.ui.collapsed.value.has('layer:L2')).toBe(false);
   });
 });
 
-/** A janela Propostas (níveis) e os Detalhes, lado a lado. */
+/** The Proposals window (levels) and the Details, side by side. */
 function PanelHost() {
   return (
     <>

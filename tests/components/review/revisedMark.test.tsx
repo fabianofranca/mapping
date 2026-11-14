@@ -37,15 +37,13 @@ describe('Revised badge on the row', () => {
     const changed = rowOf(`change:${changedId}`);
     expect(within(changed).getByText('Revised')).toBeTruthy();
     // The Tooltip hint and the text for the screen reader.
-    expect(within(changed).getAllByText(/The agent replaced this change on /)).toHaveLength(
-      2,
-    );
+    expect(
+      within(changed).getAllByText(/The agent replaced this change on /),
+    ).toHaveLength(2);
     expect(changed.getAttribute('aria-label')).toBe('Name, Revised');
     const added = rowOf(`change:${addedId}`);
     expect(within(added).getByText('New in the revision')).toBeTruthy();
-    expect(
-      within(added).getAllByText(/The agent added this change on /),
-    ).toHaveLength(2);
+    expect(within(added).getAllByText(/The agent added this change on /)).toHaveLength(2);
     expect(added.getAttribute('aria-label')).toMatch(/, New in the revision$/);
     // A change the revision did not touch does not get the badge.
     const other = [

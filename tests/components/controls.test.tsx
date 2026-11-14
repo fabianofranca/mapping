@@ -87,9 +87,7 @@ describe('IconButton', () => {
   // Stage 6 (6.4), findings 2 and 6: the tooltip stays out of the flow (fixed position, computed
   // when it appears) and inside the browser window, without being cut by the panel edge.
   it('the tooltip positions itself on screen on hover, without leaving through the edge', () => {
-    const { container } = render(
-      <IconButton icon="undo" label="Show Class · Contact" />,
-    );
+    const { container } = render(<IconButton icon="undo" label="Show Class · Contact" />);
     const anchor = container.querySelector<HTMLElement>('.tooltip-anchor');
     const tip = container.querySelector<HTMLElement>('.tooltip');
     if (!anchor || !tip) throw new Error('no tooltip');

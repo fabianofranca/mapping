@@ -178,9 +178,7 @@ describe('ActionMenu', () => {
     const user = userEvent.setup();
     await user.click(trigger);
     await vi.waitFor(() =>
-      expect(document.activeElement).toBe(
-        screen.getByRole('menuitem', { name: 'Up' }),
-      ),
+      expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Up' })),
     );
     fireEvent.pointerDown(document.body);
     await vi.waitFor(() => expect(screen.queryByRole('menu')).toBeNull());

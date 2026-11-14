@@ -42,7 +42,7 @@ describe('proposal levels', () => {
     const h = await openRich();
     renderInEditor(h, <ProposalsWindow onHelp={() => {}} />);
     // pt-BR kept: shared fixture data (item 'Botão') asserted by tests/store and tests/components
-  const proposal = rowOf('Checkout');
+    const proposal = rowOf('Checkout');
     expect(proposal.getAttribute('aria-level')).toBe('1');
     // The new image and the item created in it, with the kind badge.
     const image = rowOf('images/nova.webp');
