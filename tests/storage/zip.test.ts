@@ -70,7 +70,7 @@ describe('project zip', () => {
     ]);
     expect(formatVersions).toEqual([
       ['specs/sdui.json', 5],
-      ['specs/modelo-dados.json', 1],
+      ['specs/data-model.json', 1],
     ]);
 
     const loaded = deserialize(read.files.mapping, migrations, read.files.specs);

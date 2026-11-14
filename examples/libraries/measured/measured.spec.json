@@ -1,14 +1,14 @@
 {
   "format": "mapping-spec",
   "formatVersion": 15,
-  "id": "medido",
-  "name": "Layout medido",
+  "id": "measured",
+  "name": "Measured layout",
   "version": 1,
-  "description": "Exemplo da origem medida: a árvore de retângulos de uma página (medida num navegador) vira marcações pelas sources dos tipos Botão e Cartão. O pertencimento sai da geometria.",
+  "description": "Example of the measured origin: the tree of rectangles of a page (measured in a browser) becomes markings through the sources of the Button and Card types. Containment comes from the geometry.",
   "origins": [
     {
       "system": "dom",
-      "name": "Página medida",
+      "name": "Measured page",
       "kind": "measured"
     }
   ],
@@ -20,7 +20,7 @@
       "annotationTypes": [
         {
           "id": "card",
-          "name": "Cartão",
+          "name": "Card",
           "component": "components/card.json",
           "doc": "docs/card.md",
           "sources": [
@@ -33,7 +33,7 @@
         },
         {
           "id": "button",
-          "name": "Botão",
+          "name": "Button",
           "labelField": "label",
           "component": "components/button.json",
           "doc": "docs/button.md",
@@ -46,7 +46,7 @@
           "fields": [
             {
               "key": "label",
-              "label": "Rótulo",
+              "label": "Label",
               "type": "string",
               "sources": [
                 {
@@ -57,7 +57,7 @@
             },
             {
               "key": "tone",
-              "label": "Tom",
+              "label": "Tone",
               "type": "enum",
               "options": ["neutral", "error"],
               "default": "neutral",

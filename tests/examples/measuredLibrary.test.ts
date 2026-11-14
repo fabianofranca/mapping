@@ -1,5 +1,5 @@
-// Biblioteca de exemplo `medido` (CF11): a origem `measured`, em que uma árvore de retângulos
-// medidos (a página de um app web) vira marcações pelas `sources` dos tipos.
+// Example library `measured` (CF11): the `measured` origin, in which a tree of measured
+// rectangles (the page of a web app) becomes markings through the types' `sources`.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -7,11 +7,11 @@ import { importMeasured } from '../../src/model/components/measured';
 import { validateLibrary } from '../../src/model/library';
 import { parseSpecText } from '../../src/model/spec';
 
-const ROOT = join(__dirname, '../../examples/libraries/medido');
-const SPEC_FILE = 'medido.spec.json';
-// A árvore medida fica ao lado da pasta: a origem `measured` não declara `examples`, e um arquivo
-// solto dentro da biblioteca viraria aviso de "não referenciado".
-const TREE = join(__dirname, '../../examples/pagina.medida.json');
+const ROOT = join(__dirname, '../../examples/libraries/measured');
+const SPEC_FILE = 'measured.spec.json';
+// The measured tree sits beside the folder: the `measured` origin does not declare `examples`, and a
+// loose file inside the library would become an "unreferenced" warning.
+const TREE = join(__dirname, '../../examples/page.measured.json');
 
 function listDisk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
@@ -26,8 +26,8 @@ const files = listDisk(ROOT)
   .map((path) => ({ path, text: readFileSync(join(ROOT, path), 'utf8') }));
 const text = (path: string): string => files.find((f) => f.path === path)?.text ?? '';
 
-describe('biblioteca de exemplo medido', () => {
-  it('tem a especialização, um componente e um documento por tipo', () => {
+describe('example library measured', () => {
+  it('has the specialization, one component and one document per type', () => {
     expect(files.map((f) => f.path)).toEqual(
       [
         SPEC_FILE,
@@ -39,7 +39,7 @@ describe('biblioteca de exemplo medido', () => {
     );
   });
 
-  it('valida sem erro nos três níveis e sem aviso', () => {
+  it('validates without errors on the three levels and without warnings', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
@@ -47,18 +47,18 @@ describe('biblioteca de exemplo medido', () => {
     expect(report.summary).toMatchObject({ level: 3, types: 2, components: 2, docs: 2 });
   });
 
-  it('declara a origem measured na formatVersion 15', () => {
+  it('declares the measured origin at formatVersion 15', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.spec.id).toBe('medido');
+    expect(parsed.spec.id).toBe('measured');
     expect(parsed.spec.origins).toMatchObject([
-      { system: 'dom', name: 'Página medida', kind: 'measured' },
+      { system: 'dom', name: 'Measured page', kind: 'measured' },
     ]);
   });
 });
 
-describe('importação da árvore medida de exemplo', () => {
+describe('import of the example measured tree', () => {
   const parsed = parseSpecText(text(SPEC_FILE));
   const result = parsed.ok
     ? importMeasured([parsed.spec], {
@@ -67,7 +67,7 @@ describe('importação da árvore medida de exemplo', () => {
       })
     : undefined;
 
-  it('cria o cartão e os três botões', () => {
+  it('creates the card and the three buttons', () => {
     expect(result?.error).toBeUndefined();
     expect(result?.markings.map((m) => m.typeId)).toEqual([
       'card',
@@ -77,17 +77,17 @@ describe('importação da árvore medida de exemplo', () => {
     ]);
   });
 
-  it('preenche os campos pelas props, com values para o enum', () => {
+  it('fills the fields from the props, with values for the enum', () => {
     const buttons = result?.markings.filter((m) => m.typeId === 'button') ?? [];
-    expect(buttons[0]?.values).toEqual({ label: 'Salvar', tone: 'error' });
-    expect(buttons[1]?.values).toEqual({ label: 'Cancelar', tone: 'neutral' });
+    expect(buttons[0]?.values).toEqual({ label: 'Save', tone: 'error' });
+    expect(buttons[1]?.values).toEqual({ label: 'Cancel', tone: 'neutral' });
   });
 
-  it('ignora com aviso os nós sem tipo e segue com os filhos', () => {
+  it('ignores typeless nodes with a warning and continues with the children', () => {
     const warnings = result?.warnings ?? [];
     expect(warnings).toHaveLength(2);
-    expect(warnings.some((w) => w.includes('x-pagina'))).toBe(true);
-    expect(warnings.some((w) => w.includes('x-misterioso'))).toBe(true);
-    expect(result?.markings.some((m) => m.values.label === 'Ajuda')).toBe(true);
+    expect(warnings.some((w) => w.includes('x-page'))).toBe(true);
+    expect(warnings.some((w) => w.includes('x-mysterious'))).toBe(true);
+    expect(result?.markings.some((m) => m.values.label === 'Help')).toBe(true);
   });
 });

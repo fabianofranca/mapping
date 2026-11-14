@@ -28,7 +28,7 @@ const texts = (p: Project, id: string, tables: 'summary' | 'full' = 'summary') =
 describe('typed display', () => {
   it('title: type + instance label (labelField or name)', () => {
     const p = cadastroProject();
-    expect(annotationTitle(p, annotation(p, 'AC'))).toBe('Classe · Contato');
+    expect(annotationTitle(p, annotation(p, 'AC'))).toBe('Class · Contato');
     expect(annotationTitle(p, annotation(p, 'AB'))).toBe('Button');
     const named = renameAnnotation(p, 'AB', 'Buy');
     expect(annotationTitle(named, annotation(named, 'AB'))).toBe('Button · Buy');
@@ -38,7 +38,7 @@ describe('typed display', () => {
   it('short label of the referrer: type + first filled text', () => {
     const p = cadastroProject();
     expect(annotationShortLabel(p, annotation(p, 'AIN'))).toBe('Input input_nome');
-    expect(annotationShortLabel(p, annotation(p, 'AC'))).toBe('Classe Contato');
+    expect(annotationShortLabel(p, annotation(p, 'AC'))).toBe('Class Contato');
     expect(annotationShortLabel(p, annotation(p, 'AOH'))).toBe('onHold');
   });
 
@@ -68,7 +68,7 @@ describe('typed display', () => {
     p = updateEntry(p, 'AU', 'EN', { key: 'fullname', value: 'string' });
     expect(texts(p, 'AIN')).toContain('dado: → User.fullname');
     expect(texts(p, 'AIE')).toContain('dado: → Contato.email');
-    p = removeTableRow(p, 'AC', 'atributos', 'R1');
+    p = removeTableRow(p, 'AC', 'attributes', 'R1');
     expect(texts(p, 'AIE')).toContain('dado: → (broken reference) !');
   });
 

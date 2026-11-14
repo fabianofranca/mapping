@@ -194,7 +194,7 @@ export function pickAppPage(pages, { origin = APP_ORIGIN } = {}) {
   const matches = pages.filter((candidate) => {
     try {
       const url = new URL(candidate.url);
-      return url.origin === wanted && !url.pathname.startsWith('/guia/');
+      return url.origin === wanted && !/^\/gui(de|a)\//.test(url.pathname);
     } catch {
       return false;
     }
@@ -225,7 +225,7 @@ function pickGuidePage(pages, { origin = APP_ORIGIN } = {}) {
   const matches = pages.filter((candidate) => {
     try {
       const url = new URL(candidate.url);
-      return url.origin === wanted && url.pathname.startsWith('/guia/');
+      return url.origin === wanted && /^\/gui(de|a)\//.test(url.pathname);
     } catch {
       return false;
     }

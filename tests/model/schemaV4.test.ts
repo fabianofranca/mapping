@@ -139,7 +139,7 @@ describe('applying a specialization', () => {
       p.specializations.map(({ id, version, file }) => ({ id, version, file })),
     ).toEqual([
       { id: 'sdui', version: SDUI_VERSION, file: 'specs/sdui.json' },
-      { id: 'modelo-dados', version: 1, file: 'specs/modelo-dados.json' },
+      { id: 'data-model', version: 1, file: 'specs/data-model.json' },
     ]);
     expect(p.layers.map((l) => [l.id, l.name, l.color, l.spec])).toEqual([
       ['L1', 'Lataria', '#D32F2F', null],
@@ -147,8 +147,8 @@ describe('applying a specialization', () => {
       ['LS1', 'Componentes', '#1E88E5', { specId: 'sdui', layerId: 'componentes' }],
       ['LS2', 'Eventos', '#FB8C00', { specId: 'sdui', layerId: 'eventos' }],
       ['LS3', 'Telas', '#00897B', { specId: 'sdui', layerId: 'telas' }],
-      ['LD1', 'Classes', '#43A047', { specId: 'modelo-dados', layerId: 'classes' }],
-      ['LD2', 'Endpoints', '#8E24AA', { specId: 'modelo-dados', layerId: 'endpoints' }],
+      ['LD1', 'Classes', '#43A047', { specId: 'data-model', layerId: 'classes' }],
+      ['LD2', 'Endpoints', '#8E24AA', { specId: 'data-model', layerId: 'endpoints' }],
     ]);
     expect(layerAnnotationTypes(p, 'LS1').map((t) => t.id)).toEqual([
       'button',
@@ -196,17 +196,17 @@ describe('typed annotations', () => {
     });
     expect(annotation(p, 'AOH').values).toEqual({ acao: 'track', duracaoMs: 500 });
     expect(annotation(p, 'AC').values).toEqual({
-      nome: 'Contato',
-      descricao: null,
-      versao: 1,
-      revisadoEm: '2026-10-02',
-      atributos: [
+      name: 'Contato',
+      description: null,
+      version: 1,
+      reviewedAt: '2026-10-02',
+      attributes: [
         {
           _id: 'R1',
-          nome: 'email',
-          tipo: 'String',
-          obrigatorio: 'sim',
-          exemplo: 'ana@exemplo.com',
+          name: 'email',
+          type: 'String',
+          required: 'yes',
+          example: 'ana@exemplo.com',
         },
       ],
     });
@@ -327,10 +327,10 @@ describe('typed annotations', () => {
     expect(codeOf(() => setFieldValue(p, 'AII', 'maxLength', '10'))).toBe(
       'invalid-value',
     );
-    expect(codeOf(() => setFieldValue(p, 'AC', 'revisadoEm', '2026-02-30'))).toBe(
+    expect(codeOf(() => setFieldValue(p, 'AC', 'reviewedAt', '2026-02-30'))).toBe(
       'invalid-value',
     );
-    expect(codeOf(() => setFieldValue(p, 'AC', 'atributos', []))).toBe('invalid-value');
+    expect(codeOf(() => setFieldValue(p, 'AC', 'attributes', []))).toBe('invalid-value');
     expect(codeOf(() => setFieldValue(p, 'AB', 'extra', 'x'))).toBe('unknown-field');
     expect(codeOf(() => setFieldValue(p, 'AU', 'name', 'x'))).toBe('not-typed');
     expect(codeOf(() => updateEntry(p, 'AB', 'EN', { key: 'a', value: 'b' }))).toBe(
@@ -350,34 +350,34 @@ describe('typed annotations', () => {
 
   it('table rows with _id: add, edit, reorder and remove', () => {
     let p = cadastroProject();
-    p = addTableRow(p, 'AC', 'atributos', 'R2');
-    expect(codeOf(() => addTableRow(p, 'AC', 'atributos', 'R2'))).toBe('duplicate-id');
-    p = setTableCell(p, 'AC', 'atributos', 'R2', 'nome', 'idade');
-    p = setTableCell(p, 'AC', 'atributos', 'R2', 'tipo', 'Int');
-    expect(codeOf(() => setTableCell(p, 'AC', 'atributos', 'R2', 'tipo', 'Float'))).toBe(
+    p = addTableRow(p, 'AC', 'attributes', 'R2');
+    expect(codeOf(() => addTableRow(p, 'AC', 'attributes', 'R2'))).toBe('duplicate-id');
+    p = setTableCell(p, 'AC', 'attributes', 'R2', 'name', 'idade');
+    p = setTableCell(p, 'AC', 'attributes', 'R2', 'type', 'Int');
+    expect(codeOf(() => setTableCell(p, 'AC', 'attributes', 'R2', 'type', 'Float'))).toBe(
       'unknown-option',
     );
-    expect(codeOf(() => setTableCell(p, 'AC', 'atributos', 'R9', 'nome', 'x'))).toBe(
+    expect(codeOf(() => setTableCell(p, 'AC', 'attributes', 'R9', 'name', 'x'))).toBe(
       'not-found',
     );
-    expect(codeOf(() => setTableCell(p, 'AC', 'atributos', 'R2', 'cor', 'x'))).toBe(
+    expect(codeOf(() => setTableCell(p, 'AC', 'attributes', 'R2', 'cor', 'x'))).toBe(
       'unknown-field',
     );
-    expect(annotation(p, 'AC').values?.atributos).toEqual([
+    expect(annotation(p, 'AC').values?.attributes).toEqual([
       {
         _id: 'R1',
-        nome: 'email',
-        tipo: 'String',
-        obrigatorio: 'sim',
-        exemplo: 'ana@exemplo.com',
+        name: 'email',
+        type: 'String',
+        required: 'yes',
+        example: 'ana@exemplo.com',
       },
-      { _id: 'R2', nome: 'idade', tipo: 'Int', obrigatorio: 'sim', exemplo: null },
+      { _id: 'R2', name: 'idade', type: 'Int', required: 'yes', example: null },
     ]);
-    p = moveTableRow(p, 'AC', 'atributos', 'R2', 0);
+    p = moveTableRow(p, 'AC', 'attributes', 'R2', 0);
     const rows = () =>
-      (annotation(p, 'AC').values?.atributos as { _id: string }[]).map((r) => r._id);
+      (annotation(p, 'AC').values?.attributes as { _id: string }[]).map((r) => r._id);
     expect(rows()).toEqual(['R2', 'R1']);
-    p = removeTableRow(p, 'AC', 'atributos', 'R2');
+    p = removeTableRow(p, 'AC', 'attributes', 'R2');
     expect(rows()).toEqual(['R1']);
     expectValid(p);
   });
@@ -387,7 +387,7 @@ describe('references', () => {
   it('the three formats resolve with the target label', () => {
     let p = cadastroProject();
     expect(refLabel(p, { annotationId: 'AU', entryId: 'EN' })).toBe('User.name');
-    expect(refLabel(p, { annotationId: 'AC', key: 'atributos', rowId: 'R1' })).toBe(
+    expect(refLabel(p, { annotationId: 'AC', key: 'attributes', rowId: 'R1' })).toBe(
       'Contato.email',
     );
     // Simple field with a tag: a "glossary" with the `name` field tagged.
@@ -510,16 +510,16 @@ describe('references', () => {
 
   it('deleting the target breaks the reference, without erasing it', () => {
     const p = cadastroProject();
-    const op = (x: Project) => removeTableRow(x, 'AC', 'atributos', 'R1');
+    const op = (x: Project) => removeTableRow(x, 'AC', 'attributes', 'R1');
     expect(refsBrokenBy(p, op)).toBe(1);
     const after = op(p);
     expect(annotation(after, 'AIE').values?.dado).toEqual({
       annotationId: 'AC',
-      key: 'atributos',
+      key: 'attributes',
       rowId: 'R1',
     });
     expect(issueCodes(after, 'AIE')).toEqual(['broken-ref:dado']);
-    expect(refLabel(after, { annotationId: 'AC', key: 'atributos', rowId: 'R1' })).toBe(
+    expect(refLabel(after, { annotationId: 'AC', key: 'attributes', rowId: 'R1' })).toBe(
       '(broken reference)',
     );
     // Deleting the annotation that owns the tuples breaks the two references to it.
@@ -559,7 +559,7 @@ describe('removing a specialization', () => {
     ]);
     expect(impact.brokenRefs).toBe(0);
     const after = expectValid(removeSpecialization(p, 'sdui', 'delete'));
-    expect(after.specializations.map((s) => s.id)).toEqual(['modelo-dados']);
+    expect(after.specializations.map((s) => s.id)).toEqual(['data-model']);
     expect(after.layers.map((l) => l.id)).toEqual(['L1', 'LM', 'LD1', 'LD2']);
     expect(after.annotations.map((a) => a.id)).toEqual(['AU', 'AC', 'AE']);
     expect(specFiles(after).has('specs/sdui.json')).toBe(false);
@@ -567,15 +567,15 @@ describe('removing a specialization', () => {
 
   it('deleting the model data breaks the references coming from SDUI', () => {
     const p = cadastroProject();
-    expect(specializationRemovalImpact(p, 'modelo-dados', 'delete').brokenRefs).toBe(1);
-    const after = removeSpecialization(p, 'modelo-dados', 'delete');
+    expect(specializationRemovalImpact(p, 'data-model', 'delete').brokenRefs).toBe(1);
+    const after = removeSpecialization(p, 'data-model', 'delete');
     expect(issueCodes(after, 'AIE')).toEqual(['broken-ref:dado']);
   });
 
   it('deleting data cannot leave the project without layers', () => {
     let p = specProject();
     p = removeLayer(removeLayer(p, 'L1'), 'LM');
-    p = removeSpecialization(p, 'modelo-dados', 'delete');
+    p = removeSpecialization(p, 'data-model', 'delete');
     expect(codeOf(() => removeSpecialization(p, 'sdui', 'delete'))).toBe('last-layer');
     expect(removeSpecialization(p, 'sdui', 'convert').layers.every((l) => !l.spec)).toBe(
       true,
@@ -584,11 +584,11 @@ describe('removing a specialization', () => {
 
   it('convert: free layers and annotations, flattened table and ref as text', () => {
     const p = cadastroProject();
-    const impact = specializationRemovalImpact(p, 'modelo-dados', 'convert');
+    const impact = specializationRemovalImpact(p, 'data-model', 'convert');
     expect(impact.annotations).toBe(2);
     expect(impact.brokenRefs).toBe(1);
     const after = expectValid(
-      removeSpecialization(p, 'modelo-dados', 'convert', { newId: idGen('EC') }),
+      removeSpecialization(p, 'data-model', 'convert', { newId: idGen('EC') }),
     );
     expect(after.specializations.map((s) => s.id)).toEqual(['sdui']);
     expect(after.layers.find((l) => l.id === 'LD1')).toEqual({
@@ -602,13 +602,13 @@ describe('removing a specialization', () => {
     expect(klass.type).toBeNull();
     expect(klass.values).toBeNull();
     expect(klass.entries).toEqual([
-      { id: 'EC1', key: 'nome', value: 'Contato' },
-      { id: 'EC2', key: 'versao', value: '1' },
-      { id: 'EC3', key: 'revisadoEm', value: '2026-10-02' },
-      { id: 'EC4', key: 'atributos[1].nome', value: 'email' },
-      { id: 'EC5', key: 'atributos[1].tipo', value: 'String' },
-      { id: 'EC6', key: 'atributos[1].obrigatorio', value: 'sim' },
-      { id: 'EC7', key: 'atributos[1].exemplo', value: 'ana@exemplo.com' },
+      { id: 'EC1', key: 'name', value: 'Contato' },
+      { id: 'EC2', key: 'version', value: '1' },
+      { id: 'EC3', key: 'reviewedAt', value: '2026-10-02' },
+      { id: 'EC4', key: 'attributes[1].name', value: 'email' },
+      { id: 'EC5', key: 'attributes[1].type', value: 'String' },
+      { id: 'EC6', key: 'attributes[1].required', value: 'yes' },
+      { id: 'EC7', key: 'attributes[1].example', value: 'ana@exemplo.com' },
     ]);
     expect(annotation(after, 'AE').name).toBe('Endpoint');
     // The e-mail Input breaks; the name and age ones point to the free User.
@@ -730,12 +730,12 @@ describe('updating a specialization', () => {
   });
 
   it('a target that lost its tag leaves the reference "not accepted"', () => {
-    const v2 = withChanges(loadExample('modelo-de-dados'), (s) => {
+    const v2 = withChanges(loadExample('data-model'), (s) => {
       s.version = SDUI_VERSION + 1;
-      const atributos = s.layers[0]?.annotationTypes[0]?.fields.find(
-        (f) => f.key === 'atributos',
+      const attributes = s.layers[0]?.annotationTypes[0]?.fields.find(
+        (f) => f.key === 'attributes',
       );
-      if (atributos?.type === 'table') delete atributos.tags;
+      if (attributes?.type === 'table') delete attributes.tags;
     });
     const p = updateSpecialization(cadastroProject(), v2);
     expect(issueCodes(p, 'AIE')).toEqual(['ref-not-accepted:dado']);
@@ -765,12 +765,12 @@ describe('issues and invariants', () => {
     const rows = patch(p, 'AC', {
       values: {
         ...(annotation(p, 'AC').values ?? {}),
-        atributos: [{ _id: 'R1', nome: '', tipo: 'Text' }],
+        attributes: [{ _id: 'R1', name: '', type: 'Text' }],
       },
     });
     expect(getAnnotationIssues(rows, 'AC')).toEqual([
-      { code: 'required-empty', key: 'atributos', rowId: 'R1', column: 'nome' },
-      { code: 'unknown-option', key: 'atributos', rowId: 'R1', column: 'tipo' },
+      { code: 'required-empty', key: 'attributes', rowId: 'R1', column: 'name' },
+      { code: 'unknown-option', key: 'attributes', rowId: 'R1', column: 'type' },
     ]);
     expect(issueCodes(patch(p, 'AOC', { parentAnnotationId: null }), 'AOC')).toEqual([
       'missing-owner',
@@ -813,7 +813,7 @@ describe('issues and invariants', () => {
     const dupRow = patch(p, 'AC', {
       values: {
         ...(annotation(p, 'AC').values ?? {}),
-        atributos: [{ _id: 'R1' }, { _id: 'R1' }],
+        attributes: [{ _id: 'R1' }, { _id: 'R1' }],
       },
     });
     expect(validateProject(dupRow).map((i) => i.code)).toEqual(['duplicate-row-id']);
@@ -827,12 +827,12 @@ describe('v4 serialization', () => {
     const data = JSON.parse(text);
     expect(data.specializations).toEqual([
       { id: 'sdui', version: SDUI_VERSION, file: 'specs/sdui.json' },
-      { id: 'modelo-dados', version: 1, file: 'specs/modelo-dados.json' },
+      { id: 'data-model', version: 1, file: 'specs/data-model.json' },
     ]);
     const klass = data.annotations.find((a: { id: string }) => a.id === 'AC');
-    expect(klass.values.versao).toBe(1);
-    expect(klass.values.revisadoEm).toBe('2026-10-02');
-    expect(klass.values.atributos[0]._id).toBe('R1');
+    expect(klass.values.version).toBe(1);
+    expect(klass.values.reviewedAt).toBe('2026-10-02');
+    expect(klass.values.attributes[0]._id).toBe('R1');
     expect(klass.entries).toEqual([]);
     const user = data.annotations.find((a: { id: string }) => a.id === 'AU');
     expect(user.type).toBeNull();
@@ -864,12 +864,12 @@ describe('v4 serialization', () => {
     const p = cadastroProject();
     const files = specFiles(p);
     files.delete('specs/sdui.json');
-    files.set('specs/modelo-dados.json', '{"format": "other"}');
+    files.set('specs/data-model.json', '{"format": "other"}');
     const loaded = deserialize(serialize(p), migrations, files);
     if (!loaded.ok) throw new Error(JSON.stringify(loaded.error));
     expect(loaded.specWarnings.map((w) => [w.specId, w.problem])).toEqual([
       ['sdui', 'missing'],
-      ['modelo-dados', 'invalid'],
+      ['data-model', 'invalid'],
     ]);
     expect(loaded.project.specializations.every((s) => s.spec === null)).toBe(true);
     expect(issueCodes(loaded.project, 'AB')).toEqual(['unknown-type']);

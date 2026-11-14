@@ -545,8 +545,7 @@ describe('examples', () => {
       .layers.flatMap((l) => l.annotationTypes)
       .find((t) => t.id === 'screen');
     expect(screen?.code).toBeUndefined();
-    // pt-BR kept: field keys of the sdui example, which is Portuguese data.
-    expect(screen?.fields.map((f) => f.key)).toEqual(['nome', 'rota']);
+    expect(screen?.fields.map((f) => f.key)).toEqual(['name', 'route']);
   });
 });
 

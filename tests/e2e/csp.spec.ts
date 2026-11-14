@@ -324,9 +324,9 @@ test.describe('CSP of index.html', () => {
 
   test('the guide (static profile) opens without violation', async ({ page }) => {
     const violations = await watchViolations(page);
-    await page.goto('/guia/');
-    // pt-BR kept: the interactive guide is pt-BR (its <title>)
-    await expect(page).toHaveTitle('Guia do Mapping');
+    await page.goto('/guide/');
+    // The browser locale is en-US (playwright.config.ts): the guide opens in English.
+    await expect(page).toHaveTitle('Mapping guide');
     await expect(page.locator('#steps button')).toHaveCount(14);
     const policy = await page
       .locator('meta[http-equiv="Content-Security-Policy"]')

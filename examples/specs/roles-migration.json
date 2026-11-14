@@ -1,41 +1,41 @@
 {
   "format": "mapping-spec",
   "formatVersion": 12,
-  "id": "papeis-migracao",
-  "name": "Papéis em migração",
+  "id": "roles-migration",
+  "name": "Roles in migration",
   "version": 2,
   "layers": [
     {
-      "id": "componentes",
-      "name": "Componentes",
+      "id": "components",
+      "name": "Components",
       "color": "#1E88E5",
       "annotationTypes": [
         {
           "id": "button",
           "name": "Button",
           "allowedChildren": ["interaction"],
-          "childRolesLabel": "Gatilho",
-          "childRoles": [{ "id": "click", "name": "Clique" }],
-          "fields": [{ "key": "texto", "type": "string", "required": true }]
+          "childRolesLabel": "Trigger",
+          "childRoles": [{ "id": "click", "name": "Click" }],
+          "fields": [{ "key": "text", "type": "string", "required": true }]
         },
         {
           "id": "slider",
           "name": "Slider",
           "allowedChildren": ["interaction"],
-          "childRolesLabel": "Gatilho",
-          "childRoles": [{ "id": "change", "name": "Alteração" }],
-          "fields": [{ "key": "texto", "type": "string", "required": true }]
+          "childRolesLabel": "Trigger",
+          "childRoles": [{ "id": "change", "name": "Change" }],
+          "fields": [{ "key": "text", "type": "string", "required": true }]
         }
       ]
     },
     {
-      "id": "eventos",
-      "name": "Eventos",
+      "id": "events",
+      "name": "Events",
       "color": "#E53935",
       "annotationTypes": [
         {
           "id": "interaction",
-          "name": "Interação",
+          "name": "Interaction",
           "requiresOwner": true,
           "fields": []
         }

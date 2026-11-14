@@ -43,7 +43,7 @@ export const enUS = {
   'home.newProject': 'New project',
   'home.openFolder': 'Open folder',
   'home.openZip': 'Open zip',
-  'home.guide': 'Interactive guide (in Portuguese)',
+  'home.guide': 'Interactive guide',
   'home.recentProjects': 'Recent projects',
   'home.noRecentProjects':
     'No projects yet. Projects on this device and the folders you open show up here.',
@@ -578,11 +578,11 @@ export const enUS = {
   'help.search': 'Search help',
   'help.guide.title': 'Interactive guide',
   'help.guide.intro':
-    'A 14-step tour of the example project: screens, markings, layers, typed annotations, containers with Material 3, reviewing a proposal and perspectives. It works offline and opens in a new tab. The guide is in Portuguese only.',
+    'A 14-step tour of the example project: screens, markings, layers, typed annotations, containers with Material 3, reviewing a proposal and perspectives. It works offline and opens in a new tab. The guide is in English or Portuguese, following the app’s language.',
   'help.guide.example':
     'To see the same project in the app, download examples/exemplo-completo.zip from the repository (github.com/fabianofranca/mapping) and use Open zip on the home screen (it creates a copy on this device and does not touch any folder).',
   'help.guide.fileProtocol':
-    "Opened as a standalone file, the app cannot find the guide: it lives in guia/index.html, next to index.html, in the build's dist/ folder and in the published version.",
+    "Opened as a standalone file, the app cannot find the guide: it lives in guide/index.html, next to index.html, in the build's dist/ folder and in the published version.",
   'help.guide.open': 'Open the interactive guide',
   'help.noResults': 'Nothing found for "{query}".',
   'help.shortcuts.title': 'Keyboard shortcuts',
@@ -843,7 +843,7 @@ export const enUS = {
   'help.specs.downloadsHint':
     'Download the examples and the format’s JSON Schema. The JSON Schema only validates the structure; the other rules are checked by the app when applying.',
   'help.specs.download.sdui': 'Download SDUI example (sdui.json)',
-  'help.specs.download.data-model': 'Download Data model example (modelo-de-dados.json)',
+  'help.specs.download.data-model': 'Download Data model example (data-model.json)',
   'help.specs.download.schema': 'Download JSON Schema (spec.schema.json)',
   'help.specs.applyHint':
     'To use an example: open a project, choose Specializations (a button on the main bar) → Apply and pick the downloaded file.',

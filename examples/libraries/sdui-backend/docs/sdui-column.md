@@ -1,36 +1,36 @@
 # Column
 
-Container vertical: os filhos se empilham pela ordem, com spacing e padding.
+Vertical container: the children stack in order, with spacing and padding.
 
-Tipo de anotação: `sdui-column` (Column).
+Annotation type: `sdui-column` (Column).
 
-## Tamanho
+## Size
 
-- Inicial: 380 × 200 px
-- Mínimo: 24 × 24 px
-- Dimensionamento: largura fill, altura hug
+- Initial: 380 × 200 px
+- Minimum: 24 × 24 px
+- Sizing: width fill, height hug
 
-## Campos
+## Fields
 
-| Chave     | Rótulo  | Tipo   | Obrigatório | Opções | Padrão |
-| --------- | ------- | ------ | ----------- | ------ | ------ |
-| `spacing` | Spacing | number | não         |        | 8      |
-| `padding` | Padding | number | não         |        | 0      |
+| Key       | Label   | Type   | Required | Options | Default |
+| --------- | ------- | ------ | -------- | ------- | ------- |
+| `spacing` | Spacing | number | no       |         | 8       |
+| `padding` | Padding | number | no       |         | 0       |
 
 ## Slot
 
-Este componente tem um slot que recebe os filhos (`content`).
+This component has a slot that receives the children (`content`).
 
-## Exemplos
+## Examples
 
-- **Padrão**: spacing=8, padding=0
-- **Espaçada**: spacing=16, padding=16
+- **Default**: spacing=8, padding=0
+- **Spaced**: spacing=16, padding=16
 
-## Origem externa
+## External origin
 
-- Sistema `sdui`: tipo externo `Column`, slot `content`
+- System `sdui`: external type `Column`, slot `content`
 
-| Campo     | Caminho em `props` |
-| --------- | ------------------ |
-| `spacing` | `spacing`          |
-| `padding` | `padding`          |
+| Field     | Path in `props` |
+| --------- | --------------- |
+| `spacing` | `spacing`       |
+| `padding` | `padding`       |

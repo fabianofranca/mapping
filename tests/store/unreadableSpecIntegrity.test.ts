@@ -66,20 +66,19 @@ interface Fixture {
   readonly futureText: string;
   /** The other files of the unreadable specialization package (empty in the `flat` layout). */
   readonly futureExtras: ReadonlyMap<string, string>;
-  /** Text of the copy of the valid specialization (`modelo-dados`). */
+  /** Text of the copy of the valid specialization (`data-model`). */
   readonly validText: string;
   readonly validFile: string;
 }
 
 /**
- * Project with the SDUI-like `modelo-dados` (valid) and the `future` (unreadable), both with typed
+ * Project with the SDUI-like `data-model` (valid) and the `future` (unreadable), both with typed
  * annotations and values, plus the free annotations of `sampleProject`. The `future` is written with
  * `formatVersion` 99 and `variants` in `code`, which the app does not know.
  */
 function fixture(layout: Layout): Fixture {
-  // pt-BR kept: ids and field keys of the shipped example `modelo-de-dados` (shared example data asserted by tests/examples)
-  const valid = loadExample('modelo-de-dados');
-  // The same specialization with another id: two types `classe`/`endpoint` in distinct specIds.
+  const valid = loadExample('data-model');
+  // The same specialization with another id: two types `class`/`endpoint` in distinct specIds.
   const future: Spec = { ...valid, id: 'future', name: 'Future', version: 3 };
 
   let p = sampleProject();
@@ -105,18 +104,18 @@ function fixture(layout: Layout): Fixture {
     });
   };
   // Annotation of a valid type, which the person will edit.
-  add('AV1', 'M2', 'modelo-dados', 'classes', 'classe');
-  p = setFieldValue(p, 'AV1', 'nome', 'Valid');
+  add('AV1', 'M2', 'data-model', 'classes', 'class');
+  p = setFieldValue(p, 'AV1', 'name', 'Valid');
   // Annotations of the unreadable specialization, which must not change.
-  add('AF1', 'M1', 'future', 'classes', 'classe');
-  p = setFieldValue(p, 'AF1', 'nome', 'Future');
-  p = setFieldValue(p, 'AF1', 'descricao', 'Values that the app cannot interpret');
-  p = setFieldValue(p, 'AF1', 'versao', 7);
-  p = addTableRow(p, 'AF1', 'atributos', 'R1');
-  p = setTableCell(p, 'AF1', 'atributos', 'R1', 'nome', 'id');
-  p = setTableCell(p, 'AF1', 'atributos', 'R1', 'tipo', 'Long');
+  add('AF1', 'M1', 'future', 'classes', 'class');
+  p = setFieldValue(p, 'AF1', 'name', 'Future');
+  p = setFieldValue(p, 'AF1', 'description', 'Values that the app cannot interpret');
+  p = setFieldValue(p, 'AF1', 'version', 7);
+  p = addTableRow(p, 'AF1', 'attributes', 'R1');
+  p = setTableCell(p, 'AF1', 'attributes', 'R1', 'name', 'id');
+  p = setTableCell(p, 'AF1', 'attributes', 'R1', 'type', 'Long');
   add('AF2', 'M3', 'future', 'endpoints', 'endpoint');
-  p = setFieldValue(p, 'AF2', 'metodo', 'POST');
+  p = setFieldValue(p, 'AF2', 'method', 'POST');
   p = setFieldValue(p, 'AF2', 'path', '/future/{id}');
   p = setFieldValue(p, 'AF2', 'timeoutMs', 250);
 
@@ -127,7 +126,7 @@ function fixture(layout: Layout): Fixture {
     if (!s) throw new Error(`specialization ${id} without reference`);
     return s.file;
   };
-  const validFile = refOf('modelo-dados');
+  const validFile = refOf('data-model');
   const futureFile = refOf('future');
 
   // The unreadable copy: formatVersion that the app does not support and unknown keys, in an order and
@@ -154,11 +153,8 @@ function fixture(layout: Layout): Fixture {
   const futureExtras = new Map<string, string>();
   if (layout === 'package') {
     const dir = futureFile.slice(0, futureFile.lastIndexOf('/'));
-    futureExtras.set(
-      `${dir}/components/classe.json`,
-      '{"formatVersion":99,"nodes":[]}\n',
-    );
-    futureExtras.set(`${dir}/docs/classe.md`, '# Class\n\nDocument text.\n');
+    futureExtras.set(`${dir}/components/class.json`, '{"formatVersion":99,"nodes":[]}\n');
+    futureExtras.set(`${dir}/docs/class.md`, '# Class\n\nDocument text.\n');
     for (const [path, text] of futureExtras) root.put(path, text);
   }
   return {
@@ -234,7 +230,7 @@ describe.each<Layout>(['flat', 'package'])(
       // The unreadable copy does not become a `Spec`; the valid one does.
       const specs = loaded.ok ? loaded.project.specializations : [];
       expect(specs.find((x) => x.id === 'future')?.spec).toBeNull();
-      expect(specs.find((x) => x.id === 'modelo-dados')?.spec).not.toBeNull();
+      expect(specs.find((x) => x.id === 'data-model')?.spec).not.toBeNull();
       // The annotations of the unreadable specialization stay in the project, with the values.
       const kept = loaded.ok
         ? loaded.project.annotations.filter((a) => a.type?.specId === 'future')
@@ -254,7 +250,7 @@ describe.each<Layout>(['flat', 'package'])(
       s.actions.moveMarking('M4', 10, 10);
       s.actions.updateEntry('A1', 'E1', { key: 'type', value: 'crossed out' });
       s.actions.renameAnnotation('A4', 'Another note');
-      s.actions.setFieldValue('AV1', 'nome', 'Valid edited');
+      s.actions.setFieldValue('AV1', 'name', 'Valid edited');
       await save(s);
 
       const after = parse(await f.root.read('mapping.json'));
@@ -287,7 +283,7 @@ describe.each<Layout>(['flat', 'package'])(
       ).toEqual(f.project.annotations.filter((a) => a.id.startsWith('AF')));
       expect(again.project.annotations.find((a) => a.id === 'AV1')?.values).toMatchObject(
         {
-          nome: 'Valid edited',
+          name: 'Valid edited',
         },
       );
     });

@@ -2,15 +2,15 @@
   "format": "mapping-component",
   "formatVersion": 4,
   "id": "card",
-  "name": "Cartão",
-  "description": "Cartão branco com borda fina, que contém outros elementos.",
+  "name": "Card",
+  "description": "White card with a thin border that contains other elements.",
   "size": {
     "width": 320,
     "height": 160
   },
   "template": {
     "type": "frame",
-    "name": "cartão",
+    "name": "card",
     "cornerRadius": 8,
     "fill": "#FFFFFF",
     "stroke": {

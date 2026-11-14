@@ -242,7 +242,7 @@ describe('get_code_hints', () => {
       }),
     );
     expect(hints.unmappedTypes).toEqual(
-      expect.arrayContaining(['sdui/screen', 'modelo-dados/classe']),
+      expect.arrayContaining(['sdui/screen', 'data-model/class']),
     );
     expect(hints.types).not.toHaveProperty('sdui/screen');
     const screen = flatten(hints.tree).find((a) => a.type === 'sdui/screen')!;
@@ -779,8 +779,8 @@ describe('plan_changes: repositories per platform and nonexistent field', () => 
     const specs = new Map([
       ['specs/sdui.json', readFileSync(join(dir, 'specs', 'sdui.json'), 'utf8')],
       [
-        'specs/modelo-dados.json',
-        readFileSync(join(dir, 'specs', 'modelo-dados.json'), 'utf8'),
+        'specs/data-model.json',
+        readFileSync(join(dir, 'specs', 'data-model.json'), 'utf8'),
       ],
     ]);
     const parsed = deserialize(text, undefined, specs);

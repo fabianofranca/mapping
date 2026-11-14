@@ -60,13 +60,13 @@ describe('resolve with the new grammar', () => {
 
   it('field, pair and row, with the reference of the annotation that contains them', async () => {
     const field = ok(
-      await mcp.call<Resolved>('resolve', { ref: `${base('a', id('AC'))}/f/nome` }),
+      await mcp.call<Resolved>('resolve', { ref: `${base('a', id('AC'))}/f/name` }),
     );
     expect(field).toMatchObject({
       kind: 'field',
-      ref: `${base('a', id('AC'))}/f/nome`,
+      ref: `${base('a', id('AC'))}/f/name`,
       annotation: base('a', id('AC')),
-      key: 'nome',
+      key: 'name',
       value: 'Contato',
     });
     const entry = ok(
@@ -81,13 +81,13 @@ describe('resolve with the new grammar', () => {
     });
     const row = ok(
       await mcp.call<Resolved>('resolve', {
-        ref: `${base('a', id('AC'))}/f/atributos/r/${codeOf(id('R1'))}`,
+        ref: `${base('a', id('AC'))}/f/attributes/r/${codeOf(id('R1'))}`,
       }),
     );
     expect(row).toMatchObject({
       kind: 'row',
       annotation: base('a', id('AC')),
-      key: 'atributos',
+      key: 'attributes',
       rowId: id('R1'),
     });
   });
@@ -106,9 +106,9 @@ describe('resolve with the new grammar', () => {
       `${base('m', id('MF'))}/extra`,
       `${base('m', id('MF'))}?x=1`,
       `${base('a', id('AC'))}/f`,
-      `${base('a', id('AC'))}/x/nome`,
-      `${base('a', id('AC'))}/f/nome/r`,
-      `${base('l', id('LM'))}/f/nome`,
+      `${base('a', id('AC'))}/x/name`,
+      `${base('a', id('AC'))}/f/name/r`,
+      `${base('l', id('LM'))}/f/name`,
     ]) {
       expect(errorOf(await mcp.call('resolve', { ref: bad })).code, bad).toBe(
         'invalid-ref',
@@ -131,8 +131,8 @@ describe('resolve with the new grammar', () => {
 describe('the item tools accept the sub-reference', () => {
   it('get_annotation with a field, pair or row returns the annotation that contains them', async () => {
     for (const ref of [
-      `${base('a', id('AC'))}/f/nome`,
-      `${base('a', id('AC'))}/f/atributos/r/${codeOf(id('R1'))}`,
+      `${base('a', id('AC'))}/f/name`,
+      `${base('a', id('AC'))}/f/attributes/r/${codeOf(id('R1'))}`,
     ]) {
       const a = ok(await mcp.call<{ ref: string }>('get_annotation', { ref }));
       expect(a.ref, ref).toBe(base('a', id('AC')));
@@ -147,7 +147,7 @@ describe('the item tools accept the sub-reference', () => {
 
   it('a sub-reference in a marking or container tool is wrong-kind', async () => {
     expect(
-      errorOf(await mcp.call('get_marking', { ref: `${base('a', id('AC'))}/f/nome` }))
+      errorOf(await mcp.call('get_marking', { ref: `${base('a', id('AC'))}/f/name` }))
         .code,
     ).toBe('wrong-kind');
     expect(

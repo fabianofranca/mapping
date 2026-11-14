@@ -36,7 +36,7 @@ export function typedAnnotations(
   markings: readonly Marking[],
 ): Annotation[] {
   const layer = {
-    classe: layerOf(spec, 'modelo-dados', 'classes'),
+    class: layerOf(spec, 'data-model', 'classes'),
     componentes: layerOf(spec, 'sdui', 'componentes'),
   };
   const annotations: Annotation[] = [];
@@ -78,12 +78,11 @@ export function typedAnnotations(
   markings.forEach((marking, i) => {
     free(`F${i}`, marking.id, 'L1');
     if (i % 2 === 0) {
-      typed(`C${i}`, marking.id, layer.classe, 'modelo-dados', 'classe', {
-        nome: `Classe${i}`,
-        atributos: [
-          { _id: `C${i}-r1`, nome: 'id', tipo: 'Long', obrigatorio: 'sim' },
-          // pt-BR kept: enum value of the specFixtures sample specialization (outside this batch)
-          { _id: `C${i}-r2`, nome: 'nome', tipo: 'String', obrigatorio: 'não' },
+      typed(`C${i}`, marking.id, layer.class, 'data-model', 'class', {
+        name: `Class${i}`,
+        attributes: [
+          { _id: `C${i}-r1`, name: 'id', type: 'Long', required: 'yes' },
+          { _id: `C${i}-r2`, name: 'name', type: 'String', required: 'no' },
         ],
       });
       const target = `F${(i + 1) % markings.length}`;
@@ -98,7 +97,7 @@ export function typedAnnotations(
       typed(`N${i}`, marking.id, layer.componentes, 'sdui', 'input', {
         id: `input_${i}`,
         tipo: 'text',
-        dado: { annotationId: `C${i - 1}`, key: 'atributos', rowId },
+        dado: { annotationId: `C${i - 1}`, key: 'attributes', rowId },
       });
       free(`G${i}`, marking.id, 'LM');
     }

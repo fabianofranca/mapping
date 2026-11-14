@@ -241,7 +241,7 @@ describe('Home (B10)', () => {
     render(<Home />);
     const side = screen.getByRole('complementary', { name: t('home.sideLabel') });
     const link = within(side).getByRole('link', { name: t('home.guide') });
-    expect(link.getAttribute('href')).toBe('guia/index.html');
+    expect(link.getAttribute('href')).toBe('guide/index.html');
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('rel')).toContain('noopener');
   });

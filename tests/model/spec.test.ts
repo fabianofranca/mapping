@@ -13,8 +13,7 @@ const read = (path: string): string => readFileSync(path, 'utf8');
 const sdui = read('examples/specs/sdui.json');
 // The SDUI from before `repo` (formatVersion 2): base of the platform and code cases.
 const sduiV2 = read('tests/fixtures/sdui-v2.json');
-// pt-BR kept: file names of shared fixtures (examples/specs/, tests/fixtures/specs/), outside this phase
-const dataModel = read('examples/specs/modelo-de-dados.json');
+const dataModel = read('examples/specs/data-model.json');
 const library = read('tests/fixtures/specs/biblioteca.json');
 const jsonSchema = JSON.parse(read('docs/spec.schema.json')) as Record<string, unknown>;
 const jsonValidator = z.fromJSONSchema(jsonSchema as never);
@@ -34,7 +33,7 @@ function errorsOf(result: SpecParseResult): string[] {
 describe('specialization examples', () => {
   it.each([
     ['sdui', sdui],
-    ['modelo-de-dados', dataModel],
+    ['data-model', dataModel],
     ['biblioteca', library],
   ])('%s validates in zod and in the JSON Schema', (_name, text) => {
     const result = parseSpecText(text);
@@ -48,8 +47,7 @@ describe('specialization examples', () => {
     const { spec } = result;
     expect(spec.formatVersion).toBe(12);
     expect(spec.version).toBe(4);
-    // pt-BR kept: shared fixture data (examples/specs/sdui.json, outside this phase)
-    expect(spec.layers.map((l) => l.id)).toEqual(['componentes', 'eventos', 'telas']);
+    expect(spec.layers.map((l) => l.id)).toEqual(['components', 'events', 'screens']);
     expect(spec.layers[1]?.annotationTypes[0]?.requiresOwner).toBe(true);
     const repo = (name: string) => ({
       url: `https://github.com/org/${name}`,
@@ -67,7 +65,7 @@ describe('specialization examples', () => {
     const result = parseSpecText(sdui);
     if (!result.ok) throw new Error('failed');
     const types = result.spec.layers
-      .filter((l) => l.id !== 'telas')
+      .filter((l) => l.id !== 'screens')
       .flatMap((l) => l.annotationTypes);
     expect(types.map((t) => t.id)).toEqual([
       'button',
@@ -84,9 +82,8 @@ describe('specialization examples', () => {
     const button = types[0]?.code?.android;
     expect(button?.symbol).toBe('com.app.ds.DSButton');
     expect(button?.path).toBe('app/src/main/java/com/app/ds/DSButton.kt');
-    // pt-BR kept: shared fixture data (examples/specs/sdui.json, outside this phase)
-    expect(button?.params).toMatchObject({ texto: 'text', estilo: 'style' });
-    expect(button?.values?.estilo?.primary).toBe('ButtonStyle.Primary');
+    expect(button?.params).toMatchObject({ text: 'text', style: 'style' });
+    expect(button?.values?.style?.primary).toBe('ButtonStyle.Primary');
     // The bff points to the Kotlin function that generates the component node, not to the node.
     const bff = types[0]?.code?.bff;
     expect(bff?.symbol).toBe('com.app.bff.sdui.button');
@@ -100,18 +97,17 @@ describe('specialization examples', () => {
     }
   });
 
-  it('the Telas layer has the Screen, with only name and route', () => {
+  it('the Screens layer has the Screen, with only name and route', () => {
     const result = parseSpecText(sdui);
     if (!result.ok) throw new Error('failed');
     const layer = result.spec.layers[2];
-    // pt-BR kept: shared fixture data (examples/specs/sdui.json, outside this phase)
-    expect(layer?.name).toBe('Telas');
+    expect(layer?.name).toBe('Screens');
     const screen = layer?.annotationTypes[0];
     expect(screen?.name).toBe('Screen');
-    expect(screen?.labelField).toBe('nome');
+    expect(screen?.labelField).toBe('name');
     expect(screen?.fields.map((f) => [f.key, f.type])).toEqual([
-      ['nome', 'string'],
-      ['rota', 'string'],
+      ['name', 'string'],
+      ['route', 'string'],
     ]);
     expect(screen?.code).toBeUndefined();
     expect(result.ignored).toEqual([]);
@@ -403,7 +399,7 @@ describe('zod × JSON Schema consistency', () => {
 const BUTTON = 'layers[0].annotationTypes[0]';
 const SCREEN = 'layers[2].annotationTypes[0]';
 
-/** v1 specialization: the SDUI without platforms, without `code` and without the Telas layer. */
+/** v1 specialization: the SDUI without platforms, without `code` and without the Screens layer. */
 function asV1(spec: Json): Json {
   const v1 = structuredClone(spec);
   v1.formatVersion = 1;
@@ -415,7 +411,7 @@ function asV1(spec: Json): Json {
   return v1;
 }
 
-/** Removes `platforms`, all `code` and the Telas layer: what is left is a valid specialization. */
+/** Removes `platforms`, all `code` and the Screens layer: what is left is a valid specialization. */
 function withoutPlatforms(spec: Json): Json {
   const out = asV1(spec);
   out.formatVersion = 2;

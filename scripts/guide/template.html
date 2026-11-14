@@ -1,16 +1,16 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en" data-locale="en-US">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Guia do Mapping</title>
+    <title>Mapping guide</title>
     <link rel="icon" type="image/svg+xml" href="../icons/icon.svg" />
     <script>
-      // Segue o tema escolhido na app (mesma origem, mesma chave de Configurações). O guia é o
-      // mesmo arquivo nos dois canais; no preview (/preview/guia/) a app grava com o prefixo
-      // `preview:` (channelStorageKey), então o canal sai do caminho.
+      // Follows the theme chosen in the app (same origin, same Settings key). The guide is the
+      // same file in both channels; in the preview (/preview/guide/) the app saves with the
+      // `preview:` prefix (channelStorageKey), so the channel comes from the path.
       try {
-        const themeKey = /\/preview\/guia\//.test(location.pathname)
+        const themeKey = /\/preview\/guide\//.test(location.pathname)
           ? 'preview:mapping.theme'
           : 'mapping.theme';
         const theme = localStorage.getItem(themeKey);
@@ -18,15 +18,38 @@
           document.documentElement.setAttribute('data-theme', theme);
         }
       } catch {
-        // Armazenamento bloqueado: vale o tema do sistema.
+        // Storage blocked: the system theme applies.
+      }
+    </script>
+    <script>
+      /*__PICK_LOCALE__*/
+      // The language: the one saved by the app (same key as the theme, with the channel prefix)
+      // or the browser's, by the same rule as the app. There is no picker in the page.
+      {
+        let saved = null;
+        try {
+          saved = localStorage.getItem(
+            /\/preview\/guide\//.test(location.pathname)
+              ? 'preview:mapping.locale'
+              : 'mapping.locale',
+          );
+        } catch {
+          // Storage blocked: the browser language applies.
+        }
+        const chosen = pickLocale(saved, navigator.language);
+        document.documentElement.setAttribute('data-locale', chosen);
+        document.documentElement.setAttribute(
+          'lang',
+          chosen === 'pt-BR' ? 'pt-BR' : 'en',
+        );
       }
     </script>
     <style>
       /*__TOKENS_CSS__*/
 
-      /* Guia: roteiro à esquerda, container anotado no centro, inspetor à direita.
-       Só tokens da app (cores, espaços, raios, fontes, durações); os desenhos dos
-       componentes Material 3 ficam no JS (representam o componente, não a interface). */
+      /* Guide: walkthrough on the left, annotated container in the center, inspector on the right.
+       Only the app's tokens (colors, spacing, radii, fonts, durations); the drawings of the
+       Material 3 components stay in the JS (they represent the component, not the interface). */
       * {
         box-sizing: border-box;
       }
@@ -87,7 +110,7 @@
         gap: var(--space-4);
         align-items: start;
       }
-      /* Os breakpoints do @media ficam literais: CSS não aceita var() ali. */
+      /* The @media breakpoints stay literal: CSS does not accept var() there. */
       @media (max-width: 1020px) {
         .grid {
           grid-template-columns: minmax(0, 1fr);
@@ -364,6 +387,11 @@
         border-collapse: collapse;
         width: 100%;
       }
+      /* The shortcut table has one row per language; only the chosen one shows. */
+      html[data-locale='en-US'] tr[data-locale='pt-BR'],
+      html[data-locale='pt-BR'] tr[data-locale='en-US'] {
+        display: none;
+      }
       .shortcut-note {
         margin: var(--space-2) 0 0;
         color: var(--color-text-muted);
@@ -399,7 +427,7 @@
           grid-template-columns: 1fr;
         }
       }
-      /* Marcações: o contorno e o preenchimento usam a cor da camada (currentColor). */
+      /* Markings: the outline and the fill use the layer's color (currentColor). */
       .mk {
         cursor: pointer;
         color: var(--color-text-muted);
@@ -436,102 +464,82 @@
     </style>
   </head>
   <body>
-    <noscript>Este guia precisa de JavaScript.</noscript>
+    <noscript><!--__NOSCRIPT__--></noscript>
     <div class="wrap">
       <header>
-        <h1>Guia do Mapping</h1>
-        <p>
-          Um projeto de exemplo completo, desenhado aqui como a app o mostra: containers
-          (aqui, telas de um app), marcações, camadas e anotações. Clique nas marcações
-          para ver o que cada uma guarda e siga o roteiro à esquerda.
-        </p>
+        <h1 data-i18n="heading"></h1>
+        <p data-i18n="intro"></p>
         <div class="open">
-          <span
-            >Na app: baixe <code>examples/exemplo-completo.zip</code> do repositório
-            (github.com/fabianofranca/mapping) e use <code>Abrir zip</code>, na tela
-            inicial, para ver o mesmo projeto lado a lado.</span
-          >
-          <span>Catálogo: <kbd>Ctrl+Shift+9</kbd></span>
-          <a href="../index.html">Abrir o Mapping</a>
+          <span data-i18n="openInApp"></span>
+          <span><span data-i18n="catalogLabel"></span> <kbd>Ctrl+Shift+9</kbd></span>
+          <a href="../index.html" data-i18n="openApp"></a>
         </div>
       </header>
 
       <div class="grid">
-        <aside class="panel" aria-label="Roteiro">
-          <h2>Roteiro</h2>
+        <aside class="panel" data-i18n-aria="stepsHeading">
+          <h2 data-i18n="stepsHeading"></h2>
           <ol class="steps" id="steps"></ol>
           <div class="lesson" id="lesson" aria-live="polite"></div>
           <div class="nav">
-            <button class="btn" id="prev">Anterior</button>
-            <button class="btn primary" id="next">Próximo</button>
+            <button class="btn" id="prev" data-i18n="previous"></button>
+            <button class="btn primary" id="next" data-i18n="next"></button>
           </div>
         </aside>
 
-        <main class="panel" aria-label="Container anotado">
+        <main class="panel" data-i18n-aria="stageLabel">
           <div class="persp">
-            <label for="persp">Perspectiva</label>
+            <label for="persp" data-i18n="perspectiveLabel"></label>
             <select id="persp"></select>
           </div>
           <div class="tabs" role="tablist" id="tabs"></div>
           <div class="stage">
-            <svg id="svg" role="group" aria-label="Container com marcações"></svg>
+            <svg id="svg" role="group" data-i18n-aria="svgLabel"></svg>
           </div>
-          <div class="layers" id="layers" aria-label="Camadas"></div>
-          <div class="hint">
-            Cada contorno é uma marcação, na cor da camada da sua anotação. Clique na
-            camada para ocultar ou mostrar. A perspectiva recorta as abas e as camadas.
-          </div>
+          <div class="layers" id="layers" data-i18n-aria="layersLabel"></div>
+          <div class="hint" data-i18n="hint"></div>
         </main>
 
-        <aside class="panel insp" aria-label="Detalhes" id="insp"></aside>
+        <aside class="panel insp" data-i18n-aria="detailsLabel" id="insp"></aside>
       </div>
 
       <section class="cols">
         <div class="panel">
-          <h2>A proposta de exemplo</h2>
-          <p>
-            Na janela <b>Propostas</b> (<kbd>Ctrl+Shift+7</kbd>) há uma proposta pronta,
-            escrita por um agente: <b>Tela de Perfil e ajuste no Cadastro</b>. Clique em
-            <b>Revisar</b>, compare <b>Atual</b> × <b>Proposto</b> e aceite ou rejeite
-            cada mudança; no fim, <b>Aplicar aceitas</b>.
-          </p>
+          <h2 data-i18n="proposalHeading"></h2>
+          <p data-i18n="proposalText"></p>
           <div class="diff">
             <div>
-              <b>ATUAL</b>Botão do Cadastro: “Cadastrar”<br />Containers: Cadastro, Login,
-              Configurações, Detalhes do pedido
+              <b data-i18n="diffCurrentLabel"></b><span data-i18n="diffCurrent"></span>
             </div>
             <div>
-              <b>PROPOSTO</b>Botão renomeado: “Botão cadastrar”<br />Novo container
-              <i>Perfil</i> 360 × 800 com Top app bar, 2 List items e Button “Sair”
+              <b data-i18n="diffProposedLabel"></b><span data-i18n="diffProposed"></span>
             </div>
           </div>
         </div>
         <div class="panel scroll">
-          <h2>Atalhos</h2>
+          <h2 data-i18n="shortcutsHeading"></h2>
           <table>
             <tbody>
               <!--__SHORTCUT_ROWS__-->
             </tbody>
           </table>
-          <p class="shortcut-note">
-            Com o foco fora da janela, o atalho leva o foco a ela e a abre, se estiver
-            fechada. Com o foco dentro dela, o atalho esconde a janela.
-          </p>
+          <p class="shortcut-note" data-i18n="shortcutNote"></p>
         </div>
         <div class="panel">
-          <h2>Para agentes (MCP)</h2>
-          <p>
-            Um agente lê o projeto com <code>get_project</code> e sugere mudanças com
-            <code>propose_changes</code>. Quando o tipo é ambíguo (como “Button”), informe
-            <code>specId/typeId</code>, por exemplo <code>material3-compose/button</code>.
-            As sugestões chegam na janela Propostas, nunca direto no projeto.
-          </p>
+          <h2 data-i18n="mcpHeading"></h2>
+          <p data-i18n="mcpText"></p>
         </div>
       </section>
     </div>
 
     <script>
       const D = /*__DATA__*/ null;
+      // Texts in the chosen language (already resolved against the app's dictionary at build time)
+      // and the example's names in each language; see scripts/guide/messages.ts.
+      const GUIDE = /*__MESSAGES__*/ null;
+      const LOCALE = document.documentElement.getAttribute('data-locale') || 'en-US';
+      const T = GUIDE.messages[LOCALE];
+      document.title = T.pageTitle;
       const L = Object.fromEntries(D.layers.map((l) => [l.id, l]));
       const M = Object.fromEntries(D.markings.map((m) => [m.id, m]));
       const A = Object.fromEntries(D.annotations.map((a) => [a.id, a]));
@@ -539,7 +547,7 @@
       const byName = (img, name) =>
         D.markings.find((m) => IM[m.containerId].name === img && m.name === name);
       const P = D.perspectives;
-      // persp: índice em P, ou null para a Principal (tudo).
+      // persp: index in P, or null for Main (everything).
       const state = {
         img: D.images[0].id,
         sel: null,
@@ -548,6 +556,25 @@
         persp: null,
       };
       const $ = (id) => document.getElementById(id);
+      /* Names of the example's items that the texts mention: the one the project has, in any
+       language, else the one of the chosen language. */
+      const NAME_POOL = new Set([
+        ...D.images.map((i) => i.name),
+        ...D.markings.map((m) => m.name),
+        ...D.layers.map((l) => l.name),
+        ...D.annotations.map((a) => a.name),
+      ]);
+      function nm(key) {
+        const names = GUIDE.names[key];
+        return (
+          [names[LOCALE], ...Object.values(names)].find((n) => NAME_POOL.has(n)) ||
+          names[LOCALE]
+        );
+      }
+      /* Fills the {n:key} of a text with the example's names (escaped). */
+      function x(text) {
+        return text.replace(/\{n:(\w+)\}/g, (_, key) => esc(nm(key)));
+      }
       const NS = 'http://www.w3.org/2000/svg';
       function el(tag, attrs, kids) {
         const e = document.createElementNS(NS, tag);
@@ -559,7 +586,7 @@
         return D.annotations.filter((a) => a.markingId === mid);
       }
       function kind(a) {
-        return a.type ? a.type.typeId : a.name || 'nota';
+        return a.type ? a.type.typeId : a.name || T.noteKind;
       }
       function depth(m) {
         let d = 0;
@@ -580,7 +607,7 @@
       function inPersp(img) {
         return state.persp === null || P[state.persp].containers.includes(img.id);
       }
-      /* Escolhe a perspectiva: filtra as abas e liga/desliga os chips das camadas escondidas. */
+      /* Picks the perspective: filters the tabs and switches the chips of the hidden layers. */
       function setPersp(index) {
         state.persp = index;
         state.hidden = new Set(index === null ? [] : P[index].hiddenLayers);
@@ -599,8 +626,8 @@
         return as.length ? L[as[0].layerId].color : null;
       }
 
-      /* Desenho simples dos componentes Material 3 nos containers sem foto. As cores são as do
-       tema Material 3 (o que o componente desenha), não as da interface do Mapping. */
+      /* Simple drawing of the Material 3 components in the containers with no photo. The colors are
+       those of the Material 3 theme (what the component draws), not the Mapping interface's. */
       const M3 = {
         primary: '#6750A4',
         container: '#E8DEF8',
@@ -613,7 +640,7 @@
         track: '#E6E0E9',
         onPrimary: '#FFFFFF',
       };
-      /* Os textos saem dos valores da própria anotação: o desenho nunca diverge do exemplo. */
+      /* The texts come from the annotation's own values: the drawing never diverges from the example. */
       function wrap(text, max) {
         const lines = [];
         let line = '';
@@ -791,7 +818,7 @@
             'middle',
           );
         }
-        // Row, Column e demais containers não têm desenho próprio.
+        // Row, Column and the other containers have no drawing of their own.
         return g;
       }
 
@@ -874,14 +901,14 @@
           }
         });
         svg.onclick = () => select(null);
-        // abas
+        // tabs
         $('tabs').replaceChildren(
           ...D.images.filter(inPersp).map((i) => {
             const b = document.createElement('button');
             b.className = 'tab';
             b.setAttribute('role', 'tab');
             b.setAttribute('aria-selected', i.id === state.img);
-            b.textContent = i.name + (i.file ? '' : ' (container sem foto)');
+            b.textContent = i.name + (i.file ? '' : ' (' + T.noPhoto + ')');
             b.onclick = () => {
               state.img = i.id;
               state.sel = null;
@@ -891,7 +918,7 @@
             return b;
           }),
         );
-        // camadas
+        // layers
         const used = new Set(
           D.annotations
             .filter((a) => M[a.markingId].containerId === state.img)
@@ -906,7 +933,7 @@
               b.setAttribute('aria-pressed', !state.hidden.has(l.id));
               const dot = document.createElement('i');
               dot.style.background = l.color;
-              b.append(dot, l.name + (l.spec ? ' · ' + l.spec.specId : ' · livre'));
+              b.append(dot, l.name + (l.spec ? ' · ' + l.spec.specId : ' · ' + T.free));
               b.onclick = () => {
                 state.hidden.has(l.id)
                   ? state.hidden.delete(l.id)
@@ -965,9 +992,11 @@
         if (!state.sel) {
           const n = D.markings.filter((m) => m.containerId === state.img).length;
           box.innerHTML =
-            '<h2>Detalhes</h2><p class="empty">Clique numa marcação do container para ver as anotações dela. Este container tem ' +
-            n +
-            ' marcações.</p>';
+            '<h2>' +
+            T.detailsLabel +
+            '</h2><p class="empty">' +
+            T.detailsEmpty.replace('%count', n) +
+            '</p>';
           return;
         }
         const m = M[state.sel],
@@ -981,8 +1010,8 @@
         h +=
           '<h2>' +
           esc(m.name) +
-          (m.locked ? '<span class="flag lock">trancada</span>' : '') +
-          (m.needsReview ? '<span class="flag rev">posição a revisar</span>' : '') +
+          (m.locked ? '<span class="flag lock">' + T.locked + '</span>' : '') +
+          (m.needsReview ? '<span class="flag rev">' + T.needsReview + '</span>' : '') +
           '</h2>';
         h +=
           '<div class="geometry">x ' +
@@ -994,19 +1023,19 @@
           ' × ' +
           m.rect.height +
           '</div>';
-        if (!as.length) h += '<p class="empty">Sem anotações.</p>';
+        if (!as.length) h += '<p class="empty">' + T.noAnnotations + '</p>';
         as.forEach((a) => {
           const l = L[a.layerId];
           h +=
             '<div class="ann" data-color="' +
             l.color +
             '"><div class="t">' +
-            esc(a.name || (a.type ? kind(a) : 'Nota')) +
+            esc(a.name || (a.type ? kind(a) : T.note)) +
             '</div><div class="l">' +
             esc(l.name) +
             (a.type
               ? ' · ' + esc(a.type.specId) + '/' + esc(a.type.typeId)
-              : ' · camada livre') +
+              : ' · ' + T.freeLayer) +
             '</div>';
           const rows = [];
           if (a.values)
@@ -1025,7 +1054,7 @@
           h += '</div>';
         });
         box.innerHTML = h;
-        // A CSP não aceita style="" no HTML: a cor da camada entra pelo CSSOM.
+        // The CSP does not accept style="" in the HTML: the layer color goes in through the CSSOM.
         box.querySelectorAll('[data-color]').forEach((e) => {
           e.style.setProperty('--c', e.dataset.color);
         });
@@ -1034,127 +1063,47 @@
           .forEach((b) => (b.onclick = () => select(b.dataset.go)));
       }
 
-      /* Roteiro */
+      /* Walkthrough */
       function perspectivesText() {
-        const names = P.map((p) => '<b>' + esc(p.name) + '</b>').join(' e ');
+        const names = P.map((p) => '<b>' + esc(p.name) + '</b>').join(T.and);
         const arrival = D.arrivals[0];
         return (
-          'Uma <b>perspectiva</b> é um recorte do projeto: quais itens aparecem, onde ficam e quais camadas se veem. A <b>Principal</b> mostra tudo e é onde as propostas são aceitas. O seletor acima das abas faz o que o da app faz; este exemplo traz ' +
+          T.perspectivesIntro +
           names +
-          ': cada uma mostra só os containers dela (nas abas) e esconde as camadas dela (nos chips). Na app, <b>Nova perspectiva…</b> cria outra, para <b>Todos do projeto</b> (grava no <code>mapping.json</code>) ou <b>Só eu</b> (fica neste navegador, por isso não está no exemplo). <b>Enviar para perspectiva</b> mostra um item também em outra e <b>Tirar desta perspectiva</b> o tira só dali; arrastar muda só a posição na perspectiva aberta. ' +
+          T.perspectivesApp +
           (arrival
-            ? 'O que nasce numa perspectiva chega à Principal com o selo <b>Veio de…</b>: a nota “' +
-              esc(arrival.name) +
-              '” veio de ' +
-              esc(arrival.fromName) +
-              ' (a barra de status diz <b>Chegadas: ' +
-              D.arrivals.length +
-              '</b>), e <b>Dispensar</b> tira o aviso. '
+            ? T.perspectivesArrival
+                .replace('%item', esc(arrival.name))
+                .replace('%from', esc(arrival.fromName))
+                .replace('%count', D.arrivals.length)
             : '') +
-          'Este guia não desenha a nota nem as posições.'
+          T.perspectivesEnd
         );
       }
-      const S = [
-        {
-          t: 'Containers e marcações',
-          img: 'Cadastro',
-          sel: null,
-          p: 'Um projeto é uma pasta: <code>mapping.json</code>, os containers (cada imagem, ou área sem foto, vira um canvas) e as especializações. Cada contorno é uma <b>marcação</b>. Este é o container Cadastro, a foto de uma tela do app com 6 marcações.',
-          try: 'Passe pelo container e clique em qualquer contorno.',
-        },
-        {
-          t: 'Marcações dentro de marcações',
-          img: 'Cadastro',
-          sel: ['Cadastro', 'Nome'],
-          p: '“Nome” está dentro de “Formulário”. Essa hierarquia é a <b>Árvore</b> (<kbd>Ctrl+Shift+1</kbd>). Quem está dentro acompanha o pai quando ele muda.',
-          try: 'No painel à direita, clique em “Formulário” no caminho no topo.',
-        },
-        {
-          t: 'Camadas',
-          img: 'Cadastro',
-          sel: ['Cadastro', 'Cadastrar'],
-          p: 'Uma marcação pode ter várias anotações, cada uma em uma <b>camada</b> (janela <b>Camadas</b>, <kbd>Ctrl+Shift+2</kbd>). O botão Cadastrar tem componente, dois eventos e uma nota. Camadas ligadas a uma especialização (SDUI, Modelo de dados, Material 3 para Compose) trazem campos prontos; as livres (Dúvidas, Model) aceitam o que você quiser.',
-          try: 'Oculte a camada “Eventos” e veja o contorno mudar de cor.',
-        },
-        {
-          t: 'Especialização SDUI',
-          img: 'Cadastro',
-          sel: ['Cadastro', 'Nome'],
-          p: 'O tipo <code>input</code> da especialização <b>SDUI v2</b> define os campos: id, tipo, placeholder, obrigatório, maxLength e dado. A app confere os valores pelo tipo do campo e lista as anotações com problema, com o motivo, em <b>Incompletas</b> (<kbd>Ctrl+Shift+5</kbd>).',
-          try: 'Compare com “Idade”, que tem o contorno tracejado.',
-        },
-        {
-          t: 'Ligação com os dados',
-          img: 'Cadastro',
-          sel: ['Cadastro', 'E-mail'],
-          p: 'O campo <code>dado</code> aponta para uma entrada do Model “Usuário”. Se o dado mudar de nome, o vínculo acompanha. Assim a tela e o contrato da API ficam amarrados.',
-          try: 'Clique no link do campo dado para ir ao Formulário.',
-        },
-        {
-          t: 'Eventos',
-          img: 'Cadastro',
-          sel: ['Cadastro', 'Cadastrar'],
-          p: 'O botão tem dois eventos, cada um num <b>papel</b>: a <b>Ação</b> no <b>Clique</b> e o <b>Feedback</b> em <b>Pressionar</b>. Eles ficam na camada Eventos, separados do visual do componente, e o <b>+ Vincular…</b> do botão cria um novo no papel escolhido.',
-          try: 'Veja em Vinculadas o evento de cada papel e leia as ações no painel.',
-        },
-        {
-          t: 'Trancada e posição a revisar',
-          img: 'Cadastro',
-          sel: ['Cadastro', 'Idade'],
-          p: '“Idade” está com <b>Posição a revisar</b> (contorno tracejado): o aviso de que o retângulo pode estar fora do lugar, por exemplo depois de trocar a imagem por outra de tamanho diferente. O “Título” está <b>trancado</b>: não se move, não se redimensiona e não se exclui por engano (<kbd>Alt+L</kbd> tranca e destranca). Os dois estados aparecem nos Detalhes.',
-          try: 'Selecione “Título” e veja o selo.',
-        },
-        {
-          t: 'Dúvidas e notas',
-          img: 'Cadastro',
-          sel: ['Cadastro', 'Cadastrar'],
-          p: 'A camada <b>Dúvidas</b> não tem especialização: serve para dúvidas e decisões, com os campos que você criar. O Cadastrar tem uma anotação “Dúvida”. Já a camada <b>Notas</b>, da biblioteca de notas que a app aplica em todo projeto novo, tem o post-it flutuante: ele fica solto no canvas, ao lado das telas (no projeto de exemplo, uma nota sobre o Cadastro, que este guia não desenha).',
-          try: 'Ache a anotação “Dúvida” no painel de Cadastrar.',
-        },
-        {
-          t: 'Conversas com os agentes',
-          img: 'Cadastro',
-          sel: ['Cadastro', 'Cadastrar'],
-          p: 'Quando uma dúvida não cabe numa anotação, abra uma <b>conversa</b> ancorada no item: pessoas e agentes trocam mensagens ali, e ela fica aberta até uma pessoa resolver. A janela <b>Comentários</b> (<kbd>Ctrl+Shift+0</kbd>) lista todas; os botões <b>Conversas</b> e <b>Comentar</b> mostram os pinos no canvas. O projeto de exemplo traz três, na pasta <code>comments/</code>: uma que aguarda você, uma que aguarda o agente e uma resolvida. Este guia não desenha os pinos.',
-          try: 'Abra o zip do exemplo na app e veja a janela Comentários.',
-        },
-        {
-          t: 'Um segundo container',
-          img: 'Login',
-          sel: ['Login', 'Formulário de login'],
-          p: 'O Login repete o padrão com um Model próprio, “Credenciais”, e um endpoint <code>POST /v1/sessoes</code> na camada Endpoints do Modelo de dados.',
-          try: 'Veja que “Entrar” e “E-mail” apontam para o mesmo Model.',
-        },
-        {
-          t: 'Container sem foto com Material 3',
-          img: 'Configurações',
-          sel: ['Configurações', 'Filtros'],
-          p: 'Sem foto, o container é um canvas de cor lisa e os componentes <b>Material 3</b> (a biblioteca <b>material3-compose</b>) são desenhados na hora. O <b>Row</b> “Filtros” é um componente com slot: use <b>Arrumar</b> (<kbd>Alt+Shift+A</kbd>) para distribuir os chips.',
-          try: 'Selecione um chip e veja que o pai é o Row.',
-        },
-        {
-          t: 'Componente com slot e filho',
-          img: 'Configurações',
-          sel: ['Configurações', 'Notificações'],
-          p: 'Os dois Switches e o Checkbox estão dentro da Column “Preferências”. Box, Row, Column e Surface têm slot e levam os filhos junto.',
-          try: 'Clique em “Preferências” e depois em “Notificações”.',
-        },
-        {
-          t: 'Mais um container',
-          img: 'Detalhes do pedido',
-          sel: ['Detalhes do pedido', 'Ajuda'],
-          p: 'Detalhes do pedido usa Top app bar, Card, List items, Button e FAB. Tudo vem do catálogo do Material 3, aba <b>Paleta</b> (<kbd>Ctrl+Shift+9</kbd>).',
-          try: 'Abra o Catálogo na app e adicione um componente aqui.',
-        },
-        {
-          t: 'Perspectivas',
-          img: 'Cadastro',
-          sel: null,
-          persp: P.length ? P[0].name : null,
-          p: perspectivesText(),
-          try: 'Troque a perspectiva no seletor acima das abas e veja as abas e os chips mudarem.',
-        },
+      /* Where each step of the walkthrough points: screen and marking, by the example's names
+       (see `nm`); the texts come from the language dictionary, in the same order. */
+      const TARGETS = [
+        { img: 'signup', sel: null },
+        { img: 'signup', sel: ['signup', 'name'] },
+        { img: 'signup', sel: ['signup', 'registerButton'] },
+        { img: 'signup', sel: ['signup', 'name'] },
+        { img: 'signup', sel: ['signup', 'email'] },
+        { img: 'signup', sel: ['signup', 'registerButton'] },
+        { img: 'signup', sel: ['signup', 'age'] },
+        { img: 'signup', sel: ['signup', 'registerButton'] },
+        { img: 'signup', sel: ['signup', 'registerButton'] },
+        { img: 'login', sel: ['login', 'loginForm'] },
+        { img: 'settings', sel: ['settings', 'filters'] },
+        { img: 'settings', sel: ['settings', 'notifications'] },
+        { img: 'orderDetails', sel: ['orderDetails', 'help'] },
+        { img: 'signup', sel: null, persp: true },
       ];
+      const S = T.steps.map((step, i) => ({
+        ...TARGETS[i],
+        t: x(step.t),
+        p: x(step.p.replace('%perspectives', perspectivesText())),
+        try: x(step.try),
+      }));
       function stepRender() {
         $('steps').replaceChildren(
           ...S.map((s, i) => {
@@ -1178,7 +1127,9 @@
           s.t +
           '</h3><p>' +
           s.p +
-          '</p><div class="try">Experimente: ' +
+          '</p><div class="try">' +
+          T.try +
+          ' ' +
           s.try +
           '</div>';
         $('prev').disabled = state.step === 0;
@@ -1187,17 +1138,16 @@
       function go(i) {
         state.step = i;
         const s = S[i];
-        const im = D.images.find((x) => x.name === s.img);
-        const pi = P.findIndex((x) => x.name === s.persp);
-        setPersp(pi < 0 ? null : pi);
+        const im = D.images.find((i) => i.name === nm(s.img));
+        setPersp(s.persp && P.length ? 0 : null);
         state.img = im.id;
-        state.sel = s.sel ? byName(s.sel[0], s.sel[1]).id : null;
+        state.sel = s.sel ? byName(nm(s.sel[0]), nm(s.sel[1])).id : null;
         stepRender();
         render();
         inspect();
       }
       $('persp').replaceChildren(
-        ...[['', 'Principal'], ...P.map((p, i) => [String(i), p.name])].map(
+        ...[['', T.main], ...P.map((p, i) => [String(i), p.name])].map(
           ([value, label]) => {
             const o = document.createElement('option');
             o.value = value;
@@ -1213,6 +1163,13 @@
       };
       $('prev').onclick = () => go(Math.max(0, state.step - 1));
       $('next').onclick = () => go(Math.min(S.length - 1, state.step + 1));
+      // The page's own texts (the markup leaves them empty).
+      document.querySelectorAll('[data-i18n]').forEach((e) => {
+        e.innerHTML = x(T[e.dataset.i18n]);
+      });
+      document.querySelectorAll('[data-i18n-aria]').forEach((e) => {
+        e.setAttribute('aria-label', x(T[e.dataset.i18nAria]));
+      });
       go(0);
     </script>
   </body>

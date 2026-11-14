@@ -159,7 +159,7 @@ describe('list_projects and discovery', () => {
       counts: { containers: 1, markings: 6, annotations: 11, layers: 7 },
       specializations: [
         { id: 'sdui', version: loadLegacySdui().version },
-        { id: 'modelo-dados', version: 1 },
+        { id: 'data-model', version: 1 },
       ],
     });
     expect(signup.dir).toBe(realpathSync(ws.projectDir('apps/cadastro')));
@@ -224,7 +224,7 @@ describe('get_project', () => {
         available: true,
         annotations: 8,
       }),
-      expect.objectContaining({ id: 'modelo-dados', available: true, annotations: 2 }),
+      expect.objectContaining({ id: 'data-model', available: true, annotations: 2 }),
     ]);
     const [issue] = (data.issues as { annotations: Record<string, unknown>[] })
       .annotations;
@@ -239,7 +239,7 @@ describe('get_project', () => {
     expect(noCopies.specializations).toEqual([
       expect.objectContaining({ id: 'sdui', available: false, problem: 'missing' }),
       expect.objectContaining({
-        id: 'modelo-dados',
+        id: 'data-model',
         available: false,
         problem: 'missing',
       }),
@@ -494,7 +494,7 @@ describe('get_marking', () => {
       }),
     ]);
     const classe = form.layers.find((l) => l.layer.name === 'Classes')!.annotations[0]!;
-    expect(classe).toMatchObject({ title: 'Classe Contato', name: null });
+    expect(classe).toMatchObject({ title: 'Class Contato', name: null });
     expect(classe.backlinks).toEqual([
       expect.objectContaining({
         fromLabel: 'Input input_email',
@@ -552,7 +552,7 @@ describe('get_annotation, get_container and resolve', () => {
           to: 'Contato.email',
           target: expect.objectContaining({
             kind: 'row',
-            key: 'atributos',
+            key: 'attributes',
             rowId: ws.ids.R1,
           }),
         },
@@ -778,7 +778,7 @@ describe('get_specialization', () => {
     const without = ok(
       await mcp.call('get_specialization', {
         project: 'cadastro',
-        specId: 'modelo-dados',
+        specId: 'data-model',
       }),
     );
     expect((without.spec as { platforms?: unknown[] }).platforms ?? []).toEqual([]);

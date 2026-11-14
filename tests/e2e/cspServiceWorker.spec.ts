@@ -59,7 +59,7 @@ async function serveSite(
         /^\/+/,
         '',
       );
-      // Like GitHub Pages: a directory (`guia/`) serves its `index.html`.
+      // Like GitHub Pages: a directory (`guide/`) serves its `index.html`.
       const file = normalize(
         join(
           dir,
@@ -176,11 +176,14 @@ test('GitHub Pages and preview: service worker installs, caches and announces th
   await context.setOffline(true);
   await page.reload();
   await expect(page.getByRole('button', { name: /New project/ })).toBeVisible();
-  // The interactive guide (guia/) also comes from the cache, without network.
-  await page.goto(`${origin}/guia/`);
-  // pt-BR kept: the interactive guide is pt-BR (its <title>)
-  await expect(page).toHaveTitle('Guia do Mapping');
+  // The interactive guide (guide/) also comes from the cache, without network.
+  await page.goto(`${origin}/guide/`);
+  await expect(page).toHaveTitle('Mapping guide');
   await expect(page.locator('#steps button')).toHaveCount(14);
+  // The old address (guia/) is cached too: its redirect page leads to the guide.
+  await page.goto(`${origin}/guia/`);
+  await expect(page).toHaveURL(/\/guide\/$/);
+  await expect(page).toHaveTitle('Mapping guide');
   await context.setOffline(false);
 
   // Preview at /preview/: another build, another service worker, same policy.
@@ -208,9 +211,8 @@ test('GitHub Pages and preview: service worker installs, caches and announces th
 
   // The preview guide is the one from the preview build, also from the cache.
   await context.setOffline(true);
-  await page.goto(`${origin}/preview/guia/`);
-  // pt-BR kept: the interactive guide is pt-BR (its <title>)
-  await expect(page).toHaveTitle('Guia do Mapping');
+  await page.goto(`${origin}/preview/guide/`);
+  await expect(page).toHaveTitle('Mapping guide');
   await expect(page.locator('#steps button')).toHaveCount(14);
   await context.setOffline(false);
 

@@ -4,7 +4,7 @@
   "id": "sdui",
   "name": "SDUI",
   "version": 4,
-  "description": "Componentes de tela e seus eventos para Server-Driven UI.",
+  "description": "Screen components and their events for Server-Driven UI.",
   "platforms": [
     {
       "id": "android",
@@ -40,15 +40,15 @@
   "docRepos": [
     {
       "id": "design-docs",
-      "url": "https://gitlab.empresa.com/grupo/sdui-docs",
-      "urlTemplate": "https://gitlab.empresa.com/grupo/sdui-docs/-/blob/main/{path}",
+      "url": "https://gitlab.example.com/group/sdui-docs",
+      "urlTemplate": "https://gitlab.example.com/group/sdui-docs/-/blob/main/{path}",
       "ref": "main"
     }
   ],
   "layers": [
     {
-      "id": "componentes",
-      "name": "Componentes",
+      "id": "components",
+      "name": "Components",
       "color": "#1E88E5",
       "annotationTypes": [
         {
@@ -56,25 +56,25 @@
           "name": "Button",
           "doc": {
             "repo": "design-docs",
-            "path": "componentes/button.md"
+            "path": "components/button.md"
           },
           "allowedChildren": [
             {
-              "layer": "eventos",
-              "groups": ["interacao"]
+              "layer": "events",
+              "groups": ["interaction"]
             }
           ],
           "childRolesLabel": "Trigger",
           "childRoles": [
             {
               "id": "click",
-              "name": "Clique",
-              "description": "O toque ou clique no componente."
+              "name": "Click",
+              "description": "The tap or click on the component."
             },
             {
               "id": "hold",
-              "name": "Pressionar",
-              "description": "O toque longo, que segura o componente."
+              "name": "Press",
+              "description": "The long press that holds the component."
             }
           ],
           "fields": [
@@ -84,21 +84,21 @@
               "required": true
             },
             {
-              "key": "texto",
+              "key": "text",
               "type": "string",
               "required": true
             },
             {
-              "key": "estilo",
+              "key": "style",
               "type": "enum",
               "options": ["primary", "secondary", "text"],
               "default": "primary"
             },
             {
-              "key": "habilitado",
+              "key": "enabled",
               "type": "enum",
-              "options": ["sim", "não"],
-              "default": "sim"
+              "options": ["yes", "no"],
+              "default": "yes"
             }
           ],
           "code": {
@@ -106,40 +106,40 @@
               "symbol": "com.app.ds.DSButton",
               "path": "app/src/main/java/com/app/ds/DSButton.kt",
               "params": {
-                "texto": "text",
-                "estilo": "style",
-                "habilitado": "enabled"
+                "text": "text",
+                "style": "style",
+                "enabled": "enabled"
               },
               "values": {
-                "estilo": {
+                "style": {
                   "primary": "ButtonStyle.Primary",
                   "secondary": "ButtonStyle.Secondary",
                   "text": "ButtonStyle.Text"
                 },
-                "habilitado": {
-                  "sim": "true",
-                  "não": "false"
+                "enabled": {
+                  "yes": "true",
+                  "no": "false"
                 }
               },
-              "notes": "Use o modifier de testTag com o valor do campo id."
+              "notes": "Use the testTag modifier with the value of the id field."
             },
             "ios": {
               "symbol": "DSButton",
               "path": "App/DesignSystem/DSButton.swift",
               "params": {
-                "texto": "title",
-                "estilo": "style",
-                "habilitado": "isEnabled"
+                "text": "title",
+                "style": "style",
+                "enabled": "isEnabled"
               },
               "values": {
-                "estilo": {
+                "style": {
                   "primary": ".primary",
                   "secondary": ".secondary",
                   "text": ".text"
                 },
-                "habilitado": {
-                  "sim": "true",
-                  "não": "false"
+                "enabled": {
+                  "yes": "true",
+                  "no": "false"
                 }
               }
             },
@@ -148,11 +148,11 @@
               "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
               "params": {
                 "id": "id",
-                "texto": "label",
-                "estilo": "variant",
-                "habilitado": "enabled"
+                "text": "label",
+                "style": "variant",
+                "enabled": "enabled"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         },
@@ -161,16 +161,16 @@
           "name": "Input",
           "allowedChildren": [
             {
-              "layer": "eventos",
-              "groups": ["dados"]
+              "layer": "events",
+              "groups": ["data"]
             }
           ],
           "childRolesLabel": "Trigger",
           "childRoles": [
             {
               "id": "change",
-              "name": "Alteração",
-              "description": "O valor digitado mudou."
+              "name": "Change",
+              "description": "The typed value changed."
             }
           ],
           "fields": [
@@ -180,7 +180,7 @@
               "required": true
             },
             {
-              "key": "tipo",
+              "key": "inputType",
               "type": "enum",
               "options": ["text", "email", "password", "number", "phone"],
               "default": "text",
@@ -191,24 +191,23 @@
               "type": "string"
             },
             {
-              "key": "obrigatorio",
-              "label": "obrigatório",
+              "key": "required",
               "type": "enum",
-              "options": ["sim", "não"],
-              "default": "não"
+              "options": ["yes", "no"],
+              "default": "no"
             },
             {
               "key": "maxLength",
               "type": "number"
             },
             {
-              "key": "dado",
+              "key": "data",
               "type": "ref",
               "accepts": {
                 "tags": ["data-field"],
                 "free": true
               },
-              "description": "Atributo do modelo de dados exibido e editado por este campo"
+              "description": "Data model attribute shown and edited by this field"
             }
           ],
           "code": {
@@ -216,45 +215,45 @@
               "symbol": "com.app.ds.DSTextField",
               "path": "app/src/main/java/com/app/ds/DSTextField.kt",
               "params": {
-                "tipo": "keyboardType",
+                "inputType": "keyboardType",
                 "placeholder": "placeholder",
-                "obrigatorio": "required",
+                "required": "required",
                 "maxLength": "maxLength"
               },
               "values": {
-                "tipo": {
+                "inputType": {
                   "text": "KeyboardType.Text",
                   "email": "KeyboardType.Email",
                   "password": "KeyboardType.Password",
                   "number": "KeyboardType.Number",
                   "phone": "KeyboardType.Phone"
                 },
-                "obrigatorio": {
-                  "sim": "true",
-                  "não": "false"
+                "required": {
+                  "yes": "true",
+                  "no": "false"
                 }
               },
-              "notes": "O campo dado indica o atributo do modelo de dados ligado ao valor digitado."
+              "notes": "The data field names the data model attribute linked to the typed value."
             },
             "ios": {
               "symbol": "DSTextField",
               "params": {
-                "tipo": "keyboardType",
+                "inputType": "keyboardType",
                 "placeholder": "placeholder",
-                "obrigatorio": "isRequired",
+                "required": "isRequired",
                 "maxLength": "maxLength"
               },
               "values": {
-                "tipo": {
+                "inputType": {
                   "text": ".default",
                   "email": ".emailAddress",
                   "password": ".default",
                   "number": ".numberPad",
                   "phone": ".phonePad"
                 },
-                "obrigatorio": {
-                  "sim": "true",
-                  "não": "false"
+                "required": {
+                  "yes": "true",
+                  "no": "false"
                 }
               }
             },
@@ -263,12 +262,12 @@
               "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
               "params": {
                 "id": "id",
-                "tipo": "type",
+                "inputType": "type",
                 "placeholder": "placeholder",
-                "obrigatorio": "required",
+                "required": "required",
                 "maxLength": "maxLength"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         },
@@ -282,53 +281,52 @@
               "required": true
             },
             {
-              "key": "conteudo",
-              "label": "conteúdo",
+              "key": "content",
               "type": "string",
               "required": true
             },
             {
-              "key": "estilo",
+              "key": "style",
               "type": "enum",
-              "options": ["titulo", "corpo", "legenda"],
-              "default": "corpo"
+              "options": ["title", "body", "caption"],
+              "default": "body"
             },
             {
-              "key": "dado",
+              "key": "data",
               "type": "ref",
               "accepts": {
                 "tags": ["data-field"],
                 "free": true
               },
-              "description": "Atributo exibido por este texto (opcional)"
+              "description": "Attribute shown by this text (optional)"
             }
           ],
           "code": {
             "android": {
               "symbol": "com.app.ds.DSText",
               "params": {
-                "conteudo": "text",
-                "estilo": "style"
+                "content": "text",
+                "style": "style"
               },
               "values": {
-                "estilo": {
-                  "titulo": "TextStyle.Title",
-                  "corpo": "TextStyle.Body",
-                  "legenda": "TextStyle.Caption"
+                "style": {
+                  "title": "TextStyle.Title",
+                  "body": "TextStyle.Body",
+                  "caption": "TextStyle.Caption"
                 }
               }
             },
             "ios": {
               "symbol": "DSText",
               "params": {
-                "conteudo": "text",
-                "estilo": "style"
+                "content": "text",
+                "style": "style"
               },
               "values": {
-                "estilo": {
-                  "titulo": ".title",
-                  "corpo": ".body",
-                  "legenda": ".caption"
+                "style": {
+                  "title": ".title",
+                  "body": ".body",
+                  "caption": ".caption"
                 }
               }
             },
@@ -337,10 +335,10 @@
               "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
               "params": {
                 "id": "id",
-                "conteudo": "content",
-                "estilo": "variant"
+                "content": "content",
+                "style": "variant"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         },
@@ -349,16 +347,16 @@
           "name": "Image",
           "allowedChildren": [
             {
-              "layer": "eventos",
-              "groups": ["interacao"]
+              "layer": "events",
+              "groups": ["interaction"]
             }
           ],
           "childRolesLabel": "Trigger",
           "childRoles": [
             {
               "id": "click",
-              "name": "Clique",
-              "description": "O toque ou clique no componente."
+              "name": "Click",
+              "description": "The tap or click on the component."
             }
           ],
           "fields": [
@@ -368,8 +366,8 @@
               "required": true
             },
             {
-              "key": "descricao",
-              "label": "descrição (acessibilidade)",
+              "key": "description",
+              "label": "description (accessibility)",
               "type": "string",
               "required": true
             },
@@ -382,14 +380,14 @@
             "android": {
               "symbol": "com.app.ds.DSImage",
               "params": {
-                "descricao": "contentDescription",
+                "description": "contentDescription",
                 "url": "url"
               }
             },
             "ios": {
               "symbol": "DSImage",
               "params": {
-                "descricao": "accessibilityLabel",
+                "description": "accessibilityLabel",
                 "url": "url"
               }
             },
@@ -398,49 +396,47 @@
               "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
               "params": {
                 "id": "id",
-                "descricao": "accessibilityLabel",
+                "description": "accessibilityLabel",
                 "url": "url"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         }
       ]
     },
     {
-      "id": "eventos",
-      "name": "Eventos",
+      "id": "events",
+      "name": "Events",
       "color": "#FB8C00",
       "annotationTypes": [
         {
           "id": "action",
-          "name": "Ação",
-          "groups": ["interacao"],
+          "name": "Action",
+          "groups": ["interaction"],
           "requiresOwner": true,
           "fields": [
             {
-              "key": "acao",
-              "label": "ação",
+              "key": "action",
               "type": "enum",
               "options": ["navigate", "submit", "openUrl", "showDialog", "track"],
               "required": true
             },
             {
-              "key": "destino",
+              "key": "target",
               "type": "string"
             },
             {
-              "key": "parametros",
-              "label": "parâmetros",
+              "key": "parameters",
               "type": "table",
               "columns": [
                 {
-                  "key": "nome",
+                  "key": "name",
                   "type": "string",
                   "required": true
                 },
                 {
-                  "key": "valor",
+                  "key": "value",
                   "type": "string"
                 }
               ]
@@ -450,48 +446,47 @@
             "android": {
               "symbol": "com.app.ds.Action",
               "params": {
-                "acao": "action",
-                "destino": "target",
-                "parametros": "params"
+                "action": "action",
+                "target": "target",
+                "parameters": "params"
               },
-              "notes": "Passe o evento no parâmetro do papel que ele ocupa no componente dono (Clique em onClick, Pressionar em onHold)."
+              "notes": "Pass the event in the parameter of the role it fills in the owner component (Click in onClick, Press in onHold)."
             },
             "ios": {
               "symbol": "Action",
               "params": {
-                "acao": "action",
-                "destino": "target",
-                "parametros": "params"
+                "action": "action",
+                "target": "target",
+                "parameters": "params"
               }
             },
             "bff": {
               "symbol": "com.app.bff.sdui.action",
               "path": "src/main/kotlin/com/app/bff/sdui/Events.kt",
               "params": {
-                "acao": "action",
-                "destino": "target",
-                "parametros": "parameters"
+                "action": "action",
+                "target": "target",
+                "parameters": "parameters"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         },
         {
           "id": "feedback",
           "name": "Feedback",
-          "groups": ["interacao"],
+          "groups": ["interaction"],
           "requiresOwner": true,
           "fields": [
             {
-              "key": "acao",
-              "label": "ação",
+              "key": "action",
               "type": "enum",
               "options": ["showTooltip", "showMenu", "track"],
               "required": true
             },
             {
-              "key": "duracaoMs",
-              "label": "duração (ms)",
+              "key": "durationMs",
+              "label": "duration (ms)",
               "type": "number",
               "default": 500
             }
@@ -500,104 +495,103 @@
             "android": {
               "symbol": "com.app.ds.Feedback",
               "params": {
-                "acao": "action",
-                "duracaoMs": "durationMs"
+                "action": "action",
+                "durationMs": "durationMs"
               }
             },
             "ios": {
               "symbol": "Feedback",
               "params": {
-                "acao": "action",
-                "duracaoMs": "duration"
+                "action": "action",
+                "durationMs": "duration"
               }
             },
             "bff": {
               "symbol": "com.app.bff.sdui.feedback",
               "path": "src/main/kotlin/com/app/bff/sdui/Events.kt",
               "params": {
-                "acao": "action",
-                "duracaoMs": "durationMs"
+                "action": "action",
+                "durationMs": "durationMs"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         },
         {
           "id": "validation",
-          "name": "Validação",
-          "groups": ["dados"],
+          "name": "Validation",
+          "groups": ["data"],
           "requiresOwner": true,
           "fields": [
             {
-              "key": "acao",
-              "label": "ação",
+              "key": "action",
               "type": "enum",
               "options": ["validate", "mask", "track"],
               "required": true
             },
             {
-              "key": "regra",
+              "key": "rule",
               "type": "string",
-              "description": "Ex: email, cpf, minLength:8"
+              "description": "E.g. email, cpf, minLength:8"
             }
           ],
           "code": {
             "android": {
               "symbol": "com.app.ds.Validation",
               "params": {
-                "acao": "action",
-                "regra": "rule"
+                "action": "action",
+                "rule": "rule"
               }
             },
             "ios": {
               "symbol": "Validation",
               "params": {
-                "acao": "action",
-                "regra": "rule"
+                "action": "action",
+                "rule": "rule"
               }
             },
             "bff": {
               "symbol": "com.app.bff.sdui.validation",
               "path": "src/main/kotlin/com/app/bff/sdui/Events.kt",
               "params": {
-                "acao": "action",
-                "regra": "rule"
+                "action": "action",
+                "rule": "rule"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         }
       ],
       "groups": [
         {
-          "id": "interacao",
-          "name": "Interação",
-          "description": "O que acontece quando a pessoa toca, clica ou segura o componente."
+          "id": "interaction",
+          "name": "Interaction",
+          "description": "What happens when the person taps, clicks or holds the component."
         },
         {
-          "id": "dados",
-          "name": "Dados",
-          "description": "Validação e máscara do valor digitado."
+          "id": "data",
+          "name": "Data",
+          "description": "Validation and mask of the typed value."
         }
       ]
     },
     {
-      "id": "telas",
-      "name": "Telas",
+      "id": "screens",
+      "name": "Screens",
       "color": "#00897B",
       "annotationTypes": [
         {
           "id": "screen",
           "name": "Screen",
-          "labelField": "nome",
+          "labelField": "name",
           "fields": [
             {
-              "key": "nome",
+              "key": "name",
               "type": "string",
               "required": true
             },
             {
-              "key": "rota",
+              "key": "route",
               "type": "string"
             }
           ]
@@ -648,6 +642,190 @@
           "op": "rename-type",
           "from": "onChange",
           "to": "validation"
+        },
+        {
+          "op": "rename-field",
+          "type": "button",
+          "from": "texto",
+          "to": "text"
+        },
+        {
+          "op": "rename-field",
+          "type": "button",
+          "from": "estilo",
+          "to": "style"
+        },
+        {
+          "op": "rename-field",
+          "type": "button",
+          "from": "habilitado",
+          "to": "enabled"
+        },
+        {
+          "op": "map-values",
+          "type": "button",
+          "field": "enabled",
+          "values": {
+            "sim": "yes",
+            "não": "no"
+          }
+        },
+        {
+          "op": "rename-field",
+          "type": "input",
+          "from": "tipo",
+          "to": "inputType"
+        },
+        {
+          "op": "rename-field",
+          "type": "input",
+          "from": "obrigatorio",
+          "to": "required"
+        },
+        {
+          "op": "map-values",
+          "type": "input",
+          "field": "required",
+          "values": {
+            "sim": "yes",
+            "não": "no"
+          }
+        },
+        {
+          "op": "rename-field",
+          "type": "input",
+          "from": "dado",
+          "to": "data"
+        },
+        {
+          "op": "rename-field",
+          "type": "text",
+          "from": "conteudo",
+          "to": "content"
+        },
+        {
+          "op": "rename-field",
+          "type": "text",
+          "from": "estilo",
+          "to": "style"
+        },
+        {
+          "op": "map-values",
+          "type": "text",
+          "field": "style",
+          "values": {
+            "titulo": "title",
+            "corpo": "body",
+            "legenda": "caption"
+          }
+        },
+        {
+          "op": "rename-field",
+          "type": "text",
+          "from": "dado",
+          "to": "data"
+        },
+        {
+          "op": "rename-field",
+          "type": "image",
+          "from": "descricao",
+          "to": "description"
+        },
+        {
+          "op": "rename-field",
+          "type": "action",
+          "from": "acao",
+          "to": "action"
+        },
+        {
+          "op": "rename-field",
+          "type": "action",
+          "from": "destino",
+          "to": "target"
+        },
+        {
+          "op": "rename-field",
+          "type": "action",
+          "from": "parametros",
+          "to": "parameters"
+        },
+        {
+          "op": "rename-field",
+          "type": "action",
+          "from": "parameters.nome",
+          "to": "parameters.name"
+        },
+        {
+          "op": "rename-field",
+          "type": "action",
+          "from": "parameters.valor",
+          "to": "parameters.value"
+        },
+        {
+          "op": "rename-field",
+          "type": "feedback",
+          "from": "acao",
+          "to": "action"
+        },
+        {
+          "op": "rename-field",
+          "type": "feedback",
+          "from": "duracaoMs",
+          "to": "durationMs"
+        },
+        {
+          "op": "rename-field",
+          "type": "validation",
+          "from": "acao",
+          "to": "action"
+        },
+        {
+          "op": "rename-field",
+          "type": "validation",
+          "from": "regra",
+          "to": "rule"
+        },
+        {
+          "op": "rename-field",
+          "type": "screen",
+          "from": "nome",
+          "to": "name"
+        },
+        {
+          "op": "rename-field",
+          "type": "screen",
+          "from": "rota",
+          "to": "route"
+        },
+        {
+          "op": "fill-field",
+          "type": "button",
+          "field": "text",
+          "default": ""
+        },
+        {
+          "op": "fill-field",
+          "type": "input",
+          "field": "inputType",
+          "default": "text"
+        },
+        {
+          "op": "fill-field",
+          "type": "text",
+          "field": "content",
+          "default": ""
+        },
+        {
+          "op": "fill-field",
+          "type": "image",
+          "field": "description",
+          "default": ""
+        },
+        {
+          "op": "fill-field",
+          "type": "screen",
+          "field": "name",
+          "default": ""
         }
       ]
     }

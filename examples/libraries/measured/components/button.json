@@ -2,8 +2,8 @@
   "format": "mapping-component",
   "formatVersion": 4,
   "id": "button",
-  "name": "Botão",
-  "description": "Botão com rótulo; o tom neutro é cinza e o de erro é vermelho.",
+  "name": "Button",
+  "description": "Button with a label; the neutral tone is gray and the error tone is red.",
   "size": {
     "width": 120,
     "height": 40
@@ -13,12 +13,12 @@
     "height": 32
   },
   "preview": {
-    "label": "Salvar",
+    "label": "Save",
     "tone": "neutral"
   },
   "template": {
     "type": "frame",
-    "name": "botão",
+    "name": "button",
     "layout": {
       "type": "row",
       "padding": [0, 16],
@@ -36,7 +36,7 @@
     "children": [
       {
         "type": "text",
-        "name": "rótulo",
+        "name": "label",
         "text": {
           "$field": "label"
         },

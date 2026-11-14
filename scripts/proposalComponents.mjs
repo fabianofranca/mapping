@@ -1,6 +1,6 @@
 // Gera examples/proposta-componentes.zip (roteiro R13 do docs/TESTING.md): o projeto "Telas"
 // com uma proposta aberta de componentes novos. Empacota tests/e2e/proposedComponentsFixture.ts
-// com o esbuild (como buildGuia.mjs), executa e grava. O teste
+// com o esbuild (como buildGuide.mjs), executa e grava. O teste
 // tests/examples/proposalComponents.test.ts prova que o zip em disco está em dia.
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';

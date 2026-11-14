@@ -5,7 +5,7 @@ import { setFieldValue, typeOfAnnotation, type Project } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { MULTILINE_MIN_LENGTH } from '../../src/ui/FieldEditors';
 import { TypedField } from '../../src/ui/TypedFields';
-// pt-BR kept: shared fixture data (cadastroProject: estilo, tipo, dado, atributos, exemplo, texto, Cadastrar) asserted by tests/model, tests/mcp and tests/examples
+// pt-BR kept: shared fixture data (cadastroProject: estilo, tipo, dado, texto, Cadastrar) asserted by tests/model, tests/mcp and tests/examples
 import { cadastroProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
 
@@ -296,31 +296,31 @@ describe('TypedFields — reference (ref)', () => {
 
 describe('TypedFields — table', () => {
   it('shows the rows and allows editing a cell', async () => {
-    const { harness, user } = setup('AC', 'atributos');
+    const { harness, user } = setup('AC', 'attributes');
     expect(screen.getByText('email')).toBeTruthy(); // row name (rowLabel)
-    const cell = screen.getByLabelText('exemplo (email)');
+    const cell = screen.getByLabelText('example (email)');
     await user.clear(cell);
     await user.type(cell, 'new@example.com{Enter}');
-    const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
+    const rows = annotationOf(harness.project(), 'AC').values?.['attributes'];
     expect(JSON.stringify(rows)).toContain('new@example.com');
   });
 
   it('adds and reorders rows', async () => {
-    const { harness, user } = setup('AC', 'atributos');
+    const { harness, user } = setup('AC', 'attributes');
     await user.click(screen.getByRole('button', { name: '+ Row' }));
     const count = () => {
-      const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
+      const rows = annotationOf(harness.project(), 'AC').values?.['attributes'];
       return Array.isArray(rows) ? rows.length : 0;
     };
     expect(count()).toBe(2);
     await user.click(screen.getAllByRole('button', { name: /^Actions for row/ })[0]!);
     await user.click(screen.getByRole('menuitem', { name: 'Move row down' }));
-    const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
+    const rows = annotationOf(harness.project(), 'AC').values?.['attributes'];
     expect((rows as { _id: string }[]).map((r) => r._id)[1]).toBe('R1');
   });
 
   it('removing a row that is a reference target asks for confirmation', async () => {
-    const { harness, user } = setup('AC', 'atributos');
+    const { harness, user } = setup('AC', 'attributes');
     await user.click(screen.getByRole('button', { name: 'Actions for row email' }));
     await user.click(screen.getByRole('menuitem', { name: 'Remove row' }));
     // Stage 8 (8.3), F10: destructive confirmation, announced as an alert.
@@ -328,15 +328,15 @@ describe('TypedFields — table', () => {
     expect(within(dialog).getByText('References will break')).toBeTruthy();
     expect(dialog.getAttribute('aria-describedby')).toBeTruthy();
     await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
-    const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
+    const rows = annotationOf(harness.project(), 'AC').values?.['attributes'];
     expect(Array.isArray(rows) ? rows.length : 0).toBe(0);
   });
 
   // Stage 7 (7.1), finding A3: the cell truncates the text ("ana@exe"); the whole value goes in the hint.
   it('cells and text fields carry the whole value in the title', () => {
-    setup('AC', 'atributos');
-    expect(screen.getByLabelText('exemplo (email)').title).toBe('ana@exemplo.com');
-    expect(screen.getByLabelText('nome (email)').title).toBe('email');
+    setup('AC', 'attributes');
+    expect(screen.getByLabelText('example (email)').title).toBe('ana@exemplo.com');
+    expect(screen.getByLabelText('name (email)').title).toBe('email');
   });
 
   // Stage 7 (7.1), finding A1: the deleted row took the button that opened the dialog with it.
@@ -359,7 +359,7 @@ describe('TypedFields — table', () => {
     }
 
     it('goes to the actions button of the row that stayed in place', async () => {
-      const { user } = setup('AC', 'atributos');
+      const { user } = setup('AC', 'attributes');
       await user.click(screen.getByRole('button', { name: '+ Row' }));
       // The new row takes the focus in the next frame.
       await vi.waitFor(() => expect(document.activeElement?.tagName).toBe('INPUT'));
@@ -370,13 +370,13 @@ describe('TypedFields — table', () => {
     });
 
     it('no rows, goes to the table (the + Row button)', async () => {
-      const { user } = setup('AC', 'atributos');
+      const { user } = setup('AC', 'attributes');
       await removeEmail(user);
       expect(document.activeElement).toBe(screen.getByRole('button', { name: '+ Row' }));
     });
 
     it('Cancel returns to the actions button of the row itself', async () => {
-      const { user } = setup('AC', 'atributos');
+      const { user } = setup('AC', 'attributes');
       await user.click(screen.getByRole('button', { name: 'Actions for row email' }));
       await user.click(screen.getByRole('menuitem', { name: 'Remove row' }));
       const dialog = await vi.waitFor(() => {
@@ -395,7 +395,7 @@ describe('TypedFields — table', () => {
   });
 
   it('shows who references the row', () => {
-    setup('AC', 'atributos');
+    setup('AC', 'attributes');
     expect(screen.getByRole('button', { name: /^← Input input_email/ })).toBeTruthy();
   });
 });

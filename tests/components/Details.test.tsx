@@ -311,16 +311,16 @@ describe('Detalhes — DataGrid', () => {
   it('Alt+Enter in the table creates a row', async () => {
     const { harness, user } = renderAnnotation('AC');
     // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
-    screen.getByLabelText('exemplo (email)').focus();
+    screen.getByLabelText('example (email)').focus();
     await user.keyboard('{Alt>}{Enter}{/Alt}');
-    const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
+    const rows = annotationOf(harness.project(), 'AC').values?.['attributes'];
     expect(Array.isArray(rows) ? rows.length : 0).toBe(2);
   });
 
   it('numbered rows, with the row name', () => {
     renderAnnotation('AC');
     // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
-    const table = screen.getByRole('table', { name: 'atributos' });
+    const table = screen.getByRole('table', { name: 'attributes' });
     const [, row] = within(table).getAllByRole('row');
     expect(row?.textContent).toContain('1');
     expect(row?.textContent).toContain('email');

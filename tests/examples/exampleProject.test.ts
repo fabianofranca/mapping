@@ -29,7 +29,7 @@ import {
   folderFiles,
 } from '../../scripts/exampleProject.mjs';
 
-// `examples/exemplo-completo/` é o projeto de exemplo (a fonte); o zip e o guia (`public/guia/`)
+// `examples/exemplo-completo/` é o projeto de exemplo (a fonte); o zip e o guia (`public/guide/`)
 // saem dela. O zip é o que a pessoa baixa do repositório (a app não o embute). Para gerar
 // o zip de novo: `npm run build:example`.
 
@@ -270,7 +270,7 @@ describe('especializações do exemplo geradas das fontes', () => {
     ) as { specializations: { id: string; version: number; file: string }[] };
     expect(mapping.specializations.map((s) => s.id).sort()).toEqual([
       'material3-compose',
-      'modelo-dados',
+      'data-model',
       'notas',
       'sdui',
     ]);
@@ -291,7 +291,7 @@ describe('especializações do exemplo geradas das fontes', () => {
     const paths = [...view.keys()];
     expect(paths).toContain('mapping.json');
     expect(paths).toContain('specs/sdui.json');
-    expect(paths).toContain('specs/modelo-dados.json');
+    expect(paths).toContain('specs/data-model.json');
     expect(paths).toContain('specs/material3-compose/material3-compose.spec.json');
     expect(paths).toContain('specs/notas/notas.spec.json');
     expect(paths).not.toContain('specs/notas/index.ts');

@@ -184,7 +184,7 @@ const scenarios: [string, () => [Project, Project]][] = [
       const base = cadastroProject();
       return [
         base,
-        removeSpecialization(base, 'modelo-dados', 'convert', { newId: idGen('X') }),
+        removeSpecialization(base, 'data-model', 'convert', { newId: idGen('X') }),
       ];
     },
   ],
@@ -225,7 +225,7 @@ const scenarios: [string, () => [Project, Project]][] = [
     'specialization removed with the layers and annotations',
     () => {
       const base = cadastroProject();
-      return [base, removeSpecialization(base, 'modelo-dados', 'delete')];
+      return [base, removeSpecialization(base, 'data-model', 'delete')];
     },
   ],
   [

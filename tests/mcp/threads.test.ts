@@ -259,7 +259,7 @@ describe('list_threads', () => {
 describe('get_thread', () => {
   it('returns the resolved anchor (field with its value), the citations and the citedIn', async () => {
     const target = seedThread(dir(), {
-      anchor: { kind: 'field', annotationId: id('AC'), key: 'nome' },
+      anchor: { kind: 'field', annotationId: id('AC'), key: 'name' },
       messages: [{ by: 'human', text: 'Is the class name right?' }],
     });
     const cites = seedThread(dir(), {
@@ -267,7 +267,7 @@ describe('get_thread', () => {
       messages: [
         {
           by: 'human',
-          text: `See [the name](${ref('a', id('AC'))}/f/nome), [the conversation](${threadRef(target.id)}) and [vanished](${ref('m', 'f0f0f0f0-0000-4000-8000-000000000000')}).`,
+          text: `See [the name](${ref('a', id('AC'))}/f/name), [the conversation](${threadRef(target.id)}) and [vanished](${ref('m', 'f0f0f0f0-0000-4000-8000-000000000000')}).`,
         },
       ],
     });
@@ -278,7 +278,7 @@ describe('get_thread', () => {
     const [field, thread, gone] = got.messages[0]!.cites;
     expect(field).toMatchObject({
       kind: 'field',
-      ref: `${ref('a', id('AC'))}/f/nome`,
+      ref: `${ref('a', id('AC'))}/f/name`,
       value: 'Contato',
       broken: false,
     });
@@ -291,7 +291,7 @@ describe('get_thread', () => {
 
     const cited = ok(await mcp.call<Got>('get_thread', { ref: threadRef(target.id) }));
     expect(cited.anchor).toMatchObject({
-      ref: `${ref('a', id('AC'))}/f/nome`,
+      ref: `${ref('a', id('AC'))}/f/name`,
       kind: 'field',
       name: expect.any(String),
       value: 'Contato',
@@ -356,11 +356,11 @@ describe('open_thread', () => {
   });
 
   it('anchor on field, pair and row', async () => {
-    const field = ok(await open(`${ref('a', id('AC'))}/f/nome`));
+    const field = ok(await open(`${ref('a', id('AC'))}/f/name`));
     expect(readThread(dir(), field.id).anchor).toEqual({
       kind: 'field',
       annotationId: id('AC'),
-      key: 'nome',
+      key: 'name',
     });
     const entry = ok(await open(`${ref('a', id('AU'))}/e/${codeOf(id('EN'))}`));
     expect(readThread(dir(), entry.id).anchor).toEqual({
@@ -368,11 +368,13 @@ describe('open_thread', () => {
       annotationId: id('AU'),
       entryId: id('EN'),
     });
-    const row = ok(await open(`${ref('a', id('AC'))}/f/atributos/r/${codeOf(id('R1'))}`));
+    const row = ok(
+      await open(`${ref('a', id('AC'))}/f/attributes/r/${codeOf(id('R1'))}`),
+    );
     expect(readThread(dir(), row.id).anchor).toEqual({
       kind: 'row',
       annotationId: id('AC'),
-      key: 'atributos',
+      key: 'attributes',
       rowId: id('R1'),
     });
   });
@@ -424,13 +426,13 @@ describe('open_thread', () => {
       ref('p', 'abcdef01-0000-4000-8000-000000000000'),
       { point: { container: null, x: 'a', y: 1 } },
       { point: { container: ref('m', id('MF')), x: 1, y: 1 } },
-      `${ref('a', id('AC'))}/f/nome/extra`,
+      `${ref('a', id('AC'))}/f/name/extra`,
     ]) {
       expect(errorOf(await open(bad)).code, JSON.stringify(bad)).toBe('invalid-anchor');
     }
     for (const missing of [
       ref('m', 'abcdef12-0000-4000-8000-000000000000'),
-      `${ref('a', id('AC'))}/f/campoQueNaoExiste`,
+      `${ref('a', id('AC'))}/f/nonexistentField`,
       `${ref('a', id('AU'))}/e/00000000`,
       {
         point: {

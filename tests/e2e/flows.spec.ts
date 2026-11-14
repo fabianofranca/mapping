@@ -13,8 +13,7 @@ import {
 } from './helpers';
 
 const SDUI = join(process.cwd(), 'examples', 'specs', 'sdui.json');
-// pt-BR kept: the example spec file is named 'modelo-de-dados.json' (examples/specs)
-const MODELO = join(process.cwd(), 'examples', 'specs', 'modelo-de-dados.json');
+const MODELO = join(process.cwd(), 'examples', 'specs', 'data-model.json');
 
 test('new project → image → marking → annotation → zip with the mapping.json', async ({
   page,
@@ -570,7 +569,7 @@ test('specialization badge inside the row with the Layers window short', async (
   }
 });
 
-test('`atributos` table without overlapping columns at the default width of Details', async ({
+test('`attributes` table without overlapping columns at the default width of Details', async ({
   page,
 }) => {
   await createProject(page, 'Table');
@@ -579,23 +578,21 @@ test('`atributos` table without overlapping columns at the default width of Deta
   await applySpecialization(page, MODELO);
   await page
     .getByRole('button', {
-      // pt-BR kept: layer and type names of examples/specs/modelo-de-dados.json
       name: 'Add annotation to layer Classes',
     })
     .click();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: /^Classe/ })
+    .getByRole('button', { name: /^Class/ })
     .click();
   const details = page.getByRole('region', { name: 'Details' });
   await details.getByRole('button', { name: '+ Row' }).click();
-  // pt-BR kept: field labels `exemplo` and `obrigatório` of examples/specs/modelo-de-dados.json
-  await details.getByLabel('exemplo (Row 1)').fill('ana@example.com');
-  await details.getByLabel('exemplo (Row 1)').press('Enter');
-  const required = details.getByRole('group', { name: 'obrigatório (Row 1)' });
+  await details.getByLabel('example (Row 1)').fill('ana@example.com');
+  await details.getByLabel('example (Row 1)').press('Enter');
+  const required = details.getByRole('group', { name: 'required (Row 1)' });
   const [seg, example] = await Promise.all([
     required.boundingBox(),
-    details.getByLabel('exemplo (Row 1)').boundingBox(),
+    details.getByLabel('example (Row 1)').boundingBox(),
   ]);
   if (!seg || !example) throw new Error('table has no size');
   expect(seg.x + seg.width).toBeLessThanOrEqual(example.x + 0.5);

@@ -1,10 +1,10 @@
 /**
- * Endereço do guia interativo (`public/guia/index.html`, publicado em `guia/` ao lado do
- * `index.html`). Relativo à página: vale na raiz do site, em `/preview/` e no `vite dev`.
- * Aberto como arquivo (`file:`), o `index.html` costuma estar sozinho, sem a pasta `guia/` (é o
- * artefato avulso do deploy): sem endereço, a interface não oferece um link quebrado.
+ * Address of the interactive guide (`public/guide/index.html`, published at `guide/` next to the
+ * `index.html`). Relative to the page: valid at the site root, in `/preview/` and in `vite dev`.
+ * Opened as a file (`file:`), the `index.html` is usually alone, without the `guide/` folder (it is
+ * the standalone artifact of the deploy): with no address, the UI does not offer a broken link.
  */
-export const GUIDE_PATH = 'guia/index.html';
+export const GUIDE_PATH = 'guide/index.html';
 
 export function guideUrl(
   protocol: string = globalThis.location?.protocol ?? '',

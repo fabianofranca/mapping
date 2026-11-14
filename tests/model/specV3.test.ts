@@ -12,12 +12,11 @@ import {
 
 // formatVersion 3 specialization (stage 4): `sources` on types and fields (including
 // on table columns). v1 and v2 still open; `sources` only exists in v3.
-// pt-BR kept: shared fixture data (tests/fixtures/sdui-v2.json and examples/specs/modelo-de-dados.json:
-// layer `componentes`, spec `modelo-dados`, type `classe`), outside this phase
+// pt-BR kept: shared fixture data (tests/fixtures/sdui-v2.json: layer `componentes`)
 
 const read = (path: string): string => readFileSync(path, 'utf8');
 const sdui = read('tests/fixtures/sdui-v2.json');
-const dataModel = read('examples/specs/modelo-de-dados.json');
+const dataModel = read('examples/specs/data-model.json');
 const jsonSchema = JSON.parse(read('docs/spec.schema.json')) as Record<string, unknown>;
 const jsonValidator = z.fromJSONSchema(jsonSchema as never);
 
@@ -204,7 +203,7 @@ describe('findTypesBySource', () => {
     });
     expect(both.map((m) => [m.specId, m.type.id, m.by])).toEqual([
       ['sdui', 'button', 'id'],
-      ['modelo-dados', 'classe', 'name'],
+      ['data-model', 'class', 'name'],
     ]);
     expect(both[0]?.layer.id).toBe('componentes');
     expect(both[0]?.source).toEqual({ system: 'figma', id: '3f2a9c', name: 'DS/Button' });

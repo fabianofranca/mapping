@@ -3,7 +3,7 @@
   "formatVersion": 3,
   "id": "sdui-sheet",
   "name": "Bottom sheet",
-  "description": "Folha modal: logo, título, legenda e rodapé. A legenda fica no topo da caixa, o rodapé no fundo, e a linha do rodapé alinha no fim.",
+  "description": "Modal sheet: logo, title, caption and footer. The caption sits at the top of the box, the footer at the bottom, and the footer row aligns to the end.",
   "size": {
     "width": 412,
     "height": 220
@@ -23,7 +23,7 @@
   },
   "template": {
     "type": "frame",
-    "name": "folha",
+    "name": "sheet",
     "layout": {
       "type": "column",
       "padding": [0, 0, 16, 0]
@@ -38,7 +38,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "cabeçalho",
+        "name": "header",
         "width": "fill",
         "height": 64,
         "layout": {
@@ -59,7 +59,7 @@
           },
           {
             "type": "text",
-            "name": "título",
+            "name": "title",
             "text": {
               "$field": "title"
             },
@@ -75,7 +75,7 @@
       },
       {
         "type": "text",
-        "name": "legenda",
+        "name": "caption",
         "text": {
           "$field": "subtitle"
         },
@@ -90,7 +90,7 @@
       },
       {
         "type": "frame",
-        "name": "rodapé",
+        "name": "footer",
         "width": "fill",
         "height": 56,
         "layout": {
@@ -102,7 +102,7 @@
         "children": [
           {
             "type": "text",
-            "name": "ação",
+            "name": "action",
             "text": {
               "$field": "footer"
             },
