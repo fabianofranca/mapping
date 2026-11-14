@@ -365,7 +365,7 @@ describe('importação inteira', () => {
       ).error;
       expect(error.code).toBe('invalid-ref');
       expect(error.hint).toContain('copy again from the app');
-      expect(error.accepted).toContain('mapping://projeto/p/3f2a9c1e');
+      expect(error.accepted).toContain('mapping://project/p/3f2a9c1e');
     }
   });
 
@@ -498,7 +498,7 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
       rejected: 2,
       applied: 11,
     });
-    expect(review.hint).toContain('corrija só o que foi rejeitado');
+    expect(review.hint).toContain('correct only what was rejected');
   });
 
   it('get_proposal_review traz só a rejeição, a anotação rejeitada junto e as notas', async () => {
@@ -611,7 +611,7 @@ describe('nova proposta com supersedes (só as correções)', () => {
       ref: first.proposal.ref,
       status: 'applied',
       revision: firstBefore.revision,
-      note: expect.stringMatching(/aplicada.*substituída por/s),
+      note: expect.stringMatching(/applied.*superseded by/s),
     });
     expect(readProposal(dir(), first.proposal.id)).toEqual(firstBefore);
     expect(readProposal(dir(), first.proposal.id).decisions).toEqual(firstDecisions());
@@ -1103,9 +1103,9 @@ describe('source nas operações de imagens e marcações', () => {
       }),
     );
     expect(plan.valid).toBe(true);
-    expect(plan.summary[0]).toContain('sem origem');
-    expect(plan.summary[1]).toContain('origem figma:1:10-v2');
-    expect(plan.summary[2]).toContain('origem sketch:abc');
+    expect(plan.summary[0]).toContain('no source');
+    expect(plan.summary[1]).toContain('source figma:1:10-v2');
+    expect(plan.summary[2]).toContain('source sketch:abc');
 
     const proposed = await propose(mcp, 'loja', operations, { title: 'Origens' });
     const proposal = readProposal(dir(), proposed.proposal.id);
