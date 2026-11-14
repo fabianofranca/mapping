@@ -417,7 +417,7 @@ struct Foo: View {
     expect(sig.params.map((p) => p.name)).toEqual(['a', 'b']);
     const result = extractSwift(withProps('  let a: Int'), 'Foo', ['--init', '1']);
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('--init 1 fora da lista');
+    expect(result.stderr).toContain('--init 1 is not in the list');
   });
 });
 
