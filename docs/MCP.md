@@ -6,7 +6,7 @@ Only **folder** projects are within the MCP's reach; projects stored in the brow
 
 ## Installation
 
-1. Download `mapping-mcp.js` from the [latest `mcp-v*` Release](../../../releases) (there is also a `mapping-mcp.js.sha256` to check it: `sha256sum -c mapping-mcp.js.sha256`). To test something not yet published, download from a pre-release: `mcp-snapshot-pr<N>` (the build of a phase PR, before it enters the epic) or `mcp-v0.40.0-rc.<n>` (the epic's release candidate, generated on the merge of the last phase). They announce the version with a suffix in `--version` (`0.8.0-snapshot.pr172+abc1234`, `0.8.0-rc.1`).
+1. Download `mapping-mcp.js` from the [latest `mcp-v*` Release](../../../releases) (there is also a `mapping-mcp.js.sha256` to check it: `sha256sum -c mapping-mcp.js.sha256`). To test something not yet published, download from a pre-release: `mcp-snapshot-pr<N>` (the build of a phase PR, before it enters the epic) or `mcp-v0.41.0-rc.<n>` (the epic's release candidate, generated on the merge of the last phase). They announce the version with a suffix in `--version` (`0.8.0-snapshot.pr172+abc1234`, `0.8.0-rc.1`).
 2. Copy the file to `tools/` in the app's repository. It is self-contained (dependencies, image WebAssembly and documentation embedded): no `npm install` needed.
 3. Register the server in a `.mcp.json` at the repository root:
 
@@ -15,7 +15,7 @@ Only **folder** projects are within the MCP's reach; projects stored in the brow
      "mcpServers": {
        "mapping": {
          "command": "node",
-         "args": ["tools/mapping-mcp.js", "--root", "design/mapeamentos"]
+         "args": ["tools/mapping-mcp.js", "--root", "design/mappings"]
        }
      }
    }
@@ -48,7 +48,7 @@ mapping://<project>/a/<code>/e/<code>
 mapping://<project>/a/<code>/f/<field>/r/<code>
 ```
 
-- `<project>`: the project's folder name, encoded as in a URL (`A-Z a-z 0-9 - . _ ~` stay as they are; everything else becomes `%XX`, in UTF-8: `Meu Projeto (v2)` is `Meu%20Projeto%20%28v2%29`). If there are two folders with the same name, the server returns the candidates and asks for the path.
+- `<project>`: the project's folder name, encoded as in a URL (`A-Z a-z 0-9 - . _ ~` stay as they are; everything else becomes `%XX`, in UTF-8: `My Project (v2)` is `My%20Project%20%28v2%29`). If there are two folders with the same name, the server returns the candidates and asks for the path.
 - `m` marking, `i` **container** (the letter did not change when the image became a container, so references already pasted keep working), `a` annotation, `p` **proposal** (the one that `propose_changes` and `list_proposals` return), `l` **layer** and `c` **conversation** (the one that `list_threads` and `open_thread` return). After the code of an **annotation** a part may follow: `/f/<field>` (the `key` of the typed field, encoded like the project), `/e/<code>` (a pair of the free-form annotation) and, after a `table` field, `/r/<code>` (a row). The full grammar is that of [`COMMENT-FORMAT.md`](COMMENT-FORMAT.md), "References and citations".
 - `<code>`: the first 8 hexadecimal characters of the id (12, 16… if there is a collision).
 - The reference is **only the URL**: it carries no readable path or anything after the code (the name comes from `resolve`; the readable path, from the `path` of `get_marking`, `get_container` and `get_annotation`). Anything after the code (the ` (path)` of the old format, `?`, `#`, a space) or an unencoded project is `invalid-ref` (see "Change in 0.21.0").
@@ -117,7 +117,7 @@ In `get_marking`, `get_annotation`, `find_by_code`, `get_component` (field `code
     "localFile": "app/src/main/java/com/app/ds/DSButton.kt",
     "exists": true
   },
-  "params": { "texto": "text", "estilo": "style" }
+  "params": { "label": "text", "style": "style" }
 }
 ```
 
@@ -405,8 +405,8 @@ No change in the format of `mapping.json` (schema v14), of the specialization (`
 No change in the format of `mapping.json` (schema v14), of the specialization (`formatVersion` 11) or of the proposal (format 4): no `mapping://` reference is written to those files.
 
 - **The reference is only the URL**: `mapping://<project>/<m|i|a|p>/<code>`, without the readable path in parentheses. It applies to what the app copies (Ctrl+C and the reference button) and to every MCP response (`ref`, `annotation`, `marking`, `container`, `proposal.ref`, the `target`s of `get_proposal` and `get_proposal_review`, the plan's `created`, the `detail` of `image-overlap`). The fields that already carried a name or path separately (`name`, `path`, `from` and `to` of arrows, when the tool has them) stay; no new field was created. `resolve` returns the reference, the kind and the identification fields (`id`, `project`, `name`, `container` or `marking` and `layer`, `rect`), without the readable path; the readable path comes from the `path` of `get_marking`, `get_container` and `get_annotation`.
-- **The project is encoded** (RFC 3986 _unreserved_ set): `A-Z a-z 0-9 - . _ ~` stay as they are and everything else becomes `%XX` in uppercase hex, in UTF-8 (`!`, `'`, `(`, `)` and `*` too, because `(` and `)` break a markdown link). A folder `Meu Projeto` appears as `mapping://Meu%20Projeto/m/3f2a9c1e`; `projeção`, as `proje%C3%A7%C3%A3o`.
-- **Old ones refused**: reading is strict. A reference with anything after the code (the old ` (path)`, `?`, `#`, a space) or with an unencoded project (`mapping://Meu Projeto/m/…`), or with an invalid `%` or one that does not decode as UTF-8, gives `invalid-ref`, in the item tools and the proposal tools, with a `hint` with the accepted format and a request to copy again in the app. References already pasted in the old format need to be copied again. The short forms are still accepted (`m/3f2a9c1e` with `project` separately, just the code, the full id) and the URL with surrounding spaces.
+- **The project is encoded** (RFC 3986 _unreserved_ set): `A-Z a-z 0-9 - . _ ~` stay as they are and everything else becomes `%XX` in uppercase hex, in UTF-8 (`!`, `'`, `(`, `)` and `*` too, because `(` and `)` break a markdown link). A folder `My Project` appears as `mapping://My%20Project/m/3f2a9c1e`; `café`, as `caf%C3%A9`.
+- **Old ones refused**: reading is strict. A reference with anything after the code (the old ` (path)`, `?`, `#`, a space) or with an unencoded project (`mapping://My Project/m/…`), or with an invalid `%` or one that does not decode as UTF-8, gives `invalid-ref`, in the item tools and the proposal tools, with a `hint` with the accepted format and a request to copy again in the app. References already pasted in the old format need to be copied again. The short forms are still accepted (`m/3f2a9c1e` with `project` separately, just the code, the full id) and the URL with surrounding spaces.
 - The links of the library documents (`mapping://<typeId>` and `mapping://<specId>/<typeId>`) do not change.
 
 ### Change in 0.20.0 (Migration of link roles)
@@ -549,7 +549,7 @@ The canvas's top-level object (formerly "image", even when it had no file) is th
 
 - **New tools**: `get_container` and `get_container_file` (same arguments and responses as `get_image` and `get_image_file`). `get_marking_image` stays, because it returns an image crop, and the `images/` folder stays, because it holds image files.
 - **New operations** of `plan_changes`/`propose_changes`:
-  - `add_container`: `{ op: "add_container", … }` either **with a file** (`file` or `base64`, `fileName?`: the width and height come from the written file, with the same optimization as before) **or with only a background** (`width`, `height` from 1 to 20000 px and `background` `#RRGGBB`); plus `name?`, `source?`, `center?`, `beside?`, `as?`. `beside` (reference, id or `$alias` of a container) puts the new one to its right, with the top aligned and the same `scale`; it is exclusive with `center`. Giving both groups of fields, or neither, fails with `invalid-arguments` and a message saying what to do. Examples: `{ "op": "add_container", "name": "Cadastro", "width": 390, "height": 844, "background": "#FFFFFF", "as": "$cadastro" }` and `{ "op": "add_container", "file": "fontes/checkout.png", "name": "Checkout", "as": "$checkout" }`.
+  - `add_container`: `{ op: "add_container", … }` either **with a file** (`file` or `base64`, `fileName?`: the width and height come from the written file, with the same optimization as before) **or with only a background** (`width`, `height` from 1 to 20000 px and `background` `#RRGGBB`); plus `name?`, `source?`, `center?`, `beside?`, `as?`. `beside` (reference, id or `$alias` of a container) puts the new one to its right, with the top aligned and the same `scale`; it is exclusive with `center`. Giving both groups of fields, or neither, fails with `invalid-arguments` and a message saying what to do. Examples: `{ "op": "add_container", "name": "Signup", "width": 390, "height": 844, "background": "#FFFFFF", "as": "$signup" }` and `{ "op": "add_container", "file": "sources/checkout.png", "name": "Checkout", "as": "$checkout" }`.
   - `update_container`, `replace_container` and `delete_container`, with the `container` argument (reference, id or alias). `create_marking` asks for `container`, and so does the `list_markings` filter.
 - **Accepted with a warning for one version** (`plan_changes` and `propose_changes` apply them and return in `warnings` a `{ code: "deprecated-op", op: <index>, message }` warning saying what to use; the old read tools answer like the new ones, with `warnings: [{ code: "deprecated-tool", tool, message }]`):
 
@@ -614,7 +614,7 @@ Schema v10 introduced the **container without a file** (`file: null`, with `widt
 Every change made by the agent arrives as a **proposal**, a kind of pull request inside the tool. The file format and the review rules are in [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md); the agent's flow, in [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
 
 ```
-meu-projeto/
+my-project/
 ├── mapping.json                 # only the app writes it
 ├── images/
 └── proposals/
@@ -695,7 +695,7 @@ The table below covers what usually shows up during installation and use; the fu
 
 ## Publishing a version (maintainers)
 
-The server's version is **one per epic**: `SERVER_VERSION` in `mcp/version.ts` (today `0.40.0`) is the only `x.y.z` in the code, and the channels below only add a suffix to the build (`MCP_BUILD_SUFFIX`, which `mcp/build.mjs` validates). The workflow `.github/workflows/mcp-prerelease.yml` takes care of the first two; `mcp-release.yml`, of the third.
+The server's version is **one per epic**: `SERVER_VERSION` in `mcp/version.ts` (today `0.41.0`) is the only `x.y.z` in the code, and the channels below only add a suffix to the build (`MCP_BUILD_SUFFIX`, which `mcp/build.mjs` validates). The workflow `.github/workflows/mcp-prerelease.yml` takes care of the first two; `mcp-release.yml`, of the third.
 
 **Files of each release.** The snapshot, the rc and the stable publish the same files, assembled by `scripts/release/workspaceAssets.mjs` (a single script, one pass per job that compiles; it exits with an error if `examples/workspace/AGENTS.md` does not have exactly one managed block, with the `mapping:begin` and `mapping:end` markers in order). Each has a `.sha256` in the `sha256sum` format (also checked by `shasum -a 256 -c`):
 
@@ -716,15 +716,15 @@ Releases earlier than this one do not have the five files after the server (`wat
 curl -fsSL https://github.com/fabianofranca/mapping/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh
 ```
 
-- **Snapshot per PR (automatic).** Every PR based on an `epic/**` generates a test build in the fixed pre-release `mcp-snapshot-pr<N>` (version `0.40.0-snapshot.pr<N>+<sha>`), overwritten on each push and **deleted (release and tag) when the PR closes**, merged or not (closing cancels a snapshot in progress). The PR's code is compiled in a read-only job (`snapshot-build`); a second job (`snapshot-publish`), without a checkout, is the only one that writes to the Release. Installation: `./setup.sh mcp-snapshot-pr<N>` (see `examples/workspace/`) or download the Release's files.
-- **Release candidate by the `mcp-rc` label (automatic).** The merge, into an `epic/**`, of a PR with the `mcp-rc` label (the one of the epic's last phase; the agent of that phase puts the label on when opening the PR) generates the pre-release `mcp-v0.40.0-rc.<n>` (`n` = the version's largest existing rc + 1) from the merge commit, after lint, typecheck and tests. Without the label, the merge does not generate an rc. If it is forgotten, run the "MCP pre-release" workflow by hand (`workflow_dispatch`) on the epic's branch. They are **deleted (release and tag) when the stable is published**.
-- **Stable (automatic on the epic's merge).** The stable `mcp-v0.40.0` comes out by itself when the epic enters `main` with a `SERVER_VERSION` that does not have a tag yet; no one creates the tag. On the push to `main`, the workflow `.github/workflows/mcp-release.yml` runs two jobs:
+- **Snapshot per PR (automatic).** Every PR based on an `epic/**` generates a test build in the fixed pre-release `mcp-snapshot-pr<N>` (version `0.41.0-snapshot.pr<N>+<sha>`), overwritten on each push and **deleted (release and tag) when the PR closes**, merged or not (closing cancels a snapshot in progress). The PR's code is compiled in a read-only job (`snapshot-build`); a second job (`snapshot-publish`), without a checkout, is the only one that writes to the Release. Installation: `./setup.sh mcp-snapshot-pr<N>` (see `examples/workspace/`) or download the Release's files.
+- **Release candidate by the `mcp-rc` label (automatic).** The merge, into an `epic/**`, of a PR with the `mcp-rc` label (the one of the epic's last phase; the agent of that phase puts the label on when opening the PR) generates the pre-release `mcp-v0.41.0-rc.<n>` (`n` = the version's largest existing rc + 1) from the merge commit, after lint, typecheck and tests. Without the label, the merge does not generate an rc. If it is forgotten, run the "MCP pre-release" workflow by hand (`workflow_dispatch`) on the epic's branch. They are **deleted (release and tag) when the stable is published**.
+- **Stable (automatic on the epic's merge).** The stable `mcp-v0.41.0` comes out by itself when the epic enters `main` with a `SERVER_VERSION` that does not have a tag yet; no one creates the tag. On the push to `main`, the workflow `.github/workflows/mcp-release.yml` runs two jobs:
 
   1. **`decide`** reads `SERVER_VERSION` at the merge commit and checks on the remote whether `mcp-v<version>` exists (`scripts/release/stableRelease.mjs`). If it exists (an epic without a new version, a Dependabot merge), it ends green with the notice "mcp-v<version> already published; nothing to do" and `release` is skipped.
-  2. **`release`** (only if the tag does not exist) runs lint, typecheck and tests (without the performance budgets), generates `dist-mcp/mapping-mcp.js`, tests it outside the repository (`--version` prints only the version, e.g. `0.40.0`) and creates the tag and the Release together (`gh release create --target <merge commit>`; a tag created only by the `GITHUB_TOKEN` would not trigger another workflow), with the 10 files and the checksum. The title is the tag's name. Finally, it deletes the pre-releases `mcp-v<version>-rc.<n>`. Two consecutive pushes with the same new version do not publish twice (`concurrency` per tag): the second only attaches the files. An rc tag (`mcp-v<version>-rc.<n>`) pushed by hand does not trigger the stable (`!mcp-v*-*`).
+  2. **`release`** (only if the tag does not exist) runs lint, typecheck and tests (without the performance budgets), generates `dist-mcp/mapping-mcp.js`, tests it outside the repository (`--version` prints only the version, e.g. `0.41.0`) and creates the tag and the Release together (`gh release create --target <merge commit>`; a tag created only by the `GITHUB_TOKEN` would not trigger another workflow), with the 10 files and the checksum. The title is the tag's name. Finally, it deletes the pre-releases `mcp-v<version>-rc.<n>`. Two consecutive pushes with the same new version do not publish twice (`concurrency` per tag): the second only attaches the files. An rc tag (`mcp-v<version>-rc.<n>`) pushed by hand does not trigger the stable (`!mcp-v*-*`).
 
   **Lock on the epic's PR.** The "MCP version" step of the `epic` job (`ci.yml`) fails the PR from `epic/*` to `main` that changes what goes in the release (the entries of `scripts/release/releaseInputs.mjs`: `mcp/`, `src/model/`, the embedded documentation, the `libraries/notas/` library and the sources of the workspace files) and keeps a version that already has a stable: raise `SERVER_VERSION` in `mcp/version.ts` (and the docs that cite it). A new version passes, as long as it is greater than the last stable; without a changed entry, it passes with the notice that the merge does not publish. `package-lock.json` stays out (a Dependabot merge never publishes).
 
   **Checking the Release after the merge.** Whoever merges the epic (in the automated flow, the orchestrator) finds the "MCP release" run of the merge commit and waits for it. With a new version, it checks that the Release `mcp-v<version>` exists, is not a pre-release, has `mapping-mcp.js`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md`, `watch-comments.mjs` and `mapping-signature.mjs`, each with its `.sha256`, and that the version's rcs are gone; without a new version, that `release` was skipped.
 
-  **Plan B (manual).** If the workflow failed or the Release was left without the files, fix the cause and create the tag by hand on `main` (`git tag mcp-v0.40.0 && git push origin mcp-v0.40.0`, or Releases › Draft a new release with the new tag), which triggers the same workflow (a Release created earlier through the UI receives the files). For a tag that already exists, run Actions › **MCP release** › Run workflow, with the tag (e.g. `mcp-v0.40.0`): the workflow uses the tag's code and only attaches the files, without deleting or recreating the Release.
+  **Plan B (manual).** If the workflow failed or the Release was left without the files, fix the cause and create the tag by hand on `main` (`git tag mcp-v0.41.0 && git push origin mcp-v0.41.0`, or Releases › Draft a new release with the new tag), which triggers the same workflow (a Release created earlier through the UI receives the files). For a tag that already exists, run Actions › **MCP release** › Run workflow, with the tag (e.g. `mcp-v0.41.0`): the workflow uses the tag's code and only attaches the files, without deleting or recreating the Release.

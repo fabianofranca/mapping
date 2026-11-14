@@ -94,7 +94,7 @@ const plan = async (operations: unknown[]) =>
 /** O lote do guia: o evento dono pendurado no Clique do botão, com os filhos em Sucesso e Falha. */
 function guideChain(): unknown[] {
   const guide = readFileSync('docs/AGENT-GUIDE.md', 'utf8');
-  const block = /encadeamento por papel[^]*?```json\n([^]*?)```/.exec(guide);
+  const block = /chaining by role[^]*?```json\n([^]*?)```/.exec(guide);
   expect(block, 'bloco json do guia').not.toBeNull();
   return JSON.parse(block![1]!) as unknown[];
 }

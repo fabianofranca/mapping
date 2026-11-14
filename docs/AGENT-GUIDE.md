@@ -39,10 +39,10 @@ mapping://<project>/a/<code>/e/<code>                   free-form annotation pai
 mapping://<project>/a/<code>/f/<field>/r/<code>         table row
 ```
 
-- `<project>` is the project's folder name, encoded as in a URL (`A-Z a-z 0-9 - . _ ~` stay as they are, the rest becomes `%XX`: `Meu Projeto` appears as `Meu%20Projeto`); `m` marking, `i` container, `a` annotation, `p` **proposal** (e.g. `mapping://cadastro/p/8c1f2d9e`), `l` **layer** and `c` **conversation** (e.g. `mapping://cadastro/c/5d0e8a41`). The letter `i` is the **container** (unchanged, so references already pasted keep working).
-- After an annotation's code a **part** segment can follow: `/f/<field>` (the typed field's `key`, encoded like the project: `cor%20de%20fundo`), `/e/<code>` (a free-form annotation pair) and, after a `table` field, `/r/<code>` (a row). Only the annotation has a part. Any other suffix is `invalid-ref`.
+- `<project>` is the project's folder name, encoded as in a URL (`A-Z a-z 0-9 - . _ ~` stay as they are, the rest becomes `%XX`: `My Project` appears as `My%20Project`); `m` marking, `i` container, `a` annotation, `p` **proposal** (e.g. `mapping://signup/p/8c1f2d9e`), `l` **layer** and `c` **conversation** (e.g. `mapping://signup/c/5d0e8a41`). The letter `i` is the **container** (unchanged, so references already pasted keep working).
+- After an annotation's code a **part** segment can follow: `/f/<field>` (the typed field's `key`, encoded like the project: `background%20color`), `/e/<code>` (a free-form annotation pair) and, after a `table` field, `/r/<code>` (a row). Only the annotation has a part. Any other suffix is `invalid-ref`.
 - `<code>` is the first 8 hexadecimal characters of the id (it grows by 4 if there is a collision).
-- The reference is **only the URL**: it carries no readable path. The name and the path (e.g. `cadastro.png › Formulário › Nome`) come from the `path` of `get_marking` (`resolve` returns the reference, the type and the identifying fields, without the readable path). A reference in the old format (with the path in parentheses) or with the project not encoded gives `invalid-ref`: ask the dev to copy it again in the app.
+- The reference is **only the URL**: it carries no readable path. The name and the path (e.g. `signup.png › Form › Name`) come from the `path` of `get_marking` (`resolve` returns the reference, the type and the identifying fields, without the readable path). A reference in the old format (with the path in parentheses) or with the project not encoded gives `invalid-ref`: ask the dev to copy it again in the app.
 
 Every tool that receives an item (`ref`) accepts: the full reference (the one the dev pastes from the app with Ctrl+C), only `m/3f2a9c1e` with `project` given, or the full id. With no project in the reference or in `project`, the server searches all the projects in the roots. If the code is ambiguous, the `ambiguous-ref` error returns the candidates: choose one by full reference. The letter `p` (proposal) is only valid in the proposal tools (`get_proposal`, `get_proposal_review`, `revise_proposal`, `withdraw_proposal` and `supersedes`) and `c` (conversation), in the conversation tools (`get_thread`, `post_message` and `thread` of `propose_changes`); in the other item tools it gives `invalid-ref`. `resolve` understands all of them and returns the `kind` (`marking`, `arrow`, `container`, `annotation`, `layer`, `thread`, `field`, `entry` or `row`; field, pair and row bring `annotation`, `key` and `value`). `get_annotation` and the other item tools accept a field, pair or row as the annotation that contains them (the response is the annotation's); in a marking or container tool, the reference of a part is `wrong-kind`, and so is that of a layer or conversation in an item tool. A field, pair or row that does not exist in the annotation is `not-found`. In the conversation texts, cite with the markdown link `[name](mapping://<project>/…)`.
 
@@ -166,7 +166,7 @@ A **library** is a v4 specialization and its **folder**: the specialization at t
 - **Generate, validate, fix:** write the package, run `validate_library({ path })` (with `previous` when it is an update), fix each error by its `file` and `path` and validate again, until `valid: true`. **An error prevents use; a warning allows use** (font missing from the package, content larger than the box, unused file): explain in the delivery what was left. Use `level: 1` or `2` to iterate quickly and close with level 3 (the default), which instantiates each component and passes the external-system examples through the declaration. The drawing warnings come from the level 3 proof, with the text measured by approximation: `content larger than the box: <frame>`, `fill inside hug becomes 0` (a `fill` child on the main axis of a `hug` frame), `text measured with width 0: <node>` (a `fill` or `%` text with no width to come from: give the parent a width) `text larger than the box: <node>` (a text of defined height wraps into more lines than fit, or a word is wider than the box, with no `maxLines` nor `ellipsis` that cuts it; give a height or width, let the text wrap or use `font.maxLines`/`font.ellipsis`) and, in the component's `formatVersion` 4, `invalid value in <key>: <value>` (an expression of `layout.type`, `layout.align`, `layout.justify`, `width` or `height` resolved outside the set and the default applied). A `fill` text in a `hug` column wraps into lines of words (two-pass measurement); `distribute: "fill"` in `repeat`, `minWidth`/`maxWidth`/`minHeight`/`maxHeight`, `"min-content"`/`"max-content"` in `width`/`height` and in `sizing`, and expressions in the layout keys and `font.wrap` (`"none"` = a single line), `font.ellipsis` (`…` on what does not fit) and `font.maxLines` (integer ≥ 1) and `runs` (rich text) are only valid from the component's `formatVersion` 4, as are the arithmetic and comparisons of the expressions (`$add`, `$sub`, `$mul`, `$div`, `$mod`, `$round`, `$floor`, `$ceil`, `$abs`, `$min`, `$max`, `$clamp`, `$sin`, `$cos`, `$gt`, `$gte`, `$lt`, `$lte`; compute instead of enumerating, instead of a `$switch` with dozens of cases over a number), as is `$rows` (the number of rows of a `table` field), `$size` (`"width"` or `"height"` of the instance; in the drawing proof and in `hug`, the component's `size`), the `repeat` by `count` (in place of `field`, up to 1000 rows, warning `repeat limited to 1000 rows: <node>`) with `{ "$field": "$index" }` (the row index; it is not a field of the type) and the anchors (`left`, `right`, `top`, `bottom`, `centerX`, `centerY`) by expression, and `font.align: "justify"` (the last line of each paragraph stays on the left), `over` in the color `$token` (`{ "$token": "on-surface", "alpha": 0.38, "over": "surface" }`: the color composited over another, opaque over an opaque base) and the `fit` values `fill-width`, `fill-height`, `scale-down` and `none` of the `image` node (error in a lower version: `only allowed with formatVersion 4`), and `rotation` (degrees, clockwise, around the center of the node's box; drawing only, does not change layout nor `hug`; a frame's children and `clip` rotate along; not valid on the root: `template.rotation: not valid on the root`; use it for needles, handles and indicators instead of a table of positions), `shadow` as a list of 1 to 4 shadows (the first stays on top, like `box-shadow`; an empty list or one with more than 4: `shadow: expected 1 to 4 shadows`), `shadow.spread` (px or `$token`; negative is valid; grows or shrinks the shadow's shape on each side; in `frame`, `rect` and `ellipse`) and `stroke.gap` (`{ "node": "<name of a template node>", "padding": 4 }`, only in `frame` and `rect`, without `sides`: the outline is interrupted where that node's box crosses it; `node not found: <name>` at the path `stroke.gap.node`) and the inherited color (`provide` in the `slot`, `{ "$provided": "<name>", "default": … }` in the child; the nearest ancestor that offers the name applies; `template…provide: empty name` and `…$provided: expected the name of the provided color (non-empty text)`) and `align`/`justify` in the `none` `layout` (`start`, `center`, `end` or `stretch`; the aligned overlap), the `slot`'s `clip` (the child markings clipped by the slot's box) and the frame's `clip` by expression, and the grid (`layout.type: "grid"` with exactly one of `columns`, `minColumnWidth`, `rows` and `minRowHeight`), `span` (only on a child of `grid`), `weight` (only on a `fill` child of `row`/`column`) and `repeat.layout` (in place of `direction` + `gap`) and the reading direction (`direction` on the node, `anchors.start`/`anchors.end`, `font.align` `start`/`end`, `mirror` on the `icon` and the `path` and the `$direction` condition; see "Reading direction") and the variables (`"let": { "name": <expression> }` on a `frame` and `{ "$var": "name" }` wherever an expression or condition is valid, replaced on read: declare a long, repeated subexpression only once; the content's type error comes out at the path of the use with `$var(<name>)`; `undefined variable: <name>`, `variable cycle: a → b → a`, `expected a variable name ([a-z][a-zA-Z0-9]*)`; `get_component` shows the file with `let` and `$var`, and an MCP before 0.38.0 refuses `unknown key: let`) (before: `only allowed with formatVersion 4`; a literal `min` greater than `max`: `<node>.minWidth: cannot be greater than maxWidth`).
 - **Ignored package folders:** the read skips subfolders more than 8 levels deep, those that start with `.` and `node_modules`, and what is in them does not enter the validation. When it skips any, `validate_library`, `plan_library_update` (in `validation.warnings`) and the batch that applies or updates the library (in `warnings`) bring a warning with `path: "ignored-paths"` and the list of the skipped folders. It is a warning, never an error: if the content is part of the package, move it out of those folders.
 - **Design tokens instead of repeated literals** (`formatVersion` 15 in the specialization, format 4 in the component). When the source has a design system, declare the colors, radii and spacings in `tokens` at the root (`modes: ["light", "dark"]`, color per mode, radius and spacing as a simple value) and use `{ "$token": "primary" }` in the components, instead of the same `#6750A4` copied into each node. `font-sans` and `font-mono` are built in (the host theme's font; text without `font.family` uses `font-sans`, no longer `Inter`). The drawing uses the first mode of `modes`. `validate_library` refuses a `$token` with a nonexistent name (`the token "x" does not exist in the specialization tokens`) or of the wrong type (`the token "primary" is a color, but a number is expected here`), with the node's path (`template.children[0].fill`); fix it by the `file` and the path like any other error.
-- **Icon set instead of a `$switch` with the paths** (`formatVersion` 15 in the specialization, format 4 in the component). When an `enum` field chooses the icon, put the icons in a package file (`format: "mapping-icons"`, `formatVersion: 1`, `viewBox` and `icons` by name `^[a-z0-9][a-z0-9-_]*$`, each with `paths: [{ d, fill?, stroke?, width?, cap?, join? }]`), point to it in `icons` at the root of the specialization and use `{ "type": "icon", "name": { "$field": "icone" }, "color": … }` in the component. `validate_library` checks the file (level 1: `file not found: <path>` at the path `icons`, or the error inside the file, e.g. `icons.Check: invalid name; use [a-z0-9][a-z0-9-_]*`), refuses a literal name outside the set (`the icon "nuvem" does not exist in the icon set (icons/set.json)`, at the path of the `name`) and warns about the `enum` `option` outside the set (level 3: `the option "nuvem" of the field "icone" is not in the icon set; the drawing falls back to the placeholder`). An unknown icon name at draw time becomes the placeholder with the warning `unknown icon: <name>`.
+- **Icon set instead of a `$switch` with the paths** (`formatVersion` 15 in the specialization, format 4 in the component). When an `enum` field chooses the icon, put the icons in a package file (`format: "mapping-icons"`, `formatVersion: 1`, `viewBox` and `icons` by name `^[a-z0-9][a-z0-9-_]*$`, each with `paths: [{ d, fill?, stroke?, width?, cap?, join? }]`), point to it in `icons` at the root of the specialization and use `{ "type": "icon", "name": { "$field": "icon" }, "color": … }` in the component. `validate_library` checks the file (level 1: `file not found: <path>` at the path `icons`, or the error inside the file, e.g. `icons.Check: invalid name; use [a-z0-9][a-z0-9-_]*`), refuses a literal name outside the set (`the icon "cloud" does not exist in the icon set (icons/set.json)`, at the path of the `name`) and warns about the `enum` `option` outside the set (level 3: `the option "cloud" of the field "icon" is not in the icon set; the drawing falls back to the placeholder`). An unknown icon name at draw time becomes the placeholder with the warning `unknown icon: <name>`.
 - **Outlined outline of a text field: ONE node with `stroke.gap`** (component format 4). The outline of an `OutlinedTextField` that is interrupted over the minimized label is **one** `frame` (or `rect`) with `cornerRadius` and `"stroke": { …, "gap": { "node": "label", "padding": 4 } }`, where `label` is the name of the label's text node; the gap follows the label's measured width, for any text. The `node` is another node, outside a `repeat` (the validator refuses the node itself and any node, or the outline, inside a `repeat`). Do not build this outline with loose straight sides (`stroke.sides`) nor with a background rectangle covering the stroke: they lose the corner radius and do not follow the label.
 - **Color inherited from the container: `provide` in the slot, `$provided` in the child** (component format 4). The content color of a surface, a scaffold or a card (Compose's `LocalContentColor`) does not become a color field on each text nor the same color repeated: the container offers it in the `slot` (`"provide": { "content-color": { "$token": "on-surface" } }`, with `$field`, `$switch` and color `$token` resolved in the parent) and the text, the icon and the icon button read it, only in color position, with `"color": { "$provided": "content-color", "default": { "$token": "on-surface" } }`. The nearest ancestor that offers the name applies; with no ancestor (a loose text, a floating one, an instance at screen level, the examples' drawing proof) the `default` applies, which is the place's default. It is drawing only: the `code` does not change. An earlier MCP refuses the keys as unknown; `render_marking` of a child alone uses the ancestor's value.
 - **Screen size and structural type** (component format 4; `formatVersion` 15 of the specialization). A pin, seal or badge that must keep its size at any zoom: `"screen": { "anchor": "top-right" }` at the root of the component (nine anchors, default `center`; the `size` becomes screen pixels) and `stroke.scale: false` so the stroke does not scale either. A type that only groups (section, composer) carries `"structural": true` and has no `component` (together it is the error `a structural type does not draw: it cannot have a component`): the app does not show its name nor count it as "without a component". A marking of a type with a component accepts 1 px (divider, dot) in `create_marking`/`update_marking`.
@@ -183,11 +183,11 @@ For a highlight inside a sentence (a bold word, a different color, a label with 
   "width": "fill",
   "font": { "size": 14, "lineHeight": 20 },
   "runs": [
-    { "text": "Fatura de " },
-    { "text": { "$field": "mes" }, "weight": 700 },
+    { "text": "Invoice of " },
+    { "text": { "$field": "month" }, "weight": 700 },
     { "text": " " },
     {
-      "text": "vencida",
+      "text": "overdue",
       "color": "#FFFFFF",
       "background": "#B3261E",
       "radius": 8,
@@ -233,19 +233,19 @@ Some pieces only make sense **next to another one**: the tooltip sits above the 
 ```json
 {
   "op": "create_marking",
-  "container": "$tela",
-  "name": "Dica",
+  "container": "$screen",
+  "name": "Hint",
   "annotation": {
     "type": "material3-compose/tooltip",
-    "values": { "text": "Adicionar aos favoritos" }
+    "values": { "text": "Add to favorites" }
   },
-  "anchor": { "to": "$botao" },
-  "as": "$dica"
+  "anchor": { "to": "$button" },
+  "as": "$hint"
 }
 ```
 
 - **Moving the anchor carries the anchored ones** (and their descendants, in a chain), even locked: `update_marking` with `move` on the anchor is enough, do not move the tooltip too. **Resizing the anchor moves no one**.
-- **After changing the size of the anchored one** (a longer text in the tooltip, followed by `fit_marking`) or **of the anchor**, call `snap_to_anchor` on the anchored one: it snaps again (`{ "op": "snap_to_anchor", "marking": "$dica" }`), in the same proposal and after the step that changed the size. The summary says the rectangle before and after, or that nothing changed. In a proposal, the review shows the anchor as the **Anchor** field and the snapping as the usual **Position**: the person can accept one and reject the other.
+- **After changing the size of the anchored one** (a longer text in the tooltip, followed by `fit_marking`) or **of the anchor**, call `snap_to_anchor` on the anchored one: it snaps again (`{ "op": "snap_to_anchor", "marking": "$hint" }`), in the same proposal and after the step that changed the size. The summary says the rectangle before and after, or that nothing changed. In a proposal, the review shows the anchor as the **Anchor** field and the snapping as the usual **Position**: the person can accept one and reject the other.
 - **Setting or removing the anchor** of a marking that already exists: `update_marking` with `anchor` (moves nothing; call `snap_to_anchor` if you want to snap it) and `anchor: null` (goes back to "no anchor").
 - **Deleting the anchor** leaves the anchored ones where they are, with `anchor: null` (the batch does it by itself). **Taking the anchored one out of the target's space** (`update_marking` with `container`, to another container or to the canvas) also releases it: `anchor: null`, no error; for it to come back, anchor it again after putting it in the same space. An anchor on a container, on an arrow, in another space or on itself does not exist.
 - **Reading:** `get_marking` always returns `anchor` (with `to` as a reference; `null` without an anchor) and `anchoredBy` (the markings anchored to it; `[]` with none).
@@ -320,31 +320,31 @@ Bumping a library's `version` affects the projects that applied it: the annotati
 
 ### Aliases
 
-An item created in the batch can be cited in the following operations by an **alias** (`"as": "$porta"`). That way a marking, an annotation and a linked event come out in a single call:
+An item created in the batch can be cited in the following operations by an **alias** (`"as": "$door"`). That way a marking, an annotation and a linked event come out in a single call:
 
 ```json
 [
   {
     "op": "create_marking",
-    "as": "$botao",
+    "as": "$button",
     "container": "i/3f2a9c1e",
     "rect": { "x": 40, "y": 900, "width": 300, "height": 80 },
-    "name": "Entrar"
+    "name": "Sign in"
   },
   {
     "op": "create_annotation",
     "as": "$btn",
-    "marking": "$botao",
+    "marking": "$button",
     "type": "sdui/button",
-    "values": { "id": "btn_entrar", "texto": "Entrar" }
+    "values": { "id": "btn_sign_in", "text": "Sign in" }
   },
   {
     "op": "create_annotation",
-    "marking": "$botao",
+    "marking": "$button",
     "type": "action",
     "owner": "$btn",
     "role": "click",
-    "values": { "acao": "submit" }
+    "values": { "action": "submit" }
   }
 ]
 ```
@@ -367,7 +367,7 @@ Where an operation asks for an item (`container`, `marking`, `parent`, `annotati
 | `apply_specialization`  | `file`                                                                                                                                                                 | A specialization inside the roots: the JSON (v1 to v3; the copy goes to `specs/`) or, in `formatVersion` 4, the package's **folder** (or the specialization file inside it); the package is validated and the folder goes in the proposal.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `update_specialization` | `file`                                                                                                                                                                 | A higher version of one already applied (a file or, in v4, the package folder). Runs the new version's `migrations` on the annotations; a break without a migration fails with `spec-missing-migrations`. See "Evolving an already applied library".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `remove_specialization` | `specId`, `mode`                                                                                                                                                       | `delete` (deletes layers and annotations) or `convert` (they become free-form).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `add_container`         | `file` or `base64`, `fileName?`; or `width`, `height`, `background`; `name?`, `source?`, `drawingMode?`, `direction?`, `center?`, `beside?`, `as?`                     | Creates a container. It **either** has a file (`file`/`base64`: PNG, JPEG or WebP, the width and height come from the stored file; same optimization as the app, below) **or** only a background (`width` and `height` from 1 to 20000 px, `background` `#RRGGBB`); both groups together fail with `invalid-arguments` ("ambiguous") and so does missing fields. `source`: `{system, id, url?}`. `beside`: reference container (reference, id or `$alias`): the new one is born to its right, with the top aligned and the same scale (occupied spot: the nearest free space); exclusive with `center` (`invalid-arguments`). `drawingMode`: fixes the container's drawing mode (see `update_project`); omitted, it follows the project's. `direction`: fixes the container's reading direction (`"ltr"` or `"rtl"`); omitted, it follows the project's. Examples: `{ "op": "add_container", "name": "Cadastro", "width": 390, "height": 844, "background": "#FFFFFF", "as": "$cadastro" }` and `{ "op": "add_container", "file": "fontes/tela1.png", "name": "Checkout", "as": "$t1" }`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `add_container`         | `file` or `base64`, `fileName?`; or `width`, `height`, `background`; `name?`, `source?`, `drawingMode?`, `direction?`, `center?`, `beside?`, `as?`                     | Creates a container. It **either** has a file (`file`/`base64`: PNG, JPEG or WebP, the width and height come from the stored file; same optimization as the app, below) **or** only a background (`width` and `height` from 1 to 20000 px, `background` `#RRGGBB`); both groups together fail with `invalid-arguments` ("ambiguous") and so does missing fields. `source`: `{system, id, url?}`. `beside`: reference container (reference, id or `$alias`): the new one is born to its right, with the top aligned and the same scale (occupied spot: the nearest free space); exclusive with `center` (`invalid-arguments`). `drawingMode`: fixes the container's drawing mode (see `update_project`); omitted, it follows the project's. `direction`: fixes the container's reading direction (`"ltr"` or `"rtl"`); omitted, it follows the project's. Examples: `{ "op": "add_container", "name": "Signup", "width": 390, "height": 844, "background": "#FFFFFF", "as": "$signup" }` and `{ "op": "add_container", "file": "sources/screen1.png", "name": "Checkout", "as": "$s1" }`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `update_container`      | `container`, `name?`, `source?`, `x?`, `y?`, `scale?`, `markingColor?`, `locked?`, `drawingMode?`, `direction?`, `markingsLocked?`, `background?`, `width?`, `height?` | `drawingMode` fixes the container's drawing mode (`[a-z0-9][a-z0-9-]*`); `null` goes back to following the project's; absent does not change. `direction` fixes the container's reading direction (`"ltr"` or `"rtl"`); `null` goes back to following the project's; absent does not change. `markingsLocked` locks or unlocks all the container's markings. `source: null` clears the source. `background`, `width` and `height` are only valid on a container without a file (with a file: `container-has-file`); changing the size requires that the markings stay inside.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `replace_container`     | `container`, `file` or `base64`, `fileName?`, `source?`, `confirmAspectChange?`                                                                                        | Replaces the container's image file. Markings are rescaled; with a different aspect ratio, it requires the confirmation and they become "needs review". Omitted, `source` is kept. On a container without a file it fails with `container-without-file`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `delete_container`      | `container`                                                                                                                                                            | With its markings and annotations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -393,9 +393,9 @@ Where an operation asks for an item (`container`, `marking`, `parent`, `annotati
 
 **Typed values** (`values`): by the field's `key` (see `get_specialization`); `null` clears.
 
-- `table` field: the list of rows, which **replaces** the table. `{"_id": "…"}` keeps an existing row (with the given cells changed); `"_as": "$linha"` gives the row an alias, for a reference in the same batch. The cell of a `ref` column takes the same value as a `ref` field (see below), with the batch's aliases; the stored format (`{"annotationId": "…", "key": "…"}`) is also accepted.
+- `table` field: the list of rows, which **replaces** the table. `{"_id": "…"}` keeps an existing row (with the given cells changed); `"_as": "$row"` gives the row an alias, for a reference in the same batch. The cell of a `ref` column takes the same value as a `ref` field (see below), with the batch's aliases; the stored format (`{"annotationId": "…", "key": "…"}`) is also accepted.
 - A key that is not a field of the type: fails with `unknown-field` (see the fields in `get_specialization`).
-- `ref` field: `{"annotation": "$user", "entry": "name"}` (a free-form annotation pair, by key or id), `{"annotation": "$contato", "key": "atributos", "row": "$linha"}` (a table row, by id, alias or index) or `{"annotation": "…", "key": "id"}` (a field) or **only** `{"annotation": "$p1"}` (the **whole annotation**, 0.27.0; the field needs `accepts.annotations`, and the target, a type covered by it: `ref-not-accepted` otherwise). In a `ref` column of a `table` the same value applies, cell by cell, and the target can be born in the same batch. Example (the type `modelo` has the table `campos`; the type `lista` has the table `alvos` with the `ref` column `alvo`; the row `$cpf` is created in one step and pointed to in the next):
+- `ref` field: `{"annotation": "$user", "entry": "name"}` (a free-form annotation pair, by key or id), `{"annotation": "$contact", "key": "attributes", "row": "$row"}` (a table row, by id, alias or index) or `{"annotation": "…", "key": "id"}` (a field) or **only** `{"annotation": "$p1"}` (the **whole annotation**, 0.27.0; the field needs `accepts.annotations`, and the target, a type covered by it: `ref-not-accepted` otherwise). In a `ref` column of a `table` the same value applies, cell by cell, and the target can be born in the same batch. Example (the type `modelo` has the table `campos`; the type `lista` has the table `alvos` with the `ref` column `alvo`; the row `$cpf` is created in one step and pointed to in the next):
 
 ```json
 [
@@ -403,7 +403,7 @@ Where an operation asks for an item (`container`, `marking`, `parent`, `annotati
     "op": "create_marking",
     "as": "$m1",
     "rect": { "x": 0, "y": 0, "width": 100, "height": 50 },
-    "annotationAs": "$cliente",
+    "annotationAs": "$customer",
     "annotation": {
       "type": "rc/modelo",
       "values": { "titulo": "Cliente", "campos": [{ "_as": "$cpf", "nome": "cpf" }] }
@@ -413,15 +413,15 @@ Where an operation asks for an item (`container`, `marking`, `parent`, `annotati
     "op": "create_marking",
     "as": "$m2",
     "rect": { "x": 200, "y": 0, "width": 100, "height": 50 },
-    "annotationAs": "$tela",
+    "annotationAs": "$screen",
     "annotation": {
       "type": "rc/lista",
       "values": {
         "titulo": "Tela",
         "alvos": [
           {
-            "nota": "documento",
-            "alvo": { "annotation": "$cliente", "key": "campos", "row": "$cpf" }
+            "nota": "document",
+            "alvo": { "annotation": "$customer", "key": "campos", "row": "$cpf" }
           }
         ]
       }
@@ -430,7 +430,7 @@ Where an operation asks for an item (`container`, `marking`, `parent`, `annotati
 ]
 ```
 
-**Images.** As in the app: the EXIF orientation is applied, the longer side stays at most 2560 px and the file is re-encoded as WebP (lossless for PNG; lossy, quality 0.85, for photos), without metadata. Without reduction or rotation, the original is kept if the WebP does not come out smaller. The `width` and `height` of the container with a file (and the markings' coordinates) are those of the stored file. The name in `images/` never overwrites an existing file, regardless of case (`Tela.png` with `tela.png` on disk becomes `Tela-2.webp`…), and an explicit `file` equal to another container's, also regardless of case, gives `duplicate-file`. `file` is relative to the project folder or to a root, or absolute inside the roots.
+**Images.** As in the app: the EXIF orientation is applied, the longer side stays at most 2560 px and the file is re-encoded as WebP (lossless for PNG; lossy, quality 0.85, for photos), without metadata. Without reduction or rotation, the original is kept if the WebP does not come out smaller. The `width` and `height` of the container with a file (and the markings' coordinates) are those of the stored file. The name in `images/` never overwrites an existing file, regardless of case (`Screen.png` with `screen.png` on disk becomes `Screen-2.webp`…), and an explicit `file` equal to another container's, also regardless of case, gives `duplicate-file`. `file` is relative to the project folder or to a root, or absolute inside the roots.
 
 **Locks.** A locked item is not moved, resized, replaced or deleted (`locked`): unlock in the same operation (`"locked": false` is applied first; `true`, last) or in an earlier one. Name and annotations remain free. Repeating the current geometry (`rect` equal to the current one, `container` and `rect` equal to the current ones, `move: {dx: 0, dy: 0}`) is not a change and passes even when locked, so the complete re-export can repeat the `rect` of everything.
 
@@ -439,7 +439,7 @@ Where an operation asks for an item (`container`, `marking`, `parent`, `annotati
 A library (a `formatVersion` 4 specialization, applied by the app or by a proposal) brings components: annotation types that the app **draws** on the marking. On a container without a file, the drawing is the content (an app screen, a panel, a card); the agent assembles the container by proposal and the person reviews.
 
 1. **Choose the components.** `list_components({ project, specId })` lists the types with a component (`type`, `name`, `size`, `minSize`, `hasDoc` and the number of `examples`; to know whether there is a slot, read the `component` in `get_component`) and `get_component({ project, specId, type })` brings the document, the `fields` and the `values` examples. Use the examples' `values` as a starting point.
-2. **Create the container.** `add_container` with the size (e.g. 390 × 844 for a phone screen; the specialization may bring ready-made sizes in `containers`, see `get_specialization`) and the `background`; give it the alias `as` (`"$tela"`). The container only accepts markings inside it.
+2. **Create the container.** `add_container` with the size (e.g. 390 × 844 for a phone screen; the specialization may bring ready-made sizes in `containers`, see `get_specialization`) and the `background`; give it the alias `as` (`"$screen"`). The container only accepts markings inside it.
 3. **Create the instances.** `create_marking` with `annotation: { type: "specId/typeId", values: { … } }`. Without `rect`, the marking is born at the component's initial size, **in the free spot nearest the container's center**, without covering or coinciding with other markings, **inside the smallest marking that contains the rectangle centered at that point (and is different from it), when there is one**; on the canvas (without `container`), it is born centered at 0,0 and in the free spot nearest there (a floating type, like the Note, does not look for a spot: it is born centered at 0,0); unless it carries `inside` (step 4). The fields that `values` does not give start with the component's `preview` (the same as the app's palette), so partial `values` do not leave a required field empty when the `preview` fills it. This also holds after `apply_specialization` or `update_specialization` in the **same batch**: the batch rebuilds the specialization's component catalog with the package it just read, and the following operations see the `preview`, the `minSize` and the optional `rect` of the new version (and, after `remove_specialization`, the type ceases to exist). If the type declares a component and the batch does not find it (file missing, unreadable or with a problem), the step brings the `ignored-argument` warning "the type … declares a component, but …: the annotation was created without the preview and without the minimum size": read it and fix the package. `create_annotation` with `type` on an already existing marking does **not** apply the `preview`: the fields start only with the `default`s, and you give the `values`. Use `annotationAs` to cite the annotation later (for example in a `ref` field).
 4. **Component with a slot and children.** Create the component with a slot first (the marking whose component has a `slot`, such as `Column` or `Card`) and give it an alias; then create each child with `inside` = the alias of the component with a slot, **without `rect`**: it is born in the slot, after the last created child, with the slot's `gap` and `padding` (like the app's **Add inside X**), in batch order. The `rect` is only for whoever wants another size (with `inside`, it gives only the size: x and y are ignored) or another position (without `inside`, the whole `rect`; the child must end up **entirely inside the slot**). The parent always comes from the geometry (`parent` is ignored, with the `ignored-argument` warning); check with `membership` in `plan_changes`. Full slot: the child is accepted, attached to the component, with the `ignored-argument` warning "did not fit in the slot of …" (enlarge the component or use Arrange in the app).
 
@@ -448,20 +448,20 @@ A library (a `formatVersion` 4 specialization, applied by the app or by a propos
      {
        "op": "create_marking",
        "as": "$col",
-       "container": "$tela",
+       "container": "$screen",
        "annotation": { "type": "material3/m3-column" }
      },
      {
        "op": "create_marking",
        "inside": "$col",
-       "annotation": { "type": "material3/m3-button", "values": { "label": "Entrar" } }
+       "annotation": { "type": "material3/m3-button", "values": { "label": "Sign in" } }
      },
      {
        "op": "create_marking",
        "inside": "$col",
        "annotation": {
          "type": "material3/m3-button",
-         "values": { "label": "Criar conta" }
+         "values": { "label": "Create account" }
        }
      },
      {
@@ -469,7 +469,7 @@ A library (a `formatVersion` 4 specialization, applied by the app or by a propos
        "inside": "$col",
        "annotation": {
          "type": "material3/m3-button",
-         "values": { "label": "Esqueci a senha" }
+         "values": { "label": "Forgot password" }
        }
      }
    ]
@@ -518,13 +518,13 @@ When the screen already exists in a browser or in an app (a web page, a view hie
     "width": 1280,
     "height": 900,
     "background": "#FFFFFF",
-    "as": "$pagina"
+    "as": "$page"
   },
   {
     "op": "import_measured",
-    "container": "$pagina",
+    "container": "$page",
     "system": "dom",
-    "file": "medidas/pagina.medida.json",
+    "file": "measures/page.measured.json",
     "scale": 1,
     "offset": { "x": 0, "y": 0 }
   }
@@ -534,7 +534,7 @@ When the screen already exists in a browser or in an app (a web page, a view hie
 **Measuring a page with Playwright.** With the page already open, measure the DOM and write the tree to a `.json` inside the roots. Only **visible** nodes enter (with width and height), the `type` is the `tagName` in lowercase, `classes` is the `classList`, and the node's **direct** text (without the children's) goes in `props.label`; do not use `innerHTML`.
 
 ```js
-// node medir.js  (Playwright already installed; the `page` has already navigated to the screen)
+// node measure.js  (Playwright already installed; the `page` has already navigated to the screen)
 const fs = require('fs');
 const tree = await page.evaluate(() => {
   const root = document.querySelector('main') ?? document.body;
@@ -569,7 +569,7 @@ const tree = await page.evaluate(() => {
   };
   return measure(root);
 });
-fs.writeFileSync('medidas/pagina.medida.json', JSON.stringify(tree, null, 2));
+fs.writeFileSync('measures/page.measured.json', JSON.stringify(tree, null, 2));
 ```
 
 Then pass the path in `file` (relative to the project folder or to a root, or absolute inside one) in the `import_measured` op, as in the example above; an inline `tree` works for small trees.
@@ -599,7 +599,7 @@ The complete batch, from scratch (the screen, the button and the types `sdui/ite
 [
   {
     "op": "add_container",
-    "as": "$tela",
+    "as": "$screen",
     "name": "Pedido",
     "width": 390,
     "height": 844,
@@ -607,25 +607,25 @@ The complete batch, from scratch (the screen, the button and the types `sdui/ite
   },
   {
     "op": "create_marking",
-    "as": "$botao",
-    "container": "$tela",
+    "as": "$button",
+    "container": "$screen",
     "rect": { "x": 20, "y": 700, "width": 350, "height": 60 },
     "annotationAs": "$b",
     "annotation": { "type": "sdui/item", "values": { "titulo": "Trocar plugins" } }
   },
   {
     "op": "add_container",
-    "as": "$depois",
+    "as": "$after",
     "name": "Pedido (depois de Trocar plugins)",
     "width": 390,
     "height": 300,
     "background": "#FFFFFF",
-    "beside": "$tela"
+    "beside": "$screen"
   },
   {
     "op": "create_marking",
     "as": "$m1",
-    "container": "$depois",
+    "container": "$after",
     "rect": { "x": 20, "y": 20, "width": 350, "height": 100 },
     "annotationAs": "$p1",
     "annotation": { "type": "sdui/item", "values": { "titulo": "Plugin A" } }
@@ -633,32 +633,32 @@ The complete batch, from scratch (the screen, the button and the types `sdui/ite
   {
     "op": "create_marking",
     "as": "$m2",
-    "container": "$depois",
+    "container": "$after",
     "rect": { "x": 20, "y": 140, "width": 350, "height": 100 },
     "annotationAs": "$p2",
     "annotation": { "type": "sdui/item", "values": { "titulo": "Plugin B" } }
   },
-  { "op": "wrap_items", "items": ["$m1", "$m2"], "name": "Plugins", "as": "$grupo" },
+  { "op": "wrap_items", "items": ["$m1", "$m2"], "name": "Plugins", "as": "$group" },
   {
     "op": "create_annotation",
-    "as": "$evento",
-    "marking": "$botao",
+    "as": "$event",
+    "marking": "$button",
     "type": "sdui/replace-plugins",
     "owner": "$b",
     "role": "click",
     "values": {
       "titulo": "Trocar plugins",
       "plugins": [
-        { "nota": "primeiro", "item": { "annotation": "$p1" } },
-        { "nota": "segundo", "item": { "annotation": "$p2" } }
+        { "nota": "first", "item": { "annotation": "$p1" } },
+        { "nota": "second", "item": { "annotation": "$p2" } }
       ]
     }
   },
-  { "op": "create_arrow", "from": "$botao", "to": "$grupo" }
+  { "op": "create_arrow", "from": "$button", "to": "$group" }
 ]
 ```
 
-- **The arrow links markings, not containers.** That is why the batch wraps the items with `wrap_items` (do not compute the rectangle by hand) and the arrow goes from the component that fires the event to `$grupo`; with a single item, link the arrow to it.
+- **The arrow links markings, not containers.** That is why the batch wraps the items with `wrap_items` (do not compute the rectangle by hand) and the arrow goes from the component that fires the event to `$group`; with a single item, link the arrow to it.
 - **Reading it back.** `get_annotation` of the event shows `refs` with `target.kind: "annotation"` and the target's label; `get_marking` of each item shows the event once in `backlinks`, with the `fields` that point to it. To cross-reference answers use `row` (0-based, as in `get_code_hints`) and `column`; `field` (`plugins[2].item`, 1-based) is for reading.
 - **For the code.** `get_code_hints` of the button brings, in the event, `targets` with each expanded component (see "From the mapping to the instantiation code").
 
@@ -684,9 +684,9 @@ People comment on mapping items in the app: each **conversation** is a sequence 
 
 ```json
 {
-  "project": "cadastro",
-  "anchor": "mapping://cadastro/a/3f2a9c1e/f/variant",
-  "text": "The screen does not show whether the button is **primary** or **secondary**. I used `primary` in the proposal; can you confirm? See also [the form's style](mapping://cadastro/c/5d0e8a41)."
+  "project": "signup",
+  "anchor": "mapping://signup/a/3f2a9c1e/f/variant",
+  "text": "The screen does not show whether the button is **primary** or **secondary**. I used `primary` in the proposal; can you confirm? See also [the form's style](mapping://signup/c/5d0e8a41)."
 }
 ```
 
@@ -763,11 +763,11 @@ When the project applies a specialization with **platforms** (see `platforms` in
 
 5. The server **neither reads nor writes code**. If you have the platform repository's clone outside the expected path, propose a `set_platform_repo` with `localPath` (see "Repositories per platform"); without a clone, the `url` is enough.
 
-Example: the form's `Button` on the `android` platform (`get_code_hints("mapping://cadastro/m/2f7c4a1d", "android")`):
+Example: the form's `Button` on the `android` platform (`get_code_hints("mapping://signup/m/2f7c4a1d", "android")`):
 
 ```json
 {
-  "marking": "mapping://cadastro/m/2f7c4a1d",
+  "marking": "mapping://signup/m/2f7c4a1d",
   "platform": { "id": "android", "name": "Android", "language": "kotlin" },
   "repos": {
     "android": {
@@ -787,48 +787,48 @@ Example: the form's `Button` on the `android` platform (`get_code_hints("mapping
         "localFile": "app/src/main/java/com/app/ds/DSButton.kt",
         "exists": true
       },
-      "params": { "texto": "text", "estilo": "style", "habilitado": "enabled" },
-      "values": { "estilo": { "primary": "ButtonStyle.Primary" } },
+      "params": { "text": "text", "style": "style", "enabled": "enabled" },
+      "values": { "style": { "primary": "ButtonStyle.Primary" } },
       "notes": "Use the testTag modifier with the value of the id field."
     },
     "sdui/action": {
-      "name": "Ação",
+      "name": "Action",
       "symbol": "com.app.ds.Action",
       "definition": null,
-      "params": { "acao": "action" },
+      "params": { "action": "action" },
       "notes": "Pass the event in the parameter of the role it occupies in the owner component (Click in onClick, Hold in onHold)."
     }
   },
   "tree": {
-    "ref": "mapping://cadastro/m/2f7c4a1d",
-    "name": "Cadastrar",
+    "ref": "mapping://signup/m/2f7c4a1d",
+    "name": "Sign up",
     "rect": { "x": 40, "y": 900, "width": 300, "height": 80 },
     "annotations": [
       {
-        "ref": "mapping://cadastro/a/5b2e91c0",
+        "ref": "mapping://signup/a/5b2e91c0",
         "type": "sdui/button",
-        "label": "Button btn_cadastrar",
+        "label": "Button btn_sign_up",
         "layer": "SDUI",
         "args": [
-          { "field": "texto", "name": "text", "value": "Cadastrar" },
-          { "field": "estilo", "name": "style", "value": "ButtonStyle.Primary" },
-          { "field": "habilitado", "name": "enabled", "value": "true" }
+          { "field": "text", "name": "text", "value": "Sign up" },
+          { "field": "style", "name": "style", "value": "ButtonStyle.Primary" },
+          { "field": "enabled", "name": "enabled", "value": "true" }
         ],
         "values": {
-          "id": "btn_cadastrar",
-          "texto": "Cadastrar",
-          "estilo": "primary",
-          "habilitado": "sim"
+          "id": "btn_sign_up",
+          "text": "Sign up",
+          "style": "primary",
+          "enabled": "yes"
         },
         "linked": [
           {
-            "ref": "mapping://cadastro/a/7d41c2e8",
+            "ref": "mapping://signup/a/7d41c2e8",
             "type": "sdui/action",
-            "label": "Ação submit",
+            "label": "Action submit",
             "parentRole": "click",
-            "layer": "Eventos",
-            "args": [{ "field": "acao", "name": "action", "value": "submit" }],
-            "values": { "acao": "submit" }
+            "layer": "Events",
+            "args": [{ "field": "action", "name": "action", "value": "submit" }],
+            "values": { "action": "submit" }
           }
         ]
       }
@@ -841,14 +841,14 @@ Example of `targets`: the button's `replace-plugins` event (the batch from "Cont
 
 ```json
 {
-  "ref": "mapping://pedido/a/9c1d02aa",
+  "ref": "mapping://order/a/9c1d02aa",
   "type": "sdui/replace-plugins",
   "label": "Trocar plugins",
   "parentRole": "click",
   "values": {
     "plugins": [
-      { "nota": "primeiro", "item": "Plugin A" },
-      { "nota": "segundo", "item": "Plugin B" }
+      { "nota": "first", "item": "Plugin A" },
+      { "nota": "second", "item": "Plugin B" }
     ]
   },
   "targets": [
@@ -858,7 +858,7 @@ Example of `targets`: the button's `replace-plugins` event (the batch from "Cont
       "column": "item",
       "label": "Plugin A",
       "annotation": {
-        "ref": "mapping://pedido/a/3be8f410",
+        "ref": "mapping://order/a/3be8f410",
         "type": "sdui/item",
         "label": "Plugin A",
         "args": [{ "field": "titulo", "name": "title", "value": "Plugin A" }]
@@ -870,7 +870,7 @@ Example of `targets`: the button's `replace-plugins` event (the batch from "Cont
       "column": "item",
       "label": "Plugin B",
       "annotation": {
-        "ref": "mapping://pedido/a/52a7c9d3",
+        "ref": "mapping://order/a/52a7c9d3",
         "type": "sdui/item",
         "label": "Plugin B"
       }
@@ -879,7 +879,7 @@ Example of `targets`: the button's `replace-plugins` event (the batch from "Cont
 }
 ```
 
-The call to write comes from `types` (the `symbol` and how to pass each field) and from `args` (this instance's values): `DSButton(text = "Cadastrar", style = ButtonStyle.Primary, enabled = true, onClick = Action(action = "submit"))`, with the `testTag` of the `id` that the `notes` ask for. What the example shows for the `Action` holds for every type without a `path`: `definition` is `null`, and the `symbol` is all the `code` says (here, you find the signature in the repository by name). On the `bff` platform, the same form gives the functions that **generate the screen's JSON** (`com.app.bff.sdui.button`, with the `path` of the file that defines it), and the call to write is that of those functions.
+The call to write comes from `types` (the `symbol` and how to pass each field) and from `args` (this instance's values): `DSButton(text = "Sign up", style = ButtonStyle.Primary, enabled = true, onClick = Action(action = "submit"))`, with the `testTag` of the `id` that the `notes` ask for. What the example shows for the `Action` holds for every type without a `path`: `definition` is `null`, and the `symbol` is all the `code` says (here, you find the signature in the repository by name). On the `bff` platform, the same form gives the functions that **generate the screen's JSON** (`com.app.bff.sdui.button`, with the `path` of the file that defines it), and the call to write is that of those functions.
 
 ### A type's `code`: the `symbol` and the file that defines it
 
@@ -896,7 +896,7 @@ In `get_marking`, `get_annotation`, `find_by_code` and `get_component`, the type
       "localFile": "app/src/main/java/com/app/ds/DSButton.kt",
       "exists": true
     },
-    "params": { "texto": "text", "estilo": "style" }
+    "params": { "text": "text", "style": "style" }
   }
 }
 ```
@@ -924,14 +924,14 @@ A `formatVersion` 9 specialization can declare `variants` in a platform's `code`
 ```json
 {
   "query": { "path": "DSButton.kt" },
-  "searched": ["cadastro"],
+  "searched": ["signup"],
   "total": 1,
   "annotationTotal": 1,
   "returned": 1,
   "matches": [
     {
-      "project": "cadastro",
-      "path": "cadastro",
+      "project": "signup",
+      "path": "signup",
       "type": { "specId": "sdui", "typeId": "button", "name": "Button" },
       "code": {
         "android": {
@@ -948,11 +948,11 @@ A `formatVersion` 9 specialization can declare `variants` in a platform's `code`
       "annotationCount": 1,
       "annotations": [
         {
-          "annotation": "mapping://cadastro/a/5b2e91c0",
-          "title": "Button btn_cadastrar",
-          "marking": "mapping://cadastro/m/2f7c4a1d",
-          "markingName": "Cadastrar",
-          "container": "mapping://cadastro/i/9d0e3b77"
+          "annotation": "mapping://signup/a/5b2e91c0",
+          "title": "Button btn_sign_up",
+          "marking": "mapping://signup/m/2f7c4a1d",
+          "markingName": "Sign up",
+          "container": "mapping://signup/i/9d0e3b77"
         }
       ]
     }
@@ -1006,10 +1006,10 @@ A `formatVersion` 11 specialization can say **at which point of the owner** a ch
 ```json
 {
   "linkedByRole": {
-    "label": "Gatilho",
+    "label": "Trigger",
     "roles": [
-      { "id": "click", "name": "Clique", "linked": ["mapping://app/a/5d2c8e10"] },
-      { "id": "hold", "name": "Pressionar", "linked": [] }
+      { "id": "click", "name": "Click", "linked": ["mapping://app/a/5d2c8e10"] },
+      { "id": "hold", "name": "Hold", "linked": [] }
     ],
     "unassigned": []
   }
@@ -1036,8 +1036,8 @@ A `formatVersion` 11 specialization can say **at which point of the owner** a ch
 [
   {
     "op": "add_container",
-    "as": "$tela",
-    "name": "Tela",
+    "as": "$screen",
+    "name": "Screen",
     "width": 390,
     "height": 844,
     "background": "#FFFFFF"
@@ -1045,27 +1045,27 @@ A `formatVersion` 11 specialization can say **at which point of the owner** a ch
   {
     "op": "create_marking",
     "as": "$m1",
-    "container": "$tela",
+    "container": "$screen",
     "rect": { "x": 40, "y": 700, "width": 300, "height": 80 },
     "name": "Salvar",
-    "annotationAs": "$botao",
+    "annotationAs": "$button",
     "annotation": { "type": "app/button", "values": { "texto": "Salvar" } }
   },
   {
     "op": "create_annotation",
-    "as": "$clique",
+    "as": "$click",
     "marking": "$m1",
     "type": "app/event",
-    "owner": "$botao",
+    "owner": "$button",
     "role": "click",
     "values": { "nome": "Ao clicar" }
   },
   {
     "op": "create_annotation",
-    "as": "$sucesso",
+    "as": "$success",
     "marking": "$m1",
     "type": "app/event",
-    "owner": "$clique",
+    "owner": "$click",
     "role": "success",
     "values": { "nome": "Salvou" }
   },
@@ -1073,7 +1073,7 @@ A `formatVersion` 11 specialization can say **at which point of the owner** a ch
     "op": "create_annotation",
     "marking": "$m1",
     "type": "app/event",
-    "owner": "$clique",
+    "owner": "$click",
     "role": "failure",
     "values": { "nome": "Falhou" }
   }
@@ -1116,7 +1116,7 @@ Component `formatVersion` 3 with the `image` node. `validate_library` accepts it
 
 ### Change in version 0.10.0 (Suggestions in the text field)
 
-The `formatVersion` 8 specialization lets a `string` field or column bring `suggestions`, a list of texts suggested while typing (`get_specialization` returns the key; no new tool). **It is the preferred vocabulary, not a restriction:** when filling a `string` field with `suggestions`, write exactly as in the list when the value fits in it (`Int`, not `int` nor `Integer`), and write freely when it does not fit (`String?`, `List<Endereco>`). Text outside the list is neither an error nor a pending item. For closed values the type uses `enum`, and then only one of the `options` is valid. **`linkedRef`:** when a `string` field or column brings `linkedRef`, it points to a sibling `ref` field (or column). If the text you write **names a mapped target**, also fill in that `ref`: for example, in the property of type `Usuario`, write `type: "Usuario"` and put in `typeRef` the reference to the annotation (to the `name` field) of `Usuario`. The text is the declaration's name, as the person would see it in the list. If the text names nothing mapped (`String`, `List<Item>` without `Item` in the mapping), leave the `ref` empty. When writing a specialization, see the `spec-author` skill (when to use `suggestions`, `enum` or `linkedRef`).
+The `formatVersion` 8 specialization lets a `string` field or column bring `suggestions`, a list of texts suggested while typing (`get_specialization` returns the key; no new tool). **It is the preferred vocabulary, not a restriction:** when filling a `string` field with `suggestions`, write exactly as in the list when the value fits in it (`Int`, not `int` nor `Integer`), and write freely when it does not fit (`String?`, `List<Address>`). Text outside the list is neither an error nor a pending item. For closed values the type uses `enum`, and then only one of the `options` is valid. **`linkedRef`:** when a `string` field or column brings `linkedRef`, it points to a sibling `ref` field (or column). If the text you write **names a mapped target**, also fill in that `ref`: for example, in the property of type `User`, write `type: "User"` and put in `typeRef` the reference to the annotation (to the `name` field) of `User`. The text is the declaration's name, as the person would see it in the list. If the text names nothing mapped (`String`, `List<Item>` without `Item` in the mapping), leave the `ref` empty. When writing a specialization, see the `spec-author` skill (when to use `suggestions`, `enum` or `linkedRef`).
 
 ### Change in version 0.9.0 (Spatial markings, notes and arrows)
 
@@ -1232,7 +1232,7 @@ Failures come back as `isError` with a JSON `{"error": {"code", "message", …}}
 | `code`                               | Meaning                                                                                                                                                                                                                                                 |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `unknown-alias`, `alias-unavailable` | Alias not created earlier in the batch, or created by an operation that failed.                                                                                                                                                                         |
-| `duplicate-alias`, `invalid-alias`   | Alias repeated in the batch (including the operation's `as`/`annotationAs` equal to a row `_as` of the same operation); or a table row's `_as` that is not an alias (`$linha`).                                                                         |
+| `duplicate-alias`, `invalid-alias`   | Alias repeated in the batch (including the operation's `as`/`annotationAs` equal to a row `_as` of the same operation); or a table row's `_as` that is not an alias (`$row`).                                                                           |
 | `layer-required`                     | Free-form annotation without `layer` (or give `type` for a typed one).                                                                                                                                                                                  |
 | `invalid-value`                      | A table that is not a list of rows, or a row that is not an object. It is also a model rule (value incompatible with the field).                                                                                                                        |
 | `invalid-ref-value`                  | Value of a `ref` field that is not `{ "annotation": … }`.                                                                                                                                                                                               |
