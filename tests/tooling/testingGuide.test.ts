@@ -1198,7 +1198,7 @@ describe('GT2 — guia acertado com a app (etapa #482)', () => {
       version: number;
     };
     const row = guide.split('\n').find((l) => /^\| R3\.1 \|/.test(l)) ?? '';
-    expect(row).toContain(`**Notas** (versão ${spec.version})`);
+    expect(row).toContain(`**Notes** (versão ${spec.version})`);
   });
 
   it('apêndice A: "Seletores e nomes que enganam" lista só data-window que existem em src/', () => {

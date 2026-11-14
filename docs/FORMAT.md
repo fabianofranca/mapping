@@ -12,7 +12,7 @@ my-project/
 ├── images/
 ├── specs/            # copies of the applied specializations (see SPEC-FORMAT.md)
 │   ├── sdui.json
-│   ├── modelo-dados.json
+│   ├── data-model.json
 │   └── material3/    # library package (formatVersion 4): the specialization's folder
 │       ├── material3.spec.json
 │       ├── components/ docs/ examples/ fonts/
@@ -273,9 +273,9 @@ the project becomes self-contained and whoever reads it understands the meaning 
   - empty field: `null` (or absent); empty `table`: `[]` (`null` is valid too).
 - `annotations[].entries`: pairs of the free annotation; always `[]` in the typed one. Each pair has an `id`.
 - The label of a typed annotation is the `name`; if empty, the value of the type's `labelField` field;
-  if empty, the type's name. E.g.: a Class with `nome: "Contato"` appears as `Contato`.
+  if empty, the type's name. E.g.: a Class with `name: "Contact"` appears as `Contact`.
 
-Typed annotation (Class of the `modelo-dados` specialization):
+Typed annotation (Class of the `data-model` specialization):
 
 ```json
 {
@@ -284,19 +284,19 @@ Typed annotation (Class of the `modelo-dados` specialization):
   "layerId": "L3",
   "name": null,
   "parentAnnotationId": null,
-  "type": { "specId": "modelo-dados", "typeId": "classe" },
+  "type": { "specId": "data-model", "typeId": "class" },
   "values": {
-    "nome": "Contato",
-    "descricao": null,
-    "versao": 1,
-    "revisadoEm": "2026-10-02",
-    "atributos": [
+    "name": "Contact",
+    "description": null,
+    "version": 1,
+    "reviewedAt": "2026-10-02",
+    "attributes": [
       {
         "_id": "R1",
-        "nome": "email",
-        "tipo": "String",
-        "obrigatorio": "sim",
-        "exemplo": null
+        "name": "email",
+        "type": "String",
+        "required": "yes",
+        "example": null
       }
     ]
   },
@@ -362,9 +362,9 @@ is from v17):
 | Target                  | Value                                | Label           |
 | ----------------------- | ------------------------------------ | --------------- |
 | Free annotation pair    | `{ "annotationId", "entryId" }`      | `User.name`     |
-| `table` row with a tag  | `{ "annotationId", "key", "rowId" }` | `Contato.email` |
-| Simple field with a tag | `{ "annotationId", "key" }`          | `Contato.nome`  |
-| Whole annotation (v17)  | `{ "annotationId" }`                 | `Pedido 4`      |
+| `table` row with a tag  | `{ "annotationId", "key", "rowId" }` | `Contact.email` |
+| Simple field with a tag | `{ "annotationId", "key" }`          | `Contact.name`  |
+| Whole annotation (v17)  | `{ "annotationId" }`                 | `Order 4`       |
 
 The fourth format is only the `annotationId`, without `key`, `entryId` or `rowId`; any other combination of
 keys is not a reference.
