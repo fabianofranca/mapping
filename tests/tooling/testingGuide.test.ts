@@ -1373,13 +1373,13 @@ describe('D2 — density script (R9.29 to R9.31, stage #1085)', () => {
     expect(row('R9.31')).toContain(enUS['density.custom']);
   });
 
-  it('the R9.30 button measures 174 × 120 (the minSize 58 × 40 × 3) and is born 264 × 120 (88 × 40 × 3)', () => {
+  it('the R9.30 button measures 174 × 120 (the minSize 58 × 40 × 3) and is born 237 × 120 (79 × 40 × 3)', () => {
     const r = row('R9.30');
     expect(r).toContain('`174`');
     expect(r).toContain('`120`');
-    expect(r).toContain('`264`');
+    expect(r).toContain('`237`');
     expect(58 * 3).toBe(174);
-    expect(88 * 3).toBe(264);
+    expect(79 * 3).toBe(237);
   });
 });
 
@@ -1410,9 +1410,9 @@ describe('A4 — anchor script in the app (R9.32 to R9.36, stage #1096, R4)', ()
     expect(row('R9.36')).toContain(enUS['arrange.done']);
   });
 
-  it('the snap arithmetic: button 88 × 40, above (Y 400 − 40 = 360) and below with 10 (Y 400 + 40 + 10 = 450)', () => {
+  it('the snap arithmetic: button 79 × 40, above (Y 400 − 40 = 360) and below with 10 (Y 400 + 40 + 10 = 450)', () => {
     const r = row('R9.34');
-    expect(r).toContain('88 × 40');
+    expect(r).toContain('79 × 40');
     expect(r).toContain('`360`');
     expect(r).toContain('`450`');
     expect(400 - 40).toBe(360);
