@@ -7,24 +7,23 @@ import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import type { PathNode, SceneNode, TextNode } from '../../src/model/components/scene';
 import { drawIn, files, solid, spec } from '../support/material3Library';
 
-// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
 const NAMES = {
-  header: 'cabeçalho',
-  title: 'título',
-  hourMinute: 'hora e minuto',
-  hour: 'hora',
-  minute: 'minuto',
-  colon: 'dois pontos',
-  amPm: 'AM e PM',
-  divider: 'divisor',
-  numberUnderHandle: 'número sob a alça',
-  number: 'número',
-  face: 'relógio',
-  handle: 'alça',
-  center: 'centro',
-  track: 'trilho',
-  hourLabel: 'rótulo da hora',
-  minuteLabel: 'rótulo do minuto',
+  header: 'header',
+  title: 'title',
+  hourMinute: 'hour and minute',
+  hour: 'hour',
+  minute: 'minute',
+  colon: 'colon',
+  amPm: 'AM and PM',
+  divider: 'divider',
+  numberUnderHandle: 'number under the handle',
+  number: 'number',
+  face: 'clock',
+  handle: 'handle',
+  center: 'center',
+  track: 'track',
+  hourLabel: 'hour label',
+  minuteLabel: 'minute label',
 } as const;
 
 const catalog = buildCatalog(files);
@@ -441,14 +440,12 @@ describe('M5 — time-picker: input mode (fields)', () => {
       // TimeFieldLabelTextFont = DisplayMedium
       expect(fontOf(textIn(d, NAMES.hour))).toEqual(scale('display-medium'));
       const label = textIn(d, NAMES.hourLabel)!;
-      // pt-BR kept: the library's default support label is Portuguese data
-      expect(label.text).toBe('Hora');
+      expect(label.text).toBe('Hour');
       expect(fontOf(label)).toEqual(scale('body-small'));
       expect(solid(label.fills)).toBe(tok('on-surface-variant', mode));
       // 72 of the field + 7 (SupportLabelTop)
       expect(box(d, NAMES.hourLabel).y).toBe(60 + 72 + 7);
-      // pt-BR kept: the library's default support label is Portuguese data
-      expect(textOf(d, NAMES.minuteLabel)).toBe('Minuto');
+      expect(textOf(d, NAMES.minuteLabel)).toBe('Minute');
     }
   });
 

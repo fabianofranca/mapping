@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "search-bar",
   "name": "Search bar",
-  "description": "Barra de busca de 56 com forma full: ícone inicial, consulta ou dica e ícone final. Expandida, o container cresce e ganha o divisor dos resultados (bar ocupa a tela, docked abre embaixo do campo).",
+  "description": "56 search bar with full shape: leading icon, query or hint and trailing icon. When expanded, the container grows and gets the results divider (bar takes the screen, docked opens below the field).",
   "size": {
     "width": 360,
     "height": 56
@@ -69,7 +69,7 @@
     "children": [
       {
         "type": "rect",
-        "name": "estado",
+        "name": "state",
         "anchors": {
           "left": 0,
           "right": 0,
@@ -128,7 +128,7 @@
       },
       {
         "type": "rect",
-        "name": "anel de foco",
+        "name": "focus ring",
         "anchors": {
           "left": 0,
           "right": 0,
@@ -176,7 +176,7 @@
       },
       {
         "type": "frame",
-        "name": "campo de entrada",
+        "name": "input field",
         "clip": false,
         "anchors": {
           "left": 0,
@@ -204,7 +204,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "linha",
+            "name": "row",
             "clip": false,
             "width": "fill",
             "height": "hug",
@@ -401,7 +401,7 @@
               },
               {
                 "type": "frame",
-                "name": "consulta (recorte)",
+                "name": "query (clip)",
                 "width": "fill",
                 "height": "hug",
                 "clip": true,
@@ -414,7 +414,7 @@
                 "children": [
                   {
                     "type": "text",
-                    "name": "consulta",
+                    "name": "query",
                     "text": {
                       "$field": "query"
                     },
@@ -444,7 +444,7 @@
               },
               {
                 "type": "text",
-                "name": "dica",
+                "name": "hint",
                 "text": {
                   "$field": "placeholder"
                 },
@@ -669,7 +669,7 @@
       },
       {
         "type": "rect",
-        "name": "divisor",
+        "name": "divider",
         "anchors": {
           "left": 0,
           "right": 0,
@@ -706,7 +706,7 @@
       },
       {
         "type": "rect",
-        "name": "divisor (bar)",
+        "name": "divider (bar)",
         "anchors": {
           "left": 0,
           "right": 0,

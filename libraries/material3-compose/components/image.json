@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "image",
   "name": "Image",
-  "description": "Image do Foundation (sem token do Material): imagem remota (URL https) com o contentScale do Compose (Crop, Fit, FillBounds, FillWidth, FillHeight, Inside e None) sobre o fundo surface variant; sem URL, mostra a descrição e as medidas.",
+  "description": "Foundation Image (no Material token): remote image (https URL) with Compose's contentScale (Crop, Fit, FillBounds, FillWidth, FillHeight, Inside and None) over the surface variant background; without a URL, it shows the description and the measures.",
   "size": {
     "width": 160,
     "height": 120
@@ -13,8 +13,8 @@
     "height": 120
   },
   "preview": {
-    "url": "https://example.com/foto.jpg",
-    "contentDescription": "Foto",
+    "url": "https://example.com/photo.jpg",
+    "contentDescription": "Photo",
     "contentScale": "Fit",
     "width": "wrap",
     "height": "wrap",
@@ -30,7 +30,7 @@
     "children": [
       {
         "type": "image",
-        "name": "imagem cover",
+        "name": "image cover",
         "src": {
           "$field": "url"
         },
@@ -44,7 +44,7 @@
       },
       {
         "type": "image",
-        "name": "imagem fill",
+        "name": "image fill",
         "src": {
           "$field": "url"
         },
@@ -58,7 +58,7 @@
       },
       {
         "type": "image",
-        "name": "imagem fill-width",
+        "name": "image fill-width",
         "src": {
           "$field": "url"
         },
@@ -72,7 +72,7 @@
       },
       {
         "type": "image",
-        "name": "imagem fill-height",
+        "name": "image fill-height",
         "src": {
           "$field": "url"
         },
@@ -86,7 +86,7 @@
       },
       {
         "type": "image",
-        "name": "imagem scale-down",
+        "name": "image scale-down",
         "src": {
           "$field": "url"
         },
@@ -100,7 +100,7 @@
       },
       {
         "type": "image",
-        "name": "imagem none",
+        "name": "image none",
         "src": {
           "$field": "url"
         },
@@ -114,7 +114,7 @@
       },
       {
         "type": "image",
-        "name": "imagem contain",
+        "name": "image contain",
         "src": {
           "$field": "url"
         },
@@ -149,7 +149,7 @@
       },
       {
         "type": "text",
-        "name": "legenda",
+        "name": "caption",
         "visible": {
           "$not": {
             "$has": "url"

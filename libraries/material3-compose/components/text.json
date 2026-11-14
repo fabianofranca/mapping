@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "text",
   "name": "Text",
-  "description": "Texto do Material 3 com um dos 15 papéis de tipografia, cor e alinhamento (tokens do tema, claro e escuro, na Roboto); vazio, mostra as medidas.",
+  "description": "Material 3 text with one of the 15 typography roles, color and alignment (theme tokens, light and dark, in Roboto); when empty, shows the measurements.",
   "size": {
     "width": 240,
     "height": 32
@@ -13,7 +13,7 @@
     "height": "hug"
   },
   "preview": {
-    "text": "Título da seção",
+    "text": "Section title",
     "style": "bodyLarge",
     "color": null,
     "textAlign": "Start",
@@ -32,7 +32,7 @@
     "children": [
       {
         "type": "text",
-        "name": "texto",
+        "name": "text",
         "visible": {
           "$has": "text"
         },
@@ -395,7 +395,7 @@
       },
       {
         "type": "text",
-        "name": "texto vazio",
+        "name": "empty text",
         "visible": {
           "$not": {
             "$has": "text"

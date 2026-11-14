@@ -19,8 +19,8 @@ const withFamily = (): typeof files =>
       };
     };
     const label = json.template.children[4]?.children[2];
-    if (label?.name !== 'rótulo')
-      throw new Error('nó rótulo não está em children[4].children[2]');
+    if (label?.name !== 'label')
+      throw new Error('nó label não está em children[4].children[2]');
     label.font.family = FAMILY;
     return { ...f, text: JSON.stringify(json, null, 2) };
   });

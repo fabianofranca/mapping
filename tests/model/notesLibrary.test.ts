@@ -97,9 +97,9 @@ describe('package libraries/notas', () => {
     if (!parsed.ok) return;
     expect(parsed.spec.formatVersion).toBe(7);
     expect(parsed.spec.id).toBe('notas');
-    expect(parsed.spec.version).toBe(3);
+    expect(parsed.spec.version).toBe(4);
     const [layer] = parsed.spec.layers;
-    expect(layer?.name).toBe('Notas');
+    expect(layer?.name).toBe('Notes');
     const [type, table] = layer?.annotationTypes ?? [];
     expect(type).toMatchObject({
       id: 'nota',
@@ -137,7 +137,7 @@ describe('package libraries/notas', () => {
   });
 
   it('the table document says the link to the target is an arrow', () => {
-    expect(NOTES_FILES.get('docs/tabela.md')).toMatch(/seta/);
+    expect(NOTES_FILES.get('docs/tabela.md')).toMatch(/arrow/);
   });
 });
 
@@ -150,11 +150,11 @@ describe('applyBundledLibrary', () => {
     expect(applied.project.specializations).toEqual([
       expect.objectContaining({
         id: 'notas',
-        version: 3,
+        version: 4,
         file: 'specs/notas/notas.spec.json',
       }),
     ]);
-    expect(applied.project.layers.map((l) => l.name)).toEqual(['Layer 1', 'Notas']);
+    expect(applied.project.layers.map((l) => l.name)).toEqual(['Layer 1', 'Notes']);
     expect(applied.project.layers[1]?.spec).toEqual({
       specId: 'notas',
       layerId: 'notas',
@@ -255,7 +255,7 @@ describe('update of the notes library from version 1 to 2', () => {
   it('updates: the version goes up, the note stays as it was and the Tabela starts to exist', () => {
     const p = withV1();
     const next = updateSpecialization(p, notesV2(), { newId: () => 'X' });
-    expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 3 });
+    expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 4 });
     expect(next.layers.map((l) => l.id)).toEqual(p.layers.map((l) => l.id));
     expect(next.annotations.find((a) => a.id === 'AN1')).toEqual(
       p.annotations.find((a) => a.id === 'AN1'),
@@ -421,11 +421,10 @@ describe('Catalog with the Tabela', () => {
   it('the preview reaches the Catalog with the rows (each with _id for the playground form)', () => {
     expect(catalog.report.errors).toEqual([]);
     expect(entry.component?.formatVersion).toBe(2);
-    // pt-BR kept: bundled library data (libraries/notas preview) asserted verbatim
     expect(entry.previewValues?.linhas).toEqual([
-      { _id: 'preview-1', chave: 'origem', valor: 'carrinho' },
-      { _id: 'preview-2', chave: 'itens', valor: '3' },
-      { _id: 'preview-3', chave: 'total', valor: '149,90' },
+      { _id: 'preview-1', chave: 'source', valor: 'cart' },
+      { _id: 'preview-2', chave: 'items', valor: '3' },
+      { _id: 'preview-3', chave: 'total', valor: '149.90' },
     ]);
     expect(entry.fields.find((f) => f.key === 'linhas')).toMatchObject({
       type: 'table',
@@ -442,22 +441,20 @@ describe('Catalog with the Tabela', () => {
       if (node.type === 'frame') node.children.forEach(visit);
     };
     if (drawing) visit(drawing.root);
-    // pt-BR kept: bundled library data (libraries/notas preview) asserted verbatim
     expect(texts).toEqual([
       'checkout_started',
-      'origem',
-      'carrinho',
-      'itens',
+      'source',
+      'cart',
+      'items',
       '3',
       'total',
-      '149,90',
+      '149.90',
     ]);
   });
 
   it('the Nota still has no rows in the preview', () => {
-    // pt-BR kept: bundled library data (libraries/notas preview) asserted verbatim
     expect(findEntry(catalog, 'nota')?.previewValues?.texto).toBe(
-      'Escreva aqui o comentário.',
+      'Write your comment here.',
     );
   });
 });

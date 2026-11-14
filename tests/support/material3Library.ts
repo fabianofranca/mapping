@@ -150,9 +150,66 @@ type Raw = {
   name?: string;
   description?: string;
   values?: Record<string, unknown>;
+  columns?: Raw[];
 };
 
-/** Field descriptions that the Material 3 with states stage (#869, ME1) fixed relative to v1 (decision 10). */
+/**
+ * The frozen v1 packages (`tests/fixtures/material3-*-v1.json`) keep the Portuguese text of the old library, while the
+ * library is now in English. To compare the STRUCTURE of a type with the fixture (keys, types, options, numbers, enum
+ * values, defaults, example count and order), the translated text is replaced by a placeholder on both sides: the
+ * `label`, `description`, `name` and `notes` keys, and the values of the free-text (`string`) fields, in the `preview`
+ * and in the examples (also the string columns of the table rows).
+ */
+const TEXT_PLACEHOLDER = '<text>';
+const TEXT_KEYS = new Set(['label', 'description', 'name', 'notes']);
+function maskKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(maskKeys);
+  if (value === null || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value).map(([k, v]) => [
+      k,
+      TEXT_KEYS.has(k) && typeof v === 'string' ? TEXT_PLACEHOLDER : maskKeys(v),
+    ]),
+  );
+}
+function maskCell(columns: readonly Raw[], row: unknown): unknown {
+  if (row === null || typeof row !== 'object' || Array.isArray(row)) return row;
+  const textKeys = new Set(columns.filter((c) => c.type === 'string').map((c) => c.key));
+  return Object.fromEntries(
+    Object.entries(row).map(([k, v]) => [
+      k,
+      textKeys.has(k) && typeof v === 'string' ? TEXT_PLACEHOLDER : v,
+    ]),
+  );
+}
+/** The `values` (of a preview or of an example) with the free-text values replaced by a placeholder. */
+export function maskTextValues(
+  typeFields: unknown,
+  values: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  if (values === undefined) return undefined;
+  const byKey = new Map((typeFields as readonly Raw[]).map((f) => [f.key, f]));
+  return Object.fromEntries(
+    Object.entries(values).map(([k, v]) => {
+      const field = byKey.get(k);
+      if (field?.type === 'string' && typeof v === 'string') return [k, TEXT_PLACEHOLDER];
+      if (field?.type === 'table' && Array.isArray(v))
+        return [k, v.map((row) => maskCell(field.columns ?? [], row))];
+      return [k, v];
+    }),
+  );
+}
+/** The fields and the examples of a type without the translated text (see `TEXT_PLACEHOLDER`). */
+function maskType(fields: readonly Raw[], examples: readonly Raw[]) {
+  return {
+    fields: maskKeys(fields),
+    examples: examples.map((e) => ({
+      ...(maskKeys({ name: e.name }) as Raw),
+      ...(e.values === undefined ? {} : { values: maskTextValues(fields, e.values) }),
+    })),
+  };
+}
+
 /**
  * Arrangement fields that lost the `default` (and the preview value) so the default and the explicit `Top`/`Start`
  * can be told apart with `reverseLayout` (CL1, FX5): the description gains the default sentence.
@@ -162,53 +219,18 @@ export const V1_NO_DEFAULT: Record<string, string> = {
   'lazy-row': 'horizontalArrangement',
 };
 
-// pt-BR kept: shared fixture data asserted by tests/model, tests/examples (text of the library files)
-const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
-  'date-picker': {
-    displayedMonth:
-      'Nome do mês e do ano mostrados no calendário, como em Outubro de 2025. É o estado inicial, não um parâmetro: é só o rótulo, e a grade vem de month e year.',
-  },
-  slider: {
-    steps:
-      'Número de pontos intermediários entre as pontas (Slider.steps). Vazio, 0 ou menor que 1 = contínuo. Com steps, o valor vai ao passo mais próximo e o desenho mostra exatamente steps marcas, mais as duas pontas.',
-  },
-  'progress-indicator': {
-    progress:
-      'Progresso de 0 a 1, exato (o desenho calcula o arco e a largura; valor fora do intervalo é preso a ele). Vazio = indeterminado (o desenho mostra um arco ou uma barra parcial).',
-  },
-  'short-navigation-bar': {
-    arrangement:
-      'EqualWeight reparte a largura por igual (telas estreitas); Centered agrupa os itens no centro (telas médias; o desenho ocupa 60%, 70%, 80% ou 90% da largura com 3, 4, 5 ou 6 itens, e cada item cresce até largura/itens quando o conteúdo é maior).',
-  },
-  carousel: {
-    preferredItemWidth:
-      'Só no multi-browse (obrigatório no Compose): a largura que os itens grandes querem ter; o carrossel escolhe quantos grandes cabem e ajusta o tamanho deles, do médio e do pequeno (de 40 a 56) à largura da marcação.',
-    itemSpacing:
-      'Espaço entre os itens em dp (itemSpacing). Vazio = 0 no código; o desenho usa 8. No centered-hero o recuo e a largura dos itens dependem dele.',
-  },
-  tabs: {
-    style:
-      'primary (indicador de 3 no tamanho do rótulo), secondary (indicador de 3 na largura da aba) ou a versão rolável de cada um (abas com a largura do conteúdo, no mínimo 90, e recuo inicial de 52).',
-  },
-  snackbar: {
-    actionOnNewLine:
-      'true põe a ação abaixo da mensagem, para textos longos (com uma linha de texto a altura do retângulo passa de 48 para 92; os 68 são a linha única de duas linhas).',
-  },
-};
-
 /** Examples that ME2 (#913) added to show known limits, by type. */
-// pt-BR kept: shared fixture data asserted by tests/model, tests/examples (text of the library files)
 export const LIMIT_EXAMPLES: Record<string, string> = {
-  button: 'Rótulo longo',
-  'time-picker': '24 horas, campos',
-  'date-picker': 'Intervalo até o fim do mês',
+  button: 'Long label',
+  'time-picker': '24 hours, fields',
+  'date-picker': 'Range until the end of the month',
 };
 
 /**
  * Examples of v1 that L2 (#1078) removed: the `size` of the tooltip (240 × 24) is the `plain` one and does not hold the `rich`, so its
  * example would go past the box (warning `content larger than the box`).
  */
-// pt-BR kept: shared fixture data asserted by tests/model, tests/examples (text of the library files)
+// pt-BR kept: the names of the examples of the FROZEN v1 fixture (tests/fixtures/material3-*-v1.json), which stay in Portuguese
 const L2_REMOVED_EXAMPLES: Record<string, string[]> = {
   tooltip: ['Rich com título', 'Rich com ação'],
 };
@@ -224,20 +246,19 @@ const MF5_FIELDS: Record<string, string[]> = {
 };
 const MF5_EXAMPLES: Record<string, string[]> = {
   // MC5 (#1033): the three-line item by the two-line support (`$lines` of the support)
-  // pt-BR kept: shared fixture data asserted by tests/model, tests/examples (text of the library files)
-  'list-item': ['Apoio de duas linhas'],
-  'date-picker': ['Dia de hoje'],
-  chip: ['Com avatar', 'Rótulo longo'],
+  'list-item': ['Two-line supporting text'],
+  'date-picker': ["Today's day"],
+  chip: ['With avatar', 'Long label'],
   // MC5 (#1033, group C): the long label of the extended-fab and the field with support (the height by `sizing`)
-  'extended-fab': ['Rótulo longo'],
-  'text-field': ['Preenchido com apoio'],
-  'secure-text-field': ['Preenchido com apoio'],
-  divider: ['Recuo por ponta'],
-  'progress-indicator': ['Trilho colorido e ponta reta'],
+  'extended-fab': ['Long label'],
+  'text-field': ['Filled with supporting text'],
+  'secure-text-field': ['Filled with supporting text'],
+  divider: ['Inset per end'],
+  'progress-indicator': ['Colored track and butt cap'],
   // MC6 (#1034): the flow-row wrap, the alert-dialog buttons on two lines and the menu width by the widest item
-  'flow-row': ['Três por linha'],
-  'alert-dialog': ['Botões em duas linhas'],
-  'dropdown-menu': ['Itens de larguras diferentes'],
+  'flow-row': ['Three per row'],
+  'alert-dialog': ['Buttons on two lines'],
+  'dropdown-menu': ['Items of different widths'],
 };
 /**
  * Fields that the import by signature (#1079, S5) added to each type: one per parameter of the `code` sheet
@@ -568,16 +589,15 @@ export function v1Preview(id: string, preview: unknown): unknown {
     ? toNumbers(preview as Record<string, unknown> | undefined)
     : preview;
 }
-// pt-BR kept: shared fixture data asserted by tests/model, tests/examples (text of the library files)
 const EX4_EXAMPLES: Record<string, string[]> = {
-  slider: ['Encaixe no passo'],
+  slider: ['Snap to step'],
   'date-picker': [
-    'Fevereiro de 2028 (bissexto)',
-    'Mês de 30 dias, 6 linhas',
-    'Mês de 28 dias, 4 linhas',
-    'Intervalo que atravessa semanas',
+    'February 2028 (leap year)',
+    '30-day month, 6 rows',
+    '28-day month, 4 rows',
+    'Range that crosses weeks',
   ],
-  'time-picker': ['10:37 em 24 horas, minutos', '22:05 em 12 horas (PM)'],
+  'time-picker': ['10:37 in 24 hours, minutes', '22:05 in 12 hours (PM)'],
 };
 
 /** Sizes that ME2 (#913) raised to the Compose ones (decision 9); the rest stay the v1 ones. */
@@ -626,7 +646,7 @@ function withoutTableValues(fields: readonly Raw[], example: Raw): Raw {
 
 /**
  * Compares the fields and the examples of a type with those of v1, without what the Material 3 with states stage added
- * (the `interaction` field and the examples that use it, and the examples of the ME2 limits) and with the descriptions fixed by `V1_DESCRIPTION_FIXES`.
+ * (the `interaction` field and the examples that use it, and the examples of the ME2 limits) (the text is compared masked, see `TEXT_PLACEHOLDER`).
  */
 export function v1WithEstados(
   id: string,
@@ -635,7 +655,6 @@ export function v1WithEstados(
 ): { actual: unknown; expected: unknown } {
   const now = nowType as { fields: Raw[]; examples?: Raw[] };
   const before = beforeType as { fields: Raw[]; examples?: Raw[] };
-  const fixes = V1_DESCRIPTION_FIXES[id] ?? {};
   const noDefault = V1_NO_DEFAULT[id];
   const expectedFields = before.fields.map((f) => {
     if (id === 'slider' && f.key !== undefined && f.key in SLIDER_NUMBERS) {
@@ -654,41 +673,36 @@ export function v1WithEstados(
       const nowField = now.fields.find((n) => n.key === f.key);
       return { ...rest, description: nowField?.description };
     }
-    return f.key !== undefined && fixes[f.key] !== undefined
-      ? { ...f, description: fixes[f.key] }
-      : f;
+    return f;
   });
   const isState = (e: Raw): boolean => e.values?.interaction !== undefined;
+  const actualFields = now.fields
+    .filter(
+      (f) =>
+        f.key !== 'interaction' &&
+        !EX4_FIELDS[id]?.includes(f.key as string) &&
+        !MF5_FIELDS[id]?.includes(f.key as string) &&
+        !IMPORTED_FIELDS[id]?.includes(f.key as string),
+    )
+    .map((f) => withoutImportNotices(withoutAddedColumns(id, f)));
+  const actualExamples = (now.examples ?? [])
+    .filter(
+      (e) =>
+        !isState(e) &&
+        e.name !== LIMIT_EXAMPLES[id] &&
+        !EX4_EXAMPLES[id]?.includes(e.name as string) &&
+        !MF5_EXAMPLES[id]?.includes(e.name as string),
+    )
+    .map((e) => withoutTableValues(now.fields, e));
+  const expectedExamples =
+    id === 'slider'
+      ? (before.examples ?? []).map((e) => ({ ...e, values: toNumbers(e.values) }))
+      : (before.examples ?? []).filter(
+          (e) => !L2_REMOVED_EXAMPLES[id]?.includes(e.name as string),
+        );
   return {
-    actual: {
-      fields: now.fields
-        .filter(
-          (f) =>
-            f.key !== 'interaction' &&
-            !EX4_FIELDS[id]?.includes(f.key as string) &&
-            !MF5_FIELDS[id]?.includes(f.key as string) &&
-            !IMPORTED_FIELDS[id]?.includes(f.key as string),
-        )
-        .map((f) => withoutImportNotices(withoutAddedColumns(id, f))),
-      examples: (now.examples ?? [])
-        .filter(
-          (e) =>
-            !isState(e) &&
-            e.name !== LIMIT_EXAMPLES[id] &&
-            !EX4_EXAMPLES[id]?.includes(e.name as string) &&
-            !MF5_EXAMPLES[id]?.includes(e.name as string),
-        )
-        .map((e) => withoutTableValues(now.fields, e)),
-    },
-    expected: {
-      fields: expectedFields,
-      examples:
-        id === 'slider'
-          ? (before.examples ?? []).map((e) => ({ ...e, values: toNumbers(e.values) }))
-          : (before.examples ?? []).filter(
-              (e) => !L2_REMOVED_EXAMPLES[id]?.includes(e.name as string),
-            ),
-    },
+    actual: maskType(actualFields, actualExamples),
+    expected: maskType(expectedFields, expectedExamples),
   };
 }
 

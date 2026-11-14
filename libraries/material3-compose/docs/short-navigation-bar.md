@@ -1,98 +1,98 @@
 # Short navigation bar
 
-Barra de navegação curta, inferior, com três a seis destinos. Cada linha de Itens é um destino; o ícone fica acima ou ao lado do rótulo.
+Short bottom navigation bar with three to six destinations. Each row of Items is a destination; the icon sits above or beside the label.
 
-Tipo de anotação: `short-navigation-bar` (camada Componentes).
+Annotation type: `short-navigation-bar` (layer Components).
 
-## Campos
+## Fields
 
-| Chave          | Rótulo           | Tipo  | Obrigatório | Opções                                  | Padrão        | Descrição                                                                                                                                                                                                                                                                                              |
-| -------------- | ---------------- | ----- | ----------- | --------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `items`        | Itens            | table | sim         | ver Colunas abaixo                      |               | Um destino por linha, na ordem em que aparecem na barra (de três a cinco com o ícone acima; até seis com o ícone ao lado).                                                                                                                                                                             |
-| `arrangement`  | Distribuição     | enum  | não         | `EqualWeight`, `Centered`               | `EqualWeight` | EqualWeight reparte a largura por igual (telas estreitas); Centered agrupa os itens no centro (telas médias; o desenho ocupa 60%, 70%, 80% ou 90% da largura com 3, 4, 5 ou 6 itens, e cada item cresce até largura/itens quando o conteúdo é maior).                                                  |
-| `iconPosition` | Posição do ícone | enum  | não         | `Top`, `Start`                          | `Top`         | Top põe o ícone acima do rótulo; Start põe o ícone ao lado dele (parâmetro do item, o mesmo em todos).                                                                                                                                                                                                 |
-| `interaction`  | Interação        | enum  | não         | `none`, `hovered`, `focused`, `pressed` | `none`        | Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda. |
+| Key            | Label         | Type  | Required | Options                                 | Default       | Description                                                                                                                                                                                                                                                                                      |
+| -------------- | ------------- | ----- | -------- | --------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `items`        | Items         | table | yes      | see Columns below                       |               | One destination per row, in the order they appear in the bar (three to five with the icon on top; up to six with the icon beside).                                                                                                                                                               |
+| `arrangement`  | Arrangement   | enum  | no       | `EqualWeight`, `Centered`               | `EqualWeight` | EqualWeight splits the width equally (narrow screens); Centered groups the items in the middle (medium screens; the drawing takes 60%, 70%, 80% or 90% of the width with 3, 4, 5 or 6 items, and each item grows up to width/items when the content is larger).                                  |
+| `iconPosition` | Icon position | enum  | no       | `Top`, `Start`                          | `Top`         | Top puts the icon above the label; Start puts the icon beside it (an item parameter, the same in all of them).                                                                                                                                                                                   |
+| `interaction`  | Interaction   | enum  | no       | `none`, `hovered`, `focused`, `pressed` | `none`        | Resting appearance of the interaction state of the selected item: hovered, focused or pressed; none = no state layer. It only changes the drawing and does not go into the code. The type has no disabled state (no enabled): the state is always drawn. With no selected item, nothing changes. |
 
-Colunas de `items` (uma linha por item):
+Columns of `items` (one row per item):
 
-| Chave      | Rótulo      | Tipo   | Obrigatório | Opções                                                         | Padrão  |
-| ---------- | ----------- | ------ | ----------- | -------------------------------------------------------------- | ------- |
-| `label`    | Rótulo      | string | sim         |                                                                |         |
-| `icon`     | Ícone       | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |         |
-| `selected` | Selecionado | enum   | não         | `true`, `false`                                                | `false` |
+| Key        | Label    | Type   | Required | Options                                                   | Default |
+| ---------- | -------- | ------ | -------- | --------------------------------------------------------- | ------- |
+| `label`    | Label    | string | yes      |                                                           |         |
+| `icon`     | Icon     | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
+| `selected` | Selected | enum   | no       | `true`, `false`                                           | `false` |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.ShortNavigationBar`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ShortNavigationBar.kt`
+- Symbol: `androidx.compose.material3.ShortNavigationBar`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ShortNavigationBar.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 ShortNavigationBar(arrangement = ShortNavigationBarArrangement.EqualWeight) {
-    // uma linha de items vira um ShortNavigationBarItem
+    // a row of items becomes a ShortNavigationBarItem
     ShortNavigationBarItem(
         selected = true,
-        onClick = { /* lógica da tela */ },
+        onClick = { /* screen logic */ },
         icon = { Icon(Icons.Filled.Home, contentDescription = null) },
-        label = { Text("Início") },
-        iconPosition = NavigationItemIconPosition.Top,    // o mesmo em todos os itens
+        label = { Text("Home") },
+        iconPosition = NavigationItemIconPosition.Top,    // the same in all items
     )
     ShortNavigationBarItem(
         selected = false,
         onClick = { /* ... */ },
         icon = { Icon(Icons.Filled.Search, contentDescription = null) },
-        label = { Text("Buscar") },
+        label = { Text("Search") },
         iconPosition = NavigationItemIconPosition.Top,
     )
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+`code` notes (what the tool hands to the agent):
 
-> Estável, sem opt-in. Um `ShortNavigationBarItem` por linha de `items`, dentro de `ShortNavigationBar(arrangement = <arrangement>) { … }`: `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` (o `label` é anulável, mas a barra mostra sempre o rótulo), e `iconPosition = <iconPosition>` (parâmetro do item, não da barra: repita o valor em todos). Dentro de um Scaffold, a barra vai em `bottomBar`. A altura mínima é de 64 dp, vinda do composable; a largura é a da tela. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.
+> Stable, no opt-in. One `ShortNavigationBarItem` per row of `items`, inside `ShortNavigationBar(arrangement = <arrangement>) { … }`: `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` (the `label` is nullable, but the bar always shows the label), and `iconPosition = <iconPosition>` (an item parameter, not a bar one: repeat the value in all of them). Inside a Scaffold, the bar goes in `bottomBar`. The minimum height is 64 dp, coming from the composable; the width is the screen width. Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) are in `Icons.AutoMirrored.Filled`.
 
-## Exemplos
+## Examples
 
-- **Ícone acima, distribuída**: arrangement=EqualWeight, iconPosition=Top
-- **Ícone ao lado, centralizada**: arrangement=Centered, iconPosition=Start
-- **Ícone acima, centralizada**: arrangement=Centered, iconPosition=Top
-- **Mouse sobre**: arrangement=EqualWeight, iconPosition=Top, interaction=hovered
-- **Com foco**: arrangement=EqualWeight, iconPosition=Top, interaction=focused
-- **Pressionado**: arrangement=EqualWeight, iconPosition=Top, interaction=pressed
+- **Icon above, distributed**: arrangement=EqualWeight, iconPosition=Top
+- **Icon beside, centered**: arrangement=Centered, iconPosition=Start
+- **Icon above, centered**: arrangement=Centered, iconPosition=Top
+- **Hovered**: arrangement=EqualWeight, iconPosition=Top, interaction=hovered
+- **Focused**: arrangement=EqualWeight, iconPosition=Top, interaction=focused
+- **Pressed**: arrangement=EqualWeight, iconPosition=Top, interaction=pressed
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or opacity is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ShortNavigationBar.kt` (linhas 121 a 146: `DefaultShortNavigationBarOverride`, o `Surface` de `defaultMinSize(minHeight = NavigationBarTokens.ContainerHeight)` e a escolha entre `EqualWeight` e `Centered`; 210 a 256: `ShortNavigationBarItem` e os recuos do indicador por `iconPosition`; 263 e 305 a 309: cor do contêiner e do item; 384 a 434: `EqualWeightContentMeasurePolicy`, a largura dividida por igual; 436 a 499: `CenteredContentMeasurePolicy`; 501 a 518: `calculateCenteredContentHorizontalPadding` (itens ocupam 60%, 70%, 80% e 90% da largura com 3 a 6 itens); 521 a 540: `TopIconItemVerticalPadding` 6, os recuos do indicador e `StartIconToLabelPadding` 4).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationItem.kt` (linhas 553 a 645: `TopIconOrIconOnlyMeasurePolicy`; 647 a 735: `StartIconMeasurePolicy`; 895 a 975: `placeLabelAndTopIcon` e `placeLabelAndStartIcon`, as posições do ícone, do rótulo e do indicador).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/NavigationBarTokens.kt` (linhas 24 a 38) e `NavigationBarVerticalItemTokens.kt` (24 a 27: indicador 56 × 32, `ContainerBetweenSpace` 6) e `NavigationBarHorizontalItemTokens.kt` (24 a 27: `ActiveIndicatorHeight` 40, `ActiveIndicatorLeadingSpace` e `TrailingSpace` 16).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationItem.kt` (linhas 1102 a 1108: `IndicatorRipple`, `ripple()` recortado na forma do indicador) e `ShortNavigationBar.kt` (linhas 265 a 267: `contentColor` = `contentColorFor(containerColor)`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ShortNavigationBar.kt` (lines 121 to 146: `DefaultShortNavigationBarOverride`, the `Surface` with `defaultMinSize(minHeight = NavigationBarTokens.ContainerHeight)` and the choice between `EqualWeight` and `Centered`; 210 to 256: `ShortNavigationBarItem` and the indicator insets by `iconPosition`; 263 and 305 to 309: container and item color; 384 to 434: `EqualWeightContentMeasurePolicy`, the width split equally; 436 to 499: `CenteredContentMeasurePolicy`; 501 to 518: `calculateCenteredContentHorizontalPadding` (items take 60%, 70%, 80% and 90% of the width with 3 to 6 items); 521 to 540: `TopIconItemVerticalPadding` 6, the indicator insets and `StartIconToLabelPadding` 4).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationItem.kt` (lines 553 to 645: `TopIconOrIconOnlyMeasurePolicy`; 647 to 735: `StartIconMeasurePolicy`; 895 to 975: `placeLabelAndTopIcon` and `placeLabelAndStartIcon`, the positions of the icon, the label and the indicator).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/NavigationBarTokens.kt` (lines 24 to 38) and `NavigationBarVerticalItemTokens.kt` (24 to 27: indicator 56 × 32, `ContainerBetweenSpace` 6) and `NavigationBarHorizontalItemTokens.kt` (24 to 27: `ActiveIndicatorHeight` 40, `ActiveIndicatorLeadingSpace` and `TrailingSpace` 16).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationItem.kt` (lines 1102 to 1108: `IndicatorRipple`, a `ripple()` clipped to the indicator shape) and `ShortNavigationBar.kt` (lines 265 to 267: `contentColor` = `contentColorFor(containerColor)`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Contêiner de 64 (`NavigationBarTokens.ContainerHeight`) em `surface-container`, sem sombra.
-- `EqualWeight`: os destinos dividem a largura por igual (`ShortNavigationBar.kt` 384 a 434, `EqualWeightContentMeasurePolicy`), sem espaço entre eles: cada destino mede `largura / itens` (`minWidth` e `maxWidth` iguais, por `$size` e `$rows`).
-- `Centered`: os destinos ficam agrupados no meio, com margens iguais nos dois lados, por conta (`$size` e `$rows`), como `CenteredContentMeasurePolicy` (`ShortNavigationBar.kt` 436 a 499). A margem de cada lado é `largura × (0,35 − 0,05 × itens)`, que é `calculateCenteredContentHorizontalPadding` (501 a 518, `((100 − 10 × (itens + 3)) / 2) / 100` da largura): 20% com 3 itens, 15% com 4, 10% com 5 e 5% com 6, e nenhuma com mais de 6 (`if (itemsCount > 6) return 0`, 514). Cada destino começa com a fatia `(largura − 2 × margem) / itens` (`itemMinWidth`, 461) e cresce até a largura que o conteúdo pede, no máximo `largura / itens` (`itemMaxWidth`, 459; 473 a 477); as margens encolhem a metade do que cada destino cresceu (479) e o grupo fica no centro (491). No desenho a fatia é o `minWidth` do destino, `largura / itens` o `maxWidth` e as duas margens dividem o que sobra por igual, então a conta da margem e do crescimento sai das mesmas duas medidas, `{ "$size": "width" }` e `{ "$rows": "items" }`.
-- Ícone acima: item de 64 com 6 de recuo (`topIconItemVerticalPadding`), indicador de 56 × 32 em `corner-full`, ícone de 24 no centro dele, 4 de espaço e o rótulo em `label-medium` (12 / 16, peso 500, 0,5): o conteúdo mede 6 + 32 + 4 + 16 + 6 = 64.
-- Ícone ao lado: pílula de 40 de altura (24 do ícone mais 8 em cima e em baixo) em `corner-full`, com 16 de respiro nos lados e 4 entre ícone e rótulo, centrada na altura. O rótulo usa `label-medium` também aqui (`NavigationBarTokens.LabelTextFont`).
-- Cores: indicador `secondary-container` (só no selecionado), ícone `on-secondary-container` selecionado e `on-surface-variant` nos demais, rótulo `secondary` selecionado e `on-surface-variant` nos demais.
-- Rótulo centrado pela maiúscula (`cap-middle`): o nó `rótulo` usa `font.verticalAlign: "cap-middle"`; com o ícone ao lado ocupa a altura da pílula (`height: "fill"`) e, com o ícone acima, segue `hug` numa coluna. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
+- Container 64 (`NavigationBarTokens.ContainerHeight`) in `surface-container`, no shadow.
+- `EqualWeight`: the destinations split the width equally (`ShortNavigationBar.kt` 384 to 434, `EqualWeightContentMeasurePolicy`), with no space between them: each destination measures `width / items` (equal `minWidth` and `maxWidth`, through `$size` and `$rows`).
+- `Centered`: the destinations are grouped in the middle, with equal margins on both sides, computed (`$size` and `$rows`), like `CenteredContentMeasurePolicy` (`ShortNavigationBar.kt` 436 to 499). The margin on each side is `width × (0.35 − 0.05 × items)`, which is `calculateCenteredContentHorizontalPadding` (501 to 518, `((100 − 10 × (items + 3)) / 2) / 100` of the width): 20% with 3 items, 15% with 4, 10% with 5 and 5% with 6, and none with more than 6 (`if (itemsCount > 6) return 0`, 514). Each destination starts with the slice `(width − 2 × margin) / items` (`itemMinWidth`, 461) and grows up to the width the content asks for, at most `width / items` (`itemMaxWidth`, 459; 473 to 477); the margins shrink by half of what each destination grew (479) and the group stays in the center (491). In the drawing the slice is the destination `minWidth`, `width / items` the `maxWidth` and the two margins split what is left equally, so the margin and growth computation comes from the same two measures, `{ "$size": "width" }` and `{ "$rows": "items" }`.
+- Icon on top: 64 item with 6 inset (`topIconItemVerticalPadding`), 56 × 32 indicator in `corner-full`, 24 icon in its center, 4 of space and the label in `label-medium` (12 / 16, weight 500, 0.5): the content measures 6 + 32 + 4 + 16 + 6 = 64.
+- Icon beside: pill 40 high (24 for the icon plus 8 above and below) in `corner-full`, with 16 of room on the sides and 4 between icon and label, centered in the height. The label uses `label-medium` here too (`NavigationBarTokens.LabelTextFont`).
+- Colors: indicator `secondary-container` (only on the selected one), icon `on-secondary-container` when selected and `on-surface-variant` on the others, label `secondary` when selected and `on-surface-variant` on the others.
+- Label centered by the cap height (`cap-middle`): the `label` node uses `font.verticalAlign: "cap-middle"`; with the icon beside it takes the pill height (`height: "fill"`) and, with the icon on top, stays `hug` in a column. The Compose `Text` centers by the font line box (ascent and descent); the drawing centers the cap height in the box, and with Roboto the two coincide to within 1 px.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `variants`. As opções são `none`, `hovered`, `focused` e `pressed`: o `NavigationBarTokens.kt` e o `NavigationItem.kt` **não nomeiam** estados do item; a camada é o ripple do indicador (`StateTokens.kt`). **Este tipo não tem `enabled`**, então não existe um desabilitado que vença: o estado sempre desenha.
+The field chooses the resting appearance of a state; it does not go into the `code` or the `variants`. The options are `none`, `hovered`, `focused` and `pressed`: `NavigationBarTokens.kt` and `NavigationItem.kt` **do not name** item states; the layer is the indicator ripple (`StateTokens.kt`). **This type has no `enabled`**, so there is no disabled state that wins: the state is always drawn.
 
-- **Camada de estado:** o nó `estado` é um `rect` do tamanho do indicador, por cima dele e com o raio `corner-full` — o de 56 × 32 do ícone acima do rótulo, ou a pílula de 40 do ícone ao lado —, na cor do ripple sem cor própria, o `contentColor` da barra, `on-surface`. A opacidade vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10).
-- **Item do estado:** vale para o item selecionado (decisão 6 da etapa); com nenhum item selecionado nada muda. O Compose desenha o estado no item que o mouse, o foco ou o toque alcança; escolher "o primeiro" pediria o índice do item no `repeat` (#897), e um campo de índice do item fica fora. Os exemplos de estado trazem os `items` do `preview`: no Catálogo o exemplo desenha os destinos, com a camada de estado no item selecionado.
+- **State layer:** the `state` node is a `rect` the size of the indicator, on top of it and with the `corner-full` radius — the 56 × 32 one of the icon above the label, or the 40 pill of the icon beside it —, in the color of the ripple with no color of its own, the bar `contentColor`, `on-surface`. The opacity comes from the `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10) tokens.
+- **Item of the state:** it applies to the selected item (decision 6 of the stage); with no selected item nothing changes. Compose draws the state on the item that the mouse, focus or touch reaches; choosing "the first one" would need the item index in the `repeat` (#897), and an item index field is out of scope. The state examples carry the `items` of the `preview`: in the Catalog the example draws the destinations, with the state layer on the selected item.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O desenho não arredonda a margem nem as larguras para pixels inteiros: o Compose usa a divisão inteira e `roundToInt()` (`ShortNavigationBar.kt` 461 e 517), então a margem pode diferir em até 1 px (a de 5 itens em 412 de largura é 41,2 aqui e 41 lá).
-- A largura que o item pede é a do conteúdo que o desenho mede (o indicador de 56 ou o rótulo mais largo, com o ícone acima; a pílula de 40 com o ícone ao lado), não o `maxIntrinsicWidth` do `ShortNavigationBarItem` (473): com rótulos longos o ponto em que o item deixa de crescer pode diferir. Com o ícone ao lado e 5 ou 6 itens a pílula é mais larga que `largura / itens`: o item para nesse teto e a pílula sai dele, com o aviso "conteúdo maior que a caixa" (o desenho não corta nem abrevia o rótulo).
-- O `interaction` é um quadro parado: sem o ripple animado, sem a animação do indicador (o desenho é o estado final), sem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado) e sem `enabled`.
-- A altura mínima de 48 de toque do item e `windowInsets` não aparecem no desenho; `ShortNavigationBarItemColors` próprio não é campo do tipo.
+- The drawing does not round the margin or the widths to whole pixels: Compose uses integer division and `roundToInt()` (`ShortNavigationBar.kt` 461 and 517), so the margin can differ by up to 1 px (the one for 5 items at 412 wide is 41.2 here and 41 there).
+- The width the item asks for is that of the content the drawing measures (the 56 indicator or the widest label, with the icon on top; the 40 pill with the icon beside), not the `maxIntrinsicWidth` of the `ShortNavigationBarItem` (473): with long labels the point where the item stops growing can differ. With the icon beside and 5 or 6 items the pill is wider than `width / items`: the item stops at that ceiling and the pill overflows it, with the "content larger than the box" warning (the drawing neither clips nor abbreviates the label).
+- The `interaction` is a still frame: no animated ripple, no indicator animation (the drawing is the final state), no focus ring (Compose does not define `FocusIndicatorColor` for it at the pinned commit) and no `enabled`.
+- The item's 48 minimum touch height and `windowInsets` do not appear in the drawing; a custom `ShortNavigationBarItemColors` is not a field of the type.

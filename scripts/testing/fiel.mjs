@@ -427,7 +427,7 @@ if (version >= 4) {
 // MC3 (R25.97 e R25.98): o `button` vira uma peça de 120 × 40 com a altura pelo rótulo. Uma caixa
 // vermelha (`#B71C1C`) `hug` na altura (`sizing.height` `hug`, `minSize` 48 × 40), com o rótulo em
 // `H` brancos (20 de altura de linha, respiro de 10 em cima e embaixo): 1 linha mede 40, 2 linhas 60,
-// 3 linhas 80. O exemplo "Rótulo longo" do tipo sai (a peça só cabe o texto longo no tamanho ajustado). Só na versão 4
+// 3 linhas 80. O exemplo "Long label" do tipo sai (a peça só cabe o texto longo no tamanho ajustado). Só na versão 4
 // (o `sizing` com `hug` na altura só vale no formato 4; o R25.2 segue com as oito peças e 15 erros).
 if (version >= 4) {
   write(
@@ -538,8 +538,8 @@ for (const layer of spec.layers)
   for (const type of layer.annotationTypes)
     if (version >= 4 && type.id === 'button') {
       const before = (type.examples ?? []).length;
-      type.examples = (type.examples ?? []).filter((e) => e.name !== 'Rótulo longo');
+      type.examples = (type.examples ?? []).filter((e) => e.name !== 'Long label');
       if (type.examples.length === before)
-        throw new Error('exemplo "Rótulo longo" do button não achado');
+        throw new Error('exemplo "Long label" do button não achado');
     }
 fs.writeFileSync(specFile, JSON.stringify(spec, null, 2));

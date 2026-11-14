@@ -60,7 +60,7 @@ describe('zip de exemplo das sugestões Kotlin', () => {
     const parsed = deserialize(read.files.mapping, undefined, read.files.specs);
     if (!parsed.ok) throw new Error(`mapping.json inválido: ${parsed.error.code}`);
     const p = parsed.project;
-    expect(p.specializations.map((s) => `${s.id}@${s.version}`)).toEqual(['kotlin@2']);
+    expect(p.specializations.map((s) => `${s.id}@${s.version}`)).toEqual(['kotlin@3']);
     const rowsOf = (id: string) => {
       const a = p.annotations.find((x) => x.id === id);
       expect(a?.type?.typeId).toBe('data-class');

@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "bottom-app-bar",
   "name": "Bottom app bar",
-  "description": "Barra de baixo de 80 em surface container: até quatro ações de 48 a partir da esquerda e, opcional, o FAB de 56 em secondary container a 12 do topo e 16 da direita.",
+  "description": "80 bottom bar on surface container: up to four 48 actions from the left and, optionally, the 56 FAB in secondary container 12 from the top and 16 from the right.",
   "size": {
     "width": 412,
     "height": 80
@@ -30,7 +30,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "ações",
+        "name": "actions",
         "width": "hug",
         "anchors": {
           "left": 4,
@@ -44,7 +44,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "ação 1",
+            "name": "action 1",
             "width": 48,
             "height": 48,
             "visible": {
@@ -243,7 +243,7 @@
           },
           {
             "type": "frame",
-            "name": "ação 2",
+            "name": "action 2",
             "width": 48,
             "height": 48,
             "visible": {
@@ -442,7 +442,7 @@
           },
           {
             "type": "frame",
-            "name": "ação 3",
+            "name": "action 3",
             "width": 48,
             "height": 48,
             "visible": {
@@ -641,7 +641,7 @@
           },
           {
             "type": "frame",
-            "name": "ação 4",
+            "name": "action 4",
             "width": 48,
             "height": 48,
             "visible": {
@@ -842,7 +842,7 @@
       },
       {
         "type": "frame",
-        "name": "botão flutuante",
+        "name": "floating button",
         "width": 56,
         "height": 56,
         "cornerRadius": {

@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "lazy-vertical-grid",
   "name": "LazyVerticalGrid",
-  "description": "Grade vertical que compõe só as células visíveis: as filhas ficam onde o retângulo delas diz; o contentPadding recua o conteúdo.",
+  "description": "Vertical grid that composes only the visible cells: the children stay where their rectangle says; contentPadding insets the content.",
   "size": {
     "width": 360,
     "height": 400

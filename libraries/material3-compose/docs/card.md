@@ -1,101 +1,101 @@
 # Card
 
-Cartão que agrupa conteúdo relacionado. Filled e elevated destacam pelo fundo e pela sombra; outlined, pelo contorno.
+Card that groups related content. Filled and elevated stand out through the background and the shadow; outlined, through the outline.
 
-Tipo de anotação: `card` (camada Componentes).
+Annotation type: `card` (Components layer).
 
-## Campos
+## Fields
 
-| Chave            | Rótulo        | Tipo   | Obrigatório | Opções                                             | Padrão   | Descrição                                                                                                                                                                                                                                                          |
-| ---------------- | ------------- | ------ | ----------- | -------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `title`          | Título        | string | sim         |                                                    |          | Título do cartão.                                                                                                                                                                                                                                                  |
-| `subtitle`       | Subtítulo     | string | não         |                                                    |          | Linha de apoio abaixo do título.                                                                                                                                                                                                                                   |
-| `supportingText` | Texto         | string | não         |                                                    |          | Parágrafo de apoio do cartão.                                                                                                                                                                                                                                      |
-| `media`          | Imagem (URL)  | string | não         |                                                    |          | Endereço https:// da imagem no topo do cartão. Vazio = sem imagem.                                                                                                                                                                                                 |
-| `style`          | Estilo        | enum   | não         | `filled`, `elevated`, `outlined`                   | `filled` | filled (Card), elevated ou outlined.                                                                                                                                                                                                                               |
-| `interaction`    | Interação     | enum   | não         | `none`, `hovered`, `focused`, `pressed`, `dragged` | `none`   | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused), pressionado (pressed) ou arrastado (dragged); none = sem camada de estado. Só muda o desenho, não entra no código. Este tipo não tem enabled, então não há desabilitado que vença. |
-| `width`          | Largura       | enum   | não         | `wrap`, `fill`, `fixed`                            | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).                                                                                                                                                              |
-| `height`         | Altura        | enum   | não         | `wrap`, `fill`, `fixed`                            | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).                                                                                                                                                                |
-| `weight`         | Peso (weight) | number | não         |                                                    |          | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                                                                                                                                                                                  |
+| Key              | Label       | Type   | Required | Options                                            | Default  | Description                                                                                                                                                                                                                |
+| ---------------- | ----------- | ------ | -------- | -------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`          | Title       | string | yes      |                                                    |          | Card title.                                                                                                                                                                                                                |
+| `subtitle`       | Subtitle    | string | no       |                                                    |          | Supporting line below the title.                                                                                                                                                                                           |
+| `supportingText` | Text        | string | no       |                                                    |          | Supporting paragraph of the card.                                                                                                                                                                                          |
+| `media`          | Image (URL) | string | no       |                                                    |          | https:// address of the image at the top of the card. Empty = no image.                                                                                                                                                    |
+| `style`          | Style       | enum   | no       | `filled`, `elevated`, `outlined`                   | `filled` | filled (Card), elevated or outlined.                                                                                                                                                                                       |
+| `interaction`    | Interaction | enum   | no       | `none`, `hovered`, `focused`, `pressed`, `dragged` | `none`   | Still appearance of the interaction state: hovered, focused, pressed or dragged; none = no state layer. Only changes the drawing, does not enter the code. This type has no enabled, so there is no disabled state to win. |
+| `width`          | Width       | enum   | no       | `wrap`, `fill`, `fixed`                            | `wrap`   | wrap fits the content, fill takes all the available width and fixed uses the marking width (dp).                                                                                                                           |
+| `height`         | Height      | enum   | no       | `wrap`, `fill`, `fixed`                            | `wrap`   | wrap fits the content, fill takes all the available height and fixed uses the marking height (dp).                                                                                                                         |
+| `weight`         | Weight      | number | no       |                                                    |          | Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.                                                                                                                                       |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.Card`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Card.kt`
-- O campo `style` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.Card`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Card.kt`
+- The `style` field chooses the symbol; values without their own case use the base one.
 
-| `style`         | Símbolo        |
+| `style`         | Symbol         |
 | --------------- | -------------- |
 | `filled` (base) | `Card`         |
 | `elevated`      | `ElevatedCard` |
 | `outlined`      | `OutlinedCard` |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in the `code`):
 
 ```kotlin
 Card(    // style elevated: ElevatedCard, outlined: OutlinedCard
     modifier = Modifier.fillMaxWidth(),
 ) {
     Column {
-        AsyncImage(    // media remota: carregador do app
+        AsyncImage(    // remote media: app loader
             model = "https://example.com/praia.jpg",
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxWidth(),
         )
         Text("Praia do Rosa")                  // title
-        Text("12 a 18 de outubro")             // subtitle
-        Text("Fim de semana de sol.")          // supportingText
+        Text("October 12 to 18")               // subtitle
+        Text("Sunny weekend.")                 // supportingText
     }
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from the `code` (what the tool hands to the agent):
 
-> O conteúdo vai em `content` (uma Column): `media` no topo, depois `title`, `subtitle` e `supportingText` em `Text`. A `media` remota usa o carregador de imagens do app (por exemplo Coil `AsyncImage(model = <media>, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth())`), fora do androidx. Cartão clicável usa a sobrecarga com `onClick`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> The content goes in `content` (a Column): `media` at the top, then `title`, `subtitle` and `supportingText` in `Text`. Remote `media` uses the app's image loader (for example Coil `AsyncImage(model = <media>, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth())`), outside androidx. A clickable card uses the overload with `onClick`. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).
 
-## Exemplos
+## Examples
 
-- **Cartão simples**: title=Resumo da semana, subtitle=12 a 18 de outubro, supportingText=Você concluiu 8 de 10 tarefas., style=filled, width=fill
-- **Com imagem**: title=Praia do Rosa, supportingText=Fim de semana de sol., media=https://example.com/praia.jpg, style=elevated, width=fill
-- **Contornado**: title=Plano gratuito, style=outlined, width=fill
-- **Mouse sobre**: title=Resumo da semana, subtitle=12 a 18 de outubro, style=elevated, width=fill, interaction=hovered
-- **Com foco**: title=Plano gratuito, style=outlined, width=fill, interaction=focused
-- **Pressionado**: title=Resumo da semana, subtitle=12 a 18 de outubro, style=filled, width=fill, interaction=pressed
-- **Arrastado**: title=Praia do Rosa, supportingText=Fim de semana de sol., style=elevated, width=fill, interaction=dragged
+- **Simple card**: title=Weekly summary, subtitle=October 12 to 18, supportingText=You completed 8 of 10 tasks., style=filled, width=fill
+- **With image**: title=Praia do Rosa, supportingText=Sunny weekend., media=https://example.com/praia.jpg, style=elevated, width=fill
+- **Outlined**: title=Free plan, style=outlined, width=fill
+- **Hovered**: title=Weekly summary, subtitle=October 12 to 18, style=elevated, width=fill, interaction=hovered
+- **Focused**: title=Free plan, style=outlined, width=fill, interaction=focused
+- **Pressed**: title=Weekly summary, subtitle=October 12 to 18, style=filled, width=fill, interaction=pressed
+- **Dragged**: title=Praia do Rosa, supportingText=Sunny weekend., style=elevated, width=fill, interaction=dragged
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Cores, raio e tipografia vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). Colors, radius and typography come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FilledCardTokens.kt` (linhas 24 a 26: `ContainerColor = SurfaceContainerHighest`, `ContainerElevation = Level0`, `ContainerShape = CornerMedium`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ElevatedCardTokens.kt` (linhas 24 a 26: `SurfaceContainerLow`, `ContainerElevation = Level1`, `CornerMedium`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedCardTokens.kt` (linhas 24 a 26: `Surface`, `Level0`, `CornerMedium`; linhas 38 e 39: `OutlineColor = OutlineVariant`, `OutlineWidth = 1.0.dp`; as elevações e os contornos por estado do campo `interaction`, linhas 30 a 41).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Card.kt` (linhas 80 a 98: `Card` é um `Surface` com `shape`, `color`, `contentColor`, `shadowElevation` e `border` sobre uma `Column`; linhas 370 a 379: `CardDefaults.shape`, `elevatedShape`, `outlinedShape`; linhas 486 a 517, 531 a 565 e 580 a 610: `contentColor = contentColorFor(containerColor)`; linhas 614 a 624: `outlinedCardBorder`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FilledCardTokens.kt` (lines 24 to 26: `ContainerColor = SurfaceContainerHighest`, `ContainerElevation = Level0`, `ContainerShape = CornerMedium`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ElevatedCardTokens.kt` (lines 24 to 26: `SurfaceContainerLow`, `ContainerElevation = Level1`, `CornerMedium`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedCardTokens.kt` (lines 24 to 26: `Surface`, `Level0`, `CornerMedium`; lines 38 and 39: `OutlineColor = OutlineVariant`, `OutlineWidth = 1.0.dp`; the elevations and the outlines per state of the `interaction` field, lines 30 to 41).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Card.kt` (lines 80 to 98: `Card` is a `Surface` with `shape`, `color`, `contentColor`, `shadowElevation` and `border` over a `Column`; lines 370 to 379: `CardDefaults.shape`, `elevatedShape`, `outlinedShape`; lines 486 to 517, 531 to 565 and 580 to 610: `contentColor = contentColorFor(containerColor)`; lines 614 to 624: `outlinedCardBorder`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- O raio é `corner-medium` (12) nos três estilos.
-- `filled` usa `surface-container-highest`, sem sombra e sem contorno; `elevated` usa `surface-container-low` com as duas sombras do nível 1 (ponto: `y` 1, `blur` 2; ambiente: `y` 1, `blur` 3, `spread` 1; tokens `elevation-1-point-*` e `elevation-1-ambient-*`); `outlined` usa `surface` com contorno de 1 em `outline-variant`, por dentro. Os valores mudam com o modo (claro e escuro).
-- A cor do conteúdo é a `contentColorFor` do fundo, `on-surface`: o título a usa. O subtítulo e o texto de apoio usam `on-surface-variant`, como o `bodyMedium` de um cartão do Material.
-- O título é `title-medium` (16/24, peso 500) e o subtítulo e o apoio são `body-medium` (14/20, peso 400), com o espaçamento entre letras dos tokens. Sem `family`: a fonte é a `font-sans` do tema.
-- O `Surface` recorta o conteúdo na forma; a raiz do desenho também recorta, então a mídia do topo fica com os cantos arredondados do cartão.
-- A mídia remota (`image` do formato) fica sobre `surface-container-highest` enquanto não carrega; é o carregador de imagens do app (`AsyncImage`) que a busca, fora do androidx.
+- The radius is `corner-medium` (12) in the three styles.
+- `filled` uses `surface-container-highest`, with no shadow and no outline; `elevated` uses `surface-container-low` with the two level 1 shadows (point: `y` 1, `blur` 2; ambient: `y` 1, `blur` 3, `spread` 1; tokens `elevation-1-point-*` and `elevation-1-ambient-*`); `outlined` uses `surface` with a 1 outline in `outline-variant`, on the inside. The values change with the mode (light and dark).
+- The content color is the background's `contentColorFor`, `on-surface`: the title uses it. The subtitle and the supporting text use `on-surface-variant`, like the `bodyMedium` of a Material card.
+- The title is `title-medium` (16/24, weight 500) and the subtitle and the supporting text are `body-medium` (14/20, weight 400), with the letter spacing from the tokens. No `family`: the font is the theme's `font-sans`.
+- The `Surface` clips the content to the shape; the drawing root also clips, so the media at the top gets the card's rounded corners.
+- Remote media (the format's `image`) sits on `surface-container-highest` while it does not load; it is the app's image loader (`AsyncImage`) that fetches it, outside androidx.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que os `*CardTokens.kt` do commit definem para o cartão: `hovered`, `focused`, `pressed` e `dragged`. **Este tipo não tem `enabled`**, então não existe um desabilitado que vença: o estado sempre desenha.
+The field chooses the still appearance of a state; it does not enter the `code` or the `variants`. The options are `none` and the states that the commit's `*CardTokens.kt` define for the card: `hovered`, `focused`, `pressed` and `dragged`. **This type has no `enabled`**, so there is no disabled state to win: the state always draws.
 
-- **Camada de estado:** o nó `estado` é um `rect` da forma do cartão (`corner-medium`), por cima do corpo (mídia e texto), como o indicador do Compose, com a cor do conteúdo do cartão, `on-surface` (`contentColorFor` do fundo; os `*CardTokens.kt` não nomeiam outra) e `opacity` pelos tokens `state-hover` (0,08), `state-focus` (0,10), `state-pressed` (0,10) e `state-dragged` (0,16), que espelham `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25). Para isso o corpo (a coluna de mídia e texto) passou a ser o nó `corpo`, filho da raiz, que agora empilha camadas (`layout: none`); o tamanho do cartão não muda.
-- **Elevação por estado** (`FilledCardTokens.kt`, `ElevatedCardTokens.kt` e `OutlinedCardTokens.kt`, linhas `*ContainerElevation`): o filled e o outlined vão de 0 para o nível 1 com o mouse (`HoverContainerElevation`, linha 33 no filled e 34 no outlined), ficam em 0 no foco e pressionado (linhas 31 e 36 no filled, 32 e 40 no outlined) e vão ao nível 3 arrastados (`DraggedContainerElevation`, linha 30 nos dois); o elevated vai de 1 (linha 25) para o nível 2 com o mouse (linha 33), fica em 1 no foco e pressionado (linhas 31 e 36) e vai ao nível 4 arrastado (linha 30). Níveis em `ElevationTokens.kt` (`Level1` 1 dp, `Level2` 3 dp, `Level3` 6 dp e `Level4` 8 dp). O `y` e o `blur` da sombra aceitam `$token`, mas não expressão (o nível não troca com o estado no mesmo nó): o nível 1 é a sombra da raiz (y 1, blur 2) e os outros são nós à parte, `sombra nível 2` (y 2, blur 6), `sombra nível 3` (y 3, blur 12) e `sombra nível 4` (y 4, blur 16, os valores de `elevation-2-*`, `elevation-3-*` e `elevation-4-*`), cada um com o fundo (e o contorno, no outlined) do cartão, visíveis só no estado que pede o nível.
-- **Cor do contorno** (outlined, `OutlinedCardTokens.kt`): `OutlineColor` (`outline-variant`, linha 38) parado, com o mouse (`HoverOutlineColor`, linha 35), pressionado (linha 41) e arrastado (`DraggedOutlineColor`, linha 31); no foco, `on-surface` (`FocusOutlineColor`, linha 33). O filled e o elevated não têm contorno.
+- **State layer:** the `state` node is a `rect` with the card's shape (`corner-medium`), over the `body` (media and text), like the Compose indicator, with the card's content color, `on-surface` (the background's `contentColorFor`; the `*CardTokens.kt` name no other) and `opacity` from the tokens `state-hover` (0.08), `state-focus` (0.10), `state-pressed` (0.10) and `state-dragged` (0.16), which mirror `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25). For this the body (the column of media and text) became the `body` node, a child of the root, which now stacks layers (`layout: none`); the card size does not change.
+- **Elevation per state** (`FilledCardTokens.kt`, `ElevatedCardTokens.kt` and `OutlinedCardTokens.kt`, `*ContainerElevation` lines): filled and outlined go from 0 to level 1 on hover (`HoverContainerElevation`, line 33 on filled and 34 on outlined), stay at 0 on focus and pressed (lines 31 and 36 on filled, 32 and 40 on outlined) and go to level 3 when dragged (`DraggedContainerElevation`, line 30 on both); the elevated goes from 1 (line 25) to level 2 on hover (line 33), stays at 1 on focus and pressed (lines 31 and 36) and goes to level 4 when dragged (line 30). Levels in `ElevationTokens.kt` (`Level1` 1 dp, `Level2` 3 dp, `Level3` 6 dp and `Level4` 8 dp). The shadow's `y` and `blur` accept `$token`, but not an expression (the level does not switch with the state in the same node): level 1 is the root's shadow (y 1, blur 2) and the others are separate nodes, `level 2 shadow` (y 2, blur 6), `level 3 shadow` (y 3, blur 12) and `level 4 shadow` (y 4, blur 16, the values of `elevation-2-*`, `elevation-3-*` and `elevation-4-*`), each with the card's background (and the outline, on outlined), visible only in the state that asks for the level.
+- **Outline color** (outlined, `OutlinedCardTokens.kt`): `OutlineColor` (`outline-variant`, line 38) at rest, on hover (`HoverOutlineColor`, line 35), pressed (line 41) and dragged (`DraggedOutlineColor`, line 31); on focus, `on-surface` (`FocusOutlineColor`, line 33). Filled and elevated have no outline.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- As sombras leem os tokens de elevação (`$token` em `shadow`): `elevation-1-point-*` e `elevation-1-ambient-*` na raiz e `elevation-N-point-*` e `elevation-N-ambient-*` nos nós `sombra nível N`; trocar o token na especialização chega ao desenho.
-- As duas sombras (ponto e ambiente) vêm dos tokens `elevation-1-point-*` e `elevation-1-ambient-*` (`$token` em `shadow`, lista de duas sombras com `spread`); a tonal da elevação não é desenhada. Valores da elevação do Material 3 para a web: `elevation/internal/_elevation.scss` do `material-components/material-web` (versão 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), fonte de fora do Compose, que no Android entrega a elevação à plataforma e não traz os números: sombra de ponto em preto a 30% e sombra ambiente em preto a 15%, com `y`, `blur` e `spread` por nível (tokens `elevation-1-point-*` e `elevation-1-ambient-*`).
-- O espaçamento de 16 entre as bordas e o texto e o vão de 4 entre as linhas são do desenho: o `Card` do Compose não tem padding, quem escreve a `Column` decide. A mídia tem altura fixa de 140.
-- Sem desabilitado (o tipo não tem `enabled`) nem `onClick`. Os estados de interação são quadros parados: sem ripple animado e sem transição, e o anel de foco só vale no filled e no elevated (`FilledCardTokens.kt` e `ElevatedCardTokens.kt`, linha 32: `FocusIndicatorColor`; o `OutlinedCardTokens.kt` não o define): com `focused` desenha o anel de 3 em `secondary`, afastado 2 da forma (`stroke.offset`), por fora da caixa (a largura e o afastamento são os da decisão da etapa; o `*Tokens.kt` só traz a cor).
-- O `Card.kt` não lê todos os tokens de estado do cartão: o `outlinedCardElevation` (linhas 452 a 458) usa a elevação padrão (0) no mouse, no foco e pressionado, e o `outlinedCardBorder` (linhas 614 a 623) só distingue habilitado e desabilitado, sem a cor do foco. O desenho segue os `OutlinedCardTokens.kt`, como a etapa pede, então o outlined sobe ao nível 1 com o mouse e ganha o contorno `on-surface` no foco.
+- The shadows read the elevation tokens (`$token` in `shadow`): `elevation-1-point-*` and `elevation-1-ambient-*` on the root and `elevation-N-point-*` and `elevation-N-ambient-*` on the `level N shadow` nodes; changing the token in the specialization reaches the drawing.
+- The two shadows (point and ambient) come from the tokens `elevation-1-point-*` and `elevation-1-ambient-*` (`$token` in `shadow`, a list of two shadows with `spread`); the elevation's tonal one is not drawn. Material 3 elevation values for the web: `elevation/internal/_elevation.scss` of `material-components/material-web` (version 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), a source outside Compose, which on Android hands the elevation to the platform and does not carry the numbers: point shadow in black at 30% and ambient shadow in black at 15%, with `y`, `blur` and `spread` per level (tokens `elevation-1-point-*` and `elevation-1-ambient-*`).
+- The 16 of spacing between the edges and the text and the 4 gap between the lines belong to the drawing: Compose's `Card` has no padding, whoever writes the `Column` decides. The media has a fixed height of 140.
+- No disabled state (the type has no `enabled`) and no `onClick`. The interaction states are still frames: no animated ripple and no transition, and the focus ring only applies to filled and elevated (`FilledCardTokens.kt` and `ElevatedCardTokens.kt`, line 32: `FocusIndicatorColor`; `OutlinedCardTokens.kt` does not define it): with `focused` it draws the 3 ring in `secondary`, offset 2 from the shape (`stroke.offset`), outside the box (the width and the offset are those of the stage decision; the `*Tokens.kt` only carries the color).
+- `Card.kt` does not read all the card state tokens: `outlinedCardElevation` (lines 452 to 458) uses the default elevation (0) on hover, focus and pressed, and `outlinedCardBorder` (lines 614 to 623) only distinguishes enabled and disabled, without the focus color. The drawing follows the `OutlinedCardTokens.kt`, as the stage asks, so the outlined rises to level 1 on hover and gets the `on-surface` outline on focus.

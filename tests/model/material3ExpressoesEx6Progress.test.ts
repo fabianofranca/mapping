@@ -67,7 +67,7 @@ describe('EX6 progress-indicator — circular: the arc comes from the fraction, 
     "progress %s: the indicator starts at 12 o'clock and ends at 360 × p, on radius 18",
     (p) => {
       const d = drawCircular(p);
-      const { node, start, end } = arcOf(d, 'indicador');
+      const { node, start, end } = arcOf(d, 'indicator');
       const [ex, ey] = onCircle(360 * p);
       expect(start).toMatchObject({ x: 20, y: 2 });
       expect(near(end.x, ex)).toBe(true);
@@ -82,7 +82,7 @@ describe('EX6 progress-indicator — circular: the arc comes from the fraction, 
     'progress %s: the track goes from 360 × p + gap to -gap (the gap shortens when the arc is short)',
     (p) => {
       const d = drawCircular(p);
-      const { start, end } = arcOf(d, 'trilho arco');
+      const { start, end } = arcOf(d, 'arc track');
       const gap = Math.min(360 * p, GAP_SWEEP);
       const [sx, sy] = onCircle(360 * p + gap);
       const [ex, ey] = onCircle(-gap);
@@ -100,7 +100,7 @@ describe('EX6 progress-indicator — circular: the arc comes from the fraction, 
     for (let i = 1; i < 1000; i++) {
       const p = i / 1000;
       const d = drawCircular(p);
-      const { end } = arcOf(d, 'indicador');
+      const { end } = arcOf(d, 'indicator');
       const [ex, ey] = onCircle(360 * p);
       expect(near(end.x, ex, 0.001) && near(end.y, ey, 0.001), `p=${p}`).toBe(true);
     }
@@ -108,12 +108,10 @@ describe('EX6 progress-indicator — circular: the arc comes from the fraction, 
 
   it('at 0 only the full track and at 1 only the indicator ring, with no degenerate arc', () => {
     const zero = drawCircular(0);
-    expect(names(zero)).toEqual(['progress indicator', 'circular', 'trilho completo']);
+    expect(names(zero)).toEqual(['progress indicator', 'circular', 'full track']);
     const one = drawCircular(1);
-    expect(names(one)).toEqual(['progress indicator', 'circular', 'anel completo']);
-    expect(solid(named(one, 'anel completo')[0]!.stroke?.paints ?? [])).toBe(
-      tok('primary'),
-    );
+    expect(names(one)).toEqual(['progress indicator', 'circular', 'full ring']);
+    expect(solid(named(one, 'full ring')[0]!.stroke?.paints ?? [])).toBe(tok('primary'));
   });
 
   it('a value outside 0 to 1 is clamped (Compose coerceIn)', () => {
@@ -127,9 +125,9 @@ describe('EX6 progress-indicator — circular: the arc comes from the fraction, 
       expect(names(d)).toEqual([
         'progress indicator',
         'circular',
-        'indicador indeterminado',
+        'indeterminate indicator',
       ]);
-      expect((named(d, 'indicador indeterminado')[0] as PathNode).d).toBe(
+      expect((named(d, 'indeterminate indicator')[0] as PathNode).d).toBe(
         'M20 2A18 18 0 0 1 21.69 37.92',
       );
     }
@@ -139,8 +137,8 @@ describe('EX6 progress-indicator — circular: the arc comes from the fraction, 
     for (const mode of ['light', 'dark'] as const) {
       const d = drawCircular(0.4, mode);
       const paint = (name: string) => solid(named(d, name)[0]!.stroke?.paints ?? []);
-      expect(paint('indicador')).toBe(tok('primary', mode));
-      expect(paint('trilho arco')).toBe(tok('secondary-container', mode));
+      expect(paint('indicator')).toBe(tok('primary', mode));
+      expect(paint('arc track')).toBe(tok('secondary-container', mode));
     }
   });
 });
@@ -156,23 +154,23 @@ describe('EX6 progress-indicator — linear: the length comes from the fraction,
     'progress %s: the indicator measures p × the width, the bar goes 2 past (round cap) and the track band starts 6 later (and disappears at the end of the lane)',
     (p) => {
       const d = drawLinear(p);
-      const [ix, iy, iw] = rectOf(d, named(d, 'indicador')[0]!);
+      const [ix, iy, iw] = rectOf(d, named(d, 'indicator')[0]!);
       expect(near(ix!, 0) && near(iw!, p * WIDTH)).toBe(true);
-      const [bx, by, bw, bh] = rectOf(d, named(d, 'barra')[0]!);
+      const [bx, by, bw, bh] = rectOf(d, named(d, 'bar')[0]!);
       expect(near(bx!, 0) && near(bw!, p * WIDTH + 2)).toBe(true);
       expect([by, bh]).toEqual([iy, 4]);
-      const [tx, , tw] = rectOf(d, named(d, 'trilho')[0]!);
+      const [tx, , tw] = rectOf(d, named(d, 'track')[0]!);
       expect(near(tx!, p * WIDTH) && near(tw!, WIDTH - p * WIDTH)).toBe(true);
       // L2 (#1078): the band only exists with more lane than the gap of 6 (before it measured 0 and drew nothing), and the
       // stop of 4 only with lane for it; no node goes past the track (warning `content larger than the box`).
       const rest = WIDTH - p * WIDTH;
-      const band = named(d, 'faixa')[0];
+      const band = named(d, 'segment')[0];
       if (rest > 6) {
         const [fx, , fw] = rectOf(d, band!);
         expect(near(fx!, p * WIDTH + 6) && near(fw!, rest - 6)).toBe(true);
       } else expect(band).toBeUndefined();
       // the stop sits against the end of the lane
-      const stop = named(d, 'parada')[0];
+      const stop = named(d, 'stop')[0];
       if (rest >= 4) expect(rectOf(d, stop!)).toEqual([236, iy, 4, 4]);
       else expect(stop).toBeUndefined();
     },
@@ -182,7 +180,7 @@ describe('EX6 progress-indicator — linear: the length comes from the fraction,
     for (let i = 1; i < 1000; i++) {
       const p = i / 1000;
       const d = drawLinear(p);
-      const [, , iw] = rectOf(d, named(d, 'indicador')[0]!);
+      const [, , iw] = rectOf(d, named(d, 'indicator')[0]!);
       expect(near(iw!, p * WIDTH, 0.001), `p=${p}`).toBe(true);
     }
   });
@@ -192,25 +190,25 @@ describe('EX6 progress-indicator — linear: the length comes from the fraction,
     expect(names(zero)).toEqual([
       'progress indicator',
       'linear',
-      'indicador',
-      'trilho',
-      'faixa total',
-      'parada',
+      'indicator',
+      'track',
+      'full segment',
+      'stop',
     ]);
-    expect(rectOf(zero, named(zero, 'faixa total')[0]!).slice(2)).toEqual([WIDTH, 4]);
+    expect(rectOf(zero, named(zero, 'full segment')[0]!).slice(2)).toEqual([WIDTH, 4]);
     const one = drawLinear(1);
-    expect(names(one)).toEqual(['progress indicator', 'linear', 'indicador', 'barra']);
-    expect(rectOf(one, named(one, 'barra')[0]!)[2]).toBe(WIDTH + 2);
+    expect(names(one)).toEqual(['progress indicator', 'linear', 'indicator', 'bar']);
+    expect(rectOf(one, named(one, 'bar')[0]!)[2]).toBe(WIDTH + 2);
   });
 
   it('a value outside 0 to 1 is clamped (Compose coerceIn)', () => {
     expect(names(drawLinear(-3))).toEqual(names(drawLinear(0)));
     expect(names(drawLinear(2))).toEqual(names(drawLinear(1)));
     const over = drawLinear(1.5);
-    expect(rectOf(over, named(over, 'barra')[0]!)[2]).toBe(WIDTH + 2);
+    expect(rectOf(over, named(over, 'bar')[0]!)[2]).toBe(WIDTH + 2);
     const under = drawLinear(-0.25);
-    expect(rectOf(under, named(under, 'indicador')[0]!)[2]).toBe(0);
-    expect(named(under, 'barra')).toEqual([]);
+    expect(rectOf(under, named(under, 'indicator')[0]!)[2]).toBe(0);
+    expect(named(under, 'bar')).toEqual([]);
   });
 
   it('without progress it is the indeterminate frame: the bar from 30% to 70% with the track on both sides', () => {
@@ -218,25 +216,25 @@ describe('EX6 progress-indicator — linear: the length comes from the fraction,
       expect(names(d)).toEqual([
         'progress indicator',
         'linear',
-        'trilho antes',
-        'faixa antes',
-        'indicador',
-        'barra indeterminada',
-        'trilho',
-        'faixa',
-        'parada',
+        'track before',
+        'segment before',
+        'indicator',
+        'indeterminate bar',
+        'track',
+        'segment',
+        'stop',
       ]);
-      expect(rectOf(d, named(d, 'indicador')[0]!)[0]).toBe(72);
-      expect(rectOf(d, named(d, 'indicador')[0]!)[2]).toBe(96);
+      expect(rectOf(d, named(d, 'indicator')[0]!)[0]).toBe(72);
+      expect(rectOf(d, named(d, 'indicator')[0]!)[2]).toBe(96);
     }
   });
 
   it('the colors follow the tokens in light and dark modes', () => {
     for (const mode of ['light', 'dark'] as const) {
       const d = drawLinear(0.4, mode);
-      expect(solid(named(d, 'barra')[0]!.fills)).toBe(tok('primary', mode));
-      expect(solid(named(d, 'faixa')[0]!.fills)).toBe(tok('secondary-container', mode));
-      expect(solid(named(d, 'parada')[0]!.fills)).toBe(tok('primary', mode));
+      expect(solid(named(d, 'bar')[0]!.fills)).toBe(tok('primary', mode));
+      expect(solid(named(d, 'segment')[0]!.fills)).toBe(tok('secondary-container', mode));
+      expect(solid(named(d, 'stop')[0]!.fills)).toBe(tok('primary', mode));
     }
   });
 });
@@ -293,6 +291,7 @@ describe('EX6 regression — the progress-indicator from before the tables, with
         draw(scene.id, scene.values, scene.mode),
         scene.nodes,
         {
+          component: 'progress-indicator',
           skip: (o) =>
             (o.n === 'faixa' && o.r[2] === 0) || (linear && o.n === 'parada' && rest < 4),
         },

@@ -16,37 +16,36 @@ interface Group {
 }
 
 /** Component → the single-line labels centered by the capital letter (decision 23). */
-// pt-BR kept: the node names below are the Portuguese names of the frozen fixture package (tests/fixtures/material3)
 const LABELS: Record<string, Group[]> = {
   // MC5 (#1033, group C): button, extended-fab and chip grow with the label (hug height), so the label no longer fills the box height
-  button: [{ names: ['rótulo'] }],
-  'extended-fab': [{ names: ['texto'] }],
-  chip: [{ names: ['rótulo'] }],
-  tabs: [{ names: ['rótulo'], fill: true }],
-  'segmented-button': [{ names: ['rótulo'], fill: true }],
-  'navigation-bar': [{ names: ['rótulo'] }],
-  'navigation-rail': [{ names: ['rótulo'] }],
-  'short-navigation-bar': [{ names: ['rótulo'] }],
-  'navigation-drawer': [{ names: ['título', 'rótulo', 'selo'] }],
-  badge: [{ names: ['número'] }],
-  snackbar: [{ names: ['rótulo da ação'], fill: true }],
+  button: [{ names: ['label'] }],
+  'extended-fab': [{ names: ['text'] }],
+  chip: [{ names: ['label'] }],
+  tabs: [{ names: ['label'], fill: true }],
+  'segmented-button': [{ names: ['label'], fill: true }],
+  'navigation-bar': [{ names: ['label'] }],
+  'navigation-rail': [{ names: ['label'] }],
+  'short-navigation-bar': [{ names: ['label'] }],
+  'navigation-drawer': [{ names: ['title', 'label', 'badge'] }],
+  badge: [{ names: ['number'] }],
+  snackbar: [{ names: ['action label'], fill: true }],
   // MC5 (#1033): the text button grows with the label (hug height), so the label no longer fills the box height
-  'alert-dialog': [{ names: ['rótulo'] }],
+  'alert-dialog': [{ names: ['label'] }],
   tooltip: [
-    { names: ['rótulo da ação'], fill: true },
-    { names: ['texto'], some: true },
+    { names: ['action label'], fill: true },
+    { names: ['text'], some: true },
   ],
-  'dropdown-menu': [{ names: ['rótulo', 'valor', 'texto'] }],
-  'text-field': [{ names: ['rótulo', 'valor'] }],
-  'secure-text-field': [{ names: ['rótulo', 'valor'] }],
-  'list-item': [{ names: ['título', 'conteúdo final'] }],
-  'search-bar': [{ names: ['dica', 'consulta'] }],
-  'top-app-bar': [{ names: ['título', 'título centralizado'], fill: true }],
-  'bottom-sheet': [{ names: ['rótulo'] }],
-  carousel: [{ names: ['rótulo'] }],
-  'date-picker': [{ pattern: /^(dia( da semana)? \d+|número|mês exibido)$/ }],
+  'dropdown-menu': [{ names: ['label', 'value', 'text'] }],
+  'text-field': [{ names: ['label', 'value'] }],
+  'secure-text-field': [{ names: ['label', 'value'] }],
+  'list-item': [{ names: ['title', 'trailing content'] }],
+  'search-bar': [{ names: ['hint', 'query'] }],
+  'top-app-bar': [{ names: ['title', 'centered title'], fill: true }],
+  'bottom-sheet': [{ names: ['label'] }],
+  carousel: [{ names: ['label'] }],
+  'date-picker': [{ pattern: /^((week)?day \d+|number|displayed month)$/ }],
   'time-picker': [
-    { pattern: /^(valor|separador|texto|número( interno)? \d+|valor selecionado)$/ },
+    { pattern: /^(value|separator|text|number( inner)? \d+|selected value)$/ },
   ],
 };
 

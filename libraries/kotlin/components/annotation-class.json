@@ -3,7 +3,7 @@
   "formatVersion": 2,
   "id": "annotation-class",
   "name": "Annotation class",
-  "description": "Cartão de diagrama de classes de Annotation class: cabeçalho colorido com estereótipo, nome e supertipos, e seções de propriedades.",
+  "description": "Class diagram card for Annotation class: colored header with stereotype, name and supertypes, and sections for propriedades.",
   "size": {
     "width": 300,
     "height": 220
@@ -23,7 +23,7 @@
     "visibility": "public",
     "targets": "CLASS, FUNCTION",
     "retention": "RUNTIME",
-    "kdoc": "Marca ações auditáveis.",
+    "kdoc": "Marks auditable actions.",
     "properties": [
       {
         "name": "action",
@@ -52,7 +52,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "cabeçalho",
+        "name": "header",
         "layout": {
           "type": "column",
           "gap": 2,
@@ -64,7 +64,7 @@
         "children": [
           {
             "type": "text",
-            "name": "anotações",
+            "name": "annotations",
             "text": {
               "$field": "annotations"
             },
@@ -83,7 +83,7 @@
           },
           {
             "type": "text",
-            "name": "estereótipo",
+            "name": "stereotype",
             "text": {
               "$concat": [
                 {
@@ -109,7 +109,7 @@
           },
           {
             "type": "text",
-            "name": "nome",
+            "name": "name",
             "text": {
               "$concat": [
                 {
@@ -141,7 +141,7 @@
           },
           {
             "type": "text",
-            "name": "pacote",
+            "name": "package",
             "text": {
               "$field": "package"
             },
@@ -159,7 +159,7 @@
           },
           {
             "type": "text",
-            "name": "alvos",
+            "name": "targets",
             "text": {
               "$concat": [
                 {
@@ -196,7 +196,7 @@
       },
       {
         "type": "rect",
-        "name": "divisória propriedades",
+        "name": "properties divider",
         "height": 1,
         "width": "fill",
         "fill": "#7F52FF40",
@@ -206,7 +206,7 @@
       },
       {
         "type": "frame",
-        "name": "propriedades",
+        "name": "properties",
         "layout": {
           "type": "column",
           "padding": 8
@@ -225,7 +225,7 @@
             "gap": 2,
             "template": {
               "type": "frame",
-              "name": "linha",
+              "name": "row",
               "layout": {
                 "type": "row"
               },
@@ -233,7 +233,7 @@
               "children": [
                 {
                   "type": "text",
-                  "name": "linha",
+                  "name": "row",
                   "text": {
                     "$concat": [
                       "val ",
@@ -261,7 +261,7 @@
       },
       {
         "type": "rect",
-        "name": "divisória descrição",
+        "name": "description divider",
         "height": 1,
         "width": "fill",
         "fill": "#7F52FF40",
@@ -271,7 +271,7 @@
       },
       {
         "type": "frame",
-        "name": "descrição",
+        "name": "description",
         "layout": {
           "type": "column",
           "padding": 8

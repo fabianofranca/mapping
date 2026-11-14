@@ -2,14 +2,15 @@
 // (`tests/fixtures/material3-mf4-before.json`, recorded with library v6) stays equal within ≤ 0.5 px per node,
 // except where the change is the purpose (EXCEPTIONS: shadow, inherited color, gap, justified, disabled and
 // number under the handle).
-// pt-BR kept: shared fixture data asserted by tests/fixtures/material3-mf4-before.json: node names and example names
-// (EXCEPTIONS, L2_EXAMPLES) are the Portuguese data of libraries/material3-compose
+// pt-BR kept: the frozen fixture tests/fixtures/material3-mf4-before.json holds the Portuguese node and example names
+// (EXCEPTIONS, L2_EXAMPLES): they are mapped to the English ones the library draws now (tests/support/material3OldNames.ts)
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import type { SceneNode } from '../../src/model/components/scene';
 import { drawIn, files } from '../support/material3Library';
+import { currentExampleName, currentNodeName } from '../support/material3OldNames';
 
 const TOUCHED = [
   'surface',
@@ -107,8 +108,109 @@ const L2_EXAMPLES: Record<string, string[]> = {
   tooltip: ['Rich com título', 'Rich com ação'],
 };
 
-/** Number under the handle: the `alça` gets the copy of the numbers (`números sob a alça`) in place of the `valor selecionado`. */
-const SKIP_CHILDREN = { 'time-picker': ['alça'] } as Record<string, string[]>;
+/** Number under the handle: the `handle` gets the copy of the numbers (`números sob a alça`) in place of the `valor selecionado`. */
+const SKIP_CHILDREN = { 'time-picker': ['handle'] } as Record<string, string[]>;
+
+/**
+ * The text values the examples had when the frozen scene was recorded (Portuguese): the text width moves the boxes of the
+ * label, the icon beside it and the tab, so the current scene is drawn with these values to compare against the fixture.
+ * By component and example name (old). Only the fields the translation changed, only in the scenes that depend on the width.
+ */
+const RECORDED_VALUES: Record<string, Record<string, Record<string, unknown>>> = {
+  button: {
+    'Com ícone': { label: 'Adicionar' },
+  },
+  'extended-fab': {
+    preview: { text: 'Criar' },
+    Criar: { text: 'Criar' },
+    'Mouse sobre': { text: 'Criar' },
+    'Com foco': { text: 'Editar' },
+  },
+  'dropdown-menu': {
+    'Campo exposto aberto': { label: 'Idioma', value: 'Português' },
+    'Com foco': { label: 'Idioma', value: 'Português' },
+  },
+  snackbar: {
+    'Com ação': { message: 'Mensagem arquivada', actionLabel: 'Desfazer' },
+    'Com ação e fechar': { message: 'Sem conexão', actionLabel: 'Tentar de novo' },
+  },
+  tooltip: {
+    Plain: { text: 'Adicionar aos favoritos' },
+  },
+  'text-field': {
+    'Contornado com dica': { label: 'E-mail', placeholder: 'nome@exemplo.com' },
+    'Em erro': { label: 'Senha', supportingText: 'Mínimo de 8 caracteres' },
+    'Com foco': { label: 'E-mail', value: 'nome@exemplo.com' },
+  },
+  'secure-text-field': {
+    'Contornado com texto': { label: 'Senha' },
+    'Em erro': { label: 'Senha', supportingText: 'Senha incorreta' },
+    'Mouse sobre': { label: 'Senha' },
+  },
+  'time-picker': {
+    preview: { title: 'Selecionar horário' },
+    'Relógio, horas': { title: 'Selecionar horário' },
+    'Relógio, minutos em 12 horas': { title: 'Selecionar horário' },
+    Campos: { title: 'Informe o horário' },
+    '24 horas, campos': { title: 'Informe o horário' },
+    '10:37 em 24 horas, minutos': { title: 'Selecionar horário' },
+    '22:05 em 12 horas (PM)': { title: 'Selecionar horário' },
+    'Mouse sobre': { title: 'Selecionar horário' },
+    'Com foco': { title: 'Selecionar horário' },
+    Pressionado: { title: 'Informe o horário' },
+  },
+  tabs: {
+    preview: {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    'Primárias com ícone acima': {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    'Secundárias com ícone à esquerda': {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    'Primárias roláveis': {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    'Mouse sobre': {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    'Com foco': {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+    Pressionado: {
+      items: [
+        { label: 'Início', icon: 'Home', selected: 'true' },
+        { label: 'Buscar', icon: 'Search', selected: 'false' },
+        { label: 'Perfil', icon: 'Person', selected: 'false' },
+      ],
+    },
+  },
+};
 
 function flatten(
   node: SceneNode,
@@ -124,12 +226,24 @@ function flatten(
     for (const c of node.children) flatten(c, x, y, out, skip);
 }
 
+/** The scene recorded in the frozen fixture, with the Portuguese node names mapped to the current English ones. */
+const translated = (id: string, recs: Rec[]): Rec[] =>
+  recs.map((r): Rec => [r[0], currentNodeName(id, r[1]), r[2], r[3], r[4], r[5]]);
+
 function normalize(id: string, recs: Rec[]): Rec[] {
   const ex = EXCEPTIONS[id];
   if (ex === undefined) return recs;
+  // the EXCEPTIONS are written with the names of the fixture: they follow the same mapping
+  const drop = ex.drop.map((n) => currentNodeName(id, n));
+  const rename = Object.fromEntries(
+    Object.entries(ex.rename).map(([from, to]) => [
+      currentNodeName(id, from),
+      currentNodeName(id, to),
+    ]),
+  );
   return recs
-    .filter((r) => !ex.drop.includes(r[1]))
-    .map((r): Rec => [r[0], ex.rename[r[1]] ?? r[1], r[2], r[3], r[4], r[5]]);
+    .filter((r) => !drop.includes(r[1]))
+    .map((r): Rec => [r[0], rename[r[1]] ?? r[1], r[2], r[3], r[4], r[5]]);
 }
 
 function sceneOf(
@@ -145,7 +259,11 @@ function sceneOf(
         .filter((e) => e.mode === 'values')
         .map((e): [string, Record<string, unknown>] => [e.name, e.values ?? {}]),
     ];
-    for (const [name, values] of cases) {
+    for (const [name, current] of cases) {
+      const recorded = Object.entries(RECORDED_VALUES[id] ?? {}).find(
+        ([old]) => currentExampleName(id, old) === name,
+      );
+      const values = { ...current, ...recorded?.[1] };
       const recs: Rec[] = [];
       flatten(
         drawIn(catalog, entry!, values as never, mode).root,
@@ -198,8 +316,13 @@ describe('MF4: scene regression of the touched types', () => {
       );
       expect(keys.length).toBeGreaterThan(0);
       for (const key of keys) {
-        expect(now[key], key).toBeDefined();
-        expect(diffScene(normalize(id, before[key]!), now[key]!), key).toEqual([]);
+        const [kid, mode, example] = key.split('|') as [string, string, string];
+        const nowKey = `${kid}|${mode}|${currentExampleName(id, example)}`;
+        expect(now[nowKey], nowKey).toBeDefined();
+        expect(
+          diffScene(normalize(id, translated(id, before[key]!)), now[nowKey]!),
+          key,
+        ).toEqual([]);
       }
     },
   );

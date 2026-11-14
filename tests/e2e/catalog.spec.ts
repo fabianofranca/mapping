@@ -169,7 +169,7 @@ test('inside a project: apply the package, open the Catalog and add a component'
   await expect(page.locator('button[data-type-id="nota"]')).toBeVisible();
   await expect(page.locator('button[data-type-id="m3-button"]')).toHaveCount(0);
   await page.getByRole('tab', { name: 'Palette' }).click();
-  await expect(page.getByRole('button', { name: 'Add to canvas: Nota' })).toHaveText(
+  await expect(page.getByRole('button', { name: 'Add to canvas: Note' })).toHaveText(
     'Add to canvas',
   );
   await page.getByRole('tab', { name: 'Components' }).click();

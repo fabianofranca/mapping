@@ -6,7 +6,7 @@ import { acceptAllAndApply, ok, propose } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
 // Unnamed component instance (the Palette creates it this way): in the MCP the type name takes the place
-// of the word "Marking" and the short code stays ("Nota 1680c843"); a plain marking remains
+// of the word "Marking" and the short code stays ("Note 1680c843"); a plain marking remains
 // "Marking <code>". Nothing is written: `name` stays `null`.
 
 interface PathSegment {
@@ -71,7 +71,7 @@ describe('name of an unnamed marking in the MCP', () => {
   it('get_marking: the path shows "<Type> <code>" and the stored name stays null', async () => {
     const note = ok(await mcp.call<MarkingData>('get_marking', { project, ref: noteId }));
     expect(note.name).toBeNull();
-    expect(note.path.at(-1)?.name).toMatch(/^Nota [0-9a-f]{8}$/);
+    expect(note.path.at(-1)?.name).toMatch(/^Note [0-9a-f]{8}$/);
     expect(note.ref).toMatch(/^mapping:\/\/[^/]+\/m\/[0-9a-f]{8}$/);
     const plain = ok(
       await mcp.call<MarkingData>('get_marking', { project, ref: plainId }),
@@ -88,6 +88,6 @@ describe('name of an unnamed marking in the MCP', () => {
     const plain = ok(
       await mcp.call<ArrowsData>('get_marking', { project, ref: plainId }),
     );
-    expect(plain.arrows.incoming[0]?.from.name).toMatch(/^Nota [0-9a-f]{8}$/);
+    expect(plain.arrows.incoming[0]?.from.name).toMatch(/^Note [0-9a-f]{8}$/);
   });
 });

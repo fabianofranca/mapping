@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "fab",
   "name": "FAB",
-  "description": "Botão de ação flutuante, como o FloatingActionButton do Compose: small 40 (forma medium), regular 56 (forma large) e large 96 (forma extra large), com elevação 3 e o ícone na cor de conteúdo do containerColor.",
+  "description": "Floating action button, like Compose's FloatingActionButton: small 40 (medium shape), regular 56 (large shape) and large 96 (extra large shape), with elevation 3 and the icon in the content color of the containerColor.",
   "size": {
     "width": 56,
     "height": 56
@@ -18,7 +18,7 @@
   },
   "preview": {
     "icon": "Add",
-    "contentDescription": "Adicionar",
+    "contentDescription": "Add",
     "size": "regular",
     "containerColor": "primaryContainer"
   },
@@ -208,7 +208,7 @@
     "children": [
       {
         "type": "rect",
-        "name": "sombra elevada",
+        "name": "elevated shadow",
         "fill": {
           "$switch": "containerColor",
           "cases": {
@@ -375,7 +375,7 @@
       },
       {
         "type": "rect",
-        "name": "estado",
+        "name": "state",
         "fill": {
           "$switch": "containerColor",
           "cases": {

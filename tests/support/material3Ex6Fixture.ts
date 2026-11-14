@@ -6,6 +6,7 @@ import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import type { PathNode, SceneNode } from '../../src/model/components/scene';
 import { drawIn, files, solid } from './material3Library';
+import { currentNodeName } from './material3OldNames';
 import fixture from '../fixtures/material3-ex6-v1.json';
 
 export type Mode = 'light' | 'dark';
@@ -145,6 +146,8 @@ export interface CompareOptions {
   readonly tol?: number;
   /** Old name → current name, when the new build split the node. */
   readonly rename?: Record<string, string>;
+  /** The component id: the Portuguese node names of the frozen fixture are mapped to the current English ones. */
+  readonly component?: string;
   /** Old nodes that deliberately have no counterpart (e.g. the 4000-wide strip). */
   readonly skip?: (old: OldNode) => boolean;
 }
@@ -164,7 +167,7 @@ export function missingNodes(
   const missing: string[] = [];
   for (const o of old) {
     if (opts.skip?.(o) === true) continue;
-    const name = opts.rename?.[o.n] ?? o.n;
+    const name = opts.rename?.[o.n] ?? currentNodeName(opts.component, o.n);
     const found = now.some((n) => {
       if (n.type !== o.t) return false;
       if (o.t === 'text' ? (n as { text: string }).text !== o.x : n.name !== name)

@@ -9,25 +9,24 @@ import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import type { PathNode, SceneNode, TextNode } from '../../src/model/components/scene';
 import { drawIn, files, solid, spec, text } from '../support/material3Library';
 
-// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
 const NAMES = {
-  header: 'cabeçalho',
-  divider: 'divisor',
-  title: 'título',
-  headline: 'manchete',
-  modeButton: 'botão do modo',
-  monthNav: 'navegação do mês',
-  yearButton: 'botão do ano',
-  displayedMonth: 'mês exibido',
-  prevArrow: 'seta anterior',
-  nextArrow: 'seta próxima',
-  weekdays: 'dias da semana',
-  weekday: 'dia da semana',
-  grid: 'grade',
-  band: 'faixa',
-  day: 'dia',
-  marked: 'marcado',
-  rangeMonth: 'mês do intervalo',
+  header: 'header',
+  divider: 'divider',
+  title: 'title',
+  headline: 'headline',
+  modeButton: 'mode button',
+  monthNav: 'month navigation',
+  yearButton: 'year button',
+  displayedMonth: 'displayed month',
+  prevArrow: 'previous arrow',
+  nextArrow: 'next arrow',
+  weekdays: 'weekdays',
+  weekday: 'weekday',
+  grid: 'grid',
+  band: 'band',
+  day: 'day',
+  marked: 'marked',
+  rangeMonth: 'range month',
 } as const;
 
 const catalog = buildCatalog(files);
@@ -184,11 +183,10 @@ describe('M5 date-picker — container and header (single mode)', () => {
     }
   });
 
-  // pt-BR kept: the library's default title and headline are Portuguese data (libraries/material3-compose)
   it('default M3 title and headline when empty', () => {
     const d = draw({ selection: 'single', displayedMonth: 'October 2025' });
-    expect(textOf(d, NAMES.title)!.text).toBe('Selecionar data');
-    expect(textOf(d, NAMES.headline)!.text).toBe('Data selecionada');
+    expect(textOf(d, NAMES.title)!.text).toBe('Select date');
+    expect(textOf(d, NAMES.headline)!.text).toBe('Selected date');
   });
 
   it('headline in headline-large (32/40/400/0), on-surface-variant, maxLines 1, 24 from the left', () => {
@@ -339,8 +337,7 @@ describe('M5 date-picker — range (DateRangePicker)', () => {
     for (const mode of MODES) {
       const d = draw(RANGE, mode);
       const title = textOf(d, NAMES.title)!;
-      // pt-BR kept: the library's default range title is Portuguese data
-      expect(title.text).toBe('Selecionar datas');
+      expect(title.text).toBe('Select dates');
       expect(fontOf(title)).toEqual(scale('label-large'));
       expect(absOf(d, title).x).toBe(64);
       const headline = textOf(d, NAMES.headline)!;

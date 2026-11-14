@@ -101,7 +101,7 @@ async function twoMarkedScreens(page: Page, host: Locator): Promise<[Rect, Rect]
 
 const centerOf = (r: Rect): Point => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
 
-// pt-BR kept: built-in notes library data ('Nota', 'Notas' from libraries/notas) asserted by tests/examples
+// Built-in notes library data ('Note', 'Notes' from libraries/notas)
 const panel = (page: Page) => page.getByRole('dialog', { name: 'Show on canvas' });
 const box = (page: Page, name: string) =>
   panel(page).getByRole('checkbox', { name, exact: false });
@@ -126,7 +126,7 @@ test('enter, uncheck Outline and a layer with a drawing, Screens only, Esc, and 
   await expect(host).toHaveAttribute('data-arrows', '1');
   await page.keyboard.press('Control+Shift+9');
   await page.getByRole('tab', { name: 'Palette' }).click();
-  await page.getByRole('button', { name: 'Add to canvas: Nota', exact: true }).click();
+  await page.getByRole('button', { name: 'Add to canvas: Note', exact: true }).click();
   await expect(host).toHaveAttribute('data-components', '1');
 
   // Enter: the button is pressed, Draw is disabled and the panel opens with focus inside.
@@ -144,7 +144,7 @@ test('enter, uncheck Outline and a layer with a drawing, Screens only, Esc, and 
   await expect(host).toHaveAttribute('data-arrows', '1');
 
   // Layer with a drawing unchecked: the drawing disappears.
-  await box(page, 'Notas').uncheck();
+  await box(page, 'Notes').uncheck();
   await expect(host).toHaveAttribute('data-components', '0');
 
   // Screens only: no arrows; Show all brings them back.
@@ -154,7 +154,7 @@ test('enter, uncheck Outline and a layer with a drawing, Screens only, Esc, and 
   await expect(host).toHaveAttribute('data-arrows', '1');
   await expect(host).toHaveAttribute('data-components', '1');
   await panel(page).getByRole('button', { name: 'Screens only' }).click();
-  await box(page, 'Notas').uncheck();
+  await box(page, 'Notes').uncheck();
 
   // Esc closes the panel first; the second one leaves the mode.
   await page.keyboard.press('Escape');
@@ -174,5 +174,5 @@ test('enter, uncheck Outline and a layer with a drawing, Screens only, Esc, and 
   await page.getByRole('button', { name: 'View', exact: true }).click();
   await expect(panel(page)).toBeVisible();
   await expect(box(page, 'Arrows')).not.toBeChecked();
-  await expect(box(page, 'Notas')).not.toBeChecked();
+  await expect(box(page, 'Notes')).not.toBeChecked();
 });

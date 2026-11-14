@@ -1,6 +1,5 @@
-// TF1 (#895, stage #863): the "Em erro" (outlined with supporting text) example of the text-field and the secure-text-field
+// TF1 (#895, stage #863): the "Error" (outlined with supporting text) example of the text-field and the secure-text-field
 // ends inside the `size` height. Compose asks for 84 (8 of the label + 56 of the outline + 4 + 16 of the supporting text).
-// pt-BR kept: 'Em erro' is the example name in the Portuguese data of libraries/material3-compose
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { multiply, IDENTITY } from '../../src/model/components/scene';
@@ -22,12 +21,12 @@ function bottomOf(node: SceneNode, parent: Matrix = IDENTITY, isRoot = true): nu
 }
 
 describe.each(['text-field', 'secure-text-field'])(
-  '%s: the "Em erro" example fits the size',
+  '%s: the "Error" example fits the size',
   (id) => {
     it.each(['light', 'dark'] as const)('ends inside the height (%s)', (mode) => {
       const catalog = sharedCatalog;
       const entry = findEntry(catalog, id);
-      const example = entry?.examples.find((e) => e.name === 'Em erro');
+      const example = entry?.examples.find((e) => e.name === 'Error');
       expect(example?.values?.style).toBe('outlined');
       const drawing = drawIn(catalog, entry!, example?.values ?? {}, mode);
       expect(drawing.warnings).toEqual([]);

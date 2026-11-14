@@ -1,41 +1,41 @@
 # Data object
 
-Data object: object com toString, equals e hashCode gerados, útil como caso sem dados de uma sealed class ou interface (data object Loading).
+Data object: object with generated toString, equals and hashCode, useful as a case without data in a sealed class or interface (data object Loading).
 
-## Quando usar
+## When to use
 
-- Casos sem dados de uma hierarquia fechada (Loading, Empty, Idle).
+- Cases without data in a closed hierarchy (Loading, Empty, Idle).
 
-## O que não confundir
+## What not to confuse
 
-- **Data object × object:** só o data object tem `toString` e `equals` gerados.
-- **Data object × data class:** o data object é instância única e não tem construtor.
+- **Data object × object:** only the data object has generated `toString` and `equals`.
+- **Data object × data class:** the data object is a single instance and has no constructor.
 
-## Campos principais
+## Main fields
 
-- **Nome** (obrigatório): nome simples da declaração; leva a etiqueta `kotlin-type`, então supertipos e tipos de propriedade de outras marcações podem apontar para ela.
-- **Pacote**, **Visibilidade**, **Anotações** e **Descrição** (KDoc).
-- Sem construtor nem parâmetros de tipo.
-- Aponta para a sealed em `supertypes` (e, se aninhado nela, em Declarada em).
+- **Name** (required): simple name of the declaration; it carries the `kotlin-type` tag, so supertypes and property types of other markings can point to it.
+- **Package**, **Visibility**, **Annotations** and **Description** (KDoc).
+- No constructor or type parameters.
+- Points to the sealed one in `supertypes` (and, if nested in it, in Declared in).
 
-## Como o subtipo se liga
+## How a subtype is linked
 
-Cada linha de `supertypes` traz o tipo como escrito no código e, em **Tipo mapeado** (`typeRef`), a declaração mapeada com a etiqueta `kotlin-type`. É assim que um subtipo se liga à sealed class ou interface: as subclasses são as declarações cujo `supertypes` aponta para ela.
+Each line of `supertypes` holds the type as written in the code and, in **Mapped type** (`typeRef`), the mapped declaration with the `kotlin-type` tag. This is how a subtype is linked to the sealed class or interface: the subclasses are the declarations whose `supertypes` points to it.
 
-## Declaração aninhada
+## Nested declaration
 
-Uma declaração aninhada (nested, inner ou companion) se liga à externa pelo campo **Declarada em** (`outer`, etiqueta `kotlin-type`). O agente lê a ligação em `refs` (na aninhada) e `backlinks` (na externa). Desenhar a marcação dentro da externa é só arrumação visual e opcional: o pertencimento do canvas (`parent`/`members`) não define o aninhamento no código.
+A nested declaration (nested, inner or companion) is linked to its outer declaration through the **Declared in** field (`outer`, tag `kotlin-type`). The agent reads the link in `refs` (on the nested one) and `backlinks` (on the outer one). Drawing the marking inside the outer one is only an optional visual tidy-up: the canvas membership (`parent`/`members`) does not define the nesting in the code.
 
-## Sugestões de tipo
+## Type suggestions
 
-Ao digitar no **Tipo** das propriedades e o **Retorno** das funções, aparecem os tipos básicos do Kotlin (`String`, `Int`, `Boolean`, `List`, `Map`...). No **Tipo** das propriedades e dos supertipos aparecem também as declarações mapeadas (com o tipo delas ao lado), e escolher uma preenche junto o **Tipo mapeado**. É só uma ajuda: qualquer texto continua valendo, como `String?` ou `List<Endereco>`.
+When typing in the **Type** of properties and the **Return type** of functions, the basic Kotlin types appear (`String`, `Int`, `Boolean`, `List`, `Map`...). In the **Type** of properties and supertypes the mapped declarations appear too (with their kind next to them), and choosing one also fills in the **Mapped type**. It is only a help: any text is still valid, such as `String?` or `List<Address>`.
 
-## Referências às propriedades
+## References to properties
 
-- Outras anotações apontam para uma linha de `properties` por um campo `ref` que aceita `data-field` ou `kotlin-property`.
-- Funções (`functions`) têm a etiqueta `kotlin-function`.
+- Other annotations point to a line of `properties` through a `ref` field that accepts `data-field` or `kotlin-property`.
+- Functions (`functions`) carry the `kotlin-function` tag.
 
-## Exemplo
+## Example
 
 ```kotlin
 sealed interface UiState {

@@ -20,18 +20,17 @@ import {
   types,
 } from '../support/material3Library';
 
-// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
 const NAMES = {
-  label: 'rótulo',
-  content: 'conteúdo',
-  line: 'linha',
-  shadowLevel3: 'sombra nível 3',
-  shadowLevel1: 'sombra nível 1',
-  title: 'título',
-  dot: 'ponto',
-  ring: 'anel',
-  track: 'trilho',
-  thumb: 'alça',
+  label: 'label',
+  content: 'content',
+  line: 'line',
+  shadowLevel3: 'shadow level 3',
+  shadowLevel1: 'shadow level 1',
+  title: 'title',
+  dot: 'dot',
+  ring: 'ring',
+  track: 'track',
+  thumb: 'handle',
 } as const;
 
 const COMMIT = '5113b82a4ed6416d6344efa50e41db8cb65928ff';
@@ -63,9 +62,9 @@ function readSignature(path: string) {
 }
 
 describe('Material 3 (Compose): the signature sheets (decision 14 of #1079)', () => {
-  it('is formatVersion 16 and version 14 (the version went up once in the #1079 epic, over the 12 of main; the 14 is R5 of #1096)', () => {
+  it('is formatVersion 16 and version 15 (the version went up once in the #1079 epic, over the 12 of main; the 14 is R5 of #1096; the 15 is the English text of ID7)', () => {
     expect(spec.formatVersion).toBe(16);
-    expect(spec.version).toBe(14);
+    expect(spec.version).toBe(15);
   });
 
   it('every type, and every variants case, cites its sheet in signatures/', () => {

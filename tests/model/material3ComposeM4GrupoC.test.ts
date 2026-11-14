@@ -89,12 +89,11 @@ const iconsOf = (d: Drawing): { node: SceneNode; color?: string }[] =>
 const near = (value: number | undefined, expected: number) =>
   expect(value).toBeCloseTo(expected, 3);
 
-// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
 const NODE = {
-  tab: 'aba',
-  divider: 'divisória',
-  primaryIndicator: 'indicador primário',
-  secondaryIndicator: 'indicador secundário',
+  tab: 'tab',
+  divider: 'divider',
+  primaryIndicator: 'primary indicator',
+  secondaryIndicator: 'secondary indicator',
 } as const;
 
 const W = 412;

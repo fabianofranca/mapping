@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "list-item",
   "name": "List item",
-  "description": "Item de lista de uma a três linhas (56, 72 e 88): ícone ou avatar à esquerda, sobretítulo, título, apoio e conteúdo à direita.",
+  "description": "One- to three-line list item (56, 72 and 88): leading icon or avatar, overline, headline, supporting text and trailing content.",
   "size": {
     "width": 412,
     "height": 88
@@ -15,7 +15,7 @@
   "preview": {
     "headlineContent": "Ana Souza",
     "overlineContent": "",
-    "supportingContent": "Vamos almoçar?",
+    "supportingContent": "Shall we get lunch?",
     "leadingIcon": "Person",
     "leadingImage": "",
     "trailingContent": "12:30",
@@ -30,7 +30,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "corpo",
+        "name": "body",
         "width": "fill",
         "height": "hug",
         "minHeight": {
@@ -49,7 +49,7 @@
               {
                 "$gt": [
                   {
-                    "$lines": "apoio"
+                    "$lines": "supporting"
                   },
                   1
                 ]
@@ -91,7 +91,7 @@
                 {
                   "$gt": [
                     {
-                      "$lines": "apoio"
+                      "$lines": "supporting"
                     },
                     1
                   ]
@@ -117,7 +117,7 @@
                 {
                   "$gt": [
                     {
-                      "$lines": "apoio"
+                      "$lines": "supporting"
                     },
                     1
                   ]
@@ -342,7 +342,7 @@
           },
           {
             "type": "frame",
-            "name": "textos",
+            "name": "texts",
             "width": "fill",
             "height": "hug",
             "layout": {
@@ -351,7 +351,7 @@
             "children": [
               {
                 "type": "text",
-                "name": "sobretítulo",
+                "name": "overline",
                 "text": {
                   "$field": "overlineContent"
                 },
@@ -381,7 +381,7 @@
               },
               {
                 "type": "text",
-                "name": "título",
+                "name": "title",
                 "text": {
                   "$field": "headlineContent",
                   "default": "Headline"
@@ -410,7 +410,7 @@
               },
               {
                 "type": "text",
-                "name": "apoio",
+                "name": "supporting",
                 "text": {
                   "$field": "supportingContent"
                 },
@@ -448,7 +448,7 @@
           },
           {
             "type": "text",
-            "name": "conteúdo final",
+            "name": "trailing content",
             "text": {
               "$field": "trailingContent"
             },
@@ -661,7 +661,7 @@
       },
       {
         "type": "rect",
-        "name": "estado",
+        "name": "state",
         "fill": {
           "$token": "on-surface"
         },
@@ -691,7 +691,7 @@
       },
       {
         "type": "rect",
-        "name": "anel de foco",
+        "name": "focus ring",
         "fill": "none",
         "stroke": {
           "color": {

@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "icon-toggle-button",
   "name": "Icon toggle button",
-  "description": "Botão de ícone que liga e desliga, 40 de container e forma full: ligado ganha a cor de seleção do estilo (primary, secondary ou inverse surface).",
+  "description": "Icon button that toggles on and off, 40 container and full shape: when on it takes the selection color of the style (primary, secondary or inverse surface).",
   "size": {
     "width": 40,
     "height": 40
@@ -18,7 +18,7 @@
   },
   "preview": {
     "icon": "Favorite",
-    "contentDescription": "Favoritar",
+    "contentDescription": "Favorite",
     "style": "filled",
     "checked": "true",
     "enabled": "true"
@@ -103,7 +103,7 @@
       },
       {
         "type": "rect",
-        "name": "contorno",
+        "name": "outline",
         "fill": "none",
         "cornerRadius": {
           "$token": "corner-full"
@@ -138,7 +138,7 @@
       },
       {
         "type": "rect",
-        "name": "estado",
+        "name": "state",
         "fill": {
           "$switch": "style",
           "cases": {

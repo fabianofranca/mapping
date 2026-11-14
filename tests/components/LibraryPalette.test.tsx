@@ -262,7 +262,7 @@ describe('Library palette: floating type (notes)', () => {
     harness.ui.selection.value = { kind: 'image', id: 'I1' };
     const { user } = renderLibrary(harness);
     // pt-BR kept: type name of the shared notes library data (libraries/notas)
-    const note = addButton('Nota');
+    const note = addButton('Note');
     expect(note.textContent).toBe(t('library.addToCanvas'));
     // The common type still points to the selected container.
     expect(addButton('Button').textContent).toBe(

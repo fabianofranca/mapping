@@ -2,19 +2,19 @@
   "format": "mapping-spec",
   "formatVersion": 7,
   "id": "notas",
-  "name": "Notas",
-  "version": 3,
-  "description": "Notas no canvas: post-its flutuantes, um com título e texto livre e outro em forma de tabela (chave e valor), para comentar uma tela, registrar uma regra de negócio, listar os dados de um evento ou deixar um recado para quem lê o mapeamento.",
+  "name": "Notes",
+  "version": 4,
+  "description": "Notes on the canvas: floating sticky notes, one with a title and free text and one shaped as a table (key and value), to comment on a screen, record a business rule, list the data of an event or leave a message for whoever reads the mapping.",
   "layers": [
     {
       "id": "notas",
-      "name": "Notas",
+      "name": "Notes",
       "color": "#F5C400",
       "annotationTypes": [
         {
           "id": "nota",
-          "name": "Nota",
-          "description": "Comentário solto no canvas (esta tela serve para X, uma regra de negócio). Não pertence a nenhuma tela: fica por cima de tudo e não carrega nem é carregada pelo que está embaixo dela. A relação com uma tela ou um elemento é uma seta.",
+          "name": "Note",
+          "description": "Loose comment on the canvas (this screen is for X, a business rule). It belongs to no screen: it sits on top of everything and neither carries nor is carried by what is underneath. The relation to a screen or an element is an arrow.",
           "labelField": "titulo",
           "floating": true,
           "component": "components/nota.json",
@@ -22,32 +22,32 @@
           "fields": [
             {
               "key": "titulo",
-              "label": "Título",
+              "label": "Title",
               "type": "string",
-              "description": "Resumo curto da nota; aparece em negrito no topo do post-it. Pode ficar vazio."
+              "description": "Short summary of the note; shown in bold at the top of the sticky note. Can be left empty."
             },
             {
               "key": "texto",
-              "label": "Texto",
+              "label": "Text",
               "type": "string",
               "required": true,
-              "description": "O comentário em si. Aceita várias linhas: Shift+Enter quebra a linha (Enter confirma enquanto o campo é de uma linha; na área de várias linhas, Enter também insere linha)."
+              "description": "The comment itself. Accepts multiple lines: Shift+Enter breaks the line (Enter confirms while the field is a single line; in the multi-line area, Enter also inserts a line)."
             }
           ],
           "examples": [
             {
-              "name": "Regra de negócio",
+              "name": "Business rule",
               "values": {
-                "titulo": "Limite",
-                "texto": "Contratar só com limite aprovado."
+                "titulo": "Limit",
+                "texto": "Only sign up with an approved limit."
               }
             }
           ]
         },
         {
           "id": "tabela",
-          "name": "Tabela",
-          "description": "Tabela de chave e valor solta no canvas (as propriedades de um evento, os parâmetros de uma chamada). Não pertence a nenhuma tela: fica por cima de tudo e não carrega nem é carregada pelo que está embaixo dela. A relação com uma tela ou um elemento é uma seta.",
+          "name": "Table",
+          "description": "Loose key-value table on the canvas (the properties of an event, the parameters of a call). It belongs to no screen: it sits on top of everything and neither carries nor is carried by what is underneath. The relation to a screen or an element is an arrow.",
           "labelField": "titulo",
           "floating": true,
           "component": "components/tabela.json",
@@ -55,36 +55,36 @@
           "fields": [
             {
               "key": "titulo",
-              "label": "Título",
+              "label": "Title",
               "type": "string",
-              "description": "Resumo curto da tabela; aparece em negrito no topo. Pode ficar vazio."
+              "description": "Short summary of the table; shown in bold at the top. Can be left empty."
             },
             {
               "key": "linhas",
-              "label": "Linhas",
+              "label": "Rows",
               "type": "table",
-              "description": "Uma linha por registro: a chave à esquerda e o valor à direita.",
+              "description": "One row per record: the key on the left and the value on the right.",
               "columns": [
                 {
                   "key": "chave",
-                  "label": "Chave",
+                  "label": "Key",
                   "type": "string",
                   "required": true,
-                  "description": "O nome do dado (uma propriedade, um parâmetro)."
+                  "description": "The name of the data item (a property, a parameter)."
                 },
                 {
                   "key": "valor",
-                  "label": "Valor",
+                  "label": "Value",
                   "type": "string",
-                  "description": "O valor ou a descrição dele."
+                  "description": "The value or its description."
                 }
               ]
             }
           ],
           "examples": [
             {
-              "name": "Evento de analytics",
-              "description": "Só o título entra num exemplo; as linhas (origem, itens, total) vêm do preview do componente.",
+              "name": "Analytics event",
+              "description": "Only the title goes into an example; the rows (source, items, total) come from the component preview.",
               "values": {
                 "titulo": "checkout_started"
               }

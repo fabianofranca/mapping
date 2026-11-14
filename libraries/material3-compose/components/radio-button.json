@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "radio-button",
   "name": "Radio button",
-  "description": "Radio button de 20 numa área de 24 (RadioButtonPadding 2 de cada lado), com rótulo ao lado: anel de 2 e, selecionado, ponto de 10 na mesma cor.",
+  "description": "20 radio button in a 24 area (RadioButtonPadding 2 on each side), with a label beside it: ring of 2 and, when selected, a 10 dot in the same color.",
   "size": {
     "width": 200,
     "height": 40
@@ -13,7 +13,7 @@
     "height": 40
   },
   "preview": {
-    "label": "Cartão de crédito",
+    "label": "Credit card",
     "selected": "true",
     "enabled": "true"
   },
@@ -27,7 +27,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "área",
+        "name": "area",
         "width": 24,
         "height": 40,
         "layout": {
@@ -36,7 +36,7 @@
         "children": [
           {
             "type": "ellipse",
-            "name": "estado",
+            "name": "state",
             "width": 24,
             "height": 24,
             "fill": {
@@ -86,7 +86,7 @@
           },
           {
             "type": "ellipse",
-            "name": "anel",
+            "name": "ring",
             "width": 20,
             "height": 20,
             "fill": "none",
@@ -607,7 +607,7 @@
           },
           {
             "type": "ellipse",
-            "name": "ponto",
+            "name": "dot",
             "width": 10,
             "height": 10,
             "fill": {
@@ -1110,7 +1110,7 @@
       },
       {
         "type": "text",
-        "name": "rótulo",
+        "name": "label",
         "text": {
           "$field": "label"
         },

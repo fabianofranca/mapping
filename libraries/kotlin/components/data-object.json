@@ -3,7 +3,7 @@
   "formatVersion": 2,
   "id": "data-object",
   "name": "Data object",
-  "description": "Cartão de diagrama de classes de Data object: cabeçalho colorido com estereótipo, nome e supertipos, e seções de propriedades e funções.",
+  "description": "Class diagram card for Data object: colored header with stereotype, name and supertypes, and sections for properties and functions.",
   "size": {
     "width": 300,
     "height": 220
@@ -22,7 +22,7 @@
     "package": "com.app.ui",
     "visibility": "public",
     "annotations": "",
-    "kdoc": "Carregando.",
+    "kdoc": "Loading.",
     "supertypes": [
       {
         "type": "UiState",
@@ -55,7 +55,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "cabeçalho",
+        "name": "header",
         "layout": {
           "type": "column",
           "gap": 2,
@@ -67,7 +67,7 @@
         "children": [
           {
             "type": "text",
-            "name": "anotações",
+            "name": "annotations",
             "text": {
               "$field": "annotations"
             },
@@ -86,7 +86,7 @@
           },
           {
             "type": "text",
-            "name": "estereótipo",
+            "name": "stereotype",
             "text": {
               "$concat": [
                 {
@@ -112,7 +112,7 @@
           },
           {
             "type": "text",
-            "name": "nome",
+            "name": "name",
             "text": {
               "$concat": [
                 {
@@ -144,7 +144,7 @@
           },
           {
             "type": "text",
-            "name": "pacote",
+            "name": "package",
             "text": {
               "$field": "package"
             },
@@ -162,13 +162,13 @@
           },
           {
             "type": "repeat",
-            "name": "supertipos",
+            "name": "supertypes",
             "field": "supertypes",
             "direction": "column",
             "gap": 0,
             "template": {
               "type": "frame",
-              "name": "supertipo",
+              "name": "supertype",
               "layout": {
                 "type": "row"
               },
@@ -176,7 +176,7 @@
               "children": [
                 {
                   "type": "text",
-                  "name": "supertipo",
+                  "name": "supertype",
                   "text": {
                     "$concat": [
                       ": ",
@@ -212,7 +212,7 @@
       },
       {
         "type": "rect",
-        "name": "divisória propriedades",
+        "name": "properties divider",
         "height": 1,
         "width": "fill",
         "fill": "#7F52FF40",
@@ -222,7 +222,7 @@
       },
       {
         "type": "frame",
-        "name": "propriedades",
+        "name": "properties",
         "layout": {
           "type": "column",
           "padding": 8
@@ -241,7 +241,7 @@
             "gap": 2,
             "template": {
               "type": "frame",
-              "name": "linha",
+              "name": "row",
               "layout": {
                 "type": "row"
               },
@@ -249,7 +249,7 @@
               "children": [
                 {
                   "type": "text",
-                  "name": "linha",
+                  "name": "row",
                   "text": {
                     "$concat": [
                       {
@@ -294,7 +294,7 @@
       },
       {
         "type": "rect",
-        "name": "divisória funções",
+        "name": "functions divider",
         "height": 1,
         "width": "fill",
         "fill": "#7F52FF40",
@@ -304,7 +304,7 @@
       },
       {
         "type": "frame",
-        "name": "funções",
+        "name": "functions",
         "layout": {
           "type": "column",
           "padding": 8
@@ -323,7 +323,7 @@
             "gap": 2,
             "template": {
               "type": "frame",
-              "name": "linha",
+              "name": "row",
               "layout": {
                 "type": "row"
               },
@@ -331,7 +331,7 @@
               "children": [
                 {
                   "type": "text",
-                  "name": "linha",
+                  "name": "row",
                   "text": {
                     "$concat": [
                       {
@@ -383,7 +383,7 @@
       },
       {
         "type": "rect",
-        "name": "divisória descrição",
+        "name": "description divider",
         "height": 1,
         "width": "fill",
         "fill": "#7F52FF40",
@@ -393,7 +393,7 @@
       },
       {
         "type": "frame",
-        "name": "descrição",
+        "name": "description",
         "layout": {
           "type": "column",
           "padding": 8

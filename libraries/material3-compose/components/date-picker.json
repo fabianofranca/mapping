@@ -3,13 +3,13 @@
   "formatVersion": 4,
   "id": "date-picker",
   "name": "Date picker",
-  "description": "Seletor de data de 360 de largura em surface container high, com cantos de 28: cabeçalho (título, manchete e o botão que alterna o modo), o mês com as setas (single) ou o subtítulo do mês (range), os dias da semana e a grade de dias de 48 com o dia escolhido em primary (single) ou o intervalo em secondary container com as pontas em primary (range). A grade é a do mês de `month` e `year` (4, 5 ou 6 linhas, com o bissexto); sem os dois, um mês de 31 dias que começa numa quarta-feira. O dia de hoje (`today`) leva o contorno de 1 e o número em primary, salvo se for o dia escolhido.",
+  "description": "Date picker 360 wide on surface container high, with 28 corners: header (title, headline and the button that switches the mode), the month with arrows (single) or the month subtitle (range), the weekdays and the 48 day grid with the chosen day in primary (single) or the range in secondary container with the ends in primary (range). The grid is that of the month given by `month` and `year` (4, 5 or 6 rows, leap years included); without both, a 31-day month that starts on a Wednesday. Today (`today`) gets a 1 outline and the number in primary, unless it is the chosen day.",
   "size": { "width": 360, "height": 512 },
   "sizing": { "width": 360, "height": "hug" },
   "preview": {
     "title": "",
-    "headline": "qua., 15 de out.",
-    "displayedMonth": "Outubro de 2025",
+    "headline": "Wed, Oct 15",
+    "displayedMonth": "October 2025",
     "selectedDay": 15,
     "rangeStartDay": null,
     "rangeEndDay": null,
@@ -26,7 +26,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "cabeçalho",
+        "name": "header",
         "width": "fill",
         "height": "hug",
         "minHeight": {
@@ -38,7 +38,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "título",
+            "name": "title",
             "width": "fill",
             "height": "hug",
             "layout": {
@@ -52,15 +52,15 @@
             "children": [
               {
                 "type": "text",
-                "name": "título",
+                "name": "title",
                 "width": "fill",
                 "text": {
                   "$if": { "$has": "title" },
                   "then": { "$field": "title" },
                   "else": {
                     "$switch": "selection",
-                    "cases": { "range": "Selecionar datas" },
-                    "default": "Selecionar data"
+                    "cases": { "range": "Select dates" },
+                    "default": "Select date"
                   }
                 },
                 "font": {
@@ -75,21 +75,21 @@
           },
           {
             "type": "frame",
-            "name": "base do cabeçalho",
+            "name": "header base",
             "width": "fill",
             "height": "hug",
             "layout": { "type": "column" },
             "children": [
               {
                 "type": "frame",
-                "name": "linha",
+                "name": "row",
                 "width": "fill",
                 "height": "hug",
                 "layout": { "type": "row", "align": "center" },
                 "children": [
                   {
                     "type": "frame",
-                    "name": "manchete",
+                    "name": "headline",
                     "width": "fill",
                     "height": "hug",
                     "layout": {
@@ -103,15 +103,15 @@
                     "children": [
                       {
                         "type": "text",
-                        "name": "manchete",
+                        "name": "headline",
                         "width": "fill",
                         "text": {
                           "$if": { "$has": "headline" },
                           "then": { "$field": "headline" },
                           "else": {
                             "$switch": "selection",
-                            "cases": { "range": "Início – Fim" },
-                            "default": "Data selecionada"
+                            "cases": { "range": "Start – End" },
+                            "default": "Selected date"
                           }
                         },
                         "font": {
@@ -143,7 +143,7 @@
                   },
                   {
                     "type": "frame",
-                    "name": "alternar modo",
+                    "name": "mode toggle",
                     "width": "hug",
                     "height": "hug",
                     "visible": { "$not": { "$eq": ["showModeToggle", "false"] } },
@@ -151,7 +151,7 @@
                     "children": [
                       {
                         "type": "frame",
-                        "name": "botão do modo",
+                        "name": "mode button",
                         "width": 48,
                         "height": 48,
                         "layout": {
@@ -175,7 +175,7 @@
               },
               {
                 "type": "rect",
-                "name": "divisor",
+                "name": "divider",
                 "width": "fill",
                 "height": 1,
                 "fill": { "$token": "outline-variant" }
@@ -186,7 +186,7 @@
       },
       {
         "type": "frame",
-        "name": "navegação do mês",
+        "name": "month navigation",
         "width": "fill",
         "height": 56,
         "visible": { "$not": { "$eq": ["selection", "range"] } },
@@ -199,7 +199,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "botão do ano",
+            "name": "year button",
             "width": "hug",
             "height": 40,
             "cornerRadius": { "$token": "corner-full" },
@@ -207,7 +207,7 @@
             "children": [
               {
                 "type": "text",
-                "name": "mês exibido",
+                "name": "displayed month",
                 "text": { "$field": "displayedMonth", "default": "-" },
                 "font": {
                   "size": { "$token": "label-large-size" },
@@ -230,14 +230,14 @@
           },
           {
             "type": "frame",
-            "name": "setas",
+            "name": "arrows",
             "width": "hug",
             "height": "hug",
             "layout": { "type": "row" },
             "children": [
               {
                 "type": "frame",
-                "name": "seta anterior",
+                "name": "previous arrow",
                 "width": 48,
                 "height": 48,
                 "layout": { "type": "row", "align": "center", "justify": "center" },
@@ -253,7 +253,7 @@
               },
               {
                 "type": "frame",
-                "name": "seta próxima",
+                "name": "next arrow",
                 "width": 48,
                 "height": 48,
                 "layout": { "type": "row", "align": "center", "justify": "center" },
@@ -273,30 +273,14 @@
       },
       {
         "type": "frame",
-        "name": "dias da semana",
+        "name": "weekdays",
         "width": "fill",
         "height": 48,
         "layout": { "type": "row", "padding": [0, 12] },
         "children": [
           {
             "type": "text",
-            "name": "dia da semana 1",
-            "text": "D",
-            "width": 48,
-            "height": 48,
-            "font": {
-              "size": { "$token": "body-large-size" },
-              "weight": { "$token": "body-large-weight" },
-              "lineHeight": { "$token": "body-large-line-height" },
-              "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center",
-              "verticalAlign": "cap-middle"
-            },
-            "color": { "$token": "on-surface" }
-          },
-          {
-            "type": "text",
-            "name": "dia da semana 2",
+            "name": "weekday 1",
             "text": "S",
             "width": 48,
             "height": 48,
@@ -312,7 +296,23 @@
           },
           {
             "type": "text",
-            "name": "dia da semana 3",
+            "name": "weekday 2",
+            "text": "M",
+            "width": 48,
+            "height": 48,
+            "font": {
+              "size": { "$token": "body-large-size" },
+              "weight": { "$token": "body-large-weight" },
+              "lineHeight": { "$token": "body-large-line-height" },
+              "letterSpacing": { "$token": "body-large-tracking" },
+              "align": "center",
+              "verticalAlign": "cap-middle"
+            },
+            "color": { "$token": "on-surface" }
+          },
+          {
+            "type": "text",
+            "name": "weekday 3",
             "text": "T",
             "width": 48,
             "height": 48,
@@ -328,8 +328,8 @@
           },
           {
             "type": "text",
-            "name": "dia da semana 4",
-            "text": "Q",
+            "name": "weekday 4",
+            "text": "W",
             "width": 48,
             "height": 48,
             "font": {
@@ -344,8 +344,8 @@
           },
           {
             "type": "text",
-            "name": "dia da semana 5",
-            "text": "Q",
+            "name": "weekday 5",
+            "text": "T",
             "width": 48,
             "height": 48,
             "font": {
@@ -360,8 +360,8 @@
           },
           {
             "type": "text",
-            "name": "dia da semana 6",
-            "text": "S",
+            "name": "weekday 6",
+            "text": "F",
             "width": 48,
             "height": 48,
             "font": {
@@ -376,7 +376,7 @@
           },
           {
             "type": "text",
-            "name": "dia da semana 7",
+            "name": "weekday 7",
             "text": "S",
             "width": 48,
             "height": 48,
@@ -394,7 +394,7 @@
       },
       {
         "type": "frame",
-        "name": "mês do intervalo",
+        "name": "range month",
         "width": "fill",
         "height": "hug",
         "visible": { "$eq": ["selection", "range"] },
@@ -402,7 +402,7 @@
         "children": [
           {
             "type": "text",
-            "name": "mês do intervalo",
+            "name": "range month",
             "text": { "$field": "displayedMonth", "default": "-" },
             "font": {
               "size": { "$token": "title-small-size" },
@@ -416,14 +416,14 @@
       },
       {
         "type": "frame",
-        "name": "grade",
+        "name": "grid",
         "width": "fill",
         "height": "hug",
         "layout": { "type": "none" },
         "children": [
           {
             "type": "repeat",
-            "name": "dias",
+            "name": "days",
             "count": {
               "$if": { "$and": [{ "$has": "month" }, { "$has": "year" }] },
               "then": {
@@ -478,14 +478,14 @@
             "anchors": { "left": 12, "top": 0 },
             "template": {
               "type": "frame",
-              "name": "posição",
+              "name": "position",
               "width": 0,
               "height": "hug",
               "layout": { "type": "none" },
               "children": [
                 {
                   "type": "frame",
-                  "name": "célula",
+                  "name": "cell",
                   "width": 48,
                   "height": 48,
                   "layout": { "type": "none" },
@@ -786,7 +786,7 @@
                   "children": [
                     {
                       "type": "rect",
-                      "name": "faixa",
+                      "name": "band",
                       "width": {
                         "$sub": [
                           48,
@@ -892,7 +892,7 @@
                     },
                     {
                       "type": "rect",
-                      "name": "contorno de hoje",
+                      "name": "today outline",
                       "width": 40,
                       "height": 40,
                       "anchors": { "left": 4, "top": 4 },
@@ -967,7 +967,7 @@
                     },
                     {
                       "type": "text",
-                      "name": "dia",
+                      "name": "day",
                       "text": { "$add": [{ "$field": "$index" }, 1] },
                       "width": 48,
                       "height": 48,
@@ -1029,7 +1029,7 @@
                     },
                     {
                       "type": "frame",
-                      "name": "marcado",
+                      "name": "marked",
                       "width": 40,
                       "height": 40,
                       "anchors": { "left": 4, "top": 4 },
@@ -1076,7 +1076,7 @@
                       "children": [
                         {
                           "type": "text",
-                          "name": "número",
+                          "name": "number",
                           "text": { "$add": [{ "$field": "$index" }, 1] },
                           "font": {
                             "size": { "$token": "body-large-size" },
@@ -1092,7 +1092,7 @@
                     },
                     {
                       "type": "rect",
-                      "name": "estado",
+                      "name": "state",
                       "width": 40,
                       "height": 40,
                       "anchors": { "left": 4, "top": 4 },

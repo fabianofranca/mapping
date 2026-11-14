@@ -74,7 +74,7 @@ const boxOf = (d: Drawing, node: SceneNode) => absoluteBoxes(d.root).get(node.id
 
 /** The center of the visible handles, in drawing order (in range: start and end). */
 const handles = (d: Drawing): { x: number; width: number }[] =>
-  collect(d, (n) => n.type === 'rect' && n.name === 'alça').map(({ node }) => ({
+  collect(d, (n) => n.type === 'rect' && n.name === 'handle').map(({ node }) => ({
     x: centerX(d, node),
     width: boxOf(d, node).width,
   }));
@@ -137,8 +137,8 @@ function expectGeometry(
   const hs = handles(d);
   expect(hs.length, 'handles').toBe(e.centers.length);
   hs.forEach((h, i) => expect(h.x, `handle ${i}`).toBeCloseTo(e.centers[i]!, 2));
-  const active = collect(d, (n) => n.type === 'rect' && n.name === 'trilho ativo');
-  const inactive = collect(d, (n) => n.type === 'rect' && n.name === 'trilho inativo');
+  const active = collect(d, (n) => n.type === 'rect' && n.name === 'active track');
+  const inactive = collect(d, (n) => n.type === 'rect' && n.name === 'inactive track');
   // the segment that does not exist comes out with width 0: only those with width count
   const r = (x: number) => Math.round(x * 1e4) / 1e4;
   const edges = (found: Found[]) =>
@@ -182,7 +182,7 @@ describe('EX6 slider — the value is a number and the handle goes to the neares
     expect(handle!.x).toBeCloseTo(133.2, 2);
     expect(handle!.x).not.toBeCloseTo(10 + 0.37 * 308, 1);
     // and the rest follows the same value: the active segment stops 8 before the handle
-    const active = collect(d, (n) => n.type === 'rect' && n.name === 'trilho ativo');
+    const active = collect(d, (n) => n.type === 'rect' && n.name === 'active track');
     expect(boxOf(d, active[0]!.node).width).toBeCloseTo(133.2 - 8 - 2, 2);
   });
 
@@ -337,7 +337,7 @@ function kindOf(d: Drawing, node: SceneNode, mode: Mode, enabled: boolean): Kind
 
 /** The visible marks (the `repeat` ones, inside the row), by position. */
 function marksOf(d: Drawing, mode: Mode = 'light', enabled = true): Mark[] {
-  return collect(d, (n) => n.type === 'ellipse' && n.name === 'marca')
+  return collect(d, (n) => n.type === 'ellipse' && n.name === 'tick')
     .map(({ node }) => ({ x: boxOf(d, node).x, kind: kindOf(d, node, mode, enabled) }))
     .sort((a, b) => a.x - b.x);
 }
@@ -485,7 +485,7 @@ describe('EX6 slider — the marks of steps', () => {
 
 /** The strip of 4 that each segment draws when the marks do not fit (the `rect` "faixa de passos"). */
 function stripsOf(d: Drawing, mode: Mode, enabled: boolean) {
-  return collect(d, (n) => n.type === 'rect' && n.name === 'faixa de passos')
+  return collect(d, (n) => n.type === 'rect' && n.name === 'step strip')
     .map(({ node }) => {
       const b = boxOf(d, node);
       return {
@@ -665,7 +665,7 @@ function missing(d: Drawing, scene: OldScene, mode: Mode): string[] {
       return { t: o.t, n: o.n, r: o.r, ...(o.x === undefined ? {} : { x: o.x }) };
     });
   return [
-    ...missingNodes(d, nodes),
+    ...missingNodes(d, nodes, { component: 'slider' }),
     ...(enabled ? [] : disabledProblems(d, scene, mode)),
   ];
 }
@@ -674,9 +674,9 @@ function missing(d: Drawing, scene: OldScene, mode: Mode): string[] {
 function disabledProblems(d: Drawing, scene: OldScene, mode: Mode): string[] {
   const out: string[] = [];
   const want: Record<string, string> = {
-    alça: disabledColor('state-disabled-content', mode),
-    'trilho ativo': disabledColor('state-disabled-content', mode),
-    'trilho inativo': disabledColor('state-disabled-container', mode),
+    handle: disabledColor('state-disabled-content', mode),
+    'active track': disabledColor('state-disabled-content', mode),
+    'inactive track': disabledColor('state-disabled-container', mode),
   };
   for (const { node } of collect(d, (n) => n.name in want)) {
     if (node.opacity !== 1)
@@ -686,7 +686,7 @@ function disabledProblems(d: Drawing, scene: OldScene, mode: Mode): string[] {
         `${scene.key} ${node.name}: ${solid(node.fills)} instead of ${want[node.name]}`,
       );
   }
-  for (const { node } of collect(d, (n) => n.name === 'marca')) {
+  for (const { node } of collect(d, (n) => n.name === 'tick')) {
     const color = solid(node.fills);
     const ok =
       isComposite(color, disabledColor('state-disabled-container', mode)) ||
@@ -842,11 +842,10 @@ describe('EX6 slider — without enumerated tables', () => {
     expect(component.preview['value']).toBe(0.5);
     expect(component.preview['valueStart']).toBe(0.2);
     expect(component.preview['valueEnd']).toBe(0.8);
-    // pt-BR kept: the Portuguese text of libraries/material3-compose/docs/slider.md and of the slider description is the object of this test
-    expect(component.description).not.toMatch(/décimos|1 a 9/);
-    // the field table of the doc is generated from the specialization; the rest (Fidelidade) is handwritten
-    const written = text('docs/slider.md').split('## Fidelidade')[1] ?? '';
+    expect(component.description).not.toMatch(/tenths|1 to 9/);
+    // the field table of the doc is generated from the specialization; the rest (Fidelity) is handwritten
+    const written = text('docs/slider.md').split('## Fidelity')[1] ?? '';
     expect(written.length).toBeGreaterThan(1000);
-    expect(/em décimos|desenha como 9|marcas de 1 a 9/.test(written)).toBe(false);
+    expect(/in tenths|draws as 9|ticks from 1 to 9/.test(written)).toBe(false);
   });
 });

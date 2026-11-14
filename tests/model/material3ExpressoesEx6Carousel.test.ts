@@ -551,7 +551,10 @@ describe('EX6 carousel — centered-hero by the width of the marking', () => {
 // ---------------------------------------------------------------------------------------------
 
 /** L2 (#1078): what went past the 360 box (the 4000 band, the cut item and what was outside) is no longer drawn as it was. */
-const WENT_PAST_THE_BOX = { skip: (o: { r: number[] }) => o.r[0]! + o.r[2]! > 360.5 };
+const WENT_PAST_THE_BOX = {
+  component: 'carousel',
+  skip: (o: { r: number[] }) => o.r[0]! + o.r[2]! > 360.5,
+};
 
 describe('EX6 carousel — regression against the scenes from before (≤ 0.5 px per node)', () => {
   it('uncontained at 360 (light and dark) matches node by node, except what went past the box', () => {
@@ -583,6 +586,7 @@ describe('EX6 carousel — regression against the scenes from before (≤ 0.5 px
       );
       expect(
         missingNodes(d, rest, {
+          component: 'carousel',
           skip: (o: { r: number[] }) => o.r[0]! + o.r[2]! > 360.5,
         }),
         scene.key,
@@ -595,7 +599,7 @@ describe('EX6 carousel — regression against the scenes from before (≤ 0.5 px
       for (const values of [multi(3), heroValues(3)]) {
         const d = drawAt(360, values, mode);
         expect(d.warnings).toEqual([]);
-        const first = visible(d).find((n) => n.name === 'imagem');
+        const first = visible(d).find((n) => n.name === 'image');
         expect(first).toBeDefined();
       }
     }

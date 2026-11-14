@@ -7,9 +7,8 @@ import { buildCatalog, findEntry } from '../../src/model/catalog';
 import type { SceneNode } from '../../src/model/components/scene';
 import { drawIn, files, typeOf } from '../support/material3Library';
 
-// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
 const NAMES = {
-  state: 'estado',
+  state: 'state',
 } as const;
 
 const catalog = buildCatalog(files);
@@ -27,7 +26,7 @@ function shadows(
   if ('children' in node) node.children.forEach((c) => shadows(c, out));
   return out;
 }
-/** The visible `estado` nodes (the state layer). */
+/** The visible `state` nodes (the state layer). */
 function layers(node: SceneNode, out: SceneNode[] = []): SceneNode[] {
   if (!node.visible) return out;
   if (node.name === NAMES.state) out.push(node);
@@ -55,8 +54,7 @@ function describeField(id: string, options: string[]) {
   it('is an optional enum with the Compose token options, default none, outside the code', () => {
     expect(field).toMatchObject({
       key: 'interaction',
-      // pt-BR kept: shared library data (field label of libraries/material3-compose)
-      label: 'Interação',
+      label: 'Interaction',
       type: 'enum',
       default: 'none',
       options,
@@ -68,9 +66,8 @@ function describeField(id: string, options: string[]) {
     ).not.toContain('interaction');
   });
   it('the description says what happens with the disabled state', () => {
-    // pt-BR kept: shared library data (field description of libraries/material3-compose)
     expect(field?.description).toMatch(/habilitado|enabled/i);
-    expect(field?.description).toMatch(/desabilitad|false/i);
+    expect(field?.description).toMatch(/disabled|false/i);
   });
 }
 function exampleFor(
@@ -244,8 +241,7 @@ describe('card: interaction field', () => {
 
   it('this type has no enabled, so the interaction always draws', () => {
     expect(typeOf('card').fields.some((f) => f.key === 'enabled')).toBe(false);
-    // pt-BR kept: shared library data (field description of libraries/material3-compose)
-    expect(interactionField('card')?.description).toMatch(/não tem enabled/);
+    expect(interactionField('card')?.description).toMatch(/no enabled/);
   });
 
   it.each(STYLES.flatMap((s) => MODES.map((m) => [s, m] as const)))(

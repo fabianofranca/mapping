@@ -6,12 +6,11 @@ import { buildCatalog, findEntry } from '../../src/model/catalog';
 import type { SceneNode } from '../../src/model/components/scene';
 import { drawIn, files, typeOf } from '../support/material3Library';
 
-// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
 const NAMES = {
-  state: 'estado',
-  box: 'caixa',
-  ring: 'anel',
-  handle: 'alça',
+  state: 'state',
+  box: 'box',
+  ring: 'ring',
+  handle: 'handle',
 } as const;
 
 const catalog = buildCatalog(files);
@@ -46,7 +45,7 @@ interface Suite {
   same?: string[];
   /** Field combinations that cover the drawing paths. */
   variants: Values[];
-  /** Expected example per state (name from the pt-BR library data). */
+  /** Expected example per state. */
   examples: Record<string, string>;
 }
 
@@ -59,8 +58,7 @@ function interactionSuite({ id, states, same = [], variants, examples }: Suite) 
     it('is an optional enum with the token options, default none, outside the code', () => {
       expect(field).toMatchObject({
         key: 'interaction',
-        // pt-BR kept: shared library data (field label of libraries/material3-compose)
-        label: 'Interação',
+        label: 'Interaction',
         type: 'enum',
         default: 'none',
         options: ['none', ...states],
@@ -70,9 +68,8 @@ function interactionSuite({ id, states, same = [], variants, examples }: Suite) 
     });
 
     it('the description says the disabled state wins', () => {
-      // pt-BR kept: shared library data (field description of libraries/material3-compose)
       expect(field?.description).toMatch(/habilitado|enabled/i);
-      expect(field?.description).toMatch(/desabilitad|false/i);
+      expect(field?.description).toMatch(/disabled|false/i);
     });
 
     it.each(states)('has the "%s" example without a warning in both modes', (state) => {
@@ -130,8 +127,7 @@ describe('checkbox (CheckboxTokens.kt)', () => {
       { label: 'Accept', state: 'checked' },
       { label: 'Accept', state: 'indeterminate' },
     ],
-    // pt-BR kept: shared library data (example names of libraries/material3-compose)
-    examples: { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressionado' },
+    examples: { hovered: 'Hovered', focused: 'Focused', pressed: 'Pressed' },
   });
 
   it('the state layer is a 40 circle (StateLayerSize) and changes color with the selection', () => {
@@ -192,8 +188,7 @@ describe('radio-button (RadioButtonTokens.kt)', () => {
       { label: 'Pix', selected: 'false' },
       { label: 'Pix', selected: 'true' },
     ],
-    // pt-BR kept: shared library data (example names of libraries/material3-compose)
-    examples: { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressionado' },
+    examples: { hovered: 'Hovered', focused: 'Focused', pressed: 'Pressed' },
   });
 
   it('the state layer is a 24 circle, the width of the ring area: the StateLayerSize (40) would exceed the component box (L2, #1078)', () => {
@@ -241,8 +236,7 @@ describe('switch (SwitchTokens.kt)', () => {
       { label: 'Wi-Fi', checked: 'true', thumbIcon: 'true' },
       { label: 'Wi-Fi', checked: 'false', thumbIcon: 'true' },
     ],
-    // pt-BR kept: shared library data (example names of libraries/material3-compose)
-    examples: { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressionado' },
+    examples: { hovered: 'Hovered', focused: 'Focused', pressed: 'Pressed' },
   });
 
   const handle = (values: Values, mode: 'light' | 'dark') =>
@@ -320,8 +314,7 @@ describe('slider (SliderTokens.kt)', () => {
       { type: 'single', value: '0' },
       { type: 'range', valueStart: '0.2', valueEnd: '0.8' },
     ],
-    // pt-BR kept: shared library data (example names of libraries/material3-compose)
-    examples: { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressionado' },
+    examples: { hovered: 'Hovered', focused: 'Focused', pressed: 'Pressed' },
   });
 
   const handleWidths = (values: Values, mode: 'light' | 'dark') =>

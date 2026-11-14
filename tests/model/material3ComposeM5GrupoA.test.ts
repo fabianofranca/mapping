@@ -21,23 +21,22 @@ import type {
 } from '../../src/model/components/scene';
 import { files, solid, spec } from '../support/material3Library';
 
-// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
 const NAMES = {
-  dialog: 'diálogo',
-  icon: 'ícone',
-  title: 'título',
-  text: 'texto',
-  confirm: 'confirmar',
-  dismiss: 'dispensar',
-  buttons: 'botões',
-  handleArea: 'área da alça',
-  handle: 'alça',
-  header: 'cabeçalho',
-  message: 'mensagem',
-  action: 'ação',
-  close: 'fechar',
-  multilineMessage: 'mensagem em várias linhas',
-  messageActionNewLine: 'mensagem com ação em nova linha',
+  dialog: 'dialog',
+  icon: 'icon',
+  title: 'title',
+  text: 'text',
+  confirm: 'confirm',
+  dismiss: 'dismiss',
+  buttons: 'buttons',
+  handleArea: 'handle area',
+  handle: 'handle',
+  header: 'header',
+  message: 'message',
+  action: 'action',
+  close: 'dismiss',
+  multilineMessage: 'multi-line message',
+  messageActionNewLine: 'message with action on new line',
 } as const;
 
 const catalog = buildCatalog(files);

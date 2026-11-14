@@ -519,9 +519,9 @@ describe('list_components and get_component', () => {
       const items = example.values?.items;
       expect(Array.isArray(items), example.name).toBe(true);
       expect((items as { label: string; _id?: string }[]).map((r) => r.label)).toEqual([
-        'Início',
-        'Buscar',
-        'Perfil',
+        'Home',
+        'Search',
+        'Profile',
       ]);
       expect(JSON.stringify(items), example.name).not.toContain('_id');
     }

@@ -1,7 +1,7 @@
 // Stage #1743 (RC1): the carousel label must be legible over the image placeholder.
 // The Catalog never loads a remote image, so the item always appears as a placeholder: `CCC8CE` (light app),
 // `48474C` (dark app), `C2BFC4` and `6A696C` (MCP PNG). The test reads the carousel scene in both modes and in the
-// three styles, takes the veil alpha at the top of the text box of the label (`rótulo`), composes the `scrim` over each placeholder
+// three styles, takes the veil alpha at the top of the text box of the label (`label`), composes the `scrim` over each placeholder
 // and checks contrast ≥ 4.5:1 (WCAG AA) against the label color (`secondary-fixed`).
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
@@ -75,14 +75,13 @@ function veilAlphaAt(veil: SceneNode, y: number): number {
   return alphaOf(before.color) * (1 - k) + alphaOf(after.color) * k;
 }
 
-// pt-BR kept: 'véu' (veil) and 'rótulo' (label) are node names of the frozen material3 fixture package (tests/fixtures/material3)
 describe('carousel — label legible over the placeholder (#1743)', () => {
   for (const style of STYLES) {
     for (const mode of MODES) {
       it(`${style}, ${mode}: label contrast ≥ 4.5:1 over the scrim over the four placeholders`, () => {
         const d = drawIn(catalog, entry, { ...items(), style }, mode);
-        const veil = named(d, 'véu');
-        const label = named(d, 'rótulo');
+        const veil = named(d, 'scrim');
+        const label = named(d, 'label');
         const boxes = absoluteBoxes(d.root);
         const veilBox = boxes.get(veil.id)!;
         const labelBox = boxes.get(label.id)!;
@@ -102,7 +101,7 @@ describe('carousel — label legible over the placeholder (#1743)', () => {
 
   it('the veil is solid in the bottom 36 px and fades out at the top (0.55 up to 0.75 and 0 at 1)', () => {
     const d = drawIn(catalog, entry, { ...items(), style: 'multi-browse' }, 'light');
-    const veil = named(d, 'véu');
+    const veil = named(d, 'scrim');
     expect(veilAlphaAt(veil, 48)).toBeCloseTo(0.55, 2);
     expect(veilAlphaAt(veil, 12)).toBeCloseTo(0.55, 2);
     expect(veilAlphaAt(veil, 0)).toBeCloseTo(0, 2);

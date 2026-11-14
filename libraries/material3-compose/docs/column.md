@@ -1,29 +1,29 @@
 # Column
 
-Coloca os filhos em coluna, de cima para baixo. Use para blocos de conteúdo, formulários e qualquer pilha vertical.
+Places the children in a column, from top to bottom. Use it for content blocks, forms and any vertical stack.
 
-Tipo de anotação: `column` (camada Layout).
+Annotation type: `column` (Layout layer).
 
-## Campos
+## Fields
 
-| Chave                 | Rótulo                 | Tipo   | Obrigatório | Opções                                                                  | Padrão  | Descrição                                                                                              |
-| --------------------- | ---------------------- | ------ | ----------- | ----------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
-| `verticalArrangement` | Distribuição vertical  | enum   | não         | `Top`, `Bottom`, `Center`, `SpaceBetween`, `SpaceAround`, `SpaceEvenly` | `Top`   | Como os filhos se distribuem no eixo vertical (Arrangement).                                           |
-| `horizontalAlignment` | Alinhamento horizontal | enum   | não         | `Start`, `CenterHorizontally`, `End`                                    | `Start` | Como os filhos se alinham no eixo horizontal (Alignment).                                              |
-| `spacing`             | Espaçamento (dp)       | number | não         |                                                                         |         | Espaço entre os filhos em dp (Arrangement.spacedBy). Vazio = 0.                                        |
-| `background`          | Fundo                  | enum   | não         | `none` e papéis do `ColorScheme`                                        | `none`  | Papel de cor do tema usado como fundo (Modifier.background). none = sem fundo.                         |
-| `padding`             | Margem interna (dp)    | number | não         |                                                                         |         | Modifier.padding em dp. Vazio = 0.                                                                     |
-| `scroll`              | Rolagem                | enum   | não         | `false`, `true`                                                         | `false` | true torna o conteúdo rolável sem usar lazy (verticalScroll/horizontalScroll com rememberScrollState). |
-| `width`               | Largura                | enum   | não         | `wrap`, `fill`, `fixed`                                                 | `wrap`  | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).  |
-| `height`              | Altura                 | enum   | não         | `wrap`, `fill`, `fixed`                                                 | `wrap`  | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).    |
-| `weight`              | Peso (weight)          | number | não         |                                                                         |         | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                      |
+| Key                   | Label                | Type   | Required | Options                                                                 | Default | Description                                                                                                      |
+| --------------------- | -------------------- | ------ | -------- | ----------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
+| `verticalArrangement` | Vertical arrangement | enum   | no       | `Top`, `Bottom`, `Center`, `SpaceBetween`, `SpaceAround`, `SpaceEvenly` | `Top`   | How the children are distributed on the vertical axis (Arrangement).                                             |
+| `horizontalAlignment` | Horizontal alignment | enum   | no       | `Start`, `CenterHorizontally`, `End`                                    | `Start` | How the children are aligned on the horizontal axis (Alignment).                                                 |
+| `spacing`             | Spacing (dp)         | number | no       |                                                                         |         | Space between the children in dp (Arrangement.spacedBy). Empty = 0.                                              |
+| `background`          | Background           | enum   | no       | `none` and `ColorScheme` roles                                          | `none`  | Theme color role used as the background (Modifier.background). none = no background.                             |
+| `padding`             | Padding (dp)         | number | no       |                                                                         |         | Modifier.padding in dp. Empty = 0.                                                                               |
+| `scroll`              | Scroll               | enum   | no       | `false`, `true`                                                         | `false` | true makes the content scrollable without using lazy (verticalScroll/horizontalScroll with rememberScrollState). |
+| `width`               | Width                | enum   | no       | `wrap`, `fill`, `fixed`                                                 | `wrap`  | wrap fits the content, fill takes all the available width and fixed uses the marking width (dp).                 |
+| `height`              | Height               | enum   | no       | `wrap`, `fill`, `fixed`                                                 | `wrap`  | wrap fits the content, fill takes all the available height and fixed uses the marking height (dp).               |
+| `weight`              | Weight               | number | no       |                                                                         |         | Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.                             |
 
 ## Compose
 
-- Símbolo: `androidx.compose.foundation.layout.Column`
-- Arquivo (`path`): `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Column.kt`
+- Symbol: `androidx.compose.foundation.layout.Column`
+- File (`path`): `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Column.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in the `code`):
 
 ```kotlin
 Column(
@@ -34,38 +34,38 @@ Column(
         .verticalScroll(rememberScrollState())
         .padding(16.dp),
 ) {
-    /* filhas */
+    /* children */
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from the `code` (what the tool hands to the agent):
 
-> Os filhos vão no `content`. Com `spacing`, passe `Arrangement.spacedBy(<spacing>.dp)` no lugar de `verticalArrangement` (para manter Center ou Bottom use `Arrangement.spacedBy(<spacing>.dp, Alignment.CenterVertically)` ou `Alignment.Bottom`). Monte o `modifier` na ordem tamanho, `background`, `padding` e, com `scroll = true`, `Modifier.verticalScroll(rememberScrollState())`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> The children go in the `content`. With `spacing`, pass `Arrangement.spacedBy(<spacing>.dp)` in place of `verticalArrangement` (to keep Center or Bottom use `Arrangement.spacedBy(<spacing>.dp, Alignment.CenterVertically)` or `Alignment.Bottom`). Build the `modifier` in the order size, `background`, `padding` and, with `scroll = true`, `Modifier.verticalScroll(rememberScrollState())`. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).
 
-## Exemplos
+## Examples
 
-- **Pilha espaçada**: verticalArrangement=Top, horizontalAlignment=Start, spacing=8, padding=16, width=fill
-- **Conteúdo centralizado**: verticalArrangement=Center, horizontalAlignment=CenterHorizontally, width=fill, height=fill
-- **Com rolagem**: spacing=16, scroll=true, width=fill, height=fill
+- **Spaced stack**: verticalArrangement=Top, horizontalAlignment=Start, spacing=8, padding=16, width=fill
+- **Centered content**: verticalArrangement=Center, horizontalAlignment=CenterHorizontally, width=fill, height=fill
+- **With scrolling**: spacing=16, scroll=true, width=fill, height=fill
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Column.kt` (linhas 82 a 86: `Column(verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.Start)`).
-  `ColorLightTokens.kt` e `ColorDarkTokens.kt`: os papéis de cor do tema, lidos como tokens (`$token`) nos dois modos.
+- `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Column.kt` (lines 82 to 86: `Column(verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.Start)`).
+  `ColorLightTokens.kt` and `ColorDarkTokens.kt`: the theme color roles, read as tokens (`$token`) in both modes.
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- `verticalArrangement` vira o `justify` do layout do slot (`Top` em `start`, `Bottom` em `end`, `Center` em `center`, `SpaceBetween` em `space-between`) e `horizontalAlignment` vira o `align` (`Start` em `start`, `CenterHorizontally` em `center`, `End` em `end`); antes o slot ficava sempre em `start`.
-- `spacing` é o `gap` (`Arrangement.spacedBy`) e `padding` o recuo do slot, depois do fundo, como na ordem dos `Modifier`.
-- O fundo segue o papel do tema nos dois modos; `none` não desenha fundo.
-- O slot tem `clip: true` (formato 4): a filha que passa da caixa do componente é cortada na borda. A `Column` do Compose não corta (`Column.kt` linhas 82 a 94: só o `Layout` com a `measurePolicy`, sem `clipToBounds`); o que impede a filha de passar são as restrições de medida, que o formato não tem. O corte é a aproximação visual dessas restrições.
+- `verticalArrangement` becomes the slot layout's `justify` (`Top` to `start`, `Bottom` to `end`, `Center` to `center`, `SpaceBetween` to `space-between`) and `horizontalAlignment` becomes the `align` (`Start` to `start`, `CenterHorizontally` to `center`, `End` to `end`); before, the slot was always at `start`.
+- `spacing` is the `gap` (`Arrangement.spacedBy`) and `padding` the slot's inset, after the background, as in the order of the `Modifier`s.
+- The background follows the theme role in both modes; `none` draws no background.
+- The slot has `clip: true` (format 4): a child that goes past the component box is cut at the edge. Compose's `Column` does not clip (`Column.kt` lines 82 to 94: only the `Layout` with the `measurePolicy`, without `clipToBounds`); what stops the child from going past are the measurement constraints, which the format does not have. The clip is the visual approximation of those constraints.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- `SpaceAround` e `SpaceEvenly` viram `space-around` e `space-evenly` do `justify`.
-- `scroll` só aparece no rótulo: a rolagem não é desenhada.
-- O Compose limita os filhos à altura da Column pelas restrições de medida (uma filha de 300 dp numa Column de 200 dp mede 200); o formato corta o que passa da caixa, em vez de encolher a filha. Rolagem não existe. O `weight` das filhas fica fora: o Arrumar não lê campos das filhas.
+- `SpaceAround` and `SpaceEvenly` become `space-around` and `space-evenly` of the `justify`.
+- `scroll` only shows in the label: scrolling is not drawn.
+- Compose limits the children to the Column height through the measurement constraints (a 300 dp child in a 200 dp Column measures 200); the format cuts what goes past the box, instead of shrinking the child. Scrolling does not exist. The children's `weight` is left out: Arrange does not read the children's fields.

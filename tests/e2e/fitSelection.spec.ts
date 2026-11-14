@@ -112,7 +112,7 @@ test('Shift+1 after the Palette Add fits; in the Position field it belongs to th
   await page.keyboard.press('Control+Shift+Digit9');
   await page.getByRole('tab', { name: 'Palette' }).click();
   const add = page.getByRole('button', {
-    name: 'Add to canvas: Nota',
+    name: 'Add to canvas: Note',
     exact: true,
   });
   await add.click();

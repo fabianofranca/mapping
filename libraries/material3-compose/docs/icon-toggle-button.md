@@ -1,89 +1,89 @@
 # Icon toggle button
 
-Botão de ícone que liga e desliga (favoritar, fixar, silenciar). Standard, filled, tonal ou outlined, ligado ou desligado.
+An icon button that toggles on and off (favorite, pin, mute). Standard, filled, tonal or outlined, checked or unchecked.
 
-Tipo de anotação: `icon-toggle-button` (camada Componentes).
+Annotation type: `icon-toggle-button` (Components layer).
 
-## Campos
+## Fields
 
-| Chave                | Rótulo     | Tipo   | Obrigatório | Opções                                                         | Padrão     | Descrição                                                                                                                                                                                                                                |
-| -------------------- | ---------- | ------ | ----------- | -------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `icon`               | Ícone      | string | sim         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) | `Favorite` | Ícone do botão.                                                                                                                                                                                                                          |
-| `contentDescription` | Descrição  | string | não         |                                                                |            | Texto de acessibilidade do botão (vai no `contentDescription` do Icon). Vazio = sem nome para leitores de tela.                                                                                                                          |
-| `style`              | Estilo     | enum   | não         | `standard`, `filled`, `tonal`, `outlined`                      | `standard` | standard (IconToggleButton), filled (FilledIconToggleButton), tonal (FilledTonalIconToggleButton) ou outlined (OutlinedIconToggleButton).                                                                                                |
-| `checked`            | Ligado     | enum   | não         | `true`, `false`                                                | `false`    | true liga o botão (cor de seleção do estilo).                                                                                                                                                                                            |
-| `enabled`            | Habilitado | enum   | não         | `true`, `false`                                                | `true`     | false desabilita o botão.                                                                                                                                                                                                                |
-| `interaction`        | Interação  | enum   | não         | `none`, `hovered`, `focused`, `pressed`                        | `none`     | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence). |
+| Key                  | Label       | Type   | Required | Options                                                   | Default    | Description                                                                                                                                                                                                    |
+| -------------------- | ----------- | ------ | -------- | --------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `icon`               | Icon        | string | yes      | free text; icon suggestions (`Home`, `Search`, `Person`…) | `Favorite` | Icon of the button.                                                                                                                                                                                            |
+| `contentDescription` | Description | string | no       |                                                           |            | Accessibility text of the button (goes in the Icon's `contentDescription`). Empty = no name for screen readers.                                                                                                |
+| `style`              | Style       | enum   | no       | `standard`, `filled`, `tonal`, `outlined`                 | `standard` | standard (IconToggleButton), filled (FilledIconToggleButton), tonal (FilledTonalIconToggleButton) or outlined (OutlinedIconToggleButton).                                                                      |
+| `checked`            | Checked     | enum   | no       | `true`, `false`                                           | `false`    | true turns the button on (the style's selection color).                                                                                                                                                        |
+| `enabled`            | Enabled     | enum   | no       | `true`, `false`                                           | `true`     | false disables the button.                                                                                                                                                                                     |
+| `interaction`        | Interaction | enum   | no       | `none`, `hovered`, `focused`, `pressed`                   | `none`     | Resting appearance of the interaction state: hovered, focused or pressed; none = no state layer. It only changes the drawing, it does not go in the code. With enabled false nothing is drawn (disabled wins). |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.IconToggleButton`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/IconButton.kt`
-- O campo `style` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.IconToggleButton`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/IconButton.kt`
+- The `style` field chooses the symbol; values without their own case use the base one.
 
-| `style`           | Símbolo                       |
+| `style`           | Symbol                        |
 | ----------------- | ----------------------------- |
 | `standard` (base) | `IconToggleButton`            |
 | `filled`          | `FilledIconToggleButton`      |
 | `tonal`           | `FilledTonalIconToggleButton` |
 | `outlined`        | `OutlinedIconToggleButton`    |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
-IconToggleButton(    // style filled: FilledIconToggleButton, tonal: FilledTonalIconToggleButton, outlined: OutlinedIconToggleButton
+IconToggleButton( // style filled: FilledIconToggleButton, tonal: FilledTonalIconToggleButton, outlined: OutlinedIconToggleButton
     checked = checked,
     onCheckedChange = { checked = it },
     enabled = true,
 ) {
-    Icon(Icons.Filled.Favorite, contentDescription = "Favoritar")
+    Icon(Icons.Filled.Favorite, contentDescription = "Favorite")
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> `onCheckedChange` liga à lógica da tela e o ícone vai em `content = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }`. É costume trocar o ícone quando ligado (por exemplo `Icons.Filled.Favorite` ligado e `Icons.Outlined.FavoriteBorder` desligado): o desenho usa o mesmo `icon` nos dois estados. Nenhum estilo exige opt-in. A 1.4.0 não traz os ícones: o app adiciona `androidx.compose.material:material-icons-core` (ou `-extended`) ou usa um Material Symbol com `painterResource`.
+> `onCheckedChange` connects to the screen logic and the icon goes in `content = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }`. It is customary to swap the icon when checked (for example `Icons.Filled.Favorite` checked and `Icons.Outlined.FavoriteBorder` unchecked): the drawing uses the same `icon` in both states. No style requires an opt-in. 1.4.0 does not ship the icons: the app adds `androidx.compose.material:material-icons-core` (or `-extended`) or uses a Material Symbol with `painterResource`.
 
-## Exemplos
+## Examples
 
-- **Desligado**: icon=Favorite, contentDescription=Favoritar, style=standard, checked=false
-- **Preenchido ligado**: icon=Favorite, contentDescription=Favoritar, style=filled, checked=true
-- **Contornado ligado**: icon=Notifications, contentDescription=Notificações, style=outlined, checked=true
-- **Mouse sobre**: icon=Favorite, contentDescription=Favoritar, style=filled, checked=true, interaction=hovered
-- **Com foco**: icon=Notifications, contentDescription=Notificações, style=outlined, checked=false, interaction=focused
-- **Pressionado**: icon=Favorite, contentDescription=Favoritar, style=tonal, checked=true, interaction=pressed
+- **Off**: icon=Favorite, contentDescription=Favorite, style=standard, checked=false
+- **Filled on**: icon=Favorite, contentDescription=Favorite, style=filled, checked=true
+- **Outlined on**: icon=Notifications, contentDescription=Notifications, style=outlined, checked=true
+- **Hovered**: icon=Favorite, contentDescription=Favorite, style=filled, checked=true, interaction=hovered
+- **Focused**: icon=Notifications, contentDescription=Notifications, style=outlined, checked=false, interaction=focused
+- **Pressed**: icon=Favorite, contentDescription=Favorite, style=tonal, checked=true, interaction=pressed
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/IconButton.kt` (linhas 316 a 350: `IconToggleButtonImpl`, o mesmo `Box` de `smallContainerSize()` do `IconButton`, com `containerColor(enabled, checked)`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/IconButtonDefaults.kt` (linhas 215 a 232: cores do `IconToggleButton`; 380 a 400: filled; 486 a 504: tonal; 687 a 708: outlined; 787 a 793: a borda do outlined some ligado; 849 a 880: forma `CornerFull` e `smallContainerSize` 40 por 40).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SmallIconButtonTokens.kt` (`ContainerHeight` 40, `IconSize` 24, `OutlinedOutlineWidth` 1), `tokens/IconButtonTokens.kt`, `FilledIconButtonTokens.kt`, `FilledTonalIconButtonTokens.kt` e `OutlinedIconButtonTokens.kt` (papéis ligado e desligado e opacidades do desabilitado).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/IconButton.kt` (lines 316 to 350: `IconToggleButtonImpl`, the same `Box` of `smallContainerSize()` as the `IconButton`, with `containerColor(enabled, checked)`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/IconButtonDefaults.kt` (lines 215 to 232: colors of the `IconToggleButton`; 380 to 400: filled; 486 to 504: tonal; 687 to 708: outlined; 787 to 793: the outlined border disappears when checked; 849 to 880: `CornerFull` shape and `smallContainerSize` 40 by 40).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SmallIconButtonTokens.kt` (`ContainerHeight` 40, `IconSize` 24, `OutlinedOutlineWidth` 1), `tokens/IconButtonTokens.kt`, `FilledIconButtonTokens.kt`, `FilledTonalIconButtonTokens.kt` and `OutlinedIconButtonTokens.kt` (checked and unchecked roles and disabled opacities).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Contêiner de 40 por 40 na forma `corner-full` e ícone de 24 centrado, desenhado pelo nó `icon`.
-- Standard: sem fundo; ícone `on-surface` desligado e `primary` ligado.
-- Filled: desligado `surface-container` com ícone `on-surface-variant`; ligado `primary` com `on-primary`.
-- Tonal: desligado `secondary-container` com `on-secondary-container`; ligado `secondary` com `on-secondary`.
-- Outlined: desligado sem fundo, ícone `on-surface` e contorno de 1 em `on-surface`; ligado `inverse-surface` com `inverse-on-surface` e **sem contorno** (`outlinedIconToggleButtonBorder` devolve `null` quando ligado).
-- Desabilitado: filled e tonal viram `on-surface` a 0,1 no contêiner (ligado ou não); o ícone e o contorno vão a 0,38 (`state-disabled-content`) sobre `on-surface`. No outlined desabilitado o contêiner é transparente também ligado, como no `defaultOutlinedIconToggleButtonColors`.
+- A 40 by 40 container in the `corner-full` shape and a 24 icon centered, drawn by the `icon` node.
+- Standard: no background; icon `on-surface` unchecked and `primary` checked.
+- Filled: unchecked `surface-container` with an `on-surface-variant` icon; checked `primary` with `on-primary`.
+- Tonal: unchecked `secondary-container` with `on-secondary-container`; checked `secondary` with `on-secondary`.
+- Outlined: unchecked no background, `on-surface` icon and 1 outline in `on-surface`; checked `inverse-surface` with `inverse-on-surface` and **no outline** (`outlinedIconToggleButtonBorder` returns `null` when checked).
+- Disabled: filled and tonal become `on-surface` at 0.1 on the container (checked or not); the icon and the outline go to 0.38 (`state-disabled-content`) over `on-surface`. In the disabled outlined the container is transparent also when checked, as in `defaultOutlinedIconToggleButtonColors`.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o desabilitado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que os `*IconButtonTokens.kt` do commit definem, separados em ligado (`Selected*`) e desligado (`Unselected*`): `hovered`, `focused` e `pressed`; não há `Dragged*` nos tokens, então não há `dragged`.
+The field chooses the resting appearance of a state, as `enabled` chooses the disabled one; it does not go in the `code` or in the `variants`. The options are `none` and the states that the commit's `*IconButtonTokens.kt` define, split into checked (`Selected*`) and unchecked (`Unselected*`): `hovered`, `focused` and `pressed`; there is no `Dragged*` in the tokens, so there is no `dragged`.
 
-- **Camada de estado:** o nó `estado` é um `rect` da forma do botão (`corner-full`), entre o contorno e o ícone, com a cor de conteúdo que os tokens dão ao estilo e à seleção (`Selected{Hovered,Focused,Pressed}Color` e `Unselected{Hovered,Focused,Pressed}Color`): standard, ligado `primary` e desligado `on-surface-variant` (`IconButtonTokens.kt`, linhas 28, 29, 31 e 32, 33, 35); filled, ligado `on-primary` e desligado `on-surface-variant` (`FilledIconButtonTokens.kt`, linhas 32, 33, 35 e 37, 38, 40); tonal, ligado `on-secondary` e desligado `on-secondary-container` (`FilledTonalIconButtonTokens.kt`, linhas 32, 33, 35 e 37, 38, 40); outlined, ligado `inverse-on-surface` e desligado `on-surface-variant` (`OutlinedIconButtonTokens.kt`, linhas 33, 34, 36 e 38, 39, 42). A `opacity` vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10), que espelham `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
-- **Elevação e contorno:** os tokens do botão de ícone não mudam a elevação nem a cor do contorno entre os estados (o contorno do outlined desligado é `OutlineVariant` nos três, `OutlinedIconButtonTokens.kt`, linha 41, e some ligado); só a camada aparece.
-- **Desabilitado vence:** com `enabled` `false` o nó `estado` fica invisível, então o desenho é o do desabilitado, qualquer que seja o `interaction`.
+- **State layer:** the `state` node is a `rect` in the button's shape (`corner-full`), between the outline and the icon, with the content color that the tokens give to the style and to the selection (`Selected{Hovered,Focused,Pressed}Color` and `Unselected{Hovered,Focused,Pressed}Color`): standard, checked `primary` and unchecked `on-surface-variant` (`IconButtonTokens.kt`, lines 28, 29, 31 and 32, 33, 35); filled, checked `on-primary` and unchecked `on-surface-variant` (`FilledIconButtonTokens.kt`, lines 32, 33, 35 and 37, 38, 40); tonal, checked `on-secondary` and unchecked `on-secondary-container` (`FilledTonalIconButtonTokens.kt`, lines 32, 33, 35 and 37, 38, 40); outlined, checked `inverse-on-surface` and unchecked `on-surface-variant` (`OutlinedIconButtonTokens.kt`, lines 33, 34, 36 and 38, 39, 42). The `opacity` comes from the tokens `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10), which mirror `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
+- **Elevation and outline:** the icon button tokens do not change the elevation or the outline color between states (the unchecked outlined outline is `OutlineVariant` in all three, `OutlinedIconButtonTokens.kt`, line 41, and disappears when checked); only the layer appears.
+- **Disabled wins:** with `enabled` `false` the `state` node is invisible, so the drawing is the disabled one, whatever the `interaction`.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- Sem ripple animado e sem transição entre estados nem animação da troca de cor (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
-- A camada de estado do standard e do outlined desligados usa `on-surface-variant`, a cor que os tokens dão ao estado; o ícone e o contorno parados continuam em `on-surface`, então a camada não tem a mesma cor do ícone nesses dois casos.
-- O conteúdo do `standard` desmarcado e do `outlined` desmarcado é o `LocalContentColor` (`IconButtonDefaults.kt`, linhas 166 e 638): o desenho lê a cor do conteúdo herdada (`on-surface` sem pai) quando o botão está habilitado. Marcado, o `filled` e o `tonal` têm conteúdo próprio; o desabilitado segue `on-surface`: esses não herdam.
-- O desabilitado de 0,1 no contêiner é literal no componente (o token `state-disabled-container` vale 0,12).
-- A forma do estado ligado do Material expressivo (`SelectedContainerShape*`) não é campo do tipo; `shape` e `width` (largura em dp) são campos e código, mas o desenho não os usa; as larguras `Narrow` e `Wide` não têm campo próprio.
+- No animated ripple and no transition between states or animation of the color swap (the drawing is a still frame). Compose defines no focus ring for this type at the pinned commit (none of its `*Tokens.kt` has `FocusIndicatorColor`): none is drawn.
+- The state layer of unchecked standard and outlined uses `on-surface-variant`, the color the tokens give to the state; the resting icon and outline stay in `on-surface`, so the layer does not have the same color as the icon in these two cases.
+- The content of unchecked `standard` and unchecked `outlined` is the `LocalContentColor` (`IconButtonDefaults.kt`, lines 166 and 638): the drawing reads the inherited content color (`on-surface` with no parent) when the button is enabled. When checked, `filled` and `tonal` have their own content; the disabled one follows `on-surface`: these do not inherit.
+- The disabled 0.1 on the container is literal in the component (the `state-disabled-container` token is 0.12).
+- The shape of the checked state in Material expressive (`SelectedContainerShape*`) is not a field of the type; `shape` and `width` (width in dp) are fields and code, but the drawing does not use them; the `Narrow` and `Wide` widths have no field of their own.

@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "box",
   "name": "Box",
-  "description": "Container livre do Compose: as filhas ficam onde o retângulo delas diz; o padding recua o conteúdo.",
+  "description": "Free-form Compose container: children stay where their rectangle says; padding insets the content.",
   "size": {
     "width": 200,
     "height": 120

@@ -12,6 +12,11 @@ import {
   v1WithEstados,
   COMPOSE_SIZES,
 } from '../support/material3Library';
+import {
+  fieldTypesOf,
+  previewWithCurrentText,
+  withCurrentText,
+} from '../support/material3V1Text';
 import v1 from '../fixtures/material3-m5-v1.json';
 
 const M5 = [
@@ -59,8 +64,11 @@ describe('M5 — surfaces and selectors in format 4', () => {
       const type = rawTypes[id]!;
       const now = component(id);
       const { actual, expected } = v1WithEstados(id, type, before);
-      expect(actual).toEqual(expected);
-      expect(now.preview).toEqual(before.preview);
+      const types = fieldTypesOf(type);
+      expect(actual).toEqual(withCurrentText(expected, actual, types));
+      expect(now.preview).toEqual(
+        previewWithCurrentText(before.preview, now.preview, types),
+      );
       expect(now.minSize).toEqual(before.minSize);
       expect(now.size).toEqual(COMPOSE_SIZES[id] ?? before.size);
     },

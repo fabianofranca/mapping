@@ -7,7 +7,6 @@ import type { SceneNode } from '../../src/model/components/scene';
 import { drawIn, files, spec, typeOf } from '../support/material3Library';
 
 const catalog = buildCatalog(files);
-// pt-BR kept: node names, labels, example names and descriptions of libraries/material3-compose are Portuguese data
 type Values = Record<string, unknown>;
 type Mode = 'light' | 'dark';
 const MODES: Mode[] = ['light', 'dark'];
@@ -21,7 +20,7 @@ const hex = (token: string, mode: Mode): string => {
 };
 const OPACITY: Record<string, number> = { hovered: 0.08, focused: 0.1, pressed: 0.1 };
 const STATES = ['hovered', 'focused', 'pressed'];
-const EXAMPLES = { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressionado' };
+const EXAMPLES = { hovered: 'Hovered', focused: 'Focused', pressed: 'Pressed' };
 
 function entryOf(id: string) {
   const entry = findEntry(catalog, id);
@@ -41,7 +40,7 @@ function visibleNamed(node: SceneNode, name: string, out: SceneNode[] = []): Sce
   return out;
 }
 const layers = (id: string, values: Values, mode: Mode) =>
-  visibleNamed(draw(id, values, mode).root, 'estado');
+  visibleNamed(draw(id, values, mode).root, 'state');
 const solid = (node: SceneNode | undefined): string | undefined => {
   const fills = node !== undefined && 'fills' in node ? node.fills : undefined;
   const paint = fills?.[0];
@@ -75,7 +74,7 @@ function suite({ id, variants, color }: Suite) {
     it('is an optional enum with the options of the tokens, default none, outside the code', () => {
       expect(field).toMatchObject({
         key: 'interaction',
-        label: 'Interação',
+        label: 'Interaction',
         type: 'enum',
         default: 'none',
         options: ['none', ...STATES],
@@ -85,8 +84,8 @@ function suite({ id, variants, color }: Suite) {
     });
 
     it('the description says it applies to the selected item and that the type has no disabled state', () => {
-      expect(field?.description).toMatch(/selecionad/i);
-      expect(field?.description).toMatch(/sem enabled|não tem/i);
+      expect(field?.description).toMatch(/selected/i);
+      expect(field?.description).toMatch(/no enabled|no disabled state/i);
     });
 
     it.each(STATES)('has the example "%s" without warnings in both modes', (state) => {
@@ -130,11 +129,11 @@ function suite({ id, variants, color }: Suite) {
   });
 }
 
-/** The first node whose `children` branch contains the `estado` and its content (icon). */
+/** The first node whose `children` branch contains the `state` and its content (icon). */
 function drawOrder(node: SceneNode, out: string[] = []): string[] {
   if ('children' in node) {
     const names = node.children.filter((c) => c.visible).map((c) => c.name ?? c.type);
-    if (names.includes('estado')) out.push(names.join('>'));
+    if (names.includes('state')) out.push(names.join('>'));
     node.children.forEach((c) => drawOrder(c, out));
   }
   return out;
@@ -161,7 +160,7 @@ describe('the layer stays behind the content where Compose draws it behind (indi
     for (const mode of MODES) {
       const orders = drawOrder(draw(id, values, mode).root);
       expect(orders, id).toHaveLength(1);
-      expect(orders[0]?.startsWith('estado>'), orders[0]).toBe(true);
+      expect(orders[0]?.startsWith('state>'), orders[0]).toBe(true);
     }
   });
 });

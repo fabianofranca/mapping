@@ -28,7 +28,6 @@ const tok = (name: string, mode: Mode): string => {
   return typeof value === 'object' ? value[mode] : String(value);
 };
 
-// pt-BR kept: the quoted node names ('rótulo', 'trilho', ...) are the names in the material3-compose library (libraries/*.json, outside this phase)
 const named = (d: Drawing, name: string): SceneNode | undefined => {
   for (const node of walk(d.root)) if (node.name === name && node.visible) return node;
   return undefined;
@@ -73,7 +72,7 @@ describe('M3 group C — slider', () => {
     const { light, dark } = both('slider', { type: 'single', value: '0.5' });
     expect([light.root.width, light.root.height]).toEqual([W, 48]);
 
-    const active = box(light, 'trilho ativo');
+    const active = box(light, 'active track');
     // SliderTokens.ActiveTrackHeight / InactiveTrackHeight = 16; track 2 from the edge, centered in the 44 of the strip, which is centered in the 48 (ME2): 2 + 14
     near(active.x, 2);
     near(active.y, 16);
@@ -81,24 +80,24 @@ describe('M3 group C — slider', () => {
     // drawTrack: active goes from 0 to (value * track width) - endGap
     near(active.width, T * 0.5 - GAP);
     expect(fillOf(active.node)).toBe(tok('primary', 'light'));
-    expect(fillOf(box(dark, 'trilho ativo').node)).toBe(tok('primary', 'dark'));
+    expect(fillOf(box(dark, 'active track').node)).toBe(tok('primary', 'dark'));
 
-    const inactive = box(light, 'trilho inativo');
+    const inactive = box(light, 'inactive track');
     near(inactive.x, 2 + T * 0.5 + GAP);
     near(inactive.width, T * 0.5 - GAP);
     expect(inactive.height).toBe(16);
     near(inactive.x + inactive.width, W - 2);
     expect(fillOf(inactive.node)).toBe(tok('secondary-container', 'light'));
-    expect(fillOf(box(dark, 'trilho inativo').node)).toBe(
+    expect(fillOf(box(dark, 'inactive track').node)).toBe(
       tok('secondary-container', 'dark'),
     );
 
     // thumb: HandleWidth 4, HandleHeight 44, CornerFull shape, primary color; center at 2 + track width * value
-    const thumb = box(light, 'alça');
+    const thumb = box(light, 'handle');
     expect([thumb.width, thumb.height, thumb.y]).toEqual([4, 44, 2]);
     near(thumb.x, T * 0.5);
     expect(fillOf(thumb.node)).toBe(tok('primary', 'light'));
-    expect(fillOf(box(dark, 'alça').node)).toBe(tok('primary', 'dark'));
+    expect(fillOf(box(dark, 'handle').node)).toBe(tok('primary', 'dark'));
     expect(radiusOf(thumb.node)).toBe(Number(tok('corner-full', 'light')));
     // the gap between the thumb and each segment is ThumbTrackGapSize = 6
     near(thumb.x - (active.x + active.width), 6);
@@ -109,7 +108,7 @@ describe('M3 group C — slider', () => {
     expect(radiusOf(inactive.node)).toEqual([2, 8, 8, 2]);
 
     // stop indicator: circle of StopIndicatorSize 4 at 8 from the end of the track, in the active track color
-    const stops = allNamed(light, 'marca').filter((n) => n.type === 'ellipse');
+    const stops = allNamed(light, 'tick').filter((n) => n.type === 'ellipse');
     const stop = stops.map((n) => ({ n, ...boxOf(light, n) })).at(-1)!;
     expect([stop.width, stop.height]).toEqual([4, 4]);
     near(stop.x + 2, 2 + T - 8);
@@ -133,9 +132,9 @@ describe('M3 group C — slider', () => {
     ]) {
       const f = Number(value);
       const d = draw('slider', { type: 'single', value });
-      near(box(d, 'alça').x, T * f);
-      const active = shown(d, 'trilho ativo');
-      const inactive = shown(d, 'trilho inativo');
+      near(box(d, 'handle').x, T * f);
+      const active = shown(d, 'active track');
+      const inactive = shown(d, 'inactive track');
       if (f === 0) expect(active).toBeUndefined();
       else near(boxOf(d, active!).width, T * f - GAP);
       if (f === 1) expect(inactive).toBeUndefined();
@@ -162,12 +161,12 @@ describe('M3 group C — slider', () => {
           Number(tok(alpha, mode)),
           tok('surface', mode),
         );
-      for (const name of ['alça', 'trilho ativo']) {
+      for (const name of ['handle', 'active track']) {
         const node = named(d, name)!;
         expectComposite(fillOf(node), over('state-disabled-content'));
         expect(node.opacity).toBe(1);
       }
-      const inactive = named(d, 'trilho inativo')!;
+      const inactive = named(d, 'inactive track')!;
       expectComposite(fillOf(inactive), over('state-disabled-container'));
       expect(inactive.opacity).toBe(1);
     }
@@ -179,23 +178,23 @@ describe('M3 group C — slider', () => {
       valueStart: '0.2',
       valueEnd: '0.8',
     });
-    const [thumbA, thumbB] = allNamed(light, 'alça');
+    const [thumbA, thumbB] = allNamed(light, 'handle');
     near(boxOf(light, thumbA!).x, T * 0.2);
     near(boxOf(light, thumbB!).x, T * 0.8);
 
-    const left = box(light, 'trilho inativo');
+    const left = box(light, 'inactive track');
     near(left.x, 2);
     near(left.width, T * 0.2 - GAP);
     expect(radiusOf(left.node)).toEqual([8, 2, 2, 8]);
 
-    const active = box(light, 'trilho ativo');
+    const active = box(light, 'active track');
     near(active.x, 2 + T * 0.2 + GAP);
     near(active.width, T * 0.6 - 2 * GAP);
     expect(radiusOf(active.node)).toBe(2);
     expect(fillOf(active.node)).toBe(tok('primary', 'light'));
-    expect(fillOf(box(dark, 'trilho ativo').node)).toBe(tok('primary', 'dark'));
+    expect(fillOf(box(dark, 'active track').node)).toBe(tok('primary', 'dark'));
 
-    const [, right] = allNamed(light, 'trilho inativo').map((n) => ({
+    const [, right] = allNamed(light, 'inactive track').map((n) => ({
       n,
       ...boxOf(light, n),
     }));
@@ -204,7 +203,7 @@ describe('M3 group C — slider', () => {
     expect(radiusOf(right!.n)).toEqual([2, 8, 8, 2]);
 
     // the two stop indicators: 8 after the start and 8 before the end of the track
-    const stops = allNamed(light, 'marca')
+    const stops = allNamed(light, 'tick')
       .filter((n) => n.type === 'ellipse')
       .map((n) => boxOf(light, n).x + 2)
       .sort((a, b) => a - b);
@@ -223,12 +222,12 @@ describe('M3 group C — slider', () => {
       [dark, 'dark'],
     ] as const) {
       // Slider.kt: with steps, the thumb sits at (track width - 2 * 8) * value + 8
-      const thumb = box(d, 'alça');
+      const thumb = box(d, 'handle');
       near(thumb.x, (T - 16) * 0.4 + 8);
-      const active = box(d, 'trilho ativo');
+      const active = box(d, 'active track');
       near(active.x, 2);
       near(active.width, (T - 16) * 0.4 + 8 - GAP);
-      const inactive = box(d, 'trilho inativo');
+      const inactive = box(d, 'inactive track');
       near(inactive.x, 2 + (T - 16) * 0.4 + 8 + GAP);
 
       // what is seen at each point: the top tick, after applying the frames' clipping
@@ -248,13 +247,13 @@ describe('M3 group C — slider', () => {
 
   it('steps: at the first and last step the thumb goes to the end (full width), as in Slider.kt', () => {
     const first = draw('slider', { type: 'single', value: '0', steps: 4 });
-    near(box(first, 'alça').x, 0);
-    expect(shown(first, 'trilho ativo')).toBeUndefined();
-    near(box(first, 'trilho inativo').x, 2 + GAP);
+    near(box(first, 'handle').x, 0);
+    expect(shown(first, 'active track')).toBeUndefined();
+    near(box(first, 'inactive track').x, 2 + GAP);
     const last = draw('slider', { type: 'single', value: '1', steps: 4 });
-    near(box(last, 'alça').x, T);
-    near(box(last, 'trilho ativo').width, T - GAP);
-    expect(shown(last, 'trilho inativo')).toBeUndefined();
+    near(box(last, 'handle').x, T);
+    near(box(last, 'active track').width, T - GAP);
+    expect(shown(last, 'inactive track')).toBeUndefined();
     // without the inactive segment there is no stop indicator
     expect(dotsOf(last).filter((dot) => dot.x > 300)).toEqual([]);
   });
@@ -271,7 +270,7 @@ describe('M3 group C — slider', () => {
       ]) {
         const d = draw('slider', values);
         // EX6: the tick that would fall under a thumb is not drawn (the thumb covered it)
-        const thumbs = allNamed(d, 'alça').map((n) => boxOf(d, n).x + 2);
+        const thumbs = allNamed(d, 'handle').map((n) => boxOf(d, n).x + 2);
         const expected = positions.filter((p) =>
           thumbs.every((t) => Math.abs(t - p) > 0.01),
         );
@@ -294,8 +293,8 @@ describe('M3 group C — slider', () => {
   it('width: the track follows the rectangle (fill) keeping the thumb and gaps', () => {
     const entry = entryOf('slider');
     const wide = instantiateAt(entry, { type: 'single', value: '0.5' }, 500);
-    near(box(wide, 'alça').x, (500 - 4) * 0.5);
-    near(box(wide, 'trilho inativo').x + box(wide, 'trilho inativo').width, 498);
+    near(box(wide, 'handle').x, (500 - 4) * 0.5);
+    near(box(wide, 'inactive track').x + box(wide, 'inactive track').width, 498);
   });
 });
 
@@ -323,7 +322,7 @@ function dotsOf(d: Drawing): Dot[] {
   ) => {
     if (!node.visible) return;
     const b = all.get(node.id)!;
-    if (node.name === 'marca' && node.type === 'ellipse') {
+    if (node.name === 'tick' && node.type === 'ellipse') {
       const cx = b.x + b.width / 2;
       const cy = b.y + b.height / 2;
       if (
@@ -371,7 +370,7 @@ describe('M3 group C — segmented-button', () => {
   });
   const three = [option('Day'), option('Week', 'true'), option('Month')];
   const segments = (d: Drawing) =>
-    allNamed(d, 'segmento').map((n) => ({ n, ...boxOf(d, n) }));
+    allNamed(d, 'segment').map((n) => ({ n, ...boxOf(d, n) }));
 
   it('segments of equal width (repeat distribute fill) with 2, 3 and 4 options, height 40', () => {
     for (const count of [2, 3, 4]) {
@@ -457,14 +456,14 @@ describe('M3 group C — segmented-button', () => {
       [dark, 'dark'],
     ] as const) {
       expect(radiusOf(d.root)).toBe(Number(tok('corner-full', mode)));
-      const outline = named(d, 'contorno')!;
+      const outline = named(d, 'outline')!;
       expect(strokeOf(outline)).toBe(tok('outline', mode));
       expect(outline.stroke?.width).toBe(1);
       expect(radiusOf(outline)).toBe(Number(tok('corner-full', mode)));
       const b = boxOf(d, outline);
       expect([b.x, b.y, b.width, b.height]).toEqual([0, 0, W, 40]);
       // inside the box there is a divider at each boundary between segments
-      const dividers = allNamed(d, 'divisor')
+      const dividers = allNamed(d, 'divider')
         .map((n) => ({ n, ...boxOf(d, n) }))
         .filter((r) => r.x > 0);
       const segs = segments(d);
@@ -485,10 +484,10 @@ describe('M3 group C — segmented-button', () => {
       [light, 'light'],
       [dark, 'dark'],
     ] as const) {
-      const outline = named(d, 'contorno')!;
+      const outline = named(d, 'outline')!;
       expect(strokeOf(outline)).toBe(tok('outline', mode));
       expect(outline.opacity).toBe(Number(tok('state-disabled-container', mode)));
-      for (const r of allNamed(d, 'divisor')) {
+      for (const r of allNamed(d, 'divider')) {
         expect(fillOf(r)).toBe(tok('outline', mode));
         expect(r.opacity).toBe(Number(tok('state-disabled-container', mode)));
       }

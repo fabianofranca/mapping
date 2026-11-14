@@ -22,12 +22,12 @@
     },
     {
       "id": "material3-compose",
-      "version": 14,
+      "version": 15,
       "file": "specs/material3-compose/material3-compose.spec.json"
     },
     {
       "id": "notas",
-      "version": 3,
+      "version": 4,
       "file": "specs/notas/notas.spec.json"
     }
   ],

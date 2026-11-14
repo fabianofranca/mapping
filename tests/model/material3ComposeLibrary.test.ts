@@ -278,9 +278,9 @@ describe('Material 3 (Compose) library', () => {
     expect(docs).toHaveLength(50);
     for (const doc of docs) {
       const body = text(doc.path);
-      // pt-BR kept: Portuguese text of the library docs (docs/*.md in libraries/material3-compose/), outside this phase
-      expect(body, doc.path).toContain(
-        '1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem',
+      // the translation of the docs words it in three ways ("the container density converts [it] to", "the container's density")
+      expect(body, doc.path).toMatch(
+        /1 dp = 1 component unit; the container(?:'s)? density converts (?:it )?to image pixels/,
       );
       expect(body, doc.path).not.toContain('1 dp = 1 px do componente');
     }
@@ -304,8 +304,7 @@ describe('Material 3 (Compose) library', () => {
       components: 50,
       docs: 50,
     });
-    // pt-BR kept: 'parâmetro fora da ficha' is the pt-BR text of the model.library.paramOutsideSignature warning
-    // Only the known `parâmetro fora da ficha` warnings (provisional: owner decision pending in bug #1774; curation
+    // Only the known `parameter outside the signature` warnings (provisional: owner decision pending in bug #1774; curation
     // in #1134): the fonts come in the package and `code` covers the fields the drawing does not use. The set cannot grow
     // or keep an item that disappeared.
     const known = unknownWarnings(report.warnings);
@@ -313,11 +312,11 @@ describe('Material 3 (Compose) library', () => {
     expect(known.missing).toEqual([]);
   }, 30_000);
 
-  it('is formatVersion 16, version 14, with tokens in light and dark modes and the compose platform in androidx pinned at the commit', () => {
+  it('is formatVersion 16, version 15, with tokens in light and dark modes and the compose platform in androidx pinned at the commit', () => {
     expect(spec).toMatchObject({
       formatVersion: 16,
       id: 'material3-compose',
-      version: 14,
+      version: 15,
       icons: 'icons/material-icons.json',
     });
     expect(spec.tokens?.modes).toEqual(['light', 'dark']);
@@ -677,8 +676,7 @@ describe('components migrated in M1 (text, icon, divider, surface)', () => {
     );
     expect(solid(other.root.fills)).toBe('#6750A4');
     const tonal = (d: typeof light) =>
-      // pt-BR kept: node name of the material3-compose library (libraries/*.json, outside this phase)
-      d.root.children.find((c) => c.name === 'elevação tonal');
+      d.root.children.find((c) => c.name === 'tonal elevation');
     expect(tonal(other)?.visible ?? false).toBe(false);
     expect(tonal(light)?.visible).toBe(true);
   });
@@ -708,11 +706,11 @@ describe('Material 3 (Compose) library update with the numeric slider', () => {
           );
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
-      [1, 14],
-      [2, 14],
-      [3, 14],
-      [4, 14],
-      [5, 14],
+      [1, 15],
+      [2, 15],
+      [3, 15],
+      [4, 15],
+      [5, 15],
     ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
@@ -760,9 +758,9 @@ describe('reading direction and anchor in the Material 3 (Compose) library (R5, 
       .join('');
   const catalog = buildCatalog(files);
 
-  it('the icon set is formatVersion 2 and the specialization is at version 14', () => {
+  it('the icon set is formatVersion 2 and the specialization is at version 15', () => {
     expect(iconSet.formatVersion).toBe(2);
-    expect(spec.version).toBe(14);
+    expect(spec.version).toBe(15);
   });
 
   it('every androidx AutoMirrored icon has mirror: true in the set, and no other does', () => {
@@ -819,7 +817,7 @@ describe('reading direction and anchor in the Material 3 (Compose) library (R5, 
 
   /** The visible arrows drawn by the tooltip. */
   const carets = (drawn: ReturnType<typeof drawWith>) =>
-    drawn.nodes.filter((n) => n.name === 'seta' && n.visible);
+    drawn.nodes.filter((n) => n.name === 'caret' && n.visible);
 
   describe('the anchored tooltip draws the arrow under the center of the anchor', () => {
     // The 120 × 24 plain tooltip and the 40 × 40 anchor 4 apart (Compose's spacing).
@@ -1034,9 +1032,8 @@ describe('reading direction and anchor in the Material 3 (Compose) library (R5, 
       expect(rtl.warnings).toEqual([]);
     });
 
-    it('the "Voltar" example of the icon and the top-app-bar one exist and cover the back arrow', () => {
-      // pt-BR kept: name of an example of the material3-compose library (libraries/*.json, outside this phase)
-      const icon = typeOf('icon').examples?.find((e) => e.name === 'Voltar');
+    it('the "Back" example of the icon and the top-app-bar one exist and cover the back arrow', () => {
+      const icon = typeOf('icon').examples?.find((e) => e.name === 'Back');
       expect(icon?.values).toMatchObject({ imageVector: 'ArrowBack' });
       const bar = typeOf('top-app-bar').examples?.some(
         (e) => (e.values as Record<string, unknown>)?.navigationIcon === 'ArrowBack',

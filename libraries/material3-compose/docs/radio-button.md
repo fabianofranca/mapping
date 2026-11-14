@@ -1,24 +1,24 @@
 # Radio button
 
-Opção exclusiva de um grupo: marcar uma desmarca as outras. Use um por opção.
+Exclusive option of a group: selecting one deselects the others. Use one per option.
 
-Tipo de anotação: `radio-button` (camada Componentes).
+Annotation type: `radio-button` (Components layer).
 
-## Campos
+## Fields
 
-| Chave         | Rótulo      | Tipo   | Obrigatório | Opções                                  | Padrão  | Descrição                                                                                                                                                                                                                                |
-| ------------- | ----------- | ------ | ----------- | --------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `label`       | Rótulo      | string | não         |                                         |         | Texto ao lado do botão (o RadioButton em si não tem rótulo).                                                                                                                                                                             |
-| `selected`    | Selecionado | enum   | não         | `true`, `false`                         | `false` | true marca a opção.                                                                                                                                                                                                                      |
-| `enabled`     | Habilitado  | enum   | não         | `true`, `false`                         | `true`  | false desabilita a opção.                                                                                                                                                                                                                |
-| `interaction` | Interação   | enum   | não         | `none`, `hovered`, `focused`, `pressed` | `none`  | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence). |
+| Key           | Label       | Type   | Required | Options                                 | Default | Description                                                                                                                                                                                                          |
+| ------------- | ----------- | ------ | -------- | --------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `label`       | Label       | string | no       |                                         |         | Text beside the button (the RadioButton itself has no label).                                                                                                                                                        |
+| `selected`    | Selected    | enum   | no       | `true`, `false`                         | `false` | true selects the option.                                                                                                                                                                                             |
+| `enabled`     | Enabled     | enum   | no       | `true`, `false`                         | `true`  | false disables the option.                                                                                                                                                                                           |
+| `interaction` | Interaction | enum   | no       | `none`, `hovered`, `focused`, `pressed` | `none`  | Resting look of the interaction state: hovered, focused or pressed; none = no state layer. It only changes the drawing, it does not go into the code. With enabled false nothing is drawn (the disabled state wins). |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.RadioButton`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/RadioButton.kt`
+- Symbol: `androidx.compose.material3.RadioButton`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/RadioButton.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and the expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 Row(
@@ -27,53 +27,53 @@ Row(
 ) {
     RadioButton(
         selected = selected,
-        onClick = null,    // a Row inteira recebe o toque
+        onClick = null,    // the whole Row receives the tap
         enabled = true,
     )
-    Text("Cartão de crédito")
+    Text("Credit card")
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> O RadioButton não tem rótulo: o `label` vira um `Text` ao lado, numa `Row`. O padrão de acessibilidade é a `Row` inteira selecionável, `Modifier.selectable(selected = <selected>, onClick = { … }, role = Role.RadioButton)`, com `RadioButton(selected = <selected>, onClick = null)` dentro; sem a `Row` selecionável, `onClick` liga à lógica da tela. Um grupo é uma `Column` (ou `Modifier.selectableGroup()`) com um RadioButton por opção. Não exige opt-in.
+> The RadioButton has no label: the `label` becomes a `Text` beside it, in a `Row`. The accessibility pattern is the whole `Row` selectable, `Modifier.selectable(selected = <selected>, onClick = { … }, role = Role.RadioButton)`, with `RadioButton(selected = <selected>, onClick = null)` inside; without the selectable `Row`, `onClick` binds to the screen logic. A group is a `Column` (or `Modifier.selectableGroup()`) with one RadioButton per option. It does not require an opt-in.
 
-## Exemplos
+## Examples
 
-- **Selecionado**: label=Cartão de crédito, selected=true
-- **Não selecionado**: label=Boleto, selected=false
-- **Desabilitado**: label=Pix, selected=false, enabled=false
-- **Mouse sobre**: label=Boleto, selected=false, interaction=hovered
-- **Com foco**: label=Cartão de crédito, selected=true, interaction=focused
-- **Pressionado**: label=Boleto, selected=false, interaction=pressed
+- **Selected**: label=Credit card, selected=true
+- **Not selected**: label=Bank slip, selected=false
+- **Disabled**: label=Pix, selected=false, enabled=false
+- **Hovered**: label=Bank slip, selected=false, interaction=hovered
+- **Focused**: label=Credit card, selected=true, interaction=focused
+- **Pressed**: label=Bank slip, selected=false, interaction=pressed
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container's density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization's tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx tokens files; no color, font or opacity is left literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/RadioButton.kt` (linhas 74 a 128: `RadioButton`, o `Canvas` com `padding(RadioButtonPadding)` e `requiredSize(IconSize)`, o `drawCircle` do anel e o do ponto; 163 a 180: `defaultRadioButtonColors`; 224 a 240: `radioColor` por estado; 264 a 266: `RadioButtonPadding` 2, `RadioButtonDotSize` 12 e `RadioStrokeWidth` 2).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/RadioButtonTokens.kt` (linhas 23 a 38: `IconSize` 20, `SelectedIconColor` `Primary`, `UnselectedIconColor` `OnSurfaceVariant`, os desabilitados `OnSurface` a 0,38; linhas 29 a 32 e 34 a 37: os papéis `Focus`, `Hover` e `Pressed`; 33: `StateLayerSize` 40).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/RadioButton.kt` (lines 74 to 128: `RadioButton`, the `Canvas` with `padding(RadioButtonPadding)` and `requiredSize(IconSize)`, the ring's `drawCircle` and the dot's; 163 to 180: `defaultRadioButtonColors`; 224 to 240: `radioColor` by state; 264 to 266: `RadioButtonPadding` 2, `RadioButtonDotSize` 12 and `RadioStrokeWidth` 2).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/RadioButtonTokens.kt` (lines 23 to 38: `IconSize` 20, `SelectedIconColor` `Primary`, `UnselectedIconColor` `OnSurfaceVariant`, the disabled ones `OnSurface` at 0.38; lines 29 to 32 and 34 to 37: the `Focus`, `Hover` and `Pressed` roles; 33: `StateLayerSize` 40).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Anel de 20 por 20 com traço de 2 por dentro (`drawCircle` com raio `IconSize / 2 - traço / 2` e `Stroke` de 2). O ponto selecionado é cheio e tem **10** de diâmetro: o Compose o desenha com raio `RadioButtonDotSize / 2 - traço / 2` = 5, e não os 12 do nome da constante. O anel e o ponto usam a mesma cor.
-- A área é de 24 (padding de 2 em volta dos 20), o desenho de `RadioButton(onClick = null)` numa `Row` selecionável, que é a chamada deste tipo; o rótulo (`body-large-*`, `on-surface`) vem logo depois.
-- Cores: selecionado `primary`; não selecionado `on-surface-variant`; desabilitado `on-surface` com `state-disabled-content` (0,38), selecionado ou não, em light e dark.
+- Ring of 20 by 20 with a 2 stroke on the inside (`drawCircle` with radius `IconSize / 2 - stroke / 2` and a `Stroke` of 2). The selected dot is filled and has a diameter of **10**: Compose draws it with radius `RadioButtonDotSize / 2 - stroke / 2` = 5, and not the 12 of the constant's name. The ring and the dot use the same color.
+- The area is 24 (padding of 2 around the 20), the drawing of `RadioButton(onClick = null)` in a selectable `Row`, which is this type's call; the label (`body-large-*`, `on-surface`) comes right after.
+- Colors: selected `primary`; unselected `on-surface-variant`; disabled `on-surface` with `state-disabled-content` (0.38), selected or not, in light and dark.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (the `interaction` field)**
 
-O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o desabilitado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que o `RadioButtonTokens.kt` do commit define: `hovered`, `focused` e `pressed` (não há `Dragged*`, então não há `dragged`).
+The field chooses the resting look of a state, as `enabled` chooses the disabled state; it does not go into the `code` or the `variants`. The options are `none` and the states that the commit's `RadioButtonTokens.kt` defines: `hovered`, `focused` and `pressed` (there is no `Dragged*`, so there is no `dragged`).
 
-- **Camada de estado:** o nó `estado` é um círculo de 24 centrado no anel, atrás dele. O Compose usa 40 (`StateLayerSize`, linha 33), mas a área do anel mede 24 de largura: o círculo de 40 passaria dela e da caixa do componente, e o desenho não deixa nada vazar da caixa, então a camada fica contida (8 a menos de cada lado), com a cor do papel do estado: `primary` selecionado (`SelectedHoverIconColor`, `SelectedFocusIconColor`, `SelectedPressedIconColor`, linhas 29, 30 e 32) e `on-surface` não selecionado (`UnselectedHoverIconColor`, `UnselectedFocusIconColor`, `UnselectedPressedIconColor`, linhas 34, 35 e 37). O `opacity` vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10).
-- **Anel do não selecionado:** passa de `on-surface-variant` para `on-surface` com o mouse, o foco e o pressionado (as mesmas linhas); o selecionado continua `primary` no anel e no ponto.
-- **Desabilitado vence:** com `enabled` `false` o nó `estado` fica invisível e o anel não muda, então o desenho é o do desabilitado, qualquer que seja o `interaction`.
+- **State layer:** the `state` node is a 24 circle centered on the ring, behind it. Compose uses 40 (`StateLayerSize`, line 33), but the ring's area is 24 wide: the 40 circle would go past it and past the component's box, and the drawing lets nothing leak out of the box, so the layer is contained (8 less on each side), with the color of the state's role: `primary` when selected (`SelectedHoverIconColor`, `SelectedFocusIconColor`, `SelectedPressedIconColor`, lines 29, 30 and 32) and `on-surface` when unselected (`UnselectedHoverIconColor`, `UnselectedFocusIconColor`, `UnselectedPressedIconColor`, lines 34, 35 and 37). The `opacity` comes from the tokens `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10).
+- **Unselected ring:** goes from `on-surface-variant` to `on-surface` with hover, focus and pressed (the same lines); the selected one stays `primary` on the ring and the dot.
+- **Disabled wins:** with `enabled` `false` the `state` node is invisible and the ring does not change, so the drawing is the disabled one, whatever the `interaction`.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- Sem ripple animado, sem transição entre estados e sem a animação do ponto (`animateDpAsState`): o desenho é um quadro parado do estado final. O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
-- A camada de 24 do desenho é menor que a de 40 do Compose, que passaria 8 para cada lado da área de 24 e, na borda esquerda, 8 além da caixa da instância. No Compose a camada sai do `selectable` da `Row` e do `minimumInteractiveComponentSize`.
-- Com `onClick` preenchido o Compose aumenta a área para 48 (`minimumInteractiveComponentSize`); o desenho fica com os 24 da chamada com `onClick = null`.
-- O rótulo a 0,38 quando desabilitado é convenção do desenho: o `Text` do Compose herda a cor do conteúdo e não diminui sozinho.
+- No animated ripple, no transition between states and no dot animation (`animateDpAsState`): the drawing is a resting frame of the final state. Compose defines no focus ring for this type at the pinned commit (none of its `*Tokens.kt` brings `FocusIndicatorColor`): none is drawn.
+- The drawing's 24 layer is smaller than Compose's 40, which would go 8 past each side of the 24 area and, on the left edge, 8 past the instance's box. In Compose the layer comes from the `Row`'s `selectable` and from `minimumInteractiveComponentSize`.
+- With `onClick` filled Compose enlarges the area to 48 (`minimumInteractiveComponentSize`); the drawing keeps the 24 of the call with `onClick = null`.
+- The label at 0.38 when disabled is a convention of the drawing: Compose's `Text` inherits the content color and does not dim by itself.

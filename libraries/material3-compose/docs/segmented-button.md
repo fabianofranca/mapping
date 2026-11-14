@@ -1,49 +1,49 @@
 # Segmented button
 
-Linha de dois a cinco segmentos para escolher uma opção (seleção única) ou várias (seleção múltipla). Cada linha de Opções é um segmento.
+Row of two to five segments to choose one option (single selection) or several (multiple selection). Each row of Options is a segment.
 
-Tipo de anotação: `segmented-button` (camada Componentes).
+Annotation type: `segmented-button` (layer Components).
 
-## Campos
+## Fields
 
-| Chave         | Rótulo     | Tipo  | Obrigatório | Opções                                  | Padrão   | Descrição                                                                                                                                                                                                                                                                                                                  |
-| ------------- | ---------- | ----- | ----------- | --------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `options`     | Opções     | table | sim         | ver Colunas abaixo                      |          | Um segmento por linha, na ordem em que aparecem (de dois a cinco).                                                                                                                                                                                                                                                         |
-| `selection`   | Seleção    | enum  | não         | `single`, `multi`                       | `single` | single (SingleChoiceSegmentedButtonRow) marca um segmento; multi (MultiChoiceSegmentedButtonRow) aceita vários.                                                                                                                                                                                                            |
-| `enabled`     | Habilitado | enum  | não         | `true`, `false`                         | `true`   | false desabilita os segmentos.                                                                                                                                                                                                                                                                                             |
-| `interaction` | Interação  | enum  | não         | `none`, `hovered`, `focused`, `pressed` | `none`   | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Vale para o segmento selecionado (cada um dos selecionados, na seleção múltipla). Com enabled false não desenha nada (o desabilitado vence). |
+| Key           | Label       | Type  | Required | Options                                 | Default  | Description                                                                                                                                                                                                                                                                                               |
+| ------------- | ----------- | ----- | -------- | --------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `options`     | Options     | table | yes      | see Columns below                       |          | One segment per row, in the order they appear (two to five).                                                                                                                                                                                                                                              |
+| `selection`   | Selection   | enum  | no       | `single`, `multi`                       | `single` | single (SingleChoiceSegmentedButtonRow) marks one segment; multi (MultiChoiceSegmentedButtonRow) accepts several.                                                                                                                                                                                         |
+| `enabled`     | Enabled     | enum  | no       | `true`, `false`                         | `true`   | false disables the segments.                                                                                                                                                                                                                                                                              |
+| `interaction` | Interaction | enum  | no       | `none`, `hovered`, `focused`, `pressed` | `none`   | Resting appearance of the interaction state: hovered, focused or pressed; none = no state layer. It only changes the drawing and does not go into the code. It applies to the selected segment (each selected one, in multiple selection). With enabled false nothing is drawn (the disabled state wins). |
 
-Colunas de `options` (uma linha por opção):
+Columns of `options` (one row per option):
 
-| Chave      | Rótulo      | Tipo   | Obrigatório | Opções                                                         | Padrão  |
-| ---------- | ----------- | ------ | ----------- | -------------------------------------------------------------- | ------- |
-| `label`    | Rótulo      | string | sim         |                                                                |         |
-| `icon`     | Ícone       | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |         |
-| `selected` | Selecionado | enum   | não         | `true`, `false`                                                | `false` |
+| Key        | Label    | Type   | Required | Options                                                   | Default |
+| ---------- | -------- | ------ | -------- | --------------------------------------------------------- | ------- |
+| `label`    | Label    | string | yes      |                                                           |         |
+| `icon`     | Icon     | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
+| `selected` | Selected | enum   | no       | `true`, `false`                                           | `false` |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.SingleChoiceSegmentedButtonRow`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SegmentedButton.kt`
-- O campo `selection` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.SingleChoiceSegmentedButtonRow`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SegmentedButton.kt`
+- The `selection` field chooses the symbol; values without their own case use the base one.
 
-| `selection`     | Símbolo                          |
+| `selection`     | Symbol                           |
 | --------------- | -------------------------------- |
 | `single` (base) | `SingleChoiceSegmentedButtonRow` |
 | `multi`         | `MultiChoiceSegmentedButtonRow`  |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 SingleChoiceSegmentedButtonRow {    // selection multi: MultiChoiceSegmentedButtonRow
-    // uma linha de options vira um SegmentedButton
+    // a row of options becomes a SegmentedButton
     SegmentedButton(
         selected = false,
-        onClick = { /* lógica da tela */ },
+        onClick = { /* screen logic */ },
         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
         enabled = true,
         icon = { SegmentedButtonDefaults.Icon(active = false) },
-        label = { Text("Dia") },
+        label = { Text("Day") },
     )
     SegmentedButton(
         selected = true,
@@ -51,59 +51,59 @@ SingleChoiceSegmentedButtonRow {    // selection multi: MultiChoiceSegmentedButt
         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
         enabled = true,
         icon = { SegmentedButtonDefaults.Icon(active = true) },
-        label = { Text("Semana") },
+        label = { Text("Week") },
     )
-    // ... o terceiro segmento (index = 2, count = 3)
+    // ... the third segment (index = 2, count = 3)
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+`code` notes (what the tool hands to the agent):
 
-> Um `SegmentedButton` por linha de `options`, dentro de `SingleChoiceSegmentedButtonRow { … }`: `selected`, `onClick`, `shape = SegmentedButtonDefaults.itemShape(index = <posição da linha>, count = <número de linhas>)` (obrigatório), `enabled = <enabled>` (parâmetro do segmento, não da linha), `icon = { SegmentedButtonDefaults.Icon(active = <selected>) }` (o check) e `label = { Text(<label>) }`. Com a coluna `icon` preenchida, passe `inactiveContent = { Icon(Icons.Filled.<icon>, contentDescription = null, Modifier.size(SegmentedButtonDefaults.IconSize)) }` ao `SegmentedButtonDefaults.Icon`. O `SegmentedButton` é função de extensão do escopo da linha: importe `androidx.compose.material3.SegmentedButton`. Nenhum tipo exige opt-in. A 1.4.0 não traz os ícones: o app adiciona `androidx.compose.material:material-icons-core` (ou `-extended`) ou usa um Material Symbol com `painterResource`.
+> One `SegmentedButton` per row of `options`, inside `SingleChoiceSegmentedButtonRow { … }`: `selected`, `onClick`, `shape = SegmentedButtonDefaults.itemShape(index = <row position>, count = <number of rows>)` (required), `enabled = <enabled>` (a segment parameter, not a row one), `icon = { SegmentedButtonDefaults.Icon(active = <selected>) }` (the check) and `label = { Text(<label>) }`. With the `icon` column filled, pass `inactiveContent = { Icon(Icons.Filled.<icon>, contentDescription = null, Modifier.size(SegmentedButtonDefaults.IconSize)) }` to `SegmentedButtonDefaults.Icon`. The `SegmentedButton` is an extension function of the row scope: import `androidx.compose.material3.SegmentedButton`. No type requires opt-in. 1.4.0 does not ship the icons: the app adds `androidx.compose.material:material-icons-core` (or `-extended`) or uses a Material Symbol with `painterResource`.
 
-Variante `multi`: Um `SegmentedButton` por linha de `options`, dentro de `MultiChoiceSegmentedButtonRow { … }`, com `checked = <selected>` e `onCheckedChange` no lugar de `selected` e `onClick` (cada segmento liga e desliga sozinho); `shape = SegmentedButtonDefaults.itemShape(index = <posição da linha>, count = <número de linhas>)`, `enabled = <enabled>`, `icon = { SegmentedButtonDefaults.Icon(active = <selected>) }` e `label = { Text(<label>) }`. Importe `androidx.compose.material3.SegmentedButton`.
+`multi` variant: One `SegmentedButton` per row of `options`, inside `MultiChoiceSegmentedButtonRow { … }`, with `checked = <selected>` and `onCheckedChange` in place of `selected` and `onClick` (each segment toggles on its own); `shape = SegmentedButtonDefaults.itemShape(index = <row position>, count = <number of rows>)`, `enabled = <enabled>`, `icon = { SegmentedButtonDefaults.Icon(active = <selected>) }` and `label = { Text(<label>) }`. Import `androidx.compose.material3.SegmentedButton`.
 
-## Exemplos
+## Examples
 
-- **Seleção única**: selection=single
-- **Seleção múltipla**: selection=multi
-- **Desabilitado**: selection=single, enabled=false
-- **Mouse sobre**: selection=single, interaction=hovered
-- **Com foco**: selection=multi, interaction=focused
-- **Pressionado**: selection=single, interaction=pressed
+- **Single selection**: selection=single
+- **Multiple selection**: selection=multi
+- **Disabled**: selection=single, enabled=false
+- **Hovered**: selection=single, interaction=hovered
+- **Focused**: selection=multi, interaction=focused
+- **Pressed**: selection=single, interaction=pressed
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SegmentedButton.kt` (linhas 130 a 170 e 210 a 250: o `SegmentedButton` com `weight(1f)`, `defaultMinSize` de `ButtonDefaults.MinWidth` e `MinHeight` e o `Surface` com a `border`; 328 a 347 e 364 a 381: as linhas, com `Arrangement.spacedBy(-space)` que sobrepõe os segmentos em 1 (a borda) e altura mínima de `ContainerHeight`; 383 a 462: `SegmentedButtonContent`, com o ícone de 18, `IconSpacing` 8 e o conjunto centrado; 541 a 567: as cores padrão (selecionado `SelectedContainerColor`, borda `OutlineColor`, desabilitado com `DisabledLabelTextOpacity` e `DisabledOutlineOpacity`); 582 a 611: `BorderWidth`, `itemShape` (forma full só nas pontas), `IconSize` e `ContentPadding`; 614 a 622: o `ActiveIcon` é o `Icons.Filled.Check`; 841: `IconSpacing`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedSegmentedButtonTokens.kt` (linhas 25 a 54: `ContainerHeight` 40, `OutlineWidth` 1, `Shape` `CornerFull`, `LabelTextFont` `LabelLarge`, `IconSize` 18, e os papéis selecionado e desmarcado).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt` (linhas 479 a 543: `TextButtonContentPadding` 12 e 8, `MinWidth` 58 e `MinHeight` 40).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SegmentedButton.kt` (lines 130 to 170 and 210 to 250: the `SegmentedButton` with `weight(1f)`, `defaultMinSize` of `ButtonDefaults.MinWidth` and `MinHeight` and the `Surface` with the `border`; 328 to 347 and 364 to 381: the rows, with `Arrangement.spacedBy(-space)` that overlaps the segments by 1 (the border) and a minimum height of `ContainerHeight`; 383 to 462: `SegmentedButtonContent`, with the 18 icon, `IconSpacing` 8 and the centered group; 541 to 567: the default colors (selected `SelectedContainerColor`, border `OutlineColor`, disabled with `DisabledLabelTextOpacity` and `DisabledOutlineOpacity`); 582 to 611: `BorderWidth`, `itemShape` (full shape only at the ends), `IconSize` and `ContentPadding`; 614 to 622: the `ActiveIcon` is the `Icons.Filled.Check`; 841: `IconSpacing`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedSegmentedButtonTokens.kt` (lines 25 to 54: `ContainerHeight` 40, `OutlineWidth` 1, `Shape` `CornerFull`, `LabelTextFont` `LabelLarge`, `IconSize` 18, and the selected and unselected roles).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt` (lines 479 to 543: `TextButtonContentPadding` 12 and 8, `MinWidth` 58 and `MinHeight` 40).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Linha de 40 de altura e forma `corner-full`; os segmentos são o `repeat` de `options` numa **grade de colunas iguais** (`repeat.layout` `grid` com `columns: { "$rows": "options" }`, formato 4), cada um com o mínimo de 58. No tamanho ajustado ao conteúdo (`fit_marking`, o Arrumar e a instância nova), a largura é `n` vezes o segmento mais largo, o `IntrinsicSize.Min` com `weight(1f)` do Compose (`SegmentedButton.kt` linhas 233 a 238 e 328 a 340): com os rótulos "A" e "Configurações avançadas" os dois segmentos medem o mesmo, o do mais largo.
-- Selecionado: fundo `secondary-container`, rótulo e check `on-secondary-container`. Desmarcado: sem fundo, rótulo e ícone `on-surface`. O check é o nó `icon` de 18 e substitui o ícone da coluna; o rótulo usa os tokens de `label-large` (14, 20, 500 e 0,1).
-- O ícone (18) e o rótulo ficam separados por 8 e o conjunto é centrado no segmento, com o espaço de `TextButtonContentPadding` (12 dos lados, 8 em cima e embaixo). Sem ícone e desmarcado, só o rótulo, centrado.
-- Contorno de 1 em `outline`, dentro da caixa e com a forma full; o `clip` da raiz arredonda as pontas do fundo do selecionado. Entre os segmentos há um divisor de 1 em `outline` (a borda dupla do Compose, sobreposta em 1).
-- Desabilitado: contorno e divisores `outline` a `state-disabled-container` (0,12, como `disabledActiveBorderColor` e `disabledInactiveBorderColor`: o código usa `OutlineColor`, não o `on-surface` que o token cita), rótulo e ícone `on-surface` a `state-disabled-content` (0,38) e o fundo do selecionado continua `secondary-container` (`disabledActiveContainerColor`).
-- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `rótulo` usa `font.verticalAlign: "cap-middle"` e ocupa a altura da caixa (`height: "fill"`), sem mudar a posição horizontal. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
+- Row 40 high in the `corner-full` shape; the segments are the `repeat` of `options` in an **equal-column grid** (`repeat.layout` `grid` with `columns: { "$rows": "options" }`, format 4), each with a minimum of 58. At the content-fitted size (`fit_marking`, Arrange and the new instance), the width is `n` times the widest segment, the Compose `IntrinsicSize.Min` with `weight(1f)` (`SegmentedButton.kt` lines 233 to 238 and 328 to 340): with the labels "A" and "Advanced settings" both segments measure the same, that of the widest one.
+- Selected: `secondary-container` background, label and check `on-secondary-container`. Unselected: no background, label and icon `on-surface`. The check is the 18 `icon` node and replaces the icon of the column; the label uses the `label-large` tokens (14, 20, 500 and 0.1).
+- The icon (18) and the label are 8 apart and the group is centered in the segment, with the `TextButtonContentPadding` space (12 on the sides, 8 above and below). With no icon and unselected, just the label, centered.
+- 1 outline in `outline`, inside the box and with the full shape; the root `clip` rounds the ends of the selected background. Between the segments there is a 1 divider in `outline` (the Compose double border, overlapped by 1).
+- Disabled: outline and dividers `outline` at `state-disabled-container` (0.12, like `disabledActiveBorderColor` and `disabledInactiveBorderColor`: the code uses `OutlineColor`, not the `on-surface` the token cites), label and icon `on-surface` at `state-disabled-content` (0.38) and the selected background stays `secondary-container` (`disabledActiveContainerColor`).
+- Single-line label centered by the cap height (`cap-middle`): the `label` node uses `font.verticalAlign: "cap-middle"` and takes the box height (`height: "fill"`), without changing the horizontal position. The Compose `Text` centers by the font line box (ascent and descent); the drawing centers the cap height in the box, and with Roboto the two coincide to within 1 px.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o desabilitado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que os `OutlinedSegmentedButtonTokens.kt` do commit definem: `hovered`, `focused` e `pressed` (não há `Dragged*` nos tokens do segmentado, então não há `dragged`).
+The field chooses the resting appearance of a state, as `enabled` chooses the disabled state; it does not go into the `code` or the `variants`. The options are `none` and the states that the commit's `OutlinedSegmentedButtonTokens.kt` defines: `hovered`, `focused` and `pressed` (there is no `Dragged*` in the segmented button tokens, so there is no `dragged`).
 
-- **Camada de estado:** o nó `estado` é um `rect` do tamanho do segmento, entre o fundo e o conteúdo, com a cor do conteúdo do segmento selecionado, `on-secondary-container` (`SelectedHoverLabelTextColor`, `SelectedFocusLabelTextColor`, `SelectedPressedLabelTextColor` e os `Selected*IconColor`, linhas 36 a 42 de `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedSegmentedButtonTokens.kt`) e `opacity` pelos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10), que espelham `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25). As pontas da linha ficam arredondadas porque a raiz recorta.
-- **Qual segmento:** a camada cai no segmento **selecionado**; na seleção múltipla, em cada um dos selecionados. Não há campo de índice para escolher outro. Sem nenhum segmento selecionado o estado não desenha nada: o formato do componente não tem índice da linha nem consulta ao conjunto das linhas, então "o primeiro, se nenhum estiver selecionado" não é expressável.
-- **Cor do conteúdo:** o rótulo e o ícone do segmento mantêm a cor parada em todos os estados (os tokens repetem `on-secondary-container` no selecionado e `on-surface` no desmarcado). Elevação e contorno não mudam com o estado nos tokens do segmentado.
-- **Desabilitado vence:** com `enabled` `false` o nó `estado` fica invisível, então o desenho é o do desabilitado, qualquer que seja o `interaction`.
+- **State layer:** the `state` node is a `rect` the size of the segment, between the background and the content, with the content color of the selected segment, `on-secondary-container` (`SelectedHoverLabelTextColor`, `SelectedFocusLabelTextColor`, `SelectedPressedLabelTextColor` and the `Selected*IconColor`, lines 36 to 42 of `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedSegmentedButtonTokens.kt`) and `opacity` from the `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10) tokens, which mirror `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25). The ends of the row stay rounded because the root clips.
+- **Which segment:** the layer lands on the **selected** segment; in multiple selection, on each selected one. There is no index field to pick another. With no segment selected the state draws nothing: the component format has no row index or query over the set of rows, so "the first one, if none is selected" cannot be expressed.
+- **Content color:** the label and the icon of the segment keep their resting color in every state (the tokens repeat `on-secondary-container` when selected and `on-surface` when unselected). Elevation and outline do not change with the state in the segmented button tokens.
+- **Disabled wins:** with `enabled` `false` the `state` node is invisible, so the drawing is the disabled one, whatever the `interaction`.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- Os segmentos se encostam e o divisor é o lado esquerdo de cada um (o do primeiro fica fora da caixa), em vez de se sobrepor em 1: a largura de cada segmento é `(largura + 1) / n`, e não `(largura + n - 1) / n`, então a fronteira cai a menos de 1 do Compose.
-- A largura da linha ajusta ao conteúdo (`hug`), como o `width(IntrinsicSize.Min)` do Compose; com a marcação mais larga que isso, a grade reparte a largura da marcação por igual entre os segmentos (a linha com `Modifier.fillMaxWidth()`). A medida é a do desenho (texto, ícone e o padding de 12 dos lados), não a `minIntrinsicWidth` do `SegmentedButton`.
-- O rótulo não quebra de propósito (`wrap: none`) e leva `maxLines: 1` com `ellipsis`: num segmento mais estreito que "check + rótulo" (a marcação encostada na borda do container, em que o `fit_marking` só recebe a largura que sobra), ele encolhe dentro da trilha e o `…` corta o resto, sem passar do vizinho e sem o aviso `conteúdo maior que a caixa`. A largura ajustada ao conteúdo não muda (a medida ignora o `ellipsis`). O Compose só limita pelo `Row`.
-- Os estados de interação são quadros parados: sem ripple animado, sem transição e sem o movimento da troca do check e do deslocamento do rótulo (`SegmentedButtonContentMeasurePolicy` anima o `offsetX`). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado. O estado vale só para o segmento selecionado (ver "Qual segmento").
-- O `selection` não muda o desenho (single e multi usam o mesmo check); só muda o símbolo do código.
+- The segments touch and the divider is the left side of each one (the first one's is outside the box), instead of overlapping by 1: the width of each segment is `(width + 1) / n`, not `(width + n - 1) / n`, so the boundary lands within 1 of Compose.
+- The row width fits the content (`hug`), like the Compose `width(IntrinsicSize.Min)`; with the marking wider than that, the grid splits the marking width equally among the segments (the row with `Modifier.fillMaxWidth()`). The measure is that of the drawing (text, icon and the 12 side padding), not the `minIntrinsicWidth` of the `SegmentedButton`.
+- The label deliberately does not wrap (`wrap: none`) and carries `maxLines: 1` with `ellipsis`: in a segment narrower than "check + label" (the marking against the container edge, where `fit_marking` only gets the leftover width), it shrinks inside the track and the `…` cuts the rest, without crossing into the neighbor and without the `content larger than the box` warning. The content-fitted width does not change (the measure ignores the `ellipsis`). Compose only limits through the `Row`.
+- The interaction states are still frames: no animated ripple, no transition and no movement of the check swap and the label shift (`SegmentedButtonContentMeasurePolicy` animates the `offsetX`). Compose defines no focus ring for this type at the pinned commit (none of its `*Tokens.kt` carries `FocusIndicatorColor`): none is drawn. The state applies only to the selected segment (see "Which segment").
+- The `selection` does not change the drawing (single and multi use the same check); it only changes the code symbol.

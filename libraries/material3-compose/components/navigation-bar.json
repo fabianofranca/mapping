@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "navigation-bar",
   "name": "Navigation bar",
-  "description": "Barra de navegação de 80 em surface container, com um destino de largura igual por linha de Itens (8 entre eles); o selecionado leva o indicador de 56 × 32 em secondary container.",
+  "description": "80-high navigation bar in surface container, with one equal-width destination per line of Items (8 between them); the selected one carries the 56 × 32 indicator in secondary container.",
   "size": {
     "width": 412,
     "height": 80
@@ -15,17 +15,17 @@
   "preview": {
     "items": [
       {
-        "label": "Início",
+        "label": "Home",
         "icon": "Home",
         "selected": "true"
       },
       {
-        "label": "Buscar",
+        "label": "Search",
         "icon": "Search",
         "selected": "false"
       },
       {
-        "label": "Perfil",
+        "label": "Profile",
         "icon": "Person",
         "selected": "false"
       }
@@ -44,7 +44,7 @@
     "children": [
       {
         "type": "repeat",
-        "name": "destinos",
+        "name": "destinations",
         "field": "items",
         "direction": "row",
         "gap": 8,
@@ -53,7 +53,7 @@
         "height": "fill",
         "template": {
           "type": "frame",
-          "name": "destino",
+          "name": "destination",
           "width": "fill",
           "height": "fill",
           "layout": {
@@ -110,7 +110,7 @@
           "children": [
             {
               "type": "frame",
-              "name": "indicador",
+              "name": "indicator",
               "width": 56,
               "height": 32,
               "cornerRadius": {
@@ -131,7 +131,7 @@
               "children": [
                 {
                   "type": "rect",
-                  "name": "estado",
+                  "name": "state",
                   "anchors": {
                     "left": 0,
                     "right": 0,
@@ -174,7 +174,7 @@
                 },
                 {
                   "type": "frame",
-                  "name": "conteúdo",
+                  "name": "content",
                   "width": "fill",
                   "height": "fill",
                   "layout": {
@@ -380,7 +380,7 @@
             },
             {
               "type": "text",
-              "name": "rótulo",
+              "name": "label",
               "text": {
                 "$field": "label"
               },

@@ -10,8 +10,6 @@
 //    (`ContainerHeight` 64, 112 and 152);
 //  - ListItem.kt 191 to 330 (`isSupportingMultiline` by the baselines of the supporting text), 451 to 473 (`calculateHeight`),
 //    475 to 524 (`place`: the three-line item pins the content to the top, at `topPadding` 12) and 712 to 757 (`ListItemType`).
-// pt-BR kept: node names ('aba', 'rótulo empilhado', 'pilha', 'indicador primário', 'título grande', 'corpo', 'apoio',
-// 'textos') and the example name 'Apoio de duas linhas' are the Portuguese data of libraries/material3-compose
 import { describe, expect, it } from 'vitest';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import type { SceneNode, TextNode } from '../../src/model/components/scene';
@@ -113,7 +111,7 @@ describe('MC5 group B — tabs, icon above the text by the baseline (Tab.kt 367 
     expect(labels).toHaveLength(2);
     for (const label of labels)
       expect((label.baselinePadding as { top: number }).top).toBe(20);
-    const stacks = templateNodes('tabs', 'pilha');
+    const stacks = templateNodes('tabs', 'stack');
     expect(stacks.length).toBeGreaterThan(0);
     for (const stack of stacks)
       expect(
@@ -156,7 +154,7 @@ describe('MC5 group B — tabs, icon above the text by the baseline (Tab.kt 367 
     // In the Compose tab the height becomes max(72, icon + text + 20) = 84; here the marking provides the height.
     for (const mode of MODES) {
       const d = drawTabs(TWO_LINES, 'primary', 84, mode);
-      const long = boxesOf(d, 'rótulo empilhado').find(
+      const long = boxesOf(d, 'stacked label').find(
         (b) => (b.node as TextNode).text === 'Account settings',
       )!;
       expect(long, 'two-line label').toBeDefined();
@@ -173,7 +171,7 @@ describe('MC5 group B — tabs, icon above the text by the baseline (Tab.kt 367 
 
   it('two lines: the text takes the tab width minus the 2 × 16 of HorizontalTextPadding', () => {
     const d = drawTabs(TWO_LINES, 'primary', 84);
-    const tab = boxesOf(d, 'aba')[0]!;
+    const tab = boxesOf(d, 'tab')[0]!;
     const long = textBox(d, 'Account settings');
     expect(long.width).toBeLessThanOrEqual(tab.width - 32 + 1e-6);
     near(long.height, 49);
@@ -181,13 +179,13 @@ describe('MC5 group B — tabs, icon above the text by the baseline (Tab.kt 367 
 
   it('the primary indicator stays the size of the content (matchContentSize)', () => {
     const d = drawTabs(THREE, 'primary', 72);
-    const indicator = boxesOf(d, 'indicador primário')[0]!;
+    const indicator = boxesOf(d, 'primary indicator')[0]!;
     near(indicator.width, textBox(d, 'Home').width);
     const long = drawTabs(TWO_LINES, 'primary', 84);
-    const wide = boxesOf(long, 'indicador primário')[0]!;
+    const wide = boxesOf(long, 'primary indicator')[0]!;
     const text = textBox(long, 'Account settings');
     near(wide.width, text.width);
-    const tab = boxesOf(long, 'aba')[0]!;
+    const tab = boxesOf(long, 'tab')[0]!;
     expect(wide.width).toBeLessThanOrEqual(tab.width - 32 + 1e-6);
   });
 
@@ -231,7 +229,7 @@ const BAR_HEIGHT: Record<string, number> = {
 
 describe('MC5 group B — top-app-bar, large title by the baseline and the height by the style', () => {
   it('the large titles (medium and large) carry baselinePadding.bottom 24 and 28, without the estimated bottom anchor', () => {
-    const nodes = templateNodes('top-app-bar', 'título grande');
+    const nodes = templateNodes('top-app-bar', 'large title');
     expect(nodes).toHaveLength(2);
     expect(
       nodes.map((n) => (n.baselinePadding as { bottom: number } | undefined)?.bottom),
@@ -253,7 +251,7 @@ describe('MC5 group B — top-app-bar, large title by the baseline and the heigh
           mode,
         );
         expect(box.height).toBe(BAR_HEIGHT[style]);
-        const title = boxesOf(drawing, 'título grande')[0]!;
+        const title = boxesOf(drawing, 'large title')[0]!;
         const first = lineHeight / 2 + ((0.93 - 0.24) * size) / 2;
         near(box.height - (title.y + first), bottom, 1);
       }
@@ -324,16 +322,16 @@ const twoLineSupport = {
 
 describe('MC5 group B — list-item, a two-line supporting text makes the three-line item (ListItem.kt 191 to 330)', () => {
   it('the body cites the supporting lines (isSupportingMultiline) in the minHeight, the padding and the alignment', () => {
-    const [body] = templateNodes('list-item', 'corpo');
+    const [body] = templateNodes('list-item', 'body');
     expect(body).toBeDefined();
     const json = JSON.stringify(body);
-    expect(json).toContain('"$lines":"apoio"');
+    expect(json).toContain('"$lines":"supporting"');
     // the 12 breathing room and the 88 of the three-line item now also hold through this path
     const layout = JSON.stringify((body as { layout: unknown }).layout);
-    expect(layout).toContain('"$lines":"apoio"');
+    expect(layout).toContain('"$lines":"supporting"');
     expect((body as { minHeight: unknown }).minHeight).toBeDefined();
     expect(JSON.stringify((body as { minHeight: unknown }).minHeight)).toContain(
-      '"$lines":"apoio"',
+      '"$lines":"supporting"',
     );
   });
 
@@ -401,14 +399,14 @@ describe('MC5 group B — list-item, a two-line supporting text makes the three-
       near(iconBoxes(drawing)[0]!.y, 24);
       const trailing = textBox(drawing, '12:30');
       near(trailing.y + trailing.height / 2, 36);
-      const texts = boxesOf(drawing, 'textos')[0]!;
+      const texts = boxesOf(drawing, 'texts')[0]!;
       near(texts.y + texts.height / 2, 36);
     }
   });
 
   it('the three-line text block by supporting text sits at the top (12) and ends inside the 88 item', () => {
     const { box, drawing } = drawFitted('list-item', twoLineSupport);
-    const texts = boxesOf(drawing, 'textos')[0]!;
+    const texts = boxesOf(drawing, 'texts')[0]!;
     near(texts.y, 12);
     near(texts.height, 24 + 40, 3);
     expect(texts.y + texts.height).toBeLessThanOrEqual(box.height - 12 + 1e-6);
@@ -441,11 +439,11 @@ describe('MC5 group B — list-item, a two-line supporting text makes the three-
     },
   );
 
-  it('the "Apoio de duas linhas" example exists and measures 88', () => {
+  it('the "Two-line supporting text" example exists and measures 88', () => {
     const example = entryOf('list-item').examples.find(
-      (e) => e.name === 'Apoio de duas linhas',
+      (e) => e.name === 'Two-line supporting text',
     );
-    expect(example, 'Apoio de duas linhas example').toBeDefined();
+    expect(example, 'Two-line supporting text example').toBeDefined();
     expect(fittedSize('list-item', example!.values as Values).height).toBe(88);
   });
 });

@@ -10,7 +10,6 @@
 //    TextField.kt 301 to 308 and 799 to 801, OutlinedTextField.kt 246 to 261 (`padding(top = minimizedLabelHalfHeight())`, 8) and
 //    internal/TextFieldImpl.kt (`MinSupportingTextLineHeight` 16);
 //  - SearchBar.kt 1356 to 1360 (`sizeIn(360, 720, 56)` of the field), 665 (the docked: `width(SearchBarMinWidth)`) and 2711 to 2714.
-// pt-BR kept: node names ('conteúdo', 'rótulo', 'texto', 'contêiner', 'apoio (linha)') are the Portuguese data of libraries/material3-compose
 import { describe, expect, it } from 'vitest';
 import { fitComponentSize } from '../../src/model/components/sizing';
 import {
@@ -92,8 +91,8 @@ describe('MC5 group C — button, the height follows the label lines (Button.kt 
     expect(comp.sizing?.height).toBe('hug');
     expect(comp.size.height).toBe(40);
     expect(comp.template.minHeight).toBe(40);
-    expect(templateNodes('button', 'conteúdo')[0]!.height).toBe('hug');
-    expect(templateNodes('button', 'rótulo')[0]!.height).toBe('hug');
+    expect(templateNodes('button', 'content')[0]!.height).toBe('hug');
+    expect(templateNodes('button', 'label')[0]!.height).toBe('hug');
   });
 
   it.each(MODES)(
@@ -119,11 +118,11 @@ describe('MC5 group C — button, the height follows the label lines (Button.kt 
       };
       const fit = arrange('button', values, 136, 40, mode);
       const { drawing } = drawFitted('button', values, mode, fit);
-      const lines = linesOf(drawing, 'rótulo');
+      const lines = linesOf(drawing, 'label');
       expect(lines).toBeGreaterThanOrEqual(3);
       expect(fit).toEqual({ width: 136, height: 16 + 20 * lines });
       // The text fits the fitted box, with 8 above and below.
-      const text = boxOf(drawing, textOf(drawing, 'rótulo'));
+      const text = boxOf(drawing, textOf(drawing, 'label'));
       near(text.y, 8);
       near(text.y + text.height, fit.height - 8);
       expect(drawing.warnings).toEqual([]);
@@ -149,9 +148,9 @@ describe('MC5 group C — button, the height follows the label lines (Button.kt 
       width: 136,
       height: 40,
     });
-    const text = boxOf(drawing, textOf(drawing, 'rótulo'));
+    const text = boxOf(drawing, textOf(drawing, 'label'));
     near(text.y + text.height / 2, 20, 0);
-    expect(textOf(drawing, 'rótulo').style.verticalAlign).toBe('cap-middle');
+    expect(textOf(drawing, 'label').style.verticalAlign).toBe('cap-middle');
   });
 });
 
@@ -166,8 +165,8 @@ describe('MC5 group C — extended-fab, the height follows the label lines (Floa
     expect(comp.sizing?.height).toBe('hug');
     expect(comp.size.height).toBe(56);
     expect(comp.template.minHeight).toBe(56);
-    expect(templateNodes('extended-fab', 'conteúdo')[0]!.height).toBe('hug');
-    expect(templateNodes('extended-fab', 'texto')[0]!.height).toBe('hug');
+    expect(templateNodes('extended-fab', 'content')[0]!.height).toBe('hug');
+    expect(templateNodes('extended-fab', 'text')[0]!.height).toBe('hug');
   });
 
   it.each(MODES)(
@@ -176,11 +175,11 @@ describe('MC5 group C — extended-fab, the height follows the label lines (Floa
       expect(arrange('extended-fab', base, 142, 56, mode).height).toBe(56);
       const two = { ...base, text: 'Create note' };
       const { drawing: d2 } = drawFitted('extended-fab', two, mode, { width: 142 });
-      expect(linesOf(d2, 'texto')).toBe(2);
+      expect(linesOf(d2, 'text')).toBe(2);
       expect(arrange('extended-fab', two, 142, 56, mode).height).toBe(56);
       const three = { ...base, text: 'Create invoice note' };
       const { drawing: d3 } = drawFitted('extended-fab', three, mode, { width: 142 });
-      expect(linesOf(d3, 'texto')).toBe(3);
+      expect(linesOf(d3, 'text')).toBe(3);
       expect(arrange('extended-fab', three, 142, 56, mode)).toEqual({
         width: 142,
         height: 60,
@@ -212,8 +211,8 @@ describe('MC5 group C — chip, the height follows the label lines (Chip.kt 2059
     expect(comp.sizing?.height).toBe('hug');
     expect(comp.size.height).toBe(32);
     expect(comp.template.minHeight).toBe(32);
-    expect(templateNodes('chip', 'conteúdo')[0]!.height).toBe('hug');
-    expect(templateNodes('chip', 'rótulo')[0]!.height).toBe('hug');
+    expect(templateNodes('chip', 'content')[0]!.height).toBe('hug');
+    expect(templateNodes('chip', 'label')[0]!.height).toBe('hug');
   });
 
   it.each(MODES)(
@@ -226,7 +225,7 @@ describe('MC5 group C — chip, the height follows the label lines (Chip.kt 2059
       const values = { label: long, style: 'assist' };
       const fit = arrange('chip', values, 232, 32, mode);
       const { drawing } = drawFitted('chip', values, mode, fit);
-      expect(linesOf(drawing, 'rótulo')).toBe(2);
+      expect(linesOf(drawing, 'label')).toBe(2);
       expect(fit).toEqual({ width: 232, height: 40 });
       expect(drawing.warnings).toEqual([]);
     },
@@ -261,11 +260,11 @@ describe('MC5 group C — chip, the height follows the label lines (Chip.kt 2059
       const values = { label: long, style, ...icons };
       const fit = arrange('chip', values, 200, 32, mode);
       const { drawing } = drawFitted('chip', values, mode, fit);
-      const content = boxOf(drawing, visible(drawing, 'conteúdo')[0]!);
+      const content = boxOf(drawing, visible(drawing, 'content')[0]!);
       near(content.x, 0);
       near(content.width, fit.width);
       expect(drawing.warnings).toEqual([]);
-      expect(fit.height).toBe(Math.max(32, 20 * linesOf(drawing, 'rótulo')));
+      expect(fit.height).toBe(Math.max(32, 20 * linesOf(drawing, 'label')));
     },
   );
 });
@@ -325,9 +324,9 @@ describe.each(['text-field', 'secure-text-field'])(
         const { drawing, box } = drawFitted(id, values, mode);
         expect(box.height).toBe(height);
         expect(drawing.warnings).toEqual([]);
-        const field = boxOf(drawing, visible(drawing, 'contêiner')[0]!);
+        const field = boxOf(drawing, visible(drawing, 'container')[0]!);
         near(field.y, 0);
-        const support = visible(drawing, 'apoio (linha)')[0];
+        const support = visible(drawing, 'support (row)')[0];
         const bottom = support === undefined ? field : boxOf(drawing, support);
         near(bottom.y + bottom.height, height);
       },

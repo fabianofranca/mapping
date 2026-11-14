@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "checkbox",
   "name": "Checkbox",
-  "description": "Checkbox de 20 (CheckboxSize) na área de 48 do toque mínimo, com rótulo: marcado (check), desmarcado (contorno) ou indeterminado (traço).",
+  "description": "20 checkbox (CheckboxSize) in the 48 minimum touch target area, with a label: checked (check), unchecked (outline) or indeterminate (dash).",
   "size": {
     "width": 200,
     "height": 40
@@ -13,7 +13,7 @@
     "height": 40
   },
   "preview": {
-    "label": "Lembrar de mim",
+    "label": "Remember me",
     "state": "checked",
     "enabled": "true"
   },
@@ -27,7 +27,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "área",
+        "name": "area",
         "width": 48,
         "height": 40,
         "layout": {
@@ -36,7 +36,7 @@
         "children": [
           {
             "type": "ellipse",
-            "name": "estado",
+            "name": "state",
             "width": 40,
             "height": 40,
             "fill": {
@@ -93,7 +93,7 @@
           },
           {
             "type": "frame",
-            "name": "marca",
+            "name": "mark",
             "width": 20,
             "height": 20,
             "layout": {
@@ -102,7 +102,7 @@
             "children": [
               {
                 "type": "rect",
-                "name": "caixa",
+                "name": "box",
                 "width": 20,
                 "height": 20,
                 "cornerRadius": {
@@ -211,7 +211,7 @@
               },
               {
                 "type": "path",
-                "name": "traço",
+                "name": "dash",
                 "visible": {
                   "$eq": ["state", "indeterminate"]
                 },
@@ -240,7 +240,7 @@
       },
       {
         "type": "text",
-        "name": "rótulo",
+        "name": "label",
         "text": {
           "$field": "label"
         },

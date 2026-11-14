@@ -1,68 +1,68 @@
 # Text
 
-Texto na tipografia do tema. Use para títulos, parágrafos, rótulos e qualquer texto solto.
+Text in the theme typography. Use it for titles, paragraphs, labels and any loose text.
 
-Tipo de anotação: `text` (camada Conteúdo).
+Annotation type: `text` (layer Content).
 
-## Campos
+## Fields
 
-| Chave       | Rótulo               | Tipo   | Obrigatório | Opções                                                               | Padrão      | Descrição                                                                                             |
-| ----------- | -------------------- | ------ | ----------- | -------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------- |
-| `text`      | Texto                | string | sim         |                                                                      |             | O texto exibido.                                                                                      |
-| `style`     | Estilo               | enum   | não         | papéis de `MaterialTheme.typography` (`displayLarge` a `labelSmall`) | `bodyLarge` | Papel da tipografia do tema (MaterialTheme.typography).                                               |
-| `color`     | Cor                  | enum   | não         | papéis do `ColorScheme`                                              |             | Papel de cor do tema. Vazio = cor do conteúdo (LocalContentColor).                                    |
-| `textAlign` | Alinhamento do texto | enum   | não         | `Start`, `Center`, `End`, `Justify`                                  |             | Alinhamento horizontal do texto (TextAlign). Vazio = padrão do Compose.                               |
-| `maxLines`  | Máximo de linhas     | number | não         |                                                                      |             | Limite de linhas (Int). Vazio = sem limite.                                                           |
-| `width`     | Largura              | enum   | não         | `wrap`, `fill`, `fixed`                                              | `wrap`      | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp). |
-| `height`    | Altura               | enum   | não         | `wrap`, `fill`, `fixed`                                              | `wrap`      | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).   |
-| `weight`    | Peso (weight)        | number | não         |                                                                      |             | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                     |
+| Key         | Label          | Type   | Required | Options                                                           | Default     | Description                                                                                        |
+| ----------- | -------------- | ------ | -------- | ----------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------- |
+| `text`      | Text           | string | yes      |                                                                   |             | The text shown.                                                                                    |
+| `style`     | Style          | enum   | no       | `MaterialTheme.typography` roles (`displayLarge` to `labelSmall`) | `bodyLarge` | Theme typography role (MaterialTheme.typography).                                                  |
+| `color`     | Color          | enum   | no       | `ColorScheme` roles                                               |             | Theme color role. Empty = content color (LocalContentColor).                                       |
+| `textAlign` | Text alignment | enum   | no       | `Start`, `Center`, `End`, `Justify`                               |             | Horizontal text alignment (TextAlign). Empty = Compose default.                                    |
+| `maxLines`  | Max lines      | number | no       |                                                                   |             | Line limit (Int). Empty = no limit.                                                                |
+| `width`     | Width          | enum   | no       | `wrap`, `fill`, `fixed`                                           | `wrap`      | wrap fits the content, fill takes all the available width and fixed uses the marking width (dp).   |
+| `height`    | Height         | enum   | no       | `wrap`, `fill`, `fixed`                                           | `wrap`      | wrap fits the content, fill takes all the available height and fixed uses the marking height (dp). |
+| `weight`    | Weight         | number | no       |                                                                   |             | Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.               |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.Text`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Text.kt`
+- Symbol: `androidx.compose.material3.Text`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Text.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 Text(
-    text = "Configurações",
+    text = "Settings",
     style = MaterialTheme.typography.headlineMedium,
-    color = MaterialTheme.colorScheme.onSurfaceVariant,   // só se color preenchido
-    textAlign = TextAlign.Center,                          // só se textAlign preenchido
-    maxLines = 2,                                          // só se maxLines preenchido
+    color = MaterialTheme.colorScheme.onSurfaceVariant,   // only if color is filled
+    textAlign = TextAlign.Center,                          // only if textAlign is filled
+    maxLines = 2,                                          // only if maxLines is filled
 )
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+`code` notes (what the tool hands to the agent):
 
-> `color` e `textAlign` só entram quando preenchidos; com `maxLines`, considere `overflow = TextOverflow.Ellipsis`. Se o app usa recursos de string, o `text` vira `stringResource(R.string.x)`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> `color` and `textAlign` are only included when filled; with `maxLines`, consider `overflow = TextOverflow.Ellipsis`. If the app uses string resources, the `text` becomes `stringResource(R.string.x)`. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).
 
-## Exemplos
+## Examples
 
-- **Título de tela**: text=Configurações, style=headlineSmall
-- **Parágrafo**: text=Texto de apoio curto., style=bodyMedium, color=onSurfaceVariant
-- **Rótulo centralizado**: text=Salvar, style=labelLarge, textAlign=Center, width=fill
+- **Screen title**: text=Settings, style=headlineSmall
+- **Paragraph**: text=Short supporting text., style=bodyMedium, color=onSurfaceVariant
+- **Centered label**: text=Save, style=labelLarge, textAlign=Center, width=fill
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Text.kt` (linhas 105 a 120: `color`, `overflow = TextOverflow.Clip`, `softWrap = true`, `maxLines = Int.MAX_VALUE` e `style = LocalTextStyle.current`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt`: tamanho, altura de linha, peso e espaçamento entre letras das 15 escalas (`BodyLargeSize` 16 sp na linha 26, `LabelLargeWeight` na linha 73, `TitleMediumTracking` 0,2 sp na linha 92…).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ColorLightTokens.kt` e `ColorDarkTokens.kt`: os papéis de cor (`color`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Text.kt` (lines 105 to 120: `color`, `overflow = TextOverflow.Clip`, `softWrap = true`, `maxLines = Int.MAX_VALUE` and `style = LocalTextStyle.current`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt`: size, line height, weight and letter spacing of the 15 scales (`BodyLargeSize` 16 sp on line 26, `LabelLargeWeight` on line 73, `TitleMediumTracking` 0.2 sp on line 92…).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ColorLightTokens.kt` and `ColorDarkTokens.kt`: the color roles (`color`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Cada estilo lê `<escala>-size`, `<escala>-line-height`, `<escala>-weight` e `<escala>-tracking` (por exemplo `body-large-size`); sem `style`, vale `bodyLarge`.
-- A família não é escrita no componente: o texto herda a `font-sans` da especialização (Roboto), como o `TypefaceTokens.Plain` do Compose herda a fonte do tema.
-- A cor é o papel escolhido em `color`; sem `color`, a cor do conteúdo herdada (`on-surface` quando nada a oferece). Cada papel tem a cor do modo `light` e a do `dark`.
-- `maxLines` corta o texto na última linha permitida, sem reticências, porque o padrão do `Text` é `TextOverflow.Clip` (`font.maxLines`, sem `ellipsis`).
+- Each style reads `<scale>-size`, `<scale>-line-height`, `<scale>-weight` and `<scale>-tracking` (for example `body-large-size`); without `style`, `bodyLarge` applies.
+- The family is not written in the component: the text inherits the specialization's `font-sans` (Roboto), as the Compose `TypefaceTokens.Plain` inherits the theme font.
+- The color is the role chosen in `color`; without `color`, the inherited content color (`on-surface` when nothing offers one). Each role has the `light` mode color and the `dark` one.
+- `maxLines` cuts the text at the last allowed line, with no ellipsis, because the `Text` default is `TextOverflow.Clip` (`font.maxLines`, without `ellipsis`).
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- `textAlign = Justify` desenha justificado (`font.align: "justify"`): as linhas se esticam até as duas bordas da caixa e a última linha de cada parágrafo fica à esquerda, como o `TextAlign.Justify` (`Text.kt`, linha 133: `textAlign` passa ao estilo).
-- Sem `color`, o texto lê a cor do conteúdo herdada (`LocalContentColor`, `Text.kt`, linha 123: `color.takeOrElse { style.color.takeOrElse { LocalContentColor.current } }`): dentro de um `surface` ou `scaffold` ele sai na cor que o pai oferece (por exemplo `on-primary` sobre `primary`), e sem pai, em `on-surface`. Um `color` escolhido vale mais que a herança.
-- As variantes `*Emphasized` da escala (Material 3 Expressive) ficam fora da etapa.
+- `textAlign = Justify` draws justified (`font.align: "justify"`): the lines stretch to both edges of the box and the last line of each paragraph stays on the left, like `TextAlign.Justify` (`Text.kt`, line 133: `textAlign` goes to the style).
+- Without `color`, the text reads the inherited content color (`LocalContentColor`, `Text.kt`, line 123: `color.takeOrElse { style.color.takeOrElse { LocalContentColor.current } }`): inside a `surface` or `scaffold` it comes out in the color the parent offers (for example `on-primary` over `primary`), and with no parent, in `on-surface`. A chosen `color` wins over inheritance.
+- The `*Emphasized` variants of the scale (Material 3 Expressive) are out of scope for the stage.

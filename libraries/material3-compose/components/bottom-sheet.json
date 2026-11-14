@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "bottom-sheet",
   "name": "Bottom sheet",
-  "description": "Folha de baixo em surface container low, cantos superiores de 28, alça de 32 × 4 numa área de 48, título e um ListItem de 56 por linha; modal sem sombra (o scrim é do composable), standard com a sombra do nível 1 e altura mínima de sheetPeekHeight.",
+  "description": "Bottom sheet on surface container low, top corners of 28, 32 × 4 handle in a 48 area, title and one 56 ListItem per row; modal has no shadow (the scrim belongs to the composable), standard has the level 1 shadow and a minimum height of sheetPeekHeight.",
   "size": {
     "width": 412,
     "height": 320
@@ -13,21 +13,21 @@
     "height": "hug"
   },
   "preview": {
-    "title": "Compartilhar",
+    "title": "Share",
     "style": "modal",
     "dragHandle": "true",
     "sheetPeekHeight": 56,
     "items": [
       {
-        "label": "Favoritos",
+        "label": "Favorites",
         "icon": "Favorite"
       },
       {
-        "label": "Editar",
+        "label": "Edit",
         "icon": "Edit"
       },
       {
-        "label": "Configurações",
+        "label": "Settings",
         "icon": "Settings"
       }
     ]
@@ -107,7 +107,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "área da alça",
+        "name": "handle area",
         "width": "fill",
         "height": 48,
         "visible": {
@@ -123,7 +123,7 @@
         "children": [
           {
             "type": "rect",
-            "name": "alça",
+            "name": "handle",
             "width": 32,
             "height": 4,
             "cornerRadius": {
@@ -137,7 +137,7 @@
       },
       {
         "type": "frame",
-        "name": "cabeçalho",
+        "name": "header",
         "width": "fill",
         "height": "hug",
         "visible": {
@@ -150,7 +150,7 @@
         "children": [
           {
             "type": "text",
-            "name": "título",
+            "name": "title",
             "text": {
               "$field": "title"
             },
@@ -177,7 +177,7 @@
       },
       {
         "type": "repeat",
-        "name": "itens",
+        "name": "items",
         "field": "items",
         "direction": "column",
         "width": "fill",
@@ -383,7 +383,7 @@
             },
             {
               "type": "text",
-              "name": "rótulo",
+              "name": "label",
               "text": {
                 "$field": "label"
               },

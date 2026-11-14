@@ -16,21 +16,20 @@ import type {
 } from '../../src/model/components/scene';
 import { drawIn, files, solid, spec, text } from '../support/material3Library';
 
-// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
 const NAMES = {
-  title: 'título',
-  text: 'texto',
-  actionButton: 'botão da ação',
-  refreshingIndicator: 'indicador atualizando',
-  pullingIndicator: 'indicador puxando',
-  ring: 'anel',
-  arrow: 'seta',
-  restingItem: 'item em repouso',
-  support: 'apoio',
-  itemSlidStart: 'item deslizado para o início',
-  itemSlidEnd: 'item deslizado para o fim',
-  image: 'imagem',
-  veil: 'véu',
+  title: 'title',
+  text: 'text',
+  actionButton: 'action button',
+  refreshingIndicator: 'refreshing indicator',
+  pullingIndicator: 'pulling indicator',
+  ring: 'ring',
+  arrow: 'arrow',
+  restingItem: 'item at rest',
+  support: 'support',
+  itemSlidStart: 'item swiped to the start',
+  itemSlidEnd: 'item swiped to the end',
+  image: 'image',
+  veil: 'scrim',
 } as const;
 
 const catalog = buildCatalog(files);

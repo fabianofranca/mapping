@@ -15,8 +15,8 @@ import { withNoteInstance } from '../model/notesFixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
 // Unnamed component instance (the Palette creates it like this): where the marking has no name, the
-// UI shows the name of the type it draws ("Nota"); nothing is saved.
-// pt-BR kept: shared fixture data (type name 'Nota', marking 'Porta') asserted by tests/
+// UI shows the name of the type it draws ("Note"); nothing is saved.
+// pt-BR kept: marking 'Porta' fixture data asserted by tests/
 
 beforeEach(() => {
   locale.value = 'en-US';
@@ -43,7 +43,7 @@ describe('Link to… with an unnamed note', () => {
       />,
     );
     expect(
-      screen.getByRole('heading', { name: t('arrow.pickerTitle', { name: 'Nota' }) }),
+      screen.getByRole('heading', { name: t('arrow.pickerTitle', { name: 'Note' }) }),
     ).toBeTruthy();
   });
 
@@ -52,7 +52,7 @@ describe('Link to… with an unnamed note', () => {
     const project = harness.project();
     const door = project.markings.find((m) => m.id === 'M1') as Marking;
     expect(markingOptions(project, 'M1').find((o) => o.marking.id === 'N1')?.label).toBe(
-      'Nota',
+      'Note',
     );
     const onPick = vi.fn();
     render(
@@ -63,7 +63,7 @@ describe('Link to… with an unnamed note', () => {
       name: t('arrow.pickerSearch'),
       hidden: true,
     });
-    await user.type(input, 'nota');
+    await user.type(input, 'note');
     const list = await screen.findByRole('listbox', { hidden: true });
     const options = within(list).getAllByRole('option', { hidden: true });
     expect(options).toHaveLength(1);
@@ -92,7 +92,7 @@ describe('Arrow, tree and breadcrumbs with the unnamed note', () => {
       />
     ));
     expect(
-      screen.getByRole('button', { name: t('arrow.select', { name: 'Nota' }) }),
+      screen.getByRole('button', { name: t('arrow.select', { name: 'Note' }) }),
     ).toBeTruthy();
     expect(
       screen.getByRole('button', { name: t('arrow.select', { name: 'Porta' }) }),
@@ -109,12 +109,12 @@ describe('Arrow, tree and breadcrumbs with the unnamed note', () => {
     const labels = [...document.querySelectorAll('.tree-label')].map(
       (l) => l.textContent,
     );
-    expect(labels).toContain('Nota');
+    expect(labels).toContain('Note');
     expect(
       screen.getByRole('button', { name: t('arrow.treeItem', { name: 'Porta' }) }),
     ).toBeTruthy();
     expect(
       crumbsOf(harness.project(), { kind: 'marking', id: 'N1' }).map((c) => c.name),
-    ).toEqual([t('canvas.name'), 'Nota']);
+    ).toEqual([t('canvas.name'), 'Note']);
   });
 });
