@@ -24,6 +24,7 @@ describe('#1884 — atrasada que está trabalhando em ciclo de CI vermelho', () 
     expect(trabalhando).toMatch(/subagente do ciclo, Sonnet/);
     expect(trabalhando).toContain('**Leitura do CI**');
     expect(trabalhando).toMatch(/commits do PR depois da abertura/);
+    expect(trabalhando).toMatch(/`sha` de cada commit.*persiste depois da reexecução/);
   });
 
   it('suspeita de ciclo: 3 commits vermelhos ou a mesma falha em 2 seguidos', () => {
@@ -43,6 +44,7 @@ describe('#1884 — atrasada que está trabalhando em ciclo de CI vermelho', () 
   });
 
   it('um diagnóstico por fase a cada 60 min, registrado no log', () => {
+    expect(trabalhando).toMatch(/60 min \(dentro deles, só o `childAt=now`\)/);
     expect(trabalhando).toMatch(/[Nn]o máximo um diagnóstico por fase a cada 60 min/);
     expect(trabalhando).toContain('<código>: diagnóstico de ciclo');
   });
