@@ -1001,8 +1001,8 @@ export function registerTools(
         project: projectArg
           .optional()
           .describe('Project to search in. Without it, searches all those in the roots.'),
-        system: z.string().describe('Sistema de origem (ex: "figma").'),
-        id: z.string().describe('Id do elemento no sistema de origem.'),
+        system: z.string().describe('Source system (e.g. "figma").'),
+        id: z.string().describe('Id of the element in the source system.'),
       },
       annotations: READ_ONLY,
     },
@@ -1016,15 +1016,15 @@ export function registerTools(
         'From the source element to the annotation type: the types of the specializations applied to the project whose `sources` declares the element (e.g. the Figma component `DS/Button`), by `id` (stronger) and/or by `name`. Each type comes with the fields that have a source property of the system (and how the values translate), so you can fill in `values` without deducing from the name.',
       inputSchema: {
         project: projectArg,
-        system: z.string().describe('Sistema de origem (ex: "figma").'),
+        system: z.string().describe('Source system (e.g. "figma").'),
         id: z
           .string()
           .optional()
-          .describe('Id do elemento (ou do componente) na origem.'),
+          .describe('Id of the element (or of the component) in the source.'),
         name: z
           .string()
           .optional()
-          .describe('Nome do elemento na origem (ex: "DS/Button").'),
+          .describe('Name of the element in the source (e.g. "DS/Button").'),
       },
       annotations: READ_ONLY,
     },
@@ -1123,7 +1123,7 @@ export function registerTools(
           .string()
           .optional()
           .describe(
-            'Alvo de design: o sistema (ex: figma), nas `sources` do tipo. Use este OU `platform`.',
+            "Design target: the system (e.g. figma), in the type's `sources`. Use this OR `platform`.",
           ),
         variant: z
           .string()
@@ -1134,7 +1134,9 @@ export function registerTools(
         signature: z
           .record(z.string(), z.unknown())
           .optional()
-          .describe('A ficha `mapping-signature` inline. Use esta OU `signatureFile`.'),
+          .describe(
+            'The `mapping-signature` sheet, inline. Use this OR `signatureFile`.',
+          ),
         signatureFile: z
           .string()
           .optional()
