@@ -319,6 +319,11 @@ function initialValuesArg(values: Record<string, JsonValue> | undefined): {
   return simple.length === 0 ? {} : { values: Object.fromEntries(simple) };
 }
 
+/** Algum valor é uma tabela (lista de linhas): o `initialValuesArg` a deixa de fora da medida. */
+function hasTableValue(values: Record<string, JsonValue>): boolean {
+  return Object.values(values).some((value) => Array.isArray(value));
+}
+
 /** Minúsculas e sem acentos, para achar camadas e tipos pelo nome. */
 function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
@@ -1843,6 +1848,34 @@ class Batch {
   }
 
   /**
+   * Refaz o tamanho de uma instância nova depois de as linhas de tabela do lote entrarem (o tamanho
+   * inicial é medido antes delas, com a tabela vazia): `fitMarking` e, se a marcação nasceu ancorada,
+   * `snapToAnchor` com os padrões do componente. Componente que não se ajusta (slot, sem `sizing`)
+   * fica como está.
+   */
+  private refitToRows(p: Project, markingId: string, anchored: boolean): Project {
+    let next = p;
+    try {
+      next = fitMarking(next, this.catalog, markingId, this.measurer, {
+        minSizeOf: (id) => componentMinSize(next, this.catalog, id),
+      });
+    } catch (error) {
+      if (!(error instanceof ModelError)) throw error;
+      return p;
+    }
+    if (!anchored || projectIndex(next).markings.get(markingId)?.anchor == null)
+      return next;
+    try {
+      return snapToAnchor(next, markingId, {
+        defaults: markingAnchorDefaults(next, this.catalog),
+      }).project;
+    } catch (error) {
+      if (!(error instanceof ModelError)) throw error;
+      return next;
+    }
+  }
+
+  /**
    * `fit_marking`: o `fitMarking` do modelo (o mesmo Arrumar da app numa marcação sem slot), com os
    * valores da anotação no estado do lote. O resumo diz o retângulo antes e depois.
    */
@@ -2243,6 +2276,10 @@ class Batch {
       const newAnnotationId = crypto.randomUUID();
       annotationId = newAnnotationId;
       // O pai sai da geometria (o modelo assenta ao criar): sem `rect`, no centro do container.
+      // O tamanho veio do componente (e não do pedido): as linhas de tabela do lote ainda não
+      // existiam quando foi medido, então o `refitToRows` o refaz depois de `setValues`.
+      const rectFromComponent =
+        nearRect === null && inside === null && op.rect === undefined;
       const rect =
         nearRect ??
         (inside ? this.insideRect(op, inside.id, containerId, typeRef, minSize) : null) ??
@@ -2297,6 +2334,9 @@ class Batch {
       }
       if (annotation.values !== undefined) {
         project = this.setValues(project, newAnnotationId, annotation.values, rowAliases);
+        if (rectFromComponent && hasTableValue(annotation.values)) {
+          project = this.refitToRows(project, markingId, anchor !== null);
+        }
       }
     } else {
       project = createMarking(p, {
