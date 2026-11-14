@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "surface",
   "name": "Surface",
-  "description": "Superfície do Material 3: cor, forma e elevação tonal (a sobreposição do surface tint sobre a cor surface, como o `Surface` do Compose) atrás do conteúdo.",
+  "description": "Material 3 surface: color, shape and tonal elevation (the surface tint overlaid on the surface color, like the Compose `Surface`) behind the content.",
   "size": {
     "width": 200,
     "height": 100
@@ -36,7 +36,7 @@
     "children": [
       {
         "type": "rect",
-        "name": "sombra nível 1",
+        "name": "shadow level 1",
         "fill": {
           "$var": "fundo"
         },
@@ -104,7 +104,7 @@
       },
       {
         "type": "rect",
-        "name": "sombra nível 2",
+        "name": "shadow level 2",
         "fill": {
           "$var": "fundo"
         },
@@ -172,7 +172,7 @@
       },
       {
         "type": "rect",
-        "name": "sombra nível 3",
+        "name": "shadow level 3",
         "fill": {
           "$var": "fundo"
         },
@@ -240,7 +240,7 @@
       },
       {
         "type": "rect",
-        "name": "sombra nível 4",
+        "name": "shadow level 4",
         "fill": {
           "$var": "fundo"
         },
@@ -308,7 +308,7 @@
       },
       {
         "type": "rect",
-        "name": "sombra nível 5",
+        "name": "shadow level 5",
         "fill": {
           "$var": "fundo"
         },
@@ -367,7 +367,7 @@
       },
       {
         "type": "rect",
-        "name": "elevação tonal",
+        "name": "tonal elevation",
         "fill": {
           "$token": "surface-tint"
         },

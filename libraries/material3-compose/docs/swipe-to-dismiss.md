@@ -1,30 +1,30 @@
 # SwipeToDismissBox
 
-Item que se dispensa deslizando para um lado ou para o outro, revelando um fundo com ícone (excluir, arquivar). Use em itens de lista.
+Item dismissed by swiping to one side or the other, revealing a background with an icon (delete, archive). Use it on list items.
 
-Tipo de anotação: `swipe-to-dismiss` (camada Componentes).
+Annotation type: `swipe-to-dismiss` (layer Components).
 
-## Campos
+## Fields
 
-| Chave                         | Rótulo                         | Tipo   | Obrigatório | Opções                                                         | Padrão    | Descrição                                                                                                                                        |
-| ----------------------------- | ------------------------------ | ------ | ----------- | -------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `title`                       | Título                         | string | sim         |                                                                |           | Linha principal do item que se dispensa (o conteúdo é do app; o desenho mostra um item de lista).                                                |
-| `supportingText`              | Texto de apoio                 | string | não         |                                                                |           | Linha de apoio abaixo do título. Vazio = sem linha.                                                                                              |
-| `direction`                   | Estado do deslize              | enum   | não         | `Settled`, `StartToEnd`, `EndToStart`                          | `Settled` | Settled é o item em repouso; StartToEnd e EndToStart mostram o item deslizado e o fundo revelado (SwipeToDismissBoxValue).                       |
-| `enableDismissFromStartToEnd` | Dispensar do início para o fim | enum   | não         | `true`, `false`                                                | `true`    | false impede o deslize no sentido da leitura (enableDismissFromStartToEnd).                                                                      |
-| `enableDismissFromEndToStart` | Dispensar do fim para o início | enum   | não         | `true`, `false`                                                | `true`    | false impede o deslize contra o sentido da leitura (enableDismissFromEndToStart).                                                                |
-| `icon`                        | Ícone do fundo                 | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |           | Ícone do fundo revelado (o desenho mostra Delete, Done, Check, Favorite, Edit, Star, Share, Add e Close; outros caem em Delete). Vazio = Delete. |
-| `width`                       | Largura                        | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`    | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).                                            |
-| `height`                      | Altura                         | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`    | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).                                              |
-| `weight`                      | Peso (weight)                  | number | não         |                                                                |           | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                                                                |
+| Key                           | Label                     | Type   | Required | Options                                                   | Default   | Description                                                                                                                                                      |
+| ----------------------------- | ------------------------- | ------ | -------- | --------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`                       | Title                     | string | yes      |                                                           |           | Main line of the dismissable item (the content belongs to the app; the drawing shows a list item).                                                               |
+| `supportingText`              | Supporting text           | string | no       |                                                           |           | Supporting line below the title. Empty = no line.                                                                                                                |
+| `direction`                   | Swipe state               | enum   | no       | `Settled`, `StartToEnd`, `EndToStart`                     | `Settled` | Settled is the item at rest; StartToEnd and EndToStart show the swiped item and the revealed background (SwipeToDismissBoxValue).                                |
+| `enableDismissFromStartToEnd` | Dismiss from start to end | enum   | no       | `true`, `false`                                           | `true`    | false prevents swiping in the reading direction (enableDismissFromStartToEnd).                                                                                   |
+| `enableDismissFromEndToStart` | Dismiss from end to start | enum   | no       | `true`, `false`                                           | `true`    | false prevents swiping against the reading direction (enableDismissFromEndToStart).                                                                              |
+| `icon`                        | Background icon           | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |           | Icon of the revealed background (the drawing shows Delete, Done, Check, Favorite, Edit, Star, Share, Add and Close; others fall back to Delete). Empty = Delete. |
+| `width`                       | Width                     | enum   | no       | `wrap`, `fill`, `fixed`                                   | `wrap`    | wrap fits the content, fill takes all the available width and fixed uses the marking width (dp).                                                                 |
+| `height`                      | Height                    | enum   | no       | `wrap`, `fill`, `fixed`                                   | `wrap`    | wrap fits the content, fill takes all the available height and fixed uses the marking height (dp).                                                               |
+| `weight`                      | Weight                    | number | no       |                                                           |           | Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.                                                                             |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.SwipeToDismissBox`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SwipeToDismissBox.kt`
-- Estável no commit fixado, sem opt-in.
+- Symbol: `androidx.compose.material3.SwipeToDismissBox`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SwipeToDismissBox.kt`
+- Stable at the pinned commit, no opt-in.
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 val state = rememberSwipeToDismissBoxState(
@@ -35,7 +35,7 @@ SwipeToDismissBox(
     state = state,
     enableDismissFromStartToEnd = false,              // enableDismissFromStartToEnd
     enableDismissFromEndToStart = true,               // enableDismissFromEndToStart
-    onDismiss = { value -> /* remove o item da lista */ },
+    onDismiss = { value -> /* remove the item from the list */ },
     backgroundContent = {
         Box(
             Modifier.fillMaxSize().background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = 24.dp),
@@ -46,44 +46,44 @@ SwipeToDismissBox(
         }
     },
 ) {
-    ListItem(headlineContent = { Text("Reunião de equipe") })    // title, supportingText
+    ListItem(headlineContent = { Text("Team meeting") })    // title, supportingText
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+`code` notes (what the tool hands to the agent):
 
-> Estável, sem opt-in. Use o overload com `onDismiss` (o que só recebe `content` e `backgroundContent` e lê `state.currentValue` está `@Deprecated`). `state = rememberSwipeToDismissBoxState(initialValue = <direction>)`: o campo `direction` é o `initialValue` do estado (não é parâmetro do `SwipeToDismissBox`) e, em geral, fica em `Settled`; os dois `enableDismiss…` são parâmetros do box. `onDismiss = { value -> … }` remove o item (o app trata `StartToEnd` e `EndToStart`). `backgroundContent` (um `RowScope`) é o fundo revelado: um `Box(Modifier.fillMaxSize().background(<cor>).padding(horizontal = 24.dp), contentAlignment = if (state.dismissDirection == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd) { Icon(Icons.Filled.<icon>, contentDescription = null) }`; as cores do fundo são do app. O `content` (um `RowScope`) é o item, em geral um `ListItem` ou `Card` (a marcação filha, ou o que o app já tem). Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> Stable, no opt-in. Use the overload with `onDismiss` (the one that only takes `content` and `backgroundContent` and reads `state.currentValue` is `@Deprecated`). `state = rememberSwipeToDismissBoxState(initialValue = <direction>)`: the `direction` field is the `initialValue` of the state (it is not a `SwipeToDismissBox` parameter) and usually stays at `Settled`; the two `enableDismiss…` are box parameters. `onDismiss = { value -> … }` removes the item (the app handles `StartToEnd` and `EndToStart`). `backgroundContent` (a `RowScope`) is the revealed background: a `Box(Modifier.fillMaxSize().background(<color>).padding(horizontal = 24.dp), contentAlignment = if (state.dismissDirection == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd) { Icon(Icons.Filled.<icon>, contentDescription = null) }`; the background colors belong to the app. The `content` (a `RowScope`) is the item, usually a `ListItem` or `Card` (the child marking, or what the app already has). Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).
 
-## Desenho
+## Drawing
 
-O desenho mostra o estado do deslize: em repouso (`Settled`) só o item; em `StartToEnd` o item sai 56 (o `positionalThreshold`) para o fim e revela o fundo primary container com o ícone no início; em `EndToStart` sai 56 para o início e revela o error container com o ícone no fim. O sentido desligado (`enableDismiss…` falso) não revela nada, e o desenho volta ao repouso. As cores do fundo são ilustrativas: o Compose deixa a cor do `backgroundContent` para o app.
+The drawing shows the swipe state: at rest (`Settled`) only the item; in `StartToEnd` the item moves 56 (the `positionalThreshold`) toward the end and reveals the primary container background with the icon at the start; in `EndToStart` it moves 56 toward the start and reveals the error container with the icon at the end. A disabled direction (`enableDismiss…` false) reveals nothing, and the drawing goes back to rest. The background colors are illustrative: Compose leaves the `backgroundContent` color to the app.
 
-## Exemplos
+## Examples
 
-- **Em repouso**: title=Reunião de equipe, supportingText=Hoje, 14:00, direction=Settled, icon=Delete, width=fill
-- **Excluir arrastando para o início**: title=Reunião de equipe, supportingText=Hoje, 14:00, direction=EndToStart, enableDismissFromStartToEnd=false, icon=Delete, width=fill
-- **Concluir arrastando para o fim**: title=Convite de Ana, direction=StartToEnd, enableDismissFromEndToStart=false, icon=Done, width=fill
+- **Resting**: title=Team meeting, supportingText=Today, 2:00 PM, direction=Settled, icon=Delete, width=fill
+- **Delete by dragging to the start**: title=Team meeting, supportingText=Today, 2:00 PM, direction=EndToStart, enableDismissFromStartToEnd=false, icon=Delete, width=fill
+- **Complete by dragging to the end**: title=Invitation from Ana, direction=StartToEnd, enableDismissFromEndToStart=false, icon=Done, width=fill
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade de cor fica literal no componente e nenhum nó de texto declara `family` (todos herdam `font-sans`). O `SwipeToDismissBox` só define o gesto e o recuo (`positionalThreshold` de 56): o fundo revelado e o item são do app, e o desenho os ilustra com os tokens do Material (o item é um `ListItem`, o fundo usa os papéis `container` do Material).
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font, radius or color opacity is literal in the component and no text node declares `family` (all inherit `font-sans`). The `SwipeToDismissBox` only defines the gesture and the offset (`positionalThreshold` of 56): the revealed background and the item belong to the app, and the drawing illustrates them with the Material tokens (the item is a `ListItem`, the background uses the Material `container` roles).
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SwipeToDismissBox.kt` (linhas 44 a 53: `SwipeToDismissBoxValue`; 305 a 357: `SwipeToDismissBox`, o `Box` com `anchoredDraggable`, a `Row(content = backgroundContent, Modifier.matchParentSize())` (331) atrás da `Row` do conteúdo e os `DraggableAnchors` com `Settled at 0`, `StartToEnd at width` e `EndToStart at -width` (337 a 349); 360 a 364: `SwipeToDismissBoxDefaults.positionalThreshold` de 56 dp; 393: `DismissVelocityThreshold` 125 dp).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ListItem.kt` e `tokens/ListTokens.kt` (o item desenhado: o `Surface` `surface` sem canto, 16 de respiro lateral e 8 em cima e embaixo, título em `BodyLarge` e apoio em `BodyMedium`; ver `docs/list-item.md`), `tokens/TypeScaleTokens.kt` (`BodyLarge` 16/24/400/0,5 e `BodyMedium` 14/20/400/0,2).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SwipeToDismissBox.kt` (lines 44 to 53: `SwipeToDismissBoxValue`; 305 to 357: `SwipeToDismissBox`, the `Box` with `anchoredDraggable`, the `Row(content = backgroundContent, Modifier.matchParentSize())` (331) behind the content `Row` and the `DraggableAnchors` with `Settled at 0`, `StartToEnd at width` and `EndToStart at -width` (337 to 349); 360 to 364: `SwipeToDismissBoxDefaults.positionalThreshold` of 56 dp; 393: `DismissVelocityThreshold` 125 dp).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ListItem.kt` and `tokens/ListTokens.kt` (the drawn item: the `surface` `Surface` with no corner, 16 side padding and 8 above and below, title in `BodyLarge` and support text in `BodyMedium`; see `docs/list-item.md`), `tokens/TypeScaleTokens.kt` (`BodyLarge` 16/24/400/0.5 and `BodyMedium` 14/20/400/0.2).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Em repouso só o item aparece, em `surface` sobre a caixa. Em `StartToEnd` e `EndToStart` o item sai 56 (o `positionalThreshold`, a distância a partir da qual o gesto assenta no sentido) para o lado e revela o fundo atrás dele, atrás do `backgroundContent`: antes o desenho usava 80, que não vem do Compose. O sentido desligado (`enableDismiss…` falso) não existe como âncora, então o desenho volta ao repouso.
-- Fundo revelado: `primary-container` no sentido do início para o fim, com o ícone em `on-primary-container`; `error-container` no sentido contrário, com o ícone em `on-error-container` (o `code` do tipo usa o `errorContainer` do tema; as cores do fundo são do app). Ícone de 24 a 24 da borda (o `padding(horizontal = 24.dp)` do `backgroundContent` do `code`), centrado na altura, no lado de onde o item saiu: `Alignment.CenterStart` ou `CenterEnd`.
-- Item como `ListItem`: título em `body-large` (16/24) em `on-surface` e apoio em `body-medium` (14/20) em `on-surface-variant`, ambos numa linha com `…` (`maxLines` 1 e `ellipsis`), a 16 das bordas e centrados na altura de 72.
-- O ícone é o nó `icon` do conjunto da biblioteca, pelo nome do Compose (`Delete`, `Done`…): campo vazio é `delete` (o padrão que o campo já tinha) e um nome fora da lista cai no reservado e avisa `ícone desconhecido`, em vez de voltar a `Delete` em silêncio.
-- A caixa recorta o que sai dela (`clip`).
+- At rest only the item appears, in `surface` over the box. In `StartToEnd` and `EndToStart` the item moves 56 (the `positionalThreshold`, the distance from which the gesture settles in the direction) to the side and reveals the background behind it, behind the `backgroundContent`: before, the drawing used 80, which does not come from Compose. A disabled direction (`enableDismiss…` false) does not exist as an anchor, so the drawing goes back to rest.
+- Revealed background: `primary-container` in the start-to-end direction, with the icon in `on-primary-container`; `error-container` in the opposite direction, with the icon in `on-error-container` (the type's `code` uses the theme's `errorContainer`; the background colors belong to the app). 24 icon, 24 from the edge (the `padding(horizontal = 24.dp)` of the `code` `backgroundContent`), centered in the height, on the side the item moved away from: `Alignment.CenterStart` or `CenterEnd`.
+- Item as a `ListItem`: title in `body-large` (16/24) in `on-surface` and support text in `body-medium` (14/20) in `on-surface-variant`, both on one line with `…` (`maxLines` 1 and `ellipsis`), 16 from the edges and centered in the height of 72.
+- The icon is the `icon` node of the library set, by the Compose name (`Delete`, `Done`…): an empty field is `delete` (the default the field already had) and a name outside the list falls back to the placeholder and warns `unknown icon`, instead of silently going back to `Delete`.
+- The box clips what leaves it (`clip`).
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- No Compose o item só assenta fora da caixa (`EndToStart at -width`, `StartToEnd at width`), e os 56 são o limiar do gesto: o quadro desenhado é o de um arrasto de 56, não um estado assentado. Assentado em `StartToEnd` ou `EndToStart`, o `onDismiss` roda e o app remove o item.
-- O item é sempre um `ListItem` de título e apoio (uma linha cada); o `content` do Compose é livre (um `Card`, um `ListItem` com ícones), e a mudança de cor do fundo com o progresso do gesto (`state.dismissDirection`, `progress`) é do app.
-- O apoio longo termina em `…` numa linha, o que mantém o item em 72; o `ListItem` de três linhas (88) não é desenhado.
-- Sem o gesto, a animação, a velocidade de dispensa (`DismissVelocityThreshold`), o `onDismiss` e o estado de foco ou pressionado; `gesturesEnabled` é campo e código, mas o desenho não o usa.
+- In Compose the item only settles outside the box (`EndToStart at -width`, `StartToEnd at width`), and the 56 is the gesture threshold: the drawn frame is that of a 56 drag, not a settled state. Once settled in `StartToEnd` or `EndToStart`, the `onDismiss` runs and the app removes the item.
+- The item is always a `ListItem` with title and support text (one line each); the Compose `content` is free (a `Card`, a `ListItem` with icons), and the background color change with the gesture progress (`state.dismissDirection`, `progress`) belongs to the app.
+- Long support text ends in `…` on one line, which keeps the item at 72; the three-line `ListItem` (88) is not drawn.
+- No gesture, no animation, no dismiss velocity (`DismissVelocityThreshold`), no `onDismiss` and no focused or pressed state; `gesturesEnabled` is a field and code, but the drawing does not use it.

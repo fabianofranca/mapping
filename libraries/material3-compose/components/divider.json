@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "divider",
   "name": "Divider",
-  "description": "Linha de 1 dp, horizontal ou vertical, centrada na caixa da marcação, com a espessura do campo, a cor do papel escolhido (outline variant por padrão) e recuo opcional em cada ponta.",
+  "description": "1 dp line, horizontal or vertical, centered in the marking box, with the thickness of the field, the color of the chosen role (outline variant by default) and an optional inset at each end.",
   "size": { "width": 360, "height": 16 },
   "sizing": { "width": "fill", "height": 1 },
   "preview": { "orientation": "horizontal", "thickness": 1, "inset": 0 },
@@ -14,7 +14,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "linha com recuo",
+        "name": "inset line",
         "layout": {
           "type": {
             "$if": { "$eq": ["orientation", "vertical"] },
@@ -27,7 +27,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "ponta inicial",
+            "name": "start inset",
             "width": {
               "$if": { "$eq": ["orientation", "vertical"] },
               "then": 0,
@@ -50,7 +50,7 @@
           },
           {
             "type": "rect",
-            "name": "linha",
+            "name": "line",
             "fill": {
               "$switch": "color",
               "cases": {
@@ -106,7 +106,7 @@
           },
           {
             "type": "frame",
-            "name": "ponta final",
+            "name": "end inset",
             "width": {
               "$if": { "$eq": ["orientation", "vertical"] },
               "then": 0,

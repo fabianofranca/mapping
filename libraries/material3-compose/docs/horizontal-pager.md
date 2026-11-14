@@ -1,31 +1,31 @@
 # HorizontalPager
 
-Páginas que se alternam com o deslize horizontal. Use para onboarding, galerias de uma imagem por vez e abas deslizantes.
+Pages that alternate with a horizontal swipe. Use it for onboarding, one-image-at-a-time galleries and swipeable tabs.
 
-Tipo de anotação: `horizontal-pager` (camada Layout).
+Annotation type: `horizontal-pager` (Layout layer).
 
-## Campos
+## Fields
 
-| Chave               | Rótulo                    | Tipo   | Obrigatório | Opções                              | Padrão             | Descrição                                                                                             |
-| ------------------- | ------------------------- | ------ | ----------- | ----------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------- |
-| `contentPadding`    | Margem do conteúdo (dp)   | number | não         |                                     |                    | Margem interna do pager em dp (PaddingValues). Vazio = 0.                                             |
-| `pageSpacing`       | Espaço entre páginas (dp) | number | não         |                                     |                    | Espaço entre as páginas em dp (pageSpacing). Vazio = 0.                                               |
-| `verticalAlignment` | Alinhamento vertical      | enum   | não         | `Top`, `CenterVertically`, `Bottom` | `CenterVertically` | Como cada página se alinha no eixo vertical (Alignment).                                              |
-| `userScrollEnabled` | Rolagem pelo usuário      | enum   | não         | `true`, `false`                     | `true`             | false trava o deslize (só troca de página por código).                                                |
-| `reverseLayout`     | Layout invertido          | enum   | não         | `true`, `false`                     | `false`            | true começa pela última página.                                                                       |
-| `width`             | Largura                   | enum   | não         | `wrap`, `fill`, `fixed`             | `wrap`             | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp). |
-| `height`            | Altura                    | enum   | não         | `wrap`, `fill`, `fixed`             | `wrap`             | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).   |
-| `weight`            | Peso (weight)             | number | não         |                                     |                    | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                     |
+| Key                 | Label                | Type   | Required | Options                             | Default            | Description                                                                                        |
+| ------------------- | -------------------- | ------ | -------- | ----------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------- |
+| `contentPadding`    | Content padding (dp) | number | no       |                                     |                    | Inner padding of the pager in dp (PaddingValues). Empty = 0.                                       |
+| `pageSpacing`       | Page spacing (dp)    | number | no       |                                     |                    | Space between the pages in dp (pageSpacing). Empty = 0.                                            |
+| `verticalAlignment` | Vertical alignment   | enum   | no       | `Top`, `CenterVertically`, `Bottom` | `CenterVertically` | How each page aligns on the vertical axis (Alignment).                                             |
+| `userScrollEnabled` | User scroll          | enum   | no       | `true`, `false`                     | `true`             | false locks the swipe (the page only changes by code).                                             |
+| `reverseLayout`     | Reverse layout       | enum   | no       | `true`, `false`                     | `false`            | true starts from the last page.                                                                    |
+| `width`             | Width                | enum   | no       | `wrap`, `fill`, `fixed`             | `wrap`             | wrap fits the content, fill takes all the available width and fixed uses the marking width (dp).   |
+| `height`            | Height               | enum   | no       | `wrap`, `fill`, `fixed`             | `wrap`             | wrap fits the content, fill takes all the available height and fixed uses the marking height (dp). |
+| `weight`            | Weight               | number | no       |                                     |                    | Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.               |
 
 ## Compose
 
-- Símbolo: `androidx.compose.foundation.pager.HorizontalPager`
-- Arquivo (`path`): `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/pager/Pager.kt`
+- Symbol: `androidx.compose.foundation.pager.HorizontalPager`
+- File (`path`): `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/pager/Pager.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
-val pagerState = rememberPagerState(pageCount = { 3 })   // número de filhas
+val pagerState = rememberPagerState(pageCount = { 3 }) // number of children
 
 HorizontalPager(
     state = pagerState,
@@ -33,36 +33,36 @@ HorizontalPager(
     modifier = Modifier.fillMaxSize(),
 ) { page ->
     when (page) {
-        0 -> { /* filha 1 */ }
-        1 -> { /* filha 2 */ }
-        else -> { /* filha 3 */ }
+        0 -> { /* child 1 */ }
+        1 -> { /* child 2 */ }
+        else -> { /* child 3 */ }
     }
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> Cada marcação filha é uma página: crie `val pagerState = rememberPagerState(pageCount = { <número de filhas> })`, passe `state = pagerState` e escolha a filha pelo índice no `pageContent = { page -> … }`. `contentPadding` vira `PaddingValues(<contentPadding>.dp)` e `pageSpacing` vira `pageSpacing = <pageSpacing>.dp`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> Each child marking is a page: create `val pagerState = rememberPagerState(pageCount = { <number of children> })`, pass `state = pagerState` and pick the child by index in `pageContent = { page -> … }`. `contentPadding` becomes `PaddingValues(<contentPadding>.dp)` and `pageSpacing` becomes `pageSpacing = <pageSpacing>.dp`. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside a Row, Column or FlowRow).
 
-## Exemplos
+## Examples
 
-- **Páginas de onboarding**: verticalAlignment=CenterVertically, width=fill, height=fill
-- **Páginas espiando**: contentPadding=32, pageSpacing=16, width=fill, height=fixed
+- **Onboarding pages**: verticalAlignment=CenterVertically, width=fill, height=fill
+- **Peeking pages**: contentPadding=32, pageSpacing=16, width=fill, height=fixed
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Este tipo é do Foundation, não do Material: não tem arquivo de tokens, e o desenho segue o comportamento do foundation, com os valores vindos dos campos.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). This type is from Foundation, not Material: it has no token file, and the drawing follows the foundation behavior, with the values coming from the fields.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/pager/Pager.kt` (linhas 113 a 125: `HorizontalPager(contentPadding = PaddingValues(0.dp), pageSpacing = 0.dp, verticalAlignment = Alignment.CenterVertically, userScrollEnabled = true, reverseLayout = false)`).
+- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/pager/Pager.kt` (lines 113 to 125: `HorizontalPager(contentPadding = PaddingValues(0.dp), pageSpacing = 0.dp, verticalAlignment = Alignment.CenterVertically, userScrollEnabled = true, reverseLayout = false)`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- `verticalAlignment` vira o `align` do slot (`Top` `start`, `CenterVertically` `center`, `Bottom` `end`), por `$switch` (formato 4: expressão em `layout.align`); o padrão é `center`, como no Compose.
-- `pageSpacing` é o `gap` e `contentPadding` é o `padding` do slot, que é uma `row`.
-- Nenhuma cor, fonte ou raio é desenhado.
+- `verticalAlignment` becomes the slot's `align` (`Top` `start`, `CenterVertically` `center`, `Bottom` `end`), by `$switch` (format 4: expression in `layout.align`); the default is `center`, as in Compose.
+- `pageSpacing` is the slot's `gap` and `contentPadding` is its `padding`; the slot is a `row`.
+- No color, font or radius is drawn.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- `userScrollEnabled`, `pageSize` e o estado de página não existem num desenho estático; as páginas aparecem lado a lado, na ordem da marcação, e `reverseLayout` as põe em ordem inversa a partir do fim (`layout.reverse`).
+- `userScrollEnabled`, `pageSize` and the page state do not exist in a static drawing; the pages appear side by side, in the marking order, and `reverseLayout` puts them in reverse order starting from the end (`layout.reverse`).

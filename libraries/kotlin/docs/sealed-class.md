@@ -1,42 +1,42 @@
 # Sealed class
 
-Sealed class: hierarquia fechada e abstrata; os subtipos diretos são conhecidos em tempo de compilação, o que permite when exaustivo.
+Sealed class: closed, abstract hierarchy; the direct subtypes are known at compile time, which allows an exhaustive when.
 
-## Quando usar
+## When to use
 
-- Resultados com formas diferentes (sucesso, erro, carregando) e hierarquias fechadas com estado.
-- Quando os subtipos precisam de construtor ou propriedades próprias.
+- Results with different shapes (success, error, loading) and closed hierarchies with state.
+- When the subtypes need a constructor or properties of their own.
 
-## O que não confundir
+## What not to confuse
 
-- **Sealed × enum:** o enum tem instâncias fixas e iguais em forma; a sealed tem subtipos com dados próprios.
-- **Sealed class × sealed interface:** use a interface quando os subtipos não compartilham estado ou precisam de outra superclasse.
+- **Sealed × enum:** the enum has fixed instances of the same shape; the sealed one has subtypes with their own data.
+- **Sealed class × sealed interface:** use the interface when the subtypes do not share state or need another superclass.
 
-## Campos principais
+## Main fields
 
-- **Nome** (obrigatório): nome simples da declaração; leva a etiqueta `kotlin-type`, então supertipos e tipos de propriedade de outras marcações podem apontar para ela.
-- **Pacote**, **Visibilidade**, **Anotações** e **Descrição** (KDoc), **Parâmetros de tipo**.
-- É abstrata; o construtor é protected ou private.
-- Os subtipos são as declarações cujo `supertypes` aponta para ela (coluna `typeRef`).
+- **Name** (required): simple name of the declaration; it carries the `kotlin-type` tag, so supertypes and property types of other markings can point to it.
+- **Package**, **Visibility**, **Annotations** and **Description** (KDoc), **Type parameters**.
+- It is abstract; the constructor is protected or private.
+- The subtypes are the declarations whose `supertypes` points to it (`typeRef` column).
 
-## Como o subtipo se liga
+## How a subtype is linked
 
-Cada linha de `supertypes` traz o tipo como escrito no código e, em **Tipo mapeado** (`typeRef`), a declaração mapeada com a etiqueta `kotlin-type`. É assim que um subtipo se liga à sealed class ou interface: as subclasses são as declarações cujo `supertypes` aponta para ela.
+Each line of `supertypes` holds the type as written in the code and, in **Mapped type** (`typeRef`), the mapped declaration with the `kotlin-type` tag. This is how a subtype is linked to the sealed class or interface: the subclasses are the declarations whose `supertypes` points to it.
 
-## Declaração aninhada
+## Nested declaration
 
-Uma declaração aninhada (nested, inner ou companion) se liga à externa pelo campo **Declarada em** (`outer`, etiqueta `kotlin-type`). O agente lê a ligação em `refs` (na aninhada) e `backlinks` (na externa). Desenhar a marcação dentro da externa é só arrumação visual e opcional: o pertencimento do canvas (`parent`/`members`) não define o aninhamento no código.
+A nested declaration (nested, inner or companion) is linked to its outer declaration through the **Declared in** field (`outer`, tag `kotlin-type`). The agent reads the link in `refs` (on the nested one) and `backlinks` (on the outer one). Drawing the marking inside the outer one is only an optional visual tidy-up: the canvas membership (`parent`/`members`) does not define the nesting in the code.
 
-## Sugestões de tipo
+## Type suggestions
 
-Ao digitar no **Tipo** das propriedades e o **Retorno** das funções, aparecem os tipos básicos do Kotlin (`String`, `Int`, `Boolean`, `List`, `Map`...). No **Tipo** das propriedades e dos supertipos aparecem também as declarações mapeadas (com o tipo delas ao lado), e escolher uma preenche junto o **Tipo mapeado**. É só uma ajuda: qualquer texto continua valendo, como `String?` ou `List<Endereco>`.
+When typing in the **Type** of properties and the **Return type** of functions, the basic Kotlin types appear (`String`, `Int`, `Boolean`, `List`, `Map`...). In the **Type** of properties and supertypes the mapped declarations appear too (with their kind next to them), and choosing one also fills in the **Mapped type**. It is only a help: any text is still valid, such as `String?` or `List<Address>`.
 
-## Referências às propriedades
+## References to properties
 
-- Outras anotações apontam para uma linha de `properties` por um campo `ref` que aceita `data-field` ou `kotlin-property`.
-- Funções (`functions`) têm a etiqueta `kotlin-function`.
+- Other annotations point to a line of `properties` through a `ref` field that accepts `data-field` or `kotlin-property`.
+- Functions (`functions`) carry the `kotlin-function` tag.
 
-## Exemplo
+## Example
 
 ```kotlin
 sealed class Resultado<out T> {

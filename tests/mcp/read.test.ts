@@ -866,7 +866,7 @@ describe('create_project', () => {
     const parsed = deserialize(readFileSync(join(dir, 'mapping.json'), 'utf8'));
     expect(parsed.ok && parsed.project.layers.map((l) => l.name)).toEqual([
       'Camada 1',
-      'Notas',
+      'Notes',
     ]);
     // The notes library package, written along with mapping.json.
     for (const file of [

@@ -69,7 +69,7 @@ export interface CreateProjectArgs {
   readonly root?: string;
   readonly firstLayerName?: string;
   /**
-   * Applies the bundled notes library (the `Notas` layer, `specs/notas/`). Default `true`; `false`
+   * Applies the bundled notes library (the `Notes` layer, `specs/notas/`). Default `true`; `false`
    * creates the project without it.
    */
   readonly notes?: boolean;

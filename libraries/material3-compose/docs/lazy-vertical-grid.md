@@ -1,28 +1,28 @@
 # LazyVerticalGrid
 
-Grade vertical rolável que só compõe o que aparece. Use para galerias e catálogos em colunas.
+Scrollable vertical grid that composes only what is visible. Use it for galleries and catalogs in columns.
 
-Tipo de anotação: `lazy-vertical-grid` (camada Layout).
+Annotation type: `lazy-vertical-grid` (Layout layer).
 
-## Campos
+## Fields
 
-| Chave               | Rótulo                        | Tipo   | Obrigatório | Opções                  | Padrão | Descrição                                                                                                  |
-| ------------------- | ----------------------------- | ------ | ----------- | ----------------------- | ------ | ---------------------------------------------------------------------------------------------------------- |
-| `columns`           | Colunas                       | number | não         |                         | `2`    | Número de colunas fixas (GridCells.Fixed).                                                                 |
-| `minColumnWidth`    | Largura mínima da coluna (dp) | number | não         |                         |        | Se preenchida, as colunas se adaptam a esta largura (GridCells.Adaptive) e o número de colunas é ignorado. |
-| `verticalSpacing`   | Espaçamento vertical (dp)     | number | não         |                         |        | Espaço entre as linhas da grade em dp (verticalArrangement).                                               |
-| `horizontalSpacing` | Espaçamento horizontal (dp)   | number | não         |                         |        | Espaço entre as colunas da grade em dp (horizontalArrangement).                                            |
-| `contentPadding`    | Margem do conteúdo (dp)       | number | não         |                         |        | Margem interna da grade em dp (PaddingValues). Vazio = 0.                                                  |
-| `width`             | Largura                       | enum   | não         | `wrap`, `fill`, `fixed` | `wrap` | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).      |
-| `height`            | Altura                        | enum   | não         | `wrap`, `fill`, `fixed` | `wrap` | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).        |
-| `weight`            | Peso (weight)                 | number | não         |                         |        | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                          |
+| Key                 | Label                     | Type   | Required | Options                 | Default | Description                                                                                           |
+| ------------------- | ------------------------- | ------ | -------- | ----------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| `columns`           | Columns                   | number | no       |                         | `2`     | Number of fixed columns (GridCells.Fixed).                                                            |
+| `minColumnWidth`    | Minimum column width (dp) | number | no       |                         |         | If filled, the columns adapt to this width (GridCells.Adaptive) and the number of columns is ignored. |
+| `verticalSpacing`   | Vertical spacing (dp)     | number | no       |                         |         | Space between the grid rows in dp (verticalArrangement).                                              |
+| `horizontalSpacing` | Horizontal spacing (dp)   | number | no       |                         |         | Space between the grid columns in dp (horizontalArrangement).                                         |
+| `contentPadding`    | Content padding (dp)      | number | no       |                         |         | Inner padding of the grid in dp (PaddingValues). Empty = 0.                                           |
+| `width`             | Width                     | enum   | no       | `wrap`, `fill`, `fixed` | `wrap`  | wrap fits the content, fill takes all the available width and fixed uses the marking's width (dp).    |
+| `height`            | Height                    | enum   | no       | `wrap`, `fill`, `fixed` | `wrap`  | wrap fits the content, fill takes all the available height and fixed uses the marking's height (dp).  |
+| `weight`            | Weight                    | number | no       |                         |         | Share of the space left over in a Row or Column (Modifier.weight). Empty = no weight.                 |
 
 ## Compose
 
-- Símbolo: `androidx.compose.foundation.lazy.grid.LazyVerticalGrid`
-- Arquivo (`path`): `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridDsl.kt`
+- Symbol: `androidx.compose.foundation.lazy.grid.LazyVerticalGrid`
+- File (`path`): `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridDsl.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and the expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 LazyVerticalGrid(
@@ -32,39 +32,39 @@ LazyVerticalGrid(
     contentPadding = PaddingValues(16.dp),
     modifier = Modifier.fillMaxSize(),
 ) {
-    item { /* filha 1 */ }
-    item { /* filha 2 */ }
+    item { /* child 1 */ }
+    item { /* child 2 */ }
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> Passe `columns = GridCells.Fixed(<columns>)`; com `minColumnWidth` preenchido use `GridCells.Adaptive(<minColumnWidth>.dp)` no lugar. Cada marcação filha vira um `item { … }` (filhas iguais e repetidas viram `items(lista) { … }`). `verticalSpacing` e `horizontalSpacing` viram `Arrangement.spacedBy(<n>.dp)` em `verticalArrangement` e `horizontalArrangement`, e `contentPadding` vira `PaddingValues(<contentPadding>.dp)`; a grade precisa de altura limitada. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> Pass `columns = GridCells.Fixed(<columns>)`; with `minColumnWidth` filled, use `GridCells.Adaptive(<minColumnWidth>.dp)` instead. Each child marking becomes an `item { … }` (identical, repeated children become `items(list) { … }`). `verticalSpacing` and `horizontalSpacing` become `Arrangement.spacedBy(<n>.dp)` in `verticalArrangement` and `horizontalArrangement`, and `contentPadding` becomes `PaddingValues(<contentPadding>.dp)`; the grid needs a bounded height. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside a Row, Column or FlowRow).
 
-## Exemplos
+## Examples
 
-- **Galeria de duas colunas**: columns=2, verticalSpacing=8, horizontalSpacing=8, contentPadding=16, width=fill, height=fill
-- **Grade adaptativa**: minColumnWidth=120, verticalSpacing=12, horizontalSpacing=12, width=fill, height=fill
+- **Two-column gallery**: columns=2, verticalSpacing=8, horizontalSpacing=8, contentPadding=16, width=fill, height=fill
+- **Adaptive grid**: minColumnWidth=120, verticalSpacing=12, horizontalSpacing=12, width=fill, height=fill
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Este tipo é do Foundation, não do Material: não tem arquivo de tokens, e o desenho segue o comportamento do foundation, com os valores vindos dos campos.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container's density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). This type belongs to Foundation, not to Material: it has no tokens file, and the drawing follows the foundation behavior, with the values coming from the fields.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridDsl.kt` (linhas 67 a 77: `LazyVerticalGrid(columns, contentPadding = PaddingValues(0.dp), reverseLayout = false, verticalArrangement, horizontalArrangement = Arrangement.Start)`; linhas 325 a 335: `GridCells.Fixed(count)`, `n` colunas iguais; linhas 354 a 366: `GridCells.Adaptive(minSize)`, `maxOf((availableSize + spacing) / (minSize + spacing), 1)` colunas).
-- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/ScrollingContainer.kt` (linha 56: o `clipScrollableContainer` que o `LazyGrid.kt`, linhas 125 a 150, aplica pelo `scrollingContainer`).
+- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridDsl.kt` (lines 67 to 77: `LazyVerticalGrid(columns, contentPadding = PaddingValues(0.dp), reverseLayout = false, verticalArrangement, horizontalArrangement = Arrangement.Start)`; lines 325 to 335: `GridCells.Fixed(count)`, `n` equal columns; lines 354 to 366: `GridCells.Adaptive(minSize)`, `maxOf((availableSize + spacing) / (minSize + spacing), 1)` columns).
+- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/ScrollingContainer.kt` (line 56: the `clipScrollableContainer` that `LazyGrid.kt`, lines 125 to 150, applies through `scrollingContainer`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- O slot é uma **grade** (`layout.type: "grid"`, formato 4): `columns` dá `n` colunas iguais (o `GridCells.Fixed`) e, com `minColumnWidth` preenchido, a grade passa a adaptativa, `max(1, floor((conteúdo + gap) / (minColumnWidth + gap)))` colunas (o `GridCells.Adaptive`, mesma conta do `LazyGridDsl.kt`, linha 363). Os dois campos viram duas chaves de trilha por expressão e vale a que tem valor; `minColumnWidth` vence `columns`, como o `code` do tipo.
-- `horizontalSpacing` é o `gap` entre as colunas e `verticalSpacing` o `lineGap` entre as linhas; `contentPadding` é o `padding` do slot, dentro da caixa cortada, como o `PaddingValues` do Compose. O **Arrumar** põe cada filha numa célula, da esquerda para a direita e de cima para baixo (a filha menor que a célula fica no início dela).
-- O slot tem `clip: true` (formato 4): a filha que passa da caixa do componente é cortada na borda, como o `clipScrollableContainer` do Compose.
-- Nenhuma cor, fonte ou raio é desenhado; o rótulo do slot mostra só o tamanho e o `weight` (a grade em si é desenhada pelo layout).
+- The slot is a **grid** (`layout.type: "grid"`, format 4): `columns` gives `n` equal columns (the `GridCells.Fixed`) and, with `minColumnWidth` filled, the grid becomes adaptive, `max(1, floor((content + gap) / (minColumnWidth + gap)))` columns (the `GridCells.Adaptive`, the same calculation as `LazyGridDsl.kt`, line 363). The two fields become two track keys by expression and the one that has a value applies; `minColumnWidth` wins over `columns`, like the type's `code`.
+- `horizontalSpacing` is the `gap` between the columns and `verticalSpacing` the `lineGap` between the rows; `contentPadding` is the slot's `padding`, inside the clipped box, like Compose's `PaddingValues`. **Arrange** puts each child in a cell, from left to right and from top to bottom (a child smaller than the cell stays at its start).
+- The slot has `clip: true` (format 4): a child that goes past the component's box is clipped at the edge, like Compose's `clipScrollableContainer`.
+- No color, font or radius is drawn; the slot's label shows only the size and the `weight` (the grid itself is drawn by the layout).
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- As colunas têm tamanho igual (`1fr`): o formato não tem `GridCells.FixedSize` nem células de larguras diferentes, e a filha não ocupa mais de uma coluna (`span` de marcação filha não existe; o `GridItemSpan` do Compose fica de fora).
-- `reverseLayout` é campo e código, mas o desenho não o usa; a grade horizontal (`LazyHorizontalGrid`) não é campo deste tipo.
-- A filha é a de tamanho próprio dentro da célula (início da célula); o Compose entrega a ela a largura da célula como restrição máxima. Redimensione a filha para ocupar a coluna.
-- Rolagem e `state` não existem num desenho estático: o que passa da caixa é cortado e não há como rolar até lá. O `weight` das filhas fica fora (o Arrumar não lê campos das filhas).
+- The columns have equal size (`1fr`): the format has no `GridCells.FixedSize` or cells of different widths, and a child does not take more than one column (a child marking's `span` does not exist; Compose's `GridItemSpan` is left out).
+- `reverseLayout` is a field and code, but the drawing does not use it; the horizontal grid (`LazyHorizontalGrid`) is not a field of this type.
+- The child keeps its own size inside the cell (the start of the cell); Compose hands it the cell width as the maximum constraint. Resize the child to fill the column.
+- Scrolling and `state` do not exist in a static drawing: whatever goes past the box is clipped and there is no way to scroll to it. The children's `weight` is left out (Arrange does not read the children's fields).

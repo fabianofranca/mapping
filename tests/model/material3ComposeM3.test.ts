@@ -10,6 +10,7 @@ import {
   files,
   text,
   v1Preview,
+  maskTextValues,
   v1WithEstados,
   COMPOSE_SIZES,
 } from '../support/material3Library';
@@ -61,7 +62,9 @@ describe('M3 — selection and input in format 4', () => {
       const now = component(id);
       const { actual, expected } = v1WithEstados(id, type, before);
       expect(actual).toEqual(expected);
-      expect(now.preview).toEqual(v1Preview(id, before.preview));
+      expect(maskTextValues(type.fields, now.preview as Rec)).toEqual(
+        maskTextValues(type.fields, v1Preview(id, before.preview) as Rec),
+      );
       expect(now.minSize).toEqual(before.minSize);
       // #863: text-field and secure-text-field go from 76 (v1) to 84, which fits the outlined style with supporting text.
       const heightFixed = id === 'text-field' || id === 'secure-text-field';

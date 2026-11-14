@@ -3,8 +3,6 @@
 // `maxPerLine` (`maxItemsInEachRow`) and `maxLines`; the `alert-dialog` buttons with `wrap-reverse` (the
 // `AlertDialogFlowRow`: the confirm button goes above when it does not fit) and the `dropdown-menu` width by the widest
 // item (`IntrinsicSize.Max`), between 112 and 280. The tests were seen failing before the library changed.
-// pt-BR kept: node names ('dispensar', 'confirmar', 'botões', 'área de toque (…)'), the example names 'Botões em duas linhas' and
-// 'Itens de larguras diferentes' and the doc phrase 'sem quebra de linha' are the Portuguese data of libraries/material3-compose
 import { describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
@@ -204,7 +202,7 @@ describe('MC6 flow-row — Arrange breaks the children into lines (FlowLayout.kt
 
   it('the Fidelity section no longer says the slot is a row without wrapping', () => {
     const doc = text('docs/flow-row.md');
-    expect(doc).not.toMatch(/sem quebra de linha/);
+    expect(doc).not.toMatch(/no line break/);
     expect(doc).toMatch(/`wrap`/);
   });
 });
@@ -227,10 +225,10 @@ describe('MC6 alert-dialog — the buttons break like the AlertDialogFlowRow (Al
     (mode) => {
       const { drawing } = drawFitted('alert-dialog', LONG, mode);
       expect(drawing.warnings).toEqual([]);
-      const dismiss = boxOf(drawing, 'dispensar');
-      const confirm = boxOf(drawing, 'confirmar');
-      const row = boxOf(drawing, 'botões');
-      // each button (40) is centered in its 48 `área de toque` frame; between the lines, 12
+      const dismiss = boxOf(drawing, 'dismiss');
+      const confirm = boxOf(drawing, 'confirm');
+      const row = boxOf(drawing, 'buttons');
+      // each button (40) is centered in its 48 `touch target` frame; between the lines, 12
       expect(dismiss.y - confirm.y).toBe(48 + 12);
       expect(confirm.y).toBe(row.y + 4);
       expect(confirm.x + confirm.width).toBeCloseTo(row.x + row.width, 5);
@@ -250,9 +248,9 @@ describe('MC6 alert-dialog — the buttons break like the AlertDialogFlowRow (Al
     expect(long.messages.map((m) => m.text)).toEqual([]);
   });
 
-  it('each button has the "área de toque" frame with its own name, at least 48', () => {
-    for (const name of ['dispensar', 'confirmar']) {
-      const wrapper = templateNodes('alert-dialog', `área de toque (${name})`);
+  it('each button has the "touch target" frame with its own name, at least 48', () => {
+    for (const name of ['dismiss', 'confirm']) {
+      const wrapper = templateNodes('alert-dialog', `touch target (${name})`);
       expect(wrapper, name).toHaveLength(1);
       expect([wrapper[0]?.height, wrapper[0]?.minHeight]).toEqual(['hug', 48]);
     }
@@ -264,22 +262,22 @@ describe('MC6 alert-dialog — the buttons break like the AlertDialogFlowRow (Al
       confirmButton: 'Discard',
       dismissButton: 'Cancel',
     });
-    const dismiss = boxOf(drawing, 'dispensar');
-    const confirm = boxOf(drawing, 'confirmar');
+    const dismiss = boxOf(drawing, 'dismiss');
+    const confirm = boxOf(drawing, 'confirm');
     expect(confirm.y).toBe(dismiss.y);
     expect(dismiss.x + dismiss.width + 8).toBeCloseTo(confirm.x, 5);
   });
 
-  it('the "Botões em duas linhas" example exists and draws without warnings', () => {
+  it('the "Buttons on two lines" example exists and draws without warnings', () => {
     const catalog = buildCatalog(files);
     const example = findEntry(catalog, 'alert-dialog')?.examples.find(
-      (e) => e.name === 'Botões em duas linhas',
+      (e) => e.name === 'Buttons on two lines',
     );
     expect(example).toBeDefined();
     for (const mode of MODES) {
       const { drawing } = drawFitted('alert-dialog', example!.values ?? {}, mode);
       expect(drawing.warnings).toEqual([]);
-      expect(boxOf(drawing, 'confirmar').y).toBeLessThan(boxOf(drawing, 'dispensar').y);
+      expect(boxOf(drawing, 'confirm').y).toBeLessThan(boxOf(drawing, 'dismiss').y);
     }
   });
 });
@@ -389,10 +387,10 @@ describe('MC6 dropdown-menu — the width by the widest item, between 112 and 28
     expect(fit.width).toBe(200);
   });
 
-  it('the "Itens de larguras diferentes" example exists and draws without warnings, at the size and fitted', () => {
+  it('the "Items of different widths" example exists and draws without warnings, at the size and fitted', () => {
     const catalog = buildCatalog(files);
     const example = findEntry(catalog, 'dropdown-menu')?.examples.find(
-      (e) => e.name === 'Itens de larguras diferentes',
+      (e) => e.name === 'Items of different widths',
     );
     expect(example).toBeDefined();
     for (const mode of MODES) {

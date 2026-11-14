@@ -1,8 +1,5 @@
 // MF5 (stage #899): today's day in the `date-picker` and the variants as a field (`avatar` of the `chip`, `contentScale` of the
 // `image`, `color`/`insetStart`/`insetEnd` of the `divider`, `trackColor`/`strokeCap` of the `progress-indicator`).
-// pt-BR kept: node names ('contorno de hoje', 'célula', 'marcado', 'rótulo', 'faixa', 'barra', 'linha', 'trilho', …), the example names
-// ('Dia de hoje', 'Com avatar', 'Recuo por ponta', 'Trilho colorido e ponta reta', 'Parágrafo justificado', 'Primário') and the
-// word 'relógio' in the code notes are the Portuguese data of libraries/material3-compose
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import type { Spec } from '../../src/model/spec';
@@ -54,7 +51,7 @@ const cx = (n: SceneNode) => n.transform[4] + n.width / 2;
 
 describe('MF5: version and additive update', () => {
   it('it stays at version 7, the new fields are optional and the update from 6 is additive', () => {
-    expect(spec.version).toBe(14);
+    expect(spec.version).toBe(15);
     const added: [string, string[]][] = [
       ['date-picker', ['today']],
       ['chip', ['avatar']],
@@ -87,7 +84,7 @@ describe('MF5: today in the date-picker (decision 19)', () => {
   it('without month/year, today gets the 1 outline in primary and the number in primary', () => {
     for (const mode of ['light', 'dark'] as const) {
       const d = draw('date-picker', { ...base, selectedDay: 15, today: 22 }, mode);
-      const rings = visibleOf(d.root, 'contorno de hoje');
+      const rings = visibleOf(d.root, 'today outline');
       expect(rings).toHaveLength(1);
       const stroke = rings[0]!.stroke!;
       expect(stroke.width).toBe(1);
@@ -99,8 +96,8 @@ describe('MF5: today in the date-picker (decision 19)', () => {
           : 'children' in n
             ? n.children.map((c) => cellOf(c, name)).find((x) => x !== undefined)
             : undefined;
-      const cell = findAll(d.root, 'célula').find((c) =>
-        findAll(c, 'contorno de hoje').some((r) => r.visible),
+      const cell = findAll(d.root, 'cell').find((c) =>
+        findAll(c, 'today outline').some((r) => r.visible),
       )!;
       expect(texts(cell, '22').length).toBeGreaterThan(0);
       void cellOf;
@@ -118,15 +115,15 @@ describe('MF5: today in the date-picker (decision 19)', () => {
 
   it('without the field, no day gets the outline and all the numbers stay in on-surface', () => {
     const d = draw('date-picker', { ...base, selectedDay: 15 });
-    expect(visibleOf(d.root, 'contorno de hoje')).toHaveLength(0);
+    expect(visibleOf(d.root, 'today outline')).toHaveLength(0);
     for (const t of texts(d.root, '22'))
       expect(solid(t.fills)).toBe(rgb(tokens('light')['on-surface'] as string));
   });
 
   it('today when selected counts as the selection: no outline, with the circle in primary', () => {
     const d = draw('date-picker', { ...base, selectedDay: 15, today: 15 });
-    expect(visibleOf(d.root, 'contorno de hoje')).toHaveLength(0);
-    expect(visibleOf(d.root, 'marcado')).toHaveLength(1);
+    expect(visibleOf(d.root, 'today outline')).toHaveLength(0);
+    expect(visibleOf(d.root, 'marked')).toHaveLength(1);
   });
 
   it('in the range, today when it is an end of the range counts as the selection', () => {
@@ -137,7 +134,7 @@ describe('MF5: today in the date-picker (decision 19)', () => {
       rangeEndDay: 16,
       today: 9,
     });
-    expect(visibleOf(d.root, 'contorno de hoje')).toHaveLength(0);
+    expect(visibleOf(d.root, 'today outline')).toHaveLength(0);
     const e = draw('date-picker', {
       selection: 'range',
       displayedMonth: 'October 2025',
@@ -145,7 +142,7 @@ describe('MF5: today in the date-picker (decision 19)', () => {
       rangeEndDay: 16,
       today: 12,
     });
-    expect(visibleOf(e.root, 'contorno de hoje')).toHaveLength(1);
+    expect(visibleOf(e.root, 'today outline')).toHaveLength(1);
   });
 
   it('today inside the band gets the outline, but the number follows the band color (dayContentColor, DatePicker.kt 936 to 950)', () => {
@@ -156,7 +153,7 @@ describe('MF5: today in the date-picker (decision 19)', () => {
       rangeEndDay: 16,
       today: 12,
     });
-    expect(visibleOf(d.root, 'contorno de hoje')).toHaveLength(1);
+    expect(visibleOf(d.root, 'today outline')).toHaveLength(1);
     for (const t of texts(d.root, '12'))
       expect(solid(t.fills)).toBe(rgb(tokens('light')['on-surface'] as string));
   });
@@ -164,28 +161,28 @@ describe('MF5: today in the date-picker (decision 19)', () => {
   it('with month and year, the outline follows the month grid and a today outside the month draws nothing', () => {
     const feb = { ...base, month: 2, year: 2026, selectedDay: 14 };
     expect(
-      visibleOf(draw('date-picker', { ...feb, today: 28 }).root, 'contorno de hoje'),
+      visibleOf(draw('date-picker', { ...feb, today: 28 }).root, 'today outline'),
     ).toHaveLength(1);
     // February 2026 has 28 days: the 30th does not exist.
     const out = draw('date-picker', { ...feb, today: 30 });
-    expect(visibleOf(out.root, 'contorno de hoje')).toHaveLength(0);
+    expect(visibleOf(out.root, 'today outline')).toHaveLength(0);
     expect(out.warnings).toEqual([]);
     // February 2028 is a leap year: the 29th exists.
     const leap = { ...base, month: 2, year: 2028, selectedDay: 3 };
     expect(
-      visibleOf(draw('date-picker', { ...leap, today: 29 }).root, 'contorno de hoje'),
+      visibleOf(draw('date-picker', { ...leap, today: 29 }).root, 'today outline'),
     ).toHaveLength(1);
     // a today outside 1 to 31 also draws nothing.
     for (const today of [0, 32])
       expect(
-        visibleOf(draw('date-picker', { ...feb, today }).root, 'contorno de hoje'),
+        visibleOf(draw('date-picker', { ...feb, today }).root, 'today outline'),
       ).toHaveLength(0);
   });
 
   it('the code says today is not a parameter (Compose uses the device clock)', () => {
     const notes = JSON.stringify(typeOf('date-picker').code);
     expect(notes).toMatch(/today/);
-    expect(notes).toMatch(/relógio/);
+    expect(notes).toMatch(/device clock/);
   });
 });
 
@@ -208,7 +205,7 @@ describe('MF5: chip avatar (decision 20)', () => {
     expect(avatar.type === 'frame' && avatar.cornerRadius).toBe(
       tokens('light')['corner-full'],
     );
-    const image = visibleOf(avatar, 'imagem do avatar')[0]!;
+    const image = visibleOf(avatar, 'avatar image')[0]!;
     expect(image.fills.find((p) => p.type === 'image')).toMatchObject({
       url: 'https://example.com/ana.png',
     });
@@ -232,7 +229,7 @@ describe('MF5: chip avatar (decision 20)', () => {
   it('the avatar pushes the label back and opens like the chip without a leading icon (inputChipPadding, Chip.kt 2946: start 4 with an avatar or without an icon)', () => {
     const withAvatar = draw('chip', input);
     const without = draw('chip', { ...input, avatar: undefined });
-    const label = (d: ReturnType<typeof draw>) => visibleOf(d.root, 'rótulo')[0]!;
+    const label = (d: ReturnType<typeof draw>) => visibleOf(d.root, 'label')[0]!;
     // the avatar (24) and the gap (8) push the label; the start without an icon is already 12 (4 + 8)
     expect(cx(label(withAvatar)) - cx(label(without))).toBeGreaterThan(24);
     const avatar = visibleOf(withAvatar.root, 'avatar')[0]!;
@@ -267,7 +264,7 @@ describe('MF5: image contentScale (decision 20)', () => {
 
 describe('MF5: divider with color and inset per end (decision 20)', () => {
   const line = (values: Values, mode: Mode = 'light') =>
-    visibleOf(draw('divider', values, mode).root, 'linha')[0]!;
+    visibleOf(draw('divider', values, mode).root, 'line')[0]!;
   const ends = (values: Values) => {
     const l = line(values);
     return [l.transform[4], 360 - (l.transform[4] + l.width)];
@@ -308,7 +305,7 @@ describe('MF5: divider with color and inset per end (decision 20)', () => {
       insetStart: 10,
       insetEnd: 20,
     }).root;
-    expect(findAll(root, 'ponta final')[0]!.height).toBe(20);
+    expect(findAll(root, 'end inset')[0]!.height).toBe(20);
   });
 });
 
@@ -318,11 +315,11 @@ describe('MF5: progress-indicator with track and cap (decision 20)', () => {
 
   it('the default track is secondary-container and the trackColor swaps the role', () => {
     for (const mode of ['light', 'dark'] as const) {
-      const std = visibleOf(lin({}, mode).root, 'faixa')[0]!;
+      const std = visibleOf(lin({}, mode).root, 'segment')[0]!;
       expect(solid(std.fills)).toBe(rgb(tokens(mode)['secondary-container'] as string));
       const alt = visibleOf(
         lin({ trackColor: 'errorContainer' }, mode).root,
-        'faixa',
+        'segment',
       )[0]!;
       expect(solid(alt.fills)).toBe(rgb(tokens(mode)['error-container'] as string));
     }
@@ -334,7 +331,7 @@ describe('MF5: progress-indicator with track and cap (decision 20)', () => {
       progress: 0.6,
       trackColor: 'tertiaryContainer',
     });
-    const arc = visibleOf(det.root, 'trilho arco')[0]!;
+    const arc = visibleOf(det.root, 'arc track')[0]!;
     expect(solid(arc.stroke!.paints)).toBe(
       rgb(tokens('light')['tertiary-container'] as string),
     );
@@ -342,27 +339,24 @@ describe('MF5: progress-indicator with track and cap (decision 20)', () => {
       shape: 'circular',
       trackColor: 'tertiaryContainer',
     });
-    expect(visibleOf(ind.root, 'trilho completo')).toHaveLength(1);
+    expect(visibleOf(ind.root, 'full track')).toHaveLength(1);
     // without trackColor, the indeterminate one has no track (circularIndeterminateTrackColor is transparent)
     expect(
-      visibleOf(
-        draw('progress-indicator', { shape: 'circular' }).root,
-        'trilho completo',
-      ),
+      visibleOf(draw('progress-indicator', { shape: 'circular' }).root, 'full track'),
     ).toHaveLength(0);
   });
 
   it('strokeCap: Round (default) rounds, Butt and Square cut straight, in the linear and in the circular', () => {
     const radius = (n: SceneNode) => (n.type === 'rect' ? n.cornerRadius : -1);
     const full = tokens('light')['corner-full'];
-    expect(radius(visibleOf(lin({}).root, 'barra')[0]!)).toBe(full);
-    expect(radius(visibleOf(lin({ strokeCap: 'Round' }).root, 'barra')[0]!)).toBe(full);
-    expect(radius(visibleOf(lin({ strokeCap: 'Butt' }).root, 'barra')[0]!)).toBe(0);
-    expect(radius(visibleOf(lin({ strokeCap: 'Square' }).root, 'barra')[0]!)).toBe(0);
+    expect(radius(visibleOf(lin({}).root, 'bar')[0]!)).toBe(full);
+    expect(radius(visibleOf(lin({ strokeCap: 'Round' }).root, 'bar')[0]!)).toBe(full);
+    expect(radius(visibleOf(lin({ strokeCap: 'Butt' }).root, 'bar')[0]!)).toBe(0);
+    expect(radius(visibleOf(lin({ strokeCap: 'Square' }).root, 'bar')[0]!)).toBe(0);
     const cap = (values: Values) =>
       visibleOf(
         draw('progress-indicator', { shape: 'circular', progress: 0.6, ...values }).root,
-        'indicador',
+        'indicator',
       )[0]!.stroke!.cap;
     expect(cap({})).toBe('round');
     expect(cap({ strokeCap: 'Butt' })).toBe('butt');
@@ -382,8 +376,8 @@ describe('MF5: progress-indicator with track and cap (decision 20)', () => {
     };
     const gap = (strokeCap?: string) => {
       const d = lin({ strokeCap });
-      const bar = visibleOf(d.root, 'barra')[0]!;
-      const track = visibleOf(d.root, 'faixa')[0]!;
+      const bar = visibleOf(d.root, 'bar')[0]!;
+      const track = visibleOf(d.root, 'segment')[0]!;
       return absX(d.root, track)! - (absX(d.root, bar)! + bar.width);
     };
     for (const cap of [undefined, 'Round', 'Butt', 'Square']) expect(gap(cap)).toBe(4);
@@ -426,12 +420,12 @@ describe('MF5: the code carries the parameter when the field is filled (decision
 
 describe('MF5: new examples (decision 22)', () => {
   const NEW: [string, string][] = [
-    ['date-picker', 'Dia de hoje'],
-    ['chip', 'Com avatar'],
-    ['divider', 'Recuo por ponta'],
-    ['progress-indicator', 'Trilho colorido e ponta reta'],
-    ['text', 'Parágrafo justificado'],
-    ['surface', 'Primário'],
+    ['date-picker', "Today's day"],
+    ['chip', 'With avatar'],
+    ['divider', 'Inset per end'],
+    ['progress-indicator', 'Colored track and butt cap'],
+    ['text', 'Justified paragraph'],
+    ['surface', 'Primary'],
   ];
   it.each(NEW)(
     '%s: the "%s" example exists and draws without warnings in light and dark',
@@ -448,14 +442,14 @@ describe('MF5: new examples (decision 22)', () => {
   it('the examples use the new fields', () => {
     const values = (id: string, name: string) =>
       entryOf(id).examples.find((e) => e.name === name)?.values ?? {};
-    expect(values('date-picker', 'Dia de hoje')).toHaveProperty('today');
-    expect(values('chip', 'Com avatar')).toHaveProperty('avatar');
-    expect(values('divider', 'Recuo por ponta')).toHaveProperty('insetStart');
-    expect(values('divider', 'Recuo por ponta')).toHaveProperty('insetEnd');
-    expect(values('progress-indicator', 'Trilho colorido e ponta reta')).toHaveProperty(
+    expect(values('date-picker', "Today's day")).toHaveProperty('today');
+    expect(values('chip', 'With avatar')).toHaveProperty('avatar');
+    expect(values('divider', 'Inset per end')).toHaveProperty('insetStart');
+    expect(values('divider', 'Inset per end')).toHaveProperty('insetEnd');
+    expect(values('progress-indicator', 'Colored track and butt cap')).toHaveProperty(
       'trackColor',
     );
-    expect(values('progress-indicator', 'Trilho colorido e ponta reta')).toHaveProperty(
+    expect(values('progress-indicator', 'Colored track and butt cap')).toHaveProperty(
       'strokeCap',
     );
   });
@@ -469,12 +463,12 @@ describe('MF5: final test of the stage (the new fields do not touch what MF4 lef
     // Without `today`, `avatar`, `color`, `insetStart`, `insetEnd`, `trackColor` and `strokeCap`, the default drawing
     // has the color, the inset, the track and the cap from before.
     const divider = draw('divider', { inset: 12 }).root;
-    expect(visibleOf(divider, 'linha')[0]!.transform[4]).toBe(12);
-    expect(solid(visibleOf(divider, 'linha')[0]!.fills)).toBe(
+    expect(visibleOf(divider, 'line')[0]!.transform[4]).toBe(12);
+    expect(solid(visibleOf(divider, 'line')[0]!.fills)).toBe(
       rgb(t('light')['outline-variant'] as string),
     );
     const bar = draw('progress-indicator', { shape: 'linear', progress: 0.5 }).root;
-    expect(solid(visibleOf(bar, 'faixa')[0]!.fills)).toBe(
+    expect(solid(visibleOf(bar, 'segment')[0]!.fills)).toBe(
       rgb(t('light')['secondary-container'] as string),
     );
     expect(
@@ -494,12 +488,12 @@ describe('MF5: final test of the stage (the new fields do not touch what MF4 lef
       const outline = findAll(
         draw('text-field', { style: 'outlined', label: 'E-mail', value: 'a@b.c' }, mode)
           .root,
-        'contorno',
+        'outline',
       ).filter((n) => n.visible)[0]!;
       expect(outline.stroke?.gaps).toHaveLength(1);
       // the disabled switch does not stack transparency
       const sw = draw('switch', { checked: 'true', enabled: 'false' }, mode).root;
-      const track = findAll(sw, 'trilho').filter((n) => n.visible)[0];
+      const track = findAll(sw, 'track').filter((n) => n.visible)[0];
       expect(track === undefined || opaque(solid(track.fills))).toBe(true);
     },
   );
@@ -512,8 +506,8 @@ describe('MF5: final test of the stage (the new fields do not touch what MF4 lef
       is24Hour: 'true',
       selection: 'minute',
     }).root;
-    const handle = findAll(root, 'alça')[0]!;
-    const copies = findAll(handle, 'número sob a alça');
+    const handle = findAll(root, 'handle')[0]!;
+    const copies = findAll(handle, 'number under the handle');
     expect(copies).toHaveLength(12);
     for (const c of copies)
       expect(solid(c.fills)).toBe(rgb(t('light')['on-primary'] as string));

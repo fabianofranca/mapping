@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { walk } from '../../src/model/components/scene';
 import type { PathNode, SceneNode } from '../../src/model/components/scene';
 import { text, typeOf } from '../support/material3Library';
+import { currentNodeName } from '../support/material3OldNames';
 import {
   draw,
   drawnPathPoints,
@@ -114,7 +115,7 @@ describe('EX6 pull-to-refresh — the arc and the arrow of the drag turn by rota
 
   it('the arc has rotation = startAngle + Compose rotation (27.075°) and the d in the canonical orientation', () => {
     for (const mode of ['light', 'dark'] as const) {
-      const arc = pathNamed(pull(mode), 'anel');
+      const arc = pathNamed(pull(mode), 'ring');
       expect(arc.rotation, 'arco').toBeCloseTo(27.075, 6);
       // canonical: the arc starts at 3 o'clock (18.75 = 12 + 6.75) and sweeps 288° to the 288° point
       const points = pathPoints(arc.d)!;
@@ -131,8 +132,8 @@ describe('EX6 pull-to-refresh — the arc and the arrow of the drag turn by rota
 
   it('the arrow has rotation = endAngle − strokeWidth + Compose rotation (312.575°) and the d in the canonical orientation', () => {
     for (const mode of ['light', 'dark'] as const) {
-      const arrow = pathNamed(pull(mode), 'seta');
-      expect(arrow.rotation, 'seta').toBeCloseTo(312.575, 6);
+      const arrow = pathNamed(pull(mode), 'arrow');
+      expect(arrow.rotation, 'arrow').toBeCloseTo(312.575, 6);
       // canonical: left corner 1.75 from the center and 2.5 above it, tip 5 to the right and 5 below
       const points = pathPoints(arrow.d)!;
       expect(points.map((p) => [p.x, p.y])).toEqual([
@@ -146,10 +147,10 @@ describe('EX6 pull-to-refresh — the arc and the arrow of the drag turn by rota
   it('once rotated, the ends of the arc and the three points of the arrow fall where the Compose drawCircularIndicator and drawArrow put them', () => {
     const geometry = composeGeometry();
     const d = pull();
-    const arc = drawnPathPoints(pathNamed(d, 'anel'))!;
+    const arc = drawnPathPoints(pathNamed(d, 'ring'))!;
     expect(near([arc[0]!.x, arc[0]!.y], geometry.arcStart)).toBe(true);
     expect(near([arc[1]!.x, arc[1]!.y], geometry.arcEnd)).toBe(true);
-    const arrow = drawnPathPoints(pathNamed(d, 'seta'))!;
+    const arrow = drawnPathPoints(pathNamed(d, 'arrow'))!;
     geometry.arrow.forEach((p, i) => {
       expect(near([arrow[i]!.x, arrow[i]!.y], p), `point ${i}`).toBe(true);
     });
@@ -157,8 +158,8 @@ describe('EX6 pull-to-refresh — the arc and the arrow of the drag turn by rota
 
   it('the "refreshing" state has no rotation: the spinner is the arc from 12 o\'clock and is already in position', () => {
     const d = refreshing();
-    expect(pathNamed(d, 'anel').rotation ?? 0).toBe(0);
-    expect(visiblePaths(d).map((p) => p.name)).toEqual(['anel']);
+    expect(pathNamed(d, 'ring').rotation ?? 0).toBe(0);
+    expect(visiblePaths(d).map((p) => p.name)).toEqual(['ring']);
   });
 });
 
@@ -171,7 +172,12 @@ describe('EX6 pull-to-refresh — regression against the scenes from before', ()
     const scenes = oldScenes('pull-to-refresh-');
     expect(scenes).toHaveLength(4);
     for (const s of scenes)
-      expect(missingNodes(draw(s.id, s.values, s.mode), s.nodes), s.key).toEqual([]);
+      expect(
+        missingNodes(draw(s.id, s.values, s.mode), s.nodes, {
+          component: 'pull-to-refresh',
+        }),
+        s.key,
+      ).toEqual([]);
   });
 
   it('the arc and the arrow from before (rotated coordinates) are found, point by point, in the rotated drawing', () => {
@@ -185,7 +191,9 @@ describe('EX6 pull-to-refresh — regression against the scenes from before', ()
       const d = draw(s.id, s.values, s.mode);
       for (const old of paths) {
         const before = pathPoints(old.d!)!;
-        const now = drawnPathPoints(pathNamed(d, old.n))!;
+        const now = drawnPathPoints(
+          pathNamed(d, currentNodeName('pull-to-refresh', old.n)),
+        )!;
         expect(now, `${s.key} ${old.n}`).toHaveLength(before.length);
         before.forEach((p, i) =>
           expect(near([now[i]!.x, now[i]!.y], [p.x, p.y], 0.5)).toBe(true),

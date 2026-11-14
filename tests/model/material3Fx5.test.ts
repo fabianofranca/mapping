@@ -160,7 +160,7 @@ const RING: { id: string; values: Record<string, unknown>; node?: string }[] = [
 // pt-BR kept: node names of libraries/material3-compose are Portuguese data
 function rings(node: SceneNode, out: SceneNode[] = []): SceneNode[] {
   if (!node.visible) return out;
-  if (node.name === 'anel de foco') out.push(node);
+  if (node.name === 'focus ring') out.push(node);
   if ('children' in node) node.children.forEach((c) => rings(c, out));
   return out;
 }
@@ -286,8 +286,8 @@ describe('reverseLayout turns on layout.reverse: the order is inverted and the b
 });
 
 describe('library update (version 4 → 5)', () => {
-  it('bumps the version once per stage: 5 in FX5, 6 in EX4 of #897, 7 in MF4 of #899, 8 in MC5 of #898, 10 in D3 of #1085 (9 was L5), 11 in VL2 of #1504, 12 in S5 of #1120, 13 in RC1 of #1743 and 14 in R5 of #1110', () => {
-    expect(spec.version).toBe(14);
+  it('bumps the version once per stage: 5 in FX5, 6 in EX4 of #897, 7 in MF4 of #899, 8 in MC5 of #898, 10 in D3 of #1085 (9 was L5), 11 in VL2 of #1504, 12 in S5 of #1120, 13 in RC1 of #1743, 14 in R5 of #1110 and 15 in the English translation of the libraries (#823)', () => {
+    expect(spec.version).toBe(15);
   });
 
   it('is additive: changes the drawing without changing a field, with no migration steps', () => {

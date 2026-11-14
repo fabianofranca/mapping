@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "lazy-column",
   "name": "LazyColumn",
-  "description": "Lista vertical que compõe só os itens visíveis: as filhas se empilham, com spacing e contentPadding.",
+  "description": "Vertical list that composes only the visible items: the children are stacked, with spacing and contentPadding.",
   "size": {
     "width": 360,
     "height": 400

@@ -52,7 +52,7 @@ function calendar(year: number, month: number) {
 
 /** The box of the days (the grid minus the 12 of margin on each side) and the window where the cells appear. */
 function gridOf(d: Drawing) {
-  const grid = named(d, 'grade')[0]!;
+  const grid = named(d, 'grid')[0]!;
   const [x, y, width, height] = rectOf(d, grid);
   return { x: x! + 12, y: y!, width: width! - 24, height: height! };
 }
@@ -61,7 +61,7 @@ function gridOf(d: Drawing) {
 function shownDays(d: Drawing): Map<number, number[]> {
   const grid = gridOf(d);
   const out = new Map<number, number[]>();
-  for (const n of named(d, 'dia')) {
+  for (const n of named(d, 'day')) {
     const r = rectOf(d, n);
     const inside =
       r[0]! >= grid.x - 0.01 &&
@@ -143,7 +143,7 @@ describe('EX4 date-picker — the calendar from month and year', () => {
 
   it('the chosen day and the final day of the range stay in place in the month, and a day the month does not have does not appear', () => {
     const { d, grid } = expectMonth(2028, 2, { selectedDay: 29 });
-    const [marked] = named(d, 'marcado');
+    const [marked] = named(d, 'marked');
     // February 29, 2028: Tuesday + 28 days = Tuesday, in row 4
     expect(rectOf(d, marked!)).toEqual([
       grid.x + 2 * 48 + 4,
@@ -158,7 +158,7 @@ describe('EX4 date-picker — the calendar from month and year', () => {
       year: 2028,
       selectedDay: 30,
     });
-    expect(named(none, 'marcado')).toEqual([]);
+    expect(named(none, 'marked')).toEqual([]);
   });
 
   it('the range crosses weeks: the band goes from the center of the start day to that of the end day, row by row', () => {
@@ -172,7 +172,7 @@ describe('EX4 date-picker — the calendar from month and year', () => {
     });
     const { x, y } = gridOf(d);
     const rows = new Map<number, [number, number]>();
-    for (const band of named(d, 'faixa')) {
+    for (const band of named(d, 'band')) {
       const [bx, by, bw, bh] = rectOf(d, band);
       if (bw === 0) continue;
       expect(bh).toBe(40);
@@ -216,7 +216,7 @@ describe('EX4 date-picker — interaction (the chosen item)', () => {
     expect(
       named(
         drawDate({ displayedMonth: 'x', selection: 'single', selectedDay: 15 }),
-        'estado',
+        'state',
       ),
     ).toEqual([]);
     expect(
@@ -227,7 +227,7 @@ describe('EX4 date-picker — interaction (the chosen item)', () => {
           selectedDay: 15,
           interaction: 'none',
         }),
-        'estado',
+        'state',
       ),
     ).toEqual([]);
   });
@@ -239,10 +239,10 @@ describe('EX4 date-picker — interaction (the chosen item)', () => {
           { displayedMonth: 'x', selection: 'single', selectedDay: 15, interaction },
           mode,
         );
-        const layers = named(d, 'estado');
+        const layers = named(d, 'state');
         expect(layers).toHaveLength(1);
         const layer = layers[0]!;
-        const [marked] = named(d, 'marcado');
+        const [marked] = named(d, 'marked');
         expect(rectOf(d, layer)).toEqual(rectOf(d, marked!));
         expect(solid(layer.fills)).toBe(tok('on-primary', mode));
         expect(layer.opacity).toBe(num(token));
@@ -258,9 +258,9 @@ describe('EX4 date-picker — interaction (the chosen item)', () => {
       rangeEndDay: 16,
       interaction: 'focused',
     });
-    const [layer] = named(d, 'estado');
-    const start = named(d, 'marcado').find((n) => (rectOf(d, n)[0] ?? 0) > 0)!;
-    expect(named(d, 'estado')).toHaveLength(1);
+    const [layer] = named(d, 'state');
+    const start = named(d, 'marked').find((n) => (rectOf(d, n)[0] ?? 0) > 0)!;
+    expect(named(d, 'state')).toHaveLength(1);
     const startNumber = [...walk(start)].find((n) => n.type === 'text') as TextNode;
     expect(startNumber.text).toBe('9');
     expect(rectOf(d, layer!)).toEqual(rectOf(d, start));
@@ -272,7 +272,7 @@ describe('EX4 date-picker — interaction (the chosen item)', () => {
       selection: 'single',
       interaction: 'hovered',
     });
-    const layers = named(d, 'estado');
+    const layers = named(d, 'state');
     expect(layers).toHaveLength(1);
     expect(solid(layers[0]!.fills)).toBe(tok('on-surface', 'light'));
     const grid = gridOf(d);
@@ -292,13 +292,13 @@ const near = (a: number[], b: number[], eps = 0.01) =>
   a.every((v, i) => Math.abs(v - b[i]!) <= eps);
 
 function handleCenter(d: Drawing): [number, number] {
-  const clock = named(d, 'relógio')[0]!;
+  const clock = named(d, 'clock')[0]!;
   const [cx, cy] = rectOf(d, clock);
-  const [x, y, w, h] = rectOf(d, named(d, 'alça')[0]!);
+  const [x, y, w, h] = rectOf(d, named(d, 'handle')[0]!);
   return [x! + w! / 2 - cx!, y! + h! / 2 - cy!];
 }
 function trackEnd(d: Drawing): [number, number] {
-  const path = named(d, 'trilho')[0]!;
+  const path = named(d, 'track')[0]!;
   const m = /^M128 128L(-?[\d.]+) (-?[\d.]+)$/.exec(
     (path as unknown as { d: string }).d,
   )!;
@@ -316,11 +316,11 @@ const textIn = (d: Drawing, parent: string): string | undefined => {
  * falls on the center of the handle. With no number at the position (minute off the 5 grid), none.
  */
 function underHandle(d: Drawing): string | undefined {
-  const handle = named(d, 'alça')[0]!;
+  const handle = named(d, 'handle')[0]!;
   const boxes = boxesOf(d);
   const at = boxes.get(handle.id)!;
   const found = [...walk(handle)].find((n) => {
-    if (n.type !== 'text' || n.name !== 'número sob a alça') return false;
+    if (n.type !== 'text' || n.name !== 'number under the handle') return false;
     const b = boxes.get(n.id)!;
     return (
       Math.abs(b.x + b.width / 2 - (at.x + at.width / 2)) <= 1 &&
@@ -343,8 +343,8 @@ describe('EX4 time-picker — pointer, dial and PM without tables', () => {
     expect(near(trackEnd(d), polar(101, 222))).toBe(true);
     // 37 is not on the 5 grid: Compose does not write the number inside the handle (the copy of the numbers only half-covers 35 and 40)
     expect(underHandle(d)).toBeUndefined();
-    expect(textIn(d, 'minuto')).toBe('37');
-    expect(textIn(d, 'hora')).toBe('10');
+    expect(textIn(d, 'minute')).toBe('37');
+    expect(textIn(d, 'hour')).toBe('10');
   });
 
   it('at 10:37, choosing the hour, the handle sits at hour 10 (300°)', () => {
@@ -374,8 +374,8 @@ describe('EX4 time-picker — pointer, dial and PM without tables', () => {
   it('at 22:05 in 12 hours: PM, hour 10, minute with a leading zero, handle at minute 5', () => {
     const base: Values = { mode: 'picker', hour: 22, minute: 5, is24Hour: 'false' };
     const minute = drawTime({ ...base, selection: 'minute' });
-    expect(textIn(minute, 'hora')).toBe('10');
-    expect(textIn(minute, 'minuto')).toBe('05');
+    expect(textIn(minute, 'hour')).toBe('10');
+    expect(textIn(minute, 'minute')).toBe('05');
     expect(near(handleCenter(minute), polar(101, 30))).toBe(true);
     expect(underHandle(minute)).toBe('5');
     const pm = named(minute, 'PM')[0]!;
@@ -396,7 +396,7 @@ describe('EX4 time-picker — pointer, dial and PM without tables', () => {
   it('the dial has 12 numbers (0 to 11, or 12 and 1 to 11 in 12 hours), every 5 for minutes, and the inner ring only in 24 hours', () => {
     const labels = (v: Values) =>
       visibleNodes(drawTime(v))
-        .filter((n): n is TextNode => n.type === 'text' && n.name === 'número')
+        .filter((n): n is TextNode => n.type === 'text' && n.name === 'number')
         .map((n) => n.text);
     const base: Values = { mode: 'picker', hour: 3, minute: 20 };
     expect(labels({ ...base, is24Hour: 'false', selection: 'hour' })).toEqual([
@@ -471,18 +471,18 @@ describe('EX4 time-picker — interaction (the chosen selector)', () => {
       options: ['none', 'hovered', 'focused', 'pressed'],
       default: 'none',
     });
-    expect(named(drawTime(base), 'estado')).toEqual([]);
+    expect(named(drawTime(base), 'state')).toEqual([]);
   });
 
   it('the layer covers the hour field (selection hour) or the minute one, in the field text color', () => {
     for (const mode of ['light', 'dark'] as const) {
       for (const [interaction, token] of STATES) {
         for (const [selection, field] of [
-          ['hour', 'hora'],
-          ['minute', 'minuto'],
+          ['hour', 'hour'],
+          ['minute', 'minute'],
         ] as const) {
           const d = drawTime({ ...base, selection, interaction }, mode);
-          const layers = named(d, 'estado');
+          const layers = named(d, 'state');
           expect(layers).toHaveLength(1);
           expect(rectOf(d, layers[0]!)).toEqual(rectOf(d, named(d, field)[0]!));
           expect(solid(layers[0]!.fills)).toBe(tok('on-primary-container', mode));
@@ -499,8 +499,8 @@ describe('EX4 time-picker — interaction (the chosen selector)', () => {
       selection: 'minute',
       interaction: 'pressed',
     });
-    expect(named(d, 'estado')).toHaveLength(1);
-    expect(rectOf(d, named(d, 'estado')[0]!)).toEqual(rectOf(d, named(d, 'minuto')[0]!));
+    expect(named(d, 'state')).toHaveLength(1);
+    expect(rectOf(d, named(d, 'state')[0]!)).toEqual(rectOf(d, named(d, 'minute')[0]!));
   });
 });
 
@@ -525,9 +525,79 @@ const closeRect = (a: number[], b: number[]) =>
 
 /** The names from before that the new construction splits into other nodes (the proof is by text, by boxes and by the union of the bands). */
 const RENAMED: Record<string, string> = {
-  'dia escolhido': 'marcado',
-  'início do intervalo': 'marcado',
-  'fim do intervalo': 'marcado',
+  'dia escolhido': 'marked',
+  'início do intervalo': 'marked',
+  'fim do intervalo': 'marked',
+};
+
+/** The Portuguese node names recorded in the frozen fixture, and the English ones the libraries draw now. */
+const NAMES_NOW: Record<string, string> = {
+  cabeçalho: 'header',
+  título: 'title',
+  'base do cabeçalho': 'header base',
+  linha: 'row',
+  manchete: 'headline',
+  'alternar modo': 'mode toggle',
+  'botão do modo': 'mode button',
+  divisor: 'divider',
+  'navegação do mês': 'month navigation',
+  'botão do ano': 'year button',
+  'mês exibido': 'displayed month',
+  setas: 'arrows',
+  'seta anterior': 'previous arrow',
+  'seta próxima': 'next arrow',
+  'dias da semana': 'weekdays',
+  'mês do intervalo': 'range month',
+  grade: 'grid',
+  dias: 'days',
+  posição: 'position',
+  célula: 'cell',
+  faixa: 'band',
+  'contorno de hoje': 'today outline',
+  dia: 'day',
+  marcado: 'marked',
+  número: 'number',
+  estado: 'state',
+  'hora e minuto': 'hour and minute',
+  'campo da hora': 'hour field',
+  hora: 'hour',
+  valor: 'value',
+  'rótulo da hora': 'hour label',
+  'dois pontos': 'colon',
+  separador: 'separator',
+  'campo do minuto': 'minute field',
+  minuto: 'minute',
+  'rótulo do minuto': 'minute label',
+  espaço: 'space',
+  'AM e PM': 'AM and PM',
+  texto: 'text',
+  margem: 'margin',
+  relógio: 'clock',
+  números: 'numbers',
+  trilho: 'track',
+  alça: 'handle',
+  'números sob a alça': 'numbers under the handle',
+  'número sob a alça': 'number under the handle',
+  centro: 'center',
+};
+const nameNow = (old: string): string => {
+  const weekday = /^dia da semana (\d)$/.exec(old);
+  return weekday ? `weekday ${weekday[1]}` : (NAMES_NOW[old] ?? old);
+};
+// the weekday initials (Sunday first) and the label texts that were translated, by the old name and text
+const WEEKDAYS_NOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const TEXT_NOW: Record<string, string> = {
+  'Selecionar data': 'Select date',
+  'Selecionar datas': 'Select dates',
+  'Início – Fim': 'Start – End',
+  'Data selecionada': 'Selected date',
+  Hora: 'Hour',
+  Minuto: 'Minute',
+};
+const textNow = (old: { n: string; x?: string }): string | undefined => {
+  const weekday = /^dia da semana (\d)$/.exec(old.n);
+  if (weekday) return WEEKDAYS_NOW[Number(weekday[1]) - 1];
+  return old.x === undefined ? undefined : (TEXT_NOW[old.x] ?? old.x);
 };
 
 /**
@@ -544,7 +614,7 @@ const movedIntoHandle = (
   old.x === '' ||
   nodes.some(
     (n) =>
-      n.name === 'número sob a alça' &&
+      n.name === 'number under the handle' &&
       n.text === old.x &&
       Math.abs(n.rect[0]! + n.rect[2]! / 2 - (old.r[0]! + old.r[2]! / 2)) <= TOL &&
       Math.abs(n.rect[1]! + n.rect[3]! / 2 - (old.r[1]! + old.r[3]! / 2)) <= TOL,
@@ -572,11 +642,11 @@ function compareScene(scene: Scene, draw: (v: Values, m: Mode) => Drawing) {
         missing.push(`${scene.id} ${old.n} ${old.x ?? ''} is not under the handle`);
       continue;
     }
-    const name = RENAMED[old.n] ?? old.n;
+    const name = RENAMED[old.n] ?? nameNow(old.n);
     const found = now.some(
       (n) =>
         n.type === old.t &&
-        (old.t === 'text' ? n.text === old.x : n.name === name) &&
+        (old.t === 'text' ? n.text === textNow(old) : n.name === name) &&
         closeRect(n.rect, old.r) &&
         (old.f === undefined || n.fill === old.f),
     );
@@ -589,7 +659,7 @@ function compareScene(scene: Scene, draw: (v: Values, m: Mode) => Drawing) {
 
 function bandRows(d: Drawing): Record<string, number[]> {
   const rows: Record<string, number[]> = {};
-  for (const band of named(d, 'faixa')) {
+  for (const band of named(d, 'band')) {
     const [x, y, w] = rectOf(d, band);
     if (w! < 0.01) continue;
     const key = String(Math.round(y! * 100) / 100);
@@ -675,8 +745,8 @@ describe('EX4 regression — the scenes from before the tables, within ≤ 0.5 p
         const candidates = now.filter(
           (n) =>
             n.type === old.t &&
-            n.name === old.n &&
-            (old.t !== 'text' || (n as TextNode).text === old.x),
+            n.name === nameNow(old.n) &&
+            (old.t !== 'text' || (n as TextNode).text === textNow(old)),
         );
         const ok = candidates.some((n) => {
           const b = boxes.get(n.id)!;

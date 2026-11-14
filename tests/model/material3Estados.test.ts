@@ -139,8 +139,7 @@ describe('button: interaction field', () => {
   it('is an optional enum with the Compose options, default none, outside the code', () => {
     expect(field).toMatchObject({
       key: 'interaction',
-      // pt-BR kept: shared library data (field label of libraries/material3-compose)
-      label: 'Interação',
+      label: 'Interaction',
       type: 'enum',
       default: 'none',
       options: INTERACTION_OPTIONS.button,
@@ -152,9 +151,8 @@ describe('button: interaction field', () => {
   });
 
   it('the description says the disabled state wins', () => {
-    // pt-BR kept: shared library data (field description of libraries/material3-compose)
-    expect(field?.description).toMatch(/habilitado|enabled/i);
-    expect(field?.description).toMatch(/desabilitad|false/i);
+    expect(field?.description).toMatch(/enabled/i);
+    expect(field?.description).toMatch(/disabled|false/i);
   });
 
   const catalog = buildCatalog(files);
@@ -237,12 +235,8 @@ describe('final test: the types with the interaction (ME1 to ME5)', () => {
   it('no docs/<type>.md of a type with the interaction says the drawing is static', () => {
     for (const t of withField) {
       const doc = readFileSync(join(ROOT, 'docs', `${t.id}.md`), 'utf8');
-      // pt-BR kept: shared library data (the docs/*.md of libraries/material3-compose are Portuguese)
-      expect(doc, t.id).not.toMatch(/o desenho é estático/i);
-      // pt-BR kept: shared library data (the docs/*.md of libraries/material3-compose are Portuguese)
-      expect(doc, t.id).not.toMatch(
-        /Sem estados? de pressionado, foco e passar o mouse/i,
-      );
+      expect(doc, t.id).not.toMatch(/the drawing is static/i);
+      expect(doc, t.id).not.toMatch(/No pressed, focus and hover states?/i);
     }
   });
 
@@ -262,8 +256,8 @@ describe('update from the previous library version to the new one', () => {
         if (type.id in INTERACTION_OPTIONS)
           type.fields = type.fields.filter((f) => f.key !== 'interaction');
       }
-    // 7 after MF4 of #899 (6 was EX4 of #897; 11 after VL2 of #1504; 12 after S5 of #1120; 13 after RC1 of #1743; 14 after R5 of #1110)
-    expect(spec.version).toBe(14);
+    // 7 after MF4 of #899 (6 was EX4 of #897; 11 after VL2 of #1504; 12 after S5 of #1120; 13 after RC1 of #1743; 14 after R5 of #1110; 15 after the English text of ID7)
+    expect(spec.version).toBe(15);
     expect(missingMigrations(previous, spec)).toEqual([]);
     // only EX6 (#897) has a migration: the slider went from enum to number (`fill-field`), and the fields
     // these tests compare do not change

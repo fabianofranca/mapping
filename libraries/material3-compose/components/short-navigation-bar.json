@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "short-navigation-bar",
   "name": "Short navigation bar",
-  "description": "Barra de navegação curta de 64 em surface container, com um destino por linha de Itens; ícone acima do rótulo (indicador de 56 × 32) ou ao lado dele (pílula de 40); centralizada, os itens ficam agrupados no meio (margem de 20% de cada lado com 3 itens, 15% com 4, 10% com 5 e 5% com 6, como no Compose; o item cresce até a largura / itens se o conteúdo for mais largo).",
+  "description": "Short navigation bar of 64 in surface container, with one destination per row of Items; icon above the label (56 × 32 indicator) or beside it (40 pill); when centered, the items are grouped in the middle (20% margin on each side with 3 items, 15% with 4, 10% with 5 and 5% with 6, as in Compose; the item grows up to width / items if the content is wider).",
   "size": {
     "width": 412,
     "height": 64
@@ -15,7 +15,7 @@
   "preview": {
     "items": [
       {
-        "label": "Início",
+        "label": "Home",
         "icon": "Home",
         "selected": "true"
       },
@@ -46,7 +46,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "margem",
+        "name": "margin",
         "width": "fill",
         "height": 1,
         "visible": {
@@ -55,7 +55,7 @@
       },
       {
         "type": "repeat",
-        "name": "destinos",
+        "name": "destinations",
         "field": "items",
         "direction": "row",
         "distribute": "none",
@@ -63,7 +63,7 @@
         "height": "fill",
         "template": {
           "type": "frame",
-          "name": "destino",
+          "name": "destination",
           "width": "hug",
           "height": "fill",
           "layout": {
@@ -74,7 +74,7 @@
           "children": [
             {
               "type": "frame",
-              "name": "ícone acima",
+              "name": "top icon",
               "width": "hug",
               "height": "hug",
               "visible": {
@@ -90,7 +90,7 @@
               "children": [
                 {
                   "type": "frame",
-                  "name": "indicador",
+                  "name": "indicator",
                   "width": 56,
                   "height": 32,
                   "cornerRadius": {
@@ -111,7 +111,7 @@
                   "children": [
                     {
                       "type": "rect",
-                      "name": "estado",
+                      "name": "state",
                       "anchors": {
                         "left": 0,
                         "right": 0,
@@ -154,7 +154,7 @@
                     },
                     {
                       "type": "frame",
-                      "name": "conteúdo",
+                      "name": "content",
                       "width": "fill",
                       "height": "fill",
                       "layout": {
@@ -360,7 +360,7 @@
                 },
                 {
                   "type": "text",
-                  "name": "rótulo",
+                  "name": "label",
                   "text": {
                     "$field": "label"
                   },
@@ -398,7 +398,7 @@
             },
             {
               "type": "frame",
-              "name": "indicador",
+              "name": "indicator",
               "width": "hug",
               "height": 40,
               "visible": {
@@ -422,7 +422,7 @@
               "children": [
                 {
                   "type": "rect",
-                  "name": "estado",
+                  "name": "state",
                   "anchors": {
                     "left": 0,
                     "right": 0,
@@ -465,7 +465,7 @@
                 },
                 {
                   "type": "frame",
-                  "name": "conteúdo",
+                  "name": "content",
                   "width": "hug",
                   "height": "fill",
                   "layout": {
@@ -668,7 +668,7 @@
                     },
                     {
                       "type": "text",
-                      "name": "rótulo",
+                      "name": "label",
                       "text": {
                         "$field": "label"
                       },
@@ -770,7 +770,7 @@
       },
       {
         "type": "frame",
-        "name": "margem",
+        "name": "margin",
         "width": "fill",
         "height": 1,
         "visible": {

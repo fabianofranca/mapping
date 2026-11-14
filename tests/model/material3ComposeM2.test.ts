@@ -10,6 +10,7 @@ import {
   files,
   text,
   V1_NO_DEFAULT,
+  maskTextValues,
   v1WithEstados,
   COMPOSE_SIZES,
 } from '../support/material3Library';
@@ -74,7 +75,9 @@ describe('M2 — layout and actions in format 4', () => {
       const dropped = V1_NO_DEFAULT[id];
       const previewBefore = { ...(before.preview as Rec) };
       if (dropped !== undefined) delete previewBefore[dropped];
-      expect(now.preview).toEqual(previewBefore);
+      expect(maskTextValues(type.fields, now.preview as Rec)).toEqual(
+        maskTextValues(type.fields, previewBefore),
+      );
       expect(now.minSize).toEqual(before.minSize);
       expect(now.size).toEqual(COMPOSE_SIZES[id] ?? before.size);
     },

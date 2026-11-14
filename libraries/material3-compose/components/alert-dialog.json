@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "alert-dialog",
   "name": "Alert dialog",
-  "description": "Diálogo em surface container high com a forma extra-large (28) e margem de 24: ícone (24, em secondary, centralizado) opcional, título em headline small, texto em body medium e os botões de texto à direita; 280 a 560 de largura.",
+  "description": "Dialog on surface container high with the extra-large shape (28) and 24 padding: optional icon (24, in secondary, centered), title in headline small, text in body medium and the text buttons on the right; 280 to 560 wide.",
   "size": {
     "width": 312,
     "height": 248
@@ -14,16 +14,16 @@
   },
   "preview": {
     "style": "standard",
-    "title": "Descartar rascunho?",
-    "text": "O rascunho será apagado e não poderá ser recuperado.",
-    "confirmButton": "Descartar",
-    "dismissButton": "Cancelar",
+    "title": "Discard draft?",
+    "text": "The draft will be deleted and cannot be recovered.",
+    "confirmButton": "Discard",
+    "dismissButton": "Cancel",
     "icon": "Delete",
     "contentDescription": ""
   },
   "template": {
     "type": "frame",
-    "name": "diálogo",
+    "name": "dialog",
     "fill": {
       "$token": "surface-container-high"
     },
@@ -39,7 +39,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "ícone",
+        "name": "icon",
         "width": "fill",
         "height": "hug",
         "visible": {
@@ -235,7 +235,7 @@
       },
       {
         "type": "frame",
-        "name": "título",
+        "name": "title",
         "width": "fill",
         "height": "hug",
         "visible": {
@@ -248,7 +248,7 @@
         "children": [
           {
             "type": "text",
-            "name": "título",
+            "name": "title",
             "text": {
               "$field": "title"
             },
@@ -282,7 +282,7 @@
       },
       {
         "type": "frame",
-        "name": "texto",
+        "name": "text",
         "width": "fill",
         "height": "hug",
         "visible": {
@@ -295,7 +295,7 @@
         "children": [
           {
             "type": "text",
-            "name": "texto",
+            "name": "text",
             "text": {
               "$field": "text"
             },
@@ -322,7 +322,7 @@
       },
       {
         "type": "frame",
-        "name": "botões",
+        "name": "buttons",
         "width": "fill",
         "height": "hug",
         "layout": {
@@ -336,7 +336,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "área de toque (dispensar)",
+            "name": "touch target (dismiss)",
             "width": "hug",
             "height": "hug",
             "minHeight": 48,
@@ -351,7 +351,7 @@
             "children": [
               {
                 "type": "frame",
-                "name": "dispensar",
+                "name": "dismiss",
                 "width": "hug",
                 "height": "hug",
                 "minWidth": 58,
@@ -364,7 +364,7 @@
                 "children": [
                   {
                     "type": "frame",
-                    "name": "conteúdo do rótulo",
+                    "name": "label content",
                     "width": "hug",
                     "height": "hug",
                     "layout": {
@@ -373,7 +373,7 @@
                     "children": [
                       {
                         "type": "text",
-                        "name": "rótulo",
+                        "name": "label",
                         "text": {
                           "$field": "dismissButton"
                         },
@@ -406,7 +406,7 @@
           },
           {
             "type": "frame",
-            "name": "área de toque (confirmar)",
+            "name": "touch target (confirm)",
             "width": "hug",
             "height": "hug",
             "minHeight": 48,
@@ -421,7 +421,7 @@
             "children": [
               {
                 "type": "frame",
-                "name": "confirmar",
+                "name": "confirm",
                 "width": "hug",
                 "height": "hug",
                 "minWidth": 58,
@@ -434,7 +434,7 @@
                 "children": [
                   {
                     "type": "frame",
-                    "name": "conteúdo do rótulo",
+                    "name": "label content",
                     "width": "hug",
                     "height": "hug",
                     "layout": {
@@ -443,7 +443,7 @@
                     "children": [
                       {
                         "type": "text",
-                        "name": "rótulo",
+                        "name": "label",
                         "text": {
                           "$field": "confirmButton"
                         },

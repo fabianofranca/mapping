@@ -1,65 +1,65 @@
 # Badge
 
-Indicador de notificação. Small é só um ponto; large mostra um contador. Ancore-o ao canto de um ícone.
+Notification indicator. Small is just a dot; large shows a counter. Anchor it to the corner of an icon.
 
-Tipo de anotação: `badge` (camada Componentes).
+Annotation type: `badge` (Components layer).
 
-## Campos
+## Fields
 
-| Chave   | Rótulo   | Tipo   | Obrigatório | Opções           | Padrão  | Descrição                                                               |
-| ------- | -------- | ------ | ----------- | ---------------- | ------- | ----------------------------------------------------------------------- |
-| `count` | Contador | string | não         |                  |         | Texto do contador (por exemplo 3 ou 99+). Só vale no estilo large.      |
-| `style` | Estilo   | enum   | não         | `small`, `large` | `small` | small é um ponto sem conteúdo; large é o contador com o texto de count. |
+| Key     | Label   | Type   | Required | Options          | Default | Description                                                                  |
+| ------- | ------- | ------ | -------- | ---------------- | ------- | ---------------------------------------------------------------------------- |
+| `count` | Counter | string | no       |                  |         | Counter text (for example 3 or 99+). Only applies in the large style.        |
+| `style` | Style   | enum   | no       | `small`, `large` | `small` | small is a dot with no content; large is the counter with the text of count. |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.Badge`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Badge.kt`
-- O campo `style` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.Badge`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Badge.kt`
+- The `style` field chooses the symbol; values without their own case use the base one.
 
-| `style`        | Símbolo |
+| `style`        | Symbol  |
 | -------------- | ------- |
 | `small` (base) | `Badge` |
 | `large`        | `Badge` |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in the `code`):
 
 ```kotlin
 BadgedBox(badge = { Badge { Text("3") } }) {    // style small: badge = { Badge() }
-    Icon(Icons.Filled.Notifications, contentDescription = "Notificações")
+    Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from the `code` (what the tool hands to the agent):
 
-> `Badge()` sem `content` desenha o ponto de 6dp. O Badge sozinho não se posiciona: para ancorá-lo ao canto de um ícone use `BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`, que cuida do deslocamento. Cores padrão `error` (fundo) e `onError` (texto); `containerColor` e `contentColor` só entram para mudá-las. Nem Badge nem BadgedBox exigem opt-in. Ancorado (`anchor`, lado `end`, alinhamento `start`), o `BadgedBox` põe o ponto com a borda do início a 6 dp da borda do fim da âncora (`BadgeOffset`), no topo dela; o contador, a 12 dp (`BadgeWithContentHorizontalOffset`) e 2 dp acima do topo (a 14 dp de sobreposição vertical, `BadgeWithContentVerticalOffset`): para o `large`, declare `offset` principal -12 e cruzado -2 na marcação.
+> `Badge()` without `content` draws the 6dp dot. The Badge alone does not position itself: to anchor it to the corner of an icon use `BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`, which takes care of the offset. Default colors `error` (background) and `onError` (text); `containerColor` and `contentColor` are only included to change them. Neither Badge nor BadgedBox requires opt-in. Anchored (`anchor`, side `end`, alignment `start`), `BadgedBox` places the dot with its start edge 6 dp from the end edge of the anchor (`BadgeOffset`), at the top of it; the counter, 12 dp (`BadgeWithContentHorizontalOffset`) and 2 dp above the top (14 dp of vertical overlap, `BadgeWithContentVerticalOffset`): for `large`, declare `offset` main -12 and cross -2 on the marking.
 
-Variante `large`: `Badge(content = { Text(<count>) })` desenha o contador de 16dp, que cresce com o texto (use `99+` para valores grandes). Ancorado: `BadgedBox(badge = { Badge { Text(<count>) } }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`. Não exige opt-in. Posição ancorada: `offset` principal -12 e cruzado -2 (`BadgeWithContentHorizontalOffset` 12 dp e `BadgeWithContentVerticalOffset` 14 dp).
+`large` variant: `Badge(content = { Text(<count>) })` draws the 16dp counter, which grows with the text (use `99+` for large values). Anchored: `BadgedBox(badge = { Badge { Text(<count>) } }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`. Does not require opt-in. Anchored position: `offset` main -12 and cross -2 (`BadgeWithContentHorizontalOffset` 12 dp and `BadgeWithContentVerticalOffset` 14 dp).
 
-## Exemplos
+## Examples
 
-- **Ponto**: style=small
-- **Contador**: count=3, style=large
-- **Muitos itens**: count=99+, style=large
+- **Dot**: style=small
+- **Counter**: count=3, style=large
+- **Many items**: count=99+, style=large
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Badge.kt` (linhas 150 a 189: `Badge`, uma `Row` com `defaultMinSize(size, size)`, fundo na forma e, com conteúdo, `padding(horizontal = 4.dp)` e o estilo `LargeLabelTextFont`; 201: `BadgeWithContentHorizontalPadding` 4; 192 a 196: `BadgeDefaults.containerColor`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/BadgeTokens.kt` (`Size` 6, `LargeSize` 16, `Shape` e `LargeShape` = `CornerFull`, `Color` = `Error`, `LargeLabelTextColor` = `OnError`, `LargeLabelTextFont` = `LabelSmall`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Badge.kt` (lines 150 to 189: `Badge`, a `Row` with `defaultMinSize(size, size)`, background in the shape and, with content, `padding(horizontal = 4.dp)` and the `LargeLabelTextFont` style; 201: `BadgeWithContentHorizontalPadding` 4; 192 to 196: `BadgeDefaults.containerColor`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/BadgeTokens.kt` (`Size` 6, `LargeSize` 16, `Shape` and `LargeShape` = `CornerFull`, `Color` = `Error`, `LargeLabelTextColor` = `OnError`, `LargeLabelTextFont` = `LabelSmall`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Pequeno: círculo de 6 em `error`. Com contador: pílula de 16 de altura e no mínimo 16 de largura, com 4 de padding dos lados, em `error`, com a forma `corner-full`; cresce com o texto (`99+` fica mais larga que um dígito, que fica em 16).
-- O texto usa `label-small-*` (11, peso 500, linha 16, espaçamento 0,5) em `on-error`, na fonte do tema (`font-sans`), sem `family` no arquivo.
-- Nos dois modos a cor vem do papel `error` e `on-error` do modo.
-- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `número` usa `font.verticalAlign: "cap-middle"` e segue `hug` na altura, porque o pai também mede pelo texto; a caixa do texto é a linha, centrada no pai. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
+- Small: 6 circle in `error`. With a counter: pill 16 tall and at least 16 wide, with 4 of padding on the sides, in `error`, with the `corner-full` shape; it grows with the text (`99+` is wider than one digit, which stays at 16).
+- The text uses `label-small-*` (11, weight 500, line 16, spacing 0.5) in `on-error`, in the theme font (`font-sans`), with no `family` in the file.
+- In both modes the color comes from the mode's `error` and `on-error` roles.
+- Single-line label centered by the capital letter (`cap-middle`): the `number` node uses `font.verticalAlign: "cap-middle"` and stays `hug` in height, because the parent also measures by the text; the text box is the line, centered in the parent. Compose's `Text` centers by the font's line box (ascent and descent); the drawing centers the capital height in the box, and with Roboto the two coincide to within 1 px.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O `BadgedBox` em si não existe: o posicionamento no canto do ícone é a âncora da marcação (a raiz declara `anchor` `end`/`start` com `offset.main` -6, o `BadgeOffset` do ponto, e o Encostar na âncora o põe no canto do ícone). Para o contador (`large`), o `BadgedBox` usa 12 (`BadgeWithContentHorizontalOffset`) e 14 de sobreposição vertical (`BadgeWithContentVerticalOffset`): declare `offset` principal -12 e cruzado -2 na marcação, porque o padrão da raiz é um só e vale o do ponto (o `small`, o padrão do tipo). O limite do `BadgeEndRuler`/`BadgeTopRuler` (o badge preso à janela) não é desenhado.
-- Sem o limite de texto do contador do Compose (quem chama corta, por exemplo `99+`).
-- A altura do contador é a do texto (`hug`), com o mínimo de 16 (`minHeight`), como o `defaultMinSize` do Compose: a prova de desenho da biblioteca mede o texto com o tamanho e a linha do token do modo (`label-small-line-height`, 16), então não avisa.
+- `BadgedBox` itself does not exist: the positioning at the icon corner is the marking's anchor (the root declares `anchor` `end`/`start` with `offset.main` -6, the dot's `BadgeOffset`, and Snap to anchor puts it at the icon corner). For the counter (`large`), `BadgedBox` uses 12 (`BadgeWithContentHorizontalOffset`) and 14 of vertical overlap (`BadgeWithContentVerticalOffset`): declare `offset` main -12 and cross -2 on the marking, because the root default is a single one and the dot's applies (`small`, the type's default). The limit of `BadgeEndRuler`/`BadgeTopRuler` (the badge pinned to the window) is not drawn.
+- No counter text limit like Compose's (the caller truncates, for example `99+`).
+- The counter height is that of the text (`hug`), with the minimum of 16 (`minHeight`), like Compose's `defaultMinSize`: the library's drawing check measures the text with the size and line of the mode's token (`label-small-line-height`, 16), so it does not warn.

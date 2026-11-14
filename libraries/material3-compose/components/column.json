@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "column",
   "name": "Column",
-  "description": "Coluna do Compose: as filhas se empilham pela ordem, com spacing, padding e alinhamentos dos campos.",
+  "description": "Compose column: children stack in order, with the spacing, padding and alignments of the fields.",
   "size": {
     "width": 380,
     "height": 200

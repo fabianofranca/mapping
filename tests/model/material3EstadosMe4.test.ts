@@ -7,7 +7,6 @@ import type { SceneNode } from '../../src/model/components/scene';
 import { drawIn, files, spec, typeOf } from '../support/material3Library';
 
 const catalog = buildCatalog(files);
-// pt-BR kept: node names, labels, example names and descriptions of libraries/material3-compose are Portuguese data
 type Values = Record<string, unknown>;
 type Mode = 'light' | 'dark';
 const MODES: Mode[] = ['light', 'dark'];
@@ -88,7 +87,7 @@ function interactionSuite({
     it('is an optional enum with the options of the tokens, default none, outside the code', () => {
       expect(field).toMatchObject({
         key: 'interaction',
-        label: 'Interação',
+        label: 'Interaction',
         type: 'enum',
         default: 'none',
         options: ['none', ...states],
@@ -99,7 +98,7 @@ function interactionSuite({
 
     it('the description explains the precedence of the disabled state', () => {
       expect(field?.description).toMatch(
-        hasEnabled ? /desabilitad/i : /sem (enabled|desabilitado)|não tem/i,
+        hasEnabled ? /disabled/i : /no (enabled|disabled state)/i,
       );
     });
 
@@ -146,7 +145,7 @@ function interactionSuite({
 }
 
 const FIELD_STATES = ['hovered', 'focused'];
-const FIELD_EXAMPLES = { hovered: 'Mouse sobre', focused: 'Com foco' };
+const FIELD_EXAMPLES = { hovered: 'Hovered', focused: 'Focused' };
 
 function textFieldSuite(id: 'text-field' | 'secure-text-field', base: Values) {
   describe(`${id} (FilledTextFieldTokens.kt, OutlinedTextFieldTokens.kt)`, () => {
@@ -170,13 +169,13 @@ function textFieldSuite(id: 'text-field' | 'secure-text-field', base: Values) {
     it('filled with focus: indicator of 2 in primary and label in primary', () => {
       for (const mode of MODES) {
         const v = { ...filled, interaction: 'focused' };
-        expect(strokeOf(id, v, mode, 'indicador')).toEqual({
+        expect(strokeOf(id, v, mode, 'indicator')).toEqual({
           width: 2,
           color: hex('primary', mode),
         });
-        expect(paintedWith(id, v, mode, 'rótulo', 'primary')).toBe(true);
+        expect(paintedWith(id, v, mode, 'label', 'primary')).toBe(true);
         expect(
-          strokeOf(id, { ...filled, interaction: 'none' }, mode, 'indicador').width,
+          strokeOf(id, { ...filled, interaction: 'none' }, mode, 'indicator').width,
         ).toBe(1);
       }
     });
@@ -184,35 +183,35 @@ function textFieldSuite(id: 'text-field' | 'secure-text-field', base: Values) {
     it('filled in error with focus: indicator and label in error', () => {
       for (const mode of MODES) {
         const v = { ...filled, ...err, interaction: 'focused' };
-        expect(strokeOf(id, v, mode, 'indicador')).toEqual({
+        expect(strokeOf(id, v, mode, 'indicator')).toEqual({
           width: 2,
           color: hex('error', mode),
         });
-        expect(paintedWith(id, v, mode, 'rótulo', 'error')).toBe(true);
+        expect(paintedWith(id, v, mode, 'label', 'error')).toBe(true);
       }
     });
 
     it('filled with the mouse: indicator of 1 in on-surface; in error, indicator and label in on-error-container', () => {
       for (const mode of MODES) {
         const v = { ...filled, interaction: 'hovered' };
-        expect(strokeOf(id, v, mode, 'indicador')).toEqual({
+        expect(strokeOf(id, v, mode, 'indicator')).toEqual({
           width: 1,
           color: hex('on-surface', mode),
         });
-        expect(paintedWith(id, v, mode, 'rótulo', 'on-surface-variant')).toBe(true);
+        expect(paintedWith(id, v, mode, 'label', 'on-surface-variant')).toBe(true);
         const e = { ...filled, ...err, trailingIcon: 'Lock', interaction: 'hovered' };
-        expect(strokeOf(id, e, mode, 'indicador').color).toBe(
+        expect(strokeOf(id, e, mode, 'indicator').color).toBe(
           hex('on-error-container', mode),
         );
-        expect(paintedWith(id, e, mode, 'rótulo', 'on-error-container')).toBe(true);
+        expect(paintedWith(id, e, mode, 'label', 'on-error-container')).toBe(true);
       }
     });
 
     // With a value, the minimized label opens the gap in the outline; without value or hint, the label stays inside and there is no gap.
     const hasValue = base.hasText !== undefined || base.value !== undefined;
-    const labelName = hasValue ? 'rótulo minimizado' : 'rótulo';
+    const labelName = hasValue ? 'minimized label' : 'label';
     const outlineOf = (values: Values, mode: Mode) => {
-      const nodes = visibleNamed(id, values, mode, 'contorno');
+      const nodes = visibleNamed(id, values, mode, 'outline');
       expect(nodes, 'a single outline').toHaveLength(1);
       return nodes[0]!;
     };
@@ -223,12 +222,12 @@ function textFieldSuite(id: 'text-field' | 'secure-text-field', base: Values) {
       for (const mode of MODES) {
         const v = { ...outlined, interaction: 'focused' };
         // the outline is a single node (the gap is the `stroke.gap`): the same line of 2 in primary goes through the gap
-        expect(strokeOf(id, v, mode, 'contorno')).toEqual({
+        expect(strokeOf(id, v, mode, 'outline')).toEqual({
           width: 2,
           color: hex('primary', mode),
         });
         expect(gapsOf(v, mode)).toBe(hasValue ? 1 : 0);
-        for (const gone of ['contorno (lados)', 'trecho final'])
+        for (const gone of ['outline (sides)', 'trecho final'])
           expect(visibleNamed(id, v, mode, gone), gone).toEqual([]);
         expect(paintedWith(id, v, mode, labelName, 'primary')).toBe(true);
       }
@@ -237,14 +236,14 @@ function textFieldSuite(id: 'text-field' | 'secure-text-field', base: Values) {
     it('outlined with the mouse: outline of 1 in on-surface and label in on-surface; in error, on-error-container', () => {
       for (const mode of MODES) {
         const v = { ...outlined, interaction: 'hovered' };
-        expect(strokeOf(id, v, mode, 'contorno')).toEqual({
+        expect(strokeOf(id, v, mode, 'outline')).toEqual({
           width: 1,
           color: hex('on-surface', mode),
         });
         expect(gapsOf(v, mode)).toBe(hasValue ? 1 : 0);
         expect(paintedWith(id, v, mode, labelName, 'on-surface')).toBe(true);
         const e = { ...v, ...err };
-        expect(strokeOf(id, e, mode, 'contorno').color).toBe(
+        expect(strokeOf(id, e, mode, 'outline').color).toBe(
           hex('on-error-container', mode),
         );
         expect(paintedWith(id, e, mode, labelName, 'on-error-container')).toBe(true);
@@ -274,7 +273,7 @@ describe('search-bar (SearchBarTokens.kt)', () => {
     id: 'search-bar',
     states: ['hovered', 'focused', 'pressed'],
     hasEnabled: false,
-    examples: { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressionado' },
+    examples: { hovered: 'Hovered', focused: 'Focused', pressed: 'Pressed' },
     variants: [
       { placeholder: 'Search' },
       { query: 'coffee', style: 'bar' },
@@ -284,15 +283,10 @@ describe('search-bar (SearchBarTokens.kt)', () => {
 
   it('the state layer has the size of the bar (56) and takes the component radius', () => {
     for (const mode of MODES) {
-      const layer = visibleNamed(
-        'search-bar',
-        { interaction: 'pressed' },
-        mode,
-        'estado',
-      );
+      const layer = visibleNamed('search-bar', { interaction: 'pressed' }, mode, 'state');
       expect(layer).toHaveLength(1);
       expect(layer[0]?.height).toBe(56);
-      expect(visibleNamed('search-bar', { interaction: 'none' }, mode, 'estado')).toEqual(
+      expect(visibleNamed('search-bar', { interaction: 'none' }, mode, 'state')).toEqual(
         [],
       );
     }
@@ -309,10 +303,10 @@ describe('list-item (ListTokens.kt)', () => {
     states: ['hovered', 'focused', 'pressed', 'dragged'],
     hasEnabled: false,
     examples: {
-      hovered: 'Mouse sobre',
-      focused: 'Com foco',
-      pressed: 'Pressionado',
-      dragged: 'Arrastado',
+      hovered: 'Hovered',
+      focused: 'Focused',
+      pressed: 'Pressed',
+      dragged: 'Dragged',
     },
     variants: [
       { headlineContent: 'Ana Souza' },
@@ -329,7 +323,7 @@ describe('list-item (ListTokens.kt)', () => {
   it('the layer covers the whole item and the dragged one gets the level 4 shadow', () => {
     for (const mode of MODES) {
       const layer = (interaction: string) =>
-        visibleNamed('list-item', { ...lines, interaction }, mode, 'estado');
+        visibleNamed('list-item', { ...lines, interaction }, mode, 'state');
       expect(layer('none')).toEqual([]);
       for (const s of ['hovered', 'focused', 'pressed', 'dragged'])
         expect(layer(s)).toHaveLength(1);
@@ -383,8 +377,8 @@ describe('dropdown-menu (MenuTokens.kt)', () => {
     const d =
       typeOf('dropdown-menu').fields.find((f) => f.key === 'interaction')?.description ??
       '';
-    expect(d).toMatch(/campo/i);
-    expect(d).toMatch(/selecionad/i);
+    expect(d).toMatch(/field/i);
+    expect(d).toMatch(/selected/i);
   });
 
   it('the exposed field has the indicator of 2 in primary with focus', () => {
@@ -397,11 +391,11 @@ describe('dropdown-menu (MenuTokens.kt)', () => {
         items,
         interaction: 'focused',
       };
-      expect(strokeOf('dropdown-menu', v, mode, 'indicador')).toEqual({
+      expect(strokeOf('dropdown-menu', v, mode, 'indicator')).toEqual({
         width: 2,
         color: hex('primary', mode),
       });
-      expect(paintedWith('dropdown-menu', v, mode, 'rótulo', 'primary')).toBe(true);
+      expect(paintedWith('dropdown-menu', v, mode, 'label', 'primary')).toBe(true);
     }
   });
 
@@ -412,7 +406,7 @@ describe('dropdown-menu (MenuTokens.kt)', () => {
           'dropdown-menu',
           { style: 'menu', expanded: 'true', items: its, interaction },
           mode,
-          'estado',
+          'state',
         );
       expect(layers(items, 'hovered')).toHaveLength(1);
       expect(layers(items, 'none')).toHaveLength(0);
@@ -440,7 +434,7 @@ describe('dropdown-menu (MenuTokens.kt)', () => {
         'dropdown-menu',
         { style: 'menu', expanded: 'true', items: its, interaction: 'focused' },
         mode,
-        'estado',
+        'state',
       );
       expect(layers).toHaveLength(0);
     }

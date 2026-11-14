@@ -30,26 +30,22 @@ const tooBig = (warnings: readonly string[]): string[] =>
 describe('a word wider than the text box warns', () => {
   it('button "Submit" at 58 × 40 warns about the label; at 96 × 40 it does not warn', () => {
     const small = drawBox('button', { label: 'Submit' }, 58, 40);
-    // pt-BR kept: node names of the Material 3 sample library (viewer/samples) are Portuguese
-    expect(tooBig(small.warnings)).toEqual(['text larger than the box: rótulo']);
+    expect(tooBig(small.warnings)).toEqual(['text larger than the box: label']);
     const fits = drawBox('button', { label: 'Submit' }, 96, 40);
     expect(tooBig(fits.warnings)).toEqual([]);
   });
 
   it('extended-fab "Next" at 50 × 56 and "Customize layout" at 60 × 56 warn about the text', () => {
     const next = drawBox('extended-fab', { text: 'Next' }, 50, 56);
-    // pt-BR kept: node names of the Material 3 sample library (viewer/samples) are Portuguese
-    expect(tooBig(next.warnings)).toEqual(['text larger than the box: texto']);
+    expect(tooBig(next.warnings)).toEqual(['text larger than the box: text']);
     const long = drawBox('extended-fab', { text: 'Customize layout' }, 60, 56);
-    // pt-BR kept: node names of the Material 3 sample library (viewer/samples) are Portuguese
-    expect(tooBig(long.warnings)).toEqual(['text larger than the box: texto']);
+    expect(tooBig(long.warnings)).toEqual(['text larger than the box: text']);
   });
 
   it('button "Customize layout" at 58 × 40 keeps the content warning and gains the label one', () => {
     const made = drawBox('button', { label: 'Customize layout' }, 58, 40);
     expect(made.warnings).toContain('content larger than the box: button');
-    // pt-BR kept: node names of the Material 3 sample library (viewer/samples) are Portuguese
-    expect(tooBig(made.warnings)).toEqual(['text larger than the box: rótulo']);
+    expect(tooBig(made.warnings)).toEqual(['text larger than the box: label']);
   });
 });
 

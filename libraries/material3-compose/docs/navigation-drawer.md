@@ -1,51 +1,51 @@
 # Navigation drawer
 
-Folha de navegação lateral. Modal cobre a tela com um scrim; dismissible empurra o conteúdo e se dispensa; permanent fica sempre à vista. Cada linha de Itens é um destino.
+Side navigation sheet. Modal covers the screen with a scrim; dismissible pushes the content and can be dismissed; permanent is always in view. Each row of Items is a destination.
 
-Tipo de anotação: `navigation-drawer` (camada Componentes).
+Annotation type: `navigation-drawer` (Components layer).
 
-## Campos
+## Fields
 
-| Chave         | Rótulo    | Tipo   | Obrigatório | Opções                                  | Padrão  | Descrição                                                                                                                                                                                                                                                                                              |
-| ------------- | --------- | ------ | ----------- | --------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `headline`    | Cabeçalho | string | não         |                                         |         | Título opcional no topo da folha, acima dos itens.                                                                                                                                                                                                                                                     |
-| `style`       | Estilo    | enum   | não         | `modal`, `dismissible`, `permanent`     | `modal` | modal (ModalNavigationDrawer), dismissible (DismissibleNavigationDrawer) ou permanent (PermanentNavigationDrawer).                                                                                                                                                                                     |
-| `items`       | Itens     | table  | sim         | ver Colunas abaixo                      |         | Um destino por linha, na ordem em que aparecem na folha.                                                                                                                                                                                                                                               |
-| `interaction` | Interação | enum   | não         | `none`, `hovered`, `focused`, `pressed` | `none`  | Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda. |
+| Key           | Label       | Type   | Required | Options                                 | Default | Description                                                                                                                                                                                                                                                                        |
+| ------------- | ----------- | ------ | -------- | --------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `headline`    | Header      | string | no       |                                         |         | Optional title at the top of the sheet, above the items.                                                                                                                                                                                                                           |
+| `style`       | Style       | enum   | no       | `modal`, `dismissible`, `permanent`     | `modal` | modal (ModalNavigationDrawer), dismissible (DismissibleNavigationDrawer) or permanent (PermanentNavigationDrawer).                                                                                                                                                                 |
+| `items`       | Items       | table  | yes      | see Columns below                       |         | One destination per row, in the order they appear in the sheet.                                                                                                                                                                                                                    |
+| `interaction` | Interaction | enum   | no       | `none`, `hovered`, `focused`, `pressed` | `none`  | Resting look of the selected item's interaction state: hovered, focused or pressed; none = no state layer. It only changes the drawing, it does not go into the code. The type has no disabled state (no enabled): the state always draws. With no selected item, nothing changes. |
 
-Colunas de `items` (uma linha por item):
+Columns of `items` (one row per item):
 
-| Chave      | Rótulo      | Tipo   | Obrigatório | Opções                                                         | Padrão  |
-| ---------- | ----------- | ------ | ----------- | -------------------------------------------------------------- | ------- |
-| `label`    | Rótulo      | string | sim         |                                                                |         |
-| `icon`     | Ícone       | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |         |
-| `selected` | Selecionado | enum   | não         | `true`, `false`                                                | `false` |
-| `badge`    | Selo        | string | não         |                                                                |         |
+| Key        | Label    | Type   | Required | Options                                                   | Default |
+| ---------- | -------- | ------ | -------- | --------------------------------------------------------- | ------- |
+| `label`    | Label    | string | yes      |                                                           |         |
+| `icon`     | Icon     | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
+| `selected` | Selected | enum   | no       | `true`, `false`                                           | `false` |
+| `badge`    | Badge    | string | no       |                                                           |         |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.ModalNavigationDrawer`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationDrawer.kt`
-- O campo `style` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.ModalNavigationDrawer`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationDrawer.kt`
+- The `style` field chooses the symbol; values without a case of their own use the base one.
 
-| `style`        | Símbolo                                                        |
+| `style`        | Symbol                                                         |
 | -------------- | -------------------------------------------------------------- |
-| `modal` (base) | `ModalNavigationDrawer` (folha `ModalDrawerSheet`)             |
-| `dismissible`  | `DismissibleNavigationDrawer` (folha `DismissibleDrawerSheet`) |
-| `permanent`    | `PermanentNavigationDrawer` (folha `PermanentDrawerSheet`)     |
+| `modal` (base) | `ModalNavigationDrawer` (sheet `ModalDrawerSheet`)             |
+| `dismissible`  | `DismissibleNavigationDrawer` (sheet `DismissibleDrawerSheet`) |
+| `permanent`    | `PermanentNavigationDrawer` (sheet `PermanentDrawerSheet`)     |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and the expressions are those of `params` and `values` in `code`):
 
 ```kotlin
-// style modal: o drawer envolve o Scaffold; a marcação é a folha
+// style modal: the drawer wraps the Scaffold; the marking is the sheet
 ModalNavigationDrawer(
     drawerContent = {
         ModalDrawerSheet {
             Text("Mapping", Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)
-            NavigationDrawerItem(    // uma por linha de items
-                label = { Text("Caixa de entrada") },
+            NavigationDrawerItem(    // one per row of items
+                label = { Text("Inbox") },
                 selected = true,
-                onClick = { /* lógica da tela */ },
+                onClick = { /* screen logic */ },
                 icon = { Icon(Icons.Filled.Email, contentDescription = null) },
                 badge = { Text("24") },
                 modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
@@ -54,61 +54,61 @@ ModalNavigationDrawer(
     },
     drawerState = rememberDrawerState(DrawerValue.Closed),
 ) {
-    Scaffold { innerPadding -> /* conteúdo da tela */ }
+    Scaffold { innerPadding -> /* screen content */ }
 }
 
-// style dismissible: DismissibleNavigationDrawer + DismissibleDrawerSheet (mesmos itens)
-// style permanent: PermanentNavigationDrawer + PermanentDrawerSheet (sem drawerState)
+// style dismissible: DismissibleNavigationDrawer + DismissibleDrawerSheet (same items)
+// style permanent: PermanentNavigationDrawer + PermanentDrawerSheet (no drawerState)
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> Estável, sem opt-in. `ModalNavigationDrawer(drawerContent = { ModalDrawerSheet { … } }, drawerState = rememberDrawerState(DrawerValue.Closed)) { <conteúdo da tela> }`; dentro da `ModalDrawerSheet`: um `NavigationDrawerItem` por linha de `items`: `label = { Text(<label>) }`, `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }` (anulável), `badge = { Text(<badge>) }` (anulável) e `modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)`; o `headline` vira um `Text(<headline>, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)` antes dos itens. A marcação é a folha: o conteúdo da tela vai no último parâmetro (`content`) e o scrim é do composable. Abrir e fechar: `drawerState.open()` e `close()` numa coroutine. O drawer envolve o `Scaffold` (`ModalNavigationDrawer { Scaffold { … } }`), não ocupa slot dele. A largura (até 360 dp) é do composable, e `Modifier.width(<largura da marcação>.dp)` ajusta a folha. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.
+> Stable, no opt-in. `ModalNavigationDrawer(drawerContent = { ModalDrawerSheet { … } }, drawerState = rememberDrawerState(DrawerValue.Closed)) { <screen content> }`; inside the `ModalDrawerSheet`: one `NavigationDrawerItem` per row of `items`: `label = { Text(<label>) }`, `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }` (nullable), `badge = { Text(<badge>) }` (nullable) and `modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)`; the `headline` becomes a `Text(<headline>, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)` before the items. The marking is the sheet: the screen content goes in the last parameter (`content`) and the scrim belongs to the composable. Opening and closing: `drawerState.open()` and `close()` in a coroutine. The drawer wraps the `Scaffold` (`ModalNavigationDrawer { Scaffold { … } }`), it does not take a slot of it. The width (up to 360 dp) belongs to the composable, and `Modifier.width(<marking width>.dp)` adjusts the sheet. Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) are in `Icons.AutoMirrored.Filled`.
 
-Variante `dismissible`: Estável, sem opt-in. `DismissibleNavigationDrawer(drawerContent = { DismissibleDrawerSheet { … } }, drawerState = rememberDrawerState(DrawerValue.Closed)) { <conteúdo da tela> }`; dentro da `DismissibleDrawerSheet`: um `NavigationDrawerItem` por linha de `items`: `label = { Text(<label>) }`, `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }` (anulável), `badge = { Text(<badge>) }` (anulável) e `modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)`; o `headline` vira um `Text(<headline>, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)` antes dos itens. Sem scrim: ao abrir, a folha empurra o conteúdo ao lado dela. Abrir e fechar: `drawerState.open()` e `close()` numa coroutine. O drawer envolve o `Scaffold` (`DismissibleNavigationDrawer { Scaffold { … } }`), não ocupa slot dele. A largura (até 360 dp) é do composable. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.
+Variant `dismissible`: Stable, no opt-in. `DismissibleNavigationDrawer(drawerContent = { DismissibleDrawerSheet { … } }, drawerState = rememberDrawerState(DrawerValue.Closed)) { <screen content> }`; inside the `DismissibleDrawerSheet`: one `NavigationDrawerItem` per row of `items`: `label = { Text(<label>) }`, `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }` (nullable), `badge = { Text(<badge>) }` (nullable) and `modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)`; the `headline` becomes a `Text(<headline>, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)` before the items. No scrim: when opened, the sheet pushes the content beside it. Opening and closing: `drawerState.open()` and `close()` in a coroutine. The drawer wraps the `Scaffold` (`DismissibleNavigationDrawer { Scaffold { … } }`), it does not take a slot of it. The width (up to 360 dp) belongs to the composable. Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) are in `Icons.AutoMirrored.Filled`.
 
-Variante `permanent`: Estável, sem opt-in. `PermanentNavigationDrawer(drawerContent = { PermanentDrawerSheet { … } }) { <conteúdo da tela> }`, sem `drawerState` (sempre visível, ao lado do conteúdo numa `Row`); dentro da `PermanentDrawerSheet`: um `NavigationDrawerItem` por linha de `items`: `label = { Text(<label>) }`, `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }` (anulável), `badge = { Text(<badge>) }` (anulável) e `modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)`; o `headline` vira um `Text(<headline>, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)` antes dos itens. O drawer envolve o `Scaffold` (`PermanentNavigationDrawer { Scaffold { … } }`), não ocupa slot dele. A largura (de 240 a 360 dp) é do composable, e `PermanentDrawerSheet(Modifier.width(<largura da marcação>.dp))` a ajusta. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.
+Variant `permanent`: Stable, no opt-in. `PermanentNavigationDrawer(drawerContent = { PermanentDrawerSheet { … } }) { <screen content> }`, with no `drawerState` (always visible, beside the content in a `Row`); inside the `PermanentDrawerSheet`: one `NavigationDrawerItem` per row of `items`: `label = { Text(<label>) }`, `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }` (nullable), `badge = { Text(<badge>) }` (nullable) and `modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)`; the `headline` becomes a `Text(<headline>, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)` before the items. The drawer wraps the `Scaffold` (`PermanentNavigationDrawer { Scaffold { … } }`), it does not take a slot of it. The width (from 240 to 360 dp) belongs to the composable, and `PermanentDrawerSheet(Modifier.width(<marking width>.dp))` adjusts it. Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) are in `Icons.AutoMirrored.Filled`.
 
-## Exemplos
+## Examples
 
-- **Modal com cabeçalho**: style=modal, headline=Mapping
-- **Dismissible**: style=dismissible, headline=Pastas
-- **Permanente sem cabeçalho**: style=permanent
-- **Mouse sobre**: style=modal, headline=Mapping, interaction=hovered
-- **Com foco**: style=modal, headline=Mapping, interaction=focused
-- **Pressionado**: style=modal, headline=Mapping, interaction=pressed
+- **Modal with headline**: style=modal, headline=Mapping
+- **Dismissible**: style=dismissible, headline=Folders
+- **Permanent without headline**: style=permanent
+- **Hovered**: style=modal, headline=Mapping, interaction=hovered
+- **Focused**: style=modal, headline=Mapping, interaction=focused
+- **Pressed**: style=modal, headline=Mapping, interaction=pressed
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container's density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization's tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx tokens files; no color, font or opacity is left literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationDrawer.kt` (linhas 590 a 612: `ModalDrawerSheet`, forma e cor padrão e elevação Level0; 679 a 700: `DismissibleDrawerSheet`, `RectangleShape`; 764 a 784: `PermanentDrawerSheet`; 786 a 857: `DrawerSheet`, a largura entre 240 e 360 e o `Surface`; 997 a 1035: `DrawerDefaults`, `shape`, `standardContainerColor`, `modalContainerColor` e as elevações; 1068 a 1111: `NavigationDrawerItem`, `heightIn(min = 56)`, `fillMaxWidth()`, `padding(start = 16.dp, end = 24.dp)` e os `Spacer` de 12; 1146 a 1188: as cores do item e o `ItemPadding` de 12).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/NavigationDrawerTokens.kt` (linhas 28 a 58: cores ativa e inativa, `ActiveIndicatorHeight` 56, `ActiveIndicatorShape` full, `ActiveIndicatorWidth` 336, `ContainerShape` CornerLargeEnd, `ContainerWidth` 360, `HeadlineColor` e `HeadlineFont` title small, `LabelTextFont` e `LargeBadgeLabelFont` label large, `ModalContainerColor` surface container low, `StandardContainerColor` surface).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationDrawer.kt` (linhas 1076 a 1090: o `Surface` do item recebe `interactionSource` e `color = colors.containerColor(selected)`, de modo que o ripple cobre o item inteiro e leva o `contentColor` da cor do fundo).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/NavigationDrawerTokens.kt` (linhas 24 a 51: `Active*`/`Inactive*` `Hover`, `Focus` e `Pressed` do ícone e do rótulo, todos iguais à cor do estado normal; `FocusIndicatorColor` `Secondary`, linha 40).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationDrawer.kt` (lines 590 to 612: `ModalDrawerSheet`, default shape and color and Level0 elevation; 679 to 700: `DismissibleDrawerSheet`, `RectangleShape`; 764 to 784: `PermanentDrawerSheet`; 786 to 857: `DrawerSheet`, the width between 240 and 360 and the `Surface`; 997 to 1035: `DrawerDefaults`, `shape`, `standardContainerColor`, `modalContainerColor` and the elevations; 1068 to 1111: `NavigationDrawerItem`, `heightIn(min = 56)`, `fillMaxWidth()`, `padding(start = 16.dp, end = 24.dp)` and the 12 `Spacer`s; 1146 to 1188: the item colors and the `ItemPadding` of 12).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/NavigationDrawerTokens.kt` (lines 28 to 58: active and inactive colors, `ActiveIndicatorHeight` 56, `ActiveIndicatorShape` full, `ActiveIndicatorWidth` 336, `ContainerShape` CornerLargeEnd, `ContainerWidth` 360, `HeadlineColor` and `HeadlineFont` title small, `LabelTextFont` and `LargeBadgeLabelFont` label large, `ModalContainerColor` surface container low, `StandardContainerColor` surface).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationDrawer.kt` (lines 1076 to 1090: the item's `Surface` receives `interactionSource` and `color = colors.containerColor(selected)`, so the ripple covers the whole item and takes the `contentColor` from the background color).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/NavigationDrawerTokens.kt` (lines 24 to 51: `Active*`/`Inactive*` `Hover`, `Focus` and `Pressed` of the icon and the label, all equal to the normal state color; `FocusIndicatorColor` `Secondary`, line 40).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Folha de 360 de largura: a modal em `surface-container-low` com os cantos do fim de 16 (`CornerLargeEnd`); a dismissible e a permanent em `surface`, sem cantos. Sem sombra nem tonal (as elevações padrão são Level0).
-- Margem de 12 dos lados (`NavigationDrawerItemDefaults.ItemPadding`) e de 12 em cima; itens de 56 de altura mínima e 336 de largura, na forma `corner-full`, sem espaço entre eles. `secondary-container` no selecionado.
-- Item: 16 de recuo no começo, ícone de 24, 12 até o rótulo (que ocupa o resto, `weight(1f)`), 12 até o selo e 24 de recuo no fim. Ícone, rótulo e selo usam a mesma cor: `on-secondary-container` no selecionado e `on-surface-variant` nos demais.
-- Rótulo e selo em `label-large` (14 / 20, peso 500, 0,1); cabeçalho opcional de 56 de altura com 16 de recuo, em `title-small` e `on-surface-variant` (`HeadlineFont` e `HeadlineColor`).
-- Rótulos centrados pela maiúscula (`cap-middle`): `título`, `rótulo` e `selo` usam `font.verticalAlign: "cap-middle"`; o `título` ocupa a altura do cabeçalho de 56 (`height: "fill"`), e `rótulo` e `selo` seguem `hug` no destino, que mede pelo conteúdo com altura mínima de 56. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
+- Sheet 360 wide: the modal in `surface-container-low` with 16 trailing corners (`CornerLargeEnd`); the dismissible and the permanent in `surface`, with no corners. No shadow or tonal elevation (the default elevations are Level0).
+- 12 margin on the sides (`NavigationDrawerItemDefaults.ItemPadding`) and 12 at the top; items of 56 minimum height and 336 width, in the `corner-full` shape, with no space between them. `secondary-container` on the selected one.
+- Item: 16 inset at the start, 24 icon, 12 up to the label (which takes the rest, `weight(1f)`), 12 up to the badge and 24 inset at the end. Icon, label and badge use the same color: `on-secondary-container` when selected and `on-surface-variant` on the others.
+- Label and badge in `label-large` (14 / 20, weight 500, 0.1); optional header of 56 height with 16 inset, in `title-small` and `on-surface-variant` (`HeadlineFont` and `HeadlineColor`).
+- Labels centered by the cap height (`cap-middle`): `title`, `label` and `badge` use `font.verticalAlign: "cap-middle"`; the `title` takes the height of the 56 header (`height: "fill"`), and `label` and `badge` stay `hug` in the destination, which measures by the content with a minimum height of 56. Compose's `Text` centers by the font's line box (ascent and descent); the drawing centers the cap height in the box, and with Roboto the two coincide to within 1 px.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (the `interaction` field)**
 
-O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `variants`. As opções são `none` e os três estados que o `NavigationDrawerTokens.kt` nomeia (`ActiveHover*`, `ActiveFocus*`, `ActivePressed*`): `hovered`, `focused` e `pressed` (não há `Dragged*`). **Este tipo não tem `enabled`**, então não existe um desabilitado que vença: o estado sempre desenha.
+The field chooses the resting look of a state; it does not go into the `code` or the `variants`. The options are `none` and the three states that `NavigationDrawerTokens.kt` names (`ActiveHover*`, `ActiveFocus*`, `ActivePressed*`): `hovered`, `focused` and `pressed` (there is no `Dragged*`). **This type has no `enabled`**, so there is no disabled state that wins: the state always draws.
 
-- **Camada de estado:** o nó `estado` é um `rect` do tamanho do item (a pílula de 56, `corner-full`), por cima dele, na cor do conteúdo do item selecionado, `on-secondary-container` (o ripple do `Surface` usa o `contentColor` do fundo `secondary-container`). A opacidade vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10). Os tokens do drawer **não nomeiam** a camada nem a opacidade: é o ripple do `Surface`, parado.
-- **Cores do conteúdo:** os `Active*Hover/Focus/Pressed*` repetem `on-secondary-container`: ícone, rótulo e selo não mudam.
-- **Item do estado:** vale para o item selecionado (decisão 6 da etapa); com nenhum item selecionado nada muda. O Compose desenha o estado no item que o mouse, o foco ou o toque alcança; escolher "o primeiro" pediria o índice do item no `repeat` (#897), e um campo de índice do item fica fora. Os exemplos de estado trazem os `items` do `preview`: no Catálogo o exemplo desenha os destinos, com a camada de estado no item selecionado.
+- **State layer:** the `state` node is a `rect` the size of the item (the 56 pill, `corner-full`), on top of it, in the content color of the selected item, `on-secondary-container` (the `Surface` ripple uses the `contentColor` of the `secondary-container` background). The opacity comes from the tokens `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10). The drawer tokens **do not name** the layer or the opacity: it is the `Surface` ripple, at rest.
+- **Content colors:** the `Active*Hover/Focus/Pressed*` repeat `on-secondary-container`: icon, label and badge do not change.
+- **State item:** it applies to the selected item (decision 6 of the stage); with no item selected nothing changes. Compose draws the state on the item that the mouse, the focus or the touch reaches; choosing "the first" would require the item index in the `repeat` (#897), and an item index field is left out. The state examples carry the `preview`'s `items`: in the Catalog the example draws the destinations, with the state layer on the selected item.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O `NavigationDrawerItem` não aplica estilo de texto: a tipografia vem do `Text` que a tela passa. O desenho usa a do arquivo de tokens (`LabelTextFont`, `LargeBadgeLabelFont`, `HeadlineFont`); o exemplo oficial do cabeçalho usa `titleLarge`. O cabeçalho de 56 e o espaço de 12 em cima são convenção do desenho (do exemplo), não do composable.
-- O raio da modal é a lista `[0, corner-large, corner-large, 0]` (`$token` por item): o 16 de `CornerLargeEnd` vem de `corner-large`.
-- A largura do Compose fica entre 240 e 360 (`sizeIn`); aqui a folha ocupa a largura da marcação. Scrim, gesto, animação, o selo como composable (aqui é texto) e as variantes `DrawerState` ficam fora do desenho.
-- O `interaction` é um quadro parado: sem o ripple animado e o anel de foco (`FocusIndicatorColor`, `NavigationDrawerTokens.kt` linha 40) vale para o item do estado: em `focused` desenha o anel de 3 em `secondary`, afastado 2 da forma (`stroke.offset`), por fora da caixa (a largura e o afastamento são os da decisão da etapa; o `*Tokens.kt` só traz a cor).
+- `NavigationDrawerItem` does not apply a text style: the typography comes from the `Text` that the screen passes. The drawing uses the tokens file's (`LabelTextFont`, `LargeBadgeLabelFont`, `HeadlineFont`); the official header example uses `titleLarge`. The 56 header and the 12 space at the top are a convention of the drawing (from the example), not of the composable.
+- The modal's radius is the list `[0, corner-large, corner-large, 0]` (`$token` per item): the 16 of `CornerLargeEnd` comes from `corner-large`.
+- Compose's width is between 240 and 360 (`sizeIn`); here the sheet takes the marking's width. Scrim, gesture, animation, the badge as a composable (here it is text) and the `DrawerState` variants are left out of the drawing.
+- The `interaction` is a resting frame: no animated ripple, and the focus ring (`FocusIndicatorColor`, `NavigationDrawerTokens.kt` line 40) applies to the state's item: in `focused` it draws a 3 ring in `secondary`, offset 2 from the shape (`stroke.offset`), outside the box (the width and the offset are those of the stage decision; the `*Tokens.kt` only brings the color).

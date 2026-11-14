@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "flow-row",
   "name": "FlowRow",
-  "description": "Linha que quebra para a linha de baixo quando falta espaço: as filhas se enfileiram, com spacing, verticalSpacing, máximo por linha, máximo de linhas e padding.",
+  "description": "Row that wraps to the next line when space runs out: the children line up, with spacing, verticalSpacing, max per row, max rows and padding.",
   "size": {
     "width": 360,
     "height": 96
@@ -72,7 +72,7 @@
                   {
                     "$field": "maxItemsInEachRow"
                   },
-                  "/linha"
+                  "/row"
                 ]
               },
               "else": ""
@@ -87,7 +87,7 @@
                   {
                     "$field": "maxLines"
                   },
-                  " linhas"
+                  " rows"
                 ]
               },
               "else": ""

@@ -1,78 +1,78 @@
 # PullToRefreshBox
 
-Área que atualiza o conteúdo ao puxar para baixo, com o indicador circular no topo. As marcações filhas são o conteúdo, que precisa rolar.
+Area that refreshes the content when pulled down, with the circular indicator at the top. The child markings are the content, which must scroll.
 
-Tipo de anotação: `pull-to-refresh` (camada Componentes).
+Annotation type: `pull-to-refresh` (Components layer).
 
-## Campos
+## Fields
 
-| Chave              | Rótulo                  | Tipo   | Obrigatório | Opções                                                                                                              | Padrão     | Descrição                                                                                                           |
-| ------------------ | ----------------------- | ------ | ----------- | ------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| `isRefreshing`     | Atualizando             | enum   | não         | `true`, `false`                                                                                                     | `false`    | true mostra o spinner (atualização em curso, isRefreshing = true); false mostra o indicador em arrasto, com a seta. |
-| `contentAlignment` | Alinhamento do conteúdo | enum   | não         | `TopStart`, `TopCenter`, `TopEnd`, `CenterStart`, `Center`, `CenterEnd`, `BottomStart`, `BottomCenter`, `BottomEnd` | `TopStart` | Onde o conteúdo fica dentro do Box (Alignment).                                                                     |
-| `width`            | Largura                 | enum   | não         | `wrap`, `fill`, `fixed`                                                                                             | `wrap`     | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).               |
-| `height`           | Altura                  | enum   | não         | `wrap`, `fill`, `fixed`                                                                                             | `wrap`     | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).                 |
-| `weight`           | Peso (weight)           | number | não         |                                                                                                                     |            | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                                   |
+| Key                | Label             | Type   | Required | Options                                                                                                             | Default    | Description                                                                                                                       |
+| ------------------ | ----------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `isRefreshing`     | Refreshing        | enum   | no       | `true`, `false`                                                                                                     | `false`    | true shows the spinner (refresh in progress, isRefreshing = true); false shows the indicator while being dragged, with the arrow. |
+| `contentAlignment` | Content alignment | enum   | no       | `TopStart`, `TopCenter`, `TopEnd`, `CenterStart`, `Center`, `CenterEnd`, `BottomStart`, `BottomCenter`, `BottomEnd` | `TopStart` | Where the content sits inside the Box (Alignment).                                                                                |
+| `width`            | Width             | enum   | no       | `wrap`, `fill`, `fixed`                                                                                             | `wrap`     | wrap fits the content, fill takes all the available width and fixed uses the marking's width (dp).                                |
+| `height`           | Height            | enum   | no       | `wrap`, `fill`, `fixed`                                                                                             | `wrap`     | wrap fits the content, fill takes all the available height and fixed uses the marking's height (dp).                              |
+| `weight`           | Weight            | number | no       |                                                                                                                     |            | Share of the space left over in a Row or Column (Modifier.weight). Empty = no weight.                                             |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.pulltorefresh.PullToRefreshBox`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/pulltorefresh/PullToRefresh.kt`
-- Estável no commit fixado, sem opt-in.
+- Symbol: `androidx.compose.material3.pulltorefresh.PullToRefreshBox`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/pulltorefresh/PullToRefresh.kt`
+- Stable at the pinned commit, no opt-in.
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and the expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 var isRefreshing by remember { mutableStateOf(false) }    // isRefreshing
 
 PullToRefreshBox(
     isRefreshing = isRefreshing,
-    onRefresh = { /* inicia a atualização e põe isRefreshing em true; ao terminar, volta a false */ },
+    onRefresh = { /* starts the refresh and sets isRefreshing to true; when done, back to false */ },
     contentAlignment = Alignment.TopStart,                // contentAlignment
     modifier = Modifier.fillMaxSize(),
 ) {
-    LazyColumn(Modifier.fillMaxSize()) {    // o conteúdo precisa rolar: as marcações filhas
-        items(lista) { /* item */ }
+    LazyColumn(Modifier.fillMaxSize()) {    // the content must scroll: the child markings
+        items(list) { /* item */ }
     }
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> Estável, sem opt-in. `isRefreshing` liga a um estado da tela (`var isRefreshing by remember { mutableStateOf(false) }`) e `onRefresh = { /* inicia a atualização e põe isRefreshing em true; ao terminar, volta a false */ }`. As marcações filhas formam o `content` (um `BoxScope`) e precisam rolar (`LazyColumn` ou `Modifier.verticalScroll`), porque o gesto vem da rolagem aninhada. O `indicator` e o `state` (`rememberPullToRefreshState()`) ficam nos padrões: o indicador circular de 40 dp no topo. `contentAlignment` é o do próprio Box. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).
+> Stable, no opt-in. `isRefreshing` binds to a screen state (`var isRefreshing by remember { mutableStateOf(false) }`) and `onRefresh = { /* starts the refresh and sets isRefreshing to true; when done, back to false */ }`. The child markings form the `content` (a `BoxScope`) and must scroll (`LazyColumn` or `Modifier.verticalScroll`), because the gesture comes from nested scrolling. The `indicator` and the `state` (`rememberPullToRefreshState()`) stay at the defaults: the 40 dp circular indicator at the top. `contentAlignment` is the Box's own. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside a Row, Column or FlowRow).
 
-## Desenho
+## Drawing
 
-O indicador é o padrão do Material 3: círculo de 40 em surface container high com sombra e um anel de 16 em on surface variant, a 40 do topo (o limiar de 80 menos o tamanho do indicador) nos dois estados. Com `isRefreshing` verdadeiro mostra o spinner; com falso, o quadro do limiar com o arco e a seta, que no Compose só existe enquanto a pessoa puxa (em repouso o indicador fica escondido). O arco e a seta do arrasto são desenhados na orientação canônica e girados por `rotation`, com os ângulos do Compose escritos como conta no componente; o spinner de "atualizando" é um quadro congelado, sem giro.
+The indicator is the Material 3 default: a 40 circle in surface container high with a shadow and a 16 ring in on surface variant, 40 from the top (the threshold of 80 minus the indicator size) in both states. With `isRefreshing` true it shows the spinner; with false, the threshold frame with the arc and the arrow, which in Compose only exists while the person pulls (at rest the indicator is hidden). The arc and the arrow of the drag are drawn in the canonical orientation and rotated by `rotation`, with Compose's angles written as calculations in the component; the "refreshing" spinner is a frozen frame, with no spin.
 
-## Exemplos
+## Examples
 
-- **Atualizando**: isRefreshing=true, width=fill, height=fill
-- **Em repouso**: isRefreshing=false, width=fill, height=fill
+- **Refreshing**: isRefreshing=true, width=fill, height=fill
+- **Resting**: isRefreshing=false, width=fill, height=fill
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade de cor fica literal no componente e nenhum nó de texto declara `family` (todos herdam `font-sans`). O indicador é o `Indicator` padrão do `PullToRefreshBox`; a seta, o spinner e o círculo não usam ícone do conjunto (são desenhos do próprio Compose).
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container's density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization's tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx tokens files; no color, font, radius or color opacity is left literal in the component and no text node declares `family` (all inherit `font-sans`). The indicator is the `PullToRefreshBox`'s default `Indicator`; the arrow, the spinner and the circle do not use an icon from the set (they are Compose's own drawings).
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/pulltorefresh/PullToRefresh.kt` (linhas 120 a 142: `PullToRefreshBox`, o `Box` com o conteúdo e o indicador em `Alignment.TopCenter`; 393 a 430: `PullToRefreshDefaults`, `indicatorShape` `CircleShape`, `indicatorContainerColor` `surfaceContainerHigh`, `indicatorColor` `onSurfaceVariant`, `PositionalThreshold` 80 e `Elevation` `Level2`; 448 a 496: `IndicatorBox`, o `size(SpinnerContainerSize)`, a `translationY = distanceFraction * maxDistance - size.height` (481 a 484) e a sombra só quando `distanceFraction > 0` ou `isRefreshing`; 509 a 541: `Indicator`, o `CircularProgressIndicator` de `StrokeWidth` e `SpinnerSize` enquanto atualiza e o `CircularArrowProgressIndicator` ao puxar; 632 a 661: a seta e o arco; 663 a 681: `drawCircularIndicator`; 690 a 708: `ArrowValues`; 710 a 732: `drawArrow`; 734 a 746: `MaxProgressArc` 0,8, `StrokeWidth` 2,5, `ArcRadius` 5,5, `SpinnerSize` 16, `SpinnerContainerSize` 40, `ArrowWidth` 10, `ArrowHeight` 5, `MinAlpha` 0,3 e `MaxAlpha` 1).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ProgressIndicator.kt` (o `CircularProgressIndicator` indeterminado, com `StrokeCap.Round` e a faixa de 0,1 a 0,87 de volta; ver `docs/progress-indicator.md`), `tokens/ElevationTokens.kt` (`Level2` 3 dp) e `tokens/ShapeTokens.kt` (`CornerFull`, `CircleShape`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/pulltorefresh/PullToRefresh.kt` (lines 120 to 142: `PullToRefreshBox`, the `Box` with the content and the indicator in `Alignment.TopCenter`; 393 to 430: `PullToRefreshDefaults`, `indicatorShape` `CircleShape`, `indicatorContainerColor` `surfaceContainerHigh`, `indicatorColor` `onSurfaceVariant`, `PositionalThreshold` 80 and `Elevation` `Level2`; 448 to 496: `IndicatorBox`, the `size(SpinnerContainerSize)`, the `translationY = distanceFraction * maxDistance - size.height` (481 to 484) and the shadow only when `distanceFraction > 0` or `isRefreshing`; 509 to 541: `Indicator`, the `CircularProgressIndicator` of `StrokeWidth` and `SpinnerSize` while refreshing and the `CircularArrowProgressIndicator` while pulling; 632 to 661: the arrow and the arc; 663 to 681: `drawCircularIndicator`; 690 to 708: `ArrowValues`; 710 to 732: `drawArrow`; 734 to 746: `MaxProgressArc` 0.8, `StrokeWidth` 2.5, `ArcRadius` 5.5, `SpinnerSize` 16, `SpinnerContainerSize` 40, `ArrowWidth` 10, `ArrowHeight` 5, `MinAlpha` 0.3 and `MaxAlpha` 1).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ProgressIndicator.kt` (the indeterminate `CircularProgressIndicator`, with `StrokeCap.Round` and the 0.1 to 0.87 range of a turn; see `docs/progress-indicator.md`), `tokens/ElevationTokens.kt` (`Level2` 3 dp) and `tokens/ShapeTokens.kt` (`CornerFull`, `CircleShape`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Indicador de 40 em `corner-full` (`CircleShape`), em `surface-container-high` com as duas sombras do nível 2 (ponto: `y` 1, `blur` 2; ambiente: `y` 2, `blur` 6, `spread` 2; tokens `elevation-2-point-*` e `elevation-2-ambient-*`), centrado no topo. O Compose o põe em `distanceFraction * 80 - 40`, então com a fração em 1 (o limiar, que é também o ponto onde ele fica enquanto atualiza) o topo está a 40: é onde o desenho o põe nos dois estados.
-- Atualizando (`isRefreshing` verdadeiro): spinner de 16 (`SpinnerSize`) com traço de 2,5 de ponta redonda em `on-surface-variant`; raio do centro do traço 6,75 e o quadro congelado do indeterminado, um arco das 12h até (0,1 + 0,87) / 2 de volta, como no `progress-indicator`.
-- Puxando (`isRefreshing` falso): o quadro de `progress` = 1, o instante em que se atinge o limiar (`targetAlpha` 1). `ArrowValues(1)` (`PullToRefresh.kt` 690 a 708) dá `adjustedPercent` 1, `endTrim` 0,8 (`MaxProgressArc`, 734), `rotation` = (−0,25 + 0,4 × 1 + 0) × 0,5 = 0,075 (702), `startAngle` = `rotation` × 360 = 27° (703) e `endAngle` = (`rotation` + `endTrim`) × 360 = 315° (704). As duas peças são `path` na orientação canônica, em 24 de caixa com o círculo de 16 no meio, e o ângulo sai de `rotation` por expressão (em graus, no sentido horário, em volta do centro da caixa, que é o centro do indicador), sem coordenadas giradas à mão:
-  - O arco (`drawCircularIndicator`, 663 a 681; `drawArc` de `startAngle` com varredura `endAngle − startAngle`, ponta reta `StrokeCap.Butt`): o `d` é o arco de 288° que parte do 3 horas (o 0° do `drawArc`) no raio 6,75, e o nó leva `rotation` = `startAngle` + `rotation` de `ArrowValues` (o `rotate(degrees = values.rotation)` de 654) = 27,075°, escrito como `(rotation × 360) + rotation` com `rotation` = `(−0,25 + 0,4) × 0,5`.
-  - A seta aberta de 10 por 5 (`ArrowWidth`, `ArrowHeight`, 741 e 742) com traço de 2,5 e canto em ponta (`Stroke` padrão; `drawArrow`, 710 a 732): o `d` é o desenho do `moveTo(0, 0)`, `lineTo(5, 5)`, `lineTo(10, 0)` (719 a 722) levado a (raio + centro − `inset`, centro − `strokeWidth`) (724 a 728), isto é, `M13.75 9.5L18.75 14.5L23.75 9.5`, e o nó leva `rotation` = `endAngle − strokeWidth` (729) mais a `rotation` de `ArrowValues` (654) = 312,575°, escrito como `((rotation + 0,8) × 360) − 2,5 + rotation`.
-- Fundo da área em `surface`; as marcações filhas formam o conteúdo (o `slot`).
+- Indicator of 40 in `corner-full` (`CircleShape`), in `surface-container-high` with the two level 2 shadows (point: `y` 1, `blur` 2; ambient: `y` 2, `blur` 6, `spread` 2; tokens `elevation-2-point-*` and `elevation-2-ambient-*`), centered at the top. Compose puts it at `distanceFraction * 80 - 40`, so with the fraction at 1 (the threshold, which is also the point where it stays while refreshing) the top is at 40: that is where the drawing puts it in both states.
+- Refreshing (`isRefreshing` true): spinner of 16 (`SpinnerSize`) with a 2.5 stroke and round cap in `on-surface-variant`; radius of the stroke's center 6.75 and the frozen frame of the indeterminate, an arc from 12 o'clock to (0.1 + 0.87) / 2 of a turn, as in `progress-indicator`.
+- Pulling (`isRefreshing` false): the frame of `progress` = 1, the instant the threshold is reached (`targetAlpha` 1). `ArrowValues(1)` (`PullToRefresh.kt` 690 to 708) gives `adjustedPercent` 1, `endTrim` 0.8 (`MaxProgressArc`, 734), `rotation` = (−0.25 + 0.4 × 1 + 0) × 0.5 = 0.075 (702), `startAngle` = `rotation` × 360 = 27° (703) and `endAngle` = (`rotation` + `endTrim`) × 360 = 315° (704). The two pieces are `path`s in the canonical orientation, in a 24 box with the 16 circle in the middle, and the angle comes from `rotation` by expression (in degrees, clockwise, around the center of the box, which is the center of the indicator), with no hand-rotated coordinates:
+  - The arc (`drawCircularIndicator`, 663 to 681; `drawArc` from `startAngle` with sweep `endAngle − startAngle`, straight cap `StrokeCap.Butt`): the `d` is the 288° arc that starts at 3 o'clock (the 0° of `drawArc`) at radius 6.75, and the node carries `rotation` = `startAngle` + the `rotation` of `ArrowValues` (the `rotate(degrees = values.rotation)` of 654) = 27.075°, written as `(rotation × 360) + rotation` with `rotation` = `(−0.25 + 0.4) × 0.5`.
+  - The open arrow of 10 by 5 (`ArrowWidth`, `ArrowHeight`, 741 and 742) with a 2.5 stroke and pointed corner (default `Stroke`; `drawArrow`, 710 to 732): the `d` is the drawing of `moveTo(0, 0)`, `lineTo(5, 5)`, `lineTo(10, 0)` (719 to 722) moved to (radius + center − `inset`, center − `strokeWidth`) (724 to 728), that is, `M13.75 9.5L18.75 14.5L23.75 9.5`, and the node carries `rotation` = `endAngle − strokeWidth` (729) plus the `rotation` of `ArrowValues` (654) = 312.575°, written as `((rotation + 0.8) × 360) − 2.5 + rotation`.
+- Background of the area in `surface`; the child markings form the content (the `slot`).
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O estado de arrasto é um quadro só (`progress` = 1): o Compose escala a seta (`scale`) e muda a opacidade de 0,3 a 1 conforme o dedo desce, e o indicador sobe e desce com a fração. Antes o desenho mostrava o indicador a 8 do topo com uma seta pequena; agora o quadro é o do limiar, a 40.
-- Em `ArrowValues` o `rotation` (0,075 volta) é passado como graus ao `rotate(degrees = values.rotation)` (654); o desenho faz o mesmo e soma esse 0,075° aos dois ângulos (a diferença para o 27° e o 312,5° de antes é de 0,01 px).
-- O spinner de "atualizando" não leva `rotation`: o `d` dele já parte das 12h e o arco canônico (do 3 horas, com `rotation` de −90°) teria o mesmo número de coordenadas, sem tirar conta nenhuma.
-- O spinner é o quadro congelado da animação (não gira), e o arco não leva o ajuste que o Compose faz nas pontas redondas do indeterminado.
-- O recorte do `IndicatorBox` acima do topo (`clipRect(top = 0)`) e a sombra que só aparece com a fração maior que 0 não existem no desenho estático.
-- `contentAlignment` e o `weight` não mudam o desenho (o conteúdo é um `slot`), e o `state`, o `indicator` e o `onRefresh` são do código.
+- The drag state is a single frame (`progress` = 1): Compose scales the arrow (`scale`) and changes the opacity from 0.3 to 1 as the finger goes down, and the indicator moves up and down with the fraction. Before, the drawing showed the indicator at 8 from the top with a small arrow; now the frame is the threshold's, at 40.
+- In `ArrowValues` the `rotation` (0.075 of a turn) is passed as degrees to `rotate(degrees = values.rotation)` (654); the drawing does the same and adds that 0.075° to both angles (the difference from the earlier 27° and 312.5° is 0.01 px).
+- The "refreshing" spinner carries no `rotation`: its `d` already starts at 12 o'clock and the canonical arc (from 3 o'clock, with a `rotation` of −90°) would have the same number of coordinates, without saving any calculation.
+- The spinner is the frozen frame of the animation (it does not spin), and the arc does not carry the adjustment that Compose makes on the round caps of the indeterminate.
+- The `IndicatorBox` clip above the top (`clipRect(top = 0)`) and the shadow that only appears with a fraction greater than 0 do not exist in the static drawing.
+- `contentAlignment` and the `weight` do not change the drawing (the content is a `slot`), and the `state`, the `indicator` and the `onRefresh` belong to the code.

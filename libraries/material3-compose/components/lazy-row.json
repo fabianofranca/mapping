@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "lazy-row",
   "name": "LazyRow",
-  "description": "Lista horizontal que compõe só os itens visíveis: as filhas se enfileiram, com spacing e contentPadding.",
+  "description": "Horizontal list that composes only the visible items: the children are lined up, with spacing and contentPadding.",
   "size": {
     "width": 360,
     "height": 120

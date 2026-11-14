@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "scaffold",
   "name": "Scaffold",
-  "description": "Estrutura de tela do Material 3: fundo da tela e um espaço para a barra de cima, o conteúdo, a barra de baixo e o botão flutuante.",
+  "description": "Material 3 screen structure: screen background and a slot for the top bar, the content, the bottom bar and the floating action button.",
   "size": {
     "width": 360,
     "height": 800

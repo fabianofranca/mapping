@@ -1,36 +1,36 @@
 # Annotation class
 
-Annotation class: declara uma anotação (@Audited, @SerialName).
+Annotation class: declares an annotation (@Audited, @SerialName).
 
-## Quando usar
+## When to use
 
-- Declarar anotações próprias para marcar classes, funções ou propriedades.
+- Declaring your own annotations to mark classes, functions or properties.
 
-## O que não confundir
+## What not to confuse
 
-- **Declarar × aplicar:** esta marcação declara a anotação; aplicá-la a uma declaração é o campo `annotations` desta.
+- **Declaring × applying:** this marking declares the annotation; applying it to a declaration is that declaration's `annotations` field.
 
-## Campos principais
+## Main fields
 
-- **Nome** (obrigatório): nome simples da declaração; leva a etiqueta `kotlin-type`, então supertipos e tipos de propriedade de outras marcações podem apontar para ela.
-- **Pacote**, **Visibilidade**, **Anotações** e **Descrição** (KDoc).
-- As propriedades são os parâmetros do construtor, sempre `val`.
-- Sem funções, supertipos nem corpo; `targets` e `retention` descrevem o alcance.
+- **Name** (required): simple name of the declaration; it carries the `kotlin-type` tag, so supertypes and property types of other markings can point to it.
+- **Package**, **Visibility**, **Annotations** and **Description** (KDoc).
+- The properties are the constructor parameters, always `val`.
+- No functions, supertypes or body; `targets` and `retention` describe the scope.
 
-## Declaração aninhada
+## Nested declaration
 
-Uma declaração aninhada (nested, inner ou companion) se liga à externa pelo campo **Declarada em** (`outer`, etiqueta `kotlin-type`). O agente lê a ligação em `refs` (na aninhada) e `backlinks` (na externa). Desenhar a marcação dentro da externa é só arrumação visual e opcional: o pertencimento do canvas (`parent`/`members`) não define o aninhamento no código.
+A nested declaration (nested, inner or companion) is linked to its outer declaration through the **Declared in** field (`outer`, tag `kotlin-type`). The agent reads the link in `refs` (on the nested one) and `backlinks` (on the outer one). Drawing the marking inside the outer one is only an optional visual tidy-up: the canvas membership (`parent`/`members`) does not define the nesting in the code.
 
-## Sugestões de tipo
+## Type suggestions
 
-Ao digitar no **Tipo** das propriedades, aparecem os tipos básicos do Kotlin (`String`, `Int`, `Boolean`, `List`, `Map`...). No **Tipo** das propriedades e dos supertipos aparecem também as declarações mapeadas (com o tipo delas ao lado), e escolher uma preenche junto o **Tipo mapeado**. É só uma ajuda: qualquer texto continua valendo, como `String?` ou `List<Endereco>`.
+When typing in the **Type** of properties, the basic Kotlin types appear (`String`, `Int`, `Boolean`, `List`, `Map`...). In the **Type** of properties and supertypes the mapped declarations appear too (with their kind next to them), and choosing one also fills in the **Mapped type**. It is only a help: any text is still valid, such as `String?` or `List<Address>`.
 
-## Referências às propriedades
+## References to properties
 
-- Outras anotações apontam para uma linha de `properties` por um campo `ref` que aceita `data-field` ou `kotlin-property`.
-- Esta declaração não tem funções; só as propriedades (parâmetros) são alvos.
+- Other annotations point to a line of `properties` through a `ref` field that accepts `data-field` or `kotlin-property`.
+- This declaration has no functions; only the properties (parameters) are targets.
 
-## Exemplo
+## Example
 
 ```kotlin
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)

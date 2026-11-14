@@ -76,7 +76,7 @@ describe('EX6 short-navigation-bar — the Centered margin by the number of item
     ];
     for (const [n, fraction] of expected) {
       const d = drawBar(items(n), 412, { arrangement: 'Centered' });
-      const margins = named(d, 'margem');
+      const margins = named(d, 'margin');
       expect(margins, `${n} items`).toHaveLength(2);
       for (const m of margins) expect(rectOf(d, m)[2]).toBeCloseTo(412 * fraction, 6);
       expect(composePadding(n)).toBeCloseTo(fraction, 10);
@@ -86,11 +86,11 @@ describe('EX6 short-navigation-bar — the Centered margin by the number of item
   it('the margins are symmetric and the destinations fill the middle, in equal slices', () => {
     for (const n of [3, 4, 5, 6]) {
       const d = drawBar(items(n), 412, { arrangement: 'Centered' });
-      const [left, right] = named(d, 'margem');
+      const [left, right] = named(d, 'margin');
       const pad = 412 * composePadding(n);
       expect(rectOf(d, left!)[0]).toBeCloseTo(0, 6);
       expect(rectOf(d, right!)[0]).toBeCloseTo(412 - pad, 6);
-      const slots = named(d, 'destino');
+      const slots = named(d, 'destination');
       expect(slots, `${n} items`).toHaveLength(n);
       const slice = (412 - 2 * pad) / n;
       slots.forEach((s, i) => {
@@ -105,9 +105,9 @@ describe('EX6 short-navigation-bar — the Centered margin by the number of item
   it('the margin follows the width of the instance ($size), not the 412 of the initial size', () => {
     for (const width of [320, 600, 840]) {
       const d = drawBar(items(4), width, { arrangement: 'Centered' });
-      for (const m of named(d, 'margem'))
+      for (const m of named(d, 'margin'))
         expect(rectOf(d, m)[2]).toBeCloseTo(width * 0.15, 6);
-      const slots = named(d, 'destino');
+      const slots = named(d, 'destination');
       expect(rectOf(d, slots[0]!)[0]).toBeCloseTo(width * 0.15, 6);
       const last = rectOf(d, slots[3]!);
       expect(last[0] + last[2]).toBeCloseTo(width * 0.85, 6);
@@ -117,22 +117,22 @@ describe('EX6 short-navigation-bar — the Centered margin by the number of item
   it('with 7 items or more the margin is 0, as in Compose (itemsCount > 6), and never goes negative', () => {
     for (const n of [7, 8]) {
       const d = drawBar(items(n), 412, { arrangement: 'Centered' });
-      for (const m of named(d, 'margem')) expect(rectOf(d, m)[2]).toBeCloseTo(0, 6);
-      expect(rectOf(d, named(d, 'destino')[0]!)[0]).toBeCloseTo(0, 6);
+      for (const m of named(d, 'margin')) expect(rectOf(d, m)[2]).toBeCloseTo(0, 6);
+      expect(rectOf(d, named(d, 'destination')[0]!)[0]).toBeCloseTo(0, 6);
     }
   });
 
   it('with no items the bar stays empty, without warnings', () => {
     const d = drawBar([], 412, { arrangement: 'Centered' });
     expect(d.warnings).toEqual([]);
-    expect(named(d, 'destino')).toEqual([]);
+    expect(named(d, 'destination')).toEqual([]);
   });
 
   it('in EqualWeight there is no margin and the destinations split the whole width', () => {
     for (const n of [3, 4, 5, 6]) {
       const d = drawBar(items(n), 412, { arrangement: 'EqualWeight' });
-      expect(named(d, 'margem')).toEqual([]);
-      const slots = named(d, 'destino');
+      expect(named(d, 'margin')).toEqual([]);
+      const slots = named(d, 'destination');
       expect(slots).toHaveLength(n);
       slots.forEach((s, i) => {
         const [x, , w] = rectOf(d, s);
@@ -152,9 +152,9 @@ describe('EX6 short-navigation-bar — the item grows up to width / items (Cente
     expect(d.warnings).toEqual([]);
     const slice = (412 * 0.6) / 3;
     const pills = visible(d).filter(
-      (n) => n.name === 'indicador' && n.type === 'frame' && rectOf(d, n)[3] === 40,
+      (n) => n.name === 'indicator' && n.type === 'frame' && rectOf(d, n)[3] === 40,
     );
-    const slots = named(d, 'destino').map((s) => rectOf(d, s));
+    const slots = named(d, 'destination').map((s) => rectOf(d, s));
     expect(pills).toHaveLength(3);
     pills.forEach((pill, i) => {
       const width = rectOf(d, pill)[2];
@@ -163,7 +163,7 @@ describe('EX6 short-navigation-bar — the item grows up to width / items (Cente
     });
     // the margin shrinks by half of what the items grew, on both sides
     const grown = slots.reduce((sum, s) => sum + (s[2] - slice), 0);
-    const [left, right] = named(d, 'margem').map((m) => rectOf(d, m)[2]);
+    const [left, right] = named(d, 'margin').map((m) => rectOf(d, m)[2]);
     expect(left).toBeCloseTo(412 * 0.2 - grown / 2, 6);
     expect(right).toBeCloseTo(left!, 6);
     // the group stays centered
@@ -174,14 +174,16 @@ describe('EX6 short-navigation-bar — the item grows up to width / items (Cente
   it('the growth stops at width / items (82.4 → at most 137.3 with 3 items)', () => {
     const long = items(3, () => 'Advanced application settings');
     const d = drawBar(long, 412, { arrangement: 'Centered', iconPosition: 'Start' });
-    for (const s of named(d, 'destino')) expect(rectOf(d, s)[2]).toBeCloseTo(412 / 3, 6);
-    for (const m of named(d, 'margem')) expect(rectOf(d, m)[2]).toBeCloseTo(0, 6);
+    for (const s of named(d, 'destination'))
+      expect(rectOf(d, s)[2]).toBeCloseTo(412 / 3, 6);
+    for (const m of named(d, 'margin')) expect(rectOf(d, m)[2]).toBeCloseTo(0, 6);
   });
 
   it('in EqualWeight the item never goes past the slice, whatever the label', () => {
     const long = items(3, () => 'Advanced application settings');
     const d = drawBar(long, 412, { arrangement: 'EqualWeight', iconPosition: 'Start' });
-    for (const s of named(d, 'destino')) expect(rectOf(d, s)[2]).toBeCloseTo(412 / 3, 6);
+    for (const s of named(d, 'destination'))
+      expect(rectOf(d, s)[2]).toBeCloseTo(412 / 3, 6);
   });
 });
 
@@ -210,7 +212,12 @@ describe('EX6 short-navigation-bar — regression against the scenes from before
     let compared = 0;
     for (const s of scenes) {
       if (centeredChanged(s.values)) continue;
-      expect(missingNodes(draw(s.id, s.values, s.mode), s.nodes), s.key).toEqual([]);
+      expect(
+        missingNodes(draw(s.id, s.values, s.mode), s.nodes, {
+          component: 'short-navigation-bar',
+        }),
+        s.key,
+      ).toEqual([]);
       compared++;
     }
     // ex1 and ex2 (Centered, 3 items) leave, in both modes
@@ -223,7 +230,12 @@ describe('EX6 short-navigation-bar — regression against the scenes from before
     let compared = 0;
     for (const s of scenes) {
       if (centeredChanged(s.values) || centeredGrows(s.values)) continue;
-      expect(missingNodes(draw(s.id, s.values, s.mode), s.nodes), s.key).toEqual([]);
+      expect(
+        missingNodes(draw(s.id, s.values, s.mode), s.nodes, {
+          component: 'short-navigation-bar',
+        }),
+        s.key,
+      ).toEqual([]);
       compared++;
     }
     // 32 scenes minus the Centered with 3, 4 and 6 items (12) and the Centered with 5 and the icon beside (2)
@@ -260,7 +272,12 @@ describe('EX6 short-navigation-bar — regression against the scenes from before
           (oldPad + slot * oldSlice + oldSlice / 2);
         return { ...o, r: [x + shift, y, w, h] };
       });
-      expect(missingNodes(draw(s.id, s.values, s.mode), remapped), s.key).toEqual([]);
+      expect(
+        missingNodes(draw(s.id, s.values, s.mode), remapped, {
+          component: 'short-navigation-bar',
+        }),
+        s.key,
+      ).toEqual([]);
     }
   });
 });
@@ -309,7 +326,7 @@ describe('EX6 short-navigation-bar — without enumerated tables', () => {
       template: { children: { name: string; template?: Record<string, unknown> }[] };
     };
     const slot = component.template.children.find(
-      (c) => c.name === 'destinos',
+      (c) => c.name === 'destinations',
     )!.template!;
     for (const key of ['minWidth', 'maxWidth']) {
       const json = JSON.stringify(slot[key]);

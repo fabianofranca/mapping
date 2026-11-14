@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "navigation-drawer",
   "name": "Navigation drawer",
-  "description": "Folha de navegação de 360 de largura com cabeçalho opcional e um destino por linha de Itens (item de 56 com forma full, ícone, rótulo e selo). A modal usa surface container low e cantos finais de 16; a dismissible e a permanent usam surface sem cantos. O scrim é do composable.",
+  "description": "360-wide navigation sheet with an optional header and one destination per line of Items (56 item with full shape, icon, label and badge). The modal uses surface container low and 16 trailing corners; the dismissible and the permanent use surface with no corners. The scrim belongs to the composable.",
   "size": {
     "width": 360,
     "height": 400
@@ -17,18 +17,18 @@
     "style": "modal",
     "items": [
       {
-        "label": "Caixa de entrada",
+        "label": "Inbox",
         "icon": "Email",
         "selected": "true",
         "badge": "24"
       },
       {
-        "label": "Favoritos",
+        "label": "Favorites",
         "icon": "Favorite",
         "selected": "false"
       },
       {
-        "label": "Configurações",
+        "label": "Settings",
         "icon": "Settings",
         "selected": "false"
       }
@@ -71,7 +71,7 @@
     "children": [
       {
         "type": "frame",
-        "name": "cabeçalho",
+        "name": "header",
         "width": "fill",
         "height": 56,
         "visible": {
@@ -85,7 +85,7 @@
         "children": [
           {
             "type": "text",
-            "name": "título",
+            "name": "title",
             "text": {
               "$field": "headline"
             },
@@ -114,7 +114,7 @@
       },
       {
         "type": "repeat",
-        "name": "destinos",
+        "name": "destinations",
         "field": "items",
         "direction": "column",
         "width": "fill",
@@ -129,7 +129,7 @@
           "children": [
             {
               "type": "frame",
-              "name": "destino",
+              "name": "destination",
               "width": "fill",
               "height": "hug",
               "minHeight": 56,
@@ -345,7 +345,7 @@
                 },
                 {
                   "type": "text",
-                  "name": "rótulo",
+                  "name": "label",
                   "text": {
                     "$field": "label"
                   },
@@ -382,7 +382,7 @@
                 },
                 {
                   "type": "text",
-                  "name": "selo",
+                  "name": "badge",
                   "text": {
                     "$field": "badge"
                   },
@@ -420,7 +420,7 @@
             },
             {
               "type": "rect",
-              "name": "estado",
+              "name": "state",
               "anchors": {
                 "left": 0,
                 "right": 0,
@@ -463,7 +463,7 @@
             },
             {
               "type": "rect",
-              "name": "anel de foco",
+              "name": "focus ring",
               "anchors": {
                 "left": 0,
                 "right": 0,

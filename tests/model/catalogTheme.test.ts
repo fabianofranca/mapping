@@ -29,9 +29,8 @@ describe('Catalog: Gallery and Try it with the specialization theme', () => {
     expect(warningsAndFills(drawing.root)).toContain('#6750A4');
   });
 
-  it('the "Com ícone" example does not warn "unknown icon"', () => {
-    // pt-BR kept: the example name comes from the pt-BR library in libraries/material3-compose
-    const example = button.examples.find((e) => /ícone/i.test(e.name))!;
+  it('the "With icon" example does not warn "unknown icon"', () => {
+    const example = button.examples.find((e) => /icon/i.test(e.name))!;
     expect(example).toBeDefined();
     const drawing = exampleDrawing(catalog, button, example, approximateMeasurer)!;
     expect(drawing.warnings.filter((w) => /unknown icon/.test(w.text))).toEqual([]);

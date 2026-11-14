@@ -41,7 +41,7 @@ describe('marking labels', () => {
     const p = withNoteInstance(sampleProject());
     const note = marking(p, 'N1');
     // pt-BR kept: shared fixture data asserted by tests/model (notesFixtures type name)
-    expect(markingLabel(p, note)).toBe('Nota');
+    expect(markingLabel(p, note)).toBe('Note');
     expect(markingLabel(p, { id: note.id, name: 'My note' })).toBe('My note');
     // An ordinary unnamed marking keeps the default text.
     expect(markingLabel(p, marking(p, 'M4'))).toBe('Unnamed marking');
@@ -55,9 +55,9 @@ describe('marking labels', () => {
     });
     const arrow = p.arrows[0]!;
     // pt-BR kept: shared fixture data asserted by tests/model (sampleProject and notesFixtures names)
-    expect(arrowEnds(p, arrow)).toMatchObject({ from: 'Nota', to: 'Porta' });
-    expect(arrowText(p, arrow)).toBe('Nota → Porta');
-    expect(markingPath(p, marking(p, 'N1'))).toBe('Nota');
+    expect(arrowEnds(p, arrow)).toMatchObject({ from: 'Note', to: 'Porta' });
+    expect(arrowText(p, arrow)).toBe('Note → Porta');
+    expect(markingPath(p, marking(p, 'N1'))).toBe('Note');
   });
 
   it('rectangle error messages', () => {

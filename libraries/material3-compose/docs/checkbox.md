@@ -1,90 +1,90 @@
 # Checkbox
 
-Caixa de seleção. Marcada, desmarcada ou indeterminada (parte de um grupo marcada).
+Selection box. Checked, unchecked or indeterminate (part of a group checked).
 
-Tipo de anotação: `checkbox` (camada Componentes).
+Annotation type: `checkbox` (Components layer).
 
-## Campos
+## Fields
 
-| Chave         | Rótulo     | Tipo   | Obrigatório | Opções                                  | Padrão      | Descrição                                                                                                                                                                                                                                |
-| ------------- | ---------- | ------ | ----------- | --------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `label`       | Rótulo     | string | não         |                                         |             | Texto ao lado da caixa (o Checkbox em si não tem rótulo).                                                                                                                                                                                |
-| `state`       | Estado     | enum   | não         | `unchecked`, `checked`, `indeterminate` | `unchecked` | unchecked, checked ou indeterminate (TriStateCheckbox).                                                                                                                                                                                  |
-| `enabled`     | Habilitado | enum   | não         | `true`, `false`                         | `true`      | false desabilita a caixa.                                                                                                                                                                                                                |
-| `interaction` | Interação  | enum   | não         | `none`, `hovered`, `focused`, `pressed` | `none`      | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence). |
+| Key           | Label       | Type   | Required | Options                                 | Default     | Description                                                                                                                                                                                            |
+| ------------- | ----------- | ------ | -------- | --------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `label`       | Label       | string | no       |                                         |             | Text next to the box (the Checkbox itself has no label).                                                                                                                                               |
+| `state`       | State       | enum   | no       | `unchecked`, `checked`, `indeterminate` | `unchecked` | unchecked, checked or indeterminate (TriStateCheckbox).                                                                                                                                                |
+| `enabled`     | Enabled     | enum   | no       | `true`, `false`                         | `true`      | false disables the box.                                                                                                                                                                                |
+| `interaction` | Interaction | enum   | no       | `none`, `hovered`, `focused`, `pressed` | `none`      | Still appearance of the interaction state: hovered, focused or pressed; none = no state layer. Only changes the drawing, does not enter the code. With enabled false it draws nothing (disabled wins). |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.Checkbox`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Checkbox.kt`
-- O campo `state` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.Checkbox`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Checkbox.kt`
+- The `state` field chooses the symbol; values without their own case use the base one.
 
-| `state`                       | Símbolo            |
+| `state`                       | Symbol             |
 | ----------------------------- | ------------------ |
 | `unchecked`, `checked` (base) | `Checkbox`         |
 | `indeterminate`               | `TriStateCheckbox` |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in the `code`):
 
 ```kotlin
 Row(verticalAlignment = Alignment.CenterVertically) {
-    Checkbox(checked = true, onCheckedChange = { /* lógica da tela */ }, enabled = true)
-    Text("Lembrar de mim")
+    Checkbox(checked = true, onCheckedChange = { /* screen logic */ }, enabled = true)
+    Text("Remember me")
 }
 
 // state indeterminate
 Row(verticalAlignment = Alignment.CenterVertically) {
     TriStateCheckbox(state = ToggleableState.Indeterminate, onClick = { /* ... */ }, enabled = true)
-    Text("Selecionar tudo")
+    Text("Select all")
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from the `code` (what the tool hands to the agent):
 
-> `onCheckedChange` liga à lógica da tela. O Checkbox não tem rótulo: o `label` vira um `Text` ao lado, numa `Row`. O estado `indeterminate` troca para `TriStateCheckbox`.
+> `onCheckedChange` connects to the screen logic. The Checkbox has no label: the `label` becomes a `Text` next to it, in a `Row`. The `indeterminate` state switches to `TriStateCheckbox`.
 
-Variante `indeterminate`: `TriStateCheckbox(state = ToggleableState.Indeterminate, onClick = …)` recebe `onClick` no lugar de `onCheckedChange`; importe `androidx.compose.ui.state.ToggleableState`. O `label` vira um `Text` ao lado, numa `Row`.
+`indeterminate` variant: `TriStateCheckbox(state = ToggleableState.Indeterminate, onClick = …)` takes `onClick` in place of `onCheckedChange`; import `androidx.compose.ui.state.ToggleableState`. The `label` becomes a `Text` next to it, in a `Row`.
 
-## Exemplos
+## Examples
 
-- **Desmarcada**: label=Aceito os termos, state=unchecked
-- **Marcada**: label=Lembrar de mim, state=checked
-- **Indeterminada**: label=Selecionar tudo, state=indeterminate
-- **Mouse sobre**: label=Aceito os termos, state=unchecked, interaction=hovered
-- **Com foco**: label=Lembrar de mim, state=checked, interaction=focused
-- **Pressionado**: label=Selecionar tudo, state=indeterminate, interaction=pressed
+- **Unchecked**: label=Accept the terms, state=unchecked
+- **Checked**: label=Remember me, state=checked
+- **Indeterminate**: label=Select all, state=indeterminate
+- **Hovered**: label=Accept the terms, state=unchecked, interaction=hovered
+- **Focused**: label=Remember me, state=checked, interaction=focused
+- **Pressed**: label=Select all, state=indeterminate, interaction=pressed
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or opacity is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Checkbox.kt` (linhas 91 a 110: `Checkbox` com traço de 2 e ponta quadrada; 267 a 306: `TriStateCheckbox`, o `minimumInteractiveComponentSize` do toque e o `padding(CheckboxDefaultPadding)`; 357 a 386: `defaultCheckboxColors`; 395 a 459: `CheckboxImpl` e o `Canvas` de `requiredSize(CheckboxSize)`; 461 a 487: `drawBox`; 489 a 523: `drawCheck`; 607 a 681: `checkmarkColor`, `boxColor` e `borderColor` por estado; 736 a 738: `CheckboxDefaultPadding` 2, `CheckboxSize` 20 e `RadiusSize` 2).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/CheckboxTokens.kt` (linhas 24 a 76: papéis de cor `SelectedContainerColor` `Primary`, `SelectedIconColor` `OnPrimary`, `UnselectedOutlineColor` `OnSurfaceVariant`, os desabilitados `OnSurface` a 0,38 e `UnselectedOutlineWidth` 2; linhas 45 a 55 e 68 a 75: os papéis `Focus*`, `Hover*` e `Pressed*`; 56 e 57: `StateLayerShape` e `StateLayerSize`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Checkbox.kt` (lines 91 to 110: `Checkbox` with a stroke of 2 and a square cap; 267 to 306: `TriStateCheckbox`, the touch `minimumInteractiveComponentSize` and the `padding(CheckboxDefaultPadding)`; 357 to 386: `defaultCheckboxColors`; 395 to 459: `CheckboxImpl` and the `Canvas` of `requiredSize(CheckboxSize)`; 461 to 487: `drawBox`; 489 to 523: `drawCheck`; 607 to 681: `checkmarkColor`, `boxColor` and `borderColor` per state; 736 to 738: `CheckboxDefaultPadding` 2, `CheckboxSize` 20 and `RadiusSize` 2).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/CheckboxTokens.kt` (lines 24 to 76: color roles `SelectedContainerColor` `Primary`, `SelectedIconColor` `OnPrimary`, `UnselectedOutlineColor` `OnSurfaceVariant`, the disabled ones `OnSurface` at 0.38 and `UnselectedOutlineWidth` 2; lines 45 to 55 and 68 to 75: the `Focus*`, `Hover*` and `Pressed*` roles; 56 and 57: `StateLayerShape` and `StateLayerSize`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- A caixa tem **20** por 20 e raio 2 (`CheckboxSize` e `RadiusSize` do `Checkbox.kt`, que mandam no `Canvas`; o token `ContainerHeight` de 18 não é o que o código desenha) e fica no centro da área de 48 do toque mínimo (`minimumInteractiveComponentSize`), com o rótulo logo depois, como numa `Row` com `onCheckedChange`. O rótulo usa `body-large-*` e `on-surface`.
-- Marcada e indeterminada: a caixa é cheia em `primary` (o `drawBox` desenha uma só forma quando a caixa e a borda têm a mesma cor) e a marca é `on-primary`. O check é o caminho de três pontos de `drawCheck` (20% e 50%, 40% e 70%, 80% e 30% da caixa) com traço de 2 e ponta quadrada; o traço do indeterminado é a mesma linha com a cruz no centro (50% e 50%), horizontal, de 4 a 16.
-- Desmarcada: sem fundo e contorno de 2 por dentro em `on-surface-variant`.
-- Desabilitado: a caixa (cheia ou o contorno) vai a `on-surface` com `state-disabled-content` (0,38), em light e dark. A marca continua `on-primary` e sem diluir, porque `defaultCheckboxColors` usa `SelectedIconColor` também desabilitado (o token `SelectedDisabledIconColor`, `Surface`, não entra no código).
+- The box is **20** by 20 with radius 2 (`CheckboxSize` and `RadiusSize` of `Checkbox.kt`, which drive the `Canvas`; the token `ContainerHeight` of 18 is not what the code draws) and sits at the center of the 48 minimum touch target area (`minimumInteractiveComponentSize`), with the label right after, as in a `Row` with `onCheckedChange`. The label uses `body-large-*` and `on-surface`.
+- Checked and indeterminate: the box is filled in `primary` (`drawBox` draws a single shape when the box and the border have the same color) and the mark is `on-primary`. The check is the three-point path of `drawCheck` (20% and 50%, 40% and 70%, 80% and 30% of the box) with a stroke of 2 and a square cap; the indeterminate dash is the same line with the cross at the center (50% and 50%), horizontal, from 4 to 16.
+- Unchecked: no fill and a 2 outline on the inside in `on-surface-variant`.
+- Disabled: the box (filled or the outline) goes to `on-surface` with `state-disabled-content` (0.38), in light and dark. The mark stays `on-primary` and undiluted, because `defaultCheckboxColors` uses `SelectedIconColor` also when disabled (the token `SelectedDisabledIconColor`, `Surface`, does not enter the code).
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o desabilitado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que o `CheckboxTokens.kt` do commit define para a caixa: `hovered`, `focused` e `pressed` (não há `Dragged*` nos tokens do checkbox, então não há `dragged`).
+The field chooses the still appearance of a state, as `enabled` chooses the disabled one; it does not enter the `code` or the `variants`. The options are `none` and the states that the commit's `CheckboxTokens.kt` defines for the box: `hovered`, `focused` and `pressed` (there is no `Dragged*` in the checkbox tokens, so there is no `dragged`).
 
-- **Camada de estado:** o nó `estado` é um círculo de 40 (`StateLayerSize` 40, `StateLayerShape` `CornerFull`, linhas 56 e 57) centrado na caixa de 20, atrás dela, na área de 48 do toque mínimo. A cor é a do papel da caixa: `primary` marcada ou indeterminada (`SelectedHoverContainerColor`, `SelectedFocusContainerColor`, `SelectedPressedContainerColor`, linhas 45, 48 e 53) e `on-surface` desmarcada (`UnselectedHoverOutlineColor`, `UnselectedFocusOutlineColor`, `UnselectedPressedOutlineColor`, linhas 68, 70 e 74). O `opacity` vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10).
-- **Contorno do desmarcado:** passa de `on-surface-variant` para `on-surface` com o mouse, o foco e o pressionado (linhas 68, 70 e 74); a largura continua 2 (`UnselectedHoverOutlineWidth`, `UnselectedFocusOutlineWidth` e `UnselectedPressedOutlineWidth` valem 2, como `UnselectedOutlineWidth`).
-- **Marcada e indeterminada:** a caixa continua `primary` e a marca `on-primary` (`Selected*ContainerColor` e `Selected*IconColor` repetem os papéis do padrão); só a camada aparece.
-- **Desabilitado vence:** com `enabled` `false` o nó `estado` fica invisível e o contorno não muda, então o desenho é o do desabilitado, qualquer que seja o `interaction`.
+- **State layer:** the `state` node is a 40 circle (`StateLayerSize` 40, `StateLayerShape` `CornerFull`, lines 56 and 57) centered on the 20 box, behind it, in the 48 minimum touch target area. The color is that of the box's role: `primary` when checked or indeterminate (`SelectedHoverContainerColor`, `SelectedFocusContainerColor`, `SelectedPressedContainerColor`, lines 45, 48 and 53) and `on-surface` when unchecked (`UnselectedHoverOutlineColor`, `UnselectedFocusOutlineColor`, `UnselectedPressedOutlineColor`, lines 68, 70 and 74). The `opacity` comes from the tokens `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10).
+- **Unchecked outline:** goes from `on-surface-variant` to `on-surface` on hover, focus and pressed (lines 68, 70 and 74); the width stays 2 (`UnselectedHoverOutlineWidth`, `UnselectedFocusOutlineWidth` and `UnselectedPressedOutlineWidth` are 2, like `UnselectedOutlineWidth`).
+- **Checked and indeterminate:** the box stays `primary` and the mark `on-primary` (`Selected*ContainerColor` and `Selected*IconColor` repeat the default roles); only the layer shows.
+- **Disabled wins:** with `enabled` `false` the `state` node is invisible and the outline does not change, so the drawing is the disabled one, whatever the `interaction`.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- Sem ripple animado, sem transição entre estados e sem a animação do traço do check (`checkDrawFraction`): o desenho é um quadro parado do estado final. O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
-- Sem o estado de erro: `CheckboxTokens.kt` tem as cores `Error` dos papéis `SelectedError*` e `UnselectedError*` (linhas 34 a 44 e 61 a 67), mas o tipo não tem campo de erro; a camada e o contorno usam só os papéis normais.
-- O raio 2 vem do token `corner-checkbox` (`compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/CheckboxTokens.kt`, linha 26: `ContainerShape = RoundedCornerShape(2.0.dp)`); `corner-extra-small` vale 4.
-- A área é de 48 por 40: a altura de 40 vem do `sizing` do tipo, abaixo dos 48 do toque mínimo. Com `onClick = null` o Compose desenha só 24.
-- O rótulo a 0,38 quando desabilitado é convenção do desenho: o `Text` do Compose herda a cor do conteúdo e não diminui sozinho.
-- `checkedColor`, `uncheckedColor`, `checkmarkColor`, `disabledCheckedColor`, `disabledUncheckedColor` e `disabledIndeterminateColor` são campos e código, mas o desenho não os usa; os `Stroke` trocáveis e o estado de erro não são campos do tipo.
+- No animated ripple, no transition between states and no animation of the check stroke (`checkDrawFraction`): the drawing is a still frame of the final state. Compose defines no focus ring for this type in the pinned commit (none of its `*Tokens.kt` carries `FocusIndicatorColor`): none is drawn.
+- No error state: `CheckboxTokens.kt` has the `Error` colors of the roles `SelectedError*` and `UnselectedError*` (lines 34 to 44 and 61 to 67), but the type has no error field; the layer and the outline use only the normal roles.
+- The radius 2 comes from the token `corner-checkbox` (`compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/CheckboxTokens.kt`, line 26: `ContainerShape = RoundedCornerShape(2.0.dp)`); `corner-extra-small` is 4.
+- The area is 48 by 40: the height of 40 comes from the type's `sizing`, below the 48 minimum touch target. With `onClick = null` Compose draws only 24.
+- The label at 0.38 when disabled is a drawing convention: Compose's `Text` inherits the content color and does not fade on its own.
+- `checkedColor`, `uncheckedColor`, `checkmarkColor`, `disabledCheckedColor`, `disabledUncheckedColor` and `disabledIndeterminateColor` are fields and code, but the drawing does not use them; the swappable `Stroke`s and the error state are not fields of the type.

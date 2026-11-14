@@ -1,53 +1,53 @@
 # Spacer
 
-Espaço vazio entre dois componentes. Use para afastar vizinhos com uma medida fixa ou, com peso, para empurrá-los para as pontas.
+Empty space between two components. Use it to space neighbors apart by a fixed amount or, with weight, to push them to the ends.
 
-Tipo de anotação: `spacer` (camada Layout).
+Annotation type: `spacer` (layer Layout).
 
-## Campos
+## Fields
 
-| Chave    | Rótulo        | Tipo   | Obrigatório | Opções                  | Padrão  | Descrição                                                                                             |
-| -------- | ------------- | ------ | ----------- | ----------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
-| `width`  | Largura       | enum   | não         | `wrap`, `fill`, `fixed` | `fixed` | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp). |
-| `height` | Altura        | enum   | não         | `wrap`, `fill`, `fixed` | `fixed` | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).   |
-| `weight` | Peso (weight) | number | não         |                         |         | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                     |
+| Key      | Label  | Type   | Required | Options                 | Default | Description                                                                                        |
+| -------- | ------ | ------ | -------- | ----------------------- | ------- | -------------------------------------------------------------------------------------------------- |
+| `width`  | Width  | enum   | no       | `wrap`, `fill`, `fixed` | `fixed` | wrap fits the content, fill takes all the available width and fixed uses the marking width (dp).   |
+| `height` | Height | enum   | no       | `wrap`, `fill`, `fixed` | `fixed` | wrap fits the content, fill takes all the available height and fixed uses the marking height (dp). |
+| `weight` | Weight | number | no       |                         |         | Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.               |
 
 ## Compose
 
-- Símbolo: `androidx.compose.foundation.layout.Spacer`
-- Arquivo (`path`): `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Spacer.kt`
+- Symbol: `androidx.compose.foundation.layout.Spacer`
+- File (`path`): `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Spacer.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
-Spacer(Modifier.width(16.dp))      // width/height fixed, com as medidas da marcação
-Spacer(Modifier.weight(1f))        // weight = 1, dentro de uma Row ou Column
+Spacer(Modifier.width(16.dp))      // width/height fixed, with the marking measurements
+Spacer(Modifier.weight(1f))        // weight = 1, inside a Row or Column
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+`code` notes (what the tool hands to the agent):
 
-> `Spacer` só recebe um `Modifier`: `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)`, `fill` vira `fillMaxWidth()`/`fillMaxHeight()` e `weight` vira `Modifier.weight(<weight>f)` (o uso comum, para empurrar vizinhos numa Row ou Column). `wrap` não ocupa espaço; não tem filhos.
+> `Spacer` only takes a `Modifier`: `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)`, `fill` becomes `fillMaxWidth()`/`fillMaxHeight()` and `weight` becomes `Modifier.weight(<weight>f)` (the common use, to push neighbors in a Row or Column). `wrap` takes no space; it has no children.
 
-## Exemplos
+## Examples
 
-- **Espaço de 16 dp**: width=fixed, height=fixed
-- **Empurra para a ponta**: weight=1
+- **16 dp space**: width=fixed, height=fixed
+- **Pushes to the end**: weight=1
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Este tipo é do Foundation, não do Material: não tem arquivo de tokens, e o desenho segue o comportamento do foundation, com os valores vindos dos campos.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). This type is from Foundation, not Material: it has no token file, and the drawing follows the foundation behavior, with the values coming from the fields.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Spacer.kt` (linha 38: `Spacer(modifier: Modifier)`, que só ocupa espaço e não desenha nada).
-- `ShapeTokens.kt` e `TypeScaleTokens.kt` do Material (`CornerExtraSmall` 4 e `LabelSmall`) e `ColorLightTokens.kt`/`ColorDarkTokens.kt` (`Outline`, `OutlineVariant`), para o desenho de edição.
+- `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Spacer.kt` (line 38: `Spacer(modifier: Modifier)`, which only takes space and draws nothing).
+- `ShapeTokens.kt` and `TypeScaleTokens.kt` from Material (`CornerExtraSmall` 4 and `LabelSmall`) and `ColorLightTokens.kt`/`ColorDarkTokens.kt` (`Outline`, `OutlineVariant`), for the editing drawing.
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- O `Spacer` do Compose não desenha: o retângulo tracejado é a ajuda de edição do Mapping. Ele usa só tokens: traço `outline-variant`, raio `corner-extra-small` e as medidas em `label-small` (tamanho, altura de linha, peso e espaçamento) na cor `outline`, com a fonte `font-sans`, nos dois modos.
-- As medidas (`width`, `height`, `fixed`, `fill`, `wrap`, `weight`) vêm dos campos e do tamanho da marcação, como `Modifier.width/height/weight`. O texto das medidas fica numa linha só, centrado, e termina em reticências quando a marcação é mais estreita que ele.
+- The Compose `Spacer` does not draw: the dashed rectangle is a Mapping editing aid. It uses only tokens: `outline-variant` stroke, `corner-extra-small` radius and the measurements in `label-small` (size, line height, weight and spacing) in the `outline` color, with the `font-sans` font, in both modes.
+- The measurements (`width`, `height`, `fixed`, `fill`, `wrap`, `weight`) come from the fields and the marking size, like `Modifier.width/height/weight`. The measurement text stays on a single line, centered, and ends in an ellipsis when the marking is narrower than it.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- A caixa tracejada e o texto das medidas não existem no Compose; mostrá-los é decisão de edição.
-- As medidas do texto passaram de 10/14 px para os 11/16 px e o peso 500 de `label-small`, que são os tokens do tema.
+- The dashed box and the measurement text do not exist in Compose; showing them is an editing decision.
+- The text measurements went from 10/14 px to the 11/16 px and weight 500 of `label-small`, which are the theme tokens.

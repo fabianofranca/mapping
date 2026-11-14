@@ -668,10 +668,9 @@ describe('floating type (notes library)', () => {
     const annotation = p.annotations.find((a) => a.id === 'A_N1')!;
     expect(annotation.type).toEqual({ specId: NOTES_SPEC_ID, typeId: 'nota' });
     expect(annotation.layerId).toBe(p.layers.find((l) => l.spec !== null)?.id);
-    // pt-BR kept: the preview values come from the notes library of mappings-workspace (Portuguese data).
     expect(annotation.values).toMatchObject({
-      titulo: 'Título',
-      texto: 'Escreva aqui o comentário.',
+      titulo: 'Title',
+      texto: 'Write your comment here.',
     });
     expectValid(p);
   });

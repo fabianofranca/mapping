@@ -52,7 +52,6 @@ const tok = (name: string, mode: Mode): string => {
 };
 const num = (name: string): number => tokens[name] as number;
 
-// pt-BR kept: the quoted node names ('rótulo', 'trilho', ...) are the names in the material3-compose library (libraries/*.json, outside this phase)
 const named = (d: Drawing, name: string): SceneNode | undefined => {
   for (const node of walk(d.root)) if (node.name === name && node.visible) return node;
   return undefined;
@@ -100,7 +99,7 @@ describe('M4 group A — top-app-bar', () => {
   it('64 bar (AppBarSmallTokens.ContainerHeight) with a surface container, in light and dark', () => {
     for (const mode of MODES) {
       const d = both('top-app-bar', { title: 'Home', navigationIcon: 'Menu' })[mode];
-      expect(box(d, 'barra').height).toBe(64);
+      expect(box(d, 'bar').height).toBe(64);
       // the root has the height of the large one (152, ME2); the one-line bar sits at the top
       expect(d.root.height).toBe(152);
       expect(fillOf(d, 'top app bar')).toBe(tok('surface', mode));
@@ -112,9 +111,9 @@ describe('M4 group A — top-app-bar', () => {
   it('24 navigation icon in a 48 area, 4 from the edge (TopAppBarHorizontalPadding), in on-surface', () => {
     for (const mode of MODES) {
       const d = both('top-app-bar', { title: 'Home', navigationIcon: 'Menu' })[mode];
-      const area = box(d, 'navegação');
+      const area = box(d, 'navigation');
       expect([area.x, area.y, area.width, area.height]).toEqual([4, 8, 48, 48]);
-      const icon = iconIn(d, 'navegação')!;
+      const icon = iconIn(d, 'navigation')!;
       expect([icon.box.width, icon.box.height]).toEqual([24, 24]);
       expect([icon.box.x, icon.box.y]).toEqual([16, 20]);
       expect(icon.color).toBe(tok('on-surface', mode));
@@ -128,12 +127,12 @@ describe('M4 group A — top-app-bar', () => {
         actionIcon1: 'Search',
         actionIcon2: 'MoreVert',
       })[mode];
-      const second = box(d, 'ação 2');
-      const first = box(d, 'ação 1');
+      const second = box(d, 'action 2');
+      const first = box(d, 'action 1');
       expect([second.x, second.width, second.height]).toEqual([412 - 4 - 48, 48, 48]);
       expect(first.x).toBe(412 - 4 - 96);
-      expect(iconIn(d, 'ação 1')!.color).toBe(tok('on-surface-variant', mode));
-      expect(iconIn(d, 'ação 2')!.box.width).toBe(24);
+      expect(iconIn(d, 'action 1')!.color).toBe(tok('on-surface-variant', mode));
+      expect(iconIn(d, 'action 2')!.box.width).toBe(24);
     }
   });
 
@@ -142,7 +141,7 @@ describe('M4 group A — top-app-bar', () => {
       const withNav = both('top-app-bar', { title: 'Home', navigationIcon: 'Menu' })[
         mode
       ];
-      const title = textIn(withNav, 'título')!;
+      const title = textIn(withNav, 'title')!;
       expect(fontOf(title)).toEqual(scale('title-large'));
       expect(solid(title.fills)).toBe(tok('on-surface', mode));
       expect(absOf(withNav, title).x).toBe(56);
@@ -151,7 +150,7 @@ describe('M4 group A — top-app-bar', () => {
       expect(title.height).toBe(64);
       expect(title.style.verticalAlign).toBe('cap-middle');
       const bare = both('top-app-bar', { title: 'Home' })[mode];
-      expect(absOf(bare, textIn(bare, 'título')!).x).toBe(16);
+      expect(absOf(bare, textIn(bare, 'title')!).x).toBe(16);
     }
   });
 
@@ -162,7 +161,7 @@ describe('M4 group A — top-app-bar', () => {
       actionIcon1: 'Search',
       actionIcon2: 'MoreVert',
     }).light;
-    const title = textIn(d, 'título')!;
+    const title = textIn(d, 'title')!;
     expect(title.style).toMatchObject({ wrap: 'none', ellipsis: true, maxLines: 1 });
     const metrics = approximateMeasurer(
       title.text,
@@ -193,7 +192,7 @@ describe('M4 group A — top-app-bar', () => {
         style: 'center',
         navigationIcon: 'ArrowBack',
       })[mode];
-      const title = textIn(d, 'título centralizado')!;
+      const title = textIn(d, 'centered title')!;
       expect(fontOf(title)).toEqual(scale('title-large'));
       expect(title.style.align).toBe('center');
       expect(solid(title.fills)).toBe(tok('on-surface', mode));
@@ -206,10 +205,10 @@ describe('M4 group A — top-app-bar', () => {
         actionIcon1: 'Search',
         actionIcon2: 'MoreVert',
       })[mode];
-      const wide = absOf(two, textIn(two, 'título centralizado')!);
+      const wide = absOf(two, textIn(two, 'centered title')!);
       expect(wide.x).toBe(104);
       expect(wide.x + wide.width / 2).toBe(412 / 2);
-      expect(textIn(d, 'título')).toBeUndefined();
+      expect(textIn(d, 'title')).toBeUndefined();
     }
   });
 
@@ -241,7 +240,7 @@ describe('M4 group A — top-app-bar', () => {
           c.height,
           mode,
         );
-        const big = textIn(d, 'título grande')!;
+        const big = textIn(d, 'large title')!;
         expect(fontOf(big)).toEqual(scale(c.scale));
         expect(solid(big.fills)).toBe(tok('on-surface', mode));
         const abs = absOf(d, big);
@@ -252,9 +251,9 @@ describe('M4 group A — top-app-bar', () => {
         const firstBaseline = c.line / 2 + ((0.93 - 0.24) * c.size) / 2;
         expect(c.height - (abs.y + firstBaseline)).toBeCloseTo(c.bottom, 6);
         // the top row (navigation) stays at 64
-        expect(box(d, 'barra').height).toBe(64);
-        expect(textIn(d, 'título')).toBeUndefined();
-        expect(textIn(d, 'título centralizado')).toBeUndefined();
+        expect(box(d, 'bar').height).toBe(64);
+        expect(textIn(d, 'title')).toBeUndefined();
+        expect(textIn(d, 'centered title')).toBeUndefined();
       }
     }
   });
@@ -284,9 +283,9 @@ describe('M4 group A — bottom-app-bar', () => {
         actionIcon4: 'Settings',
       })[mode];
       [4, 52, 100, 148].forEach((x, i) => {
-        const area = box(d, `ação ${i + 1}`);
+        const area = box(d, `action ${i + 1}`);
         expect([area.x, area.y, area.width, area.height]).toEqual([x, 18, 48, 48]);
-        const icon = iconIn(d, `ação ${i + 1}`)!;
+        const icon = iconIn(d, `action ${i + 1}`)!;
         expect([icon.box.width, icon.box.height]).toEqual([24, 24]);
         expect(icon.box.x - area.x).toBe(12);
         expect(icon.color).toBe(tok('on-surface', mode));
@@ -300,15 +299,15 @@ describe('M4 group A — bottom-app-bar', () => {
         actionIcon1: 'Check',
         floatingActionButton: 'Add',
       })[mode];
-      const fab = box(d, 'botão flutuante');
+      const fab = box(d, 'floating button');
       expect([fab.x, fab.y, fab.width, fab.height]).toEqual([412 - 16 - 56, 12, 56, 56]);
       expect('cornerRadius' in fab.node && fab.node.cornerRadius).toBe(
         num('corner-large'),
       );
-      expect(fillOf(d, 'botão flutuante')).toBe(tok('secondary-container', mode));
+      expect(fillOf(d, 'floating button')).toBe(tok('secondary-container', mode));
       // bottomAppBarFabElevation(): 0 in every state
       expect(fab.node.effects).toEqual([]);
-      const icon = iconIn(d, 'botão flutuante')!;
+      const icon = iconIn(d, 'floating button')!;
       expect(icon.color).toBe(tok('on-secondary-container', mode));
       expect([icon.box.width, icon.box.x - fab.x, icon.box.y - fab.y]).toEqual([
         24, 16, 16,
@@ -318,8 +317,8 @@ describe('M4 group A — bottom-app-bar', () => {
 
   it('no FAB and no action: only the container; an icon outside the set warns', () => {
     const empty = both('bottom-app-bar', {}).light;
-    expect(named(empty, 'botão flutuante')).toBeUndefined();
-    expect(named(empty, 'ação 1')).toBeUndefined();
+    expect(named(empty, 'floating button')).toBeUndefined();
+    expect(named(empty, 'action 1')).toBeUndefined();
     const bad = both('bottom-app-bar', { actionIcon1: 'Does-not-exist' }).light;
     expect(bad.warnings.some((w) => /unknown icon/.test(w))).toBe(true);
   });
@@ -463,11 +462,11 @@ describe('M4 group A — dropdown-menu', () => {
         300,
         mode,
       );
-      const field = box(d, 'campo');
+      const field = box(d, 'field');
       expect([field.y, field.height]).toEqual([0, 56]);
-      expect(fillOf(d, 'fundo')).toBe(tok('surface-container-highest', mode));
-      expect(strokeOf(d, 'indicador')).toBe(tok('on-surface-variant', mode));
-      expect(named(d, 'indicador')?.stroke).toMatchObject({
+      expect(fillOf(d, 'background')).toBe(tok('surface-container-highest', mode));
+      expect(strokeOf(d, 'indicator')).toBe(tok('on-surface-variant', mode));
+      expect(named(d, 'indicator')?.stroke).toMatchObject({
         width: 1,
         sides: ['bottom'],
       });
@@ -486,20 +485,20 @@ describe('M4 group A — dropdown-menu', () => {
       280,
       200,
     );
-    expect(fontOf(textIn(filled, 'rótulo')!)).toEqual(scale('body-small'));
-    expect(fontOf(textIn(filled, 'valor')!)).toEqual(scale('body-large'));
-    expect(solid(textIn(filled, 'rótulo')!.fills)).toBe(
+    expect(fontOf(textIn(filled, 'label')!)).toEqual(scale('body-small'));
+    expect(fontOf(textIn(filled, 'value')!)).toEqual(scale('body-large'));
+    expect(solid(textIn(filled, 'label')!.fills)).toBe(
       tok('on-surface-variant', 'light'),
     );
-    expect(solid(textIn(filled, 'valor')!.fills)).toBe(tok('on-surface', 'light'));
+    expect(solid(textIn(filled, 'value')!.fills)).toBe(tok('on-surface', 'light'));
     const empty = drawBox(
       'dropdown-menu',
       menu({ style: 'exposed', expanded: 'false', label: 'Country', value: '' }),
       280,
       200,
     );
-    expect(fontOf(textIn(empty, 'rótulo')!)).toEqual(scale('body-large'));
-    expect(textIn(empty, 'valor')).toBeUndefined();
+    expect(fontOf(textIn(empty, 'label')!)).toEqual(scale('body-large'));
+    expect(textIn(empty, 'value')).toBeUndefined();
   });
 
   it('exposed: 24 arrow in on-surface-variant 12 from the right, down when closed and up when open; closed hides the menu', () => {
@@ -511,7 +510,7 @@ describe('M4 group A — dropdown-menu', () => {
         200,
         mode,
       );
-      const arrow = iconIn(closed, 'campo')!;
+      const arrow = iconIn(closed, 'field')!;
       expect(named(closed, 'arrow_drop_down')).toBeDefined();
       expect(named(closed, 'arrow_drop_up')).toBeUndefined();
       expect(arrow.color).toBe(tok('on-surface-variant', mode));

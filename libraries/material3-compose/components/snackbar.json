@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "snackbar",
   "name": "Snackbar",
-  "description": "Aviso rápido e temporário em inverse surface: mensagem, ação opcional (texto em inverse primary) e botão de fechar. A altura vem das linhas da mensagem: uma linha mede 48, duas 68 e três 81 (o texto com a primeira linha de base a 30 do topo); com a ação em nova linha a ação desce para uma fileira de 48.",
+  "description": "Quick, temporary notice in inverse surface: message, optional action (text in inverse primary) and dismiss button. The height comes from the message lines: one line measures 48, two 68 and three 81 (the text with the first baseline 30 from the top); with the action on a new line the action drops to a 48 row.",
   "size": {
     "width": 344,
     "height": 48
@@ -13,7 +13,7 @@
     "height": "hug"
   },
   "preview": {
-    "message": "Mensagem arquivada",
+    "message": "Message archived",
     "actionLabel": "Desfazer",
     "dismissAction": "false",
     "actionOnNewLine": "false"
@@ -64,14 +64,14 @@
     "children": [
       {
         "type": "frame",
-        "name": "linha",
+        "name": "row",
         "width": "fill",
         "height": "hug",
         "minHeight": {
           "$if": {
             "$gt": [
               {
-                "$lines": "mensagem"
+                "$lines": "message"
               },
               1
             ]
@@ -105,7 +105,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "mensagem",
+            "name": "message",
             "width": "fill",
             "height": "hug",
             "layout": {
@@ -121,10 +121,10 @@
             "children": [
               {
                 "type": "text",
-                "name": "mensagem",
+                "name": "message",
                 "text": {
                   "$field": "message",
-                  "default": "Mensagem"
+                  "default": "Message"
                 },
                 "width": "fill",
                 "font": {
@@ -150,7 +150,7 @@
               "$not": {
                 "$gt": [
                   {
-                    "$lines": "mensagem"
+                    "$lines": "message"
                   },
                   1
                 ]
@@ -159,7 +159,7 @@
           },
           {
             "type": "frame",
-            "name": "mensagem em várias linhas",
+            "name": "multi-line message",
             "width": "fill",
             "height": "fill",
             "layout": {
@@ -175,10 +175,10 @@
             "children": [
               {
                 "type": "text",
-                "name": "mensagem em várias linhas",
+                "name": "multi-line message",
                 "text": {
                   "$field": "message",
-                  "default": "Mensagem"
+                  "default": "Message"
                 },
                 "width": "fill",
                 "font": {
@@ -207,7 +207,7 @@
             "visible": {
               "$gt": [
                 {
-                  "$lines": "mensagem"
+                  "$lines": "message"
                 },
                 1
               ]
@@ -215,7 +215,7 @@
           },
           {
             "type": "frame",
-            "name": "ação",
+            "name": "action",
             "width": "hug",
             "height": 48,
             "minWidth": 58,
@@ -231,7 +231,7 @@
             "children": [
               {
                 "type": "text",
-                "name": "rótulo da ação",
+                "name": "action label",
                 "text": {
                   "$field": "actionLabel"
                 },
@@ -259,7 +259,7 @@
           },
           {
             "type": "frame",
-            "name": "fechar",
+            "name": "dismiss",
             "width": 48,
             "height": 48,
             "layout": {
@@ -286,7 +286,7 @@
       },
       {
         "type": "frame",
-        "name": "duas linhas",
+        "name": "two lines",
         "width": "fill",
         "height": "hug",
         "visible": {
@@ -306,7 +306,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "mensagem com ação em nova linha",
+            "name": "message with action on new line",
             "width": "fill",
             "height": "hug",
             "layout": {
@@ -316,10 +316,10 @@
             "children": [
               {
                 "type": "text",
-                "name": "mensagem com ação em nova linha",
+                "name": "message with action on new line",
                 "text": {
                   "$field": "message",
-                  "default": "Mensagem"
+                  "default": "Message"
                 },
                 "width": "fill",
                 "font": {
@@ -348,7 +348,7 @@
           },
           {
             "type": "frame",
-            "name": "ações",
+            "name": "actions",
             "width": "fill",
             "height": "hug",
             "layout": {
@@ -366,7 +366,7 @@
             "children": [
               {
                 "type": "frame",
-                "name": "ação",
+                "name": "action",
                 "width": "hug",
                 "height": 48,
                 "minWidth": 58,
@@ -382,7 +382,7 @@
                 "children": [
                   {
                     "type": "text",
-                    "name": "rótulo da ação",
+                    "name": "action label",
                     "text": {
                       "$field": "actionLabel"
                     },
@@ -410,7 +410,7 @@
               },
               {
                 "type": "frame",
-                "name": "fechar",
+                "name": "dismiss",
                 "width": 48,
                 "height": 48,
                 "layout": {

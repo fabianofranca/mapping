@@ -155,11 +155,10 @@ describe('segmented-button: segments of equal width set by the widest', () => {
     labels.map((label, i) => ({ label, icon: '', selected: i === 0 ? 'true' : 'false' }));
 
   /** The widths of the `segmento` nodes of the drawing. */
-  // pt-BR kept: node names of libraries/material3-compose are Portuguese data
   const widths = (values: Json, mode: 'light' | 'dark' = 'light') => {
     const { drawing, box } = drawFitted('segmented-button', values, mode);
     const boxes = absoluteBoxes(drawing.root);
-    const cells = [...walk(drawing.root)].filter((n) => n.name === 'segmento');
+    const cells = [...walk(drawing.root)].filter((n) => n.name === 'segment');
     return {
       box,
       widths: cells.map((n) => boxes.get(n.id)!.width),

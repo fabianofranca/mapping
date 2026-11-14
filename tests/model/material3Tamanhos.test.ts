@@ -6,8 +6,6 @@
 //  - time-picker: TimePicker.kt `ClockFaceBottomMargin` 24 (2069) + TimePickerDialog.kt (actions 48, `portActionsBottomPadding` 24) → 456 + 24 + 48;
 //  - alert-dialog: 48 buttons (`minimumInteractiveComponentSize`, Surface.kt 219) → 240 + 8;
 //  - slider: Slider.kt `minimumInteractiveComponentSize` 48 (the `SliderTokens` HandleHeight is 44).
-// pt-BR kept: the example names ('Rótulo longo', '24 horas, campos', 'Intervalo até o fim do mês') and the doc heading
-// '## Fidelidade' are the Portuguese data of libraries/material3-compose
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { multiply, IDENTITY } from '../../src/model/components/scene';
@@ -78,9 +76,9 @@ describe.each(Object.keys(SIZING_HEIGHT))('%s: Compose size', (id) => {
 
 describe('limit examples (decision 11)', () => {
   const LIMITS: { id: string; name: string; issue: string }[] = [
-    { id: 'button', name: 'Rótulo longo', issue: '#898' },
-    { id: 'time-picker', name: '24 horas, campos', issue: '#898' },
-    { id: 'date-picker', name: 'Intervalo até o fim do mês', issue: '#897' },
+    { id: 'button', name: 'Long label', issue: '#898' },
+    { id: 'time-picker', name: '24 hours, fields', issue: '#898' },
+    { id: 'date-picker', name: 'Range until the end of the month', issue: '#897' },
   ];
 
   it.each(LIMITS)(
@@ -94,9 +92,9 @@ describe('limit examples (decision 11)', () => {
         expect(drawing.warnings, `${name} (${mode})`).toEqual([]);
       }
       const doc = text(`docs/${id}.md`);
-      const fidelity = doc.slice(doc.indexOf('## Fidelidade'));
+      const fidelity = doc.slice(doc.indexOf('## Fidelity'));
       expect(fidelity).toContain(issue);
-      expect(doc.slice(0, doc.indexOf('## Fidelidade'))).toContain(name);
+      expect(doc.slice(0, doc.indexOf('## Fidelity'))).toContain(name);
     },
   );
 });

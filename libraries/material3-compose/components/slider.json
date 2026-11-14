@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "slider",
   "name": "Slider",
-  "description": "Slider de 44: trilha de 16 em secondary container, trecho ativo em primary e alça de 4 × 44 com vão de 6 (SliderTokens). Os valores são números de 0 a 1; com steps a alça vai ao passo mais próximo e as marcas são exatamente as de steps; quando não cabem (menos de 1 de espaço entre centros, ou mais de 1000 marcas), cada trecho vira uma faixa de 4. No intervalo há duas alças.",
+  "description": "44 slider: 16 track in secondary container, active segment in primary and a 4 × 44 handle with a 6 gap (SliderTokens). The values are numbers from 0 to 1; with steps the handle goes to the nearest step and the ticks are exactly those of steps; when they do not fit (less than 1 of space between centers, or more than 1000 ticks), each segment becomes a 4 strip. In range there are two handles.",
   "size": { "width": 328, "height": 48 },
   "sizing": { "width": "fill", "height": 48 },
   "preview": {
@@ -63,14 +63,14 @@
     "children": [
       {
         "type": "frame",
-        "name": "faixa",
+        "name": "strip",
         "height": 44,
         "anchors": { "left": 2, "right": 2, "centerY": true },
         "layout": { "type": "row" },
         "children": [
           {
             "type": "frame",
-            "name": "antes do início",
+            "name": "before start",
             "width": {
               "$if": { "$eq": ["type", "range"] },
               "then": {
@@ -143,7 +143,7 @@
             "children": [
               {
                 "type": "rect",
-                "name": "trilho inativo",
+                "name": "inactive track",
                 "height": 16,
                 "cornerRadius": [
                   { "$token": "corner-track-outer" },
@@ -166,7 +166,7 @@
           },
           {
             "type": "frame",
-            "name": "trecho ativo",
+            "name": "active segment",
             "width": "fill",
             "height": "fill",
             "layout": {
@@ -181,7 +181,7 @@
             "children": [
               {
                 "type": "rect",
-                "name": "trilho ativo",
+                "name": "active track",
                 "height": 16,
                 "cornerRadius": [
                   { "$token": "corner-track-outer" },
@@ -203,7 +203,7 @@
               },
               {
                 "type": "rect",
-                "name": "trilho ativo",
+                "name": "active track",
                 "height": 16,
                 "cornerRadius": { "$token": "corner-track-inside" },
                 "visible": { "$eq": ["type", "range"] },
@@ -222,7 +222,7 @@
           },
           {
             "type": "frame",
-            "name": "depois do fim",
+            "name": "after end",
             "width": {
               "$sub": [
                 { "$sub": [{ "$size": "width" }, 4] },
@@ -377,7 +377,7 @@
             "children": [
               {
                 "type": "rect",
-                "name": "trilho inativo",
+                "name": "inactive track",
                 "height": 16,
                 "cornerRadius": [
                   { "$token": "corner-track-inside" },
@@ -402,7 +402,7 @@
       },
       {
         "type": "rect",
-        "name": "faixa de passos",
+        "name": "step strip",
         "height": 4,
         "cornerRadius": 2,
         "fill": {
@@ -440,7 +440,7 @@
       },
       {
         "type": "rect",
-        "name": "faixa de passos",
+        "name": "step strip",
         "height": 4,
         "cornerRadius": 2,
         "fill": {
@@ -508,7 +508,7 @@
       },
       {
         "type": "rect",
-        "name": "faixa de passos",
+        "name": "step strip",
         "height": 4,
         "cornerRadius": 2,
         "fill": {
@@ -549,7 +549,7 @@
       },
       {
         "type": "rect",
-        "name": "alça",
+        "name": "handle",
         "height": 44,
         "width": 4,
         "anchors": {
@@ -635,7 +635,7 @@
       },
       {
         "type": "rect",
-        "name": "alça",
+        "name": "handle",
         "height": 44,
         "width": {
           "$if": {
@@ -828,7 +828,7 @@
       },
       {
         "type": "repeat",
-        "name": "marcas",
+        "name": "ticks",
         "count": {
           "$if": { "$var": "dense" },
           "then": 0,
@@ -857,14 +857,14 @@
         },
         "template": {
           "type": "frame",
-          "name": "posição",
+          "name": "position",
           "width": 4,
           "height": 4,
           "layout": { "type": "none" },
           "children": [
             {
               "type": "ellipse",
-              "name": "marca",
+              "name": "tick",
               "width": 4,
               "height": 4,
               "fill": {
@@ -950,7 +950,7 @@
             },
             {
               "type": "ellipse",
-              "name": "marca",
+              "name": "tick",
               "width": 4,
               "height": 4,
               "fill": {

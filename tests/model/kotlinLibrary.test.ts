@@ -71,7 +71,7 @@ describe('Kotlin library', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.spec).toMatchObject({ formatVersion: 8, id: 'kotlin', version: 2 });
+    expect(parsed.spec).toMatchObject({ formatVersion: 8, id: 'kotlin', version: 3 });
     expect(parsed.spec.layers.map((l) => l.id)).toEqual([
       'kotlin-classes',
       'kotlin-interfaces',

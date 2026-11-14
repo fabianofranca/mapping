@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "button",
   "name": "Button",
-  "description": "Botão com rótulo e ícone opcional: filled, tonal, elevated, outlined ou text; 40 de altura e forma full.",
+  "description": "Button with a label and an optional icon: filled, tonal, elevated, outlined or text; 40 tall and full shape.",
   "size": {
     "width": 136,
     "height": 40
@@ -17,7 +17,7 @@
     "height": "hug"
   },
   "preview": {
-    "label": "Salvar",
+    "label": "Save",
     "style": "filled",
     "enabled": "true",
     "icon": ""
@@ -34,7 +34,7 @@
     "children": [
       {
         "type": "rect",
-        "name": "sombra elevada",
+        "name": "elevated shadow",
         "fill": {
           "$token": "surface-container-low"
         },
@@ -541,7 +541,7 @@
       },
       {
         "type": "rect",
-        "name": "contorno",
+        "name": "outline",
         "fill": "none",
         "cornerRadius": {
           "$switch": "shape",
@@ -590,7 +590,7 @@
       },
       {
         "type": "rect",
-        "name": "estado",
+        "name": "state",
         "fill": {
           "$switch": "style",
           "cases": {
@@ -666,7 +666,7 @@
       },
       {
         "type": "frame",
-        "name": "conteúdo",
+        "name": "content",
         "clip": false,
         "anchors": {
           "centerX": true,
@@ -715,7 +715,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "recuo inicial",
+            "name": "leading inset",
             "visible": {
               "$or": [
                 {
@@ -1212,7 +1212,7 @@
           },
           {
             "type": "text",
-            "name": "rótulo",
+            "name": "label",
             "text": {
               "$field": "label",
               "default": "Label"
@@ -1537,7 +1537,7 @@
           },
           {
             "type": "frame",
-            "name": "recuo final",
+            "name": "trailing inset",
             "visible": {
               "$or": [
                 {

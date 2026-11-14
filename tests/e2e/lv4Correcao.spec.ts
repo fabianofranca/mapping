@@ -32,8 +32,8 @@ test('Palette: the Add button label is not clipped on either side', async ({ pag
   await expect(dialog).toBeHidden();
   await page.keyboard.press('Control+Shift+9');
   await page.getByRole('tab', { name: 'Palette' }).click();
-  // pt-BR kept: component name `Nota` of libraries/notas (outside this batch)
-  const button = page.getByRole('button', { name: 'Add to canvas: Nota' });
+  // Component name `Note` of libraries/notas
+  const button = page.getByRole('button', { name: 'Add to canvas: Note' });
   await expect(button).toBeVisible();
   const { left, buttonLeft } = await button.evaluate((el) => {
     const range = document.createRange();
@@ -45,7 +45,7 @@ test('Palette: the Add button label is not clipped on either side', async ({ pag
   });
   // The start of the text is never outside the button (left clipping); the end may have an ellipsis.
   expect(left).toBeGreaterThanOrEqual(buttonLeft - 0.5);
-  await expect(button).toHaveAttribute('aria-label', 'Add to canvas: Nota');
+  await expect(button).toHaveAttribute('aria-label', 'Add to canvas: Note');
 });
 
 test('Review at 900 px: X, Y, W and H fit the digits of 3- to 4-digit values', async ({

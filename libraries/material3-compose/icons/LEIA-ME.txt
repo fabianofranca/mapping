@@ -1,27 +1,26 @@
-Ícones do pacote Material 3 (Compose)
-=====================================
+Icons of the Material 3 (Compose) package
+=========================================
 
-A especialização (material3-compose.spec.json) declara o conjunto em "icons":
+The specialization (material3-compose.spec.json) declares the set in "icons":
 
   - icons/material-icons.json (mapping-icons, formatVersion 2, viewBox 24 x 24)
 
-O conjunto é um subconjunto do Material Icons na variante Filled (o Icons.Default do Compose),
-com os caminhos tirados do pacote npm @material-design-icons/svg 0.14.15 (pasta "filled"),
-licenciado sob a Apache License 2.0. O texto da licença está em LICENSE-material-icons.txt,
-ao lado.
+The set is a subset of Material Icons in the Filled variant (Compose's Icons.Default), with the
+paths taken from the npm package @material-design-icons/svg 0.14.15 ("filled" folder), licensed
+under the Apache License 2.0. The license text is in LICENSE-material-icons.txt, next to it.
 
-Na formatVersion 2, "mirror": true marca os ícones que o androidx põe em Icons.AutoMirrored.Filled
-(arrow_back, arrow_forward, keyboard_arrow_left, keyboard_arrow_right, list, send, help…): em
-direção de leitura rtl o desenho os vira na horizontal. A lista (24 ícones do conjunto) vem dos
-artefatos androidx.compose.material:material-icons-core e -extended 1.7.8 (a última estável: o
-commit fixado do androidx, 5113b82a…, não traz os arquivos dos ícones, que são gerados e publicados
-à parte).
+In formatVersion 2, "mirror": true marks the icons that androidx puts in
+Icons.AutoMirrored.Filled (arrow_back, arrow_forward, keyboard_arrow_left, keyboard_arrow_right,
+list, send, help…): in the rtl reading direction the drawing flips them horizontally. The list
+(24 icons of the set) comes from the androidx.compose.material:material-icons-core and -extended
+1.7.8 artifacts (the latest stable: the pinned androidx commit, 5113b82a…, does not include the
+icon files, which are generated and published separately).
 
-O nome de cada ícone é o do pacote, em snake_case (home, keyboard_arrow_right). Os campos de
-ícone dos tipos guardam o nome do Compose (Home, KeyboardArrowRight, o que vai em
-Icons.Default.<nome>), e o componente traduz um para o outro.
+The name of each icon is the package's, in snake_case (home, keyboard_arrow_right). The icon
+fields of the types store the Compose name (Home, KeyboardArrowRight, what goes in
+Icons.Default.<name>), and the component translates one into the other.
 
-Para acrescentar um ícone: pegue o <nome>.svg da pasta "filled" do pacote, copie o "d" do
-<path> para uma entrada nova de "icons" (um ícone de vários caminhos leva um item de "paths"
-por <path>), e acrescente o nome do Compose às "suggestions" dos campos de ícone e ao
-$switch de nomes do componente icon.
+To add an icon: take the <name>.svg from the package's "filled" folder, copy the "d" of the
+<path> into a new entry of "icons" (an icon with several paths takes one "paths" item per
+<path>), and add the Compose name to the "suggestions" of the icon fields and to the
+$switch of names of the icon component.

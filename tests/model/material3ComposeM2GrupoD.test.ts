@@ -193,12 +193,11 @@ describe('M2 group D — fab, extended-fab and chip', () => {
     expect(solid(label(off.dark).fills)).toBe('#E6E0E9');
     expect(label(off.dark).opacity).toBe(0.38);
     expect(off.light.root.effects).toEqual([]);
-    // pt-BR kept: node names of the material3-compose library (libraries/*.json, outside this phase)
-    const container = named(off.light.root, 'contêiner desabilitado');
+    const container = named(off.light.root, 'disabled container');
     expect(solid(container?.fills ?? [])).toBe('#1D1B20');
     expect(container?.opacity).toBe(0.12);
     const outline = both('chip', { label: 'Map', style: 'assist', enabled: 'false' });
-    const edge = named(outline.light.root, 'contorno desabilitado');
+    const edge = named(outline.light.root, 'disabled outline');
     expect(solid(edge?.stroke?.paints ?? [])).toBe('#1D1B20');
     expect(edge?.opacity).toBe(0.12);
   });

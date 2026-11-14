@@ -56,7 +56,7 @@ describe('create_project with the notes library', () => {
     ]);
     expect(parsed.project.layers.map((l) => [l.name, l.spec])).toEqual([
       ['Camada 1', null],
-      ['Notas', { specId: 'notas', layerId: 'notas' }],
+      ['Notes', { specId: 'notas', layerId: 'notas' }],
     ]);
   });
 
@@ -71,13 +71,13 @@ describe('create_project with the notes library', () => {
     expect(project.specializations).toEqual([
       expect.objectContaining({
         id: 'notas',
-        name: 'Notas',
+        name: 'Notes',
         available: true,
         annotations: 0,
       }),
     ]);
     expect(project.specializations[0]).not.toHaveProperty('problem');
-    expect(project.layers.map((l) => l.name)).toEqual(['Camada 1', 'Notas']);
+    expect(project.layers.map((l) => l.name)).toEqual(['Camada 1', 'Notes']);
     expect(project.issues.total).toBe(0);
   });
 

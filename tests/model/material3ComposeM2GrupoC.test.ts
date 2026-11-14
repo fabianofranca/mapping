@@ -86,8 +86,7 @@ describe('M2 group C — Compose values', () => {
       expect(solid(findText(textual.root)!.fills)).toBe(color('primary', mode));
 
       const outlined = draw('button', { label: 'A', style: 'outlined' }, mode);
-      // pt-BR kept: node names of the material3-compose library (libraries/*.json, outside this phase)
-      const ring = named(outlined.root, 'contorno')!;
+      const ring = named(outlined.root, 'outline')!;
       expect(ring.visible).toBe(true);
       expect(ring.stroke?.width).toBe(1);
       expect(solid(ring.stroke?.paints ?? [])).toBe(color('outline-variant', mode));
@@ -144,7 +143,7 @@ describe('M2 group C — Compose values', () => {
         color('secondary-container', mode),
       );
       const outlined = draw('icon-button', { icon: 'Add', style: 'outlined' }, mode);
-      expect(solid(named(outlined.root, 'contorno')!.stroke?.paints ?? [])).toBe(
+      expect(solid(named(outlined.root, 'outline')!.stroke?.paints ?? [])).toBe(
         color('on-surface', mode),
       );
       const off = draw(
@@ -193,7 +192,7 @@ describe('M2 group C — Compose values', () => {
       expect(glyph('standard', 'true')).toBe(color('primary', mode));
       expect(glyph('standard', 'false')).toBe(color('on-surface', mode));
       const ring = (checked: string): SceneNode | undefined =>
-        named(draw('icon-toggle-button', v('outlined', checked), mode).root, 'contorno');
+        named(draw('icon-toggle-button', v('outlined', checked), mode).root, 'outline');
       expect(ring('false')?.visible).toBe(true);
       // when on, the outline disappears from the scene (Compose passes border = null)
       expect(ring('true')).toBeUndefined();
@@ -204,14 +203,14 @@ describe('M2 group C — Compose values', () => {
   it('badge: 6 dot and 16 counter in corner-full, error / on-error and label-small', () => {
     for (const mode of MODES) {
       const dot = draw('badge', { style: 'small' }, mode);
-      const point = named(dot.root, 'pontinho')!;
+      const point = named(dot.root, 'dot')!;
       expect(point.visible).toBe(true);
       expect([point.width, point.height]).toEqual([6, 6]);
       expect(point.type === 'frame' && point.cornerRadius).toBe(number('corner-full'));
       expect(solid(point.fills)).toBe(color('error', mode));
 
       const one = draw('badge', { style: 'large', count: '3' }, mode);
-      const pill = named(one.root, 'contador')!;
+      const pill = named(one.root, 'counter')!;
       expect(pill.visible).toBe(true);
       expect([pill.width, pill.height]).toEqual([16, 16]);
       expect(pill.type === 'frame' && pill.cornerRadius).toBe(number('corner-full'));
@@ -226,7 +225,7 @@ describe('M2 group C — Compose values', () => {
 
       const many = named(
         draw('badge', { style: 'large', count: '999+' }, mode).root,
-        'contador',
+        'counter',
       )!;
       expect(many.width).toBeGreaterThan(16);
       expect(many.height).toBe(16);

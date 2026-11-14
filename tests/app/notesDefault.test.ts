@@ -16,7 +16,7 @@ import { MemoryDirectory } from '../storage/memoryFs';
 // ME3: the bundled notes library is applied by default. A new project (local and in a folder)
 // is born with it; a project with a schema earlier than 13 gets it on opening (in memory, no
 // undo, and the first save writes `specs/notas/`); a project already on v14 stays as it is.
-// pt-BR kept: ids, names and paths of the bundled library `libraries/notas` (`notas`, `Notas`, `nota`), asserted verbatim
+// Library ids and paths kept verbatim: `notas`, `nota` (the layer name is now "Notes")
 
 const pickDirectory = vi.fn<() => Promise<DirectoryHandleLike | null>>();
 
@@ -98,7 +98,7 @@ function withNotes() {
 }
 
 describe('new project', () => {
-  it('local: is born with the notas specialization, the Notas layer and specs/notas/ in storage', async () => {
+  it('local: is born with the notas specialization, the Notes layer and specs/notas/ in storage', async () => {
     expect((await app.createLocalProject('New')).ok).toBe(true);
     const opened = await openedSession();
     const project = projectOf(opened);
@@ -107,7 +107,7 @@ describe('new project', () => {
     ]);
     // The first layer takes the name in the interface language; the notes one comes from the library.
     expect(project.layers).toHaveLength(2);
-    expect(project.layers.at(-1)?.name).toBe('Notas');
+    expect(project.layers.at(-1)?.name).toBe('Notes');
     expect(notesLayers(project)).toHaveLength(1);
     expect(project.layers.at(-1)?.spec).toEqual({ specId: 'notas', layerId: 'notas' });
     expect(opened.session.store.canUndo.value).toBe(false);
@@ -159,7 +159,7 @@ describe('new project', () => {
       expect.objectContaining({ id: 'notas', file: SPEC_FILE }),
     ]);
     expect(saved.project.layers).toHaveLength(2);
-    expect(saved.project.layers.at(-1)?.name).toBe('Notas');
+    expect(saved.project.layers.at(-1)?.name).toBe('Notes');
 
     const opened = await openedSession();
     expect(opened.kind).toBe('folder');

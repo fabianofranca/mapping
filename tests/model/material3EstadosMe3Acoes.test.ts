@@ -8,11 +8,10 @@ import { resolveTokens } from '../../src/model/components/tokens';
 import type { SceneNode } from '../../src/model/components/scene';
 import { drawIn, files, solid, typeOf } from '../support/material3Library';
 
-// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
 const NAMES = {
-  state: 'estado',
-  liftedShadow: 'sombra elevada',
-  outline: 'contorno',
+  state: 'state',
+  liftedShadow: 'elevated shadow',
+  outline: 'outline',
 } as const;
 
 const catalog = buildCatalog(files);
@@ -61,7 +60,7 @@ function shadows(
   return out;
 }
 
-/** State layer: the visible `estado` node, with the color and opacity resolved. */
+/** State layer: the visible `state` node, with the color and opacity resolved. */
 function layer(id: string, values: Record<string, string>, mode: 'light' | 'dark') {
   const node = byName(draw(id, values, mode).root, NAMES.state);
   if (node === undefined || !node.visible) return undefined;
@@ -73,8 +72,7 @@ function checkField(id: string, descriptionPattern: RegExp) {
   const field = type.fields.find((f) => f.key === 'interaction');
   expect(field).toMatchObject({
     key: 'interaction',
-    // pt-BR kept: shared library data (field label of libraries/material3-compose)
-    label: 'Interação',
+    label: 'Interaction',
     type: 'enum',
     default: 'none',
     options: ['none', 'hovered', 'focused', 'pressed'],
@@ -112,8 +110,7 @@ describe.each(['fab', 'extended-fab'])('%s: interaction field', (id) => {
     id === 'fab' ? { icon: 'Add' } : { text: 'Create', icon: 'Add' };
 
   it('is an optional enum with the token options, default none, outside the code and the variants', () => {
-    // pt-BR kept: shared library data (field description of libraries/material3-compose)
-    checkField(id, /sem enabled|não tem/i);
+    checkField(id, /no enabled|no disabled state/i);
   });
 
   it('has an example per state that draws without a warning in both modes', () =>
@@ -222,10 +219,9 @@ const BUTTON_LAYER: Record<(typeof BUTTON_STYLES)[number], string> = {
 describe('icon-button: interaction field', () => {
   it('is an optional enum with the token options, default none, outside the code and the variants', () => {
     checkField('icon-button', /enabled/i);
-    // pt-BR kept: shared library data (field description of libraries/material3-compose)
     expect(
       typeOf('icon-button').fields.find((f) => f.key === 'interaction')?.description,
-    ).toMatch(/desabilitado/i);
+    ).toMatch(/disabled/i);
   });
 
   it('has an example per state that draws without a warning in both modes', () =>
@@ -310,11 +306,10 @@ const TOGGLE_LAYER: Record<(typeof BUTTON_STYLES)[number], [string, string]> = {
 describe('icon-toggle-button: interaction field', () => {
   it('is an optional enum with the token options, default none, outside the code and the variants', () => {
     checkField('icon-toggle-button', /enabled/i);
-    // pt-BR kept: shared library data (field description of libraries/material3-compose)
     expect(
       typeOf('icon-toggle-button').fields.find((f) => f.key === 'interaction')
         ?.description,
-    ).toMatch(/desabilitado/i);
+    ).toMatch(/disabled/i);
   });
 
   it('has an example per state that draws without a warning in both modes', () =>

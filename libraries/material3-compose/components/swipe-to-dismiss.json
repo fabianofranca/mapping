@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "swipe-to-dismiss",
   "name": "Swipe to dismiss",
-  "description": "Item que se dispensa deslizando: o fundo revelado (primaryContainer ao arrastar para o fim, errorContainer ao arrastar para o início) leva o ícone no lado de onde o item saiu; em repouso só o item aparece.",
+  "description": "Item dismissed by swiping: the revealed background (primaryContainer when dragging to the end, errorContainer when dragging to the start) carries the icon on the side the item left; at rest only the item appears.",
   "size": {
     "width": 360,
     "height": 72
@@ -13,7 +13,7 @@
     "height": 72
   },
   "preview": {
-    "title": "Reunião de equipe",
+    "title": "Team meeting",
     "supportingText": "Hoje, 14:00",
     "direction": "EndToStart",
     "enableDismissFromStartToEnd": "true",
@@ -474,7 +474,7 @@
       },
       {
         "type": "frame",
-        "name": "item em repouso",
+        "name": "item at rest",
         "fill": {
           "$token": "surface"
         },
@@ -523,7 +523,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "textos",
+            "name": "texts",
             "width": "fill",
             "height": "hug",
             "layout": {
@@ -532,7 +532,7 @@
             "children": [
               {
                 "type": "text",
-                "name": "título",
+                "name": "title",
                 "text": {
                   "$field": "title",
                   "default": "Title"
@@ -560,7 +560,7 @@
               },
               {
                 "type": "text",
-                "name": "apoio",
+                "name": "support",
                 "text": {
                   "$field": "supportingText"
                 },
@@ -594,7 +594,7 @@
       },
       {
         "type": "frame",
-        "name": "item deslizado para o fim",
+        "name": "item swiped to the end",
         "fill": {
           "$token": "surface"
         },
@@ -625,7 +625,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "textos",
+            "name": "texts",
             "width": "fill",
             "height": "hug",
             "layout": {
@@ -634,7 +634,7 @@
             "children": [
               {
                 "type": "text",
-                "name": "título",
+                "name": "title",
                 "text": {
                   "$field": "title",
                   "default": "Title"
@@ -662,7 +662,7 @@
               },
               {
                 "type": "text",
-                "name": "apoio",
+                "name": "support",
                 "text": {
                   "$field": "supportingText"
                 },
@@ -696,7 +696,7 @@
       },
       {
         "type": "frame",
-        "name": "item deslizado para o início",
+        "name": "item swiped to the start",
         "fill": {
           "$token": "surface"
         },
@@ -727,7 +727,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "textos",
+            "name": "texts",
             "width": "fill",
             "height": "hug",
             "layout": {
@@ -736,7 +736,7 @@
             "children": [
               {
                 "type": "text",
-                "name": "título",
+                "name": "title",
                 "text": {
                   "$field": "title",
                   "default": "Title"
@@ -764,7 +764,7 @@
               },
               {
                 "type": "text",
-                "name": "apoio",
+                "name": "support",
                 "text": {
                   "$field": "supportingText"
                 },

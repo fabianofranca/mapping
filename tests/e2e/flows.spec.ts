@@ -110,7 +110,7 @@ test('SDUI example → Input with `dado` pointing to a free tuple', async ({ pag
   expect(mapping.specializations).toEqual(
     // The notes library comes already applied in every new project (ME3).
     [
-      { id: 'notas', version: 3 },
+      { id: 'notas', version: 4 },
       { id: 'sdui', version: 4 },
     ].map((s) => expect.objectContaining(s)),
   );

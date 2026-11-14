@@ -1,80 +1,80 @@
 # Extended FAB
 
-Botão de ação flutuante com ícone e texto. Use quando a ação precisa de um rótulo.
+A floating action button with an icon and text. Use it when the action needs a label.
 
-Tipo de anotação: `extended-fab` (camada Componentes).
+Annotation type: `extended-fab` (Components layer).
 
-## Campos
+## Fields
 
-| Chave            | Rótulo       | Tipo   | Obrigatório | Opções                                                         | Padrão             | Descrição                                                                                                                                                                                                                                                  |
-| ---------------- | ------------ | ------ | ----------- | -------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `text`           | Texto        | string | sim         |                                                                |                    | Rótulo do botão.                                                                                                                                                                                                                                           |
-| `icon`           | Ícone        | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |                    | Ícone antes do texto. Vazio = só texto.                                                                                                                                                                                                                    |
-| `expanded`       | Expandido    | enum   | não         | `true`, `false`                                                | `true`             | false recolhe o botão para só o ícone.                                                                                                                                                                                                                     |
-| `containerColor` | Cor do botão | enum   | não         | papéis do `ColorScheme`                                        | `primaryContainer` | Papel de cor do tema usado no fundo do botão.                                                                                                                                                                                                              |
-| `interaction`    | Interação    | enum   | não         | `none`, `hovered`, `focused`, `pressed`                        | `none`             | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O FAB estendido não tem desabilitado (sem enabled): o estado sempre desenha. |
+| Key              | Label        | Type   | Required | Options                                                   | Default            | Description                                                                                                                                                                                                                            |
+| ---------------- | ------------ | ------ | -------- | --------------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `text`           | Text         | string | yes      |                                                           |                    | Label of the button.                                                                                                                                                                                                                   |
+| `icon`           | Icon         | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |                    | Icon before the text. Empty = text only.                                                                                                                                                                                               |
+| `expanded`       | Expanded     | enum   | no       | `true`, `false`                                           | `true`             | false collapses the button to just the icon.                                                                                                                                                                                           |
+| `containerColor` | Button color | enum   | no       | `ColorScheme` roles                                       | `primaryContainer` | Theme color role used for the button background.                                                                                                                                                                                       |
+| `interaction`    | Interaction  | enum   | no       | `none`, `hovered`, `focused`, `pressed`                   | `none`             | Resting appearance of the interaction state: hovered, focused or pressed; none = no state layer. It only changes the drawing, it does not go in the code. The extended FAB has no disabled state (no enabled): the state always draws. |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.ExtendedFloatingActionButton`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButton.kt`
+- Symbol: `androidx.compose.material3.ExtendedFloatingActionButton`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButton.kt`
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 ExtendedFloatingActionButton(
-    text = { Text("Criar") },
+    text = { Text("Create") },
     icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-    onClick = { /* lógica da tela */ },
+    onClick = { /* screen logic */ },
     expanded = true,
     containerColor = MaterialTheme.colorScheme.primaryContainer,
 )
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> Use a sobrecarga `ExtendedFloatingActionButton(text = { Text(<text>) }, icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }, onClick = …, expanded = <expanded>)`; sem `icon`, use a de `content = { Text(<text>) }`. Dentro de um Scaffold, vai em `floatingActionButton`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.
+> Use the overload `ExtendedFloatingActionButton(text = { Text(<text>) }, icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }, onClick = …, expanded = <expanded>)`; without `icon`, use the one with `content = { Text(<text>) }`. Inside a Scaffold, it goes in `floatingActionButton`. Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`.
 
-## Exemplos
+## Examples
 
-- **Criar**: text=Criar, icon=Add
-- **Recolhido**: text=Editar, icon=Edit, expanded=false, containerColor=secondaryContainer
-- **Mouse sobre**: text=Criar, icon=Add, interaction=hovered
-- **Com foco**: text=Editar, icon=Edit, containerColor=secondaryContainer, interaction=focused
-- **Pressionado**: text=Editar, icon=Edit, expanded=false, containerColor=tertiaryContainer, interaction=pressed
-- **Rótulo longo**: text=Nova nota fiscal, icon=Add
+- **Create**: text=Create, icon=Add
+- **Collapsed**: text=Edit, icon=Edit, expanded=false, containerColor=secondaryContainer
+- **Hovered**: text=Create, icon=Add, interaction=hovered
+- **Focused**: text=Edit, icon=Edit, containerColor=secondaryContainer, interaction=focused
+- **Pressed**: text=Edit, icon=Edit, expanded=false, containerColor=tertiaryContainer, interaction=pressed
+- **Long label**: text=New tax invoice, icon=Add
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx token files; no color, font or radius is literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButton.kt`: o `ExtendedFloatingActionButton` com texto e ícone (linhas 381 a 433: `expanded`, `startPadding` 16 e `endPadding` 20 quando expandido, `Arrangement.Start` expandido e `Center` recolhido, `Spacer` de `ExtendedFabEndIconPadding`), o corpo comum (linhas 134 a 169) e as constantes das linhas 786 a 792 (`ExtendedFabStartIconPadding = 16.dp`, `ExtendedFabEndIconPadding = 12.dp`, `ExtendedFabTextPadding = 20.dp`, `ExtendedFabMinimumWidth = 80.dp`); o recolhido tem largura mínima de `FabBaselineTokens.ContainerWidth` (56). Linhas 107 a 123: o `textStyle` é `ExtendedFabPrimaryTokens.LabelTextFont`.
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ExtendedFabPrimaryTokens.kt` (linhas 23 a 45: `ContainerColor = PrimaryContainer`, `ContainerElevation = Level3`, `ContainerHeight = 56.dp`, `ContainerShape = CornerLarge`, `IconSize = 24.dp`, `IconColor` e `LabelTextColor = OnPrimaryContainer`, `LabelTextFont = LabelLarge`) e `ElevationTokens.kt`.
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ColorScheme.kt` (linhas 1064 a 1092: `contentColorFor`) e `tokens/TypeScaleTokens.kt` (`LabelLarge`: 14 sp, 20 de linha, peso 500, 0,1 de espaçamento).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButton.kt`: the `ExtendedFloatingActionButton` with text and icon (lines 381 to 433: `expanded`, `startPadding` 16 and `endPadding` 20 when expanded, `Arrangement.Start` expanded and `Center` collapsed, `Spacer` of `ExtendedFabEndIconPadding`), the common body (lines 134 to 169) and the constants on lines 786 to 792 (`ExtendedFabStartIconPadding = 16.dp`, `ExtendedFabEndIconPadding = 12.dp`, `ExtendedFabTextPadding = 20.dp`, `ExtendedFabMinimumWidth = 80.dp`); the collapsed one has a minimum width of `FabBaselineTokens.ContainerWidth` (56). Lines 107 to 123: the `textStyle` is `ExtendedFabPrimaryTokens.LabelTextFont`.
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ExtendedFabPrimaryTokens.kt` (lines 23 to 45: `ContainerColor = PrimaryContainer`, `ContainerElevation = Level3`, `ContainerHeight = 56.dp`, `ContainerShape = CornerLarge`, `IconSize = 24.dp`, `IconColor` and `LabelTextColor = OnPrimaryContainer`, `LabelTextFont = LabelLarge`) and `ElevationTokens.kt`.
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ColorScheme.kt` (lines 1064 to 1092: `contentColorFor`) and `tokens/TypeScaleTokens.kt` (`LabelLarge`: 14 sp, 20 line height, weight 500, 0.1 letter spacing).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Altura mínima de 56, `corner-large`, fundo pelo papel de `containerColor` (padrão `primary-container`) e sombra do nível 3.
-- **Altura pelas linhas do texto:** `sizing.height` é `hug` e a raiz leva o mínimo de 56 (`minHeight`; o `Box` do `FloatingActionButton` tem `defaultMinSize` de `FabBaselineTokens.ContainerWidth` por `ContainerHeight`, 56 por 56, `FloatingActionButton.kt` linhas 122, 123 e 161). O quadro `conteúdo` e o nó `texto` abraçam a altura e não há padding vertical (a `Row` só tem padding dos lados, linhas 333 e 334 e 402 a 417), então uma e duas linhas (20 e 40) ficam nos 56 do mínimo e três linhas medem 60. O texto quebra no que sobra da largura da marcação: o `maxWidth` do nó `texto` é a largura da instância (`$size.width`) menos os paddings (36 com ícone, 40 sem) e, com ícone, o ícone de 24 e os 12 de espaço (72 no total).
-- Expandido com ícone: padding 16 antes do ícone e 20 depois do texto, 12 entre o ícone de 24 e o texto, largura mínima de 80; só texto: padding de 20 dos dois lados. Recolhido (`expanded` falso, com ícone): sem padding e largura mínima de 56, só o ícone.
-- O texto lê `label-large-size`, `label-large-line-height`, `label-large-weight` e `label-large-tracking`, sem `family`; o texto e o ícone usam a cor de conteúdo do `contentColorFor` (`primary-container` -> `on-primary-container`…).
-- O ícone é o nó `icon`, com o `$switch` do nome do Compose para o nome do conjunto, cobrindo as sugestões do campo.
-- Estrutura do desenho: a raiz tem fundo, forma e sombra e guarda os nós de estado e o quadro `conteúdo` (a linha com o ícone e o texto, centralizada), para a camada de estado cobrir o botão inteiro sem entrar na linha; a posição do ícone e do texto é a de antes.
-- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `texto` usa `font.verticalAlign: "cap-middle"` e abraça a altura da linha (20), com o quadro `conteúdo` centrado na altura do botão, sem mudar a posição horizontal. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
+- Minimum height of 56, `corner-large`, background by the `containerColor` role (default `primary-container`) and a level 3 shadow.
+- **Height by the text lines:** `sizing.height` is `hug` and the root carries the minimum of 56 (`minHeight`; the `FloatingActionButton`'s `Box` has a `defaultMinSize` of `FabBaselineTokens.ContainerWidth` by `ContainerHeight`, 56 by 56, `FloatingActionButton.kt` lines 122, 123 and 161). The `content` frame and the `text` node hug the height and there is no vertical padding (the `Row` only has padding on the sides, lines 333 and 334 and 402 to 417), so one and two lines (20 and 40) stay within the minimum 56 and three lines measure 60. The text wraps in what is left of the marking width: the `maxWidth` of the `text` node is the instance width (`$size.width`) minus the paddings (36 with an icon, 40 without) and, with an icon, the 24 icon and the 12 gap (72 in total).
+- Expanded with icon: padding 16 before the icon and 20 after the text, 12 between the 24 icon and the text, minimum width 80; text only: padding of 20 on both sides. Collapsed (`expanded` false, with an icon): no padding and minimum width 56, just the icon.
+- The text reads `label-large-size`, `label-large-line-height`, `label-large-weight` and `label-large-tracking`, without `family`; the text and the icon use the content color from `contentColorFor` (`primary-container` -> `on-primary-container`…).
+- The icon is the `icon` node, with the `$switch` from the Compose name to the set's name, covering the field's suggestions.
+- Drawing structure: the root has the background, shape and shadow and holds the state nodes and the `content` frame (the row with the icon and the text, centered), so that the state layer covers the whole button without entering the row; the position of the icon and the text is the same as before.
+- A one-line label centered by the capital letter (`cap-middle`): the `text` node uses `font.verticalAlign: "cap-middle"` and hugs the line height (20), with the `content` frame centered in the button height, without changing the horizontal position. Compose's `Text` centers by the font's line box (ascent and descent); the drawing centers the capital height in the box, and with Roboto the two coincide within 1 px.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (`interaction` field)**
 
-O campo escolhe a aparência parada de um estado, como o `expanded` escolhe o recolhido; não entra no `code` nem nas `variants`. As opções são `none` e os estados que o `ExtendedFabPrimaryTokens.kt` do commit define: `hovered` (`Hover*`), `focused` (`Focus*`) e `pressed` (`Pressed*`); não há `Dragged*` nos tokens, então não há `dragged`. O botão do Compose não tem `enabled`, então não há desabilitado: o estado sempre desenha.
+The field chooses the resting appearance of a state, as `expanded` chooses the collapsed one; it does not go in the `code` or in the `variants`. The options are `none` and the states that the commit's `ExtendedFabPrimaryTokens.kt` defines: `hovered` (`Hover*`), `focused` (`Focus*`) and `pressed` (`Pressed*`); there is no `Dragged*` in the tokens, so there is no `dragged`. Compose's button has no `enabled`, so there is no disabled state: the state always draws.
 
-- **Camada de estado:** o nó `estado` é um `rect` da forma do botão (`corner-large`), entre o fundo e o conteúdo, com a cor de conteúdo do `containerColor` (a mesma do ícone e do texto: `on-primary-container` no padrão; `Focus*`, `Hover*` e `Pressed*` do `IconColor` e do `LabelTextColor` repetem `OnPrimaryContainer`, linhas 29, 30, 32, 33, 43 e 44 de `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ExtendedFabPrimaryTokens.kt`) e `opacity` pelos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10), que espelham `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
-- **Elevação por estado** (`ExtendedFabPrimaryTokens.kt`, linhas 25, 28, 31 e 42): o mouse sobre sobe do nível 3 para o 4 (`HoverContainerElevation = Level4`, linha 31); foco e pressionado ficam no nível 3 (`FocusContainerElevation`, linha 28; `PressedContainerElevation`, linha 42). A sombra aceita `$token` em `y` e `blur`, mas não expressão, então a do nível 4 (as duas sombras de `elevation-4-point-*` e `elevation-4-ambient-*`) é de um nó à parte (`sombra elevada`, com o mesmo fundo e a mesma forma, visível só no mouse sobre) e a sombra do contêiner some nesse estado. Foco e pressionado desenham iguais (mesma opacidade, 0,10, e mesmo nível).
-- **Lowered:** o `ExtendedFabPrimaryTokens.kt` tem também `LoweredContainerElevation` (nível 1), `LoweredHoverContainerElevation` (nível 2) e as variantes de foco e pressionado (nível 1), usadas por `ExtendedFloatingActionButtonDefaults.loweredElevation()`. O tipo não tem estilo lowered (a elevação base é sempre a do nível 3), então essas elevações não são desenhadas.
+- **State layer:** the `state` node is a `rect` in the button's shape (`corner-large`), between the background and the content, with the content color of the `containerColor` (the same as the icon and the text: `on-primary-container` by default; `Focus*`, `Hover*` and `Pressed*` of `IconColor` and `LabelTextColor` repeat `OnPrimaryContainer`, lines 29, 30, 32, 33, 43 and 44 of `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ExtendedFabPrimaryTokens.kt`) and `opacity` from the tokens `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10), which mirror `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
+- **Elevation per state** (`ExtendedFabPrimaryTokens.kt`, lines 25, 28, 31 and 42): hovered rises from level 3 to 4 (`HoverContainerElevation = Level4`, line 31); focused and pressed stay at level 3 (`FocusContainerElevation`, line 28; `PressedContainerElevation`, line 42). The shadow accepts `$token` in `y` and `blur`, but not an expression, so the level 4 one (the two shadows of `elevation-4-point-*` and `elevation-4-ambient-*`) belongs to a separate node (`elevated shadow`, with the same background and the same shape, visible only when hovered) and the container's shadow disappears in that state. Focused and pressed draw the same (same opacity, 0.10, and same level).
+- **Lowered:** `ExtendedFabPrimaryTokens.kt` also has `LoweredContainerElevation` (level 1), `LoweredHoverContainerElevation` (level 2) and the focus and pressed variants (level 1), used by `ExtendedFloatingActionButtonDefaults.loweredElevation()`. The type has no lowered style (the base elevation is always level 3), so these elevations are not drawn.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- As duas sombras vêm dos tokens `elevation-3-point-*` e `elevation-3-ambient-*` (a do nó `sombra elevada`, de `elevation-4-*`), por `$token`. Valores da elevação do Material 3 para a web: `elevation/internal/_elevation.scss` do `material-components/material-web` (versão 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), fonte de fora do Compose, que no Android entrega a elevação à plataforma e não traz os números: sombra de ponto em preto a 30% e sombra ambiente em preto a 15%, com `y`, `blur` e `spread` por nível (tokens `elevation-<n>-point-*` e `elevation-<n>-ambient-*`).
-- A animação de expandir e recolher (`AnimatedVisibility`) não existe: o desenho mostra os dois estados fixos. A elevação tonal também fica de fora, como no `fab`.
-- O conteúdo expandido fica centralizado na caixa da marcação, como o `Box` do botão. Sem retângulo (instância nova, tela arrumada pelo `layoutScreen`), a largura é a do conteúdo (`sizing.width` `hug`) e a largura de partida do texto é o `size` de 142: um texto mais largo quebra em vez de alargar o botão, onde o Compose, sem limite do pai, não quebra. O exemplo "Rótulo longo" ("Nova nota fiscal") é o texto mais longo que cabe em uma linha no `size` (142 × 56): um texto que quebra (como "Criar nota fiscal") passa da caixa até o Arrumar levá-la a 60.
-- Sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado. A elevação `lowered` do Compose não é um campo do tipo (veja acima).
+- The two shadows come from the tokens `elevation-3-point-*` and `elevation-3-ambient-*` (that of the `elevated shadow` node, from `elevation-4-*`), by `$token`. Material 3 elevation values for the web: `elevation/internal/_elevation.scss` of `material-components/material-web` (version 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), a source outside Compose, which on Android hands the elevation to the platform and does not carry the numbers: point shadow in black at 30% and ambient shadow in black at 15%, with `y`, `blur` and `spread` per level (tokens `elevation-<n>-point-*` and `elevation-<n>-ambient-*`).
+- The expand and collapse animation (`AnimatedVisibility`) does not exist: the drawing shows the two fixed states. Tonal elevation is also left out, as in `fab`.
+- The expanded content is centered in the marking box, like the button's `Box`. Without a rectangle (a new instance, screen arranged by `layoutScreen`), the width is that of the content (`sizing.width` `hug`) and the starting width of the text is the `size` of 142: a wider text wraps instead of widening the button, where Compose, with no limit from the parent, does not wrap. The "Long label" example ("New tax invoice") is the longest text that fits on one line at the `size` (142 × 56): a text that wraps (like "Create tax invoice") goes past the box until Arrange takes it to 60.
+- No animated ripple and no transition between states (the drawing is a still frame). Compose defines no focus ring for this type at the pinned commit (none of its `*Tokens.kt` has `FocusIndicatorColor`): none is drawn. Compose's `lowered` elevation is not a field of the type (see above).

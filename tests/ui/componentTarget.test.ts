@@ -26,15 +26,15 @@ describe('Add label inside a component with a slot', () => {
     const p = project();
     const name = slotTargetName(p, marking(p, 'N1'));
     // pt-BR kept: shared fixture data asserted by tests/model, tests/components (type name of notesFixtures)
-    expect(name).toBe('Nota');
+    expect(name).toBe('Note');
     expect(
       addLabel({ containerId: 'A', parentId: 'M', destination: { kind: 'slot', name } }),
-    ).toBe('Add inside Nota');
+    ).toBe('Add inside Note');
     locale.value = 'pt-BR';
     // pt-BR kept: the locale switch is the object of this assertion
     expect(
       addLabel({ containerId: 'A', parentId: 'M', destination: { kind: 'slot', name } }),
-    ).toBe('Adicionar dentro de Nota');
+    ).toBe('Adicionar dentro de Note');
   });
 
   it('with no name and no component type, keeps the default name', () => {

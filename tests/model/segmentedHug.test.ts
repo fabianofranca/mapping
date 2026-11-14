@@ -2,7 +2,6 @@
 // when the fit (`fit_marking`) has a width limit smaller than the sum of the tracks. The limit only
 // tightens what breaks: the label is `wrap: none`, so the track does not shrink below the longest
 // unbreakable word (the min-content) and the component exceeds the limit instead of invading its neighbor.
-// pt-BR kept: shared fixture data (sdui example fields/layers, Material 3 node names) asserted by other dirs
 import { describe, expect, it } from 'vitest';
 import { fitComponentSize } from '../../src/model/components/sizing';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
@@ -20,9 +19,9 @@ function segments(width: number, height: number) {
   const { drawing } = drawFitted('segmented-button', VALUES, 'light', { width, height });
   const boxes = absoluteBoxes(drawing.root);
   const nodes = [...walk(drawing.root)];
-  const texts = nodes.filter((n) => n.name === 'rótulo' && n.type === 'text');
+  const texts = nodes.filter((n) => n.name === 'label' && n.type === 'text');
   return nodes
-    .filter((n) => n.name === 'segmento')
+    .filter((n) => n.name === 'segment')
     .map((cell, i) => ({
       cell: boxes.get(cell.id)!,
       text: boxes.get(texts[i]!.id)!,

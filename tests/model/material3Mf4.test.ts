@@ -1,7 +1,5 @@
 // MF4 (stage #899): Material 3 (Compose) adopts the engine — inherited content color, two shadows per level,
 // opaque disabled state, rounded gap in the outline, justified text and number under the time-picker handle.
-// pt-BR kept: node names ('texto', 'trilho', 'contorno', 'alça', 'marca', 'rótulo minimizado', 'número sob a alça', 'relógio', …)
-// and the example names 'Primário' and 'Parágrafo justificado' are the Portuguese data of libraries/material3-compose
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import type { Spec } from '../../src/model/spec';
@@ -52,6 +50,9 @@ function find(node: SceneNode, name: string): SceneNode | undefined {
     }
   return undefined;
 }
+/** The `text` node of the text component: its root frame is also named `text` in English, so it is found by type. */
+const textNode = (root: SceneNode): SceneNode | undefined =>
+  findAll(root, 'text').find((n) => n.type === 'text');
 function findAll(node: SceneNode, name: string, out: SceneNode[] = []): SceneNode[] {
   if (node.name === name) out.push(node);
   if ('children' in node) for (const child of node.children) findAll(child, name, out);
@@ -99,7 +100,7 @@ const tokens = (mode: Mode) => resolveTokens(catalog.library!.tokens, {}, mode);
 
 describe('MF4: version and additive update', () => {
   it('it is version 7 and the update from 6 is additive (no break and no missing migration)', () => {
-    expect(spec.version).toBe(14);
+    expect(spec.version).toBe(15);
     // Version 6, the one on `main` at the start of the epic, without the two-shadow elevation tokens.
     const previous = JSON.parse(JSON.stringify(spec)) as Spec;
     (previous as { version: number }).version = 6;
@@ -156,13 +157,13 @@ describe('MF4: inherited content color (decision 14)', () => {
       const offered = draw('surface', { color: 'primary' }, mode).provides ?? {};
       expect(offered['content-color']).toBe(t['on-primary']);
       const inherited = draw('text', { text: 'Hello' }, mode, offered);
-      expect(solidOf(find(inherited.root, 'texto'))).toBe(t['on-primary']);
+      expect(solidOf(textNode(inherited.root))).toBe(t['on-primary']);
       // The own `color` wins over the inheritance.
       const own = draw('text', { text: 'Hello', color: 'error' }, mode, offered);
-      expect(solidOf(find(own.root, 'texto'))).toBe(t['error']);
+      expect(solidOf(textNode(own.root))).toBe(t['error']);
       // Without an ancestor that offers one, the usual default (on-surface).
       const alone = draw('text', { text: 'Hello' }, mode);
-      expect(solidOf(find(alone.root, 'texto'))).toBe(t['on-surface']);
+      expect(solidOf(textNode(alone.root))).toBe(t['on-surface']);
     },
   );
 
@@ -307,34 +308,27 @@ describe('MF4: opaque disabled state (decision 16)', () => {
     (mode) => {
       const t = tokens(mode);
       const off = draw('switch', { checked: 'false', enabled: 'false' }, mode).root;
-      for (const gone of [
-        'trilho desabilitado',
-        'contorno desabilitado',
-        'alça desabilitada',
-      ])
+      for (const gone of ['disabled track', 'disabled outline', 'disabled handle'])
         expect(find(off, gone), gone).toBeUndefined();
-      const rail = find(off, 'trilho')!;
+      const rail = find(off, 'track')!;
       expectNear(
         solidOf(rail),
         over(t['surface-container-highest']!, 0.12, t['surface']!),
       );
       expect(rail.opacity).toBe(1);
-      const outline = find(off, 'contorno')!;
+      const outline = find(off, 'outline')!;
       const line = outline.stroke?.paints[0];
       expectNear(
         line?.type === 'solid' ? rgb(line.color) : undefined,
         over(t['on-surface']!, 0.12, t['surface']!),
       );
       expect(outline.opacity).toBe(1);
-      const thumb = find(off, 'alça')!;
+      const thumb = find(off, 'handle')!;
       expectNear(solidOf(thumb), over(t['on-surface']!, 0.38, t['surface']!));
       expect(thumb.opacity).toBe(1);
       const on = draw('switch', { checked: 'true', enabled: 'false' }, mode).root;
-      expectNear(
-        solidOf(find(on, 'trilho')),
-        over(t['on-surface']!, 0.12, t['surface']!),
-      );
-      expect(solidOf(find(on, 'alça'))).toBe(t['surface']);
+      expectNear(solidOf(find(on, 'track')), over(t['on-surface']!, 0.12, t['surface']!));
+      expect(solidOf(find(on, 'handle'))).toBe(t['surface']);
     },
   );
 
@@ -347,12 +341,12 @@ describe('MF4: opaque disabled state (decision 16)', () => {
         { type: 'single', value: 0.5, steps: 4, enabled: 'false' },
         mode,
       ).root;
-      const handle = findAll(root, 'alça');
+      const handle = findAll(root, 'handle');
       const tracks = [
-        ...findAll(root, 'trilho ativo'),
-        ...findAll(root, 'trilho inativo'),
+        ...findAll(root, 'active track'),
+        ...findAll(root, 'inactive track'),
       ];
-      const marks = findAll(root, 'marca').filter((n) => n.visible);
+      const marks = findAll(root, 'tick').filter((n) => n.visible);
       expect(handle.length + tracks.length + marks.length).toBeGreaterThan(3);
       for (const n of [...handle, ...tracks, ...marks]) {
         expect(n.opacity, n.name).toBe(1);
@@ -360,10 +354,10 @@ describe('MF4: opaque disabled state (decision 16)', () => {
       }
       for (const n of [
         ...handle,
-        ...findAll(root, 'trilho ativo').filter((x) => x.visible),
+        ...findAll(root, 'active track').filter((x) => x.visible),
       ])
         expectNear(solidOf(n), over(t['on-surface']!, 0.38, t['surface']!));
-      for (const n of findAll(root, 'trilho inativo'))
+      for (const n of findAll(root, 'inactive track'))
         expectNear(solidOf(n), over(t['on-surface']!, 0.12, t['surface']!));
     },
   );
@@ -378,7 +372,7 @@ describe('MF4: rounded gap in the text-field and secure-text-field outline (deci
     '%s outlined with a value has a single outline, with stroke.gap over the label (padding 4) and the corner-extra-small radius',
     (id) => {
       const root = draw(id, textFieldValues[id]!).root;
-      const outlines = findAll(root, 'contorno').filter((n) => n.visible);
+      const outlines = findAll(root, 'outline').filter((n) => n.visible);
       expect(outlines).toHaveLength(1);
       const outline = outlines[0]!;
       expect(outline).toMatchObject({ type: 'rect', cornerRadius: 4 });
@@ -388,17 +382,17 @@ describe('MF4: rounded gap in the text-field and secure-text-field outline (deci
       expect(gap.side).toBe('top');
       expect(gap.to).toBeGreaterThan(gap.from + 8);
       // The gap covers the minimized label plus 4 on each side.
-      const label = find(root, 'rótulo minimizado') as TextNode;
+      const label = find(root, 'minimized label') as TextNode;
       expect(label).toBeDefined();
-      expect(find(root, 'contorno (lados)')).toBeUndefined();
-      expect(find(root, 'trecho final')).toBeUndefined();
+      expect(find(root, 'outline (sides)')).toBeUndefined();
+      expect(find(root, 'end segment')).toBeUndefined();
     },
   );
   it.each(['text-field', 'secure-text-field'])(
     '%s outlined without a value or hint, the label stays inside and the outline opens no gap',
     (id) => {
       const root = draw(id, { style: 'outlined', label: 'E-mail' }).root;
-      const outline = findAll(root, 'contorno').find((n) => n.visible)!;
+      const outline = findAll(root, 'outline').find((n) => n.visible)!;
       expect(outline.stroke?.gaps ?? []).toEqual([]);
     },
   );
@@ -419,15 +413,15 @@ describe('MF4: justified text (decision 18)', () => {
       textAlign: 'Justify',
       width: 'fill',
     }).root;
-    expect((find(justified, 'texto') as TextNode).style.align).toBe('justify');
+    expect((textNode(justified) as TextNode).style.align).toBe('justify');
     for (const [align, expected] of [
       ['Start', 'left'],
       ['Center', 'center'],
       ['End', 'right'],
     ] as const)
       expect(
-        (find(draw('text', { text: long, textAlign: align }).root, 'texto') as TextNode)
-          .style.align,
+        (textNode(draw('text', { text: long, textAlign: align }).root) as TextNode).style
+          .align,
       ).toBe(expected);
   });
 });
@@ -444,23 +438,23 @@ describe('MF4: number under the time-picker handle (decision 21)', () => {
   it('the handle is a circular frame with clip and the copy of the numbers in on-primary', () => {
     const t = tokens('light');
     const root = draw('time-picker', values).root;
-    const handle = find(root, 'alça')!;
+    const handle = find(root, 'handle')!;
     expect(handle).toMatchObject({ type: 'frame', clip: true });
     expect(handle.width).toBe(48);
     expect((handle as { cornerRadius: unknown }).cornerRadius).toBeGreaterThanOrEqual(24);
-    const copies = findAll(handle, 'número sob a alça') as TextNode[];
+    const copies = findAll(handle, 'number under the handle') as TextNode[];
     expect(copies).toHaveLength(12);
     for (const c of copies) expect(solidOf(c)).toBe(t['on-primary']);
     // The clock numbers stay in on-surface, outside the handle.
-    const originals = findAll(find(root, 'relógio')!, 'número') as TextNode[];
+    const originals = findAll(find(root, 'clock')!, 'number') as TextNode[];
     expect(originals).toHaveLength(12);
     for (const o of originals) expect(solidOf(o)).toBe(t['on-surface']);
   });
 
   it('at 10:37 the number 35 is half covered: the on-primary copy crosses the handle edge (half on-primary, half on-surface)', () => {
     const root = draw('time-picker', values).root;
-    const handle = find(root, 'alça')!;
-    const copies = findAll(handle, 'número sob a alça') as TextNode[];
+    const handle = find(root, 'handle')!;
+    const copies = findAll(handle, 'number under the handle') as TextNode[];
     const texts = copies.map((c) => c.text);
     expect(texts).toContain('35');
     expect(texts).toContain('40');
@@ -491,8 +485,8 @@ describe('MF4: number under the time-picker handle (decision 21)', () => {
       is24Hour: 'true',
       selection: 'hour',
     }).root;
-    const handle = find(root, 'alça')!;
-    const ten = (findAll(handle, 'número sob a alça') as TextNode[]).find(
+    const handle = find(root, 'handle')!;
+    const ten = (findAll(handle, 'number under the handle') as TextNode[]).find(
       (c) => c.text === '10',
     )!;
     const at = offsetIn(handle, ten)!;
@@ -507,8 +501,8 @@ describe('MF4: new examples', () => {
   it('the primary surface and the justified paragraph draw without warnings, in light and dark', () => {
     for (const mode of ['light', 'dark'] as const)
       for (const [id, name] of [
-        ['surface', 'Primário'],
-        ['text', 'Parágrafo justificado'],
+        ['surface', 'Primary'],
+        ['text', 'Justified paragraph'],
       ] as const) {
         const entry = entryOf(id);
         const example = entry.examples.find((e) => e.name === name);

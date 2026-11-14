@@ -1,113 +1,113 @@
 # Navigation rail
 
-Barra de navegação lateral para telas largas. A rail estreita (rail), a wide (wide) e a wide modal (modal-wide) têm um destino por linha de Itens.
+Side navigation bar for wide screens. The narrow rail (rail), the wide (wide) and the modal wide (modal-wide) have one destination per row of Items.
 
-Tipo de anotação: `navigation-rail` (camada Componentes).
+Annotation type: `navigation-rail` (Components layer).
 
-## Campos
+## Fields
 
-| Chave             | Rótulo                  | Tipo  | Obrigatório | Opções                                  | Padrão     | Descrição                                                                                                                                                                                                                                                                                              |
-| ----------------- | ----------------------- | ----- | ----------- | --------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `items`           | Itens                   | table | sim         | ver Colunas abaixo                      |            | Um destino por linha, na ordem em que aparecem na rail, de cima para baixo.                                                                                                                                                                                                                            |
-| `style`           | Estilo                  | enum  | não         | `rail`, `wide`, `modal-wide`            | `rail`     | rail (NavigationRail, 80 de largura), wide (WideNavigationRail, recolhida ou expandida) ou modal-wide (ModalWideNavigationRail, que expande sobre a tela).                                                                                                                                             |
-| `initialValue`    | Estado inicial          | enum  | não         | `Collapsed`, `Expanded`                 | `Expanded` | Só para wide e modal-wide: Expanded mostra o ícone ao lado do rótulo; Collapsed, o ícone acima (rememberWideNavigationRailState).                                                                                                                                                                      |
-| `alwaysShowLabel` | Sempre mostrar o rótulo | enum  | não         | `true`, `false`                         | `true`     | Só para rail: false mostra o rótulo só no destino selecionado.                                                                                                                                                                                                                                         |
-| `interaction`     | Interação               | enum  | não         | `none`, `hovered`, `focused`, `pressed` | `none`     | Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda. |
+| Key               | Label             | Type  | Required | Options                                 | Default    | Description                                                                                                                                                                                                                                                                        |
+| ----------------- | ----------------- | ----- | -------- | --------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `items`           | Items             | table | yes      | see Columns below                       |            | One destination per row, in the order they appear in the rail, from top to bottom.                                                                                                                                                                                                 |
+| `style`           | Style             | enum  | no       | `rail`, `wide`, `modal-wide`            | `rail`     | rail (NavigationRail, 80 wide), wide (WideNavigationRail, collapsed or expanded) or modal-wide (ModalWideNavigationRail, which expands over the screen).                                                                                                                           |
+| `initialValue`    | Initial state     | enum  | no       | `Collapsed`, `Expanded`                 | `Expanded` | Only for wide and modal-wide: Expanded shows the icon beside the label; Collapsed, the icon above it (rememberWideNavigationRailState).                                                                                                                                            |
+| `alwaysShowLabel` | Always show label | enum  | no       | `true`, `false`                         | `true`     | Only for rail: false shows the label only on the selected destination.                                                                                                                                                                                                             |
+| `interaction`     | Interaction       | enum  | no       | `none`, `hovered`, `focused`, `pressed` | `none`     | Resting look of the selected item's interaction state: hovered, focused or pressed; none = no state layer. It only changes the drawing, it does not go into the code. The type has no disabled state (no enabled): the state always draws. With no selected item, nothing changes. |
 
-Colunas de `items` (uma linha por item):
+Columns of `items` (one row per item):
 
-| Chave      | Rótulo      | Tipo   | Obrigatório | Opções                                                         | Padrão  |
-| ---------- | ----------- | ------ | ----------- | -------------------------------------------------------------- | ------- |
-| `label`    | Rótulo      | string | sim         |                                                                |         |
-| `icon`     | Ícone       | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |         |
-| `selected` | Selecionado | enum   | não         | `true`, `false`                                                | `false` |
+| Key        | Label    | Type   | Required | Options                                                   | Default |
+| ---------- | -------- | ------ | -------- | --------------------------------------------------------- | ------- |
+| `label`    | Label    | string | yes      |                                                           |         |
+| `icon`     | Icon     | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
+| `selected` | Selected | enum   | no       | `true`, `false`                                           | `false` |
 
 ## Compose
 
-- Símbolo: `androidx.compose.material3.NavigationRail`
-- Arquivo (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt`
-- O campo `style` escolhe o símbolo; os valores sem caso próprio usam o da base.
+- Symbol: `androidx.compose.material3.NavigationRail`
+- File (`path`): `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt`
+- The `style` field chooses the symbol; values without a case of their own use the base one.
 
-| `style`       | Símbolo                                                                                     |
-| ------------- | ------------------------------------------------------------------------------------------- |
-| `rail` (base) | `NavigationRail` (itens `NavigationRailItem`)                                               |
-| `wide`        | `WideNavigationRail` (arquivo `WideNavigationRail.kt`; itens `WideNavigationRailItem`)      |
-| `modal-wide`  | `ModalWideNavigationRail` (arquivo `WideNavigationRail.kt`; itens `WideNavigationRailItem`) |
+| `style`       | Symbol                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| `rail` (base) | `NavigationRail` (items `NavigationRailItem`)                                            |
+| `wide`        | `WideNavigationRail` (file `WideNavigationRail.kt`; items `WideNavigationRailItem`)      |
+| `modal-wide`  | `ModalWideNavigationRail` (file `WideNavigationRail.kt`; items `WideNavigationRailItem`) |
 
-Como a anotação vira a chamada (os valores abaixo são de exemplo; os nomes dos parâmetros e as expressões são os de `params` e `values` do `code`):
+How the annotation becomes the call (the values below are examples; the parameter names and the expressions are those of `params` and `values` in `code`):
 
 ```kotlin
 // style rail
 NavigationRail {
-    NavigationRailItem(    // uma por linha de items
+    NavigationRailItem(    // one per row of items
         selected = true,
-        onClick = { /* lógica da tela */ },
+        onClick = { /* screen logic */ },
         icon = { Icon(Icons.Filled.Home, contentDescription = null) },
-        label = { Text("Início") },
+        label = { Text("Home") },
         alwaysShowLabel = true,
     )
 }
 
-// style wide (modal-wide: ModalWideNavigationRail, mesmos parâmetros)
+// style wide (modal-wide: ModalWideNavigationRail, same parameters)
 val state = rememberWideNavigationRailState(initialValue = WideNavigationRailValue.Expanded)
 WideNavigationRail(state = state) {
-    WideNavigationRailItem(    // uma por linha de items
+    WideNavigationRailItem(    // one per row of items
         selected = true,
-        onClick = { /* lógica da tela */ },
+        onClick = { /* screen logic */ },
         icon = { Icon(Icons.Filled.Home, contentDescription = null) },
-        label = { Text("Início") },
+        label = { Text("Home") },
         railExpanded = state.targetValue == WideNavigationRailValue.Expanded,
     )
 }
 ```
 
-Notas do `code` (o que a ferramenta entrega ao agente):
+Notes from `code` (what the tool hands to the agent):
 
-> Estável, sem opt-in. Um `NavigationRailItem` por linha de `items`, dentro de `NavigationRail { … }`: `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` e `alwaysShowLabel = <alwaysShowLabel>` (parâmetro do item, não da rail). O slot `header = { … }` da rail (um FAB ou o botão de menu) não é um campo. A largura mínima é de 80 dp, vinda do composable; a altura enche a tela (`fillMaxHeight`). O Scaffold não tem slot para a rail: ela vai numa `Row` antes do conteúdo, dentro de `content = { innerPadding -> Row(Modifier.padding(innerPadding)) { rail; Box(Modifier.weight(1f)) { … } } }`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.
+> Stable, no opt-in. One `NavigationRailItem` per row of `items`, inside `NavigationRail { … }`: `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` and `alwaysShowLabel = <alwaysShowLabel>` (an item parameter, not a rail one). The rail's `header = { … }` slot (a FAB or the menu button) is not a field. The minimum width is 80 dp, coming from the composable; the height fills the screen (`fillMaxHeight`). The Scaffold has no slot for the rail: it goes in a `Row` before the content, inside `content = { innerPadding -> Row(Modifier.padding(innerPadding)) { rail; Box(Modifier.weight(1f)) { … } } }`. Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) are in `Icons.AutoMirrored.Filled`.
 
-Variante `wide`: Estável, sem opt-in. `WideNavigationRail(state = rememberWideNavigationRailState(initialValue = <initialValue>)) { … }` (`initialValue` é parâmetro de `rememberWideNavigationRailState`; o composable lê o mesmo `state`). Um `WideNavigationRailItem` por linha de `items`: `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` e `railExpanded = state.targetValue == WideNavigationRailValue.Expanded` (obrigatório e igual em todos os itens; o `iconPosition` do item acompanha: ao lado do rótulo expandida, acima dele recolhida). O `label` é anulável. `alwaysShowLabel` não existe aqui. O slot `header = { … }` não é um campo. A rail recolhida tem 96 dp de largura e a expandida de 220 a 360 dp, vindas do composable. Fora do Scaffold: ela vai numa `Row` antes do conteúdo, dentro de `content = { innerPadding -> … }`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.
+Variant `wide`: Stable, no opt-in. `WideNavigationRail(state = rememberWideNavigationRailState(initialValue = <initialValue>)) { … }` (`initialValue` is a parameter of `rememberWideNavigationRailState`; the composable reads the same `state`). One `WideNavigationRailItem` per row of `items`: `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` and `railExpanded = state.targetValue == WideNavigationRailValue.Expanded` (required and the same on all items; the item's `iconPosition` follows: beside the label when expanded, above it when collapsed). The `label` is nullable. `alwaysShowLabel` does not exist here. The `header = { … }` slot is not a field. The collapsed rail is 96 dp wide and the expanded one from 220 to 360 dp, coming from the composable. Outside the Scaffold: it goes in a `Row` before the content, inside `content = { innerPadding -> … }`. Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) are in `Icons.AutoMirrored.Filled`.
 
-Variante `modal-wide`: Estável, sem opt-in. `ModalWideNavigationRail(state = rememberWideNavigationRailState(initialValue = <initialValue>)) { … }`: recolhida, fica no lugar como a wide; expandida, abre numa janela modal sobre a tela, com scrim; quem expande e recolhe é o `state` (`expand()`, `collapse()` e `toggle()`, numa coroutine), e `hideOnCollapse = true` faz a rail sair da tela ao recolher. Um `WideNavigationRailItem` por linha de `items`: `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` e `railExpanded = state.targetValue == WideNavigationRailValue.Expanded` (obrigatório e igual em todos os itens; o `iconPosition` do item acompanha: ao lado do rótulo expandida, acima dele recolhida). O `label` é anulável. O slot `header = { … }` não é um campo. Fica ao lado do conteúdo, numa `Row` antes dele, dentro de `content = { innerPadding -> … }` do Scaffold; o `Scaffold` não tem slot para ela. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.
+Variant `modal-wide`: Stable, no opt-in. `ModalWideNavigationRail(state = rememberWideNavigationRailState(initialValue = <initialValue>)) { … }`: collapsed, it stays in place like the wide; expanded, it opens in a modal window over the screen, with a scrim; the `state` expands and collapses it (`expand()`, `collapse()` and `toggle()`, in a coroutine), and `hideOnCollapse = true` makes the rail leave the screen when it collapses. One `WideNavigationRailItem` per row of `items`: `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` and `railExpanded = state.targetValue == WideNavigationRailValue.Expanded` (required and the same on all items; the item's `iconPosition` follows: beside the label when expanded, above it when collapsed). The `label` is nullable. The `header = { … }` slot is not a field. It sits beside the content, in a `Row` before it, inside the Scaffold's `content = { innerPadding -> … }`; the `Scaffold` has no slot for it. Since material3 1.4.0 the icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) are in `Icons.AutoMirrored.Filled`.
 
-## Exemplos
+## Examples
 
-- **Rail estreita**: style=rail, alwaysShowLabel=true
-- **Wide expandida**: style=wide, initialValue=Expanded
-- **Modal expandida**: style=modal-wide, initialValue=Expanded
-- **Mouse sobre**: style=rail, alwaysShowLabel=true, interaction=hovered
-- **Com foco**: style=rail, alwaysShowLabel=true, interaction=focused
-- **Pressionado**: style=rail, alwaysShowLabel=true, interaction=pressed
+- **Narrow rail**: style=rail, alwaysShowLabel=true
+- **Expanded wide**: style=wide, initialValue=Expanded
+- **Expanded modal**: style=modal-wide, initialValue=Expanded
+- **Hovered**: style=rail, alwaysShowLabel=true, interaction=hovered
+- **Focused**: style=rail, alwaysShowLabel=true, interaction=focused
+- **Pressed**: style=rail, alwaysShowLabel=true, interaction=pressed
 
-## Fidelidade
+## Fidelity
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisions 1 to 3 of the faithful Material 3 stage). 1 dp = 1 component unit; the container's density converts it to image pixels (`docs/COMPONENT-FORMAT.md`, "Units and density"). The values come from the specialization's tokens (`tokens`, in the `light` and `dark` modes), which mirror the androidx tokens files; no color, font or opacity is left literal in the component.
 
-**Arquivos usados**
+**Files used**
 
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt` (linhas 146 a 168: `DefaultNavigationRailOverride`, o `Surface` com `Column` de `widthIn(min = 80)`, `padding(vertical = 4)` e `spacedBy(4)`; 200 a 316: `NavigationRailItem`, `defaultMinSize(minHeight = 56)` e `widthIn(min = 80)`; 327 a 332: `containerColor`; 693 a 753: `placeLabelAndIcon`; 767 a 797: as constantes de recuo e tamanho).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRail.kt` (linhas 209 a 415: `WideNavigationRailLayout`; 230 a 252: a largura mínima 96 ou 220, o espaço entre itens 4 ou 0 e a altura mínima do item 64 ou 48; 264: o topo de 44; 317 a 336: a medida dos itens (`fitPrioritizingWidth`) e a largura do rail pelo item mais largo mais 20; 410: a posição dos itens; 788 a 814: `WideNavigationRailDefaults`, as formas; 855 a 860: `containerColor` e `modalContainerColor`; 993 a 1000: o `Surface` do rail modal expandido; 1135 a 1157: `ItemHorizontalPadding` 20, `WNRVerticalPadding` 44, `CollapsedRailWidth`, `ExpandedRailMinWidth` 220, `ExpandedRailMaxWidth` 360, `TopIconItemMinHeight` 64).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationItem.kt` (linhas 895 a 975: `placeLabelAndTopIcon`; 978 a 1075: `placeAnimatedLabelAndIcon`, o item do rail wide: indicador no topo, ícone a 4, rótulo a 36; a pílula do ícone ao lado a 20 da borda, com ícone a 16 do início e 8 até o rótulo).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/`: `NavigationRailCollapsedTokens.kt` (24 a 31: largura 96, 80 estreita, `TopSpace` 44, `ItemVerticalSpace` 4, cor surface), `NavigationRailExpandedTokens.kt` (24 a 32: largura 220 a 360, `ModalContainerShape` CornerLarge, `ModalContainerColor` surface container), `NavigationRailVerticalItemTokens.kt` (24 a 30: indicador 56 × 32, `IconLabelSpace` 4, label medium), `NavigationRailHorizontalItemTokens.kt` (24 a 30: indicador de 56 de altura, `IconLabelSpace` 8, label large), `NavigationRailBaselineItemTokens.kt` (24 a 32: `ContainerHeight` 64, `IconSize` 24) e `NavigationRailColorTokens.kt` (24 a 31: ícone `on-secondary-container`, indicador `secondary-container`, rótulo `secondary` ou `on-surface-variant`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt` (linhas 112 a 123: `contentColor`; 274 a 302: a camada de estado só no indicador, `ripple()` do item da rail estreita) e `NavigationItem.kt` (linhas 1102 a 1108: o mesmo `IndicatorRipple` dos itens da wide).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt` (lines 146 to 168: `DefaultNavigationRailOverride`, the `Surface` with a `Column` of `widthIn(min = 80)`, `padding(vertical = 4)` and `spacedBy(4)`; 200 to 316: `NavigationRailItem`, `defaultMinSize(minHeight = 56)` and `widthIn(min = 80)`; 327 to 332: `containerColor`; 693 to 753: `placeLabelAndIcon`; 767 to 797: the inset and size constants).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRail.kt` (lines 209 to 415: `WideNavigationRailLayout`; 230 to 252: the minimum width 96 or 220, the space between items 4 or 0 and the minimum item height 64 or 48; 264: the top of 44; 317 to 336: the measuring of the items (`fitPrioritizingWidth`) and the rail width by the widest item plus 20; 410: the items' position; 788 to 814: `WideNavigationRailDefaults`, the shapes; 855 to 860: `containerColor` and `modalContainerColor`; 993 to 1000: the `Surface` of the expanded modal rail; 1135 to 1157: `ItemHorizontalPadding` 20, `WNRVerticalPadding` 44, `CollapsedRailWidth`, `ExpandedRailMinWidth` 220, `ExpandedRailMaxWidth` 360, `TopIconItemMinHeight` 64).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationItem.kt` (lines 895 to 975: `placeLabelAndTopIcon`; 978 to 1075: `placeAnimatedLabelAndIcon`, the wide rail's item: indicator at the top, icon at 4, label at 36; the pill with the icon beside the label at 20 from the edge, with the icon 16 from the start and 8 up to the label).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/`: `NavigationRailCollapsedTokens.kt` (24 to 31: width 96, 80 narrow, `TopSpace` 44, `ItemVerticalSpace` 4, color surface), `NavigationRailExpandedTokens.kt` (24 to 32: width 220 to 360, `ModalContainerShape` CornerLarge, `ModalContainerColor` surface container), `NavigationRailVerticalItemTokens.kt` (24 to 30: indicator 56 × 32, `IconLabelSpace` 4, label medium), `NavigationRailHorizontalItemTokens.kt` (24 to 30: indicator of 56 height, `IconLabelSpace` 8, label large), `NavigationRailBaselineItemTokens.kt` (24 to 32: `ContainerHeight` 64, `IconSize` 24) and `NavigationRailColorTokens.kt` (24 to 31: icon `on-secondary-container`, indicator `secondary-container`, label `secondary` or `on-surface-variant`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt` (lines 112 to 123: `contentColor`; 274 to 302: the state layer only on the indicator, the narrow rail item's `ripple()`) and `NavigationItem.kt` (lines 1102 to 1108: the same `IndicatorRipple` of the wide items).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (lines 22 to 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0.16 is the `state-dragged`).
 
-**Como o desenho segue o Compose**
+**How the drawing follows Compose**
 
-- Rail estreita (`style: rail`): folha de 80 em `surface`, 4 de padding vertical, destinos de 56 com 4 entre eles. No destino, o indicador de 56 × 32 em `corner-full` fica no topo, o ícone de 24 a 4 dele e o rótulo em `label-medium` a 36 (4 de espaço depois do indicador). Com `alwaysShowLabel` falso o rótulo some nos não selecionados e o ícone fica no centro dos 56 (y = 16).
-- Wide recolhida: folha de 96 em `surface`, 44 de topo, destinos de 64 com 4 entre eles, o indicador de 56 × 32 a 20 da borda e o conteúdo (indicador, ícone, rótulo em `label-medium`) no topo do item.
-- Wide expandida: largura de no mínimo 220 e no máximo 360, que cresce com a pílula mais larga mais 20 (`hug` com `minWidth` e `maxWidth`); itens de 56 sem espaço entre eles; a pílula de 56 de altura em `corner-full` fica a 20 da borda e mede `16 + ícone 24 + 8 + rótulo + 16`, com o rótulo em `label-large` (14 / 20, peso 500, 0,1).
-- Modal expandida: `surface-container` com os quatro cantos de 16 (`corner-large`); recolhida, igual à wide recolhida. Cores como no Compose: ícone `on-secondary-container` selecionado e `on-surface-variant` nos demais, rótulo `secondary` selecionado, indicador `secondary-container`.
-- Rótulo centrado pela maiúscula (`cap-middle`): o nó `rótulo` usa `font.verticalAlign: "cap-middle"`; no destino expandido (ícone ao lado) ocupa a altura do quadro `conteúdo` (`height: "fill"`) e, com o ícone acima, segue `hug` numa coluna. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
+- Narrow rail (`style: rail`): sheet of 80 in `surface`, 4 of vertical padding, destinations of 56 with 4 between them. In the destination, the 56 × 32 indicator in `corner-full` sits at the top, the 24 icon at 4 from it and the label in `label-medium` at 36 (4 of space after the indicator). With `alwaysShowLabel` false the label disappears on the unselected ones and the icon stays at the center of the 56 (y = 16).
+- Collapsed wide: sheet of 96 in `surface`, 44 at the top, destinations of 64 with 4 between them, the 56 × 32 indicator at 20 from the edge and the content (indicator, icon, label in `label-medium`) at the top of the item.
+- Expanded wide: width of at least 220 and at most 360, which grows with the widest pill plus 20 (`hug` with `minWidth` and `maxWidth`); items of 56 with no space between them; the 56-high pill in `corner-full` sits at 20 from the edge and measures `16 + 24 icon + 8 + label + 16`, with the label in `label-large` (14 / 20, weight 500, 0.1).
+- Expanded modal: `surface-container` with all four corners of 16 (`corner-large`); collapsed, the same as the collapsed wide. Colors as in Compose: icon `on-secondary-container` when selected and `on-surface-variant` on the others, label `secondary` when selected, indicator `secondary-container`.
+- Label centered by the cap height (`cap-middle`): the `label` node uses `font.verticalAlign: "cap-middle"`; in the expanded destination (icon beside) it takes the height of the `content` frame (`height: "fill"`) and, with the icon above, stays `hug` in a column. Compose's `Text` centers by the font's line box (ascent and descent); the drawing centers the cap height in the box, and with Roboto the two coincide to within 1 px.
 
-**Estado de interação (campo `interaction`)**
+**Interaction state (the `interaction` field)**
 
-O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `variants`. As opções são `none`, `hovered`, `focused` e `pressed`: os tokens da rail **não nomeiam** estados do item; a camada é o ripple do indicador (`StateTokens.kt`). **Este tipo não tem `enabled`**, então não existe um desabilitado que vença: o estado sempre desenha.
+The field chooses the resting look of a state; it does not go into the `code` or the `variants`. The options are `none`, `hovered`, `focused` and `pressed`: the rail tokens **do not name** item states; the layer is the indicator's ripple (`StateTokens.kt`). **This type has no `enabled`**, so there is no disabled state that wins: the state always draws.
 
-- **Camada de estado:** o nó `estado` é um `rect` do tamanho do indicador do estilo (56 × 32 sob o ícone na rail e na wide recolhida, a pílula de 56 de altura na wide expandida e na modal), por cima dele e com o raio `corner-full`, na cor do ripple sem cor própria, o `contentColor` da folha, `on-surface`. A opacidade vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10).
-- **Item do estado:** vale para o item selecionado (decisão 6 da etapa); com nenhum item selecionado nada muda. O Compose desenha o estado no item que o mouse, o foco ou o toque alcança; escolher "o primeiro" pediria o índice do item no `repeat` (#897), e um campo de índice do item fica fora. Os exemplos de estado trazem os `items` do `preview`: no Catálogo o exemplo desenha os destinos, com a camada de estado no item selecionado.
+- **State layer:** the `state` node is a `rect` the size of the style's indicator (56 × 32 under the icon in the rail and the collapsed wide, the 56-high pill in the expanded wide and the modal), on top of it and with the `corner-full` radius, in the color of the ripple with no color of its own, the sheet's `contentColor`, `on-surface`. The opacity comes from the tokens `state-hover` (0.08), `state-focus` (0.10) and `state-pressed` (0.10).
+- **State item:** it applies to the selected item (decision 6 of the stage); with no item selected nothing changes. Compose draws the state on the item that the mouse, the focus or the touch reaches; choosing "the first" would require the item index in the `repeat` (#897), and an item index field is left out. The state examples carry the `preview`'s `items`: in the Catalog the example draws the destinations, with the state layer on the selected item.
 
-**O que ainda difere do Compose**
+**What still differs from Compose**
 
-- O scrim, a elevação do rail modal (Level2 nos tokens, sem sombra no composable), a animação de expandir e recolher, o cabeçalho (`header`) e o botão do rail não fazem parte do desenho; o estilo `modal-wide` desenha só a folha.
-- A largura do rail estreito é `hug` com mínimo de 80 (o `widthIn(min = 80)` do Compose); a wide recolhida é limitada a 96 mesmo com rótulo mais largo, como o `actualMinWidth` do Compose.
-- O `interaction` é um quadro parado: sem o ripple animado nem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado), sem `enabled` e sem o ícone sozinho (item sem rótulo, de indicador redondo de 56 × 56): o tipo exige o rótulo.
+- The scrim, the modal rail's elevation (Level2 in the tokens, no shadow in the composable), the expand and collapse animation, the header (`header`) and the rail button are not part of the drawing; the `modal-wide` style draws only the sheet.
+- The narrow rail's width is `hug` with a minimum of 80 (Compose's `widthIn(min = 80)`); the collapsed wide is capped at 96 even with a wider label, like Compose's `actualMinWidth`.
+- The `interaction` is a resting frame: no animated ripple or focus ring (Compose does not define `FocusIndicatorColor` for it in the pinned commit), no `enabled` and no icon-only item (an item with no label, with a round 56 × 56 indicator): the type requires the label.

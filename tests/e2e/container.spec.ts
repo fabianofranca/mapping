@@ -139,7 +139,7 @@ test('a new project brings the notes library: Add › Note creates a floating po
   await page.keyboard.press('Control+Shift+9');
   await page.getByRole('tab', { name: 'Palette' }).click();
   const add = page.getByRole('button', {
-    name: 'Add to canvas: Nota',
+    name: 'Add to canvas: Note',
     exact: true,
   });
   await expect(add).toHaveText('Add to canvas');

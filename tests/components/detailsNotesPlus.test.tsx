@@ -10,7 +10,7 @@ import { notesProject, withNoteInstance } from '../model/notesFixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
 // The + of the Notes layer in the Details (stage #1280, decisions 4 to 6).
-// pt-BR kept: names of the bundled notes library (layer 'Notas', types 'Nota' and 'Tabela'), asserted by the test
+// Names of the bundled notes library (layer 'Notes', types 'Note' and 'Table'), asserted by the test
 
 beforeEach(() => {
   locale.value = 'en-US';
@@ -49,7 +49,7 @@ function plainMarking() {
 }
 
 const plusOfNotes = () =>
-  screen.getByRole('button', { name: t('annotation.addIn', { layer: 'Notas' }) });
+  screen.getByRole('button', { name: t('annotation.addIn', { layer: 'Notes' }) });
 
 describe('+ of the Notes layer', () => {
   it('on a plain marking it offers neither Note nor Table and says the note comes from the Palette', async () => {
@@ -58,8 +58,8 @@ describe('+ of the Notes layer', () => {
     await user.click(plusOfNotes());
     expect(screen.getByText(emptyMessage())).toBeTruthy();
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).queryByRole('button', { name: /^Nota/ })).toBeNull();
-    expect(within(dialog).queryByRole('button', { name: /^Tabela/ })).toBeNull();
+    expect(within(dialog).queryByRole('button', { name: /^Note/ })).toBeNull();
+    expect(within(dialog).queryByRole('button', { name: /^Table/ })).toBeNull();
   });
 
   it('on an arrow, the same message', async () => {
@@ -74,6 +74,6 @@ describe('+ of the Notes layer', () => {
     const user = renderPanel(harness, 'N1');
     await user.click(plusOfNotes());
     expect(screen.queryByText(emptyMessage())).toBeNull();
-    expect(screen.getByRole('button', { name: /Tabela/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Table/ })).toBeTruthy();
   });
 });
