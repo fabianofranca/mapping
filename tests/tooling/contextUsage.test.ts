@@ -341,27 +341,31 @@ describe('CM1 — textos do fluxo que usam a medida (decisões 5 a 10)', () => {
     expect(item7).toContain('`Contexto: sem medida (<motivo>)`');
   });
 
-  const contexto = between(nuvem, '**Contexto até 300 mil.**', '\n\n');
-  const entrega = between(nuvem, '**Entrega, no fim da rodada:**', '6. **Cole o Resumo');
-  const aviso = entrega.slice(entrega.indexOf('5. **Avise o coordenador**'));
+  const contexto = between(nuvem, '**Context up to 300 thousand.**', '\n\n');
+  const entrega = between(
+    nuvem,
+    '**Delivery, at the end of the round:**',
+    '6. **Paste the Summary',
+  );
+  const aviso = entrega.slice(entrega.indexOf('5. **Notify the coordinator**'));
 
   it('TESTING-NUVEM: o testador mede antes de cada lote e antes do aviso, sem ação nova', () => {
-    expect(contexto).toContain('300 mil');
+    expect(contexto).toContain('300 thousand');
     expect(contexto).toContain('`node scripts/ci/contextUsage.mjs`');
-    expect(contexto).toContain('antes de entregar cada lote');
-    expect(contexto).toContain('antes do aviso');
-    expect(contexto).toContain('`Contexto por lote: ');
-    expect(contexto).toContain('"O que atrapalhou"');
+    expect(contexto).toContain('before handing over each batch');
+    expect(contexto).toContain('before the notice');
+    expect(contexto).toContain('`Context per batch: ');
+    expect(contexto).toContain('"What got in the way"');
     expect(contexto).toContain('`get_session`');
-    expect(contexto).toContain('sem chamar o dono');
+    expect(contexto).toContain('or calling the owner');
   });
 
   it('TESTING-NUVEM: o aviso termina com "; contexto <mil> mil" nos três formatos', () => {
-    expect(aviso).toContain('`; contexto <mil> mil`');
-    expect(aviso).toContain('`; contexto sem medida (<motivo>)`');
-    expect(aviso).toContain('19min32s; contexto ');
-    expect(aviso).toMatch(/Grupo 2 de 3: [^"]*; contexto \d+ mil"/);
-    expect(aviso).toMatch(/Bloco 2 de 5: [^"]*; contexto \d+ mil"/);
+    expect(aviso).toContain('`; contexto <n> mil`');
+    expect(aviso).toContain('`; contexto sem medida (<reason>)`');
+    expect(aviso).toContain('19min32s; `contexto ');
+    expect(aviso).toMatch(/Grupo 2 de 3: [^"]*; `contexto \d+ mil`"/);
+    expect(aviso).toMatch(/Bloco 2 de 5: [^"]*; `contexto \d+ mil`"/);
   });
 
   const porEtapa = section(fila, '## 3. Por etapa');
@@ -438,9 +442,9 @@ describe('CM1 — textos do fluxo que usam a medida (decisões 5 a 10)', () => {
 
   it('CL1.6: o TESTING-NUVEM guarda o motivo do pkill e o exemplo do corte de 25.000 (não são do épico)', () => {
     expect(nuvem).toContain(
-      '`pkill -f chrome` (mata a própria shell e faz o Chrome restaurar abas)',
+      '`pkill -f chrome` (it kills the shell itself and makes Chrome restore tabs)',
     );
-    expect(nuvem).toContain('(por exemplo, o corte de 25.000 ou um trecho que faltou)');
+    expect(nuvem).toContain('(for example, the 25,000 cut or a missing excerpt)');
     // Teto subiu de 32.000 para 32.500 na etapa #1712 (restauração da redação anterior ao PR #1709).
     expect(nuvem.length).toBeLessThanOrEqual(32_500);
   });

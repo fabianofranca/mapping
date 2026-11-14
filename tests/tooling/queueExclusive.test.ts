@@ -458,11 +458,11 @@ describe('painel.py — todo .md de docs/ e da raiz por seção (TS1, decisões 
     expect(motivo('AGENTS.md#a', 'AGENTS.md#b')).toBe('#2 começa');
   });
 
-  it('docs/TESTING-NUVEM.md por seção; #blocos não conta; docs/design-system/ não conta', () => {
-    expect(motivo('docs/TESTING-NUVEM.md#relato', 'docs/TESTING-NUVEM.md#ambiente')).toBe(
-      '#2 começa',
-    );
-    expect(motivo('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md#relato')).toBe(
+  it('docs/TESTING-NUVEM.md por seção; #blocos (ignored literal) não conta; docs/design-system/ não conta', () => {
+    expect(
+      motivo('docs/TESTING-NUVEM.md#report', 'docs/TESTING-NUVEM.md#environment'),
+    ).toBe('#2 começa');
+    expect(motivo('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md#report')).toBe(
       '#2 começa',
     );
     expect(motivo('docs/design-system/x.md', 'docs/design-system/x.md')).toBe(
