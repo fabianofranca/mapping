@@ -1,312 +1,312 @@
-# Exemplos
+# Examples
 
-Este guia diz **o que dá para ver em cada exemplo** do repositório e como abri-lo. Serve a quem usa a app e o MCP: para aprender um recurso, escolha o exemplo que o mostra e abra.
+This guide says **what you can see in each example** of the repository and how to open it. It is for people who use the app and the MCP server: to learn a feature, pick the example that shows it and open it.
 
-Os exemplos moram em três lugares:
+The examples live in three places:
 
-- `libraries/`: as bibliotecas reais, prontas para uso. É a primeira fonte de exemplo de qualquer recurso.
-- `examples/`: só o que as bibliotecas não cobrem, mais os projetos e os zips prontos para os roteiros de teste.
-- `tests/fixtures/`: arquivos que só os testes leem. Não são exemplos e não estão neste guia.
+- `libraries/`: the real, ready-to-use libraries. They are the first source of examples for any feature.
+- `examples/`: only what the libraries do not cover, plus the projects and ready-made zips for the test scripts.
+- `tests/fixtures/`: files that only the tests read. They are not examples and are not in this guide.
 
-O teste `tests/examples/featureCoverage.test.ts` garante que todo recurso dos formatos de especialização e de componente tenha pelo menos um exemplo. O teste `tests/examples/examplesReadme.test.ts` garante que cada exemplo do disco tenha uma seção aqui e que nenhuma seção aponte para algo que não existe mais.
+The test `tests/examples/featureCoverage.test.ts` guarantees that every feature of the specialization and component formats has at least one example. The test `tests/examples/examplesReadme.test.ts` guarantees that every example on disk has a section here and that no section points to something that no longer exists.
 
-Os nomes dos botões vêm da app em português. Na tela inicial: **Abrir pasta**, **Abrir zip** e **Abrir biblioteca**. Em **Especializações**: **Aplicar especialização…**, **Aplicar pasta…** (só no Chrome e no Edge), **Aplicar zip…** e **Atualizar de pasta…**. O **Catálogo** abre com `Ctrl+Shift+9`. Os roteiros `R…` estão em [`docs/TESTING.md`](../docs/TESTING.md).
+Button and menu names are the app's English texts. On the home screen: **Open folder**, **Open zip** and **Open library**. Under **Specializations**: **Apply specialization…**, **Apply folder…** (Chrome and Edge only), **Apply zip…** and **Update from folder…**. The **Catalog** opens with `Ctrl+Shift+9`. The `R…` scripts are in [`docs/TESTING.md`](../docs/TESTING.md).
 
-## Bibliotecas prontas (`libraries/`)
+## Ready-made libraries (`libraries/`)
 
 ### `libraries/notas/`
 
-**O que é.** Notas soltas no canvas: o post-it de texto (**Nota**) e a tabela de chave e valor (**Tabela**). Dois tipos, os dois flutuantes.
+**What it is.** Loose notes on the canvas: the text sticky note (**Note**) and the key-value table (**Table**). Two types, both floating.
 
-**Como abrir.** Já vem na app e é aplicada sozinha em todo projeto novo. Para ver o desenho e a documentação sem projeto: **Abrir biblioteca** na tela inicial e escolher a pasta. Com um projeto aberto: **Catálogo** (`Ctrl+Shift+9`), aba **Componentes**, biblioteca **Notas**; na aba **Paleta**, **Adicionar**.
+**How to open.** It ships with the app and is applied by itself to every new project. To see the design and the documentation without a project: **Open library** on the home screen and pick the folder. With a project open: **Catalog** (`Ctrl+Shift+9`), **Components** tab, **Notes** library; in the **Palette** tab, **Add**.
 
-**O que dá para ver.**
+**What you can see.**
 
-- A marcação flutuante: a nota e a tabela ficam por cima de tudo, não pertencem a nenhuma tela e não se movem junto com ela (`floating` nos dois tipos).
-- A nota (`nota`): campos `titulo` e `texto` (obrigatório), cartão amarelo com sombra.
-- A tabela (`tabela`): campo `linhas` do tipo tabela (colunas `chave` e `valor`) desenhado linha a linha pelo nó `repeat`, com o `preview` já em forma de tabela.
-- Um documento por tipo (`docs/nota.md`, `docs/tabela.md`) e um exemplo nomeado em cada tipo.
-- Dimensionamento simples: `size`, `minSize` e `sizing` com `fill`; condições com `$has` para esconder o título vazio.
+- The floating marking: the note and the table sit on top of everything, belong to no screen and do not move with it (`floating` on both types).
+- The note (`nota`): fields `titulo` and `texto` (required), a yellow card with a shadow.
+- The table (`tabela`): a `linhas` field of the table type (columns `chave` and `valor`) drawn row by row by the `repeat` node, with the `preview` already in table form.
+- One document per type (`docs/nota.md`, `docs/tabela.md`) and one named example on each type.
+- Simple sizing: `size`, `minSize` and `sizing` with `fill`; conditions with `$has` to hide the empty title.
 
-**Roteiros.** R10.8, R11.5, R12.13 a R12.16.
+**Scripts.** R10.8, R11.5, R12.13 to R12.16.
 
 ### `libraries/kotlin/`
 
-**O que é.** As declarações Kotlin como tipos de anotação: classe, data class, sealed class, enum class, value class, annotation class, object, data object, interface, sealed interface e fun interface. Cada uma é um cartão de diagrama de classes.
+**What it is.** Kotlin declarations as annotation types: class, data class, sealed class, enum class, value class, annotation class, object, data object, interface, sealed interface and fun interface. Each one is a class-diagram card.
 
-**Como abrir.** Não vem embutida. **Especializações** › **Aplicar pasta…** (ou **Aplicar zip…** com um zip da pasta). Sem projeto: **Abrir biblioteca**. Já aplicada e com dados: `examples/sugestoes-kotlin.zip`.
+**How to open.** It is not embedded. **Specializations** › **Apply folder…** (or **Apply zip…** with a zip of the folder). Without a project: **Open library**. Already applied and with data: `examples/suggestions-kotlin.zip`.
 
-**O que dá para ver.**
+**What you can see.**
 
-- Duas camadas (`kotlin-classes` e `kotlin-interfaces`) com onze tipos, cada um com componente, documento e exemplo.
-- Tabelas com várias colunas: **Propriedades**, **Funções**, **Supertipos** e **Entradas** (enum class), desenhadas pelo `repeat`, com a altura medida pelo número de linhas.
-- Referências entre declarações: o campo `outer` (**Declarada em**) e a coluna `typeRef` (**Tipo mapeado**) são `ref` que aceitam a etiqueta `kotlin-type`. Cada linha de **Propriedades** é alvo de referência com as etiquetas `data-field` e `kotlin-property`, nomeada pela coluna `name` (`rowLabel`).
-- Sugestões de texto: a coluna **Tipo** de **Propriedades** tem `suggestions` (`String`, `Int`, `List`…), que não restringem o valor.
-- Alvos mapeados na lista: `linkedRef` liga a coluna **Tipo** à coluna **Tipo mapeado**; escolher uma declaração grava o texto e a referência juntos, numa entrada do desfazer.
-- `enum` com valor padrão (visibilidade, modalidade) e componentes com `$switch`, `$if`, `$concat`, `$has` e `$field` com `default`, texto em itálico e opacidade.
+- Two layers (`kotlin-classes` and `kotlin-interfaces`) with eleven types, each with a component, a document and an example.
+- Multi-column tables: **Properties**, **Functions**, **Supertypes** and **Constants** (enum class), drawn by `repeat`, with the height measured by the number of rows.
+- References between declarations: the `outer` field (**Declared in**) and the `typeRef` column (**Mapped type**) are `ref` fields that accept the `kotlin-type` tag. Each **Properties** row is a reference target with the tags `data-field` and `kotlin-property`, named by the `name` column (`rowLabel`).
+- Text suggestions: the **Type** column of **Properties** has `suggestions` (`String`, `Int`, `List`…), which do not restrict the value.
+- Mapped targets in the list: `linkedRef` links the **Type** column to the **Mapped type** column; choosing a declaration saves the text and the reference together, in one undo entry.
+- `enum` with a default value (visibility, modality) and components with `$switch`, `$if`, `$concat`, `$has` and `$field` with `default`, italic text and opacity.
 
-**Roteiros.** R14.
+**Scripts.** R14.
 
 ### `libraries/material3-compose/`
 
-**O que é.** O Material Design 3 para Jetpack Compose: 50 tipos em três camadas (layout, conteúdo e componentes), fixados no `androidx.compose.material3` 1.4.0, com a fonte Roboto no pacote.
+**What it is.** Material Design 3 for Jetpack Compose: 50 types in three layers (layout, content and components), pinned to `androidx.compose.material3` 1.4.0, with the Roboto font in the package.
 
-**Como abrir.** Não vem embutida. **Especializações** › **Aplicar pasta…**, ou **Aplicar zip…** com o `examples/material3-compose.zip`. Sem projeto: **Abrir biblioteca**. Pelo MCP: `validate_library` e `apply_specialization`.
+**How to open.** It is not embedded. **Specializations** › **Apply folder…**, or **Apply zip…** with `examples/material3-compose.zip`. Without a project: **Open library**. Through the MCP: `validate_library` and `apply_specialization`.
 
-**O que dá para ver.**
+**What you can see.**
 
-- O Button, com a tabela de variantes no Catálogo (`variants` no `code`): o campo `style` troca o composable (`Button`, `OutlinedButton`, `TextButton`, `FilledTonalButton`, `ElevatedButton`). Vinte e seis tipos têm variantes.
-- O `code` completo de cada tipo na plataforma Compose: `symbol`, `path` no repositório do androidx (com `repo` fixado num commit e `urlTemplate`), `params`, `values` (a tradução das opções para a expressão do código) e `notes`.
-- Os quatro tamanhos prontos de container (`containers`): Celular, Celular grande, Tablet e Desktop, no diálogo **Novo container**.
-- As fontes Roboto 400 e 500 em `.woff2` (`fonts`), então os textos saem em Roboto e a validação não dá avisos.
-- Componentes com espaço para filhas (nó `slot`): Scaffold, Surface, Box, Row, Column, LazyColumn, LazyRow, LazyVerticalGrid, FlowRow, HorizontalPager e PullToRefresh.
-- Tabelas desenhadas (`repeat`, na coluna e na linha): Navigation bar, Navigation rail, Navigation drawer, Tabs, Segmented button, Dropdown menu, Bottom sheet, Carousel e Short navigation bar.
-- Imagem remota (nó `image` com `fit` `cover`, `contain` e `fill`): Image, Card (`media`), List item (`leadingImage`) e Carousel. Sem consentimento da origem, aparece o reservado cinza.
-- Ícones e formas: nó `path` (a maioria dos tipos), `ellipse` (Switch, Radio button, Slider, Progress indicator) e `rect`.
-- Tamanho mínimo oficial (`minSize`) só onde o Compose define nos dois eixos: Button 58 × 40, Text field 280 × 56, FAB 40 × 40 e outros.
-- Sugestões de texto nos campos de ícone (`suggestions`: `Home`, `Search`, `Add`…).
-- Dimensionamento com porcentagem (Slider, Short navigation bar), âncoras (`anchors`, inclusive `centerX`), degradê (Carousel), traço tracejado e `outside`, `$and`, `$or` e `$not` nas condições.
-- Os 50 tipos têm componente, documento e de um a três exemplos.
+- The Button, with the variants table in the Catalog (`variants` in `code`): the `style` field switches the composable (`Button`, `OutlinedButton`, `TextButton`, `FilledTonalButton`, `ElevatedButton`). Twenty-six types have variants.
+- The complete `code` of each type on the Compose platform: `symbol`, `path` in the androidx repository (with `repo` pinned to a commit and `urlTemplate`), `params`, `values` (the translation of the options into the code expression) and `notes`.
+- The four ready-made container sizes (`containers`): Phone, Large phone, Tablet and Desktop, in the **New container** dialog.
+- The Roboto 400 and 500 fonts as `.woff2` (`fonts`), so the texts come out in Roboto and validation gives no warnings.
+- Components with room for children (the `slot` node): Scaffold, Surface, Box, Row, Column, LazyColumn, LazyRow, LazyVerticalGrid, FlowRow, HorizontalPager and PullToRefresh.
+- Drawn tables (`repeat`, in the column and in the row): Navigation bar, Navigation rail, Navigation drawer, Tabs, Segmented button, Dropdown menu, Bottom sheet, Carousel and Short navigation bar.
+- Remote image (the `image` node with `fit` `cover`, `contain` and `fill`): Image, Card (`media`), List item (`leadingImage`) and Carousel. Without the origin's consent, the gray placeholder appears.
+- Icons and shapes: the `path` node (most types), `ellipse` (Switch, Radio button, Slider, Progress indicator) and `rect`.
+- Official minimum size (`minSize`) only where Compose defines it on both axes: Button 58 × 40, Text field 280 × 56, FAB 40 × 40 and others.
+- Text suggestions on the icon fields (`suggestions`: `Home`, `Search`, `Add`…).
+- Sizing with percentages (Slider, Short navigation bar), anchors (`anchors`, including `centerX`), gradient (Carousel), dashed stroke and `outside`, `$and`, `$or` and `$not` in conditions.
+- All 50 types have a component, a document and one to three examples.
 
-**Roteiros.** R17.
+**Scripts.** R17.
 
-## Bibliotecas que ficam (`examples/libraries/`)
+## Libraries that stay (`examples/libraries/`)
 
 ### `examples/libraries/analytics/`
 
-**O que é.** Eventos de analytics no canvas: o **Evento** (tabela solta com nome e propriedades) e a **Transição** (anotação de uma seta).
+**What it is.** Analytics events on the canvas: the **Event** (a loose table with a name and properties) and the **Transition** (the annotation of an arrow).
 
-**Como abrir.** **Especializações** › **Aplicar pasta…** e escolher a pasta. Ou **Abrir biblioteca** para só ver o Catálogo.
+**How to open.** **Specializations** › **Apply folder…** and pick the folder. Or **Open library** to only see the Catalog.
 
-**O que dá para ver.**
+**What you can see.**
 
-- O tipo que só vale em seta (`appliesTo: arrow`): a **Transição** só aparece para quem seleciona uma seta, com os campos **Condição** e **Evento**. Nenhuma outra biblioteca tem um tipo só de seta.
-- O **Evento** é uma marcação flutuante com componente: cabeçalho roxo com o nome do evento e uma linha por propriedade, desenhada pelo nó `repeat` (campo `propriedades`).
-- Um documento por tipo e um exemplo nomeado em cada.
+- The type that only applies to an arrow (`appliesTo: arrow`): the **Transition** only shows up when an arrow is selected, with the **Condition** and **Event** fields. No other library has an arrow-only type.
+- The **Event** is a floating marking with a component: a purple header with the event name and one row per property, drawn by the `repeat` node (the `properties` field).
+- One document per type (`docs/event.md`, `docs/transition.md`) and one named example on each.
 
-**Roteiros.** R12.19 e R12.20.
+**Scripts.** R12.19 and R12.20.
 
 ### `examples/libraries/sdui-backend/`
 
-**O que é.** O exemplo da **origem executável**: um sistema externo fictício (um backend de SDUI) descreve telas em JSON e a declaração `origins` as traduz em componentes. Seis tipos: **Column** (com slot), **Button**, **FAB** (flutuante), **Bottom sheet** (modal), **Scrim** e **Endpoint** (anotação só de marcação, sem componente). Versão 2, sem fontes.
+**What it is.** The example of the **executable origin**: a fictional external system (an SDUI backend) describes screens in JSON and the `origins` declaration translates them into components. Six types: **Column** (with a slot), **Button**, **FAB** (floating), **Bottom sheet** (modal), **Scrim** and **Endpoint** (a marking-only annotation, with no component). Version 3, no fonts.
 
-**Como abrir.** **Especializações** › **Aplicar pasta…** e escolher a pasta. Ou **Abrir biblioteca** para só ver o Catálogo (sem erro nem aviso).
+**How to open.** **Specializations** › **Apply folder…** and pick the folder. Or **Open library** to only see the Catalog (no errors or warnings).
 
-**O que dá para ver.**
+**What you can see.**
 
-- A origem (`origins`): `booleans`, `background.values`, raízes da tela com `anchor`, `margin` e `scrim` (o tipo `sdui-scrim`) e a tela de exemplo `examples/settings.sdui.json`.
-- As correspondências com o sistema externo (`sources`): `slot` e `ignore` no tipo, `id` de um sistema não executável (`figma`), `path` e `values` nos campos e na coluna de uma tabela, e o exemplo de um nó do sistema externo (`examples/button.sdui.json`, na Galeria do Button).
-- O contrato de versão (`migrations`): uma migração da versão 1 para a 2 com os seis passos (`rename-type`, `rename-field`, `map-values`, `fill-field`, `remove-field`, `remove-type` em `convert` e em `delete`).
-- O tipo **Endpoint**: `appliesTo: marking`, `linkedRef` (o texto do tipo da resposta grava o vínculo junto), e uma tabela com colunas `number`, `date`, `enum` com origem e `ref` que aceita `free`.
-- Um container com `background` (`containers[].background`).
-- Recursos do componente: `font.decoration` (sublinhado e tachado no Button), `verticalAlign` `top` e `bottom` e `layout.align` `end` (Bottom sheet), `fillRule` `nonzero` e `evenodd` (FAB) e uma imagem com `src` literal (Bottom sheet).
+- The origin (`origins`): `booleans`, `background.values`, screen roots with `anchor`, `margin` and `scrim` (the `sdui-scrim` type) and the example screen `examples/settings.sdui.json`.
+- The matches with the external system (`sources`): `slot` and `ignore` on the type, the `id` of a non-executable system (`figma`), `path` and `values` on the fields and on a table column, and the example of an external-system node (`examples/button.sdui.json`, in the Button gallery).
+- The version contract (`migrations`): a migration from version 1 to 2 with the six steps (`rename-type`, `rename-field`, `map-values`, `fill-field`, `remove-field`, `remove-type` in `convert` and in `delete`).
+- The **Endpoint** type: `appliesTo: marking`, `linkedRef` (the response type text saves the link together), and a table with `number`, `date`, `enum` with an origin and `ref` that accepts `free` columns.
+- A container with `background` (`containers[].background`).
+- Component features: `font.decoration` (underline and strikethrough in the Button), `verticalAlign` `top` and `bottom` and `layout.align` `end` (Bottom sheet), `fillRule` `nonzero` and `evenodd` (FAB) and an image with a literal `src` (Bottom sheet).
 
-**Roteiros.** R10.10 e R10.11.
+**Scripts.** R10.10 and R10.11.
 
-### `examples/libraries/medido/`
+### `examples/libraries/measured/`
 
-**O que é.** O exemplo da origem **medida** (`origins[].kind: "measured"`): a árvore de retângulos de uma página (medida num navegador) vira marcações, casando cada nó com um tipo pelas `sources`. Dois tipos: **Cartão** e **Botão** (campos `label` e `tone`). A árvore de exemplo é `examples/pagina.medida.json`, ao lado da pasta da biblioteca.
+**What it is.** The example of the **measured** origin (`origins[].kind: "measured"`): the rectangle tree of a page (measured in a browser) becomes markings, matching each node to a type through the `sources`. Two types: **Card** and **Button** (fields `label` and `tone`). The example tree is `examples/page.measured.json`, next to the library folder.
 
-**Como abrir.** **Especializações** › **Aplicar pasta…** e escolher a pasta. A importação é só pelo MCP: a op `import_measured` do lote, com `file` apontando para `examples/pagina.medida.json`.
+**How to open.** **Specializations** › **Apply folder…** and pick the folder. The import is only through the MCP: the `import_measured` op of the batch, with `file` pointing to `examples/page.measured.json`.
 
-**O que dá para ver.**
+**What you can see.**
 
-- A origem `measured` (`system`, `kind`, `name`): o tipo sai do `id`, da classe ou do `type` do nó contra o `name` da `source`.
-- Campos lidos pelo `path` das `props`, com `values` no enum (`danger` vira `error`).
-- O nó raiz e o `x-misterioso` não têm tipo: viram aviso e são ignorados, e os filhos seguem.
-- O pertencimento sai da geometria: os botões ficam dentro do cartão porque o retângulo deles cabe no dele.
+- The `measured` origin (`system`, `kind`, `name`): the type comes from the node's `id`, class or `type` against the `source`'s `name`.
+- Fields read through the `props` `path`, with `values` on the enum (`danger` becomes `error`).
+- The root node and the `x-mysterious` node have no type: they become a warning and are ignored, and the children carry on.
+- Membership comes from geometry: the buttons end up inside the card because their rectangle fits inside it.
 
-**Roteiros.** R25.58 e seguintes.
+**Scripts.** R25.58 and following.
 
-## Especializações de arquivo único (`examples/specs/`)
+## Single-file specializations (`examples/specs/`)
 
-Para aplicar um arquivo solto: **Especializações** › **Aplicar especialização…**. Os dois principais também saem da própria app, em **Ajuda** (F1) › **Downloads**. Pelo MCP: `validate_specialization` e `apply_specialization`.
+To apply a loose file: **Specializations** › **Apply specialization…**. The two main ones also come from the app itself, in **Help** (F1) › **Downloads**. Through the MCP: `validate_specialization` and `apply_specialization`.
 
 ### `examples/specs/sdui.json`
 
-**O que é.** A especialização SDUI, `formatVersion` 12: componentes de uma interface descrita por servidor (Button, Input, Text, Image), eventos (Ação, Feedback e Validação) e telas. O gatilho do evento (Clique, Pressionar, Alteração) é o **papel** dele no componente, não um tipo.
+**What it is.** The SDUI specialization, `formatVersion` 12: components of a server-described interface (Button, Input, Text, Image), events (Action, Feedback and Validation) and screens. The event trigger (Click, Press, Change) is its **role** on the component, not a type.
 
-**O que dá para ver.**
+**What you can see.**
 
-- Três plataformas (Android, iOS e BFF), cada uma com `repo`, `urlTemplate` e `ref`, e o `code` de cada tipo nelas (`symbol`, `path`, `params`, `values` e `notes`). Nos Detalhes, a linha **Definição** tem **Abrir no repositório** e **Copiar caminho**.
-- Relações entre camadas: o Button aceita como filhos os eventos do grupo Interação, por **cláusula** (`allowedChildren: [{ "layer": "eventos", "groups": ["interacao"] }]`), e o Input os do grupo Dados; os eventos exigem um dono (`requiresOwner`) e a camada Eventos tem `groups`.
-- Papéis no vínculo: `childRoles` (Clique e Pressionar no Button, Alteração no Input) com `childRolesLabel: "Trigger"`; a anotação filha guarda o papel (`parentRole`) e o "+ Vincular…" do dono cria o evento já no papel.
-- Documento em repositório externo: `docRepos` e o `doc` do Button como objeto (`{ "repo", "path" }`).
-- Contrato de versão: a v4 troca `onClick`, `onHold` e `onChange` por `action`, `feedback` e `validation` (`migrations`, três `rename-type`) e dá o papel aos vínculos que vinham sem ele (quatro `set-role` com `childType`: `click`, `hold` e `change`). Quem atualiza da v3 para a v4 recebe os vínculos com papel e sem pendência; quem já está na v4 fica com a pendência `missing-role`, corrigida à mão.
-- Referência forte: o campo `dado` do Input e do Text é um `ref` que aceita a etiqueta `data-field` ou uma anotação livre (`accepts`).
-- Os tipos de valor `string`, `number`, `enum` (com valor padrão) e `table` (os `parametros` da Ação), e campos obrigatórios.
-- Um arquivo sem biblioteca: não tem componente nem documento.
+- Three platforms (Android, iOS and BFF), each with `repo`, `urlTemplate` and `ref`, and the `code` of each type on them (`symbol`, `path`, `params`, `values` and `notes`). In Details, the **Definition** row has **Open in repository** and **Copy path**.
+- Relations between layers: the Button accepts as children the events of the Interaction group, by **clause** (`allowedChildren: [{ "layer": "events", "groups": ["interaction"] }]`), and the Input accepts those of the Data group; the events require an owner (`requiresOwner`) and the Events layer has `groups`.
+- Roles on the link: `childRoles` (Click and Press on the Button, Change on the Input) with `childRolesLabel: "Trigger"`; the child annotation stores the role (`parentRole`) and the owner's "+ Link…" creates the event already in the role.
+- Document in an external repository: `docRepos` and the Button's `doc` as an object (`{ "repo", "path" }`).
+- Version contract: v4 swaps `onClick`, `onHold` and `onChange` for `action`, `feedback` and `validation` (`migrations`, three `rename-type`) and gives a role to the links that came without one (four `set-role` with `childType`: `click`, `hold` and `change`). Whoever updates from v3 to v4 gets the links with a role and no pending item; whoever is already on v4 keeps the `missing-role` pending item, fixed by hand.
+- Strong reference: the `data` field of the Input and of the Text is a `ref` that accepts the `data-field` tag or a free annotation (`accepts`).
+- The value types `string`, `number`, `enum` (with a default value) and `table` (the `parameters` of the Action), and required fields.
+- A file without a library: it has no component and no document.
 
-**Roteiros.** R1.3, R1.16, R3 (R3.1 a R3.9), R8, R19 e R20.
+**Scripts.** R1.3, R1.16, R3 (R3.1 to R3.9), R8, R19 and R20.
 
-### `examples/specs/papeis-migracao.json`
+### `examples/specs/roles-migration.json`
 
-**O que é.** Uma especialização pequena, `formatVersion` 12, na versão 2, só para mostrar os passos de papel que o SDUI não usa: o que mudou dos `childRoles` da versão 1 para a 2 e como a migração cobre cada mudança. Dois componentes (Button e Slider) com o tipo de evento Interação como filho.
+**What it is.** A small specialization, `formatVersion` 12, at version 2, only to show the role steps that SDUI does not use: what changed in the `childRoles` from version 1 to 2 and how the migration covers each change. Two components (Button and Slider) with the Interaction event type as a child.
 
-**O que dá para ver.**
+**What you can see.**
 
-- `rename-role`: o papel `tap` do Button passa a `click` (que já existia na versão 1, então os dois **juntam**).
-- `remove-role` com `mode` `clear`: o papel `hold` do Button sai e os filhos ficam vinculados, sem papel (perda `cleared-role` e pendência `missing-role`).
-- `remove-role` com `mode` `unlink`: o papel `drag` do Slider sai e os filhos são desvinculados (perda `unlinked` e pendência `missing-owner`).
+- `rename-role`: the Button's `tap` role becomes `click` (which already existed in version 1, so the two **merge**).
+- `remove-role` with `mode` `clear`: the Button's `hold` role goes away and the children stay linked, with no role (loss `cleared-role` and pending item `missing-role`).
+- `remove-role` with `mode` `unlink`: the Slider's `drag` role goes away and the children are unlinked (loss `unlinked` and pending item `missing-owner`).
 
-**Como abrir.** **Especializações** › **Atualizar versão…** num projeto que tenha a versão 1 (escrita no R19), ou `plan_library_update` pelo MCP.
+**How to open.** **Specializations** › **Update version…** on a project that has version 1 (written in R19), or `plan_library_update` through the MCP.
 
-**Roteiros.** R19 (passos de atualização de papel).
+**Scripts.** R19 (role update steps).
 
-### `examples/specs/modelo-de-dados.json`
+### `examples/specs/data-model.json`
 
-**O que é.** O Modelo de dados, `formatVersion` 1, o formato mais simples: duas camadas, Classes e Endpoints.
+**What it is.** The Data model, `formatVersion` 1, the simplest format: two layers, Classes and Endpoints.
 
-**O que dá para ver.**
+**What you can see.**
 
-- O tipo `date` (`revisadoEm`, data `AAAA-MM-DD`) e o `number` com valor padrão (`versao`, `timeoutMs`).
-- A tabela `atributos` com a etiqueta `data-field` e `rowLabel`: cada linha vira alvo de referência, que o campo `dado` da SDUI aceita.
-- Uma especialização sem plataformas, sem `code` e sem biblioteca: é a `formatVersion` 1.
+- The `date` type (`reviewedAt`, a `YYYY-MM-DD` date) and the `number` with a default value (`version`, `timeoutMs`).
+- The `attributes` table with the `data-field` tag and `rowLabel`: each row becomes a reference target, which the SDUI `data` field accepts.
+- A specialization without platforms, without `code` and without a library: it is `formatVersion` 1.
 
-**Roteiros.** R1.3 e R8.
+**Scripts.** R1.3 and R8.
 
-## Projetos e zips prontos (`examples/`)
+## Ready-made projects and zips (`examples/`)
 
-### `examples/exemplo-completo/` e `examples/exemplo-completo.zip`
+### `examples/full-example/` and `examples/full-example.zip`
 
-**O que é.** O projeto de exemplo da app, com quatro telas, e a fonte do guia interativo. A pasta e o zip têm o mesmo conteúdo; o zip é o que a app embute.
+**What it is.** The app's example project, with four screens, and the source of the interactive guide. The folder and the zip have the same content; the zip is what the guide links to.
 
-**Como abrir.** Baixe o `examples/exemplo-completo.zip` do repositório e use **Abrir zip** na tela inicial (grava só uma cópia **Neste dispositivo**, nada em pasta), ou **Abrir pasta** na pasta (num clone novo, rode `npm run build:example` antes: ele materializa `specs/`, que não é versionado). A app não embute o exemplo. O guia: link **Guia interativo** na tela inicial e na **Ajuda**.
+**How to open.** Download `examples/full-example.zip` from the repository and use **Open zip** on the home screen (it only saves a copy **On this device**, nothing in a folder), or **Open folder** on the folder (on a fresh clone, run `npm run build:example` first: it materializes `specs/`, which is not versioned). The app does not embed the example. The guide: the **Interactive guide** link on the home screen and in **Help**. The guide is bilingual (en-US and pt-BR) and is published at `guide/` (`public/guide/`; the old `guia/` address redirects).
 
-**O que dá para ver.**
+**What you can see.**
 
-- Quatro telas lado a lado: Cadastro e Login (com foto), Configurações e Detalhes do pedido (container sem foto, com componentes da `material3-compose` desenhados com os textos das anotações).
-- Dez camadas e quatro especializações aplicadas: SDUI, Modelo de dados, `material3-compose` (uma camada para o layout, com Row e Column, e outra para os componentes) e Notas. Há anotações de todos os tipos principais (Button, Input, Text, Ação, Feedback, Validação, Screen, classe e endpoint; os eventos já ligados por papel) e livres (Model e Dúvidas).
-- Casos de edição: uma marcação trancada (**Título**), uma com posição a revisar (**Idade**, em **Incompletas**), uma nota flutuante da biblioteca de notas e as marcações aninhadas na **Árvore**.
-- Uma proposta aberta, **Tela de Perfil e ajuste no Cadastro**, com dez mudanças para praticar a revisão (os tipos são os da `material3-compose`: `top-app-bar`, `list-item` e `button`): aceitar, rejeitar com nota e aplicar.
-- Três **conversas** em `comments/` (nomes e e-mails inventados, `exemplo.com`): uma aberta pelo agente no campo **estilo** do botão **Cadastrar**, que aguarda você e cita outras marcações; uma na marcação **Salvar**, que aguarda o agente; e uma resolvida, no **Gerenciar plano**. Abra a janela **Comentários** (`Ctrl+Shift+0`) e ligue o botão **Conversas** para ver os pinos. O guia ganha um passo de texto sobre elas.
-- O **Arrumar** (`Alt+Shift+A`) de um Row com chips e a Column **Preferências** com os dois Switches e o Checkbox dentro, o **Catálogo** com a **Paleta** e o **Diagnóstico**.
+- Four screens side by side: Sign up and Login (with a photo), Settings and Order details (a container without a photo, with `material3-compose` components drawn with the annotations' texts).
+- Ten layers and four applied specializations: SDUI, Data model, `material3-compose` (one layer for the layout, with Row and Column, and another for the components) and Notes. There are annotations of all the main types (Button, Input, Text, Action, Feedback, Validation, Screen, class and endpoint; the events already linked by role) and free ones (Model and Questions).
+- Editing cases: a locked marking (**Title**), one with a position to review (**Age**, in **Incomplete**), a floating note from the notes library and the nested markings in the **Tree**.
+- An open proposal, **Profile screen and Sign up tweak**, with ten changes to practice the review (the types are from `material3-compose`: `top-app-bar`, `list-item` and `button`): accept, reject with a note and apply.
+- Three **conversations** in `comments/` (made-up names and emails, `example.com`): one opened by the agent on the **style** field of the **Register** button, which waits for you and cites other markings; one on the **Save** marking, which waits for the agent; and a resolved one, on **Manage plan**. Open the **Comments** window (`Ctrl+Shift+0`) and turn on the **Conversations** button to see the pins. The guide has a text step about them.
+- **Arrange** (`Alt+Shift+A`) on a Row with chips and the **Preferences** Column with the two Switches and the Checkbox inside, the **Catalog** with the **Palette** and **Diagnostics**.
 
-**Roteiros.** R11 e R22.
+**Scripts.** R11 and R22.
 
-### `examples/proposta-exemplo.zip`
+### `examples/proposal-example.zip`
 
-**O que é.** O projeto **Loja** com uma proposta de um agente a revisar.
+**What it is.** The **Shop** project with an agent's proposal to review.
 
-**Como abrir.** **Abrir zip** com o arquivo. Depois **Propostas** (`Ctrl+Shift+7`) › **Revisar**.
+**How to open.** **Open zip** with the file. Then **Proposals** (`Ctrl+Shift+7`) › **Review**.
 
-**O que dá para ver.**
+**What you can see.**
 
-- A proposta **Checkout a partir do Figma**: cria a camada Eventos e a imagem **Confirmação** (com a marcação **Mensagem de sucesso**), troca a imagem do Carrinho, renomeia o **Cabeçalho**, move o **Botão Pagar**, cria o **Campo Cupom** (com uma anotação Input), remove o **Banner promoção** e mexe em anotações.
-- A visão **Atual** × **Proposto**, as marcas de decisão, o conflito de nome (renomear antes de revisar), o cadeado do **Botão Pagar** trancado, a nota para o agente, **Aplicar aceitas** e o desfazer em um passo.
-- **Exportar** com a proposta aberta e **Apagar proposta…**.
+- The proposal **Checkout from Figma**: creates the Events layer and the **Confirmation** image (with the **Success message** marking), swaps the Cart image, renames the **Header**, moves the **Pay button**, creates the **Coupon field** (with an Input annotation), removes the **Promotion banner** and touches annotations.
+- The **Current** × **Proposed** view, the decision marks, the name conflict (rename before reviewing), the lock on the locked **Pay button**, the note to the agent, **Apply accepted** and the one-step undo.
+- **Export** with the proposal open and **Delete proposal…**.
 
-**Roteiros.** R4, R6 e R8.
+**Scripts.** R4, R6 and R8.
 
-### `examples/proposta-componentes.zip`
+### `examples/proposal-components.zip`
 
-**O que é.** O projeto **Telas** (uma tela em branco de 360 × 800 com a `material3-compose` aplicada) e uma proposta aberta que cria componentes `button`. O zip leva o pacote aplicado (`specs/material3-compose/`) e uma cópia dele, com outro id (`m3novo`), no pacote da proposta.
+**What it is.** The **Screens** project (a blank 360 × 800 screen with `material3-compose` applied) and an open proposal that creates `button` components. The zip carries the applied package (`specs/material3-compose/`) and a copy of it, with another id (`m3new`), in the proposal's package.
 
-**Como abrir.** **Abrir zip** com o arquivo; **Propostas** › **Revisar** em **Componentes novos**.
+**How to open.** **Open zip** with the file; **Proposals** › **Review** on **New components**.
 
-**O que dá para ver.** Na visão **Proposto**, os componentes que a proposta cria, desenhados com a marca de criada, em cada caso de revisão: o **Existente** alterado (o Rótulo `Antigo` vira `Novo valor`), **Pendente**, **Aceito**, **Rejeitado** (só o fantasma pontilhado, nas duas visões), **Inválido** (retângulo de 3 × 3), **Sem rótulo** (campo obrigatório faltando) e **Do pacote** (um tipo que só existe no pacote da proposta, que não é gravado em `specs/`). Também a legenda das marcas, nos dois idiomas.
+**What you can see.** In the **Proposed** view, the components the proposal creates, drawn with the created mark, in each review case: the changed **Existing** (the Label `Old` becomes `New value`), **Pending**, **Accepted**, **Rejected** (only the dotted ghost, in both views), **Invalid** (a 3 × 3 rectangle), **Unlabeled** (a required field is missing) and **From the package** (a type that only exists in the proposal's package, which is not written to `specs/`). Also the legend of the marks, in both languages.
 
-**Roteiros.** R13.
+**Scripts.** R13.
 
-### `examples/sugestoes-kotlin.zip`
+### `examples/suggestions-kotlin.zip`
 
-**O que é.** O projeto **Sugestões Kotlin**: uma imagem lisa e duas data classes da biblioteca Kotlin, **Usuario** e **Endereco**.
+**What it is.** The **Kotlin suggestions** project: a plain image and two data classes from the Kotlin library, **User** and **Address**.
 
-**Como abrir.** **Abrir zip** com o arquivo. Selecione **Usuario** e abra **Detalhes** (`Ctrl+Shift+3`).
+**How to open.** **Open zip** with the file. Select **User** and open **Details** (`Ctrl+Shift+3`).
 
-**O que dá para ver.**
+**What you can see.**
 
-- A lista de sugestões ao digitar na coluna **Tipo** de **Propriedades** (24 tipos como `String`, `Int` e `List`), que não restringe o valor: `String?` e `List<Endereco>` são aceitos.
-- A propriedade `ativo` com o **Tipo** vazio, para praticar.
-- Os alvos mapeados na lista: **Endereco** aparece antes das sugestões fixas, e escolhê-la grava o texto e o **Tipo mapeado** juntos, desfeitos num `Ctrl+Z`.
+- The suggestions list when typing in the **Type** column of **Properties** (24 types such as `String`, `Int` and `List`), which does not restrict the value: `String?` and `List<Address>` are accepted.
+- The `active` property with an empty **Type**, to practice.
+- The mapped targets in the list: **Address** shows up before the fixed suggestions, and choosing it saves the text and the **Mapped type** together, undone with one `Ctrl+Z`.
 
-**Roteiros.** R14.
+**Scripts.** R14.
 
 ### `examples/material3-compose.zip`
 
-**O que é.** O pacote `libraries/material3-compose/` compactado, com o conteúdo na raiz do zip. Serve a quem não tem como escolher uma pasta.
+**What it is.** The `libraries/material3-compose/` package zipped, with the content at the root of the zip. It is for people who cannot pick a folder.
 
-**Como abrir.** **Especializações** › **Aplicar zip…**; ou **Abrir biblioteca** (o botão abre o seletor de zip quando não há pasta); ou `validate_library` pelo MCP.
+**How to open.** **Specializations** › **Apply zip…**; or **Open library** (the button opens the zip picker when there is no folder); or `validate_library` through the MCP.
 
-**O que dá para ver.** O mesmo de `libraries/material3-compose/`, descrito acima, em um arquivo só. Um teste confere que o zip é igual à pasta.
+**What you can see.** The same as `libraries/material3-compose/`, described above, in a single file. A test checks that the zip equals the folder.
 
-**Roteiros.** R17.
+**Scripts.** R17.
 
 ### `examples/workspace/`
 
-**O que é.** O esqueleto de uma pasta central de mapeamentos para trabalhar com um agente de IA: o servidor MCP, as raízes, a skill `spec-author` e as instruções (`AGENTS.md`) para qualquer cliente MCP.
+**What it is.** The skeleton of a central folder of mappings to work with an AI agent: the MCP server, the roots, the `spec-author` skill and the instructions (`AGENTS.md`) for any MCP client.
 
-**Como abrir.** Copie a pasta para onde quiser, rode `./setup.sh` (para atualizar um workspace antigo, a linha da transição está no `README.md` da pasta) e abra a pasta no agente (Claude Code, Cursor, Gemini CLI, Copilot ou Codex). Os projetos ficam em `projetos/` e as especializações em `especializacoes/`.
+**How to open.** Copy the folder wherever you want, run `./setup.sh` (to update an old workspace, the transition line is in the folder's `README.md`) and open the folder in the agent (Claude Code, Cursor, Gemini CLI, Copilot or Codex). The projects live in `projetos/` and the specializations in `especializacoes/`.
 
-**O que dá para ver.**
+**What you can see.**
 
-- O `setup.sh`, que baixa da última release o `tools/mapping-mcp.js`, a skill `spec-author` e o bloco de regras do `AGENTS.md` (entre os marcadores `mapping:begin` e `mapping:end`), confere o `sha256` de tudo antes de trocar qualquer arquivo e se atualiza sozinho (`--no-self-update` desliga). Rodar de novo atualiza, sem tocar `projetos/`, `especializacoes/` nem o que você escreveu fora do bloco.
-- Um arquivo de configuração por ferramenta (`.mcp.json`, `.cursor/mcp.json` e os outros), todos apontando para o mesmo comando com as duas raízes.
-- O `AGENTS.md` com a seção "Para que servem estes mapeamentos" para a pessoa preencher, e o `CLAUDE.md` que o importa.
-- Como trabalhar a partir do repositório do código (`get_code_hints`, `find_by_code`).
+- The `setup.sh`, which downloads `tools/mapping-mcp.js`, the `spec-author` skill and the `AGENTS.md` rules block (between the `mapping:begin` and `mapping:end` markers) from the latest release, checks the `sha256` of everything before replacing any file and updates itself (`--no-self-update` turns it off). Running it again updates, without touching `projetos/`, `especializacoes/` or what you wrote outside the block.
+- One configuration file per tool (`.mcp.json`, `.cursor/mcp.json` and the others), all pointing to the same command with the two roots.
+- The `AGENTS.md` with the "What these mappings are for" section for the person to fill in, and the `CLAUDE.md` that imports it.
+- How to work from the code's repository (`get_code_hints`, `find_by_code`).
 
-**Roteiros.** Nenhum. A seção 6 do guia do testador monta o servidor MCP à parte, sem esta pasta.
+**Scripts.** None. Section 6 of the tester's guide sets up the MCP server separately, without this folder.
 
-## Onde ver cada recurso
+## Where to see each feature
 
-Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executável, de `sources` e de migração estão na `sdui-backend`; os que dependem de arquivo de fonte e de itálico (`fonts[].style`) não têm exemplo, por decisão do dono (a fonte é fixa no cliente mobile, fora do SDUI; ficam em `EXCEPTIONS` do teste `tests/examples/featureCoverage.test.ts`, que diz qual exemplo cobre cada chave e cada valor).
+When one exists, the example is from `libraries/`. The features of the executable origin, of `sources` and of migration are in `sdui-backend`; the ones that depend on a font file and on italics (`fonts[].style`) have no example, by the owner's decision (the font is fixed in the mobile client, outside SDUI; they are in `EXCEPTIONS` of the test `tests/examples/featureCoverage.test.ts`, which says which example covers each key and each value).
 
-### Especialização
+### Specialization
 
-| Recurso                                                      | Onde ver                                                                                                                          |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `string`                                                     | Nota: `texto` (`notas`); Class: `name` (`kotlin`)                                                                                 |
-| `number`                                                     | `surface.tonalElevation` (`material3-compose`); `endpoint.timeoutMs` (`modelo-de-dados.json`)                                     |
-| `date`                                                       | `classe.revisadoEm` (`modelo-de-dados.json`); coluna `since` de `endpoint.params` (`sdui-backend`)                                |
-| `enum` e booleano como `enum`                                | `button.enabled` e `button.style` (`material3-compose`); visibilidade das classes (`kotlin`)                                      |
-| `table`                                                      | Tabela: `linhas` (`notas`); Propriedades e Funções (`kotlin`); `action.parametros` (`sdui.json`)                                  |
-| `ref` e `accepts`                                            | `outer` e **Tipo mapeado** (`kotlin`); `input.dado` com `free` (`sdui.json`)                                                      |
-| Etiquetas (`tags`) e `rowLabel`                              | Propriedades com `data-field` e `kotlin-property` (`kotlin`); `classe.atributos` (`modelo-de-dados.json`)                         |
-| `suggestions`                                                | Coluna **Tipo** de Propriedades (`kotlin`); campos de ícone (`material3-compose`)                                                 |
-| `linkedRef`                                                  | Colunas **Tipo** de Propriedades e de Supertipos (`kotlin`); `examples/sugestoes-kotlin.zip` mostra o uso                         |
-| Relações: `allowedChildren` e `requiresOwner`                | `button` e `action` (`sdui.json`)                                                                                                 |
-| Referências entre tipos                                      | **Declarada em** e **Supertipos** (`kotlin`); `input.dado` aponta para o Modelo de dados (`sdui.json` com `modelo-de-dados.json`) |
-| `platforms` e `repo` (`url`, `urlTemplate`, `ref`)           | `compose` fixado num commit (`material3-compose`); `android`, `ios` e `bff` (`sdui.json`)                                         |
-| `code`: `symbol`, `path`, `params`, `values`, `notes`        | Todos os tipos (`material3-compose`); `button` e `input` em três plataformas (`sdui.json`)                                        |
-| `variants` no `code`                                         | `button.style` e outros 25 tipos (`material3-compose`); a tabela de variantes no Catálogo                                         |
-| `containers` (tamanhos prontos)                              | Celular, Celular grande, Tablet e Desktop (`material3-compose`); `background` no Celular (`sdui-backend`)                         |
-| `fonts`                                                      | Roboto 400 e 500 em `.woff2` (`material3-compose`)                                                                                |
-| Tipo flutuante (`floating`)                                  | Nota e Tabela (`notas`); Evento (`analytics`)                                                                                     |
-| `appliesTo`                                                  | Transição, só em seta (`analytics`); Endpoint, só em marcação (`sdui-backend`)                                                    |
-| `component`, `doc` e `examples` (pacote de biblioteca)       | Todas as pastas de `libraries/` e a `analytics`                                                                                   |
-| `origins`, `sources` e exemplo de tela de um sistema externo | `sdui-backend`                                                                                                                    |
-| `origins[].kind: "measured"` (layout medido)                 | `medido`                                                                                                                          |
-| `migrations`                                                 | `sdui-backend`; `sdui.json` e `papeis-migracao.json` (passos de papel)                                                            |
-| `formatVersion` 1                                            | `modelo-de-dados.json`                                                                                                            |
-| `formatVersion` 4 e 5                                        | `sdui-backend` (4); `sdui.json` (5)                                                                                               |
-| `formatVersion` 6 a 9                                        | `notas` e `analytics` (7); `kotlin` (8); `material3-compose` (9)                                                                  |
-| `formatVersion` 2 e 3                                        | Sem exemplo próprio: a app aceita, e uma especialização 1 é uma 2 sem plataformas                                                 |
+| Feature                                                         | Where to see it                                                                                                           |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `string`                                                        | Note: `texto` (`notas`); Class: `name` (`kotlin`)                                                                         |
+| `number`                                                        | `surface.tonalElevation` (`material3-compose`); `endpoint.timeoutMs` (`data-model.json`)                                  |
+| `date`                                                          | `class.reviewedAt` (`data-model.json`); `since` column of `endpoint.params` (`sdui-backend`)                              |
+| `enum` and boolean as `enum`                                    | `button.enabled` and `button.style` (`material3-compose`); class visibility (`kotlin`)                                    |
+| `table`                                                         | Table: `linhas` (`notas`); Properties and Functions (`kotlin`); `action.parameters` (`sdui.json`)                         |
+| `ref` and `accepts`                                             | `outer` and **Mapped type** (`kotlin`); `input.data` with `free` (`sdui.json`)                                            |
+| Tags (`tags`) and `rowLabel`                                    | Properties with `data-field` and `kotlin-property` (`kotlin`); `class.attributes` (`data-model.json`)                     |
+| `suggestions`                                                   | **Type** column of Properties (`kotlin`); icon fields (`material3-compose`)                                               |
+| `linkedRef`                                                     | **Type** columns of Properties and Supertypes (`kotlin`); `examples/suggestions-kotlin.zip` shows the use                 |
+| Relations: `allowedChildren` and `requiresOwner`                | `button` and `action` (`sdui.json`)                                                                                       |
+| References between types                                        | **Declared in** and **Supertypes** (`kotlin`); `input.data` points to the Data model (`sdui.json` with `data-model.json`) |
+| `platforms` and `repo` (`url`, `urlTemplate`, `ref`)            | `compose` pinned to a commit (`material3-compose`); `android`, `ios` and `bff` (`sdui.json`)                              |
+| `code`: `symbol`, `path`, `params`, `values`, `notes`           | All types (`material3-compose`); `button` and `input` on three platforms (`sdui.json`)                                    |
+| `variants` in `code`                                            | `button.style` and 25 other types (`material3-compose`); the variants table in the Catalog                                |
+| `containers` (ready-made sizes)                                 | Phone, Large phone, Tablet and Desktop (`material3-compose`); `background` on Phone (`sdui-backend`)                      |
+| `fonts`                                                         | Roboto 400 and 500 as `.woff2` (`material3-compose`)                                                                      |
+| Floating type (`floating`)                                      | Note and Table (`notas`); Event (`analytics`)                                                                             |
+| `appliesTo`                                                     | Transition, arrow only (`analytics`); Endpoint, marking only (`sdui-backend`)                                             |
+| `component`, `doc` and `examples` (library package)             | All the folders in `libraries/` and `analytics`                                                                           |
+| `origins`, `sources` and a screen example of an external system | `sdui-backend`                                                                                                            |
+| `origins[].kind: "measured"` (measured layout)                  | `measured`                                                                                                                |
+| `migrations`                                                    | `sdui-backend`; `sdui.json` and `roles-migration.json` (role steps)                                                       |
+| `formatVersion` 1                                               | `data-model.json`                                                                                                         |
+| `formatVersion` 4 and 5                                         | `sdui-backend` (4); `sdui.json` (5)                                                                                       |
+| `formatVersion` 6 to 9                                          | `notas` and `analytics` (7); `kotlin` (8); `material3-compose` (9)                                                        |
+| `formatVersion` 2 and 3                                         | No example of its own: the app accepts them, and a specialization 1 is a 2 without platforms                              |
 
-### Componente
+### Component
 
-| Recurso                                        | Onde ver                                                                                                                                      |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `frame` e `text`                               | Todos os componentes                                                                                                                          |
-| `rect`                                         | Divider e Checkbox (`material3-compose`); o cartão das classes (`kotlin`)                                                                     |
-| `ellipse`                                      | Switch, Radio button, Slider e Progress indicator (`material3-compose`)                                                                       |
-| `path`                                         | Ícones do Button, do Checkbox, do Chip e de outros (`material3-compose`)                                                                      |
-| `image`                                        | Image, Card, List item e Carousel (`material3-compose`)                                                                                       |
-| `slot`                                         | Box, Column, Row, Scaffold e outros (`material3-compose`)                                                                                     |
-| `repeat`                                       | Tabela (`notas`); Propriedades (`kotlin`); Evento (`analytics`); Navigation bar, Tabs e Carousel (`material3-compose`)                        |
-| Layout `row`, `column` e `none`                | `row` e `column` em todas as bibliotecas; `none` no Box (`material3-compose`)                                                                 |
-| `gap`, `padding` (número, par e quatro lados)  | Número em todas; par e quatro lados (`material3-compose`)                                                                                     |
-| `align` e `justify`                            | `align` `start`, `center` e `stretch`; `justify` `start`, `center`, `end` e `space-between` (`material3-compose`: Tabs, Alert dialog, Slider) |
-| Tamanho do nó: px, `fill`, `hug` e `%`         | px, `fill` e `hug` em todas; `%` no Slider e no Short navigation bar (`material3-compose`)                                                    |
-| `size`, `minSize` e `sizing`                   | Todos os componentes; `minSize` oficial só no Button, FAB, Text field e outros (`material3-compose`)                                          |
-| Âncoras (`anchors`)                            | `left`, `right`, `top`, `bottom`, `centerX` e `centerY` (`material3-compose`: FAB, Pull to refresh)                                           |
-| Âncoras da tela e película                     | `sdui-scrim` e as raízes com `anchor` e `margin` (`sdui-backend`)                                                                             |
-| Expressões `$field`, `$if`, `$switch`          | `kotlin` e `material3-compose`; `$field` com `default` em ambos                                                                               |
-| `$concat`                                      | Cabeçalho das classes (`kotlin`); Box, Column e Image (`material3-compose`)                                                                   |
-| Condições `$has`, `$eq`, `$not`, `$and`, `$or` | `$has` em `notas`; todas em `material3-compose`                                                                                               |
-| `visible`, `opacity`, `clip`                   | `visible` em `notas`; `opacity` em `kotlin` e Surface; `clip` no Box (`material3-compose`)                                                    |
-| `fill`, degradê, `stroke`, `shadow`            | Cor em todas; degradê no Carousel; `stroke` com `dash` e `align`; `shadow` em `notas` (`material3-compose`)                                   |
-| `cornerRadius`                                 | Número em todas; quatro cantos (`material3-compose`)                                                                                          |
-| Fonte do texto: `size`, `weight`, `italic`     | Todas; `italic` em `kotlin` e Text (`material3-compose`)                                                                                      |
-| `preview`                                      | Todos; em forma de tabela em `notas`, `kotlin` e `analytics`                                                                                  |
+| Feature                                         | Where to see it                                                                                                                                   |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `frame` and `text`                              | All components                                                                                                                                    |
+| `rect`                                          | Divider and Checkbox (`material3-compose`); the class card (`kotlin`)                                                                             |
+| `ellipse`                                       | Switch, Radio button, Slider and Progress indicator (`material3-compose`)                                                                         |
+| `path`                                          | Icons of the Button, the Checkbox, the Chip and others (`material3-compose`)                                                                      |
+| `image`                                         | Image, Card, List item and Carousel (`material3-compose`)                                                                                         |
+| `slot`                                          | Box, Column, Row, Scaffold and others (`material3-compose`)                                                                                       |
+| `repeat`                                        | Table (`notas`); Properties (`kotlin`); Event (`analytics`); Navigation bar, Tabs and Carousel (`material3-compose`)                              |
+| Layout `row`, `column` and `none`               | `row` and `column` in all libraries; `none` in the Box (`material3-compose`)                                                                      |
+| `gap`, `padding` (number, pair and four sides)  | Number in all; pair and four sides (`material3-compose`)                                                                                          |
+| `align` and `justify`                           | `align` `start`, `center` and `stretch`; `justify` `start`, `center`, `end` and `space-between` (`material3-compose`: Tabs, Alert dialog, Slider) |
+| Node size: px, `fill`, `hug` and `%`            | px, `fill` and `hug` in all; `%` in the Slider and the Short navigation bar (`material3-compose`)                                                 |
+| `size`, `minSize` and `sizing`                  | All components; official `minSize` only in the Button, FAB, Text field and others (`material3-compose`)                                           |
+| Anchors (`anchors`)                             | `left`, `right`, `top`, `bottom`, `centerX` and `centerY` (`material3-compose`: FAB, Pull to refresh)                                             |
+| Screen anchors and scrim                        | `sdui-scrim` and the roots with `anchor` and `margin` (`sdui-backend`)                                                                            |
+| Expressions `$field`, `$if`, `$switch`          | `kotlin` and `material3-compose`; `$field` with `default` in both                                                                                 |
+| `$concat`                                       | Class header (`kotlin`); Box, Column and Image (`material3-compose`)                                                                              |
+| Conditions `$has`, `$eq`, `$not`, `$and`, `$or` | `$has` in `notas`; all in `material3-compose`                                                                                                     |
+| `visible`, `opacity`, `clip`                    | `visible` in `notas`; `opacity` in `kotlin` and Surface; `clip` in the Box (`material3-compose`)                                                  |
+| `fill`, gradient, `stroke`, `shadow`            | Color in all; gradient in the Carousel; `stroke` with `dash` and `align`; `shadow` in `notas` (`material3-compose`)                               |
+| `cornerRadius`                                  | Number in all; four corners (`material3-compose`)                                                                                                 |
+| Text font: `size`, `weight`, `italic`           | All; `italic` in `kotlin` and Text (`material3-compose`)                                                                                          |
+| `preview`                                       | All; in table form in `notas`, `kotlin` and `analytics`                                                                                           |
 
-Para um recurso que esta tabela não cita, rode o teste de cobertura (`npx vitest run tests/examples/featureCoverage.test.ts`): ele diz qual exemplo cobre cada chave e cada valor.
+For a feature this table does not mention, run the coverage test (`npx vitest run tests/examples/featureCoverage.test.ts`): it says which example covers each key and each value.

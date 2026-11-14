@@ -3,9 +3,9 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * `examples/README.md` diz o que cada exemplo mostra. Este teste o mantém em dia: todo exemplo do
- * disco tem uma seção (um título com o caminho entre crases) e todo caminho de título que começa
- * com `libraries/` ou `examples/` ainda existe.
+ * `examples/README.md` says what each example shows. This test keeps it current: every example on
+ * disk has a section (a heading with the path in backticks) and every heading path that starts
+ * with `libraries/` or `examples/` still exists.
  */
 
 const ROOT = join(__dirname, '..', '..');
@@ -27,19 +27,19 @@ function files(parent: string, extension: string): string[] {
     .map((name) => `${parent}/${name}`);
 }
 
-/** Os exemplos do disco: pastas de bibliotecas, arquivos de especialização, zips e projetos. */
+/** The examples on disk: library folders, specialization files, zips and projects. */
 function diskExamples(): string[] {
   return [
     ...dirs('libraries'),
     ...dirs('examples/libraries'),
     ...files('examples/specs', '.json'),
     ...files('examples', '.zip'),
-    'examples/exemplo-completo/',
+    'examples/full-example/',
     'examples/workspace/',
   ];
 }
 
-/** Caminhos entre crases dos títulos (linhas que começam com `#`) do README. */
+/** Paths in backticks in the README headings (lines that start with `#`). */
 function headingPaths(): string[] {
   const out: string[] = [];
   for (const line of readFileSync(README, 'utf8').split('\n')) {
@@ -52,26 +52,26 @@ function headingPaths(): string[] {
 }
 
 describe('examples/README.md', () => {
-  it('existe', () => {
+  it('exists', () => {
     expect(existsSync(README)).toBe(true);
   });
 
-  it('tem uma seção para cada exemplo do disco', () => {
+  it('has a section for every example on disk', () => {
     const titled = new Set(headingPaths());
     const missing = diskExamples().filter((path) => !titled.has(path));
     expect(
       missing,
-      `exemplo sem seção no examples/README.md (título com o caminho entre crases): ${missing.join(', ')}`,
+      `example without a section in examples/README.md (heading with the path in backticks): ${missing.join(', ')}`,
     ).toEqual([]);
   });
 
-  it('não tem seção de um exemplo que não existe mais', () => {
+  it('has no section for an example that no longer exists', () => {
     const stale = headingPaths()
       .filter((path) => path.startsWith('libraries/') || path.startsWith('examples/'))
       .filter((path) => !existsSync(join(ROOT, path)));
     expect(
       stale,
-      `seção do examples/README.md aponta para um caminho que não existe: ${stale.join(', ')}`,
+      `examples/README.md section points to a path that does not exist: ${stale.join(', ')}`,
     ).toEqual([]);
   });
 });
