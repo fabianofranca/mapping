@@ -12,14 +12,14 @@ import { ImagesSection, OtherChangesSection } from './OtherChanges';
 import { IdentityFlags, ReviewHeader } from './ReviewHeader';
 import { useReviewNames } from './useReview';
 
-// Detalhes na revisão sem painel normal (HANDOFF-REVIEW-DETAILS 5.6, fase 9.6): a proposta
-// (identidade, cabeçalho com Aceitar tudo / Rejeitar tudo, "Outras mudanças" do grupo
-// Projeto e "Imagens" com Abrir), o grupo Projeto (o mesmo painel, só com "Outras
-// mudanças") e as mudanças sem item (camadas, especializações, repositórios). Também o
-// estado vazio e o que um item mostraria se o painel normal não o achasse. Imagem e item
-// têm o painel normal, em `ReviewPanel`.
+// Details in the review without a normal panel (HANDOFF-REVIEW-DETAILS 5.6, phase 9.6): the
+// proposal (identity, header with Accept all / Reject all, "Other changes" of the Project group and
+// "Images" with Open), the Project group (the same panel, with only "Other changes") and the
+// changes without an item (layers, specializations, repositories). Also the empty state and what an
+// item would show if the normal panel did not find it. Image and item have the normal panel, in
+// `ReviewPanel`.
 
-/** O nível que o cabeçalho decide e as mudanças que a seção "Outras mudanças" lista. */
+/** The level the header decides and the changes that the "Other changes" section lists. */
 function plan(
   target: ReviewTarget,
   imageId: string | null | undefined,
@@ -32,14 +32,14 @@ function plan(
   if (target.level === 'project')
     return { header: target, others: project, images: false };
   if (target.level === 'canvas') return { header: target, others: target, images: false };
-  // Uma mudança do grupo Projeto (sem imagem nem marcação) mostra o painel do grupo.
+  // A change of the Project group (without an image or marking) shows the group's panel.
   if (target.level === 'change' && imageId === null && markingId === null) {
     return { header: project, others: project, images: false };
   }
   return { header: target, others: target, images: false };
 }
 
-/** Um nível da revisão sem painel normal. */
+/** A review level without a normal panel. */
 export function ReviewLevelPanel({ target }: { readonly target: ReviewTarget }) {
   const { review, ui } = useEditor();
   const names = useReviewNames();
@@ -53,7 +53,7 @@ export function ReviewLevelPanel({ target }: { readonly target: ReviewTarget }) 
       : null;
   const targetId = change?.id ?? null;
 
-  // A mudança selecionada abre "Outras mudanças" e é levada à vista.
+  // The selected change opens "Other changes" and is scrolled into view.
   useLayoutEffect(() => {
     if (targetId !== null) expandSections(ui, [{ kind: 'others' }]);
   }, [targetId, ui]);
@@ -109,7 +109,7 @@ export function ReviewLevelPanel({ target }: { readonly target: ReviewTarget }) 
   );
 }
 
-/** Detalhes na revisão sem painel normal: o estado vazio ou o painel do nível. */
+/** Details in the review without a normal panel: the empty state or the level's panel. */
 export function ReviewDetails() {
   const { review } = useEditor();
   const target = review.selected.value;

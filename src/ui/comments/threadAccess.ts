@@ -2,16 +2,16 @@ import { t, type TranslationKey } from '../../i18n';
 import { identity, type Identity } from '../../store/identity';
 import { useEditor } from '../EditorContext';
 
-// Quem pode escrever nas conversas agora (decisões 11, 26 e 27): a cópia precisa aceitar escrita
-// (não é só leitura nem está em revisão de proposta) e a pessoa precisa ter identidade. Sem
-// identidade a conversa se lê, mas Enviar, Resolver, Reabrir, Apagar e Nova não aparecem.
+// Who can write in the threads now (decisions 11, 26 and 27): the copy must accept writing
+// (it is not read-only nor in proposal review) and the person must have an identity. Without
+// an identity the thread can be read, but Send, Resolve, Reopen, Delete and New do not appear.
 
 export interface ThreadAccess {
-  /** A cópia aceita escrita (nem somente leitura nem em revisão). */
+  /** The copy accepts writing (neither read-only nor in review). */
   readonly writable: boolean;
-  /** A identidade desta pessoa; `null` = só leitura. */
+  /** This person's identity; `null` = read-only. */
   readonly me: Identity | null;
-  /** Pode escrever: cópia gravável e com identidade. */
+  /** Can write: writable copy and with an identity. */
   readonly can: boolean;
 }
 
@@ -30,7 +30,7 @@ const ERRORS: Readonly<Record<string, TranslationKey>> = {
   'message-too-long': 'thread.error.message-too-long',
 };
 
-/** Texto de erro de uma ação de conversa (`generic` para os códigos sem texto próprio). */
+/** Error text of a thread action (`generic` for the codes without their own text). */
 export function threadErrorText(code: string): string {
   return t(ERRORS[code] ?? 'thread.error.generic');
 }

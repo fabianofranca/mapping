@@ -1,15 +1,15 @@
 import { t } from '../../i18n';
 import type { ThreadActionError } from '../../store/threadActions';
 
-// Textos curtos da janela Comentários, da barra de status e da faixa: contagens no singular e no
-// plural e o motivo de uma ação recusada.
+// Short texts of the Comments window, the status bar and the strip: counts in singular and
+// plural and the reason an action was refused.
 
-/** "5 abertas" / "1 aberta". */
+/** "5 open" / "1 open". */
 export function openCountText(count: number): string {
   return count === 1 ? t('comments.openCountOne') : t('comments.openCount', { count });
 }
 
-/** "5 conversas abertas · 2 aguardando agente" (a barra de status). */
+/** "5 open conversations · 2 waiting for agent" (the status bar). */
 export function statusBarText(open: number, awaitingAgent: number): string {
   const base =
     open === 1
@@ -20,7 +20,7 @@ export function statusBarText(open: number, awaitingAgent: number): string {
     : base;
 }
 
-/** "N abertas · M aguardando agente · K resolvidas" (o resumo da janela). */
+/** "N open · M waiting for agent · K resolved" (the window summary). */
 export function summaryText(
   open: number,
   awaitingAgent: number,
@@ -35,7 +35,7 @@ export function summaryText(
   ].join(' · ');
 }
 
-/** Por que a ação foi recusada, em texto para a pessoa. */
+/** Why the action was refused, as text for the person. */
 export function actionErrorText(error: ThreadActionError): string {
   switch (error) {
     case 'no-identity':

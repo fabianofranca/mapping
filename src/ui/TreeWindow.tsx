@@ -11,9 +11,9 @@ interface TreeWindowProps {
 }
 
 /**
- * Janela Árvore de marcações (esquerda), com Localizar a seleção e Recolher tudo. Mostra
- * o projeto que está à vista: na visão Proposto da revisão, o "como ficaria" (uma
- * importação nova só tem imagens e itens na prévia); senão, o projeto atual.
+ * Markings Tree window (left), with Locate the selection and Collapse all. It shows
+ * the project in view: in the Proposed view of the review, the "how it would look" (a
+ * new import only has images and items in the preview); otherwise, the current project.
  */
 export function TreeWindow({ onSelect }: TreeWindowProps) {
   const { review, ui } = useEditor();

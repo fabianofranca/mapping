@@ -14,14 +14,14 @@ import { Icon } from './icons';
 
 interface MultiSelectionPanelProps {
   readonly project: Project;
-  /** Os itens selecionados que existem no projeto (dois ou mais). */
+  /** The selected items that exist in the project (two or more). */
   readonly items: readonly ItemRef[];
   readonly readOnly: boolean;
-  /** Abre a confirmação de excluir a seleção inteira. */
+  /** Opens the confirmation to delete the whole selection. */
   readonly onDelete: (items: readonly ItemRef[]) => void;
 }
 
-/** Detalhes com mais de um item selecionado: só o resumo e as ações da seleção inteira. */
+/** Details with more than one item selected: only the summary and the actions of the whole selection. */
 export function MultiSelectionPanel({
   project,
   items,

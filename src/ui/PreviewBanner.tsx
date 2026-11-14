@@ -3,7 +3,7 @@ import { dismissPreviewBanner, previewBannerDismissed } from '../store/banners';
 import { isPreview } from '../utils/channel';
 import { Banner } from './Banner';
 
-/** Selo PREVIEW permanente (barra principal, tela inicial): o build de preview nunca passa despercebido. */
+/** Permanent PREVIEW badge (main bar, home screen): the preview build never goes unnoticed. */
 export function PreviewBadge() {
   if (!isPreview) return null;
   return (
@@ -14,8 +14,8 @@ export function PreviewBadge() {
 }
 
 /**
- * Faixa do build de preview: deixa claro que os dados são outros. Pode ser dispensada
- * na sessão (P8); o selo e o canal na barra de status continuam.
+ * Preview build strip: makes clear that the data is different. It can be dismissed
+ * for the session (P8); the badge and the channel in the status bar remain.
  */
 export function PreviewBanner() {
   if (!isPreview || previewBannerDismissed.value) return null;

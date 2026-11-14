@@ -3,37 +3,37 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { tokenValue } from '../../theme/tokens';
 import { classes } from './classes';
 
-/** Número de um token de comprimento (`--space-2: 8px` → 8). */
+/** Number of a length token (`--space-2: 8px` → 8). */
 function px(token: string): number {
   return Number.parseInt(tokenValue(token, 'light'), 10);
 }
 
-/** Folga mínima entre a dica e a borda da janela do navegador (`--space-2`, a mesma do Popover). */
+/** Minimum gap between the tip and the browser window edge (`--space-2`, same as Popover). */
 const EDGE = px('space-2');
-/** Espaço entre o controle e a dica (`--space-1`). */
+/** Space between the control and the tip (`--space-1`). */
 const GAP = px('space-1');
 
 export type TooltipPlacement = 'bottom' | 'top' | 'end';
 
 interface TooltipProps {
-  /** Texto da dica. */
+  /** Tip text. */
   readonly label: string;
-  /** Atalho mostrado ao lado do texto (ex.: `Ctrl+Z`). */
+  /** Shortcut shown beside the text (e.g. `Ctrl+Z`). */
   readonly shortcut?: string;
-  /** `end`: ao lado do controle (faixa lateral), sem cobrir o conteúdo ao lado dela. */
+  /** `end`: beside the control (side strip), without covering the content next to it. */
   readonly placement?: TooltipPlacement;
-  /** Dica fixada aberta (o clique do `HelpTip`), mesmo sem hover nem foco visível. */
+  /** Tip pinned open (the `HelpTip` click), even without hover or visible focus. */
   readonly open?: boolean;
-  /** Dica suprimida (ex.: o painel que o controle abre já está na tela e a dica o cobriria). */
+  /** Tip suppressed (e.g. the panel the control opens is already on screen and the tip would cover it). */
   readonly suppressed?: boolean;
-  /** Chamado quando o Esc fecha a dica visível; com ele, o Esc é consumido (não propaga). */
+  /** Called when Esc closes the visible tip; with it, Esc is consumed (does not propagate). */
   readonly onDismiss?: () => void;
   readonly children: ComponentChildren;
 }
 
 /**
- * Põe a dica ao lado do controle, centrada na vertical, dentro da janela do navegador: à
- * direita e, se não couber, à esquerda.
+ * Puts the tip beside the control, vertically centered, inside the browser window: on the
+ * right and, if it does not fit, on the left.
  */
 function placeEnd(
   tip: HTMLElement,
@@ -51,9 +51,9 @@ function placeEnd(
 }
 
 /**
- * Põe a dica centrada embaixo (ou em cima) do controle, dentro da janela do navegador.
- * A dica é `position: fixed`: fora do fluxo, não alarga nem rola o painel onde está e
- * não é cortada pela borda dele.
+ * Puts the tip centered below (or above) the control, inside the browser window.
+ * The tip is `position: fixed`: out of the flow, it neither widens nor scrolls the panel it is
+ * in, and it is not clipped by the panel's edge.
  */
 function place(anchor: HTMLElement, placement: TooltipPlacement): void {
   const tip = anchor.querySelector<HTMLElement>(':scope > [data-tooltip]');
@@ -87,11 +87,11 @@ function place(anchor: HTMLElement, placement: TooltipPlacement): void {
 }
 
 /**
- * Dica de um controle: aparece ao passar o mouse e ao focar pelo teclado, continua
- * visível enquanto o ponteiro estiver sobre ela e some com Esc. É só um complemento
- * visual: o nome acessível vem do `aria-label` do controle (a dica é `aria-hidden`, mas
- * o texto continua no DOM). Oculta, fica fora do fluxo e não ocupa espaço.
- * Em telas de toque (sem hover) não aparece.
+ * Tip of a control: appears on mouse hover and on keyboard focus, stays visible while the
+ * pointer is over it and goes away with Esc. It is only a visual complement: the accessible
+ * name comes from the control's `aria-label` (the tip is `aria-hidden`, but the text stays in
+ * the DOM). Hidden, it is out of the flow and takes no space.
+ * On touch screens (no hover) it does not appear.
  */
 export function Tooltip({
   label,
@@ -109,7 +109,7 @@ export function Tooltip({
   };
   useEffect(() => {
     if (!open) return;
-    // Reabrir a dica fixada (Enter ou clique) depois de um Esc volta a mostrá-la.
+    // Reopening the pinned tip (Enter or click) after an Esc shows it again.
     setDismissed(false);
     if (anchor.current) place(anchor.current, placement);
   }, [open, placement]);
@@ -126,8 +126,8 @@ export function Tooltip({
         if (e.key !== 'Escape') return;
         const visible = open || !dismissed;
         setDismissed(true);
-        // Com `onDismiss` (HelpTip), o Esc que fecha a dica é consumido: não chega aos atalhos
-        // do editor (limpar a seleção) nem ao `cancel` nativo de um `<dialog>`.
+        // With `onDismiss` (HelpTip), the Esc that closes the tip is consumed: it does not reach
+        // the editor shortcuts (clear selection) nor the native `cancel` of a `<dialog>`.
         if (onDismiss && visible) {
           onDismiss();
           e.stopPropagation();

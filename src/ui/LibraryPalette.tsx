@@ -13,9 +13,9 @@ import { Button } from './controls';
 import { useAddComponent } from './useAddComponent';
 import { TypeNoticeBadge } from './NoticeBadge';
 
-// Paleta (etapa Biblioteca, B3; aba Paleta da janela Catálogo, B5): os componentes das especializações
-// aplicadas, por especialização e camada, cada um com o botão Adicionar. O componente
-// novo vai para o container selecionado ou para a tela à vista (`componentTarget`).
+// Palette (Library stage, B3; Palette tab of the Catalog window, B5): the components of the applied
+// specializations, by specialization and layer, each with the Add button. The new
+// component goes to the selected container or to the screen in view (`componentTarget`).
 
 interface LibraryGroup {
   readonly specId: string;
@@ -27,7 +27,7 @@ interface LibraryGroup {
   }[];
 }
 
-/** Os tipos agrupados por especialização e camada, na ordem em que a paleta os recebe. */
+/** The types grouped by specialization and layer, in the order the palette receives them. */
 function groupTypes(
   project: Project,
   types: readonly ComponentType[],
@@ -38,7 +38,7 @@ function groupTypes(
     specName: string;
     layers: { layerId: string; layerName: string; types: ComponentType[] }[];
   }[] = [];
-  // Um mapa por especialização e por camada, em vez de `find` a cada tipo.
+  // One map per specialization and per layer, instead of a `find` per type.
   const groupById = new Map<string, (typeof groups)[number]>();
   const layerByKey = new Map<string, (typeof groups)[number]['layers'][number]>();
   for (const type of types) {
@@ -62,7 +62,7 @@ function groupTypes(
   return groups;
 }
 
-/** O selo de aviso do tipo do componente (resolvido na especialização do projeto). */
+/** The notice badge of the component's type (resolved in the project's specialization). */
 function ComponentNotice({
   project,
   type,
@@ -75,7 +75,7 @@ function ComponentNotice({
 }
 
 interface LibraryPaletteProps {
-  /** Abre o diálogo de Especializações (atalho do estado vazio). */
+  /** Opens the Specialization dialog (shortcut of the empty state). */
   readonly onOpenSpecs: () => void;
 }
 

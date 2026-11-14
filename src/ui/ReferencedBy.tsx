@@ -4,9 +4,9 @@ import type { AnnotationLocation } from '../store/ui';
 import { markingLabel } from './labels';
 import { annotationDisplayName } from './typedText';
 
-// Linha "Referenciada por" do cartão da anotação tipada (etapa #679, CF3): as anotações que
-// apontam para ela inteira (`ref` no formato `{ annotationId }`). Só leitura, no molde da linha
-// "Vinculadas"; os apontamentos para campo, linha e par livre aparecem junto do alvo deles.
+// "Referenced by" row of the typed annotation's card (stage #679, CF3): the annotations that
+// point to it as a whole (`ref` in the `{ annotationId }` format). Read-only, modeled on the
+// "Linked" row; the pointers to a field, row and free pair show up next to their target.
 
 interface ReferencedByProps {
   readonly project: Project;
@@ -14,7 +14,7 @@ interface ReferencedByProps {
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 
-/** As origens que apontam para a anotação inteira, uma vez cada, na ordem do projeto. */
+/** The origins that point to the whole annotation, once each, in project order. */
 function wholeAnnotationSources(project: Project, annotationId: string): Annotation[] {
   const sources = new Map<string, Annotation>();
   for (const backlink of getBacklinks(project, annotationId)) {
@@ -45,7 +45,7 @@ export function ReferencedByRow({
         const name = annotationDisplayName(project, source);
         const marking = markings.get(source.markingId);
         return (
-          /* Exceção ao Button: link de texto: item da lista "Referenciada por" (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+          /* Exception to Button: text link: item of the "Referenced by" list (docs/DESIGN-SYSTEM.md, "Loose buttons") */
           <button
             key={source.id}
             type="button"

@@ -27,9 +27,9 @@ import { summaryText } from './commentsText';
 import { relativeTime } from './relativeTime';
 import { useDeleteThread } from './useDeleteThread';
 
-// Janela Comentários (etapa Comentários, CM3): todas as conversas do mapeamento numa tabela, com
-// filtros de status, usuário e texto. Escolher uma linha seleciona a conversa e o item dela e
-// leva aos Detalhes. Na revisão de uma proposta a janela é só leitura (decisão 26).
+// Comments window (Comments stage, CM3): all the threads of the mapping in a table, with
+// status, user and text filters. Choosing a row selects the thread and its item and
+// goes to the Details. In the review of a proposal the window is read-only (decision 26).
 
 const STATUSES: readonly ThreadStatusFilter[] = [
   'all',
@@ -51,7 +51,7 @@ function isStatus(value: string): value is ThreadStatusFilter {
   return (STATUSES as readonly string[]).includes(value);
 }
 
-/** O que a janela pode fazer agora: ler sempre, escrever só fora da revisão e do somente leitura. */
+/** What the window can do now: read always, write only outside review and read-only. */
 function useAccess() {
   const { store } = useEditor();
   const readOnly = store.readOnly.value;
@@ -64,7 +64,7 @@ function useAccess() {
   };
 }
 
-/** A âncora de uma conversa nova a partir da seleção do canvas; `null` sem seleção. */
+/** The anchor of a new thread from the canvas selection; `null` without a selection. */
 function anchorOfSelection(selection: Selection): ThreadAnchor | null {
   if (selection === null) return null;
   return selection.kind === 'image'
@@ -72,7 +72,7 @@ function anchorOfSelection(selection: Selection): ThreadAnchor | null {
     : { kind: selection.kind, id: selection.id };
 }
 
-/** Nova conversa e o menu ⋯ (Apagar conversas…), no cabeçalho da janela. */
+/** New thread and the ⋯ menu (Delete threads…), in the window header. */
 export function CommentsHeaderActions() {
   const { ui, review, session } = useEditor();
   const access = useAccess();
@@ -130,7 +130,7 @@ function userOptions(users: readonly ThreadUser[]) {
   });
 }
 
-/** "Só as que citam a seleção" (decisão 34): só vale com um item selecionado. */
+/** "Only those that cite the selection" (decision 34): only valid with an item selected. */
 function CiteSelectionFilter() {
   const { ui } = useEditor();
   const hasSelection = anchorOfSelection(ui.selection.value) !== null;
@@ -233,7 +233,7 @@ function StatusBadge({ thread }: { readonly thread: Thread }) {
   );
 }
 
-/** Quem abriu a conversa: iniciais e nome. */
+/** Who opened the thread: initials and name. */
 function OpenerCell({ thread }: { readonly thread: Thread }) {
   const opener = thread.messages[0];
   if (!opener) return null;
@@ -249,7 +249,7 @@ function OpenerCell({ thread }: { readonly thread: Thread }) {
 
 interface AnchorCellProps {
   readonly anchor: string;
-  /** Na revisão a âncora é só texto. */
+  /** In the review the anchor is text only. */
   readonly plain: boolean;
   readonly selected: boolean;
   readonly unread: boolean;
@@ -360,7 +360,7 @@ export function CommentsWindow() {
   const unread = derived.threads.unreadIds.value;
   const chosen = selectedThreadId(ui);
   const choose = (thread: Thread) => {
-    // Na revisão a janela só mostra: escolher uma linha não mexe na seleção (decisão 26).
+    // In the review the window only shows: choosing a row does not touch the selection (decision 26).
     if (access.reviewing) return;
     selectThread(ui, project, thread);
     openToolWindow('details');

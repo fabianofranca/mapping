@@ -11,8 +11,8 @@ import { useEditor } from './EditorContext';
 import { FOCUSABLE } from './focus';
 import { Popover } from './Popover';
 
-// O painel "Mostrar no canvas" do modo visualização (decisão 8 da etapa #656): o botão que o
-// reabre e o popover com os elementos, as camadas com desenho e os dois atalhos do rodapé.
+// The "Show on canvas" panel of view mode (decision 8 of stage #656): the button that reopens it
+// and the popover with the elements, the layers with drawing and the two footer shortcuts.
 
 type Flag = 'containers' | 'images' | 'outline' | 'names' | 'arrows';
 
@@ -33,7 +33,7 @@ const ELEMENTS: readonly {
   { flag: 'arrows', label: 'view.panelArrows', hint: 'view.panelArrowsHint' },
 ];
 
-/** O conteúdo do painel; ao montar, leva o foco ao primeiro controle. */
+/** The panel content; on mount, takes focus to the first control. */
 function PanelBody() {
   const { ui, derived } = useEditor();
   const root = useRef<HTMLDivElement>(null);
@@ -92,27 +92,27 @@ function PanelBody() {
   );
 }
 
-/** O botão Visualizar (a barra o liga a este ref), para devolver o foco a ele. */
+/** The View button (the bar binds it to this ref), to give focus back to it. */
 export const viewModeButton: { current: HTMLButtonElement | null } = { current: null };
 
-/** O "⋯" da barra do canvas (`OverflowMenu`), que guarda o lugar dos botões escondidos. */
+/** The "⋯" of the canvas bar (`OverflowMenu`), which holds the place of hidden buttons. */
 export const overflowButton: { current: HTMLButtonElement | null } = { current: null };
 
-/** A barra estreita escondeu os controles de vista (`.canvas-bar-low` sem caixa)? */
+/** Did the narrow bar hide the view controls (`.canvas-bar-low` with no box)? */
 function lowHidden(): boolean {
   const low = viewModeButton.current?.closest('[data-canvas-low]');
   return !!low && getComputedStyle(low).display === 'none';
 }
 
-/** Para onde o foco volta: o Visualizar, ou o "⋯" se a barra estreita escondeu o botão. */
+/** Where focus returns to: View, or the "⋯" if the narrow bar hid the button. */
 export function viewControl(): HTMLElement | null {
   return lowHidden() ? overflowButton.current : viewModeButton.current;
 }
 
 /**
- * O botão "Mostrar no canvas" (só habilitado no modo) e o painel que ele abre. O painel que
- * abriu ao ligar o modo devolve o foco, ao fechar, ao Visualizar (o botão ativo na barra); o
- * aberto pelo próprio "Mostrar no canvas" devolve a ele.
+ * The "Show on canvas" button (only enabled in the mode) and the panel it opens. The panel that
+ * opened on turning the mode on gives focus back, on closing, to View (the active button in the
+ * bar); the one opened by "Show on canvas" itself gives it back to that.
  */
 export function ViewModePanel() {
   const { ui } = useEditor();
@@ -137,7 +137,7 @@ export function ViewModePanel() {
       open={on && ui.viewPanel.value}
       onOpenChange={onOpenChange}
       trigger={({ open, toggle }) => (
-        // Só o botão cede na barra estreita; o painel (fora do grupo) segue renderizável.
+        // Only the button yields in the narrow bar; the panel (outside the group) stays renderable.
         <span class="canvas-bar-low">
           <IconButton
             icon="layers"

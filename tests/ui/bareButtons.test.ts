@@ -23,7 +23,7 @@ describe('botões avulsos (item 38)', () => {
     lines.forEach((line, i) => {
       if (!/<button\b/.test(line)) return;
       const before = lines.slice(Math.max(0, i - 2), i + 1).join('\n');
-      expect(before, `${file}:${i + 1}`).toContain('Exceção ao Button:');
+      expect(before, `${file}:${i + 1}`).toContain('Exception to Button:');
     });
   });
 

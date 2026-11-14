@@ -5,8 +5,8 @@ import { CitationChip } from './CitationChip';
 import { useCitationContext } from './citationContext';
 
 /**
- * "Citada em" (decisão 33): um chip por conversa, aberta ou resolvida, que cita a conversa
- * mostrada. Some quando ninguém a cita.
+ * "Cited in" (decision 33): one chip per thread, open or resolved, that cites the shown
+ * thread. Goes away when nobody cites it.
  */
 export function CitedIn({ thread }: { readonly thread: Thread }) {
   const { derived } = useEditor();

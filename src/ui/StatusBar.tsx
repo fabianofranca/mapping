@@ -14,15 +14,15 @@ import { showAndFocusToolWindow } from './toolWindowLayout';
 import { awaitingText } from './review/ProposalRow';
 import { statusBarText } from './comments/commentsText';
 
-// Barra de status (B8): salvamento, destino e "não exportado" à esquerda;
-// seleção, cursor, zoom, schema, canal e build à direita. O cursor vem do canvas num signal
-// de UI próprio, atualizado no máximo uma vez por quadro (HANDOFF, seção 6).
+// Status bar (B8): saving, destination and "not exported" on the left;
+// selection, cursor, zoom, schema, channel and build on the right. The cursor comes from the canvas in a
+// UI signal of its own, updated at most once per frame (HANDOFF, section 6).
 
 interface ItemProps extends JSX.HTMLAttributes<HTMLSpanElement> {
   readonly icon?: IconName;
 }
 
-/** Um item da barra: ícone opcional e o texto em `.status-item-text` (nunca texto solto ao lado do ícone). */
+/** A bar item: optional icon and the text in `.status-item-text` (never loose text beside the icon). */
 function Item({ icon, children, ...rest }: ItemProps) {
   return (
     <span {...rest}>
@@ -42,7 +42,7 @@ function SaveItem() {
     return (
       <span class="status-item status-item-error" role="alert">
         <span class="status-item-text">{t('status.error')}</span>
-        {/* Exceção ao Button: link de texto na mensagem de erro de gravação (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
+        {/* Exception to Button: text link in the save error message (docs/DESIGN-SYSTEM.md, "Standalone buttons") */}
         <button type="button" class="link" onClick={() => void session.flush()}>
           {t('status.retry')}
         </button>
@@ -64,7 +64,7 @@ function SaveItem() {
 function SelectionItem() {
   const { review, ui } = useEditor();
   const name = useComputed(() => {
-    // O projeto à vista (prévia na visão Proposto da revisão), nunca o confirmado direto.
+    // The project in view (preview in the Proposed view of the review), never the confirmed one directly.
     const count = existingItems(
       review.derived.shownProject.value,
       selectedItems(ui),
@@ -108,8 +108,8 @@ function CursorItem() {
 const Separator = () => <span class="status-sep" aria-hidden="true" />;
 
 /**
- * Propostas: na revisão, "Somente leitura" e as aceitas aguardando aplicação; fora dela, as
- * propostas novas (abre a janela Propostas).
+ * Proposals: in the review, "Read-only" and the accepted ones awaiting application; outside it, the
+ * new proposals (opens the Proposals window).
  */
 function ProposalsItem() {
   const { review } = useEditor();
@@ -135,7 +135,7 @@ function ProposalsItem() {
   const fresh = review.derived.freshIds.value.length;
   if (fresh === 0) return null;
   return (
-    /* Exceção ao Button: segmento da barra de status (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+    /* Exception to Button: status bar segment (docs/DESIGN-SYSTEM.md, "Standalone buttons") */
     <button
       type="button"
       class="status-item status-item-button status-item-info"
@@ -147,13 +147,13 @@ function ProposalsItem() {
   );
 }
 
-/** Avisos da especialização (etapa #486): quantas anotações têm aviso; abre a janela Avisos. */
+/** Specialization warnings (stage #486): how many annotations have a warning; opens the Warnings window. */
 function NoticesItem() {
   const { derived } = useEditor();
   const count = derived.noticedCount.value;
   if (count === 0) return null;
   return (
-    /* Exceção ao Button: segmento da barra de status (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+    /* Exception to Button: status bar segment (docs/DESIGN-SYSTEM.md, "Standalone buttons") */
     <button
       type="button"
       class="status-item status-item-button status-item-s"
@@ -166,13 +166,13 @@ function NoticesItem() {
   );
 }
 
-/** Conversas abertas (etapa Comentários): quantas e quantas aguardam o agente; abre a janela. */
+/** Open threads (Comments stage): how many and how many await the agent; opens the window. */
 function CommentsItem() {
   const { derived } = useEditor();
   const open = derived.threads.openCount.value;
   if (open === 0) return null;
   return (
-    /* Exceção ao Button: segmento da barra de status (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+    /* Exception to Button: status bar segment (docs/DESIGN-SYSTEM.md, "Standalone buttons") */
     <button
       type="button"
       class="status-item status-item-button status-item-s"
@@ -187,15 +187,15 @@ function CommentsItem() {
   );
 }
 
-/** A frase inteira das chegadas (o title do item curto da barra). */
+/** The whole arrivals sentence (the title of the bar's short item). */
 const arrivalsTitle = (count: number) =>
   count === 1
     ? t('perspective.status.arrivalsOne')
     : t('perspective.status.arrivalsMany', { count });
 
 /**
- * Perspectiva aberta (etapa #659): o nome dela (ou a Principal) e, na Principal, quantos itens
- * vieram de outras perspectivas.
+ * Open perspective (stage #659): its name (or the Main one) and, on the Main one, how many items
+ * came from other perspectives.
  */
 function PerspectiveItem() {
   const { derived, review } = useEditor();
@@ -220,7 +220,7 @@ function PerspectiveItem() {
   );
 }
 
-/** Modo visualização: lembra que o canvas é só para ver e como sair. */
+/** View mode: reminds that the canvas is view-only and how to leave. */
 function ViewModeItem() {
   const { ui } = useEditor();
   if (!ui.viewMode.value) return null;
@@ -231,7 +231,7 @@ function ViewModeItem() {
   );
 }
 
-/** Destino do salvamento, "não exportado", schema e canal: comuns às duas barras. */
+/** Save destination, "not exported", schema and channel: common to both bars. */
 function useStatusTexts() {
   const { open } = useEditor();
   return {

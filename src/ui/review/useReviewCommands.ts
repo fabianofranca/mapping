@@ -5,13 +5,13 @@ import { useEditor, type EditorContextValue } from '../EditorContext';
 import { proposalErrorMessage } from '../labels';
 import { openToolWindow } from '../toolWindowLayout';
 
-/** Quanto tempo um aviso de erro da revisão fica à vista. */
+/** How long a review error warning stays in view. */
 export const REVIEW_ERROR_MS = 6000;
 
 export interface ReviewCommands {
-  /** Abre a proposta na revisão: janelas Propostas e Detalhes. */
+  /** Opens the proposal in the review: Proposals and Details windows. */
   openReview(proposalId: string): boolean;
-  /** Mostra a mensagem de uma ação recusada. */
+  /** Shows the message of a refused action. */
   report(error: ProposalActionError, path?: string): void;
 }
 
@@ -23,8 +23,8 @@ function reporterOf(editor: EditorContextValue): Reporter {
 }
 
 /**
- * Abre a proposta na revisão (janelas Propostas e Detalhes) e avisa por toast quando não dá.
- * Sem hook: serve ao clique de um chip de citação, que tem o contexto do editor na mão.
+ * Opens the proposal in the review (Proposals and Details windows) and warns by toast when it
+ * cannot. Not a hook: it serves the click of a citation chip, which has the editor context at hand.
  */
 export function openReviewIn(editor: EditorContextValue, proposalId: string): boolean {
   const { review, ui, canvas } = editor;
@@ -39,7 +39,7 @@ export function openReviewIn(editor: EditorContextValue, proposalId: string): bo
   }
   openToolWindow('details');
   openToolWindow('proposals');
-  // Volta ao último item visto: mostra-o no canvas depois do desenho seguinte.
+  // Back to the last item seen: shows it on the canvas after the next draw.
   const center = () => canvas.current?.centerSelection();
   if (typeof requestAnimationFrame === 'function') requestAnimationFrame(center);
   if (result.resumed === 'full' && result.newConflicts === 0) {
@@ -55,7 +55,7 @@ export function openReviewIn(editor: EditorContextValue, proposalId: string): bo
   return true;
 }
 
-/** Comandos da revisão usados pela lista, pelo aviso de proposta nova e pela barra de status. */
+/** Review commands used by the list, by the new-proposal notice and by the status bar. */
 export function useReviewCommands(): ReviewCommands {
   const editor = useEditor();
   return {

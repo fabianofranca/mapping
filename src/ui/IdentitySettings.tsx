@@ -15,7 +15,7 @@ interface IdentityForm {
   readonly forget: () => void;
 }
 
-/** O estado do formulário: o que a pessoa digitou, se dá para salvar e a confirmação. */
+/** The form state: what the person typed, whether it can be saved and the confirmation. */
 function useIdentityForm(): IdentityForm {
   const saved = identity.value;
   const [name, setName] = useState(saved?.name ?? '');
@@ -50,9 +50,9 @@ function useIdentityForm(): IdentityForm {
 }
 
 /**
- * Configurações › Identidade (etapa Comentários, decisões 10 e 11): nome e e-mail desta pessoa,
- * guardados só neste dispositivo. Sem eles a pessoa lê as conversas, mas não escreve, resolve,
- * reabre nem apaga. O e-mail passa por uma conferência leve (`algo@algo`).
+ * Settings › Identity (Comments stage, decisions 10 and 11): this person's name and e-mail,
+ * kept only on this device. Without them the person reads threads but does not write, resolve,
+ * reopen or delete. The e-mail gets a light check (`something@something`).
  */
 export function IdentitySettings() {
   const form = useIdentityForm();

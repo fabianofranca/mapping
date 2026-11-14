@@ -24,19 +24,19 @@ import { imageLabel, markingLabel } from '../labels';
 import { labelTexts } from '../typedText';
 import { joinParts } from './format';
 
-// Textos das mudanças na revisão (títulos, valores antes/depois e o resumo de uma
-// linha). Só apresentação: o que é cada mudança vem do modelo (`Change`) e os valores,
-// da proposta. Os nomes das entidades citadas são procurados no projeto atual, depois no
-// "como ficaria" e, por último, no próprio `from`/`to` da mudança.
+// Texts of the changes in review (titles, before/after values and the one-line
+// summary). Presentation only: what each change is comes from the model (`Change`) and the values,
+// from the proposal. The names of the cited entities are looked up in the current project, then in the
+// "as it would be" and, last, in the change's own `from`/`to`.
 
-/** Projeto atual e o "como ficaria", de onde saem os nomes. */
+/** Current project and the "as it would be", where the names come from. */
 export interface ReviewNames {
   readonly current: Project;
   readonly preview: Project | null;
   readonly proposal: Proposal;
 }
 
-/** Um pedaço de valor; `strong` destaca o que muda (ex: o `y` de uma posição). */
+/** A piece of a value; `strong` highlights what changes (e.g. the `y` of a position). */
 export interface ValuePart {
   readonly text: string;
   readonly strong?: boolean;
@@ -49,7 +49,7 @@ function lookup<T>(
   return get(names.current) ?? (names.preview ? get(names.preview) : undefined);
 }
 
-/** A entidade como registro (na criação o `to`, na remoção o `from`). */
+/** The entity as a record (on creation the `to`, on removal the `from`). */
 function entityRecord(c: Change): Record<string, JsonValue> | null {
   const value = c.kind === 'remove' ? c.from : c.to;
   return isRecord(value) ? value : null;
@@ -59,15 +59,15 @@ const text = (v: JsonValue | undefined): string | null =>
   typeof v === 'string' && v !== '' ? v : null;
 
 interface EntityLookup {
-  /** A primeira mudança de cada entidade (pelo id). */
+  /** The first change of each entity (by id). */
   readonly firstOf: ReadonlyMap<string, Change>;
-  /** A mudança da entidade inteira (criação ou remoção: `field` nulo), pelo id. */
+  /** The whole-entity change (creation or removal: `field` null), by id. */
   readonly wholeOf: ReadonlyMap<string, Change>;
 }
 
 const lookups = new WeakMap<readonly Change[], EntityLookup>();
 
-/** Índices das mudanças por id de entidade, montados uma vez por lista (sem `find` por linha). */
+/** Indexes of the changes by entity id, built once per list (no `find` per row). */
 function entityLookup(names: ReviewNames): EntityLookup {
   const changes = names.proposal.changes;
   const cached = lookups.get(changes);
@@ -83,15 +83,15 @@ function entityLookup(names: ReviewNames): EntityLookup {
   return built;
 }
 
-/** A mudança da entidade inteira se for da `entity` dada. */
+/** The whole-entity change if it is of the given `entity`. */
 function wholeChange(names: ReviewNames, entity: Change['entity'], id: string) {
   const c = entityLookup(names).wholeOf.get(id);
   return c?.entity === entity ? c : undefined;
 }
 
 /**
- * Nome de uma seta: o `name` dela, senão "Origem → Destino" (as pontas pelos nomes das
- * marcações). `null` se a seta não está no projeto nem em uma criação ou remoção da proposta.
+ * Name of an arrow: its `name`, otherwise "Origin → Destination" (the ends by the names of the
+ * markings). `null` if the arrow is neither in the project nor in a creation or removal of the proposal.
  */
 function arrowName(names: ReviewNames, id: string): string | null {
   let source: { readonly name: string | null; from: string; to: string } | null =
@@ -113,9 +113,9 @@ function arrowName(names: ReviewNames, id: string): string | null {
   );
 }
 
-/** Nome do item da revisão: a marcação, ou a seta (os ids dividem o espaço, ME4). */
+/** Name of the review item: the marking, or the arrow (the ids share the space, ME4). */
 export function markingName(names: ReviewNames, id: string): string {
-  // O rótulo usa o projeto em que a marcação foi encontrada (o tipo vem das anotações dele).
+  // The label uses the project where the marking was found (the type comes from its annotations).
   for (const p of [names.current, names.preview]) {
     const found = p ? projectIndex(p).markings.get(id) : undefined;
     if (found && p) return markingLabel(p, found);
@@ -127,7 +127,7 @@ export function markingName(names: ReviewNames, id: string): string {
   return name || t('marking.unnamed');
 }
 
-/** Container sem arquivo criada pela proposta (imagem sem arquivo): o nome padrão dela. */
+/** Container without a file created by the proposal (image without a file): its default name. */
 function backgroundName(
   record: Record<string, JsonValue> | null | undefined,
 ): string | null {
@@ -174,8 +174,8 @@ function annotationName(names: ReviewNames, id: string): string {
 }
 
 /**
- * Nome do papel do vínculo de uma anotação ("Clique"): pelo tipo do dono dela na prévia e,
- * senão, no projeto atual (o dono pode mudar na mesma proposta); o id se nenhum oferece.
+ * Name of the role of an annotation's link ("Click"): by the type of its owner in the preview and,
+ * otherwise, in the current project (the owner can change in the same proposal); the id if neither offers it.
  */
 function roleName(names: ReviewNames, annotationId: string, roleId: string): string {
   for (const p of [names.preview, names.current]) {
@@ -191,8 +191,8 @@ function roleName(names: ReviewNames, annotationId: string, roleId: string): str
 }
 
 /**
- * Nome do tipo ("Button"), com a mesma caixa da lista e de Detalhes: da especialização do
- * projeto, senão da que a própria proposta aplica (importação nova); por último, o id.
+ * Name of the type ("Button"), with the same casing as the list and Details: from the project's
+ * specialization, otherwise from the one the proposal itself applies (new import); lastly, the id.
  */
 function typeName(
   names: ReviewNames,
@@ -226,7 +226,7 @@ function specName(names: ReviewNames, c: Change): string {
   return text(spec?.name) ?? c.entityId;
 }
 
-/** Nome de um nível da revisão (proposta, Projeto, Canvas, imagem ou item). */
+/** Name of a review level (proposal, Project, Canvas, image or item). */
 export function targetName(names: ReviewNames, target: ReviewTarget): string {
   switch (target.level) {
     case 'proposal':
@@ -296,21 +296,21 @@ const ENTITY_KEYS = {
   project: 'review.entity.project',
 } as const satisfies Record<Change['entity'], TranslationKey>;
 
-/** O tipo de entidade por extenso ("Camada"). */
+/** The entity type in full ("Layer"). */
 export function entityLabel(entity: Change['entity']): string {
   return t(ENTITY_KEYS[entity]);
 }
 
-/** O tipo da entidade que a proposta cita com esse id (pela primeira mudança nela). */
+/** The type of the entity that the proposal cites with that id (by the first change on it). */
 export function entityKindOf(names: ReviewNames, id: string): Change['entity'] | null {
   return entityLookup(names).firstOf.get(id)?.entity ?? null;
 }
 
 /**
- * Nome de uma entidade citada só pelo id (os problemas do conjunto aceito): procurada na
- * prévia e no projeto atual (marcação, imagem, camada, anotação, especialização) e, por
- * último, no registro da criação ou da remoção dela na proposta. `null` se não está em
- * lugar nenhum: o alvo não existe mais.
+ * Name of an entity cited only by id (the problems of the accepted set): looked up in the
+ * preview and in the current project (marking, image, layer, annotation, specialization) and, lastly,
+ * in the record of its creation or removal in the proposal. `null` if it is nowhere:
+ * the target no longer exists.
  */
 export function entityName(names: ReviewNames, id: string): string | null {
   for (const p of names.preview ? [names.preview, names.current] : [names.current]) {
@@ -320,7 +320,7 @@ export function entityName(names: ReviewNames, id: string): string | null {
     if (index.containers.has(id)) return imageName(names, id);
     if (index.layers.has(id)) return layerName(names, id);
     if (index.annotations.has(id)) return annotationName(names, id);
-    // Sem a cópia em `specs/` (`spec: null`), o nome pode estar na própria proposta.
+    // Without the copy in `specs/` (`spec: null`), the name may be in the proposal itself.
     const spec = index.specializations.get(id)?.spec;
     if (spec) return spec.name;
   }
@@ -342,13 +342,13 @@ export function entityName(names: ReviewNames, id: string): string | null {
   return null;
 }
 
-/** Rótulo de um campo de uma entidade (`marking` + `rect` → "Posição"); a chave quando não há rótulo. */
+/** Label of a field of an entity (`marking` + `rect` → "Position"); the key when there is no label. */
 export function entityFieldLabel(entity: Change['entity'], key: string): string {
   const label = FIELD_KEYS[`${entity}.${key}`];
   return label ? t(label) : key;
 }
 
-/** Nome do campo de uma tipada (o rótulo do campo na especialização, senão a chave). */
+/** Name of a typed field (the field's label in the specialization, otherwise the key). */
 export function valueFieldLabel(names: ReviewNames, c: Change, key: string): string {
   const project = names.preview ?? names.current;
   const a =
@@ -359,7 +359,7 @@ export function valueFieldLabel(names: ReviewNames, c: Change, key: string): str
   return field ? fieldLabel(field) : key;
 }
 
-/** Nome do objeto da mudança, para os títulos ("Anotação onClick", "Camada Eventos"). */
+/** Name of the change's object, for the titles ("Annotation onClick", "Layer Events"). */
 function subjectName(names: ReviewNames, c: Change): string | null {
   switch (c.entity) {
     case 'annotation':
@@ -382,11 +382,11 @@ function subjectName(names: ReviewNames, c: Change): string | null {
   }
 }
 
-/** Título de uma mudança ("Posição", "Anotação onClick criada", "estilo"). */
+/** Title of a change ("Position", "Annotation onClick created", "style"). */
 export function changeTitle(names: ReviewNames, c: Change): string {
   const entity = t(ENTITY_KEYS[c.entity]);
   const subject = subjectName(names, c);
-  // "Repositório" é masculino em português: "criado", "removido", "atualizado".
+  // "Repository" is masculine in Portuguese: "criado", "removido", "atualizado".
   const form =
     c.entity === 'platformRepo' || c.entity === 'docRepo' ? 'titleMasc' : 'title';
   if (c.kind === 'create') {
@@ -408,12 +408,12 @@ export function changeTitle(names: ReviewNames, c: Change): string {
     const key = FIELD_KEYS[`${c.entity}.${field}`];
     label = key ? t(key) : field;
   }
-  // Nas anotações, o campo vem com o nome da anotação ("estilo · Button").
+  // In annotations, the field comes with the annotation's name ("style · Button").
   return c.entity === 'annotation' && subject ? `${label} · ${subject}` : label;
 }
 
 // ---------------------------------------------------------------------------
-// Valores
+// Values
 
 function rectParts(value: JsonValue, other: JsonValue | undefined): ValuePart[] | null {
   if (!isRecord(value)) return null;
@@ -434,7 +434,7 @@ function rectParts(value: JsonValue, other: JsonValue | undefined): ValuePart[] 
   return parts;
 }
 
-/** Espaço da marcação: o container (ou Canvas) e o `rect` nele, "Tela Home · X 10 · …". */
+/** Marking's space: the container (or Canvas) and the `rect` in it, "Home screen · X 10 · …". */
 function spaceParts(names: ReviewNames, value: JsonValue): ValuePart[] {
   if (!isRecord(value)) return [{ text: compact(value) }];
   const space =
@@ -464,7 +464,7 @@ function placementParts(
   return parts;
 }
 
-/** Texto de uma célula ou de um campo `ref`: o rótulo do alvo; senão o valor em texto. */
+/** Text of a cell or of a `ref` field: the target's label; otherwise the value as text. */
 function cellText(names: ReviewNames, value: JsonValue): string {
   if (typeof value === 'string') return value;
   const ref = parseRefValue(value);
@@ -472,7 +472,7 @@ function cellText(names: ReviewNames, value: JsonValue): string {
   return JSON.stringify(value);
 }
 
-/** As linhas de uma tabela (`values.<campo>` com lista de registros), em texto. */
+/** The rows of a table (`values.<field>` with a list of records), as text. */
 export function tableLines(
   names: ReviewNames,
   value: JsonValue | undefined,
@@ -488,14 +488,14 @@ export function tableLines(
   });
 }
 
-/** Valor de `values.<campo>`: tabela pelas linhas, `ref` pelo rótulo do alvo; senão `null`. */
+/** Value of `values.<field>`: table by its rows, `ref` by the target's label; otherwise `null`. */
 function typedValueParts(names: ReviewNames, value: JsonValue): ValuePart[] | null {
   const lines = tableLines(names, value);
   if (lines) return [{ text: lines.map((l) => l.text).join('\n') || compact(value) }];
   return parseRefValue(value) ? [{ text: cellText(names, value) }] : null;
 }
 
-/** Texto compacto de qualquer valor JSON (o que não tem forma própria). */
+/** Compact text of any JSON value (what has no shape of its own). */
 function compact(value: JsonValue): string {
   if (value === null) return t('review.value.empty');
   if (typeof value === 'boolean')
@@ -507,7 +507,7 @@ function compact(value: JsonValue): string {
   return json.length > 80 ? `${json.slice(0, 79)}…` : json;
 }
 
-/** A âncora de uma marcação: "acima/início de Botão" (o que não foi dito é "padrão") e o deslocamento, se houver. */
+/** A marking's anchor: "above/start of Button" (what was not said is "default") and the offset, if any. */
 function anchorText(names: ReviewNames, value: JsonValue): string {
   if (!isRecord(value) || typeof value.to !== 'string') return compact(value);
   const word = (kind: 'side' | 'align', v: JsonValue | undefined): string =>
@@ -529,13 +529,13 @@ function anchorText(names: ReviewNames, value: JsonValue): string {
     : summary;
 }
 
-/** Texto de uma direção de leitura; `null` (ausente) é "Segue o projeto" no container e `ltr` no projeto. */
+/** Text of a reading direction; `null` (absent) is "Follows the project" in the container and `ltr` in the project. */
 function directionText(entity: Change['entity'], value: JsonValue): string {
   if (value === 'ltr' || value === 'rtl') return t(`review.value.direction.${value}`);
   return t(entity === 'image' ? 'direction.followProject' : 'review.value.direction.ltr');
 }
 
-/** A entidade `project`: o modo do desenho e, quando fixada, "Direção: …". */
+/** The `project` entity: the drawing mode and, when pinned, "Direction: …". */
 function projectSummary(value: Record<string, JsonValue>): string {
   const parts = [
     text(value.drawingMode),
@@ -546,7 +546,7 @@ function projectSummary(value: Record<string, JsonValue>): string {
   return parts.length > 0 ? parts.join(' · ') : t('review.value.empty');
 }
 
-/** Resumo de uma entidade inteira (criação ou remoção). */
+/** Summary of a whole entity (creation or removal). */
 function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string {
   if (!isRecord(value)) return compact(value);
   switch (c.entity) {
@@ -588,8 +588,8 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
 }
 
 /**
- * Valor de um lado da mudança, em partes (o que muda em destaque). `other`: o valor do
- * outro lado, para destacar só o número da posição que muda.
+ * Value of one side of the change, in parts (what changes highlighted). `other`: the value of the
+ * other side, to highlight only the position number that changes.
  */
 export function valueParts(
   names: ReviewNames,
@@ -606,7 +606,7 @@ export function valueParts(
   if (field === 'space') return spaceParts(names, value);
   if (field === 'placement')
     return placementParts(value, other) ?? [{ text: compact(value) }];
-  // Densidade (v19): ausente (`null`) vale 1, e o número segue o idioma (2,5 em pt-BR).
+  // Density (v19): absent (`null`) is 1, and the number follows the language (2.5 in pt-BR).
   if (field === 'density') {
     return [{ text: formatDensity(typeof value === 'number' ? value : 1) }];
   }
@@ -665,17 +665,17 @@ export function valueParts(
   return [{ text: compact(value) }];
 }
 
-/** O texto corrido das partes de um valor. */
+/** The running text of the parts of a value. */
 export const partsText = (parts: readonly ValuePart[]) =>
   parts.map((p) => p.text).join('');
 
-/** Resumo de uma linha da mudança: "y 476 → 532", "primary → secondary", "nova". */
+/** One-line summary of the change: "y 476 → 532", "primary → secondary", "new". */
 export function changeSummary(names: ReviewNames, c: Change): string {
   if (c.kind === 'create') return partsText(valueParts(names, c, c.to));
   if (c.kind === 'remove') return partsText(valueParts(names, c, c.from));
   const from = valueParts(names, c, c.from, c.to);
   const to = valueParts(names, c, c.to, c.from);
-  // Na posição, só os números que mudam.
+  // For the position, only the numbers that change.
   const strongFrom = from.filter((p) => p.strong);
   const strongTo = to.filter((p) => p.strong);
   if (strongFrom.length > 0 && strongTo.length === strongFrom.length) {
@@ -687,8 +687,8 @@ export function changeSummary(names: ReviewNames, c: Change): string {
 }
 
 /**
- * Resumo legível de uma mudança que o agente retirou da proposta. Ela já não está em
- * `proposal.changes`, então é posta de volta nos nomes só para resolver o tipo e o alvo.
+ * Readable summary of a change that the agent withdrew from the proposal. It is no longer in
+ * `proposal.changes`, so it is put back into the names only to resolve the type and the target.
  */
 export function droppedChangeSummary(names: ReviewNames, c: Change): string {
   const withChange: ReviewNames = {

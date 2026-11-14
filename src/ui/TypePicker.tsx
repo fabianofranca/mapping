@@ -12,10 +12,10 @@ import { TypeNoticeBadge } from './NoticeBadge';
 
 interface TypePickerProps {
   readonly types: readonly SpecAnnotationType[];
-  /** Grupos declarados da camada: viram cabeçalhos (docs/SPEC-FORMAT.md). */
+  /** Declared groups of the layer: they become headers (docs/SPEC-FORMAT.md). */
   readonly groups?: readonly SpecLayerGroup[];
   readonly onChoose: (type: SpecAnnotationType) => void;
-  /** Texto da lista vazia; sem ele, o aviso genérico `typed.noTypes`. */
+  /** Text of the empty list; without it, the generic notice `typed.noTypes`. */
   readonly emptyMessage?: string;
 }
 
@@ -62,7 +62,7 @@ function TypeSection({
   );
 }
 
-/** Tipos da camada, com busca, grupos e a descrição de cada um. */
+/** Types of the layer, with search, groups and the description of each. */
 export function TypePicker({ types, groups, onChoose, emptyMessage }: TypePickerProps) {
   const [query, setQuery] = useState('');
   const field = useRef<HTMLInputElement>(null);

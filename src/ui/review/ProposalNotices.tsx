@@ -9,16 +9,16 @@ import { revisionParts } from './revisedText';
 import { useReviewCommands } from './useReviewCommands';
 import { undoMessage } from './useReview';
 
-// Aviso discreto no canto do canvas quando uma proposta chega, muda ou some por fora
-// (`session.proposals.notices`, conferido junto com o `mapping.json`). A proposta nova
-// ganha "Revisar"; fechar o aviso limpa a fila (as propostas continuam na janela). Abrir a
-// proposta na revisão, por qualquer caminho, tira o aviso dela da fila (`review.open`), então
-// a interface não precisa escondê-lo por conta própria.
+// Discreet notice in the canvas corner when a proposal arrives, changes or goes away outside
+// (`session.proposals.notices`, checked together with `mapping.json`). The new proposal gets
+// "Review"; closing the notice clears the queue (the proposals stay in the window). Opening the
+// proposal in review, by any path, takes its notice off the queue (`review.open`), so the interface
+// does not need to hide it on its own.
 
 /**
- * "Desfazer" dos lotes e das dependências (HANDOFF-PROPOSALS 8.3): depois de "Aceitar
- * tudo", de uma decisão de nível ou de uma que levou outras junto, o aviso diz quantas
- * mudaram e oferece desfazer numa única escrita. Some na próxima ação.
+ * "Undo" of the batches and the dependencies (HANDOFF-PROPOSALS 8.3): after "Accept
+ * all", a level decision or one that took others along, the notice says how many
+ * changed and offers to undo in a single write. It goes away on the next action.
  */
 export function ReviewUndoNotice() {
   const { review } = useEditor();
@@ -52,7 +52,7 @@ export function ProposalNotices() {
 
 const NO_REVISION = { changed: 0, added: 0, dropped: 0 };
 
-/** "O agente revisou <título>: 1 trocada(s)…" com Revisar, a menos que essa revisão já esteja aberta. */
+/** "The agent revised <title>: 1 swapped…" with Review, unless that revision is already open. */
 function RevisedNotice({
   notice,
   more,

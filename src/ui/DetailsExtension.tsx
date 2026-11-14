@@ -4,100 +4,100 @@ import { useContext } from 'preact/hooks';
 import type { Entry, Layer } from '../model';
 import type { DetailsSection } from '../store/ui';
 
-// Ponto de extensão dos Detalhes (fase 9.5): os painéis normais (`MarkingPanel`,
+// Details extension point (phase 9.5): the normal panels (`MarkingPanel`,
 // `SelectionPanel`, `AnnotationsPanel`, `AnnotationEditor`, `TypedFields`,
-// `KeyValueGrid`, `TableField`, `MarkingColorField`) perguntam aqui, campo a campo, o que
-// desenhar além do controle (um marcador, um selo, uma linha que sai), sem saber quem
-// responde. Fora de um provedor o valor é `null` e o painel é o de sempre: uma leitura de
-// contexto por componente, nada mais. Quem fornece hoje é a revisão de propostas
+// `KeyValueGrid`, `TableField`, `MarkingColorField`) ask here, field by field, what to
+// draw beyond the control (a marker, a badge, a row that goes away), without knowing who
+// answers. Outside a provider the value is `null` and the panel is the usual one: one context
+// read per component, nothing more. Today the provider is the proposal review
 // (`ui/review/ReviewItemPanel.tsx`).
 
-/** Uma linha que não está mais no valor mostrado, desenhada no lugar onde estava. */
+/** A row that is no longer in the shown value, drawn where it was. */
 export interface RemovedEntry {
   readonly entry: Entry;
-  /** Posição que o par tinha na lista. */
+  /** Position the pair had in the list. */
   readonly index: number;
 }
 
-/** Uma anotação que não está mais na marcação mostrada, com o desenho dela. */
+/** An annotation that is no longer on the shown marking, with its drawing. */
 export interface RemovedAnnotation {
   readonly id: string;
-  /** Posição que a anotação tinha entre as da camada. */
+  /** Position the annotation had among those of the layer. */
   readonly index: number;
   readonly node: ComponentChildren;
 }
 
-/** Linhas de uma tabela que o valor mostrado ganhou e a nota das que saíram. */
+/** Rows of a table that the shown value gained, and the note of those that went away. */
 export interface TableRowsExtra {
   readonly added: ReadonlySet<string>;
-  /** Nome do selo + das linhas novas ("Linha nova"). */
+  /** Name of the badge + the new rows ("New row"). */
   readonly addedLabel: string;
-  /** Texto embaixo da tabela (ex.: as linhas que saem); `null` sem nada a dizer. */
+  /** Text below the table (e.g. the rows that go away); `null` with nothing to say. */
   readonly note: ComponentChildren;
 }
 
 export interface DetailsExtension {
   /**
-   * O que acompanha o campo `field` da entidade `entityId` (o marcador), ou `null`. Os
-   * campos são os de `Change.field` (`name`, `rect`, `parentId`, `file`, `markingColor`,
-   * `parentAnnotationId`, `markingId`, `layerId`, `type`, `values.<chave>`,
-   * `entries.<id>`); `''` é a entidade inteira (o cabeçalho da anotação).
+   * What goes with the field `field` of the entity `entityId` (the marker), or `null`. The
+   * fields are those of `Change.field` (`name`, `rect`, `parentId`, `file`, `markingColor`,
+   * `parentAnnotationId`, `markingId`, `layerId`, `type`, `values.<key>`,
+   * `entries.<id>`); `''` is the whole entity (the annotation header).
    */
   readonly mark: (entityId: string, field: string) => ComponentChildren;
   /**
-   * Linha embaixo do controle do campo (a nota da mudança, o selo da proposta substituída),
-   * ou `null`.
+   * Row below the field's control (the change note, the badge of the replaced proposal),
+   * or `null`.
    */
   readonly below: (entityId: string, field: string) => ComponentChildren;
-  /** Cabeçalho do item logo abaixo da identidade (a decisão e os avisos); `null` sem ele. */
+  /** Item header right below the identity (the decision and the warnings); `null` without it. */
   readonly header: (entityId: string) => ComponentChildren;
-  /** Decisão da anotação criada ou removida (✓ ✕), no cabeçalho dela; `null` nas demais. */
+  /** Decision of the created or removed annotation (✓ ✕), in its header; `null` on the others. */
   readonly decision: (entityId: string) => ComponentChildren;
-  /** Seção "Outras mudanças" no fim do painel do item (o que não tem campo), ou `null`. */
+  /** "Other changes" section at the end of the item panel (what has no field), or `null`. */
   readonly others: (entityId: string) => ComponentChildren;
-  /** Selos embaixo do nome da entidade e se o nome sai riscado. */
+  /** Badges below the entity name, and whether the name is struck through. */
   readonly identity: (entityId: string) => {
     readonly flags: ComponentChildren;
     readonly struck: boolean;
   } | null;
-  /** Resumo extra do cabeçalho de uma seção recolhível ("3 mudanças"), ou `null`. */
+  /** Extra summary in the header of a collapsible section ("3 changes"), or `null`. */
   readonly sectionSummary: (section: DetailsSection) => string | null;
-  /** Camadas cujos grupos o painel de anotações mostra, no lugar das visíveis do editor. */
+  /** Layers whose groups the annotations panel shows, instead of the editor's visible ones. */
   readonly layers: (visible: readonly Layer[]) => readonly Layer[];
-  /** Selo extra no cabeçalho do grupo de uma camada. */
+  /** Extra badge in the header of a layer's group. */
   readonly layerTag: (layerId: string) => ComponentChildren;
-  /** Aviso no topo das anotações da marcação. */
+  /** Warning at the top of the marking's annotations. */
   readonly annotationsNotice: (markingId: string) => ComponentChildren;
-  /** Anotações que saíram da marcação nesta camada, para desenhar no lugar onde estavam. */
+  /** Annotations that left the marking in this layer, to draw where they were. */
   readonly removedAnnotations: (
     markingId: string,
     layerId: string,
   ) => readonly RemovedAnnotation[];
-  /** Pares que saíram da anotação livre, para desenhar riscados no lugar onde estavam. */
+  /** Pairs that left the free annotation, to draw struck through where they were. */
   readonly removedEntries: (annotationId: string) => readonly RemovedEntry[];
-  /** Linhas novas e a nota das que saíram de um campo tabela, ou `null`. */
+  /** New rows and the note of those that went away from a table field, or `null`. */
   readonly tableRows: (annotationId: string, key: string) => TableRowsExtra | null;
   /**
-   * Grupos grandes: quantas anotações mostrar de início e de quantas em quantas o "mostrar
-   * mais" acrescenta, com o texto do botão. `null`: todas.
+   * Large groups: how many annotations to show at first and how many the "show
+   * more" button adds each time, with the button text. `null`: all.
    */
   readonly annotationPage: {
     readonly first: number;
     readonly step: number;
     readonly label: (count: number) => string;
     /**
-     * Id da anotação que precisa estar à vista, ainda que passe do "mostrar mais" (a mudança
-     * selecionada na janela Propostas). Um signal: só o grupo que o lê refaz.
+     * Id of the annotation that must be in view, even past "show more" (the change
+     * selected in the Proposals window). A signal: only the group that reads it redoes.
      */
     readonly reveal: ReadonlySignal<string | null>;
   } | null;
-  /** Nome (só para leitor de tela) da coluna das grades onde o marcador fica. */
+  /** Name (screen reader only) of the grid column where the marker sits. */
   readonly markColumn: string;
 }
 
 export const DetailsExtensionContext = createContext<DetailsExtension | null>(null);
 
-/** A extensão dos Detalhes em vigor (`null` no painel normal). */
+/** The Details extension in effect (`null` in the normal panel). */
 export function useDetailsExtension(): DetailsExtension | null {
   return useContext(DetailsExtensionContext);
 }

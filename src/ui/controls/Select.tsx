@@ -5,13 +5,13 @@ import { classes } from './classes';
 type NativeSelect = Omit<JSX.SelectHTMLAttributes<HTMLSelectElement>, 'class' | 'size'>;
 
 interface SelectProps extends NativeSelect {
-  /** Rótulo visível (o campo fica dentro do `<label>`); sem ele, passe `aria-label`. */
+  /** Visible label (the field sits inside the `<label>`); without it, pass `aria-label`. */
   readonly label?: ComponentChildren;
   readonly invalid?: boolean;
   readonly size?: 'md' | 'sm';
 }
 
-/** Seleção de uma opção (`<option>` como filhos), com a seta do desenho novo. */
+/** Selection of one option (`<option>` as children), with the arrow of the new design. */
 export function Select({ label, invalid, size = 'md', children, ...rest }: SelectProps) {
   const control = (
     <span class="select">

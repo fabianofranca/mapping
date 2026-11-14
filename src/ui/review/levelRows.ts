@@ -5,24 +5,24 @@ import {
   type ReviewTree,
 } from '../../model';
 
-// As linhas da janela Propostas em modo revisão: a árvore Proposta → Projeto/Imagem →
-// Item → Mudança achatada numa lista (para virtualizar), respeitando os nós recolhidos e
-// os filtros. Funções puras sobre a árvore do modelo (`reviewTree`).
+// The rows of the Proposals window in review mode: the Proposal → Project/Image →
+// Item → Change tree flattened into a list (to virtualize), respecting the collapsed nodes and
+// the filters. Pure functions over the model tree (`reviewTree`).
 
 export interface LevelRow {
-  /** `reviewKey` do alvo (`item:M1`, `change:c3`…). */
+  /** `reviewKey` of the target (`item:M1`, `change:c3`…). */
   readonly key: string;
   readonly target: ReviewTarget;
-  /** Profundidade (0 = proposta); `aria-level` é `depth + 1`. */
+  /** Depth (0 = proposal); `aria-level` is `depth + 1`. */
   readonly depth: number;
   readonly expandable: boolean;
   readonly expanded: boolean;
 }
 
 export interface LevelRowsOptions {
-  /** Mudanças que passam pelos filtros; `null` = sem filtro (todas). */
+  /** Changes that pass the filters; `null` = no filter (all). */
   readonly visible: ReadonlySet<string> | null;
-  /** Nós recolhidos (`reviewKey`). */
+  /** Collapsed nodes (`reviewKey`). */
   readonly collapsed: ReadonlySet<string>;
 }
 
@@ -31,7 +31,7 @@ const nodeTarget = (node: ReviewNode): ReviewTarget => ({
   id: node.id,
 });
 
-/** Achata a árvore: cada nó, suas mudanças diretas e depois os nós filhos. */
+/** Flattens the tree: each node, its direct changes and then the child nodes. */
 export function buildLevelRows(tree: ReviewTree, options: LevelRowsOptions): LevelRow[] {
   const { visible, collapsed } = options;
   const rows: LevelRow[] = [];
@@ -64,7 +64,7 @@ export function buildLevelRows(tree: ReviewTree, options: LevelRowsOptions): Lev
   return rows;
 }
 
-/** Pai de cada linha (`reviewKey` → `reviewKey`), para abrir os ancestrais da seleção. */
+/** Parent of each row (`reviewKey` → `reviewKey`), to open the selection's ancestors. */
 export function levelParents(tree: ReviewTree): ReadonlyMap<string, string> {
   const parents = new Map<string, string>();
   const visit = (node: ReviewNode) => {
@@ -79,7 +79,7 @@ export function levelParents(tree: ReviewTree): ReadonlyMap<string, string> {
   return parents;
 }
 
-/** Ancestrais de uma linha, do pai até a raiz. */
+/** Ancestors of a row, from the parent up to the root. */
 export function ancestorKeys(
   parents: ReadonlyMap<string, string>,
   key: string,
@@ -97,12 +97,12 @@ export function ancestorKeys(
   return out;
 }
 
-/** Nós que começam recolhidos numa proposta grande: as imagens e o Projeto. */
+/** Nodes that start collapsed in a large proposal: the images and the Project. */
 export function initiallyCollapsed(tree: ReviewTree): Set<string> {
   return new Set(tree.root.children.map((node) => reviewKey(nodeTarget(node))));
 }
 
-/** Todos os nós com filhos (para "Recolher tudo"), menos a raiz. */
+/** All nodes with children (for "Collapse all"), except the root. */
 export function allNodeKeys(tree: ReviewTree): Set<string> {
   const keys = new Set<string>();
   const visit = (node: ReviewNode) => {
@@ -115,15 +115,15 @@ export function allNodeKeys(tree: ReviewTree): Set<string> {
   return keys;
 }
 
-/** Posição da linha entre as irmãs que aparecem (`aria-posinset`/`aria-setsize`, de 1). */
+/** Position of the row among the visible siblings (`aria-posinset`/`aria-setsize`, from 1). */
 export interface RowPosition {
   readonly posinset: number;
   readonly setsize: number;
 }
 
 /**
- * Posição de cada linha no nível dela: irmãs são as linhas visíveis com o mesmo pai. A
- * proposta (sem pai) é a única do nível dela.
+ * Position of each row in its level: siblings are the visible rows with the same parent. The
+ * proposal (without a parent) is the only one in its level.
  */
 export function rowPositions(
   rows: readonly Pick<LevelRow, 'key'>[],
@@ -143,7 +143,7 @@ export function rowPositions(
   return out;
 }
 
-/** `id` do `treeitem` de uma linha (alvo do `aria-activedescendant` da árvore). */
+/** `id` of a row's `treeitem` (target of the tree's `aria-activedescendant`). */
 export function rowDomId(key: string): string {
   return `review-row-${key.replace(/[^\w-]/g, '_')}`;
 }

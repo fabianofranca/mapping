@@ -1,9 +1,9 @@
 /**
- * Menus e popovers fixos fecham ao rolar, mas o clique que os abre pode rolar a lista (ou a
- * página) até a linha, e esse evento de rolagem chega junto da abertura, ou ao longo de
- * vários quadros se a rolagem for suave (etapa #515, FN2). A guarda ignora a rolagem durante
- * uma janela curta de tempo depois da abertura (independe da ordem dos quadros) e a de
- * contêineres que não contêm o âncora; rolar depois, a pessoa, ainda fecha.
+ * Fixed menus and popovers close on scroll, but the click that opens them may scroll the list (or the
+ * page) to the row, and that scroll event arrives together with the opening, or over
+ * several frames if the scroll is smooth (stage #515, FN2). The guard ignores scrolling during
+ * a short window of time after opening (independent of frame order) and that of
+ * containers that do not contain the anchor; scrolling later, by the person, still closes.
  */
 export const OPEN_SCROLL_GRACE_MS = 300;
 

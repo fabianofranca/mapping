@@ -21,8 +21,8 @@ interface SwitchSpec {
 }
 
 /**
- * Configurações › Privacidade: origens de imagem permitidas neste navegador (com Revogar) e
- * os quatro interruptores de risco, todos desligados por padrão, cada um com o aviso.
+ * Settings › Privacy: image origins allowed in this browser (with Revoke) and
+ * the four risk switches, all off by default, each with its warning.
  */
 export function PrivacySettings() {
   const origins = allowedOrigins.value;

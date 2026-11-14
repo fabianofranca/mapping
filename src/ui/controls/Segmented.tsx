@@ -6,10 +6,10 @@ import { Tooltip } from './Tooltip';
 
 export interface SegmentedItem<T extends string> {
   readonly id: T;
-  /** Nome acessível (e texto da dica nos itens só com ícone). */
+  /** Accessible name (and tooltip text on icon-only items). */
   readonly label: string;
   readonly icon?: IconName;
-  /** Mostra o rótulo como texto (sem `icon`, o rótulo sempre aparece). */
+  /** Shows the label as text (without `icon`, the label always appears). */
   readonly showLabel?: boolean;
   readonly shortcut?: string;
   readonly disabled?: boolean;
@@ -17,18 +17,18 @@ export interface SegmentedItem<T extends string> {
 
 interface SegmentedProps<T extends string> {
   readonly items: readonly SegmentedItem<T>[];
-  /** Item escolhido (`null`: nenhum). */
+  /** Chosen item (`null`: none). */
   readonly value: T | null;
-  /** Chamado ao acionar qualquer item, inclusive o já escolhido (quem usa decide). */
+  /** Called when any item is triggered, including the already chosen one (the caller decides). */
   readonly onSelect: (id: T) => void;
-  /** Nome acessível do grupo. */
+  /** Accessible name of the group. */
   readonly label?: string;
   readonly disabled?: boolean;
-  /** Estado inválido (ex.: opção obrigatória sem escolha): borda de erro. */
+  /** Invalid state (e.g. required option with no choice): error border. */
   readonly invalid?: boolean;
 }
 
-/** Grupo de botões de alternância unidos (modo, opções de enum). */
+/** Group of joined toggle buttons (mode, enum options). */
 export function Segmented<T extends string>({
   items,
   value,

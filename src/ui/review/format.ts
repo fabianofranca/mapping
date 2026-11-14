@@ -1,8 +1,8 @@
 import { t } from '../../i18n';
 import type { Locale } from '../../store/settings';
 
-// Formatação dos textos da revisão que dependem do idioma (datas e plurais). Funções sem
-// estado: os componentes passam o idioma e "agora".
+// Formatting of the review texts that depend on the language (dates and plurals). Stateless
+// functions: the components pass the language and "now".
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -11,8 +11,8 @@ function startOfDay(d: Date): number {
 }
 
 /**
- * Data relativa e curta da lista de propostas: "hoje 09:40", "ontem 18:12" ou a data
- * ("06/10"; "06/10/2025" em outro ano), no idioma da interface e no fuso do dispositivo.
+ * Short relative date for the proposal list: "today 09:40", "yesterday 18:12" or the date
+ * ("06/10"; "06/10/2025" in another year), in the interface language and the device time zone.
  */
 export function formatWhen(iso: string, now: Date, locale: Locale): string {
   const date = new Date(iso);
@@ -31,7 +31,7 @@ export function formatWhen(iso: string, now: Date, locale: Locale): string {
   }).format(date);
 }
 
-/** Data e hora completas (dica). */
+/** Full date and time (hint). */
 export function formatFullDate(iso: string, locale: Locale): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
@@ -41,7 +41,7 @@ export function formatFullDate(iso: string, locale: Locale): string {
   }).format(date);
 }
 
-/** Junta as partes não vazias com " · ". */
+/** Joins the non-empty parts with " · ". */
 export function joinParts(parts: readonly (string | null | undefined | false)[]): string {
   return parts.filter((p): p is string => typeof p === 'string' && p !== '').join(' · ');
 }

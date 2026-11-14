@@ -30,8 +30,8 @@ import { Property, PropertyGrid } from './PropertyGrid';
 interface SelectionPanelProps {
   readonly image: ProjectContainer | null;
   /**
-   * Projeto de onde a imagem veio (as marcações dela, a trava). Padrão: o projeto à vista
-   * (`review.derived.shownProject`, que fora da revisão é o confirmado).
+   * Project the image came from (its markings, the lock). Default: the project in view
+   * (`review.derived.shownProject`, which outside the review is the committed one).
    */
   readonly project?: Project | null;
   readonly display: DisplayImage<unknown> | undefined;
@@ -39,11 +39,11 @@ interface SelectionPanelProps {
   readonly busy: boolean;
   readonly onReplace: (image: ProjectContainer) => void;
   readonly onDelete: (image: ProjectContainer) => void;
-  /** Abre as Configurações (o aviso de conversa sem identidade leva até lá). */
+  /** Opens Settings (the warning about a thread without identity leads there). */
   readonly onOpenSettings?: () => void;
 }
 
-/** Detalhes da imagem selecionada (ou o estado vazio, sem seleção). */
+/** Details of the selected image (or the empty state, with no selection). */
 export function SelectionPanel({
   image,
   project: given,
@@ -77,12 +77,12 @@ export function SelectionPanel({
   const broken = missing || (!bare && display?.status === 'error');
   const disabled = readOnly || busy;
   const dimensions = t('image.dimensions', { width: image.width, height: image.height });
-  // Trava: a da imagem e a das marcações dela ("trancar todas" vira "destrancar todas").
+  // Lock: the image's and its markings' ("lock all" becomes "unlock all").
   const own = project?.markings.filter((m) => m.containerId === image.id) ?? [];
   const allMarkingsLocked = own.length > 0 && own.every((m) => m.locked);
   const deletable = project ? canDeleteImage(project, image.id) : true;
   const identity = ext?.identity(image.id) ?? null;
-  // Pertencimento resolvido pela geometria (só leitura): a marcação do canvas que o contém.
+  // Membership resolved by geometry (read only): the canvas marking that contains it.
   const parent =
     project && image.parentId !== null
       ? projectIndex(project).markings.get(image.parentId)
@@ -151,7 +151,7 @@ export function SelectionPanel({
               placeholder={image.file ?? t('image.containerUntitled')}
               disabled={disabled}
               onCommit={(text) => {
-                // Espaços em volta não contam como alteração.
+                // Surrounding spaces do not count as a change.
                 if ((text.trim() || null) === image.name) return false;
                 return actions.renameContainer(image.id, text).ok;
               }}
@@ -252,10 +252,10 @@ interface ContainerFieldsProps {
 
 type ContainerField = 'width' | 'height' | 'background';
 
-/** Largura, altura e cor de fundo do container sem arquivo (no lugar de Arquivo e Tamanho). */
+/** Width, height and background color of a container without a file (in place of File and Size). */
 function ContainerFields({ image, ids, disabled }: ContainerFieldsProps) {
   const { actions } = useEditor();
-  // Um erro por campo, sob o próprio campo; o `key` do container zera tudo na troca.
+  // One error per field, under the field itself; the container's `key` resets everything on a switch.
   const [errors, setErrors] = useState<Partial<Record<ContainerField, string | null>>>(
     {},
   );

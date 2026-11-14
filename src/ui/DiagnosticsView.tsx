@@ -29,12 +29,12 @@ function formatTime(iso: string): string {
       new Date(iso),
     );
   } catch {
-    // Data ilegível: mostra o texto como está.
+    // Unreadable date: shows the text as it is.
     return iso;
   }
 }
 
-/** Ambiente do relato; os dados do projeto só existem dentro do editor. */
+/** Environment of the report; the project data only exists inside the editor. */
 function diagnosticsInfo(editor: EditorContextValue | null): DiagnosticsInfo {
   const project = editor?.store.committed.peek() ?? null;
   return {
@@ -58,14 +58,14 @@ function diagnosticsInfo(editor: EditorContextValue | null): DiagnosticsInfo {
 }
 
 /**
- * Copiar o cabeçalho do ambiente e o registro como texto; `copied` guarda o resultado
- * para o aviso (volta a vazio depois de 2 s ou ao limpar o registro).
+ * Copy the environment header and the log as text; `copied` holds the result
+ * for the notice (goes back to empty after 2 s or on clearing the log).
  */
 export function useCopyErrors() {
   const editor = useContext(EditorContext);
   const { result, copy, reset } = useCopyResult();
-  // Sem a API (ou sem permissão), `writeClipboardText` devolve `false` e registra o erro no
-  // Diagnóstico; a tabela continua na tela para copiar à mão.
+  // Without the API (or permission), `writeClipboardText` returns `false` and logs the error in
+  // Diagnostics; the table stays on screen to copy by hand.
   const write = () =>
     writeClipboardText(
       formatDiagnosticsReport(diagnosticsInfo(editor), reportedErrors.peek()),
@@ -73,7 +73,7 @@ export function useCopyErrors() {
   return { copied: result, copy: () => copy(write), reset };
 }
 
-/** Copiar e Limpar (e o resultado da cópia): vão no cabeçalho da janela ou no rodapé do diálogo. */
+/** Copy and Clear (and the copy result): go in the window header or the dialog footer. */
 export function DiagnosticsActions({
   copied,
   copy,
@@ -99,7 +99,7 @@ export function DiagnosticsActions({
       >
         {t('diagnostics.clear')}
       </Button>
-      {/* Copiar vale mesmo sem erros: o cabeçalho identifica o ambiente do relato. */}
+      {/* Copy applies even with no errors: the header identifies the report's environment. */}
       <Button size="sm" onClick={() => void copy()}>
         {t('diagnostics.copy')}
       </Button>
@@ -107,7 +107,7 @@ export function DiagnosticsActions({
   );
 }
 
-/** Registro de erros em tabela (Hora | Contexto | Mensagem), do mais recente ao mais antigo. */
+/** Error log as a table (Time | Context | Message), from the most recent to the oldest. */
 export function DiagnosticsTable() {
   const errors = reportedErrors.value;
   return (
@@ -168,8 +168,8 @@ export function DiagnosticsTable() {
 }
 
 /**
- * Problemas da biblioteca aplicada (níveis 1 e 2 sobre a cópia, lidos ao abrir o projeto),
- * por especialização. Sem problemas, ou fora do editor, não mostra nada.
+ * Problems of the applied library (levels 1 and 2 on the copy, read when opening the project),
+ * per specialization. With no problems, or outside the editor, it shows nothing.
  */
 export function DiagnosticsLibrary() {
   const editor = useContext(EditorContext);
@@ -198,7 +198,7 @@ export function DiagnosticsLibrary() {
   );
 }
 
-/** O motivo de uma fonte que não carregou, no idioma da interface. */
+/** The reason a font failed to load, in the interface language. */
 function fontProblemText(problem: FontProblem): string {
   switch (problem.code) {
     case 'missing':
@@ -211,9 +211,9 @@ function fontProblemText(problem: FontProblem): string {
 }
 
 /**
- * Componentes (etapa Biblioteca, B3): fontes que faltam ou não carregaram, componentes das
- * especializações que não carregaram e os avisos do desenho por marcação (com um botão para
- * selecioná-la), contando os "não cabe". Só aparece com algo a mostrar.
+ * Components (stage Library, B3): fonts that are missing or failed to load, components of the
+ * specializations that failed to load and the per-marking drawing warnings (with a button to
+ * select it), counting the "does not fit" ones. Only appears with something to show.
  */
 export function DiagnosticsComponents() {
   const editor = useContext(EditorContext);
@@ -226,7 +226,8 @@ export function DiagnosticsComponents() {
   const warnings = derived.componentWarnings.value;
   if (fonts.length === 0 && problems.length === 0 && warnings.length === 0) return null;
 
-  // Os nomes e a contagem vêm do projeto à vista (lido pelo derivado de pendências).
+  // The names and the count come from the project in view (read by the pending-items derived
+  // state).
   const shown = editor.review.derived.shownProject.value;
   const shownMarkings = shown && projectIndex(shown).markings;
   const nameOf = (markingId: string) => {
@@ -307,8 +308,8 @@ export function DiagnosticsComponents() {
 }
 
 /**
- * Modos do desenho gravados (no projeto ou nos containers) que nenhuma especialização declara:
- * o modo continua gravado, o desenho usa o primeiro modo de cada especialização.
+ * Drawing modes saved (in the project or in the containers) that no specialization declares:
+ * the mode stays saved, the drawing uses the first mode of each specialization.
  */
 export function DiagnosticsDrawingMode() {
   const project = useContext(EditorContext)?.store.project.value;
@@ -328,13 +329,13 @@ export function DiagnosticsDrawingMode() {
   );
 }
 
-/** Direção de leitura do projeto real, para a seção somente leitura. */
+/** Reading direction of the real project, for the read-only section. */
 function DiagnosticsDirectionSection() {
   const project = useContext(EditorContext)?.store.project.value;
   return project ? <DiagnosticsDirection project={project} /> : null;
 }
 
-/** Falhas e bloqueios de imagem remota da sessão (URL encurtada e motivo). */
+/** Failures and blocks of remote images in the session (shortened URL and reason). */
 export function DiagnosticsRemoteImages() {
   const issues = remoteImageIssues.value;
   if (issues.length === 0) return null;
@@ -356,8 +357,8 @@ export function DiagnosticsRemoteImages() {
 }
 
 /**
- * Conteúdo da janela Diagnóstico (B4). Enquanto está à vista, os erros novos contam
- * como vistos: o ponto de alerta da faixa só acende com a janela fechada.
+ * Content of the Diagnostics window (B4). While it is in view, new errors count
+ * as seen: the alert dot of the strip only lights up with the window closed.
  */
 export function DiagnosticsView() {
   const last = reportedErrors.value.at(-1);

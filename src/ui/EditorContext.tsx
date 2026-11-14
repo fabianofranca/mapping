@@ -15,7 +15,7 @@ import type { ProjectSession } from '../store/session';
 import { createEditorUi, type EditorUi } from '../store/ui';
 import { attachViewShowPersistence } from '../store/viewMode';
 
-/** Tudo o que os componentes do editor compartilham, sem passar por props. */
+/** Everything the editor components share, without going through props. */
 export interface EditorContextValue {
   readonly open: OpenProject;
   readonly session: ProjectSession;
@@ -24,30 +24,30 @@ export interface EditorContextValue {
   readonly display: DisplayImages<ImageBitmap>;
   readonly ui: EditorUi;
   readonly derived: EditorDerived;
-  /** Visibilidade das camadas que conhece a perspectiva aberta (única via de escrita da UI). */
+  /** Visibility of the layers known to the open perspective (the UI's only write path). */
   readonly layers: LayerVisibility;
-  /** Revisão de propostas (etapa 4): proposta aberta, filtros, decisões e o estado derivado dela. */
+  /** Proposal review (stage 4): open proposal, filters, decisions and its derived state. */
   readonly review: ReviewState;
-  /** Controller do canvas montado (`CanvasHost` o preenche); `null` fora do editor. */
+  /** Mounted canvas controller (`CanvasHost` fills it in); `null` outside the editor. */
   readonly canvas: { current: CanvasController | null };
-  /** Zoom, cursor e área das imagens, escritos pelo canvas e lidos pela interface. */
+  /** Zoom, cursor and image area, written by the canvas and read by the interface. */
   readonly view: CanvasViewState;
-  /** Para de guardar a escolha do modo visualização (ao fechar o editor). */
+  /** Stops storing the view mode choice (when closing the editor). */
   readonly stopViewShow: () => void;
 }
 
-/** Monta o contexto de um projeto aberto. `ui` pode ser injetado (testes). */
+/** Builds the context of an open project. `ui` can be injected (tests). */
 export function createEditorContextValue(
   open: OpenProject,
   ui: EditorUi = createEditorUi(),
 ): EditorContextValue {
   const { session, display } = open;
   const { store, actions } = session;
-  // A revisão vem antes do derivado do editor: ele lê o projeto à vista (`shownProject`),
-  // para Camadas, Lista, Incompletas e o canvas seguirem a visão Atual/Proposto (fase 8.2).
+  // The review comes before the editor's derived state: it reads the shown project (`shownProject`),
+  // so Layers, List, Incomplete and the canvas follow the Current/Proposed view (phase 8.2).
   const review = createReviewState(session);
-  // A perspectiva aberta: o projeto à vista já vem recortado por ela, e as camadas escondidas
-  // do derivado passam a ser as dela.
+  // The open perspective: the shown project already comes cropped by it, and the derived state's
+  // hidden layers become its own.
   const perspective = createOpenPerspective(store, session.perspective.id);
   return {
     open,
@@ -77,14 +77,14 @@ export function createEditorContextValue(
     review,
     canvas: { current: null },
     view: createCanvasViewState(),
-    // O que o modo visualização mostra volta, por cópia do projeto, neste navegador.
+    // What the view mode shows is restored, from a copy of the project, in this browser.
     stopViewShow: attachViewShowPersistence(ui, session.storage.copyId),
   };
 }
 
 export const EditorContext = createContext<EditorContextValue | null>(null);
 
-/** Um contexto (e um estado de UI novo) por projeto aberto. */
+/** One context (and a new UI state) per open project. */
 export function EditorProvider({
   open,
   children,
@@ -105,6 +105,6 @@ export function EditorProvider({
 
 export function useEditor(): EditorContextValue {
   const value = useContext(EditorContext);
-  if (!value) throw new Error('useEditor fora do EditorProvider');
+  if (!value) throw new Error('useEditor outside the EditorProvider');
   return value;
 }

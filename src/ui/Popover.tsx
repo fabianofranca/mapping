@@ -4,15 +4,15 @@ import { FOCUSABLE, returnFocusToTrigger } from './focus';
 import { createOpenScrollGuard } from './openScrollGuard';
 import { menuKeyDown, useFocusFirstItem } from './useMenuNavigation';
 
-// Popover ancorado num botão (paleta de cor e ações da linha da janela Camadas). Fica em
-// `position: fixed`, então não é cortado pela rolagem da janela onde está. Fecha com Esc,
-// ao escolher, com clique fora, ao rolar ou ao redimensionar; em todo fechamento, o foco
-// que estava nele volta ao botão (etapa 8, F6). Sem API nova do navegador: funciona em
+// Popover anchored to a button (color palette and row actions of the Layers window). It stays in
+// `position: fixed`, so it is not clipped by the scrolling of the window it sits in. It closes
+// on Esc, on choosing, on an outside click, on scroll or on resize; on every close, the focus
+// that was inside it returns to the button (stage 8, F6). No new browser API: it works on
 // `file://`.
 
-/** Folga mínima entre o popover e a borda da janela do navegador. */
+/** Minimum gap between the popover and the browser window edge. */
 const EDGE = 8;
-/** Espaço entre o botão e o popover. */
+/** Space between the button and the popover. */
 const GAP = 4;
 
 interface PopoverState {
@@ -22,46 +22,49 @@ interface PopoverState {
 
 interface PopoverProps {
   readonly class?: string;
-  /** Papel do painel: `menu` para lista de ações, `dialog` para conteúdo livre. */
+  /** Role of the panel: `menu` for a list of actions, `dialog` for free content. */
   readonly role?: 'menu' | 'dialog';
-  /** Nome acessível do painel. */
+  /** Accessible name of the panel. */
   readonly label: string;
-  /** Lado do botão com que o painel alinha a borda: `end` para botões no fim da linha. */
+  /** Side of the button the panel aligns its edge to: `end` for buttons at the end of a row. */
   readonly align?: 'start' | 'end';
-  /** O botão que abre o popover. */
+  /** The button that opens the popover. */
   readonly trigger: (state: PopoverState) => ComponentChildren;
   /**
-   * Controlado: quem usa diz se está aberto e recebe os pedidos de abrir e fechar (o
-   * marcador da revisão abre pelo hover e pelo foco, e só um fica aberto por vez). Sem
-   * `open`, o popover guarda o próprio estado, como sempre.
+   * Controlled: the caller says whether it is open and receives the open and close requests (the
+   * review marker opens on hover and on focus, and only one is open at a time). Without
+   * `open`, the popover keeps its own state, as always.
    */
   readonly open?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
-  /** `id` do painel (para o `aria-controls` do gatilho). */
+  /** `id` of the panel (for the trigger's `aria-controls`). */
   readonly id?: string;
-  /** Classe extra do painel (a do host é `class`). */
+  /** Extra class of the panel (the host's is `class`). */
   readonly panelClass?: string;
   /**
-   * Rolar a página (fora do painel): `close` fecha (padrão); `follow` reposiciona, para um
-   * popover aberto pelo foco não fechar com a rolagem que leva o gatilho à vista.
+   * Page scroll (outside the panel): `close` closes (default); `follow` repositions, so a
+   * popover opened by focus does not close on the scroll that brings the trigger into view.
    */
   readonly scroll?: 'close' | 'follow';
-  /** Limite lido a cada posicionamento (ex: a base da barra da revisão); `null`: sem limite. */
+  /** Limit read at every positioning (e.g. the bottom of the review bar); `null`: no limit. */
   readonly limit?: () => PlaceLimit | null;
-  /** Elemento em que o painel se ancora, no lugar do host (o dele está escondido); lido a cada posicionamento. */
+  /**
+   * Element the panel anchors to, instead of the host (whose own is hidden); read at every
+   * positioning.
+   */
   readonly anchor?: () => HTMLElement | null | undefined;
-  /** Conteúdo; a função recebe `close` para fechar ao escolher algo. */
+  /** Content; the function receives `close` to close on choosing something. */
   readonly children: ComponentChildren | ((close: () => void) => ComponentChildren);
 }
 
-/** Limite opcional do painel: o painel não sobe acima de `top` (coordenadas da janela). */
+/** Optional limit of the panel: the panel does not rise above `top` (window coordinates). */
 export interface PlaceLimit {
   readonly top: number;
 }
 
 /**
- * Com limite: embaixo se couber; senão em cima, abaixo do limite; senão do lado com mais
- * espaço, com altura máxima e rolagem interna.
+ * With a limit: below if it fits; otherwise above, under the limit; otherwise on the side
+ * with more room, with a maximum height and inner scrolling.
  */
 function placeLimited(
   panel: HTMLElement,
@@ -84,8 +87,8 @@ function placeLimited(
 }
 
 /**
- * Posiciona o painel embaixo do botão, ou em cima se não couber, sempre dentro da janela.
- * `limit`: o painel também não invade a área acima dele (a barra da revisão).
+ * Positions the panel below the button, or above if it does not fit, always inside the window.
+ * `limit`: the panel also does not invade the area above it (the review bar).
  */
 export function place(
   host: HTMLElement,
@@ -117,9 +120,9 @@ export function place(
 }
 
 /**
- * Teclado do popover. Com `role="menu"`, o padrão de menu (foco no primeiro item
- * habilitado, ↑/↓ circulam, Esc fecha), com a lógica do `MenuPopover` e do `ActionMenu`;
- * nos outros, só o Esc.
+ * Popover keyboard. With `role="menu"`, the menu pattern (focus on the first enabled
+ * item, ↑/↓ cycle, Esc closes), with the logic of `MenuPopover` and `ActionMenu`;
+ * for the others, only Esc.
  */
 function usePopoverKeys(
   panel: RefObject<HTMLElement>,
@@ -161,12 +164,12 @@ export function Popover({
   };
   const host = useRef<HTMLSpanElement>(null);
   const panel = useRef<HTMLDivElement>(null);
-  /** O botão que abre: o primeiro controle do host fora do painel. */
+  /** The button that opens: the first control of the host outside the panel. */
   const triggerEl = () =>
     [...(host.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].find(
       (el) => !panel.current?.contains(el),
     );
-  /** Onde o painel se ancora: o `anchor` de fora (um botão que o substitui) ou o host. */
+  /** Where the panel anchors: the outer `anchor` (a button that replaces it) or the host. */
   const anchorEl = () => anchor?.() ?? host.current;
   const close = () => {
     returnFocusToTrigger(host.current, triggerEl());
@@ -176,13 +179,13 @@ export function Popover({
   useLayoutEffect(() => {
     const at = anchorEl();
     if (open && at && panel.current) place(at, panel.current, align, limit?.());
-    // `limit` é lido a cada posicionamento, não é uma dependência.
+    // `limit` is read at every positioning, it is not a dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, align]);
 
   const onKeyDown = usePopoverKeys(panel, open, role === 'menu', close);
 
-  // Em layout effect: o clique fora vale desde o commit que abre o popover.
+  // In a layout effect: the outside click counts from the commit that opens the popover.
   useLayoutEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
@@ -190,7 +193,8 @@ export function Popover({
     };
     const scrollCounts = createOpenScrollGuard(triggerEl);
     const onScroll = (e: Event) => {
-      // Rolar o próprio popover (paleta longa) não fecha; nem a rolagem da abertura.
+      // Scrolling the popover itself (long palette) does not close it; neither does the
+      // opening scroll.
       if (panel.current?.contains(e.target as Node)) return;
       if (scroll === 'close') {
         if (scrollCounts(e)) close();
@@ -205,7 +209,7 @@ export function Popover({
       document.removeEventListener('scroll', onScroll, true);
       globalThis.removeEventListener('resize', close);
     };
-    // `close` só lê refs e escreve no estado (ou avisa quem controla).
+    // `close` only reads refs and writes state (or notifies the controlling caller).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, scroll, align]);
 

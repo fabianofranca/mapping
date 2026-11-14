@@ -12,15 +12,15 @@ import {
 
 export type { FocusOrigin, FocusReturn } from './focus';
 
-/** Largura do diálogo: 480px (padrão), 560px ou 820px (seção Layouts do DS 2.0). */
+/** Dialog width: 480px (default), 560px or 820px (Layouts section of DS 2.0). */
 export type DialogSize = 'sm' | 'md' | 'lg';
 
-/** De onde veio o fechamento: Esc (`cancel` do `<dialog>`), clique no fundo ou o X. */
+/** Where the closing came from: Esc (`cancel` of the `<dialog>`), click on the backdrop or the X. */
 export type DialogCancelCause = 'cancel' | 'backdrop' | 'close-button';
 
 /**
- * Foco inicial: o `autofocus`, senão o primeiro controle do corpo, senão o primeiro botão do
- * rodapé (numa confirmação, "Cancelar"). Sem isto o `showModal` cairia no fechar do cabeçalho.
+ * Initial focus: the `autofocus`, otherwise the first control in the body, otherwise the first button in the
+ * footer (in a confirmation, "Cancel"). Without this `showModal` would land on the header's close.
  */
 function focusFirst(dialog: HTMLDialogElement): void {
   const target =
@@ -33,34 +33,34 @@ function focusFirst(dialog: HTMLDialogElement): void {
 interface DialogBaseProps {
   readonly title: string;
   readonly children?: ComponentChildren;
-  /** Botões do rodapé. */
+  /** Footer buttons. */
   readonly actions: ComponentChildren;
   readonly size?: DialogSize;
-  /** Corpo sem margem interna nem rolagem própria: o conteúdo cuida dos dois (ex.: Ajuda). */
+  /** Body with no inner margin or own scrolling: the content handles both (e.g. Help). */
   readonly flush?: boolean;
-  /** Alvo do foco ao fechar quando quem abriu não está mais no DOM (`restoreFocus`). */
+  /** Focus target on close when whoever opened it is no longer in the DOM (`restoreFocus`). */
   readonly returnFocus?: FocusReturn;
   /**
-   * Confirmação destrutiva (excluir, remover): `role="alertdialog"`, descrita pelo corpo,
-   * que o leitor de tela lê ao abrir. Só aqui: num diálogo comprido (Ajuda) ele leria o
-   * corpo inteiro.
+   * Destructive confirmation (delete, remove): `role="alertdialog"`, described by the body,
+   * which the screen reader reads on open. Only here: in a long dialog (Help) it would read the
+   * whole body.
    */
   readonly alert?: boolean;
-  /** O `<dialog>` para quem precisa ler o estado dele (o rastro do Abrir de pasta). */
+  /** The `<dialog>` for whoever needs to read its state (the trail of the folder Open). */
   readonly dialogRef?: Ref<HTMLDialogElement>;
 }
 
 /**
- * `closable={false}`: a escolha no rodapé é obrigatória (ex.: "Projeto alterado fora da app"),
- * então não há botão de fechar no cabeçalho e Esc e o toque fora não fazem nada.
+ * `closable={false}`: the choice in the footer is mandatory (e.g. "Project changed outside the app"),
+ * so there is no close button in the header and Esc and a tap outside do nothing.
  */
 type DialogProps = DialogBaseProps &
   (
     | {
         readonly closable?: true;
         /**
-         * Esc, toque fora ou botão de fechar do cabeçalho; `cause` diz qual (opcional: só o
-         * rastro do Abrir de pasta usa, para o Diagnóstico).
+         * Esc, tap outside or the header's close button; `cause` says which (optional: only the
+         * trail of the folder Open uses it, for Diagnostics).
          */
         readonly onCancel: (cause?: DialogCancelCause) => void;
       }
@@ -68,8 +68,8 @@ type DialogProps = DialogBaseProps &
   );
 
 /**
- * Diálogo modal com `<dialog>` nativo (foco preso e Esc de graça). Cabeçalho de 44px com
- * título e fechar, corpo que rola e rodapé com borda.
+ * Modal dialog with native `<dialog>` (trapped focus and Esc for free). 44px header with
+ * title and close, scrolling body and footer with a border.
  */
 export function Dialog({
   title,
@@ -86,16 +86,16 @@ export function Dialog({
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const bodyId = useId();
-  // Onde começou o clique: só um clique inteiro no fundo fecha (um arrasto que começa no
-  // conteúdo e solta no fundo também gera `click` no `<dialog>`).
+  // Where the click started: only a whole click on the backdrop closes (a drag that starts on the
+  // content and is released on the backdrop also generates `click` on the `<dialog>`).
   const pressedOnBackdrop = useRef(false);
 
-  // Quem tinha o foco ao abrir (o botão que abriu, o diálogo de baixo, ou quem abriu o
-  // primeiro diálogo do slot do host): ao fechar, o foco volta para ele em vez de cair no
-  // `body`. Guardado na renderização, antes de o diálogo pegar o foco.
+  // Who had focus on open (the button that opened it, the dialog below, or whoever opened the
+  // first dialog of the host's slot): on close, focus goes back to it instead of falling on
+  // `body`. Saved at render time, before the dialog takes focus.
   const origin = useFocusOrigin();
   useModal(ref, origin, returnFocus, focusFirst);
-  // Depois do `showModal` (efeito acima): quem lê o ref já vê o diálogo aberto.
+  // After `showModal` (effect above): whoever reads the ref already sees the dialog open.
   useLayoutEffect(() => {
     assignRef(dialogRef, ref.current);
     return () => assignRef(dialogRef, null);
@@ -114,8 +114,8 @@ export function Dialog({
         onCancel?.('cancel');
       }}
       onClose={() => {
-        // O Chrome deixa de aceitar o `preventDefault` do Esc repetido sem outro gesto e fecha
-        // o `<dialog>` assim mesmo: sem fechar, ele volta a abrir enquanto estiver montado.
+        // Chrome stops accepting `preventDefault` on a repeated Esc without another gesture and closes
+        // the `<dialog>` anyway: without closing, it reopens while it is mounted.
         const dialog = ref.current;
         if (closable || !dialog || !dialog.isConnected || dialog.open) return;
         try {
@@ -128,7 +128,7 @@ export function Dialog({
         pressedOnBackdrop.current = e.target === ref.current;
       }}
       onClick={(e) => {
-        // Clique no fundo (fora do conteúdo) fecha, se também começou nele.
+        // Click on the backdrop (outside the content) closes, if it also started on it.
         const full = pressedOnBackdrop.current && e.target === ref.current;
         pressedOnBackdrop.current = false;
         if (full) onCancel?.('backdrop');

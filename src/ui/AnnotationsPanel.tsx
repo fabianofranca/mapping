@@ -45,18 +45,18 @@ import {
 
 interface AnnotationsPanelProps {
   readonly project: Project;
-  /** A dona das anotações: uma marcação ou uma seta (só o id importa). */
+  /** The owner of the annotations: a marking or an arrow (only the id matters). */
   readonly marking: Pick<Marking, 'id'>;
-  /** Padrão: marcação. A seta oferece os tipos que valem para ela (`offeredTypes`). */
+  /** Default: marking. The arrow offers the types that apply to it (`offeredTypes`). */
   readonly ownerKind?: AnnotationOwnerKind;
-  /** Camadas visíveis (uma seção para cada). */
+  /** Visible layers (one section for each). */
   readonly layers: readonly Layer[];
   readonly readOnly: boolean;
-  /** Torna a camada visível (para ir até uma anotação vinculada numa camada oculta). */
+  /** Makes the layer visible (to go to an annotation linked in a hidden layer). */
   readonly onShowLayer: (layerId: string) => void;
-  /** Vai até a anotação, em qualquer marcação (backlinks, alvo, vinculadas). */
+  /** Goes to the annotation, on any marking (backlinks, target, linked). */
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
-  /** Anotação para rolar até assim que estiver na tela (estado da UI). */
+  /** Annotation to scroll to as soon as it is on screen (UI state). */
   readonly focusAnnotation: string | null;
   readonly onFocusDone: () => void;
 }
@@ -69,7 +69,7 @@ const EMPTY_TYPES_KEY: Record<OfferedTypesEmpty, TranslationKey> = {
   'not-for-marking': 'typed.empty.marking',
 };
 
-/** O que o + da camada oferece a esta dona e, sem tipo, a mensagem do motivo. */
+/** What the + of the layer offers this owner and, with no type, the reason message. */
 function typeOffer(
   project: Project,
   markingId: string,
@@ -90,7 +90,7 @@ interface TypeStepDialogProps {
   readonly onCancel: () => void;
 }
 
-/** O diálogo do + de uma camada de especialização: os tipos que ela oferece, ou o motivo de não haver. */
+/** The dialog of a specialization layer's +: the types it offers, or the reason there are none. */
 function TypeStepDialog({
   project,
   markingId,
@@ -116,7 +116,7 @@ function TypeStepDialog({
   );
 }
 
-/** Passos da criação numa camada de especialização (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"). */
+/** Creation steps on a specialization layer (docs/ARCHITECTURE.md, "Specializations in the project and typed annotations"). */
 type CreateStep =
   | { readonly kind: 'type'; readonly layer: Layer }
   | {
@@ -133,8 +133,8 @@ type CreateStep =
     };
 
 /**
- * Anotações da marcação: pendências com links para o campo e um LayerGroup por camada
- * visível (cabeçalho na cor da camada, recolhível).
+ * Annotations of the marking: pending items with links to the field and one LayerGroup per
+ * visible layer (header in the layer's color, collapsible).
  */
 export function AnnotationsPanel({
   project,
@@ -150,13 +150,14 @@ export function AnnotationsPanel({
   const editor = useEditor();
   const { actions, ui } = editor;
   const ext = useDetailsExtension();
-  // Com a extensão (revisão), ela diz que camadas mostrar (ex.: uma escondida com mudanças).
+  // With the extension (review), it says which layers to show (e.g. a hidden one with changes).
   const layers = ext ? ext.layers(visible) : visible;
   const root = useRef<HTMLDivElement>(null);
-  // Os passos da criação (tipo › dono) são um slot: a troca mantém quem abriu o primeiro.
+  // The creation steps (type › owner) are a slot: the swap keeps whoever opened the first.
   const steps = useDialogSlot<CreateStep>();
   const step = steps.current;
-  // A função muda a cada renderização do pai; o efeito só deve reagir ao foco pedido.
+  // The function changes on every render of the parent; the effect should only react to the
+  // requested focus.
   const onFocusDoneRef = useRef(onFocusDone);
   onFocusDoneRef.current = onFocusDone;
   const visibleLayerIds = new Set(layers.map((l) => l.id));
@@ -168,9 +169,9 @@ export function AnnotationsPanel({
   }));
   const count = byLayer.reduce((n, g) => n + g.annotations.length, 0);
 
-  // "Ir para a anotação" (backlinks, pendências, criação, "escolher e ir" no seletor): o
-  // painel é o dono deste foco e age no commit que desenha o cartão. Um diálogo que fecha na
-  // mesma renderização devolve o foco depois (microtarefa) e, vendo-o aqui, não mexe (F2).
+  // "Go to the annotation" (backlinks, pending items, creation, "pick and go" in the picker): the
+  // panel owns this focus and acts in the commit that draws the card. A dialog that closes in the
+  // same render gives focus back later (microtask) and, seeing it here, does not touch it (F2).
   useLayoutEffect(() => {
     if (focusAnnotation === null) return;
     const target = [
@@ -187,7 +188,7 @@ export function AnnotationsPanel({
         )) ||
       target;
     scope.scrollIntoView({ block: 'nearest' });
-    // Campo de texto ou lista primeiro; senão o botão (referência, segmentado).
+    // Text field or list first; otherwise the button (reference, segmented).
     (
       scope.querySelector<HTMLElement>('input, select, textarea') ??
       scope.querySelector<HTMLElement>('[data-focus] button')
@@ -255,7 +256,8 @@ export function AnnotationsPanel({
             <Button
               size="sm"
               onClick={() => {
-                // O botão some quando as camadas voltam: o foco fica na seção, não vai ao body.
+                // The button disappears when the layers return: focus stays on the section, not on
+                // body.
                 root.current?.focus();
                 editor.layers.showAll();
               }}
@@ -279,7 +281,7 @@ export function AnnotationsPanel({
                 />
               ),
             }));
-          // As que saíram, no lugar onde estavam (na ordem da posição de antes).
+          // Those that left, where they were (in the order of their earlier position).
           for (const r of removed) {
             items.splice(Math.min(r.index, items.length), 0, { key: r.id, node: r.node });
           }
@@ -359,14 +361,14 @@ interface LayerGroupProps {
   readonly annotations: readonly Annotation[];
   readonly readOnly: boolean;
   readonly onAdd: () => void;
-  /** Há conteúdo (anotações próprias ou herdadas) para mostrar ao abrir. */
+  /** There is content (own or inherited annotations) to show on open. */
   readonly hasBody: boolean;
   readonly children: ComponentChildren;
 }
 
 /**
- * As anotações de um grupo; com `page` (grupos grandes na revisão), as primeiras e um
- * botão que mostra mais de `step` em `step`. Estado de UI do grupo, até ele desmontar.
+ * The annotations of a group; with `page` (large groups in review), the first ones and a
+ * button that shows more, `step` at a time. UI state of the group, until it unmounts.
  */
 export function PagedList({
   items,
@@ -376,7 +378,8 @@ export function PagedList({
   readonly page: DetailsExtension['annotationPage'];
 }) {
   const [limit, setLimit] = useState(page?.first ?? Number.POSITIVE_INFINITY);
-  // A anotação pedida (a mudança selecionada na janela Propostas) nunca fica além do limite.
+  // The requested annotation (the change selected in the Proposals window) never falls beyond
+  // the limit.
   const revealId = page?.reveal.value ?? null;
   const wanted =
     revealId === null ? -1 : items.findIndex((item) => item.key === revealId);
@@ -397,9 +400,9 @@ export function PagedList({
 }
 
 /**
- * Grupo de uma camada (LayerGroup do DS 2.0): borda, faixa de 3px na cor da camada,
- * selo da especialização, "· ativa", contagem e ícone de alerta. Recolhido, resume a primeira
- * anotação e não monta as anotações.
+ * Group of a layer (LayerGroup of DS 2.0): border, 3px stripe in the layer's color,
+ * specialization badge, "· active", count and alert icon. Collapsed, it summarizes the first
+ * annotation and does not mount the annotations.
  */
 function LayerGroup({
   project,
@@ -426,7 +429,7 @@ function LayerGroup({
     (s) => s !== null,
   );
 
-  // O resumo corta com reticências na janela estreita: o `title` mostra o texto inteiro.
+  // The summary is cut with an ellipsis in the narrow window: the `title` shows the whole text.
   const summary = !empty && collapsed && first ? annotationSummary(project, first) : '';
 
   const heading = (
@@ -498,8 +501,8 @@ function LayerGroup({
 }
 
 /**
- * Pendências da marcação (nas camadas visíveis): cada motivo é um link que abre a
- * camada e a anotação e leva o foco ao campo.
+ * Pending items of the marking (in the visible layers): each reason is a link that opens the
+ * layer and the annotation and takes focus to the field.
  */
 function IssuesNotice({
   project,
@@ -551,7 +554,7 @@ function IssuesNotice({
   );
 }
 
-/** Opções do passo do dono: uma por papel (dono com `childRoles`) ou uma só, sem papel. */
+/** Options of the owner step: one per role (owner with `childRoles`) or just one, with no role. */
 function ownerOptions(
   project: Project,
   owner: Annotation,

@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 
-/** Resultado de uma cópia para a área de transferência, até voltar ao normal. */
+/** Result of a copy to the clipboard, until it goes back to normal. */
 export type CopyResult = 'ok' | 'failed' | null;
 
-/** Quanto tempo o resultado da cópia fica à vista. */
+/** How long the copy result stays in view. */
 export const COPY_RESULT_MS = 2000;
 
 /**
- * Estado ok/falhou de um botão de copiar: `copy` roda a gravação (que devolve `true` se
- * deu certo) e o resultado volta a `null` depois de 2 s. `reset` zera na hora.
+ * Ok/failed state of a copy button: `copy` runs the write (which returns `true` if it
+ * worked) and the result goes back to `null` after 2 s. `reset` clears it immediately.
  */
 export function useCopyResult() {
   const [result, setResult] = useState<CopyResult>(null);

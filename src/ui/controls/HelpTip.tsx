@@ -4,23 +4,23 @@ import { Icon } from '../icons';
 import { Tooltip } from './Tooltip';
 
 interface HelpTipProps {
-  /** O assunto (rótulo do campo, nome do tipo): o nome acessível é "Sobre {name}". */
+  /** The subject (field label, type name): the accessible name is "About {name}". */
   readonly name: string;
-  /** A explicação: vai na dica e é a descrição acessível do ícone. */
+  /** The explanation: goes in the tip and is the icon's accessible description. */
   readonly text: string;
   /**
-   * `id` do elemento (fora da tela) que guarda o texto, para quem quiser apontar um
-   * `aria-describedby` para a mesma explicação (o `Property` faz isso no controle do campo).
+   * `id` of the (off-screen) element that holds the text, for anyone who wants to point an
+   * `aria-describedby` at the same explanation (`Property` does this on the field's control).
    */
   readonly descriptionId?: string;
 }
 
 /**
- * Explicação em ícone com dica ("explicação = ícone com dica"): um botão `info` focável
- * pelo teclado, com a dica no hover e no foco (`Tooltip`). Enter ou clique fixa a dica
- * aberta (`aria-expanded`), para quem usa toque; Esc (que fecha só a dica, sem chegar aos atalhos do editor), outro clique
- * ou a perda de foco a fecham. O texto também fica no DOM, fora da tela, como descrição acessível do ícone.
- * Não muda a seleção nem o projeto.
+ * Explanation in an icon with a tip ("explanation = icon with a tip"): a keyboard-focusable `info`
+ * button, with the tip on hover and focus (`Tooltip`). Enter or click pins the tip open
+ * (`aria-expanded`), for touch users; Esc (which closes only the tip, without reaching the editor
+ * shortcuts), another click or loss of focus close it. The text also stays in the DOM, off-screen,
+ * as the icon's accessible description. Does not change the selection or the project.
  */
 export function HelpTip({ name, text, descriptionId }: HelpTipProps) {
   const generated = useId();

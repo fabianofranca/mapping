@@ -20,19 +20,19 @@ interface ArrowPanelProps {
   readonly readOnly: boolean;
   readonly onDelete: (arrow: Arrow) => void;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
-  /** Abre as Configurações (o aviso de conversa sem identidade leva até lá). */
+  /** Opens the Settings (the notice about a thread without identity leads there). */
   readonly onOpenSettings?: () => void;
 }
 
-/** Mensagem de uma edição recusada da seta. */
+/** Message for a refused arrow edit. */
 export function arrowErrorMessage(code: string): string {
   return t(code === 'locked' ? 'arrow.error.locked' : 'arrow.error.generic');
 }
 
 /**
- * Detalhes da seta (decisão 14): identidade, seção Seta (nome, origem e destino, estilo),
- * anotações por camada no mesmo painel de sempre e exclusão. A seta é uma marcação que aponta:
- * as anotações dela se prendem pelo id, como as de uma marcação.
+ * Arrow Details (decision 14): identity, Arrow section (name, origin and destination, style),
+ * annotations per layer in the same panel as always, and deletion. The arrow is a marking that points:
+ * its annotations attach by id, like those of a marking.
  */
 export function ArrowPanel({
   project,
@@ -44,7 +44,7 @@ export function ArrowPanel({
 }: ArrowPanelProps) {
   const { actions, ui, derived, layers } = useEditor();
   const ext = useDetailsExtension();
-  // O Editor recria o painel (via `key`) ao trocar de seta, o que limpa o erro.
+  // The Editor recreates the panel (via `key`) when switching arrows, which clears the error.
   const [error, setError] = useState<string | null>(null);
   const nameId = useId();
 
@@ -56,7 +56,7 @@ export function ArrowPanel({
   const ends = arrowEnds(project, arrow);
   const identity = ext?.identity(arrow.id) ?? null;
 
-  /** Seleciona a marcação da ponta (a seta fica à vista no canvas). */
+  /** Selects the marking at the tip (the arrow stays in view on the canvas). */
   const selectEnd = (markingId: string) => {
     ui.selection.value = { kind: 'marking', id: markingId };
   };
@@ -121,7 +121,7 @@ export function ArrowPanel({
               placeholder={t('arrow.namePlaceholder')}
               disabled={readOnly}
               onCommit={(text) => {
-                // Espaços em volta não contam como alteração.
+                // Surrounding whitespace does not count as a change.
                 if ((text.trim() || null) === arrow.name) return false;
                 return report(actions.setArrowName(arrow.id, text));
               }}

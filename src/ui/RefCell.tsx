@@ -19,11 +19,11 @@ import { Icon } from './icons';
 import { RefPicker } from './RefPicker';
 import { labelTexts, refButtonName } from './typedText';
 
-// Célula de uma coluna `ref` de tabela (ME4, decisão (e)): a versão compacta do `RefField`.
-// Mostra o alvo (ou "Escolher…", ou a referência quebrada) e abre o seletor compacto (também
-// com Ctrl+B); Ctrl+clique vai até o alvo; ✕ limpa. É dado: nenhuma seta é desenhada.
+// Cell of a table `ref` column (ME4, decision (e)): the compact version of `RefField`.
+// Shows the target (or "Choose…", or the broken reference) and opens the compact picker (also
+// with Ctrl+B); Ctrl+click goes to the target; ✕ clears. It is data: no arrow is drawn.
 
-/** Ctrl+B (Cmd+B no macOS): escolher o alvo da célula em foco. */
+/** Ctrl+B (Cmd+B on macOS): choose the cell's target while focused. */
 function isPickKey(e: KeyboardEvent): boolean {
   return (
     e.key.toLowerCase() === 'b' && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey
@@ -33,19 +33,19 @@ function isPickKey(e: KeyboardEvent): boolean {
 export interface RefCellProps {
   readonly project: Project;
   readonly annotation: Annotation;
-  /** Chave do campo `table` e `_id` da linha: de onde vêm os alvos e o valor atual. */
+  /** Key of the `table` field and `_id` of the row: where the targets and the current value come from. */
   readonly tableKey: string;
   readonly rowId: string;
   readonly column: SpecRefColumn;
   readonly value: JsonValue | undefined;
-  /** Nome acessível do controle (a coluna e a linha). */
+  /** Accessible name of the control (the column and the row). */
   readonly label: string;
   readonly readOnly: boolean;
-  /** Pendência na célula (obrigatória vazia, alvo quebrado…): estado inválido. */
+  /** Pending item in the cell (required empty, broken target…): invalid state. */
   readonly invalid?: boolean;
-  /** Motivo da pendência (dica). */
+  /** Reason for the pending item (tooltip). */
   readonly title?: string;
-  /** Grava a referência (`null` limpa). */
+  /** Writes the reference (`null` clears). */
   readonly onSet: (value: JsonValue) => ActionResult;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
@@ -99,7 +99,7 @@ export function RefCell({
       }}
     >
       <Tooltip label={`${tip} · ${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}>
-        {/* Exceção ao Button: campo de referência (cara de select) (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
+        {/* Exception to Button: reference field (select look) (docs/DESIGN-SYSTEM.md, "Loose buttons") */}
         <button
           ref={button}
           type="button"
@@ -144,7 +144,7 @@ export function RefCell({
           annotation={annotation}
           field={column}
           cell={{ tableKey, rowId }}
-          // O seletor devolve o foco à célula ao fechar (com ele aberto, a tabela é inerte).
+          // The picker returns focus to the cell on close (while it is open, the table is inert).
           returnFocus={() => button.current}
           onClose={() => setPicking(false)}
           onPick={(picked, andGo) => {

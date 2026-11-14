@@ -4,17 +4,17 @@ import { returnFocusToTrigger } from './focus';
 import { Icon } from './icons';
 import { menuKeyDown, useFocusFirstItem } from './useMenuNavigation';
 
-// Menu em popover (o "projeto ▾" da barra principal). Não usa diálogo: fecha com Esc,
-// com clique fora e ao escolher um item, e funciona em `file://` (sem API nova). Em todo
-// fechamento, o foco que estava no menu volta ao botão (etapa 8, F6).
+// Popover menu (the "project ▾" of the main bar). It does not use a dialog: closes with Esc,
+// on click outside and on choosing an item, and works on `file://` (no new API). On every
+// close, the focus that was on the menu returns to the button (stage 8, F6).
 
 interface MenuPopoverProps {
-  /** Texto do botão que abre o menu. */
+  /** Text of the button that opens the menu. */
   readonly label: string;
-  /** Nome acessível do botão: começa pelo texto visível (WCAG 2.5.3), ex.: "Em lote: …". */
+  /** Accessible name of the button: starts with the visible text (WCAG 2.5.3), e.g. "Bulk: …". */
   readonly buttonLabel?: string;
   readonly class?: string;
-  /** Itens do menu (botões com `role="menuitem"`); o clique em qualquer um fecha o popover. */
+  /** Menu items (buttons with `role="menuitem"`); a click on any of them closes the popover. */
   readonly children: ComponentChildren;
 }
 
@@ -33,7 +33,7 @@ export function MenuPopover({
     setOpen(false);
   };
 
-  // Em layout effect: o clique fora vale desde o commit que abre o menu.
+  // In a layout effect: the outside click counts from the commit that opens the menu.
   useLayoutEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
@@ -64,9 +64,9 @@ export function MenuPopover({
         <Icon name="chevronDown" />
       </button>
       {open && (
-        // Fecha na captura, antes de o clique chegar ao item: o foco já está no gatilho
-        // quando o item age (um diálogo aberto por ele guarda o gatilho como quem o abriu).
-        // A lista só sai na renderização seguinte, então o item ainda recebe o clique.
+        // Closes on capture, before the click reaches the item: focus is already on the trigger
+        // when the item acts (a dialog opened by it keeps the trigger as its opener).
+        // The list only leaves on the next render, so the item still receives the click.
         <div class="menu-list" role="menu" onClickCapture={close}>
           {children}
         </div>

@@ -27,24 +27,24 @@ import {
   sectionsForChange,
 } from './reviewExtension';
 
-// Detalhes na revisão (fases 9.5 e 9.6, HANDOFF-REVIEW-DETAILS 5.1): imagem e item mostram
-// o painel normal (`MarkingPanel`/`SelectionPanel` com as anotações), somente leitura, sobre
-// o projeto à vista (`review.derived.shownProject`), com um marcador em cada campo alterado
-// e o cabeçalho de decisão logo abaixo da identidade, pelo ponto de extensão dos Detalhes.
-// A proposta, o grupo Projeto e as mudanças sem item têm o painel deles (`ReviewDetails`).
-// A mudança selecionada na janela Propostas abre o que a esconde, rola até o campo e o
-// destaca; um clique ou Enter na lista leva o foco ao marcador e abre o popover.
+// Details in review (phases 9.5 and 9.6, HANDOFF-REVIEW-DETAILS 5.1): an image and an item show
+// the normal panel (`MarkingPanel`/`SelectionPanel` with the annotations), read-only, over
+// the project in view (`review.derived.shownProject`), with a marker on each changed field
+// and the decision header right below the identity, through the Details extension point.
+// The proposal, the Project group and changes without an item have their own panel (`ReviewDetails`).
+// The change selected in the Proposals window opens whatever hides it, scrolls to the field and
+// highlights it; a click or Enter in the list moves focus to the marker and opens the popover.
 
-/** O item que o painel mostra e de qual projeto ele vem. */
+/** The item the panel shows and which project it comes from. */
 interface ShownItem {
   readonly kind: 'marking' | 'image';
   readonly id: string;
-  /** O item é uma seta (v13): `kind` fica `marking` (os ids dividem o espaço e o nível é o item). */
+  /** The item is an arrow (v13): `kind` stays `marking` (the ids share the space and the level is the item). */
   readonly arrow: boolean;
   readonly project: Project;
   /**
-   * Por que o item vem de outro projeto: não existe na visão Proposto (removido), ainda
-   * não existe no atual (criado) ou a criação foi rejeitada (nem na prévia).
+   * Why the item comes from another project: it does not exist in the Proposed view (removed), it does
+   * not exist yet in the current one (created) or its creation was rejected (not in the preview either).
    */
   readonly away: 'proposed' | 'current' | 'rejected' | null;
 }
@@ -58,9 +58,9 @@ const has = (project: Project | null, sel: NonNullable<Selection>): boolean =>
       : projectIndex(project).markings.has(sel.id));
 
 /**
- * Onde o item está: no projeto à vista; senão, na visão Proposto, no atual (removido) e,
- * na visão Atual, na prévia (criado); por último, no "como ficaria" sem as decisões (uma
- * criação rejeitada). `null` se não está em lugar nenhum (o ReviewDetails mostra a mudança).
+ * Where the item is: in the project in view; otherwise, in the Proposed view, in the current one (removed) and,
+ * in the Current view, in the preview (created); lastly, in the "how it would look" without the decisions (a
+ * rejected creation). `null` if it is nowhere (ReviewDetails shows the change).
  */
 function shownItem(
   sel: NonNullable<Selection>,
@@ -90,7 +90,7 @@ interface ReviewPanelProps {
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 
-/** Detalhes na revisão: escolhe entre o painel do item e o painel do nível. */
+/** Details in review: chooses between the item panel and the level panel. */
 export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
   const { review, ui, store } = useEditor();
   const host = useRef<HTMLDivElement>(null);
@@ -101,15 +101,15 @@ export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
   const shown = d.shownProject.value;
   const current = store.committed.value;
   const fromTarget = canvasSelectionOf(review, target);
-  // Proposta, Projeto e Canvas não têm painel normal; uma mudança sem item (camada,
-  // especialização, repositório) também não.
+  // Proposal, Project and Canvas have no normal panel; a change without an item (layer,
+  // specialization, repository) does not either.
   const levelOnly =
     target?.level === 'proposal' ||
     target?.level === 'project' ||
     target?.level === 'canvas' ||
     (target?.level === 'change' && fromTarget === undefined);
-  // A seleção do canvas acompanha o nível (`useReviewSync`) e também pode ser um item sem
-  // mudanças, que o nível não segue: ela é quem diz o item.
+  // The canvas selection follows the level (`useReviewSync`) and can also be an item without
+  // changes, which the level does not follow: it is what names the item.
   const sel = levelOnly ? null : (ui.selection.value ?? fromTarget ?? null);
   const item = sel
     ? shownItem(
@@ -122,9 +122,9 @@ export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
     : null;
   const itemKey = item ? `${item.kind}:${item.id}` : '';
 
-  // Selecionar outra mudança do mesmo item (focar um marcador, as setas da janela Propostas)
-  // não pode refazer o painel inteiro: o item só é "outro" se mudou o que o painel mostra, e
-  // o elemento do painel só é refeito com ele.
+  // Selecting another change of the same item (focusing a marker, the arrows of the Proposals window)
+  // must not rebuild the whole panel: the item is only "another" if what the panel shows changed, and
+  // the panel element is only rebuilt with it.
   const last = useRef<ShownItem | null>(null);
   const same =
     item !== null &&
@@ -148,8 +148,8 @@ export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
     [stable, onGoToAnnotation],
   );
 
-  // Trocar de item desmonta o painel: se o foco estava nele (um marcador, o popover), fica
-  // no contêiner, nunca no `body` (HANDOFF-REVIEW-DETAILS 12).
+  // Switching items unmounts the panel: if focus was in it (a marker, the popover), it stays
+  // on the container, never on `body` (HANDOFF-REVIEW-DETAILS 12).
   useLayoutEffect(() => {
     const active = document.activeElement;
     if (hadFocus.current && (active === null || active === document.body)) {
@@ -169,9 +169,9 @@ export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
           if (!host.current?.contains(next)) hadFocus.current = false;
           return;
         }
-        // Sem `relatedTarget` o foco foi para lugar nenhum: clique no fundo (o elemento segue na
-        // página) ou o próprio elemento focado foi removido pela troca de item (aí o foco volta
-        // ao contêiner). Só o primeiro caso zera; a diferença aparece depois da remoção.
+        // Without `relatedTarget` focus went nowhere: a click on the background (the element stays on
+        // the page) or the focused element itself was removed by the item switch (then focus returns
+        // to the container). Only the first case resets; the difference shows up after the removal.
         const from = e.target;
         queueMicrotask(() => {
           if (
@@ -190,11 +190,11 @@ export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
 }
 
 /**
- * Segue a mudança selecionada na janela Propostas (HANDOFF-REVIEW-DETAILS 6): abre o que a
- * esconde (a seção, a camada, a anotação e, numa camada escondida, o "Mostrar aqui"), deixa
- * a anotação à vista além do "mostrar mais". Rolar até o marcador e levar o foco a ele é do
- * próprio marcador (`ChangeMark`), no commit que o desenha. É um componente à parte para que
- * mudar a seleção (ou focar um marcador) refaça só ele, não o painel.
+ * Follows the change selected in the Proposals window (HANDOFF-REVIEW-DETAILS 6): opens whatever
+ * hides it (the section, the layer, the annotation and, in a hidden layer, the "Show here"), leaves
+ * the annotation in view beyond the "show more". Scrolling to the marker and moving focus to it belongs to
+ * the marker itself (`ChangeMark`), in the commit that draws it. It is a separate component so that
+ * changing the selection (or focusing a marker) rebuilds only it, not the panel.
  */
 function FollowTarget({
   item,
@@ -224,7 +224,7 @@ function FollowTarget({
     if (isChangeLayerHidden(change, { ...args, hiddenLayers: hidden })) {
       onReveal(true);
     }
-    // Só ao mudar a mudança selecionada.
+    // Only when the selected change changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetId]);
 
@@ -242,10 +242,10 @@ function ReviewItemPanel({
   const current = store.committed.value;
   const view = review.view.value;
   const hidden = ui.hiddenLayers.value;
-  // "Mostrar aqui" das camadas escondidas: só no painel, até trocar de item (decisão 4).
+  // "Show here" of the hidden layers: only in the panel, until the item changes (decision 4).
   const [revealed, setRevealed] = useState(false);
   const openMark = useMemo(createOpenMark, []);
-  // A anotação da mudança selecionada, que o "mostrar mais" não pode deixar de fora.
+  // The annotation of the selected change, which the "show more" must not leave out.
   const reveal = useMemo(() => signal<string | null>(null), []);
   const { kind, id, project } = item;
   const level = kind === 'marking' ? 'item' : 'image';
@@ -288,14 +288,14 @@ function ReviewItemPanel({
     ],
   );
 
-  // Ao mostrar o item, abrem as seções com mudanças (as outras ficam como a pessoa deixou).
+  // When showing the item, the sections with changes open (the others stay as the person left them).
   const proposalId = review.proposalId.value;
   useLayoutEffect(() => {
     if (!current) return;
     const { open, close } = sectionsFor({ kind, id, project, current, index });
     expandSections(ui, open);
     collapseSections(ui, close);
-    // Só ao chegar ao item (ou trocar de proposta): depois, quem abre e fecha é a pessoa.
+    // Only on arriving at the item (or switching proposals): afterwards, the person opens and closes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposalId, kind, id]);
 
@@ -386,5 +386,5 @@ function ReviewItemPanel({
   );
 }
 
-/** Ações de edição que o painel somente leitura não usa. */
+/** Editing actions that the read-only panel does not use. */
 const noop = () => undefined;

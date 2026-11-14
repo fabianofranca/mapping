@@ -5,7 +5,7 @@ import type {
   RenderWarningCode,
 } from '../../canvas/components/renderWarnings';
 
-/** A chave do texto de cada aviso do desenho (um `Record`: código novo sem texto quebra o typecheck). */
+/** The text key of each drawing warning (a `Record`: a new code without text breaks the typecheck). */
 const KEYS: Record<RenderWarningCode, TranslationKey> = {
   'empty-group-shadow': 'catalog.drawWarning.empty-group-shadow',
   'inner-shadow': 'catalog.drawWarning.inner-shadow',
@@ -19,7 +19,7 @@ const KEYS: Record<RenderWarningCode, TranslationKey> = {
   'stroke-image-gray': 'catalog.drawWarning.stroke-image-gray',
 };
 
-/** O texto de um aviso do desenho (`renderScene`) no idioma da app. */
+/** The text of a drawing warning (`renderScene`) in the app's language. */
 export function drawWarningText({ code, params }: RenderWarning): string {
   return t(KEYS[code], params ? { ...params } : undefined);
 }

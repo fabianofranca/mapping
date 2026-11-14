@@ -7,39 +7,40 @@ import { createOpenScrollGuard } from './openScrollGuard';
 import { place } from './Popover';
 import { menuKeyDown, useFocusFirstItem } from './useMenuNavigation';
 
-// Menu ⋯ de uma linha (KeyValueGrid e DataGrid): subir, descer, remover. Popover
-// simples, sem diálogo: fecha com Esc, com clique fora e ao escolher um item, e em todo
-// fechamento o foco que estava nele volta ao botão (etapa 8, F6). Setas andam entre os itens.
+// Row ⋯ menu (KeyValueGrid and DataGrid): move up, move down, remove. Simple
+// popover, no dialog: closes on Esc, on an outside click and on choosing an item, and on every
+// close the focus that was inside returns to the button (stage 8, F6). Arrows move between
+// the items.
 
 export interface ActionMenuItem {
   readonly label: string;
   readonly onSelect: () => void;
   readonly disabled?: boolean;
-  /** Dica do item, em especial a de por que ele está desabilitado. */
+  /** Hint for the item, especially why it is disabled. */
   readonly title?: string;
   readonly danger?: boolean;
-  /** O item que marca onde se está (`aria-current`), como o último trecho do caminho. */
+  /** The item that marks where one is (`aria-current`), like the last segment of a path. */
   readonly current?: boolean;
-  /** Liga/desliga: o item vira `menuitemcheckbox` e mostra o estado marcado. */
+  /** Toggle: the item becomes a `menuitemcheckbox` and shows the checked state. */
   readonly checked?: boolean;
-  /** Atalho, à direita do texto. */
+  /** Shortcut, to the right of the text. */
   readonly shortcut?: string;
 }
 
 interface ActionMenuProps {
-  /** Nome acessível do botão (ex.: "Ações do par"). */
+  /** Accessible name of the button (e.g. "Pair actions"). */
   readonly label: string;
   readonly items: readonly ActionMenuItem[];
   readonly disabled?: boolean;
-  /** Ícone do botão; o padrão é o ⋯ vertical das linhas. */
+  /** Icon of the button; the default is the vertical ⋯ of the rows. */
   readonly icon?: 'moreVertical' | 'more';
-  /** Nome do menu aberto, se for outro que o do botão. */
+  /** Name of the open menu, if different from the button's. */
   readonly menuLabel?: string;
-  /** Classe extra da raiz (o CSS que mostra ou esconde o menu inteiro). */
+  /** Extra class of the root (the CSS that shows or hides the whole menu). */
   readonly className?: string;
-  /** O botão que abre o menu (ex.: alvo do foco depois de um diálogo aberto pelo item). */
+  /** The button that opens the menu (e.g. focus target after a dialog opened by the item). */
   readonly triggerRef?: Ref<HTMLButtonElement>;
-  /** Selo e ponto de alerta no botão (ex.: a contagem das conversas num menu de excesso). */
+  /** Badge and alert dot on the button (e.g. the thread count in an overflow menu). */
   readonly badge?: string;
   readonly alert?: boolean;
 }
@@ -65,14 +66,14 @@ export function ActionMenu({
     setOpen(false);
   };
 
-  // Em layout effect: o clique fora vale desde o commit que abre o menu.
+  // In a layout effect: the outside click counts from the commit that opens the menu.
   useLayoutEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
       if (!root.current?.contains(e.target as Node)) close();
     };
-    // Fechar ao rolar (qualquer ancestral, em captura) ou redimensionar: a lista é fixa.
-    // A rolagem que a própria abertura provoca não conta (openScrollGuard).
+    // Close on scroll (any ancestor, in capture) or resize: the list is fixed.
+    // The scroll that the opening itself causes does not count (openScrollGuard).
     const scrollCloses = createOpenScrollGuard(() => trigger.current);
     const onScroll = (e: Event) => {
       if (scrollCloses(e)) close();

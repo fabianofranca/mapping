@@ -7,22 +7,22 @@ import { Flag } from './Flag';
 import { formatFullDate } from './format';
 import { revisionParts, type RevisionCounts } from './revisedText';
 
-/** O resumo da revisão mais nova (`review.derived.revisionSummary`). */
+/** The summary of the newest revision (`review.derived.revisionSummary`). */
 export interface RevisionSummary extends RevisionCounts {
   readonly at: string;
 }
 
-// Selo "Revisada" (etapa #644, CP3): a marca de uma mudança que o agente trocou ou
-// acrescentou numa revisão e que ainda não tem decisão. Na linha de um item ou imagem que a
-// contém, o mesmo selo com a dica geral. A dica fica no Tooltip e o texto também vai para o
-// leitor de tela, dentro do selo.
+// "Revised" badge (stage #644, CP3): the mark of a change that the agent replaced or
+// added in a revision and that has no decision yet. On the row of an item or image that
+// contains it, the same badge with the general tooltip. The tooltip lives in the Tooltip and
+// the text also goes to the screen reader, inside the badge.
 
-/** O que o selo diz: a mudança trocada, a nova na revisão ou um nível que contém uma delas. */
+/** What the badge says: the replaced change, the new one in the revision or a level containing one. */
 export type RevisedBadge =
   | { readonly kind: 'changed' | 'added'; readonly at: string }
   | { readonly kind: 'contains' };
 
-/** O selo de uma mudança com marca à vista, ou `null`. */
+/** The badge of a change with a visible mark, or `null`. */
 export function changeBadge(
   p: Proposal,
   revisedIds: ReadonlySet<string>,
@@ -33,7 +33,10 @@ export function changeBadge(
   return mark ? { kind: mark.kind, at: mark.at } : null;
 }
 
-/** O selo de uma imagem ou item: `contains` se alguma das mudanças dele tem marca à vista (a proposta não leva). */
+/**
+ * The badge of an image or item: `contains` if any of its changes has a visible mark (the
+ * proposal does not carry it).
+ */
 export function levelBadge(
   level: string,
   revisedIds: ReadonlySet<string>,
@@ -43,7 +46,7 @@ export function levelBadge(
   return changeIds.some((id) => revisedIds.has(id)) ? { kind: 'contains' } : null;
 }
 
-/** Texto da dica do selo. */
+/** Text of the badge's tooltip. */
 export function badgeHint(badge: RevisedBadge): string {
   if (badge.kind === 'contains') return t('review.revised.markHint');
   const date = formatFullDate(badge.at, locale.value);
@@ -55,7 +58,7 @@ export function badgeHint(badge: RevisedBadge): string {
   );
 }
 
-/** Texto do selo. */
+/** Text of the badge. */
 export function badgeText(badge: RevisedBadge): string {
   return t(badge.kind === 'added' ? 'review.revised.markAdded' : 'review.revised.mark');
 }
@@ -72,7 +75,7 @@ export function RevisedFlag({ badge }: { readonly badge: RevisedBadge }) {
   );
 }
 
-/** "Revisada pelo agente em <data>: 1 trocada(s), 2 nova(s)" no cabeçalho da proposta. */
+/** "Revised by the agent on <date>: 1 replaced, 2 new" in the proposal header. */
 export function RevisionLine({ summary }: { readonly summary: RevisionSummary | null }) {
   if (!summary) return null;
   return (

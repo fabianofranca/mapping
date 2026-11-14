@@ -26,7 +26,7 @@ interface LinkedRowProps {
   readonly readOnly: boolean;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
   readonly onShowLayer: (layerId: string) => void;
-  /** Cria o filho do tipo no dono, com o papel (`null` = dono sem papéis). */
+  /** Creates the child of the type on the owner, with the role (`null` = owner without roles). */
   readonly onAddChild: (child: ChildType, roleId: string | null) => void;
 }
 
@@ -35,7 +35,7 @@ type ItemProps = Pick<
   'project' | 'visibleLayerIds' | 'onGoToAnnotation' | 'onShowLayer'
 >;
 
-/** Botão que leva a uma vinculada (a camada oculta oferece mostrá-la antes). */
+/** Button that leads to a linked one (the hidden layer offers to show it first). */
 function LinkedItem({
   project,
   annotation,
@@ -73,7 +73,7 @@ function LinkedItem({
   );
 }
 
-/** As vinculadas de uma camada: "Camada: a b c". */
+/** The linked annotations of a layer: "Layer: a b c". */
 function LayerGroup({
   layer,
   items,
@@ -92,7 +92,7 @@ function LayerGroup({
   );
 }
 
-/** O "+ Vincular…" (some na revisão, junto dos outros botões que criam). */
+/** The "+ Link…" (goes away in review, along with the other buttons that create). */
 function LinkAction({
   disabled,
   onClick,
@@ -109,14 +109,14 @@ function LinkAction({
   );
 }
 
-/** Dono sem papéis: os filhos por camada (na ordem das camadas). */
+/** Owner without roles: the children by layer (in layer order). */
 function LayerLinks({
   project,
   annotation,
   ...rest
 }: ItemProps & { readonly annotation: Annotation }) {
   const linked = getLinkedAnnotations(project, annotation.id);
-  // Agrupa uma vez por camada, em vez de um `filter` por camada.
+  // Groups once per layer, instead of a `filter` per layer.
   const byLayer = new Map<string, Annotation[]>();
   for (const a of linked) {
     const group = byLayer.get(a.layerId);
@@ -141,7 +141,7 @@ function LayerLinks({
   );
 }
 
-/** Uma linha de papel: o nome, os filhos (ou "nenhuma") e o "+ Vincular…" dela. */
+/** A role row: the name, the children (or "none") and its "+ Link…". */
 function RoleRow({
   row,
   canLink,
@@ -168,7 +168,7 @@ function RoleRow({
   );
 }
 
-/** Filhos sem papel (ou com um que o dono não oferece): uma linha de pendência. */
+/** Children without a role (or with one the owner does not offer): a pending-item row. */
 function UnassignedRow({
   byRole,
   ...rest
@@ -197,9 +197,9 @@ function UnassignedRow({
 }
 
 /**
- * Linha "Vinculadas": as anotações que pertencem a esta e o "+ Vincular…" que abre o diálogo
- * de escolha do tipo. Dono sem papéis: por camada, com um botão só. Dono com papéis: uma linha
- * por papel, cada uma com o seu botão, e a pendência dos filhos sem papel por último.
+ * "Linked" row: the annotations that belong to this one and the "+ Link…" that opens the
+ * type-choice dialog. Owner without roles: by layer, with a single button. Owner with roles: one row
+ * per role, each with its own button, and the pending item of the children without a role last.
  */
 export function LinkedRow(props: LinkedRowProps) {
   const { project, annotation, readOnly, onAddChild } = props;
