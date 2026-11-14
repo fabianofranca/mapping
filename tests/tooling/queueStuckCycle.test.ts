@@ -1,9 +1,6 @@
 // @vitest-environment node
-// Via rápida #1884: a conferência das atrasadas do `implementar-fila` olha a fase que está
-// trabalhando mas em ciclo de CI vermelho (R5 da #1096: 6 pushes em 80 min, 499 mil → 648 mil de
-// contexto, sem aviso). Teste só de texto: o gatilho (3 commits vermelhos ou a mesma falha em 2
-// seguidos), o diagnóstico Opus pelo resumo, o `priority: "now"`, o limite de 60 min e a pergunta
-// ao dono quando a direção sai do "Toca em:".
+// Via rápida #1884: a conferência das atrasadas olha a fase que trabalha em ciclo de CI vermelho
+// (R5 da #1096: 6 pushes em 80 min, sem aviso). Teste só de texto do `implementar-fila`.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
