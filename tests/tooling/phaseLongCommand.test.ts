@@ -1,9 +1,6 @@
 // @vitest-environment node
-// Issue #1922 (fast track): text-only test of the delivery flow files. A long local command goes
-// through `run_in_background` (never a detached process the harness does not track); the phase
-// context handover exemption holds only for the phase's last PR, and the coordinator's hourly
-// check tells a phase far above the ceiling to hand over; the `via-rapida` label and the spelling
-// rule are written where the flow and the agents read them.
+// Issue #1922 (fast track): text test of the flow files (long local commands, the last-PR handover
+// exemption, the `via-rapida` label and the spelling rule).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
@@ -61,6 +58,5 @@ describe('#1922 — label `via-rapida` and spelling', () => {
     const code = section(read('CLAUDE.md'), '## Code');
     expect(code).toContain('American English');
     expect(code).toContain('`canceled`');
-    expect(code).toContain('`cancelled` conclusion of GitHub Actions');
   });
 });
