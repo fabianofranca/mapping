@@ -536,6 +536,7 @@ describe('export', () => {
       'cad',
       {
         mapping: serialize(project),
+        // pt-BR kept: shared fixture data (image path `nova.webp` of richScenario / `cadastro.png` of cadastroProject) asserted by tests/store, tests/mcp
         images: new Map([['images/cadastro.png', new Blob(['png'])]]),
         specs: specFiles(project),
         proposals: new Map(),
@@ -559,6 +560,7 @@ describe('export', () => {
     const zip = await JSZip.loadAsync(await result.value.file.arrayBuffer());
     const names = Object.keys(zip.files);
     expect(names).toContain('mapping.json');
+    // pt-BR kept: shared fixture data (image path `nova.webp` of richScenario / `cadastro.png` of cadastroProject) asserted by tests/store, tests/mcp
     expect(names).toContain('images/cadastro.png');
     expect(names.some((n) => n.startsWith('specs/'))).toBe(true);
     expect(names.some((n) => n.startsWith('backups'))).toBe(false);
@@ -678,9 +680,7 @@ describe('leaving the page (phase 5.5)', () => {
     expect(flush).toHaveBeenCalledTimes(1);
     await vi.waitFor(async () => {
       await app.refreshLocalProjects();
-      expect(app.localProjects.value.find((p) => p.id === localId)?.name).toBe(
-        'Hidden',
-      );
+      expect(app.localProjects.value.find((p) => p.id === localId)?.name).toBe('Hidden');
     }, soon);
   });
 
@@ -721,6 +721,7 @@ describe('change proposals (stage 4)', () => {
     const zip = new JSZip();
     zip.file('mapping.json', serialize(sampleProject()));
     zip.file('proposals/P1/proposal.json', serializeProposal(proposal));
+    // pt-BR kept: shared fixture data (image path `nova.webp` of richScenario / `cadastro.png` of cadastroProject) asserted by tests/store, tests/mcp
     zip.file('proposals/P1/images/nova.webp', 'WEBP');
     return {
       proposal,
@@ -771,6 +772,7 @@ describe('change proposals (stage 4)', () => {
     const exported = await app.buildExport();
     if (!exported.ok) throw new Error(exported.error);
     const zip = await JSZip.loadAsync(await exported.value.file.arrayBuffer());
+    // pt-BR kept: shared fixture data (image path `nova.webp` of richScenario / `cadastro.png` of cadastroProject) asserted by tests/store, tests/mcp
     expect(await zip.file('proposals/P1/images/nova.webp')?.async('string')).toBe('WEBP');
     const text = (await zip.file('proposals/P1/proposal.json')?.async('string')) ?? '';
     expect(parseProposalText(text)).toMatchObject({
@@ -789,6 +791,7 @@ describe('change proposals (stage 4)', () => {
     const { proposal } = richScenario();
     const root = folderWith({ 'mapping.json': serialize(sampleProject()) });
     root.put('proposals/P1/proposal.json', serializeProposal(proposal));
+    // pt-BR kept: shared fixture data (image path `nova.webp` of richScenario / `cadastro.png` of cadastroProject) asserted by tests/store, tests/mcp
     root.put('proposals/P1/images/nova.webp', 'WEBP');
     pickDirectory.mockResolvedValue(root);
     expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'opened' } });
@@ -804,6 +807,7 @@ describe('change proposals (stage 4)', () => {
       ok: true,
       applied: 5,
     });
+    // pt-BR kept: shared fixture data (image path `nova.webp` of richScenario / `cadastro.png` of cadastroProject) asserted by tests/store, tests/mcp
     expect(await root.read('images/nova.webp')).toBe('WEBP');
     expect(session.store.project.value?.containers.some((i) => i.id === 'I3')).toBe(true);
   });
@@ -843,8 +847,7 @@ describe('anchored conversations (stage Comments)', () => {
   it('conversing marks not exported; exporting and reimporting carries comments/ there and back (identical invalid text)', async () => {
     await withIdentity();
     expect(
-      (await app.importZip(await threadZip({ 'comments/broken.json': '{ not json' })))
-        .ok,
+      (await app.importZip(await threadZip({ 'comments/broken.json': '{ not json' }))).ok,
     ).toBe(true);
     const first = await openedOf(app);
     expect(first.unexported.value).toBe(false);
@@ -865,9 +868,7 @@ describe('anchored conversations (stage Comments)', () => {
       'comments/resolved/T1.json',
       'comments/resolved/T2.json',
     ]);
-    expect(await zip.file('comments/broken.json')?.async('string')).toBe(
-      '{ not json',
-    );
+    expect(await zip.file('comments/broken.json')?.async('string')).toBe('{ not json');
 
     await app.closeProject();
     expect((await app.importZip(exported.value.file)).ok).toBe(true);
@@ -1104,7 +1105,7 @@ describe('folder recents (phase 6.6)', () => {
     await openViaPicker(root);
     expect(folders()).toHaveLength(1);
     // Another folder with the same name is another entry (`isSameEntry`, not the name).
-    await openViaPicker(projectFolder('nova', 'Other'));
+    await openViaPicker(projectFolder('fresh', 'Other'));
     expect(folders()).toHaveLength(2);
   });
 
@@ -1394,7 +1395,7 @@ describe('folder recents (phase 6.6)', () => {
       value: { kind: 'no-project' },
     });
     expect(app.openProject.value).toBeNull();
-    expect(folders().map((p) => p.folderName)).toEqual(['pasta']);
+    expect(folders().map((p) => p.folderName)).toEqual(['folder']);
 
     pickDirectory.mockResolvedValue(null);
     expect(await app.relocateFolder(id)).toEqual({
