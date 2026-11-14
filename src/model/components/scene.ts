@@ -1,18 +1,18 @@
 /**
- * Motor dos componentes (etapa Biblioteca): cena.
+ * Component engine (Library stage): scene.
  *
- * Modelo de cena: o que `instantiate` produz a partir de um template de componente e o
- * que o renderizador Konva consome. É um subconjunto pequeno e neutro de um modelo de
- * design, só com o que dá para desenhar no canvas sem rede:
- * nada de fontes remotas, imagens por `imageRef` ou efeitos que o canvas 2D não tem.
+ * Scene model: what `instantiate` produces from a component template and what the Konva
+ * renderer consumes. It is a small, neutral subset of a design model, with only what can be
+ * drawn on the canvas without a network:
+ * no remote fonts, images by `imageRef` or effects that the 2D canvas does not have.
  *
  * Convenções:
- * - Unidades em px do design, sem nenhuma conversão de tela.
- * - `transform` é a matriz 2D do nó **relativa ao pai** (a, b, c, d, e, f, como no CSS/SVG:
- *   x' = a·x + c·y + e; y' = b·x + d·y + f). A geometria do nó (`width`/`height`, `d`,
- *   `points`) fica no espaço local, com origem no canto superior esquerdo do nó.
- * - Cores em CSS (`#rrggbb`, `#rrggbbaa` ou `rgba(...)`). A opacidade de um `Paint` é
- *   separada da do nó.
+ * - Units in design px, with no screen conversion.
+ * - `transform` is the node's 2D matrix **relative to its parent** (a, b, c, d, e, f, as in CSS/SVG:
+ *   x' = a·x + c·y + e; y' = b·x + d·y + f). The node's geometry (`width`/`height`, `d`,
+ *   `points`) stays in local space, with its origin at the node's top-left corner.
+ * - Colors in CSS (`#rrggbb`, `#rrggbbaa` or `rgba(...)`). A `Paint`'s opacity is
+ *   separate from the node's.
  */
 
 import type { Box } from './box';
@@ -29,7 +29,7 @@ export type Matrix = readonly [number, number, number, number, number, number];
 
 export const IDENTITY: Matrix = [1, 0, 0, 1, 0, 0];
 
-/** `m · n` (aplica `n` primeiro, depois `m`). */
+/** `m · n` (applies `n` first, then `m`). */
 export function multiply(m: Matrix, n: Matrix): Matrix {
   const [a, b, c, d, e, f] = m;
   const [a2, b2, c2, d2, e2, f2] = n;
@@ -48,8 +48,8 @@ export function translate(x: number, y: number): Matrix {
 }
 
 /**
- * A matriz que leva o espaço local do nó ao do pai: `transform` mais a `rotation` em volta do
- * centro da caixa. Sem `rotation` é o próprio `transform`.
+ * The matrix that takes the node's local space to its parent's: `transform` plus the `rotation`
+ * around the center of the box. Without `rotation` it is `transform` itself.
  */
 export function nodeMatrix(node: {
   readonly transform: Matrix;
@@ -76,7 +76,7 @@ export function nodeMatrix(node: {
 }
 
 export interface GradientStop {
-  /** 0..1 ao longo do gradiente. */
+  /** 0..1 along the gradient. */
   readonly offset: number;
   readonly color: string;
 }
@@ -85,7 +85,7 @@ export type Paint =
   | { readonly type: 'solid'; readonly color: string; readonly opacity?: number }
   | {
       readonly type: 'linear';
-      /** Pontos no espaço local do nó (px). */
+      /** Points in the node's local space (px). */
       readonly start: Point;
       readonly end: Point;
       readonly stops: readonly GradientStop[];
@@ -100,15 +100,15 @@ export type Paint =
     }
   | {
       /**
-       * Imagem, com duas origens que não se misturam. `src` é só a imagem embutida (`data:`),
-       * herança do laboratório e dos conversores Figma/SVG. `url` é a URL remota vinda do nó
-       * `image` do componente: o modelo nunca a baixa nem aplica a política (quem desenha
-       * decide). Sem imagem pronta ou liberada, o renderizador desenha um reservado.
+       * Image, with two sources that do not mix. `src` is only the embedded image (`data:`),
+       * a legacy of the lab and the Figma/SVG converters. `url` is the remote URL coming from the
+       * component's `image` node: the model never downloads it nor applies the policy (whoever
+       * draws decides). Without a ready or allowed image, the renderer draws a placeholder.
        */
       readonly type: 'image';
       readonly src?: string;
       readonly url?: string;
-      /** Como a imagem ocupa a caixa (ausente = `cover`). */
+      /** How the image fills the box (absent = `cover`). */
       readonly fit?: ImageFit;
       readonly opacity?: number;
     };
@@ -116,29 +116,30 @@ export type Paint =
 export interface Stroke {
   readonly paints: readonly Paint[];
   readonly width: number;
-  /** Figma alinha o traço por dentro, no centro ou por fora; SVG é sempre `center`. */
+  /** Figma aligns the stroke inside, centered or outside; SVG is always `center`. */
   readonly align: 'inside' | 'center' | 'outside';
   readonly dash?: readonly number[];
   /**
-   * Afastamento do traço da forma (px > 0; ausente = 0): o traço é desenhado sobre o contorno da
-   * forma crescida de `offset` de cada lado, com o raio de cada canto + `offset`, e o `align` vale
-   * em relação a esse contorno. Com `sides`, vale só nos lados pedidos.
+   * Stroke offset from the shape (px > 0; absent = 0): the stroke is drawn on the outline of the
+   * shape grown by `offset` on each side, with each corner's radius + `offset`, and `align` is
+   * relative to that outline. With `sides`, it only applies to the requested sides.
    */
   readonly offset?: number;
   readonly cap?: 'butt' | 'round' | 'square';
   readonly join?: 'miter' | 'round' | 'bevel';
-  /** `false`: a largura é em pixels de tela, em qualquer zoom; ausente = escala com o zoom. */
+  /** `false`: the width is in screen pixels, at any zoom; absent = scales with the zoom. */
   readonly scale?: boolean;
   /**
-   * Só estes lados da caixa têm traço (`frame` e `rect`), na ordem de `STROKE_SIDES`; ausente = os
-   * quatro, em contorno. A cena nunca traz os quatro lados aqui: o `instantiate` os normaliza para
-   * ausente, e quem desenha lê `sides` direto.
+   * Only these sides of the box have a stroke (`frame` and `rect`), in the order of `STROKE_SIDES`;
+   * absent = all four, as an outline. The scene never carries all four sides here: `instantiate`
+   * normalizes them to absent, and whoever draws reads `sides` directly.
    */
   readonly sides?: readonly ('top' | 'right' | 'bottom' | 'left')[];
   /**
-   * Vãos do contorno (`frame` e `rect`, sem `sides`), já calculados pela arrumação: no lado `side`,
-   * o trecho de `from` a `to` (px ao longo do lado, no espaço local do nó; x em cima e embaixo, y
-   * nos lados) não tem traço. Quem desenha só interrompe o contorno (ver `gapOutlines`).
+   * Gaps in the outline (`frame` and `rect`, without `sides`), already computed by the layout: on
+   * side `side`, the span from `from` to `to` (px along the side, in the node's local space; x on
+   * top and bottom, y on the sides) has no stroke. Whoever draws only interrupts the outline (see
+   * `gapOutlines`).
    */
   readonly gaps?: readonly StrokeGap[];
 }
@@ -149,7 +150,7 @@ export interface StrokeGap {
   readonly to: number;
 }
 
-/** Retângulo no espaço local do nó (px): o recorte ampliado de um quadro. */
+/** Rectangle in the node's local space (px): the enlarged clip of a frame. */
 export interface ClipBox {
   readonly x: number;
   readonly y: number;
@@ -162,7 +163,7 @@ export interface Shadow {
   readonly offset: Point;
   readonly blur: number;
   readonly spread?: number;
-  /** Sombra interna: o canvas 2D não tem; o renderizador ignora e avisa. */
+  /** Inner shadow: the 2D canvas does not have it; the renderer ignores it and warns. */
   readonly inner?: boolean;
 }
 
@@ -172,29 +173,29 @@ export interface TextStyle {
   /** 100..900. */
   readonly fontWeight: number;
   readonly italic: boolean;
-  /** Altura de linha em px (ausente = automática). */
+  /** Line height in px (absent = automatic). */
   readonly lineHeight?: number;
-  /** Espaçamento entre letras em px. */
+  /** Letter spacing in px. */
   readonly letterSpacing?: number;
   readonly align: 'left' | 'center' | 'right' | 'justify';
   /**
-   * `rtl` quando o texto lê da direita para a esquerda (o `align` já é físico, resolvido pela
-   * direção). Ausente = `ltr`. O desenho passa o sentido ao renderizador de texto; o raster do MCP
-   * alinha pelo lado físico e desenha os glifos na ordem do texto (sem bidi).
+   * `rtl` when the text reads right to left (the `align` is already physical, resolved by the
+   * direction). Absent = `ltr`. The drawing passes the direction to the text renderer; the MCP
+   * raster aligns by the physical side and draws the glyphs in text order (no bidi).
    */
   readonly direction?: 'rtl';
   readonly verticalAlign: 'top' | 'middle' | 'bottom' | 'cap-middle';
   readonly decoration?: 'underline' | 'line-through';
-  /** `none` = uma linha por parágrafo (ausente = quebra por palavra). */
+  /** `none` = one line per paragraph (absent = wraps by word). */
   readonly wrap?: 'none';
-  /** O texto que não cabe termina em `…`. */
+  /** Text that does not fit ends in `…`. */
   readonly ellipsis?: true;
-  /** Máximo de linhas desenhadas. */
+  /** Maximum number of lines drawn. */
   readonly maxLines?: number;
   /**
-   * `baselinePadding.top` resolvido (px): a primeira linha de base fica a esta distância do topo
-   * do nó, com o texto posto pela fonte de quem desenha (`verticalAlign` é `top`). Ausente = o
-   * `verticalAlign` do estilo decide.
+   * Resolved `baselinePadding.top` (px): the first baseline sits at this distance from the top
+   * of the node, with the text placed by the font of whoever draws (`verticalAlign` is `top`).
+   * Absent = the style's `verticalAlign` decides.
    */
   readonly baselineTop?: number;
 }
@@ -203,16 +204,16 @@ interface NodeBase {
   readonly id: string;
   readonly name: string;
   readonly visible: boolean;
-  /** 0..1, do nó inteiro (filhos incluídos). */
+  /** 0..1, of the whole node (children included). */
   readonly opacity: number;
   readonly transform: Matrix;
   /**
-   * Rotação em graus, sentido horário, em volta do centro da caixa (`width` × `height`) do nó,
-   * aplicada no espaço local antes de `transform` (ver `nodeMatrix`). Ausente = não gira. Os
-   * filhos giram junto e o recorte do quadro também; a caixa e o layout não mudam.
+   * Rotation in degrees, clockwise, around the center of the node's box (`width` × `height`),
+   * applied in local space before `transform` (see `nodeMatrix`). Absent = does not rotate. The
+   * children rotate along and so does the frame's clip; the box and the layout do not change.
    */
   readonly rotation?: number;
-  /** Caixa local do nó (px); em `path` e `line` é a caixa dos pontos, informativa. */
+  /** The node's local box (px); in `path` and `line` it is the box of the points, informative. */
   readonly width: number;
   readonly height: number;
   readonly fills: readonly Paint[];
@@ -222,12 +223,12 @@ interface NodeBase {
 
 export interface FrameNode extends NodeBase {
   readonly type: 'frame';
-  /** Recorta os filhos na própria caixa (Figma: `clipsContent`). */
+  /** Clips the children to its own box (Figma: `clipsContent`). */
   readonly clip: boolean;
   /**
-   * Recorte maior que a caixa, quando o traço `outside`/`center` ou a sombra do quadro (ou de um
-   * filho que passa da caixa só por eles) sai dela; ausente = o recorte é a própria caixa. Só
-   * vale com `clip`. O conteúdo (formas e texto) segue recortado na caixa.
+   * Clip larger than the box, when the `outside`/`center` stroke or the frame's shadow (or a
+   * child's that goes past the box only because of them) goes out of it; absent = the clip is the
+   * box itself. Only applies with `clip`. The content (shapes and text) stays clipped to the box.
    */
   readonly clipBox?: ClipBox;
   readonly cornerRadius: CornerRadius;
@@ -239,7 +240,7 @@ export interface GroupNode extends NodeBase {
   readonly children: readonly SceneNode[];
 }
 
-/** Um raio ou [superior-esquerdo, superior-direito, inferior-direito, inferior-esquerdo]. */
+/** A radius or [top-left, top-right, bottom-right, bottom-left]. */
 export type CornerRadius = number | readonly [number, number, number, number];
 
 export interface RectNode extends NodeBase {
@@ -253,19 +254,19 @@ export interface EllipseNode extends NodeBase {
 
 export interface LineNode extends NodeBase {
   readonly type: 'line';
-  /** Pontos no espaço local; `closed` fecha o polígono. */
+  /** Points in local space; `closed` closes the polygon. */
   readonly points: readonly Point[];
   readonly closed: boolean;
 }
 
 export interface PathNode extends NodeBase {
   readonly type: 'path';
-  /** Dados SVG (`d`), no espaço local do nó. */
+  /** SVG data (`d`), in the node's local space. */
   readonly d: string;
   readonly fillRule: 'nonzero' | 'evenodd';
 }
 
-/** Estilo resolvido de um trecho de texto rico (o texto e o que o desenho precisa dele). */
+/** Resolved style of a run of rich text (the text and what the drawing needs from it). */
 export interface SceneTextRun {
   readonly text: string;
   readonly fontFamily: string;
@@ -274,10 +275,10 @@ export interface SceneTextRun {
   readonly italic: boolean;
   readonly color: string;
   readonly decoration?: 'underline' | 'line-through';
-  /** Cor de fundo da caixa em linha; com ela o trecho é um bloco inquebrável. */
+  /** Background color of the inline box; with it the run is an unbreakable block. */
   readonly background?: string;
   readonly radius?: number;
-  /** Respiro da caixa em linha: [vertical, horizontal]. */
+  /** Inline box padding: [vertical, horizontal]. */
   readonly padding?: readonly [number, number];
 }
 
@@ -286,23 +287,23 @@ export interface TextNode extends NodeBase {
   readonly text: string;
   readonly style: TextStyle;
   /**
-   * Texto rico (`runs` do componente v4): o estilo resolvido de cada trecho; `text` é a
-   * concatenação deles. Ausente = texto de um estilo só (`style`).
+   * Rich text (`runs` of the v4 component): the resolved style of each run; `text` is their
+   * concatenation. Absent = text of a single style (`style`).
    */
   readonly runs?: readonly SceneTextRun[];
-  /** As linhas dos trechos na largura do nó (posições antes do `verticalAlign`); com `runs`. */
+  /** The runs' lines at the node's width (positions before `verticalAlign`); with `runs`. */
   readonly runLayout?: RunLayout;
 }
 
-/** Nó que o conversor reconheceu, mas não sabe desenhar: vira só a caixa (e um aviso). */
+/** A node the converter recognized but cannot draw: just the box (and a warning). */
 export interface UnknownNode extends NodeBase {
   readonly type: 'unknown';
-  /** Tipo de origem (ex.: `BOOLEAN_OPERATION`, `<foreignObject>`). */
+  /** Source type (e.g. `BOOLEAN_OPERATION`, `<foreignObject>`). */
   readonly sourceType: string;
   /**
-   * Só no `slot` (v4, `clip` do slot): as marcações filhas desenhadas dentro dele são recortadas
-   * pela caixa do slot. A camada de componentes e o raster aplicam o recorte à filha; o nó em si
-   * só desenha a caixa.
+   * Only on `slot` (v4, the slot's `clip`): the child markings drawn inside it are clipped by
+   * the slot's box. The components layer and the raster apply the clip to the child; the node
+   * itself only draws the box.
    */
   readonly clipChildren?: true;
 }
@@ -318,9 +319,9 @@ export type SceneNode =
   | UnknownNode;
 
 export interface Scene {
-  /** Raiz: um `frame` (do tamanho do design) ou `group` com os nós de nível superior. */
+  /** Root: a `frame` (of the design's size) or `group` with the top-level nodes. */
   readonly root: SceneNode;
-  /** O que ficou de fora ou foi aproximado, para o painel do laboratório mostrar. */
+  /** What was left out or approximated, for the lab panel to show. */
   readonly warnings: readonly string[];
 }
 
@@ -328,13 +329,13 @@ export function hasChildren(node: SceneNode): node is FrameNode | GroupNode {
   return node.type === 'frame' || node.type === 'group';
 }
 
-/** Percorre a árvore em pré-ordem. */
+/** Walks the tree in pre-order. */
 export function* walk(node: SceneNode): Generator<SceneNode> {
   yield node;
   if (hasChildren(node)) for (const child of node.children) yield* walk(child);
 }
 
-/** Valores padrão para montar nós sem repetir campos nos conversores e nos testes. */
+/** Default values to assemble nodes without repeating fields in the converters and in the tests. */
 export function baseNode(
   partial: Partial<NodeBase> & Pick<NodeBase, 'id' | 'name'>,
 ): NodeBase {
@@ -353,10 +354,10 @@ export function baseNode(
 export type AbsoluteBox = Box;
 
 /**
- * Caixa de cada nó no espaço da raiz, compondo só as translações (a `rotation` e a
- * escala são ignoradas de propósito: a `rotation` é só desenho, então a caixa de um quadro ou
- * slot é a sem giro, a que a arrumação e o conteúdo do slot usam; ver `nodeMatrix` para a
- * matriz que desenha).
+ * Box of each node in the root's space, composing only the translations (the `rotation` and
+ * the scale are ignored on purpose: the `rotation` is drawing only, so a frame's or slot's box
+ * is the unrotated one, the one the layout and the slot's content use; see `nodeMatrix` for the
+ * matrix that draws).
  */
 export function absoluteBoxes(root: SceneNode): ReadonlyMap<string, AbsoluteBox> {
   const out = new Map<string, AbsoluteBox>();

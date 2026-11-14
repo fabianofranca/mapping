@@ -1,23 +1,25 @@
 /**
- * Motor dos componentes (etapa Biblioteca): arrumação por tamanhos (fase L2). Recebe uma tela **sem
- * geometria** (uma árvore de nós com tipo, valores e filhos, mais as raízes ancoradas) e
- * calcula o retângulo de cada instância a partir do dimensionamento dos componentes
- * (`sizing`: px, `fill` ou `hug`). A tela é o componente raiz, em coluna. A saída é a descrição
- * neutra de tela (`Screen`), a mesma que o visualizador e o editor desenham. Puro, sem DOM: o
- * texto é medido pelo `TextMeasurer` injetado.
+ * Component engine (Library stage): size-based layout (phase L2). It receives a screen **without
+ * geometry** (a tree of nodes with type, values and children, plus the anchored roots) and
+ * computes the rectangle of each instance from the components' sizing
+ * (`sizing`: px, `fill` or `hug`). The screen is the root component, as a column. The output is
+ * the neutral screen description (`Screen`), the same one the viewer and the editor draw. Pure,
+ * no DOM: the text is measured by the injected `TextMeasurer`.
  *
- * Regras:
- * - Spec por eixo: o `sizing` do componente avaliado com os valores do nó (literal ou, na v4,
- *   expressão), ou o `size` do eixo (`resolveSizing`): px, `fill` ou `hug`;
- *   todo tamanho final respeita `minSize`; o `hug` medido sobe para o inteiro seguinte
- *   (`Math.ceil`), para o texto não quebrar por arredondamento. O resto fica exato.
- * - Um componente com slot tem um `slot`; o layout do slot (row/column/none, gap, padding,
- *   align, justify) vem de `resolveSlotLayout`. O `hug` de um componente com slot mede os filhos
- *   arrumados (`slotContent` em `measureComponent`), então a altura do cartão cresce com o texto.
- * - `fill` no eixo principal de um pai `hug` não tem de onde tirar tamanho: cai em `hug`. Na
- *   `column` o aviso é `fill dentro de hug: usando hug`; na `row` (largura) cai em `hug` sem aviso.
- * - A tela é uma coluna sem padding nem gap; as raízes sem `anchor` entram nela, as ancoradas
- *   ficam fora do fluxo (com `margin` nas bordas tocadas).
+ * Rules:
+ * - Spec per axis: the component's `sizing` evaluated with the node's values (literal or, in v4,
+ *   expression), or the axis's `size` (`resolveSizing`): px, `fill` or `hug`;
+ *   every final size respects `minSize`; the measured `hug` rounds up to the next integer
+ *   (`Math.ceil`), so the text does not wrap because of rounding. The rest stays exact.
+ * - A component with a slot has a `slot`; the slot's layout (row/column/none, gap, padding,
+ *   align, justify) comes from `resolveSlotLayout`. The `hug` of a component with a slot
+ *   measures the arranged children (`slotContent` in `measureComponent`), so the card's height
+ *   grows with the text.
+ * - `fill` on the main axis of a `hug` parent has nowhere to take size from: it falls back to
+ *   `hug`. In a `column` the warning is `fill inside hug: using hug`; in a `row` (width) it
+ *   falls back to `hug` without a warning.
+ * - The screen is a column with no padding or gap; roots without `anchor` enter it, the
+ *   anchored ones stay out of the flow (with `margin` on the touched edges).
  */
 import { createMessageSet, textsOf, type Params } from '../messages/collector';
 import type { ModelMessageTemplateCode } from '../messages';
@@ -56,18 +58,18 @@ import type { Instance, Screen } from './screen';
 import { absoluteBoxes, walk } from './scene';
 import { breakLines, stackLines } from './wrapLines';
 
-/** Nó da árvore sem geometria. */
+/** Node of the tree without geometry. */
 export interface LayoutNode {
-  /** Vira o id da instância (único na tela). */
+  /** Becomes the instance's id (unique on the screen). */
   readonly id: string;
-  /** Id do tipo de anotação na biblioteca. */
+  /** Id of the annotation type in the library. */
   readonly typeId: string;
   readonly values: FieldValues;
-  /** Vão para o slot do componente, na ordem. */
+  /** They go into the component's slot, in order. */
   readonly children: readonly LayoutNode[];
 }
 
-/** Âncora de uma raiz fora do fluxo, na tela (`start`/`end` = esquerda/direita). */
+/** Anchor of a root outside the flow, on the screen (`start`/`end` = left/right). */
 export type LayoutAnchor =
   | 'top-start'
   | 'top'
@@ -93,13 +95,13 @@ export const LAYOUT_ANCHORS: readonly LayoutAnchor[] = [
 
 export interface LayoutRoot {
   readonly node: LayoutNode;
-  /** Ausente = no fluxo (coluna da tela); presente = fora do fluxo, ancorada na tela. */
+  /** Absent = in the flow (the screen's column); present = outside the flow, anchored on the screen. */
   readonly anchor?: LayoutAnchor;
-  /** Distância das bordas da âncora (px; padrão 0). Só com `anchor`. */
+  /** Distance from the anchor's edges (px; default 0). Only with `anchor`. */
   readonly margin?: number;
   /**
-   * Tipo de anotação desenhado por baixo da raiz, cobrindo a tela inteira (película de um
-   * modal). A instância dele entra logo antes da raiz, com id `<id da raiz>#scrim`.
+   * Annotation type drawn beneath the root, covering the whole screen (a modal's scrim). Its
+   * instance enters right before the root, with id `<root id>#scrim`.
    */
   readonly scrimTypeId?: string;
 }
@@ -108,67 +110,67 @@ export interface LayoutScreen {
   readonly id: string;
   readonly name: string;
   /**
-   * Direção de leitura da tela (padrão `ltr`): em `rtl` as âncoras lógicas (`start`/`end`), as
-   * raízes em fluxo e os filhos de cada slot espelham dentro da área de conteúdo (o `padding`
-   * continua físico), como no motor dos componentes.
+   * Reading direction of the screen (default `ltr`): in `rtl` the logical anchors
+   * (`start`/`end`), the roots in the flow and the children of each slot mirror within the
+   * content area (the `padding` stays physical), as in the component engine.
    */
   readonly direction?: Direction;
   readonly width: number;
   readonly height: number;
   readonly background: string;
-  /** Ordem de desenho: a primeira raiz fica por baixo. */
+  /** Drawing order: the first root sits at the bottom. */
   readonly roots: readonly LayoutRoot[];
 }
 
 export interface LayoutResult {
   readonly screen: Screen;
-  /** `"<id do nó>: <mensagem>"` (ou `"tela: …"`). */
+  /** `"<node id>: <message>"` (or `"screen: …"`). */
   readonly warnings: readonly string[];
-  /** Os mesmos avisos com código e parâmetros (o id do nó vai em `path`). */
+  /** The same warnings with code and parameters (the node's id goes in `path`). */
   readonly messages: readonly ModelMessage[];
 }
 
 // ---------------------------------------------------------------------------------------
-// Implementação
+// Implementation
 // ---------------------------------------------------------------------------------------
 
 const EPS = 0.001;
 
 type Axis = 'width' | 'height';
 
-/** Como se mede a largura de um componente sem geometria: o `hug` (limitado pelo pai) ou a medida intrínseca. */
+/** How the width of a component without geometry is measured: the `hug` (bounded by the parent) or the intrinsic measure. */
 type Mode = 'hug' | IntrinsicSize;
 
-/** Nó resolvido: componente, slot (se componente com slot), layout do slot e filhos já preparados. */
+/** Resolved node: component, slot (if a component with a slot), slot layout and already prepared children. */
 interface Prepared {
   readonly node: LayoutNode;
   readonly component: ComponentFile;
   readonly slot?: SlotTemplate;
   readonly layout: ResolvedSlotLayout;
   readonly kids: readonly Prepared[];
-  /** O `sizing` avaliado com os valores do nó (px, `fill` ou `hug` por eixo). */
+  /** The `sizing` evaluated with the node's values (px, `fill` or `hug` per axis). */
   readonly sizing: ResolvedSizing;
 }
 
-/** Retângulo de um filho relativo à origem do conteúdo do slot, e se cada eixo veio do `hug`. */
+/** Rectangle of a child relative to the origin of the slot's content, and whether each axis came from the `hug`. */
 interface KidRect {
   readonly x: number;
   readonly y: number;
   readonly w: number;
   readonly h: number;
-  /** O tamanho é o `hug` do nó, sem corte: os filhos `fill` dele ficam no próprio `hug`. */
+  /** The size is the node's `hug`, uncut: its `fill` children stay within the `hug` itself. */
   readonly hugW: boolean;
   readonly hugH: boolean;
 }
 
 interface Arranged {
   readonly rects: readonly KidRect[];
-  /** Extensão ocupada pelos filhos (soma com gaps no eixo principal, maior no cruzado). */
+  /** Extent occupied by the children (sum with gaps on the main axis, the largest on the cross axis). */
   readonly usedW: number;
   readonly usedH: number;
 }
 
-/** O filho de um slot `none` posto pelo `align` (vertical) e `justify` (horizontal) na área conhecida do conteúdo. */
+/** The child of a `none` slot placed by `align` (vertical) and `justify` (horizontal) in the known content area. */
 function alignOverlaid<R extends { x: number; y: number; w: number; h: number }>(
   rect: R,
   layout: ResolvedSlotLayout,
@@ -193,14 +195,14 @@ const NONE_LAYOUT: ResolvedSlotLayout = {
   lineGap: 0,
 };
 
-/** A tela é uma coluna: sem padding, sem gap, filhos no início. */
+/** The screen is a column: no padding, no gap, children at the start. */
 const SCREEN_LAYOUT: ResolvedSlotLayout = { ...NONE_LAYOUT, type: 'column' };
 
 const sum = (values: readonly number[]) => values.reduce((total, v) => total + v, 0);
 const maxOf = (values: readonly number[]) => values.reduce((m, v) => Math.max(m, v), 0);
 const hugValue = (value: number) => Math.ceil(value - 1e-9);
 
-/** Posições no eixo principal (`content` nulo = o pai é `hug`: não sobra espaço). */
+/** Positions on the main axis (`content` null = the parent is `hug`: there is no free space). */
 function mainPositions(
   sizes: readonly number[],
   gap: number,
@@ -220,9 +222,10 @@ function mainPositions(
 }
 
 /**
- * Reparte `free` entre os `fill` (os índices de `fixed` sem tamanho) respeitando o `minSize` de
- * cada um, como `distributeFill` do instanciador: quem não cabe na parte igual congela no
- * mínimo e o resto é redistribuído. Devolve o tamanho por índice (0 onde não é `fill`).
+ * Splits `free` among the `fill`s (the indices of `fixed` without a size) respecting each one's
+ * `minSize`, like the instantiator's `distributeFill`: whoever does not fit in the equal share
+ * freezes at its minimum and the rest is redistributed. Returns the size per index (0 where it
+ * is not `fill`).
  */
 function shareWithMins(
   fixed: readonly unknown[],
@@ -257,13 +260,13 @@ function crossPosition(
 const ZERO_POS = { t: 0, f: 0 };
 const EMPTY_KID = { t: 0, f: 0, fFill: false, hugT: false, hugF: false };
 
-/** A ordem de colocação dos filhos: a do template, ou a inversa (`layout.reverse`). */
+/** The placement order of the children: the template's, or the reverse (`layout.reverse`). */
 function gridOrder(count: number, reverse: boolean): number[] {
   const order = Array.from({ length: count }, (_, i) => i);
   return reverse ? order.reverse() : order;
 }
 
-/** As células de uma grade com `fs` (a extensão de cada filho na linha de fluxo) e a extensão de cada linha. */
+/** The cells of a grid with `fs` (the extent of each child on the flow line) and the extent of each line. */
 function flowCells(
   fs: readonly number[],
   count: number,
@@ -279,9 +282,9 @@ const isVerticalGrid = (layout: ResolvedSlotLayout) =>
   layout.grid?.orientation !== 'horizontal';
 
 /**
- * A largura que os filhos pedem a um slot em grade (sem o padding), com os `widths` de cada um e
- * sem limite conhecido (`minColumnWidth` mede uma trilha): na grade vertical, `n` vezes a maior;
- * na horizontal, as colunas (linhas de fluxo) lado a lado com o `lineGap`.
+ * The width that the children ask of a grid slot (without the padding), with each one's `widths`
+ * and no known limit (`minColumnWidth` measures a track): in the vertical grid, `n` times the
+ * largest; in the horizontal one, the columns (flow lines) side by side with the `lineGap`.
  */
 function gridContentWidth(layout: ResolvedSlotLayout, widths: readonly number[]): number {
   const count = trackCount(layout.grid ?? {}, null, layout.gap);
@@ -291,8 +294,8 @@ function gridContentWidth(layout: ResolvedSlotLayout, widths: readonly number[])
 }
 
 /**
- * Posição de uma raiz ancorada num eixo: `margin` na borda tocada, ou centralizada. No eixo x,
- * `start`/`end` são lógicos: em `rtl`, `start` é a borda direita.
+ * Position of an anchored root on an axis: `margin` at the touched edge, or centered. On the x
+ * axis, `start`/`end` are logical: in `rtl`, `start` is the right edge.
  */
 function anchorOffset(
   anchor: LayoutAnchor,
@@ -314,7 +317,7 @@ function anchorOffset(
   return (screenSize - size) / 2;
 }
 
-/** `{ direction: 'rtl' }` só em rtl: em ltr a chave não existe (padrão). */
+/** `{ direction: 'rtl' }` only in rtl: in ltr the key does not exist (default). */
 function rtlKey(direction: Direction): { direction?: 'rtl' } {
   return direction === 'rtl' ? { direction } : {};
 }
@@ -329,10 +332,10 @@ export function layoutScreen(
     messageSet.add(code, params);
   const types = new Map(library.types.map((t) => [t.id, t]));
   const direction: Direction = input.direction ?? 'ltr';
-  /** As opções do motor comuns a toda instância desta tela (a direção, acima de tudo). */
+  /** The engine options common to every instance of this screen (the direction, above all). */
   const engine = { measure, ...rtlKey(direction) } as const;
 
-  // --- preparo: tipo, componente, slot e layout de cada nó ---------------------------------
+  // --- preparation: type, component, slot and layout of each node --------------------------
 
   const prepare = (node: LayoutNode): Prepared | undefined => {
     const component = types.get(node.typeId)?.component;
@@ -378,7 +381,7 @@ export function layoutScreen(
     return value;
   };
 
-  /** Caixa absoluta do slot do componente instanciado em `box` (nenhuma se o slot estiver invisível). */
+  /** Absolute box of the slot of the component instantiated in `box` (none if the slot is invisible). */
   const slotBoxOf = (
     p: Prepared,
     box: Box,
@@ -396,12 +399,13 @@ export function layoutScreen(
     return undefined;
   };
 
-  // --- medidas intrínsecas (hug), memoizadas ------------------------------------------------
+  // --- intrinsic measures (hug), memoized ---------------------------------------------------
 
   /**
-   * A largura dos filhos (sem o padding): a soma na `row`, a maior na `column`. Com `wrap`, as
-   * linhas vêm só do `maxPerLine` (o limite do eixo principal não se conhece ao medir): na `row`
-   * é a linha mais larga; na `column`, as colunas lado a lado, com o `lineGap`.
+   * The width of the children (without the padding): the sum in a `row`, the largest in a
+   * `column`. With `wrap`, the lines come only from `maxPerLine` (the main axis limit is not
+   * known when measuring): in a `row` it is the widest line; in a `column`, the columns side
+   * by side, with the `lineGap`.
    */
   const wrappedOrPlainWidth = (
     layout: ResolvedSlotLayout,
@@ -409,7 +413,7 @@ export function layoutScreen(
     mode: Mode = 'hug',
   ): number => {
     if (layout.type === 'grid') return gridContentWidth(layout, widths);
-    // `min-content` com `wrap`: o maior filho (a quebra põe um por linha).
+    // `min-content` with `wrap`: the largest child (the wrap puts one per line).
     if (mode === 'min-content' && layout.type !== 'none' && layout.wrap !== 'none')
       return maxOf(widths);
     if (layout.type !== 'row' && layout.wrap === 'none') return maxOf(widths);
@@ -430,19 +434,20 @@ export function layoutScreen(
   };
 
   /**
-   * A medida de largura que um `sizing` pede: o `min-content`/`max-content` do eixo, senão o `hug`
-   * (`fill` e o resto medem como `hug`).
+   * The width measure that a `sizing` asks for: the axis's `min-content`/`max-content`, else
+   * the `hug` (`fill` and the rest measure as `hug`).
    */
   const widthModeOf = (spec: ReturnType<typeof specOf>): Mode =>
     intrinsicModeOf(spec) ?? 'hug';
 
-  /** O modo de um filho `hug` ou `fill`: o do pai se é `min-content`; senão o `hug`. */
+  /** The mode of a `hug` or `fill` child: the parent's if it is `min-content`; else the `hug`. */
   const inheritedMode = (own: Mode, parent: Mode): Mode =>
     own === 'hug' && parent === 'min-content' ? parent : own;
 
   /**
-   * Largura que os filhos arrumados pedem ao slot, mais o padding dele. No `min-content` do pai, o
-   * filho `hug` ou `fill` entra com o próprio `min-content`; o que pede a medida intrínseca a tem.
+   * Width that the arranged children ask of the slot, plus its padding. In the parent's
+   * `min-content`, a `hug` or `fill` child enters with its own `min-content`; one that asks for
+   * the intrinsic measure has it.
    */
   const slotContentWidth = (p: Prepared, mode: Mode = 'hug'): number =>
     cached(p, `scw|${mode}`, () => {
@@ -455,7 +460,7 @@ export function layoutScreen(
       return wrappedOrPlainWidth(p.layout, widths, mode) + padW(p);
     });
 
-  /** Largura `hug` (ou `min-content`/`max-content`): o template medido (com `slotContent` nos componentes com slot). */
+  /** `hug` width (or `min-content`/`max-content`): the measured template (with `slotContent` in components with a slot). */
   function intrinsicWidth(p: Prepared, mode: Mode = 'hug'): number {
     return cached(p, `iw|${mode}`, () => {
       const options = p.slot
@@ -471,7 +476,7 @@ export function layoutScreen(
     });
   }
 
-  /** Altura `hug` na largura final (`hugW`: a largura também veio do `hug`). */
+  /** `hug` height at the final width (`hugW`: the width also came from the `hug`). */
   function intrinsicHeight(p: Prepared, width: number, hugW: boolean): number {
     return cached(p, `ih|${width}|${hugW}`, () => {
       let slotContent = { width: 0, height: 0 };
@@ -504,9 +509,9 @@ export function layoutScreen(
     });
   }
 
-  // --- tamanhos de um filho num eixo ---------------------------------------------------------
+  // --- sizes of a child on an axis -----------------------------------------------------------
 
-  /** Largura de um filho; `cw` nulo = o pai é `hug` nessa largura. */
+  /** Width of a child; `cw` null = the parent is `hug` in that width. */
   const widthOf = (
     kid: Prepared,
     cw: number | null,
@@ -518,12 +523,12 @@ export function layoutScreen(
       return { w: withMin(kid, 'width', cw), hug: false };
     const mode = widthModeOf(spec);
     const intrinsic = intrinsicWidth(kid, mode);
-    // `min-content`/`max-content` não se limitam ao espaço do pai (só o `hug` encolhe até ele).
+    // `min-content`/`max-content` are not limited to the parent's space (only the `hug` shrinks down to it).
     const w = cw === null || mode !== 'hug' ? intrinsic : Math.min(intrinsic, cw);
     return { w: withMin(kid, 'width', w), hug: mode === 'hug' && w === intrinsic };
   };
 
-  /** Altura natural de um filho (a do `sizing` em px, ou o `hug` na largura natural dele). */
+  /** Natural height of a child (the `sizing`'s in px, or the `hug` at its natural width). */
   const naturalHeight = (kid: Prepared): number => {
     const spec = specOf(kid, 'height');
     if (typeof spec === 'number') return withMin(kid, 'height', spec);
@@ -532,10 +537,11 @@ export function layoutScreen(
   };
 
   /**
-   * Arruma os filhos de um slot com `wrap`: reparte-os em linhas pelo tamanho natural no eixo
-   * principal (as colunas, numa `column`), arruma cada linha como um slot sem `wrap` e empilha as
-   * linhas no eixo cruzado, separadas por `lineGap`. Os filhos além de `maxLines` linhas não têm
-   * retângulo (`rects` traz só os que ficam, na ordem) e, em `emit`, o motor avisa.
+   * Arranges the children of a slot with `wrap`: it splits them into lines by natural size on
+   * the main axis (the columns, in a `column`), arranges each line as a slot without `wrap` and
+   * stacks the lines on the cross axis, separated by `lineGap`. Children beyond `maxLines` lines
+   * have no rectangle (`rects` carries only those that stay, in order) and, in `emit`, the engine
+   * warns.
    */
   function arrangeWrapped(
     kids: readonly Prepared[],
@@ -587,21 +593,21 @@ export function layoutScreen(
 
   // --- grade (`layout.type: "grid"`) ------------------------------------------------------
 
-  /** O tamanho natural de um filho no eixo das trilhas (o que a trilha `hug` abraça). */
+  /** The natural size of a child on the tracks axis (what the `hug` track hugs). */
   const gridNaturalTrack = (kid: Prepared, vertical: boolean): number =>
     vertical ? widthOf(kid, null, false).w : naturalHeight(kid);
 
-  /** Um filho de grade medido: `t` no eixo das trilhas, `f` (natural) no das linhas, e se cada um veio do `hug`. */
+  /** A measured grid child: `t` on the tracks axis, `f` (natural) on the lines axis, and whether each came from the `hug`. */
   interface GridKid {
     readonly t: number;
     readonly f: number;
-    /** `f` enche a linha de fluxo (`fill`, ou `align: stretch` num `hug`). */
+    /** `f` fills the flow line (`fill`, or `align: stretch` in a `hug`). */
     readonly fFill: boolean;
     readonly hugT: boolean;
     readonly hugF: boolean;
   }
 
-  /** Grade vertical: a largura é a da célula (`size`); a altura é a natural, na largura final. */
+  /** Vertical grid: the width is the cell's (`size`); the height is the natural one, at the final width. */
   const verticalGridKid = (
     kid: Prepared,
     layout: ResolvedSlotLayout,
@@ -621,7 +627,7 @@ export function layoutScreen(
     return { t: w.w, f: h, fFill, hugT: w.hug, hugF: typeof spec !== 'number' };
   };
 
-  /** Grade horizontal: a largura é a natural (a linha de fluxo); a altura é a da célula (`size`). */
+  /** Horizontal grid: the width is the natural one (the flow line); the height is the cell's (`size`). */
   const horizontalGridKid = (
     kid: Prepared,
     layout: ResolvedSlotLayout,
@@ -644,7 +650,7 @@ export function layoutScreen(
     };
   };
 
-  /** O retângulo de um filho já colocado na célula (relativo à origem do conteúdo). */
+  /** The rectangle of a child already placed in the cell (relative to the content origin). */
   const gridKidRect = (
     vertical: boolean,
     pos: { t: number; f: number },
@@ -657,7 +663,7 @@ export function layoutScreen(
       : { x: pos.f, y: pos.t, w: size.f, h: size.t, hugW: hugF, hugH: info.hugT };
   };
 
-  /** O retângulo do filho da célula `cell`: `justify` na trilha, `align` na linha de fluxo. */
+  /** The rectangle of the child in cell `cell`: `justify` on the track, `align` on the flow line. */
   const placeGridCell = (
     layout: ResolvedSlotLayout,
     vertical: boolean,
@@ -678,7 +684,7 @@ export function layoutScreen(
     return gridKidRect(vertical, pos, { t, f }, info);
   };
 
-  /** Arruma os filhos de um slot em grade num conteúdo `cw` × `ch` (nulo = o pai é `hug` nesse eixo). */
+  /** Arranges the children of a grid slot in a `cw` × `ch` content (null = the parent is `hug` on that axis). */
   function arrangeGrid(
     kids: readonly Prepared[],
     layout: ResolvedSlotLayout,
@@ -721,7 +727,7 @@ export function layoutScreen(
       : { rects, usedW: stacked.total, usedH: tracks };
   }
 
-  /** Arruma os filhos num conteúdo `cw` × `ch` (nulo = o pai é `hug` nesse eixo). */
+  /** Arranges the children in a `cw` × `ch` content (null = the parent is `hug` on that axis). */
   function arrangeKids(
     kids: readonly Prepared[],
     layout: ResolvedSlotLayout,
@@ -736,9 +742,10 @@ export function layoutScreen(
   }
 
   /**
-   * Em `rtl`, os retângulos já arrumados espelhados dentro da área de conteúdo
-   * (`x' = conteúdo − x − w`): vale de uma vez para `row`, `column`, `none`, grade e `wrap`. O
-   * `padding` do slot fica físico, porque a origem do conteúdo é somada depois. Em `ltr`, os mesmos.
+   * In `rtl`, the already arranged rectangles mirrored within the content area
+   * (`x' = content − x − w`): it applies at once to `row`, `column`, `none`, grid and `wrap`. The
+   * slot's `padding` stays physical, because the content origin is added afterwards. In `ltr`,
+   * the same ones.
    */
   const mirroredRects = (
     arranged: Arranged,
@@ -749,7 +756,7 @@ export function layoutScreen(
     return arranged.rects.map((r) => ({ ...r, x: width - r.x - r.w }));
   };
 
-  /** `arrangeKids` de `row`, `column`, `none` e dos que quebram em linhas (`wrap`). */
+  /** `arrangeKids` of `row`, `column`, `none` and of those that wrap into lines (`wrap`). */
   function arrangeLinear(
     kids: readonly Prepared[],
     layout: ResolvedSlotLayout,
@@ -829,7 +836,7 @@ export function layoutScreen(
         const f = fixed[i];
         return f ?? { w: withMin(kid, 'width', shares[i] ?? 0), hug: false };
       });
-      // Altura (eixo cruzado): com `ch` nulo, os `fill` recebem a maior altura dos demais.
+      // Height (cross axis): with `ch` null, the `fill`s receive the largest height of the others.
       const heightOf = (kid: Prepared, i: number): { h: number; hug: boolean } => {
         const spec = specOf(kid, 'height');
         const wi = widths[i] ?? { w: 0, hug: false };
@@ -876,7 +883,7 @@ export function layoutScreen(
       };
     }
 
-    // Box (`none`): cada filho no canto do conteúdo, ou alinhado pelo `align`/`justify` do slot.
+    // Box (`none`): each child in the content's corner, or aligned by the slot's `align`/`justify`.
     const corner = kids.map((kid) => {
       const wi = widthOf(kid, cw, false);
       const spec = specOf(kid, 'height');
@@ -909,7 +916,7 @@ export function layoutScreen(
     };
   }
 
-  // --- colocação: grava a caixa de cada instância e desce pelos filhos ---------------------
+  // --- placement: records each instance's box and descends through the children ------------
 
   const place = (
     p: Prepared,
@@ -934,7 +941,7 @@ export function layoutScreen(
       return;
     }
     const { layout } = p;
-    // Pai `hug` no eixo principal: os filhos `fill` já caíram em `hug` e não sobra espaço.
+    // `hug` parent on the main axis: the `fill` children already fell back to `hug` and there is no free space.
     const cw =
       hugW && layout.type !== 'column' ? null : Math.max(0, probe.width - padW(p));
     const pre = arrangeKids(p.kids, layout, cw, null, false);
@@ -959,7 +966,7 @@ export function layoutScreen(
     });
   };
 
-  // --- tela ----------------------------------------------------------------------------------
+  // --- screen --------------------------------------------------------------------------------
 
   const roots = input.roots
     .map((root) => ({ root, prepared: prepare(root.node) }))
@@ -977,7 +984,7 @@ export function layoutScreen(
   );
   if (flowed.usedH > input.height + EPS) warn('engine.screenTooTall');
 
-  /** As raízes em fluxo (a tela é uma coluna): em `rtl` espelhadas na largura da tela. */
+  /** The roots in the flow (the screen is a column): in `rtl` mirrored within the screen's width. */
   const flowedRects = mirroredRects(flowed, input.width);
 
   const rootBox = (

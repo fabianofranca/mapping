@@ -202,7 +202,7 @@ function add(out: Ctx, path: string, message: string): void {
 /** Acrescenta "chave desconhecida" para cada chave fora de `allowed`. */
 function checkKeys(value: Rec, allowed: readonly string[], path: string, out: Ctx): void {
   for (const key of Object.keys(value)) {
-    if (!allowed.includes(key)) add(out, join(path, key), `chave desconhecida: ${key}`);
+    if (!allowed.includes(key)) add(out, join(path, key), `unknown key: ${key}`);
   }
 }
 
@@ -211,28 +211,28 @@ function checkKeys(value: Rec, allowed: readonly string[], path: string, out: Ct
 // ---------------------------------------------------------------------------------------
 
 const checkBoolean: Check = (v, p, out) => {
-  if (typeof v !== 'boolean') add(out, p, 'esperava booleano');
+  if (typeof v !== 'boolean') add(out, p, 'expected a boolean');
 };
 
 const checkNumber = tokenCheck('number', (v, p, out) => {
-  if (!isFiniteNumber(v)) add(out, p, 'esperava número');
+  if (!isFiniteNumber(v)) add(out, p, 'expected a number');
 });
 
 const checkNonNegative = tokenCheck('number', (v, p, out) => {
-  if (!isFiniteNumber(v) || v < 0) add(out, p, 'esperava número maior ou igual a 0');
+  if (!isFiniteNumber(v) || v < 0) add(out, p, 'expected a number greater than or equal to 0');
 });
 
 const checkUnit = tokenCheck('number', (v, p, out) => {
-  if (!isFiniteNumber(v) || v < 0 || v > 1) add(out, p, 'esperava número entre 0 e 1');
+  if (!isFiniteNumber(v) || v < 0 || v > 1) add(out, p, 'expected a number between 0 and 1');
 });
 
 const checkWeight = tokenCheck('number', (v, p, out) => {
   if (!isFiniteNumber(v) || v < 100 || v > 900)
-    add(out, p, 'esperava peso entre 100 e 900');
+    add(out, p, 'expected a weight between 100 and 900');
 });
 
 const checkString: Check = (v, p, out) => {
-  if (typeof v !== 'string') add(out, p, 'esperava texto');
+  if (typeof v !== 'string') add(out, p, 'expected text');
 };
 
 /** `font.family` (e `family` de um trecho): texto; aceita `$token` de família. */
@@ -240,18 +240,18 @@ const checkFamily = tokenCheck('family', (v, p, out) => checkString(v, p, out));
 
 const checkTextOrNumber: Check = (v, p, out) => {
   if (typeof v !== 'string' && !isFiniteNumber(v))
-    add(out, p, 'esperava texto ou número');
+    add(out, p, 'expected text or a number');
 };
 
 const checkColor = tokenCheck('color', (v, p, out) => {
   if (typeof v !== 'string' || v.trim() === '')
-    add(out, p, 'esperava cor (texto não vazio)');
+    add(out, p, 'expected a color (non-empty text)');
 });
 
 function oneOf(options: readonly string[]): Check {
   return (v, p, out) => {
     if (typeof v !== 'string' || !options.includes(v))
-      add(out, p, `esperava um de: ${options.join(', ')}`);
+      add(out, p, `expected one of: ${options.join(', ')}`);
   };
 }
 
@@ -276,21 +276,21 @@ const checkCornerRadius = tokenCheck('number', (v, p, out) => {
     });
     return;
   }
-  add(out, p, 'esperava número maior ou igual a 0 ou lista de 4 números');
+  add(out, p, 'expected a number greater than or equal to 0 or a list of 4 numbers');
 });
 
 const checkFill = tokenCheck('color', (v, p, out) => {
   if (typeof v === 'string') return checkColor(v, p, out);
-  if (!isRecord(v)) return add(out, p, 'esperava cor ou gradiente');
+  if (!isRecord(v)) return add(out, p, 'expected a color or gradient');
   checkKeys(v, ['type', 'angle', 'stops'], p, out);
-  if (v.type !== 'linear') add(out, join(p, 'type'), 'esperava "linear"');
-  if (!isFiniteNumber(v.angle)) add(out, join(p, 'angle'), 'esperava número');
+  if (v.type !== 'linear') add(out, join(p, 'type'), 'expected "linear"');
+  if (!isFiniteNumber(v.angle)) add(out, join(p, 'angle'), 'expected a number');
   const stops = join(p, 'stops');
-  if (!Array.isArray(v.stops)) return add(out, stops, 'esperava lista de paradas');
-  if (v.stops.length < 2) add(out, stops, 'esperava ao menos 2 paradas');
+  if (!Array.isArray(v.stops)) return add(out, stops, 'expected a list of stops');
+  if (v.stops.length < 2) add(out, stops, 'expected at least 2 stops');
   v.stops.forEach((stop: unknown, i) => {
     const sp = `${stops}[${i}]`;
-    if (!isRecord(stop)) return add(out, sp, 'esperava objeto');
+    if (!isRecord(stop)) return add(out, sp, 'expected an object');
     checkKeys(stop, ['offset', 'color'], sp, out);
     checkUnit(stop.offset, join(sp, 'offset'), out);
     checkExpr(stop.color, join(sp, 'color'), checkColor, out);
@@ -302,13 +302,13 @@ const checkFill = tokenCheck('color', (v, p, out) => {
 // ---------------------------------------------------------------------------------------
 
 function checkCondition(value: unknown, path: string, out: Ctx): void {
-  if (!isRecord(value)) return add(out, path, 'esperava condição (objeto)');
+  if (!isRecord(value)) return add(out, path, 'expected a condition (object)');
   const ops = Object.keys(value).filter((k) => CONDITION_OPS.includes(k));
   if (ops.length !== 1) {
     if (ops.length === 0) {
-      add(out, path, `condição sem operador (${CONDITION_OPS.join(', ')})`);
+      add(out, path, `condition without an operator (${CONDITION_OPS.join(', ')})`);
     } else {
-      add(out, path, `condição com mais de um operador: ${ops.join(', ')}`);
+      add(out, path, `condition with more than one operator: ${ops.join(', ')}`);
     }
     return;
   }
@@ -320,7 +320,7 @@ function checkCondition(value: unknown, path: string, out: Ctx): void {
     case '$field':
     case '$has':
       if (typeof operand !== 'string' || operand === '')
-        add(out, at, 'esperava chave de campo (texto não vazio)');
+        add(out, at, 'expected a field key (non-empty text)');
       return;
     case '$eq':
       if (
@@ -332,7 +332,7 @@ function checkCondition(value: unknown, path: string, out: Ctx): void {
         add(
           out,
           at,
-          'esperava lista [campo, valor] com campo texto e valor texto ou número',
+          'expected a list [field, value] with a text field and a text or number value',
         );
       return;
     case '$not':
@@ -346,13 +346,13 @@ function checkCondition(value: unknown, path: string, out: Ctx): void {
       return checkOperands(operand, at, { min: 2, max: 2 }, out);
     case '$and':
     case '$or':
-      if (!Array.isArray(operand)) return add(out, at, 'esperava lista de condições');
+      if (!Array.isArray(operand)) return add(out, at, 'expected a list of conditions');
       operand.forEach((c: unknown, i) => checkCondition(c, `${at}[${i}]`, out));
   }
 }
 
 const checkOperand = tokenCheck('number', (v, p, out) => {
-  if (!isFiniteNumber(v)) add(out, p, 'precisa ser número');
+  if (!isFiniteNumber(v)) add(out, p, 'must be a number');
 });
 
 /** Os operandos de uma operação numérica ou comparação: a aridade e cada `Expr<number>`. */
@@ -363,14 +363,14 @@ function checkOperands(
   out: Ctx,
 ): void {
   if (arity.max === 1) {
-    if (Array.isArray(operand)) return add(out, at, 'precisa de 1 operando');
+    if (Array.isArray(operand)) return add(out, at, 'needs 1 operand');
     return checkExpr(operand, at, checkOperand, out);
   }
-  if (!Array.isArray(operand)) return add(out, at, 'esperava lista de operandos');
+  if (!Array.isArray(operand)) return add(out, at, 'expected a list of operands');
   if (arity.max === arity.min && operand.length !== arity.min)
-    return add(out, at, `precisa de ${arity.min} operandos`);
+    return add(out, at, `needs ${arity.min} operands`);
   if (operand.length < arity.min)
-    return add(out, at, `precisa de ${arity.min} ou mais operandos`);
+    return add(out, at, `needs ${arity.min} or more operands`);
   operand.forEach((item: unknown, i) =>
     checkExpr(item, `${at}[${i}]`, checkOperand, out),
   );
@@ -386,7 +386,7 @@ function checkNumericExpr(
 ): void {
   checkKeys(value, [op], path, out);
   if (check.tokenKind !== 'number' && !acceptsAnyValue(check))
-    return add(out, path, `${op} só vale onde se espera número`);
+    return add(out, path, `${op} is only valid where a number is expected`);
   checkOperands(value[op], join(path, op), NUMERIC_OPS[op] as never, out);
 }
 
@@ -400,21 +400,21 @@ function checkCountExpr(
 ): void {
   checkKeys(value, [op], path, out);
   if (check.tokenKind !== 'number' && !acceptsAnyValue(check))
-    return add(out, path, `${op} só vale onde se espera número`);
+    return add(out, path, `${op} is only valid where a number is expected`);
   const at = join(path, op);
   if (op === '$rows') return checkFieldKey(value.$rows, at, out);
   if (op === '$lines') {
     if (typeof value.$lines !== 'string' || value.$lines.trim() === '')
-      add(out, at, 'esperava nome de um nó text (texto não vazio)');
+      add(out, at, 'expected the name of a text node (non-empty text)');
     return;
   }
   if (value.$size !== 'width' && value.$size !== 'height')
-    add(out, at, 'esperava "width" ou "height"');
+    add(out, at, 'expected "width" or "height"');
 }
 
 function checkFieldKey(value: unknown, path: string, out: Ctx): void {
   if (typeof value !== 'string' || value === '')
-    add(out, path, 'esperava chave de campo (texto não vazio)');
+    add(out, path, 'expected a field key (non-empty text)');
 }
 
 function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void {
@@ -422,10 +422,10 @@ function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void 
   const at = join(path, '$token');
   const kind = check.tokenKind;
   if (kind === undefined)
-    add(out, path, '$token só vale onde se espera cor, número ou família de fonte');
+    add(out, path, '$token is only valid where a color, a number or a font family is expected');
   const name = value.$token;
   if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name))
-    add(out, at, 'esperava nome de token ([a-z0-9][a-z0-9-]*)');
+    add(out, at, 'expected a token name ([a-z0-9][a-z0-9-]*)');
   else if (kind !== undefined) out.refs?.push({ path, name, kind });
   if ('alpha' in value) checkTokenAlpha(value.alpha, path, kind, out);
   if ('over' in value) checkTokenOver(value.over, path, kind, out);
@@ -443,12 +443,12 @@ function checkTokenOver(
 ): void {
   if (kind === undefined) return;
   if (kind !== 'color')
-    return add(out, join(path, '$token'), 'over só vale em $token de cor');
+    return add(out, join(path, '$token'), 'over is only valid in a color $token');
   const at = join(path, 'over');
-  if (typeof over !== 'string') return add(out, at, 'esperava nome de token ou cor');
+  if (typeof over !== 'string') return add(out, at, 'expected a token name or a color');
   if (isLiteralColor(over)) return;
   if (!TOKEN_NAME_PATTERN.test(over))
-    return add(out, at, 'esperava nome de token ([a-z0-9][a-z0-9-]*) ou cor');
+    return add(out, at, 'expected a token name ([a-z0-9][a-z0-9-]*) or a color');
   out.refs?.push({ path: at, name: over, kind: 'color' });
 }
 
@@ -461,7 +461,7 @@ function checkTokenAlpha(
 ): void {
   if (kind === undefined) return;
   if (kind !== 'color')
-    return add(out, join(path, '$token'), 'alpha só vale em $token de cor');
+    return add(out, join(path, '$token'), 'alpha is only valid on a color $token');
   checkLiteralOrToken(alpha, join(path, 'alpha'), checkUnit, out);
 }
 
@@ -480,9 +480,9 @@ const checkProvided: Check = Object.assign(
 
 /** `provide` do slot (v4): nome → valor, o nome não vazio. */
 function checkProvide(value: unknown, path: string, out: Ctx): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  if (!isRecord(value)) return add(out, path, 'expected an object');
   for (const [name, expr] of Object.entries(value)) {
-    if (name.trim() === '') add(out, path, 'nome vazio');
+    if (name.trim() === '') add(out, path, 'empty name');
     else checkExpr(expr, join(path, name), checkProvided, out);
   }
 }
@@ -498,7 +498,7 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
     return;
   }
   if (ops.length > 1) {
-    add(out, path, `expressão com mais de um operador: ${ops.join(', ')}`);
+    add(out, path, `expression with more than one operator: ${ops.join(', ')}`);
     return;
   }
   const op = ops[0] as string;
@@ -515,7 +515,7 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
     case '$if':
       checkKeys(value, ['$if', 'then', 'else'], path, out);
       checkCondition(value.$if, at, out);
-      if (!('then' in value)) add(out, join(path, 'then'), 'campo obrigatório');
+      if (!('then' in value)) add(out, join(path, 'then'), 'required field');
       else checkExpr(value.then, join(path, 'then'), check, out);
       if ('else' in value) checkExpr(value.else, join(path, 'else'), check, out);
       return;
@@ -523,7 +523,7 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
       checkKeys(value, ['$switch', 'cases', 'default'], path, out);
       checkFieldKey(value.$switch, at, out);
       const cases = join(path, 'cases');
-      if (!isRecord(value.cases)) add(out, cases, 'esperava objeto de casos');
+      if (!isRecord(value.cases)) add(out, cases, 'expected an object of cases');
       else
         for (const [key, c] of Object.entries(value.cases))
           checkExpr(c, join(cases, key), check, out);
@@ -535,15 +535,15 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
     case '$provided':
       // Só desenho: o que muda a geometria (tamanho, espaço, texto) não herda.
       if (check.tokenKind !== 'color')
-        return add(out, path, '$provided só vale onde se espera cor');
+        return add(out, path, '$provided is only valid where a color is expected');
       checkKeys(value, ['$provided', 'default'], path, out);
       if (typeof value.$provided !== 'string' || value.$provided.trim() === '')
-        add(out, at, 'esperava nome da cor oferecida (texto não vazio)');
+        add(out, at, 'expected the name of the provided color (non-empty text)');
       if ('default' in value) checkExpr(value.default, join(path, 'default'), check, out);
       return;
     case '$concat':
       checkKeys(value, ['$concat'], path, out);
-      if (!Array.isArray(value.$concat)) return add(out, at, 'esperava lista de partes');
+      if (!Array.isArray(value.$concat)) return add(out, at, 'expected a list of parts');
       value.$concat.forEach((part: unknown, i) =>
         checkExpr(part, `${at}[${i}]`, checkTextOrNumber, out),
       );
@@ -569,19 +569,19 @@ const checkSize = tokenCheck('number', (value, path, out) => {
   add(
     out,
     path,
-    'esperava número maior ou igual a 0, "fill", "hug", "min-content", "max-content" ou "<número>%"',
+    'expected a number greater than or equal to 0, "fill", "hug", "min-content", "max-content" or "<number>%"',
   );
 });
 
 /** Como `checkSize`, mas sem `hug` nem a medida intrínseca: o nó `image` não depende da imagem baixada. */
 const checkSizeNoHug = tokenCheck('number', (v, p, out) => {
   if (v === 'hug')
-    add(out, p, 'o nó image não aceita hug: a arrumação não depende da imagem baixada');
+    add(out, p, 'the image node does not accept hug: the layout does not depend on the downloaded image');
   else if (isIntrinsicSize(v))
     add(
       out,
       p,
-      'o nó image não aceita min-content nem max-content: a arrumação não depende da imagem baixada',
+      'the image node does not accept min-content or max-content: the layout does not depend on the downloaded image',
     );
   else checkSize(v, p, out);
 });
@@ -603,12 +603,12 @@ function checkNodeSizes(value: Rec, path: string, nodeType: string, out: Ctx): v
     const lo = value[min];
     const hi = value[max];
     if (isFiniteNumber(lo) && isFiniteNumber(hi) && lo > hi)
-      add(out, join(path, min), `não pode ser maior que ${max}`);
+      add(out, join(path, min), `cannot be greater than ${max}`);
   }
 }
 
 function checkAnchors(value: unknown, path: string, out: Ctx): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  if (!isRecord(value)) return add(out, path, 'expected an object');
   checkKeys(
     value,
     ['left', 'right', 'start', 'end', 'top', 'bottom', 'centerX', 'centerY'],
@@ -619,9 +619,9 @@ function checkAnchors(value: unknown, path: string, out: Ctx): void {
     if (key in value) checkExpr(value[key], join(path, key), checkNumber, out);
   }
   if ('start' in value && 'left' in value)
-    add(out, join(path, 'start'), 'não combina com left');
+    add(out, join(path, 'start'), 'does not combine with left');
   if ('end' in value && 'right' in value)
-    add(out, join(path, 'end'), 'não combina com right');
+    add(out, join(path, 'end'), 'does not combine with right');
   for (const key of ['centerX', 'centerY']) {
     if (key in value) checkBoolExpr(value[key], join(path, key), out);
   }
@@ -629,20 +629,20 @@ function checkAnchors(value: unknown, path: string, out: Ctx): void {
 
 /** `stroke.sides`: lista não vazia de lados, sem repetição. */
 const checkSides: Check = (v, p, out) => {
-  if (!Array.isArray(v)) return add(out, p, 'esperava lista de lados');
-  if (v.length === 0) return add(out, p, 'esperava ao menos um lado');
+  if (!Array.isArray(v)) return add(out, p, 'expected a list of sides');
+  if (v.length === 0) return add(out, p, 'expected at least one side');
   const seen = new Set<unknown>();
   v.forEach((side: unknown, i) => {
     const at = `${p}[${i}]`;
     oneOf(STROKE_SIDES)(side, at, out);
-    if (seen.has(side)) add(out, at, `lado repetido: ${String(side)}`);
+    if (seen.has(side)) add(out, at, `repeated side: ${String(side)}`);
     seen.add(side);
   });
 };
 
 /** `stroke.dash`: lista de números ≥ 0, cada item literal ou `$token` de número. */
 const checkDash: Check = (v, p, out) => {
-  if (!Array.isArray(v)) return add(out, p, 'esperava lista de números');
+  if (!Array.isArray(v)) return add(out, p, 'expected a list of numbers');
   v.forEach((n: unknown, i) =>
     checkLiteralOrToken(n, `${p}[${i}]`, checkNonNegative, out),
   );
@@ -664,7 +664,7 @@ function checkStrokeV4(
   if (!('sides' in value)) return;
   const at = join(path, 'sides');
   if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
-    add(out, at, `só vale em frame e rect (este é ${nodeType})`);
+    add(out, at, `only valid in frame and rect (this is ${nodeType})`);
   else checkExpr(value.sides, at, checkSides, out);
 }
 
@@ -676,19 +676,19 @@ function checkOffset(
   out: Ctx,
 ): void {
   if (nodeType !== undefined && !['frame', 'rect', 'ellipse'].includes(nodeType))
-    add(out, path, `só vale em frame, rect e ellipse (este é ${nodeType})`);
+    add(out, path, `only valid in frame, rect and ellipse (this is ${nodeType})`);
   else checkLiteralOrToken(value, path, checkNonNegative, out);
 }
 
 function checkStroke(value: unknown, path: string, out: Ctx, nodeType?: string): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  if (!isRecord(value)) return add(out, path, 'expected an object');
   checkKeys(
     value,
     ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides', 'scale', 'offset', 'gap'],
     path,
     out,
   );
-  if (!('color' in value)) add(out, join(path, 'color'), 'campo obrigatório');
+  if (!('color' in value)) add(out, join(path, 'color'), 'required field');
   else checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('width' in value)
     checkExpr(value.width, join(path, 'width'), checkNonNegative, out);
@@ -708,11 +708,11 @@ function checkGap(
 ): void {
   const value = stroke.gap;
   if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
-    return add(out, path, `só vale em frame e rect (este é ${nodeType})`);
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+    return add(out, path, `only valid in frame and rect (this is ${nodeType})`);
+  if (!isRecord(value)) return add(out, path, 'expected an object');
   checkKeys(value, ['node', 'padding'], path, out);
-  if ('sides' in stroke) add(out, path, 'gap não vale com sides');
-  if (!('node' in value)) add(out, join(path, 'node'), 'campo obrigatório');
+  if ('sides' in stroke) add(out, path, 'gap is not valid with sides');
+  if (!('node' in value)) add(out, join(path, 'node'), 'required field');
   else checkString(value.node, join(path, 'node'), out);
   if ('padding' in value)
     checkExpr(value.padding, join(path, 'padding'), checkNumber, out);
@@ -720,9 +720,9 @@ function checkGap(
 
 /** Uma sombra (objeto): `color`, `x`, `y`, `blur` e `spread`. */
 function checkShadowItem(value: unknown, path: string, out: Ctx): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  if (!isRecord(value)) return add(out, path, 'expected an object');
   checkKeys(value, ['color', 'x', 'y', 'blur', 'spread'], path, out);
-  if (!('color' in value)) add(out, join(path, 'color'), 'campo obrigatório');
+  if (!('color' in value)) add(out, join(path, 'color'), 'required field');
   else checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('x' in value) checkLiteralOrToken(value.x, join(path, 'x'), checkNumber, out);
   if ('y' in value) checkLiteralOrToken(value.y, join(path, 'y'), checkNumber, out);
@@ -736,18 +736,18 @@ function checkShadowItem(value: unknown, path: string, out: Ctx): void {
 function checkShadow(value: unknown, path: string, out: Ctx): void {
   if (!Array.isArray(value)) return checkShadowItem(value, path, out);
   if (value.length < 1 || value.length > MAX_SHADOWS)
-    return add(out, path, `esperava de 1 a ${MAX_SHADOWS} sombras`);
+    return add(out, path, `expected 1 to ${MAX_SHADOWS} shadows`);
   value.forEach((item: unknown, i) => checkShadowItem(item, `${path}[${i}]`, out));
 }
 
 /** `font.maxLines`: inteiro maior ou igual a 1. */
 const checkPositiveInteger = tokenCheck('number', (v, p, out) => {
   if (!Number.isInteger(v) || (v as number) < 1)
-    add(out, p, 'esperava inteiro maior ou igual a 1');
+    add(out, p, 'expected an integer greater than or equal to 1');
 });
 
 function checkFont(value: unknown, path: string, out: Ctx): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  if (!isRecord(value)) return add(out, path, 'expected an object');
   const specs: Record<string, Check> = {
     family: checkFamily,
     size: checkNumber,
@@ -783,11 +783,11 @@ const checkPadding = tokenCheck('number', (value, path, out) => {
   add(
     out,
     path,
-    'esperava número, lista de 2 ou lista de 4 números (maiores ou iguais a 0)',
+    'expected a number, a list of 2 or a list of 4 numbers (greater than or equal to 0)',
   );
 });
 
-const LAYOUT_TYPE_EXPECTED = 'esperava "none", "row", "column" ou "grid"';
+const LAYOUT_TYPE_EXPECTED = 'expected "none", "row", "column" or "grid"';
 
 const checkLayoutType: Check = (v, p, out) => {
   if (v !== 'none' && v !== 'row' && v !== 'column' && v !== 'grid')
@@ -804,11 +804,11 @@ const GRID_TRACK_KEYS = ['columns', 'minColumnWidth', 'rows', 'minRowHeight'];
 const GRID_REJECTED_WRAP_KEYS = WRAP_KEYS.filter((key) => key !== 'lineGap');
 
 const GRID_TRACKS_MESSAGE =
-  'layout: informe exatamente uma entre columns, minColumnWidth, rows e minRowHeight';
+  'layout: give exactly one of columns, minColumnWidth, rows and minRowHeight';
 
 /** `minColumnWidth`/`minRowHeight`: número maior que 0. */
 const checkPositiveNumber = tokenCheck('number', (v, p, out) => {
-  if (!isFiniteNumber(v) || v <= 0) add(out, p, 'esperava número maior que 0');
+  if (!isFiniteNumber(v) || v <= 0) add(out, p, 'expected a number greater than 0');
 });
 
 /** `wrap` (`none`, `wrap` ou `wrap-reverse`), `lineGap`, `maxPerLine` e `maxLines`; as três últimas só valem com `wrap`. */
@@ -824,7 +824,7 @@ function checkWrapKeys(value: Rec, path: string, out: Ctx): void {
   for (const [key, check] of Object.entries(checks)) {
     if (!(key in value)) continue;
     checkExpr(value[key], join(path, key), check, out);
-    if (!wrapped) add(out, join(path, key), 'só vale com wrap');
+    if (!wrapped) add(out, join(path, key), 'only valid with wrap');
   }
 }
 
@@ -849,7 +849,7 @@ function checkLayoutFlow(value: Rec, path: string, out: Ctx): void {
   if (isExprObject(value.type)) checkTrackKeys(value, path, out);
   else
     for (const key of GRID_TRACK_KEYS)
-      if (key in value) add(out, join(path, key), 'só vale em layout grid');
+      if (key in value) add(out, join(path, key), 'only valid in a grid layout');
   if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
   if ('padding' in value)
     checkExpr(value.padding, join(path, 'padding'), checkPadding, out);
@@ -921,7 +921,7 @@ function checkGridLayout(value: Rec, path: string, out: Ctx): void {
     out,
   );
   for (const key of GRID_REJECTED_WRAP_KEYS)
-    if (key in value) add(out, join(path, key), 'não vale em layout grid');
+    if (key in value) add(out, join(path, key), 'not valid in a grid layout');
   if (!trackKeysAreValid(value)) add(out, path, GRID_TRACKS_MESSAGE);
   checkTrackKeys(value, path, out);
   for (const key of ['gap', 'lineGap'])
@@ -936,11 +936,11 @@ function checkGridLayout(value: Rec, path: string, out: Ctx): void {
 }
 
 function checkLayout(value: unknown, path: string, out: Ctx): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  if (!isRecord(value)) return add(out, path, 'expected an object');
   if (value.type === 'none') return checkNoneLayout(value, path, out);
   if (value.type === 'grid') return checkGridLayout(value, path, out);
   if (value.type === 'column' && value.align === 'baseline')
-    add(out, join(path, 'align'), 'baseline só vale em row');
+    add(out, join(path, 'align'), 'baseline is only valid in row');
   const at = join(path, 'type');
   if (isExprObject(value.type)) checkExpr(value.type, at, checkLayoutType, out);
   else if (value.type !== 'row' && value.type !== 'column')
@@ -951,7 +951,7 @@ function checkLayout(value: unknown, path: string, out: Ctx): void {
 function checkViewBox(value: unknown, path: string, out: Ctx): void {
   const ok = (n: unknown): boolean => isFiniteNumber(n) && n > 0;
   if (!Array.isArray(value) || value.length !== 2 || !value.every(ok))
-    add(out, path, 'esperava [largura, altura] com números positivos');
+    add(out, path, 'expected [width, height] with positive numbers');
 }
 
 /** Chaves de um trecho de texto rico (`runs[i]`). */
@@ -976,15 +976,15 @@ const checkRunPadding = tokenCheck('number', (v, p, out) => {
   add(
     out,
     p,
-    'esperava número ou lista [vertical, horizontal] de números (maiores ou iguais a 0)',
+    'expected a number or a list [vertical, horizontal] of numbers (greater than or equal to 0)',
   );
 });
 
 /** Um trecho de `runs`: `text` obrigatório e o estilo, cada chave com literal ou expressão. */
 function checkRun(value: unknown, path: string, out: Ctx): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto (trecho)');
+  if (!isRecord(value)) return add(out, path, 'expected an object (run)');
   checkKeys(value, RUN_KEYS, path, out);
-  if (!('text' in value)) add(out, join(path, 'text'), 'campo obrigatório');
+  if (!('text' in value)) add(out, join(path, 'text'), 'required field');
   const specs: Record<string, Check> = {
     text: checkTextOrNumber,
     weight: checkWeight,
@@ -1003,7 +1003,7 @@ function checkRun(value: unknown, path: string, out: Ctx): void {
 
 function checkRuns(value: unknown, path: string, out: Ctx): void {
   if (!Array.isArray(value) || value.length === 0)
-    return add(out, path, 'esperava lista não vazia de trechos');
+    return add(out, path, 'expected a non-empty list of runs');
   value.forEach((run: unknown, i) => checkRun(run, `${path}[${i}]`, out));
 }
 
@@ -1011,8 +1011,8 @@ function checkRuns(value: unknown, path: string, out: Ctx): void {
 function checkTextNode(value: Rec, path: string, out: Ctx): void {
   const hasText = 'text' in value;
   const hasRuns = 'runs' in value;
-  if (hasText && hasRuns) add(out, path, 'text e runs juntos: use um ou outro');
-  else if (!hasText && !hasRuns) add(out, join(path, 'text'), 'campo obrigatório');
+  if (hasText && hasRuns) add(out, path, 'text and runs together: use one or the other');
+  else if (!hasText && !hasRuns) add(out, join(path, 'text'), 'required field');
   if (hasText) checkExpr(value.text, join(path, 'text'), checkTextOrNumber, out);
   if (hasRuns) checkRuns(value.runs, join(path, 'runs'), out);
   if ('font' in value) checkFont(value.font, join(path, 'font'), out);
@@ -1024,13 +1024,13 @@ function checkTextNode(value: Rec, path: string, out: Ctx): void {
 /** `baselinePadding`: `top` e `bottom` em px ≥ 0; o `top` não combina com `font.verticalAlign` literal. */
 function checkBaselinePadding(node: Rec, path: string, out: Ctx): void {
   const value = node.baselinePadding;
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  if (!isRecord(value)) return add(out, path, 'expected an object');
   checkKeys(value, ['top', 'bottom'], path, out);
   for (const key of ['top', 'bottom'])
     if (key in value) checkExpr(value[key], join(path, key), checkNonNegative, out);
   const align = isRecord(node.font) ? node.font.verticalAlign : undefined;
   if ('top' in value && typeof align === 'string')
-    add(out, join(path, 'top'), 'não combina com verticalAlign');
+    add(out, join(path, 'top'), 'does not combine with verticalAlign');
 }
 
 /** Que quadro contém o nó: decide onde `span` e `weight` valem. */
@@ -1056,7 +1056,7 @@ function acceptsLayout(type: string): boolean {
   return type === 'slot' || type === 'repeat';
 }
 
-const WEIGHT_MESSAGE = 'weight: só vale em filho fill no eixo principal de row ou column';
+const WEIGHT_MESSAGE = 'weight: only valid on a fill child on the main axis of a row or column';
 
 /** O `weight` literal vale: pai `row`/`column` (ou incerto) e filho `fill` no eixo principal. */
 function weightApplies(value: Rec, type: string, parent: ParentKind): boolean {
@@ -1079,7 +1079,7 @@ function checkSpanWeight(
     const at = join(path, 'span');
     checkExpr(value.span, at, checkPositiveInteger, out);
     if (!isExprObject(value.span) && parent !== 'grid' && parent !== 'unknown')
-      add(out, at, 'span: só vale em filho de layout grid');
+      add(out, at, 'span: only valid on a child of a grid layout');
   }
   if ('weight' in value) {
     const at = join(path, 'weight');
@@ -1095,13 +1095,13 @@ function checkNode(
   out: Ctx,
   parent: ParentKind = 'none',
 ): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto (nó)');
+  if (!isRecord(value)) return add(out, path, 'expected an object (node)');
   const type = value.type;
   if (typeof type !== 'string' || !(NODE_TYPES as readonly string[]).includes(type)) {
     add(
       out,
       join(path, 'type'),
-      `tipo de nó desconhecido: ${JSON.stringify(type)} (esperava ${NODE_TYPES.join(', ')})`,
+      `unknown node type: ${JSON.stringify(type)} (expected ${NODE_TYPES.join(', ')})`,
     );
     return;
   }
@@ -1133,17 +1133,17 @@ function checkNode(
   for (const key of ['children', 'layout']) {
     if (acceptsLayout(type) && key === 'layout') continue;
     if (type !== 'frame' && key in value)
-      add(out, join(path, key), `só nós do tipo frame aceitam ${key} (este é ${type})`);
+      add(out, join(path, key), `only nodes of type frame accept ${key} (this is ${type})`);
   }
   for (const key of Object.keys(value)) {
     if (acceptsLayout(type) && key === 'layout') continue;
     if (type !== 'frame' && (key === 'children' || key === 'layout')) continue;
     if (type === 'repeat' && REPEAT_REJECTED_KEYS.includes(key)) {
-      add(out, join(path, key), `não vale em repeat; o desenho é do template (${key})`);
+      add(out, join(path, key), `not valid in a repeat; the drawing belongs to the template (${key})`);
       continue;
     }
     if (!BASE_KEYS.includes(key) && !extra[type]?.includes(key))
-      add(out, join(path, key), `chave desconhecida: ${key}`);
+      add(out, join(path, key), `unknown key: ${key}`);
   }
 
   if ('name' in value && type !== 'icon')
@@ -1169,7 +1169,7 @@ function checkNode(
       if ('layout' in value) checkLayout(value.layout, join(path, 'layout'), out);
       if ('children' in value) {
         const children = join(path, 'children');
-        if (!Array.isArray(value.children)) add(out, children, 'esperava lista de nós');
+        if (!Array.isArray(value.children)) add(out, children, 'expected a list of nodes');
         else
           value.children.forEach((c: unknown, i) =>
             checkNode(c, `${children}[${i}]`, out, layoutParent(value.layout)),
@@ -1181,9 +1181,9 @@ function checkNode(
       checkTextNode(value, path, out);
       return;
     case 'path':
-      if (!('d' in value)) add(out, join(path, 'd'), 'campo obrigatório');
+      if (!('d' in value)) add(out, join(path, 'd'), 'required field');
       else checkExpr(value.d, join(path, 'd'), checkString, out);
-      if (!('viewBox' in value)) add(out, join(path, 'viewBox'), 'campo obrigatório');
+      if (!('viewBox' in value)) add(out, join(path, 'viewBox'), 'required field');
       else checkViewBox(value.viewBox, join(path, 'viewBox'), out);
       if ('fillRule' in value)
         oneOf(['nonzero', 'evenodd'])(value.fillRule, join(path, 'fillRule'), out);
@@ -1209,7 +1209,7 @@ function checkNode(
 
 /** `icon` (formatVersion 4): `name` obrigatório (texto ou expressão), `color` e `strokeWidth`. */
 function checkIconNode(value: Rec, path: string, out: Ctx): void {
-  if (!('name' in value)) add(out, join(path, 'name'), 'campo obrigatório');
+  if (!('name' in value)) add(out, join(path, 'name'), 'required field');
   else checkExpr(value.name, join(path, 'name'), checkString, out);
   if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('strokeWidth' in value)
@@ -1225,7 +1225,7 @@ function checkIconNode(value: Rec, path: string, out: Ctx): void {
  */
 function checkImage(value: Rec, path: string, out: Ctx): void {
   const at = join(path, 'src');
-  if (!('src' in value)) add(out, at, 'campo obrigatório');
+  if (!('src' in value)) add(out, at, 'required field');
   else {
     const src = value.src;
     if (typeof src === 'string') {
@@ -1233,11 +1233,11 @@ function checkImage(value: Rec, path: string, out: Ctx): void {
         allowHttp: false,
         allowLocalNetwork: true,
       });
-      if (!check.ok) add(out, at, `esperava URL https:// absoluta (${check.reason})`);
+      if (!check.ok) add(out, at, `expected an absolute https:// URL (${check.reason})`);
     } else if (isRecord(src) && Object.keys(src).length === 1 && '$field' in src) {
       checkFieldKey(src.$field, join(at, '$field'), out);
     } else {
-      add(out, at, 'src só aceita texto literal ou { "$field": "<campo>" }');
+      add(out, at, 'src only accepts literal text or { "$field": "<field>" }');
     }
   }
   if ('fit' in value)
@@ -1250,15 +1250,15 @@ function checkImage(value: Rec, path: string, out: Ctx): void {
 
 const checkRepeatCount = tokenCheck('number', (v, p, out) => {
   if (!isFiniteNumber(v) || v < 0 || !Number.isInteger(v))
-    add(out, p, 'esperava inteiro maior ou igual a 0');
+    add(out, p, 'expected an integer greater than or equal to 0');
 });
 
 /** `repeat`: exatamente um de `field` (as linhas de uma `table`) e `count` (uma contagem, v4). */
 function checkRepeatSource(value: Rec, path: string, out: Ctx): void {
   const hasField = value.field !== undefined;
   const hasCount = value.count !== undefined;
-  if (hasField && hasCount) add(out, path, 'use count ou field, não os dois');
-  else if (!hasField && !hasCount) add(out, join(path, 'field'), 'campo obrigatório');
+  if (hasField && hasCount) add(out, path, 'use count or field, not both');
+  else if (!hasField && !hasCount) add(out, join(path, 'field'), 'required field');
   if (hasField) checkFieldKey(value.field, join(path, 'field'), out);
   if (hasCount) checkExpr(value.count, join(path, 'count'), checkRepeatCount, out);
 }
@@ -1267,14 +1267,14 @@ function checkRepeatSource(value: Rec, path: string, out: Ctx): void {
 function checkRepeatLayout(value: Rec, path: string, out: Ctx): void {
   checkLayout(value.layout, join(path, 'layout'), out);
   if ('direction' in value || 'gap' in value)
-    add(out, path, 'repeat.layout: não combina com direction nem gap');
+    add(out, path, 'repeat.layout: does not combine with direction or gap');
   if (value.distribute === 'fill' && layoutParent(value.layout) === 'grid')
-    add(out, join(path, 'distribute'), 'distribute: não vale com layout grid');
+    add(out, join(path, 'distribute'), 'distribute: not valid with a grid layout');
   for (const key of WRAP_KEYS)
     if (key in value)
-      add(out, join(path, key), `repeat.layout: a chave vai dentro de layout (${key})`);
+      add(out, join(path, key), `repeat.layout: the key goes inside layout (${key})`);
   if (isRecord(value.layout) && value.layout.type === 'none')
-    add(out, join(path, 'layout.type'), 'repeat.layout: use row, column ou grid');
+    add(out, join(path, 'layout.type'), 'repeat.layout: use row, column or grid');
 }
 
 /** `repeat`: o campo `table`, a direção, o espaço e o `template` (um quadro, sem `repeat` nem `slot`). */
@@ -1288,14 +1288,14 @@ function checkRepeat(value: Rec, path: string, out: Ctx): void {
   checkWrapKeys(value, path, out);
   if ('layout' in value) checkRepeatLayout(value, path, out);
   const at = join(path, 'template');
-  if (!('template' in value)) return add(out, at, 'campo obrigatório');
+  if (!('template' in value)) return add(out, at, 'required field');
   const template = value.template;
   if (isRecord(template) && template.type !== 'frame') {
-    add(out, join(at, 'type'), 'o template de uma linha deve ser do tipo "frame"');
+    add(out, join(at, 'type'), 'the template of a row must be of type "frame"');
   }
   checkNode(template, at, out, repeatParent(value));
   for (const nested of forbiddenInRepeat(template, at)) {
-    add(out, nested.path, `${nested.type} não é permitido dentro de um repeat`);
+    add(out, nested.path, `${nested.type} is not allowed inside a repeat`);
   }
 }
 
@@ -1319,7 +1319,7 @@ function forbiddenInRepeat(
 }
 
 /** O erro de toda chave, nó ou expressão que só existe na formatVersion 4. */
-const V4_ONLY_MESSAGE = 'só é permitido com formatVersion 4';
+const V4_ONLY_MESSAGE = 'only allowed with formatVersion 4';
 
 /** Caminhos (cadeias de chaves) das chaves que só existem na formatVersion 4, em qualquer nó. */
 const V4_NODE_KEYS: readonly (readonly string[])[] = [
@@ -1477,12 +1477,12 @@ function gapNodeProblem(
   inRepeat: boolean,
   known: { all: Set<string>; direct: Set<string> },
 ): string | undefined {
-  if (!known.all.has(target)) return `nó não encontrado: ${target}`;
-  if (inRepeat) return 'stroke.gap não pode ser usado dentro de um repeat';
+  if (!known.all.has(target)) return `node not found: ${target}`;
+  if (inRepeat) return 'stroke.gap cannot be used inside a repeat';
   if (templateNodeName(node) === target)
-    return `stroke.gap.node não pode citar o próprio nó: ${target}`;
+    return `stroke.gap.node cannot name the node itself: ${target}`;
   if (!known.direct.has(target))
-    return `stroke.gap.node não pode citar um nó dentro de um repeat: ${target}`;
+    return `stroke.gap.node cannot name a node inside a repeat: ${target}`;
   return undefined;
 }
 
@@ -1600,12 +1600,12 @@ function linesIssues(template: unknown): ComponentIssue[] {
   scanLines(template, 'template', { owner: undefined, chain: [] }, scan);
   for (const { name, at, context } of scan.citations) {
     const found = scan.texts.get(name);
-    if (found === undefined) addIssue(out, at, `nó text "${name}" não existe`);
-    else if (found.count > 1) addIssue(out, at, `mais de um nó text "${name}"`);
+    if (found === undefined) addIssue(out, at, `text node "${name}" does not exist`);
+    else if (found.count > 1) addIssue(out, at, `more than one text node "${name}"`);
     else if (context.owner === name)
-      addIssue(out, at, 'o nó não pode depender das próprias linhas');
+      addIssue(out, at, 'the node cannot depend on its own lines');
     else if (!found.chain.every((repeat, i) => context.chain[i] === repeat))
-      addIssue(out, at, `nó text "${name}" está dentro de um repeat`);
+      addIssue(out, at, `text node "${name}" is inside a repeat`);
   }
   return out;
 }
@@ -1658,7 +1658,7 @@ function indexIssues(version: unknown, template: unknown): ComponentIssue[] {
   const v4 = typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY;
   const flag = (at: string, inRepeat: boolean): void => {
     if (!v4) addIssue(out, at, V4_ONLY_MESSAGE);
-    else if (!inRepeat) addIssue(out, at, '$index só vale dentro de um repeat');
+    else if (!inRepeat) addIssue(out, at, '$index is only valid inside a repeat');
   };
   const walk = (node: unknown, at: string, inRepeat: boolean): void => {
     if (Array.isArray(node))
@@ -1693,7 +1693,7 @@ function anchorFieldIssues(version: unknown, template: unknown): ComponentIssue[
         const where = `${here}${cited.suffix}`;
         if (!v4) addIssue(out, where, V4_ONLY_MESSAGE);
         else if (!(ANCHOR_FIELDS as readonly string[]).includes(cited.name))
-          addIssue(out, where, `campo não existe: ${cited.name}`);
+          addIssue(out, where, `field does not exist: ${cited.name}`);
       }
       walk(value, here);
     }
@@ -1787,7 +1787,7 @@ function checkDimensions(
   out: Ctx,
 ): { width: number; height: number } | null {
   if (!isRecord(value)) {
-    add(out, path, 'esperava objeto { width, height }');
+    add(out, path, 'expected an object { width, height }');
     return null;
   }
   checkKeys(value, ['width', 'height'], path, out);
@@ -1795,7 +1795,7 @@ function checkDimensions(
   for (const key of ['width', 'height']) {
     const v = value[key];
     if (!isFiniteNumber(v) || v <= 0) {
-      add(out, join(path, key), 'esperava número positivo');
+      add(out, join(path, key), 'expected a positive number');
       valid = false;
     }
   }
@@ -1824,14 +1824,14 @@ const checkSizingAxis: Check = (value, path, out) => {
   add(
     out,
     path,
-    'esperava número maior ou igual a 0, "fill", "hug", "min-content" ou "max-content"',
+    'expected a number greater than or equal to 0, "fill", "hug", "min-content" or "max-content"',
   );
 };
 
 /** O `sizing` é avaliado antes de medir: `$size` e `$lines` não existem ainda. */
 const SIZING_FORBIDDEN: Readonly<Record<string, string>> = {
-  $size: '$size não vale em sizing',
-  $lines: '$lines não vale em sizing',
+  $size: '$size is not valid in sizing',
+  $lines: '$lines is not valid in sizing',
 };
 
 function sizingForbiddenOps(value: unknown, path: string, out: Ctx): void {
@@ -1854,7 +1854,7 @@ function sizingForbiddenOps(value: unknown, path: string, out: Ctx): void {
  * expressão que dá um deles (avaliada com os valores da instância).
  */
 function checkSizing(value: unknown, path: string, v4: boolean, out: Ctx): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto { width?, height? }');
+  if (!isRecord(value)) return add(out, path, 'expected an object { width?, height? }');
   checkKeys(value, ['width', 'height'], path, out);
   for (const key of ['width', 'height']) {
     if (!(key in value)) continue;
@@ -1871,25 +1871,25 @@ function checkSizing(value: unknown, path: string, v4: boolean, out: Ctx): void 
 
 /** `screen` (só v4, só na raiz): objeto com `anchor` opcional, de `SCREEN_ANCHORS`. */
 function checkScreen(value: unknown, path: string, out: Ctx): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  if (!isRecord(value)) return add(out, path, 'expected an object');
   checkKeys(value, ['anchor'], path, out);
   if ('anchor' in value) oneOf(SCREEN_ANCHORS)(value.anchor, join(path, 'anchor'), out);
 }
 
 /** `anchor` (só v4, só na raiz): `side`, `align` e `offset { main, cross }`, todos opcionais. */
 function checkAnchor(value: unknown, path: string, out: Ctx): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  if (!isRecord(value)) return add(out, path, 'expected an object');
   checkKeys(value, ['side', 'align', 'offset'], path, out);
   if ('side' in value) oneOf(ANCHOR_SIDES)(value.side, join(path, 'side'), out);
   if ('align' in value) oneOf(ANCHOR_ALIGNS)(value.align, join(path, 'align'), out);
   if (!('offset' in value)) return;
   const at = join(path, 'offset');
   const offset = value.offset;
-  if (!isRecord(offset)) return add(out, at, 'esperava objeto');
+  if (!isRecord(offset)) return add(out, at, 'expected an object');
   checkKeys(offset, ['main', 'cross'], at, out);
   for (const axis of ['main', 'cross'])
     if (axis in offset && !isFiniteNumber(offset[axis]))
-      add(out, join(at, axis), 'esperava número');
+      add(out, join(at, axis), 'expected a number');
 }
 
 /** Os problemas do arquivo e o `template` sem `let` nem `$var` (o que o motor lê). */
@@ -1966,7 +1966,7 @@ function collectIssues(
   const issues: ComponentIssue[] = [];
   const out: Ctx = { issues, refs };
   if (!isRecord(input)) {
-    add(out, 'componente', 'esperava objeto');
+    add(out, 'component', 'expected an object');
     return issues;
   }
   checkKeys(input, ROOT_KEYS, '', out);
@@ -1978,23 +1978,23 @@ function collectIssues(
     add(
       out,
       'formatVersion',
-      `esperava ${COMPONENT_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${COMPONENT_FORMAT_VERSIONS.at(-1)}`,
+      `expected ${COMPONENT_FORMAT_VERSIONS.slice(0, -1).join(', ')} or ${COMPONENT_FORMAT_VERSIONS.at(-1)}`,
     );
 
   if (typeof input.id !== 'string' || !ID_PATTERN.test(input.id))
-    add(out, 'id', 'esperava texto no padrão ^[a-z0-9][a-z0-9-_]*$');
+    add(out, 'id', 'expected text matching ^[a-z0-9][a-z0-9-_]*$');
   if (typeof input.name !== 'string' || input.name.trim() === '')
-    add(out, 'name', 'esperava texto não vazio');
+    add(out, 'name', 'expected non-empty text');
   if ('description' in input) checkString(input.description, 'description', out);
 
   let size: { width: number; height: number } | null = null;
-  if (!('size' in input)) add(out, 'size', 'campo obrigatório');
+  if (!('size' in input)) add(out, 'size', 'required field');
   else size = checkDimensions(input.size, 'size', out);
 
   if ('minSize' in input) {
     const min = checkDimensions(input.minSize, 'minSize', out);
     if (min && size && (min.width > size.width || min.height > size.height))
-      add(out, 'minSize', 'não pode ser maior que size');
+      add(out, 'minSize', 'cannot be greater than size');
   }
 
   if ('sizing' in input)
@@ -2018,7 +2018,7 @@ function collectIssues(
   }
 
   if ('preview' in input) {
-    if (!isRecord(input.preview)) add(out, 'preview', 'esperava objeto');
+    if (!isRecord(input.preview)) add(out, 'preview', 'expected an object');
     else
       for (const [key, v] of Object.entries(input.preview)) {
         if (Array.isArray(v)) checkPreviewRows(v, join('preview', key), out);
@@ -2026,29 +2026,29 @@ function collectIssues(
           add(
             out,
             join('preview', key),
-            'esperava texto, número ou null (ou uma lista de linhas, num campo table)',
+            'expected text, a number or null (or a list of rows, in a table field)',
           );
       }
   }
 
   if (!('template' in input)) {
-    add(out, 'template', 'campo obrigatório');
+    add(out, 'template', 'required field');
   } else if (inspectTemplate) {
     const type = isRecord(template) ? template.type : undefined;
     if (type !== 'frame' && (NODE_TYPES as readonly unknown[]).includes(type))
-      add(out, 'template.type', 'a raiz do template deve ser do tipo "frame"');
+      add(out, 'template.type', 'the root of the template must be of type "frame"');
     if (
       typeof version === 'number' &&
       version >= COMPONENT_FORMAT_VERSION_FIDELITY &&
       isRecord(template) &&
       'rotation' in template
     )
-      add(out, 'template.rotation', 'não vale na raiz');
+      add(out, 'template.rotation', 'not valid on the root');
     checkNode(template, 'template', out);
     checkGapNodes(template, out);
     if (version === 1) {
       for (const node of nodesOfTypes(template, 'template', ['repeat'])) {
-        add(out, node.path, 'o nó repeat só existe na formatVersion 2');
+        add(out, node.path, 'the repeat node only exists in formatVersion 2');
       }
     }
     issues.push(
@@ -2070,7 +2070,7 @@ function collectIssues(
     issues.push(...anchorFieldIssues(version, template));
     if (version === 1 || version === 2) {
       for (const node of nodesOfTypes(template, 'template', ['image'])) {
-        add(out, node.path, 'o nó image só existe na formatVersion 3');
+        add(out, node.path, 'the image node only exists in formatVersion 3');
       }
     }
     issues.push(...iconVersionIssues(version, template));
@@ -2082,10 +2082,10 @@ function collectIssues(
 function checkPreviewRows(rows: unknown[], path: string, out: Ctx): void {
   rows.forEach((row, i) => {
     const at = `${path}[${i}]`;
-    if (!isRecord(row)) return add(out, at, 'esperava objeto (uma linha)');
+    if (!isRecord(row)) return add(out, at, 'expected an object (a row)');
     for (const [column, v] of Object.entries(row)) {
       if (v !== null && typeof v !== 'string' && !isFiniteNumber(v))
-        add(out, join(at, column), 'esperava texto, número ou null');
+        add(out, join(at, column), 'expected text, a number or null');
     }
   });
 }
@@ -2117,7 +2117,7 @@ function familyWarning(holder: unknown, path: string): ComponentIssue[] {
   return [
     issueOf(
       join(path, 'family'),
-      `família de fonte inválida para o CSS (${JSON.stringify(family)}): o texto cai em sans-serif`,
+      `font family not valid for CSS (${JSON.stringify(family)}): the text falls back to sans-serif`,
     ),
   ];
 }

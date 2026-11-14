@@ -26,55 +26,56 @@ import {
 
 export { isPackagePath };
 
-/** "só é permitido com formatVersion N" (os N sem mensagem própria no catálogo), com o código. */
+/** "só é permitido com formatVersion N" (the Ns without their own message in the catalog), with the code. */
 function onlyFormat(version: number): SpecMsg {
   return specMsg('spec.onlyFormat', { version: String(version) });
 }
 
-// Formato da especialização (`formatVersion` 1 a 16), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
-// versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
-// externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
-// biblioteca: o pacote (pasta da especialização) com `component`, `doc` e `examples` nos
-// tipos, `fonts`, `origins` (origens executáveis, com `slot`, `ignore` e `path` nas `sources`)
-// e `migrations` (o contrato de versão); a versão 5 é a 4 mais `repo` em `platforms[]` (o
-// repositório da biblioteca na plataforma, onde estão os arquivos citados nos `path` do `code`);
-// a versão 6 é a 5 mais `containers` (presets de tamanho do diálogo Novo container); a versão 7
-// é a 6 mais `floating` no tipo (a instância é uma marcação flutuante, como uma nota),
-// `appliesTo` no tipo (onde a anotação se aplica: marcação, seta ou ambas) e `ref` como tipo
-// de coluna de `table` (a lista de referências como dado, ME4); a versão 8 é a 7 mais
-// `suggestions` e `linkedRef` em campo e coluna `string` (vocabulário sugerido ao digitar, sem
-// restringir o valor; `linkedRef` liga o texto a um campo/coluna `ref` do mesmo tipo/tabela); a
-// versão 9 é a 8 mais `variants` na entrada de `code` (um campo `enum` do tipo escolhe, por
-// valor, o composable/classe/arquivo: `resolveCode` em `codeVariants.ts` aplica o caso); a
-// versão 10 é a 9 mais `notices` (avisos `removed`, `deprecated`, `diverges` ou `pending` no
-// tipo, no campo e na coluna de `table`: informam, não geram pendência; ver `notices.ts`); a
-// versão 11 é a 10 mais os filhos por camada e grupo (`allowedChildren` aceita cláusulas
-// `{ layer, groups? }` e a camada e o tipo têm `groups`; o resolvedor é `specChildren.ts`), os
-// papéis no vínculo (`childRoles` e `childRolesLabel`) e o documento em repositório externo
-// (`docRepos` na raiz e `doc` como objeto `{ repo, path }`); a versão 12 é a 11 mais os passos
-// de papel em `migrations` (`rename-role`, `remove-role` e `set-role`); a versão 13 é a 12 mais
-// `allowedChildren` com tipos da camada do próprio dono (vínculo entre anotações da mesma camada).
-// a versão 14 é a 13 mais `accepts.annotations` (a anotação inteira como alvo de um campo ou coluna
-// `ref`); a versão 15 é a 14 mais tokens, ícones, `structural` e `origins[].kind` (`tree` ou
-// `measured`: a origem medida, só com `system`, `kind`, `name` e `booleans`; a árvore vem da op
-// `import_measured` do MCP); a versão 16 é a 15 mais a ficha de assinatura (etapa #1079): `fieldModels` na
-// raiz e, no `code` (e em cada caso de `variants`), `signature`, `ignore`, `calls` e `formats`, com
-// `params` por caminho (`colors.containerColor`) ou posicional (`#0`), mais `signature` nas `sources`
-// do tipo (ver `specSignature.ts`).
-// O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
-// não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
+// Specialization format (`formatVersion` 1 to 16), see docs/SPEC-FORMAT.md. Version 2 adds
+// `platforms` and `code`; version 1 is 2 without platforms and without `code`; version 3 is 2
+// plus `sources` (external origins on types and fields, including `table` columns); version 4 is
+// 3 plus the library: the package (the specialization folder) with `component`, `doc` and
+// `examples` on the types, `fonts`, `origins` (executable origins, with `slot`, `ignore` and
+// `path` in the `sources`) and `migrations` (the version contract); version 5 is 4 plus `repo`
+// in `platforms[]` (the library repository on the platform, where the files cited in the `code`
+// `path`s are); version 6 is 5 plus `containers` (size presets of the New container dialog);
+// version 7 is 6 plus `floating` on the type (the instance is a floating marking, like a note),
+// `appliesTo` on the type (where the annotation applies: marking, arrow or both) and `ref` as a
+// `table` column type (the list of references as data, ME4); version 8 is 7 plus `suggestions`
+// and `linkedRef` on `string` fields and columns (vocabulary suggested while typing, without
+// restricting the value; `linkedRef` links the text to a `ref` field/column of the same
+// type/table); version 9 is 8 plus `variants` in the `code` entry (an `enum` field of the type
+// picks, by value, the composable/class/file: `resolveCode` in `codeVariants.ts` applies the
+// case); version 10 is 9 plus `notices` (`removed`, `deprecated`, `diverges` or `pending`
+// notices on the type, the field and the `table` column: they inform, they do not generate an
+// issue; see `notices.ts`); version 11 is 10 plus children by layer and group
+// (`allowedChildren` accepts `{ layer, groups? }` clauses and the layer and the type have
+// `groups`; the resolver is `specChildren.ts`), roles in the link (`childRoles` and
+// `childRolesLabel`) and the document in an external repository (`docRepos` at the root and
+// `doc` as a `{ repo, path }` object); version 12 is 11 plus the role steps in `migrations`
+// (`rename-role`, `remove-role` and `set-role`); version 13 is 12 plus `allowedChildren` with
+// types of the owner's own layer (link between annotations of the same layer).
+// Version 14 is 13 plus `accepts.annotations` (the whole annotation as the target of a `ref`
+// field or column); version 15 is 14 plus tokens, icons, `structural` and `origins[].kind`
+// (`tree` or `measured`: the measured origin, only with `system`, `kind`, `name` and `booleans`;
+// the tree comes from the MCP `import_measured` op); version 16 is 15 plus the signature sheet
+// (stage #1079): `fieldModels` at the root and, in the `code` (and in each `variants` case),
+// `signature`, `ignore`, `calls` and `formats`, with `params` by path (`colors.containerColor`)
+// or positional (`#0`), plus `signature` in the type's `sources` (see `specSignature.ts`).
+// The zod here is the source of truth; `docs/spec.schema.json` mirrors it for whoever does not
+// use TypeScript. No browser APIs: reusable by the MCP server.
 //
-// Campo removido (etapa 9, schema v9 do projeto): o tipo de campo `REMOVED_FIELD_TYPE` (onde
-// a instância foi implementada) saiu do formato. Um arquivo antigo que o declara continua
-// válido: o campo é lido e ignorado (sai do tipo, e os `params` do `code` que o citam também),
-// e quem importa recebe a lista em `ignored` para avisar (`specWarnings`).
+// Removed field (stage 9, project schema v9): the field type `REMOVED_FIELD_TYPE` (where the
+// instance was implemented) left the format. An old file that declares it stays valid: the field
+// is read and ignored (it leaves the type, and so do the `code` `params` that cite it), and
+// whoever imports receives the list in `ignored` to warn about it (`specWarnings`).
 
 export const SPEC_FORMAT = 'mapping-spec';
-/** Valor usado antes do renome do produto: a importação ainda o aceita. */
+/** Value used before the product rename: the import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
-/** Versão atual do formato (a que a documentação e os exemplos novos usam). */
+/** Current version of the format (the one the documentation and the new examples use). */
 export const SPEC_FORMAT_VERSION = 16;
-/** Versões aceitas na importação. */
+/** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
 ] as const;
@@ -83,43 +84,41 @@ export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
 export type FieldType = SimpleFieldType | 'table' | 'ref';
 
-/** Tipo de campo que saiu do formato na etapa 9: lido e ignorado (ver o cabeçalho). */
+/** Field type that left the format in stage 9: read and ignored (see the header). */
 export const REMOVED_FIELD_TYPE = 'codeRef';
 
-/** Campo de um tipo removido do formato, ignorado na leitura. */
+/** Field of a type removed from the format, ignored on read. */
 export interface IgnoredSpecField {
-  /** Caminho do campo no arquivo (ex: `layers[3].annotationTypes[0].fields[2]`). */
+    /** Path of the field in the file (e.g. `layers[3].annotationTypes[0].fields[2]`). */
   readonly path: string;
   readonly typeId: string;
   readonly key: string;
 }
 
-/**
- * Repositório da biblioteca numa plataforma (só `formatVersion` 5): onde estão os arquivos
- * citados nos `path` do `code`.
- */
+ * Library repository on a platform (`formatVersion` 5 only): where the files cited in the
+ * `code` `path`s are.
 export interface SpecRepo {
-  /** Endereço do repositório (`http(s)://`). */
+    /** Repository address (`http(s)://`). */
   url: string;
-  /** Modelo do endereço de um arquivo, com `{path}` (e `{line}` opcional); sem ele, sem link. */
+    /** Template of a file address, with `{path}` (and optional `{line}`); without it, no link. */
   urlTemplate?: string;
-  /** Revisão (tag, branch ou commit) a que o `code` corresponde; informativa. */
+    /** Revision (tag, branch or commit) that the `code` corresponds to; informational. */
   ref?: string;
 }
 
-/** Plataforma declarada pela especialização: um alvo de código (um app, o BFF). */
+/** Platform declared by the specialization: a code target (an app, the BFF). */
 export interface SpecPlatform {
   id: string;
   name: string;
-  /** Informativo: ajuda o agente a saber em que linguagem o código está. */
+    /** Informational: helps the agent know what language the code is in. */
   language?: string;
-  /** Repositório da biblioteca nessa plataforma (só `formatVersion` 5). */
+    /** Library repository on that platform (`formatVersion` 5 only). */
   repo?: SpecRepo;
 }
 
 /**
- * O que um valor da variante muda no `code` (só `formatVersion` 9): `symbol`, `path` e `notes`
- * substituem os da base; `params` e `values` se somam aos da base, chave por chave.
+ * What a variant value changes in the `code` (`formatVersion` 9 only): `symbol`, `path` and
+ * `notes` replace the base ones; `params` and `values` are added to the base ones, key by key.
  */
 export interface SpecCodeCase {
   symbol?: string;
@@ -127,83 +126,84 @@ export interface SpecCodeCase {
   params?: Record<string, string>;
   values?: Record<string, Record<string, string>>;
   notes?: string;
-  /** Ficha de assinatura do caso (só `formatVersion` 16); substitui a da base. */
+    /** Signature sheet of the case (`formatVersion` 16 only); replaces the base one. */
   signature?: string;
-  /** Parâmetros fora de propósito (só `formatVersion` 16); substitui o da base. */
+    /** Parameters left out on purpose (`formatVersion` 16 only); replaces the base one. */
   ignore?: string[];
-  /** Fábricas (só `formatVersion` 16): se soma, chave por chave, às da base. */
+    /** Factories (`formatVersion` 16 only): added, key by key, to the base ones. */
   calls?: Record<string, string>;
-  /** Moldes com `{value}` (só `formatVersion` 16): se soma, chave por chave, aos da base. */
+    /** Templates with `{value}` (`formatVersion` 16 only): added, key by key, to the base ones. */
   formats?: Record<string, string>;
 }
 
-/** Um campo `enum` do tipo escolhe, por valor, o caso aplicado sobre a base do `code`. */
+/** An `enum` field of the type picks, by value, the case applied over the `code` base. */
 export interface SpecCodeVariants {
-  /** Chave de um campo `enum` do tipo (nível de cima, nunca coluna de `table`). */
+    /** Key of an `enum` field of the type (top level, never a `table` column). */
   field: string;
-  /** Valor do campo (uma das `options`) → o que muda. */
+    /** Value of the field (one of the `options`) → what changes. */
   cases: Record<string, SpecCodeCase>;
 }
 
-/** Com que código se cria uma instância do tipo de anotação em uma plataforma. */
+/** The code that creates an instance of the annotation type on a platform. */
 export interface SpecCode {
-  /** O que se chama para criar a instância: composable, view, classe ou a função que gera o nó. */
+    /** What is called to create the instance: composable, view, class or the function that generates the node. */
   symbol: string;
-  /**
-   * Arquivo que define o símbolo, relativo à raiz do repositório da plataforma (sem
-   * linha). Vira link pelo `urlTemplate` e caminho local pelo `localPath` do repositório.
-   */
+    /**
+     * File that defines the symbol, relative to the root of the platform's repository (without a
+     * line). It becomes a link through the `urlTemplate` and a local path through the repository's
+     * `localPath`.
+     */
   path?: string;
-  /**
-   * Chave do campo do tipo → nome do parâmetro no código. Na `formatVersion` 16 o valor também pode
-   * ser um caminho (`colors.containerColor`: o argumento `containerColor` da fábrica de
-   * `calls.colors`) ou posicional (`#0`: o primeiro argumento sem nome); ver `codeParams.ts`.
-   */
+    /**
+     * Key of the type's field → parameter name in the code. In `formatVersion` 16 the value can
+     * also be a path (`colors.containerColor`: the `containerColor` argument of the `calls.colors`
+     * factory) or positional (`#0`: the first unnamed argument); see `codeParams.ts`.
+     */
   params?: Record<string, string>;
-  /** Chave de um campo `enum` → (valor no mapping → valor no código). */
+    /** Key of an `enum` field → (value in the mapping → value in the code). */
   values?: Record<string, Record<string, string>>;
   notes?: string;
-  /** Caminho da ficha `mapping-signature` no pacote (só `formatVersion` 16). */
+    /** Path of the `mapping-signature` sheet in the package (`formatVersion` 16 only). */
   signature?: string;
-  /** Nomes de parâmetro que ficam fora de propósito, sem aviso (só `formatVersion` 16). */
+    /** Parameter names left out on purpose, without a warning (`formatVersion` 16 only). */
   ignore?: string[];
-  /** Nome do parâmetro → símbolo da fábrica do argumento aninhado (só `formatVersion` 16). */
+    /** Parameter name → symbol of the nested argument's factory (`formatVersion` 16 only). */
   calls?: Record<string, string>;
-  /** Chave do campo → molde do valor, com `{value}` (`{value}.dp`; só `formatVersion` 16). */
+    /** Field key → value template, with `{value}` (`{value}.dp`; `formatVersion` 16 only). */
   formats?: Record<string, string>;
-  /** Variantes por valor de um campo `enum` (só `formatVersion` 9); ver `resolveCode`. */
+    /** Variants by value of an `enum` field (`formatVersion` 9 only); see `resolveCode`. */
   variants?: SpecCodeVariants;
 }
 
-/** `code` de um tipo de anotação, por id de plataforma. */
+/** `code` of an annotation type, by platform id. */
 export type SpecCodeMap = Record<string, SpecCode>;
 
 /**
- * Elemento de um sistema externo a que um tipo de anotação corresponde (v3), ex:
- * `{ system: "figma", name: "DS/Button" }`. Tem `id`, `name` ou os dois. `slot` e `ignore`
- * (v4) só valem em sistema declarado em `origins`.
+ * Element of an external system that an annotation type corresponds to (v3), e.g.:
+ * `{ system: "figma", name: "DS/Button" }`. It has `id`, `name` or both. `slot` and `ignore`
+ * (v4) only apply to a system declared in `origins`.
  */
 export interface SpecTypeSource {
   system: string;
   id?: string;
   name?: string;
-  /** Nome do slot do componente que recebe os filhos (v4, sistema executável). */
+    /** Name of the component slot that receives the children (v4, executable system). */
   slot?: string;
-  /**
-   * Props aceitas e não desenhadas (v4, sistema executável); com `signature`, também as que a
-   * importação deixa fora de propósito, sem aviso.
-   */
+    /**
+     * Props accepted and not drawn (v4, executable system); with `signature`, also the ones the
+     * import leaves out on purpose, without a warning.
+     */
   ignore?: string[];
-  /** Caminho da ficha `mapping-signature` do componente de design no pacote (só `formatVersion` 16). */
+    /** Path of the design component's `mapping-signature` sheet in the package (`formatVersion` 16 only). */
   signature?: string;
 }
 
 /**
- * Propriedade de origem de um campo (v3), ex: `{ system: "figma", name: "Style" }`.
- * `values` (só em `enum`) traduz o valor de origem para uma das `options`. Em sistema
- * declarado em `origins` (v4) vale `path` (o caminho do valor nas `props` do nó externo,
- * obrigatório) e `name` é só o nome de exibição; nos demais, `name` é obrigatório e `path`
- * proibido (a obrigatoriedade é regra de validação, não do tipo).
+ * Origin property of a field (v3), e.g.: `{ system: "figma", name: "Style" }`.
+ * `values` (`enum` only) translates the origin value into one of the `options`. In a system
+ * declared in `origins` (v4), `path` applies (the path of the value in the external node's
+ * `props`, required) and `name` is just the display name; in the others, `name` is required and
+ * `path` is forbidden (the requirement is a validation rule, not part of the type).
  */
 export interface SpecFieldSource {
   system: string;
@@ -212,24 +212,24 @@ export interface SpecFieldSource {
   values?: Record<string, string>;
 }
 
-/** Fonte tipográfica do pacote (v4): `file` é um caminho do pacote (`.ttf`, `.otf`, `.woff`, `.woff2`). */
+/** Typographic font of the package (v4): `file` is a package path (`.ttf`, `.otf`, `.woff`, `.woff2`). */
 export interface SpecFont {
   family: string;
   file: string;
-  /** Inteiro de 100 a 1000 ou faixa `"100 900"`. */
+    /** Integer from 100 to 1000 or range `"100 900"`. */
   weight?: number | string;
   style?: 'normal' | 'italic';
 }
 
-/** Uma linha de um campo `table` num exemplo: coluna → texto, número ou `null`. */
+/** A row of a `table` field in an example: column → text, number or `null`. */
 export type SpecExampleRow = Record<string, string | number | null>;
 
-/** Valor de um campo num exemplo: texto, número, `null` ou, num campo `table`, a lista de linhas. */
+/** Value of a field in an example: text, number, `null` or, in a `table` field, the list of rows. */
 export type SpecExampleValue = string | number | null | SpecExampleRow[];
 
 /**
- * Exemplo de um tipo (v4), em um de dois modos: `values` (valores dos campos do tipo) ou
- * `system` + `file` (o JSON de um nó de um sistema externo declarado em `origins`).
+ * Example of a type (v4), in one of two modes: `values` (values of the type's fields) or
+ * `system` + `file` (the JSON of a node of an external system declared in `origins`).
  */
 export interface SpecExample {
   name: string;
@@ -239,7 +239,7 @@ export interface SpecExample {
   file?: string;
 }
 
-/** Passo de migração do contrato de versão (v4); ver `docs/SPEC-FORMAT.md`. */
+/** Migration step of the version contract (v4); see `docs/SPEC-FORMAT.md`. */
 export type SpecMigrationStep =
   | { op: 'rename-type'; from: string; to: string }
   | { op: 'remove-type'; type: string; mode: 'convert' | 'delete' }
@@ -247,12 +247,12 @@ export type SpecMigrationStep =
   | { op: 'remove-field'; type: string; field: string }
   | { op: 'map-values'; type: string; field: string; values: Record<string, string> }
   | { op: 'fill-field'; type: string; field: string; default: string | number }
-  // Passos de papel do vínculo (só `formatVersion` 12); `type` é o tipo do dono.
+    // Role steps of the link (`formatVersion` 12 only); `type` is the owner's type.
   | { op: 'rename-role'; type: string; from: string; to: string }
   | { op: 'remove-role'; type: string; role: string; mode: 'clear' | 'unlink' }
   | { op: 'set-role'; type: string; role: string; childType?: string };
 
-/** Como ir da versão `from` do pacote até a `to` (v4). */
+/** How to go from version `from` of the package to `to` (v4). */
 export interface SpecMigration {
   from: number;
   to: number;
@@ -262,14 +262,14 @@ export interface SpecMigration {
 export interface SpecRefAccepts {
   tags?: string[];
   free?: boolean;
-  /**
-   * Anotação inteira como alvo (só `formatVersion` 14): ids de tipo ou cláusulas de camada e
-   * grupos da mesma especialização, a mesma sintaxe e o mesmo resolvedor do `allowedChildren`.
-   */
+    /**
+     * Whole annotation as the target (`formatVersion` 14 only): type ids or clauses of layer and
+     * groups of the same specialization, the same syntax and the same resolver as `allowedChildren`.
+     */
   annotations?: SpecAllowedChild[];
 }
 
-/** Tipos de aviso (v10), na ordem de exibição; a gravidade está em `notices.ts`. */
+/** Notice kinds (v10), in display order; the severity is in `notices.ts`. */
 export const SPEC_NOTICE_KINDS = [
   'removed',
   'deprecated',
@@ -278,13 +278,13 @@ export const SPEC_NOTICE_KINDS = [
 ] as const;
 export type SpecNoticeKind = (typeof SPEC_NOTICE_KINDS)[number];
 
-/** Aviso de um tipo, campo ou coluna (só `formatVersion` 10). */
+/** Notice of a type, field or column (`formatVersion` 10 only). */
 export interface SpecNotice {
   kind: SpecNoticeKind;
   message: string;
-  /** Data real `AAAA-MM-DD` desde quando o aviso vale. */
+    /** Real date `YYYY-MM-DD` since when the notice applies. */
   since?: string;
-  /** Referência livre (issue, ticket, link) que explica o aviso. */
+    /** Free reference (issue, ticket, link) that explains the notice. */
   ref?: string;
 }
 
@@ -294,20 +294,20 @@ interface SpecFieldBase {
   required?: boolean;
   description?: string;
   tags?: string[];
-  /** Propriedades de origem (`formatVersion` 3 em diante). */
+    /** Origin properties (`formatVersion` 3 onwards). */
   sources?: SpecFieldSource[];
-  /** Avisos do campo ou da coluna (só `formatVersion` 10). */
+    /** Notices of the field or the column (`formatVersion` 10 only). */
   notices?: SpecNotice[];
 }
 
-/** Campo simples (e coluna simples): texto, número, data ou enum. */
+/** Simple field (and simple column): text, number, date or enum. */
 export type SpecSimpleColumn =
   | (SpecFieldBase & {
       type: 'string';
       default?: string;
-      /** Vocabulário sugerido ao digitar (só `formatVersion` 8); não restringe o valor. */
+            /** Vocabulary suggested while typing (`formatVersion` 8 only); does not restrict the value. */
       suggestions?: string[];
-      /** Chave de um campo/coluna `ref` irmão cujos alvos também entram na lista (só `formatVersion` 8). */
+            /** Key of a sibling `ref` field/column whose targets also enter the list (`formatVersion` 8 only). */
       linkedRef?: string;
     })
   | (SpecFieldBase & { type: 'number'; default?: number })
@@ -315,8 +315,8 @@ export type SpecSimpleColumn =
   | (SpecFieldBase & { type: 'enum'; options: string[]; default?: string });
 
 /**
- * Coluna `ref` de uma `table` (`formatVersion` 7): a célula guarda uma referência a um alvo,
- * com o mesmo `accepts` de um campo `ref`. É dado: não desenha seta.
+ * `ref` column of a `table` (`formatVersion` 7): the cell stores a reference to a target,
+ * with the same `accepts` as a `ref` field. It is data: it does not draw an arrow.
  */
 export type SpecRefColumn = SpecFieldBase & { type: 'ref'; accepts: SpecRefAccepts };
 
@@ -328,43 +328,43 @@ export type SpecField =
   | SpecRefColumn;
 
 /**
- * Cláusula de `allowedChildren` (só `formatVersion` 11): os tipos da camada `layer`; com `groups`,
- * só os que estão em algum desses grupos da camada.
+ * `allowedChildren` clause (`formatVersion` 11 only): the types of layer `layer`; with `groups`,
+ * only those that are in any of those groups of the layer.
  */
 export interface SpecChildClause {
   layer: string;
   groups?: string[];
 }
 
-/** Item de `allowedChildren`: o id de um tipo ou uma cláusula de camada e grupos. */
+/** `allowedChildren` item: the id of a type or a clause of layer and groups. */
 export type SpecAllowedChild = string | SpecChildClause;
 
-/** Grupo de tipos de uma camada (só `formatVersion` 11): agrupa os tipos num cabeçalho. */
+/** Group of types of a layer (`formatVersion` 11 only): groups the types under a header. */
 export interface SpecLayerGroup {
-  /** Único dentro da camada. */
+    /** Unique within the layer. */
   id: string;
   name: string;
   description?: string;
 }
 
-/** Papel que um filho assume no vínculo com o dono (só `formatVersion` 11). */
+/** Role a child takes in the link with the owner (`formatVersion` 11 only). */
 export interface SpecChildRole {
-  /** Único dentro do tipo. */
+    /** Unique within the type. */
   id: string;
   name: string;
   description?: string;
 }
 
-/** Repositório onde vivem os documentos externos (só `formatVersion` 11); ver `doc`. */
+/** Repository where the external documents live (`formatVersion` 11 only); see `doc`. */
 export interface SpecDocRepo extends SpecRepo {
-  /** Id citado por `doc.repo`: `[a-z0-9-]+`, único na especialização. */
+    /** Id cited by `doc.repo`: `[a-z0-9-]+`, unique in the specialization. */
   id: string;
 }
 
-/** Documento de um tipo que vive em um repositório declarado em `docRepos` (v11). */
+/** Document of a type that lives in a repository declared in `docRepos` (v11). */
 export interface SpecDocRef {
   repo: string;
-  /** Arquivo `.md` relativo à raiz do repositório, sem `#`. */
+    /** `.md` file relative to the repository root, without `#`. */
   path: string;
 }
 
@@ -374,53 +374,54 @@ export interface SpecAnnotationType {
   description?: string;
   labelField?: string | null;
   requiresOwner?: boolean;
-  /** Ids de tipo e, na `formatVersion` 11, cláusulas de camada e grupos (ver `specChildren.ts`). */
+    /** Type ids and, in `formatVersion` 11, clauses of layer and groups (see `specChildren.ts`). */
   allowedChildren?: SpecAllowedChild[];
-  /** Grupos da própria camada a que o tipo pertence (só `formatVersion` 11). */
+    /** Groups of the layer itself that the type belongs to (`formatVersion` 11 only). */
   groups?: string[];
-  /** Papéis que um filho pode ter no vínculo com este tipo (só `formatVersion` 11). */
+    /** Roles a child can have in the link with this type (`formatVersion` 11 only). */
   childRoles?: SpecChildRole[];
-  /** Rótulo do papel na interface; ausente = "Papel" (só `formatVersion` 11, com `childRoles`). */
+    /** Label of the role in the interface; absent = "Role" (`formatVersion` 11 only, with `childRoles`). */
   childRolesLabel?: string;
   fields: SpecField[];
   code?: SpecCodeMap;
-  /** Elementos de origem a que o tipo corresponde (`formatVersion` 3 em diante). */
+    /** Origin elements the type corresponds to (`formatVersion` 3 onwards). */
   sources?: SpecTypeSource[];
-  /** Caminho do pacote do componente `.json` que desenha o tipo (só `formatVersion` 4). */
+    /** Package path of the `.json` component that draws the type (`formatVersion` 4 only). */
   component?: string;
-  /**
-   * Documento `.md` do tipo: um caminho do pacote (`formatVersion` 4 em diante) ou, na
-   * `formatVersion` 11, `{ repo, path }` de um repositório declarado em `docRepos`.
-   */
+    /**
+     * `.md` document of the type: a package path (`formatVersion` 4 onwards) or, in
+     * `formatVersion` 11, `{ repo, path }` of a repository declared in `docRepos`.
+     */
   doc?: string | SpecDocRef;
-  /** Exemplos do tipo (só `formatVersion` 4). */
+    /** Examples of the type (`formatVersion` 4 only). */
   examples?: SpecExample[];
-  /**
-   * A instância do tipo é uma marcação **flutuante** (só `formatVersion` 7): vive no canvas,
-   * fora da árvore de pertencimento, e é desenhada acima de tudo. Ausente = `false`.
-   */
+    /**
+     * The type's instance is a **floating** marking (`formatVersion` 7 only): it lives on the
+     * canvas, outside the membership tree, and is drawn above everything. Absent = `false`.
+     */
   floating?: boolean;
-  /**
-   * Onde a anotação se aplica (só `formatVersion` 7): `marking` (padrão), `arrow` ou ambos.
-   * Um tipo só de seta não tem `component` nem `floating`: a seta não tem desenho de componente.
-   */
+    /**
+     * Where the annotation applies (`formatVersion` 7 only): `marking` (default), `arrow` or both.
+     * An arrow-only type has no `component` or `floating`: the arrow has no component drawing.
+     */
   appliesTo?: SpecAppliesTo[];
-  /** Avisos do tipo (só `formatVersion` 10). */
+    /** Notices of the type (`formatVersion` 10 only). */
   notices?: SpecNotice[];
-  /**
-   * O tipo agrupa e não desenha (só `formatVersion` 15): sem `component`; a marcação não mostra o
-   * cabeçalho com o nome e o contorno só aparece com o mouse ou selecionada. Ausente = `false`.
-   */
+    /**
+     * The type groups and does not draw (`formatVersion` 15 only): no `component`; the marking does
+     * not show the header with the name and the outline only appears on hover or when selected.
+     * Absent = `false`.
+     */
   structural?: boolean;
 }
 
-/** Itens a que um tipo de anotação se aplica (ME4, decisão 14). */
+/** Items an annotation type applies to (ME4, decision 14). */
 export type SpecAppliesTo = 'marking' | 'arrow';
 export const SPEC_APPLIES_TO: readonly SpecAppliesTo[] = ['marking', 'arrow'];
 
 /**
- * O tipo se aplica a esse item? Sem `appliesTo` (ou na especialização antiga), só a
- * marcação; um tipo declarado só para a seta não se aplica à marcação.
+ * Does the type apply to that item? Without `appliesTo` (or in the old specialization), only
+ * the marking; a type declared only for the arrow does not apply to the marking.
  */
 export function typeAppliesTo(
   type: Pick<SpecAnnotationType, 'appliesTo'>,
@@ -429,15 +430,15 @@ export function typeAppliesTo(
   return (type.appliesTo ?? ['marking']).includes(kind);
 }
 
-/** Preset de container da especialização (só `formatVersion` 6): tamanho e fundo iniciais. */
+/** Container preset of the specialization (`formatVersion` 6 only): initial size and background. */
 export interface SpecContainer {
-  /** `[a-z0-9-]+`, único na especialização. */
+    /** `[a-z0-9-]+`, unique in the specialization. */
   id: string;
   name: string;
-  /** Pixels, inteiro de 1 a `MAX_CONTAINER_SIZE`. */
+    /** Pixels, an integer from 1 to `MAX_CONTAINER_SIZE`. */
   width: number;
   height: number;
-  /** `#RRGGBB`; ausente = branco. */
+    /** `#RRGGBB`; absent = white. */
   background?: string;
 }
 
@@ -445,21 +446,21 @@ export interface SpecLayer {
   id: string;
   name: string;
   color: string;
-  /** Grupos de tipos da camada, na ordem dos cabeçalhos (só `formatVersion` 11). */
+    /** Type groups of the layer, in header order (`formatVersion` 11 only). */
   groups?: SpecLayerGroup[];
   annotationTypes: SpecAnnotationType[];
 }
 
-/** Um modelo de campo (só `formatVersion` 16), numa destas quatro formas. */
+/** A field model (`formatVersion` 16 only), in one of these four shapes. */
 export type SpecFieldModel =
-  /** Copia `type`, `options`, `suggestions`, `code.values` e `sources[].values` de `<tipo>.<campo>`. */
+    /** Copies `type`, `options`, `suggestions`, `code.values` and `sources[].values` from `<type>.<field>`. */
   | { like: string }
   | { type: 'number' | 'string' | 'enum'; options?: string[]; format?: string }
-  /** Um campo por parâmetro da fábrica (`call` opcional; nome do parâmetro → tipo na fonte). */
+    /** One field per factory parameter (optional `call`; parameter name → type in the source). */
   | { expand: { call?: string; params: Record<string, string> } }
   | { ignore: true };
 
-/** `<id da plataforma ou system>` → (`<tipo na fonte, texto exato>` | `boolean`) → modelo. */
+/** `<platform id or system>` → (`<type in the source, exact text>` | `boolean`) → model. */
 export type SpecFieldModels = Record<string, Record<string, SpecFieldModel>>;
 
 export interface Spec {
@@ -470,31 +471,31 @@ export interface Spec {
   version: number;
   description?: string;
   platforms?: SpecPlatform[];
-  /** Repositórios dos documentos externos (só `formatVersion` 11). */
+    /** Repositories of the external documents (`formatVersion` 11 only). */
   docRepos?: SpecDocRepo[];
-  /** Presets do diálogo Novo container (só `formatVersion` 6). */
+    /** Presets of the New container dialog (`formatVersion` 6 only). */
   containers?: SpecContainer[];
   layers: SpecLayer[];
-  /** Fontes do pacote (só `formatVersion` 4). */
+    /** Fonts of the package (`formatVersion` 4 only). */
   fonts?: SpecFont[];
-  /** Origens executáveis, validadas por `parseOrigins` (só `formatVersion` 4). */
+    /** Executable origins, validated by `parseOrigins` (`formatVersion` 4 only). */
   origins?: SpecOrigin[];
-  /** Contrato de versão (só `formatVersion` 4). */
+    /** Version contract (`formatVersion` 4 only). */
   migrations?: SpecMigration[];
-  /** Tokens de design (cor, número, família) por modo, lidos por `$token` nos componentes (só `formatVersion` 15). */
+    /** Design tokens (color, number, family) per mode, read by `$token` in the components (`formatVersion` 15 only). */
   tokens?: SpecTokens;
-  /** Arquivo `.json` do pacote com o conjunto de ícones (`mapping-icons`; só `formatVersion` 15). */
+    /** `.json` file of the package with the icon set (`mapping-icons`; `formatVersion` 15 only). */
   icons?: string;
-  /**
-   * Modelos de campo por plataforma ou sistema e por tipo na fonte (só `formatVersion` 16): como
-   * um tipo da fonte (`Color`, `Dp`, `boolean`) vira campo; ver `specSignature.ts`.
-   */
+    /**
+     * Field models per platform or system and per type in the source (`formatVersion` 16 only): how
+     * a source type (`Color`, `Dp`, `boolean`) becomes a field; see `specSignature.ts`.
+     */
   fieldModels?: SpecFieldModels;
 }
 
 const KEY_RE = /^[A-Za-z0-9_]+$/;
 const TAG_RE = /^[a-z0-9-]+$/;
-/** Formato do id de uma plataforma (`platforms[].id`, chaves de `code` e de `platformRepos`). */
+/** Format of a platform id (`platforms[].id`, keys of `code` and of `platformRepos`). */
 export const PLATFORM_ID_RE = /^[a-z0-9-]+$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -512,7 +513,7 @@ const platformId = z
   .string()
   .regex(PLATFORM_ID_RE, 'id de plataforma inválido; use [a-z0-9-]+');
 
-// O tipo removido ainda é aceito aqui para o campo ser lido e ignorado (`dropRemovedFields`).
+// The removed type is still accepted here so the field can be read and ignored (`dropRemovedFields`).
 const fieldType = z.enum(
   ['string', 'number', 'date', 'enum', 'table', 'ref', REMOVED_FIELD_TYPE],
   {
@@ -523,7 +524,7 @@ const fieldType = z.enum(
   },
 );
 
-/** `true` para uma data existente no formato ISO `AAAA-MM-DD`. */
+/** `true` for an existing date in the ISO format `YYYY-MM-DD`. */
 export function isIsoDate(s: string): boolean {
   if (!DATE_RE.test(s)) return false;
   const d = new Date(`${s}T00:00:00Z`);
@@ -535,7 +536,7 @@ const dateString = z
   .regex(DATE_RE, 'data inválida; use AAAA-MM-DD')
   .refine(isIsoDate, 'data inexistente');
 
-/** Caminho de arquivo do pacote com a extensão (ou uma das extensões) dada. */
+/** Package file path with the given extension (or one of the extensions). */
 function packagePath(ext: string | readonly string[]) {
   return z.string({ error: () => 'deve ser texto' }).superRefine((path, ctx) => {
     const error = packagePathError(path, ext);
@@ -550,14 +551,14 @@ const typeSourceShape = z
     name: nonEmpty.optional(),
     slot: nonEmpty.optional(),
     ignore: z.array(nonEmpty).optional(),
-    // Só `formatVersion` 16 (`specSignature.ts`).
+        // `formatVersion` 16 only (`specSignature.ts`).
     signature: packagePath('.json').optional(),
   })
   .strict()
   .refine((s) => s.id !== undefined || s.name !== undefined, 'precisa de "id" ou "name"');
 
-// `name` e `path` são opcionais aqui; qual é obrigatório depende de o `system` estar em
-// `origins` (regra cruzada, `checkFieldSources`).
+// `name` and `path` are optional here; which one is required depends on whether the `system` is in
+// `origins` (cross rule, `checkFieldSources`).
 const fieldSourceShape = z
   .object({
     system: nonEmpty,
@@ -571,7 +572,7 @@ const acceptsSchema = z
   .object({
     tags: tags.optional(),
     free: z.boolean().optional(),
-    // Só `formatVersion` 14; os itens usam a forma e o resolvedor do `allowedChildren`.
+        // `formatVersion` 14 only; the items use the shape and the resolver of `allowedChildren`.
     annotations: z
       .array(z.lazy(() => allowedChildShape))
       .refine(
@@ -609,7 +610,7 @@ const noticeShape = z
 
 const noticesShape = z.array(noticeShape);
 
-/** Dois avisos com o mesmo `kind` e a mesma `message` no mesmo `notices` (v10). */
+/** Two notices with the same `kind` and the same `message` in the same `notices` (v10). */
 function checkNotices(
   notices: readonly { kind: string; message: string }[] | undefined,
   ctx: z.RefinementCtx,
@@ -629,7 +630,7 @@ function checkNotices(
   });
 }
 
-/** Forma de um campo (coluna ou campo de nível superior); regras cruzadas ficam adiante. */
+/** Shape of a field (column or top-level field); cross rules come later. */
 const fieldShape = z
   .object({
     key,
@@ -644,7 +645,7 @@ const fieldShape = z
     tags: tags.optional(),
     rowLabel: z.string().optional(),
     accepts: acceptsSchema.optional(),
-    // Só existia no tipo removido: aceito nele (que é ignorado) e recusado nos outros.
+        // It only existed in the removed type: accepted there (where it is ignored) and rejected in the others.
     platforms: z.unknown().optional(),
     description: z.string().optional(),
     sources: z.array(fieldSourceShape).optional(),
@@ -655,8 +656,8 @@ const fieldShape = z
 type RawField = z.infer<typeof fieldShape>;
 
 /**
- * Por que `value` não serve como valor de um campo do tipo `type` (o `default` de um campo, o
- * `default` de um passo `fill-field`, o valor de um exemplo); `undefined` se serve.
+ * Why `value` does not work as the value of a field of type `type` (a field's `default`, the
+ * `default` of a `fill-field` step, the value of an example); `undefined` if it works.
  */
 function valueProblem(
   type: RawField['type'],
@@ -689,7 +690,7 @@ function valueProblem(
 
 const MAX_SUGGESTIONS = 200;
 
-/** `suggestions` (v8): lista não vazia, até 200 textos únicos, não vazios e sem espaço nas pontas. */
+/** `suggestions` (v8): non-empty list, up to 200 unique texts, non-empty and with no space at the ends. */
 function checkSuggestions(
   suggestions: readonly string[],
   add: (sub: string, message: string | SpecMsg) => void,
@@ -711,7 +712,7 @@ function checkSuggestions(
   }
 }
 
-/** Valida um campo; `column` = dentro de `table` (tipos simples e `ref`, nunca `table`). */
+/** Validates a field; `column` = inside `table` (simple types and `ref`, never `table`). */
 function checkField(
   field: RawField,
   ctx: z.RefinementCtx,
@@ -729,7 +730,7 @@ function checkField(
     add('type', specMsg('spec.columnTypeNotAllowed', { type }));
     return;
   }
-  // Tipo removido: o campo é ignorado inteiro (com um aviso de quem importa), sem conferir nada.
+    // Removed type: the whole field is ignored (with a warning from whoever imports), nothing is checked.
   if (type === REMOVED_FIELD_TYPE) return;
   checkNotices(field.notices, ctx, path);
   if (type === 'enum') {
@@ -813,14 +814,14 @@ function checkField(
   }
 }
 
-/** Os problemas do zod levam o `input`, de onde sai o `received` do texto padrão (não sai do modelo). */
+/** The zod problems carry the `input`, from which the default text's `received` comes (it does not leave the model). */
 const REPORT_INPUT = { reportInput: true } as const;
 
-/** Valida e normaliza os campos de um tipo (inclusive colunas de table). */
+/** Validates and normalizes the fields of a type (including table columns). */
 type ColumnParse = ReturnType<typeof fieldShape.safeParse>;
 let columnParses = new WeakMap<object, ColumnParse>();
 
-/** Lê uma coluna de `table` pela forma dos campos; a mesma coluna é lida uma vez só. */
+/** Reads a `table` column by the field shape; the same column is read only once. */
 function parseColumn(raw: unknown): ColumnParse {
   if (typeof raw !== 'object' || raw === null) {
     return fieldShape.safeParse(raw, REPORT_INPUT);
@@ -902,7 +903,7 @@ function checkFields(
   });
 }
 
-/** As chaves da `formatVersion` 16 do `code` (e do caso de `variants`); a versão e o conteúdo, em `specSignature.ts`. */
+/** The keys of `formatVersion` 16 of the `code` (and of the `variants` case); the version and the content are in `specSignature.ts`. */
 const signatureKeys = {
   signature: packagePath('.json').optional(),
   ignore: z.array(nonEmpty).optional(),
@@ -964,7 +965,7 @@ const codeEntryShape = z
 
 type RawFieldMap = ReadonlyMap<string, RawField>;
 
-/** `params` e `values` de um trecho do `code` (a base ou um caso) só citam campos e opções do tipo. */
+/** `params` and `values` of a piece of the `code` (the base or a case) only cite fields and options of the type. */
 function checkCodeMaps(
   entry: Pick<z.infer<typeof codeCaseShape>, 'params' | 'values'>,
   fields: RawFieldMap,
@@ -996,7 +997,7 @@ function checkCodeMaps(
   }
 }
 
-/** `variants`: o campo é um `enum` do tipo, os casos usam as `options` e cada caso muda algo. */
+/** `variants`: the field is an `enum` of the type, the cases use the `options` and each case changes something. */
 function checkCodeVariants(
   variants: z.infer<typeof codeVariantsShape>,
   fields: RawFieldMap,
@@ -1028,7 +1029,7 @@ function checkCodeVariants(
   }
 }
 
-/** `params`, `values` e `variants` de cada plataforma do `code` só citam campos (e opções) do tipo. */
+/** `params`, `values` and `variants` of each `code` platform only cite fields (and options) of the type. */
 function checkCode(
   type: { fields: RawField[]; code?: Record<string, z.infer<typeof codeEntryShape>> },
   ctx: z.RefinementCtx,
@@ -1052,8 +1053,8 @@ const exampleShape = z
     values: z
       .record(
         z.string(),
-        // A lista de linhas de um campo `table`; as linhas e as células são conferidas em
-        // `checkExamples`, com a mensagem e o caminho exatos.
+                // The list of rows of a `table` field; the rows and the cells are checked in
+                // `checkExamples`, with the exact message and path.
         z.union([z.string(), z.number(), z.null(), z.array(z.unknown())], {
           error:
             'deve ser texto, número ou null (ou uma lista de linhas, num campo table)',
@@ -1067,7 +1068,7 @@ const exampleShape = z
 
 type RawExample = z.infer<typeof exampleShape>;
 
-/** Nomes únicos, um só modo (`values` ou `system` + `file`) e valores que cabem nos campos. */
+/** Unique names, a single mode (`values` or `system` + `file`) and values that fit the fields. */
 function checkExamples(
   type: { fields: RawField[]; examples?: RawExample[] },
   ctx: z.RefinementCtx,
@@ -1116,7 +1117,7 @@ function checkExamples(
   });
 }
 
-/** As linhas do exemplo de um campo `table`: objetos coluna → valor, cada célula do tipo da coluna. */
+/** The rows of a `table` field example: column → value objects, each cell of the column's type. */
 function checkExampleRows(
   field: RawField,
   rows: readonly unknown[],
@@ -1156,7 +1157,7 @@ function checkExampleRows(
   });
 }
 
-/** `appliesTo`: não vazio, sem repetição; um tipo só de seta não tem `component` nem `floating`. */
+/** `appliesTo`: non-empty, no repeats; an arrow-only type has no `component` or `floating`. */
 function checkAppliesTo(
   type: { appliesTo?: SpecAppliesTo[]; component?: string; floating?: boolean },
   ctx: z.RefinementCtx,
@@ -1188,7 +1189,7 @@ const ALLOWED_CHILD_SHAPE_MESSAGE =
 const DOC_SHAPE_MESSAGE =
   'deve ser texto (arquivo do pacote) ou um objeto { repo, path }';
 
-/** Texto obrigatório e não vazio (as mensagens dos objetos novos da v11). */
+/** Required non-empty text (the messages of the new v11 objects). */
 const requiredText = z
   .string({
     error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
@@ -1202,17 +1203,17 @@ const childClauseShape = z
   })
   .strict();
 
-/** Reemite no `ctx` os problemas de um objeto lido por outro schema, no mesmo caminho relativo. */
+/** Re-emits on `ctx` the problems of an object read by another schema, at the same relative path. */
 function forwardIssues(
   result: { success: boolean; error?: { issues: readonly z.core.$ZodIssue[] } },
   ctx: z.RefinementCtx,
 ): void {
-  // A propriedade a mais sai em português, no molde dos outros erros da especialização.
+    // The extra property comes out in Portuguese, in the mold of the other specialization errors.
   for (const issue of result.error?.issues ?? [])
     forwardIssue(ctx, issue, [], true, KNOWN_SPEC_MSGS);
 }
 
-/** Um item de `allowedChildren`: o id de um tipo ou uma cláusula `{ layer, groups? }`. */
+/** An `allowedChildren` item: the id of a type or a `{ layer, groups? }` clause. */
 function checkAllowedChild(value: unknown, ctx: z.RefinementCtx): void {
   if (typeof value === 'string') {
     if (value === '') ctx.addIssue({ code: 'custom', message: 'não pode ser vazio' });
@@ -1233,7 +1234,7 @@ const allowedChildShape = z
   .custom<SpecAllowedChild>()
   .superRefine((value: unknown, ctx) => checkAllowedChild(value, ctx));
 
-/** Por que o `path` não vale como arquivo `.md` de um repositório; `undefined` se vale. */
+/** Why the `path` is not valid as the `.md` file of a repository; `undefined` if it is. */
 function docPathProblem(path: string): SpecMsg | undefined {
   if (path.includes('#')) return specMsg('spec.docAnchor');
   if (!isValidCodePath(path)) return specMsg('spec.docPathInvalid');
@@ -1259,7 +1260,7 @@ const docRefShape = z
 
 const docPackageShape = packagePath('.md');
 
-/** `doc`: um caminho `.md` do pacote ou, na v11, `{ repo, path }` de um repositório de `docRepos`. */
+/** `doc`: a package `.md` path or, in v11, `{ repo, path }` of a `docRepos` repository. */
 const docShape = z.custom<string | SpecDocRef>().superRefine((value: unknown, ctx) => {
   if (typeof value === 'string') {
     forwardIssues(docPackageShape.safeParse(value, REPORT_INPUT), ctx);
@@ -1278,7 +1279,7 @@ const layerGroupShape = z
   .object({ id: requiredText, name: requiredText, description: z.string().optional() })
   .strict();
 
-/** `childRoles` e `childRolesLabel` (v11): papéis não vazios e únicos, só em tipo com filhos. */
+/** `childRoles` and `childRolesLabel` (v11): non-empty and unique roles, only on a type with children. */
 function checkChildRoles(
   type: {
     allowedChildren?: readonly unknown[] | undefined;
@@ -1311,7 +1312,7 @@ function checkChildRoles(
   });
 }
 
-/** `groups` de um tipo (v11): não vazio e sem repetição; a existência é conferida na camada. */
+/** `groups` of a type (v11): non-empty and with no repeats; existence is checked in the layer. */
 function checkTypeGroups(
   groups: readonly string[] | undefined,
   ctx: z.RefinementCtx,
@@ -1389,7 +1390,7 @@ const annotationTypeShape = z
     }
   });
 
-/** Antes da v15, `structural` no tipo é erro no caminho exato. */
+/** Before v15, `structural` on the type is an error at the exact path. */
 function checkNoStructural(
   layers: readonly { annotationTypes: readonly { structural?: unknown }[] }[],
   ctx: z.RefinementCtx,
@@ -1406,7 +1407,7 @@ function checkNoStructural(
   });
 }
 
-/** Antes da v10, `notices` (no tipo, no campo e na coluna) é erro no caminho exato. */
+/** Before v10, `notices` (on the type, the field and the column) is an error at the exact path. */
 function checkNoNotices(
   layers: readonly { annotationTypes: readonly RawNoticeHolder[] }[],
   ctx: z.RefinementCtx,
@@ -1445,7 +1446,7 @@ const layerShape = z
   })
   .strict();
 
-/** A mensagem com código para o `refine` do zod: o texto e o `messageCode` no `params`. */
+/** The message with a code for zod's `refine`: the text and the `messageCode` in `params`. */
 const refineMsg = (msg: SpecMsg) => ({
   message: msg.text,
   params: { messageCode: msg.code, ...msg.params },
@@ -1491,8 +1492,8 @@ const platformShape = z
   })
   .strict();
 
-// Mensagens prontas que o zod recebe, com valores constantes: o `issueCoding` as acha pelo texto
-// exato (`KNOWN_SPEC_MSGS`), sem padrão de regex. Parâmetros em texto, como o regex os entregava.
+// Ready-made messages that zod receives, with constant values: `issueCoding` finds them by the
+// exact text (`KNOWN_SPEC_MSGS`), without a regex pattern. Parameters as text, as the regex delivered them.
 const FORMAT_INVALID = specMsg('spec.formatInvalid', { format: SPEC_FORMAT });
 const FORMAT_VERSION_INVALID = specMsg('spec.formatVersionInvalid', {
   versions: SPEC_FORMAT_VERSIONS.slice(0, -1).join(', '),
@@ -1598,7 +1599,7 @@ const migrationStepShape = z.discriminatedUnion(
         default: z.union([z.string(), z.number()], { error: 'deve ser texto ou número' }),
       })
       .strict(),
-    // Passos de papel do vínculo (só `formatVersion` 12); `type` é o tipo do dono.
+        // Role steps of the link (`formatVersion` 12 only); `type` is the owner's type.
     z
       .object({
         op: z.literal('rename-role'),
@@ -1645,7 +1646,7 @@ type RawLayers = readonly {
   }[];
 }[];
 
-/** `sources` só existe na `formatVersion` 3: aponta cada uso numa versão anterior. */
+/** `sources` only exists in `formatVersion` 3: points to each use in an earlier version. */
 function checkNoSources(
   layers: readonly {
     annotationTypes: readonly { sources?: unknown; fields: readonly RawField[] }[];
@@ -1675,7 +1676,7 @@ type PathKeys = (string | number)[];
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 
-/** Chaves da `formatVersion` 4 nos tipos (`component`, `doc`, `examples`) em versão anterior. */
+/** Keys of `formatVersion` 4 on the types (`component`, `doc`, `examples`) in an earlier version. */
 function checkNoLibraryKeys(
   layers: readonly {
     annotationTypes: readonly {
@@ -1698,7 +1699,7 @@ function checkNoLibraryKeys(
 }
 
 /**
- * `path` de uma origem de campo (`a.b[0].c`): sintaxe válida e sem `[*]`. `undefined` se vale.
+ * `path` of a field origin (`a.b[0].c`): valid syntax and no `[*]`. `undefined` if it is valid.
  */
 function fieldPathProblem(path: string): SpecMsg | undefined {
   const parsed = parsePath(path);
@@ -1708,9 +1709,9 @@ function fieldPathProblem(path: string): SpecMsg | undefined {
 }
 
 /**
- * Regras cruzadas das `sources` de um campo ou coluna (v3 em diante) que dependem de o `system`
- * estar em `origins`: sistema executável pede `path` (e `name` vira só o nome de exibição);
- * os demais pedem `name` e não aceitam `path`.
+ * Cross rules of the `sources` of a field or column (v3 onwards) that depend on whether the
+ * `system` is in `origins`: an executable system asks for `path` (and `name` becomes just the
+ * display name); the others ask for `name` and do not accept `path`.
  */
 function checkFieldSources(
   sources: readonly z.infer<typeof fieldSourceShape>[] | undefined,
@@ -1741,7 +1742,7 @@ function checkFieldSources(
   });
 }
 
-/** `slot` e `ignore` das `sources` de um tipo: só em sistema declarado em `origins`. */
+/** `slot` and `ignore` of a type's `sources`: only in a system declared in `origins`. */
 function checkTypeSources(
   sources: readonly z.infer<typeof typeSourceShape>[] | undefined,
   path: PathKeys,
@@ -1777,7 +1778,7 @@ function checkTypeSources(
   });
 }
 
-/** Aplica `checkTypeSources` e `checkFieldSources` (campos e colunas) a todos os tipos. */
+/** Applies `checkTypeSources` and `checkFieldSources` (fields and columns) to all the types. */
 function checkSources(
   layers: RawLayers,
   version: number,
@@ -1808,7 +1809,7 @@ function checkSources(
   });
 }
 
-/** O `system` de um exemplo de sistema externo precisa estar em `origins`. */
+/** The `system` of an external-system example must be in `origins`. */
 function checkExampleSystems(
   layers: readonly {
     annotationTypes: readonly { examples?: readonly RawExample[] | undefined }[];
@@ -1830,7 +1831,7 @@ function checkExampleSystems(
   });
 }
 
-/** Par `family` + `weight` + `style` repetido em `fonts`. */
+/** Repeated `family` + `weight` + `style` pair in `fonts`. */
 function checkFonts(
   fonts: readonly z.infer<typeof fontShape>[],
   ctx: z.RefinementCtx,
@@ -1853,7 +1854,7 @@ function checkFonts(
   });
 }
 
-/** Coluna `key` de um campo `table` (lida pela mesma forma dos campos); `undefined` se não há. */
+/** Column `key` of a `table` field (read by the same shape as the fields); `undefined` if there is none. */
 function columnOf(table: RawField, key: string): RawField | undefined {
   for (const raw of table.columns ?? []) {
     const parsed = parseColumn(raw);
@@ -1862,7 +1863,7 @@ function columnOf(table: RawField, key: string): RawField | undefined {
   return undefined;
 }
 
-/** A chave de campo de um passo: `key` (nível superior) ou `tabela.coluna`. */
+/** The field key of a step: `key` (top level) or `table.column`. */
 type FieldRef =
   | { kind: 'field' }
   | { kind: 'column'; table: string; column: string }
@@ -1881,23 +1882,23 @@ function parseFieldRef(ref: string): FieldRef {
   return { kind: 'column', table, column };
 }
 
-/** Passo de papel do vínculo (só `formatVersion` 12). */
+/** Role step of the link (`formatVersion` 12 only). */
 type RoleStep = Extract<
   SpecMigrationStep,
   { op: 'rename-role' | 'remove-role' | 'set-role' }
 >;
 
-/** O que `checkRoleStep` lê da especialização: tipos e papéis desta versão e o `add` do passo. */
+/** What `checkRoleStep` reads from the specialization: types and roles of this version and the step's `add`. */
 interface RoleStepEnv {
   readonly formatVersion: number;
-  /** id do tipo → papéis (`childRoles`); o tipo sem `childRoles` não tem entrada. */
+    /** type id → roles (`childRoles`); a type without `childRoles` has no entry. */
   readonly roles: ReadonlyMap<string, ReadonlySet<string>>;
   readonly hasType: (id: string) => boolean;
-  /** Erro no caminho `migrations[i].steps[j].<key>`. */
+    /** Error at the path `migrations[i].steps[j].<key>`. */
   readonly add: (key: string, message: string | SpecMsg) => void;
 }
 
-/** O papel existe no tipo (lado novo). */
+/** The role exists on the type (new side). */
 function roleHere(
   roles: ReadonlySet<string>,
   typeId: string,
@@ -1908,7 +1909,7 @@ function roleHere(
   if (!roles.has(role)) env.add(where, specMsg('spec.roleNotOfType', { role, typeId }));
 }
 
-/** O papel não existe mais no tipo (lado antigo). */
+/** The role no longer exists on the type (old side). */
 function roleGone(
   roles: ReadonlySet<string> | undefined,
   typeId: string,
@@ -1922,9 +1923,9 @@ function roleGone(
 }
 
 /**
- * Os passos de papel (formatVersion 12): `rename-role` e `set-role` pedem um tipo desta versão com
- * `childRoles`; `remove-role` pede só o tipo (pode não ter mais papéis). `childType` de `set-role`
- * só tem o formato conferido pelo zod, o tipo não precisa existir.
+ * The role steps (formatVersion 12): `rename-role` and `set-role` ask for a type of this version
+ * with `childRoles`; `remove-role` asks only for the type (it may no longer have roles). The
+ * `childType` of `set-role` only has its shape checked by zod, the type does not need to exist.
  */
 function checkRoleStep(step: RoleStep, env: RoleStepEnv): void {
   if (env.formatVersion < 12) {
@@ -1952,7 +1953,7 @@ function checkRoleStep(step: RoleStep, env: RoleStepEnv): void {
   roleGone(roles, step.type, step.from, 'from', env);
 }
 
-/** id do tipo → ids dos papéis (`childRoles`); o tipo sem `childRoles` fica de fora. */
+/** type id → role ids (`childRoles`); a type without `childRoles` is left out. */
 function rolesByType(
   layers: readonly {
     annotationTypes: readonly {
@@ -1975,7 +1976,7 @@ function rolesByType(
 type StepAdd = (key: string | PathKeys, message: string | SpecMsg) => void;
 type FieldsByKey = ReadonlyMap<string, RawField>;
 
-/** O tipo existe nesta versão (o passo trata de um campo dele). */
+/** The type exists in this version (the step deals with a field of it). */
 function typeHere(
   types: ReadonlyMap<string, FieldsByKey>,
   id: string,
@@ -1986,7 +1987,7 @@ function typeHere(
   return fields;
 }
 
-/** O campo (ou a coluna `tabela.coluna`) existe no tipo (lado novo). */
+/** The field (or the `table.column` column) exists on the type (new side). */
 function fieldHere(
   fields: FieldsByKey,
   typeId: string,
@@ -2020,7 +2021,7 @@ function fieldHere(
   return column;
 }
 
-/** O campo (ou a coluna `tabela.coluna`) não existe mais no tipo (lado antigo). */
+/** The field (or the `table.column` column) no longer exists on the type (old side). */
 function fieldGone(
   fields: FieldsByKey,
   typeId: string,
@@ -2036,7 +2037,7 @@ function fieldGone(
       stepAdd(where, specMsg('spec.fieldStillExists', { key, typeId }));
     }
   } else {
-    // Tabela que não existe mais: a coluna foi junto, e é isso que o passo declara.
+        // A table that no longer exists: the column went with it, and that is what the step declares.
     const table = fields.get(ref.table);
     if (!table) return;
     if (table.type !== 'table') {
@@ -2064,11 +2065,11 @@ function typeGone(
 }
 
 /**
- * Conferências das `migrations` que um arquivo só permite: versões, `from` único e, em cada
- * passo, o lado novo existe e o lado antigo não existe mais nesta versão. A chave de campo de um
- * passo é `key` (campo de nível superior) ou `tabela.coluna` (coluna de um campo `table`, que
- * também guarda dados). Se o lado antigo
- * existia na versão anterior é coisa do `diffSpecs`, que compara duas versões.
+ * Checks of the `migrations` that only a file allows: versions, unique `from` and, in each
+ * step, the new side exists and the old side no longer exists in this version. The field key of a
+ * step is `key` (top-level field) or `table.column` (a column of a `table` field, which also
+ * holds data). Whether the old side existed in the previous version is `diffSpecs`'s business,
+ * which compares two versions.
  */
 function checkMigrations(
   spec: {
@@ -2085,7 +2086,7 @@ function checkMigrations(
   migrations: readonly z.infer<typeof migrationShape>[],
   ctx: z.RefinementCtx,
 ): void {
-  /** id do tipo → campos (sem o tipo removido) por chave. */
+    /** type id → fields (without the removed type) by key. */
   const types = new Map<string, Map<string, RawField>>();
   for (const layer of spec.layers) {
     for (const type of layer.annotationTypes) {
@@ -2188,17 +2189,17 @@ function checkMigrations(
   });
 }
 
-/** Cada problema do `parseOrigins` (caminho, mensagem e código) vira uma issue no caminho exato. */
+/** Each `parseOrigins` problem (path, message and code) becomes an issue at the exact path. */
 type OriginsParse = ReturnType<typeof parseOrigins>;
 let originParses = new WeakMap<object, OriginsParse>();
 
-/** Zera as leituras guardadas: valem só dentro de uma validação (o JSON pode mudar entre elas). */
+/** Clears the cached reads: they are only valid within one validation (the JSON may change between them). */
 function resetParseCaches(): void {
   columnParses = new WeakMap();
   originParses = new WeakMap();
 }
 
-/** `parseOrigins(raw)` com o caminho padrão, lido uma vez por lista de origens. */
+/** `parseOrigins(raw)` with the default path, read once per list of origins. */
 function originsOf(raw: unknown): OriginsParse {
   if (typeof raw !== 'object' || raw === null) return parseOrigins(raw);
   let hit = originParses.get(raw);
@@ -2214,7 +2215,7 @@ function addOriginIssues(
   ctx: z.RefinementCtx,
   formatVersion: number,
 ): void {
-  // `kind` (origem `measured`) é da v15; antes dela a chave é erro no caminho exato.
+    // `kind` (`measured` origin) is from v15; before it the key is an error at the exact path.
   if (formatVersion < 15 && Array.isArray(raw)) {
     raw.forEach((item, index) => {
       if (isRecord(item) && item.kind !== undefined) {
@@ -2234,7 +2235,7 @@ function addOriginIssues(
   }
 }
 
-/** Sistemas declarados em `origins` (lidos do JSON cru, mesmo se uma origem tiver problema). */
+/** Systems declared in `origins` (read from the raw JSON, even if an origin has a problem). */
 function declaredSystems(raw: unknown): Set<string> {
   const systems = new Set<string>();
   if (!Array.isArray(raw)) return systems;
@@ -2248,8 +2249,8 @@ function declaredSystems(raw: unknown): Set<string> {
 
 /**
  * `layers[1].annotationTypes[0].fields[2]` → `['layers', 1, 'annotationTypes', 0, 'fields', 2]`:
- * o inverso de `formatSpecPath`, para montar o caminho de uma issue do zod a partir de um
- * caminho em texto (os do `parseOrigins`). Chaves com `.`, `[` ou `]` não são suportadas.
+ * the inverse of `formatSpecPath`, to build the path of a zod issue from a text path (those of
+ * `parseOrigins`). Keys with `.`, `[` or `]` are not supported.
  */
 export function parseSpecPath(text: string): (string | number)[] {
   const keys: (string | number)[] = [];
@@ -2259,7 +2260,7 @@ export function parseSpecPath(text: string): (string | number)[] {
   return keys;
 }
 
-/** O que os conferidores da v11 leem de um tipo (a forma crua, lida pelo zod). */
+/** What the v11 checkers read from a type (the raw shape, read by zod). */
 interface V11Type {
   readonly id: string;
   readonly requiresOwner?: boolean | undefined;
@@ -2271,7 +2272,7 @@ interface V11Type {
   readonly fields?: readonly V14Field[] | undefined;
 }
 
-/** Campo ou coluna `ref` com `accepts.annotations` (v14), na forma crua. */
+/** `ref` field or column with `accepts.annotations` (v14), in the raw shape. */
 interface V14Field {
   readonly accepts?:
     { readonly annotations?: readonly unknown[] | undefined } | undefined;
@@ -2291,7 +2292,7 @@ const issueAdder =
   (path, message) =>
     addSpecIssue(ctx, path, message);
 
-/** Caminho de cada tipo: `['layers', li, 'annotationTypes', ti]`. */
+/** Path of each type: `['layers', li, 'annotationTypes', ti]`. */
 function eachV11Type(
   layers: readonly V11Layer[],
   visit: (type: V11Type, layer: V11Layer, path: (string | number)[], li: number) => void,
@@ -2303,7 +2304,7 @@ function eachV11Type(
   });
 }
 
-/** Antes da v11, cada chave nova (cláusula, groups, childRoles, docRepos, doc objeto) é erro. */
+/** Before v11, each new key (clause, groups, childRoles, docRepos, doc object) is an error. */
 function checkNoV11Keys(
   spec: { formatVersion: number; docRepos?: unknown; layers: readonly V11Layer[] },
   ctx: z.RefinementCtx,
@@ -2318,7 +2319,7 @@ function checkNoV11Keys(
     for (const key of ['groups', 'childRoles', 'childRolesLabel'] as const) {
       if (type[key] !== undefined) only11([...path, key]);
     }
-    // Antes da v4 o `doc` já é erro (qualquer forma); da v4 à v10 só o objeto.
+        // Before v4 the `doc` is already an error (any shape); from v4 to v10 only the object is.
     if (isRecord(type.doc) && spec.formatVersion >= 4) only11([...path, 'doc']);
     (type.allowedChildren ?? []).forEach((item, ci) => {
       if (isRecord(item)) only11([...path, 'allowedChildren', ci]);
@@ -2326,7 +2327,7 @@ function checkNoV11Keys(
   });
 }
 
-/** Ids dos grupos de cada camada (a primeira camada com o id vale) e o índice dela. */
+/** Group ids of each layer (the first layer with the id wins) and its index. */
 function layerGroupIndex(
   layers: readonly V11Layer[],
 ): Map<string, { index: number; groups: Set<string> }> {
@@ -2338,10 +2339,10 @@ function layerGroupIndex(
   return byId;
 }
 
-/** A partir desta `formatVersion`, `allowedChildren` aceita tipos da camada do próprio dono. */
+/** From this `formatVersion` on, `allowedChildren` accepts types of the owner's own layer. */
 const SAME_LAYER_VERSION = 13;
 
-/** Uma cláusula de `allowedChildren` (v11): a camada existe, é outra e os grupos são dela. */
+/** An `allowedChildren` clause (v11): the layer exists, is another one and the groups belong to it. */
 function checkChildClause(
   clause: SpecChildClause,
   li: number,
@@ -2359,7 +2360,7 @@ function checkChildClause(
     add([...path, 'layer'], specMsg('spec.layerIsOwn', { layer: clause.layer }));
     return;
   }
-  // `groups` que não é lista já foi recusado pela forma da cláusula.
+    // A `groups` that is not a list was already rejected by the clause shape.
   const groups: readonly unknown[] = Array.isArray(clause.groups) ? clause.groups : [];
   groups.forEach((group, gi) => {
     if (typeof group !== 'string' || target.groups.has(group)) return;
@@ -2370,7 +2371,7 @@ function checkChildClause(
   });
 }
 
-/** Um id de tipo de `allowedChildren`: existe e, antes da v13, está em outra camada. */
+/** An `allowedChildren` type id: it exists and, before v13, is in another layer. */
 function checkChildId(
   childId: string,
   li: number,
@@ -2387,7 +2388,7 @@ function checkChildId(
   }
 }
 
-/** Cada item de `allowedChildren` (id ou, na v11, cláusula) aponta para o que existe. */
+/** Each `allowedChildren` item (id or, in v11, clause) points to something that exists. */
 function checkAllowedChildren(
   spec: { formatVersion: number; layers: readonly V11Layer[] },
   typeLayer: ReadonlyMap<string, number>,
@@ -2425,10 +2426,10 @@ function checkAllowedChildren(
   });
 }
 
-/** Primeira `formatVersion` em que `accepts.annotations` existe. */
+/** First `formatVersion` in which `accepts.annotations` exists. */
 const ACCEPTS_ANNOTATIONS_VERSION = 14;
 
-/** Cada `accepts` de campo e de coluna `ref` do tipo, com o caminho dele. */
+/** Each `accepts` of a `ref` field and column of the type, with its path. */
 function eachAccepts(
   type: V11Type,
   typePath: (string | number)[],
@@ -2450,8 +2451,8 @@ function eachAccepts(
 }
 
 /**
- * `accepts.annotations` (v14): antes dela é erro; depois, cada item aponta para o que existe,
- * com os mesmos textos do `allowedChildren`.
+ * `accepts.annotations` (v14): before it is an error; after, each item points to something that
+ * exists, with the same texts as `allowedChildren`.
  */
 function checkAcceptsAnnotations(
   spec: { formatVersion: number; layers: readonly V11Layer[] },
@@ -2480,7 +2481,7 @@ function checkAcceptsAnnotations(
   });
 }
 
-/** v11: ids de grupo únicos na camada e `groups` do tipo só com grupos da própria camada. */
+/** v11: unique group ids in the layer and the type's `groups` only with groups of its own layer. */
 function checkLayerGroups(layers: readonly V11Layer[], ctx: z.RefinementCtx): void {
   const add = issueAdder(ctx);
   layers.forEach((layer, li) => {
@@ -2506,7 +2507,7 @@ function checkLayerGroups(layers: readonly V11Layer[], ctx: z.RefinementCtx): vo
   });
 }
 
-/** v11: `docRepos` com ids únicos e todo `doc` objeto citando um deles. */
+/** v11: `docRepos` with unique ids and every `doc` object citing one of them. */
 function checkDocRepos(
   spec: {
     docRepos?: readonly { readonly id: string }[] | undefined;
@@ -2530,8 +2531,8 @@ function checkDocRepos(
 }
 
 /**
- * `requiresOwner`: o tipo precisa estar no conjunto resolvido de filhos de algum **outro** tipo
- * (ele ser o único dono de si mesmo não atende: nenhuma anotação poderia ser a dona).
+ * `requiresOwner`: the type must be in the resolved set of children of some **other** type
+ * (being the only owner of itself does not suffice: no annotation could be the owner).
  */
 function checkRequiresOwner(
   spec: { layers: readonly V11Layer[] },
@@ -2555,7 +2556,7 @@ function checkRequiresOwner(
 
 const TOKEN_MODE_RE = /^[a-z0-9][a-z0-9-]*$/;
 
-/** `tokens.modes`: lista não vazia de nomes distintos. Devolve os modos válidos (ou `null`). */
+/** `tokens.modes`: non-empty list of distinct names. Returns the valid modes (or `null`). */
 function tokenModes(
   tokens: Record<string, unknown>,
   add: IssueAdder,
@@ -2583,7 +2584,7 @@ function tokenModes(
 const isTokenLiteral = (v: unknown): v is string | number =>
   (typeof v === 'string' && v !== '') || (typeof v === 'number' && Number.isFinite(v));
 
-/** Um token: literal (vale em todos os modos) ou um literal por modo, todos do mesmo tipo. */
+/** A token: a literal (valid in every mode) or one literal per mode, all of the same kind. */
 function checkTokenValue(
   name: string,
   value: unknown,
@@ -2613,7 +2614,7 @@ function checkTokenValue(
   }
 }
 
-/** Só `modes` e `values` valem em `tokens`: o resto é chave desconhecida. */
+/** Only `modes` and `values` are valid in `tokens`: the rest is an unknown key. */
 function checkTokenKeys(tokens: Record<string, unknown>, add: IssueAdder): void {
   for (const key of Object.keys(tokens)) {
     if (key !== 'modes' && key !== 'values') {
@@ -2622,7 +2623,7 @@ function checkTokenKeys(tokens: Record<string, unknown>, add: IssueAdder): void 
   }
 }
 
-/** `tokens` (só `formatVersion` 15): `modes` e `values` por nome `^[a-z0-9][a-z0-9-]*$`. */
+/** `tokens` (`formatVersion` 15 only): `modes` and `values` by name `^[a-z0-9][a-z0-9-]*$`. */
 function checkTokens(
   spec: { formatVersion: number; tokens?: unknown },
   ctx: z.RefinementCtx,
@@ -2648,7 +2649,7 @@ function checkTokens(
   }
 }
 
-/** `icons` (só `formatVersion` 15): o caminho de um `.json` do pacote. */
+/** `icons` (`formatVersion` 15 only): the path of a `.json` in the package. */
 function checkIcons(
   spec: { formatVersion: number; icons?: unknown },
   ctx: z.RefinementCtx,
@@ -2687,14 +2688,14 @@ export const specSchema = z
     containers: z.array(containerShape).optional(),
     layers: z.array(layerShape),
     fonts: z.array(fontShape).optional(),
-    // Validado por `parseOrigins` (a fonte da verdade da declaração de origem), no superRefine.
+        // Validated by `parseOrigins` (the source of truth of the origin declaration), in the superRefine.
     origins: z.unknown().optional(),
     migrations: z.array(migrationShape).optional(),
-    // Validado por `checkTokens` (caminhos e mensagens próprios), no superRefine.
+        // Validated by `checkTokens` (its own paths and messages), in the superRefine.
     tokens: z.unknown().optional(),
-    // O caminho é conferido por `checkIcons` (a versão primeiro); o arquivo, pelo validador da biblioteca.
+        // The path is checked by `checkIcons` (the version first); the file, by the library validator.
     icons: z.unknown().optional(),
-    // Validado por `checkSignatureKeys` (a versão, as formas e os cruzamentos), no superRefine.
+        // Validated by `checkSignatureKeys` (the version, the shapes and the cross checks), in the superRefine.
     fieldModels: z.unknown().optional(),
   })
   .strict()
@@ -2714,15 +2715,15 @@ export const specSchema = z
       }
       platformIds.add(platform.id);
     });
-    // v5: `repo` nas plataformas. Antes dela, é erro no caminho exato.
+        // v5: `repo` on the platforms. Before it, it is an error at the exact path.
     if (spec.formatVersion < 5) {
       (spec.platforms ?? []).forEach((platform, pi) => {
         if (platform.repo === undefined) return;
         addSpecIssue(ctx, ['platforms', pi, 'repo'], onlyFormat(5));
       });
     }
-    // v7: `floating` e `appliesTo` no tipo e `ref` como coluna de `table`. Antes dela, é erro
-    // no caminho exato.
+        // v7: `floating` and `appliesTo` on the type and `ref` as a `table` column. Before it, it is an
+        // error at the exact path.
     if (spec.formatVersion < 7) {
       spec.layers.forEach((layer, li) => {
         layer.annotationTypes.forEach((type, ti) => {
@@ -2741,7 +2742,7 @@ export const specSchema = z
         });
       });
     }
-    // v8: `suggestions` e `linkedRef` em campo e coluna `string`. Antes dela, é erro no caminho exato.
+        // v8: `suggestions` and `linkedRef` on `string` fields and columns. Before it, it is an error at the exact path.
     if (spec.formatVersion < 8) {
       spec.layers.forEach((layer, li) => {
         layer.annotationTypes.forEach((type, ti) => {
@@ -2763,7 +2764,7 @@ export const specSchema = z
         });
       });
     }
-    // v9: `variants` na entrada de `code`. Antes dela, é erro no caminho exato.
+        // v9: `variants` in the `code` entry. Before it, it is an error at the exact path.
     if (spec.formatVersion < 9) {
       spec.layers.forEach((layer, li) => {
         layer.annotationTypes.forEach((type, ti) => {
@@ -2778,13 +2779,13 @@ export const specSchema = z
         });
       });
     }
-    // v10: `notices` no tipo, no campo e na coluna. Antes dela, é erro no caminho exato.
+        // v10: `notices` on the type, the field and the column. Before it, it is an error at the exact path.
     if (spec.formatVersion < 10) checkNoNotices(spec.layers, ctx);
-    // v15: `structural` no tipo. Antes dela, é erro no caminho exato.
+        // v15: `structural` on the type. Before it, it is an error at the exact path.
     if (spec.formatVersion < 15) checkNoStructural(spec.layers, ctx);
-    // v11: cláusulas, `groups`, papéis e documento externo. Antes dela, é erro no caminho exato.
+        // v11: clauses, `groups`, roles and external document. Before it, it is an error at the exact path.
     if (spec.formatVersion < 11) checkNoV11Keys(spec, ctx);
-    // v6: `containers`. Antes dela, é erro no caminho exato.
+        // v6: `containers`. Before it, it is an error at the exact path.
     if (spec.containers !== undefined && spec.formatVersion < 6) {
       addSpecIssue(ctx, ['containers'], onlyFormat(6));
     }
@@ -2802,7 +2803,7 @@ export const specSchema = z
     const hasPlatforms = platformIds.size > 0;
     if (spec.formatVersion < 3) checkNoSources(spec.layers, ctx);
 
-    // v4: biblioteca. Antes dela, cada chave nova é erro no caminho exato.
+        // v4: library. Before it, each new key is an error at the exact path.
     const v4 = spec.formatVersion >= 4;
     const executable = v4 ? declaredSystems(spec.origins) : new Set<string>();
     if (!v4) {
@@ -2824,7 +2825,7 @@ export const specSchema = z
       checkMigrations(spec, spec.migrations ?? [], ctx);
     }
     const layerIds = new Set<string>();
-    /** id do tipo → índice da camada onde está definido. */
+        /** type id → index of the layer where it is defined. */
     const typeLayer = new Map<string, number>();
 
     spec.layers.forEach((layer, li) => {
@@ -2887,9 +2888,9 @@ export const specSchema = z
   });
 
 /**
- * Problema da especialização: o `message` em português (o que o MCP e os testes leem) e, quando
- * há, o `code` e os `params` do catálogo de mensagens do modelo (`src/model/messages/spec.ts`),
- * que a interface traduz.
+ * Specialization problem: the `message` in Portuguese (what the MCP and the tests read) and, when
+ * there is one, the `code` and the `params` of the model message catalog
+ * (`src/model/messages/spec.ts`), which the interface translates.
  */
 export type SpecIssue = {
   path: string;
@@ -2898,7 +2899,7 @@ export type SpecIssue = {
   params?: MessageParams;
 };
 
-/** `layers[1].annotationTypes[0].fields[2].type` a partir de um caminho do zod. */
+/** `layers[1].annotationTypes[0].fields[2].type` from a zod path. */
 export function formatSpecPath(path: readonly PropertyKey[]): string {
   let out = '';
   for (const part of path) {
@@ -2914,7 +2915,7 @@ export type SpecParseResult =
 
 type ParsedSpec = z.infer<typeof specSchema>;
 
-/** Sem as chaves de `removed`; `undefined` se não sobrar nenhuma. */
+/** Without the keys in `removed`; `undefined` if none is left. */
 function withoutKeys(
   record: Record<string, string> | undefined,
   removed: ReadonlySet<string>,
@@ -2924,7 +2925,7 @@ function withoutKeys(
   return kept.length > 0 ? Object.fromEntries(kept) : undefined;
 }
 
-/** `variants` sem os `params` dos campos removidos em cada caso (um caso só de `params` esvazia). */
+/** `variants` without the `params` of the removed fields in each case (a case with only `params` ends up empty). */
 function withoutRemovedInCases(
   variants: SpecCodeVariants,
   removed: ReadonlySet<string>,
@@ -2942,8 +2943,8 @@ function withoutRemovedInCases(
 }
 
 /**
- * Tira dos tipos os campos do tipo removido (`REMOVED_FIELD_TYPE`) e os `params` do `code`
- * que os citam; devolve o que foi ignorado, com o caminho no arquivo original.
+ * Removes from the types the fields of the removed type (`REMOVED_FIELD_TYPE`) and the `code`
+ * `params` that cite them; returns what was ignored, with the path in the original file.
  */
 function dropRemovedFields(parsed: ParsedSpec): {
   spec: Spec;
@@ -2991,7 +2992,7 @@ function dropRemovedFields(parsed: ParsedSpec): {
       };
     }),
   }));
-  // `origins` foi validado por `parseOrigins` no schema; a forma lida é a dele.
+    // `origins` was validated by `parseOrigins` in the schema; the shape read is its own.
   const { origins: rawOrigins, ...rest } = parsed;
   const origins =
     rawOrigins === undefined
@@ -3001,9 +3002,9 @@ function dropRemovedFields(parsed: ParsedSpec): {
 }
 
 /**
- * Chaves dos campos do tipo removido (`REMOVED_FIELD_TYPE`) por id de tipo, lidas do JSON
- * cru de uma especialização (sem validar): a migração v8 → v9 do projeto as usa para
- * descartar os valores desses campos. Vazio se o JSON não tiver a forma esperada.
+ * Keys of the fields of the removed type (`REMOVED_FIELD_TYPE`) by type id, read from the raw
+ * JSON of a specialization (without validating): the project's v8 → v9 migration uses them to
+ * discard the values of those fields. Empty if the JSON does not have the expected shape.
  */
 export function removedFieldKeys(data: unknown): Map<string, Set<string>> {
   const result = new Map<string, Set<string>>();
@@ -3025,7 +3026,7 @@ export function removedFieldKeys(data: unknown): Map<string, Set<string>> {
   return result;
 }
 
-/** O problema do zod como `SpecIssue`, com o código e os parâmetros do catálogo (sem o `input`). */
+/** The zod problem as a `SpecIssue`, with the code and parameters of the catalog (without the `input`). */
 function toSpecIssue(issue: z.core.$ZodIssue): SpecIssue {
   const base = { path: formatSpecPath(issue.path), message: issue.message };
   const coding = issueCoding(issue, KNOWN_SPEC_MSGS);
@@ -3035,7 +3036,7 @@ function toSpecIssue(issue: z.core.$ZodIssue): SpecIssue {
     : { ...base, code: coding.code, params: coding.params };
 }
 
-/** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
+/** Validates already-parsed JSON; errors in the `path: message` format. */
 export function parseSpec(data: unknown): SpecParseResult {
   const result = specSchema.safeParse(data, REPORT_INPUT);
   if (result.success) return { ok: true, ...dropRemovedFields(result.data) };
@@ -3047,7 +3048,7 @@ export function parseSpec(data: unknown): SpecParseResult {
   };
 }
 
-/** Lê o texto JSON de um arquivo de especialização. */
+/** Reads the JSON text of a specialization file. */
 export function parseSpecText(text: string): SpecParseResult {
   let data: unknown;
   try {

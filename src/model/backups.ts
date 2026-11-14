@@ -17,19 +17,19 @@ export function backupFileName(version: number, date: Date): string {
 export function backupTimestamp(name: string): string {
   return /\.(\d{8}-\d{6})\.json$/.exec(name)?.[1] ?? '';
 }
+
 /** File that tells git to ignore the backups (`backups/`, see `BACKUPS_DIR`). */
-/** Arquivo que diz ao git para ignorar os backups (`backups/`, ver `BACKUPS_DIR`). */
 export const GITIGNORE_FILE = '.gitignore';
+
 /** Does the line already cover `backups/` (with or without a slash at the start or end)? */
-/** A linha já cobre `backups/` (com ou sem barra no começo ou no fim)? */
 function ignoresBackups(line: string): boolean {
   return line.trim().replace(/^\//, '').replace(/\/$/, '') === BACKUPS_DIR;
 }
- * Text of the `.gitignore` with `backups/`, for whoever versions the project with git: the current text
- * (`''` if the file does not exist) with the line appended, or `null` if it already covers the folder.
+
+/**
+ * Text of the `.gitignore` with `backups/`, for whoever versions the project with git: the current
+ * text (`''` if the file does not exist) with the line appended, or `null` if it already covers the folder.
  * Never deletes or duplicates. The storage (app) or `create_project` (MCP) does the writing.
- * (`''` se o arquivo não existe) com a linha acrescentada, ou `null` se ele já cobre a pasta.
- * Nunca apaga nem duplica. Quem grava é o armazenamento (app) ou o `create_project` (MCP).
  */
 export function gitignoreWithBackups(text: string): string | null {
   if (text.split(/\r?\n/).some(ignoresBackups)) return null;

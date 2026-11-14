@@ -235,10 +235,10 @@ describe('validate_library com let e $var (servidor real)', () => {
     [
       'indefinida',
       'template.children[0].children[0].gap',
-      'variável não definida: space',
+      'undefined variable: space',
     ],
-    ['ciclo', 'template.let.a', 'ciclo de variáveis: a → b → a'],
-    ['nome', 'template.let.Gap', 'esperava nome de variável ([a-z][a-zA-Z0-9]*)'],
+    ['ciclo', 'template.let.a', 'variable cycle: a → b → a'],
+    ['nome', 'template.let.Gap', 'expected a variable name ([a-z][a-zA-Z0-9]*)'],
     [
       'tipo',
       'template.children[0].children[0].gap.$var(gap).$mul[0]',

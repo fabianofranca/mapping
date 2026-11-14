@@ -64,26 +64,26 @@ import type {
   TypedValues,
 } from './types';
 
-// Criar uma instância de componente (etapa Biblioteca, B3): uma marcação com uma anotação
-// tipada, no tamanho inicial do componente. Operação pura: o store faz dela **uma** entrada
-// de desfazer. Nada do desenho é gravado (ver `componentDrawings.ts`).
+// Creating a component instance (Library stage, B3): a marking with a typed annotation,
+// at the component's initial size. Pure operation: the store makes it **one** undo
+// entry. Nothing of the drawing is written (see `componentDrawings.ts`).
 
 export interface ComponentType {
   readonly specId: string;
   readonly typeId: string;
   readonly name: string;
-  /** Camada da especialização a que o tipo pertence. */
+  /** Layer of the specialization that the type belongs to. */
   readonly layerId: string;
-  /** O componente tem um slot que adota marcações filhas. */
+  /** The component has a slot that adopts child markings. */
   readonly container: boolean;
-  /** O tipo declara `floating`: a instância nasce flutuante, no canvas (`formatVersion` 7). */
+  /** The type declares `floating`: the instance is born floating, on the canvas (`formatVersion` 7). */
   readonly floating: boolean;
   readonly component: ComponentFile;
 }
 
 /**
- * Tipos com componente das especializações aplicadas, na ordem da especialização (camadas e
- * depois tipos). Só entra a especialização cuja versão bate com a do catálogo.
+ * Types with a component of the applied specializations, in the specialization's order (layers and
+ * then types). Only the specialization whose version matches the catalog's gets in.
  */
 export function componentTypes(p: Project, catalog: ComponentCatalog): ComponentType[] {
   const result: ComponentType[] = [];
@@ -112,41 +112,41 @@ export function componentTypes(p: Project, catalog: ComponentCatalog): Component
 export interface NewComponentArgs {
   readonly markingId: string;
   readonly annotationId: string;
-  /** Container da instância (posição em pixels dele); `null` = o canvas (unidades do canvas). */
+  /** Container of the instance (position in its pixels); `null` = the canvas (canvas units). */
   readonly containerId: string | null;
   /**
-   * Componente com slot **alvo**, onde a instância é posicionada (dentro do slot); `null` = fora
-   * de qualquer slot. É só o destino do posicionamento: o pai gravado é sempre o que o assentar
-   * decide pela geometria (a menor marcação do espaço que contém a instância), nunca o pedido.
+   * **Target** component with a slot, where the instance is positioned (inside the slot); `null` = outside
+   * any slot. It is only the destination of the positioning: the stored parent is always what the settle
+   * decides by geometry (the smallest marking of the space that contains the instance), never the request.
    */
   readonly parentId: string | null;
   readonly specId: string;
   readonly typeId: string;
   /**
-   * Centro desejado sem componente com slot, no espaço da instância: pixels do container
-   * (ausente = centro dele) ou unidades do canvas (ausente = `{ x: 0, y: 0 }`). Um tipo
-   * flutuante só existe no canvas: `containerId` e `parentId` nulos, senão `invalid-space`.
+   * Desired center without a component with a slot, in the instance's space: container pixels
+   * (absent = its center) or canvas units (absent = `{ x: 0, y: 0 }`). A floating
+   * type only exists on the canvas: `containerId` and `parentId` null, otherwise `invalid-space`.
    */
   readonly center?: { readonly x: number; readonly y: number };
-  /** Retângulo explícito (MCP), no espaço da instância; ausente = `componentPlacement`. */
+  /** Explicit rectangle (MCP), in the instance's space; absent = `componentPlacement`. */
   readonly rect?: Rect;
   /**
-   * Só tipo flutuante: posiciona a instância num lugar livre da margem do alvo (container ou
-   * marcação; `placeFloatingNear`) com o tamanho do componente. `rect` explícito vence.
+   * Floating type only: positions the instance in a free spot of the target's margin (container or
+   * marking; `placeFloatingNear`) with the component's size. An explicit `rect` wins.
    */
   readonly near?: FloatingNearTarget;
   /**
-   * Valores iniciais por cima do `preview` do componente (que já está sobre os `default`):
-   * os campos que não vêm aqui começam com o `preview`; ausente = só o `preview`.
+   * Initial values on top of the component's `preview` (which is already on top of the `default`s):
+   * the fields that do not come here start with the `preview`; absent = only the `preview`.
    */
   readonly values?: TypedValues;
   readonly name?: string | null;
   /**
-   * Âncora (v20): a instância fica ligada a outra marcação do mesmo espaço. Sem `rect`, nasce no
-   * tamanho medido e já encostada (`componentAnchoredPlacement`); com `rect`, ele manda.
+   * Anchor (v20): the instance is linked to another marking of the same space. Without `rect`, it is born at the
+   * measured size and already attached (`componentAnchoredPlacement`); with `rect`, that one rules.
    */
   readonly anchor?: MarkingAnchor;
-  /** Padrões da âncora do componente (o `offset` em unidades) para o que `anchor` não informa. */
+  /** Defaults of the component's anchor (the `offset` in units) for what `anchor` does not specify. */
   readonly anchorDefaults?: AnchorDefaultsUnits;
 }
 
@@ -182,12 +182,12 @@ interface SlotBox {
   readonly padding: { left: number; top: number; right: number; bottom: number };
   readonly gap: number;
   readonly flow: 'row' | 'column' | 'grid' | 'none';
-  /** Só `grid`: as trilhas da grade. */
+  /** `grid` only: the grid's tracks. */
   readonly grid?: ResolvedGrid | undefined;
   readonly reverse: boolean;
-  /** Direção de leitura do espaço do slot: em `rtl` a grade se espelha (como no Arrumar). */
+  /** Reading direction of the slot's space: in `rtl` the grid mirrors (as in Arrange). */
   readonly direction: ReadingDirection;
-  /** Quebra de fileira do slot (`layout.wrap`, v4) e os limites dela. */
+  /** Row wrap of the slot (`layout.wrap`, v4) and its limits. */
   readonly wrap: 'none' | 'wrap' | 'wrap-reverse';
   readonly lineGap: number;
   readonly maxPerLine: number | undefined;
@@ -195,7 +195,7 @@ interface SlotBox {
   readonly hasSlot: boolean;
 }
 
-/** O layout do slot (em unidades) com as medidas em pixels da imagem: padding, gap, lineGap e `grid.min`. */
+/** The slot's layout (in units) with the measures in image pixels: padding, gap, lineGap and `grid.min`. */
 function scaledLayout(layout: ResolvedSlotLayout, density: number): ResolvedSlotLayout {
   if (density === 1) return layout;
   const px = (units: number): number => units * density;
@@ -217,7 +217,7 @@ function scaledLayout(layout: ResolvedSlotLayout, density: number): ResolvedSlot
   };
 }
 
-/** Caixa do slot em pixels inteiros, dentro do componente com slot; o retângulo dele se não houver slot. */
+/** Slot box in whole pixels, inside the component with a slot; its rectangle if there is no slot. */
 function slotArea(
   p: Project,
   catalog: ComponentCatalog,
@@ -267,7 +267,7 @@ function slotArea(
     gap: layout.gap,
     flow: layout.type,
     grid: layout.grid,
-    // Numa linha em `rtl` a ordem corre da direita para a esquerda: o fluxo das filhas inverte.
+    // In a row in `rtl` the order runs from right to left: the children's flow inverts.
     reverse: layout.reverse !== (layout.type === 'row' && drawn.direction === 'rtl'),
     direction: drawn.direction,
     wrap: layout.wrap,
@@ -279,10 +279,10 @@ function slotArea(
 }
 
 /**
- * O retângulo de `rect` ficou dentro da área do slot do componente com slot `targetId` (a mesma
- * `slotArea` do `componentPlacement`) e, em layout de linha ou coluna, fora da última filha? `false`
- * também quando o alvo não desenha componente com slot. Serve para saber se uma instância nova
- * coube ou ficou presa ao componente (slot cheio).
+ * Did the rectangle `rect` end up inside the slot area of the component with a slot `targetId` (the same
+ * `slotArea` as `componentPlacement`) and, in a row or column layout, outside the last child? `false`
+ * also when the target does not draw a component with a slot. Serves to know whether a new instance
+ * fit or stayed stuck to the component (full slot).
  */
 export function placementFitsSlot(
   p: Project,
@@ -293,16 +293,16 @@ export function placementFitsSlot(
 ): boolean {
   const slot = slotArea(p, catalog, targetId, measure);
   if (!slot.hasSlot || !containsRect(slot.area, rect)) return false;
-  // Layout em linha ou coluna: presa ao componente, a filha pode ficar dentro da área do slot e ainda
-  // assim em cima da última irmã (slot do tamanho do componente): também não coube.
+  // Row or column layout: stuck to the component, the child may be inside the slot area and still
+  // on top of the last sibling (slot the size of the component): it also did not fit.
   const kids = childrenOf(p, targetId);
-  // Em grade, a filha nova não pode cobrir nenhuma irmã (as células vizinhas ficam livres).
+  // In a grid, the new child must not cover any sibling (the neighboring cells stay free).
   if (slot.flow === 'grid') return !kids.some((k) => rectsOverlap(k.rect, rect));
   const last = kids.at(-1);
   return slot.flow === 'none' || last === undefined || !rectsOverlap(last.rect, rect);
 }
 
-/** O alvo desenha um componente com slot? (o que o `componentPlacement` usa para posicionar a filha) */
+/** Does the target draw a component with a slot? (what `componentPlacement` uses to position the child) */
 export function hasComponentSlot(
   p: Project,
   catalog: ComponentCatalog,
@@ -316,13 +316,13 @@ type PlacementArgs = Pick<
   NewComponentArgs,
   'containerId' | 'parentId' | 'specId' | 'typeId' | 'center' | 'values'
 > & {
-  /** Substitui o `size` do componente (MCP: o `rect` de `inside`), com as mesmas regras. */
+  /** Replaces the component's `size` (MCP: the `rect` of `inside`), with the same rules. */
   readonly size?: { readonly width: number; readonly height: number };
-  /** A âncora da instância (`$anchor.*`) com que o tamanho é medido; ausente = sem âncora. */
+  /** The instance's anchor (`$anchor.*`) with which the size is measured; absent = no anchor. */
   readonly instanceAnchor?: InstanceAnchor;
 };
 
-/** O que a colocação de uma instância nova precisa: o tipo, o pai alvo, o slot dele e a área. */
+/** What the placement of a new instance needs: the type, the target parent, its slot and the area. */
 interface PlacementSpace {
   readonly component: ComponentFile;
   readonly type: SpecAnnotationType;
@@ -331,9 +331,9 @@ interface PlacementSpace {
   readonly image: ProjectContainer | null;
   readonly parent: Marking | null;
   readonly slot: SlotBox | null;
-  /** A imagem ou a caixa do slot; `null` no canvas sem slot (sem limite). */
+  /** The image or the slot's box; `null` on the canvas without a slot (no limit). */
   readonly area: Rect | null;
-  /** Densidade do container da instância (1 no canvas): o `size` e o `minSize` são unidades. */
+  /** Density of the instance's container (1 on the canvas): `size` and `minSize` are units. */
   readonly density: number;
 }
 
@@ -350,7 +350,7 @@ function placementSpace(
   if (parent !== null && parent.containerId !== args.containerId)
     fail('invalid-parent', parent.id);
   const slot = parent === null ? null : slotArea(p, catalog, parent.id, measure);
-  // Sem imagem (canvas) e sem slot, não há limite.
+  // Without an image (canvas) and without a slot, there is no limit.
   const area: Rect | null = slot?.area ?? (image === null ? null : imagePixelRect(image));
   return {
     component,
@@ -365,15 +365,15 @@ function placementSpace(
   };
 }
 
-/** Id da marcação e da anotação provisórias com que se leem os valores iniciais (nunca gravadas). */
+/** Id of the provisional marking and annotation with which the initial values are read (never written). */
 const SCRATCH_MARKING = '__initial-size__';
 const SCRATCH_ANNOTATION = '__initial-size-annotation__';
 
 /**
- * Os valores com que a instância nova nasce, na forma do motor: os `default` dos campos, o `preview`
- * do componente e os `values` dados por cima (a mesma ordem de `addComponentMarking`). Lê-se de uma
- * anotação provisória num projeto descartável; o valor que o campo recusa fica de fora (a criação,
- * depois, falha com o erro dele). `undefined` se a camada do tipo não está no projeto.
+ * The values with which the new instance is born, in the engine's form: the fields' `default`s, the component's
+ * `preview` and the given `values` on top (the same order as `addComponentMarking`). They are read from a
+ * provisional annotation in a throwaway project; a value the field refuses stays out (the creation,
+ * later, fails with its error). `undefined` if the type's layer is not in the project.
  */
 function initialValues(
   p: Project,
@@ -413,10 +413,10 @@ function initialValues(
 }
 
 /**
- * O tamanho que a instância nova quer (decisão 16 da #898): o `size` do componente e, nos eixos em que o
- * `sizing` depende do conteúdo (`hug` ou expressão), o tamanho medido com os valores iniciais
- * (`preview` mais os dados). Quem dá o tamanho (`args.size`) manda, sem medir; componente sem `sizing`
- * não mede (o caso comum não paga o projeto provisório), nem o componente com slot.
+ * The size the new instance wants (decision 16 of #898): the component's `size` and, on the axes where the
+ * `sizing` depends on the content (`hug` or expression), the size measured with the initial values
+ * (`preview` plus the given ones). Whoever gives the size (`args.size`) rules, without measuring; a component without `sizing`
+ * does not measure (the common case does not pay for the provisional project), nor does a component with a slot.
  */
 function wantedSize(
   p: Project,
@@ -426,13 +426,13 @@ function wantedSize(
 ): Size {
   if (args.size !== undefined) return args.size;
   const { component, density } = space;
-  // O `size` do componente é em unidades; a instância nasce em pixels da imagem (× densidade).
+  // The component's `size` is in units; the instance is born in image pixels (× density).
   const nominal: Size = {
     width: unitsToPixels(component.size.width, density),
     height: unitsToPixels(component.size.height, density),
   };
-  // Componente com slot: o conteúdo são as filhas, que ainda não existem (nasce no `size`; o
-  // Arrumar o ajusta depois de elas entrarem).
+  // Component with a slot: the content is the children, which do not exist yet (born at `size`;
+  // Arrange adjusts it after they come in).
   if (component.sizing === undefined || hasSlotComponent(component)) return nominal;
   const values = initialValues(p, space, args);
   if (values === undefined) return nominal;
@@ -452,11 +452,11 @@ function wantedSize(
 }
 
 /**
- * Tamanho de uma instância nova: o `size` do componente (ou `args.size`) preso à área disponível
- * (a imagem ou a caixa do slot do componente com slot) e nunca abaixo do `minSize`; se nem o
- * mínimo cabe, `rect-out-of-image` (nível da imagem) ou `rect-outside-parent` (componente com
- * slot). No canvas sem slot não há limite. É só o tamanho, sem a busca de lugar: serve a quem não
- * precisa da posição (o tamanho inicial e o `near` do MCP).
+ * Size of a new instance: the component's `size` (or `args.size`) clamped to the available area
+ * (the image or the slot's box of the component with a slot) and never below `minSize`; if not even the
+ * minimum fits, `rect-out-of-image` (image level) or `rect-outside-parent` (component with a
+ * slot). On the canvas without a slot there is no limit. It is only the size, without the search for a place: it serves whoever does not
+ * need the position (the initial size and the MCP's `near`).
  */
 function fitSize(space: PlacementSpace, wanted: Size): Size {
   const unitMin = space.component.minSize;
@@ -499,7 +499,7 @@ export function componentSize(
   return fitSize(space, wantedSize(p, space, args, measure));
 }
 
-/** R0 fora de um slot: o tamanho centrado em `center` (padrão, o centro da imagem), preso à imagem. */
+/** R0 outside a slot: the size centered on `center` (default, the image center), clamped to the image. */
 function centeredRect(
   space: PlacementSpace,
   size: Size,
@@ -521,7 +521,7 @@ function centeredRect(
   };
 }
 
-/** Os eixos do slot com `wrap`: principal (largura numa `row`) e cruzado, e onde acaba o conteúdo. */
+/** The axes of the slot with `wrap`: main (width in a `row`) and cross, and where the content ends. */
 interface WrapAxes {
   readonly row: boolean;
   readonly start: number;
@@ -548,7 +548,7 @@ function wrapAxes(slot: SlotBox): WrapAxes {
   };
 }
 
-/** A filha nova cabe depois da última na linha dela (espaço do eixo principal e `maxPerLine`)? */
+/** Does the new child fit after the last one on its line (main-axis space and `maxPerLine`)? */
 function fitsLastLine(
   lastLine: readonly Marking[],
   slot: SlotBox,
@@ -562,7 +562,7 @@ function fitsLastLine(
   return used + slot.gap + mainSize <= axes.end - axes.start + WRAP_EPS;
 }
 
-/** Onde começa, no eixo principal, a filha que segue a última na mesma linha. */
+/** Where the child that follows the last one on the same line starts, on the main axis. */
 function sameLineMain(
   slot: SlotBox,
   axes: WrapAxes,
@@ -574,16 +574,16 @@ function sameLineMain(
     : axes.mainEnd(last) + slot.gap;
 }
 
-/** Cabe mais uma linha sem passar de `maxLines`? */
+/** Does one more line fit without going past `maxLines`? */
 function canOpenLine(slot: SlotBox, lines: number): boolean {
   return slot.maxLines === undefined || lines < slot.maxLines;
 }
 
 /**
- * R0 num slot com `wrap` e ao menos uma filha: na linha da última filha, depois dela, se cabe (e o
- * `maxPerLine` deixa); senão no começo da linha seguinte, abaixo da última (ou à direita, numa
- * `column`), com o `lineGap`. As linhas das filhas saem do mesmo `breakLines` da arrumação. Em
- * `wrap-reverse` a linha nova também vai depois da última: o Arrumar põe as linhas na ordem certa.
+ * R0 in a slot with `wrap` and at least one child: on the last child's line, after it, if it fits (and
+ * `maxPerLine` allows); otherwise at the start of the next line, below the last one (or to the right, in a
+ * `column`), with the `lineGap`. The children's lines come from the same `breakLines` as the arrangement. In
+ * `wrap-reverse` the new line also goes after the last one: Arrange puts the lines in the right order.
  */
 function wrapSlotPoint(
   kids: readonly Marking[],
@@ -601,7 +601,7 @@ function wrapSlotPoint(
   if (lastKid === undefined) return undefined;
   const mainSize = axes.row ? size.width : size.height;
   const fits = fitsLastLine(lastLine, slot, axes, mainSize);
-  // Uma linha nova além de `maxLines` não seria arrumada: segue o fluxo de uma linha só.
+  // A new line beyond `maxLines` would not be arranged: it follows the single-line flow.
   if (!fits && !canOpenLine(slot, lines.length)) return undefined;
   const main = fits
     ? sameLineMain(slot, axes, lastKid.rect, mainSize)
@@ -614,7 +614,7 @@ function wrapSlotPoint(
   return axes.row ? { x: main, y: cross } : { x: cross, y: main };
 }
 
-/** O R0 de um slot com `wrap` (ver `wrapSlotPoint`); `undefined` sem `wrap`, sem layout ou sem filhas. */
+/** The R0 of a slot with `wrap` (see `wrapSlotPoint`); `undefined` without `wrap`, without a layout or without children. */
 function wrappedSlotRect(
   p: Project,
   parent: Marking,
@@ -628,7 +628,7 @@ function wrappedSlotRect(
     : { x: Math.round(point.x), y: Math.round(point.y), ...size };
 }
 
-/** Os eixos da grade: onde começa e quanto mede a área de conteúdo nas trilhas, e onde começam as linhas. */
+/** The axes of the grid: where the content area starts and how large it is on the tracks, and where the lines start. */
 interface GridAxes {
   readonly vertical: boolean;
   readonly tStart: number;
@@ -649,13 +649,13 @@ function gridAxes(slot: SlotBox): GridAxes {
   };
 }
 
-/** A extensão da filha na linha de fluxo (altura na grade vertical). */
+/** The child's extent on the flow line (height in the vertical grid). */
 const flowExtent = (axes: GridAxes, r: Rect): number =>
   axes.vertical ? r.height : r.width;
 
 /**
- * Em `rtl`, o retângulo espelhado dentro da área de conteúdo do slot (`x' = 2·esquerda + largura útil
- * − x − w`), como o Arrumar espelha a grade (`mirrorInContent`); em `ltr`, o próprio retângulo.
+ * In `rtl`, the rectangle mirrored inside the slot's content area (`x' = 2·left + usable width
+ * − x − w`), as Arrange mirrors the grid (`mirrorInContent`); in `ltr`, the rectangle itself.
  */
 function mirroredInSlot(slot: SlotBox, rect: Rect): Rect {
   if (slot.direction !== 'rtl') return rect;
@@ -665,11 +665,11 @@ function mirroredInSlot(slot: SlotBox, rect: Rect): Rect {
 }
 
 /**
- * R0 num slot em grade: a primeira célula, na ordem de colocação (a das filhas que já há, mais a
- * primeira depois da última linha), cujo retângulo, com o tamanho da filha nova, não cobre nenhuma
- * irmã. As linhas de fluxo têm a extensão da maior filha e se empilham com o `lineGap`, como no
- * Arrumar. `layout.reverse` não conta aqui: o Arrumar reordena depois. Em `rtl` a célula é a espelhada
- * (a primeira fica na ponta direita), tanto na busca quanto na checagem de sobreposição.
+ * R0 in a grid slot: the first cell, in placement order (those of the children already there, plus the
+ * first after the last line), whose rectangle, with the new child's size, does not cover any
+ * sibling. The flow lines have the extent of the largest child and stack with the `lineGap`, as in
+ * Arrange. `layout.reverse` does not count here: Arrange reorders afterward. In `rtl` the cell is the mirrored one
+ * (the first sits at the right end), both in the search and in the overlap check.
  */
 function gridSlotRect(kids: readonly Marking[], slot: SlotBox, size: Size): Rect {
   const axes = gridAxes(slot);
@@ -700,7 +700,7 @@ function gridSlotRect(kids: readonly Marking[], slot: SlotBox, size: Size): Rect
   return at(lines, 0);
 }
 
-/** R0 num componente com slot: depois da última filha no eixo do layout, ou no início do conteúdo (antes do `clamp`). */
+/** R0 in a component with a slot: after the last child on the layout's axis, or at the start of the content (before the `clamp`). */
 function slotRect(p: Project, parent: Marking, slot: SlotBox, size: Size): Rect {
   if (slot.flow === 'grid') return gridSlotRect(childrenOf(p, parent.id), slot, size);
   const wrapped = wrappedSlotRect(p, parent, slot, size);
@@ -710,7 +710,7 @@ function slotRect(p: Project, parent: Marking, slot: SlotBox, size: Size): Rect 
   let y = slotBox.y + slot.padding.top;
   const last = childrenOf(p, parent.id).at(-1);
   if (slot.reverse && slot.flow !== 'none') {
-    // `layout.reverse`: a primeira filha encosta no fim do slot e as seguintes ficam antes da última.
+    // `layout.reverse`: the first child touches the end of the slot and the following ones go before the last.
     const column = slot.flow === 'column';
     const edge = column
       ? bottom(slotBox) - slot.padding.bottom
@@ -724,7 +724,7 @@ function slotRect(p: Project, parent: Marking, slot: SlotBox, size: Size): Rect 
   return { x: Math.round(x), y: Math.round(y), ...size };
 }
 
-/** Sem lugar livre no slot: a posição de antes (a do slot se cabe; senão presa dentro do componente). */
+/** No free place in the slot: the previous position (the slot's if it fits; otherwise clamped inside the component). */
 function clampToParent(parent: Marking, slotBox: Rect, placed: Rect): Rect {
   if (containsRect(slotBox, placed)) return placed;
   const outer = parent.rect;
@@ -737,18 +737,18 @@ function clampToParent(parent: Marking, slotBox: Rect, placed: Rect): Rect {
 }
 
 /**
- * Retângulo de uma instância nova, em lugar livre (etapa #1087). O R0 é a posição de antes:
- * sem componente com slot, o tamanho do componente centrado em `center` (padrão, o centro da
- * imagem) e preso à imagem; no canvas (`containerId` nulo), centrado em `center` (padrão
- * `{ x: 0, y: 0 }`), sem limite; num componente com slot, dentro da caixa do slot, logo depois da
- * última filha no eixo do layout (linha: à direita; coluna: abaixo; com o `gap` e o `padding` do
- * slot; com `layout.reverse`, a primeira no fim do slot e as seguintes antes da última), ou no
- * início do conteúdo se o layout é `none` ou não há filhas (antes do `clamp`).
+ * Rectangle of a new instance, in a free place (stage #1087). R0 is the previous position:
+ * without a component with a slot, the component's size centered on `center` (default, the
+ * image center) and clamped to the image; on the canvas (`containerId` null), centered on `center` (default
+ * `{ x: 0, y: 0 }`), without a limit; in a component with a slot, inside the slot's box, right after the
+ * last child on the layout's axis (row: to the right; column: below; with the slot's `gap` and `padding`;
+ * with `layout.reverse`, the first at the end of the slot and the following ones before the last), or at the
+ * start of the content if the layout is `none` or there are no children (before the `clamp`).
  *
- * Se o R0 já é livre, é ele. Senão vai para o lugar livre mais perto dele (`placementLevel`:
- * dentro da menor marcação que o contém e é diferente dele, ou na imagem, sem cobrir nem
- * coincidir com outras marcações), com o vão `PLACEMENT_GAP`. Sem lugar na área, fica no R0 (preso
- * ao componente com slot), sem erro. O tipo flutuante (fora da árvore) devolve o R0 sem buscar.
+ * If R0 is already free, it is the one. Otherwise it goes to the free place nearest to it (`placementLevel`:
+ * inside the smallest marking that contains it and is different from it, or on the image, without covering or
+ * coinciding with other markings), with the gap `PLACEMENT_GAP`. With no place in the area, it stays at R0 (clamped
+ * to the component with a slot), without error. The floating type (outside the tree) returns R0 without searching.
  */
 export function componentPlacement(
   p: Project,
@@ -767,16 +767,16 @@ export function componentPlacement(
   const placed = slotRect(p, parent, slot, size);
   const level = placementLevel(p, args.containerId, placed, { parent, area: slot.area });
   const free = freeRectIn(level, placed);
-  // Slot cheio: a posição de antes, mas nunca contida nem igual a uma irmã (3.1): senão o assentar
-  // a faria filha dela, e não do componente do slot.
+  // Full slot: the previous position, but never contained in or equal to a sibling (3.1): otherwise the settle
+  // would make it a child of that one, and not of the slot's component.
   return free ?? crowdedRectIn(level, clampToParent(parent, slot.area, placed));
 }
 
 /**
- * O retângulo `rect` é livre onde `componentPlacement` o poria: cabe na área do nível (a imagem,
- * a marcação que o contém ou a caixa do slot de `parentId`) e não se sobrepõe a nenhuma marcação
- * não flutuante (nem, no canvas, a nenhum container) que cruza a área, fora o pai e os ancestrais.
- * Dá ao teste, e a quem quiser avisar depois, se a peça escolhida ficou livre (decisão 5).
+ * The rectangle `rect` is free where `componentPlacement` would put it: it fits in the level's area (the image,
+ * the marking that contains it or the box of the slot of `parentId`) and does not overlap any
+ * non-floating marking (nor, on the canvas, any container) that crosses the area, except the parent and the ancestors.
+ * It gives the test, and whoever wants to warn later, whether the chosen piece ended up free (decision 5).
  */
 export function placementIsFree(
   p: Project,
@@ -792,22 +792,22 @@ export function placementIsFree(
   return isFreeInLevel(placementLevel(p, args.containerId, args.rect, target), args.rect);
 }
 
-/** O `preview` do campo se ele é um valor simples; `undefined` para `table`, `ref`, ausente ou composto. */
+/** The `preview` of the field if it is a simple value; `undefined` for `table`, `ref`, absent or composite. */
 function simplePreview(
   field: SpecAnnotationType['fields'][number],
   component: ComponentFile,
 ): string | number | null | undefined {
   if (field.type === 'table' || field.type === 'ref') return undefined;
   const preview = component.preview?.[field.key];
-  // As linhas de uma tabela não passam por aqui (o campo `table` já foi pulado).
+  // The rows of a table do not pass through here (the `table` field was already skipped).
   const simple =
     typeof preview === 'string' || typeof preview === 'number' || preview === null;
   return simple ? preview : undefined;
 }
 
 /**
- * Põe o `preview` do componente nos campos da anotação que `given` não informa (os campos
- * `table` e `ref` ficam no `default`). Um `preview` que o campo não aceita fica no `default`.
+ * Puts the component's `preview` into the annotation fields that `given` does not specify (the `table`
+ * and `ref` fields stay at the `default`). A `preview` that the field does not accept stays at the `default`.
  */
 function applyPreview(
   p: Project,
@@ -831,10 +831,10 @@ function applyPreview(
 }
 
 /**
- * O retângulo de uma instância nova ancorada, sem criar nada (o MCP e `addComponentMarking`): o
- * tamanho medido (`componentSize`, com os `values`) encostado na âncora (`anchoredRect`, com os
- * padrões de `anchorDefaults` e a densidade e a direção do espaço), preso à imagem do container
- * com um aviso (`arrange.outside`). A âncora é conferida como em `setMarkingAnchor`.
+ * The rectangle of a new anchored instance, without creating anything (the MCP and `addComponentMarking`): the
+ * measured size (`componentSize`, with the `values`) attached to the anchor (`anchoredRect`, with the
+ * defaults of `anchorDefaults` and the space's density and direction), clamped to the container's image
+ * with a warning (`arrange.outside`). The anchor is checked as in `setMarkingAnchor`.
  */
 export function componentAnchoredPlacement(
   p: Project,
@@ -856,11 +856,11 @@ export function componentAnchoredPlacement(
   const density = effectiveDensity(p, args.containerId);
   const direction = effectiveDirection(p, args.containerId);
   const resolved = resolveMarkingAnchor(args.anchor, args.anchorDefaults, density);
-  // O `$anchor.*` entra na medida (um `hug` que depende do lado mede no ramo em que desenha). O
-  // `rect` da instância ainda não existe: `$anchor.side`, `.width` e `.height` são exatos; `.x` e
-  // `.y` (o centro da âncora relativo à caixa) usam a caixa estimada pelo tamanho SEM âncora,
-  // encostada como será. Um tamanho que dependa do `.x`/`.y` pode diferir um pouco do desenhado
-  // (o `snap_to_anchor` e o `fit_marking` depois da criação medem com o `rect` real).
+  // The `$anchor.*` enters the measure (a `hug` that depends on the side measures on the branch it draws). The
+  // instance's `rect` does not exist yet: `$anchor.side`, `.width` and `.height` are exact; `.x` and
+  // `.y` (the anchor's center relative to the box) use the box estimated by the size WITHOUT an anchor,
+  // attached as it will be. A size that depends on `.x`/`.y` may differ slightly from the drawn one
+  // (`snap_to_anchor` and `fit_marking` after the creation measure with the real `rect`).
   const estimate = anchoredRect(
     target.rect,
     componentSize(p, catalog, args, measure),
@@ -894,13 +894,13 @@ export function componentAnchoredPlacement(
 }
 
 /**
- * Cria a marcação e a anotação tipada que a desenha, numa operação só (o store faz uma
- * entrada de desfazer). `parentId` é o componente com slot alvo onde a instância é posicionada;
- * o pai gravado é o que o assentar decide pela geometria (`createMarking` assenta), nunca o
- * pedido. A anotação vai na camada do projeto que veio da camada da
- * especialização do tipo, com o `preview` do componente nos campos que `args.values` não
- * informa e os valores de `args.values` por cima (campos `table` e `ref` ficam no `default`). O tamanho mínimo do
- * componente vale desde a criação.
+ * Creates the marking and the typed annotation that draws it, in a single operation (the store makes one
+ * undo entry). `parentId` is the target component with a slot where the instance is positioned;
+ * the stored parent is what the settle decides by geometry (`createMarking` settles), never the
+ * request. The annotation goes in the project layer that came from the layer of the
+ * type's specialization, with the component's `preview` in the fields that `args.values` does not
+ * specify and the values of `args.values` on top (`table` and `ref` fields stay at the `default`). The component's minimum
+ * size applies from the creation.
  */
 export function addComponentMarking(
   p: Project,
@@ -911,10 +911,10 @@ export function addComponentMarking(
   const { component, type, layerId } = resolveType(p, catalog, args.specId, args.typeId);
   const layer =
     projectLayerFor(p, args.specId, layerId) ?? fail('type-not-in-layer', args.typeId);
-  // A âncora é conferida antes de criar nada (os erros da invariante); depois do assentar, só o
-  // espaço pode ter mudado e então ela é solta (`setNewMarkingAnchor`).
+  // The anchor is checked before creating anything (the invariant's errors); after the settle, only the
+  // space may have changed and then it is released (`setNewMarkingAnchor`).
   if (args.anchor) checkAnchorTarget(p, args.markingId, args.containerId, args.anchor);
-  // Tipo flutuante (decisão 10): nasce marcação flutuante no canvas, fora do pertencimento.
+  // Floating type (decision 10): a floating marking is born on the canvas, outside the belonging.
   const floating = type.floating === true;
   const defaultSize = (): Size =>
     componentSize(
@@ -983,6 +983,6 @@ export function addComponentMarking(
   for (const [key, value] of Object.entries(args.values ?? {})) {
     next = setFieldValue(next, args.annotationId, key, value);
   }
-  // O assentar pode ter posto a nova noutro espaço que o alvo: a âncora é solta, não falha a criação.
+  // The settle may have put the new one in a different space than the target: the anchor is released, the creation does not fail.
   return args.anchor ? setNewMarkingAnchor(next, args.markingId, args.anchor) : next;
 }
