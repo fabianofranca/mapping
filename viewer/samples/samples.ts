@@ -225,7 +225,7 @@ export const AVATAR: ComponentFile = {
         fill: {
           $switch: 'color',
           cases: {
-            azul: {
+            blue: {
               type: 'linear',
               angle: 45,
               stops: [
@@ -233,7 +233,7 @@ export const AVATAR: ComponentFile = {
                 { offset: 1, color: '#1A63CC' },
               ],
             },
-            roxo: {
+            purple: {
               type: 'linear',
               angle: 45,
               stops: [
@@ -241,7 +241,7 @@ export const AVATAR: ComponentFile = {
                 { offset: 1, color: '#7E57C2' },
               ],
             },
-            verde: {
+            green: {
               type: 'linear',
               angle: 45,
               stops: [
@@ -249,7 +249,7 @@ export const AVATAR: ComponentFile = {
                 { offset: 1, color: '#2E7D32' },
               ],
             },
-            laranja: {
+            orange: {
               type: 'linear',
               angle: 45,
               stops: [

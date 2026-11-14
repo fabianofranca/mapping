@@ -39,7 +39,7 @@ export const MAX_SINCE_REVIEW = 64 * KIB;
 /** The ceiling file, relative to the current folder. */
 export const DEFAULT_BUDGET = 'scripts/ci/dist-budget.json';
 
-/** `1933312` → `1.933.312`. */
+/** `1933312` → `1,933,312`. */
 function grouped(n) {
   return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
@@ -93,7 +93,7 @@ export function describeDecision(d) {
   return `${sobe}\nbug: ${d.over.map((o) => o.reason).join('; ')}`;
 }
 
-/** KiB with a decimal comma only when the ceiling is not a multiple of 1 KiB: `1904` or `1.904,5`. */
+/** KiB with a decimal point only when the ceiling is not a multiple of 1 KiB: `1904` or `1,904.5`. */
 function kib(bytes) {
   const v = bytes / KIB;
   if (Number.isInteger(v)) return grouped(v);

@@ -74,12 +74,37 @@ const QUOTES: readonly (readonly [string, string])[] = [
   ['«', '»'],
 ];
 
+const isWordChar = (c: string | undefined): boolean =>
+  c !== undefined && /[\p{L}\p{N}]/u.test(c);
+
+/** A `'` that can open a quote: not an apostrophe inside a word. */
+const opensSingle = (line: string, i: number): boolean => !isWordChar(line[i - 1]);
+
+/** A `'` that can close a quote: not an apostrophe inside a word. */
+const closesSingle = (line: string, i: number): boolean => !isWordChar(line[i + 1]);
+
+/** Single quotes: English apostrophes ("the owner's note") are not quote marks. */
+function insideSingleQuotes(line: string, start: number, end: number): boolean {
+  let open = false;
+  for (let i = 0; i < start; i++) {
+    if (line[i] !== "'") continue;
+    if (!open && opensSingle(line, i)) open = true;
+    else if (open && closesSingle(line, i)) open = false;
+  }
+  if (!open) return false;
+  for (let i = end; i < line.length; i++)
+    if (line[i] === "'" && closesSingle(line, i)) return true;
+  return false;
+}
+
 /** True when `[start, end)` of the line is inside a pair of backticks or quotes. */
 export function insideQuotes(line: string, start: number, end: number): boolean {
   const before = line.slice(0, start);
   const after = line.slice(end);
   for (const [open, close] of QUOTES) {
-    if (open === close) {
+    if (open === "'") {
+      if (insideSingleQuotes(line, start, end)) return true;
+    } else if (open === close) {
       const opens = before.split(open).length - 1;
       if (opens % 2 === 1 && after.includes(close)) return true;
     } else if (
@@ -332,12 +357,34 @@ describe('Portuguese guard (decision 10 of #741)', () => {
     );
     expect(missing).toEqual([]);
   });
+
+  it('every protocol term is still in its source file (a translated message leaves no stale term)', () => {
+    const all = trackedFiles();
+    const stale = PROTOCOL_TERMS.filter((t) => {
+      const sources = all.filter(
+        (path) => path === t.source || path.startsWith(`${t.source.replace(/\/$/, '')}/`),
+      );
+      return !sources.some((path) =>
+        readFileSync(resolve(ROOT, path), 'utf8').includes(t.term),
+      );
+    }).map((t) => `${t.term} → ${t.source}`);
+    expect(stale).toEqual([]);
+  });
 });
 
 describe('the guard itself', () => {
   const none: ScanOptions = { paths: [], lines: [], blockOnly: [] };
   const run = (path: string, content: string, options: ScanOptions = none) =>
     scanPortuguese([{ path, content }], options);
+
+  it('an English apostrophe is not a quote mark: it does not hide Portuguese around a protocol term', () => {
+    const line =
+      "the owner's note: Troca de sessão da fase não funciona, the skill's end.";
+    const r = run('docs/x.md', `${line}\n`);
+    expect(r.findings).toEqual([{ path: 'docs/x.md', line: 1, text: line }]);
+    expect(insideQuotes("see 'Troca de sessão da fase ' here", 5, 29)).toBe(true);
+    expect(insideQuotes("the owner's Troca de sessão the skill's", 12, 30)).toBe(false);
+  });
 
   it('fails on a line with "não" in a comment of src/', () => {
     const r = run(

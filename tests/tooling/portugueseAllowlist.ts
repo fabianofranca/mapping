@@ -9,7 +9,7 @@
 // `docs/design-system/`, where they are the fixed titles (decision 3).
 //
 // The rest of this file is the guard's exception list (decision 2 of #741): whole files and
-// folders (`PORTUGUESE_PATHS`), a managed block of a file (`PORTUGUESE_BLOCK_FILES`) and single
+// folders (`PORTUGUESE_PATHS`), a managed block of a file (`PORTUGUESE_BLOCK_ONLY`) and single
 // lines (`PORTUGUESE_LINES`). Every entry has a reason; an entry without one is a test failure.
 
 export type ProtocolGroup =
@@ -775,7 +775,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   { term: 'execucoes=', source: 'scripts/ci/ciRerun.mjs', group: 'script-output' },
   { term: 'falha legítima', source: 'scripts/ci/ciRerun.mjs', group: 'script-output' },
   { term: 'minutos=', source: 'scripts/ci/ciRerun.mjs', group: 'script-output' },
-  { term: 'na fila sem jobs', source: 'scripts/ci/ciRerun.mjs', group: 'script-output' },
   {
     term: 'nenhum job abandonado',
     source: 'scripts/ci/ciRerun.mjs',
@@ -786,11 +785,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   {
     term: 'sem execução do CI no commit',
     source: 'scripts/ci/ciRerun.mjs',
-    group: 'script-output',
-  },
-  {
-    term: 'Gancho de contexto:',
-    source: 'scripts/ci/contextGuard.mjs',
     group: 'script-output',
   },
   { term: '--arquivo', source: 'scripts/ci/contextUsage.mjs', group: 'script-output' },
@@ -808,11 +802,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   {
     term: 'transcript ilegível',
     source: 'scripts/ci/contextUsage.mjs',
-    group: 'script-output',
-  },
-  {
-    term: 'Acima dos limites:',
-    source: 'scripts/ci/distBudget.mjs',
     group: 'script-output',
   },
   { term: 'bug:', source: 'scripts/ci/distBudget.mjs', group: 'script-output' },
@@ -892,11 +881,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   { term: 'Bloco k de 5', source: 'docs/TESTING-NUVEM.md', group: 'session-notices' },
   {
     term: 'Modo: completo, bloco',
-    source: 'docs/TESTING-NUVEM.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'Modo: dirigido, grupo',
     source: 'docs/TESTING-NUVEM.md',
     group: 'session-notices',
   },
@@ -1043,31 +1027,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: 'AGRUPAMENTO',
-    source: '.claude/skills/detalhar-backlog/SKILL.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'PERGUNTAS #<n>',
-    source: '.claude/skills/detalhar-backlog/SKILL.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'RESPOSTAS #<n>',
-    source: '.claude/skills/detalhar-backlog/SKILL.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'PRONTA #<n>',
-    source: '.claude/skills/detalhar-backlog/SKILL.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'BLOQUEADA #<n>',
-    source: '.claude/skills/detalhar-backlog/SKILL.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'FALHOU #<n>',
     source: '.claude/skills/detalhar-backlog/SKILL.md',
     group: 'session-notices',
   },
@@ -1276,36 +1235,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'panel-values',
   },
   {
-    term: 'Duplicadas: nenhuma (busca:',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Relacionada: #',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Via rápida:',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Via rápida recusada:',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Via rápida: espera #',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Origem: via rápida #',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
     term: 'Teto na última revisão do dono',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'issue-markers',
@@ -1317,21 +1246,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: 'Teto de contexto do testador',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Nada.',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'nenhuma (só processo)',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Exceção ao Button:',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'issue-markers',
   },
@@ -1352,12 +1266,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   { term: 'abaixo de 2 KiB', source: '.github/workflows/ci.yml', group: 'script-output' },
-  {
-    term: 'reexecuta: abandonados',
-    source: '.github/workflows/ci.yml',
-    group: 'script-output',
-  },
-  { term: 'não reexecuta:', source: '.github/workflows/ci.yml', group: 'script-output' },
   { term: 'não tem a CSP', source: 'pwa/csp.ts', group: 'script-output' },
   { term: 'atributo style', source: 'pwa/csp.ts', group: 'script-output' },
   { term: 'handler inline', source: 'pwa/csp.ts', group: 'script-output' },
@@ -1397,37 +1305,7 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'names',
   },
   {
-    term: 'Mapping - Backlog',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
-    term: 'Mapping - testes',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
-    term: 'main protegida',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
-    term: 'evidencias',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
-    term: 'Uso real',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
     term: 'observador-da-fila',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
-    term: 'Madrugadão',
     source: '.claude/skills/supervisionar-fila/SKILL.md',
     group: 'names',
   },
@@ -1504,11 +1382,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: "{k} inválido '{v}'; válidos: ",
-    source: '.claude/skills/implementar-fila/painel/painel.py',
-    group: 'error-messages',
-  },
-  {
-    term: 'já existem: ',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'error-messages',
   },
@@ -1718,11 +1591,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'error-messages',
   },
   {
-    term: '--com \'{item}\' inválido (use "#N=<toca>")',
-    source: '.claude/skills/implementar-fila/painel/painel.py',
-    group: 'error-messages',
-  },
-  {
     term: 'ci.yml sem a chave jobs:.',
     source: 'scripts/ci/ciRerun.mjs',
     group: 'error-messages',
@@ -1748,38 +1616,8 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'error-messages',
   },
   {
-    term: 'O arquivo de jobs não tem total_count nem a lista jobs.',
-    source: 'scripts/ci/ciRerun.mjs',
-    group: 'error-messages',
-  },
-  {
     term: '${flag} repetida: use uma vez só. ${USAGE}',
     source: 'scripts/ci/contextUsage.mjs',
-    group: 'error-messages',
-  },
-  {
-    term: '${file}: history precisa ser uma lista de frases (strings).',
-    source: 'scripts/ci/distBudget.mjs',
-    group: 'error-messages',
-  },
-  {
-    term: 'O arquivo tem teto ${data.indexHtmlMaxBytes}, não ${d.ceiling}.',
-    source: 'scripts/ci/distBudget.mjs',
-    group: 'error-messages',
-  },
-  {
-    term: '${a} precisa de um valor.',
-    source: 'scripts/ci/distBudget.mjs',
-    group: 'error-messages',
-  },
-  {
-    term: '--${name} precisa de um número inteiro de bytes.',
-    source: 'scripts/ci/distBudget.mjs',
-    group: 'error-messages',
-  },
-  {
-    term: '--write precisa de --epic <nome>.',
-    source: 'scripts/ci/distBudget.mjs',
     group: 'error-messages',
   },
   {
@@ -2161,11 +1999,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   {
-    term: 'novo método',
-    source: '.claude/skills/implementar-fila/painel/painel.py',
-    group: 'script-output',
-  },
-  {
     term: 'não entra no lote',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'error-messages',
@@ -2287,17 +2120,7 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'session-notices',
   },
   {
-    term: 'Fase GC1 —',
-    source: 'scripts/ci/contextGuard.mjs',
-    group: 'session-notices',
-  },
-  {
     term: 'Fase <código> —',
-    source: 'scripts/ci/contextGuard.mjs',
-    group: 'session-notices',
-  },
-  {
-    term: 'da etapa #1856 (sub-issue #1882)',
     source: 'scripts/ci/contextGuard.mjs',
     group: 'session-notices',
   },
@@ -2312,11 +2135,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'session-notices',
   },
   {
-    term: 'tipo\\tchave\\tini\\tfim\\ttítulo',
-    source: 'scripts/testing/round-guide.mjs',
-    group: 'script-output',
-  },
-  {
     term: 'Supervisão acima de 50% e sem vaga na linhagem',
     source: '.claude/skills/supervisionar-fila/SKILL.md',
     group: 'session-notices',
@@ -2325,11 +2143,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     term: 'este chat é o coordenador; abra uma sessão nova para a supervisão',
     source: '.claude/skills/supervisionar-fila/SKILL.md',
     group: 'session-notices',
-  },
-  {
-    term: 'Supervisão:',
-    source: '.claude/skills/supervisionar-fila/custo.py',
-    group: 'script-output',
   },
   {
     term: 'sem custo (fora das contas)',
@@ -2388,10 +2201,59 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     source: 'tests/tooling/designSystemLog.test.ts',
     group: 'record-titles',
   },
-  { term: 'group="Comentários"', source: 'docs/DESIGN-SYSTEM.md', group: 'names' },
-  { term: 'group="Diálogos"', source: 'docs/DESIGN-SYSTEM.md', group: 'names' },
   { term: 'CR por épico', source: 'docs/FLOW.md', group: 'names' },
   // ID10 sweep: terms added by area C (src, viewer, other tests)
+  {
+    term: 'Acima dos limites:',
+    source: 'changelog/2026-11-13-teto-sempre-sobe.md',
+    group: 'script-output',
+  },
+  {
+    term: 'Via rápida:',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Via rápida recusada:',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Origem: via rápida #',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'nenhuma (só processo)',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'issue-markers',
+  },
+  { term: 'Exceção ao Button:', source: 'docs/DESIGN-SYSTEM.md', group: 'issue-markers' },
+  {
+    term: 'não reexecuta:',
+    source: '.github/workflows/ci-rerun.yml',
+    group: 'script-output',
+  },
+  {
+    term: 'Madrugadão',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'novo método',
+    source: 'tests/tooling/queueSlots.test.ts',
+    group: 'script-output',
+  },
+  {
+    term: 'group="Comentários"',
+    source: 'docs/design-system/2026-11-10-sincronia-ds-2.md',
+    group: 'names',
+  },
+  {
+    term: 'group="Diálogos"',
+    source: 'docs/design-system/2026-11-10-sincronia-ds-2.md',
+    group: 'names',
+  },
 ];
 
 // ---------------------------------------------------------------------------------------------
