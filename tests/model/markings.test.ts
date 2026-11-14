@@ -77,7 +77,7 @@ describe('markings: create', () => {
     expect(make({ x: 992, y: 992, width: 8, height: 8 })).not.toThrow();
   });
 
-  it('id repetido e container inexistente', () => {
+  it('duplicate id and missing container', () => {
     const p = sampleProject();
     const make = (id: string, containerId: string | null) => () =>
       createMarking(p, { id, containerId, rect: rect(0, 0, 10, 10) });
@@ -91,17 +91,17 @@ describe('markings: create', () => {
         id: 'K',
         containerId: null,
         rect: rect(-500, -300, 200, 100),
-        name: ' Fora ',
+        name: ' Outside ',
       }),
     );
     expect(marking(p, 'K')).toMatchObject({
       containerId: null,
       parentId: null,
       floating: false,
-      name: 'Fora',
+      name: 'Outside',
       rect: rect(-500, -300, 200, 100),
     });
-    // A forma continua conferida.
+    // The shape is still checked.
     const make = (r: ReturnType<typeof rect>) => () =>
       createMarking(sampleProject(), { id: 'X', containerId: null, rect: r });
     expect(make(rect(0.5, 0, 10, 10))).toThrow('rect-not-integer');
@@ -192,7 +192,7 @@ describe('markings: create', () => {
 });
 
 describe('markings: change', () => {
-  it('renomeia (vazio vira null)', () => {
+  it('renames (empty becomes null)', () => {
     let p = renameMarking(sampleProject(), 'M1', '  Front door ');
     expect(marking(p, 'M1').name).toBe('Front door');
     p = renameMarking(p, 'M1', '   ');
@@ -603,7 +603,7 @@ describe('markings: delete and review', () => {
     ]);
   });
 
-  it('deleting a canvas marking locks like the others: only its own lock prevents it', () => {
+  it('deleting a canvas marking is locked like the others: only its own lock prevents it', () => {
     const p = setMarkingLocked(withCanvas(), 'K', true);
     expect(() => removeMarking(p, 'K')).toThrow('locked');
   });
@@ -621,7 +621,7 @@ describe('markings: delete and review', () => {
   });
 });
 
-describe('hierarquia', () => {
+describe('hierarchy', () => {
   it('descendants and top-to-bottom order', () => {
     const p = sampleProject();
     expect(

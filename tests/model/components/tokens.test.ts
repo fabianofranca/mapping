@@ -183,7 +183,7 @@ describe('$token: resolution by mode', () => {
     expect(solidColor(root.children[0])).toBe('#8ab4f8');
   });
 });
-});
+
 describe('default font of the host', () => {
   const textFile = (font: Record<string, unknown> = {}): ComponentFile => {
     const r = parseComponent(
