@@ -35,15 +35,15 @@ function component(id: string, children: unknown[], size = { width: 300, height:
 }
 
 const COMPONENTS: Record<string, unknown> = {
-  // Oferece `ink` (o campo `ink`, ou azul) e `size`.
+  // Provides `ink` (the `ink` field, or blue) and `size`.
   panel: component('panel', [
     slotNode({ ink: { $field: 'ink', default: '#0000ff' }, size: 20 }),
   ]),
-  // Oferece `ink` fixo (para o pai e o avô oferecerem).
+  // Provides a fixed `ink` (so that the parent and the grandparent provide it).
   grand: component('grand', [slotNode({ ink: '#00ff00' })]),
-  // Não oferece nada: atravessado.
+  // Provides nothing: traversed.
   shell: component('shell', [slotNode()]),
-  // Lê `ink` com default cinza.
+  // Reads `ink` with a gray default.
   label: component(
     'label',
     [
@@ -56,13 +56,13 @@ const COMPONENTS: Record<string, unknown> = {
     ],
     { width: 100, height: 40 },
   ),
-  // Lê `ink` sem default.
+  // Reads `ink` without a default.
   bare: component(
     'bare',
     [{ type: 'text', name: 'lbl', text: 'x', color: { $provided: 'ink' } }],
     { width: 100, height: 40 },
   ),
-  // Não lê nada.
+  // Reads nothing.
   dot: component('dot', [{ type: 'rect', name: 'dot', fill: '#123456' }], {
     width: 20,
     height: 20,
@@ -74,6 +74,7 @@ const FIELDS: Record<string, unknown[]> = {
   label: [{ key: 'label', type: 'string' }],
 };
 
+// pt-BR kept: shared fixture data (layer id/name 'componentes', 'Componentes' and file 'tela.png') asserted by tests/mcp
 const SPEC_JSON = {
   format: 'mapping-spec',
   formatVersion: 4,
