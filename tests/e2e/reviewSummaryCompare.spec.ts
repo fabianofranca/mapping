@@ -3,7 +3,6 @@ import { fixtureZip } from './proposalFixture';
 
 // Review at 900×720 and 1280×720: the Summary column of the list shows the counters whole, and
 // the Compare dialog keeps the replacement actions in view, without scrolling the body.
-// pt-BR kept: shared fixture data (proposalFixture name 'Carrinho') asserted by tests/examples and tests/store
 
 async function openReview(page: Page) {
   await page.goto('/');
@@ -45,7 +44,7 @@ for (const size of [
       page,
     }) => {
       await openReview(page);
-      await page.locator('.tree-row', { hasText: 'Carrinho' }).first().click();
+      await page.locator('.tree-row', { hasText: 'Cart' }).first().click();
       await page
         .getByRole('button', { name: /Image file/ })
         .first()

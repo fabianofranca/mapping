@@ -2,9 +2,9 @@
   "format": "mapping-proposal",
   "formatVersion": 1,
   "id": "c843deff-15f1-4430-bcfa-ead347cc007f",
-  "title": "Tela de Perfil e ajuste no Cadastro",
-  "description": "Exemplo para praticar a revisão: cria a tela Perfil (Material 3) e renomeia o botão do Cadastro. Aceite uma mudança, rejeite outra com nota e aplique.",
-  "origin": "Exemplo: agente via MCP",
+  "title": "Profile screen and Sign up tweak",
+  "description": "Example to practice the review: creates the Profile screen (Material 3) and renames the Sign up button. Accept one change, reject another with a note and apply.",
+  "origin": "Example: agent via MCP",
   "author": "Claude Code (stdio)",
   "createdAt": "2026-10-18T23:03:57.772Z",
   "baseRevision": 1,
@@ -15,12 +15,12 @@
     {
       "op": "update_marking",
       "marking": "m/8f9464",
-      "name": "Botão cadastrar"
+      "name": "Register button"
     },
     {
       "op": "add_blank_image",
-      "as": "$perfil",
-      "name": "Perfil",
+      "as": "$profile",
+      "name": "Profile",
       "width": 360,
       "height": 800,
       "background": "#FFFFFF"
@@ -28,18 +28,18 @@
     {
       "op": "create_marking",
       "as": "$b",
-      "image": "$perfil",
+      "image": "$profile",
       "rect": {
         "x": 0,
         "y": 0,
         "width": 360,
         "height": 64
       },
-      "name": "Barra",
+      "name": "Bar",
       "annotation": {
         "type": "Top app bar",
         "values": {
-          "title": "Perfil",
+          "title": "Profile",
           "style": "small",
           "navigationIcon": "ArrowBack"
         }
@@ -48,19 +48,19 @@
     {
       "op": "create_marking",
       "as": "$i1",
-      "image": "$perfil",
+      "image": "$profile",
       "rect": {
         "x": 0,
         "y": 88,
         "width": 360,
         "height": 72
       },
-      "name": "Dados da conta",
+      "name": "Account details",
       "annotation": {
         "type": "List item",
         "values": {
           "headlineContent": "Marina",
-          "supportingContent": "marina@exemplo.com",
+          "supportingContent": "marina@example.com",
           "trailingIcon": "KeyboardArrowRight"
         }
       }
@@ -68,19 +68,19 @@
     {
       "op": "create_marking",
       "as": "$i2",
-      "image": "$perfil",
+      "image": "$profile",
       "rect": {
         "x": 0,
         "y": 160,
         "width": 360,
         "height": 72
       },
-      "name": "Endereços",
+      "name": "Addresses",
       "annotation": {
         "type": "List item",
         "values": {
-          "headlineContent": "Endereços",
-          "supportingContent": "2 salvos",
+          "headlineContent": "Addresses",
+          "supportingContent": "2 saved",
           "leadingIcon": "Home",
           "trailingIcon": "KeyboardArrowRight"
         }
@@ -88,19 +88,19 @@
     },
     {
       "op": "create_marking",
-      "as": "$sair",
-      "image": "$perfil",
+      "as": "$signout",
+      "image": "$profile",
       "rect": {
         "x": 120,
         "y": 300,
         "width": 120,
         "height": 40
       },
-      "name": "Sair",
+      "name": "Sign out",
       "annotation": {
         "type": "material3-compose/button",
         "values": {
-          "label": "Sair",
+          "label": "Sign out",
           "style": "outlined"
         }
       }
@@ -118,7 +118,7 @@
       "from": null,
       "to": {
         "id": "016609d7-c04a-460c-8d68-3b629afd2f49",
-        "name": "Perfil",
+        "name": "Profile",
         "file": null,
         "background": "#FFFFFF",
         "width": 360,
@@ -141,8 +141,8 @@
       "imageId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "markingId": "8f9464dd-8756-4027-83df-02a9038a4d47",
       "field": "name",
-      "from": "Cadastrar",
-      "to": "Botão cadastrar"
+      "from": "Register",
+      "to": "Register button"
     },
     {
       "id": "c3",
@@ -157,7 +157,7 @@
         "id": "67dbf95b-3ac0-40f6-8b06-f27d670b6c98",
         "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
         "parentId": null,
-        "name": "Barra",
+        "name": "Bar",
         "rect": {
           "x": 0,
           "y": 0,
@@ -182,7 +182,7 @@
         "id": "99b50852-55a9-4d26-a409-7ab000b62e51",
         "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
         "parentId": null,
-        "name": "Dados da conta",
+        "name": "Account details",
         "rect": {
           "x": 0,
           "y": 88,
@@ -207,7 +207,7 @@
         "id": "394827fd-557d-49ea-a2a7-3f91270b39b4",
         "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
         "parentId": null,
-        "name": "Endereços",
+        "name": "Addresses",
         "rect": {
           "x": 0,
           "y": 160,
@@ -232,7 +232,7 @@
         "id": "a34c81b9-49a7-4319-a80f-9021bfdd46da",
         "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
         "parentId": null,
-        "name": "Sair",
+        "name": "Sign out",
         "rect": {
           "x": 120,
           "y": 300,
@@ -264,7 +264,7 @@
           "typeId": "top-app-bar"
         },
         "values": {
-          "title": "Perfil",
+          "title": "Profile",
           "style": "small",
           "navigationIcon": "ArrowBack",
           "actionIcon1": "MoreVert"
@@ -293,7 +293,7 @@
         },
         "values": {
           "headlineContent": "Marina",
-          "supportingContent": "marina@exemplo.com",
+          "supportingContent": "marina@example.com",
           "leadingIcon": "Person",
           "trailingIcon": "KeyboardArrowRight"
         },
@@ -320,8 +320,8 @@
           "typeId": "list-item"
         },
         "values": {
-          "headlineContent": "Endereços",
-          "supportingContent": "2 salvos",
+          "headlineContent": "Addresses",
+          "supportingContent": "2 saved",
           "leadingIcon": "Home",
           "trailingIcon": "KeyboardArrowRight"
         },
@@ -348,7 +348,7 @@
           "typeId": "button"
         },
         "values": {
-          "label": "Sair",
+          "label": "Sign out",
           "style": "outlined",
           "enabled": "true"
         },

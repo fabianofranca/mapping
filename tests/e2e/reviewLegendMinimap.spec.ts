@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 
 // Mark legend in the review at 900×720 (#537): while open, it sits on top of the minimap,
 // fully in view.
-// pt-BR kept: shared fixture data (exemplo-completo proposal title 'Tela de Perfil e ajuste no Cadastro') asserted by tests/examples
 
 test.use({ viewport: { width: 900, height: 720 } });
 
@@ -12,16 +11,16 @@ test('the mark legend sits on top of the minimap at 900×720', async ({ page }) 
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'exemplo-completo.zip',
+      name: 'full-example.zip',
       mimeType: 'application/zip',
-      buffer: readFileSync('examples/exemplo-completo.zip'),
+      buffer: readFileSync('examples/full-example.zip'),
     });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   for (const key of ['Digit3', 'Digit7', 'Digit2', 'Digit1']) {
     await page.keyboard.press(`Control+Shift+${key}`);
   }
   await page
-    .getByRole('button', { name: 'Review: Tela de Perfil e ajuste no Cadastro' })
+    .getByRole('button', { name: 'Review: Profile screen and Sign up tweak' })
     .click();
   await expect(page.getByText('Read-only').first()).toBeVisible();
   // With the Proposals window enlarged, the canvas gets short and the legend reaches the minimap.
@@ -78,16 +77,16 @@ test('the legend covers Proposals when the canvas is shorter than it', async ({
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'exemplo-completo.zip',
+      name: 'full-example.zip',
       mimeType: 'application/zip',
-      buffer: readFileSync('examples/exemplo-completo.zip'),
+      buffer: readFileSync('examples/full-example.zip'),
     });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   for (const key of ['Digit3', 'Digit7', 'Digit2', 'Digit1']) {
     await page.keyboard.press(`Control+Shift+${key}`);
   }
   await page
-    .getByRole('button', { name: 'Review: Tela de Perfil e ajuste no Cadastro' })
+    .getByRole('button', { name: 'Review: Profile screen and Sign up tweak' })
     .click();
   await expect(page.getByText('Read-only').first()).toBeVisible();
 
@@ -159,16 +158,16 @@ test('the Proposals window starts with 3 whole rows and the footer in view', asy
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'exemplo-completo.zip',
+      name: 'full-example.zip',
       mimeType: 'application/zip',
-      buffer: readFileSync('examples/exemplo-completo.zip'),
+      buffer: readFileSync('examples/full-example.zip'),
     });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   for (const key of ['Digit3', 'Digit7', 'Digit2', 'Digit1']) {
     await page.keyboard.press(`Control+Shift+${key}`);
   }
   await page
-    .getByRole('button', { name: 'Review: Tela de Perfil e ajuste no Cadastro' })
+    .getByRole('button', { name: 'Review: Profile screen and Sign up tweak' })
     .click();
   await expect(page.getByText('Read-only').first()).toBeVisible();
   const m = await page.evaluate(() => {

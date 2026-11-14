@@ -19,81 +19,81 @@ import {
 } from './featureCoverage';
 
 /**
- * Guarda dos exemplos: todo recurso dos formatos de especialização (derivado do `specSchema`)
- * e de componente (lista explícita) tem pelo menos um exemplo nas bibliotecas e exemplos
- * distribuídos. Só contam estas raízes (descobertas pelas pastas, para um pacote novo contar
- * sozinho): `libraries/*`, `examples/libraries/*` e `examples/specs/*.json`. Não entram
- * `tests/fixtures/`, `viewer/`, `examples/exemplo-completo/` (cópias) nem zips.
+ * Guard of the examples: every feature of the specialization format (derived from `specSchema`)
+ * and of the component format (explicit list) has at least one example in the distributed
+ * libraries and examples. Only these roots count (discovered through the folders, so a new
+ * package counts by itself): `libraries/*`, `examples/libraries/*` and `examples/specs/*.json`.
+ * `tests/fixtures/`, `viewer/`, `examples/full-example/` (copies) and zips are left out.
  */
 
 const ROOT = join(__dirname, '..', '..');
 
 /**
- * Recursos que nenhum exemplo precisa cobrir, com o motivo. Só entram chaves legadas aceitas
- * por compatibilidade ou sem sentido num exemplo; nunca um recurso atual só para passar.
+ * Features that no example needs to cover, with the reason. Only legacy keys accepted for
+ * compatibility or meaningless in an example go here; never a current feature just to pass.
  */
 const EXCEPTIONS: Record<string, string> = {
   'spec:layers[].annotationTypes[].fields[].type=codeRef':
-    'tipo removido na etapa 9 (schema v9); o parser o aceita só para ignorá-lo e avisar',
+    'type removed in stage 9 (schema v9); the parser accepts it only to ignore it and warn',
   'spec:layers[].annotationTypes[].fields[].platforms':
-    'chave do tipo removido codeRef; nos outros tipos é recusada',
+    'key of the removed codeRef type; rejected in the other types',
   'spec:layers[].annotationTypes[].fields[].columns[].type=codeRef':
-    'tipo removido na etapa 9; o parser o aceita só para ignorá-lo e avisar',
+    'type removed in stage 9; the parser accepts it only to ignore it and warn',
   'spec:layers[].annotationTypes[].fields[].columns[].type=table':
-    'o schema declara a coluna com a forma do campo, mas uma coluna de coluna não existe',
+    'the schema declares the column with the shape of the field, but a column of a column does not exist',
   'spec:fonts[].style':
-    'exemplo exige um arquivo de fonte no pacote (sem ele o validador avisa); decisão do dono (2026-11-01): a fonte é fixa no cliente mobile, não no SDUI',
+    'an example requires a font file in the package (without it the validator warns); owner decision (2026-11-01): the font is fixed in the mobile client, not in SDUI',
   'spec:fonts[].style=italic':
-    'idem fonts[].style: sem arquivo de fonte em nenhuma biblioteca de exemplo',
+    'same as fonts[].style: no font file in any example library',
   'spec:fonts[].style=normal':
-    'idem fonts[].style: sem arquivo de fonte em nenhuma biblioteca de exemplo',
+    'same as fonts[].style: no font file in any example library',
 };
 
 /**
- * Raízes que serão removidas na limpeza de exemplos (pastas ou arquivos, a partir da raiz do
- * repositório).
+ * Roots that will be removed in the examples cleanup (folders or files, from the repository
+ * root).
  */
 const LEAVING: string[] = [];
 
 /**
- * O que só as raízes de LEAVING cobrem hoje: precisa ganhar exemplo noutro lugar antes da
- * remoção. Cada item sai daqui quando ganhar exemplo fora de LEAVING; com LEAVING vazio, esta
- * lista é vazia.
+ * What only the LEAVING roots cover today: it needs an example elsewhere before the removal.
+ * Each item leaves here when it gets an example outside LEAVING; with LEAVING empty, this list
+ * is empty.
  */
 const PENDING_AFTER_REMOVAL: string[] = [];
 
-/** Recursos sem exemplo hoje; ganham exemplo nesta etapa. */
+/** Features with no example today; they get one in this stage. */
 /*
- * `notices` (formatVersion 10, etapa #486): o guia e os exemplos não ganham avisos nesta etapa
- * (decisão 'Fora' da #486); o recurso é coberto por tests/model/specV10.test.ts e pelo roteiro R18.
+ * `notices` (formatVersion 10, stage #486): the guide and the examples get no notices in this stage
+ * ('Out' decision of #486); the feature is covered by tests/model/specV10.test.ts and by script R18.
  */
 const MISSING_TODAY: string[] = [
-  // `sources[].signature` (formatVersion 16, etapa #1079): a Material 3 cobre `fieldModels`, `signature`, `ignore`, `calls`,
-  // `formats` e os avisos do importador (S5); o `sources[].signature` é coberto por tests/model/specV16.test.ts e
+  // `sources[].signature` (formatVersion 16, stage #1079): Material 3 covers `fieldModels`, `signature`, `ignore`, `calls`,
+  // `formats` and the importer notices (S5); `sources[].signature` is covered by tests/model/specV16.test.ts and
   // tests/model/librarySignature.test.ts.
   'spec:layers[].annotationTypes[].sources[].signature',
-  // Layout do componente v4 (etapa #747, CF2): as bibliotecas distribuídas não migram para o
-  // formato 4 nesta etapa (decisão 'Fora' da #747); coberto por
-  // tests/model/components/layoutFidelity.test.ts, layoutV4Parse.test.ts e pelo roteiro R25.
-  // `font.family` literal: o último componente da Material 3 que o usava migrou (etapa #833, M5) e
-  // herda a Roboto do token `font-sans`; coberto por tests/model/components/ e pelo roteiro R25.
+  // Component layout v4 (stage #747, CF2): the distributed libraries do not migrate to
+  // format 4 in this stage ('Out' decision of #747); covered by
+  // tests/model/components/layoutFidelity.test.ts, layoutV4Parse.test.ts and by script R25.
+  // Literal `font.family`: the last Material 3 component that used it migrated (stage #833, M5) and
+  // inherits Roboto from the `font-sans` token; covered by tests/model/components/ and by script R25.
   'component:font.family',
-  // `font.verticalAlign: "middle"`: a Material 3 passou os rótulos e os números a `cap-middle` (etapa #896,
-  // FX6, decisão 23); o `middle` segue coberto por tests/e2e/textMetrics.spec.ts e pelo roteiro R25.
+  // `font.verticalAlign: "middle"`: Material 3 moved the labels and numbers to `cap-middle` (stage #896,
+  // FX6, decision 23); `middle` is still covered by tests/e2e/textMetrics.spec.ts and by script R25.
   'component:font.verticalAlign=middle',
-  // Texto do componente v4 (etapa #747, CF3): a biblioteca Material 3 já usa o `font.maxLines` no
-  // `text` (etapa #833, M1); o resto das bibliotecas distribuídas não migrou. Coberto por
-  // tests/model/components/textWrap.test.ts, tests/e2e/textMetrics.spec.ts e pelo roteiro R25.
-  // Texto rico do componente v4 (etapa #747, CF4): as bibliotecas distribuídas não migram; coberto
-  // por tests/model/components/richText.test.ts, tests/e2e/ e pelo roteiro R25.
+  // Component text v4 (stage #747, CF3): the Material 3 library already uses `font.maxLines` in
+  // `text` (stage #833, M1); the rest of the distributed libraries did not migrate. Covered by
+  // tests/model/components/textWrap.test.ts, tests/e2e/textMetrics.spec.ts and by script R25.
+  // Rich text of component v4 (stage #747, CF4): the distributed libraries do not migrate; covered
+  // by tests/model/components/richText.test.ts, tests/e2e/ and by script R25.
   'component:node.text.runs',
-  // Quebra de fileira (etapa #898, MC4): o `repeat` com `wrap` não é adotado por nenhuma biblioteca
-  // distribuída (a Material 3 usa o `layout.wrap` no flow-row na MC6); coberto por
-  // tests/model/components/wrapLayout.test.ts e pelo roteiro R25.
+  // Row wrap (stage #898, MC4): `repeat` with `wrap` is not adopted by any distributed
+  // library (Material 3 uses `layout.wrap` in the flow-row in MC6); covered by
+  // tests/model/components/wrapLayout.test.ts and by script R25.
   'component:node.repeat.wrap',
-  // `span` e `weight` (etapa #1078, L3): a Material 3 não os adota (a grade e o `repeat.layout`
-  // sim, na L5); coberto por tests/model/components/gridInstantiate.test.ts, gridParse.test.ts,
-  // gridSlot.test.ts e pelo roteiro R25.
+  // `span` and `weight` (stage #1078, L3): Material 3 does not adopt them (the grid and
+  // `repeat.layout` do, in L5); covered by tests/model/components/gridInstantiate.test.ts, gridParse.test.ts,
+  // gridSlot.test.ts and by script R25.
   'component:node.span',
   'component:node.weight',
   'component:node.repeat.lineGap',
@@ -109,35 +109,35 @@ const MISSING_TODAY: string[] = [
   'component:run.background',
   'component:run.radius',
   'component:run.padding',
-  // Tokens (formatVersion 15, etapa #747, CF5): a raiz `tokens` já tem exemplo na biblioteca Material 3
-  // (etapa #833, M1); o `$token` nos componentes das outras bibliotecas ainda não. Coberto por
-  // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts e
-  // pelo roteiro R25.
+  // Tokens (formatVersion 15, stage #747, CF5): the `tokens` root already has an example in the Material 3 library
+  // (stage #833, M1); `$token` in the components of the other libraries does not yet. Covered by
+  // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts and
+  // by script R25.
   'component:expr.$token',
-  // Ícones (formatVersion 15, etapa #747, CF7): a raiz `icons` e o nó `icon` já têm exemplo na
-  // biblioteca Material 3 (etapa #833, M1); o `icon.name`/`strokeWidth` ainda não. Coberto por
-  // tests/model/components/icons.test.ts, libraryIcons.test.ts, tests/mcp/libraryIcons.test.ts e
-  // pelo roteiro R25.
+  // Icons (formatVersion 15, stage #747, CF7): the `icons` root and the `icon` node already have an example in the
+  // Material 3 library (stage #833, M1); `icon.name`/`strokeWidth` do not yet. Covered by
+  // tests/model/components/icons.test.ts, libraryIcons.test.ts, tests/mcp/libraryIcons.test.ts and
+  // by script R25.
   'component:node.icon.name',
   'component:node.icon.strokeWidth',
-  // Direção de leitura (etapa #1096, R1): `direction` no nó, a condição `$direction` e o `mirror`
-  // do `icon` e do `path`. As bibliotecas distribuídas desenham em `ltr` e não os adotam nesta
-  // etapa; cobertos por tests/model/components/direction.test.ts, directionParse.test.ts,
-  // layoutDirection.test.ts, tests/mcp/directionRaster.test.ts e pelo roteiro R27.
+  // Reading direction (stage #1096, R1): `direction` on the node, the `$direction` condition and the `mirror`
+  // of `icon` and `path`. The distributed libraries draw in `ltr` and do not adopt them in this
+  // stage; covered by tests/model/components/direction.test.ts, directionParse.test.ts,
+  // layoutDirection.test.ts, tests/mcp/directionRaster.test.ts and by script R27.
   'component:node.direction',
-  // As âncoras lógicas `start` e `end` já têm exemplo: a seta do tooltip da Material 3 (etapa #1096, R5).
+  // The logical anchors `start` and `end` already have an example: the arrow of the Material 3 tooltip (stage #1096, R5).
   'component:cond.$direction',
   'component:node.icon.mirror',
-  // Âncora (etapa #1096, R3 e R5): `anchor` na raiz do componente e os `$anchor.*` já têm exemplo no tooltip,
-  // no badge e no menu da Material 3, e o `mirror` do `path`, na seta do tooltip (R5).
-  // Tela e traço em escala (CF8, etapa #747): `screen` na raiz e `stroke.scale` (formato 4) e
-  // `structural` no tipo (formatVersion 15); as bibliotecas distribuídas não migram; coberto por
-  // tests/model/components/ e pelo roteiro R25.
+  // Anchor (stage #1096, R3 and R5): `anchor` on the component root and the `$anchor.*` already have an example in the tooltip,
+  // the badge and the Material 3 menu, and the `mirror` of `path`, in the tooltip arrow (R5).
+  // Screen and scaled stroke (CF8, stage #747): `screen` on the root and `stroke.scale` (format 4) and
+  // `structural` on the type (formatVersion 15); the distributed libraries do not migrate; covered by
+  // tests/model/components/ and by script R25.
   'component:root.screen',
   'component:stroke.scale',
   'spec:layers[].annotationTypes[].structural',
-  // `accepts.annotations` (formatVersion 14, etapa #679): os exemplos não ganham o recurso nesta
-  // etapa (o roteiro usa uma especialização inline); coberto por tests/model/specAcceptsAnnotations.
+  // `accepts.annotations` (formatVersion 14, stage #679): the examples do not get the feature in this
+  // stage (the script uses an inline specialization); covered by tests/model/specAcceptsAnnotations.
   'spec:layers[].annotationTypes[].fields[].accepts.annotations',
   'spec:layers[].annotationTypes[].fields[].columns[].accepts.annotations',
   'spec:layers[].annotationTypes[].notices[].kind=deprecated',
@@ -161,7 +161,7 @@ const MISSING_TODAY: string[] = [
 // ---------------------------------------------------------------------------------------
 
 interface ExampleFile {
-  /** Caminho a partir da raiz do repositório. */
+  /** Path from the repository root. */
   rel: string;
   kind: 'spec' | 'component';
   features: Set<string>;
@@ -176,7 +176,7 @@ function subdirs(dir: string): string[] {
     .map((name) => `${dir}/${name}`);
 }
 
-/** As raízes de exemplo, descobertas pelas pastas: pacotes e arquivos únicos. */
+/** The example roots, discovered through the folders: packages and single files. */
 function discoverRoots(): string[] {
   const roots = [...subdirs('libraries'), ...subdirs('examples/libraries')];
   const specsDir = join(ROOT, 'examples/specs');
@@ -216,7 +216,7 @@ const SPEC_FEATURES = specFeatureList().map((f) => `spec:${f}`);
 const COMPONENT_FEATURES = componentFeatureList().map((f) => `component:${f}`);
 const ALL_FEATURES = [...SPEC_FEATURES, ...COMPONENT_FEATURES];
 
-/** Recursos (com o prefixo do formato) usados pelos arquivos das raízes dadas. */
+/** Features (with the format prefix) used by the files of the given roots. */
 function coveredBy(selected: readonly string[]): Set<string> {
   const out = new Set<string>();
   for (const root of selected) {
@@ -236,33 +236,33 @@ const remainingRoots = roots.filter((root) => !isLeaving(root));
 const covered = coveredBy(roots);
 const withoutExceptions = ALL_FEATURES.filter((f) => !(f in EXCEPTIONS));
 
-describe('cobertura de recursos pelos exemplos', () => {
-  it('descobre as raízes de exemplo pelas pastas', () => {
+describe('feature coverage by the examples', () => {
+  it('discovers the example roots through the folders', () => {
     expect(roots).toContain('libraries/kotlin');
     expect(roots).toContain('examples/specs/sdui.json');
     expect(roots.some((r) => r.startsWith('examples/libraries/'))).toBe(true);
     for (const root of LEAVING)
-      expect(roots, `LEAVING: ${root} não existe`).toContain(root);
+      expect(roots, `LEAVING: ${root} does not exist`).toContain(root);
     expect(SPEC_FEATURES.length).toBeGreaterThan(100);
     expect(COMPONENT_FEATURES.length).toBeGreaterThan(80);
   });
 
-  it('as exceções são recursos que existem', () => {
+  it('the exceptions are features that exist', () => {
     for (const feature of Object.keys(EXCEPTIONS)) {
-      expect(ALL_FEATURES, `exceção desconhecida: ${feature}`).toContain(feature);
+      expect(ALL_FEATURES, `unknown exception: ${feature}`).toContain(feature);
       expect(EXCEPTIONS[feature]?.length ?? 0).toBeGreaterThan(10);
     }
   });
 
-  it('todo recurso tem pelo menos um exemplo (fora as exceções e os gaps declarados)', () => {
+  it('every feature has at least one example (except the exceptions and the declared gaps)', () => {
     const missing = withoutExceptions.filter((f) => !covered.has(f)).sort();
     expect(
       missing,
-      `recursos sem exemplo em nenhuma raiz:\n${missing.join('\n')}`,
+      `features with no example in any root:\n${missing.join('\n')}`,
     ).toEqual([...MISSING_TODAY].sort());
   });
 
-  it('o que sai com LEAVING deixa descoberto exatamente PENDING_AFTER_REMOVAL', () => {
+  it('what leaves with LEAVING leaves exactly PENDING_AFTER_REMOVAL uncovered', () => {
     const inLeaving = coveredBy(leavingRoots);
     const inRemaining = coveredBy(remainingRoots);
     const onlyLeaving = withoutExceptions
@@ -270,40 +270,40 @@ describe('cobertura de recursos pelos exemplos', () => {
       .sort();
     expect(
       onlyLeaving,
-      `recursos que só as raízes de LEAVING cobrem:\n${onlyLeaving.join('\n')}`,
+      `features that only the LEAVING roots cover:\n${onlyLeaving.join('\n')}`,
     ).toEqual([...PENDING_AFTER_REMOVAL].sort());
   });
 
-  it('MISSING_TODAY não repete recursos cobertos nem exceções', () => {
+  it('MISSING_TODAY repeats no covered features nor exceptions', () => {
     for (const feature of MISSING_TODAY) {
-      expect(ALL_FEATURES, `desconhecido: ${feature}`).toContain(feature);
-      expect(covered.has(feature), `${feature} já tem exemplo`).toBe(false);
+      expect(ALL_FEATURES, `unknown: ${feature}`).toContain(feature);
+      expect(covered.has(feature), `${feature} already has an example`).toBe(false);
       expect(feature in EXCEPTIONS).toBe(false);
     }
   });
 });
 
-describe('a lista de recursos do componente não esqueceu nada do código', () => {
+describe('the component feature list forgot nothing from the code', () => {
   const source = readFileSync(
     join(ROOT, 'src/model/components/parseComponent.ts'),
     'utf8',
   );
 
-  /** Itens de `const NAME = [ 'a', 'b' ]` ou de `NAME: … = [ … ]` no código. */
+  /** Items of `const NAME = [ 'a', 'b' ]` or of `NAME: … = [ … ]` in the code. */
   function constList(name: string): string[] {
     const match = new RegExp(`const ${name}\\b[^=]*=\\s*\\[([^\\]]*)\\]`).exec(source);
-    if (!match) throw new Error(`const ${name} não encontrada em parseComponent.ts`);
+    if (!match) throw new Error(`const ${name} not found in parseComponent.ts`);
     return [...(match[1] ?? '').matchAll(/'([^']+)'/g)].map((m) => m[1] ?? '');
   }
 
-  it('tipos de nó, operadores e chaves da raiz', () => {
+  it('node types, operators and root keys', () => {
     expect([...NODE_TYPES].sort()).toEqual(constList('NODE_TYPES').sort());
     expect([...EXPR_OPS].sort()).toEqual(constList('EXPR_OPS').sort());
     expect([...CONDITION_OPS].sort()).toEqual(constList('CONDITION_OPS').sort());
     expect([...ROOT_KEYS].sort()).toEqual(constList('ROOT_KEYS').sort());
   });
 
-  it('chaves comuns dos nós (com `type`) e do repeat', () => {
+  it('common node keys (with `type`) and the repeat ones', () => {
     expect(['type', ...BASE_KEYS].sort()).toEqual(constList('BASE_KEYS').sort());
     const rejected = constList('REPEAT_REJECTED_KEYS');
     expect([...REPEAT_BASE_KEYS].sort()).toEqual(
@@ -311,18 +311,18 @@ describe('a lista de recursos do componente não esqueceu nada do código', () =
     );
   });
 
-  it('chaves próprias de cada tipo de nó', () => {
+  it('keys specific to each node type', () => {
     const block = /const extra: Record<string, readonly string\[\]> = \{([^}]*)\}/.exec(
       source,
     );
-    if (!block) throw new Error('mapa `extra` não encontrado em parseComponent.ts');
+    if (!block) throw new Error('`extra` map not found in parseComponent.ts');
     const fromCode: Record<string, string[]> = {};
     for (const m of (block[1] ?? '').matchAll(/(\w+):\s*\[([^\]]*)\]/g))
       fromCode[m[1] ?? ''] = [...(m[2] ?? '').matchAll(/'([^']+)'/g)].map(
         (x) => x[1] ?? '',
       );
     for (const type of NODE_TYPES) {
-      expect([...EXTRA_KEYS[type]].sort(), `chaves de ${type}`).toEqual(
+      expect([...EXTRA_KEYS[type]].sort(), `keys of ${type}`).toEqual(
         (fromCode[type] ?? []).sort(),
       );
     }

@@ -11,12 +11,12 @@ import {
   fixtureZip,
 } from '../e2e/proposalFixture';
 
-// `examples/proposta-exemplo.zip`: um projeto com uma proposta de alteração para testar a
+// `examples/proposal-example.zip`: um projeto com uma proposta de alteração para testar a
 // revisão sem o agente ("Abrir zip", no desktop e no celular). O zip é gerado de
 // `tests/e2e/proposalFixture.ts` (o mesmo do e2e); este teste confere que ele continua
 // igual ao gerador. Para gerar de novo: `UPDATE_EXAMPLES=1 npx vitest run tests/examples`.
 
-const EXAMPLE = 'examples/proposta-exemplo.zip';
+const EXAMPLE = 'examples/proposal-example.zip';
 
 describe('zip de exemplo com proposta', () => {
   it('a proposta é válida e aplicável sobre o projeto', () => {
@@ -43,7 +43,7 @@ describe('zip de exemplo com proposta', () => {
     expect(validateAccepted(project, { ...proposal, decisions: all }).ok).toBe(true);
   });
 
-  it('examples/proposta-exemplo.zip está em dia com o gerador', async () => {
+  it('examples/proposal-example.zip está em dia com o gerador', async () => {
     if (process.env.UPDATE_EXAMPLES === '1') writeFileSync(EXAMPLE, await fixtureZip());
     const zip = await JSZip.loadAsync(readFileSync(EXAMPLE));
     const expected = fixtureFiles();
@@ -69,8 +69,8 @@ describe('zip de exemplo com proposta', () => {
     const text = files.proposals.get(`proposals/${FIXTURE_PROPOSAL_ID}/proposal.json`);
     expect(text && parseProposalText(text).ok).toBe(true);
     expect([...files.proposalImages.keys()].sort()).toEqual([
-      `proposals/${FIXTURE_PROPOSAL_ID}/images/carrinho-v2.png`,
-      `proposals/${FIXTURE_PROPOSAL_ID}/images/confirmacao.png`,
+      `proposals/${FIXTURE_PROPOSAL_ID}/images/cart-v2.png`,
+      `proposals/${FIXTURE_PROPOSAL_ID}/images/confirmation.png`,
     ]);
   });
 });

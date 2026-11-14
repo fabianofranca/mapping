@@ -6,7 +6,7 @@ import JSZip from 'jszip';
 // badge inside the cell, from 887 px (1591 × 1052) down to the narrow 900 × 720 window, where
 // Msgs and When disappear and By shows only the avatar. Tree, Layers and Details stay open.
 
-const EXAMPLE_ZIP = 'examples/exemplo-completo.zip';
+const EXAMPLE_ZIP = 'examples/full-example.zip';
 const FIRST_THREAD = 'comments/5d0e8a41-2c7b-4f1e-9a63-b8c1d4e7f902.json';
 
 /** The example with a 4th open conversation (copy of the first, long anchor and unread). */
@@ -31,7 +31,7 @@ async function openComments(
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
-    .setInputFiles({ name: 'exemplo-completo.zip', mimeType: 'application/zip', buffer });
+    .setInputFiles({ name: 'full-example.zip', mimeType: 'application/zip', buffer });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   for (const n of ['1', '2', '3', '0']) await page.keyboard.press(`Control+Shift+${n}`);
   await page.getByRole('combobox', { name: 'Status', exact: true }).selectOption({

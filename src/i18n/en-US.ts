@@ -580,7 +580,7 @@ export const enUS = {
   'help.guide.intro':
     'A 14-step tour of the example project: screens, markings, layers, typed annotations, containers with Material 3, reviewing a proposal and perspectives. It works offline and opens in a new tab. The guide is in English or Portuguese, following the app’s language.',
   'help.guide.example':
-    'To see the same project in the app, download examples/exemplo-completo.zip from the repository (github.com/fabianofranca/mapping) and use Open zip on the home screen (it creates a copy on this device and does not touch any folder).',
+    'To see the same project in the app, download examples/full-example.zip from the repository (github.com/fabianofranca/mapping) and use Open zip on the home screen (it creates a copy on this device and does not touch any folder).',
   'help.guide.fileProtocol':
     "Opened as a standalone file, the app cannot find the guide: it lives in guide/index.html, next to index.html, in the build's dist/ folder and in the published version.",
   'help.guide.open': 'Open the interactive guide',

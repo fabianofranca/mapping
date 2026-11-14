@@ -11,9 +11,9 @@ async function openExample(page: Page): Promise<void> {
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'exemplo-completo.zip',
+      name: 'full-example.zip',
       mimeType: 'application/zip',
-      buffer: readFileSync('examples/exemplo-completo.zip'),
+      buffer: readFileSync('examples/full-example.zip'),
     });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit3');
@@ -25,8 +25,7 @@ test('long specialization badge shrinks without creating a horizontal bar in Det
   await openExample(page);
   await page
     .getByRole('list', { name: 'Marking tree' })
-    // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
-    .getByRole('button', { name: 'Cadastrar', exact: true })
+    .getByRole('button', { name: 'Register', exact: true })
     .click();
 
   const panel = page
@@ -79,7 +78,7 @@ test('the layer name only shrinks after the badge has vanished (900 and 1000 px)
     await openExample(page);
     await page
       .getByRole('list', { name: 'Marking tree' })
-      .getByRole('button', { name: 'Cadastrar', exact: true })
+      .getByRole('button', { name: 'Register', exact: true })
       .click();
     const heads = await page.locator('.layer-group-head').evaluateAll((all) =>
       all.flatMap((head) => {
@@ -104,15 +103,12 @@ test('the layer name only shrinks after the badge has vanished (900 and 1000 px)
   }
 });
 
-// pt-BR kept: 'Modelo de dados' is a badge of the shared fixture examples/exemplo-completo.zip
-test('at 1592 px the short badges (SDUI, Modelo de dados) stay whole', async ({
-  page,
-}) => {
+test('at 1592 px the short badges (SDUI, Data model) stay whole', async ({ page }) => {
   await page.setViewportSize({ width: 1592, height: 860 });
   await openExample(page);
   await page
     .getByRole('list', { name: 'Marking tree' })
-    .getByRole('button', { name: 'Cadastrar', exact: true })
+    .getByRole('button', { name: 'Register', exact: true })
     .click();
   const tags = page.locator('.layer-group-head .tag');
   await expect(tags.first()).toBeVisible();

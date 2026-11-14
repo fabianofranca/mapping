@@ -149,7 +149,7 @@ test('Proposals window and review list without overlapping texts', async ({ page
     .first()
     .click();
   // pt-BR kept: shared fixture data (proposal title) asserted by tests/e2e/proposalFixture.ts
-  await page.getByRole('button', { name: 'Accept Checkout a partir do Figma' }).click();
+  await page.getByRole('button', { name: 'Accept Checkout from Figma' }).click();
   await page
     .getByRole('button', { name: /^Apply accepted/ })
     .first()

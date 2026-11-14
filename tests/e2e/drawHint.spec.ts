@@ -12,9 +12,9 @@ async function openExample(page: Page): Promise<void> {
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'exemplo-completo.zip',
+      name: 'full-example.zip',
       mimeType: 'application/zip',
-      buffer: readFileSync('examples/exemplo-completo.zip'),
+      buffer: readFileSync('examples/full-example.zip'),
     });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }

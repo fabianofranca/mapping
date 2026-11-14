@@ -580,7 +580,7 @@ export const ptBR: Dictionary = {
   'help.guide.intro':
     'Um passeio de 14 passos pelo projeto de exemplo: telas, marcações, camadas, anotações tipadas, containers com Material 3, a revisão de uma proposta e as perspectivas. Funciona sem internet e abre numa aba nova.',
   'help.guide.example':
-    'Para ver o mesmo projeto na app, baixe o arquivo examples/exemplo-completo.zip do repositório (github.com/fabianofranca/mapping) e use Abrir zip na tela inicial (ele cria uma cópia neste dispositivo, sem tocar em nenhuma pasta).',
+    'Para ver o mesmo projeto na app, baixe o arquivo examples/full-example.zip do repositório (github.com/fabianofranca/mapping) e use Abrir zip na tela inicial (ele cria uma cópia neste dispositivo, sem tocar em nenhuma pasta).',
   'help.guide.fileProtocol':
     'Aberto como arquivo avulso, a app não acha o guia: ele fica em guide/index.html, ao lado do index.html, na pasta dist/ do build e na versão publicada.',
   'help.guide.open': 'Abrir o guia interativo',

@@ -18,7 +18,7 @@
         "email": null
       },
       "at": "2026-10-19T10:02:11.000Z",
-      "text": "O botão **Salvar** fica sempre habilitado, ou só depois de alguma mudança nas preferências?",
+      "text": "Does the **Save** button stay always enabled, or only after some change in the preferences?",
       "proposal": null
     },
     {
@@ -26,10 +26,10 @@
       "author": {
         "kind": "human",
         "name": "Marina Alves",
-        "email": "marina@exemplo.com"
+        "email": "marina@example.com"
       },
       "at": "2026-10-19T10:30:45.000Z",
-      "text": "Só depois de alguma mudança. Pode marcar `enabled` como `false` no estado inicial e abrir a dúvida para o Gerenciar plano também.",
+      "text": "Only after some change. You can set `enabled` to `false` in the initial state and open the question for Manage plan too.",
       "proposal": null
     }
   ]

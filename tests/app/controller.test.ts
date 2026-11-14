@@ -512,7 +512,7 @@ describe('import zip', () => {
   });
 
   it('the example project (repository zip) opens through importZip, only as a local project', async () => {
-    const zip = new Blob([readFileSync('examples/exemplo-completo.zip')]);
+    const zip = new Blob([readFileSync('examples/full-example.zip')]);
     expect((await app.importZip(zip)).ok).toBe(true);
     const current = await openedOf(app);
     expect(current.kind).toBe('local');

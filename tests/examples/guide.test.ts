@@ -301,7 +301,7 @@ describe('interactive guide', () => {
     expect(data.markings).toHaveLength(31);
     expect(data.annotations).toHaveLength(41);
     expect(data.layers).toHaveLength(10); // the Notes layer stays in the list; the floating note and its annotation do not go to the guide
-    expect(Object.keys(data.files)).toEqual(['images/cadastro.png', 'images/login.png']);
+    expect(Object.keys(data.files)).toEqual(['images/signup.png', 'images/login.png']);
   });
 
   it('carries the perspectives and arrivals of mapping.json, never written by hand in the template', () => {
@@ -315,20 +315,17 @@ describe('interactive guide', () => {
     };
     const imageName = (id: string) => data.images.find((i) => i.id === id)?.name;
     const layerName = (id: string) => data.layers.find((l) => l.id === id)?.name;
-    expect(data.perspectives.map((p) => p.name)).toEqual(['Dados', 'Material 3']);
-    const [dados, material] = data.perspectives;
-    expect(dados?.containers.map(imageName)).toEqual(['Cadastro', 'Login']);
-    expect(dados?.hiddenLayers.map(layerName).sort()).toEqual([
-      'Componentes',
-      'Dúvidas',
-      'Eventos',
+    expect(data.perspectives.map((p) => p.name)).toEqual(['Data', 'Material 3']);
+    const [dataPerspective, material] = data.perspectives;
+    expect(dataPerspective?.containers.map(imageName)).toEqual(['Sign up', 'Login']);
+    expect(dataPerspective?.hiddenLayers.map(layerName).sort()).toEqual([
+      'Components',
+      'Events',
+      'Questions',
     ]);
-    expect(material?.containers.map(imageName)).toEqual([
-      'Configurações',
-      'Detalhes do pedido',
-    ]);
+    expect(material?.containers.map(imageName)).toEqual(['Settings', 'Order details']);
     expect(material?.hiddenLayers).toEqual([]);
-    expect(data.arrivals).toEqual([{ name: 'Cadastro', fromName: 'Dados' }]);
+    expect(data.arrivals).toEqual([{ name: 'Sign up', fromName: 'Data' }]);
     // The template does not repeat the perspective names: they come from D.perspectives.
     const template = readFileSync('scripts/guide/template.html', 'utf8');
     expect(template).not.toMatch(/Material 3<\/option>|'Material 3'/);

@@ -32,7 +32,7 @@ const perspectiveTabs = (index: number, noPhoto: string) =>
     .map((c) => containerLabel(c, noPhoto));
 
 const STEPS = 14;
-const EXAMPLE_PROPOSAL = 'Tela de Perfil e ajuste no Cadastro';
+const EXAMPLE_PROPOSAL = 'Profile screen and Sign up tweak';
 
 /** Console and page errors (a script failure in the guide shows up here). */
 function watchErrors(page: Page): readonly string[] {

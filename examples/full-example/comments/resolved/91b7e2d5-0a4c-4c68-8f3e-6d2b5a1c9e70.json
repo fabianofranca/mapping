@@ -11,7 +11,7 @@
   "resolved": {
     "by": {
       "name": "Marina Alves",
-      "email": "marina@exemplo.com"
+      "email": "marina@example.com"
     },
     "at": "2026-10-19T08:45:00.000Z"
   },
@@ -24,7 +24,7 @@
         "email": null
       },
       "at": "2026-10-18T23:20:00.000Z",
-      "text": "O texto do botão **Gerenciar** cabe na largura do cartão, ou devo usar `Gerenciar plano`?",
+      "text": "Does the text of the **Manage** button fit the card width, or should I use `Manage plan`?",
       "proposal": null
     },
     {
@@ -32,10 +32,10 @@
       "author": {
         "kind": "human",
         "name": "Marina Alves",
-        "email": "marina@exemplo.com"
+        "email": "marina@example.com"
       },
       "at": "2026-10-19T08:40:00.000Z",
-      "text": "Fica `Gerenciar`, como está no desenho.",
+      "text": "It stays `Manage`, as in the design.",
       "proposal": null
     }
   ]

@@ -29,35 +29,36 @@ import {
   folderFiles,
 } from '../../scripts/exampleProject.mjs';
 
-// `examples/exemplo-completo/` é o projeto de exemplo (a fonte); o zip e o guia (`public/guide/`)
-// saem dela. O zip é o que a pessoa baixa do repositório (a app não o embute). Para gerar
-// o zip de novo: `npm run build:example`.
+// `examples/full-example/` is the example project (the source); the zip and the guide (`public/guide/`)
+// come from it. The zip is what the person downloads from the repository (the app does not embed it).
+// To generate the zip again: `npm run build:example`.
 
-const HINT = 'Rode `npm run build:example` para regerar examples/exemplo-completo.zip.';
+const HINT = 'Run `npm run build:example` to regenerate examples/full-example.zip.';
 
 async function readExample() {
   const read = await readProjectZip(new Blob([readFileSync(EXAMPLE_ZIP)]));
-  if (!read.ok) throw new Error(`zip ilegível: ${read.error}`);
+  if (!read.ok) throw new Error(`unreadable zip: ${read.error}`);
   const parsed = deserialize(read.files.mapping, undefined, read.files.specs);
-  if (!parsed.ok) throw new Error(`mapping.json inválido: ${parsed.error.code}`);
+  if (!parsed.ok) throw new Error(`invalid mapping.json: ${parsed.error.code}`);
   return { files: read.files, project: parsed.project };
 }
 
-describe('zip do projeto de exemplo', () => {
-  it('tem o conteúdo da pasta (fora de specs/) mais o manifesto', async () => {
+describe('example project zip', () => {
+  it('has the folder content (outside specs/) plus the manifest', async () => {
     const zip = await JSZip.loadAsync(readFileSync(EXAMPLE_ZIP));
     const expected = await exampleFiles();
     const names = Object.keys(zip.files).filter((name) => !zip.files[name]?.dir);
     expect(names.sort(), HINT).toEqual([...expected.keys()].sort());
     for (const [path, content] of expected) {
       const bytes = Buffer.from((await zip.file(path)?.async('uint8array')) ?? []);
-      expect(bytes.equals(content), `${path} difere da vista do exemplo. ${HINT}`).toBe(
-        true,
-      );
+      expect(
+        bytes.equals(content),
+        `${path} differs from the example view. ${HINT}`,
+      ).toBe(true);
     }
   });
 
-  it('abre como o "Abrir zip": mapping.json válido no schema atual, sem migração', async () => {
+  it('opens like "Open zip": mapping.json valid in the current schema, no migration', async () => {
     const { project } = await readExample();
     expect(project.schemaVersion).toBe(20);
     expect(project.revision).toBe(1);
@@ -68,47 +69,47 @@ describe('zip do projeto de exemplo', () => {
     expect(parsed?.ok && parsed.migratedFrom).toBeNull();
   });
 
-  it('tem 4 imagens, 32 marcações, 42 anotações, 10 camadas e 4 especializações', async () => {
+  it('has 4 containers, 32 markings, 42 annotations, 10 layers and 4 specializations', async () => {
     const { project } = await readExample();
     expect(project.containers).toHaveLength(4);
-    expect(project.markings).toHaveLength(32); // 31 nas telas + a nota flutuante da biblioteca de notas
+    expect(project.markings).toHaveLength(32); // 31 on the screens + the floating note of the notes library
     expect(project.annotations).toHaveLength(42);
-    expect(project.layers).toHaveLength(10); // + Notas (a livre virou Dúvidas) e Layout M3
+    expect(project.layers).toHaveLength(10); // + Notes (the free layer became Questions) and Layout M3
     expect(project.specializations).toHaveLength(4);
   });
 
-  it('tem as perspectivas Dados e Material 3 (Para todos) e a chegada da nota "Cadastro"', async () => {
+  it('has the Data and Material 3 perspectives (For everyone) and the arrival of the "Sign up" note', async () => {
     const { project } = await readExample();
     const layerId = (name: string) => project.layers.find((l) => l.name === name)?.id;
     const container = (name: string) =>
       project.containers.find((c) => c.name === name)?.id;
     const note = project.markings.find((m) => m.floating);
     expect(note).toBeDefined();
-    expect(project.perspectives.map((p) => p.name)).toEqual(['Dados', 'Material 3']);
-    const [dados, material] = project.perspectives;
-    expect(dados?.items.map((i) => i.root).sort()).toEqual(
-      [container('Cadastro'), container('Login'), note?.id].sort(),
+    expect(project.perspectives.map((p) => p.name)).toEqual(['Data', 'Material 3']);
+    const [data, material] = project.perspectives;
+    expect(data?.items.map((i) => i.root).sort()).toEqual(
+      [container('Sign up'), container('Login'), note?.id].sort(),
     );
-    expect([...(dados?.hiddenLayers ?? [])].sort()).toEqual(
-      ['Componentes', 'Eventos', 'Dúvidas'].map((n) => layerId(n)).sort(),
+    expect([...(data?.hiddenLayers ?? [])].sort()).toEqual(
+      ['Components', 'Events', 'Questions'].map((n) => layerId(n)).sort(),
     );
     expect(material?.items.map((i) => i.root).sort()).toEqual(
-      [container('Configurações'), container('Detalhes do pedido')].sort(),
+      [container('Settings'), container('Order details')].sort(),
     );
     expect(material?.hiddenLayers).toEqual([]);
     expect(project.arrivals).toEqual([
-      { root: note?.id, from: dados?.id, fromName: 'Dados' },
+      { root: note?.id, from: data?.id, fromName: 'Data' },
     ]);
   });
 
-  it('as perspectivas e a chegada não têm aviso de leitura (perspective-*, arrival-*)', async () => {
+  it('the perspectives and the arrival have no read warning (perspective-*, arrival-*)', async () => {
     const { project } = await readExample();
     const codes = validateProject(project).map((i) => i.code);
     expect(codes.filter((c) => /^(perspective|arrival)-/.test(c))).toEqual([]);
     expect(codes).toEqual([]);
   });
 
-  it('duas telas são fotos e duas são telas em branco; cada foto está no zip', async () => {
+  it('two containers are photos and two are blank screens; each photo is in the zip', async () => {
     const { project, files } = await readExample();
     const photos = project.containers.filter((image) => image.file !== null);
     expect(photos).toHaveLength(2);
@@ -117,14 +118,14 @@ describe('zip do projeto de exemplo', () => {
       expect(files.images.has(image.file ?? ''), image.name ?? '').toBe(true);
   });
 
-  it('as especializações citadas estão nas cópias de specs/', async () => {
+  it('the cited specializations are in the copies in specs/', async () => {
     const { project, files } = await readExample();
     for (const spec of project.specializations) {
       expect(files.specs.has(spec.file), spec.file).toBe(true);
     }
   });
 
-  it('toda anotação tipada usa um tipo que a especialização do projeto declara', async () => {
+  it('every typed annotation uses a type that the project specialization declares', async () => {
     const { project, files } = await readExample();
     const typeIds = new Map<string, Set<string>>();
     for (const entry of project.specializations) {
@@ -143,7 +144,7 @@ describe('zip do projeto de exemplo', () => {
     }
   });
 
-  it('o pacote material3-compose valida sem erros', async () => {
+  it('the material3-compose package validates with no errors', async () => {
     const { files } = await readExample();
     const entries: { path: string; text?: string }[] = [...files.specs].map(
       ([path, text]) => ({ path, text }),
@@ -159,11 +160,11 @@ describe('zip do projeto de exemplo', () => {
     });
     expect(report.errors).toEqual([]);
     expect(report.ok).toBe(true);
-    // A prova de desenho dos 229 exemplos do pacote passa de 5 s com a cobertura ligada no CI.
+    // The drawing check of the package's 229 examples takes over 5 s with coverage on in CI.
   }, 30_000);
 });
 
-describe('conversas de exemplo (comments/)', () => {
+describe('example threads (comments/)', () => {
   async function readThreads() {
     const { files, project } = await readExample();
     const threads = [...(files.threads ?? [])].map(([path, text]) => {
@@ -174,7 +175,7 @@ describe('conversas de exemplo (comments/)', () => {
     return { threads, project };
   }
 
-  it('o zip leva três conversas válidas, canônicas e nos caminhos certos', async () => {
+  it('the zip carries three valid, canonical threads at the right paths', async () => {
     const { threads } = await readThreads();
     expect(threads).toHaveLength(3);
     for (const { path, text, thread } of threads) {
@@ -184,7 +185,7 @@ describe('conversas de exemplo (comments/)', () => {
     }
   });
 
-  it('uma aguarda humano (agente, com citação de campo), uma aguarda agente e uma está resolvida', async () => {
+  it('one awaits a human (agent, with a field citation), one awaits the agent and one is resolved', async () => {
     const { threads } = await readThreads();
     const states = threads.map(({ thread }) => awaiting(thread));
     expect(states.filter((s) => s === 'human')).toHaveLength(1);
@@ -193,12 +194,12 @@ describe('conversas de exemplo (comments/)', () => {
     const byAgent = threads.find(({ thread }) => awaiting(thread) === 'human')!.thread;
     expect(byAgent.anchor.kind).toBe('field');
     expect(byAgent.messages[0]!.author.kind).toBe('agent');
-    expect(byAgent.messages[0]!.text).toContain('mapping://exemplo-completo/m/');
+    expect(byAgent.messages[0]!.text).toContain('mapping://full-example/m/');
     const resolved = threads.find(({ thread }) => thread.resolved !== null)!.thread;
-    expect(resolved.resolved?.by.email).toBe('marina@exemplo.com');
+    expect(resolved.resolved?.by.email).toBe('marina@example.com');
   });
 
-  it('toda citação mapping:// das conversas resolve no projeto (sem broken)', async () => {
+  it('every mapping:// citation in the threads resolves in the project (no broken)', async () => {
     const { threads, project } = await readThreads();
     const all = threads.map(({ thread }) => thread);
     for (const thread of all) {
@@ -212,17 +213,17 @@ describe('conversas de exemplo (comments/)', () => {
     }
   });
 
-  it('todas as âncoras existem no projeto e nenhum e-mail é real', async () => {
+  it('all anchors exist in the project and no email is real', async () => {
     const { threads, project } = await readThreads();
     for (const { thread } of threads) {
       expect(resolveAnchor(project, thread.anchor).orphan, thread.id).toBe(false);
       for (const m of thread.messages)
-        if (m.author.email !== null) expect(m.author.email).toMatch(/@exemplo\.com$/);
+        if (m.author.email !== null) expect(m.author.email).toMatch(/@example\.com$/);
     }
   });
 });
 
-describe('proposta de exemplo', () => {
+describe('example proposal', () => {
   async function readProposal(project: Project) {
     const { files } = await readExample();
     const entries = [...files.proposals];
@@ -235,11 +236,11 @@ describe('proposta de exemplo', () => {
     return parsed.proposal;
   }
 
-  it('é válida, está aberta, sem decisões, e aceitar tudo dá um projeto válido', async () => {
+  it('is valid, open, with no decisions, and accepting everything gives a valid project', async () => {
     const { project } = await readExample();
     const proposal = await readProposal(project);
     expect(proposal.status).toBe('open');
-    expect(proposal.title).toBe('Tela de Perfil e ajuste no Cadastro');
+    expect(proposal.title).toBe('Profile screen and Sign up tweak');
     expect(proposal.changes.length).toBeGreaterThan(5);
     expect(Object.keys(proposal.decisions)).toEqual([]);
     const all = Object.fromEntries(
@@ -249,8 +250,8 @@ describe('proposta de exemplo', () => {
   });
 });
 
-describe('especializações do exemplo geradas das fontes', () => {
-  it('os file de specializations[] do mapping.json caem em destinos do manifesto', () => {
+describe('example specializations generated from the sources', () => {
+  it('the file of specializations[] in mapping.json fall on manifest targets', () => {
     const mapping = JSON.parse(
       readFileSync(join(EXAMPLE_DIR, 'mapping.json'), 'utf8'),
     ) as { specializations: { file: string }[] };
@@ -260,17 +261,17 @@ describe('especializações do exemplo geradas das fontes', () => {
       const inside = targets.some(
         (target) => file === target || file.startsWith(`${target}/`),
       );
-      expect(inside, `${file} não cai em nenhum destino do manifesto`).toBe(true);
+      expect(inside, `${file} falls on no manifest target`).toBe(true);
     }
   });
 
-  it('a version de cada especialização do mapping.json é a da fonte', () => {
+  it('the version of each specialization in mapping.json is the source one', () => {
     const mapping = JSON.parse(
       readFileSync(join(EXAMPLE_DIR, 'mapping.json'), 'utf8'),
     ) as { specializations: { id: string; version: number; file: string }[] };
     expect(mapping.specializations.map((s) => s.id).sort()).toEqual([
-      'material3-compose',
       'data-model',
+      'material3-compose',
       'notas',
       'sdui',
     ]);
@@ -282,11 +283,13 @@ describe('especializações do exemplo geradas das fontes', () => {
       const source =
         rel === '' ? (entry?.source as string) : join(entry?.source as string, rel);
       const src = JSON.parse(readFileSync(source, 'utf8')) as { version: number };
-      expect(s.version, `versão de ${s.id} difere da fonte. ${HINT}`).toBe(src.version);
+      expect(s.version, `version of ${s.id} differs from the source. ${HINT}`).toBe(
+        src.version,
+      );
     }
   });
 
-  it('exampleFiles() ignora o specs/ do disco e traz o das fontes', async () => {
+  it('exampleFiles() ignores the specs/ on disk and brings the one from the sources', async () => {
     const view = await exampleFiles();
     const paths = [...view.keys()];
     expect(paths).toContain('mapping.json');
@@ -301,16 +304,16 @@ describe('especializações do exemplo geradas das fontes', () => {
     );
   });
 
-  it('o .gitignore lista examples/exemplo-completo/specs/', () => {
+  it('the .gitignore lists examples/full-example/specs/', () => {
     const lines = readFileSync('.gitignore', 'utf8')
       .split('\n')
       .map((l) => l.trim());
-    expect(lines).toContain('examples/exemplo-completo/specs/');
+    expect(lines).toContain('examples/full-example/specs/');
   });
 });
 
-describe('folderFiles ignora lixo de sistema (item 69)', () => {
-  it('.DS_Store, Thumbs.db e node_modules não entram', async () => {
+describe('folderFiles ignores system junk (item 69)', () => {
+  it('.DS_Store, Thumbs.db and node_modules are left out', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'folderfiles-'));
     try {
       writeFileSync(join(dir, 'mapping.json'), '{}');

@@ -5,7 +5,7 @@
   "coordinateSystem": "image-pixels-exif-oriented",
   "project": {
     "id": "6c1f0e52-3b7a-4f6e-9d1a-2e8f5a7c4b10",
-    "name": "exemplo-completo",
+    "name": "full-example",
     "createdAt": "2026-10-18T23:03:32.000Z",
     "updatedAt": "2026-10-18T23:03:32.000Z"
   },
@@ -16,9 +16,9 @@
       "file": "specs/sdui.json"
     },
     {
-      "id": "modelo-dados",
+      "id": "data-model",
       "version": 1,
-      "file": "specs/modelo-dados.json"
+      "file": "specs/data-model.json"
     },
     {
       "id": "material3-compose",
@@ -36,7 +36,7 @@
   "layers": [
     {
       "id": "cad1cc53-4610-48e5-9411-5405a34bce39",
-      "name": "Dúvidas",
+      "name": "Questions",
       "color": "#D32F2F",
       "spec": null
     },
@@ -48,29 +48,29 @@
     },
     {
       "id": "17dbedeb-5a90-4f69-b544-51635127d069",
-      "name": "Componentes",
+      "name": "Components",
       "color": "#7E57C2",
       "spec": {
         "specId": "sdui",
-        "layerId": "componentes"
+        "layerId": "components"
       }
     },
     {
       "id": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
-      "name": "Eventos",
+      "name": "Events",
       "color": "#FB8C00",
       "spec": {
         "specId": "sdui",
-        "layerId": "eventos"
+        "layerId": "events"
       }
     },
     {
       "id": "5d9375dc-fede-471d-853a-e4a0e6473112",
-      "name": "Telas",
+      "name": "Screens",
       "color": "#00897B",
       "spec": {
         "specId": "sdui",
-        "layerId": "telas"
+        "layerId": "screens"
       }
     },
     {
@@ -78,7 +78,7 @@
       "name": "Classes",
       "color": "#43A047",
       "spec": {
-        "specId": "modelo-dados",
+        "specId": "data-model",
         "layerId": "classes"
       }
     },
@@ -87,7 +87,7 @@
       "name": "Endpoints",
       "color": "#8E24AA",
       "spec": {
-        "specId": "modelo-dados",
+        "specId": "data-model",
         "layerId": "endpoints"
       }
     },
@@ -102,7 +102,7 @@
     },
     {
       "id": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
-      "name": "Componentes M3",
+      "name": "Components M3",
       "color": "#6750A4",
       "spec": {
         "specId": "material3-compose",
@@ -111,7 +111,7 @@
     },
     {
       "id": "5e299d69-feba-479d-b923-1e67b775d9d2",
-      "name": "Notas",
+      "name": "Notes",
       "color": "#F5C400",
       "spec": {
         "specId": "notas",
@@ -122,8 +122,8 @@
   "containers": [
     {
       "id": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
-      "name": "Cadastro",
-      "file": "images/cadastro.png",
+      "name": "Sign up",
+      "file": "images/signup.png",
       "width": 484,
       "height": 450,
       "placement": {
@@ -156,7 +156,7 @@
     },
     {
       "id": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
-      "name": "Configurações",
+      "name": "Settings",
       "file": null,
       "width": 360,
       "height": 800,
@@ -173,7 +173,7 @@
     },
     {
       "id": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
-      "name": "Detalhes do pedido",
+      "name": "Order details",
       "file": null,
       "width": 360,
       "height": 800,
@@ -194,7 +194,7 @@
       "id": "6a948fb4-7e74-48b4-9c21-4a5756727559",
       "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": null,
-      "name": "Formulário",
+      "name": "Form",
       "rect": {
         "x": 20,
         "y": 124,
@@ -210,7 +210,7 @@
       "id": "4ece99b6-20dd-4b92-9a3e-0c5cc2b88636",
       "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
-      "name": "Nome",
+      "name": "Name",
       "rect": {
         "x": 35,
         "y": 156,
@@ -226,7 +226,7 @@
       "id": "bb9d7d83-f19b-4139-b3b4-39a10ab14dd0",
       "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
-      "name": "Idade",
+      "name": "Age",
       "rect": {
         "x": 35,
         "y": 228,
@@ -242,7 +242,7 @@
       "id": "9fe1fd67-7669-4c8a-89f8-8754cfd6a254",
       "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
-      "name": "E-mail",
+      "name": "Email",
       "rect": {
         "x": 35,
         "y": 300,
@@ -258,7 +258,7 @@
       "id": "8f9464dd-8756-4027-83df-02a9038a4d47",
       "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
-      "name": "Cadastrar",
+      "name": "Register",
       "rect": {
         "x": 37,
         "y": 347,
@@ -274,7 +274,7 @@
       "id": "74c52a78-68c7-4b5c-8ebf-097957e1b532",
       "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": null,
-      "name": "Título",
+      "name": "Title",
       "rect": {
         "x": 20,
         "y": 20,
@@ -290,7 +290,7 @@
       "id": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
       "containerId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
       "parentId": null,
-      "name": "Formulário de login",
+      "name": "Login form",
       "rect": {
         "x": 10,
         "y": 70,
@@ -306,7 +306,7 @@
       "id": "058aa9cd-b5ea-4aea-b4d0-53a800d9a131",
       "containerId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
       "parentId": null,
-      "name": "Título",
+      "name": "Title",
       "rect": {
         "x": 20,
         "y": 14,
@@ -322,7 +322,7 @@
       "id": "ca9ebac1-cb65-4ff7-8698-c46ed22d9a9e",
       "containerId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
       "parentId": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
-      "name": "E-mail",
+      "name": "Email",
       "rect": {
         "x": 20,
         "y": 90,
@@ -338,7 +338,7 @@
       "id": "671b7e2a-8064-4d2a-98d3-9bf34bff1492",
       "containerId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
       "parentId": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
-      "name": "Senha",
+      "name": "Password",
       "rect": {
         "x": 20,
         "y": 160,
@@ -354,7 +354,7 @@
       "id": "0ce8b079-f32c-45b7-b4b5-9840dfac0ae4",
       "containerId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
       "parentId": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
-      "name": "Entrar",
+      "name": "Sign in",
       "rect": {
         "x": 20,
         "y": 230,
@@ -370,7 +370,7 @@
       "id": "29f6699b-499c-4ac8-8514-242a06290b7c",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
-      "name": "Barra",
+      "name": "Bar",
       "rect": {
         "x": 0,
         "y": 0,
@@ -386,7 +386,7 @@
       "id": "21af251a-72ae-44d7-a7de-50948b3b4ce2",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
-      "name": "Filtros",
+      "name": "Filters",
       "rect": {
         "x": 16,
         "y": 88,
@@ -434,7 +434,7 @@
       "id": "729919a6-779f-4dce-9dce-a6057d294886",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "21af251a-72ae-44d7-a7de-50948b3b4ce2",
-      "name": "Chip Dados",
+      "name": "Chip Data",
       "rect": {
         "x": 208,
         "y": 88,
@@ -450,7 +450,7 @@
       "id": "2d5cacea-d724-455f-b51c-8a8c8b6919a2",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
-      "name": "Nome de exibição",
+      "name": "Display name",
       "rect": {
         "x": 16,
         "y": 144,
@@ -466,7 +466,7 @@
       "id": "73c3965f-88f1-48fa-8c20-c59126f6e7aa",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
-      "name": "Preferências",
+      "name": "Preferences",
       "rect": {
         "x": 16,
         "y": 248,
@@ -482,7 +482,7 @@
       "id": "bb5ff089-d924-4337-a3f6-2327d5a98840",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "73c3965f-88f1-48fa-8c20-c59126f6e7aa",
-      "name": "Notificações",
+      "name": "Notifications",
       "rect": {
         "x": 16,
         "y": 248,
@@ -498,7 +498,7 @@
       "id": "82c5e51d-80ba-411d-9cb6-64050f804ff4",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "73c3965f-88f1-48fa-8c20-c59126f6e7aa",
-      "name": "Modo escuro",
+      "name": "Dark mode",
       "rect": {
         "x": 16,
         "y": 288,
@@ -514,7 +514,7 @@
       "id": "89ae4fc7-8e64-4f2c-a28d-8f1d19085a14",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "73c3965f-88f1-48fa-8c20-c59126f6e7aa",
-      "name": "Novidades por e-mail",
+      "name": "Email news",
       "rect": {
         "x": 16,
         "y": 328,
@@ -530,7 +530,7 @@
       "id": "99dc1828-02bd-4976-a1f2-907a05f1eaea",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
-      "name": "Sua conta",
+      "name": "Your account",
       "rect": {
         "x": 16,
         "y": 392,
@@ -546,7 +546,7 @@
       "id": "1d73d841-f973-4f45-8b51-b03f414afd03",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "99dc1828-02bd-4976-a1f2-907a05f1eaea",
-      "name": "Gerenciar plano",
+      "name": "Manage plan",
       "rect": {
         "x": 32,
         "y": 530,
@@ -562,7 +562,7 @@
       "id": "e5a1a106-cc83-4d95-8239-666b95af7c8b",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
-      "name": "Salvar",
+      "name": "Save",
       "rect": {
         "x": 120,
         "y": 620,
@@ -578,7 +578,7 @@
       "id": "8f92eca4-7a1d-4797-9c6b-0e4b97bb0770",
       "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
-      "name": "Navegação",
+      "name": "Navigation",
       "rect": {
         "x": 0,
         "y": 720,
@@ -594,7 +594,7 @@
       "id": "4daee06e-146d-4ecc-9b36-59682c4347f0",
       "containerId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
       "parentId": null,
-      "name": "Barra",
+      "name": "Bar",
       "rect": {
         "x": 0,
         "y": 0,
@@ -610,7 +610,7 @@
       "id": "e4df851e-d6f7-4ed0-a849-717f8ebcb092",
       "containerId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
       "parentId": null,
-      "name": "Resumo",
+      "name": "Summary",
       "rect": {
         "x": 16,
         "y": 88,
@@ -658,7 +658,7 @@
       "id": "93418690-bc11-46e6-9452-f7f707380f00",
       "containerId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
       "parentId": null,
-      "name": "Pedir novamente",
+      "name": "Order again",
       "rect": {
         "x": 16,
         "y": 480,
@@ -674,7 +674,7 @@
       "id": "568acb90-25f6-4e19-bed2-fb22b85a0642",
       "containerId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
       "parentId": null,
-      "name": "Ajuda",
+      "name": "Help",
       "rect": {
         "x": 288,
         "y": 720,
@@ -707,7 +707,7 @@
   "perspectives": [
     {
       "id": "6b0f5c1e-3a52-4d7b-9a1c-0d2e8f7a4b11",
-      "name": "Dados",
+      "name": "Data",
       "hiddenLayers": [
         "17dbedeb-5a90-4f69-b544-51635127d069",
         "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
@@ -753,7 +753,7 @@
     {
       "root": "b71eeec9-148d-405c-aeb3-60606857702a",
       "from": "6b0f5c1e-3a52-4d7b-9a1c-0d2e8f7a4b11",
-      "fromName": "Dados"
+      "fromName": "Data"
     }
   ],
   "annotations": [
@@ -761,7 +761,7 @@
       "id": "4c8e4bb5-2c9b-40e2-a514-3951d7e62c8b",
       "markingId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
       "layerId": "4ce345f4-26dc-47ee-8966-41700458ae9b",
-      "name": "Usuário",
+      "name": "User",
       "parentAnnotationId": null,
       "parentRole": null,
       "type": null,
@@ -769,12 +769,12 @@
       "entries": [
         {
           "id": "a1986afd-6117-4d22-af10-91ce3f1dc385",
-          "key": "nome",
+          "key": "name",
           "value": "string"
         },
         {
           "id": "0db29ebc-327c-43ff-b200-0bccc6b0291c",
-          "key": "idade",
+          "key": "age",
           "value": "number"
         },
         {
@@ -792,21 +792,21 @@
       "parentAnnotationId": null,
       "parentRole": null,
       "type": {
-        "specId": "modelo-dados",
-        "typeId": "classe"
+        "specId": "data-model",
+        "typeId": "class"
       },
       "values": {
-        "nome": "Contato",
-        "descricao": null,
-        "versao": 1,
-        "revisadoEm": "2026-10-18",
-        "atributos": [
+        "name": "Contact",
+        "description": null,
+        "version": 1,
+        "reviewedAt": "2026-10-18",
+        "attributes": [
           {
             "_id": "b4e15dbd-07a0-4e31-892d-8bbb66da9f7c",
-            "nome": "email",
-            "tipo": "String",
-            "obrigatorio": "sim",
-            "exemplo": "ana@exemplo.com"
+            "name": "email",
+            "type": "String",
+            "required": "yes",
+            "example": "ana@example.com"
           }
         ]
       },
@@ -824,12 +824,12 @@
         "typeId": "input"
       },
       "values": {
-        "id": "input_nome",
-        "tipo": "text",
+        "id": "input_name",
+        "inputType": "text",
         "placeholder": null,
-        "obrigatorio": "não",
+        "required": "no",
         "maxLength": null,
-        "dado": {
+        "data": {
           "annotationId": "4c8e4bb5-2c9b-40e2-a514-3951d7e62c8b",
           "entryId": "a1986afd-6117-4d22-af10-91ce3f1dc385"
         }
@@ -848,12 +848,12 @@
         "typeId": "input"
       },
       "values": {
-        "id": "input_idade",
-        "tipo": "number",
+        "id": "input_age",
+        "inputType": "number",
         "placeholder": null,
-        "obrigatorio": "não",
+        "required": "no",
         "maxLength": null,
-        "dado": {
+        "data": {
           "annotationId": "4c8e4bb5-2c9b-40e2-a514-3951d7e62c8b",
           "entryId": "0db29ebc-327c-43ff-b200-0bccc6b0291c"
         }
@@ -873,11 +873,11 @@
       },
       "values": {
         "id": "input_email",
-        "tipo": "email",
+        "inputType": "email",
         "placeholder": null,
-        "obrigatorio": "sim",
+        "required": "yes",
         "maxLength": null,
-        "dado": {
+        "data": {
           "annotationId": "4c8e4bb5-2c9b-40e2-a514-3951d7e62c8b",
           "entryId": "2303a865-dcc9-44a7-b6a6-b0656e2404b0"
         }
@@ -896,10 +896,10 @@
         "typeId": "button"
       },
       "values": {
-        "id": "btn_cadastrar",
-        "texto": "Cadastrar",
-        "estilo": "primary",
-        "habilitado": "sim"
+        "id": "btn_register",
+        "text": "Register",
+        "style": "primary",
+        "enabled": "yes"
       },
       "entries": []
     },
@@ -915,10 +915,10 @@
         "typeId": "text"
       },
       "values": {
-        "id": "titulo_cadastro",
-        "conteudo": "Crie sua conta",
-        "estilo": "titulo",
-        "dado": null
+        "id": "title_signup",
+        "content": "Create your account",
+        "style": "titulo",
+        "data": null
       },
       "entries": []
     },
@@ -934,13 +934,13 @@
         "typeId": "action"
       },
       "values": {
-        "acao": "submit",
-        "destino": "/usuarios",
-        "parametros": [
+        "action": "submit",
+        "target": "/users",
+        "parameters": [
           {
             "_id": "a2c47c2f-9cc3-4232-b672-2f7049579404",
-            "nome": "origem",
-            "valor": "cadastro"
+            "name": "source",
+            "value": "signup"
           }
         ]
       },
@@ -958,8 +958,8 @@
         "typeId": "feedback"
       },
       "values": {
-        "acao": "track",
-        "duracaoMs": 500
+        "action": "track",
+        "durationMs": 500
       },
       "entries": []
     },
@@ -975,8 +975,8 @@
         "typeId": "validation"
       },
       "values": {
-        "acao": "validate",
-        "regra": "email"
+        "action": "validate",
+        "rule": "email"
       },
       "entries": []
     },
@@ -988,14 +988,14 @@
       "parentAnnotationId": null,
       "parentRole": null,
       "type": {
-        "specId": "modelo-dados",
+        "specId": "data-model",
         "typeId": "endpoint"
       },
       "values": {
-        "metodo": "POST",
-        "path": "/v1/usuarios",
-        "request": "Usuário",
-        "response": "Usuário",
+        "method": "POST",
+        "path": "/v1/users",
+        "request": "User",
+        "response": "User",
         "timeoutMs": 10000
       },
       "entries": []
@@ -1012,8 +1012,8 @@
         "typeId": "screen"
       },
       "values": {
-        "nome": "Cadastro",
-        "rota": "/cadastro"
+        "name": "Sign up",
+        "route": "/signup"
       },
       "entries": []
     },
@@ -1021,7 +1021,7 @@
       "id": "b6d0a855-bd03-416e-ab09-ce890d2890dd",
       "markingId": "8f9464dd-8756-4027-83df-02a9038a4d47",
       "layerId": "cad1cc53-4610-48e5-9411-5405a34bce39",
-      "name": "Dúvida",
+      "name": "Question",
       "parentAnnotationId": null,
       "parentRole": null,
       "type": null,
@@ -1029,12 +1029,12 @@
       "entries": [
         {
           "id": "5b0cb2e7-9f95-4bb3-8e7f-7726a7b17e39",
-          "key": "pergunta",
-          "value": "O botão fica desabilitado até o e-mail ser válido?"
+          "key": "question",
+          "value": "Is the button disabled until the email is valid?"
         },
         {
           "id": "d028ed8c-ae54-44fe-bea3-6ea4c9a11c26",
-          "key": "quem",
+          "key": "who",
           "value": "design"
         }
       ]
@@ -1043,7 +1043,7 @@
       "id": "39596373-a1df-4639-a722-e351cb254173",
       "markingId": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
       "layerId": "4ce345f4-26dc-47ee-8966-41700458ae9b",
-      "name": "Credenciais",
+      "name": "Credentials",
       "parentAnnotationId": null,
       "parentRole": null,
       "type": null,
@@ -1056,7 +1056,7 @@
         },
         {
           "id": "8c066d45-3e67-45b8-a386-d861e09c28f2",
-          "key": "senha",
+          "key": "password",
           "value": "string"
         }
       ]
@@ -1073,8 +1073,8 @@
         "typeId": "screen"
       },
       "values": {
-        "nome": "Login",
-        "rota": "/login"
+        "name": "Login",
+        "route": "/login"
       },
       "entries": []
     },
@@ -1086,14 +1086,14 @@
       "parentAnnotationId": null,
       "parentRole": null,
       "type": {
-        "specId": "modelo-dados",
+        "specId": "data-model",
         "typeId": "endpoint"
       },
       "values": {
-        "metodo": "POST",
-        "path": "/v1/sessoes",
-        "request": "Credenciais",
-        "response": "Sessão",
+        "method": "POST",
+        "path": "/v1/sessions",
+        "request": "Credentials",
+        "response": "Session",
         "timeoutMs": 8000
       },
       "entries": []
@@ -1110,10 +1110,10 @@
         "typeId": "text"
       },
       "values": {
-        "id": "titulo_login",
-        "conteudo": "Entrar na conta",
-        "estilo": "titulo",
-        "dado": null
+        "id": "title_login",
+        "content": "Sign in to your account",
+        "style": "titulo",
+        "data": null
       },
       "entries": []
     },
@@ -1130,11 +1130,11 @@
       },
       "values": {
         "id": "input_login_email",
-        "tipo": "email",
-        "placeholder": "voce@exemplo.com",
-        "obrigatorio": "sim",
+        "inputType": "email",
+        "placeholder": "you@example.com",
+        "required": "yes",
         "maxLength": null,
-        "dado": {
+        "data": {
           "annotationId": "39596373-a1df-4639-a722-e351cb254173",
           "entryId": "a4165d58-0c08-4bc4-927c-26738fbfa93c"
         }
@@ -1153,12 +1153,12 @@
         "typeId": "input"
       },
       "values": {
-        "id": "input_login_senha",
-        "tipo": "password",
+        "id": "input_login_password",
+        "inputType": "password",
         "placeholder": null,
-        "obrigatorio": "sim",
+        "required": "yes",
         "maxLength": 64,
-        "dado": {
+        "data": {
           "annotationId": "39596373-a1df-4639-a722-e351cb254173",
           "entryId": "8c066d45-3e67-45b8-a386-d861e09c28f2"
         }
@@ -1177,10 +1177,10 @@
         "typeId": "button"
       },
       "values": {
-        "id": "btn_entrar",
-        "texto": "Entrar",
-        "estilo": "primary",
-        "habilitado": "sim"
+        "id": "btn_sign_in",
+        "text": "Sign in",
+        "style": "primary",
+        "enabled": "yes"
       },
       "entries": []
     },
@@ -1196,13 +1196,13 @@
         "typeId": "action"
       },
       "values": {
-        "acao": "submit",
-        "destino": "/v1/sessoes",
-        "parametros": [
+        "action": "submit",
+        "target": "/v1/sessions",
+        "parameters": [
           {
             "_id": "f46ba23b-5edc-44f1-a246-89947d337f4e",
-            "nome": "origem",
-            "valor": "login"
+            "name": "source",
+            "value": "login"
           }
         ]
       },
@@ -1220,7 +1220,7 @@
         "typeId": "top-app-bar"
       },
       "values": {
-        "title": "Configurações",
+        "title": "Settings",
         "style": "small",
         "navigationIcon": "ArrowBack",
         "actionIcon1": "MoreVert"
@@ -1297,7 +1297,7 @@
         "typeId": "chip"
       },
       "values": {
-        "label": "Dados móveis",
+        "label": "Mobile data",
         "style": "filter",
         "selected": "false",
         "enabled": "true"
@@ -1316,9 +1316,9 @@
         "typeId": "text-field"
       },
       "values": {
-        "label": "Nome de exibição",
+        "label": "Display name",
         "value": "Marina",
-        "supportingText": "Aparece para os outros usuários",
+        "supportingText": "Shown to other users",
         "style": "outlined",
         "enabled": "true",
         "isError": "false"
@@ -1357,7 +1357,7 @@
         "typeId": "switch"
       },
       "values": {
-        "label": "Notificações",
+        "label": "Notifications",
         "checked": "true",
         "enabled": "true"
       },
@@ -1375,7 +1375,7 @@
         "typeId": "switch"
       },
       "values": {
-        "label": "Modo escuro",
+        "label": "Dark mode",
         "checked": "false",
         "enabled": "true"
       },
@@ -1393,7 +1393,7 @@
         "typeId": "checkbox"
       },
       "values": {
-        "label": "Receber novidades por e-mail",
+        "label": "Receive news by email",
         "state": "unchecked",
         "enabled": "true"
       },
@@ -1411,9 +1411,9 @@
         "typeId": "card"
       },
       "values": {
-        "title": "Plano Pro",
-        "subtitle": "Renova em 12/11",
-        "supportingText": "Você tem acesso a todas as telas e à exportação.",
+        "title": "Pro plan",
+        "subtitle": "Renews on Nov 12",
+        "supportingText": "You have access to all screens and to export.",
         "style": "outlined"
       },
       "entries": []
@@ -1430,7 +1430,7 @@
         "typeId": "button"
       },
       "values": {
-        "label": "Gerenciar",
+        "label": "Manage",
         "style": "tonal",
         "enabled": "true"
       },
@@ -1448,7 +1448,7 @@
         "typeId": "button"
       },
       "values": {
-        "label": "Salvar",
+        "label": "Save",
         "style": "filled",
         "enabled": "true"
       },
@@ -1469,19 +1469,19 @@
         "items": [
           {
             "_id": "7ed1f7b9-1bad-4991-9323-e28414d9caa8",
-            "label": "Início",
+            "label": "Home",
             "icon": "Home",
             "selected": "false"
           },
           {
             "_id": "d3ec78de-a84f-4dcb-9e99-4a3d32ee322e",
-            "label": "Buscar",
+            "label": "Search",
             "icon": "Search",
             "selected": "false"
           },
           {
             "_id": "9c741738-2965-4504-a39b-bb5131a2f099",
-            "label": "Perfil",
+            "label": "Profile",
             "icon": "Person",
             "selected": "true"
           }
@@ -1502,7 +1502,7 @@
         "typeId": "top-app-bar"
       },
       "values": {
-        "title": "Pedido #1024",
+        "title": "Order #1024",
         "style": "small",
         "navigationIcon": "ArrowBack",
         "actionIcon1": "MoreVert"
@@ -1521,9 +1521,9 @@
         "typeId": "card"
       },
       "values": {
-        "title": "Pedido #1024",
-        "subtitle": "Entregue em 12/10",
-        "supportingText": "2 itens · R$ 189,90",
+        "title": "Order #1024",
+        "subtitle": "Delivered on Oct 12",
+        "supportingText": "2 items · $189.90",
         "style": "filled"
       },
       "entries": []
@@ -1540,8 +1540,8 @@
         "typeId": "list-item"
       },
       "values": {
-        "headlineContent": "Camiseta azul",
-        "supportingContent": "Tamanho M · 1 un",
+        "headlineContent": "Blue T-shirt",
+        "supportingContent": "Size M · 1 pc",
         "leadingIcon": "ShoppingCart",
         "trailingIcon": "KeyboardArrowRight"
       },
@@ -1559,8 +1559,8 @@
         "typeId": "list-item"
       },
       "values": {
-        "headlineContent": "Boné preto",
-        "supportingContent": "Único · 1 un",
+        "headlineContent": "Black cap",
+        "supportingContent": "One size · 1 pc",
         "leadingIcon": "ShoppingCart",
         "trailingIcon": "KeyboardArrowRight"
       },
@@ -1578,7 +1578,7 @@
         "typeId": "button"
       },
       "values": {
-        "label": "Pedir novamente",
+        "label": "Order again",
         "style": "tonal",
         "enabled": "true"
       },
@@ -1597,7 +1597,7 @@
       },
       "values": {
         "icon": "Add",
-        "contentDescription": "Ajuda",
+        "contentDescription": "Help",
         "size": "regular",
         "containerColor": "primaryContainer"
       },
@@ -1615,8 +1615,8 @@
         "typeId": "nota"
       },
       "values": {
-        "titulo": "Cadastro",
-        "texto": "O botão Cadastrar só deve habilitar quando nome, idade e e-mail estiverem preenchidos e o e-mail for válido. Depois do envio, a app leva a pessoa para a tela de Login."
+        "titulo": "Sign up",
+        "texto": "The Register button should only enable when name, age and email are filled in and the email is valid. After submitting, the app takes the person to the Login screen."
       },
       "entries": []
     }

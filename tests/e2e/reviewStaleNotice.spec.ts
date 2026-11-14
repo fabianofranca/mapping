@@ -5,10 +5,9 @@ import { expect, test, type Page } from '@playwright/test';
 // one line, with an X. At the default height of the Proposals window (240 px), at 900×720 and 1280×720,
 // the list shows 2 whole rows with the notice and 3 after the X; the footer stays in the window.
 // The notice comes from the "Starting measurements" recipe of #636: review, exit, rename the
-// Cabeçalho (Header) to Top and review again.
-// pt-BR kept: shared fixture data (proposta-exemplo.zip marking 'Cabeçalho') asserted by tests/examples
+// Header to Top and review again.
 
-const ZIP = readFileSync('examples/proposta-exemplo.zip');
+const ZIP = readFileSync('examples/proposal-example.zip');
 
 async function openStaleReview(page: Page) {
   await page.goto('/');
@@ -23,7 +22,7 @@ async function openStaleReview(page: Page) {
     .first()
     .click();
   await page.getByRole('button', { name: 'Exit review' }).click();
-  await page.locator('.tree-row', { hasText: 'Cabeçalho' }).first().click();
+  await page.locator('.tree-row', { hasText: 'Header' }).first().click();
   const name = page
     .locator('[data-window="details"]')
     .getByRole('textbox', { name: 'Name' })

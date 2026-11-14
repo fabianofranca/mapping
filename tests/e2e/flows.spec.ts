@@ -63,7 +63,7 @@ test('new project → image → marking → annotation → zip with the mapping.
   ]);
 });
 
-test('SDUI example → Input with `dado` pointing to a free tuple', async ({ page }) => {
+test('SDUI example → Input with `data` pointing to a free tuple', async ({ page }) => {
   await createProject(page, 'SDUI project');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
@@ -85,23 +85,21 @@ test('SDUI example → Input with `dado` pointing to a free tuple', async ({ pag
   // Input in the components layer.
   await page
     .getByRole('button', {
-      // pt-BR kept: layer name of examples/specs/sdui.json
-      name: 'Add annotation to layer Componentes',
+      name: 'Add annotation to layer Components',
     })
     .click();
   await page.getByRole('button', { name: /^Input/ }).click();
   await page.getByLabel('id', { exact: true }).fill('input_name');
   await page.getByLabel('id', { exact: true }).press('Enter');
   // Reference picker in a popup (B14): search and Enter picks.
-  // pt-BR kept: field id `dado` of examples/specs/sdui.json
-  const dado = page.getByRole('button', { name: /: dado$/ });
-  await dado.click();
+  const dataField = page.getByRole('button', { name: /: data$/ });
+  await dataField.click();
   await page.getByRole('combobox', { name: 'Search target' }).fill('name');
   await page.getByRole('combobox', { name: 'Search target' }).press('Enter');
   // A single arrow in the field: the icon (stage 7, O2); the text arrow stays in the hint.
-  await expect(dado).toContainText('User.name');
-  await expect(dado).not.toContainText('→');
-  await expect(dado.locator('xpath=..').locator('[data-tooltip]')).toContainText(
+  await expect(dataField).toContainText('User.name');
+  await expect(dataField).not.toContainText('→');
+  await expect(dataField.locator('xpath=..').locator('[data-tooltip]')).toContainText(
     /→ User\.name/,
   );
 
@@ -119,7 +117,7 @@ test('SDUI example → Input with `dado` pointing to a free tuple', async ({ pag
   expect(input?.type).toEqual({ specId: 'sdui', typeId: 'input' });
   expect(input?.values).toMatchObject({
     id: 'input_name',
-    dado: { annotationId: free?.id, entryId: free?.entries[0]?.id },
+    data: { annotationId: free?.id, entryId: free?.entries[0]?.id },
   });
 });
 

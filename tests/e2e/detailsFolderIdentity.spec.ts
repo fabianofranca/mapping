@@ -12,7 +12,7 @@ const FOLDER = 'example-folder-e2e';
 
 /** Unzips the example into an OPFS folder and makes it the folder chosen in "Open folder". */
 async function openExampleFolder(page: Page): Promise<void> {
-  const zip = await JSZip.loadAsync(readFileSync('examples/exemplo-completo.zip'));
+  const zip = await JSZip.loadAsync(readFileSync('examples/full-example.zip'));
   const files: { path: string; data: number[] }[] = [];
   for (const [path, entry] of Object.entries(zip.files)) {
     if (!entry.dir) files.push({ path, data: [...(await entry.async('uint8array'))] });
@@ -51,8 +51,7 @@ test('Details in review at 900 px without a horizontal bar with the project open
   await page.keyboard.press('Control+Shift+Digit2');
   await page.keyboard.press('Control+Shift+Digit1');
   await page
-    // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
-    .getByRole('button', { name: 'Review: Tela de Perfil e ajuste no Cadastro' })
+    .getByRole('button', { name: 'Review: Profile screen and Sign up tweak' })
     .click();
   await expect(page.getByText('Read-only').first()).toBeVisible();
   for (const box of await page.getByRole('checkbox', { name: /^Show layer / }).all()) {
@@ -63,8 +62,7 @@ test('Details in review at 900 px without a horizontal bar with the project open
     .getByRole('group', { name: 'Canvas view' })
     .getByRole('button', { name: 'Proposed', exact: true })
     .click();
-  // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
-  await page.locator('.tree-row', { hasText: 'Dados da conta' }).first().click();
+  await page.locator('.tree-row', { hasText: 'Account details' }).first().click();
   await page.getByRole('button', { name: 'Show here' }).first().click();
   await expect(
     page.getByRole('button', { name: 'Copy reference' }).first(),

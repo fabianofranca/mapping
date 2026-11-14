@@ -19,32 +19,32 @@ import {
 } from '../e2e/proposedComponentsFixture';
 import { openHarness } from '../store/proposalHarness';
 
-// `examples/proposta-componentes.zip`: o projeto "Telas" com uma proposta aberta de componentes
-// novos, para o roteiro R13 (Proposto com componentes) do docs/TESTING.md. O zip sai de
-// `tests/e2e/proposedComponentsFixture.ts`; este teste confere que ele está em dia e que, ao
-// abrir, a revisão tem os estados que o roteiro descreve. Para gerar de novo:
+// `examples/proposal-components.zip`: the "Screens" project with an open proposal of new
+// components, for script R13 (Proposed with components) of docs/TESTING.md. The zip comes from
+// `tests/e2e/proposedComponentsFixture.ts`; this test checks that it is up to date and that, once
+// opened, the review has the states that the script describes. To generate it again:
 // `npm run build:proposal-components`.
 
-const EXAMPLE = 'examples/proposta-componentes.zip';
-const HINT = 'Rode `npm run build:proposal-components` para regerar o zip.';
+const EXAMPLE = 'examples/proposal-components.zip';
+const HINT = 'Run `npm run build:proposal-components` to regenerate the zip.';
 
 beforeEach(() => localStorage.clear());
 
 async function readExample() {
   const read = await readProjectZip(new Blob([readFileSync(EXAMPLE)]));
-  if (!read.ok) throw new Error(`zip ilegível: ${read.error}`);
+  if (!read.ok) throw new Error(`unreadable zip: ${read.error}`);
   const parsed = deserialize(read.files.mapping, undefined, read.files.specs);
-  if (!parsed.ok) throw new Error(`mapping.json inválido: ${parsed.error.code}`);
+  if (!parsed.ok) throw new Error(`invalid mapping.json: ${parsed.error.code}`);
   const text = read.files.proposals.get(
     `proposals/${SHOWCASE_PROPOSAL_ID}/proposal.json`,
   );
   const proposal = text ? parseProposalText(text) : null;
-  if (!proposal?.ok) throw new Error('proposal.json inválido');
+  if (!proposal?.ok) throw new Error('invalid proposal.json');
   return { project: parsed.project, proposal: proposal.proposal };
 }
 
-describe('zip de exemplo com componentes novos na proposta', () => {
-  it('examples/proposta-componentes.zip está em dia com o gerador', async () => {
+describe('example zip with new components in the proposal', () => {
+  it('examples/proposal-components.zip is up to date with the generator', async () => {
     const expected = showcase().files;
     if (process.env.UPDATE_EXAMPLES === '1') {
       writeFileSync(EXAMPLE, await showcaseZip());
@@ -62,14 +62,14 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     }
   });
 
-  it('a especialização aplicada se chama "Material 3 (Compose)", como na biblioteca (R13.10)', async () => {
+  it('the applied specialization is called "Material 3 (Compose)", as in the library (R13.10)', async () => {
     const { project } = await readExample();
     expect(project.specializations.map((s) => [s.id, s.spec?.name])).toEqual([
       ['material3-compose', 'Material 3 (Compose)'],
     ]);
   });
 
-  it('o pacote specs/material3-compose/ do zip é uma biblioteca válida (sem erro no Diagnóstico)', async () => {
+  it('the specs/material3-compose/ package of the zip is a valid library (no Diagnostics error)', async () => {
     const zip = await JSZip.loadAsync(readFileSync(EXAMPLE));
     const prefix = 'specs/material3-compose/';
     const files: LibraryFile[] = [];
@@ -85,7 +85,7 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     expect(report.ok).toBe(true);
   }, 30_000);
 
-  it('a app lê o zip: o projeto e a proposta aberta com as decisões gravadas', async () => {
+  it('the app reads the zip: the project and the open proposal with the recorded decisions', async () => {
     const { project, proposal } = await readExample();
     expect(project.containers).toHaveLength(1);
     expect(project.markings.map((m) => m.name)).toEqual([SHOWCASE_NAMES.existing]);
@@ -101,7 +101,7 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     expect(stateOf(ids.package)).toBeNull();
   });
 
-  it('na revisão: pendente, aceito, rejeitado, inválido, sem rótulo, do pacote e alterado', async () => {
+  it('in the review: pending, accepted, rejected, invalid, no label, from the package and changed', async () => {
     const { project, proposal } = await readExample();
     const files: Record<string, string> = {};
     for (const [path, text] of showcase().files) {
@@ -134,7 +134,7 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     const scenes = derived.componentScenes.value;
     const ids = showcase().createIds;
 
-    // Desenhados no Proposto: existente, pendente, aceito, inválido, sem rótulo, do pacote.
+    // Drawn in Proposed: existing, pending, accepted, invalid, no label, from the package.
     for (const name of [
       SHOWCASE_NAMES.existing,
       SHOWCASE_NAMES.pending,
@@ -147,11 +147,11 @@ describe('zip de exemplo com componentes novos na proposta', () => {
       expect(id, name).toBeDefined();
       expect(scenes.has(id ?? ''), name).toBe(true);
     }
-    // Rejeitado: a marcação não existe na visão Proposto (só o fantasma, desenhado pelo canvas).
+    // Rejected: the marking does not exist in the Proposed view (only the ghost, drawn by the canvas).
     expect(idOf(SHOWCASE_NAMES.rejected)).toBeUndefined();
     expect(scenes.size).toBe(6);
 
-    // O inválido está no conjunto que bloqueia Aplicar; os outros, não.
+    // The invalid one is in the set that blocks Apply; the others are not.
     const invalid = h.review.derived.invalid.value.changeIds;
     expect(invalid.has(ids.invalid)).toBe(true);
     for (const key of [
@@ -164,12 +164,12 @@ describe('zip de exemplo com componentes novos na proposta', () => {
       expect(invalid.has(ids[key]), key).toBe(false);
     }
 
-    // O "Sem rótulo" leva a pendência de incompleta; o "Pendente" não.
+    // The "No label" one carries the incomplete pending item; the "Pending" one does not.
     const incomplete = derived.incompleteMarkings.value;
     expect(incomplete.has(idOf(SHOWCASE_NAMES.noLabel) ?? '')).toBe(true);
     expect(incomplete.has(idOf(SHOWCASE_NAMES.pending) ?? '')).toBe(false);
 
-    // R13.9: o Inválido tem as duas pendências (camada e "não cabe") e Incompletas o lista.
+    // R13.9: the Invalid one has both pending items (layer and "does not fit") and Incomplete lists it.
     const invalidAnnotation = shown?.annotations.find(
       (a) => a.markingId === idOf(SHOWCASE_NAMES.invalid),
     );
@@ -185,15 +185,15 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     expect(listed).toContain(idOf(SHOWCASE_NAMES.noLabel));
     expect(listed).not.toContain(idOf(SHOWCASE_NAMES.pending));
 
-    // O existente aparece com o valor proposto.
+    // The existing one appears with the proposed value.
     const existing = shown?.annotations.find(
       (a) => a.markingId === idOf(SHOWCASE_NAMES.existing),
     );
-    expect(existing?.values?.label).toBe('Novo valor');
+    expect(existing?.values?.label).toBe('New value');
 
-    // Atual: nenhum componente criado; nada gravado em specs/ antes de aplicar.
+    // Current: no component created; nothing written to specs/ before applying.
     h.review.setView('current');
     expect(derived.componentScenes.value.size).toBe(1);
-    expect(await h.root.read('specs/m3novo/m3novo.spec.json')).toBeNull();
+    expect(await h.root.read('specs/m3new/m3new.spec.json')).toBeNull();
   });
 });
