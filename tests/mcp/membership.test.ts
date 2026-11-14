@@ -90,9 +90,9 @@ describe('move_marking sem efeito', () => {
   it('diz que a marcação já está na posição e que nada muda', async () => {
     const result = await plan(botaoSai(readProject(dir)));
     expect(result.valid).toBe(true);
-    expect(result.summary[1]).toContain('já está na posição 0 entre as 2 irmãs');
-    expect(result.summary[1]).toContain('nada muda');
-    expect(result.summary[1]).not.toContain('Mover');
+    expect(result.summary[1]).toContain('already at position 0 among its 2 siblings');
+    expect(result.summary[1]).toContain('nothing changes');
+    expect(result.summary[1]).not.toContain('Move');
   });
 
   it('o que muda a ordem segue com a descrição de sempre', async () => {
@@ -101,8 +101,8 @@ describe('move_marking sem efeito', () => {
       botaoSai(p)[0],
       { op: 'move_marking', marking: byName(p, 'Botão').id, index: 0 },
     ]);
-    expect(result.summary[1]).toContain('Mover a marcação');
-    expect(result.summary[1]).toContain('para a posição 0 entre as 2 irmãs');
+    expect(result.summary[1]).toContain('Move the marking');
+    expect(result.summary[1]).toContain('to position 0 among its 2 siblings');
   });
 });
 
@@ -121,7 +121,7 @@ describe('membership', () => {
     expect(entry!.to.container).toContain(
       p.containers[0]!.id.replaceAll('-', '').slice(0, 8),
     );
-    expect(entry!.message).toBe('Botão sai de Topo; agora direto em Detalhes');
+    expect(entry!.message).toBe('Botão leaves Topo; now directly in Detalhes');
   });
 
   it('propose_changes traz o mesmo, e o aplicado bate com o `to`', async () => {
@@ -131,7 +131,7 @@ describe('membership', () => {
     expect(proposed.valid, JSON.stringify(proposed.errors)).toBe(true);
     const { membership } = proposed as unknown as Plan;
     expect(membership).toHaveLength(1);
-    expect(membership![0]!.message).toBe('Botão sai de Topo; agora direto em Detalhes');
+    expect(membership![0]!.message).toBe('Botão leaves Topo; now directly in Detalhes');
     expect(membership).toEqual(planned.membership);
     const after = acceptAllAndApply(dir, proposed.proposal.id);
     const botao = byName(after, 'Botão');
@@ -202,6 +202,6 @@ describe('membership no empate de retângulo', () => {
     const wrapper = byName(after, 'Envoltório');
     expect(byName(after, 'Tudo').parentId).toBe(wrapper.id);
     expect(membership![0]!.to.parent).toContain(codeOf(wrapper.id));
-    expect(membership![0]!.message).toBe('Tudo entra em Envoltório');
+    expect(membership![0]!.message).toBe('Tudo enters Envoltório');
   });
 });

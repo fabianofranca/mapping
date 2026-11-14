@@ -320,7 +320,7 @@ describe('plan_changes: prova de desenho por instância', () => {
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ code: 'component-overflow', node: 'rotulo' });
     expect(items[0]!.missing).toBeGreaterThan(0);
-    expect(items[0]!.message).toMatch(/falta.*px/);
+    expect(items[0]!.message).toMatch(/\d+ px short/);
   });
 
   it('o mesmo lote com 200×40 não traz component-overflow', async () => {
@@ -336,9 +336,9 @@ describe('plan_changes: prova de desenho por instância', () => {
     const ops = [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })];
     const without = overflows(await plan(aprox, ops));
     const withFonts = overflows(await plan(real, ops));
-    expect(without[0]!.message).toContain('(aproximado)');
+    expect(without[0]!.message).toContain('(approximate)');
     expect(without[0]!.approximate).toBe(true);
-    expect(withFonts[0]!.message).not.toContain('(aproximado)');
+    expect(withFonts[0]!.message).not.toContain('(approximate)');
     expect(withFonts[0]!.approximate).toBeUndefined();
   });
 

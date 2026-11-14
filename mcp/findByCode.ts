@@ -18,15 +18,15 @@ import {
   type ProjectLocation,
 } from './projects';
 
-// `find_by_code`: do código para o mapeamento. Procura, em um projeto ou em todos os das
-// raízes, os tipos das especializações aplicadas cujo `code` aponta para um arquivo
-// (`code.<plataforma>.path`) ou símbolo (`code.<plataforma>.symbol`), e as anotações desses
-// tipos ("estou neste arquivo: que tipos o usam e em que marcações"). Só compara os textos
-// das especializações: nenhum arquivo de código é aberto (só se confere se o `path` existe).
+// `find_by_code`: from code to mapping. Searches, in one project or in all those in the
+// roots, the types of the applied specializations whose `code` points to a file
+// (`code.<platform>.path`) or symbol (`code.<platform>.symbol`), and the annotations of those
+// types ("I am in this file: which types use it and in which markings"). It only compares the texts
+// of the specializations: no code file is opened (it only checks that the `path` exists).
 
 type Json = Record<string, unknown>;
 
-/** Máximo de anotações devolvidas, somando todos os tipos (os totais vêm sempre). */
+/** Maximum annotations returned, summing all the types (the totals always come). */
 const MAX_ANNOTATIONS = 200;
 
 export interface FindByCodeArgs {
@@ -44,11 +44,11 @@ export async function findByCodeResult(
   if (path === '' && symbol === '') {
     throw new ToolError(
       'missing-query',
-      'informe `path` (arquivo inteiro ou só os últimos segmentos, ex: "CheckoutScreen.kt") e/ou `symbol`',
+      'provide `path` (whole file or only the last segments, e.g. "CheckoutScreen.kt") and/or `symbol`',
     );
   }
   if (path !== '' && normalizeCodePath(path) === null) {
-    throw new ToolError('invalid-path', `caminho inválido: ${args.path}`);
+    throw new ToolError('invalid-path', `invalid path: ${args.path}`);
   }
 
   const single = args.project !== undefined && args.project.trim() !== '';
@@ -56,7 +56,7 @@ export async function findByCodeResult(
     ? [await findProject(roots, args.project!)]
     : await discoverProjects(roots);
   if (locations.length === 0) {
-    throw new ToolError('project-not-found', 'nenhum projeto nas raízes configuradas');
+    throw new ToolError('project-not-found', 'no project in the configured roots');
   }
 
   const files = new LocalFileChecker(roots.workDir);
@@ -70,7 +70,7 @@ export async function findByCodeResult(
     try {
       loaded = await loadProject(roots, location);
     } catch (error) {
-      // Um projeto ilegível não esconde os outros; sozinho, o erro é do pedido.
+      // An unreadable project does not hide the others; alone, the error is the request's.
       if (single || !(error instanceof ToolError)) throw error;
       unreadable.push(location.path);
       continue;

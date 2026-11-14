@@ -116,7 +116,7 @@ describe('create_marking sem rect: o tamanho inclui as linhas do próprio lote',
       ],
       io,
     );
-    expect(again.steps[2]!.description).toContain('nada muda');
+    expect(again.steps[2]!.description).toContain('nothing changes');
   }, 30_000);
 });
 

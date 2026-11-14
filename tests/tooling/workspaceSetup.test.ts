@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Etapa #681, fase WA2: `examples/workspace/setup.sh` deixa o workspace inteiro na versão da
-// tag (servidor, skill, bloco do AGENTS.md e o próprio script). Cada teste roda o script de
-// verdade, contra uma "release" falsa em `file://` montada por `workspaceAssets.mjs`.
+// Stage #681, phase WA2: `examples/workspace/setup.sh` brings the whole workspace to the version of
+// the tag (server, skill, AGENTS.md block and the script itself). Each test runs the real script
+// against a fake "release" on `file://` assembled by `workspaceAssets.mjs`.
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
@@ -38,12 +38,12 @@ const OLD_AGENTS = readFileSync(
 const REAL_SETUP = readFileSync(join(SKELETON, 'setup.sh'), 'utf8');
 const REAL_AGENTS = readFileSync(join(SKELETON, 'AGENTS.md'), 'utf8');
 const BLOCK = `${REAL_AGENTS.slice(REAL_AGENTS.indexOf(BEGIN), REAL_AGENTS.indexOf(END) + END.length)}\n`;
-const RELEASE_SKILL = '# skill da release\n';
-const RAW_SKILL = '# skill do raw (main)\n';
-const RELEASE_WATCHER = '// watcher da release\n';
-const OLD_WATCHER = '// watcher copiado à mão, antigo\n';
-const RELEASE_EXTRACTOR = '// extrator da release\n';
-const OLD_EXTRACTOR = '// extrator antigo\n';
+const RELEASE_SKILL = '# skill from the release\n';
+const RAW_SKILL = '# skill from raw (main)\n';
+const RELEASE_WATCHER = '// watcher from the release\n';
+const OLD_WATCHER = '// watcher copied by hand, old\n';
+const RELEASE_EXTRACTOR = '// extractor from the release\n';
+const OLD_EXTRACTOR = '// old extractor\n';
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -57,12 +57,12 @@ const tmp = (name: string): string => {
 const sha = (data: string | Buffer): string =>
   createHash('sha256').update(data).digest('hex');
 
-/** `setup.sh` real com uma linha que conta as execuções, logo após `set -euo pipefail`. */
+/** The real `setup.sh` with a line that counts the runs, right after `set -euo pipefail`. */
 const COUNTED = REAL_SETUP.replace(
   'set -euo pipefail\n',
   'set -euo pipefail\n[ -z "${MAPPING_TEST_COUNT:-}" ] || echo run >> "$MAPPING_TEST_COUNT"\n',
 );
-const LOCAL_SETUP = `${COUNTED}# versão antiga, só para diferir\n`;
+const LOCAL_SETUP = `${COUNTED}# old version, only to differ\n`;
 
 interface Env {
   release: string;
@@ -72,13 +72,13 @@ interface Env {
 }
 
 interface Options {
-  /** Arquivos da release a não publicar (nem o `.sha256`). */
+  /** Release files not to publish (nor their `.sha256`). */
   omit?: string[];
-  /** Não copia o `setup.sh` local para o workspace. */
+  /** Does not copy the local `setup.sh` to the workspace. */
   noLocalSetup?: boolean;
 }
 
-/** Monta release falsa, raw falso e uma cópia do esqueleto como workspace. */
+/** Builds a fake release, a fake raw and a copy of the skeleton as the workspace. */
 function setup(options: Options = {}): Env {
   const root = tmp('root');
   mkdirSync(join(root, 'examples/workspace'), { recursive: true });
@@ -116,7 +116,7 @@ function setup(options: Options = {}): Env {
   return { release, raw, ws, count: join(tmp('count'), 'count') };
 }
 
-/** Roda o `setup.sh` do workspace (síncrono: o `file://` não precisa de servidor). */
+/** Runs the workspace `setup.sh` (synchronous: `file://` needs no server). */
 function run(env: Env, args: string[] = [], extraEnv: Record<string, string> = {}) {
   const result = spawnSync('bash', ['setup.sh', ...args], {
     cwd: env.ws,
@@ -142,7 +142,7 @@ const executions = (env: Env): number =>
     ? readFileSync(env.count, 'utf8').split('\n').filter(Boolean).length
     : 0;
 
-/** Caminho relativo -> hash do conteúdo (ou alvo do link) de tudo na pasta. */
+/** Relative path -> hash of the content (or link target) of everything in the folder. */
 function snapshot(dir: string): Record<string, string> {
   const out: Record<string, string> = {};
   const walk = (current: string): void => {
@@ -173,17 +173,17 @@ const leftovers = (env: Env): string[] =>
     (name) => name.startsWith('.mapping-setup.') || name === 'setup.sh.new',
   );
 
-describe('workspace novo (só o setup.sh)', () => {
-  it('baixa e confere servidor e skill, cria o AGENTS.md e o link da skill, e imprime o resumo', () => {
+describe('new workspace (only setup.sh)', () => {
+  it('downloads and checks server and skill, creates AGENTS.md and the skill link, and prints the summary', () => {
     const env = setup({ noLocalSetup: true });
     writeFileSync(join(env.ws, 'setup.sh'), COUNTED);
-    // O esqueleto não traz o AGENTS.md nem o link em um workspace novo.
+    // In a new workspace the skeleton brings neither AGENTS.md nor the link.
     rmSync(join(env.ws, 'AGENTS.md'));
     rmSync(join(env.ws, 'watch-comments.mjs'));
     const result = run(env);
     expect(result.status, result.all).toBe(0);
     expect(read(env, 'watch-comments.mjs')).toBe(RELEASE_WATCHER);
-    expect(result.out).toContain('Watcher: instalado');
+    expect(result.out).toContain('Watcher: installed');
     expect(read(env, 'tools/mapping-mcp.js')).toContain('0.0.0-test');
     expect(read(env, 'tools/mapping-mcp.js.sha256')).toContain('mapping-mcp.js');
     expect(read(env, '.agents/skills/spec-author/SKILL.md')).toBe(RELEASE_SKILL);
@@ -193,73 +193,73 @@ describe('workspace novo (só o setup.sh)', () => {
     expect(read(env, '.claude/skills/spec-author/SKILL.md')).toBe(RELEASE_SKILL);
     const agents = read(env, 'AGENTS.md');
     expect(
-      agents.startsWith('# Mapeamentos\n\n## Para que servem estes mapeamentos\n\n<!--'),
+      agents.startsWith('# Mappings\n\n## What these mappings are for\n\n<!--'),
     ).toBe(true);
     expect(agents.endsWith(`\n\n${BLOCK}`)).toBe(true);
-    expect(result.out).toContain('Servidor: 0.0.0-test');
+    expect(result.out).toContain('Server: 0.0.0-test');
     expect(result.out).toContain('Skill: release');
-    expect(result.out).toContain('AGENTS.md: criado');
-    expect(result.out).toContain('Pronto.');
+    expect(result.out).toContain('AGENTS.md: created');
+    expect(result.out).toContain('Done.');
     expect(leftovers(env)).toEqual([]);
   });
 });
 
 describe('watcher (watch-comments.mjs)', () => {
-  it('cópia antiga à mão: é trocada pela da release, sem backup, e o resumo diz atualizado', () => {
+  it('old hand-made copy: replaced by the release one, with no backup, and the summary says updated', () => {
     const env = setup();
     write(env, 'watch-comments.mjs', OLD_WATCHER);
     const result = run(env);
     expect(result.status, result.all).toBe(0);
     expect(read(env, 'watch-comments.mjs')).toBe(RELEASE_WATCHER);
-    expect(result.out).toContain('Watcher: atualizado');
+    expect(result.out).toContain('Watcher: updated');
     expect(readdirSync(env.ws).filter((n) => n.includes('watch-comments.mjs.'))).toEqual(
       [],
     );
   });
 
-  it('release sem o watcher: aviso, o arquivo local intacto e o resto do setup segue', () => {
+  it('release without the watcher: warning, the local file intact and the rest of the setup carries on', () => {
     const env = setup({ omit: ['watch-comments.mjs'] });
     write(env, 'watch-comments.mjs', OLD_WATCHER);
     const result = run(env);
     expect(result.status, result.all).toBe(0);
     expect(result.err).toContain('watch-comments.mjs');
     expect(read(env, 'watch-comments.mjs')).toBe(OLD_WATCHER);
-    expect(result.out).toContain('Watcher: não atualizado (release sem o watcher)');
-    expect(result.out).toContain('Servidor: 0.0.0-test');
+    expect(result.out).toContain('Watcher: not updated (release without the watcher)');
+    expect(result.out).toContain('Server: 0.0.0-test');
   });
 
-  it('release sem o watcher e sem arquivo local: continua ausente', () => {
+  it('release without the watcher and without a local file: stays absent', () => {
     const env = setup({ omit: ['watch-comments.mjs'] });
     rmSync(join(env.ws, 'watch-comments.mjs'));
     const result = run(env);
     expect(result.status, result.all).toBe(0);
     expect(existsSync(join(env.ws, 'watch-comments.mjs'))).toBe(false);
-    expect(result.out).toContain('Watcher: não atualizado (release sem o watcher)');
+    expect(result.out).toContain('Watcher: not updated (release without the watcher)');
   });
 
-  it('cópia igual à da release: sem mudança', () => {
+  it('copy equal to the release one: no change', () => {
     const env = setup();
     write(env, 'watch-comments.mjs', RELEASE_WATCHER);
     const result = run(env);
     expect(result.status, result.all).toBe(0);
-    expect(result.out).toContain('Watcher: sem mudança');
+    expect(result.out).toContain('Watcher: no change');
   });
 });
 
-describe('autoatualização', () => {
-  it('troca o setup.sh, avisa e roda de novo uma vez só', () => {
+describe('self-update', () => {
+  it('replaces setup.sh, warns and runs again once only', () => {
     const env = setup();
     const result = run(env);
     expect(result.status, result.all).toBe(0);
-    expect(result.all).toContain('setup.sh atualizado');
+    expect(result.all).toContain('setup.sh updated');
     expect(executions(env)).toBe(2);
     expect(read(env, 'setup.sh')).toBe(COUNTED);
     expect(statSync(join(env.ws, 'setup.sh')).mode & 0o111).not.toBe(0);
-    expect(result.out).toContain('Pronto.');
+    expect(result.out).toContain('Done.');
     expect(leftovers(env)).toEqual([]);
   });
 
-  it('--no-self-update (antes ou depois da tag) não troca', () => {
+  it('--no-self-update (before or after the tag) does not replace', () => {
     for (const args of [
       ['--no-self-update'],
       ['mcp-v0.0.0', '--no-self-update'],
@@ -270,11 +270,11 @@ describe('autoatualização', () => {
       expect(result.status, result.all).toBe(0);
       expect(executions(env)).toBe(1);
       expect(read(env, 'setup.sh')).toBe(LOCAL_SETUP);
-      expect(result.out).toContain('Pronto.');
+      expect(result.out).toContain('Done.');
     }
   });
 
-  it('MAPPING_SETUP_UPDATED=1 não troca', () => {
+  it('MAPPING_SETUP_UPDATED=1 does not replace', () => {
     const env = setup();
     const result = run(env, [], { MAPPING_SETUP_UPDATED: '1' });
     expect(result.status, result.all).toBe(0);
@@ -282,18 +282,18 @@ describe('autoatualização', () => {
     expect(read(env, 'setup.sh')).toBe(LOCAL_SETUP);
   });
 
-  it('release sem setup.sh: segue com o atual e avisa', () => {
+  it('release without setup.sh: carries on with the current one and warns', () => {
     const env = setup({ omit: ['setup.sh'] });
     const result = run(env);
     expect(result.status, result.all).toBe(0);
     expect(executions(env)).toBe(1);
     expect(read(env, 'setup.sh')).toBe(LOCAL_SETUP);
     expect(result.err).toContain('setup.sh');
-    expect(result.out).toContain('Pronto.');
+    expect(result.out).toContain('Done.');
   });
 });
 
-describe('sha256 divergente', () => {
+describe('mismatching sha256', () => {
   it.each([
     'mapping-mcp.js',
     'setup.sh',
@@ -301,15 +301,15 @@ describe('sha256 divergente', () => {
     'AGENTS.mapping.md',
     'watch-comments.mjs',
     'mapping-signature.mjs',
-  ])('em %s: sai com erro e nada muda', (name) => {
+  ])('in %s: exits with an error and nothing changes', (name) => {
     const env = setup();
-    write(env, 'tools/mapping-mcp.js', 'servidor antigo\n');
-    write(env, '.agents/skills/spec-author/SKILL.md', 'skill antiga\n');
+    write(env, 'tools/mapping-mcp.js', 'old server\n');
+    write(env, '.agents/skills/spec-author/SKILL.md', 'old skill\n');
     write(env, 'watch-comments.mjs', OLD_WATCHER);
     write(env, 'tools/mapping-signature.mjs', OLD_EXTRACTOR);
-    write(env, 'AGENTS.md', `# Mapeamentos\n\nmeu texto\n\n${BEGIN}\nvelho\n${END}\n`);
+    write(env, 'AGENTS.md', `# Mappings\n\nmy text\n\n${BEGIN}\nold\n${END}\n`);
     const file = join(env.release, name);
-    writeFileSync(file, `${readFileSync(file, 'utf8')}adulterado\n`);
+    writeFileSync(file, `${readFileSync(file, 'utf8')}tampered\n`);
     const before = snapshot(env.ws);
     const result = run(env);
     expect(result.status).not.toBe(0);
@@ -320,8 +320,8 @@ describe('sha256 divergente', () => {
   });
 });
 
-describe('extrator de assinaturas (tools/mapping-signature.mjs)', () => {
-  it('instala o arquivo e o .sha256 em tools/ e imprime o resumo', () => {
+describe('signature extractor (tools/mapping-signature.mjs)', () => {
+  it('installs the file and the .sha256 in tools/ and prints the summary', () => {
     const env = setup();
     const result = run(env);
     expect(result.status, result.all).toBe(0);
@@ -329,52 +329,54 @@ describe('extrator de assinaturas (tools/mapping-signature.mjs)', () => {
     expect(read(env, 'tools/mapping-signature.mjs.sha256')).toContain(
       sha(RELEASE_EXTRACTOR),
     );
-    expect(result.out).toContain('Extrator: instalado');
+    expect(result.out).toContain('Extractor: installed');
     expect(leftovers(env)).toEqual([]);
   });
 
-  it('segunda execução: sem mudança; arquivo diferente: atualizado', () => {
+  it('second run: no change; different file: updated', () => {
     const env = setup();
     run(env);
-    expect(run(env).out).toContain('Extrator: sem mudança');
+    expect(run(env).out).toContain('Extractor: no change');
     write(env, 'tools/mapping-signature.mjs', OLD_EXTRACTOR);
     const result = run(env);
-    expect(result.out).toContain('Extrator: atualizado');
+    expect(result.out).toContain('Extractor: updated');
     expect(read(env, 'tools/mapping-signature.mjs')).toBe(RELEASE_EXTRACTOR);
   });
 
-  it('release sem o extrator: só o aviso, o arquivo local fica e o resto segue', () => {
+  it('release without the extractor: only the warning, the local file stays and the rest carries on', () => {
     const env = setup({ omit: ['mapping-signature.mjs'] });
     write(env, 'tools/mapping-signature.mjs', OLD_EXTRACTOR);
     const result = run(env);
     expect(result.status, result.all).toBe(0);
     expect(result.err).toContain('mapping-signature.mjs');
     expect(read(env, 'tools/mapping-signature.mjs')).toBe(OLD_EXTRACTOR);
-    expect(result.out).toContain('Extrator: não atualizado (release sem o extrator)');
+    expect(result.out).toContain(
+      'Extractor: not updated (release without the extractor)',
+    );
     expect(read(env, 'tools/mapping-mcp.js')).toContain('0.0.0-test');
   });
 });
 
 describe('skill', () => {
-  it('vem da mesma origem do servidor (a release), não do raw', () => {
+  it('comes from the same origin as the server (the release), not from raw', () => {
     const env = setup();
     run(env);
     expect(read(env, '.agents/skills/spec-author/SKILL.md')).toBe(RELEASE_SKILL);
   });
 
-  it('ausente na release: cai para o raw, com aviso', () => {
+  it('absent from the release: falls back to raw, with a warning', () => {
     const env = setup({ omit: ['SKILL.md'] });
     const result = run(env);
     expect(result.status, result.all).toBe(0);
     expect(read(env, '.agents/skills/spec-author/SKILL.md')).toBe(RAW_SKILL);
     expect(result.err).toContain('SKILL.md');
-    expect(result.out).toContain('main (release antiga)');
+    expect(result.out).toContain('main (old release)');
   });
 
-  it('.claude/skills/spec-author como cópia (pasta real) é copiada de novo', () => {
+  it('.claude/skills/spec-author as a copy (real folder) is copied again', () => {
     const env = setup();
-    write(env, '.claude/skills/spec-author/SKILL.md', 'cópia velha\n');
-    write(env, '.claude/skills/spec-author/extra.md', 'sobra\n');
+    write(env, '.claude/skills/spec-author/SKILL.md', 'old copy\n');
+    write(env, '.claude/skills/spec-author/extra.md', 'leftover\n');
     const result = run(env);
     expect(result.status, result.all).toBe(0);
     expect(lstatSync(join(env.ws, '.claude/skills/spec-author')).isDirectory()).toBe(
@@ -384,7 +386,7 @@ describe('skill', () => {
     expect(existsSync(join(env.ws, '.claude/skills/spec-author/extra.md'))).toBe(false);
   });
 
-  it('.claude/skills/spec-author como link continua link e não muda', () => {
+  it('.claude/skills/spec-author as a link stays a link and does not change', () => {
     const env = setup();
     mkdirSync(join(env.ws, '.claude/skills'), { recursive: true });
     mkdirSync(join(env.ws, '.agents/skills/spec-author'), { recursive: true });
@@ -401,16 +403,16 @@ describe('skill', () => {
   });
 });
 
-describe('bloco do AGENTS.md', () => {
-  const OLD_BLOCK = `${BEGIN}\nconteúdo velho\n${END}\n`;
+describe('AGENTS.md block', () => {
+  const OLD_BLOCK = `${BEGIN}\nold content\n${END}\n`;
 
   it.each([
     [
-      'com texto antes e depois',
-      `# Mapeamentos\r\n\r\nmeu texto\r\n\r\n${OLD_BLOCK}\r\ntexto do dono\n`,
+      'with text before and after',
+      `# Mappings\r\n\r\nmy text\r\n\r\n${OLD_BLOCK}\r\nowner text\n`,
     ],
-    ['sem newline final', `# Mapeamentos\n\nmeu texto\n${OLD_BLOCK}depois sem newline`],
-  ])('só o trecho entre os marcadores muda (%s)', (_name, original) => {
+    ['no final newline', `# Mappings\n\nmy text\n${OLD_BLOCK}after without newline`],
+  ])('only the part between the markers changes (%s)', (_name, original) => {
     const env = setup();
     write(env, 'AGENTS.md', original);
     const result = run(env);
@@ -421,17 +423,17 @@ describe('bloco do AGENTS.md', () => {
     expect(read(env, 'AGENTS.md')).toBe(
       original.slice(0, start) + BLOCK.replace(/\n$/, '') + '\n' + afterOriginal,
     );
-    expect(result.out).toContain('AGENTS.md: atualizado');
+    expect(result.out).toContain('AGENTS.md: updated');
     expect(backups(env)).toHaveLength(1);
     expect(readFileSync(join(env.ws, backups(env)[0] as string), 'utf8')).toBe(original);
   });
 });
 
-describe('AGENTS.md antigo (sem marcadores)', () => {
-  const purpose = 'Documentar as telas do app X.\n';
+describe('old AGENTS.md (no markers)', () => {
+  const purpose = 'Document the screens of app X.\n';
   const old = OLD_AGENTS.replace(/<!--[\s\S]*?-->\n/, purpose);
 
-  it('estrutura reconhecida: migra, com backup, preservando "Para que servem"', () => {
+  it('recognized structure: migrates, with backup, preserving "Para que servem"', () => {
     const env = setup();
     write(env, 'AGENTS.md', old);
     const result = run(env);
@@ -439,16 +441,16 @@ describe('AGENTS.md antigo (sem marcadores)', () => {
     const from = old.indexOf('## Para que servem estes mapeamentos');
     const section = old.slice(from, old.indexOf('## Estrutura'));
     expect(section).toContain(purpose);
-    expect(read(env, 'AGENTS.md')).toBe(`# Mapeamentos\n\n${section}${BLOCK}`);
+    expect(read(env, 'AGENTS.md')).toBe(`# Mappings\n\n${section}${BLOCK}`);
     expect(backups(env)).toHaveLength(1);
     expect(readFileSync(join(env.ws, backups(env)[0] as string), 'utf8')).toBe(old);
     expect(backups(env)[0]).toMatch(/^AGENTS\.md\.bak-\d{8}-\d{6}$/);
-    expect(result.out).toContain('AGENTS.md: migrado');
+    expect(result.out).toContain('AGENTS.md: migrated');
   });
 
-  it('estrutura não reconhecida: backup, bloco no fim, aviso e nada apagado', () => {
+  it('unrecognized structure: backup, block at the end, warning and nothing deleted', () => {
     const env = setup();
-    const custom = `${old}\n## Seção do dono\n\nalgo meu\n`;
+    const custom = `${old}\n## Owner section\n\nsomething of mine\n`;
     write(env, 'AGENTS.md', custom);
     const result = run(env);
     expect(result.status, result.all).toBe(0);
@@ -457,31 +459,31 @@ describe('AGENTS.md antigo (sem marcadores)', () => {
     expect(after.endsWith(`\n\n${BLOCK}`)).toBe(true);
     expect(backups(env)).toHaveLength(1);
     expect(readFileSync(join(env.ws, backups(env)[0] as string), 'utf8')).toBe(custom);
-    expect(result.err).toContain('revise o AGENTS.md');
-    expect(result.out).toContain('não reconhecido');
+    expect(result.err).toContain('review AGENTS.md');
+    expect(result.out).toContain('not recognized');
   });
 });
 
-describe('marcadores quebrados', () => {
+describe('broken markers', () => {
   it.each([
-    ['só o begin', `# M\n\n${BEGIN}\nvelho\n`],
-    ['só o end', `# M\n\nvelho\n${END}\n`],
-    ['fora de ordem', `# M\n\n${END}\nvelho\n${BEGIN}\n`],
-    ['begin duplicado', `# M\n${BEGIN}\na\n${BEGIN}\nb\n${END}\n`],
-  ])('%s: arquivo intacto, aviso e sem backup', (_name, original) => {
+    ['only the begin', `# M\n\n${BEGIN}\nold\n`],
+    ['only the end', `# M\n\nold\n${END}\n`],
+    ['out of order', `# M\n\n${END}\nold\n${BEGIN}\n`],
+    ['duplicated begin', `# M\n${BEGIN}\na\n${BEGIN}\nb\n${END}\n`],
+  ])('%s: file intact, warning and no backup', (_name, original) => {
     const env = setup();
     write(env, 'AGENTS.md', original);
     const result = run(env);
     expect(result.status, result.all).toBe(0);
     expect(read(env, 'AGENTS.md')).toBe(original);
     expect(backups(env)).toEqual([]);
-    expect(result.err).toContain('marcadores');
-    expect(result.out).toContain('marcadores quebrados: não alterado');
+    expect(result.err).toContain('markers');
+    expect(result.out).toContain('broken markers: not changed');
   });
 });
 
-describe('idempotência', () => {
-  it('rodar de novo sem nada novo não muda nenhum arquivo nem cria backup', () => {
+describe('idempotence', () => {
+  it('running again with nothing new changes no file and creates no backup', () => {
     const env = setup();
     const first = run(env);
     expect(first.status, first.all).toBe(0);
@@ -489,25 +491,25 @@ describe('idempotência', () => {
     const second = run(env);
     expect(second.status, second.all).toBe(0);
     expect(snapshot(env.ws)).toEqual(before);
-    expect(second.out).toContain('AGENTS.md: sem mudança');
-    expect(second.out).toContain('Watcher: sem mudança');
+    expect(second.out).toContain('AGENTS.md: no change');
+    expect(second.out).toContain('Watcher: no change');
   });
 
-  it('migra um AGENTS.md antigo grande sem SIGPIPE (status 141 sob carga)', () => {
+  it('migrates a large old AGENTS.md without SIGPIPE (status 141 under load)', () => {
     const env = setup();
-    // Depois do "## Estrutura" há muito mais que o buffer do pipe: o `tail` ainda escreve
-    // quando o `head` já saiu. Com `set -o pipefail`, isso vira status 141 (causa da falha
-    // intermitente "expected 141 to be +0").
+    // After "## Estrutura" there is much more than the pipe buffer: `tail` is still writing
+    // when `head` has already exited. With `set -o pipefail`, that becomes status 141 (cause of the
+    // intermittent failure "expected 141 to be +0").
     write(
       env,
       'AGENTS.md',
-      `${OLD_AGENTS}\n${'linha de enchimento do esqueleto antigo\n'.repeat(20000)}`,
+      `${OLD_AGENTS}\n${'filler line of the old skeleton\n'.repeat(20000)}`,
     );
     const result = run(env);
     expect(result.status, result.all).toBe(0);
   });
 
-  it('vale também depois da migração', () => {
+  it('also holds after the migration', () => {
     const env = setup();
     write(env, 'AGENTS.md', OLD_AGENTS);
     expect(run(env).status).toBe(0);
@@ -516,16 +518,16 @@ describe('idempotência', () => {
     const second = run(env);
     expect(second.status, second.all).toBe(0);
     expect(snapshot(env.ws)).toEqual(before);
-    expect(second.out).toContain('AGENTS.md: sem mudança');
+    expect(second.out).toContain('AGENTS.md: no change');
   });
 });
 
-describe('o que nunca é tocado', () => {
-  it('projetos/, especializacoes/, CLAUDE.md e as configs dos clientes ficam iguais', () => {
+describe('what is never touched', () => {
+  it('projetos/, especializacoes/, CLAUDE.md and the client configs stay the same', () => {
     const env = setup();
     write(env, 'projetos/a/mapping.json', '{"x":1}\n');
     write(env, 'especializacoes/s.json', '{"id":"s"}\n');
-    write(env, 'CLAUDE.md', '# meu claude\n');
+    write(env, 'CLAUDE.md', '# my claude\n');
     write(
       env,
       '.mcp.json',
@@ -545,7 +547,7 @@ describe('o que nunca é tocado', () => {
     expect(paths.map((p) => sha(read(env, p)))).toEqual(before);
   });
 
-  it('não cria o CLAUDE.md quando ele não existe', () => {
+  it('does not create CLAUDE.md when it does not exist', () => {
     const env = setup();
     rmSync(join(env.ws, 'CLAUDE.md'), { force: true });
     run(env);
@@ -553,20 +555,20 @@ describe('o que nunca é tocado', () => {
   });
 });
 
-// Etapa #877 (SD1): o download da release mostra o motivo da falha, tenta de novo e, quando o
-// GitHub responde 5xx ou não responde, usa a API de assets. Um servidor `node:http` local imita
-// `github.com`, `api.github.com` e a CDN dos assets; o `setup.sh` real aponta para ele por
-// `MAPPING_GITHUB_BASE` e `MAPPING_GITHUB_API`, sem `MAPPING_RELEASE_BASE`.
+// Stage #877 (SD1): the release download shows the reason for the failure, retries and, when
+// GitHub answers 5xx or does not answer, uses the assets API. A local `node:http` server imitates
+// `github.com`, `api.github.com` and the assets CDN; the real `setup.sh` points to it through
+// `MAPPING_GITHUB_BASE` and `MAPPING_GITHUB_API`, without `MAPPING_RELEASE_BASE`.
 const SLOW = 40_000;
 
 interface MockOptions {
-  /** Status do download direto (arquivo, nº da requisição àquela URL); 200 serve o arquivo. */
+  /** Status of the direct download (file, request number to that URL); 200 serves the file. */
   direct?: (file: string, n: number) => number;
-  /** Status do JSON da release (`releases/latest` ou `releases/tags/<tag>`). */
+  /** Status of the release JSON (`releases/latest` or `releases/tags/<tag>`). */
   api?: number;
-  /** Status do download do asset pela API. */
+  /** Status of the asset download through the API. */
   asset?: number;
-  /** Assets cujo conteúdo, pela API, sai adulterado. */
+  /** Assets whose content, through the API, comes out tampered. */
   tamper?: string[];
 }
 
@@ -586,14 +588,18 @@ async function startMock(env: Env, options: MockOptions = {}): Promise<Mock> {
   const idOf = (name: string): number => names.indexOf(name) + 1;
   const body = (name: string, tamper: boolean): Buffer => {
     const data = readFileSync(join(env.release, name));
-    return tamper ? Buffer.concat([data, Buffer.from('adulterado\n')]) : data;
+    return tamper ? Buffer.concat([data, Buffer.from('tampered\n')]) : data;
   };
   const server: Server = createServer((req, res) => {
     const url = req.url ?? '';
     calls.push(`${req.method} ${url}`);
     const n = (counts.get(url) ?? 0) + 1;
     counts.set(url, n);
-    const send = (status: number, data: string | Buffer = 'erro', headers = {}): void => {
+    const send = (
+      status: number,
+      data: string | Buffer = 'error',
+      headers = {},
+    ): void => {
       res.writeHead(status, headers);
       res.end(data);
     };
@@ -606,7 +612,7 @@ async function startMock(env: Env, options: MockOptions = {}): Promise<Mock> {
       if (status !== 200) return send(status);
       return names.includes(file)
         ? send(200, body(file, false))
-        : send(404, 'não existe');
+        : send(404, 'does not exist');
     }
     if (new RegExp(`^${API_PATH}/releases/(?:latest|tags/[^/]+)$`).test(url)) {
       const status = options.api ?? 200;
@@ -639,7 +645,7 @@ async function startMock(env: Env, options: MockOptions = {}): Promise<Mock> {
   };
 }
 
-/** Roda o `setup.sh` apontando para o servidor local (assíncrono, para o servidor responder). */
+/** Runs `setup.sh` pointing at the local server (asynchronous, so the server can answer). */
 function runMock(
   env: Env,
   base: string,
@@ -675,9 +681,9 @@ const apiCalls = (mock: Mock): string[] => mock.calls.filter((c) => c.includes('
 const releaseJsonCalls = (mock: Mock): string[] =>
   mock.calls.filter((c) => /\/releases\/(latest|tags\/[^/]+)$/.test(c));
 
-describe('download da release (etapa #877)', () => {
+describe('release download (stage #877)', () => {
   it(
-    '504 no download direto e 200 na API: instala pelo segundo caminho, com aviso e sha256 conferidos',
+    '504 on the direct download and 200 on the API: installs through the second path, with the warning and sha256 checked',
     async () => {
       const env = setup();
       const mock = await startMock(env, { direct: () => 504 });
@@ -685,14 +691,14 @@ describe('download da release (etapa #877)', () => {
         const result = await runMock(env, mock.base, ['--no-self-update']);
         expect(result.status, result.all).toBe(0);
         expect(result.err).toContain(
-          'download direto falhou (HTTP 504); usando a API de assets do GitHub',
+          'direct download failed (HTTP 504); using the GitHub assets API',
         );
-        expect(result.out).toContain('Servidor: 0.0.0-test');
+        expect(result.out).toContain('Server: 0.0.0-test');
         expect(result.out).toContain('Skill: release');
         expect(result.out).toContain('AGENTS.md:');
         expect(read(env, 'tools/mapping-mcp.js')).toContain('0.0.0-test');
         expect(read(env, '.agents/skills/spec-author/SKILL.md')).toBe(RELEASE_SKILL);
-        // O JSON da release é lido uma vez por execução, não uma vez por arquivo.
+        // The release JSON is read once per run, not once per file.
         expect(releaseJsonCalls(mock)).toHaveLength(1);
         expect(leftovers(env)).toEqual([]);
       } finally {
@@ -703,7 +709,7 @@ describe('download da release (etapa #877)', () => {
   );
 
   it(
-    '504 nos dois caminhos: erro com o HTTP, o que fazer, os dois códigos, e a pasta fica igual',
+    '504 on both paths: error with the HTTP code, what to do, both codes, and the folder stays the same',
     async () => {
       const env = setup();
       const mock = await startMock(env, { direct: () => 504, api: 504 });
@@ -711,10 +717,10 @@ describe('download da release (etapa #877)', () => {
         const before = snapshot(env.ws);
         const result = await runMock(env, mock.base);
         expect(result.status).not.toBe(0);
-        expect(result.err).toContain('o GitHub não respondeu (HTTP 504)');
+        expect(result.err).toContain('GitHub did not respond (HTTP 504)');
         expect(result.err).toContain('mapping-mcp.js');
-        expect(result.err).toContain('Tente de novo em alguns minutos');
-        expect(result.err).toContain('API de assets');
+        expect(result.err).toContain('Try again in a few minutes');
+        expect(result.err).toContain('assets API');
         expect(snapshot(env.ws)).toEqual(before);
         expect(executions(env)).toBe(1);
       } finally {
@@ -725,7 +731,7 @@ describe('download da release (etapa #877)', () => {
   );
 
   it(
-    '404 nos dois caminhos: diz que a release não traz o arquivo, sem chamar a API, pasta igual',
+    '404 on both paths: says the release does not include the file, without calling the API, folder the same',
     async () => {
       const env = setup({ omit: ['mapping-mcp.js'] });
       const mock = await startMock(env);
@@ -733,7 +739,7 @@ describe('download da release (etapa #877)', () => {
         const before = snapshot(env.ws);
         const result = await runMock(env, mock.base);
         expect(result.status).not.toBe(0);
-        expect(result.err).toContain('não traz mapping-mcp.js (HTTP 404)');
+        expect(result.err).toContain('does not include mapping-mcp.js (HTTP 404)');
         expect(result.err).toContain('https://github.com/fabianofranca/mapping/releases');
         expect(apiCalls(mock)).toEqual([]);
         expect(snapshot(env.ws)).toEqual(before);
@@ -745,7 +751,7 @@ describe('download da release (etapa #877)', () => {
   );
 
   it(
-    'falha de rede (porta fechada): cita o host e o motivo do curl, sem segundo caminho de sucesso',
+    'network failure (closed port): names the host and the curl reason, with no successful second path',
     async () => {
       const env = setup();
       const closed = await startMock(env);
@@ -754,25 +760,25 @@ describe('download da release (etapa #877)', () => {
       const before = snapshot(env.ws);
       const result = await runMock(env, base);
       expect(result.status).not.toBe(0);
-      expect(result.err).toContain('sem resposta de 127.0.0.1');
+      expect(result.err).toContain('no response from 127.0.0.1');
       expect(result.err).toContain('curl: (7)');
-      expect(result.err).toContain('Confira a rede');
+      expect(result.err).toContain('Check the network');
       expect(snapshot(env.ws)).toEqual(before);
     },
     SLOW,
   );
 
   it(
-    'falha passageira: 503 na primeira tentativa e 200 na segunda instala sem o segundo caminho',
+    'temporary failure: 503 on the first attempt and 200 on the second installs without the second path',
     async () => {
       const env = setup();
       const mock = await startMock(env, { direct: (_file, n) => (n === 1 ? 503 : 200) });
       try {
         const result = await runMock(env, mock.base, ['--no-self-update']);
         expect(result.status, result.all).toBe(0);
-        expect(result.err).not.toContain('API de assets');
+        expect(result.err).not.toContain('assets API');
         expect(apiCalls(mock)).toEqual([]);
-        expect(result.out).toContain('Servidor: 0.0.0-test');
+        expect(result.out).toContain('Server: 0.0.0-test');
       } finally {
         await mock.close();
       }
@@ -781,7 +787,7 @@ describe('download da release (etapa #877)', () => {
   );
 
   it(
-    'com tag, o segundo caminho lê releases/tags/<tag>',
+    'with a tag, the second path reads releases/tags/<tag>',
     async () => {
       const env = setup();
       const mock = await startMock(env, { direct: () => 504 });
@@ -803,7 +809,7 @@ describe('download da release (etapa #877)', () => {
   );
 
   it(
-    'sha256 divergente no segundo caminho: erro "não confere" e a pasta fica igual',
+    'mismatching sha256 on the second path: "does not match" error and the folder stays the same',
     async () => {
       const env = setup();
       const mock = await startMock(env, {
@@ -814,7 +820,7 @@ describe('download da release (etapa #877)', () => {
         const before = snapshot(env.ws);
         const result = await runMock(env, mock.base);
         expect(result.status).not.toBe(0);
-        expect(result.err).toContain('não confere');
+        expect(result.err).toContain('does not match');
         expect(snapshot(env.ws)).toEqual(before);
         expect(leftovers(env)).toEqual([]);
         expect(executions(env)).toBe(1);
@@ -826,7 +832,7 @@ describe('download da release (etapa #877)', () => {
   );
 
   it(
-    'MAPPING_RELEASE_BASE definida: 5xx não aciona o segundo caminho',
+    'MAPPING_RELEASE_BASE set: 5xx does not trigger the second path',
     async () => {
       const env = setup();
       const mock = await startMock(env, { direct: () => 504 });
@@ -847,15 +853,15 @@ describe('download da release (etapa #877)', () => {
   );
 
   it(
-    'opcional ausente (404 do setup.sh): só avisa "release antiga", agora com o HTTP',
+    'missing optional (404 of setup.sh): only warns "old release", now with the HTTP code',
     async () => {
       const env = setup({ omit: ['setup.sh'] });
       const mock = await startMock(env);
       try {
         const result = await runMock(env, mock.base);
         expect(result.status, result.all).toBe(0);
-        expect(result.err).toContain('não traz setup.sh');
-        expect(result.err).toContain('release antiga');
+        expect(result.err).toContain('does not include setup.sh');
+        expect(result.err).toContain('old release');
         expect(result.err).toContain('HTTP 404');
         expect(apiCalls(mock)).toEqual([]);
       } finally {
@@ -866,7 +872,7 @@ describe('download da release (etapa #877)', () => {
   );
 
   it(
-    'SKILL.md da release fora do ar (5xx nos dois): erro, sem cair para a skill da main',
+    "release SKILL.md down (5xx on both): error, without falling back to main's skill",
     async () => {
       const env = setup();
       const mock = await startMock(env, {
@@ -879,7 +885,7 @@ describe('download da release (etapa #877)', () => {
         expect(result.status).not.toBe(0);
         expect(result.err).toContain('SKILL.md');
         expect(result.err).toContain('HTTP 50');
-        expect(result.err).not.toContain('usando a skill da main');
+        expect(result.err).not.toContain('using the skill from main');
         expect(snapshot(env.ws)).toEqual(before);
       } finally {
         await mock.close();
@@ -888,10 +894,10 @@ describe('download da release (etapa #877)', () => {
     SLOW,
   );
 
-  it('arquivo ausente em file://: a mensagem também traz o HTTP 404', () => {
+  it('missing file on file://: the message also carries HTTP 404', () => {
     const env = setup({ omit: ['mapping-mcp.js'] });
     const result = run(env);
     expect(result.status).not.toBe(0);
-    expect(result.err).toContain('não traz mapping-mcp.js (HTTP 404)');
+    expect(result.err).toContain('does not include mapping-mcp.js (HTTP 404)');
   });
 });

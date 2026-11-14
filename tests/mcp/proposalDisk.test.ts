@@ -230,7 +230,7 @@ describe('limpeza do temporário em melhor esforço (devolução do portão, 0.3
       const left = temps(folder);
       expect(left).toHaveLength(1);
       expect(left[0]).toMatch(/^\.proposal\.json\.[0-9a-f]+\.tmp$/);
-      expect(mcp.stderr()).toContain(`aviso: não foi possível apagar o temporário`);
+      expect(mcp.stderr()).toContain(`warning: could not delete the temporary file`);
       expect(mcp.stderr()).toContain(left[0]);
       // O temporário que sobra não é proposta nem proposta quebrada.
       const listed = ok(

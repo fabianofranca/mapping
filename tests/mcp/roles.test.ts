@@ -54,7 +54,7 @@ describe('create_annotation com role', () => {
       ]),
     );
     expect(result.valid).toBe(true);
-    expect(result.summary[0]).toContain('papel "Pressionar"');
+    expect(result.summary[0]).toContain('role "Pressionar"');
   });
 
   it('um role que o dono não oferece falha com unknown-role', async () => {
@@ -71,7 +71,7 @@ describe('create_annotation com role', () => {
     );
     expect(result.valid).toBe(false);
     expect(result.errors![0]!.code).toBe('unknown-role');
-    expect(result.errors![0]!.message).toContain('o dono não oferece este papel');
+    expect(result.errors![0]!.message).toContain('the owner does not offer this role');
   });
 
   it('um role sem owner falha com role-without-owner', async () => {
@@ -182,7 +182,7 @@ describe('aviso role-cleared: a troca de dono que limpa o papel', () => {
       ]),
     );
     expect(result.valid).toBe(true);
-    expect(result.summary[1]).toMatch(/dona .*; papel "Clique" limpo$/);
+    expect(result.summary[1]).toMatch(/owner .*; role "Clique" cleared$/);
     expect(cleared(result)).toEqual([
       {
         code: 'role-cleared',
@@ -191,7 +191,7 @@ describe('aviso role-cleared: a troca de dono que limpa o papel', () => {
         role: 'click',
         roleName: 'Clique',
         message: expect.stringMatching(
-          /^o papel "Clique" de .* é limpo: a nova dona não o oferece$/,
+          /^the role "Clique" of .* is cleared: the new owner does not offer it$/,
         ),
       },
     ]);
@@ -205,11 +205,13 @@ describe('aviso role-cleared: a troca de dono que limpa o papel', () => {
       ]),
     );
     expect(result.valid).toBe(true);
-    expect(result.summary[1]).toMatch(/sem dona; papel "Clique" limpo$/);
+    expect(result.summary[1]).toMatch(/no owner; role "Clique" cleared$/);
     const [warning] = cleared(result);
     expect(cleared(result)).toHaveLength(1);
     expect(warning).toMatchObject({ op: 1, annotation: ws.ref('C1'), role: 'click' });
-    expect(warning!.message).toMatch(/é limpo: a anotação fica sem dona$/);
+    expect(warning!.message).toMatch(
+      /is cleared: the annotation is left without an owner$/,
+    );
   });
 
   it('sem aviso: sem papel antes, dona que oferece o mesmo papel, ou role no mesmo passo', async () => {
@@ -245,7 +247,7 @@ describe('aviso role-cleared: a troca de dono que limpa o papel', () => {
     ]);
     expect(proposed.valid).toBe(true);
     expect(proposed.proposed).toBe(true);
-    expect(proposed.summary[1]).toMatch(/; papel "Clique" limpo$/);
+    expect(proposed.summary[1]).toMatch(/; role "Clique" cleared$/);
     const warnings = (proposed as unknown as Plan).warnings ?? [];
     expect(warnings.filter((w) => w.code === 'role-cleared')).toHaveLength(1);
   });
@@ -323,9 +325,7 @@ describe('set_doc_repo e remove_doc_repo', () => {
     const operations = [{ op: 'set_doc_repo', repo: 'wiki', localPath: '../wiki' }];
     const result = ok(await plan(operations));
     expect(result.valid).toBe(true);
-    expect(result.summary[0]).toContain(
-      'clone local do repositório de documentos "wiki"',
-    );
+    expect(result.summary[0]).toContain('local clone of the documents repository "wiki"');
     expect(result.changes.docRepos).toEqual({ created: 1, updated: 0, deleted: 0 });
 
     const proposed = await propose(mcp, ws.project, operations);

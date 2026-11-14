@@ -1,12 +1,12 @@
 import type { ExifOrientation } from '../../src/model';
 import { createRaster, type Raster } from './raster';
 
-// Orientação EXIF em TypeScript puro: o decodificador de JPEG entrega os pixels como estão no
-// arquivo, e a app (e as coordenadas das marcações) usam a imagem já girada.
+// EXIF orientation in plain TypeScript: the JPEG decoder hands over the pixels as they are in the
+// file, and the app (and the markings' coordinates) use the already-rotated image.
 
 /**
- * Aplica a orientação EXIF (1 a 8): devolve os pixels como a imagem deve ser vista, como o
- * `createImageBitmap(…, { imageOrientation: 'from-image' })` da app. 5 a 8 trocam os eixos.
+ * Applies the EXIF orientation (1 to 8): returns the pixels as the image should be seen, like the app's
+ * `createImageBitmap(…, { imageOrientation: 'from-image' })`. 5 to 8 swap the axes.
  */
 export function orient(source: Raster, orientation: ExifOrientation): Raster {
   if (orientation === 1) return source;
@@ -15,7 +15,7 @@ export function orient(source: Raster, orientation: ExifOrientation): Raster {
   const outW = swap ? h : w;
   const outH = swap ? w : h;
   const out = createRaster(outW, outH);
-  // Para cada pixel de saída (x, y), o pixel de origem (sx, sy).
+  // For each output pixel (x, y), the source pixel (sx, sy).
   const from: (x: number, y: number) => [number, number] = {
     2: (x: number, y: number): [number, number] => [w - 1 - x, y],
     3: (x: number, y: number): [number, number] => [w - 1 - x, h - 1 - y],

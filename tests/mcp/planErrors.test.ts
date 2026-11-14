@@ -96,7 +96,7 @@ describe('rect-too-small', () => {
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toMatchObject({
       code: 'rect-too-small',
-      detail: 'recebido 5×3 px; mínimo 8×8 px',
+      detail: 'received 5×3 px; minimum 8×8 px',
     });
     expect(result.errors[0]?.hint).toMatch(/width.*height/);
   });
@@ -124,7 +124,7 @@ describe('rect-too-small', () => {
     );
     expect(result.errors[0]).toMatchObject({
       code: 'rect-too-small',
-      detail: 'recebido 2×40 px; mínimo 8×8 px',
+      detail: 'received 2×40 px; minimum 8×8 px',
     });
   });
 
@@ -142,7 +142,7 @@ describe('rect-too-small', () => {
     expect(result.errors[0]).toMatchObject({
       code: 'rect-too-small',
       minSize: { width: 48, height: 40 },
-      detail: 'recebido 20×20 px; mínimo 48×40 px (do componente)',
+      detail: 'received 20×20 px; minimum 48×40 px (from the component)',
     });
     expect(result.errors[0]?.hint).toMatch(/width.*height/);
   });
@@ -167,7 +167,7 @@ describe('image-overlap', () => {
     expect(error.code).toBe('image-overlap');
     // Só a URL do outro container (sem o nome entre parênteses), nunca a do que cresce.
     expect(error.detail).toBe(
-      `sobrepõe o container ${containerRef(setup.project, sair!.id)}`,
+      `overlaps the container ${containerRef(setup.project, sair!.id)}`,
     );
     expect(String(error.hint)).toMatch(/x.*y.*scale/);
   });
@@ -191,7 +191,7 @@ describe('image-overlap', () => {
     const error = result.errors[0]!;
     expect(error.code).toBe('image-overlap');
     expect(error.detail).toBe(
-      `sobrepõe o container ${containerRef(setup.project, entrar.id)}`,
+      `overlaps the container ${containerRef(setup.project, entrar.id)}`,
     );
   });
 });

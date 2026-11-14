@@ -1,6 +1,6 @@
-// Funde o valor novo no JSON cru mantendo a ordem das chaves do arquivo (o `zod` reordena as da
-// raiz): as chaves do cru ficam onde estão, as novas vão para o fim, as que saíram caem. Listas se
-// fundem por posição. Serve a `plan_signature_import`, que devolve a especialização no arquivo.
+// Merges the new value into the raw JSON keeping the file's key order (`zod` reorders the root's
+// keys): the raw keys stay where they are, the new ones go to the end, the ones that left drop out.
+// Lists merge by position. Serves `plan_signature_import`, which returns the specialization in the file.
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);

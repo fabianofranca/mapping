@@ -10,20 +10,20 @@ import { ToolError } from './errors';
 import { libraryCounts } from './library';
 import type { Roots } from './paths';
 
-// `validate_specialization` (etapa 4.2): o ciclo "gerar, validar, corrigir" de um agente que
-// cria especializações. Usa a mesma validação da importação da app (`parseSpecText`, em
-// `src/model/spec.ts`), então os erros são os mesmos, com o caminho exato; os avisos
-// (`specWarnings`, inclusive o dos campos do tipo removido que a leitura ignora) não impedem
-// nada. Não aplica a nenhum projeto.
+// `validate_specialization` (stage 4.2): the "generate, validate, fix" cycle of an agent that
+// creates specializations. It uses the same validation as the app's import (`parseSpecText`, in
+// `src/model/spec.ts`), so the errors are the same, with the exact path; the warnings
+// (`specWarnings`, including the one for the removed type's fields that the reader ignores) block
+// nothing. It does not apply to any project.
 
 type Json = Record<string, unknown>;
 
-/** Arquivo de especialização maior que isto é recusado. */
+/** A specialization file larger than this is refused. */
 const MAX_SPEC_BYTES = 16 * 1024 * 1024;
-/** Erros devolvidos de uma vez; a importação da app também mostra só os primeiros. */
+/** Errors returned at once; the app's import also shows only the first ones. */
 const MAX_ERRORS = 100;
 
-/** Os avisos como o MCP os devolve: `code`, `path` e `message` (sem o código de mensagem da interface). */
+/** The warnings as the MCP returns them: `code`, `path` and `message` (without the interface's message code). */
 export function plainWarnings(
   warnings: readonly SpecWarning[],
 ): { code: string; path: string; message: string }[] {
@@ -34,10 +34,10 @@ export async function readSpecFile(roots: Roots, path: string): Promise<string> 
   const { real } = await roots.resolveExisting(path);
   const info = await stat(real);
   if (!info.isFile()) {
-    throw new ToolError('not-a-file', `não é um arquivo: ${path}`, { path });
+    throw new ToolError('not-a-file', `not a file: ${path}`, { path });
   }
   if (info.size > MAX_SPEC_BYTES) {
-    throw new ToolError('file-too-large', `arquivo grande demais: ${path}`, { path });
+    throw new ToolError('file-too-large', `file too large: ${path}`, { path });
   }
   return readFile(real, 'utf8');
 }
@@ -70,7 +70,7 @@ export async function validateSpecialization(
   if ((args.path === undefined) === (args.text === undefined)) {
     throw new ToolError(
       'invalid-arguments',
-      'informe exatamente um de `path` (arquivo dentro das raízes) ou `text` (o JSON)',
+      'provide exactly one of `path` (a file inside the roots) or `text` (the JSON)',
     );
   }
   const text =
@@ -83,17 +83,17 @@ export async function validateSpecialization(
       ...origin,
       errorCount: parsed.errors.length,
       errors: parsed.errors.slice(0, MAX_ERRORS),
-      // Só `path` e `message`: o código do modelo (`code`/`params`) é da interface, não do MCP.
+      // Only `path` and `message`: the model's code (`code`/`params`) belongs to the interface, not the MCP.
       issues: parsed.issues
         .slice(0, MAX_ERRORS)
         .map(({ path, message }) => ({ path, message })),
       ...(parsed.errors.length > MAX_ERRORS
         ? { moreErrors: parsed.errors.length - MAX_ERRORS }
         : {}),
-      hint: 'corrija os erros (o caminho de cada um aponta o trecho do JSON) e valide de novo; o arquivo não foi aplicado a nenhum projeto',
+      hint: "fix the errors (each one's path points to the stretch of JSON) and validate again; the file was not applied to any project",
     };
   }
-  // Só `code`, `path` e `message`: o código de mensagem do modelo é da interface, não do MCP.
+  // Only `code`, `path` and `message`: the model's message code belongs to the interface, not the MCP.
   const warnings = plainWarnings(specWarnings(parsed.spec, parsed.ignored));
   return {
     valid: true,
@@ -102,9 +102,9 @@ export async function validateSpecialization(
     errors: [],
     warnings,
     hint: usesPackageFiles(parsed.spec)
-      ? 'só o ARQUIVO da especialização foi validado: para conferir os componentes, documentos, exemplos e fontes do pacote use validate_library na pasta; para aplicar um pacote v4 use apply_specialization (ou update_specialization) em propose_changes com `file` da pasta, ou a app (Especializações)'
+      ? "only the specialization FILE was validated: to check the package's components, documents, examples and fonts use validate_library on the folder; to apply a v4 package use apply_specialization (or update_specialization) in propose_changes with the folder's `file`, or the app (Specializations)"
       : warnings.length > 0
-        ? 'a especialização é válida; os avisos não impedem a importação, mas costumam apontar descuidos'
-        : 'a especialização é válida e pode ser aplicada (apply_specialization em propose_changes)',
+        ? 'the specialization is valid; the warnings do not prevent the import, but they usually point to oversights'
+        : 'the specialization is valid and can be applied (apply_specialization in propose_changes)',
   };
 }

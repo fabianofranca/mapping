@@ -358,7 +358,7 @@ describe('plan_signature_import: ficha gravada que não pôde ser usada', () => 
     expect(r.isError, JSON.stringify(r.data)).toBe(false);
     expect(r.data.previous).toBe(false);
     expect(r.data.previousProblem).toContain('signatures/gone.json');
-    expect(r.data.previousProblem).toContain('ausente');
+    expect(r.data.previousProblem).toContain('missing');
   });
 
   it('a ficha citada inválida vira previousProblem', async () => {
@@ -368,7 +368,7 @@ describe('plan_signature_import: ficha gravada que não pôde ser usada', () => 
     const r = await call('plan_signature_import', args('lib-invalida'));
     expect(r.data.previous).toBe(false);
     expect(r.data.previousProblem).toContain('signatures/bad.json');
-    expect(r.data.previousProblem).toContain('inválida');
+    expect(r.data.previousProblem).toContain('invalid');
   });
 
   it('sem ficha citada ou com ficha boa, a chave não existe', async () => {

@@ -64,7 +64,7 @@ describe('update_project: direção do projeto', () => {
     expect(readProposal(dir(), proposed.proposal.id).formatVersion).toBe(
       PROPOSAL_DIRECTION_FORMAT_VERSION,
     );
-    expect(proposed.summary.join('\n')).toContain('direção');
+    expect(proposed.summary.join('\n')).toContain('direction');
     expect(ok(await mcp.call('get_project', { project: PROJECT })).direction).toBe('rtl');
 
     const cleared = await apply([{ op: 'update_project', direction: null }]);
@@ -116,7 +116,7 @@ describe('direção do container', () => {
     ]);
     const created = added.saved.containers.find((c) => c.direction === 'rtl')!;
     expect(created).toBeDefined();
-    expect(added.proposed.summary.join('\n')).toContain('direção');
+    expect(added.proposed.summary.join('\n')).toContain('direction');
     const ref = added.proposed.created.find((c) => c.kind === 'container')!.ref!;
     expect(ok(await mcp.call('get_container', { ref }))).toMatchObject({
       direction: 'rtl',

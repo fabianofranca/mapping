@@ -11,13 +11,13 @@ import {
 import type { Roots } from './paths';
 import { BARE_ID } from './shared';
 
-// Referência de proposta: `mapping://<projeto>/p/<código>` (o código são os 8 primeiros
-// caracteres hexadecimais do id, como nos itens; cresce de 4 em 4 se houver colisão entre as
-// propostas do projeto). Aceita também `p/<código>` com `project` informado, ou o id completo.
+// Proposal reference: `mapping://<project>/p/<code>` (the code is the first 8 hexadecimal
+// characters of the id, as on items; it grows by 4 if there is a collision among the
+// project's proposals). Also accepts `p/<code>` with `project` given, or the full id.
 
 interface ParsedProposalRef {
   readonly project: string | null;
-  /** Código curto ou id completo, como informado. */
+  /** Short code or full id, as given. */
   readonly code: string;
 }
 
@@ -26,7 +26,7 @@ export function parseProposalRef(text: string): ParsedProposalRef | null {
   const parsed = parseAnyRef(input);
   if (parsed) {
     const { ref } = parsed;
-    // Só a letra `p` vale aqui; o resto da gramática é das tools de item (CM6).
+    // Only the letter `p` applies here; the rest of the grammar belongs to the item tools (CM6).
     return ref.type === 'item' && ref.kind === 'p'
       ? { project: parsed.project, code: ref.code }
       : null;
@@ -34,17 +34,17 @@ export function parseProposalRef(text: string): ParsedProposalRef | null {
   return BARE_ID.test(input) ? { project: null, code: input } : null;
 }
 
-/** Códigos curtos das propostas do projeto (únicos entre elas). */
+/** Short codes of the project's proposals (unique among them). */
 export function proposalCodes(ids: readonly string[]): ReadonlyMap<string, string> {
   return shortCodesFor(ids);
 }
 
-/** `mapping://<projeto>/p/<código>`: só a URL, com o projeto codificado. */
+/** `mapping://<project>/p/<code>`: only the URL, with the project encoded. */
 export function formatProposalRef(projectName: string, code: string): string {
   return formatAnyRef(projectName, { type: 'item', kind: 'p', code });
 }
 
-/** Referências de todas as propostas legíveis do projeto, por id. */
+/** References of all the readable proposals of the project, by id. */
 export class ProposalRefs {
   private readonly codes: ReadonlyMap<string, string>;
 
@@ -56,7 +56,7 @@ export class ProposalRefs {
     this.codes = proposalCodes([...all.proposals.map((p) => p.id), ...extraIds]);
   }
 
-  /** Referência da proposta (`mapping://<projeto>/p/<código>`). */
+  /** Reference of the proposal (`mapping://<project>/p/<code>`). */
   ref(id: string): string {
     const code = this.codes.get(id) ?? normalizeId(id).slice(0, 8);
     return formatProposalRef(this.projectName, code);
@@ -84,14 +84,14 @@ function matches<T extends { readonly id: string }>(
 }
 
 const ACCEPTED = [
-  'mapping://projeto/p/3f2a9c1e',
-  'p/3f2a9c1e (com o projeto informado à parte)',
-  'o id completo da proposta (com o projeto informado à parte)',
+  'mapping://project/p/3f2a9c1e',
+  'p/3f2a9c1e (with the project given separately)',
+  'the full id of the proposal (with the project given separately)',
 ];
 
 /**
- * Acha a proposta numa lista já lida (as de um projeto). A referência completa de outro
- * projeto é recusada (`project-mismatch`); código ambíguo devolve as candidatas.
+ * Finds the proposal in an already-read list (those of one project). The full reference of another
+ * project is refused (`project-mismatch`); an ambiguous code returns the candidates.
  */
 export function lookupStored(
   all: StoredProposals,
@@ -100,7 +100,7 @@ export function lookupStored(
 ): StoredProposal {
   const parsed = parseProposalRef(refText);
   if (!parsed) {
-    throw new ToolError('invalid-ref', `referência de proposta inválida: ${refText}`, {
+    throw new ToolError('invalid-ref', `invalid proposal reference: ${refText}`, {
       accepted: ACCEPTED,
       hint: INVALID_REF_HINT,
     });
@@ -108,7 +108,7 @@ export function lookupStored(
   if (parsed.project !== null && parsed.project !== location.name) {
     throw new ToolError(
       'project-mismatch',
-      `a referência é do projeto "${parsed.project}", não de "${location.name}"`,
+      `the reference is from project "${parsed.project}", not "${location.name}"`,
     );
   }
   const found = matches(all.proposals, parsed.code);
@@ -116,24 +116,20 @@ export function lookupStored(
   if (found.length === 0) {
     const unreadable = matches(all.broken, parsed.code);
     if (unreadable.length > 0) throw unreadableProposal(unreadable);
-    throw new ToolError(
-      'proposal-not-found',
-      `nenhuma proposta corresponde a ${refText}`,
-      {
-        ref: refText,
-        hint: 'use list_proposals(project) para ver as propostas do projeto',
-      },
-    );
+    throw new ToolError('proposal-not-found', `no proposal matches ${refText}`, {
+      ref: refText,
+      hint: 'use list_proposals(project) to see the proposals of the project',
+    });
   }
   throw ambiguous(refText, location, all, found);
 }
 
-/** O código só acha propostas ilegíveis: `invalid-proposal` (o guia), não `proposal-not-found`. */
+/** The code only finds unreadable proposals: `invalid-proposal` (the guide), not `proposal-not-found`. */
 function unreadableProposal(broken: readonly BrokenProposal[]): ToolError {
   const first = broken[0]!;
-  return new ToolError('invalid-proposal', `proposta ilegível: ${first.error}`, {
+  return new ToolError('invalid-proposal', `unreadable proposal: ${first.error}`, {
     proposal: first.id,
-    hint: 'o proposal.json está ilegível; list_proposals mostra as ilegíveis em `broken`',
+    hint: 'the proposal.json is unreadable; list_proposals shows the unreadable ones in `broken`',
   });
 }
 
@@ -146,7 +142,7 @@ function ambiguous(
   const refs = new ProposalRefs(location.name, all);
   return new ToolError(
     'ambiguous-ref',
-    `${found.length} propostas começam com esse código: use a referência completa de uma delas`,
+    `${found.length} proposals start with that code: use the full reference of one of them`,
     {
       ref: refText,
       candidates: found
@@ -157,8 +153,8 @@ function ambiguous(
 }
 
 /**
- * Acha a proposta pelo que o agente informou (`ref`, mais `project` quando a referência não o
- * traz). Sem projeto, procura em todos os das raízes. Código ambíguo devolve as candidatas.
+ * Finds the proposal from what the agent gave (`ref`, plus `project` when the reference does not
+ * carry it). Without a project, searches all those in the roots. An ambiguous code returns the candidates.
  */
 export async function resolveProposal(
   roots: Roots,
@@ -167,7 +163,7 @@ export async function resolveProposal(
 ): Promise<ResolvedProposal> {
   const parsed = parseProposalRef(refText);
   if (!parsed) {
-    throw new ToolError('invalid-ref', `referência de proposta inválida: ${refText}`, {
+    throw new ToolError('invalid-ref', `invalid proposal reference: ${refText}`, {
       accepted: ACCEPTED,
       hint: INVALID_REF_HINT,
     });
@@ -193,19 +189,15 @@ export async function resolveProposal(
   }
   if (found.length === 0 && unreadable.length > 0) throw unreadableProposal(unreadable);
   if (found.length === 0) {
-    throw new ToolError(
-      'proposal-not-found',
-      `nenhuma proposta corresponde a ${refText}`,
-      {
-        ref: refText,
-        searched: locations.map((l) => l.path),
-        hint: 'use list_proposals(project) para ver as propostas do projeto',
-      },
-    );
+    throw new ToolError('proposal-not-found', `no proposal matches ${refText}`, {
+      ref: refText,
+      searched: locations.map((l) => l.path),
+      hint: 'use list_proposals(project) to see the proposals of the project',
+    });
   }
   throw new ToolError(
     'ambiguous-ref',
-    `${found.length} propostas começam com esse código: use a referência completa de uma delas`,
+    `${found.length} proposals start with that code: use the full reference of one of them`,
     {
       ref: refText,
       candidates: found.slice(0, 20).map((c) => ({

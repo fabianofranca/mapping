@@ -23,10 +23,10 @@ import {
 import { orient } from './orientation';
 import { flattenOnWhite, type Raster } from './raster';
 
-// Codecs em WebAssembly (@jsquash: libpng, mozjpeg e libwebp), embutidos no arquivo único e
-// instanciados sob demanda a partir dos bytes: nada é lido do disco nem da rede em runtime.
-// Na decodificação do JPEG, a orientação EXIF é aplicada (`orientation.ts`), como o navegador
-// faz na app.
+// WebAssembly codecs (@jsquash: libpng, mozjpeg and libwebp), embedded in the single file and
+// instantiated on demand from the bytes: nothing is read from disk or the network at runtime.
+// When decoding a JPEG, the EXIF orientation is applied (`orientation.ts`), as the browser
+// does in the app.
 
 type Wasm = WebAssembly.Module;
 const modules = new Map<Uint8Array, Wasm>();
@@ -50,9 +50,9 @@ function once<T>(key: string, start: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Os bytes como `ArrayBuffer` (o que os decodificadores do @jsquash aceitam). Quando o
- * `Uint8Array` ocupa o buffer inteiro (um `readFile` grande), o próprio buffer serve, sem cópia;
- * senão (um `Buffer` do pool do Node, que tem bytes de outros dados em volta) copia só os bytes.
+ * The bytes as an `ArrayBuffer` (what the @jsquash decoders accept). When the
+ * `Uint8Array` fills the whole buffer (a large `readFile`), the buffer itself will do, with no copy;
+ * otherwise (a `Buffer` from Node's pool, which has other data's bytes around it) it copies only the bytes.
  */
 const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer =>
   bytes.buffer instanceof ArrayBuffer &&
@@ -62,24 +62,24 @@ const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer =>
     : (new Uint8Array(bytes).buffer as ArrayBuffer);
 
 type Encoded = { data: Uint8ClampedArray; width: number; height: number };
-// Os tipos dos pacotes referenciam `ImageData` do DOM, que o tsconfig do `mcp/` não tem.
+// The packages' types reference the DOM's `ImageData`, which the `mcp/` tsconfig does not have.
 const asImageData = (r: Raster) => r as unknown as Parameters<typeof encodePng>[0];
 
-/** Recusa arquivo de imagem acima de `MAX_FILE_BYTES` (conferido antes de ler, pelo `stat`, e ao decodificar). */
+/** Refuses an image file above `MAX_FILE_BYTES` (checked before reading, by `stat`, and when decoding). */
 export function assertFileSize(size: number): void {
   if (size > MAX_FILE_BYTES) {
     throw new ToolError(
       'image-too-large',
-      `arquivo de imagem grande demais (${size} bytes; máximo ${MAX_FILE_BYTES})`,
+      `image file too large (${size} bytes; maximum ${MAX_FILE_BYTES})`,
     );
   }
 }
 
 /**
- * Decodifica PNG, JPEG ou WebP para RGBA, recusando arquivos grandes ou com pixels demais. No
- * JPEG, aplica a orientação EXIF (o mozjpeg entrega os pixels como estão no arquivo), como o
- * navegador faz na app: o `raster` está no sistema de coordenadas das marcações.
- * `orientation` é a lida do arquivo (1 = sem rotação; sempre 1 em PNG e WebP).
+ * Decodes PNG, JPEG or WebP to RGBA, refusing files that are too large or have too many pixels. For
+ * JPEG, it applies the EXIF orientation (mozjpeg hands over the pixels as they are in the file), as the
+ * browser does in the app: the `raster` is in the markings' coordinate system.
+ * `orientation` is the one read from the file (1 = no rotation; always 1 for PNG and WebP).
  */
 export async function decodeImage(
   bytes: Uint8Array,
@@ -89,17 +89,17 @@ export async function decodeImage(
   if (!format) {
     throw new ToolError(
       'unsupported-image',
-      'formato de imagem não suportado: só PNG, JPEG e WebP',
+      'unsupported image format: only PNG, JPEG and WebP',
     );
   }
   const size = readSize(bytes, format);
   if (!size) {
-    throw new ToolError('invalid-image', `cabeçalho ${format.toUpperCase()} ilegível`);
+    throw new ToolError('invalid-image', `unreadable ${format.toUpperCase()} header`);
   }
   if (size.width * size.height > MAX_PIXELS) {
     throw new ToolError(
       'image-too-large',
-      `imagem com pixels demais (${size.width}×${size.height}; máximo ${MAX_PIXELS})`,
+      `image with too many pixels (${size.width}×${size.height}; maximum ${MAX_PIXELS})`,
     );
   }
   try {
@@ -121,7 +121,7 @@ export async function decodeImage(
   } catch (error) {
     throw new ToolError(
       'invalid-image',
-      `não foi possível decodificar a imagem ${format.toUpperCase()}: ${
+      `could not decode the ${format.toUpperCase()} image: ${
         error instanceof Error ? error.message : String(error)
       }`,
     );
@@ -129,15 +129,15 @@ export async function decodeImage(
 }
 
 export interface EncodeOptions {
-  /** Qualidade (1–100) do JPEG e do WebP com perdas. */
+  /** Quality (1–100) of JPEG and of lossy WebP. */
   readonly quality?: number;
-  /** WebP sem perdas (as imagens do projeto de origem PNG usam este). */
+  /** Lossless WebP (the project images from a PNG source use this one). */
   readonly lossless?: boolean;
 }
 
 export const DEFAULT_QUALITY = 85;
 
-/** Codifica o raster no formato pedido. JPEG não tem transparência: funde sobre branco. */
+/** Encodes the raster in the requested format. JPEG has no transparency: it flattens onto white. */
 export async function encodeImage(
   raster: Raster,
   format: ImageFormat,
@@ -153,8 +153,8 @@ export async function encodeImage(
     const flat = flattenOnWhite(raster);
     return new Uint8Array(await encodeJpeg(asImageData(flat), { quality }));
   }
-  // O WebP é instanciado direto da fábrica do codec (sem SIMD): o `init` do pacote escolhe a
-  // variante com um `import()` dinâmico que o arquivo único não carrega.
+  // WebP is instantiated directly from the codec's factory (no SIMD): the package's `init` picks the
+  // variant with a dynamic `import()` that the single file does not load.
   const encoder = await once('webp-enc', () =>
     initEmscriptenModule(webpEncoderFactory, compiled(webpEncoderWasm)),
   );
@@ -163,6 +163,6 @@ export async function encodeImage(
     quality,
     lossless: options.lossless ? 1 : 0,
   });
-  if (!out) throw new ToolError('encode-failed', 'falha ao codificar a imagem WebP');
+  if (!out) throw new ToolError('encode-failed', 'failed to encode the WebP image');
   return new Uint8Array(out);
 }

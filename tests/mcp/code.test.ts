@@ -606,7 +606,7 @@ describe('find_by_code', () => {
   it('a descrição de get_project diz `repos`, como o código devolve', async () => {
     const { tools } = await mcp.client.listTools();
     const description = tools.find((t) => t.name === 'get_project')!.description!;
-    expect(description).toContain('`repos` que as especializações declaram');
+    expect(description).toContain('`repos` the specializations declare');
     expect(description).not.toContain('cada uma com o `repo`');
   });
 
@@ -731,15 +731,17 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
       [4, 'not-found'],
       [5, 'unknown-field'],
     ]);
-    expect(result.errors![0]!.message).toContain('plataforma não declarada');
-    expect(result.errors![5]!.message).toContain('campo inexistente no tipo');
+    expect(result.errors![0]!.message).toContain(
+      'platform not declared by the applied specializations',
+    );
+    expect(result.errors![5]!.message).toContain('field does not exist in the type');
   });
 
   it('remover o clone local de uma plataforma não gera aviso, e a prévia não grava nada', async () => {
     const before = readFileSync(join(ws.projectDir('escrita'), 'mapping.json'), 'utf8');
     const result = ok(await plan([{ op: 'remove_platform_repo', platform: 'android' }]));
     expect(result.valid).toBe(true);
-    expect(result.summary).toEqual(['0. Remover o clone local da plataforma "android"']);
+    expect(result.summary).toEqual(['0. Remove the local clone of platform "android"']);
     expect(result.changes.platformRepos).toEqual({ created: 0, updated: 0, deleted: 1 });
     // Plataforma sem caminho local não é problema: o agente usa a URL da especialização.
     expect(result.warnings).toBeUndefined();
@@ -761,7 +763,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     expect(result.errors).toBeUndefined();
     expect(result.valid).toBe(true);
     expect(result.revision).toBe(0);
-    expect(result.summary[0]).toContain('Informar o clone local da plataforma "ios"');
+    expect(result.summary[0]).toContain('Set the local clone of platform "ios"');
     expect(result.changes.platformRepos).toEqual({ created: 1, updated: 0, deleted: 0 });
     expect(result.warnings).toBeUndefined();
 

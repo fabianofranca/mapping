@@ -671,9 +671,9 @@ describe('formatos de referência', () => {
         hint: string;
         accepted: string[];
       };
-      expect(error.hint).toContain('copie de novo na app');
-      expect(error.accepted).toContain('mapping://projeto/m/3f2a9c1e');
-      expect(error.accepted.join()).not.toContain('caminho');
+      expect(error.hint).toContain('copy again from the app');
+      expect(error.accepted).toContain('mapping://project/m/3f2a9c1e');
+      expect(error.accepted.join()).not.toContain('path');
     }
   });
 
@@ -772,8 +772,8 @@ describe('get_specialization', () => {
     const withPlatforms = ok(
       await mcp.call('get_specialization', { project: 'cadastro', specId: 'sdui' }),
     );
-    expect(withPlatforms.codeHint).toEqual(expect.stringContaining('instância'));
-    expect(withPlatforms.codeHint).toEqual(expect.stringContaining('assinatura'));
+    expect(withPlatforms.codeHint).toEqual(expect.stringContaining('instantiation'));
+    expect(withPlatforms.codeHint).toEqual(expect.stringContaining('signature'));
     const without = ok(
       await mcp.call('get_specialization', {
         project: 'cadastro',
@@ -988,7 +988,7 @@ describe('`root` do create_project (raízes relativas, como no .mcp.json)', () =
     const result = await create('rel-g', 'mapeamentos');
     expect(errorCode(result)).toBe('unknown-root');
     const { error } = result.data as unknown as ErrorData;
-    expect(error.message).toContain('use o caminho');
+    expect(error.message).toContain('use the path');
     expect(error.roots).toEqual([ws.root, design(), outro()]);
     expect(existsSync(join(design(), 'rel-g'))).toBe(false);
     expect(existsSync(join(outro(), 'rel-g'))).toBe(false);

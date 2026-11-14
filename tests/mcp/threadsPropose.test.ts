@@ -55,7 +55,7 @@ describe('propose_changes com thread', () => {
     const last = stored.messages.at(-1)!;
     expect(last.proposal).toBe(proposed.proposal.id);
     expect(last.author).toEqual({ kind: 'agent', name: 'teste', email: null });
-    expect(last.text).toBe(`Proposta: [Título novo](${proposed.proposal.ref})`);
+    expect(last.text).toBe(`Proposal: [Título novo](${proposed.proposal.ref})`);
     expect(last.text).toMatch(/\(mapping:\/\/cadastro\/p\/[0-9a-f]+\)$/);
   });
 

@@ -2,12 +2,12 @@ import type { Font, PathCommand } from 'opentype.js';
 import type { Point } from '../../src/model/components/scene';
 import { CAP_HEIGHT_RATIO } from '../../src/model/components/baseline';
 
-// Contornos de glifos (opentype.js) como polígonos, para o rasterizador preencher.
+// Glyph outlines (opentype.js) as polygons, for the rasterizer to fill.
 
 export type Polygon = readonly Point[];
 
 const CURVE_STEPS = 8;
-/** Inclinação do itálico sintético (a fonte embutida não tem itálico): ~11,3°. */
+/** Slant of the synthetic italic (the embedded font has no italic): ~11.3°. */
 const ITALIC_SLANT = 0.2;
 
 function cubic(p0: Point, c1: Point, c2: Point, p1: Point, out: Point[]): void {
@@ -34,14 +34,14 @@ function quad(p0: Point, c: Point, p1: Point, out: Point[]): void {
   }
 }
 
-/** Um ponto do comando (`x`/`y`, `x1`/`y1` ou `x2`/`y2`), ou `from` se faltar. */
+/** A point of the command (`x`/`y`, `x1`/`y1` or `x2`/`y2`), or `from` if missing. */
 function point(cmd: PathCommand, n: '' | '1' | '2', from: Point): Point {
   const x = n === '' ? cmd.x : n === '1' ? cmd.x1 : cmd.x2;
   const y = n === '' ? cmd.y : n === '1' ? cmd.y1 : cmd.y2;
   return { x: x ?? from.x, y: y ?? from.y };
 }
 
-/** Passo de um comando do caminho: devolve o novo ponto corrente. */
+/** Step of a path command: returns the new current point. */
 function step(cmd: PathCommand, from: Point, out: Point[]): Point {
   const to = point(cmd, '', from);
   if (cmd.type === 'C')
@@ -51,7 +51,7 @@ function step(cmd: PathCommand, from: Point, out: Point[]): Point {
   return to;
 }
 
-/** Os contornos fechados de um caminho do opentype.js (curvas viram segmentos). */
+/** The closed outlines of an opentype.js path (curves become segments). */
 export function pathPolygons(commands: readonly PathCommand[]): Polygon[] {
   const polygons: Point[][] = [];
   let current: Point[] = [];
@@ -75,7 +75,7 @@ export function pathPolygons(commands: readonly PathCommand[]): Polygon[] {
   return polygons;
 }
 
-/** Inclina os polígonos em torno da linha de base (itálico sintético). */
+/** Slants the polygons around the baseline (synthetic italic). */
 export function slant(polygons: readonly Polygon[], baseline: number): Polygon[] {
   return polygons.map((poly) =>
     poly.map((p) => ({ x: p.x + (baseline - p.y) * ITALIC_SLANT, y: p.y })),
@@ -88,7 +88,7 @@ export interface GlyphStyle {
   readonly italic: boolean;
 }
 
-/** Contornos do texto com a origem da linha de base em (`x`, `baseline`). */
+/** Outlines of the text with the baseline origin at (`x`, `baseline`). */
 export function textPolygons(
   face: Font,
   text: string,
@@ -115,8 +115,8 @@ export function textPolygons(
 }
 
 /**
- * Altura da maiúscula no tamanho dado (px, positivo), para o `cap-middle`. É o único lugar que a lê:
- * `OS/2.sCapHeight`; sem ele, o topo da caixa do glifo `H`; sem `H`, 0,7 do corpo.
+ * Capital height at the given size (px, positive), for `cap-middle`. It is the only place that reads it:
+ * `OS/2.sCapHeight`; without it, the top of the glyph box of `H`; without `H`, 0.7 of the body.
  */
 export function capHeightOf(face: Font, size: number): number {
   const k = size / face.unitsPerEm;
@@ -127,7 +127,7 @@ export function capHeightOf(face: Font, size: number): number {
   return top > 0 ? top * k : CAP_HEIGHT_RATIO * size;
 }
 
-/** Ascendente e descendente da fonte no tamanho dado (px, ambos positivos). */
+/** Ascent and descent of the font at the given size (px, both positive). */
 export function fontExtents(
   face: Font,
   size: number,

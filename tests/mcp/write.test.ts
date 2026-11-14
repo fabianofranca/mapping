@@ -311,7 +311,7 @@ describe('roteiro 13.9 criado pelo MCP', () => {
     expect(plan.revision).toBe(0);
     expect(plan.summary).toHaveLength(CADASTRO_OPERATIONS.length);
     expect(plan.summary[3]).toMatch(
-      /^3\. Adicionar o container com a imagem images\/cadastro\.webp \(1000×2000 px, otimizada: WebP\)$/,
+      /^3\. Add the container with the image images\/cadastro\.webp \(1000×2000 px, optimized: WebP\)$/,
     );
     expect(plan.summary[9]).toContain('Formulário › Cadastrar');
     expect(plan.changes).toMatchObject({
@@ -437,7 +437,7 @@ describe('lote inválido e revisão desatualizada', () => {
       expect.objectContaining({ index: 3, code: 'unknown-alias' }),
     ]);
     expect(result.data.summary).toEqual([
-      expect.stringMatching(/^0\. Alterar a marcação/),
+      expect.stringMatching(/^0\. Change the marking/),
     ]);
     expect(hashOf(join(dir(), 'mapping.json'))).toBe(before);
   });
@@ -580,7 +580,7 @@ describe('regras do modelo no lote', () => {
         code: 'deprecated-op',
         op: 0,
         message: expect.stringContaining(
-          'o argumento `inherit` saiu do formato (v13) e foi ignorado',
+          'the `inherit` argument left the format (v13) and was ignored',
         ),
       },
     ]);
@@ -662,10 +662,10 @@ describe('imagens pelo lote', () => {
     });
     expect(plan.data.errors).toBeUndefined();
     expect(plan.data.summary[0]).toContain(
-      'images/foto.webp (200×300 px, otimizada: WebP)',
+      'images/foto.webp (200×300 px, optimized: WebP)',
     );
     expect(plan.data.summary[1]).toContain(
-      'images/larga.webp (2560×853 px, otimizada: 3000×1000 → 2560×853, WebP)',
+      'images/larga.webp (2560×853 px, optimized: 3000×1000 → 2560×853, WebP)',
     );
     // Enviada como proposta, as imagens esperam em proposals/<id>/images/ até a aceitação.
     const first = await propose(mcp, 'imagens', firstOps);

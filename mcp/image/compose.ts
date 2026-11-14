@@ -9,17 +9,17 @@ import {
   type Rgb,
 } from './raster';
 
-// Monta as imagens que as tools devolvem: recorte da marcação (com margem), imagem inteira com
-// a marcação destacada e contorno das filhas. Tudo em pixels da imagem original; a redução
-// vem antes dos contornos, para a espessura da linha ser a mesma em qualquer tamanho.
+// Builds the images the tools return: crop of the marking (with margin), whole image with
+// the marking highlighted and outline of the children. All in pixels of the original image; the downscaling
+// comes before the outlines, so the line thickness is the same at any size.
 
 export const DEFAULT_MAX_SIZE = 1568;
 export const MIN_MAX_SIZE = 64;
 export const MAX_MAX_SIZE = 4096;
 
-/** Cor do contorno da própria marcação no modo `context`. */
+/** Outline color of the marking itself in `context` mode. */
 export const MARKING_OUTLINE = '#FF00FF';
-/** Cores das filhas (Okabe-Ito mais um roxo): distinguíveis entre si e por daltônicos. */
+/** Colors of the children (Okabe-Ito plus a purple): distinguishable from each other and by colorblind people. */
 export const CHILD_COLORS = [
   '#E69F00',
   '#56B4E9',
@@ -30,7 +30,7 @@ export const CHILD_COLORS = [
   '#CC79A7',
   '#7B3294',
 ] as const;
-/** Quantas filhas são contornadas (as demais são contadas na resposta). */
+/** How many children are outlined (the rest are counted in the response). */
 export const MAX_OUTLINED_CHILDREN = 24;
 
 export function hexToRgb(hex: string): Rgb {
@@ -45,17 +45,17 @@ export interface Outline {
 
 export interface Composition {
   readonly raster: Raster;
-  /** A região da imagem original que virou a saída. */
+  /** The region of the original image that became the output. */
   readonly region: PixelRect;
-  /** Fator de redução (1 = tamanho original). */
+  /** Downscaling factor (1 = original size). */
   readonly scale: number;
-  /** Cada contorno desenhado, em pixels da saída. */
+  /** Each outline drawn, in output pixels. */
   readonly outlines: (Outline & { readonly output: PixelRect })[];
 }
 
 /**
- * Recorta `region` (em pixels da imagem), reduz o lado maior a `maxSize` e desenha os
- * contornos pedidos, nesta ordem (os últimos ficam por cima).
+ * Crops `region` (in image pixels), scales the longest side down to `maxSize` and draws the
+ * requested outlines, in this order (the last ones end up on top).
  */
 export function compose(
   source: Raster,
@@ -64,14 +64,14 @@ export function compose(
   maxSize: number,
 ): Composition {
   const bounds = clampRect(region, source);
-  if (!bounds) throw new Error('a região está fora da imagem');
+  if (!bounds) throw new Error('the region is outside the image');
   const cropped =
     bounds.width === source.width && bounds.height === source.height
       ? source
       : crop(source, bounds);
   const target = fitSize(bounds.width, bounds.height, maxSize);
   const out = resize(cropped, target.width, target.height);
-  // `resize` devolve o mesmo raster quando não há o que reduzir: o contorno não pode alterar o original.
+  // `resize` returns the same raster when there is nothing to downscale: the outline must not alter the original.
   const canvas = out === source ? { ...out, data: new Uint8ClampedArray(out.data) } : out;
 
   const drawn = outlines.map((outline) => {

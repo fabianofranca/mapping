@@ -23,10 +23,10 @@ import { ProposalLabels } from './proposalViews';
 import { storedOperations } from './proposalOperations';
 import type { Roots } from './paths';
 
-// `revise_proposal` (etapa #644): o agente corrige a proposta aberta na mesma proposta. O modelo
-// (`prepareRevision`/`reviseProposal`, CP1) decide o que fica, o que troca e o que sai; aqui o
-// lote roda sobre o **proposto inteiro** pelo mesmo caminho do `propose_changes` e a gravação
-// passa por `reviseStored`, que relê e recalcula se a proposta mudou no meio.
+// `revise_proposal` (stage #644): the agent corrects the open proposal in the same proposal. The model
+// (`prepareRevision`/`reviseProposal`, CP1) decides what stays, what is replaced and what leaves; here the
+// batch runs over the **whole proposed state** through the same path as `propose_changes` and the write
+// goes through `reviseStored`, which rereads and recalculates if the proposal changed in the meantime.
 
 type Json = Record<string, unknown>;
 
@@ -38,14 +38,14 @@ export interface ReviseArgs {
 
 const HINTS: Partial<Record<ReviseError['code'], string>> = {
   'proposal-applied':
-    'já há mudanças aplicadas: envie as correções com propose_changes e `supersedes` apontando para esta proposta',
+    'there are already applied changes: send the corrections with propose_changes and `supersedes` pointing to this proposal',
   'change-frozen':
-    'o usuário já aceitou essas mudanças; peça a ele para limpar a decisão ou mande uma proposta nova com `supersedes`',
+    'the user has already accepted these changes; ask them to clear the decision or send a new proposal with `supersedes`',
   'proposal-not-applicable':
-    'retire as mudanças envolvidas no `drop` e tente de novo, ou mande uma proposta nova com `supersedes`',
+    'withdraw the involved changes in `drop` and try again, or send a new proposal with `supersedes`',
 };
 
-/** Os códigos do modelo da revisão são os mesmos do servidor (`mcp/errors.ts`). */
+/** The revision model's codes are the same as the server's (`mcp/errors.ts`). */
 const CODES: Record<ReviseError['code'], McpErrorCode | 'not-open' | 'no-changes'> = {
   'not-open': 'not-open',
   'proposal-applied': 'proposal-applied',
@@ -66,7 +66,7 @@ function toToolError(error: ReviseError): ToolError {
 
 const SHOWN = 60;
 
-/** O valor novo de uma mudança em poucas palavras (texto curto; a criação mostra o nome). */
+/** The new value of a change in a few words (short text; a creation shows the name). */
 function shownValue(c: Change): string {
   if (c.kind === 'remove') return '';
   const named = (c.to as { name?: unknown } | null)?.name;
@@ -76,9 +76,9 @@ function shownValue(c: Change): string {
   return ` → ${text.length > SHOWN ? `${text.slice(0, SHOWN)}…` : text}`;
 }
 
-/** Resumo legível de uma mudança: o que ela faz, em quê e o valor novo. */
+/** Readable summary of a change: what it does, to what and the new value. */
 function summaryOf(c: Change, labels: ProposalLabels): string {
-  const verb = { create: 'criar', update: 'alterar', remove: 'remover' }[c.kind];
+  const verb = { create: 'create', update: 'change', remove: 'remove' }[c.kind];
   const field = c.field !== null ? ` › ${c.field}` : '';
   return `${verb} ${labels.target(c)}${field}${shownValue(c)}`;
 }
@@ -95,7 +95,7 @@ function itemsOf(
   }));
 }
 
-/** Arquivos de `images/` que a revisão não pode reutilizar: de outras propostas e da própria pasta. */
+/** Files in `images/` that the revision cannot reuse: from other proposals and from its own folder. */
 async function reservedFor(
   roots: Roots,
   location: ProjectLocation,
@@ -149,13 +149,13 @@ async function compute(
   if (!prepared.valid) {
     return stop({
       revised: false,
-      hint: 'nada foi gravado: corrija as operações com erro e chame revise_proposal de novo com o lote inteiro',
+      hint: 'nothing was written: fix the operations with errors and call revise_proposal again with the whole batch',
     });
   }
   if (prepared.result.packageFiles.size > 0) {
     throw new ToolError(
       'revise-unsupported',
-      'um pacote de biblioteca novo ou trocado não cabe numa revisão: envie-o numa proposta nova (propose_changes)',
+      'a new or replaced library package does not fit in a revision: send it in a new proposal (propose_changes)',
     );
   }
   const { loaded, result } = prepared;
@@ -177,7 +177,7 @@ async function compute(
       if (text === null || sha256(text) !== prepared.baseHash) {
         throw new ToolError(
           'revision-conflict',
-          'o projeto foi alterado por outro processo enquanto a revisão era calculada; releia e envie de novo',
+          'the project was changed by another process while the revision was being computed; reread and send again',
           { baseRevision: loaded.project.revision },
         );
       }
@@ -200,7 +200,7 @@ async function compute(
   };
 }
 
-/** `revise_proposal`: valida, calcula e (sem `dryRun`) grava a revisão na mesma proposta. */
+/** `revise_proposal`: validates, computes and (without `dryRun`) writes the revision in the same proposal. */
 export async function reviseOnDisk(
   roots: Roots,
   now: () => number,
@@ -210,7 +210,7 @@ export async function reviseOnDisk(
   if ((args.drop?.length ?? 0) === 0 && (args.operations?.length ?? 0) === 0) {
     throw new ToolError(
       'invalid-arguments',
-      'informe `drop` (ids de mudança a retirar) ou `operations` com pelo menos um item',
+      'give `drop` (ids of changes to withdraw) or `operations` with at least one item',
     );
   }
   const { location, stored } = resolved;
@@ -235,6 +235,6 @@ export async function reviseOnDisk(
     },
     revision: proposal.revision,
     ...result.view,
-    hint: 'a proposta é a mesma (mesma referência): as mudanças trocadas e as novas voltam a aguardar a decisão do usuário (marca "Revisada"); as aceitas e as intocadas não mudaram. O mapping.json não foi alterado. Avise o usuário e espere a revisão terminar (get_proposal). Com dryRun nada é gravado.',
+    hint: 'the proposal is the same (same reference): the replaced and new changes go back to awaiting a decision from the user ("Revised" mark); the accepted and untouched ones did not change. The mapping.json was not changed. Tell the user and wait for the review to finish (get_proposal). With dryRun nothing is written.',
   };
 }

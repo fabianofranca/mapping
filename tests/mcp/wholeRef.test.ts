@@ -634,7 +634,7 @@ describe('get_code_hints: targets', () => {
 describe('o lote do AGENT-GUIDE', () => {
   it('o lote de "Conteúdo fora da imagem", como está escrito, é válido, aplica e chega ao get_code_hints', async () => {
     const guide = readFileSync('docs/AGENT-GUIDE.md', 'utf8');
-    const block = /### Conteúdo fora da imagem[^]*?```json\n([^]*?)```/.exec(guide);
+    const block = /### Content outside the image[^]*?```json\n([^]*?)```/.exec(guide);
     expect(block, 'bloco json do guia').not.toBeNull();
     const operations = JSON.parse(block![1]!) as unknown[];
     const planned = await plan(operations);

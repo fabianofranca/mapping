@@ -992,4 +992,38 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'issue-markers',
   },
   { term: 'Parte de #', source: 'docs/FLOW.md', group: 'issue-markers' },
+  // Markers of the workspace `AGENTS.md` that `setup.sh` and `scripts/release/workspaceAssets.mjs`
+  // match literally; workspaces already installed carry them, so they cannot be translated.
+  {
+    term: '<!-- mapping:begin (gerenciado pelo setup.sh; não edite entre estas linhas) -->',
+    source: 'examples/workspace/setup.sh',
+    group: 'script-output',
+  },
+  {
+    term: '## Para que servem estes mapeamentos',
+    source: 'examples/workspace/setup.sh',
+    group: 'script-output',
+  },
+  {
+    term: '# Mapeamentos',
+    source: 'examples/workspace/setup.sh',
+    group: 'script-output',
+  },
+  { term: '## Estrutura', source: 'examples/workspace/setup.sh', group: 'script-output' },
+  {
+    term: '## Servidor MCP `mapping`',
+    source: 'examples/workspace/setup.sh',
+    group: 'script-output',
+  },
+  { term: '## Regras', source: 'examples/workspace/setup.sh', group: 'script-output' },
+  {
+    term: '## Skill `spec-author`',
+    source: 'examples/workspace/setup.sh',
+    group: 'script-output',
+  },
+  {
+    term: '## Fluxo típico',
+    source: 'examples/workspace/setup.sh',
+    group: 'script-output',
+  },
 ];
