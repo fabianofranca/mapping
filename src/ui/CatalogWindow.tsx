@@ -7,14 +7,14 @@ import { LibraryPalette } from './LibraryPalette';
 import { ToolWindow } from './ToolWindow';
 import { useAddComponent } from './useAddComponent';
 
-// Janela Catálogo (etapa Biblioteca, B5), à esquerda: a aba Componentes mostra o catálogo
-// dos pacotes aplicados ao projeto (lista; a página do componente abre num diálogo) e a aba
-// Paleta é a paleta da B3. Os catálogos só são lidos e montados quando a janela está aberta.
+// Catalog window (stage Library, B5), on the left: the Components tab shows the catalog
+// of the packages applied to the project (list; the component page opens in a dialog) and the
+// Palette tab is the B3 palette. The catalogs are only read and built when the window is open.
 
 type CatalogTab = 'components' | 'palette';
 
 interface CatalogWindowProps {
-  /** Abre o diálogo de Especializações (atalho do estado vazio). */
+  /** Opens the Specializations dialog (shortcut from the empty state). */
   readonly onOpenSpecs: () => void;
 }
 
@@ -49,7 +49,7 @@ function CatalogComponents({ onOpenSpecs }: CatalogWindowProps) {
   const { session, review } = useEditor();
   const { add, disabledReason, error } = useAddComponent();
   const [specId, setSpecId] = useState<string | null>(null);
-  // A chave muda com as versões aplicadas; o carimbo, quando os arquivos podem ter mudado.
+  // The key changes with the applied versions; the stamp, when the files may have changed.
   const key = session.catalogs.key.value;
   const stamp = session.catalogs.stamp.value;
   useEffect(() => {

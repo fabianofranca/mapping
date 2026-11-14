@@ -5,7 +5,7 @@ import { writeClipboardText } from '../utils/clipboard';
 import { Button } from './controls';
 import { Dialog } from './Dialog';
 
-/** O que a abertura recusada informa (ver `InconsistentProject` no controller). */
+/** What the refused opening reports (see `InconsistentProject` in the controller). */
 export interface InconsistentDetails {
   readonly issues: readonly InvariantIssue[];
   readonly repaired: readonly RepairRecord[];
@@ -24,7 +24,7 @@ function itemLine(item: Item, problem: string): string {
   });
 }
 
-/** Uma linha por problema, ex.: `Marcação "Nome" (MN): pai inexistente (M9)`. */
+/** One line per problem, e.g. `Marking "Name" (MN): nonexistent parent (M9)`. */
 export function issueLines(issues: readonly InvariantIssue[]): string[] {
   return issues.map((issue) => {
     const problem = t(`invariant.${issue.code}`);
@@ -37,12 +37,12 @@ export function issueLines(issues: readonly InvariantIssue[]): string[] {
   });
 }
 
-/** Uma linha por reparo, ex.: `Marcação "Nome" (MN): vira raiz da imagem`. */
+/** One line per repair, e.g. `Marking "Name" (MN): becomes a root of the image`. */
 export function repairLines(records: readonly RepairRecord[]): string[] {
   return records.map((r) => itemLine(r, t(`repair.${r.action}`)));
 }
 
-/** Texto do "Copiar": os problemas e, se houver, o que o reparo faz. */
+/** Text of "Copy": the problems and, if any, what the repair does. */
 function copyText(details: InconsistentDetails, canRepair: boolean): string {
   const sections = [[t('inconsistent.problems'), ...issueLines(details.issues)]];
   if (canRepair)
@@ -51,9 +51,9 @@ function copyText(details: InconsistentDetails, canRepair: boolean): string {
 }
 
 /**
- * Abertura recusada por dados inconsistentes: a lista exata dos problemas, "Copiar" e, quando
- * todos têm reparo mecânico, "Reparar e abrir" (o original vai para `backups/` na primeira
- * gravação). Sem reparo, só a lista e Fechar.
+ * Opening refused because of inconsistent data: the exact list of problems, "Copy" and, when
+ * all have a mechanical repair, "Repair and open" (the original goes to `backups/` on the first
+ * save). Without a repair, only the list and Close.
  */
 export function InconsistentProjectDialog({
   details,
@@ -63,7 +63,7 @@ export function InconsistentProjectDialog({
 }: {
   readonly details: InconsistentDetails;
   readonly busy: boolean;
-  /** `null`: há problema sem reparo. */
+  /** `null`: there is a problem without a repair. */
   readonly onRepair: (() => void) | null;
   readonly onClose: () => void;
 }) {

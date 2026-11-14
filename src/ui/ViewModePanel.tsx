@@ -110,9 +110,9 @@ export function viewControl(): HTMLElement | null {
 }
 
 /**
-  * The "Show on canvas" button (only enabled in the mode) and the panel it opens. The panel that
-  * opened on turning the mode on gives focus back, on closing, to View (the active button in the
-  * bar); the one opened by "Show on canvas" itself gives it back to that.
+ * The "Show on canvas" button (only enabled in the mode) and the panel it opens. The panel that
+ * opened on turning the mode on gives focus back, on closing, to View (the active button in the
+ * bar); the one opened by "Show on canvas" itself gives it back to that.
  */
 export function ViewModePanel() {
   const { ui } = useEditor();

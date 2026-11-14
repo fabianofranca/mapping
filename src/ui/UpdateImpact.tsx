@@ -12,7 +12,7 @@ import { markingPath } from './labels';
 import { specIssueText } from './specIssueText';
 import { annotationDisplayName } from './typedText';
 
-/** Perdas listadas por passo; o resto vira "+N". */
+/** Losses listed per step; the rest becomes "+N". */
 const MAX_LOSSES_PER_STEP = 5;
 const MAX_VALUE_CHARS = 40;
 
@@ -24,7 +24,7 @@ type RoleStep = Extract<
 const isRoleStep = (step: SpecMigrationStep): step is RoleStep =>
   step.op === 'rename-role' || step.op === 'remove-role' || step.op === 'set-role';
 
-/** Rótulo dos passos de papel do vínculo. */
+/** Label of the link's role steps. */
 function roleStepLabel(step: RoleStep): string {
   switch (step.op) {
     case 'rename-role':
@@ -51,7 +51,7 @@ function roleStepLabel(step: RoleStep): string {
   }
 }
 
-/** Rótulo legível de um passo declarado da migração. */
+/** Readable label of a declared migration step. */
 export function stepLabel(step: SpecMigrationStep): string {
   if (isRoleStep(step)) return roleStepLabel(step);
   switch (step.op) {
@@ -94,7 +94,7 @@ function shortValue(value: JsonValue | undefined): string {
   return text.length > MAX_VALUE_CHARS ? `${text.slice(0, MAX_VALUE_CHARS)}…` : text;
 }
 
-/** Contagens de um passo ("3 anotações, 5 valores"), ou o aviso de que nada muda. */
+/** Counts of a step ("3 annotations, 5 values"), or the notice that nothing changes. */
 function stepCounts(report: MigrationStepReport): string {
   const parts: string[] = [];
   if (report.annotations > 0)
@@ -109,7 +109,7 @@ function stepCounts(report: MigrationStepReport): string {
   return parts.length > 0 ? parts.join(', ') : t('spec.impact.nothing');
 }
 
-/** "Marcação › Anotação" da anotação da perda, com os rótulos que o resto da interface usa. */
+/** "Marking › Annotation" of the loss's annotation, with the labels the rest of the interface uses. */
 function lossTarget(project: Project, loss: MigrationLoss): string {
   const index = projectIndex(project);
   const annotation = index.annotations.get(loss.annotationId);
@@ -146,8 +146,8 @@ function lossText(project: Project, loss: MigrationLoss): string {
 }
 
 /**
- * Impacto de uma atualização de especialização: aditiva (uma linha), com migração (passos,
- * contagens, perdas em destaque e pendências) ou recusada (o que falta migrar).
+ * Impact of a specialization update: additive (one line), with migration (steps,
+ * counts, highlighted losses and pending items) or refused (what is left to migrate).
  */
 export function UpdateImpact({
   project,

@@ -5,11 +5,11 @@ import { useEditor } from '../EditorContext';
 import { Icon } from '../icons';
 import { openReviewIn } from '../review/useReviewCommands';
 
-// O cartão da proposta numa conversa (decisão 36): a mensagem com `proposal` mostra o título da
-// proposta, quantas mudanças faltam revisar e o botão que abre a revisão. O texto da mensagem
-// continua abaixo do cartão.
+// The proposal card in a thread (decision 36): the message with `proposal` shows the proposal's title,
+// how many changes are left to review and the button that opens the review. The message text
+// stays below the card.
 
-/** "N mudança(s) para revisar" (com o singular) ou, decidida, o estado em texto curto. */
+/** "N change(s) to review" (with the singular) or, once decided, the state in short text. */
 export function proposalStateText(row: ProposalRow): string {
   const { proposal, progress } = row;
   if (proposal.status !== 'open') return t(`proposals.status.${proposal.status}`);
@@ -19,7 +19,7 @@ export function proposalStateText(row: ProposalRow): string {
     : t('thread.proposal.changesMany', { count: progress.undecided });
 }
 
-/** A ação do cartão: Revisar nas abertas, Ver nas encerradas e nada na retirada. */
+/** The card action: Review on open ones, View on closed ones and nothing on withdrawn ones. */
 function cardAction(row: ProposalRow): 'review' | 'view' | null {
   switch (row.proposal.status) {
     case 'open':

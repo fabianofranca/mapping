@@ -13,14 +13,14 @@ const PREFIX = 'p:';
 
 type Who = 'all' | 'mine';
 
-/** O valor do Select de "Começar de" como o argumento da action. */
+/** The value of the "Start from" Select as the action's argument. */
 function startOf(value: string): NewPerspectiveStart {
   if (value === MAIN) return null;
   if (value === EMPTY) return 'empty';
   return value.slice(PREFIX.length);
 }
 
-/** As camadas escondidas ao começar de `value` (a Principal e a Vazia mostram todas). */
+/** The layers hidden when starting from `value` (Main and Empty show all of them). */
 function hiddenFrom(project: Project, value: string): readonly string[] {
   if (!value.startsWith(PREFIX)) return [];
   const source = project.perspectives.find((x) => x.id === value.slice(PREFIX.length));
@@ -28,8 +28,8 @@ function hiddenFrom(project: Project, value: string): readonly string[] {
 }
 
 /**
- * Nova perspectiva: nome, de onde começa, quem vê e quais camadas aparecem. Criada, a nova
- * perspectiva é aberta.
+ * New perspective: name, where it starts from, who sees it and which layers appear. Once created, the new
+ * perspective is opened.
  */
 export function NewPerspectiveDialog({ onClose }: { readonly onClose: () => void }) {
   const { session, store } = useEditor();

@@ -27,8 +27,8 @@ import {
 } from './PerspectiveMenuItems';
 
 /**
-  * ↓/↑ move focus among the enabled items of the menu (or of the submenu, if focus is in it), in a
-  * loop. → and ← of the submenu belong to `PerspectiveMenuItems`.
+ * ↓/↑ move focus among the enabled items of the menu (or of the submenu, if focus is in it), in a
+ * loop. → and ← of the submenu belong to `PerspectiveMenuItems`.
  */
 function moveFocus(e: KeyboardEvent) {
   if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -60,9 +60,9 @@ const ARROW_STYLE_LABELS: Readonly<
 };
 
 /**
-  * Items of an arrow's menu (ME4): the stroke style (Straight, Curve, Elbow; the current one
-  * checked) and Delete. Each choice is a history entry. When locked (or the project read-only), the
-  * items are disabled.
+ * Items of an arrow's menu (ME4): the stroke style (Straight, Curve, Elbow; the current one
+ * checked) and Delete. Each choice is a history entry. When locked (or the project read-only), the
+ * items are disabled.
  */
 function ArrowMenuItems({
   arrowId,
@@ -110,8 +110,8 @@ function ArrowMenuItems({
 }
 
 /**
-  * Comment (item under the cursor) and Comment here (empty place of a container or the canvas),
-  * decision 25: they open the thread's draft; nothing is saved before Send. Read-only: disabled.
+ * Comment (item under the cursor) and Comment here (empty place of a container or the canvas),
+ * decision 25: they open the thread's draft; nothing is saved before Send. Read-only: disabled.
  */
 function CommentMenuItems({
   comment,
@@ -157,9 +157,9 @@ function CommentMenuItems({
 }
 
 /**
-  * Canvas context menu (right mouse button): copy the reference and the crop, Wrap (Ctrl/Cmd+G) the
-  * item under the cursor, which the right click selects; on an arrow, the style and Delete. Opened
-  * by `ui.canvasMenu`; closes with Esc, a click outside, scrolling or on choosing an item.
+ * Canvas context menu (right mouse button): copy the reference and the crop, Wrap (Ctrl/Cmd+G) the
+ * item under the cursor, which the right click selects; on an arrow, the style and Delete. Opened
+ * by `ui.canvasMenu`; closes with Esc, a click outside, scrolling or on choosing an item.
  */
 export function CanvasContextMenu() {
   const editor = useEditor();

@@ -6,9 +6,9 @@ import { Banner } from './Banner';
 import { Button } from './controls';
 
 /**
- * "Nova versão disponível — atualizar". Grava o projeto aberto antes de recarregar; se a
- * gravação falha, não recarrega (o aviso continua e diz que não salvou, e clicar de novo
- * tenta gravar outra vez).
+ * "New version available — update". Saves the open project before reloading; if the
+ * save fails, it does not reload (the notice stays and says it did not save, and clicking again
+ * tries to save once more).
  */
 export function UpdateBanner() {
   const [saveFailed, setSaveFailed] = useState(false);

@@ -242,7 +242,7 @@ function PerspectiveRow(props: RowProps) {
   );
 }
 
-/** Manage perspectives: table with a switchable Who sees in the row, rename, duplicate and delete. */
+/** Manage perspectives: table with Who sees switchable per row, rename, duplicate and delete. */
 export function ManagePerspectivesDialog({
   onClose,
   focus,

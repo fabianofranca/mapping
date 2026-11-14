@@ -27,7 +27,7 @@ function roleIssueOf(project: Project, annotation: Annotation) {
   );
 }
 
-/** As opções: o "Escolha…" (sem papel válido), o papel que o dono não oferece e os do dono. */
+/** The options: "Choose…" (no valid role), the role the owner does not offer and the owner's. */
 function RoleOptions({
   role,
   roles,
@@ -80,7 +80,7 @@ function RoleSelect({
   );
 }
 
-/** Marcador e nota da revisão para o papel (pelo ponto de extensão dos Detalhes). */
+/** Review marker and note for the role (through the Details extension point). */
 function useRoleExtras(annotationId: string) {
   const ext = useDetailsExtension();
   const mark = ext?.mark(annotationId, 'parentRole');
@@ -89,9 +89,9 @@ function useRoleExtras(annotationId: string) {
 }
 
 /**
- * O papel da anotação no dono (v14, decisão 20): a lista dos `childRoles` do tipo do dono, com o
- * rótulo `childRolesLabel`. Só aparece com um dono que os declara, ou para explicar (e limpar) um
- * papel que o dono não oferece.
+ * The annotation's role in the owner (v14, decision 20): the list of the owner type's `childRoles`, with the
+ * label `childRolesLabel`. It only appears with an owner that declares them, or to explain (and clear) a
+ * role that the owner does not offer.
  */
 export function OwnerRoleField({
   project,

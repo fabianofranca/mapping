@@ -1,19 +1,19 @@
 import { SUGGESTED_DENSITIES, isValidDensity } from '../model';
 import { locale } from '../store/settings';
 
-// Densidade do container na interface (D2): a lista pronta do campo, o número como a pessoa
-// lê (vírgula em pt-BR) e a leitura do que ela digita em "Personalizada".
+// Container density in the interface (D2): the field's ready-made list, the number as the person
+// reads it (comma in pt-BR) and the parsing of what they type in "Custom".
 
-/** Os valores prontos do `Select` (a opção "Personalizada" vem depois deles). */
+/** The ready-made `Select` values (the "Custom" option comes after them). */
 export const DENSITY_CHOICES: readonly number[] = [1, ...SUGGESTED_DENSITIES];
 
-/** O valor do `Select` que abre o campo de número. */
+/** The `Select` value that opens the number field. */
 export const CUSTOM_DENSITY = 'custom';
 
 export const isDensityChoice = (value: number): boolean =>
   DENSITY_CHOICES.includes(value);
 
-/** O número no idioma da interface (1,5 em pt-BR; 1.5 em en-US), com até 6 casas (o MCP grava qualquer valor de 0,5 a 8). */
+/** The number in the interface language (1,5 in pt-BR; 1.5 in en-US), with up to 6 decimals (the MCP saves any value from 0.5 to 8). */
 export function formatDensity(value: number): string {
   try {
     return new Intl.NumberFormat(locale.value, { maximumFractionDigits: 6 }).format(
@@ -25,8 +25,8 @@ export function formatDensity(value: number): string {
 }
 
 /**
- * Lê a densidade digitada: número com vírgula ou ponto, de 0,5 a 8 (`isValidDensity`); qualquer
- * outra coisa, `null`.
+ * Parses the typed density: a number with comma or dot, from 0.5 to 8 (`isValidDensity`); anything
+ * else, `null`.
  */
 export function parseDensity(text: string): number | null {
   const trimmed = text.trim().replace(',', '.');

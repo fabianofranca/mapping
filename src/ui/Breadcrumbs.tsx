@@ -51,8 +51,8 @@ function canvasChain(project: Project, parentId: string | null): Marking[] {
 }
 
 /**
-  * Selection path: Canvas › canvas markings › container › markings. The first level
-  * (Canvas) only labels: there is no canvas item to select.
+ * Selection path: Canvas › canvas markings › container › markings. The first level
+ * (Canvas) only labels: there is no canvas item to select.
  */
 export function crumbsOf(project: Project | null, selection: Selection): Crumb[] {
   const resolved = resolveSelection(project, selection);
@@ -93,8 +93,8 @@ export function crumbsOf(project: Project | null, selection: Selection): Crumb[]
 }
 
 /**
-  * The "…" of the collapsed path: the CSS hides the middle segments and shows this button in the
-  * narrow bar (container query); the menu lists the whole path and each level selects its own.
+ * The "…" of the collapsed path: the CSS hides the middle segments and shows this button in the
+ * narrow bar (container query); the menu lists the whole path and each level selects its own.
  */
 function PathMenu({
   crumbs,

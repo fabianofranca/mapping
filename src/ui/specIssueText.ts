@@ -2,8 +2,8 @@ import { modelMessage, isModelMessageTemplateCode } from '../model';
 import { messageText } from './modelMessage';
 
 /**
- * O texto traduzido de um problema da especialização: com `code` do catálogo, na língua da app
- * (`messageText`); sem ele, o `message` em português do modelo.
+ * The translated text of a specialization problem: with a catalog `code`, in the app's language
+ * (`messageText`); without it, the model's Portuguese `message`.
  */
 export function specIssueText(issue: {
   readonly code?: string | undefined;

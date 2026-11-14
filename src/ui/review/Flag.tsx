@@ -1,9 +1,9 @@
 import type { ComponentChildren } from 'preact';
 import { Icon, type IconName } from '../icons';
 
-// Pílula de 18px com um fato sobre a linha (HANDOFF-PROPOSALS 2.1):
-// Conflito, Trancado, junto, Envolvida, o status da proposta. Não é interativa (o `Chip`
-// é que é); o texto aparece sempre, nunca só o ícone.
+// 18px pill with a fact about the row (HANDOFF-PROPOSALS 2.1):
+// Conflict, Locked, together, Involved, the proposal status. It is not interactive (the `Chip`
+// is); the text always shows, never only the icon.
 
 export type FlagTone = 'neutral' | 'warn' | 'danger' | 'ok' | 'new';
 
@@ -15,7 +15,7 @@ export function Flag({
 }: {
   readonly tone?: FlagTone;
   readonly icon?: IconName;
-  /** Dica com a explicação (ex.: "Rejeitada junto com a criação do item"). */
+  /** Tooltip with the explanation (e.g. "Rejected together with the creation of the item"). */
   readonly title?: string;
   readonly children: ComponentChildren;
 }) {

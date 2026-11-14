@@ -62,8 +62,8 @@ function textBytes(text: string): number {
 }
 
 /**
-  * Uncompressed size that the zip declares for the entry (the central directory), or `null` if the
-  * JSZip version does not expose it. JSZip checks the declared size when decompressing.
+ * Uncompressed size that the zip declares for the entry (the central directory), or `null` if the
+ * JSZip version does not expose it. JSZip checks the declared size when decompressing.
  */
 function declaredSize(entry: JSZip.JSZipObject): number | null {
   const data: unknown = Reflect.get(entry, '_data');

@@ -33,9 +33,9 @@ interface LayersProps {
 }
 
 /**
-  * Layer visibility: with a perspective open (stage #659, decision 11), the hidden ones are the
-  * perspective's and change in the project (with undo); in Main, those of the interface
-  * (`ui.hiddenLayers`).
+ * Layer visibility: with a perspective open (stage #659, decision 11), the hidden ones are the
+ * perspective's and change in the project (with undo); in Main, those of the interface
+ * (`ui.hiddenLayers`).
  */
 function useLayerVisibility(readOnly: boolean) {
   const { layers, session } = useEditor();

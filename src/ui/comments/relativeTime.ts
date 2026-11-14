@@ -1,8 +1,8 @@
 import { t } from '../../i18n';
 
-// Hora relativa das mensagens (etapa Comentários): "agora", "há 2 min", "há 3 h", "ontem",
-// "12/10" (dia/mês em pt-BR, mês/dia em en-US) e, de outro ano, com o ano. O dia segue o
-// horário local do dispositivo. `now` entra por parâmetro para os testes.
+// Relative time of messages (stage Comments): "now", "2 min ago", "3 h ago", "yesterday",
+// "12/10" (day/month in pt-BR, month/day in en-US) and, from another year, with the year. The day follows the
+// device's local time. `now` comes in as a parameter for the tests.
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -15,7 +15,7 @@ function dayDiff(now: Date, then: Date): number {
   return Math.round((dayStart(now) - dayStart(then)) / (24 * HOUR));
 }
 
-/** Texto curto de quando foi `iso` em relação a `now`; vazio se `iso` não é uma data. */
+/** Short text of when `iso` was relative to `now`; empty if `iso` is not a date. */
 export function relativeTime(iso: string, now: Date | number = Date.now()): string {
   const then = new Date(iso);
   if (Number.isNaN(then.getTime())) return '';

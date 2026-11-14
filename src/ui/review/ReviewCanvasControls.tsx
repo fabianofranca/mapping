@@ -31,8 +31,8 @@ const legendToggle = createRef<HTMLButtonElement>();
 const legendPanel = createRef<HTMLElement>();
 
 /**
-  * Toggles the legend (button and L shortcut). On closing with focus inside it, gives it back to
-  * the button that opens it: the panel leaves the DOM and focus would fall on body.
+ * Toggles the legend (button and L shortcut). On closing with focus inside it, gives it back to
+ * the button that opens it: the panel leaves the DOM and focus would fall on body.
  */
 export function toggleReviewLegend(ui: { readonly reviewLegend: Signal<boolean> }) {
   const open = ui.reviewLegend.peek();
@@ -43,11 +43,11 @@ export function toggleReviewLegend(ui: { readonly reviewLegend: Signal<boolean> 
 }
 
 /**
-  * Esc with the legend open and focus on the button that opens it or on the canvas (or on no
-  * control): closes only the legend and leaves focus where it was, so the next Esc does what it did
-  * before (clear the selection). With focus inside the legend, the panel itself closes it;
-  * elsewhere (Proposals, Details) Esc belongs to whoever has focus. Returns `true` when it consumed
-  * Esc.
+ * Esc with the legend open and focus on the button that opens it or on the canvas (or on no
+ * control): closes only the legend and leaves focus where it was, so the next Esc does what it did
+ * before (clear the selection). With focus inside the legend, the panel itself closes it;
+ * elsewhere (Proposals, Details) Esc belongs to whoever has focus. Returns `true` when it consumed
+ * Esc.
  */
 export function closeReviewLegendOnEscape(ui: {
   readonly reviewLegend: Signal<boolean>;
@@ -147,10 +147,10 @@ export function ReviewCanvasControls() {
 }
 
 /**
-  * Positions the legend (which is `position: fixed`, so the canvas does not clip it): the
-  * canvas's top-left corner, its column's width and the height down to the end of the
-  * windows (the top of the status bar). Hands the measurements to the CSS in variables; the
-  * spacing and margin come from the tokens, not from here.
+ * Positions the legend (which is `position: fixed`, so the canvas does not clip it): the
+ * canvas's top-left corner, its column's width and the height down to the end of the
+ * windows (the top of the status bar). Hands the measurements to the CSS in variables; the
+ * spacing and margin come from the tokens, not from here.
  */
 function useLegendPlacement(legend: { readonly current: HTMLElement | null }): void {
   useLayoutEffect(() => {

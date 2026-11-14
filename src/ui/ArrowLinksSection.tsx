@@ -40,7 +40,7 @@ interface LayerGroupData {
   readonly annotations: readonly Annotation[];
 }
 
-/** The owner's annotations per visible layer (in layer order); a layer without annotations is left out. */
+/** The owner's annotations per visible layer (in layer order); a layer without any is left out. */
 function annotationGroups(
   project: Project,
   ownerId: string,
@@ -109,7 +109,7 @@ interface ArrowLinkRowProps {
   readonly layers: readonly Layer[];
 }
 
-/** The other endpoint: a button that selects it; a marking that no longer exists becomes neutral text. */
+/** The other endpoint: a button that selects it; a missing marking becomes neutral text. */
 function OtherEnd({
   project,
   other,
@@ -199,7 +199,8 @@ export function ArrowLinksSection({
   const { derived, session, store } = useEditor();
   const ext = useDetailsExtension();
   // With a perspective open, `project` is its slice, which drops the arrows whose other endpoint
-  // is outside (decision 16: they appear as "Goes to…" with the badge): queries the whole project.
+  // is outside (decision 16: they appear as "Goes to…" with the badge): queries the whole
+  // project.
   const whole = session.perspective.id.value !== null ? store.committed.value : null;
   const source = whole ?? project;
   const links = arrowLinksOf(source, marking.id);

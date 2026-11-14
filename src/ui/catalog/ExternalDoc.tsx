@@ -6,10 +6,10 @@ import { Button } from '../controls';
 import { Icon } from '../icons';
 import { Markdown } from '../markdown/Markdown';
 
-// Documento de um tipo cujo `.md` vive num repositório externo (`doc` objeto, `docRepos`).
-// A app lê o arquivo da pasta que a pessoa conecta (o seletor só abre por clique); o estado
-// da leitura é da UI e não entra no projeto. Sem pasta, sem suporte ou sem acesso, mostra o
-// que fazer e o link para o repositório.
+// Document of a type whose `.md` lives in an external repository (`doc` object, `docRepos`).
+// The app reads the file from the folder the person connects (the picker only opens on click); the
+// read state belongs to the UI and does not enter the project. With no folder, no support or no access, it shows
+// what to do and the link to the repository.
 
 export interface ExternalDocProps {
   readonly external: CatalogDocExternal;
@@ -17,7 +17,7 @@ export interface ExternalDocProps {
   readonly onLink?: (href: string) => void;
 }
 
-/** Link discreto para o arquivo no repositório (abre em outra aba). */
+/** Discreet link to the file in the repository (opens in another tab). */
 function RepoLink({ url }: { readonly url: string }) {
   return (
     <a href={url} target="_blank" rel="noopener noreferrer" class="external-doc-link">
@@ -31,7 +31,7 @@ function PathLabel({ external }: { readonly external: CatalogDocExternal }) {
   return <span class="external-doc-path">{`${external.repo}: ${external.path}`}</span>;
 }
 
-/** Sem repositório ou sem seletor de pasta: só o link, ou só o caminho. */
+/** No repository or no folder picker: only the link, or only the path. */
 function Reference({ external }: { readonly external: CatalogDocExternal }) {
   return external.url === null ? (
     <PathLabel external={external} />
@@ -41,13 +41,13 @@ function Reference({ external }: { readonly external: CatalogDocExternal }) {
 }
 
 interface Reading {
-  /** `null` enquanto lê. */
+  /** `null` while reading. */
   readonly result: DocReadResult | null;
-  /** Relê (depois de conectar a pasta ou de a permissão ser dada). */
+  /** Re-reads (after connecting the folder or after the permission is granted). */
   readonly reload: () => void;
 }
 
-/** Lê o documento; a leitura obsoleta (outro tipo, outro clique) é descartada. */
+/** Reads the document; a stale read (another type, another click) is discarded. */
 function useDocRead(
   access: DocFolderAccess,
   repoUrl: string | null,
@@ -81,7 +81,7 @@ interface ActionsProps {
   readonly reload: () => void;
 }
 
-/** Os botões do estado (cada um é um clique da pessoa: o navegador só abre o seletor assim). */
+/** The state's buttons (each is a click by the person: the browser only opens the picker that way). */
 function Actions({ external, repoUrl, access, status, reload }: ActionsProps) {
   const [denied, setDenied] = useState(false);
   const pick = async () => {

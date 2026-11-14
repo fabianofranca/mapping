@@ -1,7 +1,7 @@
 import { t } from '../../i18n';
 
-// Textos da marca "Revisada" que dependem de contagens (etapa #644, CP3): as partes zeradas
-// ficam de fora ("2 trocada(s), 1 retirada(s)").
+// Texts of the "Revised" mark that depend on counts (stage #644, CP3): zero parts
+// are left out ("2 replaced, 1 withdrawn").
 
 export interface RevisionCounts {
   readonly changed: number;
@@ -9,7 +9,7 @@ export interface RevisionCounts {
   readonly dropped: number;
 }
 
-/** "1 trocada(s), 2 nova(s)": só as contagens maiores que zero; "nenhuma mudança" sem nenhuma. */
+/** "1 replaced, 2 new": only the counts greater than zero; "no changes" when there are none. */
 export function revisionParts(counts: RevisionCounts): string {
   const parts = (['changed', 'added', 'dropped'] as const)
     .filter((key) => counts[key] > 0)

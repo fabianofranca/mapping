@@ -1,7 +1,7 @@
 import { t } from '../../i18n';
 import type { MessageSummary } from '../../model';
 
-/** "Vão embora 5 mensagens: 3 de Marina Alves, 2 de Claude Code (agente)." (decisão 23). */
+/** "5 messages will go away: 3 from Marina Alves, 2 from Claude Code (agent)." (decision 23). */
 export function impactText(impact: MessageSummary): string {
   const authors = impact.authors
     .map((a) =>

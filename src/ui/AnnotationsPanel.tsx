@@ -133,8 +133,8 @@ type CreateStep =
     };
 
 /**
-  * Annotations of the marking: pending items with links to the field and one LayerGroup per
-  * visible layer (header in the layer's color, collapsible).
+ * Annotations of the marking: pending items with links to the field and one LayerGroup per
+ * visible layer (header in the layer's color, collapsible).
  */
 export function AnnotationsPanel({
   project,
@@ -256,7 +256,8 @@ export function AnnotationsPanel({
             <Button
               size="sm"
               onClick={() => {
-                // The button disappears when the layers return: focus stays on the section, not on body.
+                // The button disappears when the layers return: focus stays on the section, not on
+                // body.
                 root.current?.focus();
                 editor.layers.showAll();
               }}
@@ -366,8 +367,8 @@ interface LayerGroupProps {
 }
 
 /**
-  * The annotations of a group; with `page` (large groups in review), the first ones and a
-  * button that shows more, `step` at a time. UI state of the group, until it unmounts.
+ * The annotations of a group; with `page` (large groups in review), the first ones and a
+ * button that shows more, `step` at a time. UI state of the group, until it unmounts.
  */
 export function PagedList({
   items,
@@ -399,9 +400,9 @@ export function PagedList({
 }
 
 /**
-  * Group of a layer (LayerGroup of DS 2.0): border, 3px stripe in the layer's color,
-  * specialization badge, "· active", count and alert icon. Collapsed, it summarizes the first
-  * annotation and does not mount the annotations.
+ * Group of a layer (LayerGroup of DS 2.0): border, 3px stripe in the layer's color,
+ * specialization badge, "· active", count and alert icon. Collapsed, it summarizes the first
+ * annotation and does not mount the annotations.
  */
 function LayerGroup({
   project,
@@ -500,8 +501,8 @@ function LayerGroup({
 }
 
 /**
-  * Pending items of the marking (in the visible layers): each reason is a link that opens the
-  * layer and the annotation and takes focus to the field.
+ * Pending items of the marking (in the visible layers): each reason is a link that opens the
+ * layer and the annotation and takes focus to the field.
  */
 function IssuesNotice({
   project,

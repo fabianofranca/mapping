@@ -7,8 +7,8 @@ import { openToolWindow } from './toolWindowLayout';
 import { toolWindowMeta, windowBadge, windowsOfSide } from './toolWindowMeta';
 
 /**
- * Abas da janela inferior (Lista | Incompletas | Avisos | Diagnóstico | Propostas | Comentários). Incompletas mostra
- * quantas anotações estão pendentes; Avisos, quantas têm aviso da especialização; Diagnóstico, o ponto de alerta de erro novo (B4).
+ * Tabs of the bottom window (List | Incomplete | Warnings | Diagnostics | Proposals | Comments). Incomplete shows
+ * how many annotations are pending; Warnings, how many have a specialization warning; Diagnostics, the new-error alert dot (B4).
  */
 export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
   const { derived, review } = useEditor();
@@ -21,8 +21,8 @@ export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
   const tabs: TabItem<ToolWindowId>[] = windowsOfSide('bottom').map((id) => {
     const meta = toolWindowMeta(id);
     const title = meta.title();
-    // Comentários é a sexta aba: só o ícone e a contagem, para as seis caberem na largura
-    // mínima do canvas; o nome acessível e a dica continuam sendo o título.
+    // Comments is the sixth tab: only the icon and the count, so the six fit in the canvas's
+    // minimum width; the accessible name and the tooltip remain the title.
     const iconOnly = id === 'comments';
     return {
       id,

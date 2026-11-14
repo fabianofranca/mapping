@@ -3,16 +3,16 @@ import { t } from '../../i18n';
 import type { CiteCandidate, CiteGroup } from '../../model';
 import { place } from '../Popover';
 
-// O seletor do `@` no compositor (etapa Comentários, CM5, decisão 31): uma lista flutuante de
-// opções agrupadas ("aqui" primeiro), ancorada ao editor. O foco fica no editor, que aponta a
-// opção ativa por `aria-activedescendant`; aqui só se desenha e se escolhe com o mouse.
+// The `@` picker in the composer (stage Comments, CM5, decision 31): a floating list of
+// grouped options ("here" first), anchored to the editor. The focus stays in the editor, which points to the
+// active option via `aria-activedescendant`; here it only draws and chooses with the mouse.
 
-/** Id da opção `index` da lista `listId` (o editor o usa em `aria-activedescendant`). */
+/** Id of option `index` of list `listId` (the editor uses it in `aria-activedescendant`). */
 export const optionId = (listId: string, index: number): string => `${listId}-${index}`;
 
 interface CitePickerProps {
   readonly id: string;
-  /** O editor: a lista fica embaixo dele, com a largura dele no mínimo. */
+  /** The editor: the list sits below it, at least as wide as it. */
   readonly anchor: HTMLElement | null;
   readonly candidates: readonly CiteCandidate[];
   readonly active: number;
@@ -28,7 +28,7 @@ interface Section {
   }[];
 }
 
-/** As candidatas, já na ordem dos grupos, em seções seguidas; guarda o índice global. */
+/** The candidates, already in group order, in consecutive sections; keeps the global index. */
 function sectionsOf(candidates: readonly CiteCandidate[]): Section[] {
   const sections: { group: CiteGroup; items: Section['items'][number][] }[] = [];
   candidates.forEach((candidate, index) => {
@@ -61,7 +61,7 @@ export function CitePicker({
       document.removeEventListener('scroll', follow, true);
       globalThis.removeEventListener('resize', onClose);
     };
-    // `onClose` só avisa o editor; o posicionamento depende do tamanho da lista.
+    // `onClose` only notifies the editor; the positioning depends on the list size.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchor, candidates.length]);
 
@@ -77,7 +77,7 @@ export function CitePicker({
       role="listbox"
       aria-label={t('citation.picker')}
       ref={panel}
-      // Sem tirar o foco do editor.
+      // Without taking the focus off the editor.
       onMouseDown={(e) => e.preventDefault()}
     >
       {sectionsOf(candidates).map((section) => {

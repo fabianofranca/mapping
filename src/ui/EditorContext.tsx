@@ -105,6 +105,6 @@ export function EditorProvider({
 
 export function useEditor(): EditorContextValue {
   const value = useContext(EditorContext);
-  if (!value) throw new Error('useEditor fora do EditorProvider');
+  if (!value) throw new Error('useEditor outside the EditorProvider');
   return value;
 }

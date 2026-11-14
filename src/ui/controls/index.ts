@@ -1,5 +1,5 @@
-// Controles base da interface (design system: docs/DESIGN-SYSTEM.md). O CSS está em
-// `src/theme/controls.css`; os estados vêm dos tokens, não do componente.
+// Base interface controls (design system: docs/DESIGN-SYSTEM.md). The CSS is in
+// `src/theme/controls.css`; the states come from the tokens, not from the component.
 export { Button, LinkButton, type ButtonVariant } from './Button';
 export { Chip } from './Chip';
 export { Choice } from './Choice';
