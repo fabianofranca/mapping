@@ -31,7 +31,7 @@ describe('paramTarget', () => {
 });
 
 describe('unmappedParams', () => {
-  it('lists, in the signature's order, what has no field: callback, modifier, slot and value', () => {
+  it("lists, in the signature's order, what has no field: callback, modifier, slot and value", () => {
     expect(unmappedParams(signature(), { params: { label: 'enabled' } })).toEqual([
       { name: 'onClick', role: 'callback', type: '() -> Unit', required: true },
       {
@@ -128,7 +128,7 @@ describe('paramsOutsideSignature', () => {
     ]);
   });
 
-  it('a positional beyond the signature's positional parameters is also outside', () => {
+  it("a positional beyond the signature's positional parameters is also outside", () => {
     expect(paramsOutsideSignature(signature(), { params: { a: '#0' } })).toEqual([
       { field: 'a', name: '#0' },
     ]);
@@ -152,7 +152,7 @@ describe('paramsOutsideSignature with the fieldModels expand (S5)', () => {
     'BorderStroke?': { expand: { call: 'BorderStroke', params: { width: 'Dp' } } },
   };
 
-  it('the member of the expand of the owner parameter's type model counts, even if the signature's factory is another', () => {
+  it("the member of the expand of the owner parameter's type model counts, even if the signature's factory is another", () => {
     const params = { w: 'border.width', e: 'border.enabled', x: 'border.nope' };
     expect(paramsOutsideSignature(withBorder(), { params })).toEqual([
       { field: 'w', name: 'border.width' },
@@ -257,7 +257,7 @@ describe('paramsOutsideSignature and the importer use the same expansion (CL1, S
   const outside = (value: string): string[] =>
     paramsOutsideSignature(sig(), { params: { f: value } }, models).map((o) => o.name);
 
-  it('the factory argument that the model's expand does not expand is outside', () => {
+  it("the factory argument that the model's expand does not expand is outside", () => {
     // the importer expands `colors` by the model (foo), not by the factory (containerColor)
     expect(outside('colors.foo')).toEqual([]);
     expect(outside('colors.containerColor')).toEqual(['colors.containerColor']);

@@ -47,7 +47,7 @@ describe('formatVersion 15: structural', () => {
     expect(paths).toContain('layers[0].annotationTypes[0].structural');
   });
 
-  it('structural together with component fails at the type's path', () => {
+  it("structural together with component fails at the type's path", () => {
     const found = issuesOf(spec({ structural: true, component: 'components/a.json' }));
     expect(found.map((i) => i.path)).toContain('layers[0].annotationTypes[0].structural');
   });

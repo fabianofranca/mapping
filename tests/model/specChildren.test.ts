@@ -22,7 +22,7 @@ import { parsedV11, type Json } from './specV11Fixtures';
 const owner = (s: Json) => s.layers[0].annotationTypes[0] as Json;
 
 describe('childTypeIds: the set of children of a type', () => {
-  it('clause without groups: the whole layer, in the layer's order', () => {
+  it("clause without groups: the whole layer, in the layer's order", () => {
     const spec = parsedV11();
     expect(childTypeIds(spec, 'button')).toEqual([
       'onClick',
@@ -33,7 +33,7 @@ describe('childTypeIds: the set of children of a type', () => {
     ]);
   });
 
-  it('clause with groups: only the layer's types that are in some group, in the layer's order', () => {
+  it("clause with groups: only the layer's types that are in some group, in the layer's order", () => {
     const spec = parsedV11((s) => {
       owner(s).allowedChildren = [{ layer: 'eventos', groups: ['dados', 'navegacao'] }];
     });
@@ -107,7 +107,7 @@ describe('isChildTypeAllowed and ownerTypeIds', () => {
     expect(ownerTypeIds(spec, 'nothing')).toEqual([]);
   });
 
-  it('the owners come out in the specialization's order', () => {
+  it("the owners come out in the specialization's order", () => {
     const spec = parsedV11((s) => {
       s.layers[0].annotationTypes[2].allowedChildren = [{ layer: 'eventos' }];
       s.layers[0].annotationTypes[1].allowedChildren = [{ layer: 'eventos' }];
@@ -136,7 +136,7 @@ describe('the project reads go through the resolver', () => {
     });
   }
 
-  it('childTypesOf lists the clause's children, with each one's project layer', () => {
+  it("childTypesOf lists the clause's children, with each one's project layer", () => {
     const p = project((s) => {
       owner(s).allowedChildren = [{ layer: 'eventos', groups: ['dados'] }, 'onHold'];
     });

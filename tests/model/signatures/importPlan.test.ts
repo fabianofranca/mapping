@@ -117,7 +117,7 @@ describe('rule by role and value.kind (decision 5)', () => {
     });
   });
 
-  it('boolean uses the options of the library's `boolean` model', () => {
+  it("boolean uses the options of the library's `boolean` model", () => {
     const spec = librarySpec((s) => {
       s.fieldModels.compose.boolean = { type: 'enum', options: ['Yes', 'No'] };
     });
@@ -150,7 +150,7 @@ describe('rule by role and value.kind (decision 5)', () => {
     expect(plan.type.notices).toBeUndefined();
   });
 
-  it('the code's `ignore` leaves the parameter out on purpose: no field, no notice and out of unmapped', () => {
+  it("the code's `ignore` leaves the parameter out on purpose: no field, no notice and out of unmapped", () => {
     const signature = composeSignature([
       text('label'),
       text('subtitle'),
@@ -253,7 +253,7 @@ describe('field models and expansion (decision 5)', () => {
     });
   });
 
-  it('the default's factory expands into one field per parameter, with the colliding key', () => {
+  it("the default's factory expands into one field per parameter, with the colliding key", () => {
     const plan = run(librarySpec(), {
       signature: composeSignature([
         factory('colors', 'ButtonDefaults.buttonColors', [colorParam('containerColor')]),
@@ -446,7 +446,7 @@ describe('idempotence and importer notices (decision 8)', () => {
     expect(second.versionBump).toBe(false);
   });
 
-  it('rewrites the notices with the signature's ref and leaves the others alone', () => {
+  it("rewrites the notices with the signature's ref and leaves the others alone", () => {
     const spec = librarySpec((s) => {
       buttonOf(s).notices = [
         { kind: 'deprecated', message: 'authored', ref: 'issue-1' },
@@ -575,7 +575,7 @@ describe('synchronization (decision 12)', () => {
     expect(plan.versionBump).toBe(true);
   });
 
-  it('the parameter's kind changed: diverges', () => {
+  it("the parameter's kind changed: diverges", () => {
     const next = composeSignature(
       previous.params.map((p) =>
         p.name === 'label' ? { ...p, type: 'Int', value: { kind: 'integer' } } : { ...p },
@@ -653,7 +653,7 @@ describe('variants (decision 9)', () => {
     },
   );
 
-  it('one signature per case: union of fields, the case's calls and the case's unmapped', () => {
+  it("one signature per case: union of fields, the case's calls and the case's unmapped", () => {
     const first = run(spec(), { signature: base });
     const plan = run(first.spec, { variant: 'outlined', signature: outlined });
     expect(plan.signaturePath).toBe('signatures/button.outlined.compose.json');
@@ -694,7 +694,7 @@ describe('variants (decision 9)', () => {
     expect(pending[1]?.message).toMatch(/^compose: case `outlined`: the parameter/);
   });
 
-  it('reimporting the base signature after the case's does not reorder the notices (the signature's own stay where they were)', () => {
+  it("reimporting the base signature after the case's does not reorder the notices (the signature's own stay where they were)", () => {
     const inset: SignatureParam = {
       name: 'windowInsets',
       role: 'value',
@@ -718,7 +718,7 @@ describe('variants (decision 9)', () => {
     expect(again.spec).toEqual(second.spec);
   });
 
-  it('the symbol of the case signature must be the case's', () => {
+  it("the symbol of the case signature must be the case's", () => {
     const wrong = composeSignature([text('label')]);
     const result = planSignatureImport(spec(), {
       type: 'button',
@@ -846,7 +846,7 @@ describe('S2 review: binding, formats, variants and design', () => {
     expect(noticesOf(field(plan, 'title')?.notices)).toEqual([]);
   });
 
-  it('the case's hand-curated formats is not overwritten', () => {
+  it("the case's hand-curated formats is not overwritten", () => {
     const spec = librarySpec((s) => {
       const button = buttonOf(s);
       button.fields = [{ key: 'radius', type: 'number' }];

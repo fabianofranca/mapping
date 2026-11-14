@@ -160,7 +160,7 @@ describe('migrations: versions', () => {
     expectIssue(spec, `${M0}.to`, 'must be greater than "from" (2)');
   });
 
-  it('to beyond the package's version', () => {
+  it("to beyond the package's version", () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0].to = 4;
     expectIssue(spec, `${M0}.to`, 'cannot exceed "version" (3)');
@@ -364,7 +364,7 @@ describe('migrations: the new side exists in this version', () => {
     );
   });
 
-  it('map-values: the targets are in the field's options', () => {
+  it("map-values: the targets are in the field's options", () => {
     const spec = withSteps({
       op: 'map-values',
       type: 'button',
@@ -626,7 +626,7 @@ describe('migrations: table.column in map-values', () => {
     );
   });
 
-  it('the targets are in the column's options (not in another field's)', () => {
+  it("the targets are in the column's options (not in another field's)", () => {
     // "primary" is an option of the field "style", not of the column "rows.kind"
     const spec = map('rows.kind', { x: 'a', y: 'primary' });
     expectIssue(spec, `${S0}.values.y`, '"primary" is not in the options');
@@ -679,7 +679,7 @@ describe('migrations: table.column in fill-field', () => {
     ['rows.n', 'twelve', 'the value must be a number'],
     ['rows.d', '2026-02-30', 'must be a valid date YYYY-MM-DD'],
     ['rows.kind', 'z', 'must be one of the options'],
-  ])('the default must suit the column's type: %s with %j', (field, value, message) => {
+  ])("the default must suit the column's type: %s with %j", (field, value, message) => {
     expectIssue(fill(field, value), `${S0}.default`, message);
   });
 });
