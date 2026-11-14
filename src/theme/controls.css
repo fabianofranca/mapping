@@ -290,6 +290,9 @@ a.button {
   min-width: 0;
   appearance: none;
   padding-right: calc(var(--control-icon) + var(--space-3));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   cursor: pointer;
 }
 
