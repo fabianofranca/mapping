@@ -427,12 +427,14 @@ describe('painel.py — todo .md de docs/ e da raiz por seção (TS1, decisões 
 
   it('os .md de docs/ se comparam por seção; sem âncora ou a mesma âncora conflita', () => {
     const arq = 'docs/ARCHITECTURE.md';
-    expect(motivo(`${arq}#desempenho`, `${arq}#sessao-e-gravacao`)).toBe('#2 começa');
-    expect(motivo(`${arq}#desempenho`, `${arq}#desempenho`)).toBe(
-      `#2 arquivo ${arq}#desempenho com #1`,
+    expect(motivo(`${arq}#performance`, `${arq}#session-and-saving`)).toBe('#2 começa');
+    expect(motivo(`${arq}#performance`, `${arq}#performance`)).toBe(
+      `#2 arquivo ${arq}#performance com #1`,
     );
-    expect(motivo(arq, `${arq}#desempenho`)).toBe(`#2 arquivo ${arq}#desempenho com #1`);
-    expect(motivo(`${arq}#desempenho`, arq)).toBe(`#2 ficha incompleta (toca: ${arq})`);
+    expect(motivo(arq, `${arq}#performance`)).toBe(
+      `#2 arquivo ${arq}#performance com #1`,
+    );
+    expect(motivo(`${arq}#performance`, arq)).toBe(`#2 ficha incompleta (toca: ${arq})`);
   });
 
   it('os .md da raiz se comparam por seção, com ./ normalizado e .md novo da raiz', () => {
@@ -476,8 +478,8 @@ describe('painel.py — todo .md de docs/ e da raiz por seção (TS1, decisões 
   });
 
   it('pasta e glob continuam cobrindo tudo o que casam, com ou sem âncora', () => {
-    expect(motivo('docs/', 'docs/ARCHITECTURE.md#desempenho')).toBe(
-      '#2 arquivo docs/ARCHITECTURE.md#desempenho com #1',
+    expect(motivo('docs/', 'docs/ARCHITECTURE.md#performance')).toBe(
+      '#2 arquivo docs/ARCHITECTURE.md#performance com #1',
     );
     expect(motivo('docs/*.md', 'docs/FLOW.md#fase-de-correcao')).toBe(
       '#2 arquivo docs/FLOW.md#fase-de-correcao com #1',

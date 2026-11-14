@@ -1,109 +1,109 @@
-# Formato da ficha de assinatura (`mapping-signature`, `formatVersion` 1)
+# Signature sheet format (`mapping-signature`, `formatVersion` 1)
 
-A **ficha de assinatura** é um arquivo JSON que descreve, numa forma neutra, a assinatura de **uma coisa que se instancia**: os parâmetros de uma função `@Composable`, o `init` de uma view SwiftUI, as propriedades de um componente do Figma. Ela é **derivada**: quem a escreve lê a fonte (o agente, ou, em etapa seguinte, um extrator) e o resultado vive no pacote da biblioteca, ao lado da especialização, em `signatures/<tipo>.<plataforma>.json` (no caso de uma variante, `signatures/<tipo>.<caso>.<plataforma>.json`). O **servidor MCP nunca lê código**: o que ele lê, para dizer o que falta mapear, é só este JSON.
+The **signature sheet** is a JSON file that describes, in a neutral form, the signature of **one thing that gets instantiated**: the parameters of a `@Composable` function, the `init` of a SwiftUI view, the properties of a Figma component. It is **derived**: whoever writes it reads the source (the agent, or, in a later stage, an extractor) and the result lives in the library package, next to the specialization, in `signatures/<tipo>.<plataforma>.json` (for a variant, `signatures/<tipo>.<caso>.<plataforma>.json`). The **MCP server never reads code**: what it reads, to say what is left to map, is only this JSON.
 
-O schema está em [`signature.schema.json`](signature.schema.json). A validação do Mapping é a mesma da importação e do `validate_library`, com o caminho exato de cada erro (`params[3].factory.params[0].factory`).
+The schema is in [`signature.schema.json`](signature.schema.json). Mapping's validation is the same as the import's and `validate_library`'s, with the exact path of each error (`params[3].factory.params[0].factory`).
 
-## Para que serve
+## What it is for
 
-A especialização (`formatVersion` 16, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Assinaturas e modelos de campo") cita a ficha no `code` do tipo (`signature`). Com ela:
+The specialization (`formatVersion` 16, see [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Signatures and field templates") cites the sheet in the type's `code` (`signature`). With it:
 
-- o MCP devolve, no `code`, o `unmapped`: os parâmetros que nenhum campo liga e que o `ignore` não dispensa, na ordem da fonte (inclusive os obrigatórios, como o `onClick`);
-- o `validate_library` confere que o `params` do `code` aponta para parâmetros que existem (aviso `parâmetro fora da ficha: "<nome>"`) e que a ficha é a do mesmo símbolo e arquivo.
+- MCP returns, in the `code`, the `unmapped`: the parameters that no field binds and that `ignore` does not dismiss, in source order (including the required ones, such as `onClick`);
+- `validate_library` checks that the `code`'s `params` point to parameters that exist (warning `parâmetro fora da ficha: "<nome>"`) and that the sheet is the one for the same symbol and file.
 
-A ficha não guarda nada da solução nem do projeto; ela só registra o que a fonte declara.
+The sheet stores nothing about the solution or the project; it only records what the source declares.
 
-## O objeto
+## The object
 
-Objeto **estrito**: uma chave desconhecida é erro (`propriedade desconhecida: "x"`).
+**Strict** object: an unknown key is an error (`propriedade desconhecida: "x"`).
 
-| Chave           | Obrigatória | Descrição                                                                                                               |
-| --------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `format`        | sim         | Sempre `"mapping-signature"`.                                                                                           |
-| `formatVersion` | sim         | `1`. É a versão **da ficha**, independente da versão da especialização, da biblioteca e do projeto.                     |
-| `source`        | sim         | De onde a assinatura saiu (abaixo).                                                                                     |
-| `params`        | sim         | Lista dos parâmetros, **na ordem da fonte**. Nome repetido é erro (`parâmetro "x" repetido`). Pode ser vazia.           |
-| `doc`           | não         | Documentação por parâmetro: nome do parâmetro → texto (o `@param` do KDoc, o `///` do Swift, a `description` do Figma). |
+| Key             | Required | Description                                                                                                    |
+| --------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
+| `format`        | yes      | Always `"mapping-signature"`.                                                                                  |
+| `formatVersion` | yes      | `1`. It is the version **of the sheet**, independent of the specialization, library and project versions.      |
+| `source`        | yes      | Where the signature came from (below).                                                                         |
+| `params`        | yes      | List of parameters, **in source order**. A repeated name is an error (`parâmetro "x" repetido`). May be empty. |
+| `doc`           | no       | Documentation per parameter: parameter name → text (KDoc's `@param`, Swift's `///`, Figma's `description`).    |
 
-Nome de plataforma, de linguagem ou de sistema aparece **só em `source`**; o resto da ficha descreve parâmetros.
+A platform, language or system name appears **only in `source`**; the rest of the sheet describes parameters.
 
 ## `source`
 
-Tem dois formatos, conforme `kind`.
+It has two formats, depending on `kind`.
 
-**`kind: "code"`** (uma função, uma view, uma classe):
+**`kind: "code"`** (a function, a view, a class):
 
-| Chave       | Obrigatória | Descrição                                                                                                                                             |
-| ----------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kind`      | sim         | `"code"`.                                                                                                                                             |
-| `platform`  | sim         | O id da plataforma da especialização (`compose`, `swiftui`).                                                                                          |
-| `language`  | sim         | A linguagem lida (`kotlin`, `swift`).                                                                                                                 |
-| `symbol`    | sim         | O que se chama, com o nome completo (`androidx.compose.material3.Button`). Precisa ser igual ao `symbol` do `code` que cita a ficha.                  |
-| `path`      | sim         | O arquivo que o define, relativo à raiz do repositório. Precisa ser igual ao `path` do `code`, quando ele o declara.                                  |
-| `ref`       | não         | O commit, a tag ou o branch lido.                                                                                                                     |
-| `extractor` | sim         | Quem escreveu a ficha: `mapping-signature/<leitor>@<versão>` (um extrator, como `mapping-signature/kotlin@1`) ou `agent` (o agente que leu o código). |
-| `overload`  | não         | Inteiro de 0 em diante: a sobrecarga escolhida (Kotlin).                                                                                              |
-| `init`      | não         | Inteiro de 0 em diante: o `init` escolhido (Swift).                                                                                                   |
+| Key         | Required | Description                                                                                                                                                |
+| ----------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`      | yes      | `"code"`.                                                                                                                                                  |
+| `platform`  | yes      | The specialization's platform id (`compose`, `swiftui`).                                                                                                   |
+| `language`  | yes      | The language read (`kotlin`, `swift`).                                                                                                                     |
+| `symbol`    | yes      | What gets called, with the full name (`androidx.compose.material3.Button`). Must equal the `symbol` of the `code` that cites the sheet.                    |
+| `path`      | yes      | The file that defines it, relative to the repository root. Must equal the `code`'s `path`, when it declares one.                                           |
+| `ref`       | no       | The commit, tag or branch read.                                                                                                                            |
+| `extractor` | yes      | Who wrote the sheet: `mapping-signature/<leitor>@<versão>` (an extractor, such as `mapping-signature/kotlin@1`) or `agent` (the agent that read the code). |
+| `overload`  | no       | Integer from 0 up: the overload chosen (Kotlin).                                                                                                           |
+| `init`      | no       | Integer from 0 up: the `init` chosen (Swift).                                                                                                              |
 
-**`kind: "design"`** (um componente de um sistema de design):
+**`kind: "design"`** (a component of a design system):
 
-| Chave       | Obrigatória | Descrição                      |
-| ----------- | ----------- | ------------------------------ |
-| `kind`      | sim         | `"design"`.                    |
-| `system`    | sim         | O sistema de design (`figma`). |
-| `id`        | sim         | O id do componente no sistema. |
-| `name`      | sim         | O nome do componente.          |
-| `extractor` | sim         | Como em `code`.                |
+| Key         | Required | Description                       |
+| ----------- | -------- | --------------------------------- |
+| `kind`      | yes      | `"design"`.                       |
+| `system`    | yes      | The design system (`figma`).      |
+| `id`        | yes      | The component's id in the system. |
+| `name`      | yes      | The component's name.             |
+| `extractor` | yes      | As in `code`.                     |
 
 ## `params`
 
-Cada parâmetro é um objeto estrito:
+Each parameter is a strict object:
 
-| Chave      | Obrigatória | Descrição                                                                                                                                                     |
-| ---------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`     | sim         | O nome do parâmetro na fonte.                                                                                                                                 |
-| `label`    | não         | O rótulo externo, no Swift (`func f(_ text: String)` tem `label: "_"`). `_` quer dizer **posicional**: é o que o `#n` de `params` da especialização endereça. |
-| `id`       | não         | O id do parâmetro na fonte (o sufixo `#<id>` do nome de uma propriedade do Figma).                                                                            |
-| `role`     | sim         | O que o parâmetro é para a tela (abaixo).                                                                                                                     |
-| `type`     | sim         | O texto do tipo na fonte, normalizado só nos espaços (`Boolean`, `() -> Unit`, `@Composable RowScope.() -> Unit`).                                            |
-| `default`  | não         | O texto do padrão na fonte (`Modifier`, `ButtonDefaults.buttonColors()`).                                                                                     |
-| `required` | não         | `true` quando a fonte exige o parâmetro (sem padrão). Ausente vale `false`.                                                                                   |
-| `value`    | não         | Só em `role: "value"`: o que o dado é e como se escreve (abaixo).                                                                                             |
-| `factory`  | não         | A fábrica do padrão, para um parâmetro cujo valor se monta por uma função (abaixo).                                                                           |
+| Key        | Required | Description                                                                                                                                                         |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`     | yes      | The parameter's name in the source.                                                                                                                                 |
+| `label`    | no       | The external label, in Swift (`func f(_ text: String)` has `label: "_"`). `_` means **positional**: it is what the `#n` of the specialization's `params` addresses. |
+| `id`       | no       | The parameter's id in the source (the `#<id>` suffix of a Figma property's name).                                                                                   |
+| `role`     | yes      | What the parameter is for the screen (below).                                                                                                                       |
+| `type`     | yes      | The type text in the source, normalized only in whitespace (`Boolean`, `() -> Unit`, `@Composable RowScope.() -> Unit`).                                            |
+| `default`  | no       | The default's text in the source (`Modifier`, `ButtonDefaults.buttonColors()`).                                                                                     |
+| `required` | no       | `true` when the source requires the parameter (no default). Absent means `false`.                                                                                   |
+| `value`    | no       | Only in `role: "value"`: what the data is and how it is written (below).                                                                                            |
+| `factory`  | no       | The default's factory, for a parameter whose value is built by a function (below).                                                                                  |
 
 ### `role`
 
-| `role`     | O parâmetro é…                                                                                           |
-| ---------- | -------------------------------------------------------------------------------------------------------- |
-| `value`    | um dado que a tela mostra ou configura (texto, número, cor, booleano, opção): candidato a campo do tipo. |
-| `slot`     | conteúdo que se põe dentro (um `@Composable` `content`, um `ViewBuilder`).                               |
-| `callback` | um evento (`onClick`).                                                                                   |
-| `modifier` | um modificador de layout ou de estilo (`Modifier`).                                                      |
-| `state`    | um estado ou um controlador que o chamador cria (`interactionSource`, um `Binding`).                     |
-| `other`    | o que não cabe nos anteriores.                                                                           |
+| `role`     | The parameter is…                                                                                                     |
+| ---------- | --------------------------------------------------------------------------------------------------------------------- |
+| `value`    | data that the screen shows or configures (text, number, color, boolean, option): a candidate for a field of the type. |
+| `slot`     | content that goes inside (a `@Composable` `content`, a `ViewBuilder`).                                                |
+| `callback` | an event (`onClick`).                                                                                                 |
+| `modifier` | a layout or style modifier (`Modifier`).                                                                              |
+| `state`    | a state or a controller that the caller creates (`interactionSource`, a `Binding`).                                   |
+| `other`    | whatever does not fit the previous ones.                                                                              |
 
 ### `value`
 
-Objeto estrito: `kind`, `default?` e `options?`.
+Strict object: `kind`, `default?` and `options?`.
 
-| `kind`      | O dado é…                                                                                                     |
-| ----------- | ------------------------------------------------------------------------------------------------------------- |
-| `text`      | um texto.                                                                                                     |
-| `boolean`   | verdadeiro ou falso.                                                                                          |
-| `number`    | um número qualquer.                                                                                           |
-| `integer`   | um inteiro.                                                                                                   |
-| `dimension` | uma medida, **em unidades do componente**: 1 dp no Compose, 1 pt no SwiftUI, 1 px CSS a 1x no Figma e na web. |
-| `enum`      | uma opção entre constantes; `options` é **obrigatório** e lista as constantes no texto da fonte.              |
-| `color`     | uma cor.                                                                                                      |
-| `opaque`    | algo que o formato não representa (uma forma, um objeto): a ficha só registra que existe.                     |
+| `kind`      | The data is…                                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------------ |
+| `text`      | a text.                                                                                                      |
+| `boolean`   | true or false.                                                                                               |
+| `number`    | any number.                                                                                                  |
+| `integer`   | an integer.                                                                                                  |
+| `dimension` | a measure, **in component units**: 1 dp in Compose, 1 pt in SwiftUI, 1 CSS px at 1x in Figma and on the web. |
+| `enum`      | one option among constants; `options` is **required** and lists the constants as written in the source.      |
+| `color`     | a color.                                                                                                     |
+| `opaque`    | something the format does not represent (a shape, an object): the sheet only records that it exists.         |
 
-`default` é o padrão **literal** que dá para representar (texto, número ou `true`/`false`); um padrão que é uma expressão (`ButtonDefaults.shape`) fica só no `default` do parâmetro, em texto. `options` fora de `enum` é erro.
+`default` is the **literal** default that can be represented (text, number or `true`/`false`); a default that is an expression (`ButtonDefaults.shape`) stays only in the parameter's `default`, as text. `options` outside `enum` is an error.
 
 ### `factory`
 
-Um parâmetro cujo valor se monta por uma função (`colors: ButtonColors = ButtonDefaults.buttonColors()`) leva `factory`: `{ call, params }`, em que `call` é o símbolo da fábrica e `params` são os parâmetros dela, no mesmo formato de `params`. É **um nível só**: `factory` dentro de `factory` é erro (`a fábrica não pode ter fábrica: só um nível`). A especialização liga um campo ao argumento da fábrica por caminho (`colors.containerColor`).
+A parameter whose value is built by a function (`colors: ButtonColors = ButtonDefaults.buttonColors()`) carries `factory`: `{ call, params }`, where `call` is the factory's symbol and `params` are its parameters, in the same format as `params`. It is **one level only**: `factory` inside `factory` is an error (`a fábrica não pode ter fábrica: só um nível`). The specialization binds a field to the factory's argument by path (`colors.containerColor`).
 
-## Exemplo completo: o `Button` do Compose
+## Complete example: Compose's `Button`
 
 ```json
 {
@@ -164,9 +164,9 @@ Um parâmetro cujo valor se monta por uma função (`colors: ButtonColors = Butt
 }
 ```
 
-## Exemplo: uma view SwiftUI (extrator `swift`)
+## Example: a SwiftUI view (`swift` extractor)
 
-O `init` explícito de `ProfileCard` (`init(_ title: String, badge badgeCount: Int = 0, style: Style = .compact, onTap: (() -> Void)? = nil, @ViewBuilder content: () -> Content)`), como o `mapping-signature swift` o escreve. `name` é o nome **interno** da propriedade, `label` o rótulo externo (`_` é o posicional, o `#0` do `code.params`); o padrão `.compact` vira a opção `compact`; o `doc` vem do `- Parameters:` e do `///`.
+The explicit `init` of `ProfileCard` (`init(_ title: String, badge badgeCount: Int = 0, style: Style = .compact, onTap: (() -> Void)? = nil, @ViewBuilder content: () -> Content)`), as `mapping-signature swift` writes it. `name` is the property's **internal** name, `label` the external label (`_` is the positional, the `#0` of `code.params`); the `.compact` default becomes the `compact` option; the `doc` comes from `- Parameters:` and from `///`.
 
 ```json
 {
@@ -217,11 +217,11 @@ O `init` explícito de `ProfileCard` (`init(_ title: String, badge badgeCount: I
 }
 ```
 
-Importada, a ficha dá o campo `title` ligado ao argumento posicional (`code.params`: `"title": "#0"`) e `badgeCount` ligado ao rótulo `badge`; `onTap` e `content` ficam em `unmapped`.
+Once imported, the sheet gives the `title` field bound to the positional argument (`code.params`: `"title": "#0"`) and `badgeCount` bound to the `badge` label; `onTap` and `content` stay in `unmapped`.
 
-## Exemplo: um componente do Figma (extrator `figma`)
+## Example: a Figma component (`figma` extractor)
 
-As `componentPropertyDefinitions` de um `COMPONENT_SET`. O sufixo `#<id>` do nome sai de `name` e vai para `id`; `VARIANT` é `enum` com `options`, `BOOLEAN` é `boolean`, `TEXT` é `text` e `INSTANCE_SWAP` é `slot`. A ficha é de design (`kind: "design"`), por isso a importação a liga em `sources` do tipo e o `style` existente ganha o `values` do `VARIANT`.
+The `componentPropertyDefinitions` of a `COMPONENT_SET`. The `#<id>` suffix of the name leaves `name` and goes to `id`; `VARIANT` is `enum` with `options`, `BOOLEAN` is `boolean`, `TEXT` is `text` and `INSTANCE_SWAP` is `slot`. The sheet is a design one (`kind: "design"`), so the import links it in the type's `sources` and the existing `style` gains the `VARIANT`'s `values`.
 
 ```json
 {
@@ -259,15 +259,15 @@ As `componentPropertyDefinitions` de um `COMPONENT_SET`. O sufixo `#<id>` do nom
 }
 ```
 
-## Como a especialização a cita
+## How the specialization cites it
 
-No `code.<plataforma>` do tipo (e em cada caso de `variants`), `signature` é o caminho da ficha no pacote; ao lado ficam `ignore`, `calls` e `formats`, e o `params` pode usar caminho e posicional. Nas `sources` do tipo (origem de design), `signature` é a ficha de design. O formato completo, a regra de soma das `variants` e os erros estão em [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Assinaturas e modelos de campo". O recurso `mapping-docs://SIGNATURE-FORMAT.md` do servidor MCP entrega este documento.
+In the type's `code.<platform>` (and in each case of `variants`), `signature` is the sheet's path in the package; next to it come `ignore`, `calls` and `formats`, and `params` may use a path and a positional. In the type's `sources` (design origin), `signature` is the design sheet. The complete format, the `variants` summing rule and the errors are in [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Signatures and field templates". The MCP server's resource `mapping-docs://SIGNATURE-FORMAT.md` delivers this document.
 
-## Erros de validação
+## Validation errors
 
-Cada erro traz o caminho dentro da ficha (a raiz é vazia). Os principais:
+Each error carries the path inside the sheet (the root is empty). The main ones:
 
-| Caminho                               | Mensagem                                                                      |
+| Path                                  | Message                                                                       |
 | ------------------------------------- | ----------------------------------------------------------------------------- |
 |                                       | `propriedade desconhecida: "x"`; `deve ser um objeto`                         |
 | `format`                              | `deve ser "mapping-signature"`                                                |
@@ -284,8 +284,8 @@ Cada erro traz o caminho dentro da ficha (a raiz é vazia). Os principais:
 | `params[4].factory.params[0].factory` | `a fábrica não pode ter fábrica: só um nível`                                 |
 | `doc.<nome>`                          | `deve ser texto`                                                              |
 
-No `validate_library`, o arquivo da ficha que a especialização cita e que não existe (`arquivo não encontrado`), o JSON inválido e o `source.symbol` ou `source.path` diferentes do `code` também são erros; o `params` que aponta para um parâmetro ausente da ficha é aviso.
+In `validate_library`, the sheet file that the specialization cites and that does not exist (`arquivo não encontrado`), invalid JSON and a `source.symbol` or `source.path` different from the `code`'s are also errors; a `params` that points to a parameter absent from the sheet is a warning.
 
-## Versão do formato
+## Format version
 
-A `formatVersion` da ficha é **1**. Ela é independente da `formatVersion` da especialização (a 16 é a primeira que cita fichas), do componente e do projeto. Uma ficha de versão diferente é recusada com `formatVersion: deve ser 1`.
+The sheet's `formatVersion` is **1**. It is independent of the `formatVersion` of the specialization (16 is the first that cites sheets), of the component and of the project. A sheet of a different version is refused with `formatVersion: deve ser 1`.

@@ -43,10 +43,10 @@ describe('versão do formato nos docs dos agentes', () => {
     expect(listed).toEqual(expected);
   });
 
-  it('(d) o SPEC-FORMAT.md tem "A `formatVersion` k é a k−1" para cada k de 2 a N', () => {
+  it('(d) SPEC-FORMAT.md has "`formatVersion` k is k−1 plus" for each k from 2 to N', () => {
     for (let k = 2; k <= N; k += 1) {
-      expect(FORMAT, `falta "A \`formatVersion\` ${k} é a ${k - 1}"`).toContain(
-        `A \`formatVersion\` ${k} é a ${k - 1} `,
+      expect(FORMAT, `missing "\`formatVersion\` ${k} is ${k - 1}"`).toContain(
+        `\`formatVersion\` ${k} is ${k - 1} `,
       );
     }
   });
