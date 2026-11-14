@@ -1,6 +1,6 @@
 export type InstallPlatform = 'ios' | 'android' | 'other';
 
-/** iPadOS 13+ se apresenta como "Macintosh", mas tem tela de toque. */
+/** iPadOS 13+ presents itself as "Macintosh", but has a touch screen. */
 export function detectPlatform(
   userAgent: string,
   maxTouchPoints: number,
@@ -11,7 +11,7 @@ export function detectPlatform(
   return 'other';
 }
 
-/** A app está aberta como PWA instalada (sem a barra do navegador). */
+/** The app is open as an installed PWA (without the browser bar). */
 export function isStandalone(): boolean {
   try {
     if (window.matchMedia('(display-mode: standalone)').matches) return true;
@@ -21,12 +21,16 @@ export function isStandalone(): boolean {
   }
 }
 
-/** O navegador roda no macOS (Ctrl+clique ali é o clique direito). Puro: recebe os textos. */
+/**
+ * The browser runs on macOS (Ctrl+click there is the right click). Pure: it receives the strings.
+ */
 export function isApplePlatform(userAgent: string, platform: string): boolean {
   return /^Mac/i.test(platform) || /Macintosh/.test(userAgent);
 }
 
-/** Lê a plataforma do navegador na hora (sem cache: o teste e a app trocam o `navigator`). */
+/**
+ * Reads the browser's platform on the spot (no cache: the test and the app swap the `navigator`).
+ */
 export function onApplePlatform(): boolean {
   return isApplePlatform(
     globalThis.navigator?.userAgent ?? '',
@@ -35,8 +39,8 @@ export function onApplePlatform(): boolean {
 }
 
 /**
- * O clique é da seleção múltipla: Shift, Cmd (`metaKey`) ou, fora do macOS, Ctrl. No macOS
- * Ctrl+clique é o clique direito (menu de contexto) e não junta.
+ * The click belongs to multi-selection: Shift, Cmd (`metaKey`) or, outside macOS, Ctrl. On macOS
+ * Ctrl+click is the right click (context menu) and does not add.
  */
 export function isMultiSelectClick(
   e: Pick<MouseEvent, 'shiftKey' | 'ctrlKey' | 'metaKey'>,
