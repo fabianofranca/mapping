@@ -41,8 +41,8 @@ export function formatArrowHandles(shape: ArrowShape, view: Viewport): string {
 }
 
 /**
- * `"<id> <x> <y> <largura> <altura> <escala>"` por container colocado, em unidades do canvas e na
- * ordem de `containers`, separados por `;`. `null` sem container colocado.
+ * `"<id> <x> <y> <width> <height> <scale>"` per placed container, em unidades do canvas e na
+ * order of `containers`, separated by `;`. `null` without a placed container.
  */
 export function formatContainerBoxes(
   containers: readonly ProjectContainer[],

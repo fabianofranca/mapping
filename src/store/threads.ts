@@ -37,7 +37,7 @@ import { reportError } from '../utils/report';
 export type ThreadStoreError =
   /** There is no thread with that id. */
   | 'unknown-thread'
-  /** O arquivo sumiu por fora. */
+  /** The file vanished from outside. */
   | 'gone'
   /** The file changed outside and became unreadable: what was not read is not overwritten. */
   | 'unreadable'
@@ -97,7 +97,7 @@ export interface ThreadStore {
   remove(id: string): Promise<{ readonly ok: true } | (ThreadOutcome & { ok: false })>;
   /** Deletes several, one at a time, in the queue. */
   removeMany(ids: readonly string[]): Promise<RemoveManyResult>;
-  /** Confere `comments/` (sem `resolved/`): conversas novas, alteradas e apagadas por fora. */
+  /** Checks `comments/` (without `resolved/`): threads added, changed and deleted from outside. */
   scan(): Promise<ThreadScan>;
   /** Reads `comments/resolved/` (on opening the session already read it; on request, again). */
   loadResolved(): Promise<void>;
@@ -426,7 +426,7 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     }
   };
 
-  /** Conversas cujo arquivo aberto sumiu: apagadas, ou movidas para `resolved/` por fora. */
+  /** Threads whose open file vanished: deleted, or moved to `resolved/` from outside. */
   const scanVanished = async (present: ReadonlySet<string>, scan: MutableScan) => {
     for (const [id, copies] of [...known]) {
       if (present.has(id) || copies.open === null) continue;

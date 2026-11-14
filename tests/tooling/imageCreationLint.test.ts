@@ -17,7 +17,7 @@ async function restricted(code: string, filePath: string): Promise<string[]> {
     .map((m) => m.message);
 }
 
-const IMAGE_MARK = 'URL de imagem por fora';
+const IMAGE_MARK = 'image URL outside';
 const imageErrors = async (code: string, filePath: string) =>
   (await restricted(code, filePath)).filter((m) => m.includes(IMAGE_MARK));
 

@@ -19,24 +19,24 @@ import {
   type TypeParts,
 } from './types';
 
-// Um parâmetro Swift: o que se lê da fonte (`RawParam`, do `init` ou da propriedade do memberwise)
-// e a entrada da ficha (`buildParam`: o `role`, o `value.kind` e o `default` literal).
+// A Swift parameter: what is read from the source (`RawParam`, from the `init` or the memberwise
+// property) and the record entry (`buildParam`: the `role`, the `value.kind` and the literal `default`).
 
 export interface RawParam {
   readonly name: string;
-  /** O rótulo externo, só quando difere do nome (`_` é posicional). */
+  /** The external label, only when it differs from the name (`_` is positional). */
   readonly label?: string;
-  /** O texto do tipo na fonte, com os atributos da frente (`@ViewBuilder () -> Content`). */
+  /** The type text in the source, with the leading attributes (`@ViewBuilder () -> Content`). */
   readonly type: string;
-  /** O texto do padrão, se há. */
+  /** The default's text, if any. */
   readonly default?: string;
-  /** O objeto de estado (`@ObservedObject`, `@Bindable`): papel `state`. */
+  /** The state object (`@ObservedObject`, `@Bindable`): role `state`. */
   readonly state?: boolean;
 }
 
 export interface BuildContext {
   readonly enums: EnumTable;
-  /** Os genéricos da struct que são `View`: o que tem esse tipo é um slot. */
+  /** The struct's generics that are `View`: whatever has that type is a slot. */
   readonly viewGenerics: ReadonlySet<string>;
 }
 
@@ -59,7 +59,7 @@ function roleOf(raw: RawParam, parts: TypeParts, ctx: BuildContext): SignatureRo
   return raw.state === true || binding ? 'state' : 'value';
 }
 
-/** A entrada da ficha: `name`, `label`, `role`, `type`, `default` (ou `required`) e, no `value`, o `value`. */
+/** The record entry: `name`, `label`, `role`, `type`, `default` (or `required`) and, for `value`, the `value`. */
 export function buildParam(raw: RawParam, ctx: BuildContext): SignatureParam {
   const parts = splitType(raw.type);
   const role = roleOf(raw, parts, ctx);
@@ -80,7 +80,7 @@ function findColon(stream: TokenStream, from: number, to: number): number | unde
   return undefined;
 }
 
-/** O nome interno e o rótulo externo (só se difere) dos nomes antes do `:`. */
+/** The internal name and the external label (only if it differs) from the names before the `:`. */
 function readNames(
   stream: TokenStream,
   range: Range,
@@ -94,7 +94,7 @@ function readNames(
     throw errorAtToken(
       stream,
       Math.min(from, range.to - 1),
-      'parâmetro mal formado: esperado "[rótulo] nome: Tipo"',
+      'malformed parameter: expected "[label] name: Type"',
     );
   }
   const name = caseName(tokens[tokens.length - 1]!.text);
@@ -102,7 +102,7 @@ function readNames(
   return label === undefined || label === name ? { name } : { name, label };
 }
 
-/** Um parâmetro da lista do `init`: `[@Atributo] [rótulo] nome: [@escaping] Tipo [= padrão]`. */
+/** A parameter of the `init` list: `[@Attribute] [label] name: [@escaping] Type [= default]`. */
 function readInitParam(stream: TokenStream, range: Range): RawParam {
   const lead = readAnnotations(stream, range.from, range.to);
   const colon = findColon(stream, lead.end, range.to);
@@ -110,16 +110,20 @@ function readInitParam(stream: TokenStream, range: Range): RawParam {
     throw errorAtToken(
       stream,
       range.from,
-      'parâmetro mal formado: esperado "[rótulo] nome: Tipo"',
+      'malformed parameter: expected "[label] name: Type"',
     );
   }
   const names = readNames(stream, range, lead.end, colon);
   const eq = findEquals(stream, colon + 1, range.to);
   const typeTo = eq ?? range.to;
   if (typeTo <= colon + 1)
-    throw errorAtToken(stream, colon, `parâmetro "${names.name}" sem tipo`);
+    throw errorAtToken(stream, colon, `parameter "${names.name}" has no type`);
   if (eq !== undefined && eq + 1 >= range.to) {
-    throw errorAtToken(stream, eq, `parâmetro "${names.name}" sem valor depois do "="`);
+    throw errorAtToken(
+      stream,
+      eq,
+      `parameter "${names.name}" has no value after the "="`,
+    );
   }
   const attributes =
     lead.end > range.from ? joinTokens(stream, range.from, lead.end) : '';
@@ -131,7 +135,7 @@ function readInitParam(stream: TokenStream, range: Range): RawParam {
   };
 }
 
-/** Os parâmetros da lista `(open … close)` de um `init`, na ordem da fonte. */
+/** The parameters of an `init`'s `(open … close)` list, in source order. */
 export function readInitParams(
   stream: TokenStream,
   open: number,
@@ -140,7 +144,7 @@ export function readInitParams(
   return splitParams(stream, open, close).map((range) => readInitParam(stream, range));
 }
 
-/** Como se chama o parâmetro na chamada: `_`, o rótulo ou o nome (`title:` no `(_:badge:)`). */
+/** How the parameter is named in the call: `_`, the label or the name (`title:` in `(_:badge:)`). */
 export function callLabel(raw: RawParam): string {
   return raw.label ?? raw.name;
 }

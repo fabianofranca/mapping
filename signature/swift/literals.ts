@@ -5,8 +5,8 @@ import type {
 } from '../../src/model/signatures';
 import type { EnumTable } from '../paramList';
 
-// O `kind` de um `value` Swift pelo nome do tipo e o `default` quando o padrão é um literal
-// representável (`true`, `3`, `0.5`, `"OK"`, `CGFloat(8)`, `.filled`).
+// The `kind` of a Swift `value` by type name, and the `default` when the default is a
+// representable literal (`true`, `3`, `0.5`, `"OK"`, `CGFloat(8)`, `.filled`).
 
 const KIND_BY_TYPE: Readonly<Record<string, SignatureValueKind>> = {
   String: 'text',
@@ -57,10 +57,10 @@ const PARSERS: Readonly<Partial<Record<SignatureValueKind, LiteralParser>>> = {
   dimension: decimal,
 };
 
-/** O nome de um caso sem as crases (`` `default` `` → `default`). */
+/** The name of a case without the backticks (`` `default` `` → `default`). */
 export const caseName = (text: string): string => text.replace(/^`|`$/g, '');
 
-/** A opção a que o padrão (`.a`, `Tipo.a`, `Modulo.Tipo.a`) se refere, se existe no enum. */
+/** The option the default (`.a`, `Type.a`, `Module.Type.a`) refers to, if it exists in the enum. */
 function enumCase(
   text: string,
   name: string,
@@ -74,7 +74,7 @@ function enumCase(
   return option !== undefined && options.includes(option) ? option : undefined;
 }
 
-/** O `value` de um parâmetro de role `value`, pelo nome do tipo (já sem `?` nem qualificação). */
+/** The `value` of a parameter with role `value`, by type name (already without `?` or qualification). */
 export function valueFor(
   typeName: string,
   defaultText: string | undefined,
@@ -94,7 +94,7 @@ export function valueFor(
   return literal === undefined ? { kind } : { kind, default: literal };
 }
 
-/** O tipo de uma propriedade sem tipo escrito (`var count = 0`), pelo literal ou pelo construtor; `_` se não der. */
+/** The type of a property with no written type (`var count = 0`), from the literal or the initializer; `_` if it cannot be told. */
 export function inferType(defaultText: string | undefined): string {
   if (defaultText === undefined) return '_';
   if (defaultText === 'true' || defaultText === 'false') return 'Bool';

@@ -25,7 +25,7 @@ import * as view from './perspectiveGestures';
 import { openPerspectiveIn, type ArrivalInfo } from './perspectives';
 import { textMeasurer } from './textMeasure';
 
-/** Ponto em pixels (da imagem ou do canvas, conforme a action). */
+/** Point in pixels (of the image or of the canvas, depending on the action). */
 export interface Point {
   readonly x: number;
   readonly y: number;
@@ -281,10 +281,10 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     /** Project drawing mode (v18); `null` goes back to the first mode of each specialization. */
     setProjectDrawingMode: (mode: string | null) =>
       store.apply((p) => model.setProjectDrawingMode(p, mode)),
-    /** Modo do desenho que o container fixa; `null` volta a seguir o do projeto. */
+    /** Drawing mode the container pins; `null` goes back to following the project's. */
     setContainerDrawingMode: (containerId: string, mode: string | null) =>
       store.apply((p) => model.setContainerDrawingMode(p, containerId, mode)),
-    /** Densidade do container (v19); `null` volta a 1. Uma entrada de desfazer. */
+    /** Container density (v19); `null` goes back to 1. One undo entry. */
     setContainerDensity: (containerId: string, density: number | null) =>
       store.apply((p) => model.setContainerDensity(p, containerId, density)),
     /** Project reading direction (v20); `null` goes back to `ltr`. One undo entry. */
@@ -344,7 +344,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) =>
         model.replaceContainer(p, containerId, file, { ...options, ...settleOptions(p) }),
       ),
-    /** Numa perspectiva, excluir uma raiz recusa (`principal-only`). */
+    /** In a perspective, deleting a root is refused (`principal-only`). */
     removeContainer: (containerId: string) =>
       guarded(() =>
         store.apply((p) => {
@@ -352,7 +352,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
           return model.removeContainer(p, containerId, settleOptions(p));
         }),
       ),
-    /** Container sem arquivo: imagem sem arquivo, com tamanho e cor de fundo. */
+    /** Container without a file: an image without a file, with a size and a background color. */
     addBackgroundContainer: (args: {
       readonly name: string | null;
       readonly width: number;
@@ -728,7 +728,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
           return model.removeItems(p, items, settleOptions(p));
         }),
       ),
-    /** Tranca ou destranca todos os itens. */
+    /** Locks or unlocks all the items. */
     setItemsLocked: (items: readonly model.ItemRef[], locked: boolean) =>
       store.apply((p) => model.setItemsLocked(p, items, locked)),
 

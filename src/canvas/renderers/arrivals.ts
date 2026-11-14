@@ -83,7 +83,7 @@ export class ArrivalRenderer {
   private measuredSize: Frame['size'] | null = null;
   private watched: Element | null = null;
   private watcher: ResizeObserver | null = null;
-  /** Avisa quem desenha que o minimapa mudou de tamanho: o selo precisa de um quadro novo. */
+  /** Tells the drawer the minimap changed size: the badge needs a new frame. */
   private readonly onMinimapResize: (() => void) | undefined;
 
   constructor(layer: Konva.Container, onMinimapResize?: () => void) {
@@ -132,7 +132,7 @@ export class ArrivalRenderer {
     }
   }
 
-  /** O minimapa (HTML sobre o canvas) em unidades do canvas, ou `undefined` sem ele. */
+  /** The minimap (HTML over the canvas) in canvas units, or `undefined` without it. */
   private minimapArea(frame: ArrivalFrame): Rect | undefined {
     if (!frame.arrivals?.badges.length) return undefined;
     if (this.measuredSize !== frame.size) {
@@ -164,7 +164,7 @@ export class ArrivalRenderer {
     };
   }
 
-  /** Acompanha o tamanho do elemento do minimapa: ele cresce e encolhe com a vista. */
+  /** Follows the size of the minimap element: it grows and shrinks with the view. */
   private watch(map: Element | null): void {
     if (map === this.watched) return;
     this.watcher?.disconnect();
@@ -218,7 +218,7 @@ export class ArrivalRenderer {
       ...textAttrs(tokens, tokens.surface, tokens.type.name.weight),
       text,
     });
-    // O texto medido pode passar da estimativa (letras largas): o selo cresce com ele.
+    // The measured text can exceed the estimate (wide letters): the badge grows with it.
     const width = Math.max(
       arrivalBadgeWidth(text, tokens.arrival),
       node.label.getTextWidth() + 2 * tokens.arrival.pad,

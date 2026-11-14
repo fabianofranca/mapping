@@ -1,9 +1,9 @@
 import { readAttribute, type Attribute, type Range } from '../paramList';
 import { isPunct, joinTokens, topLevel, type TokenStream } from '../tokens';
 
-// As declarações de um corpo Swift (arquivo, struct, enum…): como o texto não tem `;` nem delimita
-// as linhas, um membro termina onde a próxima linha começa um token no nível de cima, a menos que
-// a linha anterior peça continuação (`,`, `=`, `->`, operador) ou só tenha atributos e modificadores.
+// The declarations of a Swift body (file, struct, enum…): since the text has no `;` and does not delimit
+// lines, a member ends where the next line starts a top-level token, unless the previous line
+// asks for continuation (`,`, `=`, `->`, operator) or has only attributes and modifiers.
 
 const MODIFIERS = new Set([
   'public',
@@ -28,16 +28,16 @@ const MODIFIERS = new Set([
   'nonisolated',
   'optional',
 ]);
-/** `class` só é modificador antes de um destes (`class var`, `class func`); senão é a declaração. */
+/** `class` is only a modifier before one of these (`class var`, `class func`); otherwise it is the declaration. */
 const CLASS_MEMBER = new Set(['var', 'let', 'func', 'subscript']);
-/** O que, no fim de uma linha, pede que a próxima continue a mesma declaração. */
+/** What, at the end of a line, asks the next one to continue the same declaration. */
 const CONTINUES = new Set([',', '.', ':', '=', '->', '&', '|', '+', '*', '/', '-', '\\']);
 
 export interface Prefix {
-  /** O índice do primeiro token depois dos atributos e modificadores. */
+  /** The index of the first token after the attributes and modifiers. */
   readonly end: number;
   readonly attributes: readonly Attribute[];
-  /** Os modificadores, com o `(set)` quando há: `public`, `private(set)`. */
+  /** The modifiers, with the `(set)` when present: `public`, `private(set)`. */
   readonly modifiers: readonly string[];
 }
 
@@ -48,7 +48,7 @@ function isModifier(stream: TokenStream, index: number): boolean {
   return CLASS_MEMBER.has(stream.tokens[index + 1]?.text ?? '');
 }
 
-/** O modificador em `index` e o índice depois dele (e do `(set)` colado). */
+/** The modifier at `index` and the index after it (and after the attached `(set)`). */
 function readModifier(
   stream: TokenStream,
   index: number,
@@ -61,7 +61,7 @@ function readModifier(
   return { text: `${text}(${joinTokens(stream, open + 1, close)})`, next: close + 1 };
 }
 
-/** Os atributos e modificadores que começam em `from` (até `to`). */
+/** The attributes and modifiers starting at `from` (up to `to`). */
 export function readPrefix(stream: TokenStream, from: number, to: number): Prefix {
   const attributes: Attribute[] = [];
   const modifiers: string[] = [];
@@ -80,20 +80,20 @@ export function readPrefix(stream: TokenStream, from: number, to: number): Prefi
   return { end: i, attributes, modifiers };
 }
 
-/** O token `index` começa uma linha? */
+/** Does the token `index` start a line? */
 function firstOnLine(stream: TokenStream, index: number): boolean {
   const previous = stream.tokens[index - 1];
   if (previous === undefined) return true;
   return stream.src.text.slice(previous.end, stream.tokens[index]!.start).includes('\n');
 }
 
-/** Pontuação que abre um membro (atributo, diretiva, tupla, colchete): só ela não continua a linha anterior. */
+/** Punctuation that opens a member (attribute, directive, tuple, bracket): only it does not continue the previous line. */
 const OPENS_MEMBER = new Set(['@', '#', '(', '[']);
 
 /**
- * A linha `index` continua a declaração anterior? Sim quando a anterior termina num operador ou
- * vírgula, ou quando esta começa por pontuação que não abre membro (`.`, `?`, `:`, `&&`, `{` em
- * linha própria…) ou pelo `where` do cabeçalho.
+ * Does the line `index` continue the previous declaration? Yes when the previous one ends in an operator or
+ * comma, or when this one starts with punctuation that does not open a member (`.`, `?`, `:`, `&&`, `{` on
+ * its own line…) or with the header's `where`.
  */
 function continuesBefore(stream: TokenStream, index: number): boolean {
   const previous = stream.tokens[index - 1]!;
@@ -103,7 +103,7 @@ function continuesBefore(stream: TokenStream, index: number): boolean {
   return next.kind === 'ident' && next.text === 'where';
 }
 
-/** Os intervalos de tokens de cada membro do trecho `[from, to)`. */
+/** The token ranges of each member of the span `[from, to)`. */
 export function splitMembers(stream: TokenStream, from: number, to: number): Range[] {
   const members: Range[] = [];
   let start = from;

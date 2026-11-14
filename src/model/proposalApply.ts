@@ -619,9 +619,9 @@ function validateOutcome(project: Project, pending: readonly Change[]): Outcome 
 }
 
 /**
- * Aplica as aceitas pendentes a uma cópia e valida: invariantes do modelo, especializações
- * citadas e mudanças que não puderam ser aplicadas. Só contam os problemas novos (os que o
- * projeto atual já tinha não bloqueiam).
+ * Applies the pending accepted changes to a copy and validates it: model invariants, cited
+ * specializations and changes that could not be applied. Only new problems count (the ones the
+ * current project already had do not block).
  */
 export function validateAccepted(project: Project, p: Proposal): AcceptedValidation {
   const pending = acceptedPending(p);

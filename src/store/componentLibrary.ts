@@ -26,7 +26,7 @@ import { createPendingTracker } from './pendingTracker';
 export interface ComponentLibrary {
   /** Components of the specializations applied to the confirmed project (only those already loaded). */
   readonly catalog: ReadonlySignal<ComponentCatalog>;
-  /** Sobe a cada registro de fontes terminado: os desenhos remedem. */
+  /** Goes up whenever a font registration finishes: the drawings re-measure. */
   readonly fontsEpoch: ReadonlySignal<number>;
   /** Status of each declared source (for Diagnostics). */
   readonly fonts: ReadonlySignal<readonly FontStatus[]>;
@@ -41,11 +41,11 @@ export interface ComponentLibrary {
 }
 
 export interface ComponentLibraryDeps {
-  /** O projeto confirmado (`store.committed`). */
+  /** The committed project (`store.committed`). */
   readonly project: ReadonlySignal<Project | null>;
-  /** Texto de um arquivo do projeto (`specs/<id>/components/x.json`), ou `null`. */
+  /** Text of a project file (`specs/<id>/components/x.json`), or `null`. */
   readonly readText: (path: string) => Promise<string | null>;
-  /** Bytes de um arquivo do projeto (fontes), ou `null`. */
+  /** Bytes of a project file (fonts), or `null`. */
   readonly readBytes: (path: string) => Promise<ArrayBuffer | null>;
   /**
    * In-memory package of the session (apply or update not yet written; undo), by id and
@@ -156,7 +156,7 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
   const entries = signal<ReadonlyMap<string, SpecComponents>>(new Map());
   const fontStatus = signal<readonly FontStatus[]>([]);
   const epoch = signal(0);
-  /** Sobe em `invalidate`, para os efeitos lerem de novo. */
+  /** Goes up on `invalidate`, so the effects read again. */
   const generation = signal(0);
   const loading = new Set<string>();
   /** Entries read before the last `invalidate`: they apply until the new one arrives. */

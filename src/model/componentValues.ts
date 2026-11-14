@@ -185,15 +185,15 @@ export function drawingValues(
  * whatever is `start`/`end`.
  */
 export function anchorValues(input: {
-  /** O `rect` da marcação (pixels do espaço dela). */
+  /** The marking's `rect` (pixels of its own space). */
   readonly rect: Rect;
-  /** O `rect` da marcação-âncora, no mesmo espaço. */
+  /** The `rect` of the anchor marking, in the same space. */
   readonly anchorRect: Rect;
   /** O `side` declarado em `marking.anchor`, se houver. */
   readonly side: AnchorSide | undefined;
-  /** O padrão do componente, quando a marcação não declara o lado. */
+  /** The component's default, when the marking does not declare the side. */
   readonly defaults: { readonly side: AnchorSide };
-  /** A densidade do espaço da marcação (`effectiveDensity`). */
+  /** The density of the marking's space (`effectiveDensity`). */
   readonly density: number;
 }): InstanceAnchor {
   const { rect, anchorRect, density } = input;

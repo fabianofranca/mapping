@@ -216,14 +216,14 @@ describe('erros (exit 1) com mensagem clara', () => {
     const result = extractFigma(files, '99:99');
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('nó 99:99 não encontrado em nodes.json\n');
+    expect(result.stderr).toBe('node 99:99 not found in nodes.json\n');
   });
 
   it('nó que não é COMPONENT_SET nem COMPONENT', () => {
     const result = extractFigma(files, '30:1');
     expect(result.code).toBe(1);
     expect(result.stderr).toBe(
-      'o nó 30:1 ("Home screen") é do tipo FRAME; esperado COMPONENT_SET ou COMPONENT\n',
+      'the node 30:1 ("Home screen") is of type FRAME; expected COMPONENT_SET or COMPONENT\n',
     );
   });
 
@@ -231,21 +231,21 @@ describe('erros (exit 1) com mensagem clara', () => {
     const result = extractFigma(files, '12:35');
     expect(result.code).toBe(1);
     expect(result.stderr).toContain(
-      'o nó 12:35 ("Style=Filled") não tem componentPropertyDefinitions',
+      'the node 12:35 ("Style=Filled") has no componentPropertyDefinitions',
     );
-    expect(result.stderr).toContain('use o id do COMPONENT_SET');
+    expect(result.stderr).toContain('use the id of the COMPONENT_SET');
   });
 
   it('JSON inválido, propriedade sem type e type que não é texto', () => {
     const bad = extractFigma({ 'nodes.json': '{ nope' }, '1:1');
     expect(bad.code).toBe(1);
-    expect(bad.stderr).toMatch(/^nodes\.json: JSON inválido: /);
+    expect(bad.stderr).toMatch(/^nodes\.json: invalid JSON: /);
     const noType = extractFigma(
       { 'nodes.json': JSON.stringify(set({ A: { defaultValue: 1 } })) },
       '1:1',
     );
     expect(noType.code).toBe(1);
-    expect(noType.stderr).toContain('a propriedade "A" não tem type');
+    expect(noType.stderr).toContain('the property "A" has no type');
   });
 
   it('arquivo ilegível é erro de extração', () => {

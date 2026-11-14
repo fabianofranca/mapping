@@ -50,7 +50,7 @@ function ConfirmDialog({
   return (
     <Dialog
       title={title}
-      // Destrutiva (excluir, fechar sem salvar): anunciada como alerta.
+      // Destructive (delete, close without saving): announced as an alert.
       alert={tone === 'danger'}
       onCancel={onCancel}
       actions={

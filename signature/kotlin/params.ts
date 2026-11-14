@@ -21,13 +21,13 @@ import {
 } from '../tokens';
 import { valueFor } from './literals';
 
-// A lista de parâmetros de uma função: separa por vírgulas no nível de cima (parênteses, chaves,
-// colchetes e `<>` de genéricos não separam) e lê cada `[anotações] [vararg] nome: Tipo [= padrão]`.
+// A function's parameter list: splits on top-level commas (parentheses, braces, brackets and
+// generic `<>` do not split) and reads each `[annotations] [vararg] name: Type [= default]`.
 
 const PARAM_MODIFIERS = new Set(['vararg', 'noinline', 'crossinline', 'val', 'var']);
 const STATE_SUFFIX = /(?:InteractionSource|State|FocusRequester|ScrollBehavior)$/;
 
-/** O tipo sem o `?` final e sem os parênteses que o envolvem inteiro: `(@Composable () -> Unit)?`. */
+/** The type without the trailing `?` and without the parentheses that wrap all of it: `(@Composable () -> Unit)?`. */
 function coreRange(stream: TokenStream, range: Range): Range {
   let { from, to } = range;
   for (;;) {
@@ -39,7 +39,7 @@ function coreRange(stream: TokenStream, range: Range): Range {
   }
 }
 
-/** O tipo tem `->` no nível de cima (função), fora dos `<>` de genéricos? */
+/** Does the type have a top-level `->` (a function), outside generic `<>`? */
 function isFunctionType(stream: TokenStream, range: Range): boolean {
   let angle = 0;
   for (const i of topLevel(stream, range.from, range.to)) {
@@ -50,7 +50,7 @@ function isFunctionType(stream: TokenStream, range: Range): boolean {
   return false;
 }
 
-/** O nome do tipo sem os argumentos de genéricos (`State<Int>` → `State`). */
+/** The type name without generic arguments (`State<Int>` → `State`). */
 function baseName(stream: TokenStream, range: Range): string {
   let end = range.to;
   for (let i = range.from; i < range.to; i++) {
@@ -62,7 +62,7 @@ function baseName(stream: TokenStream, range: Range): string {
   return joinTokens(stream, range.from, end).replace(/\s+/g, '');
 }
 
-/** O tipo é só um nome (com pontos), sem genéricos, funções nem anotações? */
+/** Is the type just a name (with dots), without generics, functions or annotations? */
 function isPlainName(stream: TokenStream, range: Range): boolean {
   if (range.to <= range.from) return false;
   for (let i = range.from; i < range.to; i++) {
@@ -73,14 +73,14 @@ function isPlainName(stream: TokenStream, range: Range): boolean {
   return true;
 }
 
-/** `@Composable` antes dos parênteses (`@Composable (() -> Unit)?`) ou dentro deles (`(@Composable () -> Unit)?`). */
+/** `@Composable` before the parentheses (`@Composable (() -> Unit)?`) or inside them (`(@Composable () -> Unit)?`). */
 function isComposableFunction(stream: TokenStream, range: Range, core: Range): boolean {
   const outer = readAnnotations(stream, range.from, range.to);
   const inner = readAnnotations(stream, core.from, core.to);
   return outer.names.includes('Composable') || inner.names.includes('Composable');
 }
 
-/** `state` pelo sufixo do nome, a menos que o tipo seja um `enum class` conhecido. */
+/** `state` by the name's suffix, unless the type is a known `enum class`. */
 function isStateType(name: string, enums: EnumTable): boolean {
   return STATE_SUFFIX.test(name) && !enums.has(name.slice(name.lastIndexOf('.') + 1));
 }
@@ -111,7 +111,7 @@ interface Declared {
   readonly defaultRange: Range | undefined;
 }
 
-/** Pula `vararg`, `noinline`, `crossinline`, `val` e `var`; diz onde o nome começa e se havia `vararg`. */
+/** Skips `vararg`, `noinline`, `crossinline`, `val` and `var`; says where the name starts and whether there was a `vararg`. */
 function readModifiers(
   stream: TokenStream,
   from: number,
@@ -132,14 +132,14 @@ function declare(stream: TokenStream, range: Range): Declared {
   const name = stream.tokens[at];
   if (at >= range.to || name?.kind !== 'ident' || !isPunct(stream, at + 1, ':')) {
     const where = Math.min(at, range.to - 1);
-    throw errorAtToken(stream, where, 'parâmetro mal formado: esperado "nome: Tipo"');
+    throw errorAtToken(stream, where, 'malformed parameter: expected "name: Type"');
   }
   const eq = findEquals(stream, at + 2, range.to);
   const type = { from: at + 2, to: eq ?? range.to };
   if (type.to <= type.from)
-    throw errorAtToken(stream, at, `parâmetro "${name.text}" sem tipo`);
+    throw errorAtToken(stream, at, `parameter "${name.text}" has no type`);
   if (eq !== undefined && eq + 1 >= range.to) {
-    throw errorAtToken(stream, eq, `parâmetro "${name.text}" sem valor depois do "="`);
+    throw errorAtToken(stream, eq, `parameter "${name.text}" has no value after the "="`);
   }
   const defaultRange = eq === undefined ? undefined : { from: eq + 1, to: range.to };
   return { range, annotations, vararg, name: unquoteName(name.text), type, defaultRange };
@@ -154,20 +154,20 @@ function typeText(stream: TokenStream, d: Declared): string {
   return [...annotation, d.vararg ? `vararg ${body}` : body].join(' ');
 }
 
-/** O nome do tipo para o `kind` (sem qualificação): `androidx.…Color` → `Color`; vazio se não for um nome simples. */
+/** The type name for the `kind` (unqualified): `androidx.…Color` → `Color`; empty if it is not a simple name. */
 function valueTypeName(stream: TokenStream, core: Range): string {
   if (!isPlainName(stream, core)) return '';
   const name = joinTokens(stream, core.from, core.to);
   return name.slice(name.lastIndexOf('.') + 1);
 }
 
-/** O tipo tem `<` (genérico)? */
+/** Does the type have `<` (generic)? */
 function hasAngle(stream: TokenStream, range: Range): boolean {
   for (let i = range.from; i < range.to; i++) if (isPunct(stream, i, '<')) return true;
   return false;
 }
 
-/** O `value` do parâmetro: genéricos e parâmetros com anotação própria são opaque. */
+/** The parameter's `value`: generics and parameters with their own annotation are opaque. */
 function valueOf(
   stream: TokenStream,
   d: Declared,
@@ -196,7 +196,7 @@ function readParam(stream: TokenStream, range: Range, enums: EnumTable): Signatu
     : param;
 }
 
-/** Os parâmetros da lista `(open … close)`, na ordem da fonte, ainda sem as fábricas. */
+/** The parameters of the `(open … close)` list, in source order, still without the factories. */
 export function parseParams(
   stream: TokenStream,
   open: number,
@@ -206,7 +206,7 @@ export function parseParams(
   return splitParams(stream, open, close).map((range) => readParam(stream, range, enums));
 }
 
-/** Só os nomes dos parâmetros da lista `(open … close)`. */
+/** Only the names of the `(open … close)` list's parameters. */
 export function parameterNames(
   stream: TokenStream,
   open: number,

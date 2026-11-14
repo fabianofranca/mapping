@@ -1,56 +1,56 @@
-# Visualizador embutível (`viewer/`)
+# Embeddable viewer (`viewer/`)
 
-Ferramenta do Mapping para quem desenvolve o `mapping-viewer`: um **visualizador de só leitura**, sem framework, que um site hospedeiro embute (inclusive React) para desenhar uma tela a partir de uma biblioteca de componentes e de uma descrição de tela, atualizando em tempo real. Não é consumido pela app; usa o motor que já mora em `src/`. O guia de uso para quem instala o pacote é o [`PACKAGE-README.md`](PACKAGE-README.md).
+A Mapping tool for those who develop `mapping-viewer`: a **read-only viewer**, framework-free, that a host site embeds (React included) to draw a screen from a component library and a screen description, updating in real time. It is not consumed by the app; it uses the engine that already lives in `src/`. The usage guide for those who install the package is [`PACKAGE-README.md`](PACKAGE-README.md).
 
-## Estrutura
+## Structure
 
-- Núcleo, na raiz da pasta:
-  - `index.ts`: entrada pública do núcleo (`createViewer` e os reexports do motor).
-  - `viewer.ts`: `createViewer`, `Viewer`, `ViewerOptions`; aplica o teto do pixel ratio do Konva (2) na criação do primeiro visualizador.
-  - `react.tsx`: invólucro `<MappingViewer/>`, um `<div>` que hospeda um `createViewer`.
-  - `tree.ts`: `screenTree` e `flattenTree` (árvore das instâncias, pura).
-  - `host.ts`: `loadLibraryFromUrl` e `registerLibraryFonts`, funções do hospedeiro (rede e fontes); o núcleo não faz nenhuma das duas.
-  - `remoteImages.ts`: imagens remotas, desligadas por padrão e sempre `pixelSafe`.
-  - `build.mjs`, `packageManifest.mjs` e `tsconfig.json`: build do pacote, o manifesto dele (versão e dependências; o teste das declarações o lê) e as declarações de tipo.
-- `demo/`: página de demonstração em React 19 de verdade (sem `preact/compat`), com CSS próprio (`--demo-*`, sem os tokens da app). É um exemplo copiável de hospedeiro.
-- `samples/`: exemplos embutidos (`samples.ts`, `samplesMaterial3.ts`, `settings.sdui.json`), usados pela demo e pelos testes do modelo e do canvas.
-- Os testes ficam em `tests/viewer/`. O desenho em si é o `ScreenRenderer` de `src/canvas/components/`.
+- Core, at the root of the folder:
+  - `index.ts`: public entry of the core (`createViewer` and the engine re-exports).
+  - `viewer.ts`: `createViewer`, `Viewer`, `ViewerOptions`; applies Konva's pixel ratio cap (2) when the first viewer is created.
+  - `react.tsx`: `<MappingViewer/>` wrapper, a `<div>` that hosts a `createViewer`.
+  - `tree.ts`: `screenTree` and `flattenTree` (tree of instances, pure).
+  - `host.ts`: `loadLibraryFromUrl` and `registerLibraryFonts`, host functions (network and fonts); the core does neither.
+  - `remoteImages.ts`: remote images, off by default and always `pixelSafe`.
+  - `build.mjs`, `packageManifest.mjs` and `tsconfig.json`: the package build, its manifest (version and dependencies; the declarations test reads it) and the type declarations.
+- `demo/`: demo page in real React 19 (no `preact/compat`), with its own CSS (`--demo-*`, without the app's tokens). It is a copyable example of a host.
+- `samples/`: bundled examples (`samples.ts`, `samplesMaterial3.ts`, `settings.sdui.json`), used by the demo and by the model and canvas tests.
+- The tests live in `tests/viewer/`. The drawing itself is the `ScreenRenderer` of `src/canvas/components/`.
 
-## Comandos
+## Commands
 
 ```bash
-npm run dev:viewer    # demo React em desenvolvimento (vite.viewer.config.ts)
-npm run build:viewer  # gera dist-viewer/ (o tsc roda primeiro e verifica os tipos)
-cd dist-viewer && npm pack   # gera mapping-viewer-<versão>.tgz para instalar no hospedeiro
+npm run dev:viewer    # React demo in development (vite.viewer.config.ts)
+npm run build:viewer  # generates dist-viewer/ (tsc runs first and checks the types)
+cd dist-viewer && npm pack   # generates mapping-viewer-<version>.tgz to install in the host
 ```
 
-A demo não entra no `npm run build` nem no deploy. `npm run build:viewer` gera `mapping-viewer.js` (núcleo) e `mapping-viewer-react.js` (invólucro), ESM minificados, com mapas externos e o Konva embutido, mais `package.json`, `types/` e o `README.md` do pacote. No fim ele confere que todo arquivo apontado por `exports` existe. A versão do pacote é a constante `VIEWER_VERSION` do `packageManifest.mjs` e sobe junto com mudanças da API.
+The demo is not part of `npm run build` or of the deploy. `npm run build:viewer` generates `mapping-viewer.js` (core) and `mapping-viewer-react.js` (wrapper), minified ESM, with external maps and Konva bundled, plus `package.json`, `types/` and the package's `README.md`. At the end it checks that every file pointed to by `exports` exists. The package version is the `VIEWER_VERSION` constant of `packageManifest.mjs` and goes up with API changes.
 
-## API em resumo
+## API summary
 
-- `createViewer(container, { library, screen, source, sourceSystem, onSource, drawingMode, direction, onHover, onClick, onWarnings, measure, fonts, fit, padding, interactive, selectionColor, hoverColor, remoteImages, allowOrigin })` devolve `{ update, redraw, setSelection, setHover, setInteractive, fit, scale, boxOf, instanceAt, clientToScreen, warnings, screen, toDataURL, dispose }`. `source` (JSON externo) vence `screen`, `sourceSystem` escolhe a origem da especialização, `onSource` recebe cada tela calculada, `fonts` define a fonte padrão dos textos e `screen()` devolve a tela desenhada.
-- O contêiner pode ter padding e borda: o stage ocupa a área útil e `clientToScreen` os desconta. O redimensionamento é aplicado no quadro seguinte, uma vez, por mais avisos do `ResizeObserver` que cheguem.
-- `update` faz o diff por identidade (`===`): só as instâncias novas ou com objeto novo são re-instanciadas. O desenho roda no `requestAnimationFrame`, no máximo uma vez por quadro.
-- `direction` (`ltr`, o padrão, ou `rtl`) é a direção de leitura da tela calculada de `source`: vai ao `layoutScreen` (espelha as raízes em fluxo, as âncoras lógicas e os slots) e ao motor dos componentes; vence a `screen.direction` da origem. Muda por `update({ direction })` (ou a prop do invólucro) e recalcula a tela. A tela calculada traz a direção em `Screen.direction` (só `rtl`; sem a chave é `ltr`), e o interior de cada componente a segue, inclusive numa `screen` pronta (sem `source`), que já traz as caixas e não é recalculada; a opção `direction`, se dada, vence a da tela.
-- `drawingMode` escolhe o modo dos `tokens` da especialização (`light`, `dark`…); sem ele (ou com um modo que a especialização não declara) vale o primeiro modo. O visualizador não tem projeto nem container: o modo é só o da opção. Mudá-lo em tempo de execução (`update({ drawingMode })`, ou a prop `drawingMode` do invólucro) redesenha sem recarregar a biblioteca nem a tela (a biblioteca com os tokens do modo é guardada por modo). Os tokens embutidos `font-sans` e `font-mono` valem a fonte do hospedeiro (`fonts`, ou a pilha do tema da app) em qualquer modo, a menos que a especialização os redefina.
-- `<MappingViewer library screen selection hover interactive ... />` lê os callbacks por ref e sobrevive ao `<StrictMode>`.
-- A biblioteca vem de `loadLibrary(files)` (ou `loadLibraryFromUrl`); a tela, de `parseScreen(json)`, de um objeto ou de um JSON de origem (`source`) traduzido pela declaração da especialização.
-- O núcleo não registra fonte: o hospedeiro fornece e chama `redraw()` (ou muda `fontsVersion` no invólucro).
+- `createViewer(container, { library, screen, source, sourceSystem, onSource, drawingMode, direction, onHover, onClick, onWarnings, measure, fonts, fit, padding, interactive, selectionColor, hoverColor, remoteImages, allowOrigin })` returns `{ update, redraw, setSelection, setHover, setInteractive, fit, scale, boxOf, instanceAt, clientToScreen, warnings, screen, toDataURL, dispose }`. `source` (external JSON) wins over `screen`, `sourceSystem` chooses the specialization's origin, `onSource` receives each computed screen, `fonts` sets the default font of the texts and `screen()` returns the drawn screen.
+- The container may have padding and a border: the stage takes the usable area and `clientToScreen` discounts them. Resizing is applied on the next frame, once, however many `ResizeObserver` notices arrive.
+- `update` diffs by identity (`===`): only new instances or instances with a new object are re-instantiated. Drawing runs in `requestAnimationFrame`, at most once per frame.
+- `direction` (`ltr`, the default, or `rtl`) is the reading direction of the screen computed from `source`: it goes to `layoutScreen` (mirrors the in-flow roots, the logical anchors and the slots) and to the component engine; it wins over the origin's `screen.direction`. It changes through `update({ direction })` (or the wrapper's prop) and recomputes the screen. The computed screen carries the direction in `Screen.direction` (only `rtl`; without the key it is `ltr`), and the inside of each component follows it, including in a ready-made `screen` (without `source`), which already carries the boxes and is not recomputed; the `direction` option, if given, wins over the screen's.
+- `drawingMode` chooses the mode of the specialization's `tokens` (`light`, `dark`…); without it (or with a mode the specialization does not declare) the first mode applies. The viewer has no project or container: the mode is only the option's. Changing it at runtime (`update({ drawingMode })`, or the wrapper's `drawingMode` prop) redraws without reloading the library or the screen (the library with the mode's tokens is kept per mode). The built-in `font-sans` and `font-mono` tokens are worth the host's font (`fonts`, or the app theme's stack) in any mode, unless the specialization redefines them.
+- `<MappingViewer library screen selection hover interactive ... />` reads the callbacks by ref and survives `<StrictMode>`.
+- The library comes from `loadLibrary(files)` (or `loadLibraryFromUrl`); the screen, from `parseScreen(json)`, from an object or from a source JSON (`source`) translated by the specialization's declaration.
+- The core does not register fonts: the host supplies them and calls `redraw()` (or changes `fontsVersion` in the wrapper).
 
-Os detalhes de cada opção e de cada exportação estão no `PACKAGE-README.md`.
+The details of each option and each export are in `PACKAGE-README.md`.
 
-## O que fica de fora, de propósito
+## What is left out, on purpose
 
-- **Arrastar e redimensionar**: é edição. O núcleo dá seleção pelo clique, hover e o modo sem interação (`interactive: false`); `boxOf`, `scale` e `clientToScreen` deixam o hospedeiro desenhar alças próprias em DOM. Quem precisar de arrasto liga o gesto nos grupos via `ScreenRenderer` (exportado).
-- Rede e fontes no núcleo: ficam em `host.ts`, para o site que instala o pacote.
-- Tokens e i18n da app: a demo não os usa. O pacote usa só `tokenValue` (`src/theme/tokens.ts`, tema claro) para as cores padrão do realce (`color-accent` e `opacity-viewer-hover`) e para a pilha de fontes padrão; não usa `t()` nem CSS.
+- **Dragging and resizing**: that is editing. The core gives click selection, hover and the no-interaction mode (`interactive: false`); `boxOf`, `scale` and `clientToScreen` let the host draw its own DOM handles. Whoever needs dragging wires the gesture into the groups via `ScreenRenderer` (exported).
+- Network and fonts in the core: they stay in `host.ts`, for the site that installs the package.
+- Tokens and i18n of the app: the demo does not use them. The package uses only `tokenValue` (`src/theme/tokens.ts`, light theme) for the default highlight colors (`color-accent` and `opacity-viewer-hover`) and for the default font stack; it uses neither `t()` nor CSS.
 
-## Pontos em aberto
+## Open points
 
-- `toDataURL` captura só o que cabe no `Stage`: com `fit` numérico maior que o contêiner, a tela sai cortada.
-- Os dois bundles duplicam o Konva: quem usa os dois no mesmo site carrega duas cópias; a saída seria um bundle só com o invólucro dentro.
-- Teste com o JSON real de um backend de SDUI (o exemplo `settings.sdui.json` passa sem avisos).
+- `toDataURL` captures only what fits in the `Stage`: with a numeric `fit` larger than the container, the screen comes out cropped.
+- The two bundles duplicate Konva: whoever uses both on the same site loads two copies; the way out would be a single bundle with the wrapper inside.
+- Test with the real JSON of an SDUI backend (the `settings.sdui.json` example passes without warnings).
 
-## Regras da pasta
+## Folder rules
 
-TypeScript strict, sem `any`, sem requisição de rede; React é dependência só de desenvolvimento e só da demo; a demo usa a CSP de perfil `static` só no build da demo (`vite build --config vite.viewer.config.ts`, saída em `dist-viewer-demo/`); no `npm run dev:viewer` o servidor do Vite não aplica essa CSP. Imagem por URL só pelo carregador de `src/canvas/components/` (regra de lint também vale em `viewer/**`).
+TypeScript strict, no `any`, no network requests; React is a development dependency only and only of the demo; the demo uses the `static` profile CSP only in the demo build (`vite build --config vite.viewer.config.ts`, output in `dist-viewer-demo/`); in `npm run dev:viewer` the Vite server does not apply that CSP. Image by URL only through the loader of `src/canvas/components/` (the lint rule also applies in `viewer/**`).

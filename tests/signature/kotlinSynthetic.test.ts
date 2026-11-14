@@ -91,7 +91,7 @@ fun Card(title: String, subtitle: String = "") {}
     expect(sig.params.map((p) => p.name)).toEqual(['b']);
   });
 
-  it('duas restantes sem --overload: erro "sobrecarga ambígua:" com uma candidata por linha', () => {
+  it('duas restantes sem --overload: "ambiguous overload:" error com uma candidata por linha', () => {
     const source = `package demo.ui
 
 @Composable
@@ -106,11 +106,11 @@ fun Card(a: Int, b: Int) {}
     const result = extract(source, 'Card');
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
-    expect(result.stderr).toMatch(/^sobrecarga ambígua:/);
+    expect(result.stderr).toMatch(/^ambiguous overload:/);
     expect(result.stderr.trimEnd().split('\n').slice(1)).toEqual([
-      '  0: linha 4 (title)',
-      '  1: linha 8 [@Deprecated] (a, b)',
-      '  2: linha 10 (title, onClick)',
+      '  0: line 4 (title)',
+      '  1: line 8 [@Deprecated] (a, b)',
+      '  2: line 10 (title, onClick)',
     ]);
   });
 
@@ -127,9 +127,9 @@ fun Card(a: Int, b: Int) {}
     const result = extract(overloads, 'Card', ['--overload', '5']);
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('--overload 5');
-    expect(result.stderr).toContain('fora da lista');
-    expect(result.stderr).toContain('  0: linha 5 [@Deprecated] (title)');
-    expect(result.stderr).toContain('  1: linha 8 (title, subtitle)');
+    expect(result.stderr).toContain('is not in the list');
+    expect(result.stderr).toContain('  0: line 5 [@Deprecated] (title)');
+    expect(result.stderr).toContain('  1: line 8 (title, subtitle)');
   });
 
   it('--overload inválido (não inteiro, negativo) é erro de uso', () => {
@@ -145,20 +145,20 @@ fun Card(a: Int, b: Int) {}
       'Old',
     );
     expect(result.code).toBe(1);
-    expect(result.stderr).toMatch(/^sobrecarga ambígua:/);
-    expect(result.stderr).toContain('  0: linha 4 [@Deprecated] (a)');
+    expect(result.stderr).toMatch(/^ambiguous overload:/);
+    expect(result.stderr).toContain('  0: line 4 [@Deprecated] (a)');
   });
 
   it('símbolo ausente: "função @Composable <nome> não encontrada em <arquivo>"', () => {
     const result = extract(composable('a: Int'), 'Nada');
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('função @Composable Nada não encontrada em A.kt');
+    expect(result.stderr).toContain('@Composable function Nada not found in A.kt');
   });
 
   it('uma função sem @Composable não é candidata (símbolo ausente)', () => {
     const result = extract(`package p\nfun Plain(a: Int) {}\n`, 'Plain');
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('função @Composable Plain não encontrada');
+    expect(result.stderr).toContain('@Composable function Plain not found');
   });
 });
 
@@ -460,7 +460,7 @@ internal fun <T> RowScope.Foo(item: T, onPick: (T) -> Unit) {}
       'Host',
     );
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('função @Composable Host não encontrada');
+    expect(result.stderr).toContain('@Composable function Host not found');
   });
 
   it('@Composable na mesma linha e com nome qualificado', () => {
@@ -661,7 +661,7 @@ describe('--symbol, --path, --ref', () => {
     const result = run3('/abs/dir/A.kt');
     expect(result.code).toBe(2);
     expect(result.stderr).toContain('--path');
-    expect(result.stderr).toContain('raiz do repositório');
+    expect(result.stderr).toContain('repository root');
   });
 
   it('--path vale mesmo com --file absoluto', () => {

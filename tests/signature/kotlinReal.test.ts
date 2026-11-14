@@ -150,13 +150,13 @@ describe('AppBar.kt (androidx): as sobrecargas do TopAppBar', () => {
     const result = runReal('AppBar.kt', symbol, APPBAR_PATH);
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
-    expect(result.stderr.startsWith('sobrecarga ambígua:')).toBe(true);
+    expect(result.stderr.startsWith('ambiguous overload:')).toBe(true);
     const lines = result.stderr.trimEnd().split('\n');
-    const candidates = lines.filter((l) => /^\s+\d+: linha \d+/.test(l));
+    const candidates = lines.filter((l) => /^\s+\d+: line \d+/.test(l));
     expect(candidates).toHaveLength(3);
-    expect(candidates[0]).toMatch(/^\s+0: linha \d+ \[@Deprecated\] \(title, modifier,/);
-    expect(candidates[1]).toMatch(/^\s+1: linha \d+ \(title, modifier, navigationIcon/);
-    expect(candidates[2]).toMatch(/^\s+2: linha \d+ \(title, subtitle, modifier,/);
+    expect(candidates[0]).toMatch(/^\s+0: line \d+ \[@Deprecated\] \(title, modifier,/);
+    expect(candidates[1]).toMatch(/^\s+1: line \d+ \(title, modifier, navigationIcon/);
+    expect(candidates[2]).toMatch(/^\s+2: line \d+ \(title, subtitle, modifier,/);
     expect(result.stderr).toContain('--overload');
   });
 
@@ -180,7 +180,7 @@ describe('AppBar.kt (androidx): as sobrecargas do TopAppBar', () => {
   it('--overload 3: fora da lista, o erro mostra as candidatas', () => {
     const result = runReal('AppBar.kt', symbol, APPBAR_PATH, ['--overload', '3']);
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('fora da lista');
-    expect(result.stderr.match(/^\s+\d+: linha/gm)).toHaveLength(3);
+    expect(result.stderr).toContain('is not in the list');
+    expect(result.stderr.match(/^\s+\d+: line/gm)).toHaveLength(3);
   });
 });

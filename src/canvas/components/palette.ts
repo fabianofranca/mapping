@@ -4,7 +4,7 @@
  * (the embeddable viewer, the lab and the tests).
  */
 export interface RenderPalette {
-  /** Preenchimento do reservado de imagem. */
+  /** Fill of the image placeholder. */
   readonly placeholderFill: string;
   /** Outline of the placeholder (X, image stroke, slot). */
   readonly placeholderLine: string;

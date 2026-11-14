@@ -1,13 +1,13 @@
-// Service worker do Mapping: cache-first do app (funciona offline).
-// `__BUILD_ID__` é trocado no build (vite.config.ts) por um hash do index.html;
-// cada build novo gera um sw.js diferente, o que dispara o aviso de nova versão.
-// `__CHANNEL__` vira `preview` no build do branch publicado em /preview/.
+// Mapping service worker: cache-first for the app (works offline).
+// `__BUILD_ID__` is replaced at build time (vite.config.ts) by a hash of index.html;
+// each new build generates a different sw.js, which triggers the new-version notice.
+// `__CHANNEL__` becomes `preview` in the build of the branch published at /preview/.
 const VERSION = '__BUILD_ID__';
 const PREVIEW = '__CHANNEL__' === 'preview';
-// Os caches são da origem inteira: a versão principal e o preview usam prefixos
-// distintos para um não apagar o cache do outro ao ativar.
-// Os prefixos `mapeador-` são os de antes do renome para "Mapping" e ficam: trocá-los
-// deixaria os caches antigos órfãos (o `activate` só apaga os que começam com o prefixo atual).
+// The caches belong to the whole origin: the main version and the preview use distinct
+// prefixes so that one does not delete the other's cache on activation.
+// The `mapeador-` prefixes are the ones from before the rename to "Mapping" and stay: changing them
+// would orphan the old caches (`activate` only deletes those that start with the current prefix).
 const PREVIEW_PREFIX = 'mapeador-preview-';
 const CACHE = PREVIEW ? `${PREVIEW_PREFIX}${VERSION}` : `mapeador-${VERSION}`;
 const ownsCache = (name) =>
@@ -18,7 +18,7 @@ const GUIDE = './guia/index.html';
 const PRECACHE = [
   './index.html',
   './manifest.webmanifest',
-  // O guia interativo (public/guia/): uma página só, autocontida; funciona sem internet.
+  // The interactive guide (public/guia/): a single, self-contained page; works without internet.
   GUIDE,
   './icons/icon.svg',
   './icons/icon-192.png',
@@ -28,13 +28,13 @@ const PRECACHE = [
 ];
 
 const url = (path) => new URL(path, self.registration.scope).href;
-// A página da app é só a raiz do escopo (e o próprio index.html): outras páginas do site
-// (ex.: `outra/`, páginas publicadas ao lado) vão à rede, sem cair no index.html.
+// The app page is only the scope root (and index.html itself): other pages of the site
+// (e.g. `other/`, pages published alongside) go to the network, without falling back to index.html.
 const isAppPage = (pathname) => {
   const scope = new URL(self.registration.scope).pathname;
   return pathname === scope || pathname === `${scope}index.html`;
 };
-// O guia fica em `guia/`: a navegação para ele (com ou sem `index.html`) é servida do cache.
+// The guide lives in `guia/`: navigation to it (with or without `index.html`) is served from the cache.
 const isGuidePage = (pathname) => {
   const guide = new URL('./guia/', self.registration.scope).pathname;
   return pathname === guide || pathname === `${guide}index.html`;
@@ -45,9 +45,9 @@ const isPreviewPath = (pathname) => {
 };
 
 self.addEventListener('install', (event) => {
-  // Sem skipWaiting: a versão nova espera o usuário aceitar o aviso.
-  // `cache: 'reload'` pula o cache HTTP do navegador: o GitHub Pages serve com max-age=600 e,
-  // logo depois de um deploy, o `addAll` comum guardaria o index.html antigo no cache novo.
+  // No skipWaiting: the new version waits for the user to accept the notice.
+  // `cache: 'reload'` skips the browser's HTTP cache: GitHub Pages serves with max-age=600 and,
+  // right after a deploy, a plain `addAll` would store the old index.html in the new cache.
   event.waitUntil(
     caches
       .open(CACHE)
@@ -80,9 +80,9 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const requested = new URL(request.url);
   if (requested.origin !== self.location.origin) return;
-  // O preview (/preview/) é outra app, com o próprio service worker: o escopo da
-  // versão principal o contém, mas não pode responder por ele (nem por `/preview`
-  // sem a barra, que o GitHub Pages redireciona para `/preview/`).
+  // The preview (/preview/) is another app, with its own service worker: the scope of the
+  // main version contains it, but it must not answer for it (nor for `/preview`
+  // without the slash, which GitHub Pages redirects to `/preview/`).
   if (!PREVIEW && isPreviewPath(requested.pathname)) return;
   const guide = isGuidePage(requested.pathname);
   if (request.mode === 'navigate' && !isAppPage(requested.pathname) && !guide) return;
@@ -90,8 +90,8 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE);
-      // Navegação (inclusive com ?query) sempre serve a página do cache: o index.html da app
-      // ou o guia.
+      // Navigation (including with ?query) always serves the page from the cache: the app's index.html
+      // or the guide.
       const key =
         request.mode === 'navigate' ? url(guide ? GUIDE : './index.html') : request;
       const cached = await cache.match(key);

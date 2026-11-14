@@ -29,7 +29,7 @@ export interface ImageIntake {
   };
 }
 
-/** Entrada de imagens: escolher, colar, arrastar e soltar, e trocar o arquivo de uma imagem. */
+/** Image intake: pick, paste, drag and drop, and replace an image's file. */
 export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageIntake {
   const { session, store, ui, canvas } = useEditor();
   const { busy, setProgress, setMessage } = notices;
@@ -44,7 +44,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
     setMessage(null);
     const failed: string[] = [];
     const added: string[] = [];
-    // Uma chamada por arquivo para mostrar o progresso.
+    // One call per file to show the progress.
     for (const [index, file] of files.entries()) {
       setProgress(t('editor.importing', { current: index + 1, total: files.length }));
       const result = await session.addImages([file], { center });

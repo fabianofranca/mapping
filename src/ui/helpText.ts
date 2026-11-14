@@ -1,6 +1,6 @@
 import type { HelpBlock } from '../i18n/specHelp';
 
-/** Todo o texto de um bloco da Ajuda, para a busca. */
+/** All the text of a Help block, for the search. */
 export function blockText(block: HelpBlock): string {
   switch (block.kind) {
     case 'p':

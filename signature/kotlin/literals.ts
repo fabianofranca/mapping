@@ -4,7 +4,7 @@ import type {
   SignatureValueKind,
 } from '../../src/model/signatures';
 
-// O `kind` de um `value` pelo nome do tipo e o `default` quando o padrão é um literal representável.
+// The `kind` of a `value` from the type name and the `default` when the default is a representable literal.
 
 const KIND_BY_TYPE: Readonly<Record<string, SignatureValueKind>> = {
   String: 'text',
@@ -49,7 +49,7 @@ const PARSERS: Readonly<Partial<Record<SignatureValueKind, LiteralParser>>> = {
   },
 };
 
-/** O padrão como literal para o kind dado, ou `undefined` quando é uma expressão. */
+/** The default as a literal for the given kind, or `undefined` when it is an expression. */
 export function literalFor(
   kind: SignatureValueKind,
   text: string | undefined,
@@ -66,7 +66,7 @@ function enumConstant(text: string, info: EnumInfo | undefined): string | undefi
   return info.options.includes(match[2]!) ? match[2] : undefined;
 }
 
-/** O `value` de um parâmetro de role `value`, pelo nome do tipo (já sem `?` nem qualificação). */
+/** The `value` of a parameter with role `value`, from the type name (already without `?` or qualification). */
 export function valueFor(
   typeName: string,
   defaultText: string | undefined,

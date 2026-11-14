@@ -26,7 +26,7 @@ import type { Point } from '../viewport';
 import type { Intent } from './intents';
 
 export type Gesture =
-  /** Ponteiro pressionado, ainda sem passar do limiar de arrasto (pode ser um clique). */
+  /** Pointer pressed, not yet past the drag threshold (may be a click). */
   | {
       readonly kind: 'pending';
       readonly pointerId: number;
@@ -123,7 +123,7 @@ export type Gesture =
       readonly index: number;
       /** Only in `segment`: the coordinate of the points' space that the pointer changes. */
       readonly axis: 'x' | 'y' | null;
-      /** Os pontos de passagem de antes do gesto. */
+      /** The waypoints from before the gesture. */
       readonly base: readonly ArrowPoint[];
       /** Position of the points' space: the container's or the identity, on the canvas. */
       readonly placement: Placement;
@@ -160,7 +160,7 @@ export type Gesture =
     }
   /** Mouse drag over the locked item: does nothing until release ("not allowed" cursor). */
   | { readonly kind: 'blocked'; readonly pointerId: number }
-  /** Dois dedos. Termina quando todos saem da tela. */
+  /** Two fingers. Ends when all of them leave the screen. */
   | { readonly kind: 'pinch' };
 
 /** Gestos que usam `beginGesture/commitGesture` do store. */
@@ -300,7 +300,7 @@ export function startGesture(
   }
 
   if (intent.kind === 'move-items') {
-    // Os itens que sumiram desde o toque (desfazer) ficam de fora; sem nada a mover, pan.
+    // Items that vanished since the touch (undo) are left out; with nothing to move, pan.
     const items = existingItems(project, intent.items);
     if (!canMoveItems(project, items) || !beginGesture()) return null;
     return {

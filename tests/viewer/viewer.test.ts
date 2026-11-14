@@ -503,7 +503,9 @@ describe('createViewer', () => {
       ],
     };
     viewer.update({ library, screen });
-    expect(viewer.warnings().get('x')).toEqual(['tipo não existe na especialização']);
+    expect(viewer.warnings().get('x')).toEqual([
+      'type does not exist in the specialization',
+    ]);
     expect(onWarnings).toHaveBeenCalledTimes(1);
     const reported = onWarnings.mock.calls[0]?.[0] as ReadonlyMap<string, unknown>;
     expect(reported.has('x')).toBe(true);

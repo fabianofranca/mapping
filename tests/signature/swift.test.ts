@@ -369,11 +369,11 @@ describe('sobrecargas de init (decisão 9)', () => {
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
     expect(result.stderr).toContain(
-      'init ambíguo: Chip tem 2 inits (fora os deprecated) em tests/fixtures/signature/swift/Chip.swift; escolha um com --init <n>:',
+      'ambiguous init: Chip has 2 inits (not counting the deprecated ones) in tests/fixtures/signature/swift/Chip.swift; pick one with --init <n>:',
     );
-    expect(result.stderr).toContain('  0: linha 7 (_:)');
-    expect(result.stderr).toContain('  1: linha 12 (title:count:)');
-    expect(result.stderr).toContain('  2: linha 18 [deprecated] (label:)');
+    expect(result.stderr).toContain('  0: line 7 (_:)');
+    expect(result.stderr).toContain('  1: line 12 (title:count:)');
+    expect(result.stderr).toContain('  2: line 18 [deprecated] (label:)');
   });
 
   it('--init escolhe pelo índice na lista completa e fica em source.init', () => {
@@ -394,8 +394,8 @@ describe('sobrecargas de init (decisão 9)', () => {
   it('--init fora da lista: erro com a lista', () => {
     const result = extractSwift(fixture('Chip.swift'), 'Chip', ['--init', '7']);
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('--init 7 fora da lista: Chip tem 3 inits');
-    expect(result.stderr).toContain('  1: linha 12 (title:count:)');
+    expect(result.stderr).toContain('--init 7 is not in the list: Chip has 3 inits');
+    expect(result.stderr).toContain('  1: line 12 (title:count:)');
   });
 
   it('só inits deprecated e sem --init: ambíguo (cita que só há deprecated)', () => {
@@ -408,7 +408,7 @@ struct Foo: View {
 `;
     const result = extractSwift(src, 'Foo');
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('só tem inits deprecated');
+    expect(result.stderr).toContain('only has deprecated inits');
   });
 
   it('sem init explícito, --init 0 vale para o memberwise e fica em source.init', () => {
@@ -417,7 +417,7 @@ struct Foo: View {
     expect(sig.params.map((p) => p.name)).toEqual(['a', 'b']);
     const result = extractSwift(withProps('  let a: Int'), 'Foo', ['--init', '1']);
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('--init 1 fora da lista');
+    expect(result.stderr).toContain('--init 1 is not in the list');
   });
 });
 
@@ -492,9 +492,9 @@ enum B { struct Row: View { let y: Int; var body: some View { EmptyView() } } }
 `;
     const ambiguous = extractSwift(src, 'Row');
     expect(ambiguous.code).toBe(1);
-    expect(ambiguous.stderr).toContain('Row aparece 2 vezes');
-    expect(ambiguous.stderr).toContain('dentro de A');
-    expect(ambiguous.stderr).toContain('dentro de B');
+    expect(ambiguous.stderr).toContain('Row appears 2 times');
+    expect(ambiguous.stderr).toContain('inside A');
+    expect(ambiguous.stderr).toContain('inside B');
     const chosen = swiftJson(src, 'B.Row');
     expect(chosen.params.map((p) => p.name)).toEqual(['y']);
     expect(chosen.source.symbol).toBe('B.Row');
@@ -504,19 +504,19 @@ enum B { struct Row: View { let y: Int; var body: some View { EmptyView() } } }
   it('struct inexistente: erro (exit 1) com o arquivo', () => {
     const result = extractSwift(withProps('  let a: Int'), 'Nada');
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('struct Nada não encontrada em A.swift');
+    expect(result.stderr).toContain('struct Nada not found in A.swift');
   });
 
   it('class e enum de mesmo nome não são struct', () => {
     const result = extractSwift('class Foo {}\nenum Bar {}\n', 'Foo');
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('struct Foo não encontrada');
+    expect(result.stderr).toContain('struct Foo not found');
   });
 
   it('erro de sintaxe: arquivo:linha:coluna com o delimitador não fechado', () => {
     const result = extractSwift('struct Foo: View {\n  init(a: Int,\n', 'Foo');
     expect(result.code).toBe(1);
-    expect(result.stderr).toMatch(/^A\.swift:2:7: "\(" não fechado\n$/);
+    expect(result.stderr).toMatch(/^A\.swift:2:7: "\(" not closed\n$/);
   });
 
   it('o --path vira source.path; sem ele vale o --file relativo', () => {
@@ -552,7 +552,7 @@ describe('opções que não são do leitor Swift (exit 2)', () => {
     expect(help.stdout).toContain('--init');
     expect(help.stdout).toContain('mapping-signature figma --file');
     expect(help.stdout).toContain('--node');
-    expect(help.stdout).toContain('Leitores: kotlin, swift, figma');
+    expect(help.stdout).toContain('Readers: kotlin, swift, figma');
   });
 });
 

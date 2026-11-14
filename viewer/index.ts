@@ -1,11 +1,12 @@
 /**
- * Visualizador embutível: a entrada pública do núcleo (sem framework). O hospedeiro monta a
- * biblioteca com `loadLibrary`, descreve a tela (`parseScreen` ou um objeto `Screen`) e chama
- * `createViewer`. Em vez da tela pronta, pode passar `source` (um JSON externo): a origem
- * declarada na especialização o traduz (`translateSource`) e `layoutScreen` o arruma, tudo em
- * `screenFromSource`, que também serve a quem quer a tela sem desenhar. As fontes são do hospedeiro (CSS `@font-face` ou `FontFace`); depois que
- * carregarem, `viewer.redraw()`. Para o site que serve a pasta da biblioteca por URL,
- * `loadLibraryFromUrl` e `registerLibraryFonts` (funções do hospedeiro, fora do núcleo).
+ * Embeddable viewer: the public entry of the core (no framework). The host builds the
+ * library with `loadLibrary`, describes the screen (`parseScreen` or a `Screen` object) and calls
+ * `createViewer`. Instead of the ready screen, it can pass `source` (an external JSON): the
+ * origin declared in the specialization translates it (`translateSource`) and `layoutScreen`
+ * arranges it, all in `screenFromSource`, which also serves whoever wants the screen without
+ * drawing. The fonts belong to the host (CSS `@font-face` or `FontFace`); once they load, call
+ * `viewer.redraw()`. For the site that serves the library folder by URL, `loadLibraryFromUrl`
+ * and `registerLibraryFonts` (host functions, outside the core).
  */
 export { createViewer } from './viewer';
 export type { Viewer, ViewerInput, ViewerOptions } from './viewer';

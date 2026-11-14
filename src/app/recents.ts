@@ -27,7 +27,7 @@ import { reportError } from '../utils/report';
 import { readSessionSetting, writeSessionSetting } from '../utils/safeStorage';
 import { err, guarded, ok, type AppResult } from './appResult';
 
-/** Uma linha da lista da tela inicial: projeto deste dispositivo ou pasta. */
+/** A row of the home screen's list: a project on this device or a folder. */
 export type RecentProject =
   | {
       readonly kind: 'local';
@@ -101,7 +101,7 @@ export const recentProjects = computed<readonly RecentProject[]>(() =>
   toRecentProjects(localProjects.value, recentFolders.value),
 );
 
-/** Abre os bancos e carrega as listas. `folderMode`: o modo pasta existe neste navegador. */
+/** Opens the databases and loads the lists. `folderMode`: folder mode exists in this browser. */
 export async function initRecents(folderMode: boolean): Promise<void> {
   [library, folderLibrary] = await Promise.all([
     openLocalLibrary(),
@@ -110,7 +110,7 @@ export async function initRecents(folderMode: boolean): Promise<void> {
   await Promise.all([refreshLocalProjects(), refreshRecentFolders()]);
 }
 
-/** O banco dos projetos deste dispositivo (`null` sem IndexedDB). */
+/** The database of this device's projects (`null` without IndexedDB). */
 export const localLibrary = (): LocalLibrary | null => library;
 
 export async function refreshLocalProjects(): Promise<void> {
@@ -153,7 +153,7 @@ export async function markLocalOpened(id: string): Promise<void> {
 export interface FolderCopy {
   /** Id of the recents entry; `null` if the folder was not remembered. */
   readonly folderId: string | null;
-  /** `ProjectStorage.copyId`: o id da entrada ou, sem ela, o id desta aba. */
+  /** `ProjectStorage.copyId`: the entry's id or, without one, this tab's id. */
   readonly copyId: string;
 }
 
@@ -235,7 +235,7 @@ async function handleOf(id: string): Promise<ReopenableDirectory | null> {
   }
 }
 
-/** Abre o projeto de uma pasta; `replaceId`: a entrada que passa a apontar para ela. */
+/** Opens a folder's project; `replaceId`: the entry that now points to it. */
 export type OpenFolder = (
   handle: DirectoryHandleLike,
   replaceId?: string,
@@ -318,7 +318,7 @@ export type FolderRelocation =
   /** The chosen folder has no `mapping.json`: the entry stays as it was. */
   | { readonly kind: 'no-project' };
 
-/** "Localizar pasta…": escolhe a pasta de novo; ela substitui a entrada e o projeto abre. */
+/** "Locate folder…": picks the folder again; it replaces the entry and the project opens. */
 export function relocateFolder(
   id: string,
   open: OpenFolder,
@@ -332,7 +332,7 @@ export function relocateFolder(
   });
 }
 
-/** "Remover da lista": esquece a pasta. Nada no disco muda. */
+/** "Remove from the list": forgets the folder. Nothing on disk changes. */
 export function forgetFolder(id: string): Promise<AppResult> {
   return guarded(async () => {
     if (!folderLibrary) return err('storage-failed');

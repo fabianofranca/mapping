@@ -113,7 +113,7 @@ export const RESIZE_STEP = 16;
 export interface LayoutSpace {
   readonly width: number;
   readonly height: number;
-  /** Largura da outra janela lateral aberta (0 se ela estiver recolhida). */
+  /** Width of the other open side window (0 if it is collapsed). */
   readonly otherWidth: number;
 }
 
@@ -136,7 +136,7 @@ export function clampWindowSize(
 }
 
 interface StoredLayout {
-  /** Lido do `localStorage` sem garantia de tipo: `storedOpen` valida. */
+  /** Read from `localStorage` with no type guarantee: `storedOpen` validates. */
   readonly open?: unknown;
   readonly bottomTab?: string;
   readonly left?: number;
@@ -230,7 +230,7 @@ const layersSplit = signal<number>(
     : px('size-tw-layers'),
 );
 
-/** Aba ativa da janela inferior (uma por vez, como numa IDE). */
+/** Active tab of the bottom window (one at a time, as in an IDE). */
 const bottomTab = signal<ToolWindowId>(
   isToolWindow(stored.bottomTab) && WINDOW_SIDE[stored.bottomTab] === 'bottom'
     ? stored.bottomTab

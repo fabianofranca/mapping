@@ -98,7 +98,7 @@ describe('página de demonstração: Material 3 (SDUI)', () => {
     expect(JSON.parse(textarea().value)).toEqual(settings);
     expect(treeRows()).toBe(total);
     expect(status()).toContain('Settings (412 × 917)');
-    expect(status()).toContain('Avisos da origem: nenhum');
+    expect(status()).toContain('Source warnings: none');
   });
 
   it('editar o JSON muda a tela', async () => {
@@ -135,8 +135,8 @@ describe('página de demonstração: Material 3 (SDUI)', () => {
     edited.content.children[0]!.props.propInventada = 1;
     await type(JSON.stringify(edited));
     expect(document.querySelector('.react-lab-error')).toBeNull();
-    expect(status()).toContain('Avisos da origem:');
+    expect(status()).toContain('Source warnings:');
     expect(status()).toContain('propInventada');
-    expect(status()).not.toContain('Avisos da origem: nenhum');
+    expect(status()).not.toContain('Source warnings: none');
   });
 });

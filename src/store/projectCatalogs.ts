@@ -33,13 +33,13 @@ export interface ProjectCatalogs {
   request(): void;
   /** The files may have changed outside: the next `request` reads again. */
   invalidate(): void;
-  /** Resolve quando o que foi pedido terminou (testes). */
+  /** Resolves when what was requested has finished (tests). */
   whenIdle(): Promise<void>;
   dispose(): void;
 }
 
 export interface ProjectCatalogsDeps {
-  /** O projeto confirmado (`store.committed`). */
+  /** The committed project (`store.committed`). */
   readonly project: ReadonlySignal<Project | null>;
   /** Package files (paths relative to its folder); `null` if there is nothing to read. */
   readonly read: (owner: ProjectSpecialization) => Promise<readonly LibraryFile[] | null>;

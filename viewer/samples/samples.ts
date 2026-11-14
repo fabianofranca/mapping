@@ -1,7 +1,7 @@
 /**
- * Exemplos embutidos da demo do visualizador: uma especialização com seis tipos, cada um
- * apontando para o próprio arquivo de componente, e uma tela montada só com instâncias (sem
- * imagem). Os mesmos arquivos podem ser baixados como pasta (zip) para editar e reabrir.
+ * Built-in examples of the viewer demo: a specialization with six types, each one
+ * pointing to its own component file, and a screen made only of instances (no
+ * image). The same files can be downloaded as a folder (zip) to edit and reopen.
  */
 import {
   COMPONENT_FORMAT,
@@ -25,7 +25,7 @@ const DANGER = '#D32F2F';
 const WHITE = '#FFFFFF';
 const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
-/** Cor do texto do botão por variante. */
+/** Button text color per variant. */
 const buttonText: Expr<Color> = {
   $switch: 'variant',
   cases: { secondary: BLUE, ghost: BLUE },
@@ -36,7 +36,7 @@ export const BUTTON: ComponentFile = {
   ...base,
   id: 'button',
   name: 'Botão',
-  description: 'Ação principal ou secundária; rótulo e ícone opcional.',
+  description: 'Primary or secondary action; label and optional icon.',
   size: { width: 132, height: 44 },
   minSize: { width: 56, height: 32 },
   preview: { label: 'Entrar', variant: 'primary', icon: 'não', disabled: 'não' },
@@ -82,7 +82,7 @@ export const TEXT_FIELD: ComponentFile = {
   ...base,
   id: 'text-field',
   name: 'Campo de texto',
-  description: 'Rótulo, caixa com valor ou dica, e texto de ajuda ou erro.',
+  description: 'Label, box with a value or hint, and help or error text.',
   size: { width: 280, height: 72 },
   minSize: { width: 120, height: 44 },
   preview: {
@@ -152,7 +152,7 @@ export const CARD: ComponentFile = {
   ...base,
   id: 'card',
   name: 'Cartão',
-  description: 'Superfície com título, subtítulo e um espaço para conteúdo.',
+  description: 'Surface with a title, a subtitle and a space for content.',
   size: { width: 320, height: 200 },
   minSize: { width: 160, height: 96 },
   preview: { title: 'Título', subtitle: 'Subtítulo do cartão', elevated: 'sim' },
@@ -208,7 +208,7 @@ export const AVATAR: ComponentFile = {
   ...base,
   id: 'avatar',
   name: 'Avatar',
-  description: 'Círculo com iniciais e indicador de presença.',
+  description: 'Circle with initials and a presence indicator.',
   size: { width: 48, height: 48 },
   minSize: { width: 24, height: 24 },
   preview: { initials: 'MS', color: 'azul', online: 'sim' },
@@ -287,7 +287,7 @@ export const APP_BAR: ComponentFile = {
   ...base,
   id: 'app-bar',
   name: 'Barra do app',
-  description: 'Barra superior com voltar, título e ações.',
+  description: 'Top bar with back, title and actions.',
   size: { width: 390, height: 56 },
   minSize: { width: 200, height: 40 },
   preview: { title: 'Título da tela', back: 'sim', actions: 'sim' },
@@ -334,7 +334,7 @@ export const SWITCH: ComponentFile = {
   ...base,
   id: 'switch',
   name: 'Interruptor',
-  description: 'Ligado/desligado com rótulo.',
+  description: 'On/off with a label.',
   size: { width: 200, height: 28 },
   minSize: { width: 48, height: 24 },
   preview: { label: 'Lembrar de mim', on: 'sim' },
@@ -403,17 +403,16 @@ const yesNo = (key: string, label: string, def: 'sim' | 'não') => ({
 });
 
 /**
- * Especialização de exemplo: `formatVersion` 4 (experimental) só pela chave `component` em cada
- * tipo. O resto segue `docs/SPEC-FORMAT.md`.
+ * Example specialization: `formatVersion` 4 (experimental) only through the `component` key in each
+ * type. The rest follows `docs/SPEC-FORMAT.md`.
  */
 export const SAMPLE_SPEC = {
   format: 'mapping-spec',
   formatVersion: 4,
   id: 'lab-components',
-  name: 'Laboratório de componentes',
+  name: 'Component lab',
   version: 1,
-  description:
-    'Componentes genéricos desenhados por template; cada um no próprio arquivo.',
+  description: 'Generic components drawn from a template; each in its own file.',
   layers: [
     {
       id: 'componentes',
@@ -468,7 +467,7 @@ export const SAMPLE_SPEC = {
               key: 'action',
               label: 'Ação',
               type: 'string',
-              description: 'Só dado: não aparece no desenho.',
+              description: 'Data only: does not appear in the drawing.',
             },
           ],
         },
@@ -517,7 +516,7 @@ export const SAMPLE_SPEC = {
   ],
 };
 
-/** Arquivos como ficariam na pasta: a especialização e um componente por arquivo. */
+/** Files as they would be in the folder: the specialization and one component per file. */
 export const SAMPLE_FILES: readonly { readonly path: string; readonly text: string }[] = [
   { path: 'lab-components.spec.json', text: JSON.stringify(SAMPLE_SPEC, null, 2) },
   ...SAMPLE_COMPONENTS.map((c) => ({
@@ -526,7 +525,7 @@ export const SAMPLE_FILES: readonly { readonly path: string; readonly text: stri
   })),
 ];
 
-/** Tela de login montada só com instâncias: cada uma é um retângulo com valores de campos. */
+/** Login screen made only of instances: each one is a rectangle with field values. */
 export const SAMPLE_SCREEN: Screen = {
   id: 'login',
   name: 'Entrar',

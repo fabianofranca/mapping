@@ -4,9 +4,9 @@ import { extractKotlin } from './kotlin/reader';
 import type { CodeRequest, DesignRequest } from './request';
 import { extractSwift } from './swift/reader';
 
-// Os leitores, por nome. Os de código (`kotlin`, `swift`) leem um arquivo-fonte e um símbolo; o de
-// design (`figma`) lê o JSON de um nó. `options` são as opções que cada um aceita (a CLI recusa as
-// outras como erro de uso).
+// The readers, by name. The code ones (`kotlin`, `swift`) read a source file and a symbol; the
+// design one (`figma`) reads a node's JSON. `options` are the options each one accepts (the CLI
+// rejects the others as a usage error).
 
 export type ReaderDef =
   | {
