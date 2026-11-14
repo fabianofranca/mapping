@@ -1,4 +1,4 @@
-// MF3: cor herdada nas telas do visualizador e do laboratório, por `Instance.parentId` (decisão 9).
+// MF3: inherited color in the viewer and lab screens, by `Instance.parentId` (decision 9).
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -15,8 +15,8 @@ beforeAll(() => installFakeCanvas());
 const LABELS: ScreenRendererLabels = {
   typeWithoutComponent: (name) => name,
   unknownType: (id) => id,
-  warningTypeWithoutComponent: 'sem componente',
-  warningUnknownType: 'desconhecido',
+  warningTypeWithoutComponent: 'no component',
+  warningUnknownType: 'unknown',
   drawWarning: ({ code }) => code,
 };
 
@@ -150,16 +150,16 @@ function withInk(screen: Screen, ink: string): Screen {
   };
 }
 
-describe('ScreenRenderer: cor herdada', () => {
-  it('a filha lê o valor do ancestral que oferece (o pai que não oferece é atravessado)', () => {
+describe('ScreenRenderer: inherited color', () => {
+  it('the child reads the value of the ancestor that provides it (the parent that does not provide is crossed)', () => {
     const { renderer, textColor } = setup();
     renderer.update(library, SCREEN);
     expect(textColor('L')).toBe('#0000ff');
-    // Sem ancestral que ofereça (nível da tela): o default.
+    // Without an ancestor that provides it (screen level): the default.
     expect(textColor('Q')).toBe('#999999');
   });
 
-  it('trocar o campo do pai muda a cor da filha', () => {
+  it("changing the parent's field changes the child's color", () => {
     const { renderer, textColor } = setup();
     renderer.update(library, SCREEN);
     renderer.update(library, withInk(SCREEN, '#ff0000'));
@@ -167,14 +167,14 @@ describe('ScreenRenderer: cor herdada', () => {
     expect(textColor('Q')).toBe('#999999');
   });
 
-  it('redesenha só a filha que lê: as outras ficam com o mesmo grupo e o mesmo desenho', () => {
+  it('redraws only the child that reads: the others keep the same group and the same drawing', () => {
     const { renderer } = setup();
     renderer.update(library, SCREEN);
     const before = new Map(
       ['S', 'L', 'D', 'Q'].map((id) => [id, renderer.nodeOf(id)?.children[0]]),
     );
     renderer.update(library, withInk(SCREEN, '#ff0000'));
-    // Só `P` (objeto novo) e `L` (valor oferecido novo) redesenham; o desenho filho de S, D e Q é o mesmo.
+    // Only `P` (new object) and `L` (new provided value) redraw; the child drawing of S, D and Q is the same.
     expect(renderer.nodeOf('L')?.children[0]).not.toBe(before.get('L'));
     for (const id of ['S', 'D', 'Q'])
       expect(renderer.nodeOf(id)?.children[0]).toBe(before.get(id));

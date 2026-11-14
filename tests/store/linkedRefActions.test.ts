@@ -1,4 +1,4 @@
-// Ações em lote do `linkedRef` (SG2): o texto e o `ref` entram numa única entrada do desfazer.
+// Batch actions of `linkedRef` (SG2): the text and the `ref` go into a single undo entry.
 import { describe, expect, it } from 'vitest';
 import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
@@ -15,18 +15,18 @@ const values = (store: ReturnType<typeof setup>['store']) =>
   store.project.value?.annotations.find((a) => a.id === 'AL')?.values;
 
 describe('store: setFieldValues / setTableCells', () => {
-  it('setFieldValues grava texto e ref numa entrada; um undo volta os dois', () => {
+  it('setFieldValues writes text and ref in one entry; one undo brings back both', () => {
     const { store, actions } = setup();
-    expect(actions.setFieldValues('AL', { titulo: 'Cliente', principal: R1 }).ok).toBe(
+    expect(actions.setFieldValues('AL', { titulo: 'Customer', principal: R1 }).ok).toBe(
       true,
     );
-    expect(values(store)).toMatchObject({ titulo: 'Cliente', principal: R1 });
+    expect(values(store)).toMatchObject({ titulo: 'Customer', principal: R1 });
     expect(store.undo()).toBe(true);
     expect(values(store)?.titulo ?? null).toBeNull();
     expect(values(store)?.principal ?? null).toBeNull();
   });
 
-  it('setTableCells grava texto e ref da linha numa entrada', () => {
+  it('setTableCells writes the row text and ref in one entry', () => {
     const { store, actions } = setup();
     expect(actions.setTableCells('AL', 'alvos', 'L1', { nota: 'cpf', alvo: R1 }).ok).toBe(
       true,
@@ -35,13 +35,13 @@ describe('store: setFieldValues / setTableCells', () => {
     expect(cell(p)).toEqual(R1);
     expect(store.undo()).toBe(true);
     expect(cell(store.project.value!) ?? null).toBeNull();
-    expect(store.canUndo.value).toBe(false); // era a única entrada
+    expect(store.canUndo.value).toBe(false); // it was the only entry
   });
 
-  it('falha atômica: nada muda e não abre entrada de desfazer', () => {
+  it('atomic failure: nothing changes and no undo entry is opened', () => {
     const { store, actions } = setup();
     const before = store.project.value;
-    const result = actions.setFieldValues('AL', { titulo: 'x', nada: 'y' });
+    const result = actions.setFieldValues('AL', { titulo: 'x', nothing: 'y' });
     expect(result.ok).toBe(false);
     expect(store.project.value).toBe(before);
   });

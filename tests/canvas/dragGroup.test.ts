@@ -16,7 +16,7 @@ import {
   type WholeProjectScenario,
 } from './wholeProjectScenario';
 
-/** Os renderizadores e as camadas do controller (privados: o teste os lê para provar onde estão os nós). */
+/** The renderers and the controller layers (private: the test reads them to prove where the nodes are). */
 interface Internals {
   readonly markings: MarkingRenderer;
   readonly images: ImageRenderer;
@@ -26,7 +26,7 @@ interface Internals {
 }
 const internals = (s: { controller: unknown }): Internals => s.controller as Internals;
 
-/** Nomes das camadas que o quadro redesenhou (contagem > 0). */
+/** Names of the layers that the frame redrew (count > 0). */
 function redrawn(counts: Record<string, number>): string[] {
   return Object.entries(counts)
     .filter(([, n]) => n > 0)
@@ -34,16 +34,16 @@ function redrawn(counts: Record<string, number>): string[] {
     .sort();
 }
 
-/** Nome da camada do palco em que o nó está. */
+/** Name of the stage layer the node is in. */
 const layerName = (node: Konva.Node): string | undefined => node.getLayer()?.name();
 
 function markingById(s: WholeProjectScenario, id: string): Marking {
   const marking = s.store.project.peek()?.markings.find((m) => m.id === id);
-  if (!marking) throw new Error(`marcação ${id}`);
+  if (!marking) throw new Error(`marking ${id}`);
   return marking;
 }
 
-/** A marcação-pai e uma filha dela (a receita do cenário põe 4 filhas em cada raiz). */
+/** The parent marking and a child of it (the scenario recipe puts 4 children on each root). */
 function parentAndChild(s: WholeProjectScenario): { parent: Marking; child: Marking } {
   const parent = s.project.markings.find((m) => m.parentId === null);
   const child = s.project.markings.find((m) => m.parentId === parent?.id);
@@ -51,20 +51,20 @@ function parentAndChild(s: WholeProjectScenario): { parent: Marking; child: Mark
   return { parent, child };
 }
 
-/** Posição desenhada da borda do nó contra a geometria do projeto (com a prévia do gesto). */
+/** Drawn position of the node border against the project geometry (with the gesture preview). */
 function expectDrawnAt(s: WholeProjectScenario, id: string): void {
   const project = s.store.project.peek();
-  if (!project) throw new Error('sem projeto');
+  if (!project) throw new Error('no project');
   const rect = markingCanvasRectOf(project, markingById(s, id));
   const node = internals(s).markings.node(id);
-  expect(node, `nó de ${id}`).toBeDefined();
-  expect({ x: node?.border.x(), y: node?.border.y() }, `posição de ${id}`).toEqual({
+  expect(node, `node of ${id}`).toBeDefined();
+  expect({ x: node?.border.x(), y: node?.border.y() }, `position of ${id}`).toEqual({
     x: rect.x,
     y: rect.y,
   });
 }
 
-/** Onde cada nó das marcações está: camada, pai e posição na pilha. */
+/** Where each marking node is: layer, parent and position in the stack. */
 function placeOf(node: Konva.Node): { parent: Konva.Container | null; index: number } {
   return { parent: node.getParent(), index: node.zIndex() };
 }
@@ -82,11 +82,11 @@ function spyOnWarnings(): void {
   warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 }
 
-// Decisões 5 a 7 da etapa canvas-escala: durante um gesto, o que se move vai para um grupo no fundo
-// da camada de sobreposições e só ela é redesenhada a cada `pointermove`; ao soltar ou cancelar, os
-// nós voltam às camadas e aos índices de antes.
-describe('grupo de arrasto: uma marcação (projeto inteiro à vista, 2.000 marcações)', () => {
-  it('cada pointermove redesenha só as sobreposições e o desenho acompanha o ponteiro', () => {
+// Decisions 5 to 7 of the canvas-scale stage: during a gesture, what moves goes into a group at the bottom
+// of the overlays layer and only it is redrawn on every `pointermove`; on release or cancel, the
+// nodes go back to the layers and to the indices they had before.
+describe('drag group: one marking (whole project in view, 2,000 markings)', () => {
+  it('each pointermove redraws only the overlays and the drawing follows the pointer', () => {
     spyOnWarnings();
     const s = openWholeProject(2000);
     const { parent, child } = parentAndChild(s);
@@ -97,7 +97,7 @@ describe('grupo de arrasto: uma marcação (projeto inteiro à vista, 2.000 marc
 
     expect(s.actions.beginGesture().ok).toBe(true);
     s.actions.previewMarkingMove(parent.id, 4, 4);
-    s.flush(); // O quadro que leva os nós ao grupo (as camadas envolvidas se redesenham).
+    s.flush(); // The frame that takes the nodes to the group (the layers involved redraw).
     s.drawnLayers();
 
     for (const d of [8, 12, 16]) {
@@ -111,14 +111,14 @@ describe('grupo de arrasto: uma marcação (projeto inteiro à vista, 2.000 marc
       }
     }
 
-    // Uma marcação parada continua na camada das marcações.
+    // A stationary marking stays in the markings layer.
     const other = s.project.markings.find(
       (m) => m.parentId === null && m.id !== parent.id,
     );
     const otherGroup = internals(s).markings.node(other?.id ?? '')?.group as Konva.Group;
     expect(layerName(otherGroup)).toBe('markings');
 
-    // Soltar: os nós voltam, no mesmo pai e no mesmo índice; o quadro redesenha as envolvidas.
+    // Release: the nodes go back, in the same parent and at the same index; the frame redraws the ones involved.
     s.actions.finishMarkingMove(parent.id, 16, 16);
     s.actions.commitGesture();
     s.flush();
@@ -137,7 +137,7 @@ describe('grupo de arrasto: uma marcação (projeto inteiro à vista, 2.000 marc
     s.destroy();
   }, 120_000);
 
-  it('cancelar o gesto devolve os nós como ao soltar', () => {
+  it('cancelling the gesture returns the nodes as releasing does', () => {
     spyOnWarnings();
     const s = openWholeProject(500);
     const { parent, child } = parentAndChild(s);
@@ -168,7 +168,7 @@ describe('grupo de arrasto: uma marcação (projeto inteiro à vista, 2.000 marc
     s.destroy();
   }, 120_000);
 
-  it('redimensionar: o mesmo (só as sobreposições por pointermove; ao soltar, os nós voltam)', () => {
+  it('resizing: the same (only the overlays per pointermove; on release, the nodes go back)', () => {
     spyOnWarnings();
     const s = openWholeProject(500);
     const { parent } = parentAndChild(s);
@@ -203,8 +203,8 @@ describe('grupo de arrasto: uma marcação (projeto inteiro à vista, 2.000 marc
   }, 120_000);
 });
 
-describe('grupo de arrasto: container e seleção múltipla', () => {
-  it('mover um container leva a imagem e tudo dele ao grupo, e tudo volta ao soltar', () => {
+describe('drag group: container and multiple selection', () => {
+  it('moving a container takes the image and everything in it to the group, and everything goes back on release', () => {
     spyOnWarnings();
     const s = openWholeProject(500);
     const image = s.project.containers[0];
@@ -255,7 +255,7 @@ describe('grupo de arrasto: container e seleção múltipla', () => {
     s.destroy();
   }, 120_000);
 
-  it('mover uma seleção múltipla: o mesmo', () => {
+  it('moving a multiple selection: the same', () => {
     spyOnWarnings();
     const s = openWholeProject(500);
     const [a, b] = s.project.markings.filter((m) => m.parentId === null);
@@ -292,8 +292,8 @@ describe('grupo de arrasto: container e seleção múltipla', () => {
   }, 120_000);
 });
 
-describe('grupo de arrasto: setas', () => {
-  it('a seta entre a marcação arrastada e uma parada é refeita a cada quadro, dentro do grupo', () => {
+describe('drag group: arrows', () => {
+  it('the arrow between the dragged marking and a stationary one is redone on every frame, inside the group', () => {
     spyOnWarnings();
     const s = openWholeProject(500);
     const arrow = s.project.arrows[0];
@@ -310,7 +310,7 @@ describe('grupo de arrasto: setas', () => {
     s.actions.previewMarkingMove(mover.id, 5, 5);
     s.flush();
     s.drawnLayers();
-    // A seta saiu da pilha das setas paradas e está no grupo de arrasto.
+    // The arrow left the stationary arrows stack and is in the drag group.
     expect(internals(s).arrows.drawn.some((shape) => shape.arrow.id === arrow.id)).toBe(
       false,
     );
@@ -320,7 +320,7 @@ describe('grupo de arrasto: setas', () => {
     s.flush();
     expect(redrawn(s.drawnLayers())).toEqual(['overlay']);
     expect(startOf()).not.toEqual(first);
-    // As demais setas continuam na pilha das setas paradas.
+    // The other arrows stay in the stationary arrows stack.
     expect(internals(s).arrows.size).toBeGreaterThan(s.project.arrows.length / 2);
 
     s.actions.cancelGesture();
@@ -332,7 +332,7 @@ describe('grupo de arrasto: setas', () => {
     s.destroy();
   }, 120_000);
 
-  it('mexer na rota e na ponta de uma seta: só as sobreposições por pointermove', () => {
+  it('touching the route and the tip of an arrow: only the overlays per pointermove', () => {
     spyOnWarnings();
     const s = openWholeProject(500);
     const arrow = s.project.arrows[0];
@@ -369,7 +369,7 @@ describe('grupo de arrasto: setas', () => {
   }, 120_000);
 });
 
-describe('grupo de arrasto: desenho de componente e flutuante', () => {
+describe('drag group: component drawing and floating', () => {
   function setup() {
     installFakeCanvas();
     const flush = stubFrames();
@@ -389,7 +389,7 @@ describe('grupo de arrasto: desenho de componente e flutuante', () => {
     return { ...editor, controller, container, flush, meter };
   }
 
-  /** Primeiro filho do grupo do container que traz o desenho da marcação. */
+  /** First child of the container group that carries the marking drawing. */
   const drawingNode = (
     layer: ComponentLayerRenderer,
     id: string,
@@ -397,7 +397,7 @@ describe('grupo de arrasto: desenho de componente e flutuante', () => {
     (layer as unknown as { mounted: Map<string, { node: Konva.Node }> }).mounted.get(id)
       ?.node;
 
-  it('o desenho do componente acompanha o arrastar e volta ao soltar', () => {
+  it('the component drawing follows the drag and goes back on release', () => {
     spyOnWarnings();
     const s = setup();
     const layer = () => internals(s).componentLayer;
@@ -412,14 +412,14 @@ describe('grupo de arrasto: desenho de componente e flutuante', () => {
     s.actions.previewMarkingMove('T1', 10, 10);
     s.flush();
     s.meter.take();
-    // A cada prévia o desenho da marcação é instanciado de novo: o nó é o que está montado agora.
+    // On every preview the marking drawing is instantiated again: the node is the one mounted now.
     const moving = () => drawingNode(layer(), 'T1') as Konva.Node;
     const x1 = moving().getAbsolutePosition().x;
     s.actions.previewMarkingMove('T1', 30, 30);
     s.flush();
     expect(redrawn(s.meter.take())).toEqual(['overlay']);
-    // O desenho vai para o grupo (na camada de sobreposições) e acompanha a marcação, com a
-    // escala da imagem em que ela está.
+    // The drawing goes to the group (in the overlays layer) and follows the marking, with the
+    // scale of the image it is in.
     expect(layerName(moving())).toBe('overlay');
     const scale = moving().getAbsoluteScale().x;
     expect(x1 - x0).toBeCloseTo(10 * scale, 5);
@@ -435,7 +435,7 @@ describe('grupo de arrasto: desenho de componente e flutuante', () => {
     s.controller.destroy();
   });
 
-  it('a flutuante: o desenho acompanha e, ao soltar, volta para a camada de cima', () => {
+  it('the floating one: the drawing follows and, on release, goes back to the top layer', () => {
     spyOnWarnings();
     const s = setup();
     expect(s.actions.setMarkingFloating('T2', true).ok).toBe(true);
@@ -466,8 +466,8 @@ describe('grupo de arrasto: desenho de componente e flutuante', () => {
   });
 });
 
-describe('grupo de arrasto: o palco', () => {
-  it('continua com 5 camadas, e a de sobreposições leva o grupo no fundo', () => {
+describe('drag group: the stage', () => {
+  it('stays with 5 layers, and the overlays one carries the group at the bottom', () => {
     spyOnWarnings();
     const s = openWholeProject(500);
     const { parent } = parentAndChild(s);
@@ -484,7 +484,7 @@ describe('grupo de arrasto: o palco', () => {
     ]);
     const overlay = stage.getLayers()[4] as Konva.Layer;
     const node = internals(s).markings.node(parent.id)?.group as Konva.Group;
-    // O grupo de arrasto é o primeiro filho da camada, por baixo de todo o resto.
+    // The drag group is the first child of the layer, below everything else.
     expect(overlay.getChildren()[0]?.isAncestorOf(node)).toBe(true);
     s.actions.cancelGesture();
     s.flush();

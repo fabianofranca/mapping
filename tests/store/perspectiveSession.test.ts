@@ -17,8 +17,8 @@ import { clearReportedErrors } from '../../src/utils/report';
 import { NOW, PROJECT_ID, sampleProject } from '../model/fixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 
-// Etapa #659, PE2: a sessão com perspectivas. A aberta fica neste navegador por `project.id`; as
-// "Para todos" vão no `mapping.json`; as "Só eu" ficam no IndexedDB (nunca no arquivo).
+// Stage #659, PE2: the session with perspectives. The open one stays in this browser by `project.id`; the
+// "For everyone" ones go in `mapping.json`; the "Only me" ones stay in IndexedDB (never in the file).
 
 let store: LocalPerspectiveStore | null = null;
 let session: ProjectSession | null = null;
@@ -27,7 +27,7 @@ let counter = 0;
 beforeEach(async () => {
   localStorage.clear();
   store = await openLocalPerspectives();
-  if (!store) throw new Error('IndexedDB indisponível');
+  if (!store) throw new Error('IndexedDB unavailable');
   await store.save(PROJECT_ID, []);
 });
 
@@ -39,9 +39,9 @@ afterEach(async () => {
   clearReportedErrors();
 });
 
-/** Pasta com o projeto já gravado (revisão 0), como a app a encontra ao abrir. */
+/** Folder with the project already saved (revision 0), as the app finds it on open. */
 function folder(project: Project = sampleProject()): MemoryDirectory {
-  const root = new MemoryDirectory('mapeamento');
+  const root = new MemoryDirectory('mapping');
   root.put('mapping.json', serialize({ ...project, revision: 0 }));
   return root;
 }
@@ -52,18 +52,18 @@ async function diskText(root: MemoryDirectory): Promise<string> {
 
 async function diskProject(root: MemoryDirectory): Promise<Project> {
   const parsed = deserialize(await diskText(root));
-  if (!parsed.ok) throw new Error('mapping.json inválido');
+  if (!parsed.ok) throw new Error('mapping.json invalid');
   return parsed.project;
 }
 
-/** Abre a sessão como a app: com o projeto do arquivo e as "Só eu" lidas do IndexedDB. */
+/** Opens the session like the app: with the project from the file and the "Only me" ones read from IndexedDB. */
 async function open(
   root: MemoryDirectory,
   options: { readonly localStore?: LocalPerspectiveStore | null } = {},
 ): Promise<ProjectSession> {
   const text = await diskText(root);
   const parsed = deserialize(text);
-  if (!parsed.ok) throw new Error('mapping.json inválido');
+  if (!parsed.ok) throw new Error('mapping.json invalid');
   const localStore = options.localStore === undefined ? store : options.localStore;
   const initial = localStore ? await localStore.load(parsed.project.project.id) : [];
   session = openSession({
@@ -71,7 +71,7 @@ async function open(
     project: parsed.project,
     loadedText: text,
     localPerspectives: { store: localStore, initial },
-    prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
+    prepareImage: () => Promise.reject(new Error('no images here')),
     now: () => NOW,
     newId: () => `PS-${++counter}`,
     autosaveDelay: 1,
@@ -79,7 +79,7 @@ async function open(
   return session;
 }
 
-/** Reabre a sessão sobre a mesma pasta (fecha a atual antes). */
+/** Reopens the session over the same folder (closes the current one first). */
 async function reopen(root: MemoryDirectory): Promise<ProjectSession> {
   await session?.flush();
   await session?.close();
@@ -87,7 +87,8 @@ async function reopen(root: MemoryDirectory): Promise<ProjectSession> {
 }
 
 function created(result: { readonly ok: boolean; readonly value?: string }): string {
-  if (!result.ok || result.value === undefined) throw new Error('perspectiva não criada');
+  if (!result.ok || result.value === undefined)
+    throw new Error('perspective not created');
   return result.value;
 }
 
@@ -95,8 +96,8 @@ async function savedLocals(): Promise<readonly Perspective[]> {
   return (await store?.load(PROJECT_ID)) ?? [];
 }
 
-describe('avisos de chegada', () => {
-  it('criar uma segunda raiz mantém o aviso da primeira', async () => {
+describe('arrival notices', () => {
+  it('creating a second root keeps the notice of the first', async () => {
     const s = await open(folder());
     const id = created(
       s.perspectiveActions.createPerspective({
@@ -116,8 +117,8 @@ describe('avisos de chegada', () => {
   });
 });
 
-describe('perspectiva aberta', () => {
-  it('abrir uma perspectiva troca session.perspective.id; null volta à Principal', async () => {
+describe('open perspective', () => {
+  it('opening a perspective switches session.perspective.id; null goes back to the Main one', async () => {
     const s = await open(folder());
     const id = created(
       s.perspectiveActions.createPerspective({
@@ -134,13 +135,13 @@ describe('perspectiva aberta', () => {
     expect(s.perspective.id.value).toBeNull();
   });
 
-  it('recusa um id que o projeto não tem', async () => {
+  it('refuses an id that the project does not have', async () => {
     const s = await open(folder());
-    expect(s.perspective.open('nao-existe')).toBe(false);
+    expect(s.perspective.open('does-not-exist')).toBe(false);
     expect(s.perspective.id.value).toBeNull();
   });
 
-  it('trocar de perspectiva não entra no desfazer', async () => {
+  it('switching perspective does not enter the undo', async () => {
     const s = await open(folder());
     const id = created(
       s.perspectiveActions.createPerspective({
@@ -156,7 +157,7 @@ describe('perspectiva aberta', () => {
     expect(s.store.canUndo.value).toBe(false);
   });
 
-  it('a escolha guardada volta ao reabrir a sessão (mesmo project.id)', async () => {
+  it('the stored choice comes back when the session is reopened (same project.id)', async () => {
     const root = folder();
     const s = await open(root);
     const id = created(
@@ -173,7 +174,7 @@ describe('perspectiva aberta', () => {
     expect(again.perspective.notice.value).toBeNull();
   });
 
-  it('a guardada que sumiu cai na Principal, com o aviso e o nome', async () => {
+  it('the stored one that disappeared falls to the Main one, with the notice and the name', async () => {
     const root = folder();
     const s = await open(root);
     const id = created(
@@ -188,7 +189,7 @@ describe('perspectiva aberta', () => {
     const saved = await diskText(root);
     await s.close();
 
-    // Outro arquivo (a perspectiva foi apagada noutro lugar): o mesmo projeto, sem ela.
+    // Another file (the perspective was deleted elsewhere): the same project, without it.
     root.put('mapping.json', serialize({ ...sampleProject(), revision: 5 }));
     expect(saved).not.toBe(await diskText(root));
     const again = await open(root);
@@ -196,7 +197,7 @@ describe('perspectiva aberta', () => {
     expect(again.perspective.notice.value).toEqual({ kind: 'removed', name: 'Mobile' });
   });
 
-  it('apagar a aberta volta à Principal com o aviso; desfazer a traz de volta', async () => {
+  it('deleting the open one goes back to the Main one with the notice; undo brings it back', async () => {
     const s = await open(folder());
     const id = created(
       s.perspectiveActions.createPerspective({
@@ -215,7 +216,7 @@ describe('perspectiva aberta', () => {
     expect(s.store.project.value?.perspectives.map((x) => x.id)).toEqual([id]);
   });
 
-  it('travar a troca abre a Principal (aviso review) e recusa abrir', async () => {
+  it('locking the switch opens the Main one (review notice) and refuses to open', async () => {
     const s = await open(folder());
     const id = created(
       s.perspectiveActions.createPerspective({
@@ -235,14 +236,14 @@ describe('perspectiva aberta', () => {
   });
 });
 
-describe('Só eu (IndexedDB)', () => {
-  it('criar grava no IndexedDB e NÃO no mapping.json', async () => {
+describe('Only me (IndexedDB)', () => {
+  it('creating writes to IndexedDB and NOT to mapping.json', async () => {
     const root = folder();
     const before = await diskText(root);
     const s = await open(root);
     const id = created(
       s.perspectiveActions.createPerspective({
-        name: 'Rascunho',
+        name: 'Draft',
         startFrom: null,
         local: true,
       }),
@@ -254,17 +255,17 @@ describe('Só eu (IndexedDB)', () => {
     await vi.waitFor(async () => {
       expect((await savedLocals()).map((x) => x.id)).toEqual([id]);
     });
-    // O arquivo continua o mesmo (nem a revisão mudou), e não cita a perspectiva.
+    // The file stays the same (not even the revision changed), and does not mention the perspective.
     expect(await diskText(root)).toBe(before);
     expect((await diskProject(root)).perspectives).toEqual([]);
   });
 
-  it('ao reabrir, as Só eu voltam do IndexedDB', async () => {
+  it('when reopening, the Only me ones come back from IndexedDB', async () => {
     const root = folder();
     const s = await open(root);
     const id = created(
       s.perspectiveActions.createPerspective({
-        name: 'Rascunho',
+        name: 'Draft',
         startFrom: null,
         local: true,
       }),
@@ -272,15 +273,13 @@ describe('Só eu (IndexedDB)', () => {
     await vi.waitFor(async () => expect(await savedLocals()).toHaveLength(1));
 
     const again = await reopen(root);
-    expect(again.store.project.value?.perspectives.map((x) => x.name)).toEqual([
-      'Rascunho',
-    ]);
+    expect(again.store.project.value?.perspectives.map((x) => x.name)).toEqual(['Draft']);
     expect(again.perspective.localIds.value.has(id)).toBe(true);
     again.perspective.open(id);
     expect(again.perspective.id.value).toBe(id);
   });
 
-  it('as Só eu usam os nomes das Para todos na unicidade', async () => {
+  it('the Only me ones use the For everyone names for uniqueness', async () => {
     const s = await open(folder());
     s.perspectiveActions.createPerspective({
       name: 'Mobile',
@@ -296,12 +295,12 @@ describe('Só eu (IndexedDB)', () => {
     expect(s.perspective.localIds.value.size).toBe(0);
   });
 
-  it('setPerspectiveLocal(id, false) leva ao arquivo e tira do navegador', async () => {
+  it('setPerspectiveLocal(id, false) takes it to the file and removes it from the browser', async () => {
     const root = folder();
     const s = await open(root);
     const id = created(
       s.perspectiveActions.createPerspective({
-        name: 'Rascunho',
+        name: 'Draft',
         startFrom: null,
         local: true,
       }),
@@ -316,12 +315,12 @@ describe('Só eu (IndexedDB)', () => {
     await vi.waitFor(async () => expect(await savedLocals()).toEqual([]));
   });
 
-  it('setPerspectiveLocal(id, true) traz para o navegador e o arquivo deixa de citá-la', async () => {
+  it('setPerspectiveLocal(id, true) brings it to the browser and the file stops mentioning it', async () => {
     const root = folder();
     const s = await open(root);
     const id = created(
       s.perspectiveActions.createPerspective({
-        name: 'Para todos',
+        name: 'For everyone',
         startFrom: null,
         local: false,
       }),
@@ -336,37 +335,37 @@ describe('Só eu (IndexedDB)', () => {
     expect((await savedLocals()).map((x) => x.id)).toEqual([id]);
     expect((await diskProject(root)).perspectives).toEqual([]);
     expect(s.perspective.localIds.value.has(id)).toBe(true);
-    // A perspectiva continua no projeto da memória.
+    // The perspective stays in the in-memory project.
     expect(s.store.project.value?.perspectives.map((x) => x.id)).toEqual([id]);
   });
 
-  it('setPerspectiveLocal não entra no desfazer', async () => {
+  it('setPerspectiveLocal does not enter the undo', async () => {
     const s = await open(folder());
     const id = created(
       s.perspectiveActions.createPerspective({
-        name: 'Para todos',
+        name: 'For everyone',
         startFrom: null,
         local: false,
       }),
     );
     await s.perspectiveActions.setPerspectiveLocal(id, true);
     s.store.undo();
-    // Desfez só a criação.
+    // Undid only the creation.
     expect(s.store.project.value?.perspectives).toEqual([]);
     expect(s.store.canUndo.value).toBe(false);
   });
 
-  it('sem IndexedDB, criar Só eu falha com local-unavailable', async () => {
+  it('without IndexedDB, creating Only me fails with local-unavailable', async () => {
     const s = await open(folder(), { localStore: null });
     expect(s.perspective.localAvailable).toBe(false);
     const result = s.perspectiveActions.createPerspective({
-      name: 'Rascunho',
+      name: 'Draft',
       startFrom: null,
       local: true,
     });
     expect(result).toEqual({ ok: false, error: 'local-unavailable' });
     expect(s.store.project.value?.perspectives).toEqual([]);
-    // As Para todos seguem funcionando, mas não viram Só eu.
+    // The For everyone ones keep working, but do not become Only me.
     const shared = created(
       s.perspectiveActions.createPerspective({
         name: 'Mobile',
@@ -381,11 +380,11 @@ describe('Só eu (IndexedDB)', () => {
     expect(s.perspective.localIds.value.size).toBe(0);
   });
 
-  it('duplicar uma Só eu dá outra Só eu', async () => {
+  it('duplicating an Only me gives another Only me', async () => {
     const s = await open(folder());
     const id = created(
       s.perspectiveActions.createPerspective({
-        name: 'Rascunho',
+        name: 'Draft',
         startFrom: null,
         local: true,
       }),
@@ -396,8 +395,8 @@ describe('Só eu (IndexedDB)', () => {
   });
 });
 
-describe('gravação do mapping.json', () => {
-  it('cada gravação sobe a revisão em 1 e mudar só uma Só eu não grava o arquivo', async () => {
+describe('writing mapping.json', () => {
+  it('each write bumps the revision by 1 and changing only an Only me does not write the file', async () => {
     const root = folder();
     const s = await open(root);
     s.perspectiveActions.createPerspective({
@@ -410,7 +409,7 @@ describe('gravação do mapping.json', () => {
 
     const local = created(
       s.perspectiveActions.createPerspective({
-        name: 'Rascunho',
+        name: 'Draft',
         startFrom: null,
         local: true,
       }),
@@ -435,7 +434,7 @@ describe('gravação do mapping.json', () => {
     expect(onDisk.perspectives.map((x) => x.name)).toEqual(['Mobile', 'Tablet']);
   });
 
-  it('o zip exportado também não leva as Só eu', async () => {
+  it('the exported zip also does not carry the Only me ones', async () => {
     const s = await open(folder());
     s.perspectiveActions.createPerspective({
       name: 'Mobile',
@@ -443,31 +442,31 @@ describe('gravação do mapping.json', () => {
       local: false,
     });
     s.perspectiveActions.createPerspective({
-      name: 'Rascunho',
+      name: 'Draft',
       startFrom: null,
       local: true,
     });
     const files = await s.collectFiles();
     const parsed = deserialize(files.mapping);
-    if (!parsed.ok) throw new Error('mapping inválido');
+    if (!parsed.ok) throw new Error('mapping invalid');
     expect(parsed.project.perspectives.map((x) => x.name)).toEqual(['Mobile']);
   });
 });
 
-describe('recarga externa', () => {
-  it('a raiz que sumiu sai das perspectivas Para todos e das Só eu', async () => {
+describe('external reload', () => {
+  it('the root that disappeared leaves the For everyone and the Only me perspectives', async () => {
     const root = folder();
     const s = await open(root);
     const shared = created(
       s.perspectiveActions.createPerspective({
-        name: 'Todos',
+        name: 'Everyone',
         startFrom: null,
         local: false,
       }),
     );
     const mine = created(
       s.perspectiveActions.createPerspective({
-        name: 'Eu',
+        name: 'Me',
         startFrom: null,
         local: true,
       }),
@@ -475,7 +474,7 @@ describe('recarga externa', () => {
     await s.flush();
     await vi.waitFor(async () => expect(await savedLocals()).toHaveLength(1));
 
-    // Outro processo apaga o container I2 e grava o arquivo.
+    // Another process deletes container I2 and writes the file.
     const current = await diskProject(root);
     const external = {
       ...removeContainer(current, 'I2'),
@@ -490,17 +489,17 @@ describe('recarga externa', () => {
       project.perspectives.find((x) => x.id === id)?.items.map((i) => i.root);
     expect(rootsOf(shared)).toEqual(['I1']);
     expect(rootsOf(mine)).toEqual(['I1']);
-    // As Só eu continuam Só eu e a reconciliada vai para o IndexedDB.
+    // The Only me ones stay Only me and the reconciled one goes to IndexedDB.
     expect(s.perspective.localIds.value.has(mine)).toBe(true);
     await vi.waitFor(async () => {
       expect((await savedLocals())[0]?.items.map((i) => i.root)).toEqual(['I1']);
     });
-    // Recarregar não regrava o arquivo.
+    // Reloading does not rewrite the file.
     await s.flush();
     expect((await diskProject(root)).revision).toBe(external.revision);
   });
 
-  it('a perspectiva aberta que sumiu volta à Principal com o aviso e o nome', async () => {
+  it('the open perspective that disappeared goes back to the Main one with the notice and the name', async () => {
     const root = folder();
     const s = await open(root);
     const id = created(
@@ -521,12 +520,12 @@ describe('recarga externa', () => {
     expect(s.perspective.notice.value).toEqual({ kind: 'removed', name: 'Mobile' });
   });
 
-  it('a Só eu aberta continua aberta depois da recarga', async () => {
+  it('the open Only me stays open after the reload', async () => {
     const root = folder();
     const s = await open(root);
     const id = created(
       s.perspectiveActions.createPerspective({
-        name: 'Eu',
+        name: 'Me',
         startFrom: null,
         local: true,
       }),
@@ -543,8 +542,8 @@ describe('recarga externa', () => {
   });
 });
 
-describe('actions das perspectivas', () => {
-  it('renomear, duplicar, apagar e escolher camadas escondidas entram no desfazer', async () => {
+describe('perspective actions', () => {
+  it('rename, duplicate, delete and choose hidden layers enter the undo', async () => {
     const s = await open(folder());
     const id = created(
       s.perspectiveActions.createPerspective({
@@ -553,26 +552,26 @@ describe('actions das perspectivas', () => {
         local: false,
       }),
     );
-    expect(s.perspectiveActions.renamePerspective(id, 'Celular').ok).toBe(true);
-    const copy = created(s.perspectiveActions.duplicatePerspective(id, 'Celular 2'));
+    expect(s.perspectiveActions.renamePerspective(id, 'Phone').ok).toBe(true);
+    const copy = created(s.perspectiveActions.duplicatePerspective(id, 'Phone 2'));
     expect(s.perspectiveActions.setPerspectiveHiddenLayers(copy, ['L2']).ok).toBe(true);
     const names = () => s.store.project.value?.perspectives.map((x) => x.name);
-    expect(names()).toEqual(['Celular', 'Celular 2']);
+    expect(names()).toEqual(['Phone', 'Phone 2']);
     expect(s.store.project.value?.perspectives[1]?.hiddenLayers).toEqual(['L2']);
 
     s.store.undo();
     expect(s.store.project.value?.perspectives[1]?.hiddenLayers).toEqual([]);
     s.store.undo();
-    expect(names()).toEqual(['Celular']);
+    expect(names()).toEqual(['Phone']);
     s.store.undo();
     expect(names()).toEqual(['Mobile']);
   });
 
-  it('enviar e tirar raízes usam a perspectiva aberta como fonte', async () => {
+  it('sending and removing roots use the open perspective as the source', async () => {
     const s = await open(folder());
     const id = created(
       s.perspectiveActions.createPerspective({
-        name: 'Vazia',
+        name: 'Empty',
         startFrom: 'empty',
         local: false,
       }),
@@ -585,18 +584,18 @@ describe('actions das perspectivas', () => {
     expect(roots()).toEqual(['I1', 'I2']);
     expect(s.perspectiveActions.removeRootsFromPerspective(id, ['I1']).ok).toBe(true);
     expect(roots()).toEqual(['I2']);
-    // Uma marcação que não é raiz é recusada.
+    // A marking that is not a root is refused.
     expect(s.perspectiveActions.sendRootsToPerspective(id, ['M1'])).toEqual({
       ok: false,
       error: 'not-root',
     });
   });
 
-  it('dismissArrival tira a marca "Veio de…"', async () => {
+  it('dismissArrival removes the "Came from…" mark', async () => {
     const s = await open(folder());
     s.store.apply((p) => ({
       ...p,
-      arrivals: [{ root: 'I1', from: 'PX', fromName: 'Antiga' }],
+      arrivals: [{ root: 'I1', from: 'PX', fromName: 'Old' }],
     }));
     expect(s.perspectiveActions.dismissArrival('I1').ok).toBe(true);
     expect(s.store.project.value?.arrivals).toEqual([]);

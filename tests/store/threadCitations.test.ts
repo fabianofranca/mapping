@@ -7,8 +7,8 @@ import { createEditorUi } from '../../src/store/ui';
 import { sampleProject } from '../model/fixtures';
 import { HUMAN, T0, T1, message, sampleThread } from '../model/threadFixtures';
 
-// "Citada em" (decisão 33), o filtro "só as que citam a seleção" (decisão 34) e a conversa que
-// ligou cada proposta (decisão 36): estado derivado das conversas.
+// "Cited in" (decision 33), the filter "only those that cite the selection" (decision 34) and the thread that
+// linked each proposal (decision 36): state derived from the threads.
 
 const NOW = '2026-11-06T12:00:00.000Z';
 const project = sampleProject();
@@ -16,12 +16,12 @@ const project = sampleProject();
 const A: Thread = sampleThread({
   id: 'ta1',
   anchor: { kind: 'marking', id: 'M2' },
-  messages: [message('a1', T0, HUMAN, 'sem citar')],
+  messages: [message('a1', T0, HUMAN, 'no citation')],
 });
 
 function urlOf(threads: readonly Thread[], target: CitationTarget): string {
-  const url = citationUrl('projeto', project, threads, target);
-  if (url === null) throw new Error('alvo sem URL');
+  const url = citationUrl('project', project, threads, target);
+  if (url === null) throw new Error('target without URL');
   return url;
 }
 
@@ -29,7 +29,7 @@ function citing(id: string, target: CitationTarget, threads: readonly Thread[]):
   return sampleThread({
     id,
     anchor: { kind: 'marking', id: 'M4' },
-    messages: [message(`${id}m`, T1, HUMAN, `veja [x](${urlOf(threads, target)})`)],
+    messages: [message(`${id}m`, T1, HUMAN, `see [x](${urlOf(threads, target)})`)],
   });
 }
 
@@ -49,13 +49,13 @@ function setup(threads: readonly Thread[]) {
 beforeEach(() => localStorage.clear());
 afterEach(() => localStorage.clear());
 
-describe('citedIn (Citada em)', () => {
-  it('mapeia a conversa citada às que a citam, abertas e resolvidas', () => {
+describe('citedIn (Cited in)', () => {
+  it('maps the cited thread to those that cite it, open and resolved', () => {
     const base = [A];
     const open = citing('tb1', { kind: 'thread', id: 'ta1' }, base);
     const done = {
       ...citing('tc1', { kind: 'thread', id: 'ta1' }, base),
-      resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
+      resolved: { by: { name: 'Marina Alves', email: 'marina@example.com' }, at: T1 },
     };
     const { derived } = setup([A, open, done]);
     expect(derived.threads.citedIn.value.get('ta1')).toEqual(['tb1', 'tc1']);
@@ -63,18 +63,18 @@ describe('citedIn (Citada em)', () => {
   });
 });
 
-describe('filtro "só as que citam a seleção"', () => {
+describe('filter "only those that cite the selection"', () => {
   const field: CitationTarget = { kind: 'entry', annotationId: 'A1', entryId: 'E1' };
   const onM1: Thread = sampleThread({
     id: 'tm1',
     anchor: { kind: 'marking', id: 'M1' },
-    messages: [message('m1', T0, HUMAN, 'na M1')],
+    messages: [message('m1', T0, HUMAN, 'on M1')],
   });
   const citesField = citing('tf1', field, []);
   const citesM2 = citing('tf2', { kind: 'marking', id: 'M2' }, []);
   const all = [onM1, citesField, citesM2, A];
 
-  it('nasce desligado e não é gravado', () => {
+  it('starts off and is not saved', () => {
     const { ui } = setup(all);
     expect(ui.commentsCiteSelection.value).toBe(false);
     ui.commentsCiteSelection.value = true;
@@ -84,7 +84,7 @@ describe('filtro "só as que citam a seleção"', () => {
   const ids = (d: ReturnType<typeof setup>['derived']) =>
     d.threads.rows.value.map((r) => r.thread.id).sort();
 
-  it('ligado com um item selecionado: as ancoradas nele e as que citam ele, as anotações ou os campos', () => {
+  it('on with a selected item: those anchored on it and those that cite it, its annotations or its fields', () => {
     const { ui, derived } = setup(all);
     ui.commentsStatus.value = 'all';
     ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -95,14 +95,14 @@ describe('filtro "só as que citam a seleção"', () => {
     expect(ids(derived)).toEqual(['ta1', 'tf2']);
   });
 
-  it('ligado sem seleção, não filtra', () => {
+  it('on without a selection, it does not filter', () => {
     const { ui, derived } = setup(all);
     ui.commentsStatus.value = 'all';
     ui.commentsCiteSelection.value = true;
     expect(ids(derived)).toHaveLength(4);
   });
 
-  it('seleção de container (kind image) vale como container', () => {
+  it('container selection (kind image) counts as container', () => {
     const onImage = citing('ti1', { kind: 'container', id: 'I1' }, []);
     const { ui, derived } = setup([onImage, A]);
     ui.commentsStatus.value = 'all';
@@ -113,10 +113,10 @@ describe('filtro "só as que citam a seleção"', () => {
 });
 
 describe('proposalThreads', () => {
-  it('a proposta aponta para a conversa que a ligou', () => {
+  it('the proposal points to the thread that linked it', () => {
     const linked = sampleThread({
       id: 'tp1',
-      messages: [{ ...message('p1', T0, HUMAN, 'Proposta'), proposal: 'P7' }],
+      messages: [{ ...message('p1', T0, HUMAN, 'Proposal'), proposal: 'P7' }],
     });
     const { derived } = setup([A, linked]);
     expect(derived.threads.proposalThreads.value.get('P7')).toBe('tp1');

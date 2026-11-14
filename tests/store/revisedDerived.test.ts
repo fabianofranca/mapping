@@ -9,8 +9,8 @@ import {
 import { sampleProject } from '../model/fixtures';
 import { openHarness, richScenario } from './proposalHarness';
 
-// Estado derivado da marca "Revisada" (etapa #644, CP3): `revisedIds`, `revisionSummary`,
-// `counts.revised` e o filtro "Só revisadas".
+// Derived state of the "Revised" mark (stage #644, CP3): `revisedIds`, `revisionSummary`,
+// `counts.revised` and the "Revised only" filter.
 
 const REVISED_AT = '2026-11-07T10:00:00.000Z';
 
@@ -18,14 +18,14 @@ function revised(p: Proposal): Proposal {
   const project = sampleProject();
   const prep = prepareRevision(project, p, []);
   if (!prep.ok) throw new Error(prep.error.code);
-  const after = renameMarking(prep.proposed, 'M1', 'Porta traseira');
+  const after = renameMarking(prep.proposed, 'M1', 'Rear door');
   const result = reviseProposal(project, p, { drop: [], at: REVISED_AT, after });
   if (!result.ok) throw new Error(result.error.code);
   return { ...result.proposal, revision: p.revision + 1 };
 }
 
-describe('derivados da revisão', () => {
-  it('expõe revisedIds, revisionSummary, counts.revised e o filtro Só revisadas', async () => {
+describe('derived state of the review', () => {
+  it('exposes revisedIds, revisionSummary, counts.revised and the Revised only filter', async () => {
     const { proposal } = richScenario();
     const rev = revised(proposal);
     const { review } = await openHarness({ proposals: [rev] });
@@ -42,7 +42,7 @@ describe('derivados da revisão', () => {
     expect(d.visibleIds.value.length).toBe(rev.changes.length);
   });
 
-  it('sem revisão: conjunto vazio, resumo nulo e contagem zero', async () => {
+  it('without a revision: empty set, null summary and zero count', async () => {
     const { proposal } = richScenario();
     const { review } = await openHarness({ proposals: [proposal] });
     review.open('P1');

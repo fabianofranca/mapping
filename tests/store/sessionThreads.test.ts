@@ -13,15 +13,15 @@ import { openHarness } from './proposalHarness';
 
 beforeEach(() => {
   localStorage.clear();
-  setIdentity('Marina Alves', 'marina@exemplo.com');
+  setIdentity('Marina Alves', 'marina@example.com');
 });
 afterEach(() => clearReportedErrors());
 
 const put = (root: { put(path: string, text: string): void }, t: Thread) =>
   root.put(threadFilePath(t.id, t.resolved !== null), serializeThread(t));
 
-describe('sessão e conversas', () => {
-  it('abre com as conversas do armazenamento e a conferência acha as mudanças por fora', async () => {
+describe('session and threads', () => {
+  it('opens with the threads of the storage and the check finds the external changes', async () => {
     const { root, session } = await openHarness();
     expect(session.threads.list.value).toEqual([]);
     put(root, sampleThread({ id: 'A' }));
@@ -34,56 +34,57 @@ describe('sessão e conversas', () => {
     await session.close();
   });
 
-  it('duas gravações da mesma conversa, a da app e a do MCP no meio, não perdem mensagem', async () => {
+  it('two writes of the same thread, the app one and the MCP one in the middle, lose no message', async () => {
     const t = sampleThread({ id: 'A', revision: 3 });
     const { root, session } = await openHarness({
       files: { [threadFilePath('A', false)]: serializeThread(t) },
     });
-    // O MCP grava entre a leitura da app e a gravação dela.
-    put(root, appendMessage(t, message('do-mcp', T3, AGENT, 'resposta do agente')));
-    const out = await session.threadActions.post('A', 'minha pergunta');
+    // The MCP writes between the app read and its write.
+    put(root, appendMessage(t, message('from-mcp', T3, AGENT, 'agent reply')));
+    const out = await session.threadActions.post('A', 'my question');
     expect(out.ok).toBe(true);
     const disk = parseThreadText((await root.read(threadFilePath('A', false))) ?? '');
-    // O relógio da bancada é anterior às mensagens de exemplo: a ordem é por `at`, não por chegada.
+    // The bench clock precedes the sample messages: the order is by `at`, not by arrival.
     const texts = disk.ok ? disk.thread.messages.map((m) => m.text).sort() : [];
     expect(texts).toEqual(
-      ['texto m1', 'resposta', 'texto m3', 'resposta do agente', 'minha pergunta'].sort(),
+      // pt-BR kept: shared fixture data asserted by tests/model (threadFixtures texts)
+      ['texto m1', 'resposta', 'texto m3', 'agent reply', 'my question'].sort(),
     );
     expect(disk.ok && disk.thread.revision).toBe(5);
     await session.close();
   });
 
-  it('collectFiles leva as conversas, abertas e resolvidas, e o texto exato dos inválidos', async () => {
+  it('collectFiles carries the threads, open and resolved, and the exact text of the invalid ones', async () => {
     const open = sampleThread({ id: 'A' });
     const resolved = sampleThread({
       id: 'R',
-      resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T3 },
+      resolved: { by: { name: 'Marina Alves', email: 'marina@example.com' }, at: T3 },
     });
     const { session } = await openHarness({
       files: {
         [threadFilePath('A', false)]: serializeThread(open),
         [threadFilePath('R', true)]: serializeThread(resolved),
-        [threadFilePath('quebrada', false)]: '{ não é json',
+        [threadFilePath('broken', false)]: '{ not json',
       },
     });
     const files = await session.collectFiles();
     expect([...(files.threads?.keys() ?? [])].sort()).toEqual([
       'comments/A.json',
-      'comments/quebrada.json',
+      'comments/broken.json',
       'comments/resolved/R.json',
     ]);
-    expect(files.threads?.get('comments/quebrada.json')).toBe('{ não é json');
+    expect(files.threads?.get('comments/broken.json')).toBe('{ not json');
     await session.close();
   });
 
-  it('gravar uma mensagem não muda o mapping.json, o histórico nem a revisão do projeto', async () => {
+  it('writing a message changes neither mapping.json, the history nor the project revision', async () => {
     const { root, session } = await openHarness({
       files: { [threadFilePath('A', false)]: serializeThread(sampleThread({ id: 'A' })) },
     });
     const mappingBefore = await root.read('mapping.json');
     const projectBefore = session.store.project.value;
     const undoBefore = session.store.canUndo.value;
-    await session.threadActions.post('A', 'oi');
+    await session.threadActions.post('A', 'hi');
     await session.threadActions.resolve('A');
     await session.flush();
     expect(await root.read('mapping.json')).toBe(mappingBefore);
@@ -92,7 +93,7 @@ describe('sessão e conversas', () => {
     await session.close();
   });
 
-  it('o onChanged avisa a gravação de uma conversa (alterações não exportadas)', async () => {
+  it('onChanged reports the write of a thread (unexported changes)', async () => {
     const onChanged = vi.fn();
     const { openSession } = await import('../../src/store/session');
     const { createFolderStorage } = await import('../../src/storage/folder');
@@ -112,10 +113,10 @@ describe('sessão e conversas', () => {
       project: loaded.project,
       loadedText: loaded.text,
       threads: await loadThreads(storage),
-      prepareImage: () => Promise.reject(new Error('sem imagens')),
+      prepareImage: () => Promise.reject(new Error('no images')),
       onChanged,
     });
-    await session.threadActions.post('A', 'oi');
+    await session.threadActions.post('A', 'hi');
     expect(onChanged).toHaveBeenCalledTimes(1);
     await session.close();
   });

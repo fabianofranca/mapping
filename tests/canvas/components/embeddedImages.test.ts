@@ -1,5 +1,5 @@
-// Imagens embutidas (`data:`): o carregador guarda o elemento por URL (cache limitado), não
-// redecodifica a cada desenho e avisa por uma época quando uma termina de carregar.
+// Embedded images (`data:`): the loader keeps the element per URL (limited cache), does not
+// re-decode at every draw and notifies through an epoch when one finishes loading.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   EMBEDDED_IMAGE_CACHE_ENTRIES,
@@ -35,12 +35,12 @@ afterEach(() => {
 const src = (n: number) => `data:image/png;base64,${n}`;
 
 describe('loadEmbeddedImage', () => {
-  it('só aceita data:', () => {
+  it('only accepts data:', () => {
     expect(loadEmbeddedImage('https://x/a.png', { onLoad: () => undefined })).toBeNull();
     expect(FakeImage.instances).toHaveLength(0);
   });
 
-  it('guarda a imagem carregada por URL: o segundo pedido não cria Image', () => {
+  it('keeps the loaded image per URL: the second request does not create an Image', () => {
     const first: HTMLImageElement[] = [];
     loadEmbeddedImage(src(1), { onLoad: (el) => first.push(el) });
     expect(cachedEmbeddedImage(src(1))).toBeUndefined();
@@ -51,7 +51,7 @@ describe('loadEmbeddedImage', () => {
     expect(FakeImage.instances).toHaveLength(1);
   });
 
-  it('pedidos enquanto carrega dividem a mesma Image e todos são avisados', () => {
+  it('requests while loading share the same Image and all are notified', () => {
     let heard = 0;
     loadEmbeddedImage(src(2), { onLoad: () => (heard += 1) });
     loadEmbeddedImage(src(2), { onLoad: () => (heard += 1) });
@@ -60,7 +60,7 @@ describe('loadEmbeddedImage', () => {
     expect(heard).toBe(2);
   });
 
-  it('a época sobe quando uma imagem termina de carregar', () => {
+  it('the epoch goes up when an image finishes loading', () => {
     const before = embeddedImageEpoch.value;
     loadEmbeddedImage(src(3), { onLoad: () => undefined });
     expect(embeddedImageEpoch.value).toBe(before);
@@ -68,7 +68,7 @@ describe('loadEmbeddedImage', () => {
     expect(embeddedImageEpoch.value).toBe(before + 1);
   });
 
-  it('erro avisa quem pediu e não fica no cache', () => {
+  it('an error notifies the requester and does not stay in the cache', () => {
     let failed = 0;
     loadEmbeddedImage(src(4), { onLoad: () => undefined, onError: () => (failed += 1) });
     FakeImage.instances[0]?.onerror?.();
@@ -76,7 +76,7 @@ describe('loadEmbeddedImage', () => {
     expect(cachedEmbeddedImage(src(4))).toBeUndefined();
   });
 
-  it('o cache é limitado: despeja a menos recente', () => {
+  it('the cache is limited: it evicts the least recent', () => {
     for (let i = 0; i <= EMBEDDED_IMAGE_CACHE_ENTRIES; i += 1) {
       loadEmbeddedImage(src(i), { onLoad: () => undefined });
       FakeImage.instances[i]?.onload?.();

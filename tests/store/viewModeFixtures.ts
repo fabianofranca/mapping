@@ -14,10 +14,10 @@ import {
 import { COMPONENTS } from '../model/componentFixtures';
 import { emptyProject } from '../model/fixtures';
 
-// Projeto do modo visualização: duas camadas com tipos que desenham (`ca`, `cb`) e uma sem
-// componente (`cc`). A tela é um container sem arquivo (B1) com um texto de cada camada
-// (TA e TB) e uma marcação comum (P); a foto I1 tem outro texto (TF).
-
+// View mode project: two layers with types that draw (`ca`, `cb`) and one without a
+// component (`cc`). The screen is a container without a file (B1) with one text of each layer
+// (TA and TB) and a plain marking (P); photo I1 has another text (TF).
+// pt-BR kept: shared fixture data asserted by tests/components, tests/canvas (spec id, layer and type names)
 export const VIEW_SPEC_ID = 'duas';
 const FILE = 'specs/duas/duas.spec.json';
 
@@ -56,6 +56,7 @@ const SPEC = {
     },
     {
       id: 'cc',
+      // pt-BR kept: shared fixture data asserted by tests/components (viewModePanel)
       name: 'Só dados',
       color: '#43A047',
       annotationTypes: [
@@ -125,7 +126,7 @@ export function viewProject(): Project {
   return p;
 }
 
-/** Ids das camadas do projeto que desenham (A e B) e da que não desenha (C). A marcação comum é P. */
+/** Ids of the project layers that draw (A and B) and of the one that does not draw (C). The plain marking is P. */
 export function viewLayerIds(p: Project): { a: string; b: string; c: string } {
   const id = (specLayer: string): string =>
     projectLayerFor(p, VIEW_SPEC_ID, specLayer)?.id ?? `?${specLayer}`;

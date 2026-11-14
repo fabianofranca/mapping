@@ -22,9 +22,9 @@ import { textMeasurer } from '../../src/store/textMeasure';
 import { SPEC_ID } from '../model/componentFixtures';
 import { componentEditor, installFakeCanvas, setOnlyScreens } from './harness';
 
-// A camada de componentes dentro do `CanvasController` (B3, P6): o desenho de cada marcação com
-// componente, redesenhado só no que mudou, e as regras de borda e de texto do zoom semântico.
-describe('CanvasController: componentes', () => {
+// The component layer inside `CanvasController` (B3, P6): the drawing of each marking with a
+// component, redrawn only where it changed, and the border and text rules of semantic zoom.
+describe('CanvasController: components', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = () => {
     while (frames.length > 0) for (const frame of frames.splice(0)) frame(0);
@@ -68,8 +68,8 @@ describe('CanvasController: componentes', () => {
     };
     const componentLayer = () => internals.stage.getLayers()[1];
     /**
-     * O nó do Konva de uma marcação desenhada (ou `undefined` se não está montado). Procura no palco
-     * todo: durante um gesto o desenho de quem se move fica no grupo de arrasto (sobreposições).
+     * The Konva node of a drawn marking (or `undefined` if it is not mounted). Searches the whole
+     * stage: during a gesture the drawing of whoever moves sits in the drag group (overlays).
      */
     const drawing = (id: string) =>
       internals.stage.find((n: Konva.Node) => n.getAttr('markingId') === id)[0];
@@ -87,19 +87,19 @@ describe('CanvasController: componentes', () => {
     };
   }
 
-  it('mede com o Konva ao montar', () => {
+  it('measures with Konva when mounting', () => {
     expect(textMeasurer.peek()).toBe(approximateMeasurer);
     const { controller } = setup();
     expect(textMeasurer.peek()).toBe(konvaMeasurer);
     controller.destroy();
   });
 
-  it('a camada de componentes fica entre as imagens e as marcações, e o container desenha', () => {
+  it('the component layer sits between the images and the markings, and the container draws', () => {
     const { controller, internals, componentLayer, drawing, container } = setup();
     expect(internals.stage.getLayers()).toHaveLength(5);
     expect(container.querySelectorAll('canvas')).toHaveLength(5);
     expect(componentLayer()?.listening()).toBe(false);
-    // Os dois textos do container; o da foto só com a opção ligada.
+    // The two texts of the container; the photo one only with the option on.
     expect(drawing('T1')).toBeDefined();
     expect(drawing('T2')).toBeDefined();
     expect(drawing('TP')).toBeUndefined();
@@ -107,9 +107,9 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('O modo (Só as telas) esconde bordas e seleção, e a camada de componentes continua', () => {
+  it('The (Screens only) mode hides borders and selection, and the component layer remains', () => {
     const { controller, ui, internals, drawing } = setup();
-    // O grupo da marcação some inteiro (borda, nome e alças vão com ele).
+    // The marking group disappears whole (border, name and handles go with it).
     const shown = (id: string) => internals.markings.node(id)?.group.visible();
     ui.selection.value = { kind: 'marking', id: 'T1' };
     flush();
@@ -126,7 +126,7 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('a foto só desenha com "Mostrar componentes sobre fotos"', () => {
+  it('the photo only draws with "Show components over photos"', () => {
     const { controller, drawing, container } = setup();
     setShowComponentsOnPhotos(true);
     flush();
@@ -139,18 +139,18 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('o container conta como imagem pronta, sem pedir arquivo', () => {
+  it('the container counts as a ready image, without asking for a file', () => {
     const { controller, container, ensure } = setup();
-    // A foto I1 ainda carrega; só o container está pronta.
+    // The photo I1 is still loading; only the container is ready.
     expect(container.dataset.images).toBe('1');
     expect(ensure.mock.calls.map(([file]) => file)).toEqual(['images/screen.png']);
     controller.destroy();
   });
 
-  it('editar um campo pela action redesenha só aquela marcação', () => {
+  it('editing a field through the action redraws only that marking', () => {
     const { controller, drawing, actions } = setup();
     const [t1, t2] = [drawing('T1'), drawing('T2')];
-    expect(actions.setFieldValue('A_T1', 'label', 'Outro texto').ok).toBe(true);
+    expect(actions.setFieldValue('A_T1', 'label', 'Other text').ok).toBe(true);
     flush();
     expect(drawing('T1')).not.toBe(t1);
     expect(drawing('T1')).toBeDefined();
@@ -158,10 +158,10 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('desfazer e refazer redesenham pelo mesmo caminho', () => {
+  it('undo and redo redraw through the same path', () => {
     const { controller, drawing, actions, store } = setup();
     const t2 = drawing('T2');
-    actions.setFieldValue('A_T1', 'label', 'Outro texto');
+    actions.setFieldValue('A_T1', 'label', 'Other text');
     flush();
     const edited = drawing('T1');
     store.undo();
@@ -175,7 +175,7 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('a prévia de um gesto redesenha só a marcação arrastada', () => {
+  it('the preview of a gesture redraws only the dragged marking', () => {
     const { controller, drawing, actions } = setup();
     const [t1, t2] = [drawing('T1'), drawing('T2')];
     actions.beginGesture();
@@ -191,10 +191,10 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('redimensionar abaixo do mínimo do componente prende no mínimo, sem recusar o gesto', () => {
+  it('resizing below the component minimum clamps to the minimum, without refusing the gesture', () => {
     const { controller, drawing, actions, store } = setup();
     actions.beginGesture();
-    // O mínimo do texto é 60×24; o ponteiro pede 10×10.
+    // The text minimum is 60×24; the pointer asks for 10×10.
     actions.previewMarkingRect('T1', { x: 20, y: 20, width: 10, height: 10 });
     flush();
     const rect = store.project.value?.markings.find((m) => m.id === 'T1')?.rect;
@@ -204,7 +204,7 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('reordenar irmãs pela action troca quem fica por cima no canvas (e desfazer devolve)', () => {
+  it('reordering siblings through the action swaps who stays on top on the canvas (and undo restores)', () => {
     const { controller, drawing, componentLayer, actions, store } = setup();
     const order = () =>
       (componentLayer()?.getChildren()[0] as Konva.Group)
@@ -215,7 +215,7 @@ describe('CanvasController: componentes', () => {
     expect(actions.reorderMarking('T1', 1).ok).toBe(true);
     flush();
     expect(order()).toEqual(['T2', 'T1']);
-    // Só a ordem muda: os nós são os mesmos.
+    // Only the order changes: the nodes are the same.
     expect(drawing('T1')).toBe(t1);
     expect(drawing('T2')).toBe(t2);
     store.undo();
@@ -224,7 +224,7 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('pan e zoom não refazem a camada de componentes', () => {
+  it('pan and zoom do not rebuild the component layer', () => {
     const { controller } = setup();
     const render = vi.spyOn(ComponentLayerRenderer.prototype, 'render');
     controller.zoomBy(1.5);
@@ -237,11 +237,11 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('um tema novo refaz os desenhos com as cores novas', async () => {
+  it('a new theme redraws the drawings with the new colors', async () => {
     const { controller, drawing } = setup();
     const before = drawing('T1');
     document.documentElement.setAttribute('data-theme', 'dark');
-    // O observador do tema é assíncrono (MutationObserver).
+    // The theme observer is asynchronous (MutationObserver).
     await new Promise((resolve) => setTimeout(resolve, 0));
     flush();
     expect(drawing('T1')).not.toBe(before);
@@ -249,11 +249,11 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  describe('marcações do canvas e flutuantes', () => {
+  describe('canvas markings and floating ones', () => {
     const markingNodes = (layer: Konva.Layer | undefined, id: string) =>
       layer?.find((n: Konva.Node) => n.getAttr('markingId') === id) ?? [];
 
-    it('a marcação do canvas desenha na camada de componentes; a flutuante, na camada de cima', () => {
+    it('the canvas marking draws on the component layer; the floating one, on the top layer', () => {
       const { controller, actions, internals, container } = setup();
       const layers = internals.stage.getLayers();
       const regular = actions.addComponent({
@@ -272,23 +272,23 @@ describe('CanvasController: componentes', () => {
       });
       if (!regular.ok || !note.ok) throw new Error('addComponent');
       expect(actions.setMarkingFloating(note.value, true).ok).toBe(true);
-      // Os desenhos e as bordas nascem sob demanda: leva as duas à vista.
+      // The drawings and borders are born on demand: bring both into view.
       controller.centerOnPoint({ x: 3000, y: 250 });
       flush();
-      // Imagens, componentes, setas e marcações (uma camada, um grupo para cada), flutuantes, sobreposições.
+      // Images, components, arrows and markings (one layer, one group for each), floating, overlays.
       expect(markingNodes(layers[1], regular.value)).toHaveLength(1);
       expect(markingNodes(layers[1], note.value)).toHaveLength(0);
       expect(markingNodes(layers[3], note.value)).toHaveLength(1);
       expect(markingNodes(layers[3], regular.value)).toHaveLength(0);
-      // T1, T2 e as duas do canvas (a do canvas desenha sempre: não há foto por baixo).
+      // T1, T2 and the two canvas ones (the canvas one always draws: there is no photo underneath).
       expect(container.dataset.components).toBe('4');
-      // As bordas da flutuante ficam no grupo de cima, depois do desenho dela.
+      // The floating one borders sit in the top group, after its drawing.
       const floatingLayer = layers[3] as Konva.Layer;
       expect(floatingLayer.getChildren()).toHaveLength(2);
       expect(internals.markings.node(note.value)?.group.getParent()).toBe(
         floatingLayer.getChildren()[1],
       );
-      // O grupo das marcações é o segundo da camada compartilhada com as setas.
+      // The markings group is the second of the layer shared with the arrows.
       const arrowMarkingLayer = layers[2] as Konva.Layer;
       expect(internals.markings.node(regular.value)?.group.getParent()).toBe(
         arrowMarkingLayer.getChildren()[1],
@@ -296,25 +296,25 @@ describe('CanvasController: componentes', () => {
       controller.destroy();
     });
 
-    it('a flutuante aparece sobre fotos mesmo sem "Mostrar componentes sobre fotos"', () => {
+    it('the floating one shows over photos even without "Show components over photos"', () => {
       const { controller, actions, internals } = setup();
       const note = actions.addComponent({
         containerId: null,
         parentId: null,
         specId: SPEC_ID,
         typeId: 'text',
-        center: { x: 500, y: 400 }, // sobre a foto I1
+        center: { x: 500, y: 400 }, // over the photo I1
       });
       if (!note.ok) throw new Error('addComponent');
       actions.setMarkingFloating(note.value, true);
       flush();
       expect(markingNodes(internals.stage.getLayers()[3], note.value)).toHaveLength(1);
-      // Os componentes de dentro da foto (TP) continuam escondidos.
+      // The components inside the photo (TP) remain hidden.
       expect(markingNodes(internals.stage.getLayers()[1], 'TP')).toHaveLength(0);
       controller.destroy();
     });
 
-    it('desfazer tira o desenho do canvas', () => {
+    it('undo removes the drawing from the canvas', () => {
       const { controller, actions, internals, store } = setup();
       const note = actions.addComponent({
         containerId: null,
@@ -324,7 +324,7 @@ describe('CanvasController: componentes', () => {
         center: { x: 3000, y: 400 },
       });
       if (!note.ok) throw new Error('addComponent');
-      // O desenho nasce sob demanda: leva a marcação à vista.
+      // The drawing is born on demand: bring the marking into view.
       controller.centerOnPoint({ x: 3000, y: 400 });
       flush();
       expect(markingNodes(internals.stage.getLayers()[1], note.value)).toHaveLength(1);
@@ -335,7 +335,7 @@ describe('CanvasController: componentes', () => {
     });
   });
 
-  describe('borda só em hover e seleção', () => {
+  describe('border only on hover and selection', () => {
     function hoverSetup() {
       const made = setup();
       const { controller, container, store } = made;
@@ -365,7 +365,7 @@ describe('CanvasController: componentes', () => {
       return { ...made, move };
     }
 
-    it('escondida sem hover; o mouse sobre a marcação mostra, e fora esconde', () => {
+    it('hidden without hover; the mouse over the marking shows it, and outside hides it', () => {
       const { controller, border, move, container, internals } = hoverSetup();
       expect(border('T1')).toBe(false);
       expect(border('T2')).toBe(false);
@@ -373,7 +373,7 @@ describe('CanvasController: componentes', () => {
       expect(internals.state.hoverMarking.value).toBe('T1');
       expect(border('T1')).toBe(true);
       expect(border('T2')).toBe(false);
-      // Fora das marcações (canto da tela).
+      // Outside the markings (corner of the screen).
       move(10, 10);
       expect(internals.state.hoverMarking.value).toBeNull();
       expect(border('T1')).toBe(false);
@@ -384,7 +384,7 @@ describe('CanvasController: componentes', () => {
       controller.destroy();
     });
 
-    it('selecionada mostra a borda mesmo sem o mouse', () => {
+    it('selected shows the border even without the mouse', () => {
       const { controller, border, ui } = hoverSetup();
       ui.selection.value = { kind: 'marking', id: 'T2' };
       flush();
@@ -393,7 +393,7 @@ describe('CanvasController: componentes', () => {
       controller.destroy();
     });
 
-    it('sem marcação desenhada, o hover nem é calculado', () => {
+    it('without a drawn marking, hover is not even computed', () => {
       const { controller, move, internals, actions } = hoverSetup();
       actions.removeMarking('T1');
       actions.removeMarking('T2');
@@ -404,15 +404,15 @@ describe('CanvasController: componentes', () => {
     });
   });
 
-  it('zoom semântico: a marcação desenhada não tem cartão; a da foto (sem desenho) tem', () => {
+  it('semantic zoom: the drawn marking has no card; the photo one (without drawing) has', () => {
     const { controller, internals, store, drawing, actions } = setup();
-    // O nome só ganha nó quando aparece (partes sob demanda): a marcação da foto tem nome.
+    // The name only gets a node when it shows (parts on demand): the photo marking has a name.
     actions.renameMarking('TP', 'Perfil');
     controller.zoomTo(3);
     flush();
     const text = (id: string) =>
       internals.markings.node(id)?.text?.group.visible() ?? false;
-    // A visibilidade do texto depende de caber na tela: enquadra a marcação conferida.
+    // The text visibility depends on fitting on the screen: fit the checked marking.
     const focus = (id: string) => {
       const marking = store.project.value?.markings.find((m) => m.id === id);
       const placement = store.project.value?.containers.find(
@@ -431,7 +431,7 @@ describe('CanvasController: componentes', () => {
     expect(text('T1')).toBe(false);
     focus('TP');
     expect(text('TP')).toBe(true);
-    // Ligando a opção, a da foto também passa a ser desenhada: sem cartão.
+    // Turning on the option, the photo one is also drawn: no card.
     setShowComponentsOnPhotos(true);
     flush();
     expect(text('TP')).toBe(false);

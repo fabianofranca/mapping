@@ -1,6 +1,6 @@
-// R2 (#1107): `Screen.direction` leva a direção de leitura ao interior de cada componente. A tela
-// `rtl` (a de `layoutScreen`, ou montada à mão) espelha o `row` dentro da instância; a opção
-// `direction` do `update` vence a da tela; sem nenhuma das duas, nada muda (ltr).
+// R2 (#1107): `Screen.direction` carries the reading direction into each component. The `rtl`
+// screen (the one from `layoutScreen`, or built by hand) mirrors the `row` inside the instance; the
+// `direction` option of `update` wins over the screen's; with neither, nothing changes (ltr).
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -23,7 +23,7 @@ const LABELS: ScreenRendererLabels = {
   drawWarning: ({ code }) => code,
 };
 
-/** Um `row` de 100x40 com dois filhos fixos (20 e 30 de largura), sem gap nem padding. */
+/** A 100x40 `row` with two fixed children (20 and 30 wide), without gap or padding. */
 const PAIR = {
   format: 'mapping-component',
   formatVersion: 4,
@@ -64,7 +64,7 @@ const library = loadLibrary([
   { path: 'components/pair.json', text: JSON.stringify(PAIR) },
 ]);
 
-/** As mesmas instâncias (mesmos objetos) em toda tela: só a direção muda entre elas. */
+/** The same instances (same objects) in every screen: only the direction changes between them. */
 const INSTANCES: Screen['instances'] = [
   { id: 'p', typeId: 'pair', box: { x: 100, y: 10, width: 100, height: 40 }, values: {} },
 ];
@@ -81,7 +81,7 @@ function screenOf(direction?: 'ltr' | 'rtl'): Screen {
   };
 }
 
-/** x (na tela) e largura dos dois retângulos do par: o vermelho (largura 20) e o azul (30). */
+/** x (on the screen) and width of the pair's two rectangles: the red one (width 20) and the blue one (30). */
 function rects(screen: Screen, direction?: 'ltr' | 'rtl'): { red: number; blue: number } {
   const group = new Konva.Group();
   const renderer = new ScreenRenderer(group, {
@@ -97,23 +97,23 @@ function rects(screen: Screen, direction?: 'ltr' | 'rtl'): { red: number; blue: 
   return { red: xOf('#ff0000'), blue: xOf('#0000ff') };
 }
 
-describe('ScreenRenderer: direção da tela', () => {
-  it('a tela ltr (sem a chave) segue como sempre: red em 100, blue em 120', () => {
+describe('ScreenRenderer: screen direction', () => {
+  it('the ltr screen (without the key) goes on as always: red at 100, blue at 120', () => {
     expect(rects(screenOf())).toEqual({ red: 100, blue: 120 });
     expect(rects(screenOf('ltr'))).toEqual({ red: 100, blue: 120 });
   });
 
-  it("a tela rtl espelha o interior do componente: x' = largura - x - w dentro da caixa", () => {
-    // dentro da instância (largura 100): red 0..20 -> 80; blue 20..50 -> 50 (mais a caixa em 100)
+  it("the rtl screen mirrors the component interior: x' = width - x - w inside the box", () => {
+    // inside the instance (width 100): red 0..20 -> 80; blue 20..50 -> 50 (plus the box at 100)
     expect(rects(screenOf('rtl'))).toEqual({ red: 180, blue: 150 });
   });
 
-  it('a opção direction do update vence a da tela', () => {
+  it("the update direction option wins over the screen's", () => {
     expect(rects(screenOf('rtl'), 'ltr')).toEqual({ red: 100, blue: 120 });
     expect(rects(screenOf(), 'rtl')).toEqual({ red: 180, blue: 150 });
   });
 
-  it('trocar a direção da tela redesenha as instâncias', () => {
+  it('changing the screen direction redraws the instances', () => {
     const group = new Konva.Group();
     const renderer = new ScreenRenderer(group, {
       labels: LABELS,

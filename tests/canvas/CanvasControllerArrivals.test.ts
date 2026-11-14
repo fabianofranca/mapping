@@ -18,10 +18,10 @@ import { viewOf } from '../store/perspectiveHarness';
 import { openHarness } from '../store/proposalHarness';
 import { canvasProject, installFakeCanvas } from './harness';
 
-// As marcas de chegada no CanvasController (PE3, decisão 8): só na Principal, enquanto houver marca,
-// no quadro de sempre, sem recalcular nada com pan e zoom.
+// The arrival marks in `CanvasController` (PE3, decision 8): only on the Main one, while there is a mark,
+// in the usual frame, recomputing nothing on pan and zoom.
 
-describe('CanvasController: marcas de chegada', () => {
+describe('CanvasController: arrival marks', () => {
   const frames: FrameRequestCallback[] = [];
   let rafCalls = 0;
   const flush = () => {
@@ -46,13 +46,13 @@ describe('CanvasController: marcas de chegada', () => {
     localStorage.clear();
   });
 
-  /** `canvasProject` com a perspectiva V (só I2) e I2 marcada como vinda de "Frente". */
+  /** `canvasProject` with perspective V (only I2) and I2 marked as coming from "Front". */
   function projectWithArrival(): Project {
     const p = addPerspective(
       canvasProject(),
       viewOf(canvasProject(), { root: 'I2', at: { x: 0, y: 2000 } }),
     );
-    return { ...p, arrivals: [{ root: 'I2', from: 'V', fromName: 'Frente' } as Arrival] };
+    return { ...p, arrivals: [{ root: 'I2', from: 'V', fromName: 'Front' } as Arrival] };
   }
 
   async function setup() {
@@ -91,14 +91,14 @@ describe('CanvasController: marcas de chegada', () => {
     return { ui, perspective, perspectiveActions, controller, internals };
   }
 
-  it('na Principal, com marca: o selo na raiz e a faixa', async () => {
+  it('on the Main one, with a mark: the seal on the root and the strip', async () => {
     const { controller, internals } = await setup();
     expect(internals.arrivalLayer.badgeCount).toBe(1);
     expect(internals.arrivalLayer.bandVisible).toBe(true);
     controller.destroy();
   });
 
-  it('com uma perspectiva aberta não desenha selo nem faixa; ao voltar, desenha', async () => {
+  it('with a perspective open it draws no seal nor strip; when going back, it draws', async () => {
     const { controller, perspective, internals } = await setup();
     perspective.open('V');
     flush();
@@ -110,7 +110,7 @@ describe('CanvasController: marcas de chegada', () => {
     controller.destroy();
   });
 
-  it('dispensar a marca tira o selo e a faixa', async () => {
+  it('dismissing the mark removes the seal and the strip', async () => {
     const { controller, perspectiveActions, internals } = await setup();
     expect(perspectiveActions.dismissArrival('I2').ok).toBe(true);
     flush();
@@ -119,7 +119,7 @@ describe('CanvasController: marcas de chegada', () => {
     controller.destroy();
   });
 
-  it('somem no modo visualização', async () => {
+  it('they disappear in view mode', async () => {
     const { controller, ui, internals } = await setup();
     setViewMode(ui, true);
     flush();
@@ -130,7 +130,7 @@ describe('CanvasController: marcas de chegada', () => {
     controller.destroy();
   });
 
-  it('pan e zoom não recalculam as marcas, só escalam o selo, e pedem um quadro só', async () => {
+  it('pan and zoom do not recompute the marks, only scale the seal, and ask for a single frame', async () => {
     const { controller, internals } = await setup();
     const marks = internals.frame.peek().arrivals;
     expect(marks).toBeTruthy();

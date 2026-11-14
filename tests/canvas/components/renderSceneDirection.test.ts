@@ -1,6 +1,6 @@
-// R1 (#1096): a direção de leitura no Konva. O nó `Text` recebe `direction: 'rtl'` só em rtl, e a
-// matriz espelhada (scaleX negativo) dos nós `icon`/`path` com `mirror` sai certa pelo `decompose`:
-// o caminho espelhado ocupa a mesma caixa que ocuparia sem espelho.
+// R1 (#1096): the reading direction in Konva. The `Text` node gets `direction: 'rtl'` only in rtl, and the
+// mirrored matrix (negative scaleX) of `icon`/`path` nodes with `mirror` comes out right through `decompose`:
+// the mirrored path takes up the same box it would without mirroring.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -68,21 +68,21 @@ const textOf = (style: Partial<TextNode['style']>): TextNode => ({
 const konvaText = (n: TextNode): Konva.Text =>
   (renderScene({ root: n, warnings: [] }).root.find('Text') as Konva.Text[])[0]!;
 
-describe('renderScene: direção', () => {
-  it('Text leva direction rtl só quando o estilo pede', () => {
+describe('renderScene: direction', () => {
+  it('Text gets direction rtl only when the style asks for it', () => {
     expect(konvaText(textOf({ direction: 'rtl' })).direction()).toBe('rtl');
     expect(konvaText(textOf({})).direction()).not.toBe('rtl');
     expect(konvaText(textOf({ direction: 'rtl', align: 'left' })).align()).toBe('left');
   });
 
-  it('o decompose de uma matriz com scaleX negativo reconstrói a mesma matriz', () => {
+  it('decompose of a matrix with negative scaleX rebuilds the same matrix', () => {
     const m = [-2, 0, 0, 2, 30, 4] as const;
     const group = new Konva.Group(decompose(m));
     const got = group.getTransform().m.map((v) => Math.round(v * 1e6) / 1e6 + 0);
     expect(got).toEqual([...m]);
   });
 
-  it('o ícone espelhado em rtl ocupa a mesma caixa que ocuparia em ltr', () => {
+  it('the icon mirrored in rtl takes up the same box it would in ltr', () => {
     const box = (d?: 'rtl') => {
       const g = render([{ type: 'icon', name: 'back', width: 24, height: 24 }], d);
       const [p] = paths(g);

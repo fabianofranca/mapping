@@ -15,7 +15,7 @@ import {
 import { sampleProject } from '../model/fixtures';
 import { AGENT, HUMAN, T0, T1, message, sampleThread } from '../model/threadFixtures';
 
-// Visibilidade dos pinos e o botão Comentar (CM4, decisões 24 e 25): estado só da UI.
+// Pin visibility and the Comment button (CM4, decisions 24 and 25): UI-only state.
 
 const NOW = '2026-11-06T12:00:00.000Z';
 const OPEN: Thread = sampleThread({
@@ -26,12 +26,12 @@ const OPEN: Thread = sampleThread({
 const OTHER: Thread = sampleThread({
   id: 'b',
   anchor: { kind: 'marking', id: 'M2' },
-  messages: [message('b1', T0, HUMAN, 'e agora?')],
+  messages: [message('b1', T0, HUMAN, 'and now?')],
 });
 const DONE: Thread = sampleThread({
   id: 'r',
   anchor: { kind: 'marking', id: 'M4' },
-  resolved: { by: { name: 'Marina', email: 'marina@exemplo.com' }, at: T1 },
+  resolved: { by: { name: 'Marina', email: 'marina@example.com' }, at: T1 },
 });
 
 function setup(threads: readonly Thread[]) {
@@ -50,8 +50,8 @@ function setup(threads: readonly Thread[]) {
 beforeEach(() => localStorage.clear());
 afterEach(() => localStorage.clear());
 
-describe('visibilidade dos pinos', () => {
-  it('nasce desligada, sem armar nada, e nunca é gravada', () => {
+describe('pin visibility', () => {
+  it('is born off, without arming anything, and is never saved', () => {
     const { ui, derived } = setup([OPEN, OTHER]);
     expect(ui.commentPins.value).toBe(false);
     expect(ui.commentArm.value).toBeNull();
@@ -60,49 +60,49 @@ describe('visibilidade dos pinos', () => {
     expect(localStorage.length).toBe(0);
   });
 
-  it('ligada, mostra o pino de cada item com conversa aberta; a resolvida fica de fora', () => {
+  it('on, shows the pin of each item with an open conversation; the resolved one stays out', () => {
     const { ui, derived } = setup([OPEN, OTHER, DONE]);
     ui.commentPins.value = true;
     const hosts = derived.threads.pins.value.map((g) => g.hostKey).sort();
     expect(hosts).toEqual(['marking:M1', 'marking:M2']);
   });
 
-  it('desligada, a conversa selecionada mostra só o próprio pino', () => {
+  it('off, the selected conversation shows only its own pin', () => {
     const { ui, project, derived } = setup([OPEN, OTHER]);
     selectThread(ui, project, OPEN);
     expect(derived.threads.pins.value.map((g) => g.hostKey)).toEqual(['marking:M1']);
   });
 
-  it('a resolvida selecionada tem pino, mesmo com os pinos desligados', () => {
+  it('the selected resolved one has a pin, even with the pins off', () => {
     const { ui, project, derived } = setup([OPEN, DONE]);
     selectThread(ui, project, DONE);
     expect(derived.threads.pins.value.map((g) => g.hostKey)).toEqual(['marking:M4']);
     expect(derived.threads.pins.value[0]?.color).toBe('resolved');
   });
 
-  it('o ponto de não lida entra no grupo', () => {
+  it('the unread dot enters the group', () => {
     const store = createProjectStore({ now: () => NOW });
     store.load(sampleProject(), { readOnly: false });
     const ui = createEditorUi();
     const derived = createEditorDerived(store, ui, undefined, undefined, {
       threads: signal([OPEN]),
-      copyId: 'cópia',
-      identity: signal({ name: 'Marina', email: 'marina@exemplo.com' }),
+      copyId: 'copy',
+      identity: signal({ name: 'Marina', email: 'marina@example.com' }),
     });
     ui.commentPins.value = true;
-    // A última mensagem é do agente e nunca foi lida neste dispositivo.
+    // The last message is from the agent and was never read on this device.
     expect(derived.threads.pins.value[0]?.hasUnread).toBe(true);
   });
 
-  it('Nova conversa (rascunho) liga a visibilidade', () => {
+  it('New conversation (draft) turns on the visibility', () => {
     const { ui, project } = setup([]);
     startComposing(ui, project, { kind: 'marking', id: 'M1' });
     expect(ui.commentPins.value).toBe(true);
   });
 });
 
-describe('botão Comentar: armar, colocar e cancelar', () => {
-  it('armar liga a visibilidade, guarda a ferramenta de antes e volta ao Navegar', () => {
+describe('Comment button: arm, place and cancel', () => {
+  it('arming turns on the visibility, keeps the previous tool and goes back to Navigate', () => {
     const { ui } = setup([]);
     ui.mode.value = 'draw';
     armComment(ui);
@@ -111,7 +111,7 @@ describe('botão Comentar: armar, colocar e cancelar', () => {
     expect(ui.mode.value).toBe('navigate');
   });
 
-  it('Esc cancela: volta à ferramenta de antes e mantém a visibilidade', () => {
+  it('Esc cancels: goes back to the previous tool and keeps the visibility', () => {
     const { ui } = setup([]);
     ui.mode.value = 'draw';
     armComment(ui);
@@ -121,7 +121,7 @@ describe('botão Comentar: armar, colocar e cancelar', () => {
     expect(cancelComment(ui)).toBe(false);
   });
 
-  it('o clique abre o rascunho no item e volta à ferramenta de antes', () => {
+  it('the click opens the draft on the item and goes back to the previous tool', () => {
     const { ui, project } = setup([]);
     ui.mode.value = 'draw';
     armComment(ui);
@@ -132,7 +132,7 @@ describe('botão Comentar: armar, colocar e cancelar', () => {
     expect(ui.mode.value).toBe('draw');
   });
 
-  it('num lugar vazio, o rascunho fica num ponto e nada é gravado', () => {
+  it('on an empty spot, the draft stays at a point and nothing is saved', () => {
     const { ui, project } = setup([]);
     armComment(ui);
     const point = { kind: 'point', containerId: 'I1', x: 10, y: 20 } as const;

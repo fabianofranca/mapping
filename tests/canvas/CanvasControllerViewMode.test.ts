@@ -23,9 +23,9 @@ import { viewCatalog, viewLayerIds, viewProject } from '../store/viewModeFixture
 import { editorFor, installFakeCanvas } from './harness';
 import { componentSources } from './harness';
 
-// O modo visualização no CanvasController (etapa #656, VZ2): o que cada item da escolha liga
-// e desliga, a seleção e os indicadores que somem, e o que o modo não faz o canvas recalcular.
-describe('CanvasController: modo visualização', () => {
+// View mode in CanvasController (stage #656, VZ2): what each item of the choice turns on
+// and off, the selection and the indicators that disappear, and what the mode does not make the canvas recompute.
+describe('CanvasController: view mode', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = () => {
     while (frames.length > 0) for (const frame of frames.splice(0)) frame(0);
@@ -50,9 +50,9 @@ describe('CanvasController: modo visualização', () => {
     localStorage.clear();
   });
 
-  // A marcação P tem nome: o nome só ganha nó quando aparece (partes sob demanda).
+  // The marking P has a name: the name only gets a node when it shows (parts on demand).
   function setup(
-    project = renameMarking(withArrow(viewProject(), 'R1', 'TA', 'P'), 'P', 'Porta'),
+    project = renameMarking(withArrow(viewProject(), 'R1', 'TA', 'P'), 'P', 'Door'),
   ) {
     const sources = componentSources(viewCatalog());
     const editor = editorFor(project, false, sources);
@@ -93,7 +93,7 @@ describe('CanvasController: modo visualização', () => {
     };
   }
 
-  it('selecionar e passar o mouse não aparecem: sem seleção, alças, hover nem indicadores', () => {
+  it('selecting and hovering do not show up: without selection, handles, hover nor indicators', () => {
     const { controller, ui, internals, marking, derived } = setup();
     ui.selection.value = { kind: 'marking', id: 'P' };
     flush();
@@ -111,18 +111,18 @@ describe('CanvasController: modo visualização', () => {
     }
     const node = marking('P');
     expect(node?.border.visible()).toBe(true);
-    // Sem a seleção, a borda não é a da seleção; sem indicadores (⚠, alerta).
+    // Without the selection, the border is not the selection one; without indicators (⚠, alert).
     expect(node?.border.stroke()).not.toBe(internals.overlay.handles.get('nw')?.stroke());
     expect(node?.alertClip?.visible() ?? false).toBe(false);
     expect(node?.badge?.visible() ?? false).toBe(false);
-    // O toque não alcança nada: nenhuma marcação está visível para o toque.
+    // The touch reaches nothing: no marking is visible to the touch.
     expect(
       [...derived.markingVisibility.peek().values()].every((v) => v === 'hidden'),
     ).toBe(true);
     controller.destroy();
   });
 
-  it('Containers: o nome acima e o contorno do container sem arquivo; o fundo continua', () => {
+  it('Containers: the name above and the outline of the container without a file; the background stays', () => {
     const { controller, ui, image } = setup();
     setViewMode(ui, true);
     flush();
@@ -135,7 +135,7 @@ describe('CanvasController: modo visualização', () => {
     expect(image('B1')?.placeholder.visible()).toBe(true);
     expect(image('B1')?.placeholder.fill()).toBe('#FFFFFF');
     expect(image('B1')?.placeholder.strokeEnabled()).toBe(false);
-    // O nome da foto também segue Containers.
+    // The photo name also follows Containers.
     expect(image('I1')?.title.visible()).toBe(false);
     setViewShow(ui, { containers: true });
     flush();
@@ -144,29 +144,29 @@ describe('CanvasController: modo visualização', () => {
     controller.destroy();
   });
 
-  it('Imagens: o bitmap das fotos (sem Imagens a foto não aparece, o nome segue Containers)', () => {
+  it('Images: the bitmap of the photos (without Images the photo does not appear, the name follows Containers)', () => {
     const { controller, ui, image } = setup();
     setViewMode(ui, true);
     flush();
-    // Sem bitmap pronto o reservado aparece, como fora do modo.
+    // Without a ready bitmap the placeholder appears, as outside the mode.
     expect(image('I1')?.placeholder.visible()).toBe(true);
     setViewShow(ui, { images: false });
     flush();
     expect(image('I1')?.bitmap.visible()).toBe(false);
     expect(image('I1')?.placeholder.visible()).toBe(false);
     expect(image('I1')?.title.visible()).toBe(true);
-    // O container sem arquivo não é foto: segue de pé.
+    // The container without a file is not a photo: it stays up.
     expect(image('B1')?.placeholder.visible()).toBe(true);
     controller.destroy();
   });
 
-  it('Contorno e Nome das marcações: a borda e o cabeçalho, cada um por si', () => {
+  it('Marking outlines and Marking names: the border and the header, each on its own', () => {
     const { controller, ui, marking } = setup();
     controller.zoomTo(1);
     controller.centerOnPoint({ x: 1600, y: 300 });
     setViewMode(ui, true);
     flush();
-    // Começa sem o contorno e com o nome.
+    // Starts without the outline and with the name.
     expect(marking('P')?.group.visible()).toBe(true);
     expect(marking('P')?.border.visible()).toBe(false);
     expect(marking('P')?.text?.group.visible()).toBe(true);
@@ -175,14 +175,14 @@ describe('CanvasController: modo visualização', () => {
     expect(marking('P')?.border.visible()).toBe(true);
     expect(marking('P')?.halo?.visible()).toBe(true);
     expect(marking('P')?.text?.group.visible() ?? false).toBe(false);
-    // Nem contorno nem nome: a marcação sai inteira.
+    // Neither outline nor name: the marking is gone entirely.
     setViewShow(ui, { outline: false });
     flush();
     expect(marking('P')?.group.visible()).toBe(false);
     controller.destroy();
   });
 
-  it('a marcação com desenho continua sem cabeçalho, e a borda só vem se o desenho sumiu', () => {
+  it('the marking with a drawing stays without a header, and the border only comes if the drawing disappeared', () => {
     const { controller, ui, marking, ids } = setup();
     setViewMode(ui, true);
     setViewShow(ui, { outline: true });
@@ -195,7 +195,7 @@ describe('CanvasController: modo visualização', () => {
     controller.destroy();
   });
 
-  it('Setas: ligam e desligam as setas, sem depender de "Mostrar setas"', () => {
+  it('Arrows: turn the arrows on and off, without depending on "Show arrows"', () => {
     const { controller, ui, container } = setup();
     expect(container.dataset.arrows).toBe('1');
     setViewMode(ui, true);
@@ -214,7 +214,7 @@ describe('CanvasController: modo visualização', () => {
     controller.destroy();
   });
 
-  it('Contorno desmarcado e Setas marcado: as setas aparecem', () => {
+  it('Outline unchecked and Arrows checked: the arrows appear', () => {
     const { controller, ui, container, marking } = setup();
     setViewMode(ui, true);
     setViewShow(ui, { outline: false, names: false, arrows: true });
@@ -225,7 +225,7 @@ describe('CanvasController: modo visualização', () => {
     controller.destroy();
   });
 
-  it('o filtro "Marcações sem anotação" não vale no modo', () => {
+  it('the "Markings without annotations" filter does not apply in the mode', () => {
     const { controller, ui, container } = setup();
     ui.hiddenLayers.value = new Set(viewProject().layers.map((l) => l.id));
     flush();
@@ -235,7 +235,7 @@ describe('CanvasController: modo visualização', () => {
     controller.destroy();
   });
 
-  it('uma camada com desenho desmarcada: os desenhos dela somem e os da outra ficam', () => {
+  it('a layer with a drawing unchecked: its drawings disappear and the other one stays', () => {
     const { controller, ui, drawing, container, ids } = setup();
     setViewMode(ui, true);
     flush();
@@ -252,7 +252,7 @@ describe('CanvasController: modo visualização', () => {
     controller.destroy();
   });
 
-  it('Só as telas dá o quadro do antigo Ver limpo: sem marcação, seta, seleção nem alça', () => {
+  it('Screens only gives the frame of the old Clean view: no marking, arrow, selection nor handle', () => {
     const { controller, ui, marking, container, drawing, internals, image } = setup();
     ui.selection.value = { kind: 'marking', id: 'P' };
     flush();
@@ -270,7 +270,7 @@ describe('CanvasController: modo visualização', () => {
     controller.destroy();
   });
 
-  it('Mostrar tudo mostra o contorno de todas as marcações', () => {
+  it('Show all shows the outline of all the markings', () => {
     const { controller, ui, marking } = setup();
     controller.zoomTo(1);
     controller.centerOnPoint({ x: 1600, y: 300 });
@@ -285,14 +285,14 @@ describe('CanvasController: modo visualização', () => {
     controller.destroy();
   });
 
-  it('trocar a escolha não refaz os desenhos nem as imagens; pan e zoom, nada do modo', () => {
+  it('switching the choice does not redo the drawings nor the images; pan and zoom, nothing of the mode', () => {
     const { controller, ui, derived, store, internals } = setup();
     setViewMode(ui, true);
     flush();
     const scenes = derived.drawingsOf(store.project.value);
     const imagesRender = vi.spyOn(internals.images, 'render');
     const arrowsRender = vi.spyOn(internals.arrows, 'render');
-    // Pan e zoom: as imagens só refazem com a escala; as setas também (a espessura é de tela).
+    // Pan and zoom: the images only redo with the scale; the arrows too (the thickness is screen based).
     controller.zoomBy(1.2);
     flush();
     imagesRender.mockClear();
@@ -301,7 +301,7 @@ describe('CanvasController: modo visualização', () => {
     flush();
     expect(imagesRender).not.toHaveBeenCalled();
     expect(arrowsRender).not.toHaveBeenCalled();
-    // Outra escolha: os desenhos são os mesmos objetos.
+    // Another choice: the drawings are the same objects.
     setViewShow(ui, { outline: true, names: false });
     flush();
     expect(derived.drawingsOf(store.project.value)).toBe(scenes);

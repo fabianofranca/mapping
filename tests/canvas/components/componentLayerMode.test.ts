@@ -1,4 +1,4 @@
-// CF6: trocar o modo do desenho pelo store refaz o desenho da camada, sem recarregar o projeto.
+// CF6: changing the drawing mode through the store redoes the layer drawing, without reloading the project.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { ComponentLayerRenderer } from '../../../src/canvas/components/componentLayer';
@@ -12,8 +12,8 @@ const PLACEMENTS: ReadonlyMap<string, Placement> = new Map([
 ]);
 const all = () => true;
 
-describe('camada de componentes: modo do desenho', () => {
-  it('trocar o modo do projeto refaz o desenho; o do container refaz só o dele', () => {
+describe('component layer: drawing mode', () => {
+  it('changing the project mode redoes the drawing; the container one redoes only its own', () => {
     const { store, actions, derived } = componentEditor();
     const loaded = store.project.value;
     const parent = new Konva.Group();
@@ -32,7 +32,7 @@ describe('camada de componentes: modo do desenho', () => {
     expect(dark.get('T1')).not.toBe(first.get('T1'));
     expect(layer.render(dark, all, PLACEMENTS)).toBe(true);
     expect(nodeOf('T1')).not.toBe(t1);
-    // O projeto não foi recarregado: segue o mesmo, só com o modo novo.
+    // The project was not reloaded: it stays the same, only with the new mode.
     expect(store.project.value?.containers).toBe(loaded?.containers);
 
     expect(actions.setContainerDrawingMode('B1', 'light').ok).toBe(true);

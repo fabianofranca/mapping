@@ -15,9 +15,9 @@ import { NOW, sampleProject } from '../model/fixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 import { material3Package, material3Spec } from '../storage/packageFixture';
 
-// FA2, decisão 11: depois de gravar um pacote, só as especializações gravadas nesta gravação são
-// validadas de novo (pelos arquivos em memória); as outras ficam com o resultado anterior, sem
-// nenhuma leitura do disco. O resultado é o mesmo de `loadLibraryIssues` sobre o disco inteiro.
+// FA2, decision 11: after writing a package, only the specializations written in this write are
+// validated again (from the in-memory files); the others keep the previous result, with no
+// disk read. The result is the same as `loadLibraryIssues` over the whole disk.
 
 let current: ProjectSession | null = null;
 afterEach(async () => {
@@ -54,7 +54,7 @@ async function setup() {
     project,
     loadedText: text,
     libraryIssues: await loadLibraryIssues(storage, project),
-    prepareImage: () => Promise.reject(new Error('sem imagens')),
+    prepareImage: () => Promise.reject(new Error('no images')),
     now: () => NOW,
     autosaveDelay: 1,
   });
@@ -62,28 +62,28 @@ async function setup() {
   return { session, storage, reads, notesDir: `specs/${applied.spec.id}` };
 }
 
-describe('biblioteca sem reler o que não mudou', () => {
-  it('atualizar uma especialização de pacote não lê nenhum arquivo da outra e o resultado é o completo', async () => {
+describe('library without rereading what did not change', () => {
+  it('updating a package specialization reads no file of the other and the result is the complete one', async () => {
     const { session, storage, reads, notesDir } = await setup();
     const spec = { ...material3Spec(), version: 1 };
     expect(session.actions.applySpecialization(spec, material3Package()).ok).toBe(true);
     await session.flush();
     reads.length = 0;
     const next = material3Package();
-    next.set('docs/novo.md', '# novo');
+    next.set('docs/new.md', '# new');
     expect(
       session.actions.updateSpecialization({ ...spec, version: 2 }, undefined, next).ok,
     ).toBe(true);
     await session.flush();
     expect(reads.filter((r) => r.includes(`${notesDir}`))).toEqual([]);
     const project = session.store.committed.peek();
-    if (!project) throw new Error('sem projeto');
+    if (!project) throw new Error('no project');
     const full = await loadLibraryIssues(storage, project);
     expect(full.size).toBe(2);
     expect(session.libraryIssues.value).toEqual(full);
   });
 
-  it('remover a especialização tira a entrada; desfazer a traz de volta, igual ao completo', async () => {
+  it('removing the specialization drops the entry; undoing brings it back, same as the complete one', async () => {
     const { session, storage } = await setup();
     const spec = { ...material3Spec(), version: 1 };
     session.actions.applySpecialization(spec, material3Package());
@@ -96,7 +96,7 @@ describe('biblioteca sem reler o que não mudou', () => {
     session.store.undo();
     await session.flush();
     const project = session.store.committed.peek();
-    if (!project) throw new Error('sem projeto');
+    if (!project) throw new Error('no project');
     expect(session.libraryIssues.value).toEqual(
       await loadLibraryIssues(storage, project),
     );

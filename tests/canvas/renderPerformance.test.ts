@@ -61,20 +61,20 @@ import { componentSources, installFakeCanvas } from './harness';
 import { openWholeProject, wholeProject } from './wholeProjectScenario';
 import { expectBelow, measureBudget } from '../support/perfReport';
 
-// Orçamento de uma renderização do canvas (docs/ARCHITECTURE.md, "Desempenho") com o projeto grande já
-// indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
-// mede o trabalho do controller e do Konva para atualizar os nós).
+// Budget of one canvas render (docs/ARCHITECTURE.md, "Performance") with the large project already
+// indexed: real Konva in jsdom, with a fake 2D context (nothing is painted;
+// it measures the work of the controller and Konva to update the nodes).
 const RENDER_BUDGET_MS = 16;
-/** Desligado com `--coverage` (vite.config.ts): o código instrumentado é mais lento. */
+/** Off with `--coverage` (vite.config.ts): instrumented code is slower. */
 const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
-/** Uma repetição separa ruído do runner de regressão (ver tests/model/performance.test.ts). */
+/** One retry separates runner noise from regression (see tests/model/performance.test.ts). */
 const BUDGET_OPTIONS = { retry: 1 };
-/** As 3 levas de 41 amostras do `measureBudget` (gc a cada amostra) passam dos 5 s do padrão sob a carga do `npm test`. */
-const LEVAS_OPTIONS = { ...BUDGET_OPTIONS, timeout: 60_000 };
+/** The 3 batches of 41 samples of `measureBudget` (gc at each sample) exceed the default 5 s under the load of `npm test`. */
+const BATCHES_OPTIONS = { ...BUDGET_OPTIONS, timeout: 60_000 };
 
-describe('renderização do canvas com o projeto grande', () => {
+describe('canvas rendering with the large project', () => {
   const frames: FrameRequestCallback[] = [];
-  /** Roda o quadro agendado e devolve quanto ele levou. */
+  /** Runs the scheduled frame and returns how long it took. */
   const flush = (): number => {
     const pending = frames.splice(0);
     const start = performance.now();
@@ -95,12 +95,12 @@ describe('renderização do canvas com o projeto grande', () => {
     vi.unstubAllGlobals();
   });
 
-  /** Setas entre marcações vizinhas do projeto grande: cada uma é desenhada (ME4). */
+  /** Arrows between neighboring markings of the large project: each one is drawn (ME4). */
   const ARROW_COUNT = 200;
 
   function setup() {
     const typed = buildLargeTypedProject();
-    // 200 setas do projeto grande: da marcação `i` à `i + 3` (containers diferentes, canvas).
+    // 200 arrows of the large project: from marking `i` to `i + 3` (different containers, canvas).
     const project = Array.from({ length: ARROW_COUNT }).reduce<Project>((acc, _, i) => {
       const from = acc.markings[i];
       const to = acc.markings[i + 3];
@@ -126,13 +126,13 @@ describe('renderização do canvas com o projeto grande', () => {
       derived,
       view: createCanvasViewState(),
     });
-    // Já indexado: o orçamento é o do desenho, não o do índice (medido no modelo).
+    // Already indexed: the budget is the drawing's, not the index's (measured in the model).
     projectIndex(project);
     projectIssues(project);
     return { project, store, actions, ui, controller, container };
   }
 
-  it('desenha as 200 setas do projeto grande', () => {
+  it('draws the 200 arrows of the large project', () => {
     const { controller, container } = setup();
     flush();
     expect(container.dataset.arrows).toBe(String(ARROW_COUNT));
@@ -140,22 +140,22 @@ describe('renderização do canvas com o projeto grande', () => {
   });
 
   budgetIt(
-    `pan, zoom e edição do projeto grande (com ${ARROW_COUNT} setas) desenham em menos de ${RENDER_BUDGET_MS} ms`,
+    `pan, zoom and edit of the large project (with ${ARROW_COUNT} arrows) draw in under ${RENDER_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
       const { project, actions, ui, controller, container } = setup();
-      flush(); // Primeiro quadro: cria os nós.
+      flush(); // First frame: creates the nodes.
 
-      // Aproxima numa marcação pai: cartões do zoom semântico na tela.
+      // Zooms in on a parent marking: semantic zoom cards on screen.
       const [first, second] = project.markings.filter((m) => m.parentId === null);
       if (!first || !second) throw new Error('fixture');
       ui.selection.value = { kind: 'marking', id: first.id };
       controller.centerSelection();
       flush();
 
-      // Uma rodada de cada métrica: pan, zoom (roda) e edição, alternando o sentido.
+      // One round of each metric: pan, zoom (wheel) and edit, alternating the direction.
       const round = (i: number): { pan: number; zoom: number; edit: number } => {
-        // Pan: centraliza alternando entre duas marcações vizinhas.
+        // Pan: centers alternating between two neighboring markings.
         ui.selection.value = { kind: 'marking', id: (i % 2 ? first : second).id };
         controller.centerSelection();
         const pan = flush();
@@ -167,31 +167,31 @@ describe('renderização do canvas com o projeto grande', () => {
           }),
         );
         const zoom = flush();
-        expect(actions.renameMarking(first.id, `Renomeada ${i}`).ok).toBe(true);
+        expect(actions.renameMarking(first.id, `Renamed ${i}`).ok).toBe(true);
         return { pan, zoom, edit: flush() };
       };
-      // Aquece (JIT e coletor) como os orçamentos irmãos: as 3 primeiras rodadas não contam.
+      // Warms up (JIT and collector) like the sibling budgets: the first 3 rounds do not count.
       for (let i = 0; i < 3; i++) round(i);
       const samples = Array.from({ length: 15 }, (_, i) => round(i));
       const median = (xs: number[]) =>
         [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
-      // A métrica no `expect`: a falha diz qual estourou.
+      // The metric in the `expect`: the failure says which one blew the budget.
       expectBelow(median(samples.map((r) => r.pan)), RENDER_BUDGET_MS, 'pan');
       expectBelow(median(samples.map((r) => r.zoom)), RENDER_BUDGET_MS, 'zoom');
-      expectBelow(median(samples.map((r) => r.edit)), RENDER_BUDGET_MS, 'edição');
+      expectBelow(median(samples.map((r) => r.edit)), RENDER_BUDGET_MS, 'edit');
       controller.destroy();
     },
   );
 
   budgetIt(
-    `modo visualização: trocar uma escolha do painel, pan e zoom desenham em menos de ${RENDER_BUDGET_MS} ms`,
+    `view mode: switching a panel choice, pan and zoom draw in under ${RENDER_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
       const { ui, controller, container } = setup();
       setViewMode(ui, true);
       flush();
       const round = (i: number): { choice: number; pan: number; zoom: number } => {
-        // Uma escolha por rodada: contorno e nome alternam, as setas e os containers também.
+        // One choice per round: outline and name alternate, and so do the arrows and the containers.
         setViewShow(ui, { outline: i % 2 === 0, names: i % 3 !== 0 });
         const choice = flush();
         setViewShow(ui, { arrows: i % 2 === 0, containers: i % 4 !== 0 });
@@ -211,16 +211,16 @@ describe('renderização do canvas com o projeto grande', () => {
       const samples = Array.from({ length: 15 }, (_, i) => round(i));
       const median = (xs: number[]) =>
         [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
-      expectBelow(median(samples.map((r) => r.choice)), RENDER_BUDGET_MS, 'escolha');
+      expectBelow(median(samples.map((r) => r.choice)), RENDER_BUDGET_MS, 'choice');
       expectBelow(median(samples.map((r) => r.pan)), RENDER_BUDGET_MS, 'pan');
       expectBelow(median(samples.map((r) => r.zoom)), RENDER_BUDGET_MS, 'zoom');
       controller.destroy();
     },
   );
 
-  it('várias mudanças no mesmo quadro geram uma renderização só', () => {
+  it('several changes in the same frame produce a single render', () => {
     const { ui, controller, project } = setup();
-    // O `batchDraw` do Konva também usa o requestAnimationFrame: esvazia a fila.
+    // Konva's `batchDraw` also uses requestAnimationFrame: empties the queue.
     while (frames.length > 0) flush();
     const [a, b] = project.markings;
     if (!a || !b) throw new Error('fixture');
@@ -232,12 +232,12 @@ describe('renderização do canvas com o projeto grande', () => {
   });
 });
 
-// Orçamento do desenho de componentes (B3): instanciar (motor puro, medidor aproximado) e
-// desenhar (`renderScene`, Konva em jsdom com contexto falso) o Material 3 do pacote de exemplo.
-// Medido (jsdom, máquina de desenvolvimento): uma instância 0,03 a 0,9 ms (média dos 15
-// componentes ~0,25 ms); a tela de configurações (21 instâncias) 3,5 a 7 ms, com picos de
-// ~15 ms do coletor de lixo no começo. O orçamento da instância é ~1 ms (folga de 4x sobre a
-// média); o da tela é o do quadro, com a mediana de várias repetições.
+// Budget of component drawing (B3): instantiating (pure engine, approximate measurer) and
+// drawing (`renderScene`, Konva in jsdom with a fake context) the Material 3 of the example package.
+// Measured (jsdom, development machine): one instance 0.03 to 0.9 ms (average of the 15
+// components ~0.25 ms); the settings screen (21 instances) 3.5 to 7 ms, with peaks of
+// ~15 ms from the garbage collector at the start. The instance budget is ~1 ms (4x headroom over the
+// average); the screen's is the frame's, with the median of several repetitions.
 const INSTANCE_BUDGET_MS = 1;
 const MATERIAL3_DIR = join(__dirname, '../../tests/fixtures/material3');
 
@@ -258,16 +258,16 @@ function loadMaterial3(): Library {
   return loadLibrary(files);
 }
 
-/** Contagem, por chave, do que o layout novo usa nos componentes do fixture (JSON cru, sem o parse). */
+/** Count, per key, of what the new layout uses in the fixture components (raw JSON, without the parse). */
 interface LayoutKeys {
-  /** Quadros ou slots `none` com `align` ou `justify`: a sobreposição alinhada. */
+  /** Frames or slots `none` with `align` or `justify`: the aligned overlap. */
   alignedNone: number;
   grid: number;
-  /** `weight` num nó do template (não o `weight` da fonte, que vive em `font`). */
+  /** `weight` on a template node (not the font's `weight`, which lives in `font`). */
   weight: number;
-  /** `"max-content"` em `width`, `height` ou `sizing`. */
+  /** `"max-content"` in `width`, `height` or `sizing`. */
   maxContent: number;
-  /** Componentes na `formatVersion` 4, a única em que as chaves novas valem. */
+  /** Components in `formatVersion` 4, the only one where the new keys apply. */
   v4Files: number;
 }
 
@@ -312,26 +312,26 @@ function layoutKeysOf(dir: string): LayoutKeys {
   return keys;
 }
 
-/** Os orçamentos da tela inteira só valem no layout novo (decisão 23 da #1078): confere antes de medir. */
+/** The whole-screen budgets only apply to the new layout (decision 23 of #1078): checks before measuring. */
 function expectNewLayout(): void {
   const keys = layoutKeysOf(MATERIAL3_DIR);
-  expect(keys.v4Files, 'componentes na formatVersion 4').toBe(15);
-  expect(keys.alignedNone, 'none alinhado').toBeGreaterThan(0);
+  expect(keys.v4Files, 'components in formatVersion 4').toBe(15);
+  expect(keys.alignedNone, 'aligned none').toBeGreaterThan(0);
   expect(keys.grid, 'grid').toBeGreaterThan(0);
   expect(keys.weight, 'weight').toBeGreaterThan(0);
   expect(keys.maxContent, 'max-content').toBeGreaterThan(0);
 }
 
-describe('desenho de componentes (Material 3)', () => {
+describe('component drawing (Material 3)', () => {
   const library = loadMaterial3();
   const typeOf = new Map(library.types.map((type) => [type.id, type]));
 
-  /** Instancia a tela de configurações inteira: um desenho por instância, na ordem do array. */
+  /** Instantiates the whole settings screen: one drawing per instance, in array order. */
   function instantiateScreen(): Map<string, LayerDrawing> {
     const drawings = new Map<string, LayerDrawing>();
     for (const instance of M3_SCREEN.instances) {
       const component = typeOf.get(instance.typeId)?.component;
-      if (!component) throw new Error(`fixture: sem componente ${instance.typeId}`);
+      if (!component) throw new Error(`fixture: no component ${instance.typeId}`);
       const { root } = instantiate(component, instance.values, instance.box, {
         measure: approximateMeasurer,
         idPrefix: instance.id,
@@ -344,21 +344,21 @@ describe('desenho de componentes (Material 3)', () => {
   beforeAll(() => installFakeCanvas());
   afterAll(() => vi.restoreAllMocks());
 
-  it('a biblioteca de exemplo carrega com os 15 componentes e a tela tem 21 instâncias', () => {
+  it('the example library loads with the 15 components and the screen has 21 instances', () => {
     expect(library.problems).toEqual([]);
     expect(library.types.filter((type) => type.component)).toHaveLength(15);
     expect(M3_SCREEN.instances).toHaveLength(21);
   });
 
-  it('o fixture está no layout novo: none alinhado, grid, weight e max-content presentes', () => {
+  it('the fixture is in the new layout: aligned none, grid, weight and max-content present', () => {
     expectNewLayout();
   });
 
-  /** Instancia um componente do fixture com os valores iniciais e a caixa `size`. */
+  /** Instantiates a fixture component with the initial values and the `size` box. */
   function drawnFixture(id: string, values: Record<string, string | number> = {}) {
     const type = typeOf.get(id);
     const component = type?.component;
-    if (!type || !component) throw new Error(`fixture: sem componente ${id}`);
+    if (!type || !component) throw new Error(`fixture: no component ${id}`);
     const { root, warnings } = instantiate(
       component,
       { ...initialValues(type), ...values },
@@ -368,43 +368,48 @@ describe('desenho de componentes (Material 3)', () => {
     return { nodes: [...walk(root)], boxes: absoluteBoxes(root), warnings };
   }
 
-  it('o none alinhado do fixture centra o glifo e a grade da navigation bar divide em colunas iguais', () => {
+  it("the fixture's aligned none centers the glyph and the navigation bar grid splits into equal columns", () => {
     const center = (box: { x: number; y: number; width: number; height: number }) => ({
       x: box.x + box.width / 2,
       y: box.y + box.height / 2,
     });
-    // checkbox: o `check` de 14 fica no centro da caixa de 18 (`none` com align e justify `center`).
+    // checkbox: the 14 `check` sits at the center of the 18 box (`none` with align and justify `center`).
+    // pt-BR kept: shared fixture data asserted by tests/model (tests/fixtures/material3 node names and values)
     const checkbox = drawnFixture('m3-checkbox', { checked: 'sim' });
-    const caixa = checkbox.nodes.find((n) => n.name === 'caixa');
+    // pt-BR kept: shared fixture data asserted by tests/model (m3-checkbox node name)
+    const boxNode = checkbox.nodes.find((n) => n.name === 'caixa');
     const check = checkbox.nodes.find((n) => n.name === 'check');
-    const caixaBox = caixa && checkbox.boxes.get(caixa.id);
+    const boxBox = boxNode && checkbox.boxes.get(boxNode.id);
     const checkBox = check && checkbox.boxes.get(check.id);
-    if (!caixaBox || !checkBox) throw new Error('fixture: checkbox sem caixa ou check');
-    // O nó do `path` guarda a caixa do viewBox (24) e a escala vai na matriz: o canto superior esquerdo
-    // do glifo de 14 dentro da caixa de 18 fica em 2.
-    expect(checkBox.x).toBeCloseTo(caixaBox.x + (caixaBox.width - 14) / 2, 6);
-    expect(checkBox.y).toBeCloseTo(caixaBox.y + (caixaBox.height - 14) / 2, 6);
+    if (!boxBox || !checkBox) throw new Error('fixture: checkbox without box or check');
+    // The `path` node keeps the viewBox box (24) and the scale goes in the matrix: the top-left corner
+    // of the 14 glyph inside the 18 box sits at 2.
+    expect(checkBox.x).toBeCloseTo(boxBox.x + (boxBox.width - 14) / 2, 6);
+    expect(checkBox.y).toBeCloseTo(boxBox.y + (boxBox.height - 14) / 2, 6);
 
-    // navigation bar: 3 destinos de largura igual, (412 − 2 × 8) / 3 = 132, e o ícone centrado no indicador.
+    // navigation bar: 3 destinations of equal width, (412 − 2 × 8) / 3 = 132, and the icon centered on the indicator.
     const bar = drawnFixture('m3-navigation-bar');
-    const destinos = bar.nodes.filter((n) => /^destino \d$/.test(n.name ?? ''));
-    expect(destinos).toHaveLength(3);
-    expect(destinos.map((n) => bar.boxes.get(n.id)?.x)).toEqual([8, 140, 272]);
-    expect(destinos.every((n) => Math.abs(n.width - 132) < 1e-6)).toBe(true);
-    const indicador = bar.nodes.find((n) => n.name === 'indicador');
-    const icone = indicador && [...walk(indicador)].find((n) => n.name === 'ícone');
-    const indicadorBox = indicador && bar.boxes.get(indicador.id);
-    const iconeBox = icone && bar.boxes.get(icone.id);
-    if (!indicadorBox || !iconeBox)
-      throw new Error('fixture: navigation bar sem indicador');
-    expect(center(iconeBox).x).toBeCloseTo(center(indicadorBox).x, 6);
-    expect(center(iconeBox).y).toBeCloseTo(center(indicadorBox).y, 6);
+    // pt-BR kept: shared fixture data asserted by tests/model (tests/fixtures/material3 node names)
+    const destinations = bar.nodes.filter((n) => /^destino \d$/.test(n.name ?? ''));
+    expect(destinations).toHaveLength(3);
+    expect(destinations.map((n) => bar.boxes.get(n.id)?.x)).toEqual([8, 140, 272]);
+    expect(destinations.every((n) => Math.abs(n.width - 132) < 1e-6)).toBe(true);
+    // pt-BR kept: shared fixture data asserted by tests/model (m3-navigation-bar node names)
+    const indicator = bar.nodes.find((n) => n.name === 'indicador');
+    // pt-BR kept: shared fixture data asserted by tests/model (m3-navigation-bar node name)
+    const icon = indicator && [...walk(indicator)].find((n) => n.name === 'ícone');
+    const indicatorBox = indicator && bar.boxes.get(indicator.id);
+    const iconBox = icon && bar.boxes.get(icon.id);
+    if (!indicatorBox || !iconBox)
+      throw new Error('fixture: navigation bar without indicator');
+    expect(center(iconBox).x).toBeCloseTo(center(indicatorBox).x, 6);
+    expect(center(iconBox).y).toBeCloseTo(center(indicatorBox).y, 6);
     for (const id of ['m3-checkbox', 'm3-navigation-bar', 'm3-top-app-bar', 'm3-box']) {
       expect(drawnFixture(id).warnings, id).toEqual([]);
     }
   });
 
-  it('cada (texto, fonte, limite) distinto é medido uma vez: 26 chamadas nos 15 componentes e 40 na tela', () => {
+  it('each distinct (text, font, limit) is measured once: 26 calls across the 15 components and 40 on the screen', () => {
     const counted = (): { measure: typeof approximateMeasurer; calls: string[] } => {
       const calls: string[] = [];
       const measure: typeof approximateMeasurer = (text, font, maxWidth) => {
@@ -431,7 +436,7 @@ describe('desenho de componentes (Material 3)', () => {
     const screen = counted();
     for (const instance of M3_SCREEN.instances) {
       const component = typeOf.get(instance.typeId)?.component;
-      if (!component) throw new Error(`fixture: sem componente ${instance.typeId}`);
+      if (!component) throw new Error(`fixture: no component ${instance.typeId}`);
       instantiate(component, instance.values, instance.box, {
         measure: screen.measure,
         idPrefix: instance.id,
@@ -441,7 +446,7 @@ describe('desenho de componentes (Material 3)', () => {
   });
 
   budgetIt(
-    `instanciar e desenhar uma instância leva ~${INSTANCE_BUDGET_MS} ms em média`,
+    `instantiating and drawing one instance takes ~${INSTANCE_BUDGET_MS} ms on average`,
     BUDGET_OPTIONS,
     () => {
       const perComponent: number[] = [];
@@ -456,21 +461,21 @@ describe('desenho de componentes (Material 3)', () => {
               .root,
             warnings: [],
           });
-        for (let i = 0; i < 20; i++) once(); // Aquecimento (JIT e primeiro uso do Konva).
+        for (let i = 0; i < 20; i++) once(); // Warm-up (JIT and first use of Konva).
         const runs = 60;
         const start = performance.now();
         for (let i = 0; i < runs; i++) once();
         perComponent.push((performance.now() - start) / runs);
       }
       const mean = perComponent.reduce((sum, ms) => sum + ms, 0) / perComponent.length;
-      expectBelow(mean, INSTANCE_BUDGET_MS, 'média dos 15');
-      // Nenhum componente sozinho passa de quatro vezes o orçamento (o maior mede ~0,9 ms).
-      expectBelow(Math.max(...perComponent), INSTANCE_BUDGET_MS * 4, 'pior componente');
+      expectBelow(mean, INSTANCE_BUDGET_MS, 'average of the 15');
+      // No single component exceeds four times the budget (the largest measures ~0.9 ms).
+      expectBelow(Math.max(...perComponent), INSTANCE_BUDGET_MS * 4, 'worst component');
     },
   );
 
   budgetIt(
-    `uma tela de 21 instâncias (instanciar e desenhar) cabe em ${RENDER_BUDGET_MS} ms`,
+    `a screen of 21 instances (instantiate and draw) fits in ${RENDER_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
       expectNewLayout();
@@ -483,7 +488,7 @@ describe('desenho de componentes (Material 3)', () => {
         layer.destroy();
         return elapsed;
       };
-      for (let i = 0; i < 5; i++) once(); // Aquecimento.
+      for (let i = 0; i < 5; i++) once(); // Warm-up.
       const times = Array.from({ length: 15 }, once);
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
       expectBelow(median, RENDER_BUDGET_MS);
@@ -491,7 +496,7 @@ describe('desenho de componentes (Material 3)', () => {
   );
 
   budgetIt(
-    'trocar o valor de uma instância refaz só o desenho dela, bem abaixo do quadro',
+    'changing the value of an instance redoes only its drawing, well below the frame',
     BUDGET_OPTIONS,
     () => {
       const parent = new Konva.Group();
@@ -508,7 +513,7 @@ describe('desenho de componentes (Material 3)', () => {
         const next = new Map(drawings);
         const { root } = instantiate(
           component,
-          { ...target.values, title: `Título ${i}` },
+          { ...target.values, title: `Title ${i}` },
           target.box,
           { measure: approximateMeasurer, idPrefix: target.id },
         );
@@ -525,14 +530,14 @@ describe('desenho de componentes (Material 3)', () => {
   );
 });
 
-// Grade com texto (decisão 23 da #1078, L3): 4 colunas e 6 linhas de 24 textos de 2 linhas, `fill` na
-// célula e `hug` na altura, instanciada e desenhada no Konva.
-// Teto medido no runner (etapa #1765): o runner do CI vem em duas classes de máquina (nos jobs
-// rápidos a grade mede ~2,5 ms; nos lentos, ~4,1 a 4,5 ms; localmente, ~2,2 ms) e o `retry: 1` roda
-// na mesma máquina. Conta (decisão 7 da #1698): maior 1ª medida no CI × 1,25 = 4,469 × 1,25 = 5,59,
-// arredondado para cima ao 0,5 ms = 6 ms. Fonte: 90 jobs `build` do CI e do Deploy, de
-// 2026-11-12T17:44Z a 2026-11-13T09:00Z (maior valor entre este e o do plano, 4,446 ms).
-describe('grade com texto', () => {
+// Grid with text (decision 23 of #1078, L3): 4 columns and 6 rows of 24 texts of 2 lines, `fill` on the
+// cell and `hug` on the height, instantiated and drawn in Konva.
+// Ceiling measured on the runner (stage #1765): the CI runner comes in two machine classes (on the
+// fast jobs the grid measures ~2.5 ms; on the slow ones, ~4.1 to 4.5 ms; locally, ~2.2 ms) and `retry: 1` runs
+// on the same machine. Computation (decision 7 of #1698): largest 1st measurement on CI × 1.25 = 4.469 × 1.25 = 5.59,
+// rounded up to 0.5 ms = 6 ms. Source: 90 `build` jobs of CI and Deploy, from
+// 2026-11-12T17:44Z to 2026-11-13T09:00Z (largest value between this one and the plan's, 4.446 ms).
+describe('grid with text', () => {
   const GRID_BUDGET_MS = 6;
   const BOX = { x: 0, y: 0, width: 400, height: 300 };
   const cells = Array.from({ length: 24 }, (_, i) => ({
@@ -544,17 +549,17 @@ describe('grade com texto', () => {
   const component = {
     format: 'mapping-component',
     formatVersion: 4,
-    id: 'grade',
-    name: 'Grade',
+    id: 'grid',
+    name: 'Grid',
     size: { width: 400, height: 300 },
     template: {
       type: 'frame',
-      name: 'raiz',
+      name: 'root',
       layout: { type: 'column' },
       children: [
         {
           type: 'frame',
-          name: 'grade',
+          name: 'grid',
           width: 'fill',
           height: 'hug',
           layout: { type: 'grid', columns: 4, gap: 8, lineGap: 8 },
@@ -571,14 +576,14 @@ describe('grade com texto', () => {
     return instantiate(component, {}, BOX, { measure: approximateMeasurer });
   }
 
-  it('a geometria da grade: 4 colunas iguais, 6 linhas e a altura hug é a soma delas', () => {
+  it('the grid geometry: 4 equal columns, 6 rows and the hug height is their sum', () => {
     const { root, warnings } = drawn();
     const boxes = absoluteBoxes(root);
     const nodes = [...walk(root)];
-    const grid = nodes.find((n) => n.name === 'grade');
+    const grid = nodes.find((n) => n.name === 'grid');
     const texts = nodes.filter((n) => n.name === 'cell');
     expect(texts).toHaveLength(24);
-    // (400 − 3 × 8) / 4 = 94 por coluna; cada linha tem 2 linhas de texto de 16,8.
+    // (400 − 3 × 8) / 4 = 94 per column; each row has 2 text lines of 16.8.
     const xs = [...new Set(texts.map((n) => boxes.get(n.id)?.x))];
     const ys = [...new Set(texts.map((n) => boxes.get(n.id)?.y))];
     expect(xs).toEqual([0, 102, 204, 306]);
@@ -591,8 +596,8 @@ describe('grade com texto', () => {
   });
 
   budgetIt(
-    `uma grade de 4 × 6 textos de 2 linhas (instanciar e desenhar) cabe em ${GRID_BUDGET_MS} ms`,
-    LEVAS_OPTIONS,
+    `a grid of 4 × 6 texts of 2 lines (instantiate and draw) fits in ${GRID_BUDGET_MS} ms`,
+    BATCHES_OPTIONS,
     () => {
       const run = (): void => {
         renderScene({ root: drawn().root, warnings: [] });
@@ -602,19 +607,19 @@ describe('grade com texto', () => {
   );
 });
 
-// Intrínseco aninhado em 3 níveis (decisão 23 da #1078, L4): `row` `max-content` › 4 `column`
-// `min-content` › 3 `row` com 2 textos cada, instanciado e desenhado no Konva e com no máximo uma
-// chamada ao medidor por (texto, limite) distinto.
-// Teto medido no runner (etapa #1765): duas classes de máquina no runner (nos jobs rápidos o
-// aninhado mede ~2,9 ms; nos lentos, ~4,7 a 5,1 ms; localmente, ~2,4 ms). Conta (decisão 7 da
-// #1698): maior 1ª medida no CI × 1,25 = 5,124 × 1,25 = 6,41, arredondado para cima ao 0,5 ms =
-// 6,5 ms. Fonte: 87 jobs `build` do CI e do Deploy, de 2026-11-12T17:44Z a 2026-11-13T09:00Z.
-describe('intrínseco aninhado em 3 níveis', () => {
+// Intrinsic nested in 3 levels (decision 23 of #1078, L4): `row` `max-content` › 4 `column`
+// `min-content` › 3 `row` with 2 texts each, instantiated and drawn in Konva and with at most one
+// measurer call per distinct (text, limit).
+// Ceiling measured on the runner (stage #1765): two machine classes on the runner (on the fast jobs the
+// nested one measures ~2.9 ms; on the slow ones, ~4.7 to 5.1 ms; locally, ~2.4 ms). Computation (decision 7 of
+// #1698): largest 1st measurement on CI × 1.25 = 5.124 × 1.25 = 6.41, rounded up to 0.5 ms =
+// 6.5 ms. Source: 87 `build` jobs of CI and Deploy, from 2026-11-12T17:44Z to 2026-11-13T09:00Z.
+describe('intrinsic nested in 3 levels', () => {
   const NESTED_BUDGET_MS = 6.5;
   const BOX = { x: 0, y: 0, width: 800, height: 300 };
   const inner = (i: number, j: number) => ({
     type: 'frame',
-    name: 'linha',
+    name: 'row',
     width: 'fill',
     layout: { type: 'row', gap: 4 },
     children: [
@@ -624,7 +629,7 @@ describe('intrínseco aninhado em 3 níveis', () => {
   });
   const column = (i: number) => ({
     type: 'frame',
-    name: 'coluna',
+    name: 'column',
     width: 'min-content',
     height: 'hug',
     layout: { type: 'column', gap: 4 },
@@ -633,17 +638,17 @@ describe('intrínseco aninhado em 3 níveis', () => {
   const component = {
     format: 'mapping-component',
     formatVersion: 4,
-    id: 'intrinseco',
-    name: 'Intrínseco',
+    id: 'intrinsic',
+    name: 'Intrinsic',
     size: { width: 800, height: 300 },
     template: {
       type: 'frame',
-      name: 'raiz',
+      name: 'root',
       layout: { type: 'column' },
       children: [
         {
           type: 'frame',
-          name: 'externa',
+          name: 'outer',
           width: 'max-content',
           height: 'hug',
           layout: { type: 'row', gap: 8 },
@@ -660,19 +665,19 @@ describe('intrínseco aninhado em 3 níveis', () => {
     return instantiate(component, {}, BOX, { measure });
   }
 
-  it('a geometria: a coluna vale o min-content da linha e a linha externa soma as 4', () => {
+  it('the geometry: the column equals the row min-content and the outer row sums the 4', () => {
     const { root } = drawn();
     const nodes = [...walk(root)];
-    const columns = nodes.filter((n) => n.name === 'coluna');
-    const outer = nodes.find((n) => n.name === 'externa');
+    const columns = nodes.filter((n) => n.name === 'column');
+    const outer = nodes.find((n) => n.name === 'outer');
     expect(columns).toHaveLength(4);
-    // Palavras mais largas a 14 px (7,7 por caractere): "bbbbbbbb" (61,6) e "yy" (15,4) + gap 4.
+    // Widest words at 14 px (7.7 per character): "bbbbbbbb" (61.6) and "yy" (15.4) + gap 4.
     const column = 61.6 + 4 + 15.4;
     expect(columns.every((n) => Math.abs(n.width - column) < 1e-6)).toBe(true);
     expect(outer?.width).toBeCloseTo(4 * column + 3 * 8, 6);
   });
 
-  it('mede no máximo uma vez cada (texto, limite) distinto', () => {
+  it('measures each distinct (text, limit) at most once', () => {
     const calls = new Map<string, number>();
     const spy: TextMeasurer = (text, font, maxWidth) => {
       const key = `${text}|${maxWidth ?? ''}`;
@@ -685,8 +690,8 @@ describe('intrínseco aninhado em 3 níveis', () => {
   });
 
   budgetIt(
-    `row max-content › 4 column min-content › 3 row × 2 textos (instanciar e desenhar) cabe em ${NESTED_BUDGET_MS} ms`,
-    LEVAS_OPTIONS,
+    `row max-content › 4 column min-content › 3 row × 2 texts (instantiate and draw) fits in ${NESTED_BUDGET_MS} ms`,
+    BATCHES_OPTIONS,
     () => {
       const run = (): void => {
         renderScene({ root: drawn().root, warnings: [] });
@@ -696,9 +701,9 @@ describe('intrínseco aninhado em 3 níveis', () => {
   );
 });
 
-// Imagens remotas (RI3): quando uma imagem termina de carregar, só as marcações dela são refeitas
-// (e o consentimento que muda refaz todas as que usam imagem); ambos cabem num quadro.
-describe('refazer marcações com imagem remota', () => {
+// Remote images (RI3): when an image finishes loading, only its markings are redone
+// (and a changed consent redoes all those that use an image); both fit in a frame.
+describe('redoing markings with a remote image', () => {
   const IMAGE_COUNT = 30;
   const drawings = new Map<string, LayerDrawing>();
   const image = { width: 64, height: 64 } as unknown as CanvasImageSource;
@@ -733,7 +738,7 @@ describe('refazer marcações com imagem remota', () => {
   });
 
   budgetIt(
-    `refazer 1 de ${IMAGE_COUNT} marcações com imagem cabe no quadro; refazer todas, em 1,5x`,
+    `redoing 1 of ${IMAGE_COUNT} markings with an image fits in the frame; redoing all of them, in 1.5x`,
     BUDGET_OPTIONS,
     () => {
       const layer = new ComponentLayerRenderer(new Konva.Group(), {
@@ -741,7 +746,7 @@ describe('refazer marcações com imagem remota', () => {
       });
       layer.render(drawings, () => true, placements);
       const median = (run: () => void): number => {
-        for (let i = 0; i < 5; i++) run(); // Aquecimento.
+        for (let i = 0; i < 5; i++) run(); // Warm-up.
         const times = Array.from({ length: 15 }, () => {
           const start = performance.now();
           run();
@@ -751,22 +756,22 @@ describe('refazer marcações com imagem remota', () => {
       };
       const one = median(() => layer.refreshImages(new Set(['https://img.test/3.png'])));
       const all = median(() => layer.refreshImages(null));
-      expectBelow(one, RENDER_BUDGET_MS / 4, 'uma marcação');
+      expectBelow(one, RENDER_BUDGET_MS / 4, 'one marking');
       expectBelow(all, RENDER_BUDGET_MS * 1.5, 'todas');
       layer.destroy();
     },
   );
 });
 
-// A tela de configurações do Material 3 (21 instâncias) num container, dentro do
-// `CanvasController`: o quadro inteiro (todos os desenhos reinstanciados e refeitos), editar um
-// campo (só uma marcação) e o zoom (a camada não se refaz). Medido (jsdom, máquina de
-// desenvolvimento, medidor aproximado): quadro inteiro ~11 ms (10 a 13; até ~20 com a máquina
-// ocupada), edição ~2 a 5 ms, zoom ~2 a 3 ms. A edição e o zoom têm o orçamento do quadro; o
-// quadro inteiro (que acontece só ao carregar fontes ou trocar o medidor) tem 1,5x, porque
-// reinstancia e refaz os 21 desenhos de uma vez. Sempre a mediana de várias repetições.
+// The Material 3 settings screen (21 instances) in a container, inside the
+// `CanvasController`: the whole frame (all drawings re-instantiated and redone), editing a
+// field (just one marking) and the zoom (the layer is not redone). Measured (jsdom, development
+// machine, approximate measurer): whole frame ~11 ms (10 to 13; up to ~20 with the machine
+// busy), edit ~2 to 5 ms, zoom ~2 to 3 ms. The edit and the zoom get the frame budget; the
+// whole frame (which only happens on loading fonts or switching the measurer) gets 1.5x, because it
+// re-instantiates and redoes the 21 drawings at once. Always the median of several repetitions.
 const FULL_FRAME_BUDGET_MS = RENDER_BUDGET_MS * 1.5;
-describe('tela de componentes dentro do CanvasController (Material 3)', () => {
+describe('components screen inside the CanvasController (Material 3)', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = (): void => {
     for (const frame of frames.splice(0)) frame(performance.now());
@@ -786,7 +791,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     vi.unstubAllGlobals();
   });
 
-  /** Catálogo do pacote de exemplo, lido do disco como a sessão lê da pasta do projeto. */
+  /** Catalog of the example package, read from disk as the session reads it from the project folder. */
   function m3Catalog(): ComponentCatalog {
     const loaded = loadSpecComponents(
       material3Spec(),
@@ -807,7 +812,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     return new Map([['material3', loaded]]);
   }
 
-  /** A tela no container com `density`: os retângulos e o container em pixels (× densidade). */
+  /** The screen in the container with `density`: the rectangles and the container in pixels (× density). */
   function m3Project(catalog: ComponentCatalog, density = 1): Project {
     let p = applySpecialization(emptyProject(), material3Spec(), {
       newId: (() => {
@@ -886,13 +891,13 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     return { actions, controller, container, derived, sources };
   }
 
-  /** Mediana de `runs` medidas de `run`, que devolve o tempo gasto (ms). */
+  /** Median of `runs` measurements of `run`, which returns the time spent (ms). */
   const medianOf = (runs: number, run: () => number): number => {
     const times = Array.from({ length: runs }, run);
     return [...times].sort((a, b) => a - b)[Math.floor(runs / 2)] ?? Number.NaN;
   };
 
-  it('desenha as 21 instâncias da tela de configurações', () => {
+  it('draws the 21 instances of the settings screen', () => {
     const { controller, container, derived } = setup();
     expect(derived.drawnMarkings.value.size).toBe(21);
     expect(container.dataset.components).toBe('21');
@@ -900,25 +905,25 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
   });
 
   budgetIt(
-    `o quadro inteiro (21 desenhos reinstanciados e refeitos) cabe em ${FULL_FRAME_BUDGET_MS} ms`,
+    `the whole frame (21 drawings re-instantiated and redone) fits in ${FULL_FRAME_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
       expectNewLayout();
       const { controller, sources } = setup();
       const whole = (): number => {
         const start = performance.now();
-        sources.fontsEpoch.value++; // Reinstancia todos os desenhos.
+        sources.fontsEpoch.value++; // Re-instantiates all the drawings.
         flush();
         return performance.now() - start;
       };
-      for (let i = 0; i < 4; i++) whole(); // Aquecimento.
+      for (let i = 0; i < 4; i++) whole(); // Warm-up.
       expectBelow(medianOf(15, whole), FULL_FRAME_BUDGET_MS);
       controller.destroy();
     },
   );
 
   budgetIt(
-    `editar um campo e redesenhar cabe em ${RENDER_BUDGET_MS} ms`,
+    `editing a field and redrawing fits in ${RENDER_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
       const { controller, actions, container } = setup();
@@ -938,7 +943,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     },
   );
 
-  it('20 quadros de pan e zoom da tela no layout novo fazem 0 instanciações (decisão 22)', () => {
+  it('20 frames of pan and zoom of the screen in the new layout make 0 instantiations (decision 22)', () => {
     expectNewLayout();
     const { controller, derived, sources } = setup();
     const before = new Map(derived.componentScenes.value);
@@ -955,7 +960,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
       expect(render).not.toHaveBeenCalled();
       const after = derived.componentScenes.value;
       for (const [id, drawing] of before) expect(after.get(id)).toBe(drawing);
-      // Controle: os dois espiões enxergam uma reinstanciação de verdade (as fontes mudaram).
+      // Control: the two spies see a real re-instantiation (the fonts changed).
       sources.fontsEpoch.value++;
       flush();
       expect(instantiated).toHaveBeenCalled();
@@ -967,9 +972,9 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     }
   });
 
-  // Variante com `density` 3 no container (#1085, decisão 12): a escala na raiz da cena não
-  // muda o custo, então os mesmos orçamentos valem.
-  it('com density 3 a tela também desenha as 21 instâncias, com a escala na raiz', () => {
+  // Variant with `density` 3 on the container (#1085, decision 12): the scale at the scene root does not
+  // change the cost, so the same budgets apply.
+  it('with density 3 the screen also draws the 21 instances, with the scale at the root', () => {
     const { controller, container, derived } = setup(3);
     expect(derived.drawnMarkings.value.size).toBe(21);
     expect(container.dataset.components).toBe('21');
@@ -981,7 +986,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
   });
 
   budgetIt(
-    `com density 3: editar um campo e redesenhar cabe em ${RENDER_BUDGET_MS} ms`,
+    `with density 3: editing a field and redrawing fits in ${RENDER_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
       const { controller, actions, container } = setup(3);
@@ -1002,7 +1007,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
   );
 
   budgetIt(
-    `com density 3: o zoom da tela cabe em ${RENDER_BUDGET_MS} ms`,
+    `with density 3: the screen zoom fits in ${RENDER_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
       const { controller } = setup(3);
@@ -1018,7 +1023,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     },
   );
 
-  it('com density 3: 20 quadros de pan e zoom fazem 0 instanciações', () => {
+  it('with density 3: 20 frames of pan and zoom make 0 instantiations', () => {
     const { controller, derived } = setup(3);
     const before = new Map(derived.componentScenes.value);
     expect(before.size).toBe(21);
@@ -1039,7 +1044,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
   });
 
   budgetIt(
-    `o zoom da tela (sem refazer os desenhos) cabe em ${RENDER_BUDGET_MS} ms`,
+    `the screen zoom (without redoing the drawings) fits in ${RENDER_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
       const { controller } = setup();
@@ -1056,12 +1061,12 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
   );
 });
 
-// Visão Proposto com 60 componentes novos (PC1): trocar para o Proposto instancia as 60 cenas
-// novas de uma vez (como o quadro inteiro da tela de componentes: 1,5x o quadro); pan e zoom
-// depois não reinstanciam nada e cabem no quadro. Texto de teste é mais leve que o Material 3,
-// então o limite é o mesmo do quadro inteiro, com folga.
+// Proposed view with 60 new components (PC1): switching to Proposed instantiates the 60 new scenes
+// at once (like the whole frame of the components screen: 1.5x the frame); pan and zoom
+// afterwards re-instantiate nothing and fit in the frame. Test text is lighter than Material 3,
+// so the limit is the same as the whole frame's, with headroom.
 const PROPOSED_COUNT = 60;
-describe('visão Proposto com 60 componentes novos', () => {
+describe('Proposed view with 60 new components', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = (): void => {
     for (const frame of frames.splice(0)) frame(performance.now());
@@ -1158,7 +1163,7 @@ describe('visão Proposto com 60 componentes novos', () => {
     return [...times].sort((a, b) => a - b)[Math.floor(runs / 2)] ?? Number.NaN;
   };
 
-  it('a troca para o Proposto desenha as 60 cenas novas e a Atual, nenhuma', async () => {
+  it('switching to Proposed draws the 60 new scenes and Current draws none', async () => {
     const { controller, container, review } = await setup();
     expect(container.dataset.components).toBe('0');
     review.setView('proposed');
@@ -1171,7 +1176,7 @@ describe('visão Proposto com 60 componentes novos', () => {
   });
 
   budgetIt(
-    `trocar para o Proposto (${PROPOSED_COUNT} cenas novas) cabe em ${FULL_FRAME_BUDGET_MS} ms`,
+    `switching to Proposed (${PROPOSED_COUNT} new scenes) fits in ${FULL_FRAME_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     async () => {
       const { controller, review } = await setup();
@@ -1179,18 +1184,18 @@ describe('visão Proposto com 60 componentes novos', () => {
         review.setView('current');
         flush();
         const start = performance.now();
-        review.setView('proposed'); // Reinstancia as 60 cenas (a Atual descartou o cache delas).
+        review.setView('proposed'); // Re-instantiates the 60 scenes (Current discarded their cache).
         flush();
         return performance.now() - start;
       };
-      for (let i = 0; i < 3; i++) toggle(); // Aquecimento.
+      for (let i = 0; i < 3; i++) toggle(); // Warm-up.
       expectBelow(medianOf(11, toggle), FULL_FRAME_BUDGET_MS);
       controller.destroy();
     },
   );
 
   budgetIt(
-    `pan e zoom no Proposto cabem em ${RENDER_BUDGET_MS} ms e não reinstanciam cenas`,
+    `pan and zoom in Proposed fit in ${RENDER_BUDGET_MS} ms and do not re-instantiate scenes`,
     BUDGET_OPTIONS,
     async () => {
       const { controller, review, derived } = await setup();
@@ -1219,22 +1224,22 @@ describe('visão Proposto com 60 componentes novos', () => {
   );
 });
 
-// Decisões 3, 4 e 9 da etapa canvas-escala: o quadro de edição com o projeto inteiro à vista só
-// redesenha as camadas que mudaram (marcações e sobreposições) e, de longe, cada marcação desenha
-// só a borda e pendura no grupo só o que está visível (nível de detalhe). A meta da decisão 9 é
-// `RENDER_BUDGET_MS` (16 ms), mas em jsdom o quadro de edição mede ~16 a 24 ms (mediana de 15; o
-// `drawScene` das marcações caiu de ~21 para ~9 ms, de 18 mil para 4 mil nós, e sobram ~6 ms do
-// `CanvasController.render` e as sobreposições): o teto abaixo guarda contra regressão. Conferência final
-// (CD5 da etapa canvas-desempenho): com 16 ms o orçamento passou só 6 de 10 execuções seguidas, então o
-// teto continua 35 ms; a meta de 16 ms está atingida no Chromium (edição 9,8 ms com 2.000).
+// Decisions 3, 4 and 9 of the canvas-scale stage: the edit frame with the whole project in view only
+// redraws the layers that changed (markings and overlays) and, from afar, each marking draws
+// only the border and hangs on the group only what is visible (level of detail). The goal of decision 9 is
+// `RENDER_BUDGET_MS` (16 ms), but in jsdom the edit frame measures ~16 to 24 ms (median of 15; the
+// markings' `drawScene` dropped from ~21 to ~9 ms, from 18 thousand to 4 thousand nodes, and ~6 ms remain from
+// `CanvasController.render` and the overlays): the ceiling below guards against regression. Final check
+// (CD5 of the canvas-performance stage): with 16 ms the budget passed only 6 of 10 consecutive runs, so the
+// ceiling stays 35 ms; the 16 ms goal is met in Chromium (edit 9.8 ms with 2,000).
 const EDIT_FRAME_CEILING_MS = 35;
 
-// Decisões 5 a 7 e 9 da etapa canvas-escala: depois do quadro que leva os nós ao grupo de arrasto, cada
-// `pointermove` só redesenha a camada de sobreposições; o custo depende do que se arrasta, e não do
-// projeto. Meta da decisão 9: 16 ms no cenário de 2.000 marcações (jsdom, mediana de 15).
-describe('quadro de arrasto com o projeto inteiro à vista (2.000 marcações)', () => {
+// Decisions 5 to 7 and 9 of the canvas-scale stage: after the frame that takes the nodes to the drag group, each
+// `pointermove` only redraws the overlays layer; the cost depends on what is dragged, not on the
+// project. Goal of decision 9: 16 ms in the 2,000-marking scenario (jsdom, median of 15).
+describe('drag frame with the whole project in view (2,000 markings)', () => {
   budgetIt(
-    `arrastar uma marcação cabe em ${RENDER_BUDGET_MS} ms por pointermove`,
+    `dragging a marking fits in ${RENDER_BUDGET_MS} ms per pointermove`,
     { ...BUDGET_OPTIONS, timeout: 120_000 },
     () => {
       const s = openWholeProject(2000);
@@ -1247,8 +1252,8 @@ describe('quadro de arrasto com o projeto inteiro à vista (2.000 marcações)',
         s.actions.previewMarkingMove(target.id, step, step);
         return s.flush();
       };
-      move(); // O quadro que leva os nós ao grupo de arrasto não conta.
-      for (let i = 0; i < 3; i++) move(); // Aquecimento.
+      move(); // The frame that takes the nodes to the drag group does not count.
+      for (let i = 0; i < 3; i++) move(); // Warm-up.
       const times = Array.from({ length: 15 }, move);
       s.actions.cancelGesture();
       s.flush();
@@ -1259,11 +1264,11 @@ describe('quadro de arrasto com o projeto inteiro à vista (2.000 marcações)',
   );
 });
 
-// Decisão 5 da etapa canvas-desempenho: o `createNode` cria só o grupo e a borda; o primeiro quadro em
-// Enquadrar tudo (2.000 marcações, jsdom) cabe na metade dos 223 ms da DA1.
-describe('primeiro quadro em Enquadrar tudo (2.000 marcações)', () => {
+// Decision 5 of the canvas-performance stage: `createNode` creates only the group and the border; the first frame in
+// Fit all (2,000 markings, jsdom) fits in half of the 223 ms of DA1.
+describe('first frame in Fit all (2,000 markings)', () => {
   budgetIt(
-    'abrir em Enquadrar tudo cabe em 111,5 ms',
+    'opening in Fit all fits in 111.5 ms',
     { ...BUDGET_OPTIONS, timeout: 120_000 },
     () => {
       const times: number[] = [];
@@ -1278,12 +1283,12 @@ describe('primeiro quadro em Enquadrar tudo (2.000 marcações)', () => {
   );
 });
 
-// Decisão 7 da etapa canvas-desempenho: de longe a seta curta é só o traço e não tem rótulo, e a fora da
-// área visível não é pintada. Com as 1.000 setas nomeadas, pan e zoom em Enquadrar tudo e aproximados
-// cabem na meta da decisão 10 (33 ms; jsdom, mediana de 15).
-describe('pan e zoom com 2.000 marcações e 1.000 setas nomeadas', () => {
+// Decision 7 of the canvas-performance stage: from afar a short arrow is only the stroke and has no label, and the one outside the
+// visible area is not painted. With the 1,000 named arrows, pan and zoom in Fit all and zoomed in
+// fit in the goal of decision 10 (33 ms; jsdom, median of 15).
+describe('pan and zoom with 2,000 markings and 1,000 named arrows', () => {
   budgetIt(
-    'cabem em 33 ms, de longe e aproximados',
+    'fit in 33 ms, from afar and zoomed in',
     { ...BUDGET_OPTIONS, timeout: 120_000 },
     () => {
       const base = wholeProject(2000);
@@ -1312,9 +1317,9 @@ describe('pan e zoom com 2.000 marcações e 1.000 setas nomeadas', () => {
   );
 });
 
-describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)', () => {
+describe('edit frame with the whole project in view (2,000 markings)', () => {
   budgetIt(
-    `editar o nome de uma marcação cabe em ${EDIT_FRAME_CEILING_MS} ms (meta: ${RENDER_BUDGET_MS} ms)`,
+    `editing the name of a marking fits in ${EDIT_FRAME_CEILING_MS} ms (goal: ${RENDER_BUDGET_MS} ms)`,
     { ...BUDGET_OPTIONS, timeout: 120_000 },
     () => {
       const s = openWholeProject(2000);
@@ -1325,7 +1330,7 @@ describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)'
         s.actions.renameMarking(target.id, `Nome ${step++}`);
         return s.flush();
       };
-      for (let i = 0; i < 3; i++) edit(); // Aquecimento.
+      for (let i = 0; i < 3; i++) edit(); // Warm-up.
       const times = Array.from({ length: 15 }, edit);
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
       expectBelow(median, EDIT_FRAME_CEILING_MS);
@@ -1334,7 +1339,7 @@ describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)'
   );
 
   budgetIt(
-    `pan e zoom com o projeto inteiro à vista cabem em 33 ms`,
+    `pan and zoom with the whole project in view fit in 33 ms`,
     { ...BUDGET_OPTIONS, timeout: 120_000 },
     () => {
       const s = openWholeProject(2000);
@@ -1349,7 +1354,7 @@ describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)'
       for (let i = 0; i < 3; i++) round();
       const samples = Array.from({ length: 15 }, round);
       const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[7] ?? Number.NaN;
-      // Meta da decisão 9: 33 ms.
+      // Goal of decision 9: 33 ms.
       expectBelow(median(samples.map((r) => r.pan)), 33, 'pan');
       expectBelow(median(samples.map((r) => r.zoom)), 33, 'zoom');
       s.destroy();

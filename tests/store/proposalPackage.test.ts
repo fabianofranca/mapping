@@ -12,8 +12,8 @@ import { propose } from '../model/proposalFixtures';
 import { material3Package, material3Spec } from '../storage/packageFixture';
 import { diskProposal, openHarness, writeOutside, type Harness } from './proposalHarness';
 
-// Fase B4 (C2): a proposta que sobe a versão de um pacote de biblioteca traz os arquivos
-// em `proposals/<id>/specs/<pasta>/`; aplicar os COPIA para `specs/<pasta>/` pela sessão.
+// Phase B4 (C2): the proposal that bumps the version of a library package brings the files
+// in `proposals/<id>/specs/<folder>/`; applying COPIES them to `specs/<folder>/` through the session.
 
 beforeEach(() => localStorage.clear());
 afterEach(() => clearReportedErrors());
@@ -25,30 +25,30 @@ const SPEC_FILE = `${DIR}/material3.spec.json`;
 async function projectOnDisk(h: Harness): Promise<Project> {
   await h.session.flush();
   const parsed = deserialize((await h.root.read('mapping.json')) ?? '');
-  if (!parsed.ok) throw new Error('mapping.json inválido');
+  if (!parsed.ok) throw new Error('invalid mapping.json');
   return parsed.project;
 }
 
-/** O projeto com o pacote v1 aplicado e gravado (com um documento que a v2 não terá). */
+/** The project with the v1 package applied and saved (with a document that v2 will not have). */
 async function withV1(): Promise<{ h: Harness; v1: Spec }> {
   const h = await openHarness({ proposals: [] });
   const v1: Spec = { ...material3Spec(), version: 1 };
   const files = material3Package();
-  files.set('docs/antigo.md', '# antigo');
+  files.set('docs/old.md', '# old');
   expect(h.session.actions.applySpecialization(v1, files).ok).toBe(true);
   await h.session.flush();
   return { h, v1 };
 }
 
 interface Staged {
-  /** Arquivos a pôr em `proposals/P1/specs/material3/` (o pacote da v2 por padrão). */
+  /** Files to put in `proposals/P1/specs/material3/` (the v2 package by default). */
   readonly files?: Map<string, string | Blob>;
 }
 
-/** Monta a proposta da v2 sobre o projeto aberto e deixa os arquivos onde o MCP deixaria. */
+/** Builds the v2 proposal over the open project and leaves the files where the MCP would leave them. */
 async function propose2(h: Harness, v1: Spec, staged: Staged = {}): Promise<Proposal> {
   const base = h.session.store.project.value;
-  if (!base) throw new Error('sem projeto');
+  if (!base) throw new Error('no project');
   const v2: Spec = { ...v1, version: 2 };
   const proposal = propose(
     base,
@@ -58,7 +58,7 @@ async function propose2(h: Harness, v1: Spec, staged: Staged = {}): Promise<Prop
   const files = staged.files ?? material3Package();
   if (!staged.files) {
     files.delete('material3.spec.json');
-    files.set('docs/novo.md', '# novo');
+    files.set('docs/new.md', '# new');
   }
   const storage = createFolderStorage(h.root);
   for (const [path, data] of files) {
@@ -78,11 +78,11 @@ async function specVersionOnDisk(h: Harness): Promise<number> {
   return (JSON.parse(text ?? '{}') as { version: number }).version;
 }
 
-describe('aplicar proposta com pacote de biblioteca', () => {
-  it('copia o pacote para specs/<pasta>/, e desfazer e refazer trocam a pasta junto com a versão', async () => {
+describe('apply a proposal with a library package', () => {
+  it('copies the package to specs/<folder>/, and undo and redo swap the folder along with the version', async () => {
     const { h, v1 } = await withV1();
     const beforeFiles = await dirFiles(h);
-    expect(beforeFiles).toContain(`${DIR}/docs/antigo.md`);
+    expect(beforeFiles).toContain(`${DIR}/docs/old.md`);
     const proposal = await propose2(h, v1);
     const spec = proposal.changes.find((c) => c.entity === 'specialization');
     expect(spec?.kind).toBe('update');
@@ -92,41 +92,41 @@ describe('aplicar proposta com pacote de biblioteca', () => {
     const result = await h.review.apply();
     expect(result).toMatchObject({ ok: true });
 
-    // Pasta regravada com os arquivos novos; o `mapping.json` na versão 2.
+    // Folder rewritten with the new files; `mapping.json` at version 2.
     const after = await dirFiles(h);
-    expect(after).toContain(`${DIR}/docs/novo.md`);
-    expect(after).not.toContain(`${DIR}/docs/antigo.md`);
+    expect(after).toContain(`${DIR}/docs/new.md`);
+    expect(after).not.toContain(`${DIR}/docs/old.md`);
     expect(after).toContain(SPEC_FILE);
-    expect(await h.root.read(`${DIR}/docs/novo.md`)).toBe('# novo');
+    expect(await h.root.read(`${DIR}/docs/new.md`)).toBe('# new');
     expect(await specVersionOnDisk(h)).toBe(2);
     expect((await projectOnDisk(h)).specializations[0]?.version).toBe(2);
-    // Copiados, não movidos: a proposta continua com os arquivos.
-    expect(await h.root.read(`${FROM}/docs/novo.md`)).toBe('# novo');
+    // Copied, not moved: the proposal keeps the files.
+    expect(await h.root.read(`${FROM}/docs/new.md`)).toBe('# new');
     expect((await diskProposal(h.root)).applied).not.toEqual({});
 
-    // Desfazer: versão 1 e os arquivos da pasta como eram.
+    // Undo: version 1 and the folder files as they were.
     h.session.store.undo();
     await h.session.proposals.settled();
     await h.session.flush();
     expect((await projectOnDisk(h)).specializations[0]?.version).toBe(1);
     expect(await dirFiles(h)).toEqual(beforeFiles);
     expect(await specVersionOnDisk(h)).toBe(1);
-    expect(await h.root.read(`${DIR}/docs/antigo.md`)).toBe('# antigo');
-    expect(await h.root.read(`${FROM}/docs/novo.md`)).toBe('# novo');
+    expect(await h.root.read(`${DIR}/docs/old.md`)).toBe('# old');
+    expect(await h.root.read(`${FROM}/docs/new.md`)).toBe('# new');
 
-    // Refazer: de volta à versão 2.
+    // Redo: back to version 2.
     h.session.store.redo();
     await h.session.proposals.settled();
     await h.session.flush();
     expect((await projectOnDisk(h)).specializations[0]?.version).toBe(2);
     expect(await dirFiles(h)).toEqual(after);
-    expect(await h.root.read(`${DIR}/docs/novo.md`)).toBe('# novo');
+    expect(await h.root.read(`${DIR}/docs/new.md`)).toBe('# new');
     expect(await specVersionOnDisk(h)).toBe(2);
   });
 
-  it('o arquivo da especialização vem de to.spec: o da pasta da proposta, se houver, não vale', async () => {
+  it('the specialization file comes from to.spec: the one in the proposal folder, if any, does not count', async () => {
     const { h, v1 } = await withV1();
-    // O pacote traz o `material3.spec.json` ainda na v1.
+    // The package brings `material3.spec.json` still at v1.
     await propose2(h, v1, { files: material3Package() });
     h.review.open('P1');
     await h.review.decide({ level: 'proposal', id: null }, 'accepted');
@@ -136,7 +136,7 @@ describe('aplicar proposta com pacote de biblioteca', () => {
     expect((await projectOnDisk(h)).specializations[0]?.version).toBe(2);
   });
 
-  it('pacote ausente na proposta: package-missing e nada muda', async () => {
+  it('package missing in the proposal: package-missing and nothing changes', async () => {
     const { h, v1 } = await withV1();
     await propose2(h, v1, { files: new Map() });
     const before = h.session.store.project.value;
@@ -155,15 +155,15 @@ describe('aplicar proposta com pacote de biblioteca', () => {
     expect((await diskProposal(h.root)).applied).toEqual({});
   });
 
-  it('pacote inválido na proposta: package-invalid e nada muda', async () => {
+  it('invalid package in the proposal: package-invalid and nothing changes', async () => {
     const { h, v1 } = await withV1();
     const files = material3Package();
-    files.set('components/quebrado.json', '{ não é json');
+    files.set('components/broken.json', '{ not json');
     files.delete('material3.spec.json');
-    // Um componente citado pela especialização some: erro de nível 1.
+    // A component cited by the specialization disappears: level 1 error.
     const [firstComponent] = [...files.keys()].filter((p) => p.startsWith('components/'));
-    if (firstComponent === undefined) throw new Error('sem componentes no pacote');
-    files.set(firstComponent, '{ "format": "nada" }');
+    if (firstComponent === undefined) throw new Error('no components in the package');
+    files.set(firstComponent, '{ "format": "nothing" }');
     await propose2(h, v1, { files });
     const before = h.session.store.project.value;
     const filesBefore = await dirFiles(h);
@@ -181,7 +181,7 @@ describe('aplicar proposta com pacote de biblioteca', () => {
     expect((await diskProposal(h.root)).applied).toEqual({});
   });
 
-  it('a exportação leva os arquivos do pacote enquanto a mudança não foi aplicada, e não depois', async () => {
+  it('the export carries the package files while the change has not been applied, and not afterwards', async () => {
     const { h, v1 } = await withV1();
     await propose2(h, v1);
     const exported = async () =>
@@ -189,7 +189,7 @@ describe('aplicar proposta com pacote de biblioteca', () => {
         path.startsWith(`${FROM}/`),
       );
     const before = await exported();
-    expect(before).toContain(`${FROM}/docs/novo.md`);
+    expect(before).toContain(`${FROM}/docs/new.md`);
     expect(before).toContain(`${FROM}/components/m3-button.json`);
 
     h.review.open('P1');

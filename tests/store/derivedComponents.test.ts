@@ -53,7 +53,7 @@ function add(
   );
 }
 
-/** Dois textos e uma folha que não cabe, na imagem I1. */
+/** Two texts and a sheet that does not fit, on image I1. */
 function screen(): Project {
   let p = componentProject();
   p = add(p, 'T1', 'text', box(100, 100, 100, 40));
@@ -61,7 +61,7 @@ function screen(): Project {
   return p;
 }
 
-/** Deixa só uma camada visível (o filtro "sem anotação" vale pelas visíveis). */
+/** Leaves only one layer visible (the "no annotation" filter applies to the visible ones). */
 function showOnly(ui: EditorUi, project: Project | null, layerId: string): void {
   ui.hiddenLayers.value = new Set(
     (project?.layers ?? []).filter((l) => l.id !== layerId).map((l) => l.id),
@@ -91,14 +91,14 @@ function setup(
   const derived = createEditorDerived(
     store,
     ui,
-    // Sem revisão: o projeto à vista é o confirmado, até um teste trocar `shown`.
+    // No review: the shown project is the confirmed one, until a test swaps `shown`.
     undefined,
     sources,
   );
   return { store, actions, ui, derived, sources, shown };
 }
 
-/** Todo o texto do desenho (a cena em JSON basta para procurar um valor). */
+/** All the drawing's text (the scene as JSON is enough to look for a value). */
 const drawnText = (root: unknown): string => JSON.stringify(root);
 
 beforeEach(() => {
@@ -110,15 +110,15 @@ afterEach(() => {
   localStorage.clear();
 });
 
-describe('derivado: desenhos dos componentes', () => {
-  it('sem catálogo, ninguém tem desenho', () => {
+describe('derived: component drawings', () => {
+  it('without a catalog, nobody has a drawing', () => {
     const { derived } = setup(screen(), { catalog: new Map() });
     expect(derived.componentScenes.value.size).toBe(0);
     expect(derived.drawnMarkings.value.size).toBe(0);
     expect(derived.componentTypes.value).toEqual([]);
   });
 
-  it('desenha as marcações com componente, na ordem do array', () => {
+  it('draws the markings with a component, in array order', () => {
     const { derived } = setup();
     const scenes = derived.componentScenes.value;
     expect([...scenes.keys()]).toEqual(['T1', 'T2']);
@@ -126,40 +126,40 @@ describe('derivado: desenhos dos componentes', () => {
     expect(derived.catalog.value).toBe(catalog);
   });
 
-  it('editar um campo reinstancia só aquela marcação', () => {
+  it('editing a field re-instantiates only that marking', () => {
     const { derived, actions } = setup();
     const before = derived.componentScenes.value;
-    expect(actions.setFieldValue('A_T1', 'label', 'Texto novo').ok).toBe(true);
+    expect(actions.setFieldValue('A_T1', 'label', 'New text').ok).toBe(true);
     const after = derived.componentScenes.value;
     expect(after.get('T1')).not.toBe(before.get('T1'));
-    expect(drawnText(after.get('T1')?.root)).toContain('Texto novo');
+    expect(drawnText(after.get('T1')?.root)).toContain('New text');
     expect(after.get('T2')).toBe(before.get('T2'));
   });
 
-  it('desfazer e refazer redesenham pelo mesmo caminho', () => {
+  it('undo and redo redraw through the same path', () => {
     const { derived, actions, store } = setup();
-    actions.setFieldValue('A_T1', 'label', 'Texto novo');
+    actions.setFieldValue('A_T1', 'label', 'New text');
     const edited = derived.componentScenes.value;
     store.undo();
     const undone = derived.componentScenes.value;
-    expect(drawnText(undone.get('T1')?.root)).not.toContain('Texto novo');
+    expect(drawnText(undone.get('T1')?.root)).not.toContain('New text');
     expect(undone.get('T2')).toBe(edited.get('T2'));
     store.redo();
     expect(drawnText(derived.componentScenes.value.get('T1')?.root)).toContain(
-      'Texto novo',
+      'New text',
     );
   });
 
-  it('recarga externa (outro projeto na mesma sessão) redesenha só o que mudou', () => {
+  it('external reload (another project in the same session) redraws only what changed', () => {
     const { derived, store } = setup();
     const before = derived.componentScenes.value;
-    store.load(setFieldValue(screen(), 'A_T2', 'label', 'Veio do disco'));
+    store.load(setFieldValue(screen(), 'A_T2', 'label', 'Came from disk'));
     const after = derived.componentScenes.value;
-    expect(drawnText(after.get('T2')?.root)).toContain('Veio do disco');
+    expect(drawnText(after.get('T2')?.root)).toContain('Came from disk');
     expect(after.get('T1')).toBe(before.get('T1'));
   });
 
-  it('um catálogo que chega depois desenha as marcações que já estavam no projeto', () => {
+  it('a catalog that arrives later draws the markings that were already in the project', () => {
     const { derived, sources } = setup();
     sources.catalog.value = new Map();
     expect(derived.componentScenes.value.size).toBe(0);
@@ -167,7 +167,7 @@ describe('derivado: desenhos dos componentes', () => {
     expect(derived.componentScenes.value.size).toBe(2);
   });
 
-  it('o medidor e a época das fontes redesenham', () => {
+  it('the measurer and the fonts epoch redraw', () => {
     const { derived, sources } = setup();
     const before = derived.componentScenes.value;
     sources.fontsEpoch.value++;
@@ -178,7 +178,7 @@ describe('derivado: desenhos dos componentes', () => {
     expect(derived.componentScenes.value.get('T1')).not.toBe(afterFonts.get('T1'));
   });
 
-  it('a visão Proposto desenha os valores propostos', () => {
+  it('the Proposed view draws the proposed values', () => {
     const base = screen();
     const store = createProjectStore();
     store.load(base);
@@ -188,13 +188,13 @@ describe('derivado: desenhos dos componentes', () => {
       fontsEpoch: signal(0),
     });
     const current = derived.componentScenes.value;
-    proposed.value = setFieldValue(base, 'A_T1', 'label', 'Proposto');
+    proposed.value = setFieldValue(base, 'A_T1', 'label', 'Proposed');
     const next = derived.componentScenes.value;
-    expect(drawnText(next.get('T1')?.root)).toContain('Proposto');
+    expect(drawnText(next.get('T1')?.root)).toContain('Proposed');
     expect(next.get('T2')).toBe(current.get('T2'));
   });
 
-  it('drawingsOf devolve a cena do projeto à vista e reaproveita as demais com a prévia do gesto', () => {
+  it('drawingsOf returns the scene of the shown project and reuses the rest with the gesture preview', () => {
     const { derived, actions, store } = setup();
     const scenes = derived.componentScenes.value;
     expect(derived.drawingsOf(store.project.value)).toBe(scenes);
@@ -205,7 +205,7 @@ describe('derivado: desenhos dos componentes', () => {
     expect(preview).not.toBe(scenes);
     expect(preview.get('T1')?.root.width).toBe(120);
     expect(preview.get('T2')).toBe(scenes.get('T2'));
-    // Durante o gesto o projeto à vista (confirmado) não muda.
+    // During the gesture the shown (confirmed) project does not change.
     expect(derived.componentScenes.value).toBe(scenes);
     actions.commitGesture();
     expect(derived.componentScenes.value.get('T1')?.root.width).toBe(120);
@@ -214,8 +214,8 @@ describe('derivado: desenhos dos componentes', () => {
   });
 });
 
-describe('derivado: marcações desenhadas', () => {
-  it('na foto só com a opção ligada; no container, sempre', () => {
+describe('derived: drawn markings', () => {
+  it('on the photo only with the option on; in the container, always', () => {
     const { derived, actions, store } = setup();
     expect(derived.drawnMarkings.value.size).toBe(0);
     setShowComponentsOnPhotos(true);
@@ -241,8 +241,8 @@ describe('derivado: marcações desenhadas', () => {
     expect(store.project.value?.markings).toHaveLength(3);
   });
 
-  it('o filtro "sem anotação" não esconde marcação que desenha; a comum segue a regra', () => {
-    // Container com filha, mais uma marcação comum sem anotação, no container... e na foto.
+  it('the "no annotation" filter does not hide a marking that draws; the plain one follows the rule', () => {
+    // Container with a child, plus a plain marking with no annotation, in the container... and on the photo.
     let p = add(screen(), 'C', 'row', box(100, 300, 300, 100));
     p = add(p, 'K', 'text', box(100, 300, 100, 40), { parentId: 'C' });
     p = createMarking(p, { id: 'P', containerId: 'I1', rect: box(500, 500, 50, 50) });
@@ -251,11 +251,11 @@ describe('derivado: marcações desenhadas', () => {
     const layers = store.project.value?.layers ?? [];
     const other = layers.find((l) => l.spec === null);
     const typed = layers.find((l) => l.spec !== null);
-    if (!other || !typed) throw new Error('camadas');
+    if (!other || !typed) throw new Error('layers');
     const drawable = ['T1', 'T2', 'C', 'K'];
     for (const mode of ['hide', 'dim'] as const) {
       setMarkingDisplay(mode);
-      // Só uma camada sem as anotações dos componentes visível: eles seguem por inteiro e desenhados.
+      // Only a layer without the components' annotations visible: they stay whole and drawn.
       showOnly(ui, store.project.value, other.id);
       const marks = derived.markingVisibility.value;
       for (const id of drawable) expect(marks.get(id)).toBe('full');
@@ -264,7 +264,7 @@ describe('derivado: marcações desenhadas', () => {
       showOnly(ui, store.project.value, typed.id);
       expect(derived.markingVisibility.value.get('C')).toBe('full');
     }
-    // Modo visualização: nenhuma marcação ao toque, nem a selecionada, mas o desenho segue à vista.
+    // View mode: no marking to the touch, not even the selected one, but the drawing stays in sight.
     setMarkingDisplay('all');
     ui.selection.value = { kind: 'marking', id: 'T1' };
     setViewMode(ui, true);
@@ -275,7 +275,7 @@ describe('derivado: marcações desenhadas', () => {
     setViewMode(ui, false);
     ui.selection.value = null;
     expect(derived.markingVisibility.value.get('T1')).toBe('full');
-    // Sem a opção, na foto nada desenha; o filtro volta a valer para o que não desenha.
+    // Without the option, nothing draws on the photo; the filter applies again to what does not draw.
     setShowComponentsOnPhotos(false);
     setMarkingDisplay('hide');
     showOnly(ui, store.project.value, other.id);
@@ -283,7 +283,7 @@ describe('derivado: marcações desenhadas', () => {
     expect(derived.markingVisibility.value.get('T1')).toBe('hidden');
   });
 
-  it('no container o componente aparece mesmo com a opção de fotos desligada', () => {
+  it('in the container the component shows even with the photos option off', () => {
     const { derived, actions, ui, store } = setup();
     const bgContainer = actions.addBackgroundContainer({
       name: null,
@@ -300,22 +300,22 @@ describe('derivado: marcações desenhadas', () => {
     });
     if (!created.ok) throw new Error('addComponent');
     const other = store.project.value?.layers.find((l) => l.spec === null);
-    if (!other) throw new Error('camada');
+    if (!other) throw new Error('layer');
     setMarkingDisplay('hide');
     showOnly(ui, store.project.value, other.id);
     expect(derived.markingVisibility.value.get(created.value)).toBe('full');
     expect([...derived.drawnMarkings.value]).toEqual([created.value]);
   });
 
-  it('mantém o mesmo conjunto quando nada muda', () => {
+  it('keeps the same set when nothing changes', () => {
     const { derived, actions } = setup();
     setShowComponentsOnPhotos(true);
     const before = derived.drawnMarkings.value;
-    actions.renameProject('Outro nome');
+    actions.renameProject('Another name');
     expect(derived.drawnMarkings.value).toBe(before);
   });
 
-  it('a marcação do canvas desenha sempre, sem depender da opção das fotos', () => {
+  it('the canvas marking always draws, regardless of the photos option', () => {
     const { derived, actions } = setup();
     setShowComponentsOnPhotos(false);
     const created = actions.addComponent({
@@ -326,18 +326,18 @@ describe('derivado: marcações desenhadas', () => {
       center: { x: 3000, y: 100 },
     });
     if (!created.ok) throw new Error('addComponent');
-    // T1 e T2 estão na foto I1 (escondidos); a do canvas aparece.
+    // T1 and T2 are on photo I1 (hidden); the canvas one shows.
     expect([...derived.drawnMarkings.value]).toEqual([created.value]);
     expect(derived.componentScenes.value.get(created.value)?.containerId).toBeNull();
   });
 });
 
-describe('derivado: marcações flutuantes', () => {
-  it('lista as flutuantes e mantém o mesmo conjunto enquanto nenhuma muda', () => {
+describe('derived: floating markings', () => {
+  it('lists the floating ones and keeps the same set while none changes', () => {
     const { derived, actions } = setup();
     const empty = derived.floatingMarkings.value;
     expect(empty.size).toBe(0);
-    actions.renameProject('Outro nome');
+    actions.renameProject('Another name');
     expect(derived.floatingMarkings.value).toBe(empty);
 
     const note = actions.addComponent({
@@ -348,22 +348,22 @@ describe('derivado: marcações flutuantes', () => {
       center: { x: 3000, y: 100 },
     });
     if (!note.ok) throw new Error('addComponent');
-    // Comum no canvas: ainda não é flutuante.
+    // Plain on the canvas: not floating yet.
     expect(derived.floatingMarkings.value.size).toBe(0);
     expect(actions.setMarkingFloating(note.value, true).ok).toBe(true);
     const floating = derived.floatingMarkings.value;
     expect([...floating]).toEqual([note.value]);
-    actions.renameProject('Mais outro');
+    actions.renameProject('Yet another');
     expect(derived.floatingMarkings.value).toBe(floating);
   });
 });
 
-describe('derivado: pendência "componente não cabe"', () => {
+describe('derived: "component does not fit" issue', () => {
   function withWide() {
     return setup(add(screen(), 'W', 'wide', box(500, 100, 100, 40)));
   }
 
-  it('aparece na anotação que desenha e entra nas incompletas', () => {
+  it('shows on the annotation that draws and enters the incomplete ones', () => {
     const { derived } = withWide();
     expect(derived.issues.value.get('A_W')).toEqual([{ code: 'component-overflow' }]);
     expect(derived.issues.value.has('A_T1')).toBe(false);
@@ -372,10 +372,10 @@ describe('derivado: pendência "componente não cabe"', () => {
     expect(derived.incompleteList.value.length).toBeGreaterThan(0);
   });
 
-  it('some quando a marcação passa a caber ou deixa de existir', () => {
+  it('goes away when the marking comes to fit or stops existing', () => {
     const { derived, actions } = withWide();
     expect(derived.incompleteCount.value).toBe(1);
-    // Mais larga: as duas caixas de 80 cabem numa linha de 160 ou mais.
+    // Wider: the two 80 boxes fit in a line of 160 or more.
     expect(actions.setMarkingRect('W', box(500, 100, 200, 40)).ok).toBe(true);
     expect(derived.issues.value.has('A_W')).toBe(false);
     expect(derived.incompleteCount.value).toBe(0);
@@ -385,51 +385,51 @@ describe('derivado: pendência "componente não cabe"', () => {
     expect(derived.incompleteCount.value).toBe(0);
   });
 
-  it('mantém o mesmo mapa quando uma edição não mexe nas pendências', () => {
+  it('keeps the same map when an edit does not touch the issues', () => {
     const { derived, actions } = withWide();
     const before = derived.issues.value;
-    actions.renameMarking('T1', 'Outro');
+    actions.renameMarking('T1', 'Other');
     expect(derived.issues.value).toBe(before);
   });
 
-  it('soma ao que o modelo já aponta na mesma anotação', () => {
+  it('adds to what the model already flags on the same annotation', () => {
     const { derived, actions, store } = withWide();
-    // Um valor inválido numa anotação que também transborda: as duas pendências aparecem.
+    // An invalid value on an annotation that also overflows: both issues show.
     actions.addAnnotation('W', store.project.value?.layers[0]?.id as string);
     const issues = derived.issues.value.get('A_W') ?? [];
     expect(issues.map((i) => i.code)).toContain('component-overflow');
   });
 });
 
-describe('derivado: tamanho mínimo, paleta e avisos', () => {
-  it('componentMinSizes traz o mínimo dos componentes (1×1 sem minSize)', () => {
+describe('derived: minimum size, palette and warnings', () => {
+  it('componentMinSizes brings the components minimum (1×1 without minSize)', () => {
     const { derived, actions } = setup(
       add(screen(), 'W', 'wide', box(500, 100, 100, 40)),
     );
     const sizes = derived.componentMinSizes.value;
     expect(sizes.get('T1')).toEqual({ width: 60, height: 24 });
-    // Sem minSize no componente, vale o mínimo de 1 px de quem desenha um componente.
+    // Without minSize on the component, the 1 px minimum of whoever draws a component applies.
     expect(sizes.get('W')).toEqual({ width: 1, height: 1 });
     const before = sizes;
-    actions.renameMarking('T1', 'Outro');
+    actions.renameMarking('T1', 'Other');
     expect(derived.componentMinSizes.value).toBe(before);
   });
 
-  it('componentMinSizes multiplica o minSize pela densidade do container (o mínimo do redimensionar)', () => {
+  it('componentMinSizes multiplies minSize by the container density (the resize minimum)', () => {
     const { derived } = setup(setContainerDensity(screen(), 'I1', 3));
     expect(derived.componentMinSizes.value.get('T1')).toEqual({ width: 180, height: 72 });
   });
 
-  it('componentTypes lista os tipos com componente e mantém a lista', () => {
+  it('componentTypes lists the types with a component and keeps the list', () => {
     const { derived, actions } = setup();
     const types = derived.componentTypes.value;
     expect(types.map((t) => t.typeId)).toContain('text');
     expect(types.map((t) => t.typeId)).not.toContain('plain');
-    actions.renameMarking('T1', 'Outro');
+    actions.renameMarking('T1', 'Other');
     expect(derived.componentTypes.value).toBe(types);
   });
 
-  it('componentWarnings só traz as marcações com aviso', () => {
+  it('componentWarnings only brings the markings with a warning', () => {
     const { derived } = setup(add(screen(), 'W', 'wide', box(500, 100, 100, 40)));
     const warnings = derived.componentWarnings.value;
     expect(warnings.map((w) => w.markingId)).toEqual(['W']);
@@ -439,8 +439,8 @@ describe('derivado: tamanho mínimo, paleta e avisos', () => {
   });
 });
 
-describe('derivado: nota flutuante sobre uma foto', () => {
-  it('desenha mesmo com "Mostrar componentes sobre fotos" desligado, com a foto embaixo', () => {
+describe('derived: floating note over a photo', () => {
+  it('draws even with "Show components over photos" off, with the photo underneath', () => {
     const { derived, actions, store } = setup(notesProject(), {
       catalog: notesCatalog(),
     });
@@ -452,7 +452,7 @@ describe('derivado: nota flutuante sobre uma foto', () => {
       parentId: null,
       specId: NOTES_SPEC_ID,
       typeId: 'nota',
-      // Sobre a foto I1.
+      // Over photo I1.
       center: { x: photo.placement.x + 100, y: photo.placement.y + 100 },
     });
     if (!created.ok) throw new Error('addComponent');
@@ -461,7 +461,7 @@ describe('derivado: nota flutuante sobre uma foto', () => {
     expect([...derived.drawnMarkings.value]).toEqual([created.value]);
     expect(derived.componentScenes.value.get(created.value)).toBeDefined();
     expect(derived.floatingMarkings.value.has(created.value)).toBe(true);
-    // Ligar a opção não muda nada para a flutuante.
+    // Turning the option on changes nothing for the floating one.
     setShowComponentsOnPhotos(true);
     expect([...derived.drawnMarkings.value]).toEqual([created.value]);
   });

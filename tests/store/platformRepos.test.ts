@@ -16,12 +16,12 @@ function setup() {
 
 const current = (store: ReturnType<typeof createProjectStore>): Project => {
   const p = store.project.value;
-  if (!p) throw new Error('sem projeto');
+  if (!p) throw new Error('no project');
   return p;
 };
 
-describe('store: clone local por plataforma', () => {
-  it('erros do modelo voltam como ActionResult, sem mexer no histórico', () => {
+describe('store: local clone per platform', () => {
+  it('model errors come back as ActionResult, without touching the history', () => {
     const { store, actions } = setup();
     expect(actions.setPlatformRepo('android', { localPath: '/abs' })).toEqual({
       ok: false,
@@ -32,7 +32,7 @@ describe('store: clone local por plataforma', () => {
       error: 'unknown-platform',
     });
     expect(actions.removePlatformRepo('ios')).toEqual({ ok: false, error: 'not-found' });
-    // O campo de código removido na etapa 9 não existe mais no tipo do Screen.
+    // The code field removed in stage 9 no longer exists on the Screen type.
     expect(actions.setFieldValue('AS', 'implementacao', [])).toEqual({
       ok: false,
       error: 'unknown-field',
@@ -40,14 +40,14 @@ describe('store: clone local por plataforma', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('informar e remover entram no desfazer; o aviso de repositório ausente saiu', () => {
+  it('setting and removing go into the undo; the missing repository warning is gone', () => {
     const { store, actions, derived } = setup();
     expect('platformRepoWarnings' in derived).toBe(false);
     expect(actions.setPlatformRepo('ios', { localPath: '../ios' }).ok).toBe(true);
     expect(actions.removePlatformRepo('android').ok).toBe(true);
     expect(store.revision.value).toBe(2);
 
-    // Repetir o valor atual não cria entrada.
+    // Repeating the current value does not create an entry.
     expect(actions.setPlatformRepo('ios', { localPath: '../ios' }).ok).toBe(true);
     expect(store.revision.value).toBe(2);
 
