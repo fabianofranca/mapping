@@ -7,7 +7,7 @@ const project = canvasProject();
 const at = { x: 250, y: 250 };
 
 describe('startGesture', () => {
-  it('pan (ou sem projeto) não começa gesto', () => {
+  it('pan (or without a project) does not start a gesture', () => {
     const begin = vi.fn(() => true);
     expect(startGesture(project, 1, at, { kind: 'pan' }, begin)).toBeNull();
     expect(
@@ -16,7 +16,7 @@ describe('startGesture', () => {
     expect(begin).not.toHaveBeenCalled();
   });
 
-  it('select-rect: gesto sem store, sem rascunho; sem projeto não começa', () => {
+  it('select-rect: gesture without store, without draft; without a project it does not start', () => {
     const begin = vi.fn(() => true);
     const started = startGesture(project, 7, at, { kind: 'select-rect' }, begin);
     expect(started?.gesture).toEqual({
@@ -30,7 +30,7 @@ describe('startGesture', () => {
     expect(begin).not.toHaveBeenCalled();
   });
 
-  it('desenhar: rascunho no ponto inicial, sem abrir gesto no store', () => {
+  it('draw: draft at the initial point, without opening a gesture in the store', () => {
     const begin = vi.fn(() => true);
     const started = startGesture(
       project,
@@ -45,7 +45,7 @@ describe('startGesture', () => {
     expect(begin).not.toHaveBeenCalled();
   });
 
-  it('desenhar no vazio: rascunho do canvas (sem imagem), em unidades do canvas', () => {
+  it('draw on empty space: canvas draft (no image), in canvas units', () => {
     const begin = vi.fn(() => true);
     const empty = { x: 1050.4, y: 900.6 };
     const started = startGesture(
@@ -67,7 +67,7 @@ describe('startGesture', () => {
     expect(begin).not.toHaveBeenCalled();
   });
 
-  it('desenhar numa imagem: os candidatos à absorção são as marcações dela', () => {
+  it('draw on an image: the absorption candidates are its markings', () => {
     const started = startGesture(
       project,
       1,
@@ -82,7 +82,7 @@ describe('startGesture', () => {
     ]);
   });
 
-  it('desenhar no canvas: candidatos são as marcações do canvas e os containers', () => {
+  it('draw on the canvas: candidates are the canvas markings and the containers', () => {
     const q = createMarking(project, {
       id: 'C1',
       containerId: null,
@@ -103,7 +103,7 @@ describe('startGesture', () => {
     ]);
   });
 
-  it('mover/redimensionar abrem um gesto no store, com o estado inicial', () => {
+  it('move/resize open a gesture in the store, with the initial state', () => {
     const begin = vi.fn(() => true);
     const move = startGesture(
       project,
@@ -128,11 +128,11 @@ describe('startGesture', () => {
       kind: 'resize-marking',
       corner: 'se',
       startRect: { x: 200, y: 200, width: 100, height: 100 },
-      // Só o container limita; as filhas e o pai não.
+      // Only the container limits; the children and the parent do not.
       limits: { outer: { x: 0, y: 0, width: 1000, height: 800 } },
       placement: { x: 0, y: 0, scale: 1 },
     });
-    // Absorve o que cruza, menos ela mesma e os ancestrais (aqui, M1).
+    // Absorbs what crosses, except itself and the ancestors (here, M1).
     const candidates =
       resize?.gesture.kind === 'resize-marking' ? resize.gesture.candidates : [];
     expect(candidates).toEqual([]);
@@ -141,7 +141,7 @@ describe('startGesture', () => {
     expect(resize?.draft).toBeNull();
   });
 
-  it('item que não existe mais, ou store recusando o gesto: vira pan (null)', () => {
+  it('item that no longer exists, or store refusing the gesture: becomes pan (null)', () => {
     expect(
       startGesture(project, 1, at, { kind: 'move-marking', markingId: 'X' }, () => true),
     ).toBeNull();
@@ -157,8 +157,8 @@ describe('startGesture', () => {
   });
 });
 
-describe('startGesture: espaços', () => {
-  it('mover marcação de container usa a escala dele; a do canvas, 1', () => {
+describe('startGesture: spaces', () => {
+  it('moving a container marking uses its scale; the canvas one, 1', () => {
     const scaled = setContainerPlacement(project, 'I2', { x: 1100, y: 0, scale: 0.5 });
     const inContainer = startGesture(
       scaled,
@@ -188,7 +188,7 @@ describe('startGesture: espaços', () => {
     expect(onCanvas?.gesture).toMatchObject({ kind: 'move-marking', scale: 1 });
   });
 
-  it('redimensionar marcação do canvas: sem limite, com os containers entre os candidatos', () => {
+  it('resizing a canvas marking: no limit, with the containers among the candidates', () => {
     const q = createMarking(project, {
       id: 'C1',
       containerId: null,
@@ -212,7 +212,7 @@ describe('startGesture: espaços', () => {
     ).toEqual(['I1', 'I2']);
   });
 
-  it('a flutuante não absorve nada ao ser redimensionada', () => {
+  it('the floating one absorbs nothing when resized', () => {
     const q = createMarking(project, {
       id: 'N1',
       containerId: null,
@@ -230,7 +230,7 @@ describe('startGesture: espaços', () => {
     expect(gesture?.kind === 'resize-marking' && gesture.candidates).toEqual([]);
   });
 
-  it('resize exclui os ancestrais e ela mesma dos candidatos; as filhas ficam', () => {
+  it('resize excludes the ancestors and itself from the candidates; the children stay', () => {
     const started = startGesture(
       project,
       1,
@@ -245,8 +245,8 @@ describe('startGesture: espaços', () => {
   });
 });
 
-describe('startGesture: item trancado', () => {
-  it('o arrasto sobre o item trancado vira um gesto "blocked", sem abrir gesto no store', () => {
+describe('startGesture: locked item', () => {
+  it('dragging the locked item becomes a "blocked" gesture, without opening a gesture in the store', () => {
     const begin = vi.fn(() => true);
     const started = startGesture(project, 7, at, { kind: 'locked' }, begin);
     expect(started).toEqual({ gesture: { kind: 'blocked', pointerId: 7 }, draft: null });
@@ -255,13 +255,13 @@ describe('startGesture: item trancado', () => {
   });
 });
 
-describe('startGesture: arrasto conjunto (ME2)', () => {
+describe('startGesture: joint drag (ME2)', () => {
   const items = [
     { kind: 'image', id: 'I2' },
     { kind: 'marking', id: 'M1' },
   ] as const;
 
-  it('abre um gesto no store com os itens e o deslocamento zerado', () => {
+  it('opens a gesture in the store with the items and the offset zeroed', () => {
     const begin = vi.fn(() => true);
     const started = startGesture(project, 3, at, { kind: 'move-items', items }, begin);
     expect(started).toEqual({
@@ -279,14 +279,14 @@ describe('startGesture: arrasto conjunto (ME2)', () => {
     expect(isStoreGesture(started?.gesture ?? null)).toBe(true);
   });
 
-  it('item travado entre os que se movem: o gesto não começa (vira pan)', () => {
+  it('locked item among the ones that move: the gesture does not start (becomes pan)', () => {
     const begin = vi.fn(() => true);
     const locked = setImageLocked(project, 'I2', true);
     expect(startGesture(locked, 1, at, { kind: 'move-items', items }, begin)).toBeNull();
     expect(begin).not.toHaveBeenCalled();
   });
 
-  it('os itens que sumiram saem do gesto; sem nenhum, ou com o store recusando, é pan', () => {
+  it('the items that vanished leave the gesture; with none, or with the store refusing, it is pan', () => {
     const begin = vi.fn(() => true);
     const partial = startGesture(
       project,

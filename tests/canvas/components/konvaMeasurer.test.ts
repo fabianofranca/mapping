@@ -7,7 +7,7 @@ vi.mock('konva/lib/shapes/Text', () => ({
     constructor(config: { fontFamily?: string }) {
       configs.push(config);
     }
-    // Como o Konva: `width()` devolve a largura fixada (o `maxWidth`) e `getTextWidth()`, a natural.
+    // Like Konva: `width()` returns the fixed width (the `maxWidth`) and `getTextWidth()`, the natural one.
     width = () => 400;
     getTextWidth = () => 10;
     height = () => 10;

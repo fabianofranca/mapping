@@ -23,7 +23,7 @@ class FakeImage {
     this.source = value;
     this.sources.push(value);
   }
-  /** Os testes disparam o fim da carga. */
+  /** The tests trigger the end of the load. */
   load(): void {
     this.onload?.();
   }
@@ -87,7 +87,7 @@ function setup(overrides: Partial<RemoteImageLoaderDeps> = {}) {
   return { loader, images, bitmaps, bitmapCalls, timers, flushFrames };
 }
 
-/** Deixa as promessas do bitmap resolverem. */
+/** Lets the bitmap promises resolve. */
 const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 const CORS = { allowNoCors: false };
 const NO_CORS = { allowNoCors: true };
@@ -124,7 +124,7 @@ describe('RemoteImageLoader', () => {
     expect(loader.epoch.peek()).toBe(epoch + 1);
   });
 
-  it('reduz a 2048 px no lado maior com alta qualidade', async () => {
+  it('reduces to 2048 px on the longer side with high quality', async () => {
     const { loader, images, bitmapCalls } = setup();
     loader.request(url(1), CORS);
     const image = images[0]!;
@@ -153,7 +153,7 @@ describe('RemoteImageLoader', () => {
     expect(view.width).toBe(100);
   });
 
-  it('se o bitmap falhar, o elemento carregado serve', async () => {
+  it('if the bitmap fails, the loaded element serves', async () => {
     const { loader, images } = setup({
       createBitmap: () => Promise.reject(new Error('out of memory')),
     });
@@ -177,7 +177,7 @@ describe('RemoteImageLoader', () => {
     expect(loader.request(url(1), CORS).state).toBe('too-large');
     expect(loader.request(url(2), CORS).state).toBe('too-large');
     expect(bitmaps).toHaveLength(0);
-    // Exatamente nos limites passa.
+    // Exactly at the limits it passes.
     loader.request(url(3), CORS);
     images[2]!.naturalWidth = 8192;
     images[2]!.naturalHeight = 4880; // 39,98 MP
@@ -378,7 +378,7 @@ describe('RemoteImageLoader', () => {
       expect(ctx.loader.request(url(0), CORS).state).toBe('loading');
     });
 
-    it('o close() do bitmap despejado espera o quadro seguinte', async () => {
+    it('the close() of the evicted bitmap waits for the next frame', async () => {
       const ctx = await fill(REMOTE_IMAGE_LIMITS.cacheEntries);
       ctx.flushFrames();
       ctx.flushFrames();
@@ -392,7 +392,7 @@ describe('RemoteImageLoader', () => {
       expect(ctx.bitmaps.filter((b) => b.closed)).toHaveLength(1);
     });
 
-    it('dispose fecha os bitmaps (no quadro seguinte) e esquece tudo', async () => {
+    it('dispose closes the bitmaps (in the next frame) and forgets everything', async () => {
       const ctx = await fill(2);
       ctx.loader.dispose();
       expect(ctx.bitmaps.every((b) => !b.closed)).toBe(true);
@@ -404,7 +404,7 @@ describe('RemoteImageLoader', () => {
     });
   });
 
-  it('cancelar a assinatura para os avisos', async () => {
+  it('cancelling the subscription stops the notices', async () => {
     const { loader, images } = setup();
     const listener = vi.fn();
     const off = loader.subscribe(listener);

@@ -39,7 +39,7 @@ function namedProject(): Project {
   const base = wholeProject(2000);
   return {
     ...base,
-    arrows: base.arrows.map((a, i) => ({ ...a, name: `Seta ${i}` })),
+    arrows: base.arrows.map((a, i) => ({ ...a, name: `Arrow ${i}` })),
   };
 }
 
@@ -74,7 +74,7 @@ describe('arrows from afar (2,000 markings in Fit all)', () => {
     const s = (scenario = openWholeProject(2000, 'fit', { project: namedProject() }));
     const renderer = internals(s).arrows;
     const shape = renderer.thin[0];
-    if (!shape) throw new Error('fixture: nenhuma seta curta');
+    if (!shape) throw new Error('fixture: no short arrow');
     const id = shape.arrow.id;
     const thinCount = renderer.thin.length;
     s.ui.selection.value = { kind: 'marking', id: shape.arrow.from };

@@ -24,7 +24,7 @@ import { createCanvasViewState } from '../../src/canvas/viewState';
 // view (its roots, where it puts them), the conversation pins at a canvas point only appear
 // on the Main one and pan and zoom recompute nothing nor ask for more than one frame.
 
-describe('CanvasController: perspectiva aberta', () => {
+describe('CanvasController: open perspective', () => {
   const frames: FrameRequestCallback[] = [];
   let rafCalls = 0;
   const flush = () => {
@@ -51,7 +51,7 @@ describe('CanvasController: perspectiva aberta', () => {
 
   /** `canvasProject` + L2 + the perspective V (only I2, at 0,2000). */
   function projectWithView(): Project {
-    let p = addLayer(canvasProject(), { id: 'L2', name: 'Pintura', color: '#00AA00' });
+    let p = addLayer(canvasProject(), { id: 'L2', name: 'Paint', color: '#00AA00' });
     p = addPerspective(p, viewOf(p, { root: 'I2', at: { x: 0, y: 2000 } }));
     return p;
   }

@@ -21,7 +21,7 @@ import { canvasProject, installFakeCanvas } from './harness';
 // The arrival marks in `CanvasController` (PE3, decision 8): only on the Main one, while there is a mark,
 // in the usual frame, recomputing nothing on pan and zoom.
 
-describe('CanvasController: marcas de chegada', () => {
+describe('CanvasController: arrival marks', () => {
   const frames: FrameRequestCallback[] = [];
   let rafCalls = 0;
   const flush = () => {
@@ -91,7 +91,7 @@ describe('CanvasController: marcas de chegada', () => {
     return { ui, perspective, perspectiveActions, controller, internals };
   }
 
-  it('na Principal, com marca: o selo na raiz e a faixa', async () => {
+  it('on the Main one, with a mark: the seal on the root and the strip', async () => {
     const { controller, internals } = await setup();
     expect(internals.arrivalLayer.badgeCount).toBe(1);
     expect(internals.arrivalLayer.bandVisible).toBe(true);
@@ -110,7 +110,7 @@ describe('CanvasController: marcas de chegada', () => {
     controller.destroy();
   });
 
-  it('dispensar a marca tira o selo e a faixa', async () => {
+  it('dismissing the mark removes the seal and the strip', async () => {
     const { controller, perspectiveActions, internals } = await setup();
     expect(perspectiveActions.dismissArrival('I2').ok).toBe(true);
     flush();

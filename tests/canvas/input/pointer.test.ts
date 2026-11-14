@@ -26,7 +26,7 @@ import {
 import { arrowProject, withArrow } from '../../model/arrowFixtures';
 import { canvasProject, editorFor, setOnlyScreens } from '../harness';
 
-// Viewport 1:1 em (0, 0) e container em (0, 0) na página: tela = canvas.
+// Viewport 1:1 at (0, 0) and container at (0, 0) on the page: screen = canvas.
 function setup(
   readOnly = false,
   project: Project = canvasProject(),
@@ -75,7 +75,7 @@ function setup(
         bubbles: true,
       }),
     );
-  /** Toque sem arrastar. */
+  /** Tap without dragging. */
   const click = (
     x: number,
     y: number,
@@ -84,7 +84,7 @@ function setup(
     fire('pointerdown', x, y, options);
     fire('pointerup', x, y, options);
   };
-  /** Duplo clique do mouse: dois toques no mesmo ponto e o evento `dblclick`. */
+  /** Mouse double-click: two taps at the same point and the `dblclick` event. */
   const doubleClick = (x: number, y: number) => {
     click(x, y);
     click(x, y);
@@ -92,7 +92,7 @@ function setup(
       new MouseEvent('dblclick', { clientX: x, clientY: y, bubbles: true }),
     );
   };
-  /** Botão direito: o `pointerdown` do botão 2 e o `contextmenu`. */
+  /** Right button: the `pointerdown` of button 2 and the `contextmenu`. */
   const rightClick = (x: number, y: number) => {
     fire('pointerdown', x, y, { button: 2 });
     container.dispatchEvent(
@@ -105,7 +105,7 @@ function setup(
     );
     fire('pointerup', x, y, { button: 2 });
   };
-  /** Arrasta de `from` até `to` em alguns passos e solta. */
+  /** Drags from `from` to `to` in a few steps and releases. */
   const drag = (
     from: [number, number],
     to: [number, number],
@@ -163,7 +163,7 @@ afterEach(() => {
 });
 
 describe('PointerInput', () => {
-  it('toque sem arrastar seleciona; de novo no mesmo ponto sobe para o pai', () => {
+  it('a tap without dragging selects; again at the same point goes up to the parent', () => {
     const s = setup();
     s.fire('pointerdown', 250, 250);
     s.fire('pointerup', 250, 250);
@@ -177,7 +177,7 @@ describe('PointerInput', () => {
     s.cleanup();
   });
 
-  it('mouse: arrastar a marcação selecionada a move, com uma entrada no desfazer', () => {
+  it('mouse: dragging the selected marking moves it, with one undo entry', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.drag([400, 400], [500, 450]);
@@ -188,7 +188,7 @@ describe('PointerInput', () => {
     s.cleanup();
   });
 
-  it('mouse: a alça redimensiona', () => {
+  it('mouse: the handle resizes', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M2' };
     s.drag([300, 300], [340, 360]);
@@ -196,7 +196,7 @@ describe('PointerInput', () => {
     s.cleanup();
   });
 
-  it('mouse: mover a imagem para cima de outra encosta nela e fica ali ao soltar', () => {
+  it('mouse: moving the image over another one snaps against it and stays there on release', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'image', id: 'I2' };
     s.fire('pointerdown', 1300, 300);
@@ -205,13 +205,13 @@ describe('PointerInput', () => {
     expect(s.state.preview.value).toMatchObject({ containerId: 'I2', valid: true });
     s.fire('pointerup', 800, 300);
     expect(s.state.preview.value).toBeNull();
-    // Encostou na borda direita da I1 (1000), em vez de ficar onde estava (1100).
+    // Snapped to the right edge of I1 (1000), instead of staying where it was (1100).
     const p = s.store.project.peek();
     expect(p && projectIndex(p).containers.get('I2')?.placement.x).toBe(1000);
     s.cleanup();
   });
 
-  it('mouse: arrastar o container só na vertical não regrava o x (zoom fracionário, bit a bit)', () => {
+  it('mouse: dragging the container only vertically does not rewrite x (fractional zoom, bit for bit)', () => {
     const base = canvasProject();
     const x0 = 3300.0000513292603;
     const project: Project = {
@@ -223,8 +223,8 @@ describe('PointerInput', () => {
     const s = setup(false, project);
     s.viewport.viewport.value = { x: 0, y: 78.9, scale: 0.557 };
     s.ui.selection.value = { kind: 'image', id: 'I1' };
-    // Ponto de tela dentro do I1 (canvas ~ 3300..4300 x 0..800), sem tocar marcação.
-    // 1900 em tela vira 3411.131… no canvas: `(x0 + c) - c` ≠ `x0` (a fórmula antiga regravava).
+    // Screen point inside I1 (canvas ~ 3300..4300 x 0..800), without touching a marking.
+    // 1900 on screen becomes 3411.131… on the canvas: `(x0 + c) - c` ≠ `x0` (the old formula rewrote it).
     const sx = 1900;
     const sy = 700 * 0.557 + 78.9;
     s.fire('pointerdown', sx, sy);
@@ -233,13 +233,13 @@ describe('PointerInput', () => {
     s.fire('pointermove', sx, sy + 90);
     expect(s.state.preview.value?.placement.x).toBe(x0);
     s.fire('pointerup', sx, sy + 90);
-    // Gravado: o mesmo x de sempre (a gravação só corta a cauda, como em qualquer escrita).
+    // Stored: the same x as always (the write only trims the tail, as in any write).
     expect(s.containerOf('I1')?.placement.x).toBe(Number(x0.toFixed(6)));
     expect(s.containerOf('I1')?.placement.y).not.toBe(0);
     s.cleanup();
   });
 
-  it('toque: arrastar sobre a marcação selecionada faz pan, sem movê-la', () => {
+  it('touch: dragging over the selected marking pans, without moving it', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.drag([400, 400], [450, 430], { kind: 'touch' });
@@ -248,7 +248,7 @@ describe('PointerInput', () => {
     s.cleanup();
   });
 
-  it('modo Desenhar: arrastar sobre a imagem cria e seleciona a marcação', () => {
+  it('Draw mode: dragging over the image creates and selects the marking', () => {
     const s = setup();
     s.ui.mode.value = 'draw';
     s.fire('pointerdown', 750, 650);
@@ -268,7 +268,7 @@ describe('PointerInput', () => {
     s.cleanup();
   });
 
-  it('cancelar (Esc) desfaz o gesto em andamento e ignora o resto do arrasto', () => {
+  it('cancel (Esc) undoes the gesture in progress and ignores the rest of the drag', () => {
     const s = setup();
     expect(s.input.cancelInteraction()).toBe(false);
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -284,7 +284,7 @@ describe('PointerInput', () => {
     s.cleanup();
   });
 
-  it('dois dedos: pinça muda o zoom e cancela o arrasto', () => {
+  it('two fingers: pinch changes the zoom and cancels the drag', () => {
     const s = setup();
     s.fire('pointerdown', 100, 100, { id: 1, kind: 'touch' });
     s.fire('pointerdown', 200, 100, { id: 2, kind: 'touch' });
@@ -292,11 +292,11 @@ describe('PointerInput', () => {
     expect(s.viewport.viewport.value.scale).toBeCloseTo(2);
     s.fire('pointerup', 100, 100, { id: 1, kind: 'touch' });
     s.fire('pointerup', 300, 100, { id: 2, kind: 'touch' });
-    expect(s.ui.selection.value).toBeNull(); // Soltar a pinça não é um toque.
+    expect(s.ui.selection.value).toBeNull(); // Releasing the pinch is not a tap.
     s.cleanup();
   });
 
-  it('roda do mouse dá zoom no ponto', () => {
+  it('mouse wheel zooms at the point', () => {
     const s = setup();
     const wheel = new WheelEvent('wheel', {
       deltaY: -100,
@@ -311,7 +311,7 @@ describe('PointerInput', () => {
     s.cleanup();
   });
 
-  it('cursor: mover sobre o item selecionado, alça nos cantos, "grab" com Espaço', () => {
+  it('cursor: move over the selected item, handle on the corners, "grab" with Space', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.fire('pointermove', 400, 400);
@@ -324,7 +324,7 @@ describe('PointerInput', () => {
     s.cleanup();
   });
 
-  it('só leitura: arrastar o item selecionado faz pan', () => {
+  it('read-only: dragging the selected item pans', () => {
     const s = setup(true);
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.drag([400, 400], [450, 430]);
@@ -339,12 +339,12 @@ describe('PointerInput: trava (etapa 2.5)', () => {
     expect(s.actions.setMarkingLocked(id, true).ok).toBe(true);
   };
 
-  it('mouse: arrastar o item trancado não faz nada (nem pan), sem entrada no desfazer', () => {
+  it('mouse: dragging the locked item does nothing (not even pan), with no undo entry', () => {
     const s = setup();
     lockMarking(s, 'M1');
     const revision = s.store.revision.value;
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
-    s.fire('pointermove', 400, 400); // o mouse passa por cima antes de apertar
+    s.fire('pointermove', 400, 400); // the mouse passes over before pressing
     expect(s.container.style.cursor).toBe('not-allowed');
     s.fire('pointerdown', 400, 400);
     s.fire('pointermove', 450, 430);
@@ -358,7 +358,7 @@ describe('PointerInput: trava (etapa 2.5)', () => {
     s.cleanup();
   });
 
-  it('mouse: os cantos do item trancado não redimensionam', () => {
+  it('mouse: the corners of the locked item do not resize', () => {
     const s = setup();
     lockMarking(s, 'M2');
     s.ui.selection.value = { kind: 'marking', id: 'M2' };
@@ -367,7 +367,7 @@ describe('PointerInput: trava (etapa 2.5)', () => {
     s.cleanup();
   });
 
-  it('mouse: o cursor sobre o item selecionado e trancado é "não permitido"', () => {
+  it('mouse: the cursor over the selected and locked item is "not allowed"', () => {
     const s = setup();
     lockMarking(s, 'M1');
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -389,7 +389,7 @@ describe('PointerInput: trava (etapa 2.5)', () => {
     s.cleanup();
   });
 
-  it('mouse: a imagem trancada não se move', () => {
+  it('mouse: the locked image does not move', () => {
     const s = setup();
     expect(s.actions.setImageLocked('I2', true).ok).toBe(true);
     s.ui.selection.value = { kind: 'image', id: 'I2' };
@@ -413,8 +413,8 @@ describe('PointerInput: trava (etapa 2.5)', () => {
   });
 });
 
-describe('PointerInput: rótulo do nome do container', () => {
-  // M9 cobre o container I1 inteiro; o rótulo de I1 fica logo acima dele.
+describe('PointerInput: container name label', () => {
+  // M9 covers the whole container I1; the label of I1 sits right above it.
   const covered = () =>
     createMarking(canvasProject(), {
       id: 'M9',
@@ -423,7 +423,7 @@ describe('PointerInput: rótulo do nome do container', () => {
     });
   const titles = new Map([['I1', { x: 0, y: -20, width: 100, height: 16 }]]);
 
-  it('clicar no nome seleciona o container coberto por marcação; arrastar o move', () => {
+  it('clicking the name selects the container covered by a marking; dragging moves it', () => {
     const s = setup(false, covered(), titles);
     s.click(900, 700);
     expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M9' });
@@ -434,7 +434,7 @@ describe('PointerInput: rótulo do nome do container', () => {
     s.cleanup();
   });
 
-  it('rótulo de container não selecionado: arrastar faz pan', () => {
+  it('label of an unselected container: dragging pans', () => {
     const s = setup(false, covered(), titles);
     s.drag([50, -12], [80, 18]);
     expect(s.containerOf('I1')?.placement).toMatchObject({ x: 0, y: 0 });
@@ -443,8 +443,8 @@ describe('PointerInput: rótulo do nome do container', () => {
   });
 });
 
-describe('PointerInput: botão do meio e Ctrl+clique (CR canvas/store, itens 16 e 17)', () => {
-  it('clique curto do botão do meio não seleciona, não limpa a seleção', () => {
+describe('PointerInput: middle button and Ctrl+click (CR canvas/store, items 16 and 17)', () => {
+  it('a short middle-button click does not select, does not clear the selection', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.fire('pointerdown', 250, 250, { button: 1 });
@@ -456,7 +456,7 @@ describe('PointerInput: botão do meio e Ctrl+clique (CR canvas/store, itens 16 
     s.cleanup();
   });
 
-  it('clique curto do botão do meio não consome o Comentar armado nem põe o pino', () => {
+  it('a short middle-button click does not consume the armed Comment nor place the pin', () => {
     const s = setup();
     s.ui.commentArm.value = { mode: 'navigate' };
     s.fire('pointerdown', 250, 250, { button: 1 });
@@ -466,7 +466,7 @@ describe('PointerInput: botão do meio e Ctrl+clique (CR canvas/store, itens 16 
     s.cleanup();
   });
 
-  it('Ctrl+clique: o contextmenu com o gesto pendente o cancela, abre o menu e o pointerup não vira clique', () => {
+  it('Ctrl+click: the contextmenu with the pending gesture cancels it, opens the menu and the pointerup does not become a click', () => {
     const s = setup();
     s.fire('pointerdown', 250, 250, { ctrl: true });
     s.container.dispatchEvent(
@@ -481,14 +481,14 @@ describe('PointerInput: botão do meio e Ctrl+clique (CR canvas/store, itens 16 
     expect(s.ui.canvasMenu.value?.target).toEqual({ kind: 'm', id: 'M2' });
     const before = s.ui.selection.value;
     s.fire('pointerup', 250, 250, { ctrl: true });
-    // Sem `tap`: a seleção com Ctrl não alterna o item que o menu selecionou.
+    // Without `tap`: the Ctrl selection does not toggle the item the menu selected.
     expect(s.ui.selection.value).toEqual(before);
     expect(s.input.isInteracting()).toBe(false);
     s.cleanup();
   });
 });
 
-describe('PointerInput: menu de contexto (etapa 3a.2)', () => {
+describe('PointerInput: context menu (stage 3a.2)', () => {
   const contextMenu = (s: ReturnType<typeof setup>, x: number, y: number) => {
     const event = new MouseEvent('contextmenu', {
       clientX: x,
@@ -500,7 +500,7 @@ describe('PointerInput: menu de contexto (etapa 3a.2)', () => {
     return event;
   };
 
-  it('botão direito sobre uma marcação a seleciona e abre o menu dela', () => {
+  it('right button over a marking selects it and opens its menu', () => {
     const s = setup();
     s.fire('pointerdown', 250, 250, { button: 2 });
     const event = contextMenu(s, 250, 250);
@@ -516,13 +516,13 @@ describe('PointerInput: menu de contexto (etapa 3a.2)', () => {
     });
   });
 
-  it('sobre a imagem, fora das marcações, o menu é da imagem', () => {
+  it("over the image, outside the markings, the menu is the image's", () => {
     const s = setup();
     s.fire('pointerdown', 20, 20, { button: 2 });
     contextMenu(s, 20, 20);
     expect(s.ui.selection.value).toMatchObject({ kind: 'image' });
     expect(s.ui.canvasMenu.value?.target?.kind).toBe('i');
-    // Dentro do container, a imagem aceita também o Comentar aqui (CM4).
+    // Inside the container, the image also accepts Comment here (CM4).
     expect(s.ui.canvasMenu.value?.comment).toEqual({ kind: 'container', id: 'I1' });
     expect(s.ui.canvasMenu.value?.here).toMatchObject({
       kind: 'point',
@@ -530,7 +530,7 @@ describe('PointerInput: menu de contexto (etapa 3a.2)', () => {
     });
   });
 
-  it('fora das imagens só abre o Comentar aqui (ponto no canvas), e o menu do navegador continua suprimido', () => {
+  it('outside the images it only opens Comment here (point on the canvas), and the browser menu stays suppressed', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.fire('pointerdown', 1050, 50, { button: 2 });
@@ -546,7 +546,7 @@ describe('PointerInput: menu de contexto (etapa 3a.2)', () => {
     expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
   });
 
-  it('o contextmenu de um toque longo é o "segurar e mover": não abre o menu', () => {
+  it('the contextmenu of a long touch is the "hold and move": it does not open the menu', () => {
     const s = setup();
     s.fire('pointerdown', 250, 250, { kind: 'touch' });
     const event = contextMenu(s, 250, 250);
@@ -554,7 +554,7 @@ describe('PointerInput: menu de contexto (etapa 3a.2)', () => {
     expect(s.ui.canvasMenu.value).toBeNull();
   });
 
-  it('um novo botão direito troca o menu; com o toque no meio, fecha o aberto', () => {
+  it('a new right button swaps the menu; with the middle tap, it closes the open one', () => {
     const s = setup();
     s.fire('pointerdown', 250, 250, { button: 2 });
     contextMenu(s, 250, 250);
@@ -565,10 +565,10 @@ describe('PointerInput: menu de contexto (etapa 3a.2)', () => {
   });
 });
 
-// Pertencimento por geometria (etapa Marcações espaciais, ME1): o desenho no vazio, o mover
-// que atravessa espaços (com encaixe), a absorção e o assentar ao soltar, sempre numa entrada.
-describe('PointerInput: marcações do canvas e pertencimento', () => {
-  /** `canvasProject` com um terceiro container I3 (400×400) em (1800, 0) e uma marcação Ma solta em I1. */
+// Membership by geometry (Spatial markings stage, ME1): drawing on the empty canvas, the move
+// that crosses spaces (with snapping), absorption and settling on release, always in one entry.
+describe('PointerInput: canvas markings and membership', () => {
+  /** `canvasProject` with a third container I3 (400×400) at (1800, 0) and a loose marking Ma in I1. */
   function withThird(): Project {
     let p = canvasProject();
     p = addContainer(p, { id: 'I3', file: 'images/c.jpg', width: 400, height: 400 });
@@ -576,7 +576,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     return p;
   }
 
-  it('modo Desenhar: arrastar no vazio em volta de dois containers cria uma marcação do canvas', () => {
+  it('Draw mode: dragging on the empty canvas around two containers creates a canvas marking', () => {
     const s = setup();
     s.ui.mode.value = 'draw';
     s.fire('pointerdown', -50, -50);
@@ -604,12 +604,12 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('modo Desenhar: o desenho no vazio absorve o container que passa dentro da tolerância', () => {
+  it('Draw mode: drawing on the empty canvas absorbs the container that crosses within the tolerance', () => {
     const s = setup();
     s.ui.mode.value = 'draw';
     s.fire('pointerdown', -20, -20);
     s.fire('pointermove', 500, 400);
-    // I1 vai até x = 1000: 10 para fora do desenho, dentro dos 12 px de tela.
+    // I1 goes up to x = 1000: 10 outside the drawing, within the 12 screen px.
     s.fire('pointermove', 990, 805);
     expect(s.state.absorb.value).toEqual([{ x: 0, y: 0, width: 1000, height: 800 }]);
     s.fire('pointerup', 990, 805);
@@ -620,12 +620,12 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('a absorção depende do zoom (px de tela)', () => {
+  it('absorption depends on the zoom (screen px)', () => {
     const draw = (scale: number) => {
       const s = setup();
       s.viewport.viewport.value = { x: 0, y: 0, scale };
       s.ui.mode.value = 'draw';
-      // Do canvas (-20, -20) a (990, 805): I1 passa 10 unidades à direita do desenho.
+      // From canvas (-20, -20) to (990, 805): I1 extends 10 units past the right of the drawing.
       s.fire('pointerdown', -20 * scale, -20 * scale);
       s.fire('pointermove', 400 * scale, 400 * scale);
       s.fire('pointermove', 990 * scale, 805 * scale);
@@ -635,35 +635,35 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
       s.cleanup();
       return { ...result, id };
     };
-    // Zoom 1: 12 px de tela = 12 unidades, absorve (cresce até 1000).
+    // Zoom 1: 12 screen px = 12 units, absorbs (grows up to 1000).
     const near = draw(1);
     expect(near.rect).toEqual({ x: -20, y: -20, width: 1020, height: 825 });
     expect(near.parentId).toBe(near.id);
-    // Zoom 2: 12 px de tela = 6 unidades; 10 passa da tolerância, não absorve.
+    // Zoom 2: 12 screen px = 6 units; 10 exceeds the tolerance, does not absorb.
     const far = draw(2);
     expect(far.rect).toEqual({ x: -20, y: -20, width: 1010, height: 825 });
     expect(far.parentId).toBeNull();
   });
 
-  describe('aviso ao soltar um desenho abaixo do mínimo', () => {
+  describe('warning when releasing a drawing below the minimum', () => {
     const tooSmall = t('marking.error.rect-too-small', { min: 8 });
     const markingCount = (s: ReturnType<typeof setup>) =>
       Object.keys(
         Object.fromEntries(projectIndex(s.store.project.peek() as Project).markings),
       ).length;
 
-    it('arrasto real de 3×3 px da imagem avisa e não cria marcação', () => {
+    it('a real drag of 3×3 image px warns and creates no marking', () => {
       const s = setup();
       s.viewport.viewport.value = { x: 0, y: 0, scale: 4 };
       s.ui.mode.value = 'draw';
       const before = markingCount(s);
-      s.drag([40, 40], [52, 52]); // 12 px de tela = 3 px da imagem
+      s.drag([40, 40], [52, 52]); // 12 screen px = 3 image px
       expect(s.ui.toast.value).toBe(tooSmall);
       expect(markingCount(s)).toBe(before);
       s.cleanup();
     });
 
-    it('arrasto pequeno no fundo do canvas (sem container) também avisa', () => {
+    it('a small drag on the canvas background (no container) also warns', () => {
       const s = setup();
       s.viewport.viewport.value = { x: -5900, y: 0, scale: 4 }; // tela 100 = canvas 1500
       s.ui.mode.value = 'draw';
@@ -674,7 +674,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
       s.cleanup();
     });
 
-    it('clique simples não avisa', () => {
+    it('a simple click does not warn', () => {
       const s = setup();
       s.viewport.viewport.value = { x: 0, y: 0, scale: 4 };
       s.ui.mode.value = 'draw';
@@ -683,7 +683,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
       s.cleanup();
     });
 
-    it('arrasto cancelado não avisa', () => {
+    it('a cancelled drag does not warn', () => {
       const s = setup();
       s.viewport.viewport.value = { x: 0, y: 0, scale: 4 };
       s.ui.mode.value = 'draw';
@@ -695,19 +695,19 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
       s.cleanup();
     });
 
-    it('arrasto de 8×8 cria a marcação sem aviso', () => {
+    it('an 8×8 drag creates the marking without a warning', () => {
       const s = setup();
       s.viewport.viewport.value = { x: 0, y: 0, scale: 4 };
       s.ui.mode.value = 'draw';
       const before = markingCount(s);
-      s.drag([40, 40], [72, 72]); // 32 px de tela = 8 px da imagem
+      s.drag([40, 40], [72, 72]); // 32 screen px = 8 image px
       expect(s.ui.toast.value).toBeNull();
       expect(markingCount(s)).toBe(before + 1);
       s.cleanup();
     });
   });
 
-  it('modo Desenhar sobre uma imagem continua preso a ela; o pan é da barra de espaço e do botão do meio', () => {
+  it('Draw mode over an image stays bound to it; pan belongs to the space bar and the middle button', () => {
     const s = setup();
     s.ui.mode.value = 'draw';
     s.fire('pointerdown', 900, 700);
@@ -720,12 +720,12 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.fire('pointerup', 1300, 900);
     const id = s.ui.selection.value?.id ?? '';
     expect(s.markingOf(id)).toMatchObject({ containerId: 'I1', parentId: null });
-    // Espaço pressionado: arrastar no vazio é pan, não desenho.
+    // Space pressed: dragging on the empty canvas is pan, not drawing.
     s.setSpace(true);
     s.drag([1700, 600], [1750, 650]);
     expect(s.viewport.viewport.value).toMatchObject({ x: 50, y: 50 });
     s.setSpace(false);
-    // Botão do meio também.
+    // Middle button too.
     s.fire('pointerdown', 1700, 600, { button: 1 });
     s.fire('pointermove', 1720, 620, { button: 1 });
     s.fire('pointermove', 1740, 640, { button: 1 });
@@ -734,10 +734,10 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('mover uma marcação para a outra imagem a torna dela, com as filhas junto e uma entrada', () => {
+  it('moving a marking to the other image makes it belong to that image, with its children along and one entry', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M1' }; // M1 tem a filha M2
-    // I2 está em (1100, 0) na escala 1: M1 (600×500) não cabe nela (500×500), então só a M2.
+    // I2 is at (1100, 0) at scale 1: M1 (600×500) does not fit in it (500×500), so only M2.
     s.ui.selection.value = { kind: 'marking', id: 'M2' };
     s.drag([250, 250], [1350, 350]);
     expect(s.markingOf('M2')).toMatchObject({
@@ -755,14 +755,14 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('entre telas de resoluções diferentes, a marcação mantém o tamanho que tinha na tela', () => {
+  it('between screens of different resolutions, the marking keeps the size it had on screen', () => {
     let project = canvasProject();
-    // I2 (500×500) na metade da escala: ocupa 250×250 no canvas, de (1100, 0) a (1350, 250).
+    // I2 (500×500) at half scale: occupies 250×250 on the canvas, from (1100, 0) to (1350, 250).
     project = setContainerPlacement(project, 'I2', { x: 1100, y: 0, scale: 0.5 });
     const s = setup(false, project);
     s.ui.selection.value = { kind: 'marking', id: 'M2' }; // 100×100 em I1, na escala 1
     s.drag([250, 250], [1250, 150]); // vai de (200, 200) a (1200, 100) no canvas
-    // 100 unidades do canvas = 200 pixels de I2; a posição em pixels dela.
+    // 100 canvas units = 200 I2 pixels; its position in pixels.
     expect(s.markingOf('M2')).toMatchObject({
       containerId: 'I2',
       rect: { x: 200, y: 200, width: 200, height: 200 },
@@ -772,13 +772,13 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('encaixe entre escalas: o deslocamento sai em pixels do container de origem e a marcação fica dentro', () => {
+  it('snapping between scales: the offset comes out in pixels of the source container and the marking stays inside', () => {
     let project = canvasProject();
     project = setContainerPlacement(project, 'I2', { x: 1100, y: 0, scale: 0.5 });
     const s = setup(false, project);
     s.ui.selection.value = { kind: 'marking', id: 'M3' }; // 200×200 px em I2 = 100×100 no canvas
-    // M3 ocupa 1125..1225 no canvas; levada 133 para a direita termina em 1358, 8 além da borda
-    // de I2 (1350): o encaixe a devolve 16 pixels de I2 para dentro.
+    // M3 occupies 1125..1225 on the canvas; moved 133 to the right it ends at 1358, 8 past the edge
+    // of I2 (1350): the snap returns it 16 I2 pixels inward.
     s.drag([1175, 75], [1308, 75]);
     expect(s.markingOf('M3')).toMatchObject({
       containerId: 'I2',
@@ -787,7 +787,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('solta no vazio vira marcação do canvas; solta de volta numa imagem, dela', () => {
+  it('released on the empty canvas becomes a canvas marking; released back on an image, it belongs to it', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M2' };
     s.drag([250, 250], [250, 1150]);
@@ -796,7 +796,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
       parentId: null,
       rect: { x: 200, y: 1100, width: 100, height: 100 },
     });
-    // Agora do canvas: arrastar de volta para dentro de I2 (inteira) a devolve a um container.
+    // Now from the canvas: dragging back into I2 (entirely) returns it to a container.
     s.drag([250, 1150], [1350, 250]);
     expect(s.markingOf('M2')).toMatchObject({
       containerId: 'I2',
@@ -811,15 +811,15 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('o container de destino acende enquanto a marcação passa por cima dele e apaga ao soltar', () => {
+  it('the target container lights up while the marking passes over it and goes off on release', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M2' };
     s.fire('pointerdown', 250, 250);
     s.fire('pointermove', 400, 260);
-    expect(s.state.moveTarget.value).toBeNull(); // ainda em I1 (o de origem não acende)
+    expect(s.state.moveTarget.value).toBeNull(); // still in I1 (the source one does not light up)
     s.fire('pointermove', 1350, 300);
     expect(s.state.moveTarget.value).toBe('I2');
-    s.fire('pointermove', 1050, 300); // no vazio entre as imagens, longe do encaixe
+    s.fire('pointermove', 1050, 300); // on the empty canvas between the images, far from the snap
     expect(s.state.moveTarget.value).toBeNull();
     s.fire('pointermove', 1350, 300);
     s.fire('pointerup', 1350, 300);
@@ -827,10 +827,10 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('encaixe: solta quase inteira num container, a marcação é levada para dentro dele', () => {
+  it('snap: released almost entirely on a container, the marking is carried inside it', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M2' }; // 100×100 em I1
-    // Sem o encaixe ficaria em x = 1090 (10 à esquerda de I2, que começa em 1100).
+    // Without the snap it would stay at x = 1090 (10 to the left of I2, which starts at 1100).
     s.fire('pointerdown', 250, 250);
     s.fire('pointermove', 600, 250);
     s.fire('pointermove', 1140, 250);
@@ -843,10 +843,10 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('encaixe dentro do mesmo container (saiu um pouco da borda): volta para dentro', () => {
+  it('snap within the same container (went slightly past the edge): goes back inside', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M3' }; // 200×200 em I2, em (50, 50)
-    s.drag([1300, 200], [1560, 200]); // x = 310 + 200 = 510: 10 além da borda direita (500)
+    s.drag([1300, 200], [1560, 200]); // x = 310 + 200 = 510: 10 past the right edge (500)
     expect(s.markingOf('M3')).toMatchObject({
       containerId: 'I2',
       rect: { x: 300, y: 50, width: 200, height: 200 },
@@ -854,15 +854,15 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('longe do container (além da tolerância) não encaixa', () => {
+  it('far from the container (beyond the tolerance) does not snap', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M2' };
-    s.drag([250, 250], [1110, 250]); // x = 1060: 40 antes de I2, no vazio
+    s.drag([250, 250], [1110, 250]); // x = 1060: 40 before I2, on the empty canvas
     expect(s.markingOf('M2')).toMatchObject({ containerId: null });
     s.cleanup();
   });
 
-  it('a flutuante se move sozinha e nunca encaixa nem muda de espaço', () => {
+  it('the floating one moves on its own and never snaps or changes space', () => {
     const s = setup();
     const created = s.actions.createMarking(null, {
       x: 900,
@@ -873,7 +873,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     const id = created.ok ? created.value : '';
     expect(s.actions.setMarkingFloating(id, true).ok).toBe(true);
     s.ui.selection.value = { kind: 'marking', id };
-    // Para perto de I2 (x = 1090) e depois por cima dela, inteira.
+    // To near I2 (x = 1090) and then over it, entirely.
     s.drag([950, 950], [1140, 950]);
     expect(s.markingOf(id)).toMatchObject({ containerId: null, floating: true });
     expect(s.markingRect(id)).toEqual({ x: 1090, y: 900, width: 100, height: 100 });
@@ -887,7 +887,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('mover uma marcação do canvas move só o retângulo; os containers dentro não vão junto', () => {
+  it('moving a canvas marking moves only the rectangle; the containers inside do not go along', () => {
     const s = setup();
     const created = s.actions.createMarking(null, {
       x: -100,
@@ -898,11 +898,11 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     const id = created.ok ? created.value : '';
     expect(s.containerOf('I1')?.parentId).toBe(id);
     s.ui.selection.value = { kind: 'marking', id };
-    s.drag([1050, 300], [1050, 1300]); // 1000 para baixo, no vazio entre I1 e I2
+    s.drag([1050, 300], [1050, 1300]); // 1000 down, on the empty canvas between I1 and I2
     expect(s.markingRect(id)).toEqual({ x: -100, y: 900, width: 1800, height: 1000 });
     expect(s.containerOf('I1')?.placement).toEqual({ x: 0, y: 0, scale: 1 });
     expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 0, scale: 1 });
-    // Os containers deixaram de caber nela: saem do pertencimento ao soltar.
+    // The containers no longer fit in it: they leave the membership on release.
     expect(s.containerOf('I1')?.parentId).toBeNull();
     expect(s.containerOf('I2')?.parentId).toBeNull();
     expect(s.store.undo()).toBe(true);
@@ -910,7 +910,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('mover um container para dentro de uma marcação do canvas o torna membro; para fora, tira', () => {
+  it('moving a container into a canvas marking makes it a member; moving it out removes it', () => {
     const s = setup(false, withThird());
     const created = s.actions.createMarking(null, {
       x: -100,
@@ -921,34 +921,34 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     const id = created.ok ? created.value : '';
     expect(s.containerOf('I3')?.parentId).toBeNull();
     s.ui.selection.value = { kind: 'image', id: 'I3' };
-    // De (1800, 0) para (1100, 520): abaixo de I2 (que termina em y = 500) e dentro da marcação.
+    // From (1800, 0) to (1100, 520): below I2 (which ends at y = 500) and inside the marking.
     s.drag([1900, 100], [1200, 620]);
     expect(s.containerOf('I3')?.placement).toMatchObject({ x: 1100, y: 520 });
     expect(s.containerOf('I3')?.parentId).toBe(id);
     expect(s.store.undo()).toBe(true);
     expect(s.containerOf('I3')?.parentId).toBeNull();
     expect(s.containerOf('I3')?.placement).toMatchObject({ x: 1800, y: 0 });
-    // Redo e para fora de novo: um gesto cada.
+    // Redo and out again: one gesture each.
     expect(s.store.redo()).toBe(true);
     s.drag([1200, 620], [2000, 620]);
     expect(s.containerOf('I3')?.parentId).toBeNull();
     s.cleanup();
   });
 
-  it('redimensionar uma marcação sem limite das filhas: o que não cabe mais sai do pertencimento', () => {
+  it('resizing a marking without a limit from its children: what no longer fits leaves the membership', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M1' }; // (100, 100, 600×500), filha M2
     expect(s.markingOf('M2')?.parentId).toBe('M1');
-    s.drag([100, 100], [260, 260]); // alça NW
+    s.drag([100, 100], [260, 260]); // NW handle
     expect(s.markingRect('M1')).toEqual({ x: 260, y: 260, width: 440, height: 340 });
-    expect(s.markingOf('M2')?.parentId).toBeNull(); // M2 ficou meio fora, sem tolerância
+    expect(s.markingOf('M2')?.parentId).toBeNull(); // M2 ended up half outside, with no tolerance
     expect(s.store.undo()).toBe(true);
     expect(s.markingOf('M2')?.parentId).toBe('M1');
     expect(s.markingRect('M1')).toEqual({ x: 100, y: 100, width: 600, height: 500 });
     s.cleanup();
   });
 
-  it('redimensionar absorve o que cruza dentro da tolerância (e acende durante o gesto)', () => {
+  it('resizing absorbs what crosses within the tolerance (and lights up during the gesture)', () => {
     const base = canvasProject();
     const project = createMarking(base, {
       id: 'Ma',
@@ -958,10 +958,10 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     const s = setup(false, project);
     expect(s.markingOf('Ma')?.parentId).toBeNull();
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
-    s.fire('pointerdown', 700, 600); // alça SE de M1
+    s.fire('pointerdown', 700, 600); // SE handle of M1
     s.fire('pointermove', 715, 605);
     s.fire('pointermove', 730, 610);
-    // Ma passa 5 do novo limite direito: acende.
+    // Ma extends 5 past the new right limit: lights up.
     expect(s.state.absorb.value).toEqual([{ x: 715, y: 150, width: 20, height: 40 }]);
     s.fire('pointerup', 730, 610);
     expect(s.state.absorb.value).toEqual([]);
@@ -974,12 +974,12 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('uma alça que volta ao ponto de partida não absorve nada (não é redimensionar)', () => {
+  it('a handle that returns to the starting point absorbs nothing (it is not a resize)', () => {
     const base = canvasProject();
     const project = createMarking(base, {
       id: 'Ma',
       containerId: 'I1',
-      rect: { x: 695, y: 150, width: 15, height: 40 }, // passa 10 da borda direita de M1
+      rect: { x: 695, y: 150, width: 15, height: 40 }, // extends 10 past the right edge of M1
     });
     const s = setup(false, project);
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -992,7 +992,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('redimensionar a marcação do canvas absorve um container que cruza a borda', () => {
+  it('resizing the canvas marking absorbs a container that crosses the edge', () => {
     const s = setup();
     const created = s.actions.createMarking(null, {
       x: -100,
@@ -1001,21 +1001,21 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
       height: 1000,
     });
     const id = created.ok ? created.value : '';
-    // I2 (1100..1600) fica de fora; o canto SE (1050, 900) vai para x = 1110: I2 passa 490 (não absorve).
+    // I2 (1100..1600) stays outside; the SE corner (1050, 900) goes to x = 1110: I2 extends 490 past (does not absorb).
     s.ui.selection.value = { kind: 'marking', id };
     s.drag([1050, 900], [1110, 900]);
     expect(s.markingRect(id)).toEqual({ x: -100, y: -100, width: 1210, height: 1000 });
     expect(s.containerOf('I2')?.parentId).toBeNull();
-    // Agora o limite direito vai a 1595: I2 passa só 5 → o retângulo cresce até 1600.
+    // Now the right limit goes to 1595: I2 extends only 5 past → the rectangle grows up to 1600.
     s.drag([1110, 900], [1595, 900]);
     expect(s.markingRect(id)).toEqual({ x: -100, y: -100, width: 1700, height: 1000 });
     expect(s.containerOf('I2')?.parentId).toBe(id);
     s.cleanup();
   });
 
-  it('mover não absorve (só desenhar e redimensionar)', () => {
+  it('moving does not absorb (only drawing and resizing)', () => {
     const base = canvasProject();
-    // Ma cruza a borda direita de M1 (700) por 10: um redimensionamento a absorveria.
+    // Ma crosses the right edge of M1 (700) by 10: a resize would absorb it.
     const project = createMarking(base, {
       id: 'Ma',
       containerId: 'I1',
@@ -1044,7 +1044,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('container dentro de uma marcação do canvas trancada não se move (trava herdada)', () => {
+  it('a container inside a locked canvas marking does not move (inherited lock)', () => {
     const s = setup();
     const created = s.actions.createMarking(null, {
       x: -100,
@@ -1064,7 +1064,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('toque no vazio seleciona a marcação do canvas; botão direito abre o menu dela', () => {
+  it('a tap on the empty canvas selects the canvas marking; right button opens its menu', () => {
     const s = setup();
     const created = s.actions.createMarking(null, {
       x: -100,
@@ -1090,7 +1090,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.cleanup();
   });
 
-  it('a flutuante recebe o toque primeiro, sobre a marcação e o container', () => {
+  it('the floating one receives the tap first, over the marking and the container', () => {
     const s = setup();
     const created = s.actions.createMarking(null, {
       x: 150,
@@ -1100,7 +1100,7 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     });
     const id = created.ok ? created.value : '';
     expect(s.actions.setMarkingFloating(id, true).ok).toBe(true);
-    s.fire('pointerdown', 250, 250); // também sobre a Maçaneta (M2)
+    s.fire('pointerdown', 250, 250); // also over the Handle (M2)
     s.fire('pointerup', 250, 250);
     expect(s.ui.selection.value).toEqual({ kind: 'marking', id });
     s.fire('pointerdown', 251, 251);
@@ -1110,17 +1110,17 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
   });
 });
 
-// Seleção múltipla (etapa Marcações espaciais, ME2): arrasto conjunto, Shift+clique, duplo clique
-// com o conteúdo e o botão direito sobre a seleção.
-describe('PointerInput: seleção múltipla', () => {
+// Multiple selection (Spatial markings stage, ME2): joint drag, Shift+click, double-click
+// with the content and right button over the selection.
+describe('PointerInput: multiple selection', () => {
   const im = (id: string): SelectionItem => ({ kind: 'image', id });
   const mk = (id: string): SelectionItem => ({ kind: 'marking', id });
   const ids = (s: ReturnType<typeof setup>) =>
     peekSelectedItems(s.ui).map((i) => `${i.kind}:${i.id}`);
 
   /**
-   * `canvasProject` com um terceiro container I3 (400×400) em (1800, 0) e a marcação do canvas
-   * `C` (-100, -100, 2400×1000) em volta dos três: os três são membros dela.
+   * `canvasProject` with a third container I3 (400×400) at (1800, 0) and the canvas marking
+   * `C` (-100, -100, 2400×1000) around the three: all three are members of it.
    */
   function withGroup(): Project {
     let p = canvasProject();
@@ -1142,19 +1142,19 @@ describe('PointerInput: seleção múltipla', () => {
   }
 
   describe('arrasto conjunto', () => {
-    it('arrastar os três containers e a marcação do canvas move tudo junto, numa entrada só', () => {
+    it('dragging the three containers and the canvas marking moves everything together, in a single entry', () => {
       const s = groupSetup();
       selectItems(s.ui, [im('I1'), im('I2'), im('I3'), mk('C')]);
-      s.drag([1300, 300], [1400, 350]); // dentro de I2, que não é o primário
+      s.drag([1300, 300], [1400, 350]); // inside I2, which is not the primary
       expect(s.containerOf('I1')?.placement).toEqual({ x: 100, y: 50, scale: 1 });
       expect(s.containerOf('I2')?.placement).toEqual({ x: 1200, y: 50, scale: 1 });
       expect(s.containerOf('I3')?.placement).toEqual({ x: 1900, y: 50, scale: 1 });
       expect(s.markingRect('C')).toEqual({ x: 0, y: -50, width: 2400, height: 1000 });
-      // As marcações dos containers vão com eles (coordenadas relativas) e o pertencimento fica.
+      // The containers' markings go with them (relative coordinates) and the membership stays.
       expect(s.markingRect('M1')).toEqual({ x: 100, y: 100, width: 600, height: 500 });
       expect(s.markingRect('M3')).toEqual({ x: 50, y: 50, width: 200, height: 200 });
       for (const id of ['I1', 'I2', 'I3']) expect(s.containerOf(id)?.parentId).toBe('C');
-      // A seleção continua inteira, com o primário de antes.
+      // The selection stays whole, with the same primary as before.
       expect(ids(s)).toEqual(['image:I1', 'image:I2', 'image:I3', 'marking:C']);
       expect(s.ui.selection.value).toEqual(mk('C'));
       // Um Ctrl+Z desfaz tudo.
@@ -1167,33 +1167,33 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('arrastar dentro do primário (a marcação do canvas) também move a seleção toda', () => {
+    it('dragging inside the primary (the canvas marking) also moves the whole selection', () => {
       const s = groupSetup();
       selectItems(s.ui, [im('I1'), im('I2'), mk('C')]);
-      s.drag([1050, 300], [1050, 350]); // no vazio entre as telas, dentro de C
+      s.drag([1050, 300], [1050, 350]); // on the empty canvas between the screens, inside C
       expect(s.containerOf('I1')?.placement).toEqual({ x: 0, y: 50, scale: 1 });
       expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 50, scale: 1 });
-      expect(s.containerOf('I3')?.placement).toEqual({ x: 1800, y: 0, scale: 1 }); // fora da seleção
+      expect(s.containerOf('I3')?.placement).toEqual({ x: 1800, y: 0, scale: 1 }); // outside the selection
       expect(s.markingRect('C')).toEqual({ x: -100, y: -50, width: 2400, height: 1000 });
       s.cleanup();
     });
 
-    it('um movimento que sobreporia um container fixo encosta nele, e soltar grava essa posição', () => {
+    it('a move that would overlap a fixed container snaps against it, and releasing records that position', () => {
       const s = groupSetup();
-      selectItems(s.ui, [im('I1'), im('I2')]); // I3 fica de fora
+      selectItems(s.ui, [im('I1'), im('I2')]); // I3 stays out
       s.fire('pointerdown', 1300, 300);
       s.fire('pointermove', 1400, 300);
-      s.fire('pointermove', 1450, 300); // +150: I2 vai a 1250..1750, antes de I3 (1800)
+      s.fire('pointermove', 1450, 300); // +150: I2 goes to 1250..1750, before I3 (1800)
       expect(s.containerOf('I2')?.placement.x).toBe(1250);
       expect(s.containerOf('I1')?.placement.x).toBe(150);
-      s.fire('pointermove', 1700, 300); // +400: I2 passaria por cima de I3 e encosta nele (+200)
+      s.fire('pointermove', 1700, 300); // +400: I2 would go over I3 and snaps against it (+200)
       expect(s.containerOf('I2')?.placement.x).toBe(1300);
       expect(s.containerOf('I1')?.placement.x).toBe(200);
-      s.fire('pointermove', 1460, 300); // volta: a prévia segue o ponteiro
+      s.fire('pointermove', 1460, 300); // back: the preview follows the pointer
       expect(s.containerOf('I2')?.placement.x).toBe(1260);
       expect(s.containerOf('I1')?.placement.x).toBe(160);
-      s.fire('pointermove', 1800, 300); // de novo além do I3
-      s.fire('pointerup', 1800, 300); // solta além: grava a posição encostada
+      s.fire('pointermove', 1800, 300); // again past I3
+      s.fire('pointerup', 1800, 300); // released past: records the snapped position
       expect(s.containerOf('I2')?.placement.x).toBe(1300);
       expect(s.containerOf('I1')?.placement.x).toBe(200);
       expect(s.containerOf('I3')?.placement.x).toBe(1800);
@@ -1205,19 +1205,19 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('uma marcação de container que sairia do container fica na última posição válida', () => {
+    it('a container marking that would leave the container stays at the last valid position', () => {
       const s = groupSetup();
       selectItems(s.ui, [mk('M3'), mk('C')]);
-      s.fire('pointerdown', 1050, 300); // dentro de C
+      s.fire('pointerdown', 1050, 300); // inside C
       s.fire('pointermove', 1100, 300);
       s.fire('pointermove', 1150, 300); // +100: M3 (50..250) vai a 150..350 em I2 (500 de largura)
       expect(s.markingRect('M3')).toEqual({ x: 150, y: 50, width: 200, height: 200 });
-      s.fire('pointermove', 1450, 300); // +400: M3 passaria da borda de I2
+      s.fire('pointermove', 1450, 300); // +400: M3 would go past the edge of I2
       expect(s.markingRect('M3')?.x).toBe(150);
       expect(s.markingRect('C')?.x).toBe(0);
       s.fire('pointerup', 1450, 300);
       expect(s.markingRect('M3')).toEqual({ x: 150, y: 50, width: 200, height: 200 });
-      expect(s.markingOf('M3')?.containerId).toBe('I2'); // não trocou de espaço
+      expect(s.markingOf('M3')?.containerId).toBe('I2'); // did not change space
       expect(s.markingRect('C')).toEqual({ x: 0, y: -100, width: 2400, height: 1000 });
       expect(s.store.undo()).toBe(true);
       expect(s.markingRect('M3')?.x).toBe(50);
@@ -1226,12 +1226,12 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('o pertencimento fica congelado durante o arrasto e é assentado ao soltar', () => {
+    it('membership stays frozen during the drag and is settled on release', () => {
       const s = groupSetup();
       selectItems(s.ui, [im('I1'), im('I2')]);
       s.fire('pointerdown', 1300, 300);
       s.fire('pointermove', 1300, 800);
-      s.fire('pointermove', 1300, 1300); // +1000 para baixo: as duas telas saem de C
+      s.fire('pointermove', 1300, 1300); // +1000 down: both screens leave C
       expect(s.containerOf('I1')?.placement.y).toBe(1000);
       expect(s.containerOf('I1')?.parentId).toBe('C');
       expect(s.containerOf('I2')?.parentId).toBe('C');
@@ -1246,7 +1246,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('Esc cancela o arrasto conjunto: nada muda e não há entrada no desfazer', () => {
+    it('Esc cancels the joint drag: nothing changes and there is no undo entry', () => {
       const s = groupSetup();
       selectItems(s.ui, [im('I1'), im('I2'), mk('C')]);
       s.fire('pointerdown', 1300, 300);
@@ -1255,16 +1255,16 @@ describe('PointerInput: seleção múltipla', () => {
       expect(s.input.cancelInteraction()).toBe(true);
       expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 0, scale: 1 });
       expect(s.markingRect('C')?.x).toBe(-100);
-      s.fire('pointermove', 1500, 400); // o resto do arrasto é ignorado
+      s.fire('pointermove', 1500, 400); // the rest of the drag is ignored
       s.fire('pointerup', 1500, 400);
       expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 0, scale: 1 });
       expect(s.store.canUndo.value).toBe(false);
       expect(s.store.gestureActive.value).toBe(false);
-      expect(ids(s)).toEqual(['image:I1', 'image:I2', 'marking:C']); // a seleção fica
+      expect(ids(s)).toEqual(['image:I1', 'image:I2', 'marking:C']); // the selection stays
       s.cleanup();
     });
 
-    it('pointercancel também cancela', () => {
+    it('pointercancel also cancels', () => {
       const s = groupSetup();
       selectItems(s.ui, [im('I1'), im('I2')]);
       s.fire('pointerdown', 1300, 300);
@@ -1287,7 +1287,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('com um item travado o arrasto não começa: cursor "não permitido", sem pan nem entrada', () => {
+    it('with a locked item the drag does not start: "not allowed" cursor, no pan or entry', () => {
       const s = groupSetup();
       expect(s.actions.setImageLocked('I3', true).ok).toBe(true);
       const revision = s.store.revision.value;
@@ -1303,7 +1303,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('as alças do primário continuam redimensionando só o primário', () => {
+    it("the primary's handles still resize only the primary", () => {
       const s = groupSetup();
       selectItems(s.ui, [im('I2'), mk('M2')]);
       s.drag([300, 300], [340, 360]); // canto SE de M2
@@ -1312,19 +1312,19 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('cursor: "mover" sobre qualquer item selecionado, nada fora deles', () => {
+    it('cursor: "move" over any selected item, nothing outside them', () => {
       const s = groupSetup();
       selectItems(s.ui, [im('I2'), mk('M2')]);
-      s.fire('pointermove', 1300, 300); // dentro de I2
+      s.fire('pointermove', 1300, 300); // inside I2
       expect(s.container.style.cursor).toBe('move');
-      s.fire('pointermove', 250, 250); // dentro de M2
+      s.fire('pointermove', 250, 250); // inside M2
       expect(s.container.style.cursor).toBe('move');
-      s.fire('pointermove', 900, 700); // I1, não selecionado
+      s.fire('pointermove', 900, 700); // I1, not selected
       expect(s.container.style.cursor).toBe('');
       s.cleanup();
     });
 
-    it('toque: arrastar sobre a seleção múltipla faz pan, sem mover nada', () => {
+    it('touch: dragging over the multiple selection pans, without moving anything', () => {
       const s = groupSetup();
       selectItems(s.ui, [im('I1'), im('I2')]);
       s.drag([1300, 300], [1350, 330], { kind: 'touch' });
@@ -1333,7 +1333,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('um arrasto de zoom diferente de 1 usa o deslocamento no canvas', () => {
+    it('a drag at a zoom other than 1 uses the offset on the canvas', () => {
       const s = groupSetup();
       s.viewport.viewport.value = { x: 0, y: 0, scale: 2 };
       selectItems(s.ui, [im('I1'), im('I2'), mk('C')]);
@@ -1349,7 +1349,7 @@ describe('PointerInput: seleção múltipla', () => {
       vi.spyOn(globalThis.navigator, 'platform', 'get').mockReturnValue(value);
     afterEach(() => vi.restoreAllMocks());
 
-    it('Ctrl+clique (fora do macOS) e Cmd+clique juntam e tiram como o Shift+clique', () => {
+    it('Ctrl+click (outside macOS) and Cmd+click add and remove like Shift+click', () => {
       platform('Win32');
       const s = setup();
       s.click(250, 250); // M2
@@ -1362,7 +1362,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('no macOS, Ctrl+clique não junta (é o clique direito); Cmd+clique junta', () => {
+    it('on macOS, Ctrl+click does not add (it is the right click); Cmd+click adds', () => {
       platform('MacIntel');
       const s = setup();
       s.click(250, 250); // M2
@@ -1376,31 +1376,31 @@ describe('PointerInput: seleção múltipla', () => {
   });
 
   describe('Shift+clique', () => {
-    it('acrescenta o item à seleção e, clicando de novo, tira', () => {
+    it('adds the item to the selection and, clicking again, removes it', () => {
       const s = setup();
       s.click(250, 250); // M2
       expect(ids(s)).toEqual(['marking:M2']);
-      s.click(1300, 300, { shift: true }); // I2 (fora de M3)
+      s.click(1300, 300, { shift: true }); // I2 (outside M3)
       expect(ids(s)).toEqual(['marking:M2', 'image:I2']);
-      expect(s.ui.selection.value).toEqual(im('I2')); // o último clicado é o primário
-      s.click(1200, 100, { shift: true }); // M3, dentro de I2
+      expect(s.ui.selection.value).toEqual(im('I2')); // the last clicked is the primary
+      s.click(1200, 100, { shift: true }); // M3, inside I2
       expect(ids(s)).toEqual(['marking:M2', 'image:I2', 'marking:M3']);
       expect(s.ui.selection.value).toEqual(mk('M3'));
       s.click(1300, 300, { shift: true }); // I2 sai
       expect(ids(s)).toEqual(['marking:M2', 'marking:M3']);
       expect(s.ui.selection.value).toEqual(mk('M3'));
-      s.click(1200, 100, { shift: true }); // o primário sai: o último dos que ficam o substitui
+      s.click(1200, 100, { shift: true }); // the primary leaves: the last of those that remain replaces it
       expect(ids(s)).toEqual(['marking:M2']);
       expect(s.ui.selection.value).toEqual(mk('M2'));
       expect(s.ui.selectionGroup.value).toBeNull();
       s.cleanup();
     });
 
-    it('é o primeiro item sob o ponto, sem o ciclo de subir para o pai', () => {
+    it('it is the first item under the point, without the cycle of going up to the parent', () => {
       const s = setup();
       s.click(250, 250, { shift: true });
-      s.click(252, 251, { shift: true }); // no mesmo ponto: não sobe para a Porta (M1)
-      // O primeiro da cadeia (M2) entrou e saiu; a Porta e a imagem nunca foram escolhidas.
+      s.click(252, 251, { shift: true }); // at the same point: does not go up to the Door (M1)
+      // The first of the chain (M2) went in and out; the Door and the image were never chosen.
       expect(ids(s)).toEqual([]);
       s.click(250, 250, { shift: true });
       s.click(250, 250, { shift: true });
@@ -1409,7 +1409,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('Shift no vazio não muda nada', () => {
+    it('Shift on the empty canvas changes nothing', () => {
       const s = setup();
       selectItems(s.ui, [im('I2'), mk('M2')]);
       const before = s.ui.selection.value;
@@ -1419,7 +1419,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('sem Shift, o toque seleciona um item só e desfaz o grupo', () => {
+    it('without Shift, a tap selects a single item and undoes the group', () => {
       const s = setup();
       selectItems(s.ui, [im('I2'), mk('M2')]);
       s.click(1200, 100); // M3
@@ -1427,7 +1427,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('arrastar com Shift apertado move; só o toque sem arrasto alterna', () => {
+    it('dragging with Shift held moves; only a tap without a drag toggles', () => {
       const s = setup();
       selectItems(s.ui, [mk('M1')]);
       s.fire('pointerdown', 400, 400, { shift: true });
@@ -1439,7 +1439,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('na revisão, Shift+clique é um clique simples', () => {
+    it('in review, Shift+click is a simple click', () => {
       const s = setup();
       s.click(250, 250); // M2
       s.setReviewing(true);
@@ -1449,19 +1449,19 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('um clique simples depois do Shift+clique não continua o ciclo de subir', () => {
+    it('a simple click after Shift+click does not continue the go-up cycle', () => {
       const s = setup();
       s.click(250, 250, { shift: true }); // M2 entra
-      s.click(250, 250); // clique simples no mesmo ponto: o primeiro da cadeia, não o pai
+      s.click(250, 250); // simple click at the same point: the first of the chain, not the parent
       expect(ids(s)).toEqual(['marking:M2']);
       s.cleanup();
     });
   });
 
-  describe('duplo clique seleciona com o conteúdo', () => {
-    it('numa marcação do canvas: ela e os containers dentro, com as marcações deles; ela é a primária', () => {
+  describe('double-click selects with the content', () => {
+    it('on a canvas marking: it and the containers inside, with their markings; it is the primary', () => {
       const s = groupSetup();
-      s.doubleClick(1050, 300); // vazio entre as telas, dentro de C
+      s.doubleClick(1050, 300); // empty canvas between the screens, inside C
       expect(ids(s)).toEqual([
         'image:I1',
         'marking:M1',
@@ -1475,7 +1475,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('o arrasto seguinte move o conjunto: as posições relativas ficam e é um Ctrl+Z', () => {
+    it('the next drag moves the set: the relative positions stay and it is one Ctrl+Z', () => {
       const s = groupSetup();
       s.doubleClick(1050, 300);
       s.drag([1300, 300], [1350, 340]);
@@ -1488,47 +1488,47 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('o alvo é o que o primeiro clique selecionou (a mais interna), não o degrau seguinte', () => {
+    it('the target is what the first click selected (the innermost), not the next step', () => {
       const s = setup();
-      s.doubleClick(400, 400); // dentro da Porta (M1, com a filha M2), fora da Maçaneta
+      s.doubleClick(400, 400); // inside the Door (M1, with the child M2), outside the Handle
       expect(ids(s)).toEqual(['marking:M2', 'marking:M1']);
       expect(s.ui.selection.value).toEqual(mk('M1'));
       s.cleanup();
     });
 
-    it('numa marcação sem conteúdo seleciona só ela', () => {
+    it('on a marking without content it selects only it', () => {
       const s = setup();
-      s.doubleClick(250, 250); // Maçaneta, a mais interna
+      s.doubleClick(250, 250); // Handle, the innermost
       expect(ids(s)).toEqual(['marking:M2']);
       expect(s.ui.selectionGroup.value).toBeNull();
       s.cleanup();
     });
 
-    it('num container só devolve a seleção a ele', () => {
+    it('on a container it only returns the selection to it', () => {
       const s = groupSetup();
-      // Entre as marcações de I1: a cadeia é [I1, C]; o segundo toque subiria para C.
+      // Between the markings of I1: the chain is [I1, C]; the second tap would go up to C.
       s.doubleClick(900, 700);
       expect(ids(s)).toEqual(['image:I1']);
       expect(s.ui.selection.value).toEqual(im('I1'));
       s.cleanup();
     });
 
-    it('zera o ciclo: o clique seguinte no mesmo ponto recomeça pelo primeiro da cadeia', () => {
+    it('resets the cycle: the next click at the same point starts again from the first of the chain', () => {
       const s = setup();
       s.doubleClick(400, 400);
-      s.click(402, 401); // perto do duplo clique
-      expect(ids(s)).toEqual(['marking:M1']); // o primeiro da cadeia, não o degrau seguinte
+      s.click(402, 401); // near the double-click
+      expect(ids(s)).toEqual(['marking:M1']); // the first of the chain, not the next step
       s.cleanup();
     });
 
-    it('no vazio não faz nada', () => {
+    it('on the empty canvas it does nothing', () => {
       const s = setup();
       s.doubleClick(1050, 900);
       expect(ids(s)).toEqual([]);
       s.cleanup();
     });
 
-    it('só no modo Navegar', () => {
+    it('only in Navigate mode', () => {
       const s = groupSetup();
       s.ui.mode.value = 'draw';
       s.doubleClick(1050, 300);
@@ -1536,7 +1536,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('um toque de dedo (não é mouse) ou a revisão não selecionam o conteúdo', () => {
+    it('a finger touch (not a mouse) or review does not select the content', () => {
       const s = groupSetup();
       s.click(1050, 300, { kind: 'touch' });
       s.click(1050, 300, { kind: 'touch' });
@@ -1550,35 +1550,35 @@ describe('PointerInput: seleção múltipla', () => {
       t.cleanup();
     });
 
-    it('um arrasto no meio do duplo clique o desfaz', () => {
+    it('a drag in the middle of the double-click undoes it', () => {
       const s = groupSetup();
       s.click(1050, 300); // C
-      s.drag([1050, 300], [1100, 300]); // o segundo "clique" foi um arrasto (pan, sem seleção)
+      s.drag([1050, 300], [1100, 300]); // the second "click" was a drag (pan, no selection)
       s.container.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
       expect(ids(s)).toEqual(['marking:C']);
       s.cleanup();
     });
   });
 
-  describe('botão direito', () => {
-    it('sobre um item que já está na seleção múltipla não desfaz a seleção', () => {
+  describe('right button', () => {
+    it('over an item already in the multiple selection does not undo the selection', () => {
       const s = setup();
       selectItems(s.ui, [mk('M3'), mk('M2')]);
       const primary = s.ui.selection.value;
-      s.rightClick(1200, 100); // M3, na seleção mas não primário
+      s.rightClick(1200, 100); // M3, in the selection but not primary
       expect(ids(s)).toEqual(['marking:M3', 'marking:M2']);
       expect(s.ui.selection.value).toBe(primary);
       expect(s.ui.canvasMenu.value?.target).toEqual({ kind: 'm', id: 'M3' });
-      s.rightClick(250, 250); // M2, o primário
+      s.rightClick(250, 250); // M2, the primary
       expect(ids(s)).toEqual(['marking:M3', 'marking:M2']);
       expect(s.ui.canvasMenu.value?.target).toEqual({ kind: 'm', id: 'M2' });
       s.cleanup();
     });
 
-    it('sobre outro item o comportamento é o de sempre: seleciona só ele', () => {
+    it('over another item the behavior is the usual: selects only it', () => {
       const s = setup();
       selectItems(s.ui, [mk('M3'), mk('M2')]);
-      s.rightClick(400, 400); // M1, fora da seleção
+      s.rightClick(400, 400); // M1, outside the selection
       expect(ids(s)).toEqual(['marking:M1']);
       expect(s.ui.canvasMenu.value?.target).toEqual({ kind: 'm', id: 'M1' });
       s.cleanup();
@@ -1586,10 +1586,10 @@ describe('PointerInput: seleção múltipla', () => {
   });
 });
 
-// Setas (ME4): selecionar pelo traço, criar pela alça de ligação, pontos de passagem, trocar a
-// ponta e o lado. Projeto das setas: r1 de a1 (100,100,300,300) a a3 (600,600,200,200), no
-// container A (escala 1, em 0,0); a curva sai por (400,250) e chega por (600,700). Cada gesto é
-// uma entrada de desfazer.
+// Arrows (ME4): select by the stroke, create by the link handle, waypoints, swap the
+// end and the side. Arrow project: r1 from a1 (100,100,300,300) to a3 (600,600,200,200), in
+// container A (scale 1, at 0,0); the curve leaves at (400,250) and arrives at (600,700). Each gesture is
+// one undo entry.
 describe('PointerInput: setas (ME4)', () => {
   const arrowsOf = (s: ReturnType<typeof setup>) => s.store.project.peek()?.arrows ?? [];
   const r1 = (s: ReturnType<typeof setup>) => arrowsOf(s).find((a) => a.id === 'r1');
@@ -1605,14 +1605,14 @@ describe('PointerInput: setas (ME4)', () => {
 
   afterEach(() => setShowArrows(true));
 
-  describe('seleção pelo traço', () => {
-    it('clicar perto do traço seleciona a seta; longe, o container; Shift alterna', () => {
+  describe('selection by the stroke', () => {
+    it('clicking near the stroke selects the arrow; far from it, the container; Shift toggles', () => {
       const s = setup(false, straightProject());
       s.click(500, 475);
       expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: 'r1' });
-      s.click(900, 100); // dentro de A, longe de tudo
+      s.click(900, 100); // inside A, far from everything
       expect(s.ui.selection.value).toEqual({ kind: 'image', id: 'A' });
-      // Shift+clique soma a seta à seleção e de novo a tira.
+      // Shift+click adds the arrow to the selection and again removes it.
       s.click(500, 475, { shift: true });
       expect(peekSelectedItems(s.ui)).toEqual([
         { kind: 'image', id: 'A' },
@@ -1623,7 +1623,7 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('"Mostrar setas" desligado ou modo visualização: o traço não recebe o toque', () => {
+    it('"Show arrows" off or view mode: the stroke does not receive the tap', () => {
       const s = setup(false, straightProject());
       setShowArrows(false);
       s.click(500, 475);
@@ -1635,7 +1635,7 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('no modo visualização, mesmo com as setas à vista, o traço não recebe o toque nem o modo vira Desenhar', () => {
+    it('in view mode, even with the arrows in view, the stroke does not receive the tap and the mode does not become Draw', () => {
       const s = setup(false, straightProject());
       s.ui.mode.value = 'draw';
       setViewMode(s.ui, true);
@@ -1645,9 +1645,9 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('a seta de ponta oculta pelo modo de exibição não recebe o toque', () => {
+    it('an arrow whose end is hidden by the display mode does not receive the tap', () => {
       const s = setup(false, straightProject());
-      s.derived.markingVisibility.peek(); // mapa de visibilidade do modo atual
+      s.derived.markingVisibility.peek(); // visibility map of the current mode
       const hidden = vi
         .spyOn(s.derived.markingVisibility, 'peek')
         .mockReturnValue(new Map([['a3', 'hidden' as const]]));
@@ -1657,7 +1657,7 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('botão direito no traço seleciona a seta e abre o menu dela', () => {
+    it('right button on the stroke selects the arrow and opens its menu', () => {
       const s = setup(false, straightProject());
       s.rightClick(500, 475);
       expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: 'r1' });
@@ -1665,19 +1665,19 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('clicar numa alça não troca a seleção (nem sobe pela cadeia)', () => {
+    it('clicking on a handle does not change the selection (nor go up the chain)', () => {
       const s = setup(false, straightProject());
       select(s, { kind: 'arrow', id: 'r1' });
       s.click(400, 250);
       s.click(400, 250);
       expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: 'r1' });
       select(s, { kind: 'marking', id: 'a1' });
-      s.click(414, 250); // alça de ligação
+      s.click(414, 250); // link handle
       expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'a1' });
       s.cleanup();
     });
 
-    it('cursor: alça da ponta mira, ponto de passagem move, traço trancado não permite', () => {
+    it('cursor: end handle aims, waypoint moves, locked stroke does not allow', () => {
       const s = setup(false, straightProject());
       select(s, { kind: 'arrow', id: 'r1' });
       s.input.updateCursor({ x: 400, y: 250 });
@@ -1693,8 +1693,8 @@ describe('PointerInput: setas (ME4)', () => {
     });
   });
 
-  describe('criar pela alça de ligação', () => {
-    it('puxar até outra marcação acende o destino, cria a seta e a seleciona (uma entrada)', () => {
+  describe('create by the link handle', () => {
+    it('pulling to another marking lights up the target, creates the arrow and selects it (one entry)', () => {
       const s = setup(false, arrowProject());
       select(s, { kind: 'marking', id: 'a1' });
       s.fire('pointerdown', 414, 250);
@@ -1704,21 +1704,21 @@ describe('PointerInput: setas (ME4)', () => {
         line: { from: { x: 400, y: 250 }, to: { x: 700, y: 700 } },
         target: 'a3',
       });
-      // Nada foi criado nem entrou no histórico ainda.
+      // Nothing was created or entered in the history yet.
       expect(arrowsOf(s)).toHaveLength(1);
       s.fire('pointerup', 700, 700);
       const created = arrowsOf(s)[1];
       expect(created).toMatchObject({ from: 'a1', to: 'a3', style: 'curve', points: [] });
       expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: created?.id });
       expect(s.state.arrowDraft.value).toBeNull();
-      // O marcação de origem não mudou, e desfazer tira só a seta.
+      // The source marking did not change, and undo removes only the arrow.
       expect(s.markingRect('a1')).toEqual({ x: 100, y: 100, width: 300, height: 300 });
       expect(s.store.undo()).toBe(true);
       expect(arrowsOf(s)).toHaveLength(1);
       s.cleanup();
     });
 
-    it('soltar fora de uma marcação ou sobre a origem cancela, sem entrada', () => {
+    it('releasing outside a marking or over the source cancels, with no entry', () => {
       const s = setup(false, arrowProject());
       select(s, { kind: 'marking', id: 'a1' });
       const before = s.store.canUndo.value;
@@ -1726,7 +1726,7 @@ describe('PointerInput: setas (ME4)', () => {
       expect(arrowsOf(s)).toHaveLength(1);
       s.fire('pointerdown', 414, 250);
       s.fire('pointermove', 450, 280);
-      s.fire('pointermove', 350, 350); // sobre a própria origem: não é destino
+      s.fire('pointermove', 350, 350); // over the source itself: it is not a target
       expect(s.state.arrowDraft.value?.target).toBeNull();
       s.fire('pointerup', 350, 350);
       expect(arrowsOf(s)).toHaveLength(1);
@@ -1735,7 +1735,7 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('Esc no meio do gesto cancela e apaga a seta provisória', () => {
+    it('Esc in the middle of the gesture cancels and deletes the provisional arrow', () => {
       const s = setup(false, arrowProject());
       select(s, { kind: 'marking', id: 'a1' });
       s.fire('pointerdown', 414, 250);
@@ -1749,7 +1749,7 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('vale para a marcação trancada (a marcação não muda) e não para o somente leitura', () => {
+    it('works for the locked marking (the marking does not change) and not for read-only', () => {
       const locked = setMarkingLocked(arrowProject(), 'a1', true);
       const s = setup(false, locked);
       select(s, { kind: 'marking', id: 'a1' });
@@ -1763,7 +1763,7 @@ describe('PointerInput: setas (ME4)', () => {
       ro.cleanup();
     });
 
-    it('o destino é a primeira marcação sob o ponteiro: a flutuante, sobre as demais', () => {
+    it('the target is the first marking under the pointer: the floating one, over the others', () => {
       const project = createMarking(arrowProject(), {
         id: 'F1',
         containerId: null,
@@ -1779,7 +1779,7 @@ describe('PointerInput: setas (ME4)', () => {
   });
 
   describe('pontos de passagem', () => {
-    it('arrastar o meio de um trecho cria um ponto ali (uma entrada)', () => {
+    it('dragging the middle of a segment creates a point there (one entry)', () => {
       const s = setup(false, straightProject());
       select(s, { kind: 'arrow', id: 'r1' });
       s.drag([500, 475], [560, 420]);
@@ -1790,14 +1790,14 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('mover um ponto de passagem; o ponto cai nos pixels inteiros do container', () => {
+    it('moving a waypoint; the point lands on whole container pixels', () => {
       const project = setArrowRoute(straightProject(), 'r1', [{ x: 700, y: 300 }]);
       const s = setup(false, project);
       select(s, { kind: 'arrow', id: 'r1' });
       s.fire('pointerdown', 700, 300);
       s.fire('pointermove', 710, 310);
       s.fire('pointermove', 720.4, 330.6);
-      // Durante o gesto a prévia já mostra o ponto novo, mas não há entrada no histórico.
+      // During the gesture the preview already shows the new point, but there is no history entry.
       expect(r1(s)?.points).toEqual([{ x: 720, y: 331 }]);
       expect(s.store.canUndo.value).toBe(false);
       s.fire('pointerup', 720.4, 330.6);
@@ -1808,7 +1808,7 @@ describe('PointerInput: setas (ME4)', () => {
     });
 
     describe('canto (elbow): arrastar um segmento', () => {
-      // r1 em canto: (400,250) → (500,250) → (500,700) → (600,700); a pista é o x = 500.
+      // r1 in a corner: (400,250) → (500,250) → (500,700) → (600,700); the guide is x = 500.
       const elbowProject = (points: { x: number; y: number }[] = []) =>
         setArrowStyle(setArrowRoute(arrowProject(), 'r1', points), 'r1', 'elbow');
       const route = (s: ReturnType<typeof setup>) => {
@@ -1818,13 +1818,13 @@ describe('PointerInput: setas (ME4)', () => {
         return arrowRoute(project, arrow)?.points;
       };
 
-      it('move o segmento em paralelo, mantém os ângulos retos e grava uma entrada', () => {
+      it('moves the segment in parallel, keeps the right angles and records one entry', () => {
         const s = setup(false, elbowProject());
         select(s, { kind: 'arrow', id: 'r1' });
         s.fire('pointerdown', 500, 475);
         s.fire('pointermove', 520, 470);
         s.fire('pointermove', 560.4, 300);
-        // A prévia: só o x acompanha o ponteiro; o y do ponto fica no meio do segmento.
+        // The preview: only x follows the pointer; the point's y stays in the middle of the segment.
         expect(r1(s)?.points).toEqual([{ x: 560, y: 475 }]);
         expect(route(s)).toEqual([
           { x: 400, y: 250 },
@@ -1840,7 +1840,7 @@ describe('PointerInput: setas (ME4)', () => {
         s.cleanup();
       });
 
-      it('o segmento inteiro pega o arrasto, não só a alça do meio', () => {
+      it('the whole segment takes the drag, not only the middle handle', () => {
         const s = setup(false, elbowProject([{ x: 500, y: 475 }]));
         select(s, { kind: 'arrow', id: 'r1' });
         s.drag([498, 640], [450, 640]);
@@ -1848,7 +1848,7 @@ describe('PointerInput: setas (ME4)', () => {
         s.cleanup();
       });
 
-      it('um primeiro trecho (que não é do meio) faz pan, sem mexer na rota', () => {
+      it('a first segment (which is not the middle one) pans, without touching the route', () => {
         const s = setup(false, elbowProject());
         select(s, { kind: 'arrow', id: 'r1' });
         s.drag([450, 250], [470, 280]);
@@ -1857,7 +1857,7 @@ describe('PointerInput: setas (ME4)', () => {
         s.cleanup();
       });
 
-      it('cursor de redimensionar no eixo do arrasto', () => {
+      it('resize cursor on the drag axis', () => {
         const s = setup(false, elbowProject());
         select(s, { kind: 'arrow', id: 'r1' });
         s.input.updateCursor({ x: 500, y: 600 });
@@ -1865,7 +1865,7 @@ describe('PointerInput: setas (ME4)', () => {
         s.cleanup();
       });
 
-      it('clique duplo no segmento volta à rota padrão (uma entrada)', () => {
+      it('double-click on the segment returns to the default route (one entry)', () => {
         const s = setup(false, elbowProject([{ x: 560, y: 475 }]));
         select(s, { kind: 'arrow', id: 'r1' });
         s.doubleClick(560, 600);
@@ -1876,7 +1876,7 @@ describe('PointerInput: setas (ME4)', () => {
         s.cleanup();
       });
 
-      it('seta trancada e somente leitura: o segmento não se move', () => {
+      it('locked and read-only arrow: the segment does not move', () => {
         const ro = setup(true, elbowProject());
         select(ro, { kind: 'arrow', id: 'r1' });
         ro.drag([500, 600], [560, 600]);
@@ -1908,14 +1908,14 @@ describe('PointerInput: setas (ME4)', () => {
       });
     });
 
-    it('o ponto novo vai para a posição certa entre os pontos que já existem', () => {
+    it('the new point goes to the right position among the existing points', () => {
       const project = setArrowRoute(straightProject(), 'r1', [
         { x: 700, y: 300 },
         { x: 700, y: 500 },
       ]);
       const s = setup(false, project);
       select(s, { kind: 'arrow', id: 'r1' });
-      // Meio do segundo trecho: entre (700,300) e (700,500) = (700,400), posição 1.
+      // Middle of the second segment: between (700,300) and (700,500) = (700,400), position 1.
       s.drag([700, 400], [760, 400]);
       expect(r1(s)?.points).toEqual([
         { x: 700, y: 300 },
@@ -1925,7 +1925,7 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('clique duplo num ponto de passagem o remove e mantém a seta selecionada', () => {
+    it('double-click on a waypoint removes it and keeps the arrow selected', () => {
       const project = setArrowRoute(straightProject(), 'r1', [
         { x: 700, y: 300 },
         { x: 700, y: 500 },
@@ -1940,16 +1940,16 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('clique duplo fora de um ponto de passagem não remove nada', () => {
+    it('double-click outside a waypoint removes nothing', () => {
       const project = setArrowRoute(straightProject(), 'r1', [{ x: 700, y: 300 }]);
       const s = setup(false, project);
       select(s, { kind: 'arrow', id: 'r1' });
-      s.doubleClick(550, 276); // o meio do trecho, não um ponto
+      s.doubleClick(550, 276); // the middle of the segment, not a point
       expect(r1(s)?.points).toHaveLength(1);
       s.cleanup();
     });
 
-    it('seta trancada: arrastar o traço não faz nada (nem pan); só leitura: pan', () => {
+    it('locked arrow: dragging the stroke does nothing (not even pan); read-only: pan', () => {
       const locked = withArrow(straightProject(), 'r2', 'a3', 'b2', {
         style: 'straight',
         locked: true,
@@ -1992,7 +1992,7 @@ describe('PointerInput: setas (ME4)', () => {
   });
 
   describe('trocar a ponta e o lado', () => {
-    it('arrastar a ponta até outra marcação troca o destino (uma entrada) e acende o alvo', () => {
+    it('dragging the end to another marking changes the target (one entry) and lights up the target', () => {
       const s = setup(false, arrowProject());
       select(s, { kind: 'arrow', id: 'r1' });
       s.fire('pointerdown', 600, 700);
@@ -2002,7 +2002,7 @@ describe('PointerInput: setas (ME4)', () => {
       expect(r1(s)?.to).toBe('b2');
       s.fire('pointerup', 2700, 700);
       expect(r1(s)).toMatchObject({ from: 'a1', to: 'b2', toSide: null });
-      // Os containers das pontas mudaram: o espaço dos pontos mudou e a rota voltou ao padrão.
+      // The containers of the ends changed: the space of the points changed and the route went back to the default.
       expect(r1(s)?.points).toEqual([]);
       expect(s.state.arrowDraft.value).toBeNull();
       expect(undoAll(s)).toBe(1);
@@ -2018,17 +2018,17 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('sobre a mesma marcação, perto de outro lado, troca o lado', () => {
+    it('over the same marking, near another side, swaps the side', () => {
       const s = setup(false, arrowProject());
       select(s, { kind: 'arrow', id: 'r1' });
-      // a3 (600,600,200,200): perto do lado de cima.
+      // a3 (600,600,200,200): near the top side.
       s.drag([600, 700], [700, 610]);
       expect(r1(s)).toMatchObject({ to: 'a3', toSide: 'top', fromSide: null });
       expect(undoAll(s)).toBe(1);
       s.cleanup();
     });
 
-    it('sobre a mesma marcação, no lado em que já está: nada muda (o automático segue automático)', () => {
+    it('over the same marking, on the side where it already is: nothing changes (automatic stays automatic)', () => {
       const s = setup(false, arrowProject());
       select(s, { kind: 'arrow', id: 'r1' });
       s.drag([600, 700], [610, 700]);
@@ -2037,7 +2037,7 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('soltar no vazio ou sobre a outra ponta cancela e mostra a linha provisória no caminho', () => {
+    it('releasing on the empty canvas or over the other end cancels and shows the provisional line on the way', () => {
       const s = setup(false, arrowProject());
       select(s, { kind: 'arrow', id: 'r1' });
       s.fire('pointerdown', 600, 700);
@@ -2052,7 +2052,7 @@ describe('PointerInput: setas (ME4)', () => {
       expect(r1(s)?.to).toBe('a3');
       expect(s.store.canUndo.value).toBe(false);
       expect(s.state.arrowDraft.value).toBeNull();
-      // Sobre a marcação da outra ponta (a1): também cancela (seria uma seta ligada a ela mesma).
+      // Over the marking of the other end (a1): also cancels (it would be an arrow linked to itself).
       s.drag([600, 700], [350, 350]);
       expect(r1(s)).toMatchObject({ from: 'a1', to: 'a3' });
       expect(s.store.canUndo.value).toBe(false);
@@ -2060,8 +2060,8 @@ describe('PointerInput: setas (ME4)', () => {
     });
   });
 
-  describe('Ver limpo e revisão', () => {
-    it('na revisão (somente leitura) as setas não se editam, mas o traço ainda seleciona', () => {
+  describe('Clean view and review', () => {
+    it('in review (read-only) the arrows cannot be edited, but the stroke still selects', () => {
       const s = setup(false, straightProject());
       s.setReviewing(true);
       s.click(500, 475);
@@ -2075,8 +2075,8 @@ describe('PointerInput: setas (ME4)', () => {
   });
 });
 
-// Seleção por retângulo (SM2): Shift+arrasto soma à seleção os itens inteiramente dentro.
-describe('PointerInput: seleção por retângulo (SM2)', () => {
+// Rectangle selection (SM2): Shift+drag adds to the selection the items entirely inside.
+describe('PointerInput: rectangle selection (SM2)', () => {
   type S = ReturnType<typeof setup>;
   const SHIFT = { shift: true };
   /** Shift+arrasto de `from` a `to` em alguns passos, soltando em `to`. */
@@ -2113,7 +2113,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('sem seleção antes, o principal é o primeiro na ordem da Árvore', () => {
+  it('with no prior selection, the primary is the first in Tree order', () => {
     const s = setup();
     shiftDrag(s, ...AROUND_BOTH);
     expect(new Set(ids(s))).toEqual(new Set(['image:I1', 'image:I2']));
@@ -2121,7 +2121,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('o retângulo aparece em state.marquee durante o arrasto e some ao soltar', () => {
+  it('the rectangle appears in state.marquee during the drag and disappears on release', () => {
     const s = setup();
     s.fire('pointerdown', 10, 20, SHIFT);
     s.fire('pointermove', 60, 90, SHIFT);
@@ -2135,7 +2135,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('sem item dentro a seleção não muda (mesmos objetos)', () => {
+  it('with no item inside the selection does not change (same objects)', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
     const { value: selection } = s.ui.selection;
@@ -2145,7 +2145,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('nunca tira um item já selecionado', () => {
+  it('never removes an already selected item', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'image', id: 'I1' };
     shiftDrag(s, ...AROUND_BOTH);
@@ -2154,7 +2154,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('não muda o projeto nem ganha entrada no desfazer', () => {
+  it('does not change the project nor gain an undo entry', () => {
     const s = setup();
     const before = s.store.project.peek();
     shiftDrag(s, ...AROUND_BOTH);
@@ -2163,7 +2163,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('abaixo do limiar de arrasto vale o Shift+clique de sempre', () => {
+  it('below the drag threshold the usual Shift+click applies', () => {
     const s = setup();
     s.fire('pointerdown', 250, 250, SHIFT);
     s.fire('pointermove', 252, 251, SHIFT);
@@ -2173,7 +2173,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('Esc (cancelInteraction) cancela: seleção intacta, retângulo some e o resto do arrasto é ignorado', () => {
+  it('Esc (cancelInteraction) cancels: selection intact, rectangle disappears and the rest of the drag is ignored', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M3' };
     const { value: selection } = s.ui.selection;
@@ -2191,7 +2191,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('pointercancel não muda a seleção e o retângulo some', () => {
+  it('pointercancel does not change the selection and the rectangle disappears', () => {
     const s = setup();
     s.fire('pointerdown', ...AROUND_BOTH[0], SHIFT);
     s.fire('pointermove', ...AROUND_BOTH[1], SHIFT);
@@ -2201,7 +2201,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('Navegar: Shift+arrasto sobre o item selecionado ainda o move', () => {
+  it('Navigate: Shift+drag over the selected item still moves it', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
     shiftDrag(s, [400, 400], [500, 450]);
@@ -2210,7 +2210,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('Navegar: Shift+arrasto na alça ainda redimensiona', () => {
+  it('Navigate: Shift+drag on the handle still resizes', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M2' };
     shiftDrag(s, [300, 300], [340, 360]);
@@ -2218,7 +2218,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('Desenhar: Shift+arrasto não cria marcação, só seleciona', () => {
+  it('Draw: Shift+drag does not create a marking, it only selects', () => {
     const s = setup();
     s.ui.mode.value = 'draw';
     const count = s.store.project.peek()?.markings.length;
@@ -2229,7 +2229,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('Ctrl/Cmd+arrasto não ganha o retângulo (pan)', () => {
+  it('Ctrl/Cmd+drag does not get the rectangle (pan)', () => {
     const s = setup();
     s.drag([700, 700], [750, 730]);
     expect(s.viewport.viewport.value).toMatchObject({ x: 50, y: 30 });
@@ -2242,7 +2242,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     c.cleanup();
   });
 
-  it('Espaço, botão do meio e toque fazem pan, sem retângulo', () => {
+  it('Space, middle button and touch pan, without a rectangle', () => {
     const space = setup();
     space.setSpace(true);
     shiftDrag(space, [700, 700], [750, 730]);
@@ -2262,7 +2262,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     touch.cleanup();
   });
 
-  it('revisão de propostas: sem retângulo (pan)', () => {
+  it('proposal review: no rectangle (pan)', () => {
     const s = setup();
     s.setReviewing(true);
     shiftDrag(s, [700, 700], [750, 730]);
@@ -2271,7 +2271,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 
-  it('somente leitura: o retângulo vale', () => {
+  it('read-only: the rectangle applies', () => {
     const s = setup(true);
     shiftDrag(s, ...AROUND_BOTH);
     expect(new Set(ids(s))).toEqual(new Set(['image:I1', 'image:I2']));
@@ -2279,7 +2279,7 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
   });
 });
 
-describe('PointerInput: gesto recomeça o ciclo do clique (CC1)', () => {
+describe('PointerInput: a gesture restarts the click cycle (CC1)', () => {
   const CHILD = { kind: 'marking', id: 'M2' };
   const SHIFT = { shift: true };
   const AROUND: [[number, number], [number, number]] = [
@@ -2287,7 +2287,7 @@ describe('PointerInput: gesto recomeça o ciclo do clique (CC1)', () => {
     [1700, 900],
   ];
 
-  it('Shift+arrasto cancelado por Esc no meio: o clique seguinte no mesmo ponto fica no filho', () => {
+  it('Shift+drag cancelled by Esc in the middle: the next click at the same point stays on the child', () => {
     const s = setup();
     s.click(250, 250);
     expect(s.ui.selection.value).toEqual(CHILD);
@@ -2300,7 +2300,7 @@ describe('PointerInput: gesto recomeça o ciclo do clique (CC1)', () => {
     s.cleanup();
   });
 
-  it('Shift+arrasto solto: o clique seguinte troca a seleção pelo filho', () => {
+  it('Shift+drag released: the next click swaps the selection for the child', () => {
     const s = setup();
     s.click(250, 250);
     s.fire('pointerdown', ...AROUND[0], SHIFT);
@@ -2311,7 +2311,7 @@ describe('PointerInput: gesto recomeça o ciclo do clique (CC1)', () => {
     s.cleanup();
   });
 
-  it('pan do fundo entre dois cliques: o segundo, no mesmo ponto do canvas, fica no filho', () => {
+  it('background pan between two clicks: the second, at the same canvas point, stays on the child', () => {
     const s = setup();
     s.click(250, 250);
     s.drag([1050, 700], [1060, 710]);
@@ -2331,7 +2331,7 @@ describe('PointerInput: gesto recomeça o ciclo do clique (CC1)', () => {
     s.cleanup();
   });
 
-  it('pinça entre dois cliques zera o ciclo', () => {
+  it('pinch between two clicks resets the cycle', () => {
     const s = setup();
     s.click(250, 250);
     s.fire('pointerdown', 100, 100, { id: 1, kind: 'touch' });
@@ -2344,7 +2344,7 @@ describe('PointerInput: gesto recomeça o ciclo do clique (CC1)', () => {
     s.cleanup();
   });
 
-  it('regressão: cliques seguidos sobem para o pai e o terceiro continua o ciclo', () => {
+  it('regression: successive clicks go up to the parent and the third continues the cycle', () => {
     const s = setup();
     s.click(250, 250);
     expect(s.ui.selection.value).toEqual(CHILD);

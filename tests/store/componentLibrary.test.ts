@@ -10,7 +10,7 @@ import { emptyProject } from '../model/fixtures';
 
 const DIR = 'specs/material3';
 
-/** Texto e bytes dos arquivos do pacote, pelo caminho da raiz do projeto. */
+/** Text and bytes of the package files, by the path from the project root. */
 function diskFiles(extra: Record<string, Uint8Array> = {}): Map<string, string | Blob> {
   const files = new Map<string, string | Blob>();
   for (const [rel, data] of material3Package()) files.set(`${DIR}/${rel}`, data);
@@ -30,7 +30,7 @@ function withSpec(spec: Spec = material3Spec()): Project {
   });
 }
 
-/** A mesma especialização com outra versão (como a atualização da biblioteca faz). */
+/** The same specialization with another version (as the library update does). */
 function withVersion(version: number): Project {
   return withSpec({ ...material3Spec(), version });
 }
@@ -94,7 +94,7 @@ function setup(
   return { project, files, reads, library, font };
 }
 
-describe('biblioteca de componentes da sessão', () => {
+describe('session component library', () => {
   const libraries: { dispose(): void }[] = [];
   afterEach(() => {
     for (const library of libraries.splice(0)) library.dispose();
@@ -105,7 +105,7 @@ describe('biblioteca de componentes da sessão', () => {
     return made;
   };
 
-  it('sem projeto ou sem pacote, o catálogo é vazio', async () => {
+  it('without a project or without a package, the catalog is empty', async () => {
     const { library, project } = start(null);
     await library.whenIdle();
     expect(library.catalog.value.size).toBe(0);
@@ -114,7 +114,7 @@ describe('biblioteca de componentes da sessão', () => {
     expect(library.catalog.value.size).toBe(0);
   });
 
-  it('carrega os componentes do pacote aplicado, uma vez', async () => {
+  it('loads the components of the applied package, once', async () => {
     const { library, project, reads } = start(withSpec());
     await library.whenIdle();
     const components = library.catalog.value.get('material3');
@@ -124,7 +124,7 @@ describe('biblioteca de componentes da sessão', () => {
     const firstReads = reads.length;
     expect(firstReads).toBeGreaterThan(0);
 
-    // Outra edição do projeto (mesma especialização): nada é lido de novo e o catálogo é o mesmo.
+    // Another project edit (same specialization): nothing is read again and the catalog is the same.
     const catalog = library.catalog.value;
     project.value = { ...(project.value as Project), revision: 7 };
     await library.whenIdle();
@@ -132,28 +132,28 @@ describe('biblioteca de componentes da sessão', () => {
     expect(library.catalog.value).toBe(catalog);
   });
 
-  it('o projeto aparece antes dos arquivos: o catálogo chega depois', async () => {
+  it('the project appears before the files: the catalog arrives later', async () => {
     const { library } = start(withSpec());
     expect(library.catalog.value.size).toBe(0);
     await library.whenIdle();
     expect(library.catalog.value.size).toBe(1);
   });
 
-  it('usa o pacote em memória da sessão antes do armazenamento', async () => {
+  it('uses the in-memory package of the session before the storage', async () => {
     const cached = new Map<string, string | Blob>();
     for (const [rel, data] of material3Package()) cached.set(rel, data);
     const { library, reads, project } = start(null, {
       files: new Map(),
       cached: (id, version) => (id === 'material3' && version === 1 ? cached : undefined),
     });
-    // A action muda o projeto e só depois a sessão guarda o pacote: a leitura espera.
+    // The action changes the project and only then does the session keep the package: the read waits.
     project.value = withSpec();
     await library.whenIdle();
     expect(library.catalog.value.get('material3')?.byType.size).toBeGreaterThan(5);
     expect(reads).toEqual([]);
   });
 
-  it('guarda por id@versão: atualizar e desfazer não lê de novo', async () => {
+  it('caches by id@version: updating and undoing do not read again', async () => {
     const { library, project, reads } = start(withSpec());
     await library.whenIdle();
     const first = library.catalog.value.get('material3');
@@ -170,7 +170,7 @@ describe('biblioteca de componentes da sessão', () => {
     expect(reads.length).toBe(before);
   });
 
-  it('o resultado de uma leitura velha não aparece sob o projeto novo', async () => {
+  it('the result of a stale read does not appear under the new project', async () => {
     const gate: { release: () => void } = { release: () => {} };
     const blocked = new Promise<void>((resolve) => (gate.release = resolve));
     const files = diskFiles();
@@ -187,7 +187,7 @@ describe('biblioteca de componentes da sessão', () => {
     });
     libraries.push(library);
     await Promise.resolve();
-    // O projeto muda para a versão 2 enquanto a 1 ainda carrega.
+    // The project changes to version 2 while version 1 is still loading.
     project.value = withVersion(2);
     expect(library.catalog.value.size).toBe(0);
     gate.release();
@@ -195,7 +195,7 @@ describe('biblioteca de componentes da sessão', () => {
     expect(library.catalog.value.get('material3')?.version).toBe(2);
   });
 
-  it('falha de leitura vai para o Diagnóstico e não derruba', async () => {
+  it('a read failure goes to Diagnostics and does not bring it down', async () => {
     const before = reportedErrors.value.length;
     const project = signal<Project | null>(withSpec());
     const library = createComponentLibrary({
@@ -223,7 +223,7 @@ describe('biblioteca de componentes da sessão', () => {
     expect(components?.byType.size).toBeGreaterThan(5);
   });
 
-  it('invalidate lê o pacote de novo e mantém o catálogo até o novo chegar', async () => {
+  it('invalidate reads the package again and keeps the catalog until the new one arrives', async () => {
     const { library, reads, files } = start(withSpec());
     await library.whenIdle();
     const first = library.catalog.value.get('material3');
@@ -239,7 +239,7 @@ describe('biblioteca de componentes da sessão', () => {
   });
 
   describe('fontes', () => {
-    it('registra as fontes declaradas, com status por fonte, e sobe a época', async () => {
+    it('registers the declared fonts, with status per font, and raises the epoch', async () => {
       const files = diskFiles({
         'fonts/Roboto-Regular.ttf': new Uint8Array([0, 1, 2, 3]),
       });
@@ -257,7 +257,7 @@ describe('biblioteca de componentes da sessão', () => {
       expect(library.fontsEpoch.value).toBe(1);
     });
 
-    it('não registra de novo enquanto o conjunto de fontes não muda', async () => {
+    it('does not register again while the set of fonts does not change', async () => {
       const { library, project } = start(withSpec());
       await library.whenIdle();
       const epoch = library.fontsEpoch.value;
@@ -266,14 +266,14 @@ describe('biblioteca de componentes da sessão', () => {
       expect(library.fontsEpoch.value).toBe(epoch);
     });
 
-    it('sem especialização com fontes, não há época nem status', async () => {
+    it('without a specialization with fonts, there is no epoch nor status', async () => {
       const { library } = start(emptyProject());
       await library.whenIdle();
       expect(library.fontsEpoch.value).toBe(0);
       expect(library.fonts.value).toEqual([]);
     });
 
-    it('tirar a especialização tira as faces do documento', async () => {
+    it('removing the specialization removes the faces from the document', async () => {
       const files = diskFiles({
         'fonts/Roboto-Regular.ttf': new Uint8Array([0, 1, 2, 3]),
       });

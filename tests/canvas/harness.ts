@@ -256,7 +256,7 @@ export function componentCanvasProject(): Project {
   let p = componentProject();
   p = addBackgroundContainer(p, {
     id: 'B1',
-    name: 'Tela',
+    name: 'Screen',
     width: 400,
     height: 600,
     background: '#FFFFFF',

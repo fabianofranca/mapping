@@ -48,7 +48,7 @@ const mark = (p: Project, root: string, fromName = 'Front'): Project => ({
   arrivals: [...p.arrivals, { root, from: 'V', fromName } satisfies Arrival],
 });
 
-describe('arrivalMarks: o que desenhar', () => {
+describe('arrivalMarks: what to draw', () => {
   it('without an arrival mark, nothing to draw', () => {
     expect(arrivalMarks(canvasProject())).toBeNull();
     expect(arrivalMarks(null)).toBeNull();
@@ -66,7 +66,7 @@ describe('arrivalMarks: o que desenhar', () => {
     expect(arrivalMarks(mark(canvasProject(), 'XX'))).toBeNull();
   });
 
-  it('dispensar a marca tira o selo (e a faixa)', () => {
+  it('dismissing the mark removes the seal (and the strip)', () => {
     const p = mark(canvasProject(), 'I2');
     expect(arrivalMarks(p)).not.toBeNull();
     expect(arrivalMarks(dismissArrival(p, 'I2'))).toBeNull();
@@ -135,7 +135,7 @@ describe('arrivalMarks: o que desenhar', () => {
   });
 });
 
-describe('arrivalBadgeSpot: o lugar do selo', () => {
+describe('arrivalBadgeSpot: the place of the seal', () => {
   const big = { x: 100, y: 200, width: 800, height: 600 };
   const small = { x: 100, y: 200, width: 40, height: 30 };
 
@@ -335,7 +335,7 @@ describe('arrivalBandLabelSpot: the place of the strip label', () => {
   });
 });
 
-describe('arrivalBadgeSpot: sem cair sob o minimapa', () => {
+describe('arrivalBadgeSpot: without falling under the minimap', () => {
   const view = { x: 0, y: 0, width: 600, height: 400 };
   const width = 135;
   const minimap = { x: 500, y: 300, width: 90, height: 90 };
@@ -360,7 +360,7 @@ describe('arrivalBadgeSpot: sem cair sob o minimapa', () => {
     expect(spot.y + A.height).toBeLessThanOrEqual(mini.y);
   });
 
-  it('longe do minimapa, nada muda', () => {
+  it('far from the minimap, nothing changes', () => {
     const rect = { x: 100, y: 100, width: 60, height: 40 };
     expect(badgeSpot(rect, 1, width, view, minimap)).toEqual(
       badgeSpot(rect, 1, width, view),

@@ -64,7 +64,7 @@ function rectPoint(zoom: number, fx: number, fy: number) {
   };
 }
 
-describe('desenho com screen', () => {
+describe('drawing with screen', () => {
   it.each([0.25, 4])(
     'top-left: measures 120×40 screen px and sits at the rectangle corner (zoom %s)',
     (zoom) => {
@@ -160,7 +160,7 @@ describe('stroke.scale', () => {
       : shape.strokeWidth() * shape.getAbsoluteScale().x;
   }
 
-  it.each([0.5, 4])('scale: false mede 2 px de tela (zoom %s)', (zoom) => {
+  it.each([0.5, 4])('scale: false measures 2 screen px (zoom %s)', (zoom) => {
     const shape = strokeShape({ scale: false });
     expect(shape.strokeScaleEnabled()).toBe(false);
     expect(screenWidth(shape, zoom)).toBe(2);

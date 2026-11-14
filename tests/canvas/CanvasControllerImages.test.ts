@@ -14,14 +14,14 @@ import { componentEditor, installFakeCanvas } from './harness';
 
 // Remote images inside `CanvasController` (RI3): the image that finishes asks for a frame, several
 // in the same frame draw once, and the consent that changes redraws the markings with an image.
-describe('CanvasController: imagens remotas', () => {
+describe('CanvasController: remote images', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = () => {
     while (frames.length > 0) for (const frame of frames.splice(0)) frame(0);
   };
-  const A = 'https://cdn.exemplo.com/a.png';
-  const B = 'https://cdn.exemplo.com/b.png';
-  const C = 'https://cdn.exemplo.com/c.png';
+  const A = 'https://cdn.example.com/a.png';
+  const B = 'https://cdn.example.com/b.png';
+  const C = 'https://cdn.example.com/c.png';
 
   beforeAll(() => {
     installFakeCanvas();
@@ -209,7 +209,7 @@ describe('CanvasController: imagens remotas', () => {
     controller.destroy();
   });
 
-  it('destruir o canvas cancela a assinatura e ignora aviso tardio', () => {
+  it('destroying the canvas cancels the subscription and ignores a late notice', () => {
     const { controller, hasListener, emit } = setup();
     expect(hasListener()).toBe(true);
     controller.destroy();

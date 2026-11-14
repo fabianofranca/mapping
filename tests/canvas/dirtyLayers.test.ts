@@ -40,7 +40,7 @@ describe('layers redrawn per frame (whole project in view, 2,000 markings)', () 
     expect(redrawn(s.drawnLayers())).toEqual(ALL);
 
     // Editing the name: markings and overlays; neither the images nor the components.
-    s.actions.renameMarking(first.id, 'Renomeada');
+    s.actions.renameMarking(first.id, 'Renamed');
     s.flush();
     const edit = redrawn(s.drawnLayers());
     expect(edit).toContain('markings');

@@ -14,10 +14,10 @@ import { sampleProject } from '../model/fixtures';
 import { openHarness } from '../store/proposalHarness';
 import { editorFor, installFakeCanvas, setOnlyScreens } from './harness';
 
-// Setas no CanvasController (ME4): a camada, a visibilidade ("Mostrar setas", Ver limpo e as
+// Arrows in CanvasController (ME4): the layer, the visibility ("Show arrows", Screens only and the
 // ends), the `data-arrows`, the arrow fit and the Proposed view of the review.
 
-describe('CanvasController: setas', () => {
+describe('CanvasController: arrows', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = () => {
     while (frames.length > 0) for (const frame of frames.splice(0)) frame(0);
@@ -59,7 +59,7 @@ describe('CanvasController: setas', () => {
     return { ...editor, container, controller, internals };
   }
 
-  it('desenha as setas e publica quantas em `data-arrows`', () => {
+  it('draws the arrows and publishes how many in `data-arrows`', () => {
     const { container, controller, internals, actions } = setup();
     expect(container.dataset.arrows).toBe('1');
     expect(internals.arrows.size).toBe(1);

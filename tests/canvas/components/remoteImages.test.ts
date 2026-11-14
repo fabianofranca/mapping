@@ -13,8 +13,8 @@ import {
 } from '../../../src/store/diagnostics';
 import type { RemoteImageGate } from '../../../src/store/imagePermissions';
 
-const URL = 'https://cdn.exemplo.com/a.png?x=1';
-const NORMAL = 'https://cdn.exemplo.com/a.png?x=1';
+const URL = 'https://cdn.example.com/a.png?x=1';
+const NORMAL = 'https://cdn.example.com/a.png?x=1';
 
 function setup(gate: (url: string) => RemoteImageGate) {
   const request = vi.fn<(url: string, o: { allowNoCors: boolean }) => RemoteImageView>(
@@ -53,7 +53,7 @@ function setup(gate: (url: string) => RemoteImageGate) {
 const allow = (url: string): RemoteImageGate => ({
   allowed: true,
   url,
-  origin: 'https://cdn.exemplo.com',
+  origin: 'https://cdn.example.com',
 });
 
 describe('createRemoteImageSource', () => {
@@ -61,7 +61,7 @@ describe('createRemoteImageSource', () => {
     const blocked = setup((): RemoteImageGate => ({
       allowed: false,
       state: 'blocked-consent',
-      origin: 'https://cdn.exemplo.com',
+      origin: 'https://cdn.example.com',
     }));
     expect(blocked.source.resolve(URL)).toEqual({ state: 'blocked-consent' });
     expect(blocked.report).toHaveBeenCalledWith(URL, 'blocked-consent');
@@ -81,7 +81,7 @@ describe('createRemoteImageSource', () => {
     const ctx = setup((url) => ({
       allowed: true,
       url: `${url}#n`,
-      origin: 'https://cdn.exemplo.com',
+      origin: 'https://cdn.example.com',
     }));
     ctx.source.resolve(URL);
     expect(ctx.request).toHaveBeenCalledWith(`${NORMAL}#n`, { allowNoCors: false });
@@ -112,7 +112,7 @@ describe('createRemoteImageSource', () => {
     const ctx = setup((url) => ({
       allowed: true,
       url: `${url}#n`,
-      origin: 'https://cdn.exemplo.com',
+      origin: 'https://cdn.example.com',
     }));
     const heard: string[] = [];
     ctx.source.subscribe((u) => heard.push(u));
@@ -155,7 +155,7 @@ describe('Diagnostics: the image that started being shown leaves the list (R15.5
     const { source, gate, view } = realSource((): RemoteImageGate => ({
       allowed: false,
       state: 'blocked-consent',
-      origin: 'https://cdn.exemplo.com',
+      origin: 'https://cdn.example.com',
     }));
     source.resolve(URL);
     expect(remoteImageIssues.value.map((i) => i.reason)).toEqual(['blocked-consent']);
@@ -190,19 +190,19 @@ describe('Diagnostics: the image that started being shown leaves the list (R15.5
     const ctx = setup((raw) => ({
       allowed: true,
       url: normalized(raw),
-      origin: 'https://cdn.exemplo.com',
+      origin: 'https://cdn.example.com',
     }));
     const heard: string[] = [];
     ctx.source.subscribe((u) => heard.push(u));
     const total = REMOTE_IMAGE_LIMITS.failureEntries + 100;
-    for (let i = 0; i < total; i += 1) ctx.source.resolve(`https://cdn.exemplo.com/${i}`);
+    for (let i = 0; i < total; i += 1) ctx.source.resolve(`https://cdn.example.com/${i}`);
     // The recent one still translates the normalized URL to the field one...
-    ctx.emit(normalized(`https://cdn.exemplo.com/${total - 1}`));
+    ctx.emit(normalized(`https://cdn.example.com/${total - 1}`));
     // ...the oldest has already left the map: the notice goes with the normalized one.
-    ctx.emit(normalized('https://cdn.exemplo.com/0'));
+    ctx.emit(normalized('https://cdn.example.com/0'));
     expect(heard).toEqual([
-      `https://cdn.exemplo.com/${total - 1}`,
-      normalized('https://cdn.exemplo.com/0'),
+      `https://cdn.example.com/${total - 1}`,
+      normalized('https://cdn.example.com/0'),
     ]);
   });
 });

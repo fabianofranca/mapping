@@ -10,8 +10,8 @@ import { NOW, sampleProject } from '../model/fixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 import { files, ROOT, spec } from '../support/material3Library';
 
-// Bug 1.5: a janela Catálogo dizia "Pacote válido, sem erros nem avisos." enquanto o
-// Diagnóstico contava os avisos "parâmetro fora da ficha" do mesmo pacote.
+// Bug 1.5: the Catalog window said "Valid package, no errors or warnings." while the
+// Diagnostics counted the "parameter outside the signature" warnings of the same package.
 
 let current: ProjectSession | null = null;
 afterEach(async () => {
@@ -44,8 +44,8 @@ async function open(project: Project, root: MemoryDirectory) {
 const warningsOf = (issues: readonly { severity: string }[]) =>
   issues.filter((i) => i.severity === 'warning').length;
 
-describe('Catálogo e Diagnóstico contam os mesmos avisos do pacote', () => {
-  it('pacote recém-aplicado (cópia em memória) e reaberto do disco', async () => {
+describe('Catalog and Diagnostics count the same package warnings', () => {
+  it('freshly applied package (in-memory copy) and reopened from disk', async () => {
     const root = new MemoryDirectory('p');
     const base: Project = { ...sampleProject(), revision: 1 };
     root.put('mapping.json', serialize(base));
@@ -63,9 +63,9 @@ describe('Catálogo e Diagnóstico contam os mesmos avisos do pacote', () => {
     expect(diag).toBeGreaterThan(0);
     expect(await fromMemory(first)).toBe(diag);
 
-    // Reaberto: o Diagnóstico lê o disco; o Catálogo também.
+    // Reopened: Diagnostics reads the disk; the Catalog too.
     const saved = first.store.committed.peek();
-    if (!saved) throw new Error('sem projeto');
+    if (!saved) throw new Error('no project');
     await first.close();
     const second = await open(saved, root);
     current = second;

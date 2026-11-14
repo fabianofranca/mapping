@@ -162,7 +162,9 @@ describe('ScreenRenderer', () => {
     expect(rect?.dash()).toEqual([6, 4]);
     expect(rect?.stroke()).toBe(DEFAULT_PALETTE.unknownLine);
     expect(node?.findOne<Konva.Text>('Text')?.text()).toContain('does-not-exist');
-    expect(renderer.warnings().get('x')).toEqual(['type does not exist in the specialization']);
+    expect(renderer.warnings().get('x')).toEqual([
+      'type does not exist in the specialization',
+    ]);
     // Without any library: all become a placeholder.
     const empty = setup();
     empty.renderer.update(undefined, SAMPLE_SCREEN);

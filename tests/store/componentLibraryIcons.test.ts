@@ -1,5 +1,5 @@
 // @vitest-environment node
-// CF7: a biblioteca carregada na app resolve o ícone do pacote (`icons` da especialização).
+// CF7: the library loaded in the app resolves the package icon (`icons` of the specialization).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -11,9 +11,9 @@ const DIR = 'tests/fixtures/icons';
 const SPEC_FILE = 'specs/icons/icons.spec.json';
 
 const parsed = parseSpecText(readFileSync(join(DIR, 'icons.spec.json'), 'utf8'));
-if (!parsed.ok) throw new Error('spec de teste inválida');
+if (!parsed.ok) throw new Error('invalid test spec');
 
-/** Lê um caminho da raiz do projeto (`specs/icons/…`) a partir da pasta do pacote de teste. */
+/** Reads a path from the project root (`specs/icons/…`) from the folder of the test package. */
 async function read(path: string): Promise<string | null> {
   const rel = path.replace(/^specs\/icons\//, '');
   try {
@@ -24,7 +24,7 @@ async function read(path: string): Promise<string | null> {
 }
 
 describe('readSpecComponents com icons', () => {
-  it('lê o arquivo de ícones junto dos componentes e o ícone do pacote desenha', async () => {
+  it('reads the icons file along with the components and the package icon draws', async () => {
     const loaded = await readSpecComponents(parsed.spec, SPEC_FILE, 1, read);
     expect(loaded.problems).toEqual([]);
     const component = loaded.byType.get('badge');
@@ -40,7 +40,7 @@ describe('readSpecComponents com icons', () => {
     expect(JSON.stringify(root)).toContain('M6 6l12 12M18 6L6 18');
   });
 
-  it('sem o arquivo de ícones, o catálogo avisa e o ícone fica reservado', async () => {
+  it('without the icons file, the catalog warns and the icon stays reserved', async () => {
     const loaded = await readSpecComponents(parsed.spec, SPEC_FILE, 1, (path) =>
       path.endsWith('icons/set.json') ? Promise.resolve(null) : read(path),
     );

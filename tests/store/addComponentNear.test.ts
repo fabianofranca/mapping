@@ -12,8 +12,8 @@ import { testCatalog } from '../model/componentFixtures';
 import { marking } from '../model/fixtures';
 import { NOTES_SPEC_ID, notesCatalog, notesProject } from '../model/notesFixtures';
 
-// ME4: o `near` do addComponent (flutuante perto do alvo) como action do store (uma entrada
-// de desfazer).
+// ME4: the `near` of addComponent (floating near the target) as a store action (one undo
+// entry).
 
 function setup(initial: Project, components = testCatalog()) {
   const store = createProjectStore({ now: () => '2026-10-01T00:00:00.000Z' });
@@ -28,7 +28,7 @@ function setup(initial: Project, components = testCatalog()) {
 }
 
 const current = (store: ProjectStore): Project => store.project.value as Project;
-/** Quantas entradas de desfazer existem (desfaz tudo e refaz). */
+/** How many undo entries exist (undoes everything and redoes). */
 function undoDepth(store: ProjectStore): number {
   let depth = 0;
   while (store.undo()) depth++;
@@ -43,7 +43,7 @@ describe('addComponent com near (tipo flutuante)', () => {
     rect: { x: 100, y: 200, width: 100, height: 50 },
   });
 
-  it('nasce flutuante na margem direita do container, na altura da marcação', () => {
+  it('is born floating on the right margin of the container, at the height of the marking', () => {
     const { store, actions } = setup(project, notesCatalog());
     const result = actions.addComponent({
       containerId: null,
@@ -64,7 +64,7 @@ describe('addComponent com near (tipo flutuante)', () => {
     expect(undoDepth(store)).toBe(1);
   });
 
-  it('a segunda nota empilha abaixo da primeira, sem sobrepor', () => {
+  it('the second note stacks below the first, without overlapping', () => {
     const { store, actions } = setup(project, notesCatalog());
     const args = {
       containerId: null,

@@ -1,5 +1,5 @@
-// Âncora na app (R4, decisões 12 e 13): as actions `setMarkingAnchor` e `snapToAnchor`, o Arrumar
-// que também encosta e o `addComponent` ancorado. Cada uma é uma entrada de desfazer.
+// Anchor in the app (R4, decisions 12 and 13): the `setMarkingAnchor` and `snapToAnchor` actions, the Arrange
+// that also snaps and the anchored `addComponent`. Each one is an undo entry.
 import { describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
@@ -45,7 +45,7 @@ function addTip(
   );
 }
 
-/** I1 com o botão B e o tooltip T longe dele, sem âncora ainda. */
+/** I1 with the button B and the tooltip T far from it, no anchor yet. */
 function tipScene(): Project {
   return addTip(addTip(tipProject(), 'B', 'botao', BUTTON), 'T', 'tooltip', TOOLTIP);
 }
@@ -64,7 +64,7 @@ function setup(initial: Project, catalog = tipComponents) {
 
 const current = (store: ProjectStore): Project => store.project.value as Project;
 
-/** Quantas entradas de desfazer existem (desfaz tudo e refaz). */
+/** How many undo entries exist (undoes everything and redoes). */
 function undoDepth(store: ProjectStore): number {
   let depth = 0;
   while (store.undo()) depth++;
@@ -72,12 +72,12 @@ function undoDepth(store: ProjectStore): number {
   return depth;
 }
 
-// O tooltip tem `anchor` top/center com `offset.main` 4 na raiz: sobre o botão (400,300, 80×32),
-// 100×48 fica em x = 400 + (80 − 100) / 2 = 390 e y = 300 − 48 − 4 = 248.
+// The tooltip has `anchor` top/center with `offset.main` 4 at the root: above the button (400,300, 80×32),
+// 100×48 sits at x = 400 + (80 − 100) / 2 = 390 and y = 300 − 48 − 4 = 248.
 const SNAPPED = { x: 390, y: 248 };
 
 describe('setMarkingAnchor', () => {
-  it('grava a âncora numa entrada de desfazer, sem mover a marcação', () => {
+  it('records the anchor in an undo entry, without moving the marking', () => {
     const { store, actions } = setup(tipScene());
     expect(actions.setMarkingAnchor('T', { to: 'B', side: 'bottom' }).ok).toBe(true);
     expect(marking(current(store), 'T').anchor).toEqual({ to: 'B', side: 'bottom' });
@@ -87,7 +87,7 @@ describe('setMarkingAnchor', () => {
     expect(marking(current(store), 'T').anchor ?? null).toBeNull();
   });
 
-  it('`null` tira a âncora; a mesma âncora não cria entrada', () => {
+  it('`null` removes the anchor; the same anchor does not create an entry', () => {
     const { store, actions } = setup(tipScene());
     actions.setMarkingAnchor('T', { to: 'B' });
     const anchored = current(store);
@@ -98,7 +98,7 @@ describe('setMarkingAnchor', () => {
     expect(undoDepth(store)).toBe(2);
   });
 
-  it('recusa a própria marcação, o ciclo e outro espaço com o código da invariante', () => {
+  it('refuses the marking itself, the cycle and another space with the invariant code', () => {
     const { store, actions } = setup(
       createMarking(tipScene(), {
         id: 'C',
@@ -126,7 +126,7 @@ describe('setMarkingAnchor', () => {
     expect(undoDepth(store)).toBe(1);
   });
 
-  it('a trava da geometria não impede ancorar (não é geometria)', () => {
+  it('the geometry lock does not prevent anchoring (it is not geometry)', () => {
     const { store, actions } = setup(tipScene());
     actions.setMarkingLocked('T', true);
     expect(actions.setMarkingAnchor('T', { to: 'B' }).ok).toBe(true);
@@ -134,8 +134,8 @@ describe('setMarkingAnchor', () => {
   });
 });
 
-describe('snapToAnchor (Encostar na âncora)', () => {
-  it('move a marcação para junto da âncora e o desfazer a devolve, numa entrada só', () => {
+describe('snapToAnchor (Snap to anchor)', () => {
+  it('moves the marking next to the anchor and undo returns it, in a single entry', () => {
     const { store, actions } = setup(tipScene());
     actions.setMarkingAnchor('T', { to: 'B' });
     const result = actions.snapToAnchor('T');
@@ -147,7 +147,7 @@ describe('snapToAnchor (Encostar na âncora)', () => {
     expect(marking(current(store), 'T').anchor).toEqual({ to: 'B' });
   });
 
-  it('já encostada: nada muda e não cria entrada', () => {
+  it('already snapped: nothing changes and no entry is created', () => {
     const { store, actions } = setup(tipScene());
     actions.setMarkingAnchor('T', { to: 'B' });
     actions.snapToAnchor('T');
@@ -157,7 +157,7 @@ describe('snapToAnchor (Encostar na âncora)', () => {
     expect(undoDepth(store)).toBe(2);
   });
 
-  it('sem âncora recusa com not-anchored; trancada, com locked', () => {
+  it('without an anchor it refuses with not-anchored; locked, with locked', () => {
     const { store, actions } = setup(tipScene());
     expect(actions.snapToAnchor('T')).toEqual({ ok: false, error: 'not-anchored' });
     actions.setMarkingAnchor('T', { to: 'B' });
@@ -166,7 +166,7 @@ describe('snapToAnchor (Encostar na âncora)', () => {
     expect(marking(current(store), 'T').rect).toEqual(TOOLTIP);
   });
 
-  it('passando do container, prende dentro e devolve o aviso', () => {
+  it('going past the container, it clamps inside and returns the warning', () => {
     const { store, actions } = setup(tipScene());
     actions.setMarkingAnchor('T', {
       to: 'B',
@@ -180,20 +180,20 @@ describe('snapToAnchor (Encostar na âncora)', () => {
   });
 });
 
-describe('arrange numa marcação com âncora encosta', () => {
-  it('componente sem slot nem eixo ajustável: o Arrumar só encosta (antes dava not-fittable)', () => {
+describe('arrange on a marking with an anchor snaps', () => {
+  it('component without a slot nor adjustable axis: Arrange only snaps (before it gave not-fittable)', () => {
     const { store, actions } = setup(tipScene());
     actions.setMarkingAnchor('T', { to: 'B' });
     expect(actions.arrange('T')).toEqual({ ok: true, value: [] });
     expect(marking(current(store), 'T').rect).toMatchObject(SNAPPED);
   });
 
-  it('sem âncora a regra de hoje vale (not-fittable)', () => {
+  it('without an anchor the current rule applies (not-fittable)', () => {
     const { actions } = setup(tipScene());
     expect(actions.arrange('T')).toEqual({ ok: false, error: 'not-fittable' });
   });
 
-  it('o que se ajusta ao conteúdo ajusta e encosta na MESMA entrada de desfazer', () => {
+  it('what fits to the content adjusts and snaps in the SAME undo entry', () => {
     const target: Rect = { x: 400, y: 300, width: 200, height: 100 };
     let p = createMarking(fitProject(), { id: 'T', containerId: 'I1', rect: target });
     p = addComponentMarking(
@@ -217,7 +217,7 @@ describe('arrange numa marcação com âncora encosta', () => {
     expect(actions.arrange('B').ok).toBe(true);
     const b = marking(current(store), 'B');
     expect(b.rect.height).toBeGreaterThan(40);
-    // Encostada acima da âncora com a altura já ajustada, centrada nela.
+    // Snapped above the anchor with the height already adjusted, centered on it.
     expect(b.rect.y).toBe(target.y - b.rect.height);
     expect(b.rect.x).toBe(target.x + (target.width - b.rect.width) / 2);
     expect(undoDepth(store)).toBe(depth + 1);
@@ -231,8 +231,8 @@ describe('arrange numa marcação com âncora encosta', () => {
   });
 });
 
-describe('arrastar a âncora leva as ancoradas', () => {
-  it('na prévia e no commit, numa entrada de desfazer', () => {
+describe('dragging the anchor takes the anchored ones along', () => {
+  it('in the preview and in the commit, in one undo entry', () => {
     const { store, actions } = setup(tipScene());
     actions.setMarkingAnchor('T', { to: 'B' });
     actions.snapToAnchor('T');
@@ -258,7 +258,7 @@ describe('arrastar a âncora leva as ancoradas', () => {
 });
 
 describe('addComponent ancorado (Paleta)', () => {
-  it('com `anchorTo` cria a instância ancorada e já encostada, numa entrada', () => {
+  it('with `anchorTo` creates the instance anchored and already snapped, in one entry', () => {
     const { store, actions } = setup(addTip(tipProject(), 'B', 'botao', BUTTON));
     const result = actions.addComponent({
       containerId: 'I1',
@@ -275,7 +275,7 @@ describe('addComponent ancorado (Paleta)', () => {
     expect(undoDepth(store)).toBe(1);
   });
 
-  it('sem `anchorTo` vale a regra de hoje: sem âncora, centrada no ponto pedido', () => {
+  it('without `anchorTo` the current rule applies: no anchor, centered on the requested point', () => {
     const { store, actions } = setup(addTip(tipProject(), 'B', 'botao', BUTTON));
     const result = actions.addComponent({
       containerId: 'I1',

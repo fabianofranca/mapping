@@ -147,20 +147,23 @@ describe('the shadow that comes back through the offset', () => {
     ['rotated 90°', { a: 0, b: 1, c: -1, d: 0 }],
     ['with zoom 2', { a: 2, b: 0, c: 0, d: 2 }],
     ['rotated 30° with zoom 1.5', { a: 1.3, b: 0.75, c: -0.75, d: 1.3 }],
-  ])('the shape lands far from the screen and the shadow comes back into place: %s', (_name, m) => {
-    const first = shadow({ offset: { x: 3, y: 5 }, blur: 6 });
-    const { native, calls } = draw([first, shadow()], m);
-    const sx = Math.hypot(m.a, m.b);
-    const sy = Math.hypot(m.c, m.d);
-    const result = net(native, calls, m);
-    expect(result.x).toBeCloseTo(3 * sx, 6);
-    expect(result.y).toBeCloseTo(5 * sy, 6);
-    // Far away: the shape offset goes past the whole screen.
-    const t = calls.find(([name]) => name === 'translate')!;
-    expect(Math.hypot(m.a * t[1]!, m.b * t[1]!)).toBeGreaterThan(800 + 600);
-    expect(native.shadowBlur).toBeCloseTo(6 * Math.min(sx, sy), 6);
-    expect(native.shadowColor).toBe('#000000');
-  });
+  ])(
+    'the shape lands far from the screen and the shadow comes back into place: %s',
+    (_name, m) => {
+      const first = shadow({ offset: { x: 3, y: 5 }, blur: 6 });
+      const { native, calls } = draw([first, shadow()], m);
+      const sx = Math.hypot(m.a, m.b);
+      const sy = Math.hypot(m.c, m.d);
+      const result = net(native, calls, m);
+      expect(result.x).toBeCloseTo(3 * sx, 6);
+      expect(result.y).toBeCloseTo(5 * sy, 6);
+      // Far away: the shape offset goes past the whole screen.
+      const t = calls.find(([name]) => name === 'translate')!;
+      expect(Math.hypot(m.a * t[1]!, m.b * t[1]!)).toBeGreaterThan(800 + 600);
+      expect(native.shadowBlur).toBeCloseTo(6 * Math.min(sx, sy), 6);
+      expect(native.shadowColor).toBe('#000000');
+    },
+  );
 });
 
 describe('shadow.spread in Konva (decision 4)', () => {

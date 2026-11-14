@@ -52,7 +52,7 @@ describe('CanvasController: view mode', () => {
 
   // The marking P has a name: the name only gets a node when it shows (parts on demand).
   function setup(
-    project = renameMarking(withArrow(viewProject(), 'R1', 'TA', 'P'), 'P', 'Porta'),
+    project = renameMarking(withArrow(viewProject(), 'R1', 'TA', 'P'), 'P', 'Door'),
   ) {
     const sources = componentSources(viewCatalog());
     const editor = editorFor(project, false, sources);
@@ -214,7 +214,7 @@ describe('CanvasController: view mode', () => {
     controller.destroy();
   });
 
-  it('Contorno desmarcado e Setas marcado: as setas aparecem', () => {
+  it('Outline unchecked and Arrows checked: the arrows appear', () => {
     const { controller, ui, container, marking } = setup();
     setViewMode(ui, true);
     setViewShow(ui, { outline: false, names: false, arrows: true });

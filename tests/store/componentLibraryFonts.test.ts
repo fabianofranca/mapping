@@ -1,4 +1,4 @@
-// CF5: o catálogo da app põe nos componentes a pilha do --font-sans/--font-mono lida do tema.
+// CF5: the app catalog puts on the components the --font-sans/--font-mono stack read from the theme.
 import { afterEach, describe, expect, it } from 'vitest';
 import { readSpecComponents } from '../../src/store/componentLibrary';
 import { SPEC_FILE, packageTexts, testSpec } from '../model/componentFixtures';

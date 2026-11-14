@@ -121,7 +121,7 @@ function textNode(align: TextNode['style']['align'], direction?: 'rtl'): TextNod
   };
 }
 
-describe('texto no Konva: direction', () => {
+describe('text in Konva: direction', () => {
   const textOf = (n: TextNode): Konva.Text =>
     (renderScene({ root: n, warnings: [] }).root.find('Text') as Konva.Text[])[0]!;
 

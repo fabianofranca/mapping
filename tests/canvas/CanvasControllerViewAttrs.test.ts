@@ -52,7 +52,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
   const boxOf = (el: HTMLElement) =>
     (el.dataset.selectionBox ?? '').split(' ').map(Number);
 
-  it('publica a vista e a acompanha em pan e zoom', () => {
+  it('publishes the view and follows it on pan and zoom', () => {
     const { container, controller } = setup();
     const first = viewportOf(container);
     expect(first.scale).toBeGreaterThan(0);
@@ -71,7 +71,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     flush();
     const v = viewportOf(container);
     const [l, t, w, h] = boxOf(container);
-    // H: (400,1300,200,100) no canvas
+    // H: (400,1300,200,100) on the canvas
     expect(l).toBeCloseTo(400 * v.scale + v.x, 1);
     expect(t).toBeCloseTo(1300 * v.scale + v.y, 1);
     expect(w).toBeCloseTo(200 * v.scale, 1);
@@ -85,7 +85,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     flush();
     const v = viewportOf(container);
     const [l, t, w, h] = boxOf(container);
-    // b1 no container B (2000,0, escala 2): canvas (2100,100,200,200)
+    // b1 in container B (2000,0, scale 2): canvas (2100,100,200,200)
     expect(l).toBeCloseTo(2100 * v.scale + v.x, 1);
     expect(t).toBeCloseTo(100 * v.scale + v.y, 1);
     expect(w).toBeCloseTo(200 * v.scale, 1);
@@ -187,7 +187,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     controller.destroy();
   });
 
-  it('data-arrow-handles some com Mostrar setas desligado', () => {
+  it('data-arrow-handles disappears with Show arrows off', () => {
     const { container, controller, ui } = setup();
     selectItems(ui, [{ kind: 'arrow', id: 'r1' }]);
     flush();
@@ -214,7 +214,7 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     controller.destroy();
   });
 
-  it('data-container-boxes se refaz ao redimensionar um container', () => {
+  it('data-container-boxes is rebuilt when resizing a container', () => {
     const { container, controller, store } = setup();
     const before = container.dataset.containerBoxes;
     store.apply((p) => moveContainer(p, 'B', 3000, 0));

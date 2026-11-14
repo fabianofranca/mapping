@@ -107,7 +107,7 @@ describe('pinPlaces: the place of each pin', () => {
       p,
       groupsOf(p, [
         thread('c1', { kind: 'marking', id: 'M1' }),
-        thread('c2', { kind: 'field', annotationId: 'A1', key: 'tipo' }),
+        thread('c2', { kind: 'field', annotationId: 'A1', key: 'type' }),
       ]),
       FULL,
     );
@@ -115,7 +115,7 @@ describe('pinPlaces: the place of each pin', () => {
     expect(places[0]?.group.count).toBe(2);
   });
 
-  it('seta: no meio da rota', () => {
+  it('arrow: at the middle of the route', () => {
     const p = arrowProject();
     const arrowId = p.arrows[0]!.id;
     const places = pinPlaces(
@@ -127,7 +127,7 @@ describe('pinPlaces: the place of each pin', () => {
     expect(places[0]?.align).toBe('center');
   });
 
-  it('ponto solto: no container (pixels dele) e no canvas', () => {
+  it('loose point: in the container (its pixels) and on the canvas', () => {
     const p = canvasProject();
     const places = pinPlaces(
       p,
@@ -197,7 +197,7 @@ describe('the point of a new conversation', () => {
     });
   });
 
-  it('respeita a escala do container', () => {
+  it('respects the container scale', () => {
     const p = setContainerPlacement(canvasProject(), 'I1', { x: 100, y: 0, scale: 0.5 });
     expect(pointAnchorAt(p, { x: 300, y: 50 })).toEqual({
       kind: 'point',
@@ -211,12 +211,12 @@ describe('the point of a new conversation', () => {
     const p = canvasProject();
     expect(pointCanvas(p, 'I2', 50, 60)).toEqual({ x: 1150, y: 60 });
     expect(pointCanvas(p, null, 7, 8)).toEqual({ x: 7, y: 8 });
-    expect(pointCanvas(p, 'nao-existe', 7, 8)).toBeNull();
+    expect(pointCanvas(p, 'does-not-exist', 7, 8)).toBeNull();
   });
 
   it('commentAnchorAt: over an item anchors to the item; on the empty part of the container, to a point', () => {
     const p = canvasProject();
-    // M2 (a mais interna) em (200,200,100,100).
+    // M2 (the innermost one) at (200,200,100,100).
     expect(commentAnchorAt(p, FULL, { x: 250, y: 250 })).toEqual({
       kind: 'marking',
       id: 'M2',

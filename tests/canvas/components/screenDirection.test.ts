@@ -113,7 +113,7 @@ describe('ScreenRenderer: screen direction', () => {
     expect(rects(screenOf(), 'rtl')).toEqual({ red: 180, blue: 150 });
   });
 
-  it("changing the screen direction redraws the instances", () => {
+  it('changing the screen direction redraws the instances', () => {
     const group = new Konva.Group();
     const renderer = new ScreenRenderer(group, {
       labels: LABELS,

@@ -91,7 +91,7 @@ function baseProject(required = false): { base: Project; catalog: ComponentCatal
   });
   p = addBackgroundContainer(p, {
     id: 'B1',
-    name: 'Tela',
+    name: 'Screen',
     width: 400,
     height: 600,
     background: '#FFFFFF',
@@ -406,7 +406,7 @@ describe('CanvasController: Proposed view with components', () => {
         specId: 'extra',
         typeId: 'text',
         rect: { x: 20, y: 100, width: 100, height: 40 },
-        values: { label: 'Do pacote' },
+        values: { label: 'From the package' },
       },
       approximateMeasurer,
     );
@@ -419,7 +419,7 @@ describe('CanvasController: Proposed view with components', () => {
     t.show('proposed');
     await t.whenLoaded();
     expect(t.drawing('N1')).toBeDefined();
-    expect(t.texts('N1')).toContain('Do pacote');
+    expect(t.texts('N1')).toContain('From the package');
     expect(t.container.dataset.components).toBe('2');
     expect(t.marks()?.markings.get('N1')).toMatchObject({ line: 'created' });
     t.show('current');
@@ -432,7 +432,7 @@ describe('CanvasController: Proposed view with components', () => {
     it('switching views keeps the scenes that the proposal does not change', async () => {
       const start = baseProject();
       const { catalog } = start;
-      const base = addText(start.base, catalog, 'T2', 20, 200, { label: 'Dois' });
+      const base = addText(start.base, catalog, 'T2', 20, 200, { label: 'Two' });
       const after = addText(base, catalog, 'N1', 20, 100, { label: 'New' });
       const t = await setup(base, catalog, propose(base, after));
       const t1 = t.scenes().get('T1');

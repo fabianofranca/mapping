@@ -216,7 +216,7 @@ describe('ComponentLayerRenderer', () => {
     expect(layer.render(new Map(), all, PLACEMENTS)).toBe(false);
   });
 
-  it('passa a paleta do tema ao reservado', () => {
+  it('passes the theme palette to the placeholder', () => {
     const parent = new Konva.Group();
     const layer = new ComponentLayerRenderer(parent, {
       placeholder: { unknownLine: '#00aa00' },
@@ -256,7 +256,7 @@ describe('ComponentLayerRenderer: canvas space', () => {
     expect(group?.x()).toBe(0);
     expect(group?.y()).toBe(0);
     expect(group?.scaleX()).toBe(1);
-    // Os containers continuam com o placement deles, e o diff por identidade vale nos dois.
+    // The containers keep their placement, and the identity diff holds in both.
     const inImage = drawing('m1');
     layer.render(toMap(note, inImage), all, PLACEMENTS);
     expect(layer.size).toBe(2);
@@ -302,9 +302,9 @@ describe('ComponentLayerRenderer: canvas space', () => {
     expect(above.size).toBe(0);
   });
 
-  describe('imagens remotas', () => {
-    const A = 'https://cdn.exemplo.com/a.png';
-    const B = 'https://cdn.exemplo.com/b.png';
+  describe('remote images', () => {
+    const A = 'https://cdn.example.com/a.png';
+    const B = 'https://cdn.example.com/b.png';
     /** Drawing of a marking with a remote image (the `image` node of the component). */
     function withImage(markingId: string, url?: string): LayerDrawing {
       const base = drawing(markingId);
@@ -382,7 +382,7 @@ describe('ComponentLayerRenderer: canvas space', () => {
       const { resolve, layer } = imageSetup();
       layer.render(toMap(withImage('a', A), withImage('d')), all, PLACEMENTS);
       resolve.mockClear();
-      expect(layer.refreshImages(new Set(['https://outra.exemplo.com/x.png']))).toBe(
+      expect(layer.refreshImages(new Set(['https://other.example.com/x.png']))).toBe(
         false,
       );
       expect(resolve).not.toHaveBeenCalled();

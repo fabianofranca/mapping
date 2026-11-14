@@ -30,20 +30,20 @@ import {
 } from '../../src/model';
 import { arrowProject, withArrow } from '../model/arrowFixtures';
 
-// r1: a1 (100,100,300,300) → a3 (600,600,200,200), as duas no container A (escala 1, em 0,0).
+// r1: a1 (100,100,300,300) → a3 (600,600,200,200), both in container A (scale 1, at 0,0).
 // Automatic side: exit through the right of a1 (400,250) and arrival through the left of a3 (600,700).
 const NONE = new Map();
 
 function shapeOf(p: Project, id = 'r1') {
   const arrow = p.arrows.find((a) => a.id === id);
-  if (!arrow) throw new Error('seta');
+  if (!arrow) throw new Error('arrow');
   const shape = arrowShape(p, arrow);
   if (!shape) throw new Error('forma');
   return shape;
 }
 
 describe('distances', () => {
-  it('ponto ao segmento: perpendicular, ponta e segmento degenerado', () => {
+  it('point to segment: perpendicular, tip and degenerate segment', () => {
     expect(distanceToSegment({ x: 5, y: 3 }, { x: 0, y: 0 }, { x: 10, y: 0 })).toBe(3);
     expect(distanceToSegment({ x: -4, y: 3 }, { x: 0, y: 0 }, { x: 10, y: 0 })).toBe(5);
     expect(distanceToSegment({ x: 13, y: 4 }, { x: 0, y: 0 }, { x: 10, y: 0 })).toBe(5);
@@ -184,7 +184,7 @@ describe('project shapes', () => {
     expect(shapeOf(p)).toBe(first);
     // Another project version, the same arrow and the same markings and containers: same shape.
     expect(shapeOf({ ...p })).toBe(first);
-    // Mudar a seta (estilo) refaz a forma.
+    // Changing the arrow (style) redoes the shape.
     expect(shapeOf(setArrowStyle(p, 'r1', 'straight'))).not.toBe(first);
   });
 
@@ -217,12 +217,12 @@ describe('project shapes', () => {
   });
 });
 
-describe('toque', () => {
+describe('touch', () => {
   const straight = () => setArrowStyle(arrowProject(), 'r1', 'straight');
 
   it('picks the arrow up to 7 screen px from the stroke and not beyond', () => {
     const shapes = visibleArrowShapes(straight(), NONE);
-    // A reta de (400,250) a (600,700): passa por (500,475).
+    // The line from (400,250) to (600,700): passes through (500,475).
     expect(arrowsAt(shapes, { x: 500, y: 475 }, 1)).toHaveLength(1);
     expect(arrowsAt(shapes, { x: 505, y: 475 }, 1)).toHaveLength(1);
     expect(arrowsAt(shapes, { x: 520, y: 475 }, 1)).toHaveLength(0);
@@ -330,8 +330,8 @@ describe('corner handles', () => {
       NONE,
     );
     const strokes = arrowStrokes(mixed, 1, 10);
-    expect(strokes.bodies).toHaveLength(1); // a curva r1
-    expect(strokes.corners).toHaveLength(1); // o canto r2
+    expect(strokes.bodies).toHaveLength(1); // the curve r1
+    expect(strokes.corners).toHaveLength(1); // the corner r2
     // The corner is not thinned: all the corners of the route are on the stroke.
     expect((strokes.corners[0] as number[]).length).toBeGreaterThanOrEqual(8);
   });

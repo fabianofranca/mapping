@@ -13,8 +13,8 @@ import { createProjectActions } from '../../src/store/project';
 import { createEditorUi } from '../../src/store/ui';
 import { NOW, emptyProject, sampleProject } from '../model/fixtures';
 
-// D2: a densidade passa por uma action do store (uma entrada de desfazer) e a sugestão sai do
-// derivado, calculada só do projeto: pan e zoom (que moram no canvas) não a recalculam.
+// D2: the density goes through a store action (one undo entry) and the suggestion comes from the
+// derived, computed only from the project: pan and zoom (which live on the canvas) do not recompute it.
 
 const SPEC: Spec = {
   format: 'mapping-spec',
@@ -31,7 +31,7 @@ function setup(project: Project = sampleProject()) {
   const actions = createProjectActions(store, { newId: () => 'id' });
   store.load(project);
   const current = () => {
-    if (!store.project.value) throw new Error('sem projeto');
+    if (!store.project.value) throw new Error('no project');
     return store.project.value;
   };
   return { store, actions, current };
@@ -54,7 +54,7 @@ describe('action setContainerDensity', () => {
     expect('density' in (current().containers[0] ?? {})).toBe(false);
   });
 
-  it('fora de 0,5 a 8 e container inexistente devolvem erro, sem mudar o projeto', () => {
+  it('outside 0.5 to 8 and a nonexistent container return an error, without changing the project', () => {
     const { actions, current } = setup();
     const before = current();
     const id = before.containers[0]?.id ?? '';
@@ -65,7 +65,7 @@ describe('action setContainerDensity', () => {
     expect(current()).toBe(before);
   });
 
-  it('addBackgroundContainer com density grava a densidade numa só entrada; 1 não grava a chave', () => {
+  it('addBackgroundContainer with density saves the density in a single entry; 1 does not save the key', () => {
     const { store, actions, current } = setup();
     const args = {
       name: 'Tela',
@@ -109,7 +109,7 @@ describe('derivado densitySuggestions', () => {
     return specs ? applySpecialization(p, SPEC) : p;
   };
 
-  it('sugere por container pelos tamanhos prontos; sem especialização, nada', () => {
+  it('suggests per container from the ready sizes; without a specialization, nothing', () => {
     const { derived } = derivedOf(screen(1080, 2400));
     expect(derived.densitySuggestions.value.get('C1')).toMatchObject({
       density: 3,
@@ -121,7 +121,7 @@ describe('derivado densitySuggestions', () => {
     expect(derivedOf(screen(360, 800)).derived.densitySuggestions.value.size).toBe(0);
   });
 
-  it('só se recalcula quando mudam os containers ou as especializações, não a cada edição', () => {
+  it('only recomputes when the containers or the specializations change, not on every edit', () => {
     const { derived, actions } = derivedOf(screen(1080, 2400));
     let runs = 0;
     const stop = effect(() => {
@@ -129,19 +129,19 @@ describe('derivado densitySuggestions', () => {
       runs += 1;
     });
     expect(runs).toBe(1);
-    // Edições que não mexem no tamanho do container (e o pan e o zoom, que moram no canvas e
-    // nem passam pelo store) não disparam quem lê a sugestão.
+    // Edits that do not touch the container size (and pan and zoom, which live on the canvas and
+    // do not even go through the store) do not trigger whoever reads the suggestion.
     actions.setContainerMarkingColor('C1', '#112233');
     actions.setContainerDensity('C1', 3);
     expect(runs).toBe(1);
-    // Mudar a largura muda a sugestão.
+    // Changing the width changes the suggestion.
     actions.setBackgroundContainer('C1', { width: 720 });
     expect(runs).toBe(2);
     expect(derived.densitySuggestions.value.get('C1')?.density).toBe(2);
     stop();
   });
 
-  it('a mesma tabela (identidade) volta enquanto as sugestões não mudam', () => {
+  it('the same table (identity) comes back while the suggestions do not change', () => {
     const { derived, actions } = derivedOf(screen(1080, 2400));
     const before = derived.densitySuggestions.value;
     actions.setContainerMarkingColor('C1', '#112233');

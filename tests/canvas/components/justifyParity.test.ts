@@ -43,7 +43,7 @@ function konvaText(n: TextNode): Konva.Text {
   return found;
 }
 
-describe('justify: paridade entre o Konva e o raster', () => {
+describe('justify: parity between Konva and the raster', () => {
   const paragraph = node('aaaa bbbb cccc dddd eeee ffff');
 
   it('a 3-line paragraph: the first two justified, the last on the left', () => {

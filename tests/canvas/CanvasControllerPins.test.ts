@@ -14,7 +14,7 @@ import { canvasProject, editorFor, installFakeCanvas } from './harness';
 
 // The conversation pins in CanvasController (CM4, decision 24): hidden by default, in the usual
 // frame, recomputing nothing on pan and zoom.
-describe('CanvasController: pinos das conversas', () => {
+describe('CanvasController: conversation pins', () => {
   const frames: FrameRequestCallback[] = [];
   let rafCalls = 0;
   const flush = () => {
@@ -185,7 +185,7 @@ describe('CanvasController: pinos das conversas', () => {
     const resolved: Thread = sampleThread({
       id: 't3',
       anchor: { kind: 'container', id: 'I1' },
-      resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
+      resolved: { by: { name: 'Marina Alves', email: 'marina@example.com' }, at: T1 },
       messages: [message('d', T0, HUMAN, 'ok')],
     });
     const { controller, ui, internals, container } = setup([OPEN, agentLast, resolved]);

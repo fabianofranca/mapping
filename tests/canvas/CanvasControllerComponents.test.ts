@@ -24,7 +24,7 @@ import { componentEditor, installFakeCanvas, setOnlyScreens } from './harness';
 
 // The component layer inside `CanvasController` (B3, P6): the drawing of each marking with a
 // component, redrawn only where it changed, and the border and text rules of semantic zoom.
-describe('CanvasController: componentes', () => {
+describe('CanvasController: components', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = () => {
     while (frames.length > 0) for (const frame of frames.splice(0)) frame(0);
@@ -87,7 +87,7 @@ describe('CanvasController: componentes', () => {
     };
   }
 
-  it('mede com o Konva ao montar', () => {
+  it('measures with Konva when mounting', () => {
     expect(textMeasurer.peek()).toBe(approximateMeasurer);
     const { controller } = setup();
     expect(textMeasurer.peek()).toBe(konvaMeasurer);
@@ -150,7 +150,7 @@ describe('CanvasController: componentes', () => {
   it('editing a field through the action redraws only that marking', () => {
     const { controller, drawing, actions } = setup();
     const [t1, t2] = [drawing('T1'), drawing('T2')];
-    expect(actions.setFieldValue('A_T1', 'label', 'Outro texto').ok).toBe(true);
+    expect(actions.setFieldValue('A_T1', 'label', 'Other text').ok).toBe(true);
     flush();
     expect(drawing('T1')).not.toBe(t1);
     expect(drawing('T1')).toBeDefined();
@@ -161,7 +161,7 @@ describe('CanvasController: componentes', () => {
   it('undo and redo redraw through the same path', () => {
     const { controller, drawing, actions, store } = setup();
     const t2 = drawing('T2');
-    actions.setFieldValue('A_T1', 'label', 'Outro texto');
+    actions.setFieldValue('A_T1', 'label', 'Other text');
     flush();
     const edited = drawing('T1');
     store.undo();
@@ -303,7 +303,7 @@ describe('CanvasController: componentes', () => {
         parentId: null,
         specId: SPEC_ID,
         typeId: 'text',
-        center: { x: 500, y: 400 }, // sobre a foto I1
+        center: { x: 500, y: 400 }, // over the photo I1
       });
       if (!note.ok) throw new Error('addComponent');
       actions.setMarkingFloating(note.value, true);
@@ -314,7 +314,7 @@ describe('CanvasController: componentes', () => {
       controller.destroy();
     });
 
-    it('desfazer tira o desenho do canvas', () => {
+    it('undo removes the drawing from the canvas', () => {
       const { controller, actions, internals, store } = setup();
       const note = actions.addComponent({
         containerId: null,

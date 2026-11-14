@@ -77,7 +77,7 @@ function texts(s: Scene): Konva.Text[] {
   return renderScene(s).root.find('Text') as Konva.Text[];
 }
 
-describe('capMiddleShift (conta pura)', () => {
+describe('capMiddleShift (pure arithmetic)', () => {
   it('one line: the center of the capital falls on the center of the box', () => {
     // Natural baseline (top) at 9.5; capital 8: the block occupies [1.5 ; 9.5] and must go to [16 ; 24].
     const shift = capMiddleShift({
@@ -98,7 +98,7 @@ describe('capMiddleShift (conta pura)', () => {
       firstBaseline: 9.5,
       lastBaseline: 9.5 + 12 * 2,
     });
-    // bloco = 8 + 24 = 32 → primeira base em (100 − 32)/2 + 8 = 42.
+    // block = 8 + 24 = 32 → first base at (100 − 32)/2 + 8 = 42.
     expect(9.5 + shift).toBeCloseTo(42, 9);
   });
 });
@@ -114,10 +114,10 @@ describe('cap-middle on the plain Konva text', () => {
 
   it('two lines: the block from the capital to the base of the second is centered', () => {
     injectMetrics();
-    // Largura 70 / 5,5 por letra: duas palavras de 10 letras quebram em duas linhas.
+    // Width 70 / 5.5 per letter: two 10-letter words break into two lines.
     const [text] = texts(scene({ text: 'abcdefghij abcdefghij', width: 70 }, 60));
     expect(text?.textArr).toHaveLength(2);
-    // bloco = 8 + 12; primeira base em (60 − 20)/2 + 8 = 28.
+    // block = 8 + 12; first base at (60 − 20)/2 + 8 = 28.
     expect(text?.y()).toBeCloseTo(28 - 9.5, 9);
   });
 
@@ -156,11 +156,11 @@ describe('cap-middle on the plain Konva text', () => {
   });
 });
 
-describe('cap-middle nos trechos (runs)', () => {
+describe('cap-middle on the runs', () => {
   it('the base of the first line goes to (height − capHeight)/2 + capHeight', () => {
     injectMetrics();
     const [first] = texts(
-      scene({ runs: [{ text: 'Vence em ' }, { text: '3 dias', weight: 700 }] }),
+      scene({ runs: [{ text: 'Valid on ' }, { text: '3 days', weight: 700 }] }),
     );
     // Single line of height 12 at y 0: natural base at 6 + (10 − 3)/2 = 9.5 → goes to 24.
     expect(first?.y()).toBeCloseTo(24 - 9.5, 9);
@@ -171,7 +171,7 @@ describe('cap-middle nos trechos (runs)', () => {
     const runs = [{ text: 'abcdefghij abcdefghij' }];
     const shapes = texts(scene({ runs, width: 70 }, 60));
     expect(shapes.length).toBeGreaterThanOrEqual(2);
-    // bloco = 8 + 12: primeira base em 28, a segunda em 40.
+    // block = 8 + 12: first base at 28, the second at 40.
     expect(shapes[0]?.y()).toBeCloseTo(28 - 9.5, 9);
     expect(shapes[1]?.y()).toBeCloseTo(40 - 9.5, 9);
   });

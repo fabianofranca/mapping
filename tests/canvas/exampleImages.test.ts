@@ -1,4 +1,4 @@
-// Cache das imagens da galeria do Catálogo: gera uma vez por chave; o rasterizador é injetado.
+// Cache of the Catalog gallery images: generates once per key; the rasterizer is injected.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from './harness';
@@ -38,8 +38,8 @@ const key: ExampleImageKey = {
   imagesEpoch: 0,
 };
 
-describe('cache de imagens de exemplo', () => {
-  it('devolve a mesma string e gera uma vez por chave', () => {
+describe('example image cache', () => {
+  it('returns the same string and generates once per key', () => {
     const rasterize = vi.fn(() => `data:image/png;base64,${Math.random()}`);
     const cache = createExampleImageCache(rasterize);
     const a = cache.get(key, () => root);
@@ -49,7 +49,7 @@ describe('cache de imagens de exemplo', () => {
     expect(cache.size).toBe(1);
   });
 
-  it('chaves diferentes (versão, tamanho, exemplo, época) geram novas imagens', () => {
+  it('different keys (version, size, example, epoch) generate new images', () => {
     const rasterize = vi.fn(() => `data:image/png;base64,${Math.random()}`);
     const cache = createExampleImageCache(rasterize);
     cache.get(key, () => root);
@@ -61,7 +61,7 @@ describe('cache de imagens de exemplo', () => {
     expect(rasterize).toHaveBeenCalledTimes(6);
   });
 
-  it('a época das imagens invalida a entrada: a imagem que termina de carregar é redesenhada', () => {
+  it('the images epoch invalidates the entry: the image that finishes loading is redrawn', () => {
     const rasterize = vi.fn(() => `data:image/png;base64,${Math.random()}`);
     const cache = createExampleImageCache(rasterize);
     const before = cache.get(key, () => root);
@@ -71,7 +71,7 @@ describe('cache de imagens de exemplo', () => {
     expect(rasterize).toHaveBeenCalledTimes(2);
   });
 
-  it('guarda uma entrada por cena: as épocas antigas não se acumulam', () => {
+  it('keeps one entry per scene: old epochs do not pile up', () => {
     const rasterize = vi.fn(() => `data:image/png;base64,${Math.random()}`);
     const cache = createExampleImageCache(rasterize);
     for (let epoch = 0; epoch < 5; epoch += 1) {
@@ -79,12 +79,12 @@ describe('cache de imagens de exemplo', () => {
     }
     expect(rasterize).toHaveBeenCalledTimes(5);
     expect(cache.size).toBe(1);
-    // Outra cena é outra entrada.
+    // Another scene is another entry.
     cache.get({ ...key, example: 'Outlined' }, () => root);
     expect(cache.size).toBe(2);
   });
 
-  it('guarda os avisos do desenho junto da imagem, por chave', () => {
+  it('keeps the drawing warnings together with the image, per key', () => {
     const warning = { code: 'inner-shadow' } as const;
     const rasterize = vi.fn((_: FrameNode, options: ExampleImageOptions) => {
       options.onWarnings?.([warning]);
@@ -97,7 +97,7 @@ describe('cache de imagens de exemplo', () => {
     expect(cache.warnings({ ...key, example: 'Outlined' })).toEqual([]);
   });
 
-  it('sem desenho não guarda nada e clear esvazia', () => {
+  it('without a drawing it keeps nothing and clear empties', () => {
     const cache = createExampleImageCache(() => 'data:x');
     expect(cache.get(key, () => null)).toBeNull();
     expect(cache.size).toBe(0);
@@ -109,7 +109,7 @@ describe('cache de imagens de exemplo', () => {
 
 describe('renderSceneToDataUrl', () => {
   beforeAll(() => installFakeCanvas());
-  it('desenha numa Stage fora da tela e a destrói', () => {
+  it('draws on an off-screen Stage and destroys it', () => {
     const before = Konva.stages.length;
     const spy = vi
       .spyOn(HTMLCanvasElement.prototype, 'toDataURL')
@@ -120,7 +120,7 @@ describe('renderSceneToDataUrl', () => {
     spy.mockRestore();
   });
 
-  describe('imagens embutidas (data:)', () => {
+  describe('embedded images (data:)', () => {
     const embedded: FrameNode = {
       ...baseNode({ id: 'card', name: 'card', width: 40, height: 40 }),
       type: 'frame',
@@ -149,7 +149,7 @@ describe('renderSceneToDataUrl', () => {
       }
     }
 
-    /** As imagens do Konva com pixels no momento da leitura (`toDataURL`). */
+    /** The Konva images with pixels at the moment of the read (`toDataURL`). */
     function loadedAtRead(): number {
       const layers: Konva.Layer[] = [];
       const add = vi.spyOn(Konva.Layer.prototype, 'add').mockImplementation(function (
@@ -177,16 +177,16 @@ describe('renderSceneToDataUrl', () => {
       return seen;
     }
 
-    it('o PNG da cena sai com a imagem embutida depois que ela carrega', () => {
+    it('the scene PNG comes out with the embedded image after it loads', () => {
       const original = globalThis.Image;
       globalThis.Image = FakeImage as unknown as typeof Image;
       clearEmbeddedImages();
       FakeImage.instances = [];
       try {
-        // Primeira leitura: a imagem ainda decodifica, o PNG sai com o reservado.
+        // First read: the image is still decoding, the PNG comes out with the placeholder.
         expect(loadedAtRead()).toBe(0);
         FakeImage.instances[0]?.onload?.();
-        // A época das imagens embutidas mudou: o novo PNG leva a imagem decodificada.
+        // The embedded images epoch changed: the new PNG carries the decoded image.
         expect(loadedAtRead()).toBe(1);
         expect(FakeImage.instances).toHaveLength(1);
       } finally {
@@ -195,7 +195,7 @@ describe('renderSceneToDataUrl', () => {
       }
     });
 
-    it('entrega os avisos do desenho a quem pede', () => {
+    it('hands the drawing warnings to whoever asks', () => {
       const unknown: FrameNode = {
         ...embedded,
         children: [
@@ -216,8 +216,8 @@ describe('renderSceneToDataUrl', () => {
     });
   });
 
-  describe('imagens remotas', () => {
-    const URL = 'https://cdn.exemplo.com/a.png';
+  describe('remote images', () => {
+    const URL = 'https://cdn.example.com/a.png';
     const withImage: FrameNode = {
       ...baseNode({ id: 'card', name: 'card', width: 40, height: 40 }),
       type: 'frame',
@@ -235,7 +235,7 @@ describe('renderSceneToDataUrl', () => {
     };
     const image = { width: 10, height: 10 } as unknown as CanvasImageSource;
 
-    /** Quantos `KonvaImage` a cena tinha no momento da leitura de pixels. */
+    /** How many `KonvaImage` the scene had at the moment of the pixel read. */
     function imagesAtRead(remoteImage: (url: string) => RemoteImageView): number {
       const layers: Konva.Layer[] = [];
       const add = vi.spyOn(Konva.Layer.prototype, 'add').mockImplementation(function (
@@ -261,13 +261,13 @@ describe('renderSceneToDataUrl', () => {
       return seen;
     }
 
-    it('imagem opaque (sem CORS) nunca entra no que é lido de volta: vale o reservado', () => {
+    it('opaque image (no CORS) never enters what is read back: the placeholder applies', () => {
       expect(
         imagesAtRead(() => ({ state: 'opaque', image, width: 10, height: 10 })),
       ).toBe(0);
     });
 
-    it('imagem com CORS entra; sem a função, o reservado', () => {
+    it('image with CORS enters; without the function, the placeholder', () => {
       expect(
         imagesAtRead(() => ({ state: 'loaded', image, width: 10, height: 10 })),
       ).toBe(1);
@@ -279,7 +279,7 @@ describe('renderSceneToDataUrl', () => {
       read.mockRestore();
     });
 
-    it('o rasterizador pede a URL à função das opções', () => {
+    it('the rasterizer asks the function for the URL from the options', () => {
       const remoteImage = vi.fn((): RemoteImageView => ({ state: 'loading' }));
       imagesAtRead(remoteImage);
       expect(remoteImage).toHaveBeenCalledWith(URL);

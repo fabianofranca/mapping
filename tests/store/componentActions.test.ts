@@ -65,7 +65,7 @@ function setup(initial: Project = componentProject()) {
   return { store, actions };
 }
 
-/** Quantas entradas de desfazer existem (desfaz tudo e refaz). */
+/** How many undo entries exist (undoes everything and redoes). */
 function undoDepth(store: ProjectStore): number {
   let depth = 0;
   while (store.undo()) depth++;
@@ -81,7 +81,7 @@ describe('actions do container', () => {
     ctx = setup();
   });
 
-  it('addBackgroundContainer cria a imagem sem arquivo, numa entrada, e o desfazer a tira', () => {
+  it('addBackgroundContainer creates the image without a file, in one entry, and undo removes it', () => {
     const { store, actions } = ctx;
     const before = current(store);
     const result = actions.addBackgroundContainer({
@@ -105,7 +105,7 @@ describe('actions do container', () => {
     expect(current(store).containers).toEqual(before.containers);
   });
 
-  it('addBackgroundContainer recusa medida ou cor inválida sem mexer em nada', () => {
+  it('addBackgroundContainer refuses an invalid size or color without touching anything', () => {
     const { store, actions } = ctx;
     const before = current(store);
     expect(
@@ -128,7 +128,7 @@ describe('actions do container', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('setBackgroundContainer muda cor e tamanho numa entrada; só vale paro container', () => {
+  it('setBackgroundContainer changes color and size in one entry; only valid for a container', () => {
     const { store, actions } = ctx;
     const created = actions.addBackgroundContainer({
       name: null,
@@ -160,7 +160,7 @@ describe('actions do container', () => {
 });
 
 describe('addComponent', () => {
-  it('cria a marcação e a anotação numa entrada de desfazer', () => {
+  it('creates the marking and the annotation in one undo entry', () => {
     const { store, actions } = setup();
     const result = actions.addComponent({
       containerId: 'I1',
@@ -176,7 +176,7 @@ describe('addComponent', () => {
     expect(created.rect.width).toBeGreaterThan(0);
     const annotation = p.annotations.find((a) => a.markingId === result.value);
     expect(annotation?.type).toEqual({ specId: SPEC_ID, typeId: 'text' });
-    // A anotação tem id próprio, diferente do da marcação.
+    // The annotation has its own id, different from the marking's.
     expect(annotation?.id).not.toBe(result.value);
     expect(undoDepth(store)).toBe(1);
     store.undo();
@@ -186,7 +186,7 @@ describe('addComponent', () => {
     );
   });
 
-  it('dentro de um container, a nova entra como filha', () => {
+  it('inside a container, the new one enters as a child', () => {
     const initial = add(componentProject(), 'C', 'row', box(100, 100, 300, 100));
     const { store, actions } = setup(initial);
     const result = actions.addComponent({
@@ -199,7 +199,7 @@ describe('addComponent', () => {
     if (result.ok) expect(marking(current(store), result.value).parentId).toBe('C');
   });
 
-  it('recusa tipo sem componente ou imagem inexistente, sem mudar nada', () => {
+  it('refuses a type without a component or a nonexistent image, without changing anything', () => {
     const { store, actions } = setup();
     const before = current(store);
     expect(
@@ -222,7 +222,7 @@ describe('addComponent', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('sem catálogo (padrão) nada é criado', () => {
+  it('without a catalog (default) nothing is created', () => {
     const store = createProjectStore();
     const actions = createProjectActions(store);
     store.load(componentProject());
@@ -237,7 +237,7 @@ describe('addComponent', () => {
   });
 });
 
-describe('addComponent: top-app-bar da Material 3 (TB1, decisão 1 da #1335)', () => {
+describe('addComponent: Material 3 top-app-bar (TB1, decision 1 of #1335)', () => {
   const m3setup = () => {
     let n = 0;
     let p = applySpecialization(emptyProject(), m3Spec, {
@@ -256,7 +256,7 @@ describe('addComponent: top-app-bar da Material 3 (TB1, decisão 1 da #1335)', (
     return { store, actions };
   };
 
-  it('a Paleta cria a top-app-bar com 64 e o Row em Y 100 fica fora, irmão dela', () => {
+  it('the Palette creates the top-app-bar with 64 and the Row at Y 100 stays outside, its sibling', () => {
     const { store, actions } = m3setup();
     const bar = actions.addComponent({
       containerId: 'I1',
@@ -267,7 +267,7 @@ describe('addComponent: top-app-bar da Material 3 (TB1, decisão 1 da #1335)', (
     });
     expect(bar.ok).toBe(true);
     if (!bar.ok) return;
-    // A barra nasce no lugar que a Paleta pede (centro 180, 400): a altura é a que importa aqui.
+    // The bar is born at the place the Palette asks for (center 180, 400): the height is what matters here.
     expect(marking(current(store), bar.value).rect.height).toBe(64);
     store.load(
       setMarkingRect(current(store), bar.value, { x: 0, y: 0, width: 360, height: 64 }),
@@ -281,7 +281,7 @@ describe('addComponent: top-app-bar da Material 3 (TB1, decisão 1 da #1335)', (
     });
     expect(row.ok).toBe(true);
     if (!row.ok) return;
-    // Como no R9.4: a Paleta cria e o Y se digita nos Detalhes (aqui 100, abaixo dos 64 da barra).
+    // As in R9.4: the Palette creates and the Y is typed in the Details (here 100, below the 64 of the bar).
     const made = marking(current(store), row.value).rect;
     store.load(setMarkingRect(current(store), row.value, { ...made, y: 100 }));
     const p = current(store);
@@ -291,8 +291,8 @@ describe('addComponent: top-app-bar da Material 3 (TB1, decisão 1 da #1335)', (
   });
 });
 
-describe('componentes no canvas e entre espaços (ME1)', () => {
-  it('addComponent com containerId nulo cria a instância no canvas, centrada em `center`', () => {
+describe('components on the canvas and between spaces (ME1)', () => {
+  it('addComponent with a null containerId creates the instance on the canvas, centered on `center`', () => {
     const { store, actions } = setup();
     const result = actions.addComponent({
       containerId: null,
@@ -305,7 +305,7 @@ describe('componentes no canvas e entre espaços (ME1)', () => {
     if (!result.ok) return;
     const created = marking(current(store), result.value);
     expect(created).toMatchObject({ containerId: null, parentId: null, floating: false });
-    // Em unidades do canvas, sem limite, e centrada no ponto pedido.
+    // In canvas units, no limit, and centered on the requested point.
     expect(created.rect.x + created.rect.width / 2).toBeCloseTo(-2000, -1);
     expect(created.rect.y + created.rect.height / 2).toBeCloseTo(-1500, -1);
     const annotation = current(store).annotations.find(
@@ -315,7 +315,7 @@ describe('componentes no canvas e entre espaços (ME1)', () => {
     expect(undoDepth(store)).toBe(1);
   });
 
-  it('a instância no canvas vira flutuante por uma action, numa entrada', () => {
+  it('the instance on the canvas becomes floating through an action, in one entry', () => {
     const { store, actions } = setup();
     const result = actions.addComponent({
       containerId: null,
@@ -332,16 +332,16 @@ describe('componentes no canvas e entre espaços (ME1)', () => {
     expect(marking(current(store), result.value).floating).toBe(false);
   });
 
-  /** I1 reduzida a um quarto: um texto de 100×40 pixels mede 25×10 no canvas (o mínimo é 60×24). */
+  /** I1 reduced to a quarter: a 100×40 pixel text measures 25×10 on the canvas (the minimum is 60×24). */
   function smallImage() {
     let p = setContainerPlacement(componentProject(), 'I1', { x: 0, y: 0, scale: 0.25 });
     p = add(p, 'T', 'text', box(100, 100, 100, 40));
     return setup(p);
   }
 
-  it('mover o componente para o canvas respeita o tamanho mínimo dele na conversão do rect', () => {
+  it('moving the component to the canvas respects its minimum size in the rect conversion', () => {
     const { store, actions } = smallImage();
-    // 2000 pixels de I1 = 500 unidades do canvas: sai da imagem (0..250).
+    // 2000 pixels of I1 = 500 canvas units: it leaves the image (0..250).
     expect(actions.moveMarking('T', 2000, 0).ok).toBe(true);
     expect(marking(current(store), 'T')).toMatchObject({
       containerId: null,
@@ -349,11 +349,11 @@ describe('componentes no canvas e entre espaços (ME1)', () => {
     });
   });
 
-  it('o gesto de mover também: a final assenta com o mínimo do componente', () => {
+  it('the move gesture too: the final one settles with the component minimum', () => {
     const { store, actions } = smallImage();
     expect(actions.beginGesture().ok).toBe(true);
     actions.previewMarkingMove('T', 2000, 0);
-    // Na prévia o rect ainda é o de I1 (sem assentar): 100×40 pixels.
+    // In the preview the rect is still the one of I1 (not settled): 100×40 pixels.
     expect(marking(current(store), 'T').rect).toMatchObject({ width: 100, height: 40 });
     expect(actions.finishMarkingMove('T', 2000, 0).ok).toBe(true);
     actions.commitGesture();
@@ -375,7 +375,7 @@ describe('reorderMarking', () => {
   }
   const order = (store: ProjectStore) => current(store).markings.map((m) => m.id);
 
-  it('move entre as irmãs numa entrada e desfaz', () => {
+  it('moves among the siblings in one entry and undoes', () => {
     const { store, actions } = threeSiblings();
     expect(actions.reorderMarking('A', 2).ok).toBe(true);
     expect(order(store)).toEqual(['B', 'C', 'A']);
@@ -384,7 +384,7 @@ describe('reorderMarking', () => {
     expect(order(store)).toEqual(['A', 'B', 'C']);
   });
 
-  it('mesma posição não cria entrada; índice fora recusa', () => {
+  it('same position does not create an entry; out-of-range index refuses', () => {
     const { store, actions } = threeSiblings();
     expect(actions.reorderMarking('B', 1).ok).toBe(true);
     expect(store.canUndo.value).toBe(false);
@@ -392,7 +392,7 @@ describe('reorderMarking', () => {
     expect(order(store)).toEqual(['A', 'B', 'C']);
   });
 
-  it('a trava da geometria não impede reordenar', () => {
+  it('the geometry lock does not prevent reordering', () => {
     const { store, actions } = threeSiblings();
     actions.setMarkingLocked('A', true);
     expect(actions.reorderMarking('A', 2).ok).toBe(true);
@@ -408,7 +408,7 @@ describe('arrange', () => {
     return setup(p);
   }
 
-  it('arruma as filhas numa entrada de desfazer e devolve os avisos', () => {
+  it('arranges the children in one undo entry and returns the warnings', () => {
     const { store, actions } = rowWithKids();
     const before = current(store);
     const result = actions.arrange('C');
@@ -422,21 +422,21 @@ describe('arrange', () => {
     expect(current(store).markings).toEqual(before.markings);
   });
 
-  it('já arrumado: não cria entrada nova', () => {
+  it('already arranged: does not create a new entry', () => {
     const { store, actions } = rowWithKids();
     actions.arrange('C');
     const arranged = current(store);
     expect(actions.arrange('C').ok).toBe(true);
     expect(current(store)).toBe(arranged);
-    // Uma só entrada: a do primeiro arrumar.
+    // Just one entry: the one of the first arrange.
     expect(store.undo()).toBe(true);
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('recusa o que não é container com filhas, e a geometria trancada', () => {
+  it('refuses what is not a container with children, and the locked geometry', () => {
     const { store, actions } = rowWithKids();
     const before = current(store);
-    // Um componente sem slot nem eixo ajustável: `not-fittable`; uma marcação sem componente: `not-arrangeable`.
+    // A component without a slot nor adjustable axis: `not-fittable`; a marking without a component: `not-arrangeable`.
     expect(actions.arrange('T1')).toEqual({ ok: false, error: 'not-fittable' });
     actions.setMarkingLocked('T1', true);
     const locked = current(store);
@@ -446,7 +446,7 @@ describe('arrange', () => {
   });
 });
 
-describe('arrange numa marcação sem slot: ajustar ao conteúdo (MC3)', () => {
+describe('arrange on a marking without a slot: fit to the content (MC3)', () => {
   const fcat = fitCatalog();
   function fitSetup(typeId = 'fit-button', label = LONG_LABEL) {
     let p = addComponentMarking(
@@ -476,7 +476,7 @@ describe('arrange numa marcação sem slot: ajustar ao conteúdo (MC3)', () => {
     return { store, actions };
   }
 
-  it('o Arrumar ajusta a altura ao rótulo numa entrada de desfazer, sem avisos', () => {
+  it('Arrange adjusts the height to the label in one undo entry, without warnings', () => {
     const { store, actions } = fitSetup();
     const before = current(store);
     expect(actions.arrange('B')).toEqual({ ok: true, value: [] });
@@ -488,7 +488,7 @@ describe('arrange numa marcação sem slot: ajustar ao conteúdo (MC3)', () => {
     expect(current(store).markings).toEqual(before.markings);
   });
 
-  it('já ajustado: nenhuma entrada nova', () => {
+  it('already adjusted: no new entry', () => {
     const { store, actions } = fitSetup();
     actions.arrange('B');
     const fitted = current(store);
@@ -497,7 +497,7 @@ describe('arrange numa marcação sem slot: ajustar ao conteúdo (MC3)', () => {
     expect(undoDepth(store)).toBe(1);
   });
 
-  it('geometria travada e componente sem eixo ajustável recusam; marcação sem componente é not-arrangeable', () => {
+  it('locked geometry and component without an adjustable axis refuse; marking without a component is not-arrangeable', () => {
     const { store, actions } = fitSetup();
     expect(actions.arrange('P')).toEqual({ ok: false, error: 'not-arrangeable' });
     actions.setMarkingLocked('B', true);
@@ -509,13 +509,13 @@ describe('arrange numa marcação sem slot: ajustar ao conteúdo (MC3)', () => {
   });
 });
 
-describe('tamanho mínimo do componente', () => {
-  // `text` tem minSize 60 x 24.
+describe('minimum size of the component', () => {
+  // `text` has minSize 60 x 24.
   function withText() {
     return setup(add(componentProject(), 'T', 'text', box(100, 100, 100, 40)));
   }
 
-  it('setMarkingRect e adjustMarkingRect respeitam o mínimo', () => {
+  it('setMarkingRect and adjustMarkingRect respect the minimum', () => {
     const { store, actions } = withText();
     expect(actions.setMarkingRect('T', box(100, 100, 50, 40))).toEqual({
       ok: false,
@@ -525,12 +525,12 @@ describe('tamanho mínimo do componente', () => {
     expect(marking(current(store), 'T').rect).toEqual(box(100, 100, 61, 24));
     const depth = undoDepth(store);
     actions.adjustMarkingRect('T', 'width', 10);
-    // O ajuste fino é limitado pelas regras: nunca abaixo do mínimo.
+    // The fine adjustment is limited by the rules: never below the minimum.
     expect(marking(current(store), 'T').rect.width).toBeGreaterThanOrEqual(60);
     expect(undoDepth(store)).toBeGreaterThanOrEqual(depth);
   });
 
-  it('marcação comum não tem mínimo', () => {
+  it('a plain marking has no minimum', () => {
     const { store, actions } = setup(
       createMarking(componentProject(), {
         id: 'P',
@@ -542,16 +542,16 @@ describe('tamanho mínimo do componente', () => {
     expect(marking(current(store), 'P').rect).toEqual(box(0, 0, 10, 10));
   });
 
-  it('a prévia do gesto prende ao mínimo, mantendo a borda oposta à alça', () => {
+  it('the gesture preview clamps to the minimum, keeping the edge opposite to the handle', () => {
     const { store, actions } = withText();
     expect(actions.beginGesture().ok).toBe(true);
-    // Alça da direita: o lado esquerdo fica.
+    // Right handle: the left side stays.
     expect(actions.previewMarkingRect('T', box(100, 100, 20, 40)).ok).toBe(true);
     expect(marking(current(store), 'T').rect).toEqual(box(100, 100, 60, 40));
-    // Alça da esquerda: o lado direito (x + width = 200) fica.
+    // Left handle: the right side (x + width = 200) stays.
     expect(actions.previewMarkingRect('T', box(180, 100, 20, 40)).ok).toBe(true);
     expect(marking(current(store), 'T').rect).toEqual(box(140, 100, 60, 40));
-    // Alça de baixo e de cima.
+    // Bottom and top handle.
     expect(actions.previewMarkingRect('T', box(100, 100, 100, 5)).ok).toBe(true);
     expect(marking(current(store), 'T').rect).toEqual(box(100, 100, 100, 24));
     expect(actions.previewMarkingRect('T', box(100, 135, 100, 5)).ok).toBe(true);
@@ -565,13 +565,13 @@ describe('clampToMinSize', () => {
   const base = box(100, 100, 100, 40);
   const min = { width: 60, height: 24 };
 
-  it('o que já cabe não muda', () => {
+  it('what already fits does not change', () => {
     expect(clampToMinSize(box(90, 100, 120, 40), base, min)).toEqual(
       box(90, 100, 120, 40),
     );
   });
 
-  it('eixo que o gesto não mexeu fica, mesmo abaixo do mínimo', () => {
+  it('an axis the gesture did not touch stays, even below the minimum', () => {
     const tiny = box(100, 100, 50, 10);
     expect(clampToMinSize(tiny, tiny, min)).toEqual(tiny);
   });

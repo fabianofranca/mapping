@@ -317,7 +317,7 @@ describe('joint drag and arrow step', () => {
 });
 
 describe('only on the Main one', () => {
-  /** O comando é recusado na perspectiva, sem gravar, e funciona na Principal. */
+  /** The command is refused in the perspective, without writing, and works on the Main one. */
   function refused(run: (a: ReturnType<typeof setup>['actions']) => unknown) {
     const inPerspective = setup('P');
     const before = project(inPerspective.store);

@@ -144,7 +144,7 @@ describe('CanvasController', () => {
       controller.centerSelection();
     });
     const edit = count(() => {
-      expect(actions.renameContainer('I1', 'Outro nome').ok).toBe(true);
+      expect(actions.renameContainer('I1', 'Another name').ok).toBe(true);
     });
     // Position and scale in a single call: each separate attribute rebuilds the transform cache
     // of every node of the stage (docs/ARCHITECTURE.md, "Desempenho").
@@ -235,7 +235,7 @@ describe('CanvasController', () => {
     document.body.append(container);
     const controller = new CanvasController({ container, display, ...editor });
     flush();
-    // O primeiro enquadramento acontece ao medir o container; os bitmaps ainda carregam.
+    // The first fit happens when the container is measured; the bitmaps are still loading.
     expect(container.dataset.fits).toBe('1');
     expect(container.dataset.images).toBe('0');
     await Promise.resolve();
@@ -279,7 +279,7 @@ describe('CanvasController', () => {
     flush();
     expect(container.dataset.images).toBe('2');
     const b = bitmaps.get('images/b.jpg');
-    if (!b) throw new Error('bitmap de b.jpg');
+    if (!b) throw new Error('bitmap of b.jpg');
 
     // The image leaves the project: the display map releases it at once, but the bitmap stays
     // open until the next frame (which removes the node reference) is drawn.
@@ -377,7 +377,7 @@ describe('CanvasController', () => {
     move(x, y);
     expect(hover()).toBeNull();
 
-    // Pai trancado: a filha herda e o cadeado aparece nela.
+    // Locked parent: the child inherits it and the lock shows on it.
     actions.setMarkingLocked('M1', true);
     controller.centerOnPoint({ x: 250, y: 250 });
     move(x, y);
@@ -475,7 +475,7 @@ describe('CanvasController', () => {
       controller.destroy();
     });
 
-    it('os itens a absorver acendem no overlay e apagam quando o gesto acaba', () => {
+    it('the items to be absorbed light up on the overlay and go off when the gesture ends', () => {
       const { controller } = setup();
       const internals = controller as unknown as {
         state: InteractionState;

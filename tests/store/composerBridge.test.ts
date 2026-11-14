@@ -6,8 +6,8 @@ import {
   registerComposer,
 } from '../../src/store/composerBridge';
 
-// Ponte do compositor aberto (etapa Comentários, CM5): os menus "Citar na conversa" inserem o
-// chip no compositor que estiver montado e gravável.
+// Open composer bridge (Comments stage, CM5): the "Cite in the conversation" menus insert the
+// chip in the composer that is mounted and writable.
 
 const TARGET: CitationTarget = { kind: 'marking', id: 'M1' };
 const disposers: (() => void)[] = [];
@@ -22,12 +22,12 @@ afterEach(() => {
 });
 
 describe('composerBridge', () => {
-  it('sem compositor registrado: fechado, e inserir devolve false', () => {
+  it('without a registered composer: closed, and insert returns false', () => {
     expect(composerOpen.value).toBe(false);
     expect(insertCitation(TARGET)).toBe(false);
   });
 
-  it('registrar abre; inserir entrega o alvo ao compositor e devolve true', () => {
+  it('registering opens; insert hands the target to the composer and returns true', () => {
     const insert = vi.fn();
     register({ insert });
     expect(composerOpen.value).toBe(true);
@@ -35,7 +35,7 @@ describe('composerBridge', () => {
     expect(insert).toHaveBeenCalledWith(TARGET);
   });
 
-  it('desregistrar fecha de novo e a função devolvida é idempotente', () => {
+  it('unregistering closes again and the returned function is idempotent', () => {
     const insert = vi.fn();
     const off = register({ insert });
     off();
@@ -45,7 +45,7 @@ describe('composerBridge', () => {
     expect(insert).not.toHaveBeenCalled();
   });
 
-  it('com vários, o mais recente recebe; ao sair, volta o anterior', () => {
+  it('with several, the most recent receives; on leaving, the previous one comes back', () => {
     const first = vi.fn();
     const second = vi.fn();
     register({ insert: first });
