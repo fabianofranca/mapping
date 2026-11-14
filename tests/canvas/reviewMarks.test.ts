@@ -239,7 +239,8 @@ describe('reviewMarks', () => {
       expect(m.removed).toEqual([
         expect.objectContaining({
           key: 'marking:M3',
-          name: 'Lock',
+          // pt-BR kept: shared fixture data (sampleProject) asserted by tests/model, tests/components
+          name: 'Fechadura',
           badges: ['removed'],
           rect: { x: 1300, y: 1250, width: 50, height: 50 },
         }),

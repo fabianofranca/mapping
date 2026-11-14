@@ -71,6 +71,7 @@ describe('session with packages applied in memory (stagedPackages)', () => {
     session = opened.session;
     expect(await opened.storage.listSpecDir(DIR)).toEqual([]);
     await session.components.whenIdle();
+    // pt-BR kept: shared fixture data (spec id 'notas', type id 'nota', files nota.json/nota.md) from the notes library, asserted by tests/model, tests/components and tests/store
     const notes = session.components.catalog.value.get('notas');
     expect(notes?.problems).toEqual([]);
     expect(notes?.byType.has('nota')).toBe(true);
