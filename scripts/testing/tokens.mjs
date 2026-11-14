@@ -1,7 +1,7 @@
-// tokens.mjs: node scripts/testing/tokens.mjs <library folder> [ok|erro]   (`erro` = error case)
+// tokens.mjs: node scripts/testing/tokens.mjs <library folder> [ok|error]
 import fs from 'node:fs';
 const dir = process.argv[2];
-const erro = process.argv[3] === 'erro';
+const failing = process.argv[3] === 'error';
 const specFile = dir + '/material3-compose.spec.json';
 const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
 spec.formatVersion = Math.max(spec.formatVersion, 15);
@@ -34,7 +34,7 @@ const line = (name, text, color, family) => ({
   font: { size: 14, lineHeight: 20, ...(family ? { family } : {}) },
 });
 const mono = { $token: 'font-mono' };
-const template = erro
+const template = failing
   ? {
       type: 'frame',
       name: 'cartao',
@@ -47,7 +47,7 @@ const template = erro
           name: 'sem-token',
           width: 50,
           height: 20,
-          fill: { $token: 'inexistente' },
+          fill: { $token: 'missing' },
         },
         {
           type: 'rect',
