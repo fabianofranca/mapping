@@ -1,13 +1,13 @@
-# Painel da fila agrupado por status — 2026-11-09 (épico `epic/painel-ordem`)
+# Queue panel grouped by status — 2026-11-09 (épico `epic/painel-ordem`)
 
 ## Pendências
 
-- PO1: nenhuma (só a página do painel do fluxo de entrega, fora da app).
+- PO1: nenhuma (only the delivery flow panel page, outside the app).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só mudou a página do painel da fila.
+No write to the Mapping artifact in Claude Design: the stage only changed the queue panel page.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

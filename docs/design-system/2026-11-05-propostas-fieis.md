@@ -1,13 +1,13 @@
-# Propostas fiéis ao aplicado — 2026-11-05 (épico `epic/propostas-fieis`)
+# Proposals faithful to what was applied — 2026-11-05 (épico `epic/propostas-fieis`)
 
 ## Pendências
 
-Nenhuma. O PF1 (formato `formatVersion` 4 da proposta, só modelo) não muda tamanho, token, ícone nem anatomia de componente.
+None. PF1 (proposal `formatVersion` 4, model only) does not change size, token, icon or component anatomy.
 
 ## Sincronização
 
-Sem impacto no artefato **Mapping** (conferido em 2026-11-05). As duas fases tocam `src/model/` (formato da proposta e a comparação de pertencimento), `mcp/` e a documentação, que o mapa de `docs/DESIGN-SYSTEM.md` põe em "Nunca dispara". Nada muda na tela: a revisão mostra o mesmo, e o `membership` só existe nas respostas do MCP. Nada gravado; nenhuma versão nova.
+Sem impacto on the **Mapping** artifact (checked on 2026-11-05). Both phases touch `src/model/` (the proposal format and the belonging comparison), `mcp/` and the documentation, which the map in `docs/DESIGN-SYSTEM.md` puts under "Never triggers". Nothing changes on screen: the review shows the same, and `membership` only exists in MCP responses. Nothing written; no new version.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

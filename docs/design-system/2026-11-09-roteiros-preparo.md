@@ -1,13 +1,13 @@
-# Roteiros que batem com a app — 2026-11-09 (épico `epic/roteiros-preparo`)
+# Scripts that match the app — 2026-11-09 (épico `epic/roteiros-preparo`)
 
 ## Pendências
 
-Nenhuma: o épico só mexe em texto de roteiro (`docs/TESTING.md`) e no `docs/MCP.md`; nada de componente, token ou ícone.
+None: the epic only touches script text (`docs/TESTING.md`) and `docs/MCP.md`; no component, token or icon.
 
 ## Sincronização
 
-Nada a gravar no artefato Mapping do Claude Design: o épico não tem impacto no DS (só texto de roteiro e de doc).
+Nothing to write to the Mapping artifact in Claude Design: the epic has no DS impact (only script and doc text).
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

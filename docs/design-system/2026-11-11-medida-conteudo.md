@@ -1,15 +1,15 @@
-# Medida pelo conteúdo no formato 4 — 2026-11-11 (épico `epic/medida-conteudo`)
+# Measuring by content in format 4 — 2026-11-11 (épico `epic/medida-conteudo`)
 
 ## Pendências
 
-Nenhuma.
+None.
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do design system: o épico não muda token, ícone nem componente da interface.
+Sem impacto on the design system's Mapping artifact: the epic changes no token, icon or interface component.
 
-MC3: o **Arrumar** (item do menu, botão dos Detalhes e atalho) mantém o rótulo e o ícone e passa a valer também na marcação de um componente sem slot com eixo ajustável; só a dica do botão ganha uma variante ("Ajusta o tamanho da marcação ao conteúdo do componente."), texto de tooltip que o artefato não registra. Sem pendência.
+MC3: **Arrange** (menu item, Details button and shortcut) keeps its label and icon and now also applies to the marking of a component with no slot that has an adjustable axis; only the button's hint gains a variant ("Fits the marking's size to the component's content."), a tooltip text that the artifact does not record. No pending item.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

@@ -1,13 +1,13 @@
-# Observador da fila na skill supervisionar-fila — 2026-11-12 (épico `epic/observador-da-fila`)
+# Queue observer in the supervisionar-fila skill — 2026-11-12 (épico `epic/observador-da-fila`)
 
 ## Pendências
 
-Nenhuma. O épico só mexe numa skill do fluxo (`.claude/skills/supervisionar-fila/SKILL.md`) e num teste de `tests/tooling/`; não toca na app, no MCP nem em tokens.
+None. The epic only touches a flow skill (`.claude/skills/supervisionar-fila/SKILL.md`) and a test in `tests/tooling/`; it does not touch the app, the MCP or tokens.
 
 ## Sincronização
 
-Sem impacto: nada a gravar no artefato **Mapping**.
+Sem impacto: nothing to write to the **Mapping** artifact.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

@@ -1,13 +1,13 @@
-# Desfazer aplicação — 2026-11-08 (épico `epic/desfazer-aplicacao`)
+# Undo apply — 2026-11-08 (épico `epic/desfazer-aplicacao`)
 
 ## Pendências
 
-Pendências: nenhuma (sem mudança de UI nem de tokens; só o histórico do store).
+Pending items: none (no UI or token change; only the store history).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa não tem pendência de design system (só o histórico do store).
+No write to the Claude Design Mapping artifact: the stage has no design system pending item (only the store history).
 
 ## Ficou sem gravar
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa não tem pendência de design system (só o histórico do store).
+No write to the Claude Design Mapping artifact: the stage has no design system pending item (only the store history).

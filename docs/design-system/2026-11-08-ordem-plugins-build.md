@@ -1,13 +1,13 @@
-# Build resistente à ordem dos plugins — 2026-11-08 (épico `epic/ordem-plugins-build`)
+# Build resilient to plugin order — 2026-11-08 (épico `epic/ordem-plugins-build`)
 
 ## Pendências
 
-Pendências: nenhuma (sem UI do app; só a ordem dos plugins do build).
+Pending items: none (no app UI; only the build plugin order).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só mudou a ordem dos plugins do build.
+No write to the Mapping artifact in Claude Design: the stage only changed the build plugin order.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

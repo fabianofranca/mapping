@@ -1,13 +1,13 @@
-# Testador da nuvem mais rápido, parte 2 — 2026-11-09 (épico `epic/testador-rapido-2`)
+# Faster cloud tester, part 2 — 2026-11-09 (épico `epic/testador-rapido-2`)
 
 ## Pendências
 
-Nenhuma. O épico só mexe nos auxiliares e nos roteiros do testador da nuvem; nenhum componente, token ou ícone do design system muda.
+None. The epic only touches the helpers and scripts of the cloud tester; no design system component, token or icon changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não mudou componente, token nem ícone.
+Nothing to write to the **Mapping** artifact: the epic changed no component, token or icon.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

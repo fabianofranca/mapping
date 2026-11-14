@@ -1,19 +1,19 @@
-# Rodada completa em 5 blocos — 2026-11-09 (épico `epic/rodada-4-blocos`)
+# Full round in 5 blocks — 2026-11-09 (épico `epic/rodada-4-blocos`)
 
 ## Pendências
 
-- **Barra dos breadcrumbs / Ajuda (RB3):** o botão **Enquadrar tudo** passa a mostrar `Shift+1` no tooltip (o **Enquadrar seleção**, o ícone `fit-selection` e o `Shift+2` já estão no registro `2026-11-08-enquadrar-selecao.md`), e a lista de atalhos da Ajuda ganha a linha "Enquadrar tudo" (`Shift+1`) no grupo de visualização.
+- **Breadcrumbs bar / Help (RB3):** the **Fit all** button now shows `Shift+1` in the tooltip (the **Fit selection**, the `fit-selection` icon and `Shift+2` are already in the record `2026-11-08-enquadrar-selecao.md`), and the Help shortcut list gains the "Fit all" row (`Shift+1`) in the view group.
 
 ## Sincronização
 
-Gravado no artefato Mapping do Claude Design em 2026-11-09 (índice `project/design-system.json`, lido imediatamente antes; versão 63 do artefato, `lastChange` por Claude via claude). A primeira tentativa de gravar foi recusada por "versão não vista"; reli o índice e os quatro arquivos (inalterados) e gravei de novo.
+Gravado no artefato Mapping in Claude Design on 2026-11-09 (index `project/design-system.json`, read immediately before; artifact version 63, `lastChange` by Claude via claude). The first write attempt was refused for "version not seen"; I re-read the index and the four files (unchanged) and wrote again.
 
-- **`Atalhos.md`:** linha "Enquadrar tudo | Shift+1" na tabela do grupo "Ver", antes de "Enquadrar a seleção"; o parágrafo do modo visualização deixa de dizer que o Enquadrar tudo não tem atalho e passa a dizer que os dois atalhos valem pela tecla física (`Digit1`, `Digit2`, para o ABNT2) e não agem com o foco num campo de texto.
-- **`Breadcrumbs`:** `README.md` cita `Shift+1` no **Enquadrar tudo** (`fit`); `preview.html` ganha `aria-keyshortcuts="Shift+1"` nos dois botões **Enquadrar tudo** (as duas prévias).
-- **`HelpDialog`:** `preview.html` ganha a linha "Enquadrar tudo | Shift 1" antes de "Enquadrar a seleção" no grupo de visualização (as duas ocorrências).
+- **`Atalhos.md`:** "Fit all | Shift+1" row in the table of the "View" group, before "Fit the selection"; the view mode paragraph stops saying that Fit all has no shortcut and now says that both shortcuts work by physical key (`Digit1`, `Digit2`, for ABNT2) and do not act with focus in a text field.
+- **`Breadcrumbs`:** `README.md` cites `Shift+1` on **Fit all** (`fit`); `preview.html` gains `aria-keyshortcuts="Shift+1"` on the two **Fit all** buttons (the two previews).
+- **`HelpDialog`:** `preview.html` gains the "Fit all | Shift 1" row before "Fit the selection" in the view group (both occurrences).
 
-Só tokens e classes que já existiam; as prévias não foram renderizadas no navegador.
+Only tokens and classes that already existed; the previews were not rendered in the browser.
 
 ## Ficou sem gravar
 
-Nada. (Não conferi o contraste das prévias nos temas claro e escuro: só entram uma linha de tabela e um atributo `aria-keyshortcuts`, sem cor nova.)
+Nothing. (I did not check the previews' contrast in the light and dark themes: only a table row and an `aria-keyshortcuts` attribute go in, with no new color.)

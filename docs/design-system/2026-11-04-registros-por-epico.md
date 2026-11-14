@@ -1,5 +1,5 @@
-# Registros por épico — 2026-11-04 (épico `epic/registros-por-epico`)
+# Records per epic — 2026-11-04 (épico `epic/registros-por-epico`)
 
 ## Sincronização
 
-Sem impacto: a etapa só mudou onde ficam o changelog e o registro do DS e a formatação das tabelas dos guias; nada foi gravado no artefato.
+Sem impacto: the stage only changed where the changelog and the DS record live and the formatting of the guide tables; nothing was written to the artifact.

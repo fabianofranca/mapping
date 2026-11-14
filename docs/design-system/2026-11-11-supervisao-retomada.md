@@ -1,13 +1,13 @@
-# Supervisão: retomada sem argumentos e passagem em database — 2026-11-11 (épico `epic/supervisao-retomada`)
+# Supervision: resume without arguments and handoff in a database — 2026-11-11 (épico `epic/supervisao-retomada`)
 
 ## Pendências
 
-Sem impacto: o épico só mexe no `painel.py`, nos skills `implementar-fila`, `supervisionar-fila` e `detalhar-backlog`, em `docs/FLOW.md` e `docs/PROCESS.md` do fluxo de entrega, sem componente, token nem ícone da app. A página `.claude/skills/supervisionar-fila/passagem/index.html` (SV2) é standalone, vive no artefato de passagem do supervisor, fora da app e do design system, e tem CSS próprio por isso.
+No impact: the epic only touches `painel.py`, the `implementar-fila`, `supervisionar-fila` and `detalhar-backlog` skills, `docs/FLOW.md` and `docs/PROCESS.md` of the delivery flow, with no component, token or icon of the app. The page `.claude/skills/supervisionar-fila/passagem/index.html` (SV2) is standalone, lives in the supervisor's handoff artifact, outside the app and the design system, and has its own CSS for that reason.
 
 ## Sincronização
 
-Sem impacto no artefato **Mapping**. Nada gravado.
+Sem impacto on the **Mapping** artifact. Nothing written.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

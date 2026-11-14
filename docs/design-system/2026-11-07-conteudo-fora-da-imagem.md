@@ -1,15 +1,15 @@
-# Conteúdo fora da imagem — 2026-11-07 (épico `epic/conteudo-fora-da-imagem`)
+# Content outside the image — 2026-11-07 (épico `epic/conteudo-fora-da-imagem`)
 
 ## Pendências
 
-- CF1: nenhuma (sem interface).
-- CF3, `ReferenceField` e `RefCell` (`src/ui/RefPicker.tsx`): o seletor ganha o alvo do tipo anotação inteira (`{ annotationId }`), mostrado com o rótulo e, na etiqueta da linha, o nome do tipo (no lugar de "livre"); quando o campo aceita anotações, as abas de filtro ganham uma por tipo (depois das etiquetas e antes de "Livres"), e a linha "aceita: …" lista os tipos. Estados novos para os previews: seletor com alvo de anotação, aba de tipo ativa e o vazio "Nenhuma anotação dos tipos …".
-- CF3, painel Detalhes (`src/ui/ReferencedBy.tsx`, novo): a linha **Referenciada por** no cartão da anotação tipada, no molde de "Vinculadas" (`annotation-linked-summary`, só leitura): o rótulo e um botão `link-button` por origem ("tipo · rótulo (marcação)"), em grupo com nome acessível. Componente novo sem guia: `ReferencedByRow`, junto do que cobre o `LinkedRow` (sem token, ícone nem seção novos).
+- CF1: nenhuma (no interface).
+- CF3, `ReferenceField` and `RefCell` (`src/ui/RefPicker.tsx`): the picker gains the whole-annotation target type (`{ annotationId }`), shown with the label and, on the row's tag, the type name (in place of "free"); when the field accepts annotations, the filter tabs gain one per type (after the tags and before "Free"), and the "accepts: …" line lists the types. New states for the previews: picker with an annotation target, active type tab and the empty state "No annotation of the … types".
+- CF3, Details panel (`src/ui/ReferencedBy.tsx`, new): the **Referenced by** row on the typed annotation card, in the mold of "Linked" (`annotation-linked-summary`, read-only): the label and a `link-button` button per source ("type · label (marking)"), in a group with an accessible name. New component without a guide: `ReferencedByRow`, together with what `LinkedRow` covers (no token, icon or section new).
 
 ## Sincronização
 
-Versões 58 (conteúdo) e 59 (índice) do artefato, de 2026-11-07. **Componente novo (só guia `README.md`, sem `preview.html`):** `ReferencedByRow` (a linha Referenciada por). **Guias alterados:** `ReferenceField` (alvo de anotação inteira, aba por tipo, "Livres" sem anotação inteira) e `RefCell` (anotações aceitas e abas por tipo). **Tokens, ícones e `bundle.css`:** nenhum novo. Nada foi apagado.
+Versões 58 (content) and 59 (index) of the artifact, from 2026-11-07. **New component (`README.md` guide only, no `preview.html`):** `ReferencedByRow` (the Referenced by row). **Changed guides:** `ReferenceField` (whole-annotation target, tab per type, "Free" without whole annotation) and `RefCell` (accepted annotations and tabs per type). **Tokens, icons and `bundle.css`:** none new. Nothing was deleted.
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: a prévia nova do `ReferencedByRow` e os estados novos nas prévias de `ReferenceField` e `RefCell` (seletor com alvo de anotação, aba de tipo ativa, vazio "Nenhuma anotação dos tipos …") (DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: the new `ReferencedByRow` preview and the new states in the `ReferenceField` and `RefCell` previews (picker with an annotation target, active type tab, empty state "No annotation of the … types") (DS5).

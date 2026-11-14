@@ -1,18 +1,18 @@
-# Migração dos papéis do vínculo — 2026-11-06 (épico `epic/migracao-papeis`)
+# Migration of link roles — 2026-11-06 (épico `epic/migracao-papeis`)
 
 ## Pendências
 
-- **`UpdateImpact`** (PM2): linhas novas no diálogo de atualização, sem componente, token nem ícone novos: os passos de papel ("Renomear o papel A → B em T", "Remover o papel R em T (limpar o papel)" e "(desvincular)", "Dar o papel R aos filhos de T" e, com `childType`, "aos filhos C de T"), a contagem "N desvinculada(s)" ao lado das contagens do passo, as perdas "papel R limpo" e "vínculo desfeito (papel R)" e o total com "e N vínculo(s)" no fim de "Esta atualização apaga …". Atualizar o exemplo do `UpdateImpact` no artefato com um passo de papel e a nova perda.
+- **`UpdateImpact`** (PM2): new rows in the update dialog, with no new component, token or icon: the role steps ("Rename role A → B in T", "Remove role R in T (clear the role)" and "(unlink)", "Give role R to the children of T" and, with `childType`, "to the C children of T"), the count "N unlinked" next to the step counts, the losses "role R cleared" and "link removed (role R)", and the total with "and N link(s)" at the end of "This update deletes …". Update the `UpdateImpact` example in the artifact with a role step and the new loss.
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-06, no fechamento do épico (versão `1793938034-b403`; o índice por último, com `lastChange`):
+Gravado no artefato **Mapping** on 2026-11-06, at the close of the epic (version `1793938034-b403`; the index last, with `lastChange`):
 
-- `UpdateImpact`, guia (`project/components/UpdateImpact/README.md`): parágrafo novo "Passos de papel do vínculo" (rótulos dos três passos, a contagem "N desvinculada(s)", as perdas "papel R limpo" e "vínculo desfeito (papel R)" e o total com "e N vínculo(s)"), o "Não faça" e o teste em "No código". O papel limpo conta como valor no total; só o desvincular entra em "e N vínculo(s)"; `rename-role` e `set-role` nunca geram perda.
-- `UpdateImpact`, prévia (`preview.html`): três cartões novos ao fim da grade ("Passos de papel e papel limpo", "Desvincular: vínculo desfeito" e "Dar o papel aos filhos (set-role)"), sem mexer nos cartões antigos.
-- `project/design-system.json`: só o `lastChange`.
+- `UpdateImpact`, guide (`project/components/UpdateImpact/README.md`): new paragraph "Link role steps" (the labels of the three steps, the count "N unlinked", the losses "role R cleared" and "link removed (role R)", and the total with "and N link(s)"), the "Don't" and the test in "In the code". A cleared role counts as a value in the total; only unlinking counts toward "and N link(s)"; `rename-role` and `set-role` never generate a loss.
+- `UpdateImpact`, preview (`preview.html`): three new cards at the end of the grid ("Role steps and cleared role", "Unlink: link removed" and "Give the role to the children (set-role)"), without touching the old cards.
+- `project/design-system.json`: only the `lastChange`.
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: a conferência do cartão `@dsCard height=1200` da prévia do `UpdateImpact` no visualizador real, nos dois temas.
-- Passou para o registro do épico `epic/sincronia-ds-2`: nada a gravar: o guia do `SpecsDialog` só cita o `UpdateImpact` em geral e as strings en-US não aparecem nas prévias (o DS é pt-BR).
+- Passou para o registro do épico `epic/sincronia-ds-2`: checking the `@dsCard height=1200` card of the `UpdateImpact` preview in the real viewer, in both themes.
+- Passou para o registro do épico `epic/sincronia-ds-2`: nothing to write: the `SpecsDialog` guide only mentions `UpdateImpact` in general and the en-US strings do not appear in the previews (the DS is pt-BR).

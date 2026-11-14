@@ -1,13 +1,13 @@
-# Vista do canvas para o testador — 2026-11-08 (épico `epic/vista-do-canvas`)
+# Canvas view for the tester — 2026-11-08 (épico `epic/vista-do-canvas`)
 
 ## Pendências
 
-Pendências: nenhuma (só atributos `data-` do `.canvas-host`; nenhum componente, token nem ícone muda).
+Pending items: none (only `data-` attributes on `.canvas-host`; no component, token or icon changes).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só acrescentou atributos `data-` de leitura para teste no `.canvas-host`.
+No write to the Mapping artifact in Claude Design: the stage only added read-only `data-` attributes for testing on `.canvas-host`.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

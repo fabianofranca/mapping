@@ -1,13 +1,13 @@
-# Medida de contexto pelo transcript — 2026-11-12 (épico `epic/medida-de-contexto`)
+# Context measurement from the transcript — 2026-11-12 (épico `epic/medida-de-contexto`)
 
 ## Pendências
 
-Nenhuma. O épico mexe num script do fluxo de entrega (`scripts/ci/contextUsage.mjs`), em `docs/FLOW.md`, em `docs/TESTING-NUVEM.md`, em duas skills do fluxo e em testes de `tests/tooling/`; nenhum componente, token nem ícone do design system da app muda.
+None. The epic touches a delivery-flow script (`scripts/ci/contextUsage.mjs`), `docs/FLOW.md`, `docs/TESTING-NUVEM.md`, two flow skills and tests in `tests/tooling/`; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto: nada a gravar no artefato **Mapping**.
+Sem impacto: nothing to write to the **Mapping** artifact.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

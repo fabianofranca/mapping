@@ -1,13 +1,13 @@
-# Correções na edição — 2026-11-09 (épico `epic/correcoes-edicao`)
+# Fixes in editing — 2026-11-09 (épico `epic/correcoes-edicao`)
 
 ## Pendências
 
-Pendências: nenhuma (só comportamento do editor de várias linhas e do fundo do diálogo; nenhum componente, token nem ícone muda).
+Pending items: none (only multi-line editor and dialog backdrop behavior; no component, token or icon changes).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa só corrigiu comportamento (editor de várias linhas, fundo do diálogo, visibilidade de camada com perspectiva, erro ao apagar conversa, layout guardado e arquivo solto); nenhum componente, token nem ícone mudou.
+No write to the Mapping artifact in Claude Design: the stage only fixed behavior (multi-line editor, dialog backdrop, layer visibility with perspective, error when deleting a conversation, saved layout and loose file); no component, token or icon changed.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

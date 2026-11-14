@@ -1,13 +1,13 @@
-# Mensagens do modelo na língua da app — 2026-11-10 (épico `epic/mensagens-modelo`)
+# Model messages in the app's language — 2026-11-10 (épico `epic/mensagens-modelo`)
 
 ## Pendências
 
-Nenhuma. O épico só traduz mensagens do modelo; nenhum componente, token ou ícone do design system da app muda.
+None. The epic only translates model messages; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto no artefato **Mapping** (nada gravado em 2026-11-10): o épico não muda componente, token nem ícone da app, e as `## Pendências` estão vazias, então não há o que gravar. O índice `project/design-system.json` não foi tocado.
+Sem impacto on the **Mapping** artifact (nothing written on 2026-11-10): the epic changes no component, token or icon of the app, and the `## Pendências` are empty, so there is nothing to write. The `project/design-system.json` index was not touched.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

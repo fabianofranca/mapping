@@ -1,13 +1,13 @@
-# Toca por seção em todo docs/*.md e nos .md da raiz — 2026-11-13 (épico `epic/toca-por-secao`)
+# Touches by section in every docs/*.md and the root .md files — 2026-11-13 (épico `epic/toca-por-secao`)
 
 ## Pendências
 
-Pendências: nenhuma. O épico só mexe no fluxo de entrega (`painel.py`, skills, `docs/PROCESS.md`, `docs/FLOW.md` e testes de ferramentas); nenhum componente, token ou ícone do design system da app muda.
+Pending items: none. The epic only touches the delivery flow (`painel.py`, skills, `docs/PROCESS.md`, `docs/FLOW.md` and tool tests); no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componente, token nem ícone da app.
+Sem impacto on the Claude Design Mapping artifact: nothing was written, since the epic changes no component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

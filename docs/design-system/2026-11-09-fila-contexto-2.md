@@ -1,13 +1,13 @@
-# Coordenador da fila: ajustes finos de contexto — 2026-11-09 (épico `epic/fila-contexto-2`)
+# Queue coordinator: fine context adjustments — 2026-11-09 (épico `epic/fila-contexto-2`)
 
 ## Pendências
 
-Nenhuma. O épico só mexe no fluxo de entrega; nenhum componente, token ou ícone do design system muda.
+None. The epic only touches the delivery flow; no design system component, token or icon changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**.
+Nothing to write to the **Mapping** artifact.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

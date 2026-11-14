@@ -1,21 +1,21 @@
-# Enquadrar a seleção e o Card que mudou de lugar no R25 — 2026-11-08 (épico `epic/enquadrar-selecao`)
+# Fit the selection and the Card that moved in R25 — 2026-11-08 (épico `epic/enquadrar-selecao`)
 
 ## Pendências
 
-- **`Breadcrumbs` (controles à direita da barra do canvas):** botão novo **Enquadrar seleção** (`FitSelectionButton`, `IconButton` com o ícone `fit-selection`), logo depois do **Enquadrar tudo**; rótulo "Enquadrar seleção" / "Fit selection", dica com o atalho `Shift+2`, desabilitado sem seleção e no modo visualização. Só tokens. Arquivos: `src/app/EditorTools.tsx`, `src/app/EditorWindows.tsx`. Mostrar o botão (habilitado e desabilitado) ao lado do **Enquadrar tudo** na prévia dos controles do canvas.
-- **Ícones:** `fit-selection` novo em `src/ui/icons.tsx`, no traço do `fit` (quatro cantos) com um quadrado pequeno no centro. Acrescentar ao conjunto de ícones do artefato.
-- **`Atalhos.md` / `HelpDialog`:** linha nova no grupo **Zoom**, "Enquadrar a seleção" / "Fit the selection", `Shift+2` (`src/ui/shortcutList.ts`).
+- **`Breadcrumbs` (controls on the right of the canvas bar):** new **Fit selection** button (`FitSelectionButton`, `IconButton` with the `fit-selection` icon), right after **Fit all**; label "Fit selection", tip with the `Shift+2` shortcut, disabled without a selection and in view mode. Only tokens. Files: `src/app/EditorTools.tsx`, `src/app/EditorWindows.tsx`. Show the button (enabled and disabled) next to **Fit all** in the canvas controls preview.
+- **Icons:** `fit-selection` new in `src/ui/icons.tsx`, in the stroke of `fit` (four corners) with a small square in the center. Add to the artifact's icon set.
+- **`Atalhos.md` / `HelpDialog`:** new row in the **Zoom** group, "Fit the selection", `Shift+2` (`src/ui/shortcutList.ts`).
 
 ## Sincronização
 
-Gravado no artefato Mapping do Claude Design em 2026-11-08 (índice `project/design-system.json`, versão 62, `lastChange` por Claude via claude):
+Gravado no artefato Mapping do Claude Design on 2026-11-08 (index `project/design-system.json`, version 62, `lastChange` by Claude via claude):
 
-- **Ícone `fit-selection`:** asset novo `fit-selection.svg` (o `fit` com o quadrado central), no grupo `Icons` do índice, logo depois de `fit.svg`; `project/assets/Icons/README.md` passa a dizer 90 ícones e cita o novo.
-- **`Breadcrumbs`:** botão **Enquadrar seleção** logo depois de **Enquadrar tudo** na prévia (habilitado com seleção, desabilitado no modo visualização, `aria-keyshortcuts="Shift+2"`) e no `README.md` do componente (`FitSelectionButton` em "No código").
-- **`Atalhos.md`:** linha "Enquadrar a seleção | Shift+2" na tabela do grupo "Ver" (o app o chama de "Zoom"); **`HelpDialog`:** a mesma linha na prévia.
+- **`fit-selection` icon:** new asset `fit-selection.svg` (the `fit` with the central square), in the `Icons` group of the index, right after `fit.svg`; `project/assets/Icons/README.md` now says 90 icons and mentions the new one.
+- **`Breadcrumbs`:** **Fit selection** button right after **Fit all** in the preview (enabled with a selection, disabled in view mode, `aria-keyshortcuts="Shift+2"`) and in the component's `README.md` (`FitSelectionButton` in "In the code").
+- **`Atalhos.md`:** row "Fit the selection | Shift+2" in the table of the "View" group (the app calls it "Zoom"); **`HelpDialog`:** the same row in the preview.
 
-Só tokens e classes que já existiam; as prévias não foram renderizadas no navegador.
+Only tokens and classes that already existed; the previews were not rendered in the browser.
 
 ## Ficou sem gravar
 
-Nada. (Não conferi o contraste das prévias nos temas claro e escuro: o botão e o ícone usam só tokens e `currentColor`.)
+Nothing. (I did not check the contrast of the previews in the light and dark themes: the button and the icon use only tokens and `currentColor`.)
