@@ -1,4 +1,4 @@
-# Gancho de contexto da fase — [Não lançado] (épico `epic/gancho-de-contexto`, PR #1856, MCP sem mudança, schema v19)
+# Gancho de contexto da fase — 2026-11-14 (épico `epic/gancho-de-contexto`, PR #1886, MCP sem mudança, schema v19)
 
 ## Adicionado
 
