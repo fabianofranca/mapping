@@ -158,7 +158,7 @@ export function checkUpdate(p: Project, spec: Spec): SpecUpdateImpact {
         from: applied.version,
         to: spec.version,
         missingMigrations: missingView(impact.missingMigrations),
-        hint: `declare in \`migrations\` an entry with from ${applied.version} (up to to ${spec.version}) with a step for each listed break, validate with validate_library (previous = the applied copy) and check with plan_library_update`,
+        hint: `declare in \`migrations\` an entry with \`from: ${applied.version}\` and \`to: ${spec.version}\` with a step for each listed break, validate with validate_library (previous = the applied copy) and check with plan_library_update`,
       },
     );
   }

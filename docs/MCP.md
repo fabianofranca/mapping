@@ -204,6 +204,12 @@ node tools/mapping-signature.mjs --help
 - **Note when the component is missing:** if the type declares `component` and the batch does not find it (file absent, unreadable or with a problem), the `create_marking` step gets the `ignored-argument` warning: "type `<spec/type>` declares a component, but `<reason>`: the annotation was created without the preview and without the minimum size".
 - **`create_annotation` with `type`** on an existing marking continues with the `default`s (the `preview` is example text); the argument's description says so.
 
+### Messages and descriptions in English (0.41.0)
+
+- **What changed.** The descriptions of every tool and parameter, the error and return messages (`message`, `hint`, `detail`), the step summaries of `plan_changes` and `propose_changes`, the server instructions and the embedded guide (`mapping-docs://AGENT-GUIDE.md`) are in English. Before 0.41.0 they were in Portuguese.
+- **What did not change.** Tool names, parameter names, batch `op`s, error `code`s, JSON keys and the format of every file. A client that matches `code`s keeps working; a client that matched message text must now match the English text.
+- **Kept as stored data.** The default author name of an agent message is still `"agente"` (it is written to `comments/<id>.json`; `docs/COMMENT-FORMAT.md`).
+
 ### Anchor between markings (schema v20, 0.40.0)
 
 - **Operations.** `create_marking` and `update_marking` accept `anchor` (`{ to, side?, align?, offset?: { main, cross } }`; `to` is the anchor's reference, id or alias; `side` `top`, `bottom`, `start` or `end`; `align` `start`, `center` or `end`; `offset` in container pixels). `null` in `update_marking` removes the anchor; absent does not change it. `create_marking` with `anchor` and **without `rect`** (with `annotation` of a type with a component) is born at the measured size, **snapped** to the anchor by the component's defaults (the `anchor` key at its root) and by what `anchor` says. The **`snap_to_anchor`** op (`{ "op": "snap_to_anchor", "marking": <ref> }`) snaps an already anchored marking again, keeping its size; the summary gives the rectangle before and after, or says nothing changed. It works in `plan_changes` (the preview), in the batch and in a proposal (the review shows the anchor as "Anchor" and the snap as the Position).

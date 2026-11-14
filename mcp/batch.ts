@@ -1528,7 +1528,9 @@ class Batch {
         return {
           project: removeAnnotation(p, id),
           description: `Delete the annotation ${this.annotationLabel(p, id)}${
-            impact.annotations > 1 ? ` (with ${impact.annotations - 1} linked)` : ''
+            impact.annotations > 1
+              ? ` (with ${impact.annotations - 1} linked annotation(s))`
+              : ''
           }${impact.brokenRefs > 0 ? `, ${impact.brokenRefs} broken reference(s)` : ''}`,
         };
       }

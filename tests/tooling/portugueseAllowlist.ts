@@ -1010,4 +1010,20 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   { term: '## Estrutura', source: 'examples/workspace/setup.sh', group: 'script-output' },
+  {
+    term: '## Servidor MCP `mapping`',
+    source: 'examples/workspace/setup.sh',
+    group: 'script-output',
+  },
+  { term: '## Regras', source: 'examples/workspace/setup.sh', group: 'script-output' },
+  {
+    term: '## Skill `spec-author`',
+    source: 'examples/workspace/setup.sh',
+    group: 'script-output',
+  },
+  {
+    term: '## Fluxo típico',
+    source: 'examples/workspace/setup.sh',
+    group: 'script-output',
+  },
 ];
