@@ -3,8 +3,8 @@ import { useEditor } from '../ui/EditorContext';
 import { CanvasController } from './CanvasController';
 
 /**
- * Monta o `CanvasController` num <div> e o publica em `canvas.current` do contexto
- * (comandos como "enquadrar"). Único componente que conhece o Konva.
+ * Mounts the `CanvasController` in a <div> and publishes it in the context's `canvas.current`
+ * (commands such as "fit"). The only component that knows Konva.
  */
 export function CanvasHost() {
   const { store, actions, display, ui, derived, canvas, view, review, session } =
@@ -12,7 +12,7 @@ export function CanvasHost() {
   const { perspective } = session;
   const ref = useRef<HTMLDivElement>(null);
 
-  // O controller vive enquanto o projeto estiver aberto.
+  // The controller lives while the project is open.
   useEffect(() => {
     const container = ref.current;
     if (!container) return;

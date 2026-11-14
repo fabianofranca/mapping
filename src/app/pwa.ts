@@ -1,13 +1,13 @@
-// PWA: registro do service worker, aviso de nova versão e convite para instalar.
+// PWA: service worker registration, new-version notice and install invitation.
 import { signal } from '@preact/signals';
 import { readSetting, writeSetting } from '../utils/safeStorage';
 import { reportError } from '../utils/report';
 import { SERVICE_WORKER_URL } from './trustedTypes';
 
-/** Há uma versão nova baixada, esperando o usuário aceitar. */
+/** A new version has been downloaded, waiting for the user to accept. */
 export const updateReady = signal(false);
 
-/** Evento do Chrome/Edge/Android que permite abrir o convite de instalação. */
+/** Chrome/Edge/Android event that allows opening the install invitation. */
 interface InstallPromptEvent extends Event {
   prompt: () => Promise<void>;
 }
@@ -22,7 +22,7 @@ export function dismissInstallHint(): void {
   writeSetting(INSTALL_HINT_KEY, 'yes');
 }
 
-/** Service worker só em https (CLAUDE.md): em `file://` nem existe. */
+/** Service worker only on https (CLAUDE.md): on `file://` it does not even exist. */
 export function canRegisterServiceWorker(
   protocol: string,
   nav: { serviceWorker?: unknown },
@@ -30,7 +30,7 @@ export function canRegisterServiceWorker(
   return protocol === 'https:' && nav.serviceWorker !== undefined;
 }
 
-/** Liga o manifest só em https: em `file://` o navegador reclamaria dele. */
+/** Links the manifest only on https: on `file://` the browser would complain about it. */
 export function attachManifest(): void {
   if (location.protocol !== 'https:') return;
   const link = document.createElement('link');
@@ -40,13 +40,13 @@ export function attachManifest(): void {
 }
 
 let waiting: ServiceWorker | null = null;
-/** O usuário aceitou o aviso: quando a versão nova assumir, recarrega. */
+/** The user accepted the notice: when the new version takes over, reload. */
 let updating = false;
 
 function trackInstalling(worker: ServiceWorker | null): void {
   if (!worker) return;
   worker.addEventListener('statechange', () => {
-    // Sem `controller` é a primeira instalação: nada a avisar.
+    // Without a `controller` this is the first install: nothing to notify.
     if (worker.state === 'installed' && navigator.serviceWorker.controller) {
       waiting = worker;
       updateReady.value = true;
@@ -67,21 +67,21 @@ export async function registerServiceWorker(): Promise<void> {
       trackInstalling(registration.installing),
     );
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      // Sem `updating` é só a primeira instalação assumindo a página (clients.claim).
+      // Without `updating` it is just the first install taking over the page (clients.claim).
       if (updating) location.reload();
     });
-    // App instalada raramente recarrega: procura versão nova ao voltar para ela.
+    // An installed app rarely reloads: look for a new version when returning to it.
     document.addEventListener('visibilitychange', () => {
-      // Offline não consegue verificar versão nova: não é falha a registrar.
+      // Offline it cannot check for a new version: not a failure to record.
       if (document.visibilityState === 'visible') void registration.update().catch(noop);
     });
   } catch (e) {
-    // Sem service worker a app funciona igual, só não fica offline.
+    // Without a service worker the app works the same, it just does not work offline.
     reportError('pwa.register', e);
   }
 }
 
-/** Ativa a versão nova; o `controllerchange` recarrega a página. */
+/** Activates the new version; the `controllerchange` reloads the page. */
 export function applyUpdate(): void {
   updating = true;
   waiting?.postMessage({ type: 'SKIP_WAITING' });
@@ -89,7 +89,7 @@ export function applyUpdate(): void {
 
 function noop(): void {}
 
-/** Guarda o convite de instalação do navegador para abri-lo no nosso botão. */
+/** Keeps the browser's install invitation to open it from our button. */
 export function bindInstallPrompt(): void {
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
@@ -107,6 +107,6 @@ export async function promptInstall(): Promise<void> {
   try {
     await event.prompt();
   } catch {
-    // O usuário pode instalar pelo menu do navegador.
+    // The user can install from the browser menu.
   }
 }

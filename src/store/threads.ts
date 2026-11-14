@@ -21,31 +21,31 @@ import {
 import type { ProjectStorage } from '../storage/types';
 import { reportError } from '../utils/report';
 
-// As conversas ancoradas do projeto aberto (etapa Comentários): a lista em memória, a leitura da
-// pasta e a gravação. Quem grava `comments/<id>.json` e `comments/resolved/<id>.json` é só este
-// módulo, dentro da sessão (`session.threads`); a interface nunca escreve no armazenamento.
-// Nada disso toca o `mapping.json` nem o histórico de desfazer (decisão 1).
+// The open project's anchored threads (Comments stage): the in-memory list, reading the
+// folder and writing. The only one that writes `comments/<id>.json` and `comments/resolved/<id>.json`
+// is this module, inside the session (`session.threads`); the interface never writes to storage.
+// None of this touches `mapping.json` nor the undo history (decision 1).
 //
-// Conferência do arquivo, como a das propostas: toda gravação relê o arquivo (as duas pastas)
-// antes e, se ele difere do que a sessão leu ou gravou por último (o servidor MCP acrescentou
-// uma mensagem, um editor mexeu nele), adota a versão do disco e REFAZ a operação sobre ela, em
-// vez de sobrescrevê-la. As operações são funções puras da conversa (acrescentar, resolver,
-// reabrir) e cada uma devolve `revision + 1`, então refazer é seguro e nada de fora se perde. Um
-// arquivo que ficou ilegível nunca é sobrescrito. O campo `resolved` é a verdade; a pasta é só o
-// índice: a gravação deixa o arquivo na pasta certa e só então apaga a outra cópia.
+// File check, like the proposals': every write re-reads the file (both folders)
+// beforehand and, if it differs from what the session last read or wrote (the MCP server appended
+// a message, an editor touched it), adopts the disk version and REDOES the operation on it, instead
+// of overwriting it. The operations are pure functions of the thread (append, resolve,
+// reopen) and each one returns `revision + 1`, so redoing is safe and nothing from outside is lost. An
+// unreadable file is never overwritten. The `resolved` field is the truth; the folder is just the
+// index: the write leaves the file in the right folder and only then deletes the other copy.
 
 export type ThreadStoreError =
-  /** Não há conversa com esse id. */
+  /** There is no thread with that id. */
   | 'unknown-thread'
   /** O arquivo sumiu por fora. */
   | 'gone'
-  /** O arquivo mudou por fora e ficou ilegível: não se sobrescreve o que não se leu. */
+  /** The file changed outside and became unreadable: what was not read is not overwritten. */
   | 'unreadable'
-  /** Já existe uma conversa com esse id (`create`). */
+  /** A thread with that id already exists (`create`). */
   | 'exists'
-  /** A mensagem repetiria o id de uma que já está na conversa. */
+  /** The message would repeat the id of one that is already in the thread. */
   | 'duplicate-message'
-  /** A conversa que a operação devolveu não passa na validação do formato. */
+  /** The thread the operation returned fails the format validation. */
   | 'invalid'
   | 'write-failed';
 
@@ -53,7 +53,7 @@ export type ThreadOutcome =
   | { readonly ok: true; readonly thread: Thread }
   | { readonly ok: false; readonly error: ThreadStoreError };
 
-/** O que a conferência da pasta `comments/` encontrou (ids). */
+/** What the `comments/` folder check found (ids). */
 export interface ThreadScan {
   readonly added: readonly string[];
   readonly changed: readonly string[];
@@ -71,41 +71,41 @@ export interface RemoveManyResult {
   readonly failed: readonly string[];
 }
 
-/** O que a sessão sabe de cada arquivo da conversa: o aberto e o resolvido. */
+/** What the session knows about each thread file: the open one and the resolved one. */
 interface Copies {
   readonly open: LoadedThread | null;
   readonly resolved: LoadedThread | null;
 }
 
 export interface ThreadStore {
-  /** Conversas legíveis (abertas e resolvidas já lidas), a mais nova primeiro. */
+  /** Readable threads (open and already-read resolved ones), newest first. */
   readonly list: ReadonlySignal<readonly Thread[]>;
-  /** Arquivos de conversa que não puderam ser lidos (a conversa não aparece na lista). */
+  /** Thread files that could not be read (the thread does not appear in the list). */
   readonly problems: ReadonlySignal<readonly ThreadProblem[]>;
-  /** `comments/resolved/` já foi lida (na abertura ou por `loadResolved`). */
+  /** `comments/resolved/` has been read (on opening or by `loadResolved`). */
   readonly resolvedLoaded: ReadonlySignal<boolean>;
   get(id: string): Thread | null;
   /**
-   * Muda uma conversa: relê os arquivos, adota a versão do disco se mudou por fora, aplica a
-   * operação (pura, de `src/model/threadOps.ts`) e grava com `revision + 1` na pasta que o
-   * campo `resolved` manda. As chamadas rodam em fila.
+   * Changes a thread: re-reads the files, adopts the disk version if it changed outside, applies the
+   * operation (pure, from `src/model/threadOps.ts`) and writes with `revision + 1` to the folder the
+   * `resolved` field dictates. Calls run in a queue.
    */
   mutate(id: string, operation: (thread: Thread) => Thread): Promise<ThreadOutcome>;
-  /** Grava uma conversa nova em `comments/`. Recusa um id que já existe (nunca sobrescreve). */
+  /** Writes a new thread to `comments/`. Refuses an id that already exists (never overwrites). */
   create(thread: Thread): Promise<ThreadOutcome>;
-  /** Apaga a conversa (as duas cópias) do armazenamento e da lista. */
+  /** Deletes the thread (both copies) from storage and from the list. */
   remove(id: string): Promise<{ readonly ok: true } | (ThreadOutcome & { ok: false })>;
-  /** Apaga várias, uma por vez, na fila. */
+  /** Deletes several, one at a time, in the queue. */
   removeMany(ids: readonly string[]): Promise<RemoveManyResult>;
   /** Confere `comments/` (sem `resolved/`): conversas novas, alteradas e apagadas por fora. */
   scan(): Promise<ThreadScan>;
-  /** Lê `comments/resolved/` (na abertura a sessão já a leu; sob pedido, de novo). */
+  /** Reads `comments/resolved/` (on opening the session already read it; on request, again). */
   loadResolved(): Promise<void>;
-  /** Espera as gravações em andamento (ao fechar o projeto). */
+  /** Waits for the writes in progress (when closing the project). */
   settled(): Promise<void>;
   /**
-   * Arquivos para exportar (caminho → texto): as conversas como estão no disco, as resolvidas
-   * inclusive (lê `resolved/` se ainda não leu) e o texto exato dos arquivos inválidos.
+   * Files to export (path → text): the threads as they are on disk, the resolved ones
+   * included (reads `resolved/` if not read yet) and the exact text of the invalid files.
    */
   collect(): Promise<Map<string, string>>;
 }
@@ -114,18 +114,18 @@ export interface ThreadStoreOptions {
   readonly storage: ProjectStorage;
   readonly initial?: LoadedThreads;
   /**
-   * `initial` já trouxe `comments/resolved/` (padrão `true`, o que `loadThreads` faz). `false`
-   * quando a sessão abriu lendo só `comments/`.
+   * `initial` already brought `comments/resolved/` (default `true`, what `loadThreads` does). `false`
+   * when the session opened reading only `comments/`.
    */
   readonly resolvedLoaded?: boolean;
-  /** Depois de cada gravação ou remoção bem-sucedida (o indicador "Alterações não exportadas"). */
+  /** After each successful write or removal (the "Changes not exported" indicator). */
   readonly onChanged?: () => void;
 }
 
 const slot = (resolvedDir: boolean): 'open' | 'resolved' =>
   resolvedDir ? 'resolved' : 'open';
 
-/** Roda a operação pura; os erros dela viram o código da loja. */
+/** Runs the pure operation; its errors become the store's code. */
 function runOperation(
   thread: Thread,
   operation: (thread: Thread) => Thread,
@@ -141,15 +141,15 @@ function runOperation(
   }
 }
 
-/** O arquivo existe mas não passou na validação. */
+/** The file exists but failed validation. */
 const unreadable = (raw: string | null, copy: LoadedThread | null): boolean =>
   raw !== null && copy === null;
 
-/** A conversa das cópias lidas (a junção, se são duas). */
+/** The thread of the copies read (the merge, if there are two). */
 const mergedOf = (open: LoadedThread | null, resolved: LoadedThread | null): Thread =>
   mergeThreadCopies(open?.thread ?? null, resolved?.thread ?? null).thread;
 
-/** A operação não mudou nada, mas havia duas cópias: a gravação que as une sobe a `revision`. */
+/** The operation changed nothing, but there were two copies: the write that joins them bumps `revision`. */
 const bumped = (thread: Thread): Thread => ({ ...thread, revision: thread.revision + 1 });
 
 const problemKey = (p: { readonly id: string; readonly resolvedDir: boolean }): string =>
@@ -208,7 +208,7 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     const key = problemKey(problem);
     const previous = problemMap.get(key);
     problemMap.set(key, { problem, stamp, text });
-    // Uma vez por arquivo: a conferência que o encontra de novo, igual, não repete o aviso.
+    // Once per file: the check that finds it again, unchanged, does not repeat the warning.
     if (!previous || previous.text !== text) reportThreadProblem(problem);
   };
 
@@ -219,13 +219,13 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
   }
   publish();
 
-  // Fila única: gravações e conferências nunca rodam em paralelo.
+  // Single queue: writes and checks never run in parallel.
   const enqueue = createSerialQueue();
 
   const stampOf = (id: string, resolved: boolean): Promise<string | null> =>
     stampOr(storage.statThread ? () => storage.statThread!(id, resolved) : null);
 
-  /** Texto cru de uma cópia, `undefined` se a leitura falhou. */
+  /** Raw text of a copy, `undefined` if reading failed. */
   const rawOf = async (
     id: string,
     resolved: boolean,
@@ -238,7 +238,7 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     }
   };
 
-  /** Uma cópia lida do disco: a que a sessão já conhece, se o texto é o mesmo, senão a nova. */
+  /** A copy read from disk: the one the session already knows, if the text is the same, else the new one. */
   const readCopy = async (
     id: string,
     resolvedDir: boolean,
@@ -250,7 +250,7 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     return parsed.ok ? parsed : null;
   };
 
-  /** Lê as duas cópias do disco e atualiza o que a sessão sabe delas. */
+  /** Reads both copies from disk and updates what the session knows about them. */
   const refresh = async (
     id: string,
   ): Promise<
@@ -268,7 +268,7 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
       open: raws[0] === null ? null : await readCopy(id, false, raws[0]),
       resolved: raws[1] === null ? null : await readCopy(id, true, raws[1]),
     };
-    // Existe o arquivo mas não passa na validação: não se sobrescreve o que não se leu.
+    // The file exists but fails validation: what was not read is not overwritten.
     if (unreadable(raws[0], copies.open) || unreadable(raws[1], copies.resolved)) {
       return { ok: false, error: 'unreadable' };
     }
@@ -294,7 +294,7 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     if (!ran.ok) return ran;
     const duplicated = read.open !== null && read.resolved !== null;
     if (ran.next === merged && !duplicated) return { ok: true, thread: merged };
-    // As duas cópias juntadas sem mudança nenhuma ainda precisam de uma gravação que as una.
+    // The two copies joined without any change still need a write that unites them.
     const next = ran.next === merged ? bumped(merged) : ran.next;
     return writeThread(next, {
       hadOpen: read.open !== null,
@@ -317,8 +317,8 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     }
     const hadOther = toResolved ? existing.hadOpen : existing.hadResolved;
     if (hadOther) {
-      // Gravou no destino; a origem sai agora. Se isto falhar, as duas cópias ficam e a
-      // próxima leitura as junta (decisão 7): nada se perde.
+      // Wrote to the destination; the source goes away now. If this fails, both copies stay and
+      // the next read merges them (decision 7): nothing is lost.
       try {
         await storage.removeThread(id, !toResolved);
       } catch (e) {
@@ -368,7 +368,7 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     return { ok: true };
   };
 
-  /** O carimbo já diz que nada mudou (ou que o problema conhecido é o mesmo)? */
+  /** Does the stamp already say nothing changed (or that the known problem is the same)? */
   const stampSaysSkip = (
     id: string,
     resolvedDir: boolean,
@@ -382,8 +382,8 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
   };
 
   /**
-   * Lê o arquivo de uma pasta se o carimbo mudou. Devolve o que a conferência precisa saber.
-   * `stamp`: o carimbo que a conferência já tem (de `stampThreads` ou de um `stampOf`).
+   * Reads a folder's file if the stamp changed. Returns what the check needs to know.
+   * `stamp`: the stamp the check already has (from `stampThreads` or from a `stampOf`).
    */
   const checkFile = async (
     id: string,
@@ -395,8 +395,8 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     const entry = known.get(id)?.[slot(resolvedDir)] ?? null;
     const read = await readThread(storage, id, resolvedDir);
     if (!read.ok) {
-      // Sumiu entre a lista e a leitura, ou está ilegível: uma conversa que já conhecemos
-      // fica como está (um editor ainda escrevendo); só as desconhecidas viram problema.
+      // Vanished between the list and the read, or is unreadable: a thread we already know
+      // stays as it is (an editor still writing); only the unknown ones become a problem.
       if (!read.missing && !known.has(id)) {
         recordProblem({ id, resolvedDir, errors: read.errors }, stamp, read.text);
       }
@@ -410,7 +410,7 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     return entry ? 'changed' : 'added';
   };
 
-  /** Lê os arquivos de `comments/` que mudaram e diz quais ids são novos e quais mudaram. */
+  /** Reads the `comments/` files that changed and says which ids are new and which changed. */
   const scanOpenFiles = async (
     ids: readonly string[],
     scan: MutableScan,
@@ -454,13 +454,13 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     }
   };
 
-  /** Identifica o conjunto de problemas (ids e erros), para publicar só quando ele muda. */
+  /** Identifies the set of problems (ids and errors), to publish only when it changes. */
   const problemsKey = () =>
     JSON.stringify([...problemMap.values()].map((p) => [p.problem.id, p.problem.errors]));
 
   /**
-   * Os ids de `comments/` e, quando o armazenamento tem `stampThreads`, o carimbo de cada um (num
-   * passo só); sem ele, só os ids (o carimbo sai de um `statThread` por arquivo).
+   * The `comments/` ids and, when the storage has `stampThreads`, the stamp of each one (in a
+   * single pass); without it, only the ids (the stamp comes from one `statThread` per file).
    */
   const listOpen = async (): Promise<{
     ids: string[];

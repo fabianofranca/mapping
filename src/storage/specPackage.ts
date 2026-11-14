@@ -13,28 +13,28 @@ import { FOLDER_CONCURRENCY } from './folderConcurrency';
 import type { ProjectStorage } from './types';
 
 /**
- * Problema da biblioteca como a app o mostra: o do `validateLibrary` mais, opcionalmente, um
- * código para os que a própria app levanta. Com `code`, a interface mostra o texto traduzido e
- * `message` fica como reserva (logs). O código vive aqui e não em `src/model/` porque o modelo
- * é entrada da release do MCP.
+ * Library problem as the app shows it: the one from `validateLibrary` plus, optionally, a
+ * code for those the app itself raises. With `code`, the interface shows the translated text and
+ * `message` stays as a fallback (logs). The code lives here and not in `src/model/` because the model
+ * is input to the MCP release.
  */
 export interface AppLibraryIssue extends Omit<LibraryIssue, 'code'> {
   readonly code?: LibraryIssue['code'] | 'package-too-big';
 }
 
-/** Problemas da biblioteca aplicada (níveis 1 e 2) por id de especialização. */
+/** Problems of the applied library (levels 1 and 2) by specialization id. */
 export type LibraryIssues = ReadonlyMap<string, readonly AppLibraryIssue[]>;
 
-/** Lê todos os arquivos de `specs/<id>/`: texto dos `.json` e `.md`, os demais só em presença. */
+/** Reads all the files of `specs/<id>/`: text of the `.json` and `.md`, the others only as present. */
 export async function readSpecPackage(
   storage: ProjectStorage,
   dir: string,
 ): Promise<{ entries: PackageEntry[]; bytes: number } | null> {
   const paths = await storage.listSpecDir(dir);
   if (!packageWithinLimits(paths.length, 0)) return null;
-  // Leitura em paralelo com limite; o resultado segue a ordem da listagem. O tamanho vem do
-  // `Blob` antes de ler o texto: estourado o limite de bytes, ninguém mais abre nem converte
-  // arquivo (o pacote vira `null`).
+  // Reading in parallel with a limit; the result follows the listing order. The size comes from the
+  // `Blob` before reading the text: once the byte limit is exceeded, nobody opens or converts
+  // a file anymore (the package becomes `null`).
   let total = 0;
   let overflow = false;
   const read = await mapLimit(paths, FOLDER_CONCURRENCY, async (path) => {
@@ -65,11 +65,11 @@ const TOO_BIG: AppLibraryIssue = {
   path: '',
   message: 'pacote grande demais para conferir (limite de arquivos ou de bytes)',
   severity: 'error',
-  // A interface mostra o texto traduzido (`library.packageTooBig`), não esta mensagem.
+  // The interface shows the translated text (`library.packageTooBig`), not this message.
   code: 'package-too-big',
 };
 
-/** O pacote em memória (caminho relativo → texto ou bytes) como o validador o recebe. */
+/** The in-memory package (relative path → text or bytes) as the validator receives it. */
 export function packageEntriesOf(
   dir: string,
   files: ReadonlyMap<string, string | Blob>,
@@ -91,9 +91,9 @@ export function packageEntriesOf(
 }
 
 /**
- * Valida (níveis 1 e 2) UMA especialização a partir dos arquivos do pacote já em memória
- * (`pkg`, com o arquivo da especialização incluso), ou devolve o problema de pacote grande
- * demais. `pkg` nulo é o pacote que passou do limite ao ser lido.
+ * Validates (levels 1 and 2) ONE specialization from the package files already in memory
+ * (`pkg`, with the specialization file included), or returns the too-large-package
+ * problem. A null `pkg` is the package that exceeded the limit when read.
  */
 export function libraryIssuesOf(
   spec: { readonly file: string },
@@ -110,18 +110,18 @@ export function libraryIssuesOf(
 }
 
 /**
- * Valida (níveis 1 e 2, sem a prova de desenho, que é cara) a cópia do pacote de cada
- * especialização do projeto que mora numa pasta `specs/<id>/`. Nunca lança: uma falha de
- * leitura vai para o Diagnóstico (`reportError`) e a especialização fica sem entrada.
- * Só com as especializações que têm pacote; vazio se nenhuma tem.
+ * Validates (levels 1 and 2, without the drawing proof, which is expensive) the package copy of each
+ * project specialization that lives in a `specs/<id>/` folder. Never throws: a read
+ * failure goes to Diagnostics (`reportError`) and the specialization is left without an entry.
+ * Only with the specializations that have a package; empty if none has.
  */
 export async function loadLibraryIssues(
   storage: ProjectStorage,
   project: Pick<Project, 'specializations'>,
 ): Promise<LibraryIssues> {
   const result = new Map<string, readonly AppLibraryIssue[]>();
-  // As especializações vão em série e o paralelo fica dentro de cada pacote: o pico de leituras
-  // simultâneas à pasta é `FOLDER_CONCURRENCY`. O resultado segue a ordem das especializações.
+  // The specializations go in series and the parallelism stays inside each package: the peak of
+  // simultaneous reads to the folder is `FOLDER_CONCURRENCY`. The result follows the order of the specializations.
   const found = await mapLimit(project.specializations, 1, async (s) => {
     const dir = packageDirOf(s.file);
     if (dir === null) return null;

@@ -1,25 +1,25 @@
 /**
- * Cores e medidas do desenho dos componentes que não vêm da cena. O produto passa os valores dos
- * tokens do tema (`CanvasTokens.component`); `DEFAULT_PALETTE` é o padrão de quem não tem tema
- * (o visualizador embutível, o laboratório e os testes).
+ * Colors and measurements of the components' drawing that do not come from the scene. The product passes the
+ * theme token values (`CanvasTokens.component`); `DEFAULT_PALETTE` is the default for whoever has no theme
+ * (the embeddable viewer, the lab and the tests).
  */
 export interface RenderPalette {
   /** Preenchimento do reservado de imagem. */
   readonly placeholderFill: string;
-  /** Contorno do reservado (X, traço de imagem, slot). */
+  /** Outline of the placeholder (X, image stroke, slot). */
   readonly placeholderLine: string;
-  /** Contorno da caixa de nó que o desenho não conhece (e texto da caixa de tipo ausente). */
+  /** Outline of the node box the drawing does not know (and text of the missing-type box). */
   readonly unknownLine: string;
-  /** Preenchimento da caixa de tipo ausente (instância sem componente ou de tipo desconhecido). */
+  /** Fill of the missing-type box (instance without a component or of an unknown type). */
   readonly unknownFill: string;
   /** Opacidade do contorno de um `slot`. */
   readonly slotOpacity: number;
-  /** Tamanho e família da fonte do texto da caixa de tipo ausente. */
+  /** Size and family of the missing-type box's text font. */
   readonly labelFontSize: number;
   readonly labelFontFamily: string;
 }
 
-/** Padrão do laboratório (sem tema próprio). */
+/** Lab default (without its own theme). */
 export const DEFAULT_PALETTE: RenderPalette = {
   placeholderFill: 'rgba(128, 128, 128, 0.25)',
   placeholderLine: 'rgba(128, 128, 128, 0.8)',

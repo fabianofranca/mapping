@@ -11,17 +11,17 @@ import {
 } from '../model';
 import { reportError } from '../utils/report';
 
-/** Fundo do JPEG (que não tem transparência): papel branco, não uma cor de design. */
+/** JPEG background (it has no transparency): white paper, not a design color. */
 const JPEG_BACKGROUND = '#fff';
 
-/** Lado maior do bitmap usado para exibir a imagem (as coordenadas não mudam). */
+/** Longer side of the bitmap used to display the image (the coordinates do not change). */
 export const DISPLAY_MAX_SIDE = 2048;
 
 export interface PreparedImage {
-  /** Nome sugerido para `images/` (a colisão é resolvida pelo modelo). */
+  /** Suggested name for `images/` (a collision is resolved by the model). */
   readonly name: string;
   readonly data: Blob;
-  /** Dimensões já com a orientação EXIF aplicada. */
+  /** Dimensions with the EXIF orientation already applied. */
   readonly width: number;
   readonly height: number;
 }
@@ -49,7 +49,7 @@ function drawToCanvas(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('2d context unavailable');
   if (mime === 'image/jpeg') {
-    // JPEG não tem transparência: sem fundo, ela viraria preto.
+    // JPEG has no transparency: without a background, it would turn black.
     ctx.fillStyle = JPEG_BACKGROUND;
     ctx.fillRect(0, 0, width, height);
   }
@@ -68,7 +68,7 @@ function canvasToBlob(
 
 let webpSupport: Promise<boolean> | null = null;
 
-/** Detecta em runtime se `canvas.toBlob` gera WebP (senão ele devolve PNG). */
+/** Detects at runtime whether `canvas.toBlob` produces WebP (otherwise it returns PNG). */
 function supportsWebp(): Promise<boolean> {
   webpSupport ??= (async () => {
     try {
@@ -78,7 +78,7 @@ function supportsWebp(): Promise<boolean> {
       const blob = await canvasToBlob(canvas, 'image/webp', 0.5);
       return blob !== null && encodedAsRequested('image/webp', blob.type);
     } catch {
-      // Detecção de recurso: sem WebP o app usa JPEG, não é uma falha a registrar.
+      // Feature detection: without WebP the app uses JPEG, not a failure to report.
       return false;
     }
   })();
@@ -86,14 +86,14 @@ function supportsWebp(): Promise<boolean> {
 }
 
 /**
- * Prepara e otimiza uma imagem que entra pela app (arquivo, câmera, colar,
- * arrastar, troca): aplica a orientação EXIF, limita o lado maior a
- * `MAX_IMAGE_SIDE` e recodifica em WebP (PNG de origem: sem perdas; sem suporte
- * a WebP: JPEG ou PNG), removendo os metadados. Sem redução, só usa o
- * recodificado se ficar menor (ou se for preciso girar a foto). Se a
- * recodificação falhar (ex.: foto maior que o limite de canvas do iOS), guarda o
- * arquivo original: as coordenadas continuam corretas porque o sistema de
- * coordenadas é o da imagem com EXIF aplicado.
+ * Prepares and optimizes an image that enters through the app (file, camera, paste,
+ * drag, swap): applies the EXIF orientation, limits the longer side to
+ * `MAX_IMAGE_SIDE` and re-encodes to WebP (PNG source: lossless; without WebP
+ * support: JPEG or PNG), removing the metadata. Without a reduction, it only uses the
+ * re-encoded one if it ends up smaller (or if the photo needs rotating). If
+ * re-encoding fails (e.g. a photo larger than the iOS canvas limit), it keeps the
+ * original file: the coordinates stay correct because the coordinate system is
+ * that of the image with EXIF applied.
  */
 export async function prepareImage(file: File): Promise<PreparedImage> {
   let bitmap: ImageBitmap;
@@ -133,7 +133,7 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
         };
       }
     } catch (e) {
-      // Cai no arquivo original abaixo.
+      // Falls back to the original file below.
       reportError('image.optimize', e);
     }
     return { name: file.name, data: file, width, height };
@@ -142,7 +142,7 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
   }
 }
 
-/** Dimensões (com EXIF aplicado) de uma imagem já gravada no projeto. */
+/** Dimensions (with EXIF applied) of an image already saved in the project. */
 export async function readImageSize(
   data: Blob,
   name: string,
@@ -157,7 +157,7 @@ export async function readImageSize(
   }
 }
 
-/** Tamanho do bitmap de exibição para uma imagem de `width` × `height`. */
+/** Size of the display bitmap for an image of `width` × `height`. */
 export function displaySize(
   width: number,
   height: number,
@@ -170,10 +170,10 @@ export function displaySize(
 }
 
 /**
- * Bitmap reduzido (lado maior até `DISPLAY_MAX_SIDE`) para exibir no canvas.
- * Com o tamanho original conhecido (`size`, vindo do projeto), pede o tamanho
- * final direto ao decodificador, sem decodificar a foto inteira. Se o navegador
- * ignorar `resizeWidth`, reduz desenhando num canvas.
+ * Reduced bitmap (longer side up to `DISPLAY_MAX_SIDE`) to display on the canvas.
+ * With the original size known (`size`, coming from the project), it asks the decoder
+ * for the final size directly, without decoding the whole photo. If the browser
+ * ignores `resizeWidth`, it reduces by drawing on a canvas.
  */
 export async function createDisplayBitmap(
   data: Blob,

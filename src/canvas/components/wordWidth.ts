@@ -1,35 +1,36 @@
 /**
- * A palavra mais larga de um texto, medida com o Konva. O modelo e o PNG do MCP quebram a linha só
- * entre palavras (uma palavra mais larga que a caixa fica sozinha na linha e passa da borda); o
- * `Text` do Konva, sem espaço para quebrar, parte a palavra letra por letra. O medidor e o desenho
- * da app alargam o texto até a palavra mais larga, e o Konva passa a quebrar onde o modelo quebra.
+ * The widest word of a text, measured with Konva. The model and the MCP PNG break the line only
+ * between words (a word wider than the box stays alone on the line and overflows the edge); the
+ * Konva `Text`, with no space to break at, splits the word letter by letter. The app's measurer
+ * and drawing widen the text up to the widest word, and Konva then breaks where the model
+ * breaks.
  */
 import type { TextConfig } from 'konva/lib/shapes/Text';
 import { wrapWords } from '../../model/components/instantiate';
 
-/** Quantas palavras (as de mais letras) o texto mede: o bastante para achar a mais larga. */
+/** How many words (the ones with the most letters) the text measures: enough to find the widest. */
 const WORDS_MEASURED = 8;
 
-/** O que a largura de uma palavra lê da fonte do texto. */
+/** What the width of a word reads from the text's font. */
 export type WordFont = Pick<
   TextConfig,
   'fontFamily' | 'fontSize' | 'fontStyle' | 'letterSpacing'
 >;
 
 /**
- * `width` ou, se uma palavra do texto é mais larga, a largura dela: a largura com que o Konva
- * quebra o texto só entre palavras. Texto sem espaço de sobra (uma palavra só que cabe) devolve
- * `width`. Sem canvas para medir (testes sem ele), devolve `width`.
+ * `width` or, if a word of the text is wider, its width: the width with which Konva breaks
+ * the text only between words. Text with no extra space (a single word that fits) returns
+ * `width`. Without a canvas to measure on (tests without it), returns `width`.
  */
 export function wordSafeWidth(text: string, font: WordFont, width: number): number {
-  // Uma palavra de `n` letras não passa de `n × (corpo + espaçamento)`: a que cabe nisso na caixa
-  // nem é medida (o caso comum), e só as que podem passar dela vão ao Konva.
+  // A word of `n` letters is at most `n × (size + spacing)`: one that fits in the box by that
+  // is not even measured (the common case), and only the ones that may exceed it go to Konva.
   const advance = Number(font.fontSize ?? 0) + Number(font.letterSpacing ?? 0);
-  // O texto inteiro cabe nisso: nenhuma palavra passa da caixa (o caso comum, sem dividir nem ordenar).
+  // The whole text fits by that: no word exceeds the box (the common case, no split or sort).
   if (text.length * advance <= width) return width;
   const words = [
     ...new Set(
-      // Só espaço, tab e quebra dividem: o NBSP é parte da palavra (no Konva e no modelo).
+      // Only space, tab and newline split: the NBSP is part of the word (in Konva and the model).
       text
         .split(/[ \t\n]+/)
         .filter((word) => word.length > 0 && word.length * advance > width),
@@ -45,9 +46,10 @@ export function wordSafeWidth(text: string, font: WordFont, width: number): numb
 }
 
 /**
- * O texto e a largura com que o Konva quebra como o modelo: com uma palavra mais larga que a
- * caixa, o `Text` se alarga até ela (`wordSafeWidth`) e as outras linhas já vão quebradas (`\n`)
- * onde o modelo as quebra na largura da caixa, senão o Konva as juntaria na largura maior.
+ * The text and the width with which Konva breaks like the model: with a word wider than the
+ * box, the `Text` widens up to it (`wordSafeWidth`) and the other lines already go pre-broken
+ * (`\n`) where the model breaks them at the box width, otherwise Konva would join them at the
+ * larger width.
  */
 export function wordSafeText(
   text: string,
@@ -64,7 +66,7 @@ export function wordSafeText(
   return { text: broken, width: safe };
 }
 
-/** A largura de um texto na fonte (com o espaçamento entre letras); `null` sem canvas. */
+/** The width of a text in the font (with the letter spacing); `null` without a canvas. */
 function fontWidth(font: WordFont): ((text: string) => number) | null {
   const ctx = measureContext();
   if (ctx === null) return null;
@@ -78,7 +80,8 @@ function fontWidth(font: WordFont): ((text: string) => number) | null {
 
 let context: CanvasRenderingContext2D | null | undefined;
 
-/** O contexto 2D de um canvas só de medida (nada do `Stage`); `null` sem canvas (testes em jsdom). */
+/** The 2D context of a measure-only canvas (nothing from the `Stage`); `null` without a canvas
+ * (tests in jsdom). */
 function measureContext(): CanvasRenderingContext2D | null {
   if (context !== undefined) return context;
   try {

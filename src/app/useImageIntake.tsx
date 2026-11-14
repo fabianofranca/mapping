@@ -19,7 +19,7 @@ export interface ImageIntake {
   readonly replaceInput: { current: HTMLInputElement | null };
   onImagesChosen(input: HTMLInputElement): Promise<void>;
   onReplaceChosen(input: HTMLInputElement): Promise<void>;
-  /** Botão de adicionar: abre o seletor de arquivos. */
+  /** Add button: opens the file picker. */
   onAddClick(): void;
   requestReplace(image: ProjectContainer): void;
   readonly dropHandlers: {
@@ -76,8 +76,8 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
     else if (result === 'locked') setMessage(t('image.replaceLocked'));
   };
 
-  // Ctrl/Cmd+V com o foco fora de campos de texto adiciona a imagem copiada.
-  // O listener é inscrito uma vez; `pasteFiles` aponta para a versão atual de `addAtViewCenter`.
+  // Ctrl/Cmd+V with focus outside text fields adds the copied image.
+  // The listener is subscribed once; `pasteFiles` points to the current version of `addAtViewCenter`.
   const pasteFiles = useRef<(files: readonly File[]) => void>(() => {});
   pasteFiles.current = (files) => void addAtViewCenter(files);
   const busyRef = useRef(busy);
@@ -88,7 +88,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
       const files = imagesFromPaste(e.clipboardData);
       if (files.length === 0 || !store.project.peek() || store.locked.peek()) return;
       e.preventDefault();
-      // Importação em curso: ignora, como o soltar (duas importações zerariam o progresso uma da outra).
+      // Import in progress: ignore, like the drop (two imports would reset each other's progress).
       if (busyRef.current) return;
       pasteFiles.current(files);
     };
@@ -98,7 +98,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
 
   // ---- Arrastar e soltar arquivos ----
 
-  /** Imagem sob o ponto que um arquivo solto trocaria; o container sem arquivo não tem arquivo para trocar. */
+  /** Image under the point that a dropped file would replace; a container without a file has no file to replace. */
   const replaceableImageAt = (e: DragEvent): string | null => {
     const containerId = canvas.current?.imageIdAt(e.clientX, e.clientY) ?? null;
     const image =
@@ -113,7 +113,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
 
   const onDragOver = (e: DragEvent) => {
     if (!dragHasFiles(e.dataTransfer)) return;
-    // Sempre cancela a ação padrão com arquivo: senão o navegador abre o arquivo na aba (#972).
+    // Always cancels the default action with a file: otherwise the browser opens the file in the tab (#972).
     e.preventDefault();
     if (readOnly || busy) {
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
@@ -124,7 +124,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
   };
 
   const onDragLeave = (e: DragEvent) => {
-    // Só limpa ao sair da área (dragleave também dispara entre filhos).
+    // Only clears when leaving the area (dragleave also fires between children).
     if (e.relatedTarget instanceof Node && e.currentTarget instanceof Node) {
       if (e.currentTarget.contains(e.relatedTarget)) return;
     }
@@ -144,7 +144,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
         setMessage(t('editor.dropIgnored', { names: ignored.join(', ') }));
     };
     if (!only) return warn();
-    // Troca só com exatamente um arquivo solto, a mesma regra do destaque do `dragover`.
+    // Replaces only with exactly one dropped file, the same rule as the `dragover` highlight.
     if ((e.dataTransfer?.files.length ?? 0) === 1 && images.length === 1 && overImage) {
       void replaceWith(overImage, only).then(warn);
       return;
@@ -178,7 +178,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
   };
 }
 
-/** Os `<input type="file">` escondidos que o botão de adicionar e "Trocar imagem" acionam. */
+/** The hidden `<input type="file">`s that the add button and "Replace image" trigger. */
 export function ImageInputs({ intake }: { readonly intake: ImageIntake }) {
   return (
     <>

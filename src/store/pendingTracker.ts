@@ -1,9 +1,9 @@
-// Rastreia as promessas em voo de um módulo da store, para os testes esperarem `whenIdle`.
+// Tracks the in-flight promises of a store module, so the tests can wait on `whenIdle`.
 
 export interface PendingTracker {
-  /** Registra a promessa até ela terminar (com sucesso ou não) e a devolve. */
+  /** Registers the promise until it finishes (successfully or not) and returns it. */
   track<T>(promise: Promise<T>): Promise<T>;
-  /** Resolve quando nada está pedido (inclusive o que entrou enquanto esperava). */
+  /** Resolves when nothing is pending (including what came in while waiting). */
   whenIdle(): Promise<void>;
 }
 

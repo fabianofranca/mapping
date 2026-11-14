@@ -31,7 +31,7 @@ interface EditorDialogsProps {
 const formatSize = (s: { width: number; height: number }) =>
   t('image.dimensions', { width: s.width, height: s.height });
 
-/** Diálogo de confirmação: Cancelar + uma ação (destrutiva ou principal). */
+/** Confirmation dialog: Cancel + one action (destructive or primary). */
 function ConfirmDialog({
   title,
   confirmLabel,
@@ -267,7 +267,7 @@ function renderDialog(
         />
       );
     case 'deletePerspective':
-      // Aberta pelo Gerenciar (a única origem): ao fechar, volta a ele (etapa #764, decisão 1).
+      // Opened from Manage (the only origin): on closing, it goes back to it (stage #764, decision 1).
       return (
         <DeletePerspectiveDialog
           id={dialog.id}
@@ -301,9 +301,9 @@ function renderDialog(
 }
 
 /**
- * "Projeto alterado fora da app": o `mapping.json` mudou por fora enquanto havia alterações
- * locais ainda não gravadas (a gravação foi recusada, ou estava em erro e a conferência
- * percebeu). Sem botão de fechar: é preciso escolher (Esc e toque fora não fazem nada).
+ * "Project changed outside the app": `mapping.json` changed outside while there were
+ * local changes not yet written (the write was refused, or was in error and the check
+ * noticed). No close button: a choice is required (Esc and a tap outside do nothing).
  */
 function ExternalChangeDialog() {
   const { session } = useEditor();
@@ -334,7 +334,7 @@ function ExternalChangeDialog() {
   );
 }
 
-/** O diálogo aberto no editor (`dialogs.current`), se houver. */
+/** The dialog open in the editor (`dialogs.current`), if any. */
 export function EditorDialogs(props: EditorDialogsProps) {
   const ctx = useEditor();
   const { current } = props.dialogs;

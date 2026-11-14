@@ -37,7 +37,7 @@ body {
   border: none;
 }
 
-/* Botão de ação dentro de um aviso (`Button` com `button-link`): herda a cor do aviso e fica sublinhado, como o `.link`. */
+/* Action button inside a notice (`Button` with `button-link`): inherits the notice color and is underlined, like `.link`. */
 .notice .button-link {
   color: inherit;
   text-decoration: underline;
@@ -60,7 +60,7 @@ body {
   background: var(--color-success-bg);
 }
 
-/* Foco visível para quem usa teclado (o contraste do acento passa de 3:1 nos dois temas). */
+/* Visible focus for keyboard users (the accent contrast exceeds 3:1 in both themes). */
 :focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
@@ -85,7 +85,7 @@ body {
   overflow-wrap: anywhere;
 }
 
-/* Anotações tipadas e referências (fase 16) */
+/* Typed annotations and references (phase 16) */
 .annotation-title {
   display: flex;
   align-items: center;
@@ -93,7 +93,7 @@ body {
   overflow-wrap: anywhere;
 }
 
-/* Só para leitor de tela: fora da vista, mas no DOM. */
+/* Screen reader only: out of view, but in the DOM. */
 .visually-hidden {
   position: absolute;
   width: 1px;

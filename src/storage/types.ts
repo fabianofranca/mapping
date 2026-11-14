@@ -1,4 +1,4 @@
-/** Pasta das cópias das especializações aplicadas (`specs/<id>.json`). */
+/** Folder of the copies of the applied specializations (`specs/<id>.json`). */
 export const SPECS_DIR = 'specs';
 import {
   COMMENTS_DIR,
@@ -8,7 +8,7 @@ import {
   RESOLVED_DIR,
   THREAD_ID_RE,
 } from '../model';
-// Nomes da pasta do projeto: definidos no modelo, compartilhados com o servidor MCP.
+// Project folder names: defined in the model, shared with the MCP server.
 export {
   BACKUPS_DIR,
   IMAGES_DIR,
@@ -20,153 +20,155 @@ export {
 export type StorageKind = 'folder' | 'local';
 
 /**
- * Onde o projeto vive: uma pasta no disco (File System Access API) ou o
- * IndexedDB do navegador. Os caminhos são relativos à raiz do projeto
- * (`mapping.json`, `images/foto.jpg`).
+ * Where the project lives: a folder on disk (File System Access API) or the
+ * browser's IndexedDB. Paths are relative to the project root
+ * (`mapping.json`, `images/photo.jpg`).
  */
 export interface ProjectStorage {
   readonly kind: StorageKind;
   /**
-   * Nome da pasta do projeto no disco (o `<projeto>` das referências `mapping://`).
-   * Só existe no modo pasta: é o que o MCP alcança.
+   * Name of the project folder on disk (the `<project>` of the `mapping://` references).
+   * It only exists in folder mode: it is what the MCP reaches.
    */
   readonly folderName?: string;
   /**
-   * A cópia do projeto a que o estado por dispositivo (retomar a revisão) pertence. Local: o
-   * id do projeto no IndexedDB. Pasta: o id da entrada dos recentes (por pasta física; ele
-   * sobrevive ao "Localizar pasta…"); sem recentes, um id por aba (`app/recents.ts`).
-   * Definido na criação do storage, nunca vazio e imutável. Todo storage entregue a uma
-   * sessão pelo controller tem `copyId`; só os de leitura (abrir, conferir a pasta) não têm.
+   * The copy of the project that the per-device state (resuming the review) belongs to. Local: the
+   * project id in IndexedDB. Folder: the id of the recents entry (per physical folder; it
+   * survives "Locate folder…"); with no recents, one id per tab (`app/recents.ts`).
+   * Set when the storage is created, never empty and immutable. Every storage handed to a
+   * session by the controller has `copyId`; only the read-only ones (open, check the folder) do
+   * not.
    */
   readonly copyId?: string;
-  /** Texto do `mapping.json`, ou `null` se ele não existir. */
+  /** Text of the `mapping.json`, or `null` if it does not exist. */
   loadMapping(): Promise<string | null>;
   /**
-   * O texto do `mapping.json` e o `lastModified` (ms) do MESMO `File`, com um único `getFile`
-   * (a sessão deixa de ler o arquivo e carimbá-lo em duas chamadas). `null` se o arquivo não
-   * existe; `lastModified` 0 se o `File` não o tem. Só a pasta implementa, como `statMapping`.
+   * The text of the `mapping.json` and the `lastModified` (ms) of the SAME `File`, with a single
+   * `getFile` (the session no longer reads the file and stamps it in two calls). `null` if the file
+   * does not exist; `lastModified` 0 if the `File` has none. Only the folder implements it, like
+   * `statMapping`.
    */
   loadMappingStamped?(): Promise<{ text: string; lastModified: number } | null>;
   saveMapping(text: string): Promise<void>;
   /**
-   * `lastModified` do `mapping.json` (ms), ou `null` se ele não existir. Só os
-   * armazenamentos que podem mudar por fora (a pasta) implementam; é o que a app
-   * confere a cada poucos segundos para perceber uma alteração externa.
+   * `lastModified` of the `mapping.json` (ms), or `null` if it does not exist. Only the
+   * storages that can change from outside (the folder) implement it; it is what the app
+   * checks every few seconds to notice an external change.
    */
   statMapping?(): Promise<number | null>;
-  /** Conteúdo da imagem, ou `null` se o arquivo não existir. */
+  /** Content of the image, or `null` if the file does not exist. */
   readImage(path: string): Promise<Blob | null>;
   writeImage(path: string, data: Blob): Promise<void>;
   /**
-   * Carimbo do arquivo da imagem (tamanho e `lastModified`), ou `null` se ele não existir.
-   * Mudou entre duas leituras = o arquivo foi trocado por fora. Opcional, como `statMapping`.
+   * Stamp of the image file (size and `lastModified`), or `null` if it does not exist.
+   * Changed between two reads = the file was swapped from outside. Optional, like `statMapping`.
    */
   statImage?(path: string): Promise<string | null>;
   /**
-   * Caminhos (`images/foto.jpg`) de todos os arquivos que estão em `images/`, citados ou não
-   * pelo projeto, em ordem alfabética: é o que a escolha de um nome livre precisa saber.
-   * `[]` se a pasta não existir.
+   * Paths (`images/photo.jpg`) of all the files in `images/`, cited by the project or not,
+   * in alphabetical order: it is what choosing a free name needs to know.
+   * `[]` if the folder does not exist.
    */
   listImages(): Promise<string[]>;
-  /** Remove a imagem. Não falha se ela já não existir. */
+  /** Removes the image. Does not fail if it no longer exists. */
   removeImage(path: string): Promise<void>;
   /**
-   * Texto da cópia de uma especialização (`specs/sdui.json`, ou o arquivo dela dentro da pasta
-   * do pacote, `specs/material3/material3.spec.json`), ou `null` se não existir.
+   * Text of the copy of a specialization (`specs/sdui.json`, or its file inside the package
+   * folder, `specs/material3/material3.spec.json`), or `null` if it does not exist.
    */
   readSpec(path: string): Promise<string | null>;
   writeSpec(path: string, text: string): Promise<void>;
-  /** Remove a cópia da especialização. Não falha se ela já não existir. */
+  /** Removes the copy of the specialization. Does not fail if it no longer exists. */
   removeSpec(path: string): Promise<void>;
   /**
-   * Caminhos (relativos à raiz do projeto) de todos os arquivos de `dir` (`specs/material3`),
-   * recursivo, em ordem alfabética. `[]` se a pasta não existir.
+   * Paths (relative to the project root) of all the files in `dir` (`specs/material3`),
+   * recursive, in alphabetical order. `[]` if the folder does not exist.
    */
   listSpecDir(dir: string): Promise<string[]>;
-  /** Conteúdo de um arquivo do pacote (`specs/material3/fonts/Roboto.ttf`), ou `null`. */
+  /** Content of a package file (`specs/material3/fonts/Roboto.ttf`), or `null`. */
   readSpecFile(path: string): Promise<Blob | null>;
-  /** Grava um arquivo do pacote, criando as pastas. No projeto local marca "não exportado". */
+  /** Writes a package file, creating the folders. In the local project it marks "not exported". */
   writeSpecFile(path: string, data: Blob | string): Promise<void>;
   /**
-   * Remove um arquivo do pacote (`specs/material3/docs/antigo.md`; qualquer extensão). Não falha
-   * se ele já não existir. No projeto local marca "não exportado".
+   * Removes a package file (`specs/material3/docs/old.md`; any extension). Does not fail
+   * if it no longer exists. In the local project it marks "not exported".
    */
   removeSpecFile(path: string): Promise<void>;
   /**
-   * Remove a pasta do pacote inteira (recursivo). Não falha se ela não existir. No projeto
-   * local marca "não exportado".
+   * Removes the whole package folder (recursive). Does not fail if it does not exist. In the
+   * local project it marks "not exported".
    */
   removeSpecDir(dir: string): Promise<void>;
   /**
-   * Ids das propostas (`proposals/<id>/proposal.json`, etapa 4), em ordem alfabética.
-   * O conteúdo das imagens de uma proposta usa `readImage`/`writeImage`/`removeImage`
-   * com o caminho completo (`proposals/<id>/images/tela.webp`).
+   * Ids of the proposals (`proposals/<id>/proposal.json`, stage 4), in alphabetical order.
+   * The content of a proposal's images uses `readImage`/`writeImage`/`removeImage`
+   * with the full path (`proposals/<id>/images/screen.webp`).
    */
   listProposals(): Promise<string[]>;
-  /** Texto do `proposal.json`, ou `null` se ele não existir. */
+  /** Text of the `proposal.json`, or `null` if it does not exist. */
   readProposal(id: string): Promise<string | null>;
   writeProposal(id: string, text: string): Promise<void>;
   /**
-   * Apaga a proposta inteira: `proposals/<id>/` com o `proposal.json` e as imagens que
-   * esperam a aceitação (recursivo). Não falha se ela já não existir. No projeto local
-   * marca "não exportado", como `writeProposal`.
+   * Deletes the whole proposal: `proposals/<id>/` with the `proposal.json` and the images that
+   * await acceptance (recursive). Does not fail if it no longer exists. In the local project
+   * it marks "not exported", like `writeProposal`.
    */
   removeProposal(id: string): Promise<void>;
   /**
-   * Caminhos (relativos à raiz do projeto) de todos os arquivos sob `proposals/<id>/`
-   * (o `proposal.json`, as imagens e os pacotes de biblioteca em `specs/<pasta>/…`),
-   * recursivo, em ordem alfabética. `[]` se a proposta não existir. O conteúdo de cada
-   * um se lê com `readImage(path)`, que aceita qualquer caminho do projeto.
+   * Paths (relative to the project root) of all the files under `proposals/<id>/`
+   * (the `proposal.json`, the images and the library packages in `specs/<folder>/…`),
+   * recursive, in alphabetical order. `[]` if the proposal does not exist. The content of each
+   * one is read with `readImage(path)`, which accepts any project path.
    */
   listProposalFiles(id: string): Promise<string[]>;
   /**
-   * Carimbo (tamanho e `lastModified`) do `proposal.json`, ou `null` se ele não existir.
-   * Só a pasta implementa, como `statMapping`: é como a app percebe propostas novas ou
-   * alteradas por fora.
+   * Stamp (size and `lastModified`) of the `proposal.json`, or `null` if it does not exist.
+   * Only the folder implements it, like `statMapping`: it is how the app notices proposals that are
+   * new or changed from outside.
    */
   statProposal?(id: string): Promise<string | null>;
   /**
-   * `statProposal` de todas as propostas num passo só (a varredura da conferência): percorre
-   * `proposals/` uma vez e, para cada pasta de id válido, carimba o `proposal.json` pelo handle
-   * da própria entrada. A pasta sem `proposal.json` fica de fora, como no `listProposals`; a
-   * proposta cujo arquivo não pôde ser lido (em uso, sem permissão) vem com `null`, para a
-   * varredura a reler em vez de a tomar por apagada. Os ids em `skip` não são conferidos e
-   * também voltam com `null` (a conferência de ciclo pula as propostas finais já lidas). Em
-   * ordem alfabética. Só a pasta implementa.
+   * `statProposal` of all the proposals in a single pass (the check's sweep): walks
+   * `proposals/` once and, for each folder with a valid id, stamps the `proposal.json` through the
+   * handle of the entry itself. A folder without `proposal.json` is left out, as in
+   * `listProposals`; a proposal whose file could not be read (in use, no permission) comes back
+   * with `null`, so the sweep rereads it instead of taking it for deleted. The ids in `skip` are
+   * not checked and also come back with `null` (the cycle check skips the final proposals already
+   * read). In alphabetical order. Only the folder implements it.
    */
   stampProposals?(skip?: ReadonlySet<string>): Promise<Map<string, string | null>>;
   /**
-   * Ids das conversas (`comments/<id>.json`; com `resolved`, `comments/resolved/<id>.json`),
-   * em ordem alfabética. Só lista o nome dos arquivos (a conferência de ~3 s depende de ser
-   * barato). `[]` se a pasta não existir; nomes fora do `THREAD_ID_RE` ficam de fora.
+   * Ids of the threads (`comments/<id>.json`; with `resolved`, `comments/resolved/<id>.json`),
+   * in alphabetical order. It only lists the file names (the ~3 s check depends on it being
+   * cheap). `[]` if the folder does not exist; names outside the `THREAD_ID_RE` are left out.
    */
   listThreads(resolved: boolean): Promise<string[]>;
-  /** Texto do arquivo da conversa, ou `null` se ele não existir. Recusa um id inválido. */
+  /** Text of the thread file, or `null` if it does not exist. Refuses an invalid id. */
   readThread(id: string, resolved: boolean): Promise<string | null>;
   /**
-   * Grava o arquivo da conversa, criando as pastas. No projeto local marca "não exportado".
-   * Mover entre `comments/` e `comments/resolved/` é gravar no destino e só então apagar a
-   * origem (quem move é a sessão).
+   * Writes the thread file, creating the folders. In the local project it marks "not exported".
+   * Moving between `comments/` and `comments/resolved/` is writing to the destination and only then
+   * deleting the origin (the session does the moving).
    */
   writeThread(id: string, resolved: boolean, text: string): Promise<void>;
-  /** Apaga o arquivo da conversa. Não falha se ele já não existir. */
+  /** Deletes the thread file. Does not fail if it no longer exists. */
   removeThread(id: string, resolved: boolean): Promise<void>;
   /**
-   * Carimbo (tamanho e `lastModified`) do arquivo da conversa, ou `null` se ele não existir.
-   * Só a pasta implementa, como `statProposal`: o projeto local não é observado.
+   * Stamp (size and `lastModified`) of the thread file, or `null` if it does not exist.
+   * Only the folder implements it, like `statProposal`: the local project is not watched.
    */
   statThread?(id: string, resolved: boolean): Promise<string | null>;
   /**
-   * `listThreads` + `statThread` de todas as conversas de uma pasta num passo só (a varredura da
-   * conferência): percorre `comments/` (ou `comments/resolved/`) uma vez e carimba cada arquivo
-   * pelo handle da própria entrada. Id → carimbo, em ordem alfabética; o arquivo que não pôde
-   * ser lido (em uso, sem permissão) vem com `null`, presente mas sem carimbo, para a varredura
-   * o reler em vez de o tomar por apagado. Só a pasta implementa.
+   * `listThreads` + `statThread` of all the threads of a folder in a single pass (the check's
+   * sweep): walks `comments/` (or `comments/resolved/`) once and stamps each file
+   * through the handle of the entry itself. Id → stamp, in alphabetical order; a file that could
+   * not be read (in use, no permission) comes back with `null`, present but without a stamp, so the
+   * sweep rereads it instead of taking it for deleted. Only the folder implements it.
    */
   stampThreads?(resolved: boolean): Promise<Map<string, string | null>>;
   /**
-   * Guarda uma cópia do `mapping.json` original (antes de migrar o schema).
-   * `name` é o nome do arquivo (ver `backupFileName`), sem a pasta.
+   * Keeps a copy of the original `mapping.json` (before migrating the schema).
+   * `name` is the file name (see `backupFileName`), without the folder.
    */
   writeBackup(name: string, text: string): Promise<void>;
 }
@@ -179,8 +181,8 @@ function cleanSegments(path: string): string[] | null {
 }
 
 /**
- * `true` para `specs/<nome>.json` (cópia única, v1 a v3) ou `specs/<pasta>/…/<nome>.json`
- * (o arquivo da especialização dentro do pacote), sem `..`, `.` nem segmentos vazios.
+ * `true` for `specs/<name>.json` (single copy, v1 to v3) or `specs/<folder>/…/<name>.json`
+ * (the specialization file inside the package), without `..`, `.` or empty segments.
  */
 export function isSpecPath(path: string): boolean {
   const parts = cleanSegments(path);
@@ -192,19 +194,19 @@ export function isSpecPath(path: string): boolean {
   );
 }
 
-/** `true` para um arquivo de pacote: `specs/<pasta>/…` (qualquer extensão), sem `..`. */
+/** `true` for a package file: `specs/<folder>/…` (any extension), without `..`. */
 export function isSpecPackagePath(path: string): boolean {
   const parts = cleanSegments(path);
   return parts !== null && parts.length >= 3 && parts[0] === SPECS_DIR;
 }
 
-/** `true` para a pasta de um pacote: `specs/<pasta>` ou mais fundo, sem `..`. */
+/** `true` for a package folder: `specs/<folder>` or deeper, without `..`. */
 export function isSpecDirPath(path: string): boolean {
   const parts = cleanSegments(path);
   return parts !== null && parts.length >= 2 && parts[0] === SPECS_DIR;
 }
 
-/** Recusa (lança) o caminho que não seja de `specs/`; usado por todas as implementações. */
+/** Refuses (throws) a path that is not under `specs/`; used by all the implementations. */
 export function assertSpecPath(path: string, kind: 'file' | 'dir' | 'package'): void {
   const ok =
     kind === 'dir'
@@ -217,13 +219,13 @@ export function assertSpecPath(path: string, kind: 'file' | 'dir' | 'package'): 
 
 const PROPOSAL_PATH_RE = new RegExp(`^${PROPOSALS_DIR}/([^/]+)/(.+)$`);
 
-/** Id da proposta de um caminho `proposals/<id>/…`; `null` se não for um. */
+/** Id of the proposal of a `proposals/<id>/…` path; `null` if it is not one. */
 export function proposalIdOfPath(path: string): string | null {
   const id = PROPOSAL_PATH_RE.exec(path)?.[1];
   return id !== undefined && PROPOSAL_ID_RE.test(id) ? id : null;
 }
 
-/** `true` para `proposals/<id>/proposal.json`. */
+/** `true` for `proposals/<id>/proposal.json`. */
 export function isProposalFilePath(path: string): boolean {
   const match = PROPOSAL_PATH_RE.exec(path);
   return (
@@ -232,8 +234,8 @@ export function isProposalFilePath(path: string): boolean {
 }
 
 /**
- * `true` para uma imagem de proposta (`proposals/<id>/images/tela.webp`): imagem
- * dentro da pasta da proposta, sem `..`.
+ * `true` for a proposal image (`proposals/<id>/images/screen.webp`): an image
+ * inside the proposal folder, without `..`.
  */
 export function isProposalImagePath(path: string): boolean {
   const match = PROPOSAL_PATH_RE.exec(path);
@@ -245,9 +247,9 @@ export function isProposalImagePath(path: string): boolean {
 }
 
 /**
- * `true` para um arquivo de pacote de biblioteca que espera numa proposta
- * (`proposals/<id>/specs/<pasta>/…`, qualquer extensão): pelo menos pasta e arquivo, sem
- * `..`, `.`, segmentos vazios nem `\`.
+ * `true` for a library package file waiting in a proposal
+ * (`proposals/<id>/specs/<folder>/…`, any extension): at least folder and file, without
+ * `..`, `.`, empty segments or `\`.
  */
 export function isProposalPackagePath(path: string): boolean {
   const match = PROPOSAL_PATH_RE.exec(path);
@@ -259,19 +261,21 @@ const THREAD_PATH_RE = new RegExp(
   `^(${COMMENTS_DIR}/resolved|${COMMENTS_DIR})/([^/]+)\\.json$`,
 );
 
-/** Recusa (lança) um id de conversa que não vire só um nome de arquivo em `comments/`. */
+/** Refuses (throws) a thread id that would not become just a file name in `comments/`. */
 export function assertThreadId(id: string): void {
   if (!THREAD_ID_RE.test(id)) throw new Error(`invalid thread id: ${id}`);
 }
 
-/** `true` para um nome de arquivo `<id>.json` com id válido (devolve o id), senão `null`. */
+/** `true` for a file name `<id>.json` with a valid id (returns the id), else `null`. */
 export function threadIdOfFileName(name: string): string | null {
   if (!name.endsWith('.json')) return null;
   const id = name.slice(0, -'.json'.length);
   return THREAD_ID_RE.test(id) ? id : null;
 }
 
-/** Id e pasta de `comments/<id>.json` ou `comments/resolved/<id>.json`; `null` se não for. */
+/**
+ * Id and folder of `comments/<id>.json` or `comments/resolved/<id>.json`; `null` if it is not one.
+ */
 export function threadLocationOfPath(
   path: string,
 ): { readonly id: string; readonly resolved: boolean } | null {
@@ -281,20 +285,20 @@ export function threadLocationOfPath(
   return { id, resolved: match?.[1] === RESOLVED_DIR };
 }
 
-/** `true` para `comments/<id>.json` e `comments/resolved/<id>.json`, com id válido. */
+/** `true` for `comments/<id>.json` and `comments/resolved/<id>.json`, with a valid id. */
 export function isThreadFilePath(path: string): boolean {
   return threadLocationOfPath(path) !== null;
 }
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif'];
 
-/** `true` se o nome do arquivo tem extensão de imagem conhecida. */
+/** `true` if the file name has a known image extension. */
 export function isImageFileName(name: string): boolean {
   const dot = name.lastIndexOf('.');
   return dot > 0 && IMAGE_EXTENSIONS.includes(name.slice(dot + 1).toLowerCase());
 }
 
-/** Tipo MIME a partir da extensão (para arquivos lidos sem tipo, como os do zip). */
+/** MIME type from the extension (for files read without a type, such as the zip's). */
 export function imageMimeType(name: string): string {
   const ext = name.slice(name.lastIndexOf('.') + 1).toLowerCase();
   if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';

@@ -1,7 +1,7 @@
 import { channelStorageKey } from './channel';
 
-// localStorage pode lançar exceção (modo privado, file://, dados bloqueados).
-// As chaves passam por `channelStorageKey`: o preview não lê as da versão principal.
+// localStorage can throw (private mode, file://, blocked data).
+// Keys go through `channelStorageKey`: the preview does not read the main version's.
 export function readSetting(key: string): string | null {
   try {
     return localStorage.getItem(channelStorageKey(key));
@@ -14,12 +14,12 @@ export function writeSetting(key: string, value: string): void {
   try {
     localStorage.setItem(channelStorageKey(key), value);
   } catch {
-    // Sem persistência: a configuração vale só para esta sessão.
+    // No persistence: the setting only holds for this session.
   }
 }
 
-// O mesmo para o `sessionStorage`: o que vale só enquanto a aba existir (sobrevive a
-// recarregar a página, não a outra aba). Fase 8.4: o id por aba de uma pasta sem recentes.
+// The same for `sessionStorage`: what only holds while the tab exists (survives
+// reloading the page, not another tab). Phase 8.4: the per-tab id of a folder with no recents.
 export function readSessionSetting(key: string): string | null {
   try {
     return sessionStorage.getItem(channelStorageKey(key));
@@ -32,6 +32,6 @@ export function writeSessionSetting(key: string, value: string): void {
   try {
     sessionStorage.setItem(channelStorageKey(key), value);
   } catch {
-    // Sem `sessionStorage`: quem chama guarda em memória.
+    // No `sessionStorage`: the caller keeps it in memory.
   }
 }

@@ -1,10 +1,10 @@
 import { useState } from 'preact/hooks';
 
-/** Progresso de uma operação longa e a mensagem de erro/aviso sobre o canvas. */
+/** Progress of a long operation and the error/warning message over the canvas. */
 export interface EditorNotices {
   readonly progress: string | null;
   readonly message: string | null;
-  /** Há uma operação em andamento (importar, trocar, exportar). */
+  /** An operation is in progress (import, replace, export). */
   readonly busy: boolean;
   setProgress(progress: string | null): void;
   setMessage(message: string | null): void;

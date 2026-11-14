@@ -33,24 +33,24 @@ import { validatePackage } from './packageValidation';
 import type { SpecPackageFiles } from './project';
 import type { ProposalErrorCode, ProposalStore, RemoveProposalError } from './proposals';
 
-// Ações da revisão sobre as propostas (etapa 4): decidir, anotar e aplicar as aceitas.
-// São as únicas que mudam uma proposta; a gravação é de `ProposalStore.mutate`. Cada
-// ação é uma função pura da proposta (do `src/model/`), então, se o arquivo mudou por
-// fora, ela é refeita sobre a versão nova do disco.
+// Review actions on proposals (stage 4): decide, annotate and apply the accepted ones.
+// They are the only ones that change a proposal; writing is done by `ProposalStore.mutate`. Each
+// action is a pure function of the proposal (from `src/model/`), so, if the file changed
+// outside, it is redone over the new version from disk.
 
 export type DecisionError =
-  /** O agente revisou esta mudança enquanto a pessoa olhava a versão antiga (decisão 8). */
+  /** The agent revised this change while the person was looking at the old version (decision 8). */
   'revised' | 'not-open' | 'unknown-target' | 'no-project' | ProposalErrorCode;
 
-/** O que uma decisão mudou, para explicar ("4 mudanças rejeitadas junto") e para o "Desfazer" dos lotes. */
+/** What a decision changed, to explain ("4 changes rejected along with it") and for the batches' "Undo". */
 export interface DecisionOutcome {
   readonly proposal: Proposal;
-  /** Decisões antes e depois (o "Desfazer" regrava `previous` numa única escrita). */
+  /** Decisions before and after (the "Undo" rewrites `previous` in a single write). */
   readonly previous: ProposalDecisions;
   readonly decisions: ProposalDecisions;
-  /** Mudanças pedidas cujo estado mudou. */
+  /** Requested changes whose state changed. */
   readonly changed: readonly string[];
-  /** Mudanças fora do pedido que mudaram pelas dependências. */
+  /** Changes outside the request that changed through dependencies. */
   readonly cascaded: readonly string[];
 }
 
@@ -70,21 +70,21 @@ export type RestoreError = 'not-open' | 'stale' | ProposalErrorCode;
 export type ApplyError =
   | 'no-project'
   | 'read-only'
-  /** O conjunto aceito deixaria o projeto inválido (`issues`) ou não cabe nele. */
+  /** The accepted set would leave the project invalid (`issues`) or does not fit in it. */
   | 'blocked'
-  /** O projeto mudou durante a aplicação (recarregado por fora). */
+  /** The project changed during the application (reloaded from outside). */
   | 'stale'
-  /** A imagem nova não está em `proposals/<id>/…` (`path`). */
+  /** The new image is not in `proposals/<id>/…` (`path`). */
   | 'image-missing'
-  /** O arquivo de destino já é de outra imagem do projeto (`path`). */
+  /** The destination file already belongs to another image of the project (`path`). */
   | 'image-exists'
   /** Nenhum arquivo do pacote de biblioteca em `proposals/<id>/specs/<pasta>/` (`path`). */
   | 'package-missing'
-  /** O pacote da proposta não passa na validação da biblioteca (ou passa dos limites) (`path`). */
+  /** The proposal's package fails the library validation (or exceeds the limits) (`path`). */
   | 'package-invalid'
   /**
-   * O `mapping.json` não gravou (alteração externa, quota, permissão): as mudanças foram
-   * desfeitas e a proposta continua como estava (alteração externa abre o diálogo de conflito).
+   * `mapping.json` was not written (external change, quota, permission): the changes were
+   * undone and the proposal stays as it was (an external change opens the conflict dialog).
    */
   | 'save-failed'
   | 'failed'
@@ -94,7 +94,7 @@ export type ApplyResult =
   | {
       readonly ok: true;
       readonly proposal: Proposal;
-      /** Mudanças efetivadas agora. */
+      /** Changes made effective now. */
       readonly applied: number;
       /** Imagens movidas para `images/`. */
       readonly files: number;
@@ -109,7 +109,7 @@ export type ApplyResult =
 export type RemoveError =
   /** Projeto somente leitura: nada do armazenamento muda. */
   | 'read-only'
-  /** Há uma proposta em revisão: apagar é da lista, fora da revisão. */
+  /** A proposal is under review: deleting belongs to the list, outside the review. */
   | 'reviewing'
   | RemoveProposalError;
 
@@ -117,20 +117,20 @@ export type RemoveResult =
   | { readonly ok: true; readonly proposal: Proposal }
   | { readonly ok: false; readonly error: RemoveError };
 
-/** Todos os motivos de recusa das ações da revisão (para a mensagem ao usuário). */
+/** All the reasons the review actions refuse (for the message to the user). */
 export type ProposalActionError =
   DecisionError | NoteError | RestoreError | ApplyError | RemoveError;
 
 export interface ProposalActions {
-  /** Decide um nível (aceita, rejeita ou limpa) resolvendo as dependências. */
+  /** Decides a level (accepts, rejects or clears) resolving the dependencies. */
   decide(
     proposalId: string,
     target: ReviewTarget,
     state: 'accepted' | 'rejected' | null,
   ): Promise<DecisionResult>;
   /**
-   * Decide vários alvos numa única gravação (os lotes: "Aceitar 12 visíveis" com filtros).
-   * Pelo menos um alvo existente.
+   * Decides several targets in a single write (the batches: "Accept 12 visible" with filters).
+   * At least one existing target.
    */
   decideMany(
     proposalId: string,
@@ -138,8 +138,8 @@ export interface ProposalActions {
     state: 'accepted' | 'rejected' | null,
   ): Promise<DecisionResult>;
   /**
-   * Regrava `previous` como as decisões, numa única escrita ("Desfazer" do lote). Só vale
-   * enquanto as decisões ainda são `expected` (ninguém decidiu nada depois).
+   * Rewrites `previous` as the decisions, in a single write (the batch's "Undo"). Only valid
+   * while the decisions are still `expected` (nobody decided anything afterwards).
    */
   restoreDecisions(
     proposalId: string,
@@ -154,19 +154,20 @@ export interface ProposalActions {
   editNote(proposalId: string, noteId: string, text: string): Promise<NoteResult>;
   removeNote(proposalId: string, noteId: string): Promise<NoteResult>;
   /**
-   * "Aplicar aceitas": efetiva as aceitas ainda não aplicadas numa única entrada de
-   * desfazer do projeto, move as imagens de `proposals/<id>/` para `images/`, copia os
-   * pacotes de biblioteca de `proposals/<id>/specs/` para `specs/` (pela sessão; os arquivos
-   * ficam na proposta) e grava `applied` (e `status`, se tudo foi decidido) na proposta. Desfazer e refazer essa
-   * entrada também desfazem e refazem o `applied` e a posição das imagens.
+   * "Apply accepted": makes the accepted, not yet applied changes effective in a single undo
+   * entry of the project, moves the images from `proposals/<id>/` to `images/`, copies the
+   * library packages from `proposals/<id>/specs/` to `specs/` (through the session; the files
+   * stay in the proposal) and writes `applied` (and `status`, if everything was decided) to the
+   * proposal. Undoing and redoing that entry also undo and redo the `applied` and the position of
+   * the images.
    */
   applyAccepted(proposalId: string): Promise<ApplyResult>;
   /**
-   * Apaga uma proposta fechada (retirada, substituída ou aplicada) do armazenamento, com as
-   * imagens que esperavam a aceitação. Sem desfazer. A entrada de "Aplicar aceitas" dela no
-   * histórico perde o vínculo (`detachLinks`): o desfazer e o refazer do projeto continuam
-   * valendo, sem mexer em proposta nenhuma. As imagens que a aplicação copiou para
-   * `images/` são do projeto e seguem a limpeza normal da sessão.
+   * Deletes a closed proposal (withdrawn, superseded or applied) from storage, with the
+   * images that were waiting for acceptance. No undo. Its "Apply accepted" entry in the
+   * history loses the link (`detachLinks`): the project's undo and redo remain
+   * valid, without touching any proposal. The images the application copied to
+   * `images/` belong to the project and follow the session's normal cleanup.
    */
   removeProposal(proposalId: string): Promise<RemoveResult>;
 }
@@ -177,19 +178,19 @@ export interface ProposalActionsDeps {
   readonly storage: ProjectStorage;
   readonly now: () => string;
   readonly newId: () => string;
-  /** Grava a imagem no projeto e a registra como gravada pela sessão (`stored`). */
+  /** Writes the image to the project and registers it as written by the session (`stored`). */
   readonly putProjectImage: (path: string, data: Blob) => Promise<void>;
   /**
-   * Tudo que ocupa um nome em `images/` agora: os arquivos da pasta (citados ou não) e o que a
-   * sessão guarda (histórico de desfazer, lixeira, gravações em curso). Comparado por
-   * `fileNameKey`, sem diferenciar maiúsculas e minúsculas.
+   * Everything that occupies a name in `images/` now: the files in the folder (cited or not) and
+   * what the session keeps (undo history, trash, writes in progress). Compared by
+   * `fileNameKey`, case-insensitively.
    */
   readonly takenImageFiles: () => Promise<ReadonlySet<string>>;
-  /** Desfaz `putProjectImage` (a aplicação falhou no meio). */
+  /** Undoes `putProjectImage` (the application failed midway). */
   readonly dropProjectImage: (path: string) => Promise<void>;
   /**
-   * Entrega à sessão o pacote da especialização (já validado) que a aplicação vai pôr no
-   * projeto: a gravação de `specs/<pasta>/` e o desfazer/refazer saem do cache dela.
+   * Hands the session the specialization package (already validated) that the application will put
+   * in the project: writing `specs/<folder>/` and undo/redo come from its cache.
    */
   readonly stagePackage: (
     spec: { readonly id: string; readonly version: number },
@@ -198,13 +199,13 @@ export interface ProposalActionsDeps {
   /** Grava agora o que o projeto tem pendente (o `mapping.json` antes da proposta) e diz se gravou. */
   readonly flush: () => Promise<FlushResult>;
   /**
-   * Mede no contador de chamadas da pasta (`decide`: gravar uma decisão ou nota; `apply`:
-   * aplicar as aceitas, até o `mapping.json` gravado). Sem ele, só executa.
+   * Measures on the folder's call counter (`decide`: writing a decision or note; `apply`:
+   * applying the accepted ones, up to the `mapping.json` written). Without it, it only runs.
    */
   readonly measure?: <T>(op: FolderOp, fn: () => Promise<T>) => Promise<T>;
 }
 
-/** Alguma das mudanças que vão mudar de estado foi revisada pelo agente sem a pessoa ver? */
+/** Is any of the changes about to change state one the agent revised without the person seeing? */
 function touchesUnseen(
   unseen: ReadonlySet<string>,
   changed: readonly string[],
@@ -222,21 +223,22 @@ function sameDecisions(a: ProposalDecisions, b: ProposalDecisions): boolean {
   });
 }
 
-/** Imagem copiada para `images/`: onde estava, onde está e o conteúdo (para desfazer). */
+/** Image copied to `images/`: where it was, where it is and the content (to undo). */
 interface MovedImage {
   readonly from: string;
   readonly to: string;
   readonly blob: Blob;
 }
 
-/** Por que o pacote de uma proposta não pôde ser lido. */
+/** Why a proposal's package could not be read. */
 type PackageReadError = 'package-missing' | 'package-invalid';
 
 /**
- * Lê para a memória o pacote que espera em `proposals/<id>/specs/<pasta>/` (texto dos `.json`
- * e `.md`, `Blob` copiado dos demais, como o `snapshotPackage` da sessão) e o valida pelos
- * três níveis, com a versão aplicada como anterior (contrato de versão). O arquivo da
- * especialização vem de `to.spec`, a fonte da verdade: se a pasta tem o dele, é substituído.
+ * Reads into memory the package waiting in `proposals/<id>/specs/<folder>/` (text of the `.json`
+ * and `.md`, `Blob` copied for the others, like the session's `snapshotPackage`) and validates it
+ * through the three levels, with the applied version as the previous one (version contract). The
+ * specialization file comes from `to.spec`, the source of truth: if the folder has its own, it is
+ * replaced.
  */
 async function readProposalPackage(
   storage: ProjectStorage,
@@ -249,7 +251,7 @@ async function readProposalPackage(
     path.startsWith(prefix),
   );
   if (paths.length === 0) return 'package-missing';
-  // Leituras em paralelo com limite; a conferência e o mapa seguem a ordem dos arquivos.
+  // Reads in parallel with a limit; the check and the map follow the order of the files.
   const read = await mapLimit(paths, FOLDER_CONCURRENCY, async (path) => {
     const blob = await storage.readImage(path);
     if (!blob) return null;
@@ -276,9 +278,9 @@ async function readProposalPackage(
 }
 
 /**
- * Lê as imagens de origem de uma proposta em paralelo com limite, na ordem de `moves`: `null`
- * onde o arquivo não existe. Cópia em memória: ler de novo depois de apagar a origem, no
- * desfazer, não pode falhar.
+ * Reads a proposal's source images in parallel with a limit, in the order of `moves`: `null`
+ * where the file does not exist. In-memory copy: reading again after deleting the source, on
+ * undo, cannot fail.
  */
 async function readImageSources(
   storage: ProjectStorage,
@@ -311,7 +313,7 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
         for (const target of targets) {
           const decided = decide(current, tree, target, state, at);
           if (!decided.ok) {
-            // Um alvo que sumiu num lote é ignorado; sozinho, é erro.
+            // A target that vanished in a batch is ignored; alone, it is an error.
             if (targets.length === 1) return { ok: false, error: decided.reason };
             continue;
           }
@@ -342,7 +344,7 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
       }),
     );
     if (!result.ok) return result;
-    // Decidir é como editar: o "refazer" de uma aplicação desfeita deixaria de valer.
+    // Deciding is like editing: the "redo" of an undone application would no longer be valid.
     if (result.value.changed.length + result.value.cascaded.length > 0) {
       store.discardRedoOf(id);
     }
@@ -366,7 +368,7 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
         : { ok: false, error: result.error },
     );
 
-  /** O alvo existe na proposta (para a nota não apontar para o vazio). */
+  /** The target exists in the proposal (so the note does not point to nothing). */
   const targetExists = (p: Proposal, target: ReviewTarget): boolean => {
     if (target.level === 'proposal' || target.level === 'project') return true;
     if (target.id === null) return false;
@@ -376,8 +378,8 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
   };
 
   /**
-   * Põe a nota no alvo. Uma mudança que o agente retirou numa revisão já não existe: a nota
-   * sobe ao nível da proposta e a mudança retirada a reivindica (decisão 6).
+   * Puts the note on the target. A change the agent withdrew in a revision no longer exists: the
+   * note goes up to the proposal level and the withdrawn change claims it (decision 6).
    */
   const addNoteTo = (
     p: Proposal,
@@ -417,13 +419,13 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
         );
         const statusBefore: ProposalStatus = p.status;
         const statusAfter: ProposalStatus = applying.proposal.status;
-        // A gravação do `mapping.json` falhou e a entrada foi desfeita: o vínculo não faz nada.
+        // Writing `mapping.json` failed and the entry was undone: the link does nothing.
         let abandoned = false;
-        // O projeto depois do `store.apply` (para desfazer só se ainda é ele).
+        // The project after `store.apply` (to undo only if it is still the one).
         let applied: Project | null = null;
 
-        // Desfazer a entrada: a proposta volta a ter as mudanças como aceitas sem aplicar e
-        // as imagens voltam para `proposals/<id>/`. Refazer: o contrário.
+        // Undo the entry: the proposal goes back to having the changes as accepted but not applied
+        // and the images go back to `proposals/<id>/`. Redo: the opposite.
         const link: HistoryLink = {
           tag: id,
           undo: () => {
@@ -493,8 +495,8 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
         };
 
         const prepare = async (): Promise<ApplyError | null> => {
-          // 0. Os pacotes de biblioteca são lidos, validados e entregues à sessão, que os
-          // grava em `specs/<pasta>/` junto com o projeto (copiados: ficam na proposta).
+          // 0. The library packages are read, validated and handed to the session, which
+          // writes them to `specs/<folder>/` together with the project (copied: they stay in the proposal).
           for (const pkg of applying.packages) {
             const read = await readProposalPackage(storage, pkg, base, id);
             if (typeof read === 'string') {
@@ -503,14 +505,14 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
             }
             deps.stagePackage({ id: pkg.specId, version: pkg.version }, read);
           }
-          // 1. As imagens vão para o lugar definitivo (copiadas; a origem só sai no fim).
+          // 1. The images go to their final place (copied; the source is removed only at the end).
           const taken = new Set<string>();
           for (const file of await deps.takenImageFiles()) taken.add(fileNameKey(file));
           for (const image of base.containers) {
             if (image.file !== null) taken.add(fileNameKey(image.file));
           }
-          // As origens são lidas todas de uma vez (em paralelo com limite); as verificações e as
-          // gravações abaixo seguem em ordem, com os mesmos erros.
+          // The sources are all read at once (in parallel with a limit); the checks and the
+          // writes below follow in order, with the same errors.
           const sources = await readImageSources(storage, applying.files);
           for (const [i, move] of applying.files.entries()) {
             if (taken.has(fileNameKey(move.to))) {
@@ -528,7 +530,7 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
             moved.push({ from: move.from, to: move.to, blob });
             taken.add(fileNameKey(move.to));
           }
-          // 2. O projeto, numa entrada de desfazer. Se mudou enquanto copiávamos, desiste.
+          // 2. The project, in one undo entry. If it changed while we were copying, give up.
           if (store.project.peek() !== base) {
             await rollback();
             return 'stale';
@@ -541,15 +543,15 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
             }
             applied = store.project.peek();
           }
-          // 3. O `mapping.json` primeiro: a proposta só diz "aplicada" se ele gravou. Senão,
-          // desfaz a entrada (sem "refazer"), devolve as cópias e não grava a proposta.
+          // 3. `mapping.json` first: the proposal only says "applied" if it was written. Otherwise,
+          // undo the entry (no "redo"), return the copies and do not write the proposal.
           const saved = await deps.flush();
           if (!saved.ok) {
             abandoned = true;
             const undone = applied !== null && store.project.peek() === applied;
             if (undone) store.undo();
             store.discardRedoOf(id);
-            // Projeto já trocado (o undo foi pulado): ele pode citar as cópias, que ficam.
+            // Project already swapped (the undo was skipped): it may cite the copies, which stay.
             if (undone) await rollback();
             return 'save-failed';
           }
@@ -566,26 +568,26 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
             try {
               return await prepare();
             } catch (e) {
-              // Exceção de armazenamento (leitura do pacote ou da imagem, gravação da cópia):
-              // vira a falha de gravação tipada e as cópias já feitas saem.
+              // Storage exception (reading the package or image, writing the copy):
+              // it becomes the typed write failure and the copies already made are removed.
               reportError('proposals.apply', e);
               await rollback();
               return 'write-failed';
             }
           },
-          // 4. O `mapping.json` gravou, mas o `proposal.json` falhou (fase 8.2, P7): o projeto
-          // não pode ficar aplicado com a proposta sem `applied`. Desfaz a entrada (a sessão
-          // vê o confirmado diferente do disco e agenda a regravação), confirma a regravação
-          // com `flush` e só então tira as cópias de `images/`: o `mapping.json` em disco
-          // ainda as cita até a regravação, e ele nunca aponta para um arquivo apagado. Se a
-          // regravação falha, as cópias ficam para a limpeza da sessão quando ela passar.
+          // 4. `mapping.json` was written, but `proposal.json` failed (phase 8.2, P7): the project
+          // cannot stay applied with the proposal lacking `applied`. Undo the entry (the session
+          // sees the confirmed state differ from the disk and schedules the rewrite), confirm the
+          // rewrite with `flush` and only then remove the copies from `images/`: the `mapping.json`
+          // on disk still cites them until the rewrite, and it never points to a deleted file. If
+          // the rewrite fails, the copies are left for the session's cleanup when it succeeds.
           compensate: async () => {
             abandoned = true;
             const undone = applied !== null && store.project.peek() === applied;
             if (undone) store.undo();
             store.discardRedoOf(id);
-            // O projeto já não é o aplicado (recarregado por fora na janela da gravação): não há
-            // o que regravar, e o disco pode citar as cópias. Elas ficam.
+            // The project is no longer the applied one (reloaded from outside in the write window):
+            // there is nothing to rewrite, and the disk may cite the copies. They stay.
             if (!undone) return;
             const restored = await deps.flush();
             if (restored.ok) await rollback();
@@ -620,7 +622,7 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
       const result = await proposals.mutate<void, 'not-open' | 'stale'>(id, (p) => {
         if (p.status !== 'open') return { ok: false, error: 'not-open' };
         if (!sameDecisions(p.decisions, expected)) return { ok: false, error: 'stale' };
-        // O que já foi aplicado continua aceito.
+        // What was already applied remains accepted.
         if (
           Object.keys(p.applied).some(
             (changeId) => previous[changeId]?.state !== 'accepted',

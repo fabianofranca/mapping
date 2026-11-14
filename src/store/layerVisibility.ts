@@ -3,16 +3,16 @@ import type { Perspective } from '../model';
 import type { PerspectiveActions } from './perspectiveActions';
 import { showAllLayers, showLayer, toggleLayerVisible, type EditorUi } from './ui';
 
-// Visibilidade das camadas que conhece a perspectiva (etapa #956, CE2; decisão 11 da #659):
-// com uma perspectiva aberta, as camadas escondidas são as dela e mudam no projeto (uma entrada
-// de desfazer por mudança); na Principal, as da interface (`ui.hiddenLayers`). É o único
-// caminho de escrita dos componentes: Camadas, Lista, painéis e a navegação passam por aqui.
+// Visibility of the layers known to the perspective (stage #956, CE2; decision 11 of #659):
+// with a perspective open, the hidden layers are its own and change in the project (one undo entry
+// per change); in the Main one, the interface's (`ui.hiddenLayers`). It is the only write
+// path for components: Layers, List, panels and navigation go through here.
 
 export interface LayerVisibility {
-  /** As camadas escondidas à vista: as da perspectiva aberta, ou as da interface. */
+  /** The hidden layers in view: the open perspective's, or the interface's. */
   hidden(): ReadonlySet<string>;
   toggle(layerId: string): void;
-  /** Tira a camada das escondidas; camada que já está visível não grava nada. */
+  /** Removes the layer from the hidden ones; a layer already visible writes nothing. */
   show(layerId: string): void;
   showAll(): void;
 }

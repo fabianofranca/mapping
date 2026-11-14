@@ -8,10 +8,10 @@ import {
   type ImageSwitchName,
 } from '../storage/imagePermissions';
 
-// Consentimento de imagens remotas (RI3). Estado por navegador, lido do `localStorage` na
-// carga; as ações gravam. "Agora não" vale só na sessão (memória).
+// Consent for remote images (RI3). Per-browser state, read from `localStorage` on
+// load; the actions write. "Not now" only applies to the session (memory).
 
-/** Resultado das duas portas da app (política de URL e consentimento) para uma URL. */
+/** Result of the app's two gates (URL policy and consent) for a URL. */
 export type RemoteImageGate =
   | { readonly allowed: true; readonly url: string; readonly origin: string }
   | {
@@ -36,20 +36,20 @@ const dismissed = signal<ReadonlySet<string>>(new Set());
 
 /** Origens permitidas neste navegador. */
 export const allowedOrigins: ReadonlySignal<readonly string[]> = origins;
-/** "Permitir imagens de qualquer origem" (não vale para a rede local). */
+/** "Allow images from any origin" (does not apply to the local network). */
 export const allowAnyOrigin: ReadonlySignal<boolean> = anyOrigin;
 /** "Permitir imagens sem criptografia (http)". */
 export const allowHttp: ReadonlySignal<boolean> = http;
 /** "Permitir imagens da rede local". */
 export const allowLocalNetwork: ReadonlySignal<boolean> = localNetwork;
-/** Interruptor "Mostrar imagens de servidores sem CORS" (decisão 17). */
+/** "Show images from servers without CORS" switch (decision 17). */
 export const allowNoCors: ReadonlySignal<boolean> = noCors;
-/** Origens que a pessoa dispensou com "Agora não" nesta sessão. */
+/** Origins the person dismissed with "Not now" in this session. */
 export const dismissedOrigins: ReadonlySignal<ReadonlySet<string>> = dismissed;
 
 /**
- * A função das duas portas. Muda (outro objeto) quando o consentimento ou um interruptor muda:
- * quem a lê dentro de um `computed`/`effect` refaz o desenho.
+ * The function of the two gates. It changes (another object) when the consent or a switch changes:
+ * whoever reads it inside a `computed`/`effect` redraws.
  */
 export const remoteImageGate: ReadonlySignal<(url: string) => RemoteImageGate> = computed(
   () => {
@@ -81,7 +81,7 @@ export function revokeOrigin(origin: string): void {
   saveAllowedOrigins(next);
 }
 
-/** "Agora não": esconde a faixa dessas origens até recarregar a página. */
+/** "Not now": hides the banner for those origins until the page reloads. */
 export function dismissOrigins(list: readonly string[]): void {
   dismissed.value = new Set([...dismissed.peek(), ...list]);
 }

@@ -1,28 +1,28 @@
 /**
- * Fontes do design system carregadas a partir dos **bytes** dos arquivos da pasta (ou do zip),
- * sem rede. A CSP da app bloqueia carregar fonte por URL, mas não uma `FontFace` construída de
- * um `ArrayBuffer` já em memória. Depois de carregadas, o canvas usa a família pelo nome; quem
- * chama precisa remedir os textos e redesenhar.
+ * Design-system fonts loaded from the **bytes** of the files in the folder (or the zip),
+ * without network. The app's CSP blocks loading a font by URL, but not a `FontFace` built
+ * from an `ArrayBuffer` already in memory. Once loaded, the canvas uses the family by name;
+ * the caller must re-measure the texts and redraw.
  *
- * Cada usuário cria o próprio registro (`createFontRegistry`): o registro lembra as faces que
- * ele adicionou ao documento, para tirá-las ao trocar de biblioteca. Não há estado de módulo.
+ * Each user creates its own registry (`createFontRegistry`): the registry remembers the faces
+ * it added to the document, to remove them when switching libraries. There is no module state.
  */
 import type { LoadedFont } from '../model/components/library';
 
 export interface FontStatus {
   readonly font: LoadedFont;
   readonly status: 'loaded' | 'missing' | 'failed';
-  /** Por que a fonte não carregou; a interface monta o texto por `t()`. */
+  /** Why the font did not load; the interface builds the text through `t()`. */
   readonly problem?: FontProblem;
 }
 
-/** Código e parâmetros do motivo (sem texto: o idioma é da interface). */
+/** Code and parameters of the reason (no text: the language belongs to the interface). */
 export type FontProblem =
   | { readonly code: 'missing'; readonly path: string }
   | { readonly code: 'no-fontface' }
   | { readonly code: 'load-failed'; readonly message: string };
 
-/** `FontFace` e `document.fonts`, injetáveis nos testes (o jsdom não os tem). */
+/** `FontFace` and `document.fonts`, injectable in tests (jsdom does not have them). */
 export interface FontHost {
   readonly FontFace?: new (
     family: string,
@@ -37,15 +37,15 @@ const defaultHost = (): FontHost => ({
   fonts: typeof document !== 'undefined' ? document.fonts : undefined,
 });
 
-/** Registro de fontes: guarda as faces adicionadas ao documento para poder tirá-las. */
+/** Font registry: keeps the faces added to the document so they can be removed. */
 export interface FontRegistry {
   /**
-   * Registra as fontes com bytes e devolve o status de cada declaração. As faces registradas
-   * antes por este registro saem primeiro, para uma família com o mesmo nome não misturar
-   * pesos de dois pacotes.
+   * Registers the fonts with bytes and returns the status of each declaration. The faces
+   * registered earlier by this registry are removed first, so a family with the same name
+   * does not mix weights from two packages.
    */
   register(fonts: readonly LoadedFont[]): Promise<FontStatus[]>;
-  /** Tira do documento as faces que este registro adicionou. */
+  /** Removes from the document the faces this registry added. */
   clear(): void;
 }
 

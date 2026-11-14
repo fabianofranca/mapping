@@ -31,7 +31,8 @@
   pointer-events: auto;
 }
 
-/* Avisos curtos e progresso: no pé, à esquerda, da largura do texto, nunca sob o minimapa. */
+/* Short notices and progress: at the foot, on the left, as wide as the text, never under the
+   minimap. */
 .canvas-overlay-foot {
   position: absolute;
   left: var(--space-2);
@@ -79,7 +80,7 @@
   display: none;
 }
 
-/* Arrastar e soltar arquivos em área vazia do canvas. */
+/* Drag and drop files onto an empty canvas area. */
 .canvas-host--drop {
   outline: 3px dashed var(--color-accent);
   outline-offset: -3px;

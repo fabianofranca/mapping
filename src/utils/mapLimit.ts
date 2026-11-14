@@ -1,7 +1,8 @@
 /**
- * Como `Promise.all(items.map(fn))`, mas com no máximo `limit` tarefas ao mesmo tempo e o
- * resultado na ordem dos itens. Ao primeiro erro nenhuma tarefa nova começa; as em curso
- * terminam e só então a promessa rejeita, com esse primeiro erro. Sem dependência de DOM.
+ * Like `Promise.all(items.map(fn))`, but with at most `limit` tasks at a time and the
+ * result in the order of the items. After the first error no new task starts; the ones in
+ * progress finish and only then does the promise reject, with that first error. No DOM
+ * dependency.
  */
 export async function mapLimit<T, R>(
   items: readonly T[],

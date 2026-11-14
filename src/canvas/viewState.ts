@@ -2,11 +2,11 @@ import { signal, type Signal } from '@preact/signals';
 import type { Rect } from '../model';
 import type { Size, Viewport } from './viewport';
 
-// Estado de visualização que a interface lê (barra de status, minimapa e campo de
-// zoom): o `CanvasController` escreve aqui, e os componentes só leem. Fica fora do
-// projeto e do desfazer, e o cursor é atualizado no máximo uma vez por quadro.
+// View state that the interface reads (status bar, minimap and zoom field): the
+// `CanvasController` writes here, and the components only read. It lives outside the
+// project and the undo, and the cursor is updated at most once per frame.
 
-/** Posição do ponteiro em pixels da imagem sob ele. */
+/** Pointer position in pixels of the image under it. */
 export interface CanvasCursor {
   readonly containerId: string;
   readonly x: number;
@@ -16,9 +16,9 @@ export interface CanvasCursor {
 export interface CanvasViewState {
   readonly viewport: Signal<Viewport>;
   readonly size: Signal<Size>;
-  /** Área ocupada por todas as imagens (unidades do canvas); `null` sem imagens. */
+  /** Area occupied by all the images (canvas units); `null` without images. */
   readonly bounds: Signal<Rect | null>;
-  /** Pixel da imagem sob o mouse; `null` fora de qualquer imagem (ou no toque). */
+  /** Image pixel under the mouse; `null` outside any image (or on touch). */
   readonly cursor: Signal<CanvasCursor | null>;
 }
 
@@ -31,7 +31,7 @@ export function createCanvasViewState(): CanvasViewState {
   };
 }
 
-/** Mesmo cursor (evita escrever o signal a cada quadro parado). */
+/** Same cursor (avoids writing the signal on every idle frame). */
 export function sameCursor(a: CanvasCursor | null, b: CanvasCursor | null): boolean {
   if (a === null || b === null) return a === b;
   return a.containerId === b.containerId && a.x === b.x && a.y === b.y;

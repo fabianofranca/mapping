@@ -1,6 +1,6 @@
-// Resultado das ações da tela inicial (abrir, criar, importar, recentes): sucesso ou um código
-// de erro que a `Home` mostra com `t('error.<code>')`. Módulo sem dependências da app, para o
-// controller e `recents.ts` usarem sem ciclo de imports (fase 8.4).
+// Result of the home screen actions (open, create, import, recents): success or an error code
+// that `Home` shows with `t('error.<code>')`. Module with no app dependencies, so the
+// controller and `recents.ts` can use it without an import cycle (phase 8.4).
 import type {
   DeserializeError,
   InvariantIssue,
@@ -9,7 +9,7 @@ import type {
 } from '../model';
 import { reportError } from '../utils/report';
 
-/** Todo código tem `error.<code>` nos dicionários (`tests/i18n/dictionaries.test.ts`). */
+/** Every code has `error.<code>` in the dictionaries (`tests/i18n/dictionaries.test.ts`). */
 export type AppErrorCode =
   | DeserializeError['code']
   | 'invalid-zip'
@@ -22,20 +22,20 @@ export type AppResult<T = void> =
   | {
       readonly ok: false;
       readonly error: AppErrorCode;
-      /** Em `invariant-violation`: a lista exata dos problemas e o reparo, se houver. */
+      /** On `invariant-violation`: the exact list of problems and the repair, if any. */
       readonly inconsistent?: InconsistentProject;
     };
 
-/** Projeto recusado por dados inconsistentes (docs/FORMAT.md, "Arquivos inconsistentes"). */
+/** Project refused for inconsistent data (docs/FORMAT.md, "Inconsistent files"). */
 export interface InconsistentProject {
   readonly issues: readonly InvariantIssue[];
-  /** O que "Reparar e abrir" faria. */
+  /** What "Repair and open" would do. */
   readonly repaired: readonly RepairRecord[];
-  /** Problemas sem reparo mecânico. */
+  /** Problems with no mechanical repair. */
   readonly unrepaired: readonly InvariantIssue[];
   /**
-   * "Reparar e abrir": abre o projeto reparado; o backup do original e o reparado só são
-   * gravados na primeira gravação. `null` quando há problema sem reparo.
+   * "Repair and open": opens the repaired project; the backup of the original and the repaired
+   * one are only written on the first save. `null` when there is a problem with no repair.
    */
   readonly repair: (() => Promise<AppResult>) | null;
 }
@@ -43,7 +43,7 @@ export interface InconsistentProject {
 export const ok = <T>(value: T): AppResult<T> => ({ ok: true, value });
 export const err = (error: AppErrorCode): AppResult<never> => ({ ok: false, error });
 
-/** Uma exceção vira `storage-failed`, com a causa no Diagnóstico. */
+/** An exception becomes `storage-failed`, with the cause in the Diagnostics. */
 export async function guarded<T>(
   action: () => Promise<AppResult<T>>,
 ): Promise<AppResult<T>> {
@@ -55,7 +55,7 @@ export async function guarded<T>(
   }
 }
 
-/** Recusa por dados inconsistentes, com o "Reparar e abrir" quando tudo tem reparo. */
+/** Refusal for inconsistent data, with "Repair and open" when everything has a repair. */
 export function inconsistentResult(
   issues: readonly InvariantIssue[],
   repair: RepairedLoad,

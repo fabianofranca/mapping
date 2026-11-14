@@ -1,6 +1,6 @@
-// O que um toque ou arrasto faria num ponto do canvas: pan, mover/redimensionar
-// o item selecionado, desenhar, pegar um item ou selecionar pelo toque.
-// Funções puras (sem DOM nem Konva), testadas em `tests/canvas/input/`.
+// What a touch or drag would do at a canvas point: pan, move/resize
+// the selected item, draw, pick an item or select by touch.
+// Pure functions (no DOM or Konva), tested in `tests/canvas/input/`.
 import {
   canEditArrow,
   canEditImagePlacement,
@@ -49,9 +49,9 @@ import type { Point } from '../viewport';
 
 export { ABSORB_TOLERANCE } from '../containment';
 
-/** Distância (px de tela) em que um novo toque conta como "no mesmo ponto". */
+/** Distance (screen px) within which a new touch counts as "at the same point". */
 export const TAP_REPEAT_DISTANCE = 12;
-/** Metade da área de toque da alça (px de tela): 22 → 44 px, acima do mínimo de 24. */
+/** Half of the handle's touch area (screen px): 22 → 44 px, above the 24 minimum. */
 export const HANDLE_HIT_RADIUS = 22;
 
 export type Intent =
@@ -68,32 +68,32 @@ export type Intent =
       readonly markingId: string;
       readonly corner: Corner;
     }
-  /** Desenhar: `containerId` nulo = no vazio do canvas (marcação do canvas). */
+  /** Draw: null `containerId` = in the empty canvas (canvas marking). */
   | { readonly kind: 'draw'; readonly containerId: string | null }
   /**
-   * Seleção múltipla (ME2): arrastar qualquer item selecionado leva a seleção inteira, cada
-   * item no próprio espaço (`moveItems`). Leva os itens que existiam ao apertar o ponteiro.
+   * Multiple selection (ME2): dragging any selected item takes the whole selection, each
+   * item in its own space (`moveItems`). Takes the items that existed when the pointer was pressed.
    */
   | { readonly kind: 'move-items'; readonly items: readonly SelectionItem[] }
   /**
-   * Alça de ligação da marcação selecionada (ME4): puxar dela até outra marcação cria uma seta
-   * que sai da selecionada.
+   * Link handle of the selected marking (ME4): pulling from it to another marking creates an arrow
+   * that leaves the selected one.
    */
   | { readonly kind: 'arrow-link'; readonly markingId: string }
   /**
-   * Alça da seta selecionada (ME4): a ponta (trocar de marcação ou de lado), um ponto de passagem
-   * (mover) ou o meio de um trecho (arrastar cria um ponto de passagem).
+   * Handle of the selected arrow (ME4): the tip (switch marking or side), a waypoint
+   * (move) or the middle of a segment (dragging creates a waypoint).
    */
   | {
       readonly kind: 'arrow-handle';
       readonly arrowId: string;
       readonly handle: ArrowHandle;
     }
-  /** Sobre o item selecionado e trancado: arrastar não faz nada (cursor "não permitido"). */
+  /** On the selected, locked item: dragging does nothing ("not allowed" cursor). */
   | { readonly kind: 'locked' }
   /**
-   * Seleção por retângulo (SM2): Shift+arrasto onde, sem Shift, haveria pan ou desenho. Soma à
-   * seleção os itens inteiramente dentro do retângulo; não muda o projeto.
+   * Rectangle selection (SM2): Shift+drag where, without Shift, there would be pan or drawing. Adds to the
+   * selection the items entirely inside the rectangle; does not change the project.
    */
   | { readonly kind: 'select-rect' };
 
@@ -101,58 +101,58 @@ const PAN: Intent = { kind: 'pan' };
 const LOCKED: Intent = { kind: 'locked' };
 const RECT_SELECT: Intent = { kind: 'select-rect' };
 
-/** Estado do editor que decide a intenção (lido sem assinar, no momento do evento). */
+/** Editor state that decides the intent (read without subscribing, at the moment of the event). */
 export interface IntentContext {
   readonly project: Project | null;
   readonly readOnly: boolean;
   readonly mode: EditorMode;
-  /** Item primário da seleção (o último clicado): é o das alças. */
+  /** Primary item of the selection (the last clicked): it is the one with handles. */
   readonly selection: Selection;
   /**
-   * Todos os itens selecionados que existem no projeto, o primário por último. Com dois ou mais,
-   * arrastar dentro de qualquer um deles move a seleção toda; com um só, vale `selection`.
+   * All the selected items that exist in the project, the primary last. With two or more,
+   * dragging inside any of them moves the whole selection; with just one, `selection` applies.
    */
   readonly items: readonly SelectionItem[];
   /**
-   * Visibilidade das marcações no modo de exibição: uma marcação oculta não conta como "dentro"
-   * (não aparece na tela), mas continua sendo movida com a seleção. Sem o mapa, todas contam.
+   * Visibility of the markings in the display mode: a hidden marking does not count as "inside"
+   * (it does not appear on screen), but is still moved with the selection. Without the map, all count.
    */
   readonly visibility?: ReadonlyMap<string, MarkingVisibility>;
   /**
-   * Setas desenhadas (as duas pontas à vista, "Mostrar setas" ligado, fora do modo visualização): o que o
-   * toque alcança e onde ficam as alças da seta selecionada. Sem o campo, não há seta no toque.
+   * Arrows drawn (both ends in view, "Show arrows" on, outside view mode): what the
+   * touch reaches and where the selected arrow's handles are. Without the field, there is no arrow on touch.
    */
   readonly arrows?: readonly ArrowShape[];
   /**
-   * Retângulos dos nomes acima dos containers (canvas): arrastar pelo nome do container selecionado
-   * o move. Sem o campo, o nome não conta.
+   * Rectangles of the names above the containers (canvas): dragging by the selected container's name
+   * moves it. Without the field, the name does not count.
    */
   readonly titles?: ReadonlyMap<string, Rect>;
-  /** Pixels de tela por unidade do canvas. */
+  /** Screen pixels per canvas unit. */
   readonly zoom: number;
-  /** Espaço pressionado: arrastar sempre faz pan. */
+  /** Space pressed: dragging always pans. */
   readonly spaceDown: boolean;
   /**
-   * Shift apertado com o mouse (botão esquerdo) fora da revisão: o arrasto que faria pan ou
-   * desenharia vira `select-rect`, mesmo em somente leitura. Só o toque do ponteiro o liga.
+   * Shift pressed with the mouse (left button) outside the review: the drag that would pan or
+   * draw becomes `select-rect`, even in read-only. Only the pointer touch turns it on.
    */
   readonly rectSelect?: boolean;
   /**
-   * Há uma perspectiva aberta (etapa #659, decisão 5): o que só vale na Principal não começa.
-   * Não desenha no vazio do canvas (marcação do canvas) e não mexe nos pontos de passagem da
-   * seta; desenhar dentro de um container e as pontas da seta continuam.
+   * A perspective is open (stage #659, decision 5): what only applies in the Main one does not start.
+   * It does not draw in the empty canvas (canvas marking) and does not touch the arrow's waypoints;
+   * drawing inside a container and the arrow's tips continue.
    */
   readonly perspectiveOpen?: boolean;
 }
 
 /**
- * O que um arrasto começando em `c` (canvas) faria. Em Navegar, as alças do
- * item selecionado redimensionam e arrastar o item o move; com vários itens selecionados, as alças
- * continuam sendo só do primário e arrastar dentro de qualquer item selecionado move todos
- * (`move-items`, ou `locked` se algum não pode ir). Em Desenhar,
- * arrastar sempre cria uma marcação (sem alças, para não atrapalhar o desenho de filhas perto
- * dos cantos do pai): sobre uma imagem, preso a ela; no vazio, uma marcação do canvas. O pan
- * no modo Desenhar fica com a barra de espaço, o botão do meio e a roda.
+ * What a drag starting at `c` (canvas) would do. In Navigate, the handles of the
+ * selected item resize and dragging the item moves it; with several items selected, the handles
+ * remain only the primary's and dragging inside any selected item moves all
+ * (`move-items`, or `locked` if any cannot go). In Draw,
+ * dragging always creates a marking (without handles, so as not to disturb drawing children near
+ * the parent's corners): over an image, attached to it; in the void, a canvas marking. Pan
+ * in Draw mode stays with the space bar, the middle button and the wheel.
  */
 export function intentAt(ctx: IntentContext, c: Point): Intent {
   const intent = baseIntentAt(ctx, c);
@@ -165,7 +165,7 @@ function baseIntentAt(ctx: IntentContext, c: Point): Intent {
   if (ctx.spaceDown || !project || ctx.readOnly) return PAN;
   if (ctx.mode === 'draw') {
     const image = imageAt(project.containers, c);
-    // Numa perspectiva, a marcação do canvas (fora de container) é só da Principal.
+    // In a perspective, the canvas marking (outside a container) belongs only to the Main one.
     if (!image && ctx.perspectiveOpen) return PAN;
     return { kind: 'draw', containerId: image?.id ?? null };
   }
@@ -175,15 +175,15 @@ function baseIntentAt(ctx: IntentContext, c: Point): Intent {
     return arrowIntentAt(ctx, project, selected.arrow.id, c) ?? PAN;
   if (selected?.kind === 'marking') {
     const rect = markingCanvasRect(selected.space.placement, selected.marking.rect);
-    // A alça de ligação fica fora do retângulo e vale também trancada: criar a seta não muda a
-    // marcação.
+    // The link handle sits outside the rectangle and also applies when locked: creating the arrow does not change the
+    // marking.
     if (isOnLinkHandle(rect, c, zoom)) {
       return { kind: 'arrow-link', markingId: selected.marking.id };
     }
     const radius = handleHitRadius(Math.min(rect.width, rect.height) * zoom) / zoom;
     const markingId = selected.marking.id;
-    // Trancada (ela ou um ancestral): sem alças e sem mover. Descendentes trancados não
-    // contam: mover o pai os leva junto.
+    // Locked (it or an ancestor): no handles and no moving. Locked descendants do not
+    // count: moving the parent takes them along.
     const editable = canEditMarkingGeometry(project, markingId);
     const corner = editable ? cornerAt(rect, c, radius) : null;
     if (corner) return { kind: 'resize-marking', markingId, corner };
@@ -207,22 +207,22 @@ function baseIntentAt(ctx: IntentContext, c: Point): Intent {
   return PAN;
 }
 
-/** O ponto está no rótulo do nome do container `id` (`ctx.titles`)? */
+/** Is the point on the label of the name of container `id` (`ctx.titles`)? */
 function onContainerTitle(ctx: IntentContext, id: string, c: Point): boolean {
   const title = ctx.titles?.get(id);
   return title !== undefined && pointInRect(c, title);
 }
 
 /**
- * Seleção múltipla: as alças do primário redimensionam o primário; fora delas, o ponto dentro do
- * retângulo (no canvas) de qualquer item selecionado começa o arrasto conjunto, se todos podem ir
- * (tudo ou nada), ou é `locked`; fora de todos, pan.
+ * Multiple selection: the primary's handles resize the primary; outside them, a point inside the
+ * rectangle (in the canvas) of any selected item starts the joint drag, if all can go
+ * (all or nothing), or it is `locked`; outside all of them, pan.
  */
 function multiIntentAt(ctx: IntentContext, project: Project, c: Point): Intent {
   const { items, zoom } = ctx;
   const selected = resolveSelection(project, ctx.selection);
   if (selected?.kind === 'arrow') {
-    // As alças da seta primária valem com vários itens; fora delas, o resto do arrasto conjunto.
+    // The primary arrow's handles apply with several items; outside them, the rest of the joint drag.
     const arrowIntent = arrowIntentAt(ctx, project, selected.arrow.id, c);
     if (arrowIntent) return arrowIntent;
   }
@@ -260,9 +260,9 @@ function multiIntentAt(ctx: IntentContext, project: Project, c: Point): Intent {
 }
 
 /**
- * A intenção de um ponto sobre a seta selecionada (a primária): uma alça dela, ou `locked` sobre o
- * traço de uma seta trancada (sem alças); `null` fora das alças. Uma seta que não está
- * desenhada (ponta oculta, "Mostrar setas" desligado) não tem alças.
+ * The intent of a point on the selected arrow (the primary): one of its handles, or `locked` over the
+ * stroke of a locked arrow (no handles); `null` outside the handles. An arrow that is not
+ * drawn (hidden end, "Show arrows" off) has no handles.
  */
 function arrowIntentAt(
   ctx: IntentContext,
@@ -276,12 +276,12 @@ function arrowIntentAt(
     return arrowsAt([shape], c, ctx.zoom).length > 0 ? LOCKED : null;
   }
   const handle = arrowHandleAt(shape, c, ctx.zoom);
-  // Numa perspectiva, só as pontas da seta se mexem: a rota (pontos de passagem) é da Principal.
+  // In a perspective, only the arrow's tips move: the route (waypoints) belongs to the Main one.
   if (handle && ctx.perspectiveOpen && handle.kind !== 'end') return null;
   return handle ? { kind: 'arrow-handle', arrowId, handle } : null;
 }
 
-/** Marcações que aceitam toque: as ocultas pelo modo de exibição ficam de fora. */
+/** Markings that accept touch: those hidden by the display mode are left out. */
 export function selectableMarkings(
   project: Project,
   visibility: ReadonlyMap<string, MarkingVisibility>,
@@ -289,37 +289,37 @@ export function selectableMarkings(
   return project.markings.filter((m) => visibility.get(m.id) !== 'hidden');
 }
 
-/** O toque em `c` foi perto do anterior (`last`), em px de tela? */
+/** Was the touch at `c` near the previous one (`last`), in screen px? */
 export function isRepeatTap(last: Point | null, c: Point, zoom: number): boolean {
   return (
     last !== null && Math.hypot(c.x - last.x, c.y - last.y) * zoom <= TAP_REPEAT_DISTANCE
   );
 }
 
-/** Item que um toque pode selecionar. */
+/** Item that a touch can select. */
 export type HitItem = NonNullable<Selection>;
 
-/** As setas que o toque alcança: as desenhadas e o zoom (o alcance é em px de tela). */
+/** The arrows the touch reaches: the drawn ones and the zoom (the reach is in screen px). */
 export interface ArrowHit {
   readonly shapes: readonly ArrowShape[];
   readonly zoom: number;
 }
 
 /**
- * Tudo o que um toque em `c` (canvas) alcança, do primeiro a receber o toque ao último (a cadeia
- * do "clicar de novo sobe"):
+ * Everything a touch at `c` (canvas) reaches, from the first to receive the touch to the last (the chain
+ * of "click again goes up"):
  *
- * 1. as marcações flutuantes sob o ponto, onde estiverem (a de cima primeiro);
- * 1b. as setas a até `ARROW_HIT_TOLERANCE` px de tela do ponto (`arrows`; a mais perto primeiro);
- * 1c. o rótulo do nome acima de um container (`titles`): o container e as marcações do canvas que
- *    o contêm, mesmo que ele esteja inteiramente coberto de marcações;
- * 2. dentro de um container: a marcação mais interna → os ancestrais → o container → as marcações
- *    do canvas que o contêm (pela cadeia de `parentId` do container) → as demais marcações do
- *    canvas sobrepostas ao ponto;
- * 3. fora dos containers: as marcações do canvas sob o ponto, a mais interna primeiro e depois os
- *    ancestrais.
+ * 1. the floating markings under the point, wherever they are (the top one first);
+ * 1b. the arrows within `ARROW_HIT_TOLERANCE` screen px of the point (`arrows`; the nearest first);
+ * 1c. the name label above a container (`titles`): the container and the canvas markings that
+ *    contain it, even if it is entirely covered with markings;
+ * 2. inside a container: the innermost marking → the ancestors → the container → the canvas markings
+ *    that contain it (through the container's `parentId` chain) → the other canvas
+ *    markings overlapping the point;
+ * 3. outside the containers: the canvas markings under the point, the innermost first and then the
+ *    ancestors.
  *
- * As marcações ocultas pela visibilidade ficam de fora.
+ * Markings hidden by visibility are left out.
  */
 export function hitChain(
   project: Project,
@@ -339,13 +339,13 @@ export function hitChain(
     chain.push(pick);
   };
   for (const m of floatingAt(markings, c)) add({ kind: 'marking', id: m.id });
-  // As setas ficam acima das marcações e dos containers, e abaixo das flutuantes.
+  // The arrows stay above the markings and the containers, and below the floating ones.
   if (arrows) {
     for (const shape of arrowsAt(arrows.shapes, c, arrows.zoom)) {
       add({ kind: 'arrow', id: shape.arrow.id });
     }
   }
-  // As marcações do canvas que contêm o container, de dentro para fora.
+  // The canvas markings that contain the container, from the inside out.
   const addCanvasParents = (container: ProjectContainer) => {
     const byId = projectIndex(project).markings;
     let parentId = container.parentId;
@@ -375,8 +375,8 @@ export function hitChain(
 }
 
 /**
- * Seleção depois de um toque em `c`: o primeiro da cadeia (`hitChain`); tocar de novo no mesmo
- * ponto (`repeat`) sobe um degrau e, depois do último, volta ao primeiro. Fora de tudo, nada.
+ * Selection after a touch at `c`: the first of the chain (`hitChain`); touching again at the same
+ * point (`repeat`) goes up one step and, after the last, returns to the first. Outside everything, nothing.
  */
 export function tapSelection(
   project: Project | null,
@@ -394,7 +394,7 @@ export function tapSelection(
   return chain.find((pick) => keyOf(pick) === next) ?? null;
 }
 
-/** A âncora `point` do clique em `c` (canvas): no container mais alto sob ele, ou no canvas. */
+/** The `point` anchor of the click at `c` (canvas): in the highest container under it, or in the canvas. */
 export function pointAnchorAt(
   project: Project,
   c: Point,
@@ -406,8 +406,8 @@ export function pointAnchorAt(
 }
 
 /**
- * Onde o clique do botão Comentar abre a conversa (decisão 25): na marcação ou na seta sob `c`
- * (a mais interna) ou, num lugar vazio do canvas ou de um container, num ponto (`pointAnchorAt`).
+ * Where the Comment button's click opens the thread (decision 25): on the marking or arrow under `c`
+ * (the innermost) or, in an empty place of the canvas or of a container, at a point (`pointAnchorAt`).
  */
 export function commentAnchorAt(
   project: Project,
@@ -434,7 +434,7 @@ export function dragModeOf(intent: Intent): DragMode {
     : 'resize';
 }
 
-/** Cursor do mouse parado sobre um ponto com a intenção dada. */
+/** Mouse cursor resting over a point with the given intent. */
 export function cursorFor(intent: Intent): string {
   switch (intent.kind) {
     case 'move-image':

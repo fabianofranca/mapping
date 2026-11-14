@@ -1,8 +1,8 @@
-// As linhas da lista de recentes da tela inicial, para levar o foco à linha que ficou no
-// lugar da que saiu (etapa 7, G4). Saiu do `Home.tsx` sem mudança (devolução do portão da
-// 8.4, para o arquivo não crescer além do `max-lines`).
+// The rows of the home screen's recents list, to move focus to the row that took the
+// place of the one that left (stage 7, G4). Moved out of `Home.tsx` unchanged (returned by the
+// 8.4 gate, so the file does not grow past `max-lines`).
 
-/** Posição da linha `key` na lista de recentes (0 se não estiver nela). */
+/** Position of row `key` in the recents list (0 if it is not in it). */
 export function recentRowIndex(section: HTMLElement | null, key: string): number {
   const rows = [...(section?.querySelectorAll<HTMLElement>('tr[data-recent]') ?? [])];
   return Math.max(
@@ -12,8 +12,8 @@ export function recentRowIndex(section: HTMLElement | null, key: string): number
 }
 
 /**
- * Foco depois de uma linha sair da lista: o Abrir da linha que ficou na posição `index` (ou
- * da última, se a removida era a última); sem linhas, o título da lista.
+ * Focus after a row leaves the list: the Open of the row now at position `index` (or of the
+ * last one, if the removed one was the last); with no rows, the list title.
  */
 export function recentRowTarget(
   section: HTMLElement | null,

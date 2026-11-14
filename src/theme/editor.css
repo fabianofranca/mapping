@@ -1,7 +1,7 @@
 /*
- * Estrutura do editor no desktop (fase R4): barra principal, faixas, janelas de
- * ferramenta, breadcrumbs, barra de status e minimapa. Medidas e cores só dos tokens
- * (seção Layouts do DS 2.0).
+ * Editor structure on desktop (phase R4): main bar, strips, tool windows,
+ * breadcrumbs, status bar and minimap. Measures and colors only from the tokens
+ * (Layouts section of DS 2.0).
  */
 
 .editor-desktop {
@@ -9,7 +9,7 @@
   flex-direction: column;
 }
 
-/* Barra principal (40px) */
+/* Main bar (40px) */
 .main-bar {
   flex: none;
   display: flex;
@@ -34,7 +34,7 @@
   margin-left: auto;
 }
 
-/* Menu em popover (projeto ▾) */
+/* Popover menu (project ▾) */
 .menu-popover {
   position: relative;
   min-width: 0;
@@ -63,7 +63,7 @@
   background: var(--color-pressed);
 }
 
-/* "Enviar para perspectiva…" dos Detalhes: o gatilho com a aparência do .button (controls.css) */
+/* "Send to perspective…" in Details: the trigger with the look of .button (controls.css) */
 .menu-popover-control .menu-trigger {
   min-height: var(--control-height);
   padding: 0 var(--space-3);
@@ -117,7 +117,7 @@
   flex: 0 1 auto;
 }
 
-/* Faixas laterais (40px) */
+/* Side strips (40px) */
 .tool-strip {
   flex: none;
   display: flex;
@@ -147,8 +147,8 @@
 }
 
 /*
- * O botão da faixa é discreto (DS 2.0, ToolStripButton): ícone esmaecido e, com a
- * janela aberta, a seleção fraca — e não o azul cheio da alternância comum.
+ * The strip button is discreet (DS 2.0, ToolStripButton): dimmed icon and, with the
+ * window open, the weak selection — not the full blue of the common toggle.
  */
 .tool-strip .icon-button {
   color: var(--color-text-muted);
@@ -171,7 +171,7 @@
   background: var(--color-pressed);
 }
 
-/* Área com as janelas e o canvas */
+/* Area with the windows and the canvas */
 .editor-panes {
   flex: 1;
   min-width: 0;
@@ -185,7 +185,7 @@
   flex-direction: column;
 }
 
-/* Janelas de ferramenta */
+/* Tool windows */
 .tool-window {
   position: relative;
   flex: none;
@@ -208,8 +208,8 @@
 }
 
 /*
- * Janela inativa (sem foco dentro): a linha selecionada esmaece, para a seleção forte
- * marcar a janela em que você está (DS 2.0, estado inativo da ToolWindow).
+ * Inactive window (no focus inside): the selected row fades, so the strong selection
+ * marks the window you are in (DS 2.0, inactive state of the ToolWindow).
  */
 .tool-window:not(:focus-within) .tree-row-current,
 .tool-window:not(:focus-within) .tree-row-current:hover {
@@ -226,8 +226,8 @@
 }
 
 /*
- * Coluna da esquerda: Árvore em cima e Camadas embaixo dividem a mesma largura. A
- * Árvore ocupa o que sobra; as Camadas têm altura própria (divisória de arraste).
+ * Left column: Tree on top and Layers below share the same width. The
+ * Tree takes what is left; the Layers have their own height (drag divider).
  */
 .tool-column {
   flex: none;
@@ -261,7 +261,7 @@
   background: var(--color-accent);
 }
 
-/* Árvore e Camadas: as linhas ocupam a largura toda da janela. */
+/* Tree and Layers: the rows take the whole width of the window. */
 .tool-window[data-window='tree'] .tool-window-body,
 .tool-window[data-window='layers'] .tool-window-body {
   padding: 0 var(--space-1) var(--space-1);
@@ -278,7 +278,7 @@
   flex: 1;
 }
 
-/* Popover ancorado num botão (paleta e ações da camada) */
+/* Popover anchored to a button (palette and layer actions) */
 .popover-host {
   position: relative;
   display: inline-flex;
@@ -294,12 +294,12 @@
   box-shadow: var(--shadow-popup);
 }
 
-/* Lista de sugestões do campo de texto: painel do popover, com o foco no campo */
+/* Suggestion list of the text field: popover panel, with focus in the field */
 .suggestions {
   display: flex;
   flex-direction: column;
   padding: var(--space-0-5);
-  /* Até 8 itens à vista; o resto rola. */
+  /* Up to 8 items in view; the rest scrolls. */
   max-height: calc(8 * var(--control-height-sm) + 2 * var(--space-0-5) + 2px);
   overflow-y: auto;
 }
@@ -339,13 +339,13 @@
   border-color: transparent;
 }
 
-/* Espaço mínimo entre o rótulo e o atalho. Só a entrada com atalho (que não tem ícone) o leva;
-   o espaço entre ícone ou check e rótulo continua o do `.button` (#531). */
+/* Minimum space between the label and the shortcut. Only the entry with a shortcut (which has no icon) takes it;
+   the space between icon or check and label stays that of `.button` (#531). */
 .menu-items .button:has(> .menu-shortcut) {
   gap: var(--space-4);
 }
 
-/* Atalho da entrada, alinhado à direita (Envolver: Ctrl+G). */
+/* Entry shortcut, aligned to the right (Wrap: Ctrl+G). */
 .menu-items .menu-shortcut {
   margin-inline-start: auto;
   padding: 0 var(--space-1);
@@ -387,7 +387,7 @@
   gap: var(--space-0-5);
   margin: 0;
   border-bottom: none;
-  /* Janela estreita: só as abas rolam, nunca passam sob as ações do cabeçalho. */
+  /* Narrow window: only the tabs scroll, never passing under the header actions. */
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -405,8 +405,8 @@
 }
 
 /*
- * Janela inferior: as abas nunca encolhem nem rolam; quando as ações do cabeçalho não
- * cabem ao lado, quebram para uma linha própria, à direita, sem cobrir nenhuma aba.
+ * Bottom window: the tabs never shrink or scroll; when the header actions do not
+ * fit beside them, they wrap to their own line, on the right, without covering any tab.
  */
 .tool-window-bottom .tool-window-head {
   flex-wrap: wrap;
@@ -416,7 +416,7 @@
   padding: 0;
 }
 
-/* O recuo da direita fica no último botão (fechar), para as abas usarem a largura toda da faixa. */
+/* The right inset stays on the last button (close), so the tabs use the strip's whole width. */
 .tool-window-bottom .tool-window-head > :last-child {
   margin-right: var(--space-1);
 }
@@ -427,16 +427,16 @@
   min-height: var(--size-tw-header);
 }
 
-/* Largura menor que as abas: a faixa rola (herdado), mas nunca encolhe abaixo do conteúdo no layout. */
+/* Width smaller than the tabs: the strip scrolls (inherited), but never shrinks below the content in the layout. */
 .tool-window-bottom .tool-window-tabs .tabs {
   flex: 1 1 auto;
   gap: 0;
 }
 
-/* Abas mais justas: as seis cabem na largura mínima do canvas (`--size-canvas-min`). */
+/* Tighter tabs: all six fit in the minimum canvas width (`--size-canvas-min`). */
 .tool-window-bottom .tool-window-tabs .tab {
   padding: 0;
-  /* Seis abas: a fonte pequena deixa folga para as fontes mais largas de outras máquinas. */
+  /* Six tabs: the small font leaves slack for the wider fonts of other machines. */
   font: var(--t-text-small);
 }
 
@@ -446,23 +446,23 @@
 }
 
 /*
- * Contador: 4px de vão para o rótulo (CL1, 1.1: eram 2px, e o contador parecia colado), fonte
- * `--t-kbd` (11px, peso 400) e recuo de 1px. A 900px a faixa tem 360px (356 antes: o recuo de
- * 4px do cabeçalho passou para o botão de fechar) e as abas com rótulo, com contador em todas e o
- * do Avisos com 2 dígitos, cabem sem rolar nem cortar a primeira aba, também com a fonte mais
- * larga do CI (teste e2e `bottomTabs.spec.ts`); a 1280px a faixa tem 417px.
+ * Counter: 4px gap to the label (CL1, 1.1: it was 2px, and the counter looked glued), font
+ * `--t-kbd` (11px, weight 400) and 1px inset. At 900px the strip is 360px (356 before: the 4px
+ * header inset moved to the close button) and the tabs with label, with a counter on all and the
+ * Warnings one with 2 digits, fit without scrolling or cutting the first tab, also with the
+ * wider CI font (e2e test `bottomTabs.spec.ts`); at 1280px the strip is 417px.
  */
 .tool-window-bottom .tool-window-tabs .tab-badge {
   padding: 0 var(--space-px);
   font: var(--t-kbd);
 }
 
-/* As tabelas da janela inferior ocupam a largura toda. */
+/* The bottom window tables take the whole width. */
 .tool-window-bottom .tool-window-body {
   padding: 0;
 }
 
-/* Divisória de arraste (8px de área, 1px visível pela borda da janela) */
+/* Drag divider (8px area, 1px visible through the window border) */
 .tool-resizer {
   position: absolute;
   z-index: var(--z-toolwindow);
@@ -497,7 +497,7 @@
   cursor: row-resize;
 }
 
-/* Breadcrumbs e ações do canvas (32px) */
+/* Breadcrumbs and canvas actions (32px) */
 .canvas-bar {
   flex: none;
   display: flex;
@@ -511,18 +511,18 @@
 }
 
 /*
- * Coluna estreita na revisão (900×720 com Árvore, Camadas, Propostas e Detalhes: 360 px): os
- * controles da revisão (Atual/Proposto) e o zoom ficam inteiros e o caminho encolhe com
- * reticências e dica (BS3: sobram ~103 px, a seleção com ~5 letras + "…"; só "› ›" era ilegível);
- * cedem, por valor menor, Conversas, Enquadrar tudo (Ctrl+0), Visualizar e Mostrar no canvas
- * (opções de vista, fora da revisão), que fechar a janela Detalhes devolve. A legenda fica: é da revisão.
- * Sem a revisão nada cede.
+ * Narrow column in review (900×720 with Tree, Layers, Proposals and Details: 360 px): the
+ * review controls (Current/Proposed) and the zoom stay whole and the path shrinks with
+ * ellipsis and hint (BS3: ~103 px are left, the selection with ~5 letters + "…"; only "› ›" was illegible);
+ * these yield, by lower value: Threads, Fit all (Ctrl+0), View and Show on canvas
+ * (view options, outside review), which closing the Details window gives back. The legend stays: it belongs to the review.
+ * Without the review nothing yields.
  */
 .canvas-bar-low {
   display: contents;
 }
 
-/* O "⋯" (BC2) guarda os controles que somem: aparece onde o grupo cede. */
+/* The "⋯" (BC2) holds the controls that disappear: it appears where the group yields. */
 .canvas-bar .canvas-bar-more {
   display: none;
 }
@@ -536,12 +536,12 @@
     display: inline-flex;
   }
 
-  /* Sem o botão, o host do painel "Mostrar no canvas" não ocupa vão (o painel é fixo). */
+  /* Without the button, the host of the "Show on canvas" panel takes no gap (the panel is fixed). */
   .canvas-bar:has(.review-canvas-controls) .view-panel-host {
     position: absolute;
   }
 
-  /* O "⋯" custa ~30 px ao caminho: ele, a folga e os vãos ficam justos para a seleção manter letras. */
+  /* The "⋯" costs the path ~30 px: it, the slack and the gaps are tight so the selection keeps letters. */
   .canvas-bar:has(.review-canvas-controls) {
     gap: var(--space-1);
   }
@@ -557,10 +557,10 @@
 }
 
 /*
- * Barra estreita (BC1; o mesmo limiar da BS3, 470 px, dentro e fora da revisão): o caminho de 3 ou
- * mais trechos vira "Canvas › … › seleção". Os trechos do meio saem (0 px) e o "…" (que o
- * Breadcrumbs sempre desenha com 3 ou mais) aparece e abre o caminho inteiro; o último fica
- * com a sobra, com reticências e dica. Na barra larga o "…" não aparece e nada muda.
+ * Narrow bar (BC1; the same threshold as BS3, 470 px, inside and outside review): a path of 3 or
+ * more segments becomes "Canvas › … › selection". The middle segments leave (0 px) and the "…" (which
+ * Breadcrumbs always draws with 3 or more) appears and opens the whole path; the last one stays
+ * with the leftover, with ellipsis and hint. On the wide bar the "…" does not appear and nothing changes.
  */
 .crumb-more {
   display: none;
@@ -577,7 +577,7 @@
     display: none;
   }
 
-  /* Cada palavra conta: sem o ícone do último e com folga menor, a seleção ganha letras. */
+  /* Every word counts: without the last one's icon and with less slack, the selection gains letters. */
   .crumbs:has(.crumb-more) .crumb {
     padding: 0 var(--space-1);
   }
@@ -586,13 +586,13 @@
     display: none;
   }
 
-  /* O Canvas cede antes da seleção (o menu do "…" tem o nome inteiro de cada nível). */
+  /* The Canvas yields before the selection (the "…" menu has the whole name of each level). */
   .crumbs:has(.crumb-more) .crumb-item:first-child {
     flex-shrink: 20;
     overflow: hidden;
   }
 
-  /* Na revisão sobram ~95 px: ali o Canvas cede tudo à seleção. */
+  /* In review ~95 px are left: there the Canvas yields everything to the selection. */
   .canvas-bar:not(:has(.review-canvas-controls)) .crumb-item:first-child {
     min-width: 32px;
   }
@@ -604,8 +604,8 @@
 }
 
 /*
- * Barra larga (PV2, #1383): a seleção (o último trecho) é a última a encolher; os outros trechos
- * cedem até 32 px cada antes de ela perder letras. Até 470 px valem as regras da BC1 acima.
+ * Wide bar (PV2, #1383): the selection (the last segment) is the last to shrink; the other segments
+ * yield up to 32 px each before it loses letters. Up to 470 px the BC1 rules above apply.
  */
 @container (min-width: 471px) {
   .crumbs .crumb-item:not(:last-child) {
@@ -694,7 +694,7 @@
   gap: var(--space-1);
 }
 
-/* Campo de zoom (P4) */
+/* Zoom field (P4) */
 .zoom-field {
   min-width: 56px;
   height: var(--control-height);
@@ -712,7 +712,7 @@
   background: var(--color-hover);
 }
 
-/* Barra de status (26px) */
+/* Status bar (26px) */
 .statusbar {
   flex: none;
   display: flex;
@@ -750,11 +750,11 @@
 }
 
 /*
- * Prioridade (#675): por padrão o item nunca encolhe (estado de gravação, destino, Somente
- * leitura, cursor, zoom, build). Os que encolhem (reticências no `.status-item-text`, dica no
- * `title`) perdem espaço na ordem do `flex-shrink`: primeiro `s4` (perspectiva, aguardando
- * aplicação), depois `s` (não exportadas, avisos, conversas, chegadas), que dividem o aperto pelo
- * tamanho, e o nome da seleção (`sel`, o mais comprido, com largura mínima).
+ * Priority (#675): by default the item never shrinks (save state, target, Read-only,
+ * cursor, zoom, build). Those that shrink (ellipsis in `.status-item-text`, hint in
+ * `title`) lose space in the order of `flex-shrink`: first `s4` (perspective, waiting for
+ * apply), then `s` (unexported, warnings, threads, arrivals), which split the squeeze by
+ * size, and the selection name (`sel`, the longest, with a minimum width).
  */
 .status-item-s,
 .status-item-s4,
@@ -778,9 +778,9 @@
 }
 
 /*
- * Janela estreita: abaixo de 1100 px de barra (a 900×720 ela tem 884 px) schema e canal somem com
- * os separadores. Medido na revisão com pasta e "aguardando aplicação" (o pior caso): sem eles,
- * Salvo, o destino e Somente leitura cabem inteiros e só os itens encolhíveis perdem texto.
+ * Narrow window: below 1100 px of bar (at 900×720 it is 884 px) schema and channel go away with
+ * the separators. Measured in review with folder and "waiting for apply" (the worst case): without them,
+ * Saved, the target and Read-only fit whole and only the shrinkable items lose text.
  */
 @container (max-width: 1100px) {
   .status-wide,
@@ -817,7 +817,7 @@
   height: var(--space-6);
 }
 
-/* Minimapa (P3) */
+/* Minimap (P3) */
 .minimap {
   position: absolute;
   right: var(--space-2);
@@ -846,7 +846,7 @@
   opacity: var(--opacity-grabbed);
 }
 
-/* Painel "Mostrar no canvas" do modo visualização (ViewModePanel) */
+/* "Show on canvas" panel of view mode (ViewModePanel) */
 .view-panel-popover {
   width: var(--size-view-panel);
   max-width: calc(100vw - 2 * var(--space-2));
@@ -893,7 +893,7 @@
   justify-content: flex-end;
 }
 
-/* Seletor de perspectivas (etapa #659, PE3): botão ao lado do projeto e a lista em popover */
+/* Perspective picker (stage #659, PE3): button beside the project and the list in a popover */
 .perspective-picker {
   flex: 0 1 auto;
   min-width: 0;

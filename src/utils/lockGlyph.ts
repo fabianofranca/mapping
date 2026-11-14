@@ -1,5 +1,5 @@
-// Traços do cadeado na grade de 16px, compartilhados pelo ícone da interface
-// (`ui/icons.tsx`) e pelo emblema desenhado no canvas (`canvas/renderers/overlay.ts`).
+// Strokes of the padlock on the 16px grid, shared by the interface icon
+// (`ui/icons.tsx`) and the badge drawn on the canvas (`canvas/renderers/overlay.ts`).
 
 /** Cadeado fechado: corpo e arco. */
 export const LOCK_PATHS: readonly string[] = [

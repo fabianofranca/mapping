@@ -1,32 +1,32 @@
-// A camada de componentes do canvas: o desenho de cada marcação que tem componente.
-// Konva imperativo (como os outros renderers de `src/canvas/`); o desenho em si vem pronto
-// do modelo (cena instanciada na caixa da marcação, em pixels da imagem).
+// The canvas components layer: the drawing of each marking that has a component.
+// Imperative Konva (like the other renderers in `src/canvas/`); the drawing itself comes ready
+// from the model (scene instantiated in the marking's box, in image pixels).
 import Konva from 'konva/lib/Core';
 import { IDENTITY_PLACEMENT, type Placement, type Rect } from '../../model';
 import type { ScreenAnchor } from '../../model/components/componentFormat';
 import type { FrameNode } from '../../model/components/scene';
 import { type RemoteImageResult, type RenderPalette, renderScene } from './renderScene';
 
-/** O que o renderer desenha de cada marcação (o `ComponentDrawing` do modelo tem esta forma). */
+/** What the renderer draws for each marking (the model's `ComponentDrawing` has this shape). */
 export interface LayerDrawing {
   readonly markingId: string;
-  /** Container da marcação; `null` = marcação do canvas (espaço de `placement` identidade). */
+  /** The marking's container; `null` = canvas marking (identity `placement` space). */
   readonly containerId: string | null;
-  /** Cena instanciada no retângulo da marcação, em pixels da imagem. */
+  /** Scene instantiated in the marking's rectangle, in image pixels. */
   readonly root: FrameNode;
   /**
-   * Desenho em pixels de tela: `root` mede o `size` do componente na origem e é ancorado em
-   * `anchor` no `rect` da marcação (pixels do espaço), com tamanho fixo em qualquer zoom.
+   * Drawing in screen pixels: `root` measures the component's `size` at the origin and is anchored at
+   * `anchor` in the marking's `rect` (space pixels), with a fixed size at any zoom.
    */
   readonly screen?: { readonly anchor: ScreenAnchor; readonly rect: Rect };
   /**
-   * Filha de um slot com `clip` (v4): a caixa do slot da mãe, no espaço de `root.transform`. O
-   * desenho só aparece dentro dela. O desenho em pixels de tela ignora o recorte.
+   * Child of a slot with `clip` (v4): the parent slot's box, in the space of `root.transform`. The
+   * drawing only shows inside it. The screen-pixel drawing ignores the clip.
    */
   readonly clip?: Rect;
 }
 
-/** Fração (da largura e da altura) do ponto de cada âncora. */
+/** Fraction (of the width and height) of each anchor's point. */
 const ANCHOR_FRACTION: Record<ScreenAnchor, readonly [number, number]> = {
   'top-left': [0, 0],
   top: [0.5, 0],
@@ -40,52 +40,52 @@ const ANCHOR_FRACTION: Record<ScreenAnchor, readonly [number, number]> = {
 };
 
 export interface ComponentLayerOptions {
-  /** Cores do reservado de imagem e do nó desconhecido (vêm dos tokens do tema). */
+  /** Colors of the image placeholder and of the unknown node (they come from the theme tokens). */
   readonly placeholder?: Partial<RenderPalette>;
-  /** Uma imagem embutida (`data:`) terminou de carregar: o chamador pede um quadro. */
+  /** An embedded image (`data:`) finished loading: the caller asks for a frame. */
   readonly onImageLoaded?: () => void;
-  /** Resolve a URL do nó `image` do componente (portas da app + carregador); ver `renderScene`. */
+  /** Resolves the URL of the component's `image` node (app gates + loader); see `renderScene`. */
   readonly remoteImage?: (url: string) => RemoteImageResult;
 }
 
 interface Mounted {
   readonly drawing: LayerDrawing;
   readonly node: Konva.Group;
-  /** URLs remotas que o desenho usa (para refazer só ele quando a imagem muda). */
+  /** Remote URLs the drawing uses (to redo only it when the image changes). */
   readonly imageUrls: readonly string[];
-  /** Quantas imagens (`Konva.Image`) o desenho tem de fato (o reservado não conta). */
+  /** How many images (`Konva.Image`) the drawing actually has (the placeholder does not count). */
   readonly images: number;
 }
 
 type Parent = Konva.Group | Konva.Layer;
 
-/** Em que grupo `place` mexeu: o da imagem (a camada de sempre) ou o do arrasto. */
+/** Which group `place` touched: the image's (the usual layer) or the drag one. */
 const TOUCHED_GROUP = 1;
 const TOUCHED_MIRROR = 2;
 
 /**
- * Desenha os desenhos de componentes dentro de um grupo (ou camada) do Konva. Cada espaço tem um
- * grupo próprio, posicionado pelo `placement` dele (pixels da imagem → canvas; o canvas, com
- * `containerId` nulo, usa a identidade); dentro dele, um nó por marcação. Não ouve eventos
- * (`listening: false`) e não recorta o conteúdo.
+ * Draws the component drawings inside a Konva group (or layer). Each space has its own
+ * group, positioned by its `placement` (image pixels → canvas; the canvas, with a null
+ * `containerId`, uses the identity); inside it, one node per marking. It does not listen to events
+ * (`listening: false`) and does not clip the content.
  */
 export class ComponentLayerRenderer {
   private readonly imageGroups = new Map<string | null, Konva.Group>();
   private readonly mounted = new Map<string, Mounted>();
-  /** As marcações cujo desenho se move num gesto e o grupo em que ficam até soltar (decisões 5 e 6). */
+  /** The markings whose drawing moves in a gesture and the group they stay in until released (decisions 5 and 6). */
   private dragIds: ReadonlySet<string> | null = null;
   private dragTarget: Konva.Container | null = null;
   /**
-   * Um grupo por container no grupo de arrasto, com a mesma posição e escala do grupo da imagem: o
-   * desenho que se move fica nele, e o grupo da imagem (que o desenho de fora continua usando) não
-   * é tocado.
+   * One group per container in the drag group, with the same position and scale as the image's group: the
+   * drawing that moves stays in it, and the image's group (which the drawing from outside keeps using) is
+   * not touched.
    */
   private readonly mirrors = new Map<string | null, Konva.Group>();
   private dragChanged = false;
-  /** Zoom do stage: o desenho em pixels de tela se contrai por ele (e pela escala da imagem). */
+  /** Stage zoom: the screen-pixel drawing shrinks by it (and by the image scale). */
   private zoom = 1;
   private placements: ReadonlyMap<string, Placement> = new Map();
-  /** Os espaços do último `render`, com todos os desenhos que aparecem (montados ou ainda por montar). */
+  /** The spaces of the last `render`, with all the drawings that appear (mounted or yet to mount). */
   private readonly spaces = new Map<
     string | null,
     { list: readonly LayerDrawing[]; placement: Placement }
@@ -97,8 +97,8 @@ export class ComponentLayerRenderer {
   ) {}
 
   /**
-   * Quantos desenhos aparecem no último quadro, montados ou não (publicado no container para os
-   * testes e2e e os roteiros: não depende de onde está a vista).
+   * How many drawings appear in the last frame, mounted or not (published on the container for the
+   * e2e tests and the scripts: it does not depend on where the view is).
    */
   get size(): number {
     let total = 0;
@@ -106,12 +106,12 @@ export class ComponentLayerRenderer {
     return total;
   }
 
-  /** Quantos desenhos estão montados de fato (`renderScene`): só os que já estiveram na tela. */
+  /** How many drawings are actually mounted (`renderScene`): only the ones that have been on screen. */
   get mountedCount(): number {
     return this.mounted.size;
   }
 
-  /** Quantas imagens estão desenhadas de fato nos componentes (gancho de teste e2e). */
+  /** How many images are actually drawn in the components (e2e test hook). */
   get imageCount(): number {
     let total = 0;
     for (const entry of this.mounted.values()) total += entry.images;
@@ -119,15 +119,15 @@ export class ComponentLayerRenderer {
   }
 
   /**
-   * Leva os desenhos das marcações de `ids` para o grupo de arrasto no próximo `render` (os nós são
-   * os mesmos, movidos com `moveTo`, nunca refeitos), ou os devolve ao grupo da imagem com `null`.
+   * Takes the drawings of the markings in `ids` to the drag group on the next `render` (the nodes are
+   * the same, moved with `moveTo`, never redone), or returns them to the image group with `null`.
    */
   setDragged(ids: ReadonlySet<string> | null, target: Konva.Container): void {
     this.dragIds = ids && ids.size > 0 ? ids : null;
     this.dragTarget = target;
   }
 
-  /** `true` se algum desenho do grupo de arrasto mudou desde a última chamada (e zera). */
+  /** `true` if any drawing in the drag group changed since the last call (and resets). */
   takeDragChanged(): boolean {
     const changed = this.dragChanged;
     this.dragChanged = false;
@@ -135,11 +135,11 @@ export class ComponentLayerRenderer {
   }
 
   /**
-   * Desenha os desenhos de `drawings` (a ordem do Map é a ordem de desenho, de baixo para cima)
-   * que passam em `visible` e cuja imagem tem `placement`. Diff por identidade: só o desenho
-   * cujo objeto mudou é refeito (`renderScene`); o que sumiu é destruído; a ordem é refeita só
-   * quando muda. Devolve `true` se algo mudou (criado, refeito, removido, movido ou reordenado).
-   * `zoom` (padrão: o último) é a escala do stage, para os desenhos em pixels de tela.
+   * Draws the drawings in `drawings` (the Map order is the drawing order, bottom to top)
+   * that pass `visible` and whose image has a `placement`. Diff by identity: only the drawing
+   * whose object changed is redone (`renderScene`); what disappeared is destroyed; the order is redone only
+   * when it changes. Returns `true` if anything changed (created, redone, removed, moved or reordered).
+   * `zoom` (default: the last) is the stage scale, for the screen-pixel drawings.
    */
   render(
     drawings: ReadonlyMap<string, LayerDrawing>,
@@ -164,7 +164,7 @@ export class ComponentLayerRenderer {
     return changed;
   }
 
-  /** Some o que não está mais na lista (ou trocou de imagem); `true` se destruiu algo. */
+  /** Removes what is no longer in the list (or switched image); `true` if it destroyed anything. */
   private prune(wanted: ReadonlyMap<string | null, readonly LayerDrawing[]>): boolean {
     let changed = false;
     const keep = new Set<string>();
@@ -185,9 +185,9 @@ export class ComponentLayerRenderer {
   }
 
   /**
-   * Um espaço (container ou canvas): põe os desenhos de `list` no grupo dele. Sob demanda (decisão 3
-   * da etapa canvas-desempenho): o desenho ainda não montado só nasce quando a caixa dele cruza
-   * `area` (a parte visível do canvas; `null` = tudo); montado, fica, e só se esconde fora da área.
+   * A space (container or canvas): puts the drawings of `list` in its group. On demand (decision 3
+   * of the canvas-performance stage): a drawing not yet mounted is only born when its box crosses
+   * `area` (the visible part of the canvas; `null` = everything); once mounted, it stays, and only hides outside the area.
    */
   private renderSpace(
     containerId: string | null,
@@ -236,8 +236,8 @@ export class ComponentLayerRenderer {
   }
 
   /**
-   * Monta (ou reaproveita) o desenho em `home`, ajusta a posição em pixels de tela e a visibilidade.
-   * Devolve `true` se mexeu na camada de sempre (o que mexe no grupo de arrasto vai em `dragChanged`).
+   * Mounts (or reuses) the drawing in `home`, adjusts the screen-pixel position and the visibility.
+   * Returns `true` if it touched the usual layer (what touches the drag group goes in `dragChanged`).
    */
   private mountOne(
     drawing: LayerDrawing,
@@ -260,9 +260,9 @@ export class ComponentLayerRenderer {
   }
 
   /**
-   * Pan ou zoom: monta o desenho que passou a cruzar a tela e esconde o montado que saiu dela
-   * (nada é redesenhado nem reinstanciado). `area` é a parte visível do canvas e `zoom` a escala do
-   * stage. Devolve `true` se algum nó mudou.
+   * Pan or zoom: mounts the drawing that now crosses the screen and hides the mounted one that left it
+   * (nothing is redrawn or reinstantiated). `area` is the visible part of the canvas and `zoom` the stage
+   * scale. Returns `true` if any node changed.
    */
   reveal(area: Rect | null, zoom: number): boolean {
     let changed = false;
@@ -304,8 +304,8 @@ export class ComponentLayerRenderer {
   }
 
   /**
-   * O zoom do stage mudou: refaz só a posição e a escala dos desenhos em pixels de tela (nada é
-   * redesenhado). Devolve `true` se algum nó mudou.
+   * The stage zoom changed: redoes only the position and scale of the screen-pixel drawings (nothing is
+   * redrawn). Returns `true` if any node changed.
    */
   setZoom(zoom: number): boolean {
     if (zoom === this.zoom) return false;
@@ -322,10 +322,10 @@ export class ComponentLayerRenderer {
   }
 
   /**
-   * Refaz só os desenhos que usam alguma das `urls` (a imagem terminou de carregar, falhou ou
-   * saiu do cache), ou todos os que usam alguma imagem remota quando `urls` é `null` (o
-   * consentimento ou um interruptor mudou). O nó novo ocupa o lugar do antigo na ordem.
-   * Devolve `true` se algum foi refeito.
+   * Redoes only the drawings that use any of the `urls` (the image finished loading, failed or
+   * left the cache), or all those that use any remote image when `urls` is `null` (the
+   * consent or a switch changed). The new node takes the old one's place in the order.
+   * Returns `true` if any was redone.
    */
   refreshImages(urls: ReadonlySet<string> | null): boolean {
     let changed = false;
@@ -349,7 +349,7 @@ export class ComponentLayerRenderer {
     return changed;
   }
 
-  /** Destrói tudo o que o renderer criou (o grupo recebido fica a cargo de quem o criou). */
+  /** Destroys everything the renderer created (the received group is left to whoever created it). */
   destroy(): void {
     for (const group of this.imageGroups.values()) group.destroy();
     for (const mirror of this.mirrors.values()) mirror.destroy();
@@ -368,7 +368,7 @@ export class ComponentLayerRenderer {
     return { group, created: true };
   }
 
-  /** O grupo do container no grupo de arrasto, com a posição e a escala do grupo da imagem. */
+  /** The container's group inside the drag group, with the position and scale of the image's group. */
   private mirrorOf(containerId: string | null, placement: Placement): Konva.Group {
     let mirror = this.mirrors.get(containerId);
     if (!mirror) {
@@ -381,7 +381,7 @@ export class ComponentLayerRenderer {
     return mirror;
   }
 
-  /** Destrói os grupos de arrasto dos containers que não têm mais desenho se movendo. */
+  /** Destroys the drag groups of the containers that no longer have a drawing moving. */
   private dropMirrors(used: ReadonlySet<string | null>): boolean {
     let dropped = false;
     for (const [containerId, mirror] of this.mirrors) {
@@ -404,9 +404,9 @@ export class ComponentLayerRenderer {
   }
 
   /**
-   * Põe o desenho de `drawing` em `home` (o grupo da imagem ou o do arrasto): o nó que já existe e
-   * está certo só muda de grupo (`moveTo`, o mesmo nó); o de objeto novo é refeito. Devolve em que
-   * grupo mexeu (`TOUCHED_*`), para o quadro redesenhar a camada certa.
+   * Puts the `drawing` in `home` (the image group or the drag one): the node that already exists and
+   * is right only changes group (`moveTo`, the same node); the one with a new object is redone. Returns which
+   * group it touched (`TOUCHED_*`), so the frame redraws the right layer.
    */
   private place(drawing: LayerDrawing, home: Konva.Group, group: Konva.Group): number {
     const current = this.mounted.get(drawing.markingId);
@@ -422,8 +422,8 @@ export class ComponentLayerRenderer {
   }
 
   /**
-   * O nó montado serve se é do mesmo objeto de desenho e está num dos grupos deste renderizador:
-   * só muda de grupo. `null` se precisa ser refeito.
+   * The mounted node is usable if it is of the same drawing object and sits in one of this renderer's
+   * groups: it only changes group. `null` if it needs to be redone.
    */
   private reuse(
     current: Mounted,
@@ -454,7 +454,7 @@ export class ComponentLayerRenderer {
         palette: this.options.placeholder,
         showSlots: false,
         onImageLoaded: this.options.onImageLoaded,
-        // O canvas principal não lê pixels: imagem `opaque` (sem CORS) aparece.
+        // The main canvas does not read pixels: an `opaque` image (no CORS) shows up.
         pixelSafe: false,
         ...(this.options.remoteImage ? { remoteImage: this.options.remoteImage } : {}),
       },
@@ -467,8 +467,8 @@ export class ComponentLayerRenderer {
 }
 
 /**
- * Envolve a cena num grupo (sem transformação, no espaço do container) recortado pela caixa do
- * slot: a matriz do `root` não entra na conta, o recorte vale no espaço onde `clip` foi medido.
+ * Wraps the scene in a group (no transform, in the container's space) clipped by the slot's
+ * box: the `root` matrix does not enter the computation, the clip applies in the space where `clip` was measured.
  */
 function clipped(root: Konva.Group, { x, y, width, height }: Rect): Konva.Group {
   const wrapper = new Konva.Group({ listening: false, name: root.name() });
@@ -481,7 +481,7 @@ function clipped(root: Konva.Group, { x, y, width, height }: Rect): Konva.Group 
   return wrapper;
 }
 
-/** Os desenhos que aparecem, por espaço, na ordem de desenho (só os que têm posição). */
+/** The drawings that appear, per space, in drawing order (only the ones that have a position). */
 function wantedBySpace(
   drawings: ReadonlyMap<string, LayerDrawing>,
   visible: (drawing: LayerDrawing) => boolean,
@@ -499,7 +499,7 @@ function wantedBySpace(
   return wanted;
 }
 
-/** Posição do espaço: a do container ou, no canvas (`null`), a identidade. */
+/** The space's position: the container's or, on the canvas (`null`), the identity. */
 function placementOf(
   placements: ReadonlyMap<string, Placement>,
   containerId: string | null,
@@ -508,9 +508,9 @@ function placementOf(
 }
 
 /**
- * Desenho em pixels de tela: contrai o nó pela escala da imagem e pelo zoom (tamanho fixo na
- * tela) e o põe de modo que o ponto da âncora do desenho caia no mesmo ponto do retângulo da
- * marcação. Devolve `true` se algo mudou; desenho sem `screen` não é tocado.
+ * Screen-pixel drawing: shrinks the node by the image scale and the zoom (fixed size on
+ * screen) and places it so the drawing's anchor point lands on the same point of the marking's
+ * rectangle. Returns `true` if anything changed; a drawing without `screen` is not touched.
  */
 function placeScreen(
   node: Konva.Group,
@@ -530,13 +530,13 @@ function placeScreen(
   return true;
 }
 
-/** Margem (px de tela) em volta da caixa do desenho: sombra, traço e o que passa da caixa. */
+/** Margin (screen px) around the drawing's box: shadow, stroke and whatever exceeds the box. */
 const ON_SCREEN_MARGIN = 64;
 
 /**
- * A caixa do desenho cruza a parte visível do canvas? Só para decidir se o desenho nasce e se
- * aparece; `area` `null` = tudo à vista. A caixa vem da própria cena (matriz e medida do `root`) ou,
- * no desenho em pixels de tela, da âncora no retângulo da marcação.
+ * Does the drawing's box cross the visible part of the canvas? Only to decide whether the drawing is born and
+ * shows; `area` `null` = everything in view. The box comes from the scene itself (matrix and `root` size) or,
+ * for the screen-pixel drawing, from the anchor in the marking's rectangle.
  */
 function onScreen(
   drawing: LayerDrawing,
@@ -560,7 +560,7 @@ function onScreen(
     };
   } else {
     const visible = cachedVisibleBox(drawing);
-    // Filha toda fora da caixa do slot: não há nada para mostrar.
+    // Child entirely outside the slot's box: there is nothing to show.
     if (visible === null) return false;
     box = visible;
   }
@@ -575,7 +575,7 @@ function onScreen(
   );
 }
 
-/** Caixa visível do desenho: a da cena, reduzida pelo `clip` da filha de um slot (se tiver). */
+/** Visible box of the drawing: the scene's, reduced by the child's slot `clip` (if it has one). */
 const visibleBoxes = new WeakMap<LayerDrawing, Rect | null>();
 
 function cachedVisibleBox(drawing: LayerDrawing): Rect | null {
@@ -589,7 +589,7 @@ function cachedVisibleBox(drawing: LayerDrawing): Rect | null {
   return box;
 }
 
-/** Interseção de dois retângulos; `null` se não se tocam (encostar ainda conta). */
+/** Intersection of two rectangles; `null` if they do not touch (touching still counts). */
 function intersectRects(a: Rect, b: Rect): Rect | null {
   const x = Math.max(a.x, b.x);
   const y = Math.max(a.y, b.y);
@@ -599,7 +599,7 @@ function intersectRects(a: Rect, b: Rect): Rect | null {
   return { x, y, width: right - x, height: bottom - y };
 }
 
-/** A caixa só depende da cena (dado do projeto): pan e zoom não a recalculam. */
+/** The box only depends on the scene (project data): pan and zoom do not recompute it. */
 const sceneBoxes = new WeakMap<FrameNode, Rect>();
 
 function cachedSceneBox(root: FrameNode): Rect {
@@ -611,7 +611,7 @@ function cachedSceneBox(root: FrameNode): Rect {
   return box;
 }
 
-/** Caixa (espaço da marcação) de uma cena com matriz `[a, b, c, d, e, f]` e medida `width × height`. */
+/** Box (marking space) of a scene with matrix `[a, b, c, d, e, f]` and size `width × height`. */
 function sceneBox({ transform, width, height }: FrameNode): Rect {
   const [a, b, c, d, e, f] = transform;
   const xs = [e, a * width + e, c * height + e, a * width + c * height + e];
@@ -621,14 +621,14 @@ function sceneBox({ transform, width, height }: FrameNode): Rect {
   return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
 }
 
-/** Esconde ou mostra o nó; `true` se mudou. */
+/** Hides or shows the node; `true` if it changed. */
 function showNode(node: Konva.Group, show: boolean): boolean {
   if (node.visible() === show) return false;
   node.visible(show);
   return true;
 }
 
-/** Posiciona o grupo da imagem; `true` se algo mudou. */
+/** Positions the image group; `true` if anything changed. */
 function placeGroup(group: Konva.Group, { x, y, scale }: Placement): boolean {
   if (group.x() === x && group.y() === y && group.scaleX() === scale) return false;
   group.position({ x, y });
@@ -636,7 +636,7 @@ function placeGroup(group: Konva.Group, { x, y, scale }: Placement): boolean {
   return true;
 }
 
-/** Deixa os filhos do grupo na ordem de `list`; `true` se foi preciso mexer. */
+/** Leaves the group's children in the order of `list`; `true` if it had to touch anything. */
 function sortChildren(
   group: Konva.Group,
   list: readonly LayerDrawing[],

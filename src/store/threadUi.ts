@@ -8,21 +8,22 @@ import {
 } from '../model';
 import { expandSections, type EditorUi, type Selection } from './ui';
 
-// Seleção e rascunhos das conversas (etapa Comentários, decisões 19 e 20): estado só da UI.
+// Thread selection and drafts (Comments stage, decisions 19 and 20): UI-only state.
 
-/** Id da conversa selecionada, enquanto a seleção em que ela foi escolhida continua a mesma. */
+/** Id of the selected thread, as long as the selection in which it was chosen stays the same. */
 export function selectedThreadId(ui: EditorUi): string | null {
   const chosen = ui.thread.value;
   return chosen !== null && chosen.selection === ui.selection.value ? chosen.id : null;
 }
 
-/** A âncora do rascunho de conversa nova, enquanto a seleção em que ele nasceu continua a mesma. */
+/** The anchor of the new-thread draft, as long as the selection in which it was born stays the
+ * same. */
 export function composingAnchor(ui: EditorUi): ThreadAnchor | null {
   const draft = ui.composing.value;
   return draft !== null && draft.selection === ui.selection.value ? draft.anchor : null;
 }
 
-/** Chave do rascunho de uma resposta (a conversa) ou de uma conversa nova (a âncora). */
+/** Key of the draft of a reply (the thread) or of a new thread (the anchor). */
 export const replyDraftKey = (threadId: string): string => `reply:${threadId}`;
 export function newDraftKey(anchor: ThreadAnchor): string {
   return `new:${JSON.stringify(anchor)}`;
@@ -39,22 +40,22 @@ export function setDraft(ui: EditorUi, key: string, text: string): void {
   ui.threadDrafts.value = next;
 }
 
-/** O item que a seleção usa para uma âncora com hospedeiro item; `null` nos outros casos. */
+/** The item the selection uses for an anchor with an item host; `null` in the other cases. */
 function selectionFor(project: Project, anchor: ThreadAnchor): Selection {
   const host = hostOf(project, anchor);
   if (host === null || host.kind === 'point') return null;
   return { kind: host.kind === 'container' ? 'image' : host.kind, id: host.id };
 }
 
-/** A conversa mora num item selecionável (marcação, container ou seta)? */
+/** Does the thread live on a selectable item (marking, container or arrow)? */
 export function hasItemHost(project: Project, anchor: ThreadAnchor): boolean {
   return selectionFor(project, anchor) !== null;
 }
 
 /**
- * Escolhe uma conversa (pela janela, pelo pino ou por um chip): seleciona o item dela, abre a
- * seção Conversas e, numa anotação, campo, par ou linha, leva o foco até lá. A conversa sem item
- * (camada, ponto, órfã) deixa a seleção vazia e abre sozinha nos Detalhes.
+ * Chooses a thread (from the window, the pin or a chip): selects its item, opens the Threads
+ * section and, on an annotation, field, pair or row, moves focus there. A thread without an item
+ * (layer, point, orphan) leaves the selection empty and opens by itself in the Details.
  */
 export function selectThread(ui: EditorUi, project: Project, thread: Thread): void {
   const anchor = thread.anchor;
@@ -73,7 +74,7 @@ export function selectThread(ui: EditorUi, project: Project, thread: Thread): vo
   });
 }
 
-/** Começa uma conversa nova em rascunho, ancorada em `anchor` (nada é gravado antes do Enviar). */
+/** Starts a new thread as a draft, anchored at `anchor` (nothing is saved before Send). */
 export function startComposing(
   ui: EditorUi,
   project: Project,
@@ -84,15 +85,15 @@ export function startComposing(
     ui.thread.value = null;
     ui.selection.value = target;
     ui.composing.value = { anchor, selection: ui.selection.peek() };
-    // Nova conversa liga os pinos (decisão 24): o rascunho no ponto mostra o pino tracejado.
+    // A new thread turns the pins on (decision 24): the draft at the point shows the dashed pin.
     ui.commentPins.value = true;
     expandSections(ui, [{ kind: 'comments' }]);
   });
 }
 
 /**
- * Arma o botão Comentar (decisão 25): liga os pinos, volta ao Navegar guardando a ferramenta de
- * antes e espera um clique no canvas.
+ * Arms the Comment button (decision 25): turns the pins on, goes back to Navigate keeping the
+ * previous tool and waits for a click on the canvas.
  */
 export function armComment(ui: EditorUi): void {
   batch(() => {
@@ -104,7 +105,7 @@ export function armComment(ui: EditorUi): void {
   });
 }
 
-/** Desarma o Comentar e volta à ferramenta de antes; `false` se não estava armado. */
+/** Disarms Comment and goes back to the previous tool; `false` if it was not armed. */
 export function cancelComment(ui: EditorUi): boolean {
   const armed = ui.commentArm.peek();
   if (armed === null) return false;
@@ -115,7 +116,7 @@ export function cancelComment(ui: EditorUi): boolean {
   return true;
 }
 
-/** O clique do Comentar: abre o rascunho em `anchor` e volta à ferramenta de antes. */
+/** The Comment click: opens the draft at `anchor` and goes back to the previous tool. */
 export function placeComment(ui: EditorUi, project: Project, anchor: ThreadAnchor): void {
   batch(() => {
     cancelComment(ui);
@@ -124,8 +125,9 @@ export function placeComment(ui: EditorUi, project: Project, anchor: ThreadAncho
 }
 
 /**
- * Clique num pino (decisão 24): com uma conversa, seleciona-a (item e conversa nos Detalhes; no
- * ponto, só a conversa); com várias no mesmo item, seleciona o item e abre a lista.
+ * Click on a pin (decision 24): with one thread, selects it (item and thread in the Details; on
+ * the point, only the thread); with several on the same item, selects the item and opens the
+ * list.
  */
 export function activatePin(
   ui: EditorUi,
@@ -147,7 +149,8 @@ export function activatePin(
   });
 }
 
-/** A âncora órfã ou sem item (camada, ponto)? Esses casos abrem sozinhos nos Detalhes. */
+/** Is the anchor orphaned or without an item (layer, point)? Those cases open by themselves in
+ * the Details. */
 export function isStandalone(project: Project, anchor: ThreadAnchor): boolean {
   return !hasItemHost(project, anchor) || resolveAnchor(project, anchor).orphan;
 }

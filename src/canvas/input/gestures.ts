@@ -1,5 +1,5 @@
-// Gestos de arrasto em andamento e como cada intenção começa um. Sem DOM nem
-// Konva: o `PointerInput` guarda o gesto e o alimenta com os eventos.
+// Drag gestures in progress and how each intent starts one. No DOM or
+// Konva: the `PointerInput` holds the gesture and feeds it with the events.
 import {
   ancestorsOf,
   arrowPointsSpace,
@@ -31,7 +31,7 @@ export type Gesture =
       readonly kind: 'pending';
       readonly pointerId: number;
       readonly start: Point;
-      /** Botão apertado: o clique curto do botão do meio (pan) não é um toque. */
+      /** Button pressed: the middle button's short click (pan) is not a tap. */
       readonly button: number;
       /** O que o arrasto faria. */
       intent: Intent;
@@ -56,16 +56,16 @@ export type Gesture =
       readonly pointerId: number;
       readonly markingId: string;
       readonly startCanvas: Point;
-      /** Escala do espaço da marcação: converte o deslocamento do canvas em unidades dele. */
+      /** Scale of the marking's space: converts the canvas offset into its units. */
       readonly scale: number;
-      /** Último deslocamento mostrado na prévia (unidades do espaço da marcação, inteiras). */
+      /** Last offset shown in the preview (units of the marking's space, integers). */
       dx: number;
       dy: number;
     }
   /**
-   * Arrasto conjunto (ME2): a seleção inteira se move junto. `dx`, `dy` guardam o último
-   * deslocamento **válido** da prévia (unidades do canvas, sem arredondar): quando um movimento é
-   * recusado (tudo ou nada), a prévia fica nele e é ele que o soltar grava.
+   * Joint drag (ME2): the whole selection moves together. `dx`, `dy` hold the last **valid**
+   * offset of the preview (canvas units, unrounded): when a move is refused (all or nothing),
+   * the preview stays on it and it is what the release writes.
    */
   | {
       readonly kind: 'move-items';
@@ -80,40 +80,40 @@ export type Gesture =
       readonly pointerId: number;
       readonly markingId: string;
       readonly corner: Corner;
-      /** Posição do espaço da marcação: a do container ou a identidade, no canvas. */
+      /** Position of the marking's space: the container's or the identity, on the canvas. */
       readonly placement: Placement;
       readonly startRect: Rect;
       readonly limits: RectLimits;
-      /** Itens do espaço que o redimensionamento pode absorver ao soltar. */
+      /** Items of the space that the resize can absorb on release. */
       readonly candidates: readonly AbsorbCandidate[];
     }
   | {
       readonly kind: 'draw';
       readonly pointerId: number;
-      /** Container em que o desenho começou; `null` = no vazio, desenho no canvas. */
+      /** Container where the drawing started; `null` = on empty space, drawing on the canvas. */
       readonly image: ProjectContainer | null;
-      /** Onde começou, no espaço do desenho (pixels da imagem ou unidades do canvas). */
+      /** Where it started, in the drawing's space (image pixels or canvas units). */
       readonly startPixel: Point;
-      /** Itens do espaço que o desenho pode absorver ao soltar. */
+      /** Items of the space that the drawing can absorb on release. */
       readonly candidates: readonly AbsorbCandidate[];
     }
   /**
-   * Criar uma seta puxando a alça de ligação da marcação `markingId` (ME4): sem gesto do store; a
-   * seta provisória e o destino ficam em `state.arrowDraft`, e soltar sobre uma marcação cria a
-   * seta (`addArrow`).
+   * Create an arrow by pulling the link handle of the marking `markingId` (ME4): no store gesture; the
+   * provisional arrow and the target are in `state.arrowDraft`, and releasing over a marking creates the
+   * arrow (`addArrow`).
    */
   | {
       readonly kind: 'arrow-link';
       readonly pointerId: number;
       readonly markingId: string;
-      /** Onde a seta provisória sai (canvas): o meio do lado direito da marcação. */
+      /** Where the provisional arrow starts (canvas): the middle of the marking's right side. */
       readonly origin: Point;
     }
   /**
-   * Mover um ponto de passagem (`mode` `point`, `index` em `points`) ou criar um no meio de um
-   * trecho (`mode` `mid`, `index` = onde entra), no espaço dos pontos (`placement`). No `elbow`,
-   * mover em paralelo um segmento do meio (`mode` `segment`, `index` = a pista, `axis` = a
-   * coordenada do ponto que o ponteiro muda; `base` já traz um ponto por pista).
+   * Move a waypoint (`mode` `point`, `index` in `points`) or create one in the middle of a
+   * segment (`mode` `mid`, `index` = where it goes in), in the points' space (`placement`). In `elbow`,
+   * move a middle segment in parallel (`mode` `segment`, `index` = the lane, `axis` = the
+   * coordinate of the point that the pointer changes; `base` already carries one point per lane).
    */
   | {
       readonly kind: 'arrow-route';
@@ -121,44 +121,44 @@ export type Gesture =
       readonly arrowId: string;
       readonly mode: 'point' | 'mid' | 'segment';
       readonly index: number;
-      /** Só no `segment`: a coordenada do espaço dos pontos que o ponteiro muda. */
+      /** Only in `segment`: the coordinate of the points' space that the pointer changes. */
       readonly axis: 'x' | 'y' | null;
       /** Os pontos de passagem de antes do gesto. */
       readonly base: readonly ArrowPoint[];
-      /** Posição do espaço dos pontos: a do container ou a identidade, no canvas. */
+      /** Position of the points' space: the container's or the identity, on the canvas. */
       readonly placement: Placement;
     }
   /**
-   * Arrastar uma ponta da seta até outra marcação (troca `from`/`to`) ou, sobre a mesma, até outro
-   * lado (troca `fromSide`/`toSide`). `valid` diz se o ponteiro está sobre um destino (soltar fora
-   * cancela).
+   * Drag an arrow tip to another marking (swaps `from`/`to`) or, over the same one, to another
+   * side (swaps `fromSide`/`toSide`). `valid` says whether the pointer is over a target (releasing
+   * outside cancels).
    */
   | {
       readonly kind: 'arrow-end';
       readonly pointerId: number;
       readonly arrowId: string;
       readonly end: ArrowEnd;
-      /** A marcação da outra ponta: não pode ser o destino. */
+      /** The marking at the other tip: it cannot be the target. */
       readonly fixed: string;
-      /** Onde a outra ponta prende (canvas): a seta provisória sai dali. */
+      /** Where the other tip attaches (canvas): the provisional arrow starts there. */
       readonly fixedAnchor: Point;
-      /** A marcação e o lado que a ponta tinha (`side` nulo = automático). */
+      /** The marking and side the tip had (`side` null = automatic). */
       readonly original: { readonly markingId: string; readonly side: ArrowSide | null };
-      /** O lado em que a ponta prende hoje (o efetivo, mesmo com o lado automático). */
+      /** The side the tip attaches to today (the effective one, even with the automatic side). */
       readonly currentSide: ArrowSide;
       valid: boolean;
     }
   /**
-   * Seleção por retângulo (SM2, Shift+arrasto): sem gesto do store (o projeto não muda e nada
-   * vai ao desfazer); o retângulo vive em `state.marquee` e soltar soma os itens dentro dele.
+   * Rectangle selection (SM2, Shift+drag): no store gesture (the project does not change and nothing
+   * goes to undo); the rectangle lives in `state.marquee` and releasing adds the items inside it.
    */
   | {
       readonly kind: 'select-rect';
       readonly pointerId: number;
-      /** Onde o arrasto começou (canvas): um canto do retângulo. */
+      /** Where the drag started (canvas): a corner of the rectangle. */
       readonly startCanvas: Point;
     }
-  /** Arrasto do mouse sobre o item trancado: não faz nada até soltar (cursor "não permitido"). */
+  /** Mouse drag over the locked item: does nothing until release ("not allowed" cursor). */
   | { readonly kind: 'blocked'; readonly pointerId: number }
   /** Dois dedos. Termina quando todos saem da tela. */
   | { readonly kind: 'pinch' };
@@ -190,16 +190,16 @@ export function isStoreGesture(g: Gesture | null): g is StoreGesture {
   );
 }
 
-/** Gesto começado e, no modo Desenhar, o rascunho inicial. */
+/** Gesture started and, in Draw mode, the initial draft. */
 export interface StartedGesture {
   readonly gesture: Gesture;
   readonly draft: Draft | null;
 }
 
 /**
- * Começa o gesto da intenção, com o ponteiro em `startCanvas`. `null` se ela
- * não se aplica mais (item removido, edição bloqueada): o arrasto vira pan.
- * `beginGesture` abre o gesto no store (uma entrada no desfazer ao soltar).
+ * Starts the intent's gesture, with the pointer at `startCanvas`. `null` if it
+ * no longer applies (item removed, editing blocked): the drag becomes a pan.
+ * `beginGesture` opens the gesture in the store (one undo entry on release).
  */
 export function startGesture(
   project: Project | null,
@@ -358,8 +358,8 @@ export function startGesture(
           placement: space.placement,
           startRect: marking.rect,
           limits: { outer: space.bounds },
-          // Absorve o que cruza o retângulo, menos ela mesma e os ancestrais (que a contêm). A
-          // flutuante não absorve nada: fica fora da árvore de pertencimento nos dois sentidos.
+          // Absorbs what crosses the rectangle, except itself and the ancestors (which contain it). The
+          // floating one absorbs nothing: it stays outside the membership tree both ways.
           candidates: marking.floating
             ? []
             : absorbCandidates(

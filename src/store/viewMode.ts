@@ -2,26 +2,26 @@ import { z } from 'zod';
 import { readSetting, writeSetting } from '../utils/safeStorage';
 import type { EditorUi } from './ui';
 
-// O que o modo visualização mostra no canvas (decisões 8, 9 e 13 da etapa #656). A escolha é
-// estado da UI: não vai para o `mapping.json` nem entra no desfazer. Fica por cópia do projeto,
-// neste navegador (`ProjectStorage.copyId`), no molde da retomada da revisão (`review.ts`): um
-// blob versionado no `localStorage`, validado com zod, as cópias mais recentes. Sem `copyId`,
-// vale só para a sessão. O modo em si (ligado ou não) nunca é guardado: nasce desligado.
+// What view mode shows on the canvas (decisions 8, 9 and 13 of stage #656). The choice is
+// UI state: it does not go to `mapping.json` nor into undo. It is kept per project copy,
+// in this browser (`ProjectStorage.copyId`), following the model of the review resume (`review.ts`): a
+// versioned blob in `localStorage`, validated with zod, the most recent copies. Without `copyId`,
+// it only applies to the session. The mode itself (on or off) is never stored: it starts off.
 
 export interface ViewShow {
   /** O nome acima do container e o contorno do container sem arquivo (o fundo continua). */
   readonly containers: boolean;
   /** O bitmap das fotos. */
   readonly images: boolean;
-  /** A borda e o halo das marcações. */
+  /** The border and halo of the markings. */
   readonly outline: boolean;
-  /** O cabeçalho com o nome dentro da marcação. */
+  /** The header with the name inside the marking. */
   readonly names: boolean;
   /** As setas. */
   readonly arrows: boolean;
   /**
-   * Camadas com desenho desmarcadas. Guardar as desmarcadas (e não as marcadas) faz a camada
-   * nova nascer marcada; ids que já não existem não fazem efeito.
+   * Layers with drawing that are unchecked. Storing the unchecked ones (and not the checked ones)
+   * makes a new layer start checked; ids that no longer exist have no effect.
    */
   readonly hiddenDrawingLayers: ReadonlySet<string>;
 }
@@ -30,7 +30,7 @@ type ViewFlag = 'containers' | 'images' | 'outline' | 'names' | 'arrows';
 
 const NO_LAYERS: ReadonlySet<string> = new Set();
 
-/** O começo: tudo marcado, menos o contorno das marcações. */
+/** The start: everything checked, except the markings' outline. */
 export const VIEW_SHOW_START: ViewShow = {
   containers: true,
   images: true,
@@ -56,7 +56,7 @@ export function toggleViewDrawingLayer(ui: EditorUi, layerId: string): void {
   ui.viewShow.value = { ...current, hiddenDrawingLayers: hidden };
 }
 
-/** Desmarca a camada com desenho (sem efeito se já estava). */
+/** Unchecks the layer with drawing (no effect if it already was). */
 export function hideViewDrawingLayer(ui: EditorUi, layerId: string): void {
   const current = ui.viewShow.peek();
   if (current.hiddenDrawingLayers.has(layerId)) return;
@@ -79,8 +79,8 @@ export function showEverything(ui: EditorUi): void {
 }
 
 /**
- * Só as telas: containers, imagens e todas as camadas com desenho marcados; contorno, nome e
- * setas desmarcados (o canvas do antigo Ver limpo).
+ * Only the screens: containers, images and all layers with drawing checked; outline, name and
+ * arrows unchecked (the canvas of the former Clean view).
  */
 export function onlyScreens(ui: EditorUi): void {
   ui.viewShow.value = {
@@ -94,11 +94,11 @@ export function onlyScreens(ui: EditorUi): void {
 }
 
 // ---------------------------------------------------------------------------
-// Persistência por cópia do projeto
+// Persistence per project copy
 
 const KEY = 'mapping.viewShow';
 const VERSION = 1;
-/** Cópias do projeto com escolha guardada (as mais recentes). */
+/** Project copies with a stored choice (the most recent ones). */
 const MAX_COPIES = 20;
 
 const copySchema = z.object({
@@ -113,7 +113,7 @@ type StoredCopy = z.infer<typeof copySchema>;
 
 type Blob = Readonly<Record<string, StoredCopy>>;
 
-/** Lê as cópias do `localStorage`; texto corrompido, outra versão ou cópia inválida somem. */
+/** Reads the copies from `localStorage`; corrupted text, another version or an invalid copy disappear. */
 function readCopies(): Blob {
   const text = readSetting(KEY);
   if (text === null) return {};
@@ -155,16 +155,16 @@ function fromStored(copy: StoredCopy): ViewShow {
   };
 }
 
-/** O blob com a escolha desta cópia por último (a mais recente) e só as mais recentes. */
+/** The blob with this copy's choice last (the most recent) and only the most recent ones. */
 function withCopy(copies: Blob, scope: string, copy: StoredCopy): Blob {
   const others = Object.entries(copies).filter(([key]) => key !== scope);
   return Object.fromEntries([...others, [scope, copy]].slice(-MAX_COPIES));
 }
 
 /**
- * Aplica a escolha guardada desta cópia do projeto e passa a guardar cada mudança. Sem
- * `copyId` (`undefined` ou vazio), nada é lido nem gravado: a escolha vale só para a sessão.
- * Devolve quem para de guardar.
+ * Applies this project copy's stored choice and starts storing each change. Without
+ * `copyId` (`undefined` or empty), nothing is read or written: the choice only applies to the session.
+ * Returns whoever stops storing.
  */
 export function attachViewShowPersistence(
   ui: EditorUi,
@@ -175,7 +175,7 @@ export function attachViewShowPersistence(
   if (saved !== undefined) ui.viewShow.value = fromStored(saved);
   let first = true;
   return ui.viewShow.subscribe((show) => {
-    // A primeira chamada é o valor de agora (já guardado ou o começo): só mudanças gravam.
+    // The first call is the current value (already stored or the start): only changes write.
     if (first) {
       first = false;
       return;

@@ -1,6 +1,6 @@
-// Peças comuns das varreduras de propostas e conversas (etapa #940, decisão 17).
+// Shared pieces of the proposal and thread sweeps (stage #940, decision 17).
 
-/** Fila única: gravações e conferências nunca rodam em paralelo; uma falha não trava a fila. */
+/** Single queue: writes and checks never run in parallel; a failure does not block the queue. */
 export function createSerialQueue(): <T>(job: () => Promise<T>) => Promise<T> {
   let tail: Promise<unknown> = Promise.resolve();
   return <T>(job: () => Promise<T>): Promise<T> => {
@@ -10,7 +10,7 @@ export function createSerialQueue(): <T>(job: () => Promise<T>) => Promise<T> {
   };
 }
 
-/** A marca do arquivo (`stat`), ou `null` se o armazenamento não sabe ou a leitura falhou. */
+/** The file stamp (`stat`), or `null` if the storage does not know it or the read failed. */
 export async function stampOr(
   read: (() => Promise<string | null>) | null,
 ): Promise<string | null> {
@@ -22,7 +22,7 @@ export async function stampOr(
   }
 }
 
-/** Mais recente primeiro; empate pelo id. */
+/** Newest first; ties broken by id. */
 export function newestFirst(
   a: { readonly createdAt: string; readonly id: string },
   b: { readonly createdAt: string; readonly id: string },
