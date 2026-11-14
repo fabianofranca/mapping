@@ -31,6 +31,14 @@ import {
   componentPlacement,
   componentSize,
   fitMarking,
+  snapToAnchor,
+  setMarkingAnchor,
+  setNewMarkingAnchor,
+  checkAnchorTarget,
+  componentAnchoredPlacement,
+  typeAnchorDefaults,
+  markingAnchorDefaults,
+  type MarkingAnchor,
   placementFitsSlot,
   hasComponentSlot,
   componentTypes,
@@ -82,8 +90,10 @@ import {
   setFieldValue,
   setImageLocked,
   setContainerDensity,
+  setContainerDirection,
   setContainerDrawingMode,
   setContainerMarkingColor,
+  setProjectDirection,
   setProjectDrawingMode,
   setImageMarkingsLocked,
   setContainerPlacement,
@@ -307,6 +317,11 @@ function initialValuesArg(values: Record<string, JsonValue> | undefined): {
       value === null || typeof value === 'string' || typeof value === 'number',
   );
   return simple.length === 0 ? {} : { values: Object.fromEntries(simple) };
+}
+
+/** Algum valor é uma tabela (lista de linhas): o `initialValuesArg` a deixa de fora da medida. */
+function hasTableValue(values: Record<string, JsonValue>): boolean {
+  return Object.values(values).some((value) => Array.isArray(value));
 }
 
 /** Minúsculas e sem acentos, para achar camadas e tipos pelo nome. */
@@ -1399,6 +1414,8 @@ class Batch {
       }
       case 'fit_marking':
         return this.fitMarkingOp(op, p);
+      case 'snap_to_anchor':
+        return this.snapToAnchorOp(op, p);
       case 'update_marking': {
         const id = this.item(op.marking, 'm');
         this.requireNotArrow(id, 'update_arrow');
@@ -1456,6 +1473,15 @@ class Batch {
           );
           const r = op.rect;
           changes.push(`retângulo x ${r.x}, y ${r.y}, ${r.width}×${r.height}`);
+        }
+        if (op.anchor !== undefined) {
+          const anchor = op.anchor === null ? null : this.markingAnchor(op.anchor);
+          project = setMarkingAnchor(project, id, anchor);
+          changes.push(
+            anchor === null
+              ? 'tirar a âncora'
+              : `ancorar em "${this.markingLabel(project, anchor.to)}"`,
+          );
         }
         if (op.confirmReview === true) {
           project = confirmMarkingReview(project, id);
@@ -1549,20 +1575,30 @@ class Batch {
    * componente) e vale o `minSize`; a anotação nasce como na paleta da app (`preview`), com os
    * `values` por cima. O servidor nunca arruma: os retângulos são os que o agente informou.
    */
-  /** `update_project`: hoje só o modo do desenho. */
+  /** `update_project`: o modo do desenho e a direção de leitura do projeto. */
   private updateProjectOp(
     op: Extract<Operation, { op: 'update_project' }>,
     p: Project,
   ): Step {
-    if (op.drawingMode === undefined) {
-      return { project: p, description: 'Alterar o projeto: nada' };
+    let project = p;
+    const changes: string[] = [];
+    if (op.drawingMode !== undefined) {
+      project = setProjectDrawingMode(project, op.drawingMode);
+      changes.push(
+        op.drawingMode === null
+          ? 'modo do desenho removido'
+          : `modo do desenho ${quoted(op.drawingMode)}`,
+      );
+    }
+    if (op.direction !== undefined) {
+      project = setProjectDirection(project, op.direction);
+      changes.push(
+        op.direction === null ? 'direção removida' : `direção ${quoted(op.direction)}`,
+      );
     }
     return {
-      project: setProjectDrawingMode(p, op.drawingMode),
-      description:
-        op.drawingMode === null
-          ? 'Alterar o projeto: modo do desenho removido'
-          : `Alterar o projeto: modo do desenho ${quoted(op.drawingMode)}`,
+      project,
+      description: `Alterar o projeto: ${changes.join(', ') || 'nada'}`,
     };
   }
 
@@ -1583,6 +1619,13 @@ class Batch {
         ...result,
         project: setContainerDrawingMode(result.project, id, op.drawingMode),
         description: `${result.description}, modo do desenho ${quoted(op.drawingMode)}`,
+      };
+    }
+    if (op.direction != null) {
+      result = {
+        ...result,
+        project: setContainerDirection(result.project, id, op.direction),
+        description: `${result.description}, direção ${quoted(op.direction)}`,
       };
     }
     if (op.density != null) {
@@ -1757,6 +1800,12 @@ class Batch {
           : `modo do desenho ${quoted(op.drawingMode)}`,
       );
     }
+    if (op.direction !== undefined) {
+      project = setContainerDirection(project, id, op.direction);
+      changes.push(
+        op.direction === null ? 'direção do projeto' : `direção ${quoted(op.direction)}`,
+      );
+    }
     if (op.density !== undefined) {
       project = setContainerDensity(project, id, op.density);
       changes.push(op.density === null ? 'densidade 1x' : `densidade ${op.density}x`);
@@ -1799,6 +1848,34 @@ class Batch {
   }
 
   /**
+   * Refaz o tamanho de uma instância nova depois de as linhas de tabela do lote entrarem (o tamanho
+   * inicial é medido antes delas, com a tabela vazia): `fitMarking` e, se a marcação nasceu ancorada,
+   * `snapToAnchor` com os padrões do componente. Componente que não se ajusta (slot, sem `sizing`)
+   * fica como está.
+   */
+  private refitToRows(p: Project, markingId: string, anchored: boolean): Project {
+    let next = p;
+    try {
+      next = fitMarking(next, this.catalog, markingId, this.measurer, {
+        minSizeOf: (id) => componentMinSize(next, this.catalog, id),
+      });
+    } catch (error) {
+      if (!(error instanceof ModelError)) throw error;
+      return p;
+    }
+    if (!anchored || projectIndex(next).markings.get(markingId)?.anchor == null)
+      return next;
+    try {
+      return snapToAnchor(next, markingId, {
+        defaults: markingAnchorDefaults(next, this.catalog),
+      }).project;
+    } catch (error) {
+      if (!(error instanceof ModelError)) throw error;
+      return next;
+    }
+  }
+
+  /**
    * `fit_marking`: o `fitMarking` do modelo (o mesmo Arrumar da app numa marcação sem slot), com os
    * valores da anotação no estado do lote. O resumo diz o retângulo antes e depois.
    */
@@ -1821,6 +1898,51 @@ class Batch {
     return {
       project,
       description: `Ajustar a marcação "${label}" ao conteúdo: ${rectText(before)} → ${rectText(after)}`,
+    };
+  }
+
+  /** A âncora do passo: o alvo (referência, id ou apelido) vira id; `side`, `align` e `offset` só entram se vierem. */
+  private markingAnchor(
+    anchor: NonNullable<Extract<Operation, { op: 'update_marking' }>['anchor']>,
+  ): MarkingAnchor {
+    return {
+      to: this.item(anchor.to, 'm'),
+      ...(anchor.side === undefined ? {} : { side: anchor.side }),
+      ...(anchor.align === undefined ? {} : { align: anchor.align }),
+      ...(anchor.offset === undefined ? {} : { offset: anchor.offset }),
+    };
+  }
+
+  /**
+   * `snap_to_anchor`: o `snapToAnchor` do modelo (o mesmo Encostar da app), com os padrões do
+   * componente da marcação. O resumo diz o retângulo antes e depois; o aviso de "preso dentro do
+   * container" vai para `warnings`.
+   */
+  private snapToAnchorOp(
+    op: Extract<Operation, { op: 'snap_to_anchor' }>,
+    p: Project,
+  ): Step {
+    const id = this.item(op.marking, 'm');
+    this.requireNotArrow(id, 'update_arrow');
+    const label = this.markingLabel(p, id);
+    const before = projectIndex(p).markings.get(id)?.rect;
+    if (before === undefined) throw new ModelError('not-found', id);
+    const { project, warnings } = snapToAnchor(p, id, {
+      defaults: markingAnchorDefaults(p, this.catalog),
+    });
+    const notes = warnings.map((w) => w.text);
+    const rectText = (r: Rect): string => `${r.width}×${r.height} px em (${r.x}, ${r.y})`;
+    if (project === p) {
+      return {
+        project,
+        description: `A marcação "${label}" já está encostada na âncora (${rectText(before)}): nada muda`,
+      };
+    }
+    const after = projectIndex(project).markings.get(id)!.rect;
+    return {
+      project,
+      ...(notes.length > 0 ? { notes } : {}),
+      description: `Encostar a marcação "${label}" na âncora: ${rectText(before)} → ${rectText(after)}`,
     };
   }
 
@@ -2094,6 +2216,16 @@ class Batch {
         '`inside` só vale com `annotation` de um tipo com componente (veja list_components)',
       );
     }
+    const anchor = op.anchor === undefined ? null : this.markingAnchor(op.anchor);
+    // A âncora é conferida antes de criar (os erros da invariante); depois do assentar, só o espaço
+    // pode ter mudado e então a nova nasce sem âncora, com um aviso.
+    if (anchor !== null) checkAnchorTarget(p, markingId, containerId, anchor);
+    if (anchor !== null && (op.near !== undefined || inside !== null)) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`anchor` e `near`/`inside` são posições diferentes: informe só uma',
+      );
+    }
     if (op.rect === undefined && component === null) {
       throw new ToolError(
         'invalid-arguments',
@@ -2144,10 +2276,15 @@ class Batch {
       const newAnnotationId = crypto.randomUUID();
       annotationId = newAnnotationId;
       // O pai sai da geometria (o modelo assenta ao criar): sem `rect`, no centro do container.
+      // O tamanho veio do componente (e não do pedido): as linhas de tabela do lote ainda não
+      // existiam quando foi medido, então o `refitToRows` o refaz depois de `setValues`.
+      const rectFromComponent =
+        nearRect === null && inside === null && op.rect === undefined;
       const rect =
         nearRect ??
         (inside ? this.insideRect(op, inside.id, containerId, typeRef, minSize) : null) ??
         op.rect ??
+        this.anchoredRect(p, notes, markingId, containerId, typeRef, op, anchor) ??
         componentPlacement(
           p,
           catalog,
@@ -2180,6 +2317,7 @@ class Batch {
             ...typeRef,
             rect,
             name: op.name ?? null,
+            ...(anchor === null ? {} : { anchor }),
           },
           this.measurer,
         ),
@@ -2196,6 +2334,9 @@ class Batch {
       }
       if (annotation.values !== undefined) {
         project = this.setValues(project, newAnnotationId, annotation.values, rowAliases);
+        if (rectFromComponent && hasTableValue(annotation.values)) {
+          project = this.refitToRows(project, markingId, anchor !== null);
+        }
       }
     } else {
       project = createMarking(p, {
@@ -2204,6 +2345,7 @@ class Batch {
         rect: op.rect!,
         name: op.name ?? null,
       });
+      if (anchor !== null) project = setNewMarkingAnchor(project, markingId, anchor);
       if (annotation && typeRef !== null) {
         annotationId = crypto.randomUUID();
         project = this.typedAnnotation(project, annotationId, markingId, {
@@ -2228,6 +2370,11 @@ class Batch {
       }
     }
     const { rect } = created;
+    if (anchor !== null && created.anchor == null) {
+      notes.push(
+        'a âncora foi solta: pela geometria a marcação nasceu em outro espaço que o alvo (o container ou o canvas); ancore-a depois com `update_marking`, no mesmo espaço do alvo',
+      );
+    }
     const label = this.createdMarkingLabel(p, project, created, component?.name ?? null);
     return {
       project,
@@ -2243,6 +2390,39 @@ class Batch {
       ],
       rowAliases,
     };
+  }
+
+  /**
+   * O retângulo de uma instância nova com `anchor` e sem `rect`: o tamanho medido encostado no alvo,
+   * com os padrões do componente; `null` quando não há `anchor` ou o `rect` manda. O aviso de "preso
+   * dentro do container" vai para as notas.
+   */
+  private anchoredRect(
+    p: Project,
+    notes: string[],
+    markingId: string,
+    containerId: string | null,
+    typeRef: AnnotationTypeRef,
+    op: Extract<Operation, { op: 'create_marking' }>,
+    anchor: MarkingAnchor | null,
+  ): Rect | null {
+    if (anchor === null || op.rect !== undefined) return null;
+    const placed = componentAnchoredPlacement(
+      p,
+      this.catalog,
+      {
+        markingId,
+        containerId,
+        parentId: null,
+        ...typeRef,
+        ...initialValuesArg(op.annotation?.values),
+        anchor,
+        anchorDefaults: typeAnchorDefaults(this.catalog, typeRef.specId, typeRef.typeId),
+      },
+      this.measurer,
+    );
+    notes.push(...placed.warnings.map((w) => w.text));
+    return placed.rect;
   }
 
   /**

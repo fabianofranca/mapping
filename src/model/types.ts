@@ -1,9 +1,13 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v19). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
+// Tipos do `mapping.json` (schema v20). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 19;
+export const SCHEMA_VERSION = 20;
+/** As direções de leitura que o arquivo aceita (v20): fonte única do tipo e dos schemas (zod, MCP). */
+export const READING_DIRECTIONS = ['ltr', 'rtl'] as const;
+/** Direção de leitura (v20): da esquerda para a direita ou da direita para a esquerda. */
+export type ReadingDirection = (typeof READING_DIRECTIONS)[number];
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -95,6 +99,32 @@ export interface ProjectContainer {
    * 1x), de 0,5 a 8; ausente ou `null` = 1. As marcações continuam em pixels da imagem.
    */
   readonly density?: number | null;
+  /**
+   * Direção de leitura que o container fixa (v20); ausente ou `null` = segue a do projeto. Vale
+   * para o desenho dos componentes (fileiras, grades, `start`/`end`, `mirror`).
+   */
+  readonly direction?: ReadingDirection | null;
+}
+
+import {
+  ANCHOR_ALIGNS,
+  ANCHOR_SIDES,
+  type AnchorAlign,
+  type AnchorSide,
+} from './anchorSides';
+export { ANCHOR_ALIGNS, ANCHOR_SIDES, type AnchorAlign, type AnchorSide };
+
+/**
+ * Âncora de uma marcação (v20): a marcação fica encostada em outra do mesmo espaço (`to`), do lado
+ * `side`, alinhada por `align`, com o `offset` em pixels do espaço (`main` = distância da borda
+ * da âncora, negativo sobrepõe; `cross` = deslocamento ao longo do lado). Os campos ausentes
+ * valem os padrões do componente. Não entra no pertencimento: quem contém quem é só geometria.
+ */
+export interface MarkingAnchor {
+  readonly to: string;
+  readonly side?: AnchorSide;
+  readonly align?: AnchorAlign;
+  readonly offset?: { readonly main: number; readonly cross: number };
 }
 
 export interface Marking {
@@ -126,6 +156,11 @@ export interface Marking {
   readonly floating: boolean;
   /** Identidade no sistema de origem (v8); `null` = sem origem. */
   readonly source: ExternalSource | null;
+  /**
+   * Âncora (v20): encosta a marcação em outra do mesmo espaço; ausente ou `null` = sem âncora.
+   * Mover a âncora leva as ancoradas; redimensioná-la não.
+   */
+  readonly anchor?: MarkingAnchor | null;
 }
 
 /** Lado de uma marcação onde a seta se prende (v13). */
@@ -356,6 +391,8 @@ export interface Project {
    * o primeiro modo de cada especialização. Um modo que nenhuma declara fica gravado (Diagnóstico).
    */
   readonly drawingMode?: string;
+  /** Direção de leitura do projeto (v20): `ltr` ou `rtl`; ausente = `ltr`. */
+  readonly direction?: ReadingDirection;
   readonly layers: readonly Layer[];
   readonly containers: readonly ProjectContainer[];
   readonly markings: readonly Marking[];

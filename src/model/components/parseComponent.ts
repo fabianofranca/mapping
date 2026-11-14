@@ -10,16 +10,21 @@ import {
   COMPONENT_FORMAT,
   COMPONENT_FORMAT_VERSIONS,
   COMPONENT_FORMAT_VERSION_FIDELITY,
+  DIRECTIONS,
   IMAGE_FITS_V4,
   SCREEN_ANCHORS,
+  ANCHOR_ALIGNS,
+  ANCHOR_SIDES,
   STROKE_SIDES,
   type ComponentFile,
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
 import { isValidFontFamily } from './fontFamily';
 import {
+  ANCHOR_FIELDS,
   COMPARISON_OPS,
   NUMERIC_OPS,
+  isAnchorFieldName,
   isNumericOp,
   referencedFields,
 } from './expressions';
@@ -120,6 +125,7 @@ const CONDITION_OPS: readonly string[] = [
   '$not',
   '$and',
   '$or',
+  '$direction',
   ...COMPARISON_OPS,
 ];
 /** Operadores que só existem em condição (`$field` é ambíguo e fica como expressão). */
@@ -129,6 +135,7 @@ const DIRECT_CONDITION_OPS: readonly string[] = [
   '$not',
   '$and',
   '$or',
+  '$direction',
   ...COMPARISON_OPS,
 ];
 const ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
@@ -159,6 +166,7 @@ const BASE_KEYS = [
   'cornerRadius',
   'span',
   'weight',
+  'direction',
 ];
 
 /** Um objeto com algum operador `$…`: uma expressão, não um literal. */
@@ -329,6 +337,8 @@ function checkCondition(value: unknown, path: string, out: Ctx): void {
       return;
     case '$not':
       return checkCondition(operand, at, out);
+    case '$direction':
+      return oneOf(DIRECTIONS)(operand, at, out);
     case '$gt':
     case '$gte':
     case '$lt':
@@ -599,10 +609,19 @@ function checkNodeSizes(value: Rec, path: string, nodeType: string, out: Ctx): v
 
 function checkAnchors(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
-  checkKeys(value, ['left', 'right', 'top', 'bottom', 'centerX', 'centerY'], path, out);
-  for (const key of ['left', 'right', 'top', 'bottom']) {
+  checkKeys(
+    value,
+    ['left', 'right', 'start', 'end', 'top', 'bottom', 'centerX', 'centerY'],
+    path,
+    out,
+  );
+  for (const key of ['left', 'right', 'start', 'end', 'top', 'bottom']) {
     if (key in value) checkExpr(value[key], join(path, key), checkNumber, out);
   }
+  if ('start' in value && 'left' in value)
+    add(out, join(path, 'start'), 'não combina com left');
+  if ('end' in value && 'right' in value)
+    add(out, join(path, 'end'), 'não combina com right');
   for (const key of ['centerX', 'centerY']) {
     if (key in value) checkBoolExpr(value[key], join(path, key), out);
   }
@@ -736,7 +755,7 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
     italic: checkBoolean,
     lineHeight: checkNumber,
     letterSpacing: checkNumber,
-    align: oneOf(['left', 'center', 'right', 'justify']),
+    align: oneOf(['left', 'center', 'right', 'justify', 'start', 'end']),
     verticalAlign: oneOf(['top', 'middle', 'bottom', 'cap-middle']),
     decoration: oneOf(['none', 'underline', 'line-through']),
     wrap: oneOf(['word', 'none']),
@@ -1092,7 +1111,7 @@ function checkNode(
     rect: [],
     ellipse: [],
     text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
-    path: ['d', 'viewBox', 'fillRule'],
+    path: ['d', 'viewBox', 'fillRule', 'mirror'],
     slot: ['label', 'layout', 'clip', 'provide'],
     repeat: [
       'field',
@@ -1108,7 +1127,7 @@ function checkNode(
       'template',
     ],
     image: ['src', 'fit'],
-    icon: ['name', 'color', 'strokeWidth'],
+    icon: ['name', 'color', 'strokeWidth', 'mirror'],
   };
   // children/layout em nó que não é quadro têm mensagem própria, em vez de "chave desconhecida"
   for (const key of ['children', 'layout']) {
@@ -1131,6 +1150,8 @@ function checkNode(
     checkString(value.name, join(path, 'name'), out);
   if ('visible' in value) checkBoolExpr(value.visible, join(path, 'visible'), out);
   if ('opacity' in value) checkExpr(value.opacity, join(path, 'opacity'), checkUnit, out);
+  if ('direction' in value && type !== 'repeat')
+    oneOf(DIRECTIONS)(value.direction, join(path, 'direction'), out);
   if ('rotation' in value)
     checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
   checkNodeSizes(value, path, type, out);
@@ -1166,6 +1187,7 @@ function checkNode(
       else checkViewBox(value.viewBox, join(path, 'viewBox'), out);
       if ('fillRule' in value)
         oneOf(['nonzero', 'evenodd'])(value.fillRule, join(path, 'fillRule'), out);
+      if ('mirror' in value) checkBoolExpr(value.mirror, join(path, 'mirror'), out);
       return;
     case 'slot':
       if ('label' in value) checkExpr(value.label, join(path, 'label'), checkString, out);
@@ -1192,6 +1214,7 @@ function checkIconNode(value: Rec, path: string, out: Ctx): void {
   if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('strokeWidth' in value)
     checkExpr(value.strokeWidth, join(path, 'strokeWidth'), checkNonNegative, out);
+  if ('mirror' in value) checkBoolExpr(value.mirror, join(path, 'mirror'), out);
 }
 
 /**
@@ -1326,6 +1349,9 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['runs'],
   ['rotation'],
   ['provide'],
+  ['mirror'],
+  ['anchors', 'start'],
+  ['anchors', 'end'],
 ];
 
 /** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
@@ -1349,6 +1375,8 @@ const V4_EXPR_KEYS: readonly (readonly string[])[] = [
 const V4_LITERAL_VALUES: readonly (readonly [readonly string[], string])[] = [
   [['font', 'verticalAlign'], 'cap-middle'],
   [['font', 'align'], 'justify'],
+  [['font', 'align'], 'start'],
+  [['font', 'align'], 'end'],
   ...IMAGE_FITS_V4.map((fit): readonly [readonly string[], string] => [['fit'], fit]),
   [['layout', 'justify'], 'space-around'],
   [['layout', 'justify'], 'space-evenly'],
@@ -1380,16 +1408,24 @@ function noneAlignVersionIssues(version: unknown, template: unknown): ComponentI
   return out;
 }
 
-/** As chaves da v4 de um nó só: `align`/`justify` do layout `none` e o `clip` literal do slot. */
+/** As chaves da v4 de um nó só: `align`/`justify` do layout `none`, o `clip` literal do slot e o `direction`. */
 function noneAlignNodeIssues(node: Rec, at: string, out: ComponentIssue[]): void {
   const layout = node.layout;
   if (isRecord(layout) && layout.type === 'none')
     for (const key of ['align', 'justify'])
       if (key in layout) addIssue(out, join(at, `layout.${key}`), V4_ONLY_MESSAGE);
+  v4NodeKeyIssues(node, at, out);
+}
+
+/** As outras chaves da v4 num nó: o `clip` literal do slot, o `layout` do `repeat` e o `direction`. */
+function v4NodeKeyIssues(node: Rec, at: string, out: ComponentIssue[]): void {
   if (node.type === 'slot' && 'clip' in node && !isExprObject(node.clip))
     addIssue(out, join(at, 'clip'), V4_ONLY_MESSAGE);
   if (node.type === 'repeat' && 'layout' in node)
     addIssue(out, join(at, 'layout'), V4_ONLY_MESSAGE);
+  // `direction` ltr/rtl é da v4; no `repeat` a chave é o empilhamento das linhas, de toda versão.
+  if (node.type !== 'repeat' && 'direction' in node)
+    addIssue(out, join(at, 'direction'), V4_ONLY_MESSAGE);
 }
 
 /** `shadow` como lista (v4) numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho de `shadow`. */
@@ -1495,6 +1531,7 @@ function isV4OnlyOp(key: string): boolean {
     key === '$size' ||
     key === '$lines' ||
     key === '$provided' ||
+    key === '$direction' ||
     (COMPARISON_OPS as readonly string[]).includes(key)
   );
 }
@@ -1591,12 +1628,25 @@ function numericVersionIssues(version: unknown, template: unknown): ComponentIss
   return out;
 }
 
-/** A chave cita `$index` (`$field`, `$has`, `$switch` ou o primeiro item de `$eq`)? Devolve o sufixo do caminho. */
-function indexCitation(key: string, value: unknown): string | undefined {
-  if ((key === '$field' || key === '$has' || key === '$switch') && value === '$index')
-    return '';
-  if (key === '$eq' && Array.isArray(value) && value[0] === '$index') return '[0]';
+/** A chave cita um campo (`$field`, `$has`, `$switch` ou o primeiro item de `$eq`)? O nome e o sufixo do caminho. */
+function citedField(
+  key: string,
+  value: unknown,
+): { readonly name: string; readonly suffix: string } | undefined {
+  if (
+    (key === '$field' || key === '$has' || key === '$switch') &&
+    typeof value === 'string'
+  )
+    return { name: value, suffix: '' };
+  if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string')
+    return { name: value[0], suffix: '[0]' };
   return undefined;
+}
+
+/** A chave cita `$index`? Devolve o sufixo do caminho. */
+function indexCitation(key: string, value: unknown): string | undefined {
+  const cited = citedField(key, value);
+  return cited?.name === '$index' ? cited.suffix : undefined;
 }
 
 /**
@@ -1622,6 +1672,33 @@ function indexIssues(version: unknown, template: unknown): ComponentIssue[] {
     }
   };
   walk(template, 'template', false);
+  return out;
+}
+
+/**
+ * `$anchor.*` (os pseudo-campos da âncora): antes da 4 `só é permitido com formatVersion 4`; na 4, só
+ * valem os cinco nomes de `ANCHOR_FIELDS` (outro é `campo não existe: $anchor.foo`). O caminho é o da
+ * chave que o cita.
+ */
+function anchorFieldIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  const v4 = typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY;
+  const walk = (node: unknown, at: string): void => {
+    if (Array.isArray(node)) return node.forEach((n, i) => walk(n, `${at}[${i}]`));
+    if (!isRecord(node)) return;
+    for (const [key, value] of Object.entries(node)) {
+      const here = join(at, key);
+      const cited = citedField(key, value);
+      if (cited !== undefined && isAnchorFieldName(cited.name)) {
+        const where = `${here}${cited.suffix}`;
+        if (!v4) addIssue(out, where, V4_ONLY_MESSAGE);
+        else if (!(ANCHOR_FIELDS as readonly string[]).includes(cited.name))
+          addIssue(out, where, `campo não existe: ${cited.name}`);
+      }
+      walk(value, here);
+    }
+  };
+  walk(template, 'template');
   return out;
 }
 
@@ -1735,6 +1812,7 @@ const ROOT_KEYS = [
   'minSize',
   'sizing',
   'screen',
+  'anchor',
   'preview',
   'template',
 ];
@@ -1796,6 +1874,22 @@ function checkScreen(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   checkKeys(value, ['anchor'], path, out);
   if ('anchor' in value) oneOf(SCREEN_ANCHORS)(value.anchor, join(path, 'anchor'), out);
+}
+
+/** `anchor` (só v4, só na raiz): `side`, `align` e `offset { main, cross }`, todos opcionais. */
+function checkAnchor(value: unknown, path: string, out: Ctx): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  checkKeys(value, ['side', 'align', 'offset'], path, out);
+  if ('side' in value) oneOf(ANCHOR_SIDES)(value.side, join(path, 'side'), out);
+  if ('align' in value) oneOf(ANCHOR_ALIGNS)(value.align, join(path, 'align'), out);
+  if (!('offset' in value)) return;
+  const at = join(path, 'offset');
+  const offset = value.offset;
+  if (!isRecord(offset)) return add(out, at, 'esperava objeto');
+  checkKeys(offset, ['main', 'cross'], at, out);
+  for (const axis of ['main', 'cross'])
+    if (axis in offset && !isFiniteNumber(offset[axis]))
+      add(out, join(at, axis), 'esperava número');
 }
 
 /** Os problemas do arquivo e o `template` sem `let` nem `$var` (o que o motor lê). */
@@ -1917,6 +2011,12 @@ function collectIssues(
       add(out, 'screen', V4_ONLY_MESSAGE);
   }
 
+  if ('anchor' in input) {
+    checkAnchor(input.anchor, 'anchor', out);
+    if (typeof version === 'number' && version < COMPONENT_FORMAT_VERSION_FIDELITY)
+      add(out, 'anchor', V4_ONLY_MESSAGE);
+  }
+
   if ('preview' in input) {
     if (!isRecord(input.preview)) add(out, 'preview', 'esperava objeto');
     else
@@ -1967,6 +2067,7 @@ function collectIssues(
     issues.push(...numericVersionIssues(version, template));
     issues.push(...linesIssues(template));
     issues.push(...indexIssues(version, template));
+    issues.push(...anchorFieldIssues(version, template));
     if (version === 1 || version === 2) {
       for (const node of nodesOfTypes(template, 'template', ['image'])) {
         add(out, node.path, 'o nó image só existe na formatVersion 3');

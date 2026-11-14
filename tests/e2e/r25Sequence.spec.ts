@@ -246,7 +246,7 @@ test('R25.3 a R25.12: nenhuma marcação muda de lugar sem pedido', async ({ pag
 
   let raw = await settled(page);
   let mapping = expectRects(raw, {}, 'R25.3');
-  expect(mapping.schemaVersion).toBe(19);
+  expect(mapping.schemaVersion).toBe(20);
   expect(mapping.containers).toMatchObject([{ name: 'Telas', background: '#DDEEFF' }]);
 
   // R25.4: Card, Text field e Divider.

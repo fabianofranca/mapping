@@ -1,5 +1,6 @@
 import {
   drawingModesOf,
+  effectiveDirection,
   effectiveDrawingMode,
   arrowsOf,
   markingComponent,
@@ -313,6 +314,18 @@ function linkTree(refs: Refs, own: readonly Annotation[]): LinkNode[] | null {
   return own.filter((a) => a.parentAnnotationId === null).map(node);
 }
 
+/** A âncora da marcação com `to` como referência (os campos que ela não diz ficam ausentes); `null` sem âncora. */
+function anchorView(refs: Refs, marking: Marking): Json | null {
+  const { anchor } = marking;
+  if (anchor == null) return null;
+  return {
+    to: refs.ref('m', anchor.to),
+    ...(anchor.side === undefined ? {} : { side: anchor.side }),
+    ...(anchor.align === undefined ? {} : { align: anchor.align }),
+    ...(anchor.offset === undefined ? {} : { offset: anchor.offset }),
+  };
+}
+
 /** Tudo sobre a marcação (`get_marking`). Com `platform`, o `code` mostra só essa plataforma. */
 export async function markingView(
   ctx: CodeContext,
@@ -384,6 +397,9 @@ export async function markingView(
     },
     needsReview: marking.needsReview,
     parent: marking.parentId === null ? null : refs.ref('m', marking.parentId),
+    // Âncora (v20): a marcação a que esta está ligada e as que estão ligadas a ela.
+    anchor: anchorView(refs, marking),
+    anchoredBy: (index.anchoredBy.get(marking.id) ?? []).map((m) => refs.ref('m', m.id)),
     children: childRows,
     ...(children.length > LIST_LIMIT ? { childrenTotal: children.length } : {}),
     // Quem tem esta marcação como pai (derivado da geometria): marcações do mesmo espaço e,
@@ -500,6 +516,9 @@ function containerSummary(refs: Refs, image: ProjectContainer): Json {
     // Modo do desenho que o container fixa (`null` = segue o projeto) e o que vale nele.
     drawingMode: image.drawingMode ?? null,
     effectiveDrawingMode: effectiveModeOf(refs.project, image.id),
+    // Direção de leitura que o container fixa (`null` = segue o projeto) e a que vale nele.
+    direction: image.direction ?? null,
+    effectiveDirection: effectiveDirection(refs.project, image.id),
     // Pixels da imagem por unidade do componente (1 = o padrão, também quando ausente).
     density: image.density ?? 1,
     // Marcação do canvas que contém o container (derivado da geometria), ou `null`.
@@ -632,6 +651,8 @@ export function projectDetail(refs: Refs): Json {
     createdAt: p.project.createdAt,
     // Modo do desenho do projeto (`null` = o primeiro modo de cada especialização).
     drawingMode: p.drawingMode ?? null,
+    // Direção de leitura do projeto: `ltr` quando nenhuma está gravada (é o que vale).
+    direction: p.direction ?? 'ltr',
     ...(loaded.migratedFrom !== null ? { migratedFrom: loaded.migratedFrom } : {}),
     containers: p.containers.map((image) => ({
       ...containerSummary(refs, image),

@@ -1,6 +1,7 @@
 import { isSameAspect, scaleRect } from './containers';
 import { withoutDensity } from './density';
 import { snapPlacement } from './geometry';
+import { setProjectDirection } from './direction';
 import { setProjectDrawingMode } from './drawingMode';
 import { clearArrowRoutes, settleHierarchy } from './hierarchySettle';
 import { reconcilePerspectives } from './perspectiveReconcile';
@@ -36,6 +37,7 @@ import type {
   PlatformRepo,
   Project,
   ProjectContainer,
+  ReadingDirection,
   ProjectSpecialization,
   Rect,
   TypedValues,
@@ -61,9 +63,13 @@ export interface PatchProblem {
   readonly changeId: string;
 }
 
-/** A entidade `project` (formatVersion 6): o modo do desenho (`null` = sem modo fixado). */
+/**
+ * A entidade `project` (formatVersion 6): o modo do desenho (`null` = sem modo fixado) e, na
+ * formatVersion 8, a direção de leitura (ausente ou `null` = sem direção fixada).
+ */
 interface ProjectModeEntity {
   readonly drawingMode: string | null;
+  readonly direction?: ReadingDirection | null;
 }
 
 type Entity =
@@ -352,6 +358,19 @@ function placeGroup(
   });
 }
 
+const hasDirection = (v: unknown): boolean =>
+  typeof v === 'object' && v !== null && 'direction' in v;
+
+/**
+ * A mudança do projeto de uma proposta anterior à direção (sem `direction` no `from` nem no
+ * `to`) não fala dela: a direção atual fica. Com `direction` no `from`, a ausência no `to` é a
+ * remoção (`projectValue` não grava o campo sem direção).
+ */
+function keepProjectDirection(c: Change, current: Entity, next: Entity): Entity {
+  if (hasDirection(c.from) || hasDirection(c.to)) return next;
+  return { ...next, direction: (current as ProjectModeEntity).direction ?? null };
+}
+
 export interface PatchResult {
   readonly project: Project;
   readonly problems: readonly PatchProblem[];
@@ -372,7 +391,9 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     specialization: new Map(p.specializations.map((s) => [s.id, s])),
     platformRepo: new Map(Object.entries(p.platformRepos)),
     docRepo: new Map(Object.entries(p.docRepos)),
-    project: new Map([['project', { drawingMode: p.drawingMode ?? null }]]),
+    project: new Map([
+      ['project', { drawingMode: p.drawingMode ?? null, direction: p.direction ?? null }],
+    ]),
     layer: new Map(p.layers.map((l) => [l.id, l])),
     image: new Map(p.containers.map((i) => [i.id, i])),
     marking: new Map(p.markings.map((m) => [m.id, m])),
@@ -411,7 +432,11 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
       }
       if (!current) problems.push({ code: 'entity-missing', changeId: c.id });
       else if (!next) problems.push({ code: 'field-mismatch', changeId: c.id });
-      else map.set(c.entityId, next);
+      else
+        map.set(
+          c.entityId,
+          c.entity === 'project' ? keepProjectDirection(c, current, next) : next,
+        );
     }
   }
 
@@ -455,24 +480,21 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
   }
   placeAmongSiblings(markings, markingPositions);
 
-  const mode = (maps.project.get('project') as ProjectModeEntity | undefined)
-    ?.drawingMode;
-  const project: Project = setProjectDrawingMode(
-    {
-      ...p,
-      specializations: [...maps.specialization.values()] as ProjectSpecialization[],
-      platformRepos: Object.fromEntries(maps.platformRepo) as Record<
-        string,
-        PlatformRepo
-      >,
-      docRepos: Object.fromEntries(maps.docRepo) as Record<string, DocRepo>,
-      layers,
-      containers,
-      markings,
-      arrows,
-      annotations: [...maps.annotation.values()] as Annotation[],
-    },
-    mode ?? null,
+  const projectEntity = maps.project.get('project') as ProjectModeEntity | undefined;
+  const assembled: Project = {
+    ...p,
+    specializations: [...maps.specialization.values()] as ProjectSpecialization[],
+    platformRepos: Object.fromEntries(maps.platformRepo) as Record<string, PlatformRepo>,
+    docRepos: Object.fromEntries(maps.docRepo) as Record<string, DocRepo>,
+    layers,
+    containers,
+    markings,
+    arrows,
+    annotations: [...maps.annotation.values()] as Annotation[],
+  };
+  const project = setProjectDirection(
+    setProjectDrawingMode(assembled, projectEntity?.drawingMode ?? null),
+    projectEntity?.direction ?? null,
   );
   return { project: reconcilePerspectives(p, project), problems };
 }

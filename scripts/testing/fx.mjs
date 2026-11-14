@@ -37,7 +37,15 @@ const card = {
         height: 20,
         text: 'HHHHHHHHHHHHHHHH',
         color: '#000000',
-        font: { family: 'sans-serif', size: 16, lineHeight: 20, wrap: 'none' },
+        font: {
+          family: 'sans-serif',
+          size: 16,
+          lineHeight: 20,
+          wrap: 'none',
+          // Uma linha só, cortada pela caixa de propósito: o maxLines diz isso ao motor, que não avisa
+          // "texto maior que a caixa" (o R25.71 espera só os avisos de parâmetro fora da ficha).
+          maxLines: 1,
+        },
       },
       // Raio e cor por token; a cor com metade do alfa.
       rect(30, 85, 60, 25, {

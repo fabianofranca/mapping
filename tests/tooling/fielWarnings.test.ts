@@ -36,7 +36,27 @@ describe('fiel.mjs (R25.1)', () => {
     const report = validateLibrary({ files });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
-  });
+  }, 30_000);
+
+  it('m3-fx (R25.71): o card de formato 4 valida sem erro e só com os avisos conhecidos, sem "texto maior que a caixa" (CL1, achado 1.1)', () => {
+    const dir = join(mkdtempSync(join(tmpdir(), 'fx-')), 'm3-fx');
+    cpSync(join(REPO, 'libraries/material3-compose'), dir, { recursive: true });
+    execFileSync('node', [join(REPO, 'scripts/testing/tokens.mjs'), dir]);
+    execFileSync('node', [join(REPO, 'scripts/testing/fx.mjs'), dir]);
+    const files = list(dir).map((path) =>
+      isFontPath(path)
+        ? { path, binary: true as const }
+        : { path, text: readFileSync(join(dir, path), 'utf8') },
+    );
+    const report = validateLibrary({ files });
+    expect(report.errors).toEqual([]);
+    expect(
+      report.warnings
+        .map((w) => w.message)
+        .filter((m) => m.includes('maior que a caixa')),
+    ).toEqual([]);
+    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
+  }, 30_000);
 
   it('top-app-bar: a caixa vermelha mede 48, 68 e 88 com 1, 2 e 3 linhas (R25.95)', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'fiel-')), 'm3-fiel');

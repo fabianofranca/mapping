@@ -49,9 +49,9 @@ function readSignature(path: string) {
 }
 
 describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)', () => {
-  it('é a formatVersion 16 e a versão 13 (a version subiu uma vez, sobre a 12 da main)', () => {
+  it('é a formatVersion 16 e a versão 14 (a version subiu uma vez no épico da #1079, sobre a 12 da main; a 14 é a R5 da #1096)', () => {
     expect(spec.formatVersion).toBe(16);
-    expect(spec.version).toBe(13);
+    expect(spec.version).toBe(14);
   });
 
   it('todo tipo, e todo caso de variants, cita a sua ficha em signatures/', () => {
@@ -90,7 +90,7 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
   it('o pacote valida sem erro nos três níveis', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
-  });
+  }, 30_000);
 
   // Um `it` por ficha: o laço único levava ~1,4 s e estourava os 5 s do teste no shard sob carga do CI (CL2, E-1).
   it.each(

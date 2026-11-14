@@ -16,6 +16,14 @@
     "width": "hug",
     "height": "hug"
   },
+  "anchor": {
+    "side": "end",
+    "align": "start",
+    "offset": {
+      "main": -6,
+      "cross": 0
+    }
+  },
   "preview": {
     "count": "3",
     "style": "large"

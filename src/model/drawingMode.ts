@@ -1,9 +1,13 @@
+import { anchorValues } from './componentValues';
+import { componentAnchorDefaults, type InstanceAnchor } from './components/anchor';
 import type { ComponentFile } from './components/componentFormat';
 import { applyTokens, type ResolvedTokens } from './components/tokens';
+import { effectiveDensity } from './density';
+import { effectiveDirection } from './direction';
 import { fail } from './errors';
 import { updateById } from './project';
 import { projectIndex } from './projectIndex';
-import type { Project } from './types';
+import type { Marking, Project, ReadingDirection } from './types';
 
 // Modo do desenho (schema v18, etapa "componentes fiéis"): escolhe o modo dos `tokens` das
 // especializações (`light`, `dark`…). É do projeto; o container pode fixar o seu. Não depende do
@@ -88,13 +92,19 @@ export function undeclaredDrawingMode(p: Project, declared: readonly string[]): 
  * O componente como o desenho o usa: com cada `$token` trocado pela tabela do modo efetivo do
  * espaço (`resolvedTokensByMode[modo]`; sem modo ou sem a tabela, a de `resolvedTokens`). Arrumar,
  * posicionar e medir passam por aqui antes de ler o slot, para o `gap` e o `padding` em `$token`
- * valerem o mesmo que na tela. `tokens` vai na opção `tokens` do `instantiate`.
+ * valerem o mesmo que na tela. `tokens` vai na opção `tokens` do `instantiate`; `direction` é a
+ * direção de leitura efetiva do espaço (`effectiveDirection`), que vai na opção `direction` do
+ * motor (`drawOptions`).
  */
 export function componentForDrawing(
   p: Project,
   component: ComponentFile,
   containerId: string | null,
-): { readonly component: ComponentFile; readonly tokens: ResolvedTokens | undefined } {
+): {
+  readonly component: ComponentFile;
+  readonly tokens: ResolvedTokens | undefined;
+  readonly direction: ReadingDirection;
+} {
   const mode = effectiveDrawingMode(p, containerId);
   const tokens =
     (mode === undefined ? undefined : component.resolvedTokensByMode?.[mode]) ??
@@ -102,5 +112,48 @@ export function componentForDrawing(
   return {
     component: tokens === undefined ? component : applyTokens(component, tokens),
     tokens,
+    direction: effectiveDirection(p, containerId),
+  };
+}
+
+/**
+ * A âncora de uma marcação existente na forma que a instância lê (`$anchor.*`), para as MEDIÇÕES
+ * (`fitMarking`, o arrumar): a mesma que o desenho recebe (`componentDrawings`), com o `rect` atual
+ * da marcação, o lado gravado ou, sem ele, o padrão do componente. `undefined` sem âncora ou sem o
+ * alvo. Sem isso o `$anchor.*` fica nulo e um `sizing` que depende do lado mede noutro ramo.
+ */
+export function measuringAnchor(
+  p: Project,
+  marking: Marking,
+  component: ComponentFile,
+): InstanceAnchor | undefined {
+  const { anchor } = marking;
+  if (anchor == null) return undefined;
+  const target = projectIndex(p).markings.get(anchor.to);
+  if (target === undefined) return undefined;
+  const density = effectiveDensity(p, marking.containerId);
+  return anchorValues({
+    rect: marking.rect,
+    anchorRect: target.rect,
+    side: anchor.side,
+    defaults: componentAnchorDefaults(component, density),
+    density,
+  });
+}
+
+/**
+ * As opções do motor que vêm do espaço (`tokens`, `direction` e, numa marcação ancorada, `anchor`):
+ * só leva a chave quando há o que passar (`tokens` definidos, direção `rtl`, âncora), então em `ltr`
+ * e sem âncora as opções são as de antes.
+ */
+export function drawOptions(drawn: {
+  readonly tokens: ResolvedTokens | undefined;
+  readonly direction: ReadingDirection;
+  readonly anchor?: InstanceAnchor | undefined;
+}): { tokens?: ResolvedTokens; direction?: 'rtl'; anchor?: InstanceAnchor } {
+  return {
+    ...(drawn.tokens === undefined ? {} : { tokens: drawn.tokens }),
+    ...(drawn.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
+    ...(drawn.anchor === undefined ? {} : { anchor: drawn.anchor }),
   };
 }

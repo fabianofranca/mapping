@@ -58,6 +58,8 @@ export function imageValue(i: ProjectContainer): JsonValue {
     ...(i.drawingMode == null ? {} : { drawingMode: i.drawingMode }),
     // Só quando declarada (formatVersion 7).
     ...(i.density == null ? {} : { density: i.density }),
+    // Só quando fixa (formatVersion 8).
+    ...(i.direction == null ? {} : { direction: i.direction }),
   });
 }
 
@@ -72,6 +74,8 @@ export function markingValue(m: Marking): JsonValue {
     needsReview: m.needsReview,
     locked: m.locked,
     source: m.source,
+    // Só quando ancorada (formatVersion 9): sem ele o valor é o de antes da âncora.
+    ...(m.anchor == null ? {} : { anchor: m.anchor }),
   });
 }
 
@@ -118,9 +122,15 @@ export function docRepoValue(r: DocRepo): JsonValue {
   return toJson({ localPath: r.localPath });
 }
 
-/** O que do projeto a proposta carrega (entidade `project`, formatVersion 6): o modo do desenho. */
-export function projectValue(p: Pick<Project, 'drawingMode'>): JsonValue {
-  return { drawingMode: p.drawingMode ?? null };
+/**
+ * O que do projeto a proposta carrega (entidade `project`, formatVersion 6): o modo do desenho e,
+ * só quando fixada (formatVersion 8), a direção de leitura.
+ */
+export function projectValue(p: Pick<Project, 'drawingMode' | 'direction'>): JsonValue {
+  return {
+    drawingMode: p.drawingMode ?? null,
+    ...(p.direction === undefined ? {} : { direction: p.direction }),
+  };
 }
 
 export function platformRepoValue(r: PlatformRepo): JsonValue {
@@ -144,8 +154,9 @@ export const COMPARED_FIELDS = {
     'source',
     'drawingMode',
     'density',
+    'direction',
   ],
-  marking: ['name', 'space', 'rect', 'floating', 'locked', 'source'],
+  marking: ['name', 'space', 'rect', 'floating', 'locked', 'source', 'anchor'],
   // A seta só se cria e se remove: nenhum campo dela é comparado (ver `ARROW_FIELDS`).
   arrow: [],
   annotation: ['name', 'parentAnnotationId', 'parentRole', 'markingId', 'layerId'],
@@ -189,36 +200,34 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
       return i.drawingMode ?? null;
     case 'density':
       return i.density ?? null;
+    case 'direction':
+      return i.direction ?? null;
     default:
       return undefined;
   }
 }
+
+/** Os campos de uma marcação que só dependem dela (sem o projeto): cada um lê o seu valor. */
+const MARKING_FIELD_READERS: Readonly<Record<string, (m: Marking) => JsonValue>> = {
+  name: (m) => m.name,
+  rect: (m) => toJson(m.rect),
+  space: (m) => toJson({ containerId: m.containerId, rect: m.rect }),
+  containerId: (m) => m.containerId,
+  floating: (m) => m.floating,
+  locked: (m) => m.locked,
+  source: (m) => toJson(m.source),
+  anchor: (m) => toJson(m.anchor ?? null),
+};
 
 export function markingField(
   p: Project,
   m: Marking,
   field: string,
 ): JsonValue | undefined {
-  switch (field) {
-    case 'position':
-      return siblingPosition(p, m.id).index;
-    case 'name':
-      return m.name;
-    case 'rect':
-      return toJson(m.rect);
-    case 'space':
-      return toJson({ containerId: m.containerId, rect: m.rect });
-    case 'containerId':
-      return m.containerId;
-    case 'floating':
-      return m.floating;
-    case 'locked':
-      return m.locked;
-    case 'source':
-      return toJson(m.source);
-    default:
-      return undefined;
-  }
+  if (field === 'position') return siblingPosition(p, m.id).index;
+  return Object.hasOwn(MARKING_FIELD_READERS, field)
+    ? MARKING_FIELD_READERS[field]?.(m)
+    : undefined;
 }
 
 /** Valor do campo `type` de uma anotação: o tipo com os valores e pares. */
@@ -380,6 +389,8 @@ function entityRefs(entity: ChangeEntity, value: JsonValue): ValueRef[] {
   if (entity === 'marking') {
     push(out, 'image', str(field(value, 'containerId')));
     push(out, 'marking', str(field(value, 'parentId')));
+    // A âncora (v20) é uma referência forte: `anchor-missing` se o alvo não existe.
+    push(out, 'marking', str(field(field(value, 'anchor') ?? null, 'to')));
   } else if (entity === 'arrow') {
     // As duas pontas são marcações que precisam existir (invariante `arrow-endpoint-missing`).
     push(out, 'marking', str(field(value, 'from')));
@@ -403,6 +414,7 @@ function fieldRefs(entity: ChangeEntity, name: string, value: JsonValue): ValueR
     // `parentId` é derivado (não é campo): só o espaço cita um container.
     if (name === 'containerId') push(out, 'image', str(value));
     if (name === 'space') push(out, 'image', str(field(value, 'containerId')));
+    if (name === 'anchor') push(out, 'marking', str(field(value, 'to')));
   } else if (entity === 'annotation') {
     if (name === 'parentAnnotationId') push(out, 'annotation', str(value));
     if (name === 'markingId') push(out, 'marking', str(value));

@@ -13,6 +13,9 @@ import { validateComponent } from '../../../src/model/components/parseComponent'
 import type { PathNode, SceneNode } from '../../../src/model/components/scene';
 import { walk } from '../../../src/model/components/scene';
 import { parseSpecText } from '../../../src/model/spec';
+import { modelMessage } from '../../../src/model/modelMessage';
+import { locale } from '../../../src/store/settings';
+import { messageText } from '../../../src/ui/modelMessage';
 
 const V4 = 'só é permitido com formatVersion 4';
 
@@ -62,11 +65,63 @@ describe('parseIconsFile', () => {
       expect(result.errors.join('\n')).toContain('icons.check.paths: esperava');
   });
 
-  it('recusa formatVersion 2 com mensagem de versão', () => {
-    const result = parseIconsFile({ ...FILE, formatVersion: 2 });
+  it('recusa formatVersion 3 com mensagem de versão (1 e 2 valem)', () => {
+    const result = parseIconsFile({ ...FILE, formatVersion: 3 });
     expect(result.ok).toBe(false);
     if (!result.ok)
-      expect(result.errors.join('\n')).toContain('formatVersion: deve ser 1');
+      expect(result.errors.join('\n')).toContain('formatVersion: deve ser 1 ou 2');
+    expect(parseIconsFile({ ...FILE, formatVersion: 1 }).ok).toBe(true);
+    expect(parseIconsFile({ ...FILE, formatVersion: 2 }).ok).toBe(true);
+  });
+
+  it('a mensagem de formatVersion inválido sai inteira em cada idioma (sem "ou" em inglês)', () => {
+    const result = parseIconsFile({ ...FILE, formatVersion: 3 });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const issue = result.issues.find((i) => i.path === 'formatVersion');
+    expect(issue?.code).toBe('iconsFile.formatVersionInvalid');
+    const message = modelMessage(
+      'iconsFile.formatVersionInvalid',
+      issue?.params ?? {},
+      issue?.message ?? '',
+    );
+    try {
+      locale.value = 'pt-BR';
+      expect(messageText(message)).toBe('deve ser 1 ou 2');
+      locale.value = 'en-US';
+      expect(messageText(message)).toBe('must be 1 or 2');
+    } finally {
+      locale.value = 'pt-BR';
+    }
+  });
+
+  it('mapping-icons 2 aceita mirror por ícone (booleano); a 1 continua aceita sem ele', () => {
+    const icons = { back: { mirror: true, paths: FILE.icons.check.paths } };
+    const ok = parseIconsFile({ ...FILE, formatVersion: 2, icons });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) expect(ok.set.icons.back?.mirror).toBe(true);
+    const bad = parseIconsFile({
+      ...FILE,
+      formatVersion: 2,
+      icons: { back: { mirror: 'sim', paths: FILE.icons.check.paths } },
+    });
+    expect(bad.ok).toBe(false);
+    if (!bad.ok)
+      expect(bad.errors.join('\n')).toContain(
+        'icons.back.mirror: esperava true ou false',
+      );
+  });
+
+  it('mirror na formatVersion 1 é só é permitido com formatVersion 2', () => {
+    const result = parseIconsFile({
+      ...FILE,
+      icons: { back: { mirror: true, paths: FILE.icons.check.paths } },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok)
+      expect(result.errors).toContain(
+        'icons.back.mirror: só é permitido com formatVersion 2',
+      );
   });
 
   it('recusa chave desconhecida, cap/join inválidos e sem viewBox no conjunto', () => {

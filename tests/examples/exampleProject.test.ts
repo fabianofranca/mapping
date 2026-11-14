@@ -59,7 +59,7 @@ describe('zip do projeto de exemplo', () => {
 
   it('abre como o "Abrir zip": mapping.json válido no schema atual, sem migração', async () => {
     const { project } = await readExample();
-    expect(project.schemaVersion).toBe(19);
+    expect(project.schemaVersion).toBe(20);
     expect(project.revision).toBe(1);
     const read = await readProjectZip(new Blob([readFileSync(EXAMPLE_ZIP)]));
     const parsed = read.ok
@@ -159,7 +159,8 @@ describe('zip do projeto de exemplo', () => {
     });
     expect(report.errors).toEqual([]);
     expect(report.ok).toBe(true);
-  });
+    // A prova de desenho dos 229 exemplos do pacote passa de 5 s com a cobertura ligada no CI.
+  }, 30_000);
 });
 
 describe('conversas de exemplo (comments/)', () => {

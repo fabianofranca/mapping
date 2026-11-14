@@ -113,6 +113,8 @@ export const componentMessages = {
   'component.trackOnlyGrid': 'só vale em layout grid',
   'component.notInGrid': 'não vale em layout grid',
   'component.spanOnlyInGrid': 'span: só vale em filho de layout grid',
+  'component.anchorStartLeft': 'não combina com left',
+  'component.anchorEndRight': 'não combina com right',
   'component.weightOnlyFill':
     'weight: só vale em filho fill no eixo principal de row ou column',
   'component.repeatLayoutConflict': 'repeat.layout: não combina com direction nem gap',
@@ -121,6 +123,7 @@ export const componentMessages = {
   'component.repeatLayoutNotNone': 'repeat.layout: use row, column ou grid',
   // Versão do formato
   'component.v4Only': 'só é permitido com formatVersion 4',
+  'component.anchorFieldUnknown': 'campo não existe: {name}',
   'component.indexOnlyInRepeat': '$index só vale dentro de um repeat',
   'component.repeatOnlyV2': 'o nó repeat só existe na formatVersion 2',
   'component.imageOnlyV3': 'o nó image só existe na formatVersion 3',

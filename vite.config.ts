@@ -36,6 +36,13 @@ const perfBudgets =
     ? 'off'
     : 'on';
 /**
+ * Pela mesma condição (`--coverage`, ou `PERF_BUDGETS=off` no deploy em paralelo) o código
+ * roda instrumentado ou numa máquina carregada, e um teste de ~1 s sem cobertura passa de
+ * 5 s: nesses casos os projetos que ficariam no padrão do Vitest usam 30 s. Sem cobertura o
+ * limite continua 5 s. Os projetos com `testTimeout` próprio não mudam.
+ */
+const defaultTestTimeout = perfBudgets === 'off' ? { testTimeout: 30_000 } : {};
+/**
  * Nos shards do CI (`COVERAGE_REPORT=off`) o blob já leva os dados de cobertura e só o job
  * `coverage` gera o relatório, no `--merge-reports`: gerá-lo em cada shard custava ~15 s.
  * Local (`npm run test:coverage`) o relatório sai como sempre.
@@ -95,6 +102,7 @@ export default defineConfig({
           env: testEnv,
           include: ['tests/model/**/*.test.ts'],
           exclude: perfModelFiles,
+          ...defaultTestTimeout,
         },
       },
       {
@@ -177,6 +185,7 @@ export default defineConfig({
             'tests/viewer/react*.test.tsx',
             ...perfAppFiles,
           ],
+          ...defaultTestTimeout,
         },
       },
       {
@@ -207,6 +216,7 @@ export default defineConfig({
           environment: 'jsdom',
           env: testEnv,
           include: ['tests/viewer/react*.test.tsx'],
+          ...defaultTestTimeout,
         },
       },
     ],

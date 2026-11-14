@@ -13,7 +13,9 @@ import { iconsFileCodeForText } from '../messages/textLookup';
  */
 
 export const ICONS_FORMAT = 'mapping-icons';
-export const ICONS_FORMAT_VERSION = 1;
+/** A versão atual do arquivo; a 1 (sem `mirror`) continua aceita. */
+export const ICONS_FORMAT_VERSION = 2;
+export const ICONS_FORMAT_VERSIONS: readonly number[] = [1, 2];
 /** Padrão do nome de um ícone. */
 export const ICON_NAME_PATTERN = /^[a-z0-9][a-z0-9-_]*$/;
 /** Caixa usada quando não há conjunto para dizer o `viewBox` (ícone desconhecido). */
@@ -37,6 +39,8 @@ export interface IconPath {
 export interface IconDef {
   /** Sobrepõe o `viewBox` do conjunto. */
   readonly viewBox?: readonly [number, number];
+  /** O ícone vira na horizontal em `rtl` (formatVersion 2 do arquivo; padrão `false`). */
+  readonly mirror?: boolean;
   readonly paths: readonly IconPath[];
 }
 
@@ -137,9 +141,20 @@ function checkIconPath(value: unknown, path: string, out: IconsIssue[]): void {
   checkPathStyle(value, path, out);
 }
 
-function checkIcon(value: unknown, path: string, out: IconsIssue[]): void {
+function checkIcon(
+  value: unknown,
+  path: string,
+  version: unknown,
+  out: IconsIssue[],
+): void {
   if (!isRecord(value)) return void out.push(issue(path, 'esperava objeto'));
-  checkUnknownKeys(value, ['viewBox', 'paths'], path, out);
+  checkUnknownKeys(value, ['viewBox', 'paths', 'mirror'], path, out);
+  if ('mirror' in value) {
+    const at = join(path, 'mirror');
+    if (version === 1) out.push(issue(at, 'só é permitido com formatVersion 2'));
+    else if (typeof value.mirror !== 'boolean')
+      out.push(issue(at, 'esperava true ou false'));
+  }
   if ('viewBox' in value) checkViewBox(value.viewBox, join(path, 'viewBox'), out);
   const at = join(path, 'paths');
   if (!Array.isArray(value.paths) || value.paths.length === 0)
@@ -150,13 +165,8 @@ function checkIcon(value: unknown, path: string, out: IconsIssue[]): void {
 function checkHeader(input: Record<string, unknown>, out: IconsIssue[]): void {
   if (input.format !== ICONS_FORMAT)
     out.push(issue('format', `deve ser "${ICONS_FORMAT}"`));
-  if (input.formatVersion !== ICONS_FORMAT_VERSION)
-    out.push(
-      issue(
-        'formatVersion',
-        `deve ser ${ICONS_FORMAT_VERSION} (a única versão do formato)`,
-      ),
-    );
+  if (!ICONS_FORMAT_VERSIONS.includes(input.formatVersion as number))
+    out.push(issue('formatVersion', 'deve ser 1 ou 2'));
   if (!('viewBox' in input)) out.push(issue('viewBox', 'campo obrigatório'));
   else checkViewBox(input.viewBox, 'viewBox', out);
   for (const key of Object.keys(input))
@@ -176,7 +186,7 @@ function collectIssues(input: unknown): IconsIssue[] {
     const at = join('icons', name);
     if (!ICON_NAME_PATTERN.test(name))
       out.push(issue(at, 'nome inválido; use [a-z0-9][a-z0-9-_]*'));
-    checkIcon(icon, at, out);
+    checkIcon(icon, at, input.formatVersion, out);
   }
   return out;
 }

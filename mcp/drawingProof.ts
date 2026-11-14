@@ -1,6 +1,7 @@
 import {
   createDrawingCache,
   effectiveDensity,
+  effectiveDirection,
   effectiveDrawingMode,
   projectIndex,
   SLOT_OVERFLOW,
@@ -45,7 +46,17 @@ const differs = (a: unknown, b: unknown) => a !== b && json(a) !== json(b);
 /** Um cache de desenhos por leitor de fontes: provas seguidas do mesmo projeto reaproveitam as instâncias. */
 const drawingCaches = new WeakMap<FontBook, DrawingCache>();
 
-/** Marcações que o lote criou ou alterou (retângulo, anotação, modo do desenho) e as donas delas. */
+/** O espaço mudou o que vale nele para o desenho: modo, densidade ou direção de leitura efetivos. */
+function spaceChanged(before: Project, after: Project, containerId: string | null) {
+  return (
+    effectiveDrawingMode(before, containerId) !==
+      effectiveDrawingMode(after, containerId) ||
+    effectiveDensity(before, containerId) !== effectiveDensity(after, containerId) ||
+    effectiveDirection(before, containerId) !== effectiveDirection(after, containerId)
+  );
+}
+
+/** Marcações que o lote criou ou alterou (retângulo, anotação, modo, densidade, direção) e as donas delas. */
 function touchedMarkings(before: Project, after: Project): Set<string> {
   const old = projectIndex(before);
   const next = projectIndex(after);
@@ -55,19 +66,30 @@ function touchedMarkings(before: Project, after: Project): Set<string> {
     const changed =
       previous === undefined ||
       differs(previous, marking) ||
-      effectiveDrawingMode(before, marking.containerId) !==
-        effectiveDrawingMode(after, marking.containerId) ||
-      effectiveDensity(before, marking.containerId) !==
-        effectiveDensity(after, marking.containerId) ||
+      spaceChanged(before, after, marking.containerId) ||
       annotationsChanged(old.annotations, next.annotationsByMarking, marking.id);
     if (changed) touched.add(marking.id);
   }
-  // A filha que muda pode deixar de caber no slot da dona: a dona também entra na prova.
+  addDependents(next, touched);
+  return touched;
+}
+
+/**
+ * Quem depende do desenho das marcações tocadas entra na prova: o seguidor (o desenho dele lê o
+ * alvo por `$anchor.*`: lado, centro e tamanho) e a dona (a filha que muda pode deixar de caber
+ * no slot dela).
+ */
+function addDependents(
+  next: ReturnType<typeof projectIndex>,
+  touched: Set<string>,
+): void {
+  for (const id of [...touched]) {
+    for (const follower of next.anchoredBy.get(id) ?? []) touched.add(follower.id);
+  }
   for (const id of [...touched]) {
     const parent = next.markings.get(id)?.parentId;
     if (parent != null) touched.add(parent);
   }
-  return touched;
 }
 
 type Annotations = ReturnType<typeof projectIndex>['annotations'];

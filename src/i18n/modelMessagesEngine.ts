@@ -23,4 +23,5 @@ export const engineEnUS: {
   'model.engine.linesUnstable': '$lines unstable: {name}',
   'model.engine.screenTooTall': 'screen: content taller than the screen height',
   'model.engine.approximate': '{reason} (approximate)',
+  'model.engine.inRtl': 'in rtl: {reason}',
 };

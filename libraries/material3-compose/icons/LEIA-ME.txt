@@ -3,12 +3,19 @@
 
 A especialização (material3-compose.spec.json) declara o conjunto em "icons":
 
-  - icons/material-icons.json (mapping-icons, formatVersion 1, viewBox 24 x 24)
+  - icons/material-icons.json (mapping-icons, formatVersion 2, viewBox 24 x 24)
 
 O conjunto é um subconjunto do Material Icons na variante Filled (o Icons.Default do Compose),
 com os caminhos tirados do pacote npm @material-design-icons/svg 0.14.15 (pasta "filled"),
 licenciado sob a Apache License 2.0. O texto da licença está em LICENSE-material-icons.txt,
 ao lado.
+
+Na formatVersion 2, "mirror": true marca os ícones que o androidx põe em Icons.AutoMirrored.Filled
+(arrow_back, arrow_forward, keyboard_arrow_left, keyboard_arrow_right, list, send, help…): em
+direção de leitura rtl o desenho os vira na horizontal. A lista (24 ícones do conjunto) vem dos
+artefatos androidx.compose.material:material-icons-core e -extended 1.7.8 (a última estável: o
+commit fixado do androidx, 5113b82a…, não traz os arquivos dos ícones, que são gerados e publicados
+à parte).
 
 O nome de cada ícone é o do pacote, em snake_case (home, keyboard_arrow_right). Os campos de
 ícone dos tipos guardam o nome do Compose (Home, KeyboardArrowRight, o que vai em

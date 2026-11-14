@@ -53,6 +53,24 @@
       },
       "description": "formatVersion 4, só na raiz. O template é desenhado no size do componente em pixels de tela, em qualquer zoom, ancorado no ponto anchor (padrão center) do retângulo da marcação; o desenho pode passar do retângulo (sem a pendência 'não cabe'). Numa formatVersion menor o parseComponent recusa com 'só é permitido com formatVersion 4'."
     },
+    "anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "side": { "enum": ["top", "bottom", "start", "end"] },
+        "align": { "enum": ["start", "center", "end"] },
+        "offset": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "main": { "type": "number" },
+            "cross": { "type": "number" }
+          },
+          "description": "Em unidades do componente (a densidade do container as converte em pixels). Ausentes valem 0."
+        }
+      },
+      "description": "formatVersion 4, só na raiz. Como o tipo prefere encostar na âncora de uma marcação: side (padrão top), align (padrão center) e offset (padrão 0, 0). Tudo opcional. Numa formatVersion menor o parseComponent recusa com 'só é permitido com formatVersion 4'."
+    },
     "preview": {
       "type": "object",
       "additionalProperties": {
@@ -203,7 +221,7 @@
       "enum": ["none", "wrap", "wrap-reverse"]
     },
     "lit_fontAlign": {
-      "enum": ["left", "center", "right", "justify"]
+      "enum": ["left", "center", "right", "justify", "start", "end"]
     },
     "lit_verticalAlign": {
       "enum": ["top", "middle", "bottom", "cap-middle"]
@@ -2095,6 +2113,16 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "required": ["$direction"],
+          "properties": {
+            "$direction": {
+              "enum": ["ltr", "rtl"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "required": ["$gt"],
           "properties": {
             "$gt": {
@@ -2259,6 +2287,12 @@
         "right": {
           "$ref": "#/$defs/expr_number"
         },
+        "start": {
+          "$ref": "#/$defs/expr_number"
+        },
+        "end": {
+          "$ref": "#/$defs/expr_number"
+        },
         "top": {
           "$ref": "#/$defs/expr_number"
         },
@@ -2272,7 +2306,7 @@
           "$ref": "#/$defs/expr_boolean"
         }
       },
-      "description": "Âncoras no pai com layout none. Na formatVersion 4 cada valor pode ser uma expressão (centerX e centerY aceitam condições); a que não produz número vale como âncora ausente. A expressão em versão anterior à 4 é recusada pelo parseComponent."
+      "description": "Âncoras no pai com layout none. Na formatVersion 4 cada valor pode ser uma expressão (centerX e centerY aceitam condições); a que não produz número vale como âncora ausente. A expressão em versão anterior à 4 é recusada pelo parseComponent. Na formatVersion 4, start e end são as âncoras lógicas do eixo horizontal (start é a esquerda em ltr e a direita em rtl); start junto de left, e end junto de right, são recusados pelo parseComponent."
     },
     "stroke": {
       "type": "object",
@@ -2626,6 +2660,10 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "direction": {
+          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "enum": ["ltr", "rtl"]
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -2702,6 +2740,10 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "direction": {
+          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "enum": ["ltr", "rtl"]
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -2764,6 +2806,10 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "direction": {
+          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "enum": ["ltr", "rtl"]
         },
         "width": {
           "$ref": "#/$defs/expr_size"
@@ -2836,6 +2882,10 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "direction": {
+          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "enum": ["ltr", "rtl"]
         },
         "width": {
           "$ref": "#/$defs/expr_size"
@@ -2930,6 +2980,10 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "direction": {
+          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "enum": ["ltr", "rtl"]
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -2985,6 +3039,10 @@
         },
         "fillRule": {
           "enum": ["nonzero", "evenodd"]
+        },
+        "mirror": {
+          "description": "formatVersion 4: em rtl o caminho é espelhado na horizontal dentro da caixa do nó (padrão false). Em ltr não muda nada.",
+          "$ref": "#/$defs/expr_boolean"
         }
       }
     },
@@ -3007,6 +3065,10 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "direction": {
+          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "enum": ["ltr", "rtl"]
         },
         "width": {
           "$ref": "#/$defs/expr_size"
@@ -3121,6 +3183,10 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "direction": {
+          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "enum": ["ltr", "rtl"]
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -3167,6 +3233,10 @@
         },
         "strokeWidth": {
           "$ref": "#/$defs/expr_nonNegative"
+        },
+        "mirror": {
+          "description": "formatVersion 4: em rtl o ícone é espelhado na horizontal dentro da caixa do nó. Sem a chave vale o mirror do ícone no conjunto (mapping-icons formatVersion 2), que vale false.",
+          "$ref": "#/$defs/expr_boolean"
         }
       }
     },
@@ -3190,6 +3260,10 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "direction": {
+          "description": "formatVersion 4: fixa a direção de leitura da subárvore (literal ltr ou rtl, nunca expressão). O nó é posto pelo pai na direção dele; o que está dentro segue a que ele fixa. No repeat a chave direction é outra (o empilhamento das linhas). Numa formatVersion menor, o parseComponent recusa.",
+          "enum": ["ltr", "rtl"]
         },
         "width": {
           "$ref": "#/$defs/expr_sizeNoHug"

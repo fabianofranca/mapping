@@ -85,6 +85,11 @@ const MARKING_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
   'invalid-space': 'marking.error.invalid-space',
   'not-arrangeable': 'marking.error.not-arrangeable',
   'not-fittable': 'marking.error.not-fittable',
+  'anchor-missing': 'marking.error.anchor-missing',
+  'anchor-self': 'marking.error.anchor-self',
+  'anchor-cycle': 'marking.error.anchor-cycle',
+  'anchor-other-space': 'marking.error.anchor-other-space',
+  'not-anchored': 'marking.error.not-anchored',
   locked: 'marking.error.locked',
   reviewing: 'review.readOnly',
 };

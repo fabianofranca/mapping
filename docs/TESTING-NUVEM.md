@@ -7,7 +7,7 @@ A sessão é criada pelo **orquestrador** do fluxo automatizado (`docs/PROCESS.m
 - **Dirigido por lista de roteiros ou de passos:** "Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: R0 e R2. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`."
 - **Dirigido pelos achados de um relato anterior:** "… no modo dirigido: os achados 2 a 5 do relato em <link do comentário>. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (número de achado ou código, como "A1 a A3")
 - **Dirigido pelas fases de uma etapa:** "… no modo dirigido: as fases X e Y da etapa #301. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`."
-- **Completo:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (R0 a R26; ordem em "O que executar")
+- **Completo:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (R0 a R27; ordem em "O que executar")
 - **Completo, em bloco:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco k de 5. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (só os roteiros do bloco k da tabela de "Rodada completa em blocos")
 - **Dirigido, em grupo:** "Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido, grupo k de n: R12. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (só os roteiros do grupo k do `round-guide.mjs --grupos`; ver "Rodada dirigida em grupos")
 - **Só um link de PR do Mapping** ("Teste <link>"): trate como dirigida pelos roteiros que o PR toca; leia o corpo e os arquivos do PR, monte a lista e siga o modo comum.
@@ -94,7 +94,7 @@ Regras desta sessão:
 
 ## O que executar
 
-**Rodada completa (padrão).** Todos os roteiros, **R0 a R26** (sem o RP, o RF, o RA, o RB e o RT), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8: R0, R1, R2, a seção 6 (repositório de teste e MCP), R3, R4, R6, R7, R5, R8 e R9 a R26. A seção 9 do guia não entra. Os roteiros principais vão a subagentes (ver "Como agir"). Com "bloco k de 5" na mensagem, você roda só o bloco k (ver "Rodada completa em blocos"); sem bloco, uma sessão roda tudo.
+**Rodada completa (padrão).** Todos os roteiros, **R0 a R27** (sem o RP, o RF, o RA, o RB e o RT), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8: R0, R1, R2, a seção 6 (repositório de teste e MCP), R3, R4, R6, R7, R5, R8 e R9 a R27. A seção 9 do guia não entra. Os roteiros principais vão a subagentes (ver "Como agir"). Com "bloco k de 5" na mensagem, você roda só o bloco k (ver "Rodada completa em blocos"); sem bloco, uma sessão roda tudo.
 
 **R21 e a tag da release; passo que exige o dono.** Antes do R21, ou de um passo que só a pessoa faria: `node scripts/testing/cloud.mjs secao consulta.regras`. O R21 testa a release real e usa a tag da mensagem (`sem R21` o tira da rodada).
 
@@ -122,15 +122,15 @@ Nos três casos, **não peça confirmação**: monte a lista e ponha-a no começ
 
 ## Rodada completa em blocos
 
-A rodada completa (R0 a R26) roda em **5 sessões ao mesmo tempo**, uma por bloco, com a divisão fixa abaixo. Cada sessão faz o ambiente, o R0 inteiro e os roteiros do seu bloco, e entrega o relato dela; um coordenador (o orquestrador da etapa ou um chat avulso do dono, ver [`docs/FLOW.md`](FLOW.md)) cria as cinco e resume.
+A rodada completa (R0 a R27) roda em **5 sessões ao mesmo tempo**, uma por bloco, com a divisão fixa abaixo. Cada sessão faz o ambiente, o R0 inteiro e os roteiros do seu bloco, e entrega o relato dela; um coordenador (o orquestrador da etapa ou um chat avulso do dono, ver [`docs/FLOW.md`](FLOW.md)) cria as cinco e resume.
 
 | Bloco | Roteiros, na ordem do guia                                                          | Passos |
 | ----- | ----------------------------------------------------------------------------------- | ------ |
 | 1     | R0, R1, R2, seção 6, R3, R6.3 a R6.7, R6.12 a R6.14, R7, R5, R8 e R14               | 131    |
-| 2     | R0, seção 6, R15 e R25                                                              | 143    |
-| 3     | R0, seção 6, R12, R18 e R19                                                         | 114    |
-| 4     | R0, seção 6, R4, R6.8a a R6.11, R9, R10, R13, R16, R22, R24, R26 e a passada visual | 157    |
-| 5     | R0, seção 6, R11, R17, R20, R21 e R23                                               | 128    |
+| 2     | R0, seção 6 e R25                                                                   | 136    |
+| 3     | R0, seção 6, R12, R15, R18, R19 e R27                                               | 144    |
+| 4     | R0, seção 6, R4, R6.8a a R6.11, R9, R10, R13, R16, R22, R24, R26 e a passada visual | 163    |
+| 5     | R0, seção 6, R11, R17, R20, R21 e R23                                               | 135    |
 
 São 5 blocos por decisão do dono (2026-11-09). A passada visual fica no bloco 4 (decisão 6 da etapa #841). O limite do guia gerado de cada bloco (`MAX_BLOCK_GUIDE_CHARS`, no `tests/tooling/roundBlocks.test.ts`), os tamanhos de antes, as dependências por bloco e as linhas de base: `cloud.mjs secao consulta.historico`.
 

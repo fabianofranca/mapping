@@ -1,7 +1,7 @@
 import type { ComponentFile } from './components/componentFormat';
 import { findSlot } from './components/arrange';
 import { resolvePath, type TextFile } from './components/library';
-import { INDEX_FIELD } from './components/expressions';
+import { INDEX_FIELD, isAnchorFieldName } from './components/expressions';
 import {
   collectFieldKeys,
   parseComponent,
@@ -183,11 +183,15 @@ function fieldReferences(
       (key === '$field' || key === '$has' || key === '$switch' || key === '$rows') &&
       typeof value === 'string'
     ) {
-      // `$index` é o índice da linha de um `repeat`, não um campo do tipo.
-      if (!out.has(value) && (value !== INDEX_FIELD || key === '$rows'))
+      // `$index` é o índice da linha de um `repeat` e `$anchor.*` vêm da âncora: não são campos do tipo.
+      if (
+        !out.has(value) &&
+        (key === '$rows' || (value !== INDEX_FIELD && !isAnchorFieldName(value)))
+      )
         out.set(value, at);
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {
-      if (!out.has(value[0]) && value[0] !== INDEX_FIELD) out.set(value[0], `${at}[0]`);
+      if (!out.has(value[0]) && value[0] !== INDEX_FIELD && !isAnchorFieldName(value[0]))
+        out.set(value[0], `${at}[0]`);
     } else {
       fieldReferences(value, at, out);
     }

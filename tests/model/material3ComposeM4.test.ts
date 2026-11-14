@@ -35,6 +35,9 @@ const rawTypes: Record<string, Rec> = Object.fromEntries(
 );
 const component = (id: string): Rec => JSON.parse(text(`components/${id}.json`)) as Rec;
 
+/** O catálogo se monta uma vez, na coleta: montá-lo dentro do teste passava de 5 s com a cobertura ligada no CI. */
+const shared = buildCatalog(files);
+
 describe('M4 — navegação e listas no formato 4', () => {
   it.each(M4)('%s é formato 4, sem cor literal e sem family literal', (id) => {
     const raw = text(`components/${id}.json`);
@@ -72,7 +75,7 @@ describe('M4 — navegação e listas no formato 4', () => {
   });
 
   it.each(M4)('%s: o padrão e os exemplos desenham sem aviso em light e dark', (id) => {
-    const catalog = buildCatalog(files);
+    const catalog = shared;
     const entry = findEntry(catalog, id)!;
     const cases = [{}, ...(entry.examples ?? []).map((e) => e.values)];
     for (const mode of ['light', 'dark'] as const) {
@@ -87,5 +90,5 @@ describe('M4 — navegação e listas no formato 4', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
-  });
+  }, 30_000);
 });

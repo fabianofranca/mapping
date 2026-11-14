@@ -1400,19 +1400,19 @@
   gap: var(--space-3);
 }
 
-/* Rótulo com o marcador no fim da coluna (o rótulo quebra linha, o controle não anda). */
+/* Rótulo com o ícone de ajuda e o marcador na mesma linha: o rótulo quebra entre palavras, o (i) nunca desce sozinho. */
 .props-label-cell {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: flex-start;
   gap: var(--space-1);
   min-width: 0;
 }
 
-/* O rótulo nunca quebra no meio da palavra: se faltar espaço, o ícone de ajuda e o marcador descem. */
+/* O rótulo cede espaço ao ícone de ajuda (a coluna ganha a largura dele, em `.props`). */
 .props-label-cell > .props-label {
   flex: 1 1 auto;
-  min-width: min-content;
+  min-width: 0;
   overflow-wrap: break-word;
 }
 

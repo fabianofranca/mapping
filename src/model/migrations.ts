@@ -322,6 +322,13 @@ export const migrateFrom17To18: Migration = (data) => data;
  */
 export const migrateFrom18To19: Migration = (data) => data;
 
+/**
+ * v19 → v20 (direção de leitura): só a versão muda. `direction` (do projeto e do container) é
+ * opcional e ausente vale `ltr`; a versão nova existe para que uma app anterior abra o arquivo só
+ * para leitura, em vez de descartar a direção ao gravar.
+ */
+export const migrateFrom19To20: Migration = (data) => data;
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -342,6 +349,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [16, migrateFrom16To17],
   [17, migrateFrom17To18],
   [18, migrateFrom18To19],
+  [19, migrateFrom19To20],
 ]);
 
 export type MigrationResult =

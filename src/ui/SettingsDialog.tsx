@@ -11,6 +11,7 @@ import { IdentitySettings } from './IdentitySettings';
 import { PrivacySettings } from './PrivacySettings';
 import { DrawingModeSettings, hasDrawingModes } from './DrawingModeSettings';
 import { PlatformRepos, hasRepos } from './PlatformRepos';
+import { ProjectDirectionSettings } from './ProjectDirectionSettings';
 import { SettingsBar } from './SettingsBar';
 import { Button } from './controls';
 
@@ -88,7 +89,7 @@ function About() {
 
 /**
  * Configurações: idioma, tema e opções do canvas, com atalho para a lista de teclas; no
- * editor, também os repositórios de código por plataforma; depois a Identidade (nome e e-mail
+ * editor, também os repositórios de código por plataforma, o modo do desenho e a direção de leitura; depois a Identidade (nome e e-mail
  * das conversas), a Privacidade e, no fim, o Sobre.
  */
 export function SettingsDialog({
@@ -99,10 +100,12 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const repos = project !== undefined && hasRepos(project);
   const modes = project !== undefined && hasDrawingModes(project);
+  // A direção de leitura é do projeto: aparece sempre que há um projeto aberto.
+  const direction = project !== undefined;
   return (
     <Dialog
       title={t('settings.title')}
-      size={repos || modes ? 'md' : 'sm'}
+      size={repos || modes || direction ? 'md' : 'sm'}
       onCancel={onClose}
       actions={<Button onClick={onClose}>{t('common.close')}</Button>}
     >
@@ -112,6 +115,7 @@ export function SettingsDialog({
       </Button>
       {repos && <PlatformRepos project={project} readOnly={readOnly} />}
       {modes && <DrawingModeSettings project={project} readOnly={readOnly} />}
+      {direction && <ProjectDirectionSettings project={project} readOnly={readOnly} />}
       <IdentitySettings />
       <PrivacySettings />
       <About />

@@ -23,6 +23,7 @@ export function fontKey(font: MeasureFont): string {
     font.wrap ?? '',
     font.ellipsis === true ? 1 : 0,
     font.maxLines ?? '',
+    font.direction ?? '',
   ].join(SEPARATOR);
 }
 

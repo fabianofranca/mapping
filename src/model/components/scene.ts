@@ -177,6 +177,12 @@ export interface TextStyle {
   /** Espaçamento entre letras em px. */
   readonly letterSpacing?: number;
   readonly align: 'left' | 'center' | 'right' | 'justify';
+  /**
+   * `rtl` quando o texto lê da direita para a esquerda (o `align` já é físico, resolvido pela
+   * direção). Ausente = `ltr`. O desenho passa o sentido ao renderizador de texto; o raster do MCP
+   * alinha pelo lado físico e desenha os glifos na ordem do texto (sem bidi).
+   */
+  readonly direction?: 'rtl';
   readonly verticalAlign: 'top' | 'middle' | 'bottom' | 'cap-middle';
   readonly decoration?: 'underline' | 'line-through';
   /** `none` = uma linha por parágrafo (ausente = quebra por palavra). */
