@@ -21,10 +21,10 @@ import {
   type Connection,
 } from './workspace';
 
-// Etapa Biblioteca Material 3, MD1: `variants` no `code` (especialização formatVersion 9) pelo
-// dist-mcp/mapping-mcp.js por stdio: get_code_hints, get_marking e get_annotation com o código
-// resolvido pela anotação, find_by_code com a regra nova, e validate_specialization,
-// validate_library e apply_specialization (plan_changes) com os mesmos erros da app.
+// Material 3 Library stage, MD1: `variants` in `code` (specialization formatVersion 9) through
+// dist-mcp/mapping-mcp.js over stdio: get_code_hints, get_marking and get_annotation with the code
+// resolved by the annotation, find_by_code with the new rule, and validate_specialization,
+// validate_library and apply_specialization (plan_changes) with the same errors as the app.
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -88,19 +88,19 @@ function writeLibrary(name: string, text: string): void {
 
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), 'mapping-mcp-variants-'));
-  mkdirSync(join(root, 'fontes'), { recursive: true });
-  writeFileSync(join(root, 'fontes', 'm3.json'), specText());
-  writeFileSync(join(root, 'fontes', 'm3-v8.json'), specText(undefined, 8));
+  mkdirSync(join(root, 'sources'), { recursive: true });
+  writeFileSync(join(root, 'sources', 'm3.json'), specText());
+  writeFileSync(join(root, 'sources', 'm3-v8.json'), specText(undefined, 8));
   writeFileSync(
-    join(root, 'fontes', 'm3-ruim.json'),
+    join(root, 'sources', 'm3-bad.json'),
     specText((spec) => {
       button(spec).code.compose.variants.field = 'label';
     }),
   );
-  writeLibrary('boa', specText());
+  writeLibrary('good', specText());
   writeLibrary('v8', specText(undefined, 8));
   writeLibrary(
-    'ruim',
+    'bad',
     specText((spec) => {
       button(spec).code.compose.variants.cases.elevated = { symbol: 'ElevatedButton' };
     }),
@@ -108,12 +108,12 @@ beforeAll(async () => {
 
   const source = variantsProject();
   for (const id of allIds(source)) ids[id] = uuidFor(id);
-  for (const name of ['botoes', 'vazio']) {
+  for (const name of ['buttons', 'empty']) {
     const dir = join(root, 'projetos', name);
     mkdirSync(join(dir, 'images'), { recursive: true });
     mkdirSync(join(dir, 'specs'), { recursive: true });
     writeFileSync(join(dir, 'images', 'a.png'), PNG_1X1);
-    if (name === 'vazio') {
+    if (name === 'empty') {
       writeFileSync(join(dir, 'mapping.json'), serialize(emptyProject()));
       continue;
     }
@@ -131,8 +131,8 @@ afterAll(async () => {
   await mcp?.close();
 });
 
-const mRef = (key: string) => `mapping://botoes/m/${codeOf(ids[key]!)}`;
-const aRef = (key: string) => `mapping://botoes/a/${codeOf(ids[key]!)}`;
+const mRef = (key: string) => `mapping://buttons/m/${codeOf(ids[key]!)}`;
+const aRef = (key: string) => `mapping://buttons/a/${codeOf(ids[key]!)}`;
 
 function flatten(node: HintNode): HintAnnotation[] {
   return [
@@ -141,8 +141,8 @@ function flatten(node: HintNode): HintAnnotation[] {
   ];
 }
 
-describe('get_code_hints com variants', () => {
-  it('types traz a base (com variants) e cada anotação com variantes traz o código resolvido', async () => {
+describe('get_code_hints with variants', () => {
+  it('types brings the base (with variants) and each annotation with variants brings the resolved code', async () => {
     const hints: Hints[] = [];
     for (const marking of ['MBF', 'MBO', 'MBT', 'MBN']) {
       hints.push(
@@ -183,7 +183,7 @@ describe('get_code_hints com variants', () => {
     ]);
   });
 
-  it('o tipo sem variants não ganha `code` na árvore', async () => {
+  it('a type without variants gets no `code` in the tree', async () => {
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', { ref: mRef('MCD'), platform: 'compose' }),
     );
@@ -193,8 +193,8 @@ describe('get_code_hints com variants', () => {
   });
 });
 
-describe('get_marking e get_annotation com variants', () => {
-  it('o code da anotação é o resolvido, sem a chave variants', async () => {
+describe('get_marking and get_annotation with variants', () => {
+  it('the annotation code is the resolved one, without the variants key', async () => {
     const annotation = ok(
       await mcp.call<{ code: { compose: CodeEntry } }>('get_annotation', {
         ref: aRef('BO'),
@@ -212,7 +212,7 @@ describe('get_marking e get_annotation com variants', () => {
     const typed = marking.layers.flatMap((l) => l.annotations)[0]!;
     expect(typed.code?.compose?.symbol).toBe('androidx.compose.material3.TextButton');
     expect(typed.code?.compose?.definition?.path).toBe(TEXT_BUTTON_PATH);
-    // A base padrão (sem valor no style): o Button.
+    // The default base (no value in style): the Button.
     const filled = ok(
       await mcp.call<{ code: { compose: CodeEntry } }>('get_annotation', {
         ref: aRef('BF'),
@@ -222,25 +222,25 @@ describe('get_marking e get_annotation com variants', () => {
   });
 });
 
-describe('find_by_code com variants', () => {
+describe('find_by_code with variants', () => {
   const find = async (args: Record<string, string>) =>
-    ok(await mcp.call<Found>('find_by_code', { project: 'botoes', ...args }));
+    ok(await mcp.call<Found>('find_by_code', { project: 'buttons', ...args }));
   const annotationsOf = (found: Found, typeId = 'button') =>
     found.matches
       .find((m) => m.type.typeId === typeId)
       ?.annotations.map((a) => a.annotation.split(' ')[0])
       .sort();
 
-  it('pelo símbolo da base, só a base; pelo de um caso, só as anotações dele', async () => {
+  it('by the base symbol, only the base; by a case symbol, only its annotations', async () => {
     const base = await find({ symbol: 'androidx.compose.material3.Button' });
     expect(annotationsOf(base)).toEqual([aRef('BF')]);
     const outlined = await find({ symbol: 'androidx.compose.material3.OutlinedButton' });
     expect(annotationsOf(outlined)).toEqual([aRef('BO')]);
-    // O code do resultado é o cru, com variants.
+    // The result's code is the raw one, with variants.
     expect(outlined.matches[0]?.code.compose?.variants).toBeDefined();
   });
 
-  it('pelo path, todos os que apontam para o arquivo', async () => {
+  it('by path, all those pointing to the file', async () => {
     const found = await find({ path: 'Button.kt' });
     expect(annotationsOf(found)).toEqual([aRef('BF'), aRef('BN'), aRef('BO')].sort());
     expect(annotationsOf(found, 'card')).toEqual([aRef('CD')]);
@@ -248,33 +248,33 @@ describe('find_by_code com variants', () => {
   });
 });
 
-describe('validate_specialization, validate_library e apply_specialization com a 9', () => {
+describe('validate_specialization, validate_library and apply_specialization with 9', () => {
   const appErrors = (text: string): string[] => {
     const result = parseSpecText(text);
-    if (result.ok) throw new Error('era para falhar');
+    if (result.ok) throw new Error('was expected to fail');
     return result.errors;
   };
 
-  it('uma 9 válida é aceita pelos três', async () => {
+  it('a valid 9 is accepted by all three', async () => {
     const spec = ok(
-      await mcp.call<Validated>('validate_specialization', { path: 'fontes/m3.json' }),
+      await mcp.call<Validated>('validate_specialization', { path: 'sources/m3.json' }),
     );
     expect(spec).toMatchObject({ valid: true, errors: [] });
     const library = ok(
-      await mcp.call<Validated>('validate_library', { path: 'lib/boa' }),
+      await mcp.call<Validated>('validate_library', { path: 'lib/good' }),
     );
     expect(library.valid).toBe(true);
     expect(library.errors).toEqual([]);
     const plan = ok(
       await mcp.call<{ valid: boolean; summary: string[] }>('plan_changes', {
-        project: 'vazio',
-        operations: [{ op: 'apply_specialization', file: 'fontes/m3.json' }],
+        project: 'empty',
+        operations: [{ op: 'apply_specialization', file: 'sources/m3.json' }],
       }),
     );
     expect(plan.valid).toBe(true);
   });
 
-  it('variants inválido dá os mesmos erros da app', async () => {
+  it('invalid variants give the same errors as the app', async () => {
     const text = specText((spec) => {
       button(spec).code.compose.variants.field = 'label';
     });
@@ -284,13 +284,13 @@ describe('validate_specialization, validate_library e apply_specialization com a
     ]);
     const spec = ok(
       await mcp.call<Validated>('validate_specialization', {
-        path: 'fontes/m3-ruim.json',
+        path: 'sources/m3-bad.json',
       }),
     );
     expect(spec.valid).toBe(false);
     expect(spec.errors).toEqual(expected);
     const library = ok(
-      await mcp.call<Validated>('validate_library', { path: 'lib/ruim' }),
+      await mcp.call<Validated>('validate_library', { path: 'lib/bad' }),
     );
     expect(library.valid).toBe(false);
     expect(library.errors).toEqual([
@@ -303,8 +303,8 @@ describe('validate_specialization, validate_library e apply_specialization com a
       await mcp.call<{ valid: boolean; errors?: { errors?: string[] }[] }>(
         'plan_changes',
         {
-          project: 'vazio',
-          operations: [{ op: 'apply_specialization', file: 'fontes/m3-ruim.json' }],
+          project: 'empty',
+          operations: [{ op: 'apply_specialization', file: 'sources/m3-bad.json' }],
         },
       ),
     );
@@ -312,11 +312,13 @@ describe('validate_specialization, validate_library e apply_specialization com a
     expect(plan.errors?.[0]?.errors).toEqual(expected);
   });
 
-  it('variants numa 8 é o mesmo erro no caminho exato', async () => {
+  it('variants in an 8 is the same error at the exact path', async () => {
     const expected = appErrors(specText(undefined, 8));
     expect(expected).toEqual([`${FIELD}: only allowed with formatVersion 9`]);
     const spec = ok(
-      await mcp.call<Validated>('validate_specialization', { path: 'fontes/m3-v8.json' }),
+      await mcp.call<Validated>('validate_specialization', {
+        path: 'sources/m3-v8.json',
+      }),
     );
     expect(spec.errors).toEqual(expected);
     const library = ok(await mcp.call<Validated>('validate_library', { path: 'lib/v8' }));
@@ -331,8 +333,8 @@ describe('validate_specialization, validate_library e apply_specialization com a
       await mcp.call<{ valid: boolean; errors?: { errors?: string[] }[] }>(
         'plan_changes',
         {
-          project: 'vazio',
-          operations: [{ op: 'apply_specialization', file: 'fontes/m3-v8.json' }],
+          project: 'empty',
+          operations: [{ op: 'apply_specialization', file: 'sources/m3-v8.json' }],
         },
       ),
     );
@@ -340,9 +342,9 @@ describe('validate_specialization, validate_library e apply_specialization com a
     expect(plan.errors?.[0]?.errors).toEqual(expected);
   });
 
-  it('a recusa continua sendo um erro de ferramenta quando o arquivo não existe', async () => {
+  it('the refusal remains a tool error when the file does not exist', async () => {
     expect(
-      errorOf(await mcp.call('validate_specialization', { path: 'fontes/nada.json' }))
+      errorOf(await mcp.call('validate_specialization', { path: 'sources/nothing.json' }))
         .code,
     ).toBeTruthy();
   });

@@ -6,10 +6,10 @@ import type { Annotation, Project } from '../../src/model';
 import { acceptAllAndApply, ok, propose, readProject } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// Etapa #678, fase VC2 (MCP 0.24.0, formatVersion 13): o vínculo na mesma camada. Um evento
-// pode ser dono de outros eventos (Clique do botão -> evento -> Sucesso e Falha), cada filho
-// no papel em que se liga; o ciclo continua barrado. O lote de encadeamento é o mesmo do
-// `docs/AGENT-GUIDE.md` ("O 'quando' é papel, também entre eventos").
+// Stage #678, phase VC2 (MCP 0.24.0, formatVersion 13): the link in the same layer. An event
+// can be the owner of other events (button Click -> event -> Success and Failure), each child
+// in the role it links in; the cycle is still blocked. The chaining batch is the same as the one in
+// `docs/AGENT-GUIDE.md` ("The "when" is a role, also between events").
 
 interface Planned {
   valid: boolean;
@@ -43,18 +43,18 @@ const SPEC = {
           name: 'Button',
           labelField: 'texto',
           fields: [{ key: 'texto', type: 'string' }],
-          childRoles: [{ id: 'click', name: 'Clique' }],
+          childRoles: [{ id: 'click', name: 'Click' }],
           allowedChildren: ['event'],
           code: { web: { symbol: 'Button' } },
         },
         {
           id: 'event',
-          name: 'Evento',
+          name: 'Event',
           labelField: 'nome',
           fields: [{ key: 'nome', type: 'string' }],
           childRoles: [
-            { id: 'success', name: 'Sucesso' },
-            { id: 'failure', name: 'Falha' },
+            { id: 'success', name: 'Success' },
+            { id: 'failure', name: 'Failure' },
           ],
           allowedChildren: ['event'],
           code: { web: { symbol: 'Event' } },
@@ -67,7 +67,7 @@ const SPEC = {
 let root: string;
 let dir: string;
 let mcp: Connection;
-const project = 'encadeado';
+const project = 'chained';
 
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), 'mapping-chain-'));
@@ -91,19 +91,19 @@ afterAll(async () => {
 const plan = async (operations: unknown[]) =>
   ok(await mcp.call<Planned>('plan_changes', { project, operations }));
 
-/** O lote do guia: o evento dono pendurado no Clique do botão, com os filhos em Sucesso e Falha. */
+/** The guide batch: the owner event hung from the button Click, with the children in Success and Failure. */
 function guideChain(): unknown[] {
   const guide = readFileSync('docs/AGENT-GUIDE.md', 'utf8');
   const block = /chaining by role[^]*?```json\n([^]*?)```/.exec(guide);
-  expect(block, 'bloco json do guia').not.toBeNull();
+  expect(block, 'json block of the guide').not.toBeNull();
   return JSON.parse(block![1]!) as unknown[];
 }
 
 const byName = (p: Project, name: string): Annotation =>
   p.annotations.find((a) => a.values?.nome === name || a.values?.texto === name)!;
 
-describe('vínculo na mesma camada pelo MCP', () => {
-  it('o lote do guia (evento dono em Clique, filhos em Sucesso e Falha) é válido e grava a cadeia', async () => {
+describe('link in the same layer through the MCP', () => {
+  it('the guide batch (owner event on Click, children in Success and Failure) is valid and writes the chain', async () => {
     const operations = guideChain();
     const planned = await plan(operations);
     expect(planned.valid, JSON.stringify(planned.errors)).toBe(true);
@@ -122,7 +122,7 @@ describe('vínculo na mesma camada pelo MCP', () => {
     expect(fail).toMatchObject({ parentAnnotationId: click.id, parentRole: 'failure' });
     expect(new Set([button, click, ok1, fail].map((a) => a.layerId)).size).toBe(1);
 
-    // get_code_hints: a cadeia de dois níveis sob o botão, cada filho com o papel.
+    // get_code_hints: the two-level chain under the button, each child with its role.
     const hints = ok(
       await mcp.call<{ tree: HintNode }>('get_code_hints', {
         ref: p.markings.find((m) => m.id === button.markingId)!.id,
@@ -137,7 +137,7 @@ describe('vínculo na mesma camada pelo MCP', () => {
     expect(level1[0]!.linked!.map((a) => a.parentRole)).toEqual(['success', 'failure']);
   });
 
-  it('um ciclo no lote falha com invalid-annotation-parent e o texto novo', async () => {
+  it('a cycle in the batch fails with invalid-annotation-parent and the new text', async () => {
     const operations = [
       ...guideChain(),
       {

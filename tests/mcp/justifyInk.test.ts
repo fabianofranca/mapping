@@ -4,7 +4,7 @@ import { textInk } from '../../mcp/image/textLayout';
 import { createFontBook, measurerFor } from '../../mcp/image/textMeasurer';
 import { baseNode, type TextNode } from '../../src/model/components/scene';
 
-// CL1 / D1: o PNG justifica o texto como a app (a linha que não fecha parágrafo vai até a largura do nó).
+// CL1 / D1: the PNG justifies the text like the app (a line that does not end a paragraph runs to the node's width).
 
 const book = createFontBook();
 const measure = measurerFor(book);
@@ -31,25 +31,26 @@ const maxX = (n: TextNode): number =>
     ...textInk(n, measure, book).glyphs.flatMap((g) => g.polygons.flat().map((p) => p.x)),
   );
 
-describe('textInk justificado', () => {
-  const text = 'um dois tres quatro cinco seis sete oito nove dez';
-  it('a primeira linha vai até a largura do nó', () => {
+describe('justified textInk', () => {
+  const text = 'one two three four five six seven eight nine ten';
+  it('the first line runs to the node width', () => {
     const justified = maxX(node('justify', text, 150));
     const left = maxX(node('left', text, 150));
     expect(justified).toBeGreaterThan(left + 1);
     expect(justified).toBeGreaterThan(148);
     expect(justified).toBeLessThanOrEqual(150.5);
   });
-  it('a última linha do parágrafo fica à esquerda', () => {
-    const short = node('justify', 'curto aqui', 200);
+  it('the last line of the paragraph stays on the left', () => {
+    const short = node('justify', 'short here', 200);
     expect(maxX(short)).toBeLessThan(150);
   });
 });
 
-// Decisão 10 da #1631: o `customEnds` conta as palavras pelo espaço, como o `wrapWords` quebra; a
-// palavra mais larga que a caixa fica inteira numa linha, então nunca se parte em várias.
-describe('fins de parágrafo com maxLines e palavra mais larga que a caixa', () => {
-  it('só a última linha de cada parágrafo fecha, com a palavra larga inteira', () => {
+// The Portuguese sample text below stays: the wrapping asserted depends on its measured widths.
+// Decision 10 of #1631: `customEnds` counts the words by the space, as `wrapWords` breaks them; a
+// word wider than the box stays whole on a line, so it is never split across several.
+describe('paragraph ends with maxLines and a word wider than the box', () => {
+  it('only the last line of each paragraph closes, with the wide word whole', () => {
     const n: TextNode = {
       ...node(
         'justify',
@@ -61,9 +62,9 @@ describe('fins de parágrafo com maxLines e palavra mais larga que a caixa', () 
     const withMax: TextNode = { ...n, style: { ...n.style, maxLines: 8 } };
     const widthOf = (text: string) => measure(text, measureFontOf(n.style)).width;
     const { lines, ends } = plainLines(withMax, measure, widthOf);
-    // A palavra larga continua inteira, numa linha só dela.
+    // The wide word stays whole, on a line of its own.
     expect(lines).toContain('supercalifragilisticoexpialidoso');
-    // Uma entrada por linha; fecha a última linha de cada `\n` e mais nenhuma.
+    // One entry per line; it closes the last line of each `\n` and no other.
     const closing = lines.flatMap((line, i) => (ends[i] ? [line] : []));
     expect(closing).toEqual(['um dois', 'quatro', 'cinco']);
   });

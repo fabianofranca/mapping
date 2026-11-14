@@ -32,8 +32,8 @@ import {
 import type { ProjectLocation } from '../../mcp/projects';
 import { NOW } from '../model/fixtures';
 
-// A conferência de `revision` do arquivo da proposta (como a do mapping.json): quem atualiza
-// relê o arquivo imediatamente antes de gravar e grava `revision + 1`.
+// The `revision` check of the proposal file (like the mapping.json one): whoever updates
+// rereads the file right before writing and writes `revision + 1`.
 
 function setup() {
   const root = mkdtempSync(join(tmpdir(), 'mapping-store-'));
@@ -45,10 +45,10 @@ function setup() {
     now: NOW,
     firstLayer: { id: 'L1', name: 'Camada 1', color: '#D32F2F' },
   });
-  const after = addLayer(base, { id: 'L2', name: 'Nova', color: '#112233' });
+  const after = addLayer(base, { id: 'L2', name: 'New', color: '#112233' });
   const proposal = buildProposal(base, after, {
     id: 'prop-1',
-    title: 'Teste',
+    title: 'Test',
     createdAt: NOW,
   });
   return { roots: new Roots([root]), dir, location, proposal };
@@ -60,8 +60,8 @@ const read = (dir: string, id: string): Proposal => {
   return parsed.proposal;
 };
 
-describe('writeNewProposal e listStored', () => {
-  it('grava a pasta, as imagens e o proposal.json; um id repetido é recusado', async () => {
+describe('writeNewProposal and listStored', () => {
+  it('writes the folder, the images and the proposal.json; a repeated id is refused', async () => {
     const { roots, dir, location, proposal } = setup();
     const result = await writeNewProposal(
       roots,
@@ -78,7 +78,7 @@ describe('writeNewProposal e listStored', () => {
     await expect(
       writeNewProposal(roots, location, proposal, new Map()),
     ).rejects.toThrow();
-    // A falha não apaga a proposta que já existia.
+    // The failure does not delete the proposal that already existed.
     expect(read(dir, 'prop-1').id).toBe('prop-1');
 
     const stored = await listStored(roots, location);
@@ -86,7 +86,7 @@ describe('writeNewProposal e listStored', () => {
     expect(stored.broken).toEqual([]);
   });
 
-  it('uma pasta cujo id não bate com o do arquivo é listada como quebrada', async () => {
+  it('a folder whose id does not match the file one is listed as broken', async () => {
     const { roots, dir, location, proposal } = setup();
     mkdirSync(join(dir, 'proposals', 'outra'), { recursive: true });
     writeFileSync(
@@ -102,7 +102,7 @@ describe('writeNewProposal e listStored', () => {
 });
 
 describe('updateStored', () => {
-  it('grava com revision + 1 e não grava se nada mudou', async () => {
+  it('writes with revision + 1 and does not write if nothing changed', async () => {
     const { roots, dir, location, proposal } = setup();
     await writeNewProposal(roots, location, proposal, new Map());
     const same = await updateStored(roots, location, 'prop-1', (p) => p);
@@ -115,7 +115,7 @@ describe('updateStored', () => {
     expect(read(dir, 'prop-1')).toMatchObject({ status: 'withdrawn', revision: 1 });
   });
 
-  it('se a app grava no meio, relê e tenta de novo, sem perder a decisão dela', async () => {
+  it('if the app writes in between, rereads and tries again, without losing its decision', async () => {
     const { roots, dir, location, proposal } = setup();
     await writeNewProposal(roots, location, proposal, new Map());
     const change = proposal.changes[0]!;
@@ -123,7 +123,7 @@ describe('updateStored', () => {
     const updated = await updateStored(roots, location, 'prop-1', (p) => {
       attempts++;
       if (attempts === 1) {
-        // A app grava uma decisão (revision 1) entre a leitura e a gravação do servidor.
+        // The app writes a decision (revision 1) between the server read and the server write.
         const decided: Proposal = {
           ...p,
           revision: 1,
@@ -138,7 +138,7 @@ describe('updateStored', () => {
     expect(read(dir, 'prop-1').decisions[change.id]).toMatchObject({ state: 'accepted' });
   });
 
-  it('recusa com revision-conflict se o arquivo não para de mudar', async () => {
+  it('refuses with revision-conflict if the file keeps changing', async () => {
     const { roots, dir, location, proposal } = setup();
     await writeNewProposal(roots, location, proposal, new Map());
     let revision = 0;
@@ -152,11 +152,11 @@ describe('updateStored', () => {
     });
     await expect(result).rejects.toMatchObject({ code: 'revision-conflict' });
     await expect(result).rejects.toBeInstanceOf(ToolError);
-    // Nada do servidor foi gravado por cima da alteração externa.
+    // Nothing from the server was written over the external change.
     expect(read(dir, 'prop-1').status).toBe('open');
   });
 
-  it('proposta inexistente', async () => {
+  it('nonexistent proposal', async () => {
     const { roots, location } = setup();
     await expect(
       updateStored(roots, location, 'nao-existe', (p) => p),
@@ -164,8 +164,8 @@ describe('updateStored', () => {
   });
 });
 
-// Nomes de `images/` que uma proposta ainda reserva (fase 8.5, M5): o que ainda pode ser
-// aplicado. Numa `superseded`, só as aceitas (PROPOSAL-FORMAT.md, "Estados").
+// Names in `images/` that a proposal still reserves (phase 8.5, M5): what can still be
+// applied. In a `superseded` one, only the accepted ones (PROPOSAL-FORMAT.md, "States").
 describe('reservedImages', () => {
   function withImages(): Proposal {
     const base = createProject({
@@ -175,16 +175,16 @@ describe('reservedImages', () => {
     });
     let after = base;
     for (const [id, file] of [
-      ['I1', 'images/aceita.webp'],
-      ['I2', 'images/pendente.webp'],
-      ['I3', 'images/rejeitada.webp'],
-      ['I4', 'images/aplicada.webp'],
+      ['I1', 'images/accepted.webp'],
+      ['I2', 'images/pending.webp'],
+      ['I3', 'images/rejected.webp'],
+      ['I4', 'images/applied.webp'],
     ] as const) {
       after = addContainer(after, { id, file, width: 100, height: 100 });
     }
     const proposal = buildProposal(base, after, {
       id: 'prop-img',
-      title: 'Imagens',
+      title: 'Images',
       createdAt: NOW,
     });
     const changeOf = (id: string) => proposal.changes.find((c) => c.entityId === id)!.id;
@@ -199,38 +199,38 @@ describe('reservedImages', () => {
     };
   }
 
-  it('aberta: pendentes e aceitas não aplicadas', () => {
+  it('open: pending and accepted not applied', () => {
     expect(reservedImages(withImages()).sort()).toEqual([
-      'images/aceita.webp',
-      'images/pendente.webp',
+      'images/accepted.webp',
+      'images/pending.webp',
     ]);
   });
 
-  it('substituída: só as aceitas não aplicadas (as pendentes não podem mais ser aplicadas)', () => {
+  it('superseded: only the accepted ones not applied (the pending ones can no longer be applied)', () => {
     const superseded = { ...withImages(), status: 'superseded' as const };
-    expect(reservedImages(superseded)).toEqual(['images/aceita.webp']);
-    // A anterior de um `supersedes`, ainda aberta no disco, entra pelo estado que vai ter.
-    expect(reservedImages(withImages(), 'superseded')).toEqual(['images/aceita.webp']);
+    expect(reservedImages(superseded)).toEqual(['images/accepted.webp']);
+    // The previous one of a `supersedes`, still open on disk, goes in by the state it will have.
+    expect(reservedImages(withImages(), 'superseded')).toEqual(['images/accepted.webp']);
   });
 
-  it('aplicada ou retirada: nada', () => {
+  it('applied or withdrawn: nothing', () => {
     for (const status of ['applied', 'withdrawn'] as const) {
       expect(reservedImages({ ...withImages(), status })).toEqual([]);
     }
   });
 });
 
-describe('link simbólico em proposals/<id>/images e specs (etapa #942, fase 2)', () => {
-  it('reviseStored recusa a pasta que aponta para fora das raízes e não apaga nem grava nela', async () => {
+describe('symbolic link in proposals/<id>/images and specs (stage #942, phase 2)', () => {
+  it('reviseStored refuses the folder that points outside the roots and neither deletes nor writes in it', async () => {
     const { roots, dir, location, proposal } = setup();
     await writeNewProposal(roots, location, proposal, new Map());
     const outside = mkdtempSync(join(tmpdir(), 'mapping-out-'));
-    writeFileSync(join(outside, 'segredo.txt'), 'não apague');
+    writeFileSync(join(outside, 'segredo.txt'), 'do not delete');
     symlinkSync(outside, join(dir, 'proposals', 'prop-1', 'images'), 'dir');
     await expect(
       reviseStored(roots, location, 'prop-1', true, async (p) => ({
         proposal: p,
-        images: new Map([['images/nova.webp', new Uint8Array([1])]]),
+        images: new Map([['images/new.webp', new Uint8Array([1])]]),
         check: async () => {},
         result: null,
       })),
@@ -238,11 +238,11 @@ describe('link simbólico em proposals/<id>/images e specs (etapa #942, fase 2)'
     expect(readdirSync(outside)).toEqual(['segredo.txt']);
   });
 
-  it('o mesmo para specs', async () => {
+  it('the same for specs', async () => {
     const { roots, dir, location, proposal } = setup();
     await writeNewProposal(roots, location, proposal, new Map());
     const outside = mkdtempSync(join(tmpdir(), 'mapping-out-'));
-    writeFileSync(join(outside, 'segredo.txt'), 'não apague');
+    writeFileSync(join(outside, 'segredo.txt'), 'do not delete');
     symlinkSync(outside, join(dir, 'proposals', 'prop-1', 'specs'), 'dir');
     await expect(
       reviseStored(roots, location, 'prop-1', true, async (p) => ({
@@ -256,8 +256,8 @@ describe('link simbólico em proposals/<id>/images e specs (etapa #942, fase 2)'
   });
 });
 
-describe('listStored tolerante (etapa #942, fase 2)', () => {
-  it('proposal.json grande demais vai para broken e as demais seguem', async () => {
+describe('tolerant listStored (stage #942, phase 2)', () => {
+  it('a proposal.json that is too large goes to broken and the others carry on', async () => {
     const { roots, dir, location, proposal } = setup();
     await writeNewProposal(roots, location, proposal, new Map());
     mkdirSync(join(dir, 'proposals', 'grande'));

@@ -4,8 +4,8 @@ import { seedThread } from './threadSupport';
 import { codeOf, connect, createWorkspace } from './workspace';
 import type { Connection, Workspace } from './workspace';
 
-// A gramática nova da referência no MCP (decisão 27): `l` (camada), `c` (conversa) e os
-// segmentos `/f/`, `/e/` e `/r/` depois do código. As referências de hoje continuam iguais, e o
+// The new reference grammar in the MCP (decision 27): `l` (layer), `c` (conversation) and the
+// segments `/f/`, `/e/` and `/r/` after the code. Today's references stay the same, and the
 // sufixo estranho continua `invalid-ref`.
 
 let ws: Workspace;
@@ -37,8 +37,8 @@ afterAll(async () => {
   await mcp?.close();
 });
 
-describe('resolve com a gramática nova', () => {
-  it('camada (l)', async () => {
+describe('resolve with the new grammar', () => {
+  it('layer (l)', async () => {
     const r = ok(await mcp.call<Resolved>('resolve', { ref: base('l', id('LM')) }));
     expect(r).toMatchObject({
       kind: 'layer',
@@ -58,7 +58,7 @@ describe('resolve com a gramática nova', () => {
     expect(r).toMatchObject({ kind: 'thread', ref: base('c', t.id), id: t.id });
   });
 
-  it('campo, par e linha, com a referência da anotação que os contém', async () => {
+  it('field, pair and row, with the reference of the annotation that contains them', async () => {
     const field = ok(
       await mcp.call<Resolved>('resolve', { ref: `${base('a', id('AC'))}/f/nome` }),
     );
@@ -92,7 +92,7 @@ describe('resolve com a gramática nova', () => {
     });
   });
 
-  it('as referências de hoje continuam iguais', async () => {
+  it("today's references stay the same", async () => {
     const m = ok(await mcp.call<Resolved>('resolve', { ref: base('m', id('MF')) }));
     expect(m).toMatchObject({ kind: 'marking', id: id('MF'), name: 'Formulário' });
     const i = ok(await mcp.call<Resolved>('resolve', { ref: base('i', id('I1')) }));
@@ -101,7 +101,7 @@ describe('resolve com a gramática nova', () => {
     expect(a.kind).toBe('annotation');
   });
 
-  it('sufixo estranho, segmento incompleto ou campo/par/linha que não existe', async () => {
+  it('odd suffix, incomplete segment or a field/pair/row that does not exist', async () => {
     for (const bad of [
       `${base('m', id('MF'))}/extra`,
       `${base('m', id('MF'))}?x=1`,
@@ -128,8 +128,8 @@ describe('resolve com a gramática nova', () => {
   });
 });
 
-describe('as tools de item aceitam a sub-referência', () => {
-  it('get_annotation com campo, par ou linha devolve a anotação que os contém', async () => {
+describe('the item tools accept the sub-reference', () => {
+  it('get_annotation with a field, pair or row returns the annotation that contains them', async () => {
     for (const ref of [
       `${base('a', id('AC'))}/f/nome`,
       `${base('a', id('AC'))}/f/atributos/r/${codeOf(id('R1'))}`,
@@ -145,7 +145,7 @@ describe('as tools de item aceitam a sub-referência', () => {
     expect(free.ref).toBe(base('a', id('AU')));
   });
 
-  it('uma sub-referência numa tool de marcação ou de container é wrong-kind', async () => {
+  it('a sub-reference in a marking or container tool is wrong-kind', async () => {
     expect(
       errorOf(await mcp.call('get_marking', { ref: `${base('a', id('AC'))}/f/nome` }))
         .code,

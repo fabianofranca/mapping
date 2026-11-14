@@ -1,5 +1,5 @@
-// FX6 (#1013, decisão 23 da #896): o centro da tinta de um rótulo de `button` fica a ≤ 1 px do centro
-// da caixa no raster do MCP, a zoom 1 e 4,2.
+// FX6 (#1013, decision 23 of #896): the ink center of a `button` label is within 1 px of the center
+// of the box in the MCP raster, at zoom 1 and 4.2.
 import { describe, expect, it } from 'vitest';
 import { createRaster } from '../../mcp/image/raster';
 import { paintScene } from '../../mcp/image/sceneRaster';
@@ -19,13 +19,13 @@ import { files } from '../support/material3Library';
 const book = createFontBook();
 const measure = measurerFor(book);
 
-/** Instancia o componente no modo claro, com a fonte embutida do MCP, e devolve o texto e o quadro. */
+/** Instantiates the component in light mode, with the MCP's embedded font, and returns the text and the frame. */
 function labelOf(id: string, values: Record<string, string>) {
   const catalog = buildCatalog(files);
   const entry = findEntry(catalog, id);
   const library = catalog.library;
   if (entry === undefined || entry.component === null || library === null)
-    throw new Error(`sem componente ${id}`);
+    throw new Error(`no component ${id}`);
   const box = { x: 0, y: 0, ...entry.component.size };
   const drawing = instantiate(
     entry.component,
@@ -45,11 +45,11 @@ function labelOf(id: string, values: Record<string, string>) {
     if ('children' in node) for (const child of node.children) walk(child, here);
   };
   walk(drawing.root, 0);
-  if (found === undefined) throw new Error(`${id} sem texto visível`);
+  if (found === undefined) throw new Error(`${id} has no visible text`);
   return { ...found, height: drawing.root.height };
 }
 
-/** Pinta só o texto, em preto sobre branco, e devolve o centro vertical da tinta (px do componente). */
+/** Paints only the text, in black on white, and returns the vertical center of the ink (component px). */
 function inkCenter(node: TextNode, top: number, height: number, scale: number): number {
   const pad = 4;
   const width = Math.ceil((node.width + node.transform[4] + pad) * scale);
@@ -93,10 +93,10 @@ function inkCenter(node: TextNode, top: number, height: number, scale: number): 
   return (topEdge + bottomEdge) / 2 / scale;
 }
 
-describe('centro da tinta de um rótulo de button no raster do MCP (decisão 23)', () => {
+describe('ink center of a button label in the MCP raster (decision 23)', () => {
   for (const scale of [1, 4.2]) {
     for (const style of ['filled', 'text']) {
-      it(`${style}, zoom ${scale}: a ≤ 1 px do centro da caixa`, () => {
+      it(`${style}, zoom ${scale}: within 1 px of the box center`, () => {
         const { node, y, height } = labelOf('button', { label: 'HHHH', style });
         expect(node.style.verticalAlign).toBe('cap-middle');
         const center = inkCenter(node, y, height, scale);

@@ -8,12 +8,12 @@ import { describe, expect, it } from 'vitest';
 import { MAX_MESSAGE_BYTES } from '../../mcp/image/formats';
 import { IDS, IMAGE_FILES, codeOf, createImageWorkspace } from './imageFixtures';
 
-// O stdout do servidor é o canal do protocolo: nada além de mensagens JSON-RPC pode sair
-// nele. Os codecs Emscripten escrevem com `Module.print || console.log.bind(console)`
-// (capturado quando o codec é instanciado, sob demanda, no meio de uma chamada). Os testes
-// leem o stdout bruto do bundle, sem o cliente do SDK (que ignoraria as linhas que não são
-// JSON). Um script carregado com `--import` faz o papel de uma dependência que escreve no
-// console durante a chamada, ou que deixa escapar um erro.
+// The server's stdout is the protocol channel: nothing but JSON-RPC messages may come out of
+// it. The Emscripten codecs write with `Module.print || console.log.bind(console)`
+// (captured when the codec is instantiated, on demand, in the middle of a call). The tests
+// read the raw stdout of the bundle, without the SDK client (which would ignore the lines that are not
+// JSON). A script loaded with `--import` plays the role of a dependency that writes to the
+// console during the call, or that lets an error escape.
 
 const bundle = resolve('dist-mcp/mapping-mcp.js');
 
@@ -24,14 +24,14 @@ interface Run {
 }
 
 /**
- * Script carregado antes do servidor; `onCall` roda quando chega a chamada da tool, depois do
- * handshake (o servidor já está conectado).
+ * Script loaded before the server; `onCall` runs when the tool call arrives, after the
+ * handshake (the server is already connected).
  */
 function preload(onCall: string): string {
   const file = join(mkdtempSync(join(tmpdir(), 'mapping-mcp-preload-')), 'preload.mjs');
   writeFileSync(
     file,
-    // Só escuta o stdin depois que o transporte do servidor o escuta (não rouba mensagens).
+    // Only listens to stdin after the server transport does (does not steal messages).
     `const wait = setInterval(() => {
   if (process.stdin.listenerCount('data') === 0) return;
   clearInterval(wait);
@@ -52,8 +52,8 @@ interface Call {
 }
 
 /**
- * Sobe o bundle, faz o handshake e chama as tools em sequência (ids 2, 3…), cada uma depois da
- * resposta da anterior; devolve o stdout em linhas, o stderr e o código de saída.
+ * Starts the bundle, does the handshake and calls the tools in sequence (ids 2, 3…), each one after the
+ * previous one's response; returns the stdout as lines, the stderr and the exit code.
  */
 function callTools(
   root: string,
@@ -68,14 +68,14 @@ function callTools(
     );
     let stdout = '';
     let stderr = '';
-    // Sem resposta (o processo pode ter caído): encerra e deixa o teste conferir o que saiu.
+    // No response (the process may have crashed): ends it and lets the test check what came out.
     const timer = setTimeout(() => child.kill(), 50_000);
     child.stderr.on('data', (chunk: Buffer) => (stderr += chunk.toString()));
     let next = 0;
     child.stdout.on('data', (chunk: Buffer) => {
       stdout += chunk.toString();
       if (!stdout.endsWith('\n')) return;
-      // Depois da resposta anterior (o handshake é o id 1), a próxima chamada.
+      // After the previous response (the handshake is id 1), the next call.
       if (!new RegExp(`"id":${next + 1}[,}]`).test(stdout)) return;
       if (next === 0) send({ method: 'notifications/initialized' });
       const call = calls[next];
@@ -104,7 +104,7 @@ function callTools(
       params: {
         protocolVersion: '2025-06-18',
         capabilities: {},
-        clientInfo: { name: 'teste', version: '0' },
+        clientInfo: { name: 'test', version: '0' },
       },
     });
   });
@@ -128,12 +128,12 @@ const isJsonRpc = (line: string): boolean => {
 const answered = (run: Run, id = 2) =>
   run.lines.some((line) => new RegExp(`"id":${id}[,}]`).test(line));
 
-describe('stdout do bundle (só JSON-RPC)', () => {
-  it('get_image_file sobre um JPEG truncado não escreve nada além de JSON-RPC no stdout', async () => {
+describe('bundle stdout (JSON-RPC only)', () => {
+  it('get_image_file on a truncated JPEG writes nothing but JSON-RPC to stdout', async () => {
     const { root, dir } = await createImageWorkspace();
     const file = join(dir, IMAGE_FILES.jpeg);
-    // Mantém o cabeçalho (as dimensões são lidas antes de decodificar) e corta o resto: a
-    // libjpeg avisa "Premature end of JPEG file".
+    // Keeps the header (the dimensions are read before decoding) and cuts the rest: libjpeg
+    // warns "Premature end of JPEG file".
     const bytes = readFileSync(file);
     writeFileSync(file, bytes.subarray(0, Math.floor(bytes.length / 2)));
 
@@ -146,54 +146,54 @@ describe('stdout do bundle (só JSON-RPC)', () => {
     expect(answered(run)).toBe(true);
   }, 30_000);
 
-  it('o que um codec escreve com console.log durante a chamada vai para o stderr', async () => {
+  it('what a codec writes with console.log during the call goes to stderr', async () => {
     const { root } = await createImageWorkspace();
-    // Como o Emscripten: captura `console.log` ao instanciar o módulo, depois do início.
+    // Like Emscripten: captures `console.log` when instantiating the module, after startup.
     const run = await callTool(
       root,
       'list_projects',
       {},
       preload(
-        "const out = console.log.bind(console); out('aviso do codec'); console.info('info'); console.debug('debug');",
+        "const out = console.log.bind(console); out('codec warning'); console.info('info'); console.debug('debug');",
       ),
     );
 
     expect(run.lines.filter((line) => !isJsonRpc(line))).toEqual([]);
     expect(answered(run)).toBe(true);
-    expect(run.stderr).toContain('aviso do codec');
+    expect(run.stderr).toContain('codec warning');
   }, 30_000);
 
-  it('rejeição sem tratamento: uma linha com o prefixo no stderr e saída 1', async () => {
+  it('unhandled rejection: one line with the prefix on stderr and exit 1', async () => {
     const { root } = await createImageWorkspace();
     const run = await callTool(
       root,
       'list_projects',
       {},
-      preload("Promise.reject(new Error('falha solta'));"),
+      preload("Promise.reject(new Error('loose failure'));"),
     );
 
     expect(run.lines.filter((line) => !isJsonRpc(line))).toEqual([]);
-    expect(run.stderr).toContain('mapping-mcp: falha solta');
+    expect(run.stderr).toContain('mapping-mcp: loose failure');
     expect(run.code).toBe(1);
   }, 30_000);
 
-  it('exceção sem tratamento: uma linha com o prefixo no stderr e saída 1', async () => {
+  it('unhandled exception: one line with the prefix on stderr and exit 1', async () => {
     const { root } = await createImageWorkspace();
     const run = await callTool(
       root,
       'list_projects',
       {},
-      preload("setImmediate(() => { throw new Error('exceção solta'); });"),
+      preload("setImmediate(() => { throw new Error('loose exception'); });"),
     );
 
     expect(run.lines.filter((line) => !isJsonRpc(line))).toEqual([]);
-    expect(run.stderr).toContain('mapping-mcp: exceção solta');
+    expect(run.stderr).toContain('mapping-mcp: loose exception');
     expect(run.code).toBe(1);
   }, 30_000);
 });
 
-describe('mensagens grandes no stdin', () => {
-  it('plan_changes com 20 MB de base64 responde ao id e o servidor continua vivo', async () => {
+describe('large messages on stdin', () => {
+  it('plan_changes with 20 MB of base64 answers the id and the server stays alive', async () => {
     const { root } = await createImageWorkspace();
     const base64 = randomBytes(15 * 1024 * 1024).toString('base64');
     expect(base64.length).toBeGreaterThan(20_000_000);
@@ -208,12 +208,12 @@ describe('mensagens grandes no stdin', () => {
 
     expect(run.lines.filter((line) => !isJsonRpc(line))).toEqual([]);
     const reply = run.lines.find((line) => /"id":2[,}]/.test(line));
-    // Erro estruturado da operação (os bytes não são uma imagem), não queda da conexão.
+    // Structured error from the operation (the bytes are not an image), not a dropped connection.
     expect(reply).toContain('unsupported-image');
     expect(answered(run, 3)).toBe(true);
   }, 60_000);
 
-  it('acima do teto do transporte: linha com o prefixo no stderr e saída 1, nunca 0 em silêncio', async () => {
+  it('above the transport ceiling: line with the prefix on stderr and exit 1, never a silent 0', async () => {
     const { root } = await createImageWorkspace();
     const run = await callTool(root, 'plan_changes', {
       project: 'imagens',

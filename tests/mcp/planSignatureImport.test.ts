@@ -14,9 +14,9 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createServer } from '../../mcp/server';
 
-// `plan_signature_import` (etapa #1079, S2, decisões 1c e 13): a prévia da importação da ficha
-// de assinatura num pacote de biblioteca. Somente leitura: o teste grava o que a tool devolve (como
-// o agente faz), valida com `validate_library` e reimporta.
+// `plan_signature_import` (stage #1079, S2, decisions 1c and 13): the preview of importing the
+// signature sheet into a library package. Read-only: the test writes what the tool returns (as
+// the agent does), validates with `validate_library` and reimports.
 
 const FIXTURES = 'tests/fixtures/signature';
 let base: string;
@@ -68,7 +68,7 @@ const specFile = (): string => join(pkg, 'lib.spec.json');
 const tree = (): string[] =>
   readdirSync(base, { recursive: true, encoding: 'utf8' }).sort();
 
-/** Grava o que a tool devolveu no pacote, como o agente: o `spec` e a ficha no `signaturePath`. */
+/** Writes what the tool returned into the package, as the agent does: the `spec` and the sheet at the `signaturePath`. */
 function save(result: Plan, signature: unknown): void {
   writeFileSync(specFile(), `${JSON.stringify(result.spec, null, 2)}\n`);
   const target = join(pkg, result.signaturePath);
@@ -92,7 +92,7 @@ afterAll(async () => {
 });
 
 describe('plan_signature_import: Compose', () => {
-  it('com a ficha à mão devolve campos, code, avisos e a especialização; não grava nada', async () => {
+  it('with the sheet inline it returns fields, code, notices and the specialization; writes nothing', async () => {
     const before = tree();
     const raw = readFileSync(specFile(), 'utf8');
     const result = await plan({
@@ -131,7 +131,7 @@ describe('plan_signature_import: Compose', () => {
     expect(Object.keys(result.spec)).toEqual(keys);
   });
 
-  it('gravada, passa no validate_library e reimportar não muda nada', async () => {
+  it('once written, it passes validate_library and reimporting changes nothing', async () => {
     const signature = fixture('button.compose.json');
     const first = await plan({ type: 'button', platform: 'compose', signature });
     save(first, signature);
@@ -147,7 +147,7 @@ describe('plan_signature_import: Compose', () => {
     expect(JSON.stringify(again.spec)).toBe(JSON.stringify(first.spec));
   });
 
-  it('ficha mudada: campo novo opcional, removed, padrão novo e nenhuma quebra', async () => {
+  it('changed sheet: a new optional field, removed, a new default and no break', async () => {
     const changed = fixture('button.compose.changed.json');
     const result = await plan({
       type: 'button',
@@ -187,8 +187,8 @@ describe('plan_signature_import: Compose', () => {
   });
 });
 
-describe('plan_signature_import: SwiftUI e Figma', () => {
-  it('a view SwiftUI: tipo novo (required), posicional e rótulo externo', async () => {
+describe('plan_signature_import: SwiftUI and Figma', () => {
+  it('the SwiftUI view: a new type (required), positional and external label', async () => {
     const result = await plan({
       type: 'profile-card',
       platform: 'swiftui',
@@ -203,7 +203,7 @@ describe('plan_signature_import: SwiftUI e Figma', () => {
     expect(result.unmapped.map((u) => u.name)).toEqual(['onTap', 'content']);
   });
 
-  it('o componente do Figma casa Style com style e avisa a opção que não casa', async () => {
+  it('the Figma component matches Style with style and warns about the option that does not match', async () => {
     const result = await plan({
       type: 'button',
       system: 'figma',
@@ -223,7 +223,7 @@ describe('plan_signature_import: SwiftUI e Figma', () => {
     ]);
   });
 
-  it('signatureFile: um .json dentro das raízes', async () => {
+  it('signatureFile: a .json inside the roots', async () => {
     cpSync(join(FIXTURES, 'button.figma.json'), join(base, 'ficha.json'));
     const result = await plan({
       type: 'button',
@@ -234,10 +234,10 @@ describe('plan_signature_import: SwiftUI e Figma', () => {
   });
 });
 
-describe('plan_signature_import: erros', () => {
+describe('plan_signature_import: errors', () => {
   const ficha = (): unknown => fixture('button.compose.json');
 
-  it('signature-invalid com o caminho do problema na ficha', async () => {
+  it('signature-invalid with the path of the problem in the sheet', async () => {
     const bad = JSON.parse(JSON.stringify(ficha()));
     bad.params[0].role = 'nada';
     const r = await call('plan_signature_import', {
@@ -252,7 +252,7 @@ describe('plan_signature_import: erros', () => {
     expect(r.data.error.hint).toContain('SIGNATURE-FORMAT');
   });
 
-  it('signatureFile que não é .json é recusado, mesmo existindo', async () => {
+  it('a signatureFile that is not .json is refused, even if it exists', async () => {
     writeFileSync(join(base, 'Button.kt'), 'fun Button() {}');
     const r = await call('plan_signature_import', {
       path: 'lib',
@@ -264,7 +264,7 @@ describe('plan_signature_import: erros', () => {
     expect(r.data.error.message).toContain('.json');
   });
 
-  it('type-not-found, platform-not-declared e signature-mismatch', async () => {
+  it('type-not-found, platform-not-declared and signature-mismatch', async () => {
     const args = { path: 'lib', platform: 'compose', signature: ficha() };
     const notFound = await call('plan_signature_import', { ...args, type: 'nada' });
     expect(notFound.data.error.code).toBe('type-not-found');
@@ -285,7 +285,7 @@ describe('plan_signature_import: erros', () => {
     expect(mismatch.data.error.hint).toBeTruthy();
   });
 
-  it('CL2 R-1: pacote com a especialização anterior à 16 é recusado (invalid-spec), sem plano', async () => {
+  it('CL2 R-1: a package with a pre-16 specialization is refused (invalid-spec), with no plan', async () => {
     const old = join(base, 'old');
     cpSync(join(FIXTURES, 'library'), old, { recursive: true });
     const file = join(old, 'lib.spec.json');
@@ -310,7 +310,7 @@ describe('plan_signature_import: erros', () => {
     expect(r.data.error.hint).toBeTruthy();
   });
 
-  it('pede exatamente uma ficha e um alvo', async () => {
+  it('requires exactly one sheet and one target', async () => {
     const none = await call('plan_signature_import', {
       path: 'lib',
       type: 'button',
@@ -326,8 +326,8 @@ describe('plan_signature_import: erros', () => {
   });
 });
 
-describe('plan_signature_import: ficha gravada que não pôde ser usada', () => {
-  /** Uma cópia da biblioteca em que o `code` do button cita a ficha `ref`. */
+describe('plan_signature_import: a written sheet that could not be used', () => {
+  /** A copy of the library where the button's `code` cites the sheet `ref`. */
   function libraryCiting(name: string, ref: string): void {
     const dir = join(base, name);
     cpSync(join(FIXTURES, 'library'), dir, { recursive: true });
@@ -352,7 +352,7 @@ describe('plan_signature_import: ficha gravada que não pôde ser usada', () => 
     signature: fixture('button.compose.json'),
   });
 
-  it('a ficha citada que não está no pacote vira previousProblem', async () => {
+  it('a cited sheet that is not in the package becomes previousProblem', async () => {
     libraryCiting('lib-ausente', 'signatures/gone.json');
     const r = await call('plan_signature_import', args('lib-ausente'));
     expect(r.isError, JSON.stringify(r.data)).toBe(false);
@@ -361,7 +361,7 @@ describe('plan_signature_import: ficha gravada que não pôde ser usada', () => 
     expect(r.data.previousProblem).toContain('missing');
   });
 
-  it('a ficha citada inválida vira previousProblem', async () => {
+  it('an invalid cited sheet becomes previousProblem', async () => {
     libraryCiting('lib-invalida', 'signatures/bad.json');
     mkdirSync(join(base, 'lib-invalida', 'signatures'));
     writeFileSync(join(base, 'lib-invalida', 'signatures', 'bad.json'), '{"x":1}');
@@ -371,7 +371,7 @@ describe('plan_signature_import: ficha gravada que não pôde ser usada', () => 
     expect(r.data.previousProblem).toContain('invalid');
   });
 
-  it('sem ficha citada ou com ficha boa, a chave não existe', async () => {
+  it('without a cited sheet or with a good sheet, the key does not exist', async () => {
     const none = await call('plan_signature_import', args('lib'));
     expect(none.data).not.toHaveProperty('previousProblem');
     libraryCiting('lib-boa', 'signatures/ok.json');

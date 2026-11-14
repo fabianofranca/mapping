@@ -1,6 +1,6 @@
-// A mídia do `card` (140 de altura) é recortada pelo canto arredondado do Card, mesmo quando o card
-// tem sombra (o recorte ampliado do quadro com sombra é reto) e mesmo cortado por uma lazy-column
-// (a caixa do Card, 200 × 40, é menor que a mídia).
+// The `card` media (140 tall) is clipped by the Card's rounded corner, even when the card
+// has a shadow (the enlarged clip of the frame with a shadow is straight) and even when cut by a lazy-column
+// (the Card box, 200 × 40, is smaller than the media).
 import { describe, expect, it } from 'vitest';
 import { approximateMeasurer, createDrawingCache } from '../../src/model';
 import { createRaster } from '../../mcp/image/raster';
@@ -42,7 +42,7 @@ function rasterOf(values: Record<string, string>) {
 
 const white = [255, 255, 255];
 
-describe('card: a mídia respeita o canto arredondado', () => {
+describe('card: the media respects the rounded corner', () => {
   const cases: Record<string, string>[] = [
     { style: 'filled' },
     { style: 'elevated' },
@@ -53,12 +53,12 @@ describe('card: a mídia respeita o canto arredondado', () => {
   for (const values of cases) {
     it(`${values.style} ${values.interaction ?? ''}`, () => {
       const px = rasterOf(values);
-      // O canto de cima (raio 12): o pixel do canto exato não é da mídia.
+      // The top corner (radius 12): the exact corner pixel is not the media's.
       expect(px(20, 20)).not.toEqual(px(120, 30));
       expect(px(219, 20)).not.toEqual(px(120, 30));
-      // Dentro do Card a mídia aparece.
+      // Inside the Card the media shows.
       expect(px(120, 30)).not.toEqual(white);
-      // Abaixo da caixa do Card (40) a mídia não vaza (a sombra é pálida, a mídia não).
+      // Below the Card box (40) the media does not leak (the shadow is pale, the media is not).
       const below = px(120, 62);
       expect(below.every((c, i) => Math.abs(c - px(120, 30)[i]!) > 8)).toBe(true);
     });

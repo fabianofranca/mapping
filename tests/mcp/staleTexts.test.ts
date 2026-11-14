@@ -1,4 +1,4 @@
-// Etapa #680, fase CORR: textos embutidos no servidor e na ajuda que ficaram para trás.
+// Stage #680, phase CORR: texts embedded in the server and in the help that were left behind.
 import { readFileSync } from 'node:fs';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
@@ -18,18 +18,18 @@ async function toolDescription(name: string): Promise<string> {
   return tools.find((tool) => tool.name === name)?.description ?? '';
 }
 
-describe('textos desatualizados', () => {
-  it('a descrição do FORMAT.md cita o SCHEMA_VERSION atual', () => {
+describe('stale texts', () => {
+  it('the FORMAT.md description cites the current SCHEMA_VERSION', () => {
     const doc = DOC_RESOURCES.find((d) => d.name === 'format');
     expect(doc?.description).toContain(`schema v${SCHEMA_VERSION})`);
   });
 
-  it('a descrição do SPEC-FORMAT.md cita a faixa de formatVersion atual', () => {
+  it('the SPEC-FORMAT.md description cites the current formatVersion range', () => {
     const doc = DOC_RESOURCES.find((d) => d.name === 'spec-format');
     expect(doc?.description).toContain(`formatVersion 1 to ${SPEC_FORMAT_VERSION}`);
   });
 
-  it('validate_specialization cita todos os códigos de aviso de specWarnings.ts', async () => {
+  it('validate_specialization cites all the warning codes of specWarnings.ts', async () => {
     const source = readFileSync('src/model/specWarnings.ts', 'utf8');
     const codes = [...source.matchAll(/^\s*\| '([a-z-]+)'/gm)].map((m) => m[1]!);
     expect(codes.length).toBeGreaterThanOrEqual(8);

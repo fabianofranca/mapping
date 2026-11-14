@@ -1,6 +1,6 @@
-// R25.79 a R25.82: o componente que o `scripts/testing/sombras.mjs` grava é válido (formato 4), a
-// cena instanciada traz a lista de 2 sombras com `spread` e o contorno com vão (`stroke.gaps`),
-// e o raster desenha o que os passos do roteiro esperam.
+// R25.79 to R25.82: the component that `scripts/testing/sombras.mjs` writes is valid (format 4), the
+// instantiated scene carries the list of 2 shadows with `spread` and the outline with a gap (`stroke.gaps`),
+// and the raster draws what the script's steps expect.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -56,15 +56,15 @@ const BLUE = [0x19, 0x76, 0xd2];
 const RED = [0xd3, 0x2f, 0x2f];
 const WHITE = [255, 255, 255];
 
-describe('sombras.mjs (R25.79 a R25.82)', () => {
-  it('grava um componente de formato 4, de 300 × 120, que o validador aceita', () => {
+describe('sombras.mjs (R25.79 to R25.82)', () => {
+  it('writes a format 4 component, 300 × 120, that the validator accepts', () => {
     const card = buildCard() as { formatVersion: number; size: unknown };
     expect(card.formatVersion).toBe(4);
     expect(card.size).toEqual({ width: 300, height: 120 });
     expect(validateComponent(card)).toEqual([]);
   });
 
-  it('numa formatVersion 3 a lista de sombras e o gap são erros', () => {
+  it('in formatVersion 3 the shadow list and the gap are errors', () => {
     const errors = validateComponent({ ...(buildCard() as object), formatVersion: 3 });
     expect(errors.some((e) => e.includes('template.children[0].shadow'))).toBe(true);
     expect(errors.some((e) => e.includes('template.children[1].stroke.gap'))).toBe(true);
@@ -73,7 +73,7 @@ describe('sombras.mjs (R25.79 a R25.82)', () => {
     );
   });
 
-  it('a cena tem 2 efeitos com spread no retângulo e o vão no contorno', () => {
+  it('the scene has 2 effects with spread on the rectangle and the gap in the outline', () => {
     const { child } = drawCard();
     const rect = child('sombras');
     expect(rect?.effects).toHaveLength(2);
@@ -82,11 +82,11 @@ describe('sombras.mjs (R25.79 a R25.82)', () => {
     const gaps = child('contorno')?.stroke?.gaps ?? [];
     expect(gaps).toHaveLength(1);
     expect(gaps[0]?.side).toBe('top');
-    expect(gaps[0]?.from).toBe(16); // rótulo em x 170 - quadro em x 150 - respiro 4
+    expect(gaps[0]?.from).toBe(16); // label at x 170 - frame at x 150 - breathing room 4
     expect(gaps[0]?.to ?? 0).toBeGreaterThan(30);
   });
 
-  it('o anel azul, a sombra ambiente e o vão do contorno aparecem onde os passos esperam', () => {
+  it('the blue ring, the ambient shadow and the outline gap show up where the steps expect', () => {
     const { at } = drawCard();
     expect(at(36, 40)).toEqual(BLUE);
     expect(at(35, 40)).toEqual(WHITE);
@@ -94,11 +94,11 @@ describe('sombras.mjs (R25.79 a R25.82)', () => {
     expect(at(104, 40)).toEqual(WHITE);
     expect(at(70, 62)).toEqual(BLUE); // a primeira sombra da lista fica por cima
     expect(at(70, 40)).toEqual([0xff, 0xeb, 0x3b]);
-    expect(at(70, 66)[0]).toBeLessThan(0x80); // a preta, que passa do anel
+    expect(at(70, 66)[0]).toBeLessThan(0x80); // the black one, which goes past the ring
     expect(at(70, 72)[0]).toBeGreaterThanOrEqual(0xf0); // o spread -6 a afasta
     expect(at(70, 76)).toEqual(WHITE);
     expect(at(164, 31)).toEqual(RED);
-    expect(at(168, 31)).toEqual(WHITE); // no vão, no respiro de antes do rótulo
+    expect(at(168, 31)).toEqual(WHITE); // in the gap, in the breathing room before the label
     expect(at(250, 31)).toEqual(RED);
     expect(at(150, 30)).toEqual(WHITE); // o canto reto ficaria aqui
     expect(at(150, 60)).toEqual(RED);
@@ -106,10 +106,10 @@ describe('sombras.mjs (R25.79 a R25.82)', () => {
     expect(at(269, 89)).toEqual(WHITE);
   });
 
-  it('R25.82: em escala não inteira o contorno, na metade do traço, e os cinzas seguem o critério', () => {
+  it('R25.82: at a non-integer scale the outline, at half the stroke, and the grays follow the criterion', () => {
     for (const scale of [1.76, 2.8, 4.2]) {
       const { at } = drawCard(scale);
-      expect(at(151, 60)).toEqual(RED); // meio do traço de 2 (o 150 é a borda dele)
+      expect(at(151, 60)).toEqual(RED); // middle of the 2 stroke (150 is its edge)
       const dark = at(70, 66);
       expect(dark[0]).toBe(dark[1]);
       expect(dark[1]).toBe(dark[2]);

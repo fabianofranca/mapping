@@ -22,8 +22,8 @@ import { Roots } from '../../mcp/paths';
 import { findProject, loadProject, type LoadedProject } from '../../mcp/projects';
 import { NOW } from '../model/fixtures';
 
-// Decisão 24: marcação com anotação de um tipo COM componente tem mínimo de 1 px (o `minSize`
-// do componente, se houver, continua mandando); a marcação comum mantém 8 px.
+// Decision 24: a marking with an annotation of a type WITH a component has a minimum of 1 px (the component
+// `minSize`, if any, still rules); the plain marking keeps 8 px.
 
 const LIBRARY = resolve('tests/fixtures/material3');
 const PHOTO = 'bbbbbbbb-0000-4000-8000-000000000001';
@@ -36,9 +36,9 @@ beforeAll(async () => {
   const parsed = parseSpecText(
     readFileSync(join(LIBRARY, 'material3.spec.json'), 'utf8'),
   );
-  if (!parsed.ok) throw new Error('material3 inválida');
+  if (!parsed.ok) throw new Error('invalid material3');
   let p = createProject({
-    name: 'Telas',
+    name: 'Screens',
     now: NOW,
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
@@ -48,7 +48,7 @@ beforeAll(async () => {
   const dir = join(base, 'telas');
   mkdirSync(join(dir, 'specs'), { recursive: true });
   cpSync(LIBRARY, join(dir, 'specs', 'material3'), { recursive: true });
-  // O `m3-box` sem `minSize`: o mínimo dele passa a ser o de qualquer componente (1×1).
+  // The `m3-box` without `minSize`: its minimum becomes that of any component (1×1).
   const boxPath = join(dir, 'specs', 'material3', 'components', 'm3-box.json');
   const box = JSON.parse(readFileSync(boxPath, 'utf8')) as Record<string, unknown>;
   delete box.minSize;
@@ -63,8 +63,8 @@ afterAll(() => {
 });
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
-  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
+  readSpecInput: () => Promise.reject(new Error('no files')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };
@@ -81,15 +81,15 @@ const BOX: Operation = {
   annotation: { type: 'material3/m3-box' },
 };
 
-describe('mínimo de 1 px com componente', () => {
-  it('create_marking 3×3 com componente sem minSize é aceito', async () => {
+describe('minimum of 1 px with a component', () => {
+  it('create_marking 3×3 with a component without minSize is accepted', async () => {
     const result = await run([BOX]);
     expect(result.errors).toEqual([]);
     const marking = result.project.markings.find((m) => m.containerId === PHOTO);
     expect(marking?.rect).toEqual(SMALL);
   });
 
-  it('update_marking 3×3 numa marcação com componente sem minSize é aceito', async () => {
+  it('update_marking 3×3 on a marking with a component without minSize is accepted', async () => {
     const result = await run([
       { ...BOX, rect: { x: 0, y: 0, width: 50, height: 50 } },
       { op: 'update_marking', marking: '$box', rect: SMALL },
@@ -100,7 +100,7 @@ describe('mínimo de 1 px com componente', () => {
     );
   });
 
-  it('sem componente 3×3 segue recusado, com mínimo 8×8', async () => {
+  it('without a component 3×3 stays refused, with minimum 8×8', async () => {
     const result = await run([{ op: 'create_marking', container: PHOTO, rect: SMALL }]);
     expect(result.errors[0]).toMatchObject({
       code: 'rect-too-small',
@@ -108,7 +108,7 @@ describe('mínimo de 1 px com componente', () => {
     });
   });
 
-  it('o minSize do componente (48×40) continua mandando', async () => {
+  it('the component minSize (48×40) still rules', async () => {
     const result = await run([
       {
         op: 'create_marking',

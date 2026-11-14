@@ -1,4 +1,4 @@
-// FX4 no PNG do MCP: stroke.offset, wrap "none" cortado por pixel e quatro sides (decisões 17, 19 e 21).
+// FX4 in the MCP PNG: stroke.offset, wrap "none" cropped by pixel and four sides (decisions 17, 19 and 21).
 import { describe, expect, it } from 'vitest';
 import { approximateMeasurer } from '../../src/model';
 import type { StrokeSide } from '../../src/model/components/componentFormat';
@@ -43,29 +43,29 @@ const rect = (stroke: NonNullable<SceneNode['stroke']>, radius = 0): SceneNode =
   transform: [1, 0, 0, 1, 10, 10],
 });
 
-describe('stroke.offset no raster', () => {
-  it('o anel fica afastado da forma: o pixel colado na borda é do fundo e o do anel é tinta', () => {
+describe('stroke.offset in the raster', () => {
+  it('the ring sits away from the shape: the pixel next to the edge is background and the ring one is ink', () => {
     const raster = canvas(40, 40);
     paint(raster, rect({ paints: [solid(INK)], width: 2, align: 'outside', offset: 3 }));
-    // A forma começa em x = 10; o anel ocupa de 10 − 3 − 2 = 5 a 7.
+    // The shape starts at x = 10; the ring spans 10 − 3 − 2 = 5 to 7.
     expect(isInk(pixel(raster, 6, 20))).toBe(true);
     expect(pixel(raster, 9, 20)).toEqual(WHITE);
     expect(pixel(raster, 11, 20)).toEqual(WHITE);
     expect(pixel(raster, 3, 20)).toEqual(WHITE);
   });
 
-  it('o raio do canto cresce o offset (canto de raio 6 + 3)', () => {
+  it('the corner radius grows by the offset (corner of radius 6 + 3)', () => {
     const raster = canvas(40, 40);
     paint(
       raster,
       rect({ paints: [solid(INK)], width: 2, align: 'center', offset: 3 }, 6),
     );
-    // Caixa do anel: 7..33; um canto reto estaria em (7,7); o arredondado deixa (7,7) em branco.
+    // Ring box: 7..33; a square corner would be at (7,7); the rounded one leaves (7,7) blank.
     expect(pixel(raster, 7, 7)).toEqual(WHITE);
     expect(isInk(pixel(raster, 20, 7))).toBe(true);
   });
 
-  it('com sides, o lado pedido se afasta e os outros nada pintam', () => {
+  it('with sides, the requested side moves away and the others paint nothing', () => {
     const raster = canvas(40, 40);
     paint(
       raster,
@@ -77,15 +77,15 @@ describe('stroke.offset no raster', () => {
         sides: ['bottom'],
       }),
     );
-    // Base em y = 30; com offset 4 a linha fica em y = 34 (33 e 34).
+    // Base at y = 30; with offset 4 the line sits at y = 34 (33 and 34).
     expect(isInk(pixel(raster, 20, 34))).toBe(true);
     expect(pixel(raster, 20, 30)).toEqual(WHITE);
     expect(pixel(raster, 20, 7)).toEqual(WHITE);
   });
 });
 
-describe('stroke.sides com os quatro lados no raster', () => {
-  // A cena nunca traz os quatro lados (o `instantiate` os normaliza, MC0): o caminho é o do modelo.
+describe('stroke.sides with all four sides in the raster', () => {
+  // The scene never carries all four sides (`instantiate` normalizes them, MC0): the path is the model's.
   const sceneWith = (sides?: StrokeSide[]): SceneNode => {
     const { root } = instantiate(
       {
@@ -119,22 +119,22 @@ describe('stroke.sides com os quatro lados no raster', () => {
     return root;
   };
 
-  it('é o contorno inteiro com raio, igual ao sides ausente', () => {
+  it('is the whole outline with radius, same as absent sides', () => {
     const all = canvas(40, 40);
     paint(all, sceneWith(['top', 'right', 'bottom', 'left']));
     const none = canvas(40, 40);
     paint(none, sceneWith());
     expect(Buffer.from(all.data).equals(Buffer.from(none.data))).toBe(true);
-    // O canto arredondado ficou em branco (não são quatro linhas retas se tocando).
+    // The rounded corner stayed blank (it is not four straight lines touching).
     expect(pixel(all, 10, 10)).toEqual(WHITE);
   });
 });
 
-describe('wrap "none" cortado por pixel no raster', () => {
+describe('wrap "none" cropped by pixel in the raster', () => {
   const text = (align: 'left' | 'center' | 'right'): TextNode => ({
     ...baseNode({ id: 't', name: 't', width: 30, height: 20, fills: [solid(INK)] }),
     type: 'text',
-    text: 'Texto bem comprido',
+    text: 'A rather long text',
     style: {
       fontFamily: 'Roboto',
       fontSize: 10,
@@ -148,9 +148,9 @@ describe('wrap "none" cortado por pixel no raster', () => {
   });
 
   it.each(['left', 'center', 'right'] as const)(
-    'align %s: a barra passa da caixa nas barras, mas o desenho é recortado em 30 px',
+    'align %s: the bar goes past the box in the bars, but the drawing is cropped at 30 px',
     (align) => {
-      // O texto tem 18 × 5,5 = 99 px; a caixa, 30. Nada se pinta além de x = 30.
+      // The text is 18 × 5.5 = 99 px; the box, 30. Nothing is painted beyond x = 30.
       const root: SceneNode = {
         ...text(align),
         transform: [1, 0, 0, 1, 0, 0],
@@ -163,13 +163,13 @@ describe('wrap "none" cortado por pixel no raster', () => {
   );
 });
 
-describe('texto cortado de vários parágrafos (MC0, decisão 30)', () => {
-  // Cada caractere mede 5,5 px (aproximado): a 1ª linha tem 99 px, a 2ª 27,5; a caixa, 60. O bloco
-  // (99) é mais largo que a caixa e começa na borda esquerda; a linha curta se alinha dentro do bloco.
+describe('cropped text of several paragraphs (MC0, decision 30)', () => {
+  // Each character measures 5.5 px (approximate): the 1st line is 99 px, the 2nd 27.5; the box, 60. The block
+  // (99) is wider than the box and starts at the left edge; the short line aligns within the block.
   const two = (align: 'left' | 'center' | 'right'): SceneNode => ({
     ...baseNode({ id: 't', name: 't', width: 60, height: 40, fills: [solid(INK)] }),
     type: 'text',
-    text: 'Texto bem comprido\ncurto',
+    text: 'A rather long text\nshort',
     style: {
       fontFamily: 'Roboto',
       fontSize: 10,
@@ -182,31 +182,31 @@ describe('texto cortado de vários parágrafos (MC0, decisão 30)', () => {
     },
   });
 
-  it('center: a linha curta começa em (99 − 27,5) / 2 = 35,75, como na app', () => {
+  it('center: the short line starts at (99 − 27.5) / 2 = 35.75, as in the app', () => {
     const raster = canvas(120, 40);
     paint(raster, two('center'));
-    // A segunda linha ocupa y 20..40 (barra em 24..36).
+    // The second line spans y 20..40 (bar at 24..36).
     expect(pixel(raster, 30, 30)).toEqual(WHITE);
     expect(isInk(pixel(raster, 40, 30))).toBe(true);
     expect(isInk(pixel(raster, 58, 30))).toBe(true);
   });
 
-  it('right: a linha curta começa em 99 − 27,5 = 71,5, fora da caixa: nada se pinta', () => {
+  it('right: the short line starts at 99 − 27.5 = 71.5, outside the box: nothing is painted', () => {
     const raster = canvas(120, 40);
     paint(raster, two('right'));
     for (const x of [5, 30, 45, 58]) expect(pixel(raster, x, 30)).toEqual(WHITE);
-    // A linha comprida começa na borda e é cortada em 60.
+    // The long line starts at the edge and is cropped at 60.
     expect(isInk(pixel(raster, 20, 10))).toBe(true);
   });
 
-  it('left: as duas linhas começam na borda', () => {
+  it('left: both lines start at the edge', () => {
     const raster = canvas(120, 40);
     paint(raster, two('left'));
     expect(isInk(pixel(raster, 5, 30))).toBe(true);
   });
 });
 
-describe('só as linhas que cabem na altura (MC0, decisão 31)', () => {
+describe('only the lines that fit the height (MC0, decision 31)', () => {
   const tall = (verticalAlign: 'top' | 'middle' | 'bottom', extra = {}): SceneNode => ({
     ...baseNode({ id: 't', name: 't', width: 120, height: 40, fills: [solid(INK)] }),
     type: 'text',
@@ -223,32 +223,32 @@ describe('só as linhas que cabem na altura (MC0, decisão 31)', () => {
     },
   });
 
-  it('top: 3 linhas numa caixa de 2 desenham 2 (a terceira não sai)', () => {
+  it('top: 3 lines in a 2-line box draw 2 (the third does not come out)', () => {
     const raster = canvas(120, 80);
     paint(raster, tall('top'));
     expect(isInk(pixel(raster, 5, 10))).toBe(true);
     expect(isInk(pixel(raster, 5, 30))).toBe(true);
-    // A terceira linha cairia em y 40..60 (barra em 44..56).
+    // The third line would fall at y 40..60 (bar at 44..56).
     expect(pixel(raster, 5, 50)).toEqual(WHITE);
   });
 
-  it('middle: o bloco de 2 linhas é que se centra (a linha 1 fica no topo da caixa)', () => {
+  it('middle: the 2-line block is the one that centers (line 1 stays at the top of the box)', () => {
     const raster = canvas(120, 80);
     paint(raster, tall('middle'));
-    // Com 3 linhas o bloco subiria 10 px e a barra da 1ª linha ficaria em −6..6; com 2, em 4..16.
+    // With 3 lines the block would rise 10 px and the bar of the 1st line would be at −6..6; with 2, at 4..16.
     expect(isInk(pixel(raster, 5, 10))).toBe(true);
     expect(isInk(pixel(raster, 5, 30))).toBe(true);
     expect(pixel(raster, 5, 50)).toEqual(WHITE);
   });
 
-  it('bottom: o bloco de 2 linhas termina no fundo da caixa', () => {
+  it('bottom: the 2-line block ends at the bottom of the box', () => {
     const raster = canvas(120, 80);
     paint(raster, tall('bottom'));
     expect(isInk(pixel(raster, 5, 10))).toBe(true);
     expect(pixel(raster, 5, 50)).toEqual(WHITE);
   });
 
-  it('com ellipsis, o corte pela altura vale como maxLines: 2 linhas, a segunda termina em …', () => {
+  it('with ellipsis, the height cut works as maxLines: 2 lines, the second ends in …', () => {
     const node = tall('top', { ellipsis: true }) as TextNode;
     const long: TextNode = {
       ...node,
@@ -260,13 +260,13 @@ describe('só as linhas que cabem na altura (MC0, decisão 31)', () => {
     expect(lines.lines[1]?.endsWith('…')).toBe(true);
   });
 
-  it('uma caixa de 2,5 linhas também desenha 2', () => {
+  it('a box of 2.5 lines also draws 2', () => {
     const node = { ...(tall('top') as TextNode), height: 50 };
     const lines = plainLines(node, approximateMeasurer, (text) => text.length * 5.5);
     expect(lines.lines).toHaveLength(2);
   });
 
-  it('com ellipsis e altura de linha 0, o medidor não recebe um maxLines infinito', () => {
+  it('with ellipsis and line height 0, the measurer does not receive an infinite maxLines', () => {
     const node = tall('top', { ellipsis: true, lineHeight: 0 }) as TextNode;
     const seen: unknown[] = [];
     const spy: typeof approximateMeasurer = (text, font, width) => {
@@ -279,7 +279,7 @@ describe('só as linhas que cabem na altura (MC0, decisão 31)', () => {
       expect(maxLines === undefined || Number.isFinite(maxLines)).toBe(true);
   });
 
-  it('sem altura (0), todas as linhas', () => {
+  it('without a height (0), all the lines', () => {
     const node = { ...(tall('top') as TextNode), height: 0 };
     const lines = plainLines(node, approximateMeasurer, (text) => text.length * 5.5);
     expect(lines.lines).toHaveLength(3);

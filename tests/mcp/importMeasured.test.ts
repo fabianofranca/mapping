@@ -19,9 +19,9 @@ import { findProject, loadProject } from '../../mcp/projects';
 import { createServer } from '../../mcp/server';
 import { NOW } from '../model/fixtures';
 
-// CF11 (decisão 29): a op de lote `import_measured` lê uma árvore de retângulos medidos (inline ou
-// de um `.json` dentro das raízes) e cria uma marcação por nó com tipo, pelas `sources` dos tipos
-// da origem `measured`. O pertencimento sai da geometria; a prova de desenho da CF10 vale.
+// CF11 (decision 29): the `import_measured` batch op reads a tree of measured rectangles (inline or
+// from a `.json` inside the roots) and creates one marking per typed node, through the `sources` of the types
+// of the `measured` origin. Membership comes from geometry; the CF10 drawing proof applies.
 
 const LAYER = 'cccccccc-0000-4000-8000-000000000001';
 
@@ -40,7 +40,7 @@ const spec = {
       annotationTypes: [
         {
           id: 'btn',
-          name: 'Botão',
+          name: 'Button',
           component: 'components/btn.json',
           sources: [{ system: 'dom', name: 'btn' }],
           fields: [
@@ -54,7 +54,7 @@ const spec = {
         },
         {
           id: 'box',
-          name: 'Caixa',
+          name: 'Box',
           sources: [{ system: 'dom', name: 'box' }],
           fields: [],
         },
@@ -75,7 +75,7 @@ const component = {
     children: [
       {
         type: 'text',
-        name: 'rotulo',
+        name: 'label',
         text: { $field: 'label', default: 'Ok' },
         width: 'fill',
         height: 'fill',
@@ -93,10 +93,10 @@ const btn = (x: number, y: number, w: number, h: number, label?: string) => ({
   ...(label === undefined ? {} : { props: { label } }),
 });
 
-// A caixa é irmã do botão na árvore, mas o retângulo do botão está dentro dela.
+// The box is the button's sibling in the tree, but the button's rectangle is inside it.
 const tree = {
   type: 'div',
-  classes: ['x-misterioso'],
+  classes: ['x-mysterious'],
   rect: { x: 0, y: 0, width: 300, height: 200 },
   children: [
     {
@@ -104,7 +104,7 @@ const tree = {
       classes: ['box'],
       rect: { x: 10, y: 10, width: 200, height: 100 },
     },
-    btn(20, 20, 120, 40, 'Salvar'),
+    btn(20, 20, 120, 40, 'Save'),
   ],
 };
 
@@ -113,33 +113,33 @@ let client: Client;
 
 beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-measured-'));
-  const dir = join(base, 'telas');
+  const dir = join(base, 'screens');
   const lib = join(dir, 'specs', 'lib');
   mkdirSync(join(lib, 'components'), { recursive: true });
   mkdirSync(join(dir, 'images'), { recursive: true });
   writeFileSync(join(lib, 'lib.spec.json'), JSON.stringify(spec));
   writeFileSync(join(lib, 'components', 'btn.json'), JSON.stringify(component));
   const parsed = parseSpecText(JSON.stringify(spec));
-  if (!parsed.ok) throw new Error(`spec inválida: ${JSON.stringify(parsed)}`);
+  if (!parsed.ok) throw new Error(`invalid spec: ${JSON.stringify(parsed)}`);
   let p = createProject({
-    name: 'Telas',
+    name: 'Screens',
     now: NOW,
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
   p = addContainer(p, {
     id: 'dddddddd-0000-4000-8000-000000000001',
-    file: 'images/foto.png',
+    file: 'images/photo.png',
     width: 400,
     height: 300,
   });
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'lib.spec.json' });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
-  writeFileSync(join(dir, 'images', 'foto.png'), Buffer.from([0]));
+  writeFileSync(join(dir, 'images', 'photo.png'), Buffer.from([0]));
   writeFileSync(join(dir, 'tree.json'), JSON.stringify(tree));
-  writeFileSync(join(base, 'fora.json'), JSON.stringify(tree));
+  writeFileSync(join(base, 'outside.json'), JSON.stringify(tree));
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await createServer({ roots: [dir] }).connect(serverSide);
-  client = new Client({ name: 'teste', version: '0' });
+  client = new Client({ name: 'test', version: '0' });
   await client.connect(clientSide);
 });
 
@@ -156,18 +156,18 @@ interface Reply {
 async function plan(operations: unknown[]): Promise<Reply> {
   const result = await client.callTool({
     name: 'plan_changes',
-    arguments: { project: 'telas', operations },
+    arguments: { project: 'screens', operations },
   });
   const text = (result.content as { text: string }[])[0]!.text;
   return { isError: result.isError === true, data: JSON.parse(text) };
 }
 
 async function run(operations: unknown[]) {
-  const roots = new Roots([join(base, 'telas')]);
-  const loaded = await loadProject(roots, await findProject(roots, 'telas'));
+  const roots = new Roots([join(base, 'screens')]);
+  const loaded = await loadProject(roots, await findProject(roots, 'screens'));
   return runBatch(loaded, operations as Operation[], {
-    readSource: () => Promise.reject(new Error('sem arquivos')),
-    readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+    readSource: () => Promise.reject(new Error('no files')),
+    readSpecInput: () => Promise.reject(new Error('no files')),
     takenImageFiles: new Set<string>(),
     now: () => new Date(NOW),
   });
@@ -175,14 +175,14 @@ async function run(operations: unknown[]) {
 
 const SCREEN = {
   op: 'add_container',
-  as: '$tela',
+  as: '$screen',
   width: 400,
   height: 300,
   background: '#FFFFFF',
 };
 const imp = (extra: Record<string, unknown>) => ({
   op: 'import_measured',
-  container: '$tela',
+  container: '$screen',
   system: 'dom',
   ...extra,
 });
@@ -190,15 +190,15 @@ const created = (reply: Reply) =>
   ((reply.data.created ?? []) as { kind: string }[]).filter((c) => c.kind === 'marking');
 
 describe('import_measured', () => {
-  it('cria uma marcação por nó com tipo e ignora o nó sem tipo, com aviso', async () => {
+  it('creates one marking per typed node and ignores the untyped node, with a warning', async () => {
     const reply = await plan([SCREEN, imp({ tree })]);
     expect(reply.data.errors).toBeUndefined();
     expect(reply.data.valid).toBe(true);
     expect(created(reply)).toHaveLength(2);
-    expect(JSON.stringify(reply.data.warnings)).toContain('x-misterioso');
+    expect(JSON.stringify(reply.data.warnings)).toContain('x-mysterious');
   });
 
-  it('tree inline e file dentro das raízes dão o mesmo resultado', async () => {
+  it('inline tree and file inside the roots give the same result', async () => {
     const inline = await plan([SCREEN, imp({ tree })]);
     const file = await plan([SCREEN, imp({ file: 'tree.json' })]);
     expect(file.data.errors).toBeUndefined();
@@ -206,22 +206,22 @@ describe('import_measured', () => {
     expect(file.data.summary).toEqual(inline.data.summary);
   });
 
-  it('file fora das raízes falha com o erro de caminho de hoje', async () => {
-    const reply = await plan([SCREEN, imp({ file: join(base, 'fora.json') })]);
+  it('a file outside the roots fails with the same path error as today', async () => {
+    const reply = await plan([SCREEN, imp({ file: join(base, 'outside.json') })]);
     expect(reply.data.errors?.[0]?.code).toBe('outside-roots');
   });
 
-  it('exige tree ou file, não os dois nem nenhum', async () => {
+  it('requires tree or file, not both and not neither', async () => {
     const none = await plan([SCREEN, imp({})]);
     const both = await plan([SCREEN, imp({ tree, file: 'tree.json' })]);
     expect(none.data.errors?.[0]?.code).toBe('invalid-arguments');
     expect(both.data.errors?.[0]?.code).toBe('invalid-arguments');
   });
 
-  it('offset e scale multiplicam e deslocam os retângulos', async () => {
+  it('offset and scale multiply and shift the rectangles', async () => {
     const result = await run([
       SCREEN,
-      imp({ tree: btn(10, 20, 120, 40, 'Salvar'), offset: { x: 100, y: 50 }, scale: 2 }),
+      imp({ tree: btn(10, 20, 120, 40, 'Save'), offset: { x: 100, y: 50 }, scale: 2 }),
     ]);
     expect(result.errors).toEqual([]);
     expect(result.project.markings.at(-1)!.rect).toEqual({
@@ -232,19 +232,19 @@ describe('import_measured', () => {
     });
   });
 
-  it('o pertencimento sai da geometria: o botão dentro da caixa vira filho dela', async () => {
+  it('membership comes from geometry: the button inside the box becomes its child', async () => {
     const result = await run([SCREEN, imp({ tree })]);
     expect(result.errors).toEqual([]);
     const [box, button] = result.project.markings.slice(-2);
-    // A caixa (10,10,200×100) contém o botão (20,20,120×40) mesmo irmã dele na árvore.
+    // The box (10,10,200×100) contains the button (20,20,120×40) even as its sibling in the tree.
     expect(box!.parentId).toBeNull();
     expect(button!.parentId).toBe(box!.id);
   });
 
-  it('a prova de desenho vale: texto que não cabe vira component-overflow', async () => {
+  it('the drawing proof applies: text that does not fit becomes component-overflow', async () => {
     const reply = await plan([
       SCREEN,
-      imp({ tree: btn(10, 10, 60, 20, 'Confirmar pagamento agora') }),
+      imp({ tree: btn(10, 10, 60, 20, 'Confirm payment now') }),
     ]);
     expect(reply.data.errors).toBeUndefined();
     const items = (
@@ -253,14 +253,14 @@ describe('import_measured', () => {
     expect(items.length).toBeGreaterThan(0);
   });
 
-  it('origem que não é measured falha com not-found/invalid-arguments e mensagem clara', async () => {
+  it('an origin that is not measured fails with not-found/invalid-arguments and a clear message', async () => {
     const reply = await plan([SCREEN, imp({ tree, system: 'zzz' })]);
     expect(reply.data.errors?.[0]?.message).toContain('zzz');
   });
 });
 
-// Achado 12 (CR do MCP): o `catch` por nó pega só `ToolError` e `ModelError`; um erro interno sobe.
-describe('import_measured: erro por nó', () => {
+// Finding 12 (MCP code review): the per-node `catch` catches only `ToolError` and `ModelError`; an internal error propagates.
+describe('import_measured: per-node error', () => {
   let thrown = 0;
   const failInCreate = (error: Error) => {
     thrown = 0;
@@ -274,7 +274,7 @@ describe('import_measured: erro por nó', () => {
     });
   };
 
-  it('um erro do modelo vira aviso do nó e o lote segue', async () => {
+  it('a model error becomes a node warning and the batch continues', async () => {
     const spy = failInCreate(new ModelError('rect-too-small'));
     try {
       const result = await run([SCREEN, imp({ tree: btn(10, 10, 120, 40, 'Ok') })]);
@@ -288,12 +288,12 @@ describe('import_measured: erro por nó', () => {
     }
   });
 
-  it('um erro que não é do modelo nem da tool sobe (não vira aviso do nó)', async () => {
-    const spy = failInCreate(new TypeError('bug interno'));
+  it("an error that is neither the model's nor the tool's propagates (does not become a node warning)", async () => {
+    const spy = failInCreate(new TypeError('internal bug'));
     try {
       await expect(
         run([SCREEN, imp({ tree: btn(10, 10, 120, 40, 'Ok') })]),
-      ).rejects.toThrow('bug interno');
+      ).rejects.toThrow('internal bug');
       expect(thrown).toBeGreaterThan(0);
     } finally {
       spy.mockRestore();

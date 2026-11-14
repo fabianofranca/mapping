@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
-// Simula o `mapping.json` que aparece depois da conferência de `create_project` e antes da
-// gravação: o `mkdir` da pasta (feito entre as duas) cria o arquivo de outra pessoa.
+// Simulates the `mapping.json` that appears after the check of `create_project` and before the
+// write: the folder's `mkdir` (done between the two) creates someone else's file.
 const RIVAL = '{"rival":true}\n';
 const state = vi.hoisted(() => ({ dropRival: null as string | null }));
 
@@ -28,15 +28,15 @@ const { createProjectFolder } = await import('../../mcp/createProject');
 const { Roots } = await import('../../mcp/paths');
 const { ToolError } = await import('../../mcp/errors');
 
-describe('create_project: gravação exclusiva do mapping.json', () => {
-  it('um mapping.json que aparece entre a conferência e a gravação não é sobrescrito', async () => {
+describe('create_project: exclusive write of the mapping.json', () => {
+  it('a mapping.json that appears between the check and the write is not overwritten', async () => {
     const root = mkdtempSync(join(tmpdir(), 'mapping-race-'));
-    const dir = join(root, 'novo');
+    const dir = join(root, 'fresh');
     mkdirSync(dir);
     state.dropRival = join(dir, 'mapping.json');
 
     const failure = await createProjectFolder(new Roots([root], root), {
-      path: 'novo',
+      path: 'fresh',
       name: 'Novo',
     }).catch((error: unknown) => error);
 
@@ -45,7 +45,7 @@ describe('create_project: gravação exclusiva do mapping.json', () => {
     expect(readFileSync(join(dir, 'mapping.json'), 'utf8')).toBe(RIVAL);
   });
 
-  it('sem concorrência, cria o projeto', async () => {
+  it('without concurrency, creates the project', async () => {
     const root = mkdtempSync(join(tmpdir(), 'mapping-race-'));
     const created = await createProjectFolder(new Roots([root], root), {
       path: 'ok',

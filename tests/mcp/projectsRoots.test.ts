@@ -7,8 +7,8 @@ import { Roots } from '../../mcp/paths';
 import { findProject } from '../../mcp/projects';
 import { NOW } from '../model/fixtures';
 
-describe('findProject com várias raízes', () => {
-  it('acha o projeto que só existe na segunda raiz, mesmo que a pasta exista (sem projeto) na primeira', async () => {
+describe('findProject with several roots', () => {
+  it('finds the project that only exists in the second root, even if the folder exists (without a project) in the first', async () => {
     const first = mkdtempSync(join(tmpdir(), 'mapping-r1-'));
     const second = mkdtempSync(join(tmpdir(), 'mapping-r2-'));
     mkdirSync(join(first, 'apps', 'cadastro'), { recursive: true });
@@ -28,7 +28,7 @@ describe('findProject com várias raízes', () => {
     expect(found.path).toBe('apps/cadastro');
   });
 
-  it('sem projeto em nenhuma raiz, o erro continua sendo project-not-found', async () => {
+  it('without a project in any root, the error is still project-not-found', async () => {
     const first = mkdtempSync(join(tmpdir(), 'mapping-r1-'));
     const second = mkdtempSync(join(tmpdir(), 'mapping-r2-'));
     mkdirSync(join(first, 'x'));

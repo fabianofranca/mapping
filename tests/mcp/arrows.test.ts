@@ -5,9 +5,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { acceptAllAndApply, errorOf, ok, propose, readProject } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// Setas e `near` no MCP (ME4): `create_arrow`, `update_arrow`, `delete_arrow` no lote e na
-// proposta, `near` em `create_marking`, `arrows` em `get_marking`, a seta lida e anotada pelo id
-// e `get_marking_image` recusando a seta (`arrow`).
+// Arrows and `near` in the MCP (ME4): `create_arrow`, `update_arrow`, `delete_arrow` in the batch and in the
+// proposal, `near` in `create_marking`, `arrows` in `get_marking`, the arrow read and annotated by id
+// and `get_marking_image` refusing the arrow (`arrow`).
 
 interface Plan {
   valid: boolean;
@@ -64,7 +64,7 @@ const build = [
   {
     op: 'add_container',
     as: '$tela',
-    name: 'Tela',
+    name: 'Screen',
     width: 400,
     height: 400,
     background: '#FFFFFF',
@@ -74,7 +74,7 @@ const build = [
     as: '$botao',
     container: '$tela',
     rect: { x: 10, y: 10, width: 100, height: 60 },
-    name: 'Botão',
+    name: 'Button',
   },
   {
     op: 'create_marking',
@@ -82,13 +82,13 @@ const build = [
     annotationAs: '$nota-a',
     near: '$botao',
     annotation: { type: 'notas/nota' },
-    name: 'Nota do botão',
+    name: 'Button note',
   },
   { op: 'create_arrow', as: '$seta', from: '$botao', to: '$nota', style: 'elbow' },
 ];
 
-describe('create_marking com near', () => {
-  it('a nota flutuante nasce na margem do container, à direita da tela', async () => {
+describe('create_marking with near', () => {
+  it('the floating note is born in the container margin, to the right of the screen', async () => {
     const result = await plan(build);
     expect(result.errors).toBeUndefined();
     expect(result.valid).toBe(true);
@@ -101,14 +101,14 @@ describe('create_marking com near', () => {
     );
   });
 
-  it('numa proposta aplicada: a nota é flutuante, fora do container, e a seta liga as duas', async () => {
+  it('in an applied proposal: the note is floating, outside the container, and the arrow links the two', async () => {
     const proposed = await propose(mcp, project, build);
     expect(proposed.valid).toBe(true);
     const saved = acceptAllAndApply(dir, proposed.proposal.id);
-    const nota = saved.markings.find((m) => m.name === 'Nota do botão');
+    const nota = saved.markings.find((m) => m.name === 'Button note');
     const tela = saved.containers[0]!;
     expect(nota).toMatchObject({ floating: true, containerId: null });
-    // À direita do container (margem de 24 unidades), na altura da marcação.
+    // To the right of the container (24-unit margin), at the height of the marking.
     const width = tela.width * tela.placement.scale;
     expect(nota!.rect.x).toBe(tela.placement.x + width + 24);
     expect(nota!.rect.y).toBe(tela.placement.y + 10 * tela.placement.scale);
@@ -117,7 +117,7 @@ describe('create_marking com near', () => {
     expect(readProject(dir).arrows).toHaveLength(1);
   });
 
-  it('near com referência inexistente falha com not-found', async () => {
+  it('near with a nonexistent reference fails with not-found', async () => {
     const result = await plan([
       {
         op: 'create_marking',
@@ -130,7 +130,7 @@ describe('create_marking com near', () => {
     expect(result.errors?.[0]?.code).toBe('not-found');
   });
 
-  it('near em marcação não flutuante é ignorado com aviso', async () => {
+  it('near on a non-floating marking is ignored with a warning', async () => {
     const result = await plan([
       {
         op: 'create_marking',
@@ -146,13 +146,13 @@ describe('create_marking com near', () => {
   });
 });
 
-describe('seta lida, anotada e recusada onde não cabe', () => {
+describe('arrow read, annotated and refused where it does not fit', () => {
   let arrowRef: string;
   let buttonRef: string;
 
-  it('get_marking da marcação lista as setas que saem e chegam, com a outra ponta', async () => {
+  it('get_marking of the marking lists the arrows leaving and arriving, with the other end', async () => {
     const saved = readProject(dir);
-    const botao = saved.markings.find((m) => m.name === 'Botão')!;
+    const botao = saved.markings.find((m) => m.name === 'Button')!;
     const nota = saved.markings.find((m) => m.floating)!;
     const button = ok(
       await mcp.call<MarkingData>('get_marking', { project, ref: botao.id }),
@@ -163,33 +163,33 @@ describe('seta lida, anotada e recusada onde não cabe', () => {
     const out = button.arrows!.outgoing[0]!;
     arrowRef = out.ref;
     expect(out).toMatchObject({ style: 'elbow', name: null, locked: false });
-    expect(out.to?.name).toBe('Nota do botão');
+    expect(out.to?.name).toBe('Button note');
     expect(out.to?.path.at(0)).toBe('Canvas');
 
     const note = ok(
       await mcp.call<MarkingData>('get_marking', { project, ref: nota.id }),
     );
     expect(note.arrows?.incoming).toHaveLength(1);
-    expect(note.arrows?.incoming[0]?.from?.name).toBe('Botão');
+    expect(note.arrows?.incoming[0]?.from?.name).toBe('Button');
   });
 
-  it('get_marking com a referência da seta devolve kind arrow, pontas e estilo', async () => {
+  it('get_marking with the arrow reference returns kind arrow, endpoints and style', async () => {
     const arrow = ok(
       await mcp.call<MarkingData>('get_marking', { project, ref: arrowRef }),
     );
     expect(arrow).toMatchObject({ kind: 'arrow', style: 'elbow' });
-    expect(arrow.from?.name).toBe('Botão');
-    expect(arrow.to?.name).toBe('Nota do botão');
+    expect(arrow.from?.name).toBe('Button');
+    expect(arrow.to?.name).toBe('Button note');
     expect(arrow).not.toHaveProperty('points');
   });
 
-  it('create_annotation aceita a seta como marcação e a anotação aparece em get_marking', async () => {
+  it('create_annotation accepts the arrow as a marking and the annotation shows up in get_marking', async () => {
     const operations = [
       {
         op: 'create_annotation',
         marking: arrowRef,
         layer: 'Camada 1',
-        name: 'Ao tocar',
+        name: 'On tap',
         entries: [{ key: 'evento', value: 'click' }],
       },
     ];
@@ -201,10 +201,10 @@ describe('seta lida, anotada e recusada onde não cabe', () => {
     const arrow = ok(
       await mcp.call<MarkingData>('get_marking', { project, ref: arrowRef }),
     );
-    expect(arrow.layers[0]?.annotations.map((a) => a.name)).toEqual(['Ao tocar']);
+    expect(arrow.layers[0]?.annotations.map((a) => a.name)).toEqual(['On tap']);
   });
 
-  it('create_annotation com tipo só de marcação na seta falha com type-not-applicable e uma dica', async () => {
+  it('create_annotation with a marking-only type on the arrow fails with type-not-applicable and a hint', async () => {
     const result = await plan([
       { op: 'create_annotation', marking: arrowRef, type: 'notas/nota' },
     ]);
@@ -214,7 +214,7 @@ describe('seta lida, anotada e recusada onde não cabe', () => {
     expect(String(error.hint)).toContain('appliesTo');
   });
 
-  it('update_marking e delete_marking com o id de uma seta apontam update_arrow e delete_arrow', async () => {
+  it('update_marking and delete_marking with the id of an arrow point to update_arrow and delete_arrow', async () => {
     const update = await plan([{ op: 'update_marking', marking: arrowRef, name: 'x' }]);
     const updateError = update.errors?.[0] as unknown as Record<string, unknown>;
     expect(updateError.code).toBe('wrong-kind');
@@ -225,7 +225,7 @@ describe('seta lida, anotada e recusada onde não cabe', () => {
     expect(String(delError.hint)).toContain('delete_arrow');
   });
 
-  it('get_marking_image recusa a seta com o erro arrow e uma dica', async () => {
+  it('get_marking_image refuses the arrow with the arrow error and a hint', async () => {
     const error = errorOf(
       await mcp.call('get_marking_image', { project, ref: arrowRef }),
     );
@@ -233,7 +233,7 @@ describe('seta lida, anotada e recusada onde não cabe', () => {
     expect(String(error.hint)).toContain('get_marking');
   });
 
-  it('create_arrow e update_arrow recusam points', async () => {
+  it('create_arrow and update_arrow refuse points', async () => {
     const created = await plan([
       { op: 'create_arrow', from: buttonRef, to: arrowRef, points: [{ x: 1, y: 2 }] },
       { op: 'update_arrow', arrow: arrowRef, points: [] },
@@ -245,7 +245,7 @@ describe('seta lida, anotada e recusada onde não cabe', () => {
     ]);
   });
 
-  it('seta como ponta de seta: arrow-endpoint; mesma ponta: arrow-self', async () => {
+  it('arrow as an arrow endpoint: arrow-endpoint; same endpoint: arrow-self', async () => {
     const result = await plan([
       { op: 'create_arrow', from: buttonRef, to: arrowRef },
       { op: 'create_arrow', from: buttonRef, to: buttonRef },
@@ -254,11 +254,11 @@ describe('seta lida, anotada e recusada onde não cabe', () => {
   });
 });
 
-describe('update_arrow e delete_arrow', () => {
-  it('update de seta existente funciona na prévia e avisa que a proposta não o leva', async () => {
+describe('update_arrow and delete_arrow', () => {
+  it('update of an existing arrow works in the preview and warns that the proposal does not carry it', async () => {
     const arrow = readProject(dir).arrows[0]!;
     const result = await plan([
-      { op: 'update_arrow', arrow: arrow.id, name: 'explica', style: 'straight' },
+      { op: 'update_arrow', arrow: arrow.id, name: 'explains', style: 'straight' },
     ]);
     expect(result.valid).toBe(true);
     expect(result.summary[0]).toContain('style straight');
@@ -267,10 +267,10 @@ describe('update_arrow e delete_arrow', () => {
     ]);
   });
 
-  it('update numa seta criada no mesmo lote vale: a criação leva nome, estilo e trava', async () => {
+  it('update on an arrow created in the same batch is valid: the creation carries name, style and lock', async () => {
     const saved = readProject(dir);
     const [botao, nota] = [
-      saved.markings.find((m) => m.name === 'Botão')!,
+      saved.markings.find((m) => m.name === 'Button')!,
       saved.markings.find((m) => m.floating)!,
     ];
     const operations = [
@@ -278,7 +278,7 @@ describe('update_arrow e delete_arrow', () => {
       {
         op: 'update_arrow',
         arrow: '$s2',
-        name: 'volta',
+        name: 'back',
         style: 'straight',
         locked: true,
       },
@@ -287,11 +287,11 @@ describe('update_arrow e delete_arrow', () => {
     expect(result.warnings).toBeUndefined();
     const proposed = await propose(mcp, project, operations);
     const after = acceptAllAndApply(dir, proposed.proposal.id);
-    const created = after.arrows.find((a) => a.name === 'volta');
+    const created = after.arrows.find((a) => a.name === 'back');
     expect(created).toMatchObject({ style: 'straight', locked: true, points: [] });
   });
 
-  it('delete_arrow: trancada recusa (locked); destrancada sai com as anotações', async () => {
+  it('delete_arrow: a locked one is refused (locked); an unlocked one goes away with its annotations', async () => {
     const saved = readProject(dir);
     const locked = saved.arrows.find((a) => a.locked)!;
     const refused = await plan([{ op: 'delete_arrow', arrow: locked.id }]);
@@ -307,8 +307,8 @@ describe('update_arrow e delete_arrow', () => {
     expect(after.annotations.some((a) => a.markingId === free.id)).toBe(false);
   });
 
-  it('delete_arrow numa marcação (não seta) falha com wrong-kind', async () => {
-    const botao = readProject(dir).markings.find((m) => m.name === 'Botão')!;
+  it('delete_arrow on a marking (not an arrow) fails with wrong-kind', async () => {
+    const botao = readProject(dir).markings.find((m) => m.name === 'Button')!;
     const result = await plan([{ op: 'delete_arrow', arrow: botao.id }]);
     expect(result.errors?.[0]?.code).toBe('wrong-kind');
   });

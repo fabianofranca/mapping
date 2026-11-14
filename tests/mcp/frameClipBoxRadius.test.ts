@@ -4,8 +4,8 @@ import { paintScene } from '../../mcp/image/sceneRaster';
 import { createFontBook, measurerFor } from '../../mcp/image/textMeasurer';
 import { baseNode, type FrameNode } from '../../src/model/components/scene';
 
-// CL2 (1.6 do reteste): quadro com sombra (recorte ampliado, `clipBox`) e canto arredondado recorta
-// o conteúdo pela forma (o raio), não pelo retângulo ampliado: o canto do filho não sai reto.
+// CL2 (1.6 of the retest): a frame with a shadow (enlarged clip, `clipBox`) and a rounded corner clips
+// the content by the shape (the radius), not by the enlarged rectangle: the child's corner does not come out square.
 
 const book = createFontBook();
 const measure = measurerFor(book);
@@ -51,13 +51,13 @@ function render(cornerRadius: number, clipBox: boolean) {
     raster.data[((y + PAD) * raster.width + x + PAD) * 4 + 1]!;
 }
 
-describe('recorte ampliado de um quadro com raio', () => {
-  it('com sombra (clipBox) e raio o canto do filho fica sem tinta e o centro pintado', () => {
+describe('enlarged clip of a frame with a radius', () => {
+  it("with a shadow (clipBox) and a radius the child's corner has no ink and the center is painted", () => {
     const green = render(20, true);
     expect(green(1, 1)).toBe(255);
     expect(green(20, 20)).toBeLessThan(10);
   });
-  it('com clipBox e sem raio o retângulo todo é pintado', () => {
+  it('with clipBox and no radius the whole rectangle is painted', () => {
     expect(render(0, true)(1, 1)).toBeLessThan(10);
   });
 });

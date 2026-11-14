@@ -15,9 +15,9 @@ import { NOW } from '../model/fixtures';
 import { hashOf, ok, errorOf } from './proposalSupport';
 import { codeOf, connect, PNG_1X1, uuidFor, type Connection } from './workspace';
 
-// Perspectivas pelo MCP (etapa #659, PE4): o servidor só lê. `get_project` traz o resumo e as
-// marcas de chegada, `get_perspective` as raízes com a posição, `get_marking` e `get_container`
-// dizem em que perspectivas a raiz aparece, e um projeto v15 é lido como v16 sem ser regravado.
+// Perspectives through the MCP (stage #659, PE4): the server only reads. `get_project` brings the summary and the
+// arrival marks, `get_perspective` the roots with their position, `get_marking` and `get_container`
+// say in which perspectives the root appears, and a v15 project is read as v16 without being rewritten.
 
 const id = (name: string) => uuidFor(name, 'persp:');
 
@@ -63,28 +63,28 @@ let mcp: Connection;
 let dir: string;
 let mappingPath: string;
 
-/** Dois containers e uma flutuante; "Analytics" mostra uma tela e a flutuante, esconde "Dados". */
+/** Two containers and a floating marking; "Analytics" shows a screen and the floating one, hides "Data". */
 function sample(): Project {
   let p = createProject({
-    name: 'Perspectivas',
+    name: 'Perspectives',
     now: NOW,
     firstLayer: { id: id('L1'), name: 'Camada 1', color: '#D32F2F' },
   });
-  p = addLayer(p, { id: id('L2'), name: 'Dados', color: '#1976D2' });
+  p = addLayer(p, { id: id('L2'), name: 'Data', color: '#1976D2' });
   p = addContainer(p, { id: id('C1'), file: 'images/a.png', width: 100, height: 100 });
   p = addContainer(p, { id: id('C2'), file: 'images/b.png', width: 100, height: 100 });
   p = createMarking(p, {
     id: id('M1'),
     containerId: id('C1'),
     rect: { x: 5, y: 5, width: 20, height: 20 },
-    name: 'Botão',
+    name: 'Button',
   });
   p = createMarking(p, {
     id: id('F1'),
     containerId: null,
     floating: true,
     rect: { x: 900, y: 40, width: 80, height: 30 },
-    name: 'Tabela',
+    name: 'Table',
   });
   const withRoots = buildPerspective(p, {
     id: id('P1'),
@@ -120,7 +120,7 @@ beforeAll(async () => {
   mappingPath = join(dir, 'mapping.json');
   writeProject(dir, serialize(sample()));
 
-  // O mesmo projeto como a v15 o gravava: sem `project.id`, `perspectives` e `arrivals`.
+  // The same project as v15 wrote it: without `project.id`, `perspectives` and `arrivals`.
   const old = JSON.parse(serialize(sample())) as Record<string, unknown>;
   old.schemaVersion = 15;
   delete old.perspectives;
@@ -137,7 +137,7 @@ afterAll(async () => {
 });
 
 describe('get_project', () => {
-  it('resume as perspectivas e traz as marcas de chegada', async () => {
+  it('summarizes the perspectives and brings the arrival marks', async () => {
     const data = ok(await mcp.call<ProjectData>('get_project', { project: 'persp' }));
     expect(data.schemaVersion).toBe(20);
     expect(data.perspectives).toEqual([
@@ -145,13 +145,13 @@ describe('get_project', () => {
         id: id('P1'),
         name: 'Analytics',
         roots: 2,
-        hiddenLayers: [{ id: id('L2'), name: 'Dados' }],
+        hiddenLayers: [{ id: id('L2'), name: 'Data' }],
       },
     ]);
     expect(data.arrivals).toEqual([
       {
         root: `mapping://persp/m/${codeOf(id('F1'))}`,
-        name: 'Tabela',
+        name: 'Table',
         from: id('P1'),
         fromName: 'Analytics',
         perspectiveExists: true,
@@ -159,7 +159,7 @@ describe('get_project', () => {
     ]);
   });
 
-  it('projeto v15 é lido como v16, sem listas e sem regravar o arquivo', async () => {
+  it('a v15 project is read as v16, without lists and without rewriting the file', async () => {
     const path = join(base, 'v15', 'mapping.json');
     const before = hashOf(path);
     const data = ok(await mcp.call<ProjectData>('get_project', { project: 'v15' }));
@@ -172,7 +172,7 @@ describe('get_project', () => {
 });
 
 describe('get_perspective', () => {
-  it('traz as raízes com a posição e as camadas escondidas', async () => {
+  it('brings the roots with their position and the hidden layers', async () => {
     const data = ok(
       await mcp.call<PerspectiveData>('get_perspective', {
         project: 'persp',
@@ -182,7 +182,7 @@ describe('get_perspective', () => {
     expect(data).toMatchObject({
       id: id('P1'),
       name: 'Analytics',
-      hiddenLayers: [{ id: id('L2'), name: 'Dados' }],
+      hiddenLayers: [{ id: id('L2'), name: 'Data' }],
     });
     expect(data.roots).toEqual([
       {
@@ -195,14 +195,14 @@ describe('get_perspective', () => {
       {
         ref: `mapping://persp/m/${codeOf(id('F1'))}`,
         kind: 'marking',
-        name: 'Tabela',
+        name: 'Table',
         x: 1480,
         y: 260,
       },
     ]);
   });
 
-  it('aceita o nome da perspectiva, sem diferença de caixa', async () => {
+  it('accepts the perspective name, case-insensitive', async () => {
     const data = ok(
       await mcp.call<PerspectiveData>('get_perspective', {
         project: 'persp',
@@ -212,17 +212,17 @@ describe('get_perspective', () => {
     expect(data.id).toBe(id('P1'));
   });
 
-  it('id que não existe falha com not-found e a dica das perspectivas', async () => {
+  it('an id that does not exist fails with not-found and the perspectives hint', async () => {
     const error = errorOf(
-      await mcp.call('get_perspective', { project: 'persp', id: 'nao-existe' }),
+      await mcp.call('get_perspective', { project: 'persp', id: 'does-not-exist' }),
     );
     expect(error.code).toBe('not-found');
     expect(String((error as { hint?: string }).hint)).toContain('get_project');
   });
 });
 
-describe('get_marking e get_container', () => {
-  it('a flutuante diz em que perspectivas a raiz dela aparece', async () => {
+describe('get_marking and get_container', () => {
+  it('the floating marking says in which perspectives its root appears', async () => {
     const data = ok(
       await mcp.call<WherePerspectives>('get_marking', {
         ref: `mapping://persp/m/${codeOf(id('F1'))}`,
@@ -233,7 +233,7 @@ describe('get_marking e get_container', () => {
     ]);
   });
 
-  it('uma marcação dentro do container segue a raiz do container', async () => {
+  it('a marking inside the container follows the container root', async () => {
     const data = ok(
       await mcp.call<WherePerspectives>('get_marking', {
         ref: `mapping://persp/m/${codeOf(id('M1'))}`,
@@ -245,7 +245,7 @@ describe('get_marking e get_container', () => {
     ]);
   });
 
-  it('o container que nenhuma perspectiva mostra traz a lista vazia', async () => {
+  it('a container that no perspective shows brings the empty list', async () => {
     const data = ok(
       await mcp.call<WherePerspectives>('get_container', {
         ref: `mapping://persp/i/${codeOf(id('C2'))}`,
@@ -254,7 +254,7 @@ describe('get_marking e get_container', () => {
     expect(data.perspectives).toEqual([]);
   });
 
-  it('o container diz a posição dele na perspectiva', async () => {
+  it('the container says its position in the perspective', async () => {
     const data = ok(
       await mcp.call<WherePerspectives>('get_container', {
         ref: `mapping://persp/i/${codeOf(id('C1'))}`,
@@ -266,8 +266,8 @@ describe('get_marking e get_container', () => {
   });
 });
 
-describe('o MCP nunca grava perspectivas', () => {
-  it('nenhuma leitura muda o mapping.json', async () => {
+describe('the MCP never writes perspectives', () => {
+  it('no read changes mapping.json', async () => {
     const before = hashOf(mappingPath);
     for (const [name, args] of [
       ['get_project', { project: 'persp' }],
@@ -280,7 +280,7 @@ describe('o MCP nunca grava perspectivas', () => {
     expect(hashOf(mappingPath)).toBe(before);
   });
 
-  it('get_perspective é só leitura nas anotações da tool', async () => {
+  it('get_perspective is read-only in the tool annotations', async () => {
     const { tools } = await mcp.client.listTools();
     const tool = tools.find((t) => t.name === 'get_perspective');
     expect(tool?.annotations?.readOnlyHint).toBe(true);

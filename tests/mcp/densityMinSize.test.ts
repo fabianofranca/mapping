@@ -23,8 +23,8 @@ import { Roots } from '../../mcp/paths';
 import { findProject, loadProject, type LoadedProject } from '../../mcp/projects';
 import { NOW } from '../model/fixtures';
 
-// CL2 (#1715): o mínimo do `create_marking` com componente vale em pixels (`minSize` × densidade
-// do container); `density: 1` no MCP não grava a chave.
+// CL2 (#1715): the `create_marking` minimum with a component is in pixels (`minSize` × container
+// density); `density: 1` in the MCP does not write the key.
 
 const LIBRARY = resolve('tests/fixtures/material3');
 const PHOTO = 'bbbbbbbb-0000-4000-8000-000000000001';
@@ -37,7 +37,7 @@ beforeAll(async () => {
   const parsed = parseSpecText(
     readFileSync(join(LIBRARY, 'material3.spec.json'), 'utf8'),
   );
-  if (!parsed.ok) throw new Error('material3 inválida');
+  if (!parsed.ok) throw new Error('invalid material3');
   let p = createProject({
     name: 'Telas',
     now: NOW,
@@ -60,8 +60,8 @@ afterAll(() => {
 });
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
-  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
+  readSpecInput: () => Promise.reject(new Error('no files')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };
@@ -81,8 +81,8 @@ const BUTTON = (rect: {
   annotation: { type: 'material3/m3-button' },
 });
 
-describe('mínimo do create_marking com a densidade do container', () => {
-  it('60×60 num container 3x recusa: o mínimo do m3-button (48×40) vale 144×120 px', async () => {
+describe('create_marking minimum with the container density', () => {
+  it('60×60 in a 3x container is refused: the m3-button minimum (48×40) is 144×120 px', async () => {
     const result = await run([BUTTON({ x: 10, y: 10, width: 60, height: 60 })]);
     expect(result.errors[0]).toMatchObject({
       code: 'rect-too-small',
@@ -90,20 +90,20 @@ describe('mínimo do create_marking com a densidade do container', () => {
     });
   });
 
-  it('144×120 num container 3x é aceito', async () => {
+  it('144×120 in a 3x container is accepted', async () => {
     const result = await run([BUTTON({ x: 10, y: 10, width: 144, height: 120 })]);
     expect(result.errors).toEqual([]);
   });
 });
 
-describe('density: 1 no MCP não grava a chave', () => {
-  it('update_container com density 1 num container 3x remove a chave', async () => {
+describe('density: 1 in the MCP does not write the key', () => {
+  it('update_container with density 1 on a 3x container removes the key', async () => {
     const result = await run([{ op: 'update_container', container: PHOTO, density: 1 }]);
     expect(result.errors).toEqual([]);
     expect('density' in result.project.containers[0]!).toBe(false);
   });
 
-  it('update_container com density 1 num container sem densidade não muda nada', async () => {
+  it('update_container with density 1 on a container without density changes nothing', async () => {
     const result = await run([
       { op: 'update_container', container: PHOTO, density: null },
       { op: 'update_container', container: PHOTO, density: 1 },

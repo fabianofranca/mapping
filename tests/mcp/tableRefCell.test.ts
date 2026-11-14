@@ -6,9 +6,10 @@ import type { Annotation, Project } from '../../src/model';
 import { acceptAllAndApply, ok, propose, readProject } from './proposalSupport';
 import { codeOf, connect, type Connection } from './workspace';
 
-// Bug #677 (etapa #678, VC1): a célula de coluna `ref` de uma tabela aceita o mesmo valor do
-// campo `ref` (`annotation` com `entry`, `key` ou `row`, inclusive apelidos do mesmo lote) e
-// continua aceitando o formato gravado (`annotationId` …).
+// Bug #677 (stage #678, VC1): the `ref` column cell of a table accepts the same value as the
+// `ref` field (`annotation` with `entry`, `key` or `row`, including aliases from the same batch) and
+// keeps accepting the stored format (`annotationId` …).
+// The SPEC ids and the titles `Cliente` and `Tela` mirror the example of docs/AGENT-GUIDE.md, which the last test reads.
 
 interface Planned {
   valid: boolean;
@@ -19,18 +20,18 @@ const SPEC = {
   format: 'mapping-spec',
   formatVersion: 10,
   id: 'rc',
-  name: 'Ref em coluna',
+  name: 'Ref in column',
   version: 1,
   platforms: [{ id: 'web', name: 'Web' }],
   layers: [
     {
       id: 'dados',
-      name: 'Dados',
+      name: 'Data',
       color: '#2E7D32',
       annotationTypes: [
         {
           id: 'modelo',
-          name: 'Modelo',
+          name: 'Model',
           labelField: 'titulo',
           fields: [
             { key: 'titulo', type: 'string' },
@@ -49,12 +50,12 @@ const SPEC = {
     },
     {
       id: 'telas',
-      name: 'Telas',
+      name: 'Screens',
       color: '#1565C0',
       annotationTypes: [
         {
           id: 'lista',
-          name: 'Lista',
+          name: 'List',
           labelField: 'titulo',
           fields: [
             { key: 'titulo', type: 'string' },
@@ -80,17 +81,17 @@ const SPEC = {
 let root: string;
 let dir: string;
 let mcp: Connection;
-const project = 'celula';
+const project = 'cell';
 
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), 'mapping-tableref-'));
-  mkdirSync(join(root, 'fontes'), { recursive: true });
-  writeFileSync(join(root, 'fontes', 'rc.json'), JSON.stringify(SPEC));
+  mkdirSync(join(root, 'sources'), { recursive: true });
+  writeFileSync(join(root, 'sources', 'rc.json'), JSON.stringify(SPEC));
   dir = join(root, 'projetos', project);
   mcp = await connect([root]);
   ok(await mcp.call('create_project', { path: `projetos/${project}`, name: project }));
   const proposed = await propose(mcp, project, [
-    { op: 'apply_specialization', file: 'fontes/rc.json' },
+    { op: 'apply_specialization', file: 'sources/rc.json' },
   ]);
   expect(proposed.valid).toBe(true);
   acceptAllAndApply(dir, proposed.proposal.id);
@@ -105,7 +106,7 @@ const rect = { x: 0, y: 0, width: 100, height: 50 };
 const plan = async (operations: unknown[]) =>
   ok(await mcp.call<Planned>('plan_changes', { project, operations }));
 
-/** Propõe o lote, aplica tudo e devolve o projeto gravado. */
+/** Proposes the batch, applies everything and returns the stored project. */
 async function apply(operations: unknown[]): Promise<Project> {
   const proposed = await propose(mcp, project, operations);
   expect(proposed.valid, JSON.stringify(proposed.errors)).toBe(true);
@@ -113,13 +114,13 @@ async function apply(operations: unknown[]): Promise<Project> {
   return readProject(dir);
 }
 
-/** A última anotação com o título (outros testes do arquivo repetem títulos no mesmo projeto). */
+/** The last annotation with the title (other tests in the file repeat titles in the same project). */
 const byTitle = (p: Project, title: string): Annotation =>
   p.annotations.filter((a) => a.values?.titulo === title).at(-1)!;
 const cells = (a: Annotation) =>
   (a.values!.alvos as { _id: string; alvo: unknown; nota?: string }[]).map((r) => r.alvo);
 
-/** O alvo do lote: um modelo com duas linhas, `$p1` (anotação) e `$r1` (linha). */
+/** The batch target: a model with two rows, `$p1` (annotation) and `$r1` (row). */
 const model = (title: string) => ({
   op: 'create_marking',
   as: '$m1',
@@ -141,8 +142,8 @@ const list = (title: string, alvos: unknown[]) => ({
   annotation: { type: 'rc/lista', values: { titulo: title, alvos } },
 });
 
-describe('célula ref com o valor do campo ref', () => {
-  it('alvo e célula no mesmo lote: o apelido vira o formato gravado', async () => {
+describe('ref cell with the value of the ref field', () => {
+  it('target and cell in the same batch: the alias becomes the stored format', async () => {
     const operations = [
       model('Cliente'),
       list('Tela', [{ nota: 'a', alvo: { annotation: '$p1', key: 'chave' } }]),
@@ -155,91 +156,91 @@ describe('célula ref com o valor do campo ref', () => {
     ]);
   });
 
-  it('entry: par de anotação livre', async () => {
+  it('entry: pair of a free-form annotation', async () => {
     const operations = [
-      { op: 'create_layer', as: '$livres', name: 'Livres' },
+      { op: 'create_layer', as: '$free', name: 'Free' },
       { op: 'create_marking', as: '$m3', rect },
       {
         op: 'create_annotation',
-        as: '$livre',
+        as: '$freeAnn',
         marking: '$m3',
-        layer: '$livres',
-        name: 'Glossário',
-        entries: [{ key: 'termo', value: 'v' }],
+        layer: '$free',
+        name: 'Glossary',
+        entries: [{ key: 'term', value: 'v' }],
       },
-      list('Com par', [{ alvo: { annotation: '$livre', entry: 'termo' } }]),
+      list('With pair', [{ alvo: { annotation: '$freeAnn', entry: 'term' } }]),
     ];
     const planned = await plan(operations);
     expect(planned.valid, JSON.stringify(planned.errors)).toBe(true);
     const p = await apply(operations);
-    const free = p.annotations.find((a) => a.name === 'Glossário')!;
-    expect(cells(byTitle(p, 'Com par'))).toEqual([
+    const free = p.annotations.find((a) => a.name === 'Glossary')!;
+    expect(cells(byTitle(p, 'With pair'))).toEqual([
       { annotationId: free.id, entryId: free.entries[0]!.id },
     ]);
   });
 
-  it('row: linha de outra tabela por apelido e por id', async () => {
-    const first = await apply([model('Modelo B')]);
-    const target = byTitle(first, 'Modelo B');
+  it('row: row of another table by alias and by id', async () => {
+    const first = await apply([model('Model B')]);
+    const target = byTitle(first, 'Model B');
     const rowId = (target.values!.campos as { _id: string }[])[0]!._id;
     const byId = {
       annotation: `mapping://${project}/a/${codeOf(target.id)}`,
       key: 'campos',
       row: rowId,
     };
-    const p = await apply([model('Modelo C'), list('Com linhas', [{ alvo: byId }])]);
-    expect(cells(byTitle(p, 'Com linhas'))).toEqual([
+    const p = await apply([model('Model C'), list('With rows', [{ alvo: byId }])]);
+    expect(cells(byTitle(p, 'With rows'))).toEqual([
       { annotationId: target.id, key: 'campos', rowId },
     ]);
-    // por apelido: a linha foi criada num passo anterior do lote
+    // by alias: the row was created in an earlier step of the batch
     const aliased = await apply([
-      model('Modelo D'),
-      list('Por apelido', [{ alvo: { annotation: '$p1', key: 'campos', row: '$r1' } }]),
+      model('Model D'),
+      list('By alias', [{ alvo: { annotation: '$p1', key: 'campos', row: '$r1' } }]),
     ]);
-    const modelD = byTitle(aliased, 'Modelo D');
+    const modelD = byTitle(aliased, 'Model D');
     const rowD = (modelD.values!.campos as { _id: string }[])[0]!._id;
-    expect(cells(byTitle(aliased, 'Por apelido'))).toEqual([
+    expect(cells(byTitle(aliased, 'By alias'))).toEqual([
       { annotationId: modelD.id, key: 'campos', rowId: rowD },
     ]);
   });
 
-  it('o formato gravado continua aceito', async () => {
-    const first = await apply([model('Modelo E')]);
-    const target = byTitle(first, 'Modelo E');
+  it('the stored format is still accepted', async () => {
+    const first = await apply([model('Model E')]);
+    const target = byTitle(first, 'Model E');
     const stored = { annotationId: target.id, key: 'chave' };
     const p = await apply([
-      list('Gravado', [{ alvo: { annotationId: target.id, key: 'chave' } }]),
+      list('Stored', [{ alvo: { annotationId: target.id, key: 'chave' } }]),
     ]);
-    expect(cells(byTitle(p, 'Gravado'))).toEqual([stored]);
+    expect(cells(byTitle(p, 'Stored'))).toEqual([stored]);
   });
 
-  it('alvo que a coluna não aceita: ref-not-accepted na operação certa', async () => {
+  it('target the column does not accept: ref-not-accepted on the right operation', async () => {
     const planned = await plan([
       model('Cliente'),
-      list('Ruim', [{ alvo: { annotation: '$p1', key: 'solto' } }]),
+      list('Bad', [{ alvo: { annotation: '$p1', key: 'solto' } }]),
     ]);
     expect(planned.valid).toBe(false);
     expect(planned.errors![0]).toMatchObject({ index: 1, code: 'ref-not-accepted' });
   });
 
-  it('valor que não é um alvo: invalid-ref-value, como no campo', async () => {
-    const planned = await plan([list('Ruim', [{ alvo: 'texto solto' }])]);
+  it('value that is not a target: invalid-ref-value, as in the field', async () => {
+    const planned = await plan([list('Bad', [{ alvo: 'loose text' }])]);
     expect(planned.valid).toBe(false);
     expect(planned.errors![0]).toMatchObject({ index: 0, code: 'invalid-ref-value' });
   });
 
-  it('update_annotation mantém a linha por _id e troca só a célula ref', async () => {
+  it('update_annotation keeps the row by _id and changes only the ref cell', async () => {
     const first = await apply([
-      model('Modelo F'),
-      list('Trocar', [{ nota: 'fica', alvo: { annotation: '$p1', key: 'chave' } }]),
+      model('Model F'),
+      list('Swap', [{ nota: 'stays', alvo: { annotation: '$p1', key: 'chave' } }]),
     ]);
-    const lista = byTitle(first, 'Trocar');
-    const row = (lista.values!.alvos as { _id: string }[])[0]!._id;
-    const other = byTitle(first, 'Modelo F');
+    const listAnn = byTitle(first, 'Swap');
+    const row = (listAnn.values!.alvos as { _id: string }[])[0]!._id;
+    const other = byTitle(first, 'Model F');
     const p = await apply([
       {
         op: 'update_annotation',
-        annotation: `mapping://${project}/a/${codeOf(lista.id)}`,
+        annotation: `mapping://${project}/a/${codeOf(listAnn.id)}`,
         values: {
           alvos: [
             {
@@ -254,29 +255,29 @@ describe('célula ref com o valor do campo ref', () => {
         },
       },
     ]);
-    const after = byTitle(p, 'Trocar').values!.alvos as {
+    const after = byTitle(p, 'Swap').values!.alvos as {
       _id: string;
       nota: string;
       alvo: unknown;
     }[];
     expect(after).toHaveLength(1);
     expect(after[0]!._id).toBe(row);
-    expect(after[0]!.nota).toBe('fica');
+    expect(after[0]!.nota).toBe('stays');
     expect(after[0]!.alvo).toMatchObject({ annotationId: other.id, key: 'campos' });
   });
 });
 
-describe('o exemplo do AGENT-GUIDE', () => {
-  it('o lote do guia (célula ref com linha por apelido) é válido e grava o formato esperado', async () => {
+describe('the AGENT-GUIDE example', () => {
+  it('the guide batch (ref cell with a row by alias) is valid and stores the expected format', async () => {
     const guide = readFileSync('docs/AGENT-GUIDE.md', 'utf8');
     const block = /same value applies, cell by cell[^]*?```json\n([^]*?)```/.exec(guide);
-    expect(block, 'bloco json do guia').not.toBeNull();
+    expect(block, 'json block of the guide').not.toBeNull();
     const operations = JSON.parse(block![1]!) as unknown[];
     const p = await apply(operations);
-    const cliente = byTitle(p, 'Cliente');
-    const rowId = (cliente.values!.campos as { _id: string }[])[0]!._id;
+    const customer = byTitle(p, 'Cliente');
+    const rowId = (customer.values!.campos as { _id: string }[])[0]!._id;
     expect(cells(byTitle(p, 'Tela'))).toEqual([
-      { annotationId: cliente.id, key: 'campos', rowId },
+      { annotationId: customer.id, key: 'campos', rowId },
     ]);
   });
 });

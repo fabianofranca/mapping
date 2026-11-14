@@ -12,10 +12,10 @@ import {
 import { createRoleWorkspace, roleSpec, type RoleWorkspace } from './roleWorkspace';
 import { connect, type Connection } from './workspace';
 
-// Etapa #557, PM2 (MCP 0.20.0): os passos de papel (`rename-role`, `remove-role`, `set-role`) no
-// `plan_library_update`, no `update_specialization` e nas validações da `formatVersion` 12, por
-// stdio. O cenário é o de `roleWorkspace`: `button` (papéis `click` e `hold`), `A1` com os filhos
-// `C1` (`click`) e `C2` (sem papel, `onHold`); `image` (papel `tap`), `A3`; `text` sem papéis.
+// Stage #557, PM2 (MCP 0.20.0): the role steps (`rename-role`, `remove-role`, `set-role`) in
+// `plan_library_update`, in `update_specialization` and in the `formatVersion` 12 validations, over
+// stdio. The scenario is that of `roleWorkspace`: `button` (roles `click` and `hold`), `A1` with the children
+// `C1` (`click`) and `C2` (no role, `onHold`); `image` (role `tap`), `A3`; `text` with no roles.
 
 interface Loss {
   reason: string;
@@ -49,9 +49,9 @@ interface Validation {
 let ws: RoleWorkspace;
 let mcp: Connection;
 
-const BUTTON_HOLD = [{ id: 'hold', name: 'Pressionar' }];
+const BUTTON_HOLD = [{ id: 'hold', name: 'Press' }];
 
-/** A especialização do cenário na versão 2 (v12 se `steps`, senão v11) e o arquivo dela. */
+/** The scenario's specialization at version 2 (v12 with `steps`, otherwise v11) and its file. */
 function variant(name: string, edit: (s: Json) => void, steps?: unknown[]): string {
   const spec = roleSpec((s) => {
     edit(s);
@@ -72,7 +72,7 @@ const noClick = (s: Json) => {
 };
 const textRoles = (s: Json) => {
   s.layers[0].annotationTypes[2].allowedChildren = [{ layer: 'eventos' }];
-  s.layers[0].annotationTypes[2].childRoles = [{ id: 'main', name: 'Principal' }];
+  s.layers[0].annotationTypes[2].childRoles = [{ id: 'main', name: 'Main' }];
 };
 
 let files: Record<string, string>;
@@ -106,8 +106,8 @@ afterAll(async () => {
 const plan = async (path: string) =>
   ok(await mcp.call<Plan>('plan_library_update', { project: ws.project, path }));
 
-describe('plan_library_update: quebras de papel sem passo', () => {
-  it('papel removido: refused com o removed-role e a hint cita os nove passos', async () => {
+describe('plan_library_update: role breaks without a step', () => {
+  it('removed role: refused with removed-role and the hint cites the nine steps', async () => {
     const result = await plan(files.removeNoStep!);
     expect(result.decision).toBe('update');
     expect(result.refused).toBe(true);
@@ -119,7 +119,7 @@ describe('plan_library_update: quebras de papel sem passo', () => {
     );
   });
 
-  it('dono que ganha papéis: refused com o roles-required', async () => {
+  it('an owner that gains roles: refused with roles-required', async () => {
     const result = await plan(files.rolesNoStep!);
     expect(result.refused).toBe(true);
     expect(result.missingMigrations).toHaveLength(1);
@@ -128,8 +128,8 @@ describe('plan_library_update: quebras de papel sem passo', () => {
   });
 });
 
-describe('plan_library_update: com os passos', () => {
-  it('remove-role com clear: relatório, perda cleared-role com o papel e a pendência missing-role', async () => {
+describe('plan_library_update: with the steps', () => {
+  it('remove-role with clear: report, cleared-role loss with the role and the missing-role pending item', async () => {
     const result = await plan(files.clear!);
     expect(result.refused).toBe(false);
     expect(result.validation.errors).toEqual([]);
@@ -149,7 +149,7 @@ describe('plan_library_update: com os passos', () => {
     expect(result.hint).toMatch(/loses data/);
   });
 
-  it('remove-role com unlink: unlinked no passo e no relatório, perda unlinked com o papel', async () => {
+  it('remove-role with unlink: unlinked in the step and in the report, unlinked loss with the role', async () => {
     const result = await plan(files.unlink!);
     expect(result.refused).toBe(false);
     expect(result.steps[0]).toMatchObject({ annotations: 1, unlinked: 1, lossCount: 1 });
@@ -161,7 +161,7 @@ describe('plan_library_update: com os passos', () => {
     expect(result.pending.map((p) => p.code)).not.toContain('missing-role');
   });
 
-  it('rename-role: conta o filho e nada se perde', async () => {
+  it('rename-role: counts the child and nothing is lost', async () => {
     const result = await plan(files.rename!);
     expect(result.refused).toBe(false);
     expect(result.steps[0]).toMatchObject({
@@ -174,7 +174,7 @@ describe('plan_library_update: com os passos', () => {
     expect(result.hint).toMatch(/cover the breaks/);
   });
 
-  it('set-role: o passo com childType alcança só o filho do tipo, sem perda nem pendência nova', async () => {
+  it('set-role: the step with childType reaches only the child of the type, with no loss or new pending item', async () => {
     const result = await plan(files.setRole!);
     expect(result.refused).toBe(false);
     expect(result.steps.map((s) => [s.step.op, s.annotations])).toEqual([
@@ -185,7 +185,7 @@ describe('plan_library_update: com os passos', () => {
   });
 });
 
-/** Cenário novo (a aplicação migra `proj`, então cada teste usa o seu) com a v2 dos passos dados. */
+/** A new scenario (applying migrates `proj`, so each test uses its own) with the v2 of the given steps. */
 async function withMigration(
   steps: unknown[],
   run: (other: RoleWorkspace, conn: Connection) => Promise<void>,
@@ -210,8 +210,8 @@ async function withMigration(
 
 const updateOp = { op: 'update_specialization', file: 'nova/s.json' };
 
-describe('update_specialization grava os vínculos migrados', () => {
-  it('clear: o plano mostra parentRole click → null e a aplicação o grava', async () => {
+describe('update_specialization writes the migrated links', () => {
+  it('clear: the plan shows parentRole click → null and applying writes it', async () => {
     await withMigration(
       [{ op: 'remove-role', type: 'button', role: 'click', mode: 'clear' }],
       async (other, conn) => {
@@ -235,7 +235,7 @@ describe('update_specialization grava os vínculos migrados', () => {
     );
   });
 
-  it('unlink: o plano mostra parentAnnotationId e parentRole → null; a proposta continua no formato 4', async () => {
+  it('unlink: the plan shows parentAnnotationId and parentRole → null; the proposal stays in format 4', async () => {
     await withMigration(
       [{ op: 'remove-role', type: 'button', role: 'click', mode: 'unlink' }],
       async (other, conn) => {
@@ -260,7 +260,7 @@ describe('update_specialization grava os vínculos migrados', () => {
     );
   });
 
-  it('rename-role: o filho passa a hold e o outro fica como estava', async () => {
+  it('rename-role: the child becomes hold and the other stays as it was', async () => {
     await withMigration(
       [{ op: 'rename-role', type: 'button', from: 'click', to: 'hold' }],
       async (other, conn) => {
@@ -277,7 +277,7 @@ describe('update_specialization grava os vínculos migrados', () => {
     );
   });
 
-  it('plan_changes mostra a mudança de parentRole sem mudar o formato da proposta', async () => {
+  it('plan_changes shows the parentRole change without changing the proposal format', async () => {
     await withMigration(
       [{ op: 'rename-role', type: 'button', from: 'click', to: 'hold' }],
       async (other, conn) => {
@@ -295,14 +295,14 @@ describe('update_specialization grava os vínculos migrados', () => {
     );
   });
 
-  it('a quebra de papel sem passo é recusada com spec-missing-migrations', async () => {
+  it('a role break with no step is refused with spec-missing-migrations', async () => {
     const failed = ok(
       await mcp.call<{
         valid: boolean;
         errors: { code: string; missingMigrations: { message: string }[] }[];
       }>('propose_changes', {
         project: ws.project,
-        title: 'Sem passo',
+        title: 'No step',
         operations: [{ op: 'update_specialization', file: files.removeNoStep! }],
       }),
     );
@@ -312,7 +312,7 @@ describe('update_specialization grava os vínculos migrados', () => {
   });
 });
 
-describe('validate_specialization e validate_library: formatVersion 12', () => {
+describe('validate_specialization and validate_library: formatVersion 12', () => {
   const validate = async (spec: unknown) =>
     ok(
       await mcp.call<Validation>('validate_specialization', {
@@ -328,13 +328,13 @@ describe('validate_specialization e validate_library: formatVersion 12', () => {
       s.migrations = [{ from: 1, to: 2, steps: [step] }];
     });
 
-  it('aceita a v12 com os passos de papel', async () => {
+  it('accepts v12 with the role steps', async () => {
     const result = await validate(withStep(12));
     expect(result.errors).toEqual([]);
     expect(result.valid).toBe(true);
   });
 
-  it('um passo de papel numa v11 dá só é permitido com formatVersion 12 no caminho exato', async () => {
+  it('a role step in a v11 gives only allowed with formatVersion 12 at the exact path', async () => {
     const result = await validate(withStep(11));
     expect(result.valid).toBe(false);
     expect(result.errors).toContain(
@@ -342,7 +342,7 @@ describe('validate_specialization e validate_library: formatVersion 12', () => {
     );
   });
 
-  it('validate_library com previous aceita o passo e recusa sem ele', async () => {
+  it('validate_library with previous accepts the step and refuses without it', async () => {
     const previous = join(ws.root, 'lib', 's.json');
     const good = ok(
       await mcp.call<Validation>('validate_library', { path: files.clear!, previous }),

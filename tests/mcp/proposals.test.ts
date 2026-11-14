@@ -35,20 +35,20 @@ import {
 } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// Propostas pelo dist-mcp/mapping-mcp.js, por stdio (etapa 4.2): importação inteira, revisão
-// simulada (editando decisões e notas no arquivo, como a app faz), nova proposta com
-// `supersedes` e a garantia de que o agente nunca altera o `mapping.json`.
+// Proposals through dist-mcp/mapping-mcp.js, over stdio (stage 4.2): whole import, simulated
+// review (editing decisions and notes in the file, as the app does), new proposal with
+// `supersedes` and the guarantee that the agent never changes the `mapping.json`.
 
 let root: string;
 let mcp: Connection;
-const dir = () => join(root, 'loja');
+const dir = () => join(root, 'store');
 
 const mappingPath = () => join(dir(), 'mapping.json');
-/** Arquivos em `images/` do projeto (a pasta só existe depois da primeira imagem aplicada). */
+/** Files in the project's `images/` (the folder only exists after the first image is applied). */
 const projectImages = () =>
   existsSync(join(dir(), 'images')) ? readdirSync(join(dir(), 'images')).sort() : [];
 
-/** O SDUI de exemplo em v3, com origens no Button (tipo, campo de texto e campo enum). */
+/** The example SDUI in v3, with origins on the Button (type, text field and enum field). */
 function sduiV3(): string {
   const spec = JSON.parse(readFileSync('tests/fixtures/sdui-v2.json', 'utf8')) as {
     formatVersion: number;
@@ -82,7 +82,7 @@ const figma = (id: string) => ({
   url: `https://figma.example/${id}`,
 });
 
-/** A importação inteira de duas telas, com origem em tudo, como um agente de importação faria. */
+/** The whole import of two screens, with an origin on everything, as an import agent would do. */
 const IMPORT_OPERATIONS = [
   { op: 'apply_specialization', file: 'fontes/sdui.json' },
   {
@@ -96,14 +96,14 @@ const IMPORT_OPERATIONS = [
     op: 'add_container',
     as: '$t2',
     file: 'fontes/tela2.png',
-    name: 'Pagamento',
+    name: 'Payment',
     source: figma('1:20'),
   },
   {
     op: 'create_marking',
     as: '$titulo',
     container: '$t1',
-    name: 'Título',
+    name: 'Title',
     rect: { x: 20, y: 20, width: 400, height: 60 },
     source: figma('1:11'),
   },
@@ -111,7 +111,7 @@ const IMPORT_OPERATIONS = [
     op: 'create_marking',
     as: '$botao',
     container: '$t1',
-    name: 'Botão Pagar',
+    name: 'Pay button',
     rect: { x: 20, y: 600, width: 300, height: 80 },
     source: figma('1:12'),
   },
@@ -119,7 +119,7 @@ const IMPORT_OPERATIONS = [
     op: 'create_marking',
     as: '$cartao',
     container: '$t2',
-    name: 'Campo cartão',
+    name: 'Card field',
     rect: { x: 20, y: 100, width: 500, height: 70 },
     source: figma('2:21'),
   },
@@ -128,7 +128,7 @@ const IMPORT_OPERATIONS = [
     as: '$btn',
     marking: '$botao',
     type: 'button',
-    values: { id: 'btn_pagar', texto: 'Pagar' },
+    values: { id: 'btn_pagar', texto: 'Pay' },
   },
   {
     op: 'create_annotation',
@@ -147,7 +147,7 @@ const IMPORT_OPERATIONS = [
     op: 'create_annotation',
     marking: '$cartao',
     layer: 'Camada 1',
-    entries: [{ key: 'máscara', value: '0000 0000 0000 0000' }],
+    entries: [{ key: 'mask', value: '0000 0000 0000 0000' }],
   },
 ];
 
@@ -219,7 +219,7 @@ beforeAll(async () => {
   writeFileSync(join(root, 'fontes', 'tela1.png'), await encodePng(quadrants(600, 800)));
   writeFileSync(join(root, 'fontes', 'tela2.png'), await encodePng(quadrants(600, 800)));
   mcp = await connect([root]);
-  ok(await mcp.call('create_project', { path: 'loja', name: 'Loja' }));
+  ok(await mcp.call('create_project', { path: 'store', name: 'Store' }));
 });
 
 afterAll(async () => {
@@ -233,33 +233,33 @@ const idOf = (p: Proposal, entity: Change['entity'], name: string): string => {
       c.kind === 'create' &&
       (c.to as { name?: string | null }).name === name,
   );
-  if (!change) throw new Error(`sem criação de ${entity} "${name}"`);
+  if (!change) throw new Error(`no creation of ${entity} "${name}"`);
   return change.entityId;
 };
 
 let first: Proposed;
 let firstProposal: Proposal;
 
-describe('importação inteira', () => {
-  it('propose_changes grava a proposta; o mapping.json não muda', async () => {
+describe('whole import', () => {
+  it('propose_changes writes the proposal; the mapping.json does not change', async () => {
     const before = hashOf(mappingPath());
-    first = await propose(mcp, 'loja', IMPORT_OPERATIONS, {
-      title: 'Loja a partir do Figma',
-      description: 'Telas Checkout e Pagamento.',
-      origin: 'Figma: Loja v3 › Checkout',
-      author: 'Agente de teste',
+    first = await propose(mcp, 'store', IMPORT_OPERATIONS, {
+      title: 'Store from Figma',
+      description: 'Checkout and Payment screens.',
+      origin: 'Figma: Store v3 › Checkout',
+      author: 'Test agent',
     });
     expect(first.proposed).toBe(true);
     expect(hashOf(mappingPath())).toBe(before);
     expect(first.proposal).toMatchObject({
-      title: 'Loja a partir do Figma',
+      title: 'Store from Figma',
       status: 'open',
       baseRevision: 0,
       supersedes: null,
     });
-    expect(first.proposal.ref).toMatch(/^mapping:\/\/loja\/p\/[0-9a-f]{8}$/);
+    expect(first.proposal.ref).toMatch(/^mapping:\/\/store\/p\/[0-9a-f]{8}$/);
 
-    // Pasta, arquivo da proposta (válido pelo modelo) e imagens novas ao lado.
+    // Folder, proposal file (valid for the model) and new images beside it.
     const proposalDir = join(dir(), 'proposals', first.proposal.id);
     expect(readdirSync(proposalDir).sort()).toEqual(['images', 'proposal.json']);
     expect(readdirSync(join(proposalDir, 'images')).sort()).toEqual([
@@ -273,8 +273,8 @@ describe('importação inteira', () => {
     expect(parsed.ok, JSON.stringify(parsed)).toBe(true);
     firstProposal = readProposal(dir(), first.proposal.id);
     expect(firstProposal).toMatchObject({
-      origin: 'Figma: Loja v3 › Checkout',
-      author: 'Agente de teste',
+      origin: 'Figma: Store v3 › Checkout',
+      author: 'Test agent',
       revision: 0,
       decisions: {},
       notes: [],
@@ -283,7 +283,7 @@ describe('importação inteira', () => {
     expect(firstProposal.operations).toHaveLength(IMPORT_OPERATIONS.length);
   });
 
-  it('é tudo criação: uma mudança por entidade, resumida por nível', () => {
+  it('it is all creation: one change per entity, summarized by level', () => {
     const kinds = new Map<string, number>();
     for (const c of firstProposal.changes) {
       expect(c.kind).toBe('create');
@@ -306,14 +306,14 @@ describe('importação inteira', () => {
       `proposals/${first.proposal.id}/images/tela1.webp`,
       `proposals/${first.proposal.id}/images/tela2.webp`,
     ]);
-    // Cada item criado traz a referência definitiva, com o apelido.
+    // Each created item carries the final reference, with the alias.
     const aliases = first.created.filter((c) => c.alias).map((c) => c.alias);
     expect(aliases).toEqual(['$t1', '$t2', '$titulo', '$botao', '$cartao', '$btn']);
     expect(first.hint).toContain('Proposals window');
   });
 
-  it('list_proposals e get_proposal mostram tudo pendente', async () => {
-    const listed = ok(await mcp.call<Listed>('list_proposals', { project: 'loja' }));
+  it('list_proposals and get_proposal show everything pending', async () => {
+    const listed = ok(await mcp.call<Listed>('list_proposals', { project: 'store' }));
     expect(listed.total).toBe(1);
     expect(listed.proposals[0]).toMatchObject({
       ref: first.proposal.ref,
@@ -322,13 +322,14 @@ describe('importação inteira', () => {
       conflicts: 0,
     });
     expect(
-      ok(await mcp.call<Listed>('list_proposals', { project: 'loja', status: 'applied' }))
-        .total,
+      ok(
+        await mcp.call<Listed>('list_proposals', { project: 'store', status: 'applied' }),
+      ).total,
     ).toBe(0);
 
     const got = ok(await mcp.call<Got>('get_proposal', { ref: first.proposal.ref }));
     expect(got.proposal).toMatchObject({
-      description: 'Telas Checkout e Pagamento.',
+      description: 'Checkout and Payment screens.',
       supersedes: null,
     });
     expect(got.total).toBe(13);
@@ -338,23 +339,23 @@ describe('importação inteira', () => {
       entity: 'specialization',
       target: 'specialization sdui',
     });
-    // A especialização inteira não entra na resposta.
+    // The whole specialization does not go in the response.
     expect(JSON.stringify(got.changes[0])).not.toContain('"layers"');
     expect(got.levels.containers.map((i) => [i.change, i.state])).toEqual([
       ['new', 'undecided'],
       ['new', 'undecided'],
     ]);
-    // O alvo de uma marcação criada é a referência definitiva, só a URL.
+    // The target of a created marking is the final reference, only the URL.
     expect(got.changes.find((c) => c.entity === 'marking')!.target).toMatch(
-      /^mapping:\/\/loja\/m\/[0-9a-f]{8}$/,
+      /^mapping:\/\/store\/m\/[0-9a-f]{8}$/,
     );
   });
 
-  it('get_proposal recusa a referência no formato antigo, com a hint e o accepted novo', async () => {
+  it('get_proposal refuses the reference in the old format, with the hint and the new accepted', async () => {
     const code = first.proposal.ref.match(/\/p\/([0-9a-f]+)/)![1]!;
     for (const ref of [
-      `mapping://loja/p/${code} (Loja a partir do Figma)`,
-      `mapping://Loja Final/p/${code}`,
+      `mapping://store/p/${code} (Store from Figma)`,
+      `mapping://Final Store/p/${code}`,
     ]) {
       const result = await mcp.call('get_proposal', { ref });
       expect(result.isError, ref).toBe(true);
@@ -369,10 +370,10 @@ describe('importação inteira', () => {
     }
   });
 
-  it('get_proposal aceita o código curto, o id e filtra por estado, com paginação', async () => {
+  it('get_proposal accepts the short code and the id, and filters by status, with pagination', async () => {
     const code = first.proposal.ref.match(/\/p\/([0-9a-f]+)/)![1]!;
-    for (const ref of [`p/${code}`, first.proposal.id, `mapping://loja/p/${code}`]) {
-      const got = ok(await mcp.call<Got>('get_proposal', { ref, project: 'loja' }));
+    for (const ref of [`p/${code}`, first.proposal.id, `mapping://store/p/${code}`]) {
+      const got = ok(await mcp.call<Got>('get_proposal', { ref, project: 'store' }));
       expect(got.proposal.id).toBe(first.proposal.id);
     }
     const page = ok(await mcp.call<Got>('get_proposal', { ref: code, limit: 5 }));
@@ -392,17 +393,17 @@ describe('importação inteira', () => {
     ).toBe(0);
 
     expect(
-      errorOf(await mcp.call('get_proposal', { ref: 'zzzz', project: 'loja' })).code,
+      errorOf(await mcp.call('get_proposal', { ref: 'zzzz', project: 'store' })).code,
     ).toBe('proposal-not-found');
     expect(errorOf(await mcp.call('get_proposal', { ref: 'm/3f2a9c1e' })).code).toBe(
       'invalid-ref',
     );
     expect(
-      errorOf(await mcp.call('get_proposal', { ref: 'mapping://outro/p/abcd1234' })).code,
+      errorOf(await mcp.call('get_proposal', { ref: 'mapping://other/p/abcd1234' })).code,
     ).toBe('project-not-found');
   });
 
-  it('get_proposal_review antes da revisão: nada rejeitado e a revisão não terminou', async () => {
+  it('get_proposal_review before the review: nothing rejected and the review is not finished', async () => {
     const review = ok(
       await mcp.call<Reviewed>('get_proposal_review', { ref: first.proposal.ref }),
     );
@@ -416,16 +417,16 @@ describe('importação inteira', () => {
   });
 });
 
-describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)', () => {
+describe('simulated review (decisions and notes written in the file, as the app does)', () => {
   let cartaoId: string;
   let imageIds: { checkout: string; pagamento: string };
 
-  it('aceita a tela 1 e o projeto; na tela 2 rejeita um item, com nota', async () => {
+  it('accepts screen 1 and the project; on screen 2 rejects an item, with a note', async () => {
     imageIds = {
       checkout: idOf(firstProposal, 'image', 'Checkout'),
-      pagamento: idOf(firstProposal, 'image', 'Pagamento'),
+      pagamento: idOf(firstProposal, 'image', 'Payment'),
     };
-    cartaoId = idOf(firstProposal, 'marking', 'Campo cartão');
+    cartaoId = idOf(firstProposal, 'marking', 'Card field');
     reviewDecide(dir(), first.proposal.id, { level: 'project', id: null }, 'accepted');
     reviewDecide(
       dir(),
@@ -439,19 +440,19 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
       { level: 'image', id: imageIds.pagamento },
       'accepted',
     );
-    // Rejeitar o item rejeita a anotação dele junto (dependência).
+    // Rejecting the item rejects its annotation along with it (dependency).
     reviewDecide(dir(), first.proposal.id, { level: 'item', id: cartaoId }, 'rejected');
     reviewNote(
       dir(),
       first.proposal.id,
       { level: 'item', id: cartaoId },
-      'O campo é mais largo e fica em y 90.',
+      'The field is wider and sits at y 90.',
     );
     reviewNote(
       dir(),
       first.proposal.id,
       { level: 'proposal', id: null },
-      'Faltou a tela de erro.',
+      'The error screen is missing.',
     );
 
     const got = ok(await mcp.call<Got>('get_proposal', { ref: first.proposal.ref }));
@@ -465,23 +466,23 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
     });
     expect(got.levels.containers.map((i) => i.state)).toEqual(['accepted', 'partial']);
     expect(got.notes.map((n) => [n.level, n.text])).toEqual([
-      ['item', 'O campo é mais largo e fica em y 90.'],
-      ['proposal', 'Faltou a tela de erro.'],
+      ['item', 'The field is wider and sits at y 90.'],
+      ['proposal', 'The error screen is missing.'],
     ]);
   });
 
-  it('a revisão só termina quando as aceitas são aplicadas', async () => {
+  it('the review only finishes when the accepted ones are applied', async () => {
     let review = ok(
       await mcp.call<Reviewed>('get_proposal_review', { ref: first.proposal.ref }),
     );
     expect(review.ready).toBe(false);
     expect(review.hint).toContain('0 undecided, 11 accepted without being applied');
 
-    // "Aplicar aceitas": o modelo que a app usa aplica a proposta que o MCP gerou.
+    // "Apply accepted": the model the app uses applies the proposal the MCP generated.
     const project = applyAcceptedOnDisk(dir(), first.proposal.id);
     expect(project.revision).toBe(1);
-    expect(project.containers.map((i) => i.name)).toEqual(['Checkout', 'Pagamento']);
-    expect(project.markings.map((m) => m.name)).toEqual(['Título', 'Botão Pagar']);
+    expect(project.containers.map((i) => i.name)).toEqual(['Checkout', 'Payment']);
+    expect(project.markings.map((m) => m.name)).toEqual(['Title', 'Pay button']);
     expect(project.annotations).toHaveLength(3);
     expect(readProposal(dir(), first.proposal.id)).toMatchObject({
       status: 'applied',
@@ -501,7 +502,7 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
     expect(review.hint).toContain('correct only what was rejected');
   });
 
-  it('get_proposal_review traz só a rejeição, a anotação rejeitada junto e as notas', async () => {
+  it('get_proposal_review brings only the rejection, the rejected annotation along with it and the notes', async () => {
     const review = ok(
       await mcp.call<Reviewed>('get_proposal_review', { ref: first.proposal.ref }),
     );
@@ -510,26 +511,26 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
       ['annotation', 'create', 'rejected'],
     ]);
     const [marking, annotation] = review.rejected;
-    expect(marking!.target).toMatch(/^mapping:\/\/loja\/m\/[0-9a-f]{8}$/);
+    expect(marking!.target).toMatch(/^mapping:\/\/store\/m\/[0-9a-f]{8}$/);
     expect(marking!.via).toBeUndefined();
-    // A anotação foi rejeitada por depender da criação da marcação.
+    // The annotation was rejected because it depends on the marking's creation.
     expect(annotation!.via).toBe(marking!.id);
-    // Notas gerais (item e proposta) vêm à parte, com o alvo legível.
+    // General notes (item and proposal) come separately, with a readable target.
     expect(review.notes.map((n) => [n.level, n.text])).toEqual([
-      ['item', 'O campo é mais largo e fica em y 90.'],
-      ['proposal', 'Faltou a tela de erro.'],
+      ['item', 'The field is wider and sits at y 90.'],
+      ['proposal', 'The error screen is missing.'],
     ]);
     expect(review.notes[0]!.target).toBe(marking!.target);
     expect(review.conflicts).toEqual([]);
   });
 
-  it('o projeto aplicado é lido pelo próprio servidor, e find_by_source acha a origem', async () => {
+  it('the applied project is read by the server itself, and find_by_source finds the origin', async () => {
     const found = ok(
       await mcp.call<{
         total: number;
         matches: { kind: string; ref: string; source: { system: string; id: string } }[];
         proposed?: unknown[];
-      }>('find_by_source', { project: 'loja', system: 'figma', id: '1:12' }),
+      }>('find_by_source', { project: 'store', system: 'figma', id: '1:12' }),
     );
     expect(found.total).toBe(1);
     expect(found.matches[0]).toMatchObject({
@@ -541,7 +542,7 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
       await mcp.call<{ lock: unknown }>('get_marking', { ref: found.matches[0]!.ref }),
     );
     expect(marking).toBeDefined();
-    // O que foi rejeitado não existe no projeto.
+    // What was rejected does not exist in the project.
     expect(
       ok(
         await mcp.call<{ total: number }>('find_by_source', {
@@ -550,21 +551,21 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
         }),
       ).total,
     ).toBe(0);
-    // Funciona no modelo (a app usa a mesma função) e o `source` foi gravado no mapping.json.
+    // Works in the model (the app uses the same function) and the `source` was written in the mapping.json.
     const project = readProject(dir());
     expect(findBySource(project, 'figma', '1:12')).toHaveLength(1);
     expect(findBySource(project, 'figma', '1:10')[0]).toMatchObject({ kind: 'image' });
   });
 });
 
-describe('nova proposta com supersedes (só as correções)', () => {
+describe('new proposal with supersedes (only the corrections)', () => {
   let second: Proposed;
   let pagamentoRef: string;
 
-  it('recria só o que foi rejeitado e a anterior (já aplicada) continua applied', async () => {
+  it('recreates only what was rejected and the previous one (already applied) stays applied', async () => {
     const found = ok(
       await mcp.call<{ matches: { ref: string }[] }>('find_by_source', {
-        project: 'loja',
+        project: 'store',
         system: 'figma',
         id: '1:20',
       }),
@@ -574,13 +575,13 @@ describe('nova proposta com supersedes (só as correções)', () => {
     const firstBefore = readProposal(dir(), first.proposal.id);
     second = await propose(
       mcp,
-      'loja',
+      'store',
       [
         {
           op: 'create_marking',
           as: '$cartao',
           container: pagamentoRef,
-          name: 'Campo cartão',
+          name: 'Card field',
           rect: { x: 20, y: 90, width: 560, height: 70 },
           source: figma('2:21'),
         },
@@ -588,10 +589,10 @@ describe('nova proposta com supersedes (só as correções)', () => {
           op: 'create_annotation',
           marking: '$cartao',
           layer: 'Camada 1',
-          entries: [{ key: 'máscara', value: '0000 0000 0000 0000' }],
+          entries: [{ key: 'mask', value: '0000 0000 0000 0000' }],
         },
       ],
-      { title: 'Correção do campo cartão', supersedes: first.proposal.ref },
+      { title: 'Card field fix', supersedes: first.proposal.ref },
     );
     expect(hashOf(mappingPath())).toBe(before);
     expect(second.proposal).toMatchObject({
@@ -599,14 +600,14 @@ describe('nova proposta com supersedes (só as correções)', () => {
       baseRevision: 1,
     });
     expect(second.reviewChanges).toMatchObject({ total: 2, create: 2 });
-    // A revisão anterior estava completa: sem aviso, e ela continua `applied`.
+    // The previous review was complete: no warning, and it stays `applied`.
     expect(second.warnings ?? []).toEqual([]);
     expect(second.superseded).toMatchObject({
       ref: first.proposal.ref,
       status: 'applied',
     });
-    // Achado 13: a aplicada é histórico e não muda; a resposta explica por quê (e o que a app
-    // mostra), em vez de deixar o agente esperar `superseded`.
+    // Finding 13: the applied one is history and does not change; the response explains why (and what the app
+    // shows), instead of leaving the agent waiting for `superseded`.
     expect(second.superseded).toEqual({
       ref: first.proposal.ref,
       status: 'applied',
@@ -615,7 +616,7 @@ describe('nova proposta com supersedes (só as correções)', () => {
     });
     expect(readProposal(dir(), first.proposal.id)).toEqual(firstBefore);
     expect(readProposal(dir(), first.proposal.id).decisions).toEqual(firstDecisions());
-    const listed = ok(await mcp.call<Listed>('list_proposals', { project: 'loja' }));
+    const listed = ok(await mcp.call<Listed>('list_proposals', { project: 'store' }));
     const row = listed.proposals.find((r) => r.id === first.proposal.id)!;
     expect(row.supersededBy).toEqual([second.proposal.ref]);
     expect(listed.proposals.find((r) => r.id === second.proposal.id)!.supersedes).toBe(
@@ -623,7 +624,7 @@ describe('nova proposta com supersedes (só as correções)', () => {
     );
   });
 
-  it('aceita e aplica a correção: o projeto passa a ter o campo, com a origem', () => {
+  it('accepts and applies the fix: the project now has the field, with the origin', () => {
     const project = acceptAllAndApply(dir(), second.proposal.id);
     expect(project.revision).toBe(2);
     const found = findBySource(project, 'figma', '2:21');
@@ -631,11 +632,11 @@ describe('nova proposta com supersedes (só as correções)', () => {
     expect(found[0]).toMatchObject({ marking: { rect: { y: 90, width: 560 } } });
   });
 
-  it('substituir antes de terminar a revisão avisa o que ficou para trás', async () => {
+  it('replacing before the review finishes warns what was left behind', async () => {
     const markingRef = (
       ok(
         await mcp.call<{ matches: { ref: string }[] }>('find_by_source', {
-          project: 'loja',
+          project: 'store',
           system: 'figma',
           id: '1:12',
         }),
@@ -643,15 +644,15 @@ describe('nova proposta com supersedes (só as correções)', () => {
     ).ref;
     const third = await propose(
       mcp,
-      'loja',
+      'store',
       [
-        { op: 'update_marking', marking: markingRef, name: 'Pagar agora' },
+        { op: 'update_marking', marking: markingRef, name: 'Pay now' },
         { op: 'update_marking', marking: markingRef, move: { dx: 0, dy: 10 } },
       ],
-      { title: 'Ajustes no botão' },
+      { title: 'Button tweaks' },
     );
     expect(third.reviewChanges).toMatchObject({ total: 2, update: 2 });
-    // O usuário aceita um nome e deixa o resto sem decisão.
+    // The user accepts a name and leaves the rest undecided.
     const proposal = readProposal(dir(), third.proposal.id);
     const nameChange = proposal.changes.find((c) => c.field === 'name')!;
     reviewDecide(
@@ -663,12 +664,12 @@ describe('nova proposta com supersedes (só as correções)', () => {
 
     const fourth = await propose(
       mcp,
-      'loja',
+      'store',
       [
-        { op: 'update_marking', marking: markingRef, name: 'Pagar agora' },
+        { op: 'update_marking', marking: markingRef, name: 'Pay now' },
         { op: 'update_marking', marking: markingRef, move: { dx: 0, dy: 20 } },
       ],
-      { title: 'Ajustes no botão (2)', supersedes: third.proposal.ref },
+      { title: 'Button tweaks (2)', supersedes: third.proposal.ref },
     );
     expect(fourth.warnings ?? []).toEqual([
       expect.objectContaining({
@@ -676,12 +677,12 @@ describe('nova proposta com supersedes (só as correções)', () => {
         proposal: third.proposal.ref,
         undecided: 1,
         acceptedNotApplied: 1,
-        // O nome é igual na nova; a posição mudou de valor.
+        // The name is the same in the new one; the position changed value.
         inNewProposal: { same: 1, different: 1, missing: 0 },
       }),
     ]);
     expect(fourth.superseded).toMatchObject({ status: 'superseded' });
-    // A substituída guarda as decisões e ganhou uma revisão (decisão da app + a substituição).
+    // The replaced one keeps the decisions and gained a revision (app decision + the replacement).
     const old = readProposal(dir(), third.proposal.id);
     expect(old.status).toBe('superseded');
     expect(old.revision).toBe(2);
@@ -692,7 +693,7 @@ describe('nova proposta com supersedes (só as correções)', () => {
     expect(got.progress).toMatchObject({ pending: 1, accepted: 1 });
   });
 
-  it('superseded-incomplete conta como presentes as criações sem source que a nova repete (achado 15)', async () => {
+  it('superseded-incomplete counts as present the creations without source that the new one repeats (finding 15)', async () => {
     const operations = (input: Record<string, unknown>) => [
       {
         op: 'create_marking',
@@ -707,16 +708,16 @@ describe('nova proposta com supersedes (só as correções)', () => {
         op: 'create_annotation',
         marking: '$senha',
         type: 'button',
-        values: { id: 'btn_ver_senha', texto: 'Ver' },
+        values: { id: 'btn_ver_senha', texto: 'Show' },
       },
     ];
-    const fifth = await propose(mcp, 'loja', operations({ id: 'input_senha' }), {
+    const fifth = await propose(mcp, 'store', operations({ id: 'input_senha' }), {
       title: 'Senha',
     });
     expect(fifth.reviewChanges).toMatchObject({ total: 3, create: 3 });
     const sixth = await propose(
       mcp,
-      'loja',
+      'store',
       operations({ id: 'input_senha', placeholder: 'Sua senha' }),
       { title: 'Senha (2)', supersedes: fifth.proposal.ref },
     );
@@ -724,7 +725,7 @@ describe('nova proposta com supersedes (só as correções)', () => {
       expect.objectContaining({
         code: 'superseded-incomplete',
         undecided: 3,
-        // A marcação (casada pela origem) e o Button iguais; o Input ganhou o placeholder.
+        // The marking (matched by origin) and the Button are equal; the Input gained the placeholder.
         inNewProposal: { same: 2, different: 1, missing: 0 },
       }),
     ]);
@@ -733,10 +734,10 @@ describe('nova proposta com supersedes (só as correções)', () => {
     ok(await mcp.call('withdraw_proposal', { ref: sixth.proposal.ref }));
   });
 
-  it('supersedes inexistente ou de outro projeto é recusado, sem gravar nada', async () => {
+  it('a nonexistent supersedes, or one from another project, is refused, without writing anything', async () => {
     const before = readdirSync(join(dir(), 'proposals')).length;
     const result = await mcp.call('propose_changes', {
-      project: 'loja',
+      project: 'store',
       title: 'x',
       supersedes: 'p/00000000',
       operations: [{ op: 'create_layer', name: 'Outra' }],
@@ -746,36 +747,36 @@ describe('nova proposta com supersedes (só as correções)', () => {
   });
 });
 
-/** As decisões gravadas pela revisão simulada da primeira proposta (nada mudou ao substituí-la). */
+/** The decisions written by the simulated review of the first proposal (nothing changed when replacing it). */
 function firstDecisions() {
   const p = readProposal(dir(), first.proposal.id);
   return p.decisions;
 }
 
-describe('reexportação: casar por source e propor só o que mudou', () => {
-  it('a mesma exportação, sem diferenças, não gera proposta', async () => {
+describe('re-export: match by source and propose only what changed', () => {
+  it('the same export, without differences, generates no proposal', async () => {
     const found = ok(
       await mcp.call<{ matches: { ref: string }[] }>('find_by_source', {
-        project: 'loja',
+        project: 'store',
         system: 'figma',
         id: '1:11',
       }),
     );
     const titulo = found.matches[0]!.ref;
     const result = await mcp.call('propose_changes', {
-      project: 'loja',
-      title: 'Nada novo',
+      project: 'store',
+      title: 'Nothing new',
       operations: [
-        { op: 'update_marking', marking: titulo, name: 'Título', source: figma('1:11') },
+        { op: 'update_marking', marking: titulo, name: 'Title', source: figma('1:11') },
       ],
     });
     expect(errorOf(result).code).toBe('no-changes');
   });
 
-  it('mudanças campo a campo; rejeitar só uma delas e ler a nota', async () => {
+  it('field-by-field changes; rejecting only one of them and reading the note', async () => {
     const found = ok(
       await mcp.call<{ matches: { ref: string }[] }>('find_by_source', {
-        project: 'loja',
+        project: 'store',
         system: 'figma',
         id: '1:11',
       }),
@@ -783,16 +784,16 @@ describe('reexportação: casar por source e propor só o que mudou', () => {
     const titulo = found.matches[0]!.ref;
     const proposed = await propose(
       mcp,
-      'loja',
+      'store',
       [
         {
           op: 'update_marking',
           marking: titulo,
-          name: 'Título da tela',
+          name: 'Screen title',
           rect: { x: 20, y: 30, width: 400, height: 60 },
         },
       ],
-      { title: 'Reexportação do Checkout' },
+      { title: 'Checkout re-export' },
     );
     const proposal = readProposal(dir(), proposed.proposal.id);
     expect(proposal.changes.map((c) => [c.entity, c.kind, c.field])).toEqual([
@@ -814,7 +815,7 @@ describe('reexportação: casar por source e propor só o que mudou', () => {
       dir(),
       proposed.proposal.id,
       { level: 'change', id: rect.id },
-      'A posição antiga estava certa.',
+      'The old position was right.',
     );
     reviewDecide(
       dir(),
@@ -834,7 +835,7 @@ describe('reexportação: casar por source e propor só o que mudou', () => {
         field: 'rect',
         from: { x: 20, y: 20, width: 400, height: 60 },
         to: { x: 20, y: 30, width: 400, height: 60 },
-        notes: [expect.objectContaining({ text: 'A posição antiga estava certa.' })],
+        notes: [expect.objectContaining({ text: 'The old position was right.' })],
       }),
     ]);
     expect(review.notes).toEqual([]);
@@ -842,30 +843,30 @@ describe('reexportação: casar por source e propor só o que mudou', () => {
     const marking = [...projectIndex(project).markings.values()].find(
       (m) => m.source?.id === '1:11',
     )!;
-    expect(marking.name).toBe('Título da tela');
+    expect(marking.name).toBe('Screen title');
     expect(marking.rect.y).toBe(20);
   });
 
-  it('find_by_source lista o que propostas abertas ainda vão criar (sem duplicar)', async () => {
+  it('find_by_source lists what open proposals will still create (without duplicating)', async () => {
     const proposed = await propose(
       mcp,
-      'loja',
+      'store',
       [
         {
           op: 'add_container',
           as: '$t3',
           file: 'fontes/tela1.png',
-          name: 'Erro',
+          name: 'Error',
           source: figma('1:30'),
         },
       ],
-      { title: 'Tela de erro' },
+      { title: 'Error screen' },
     );
     const found = ok(
       await mcp.call<{
         total: number;
         proposed?: { proposal: string; entity: string; state: string }[];
-      }>('find_by_source', { project: 'loja', system: 'figma', id: '1:30' }),
+      }>('find_by_source', { project: 'store', system: 'figma', id: '1:30' }),
     );
     expect(found.total).toBe(0);
     expect(found.proposed).toEqual([
@@ -875,12 +876,12 @@ describe('reexportação: casar por source e propor só o que mudou', () => {
         state: 'pending',
       }),
     ]);
-    // O nome do arquivo de imagem não colide com o das outras propostas ainda abertas.
+    // The image file name does not collide with that of the other still-open proposals.
     const again = await propose(
       mcp,
-      'loja',
-      [{ op: 'add_container', file: 'fontes/tela1.png', name: 'Erro 2' }],
-      { title: 'Outra tela' },
+      'store',
+      [{ op: 'add_container', file: 'fontes/tela1.png', name: 'Error 2' }],
+      { title: 'Another screen' },
     );
     expect(again.files.images[0]).not.toBe(proposed.files.images[0]);
     expect(proposed.files.images[0]).toMatch(/images\/tela1-?\d*\.webp$/);
@@ -890,30 +891,30 @@ describe('reexportação: casar por source e propor só o que mudou', () => {
   });
 });
 
-describe('conflito e item trancado, recalculados contra o projeto atual', () => {
+describe('conflict and locked item, recomputed against the current project', () => {
   let proposed: Proposed;
   let markingId: string;
 
-  it('o projeto editado depois da proposta aparece como conflito, com o valor atual', async () => {
+  it('the project edited after the proposal shows up as a conflict, with the current value', async () => {
     const project = readProject(dir());
     const marking = [...project.markings].find((m) => m.source?.id === '1:12')!;
     markingId = marking.id;
     proposed = await propose(
       mcp,
-      'loja',
+      'store',
       [
         {
           op: 'update_marking',
           marking: `m/${marking.id.replaceAll('-', '').slice(0, 8)}`,
-          name: 'Pagar já',
+          name: 'Pay it now',
           move: { dx: 0, dy: -10 },
         },
       ],
-      { title: 'Botão' },
+      { title: 'Button' },
     );
-    // Alguém (a app) edita a marcação à mão e trava o item depois da proposta.
+    // Someone (the app) edits the marking by hand and locks the item after the proposal.
     const edited = setMarkingLocked(
-      renameMarking(project, marking.id, 'Pagar!'),
+      renameMarking(project, marking.id, 'Pay!'),
       marking.id,
       true,
     );
@@ -923,9 +924,9 @@ describe('conflito e item trancado, recalculados contra o projeto atual', () => 
     expect(got.project.changedSinceProposal).toBe(true);
     expect(got.conflicts).toBe(1);
     const name = got.changes.find((c) => c.field === 'name')!;
-    expect(name.conflict).toEqual({ current: 'Pagar!' });
-    expect(name).toMatchObject({ from: 'Botão Pagar', to: 'Pagar já' });
-    // A mudança de geometria num item trancado traz o aviso.
+    expect(name.conflict).toEqual({ current: 'Pay!' });
+    expect(name).toMatchObject({ from: 'Pay button', to: 'Pay it now' });
+    // A geometry change on a locked item brings the warning.
     const rect = got.changes.find((c) => c.field === 'rect')!;
     expect(rect.locked).toBe(true);
     expect(rect.conflict).toBeUndefined();
@@ -938,7 +939,7 @@ describe('conflito e item trancado, recalculados contra o projeto atual', () => 
     );
     expect(conflicts.changes.map((c) => c.field)).toEqual(['name']);
     const listed = ok(
-      await mcp.call<Listed>('list_proposals', { project: 'loja', status: 'open' }),
+      await mcp.call<Listed>('list_proposals', { project: 'store', status: 'open' }),
     );
     expect(listed.proposals.find((r) => r.id === proposed.proposal.id)!.conflicts).toBe(
       1,
@@ -948,11 +949,11 @@ describe('conflito e item trancado, recalculados contra o projeto atual', () => 
       await mcp.call<Reviewed>('get_proposal_review', { ref: proposed.proposal.ref }),
     );
     expect(review.conflicts).toEqual([
-      expect.objectContaining({ field: 'name', current: 'Pagar!' }),
+      expect.objectContaining({ field: 'name', current: 'Pay!' }),
     ]);
   });
 
-  it('retirar a proposta: só uma aberta, com a contagem do que se perde', async () => {
+  it('withdrawing the proposal: only an open one, with the count of what is lost', async () => {
     const proposal = readProposal(dir(), proposed.proposal.id);
     reviewDecide(
       dir(),
@@ -976,19 +977,19 @@ describe('conflito e item trancado, recalculados contra o projeto atual', () => 
       status: 'withdrawn',
       revision: 2,
     });
-    // Retirar de novo, ou retirar uma proposta já aplicada, é recusado.
+    // Withdrawing again, or withdrawing an already applied proposal, is refused.
     expect(
       errorOf(await mcp.call('withdraw_proposal', { ref: proposed.proposal.ref })),
     ).toMatchObject({ code: 'not-open', status: 'withdrawn' });
     expect(
       errorOf(await mcp.call('withdraw_proposal', { ref: first.proposal.ref })).code,
     ).toBe('not-open');
-    // O item continua do jeito que a app deixou: a retirada não mexe no projeto.
-    expect(projectIndex(readProject(dir())).markings.get(markingId)!.name).toBe('Pagar!');
+    // The item stays the way the app left it: the withdrawal does not touch the project.
+    expect(projectIndex(readProject(dir())).markings.get(markingId)!.name).toBe('Pay!');
   });
 });
 
-describe('find_types_by_source (especialização v3 aplicada)', () => {
+describe('find_types_by_source (applied v3 specialization)', () => {
   const query = (args: Record<string, unknown>) =>
     mcp.call<{
       total: number;
@@ -1001,9 +1002,9 @@ describe('find_types_by_source (especialização v3 aplicada)', () => {
           sources: { name: string; values?: Record<string, string> }[];
         }[];
       }[];
-    }>('find_types_by_source', { project: 'loja', system: 'figma', ...args });
+    }>('find_types_by_source', { project: 'store', system: 'figma', ...args });
 
-  it('acha o tipo pelo id (mais forte) ou pelo nome, com as propriedades de origem', async () => {
+  it('finds the type by id (stronger) or by name, with the origin properties', async () => {
     const byId = ok(await query({ id: '3f2a9c', name: 'Outro' }));
     expect(byId.total).toBe(1);
     expect(byId.types[0]).toMatchObject({
@@ -1030,27 +1031,27 @@ describe('find_types_by_source (especialização v3 aplicada)', () => {
     expect(ok(await query({ id: '3f2a9c', system: 'sketch' } as never)).total).toBe(0);
   });
 
-  it('exige id e/ou name', async () => {
+  it('requires id and/or name', async () => {
     expect(errorOf(await query({})).code).toBe('missing-query');
   });
 });
 
-describe('add_container e a antiga add_blank_image', () => {
-  const box = { name: 'Cartão', width: 300, height: 200, background: '#FFFFFF' };
+describe('add_container and the old add_blank_image', () => {
+  const box = { name: 'Card', width: 300, height: 200, background: '#FFFFFF' };
 
-  it('add_container planeja sem aviso e vira proposta formatVersion 4', async () => {
+  it('add_container plans without a warning and becomes a formatVersion 4 proposal', async () => {
     const operations = [{ op: 'add_container', ...box }];
     const plan = ok(
       await mcp.call<{ valid: boolean; summary: string[]; warnings?: unknown[] }>(
         'plan_changes',
-        { project: 'loja', operations },
+        { project: 'store', operations },
       ),
     );
     expect(plan.valid).toBe(true);
-    expect(plan.summary[0]).toContain('container "Cartão"');
+    expect(plan.summary[0]).toContain('container "Card"');
     expect(plan.warnings).toBeUndefined();
 
-    const proposed = await propose(mcp, 'loja', operations, { title: 'Container' });
+    const proposed = await propose(mcp, 'store', operations, { title: 'Container' });
     const proposal = readProposal(dir(), proposed.proposal.id);
     expect(proposal.formatVersion).toBe(4);
     expect(
@@ -1058,11 +1059,11 @@ describe('add_container e a antiga add_blank_image', () => {
     ).toBe(true);
   });
 
-  it('add_blank_image continua aplicando, com aviso deprecated-op', async () => {
+  it('add_blank_image still applies, with a deprecated-op warning', async () => {
     const plan = ok(
       await mcp.call<{ valid: boolean; warnings?: { code: string; op: number }[] }>(
         'plan_changes',
-        { project: 'loja', operations: [{ op: 'add_blank_image', ...box }] },
+        { project: 'store', operations: [{ op: 'add_blank_image', ...box }] },
       ),
     );
     expect(plan.valid).toBe(true);
@@ -1072,17 +1073,17 @@ describe('add_container e a antiga add_blank_image', () => {
   });
 });
 
-describe('source nas operações de imagens e marcações', () => {
+describe('source in the image and marking operations', () => {
   const refBySource = async (id: string) =>
     ok(
       await mcp.call<{ matches: { ref: string }[] }>('find_by_source', {
-        project: 'loja',
+        project: 'store',
         system: 'figma',
         id,
       }),
     ).matches[0]!.ref;
 
-  it('define, troca e limpa a origem; cada uma vira a mudança `source`', async () => {
+  it('sets, swaps and clears the origin; each becomes the `source` change', async () => {
     const titulo = await refBySource('1:11');
     const checkout = await refBySource('1:10');
     const operations = [
@@ -1098,7 +1099,7 @@ describe('source nas operações de imagens e marcações', () => {
     ];
     const plan = ok(
       await mcp.call<{ valid: boolean; summary: string[] }>('plan_changes', {
-        project: 'loja',
+        project: 'store',
         operations,
       }),
     );
@@ -1107,7 +1108,7 @@ describe('source nas operações de imagens e marcações', () => {
     expect(plan.summary[1]).toContain('source figma:1:10-v2');
     expect(plan.summary[2]).toContain('source sketch:abc');
 
-    const proposed = await propose(mcp, 'loja', operations, { title: 'Origens' });
+    const proposed = await propose(mcp, 'store', operations, { title: 'Origins' });
     const proposal = readProposal(dir(), proposed.proposal.id);
     const bySource = proposal.changes.filter((c) => c.field === 'source');
     expect(bySource.map((c) => [c.entity, c.from, c.to])).toEqual([
@@ -1118,7 +1119,7 @@ describe('source nas operações de imagens e marcações', () => {
       ],
       ['marking', expect.objectContaining({ id: '1:11' }), null],
     ]);
-    // A criação leva a origem dentro da entidade; url omitida vira null.
+    // The creation carries the origin inside the entity; an omitted url becomes null.
     const created = proposal.changes.find(
       (c) => c.entity === 'marking' && c.kind === 'create',
     )!;
@@ -1127,12 +1128,12 @@ describe('source nas operações de imagens e marcações', () => {
       id: 'abc',
       url: null,
     });
-    // Enquanto a proposta espera a revisão, find_by_source avisa que ela vai criar esse elemento.
+    // While the proposal awaits review, find_by_source warns that it will create that element.
     const found = ok(
       await mcp.call<{ total: number; proposed?: { entity: string }[] }>(
         'find_by_source',
         {
-          project: 'loja',
+          project: 'store',
           system: 'sketch',
           id: 'abc',
         },
@@ -1143,11 +1144,11 @@ describe('source nas operações de imagens e marcações', () => {
     ok(await mcp.call('withdraw_proposal', { ref: proposed.proposal.ref }));
   });
 
-  it('origem sem system ou id é recusada pelo modelo', async () => {
+  it('an origin without system or id is refused by the model', async () => {
     const titulo = await refBySource('1:11');
     const plan = ok(
       await mcp.call<{ valid: boolean; errors?: { code: string }[] }>('plan_changes', {
-        project: 'loja',
+        project: 'store',
         operations: [
           { op: 'update_marking', marking: titulo, source: { system: ' ', id: 'x' } },
         ],
@@ -1158,31 +1159,26 @@ describe('source nas operações de imagens e marcações', () => {
   });
 });
 
-describe('o agente nunca altera o mapping.json', () => {
-  it('nenhuma tool de proposta mexe no mapping.json (nem nas cópias de specs/)', async () => {
+describe('the agent never changes the mapping.json', () => {
+  it('no proposal tool touches the mapping.json (nor the copies in specs/)', async () => {
     const files = [mappingPath(), join(dir(), 'specs', 'sdui.json')];
     const before = files.map((f) => hashOf(f));
     const imagesBefore = projectImages();
 
-    const a = await propose(
-      mcp,
-      'loja',
-      [{ op: 'create_layer', name: 'Eventos de teste' }],
-      {
-        title: 'A',
-      },
-    );
-    const b = await propose(mcp, 'loja', [{ op: 'create_layer', name: 'Outras' }], {
+    const a = await propose(mcp, 'store', [{ op: 'create_layer', name: 'Test events' }], {
+      title: 'A',
+    });
+    const b = await propose(mcp, 'store', [{ op: 'create_layer', name: 'Others' }], {
       title: 'B',
       supersedes: a.proposal.ref,
     });
     ok(
       await mcp.call('plan_changes', {
-        project: 'loja',
+        project: 'store',
         operations: [{ op: 'create_layer', name: 'C' }],
       }),
     );
-    ok(await mcp.call('list_proposals', { project: 'loja' }));
+    ok(await mcp.call('list_proposals', { project: 'store' }));
     ok(await mcp.call('get_proposal', { ref: b.proposal.ref }));
     ok(await mcp.call('get_proposal_review', { ref: b.proposal.ref }));
     ok(await mcp.call('find_by_source', { system: 'figma', id: '1:12' }));
@@ -1190,24 +1186,24 @@ describe('o agente nunca altera o mapping.json', () => {
 
     expect(files.map((f) => hashOf(f))).toEqual(before);
     expect(projectImages()).toEqual(imagesBefore);
-    // Também em lote inválido e em operações que o modelo recusa.
+    // Also on an invalid batch and on operations the model refuses.
     const invalid = await mcp.call<Proposed>('propose_changes', {
-      project: 'loja',
-      title: 'Inválida',
+      project: 'store',
+      title: 'Invalid',
       operations: [{ op: 'delete_container', container: 'i/00000000' }],
     });
     expect(invalid.data.valid).toBe(false);
     expect(files.map((f) => hashOf(f))).toEqual(before);
   });
-  // A guarda estática dos escritores (recursiva) está em staticGuards.test.ts.
+  // The static guard of the writers (recursive) is in staticGuards.test.ts.
 });
 
-describe('projeto com propostas ilegíveis', () => {
-  it('uma pasta quebrada aparece em `broken` sem esconder as outras', async () => {
+describe('project with unreadable proposals', () => {
+  it('a broken folder shows up in `broken` without hiding the others', async () => {
     mkdirSync(join(dir(), 'proposals', 'quebrada'), { recursive: true });
     writeFileSync(join(dir(), 'proposals', 'quebrada', 'proposal.json'), '{ nada');
     mkdirSync(join(dir(), 'proposals', 'vazia'));
-    const listed = ok(await mcp.call<Listed>('list_proposals', { project: 'loja' }));
+    const listed = ok(await mcp.call<Listed>('list_proposals', { project: 'store' }));
     expect(listed.total).toBeGreaterThan(3);
     expect(listed.broken?.map((b) => b.id)).toEqual(['quebrada', 'vazia']);
     expect(listed.broken![0]!.error).toContain('invalid JSON');

@@ -19,13 +19,13 @@ import {
 import type { ImageFormat } from '../../mcp/image/formats';
 import { NOW } from '../model/fixtures';
 
-// Imagens de fixture geradas no teste (PNG, JPEG e WebP) com o mesmo codec do servidor e um
-// projeto de pastas temporárias que as usa. Os pixels seguem fórmulas, então os testes
-// conferem o recorte pela cor de cada lugar da imagem original.
+// Fixture images generated in the test (PNG, JPEG and WebP) with the same codec as the server and a
+// project of temporary folders that uses them. The pixels follow formulas, so the tests
+// check the crop by the color of each place in the original image.
 
 export const SOLID = { form: [16, 160, 48], a: [200, 32, 32], b: [32, 64, 200] } as const;
 
-/** Gradiente suave (R cresce com x, G com y) com três blocos de cor sólida. */
+/** Smooth gradient (R grows with x, G with y) with three solid color blocks. */
 export function patternRaster(width: number, height: number, blocks: Block[]): Raster {
   const r = createRaster(width, height);
   for (let y = 0; y < height; y++) {
@@ -57,7 +57,7 @@ export function pixel(raster: Raster, x: number, y: number): number[] {
   return [...raster.data.subarray(i, i + 4)];
 }
 
-/** Maior diferença entre canais: JPEG e WebP com perdas mudam levemente as cores. */
+/** Largest difference between channels: lossy JPEG and WebP slightly change the colors. */
 export function distance(a: readonly number[], b: readonly number[]): number {
   return Math.max(...a.slice(0, 3).map((v, i) => Math.abs(v - b[i]!)));
 }
@@ -97,16 +97,16 @@ export const IDS = {
   text: containerId('7'),
   bomb: containerId('8'),
   escape: containerId('9'),
-  // Container (sem arquivo): não está em IMAGE_FILES.
+  // Container (without a file): it is not in IMAGE_FILES.
   bgContainer: containerId('d'),
-  // As marcações de cada imagem trocam o primeiro caractere do id da imagem (códigos distintos).
+  // The markings of each image swap the first character of the image id (distinct codes).
   parent: (image: string) => `a${image.slice(1)}`,
   childA: (image: string) => `b${image.slice(1)}`,
   childB: (image: string) => `c${image.slice(1)}`,
 } as const;
 
-/** O código das referências (8 primeiros caracteres hexadecimais do id). */
-/** Cor de fundo do container da fixture. */
+/** The reference code (first 8 hexadecimal characters of the id). */
+/** Background color of the fixture container. */
 export const BLANK_BACKGROUND = '#1060A0';
 
 export const codeOf = (id: string) => id.replaceAll('-', '').slice(0, 8);
@@ -134,7 +134,7 @@ function imageProject(): Project {
     jpeg: IMAGE_SIZE,
     webp: IMAGE_SIZE,
     big: { width: 3000, height: 2000 },
-    // O arquivo tem metade das dimensões registradas no mapping.json.
+    // The file has half the dimensions recorded in mapping.json.
     mismatch: IMAGE_SIZE,
     missing: IMAGE_SIZE,
     text: IMAGE_SIZE,
@@ -179,7 +179,7 @@ export interface ImageWorkspace {
   readonly dir: string;
 }
 
-/** Pasta temporária com o projeto `imagens` e as imagens de fixture em PNG, JPEG e WebP. */
+/** Temporary folder with the `imagens` project and the fixture images in PNG, JPEG and WebP. */
 export async function createImageWorkspace(): Promise<ImageWorkspace> {
   const root = mkdtempSync(join(tmpdir(), 'mapping-mcp-img-'));
   const dir = join(root, 'imagens');
@@ -199,8 +199,8 @@ export async function createImageWorkspace(): Promise<ImageWorkspace> {
       ]),
     ),
   );
-  put(IMAGE_FILES.text, new TextEncoder().encode('isto não é uma imagem'));
-  // Cabeçalho PNG que declara 50 000 × 50 000 pixels: recusado antes de decodificar.
+  put(IMAGE_FILES.text, new TextEncoder().encode('this is not an image'));
+  // PNG header that declares 50,000 × 50,000 pixels: refused before decoding.
   const bomb = new Uint8Array(33);
   bomb.set([
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52,
@@ -208,10 +208,10 @@ export async function createImageWorkspace(): Promise<ImageWorkspace> {
   new DataView(bomb.buffer).setUint32(16, 50_000);
   new DataView(bomb.buffer).setUint32(20, 50_000);
   put(IMAGE_FILES.bomb, bomb);
-  // Link simbólico para um arquivo fora das raízes: a imagem é tratada como inexistente.
-  const outside = join(root, '..', `fora-${Date.now()}`);
+  // Symbolic link to a file outside the roots: the image is treated as nonexistent.
+  const outside = join(root, '..', `outside-${Date.now()}`);
   mkdirSync(outside, { recursive: true });
-  writeFileSync(join(outside, 'segredo.png'), await fixtureFile('png'));
-  symlinkSync(join(outside, 'segredo.png'), join(dir, IMAGE_FILES.escape));
+  writeFileSync(join(outside, 'secret.png'), await fixtureFile('png'));
+  symlinkSync(join(outside, 'secret.png'), join(dir, IMAGE_FILES.escape));
   return { root, dir };
 }
