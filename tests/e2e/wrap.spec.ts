@@ -56,11 +56,11 @@ async function twoMarkings(page: Page, name: string) {
     x: screen.x + screen.width * fx,
     y: screen.y + screen.height * (fx === 0.2 ? 0.25 : 0.55),
   }));
-  await setMode(page, 'Desenhar');
+  await setMode(page, 'Draw');
   for (const s of spots) {
     await drag(page, s, { x: s.x + sizeW, y: s.y + sizeH });
   }
-  await setMode(page, 'Navegar');
+  await setMode(page, 'Navigate');
   const centers = spots.map((s) => ({ x: s.x + sizeW / 2, y: s.y + sizeH / 2 }));
 
   const before = (await exportMapping(page)).mapping;

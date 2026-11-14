@@ -20,20 +20,21 @@ import {
 } from '../../src/model';
 import { solidPng } from './png';
 
-// Etapa Sugestões no campo de texto: o projeto "Sugestões Kotlin" (biblioteca Kotlin aplicada e
-// duas data classes) para o roteiro R14 do `docs/TESTING.md`. O zip sai daqui
-// (`scripts/suggestionsKotlin.mjs`) e o teste `tests/examples/suggestionsKotlin.test.ts`
-// confere que `examples/sugestoes-kotlin.zip` está em dia.
+// Text-field Suggestions stage: the "Sugestões Kotlin" project (Kotlin library applied and
+// two data classes) for script R14 of `docs/TESTING.md`. The zip comes from here
+// (`scripts/suggestionsKotlin.mjs`) and the test `tests/examples/suggestionsKotlin.test.ts`
+// checks that `examples/sugestoes-kotlin.zip` is up to date.
 
+// pt-BR kept: shared fixture data (project name, 'Usuario'/'Endereco' names, layer 'Notas') asserted by tests/examples (examples/sugestoes-kotlin.zip byte check)
 export const PACKAGE_DIR = 'libraries/kotlin';
 export const NOW = '2026-10-28T12:00:00.000Z';
-/** Data fixa nas entradas do zip: o mesmo conteúdo gera sempre os mesmos bytes. */
+/** Fixed date on the zip entries: the same content always generates the same bytes. */
 const ENTRY_DATE = new Date('2026-10-28T00:00:00Z');
 export const IMAGE_FILE = 'images/telas.png';
 export const NAMES = { user: 'Usuario', address: 'Endereco' } as const;
 export const ANNOTATION_IDS = { user: 'A_USUARIO', address: 'A_ENDERECO' } as const;
 
-/** Todos os arquivos de texto do pacote Kotlin (caminho relativo → texto), ordenados. */
+/** All text files of the Kotlin package (relative path → text), sorted. */
 export function packageTexts(): Map<string, string> {
   const out = new Map<string, string>();
   const walk = (dir: string): void => {
@@ -77,7 +78,7 @@ const PROPERTIES: Record<
   ],
 };
 
-/** O projeto: imagem, biblioteca Kotlin aplicada e as data classes `Usuario` e `Endereco`. */
+/** The project: image, applied Kotlin library and the data classes `Usuario` and `Endereco`. */
 export function project(): Project {
   const spec = loadKotlinSpec();
   const texts = packageTexts();
@@ -136,7 +137,7 @@ export function project(): Project {
   return p;
 }
 
-/** Os arquivos do zip: `mapping.json`, `specs/` com o pacote Kotlin e a imagem. */
+/** The zip files: `mapping.json`, `specs/` with the Kotlin package and the image. */
 export function files(): Map<string, string | Buffer> {
   const out = new Map<string, string | Buffer>();
   const p = project();
@@ -150,7 +151,7 @@ export function files(): Map<string, string | Buffer> {
   return out;
 }
 
-/** Os bytes de `examples/sugestoes-kotlin.zip` (determinísticos). */
+/** The bytes of `examples/sugestoes-kotlin.zip` (deterministic). */
 export async function suggestionsZip(): Promise<Buffer> {
   const all = files();
   const zip = new JSZip();

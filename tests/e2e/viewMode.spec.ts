@@ -91,7 +91,7 @@ async function twoMarkedScreens(page: Page, host: Locator): Promise<[Rect, Rect]
       { x: mark.x, y: mark.y },
       { x: mark.x + mark.width, y: mark.y + mark.height },
     );
-    await setMode(page, 'Navegar');
+    await setMode(page, 'Navigate');
     marks.push(mark);
   }
   const [first, second] = marks;
@@ -173,6 +173,6 @@ test('enter, uncheck Outline and a layer with a drawing, Screens only, Esc, and 
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.getByRole('button', { name: 'View', exact: true }).click();
   await expect(panel(page)).toBeVisible();
-  await expect(box(page, 'Setas')).not.toBeChecked();
+  await expect(box(page, 'Arrows')).not.toBeChecked();
   await expect(box(page, 'Notas')).not.toBeChecked();
 });
