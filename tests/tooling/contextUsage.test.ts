@@ -402,14 +402,14 @@ describe('CM1 — flow texts that use the measure (decisions 5 to 10)', () => {
   it('implementar-fila: step 3 of "In the new session" records the context with --medir --max <max_tokens>', () => {
     const fresh = between(queue, '**In the new session**', '## End');
     expect(fresh).toContain('--medir --max <max_tokens>');
-    expect(fresh).not.toContain('`painel.py context <pasta> <pct>`');
+    expect(fresh).not.toContain('`painel.py context <folder> <pct>`');
     expect(fresh).not.toContain('`painel.py context <folder> <pct>`');
   });
 
   it('implementar-fila: the "Session switch" measures with --max and the ctx of its own cost comes from the script', () => {
     expect(switching).toContain('`node scripts/ci/contextUsage.mjs --max <max_tokens>`');
-    expect(switching).toContain('`painel.py context <pasta> --medir --max <max_tokens>`');
-    expect(switching).toContain('`painel.py context <pasta> <pct> --fonte get_session`');
+    expect(switching).toContain('`painel.py context <folder> --medir --max <max_tokens>`');
+    expect(switching).toContain('`painel.py context <folder> <pct> --fonte get_session`');
     const old = between(
       switching,
       '**In the old session:**',

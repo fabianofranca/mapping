@@ -304,74 +304,70 @@ describe('painel.py: sessions per stage (FC2, decision 8)', () => {
   });
 });
 
-// Etapa #1324 (CR1): CI resiliente do lado da fase e do coordenador.
-describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
+// Stage #1324 (CR1): resilient CI on the phase's and the coordinator's side.
+describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
   const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
   const processDoc = readFileSync('docs/PROCESS.md', 'utf8');
-  const fase = section(flow, '## Para a sessão da fase');
-  // O item 6 é uma lista: o bloco vai do "6." até o "7." (etapa #1466, decisão 9).
-  const item6 = between(fase, '\n6. ', '\n7. ');
-  const leitura = between(item6, '**Leitura do CI:**', '\n   - **');
-  const reserva = between(skill, '**Conferências de reserva:**', '**CI vermelho');
-  const ciVermelho = between(
-    skill,
-    '**CI vermelho',
-    '## Mudanças na fila durante a execução',
-  );
+  const phase = section(flow, '## For the phase session');
+  // Item 6 is a list: the block goes from "6." to "7." (stage #1466, decision 9).
+  const item6 = between(phase, '\n6. ', '\n7. ');
+  const reading = between(item6, '**Reading CI:**', '\n   - **');
+  const fallback = between(skill, '**Fallback checks:**', '**Red CI');
+  const redCi = between(skill, '**Red CI', '## Queue changes during the run');
 
-  it('"Para a sessão da fase": send_later de 4 min e de 2 em 2 min, segunda reexecução pela fase e aviso (decisões 1 e 2)', () => {
-    expect(item6).toMatch(/primeira conferência com um `send_later` de 4 min/);
-    expect(item6).toMatch(/de 2 em 2 min até 20 min/);
-    expect(item6).toMatch(/depois disso, de 8 em 8/);
-    expect(item6).not.toMatch(/`send_later` de 8 min/);
-    expect(item6).toMatch(/nunca encerre o turno/i);
+  it('"For the phase session": send_later of 4 min and every 2 min, second rerun by the phase and notice (decisions 1 and 2)', () => {
+    expect(item6).toMatch(/first check with a `send_later` of 4 min/);
+    expect(item6).toMatch(/every 2 min up to 20 min/);
+    expect(item6).toMatch(/after that, every 8/);
+    expect(item6).not.toMatch(/`send_later` of 8 min/);
+    expect(item6).toMatch(/never end the turn/i);
     expect(item6).toContain('ci-rerun.yml');
     expect(item6).toContain('node scripts/ci/ciRerun.mjs decide');
     expect(item6).toContain('gh run rerun <id> --failed');
-    expect(item6).toMatch(/depois de \*\*2 reexecuções sem sucesso\*\*/);
+    expect(item6).toMatch(/after \*\*2 reruns without success\*\*/);
     expect(item6).toContain('CI travado: <link da execução>, tentativas 1 a 3');
-    expect(item6).toMatch(/falha legítima/i);
+    expect(item6).toMatch(/legitimate failure/i);
   });
 
-  it('Leitura do CI: check runs, sem get_status, commit atual e só o workflow CI (decisões 1 a 4)', () => {
-    expect(leitura).toContain('`get_check_runs`');
-    expect(leitura).toMatch(/nunca com `get_status`/);
-    expect(leitura).toMatch(/`perPage` 100/);
+  it('Reading CI: check runs, no get_status, current commit and only the CI workflow (decisions 1 to 4)', () => {
+    expect(reading).toContain('`get_check_runs`');
+    expect(reading).toMatch(/never with `get_status`/);
+    expect(reading).toMatch(/`perPage` 100/);
     for (const job of ['epic', 'static', 'test', 'coverage', 'build', 'check', 'e2e'])
-      expect(leitura).toContain(`\`${job}\``);
-    expect(leitura).toMatch(/`queued` ou `in_progress`/);
-    expect(leitura).toMatch(/`failure`, `cancelled` ou `timed_out`/);
-    expect(leitura).toMatch(/execução mais recente de cada job/);
-    expect(leitura).toMatch(/outros workflows não contam/);
-    expect(leitura).toMatch(/verde de um commit anterior não vale/);
-    expect(leitura).toMatch(
-      /Sem `check` e `e2e` \(e `epic`, no PR de épico\) em `success` e sem falha, o CI ainda roda/,
+      expect(reading).toContain(`\`${job}\``);
+    expect(reading).toMatch(/`queued` or `in_progress`/);
+    expect(reading).toMatch(/`failure`, `cancelled` or `timed_out`/);
+    expect(reading).toMatch(/most recent run of each job/);
+    expect(reading).toMatch(/other workflows do not count/);
+    expect(reading).toMatch(/green of an earlier commit does not count/);
+    expect(reading).toMatch(
+      /Without `check` and `e2e` \(and `epic`, on an epic PR\) at `success` and with no failure, CI is still running/,
     );
-    expect(leitura).not.toMatch(/Ignore os check runs `skipped`/);
-    expect(leitura).not.toMatch(/nenhum outro com/);
+    expect(reading).not.toMatch(/Ignore the `skipped` check runs/);
+    expect(reading).not.toMatch(/no other with/);
   });
 
-  it('o item 6 é uma lista com Espera do CI, Leitura do CI, Runner abandonado e Teto; a fase mescla o próprio PR (decisões 9 e 12)', () => {
+  it('item 6 is a list with CI wait, Reading CI, Abandoned runner and Ceiling; the phase merges its own PR (decisions 9 and 12)', () => {
     for (const sub of [
-      'Espera do CI',
-      'Leitura do CI',
-      'Runner abandonado',
-      'Teto do `dist/index.html`',
+      'CI wait',
+      'Reading CI',
+      'Abandoned runner',
+      'Ceiling of `dist/index.html`',
     ])
       expect(item6).toContain(`   - **${sub}:**`);
-    expect(item6).toMatch(/mescle o próprio PR no épico/);
-    expect(item6).toMatch(/nunca deixado para o coordenador/);
-    expect(item6).toMatch(/cada push[^\n]*recomeça a contagem/);
-    expect(item6).toMatch(/nunca rebase/);
-    const item7 = between(fase, '\n7. ', '\n8. ');
-    expect(item7).toMatch(/PR mesclado/);
-    const correcao = section(flow, '## Fase de correção');
-    expect(correcao).toMatch(/mescla o próprio PR/);
+    expect(item6).toMatch(/merge your own PR into the epic/);
+    expect(item6).toMatch(/never left to the coordinator/);
+    expect(item6).toMatch(/each push[^\n]*restarts the 20 min count/);
+    expect(item6).toMatch(/never rebase/);
+    const item7 = between(phase, '\n7. ', '\n8. ');
+    expect(item7).toMatch(/PR already merged/);
+    const fix = section(flow, '## Fix phase');
+    expect(fix).toMatch(/merges its own PR/);
   });
 
-  it('o verde exige cada job do ci.yml fora do needs do check, junto com success (achado 6, decisão 11)', () => {
+  it('green requires each ci.yml job outside the check needs, together with success (finding 6, decision 11)', () => {
     const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
     const afterJobs = ci.slice(ci.indexOf('\njobs:\n'));
     const jobs = [...afterJobs.matchAll(/^ {2}([\w-]+):\s*$/gm)].map((m) => m[1]!);
@@ -379,16 +375,16 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     const needsLine = afterJobs.match(
       /^ {2}check:\n(?:(?: {4}|\n).*\n)*? {4}needs: \[([^\]]*)\]/m,
     );
-    if (needsLine === null) throw new Error('needs do job check não achado');
+    if (needsLine === null) throw new Error('needs of the check job not found');
     const needs = needsLine[1]!.split(',').map((n) => n.trim());
-    for (const job of jobs) expect(leitura).toContain(`\`${job}\``);
-    const verde = between(leitura, 'Verde = ', 'O `check` não espera');
-    const fora = jobs.filter((j) => j !== 'check' && !needs.includes(j));
-    expect(fora).toContain('e2e');
-    expect(fora).toContain('epic');
-    for (const job of fora) {
-      expect(verde).toContain(`\`${job}\``);
-      expect(verde).toContain('`success`');
+    for (const job of jobs) expect(reading).toContain(`\`${job}\``);
+    const green = between(reading, 'Green = ', '`check` does not wait');
+    const outside = jobs.filter((j) => j !== 'check' && !needs.includes(j));
+    expect(outside).toContain('e2e');
+    expect(outside).toContain('epic');
+    for (const job of outside) {
+      expect(green).toContain(`\`${job}\``);
+      expect(green).toContain('`success`');
     }
   });
 
@@ -402,8 +398,8 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(conferencia).toContain('docs/FLOW.md');
     expect(conferencia).not.toContain('nenhum outro com');
     expect(conferencia).not.toMatch(/ignore os `skipped`/i);
-    expect(skill).not.toMatch(/Ignore os check runs `skipped`/);
-    expect(flow).not.toMatch(/Ignore os check runs `skipped`/);
+    expect(skill).not.toMatch(/Ignore the `skipped` check runs/);
+    expect(flow).not.toMatch(/Ignore the `skipped` check runs/);
   });
 
   it('PR que espera o coordenador: send_later, gatilhos, log do aviso e merge no mesmo turno (#1476, decisões 12 a 15)', () => {
@@ -763,8 +759,7 @@ describe('CI preso na fila (#1669)', () => {
     expect(filha).toContain('CI preso na fila');
     const espera = between(skill, '**PR que espera o coordenador:**', '\n\n');
     expect(espera).toContain('CI preso na fila');
-    const reserva = between(skill, '**Conferências de reserva:**', '**CI vermelho');
-    expect(reserva).toContain('CI preso na fila');
+        expect(reserva).toContain('CI preso na fila');
   });
 
   it('o skill ficou pequeno: o parágrafo novo e as remissões somam menos de 60 linhas (decisão 11)', () => {

@@ -363,12 +363,12 @@ describe('painel.py — sections in Parallel (FM2, decision 14)', () => {
   it(
     'FLOW.md, PROCESS.md and SKILL.md are compared by section; TESTING.md as before',
     () => {
-      expect(
-        reason('docs/FLOW.md#fix-phase', 'docs/FLOW.md#for-the-tester'),
-      ).toBe('#2 começa');
-      expect(
-        reason('docs/FLOW.md#fix-phase', 'docs/FLOW.md#fix-phase'),
-      ).toBe('#2 arquivo docs/FLOW.md#fix-phase com #1');
+      expect(reason('docs/FLOW.md#fix-phase', 'docs/FLOW.md#for-the-tester')).toBe(
+        '#2 começa',
+      );
+      expect(reason('docs/FLOW.md#fix-phase', 'docs/FLOW.md#fix-phase')).toBe(
+        '#2 arquivo docs/FLOW.md#fix-phase com #1',
+      );
       expect(reason('docs/FLOW.md', 'docs/FLOW.md#fix-phase')).toBe(
         '#2 arquivo docs/FLOW.md#fix-phase com #1',
       );
@@ -434,7 +434,7 @@ describe('painel.py — every .md of docs/ and of the root by section (TS1, deci
     expect(reason(doc, `${doc}#performance`)).toBe(
       `#2 arquivo ${doc}#performance com #1`,
     );
-    expect(reason(`${doc}#performance`, arq)).toBe(`#2 ficha incompleta (toca: ${doc})`);
+    expect(reason(`${doc}#performance`, doc)).toBe(`#2 ficha incompleta (toca: ${doc})`);
   });
 
   it('the root .md are compared by section, with ./ normalized and a new root .md', () => {
@@ -514,9 +514,7 @@ describe('painel.py — every .md of docs/ and of the root by section (TS1, deci
     const parallel = section(skill, '## Parallel');
     expect(parallel).toContain('docs/ARCHITECTURE.md#performance');
     expect(parallel).toContain('CLAUDE.md#');
-    expect(parallel).not.toContain(
-      'the `docs/ARCHITECTURE.md` count as a whole file',
-    );
+    expect(parallel).not.toContain('the `docs/ARCHITECTURE.md` count as a whole file');
     expect(parallel).not.toContain('The `CLAUDE.md` and the other files count whole');
 
     const ficha = section(skill, '### Stage ficha');
@@ -533,22 +531,26 @@ describe('painel.py — every .md of docs/ and of the root by section (TS1, deci
     expect(steps).toContain('CLAUDE.md#');
     expect(steps).not.toContain('including the `CLAUDE.md`, without an anchor');
 
-    const detalhar = between(reading('docs/PROCESS.md'), '**Detalhar uma etapa:**', '\n');
+    const detailing = between(reading('docs/PROCESS.md'), '**Detailing a stage:**', '\n');
     expect(detailing).toContain('docs/ARCHITECTURE.md#');
     expect(detailing).toContain('CLAUDE.md#');
 
-    const dono = section(reading('docs/FLOW.md'), '## Para o dono, nos três chats');
+    const owner = section(
+      reading('docs/FLOW.md'),
+      '## For the owner, in the three chats',
+    );
     expect(owner).toContain('docs/*.md');
     expect(owner).toContain('CLAUDE.md');
   });
 });
 
-describe('painel.py slug (FM2, decisão 14)', () => {
+describe('painel.py slug (FM2, decision 14)', () => {
   it('the ## title in lowercase, without accents, with - between the runs and without - at the ends', () => {
     expect(run('slug', '3. Per stage').trim()).toBe('3-per-stage');
     expect(run('slug', 'For the owner, in the three chats').trim()).toBe(
       'for-the-owner-in-the-three-chats',
     );
+    // accent stripping needs accented input, so these two stay in Portuguese
     expect(run('slug', 'Mudanças na fila durante a execução').trim()).toBe(
       'mudancas-na-fila-durante-a-execucao',
     );
@@ -590,7 +592,7 @@ describe('skill and FLOW texts (FM2)', () => {
   });
 
   it('the Parallel and step 4 of detalhar-backlog cite the section', () => {
-    expect(section(reading(SKILL), '## Paralelo')).toContain('docs/FLOW.md#');
+    expect(section(reading(SKILL), '## Parallel')).toContain('docs/FLOW.md#');
     const detail = reading(DETAIL);
     expect(detail).toContain('SKILL.md#');
     expect(detail).toContain('`##`');
@@ -598,6 +600,8 @@ describe('skill and FLOW texts (FM2)', () => {
 
   it('item 2 of "For the owner" cites the comparison by section', () => {
     const flow = reading('docs/FLOW.md');
-    expect(section(flow, '## For the owner, in the three chats')).toContain('per `##` section');
+    expect(section(flow, '## For the owner, in the three chats')).toContain(
+      'per `##` section',
+    );
   });
 });

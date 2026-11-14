@@ -1,8 +1,8 @@
 // @vitest-environment node
-// Fase FS1 (etapa #1322): a fila sem espera. Confere, lendo os arquivos do fluxo de entrega, que o
-// skill da fila escolhe a versão do MCP no fechamento, roda a correção dependente como `bug`
-// `ready`, não conta etapa parada como vaga, confere os `bug` dela no fim e fecha durante o CI, e
-// que o painel não mantém mais a tabela de issues.
+// Phase FS1 (stage #1322): the queue without waiting. Checks, by reading the delivery flow files,
+// that the queue skill chooses the MCP version at the closing, runs the dependent fix as a `ready`
+// `bug`, does not count a stopped stage as a slot, checks its own `bug` rows at the end and closes
+// during the CI, and that the panel no longer keeps the issues table.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -10,262 +10,270 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
 
-const FILA = '.claude/skills/implementar-fila';
+const QUEUE = '.claude/skills/implementar-fila';
 const read = (p: string): string => readFileSync(p, 'utf8');
-const fila = read(`${FILA}/SKILL.md`);
-const detalhar = read('.claude/skills/detalhar-backlog/SKILL.md');
+const queue = read(`${QUEUE}/SKILL.md`);
+const detail = read('.claude/skills/detalhar-backlog/SKILL.md');
 const flow = read('docs/FLOW.md');
 const processDoc = read('docs/PROCESS.md');
-const page = read(`${FILA}/painel/index.html`);
-const painelPy = read(`${FILA}/painel/painel.py`);
+const page = read(`${QUEUE}/painel/index.html`);
+const painelPy = read(`${QUEUE}/painel/painel.py`);
 
-describe('implementar-fila: versão do MCP no fechamento (decisão 1)', () => {
-  const regras = section(fila, '## Regras desta fila');
-  const regra3 = regras.slice(regras.indexOf('\n3. '));
+describe('implementar-fila: MCP version at the closing (decision 1)', () => {
+  const rules = section(queue, '## Rules of this queue');
+  const rule3 = rules.slice(rules.indexOf('\n3. '));
 
-  it('a regra 3 diz que a versão é provisória e escolhida no fechamento', () => {
-    expect(regra3).toContain('provisória');
-    expect(regra3).toContain('escolhida no fechamento');
-    expect(regra3).toContain('git merge origin/main');
-    expect(regra3).toContain('tests/mcp/version.test.ts');
-    expect(regra3).not.toContain('fixada ao começar');
+  it('rule 3 says the version is provisional and chosen at the closing', () => {
+    expect(rule3).toContain('provisional');
+    expect(rule3).toContain('chosen at the closing');
+    expect(rule3).toContain('git merge origin/main');
+    expect(rule3).toContain('tests/mcp/version.test.ts');
+    expect(rule3).not.toContain('fixed at the start');
   });
 
-  it('o passo 1 de "Por etapa" usa a versão provisória, não fixa', () => {
-    const porEtapa = section(fila, '## 3. Por etapa');
-    expect(porEtapa).toContain('versão provisória do MCP');
-    expect(porEtapa).not.toContain('Fixe a versão do MCP');
+  it('step 1 of "Per stage" uses the provisional version, not a fixed one', () => {
+    const perStage = section(queue, '## 3. Per stage');
+    expect(perStage).toContain('provisional MCP version');
+    expect(perStage).not.toContain('Fix the MCP version');
   });
 
-  it('o fechamento escolhe a versão antes do push e o Merge confere o SERVER_VERSION da origin/main', () => {
-    const porEtapa = section(fila, '## 3. Por etapa');
-    expect(porEtapa).toContain('SERVER_VERSION');
-    const merge = section(fila, '## Merge');
+  it('the closing chooses the version before the push and the Merge checks the SERVER_VERSION of origin/main', () => {
+    const perStage = section(queue, '## 3. Per stage');
+    expect(perStage).toContain('SERVER_VERSION');
+    const merge = section(queue, '## Merge');
     expect(merge).toContain('SERVER_VERSION');
     expect(merge).toContain('origin/main');
   });
 });
 
-describe('implementar-fila: paralelo e ordem (decisões 2 e 3)', () => {
-  const paralelo = section(fila, '## Paralelo');
+describe('implementar-fila: parallel and order (decisions 2 and 3)', () => {
+  const parallel = section(queue, '## Parallel');
 
-  it('"Paralelo" não tem mais a cláusula do MCP', () => {
-    expect(paralelo).not.toMatch(/não mudam o MCP/);
-    expect(paralelo).toMatch(/não mudam o schema ao mesmo tempo/);
-    expect(paralelo).toContain('mcp/version.ts');
+  it('"Parallel" no longer has the MCP clause', () => {
+    expect(parallel).not.toMatch(/do not change the MCP/);
+    expect(parallel).toMatch(/do not change the schema at the same time/);
+    expect(parallel).toContain('mcp/version.ts');
   });
 
-  it('só `em andamento` ocupa vaga e os "Toca em:" se comparam também com as etapas paradas', () => {
-    expect(paralelo).toContain('só as etapas `em andamento` ocupam vaga');
-    expect(paralelo).toContain('esperando dono');
-    expect(paralelo).toMatch(/paradas/);
+  it('only `em andamento` takes a slot and the "Toca em:" are also compared with the stopped stages', () => {
+    expect(parallel).toContain('only the `em andamento` stages take a slot');
+    expect(parallel).toContain('esperando dono');
+    expect(parallel).toMatch(/stopped/);
   });
 
-  it('a "Ordem" não fala mais em ordem das versões', () => {
-    expect(section(fila, '## 2. Fila')).not.toContain('ordem das versões');
-  });
-});
-
-describe('implementar-fila: correção dependente vira bug ready (decisões 4 e 5)', () => {
-  const porEtapa = section(fila, '## 3. Por etapa');
-  const mudancas = section(fila, '## Mudanças na fila durante a execução');
-
-  it('o passo de correção separa os achados que dependem de outro épico e cria o `bug` `ready`', () => {
-    expect(porEtapa).toContain('depende de #N');
-    expect(porEtapa).toContain('(correção que depende de #N)');
-    expect(porEtapa).toContain('**Depende de:** #N');
-    expect(porEtapa).toContain('severity: high');
-    expect(porEtapa).toContain('`kind=bug`');
-  });
-
-  it('o `bug` da própria fila entra mesmo com a lista `#n ...`', () => {
-    expect(mudancas).toContain('kind=bug');
-    expect(mudancas).toContain('lista `#n ...`');
+  it('the "Order" no longer talks about the order of the versions', () => {
+    expect(section(queue, '## 2. Queue')).not.toContain('order of the versions');
   });
 });
 
-describe('implementar-fila: o Fim confere os bug da fila (decisão 6)', () => {
-  const fim = section(fila, '## Fim');
+describe('implementar-fila: a dependent fix becomes a ready bug (decisions 4 and 5)', () => {
+  const perStage = section(queue, '## 3. Per stage');
+  const changes = section(queue, '## Queue changes during the run');
 
-  it('confere as linhas kind=bug antes de encerrar', () => {
-    expect(fim).toContain('kind=bug');
-    expect(fim).toContain('aguardando');
-    expect(fim).toContain('falhou');
-    expect(fim).toContain('esperando dono');
+  it('the fix step separates the findings that depend on another epic and creates the `ready` `bug`', () => {
+    expect(perStage).toContain('depende de #N');
+    expect(perStage).toContain('(correção que depende de #N)');
+    expect(perStage).toContain('**Depende de:** #N');
+    expect(perStage).toContain('severity: high');
+    expect(perStage).toContain('`kind=bug`');
+  });
+
+  it("the queue's own `bug` enters even with the `#n ...` list", () => {
+    expect(changes).toContain('kind=bug');
+    expect(changes).toContain('`#n ...` list');
   });
 });
 
-describe('detalhar-backlog: Depende de (decisão 7)', () => {
-  it('exige Depende de sobre as ready e in-progress com arquivo em comum', () => {
-    expect(detalhar).toContain('`ready` ou `in-progress`');
-    expect(detalhar).toContain('arquivo em comum');
-    expect(detalhar).toContain('mcp/version.ts');
-    expect(detalhar).not.toContain('fixado quando o épico começa');
-    expect(detalhar).toContain('escolhido no fechamento do épico');
-  });
+describe('implementar-fila: the End checks the queue bug rows (decision 6)', () => {
+  const end = section(queue, '## End');
 
-  it('o coordenador compara as prontas da rodada ao receber cada PRONTA', () => {
-    const durante = section(detalhar, '## 4. Durante');
-    expect(durante).toContain('Sobreposição');
-    expect(durante).toContain('Depende de');
-    expect(durante).toContain('ORDEM');
+  it('checks the kind=bug rows before ending', () => {
+    expect(end).toContain('kind=bug');
+    expect(end).toContain('aguardando');
+    expect(end).toContain('falhou');
+    expect(end).toContain('esperando dono');
   });
 });
 
-describe('implementar-fila: fechamento durante o CI (decisão 9)', () => {
-  it('as issues do que ficou para depois e o comentário saem por um subagente durante o CI', () => {
-    const porEtapa = section(fila, '## 3. Por etapa');
-    expect(porEtapa).toContain('durante o CI');
-    expect(porEtapa).toContain('Closes #<etapa>');
-    const merge = section(fila, '## Merge');
-    expect(merge).toContain('não espera');
-    expect(merge).toContain('subagente');
+describe('detalhar-backlog: Depende de (decision 7)', () => {
+  it('requires Depende de on the ready and in-progress ones with a file in common', () => {
+    expect(detail).toContain('`ready` or `in-progress`');
+    expect(detail).toContain('file in common');
+    expect(detail).toContain('mcp/version.ts');
+    expect(detail).not.toContain('fixed when the epic starts');
+    expect(detail).toContain('chosen at the epic closing');
+  });
+
+  it("the coordinator compares the round's ready ones when receiving each PRONTA", () => {
+    const during = section(detail, '## 4. During');
+    expect(during).toContain('Sobreposição');
+    expect(during).toContain('Depende de');
+    expect(during).toContain('ORDEM');
   });
 });
 
-describe('docs: processo e mensagens (decisão 8)', () => {
-  it('o item "Versão do MCP por épico" diz que a versão é provisória até o fechamento', () => {
-    expect(processDoc).toContain('provisória até o fechamento');
-    expect(processDoc).toContain('próxima livre na `origin/main`');
-  });
-
-  it('o FLOW cita as novidades da fila e do detalhamento', () => {
-    expect(flow).toContain('versão do MCP no fechamento');
-    expect(flow).toContain('`Depende de` cobre as `ready` e `in-progress`');
-    const correcao = section(flow, '## Fase de correção');
-    expect(correcao).toContain('depende de #N');
-    expect(correcao).toContain('`bug` `ready`');
+describe('implementar-fila: closing during the CI (decision 9)', () => {
+  it('the issues for what was left for later and the comment go out through a subagent during the CI', () => {
+    const perStage = section(queue, '## 3. Per stage');
+    expect(perStage).toContain('during the CI');
+    expect(perStage).toContain('Closes #<etapa>');
+    const merge = section(queue, '## Merge');
+    expect(merge).toContain('does not wait');
+    expect(merge).toContain('subagent');
   });
 });
 
-describe('painel sem a tabela de issues (decisão 10)', () => {
-  it('a página troca a seção pelo cartão com o link da busca do GitHub', () => {
-    expect(page).not.toContain('Bugs e roadmaps por etapa');
+describe('docs: process and messages (decision 8)', () => {
+  it('the "MCP version per epic" item says the version is provisional until the closing', () => {
+    expect(processDoc).toContain('provisional until the closing');
+    expect(processDoc).toContain('next free one on `origin/main`');
+  });
+
+  it('the FLOW cites the news of the queue and of the detailing', () => {
+    expect(flow).toContain('MCP version at closing');
+    expect(flow).toContain('`Depende de` covers the `ready` and `in-progress` ones');
+    const fix = section(flow, '## Fix phase');
+    expect(fix).toContain('depende de #N');
+    expect(fix).toContain('`ready` `bug`');
+  });
+});
+
+describe('panel without the issues table (decision 10)', () => {
+  it('the page swaps the section for the card with the GitHub search link', () => {
+    expect(page).not.toContain('Bugs and roadmaps per stage');
     expect(page).not.toContain('mp-issues');
-    expect(page).toContain('Issues criadas pela fila');
+    expect(page).toContain('Issues created by the queue');
     expect(page).toContain(
       'https://github.com/fabianofranca/mapping/issues?q=is%3Aissue+is%3Aopen+%22Origem%3A+etapa%22',
     );
   });
 
-  it('o painel.py não tem o subcomando issue nem o issues.json', () => {
+  it('painel.py has neither the issue subcommand nor issues.json', () => {
     expect(painelPy).not.toContain('issues.json');
     expect(painelPy).not.toContain('cmd_issue');
     const dir = mkdtempSync(path.join(tmpdir(), 'painel-nw-'));
     try {
-      execFileSync('python3', [`${FILA}/painel/painel.py`, 'init', dir]);
+      execFileSync('python3', [`${QUEUE}/painel/painel.py`, 'init', dir]);
       expect(existsSync(path.join(dir, 'issues.json'))).toBe(false);
       expect(() =>
-        execFileSync('python3', [`${FILA}/painel/painel.py`, 'issue', dir, 'number=#1'], {
-          stdio: 'pipe',
-        }),
+        execFileSync(
+          'python3',
+          [`${QUEUE}/painel/painel.py`, 'issue', dir, 'number=#1'],
+          {
+            stdio: 'pipe',
+          },
+        ),
       ).toThrow();
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('o skill da fila e o detalhar-backlog exigem a linha `Origem: etapa #<n>`', () => {
-    expect(fila).toContain('Origem: etapa #<n>');
-    expect(detalhar).toContain('Origem: etapa #<n>');
-    expect(fila).not.toContain('no dataset `issues`');
-    expect(fila).not.toContain('painel.py issue');
+  it('the queue skill and detalhar-backlog require the `Origem: etapa #<n>` line', () => {
+    expect(queue).toContain('Origem: etapa #<n>');
+    expect(detail).toContain('Origem: etapa #<n>');
+    expect(queue).not.toContain('in the `issues` dataset');
+    expect(queue).not.toContain('painel.py issue');
   });
 
-  it('o fechamento troca o files/index.html e apaga o datasets/issues do painel publicado', () => {
-    const porEtapa = section(fila, '## 3. Por etapa');
-    expect(porEtapa).toContain('datasets/issues');
-    expect(porEtapa).toContain('files/index.html');
+  it('the closing swaps files/index.html and deletes datasets/issues of the published panel', () => {
+    const perStage = section(queue, '## 3. Per stage');
+    expect(perStage).toContain('datasets/issues');
+    expect(perStage).toContain('files/index.html');
   });
 });
 
-describe('implementar-fila: skill novo na main (decisão 11)', () => {
-  const troca = section(fila, '## Troca de sessão');
+describe('implementar-fila: new skill on main (decision 11)', () => {
+  const switching = section(queue, '## Session switch');
 
-  it('mudança grande vira troca de sessão, com a linhagem conferida antes', () => {
-    // CR1 (decisão do dono de 2026-11-10, comentário na #1324): 60 linhas, ou mudança em "Regras desta fila".
-    expect(troca).toContain('mais de 60 linhas');
-    expect(troca).not.toContain('mais de 30 linhas');
-    expect(troca).toContain('mudança em "Regras desta fila"');
-    expect(troca).not.toContain('Economia de contexto", "Por etapa"');
-    expect(troca).toContain('git diff --numstat');
-    expect(troca).toMatch(
-      /linhagem[\s\S]*antes dessa troca|antes dessa troca[\s\S]*linhagem/,
+  it('a large change becomes a session switch, with the lineage checked first', () => {
+    // CR1 (owner decision of 2026-11-10, comment on #1324): 60 lines, or a change in "Rules of this queue".
+    expect(switching).toContain('more than 60 changed lines');
+    expect(switching).not.toContain('more than 30 changed lines');
+    expect(switching).toContain('a change in "Rules of this queue"');
+    expect(switching).not.toContain('Context economy", "Per stage"');
+    expect(switching).toContain('git diff --numstat');
+    expect(switching).toMatch(
+      /lineage[\s\S]*before that switch|before that switch[\s\S]*lineage/,
     );
   });
 
-  it('mudança pequena é releitura do SKILL.md inteiro, com prova no log', () => {
-    expect(troca).toContain('`SKILL.md` inteiro, nunca só o diff');
-    expect(troca).toContain('skill <commit>: <regra> → <o que faço agora>');
+  it('a small change is a reread of the whole SKILL.md, with proof in the log', () => {
+    expect(switching).toContain('the whole `SKILL.md`, never just the diff');
+    expect(switching).toContain('skill <commit>: <regra> → <o que faço agora>');
   });
 
-  it('a releitura é com Read sem offset nem limit, e a prova começa por "relido inteiro, <n> linhas" (RS1, decisão 8)', () => {
-    const pequena = troca.slice(troca.indexOf('**Pequena:**'));
-    expect(pequena).toContain('`Read`');
-    expect(pequena).toContain('sem `offset` nem `limit`');
-    expect(pequena).toContain('skill <commit>: relido inteiro, <n> linhas');
-    expect(pequena).toMatch(/`git diff --numstat` serve só para classificar/);
-    expect(pequena).toMatch(/diff do `SKILL.md` não se abre antes/);
-    const reserva = between(fila, '**Conferências de reserva:**', '**CI vermelho');
-    expect(reserva).toContain('`Read`');
-    expect(reserva).toContain('sem `offset` nem `limit`');
+  it('the reread uses Read without offset or limit, and the proof starts with "relido inteiro, <n> linhas" (RS1, decision 8)', () => {
+    const small = switching.slice(switching.indexOf('**Small:**'));
+    expect(small).toContain('`Read`');
+    expect(small).toContain('without `offset` or `limit`');
+    expect(small).toContain('skill <commit>: relido inteiro, <n> linhas');
+    expect(small).toMatch(/`git diff --numstat` is only for classifying/);
+    expect(small).toMatch(/`SKILL.md` diff is not opened before/);
+    const fallback = between(queue, '**Fallback checks:**', '**Red CI');
+    expect(fallback).toContain('`Read`');
+    expect(fallback).toContain('without `offset` or `limit`');
   });
 
-  it('a releitura é exceção da economia de contexto: não se delega nem se resume (RS1, decisão 8)', () => {
-    const economia = section(fila, '## Economia de contexto');
-    const item = economia
+  it('the reread is an exception to the context economy: it is neither delegated nor summarized (RS1, decision 8)', () => {
+    const economy = section(queue, '## Context economy');
+    const item = economy
       .split('\n')
-      .find((l) => /^\d+\. \*\*A releitura do skill/.test(l));
+      .find((l) => /^\d+\. \*\*Rereading the skill/.test(l));
     expect(item).toBeDefined();
-    expect(item).toMatch(/exceção/);
-    expect(item).toMatch(/não se delega a subagente nem se resume/);
+    expect(item).toMatch(/exception/);
+    expect(item).toMatch(/not delegated to a subagent nor summarized/);
   });
 });
 
-describe('revisão /code-review high do épico (fechamento da etapa #1322)', () => {
-  it('o FLOW.md não diz mais que a troca é só por contexto e cita o skill grande', () => {
-    const linha = flow
+describe('/code-review high review of the epic (closing of stage #1322)', () => {
+  it('FLOW.md no longer says the switch is only by context and cites the large skill', () => {
+    const line = flow
       .split('\n')
-      .find((l) => l.startsWith('Para implementar em sequência'))!;
-    expect(linha).not.toMatch(/é só por contexto/);
-    expect(linha).toMatch(/skill novo na `main` grande/);
+      .find((l) => l.startsWith('To implement all the `ready` ones in sequence'))!;
+    expect(line).not.toMatch(/is only by context/);
+    expect(line).toMatch(/large new skill on `main`/);
   });
 
-  it('o FLOW.md usa o critério de 60 linhas ou "Regras desta fila" e a releitura com Read (RS1, decisão 9)', () => {
-    const linha = flow
+  it('FLOW.md uses the 60-line or "Rules of this queue" criterion and the reread with Read (RS1, decision 9)', () => {
+    const line = flow
       .split('\n')
-      .find((l) => l.startsWith('Para implementar em sequência'))!;
-    expect(linha).toContain(
-      'mais de 60 linhas alteradas ou mudança em "Regras desta fila"',
+      .find((l) => l.startsWith('To implement all the `ready` ones in sequence'))!;
+    expect(line).toContain(
+      'more than 60 changed lines or a change in "Rules of this queue"',
     );
-    expect(linha).not.toContain('mais de 30 linhas');
-    expect(linha).toMatch(/releitura do `SKILL.md` inteiro com `Read` e prova no `log`/);
+    expect(line).not.toContain('more than 30 lines');
+    expect(line).toMatch(
+      /rereading the whole `SKILL.md` with `Read` and proof in the `log`/,
+    );
   });
 
-  it('versão trocada no fechamento: a rc antiga não some sozinha e o número novo refaz a rc', () => {
-    const regras = section(fila, '## Regras desta fila');
-    expect(regras).not.toMatch(/não precisa ser refeita/);
-    expect(regras).toMatch(/rc do número antigo/);
-    expect(regras).toMatch(/MCP pre-release/);
+  it('version changed at the closing: the old rc does not go away by itself and the new number redoes the rc', () => {
+    const rules = section(queue, '## Rules of this queue');
+    expect(rules).not.toMatch(/does not need to be redone/);
+    expect(rules).toMatch(/rc of the old number/);
+    expect(rules).toMatch(/MCP pre-release/);
   });
 
-  it('o merge sem o id do comentário de fechamento posta um comentário novo', () => {
-    const por = section(fila, '## 3. Por etapa');
-    expect(por).toMatch(/sem o id do comentário[^\n]*comentário novo/);
+  it('the merge without the closing comment id posts a new comment', () => {
+    const per = section(queue, '## 3. Per stage');
+    expect(per).toMatch(/without the closing comment's id[^\n]*new comment/);
   });
 
-  it('o Fim não exige "nenhuma aguardando" cega e trata o `bug` da fila', () => {
-    const fim = section(fila, '## Fim');
-    expect(fim).not.toMatch(/Quando nenhuma etapa está aguardando nem em andamento/);
-    expect(fim).toMatch(/fora os `bug` da própria fila/);
+  it('the End does not require a blind "none waiting" and handles the queue\'s `bug`', () => {
+    const end = section(queue, '## End');
+    expect(end).not.toMatch(/When no stage is waiting or in progress/);
+    expect(end).toMatch(/apart from the queue's own `bug` rows/);
   });
 
-  it('o detalhar-backlog confere ciclos antes de acrescentar Depende de', () => {
-    expect(detalhar).toMatch(/dependência transitiva|ciclo/);
+  it('detalhar-backlog checks for cycles before adding Depende de', () => {
+    expect(detail).toMatch(/transitive dependency|cycle/);
   });
 
-  it('o PROCESS.md mantém o gatilho do check e o título do changelog na versão provisória', () => {
-    expect(processDoc).toMatch(/mudou o que vai na release sem subir a versão/);
-    expect(processDoc).toMatch(/título do changelog/);
+  it('PROCESS.md keeps the check trigger and the changelog title on the provisional version', () => {
+    expect(processDoc).toMatch(
+      /what goes in the release changed without raising the version/,
+    );
+    expect(processDoc).toMatch(/changelog title/);
   });
 });
