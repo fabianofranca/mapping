@@ -1,5 +1,5 @@
-// Geometria das marcações no canvas: conversões imagem ↔ canvas, hit-test,
-// desenho e redimensionamento. Funções puras, testadas em `tests/canvas/`.
+// Geometry of the markings on the canvas: image ↔ canvas conversions, hit-test,
+// drawing and resizing. Pure functions, tested in `tests/canvas/`.
 import {
   IDENTITY_PLACEMENT,
   MIN_MARKING_SIZE,
@@ -15,7 +15,7 @@ import {
 import { pointInRect, type Corner } from './imageGeometry';
 import type { Point } from './viewport';
 
-/** Retângulo da marcação no canvas, dada a posição da imagem. */
+/** The marking's rectangle on the canvas, given the image position. */
 export function markingCanvasRect(placement: Placement, rect: Rect): Rect {
   return {
     x: placement.x + rect.x * placement.scale,
@@ -26,9 +26,9 @@ export function markingCanvasRect(placement: Placement, rect: Rect): Rect {
 }
 
 /**
- * Posição do espaço de uma marcação no quadro: a do container (com a prévia de um gesto de
- * imagem aplicada) ou a identidade, no canvas (`containerId` nulo). `undefined` se o container
- * não está no mapa.
+ * Position of a marking's space in the frame: the container's (with the preview of an image
+ * gesture applied) or the identity, on the canvas (`containerId` null). `undefined` if the
+ * container is not in the map.
  */
 export function placementOfSpace(
   placements: ReadonlyMap<string, Placement>,
@@ -37,7 +37,7 @@ export function placementOfSpace(
   return containerId === null ? IDENTITY_PLACEMENT : placements.get(containerId);
 }
 
-/** Ponto do canvas em pixels da imagem (sem arredondar). */
+/** Canvas point in image pixels (not rounded). */
 export function canvasToImagePixel(placement: Placement, p: Point): Point {
   return {
     x: (p.x - placement.x) / placement.scale,
@@ -46,9 +46,9 @@ export function canvasToImagePixel(placement: Placement, p: Point): Point {
 }
 
 /**
- * Retângulo (inteiro) entre dois pontos do desenho, limitado às bordas da imagem (pixels da
- * imagem). Sem `image` é o desenho no canvas (v13): unidades do canvas, sem limite. Pode ficar
- * menor que o mínimo: ver `isDrawableRect`.
+ * (Integer) rectangle between two drawing points, limited to the image borders (image
+ * pixels). Without `image` it is the drawing on the canvas (v13): canvas units, no limit. It may end up
+ * smaller than the minimum: see `isDrawableRect`.
  */
 export function rectFromPoints(
   a: Point,
@@ -68,10 +68,12 @@ export function isDrawableRect(rect: Rect): boolean {
 }
 
 /**
- * Marcações do espaço sob o ponto (pixels do container, ou unidades do canvas com
- * `containerId` nulo): a mais interna primeiro, seguida dos ancestrais até a raiz. A mais
- * interna é a mais funda na hierarquia; no empate, a de menor área e, depois, a última do array.
- * As flutuantes ficam de fora (têm a vez antes, em `floatingAt`): não pertencem à cadeia.
+ * Markings of the space under the point (container pixels, or canvas units with
+ * null `containerId`): the innermost first, followed by the ancestors up to the root. The
+ * innermost is the deepest in the hierarchy; on a tie, the one with the smaller area and then the
+ * last in the array.
+ * Floating ones are left out (they get their turn first, in `floatingAt`): they do not belong to
+ * the chain.
  */
 export function markingChainAt(
   markings: readonly Marking[],
@@ -108,8 +110,8 @@ export function markingChainAt(
 }
 
 /**
- * Marcações flutuantes sob o ponto do canvas (unidades do canvas), a de cima primeiro (a última
- * do array é a desenhada por cima). A flutuante é a primeira a receber o toque onde estiver.
+ * Floating markings under the canvas point (canvas units), the top one first (the last
+ * in the array is drawn on top). The floating one is the first to receive the touch wherever it is.
  */
 export function floatingAt(markings: readonly Marking[], p: Point): Marking[] {
   const hits: Marking[] = [];
@@ -121,8 +123,8 @@ export function floatingAt(markings: readonly Marking[], p: Point): Marking[] {
 }
 
 /**
- * Seleção por toque: a mais interna da cadeia. Tocar de novo no mesmo ponto
- * (`repeat`) sobe para o pai e, depois da raiz, volta para a mais interna.
+ * Touch selection: the innermost in the chain. Touching the same point again
+ * (`repeat`) goes up to the parent and, after the root, returns to the innermost.
  */
 export function nextInChain(
   chain: readonly string[],
@@ -136,21 +138,24 @@ export function nextInChain(
   return first;
 }
 
-/** Mínimo de uma marcação comum nos gestos (a que desenha componente passa o dela, de 1 px ou mais). */
+/**
+ * Minimum of an ordinary marking in gestures (a component-drawing one passes its own, of 1 px or
+ * more).
+ */
 const DEFAULT_MIN_SIZE: Size = { width: MIN_MARKING_SIZE, height: MIN_MARKING_SIZE };
 
 export interface RectLimits {
   /**
-   * Área em que a marcação precisa ficar: o container dela (pixels dele); `null` na marcação do
-   * canvas (sem limite). As filhas não limitam: redimensionar é livre e não as move.
+   * Area where the marking must stay: its container (its pixels); `null` for a canvas
+   * marking (no limit). Children do not limit: resizing is free and does not move them.
    */
   readonly outer: Rect | null;
 }
 
 /**
- * Redimensiona pelo canto `corner` (o canto oposto fica fixo), seguindo o
- * ponteiro no espaço da marcação (pixels do container ou unidades do canvas). O resultado é
- * inteiro, tem o tamanho mínimo e fica dentro de `outer`, se houver.
+ * Resizes by the `corner` (the opposite corner stays fixed), following the
+ * pointer in the marking's space (container pixels or canvas units). The result is an
+ * integer, has the minimum size and stays inside `outer`, if any.
  */
 export function resizeMarkingRect(
   start: Rect,
@@ -184,9 +189,9 @@ export function resizeMarkingRect(
 }
 
 /**
- * Raio de toque das alças (px de tela) para um retângulo cujo menor lado mede
- * `minSide` px na tela: encolhe em marcações pequenas, para sobrar área de
- * mover, sem ficar abaixo de 12 (área de 24 px).
+ * Touch radius of the handles (screen px) for a rectangle whose shortest side measures
+ * `minSide` px on screen: it shrinks on small markings, so that move area is left over,
+ * without going below 12 (24 px area).
  */
 export function handleHitRadius(minSide: number, max = 22): number {
   return clamp(minSide / 3, 12, max);

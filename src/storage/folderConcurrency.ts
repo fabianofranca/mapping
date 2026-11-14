@@ -1,2 +1,2 @@
-/** Quantas chamadas à pasta rodam ao mesmo tempo nas leituras e gravações em lote. */
+/** How many folder calls run at the same time in batch reads and writes. */
 export const FOLDER_CONCURRENCY = 4;

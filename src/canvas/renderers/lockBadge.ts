@@ -1,6 +1,6 @@
-// Emblema do cadeado: um quadrado com o cadeado no canto superior direito de um item
-// trancado (o selecionado e o que está sob o mouse). Tamanho fixo em px de tela, na
-// escala inversa do zoom, como a etiqueta do nome.
+// Lock badge: a square with the padlock at the top-right corner of a locked item
+// (the selected one and the one under the mouse). Fixed size in screen px, at the inverse
+// scale of the zoom, like the name label.
 import Konva from 'konva/lib/Core';
 import { Path as KonvaPath } from 'konva/lib/shapes/Path';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
@@ -9,13 +9,13 @@ import { LOCK_PATHS } from '../../utils/lockGlyph';
 import type { CanvasTokens } from '../theme';
 import { HALO_WIDTH, LOCK_BADGE_GAP, LOCK_GLYPH_GRID, LOCK_GLYPH_RATIO } from './metrics';
 
-/** Espessura do traço do cadeado, na grade de 16 unidades do ícone. */
+/** Stroke width of the padlock, on the icon's 16-unit grid. */
 const GLYPH_STROKE = 1.25;
 
 /**
- * Onde o emblema fica (canto superior esquerdo, em unidades do canvas). Em itens
- * grandes, por dentro do canto superior direito, ancorado na parte visível; em itens
- * pequenos, por fora, acima do canto (ou abaixo, sem espaço acima na tela).
+ * Where the badge goes (top-left corner, in canvas units). On large items, inside the
+ * top-right corner, anchored to the visible part; on small items, outside, above the
+ * corner (or below, when there is no room above on screen).
  */
 export function lockBadgeSpot(
   rect: Rect,
@@ -56,7 +56,7 @@ export class LockBadge {
     this.group.visible(false);
   }
 
-  /** Mostra o emblema para o item em `rect` (canvas); `dimmed` esmaece o cadeado herdado do pai. */
+  /** Shows the badge for the item at `rect` (canvas); `dimmed` fades the parent's inherited lock. */
   show(
     rect: Rect,
     view: Rect,

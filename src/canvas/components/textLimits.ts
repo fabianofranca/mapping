@@ -1,6 +1,6 @@
 /**
- * A altura do texto com `maxLines`: as linhas além do limite são cortadas, então a altura é a
- * de `maxLines` linhas. Sem `maxLines` (ou com texto que cabe nele), a natural.
+ * The text height with `maxLines`: the lines beyond the limit are cut, so the height is that
+ * of `maxLines` lines. Without `maxLines` (or with text that fits in it), the natural one.
  */
 export function textBoxLimits(
   naturalHeight: number,

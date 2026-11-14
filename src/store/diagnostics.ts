@@ -1,29 +1,29 @@
 import { computed, signal, type ReadonlySignal } from '@preact/signals';
 import { reportedErrors, type ReportedError } from '../utils/report';
 
-// "Visto até" do Diagnóstico (B4): o último erro que o usuário já viu. Enquanto o
-// registro tiver um erro mais novo, a faixa mostra o ponto de alerta. Estado de UI
-// (por sessão do navegador): fora do projeto, do histórico e do `localStorage`.
+// Diagnostics "Seen until" (B4): the last error the user has already seen. While the
+// log has a newer error, the strip shows the alert dot. UI state
+// (per browser session): outside the project, the history and `localStorage`.
 
 const seen = signal<ReportedError | null>(null);
 
-/** Há erro registrado que ainda não foi visto (a janela Diagnóstico não esteve aberta). */
+/** There is a logged error that has not been seen yet (the Diagnostics window was not open). */
 export const diagnosticsUnseen: ReadonlySignal<boolean> = computed(() => {
   const last = reportedErrors.value.at(-1);
   return last !== undefined && last !== seen.value;
 });
 
-/** Marca todos os erros registrados até agora como vistos. */
+/** Marks all the errors logged so far as seen. */
 export function markDiagnosticsSeen(): void {
   seen.value = reportedErrors.peek().at(-1) ?? null;
 }
 
-// Falhas e bloqueios de imagem remota no Diagnóstico (RI3). Em memória, por sessão.
+// Remote image failures and blocks in Diagnostics (RI3). In memory, per session.
 export type RemoteImageIssueReason =
   'blocked-consent' | 'invalid' | 'failed' | 'too-large' | 'timeout';
 
 export interface RemoteImageIssue {
-  /** URL encurtada (sem consulta nem fragmento, no máximo 80 caracteres). */
+  /** Shortened URL (without query or fragment, at most 80 characters). */
   readonly url: string;
   readonly reason: RemoteImageIssueReason;
 }
@@ -31,8 +31,8 @@ export interface RemoteImageIssue {
 const SHORT_URL_MAX = 80;
 
 /**
- * Origem e caminho de URLs http(s); nas demais a origem é `'null'`, então mostra o esquema:
- * `data:` só com o tipo (o conteúdo não aparece), `file:` inteiro, o resto só o esquema.
+ * Origin and path of http(s) URLs; for the others the origin is `'null'`, so it shows the scheme:
+ * `data:` with only the type (the content does not appear), `file:` in full, the rest only the scheme.
  */
 function readableUrl(parsed: URL): string {
   if (parsed.origin !== 'null') return `${parsed.origin}${parsed.pathname}`;
@@ -50,22 +50,22 @@ function shortenUrl(url: string): string {
     const parsed = new URL(url);
     text = readableUrl(parsed);
   } catch {
-    // URL ilegível: encurta o texto como está.
+    // Unreadable URL: shortens the text as is.
   }
   return text.length > SHORT_URL_MAX ? `${text.slice(0, SHORT_URL_MAX - 1)}…` : text;
 }
 
 const issues = signal<readonly RemoteImageIssue[]>([]);
-/** Posição de cada URL em `issues`, para trocar a razão no lugar quando ela muda. */
+/** Position of each URL in `issues`, to swap the reason in place when it changes. */
 const issueIndex = new Map<string, number>();
 
-/** Falhas e bloqueios de imagem remota desta sessão, na ordem em que apareceram. */
+/** Remote image failures and blocks of this session, in the order they appeared. */
 export const remoteImageIssues: ReadonlySignal<readonly RemoteImageIssue[]> = issues;
 
 /**
- * Registra uma falha ou bloqueio de imagem remota. Cada URL aparece uma vez, na ordem da
- * primeira vez; se a razão muda (ex.: "endereço não aceito" vira "não carregou" depois que a
- * pessoa liga um interruptor da Privacidade), a linha ganha a razão nova no mesmo lugar.
+ * Records a remote image failure or block. Each URL appears once, in the order of its
+ * first time; if the reason changes (e.g. "address not accepted" becomes "did not load" after the
+ * person turns on a Privacy switch), the row gets the new reason in the same place.
  */
 export function reportRemoteImageIssue(
   url: string,
@@ -84,8 +84,8 @@ export function reportRemoteImageIssue(
 }
 
 /**
- * Tira a URL da lista: ela passou a ser desenhada nesta sessão (carregou), então o Diagnóstico
- * não deve mais dizer que não foi mostrada. As linhas de baixo sobem e o índice acompanha.
+ * Removes the URL from the list: it came to be drawn in this session (it loaded), so Diagnostics
+ * should no longer say it was not shown. The rows below move up and the index follows.
  */
 export function resolveRemoteImageIssue(url: string): void {
   const at = issueIndex.get(url);
@@ -97,7 +97,7 @@ export function resolveRemoteImageIssue(url: string): void {
   issues.value = issues.peek().filter((_, i) => i !== at);
 }
 
-/** Só para testes. */
+/** Only for tests. */
 export function clearRemoteImageIssues(): void {
   issueIndex.clear();
   issues.value = [];

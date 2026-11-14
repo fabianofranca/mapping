@@ -18,23 +18,23 @@ import { reportError } from '../utils/report';
 import { createFontSync } from './fontSync';
 import { createPendingTracker } from './pendingTracker';
 
-// A biblioteca de componentes de um projeto aberto (etapa Biblioteca, B3): o catálogo e as
-// fontes das especializações aplicadas, lidos dos pacotes `specs/<id>/` e guardados em
-// memória. Estado da sessão, nunca do projeto: o `mapping.json` não guarda nada do desenho.
-// Quem a cria é a sessão, que sabe ler o armazenamento e guarda os pacotes ainda não gravados.
+// A project's component library (Library stage, B3): the catalog and the sources of the applied
+// specializations, read from the `specs/<id>/` packages and kept in memory. Session state, never
+// the project's: `mapping.json` stores nothing about the drawing.
+// The session creates it, since it knows how to read storage and holds the packages not yet written.
 
 export interface ComponentLibrary {
-  /** Componentes das especializações aplicadas ao projeto confirmado (só as que já carregaram). */
+  /** Components of the specializations applied to the confirmed project (only those already loaded). */
   readonly catalog: ReadonlySignal<ComponentCatalog>;
   /** Sobe a cada registro de fontes terminado: os desenhos remedem. */
   readonly fontsEpoch: ReadonlySignal<number>;
-  /** Situação de cada fonte declarada (para o Diagnóstico). */
+  /** Status of each declared source (for Diagnostics). */
   readonly fonts: ReadonlySignal<readonly FontStatus[]>;
-  /** Resolve quando o que está pedido terminou de carregar (testes). */
+  /** Resolves when what was requested has finished loading (tests). */
   whenIdle(): Promise<void>;
   /**
-   * Esquece o que foi lido: os pacotes são lidos de novo (uma recarga externa pode ter mudado
-   * os arquivos sem mudar a versão). O catálogo atual fica até o novo chegar, sem piscar.
+   * Forgets what was read: the packages are read again (an external reload may have changed
+   * the files without changing the version). The current catalog stays until the new one arrives, without flicker.
    */
   invalidate(): void;
   dispose(): void;
@@ -48,26 +48,26 @@ export interface ComponentLibraryDeps {
   /** Bytes de um arquivo do projeto (fontes), ou `null`. */
   readonly readBytes: (path: string) => Promise<ArrayBuffer | null>;
   /**
-   * Pacote em memória da sessão (aplicar ou atualizar ainda não gravado; desfazer), por id e
-   * versão: caminho relativo à pasta do pacote → texto ou `Blob`.
+   * In-memory package of the session (apply or update not yet written; undo), by id and
+   * version: path relative to the package folder → text or `Blob`.
    */
   readonly cached?: (
     specId: string,
     version: number,
   ) => ReadonlyMap<string, string | Blob> | undefined;
-  /** Padrão: `createFontRegistry()`. */
+  /** Default: `createFontRegistry()`. */
   readonly fonts?: FontRegistry;
 }
 
 const keyOf = (s: { readonly id: string; readonly version: number }): string =>
   `${s.id}@${s.version}`;
 
-/** Especialização com pacote em pasta e conteúdo carregado: a única que tem componentes. */
+/** Specialization with a folder package and loaded content: the only one that has components. */
 function hasPackage(s: ProjectSpecialization): boolean {
   return s.spec !== null && packageDirOf(s.file) !== null;
 }
 
-/** Fonte declarada pela especialização (`spec.fonts`) como o registro de fontes a recebe (sem bytes). */
+/** Font declared by the specialization (`spec.fonts`) as the font registry receives it (no bytes). */
 export function fontDeclaration(
   specFile: string,
   font: NonNullable<Spec['fonts']>[number],
@@ -91,7 +91,7 @@ interface DeclaredFont {
   readonly font: LoadedFont;
 }
 
-/** Fontes declaradas (`spec.fonts`) pelas especializações com pacote, na ordem do projeto. */
+/** Fonts declared (`spec.fonts`) by the specializations with a package, in project order. */
 function declaredFonts(p: Project | null): DeclaredFont[] {
   const out: DeclaredFont[] = [];
   if (!p) return out;
@@ -105,9 +105,9 @@ function declaredFonts(p: Project | null): DeclaredFont[] {
 }
 
 /**
- * Lê os arquivos de componente que a especialização cita (`read` devolve o texto de um caminho
- * da raiz do projeto, ou `null`) e monta os componentes. Quem lê decide de onde: `specs/<id>/`,
- * a cópia em memória da sessão ou `proposals/<id>/` (catálogo do Proposto).
+ * Reads the component files the specialization cites (`read` returns the text of a path
+ * from the project root, or `null`) and builds the components. Whoever reads decides from where: `specs/<id>/`,
+ * the session's in-memory copy or `proposals/<id>/` (the Proposed catalog).
  */
 export async function readSpecComponents(
   spec: Spec,
@@ -127,7 +127,7 @@ export async function readSpecComponents(
   });
 }
 
-/** Entrada vazia com o motivo: sem ela, cada edição do projeto tentaria ler de novo. */
+/** Empty entry with the reason: without it, each project edit would try to read again. */
 export function failedComponents(
   specId: string,
   version: number,
@@ -152,20 +152,20 @@ export function sameCatalog(a: ComponentCatalog, b: ComponentCatalog): boolean {
 
 export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLibrary {
   const registry = deps.fonts ?? createFontRegistry();
-  /** Por `id@versão`: o desfazer de uma atualização volta a achar a anterior. */
+  /** By `id@version`: undoing an update finds the previous one again. */
   const entries = signal<ReadonlyMap<string, SpecComponents>>(new Map());
   const fontStatus = signal<readonly FontStatus[]>([]);
   const epoch = signal(0);
   /** Sobe em `invalidate`, para os efeitos lerem de novo. */
   const generation = signal(0);
   const loading = new Set<string>();
-  /** Entradas lidas antes do último `invalidate`: valem até a nova chegar. */
+  /** Entries read before the last `invalidate`: they apply until the new one arrives. */
   const stale = new Set<string>();
   const { track, whenIdle } = createPendingTracker();
   let disposed = false;
   let current = 0;
 
-  /** Lê um arquivo do pacote: da cópia em memória da sessão e, senão, do armazenamento. */
+  /** Reads a package file: from the session's in-memory copy and, otherwise, from storage. */
   async function readText(
     owner: ProjectSpecialization,
     path: string,
@@ -200,7 +200,7 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
   async function loadEntry(owner: ProjectSpecialization): Promise<void> {
     const key = keyOf(owner);
     const run = current;
-    // Deixa a sessão terminar o que faz logo depois da action (guardar o pacote em memória).
+    // Lets the session finish what it does right after the action (keeping the package in memory).
     await Promise.resolve();
     let loaded: SpecComponents;
     try {
@@ -249,7 +249,7 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
     return lastCatalog;
   });
 
-  // Fontes: o conjunto declarado muda raramente; só então registra de novo.
+  // Fonts: the declared set rarely changes; only then does it register again.
   const fontsKey = computed(() =>
     JSON.stringify(
       declaredFonts(deps.project.value).map(({ owner, font }) => [
@@ -277,7 +277,7 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
     void fontsKey.value;
     void generation.value;
     const declared = declaredFonts(deps.project.peek());
-    // Sem fontes e sem nada registrado antes: não há o que fazer nem o que remedir.
+    // No fonts and nothing registered before: there is nothing to do nor to re-measure.
     if (declared.length === 0 && !fontsRegistered) return;
     fontsRegistered = declared.length > 0;
     void track(

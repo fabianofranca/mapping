@@ -1,26 +1,28 @@
-// Escrita na área de transferência (API assíncrona). Funciona em `file://` e em `https:`: o
-// Chrome trata os dois como contexto seguro. Chamar a partir de um gesto do usuário (tecla,
-// clique); sem a API ou sem permissão, devolve `false`.
+// Writing to the clipboard (async API). Works on `file://` and on `https:`: Chrome
+// treats both as a secure context. Call it from a user gesture (key,
+// click); without the API or without permission, it returns `false`.
 //
-// Regra de permissão (Chrome): gravar texto (`writeText`) e PNG é sempre permitido, sem pedido.
-// Gravar um formato web personalizado (`web <mime>`) exige a permissão `clipboard-read`, que o
-// navegador não concede sozinho: sem ela o `write` abre um pedido de permissão e, se negado,
-// rejeita. Por isso o texto vai sempre primeiro e o formato personalizado só é acrescentado
-// quando a permissão já está concedida: copiar nunca abre um pedido de permissão.
+// Permission rule (Chrome): writing text (`writeText`) and PNG is always allowed, with no prompt.
+// Writing a custom web format (`web <mime>`) requires the `clipboard-read` permission, which the
+// browser does not grant by itself: without it the `write` opens a permission prompt and, if
+// denied, rejects. That is why the text always goes first and the custom format is only added
+// when the permission is already granted: copying never opens a permission prompt.
 
 import { reportError } from './report';
 
-/** O navegador aceita formatos web personalizados (`web <mime>`) no `ClipboardItem`? */
+/** Does the browser accept custom web formats (`web <mime>`) in the `ClipboardItem`? */
 function supportsCustomFormat(mime: string): boolean {
   if (typeof ClipboardItem === 'undefined') return false;
   const supports: unknown = Reflect.get(ClipboardItem, 'supports');
   return typeof supports === 'function' && supports.call(ClipboardItem, `web ${mime}`);
 }
 
-/** A permissão `clipboard-read` já está concedida? Nunca abre pedido; qualquer erro é "não". */
+/**
+ * Is the `clipboard-read` permission already granted? It never opens a prompt; any error is "no".
+ */
 async function clipboardReadGranted(): Promise<boolean> {
   try {
-    // `clipboard-read` não consta no tipo `PermissionName` do TypeScript.
+    // `clipboard-read` is not in TypeScript's `PermissionName` type.
     const name = 'clipboard-read' as unknown as PermissionName;
     const status = await navigator.permissions.query({ name });
     return status.state === 'granted';
@@ -30,12 +32,12 @@ async function clipboardReadGranted(): Promise<boolean> {
 }
 
 /**
- * Grava `text` (`text/plain`) com `writeText`, chamado de forma síncrona dentro do gesto do
- * usuário. Depois, só se `custom` foi passado, o navegador suporta o formato e a permissão
- * `clipboard-read` já está concedida, grava por cima texto e `data` juntos num formato web
- * personalizado (outros programas só enxergam o texto). Falha nessa segunda gravação é
- * ignorada: o texto já está na área de transferência. Erro ao gravar o texto vai ao
- * Diagnóstico e devolve `false`.
+ * Writes `text` (`text/plain`) with `writeText`, called synchronously inside the user's
+ * gesture. Then, only if `custom` was passed, the browser supports the format and the
+ * `clipboard-read` permission is already granted, it writes text and `data` together over it in a
+ * custom web format (other programs only see the text). A failure in this second write is
+ * ignored: the text is already on the clipboard. An error writing the text goes to the
+ * Diagnostics and returns `false`.
  */
 export async function writeClipboardText(
   text: string,
@@ -56,15 +58,15 @@ export async function writeClipboardText(
         }),
       ]);
     } catch {
-      // O texto já foi gravado; o formato personalizado é um extra.
+      // The text was already written; the custom format is an extra.
     }
   }
   return true;
 }
 
 /**
- * Grava uma imagem PNG. Recebe a promessa do blob (e não o blob) para o `write` começar
- * dentro do gesto do usuário, antes de o recorte ficar pronto (exigência do Safari).
+ * Writes a PNG image. It receives the blob's promise (not the blob) so the `write` starts
+ * inside the user's gesture, before the crop is ready (a Safari requirement).
  */
 export async function writeClipboardPng(png: Promise<Blob>): Promise<boolean> {
   try {

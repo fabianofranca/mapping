@@ -1,12 +1,13 @@
-// Setas (v13, ME4) no canvas: uma camada entre os desenhos dos componentes e as marcações. Todas as
-// setas são um só nó do Konva que desenha, em poucas passagens, os halos, os traços (a polilinha ou
-// a curva amostrada de `arrowGeometry.ts`) e as pontas: duzentas setas custam o mesmo número de
-// operações de pintura que uma, e o zoom não toca nenhum nó (a espessura e a ponta, em px de tela,
-// saem do zoom na hora de pintar). Só o rótulo (o `name`, no meio do traço) é um nó por seta, e só
-// nas que têm nome e estão inteiras. De longe a seta curta é só o traço e a que liga marcações
-// invisíveis some (`arrowDetail.ts`); a fora da área visível não é pintada. A seleção e o mouse só
-// entram no nível de detalhe (a selecionada e as ligadas ao que se seleciona ficam inteiras); o
-// realce e as alças ficam na sobreposição (`overlay.ts`).
+// Arrows (v13, ME4) on the canvas: a layer between the component drawings and the markings. All the
+// arrows are a single Konva node that draws, in a few passes, the halos, the strokes (the polyline
+// or the sampled curve of `arrowGeometry.ts`) and the heads: two hundred arrows cost the same
+// number of paint operations as one, and zoom touches no node (the thickness and the head, in
+// screen px, come from the zoom at paint time). Only the label (the `name`, in the middle of the
+// stroke) is a node per arrow, and only on the ones that have a name and are whole. From afar the
+// short arrow is just the stroke and the one that links invisible markings disappears
+// (`arrowDetail.ts`); the one outside the visible area is not painted. Selection and the mouse only
+// enter the level of detail (the selected one and the ones linked to what is selected stay whole);
+// the highlight and the handles stay in the overlay (`overlay.ts`).
 import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
@@ -23,11 +24,14 @@ import type { CanvasTokens } from '../theme';
 import { arrowDetail, type ArrowEnd } from './arrowDetail';
 import { HALO_WIDTH, fontStyle } from './metrics';
 
-/** Recuo interno e largura máxima do rótulo (px de tela). */
+/** Inner inset and maximum width of the label (screen px). */
 const LABEL_PADDING = 4;
 const LABEL_MAX_WIDTH = 200;
 
-/** O que o nível de detalhe lê do quadro: o zoom e a área visível, a seleção, o mouse e a revisão. */
+/**
+ * What the level of detail reads from the frame: the zoom and the visible area, the selection, the
+ * mouse and the review.
+ */
 export type ArrowsFrame = Pick<
   Frame,
   | 'arrows'
@@ -42,7 +46,7 @@ export type ArrowsFrame = Pick<
   | 'view'
 >;
 
-/** O que um quadro mexeu: a camada das marcações (onde ficam as setas) e/ou o grupo de arrasto. */
+/** What a frame touched: the markings layer (where the arrows live) and/or the drag group. */
 export interface ArrowChanges {
   readonly main: boolean;
   readonly drag: boolean;
@@ -56,7 +60,7 @@ function sameShapes(a: readonly ArrowShape[], b: readonly ArrowShape[]): boolean
   return a.length === b.length && a.every((shape, i) => shape === b[i]);
 }
 
-/** As setas pintadas num quadro: as inteiras e as só com o traço. */
+/** The arrows painted in a frame: the whole ones and the ones with only the stroke. */
 interface DetailSplit {
   readonly full: readonly ArrowShape[];
   readonly thin: readonly ArrowShape[];
@@ -64,18 +68,21 @@ interface DetailSplit {
 const NO_SPLIT: DetailSplit = { full: NO_SHAPES, thin: NO_SHAPES };
 
 /**
- * O tamanho de uma ponta com o zoom em 1 (o da tela é ele × o zoom; infinito sem posição: sem
- * dado, a ponta conta como visível).
+ * The size of a head at zoom 1 (the screen one is it × the zoom; infinite without a position: with
+ * no data, the head counts as visible).
  */
 interface EndSize {
   readonly width: number;
   readonly height: number;
 }
 
-/** O que da seta só muda com o projeto, as posições e o tema (pan, zoom e seleção não mexem). */
+/**
+ * What about the arrow changes only with the project, the positions and the theme (pan, zoom and
+ * selection do not touch it).
+ */
 interface Measured {
   readonly shape: ArrowShape;
-  /** Comprimento do traço (unidades do canvas). */
+  /** Length of the stroke (canvas units). */
   readonly length: number;
   readonly from: EndSize;
   readonly to: EndSize;
@@ -86,7 +93,10 @@ const UNKNOWN_END: EndSize = {
   height: Number.POSITIVE_INFINITY,
 };
 
-/** Os itens que deixam a seta inteira: setas selecionadas e marcações selecionadas ou sob o mouse. */
+/**
+ * The items that make the arrow whole: selected arrows and markings that are selected or under the
+ * mouse.
+ */
 interface Exceptions {
   readonly arrows: ReadonlySet<string>;
   readonly markings: ReadonlySet<string>;
@@ -95,7 +105,7 @@ interface Exceptions {
 const NO_IDS: ReadonlySet<string> = new Set();
 
 function exceptionsOf(frame: ArrowsFrame): Exceptions {
-  // No modo visualização não há seleção nem mouse: vale só o tamanho.
+  // In view mode there is no selection or mouse: only the size counts.
   if (frame.view !== null) return { arrows: NO_IDS, markings: NO_IDS };
   const arrows = new Set<string>();
   const markings = new Set<string>();
@@ -108,8 +118,8 @@ function exceptionsOf(frame: ArrowsFrame): Exceptions {
 }
 
 /**
- * Sobreposição inclusiva: a caixa do traço de uma seta reta na horizontal ou na vertical tem altura
- * ou largura zero, e `rectsOverlap` do modelo (área positiva) a descartaria.
+ * Inclusive overlap: the stroke box of a horizontal or vertical straight arrow has zero height
+ * or width, and the model's `rectsOverlap` (positive area) would discard it.
  */
 function overlaps(a: Rect, b: Rect): boolean {
   return (
@@ -120,7 +130,10 @@ function overlaps(a: Rect, b: Rect): boolean {
   );
 }
 
-/** A área visível com a folga do rótulo (o maior pedaço da seta que pode sobrar da caixa do traço). */
+/**
+ * The visible area with the label's slack (the biggest piece of the arrow that can stick out of the
+ * stroke box).
+ */
 function paddedArea(frame: ArrowsFrame): Rect {
   const area = visibleArea(frame.size, frame.viewport);
   const margin = LABEL_MAX_WIDTH / frame.viewport.scale;
@@ -133,10 +146,10 @@ function paddedArea(frame: ArrowsFrame): Rect {
 }
 
 /**
- * O nível de detalhe das setas (decisão 7 da etapa canvas-desempenho): a medida de cada seta fica
- * guardada até o projeto ou as posições mudarem, e cada quadro só confere o zoom, a área
- * visível e as exceções (seleção e mouse). Os arrays se repetem enquanto as setas pintadas forem
- * as mesmas, para o desenho dos traços e dos halos não ser refeito.
+ * The arrows' level of detail (decision 7 of the canvas-performance stage): the measure of each
+ * arrow is kept until the project or the positions change, and each frame only checks the zoom, the
+ * visible area and the exceptions (selection and mouse). The arrays repeat while the painted arrows
+ * are the same, so the drawing of the strokes and halos is not redone.
  */
 class DetailPlan {
   private measured: {
@@ -205,7 +218,7 @@ class DetailPlan {
   }
 }
 
-/** O tamanho na tela da marcação que a ponta liga. */
+/** The on-screen size of the marking that the head links. */
 function endSize(
   frame: ArrowsFrame,
   placements: ReadonlyMap<string, Placement>,
@@ -224,7 +237,7 @@ function endSize(
   };
 }
 
-/** A ponta com o tamanho na tela no zoom `zoom`. */
+/** The head with the on-screen size at zoom `zoom`. */
 function onScreen(end: EndSize, zoom: number, always: boolean): ArrowEnd {
   return { screenWidth: end.width * zoom, screenHeight: end.height * zoom, always };
 }
@@ -241,7 +254,7 @@ function measureArrows(
   }));
 }
 
-/** Separa `shapes` entre as que se movem (`ids`) e as paradas. */
+/** Splits `shapes` between the ones that move (`ids`) and the still ones. */
 function splitMoving(
   shapes: readonly ArrowShape[],
   ids: ReadonlySet<string>,
@@ -252,7 +265,7 @@ function splitMoving(
   return { parked, moving };
 }
 
-/** As setas inteiras e depois as curtas num array só, o mesmo enquanto os dois forem. */
+/** The whole arrows and then the short ones in a single array, the same one while both are. */
 class ShapesJoin {
   private entry: {
     readonly full: readonly ArrowShape[];
@@ -270,7 +283,7 @@ class ShapesJoin {
   }
 }
 
-/** Os corpos de `a` e de `b` juntos, na mesma passagem do traço (o mesmo objeto enquanto os dois forem). */
+/** The bodies of `a` and `b` together, in the same stroke pass (the same object while both are). */
 class BodiesMerge {
   private entry: {
     readonly a: ArrowStrokes;
@@ -292,7 +305,7 @@ class BodiesMerge {
   }
 }
 
-/** O desenho calculado para (`shapes`, `zoom`, ponta): quadros iguais o reaproveitam. */
+/** The drawing computed for (`shapes`, `zoom`, head): equal frames reuse it. */
 class StrokeCache {
   private entry: {
     readonly shapes: readonly ArrowShape[];
@@ -317,7 +330,7 @@ class StrokeCache {
   }
 }
 
-/** As operações de pintura que o desenho usa (o contexto do Konva as tem; os testes gravam). */
+/** The paint operations the drawing uses (Konva's context has them; the tests record). */
 export interface ArrowPainter {
   beginPath(): void;
   moveTo(x: number, y: number): void;
@@ -332,7 +345,7 @@ interface LabelNode {
   readonly group: Konva.Group;
   readonly box: KonvaRect;
   readonly text: KonvaText;
-  /** O que o nó mostra: iguais ao quadro, ele já está certo. */
+  /** What the node shows: equal to the frame, it is already right. */
   shape: ArrowShape | null;
   zoom: number;
   tokens: CanvasTokens | null;
@@ -346,7 +359,7 @@ export class ArrowRenderer {
     readonly arrows: readonly ArrowShape[];
     readonly ids: ReadonlySet<string>;
   } | null = null;
-  /** As setas inteiras (paradas) e as só com o traço, escolhidas pelo `DetailPlan`. */
+  /** The whole (still) arrows and the stroke-only ones, chosen by the `DetailPlan`. */
   private shapes: readonly ArrowShape[] = [];
   private thinShapes: readonly ArrowShape[] = NO_SHAPES;
   private tokens: CanvasTokens | null = null;
@@ -359,9 +372,9 @@ export class ArrowRenderer {
   private readonly liftedJoin = new ShapesJoin();
   private readonly dragMerge = new BodiesMerge();
   /**
-   * As setas que se movem num gesto (decisões 5 e 7): têm um corpo e um grupo de rótulos próprios,
-   * no grupo de arrasto, e `shapes` fica só com as paradas (o mesmo array enquanto elas não mudam,
-   * então o corpo das paradas não é refeito nem repintado).
+   * The arrows that move in a gesture (decisions 5 and 7): they have their own body and label
+   * group, in the drag group, and `shapes` keeps only the still ones (the same array while they do
+   * not change, so the body of the still ones is neither redone nor repainted).
    */
   private dragIds: ReadonlySet<string> | null = null;
   private dragGroup: Konva.Group | null = null;
@@ -381,45 +394,45 @@ export class ArrowRenderer {
     parent.add(this.body, this.labelsGroup);
   }
 
-  /** O nó que pinta as setas. */
+  /** The node that paints the arrows. */
   get node(): Konva.Shape {
     return this.body;
   }
 
-  /** As setas pintadas no último quadro (inteiras e depois as só com o traço), fora o grupo de arrasto. */
+  /** The arrows painted in the last frame (whole and then stroke-only), minus the drag group. */
   get drawn(): readonly ArrowShape[] {
     return this.parkedJoin.get(this.shapes, this.thinShapes);
   }
 
-  /** As setas curtas do último quadro, pintadas só com o traço (sem halo, ponta nem rótulo). */
+  /** The short arrows of the last frame, painted with only the stroke (no halo, head or label). */
   get thin(): readonly ArrowShape[] {
     return this.thinShapes;
   }
 
-  /** Quantas setas estão pintadas (fora o grupo de arrasto). */
+  /** How many arrows are painted (minus the drag group). */
   get size(): number {
     return this.shapes.length + this.thinShapes.length;
   }
 
-  /** Quantas setas estão pintadas, contando as do grupo de arrasto (o `data-arrows`). */
+  /** How many arrows are painted, counting the drag group's (the `data-arrows`). */
   get painted(): number {
     return this.size + this.dragShapes.length + this.dragThin.length;
   }
 
-  /** As setas que se movem num gesto, desenhadas no grupo de arrasto (vazio fora dele). */
+  /** The arrows that move in a gesture, drawn in the drag group (empty outside it). */
   get liftedDrawn(): readonly ArrowShape[] {
     return this.liftedJoin.get(this.dragShapes, this.dragThin);
   }
 
-  /** O nó do rótulo da seta (`undefined` se ela não tem nome ou não está à vista). */
+  /** The arrow's label node (`undefined` if it has no name or is not in view). */
   label(id: string): LabelNode | undefined {
     const node = this.labels.get(id);
     return node?.group.visible() ? node : undefined;
   }
 
   /**
-   * Leva as setas de `ids` para o grupo de arrasto no próximo `render` (o corpo e os rótulos delas
-   * saem do desenho das paradas), ou as devolve com `null`.
+   * Takes the arrows in `ids` to the drag group on the next `render` (their body and labels
+   * leave the still ones' drawing), or returns them with `null`.
    */
   setDragged(ids: ReadonlySet<string> | null, target: Konva.Container): void {
     const next = ids && ids.size > 0 ? ids : null;
@@ -429,8 +442,8 @@ export class ArrowRenderer {
   }
 
   /**
-   * Refaz os rótulos e guarda o que as passagens de pintura desenham. Devolve o que mexeu: com um
-   * gesto em andamento, a camada das paradas só quando as setas paradas, o zoom ou o tema mudam.
+   * Redoes the labels and keeps what the paint passes draw. Returns what moved: with a
+   * gesture in progress, the still layer only when the still arrows, the zoom or the theme change.
    */
   render(
     frame: ArrowsFrame,
@@ -444,8 +457,8 @@ export class ArrowRenderer {
   }
 
   /**
-   * Pan (e posições novas): o zoom e o tema são os mesmos, então só se confere quais setas estão na
-   * área visível e de que nível de detalhe, sem tocar no resto.
+   * Pan (and new positions): the zoom and the theme are the same, so it only checks which arrows
+   * are in the visible area and at what level of detail, without touching the rest.
    */
   reveal(
     frame: ArrowsFrame,
@@ -463,8 +476,8 @@ export class ArrowRenderer {
     const dragging = this.dragIds !== null;
     this.place(this.plan.classify(frame, placements));
     const labelsMain = this.renderLabels(frame);
-    // O desenho é função de `shapes`, `zoom` e `tokens`, que o Konva não enxerga: quem pede o
-    // quadro (`CanvasController`) repinta a camada depois de renderizar.
+    // The drawing is a function of `shapes`, `zoom` and `tokens`, which Konva does not see: whoever
+    // requests the frame (`CanvasController`) repaints the layer after rendering.
     const main =
       labelsMain ||
       restyled ||
@@ -484,8 +497,8 @@ export class ArrowRenderer {
   }
 
   /**
-   * Pinta todas as setas: os halos (traços e pontas), os traços e as pontas, cada passagem num só
-   * caminho. A espessura, o halo e a ponta são de tela, divididos pelo zoom.
+   * Paints all the arrows: the halos (strokes and heads), the strokes and the heads, each pass in a
+   * single path. The thickness, the halo and the head are on-screen, divided by the zoom.
    */
   paint(painter: ArrowPainter): void {
     this.paintShapes(painter, this.shapes, this.thinShapes, {
@@ -495,7 +508,7 @@ export class ArrowRenderer {
     });
   }
 
-  /** Pinta as setas que se movem (o corpo do grupo de arrasto). */
+  /** Paints the arrows that move (the drag group's body). */
   paintDragged(painter: ArrowPainter): void {
     this.paintShapes(painter, this.dragShapes, this.dragThin, {
       full: this.dragStrokes,
@@ -505,8 +518,8 @@ export class ArrowRenderer {
   }
 
   /**
-   * As inteiras levam halo, traço e ponta; as curtas (`thin`) só entram na passagem do traço,
-   * junto com os corpos das inteiras: sem halo e sem ponta.
+   * The whole ones get halo, stroke and head; the short ones (`thin`) only enter the stroke pass,
+   * together with the bodies of the whole ones: no halo and no head.
    */
   private paintShapes(
     painter: ArrowPainter,
@@ -523,7 +536,7 @@ export class ArrowRenderer {
     const slim = thin.length > 0 ? caches.thin.get(thin, zoom, 0) : NO_STROKES;
     painter.setAttr('lineCap', 'round');
     if (shapes.length > 0) {
-      // Halo: o traço mais largo e a ponta com um contorno, na cor do halo.
+      // Halo: the wider stroke and the head with an outline, in the halo color.
       strokeBodies(painter, strokes, tokens.halo, (style.width + 2 * HALO_WIDTH) / zoom);
       painter.beginPath();
       for (const head of strokes.heads) polyline(painter, head, true);
@@ -533,7 +546,7 @@ export class ArrowRenderer {
       painter.fill();
       painter.stroke();
     }
-    // Traço (das inteiras e das curtas) e ponta na cor da seta.
+    // Stroke (of the whole and the short ones) and head in the arrow's color.
     strokeBodies(
       painter,
       caches.merge.get(strokes, slim),
@@ -547,7 +560,7 @@ export class ArrowRenderer {
     painter.fill();
   }
 
-  /** Guarda as setas pintadas; as paradas mantêm o array se nenhuma mudou. */
+  /** Keeps the painted arrows; the still ones keep the array if none changed. */
   private place(detail: DetailSplit): void {
     const ids = this.dragIds;
     if (!ids) {
@@ -577,7 +590,7 @@ export class ArrowRenderer {
     this.dragGroup = group;
   }
 
-  /** Devolve os rótulos ao grupo de sempre e desfaz o grupo de arrasto. */
+  /** Returns the labels to the usual group and undoes the drag group. */
   private unmountDragGroup(): void {
     for (const node of this.labels.values()) {
       if (node.group.getParent() === this.dragLabels) this.labelsGroup.add(node.group);
@@ -591,17 +604,17 @@ export class ArrowRenderer {
   }
 
   /**
-   * Rótulos: um nó por seta com nome, reaproveitado. O da seta que deixou de ser inteira (curta,
-   * invisível ou fora da área visível) só se esconde, para o pan não recriar nós; o da seta que
-   * saiu do projeto é destruído. O da seta que se move fica no grupo de arrasto. Devolve `true` se
-   * mexeu num rótulo das paradas.
+   * Labels: one node per named arrow, reused. The one of an arrow that stopped being whole (short,
+   * invisible or outside the visible area) is only hidden, so pan does not recreate nodes; the one
+   * of an arrow that left the project is destroyed. The one of the arrow that moves stays in the
+   * drag group. Returns `true` if it touched a label of the still ones.
    */
   private renderLabels(frame: ArrowsFrame): boolean {
     const { tokens } = frame;
     const zoom = this.zoom;
     const seen = new Set<string>();
     let main = false;
-    // Só as inteiras têm rótulo (as curtas e as que somem não).
+    // Only the whole ones have a label (the short ones and the ones that disappear do not).
     for (const shapes of [this.shapes, this.dragShapes]) {
       for (const shape of shapes) {
         const name = shape.arrow.name;
@@ -614,7 +627,10 @@ export class ArrowRenderer {
     return main;
   }
 
-  /** Esconde os rótulos das setas que seguem à vista sem rótulo e destrói os das que saíram. */
+  /**
+   * Hides the labels of the arrows that stay in view without a label and destroys those of the ones
+   * that left.
+   */
   private retireLabels(frame: ArrowsFrame, seen: ReadonlySet<string>): boolean {
     const known = this.knownIds(frame.arrows);
     let changed = false;
@@ -632,7 +648,7 @@ export class ArrowRenderer {
     return changed;
   }
 
-  /** Os ids das setas à vista (qualquer nível ou posição), guardados por array. */
+  /** The ids of the arrows in view (any level or position), kept by array. */
   private knownIds(arrows: readonly ArrowShape[]): ReadonlySet<string> {
     if (this.known?.arrows !== arrows) {
       this.known = { arrows, ids: new Set(arrows.map((shape) => shape.arrow.id)) };
@@ -640,13 +656,16 @@ export class ArrowRenderer {
     return this.known.ids;
   }
 
-  /** O grupo do rótulo: o de arrasto se a seta se move, senão o de sempre. */
+  /** The label group: the drag one if the arrow moves, else the usual one. */
   private labelHome(id: string): Konva.Group {
     const lifted = this.dragIds?.has(id) === true;
     return lifted && this.dragLabels ? this.dragLabels : this.labelsGroup;
   }
 
-  /** Põe o rótulo da seta no grupo certo e o refaz se mudou. `true` se mexeu num rótulo das paradas. */
+  /**
+   * Puts the arrow's label in the right group and redoes it if it changed. `true` if it touched a
+   * label of the still ones.
+   */
   private syncLabel(
     shape: ArrowShape,
     name: string,
@@ -676,7 +695,7 @@ export class ArrowRenderer {
     return node;
   }
 
-  /** Rótulo no meio do traço, centrado, em tamanho de tela. */
+  /** Label in the middle of the stroke, centered, at on-screen size. */
   private updateLabel(
     node: LabelNode,
     shape: ArrowShape,
@@ -720,9 +739,9 @@ export class ArrowRenderer {
 }
 
 /**
- * Traça os corpos das setas numa cor e espessura: o traço com junção redonda (reta e curva) e,
- * depois, o das setas `elbow` com junção em esquadro, para a dobra sair viva. Deixa a junção
- * redonda ao fim (a das pontas).
+ * Traces the arrows' bodies in one color and thickness: the stroke with a round join (straight and
+ * curve) and, then, the `elbow` arrows' one with a mitered join, so the bend comes out sharp.
+ * Leaves the round join at the end (the heads' one).
  */
 function strokeBodies(
   painter: ArrowPainter,
@@ -746,7 +765,7 @@ function strokeBodies(
   painter.setAttr('lineJoin', 'round');
 }
 
-/** Acrescenta ao caminho a lista plana de pontos (`closed` fecha o triângulo da ponta). */
+/** Adds the flat list of points to the path (`closed` closes the head's triangle). */
 function polyline(painter: ArrowPainter, flat: readonly number[], closed: boolean): void {
   const x0 = flat[0];
   const y0 = flat[1];
@@ -755,7 +774,7 @@ function polyline(painter: ArrowPainter, flat: readonly number[], closed: boolea
   for (let i = 2; i + 1 < flat.length; i += 2) {
     painter.lineTo(flat[i] as number, flat[i + 1] as number);
   }
-  // Um ponto só (seta menor que a ponta): um ponto redondo, para o traço não sumir.
+  // A single point (arrow smaller than the head): a round dot, so the stroke does not vanish.
   if (flat.length === 2) painter.lineTo(x0, y0);
   if (closed) painter.closePath();
 }

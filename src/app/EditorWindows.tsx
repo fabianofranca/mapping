@@ -38,19 +38,19 @@ import {
 import { ViewModePanel } from '../ui/ViewModePanel';
 import { EditorPanel, type EditorPanelProps } from './EditorPanel';
 
-// Estrutura do editor no desktop (R4): faixas, janelas de ferramenta, breadcrumbs e o
-// canvas no meio. A barra principal e a barra de status ficam fora, em `Editor.tsx`.
+// Desktop editor structure (R4): strips, tool windows, breadcrumbs and the
+// canvas in the middle. The main bar and the status bar stay outside, in `Editor.tsx`.
 
 interface EditorWindowsProps {
   readonly panel: EditorPanelProps;
   readonly onSelect: (selection: NonNullable<Selection>) => void;
-  /** O canvas (com os avisos, o minimapa e o estado vazio), montado pelo `Editor`. */
+  /** The canvas (with the notices, the minimap and the empty state), mounted by the `Editor`. */
   readonly canvas: ComponentChildren;
 }
 
 /**
- * Cada janela, com o próprio cabeçalho.
- * `stacked`: a janela divide a coluna com outra (Camadas embaixo da Árvore).
+ * Each window, with its own header.
+ * `stacked`: the window shares the column with another (Layers below the Tree).
  */
 function Window({
   id,
@@ -95,7 +95,7 @@ function Window({
   }
 }
 
-/** Ir até a anotação precisa do painel de Detalhes à vista (Incompletas e Avisos). */
+/** Go to the annotation needs the Details panel in view (Incomplete and Warnings). */
 function goToAnnotationIn(panel: EditorPanelProps): EditorPanelProps['onGoToAnnotation'] {
   return (annotation) => {
     openToolWindow('details');
@@ -103,7 +103,7 @@ function goToAnnotationIn(panel: EditorPanelProps): EditorPanelProps['onGoToAnno
   };
 }
 
-/** As janelas inferiores que não são a Lista nem a Incompletas (a `Window` delega a elas). */
+/** The bottom windows that are neither the List nor Incomplete (`Window` delegates to them). */
 function MoreWindow({
   id,
   panel,
@@ -143,7 +143,7 @@ function MoreWindow({
   }
 }
 
-/** Copiar e Limpar ficam no cabeçalho da janela Diagnóstico (B4). */
+/** Copy and Clear stay in the Diagnostics window header (B4). */
 function DiagnosticsHeaderActions() {
   return <DiagnosticsActions {...useCopyErrors()} />;
 }
@@ -156,7 +156,7 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
     <Window key={id} id={id} stacked={stacked} panel={panel} onSelect={onSelect} />
   );
 
-  // Mede a área das janelas: as laterais encolhem para o canvas não passar do mínimo.
+  // Measures the windows area: the side ones shrink so the canvas does not go under the minimum.
   const panes = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = panes.current;
@@ -174,7 +174,7 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
       <ToolStrip side="left" />
       <div class={PANES_CLASS} data-panes ref={panes}>
         {left.length > 0 && (
-          // A largura é da coluna: Árvore e Camadas empilhadas dividem a mesma.
+          // The width belongs to the column: stacked Tree and Layers share the same one.
           <div
             class="tool-column"
             data-tool-column

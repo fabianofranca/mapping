@@ -1,7 +1,7 @@
-// Teclado do canvas: segurar Espaço faz o arrasto virar pan (como em editores
-// de imagem). Os demais atalhos do editor ficam em `app/shortcuts.ts`.
+// Canvas keyboard: holding Space turns the drag into a pan (as in image
+// editors). The other editor shortcuts live in `app/shortcuts.ts`.
 
-/** Campos de texto e botões recebem o Espaço normalmente. */
+/** Text fields and buttons receive Space normally. */
 export function isEditable(target: EventTarget | null): boolean {
   return (
     target instanceof HTMLElement &&
@@ -9,7 +9,7 @@ export function isEditable(target: EventTarget | null): boolean {
   );
 }
 
-/** Link e botão (inclusive `role=button`) usam o Espaço para ativar: o `keydown` não é cancelado neles. */
+/** Link and button (including `role=button`) use Space to activate: the `keydown` is not canceled on them. */
 function isInteractive(target: EventTarget | null): boolean {
   return (
     target instanceof HTMLElement &&
@@ -18,14 +18,14 @@ function isInteractive(target: EventTarget | null): boolean {
 }
 
 export interface SpaceKey {
-  /** Espaço pressionado agora. */
+  /** Space pressed now. */
   readonly down: () => boolean;
   readonly dispose: () => void;
 }
 
 /**
- * Acompanha o Espaço na janela. `onChange` roda a cada tecla (para atualizar o
- * cursor). Perder o foco solta a tecla (o keyup pode nunca chegar).
+ * Tracks Space on the window. `onChange` runs on every key (to update the
+ * cursor). Losing focus releases the key (the keyup may never arrive).
  */
 export function watchSpaceKey(onChange: () => void, target: Window = window): SpaceKey {
   let down = false;

@@ -1,12 +1,12 @@
 /*
- * Revisão de propostas (design system, docs/DESIGN-SYSTEM.md): componentes
- * novos (DecisionMark, ChangeKind, Flag, DecisionControl, DiffValue, ChangeCard,
- * ReviewRow, ProposalRow, ReviewBar, ImageCompare), o aviso em caixa (Notice) e as
- * janelas da revisão. Cores, espaços e tamanhos só dos tokens; verde e vermelho só
- * para aceita e rejeitada.
+ * Proposal review (design system, docs/DESIGN-SYSTEM.md): new components
+ * (DecisionMark, ChangeKind, Flag, DecisionControl, DiffValue, ChangeCard,
+ * ReviewRow, ProposalRow, ReviewBar, ImageCompare), the boxed notice (Notice) and the
+ * review windows. Colors, spacing and sizes only from the tokens; green and red only
+ * for accepted and rejected.
  */
 
-/* ---------- Notice (caixa): info, warning, error, success; compacto ---------- */
+/* ---------- Notice (box): info, warning, error, success; compact ---------- */
 .notice-box {
   display: flex;
   align-items: flex-start;
@@ -88,7 +88,7 @@
   margin-top: var(--space-1);
 }
 
-/* Linha: ícone, texto curto (reticências), ação e X numa linha só, da altura de um controle. */
+/* Row: icon, short text (ellipsis), action and X on a single row, as tall as a control. */
 .notice-box-line {
   align-items: center;
   min-height: var(--control-height-sm);
@@ -119,7 +119,7 @@
   flex-wrap: nowrap;
 }
 
-/* ---------- DecisionMark: o estado pela forma ---------- */
+/* ---------- DecisionMark: the state by shape ---------- */
 .decision-mark {
   flex: none;
   display: inline-flex;
@@ -155,7 +155,7 @@
   stroke-width: 1.5;
 }
 
-/* ---------- ChangeKind: selo neutro do tipo ---------- */
+/* ---------- ChangeKind: neutral badge of the kind ---------- */
 .change-kind {
   flex: none;
   display: inline-flex;
@@ -179,7 +179,7 @@
   height: calc(var(--size-icon) + var(--space-0-5));
 }
 
-/* ---------- Flag: pílula de um fato ---------- */
+/* ---------- Flag: pill for a fact ---------- */
 .flag {
   flex: none;
   display: inline-flex;
@@ -242,7 +242,7 @@
   flex: 1 0 auto;
 }
 
-/* ---------- Contagens (○ ✓ ✕ ⚠) ---------- */
+/* ---------- Counts (○ ✓ ✕ ⚠) ---------- */
 .review-counts {
   display: inline-flex;
   align-items: center;
@@ -267,7 +267,7 @@
   color: var(--color-warning);
 }
 
-/* ---------- Linhas de grupo (Abertas / Fechadas; Sem decisão / Aceitas…) ---------- */
+/* ---------- Group rows (Open / Closed; Undecided / Accepted…) ---------- */
 .review-group {
   display: flex;
   align-items: center;
@@ -287,15 +287,15 @@
   font-weight: 600;
 }
 
-/* ---------- Filtros no topo das janelas da revisão ---------- */
-/* Painel do popover do botão "Filtros": os controles empilhados. */
+/* ---------- Filters at the top of the review windows ---------- */
+/* Panel of the "Filters" button popover: the controls stacked. */
 .review-filters-panel {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
   padding: var(--space-3);
-  /* O popover lê a largura do conteúdo; a lista de tipos quebra em linhas. */
+  /* The popover reads the content width; the list of types wraps into rows. */
   max-width: calc(20 * var(--space-6));
 }
 
@@ -324,7 +324,7 @@
   margin: 0;
 }
 
-/* ---------- Lista de propostas (ProposalRow) ---------- */
+/* ---------- Proposal list (ProposalRow) ---------- */
 .proposal-list {
   display: flex;
   flex-direction: column;
@@ -336,8 +336,8 @@
 }
 
 .proposal-row {
-  /* Em janela estreita as contagens e a ação descem para a linha de baixo, em vez de
-     espremer o título. */
+  /* In a narrow window the counts and the action drop to the row below, instead of
+     squeezing the title. */
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -427,7 +427,7 @@
   justify-content: flex-end;
 }
 
-/* "substituída por <título>" ao lado do status (a proposta aplicada é histórico). */
+/* "superseded by <title>" next to the status (the applied proposal is history). */
 .proposal-row-newer {
   min-width: 0;
   overflow: hidden;
@@ -441,7 +441,7 @@
   padding-left: var(--space-4);
 }
 
-/* ---------- Estado vazio ---------- */
+/* ---------- Empty state ---------- */
 .proposals-empty {
   display: flex;
   flex-direction: column;
@@ -487,7 +487,7 @@
   font: var(--t-text-small);
 }
 
-/* ---------- Aviso no canto do canvas (proposta nova) ---------- */
+/* ---------- Notice in the canvas corner (new proposal) ---------- */
 .canvas-corner {
   position: absolute;
   top: var(--space-2);
@@ -509,7 +509,7 @@
   overflow-wrap: anywhere;
 }
 
-/* ---------- Barra de status: item que abre a janela ---------- */
+/* ---------- Status bar: item that opens the window ---------- */
 .status-item-button {
   font: inherit;
   color: inherit;
@@ -527,7 +527,7 @@
   color: var(--color-accent);
 }
 
-/* ---------- Selo REVISÃO ---------- */
+/* ---------- REVIEW badge ---------- */
 .review-badge {
   flex: none;
   display: inline-flex;
@@ -549,7 +549,7 @@
   stroke-width: 1.5;
 }
 
-/* ---------- Barra de progresso (aceitas / rejeitadas / vazio) ---------- */
+/* ---------- Progress bar (accepted / rejected / empty) ---------- */
 .review-progress {
   flex: none;
   display: flex;
@@ -580,7 +580,7 @@
   background: var(--color-danger);
 }
 
-/* ---------- ReviewBar (40px, abaixo da barra principal) ---------- */
+/* ---------- ReviewBar (40px, below the main bar) ---------- */
 .review-bar {
   flex: none;
   display: flex;
@@ -663,7 +663,7 @@
   cursor: pointer;
 }
 
-/* ---------- Níveis da revisão (janela Propostas) ---------- */
+/* ---------- Review levels (Proposals window) ---------- */
 .review-levels {
   display: flex;
   flex-direction: column;
@@ -693,7 +693,7 @@
 .review-levels-head,
 .review-row {
   display: grid;
-  /* O resumo encolhe (com reticências) antes de o nome ser cortado: nada passa por cima. */
+  /* The summary shrinks (with an ellipsis) before the name is cut: nothing goes over anything. */
   grid-template-columns:
     minmax(var(--size-review-col-name-min), 1fr) minmax(0, var(--size-review-col-summary))
     calc(2 * var(--control-height-sm) + var(--space-0-5));
@@ -829,7 +829,7 @@
   justify-content: flex-end;
 }
 
-/* Rodapé de atalhos */
+/* Shortcuts footer */
 .review-footer {
   flex: none;
   display: flex;
@@ -844,7 +844,7 @@
   border-top: 1px solid var(--color-border);
 }
 
-/* Janela estreita: só os três atalhos principais, numa linha (sem quebra). */
+/* Narrow window: only the three main shortcuts, on one row (no wrapping). */
 .review-footer-compact {
   flex-wrap: nowrap;
 }
@@ -860,12 +860,12 @@
   margin: var(--space-1-5) var(--space-2) 0;
 }
 
-/* A linha rouba o mínimo da lista: a 900×720 sobram 2 linhas inteiras. */
+/* The row steals the minimum from the list: at 900×720 two whole rows are left. */
 .review-levels > .notice-box-line {
   margin-top: var(--space-1);
 }
 
-/* ---------- Controles do canvas: Atual / Proposto, legenda, Comparar ---------- */
+/* ---------- Canvas controls: Current / Proposed, legend, Compare ---------- */
 .review-canvas-controls {
   display: inline-flex;
   align-items: center;
@@ -876,11 +876,11 @@
 }
 
 /*
- * Legenda das marcas. Fixa na janela (não é recortada pelo canvas): ancora no canto
- * superior esquerdo do canvas, não passa da coluna dele e, se o canvas for mais baixo que
- * ela, desce por cima das janelas até o topo da barra de status. O `ReviewLegend` mede o
- * canvas e a barra e entrega nas variáveis `--legend-*`. Fica acima das janelas e abaixo
- * de dicas, seletores e diálogos.
+ * Marks legend. Fixed in the window (not clipped by the canvas): anchors at the top
+ * left corner of the canvas, does not pass its column and, if the canvas is shorter than
+ * it, goes down over the windows to the top of the status bar. `ReviewLegend` measures the
+ * canvas and the bar and delivers in the `--legend-*` variables. It sits above the windows and below
+ * tooltips, pickers and dialogs.
  */
 .review-legend {
   position: fixed;
@@ -1087,7 +1087,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  /* No rodapé do diálogo, à esquerda do Fechar: a decisão não rola com o corpo. */
+  /* In the dialog footer, left of Close: the decision does not scroll with the body. */
   flex: 1;
 }
 
@@ -1102,7 +1102,7 @@
   }
 }
 
-/* ---------- DiffValue: atual, antes e depois ---------- */
+/* ---------- DiffValue: current, before and after ---------- */
 .diff-value {
   display: grid;
   grid-template-columns: calc(3 * var(--space-6)) minmax(0, 1fr);
@@ -1169,7 +1169,7 @@
   color: var(--color-text-muted);
 }
 
-/* ---------- Detalhes na revisão ---------- */
+/* ---------- Details in the review ---------- */
 .review-details {
   display: flex;
   flex-direction: column;
@@ -1177,7 +1177,7 @@
   padding: var(--space-2) 0 var(--space-4);
 }
 
-/* Cabeçalho do item (fase 9.6): a decisão, a criação ou remoção por inteiro, os avisos e a nota. */
+/* Item header (phase 9.6): the decision, the whole creation or removal, the warnings and the note. */
 .review-header {
   display: flex;
   flex-direction: column;
@@ -1245,7 +1245,7 @@
   font: var(--t-text);
 }
 
-/* Nota para o agente: o campo grava ao sair dele. */
+/* Note for the agent: the field saves when leaving it. */
 .review-note-field {
   display: flex;
   flex-direction: column;
@@ -1257,7 +1257,7 @@
   font: var(--t-text-small);
 }
 
-/* A linha embaixo do controle do campo: a nota da mudança e o selo da substituída. */
+/* The row under the field control: the change's note and the superseded badge. */
 .change-below {
   display: flex;
   flex-direction: column;
@@ -1282,7 +1282,7 @@
   margin-top: var(--space-0-5);
 }
 
-/* Outras mudanças e Imagens: uma linha por mudança, com o marcador à direita. */
+/* Other changes and Images: one row per change, with the marker on the right. */
 .other-changes {
   display: flex;
   flex-direction: column;
@@ -1333,7 +1333,7 @@
   padding: var(--space-4) 0;
 }
 
-/* ---------- Lembrete ao sair da revisão ---------- */
+/* ---------- Reminder when leaving the review ---------- */
 .exit-review-summary {
   display: flex;
   flex-direction: column;
@@ -1356,11 +1356,11 @@
   gap: var(--space-2);
 }
 
-/* ---------- Detalhes na revisão: o painel normal com os marcadores (fase 9.5) ---------- */
+/* ---------- Details in the review: the normal panel with the markers (phase 9.5) ---------- */
 /*
- * Somente leitura legível (decisão 1 do HANDOFF-REVIEW-DETAILS): os controles do painel
- * ficam desabilitados, mas com o valor em contraste cheio, como o estado "Somente leitura"
- * do DS (borda `color-border`), em vez da opacidade do desabilitado.
+ * Legible read-only (decision 1 of HANDOFF-REVIEW-DETAILS): the panel controls
+ * stay disabled, but with the value in full contrast, like the DS "Read-only" state
+ * (border `color-border`), instead of the disabled opacity.
  */
 .review-panel .input:disabled,
 .review-panel .ref-control:disabled {
@@ -1385,7 +1385,7 @@
   border-color: transparent;
 }
 
-/* Ações de edição não existem na revisão (o projeto é somente leitura). */
+/* Edit actions do not exist in the review (the project is read-only). */
 .review-panel .panel-details > .row,
 .review-panel .details-section-head > .button,
 .review-panel .layer-group-head > .tooltip-anchor,
@@ -1400,7 +1400,10 @@
   gap: var(--space-3);
 }
 
-/* Rótulo com o ícone de ajuda e o marcador na mesma linha: o rótulo quebra entre palavras, o (i) nunca desce sozinho. */
+/*
+ * Label with the help icon and the marker on the same row: the label wraps between words, the (i)
+ * never drops alone.
+ */
 .props-label-cell {
   display: flex;
   flex-wrap: nowrap;
@@ -1409,14 +1412,14 @@
   min-width: 0;
 }
 
-/* O rótulo cede espaço ao ícone de ajuda (a coluna ganha a largura dele, em `.props`). */
+/* The label yields space to the help icon (the column gains its width, in `.props`). */
 .props-label-cell > .props-label {
   flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: break-word;
 }
 
-/* Nos Detalhes da revisão a coluna do rótulo ganha a largura do ícone de ajuda (Posição, Tamanho). */
+/* In the review Details the label column gains the help icon width (Position, Size). */
 .review-details-panel .props {
   grid-template-columns: calc(var(--size-label-col) + var(--control-height-sm)) minmax(
       0,
@@ -1424,7 +1427,10 @@
     );
 }
 
-/* A 900 px a coluna do controle é estreita: os campos de X, Y, L e A trocam o respiro lateral por dígitos. */
+/*
+ * At 900 px the control column is narrow: the X, Y, W and H fields trade side breathing room for
+ * digits.
+ */
 .review-details-panel .props-pair {
   gap: var(--space-1);
 }
@@ -1438,7 +1444,7 @@
   margin-top: calc((var(--control-height-sm) - var(--size-icon) - var(--space-0-5)) / 2);
 }
 
-/* `rect`: Posição e Tamanho num rótulo de duas linhas, com um colchete e um marcador. */
+/* `rect`: Position and Size in a two-line label, with a bracket and a marker. */
 .props-label-cell > .props-label:has(.props-label-rect) {
   padding-top: 0;
 }
@@ -1493,7 +1499,7 @@ del.identity-name {
   color: var(--color-text-muted);
 }
 
-/* Marcador (ChangeMark): tipo à esquerda, decisão à direita, 18px. */
+/* Marker (ChangeMark): kind on the left, decision on the right, 18px. */
 .change-mark-host {
   display: inline-flex;
   flex: none;
@@ -1553,7 +1559,7 @@ del.identity-name {
   box-shadow: 0 0 0 2px var(--color-danger);
 }
 
-/* Popover da mudança (ChangePopover) */
+/* Change popover (ChangePopover) */
 .change-popover {
   width: var(--size-change-popover);
   max-height: 60vh;
@@ -1633,7 +1639,7 @@ del.identity-name {
   gap: var(--space-1);
 }
 
-/* A mudança selecionada na janela Propostas: o marcador e a linha dele acendem. */
+/* The change selected in the Proposals window: its marker and row light up. */
 .change-mark.is-target {
   border-color: var(--color-accent);
 }
@@ -1645,7 +1651,7 @@ del.identity-name {
   background: var(--color-selection);
 }
 
-/* Par e linha de tabela que saem ou entram; anotação que sai (fantasma). */
+/* Table pair and row that leave or enter; annotation that leaves (ghost). */
 .grid-row.is-removed {
   color: var(--color-text-muted);
 }
@@ -1693,14 +1699,14 @@ del.identity-name {
   white-space: nowrap;
 }
 
-/* Avisos da especialização no popover da mudança (etapa #486) */
+/* Specialization warnings in the change popover (stage #486) */
 .change-notices {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
 }
 
-/* Antes da revisão: o que o agente tinha proposto na mudança que ele trocou (etapa #644). */
+/* Before the review: what the agent had proposed in the change it replaced (stage #644). */
 .revised-before {
   display: flex;
   flex-direction: column;
@@ -1714,7 +1720,7 @@ del.identity-name {
   font: var(--t-text-heading);
 }
 
-/* Uma tabela vira uma linha de texto por registro. */
+/* A table becomes a text row per record. */
 .revised-before .diff-value-value {
   white-space: pre-line;
 }

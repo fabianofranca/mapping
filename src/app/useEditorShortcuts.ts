@@ -66,7 +66,7 @@ interface FocusedWindow {
   readonly el: Element;
 }
 
-/** Janela de ferramenta que contém o foco (ou `null` fora delas). */
+/** Tool window that contains the focus (or `null` outside them). */
 function focusedWindow(): FocusedWindow | null {
   const el = document.activeElement?.closest('[data-window]');
   const name = el?.getAttribute('data-window');
@@ -75,9 +75,9 @@ function focusedWindow(): FocusedWindow | null {
 }
 
 /**
- * O teclado é do campo em foco, não do atalho? O Alt+H vale em caixas e opções; o Ctrl+C num
- * campo de texto de uma propriedade, sem texto selecionado, copia a referência dela (com
- * seleção, ou fora de uma propriedade, o copiar nativo continua).
+ * Does the keyboard belong to the focused field, not the shortcut? Alt+H applies in checkboxes and radios; Ctrl+C in a
+ * text field of a property, with no selected text, copies its reference (with
+ * a selection, or outside a property, the native copy continues).
  */
 function fieldOwnsKey(shortcut: Shortcut, target: EventTarget | null): boolean {
   if (shortcut.kind === 'view-mode') return isTypingField(target);
@@ -90,8 +90,8 @@ function fieldOwnsKey(shortcut: Shortcut, target: EventTarget | null): boolean {
 }
 
 /**
- * Redimensiona a janela em foco em 16px no sentido das setas (B2). Nas Camadas
- * empilhadas, ↑/↓ mexem na divisória com a Árvore e ←/→ na largura da coluna.
+ * Resizes the focused window by 16px in the arrow direction (B2). In the stacked
+ * Layers, ↑/↓ move the divider with the Tree and ←/→ the column width.
  */
 function resizeFocused(dx: number, dy: number): void {
   const focused = focusedWindow();
@@ -109,9 +109,9 @@ function resizeFocused(dx: number, dy: number): void {
 }
 
 /**
- * Atalhos de teclado. Diálogos abertos cuidam do próprio teclado (Esc).
- * O listener é inscrito uma vez; `dialogs` aponta para a versão atual.
- * `enabled` falso (janela estreita, com o editor atrás do aviso) desliga todos.
+ * Keyboard shortcuts. Open dialogs handle their own keyboard (Esc).
+ * The listener is subscribed once; `dialogs` points to the current version.
+ * `enabled` false (narrow window, with the editor behind the notice) turns them all off.
  */
 export function useEditorShortcuts(
   dialogs: EditorDialogs,
@@ -121,11 +121,11 @@ export function useEditorShortcuts(
 ): void {
   const editor = useEditor();
   const { store, ui, canvas, actions, review } = editor;
-  // O projeto à vista (`shownProject`): na visão Proposto da revisão, o item que só existe
-  // na proposta também tem pai e filhos para o Alt+↑/↓ (fase 8.2, P1). Fora da revisão é
-  // o confirmado; a prévia do gesto só muda geometria, que nenhum atalho daqui consulta.
+  // The project in view (`shownProject`): in the review's Proposed view, an item that only exists
+  // in the proposal also has a parent and children for Alt+↑/↓ (phase 8.2, P1). Outside the review it is
+  // the confirmed one; the gesture preview only changes geometry, which no shortcut here consults.
   const shown = review.derived.shownProject;
-  // Revisão: decidir e aplicar avisam os erros como os botões.
+  // Review: deciding and applying report errors like the buttons do.
   const decide = useDecide();
   const apply = useApplyAccepted();
   const reviewRef = useRef({ decide, apply });
@@ -134,7 +134,7 @@ export function useEditorShortcuts(
   dialogsRef.current = dialogs;
   const commandsRef = useRef(commands);
   commandsRef.current = commands;
-  // Importação ou troca em curso: exportar apagaria o progresso (os botões também esperam).
+  // Import or swap in progress: exporting would wipe the progress (the buttons also wait).
   const busyRef = useRef(busy);
   busyRef.current = busy;
   const enabledRef = useRef(enabled);
@@ -146,12 +146,12 @@ export function useEditorShortcuts(
       isStandalone(),
     );
 
-    /** Alt+↑ / Alt+↓: anda no caminho da seleção (B11). */
+    /** Alt+↑ / Alt+↓: moves along the selection path (B11). */
     const moveSelection = (up: boolean) => {
       const project = shown.peek();
       const current = resolveSelection(project, ui.selection.peek());
       if (!project || !current) return;
-      // A seta não tem pai nem filhas a percorrer.
+      // The arrow has no parent or children to walk through.
       if (current.kind === 'arrow') return;
       const index = projectIndex(project);
       let next: Selection = null;
@@ -167,7 +167,7 @@ export function useEditorShortcuts(
           else if (member) next = { kind: 'image', id: member.id };
         }
       } else if (up) {
-        // Container dentro de uma marcação do canvas: sobe para ela.
+        // Container inside a canvas marking: goes up to it.
         if (current.image.parentId !== null) {
           next = { kind: 'marking', id: current.image.parentId };
         }
@@ -183,14 +183,14 @@ export function useEditorShortcuts(
     };
 
     /**
-     * Item que Ctrl+C / Ctrl+Alt+C copiariam agora, ou `null` quando o copiar fica com o
-     * navegador: projeto fora de uma pasta, nada selecionado, ou texto selecionado na página.
+     * Item that Ctrl+C / Ctrl+Alt+C would copy now, or `null` when copying is left to the
+     * browser: project outside a folder, nothing selected, or text selected on the page.
      */
     const copyTarget = (shortcut: Shortcut): CopyTarget | null => {
       if (!canCopyItems(editor)) return null;
       if (shortcut.kind === 'copy-crop') {
         const target = copyShortcutTarget(editor);
-        // Container sem arquivo não tem recorte: o atalho não assume a tecla.
+        // Container without a file has no crop: the shortcut does not take the key.
         return target?.kind === 'm' && canCopyCrop(shown.peek(), target.id)
           ? target
           : null;
@@ -200,9 +200,9 @@ export function useEditorShortcuts(
     };
 
     /**
-     * O atalho assume a tecla só quando tem o que fazer; senão o evento segue para o navegador
-     * (copiar nativo, "localizar próximo"): copiar sem item para copiar; envolver sem nada que
-     * entre numa marcação pai (somente leitura, revisão, sem seleção, só notas e setas).
+     * The shortcut takes the key only when it has something to do; otherwise the event goes on to the browser
+     * (native copy, "find next"): copy with no item to copy; wrap with nothing that can
+     * enter a parent marking (read-only, review, no selection, only notes and arrows).
      */
     const applies = (shortcut: Shortcut): boolean => {
       if (shortcut.kind === 'copy-reference' || shortcut.kind === 'copy-crop') {
@@ -213,9 +213,9 @@ export function useEditorShortcuts(
     };
 
     /**
-     * Envolver não age na tecla repetida (segurar o Ctrl+G aninharia um pai por repetição) nem
-     * com um gesto de ponteiro em andamento (o store recusaria e o aviso apareceria no meio do
-     * arrasto). O `preventDefault` já foi chamado: o "localizar próximo" do navegador fica fora.
+     * Wrap does not act on a repeated key (holding Ctrl+G would nest one parent per repeat) nor
+     * with a pointer gesture in progress (the store would refuse and the notice would appear in the middle of the
+     * drag). `preventDefault` was already called: the browser's "find next" stays out.
      */
     const wrapIgnored = (shortcut: Shortcut, e: KeyboardEvent): boolean =>
       shortcut.kind === 'wrap' && (e.repeat || canvas.current?.isInteracting() === true);
@@ -235,7 +235,7 @@ export function useEditorShortcuts(
           return;
         }
         case 'arrange': {
-          // Container em linha ou coluna com filhas; fora disso (ou somente leitura) o atalho não age.
+          // Container in a row or column with children; otherwise (or read-only) the shortcut does not act.
           if (store.locked.peek()) return;
           const current = resolveSelection(shown.peek(), ui.selection.peek());
           if (
@@ -251,13 +251,13 @@ export function useEditorShortcuts(
         case 'redo':
           return store.redo();
         case 'escape':
-          // Gesto em andamento: cancela. Senão, com vários itens volta ao primário; por fim limpa.
+          // Gesture in progress: cancels. Otherwise, with several items goes back to the primary; finally clears.
           if (canvas.current?.cancelInteraction()) return;
-          // A legenda da revisão aberta, com o foco no botão ou no canvas: o Esc fecha só ela.
+          // The review legend open, with focus on the button or the canvas: Esc closes only it.
           if (closeReviewLegendOnEscape(ui)) return;
-          // O Comentar armado: o Esc desarma e volta à ferramenta de antes.
+          // Comment armed: Esc disarms and returns to the previous tool.
           if (cancelComment(ui)) return;
-          // No modo visualização o Esc sai do modo (o painel aberto já consumiu o Esc dele).
+          // In view mode Esc leaves the mode (the open panel already consumed its Esc).
           if (ui.viewMode.peek()) return setViewMode(ui, false);
           if (!collapseToPrimary(ui)) selectItems(ui, []);
           return;
@@ -279,11 +279,11 @@ export function useEditorShortcuts(
           return;
         }
         case 'toggle-lock': {
-          // Só a trava muda: seleção e anotações seguem livres, mas o somente leitura vale.
+          // Only the lock changes: selection and annotations stay free, but read-only applies.
           if (store.locked.peek()) return;
           const many = existingItems(shown.peek(), peekSelectedItems(ui));
           if (many.length > 1) {
-            // Todos trancados: destranca todos; senão tranca todos.
+            // All locked: unlocks all; otherwise locks all.
             const project = shown.peek();
             const index = project ? projectIndex(project) : null;
             const allLocked = many.every((i) =>
@@ -309,7 +309,7 @@ export function useEditorShortcuts(
         case 'view-mode':
           return setViewMode(ui, !ui.viewMode.peek());
         case 'hide-window': {
-          // Quem faz o retângulo de seleção tem o Shift apertado: com gesto em andamento, o Esc cancela.
+          // Whoever makes the selection rectangle has Shift pressed: with a gesture in progress, Esc cancels.
           if (canvas.current?.cancelInteraction()) return;
           const focused = focusedWindow();
           if (focused) closeToolWindow(focused.id);
@@ -317,7 +317,7 @@ export function useEditorShortcuts(
         }
         case 'toggle-window': {
           const { window } = shortcut;
-          // Fechada ou sem foco dentro: abre e foca; já em foco: esconde.
+          // Closed or without focus inside: opens and focuses; already focused: hides.
           if (focusedWindow()?.id === window) closeToolWindow(window);
           else showAndFocusToolWindow(window);
           return;
@@ -348,7 +348,7 @@ export function useEditorShortcuts(
       }
     };
 
-    /** Atalhos da revisão (HANDOFF-PROPOSALS 6): agem sobre o nível selecionado. */
+    /** Review shortcuts (HANDOFF-PROPOSALS 6): they act on the selected level. */
     const runReview = (shortcut: ReviewShortcut) => {
       switch (shortcut.kind) {
         case 'decide': {
@@ -373,7 +373,7 @@ export function useEditorShortcuts(
       }
     };
 
-    // As setas movem a seleção: apertar e soltar é um gesto; segurar soma passos no mesmo gesto.
+    // The arrows move the selection: pressing and releasing is one gesture; holding adds steps in the same gesture.
     const nudge = new NudgeSession(actions, () =>
       existingItems(shown.peek(), peekSelectedItems(ui)),
     );
@@ -387,7 +387,7 @@ export function useEditorShortcuts(
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      // Qualquer outra tecla (o Shift solto no meio, Ctrl+Z...) fecha o gesto das setas.
+      // Any other key (Shift released in the middle, Ctrl+Z...) closes the arrow gesture.
       const shortcut = shortcutFor(e, altNumbers);
       if (shortcut?.kind !== 'nudge') nudge.end();
       if (e.defaultPrevented || !enabledRef.current) return;

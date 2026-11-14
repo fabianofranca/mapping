@@ -5,20 +5,20 @@ import { Dialog } from '../ui/Dialog';
 
 interface ProjectNameDialogProps {
   readonly title: string;
-  /** `id` do formulário: o botão "Criar" fica nas ações do diálogo e o envia por ele. */
+  /** `id` of the form: the "Create" button sits in the dialog actions and submits it by this id. */
   readonly formId: string;
   readonly busy: boolean;
   readonly name: string;
-  /** Vazio usa o `placeholder` como nome (ver controller). */
+  /** Empty uses the `placeholder` as the name (see controller). */
   readonly placeholder: string;
   readonly onName: (name: string) => void;
   readonly onCancel: () => void;
   readonly onSubmit: () => void;
-  /** Texto antes do campo (a pasta escolhida e quantas imagens ela já tem). */
+  /** Text before the field (the chosen folder and how many images it already has). */
   readonly children?: ComponentChildren;
 }
 
-/** Diálogo "novo projeto" e "configurar pasta": um campo de nome, Cancelar e Criar. */
+/** "New project" and "configure folder" dialog: a name field, Cancel and Create. */
 export function ProjectNameDialog({
   title,
   formId,
@@ -51,7 +51,7 @@ export function ProjectNameDialog({
         }}
       >
         {children}
-        {/* Sem foco próprio: o diálogo dá o foco inicial ao primeiro controle do corpo (F9). */}
+        {/* No focus of its own: the dialog gives the initial focus to the first body control (F9). */}
         <TextField
           label={t('project.name')}
           type="text"

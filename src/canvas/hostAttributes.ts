@@ -1,6 +1,6 @@
-// Texto dos atributos de teste do `.canvas-host` (`data-selection`, `data-arrow-handles` e
-// `data-container-boxes`), só leitura para os testes e para o testador da nuvem. Funções puras,
-// sem Konva, testadas em `tests/canvas/hostAttributes.test.ts`. Números com 2 casas, como o
+// Text of the test attributes of `.canvas-host` (`data-selection`, `data-arrow-handles` and
+// `data-container-boxes`), read-only for the tests and for the cloud tester. Pure functions,
+// without Konva, tested in `tests/canvas/hostAttributes.test.ts`. Numbers with 2 decimals, like
 // `formatSelectionBox`.
 import {
   imageCanvasRect,
@@ -14,7 +14,7 @@ import type { Viewport } from './viewport';
 
 const round2 = (n: number): string => String(Math.round(n * 100) / 100);
 
-/** `"<tipo> <id>"` da seleção primária (`image`, `marking` ou `arrow`); `null` se não resolve. */
+/** `"<type> <id>"` of the primary selection (`image`, `marking` or `arrow`); `null` if it does not resolve. */
 export function formatSelection(
   project: Project | null,
   selection: Selection,
@@ -28,8 +28,8 @@ function handleName(handle: ArrowHandle): string {
 }
 
 /**
- * `"<nome> <x> <y>"` separados por `;`, em px CSS relativos ao canto do host: `center` (o meio do
- * traço, onde o clique pega a seta) e as alças de `arrowHandles` na ordem dela.
+ * `"<name> <x> <y>"` separated by `;`, in CSS px relative to the host's corner: `center` (the middle of the
+ * stroke, where the click catches the arrow) and the `arrowHandles` handles in their order.
  */
 export function formatArrowHandles(shape: ArrowShape, view: Viewport): string {
   const entry = (name: string, at: { x: number; y: number }) =>

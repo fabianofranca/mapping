@@ -1,12 +1,12 @@
-// Caixa, no espaço do canvas, que envolve todos os itens selecionados (Enquadrar seleção).
-// Função pura, testada em `tests/canvas/`.
+// Box, in canvas space, that wraps all the selected items (Frame selection).
+// Pure function, tested in `tests/canvas/`.
 import { imageCanvasRect, type Project, type Rect } from '../model';
 import { resolveSelection, type SelectionItem } from '../store/ui';
 import { arrowShape } from './arrowGeometry';
 import { markingCanvasRect } from './markingGeometry';
 import { unionRect } from './minimap';
 
-/** Caixa desenhada de um item (marcação, container, flutuante ou seta), ou `null` se não existe. */
+/** Drawn box of an item (marking, container, floating or arrow), or `null` if it does not exist. */
 function itemCanvasRect(project: Project, item: SelectionItem): Rect | null {
   const selected = resolveSelection(project, item);
   if (!selected) return null;
@@ -18,7 +18,7 @@ function itemCanvasRect(project: Project, item: SelectionItem): Rect | null {
   return imageCanvasRect(selected.image, selected.image.placement);
 }
 
-/** União das caixas dos itens; `null` sem nenhum item que exista. */
+/** Union of the items' boxes; `null` without any item that exists. */
 export function selectionCanvasBounds(
   project: Project | null,
   items: readonly SelectionItem[],

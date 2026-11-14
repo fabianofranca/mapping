@@ -1,7 +1,7 @@
-// Geometria das setas no canvas (v13, ME4): a polilinha/curva desenhada, o hit-test pelo traço, as
-// alças da seta selecionada e a alça de ligação de uma marcação. Funções puras (sem DOM nem Konva),
-// testadas em `tests/canvas/arrowGeometry.test.ts`. Tudo em unidades do canvas; as distâncias de
-// toque entram em px de tela e são divididas pelo zoom.
+// Arrow geometry on the canvas (v13, ME4): the drawn polyline/curve, the stroke hit-test, the
+// handles of the selected arrow and a marking's link handle. Pure functions (no DOM or Konva),
+// tested in `tests/canvas/arrowGeometry.test.ts`. Everything in canvas units; touch distances
+// come in screen px and are divided by the zoom.
 import {
   arrowRoute,
   fromCanvasPoint,
@@ -20,39 +20,39 @@ import {
 } from '../model';
 import type { Point } from './viewport';
 
-/** Distância (px de tela) do traço em que o toque ainda pega a seta. */
+/** Distance (screen px) from the stroke at which a touch still catches the arrow. */
 export const ARROW_HIT_TOLERANCE = 7;
-/** Raio de toque (px de tela) das alças da seta selecionada e da alça de ligação. */
+/** Touch radius (screen px) of the selected arrow's handles and the link handle. */
 export const ARROW_HANDLE_HIT_RADIUS = 10;
-/** Trecho curto demais (px de tela) não ganha a alça do meio: ela cairia sobre as vizinhas. */
+/** A section too short (screen px) gets no middle handle: it would fall on its neighbors. */
 export const ARROW_MID_HANDLE_MIN = 3 * ARROW_HANDLE_HIT_RADIUS;
-/** Distância (px de tela) da alça de ligação até a borda direita da marcação. */
+/** Distance (screen px) from the link handle to the marking's right edge. */
 export const LINK_HANDLE_OFFSET = 14;
-/** Amostras de cada trecho de uma curva (par, para o meio cair numa amostra). */
+/** Samples per section of a curve (even, so the middle falls on a sample). */
 const CURVE_SAMPLES = 16;
-/** A tangente de um ponto de passagem é essa fração da corda entre os vizinhos (Catmull-Rom). */
+/** The tangent at a through point is this fraction of the chord between neighbors (Catmull-Rom). */
 const TANGENT_FACTOR = 0.5;
 
-/** A seta pronta para desenhar e tocar. */
+/** The arrow ready to draw and touch. */
 export interface ArrowShape {
   readonly arrow: Arrow;
-  /** Âncoras e pontos de passagem (canvas), com os lados efetivos. */
+  /** Anchors and through points (canvas), with the effective sides. */
   readonly route: ArrowRoute;
   /**
-   * O traço: os pontos da rota no `straight` e no `elbow`; no `curve`, a curva amostrada (o
-   * mesmo desenho e o mesmo alvo do toque).
+   * The stroke: the route points in `straight` and `elbow`; in `curve`, the sampled curve (the
+   * same drawing and the same touch target).
    */
   readonly path: readonly Point[];
-  /** O meio do traço de cada trecho da rota (um a menos que `route.points`). */
+  /** The middle of the stroke of each route section (one fewer than `route.points`). */
   readonly mids: readonly Point[];
-  /** O meio do traço pelo comprimento: onde fica o rótulo. */
+  /** The middle of the stroke by length: where the label goes. */
   readonly label: Point;
-  /** Caixa do traço (sem a espessura nem a ponta). */
+  /** Stroke box (without the thickness or the head). */
   readonly bounds: Rect;
 }
 
 // ---------------------------------------------------------------------------
-// Traço
+// Stroke
 
 function normalOf(side: ArrowSide): Point {
   switch (side) {
@@ -70,9 +70,9 @@ function normalOf(side: ArrowSide): Point {
 const dist = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
 
 /**
- * A curva pelos pontos da rota: Hermite cúbica por trecho (como a suavização do Konva, com
- * tangentes de Catmull-Rom nos pontos de passagem). Nas pontas a tangente sai perpendicular ao
- * lado da marcação, então até a seta sem pontos de passagem faz um S entre os lados.
+ * The curve through the route points: cubic Hermite per section (like Konva's smoothing, with
+ * Catmull-Rom tangents at the through points). At the ends the tangent leaves perpendicular to the
+ * marking's side, so even an arrow with no through points makes an S between the sides.
  */
 export function curvePath(
   points: readonly Point[],
@@ -128,7 +128,7 @@ export function curvePath(
   return { path, mids };
 }
 
-/** O ponto a meio caminho do comprimento da polilinha. */
+/** The point halfway along the polyline's length. */
 export function pathMidpoint(path: readonly Point[]): Point {
   const first = path[0];
   if (!first) return { x: 0, y: 0 };
@@ -166,7 +166,7 @@ function boundsOf(path: readonly Point[]): Rect {
     : { x: 0, y: 0, width: 0, height: 0 };
 }
 
-/** Monta o desenho da seta a partir da rota (`arrowRoute`). */
+/** Builds the arrow drawing from the route (`arrowRoute`). */
 export function shapeOf(arrow: Arrow, route: ArrowRoute): ArrowShape {
   const points = route.points;
   let path: readonly Point[] = points;
@@ -185,7 +185,7 @@ export function shapeOf(arrow: Arrow, route: ArrowRoute): ArrowShape {
 }
 
 // ---------------------------------------------------------------------------
-// Do projeto para as setas desenhadas
+// From the project to the drawn arrows
 
 interface ShapeEntry {
   readonly from: Marking;
@@ -198,9 +198,9 @@ interface ShapeEntry {
 const shapeCache = new WeakMap<Arrow, ShapeEntry>();
 
 /**
- * O desenho da seta no projeto, `null` se uma ponta não existe. Guardado por seta: o mesmo objeto
- * enquanto a seta, as duas marcações e os containers delas são os mesmos, então um gesto que mexe
- * numa marcação refaz só as setas presas a ela.
+ * The arrow's drawing in the project, `null` if an end does not exist. Cached per arrow: the same
+ * object while the arrow, its two markings and their containers are the same, so a gesture that
+ * moves a marking redoes only the arrows attached to it.
  */
 export function arrowShape(project: Project, arrow: Arrow): ArrowShape | null {
   const index = projectIndex(project);
@@ -239,10 +239,10 @@ function sameShapes(a: readonly ArrowShape[], b: readonly ArrowShape[]): boolean
 }
 
 /**
- * As setas que aparecem: as duas pontas existem e nenhuma está oculta pelo modo de exibição
- * (`visibility`; sem entrada, visível). Na ordem do projeto (a última fica por cima). Guardado pelo
- * projeto e pela visibilidade, e o mesmo array enquanto as setas desenhadas forem as mesmas:
- * pan e zoom não passam por aqui, e editar o que não é seta não redesenha as setas.
+ * The arrows that show: both ends exist and none is hidden by the display mode
+ * (`visibility`; no entry, visible). In project order (the last one is on top). Cached by the
+ * project and the visibility, and the same array while the drawn arrows are the same:
+ * pan and zoom do not come through here, and editing what is not an arrow does not redraw the arrows.
  */
 export function visibleArrowShapes(
   project: Project | null,
@@ -272,8 +272,8 @@ export function visibleArrowShapes(
 const lengthCache = new WeakMap<ArrowShape, number>();
 
 /**
- * O comprimento do traço (soma dos trechos do `path`, unidades do canvas), guardado por
- * `ArrowShape`: pan e zoom não o recalculam (o comprimento na tela é ele × o zoom).
+ * The stroke length (sum of the `path` sections, canvas units), cached per
+ * `ArrowShape`: pan and zoom do not recompute it (the on-screen length is it × the zoom).
  */
 export function arrowPathLength(shape: ArrowShape): number {
   const cached = lengthCache.get(shape);
@@ -287,9 +287,9 @@ export function arrowPathLength(shape: ArrowShape): number {
 }
 
 // ---------------------------------------------------------------------------
-// Toque
+// Touch
 
-/** Distância do ponto `p` ao segmento `a`–`b`. */
+/** Distance from point `p` to segment `a`–`b`. */
 export function distanceToSegment(p: Point, a: Point, b: Point): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -299,7 +299,7 @@ export function distanceToSegment(p: Point, a: Point, b: Point): number {
   return dist(p, { x: a.x + t * dx, y: a.y + t * dy });
 }
 
-/** Distância do ponto ao traço (a menor entre os segmentos). */
+/** Distance from the point to the stroke (the smallest among the segments). */
 export function distanceToPath(p: Point, path: readonly Point[]): number {
   const only = path[0];
   if (!only) return Infinity;
@@ -312,8 +312,8 @@ export function distanceToPath(p: Point, path: readonly Point[]): number {
 }
 
 /**
- * Setas sob o ponto `c` (canvas): as que têm o traço a até `tolerance` px de tela, a mais perto
- * primeiro; no empate, a de cima (a última do array).
+ * Arrows under point `c` (canvas): those whose stroke is within `tolerance` screen px, the closest
+ * first; on a tie, the top one (the last in the array).
  */
 export function arrowsAt(
   shapes: readonly ArrowShape[],
@@ -345,15 +345,15 @@ export function arrowsAt(
 }
 
 // ---------------------------------------------------------------------------
-// Alças
+// Handles
 
 /**
- * Uma alça da seta selecionada: a ponta (`end`, arrastar até outra marcação ou outro lado), um
- * ponto de passagem (`point`, `index` em `arrow.points`: mover; clique duplo remove), o meio de
- * um trecho (`mid`, `index` = onde o ponto novo entra em `arrow.points`: arrastar o cria) ou, só
- * no `elbow`, um segmento do meio (`segment`, `index` = a pista em `arrow.points` e `route.lanes`;
- * `axis` = a coordenada que ele fixa: arrastar o move em paralelo, e o clique duplo volta à rota
- * padrão). O `elbow` não tem `point` nem `mid`: `points` ali são os segmentos.
+ * A handle of the selected arrow: the end (`end`, drag to another marking or another side), a
+ * through point (`point`, `index` in `arrow.points`: move; double click removes), the middle of
+ * a section (`mid`, `index` = where the new point enters `arrow.points`: dragging creates it) or, only
+ * in `elbow`, a middle segment (`segment`, `index` = the lane in `arrow.points` and `route.lanes`;
+ * `axis` = the coordinate it fixes: dragging moves it in parallel, and double click returns to the
+ * default route). `elbow` has no `point` or `mid`: `points` there are the segments.
  */
 export type ArrowHandle =
   | { readonly kind: 'end'; readonly end: ArrowEnd; readonly at: Point }
@@ -367,9 +367,9 @@ export type ArrowHandle =
     };
 
 /**
- * As alças da seta, na ordem de prioridade do toque: as duas pontas, os pontos de passagem, os
- * meios dos trechos (só dos que têm `ARROW_MID_HANDLE_MIN` px de tela ou mais). No `elbow`, as
- * pontas e o meio de cada segmento do meio (com o mesmo comprimento mínimo).
+ * The arrow's handles, in touch priority order: the two ends, the through points, the
+ * middles of the sections (only those `ARROW_MID_HANDLE_MIN` screen px or longer). In `elbow`, the
+ * ends and the middle of each middle segment (with the same minimum length).
  */
 export function arrowHandles(shape: ArrowShape, zoom: number): ArrowHandle[] {
   const points = shape.route.points;
@@ -409,8 +409,8 @@ export function arrowHandles(shape: ArrowShape, zoom: number): ArrowHandle[] {
 }
 
 /**
- * A alça do segmento do meio de uma seta `elbow` sob `c`: o segmento inteiro pega o toque (não só
- * a alça do meio), o mais perto primeiro; segmento de comprimento zero não pega.
+ * The middle-segment handle of an `elbow` arrow under `c`: the whole segment catches the touch (not
+ * only the middle handle), the closest first; a zero-length segment does not catch it.
  */
 function segmentHandleAt(shape: ArrowShape, c: Point, zoom: number): ArrowHandle | null {
   const points = shape.route.points;
@@ -436,9 +436,9 @@ function segmentHandleAt(shape: ArrowShape, c: Point, zoom: number): ArrowHandle
 }
 
 /**
- * Os pontos de passagem de uma seta `elbow` com uma pista por segmento do meio, para o gesto que
- * move um segmento: os gravados, se casam com a rota (`arrow.points`), ou o meio de cada segmento
- * da rota padrão, no espaço dos pontos (`placement`), arredondado para o pixel.
+ * The through points of an `elbow` arrow with one lane per middle segment, for the gesture that
+ * moves a segment: the stored ones, if they match the route (`arrow.points`), or the middle of each
+ * segment of the default route, in the points' space (`placement`), rounded to the pixel.
  */
 export function elbowLanePoints(shape: ArrowShape, placement: Placement): ArrowPoint[] {
   const { arrow, route } = shape;
@@ -449,7 +449,7 @@ export function elbowLanePoints(shape: ArrowShape, placement: Placement): ArrowP
   });
 }
 
-/** A alça sob `c`: a primeira da ordem de prioridade, e entre as do mesmo tipo a mais perto. */
+/** The handle under `c`: the first in priority order, and among those of the same kind the closest. */
 export function arrowHandleAt(
   shape: ArrowShape,
   c: Point,
@@ -471,7 +471,7 @@ export function arrowHandleAt(
   return best;
 }
 
-/** Centro da alça de ligação da marcação (canvas): fora da borda direita, no meio do lado. */
+/** Center of the marking's link handle (canvas): outside the right edge, at the middle of the side. */
 export function linkHandlePoint(rect: Rect, zoom: number): Point {
   return {
     x: rect.x + rect.width + LINK_HANDLE_OFFSET / zoom,
@@ -479,14 +479,14 @@ export function linkHandlePoint(rect: Rect, zoom: number): Point {
   };
 }
 
-/** O ponto `c` está sobre a alça de ligação do retângulo? */
+/** Is point `c` on the rectangle's link handle? */
 export function isOnLinkHandle(rect: Rect, c: Point, zoom: number): boolean {
   return dist(c, linkHandlePoint(rect, zoom)) <= ARROW_HANDLE_HIT_RADIUS / zoom;
 }
 
 /**
- * O lado do retângulo mais perto do ponto (distância ao segmento de cada lado; empate na ordem
- * `top`, `right`, `bottom`, `left`). Dentro do retângulo, o lado de borda mais perto.
+ * The side of the rectangle closest to the point (distance to each side's segment; ties in the order
+ * `top`, `right`, `bottom`, `left`). Inside the rectangle, the closest border side.
  */
 export function nearestSide(rect: Rect, p: Point): ArrowSide {
   const x1 = rect.x + rect.width;
@@ -502,7 +502,7 @@ export function nearestSide(rect: Rect, p: Point): ArrowSide {
   return best[0];
 }
 
-/** Direção (versor) em que a ponta da seta aponta: do penúltimo ao último ponto distinto do traço. */
+/** Direction (unit vector) the arrow head points: second-to-last to last distinct stroke point. */
 export function headDirection(path: readonly Point[]): Point {
   const last = path[path.length - 1];
   if (!last) return { x: 1, y: 0 };
@@ -515,8 +515,8 @@ export function headDirection(path: readonly Point[]): Point {
 }
 
 /**
- * O traço sem os últimos `length` de comprimento (a ponta cobre esse trecho): o traço não fura a
- * ponta pelos lados. Mais curto que `length`, sobra o primeiro ponto.
+ * The stroke without the last `length` of length (the head covers that stretch): the stroke does not
+ * poke out of the head at the sides. Shorter than `length`, the first point remains.
  */
 export function trimPathEnd(path: readonly Point[], length: number): Point[] {
   const out = [...path];
@@ -539,12 +539,12 @@ export function trimPathEnd(path: readonly Point[], length: number): Point[] {
   return out;
 }
 
-/** Largura da ponta (de lado a lado) como fração do comprimento dela. */
+/** Width of the head (side to side) as a fraction of its length. */
 const HEAD_WIDTH_RATIO = 0.9;
 
 /**
- * A ponta de seta: um triângulo com a ponta em `tip`, apontando na direção `dir` (versor), de
- * comprimento `length`. Lista plana de pontos para o Konva.
+ * The arrow head: a triangle with its tip at `tip`, pointing in direction `dir` (unit vector), of
+ * length `length`. Flat list of points for Konva.
  */
 export function headPoints(tip: Point, dir: Point, length: number): number[] {
   const bx = tip.x - dir.x * length;
@@ -560,29 +560,29 @@ export function headPoints(tip: Point, dir: Point, length: number): number[] {
   ];
 }
 
-/** Os pontos do traço como a lista plana `[x0, y0, x1, y1, …]` do Konva. */
+/** The stroke points as Konva's flat list `[x0, y0, x1, y1, …]`. */
 export function flatPoints(path: readonly Point[]): number[] {
   const flat: number[] = [];
   for (const p of path) flat.push(p.x, p.y);
   return flat;
 }
 
-/** O que se desenha de todas as setas num zoom: os traços (sem o fim, que a ponta cobre) e as pontas. */
+/** What is drawn of all arrows at a zoom: the strokes (minus the end the head covers) and the heads. */
 export interface ArrowStrokes {
-  /** Lista plana `[x0, y0, x1, y1, …]` do traço de cada seta, menos o trecho da ponta. */
+  /** Flat list `[x0, y0, x1, y1, …]` of each arrow's stroke, minus the head stretch. */
   readonly bodies: readonly (readonly number[])[];
-  /** O mesmo para as setas `elbow`, que o desenho pinta com cantos vivos (junção em esquadro). */
+  /** The same for `elbow` arrows, which the drawing paints with sharp corners (square join). */
   readonly corners: readonly (readonly number[])[];
-  /** Triângulo de cada ponta, lista plana de três pontos. */
+  /** Triangle of each head, flat list of three points. */
   readonly heads: readonly (readonly number[])[];
 }
 
-/** Fração do comprimento da ponta que o traço deixa de fora (a ponta o cobre). */
+/** Fraction of the head length that the stroke leaves out (the head covers it). */
 const HEAD_OVERLAP = 0.9;
-/** Pontos do traço mais perto que isto (px de tela) um do outro não mudam o que se vê. */
+/** Stroke points closer than this (screen px) to each other do not change what is seen. */
 const DRAW_SPACING = 2;
 
-/** O traço sem os pontos a menos de `spacing` do anterior mantido (o primeiro e o último ficam). */
+/** The stroke without points within `spacing` of the previous kept one (first and last stay). */
 export function thinPath(path: readonly Point[], spacing: number): Point[] {
   const first = path[0];
   if (!first) return [];
@@ -596,8 +596,8 @@ export function thinPath(path: readonly Point[], spacing: number): Point[] {
 }
 
 /**
- * O desenho das setas a `zoom`, com a ponta de `headPx` px de tela: o comprimento dela em unidades
- * do canvas é `headPx / zoom`. Só depende das formas e do zoom (pan não recalcula).
+ * The drawing of the arrows at `zoom`, with a head of `headPx` screen px: its length in canvas units
+ * is `headPx / zoom`. It only depends on the shapes and the zoom (pan does not recompute).
  */
 export function arrowStrokes(
   shapes: readonly ArrowShape[],
@@ -611,10 +611,10 @@ export function arrowStrokes(
   for (const shape of shapes) {
     const tip = shape.path[shape.path.length - 1];
     if (!tip) continue;
-    // Sem ponta (`headPx` 0: a seta curta, só o traço), o traço vai até o fim e não há triângulo.
+    // No head (`headPx` 0: the short arrow, only the stroke): the stroke goes to the end, no triangle.
     const trimmed =
       length > 0 ? trimPathEnd(shape.path, length * HEAD_OVERLAP) : shape.path;
-    // O canto não é afinado: tirar um ponto perto do outro comeria a dobra de um trecho curto.
+    // The corner is not thinned: dropping a point near another would eat a short section's bend.
     const flat = flatPoints(
       shape.arrow.style === 'elbow' ? trimmed : thinPath(trimmed, DRAW_SPACING / zoom),
     );

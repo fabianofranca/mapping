@@ -67,7 +67,7 @@ describe('ReopenTrace', () => {
     trace.shown(openDialog());
     clock = 4120;
     trace.closed('backdrop');
-    expect(lines()[1]).toBe('aviso fechado: backdrop após 120ms');
+    expect(lines()[1]).toBe('notice closed: backdrop after 120ms');
     // Fechado, o rastro acabou: nada mais grava.
     trace.closed('cancel');
     expect(lines()).toHaveLength(2);

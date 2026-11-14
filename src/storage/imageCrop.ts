@@ -1,11 +1,11 @@
 import { planOutputSize, type Rect } from '../model';
 
-/** Lado maior máximo do recorte copiado, em pixels. */
+/** Maximum longer side of the copied crop, in pixels. */
 export const CROP_MAX_SIDE = 2048;
 
 /**
- * Recorta `rect` (pixels da imagem original, já com o EXIF aplicado) de uma imagem do
- * projeto e devolve um PNG, reduzido a `CROP_MAX_SIDE` no lado maior (nunca amplia).
+ * Crops `rect` (pixels of the original image, with EXIF already applied) from a project
+ * image and returns a PNG, reduced to `CROP_MAX_SIDE` on the longer side (never enlarges).
  */
 export async function cropToPng(data: Blob, rect: Rect): Promise<Blob> {
   const bitmap = await createImageBitmap(data, { imageOrientation: 'from-image' });

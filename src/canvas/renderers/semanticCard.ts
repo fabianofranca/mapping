@@ -1,5 +1,5 @@
-// Zoom semântico no Konva: nome da marcação na linha de cabeçalho. As
-// anotações ficam só no painel direito (Detalhes e Lista).
+// Semantic zoom in Konva: the marking's name on the header line. The
+// annotations stay only in the right panel (Details and List).
 import Konva from 'konva/lib/Core';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import type { Marking, Rect } from '../../model';
@@ -13,17 +13,17 @@ import {
   intersectRects,
 } from './metrics';
 
-/** Margem interna do texto do cabeçalho (px de tela); fonte e linha vêm de `t-cv-name`. */
+/** Inner margin of the header text (screen px); font and line come from `t-cv-name`. */
 const TEXT_PADDING = 4;
 /**
- * Altura da linha de cabeçalho (onde ficam o selo, o alerta e o nome). O valor vem de quando as
- * bolinhas de camada definiam a linha (2 × margem + 2 × raio): mantido para o nome não subir.
+ * Height of the header line (where the badge, the alert and the name go). The value comes from when
+ * the layer dots defined the line (2 × margin + 2 × radius): kept so the name does not move up.
  */
 export const TEXT_HEADER_HEIGHT = 14;
-/** Nós do texto do zoom semântico de uma marcação, recortados no retângulo dela. */
+/** Text nodes of a marking's semantic zoom, clipped to its rectangle. */
 export interface SemanticNode {
   readonly group: Konva.Group;
-  /** Nome da marcação na linha de cabeçalho, depois do selo e do alerta. */
+  /** The marking's name on the header line, after the badge and the alert. */
   readonly header: KonvaText;
 }
 
@@ -40,31 +40,31 @@ export function createSemanticNode(): SemanticNode {
   return node;
 }
 
-/** O que `updateSemanticText` desenha numa marcação. */
+/** What `updateSemanticText` draws on a marking. */
 export interface SemanticText {
   readonly marking: Marking;
-  /** Retângulo da marcação no canvas. */
+  /** The marking's rectangle on the canvas. */
   readonly markingRect: Rect;
-  /** Parte do canvas visível na tela. */
+  /** Part of the canvas visible on screen. */
   readonly view: Rect;
   readonly mode: SemanticMode;
   readonly incomplete: boolean;
   /**
-   * Fim (y do canvas) do cabeçalho do pai quando ele passa pelo canto desta marcação
-   * (filha no mesmo canto): o nome dela desce para baixo dele em vez de cobri-lo.
+   * End (canvas y) of the parent's header when it passes through the corner of this marking
+   * (a child in the same corner): its name goes below it instead of covering it.
    */
   readonly headerFloor?: number | null;
 }
 
-/** Faixa ocupada pelo nome no cabeçalho (canvas), para as filhas no mesmo canto. */
+/** Band occupied by the name in the header (canvas), for the children in the same corner. */
 export interface HeaderBand {
   readonly bottom: number;
   readonly right: number;
 }
 
 /**
- * Zoom semântico: o nome da marcação no cabeçalho, depois do selo e do alerta,
- * recortado na parte visível dela.
+ * Semantic zoom: the marking's name in the header, after the badge and the alert,
+ * clipped to its visible part.
  */
 export function updateSemanticText(
   node: SemanticNode,
@@ -73,8 +73,8 @@ export function updateSemanticText(
   zoom: number,
 ): HeaderBand | null {
   const { marking, markingRect, mode, incomplete } = input;
-  // Com zoom alto o canto da marcação sai da tela: o texto fica ancorado na
-  // parte visível dela (e recortado nela).
+  // At high zoom the marking's corner leaves the screen: the text stays anchored to the
+  // visible part of it (and clipped to it).
   const rect = intersectRects(markingRect, input.view);
   if (mode === 'none' || !rect) {
     node.group.visible(false);
@@ -86,12 +86,12 @@ export function updateSemanticText(
     visible: true,
     clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
   });
-  // Selo e alerta só ocupam o cabeçalho se o canto da marcação estiver visível.
+  // The badge and the alert only occupy the header if the marking's corner is visible.
   const atCorner = rect.x === markingRect.x && rect.y === markingRect.y;
-  // O nome começa depois do selo de revisão e do alerta.
+  // The name starts after the review badge and the alert.
   const before = atCorner && marking.needsReview ? REVIEW_BADGE_SIZE + CORNER_MARGIN : 0;
   const alertWidth = atCorner && incomplete ? ALERT_SIZE + 2 : 0;
-  // Filha no mesmo canto do pai: o nome vai para a linha de baixo do cabeçalho dele.
+  // Child in the same corner as the parent: the name goes to the line below its header.
   const floor = input.headerFloor ?? null;
   const shifted = floor !== null && floor > rect.y;
   const headerTop = shifted ? floor : rect.y;

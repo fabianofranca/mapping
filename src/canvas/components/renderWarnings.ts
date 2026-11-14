@@ -1,28 +1,28 @@
 /**
- * Avisos do desenho de uma cena (`renderScene`): cada um leva um código e, se preciso,
- * parâmetros. O texto nunca nasce aqui: quem mostra o aviso o traduz (a app por `t()`, o
- * visualizador pelos rótulos que passa ao `ScreenRenderer`).
+ * Warnings from drawing a scene (`renderScene`): each one carries a code and, if needed,
+ * parameters. The text is never born here: whoever shows the warning translates it (the app by
+ * `t()`, the viewer by the labels it passes to the `ScreenRenderer`).
  */
 export type RenderWarningCode =
-  /** Sombra num grupo sem filhos nem forma. */
+  /** Shadow on a group with no children or shape. */
   | 'empty-group-shadow'
-  /** Sombra interna: não existe no canvas 2D. */
+  /** Inner shadow: it does not exist in canvas 2D. */
   | 'inner-shadow'
-  /** Texto, caminho ou imagem com lista de sombras ou `spread`: só a primeira vale. */
+  /** Text, path or image with a shadow list or `spread`: only the first one counts. */
   | 'extra-shadows'
-  /** Nó que o desenho não conhece (`params.type`): só a caixa. */
+  /** Node the drawing does not know (`params.type`): only the box. */
   | 'unknown-node'
-  /** Imagem sem pixels (sem `src` embutido nem `url`): reservado. */
+  /** Image without pixels (no embedded `src` or `url`): placeholder. */
   | 'image-without-pixels'
-  /** Imagem embutida que não pôde ser decodificada. */
+  /** Embedded image that could not be decoded. */
   | 'image-decode-failed'
-  /** Traço com vários preenchimentos: só o primeiro vale. */
+  /** Stroke with several fills: only the first one counts. */
   | 'stroke-extra-paints'
-  /** Traço por dentro ou por fora em caminho ou linha: centralizado. */
+  /** Inside or outside stroke on a path or line: centered. */
   | 'stroke-align-centered'
-  /** Traço com gradiente radial: a primeira cor. */
+  /** Stroke with a radial gradient: the first color. */
   | 'stroke-radial-first-color'
-  /** Traço com imagem: cinza. */
+  /** Stroke with an image: gray. */
   | 'stroke-image-gray';
 
 export interface RenderWarning {
@@ -30,7 +30,7 @@ export interface RenderWarning {
   readonly params?: Readonly<Record<string, string | number>>;
 }
 
-/** Todos os códigos (a interface confere que cada um tem texto nos dois idiomas). */
+/** All the codes (the interface checks that each one has text in both languages). */
 export const RENDER_WARNING_CODES: readonly RenderWarningCode[] = [
   'empty-group-shadow',
   'inner-shadow',

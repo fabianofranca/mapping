@@ -10,10 +10,10 @@ import type { LibraryFile } from '../model/library';
 import { reportError } from '../utils/report';
 import { createPendingTracker } from './pendingTracker';
 
-// Catálogos (página de cada componente) das especializações com pacote do projeto aberto
-// (etapa Biblioteca, B5). Estado em memória da sessão, nunca do projeto, e sob demanda: nada
-// é lido nem montado enquanto a janela Catálogo não pede (`request`). Quem sabe ler o
-// pacote (cópia em memória da sessão ou `specs/<id>/`) entrega os arquivos em `read`.
+// Catalogs (each component's page) of the open project's specializations with a package
+// (Library stage, B5). In-memory session state, never the project's, and on demand: nothing
+// is read or built until the Catalog window asks (`request`). Whoever knows how to read the
+// package (the session's in-memory copy or `specs/<id>/`) hands over the files in `read`.
 
 export interface ProjectCatalog {
   readonly specId: string;
@@ -23,15 +23,15 @@ export interface ProjectCatalog {
 }
 
 export interface ProjectCatalogs {
-  /** Catálogos prontos; `null` até a primeira leitura pedida terminar. */
+  /** Ready catalogs; `null` until the first requested read finishes. */
   readonly entries: ReadonlySignal<readonly ProjectCatalog[] | null>;
-  /** `id@versão` das especializações com pacote, juntas; vazio se nenhuma tem. */
+  /** `id@version` of the specializations with a package, joined; empty if none has one. */
   readonly key: ReadonlySignal<string>;
-  /** Sobe a cada `invalidate`: quem mostra os catálogos pede de novo. */
+  /** Goes up on every `invalidate`: whoever shows the catalogs asks again. */
   readonly stamp: ReadonlySignal<number>;
-  /** Lê e monta o que falta (a mesma versão não é montada duas vezes). Sem custo se nada mudou. */
+  /** Reads and builds what is missing (the same version is not built twice). No cost if nothing changed. */
   request(): void;
-  /** Os arquivos podem ter mudado por fora: a próxima `request` lê de novo. */
+  /** The files may have changed outside: the next `request` reads again. */
   invalidate(): void;
   /** Resolve quando o que foi pedido terminou (testes). */
   whenIdle(): Promise<void>;
@@ -41,7 +41,7 @@ export interface ProjectCatalogs {
 export interface ProjectCatalogsDeps {
   /** O projeto confirmado (`store.committed`). */
   readonly project: ReadonlySignal<Project | null>;
-  /** Arquivos do pacote (caminhos relativos à pasta dele); `null` se não há o que ler. */
+  /** Package files (paths relative to its folder); `null` if there is nothing to read. */
   readonly read: (owner: ProjectSpecialization) => Promise<readonly LibraryFile[] | null>;
 }
 
@@ -83,7 +83,7 @@ export function createProjectCatalogs(deps: ProjectCatalogsDeps): ProjectCatalog
     mine: number,
     current: string,
   ) {
-    // Deixa a interface pintar antes do trabalho síncrono de montar o catálogo.
+    // Lets the interface paint before the synchronous work of building the catalog.
     await Promise.resolve();
     const out: ProjectCatalog[] = [];
     let failed = false;
@@ -93,7 +93,7 @@ export function createProjectCatalogs(deps: ProjectCatalogsDeps): ProjectCatalog
       else if (result !== null) out.push(result);
     }
     if (disposed || mine !== run) return;
-    // Um dono que falhou não marca a chave: o próximo pedido tenta de novo (decisão 16).
+    // An owner that failed does not mark the key: the next request tries again (decision 16).
     if (failed && doneKey === current) doneKey = null;
     entries.value = out;
   }

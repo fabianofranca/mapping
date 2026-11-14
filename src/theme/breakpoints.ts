@@ -1,20 +1,20 @@
 /**
- * Breakpoints do layout, em px. Media queries não aceitam `var()`, então o CSS repete
- * estes números; `tests/theme/tokenLiterals.test.ts` confere que os dois batem.
+ * Layout breakpoints, in px. Media queries do not accept `var()`, so the CSS repeats
+ * these numbers; `tests/theme/tokenLiterals.test.ts` checks that the two match.
  */
 export const BREAKPOINTS = {
-  /** Menor largura da app (só desktop): abaixo dela, o aviso "Abra numa janela maior". */
+  /** Smallest app width (desktop only): below it, the "Open in a larger window" notice. */
   appMin: 900,
   /**
-   * Menor altura da app (só desktop): 720 px, a janela baixa de um notebook. A revisão se adapta a ela
-   * (filtros recolhidos num popover, legenda das marcas por cima da Propostas e do minimapa; #598).
+   * Smallest app height (desktop only): 720 px, a laptop's short window. The review adapts to it
+   * (filters collapsed into a popover, marks legend over the Proposals and the minimap; #598).
    */
   appMinHeight: 720,
-  /** Maior largura do desktop "compacto" (botões da barra só com ícone). */
+  /** Largest "compact" desktop width (toolbar buttons with icon only). */
   compact: 1199,
-  /** Largura de referência dos mockups de desktop. */
+  /** Reference width of the desktop mockups. */
   design: 1440,
 } as const;
 
-/** Janela abaixo da largura ou da altura mínima da app. */
+/** Window below the app's minimum width or height. */
 export const NARROW_QUERY = `(max-width: ${BREAKPOINTS.appMin - 1}px), (max-height: ${BREAKPOINTS.appMinHeight - 1}px)`;

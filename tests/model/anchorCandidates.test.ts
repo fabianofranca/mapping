@@ -136,8 +136,12 @@ describe('anchorCandidates (achado 7 do CL2)', () => {
       anchorCandidates(p, 'M0', space);
       return performance.now() - start;
     };
-    time(100); // aquece
-    const small = Math.max(time(300), 0.05);
-    expect(time(1200) / small).toBeLessThan(6);
+    // The minimum of a few runs is the cost without scheduler noise: one slow sample on a loaded
+    // runner made the ratio flaky, while the 6× limit stays the same.
+    const best = (n: number): number =>
+      Math.min(...Array.from({ length: 5 }, () => time(n)));
+    time(100); // warm-up
+    const small = Math.max(best(300), 0.05);
+    expect(best(1200) / small).toBeLessThan(6);
   });
 });

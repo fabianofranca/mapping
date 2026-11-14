@@ -1,6 +1,6 @@
 import type { DirectoryHandleLike, FileHandleLike, WritableLike } from './folder';
 
-/** Os tipos de chamada à File System Access API que o contador distingue. */
+/** The kinds of File System Access API call that the counter distinguishes. */
 export type FolderCallKind =
   | 'getDirectoryHandle'
   | 'getFileHandle'
@@ -13,14 +13,14 @@ export type FolderCallKind =
   | 'removeEntry';
 
 /**
- * As operações de projeto em pasta que se medem, na ordem em que o Diagnóstico as lista:
- * abrir, gravar, gravar com pacote de biblioteca, gravar uma decisão ou nota de proposta,
- * aplicar as aceitas e um ciclo da conferência de alterações externas.
+ * The folder project operations that are measured, in the order Diagnostics lists them:
+ * open, save, save with a library package, save a proposal decision or note,
+ * apply the accepted ones and one cycle of the external-changes check.
  */
 export const FOLDER_OPS = ['open', 'save', 'library', 'decide', 'apply', 'sync'] as const;
 export type FolderOp = (typeof FOLDER_OPS)[number];
 
-/** A última medida de uma operação: chamadas à pasta e milissegundos. */
+/** The last measurement of an operation: folder calls and milliseconds. */
 export interface FolderMeasure {
   readonly op: FolderOp;
   readonly calls: number;
@@ -28,20 +28,20 @@ export interface FolderMeasure {
 }
 
 export interface FolderCalls {
-  /** Todas as chamadas contadas até agora. */
+  /** All the calls counted so far. */
   readonly total: number;
-  /** As chamadas contadas até agora, por tipo. */
+  /** The calls counted so far, by kind. */
   readonly byKind: Readonly<Record<FolderCallKind, number>>;
-  /** Conta uma chamada (usado pelo `countingDirectory`). */
+  /** Counts a call (used by `countingDirectory`). */
   count(kind: FolderCallKind): void;
   /**
-   * Mede `fn`: as chamadas à pasta e os milissegundos entre o início e o fim dela, guardados
-   * como a última medida de `op`. `op` pode ser decidida no fim (`save` ou `library`).
-   * Operações concorrentes somam nas duas medidas (é diagnóstico, não orçamento). Uma `fn` que
-   * lança também registra a medida e repassa o erro.
+   * Measures `fn`: the folder calls and the milliseconds between its start and end, stored
+   * as the last measurement of `op`. `op` may be decided at the end (`save` or `library`).
+   * Concurrent operations add up in both measurements (it is diagnostics, not a budget). A `fn` that
+   * throws also records the measurement and rethrows the error.
    */
   measure<T>(op: FolderOp | (() => FolderOp), fn: () => Promise<T>): Promise<T>;
-  /** As últimas medidas, na ordem de `FOLDER_OPS`, só das operações já medidas. */
+  /** The latest measurements, in `FOLDER_OPS` order, only for operations already measured. */
   snapshot(): readonly FolderMeasure[];
 }
 
@@ -138,10 +138,10 @@ function countingEntry(
 }
 
 /**
- * Embrulha a pasta (e, recursivamente, os handles que ela devolve) contando cada
- * `getDirectoryHandle`, `getFileHandle`, `getFile`, entrada de `values()`, `createWritable`,
- * `write`/`close`/`abort` e `removeEntry`, sem mudar o resultado nem o erro de nenhuma chamada.
- * A chamada que falha também conta: ela foi feita.
+ * Wraps the folder (and, recursively, the handles it returns) counting each
+ * `getDirectoryHandle`, `getFileHandle`, `getFile`, `values()` entry, `createWritable`,
+ * `write`/`close`/`abort` and `removeEntry`, without changing the result or error of any call.
+ * A call that fails also counts: it was made.
  */
 export function countingDirectory(
   root: DirectoryHandleLike,

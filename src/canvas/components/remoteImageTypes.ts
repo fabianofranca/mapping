@@ -1,21 +1,21 @@
-// Tipos do estado de uma imagem remota para o desenho. Sem imports de propósito: as declarações
-// do pacote `mapping-viewer` os alcançam (via `renderScene`) e não podem puxar o carregador,
-// que importa `@preact/signals`.
+// Types of a remote image's state for drawing. No imports on purpose: the declarations
+// of the `mapping-viewer` package reach them (via `renderScene`) and cannot pull in the loader,
+// which imports `@preact/signals`.
 
-/** Estados que o carregador conhece. `blocked-consent` e `invalid` vêm das portas da app. */
+/** States the loader knows. `blocked-consent` and `invalid` come from the app's gates. */
 export type RemoteImageState = 'loading' | 'loaded' | 'opaque' | 'failed' | 'too-large';
 
-/** Estado de uma imagem para o desenho: os do carregador mais os das duas portas. */
+/** State of an image for drawing: the loader's plus those of the two gates. */
 export type RemoteImageViewState = RemoteImageState | 'blocked-consent' | 'invalid';
 
-/** O que o desenho recebe de uma URL remota. Só `loaded` e `opaque` trazem `image`. */
+/** What drawing receives from a remote URL. Only `loaded` and `opaque` bring `image`. */
 export interface RemoteImageView {
   readonly state: RemoteImageViewState;
-  /** Bitmap reduzido (ou o próprio elemento, sem `createImageBitmap`). */
+  /** Reduced bitmap (or the element itself, without `createImageBitmap`). */
   readonly image?: CanvasImageSource;
-  /** Tamanho da fonte `image`, em pixels (é nele que o `fit` calcula o recorte). */
+  /** Size of the `image` source, in pixels (this is what `fit` computes the crop on). */
   readonly width?: number;
   readonly height?: number;
-  /** Por que `failed`, para o Diagnóstico (`timeout` = estourou o tempo limite). */
+  /** Why `failed`, for Diagnostics (`timeout` = the time limit was exceeded). */
   readonly reason?: 'failed' | 'timeout';
 }

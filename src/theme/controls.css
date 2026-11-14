@@ -1,11 +1,11 @@
 /*
- * Controles base (fase R2): Button, IconButton, TextField, Select, Choice, Segmented, Tabs
- * e Tooltip. Altura, raio e ícone vêm dos papéis `--control-*` (tokens.ts): 28px e 16px.
- * Todo estado usa tokens:
- * hover, pressionado, foco, desabilitado, alternância ligada, inválido e somente leitura.
+ * Base controls (phase R2): Button, IconButton, TextField, Select, Choice, Segmented, Tabs
+ * and Tooltip. Height, radius and icon come from the `--control-*` roles (tokens.ts): 28px and 16px.
+ * Every state uses tokens:
+ * hover, pressed, focus, disabled, toggled on, invalid and read-only.
  */
 
-/* Botões, botões de ícone e itens do segmentado: base comum */
+/* Buttons, icon buttons and segmented items: common base */
 .button,
 .icon-button,
 .segmented-item {
@@ -54,14 +54,14 @@
   padding: 0 var(--space-3);
 }
 
-/* Link com a aparência do botão de ícone e do botão com texto */
+/* Link with the look of the icon button and of the text button */
 a.icon-button,
 a.button {
   color: var(--color-text);
   text-decoration: none;
 }
 
-/* Hover e pressionado */
+/* Hover and pressed */
 .button:hover:not(:disabled),
 .icon-button:hover:not(:disabled),
 .segmented-item:hover:not(:disabled) {
@@ -74,7 +74,7 @@ a.button {
   background: var(--color-pressed);
 }
 
-/* Alternância ligada (modo, "Texto no canvas", opção do segmentado) */
+/* Toggled on (mode, "Text on canvas", segmented option) */
 .icon-button[aria-pressed='true'],
 .segmented-item[aria-pressed='true'] {
   color: var(--color-accent-text);
@@ -91,7 +91,7 @@ a.button {
   background: var(--color-accent-pressed);
 }
 
-/* Variantes do botão */
+/* Button variants */
 .button-primary {
   color: var(--color-accent-text);
   background: var(--color-accent);
@@ -118,17 +118,17 @@ a.button {
   background: var(--color-danger-bg);
 }
 
-/* "Fantasma": sem borda nem fundo em repouso (ex.: "Sair da revisão") */
+/* "Ghost": no border or background at rest (e.g. "Exit review") */
 .button-ghost {
   background: none;
   border-color: transparent;
 }
 
 /*
- * Decisão da revisão (HANDOFF-PROPOSALS 2.2): `button-accept`/`button-reject` ("Aceitar
- * item") e `icon-button-accept`/`icon-button-reject` (o par ✓ ✕ do DecisionControl). Em
- * repouso, neutros; o hover antecipa a cor; marcado (`aria-pressed`), cheio de
- * `color-success` ou `color-danger` com o ícone em `color-surface`.
+ * Review decision (HANDOFF-PROPOSALS 2.2): `button-accept`/`button-reject` ("Accept
+ * item") and `icon-button-accept`/`icon-button-reject` (the ✓ ✕ pair of the DecisionControl). At
+ * rest, neutral; hover anticipates the color; checked (`aria-pressed`), filled with
+ * `color-success` or `color-danger` with the icon in `color-surface`.
  */
 .icon-button-accept,
 .icon-button-reject {
@@ -170,7 +170,7 @@ a.button {
   font-weight: 600;
 }
 
-/* Botão de ícone compacto (24px) */
+/* Compact icon button (24px) */
 .icon-button-sm {
   min-height: var(--control-height-sm);
   min-width: var(--control-height-sm);
@@ -185,7 +185,7 @@ a.button {
   background: var(--color-danger-bg);
 }
 
-/* Desabilitado */
+/* Disabled */
 .button:disabled,
 .icon-button:disabled,
 .segmented-item:disabled {
@@ -193,20 +193,20 @@ a.button {
   cursor: default;
 }
 
-/* Foco: anel por dentro nos controles unidos ou que ficam rente a outro elemento. */
+/* Focus: inner ring on joined controls or ones that sit flush against another element. */
 .segmented-item:focus-visible,
 .tab:focus-visible {
   outline-offset: calc(-1 * var(--space-0-5));
 }
 
-/* Ícones dos botões acompanham a densidade. */
+/* Button icons follow the density. */
 .icon {
   flex: none;
   width: var(--control-icon);
   height: var(--control-icon);
 }
 
-/* Segmentado: botões unidos numa borda só (o `overflow: clip` arredonda os cantos dos itens) */
+/* Segmented: buttons joined in a single border (`overflow: clip` rounds the items' corners) */
 .segmented {
   display: inline-flex;
   align-items: stretch;
@@ -224,7 +224,7 @@ a.button {
   display: flex;
 }
 
-/* Campos de texto, número e data */
+/* Text, number and date fields */
 .input {
   min-height: var(--control-height);
   padding: 0 var(--space-2);
@@ -239,7 +239,7 @@ a.button {
   min-height: var(--control-height-sm);
 }
 
-/* Várias linhas (`mp-field--area`): a nota da revisão */
+/* Multiple lines (`mp-field--area`): the review note */
 .input-area {
   display: block;
   width: 100%;
@@ -279,7 +279,7 @@ a.button {
   border-color: var(--color-danger);
 }
 
-/* Select: a seta do desenho novo no lugar da nativa */
+/* Select: the arrow of the new design in place of the native one */
 .select {
   position: relative;
   display: flex;
@@ -315,7 +315,7 @@ a.button {
   opacity: var(--opacity-disabled);
 }
 
-/* Chip de filtro: alternância compacta, com contagem opcional */
+/* Filter chip: compact toggle, with optional count */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -353,7 +353,7 @@ a.button {
   font-weight: 600;
 }
 
-/* Caixa de seleção e rádio: rótulo na mesma linha */
+/* Checkbox and radio: label on the same line */
 .choice {
   display: flex;
   align-items: flex-start;
@@ -395,7 +395,7 @@ a.button {
   overflow-wrap: anywhere;
 }
 
-/* Abas */
+/* Tabs */
 .tabs {
   display: flex;
   gap: var(--space-1);
@@ -436,7 +436,7 @@ a.button {
   cursor: default;
 }
 
-/* Contador e ponto de alerta da aba */
+/* Tab counter and alert dot */
 .tab-badge {
   margin-left: var(--space-1-5);
   padding: 0 var(--space-1-5);
@@ -446,7 +446,7 @@ a.button {
   border-radius: var(--radius-full);
 }
 
-/* Contador de novidade (ex.: propostas novas): `mp-count--info` do DS */
+/* News counter (e.g. new proposals): `mp-count--info` of the DS */
 .tab-badge-info {
   color: var(--color-accent-text);
   background: var(--color-accent);
@@ -462,7 +462,7 @@ a.button {
   border-radius: var(--radius-full);
 }
 
-/* Ponto de alerta do botão de ícone */
+/* Icon button alert dot */
 .icon-button {
   position: relative;
 }
@@ -477,13 +477,13 @@ a.button {
   border-radius: var(--radius-full);
 }
 
-/* Selo numérico do botão de ícone (`mp-sb__badge--info`: novidade na faixa lateral) */
+/* Icon button numeric badge (`mp-sb__badge--info`: news on the side strip) */
 .icon-button-badge {
   position: absolute;
   top: 0;
   right: 0;
-  /* No canto do botão, fora do glifo central (⋯ do "Mais controles"); só um quarto sai da
-     caixa, para caber na folga da faixa lateral (botão de 28px em 40px) sem corte. */
+  /* At the button's corner, outside the central glyph (⋯ of "More controls"); only a quarter sticks out of the
+     box, to fit in the side strip's slack (28px button in 40px) without clipping. */
   transform: translate(25%, -25%);
   min-width: var(--space-4);
   padding: 0 var(--space-1);
@@ -493,15 +493,15 @@ a.button {
   border-radius: var(--radius-full);
 }
 
-/* Dica */
+/* Tooltip */
 .tooltip-anchor {
   position: relative;
   display: inline-flex;
 }
 
 /*
- * A dica é fixa (fora do fluxo): oculta, não ocupa espaço nem alarga ou rola o painel
- * onde está, e não é cortada pela borda dele. O Tooltip calcula `top`/`left` ao aparecer.
+ * The tooltip is fixed (out of flow): hidden, it takes no space nor widens or scrolls the panel
+ * it is in, and is not clipped by its edge. The Tooltip computes `top`/`left` when it appears.
  */
 .tooltip {
   position: fixed;
@@ -536,7 +536,7 @@ a.button {
   opacity: var(--opacity-ancestor);
 }
 
-/* Aparece depois de uma pausa; o foco só mostra a dica no teclado. */
+/* Appears after a pause; focus only shows the tooltip on the keyboard. */
 .tooltip-anchor:hover .tooltip {
   opacity: 1;
   visibility: visible;
@@ -549,8 +549,8 @@ a.button {
   transition-delay: var(--duration-instant), var(--duration-instant);
 }
 
-/* Depois do Esc a dica some também com o foco de teclado (WCAG 1.4.13): a classe do anchor
-   junta-se a `.tooltip-anchor` para vencer `:has(:focus-visible)` (0,3,0) pela ordem. */
+/* After Esc the tooltip also goes away with keyboard focus (WCAG 1.4.13): the anchor's class
+   joins `.tooltip-anchor` to beat `:has(:focus-visible)` (0,3,0) by order. */
 .tooltip-anchor.tooltip-dismissed .tooltip,
 .tooltip-anchor.tooltip-dismissed:hover .tooltip {
   opacity: 0;
@@ -558,7 +558,7 @@ a.button {
   transition-delay: var(--duration-instant), var(--duration-instant);
 }
 
-/* Dica fixada aberta pelo clique (HelpTip): vale também sem hover. */
+/* Pinned tooltip opened by click (HelpTip): also applies without hover. */
 .tooltip-open .tooltip {
   opacity: 1;
   visibility: visible;
@@ -570,12 +570,12 @@ a.button {
   visibility: hidden;
 }
 
-/* Com o menu ou o popover do botão aberto, a dica não cobre o que ele abriu. */
+/* With the button's menu or popover open, the tooltip does not cover what it opened. */
 .tooltip-anchor:has([aria-haspopup][aria-expanded='true']) .tooltip {
   display: none;
 }
 
-/* Sem mouse não há hover: a dica não aparece. */
+/* Without a mouse there is no hover: the tooltip does not appear. */
 @media (hover: none) {
   .tooltip {
     display: none;
@@ -586,12 +586,12 @@ a.button {
   }
 }
 
-/* Com um menu ou popover aberto, a dica das barras laterais não o cobre. */
+/* With a menu or popover open, the side bars' tooltip does not cover it. */
 body:has(.popover, .menu-list, .action-menu-list) .tool-strip .tooltip-anchor .tooltip {
   display: none;
 }
 
-/* Explicação em ícone com dica (HelpTip): ícone discreto, a dica quebra linha. */
+/* Explanation in an icon with tooltip (HelpTip): discreet icon, the tooltip wraps lines. */
 .help-tip {
   display: inline-flex;
   flex: none;

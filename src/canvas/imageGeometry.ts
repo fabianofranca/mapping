@@ -1,5 +1,5 @@
-// Hit-test e redimensionamento proporcional de imagens, em unidades do canvas.
-// Funções puras, testadas em `tests/canvas/`.
+// Hit-test and proportional resizing of images, in canvas units.
+// Pure functions, tested in `tests/canvas/`.
 import {
   boundingBox,
   imageCanvasRect,
@@ -32,7 +32,7 @@ function opposite(corner: Corner): Corner {
   return map[corner];
 }
 
-/** Imagem sob o ponto (a última da lista, que é desenhada por cima). */
+/** Image under the point (the last in the list, which is drawn on top). */
 export function imageAt(
   images: readonly ProjectContainer[],
   p: Point,
@@ -45,9 +45,9 @@ export function imageAt(
 }
 
 /**
- * Container cujo rótulo (o nome acima dele, `titles` em coordenadas do canvas) está sob o ponto.
- * Percorre na ordem inversa de desenho: o corpo de um container desenhado por cima cobre o
- * rótulo dos de baixo.
+ * Container whose label (the name above it, `titles` in canvas coordinates) is under the point.
+ * Walks in reverse drawing order: the body of a container drawn on top covers the
+ * label of those below.
  */
 export function containerTitleAt(
   containers: readonly ProjectContainer[],
@@ -64,7 +64,7 @@ export function containerTitleAt(
   return null;
 }
 
-/** Canto de `rect` a até `radius` (canvas) do ponto; o mais próximo vence. */
+/** Corner of `rect` within `radius` (canvas) of the point; the closest wins. */
 export function cornerAt(rect: Rect, p: Point, radius: number): Corner | null {
   let best: Corner | null = null;
   let bestDistance = Infinity;
@@ -108,9 +108,9 @@ export function resizeFromCorner(
 }
 
 /**
- * Caixa que envolve tudo o que ocupa o canvas: as imagens e as marcações do canvas (v13,
- * `containerId` nulo, flutuantes inclusive; o `rect` delas já está em unidades do canvas).
- * `null` se não há nada.
+ * Box that wraps everything that occupies the canvas: the images and the canvas markings (v13,
+ * null `containerId`, floating ones included; their `rect` is already in canvas units).
+ * `null` if there is nothing.
  */
 export function imagesBounds(
   images: readonly ProjectContainer[],

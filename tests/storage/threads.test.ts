@@ -163,7 +163,7 @@ describe('loadThreads', () => {
     expect(loaded.threads.find((t) => t.thread.id === 'T3')?.resolvedDir).toBe(true);
     expect(loaded.problems.map((p) => p.id).sort()).toEqual(['T2', 'quebrada']);
     expect(loaded.problems.find((p) => p.id === 'T2')?.errors[0]).toContain(
-      'o nome do arquivo',
+      'the file name',
     );
     expect(loaded.problemTexts?.get(threadFilePath('quebrada', false))).toBe(
       '{ não é json',

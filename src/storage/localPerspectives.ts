@@ -4,32 +4,34 @@ import { channelDbName } from '../utils/channel';
 import { reportError } from '../utils/report';
 import { hasIndexedDb, withTimeout } from './local';
 
-// Perspectivas "Só eu" (etapa #659, PE2): ficam neste navegador, por `project.id`, no mesmo
-// formato de um item de `perspectives` do `mapping.json`, e não vão ao arquivo. Banco próprio:
-// mexer na versão do banco dos projetos locais (`local.ts`) pediria uma atualização que uma aba
-// antiga aberta bloquearia (o mesmo motivo do banco das pastas recentes).
+// "Only me" perspectives (stage #659, PE2): they stay in this browser, by `project.id`, in the
+// same format as an item of `perspectives` in `mapping.json`, and do not go to the file. Own
+// database: changing the version of the local projects database (`local.ts`) would require an
+// upgrade that an old open tab would block (the same reason as the recent folders database).
 
 const DB_NAME = channelDbName('mapping-perspectivas');
 const DB_VERSION = 1;
 
 interface Schema extends DBSchema {
-  /** `project.id` → a lista das "Só eu" do projeto. */
+  /** `project.id` → the project's "Only me" list. */
   perspectives: { key: string; value: readonly Perspective[] };
 }
 
 /**
- * As "Só eu" guardadas neste navegador. `load` nunca rejeita (falhas vão para o Diagnóstico e
- * a lista volta vazia); `save` registra a falha e rejeita, e quem chama decide o que fazer.
+ * The "Only me" perspectives kept in this browser. `load` never rejects (failures go to
+ * Diagnostics and the list comes back empty); `save` records the failure and rejects, and the
+ * caller decides what to do.
  */
 export interface LocalPerspectiveStore {
-  /** As perspectivas do projeto; o que não valida é descartado. Vazio se não há nada ou se falhar. */
+  /** The project's perspectives; whatever does not validate is discarded. Empty if there is
+   * nothing or if it fails. */
   load(projectId: string): Promise<readonly Perspective[]>;
-  /** Substitui a lista do projeto. Lista vazia apaga a chave. */
+  /** Replaces the project's list. An empty list deletes the key. */
   save(projectId: string, list: readonly Perspective[]): Promise<void>;
   close(): void;
 }
 
-/** Só o que valida como perspectiva: uma entrada corrompida não derruba as demais. */
+/** Only what validates as a perspective: a corrupted entry does not take down the others. */
 function validPerspectives(raw: unknown): readonly Perspective[] {
   if (!Array.isArray(raw)) return [];
   const out: Perspective[] = [];
@@ -66,8 +68,8 @@ function createStore(db: IDBPDatabase<Schema>): LocalPerspectiveStore {
 }
 
 /**
- * Abre o banco das "Só eu". `null` sem IndexedDB ou se ele não responder a tempo: a opção "Só eu"
- * fica indisponível (decisão 14).
+ * Opens the "Only me" database. `null` without IndexedDB or if it does not answer in time: the
+ * "Only me" option becomes unavailable (decision 14).
  */
 export async function openLocalPerspectives(): Promise<LocalPerspectiveStore | null> {
   try {

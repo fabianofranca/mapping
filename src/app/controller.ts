@@ -1,7 +1,7 @@
-// Orquestra a tela inicial e o projeto aberto: detecção de recursos, abertura e criação de
-// projetos (pasta, local, zip), exportação e fechamento. Os recentes ficam em `recents.ts`,
-// gravar ao sair da página em `pageLifecycle.ts` e os tipos de resultado em `appResult.ts`
-// (fase 8.4); este módulo re-exporta o que a `Home` e os testes usam deles.
+// Orchestrates the home screen and the open project: feature detection, opening and creating
+// projects (folder, local, zip), export and closing. The recents live in `recents.ts`,
+// saving on page exit in `pageLifecycle.ts` and the result types in `appResult.ts`
+// (phase 8.4); this module re-exports what `Home` and the tests use from them.
 import { signal, type Signal } from '@preact/signals';
 import { NOTES_LIBRARY } from '../../libraries/notas';
 import { t } from '../i18n';
@@ -76,11 +76,11 @@ export {
 } from './recents';
 
 export interface Features {
-  /** File System Access API disponível (modo Pasta). */
+  /** File System Access API available (Folder mode). */
   readonly folder: boolean;
-  /** IndexedDB disponível (modo Local + Zip). */
+  /** IndexedDB available (Local + Zip mode). */
   readonly local: boolean;
-  /** Página aberta como arquivo: o IndexedDB pode não ser confiável. */
+  /** Page opened as a file: IndexedDB may not be reliable. */
   readonly fileProtocol: boolean;
 }
 
@@ -88,16 +88,16 @@ export interface OpenProject {
   readonly kind: StorageKind;
   readonly session: ProjectSession;
   readonly display: DisplayImages<ImageBitmap>;
-  /** Id no IndexedDB (modo local). */
+  /** Id in IndexedDB (local mode). */
   readonly localId: string | null;
   /**
-   * Entrada dos recentes da pasta aberta (nome e data atualizados a cada gravação e ao
-   * fechar). Ausente fora do modo pasta ou com a pasta fora dos recentes.
+   * Recents entry of the open folder (name and date updated on every save and on
+   * close). Absent outside folder mode or with the folder outside the recents.
    */
   readonly folderId?: string;
-  /** Modo local: há alterações desde a última exportação. */
+  /** Local mode: there are changes since the last export. */
   readonly unexported: Signal<boolean>;
-  /** Reparos feitos ao abrir um projeto inconsistente (vazio ou ausente no caso normal). */
+  /** Repairs made when opening an inconsistent project (empty or absent in the normal case). */
   readonly repaired?: readonly RepairRecord[];
 }
 
@@ -105,8 +105,8 @@ export const features = signal<Features | null>(null);
 export const openProject = signal<OpenProject | null>(null);
 
 /**
- * O projeto novo já nasce com a biblioteca de notas aplicada (como qualquer biblioteca, removível
- * pela pessoa). Os arquivos do pacote vão para o armazenamento junto com o `mapping.json`
+ * The new project is born with the notes library applied (like any library, removable
+ * by the person). The package files go to storage together with the `mapping.json`
  * (`newProjectSpecFiles`).
  */
 function newProject(name: string): Project {
@@ -122,12 +122,12 @@ function newProject(name: string): Project {
   return applyBundledLibrary(blank, NOTES_LIBRARY).project;
 }
 
-/** Arquivos de `specs/` de um projeto novo (`specs/notas/…`), para gravar junto com ele. */
+/** `specs/` files of a new project (`specs/notas/…`), to be written along with it. */
 function newProjectSpecFiles(project: Project): Map<string, string> {
   return bundledLibraryDiskFiles(project, NOTES_LIBRARY);
 }
 
-/** Detecta os recursos e carrega as listas dos recentes. Chamar uma vez. */
+/** Detects the features and loads the recents lists. Call once. */
 export async function initApp(): Promise<void> {
   const folder = isFolderModeSupported();
   await recents.initRecents(folder);
@@ -139,26 +139,27 @@ export async function initApp(): Promise<void> {
   bindPageLifecycle(() => openProject.value?.session);
 }
 
-/** O storage que a sessão usa (com `copyId`) e a entrada dos recentes da pasta. */
+/** The storage the session uses (with `copyId`) and the folder's recents entry. */
 interface Bound {
   readonly storage: ProjectStorage;
   readonly folderId?: string;
 }
 
 /**
- * O que abrir. `storage` é o de leitura; `bind` roda depois de ler e antes de a sessão abrir,
- * no caminho normal e no "Reparar e abrir": guarda a pasta nos recentes (e dá o `copyId`) ou
- * marca o uso do projeto local. Sem `bind`, a sessão usa o próprio `storage`.
+ * What to open. `storage` is the reading one; `bind` runs after reading and before the session
+ * opens, on the normal path and on "Repair and open": it stores the folder in the recents (and
+ * gives the `copyId`) or
+ * marks the local project as used. Without `bind`, the session uses `storage` itself.
  */
 interface OpenTarget {
   readonly storage: ProjectStorage;
   readonly localId: string | null;
-  /** O contador de chamadas da pasta, o que embrulha a raiz do `storage` (só em pasta). */
+  /** The folder call counter, which wraps the `storage` root (folder only). */
   readonly folderCalls?: FolderCalls;
   readonly bind?: (project: Project) => Promise<Bound>;
 }
 
-/** A abertura, medida no contador da pasta (`open`): do `loadProject` até a sessão pronta. */
+/** The opening, measured in the folder counter (`open`): from `loadProject` to the session ready. */
 const measureOpen = <T>(target: OpenTarget, fn: () => Promise<T>): Promise<T> =>
   target.folderCalls ? target.folderCalls.measure('open', fn) : fn();
 
@@ -176,15 +177,16 @@ function openFromStorage(target: OpenTarget): Promise<AppResult> {
 
 let localPerspectives: Promise<LocalPerspectiveStore | null> | null = null;
 
-/** O banco das perspectivas "Só eu", aberto uma vez por app (`null` sem IndexedDB). */
+/** The "Only me" perspectives database, opened once per app (`null` without IndexedDB). */
 function localPerspectiveStore(): Promise<LocalPerspectiveStore | null> {
   return (localPerspectives ??= openLocalPerspectives());
 }
 
 /**
- * Vincula (recentes, `copyId`) e abre a sessão do projeto já lido. `text`: o `mapping.json`
- * como foi lido (`SessionOptions.loadedText`); `migratedFrom`: schema antigo (ou reparo), o
- * original vai para `backups/` antes do primeiro salvamento.
+ * Binds (recents, `copyId`) and opens the session of the project already read. `text`: the
+ * `mapping.json`
+ * as it was read (`SessionOptions.loadedText`); `migratedFrom`: old schema (or repair), the
+ * original goes to `backups/` before the first save.
  */
 async function openLoaded(
   target: OpenTarget,
@@ -193,12 +195,12 @@ async function openLoaded(
     readonly readOnly: boolean;
     readonly text: string;
     readonly migratedFrom: number | null;
-    /** `urlTemplate` que a migração para o schema 11 descartou; vão para o Diagnóstico. */
+    /** `urlTemplate` that the migration to schema 11 discarded; they go to Diagnostics. */
     readonly discardedUrlTemplates?: readonly DiscardedUrlTemplate[];
-    /** Anotações que perderam a herança na migração para o schema 13; vão para o Diagnóstico. */
+    /** Annotations that lost inheritance in the migration to schema 13; they go to Diagnostics. */
     readonly discardedInherit?: readonly DiscardedInherit[];
     readonly repaired?: readonly RepairRecord[];
-    /** Problemas do pacote da biblioteca (Diagnóstico); sem o campo, a sessão começa sem. */
+    /** Library package problems (Diagnostics); without the field, the session starts without any. */
     readonly libraryIssues?: LibraryIssues;
   },
 ): Promise<AppResult> {
@@ -212,7 +214,7 @@ async function openLoaded(
     ? await target.bind(project)
     : { storage: target.storage, folderId: undefined };
   const unexported = signal(meta?.unexported ?? false);
-  // As perspectivas "Só eu" ficam neste navegador, por `project.id` (etapa #659).
+  // The "Only me" perspectives stay in this browser, by `project.id` (stage #659).
   const localStore = await localPerspectiveStore();
   const localInitial = localStore ? await localStore.load(project.project.id) : [];
   const session = openSession({
@@ -232,16 +234,16 @@ async function openLoaded(
     proposals: await loadProposals(storage),
     threads: await loadThreads(storage),
     prepareImage,
-    // Gravou o `mapping.json` (com conteúdo que ainda não saiu num zip), um `proposal.json` ou uma
-    // conversa (`comments/`):
-    // há trabalho a exportar. `markExported` zera; o IndexedDB guarda o mesmo flag. Na pasta,
-    // a linha dos recentes acompanha o nome e o último uso, como a do projeto local (R2).
+    // Wrote the `mapping.json` (with content that has not yet left in a zip), a `proposal.json` or a
+    // thread (`comments/`):
+    // there is work to export. `markExported` clears it; IndexedDB keeps the same flag. In a folder,
+    // the recents row follows the name and the last use, like the local project's (R2).
     onChanged: () => {
       unexported.value = true;
       const name = session.store.project.peek()?.project.name;
       if (folderId !== undefined && name !== undefined) void touchFolder(folderId, name);
     },
-    // Arquivos trocados por fora: o bitmap guardado é do conteúdo antigo.
+    // Files changed from outside: the stored bitmap is of the old content.
     onImagesChanged: (paths) => {
       for (const path of paths) display.invalidate(path);
     },
@@ -267,15 +269,15 @@ async function openLoaded(
   return ok(undefined);
 }
 
-/** A versão do schema a partir da qual a biblioteca de notas existe (v13). */
+/** The schema version from which the notes library exists (v13). */
 const NOTES_SINCE_SCHEMA = 13;
 
 /**
- * Um projeto aberto de um schema anterior ao 13 ganha a biblioteca de notas ao abrir, antes de
- * entrar no store (sem entrada de desfazer): o pacote vai para o cache da sessão e a primeira
- * gravação escreve `specs/notas/` junto com o `mapping.json` e o backup da migração. Projeto já
- * na v13 (sem a biblioteca porque a pessoa a removeu, ou criado sem ela) fica como está; o
- * somente leitura também.
+ * A project opened from a schema older than 13 gets the notes library on opening, before
+ * entering the store (no undo entry): the package goes to the session cache and the first
+ * save writes `specs/notas/` along with the `mapping.json` and the migration backup. A project already
+ * at v13 (without the library because the person removed it, or created without it) stays as it is;
+ * so does a read-only one.
  */
 function withDefaultNotes(
   project: Project,
@@ -300,16 +302,16 @@ function withDefaultNotes(
       staged: [{ spec: applied.spec, files: applied.packageFiles }],
     };
   } catch (e) {
-    // A biblioteca de notas não pode impedir a abertura do projeto.
+    // The notes library cannot prevent the project from opening.
     reportError('open.notes', e);
     return { project, staged: [] };
   }
 }
 
 /**
- * Registra no Diagnóstico o que a migração para o schema 11 descartou: o endereço dos
- * arquivos saiu do projeto e passou a ser da especialização (`platforms[].repo`). Uma
- * entrada só, com as plataformas e os modelos descartados.
+ * Records in Diagnostics what the migration to schema 11 discarded: the address of the
+ * files left the project and became the specialization's (`platforms[].repo`). A
+ * single entry, with the discarded platforms and models.
  */
 function reportDiscardedUrlTemplates(discarded: readonly DiscardedUrlTemplate[]): void {
   if (discarded.length === 0) return;
@@ -323,8 +325,8 @@ function reportDiscardedUrlTemplates(discarded: readonly DiscardedUrlTemplate[])
 }
 
 /**
- * Registra no Diagnóstico o que a migração para o schema 13 deixou de herdar: a anotação não
- * vale mais para as marcações descendentes. Uma entrada só, com a quantidade e as marcações.
+ * Records in Diagnostics what the migration to schema 13 stopped inheriting: the annotation no
+ * longer applies to descendant markings. A single entry, with the count and the markings.
  */
 function reportDiscardedInherit(discarded: readonly DiscardedInherit[]): void {
   if (discarded.length === 0) return;
@@ -337,7 +339,7 @@ function reportDiscardedInherit(discarded: readonly DiscardedInherit[]): void {
   );
 }
 
-/** Uma linha por reparo, para o Diagnóstico (ex.: `made-root marking MN "Nome" (missing-parent)`). */
+/** One line per repair, for Diagnostics (e.g. `made-root marking MN "Name" (missing-parent)`). */
 function describeRepairs(records: readonly RepairRecord[]): string {
   return records
     .map(
@@ -348,8 +350,8 @@ function describeRepairs(records: readonly RepairRecord[]): string {
 }
 
 /**
- * Abre o projeto reparado. Nada é gravado agora: a sessão guarda o original em `backups/`
- * (mesmo mecanismo da migração) e grava o reparado na primeira gravação.
+ * Opens the repaired project. Nothing is written now: the session keeps the original in `backups/`
+ * (same mechanism as the migration) and writes the repaired one on the first save.
  */
 async function openRepaired(target: OpenTarget, { repair, text }: InconsistentLoad) {
   reportError(
@@ -367,7 +369,7 @@ async function openRepaired(target: OpenTarget, { repair, text }: InconsistentLo
   });
 }
 
-// ---- Modo local (IndexedDB) ----
+// ---- Local mode (IndexedDB) ----
 
 export function createLocalProject(name: string): Promise<AppResult> {
   return guarded(async () => {
@@ -394,7 +396,7 @@ export function openLocalProject(id: string): Promise<AppResult> {
     if (!library) return err('storage-failed');
     void requestPersistentStorage();
     const storage = library.open(id);
-    // Abrir conta como uso, para a ordem dos recentes (também o "Reparar e abrir", R4).
+    // Opening counts as use, for the recents order (also "Repair and open", R4).
     return openFromStorage({
       storage,
       localId: id,
@@ -406,7 +408,7 @@ export function openLocalProject(id: string): Promise<AppResult> {
   });
 }
 
-/** Importa um zip para o IndexedDB como um novo projeto local e o abre. */
+/** Imports a zip into IndexedDB as a new local project and opens it. */
 export function importZip(file: Blob): Promise<AppResult> {
   return guarded(async () => {
     const target = localLibrary();
@@ -423,7 +425,7 @@ export function importZip(file: Blob): Promise<AppResult> {
     if (!parsed.ok) {
       const { error, repair } = parsed;
       if (error.code !== 'invariant-violation' || !repair) return err(error.code);
-      // O projeto local só é criado se o reparo for aceito; recusar não deixa rastro.
+      // The local project is only created if the repair is accepted; refusing leaves no trace.
       return inconsistentResult(error.issues, repair, async () => {
         const opened = await create();
         return opened.ok || !opened.inconsistent?.repair
@@ -435,7 +437,7 @@ export function importZip(file: Blob): Promise<AppResult> {
   });
 }
 
-// ---- Modo pasta (File System Access API) ----
+// ---- Folder mode (File System Access API) ----
 
 export type FolderInspection =
   | { readonly kind: 'cancelled' }
@@ -446,7 +448,7 @@ export type FolderInspection =
       readonly images: readonly ExistingImage[];
     };
 
-/** Escolhe uma pasta: abre o projeto dela ou pede para criar um (sem `mapping.json`). */
+/** Picks a folder: opens its project or asks to create one (without `mapping.json`). */
 export function openFolder(): Promise<AppResult<FolderInspection>> {
   return guarded<FolderInspection>(async () => {
     const handle = await pickDirectory();
@@ -464,13 +466,13 @@ export function openFolder(): Promise<AppResult<FolderInspection>> {
 }
 
 /**
- * A pasta como alvo da abertura: lida sem `copyId`; antes de a sessão abrir (também no
- * "Reparar e abrir"), é guardada nos recentes e a sessão recebe o storage com a cópia.
- * `replaceId`: a entrada dos recentes que passa a apontar para esta pasta ("Localizar").
+ * The folder as the opening target: read without `copyId`; before the session opens (also in
+ * "Repair and open"), it is stored in the recents and the session receives the storage with the copy.
+ * `replaceId`: the recents entry that now points to this folder ("Locate").
  */
 const folderTarget = (handle: DirectoryHandleLike, replaceId?: string): OpenTarget => {
-  // O contador embrulha a raiz uma vez: o storage de leitura, o da sessão e as medidas dela
-  // usam o mesmo.
+  // The counter wraps the root once: the reading storage, the session's and its measurements
+  // use the same one.
   const folderCalls = createFolderCalls();
   const root = countingDirectory(handle, folderCalls);
   return {
@@ -494,18 +496,18 @@ const folderTarget = (handle: DirectoryHandleLike, replaceId?: string): OpenTarg
 const openFolderHandle = (handle: DirectoryHandleLike, replaceId?: string) =>
   openFromStorage(folderTarget(handle, replaceId));
 
-/** Reabre uma pasta dos recentes. Chamar direto do clique (ver `recents.openRecentFolder`). */
+/** Reopens a folder from the recents. Call straight from the click (see `recents.openRecentFolder`). */
 export const openRecentFolder = (id: string, trace?: recents.ReopenSteps) =>
   recents.openRecentFolder(id, openFolderHandle, trace);
 
-/** "Localizar pasta…" (ver `recents.relocateFolder`). */
+/** "Locate folder…" (see `recents.relocateFolder`). */
 export const relocateFolder = (id: string) =>
   recents.relocateFolder(id, openFolderHandle);
 
 /**
- * Cria o projeto na pasta, importando as imagens que já estavam nela. Se um `mapping.json`
- * apareceu depois do diálogo (antes de importar ou antes de gravar), não cria nada: abre o
- * projeto que já está lá e devolve `existing: true` para a tela avisar.
+ * Creates the project in the folder, importing the images that were already in it. If a `mapping.json`
+ * appeared after the dialog (before importing or before saving), it creates nothing: it opens the
+ * project that is already there and returns `existing: true` for the screen to notify.
  */
 export function createFolderProject(
   handle: DirectoryHandleLike,
@@ -518,7 +520,7 @@ export function createFolderProject(
       return opened.ok ? ok({ skipped: [], existing: true as const }) : opened;
     };
     if (await hasMappingFile(handle)) return openExisting();
-    // O mesmo alvo (e contador) da sessão que abre no fim: a criação já conta nele.
+    // The same target (and counter) as the session that opens at the end: creation already counts on it.
     const target = folderTarget(handle);
     const { storage } = target;
     const imported = await importExistingImages(
@@ -528,19 +530,19 @@ export function createFolderProject(
       { readSize: readImageSize, newId: () => crypto.randomUUID() },
     );
     const mappingText = serialize(imported.project);
-    // A janela do diálogo e da importação: reconfere antes de gravar qualquer coisa.
+    // The dialog and import window: recheck before writing anything.
     if (await hasMappingFile(handle)) return openExisting();
-    // O pacote da biblioteca de notas antes do `mapping.json` que o cita.
+    // The notes library package before the `mapping.json` that cites it.
     for (const [path, text] of newProjectSpecFiles(imported.project)) {
       await storage.writeSpecFile(path, text);
     }
     await storage.saveMapping(mappingText);
-    // Para quem versiona a pasta com git: os backups de migração não entram no repositório.
+    // For whoever versions the folder with git: migration backups do not enter the repository.
     await ensureGitignore(handle).catch((e: unknown) =>
       reportError('folder.gitignore', e),
     );
-    // A pasta pode já ter propostas (ex: restauradas do git sem o mapping.json): a abertura
-    // as lê, como em qualquer pasta.
+    // The folder may already have proposals (e.g. restored from git without the mapping.json): opening
+    // reads them, as in any folder.
     await measureOpen(target, () =>
       openLoaded(target, imported.project, {
         readOnly: false,
@@ -552,20 +554,20 @@ export function createFolderProject(
   });
 }
 
-// ---- Projeto aberto ----
+// ---- Open project ----
 
 export interface ExportedProject {
   readonly file: File;
-  /** Imagens do projeto que não estavam no armazenamento e ficaram fora do zip. */
+  /** Project images that were not in storage and were left out of the zip. */
   readonly missingImages: readonly string[];
-  /** `false` com a gravação em erro: o zip leva o que o armazenamento ainda não tem. */
+  /** `false` with the save in error: the zip carries what storage does not have yet. */
   readonly saved: boolean;
 }
 
-// Último zip gerado: só conta como exportado em `markExported`, quando o arquivo saiu (8.7).
+// Last zip generated: only counts as exported in `markExported`, when the file left (8.7).
 let pendingExport: { session: ProjectSession; snapshot: Project } | null = null;
 
-/** Gera o zip do projeto aberto. */
+/** Generates the zip of the open project. */
 export function buildExport(): Promise<AppResult<ExportedProject>> {
   return guarded(async () => {
     const current = openProject.value;
@@ -588,7 +590,7 @@ export function buildExport(): Promise<AppResult<ExportedProject>> {
   });
 }
 
-/** O zip gerado por `buildExport` saiu (salvo ou compartilhado). */
+/** The zip generated by `buildExport` left (saved or shared). */
 export async function markExported(): Promise<void> {
   const current = openProject.value;
   if (!current) return;
@@ -601,7 +603,7 @@ export async function markExported(): Promise<void> {
   try {
     await localLibrary()?.setUnexported(current.localId, false);
   } catch (e) {
-    // O indicador volta a aparecer na próxima abertura; nada se perde.
+    // The indicator reappears on the next opening; nothing is lost.
     reportError('local.setUnexported', e);
   }
 }
@@ -623,9 +625,9 @@ export async function closeProject(): Promise<void> {
   }
 }
 
-// ---- Catálogo de uma biblioteca, sem projeto (etapa Biblioteca, B5) ----
+// ---- Library Catalog, without a project (Library stage, B5) ----
 
-/** A biblioteca aberta na tela do Catálogo; `null` quando não há. Nada dela é gravado. */
+/** The library open on the Catalog screen; `null` when there is none. Nothing of it is written. */
 export const openLibrary = signal<LibraryPreview | null>(null);
 
 export type LibrarySource =
@@ -633,14 +635,14 @@ export type LibrarySource =
 
 export type LibraryOpenResult =
   | { readonly kind: 'opened' }
-  /** O usuário cancelou o seletor de pasta. */
+  /** The user cancelled the folder picker. */
   | { readonly kind: 'cancelled' }
   | { readonly kind: 'failed'; readonly reason: 'too-big' | 'empty' | 'unreadable' };
 
 /**
- * Lê o pacote (pasta ou zip) para a memória e abre o Catálogo. Um pacote com erros de
- * validação abre mesmo assim (os problemas aparecem no topo da tela); só o que não se
- * consegue ler (grande demais, vazio, zip inválido) falha.
+ * Reads the package (folder or zip) into memory and opens the Catalog. A package with
+ * validation errors opens anyway (the problems appear at the top of the screen); only what
+ * cannot be read (too large, empty, invalid zip) fails.
  */
 export async function openLibraryPackage(
   source: LibrarySource,
@@ -670,7 +672,7 @@ export async function openLibraryPackage(
   }
 }
 
-/** Fecha o Catálogo da biblioteca e tira as fontes do pacote do documento. */
+/** Closes the library Catalog and removes the package fonts from the document. */
 export function closeLibrary(): void {
   openLibrary.value?.dispose();
   openLibrary.value = null;

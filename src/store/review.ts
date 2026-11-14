@@ -27,65 +27,65 @@ import type {
 import { createProposedComponents, type ProposedComponents } from './proposedCatalog';
 import type { ProjectSession } from './session';
 
-// Estado da revisão de uma proposta (etapa 4): qual proposta está aberta, o item
-// selecionado, os filtros, a visão Atual/Proposto e o "Desfazer" dos lotes de decisão.
-// É estado de UI: as decisões e notas moram na proposta (gravadas pela sessão) e o que é
-// calculado a partir delas, em `derived`. Retomar a revisão (último item, filtros, visão e
-// conflitos conhecidos) e "vista" ficam no `localStorage` por dispositivo e por cópia do
-// projeto (`ProjectStorage.copyId`), com try/catch, fora da proposta e do desfazer.
+// State of reviewing a proposal (stage 4): which proposal is open, the selected item,
+// the filters, the Current/Proposed view and the "Undo" of the decision batches.
+// It is UI state: the decisions and notes live in the proposal (written by the session) and what
+// is computed from them, in `derived`. Resuming the review (last item, filters, view and
+// known conflicts) and "seen" are kept in `localStorage` per device and per copy of the
+// project (`ProjectStorage.copyId`), with try/catch, outside the proposal and the undo.
 
 export type { ReviewView };
 
-/** O que volta ao reabrir uma proposta nesta cópia do projeto, neste dispositivo. */
+/** What comes back when reopening a proposal in this copy of the project, on this device. */
 export interface ReviewResume {
-  /** Último item visto. */
+  /** Last item seen. */
   readonly selected: ReviewTarget | null;
   readonly view: ReviewView;
   readonly filters: ReviewFilters;
   /**
-   * Conflitos que a pessoa já conhecia nesta cópia do projeto (os que viu ao abrir e os
-   * que decidiu), para marcar só os novos ("Conflito novo").
+   * Conflicts the person already knew about in this copy of the project (those seen on open and
+   * those decided), so that only the new ones are marked ("New conflict").
    */
   readonly knownConflicts: readonly string[];
 }
 
-/** A última decisão, com o que ela mudou: o aviso "Desfazer" (HANDOFF 8.3). */
+/** The last decision, with what it changed: the "Undo" notice (HANDOFF 8.3). */
 export interface DecisionUndo {
   readonly proposalId: string;
-  /** Decisões de antes: o "Desfazer" as regrava numa única escrita. */
+  /** Earlier decisions: "Undo" rewrites them in a single write. */
   readonly previous: ProposalDecisions;
-  /** Decisões de depois: o "Desfazer" só vale enquanto ainda são estas. */
+  /** Later decisions: "Undo" is only valid while they are still these. */
   readonly decisions: ProposalDecisions;
-  /** Mudanças pedidas que mudaram de estado. */
+  /** Requested changes that changed state. */
   readonly changed: readonly string[];
-  /** Mudanças que mudaram junto, pelas dependências ("4 mudanças rejeitadas junto"). */
+  /** Changes that changed along with them, through dependencies ("4 changes rejected too"). */
   readonly cascaded: readonly string[];
-  /** Quem decidiu: o estado aplicado ao alvo (`null` = limpou). */
+  /** Who decided: the state applied to the target (`null` = cleared). */
   readonly state: 'accepted' | 'rejected' | null;
 }
 
 /**
- * Pedido de levar o foco ao marcador de uma mudança nos Detalhes (clique ou Enter numa
- * mudança da janela Propostas, fase 9.6): quem desenha o marcador cumpre e limpa. As setas
- * só selecionam: o foco fica na lista (HANDOFF-REVIEW-DETAILS, decisão 2).
+ * Request to move focus to the marker of a change in Details (click or Enter on a
+ * change in the Proposals window, phase 9.6): whoever draws the marker fulfills and clears it. The
+ * arrows only select: focus stays in the list (HANDOFF-REVIEW-DETAILS, decision 2).
  */
 export interface MarkRequest {
   readonly changeId: string;
-  /** Distingue dois pedidos seguidos da mesma mudança. */
+  /** Tells two consecutive requests for the same change apart. */
   readonly seq: number;
 }
 
-/** Qual controle do par ✓ ✕ recebe o foco depois de uma decisão pelo teclado. */
+/** Which control of the ✓ ✕ pair receives focus after a keyboard decision. */
 export type DecisionControlKind = 'accept' | 'reject';
-/** Onde está o par: o cartão da anotação (Detalhes) ou o rodapé do popover do marcador. */
+/** Where the pair is: the annotation card (Details) or the footer of the marker popover. */
 export type DecisionSurface = 'card' | 'popover';
 
 export type OpenReviewResult =
   | {
       readonly ok: true;
-      /** `'full'`: voltou ao ponto onde parou (havia estado desta cópia neste dispositivo). */
+      /** `'full'`: back to where it stopped (there was state for this copy on this device). */
       readonly resumed: 'full' | 'none';
-      /** Conflitos que apareceram desde a última abertura nesta cópia. */
+      /** Conflicts that appeared since the last opening in this copy. */
       readonly newConflicts: number;
     }
   | {
@@ -94,75 +94,75 @@ export type OpenReviewResult =
     };
 
 export interface ReviewState {
-  /** Proposta aberta na revisão; `null` fora dela. */
+  /** Proposal open in the review; `null` outside it. */
   readonly proposalId: ReadonlySignal<string | null>;
-  /** Alvo selecionado (proposta, projeto, imagem, item ou mudança). */
+  /** Selected target (proposal, project, image, item or change). */
   readonly selected: ReadonlySignal<ReviewTarget | null>;
   readonly view: ReadonlySignal<ReviewView>;
   readonly filters: ReadonlySignal<ReviewFilters>;
-  /** Propostas já abertas nesta cópia do projeto, neste dispositivo (ids). */
+  /** Proposals already opened in this copy of the project, on this device (ids). */
   readonly seen: ReadonlySignal<ReadonlySet<string>>;
   /**
-   * Mudanças em conflito que a pessoa não conhecia ao abrir a revisão: as que já estavam
-   * em conflito na abertura e não eram conhecidas, e as que surgiram durante a revisão
-   * (projeto recarregado por fora). Vazio fora da revisão.
+   * Changes in conflict that the person did not know about when opening the review: those that were already
+   * in conflict at open and were not known, and those that appeared during the review
+   * (project reloaded from outside). Empty outside the review.
    */
   readonly newConflicts: ReadonlySignal<ReadonlySet<string>>;
   /**
-   * Os conflitos novos que o aviso da lista anuncia: os de `newConflicts`, ou vazio se a
-   * pessoa dispensou o aviso (X) e nenhum conflito novo surgiu depois. Estado da revisão
-   * aberta: nada é gravado e zera ao abrir e ao fechar.
+   * The new conflicts that the list notice announces: those of `newConflicts`, or empty if the
+   * person dismissed the notice (X) and no new conflict appeared afterwards. State of the open
+   * review: nothing is written and it resets on open and on close.
    */
   readonly staleNotice: ReadonlySignal<ReadonlySet<string>>;
-  /** Dispensa o aviso de conflitos novos (X) até um conflito novo aparecer. */
+  /** Dismisses the new-conflicts notice (X) until a new conflict appears. */
   dismissStaleNotice(): void;
-  /** A pessoa dispensou (X) o aviso de proposta substituída nesta revisão. */
+  /** The person dismissed (X) the superseded-proposal notice in this review. */
   readonly supersededDismissed: ReadonlySignal<boolean>;
   dismissSupersededNotice(): void;
-  /** A última decisão, enquanto o "Desfazer" vale; `null` depois de outra ação. */
+  /** The last decision, while "Undo" is valid; `null` after another action. */
   readonly undoable: ReadonlySignal<DecisionUndo | null>;
-  /** Pedido pendente de focar o marcador de uma mudança (Detalhes); `null` sem pedido. */
+  /** Pending request to focus the marker of a change (Details); `null` with no request. */
   readonly markRequest: ReadonlySignal<MarkRequest | null>;
   /**
-   * Pedido de abrir a nota sugerida de uma mudança, com o foco no campo (rejeitar pelo
-   * popover com o mouse). Vive aqui, e não no popover, porque rejeitar pode trocar o cartão
-   * da anotação criada e remontar o marcador: o popover novo cumpre o pedido. `null` sem
-   * pedido.
+   * Request to open the suggested note of a change, with focus in the field (rejecting through the
+   * popover with the mouse). It lives here, not in the popover, because rejecting may swap the card
+   * of the created annotation and remount the marker: the new popover fulfills the
+   * request. `null` with no request.
    */
   readonly noteRequest: ReadonlySignal<MarkRequest | null>;
-  /** Estado derivado (níveis, contagens, "como ficaria", pendências, conflitos). */
+  /** Derived state (levels, counts, "how it would look", pending items, conflicts). */
   readonly derived: ReviewDerived;
   /**
-   * O catálogo de componentes que o desenho lê: na visão Proposto, o da biblioteca aplicada
-   * mais os pacotes da proposta aberta (lidos de `proposals/<id>/`, sem gravar); na Atual, o
-   * da biblioteca. Quem não desenha (paleta de inserir, Diagnóstico de fontes) lê `session.components`.
+   * The component catalog the drawing reads: in the Proposed view, that of the applied library
+   * plus the packages of the open proposal (read from `proposals/<id>/`, without writing); in Current, that
+   * of the library. Whoever does not draw (insert palette, Sources diagnostics) reads `session.components`.
    */
   readonly components: ProposedComponents;
 
-  /** Abre a revisão (projeto somente leitura) e volta ao ponto onde parou. */
+  /** Opens the review (read-only project) and returns to where it stopped. */
   open(proposalId: string): OpenReviewResult;
-  /** Sai da revisão, guardando o ponto onde parou. As decisões ficam na proposta. */
+  /** Leaves the review, keeping where it stopped. The decisions stay in the proposal. */
   close(): void;
   select(target: ReviewTarget | null): void;
-  /** Pede que os Detalhes levem o foco ao marcador da mudança e abram o popover dela. */
+  /** Asks Details to move focus to the change's marker and open its popover. */
   requestMark(changeId: string): void;
-  /** Cumpriu (ou desistiu de) o pedido do `requestMark`. */
+  /** Fulfilled (or gave up) the `requestMark` request. */
   clearMarkRequest(): void;
-  /** Pede a nota sugerida da mudança (`noteRequest`); cada pedido tem um `seq` novo. */
+  /** Asks for the change's suggested note (`noteRequest`); each request has a new `seq`. */
   requestNote(changeId: string): void;
-  /** A nota foi fechada vazia, ou o popover foi fechado: o pedido deixa de valer. */
+  /** The note was closed empty, or the popover was closed: the request no longer applies. */
   clearNoteRequest(): void;
   /**
-   * Decidir pelo teclado pode trocar o cartão (ou remontar o popover) e tirar do DOM o botão
-   * focado; o navegador manda o foco ao `body`. Quem decidiu registra aqui o controle que
-   * tinha o foco, e o par ✓ ✕ novo o recupera ao montar (`takeControlFocus`).
+   * Deciding by keyboard may swap the card (or remount the popover) and remove from the DOM the button
+   * that had focus; the browser sends focus to `body`. Whoever decided records here the control that
+   * had focus, and the new ✓ ✕ pair recovers it on mount (`takeControlFocus`).
    */
   requestControlFocus(
     changeId: string,
     surface: DecisionSurface,
     control: DecisionControlKind,
   ): void;
-  /** Entrega (uma vez) o controle que deve receber o foco neste par; `null` sem pedido. */
+  /** Delivers (once) the control that should receive focus in this pair; `null` with no request. */
   takeControlFocus(
     changeId: string,
     surface: DecisionSurface,
@@ -176,53 +176,53 @@ export interface ReviewState {
     state: 'accepted' | 'rejected' | null,
   ): Promise<DecisionResult>;
   /**
-   * Decide vários alvos numa gravação só e numa entrada só de "Desfazer" (os botões dos
-   * avisos de dependência). `null` se não há proposta aberta.
+   * Decides several targets in a single write and a single "Undo" entry (the buttons of the
+   * dependency notices). `null` if no proposal is open.
    */
   decideMany(
     targets: readonly ReviewTarget[],
     state: 'accepted' | 'rejected' | null,
   ): Promise<DecisionResult | null>;
-  /** Decide o que a lista mostra (com filtros ativos, só as visíveis; sem filtros, a proposta toda). */
+  /** Decides what the list shows (with active filters, only the visible ones; without filters, the whole proposal). */
   decideVisible(state: 'accepted' | 'rejected' | null): Promise<DecisionResult | null>;
-  /** Desfaz a última decisão numa única escrita. `false` se já não vale (alguém decidiu depois). */
+  /** Undoes the last decision in a single write. `false` if it no longer applies (someone decided afterwards). */
   undoLastDecision(): Promise<boolean>;
   dismissUndo(): void;
 
   addNote(target: ReviewTarget, text: string): Promise<NoteResult | null>;
   editNote(noteId: string, text: string): Promise<NoteResult | null>;
   removeNote(noteId: string): Promise<NoteResult | null>;
-  /** "Aplicar aceitas". */
+  /** "Apply accepted". */
   apply(): Promise<ApplyResult | null>;
   /**
-   * Apaga uma proposta fechada (menu ⋯ da lista) e esquece o que esta cópia guardava dela
-   * (`seen` e o ponto onde parou). Só fora da revisão.
+   * Deletes a closed proposal (⋯ menu of the list) and forgets what this copy kept about it
+   * (`seen` and the point where it stopped). Only outside the review.
    */
   removeProposal(id: string): Promise<RemoveResult>;
 
   /**
-   * Seleciona a mudança pendente (sem decisão) ou em conflito seguinte/anterior à
-   * selecionada, dentre as que passam pelos filtros, dando a volta. Devolve o alvo.
+   * Selects the next/previous pending (undecided) or conflicting change relative to the
+   * selected one, among those that pass the filters, wrapping around. Returns the target.
    */
   step(kind: 'pending' | 'conflict', direction: 1 | -1): ReviewTarget | null;
   dispose(): void;
 }
 
 // ---------------------------------------------------------------------------
-// Retomar a revisão: estado por dispositivo (fase 8.2, blob v2)
+// Resuming the review: per-device state (phase 8.2, blob v2)
 //
-// Um blob só no `localStorage` (`mapping.reviewResume`), versionado: `seen`, as propostas
-// já abertas (chaves `copyId|proposalId`, sem limite: só ids) e `resume`, a posição, a
-// visão, os filtros e os conflitos conhecidos por proposta (as mesmas chaves, as 12 mais
-// recentes por cópia). "Vista" e "retomar" são separados de propósito: evictar uma entrada
-// do resume nunca devolve a proposta a "Nova". Versão desconhecida, texto corrompido ou o
-// formato antigo (um `Record` plano) são descartados, não migrados.
+// A single blob in `localStorage` (`mapping.reviewResume`), versioned: `seen`, the proposals
+// already opened (keys `copyId|proposalId`, unbounded: only ids) and `resume`, the position, the
+// view, the filters and the known conflicts per proposal (the same keys, the 12 most
+// recent per copy). "Seen" and "resume" are separate on purpose: evicting an entry
+// from resume never returns the proposal to "New". Unknown version, corrupted text or the
+// old format (a flat `Record`) are discarded, not migrated.
 
 const RESUME_KEY = 'mapping.reviewResume';
 const RESUME_VERSION = 2;
-/** Propostas com posição lembrada, por cópia do projeto (as mais recentes). */
+/** Proposals with a remembered position, per copy of the project (the most recent ones). */
 const MAX_RESUME_PER_COPY = 12;
-/** Conflitos guardados por proposta. */
+/** Conflicts stored per proposal. */
 const MAX_KNOWN_CONFLICTS = 500;
 
 const targetSchema = z.object({
@@ -239,7 +239,7 @@ const resumeSchema = z.object({
     layerId: z.string().nullable(),
     decision: z.enum(['all', 'undecided', 'accepted', 'rejected']),
     onlyConflicts: z.boolean(),
-    // Blob gravado antes da etapa #644 não tem o campo: vale desligado (sem mudar a versão).
+    // Blob written before stage #644 does not have the field: it counts as off (without changing the version).
     onlyRevised: z.boolean().default(false),
   }),
   knownConflicts: z.array(z.string()),
@@ -266,7 +266,7 @@ function readBlob(): ResumeBlob {
     const parsed = blobSchema.safeParse(JSON.parse(text));
     return parsed.success ? (parsed.data as ResumeBlob) : EMPTY_BLOB;
   } catch {
-    // Texto corrompido: a revisão volta ao começo, nada mais.
+    // Corrupted text: the review goes back to the start, nothing more.
     return EMPTY_BLOB;
   }
 }
@@ -275,15 +275,15 @@ function writeBlob(blob: ResumeBlob): void {
   writeSetting(RESUME_KEY, JSON.stringify(blob));
 }
 
-/** Separa a cópia do id da proposta (o id nunca tem `|`: `PROPOSAL_ID_RE`). */
+/** Separates the copy from the proposal id (the id never has `|`: `PROPOSAL_ID_RE`). */
 const KEY_SEPARATOR = '|';
 
 /**
- * A cópia do projeto a que o estado guardado pertence: `ProjectStorage.copyId` (fase 8.4;
- * local: o id do projeto; pasta: o id da entrada dos recentes). A mesma proposta (mesmo
- * id) em duas cópias (o zip importado e a pasta descompactada dele, duas pastas com o
- * mesmo nome) tem conflitos e posição diferentes. Toda sessão recebe um storage com
- * `copyId`; sem ele, as cópias dividiriam o estado, então o Diagnóstico registra.
+ * The copy of the project the stored state belongs to: `ProjectStorage.copyId` (phase 8.4;
+ * local: the project id; folder: the id of the recents entry). The same proposal (same
+ * id) in two copies (the imported zip and its unzipped folder, two folders with the
+ * same name) has different conflicts and position. Every session receives a storage with
+ * `copyId`; without it, the copies would share state, so Diagnostics logs it.
  */
 function resumeScope(storage: ProjectStorage): string {
   const id = storage.copyId;
@@ -295,7 +295,7 @@ function resumeScope(storage: ProjectStorage): string {
 const keyOf = (scope: string, proposalId: string) =>
   `${scope}${KEY_SEPARATOR}${proposalId}`;
 
-/** Ids das propostas desta cópia em `seen`. */
+/** Ids of the proposals of this copy in `seen`. */
 function seenOf(blob: ResumeBlob, scope: string): Set<string> {
   const prefix = `${scope}${KEY_SEPARATOR}`;
   const result = new Set<string>();
@@ -306,9 +306,9 @@ function seenOf(blob: ResumeBlob, scope: string): Set<string> {
 }
 
 /**
- * O blob com a entrada desta proposta trocada (a mais recente por último) e só as
- * `MAX_RESUME_PER_COPY` mais recentes **desta cópia**; as de outras cópias ficam como
- * estão. `seen` só cresce.
+ * The blob with this proposal's entry replaced (the most recent last) and only the
+ * `MAX_RESUME_PER_COPY` most recent **of this copy**; those of other copies stay
+ * as they are. `seen` only grows.
  */
 function withEntry(
   blob: ResumeBlob,
@@ -331,7 +331,7 @@ function withEntry(
   };
 }
 
-/** O blob sem o que esta cópia guardava da proposta (apagada); `null` se não havia nada. */
+/** The blob without what this copy kept of the proposal (deleted); `null` if there was nothing. */
 function withoutEntry(blob: ResumeBlob, key: string): ResumeBlob | null {
   const hasSeen = blob.seen.includes(key);
   const hasResume = Object.hasOwn(blob.resume, key);
@@ -345,7 +345,7 @@ function withoutEntry(blob: ResumeBlob, key: string): ResumeBlob | null {
 
 const START_VIEW: ReviewView = 'proposed';
 const NO_CONFLICTS: ReadonlySet<string> = new Set();
-/** Decidir sem revisão aberta: não há proposta a que a decisão se aplique. */
+/** Deciding without an open review: there is no proposal the decision applies to. */
 const NOT_OPEN: DecisionResult = { ok: false, error: 'unknown-proposal' };
 
 function sameTarget(a: ReviewTarget | null, b: ReviewTarget | null): boolean {
@@ -368,20 +368,20 @@ export function createReviewState(session: ProjectSession): ReviewState {
     surface: DecisionSurface;
     control: DecisionControlKind;
   } | null = null;
-  // Os conflitos que a pessoa conhecia ao abrir: o que estiver fora deles é "novo". E os
-  // que estavam à vista na abertura (anunciados pelo aviso), que ao fechar ficam conhecidos.
+  // The conflicts the person knew about on open: whatever is outside them is "new". And those
+  // that were in view on open (announced by the notice), which become known on close.
   const knownAtOpen = signal<ReadonlySet<string>>(NO_CONFLICTS);
   let conflictsAtOpen: ReadonlySet<string> = NO_CONFLICTS;
-  // Os conflitos novos que a pessoa dispensou no aviso (X) e se dispensou o de substituída.
+  // The new conflicts the person dismissed in the notice (X) and whether they dismissed the superseded one.
   const staleDismissed = signal<ReadonlySet<string>>(NO_CONFLICTS);
   const supersededDismissed = signal(false);
-  // Só as propostas desta cópia contam como vistas (a de uma cópia nova é nova, G1).
+  // Only the proposals of this copy count as seen (that of a new copy is new, G1).
   const seen = signal<ReadonlySet<string>>(seenOf(readBlob(), scope));
 
   /**
-   * Junta ao `seen` em memória o que o blob tem agora (outra aba pode ter aberto uma
-   * proposta) mais `extra`, reatribuindo o signal só se entrou algum id: `derived.rows`
-   * depende dele e `remember` roda a cada seleção.
+   * Merges into the in-memory `seen` what the blob has now (another tab may have opened a
+   * proposal) plus `extra`, reassigning the signal only if some id entered: `derived.rows`
+   * depends on it and `remember` runs on every selection.
    */
   const mergeSeen = (blob: ResumeBlob, extra?: string) => {
     const current = seen.peek();
@@ -423,7 +423,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
     return NO_CONFLICTS;
   });
 
-  /** O alvo existe na proposta aberta? */
+  /** Does the target exist in the open proposal? */
   const exists = (target: ReviewTarget, p: Proposal): boolean => {
     if (
       target.level === 'proposal' ||
@@ -443,9 +443,9 @@ export function createReviewState(session: ProjectSession): ReviewState {
   };
 
   /**
-   * O blob com o que ainda não foi gravado: `remember` roda a cada tecla de seta, então ele
-   * guarda o resultado em memória e a gravação sai agrupada, uma por quadro (e já, ao
-   * fechar a revisão). Sem pendência, relê o armazenamento: o que outra aba gravou fica.
+   * The blob with what has not been written yet: `remember` runs on every arrow key, so it
+   * keeps the result in memory and the write goes out grouped, one per frame (and immediately, on
+   * closing the review). With nothing pending, it rereads the storage: what another tab wrote stays.
    */
   let pendingBlob: ResumeBlob | null = null;
   let resumeFrame: number | null = null;
@@ -466,7 +466,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
     if (resumeFrame !== null || resumeTimer !== null) return;
     if (typeof requestAnimationFrame === 'function') {
       resumeFrame = requestAnimationFrame(flushResume);
-      // A aba em segundo plano pausa os quadros: o relógio garante a gravação.
+      // A background tab pauses frames: the timer guarantees the write.
       resumeTimer = setTimeout(flushResume, 500);
     } else {
       resumeTimer = setTimeout(flushResume, 0);
@@ -474,10 +474,10 @@ export function createReviewState(session: ProjectSession): ReviewState {
   };
 
   /**
-   * Grava o ponto onde a revisão está. Relê o blob e troca só a entrada desta proposta
-   * nesta cópia (o que outra aba ou outra cópia gravou fica). `known`: os conflitos que
-   * passam a ser conhecidos; sem ele, os que a entrada já tinha. Se o `localStorage`
-   * estiver bloqueado, a gravação é engolida e o `seen` em memória vale mesmo assim.
+   * Writes the point where the review is. Rereads the blob and replaces only this proposal's entry
+   * in this copy (what another tab or another copy wrote stays). `known`: the conflicts that
+   * become known; without it, those the entry already had. If `localStorage`
+   * is blocked, the write is swallowed and the in-memory `seen` holds anyway.
    */
   const remember = (known?: readonly string[]) => {
     const id = proposalId.peek();
@@ -495,14 +495,14 @@ export function createReviewState(session: ProjectSession): ReviewState {
     mergeSeen(blob, id);
   };
 
-  // A proposta apagada por fora fecha a revisão; uma alteração externa que tira o item
-  // selecionado da proposta volta à primeira pendente.
+  // A proposal deleted from outside closes the review; an external change that removes the selected item
+  // from the proposal goes back to the first pending one.
   const stopWatching = effect(() => {
     const id = proposalId.value;
     if (id === null) return;
     const p = derived.proposal.value;
     if (p === null) {
-      // Apagada por fora: não deixa uma entrada de retomar para uma proposta que não existe.
+      // Deleted from outside: does not leave a resume entry for a proposal that does not exist.
       pendingBlob = null;
       closeReview();
       return;
@@ -513,10 +513,10 @@ export function createReviewState(session: ProjectSession): ReviewState {
 
   function closeReview() {
     if (proposalId.peek() === null) return;
-    // Passam a conhecidos os conflitos que a pessoa conhecia ou viu anunciados ao abrir
-    // mais os que ela decidiu (decidir é a prova de que viu); um conflito que surgiu
-    // durante a revisão (recarga externa) e ficou sem decisão volta como novo na próxima
-    // abertura (P6). A proposta apagada por fora não ganha entrada (P11).
+    // Those the person knew about or saw announced on open become known
+    // plus those it decided (deciding is proof it saw them); a conflict that appeared
+    // during the review (external reload) and was left undecided comes back as new on the next
+    // opening (P6). A proposal deleted from outside does not gain an entry (P11).
     const p = derived.proposal.peek();
     if (p) {
       const known = new Set([...knownAtOpen.peek(), ...conflictsAtOpen]);
@@ -540,7 +540,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
       view.value = START_VIEW;
       filters.value = NO_FILTERS;
       store.setReviewing(null);
-      // A troca volta; a perspectiva de antes não reabre sozinha.
+      // The swap comes back; the previous perspective does not reopen on its own.
       perspective.setLocked(false);
     });
   }
@@ -595,11 +595,11 @@ export function createReviewState(session: ProjectSession): ReviewState {
       if (p.status === 'withdrawn') return { ok: false, error: 'withdrawn' };
       if (!store.committed.peek()) return { ok: false, error: 'no-project' };
       if (proposalId.peek() !== null && proposalId.peek() !== id) closeReview();
-      // Relido agora: outra aba pode ter gravado depois de esta abrir.
+      // Reread now: another tab may have written after this one opened.
       const blob = currentBlob();
       const entry = blob.resume[keyOf(scope, id)];
       batch(() => {
-        // A revisão mostra só a Principal (decisão 12): abre-a e trava a troca.
+        // The review shows only the Main one (decision 12): opens it and locks the swap.
         perspective.setLocked(true);
         proposalId.value = id;
         store.setReviewing(id);
@@ -608,17 +608,17 @@ export function createReviewState(session: ProjectSession): ReviewState {
         supersededDismissed.value = false;
       });
       const conflicts = derived.conflictIds.peek();
-      // Sem entrada (primeira abertura nesta cópia) não há com o que comparar: nada é novo.
+      // With no entry (first opening in this copy) there is nothing to compare with: nothing is new.
       const known: ReadonlySet<string> = entry
         ? new Set(entry.knownConflicts)
         : conflicts;
-      // Os conflitos à vista na abertura são anunciados ("N conflito(s) novo(s)") e passam
-      // a conhecidos ao fechar; os que surgirem durante a revisão, só se forem decididos.
+      // Conflicts in view on open are announced ("N new conflict(s)") and become
+      // known on close; those that appear during the review, only if decided.
       conflictsAtOpen = conflicts;
       let target = entry?.selected ?? null;
       if (target === null || !exists(target, p)) target = firstPending();
-      // Filtros de uma imagem ou camada que não existem mais não podem esconder tudo. A
-      // camada vale se existe no projeto atual ou na prévia (criada pela proposta).
+      // Filters of an image or layer that no longer exist must not hide everything. The
+      // layer counts if it exists in the current project or in the preview (created by the proposal).
       const savedFilters = entry?.filters ?? NO_FILTERS;
       const tree = derived.tree.peek();
       const layers = [
@@ -646,7 +646,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
         filters.value = cleanFilters;
         knownAtOpen.value = known;
       });
-      // Abrir tira da fila todos os avisos desta proposta (nova, revisada, alterada).
+      // Opening removes all this proposal's notices from the queue (new, revised, changed).
       proposals.dismissNotice(id);
       remember([...known].slice(0, MAX_KNOWN_CONFLICTS));
       return {
@@ -659,7 +659,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
     close: closeReview,
 
     select(target) {
-      // Um pedido de foco vale para a mudança que ele nomeia; ir para outra o descarta.
+      // A focus request applies to the change it names; going to another discards it.
       const pending = markRequest.peek();
       if (
         pending !== null &&
@@ -768,11 +768,11 @@ export function createReviewState(session: ProjectSession): ReviewState {
 
     apply: () =>
       withOpen(async (id) => {
-        // Aplicar fecha o que se pode desfazer da revisão: o projeto muda de base.
+        // Applying closes what can be undone in the review: the project changes base.
         undoable.value = null;
-        // Até a proposta dizer "aplicada" (ou o aplicar ser desfeito), a revisão não
-        // reavalia: o projeto já teria as aceitas e a proposta ainda não. Segura aqui, no
-        // clique, antes de o aplicar entrar na fila; o retrato é do projeto de antes.
+        // Until the proposal says "applied" (or the apply is undone), the review does not
+        // reevaluate: the project would already have the accepted ones and the proposal not yet. Hold it here, at the
+        // click, before the apply enters the queue; the snapshot is of the earlier project.
         const release = derived.hold();
         try {
           return await proposalActions.applyAccepted(id);
@@ -782,12 +782,12 @@ export function createReviewState(session: ProjectSession): ReviewState {
       }),
 
     async removeProposal(id) {
-      // Dentro da revisão a lista nem aparece; a guarda é para quem chamar por outro caminho.
+      // Inside the review the list does not even appear; the guard is for whoever calls through another path.
       if (proposalId.peek() !== null) return { ok: false, error: 'reviewing' };
       const result = await proposalActions.removeProposal(id);
       if (!result.ok) return result;
-      // Esquece o que esta cópia guardava da proposta: uma de mesmo id que chegue depois é
-      // nova de verdade, e a entrada do retomar não fica órfã no blob.
+      // Forgets what this copy kept of the proposal: one with the same id that arrives later is
+      // truly new, and the resume entry does not become orphaned in the blob.
       const blob = currentBlob();
       pendingBlob = null;
       const trimmed = withoutEntry(blob, keyOf(scope, id));
@@ -812,7 +812,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
       );
       const current = selected.peek();
       const tree = derived.tree.peek();
-      // De um item ou imagem, parte da primeira mudança dele.
+      // From an item or image, starts at its first change.
       const from =
         current === null
           ? null

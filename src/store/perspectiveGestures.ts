@@ -13,15 +13,15 @@ import type {
 } from '../model';
 import type { ArrivalInfo } from './perspectives';
 
-// As actions do projeto com uma perspectiva aberta (etapa #659, PE2, decisão 5). O canvas desenha
-// `perspectiveView(project, perspective)` e chama as MESMAS actions com coordenadas DA VISTA; aqui
-// elas viram o que muda de fato: arrastar uma raiz muda só a posição dela na perspectiva (só
-// `perspectives[].items`), o que está dentro de um container segue a geometria de sempre, e o que
-// decide pertencimento (desenhar no canvas, rota de seta, arrumar, excluir raiz) só vale na
-// Principal. Convenção das funções `…InView`: devolvem `null` quando a perspectiva é `null` (a
-// Principal) ou quando vale a regra de sempre do modelo; quem chama cai na operação do modelo.
+// The project actions with a perspective open (stage #659, PE2, decision 5). The canvas draws
+// `perspectiveView(project, perspective)` and calls the SAME actions with coordinates IN THE VIEW; here
+// they become what actually changes: dragging a root changes only its position in the perspective (only
+// `perspectives[].items`), what is inside a container follows the usual geometry, and what
+// decides membership (drawing on the canvas, arrow route, arranging, deleting a root) only applies in the
+// Main one. Convention of the `…InView` functions: they return `null` when the perspective is `null` (the
+// Main one) or when the model's usual rule applies; the caller falls back to the model operation.
 
-/** Comando recusado fora da Principal; `project.ts` o devolve como o código `principal-only`. */
+/** Command refused outside the Main one; `project.ts` returns it as the `principal-only` code. */
 export class PrincipalOnlyError extends Error {
   constructor() {
     super('principal-only');
@@ -33,12 +33,12 @@ function refusePrincipalOnly(): never {
   throw new PrincipalOnlyError();
 }
 
-/** Recusa (`principal-only`) o comando de rota de seta e de arrumar numa perspectiva. */
+/** Refuses (`principal-only`) the arrow-route and arrange commands in a perspective. */
 export function requirePrincipal(perspective: Perspective | null): void {
   if (perspective !== null) refusePrincipalOnly();
 }
 
-/** Recusa (`principal-only`) a exclusão de uma raiz numa perspectiva; as demais seguem. */
+/** Refuses (`principal-only`) deleting a root in a perspective; the others go ahead. */
 export function refuseRootDeletion(
   p: Project,
   perspective: Perspective | null,
@@ -52,10 +52,10 @@ export function refuseRootDeletion(
 export type PrincipalOnlyCommand = 'draw-canvas' | 'arrow-route' | 'arrange' | 'delete';
 
 /**
- * A interface desabilita o comando com a dica "só na Principal"? `true` quando há uma
- * perspectiva aberta em `p` e o comando só vale fora dela: desenhar marcação do canvas que não é
- * flutuante (`draw-canvas`), editar a rota de uma seta (`arrow-route`), arrumar (`arrange`) e
- * excluir uma raiz (`delete`, com os ids em `targets`: basta um ser raiz).
+ * Does the interface disable the command with the hint "only in Main"? `true` when there is a
+ * perspective open in `p` and the command only applies outside it: drawing a canvas marking that is not
+ * floating (`draw-canvas`), editing an arrow's route (`arrow-route`), arranging (`arrange`) and
+ * deleting a root (`delete`, with the ids in `targets`: one being a root is enough).
  */
 export function principalOnly(
   p: Project,
@@ -77,11 +77,11 @@ function perspectiveIn(p: Project, id: string): Perspective {
 }
 
 // ---------------------------------------------------------------------------
-// Mover raízes na perspectiva
+// Moving roots in the perspective
 
 /**
- * Confere que os containers das raízes movidas não sobrepõem outros containers da vista (a vista
- * só tem os containers das raízes da perspectiva): `image-overlap`, como na Principal.
+ * Checks that the containers of the moved roots do not overlap other containers of the view (the view
+ * only has the containers of the perspective's roots): `image-overlap`, as in the Main one.
  */
 function assertNoViewOverlap(
   p: Project,
@@ -109,9 +109,9 @@ function assertNoViewOverlap(
 }
 
 /**
- * O deslocamento `dx`, `dy` das `roots` na vista, reduzido ao maior sem sobrepor um container da
- * vista que não anda (eixo a eixo: encosta e desliza). Com raiz que é marcação do canvas o
- * deslocamento é inteiro, como em `moveRootsInPerspective`. Deslocamento que cabe volta igual.
+ * The displacement `dx`, `dy` of the `roots` in the view, reduced to the largest that does not overlap a container of the
+ * view that stays put (axis by axis: it touches and slides). With a root that is a canvas marking the
+ * displacement is whole, as in `moveRootsInPerspective`. A displacement that fits comes back unchanged.
  */
 function touchingViewDelta(
   p: Project,
@@ -137,7 +137,7 @@ function touchingViewDelta(
   );
 }
 
-/** Anda as raízes na perspectiva (`moveRootsInPerspective`) e confere a sobreposição na vista. */
+/** Moves the roots in the perspective (`moveRootsInPerspective`) and checks the overlap in the view. */
 function moveRootsChecked(
   p: Project,
   perspectiveId: string,
@@ -153,12 +153,12 @@ function moveRootsChecked(
   return next;
 }
 
-/** A raiz de um container ou marcação (`not-found` se o id não existe). */
+/** The root of a container or marking (`not-found` if the id does not exist). */
 function rootOrFail(p: Project, id: string): string {
   return model.perspectiveRootOf(p, id) ?? model.fail('not-found', id);
 }
 
-/** Anda a raiz do item pelo deslocamento (inteiro se a raiz é uma marcação). */
+/** Moves the item's root by the displacement (whole if the root is a marking). */
 function moveRootOf(
   p: Project,
   perspective: Perspective,
@@ -185,7 +185,7 @@ function markingOrFail(p: Project, id: string): Marking {
 // ---------------------------------------------------------------------------
 // Container
 
-/** A posição do container na vista (o que o canvas mostra), ou `undefined` se não está nela. */
+/** The container's position in the view (what the canvas shows), or `undefined` if it is not in it. */
 export function viewPlacement(
   p: Project,
   perspectiveId: string,
@@ -199,11 +199,11 @@ export function viewPlacement(
 }
 
 /**
- * Mover ou redimensionar o container com `placement` DA VISTA. Mover (mesma escala) anda a raiz
- * do container na perspectiva: o projeto não muda, e dentro de uma marcação do canvas arrasta a
- * raiz inteira. Mudar a escala é geometria: a raiz recebe só a escala (o x/y da Principal ficam) e
- * a posição pedida vai para o item dela; o container que não é raiz recebe a posição da
- * Principal que corresponde à pedida. A trava e a sobreposição na vista valem como na Principal.
+ * Move or resize the container with the `placement` IN THE VIEW. Moving (same scale) moves the
+ * container's root in the perspective: the project does not change, and inside a canvas marking it drags the
+ * whole root. Changing the scale is geometry: the root receives only the scale (the Main one's x/y stay) and
+ * the requested position goes to its item; a container that is not a root receives the
+ * Main position that corresponds to the requested one. The lock and the overlap in the view apply as in the Main one.
  */
 export function placementInView(
   p: Project,
@@ -219,7 +219,7 @@ export function placementInView(
   model.requireUnlocked(model.canEditImagePlacement(p, containerId));
   const isRoot = model.isRootId(p, containerId);
   const rescaled = placement.scale !== own.placement.scale;
-  // Mover (mesma escala) encosta no container da vista que o ponteiro atravessaria.
+  // Moving (same scale) touches the view container that the pointer would cross.
   const wanted = { dx: placement.x - shown.x, dy: placement.y - shown.y };
   const { dx, dy } = rescaled
     ? wanted
@@ -247,7 +247,7 @@ export function placementInView(
     );
   }
   if (isRoot || !rescaled) {
-    // `moveRootOf` já confere a sobreposição quando anda; só o que não andou confere aqui.
+    // `moveRootOf` already checks the overlap when it moves; only what did not move checks here.
     const moved = moveRootOf(next, perspective, containerId, dx, dy);
     if (moved !== next) return moved;
   }
@@ -257,9 +257,9 @@ export function placementInView(
 }
 
 // ---------------------------------------------------------------------------
-// Marcação do canvas
+// Canvas marking
 
-/** O retângulo da marcação como o canvas o mostra (da vista, se há perspectiva). */
+/** The marking's rectangle as the canvas shows it (from the view, if there is a perspective). */
 export function shownRect(
   p: Project,
   perspective: Perspective | null,
@@ -273,9 +273,9 @@ export function shownRect(
 }
 
 /**
- * Mover a marcação do canvas (flutuante inclusive) pelo deslocamento inteiro `dx`, `dy`: anda a
- * raiz dela na perspectiva (a marcação filha de outra arrasta a raiz inteira). Marcação de
- * container: `null` (a regra de sempre).
+ * Move the canvas marking (floating included) by the whole displacement `dx`, `dy`: moves its
+ * root in the perspective (a marking that is a child of another drags the whole root). Container
+ * marking: `null` (the usual rule).
  */
 export function markingMoveInView(
   p: Project,
@@ -294,10 +294,10 @@ export function markingMoveInView(
 }
 
 /**
- * Mudar o retângulo (DA VISTA) da marcação do canvas. A flutuante é raiz: o tamanho vai ao
- * projeto (o x/y da Principal ficam) e a posição pedida ao item da perspectiva. A que não é
- * flutuante decide pertencimento, então só se redimensiona na Principal (`principal-only`;
- * decisão do coordenador). Marcação de container: `null`.
+ * Change the rectangle (IN THE VIEW) of the canvas marking. The floating one is a root: the size goes to the
+ * project (the Main one's x/y stay) and the requested position to the perspective item. One that is not
+ * floating decides membership, so it is only resized in the Main one (`principal-only`;
+ * coordinator's decision). Container marking: `null`.
  */
 export function markingRectInView(
   p: Project,
@@ -325,7 +325,7 @@ export function markingRectInView(
   return markingMoveFrom(sized, perspective, markingId, rect, shown);
 }
 
-/** Anda a raiz da marcação até a posição pedida (`rect`), partindo de `shown`. */
+/** Moves the marking's root to the requested position (`rect`), starting from `shown`. */
 function markingMoveFrom(
   p: Project,
   perspective: Perspective,
@@ -339,8 +339,8 @@ function markingMoveFrom(
 }
 
 /**
- * Ajuste fino pelo painel (valor DA VISTA para `x`/`y`): `x`/`y` movem a raiz da marcação do
- * canvas; largura e altura só da flutuante (as demais: `principal-only`). Marcação de container:
+ * Fine adjustment through the panel (value IN THE VIEW for `x`/`y`): `x`/`y` move the root of the canvas
+ * marking; width and height only for the floating one (the others: `principal-only`). Container marking:
  * `null`.
  */
 export function markingAdjustInView(
@@ -371,9 +371,9 @@ export function markingAdjustInView(
 }
 
 // ---------------------------------------------------------------------------
-// Seleção
+// Selection
 
-/** Um item que anda na perspectiva: container ou marcação do canvas (a raiz dele). */
+/** An item that moves in the perspective: a container or canvas marking (its root). */
 function rootOfMoving(p: Project, item: ItemRef): string | undefined {
   const index = model.projectIndex(p);
   if (item.kind === 'image') return index.rootOf.get(item.id);
@@ -381,14 +381,14 @@ function rootOfMoving(p: Project, item: ItemRef): string | undefined {
   return marking?.containerId === null ? index.rootOf.get(item.id) : undefined;
 }
 
-/** O item pode mudar de lugar (trava própria ou herdada dos ancestrais). */
+/** The item can change place (own lock or inherited from the ancestors). */
 function canGrab(p: Project, item: ItemRef): boolean {
   return item.kind === 'image'
     ? model.canEditImagePlacement(p, item.id)
     : model.canEditMarkingGeometry(p, item.id);
 }
 
-/** Os itens do arrasto separados: as raízes que andam na perspectiva e o resto, que anda no projeto. */
+/** The drag's items separated: the roots that move in the perspective and the rest, which moves in the project. */
 function splitMoving(
   p: Project,
   items: readonly ItemRef[],
@@ -405,12 +405,12 @@ function splitMoving(
     }
   }
   const index = model.projectIndex(p);
-  // A marcação de container cuja raiz anda vai com a raiz.
+  // A container marking whose root moves goes with the root.
   const rest = others.filter((item) => !roots.has(index.rootOf.get(item.id) ?? ''));
   return { roots: [...roots], rest };
 }
 
-/** O arrasto aceita qualquer número finito; o passo das setas, só inteiros. */
+/** The drag accepts any finite number; the arrow-key step, only integers. */
 function assertValidDelta(
   mode: 'move' | 'nudge',
   delta: { readonly dx: number; readonly dy: number },
@@ -420,10 +420,10 @@ function assertValidDelta(
 }
 
 /**
- * Arrasto conjunto (`'move'`, unidades do canvas) ou passo das setas (`'nudge'`, inteiros) com uma
- * perspectiva aberta: as raízes dos containers e das marcações do canvas andam na perspectiva
- * (sem repetir; com marcação raiz o deslocamento do canvas é arredondado uma vez para todas) e as
- * marcações de container cuja raiz não anda seguem `moveItems`/`nudgeItems`, na mesma operação.
+ * Joint drag (`'move'`, canvas units) or arrow-key step (`'nudge'`, integers) with a
+ * perspective open: the roots of containers and canvas markings move in the perspective
+ * (without repeating; with a root marking the canvas displacement is rounded once for all) and the
+ * container markings whose root does not move follow `moveItems`/`nudgeItems`, in the same operation.
  */
 export function itemsMoveInView(
   p: Project,
@@ -437,7 +437,7 @@ export function itemsMoveInView(
   assertValidDelta(mode, delta);
   if (delta.dx === 0 && delta.dy === 0) return p;
   const { roots, rest } = splitMoving(p, items);
-  // O arrasto encosta (decisão 4 da etapa #764); o passo das setas segue recusando.
+  // The drag touches (decision 4 of stage #764); the arrow-key step keeps refusing.
   const { dx, dy } =
     mode === 'move'
       ? touchingViewDelta(p, perspective, roots, delta.dx, delta.dy)
@@ -462,10 +462,10 @@ export function itemsMoveInView(
 // Criar numa perspectiva
 
 /**
- * Depois de uma operação que cria (`before` → `after`) com a perspectiva `perspectiveId` aberta:
- * marcação do canvas nova que não é flutuante recusa (`principal-only`); cada raiz nova (container
- * sem pai ou flutuante) entra na perspectiva na posição que tem no projeto e chega à Principal
- * (`arriveInPrincipal`), uma de cada vez. Devolve o projeto e as chegadas (para o aviso).
+ * After an operation that creates (`before` → `after`) with perspective `perspectiveId` open:
+ * a new canvas marking that is not floating refuses (`principal-only`); each new root (container
+ * without a parent or floating) enters the perspective at the position it has in the project and arrives in the Main one
+ * (`arriveInPrincipal`), one at a time. Returns the project and the arrivals (for the notice).
  */
 export function creationInPerspective(
   before: Project,
@@ -498,7 +498,7 @@ export function creationInPerspective(
   return { project, arrivals };
 }
 
-/** Acrescenta a raiz na perspectiva, na posição que ela tem no projeto. */
+/** Adds the root to the perspective, at the position it has in the project. */
 function enterPerspective(p: Project, perspectiveId: string, root: string): Project {
   const open = perspectiveIn(p, perspectiveId);
   const at = model.placeCreatedRoot(p, open, root);

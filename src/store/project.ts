@@ -33,25 +33,26 @@ export interface Point {
 
 export interface ActionDeps {
   readonly newId?: () => string;
-  /** Catálogo de componentes de agora (padrão: vazio). Dele vêm o tamanho mínimo e o desenho das instâncias. */
+  /** Current component catalog (default: empty). It gives the minimum size and the instance drawing. */
   readonly components?: () => ComponentCatalog;
-  /** Medidor de texto de agora (padrão: o de `textMeasurer`, que o canvas troca pelo real). */
+  /** Current text measurer (default: `textMeasurer`'s, which the canvas swaps for the real one). */
   readonly measure?: () => TextMeasurer;
   /**
-   * A perspectiva aberta (`null` = a Principal; sem esta função, sempre a Principal). Com uma
-   * aberta, o canvas chama as actions com coordenadas da vista e elas viram o que muda de fato
-   * (`perspectiveGestures.ts`): arrastar uma raiz muda só a posição dela na perspectiva, e os
-   * comandos "só na Principal" recusam com `principal-only`.
+   * The open perspective (`null` = Main; without this function, always Main). With one
+   * open, the canvas calls the actions with view coordinates and they become what actually changes
+   * (`perspectiveGestures.ts`): dragging a root changes only its position in the perspective, and
+   * the "Main only" commands refuse with `principal-only`.
    */
   readonly perspective?: () => string | null;
-  /** Chamada com as chegadas à Principal de uma operação que criou raízes numa perspectiva. */
+  /** Called with the arrivals in Main of an operation that created roots in a perspective. */
   readonly onArrival?: (infos: readonly ArrivalInfo[]) => void;
 }
 
 /**
- * Prende o retângulo pedido ao tamanho mínimo do componente, em vez de recusar: o gesto de
- * redimensionar não trava no meio. A borda que o gesto não mexe (a oposta à alça) fica onde
- * estava no início do gesto (`base`); se nenhuma borda ficou, ancora em x e y.
+ * Clamps the requested rectangle to the component's minimum size, instead of refusing: the
+ * resize gesture does not lock up midway. The edge the gesture does not move (the one opposite the
+ * handle) stays where it was at the start of the gesture (`base`); if no edge stayed, it anchors at
+ * x and y.
  */
 export function clampToMinSize(
   rect: Rect,
@@ -65,10 +66,10 @@ export function clampToMinSize(
     baseStart: number,
     baseSize: number,
   ): [number, number] => {
-    // Um eixo que o gesto não mexeu fica como está, mesmo abaixo do mínimo (marcação antiga).
+    // An axis the gesture did not move stays as it is, even below the minimum (old marking).
     if (size >= minimum || (start === baseStart && size === baseSize))
       return [start, size];
-    // Só a borda de baixo/direita ficou onde estava: a alça é a de cima/esquerda.
+    // Only the bottom/right edge stayed where it was: the handle is the top/left one.
     const anchorFar = start + size === baseStart + baseSize && start !== baseStart;
     return [anchorFar ? start + size - minimum : start, minimum];
   };
@@ -78,8 +79,8 @@ export function clampToMinSize(
 }
 
 /**
- * Arquivos do pacote de uma biblioteca: caminho relativo à pasta do pacote
- * (`components/button.json`) → texto (`.json`, `.md`) ou bytes (fontes).
+ * Files of a library package: path relative to the package folder
+ * (`components/button.json`) → text (`.json`, `.md`) or bytes (fonts).
  */
 export type SpecPackageFiles = ReadonlyMap<string, string | Blob>;
 
@@ -88,16 +89,16 @@ function packageSpecNameIn(spec: Spec, files?: SpecPackageFiles): string | undef
 }
 
 /**
- * Actions do projeto: toda mutação passa por aqui. Cada action aplica uma
- * operação pura do modelo e gera uma entrada no histórico. As que criam itens
- * devolvem o id gerado.
+ * Project actions: every mutation goes through here. Each action applies a pure model
+ * operation and creates a history entry. Those that create items
+ * return the generated id.
  *
- * Gestos (arrastar/redimensionar) usam `store.beginGesture/updateGesture/commitGesture`
- * com as mesmas operações, para gerar uma única entrada no histórico.
+ * Gestures (drag/resize) use `store.beginGesture/updateGesture/commitGesture`
+ * with the same operations, to produce a single history entry.
  */
 /**
- * Arrasto conjunto na Principal: `moveItems` com o deslocamento reduzido ao maior sem sobrepor
- * um container que não anda (as bordas encostam; decisão 4 da etapa #764).
+ * Joint drag in Main: `moveItems` with the offset reduced to the largest that does not overlap
+ * a container that does not move (the edges touch; decision 4 of stage #764).
  */
 function movedTouching(
   p: Project,
@@ -111,8 +112,8 @@ function movedTouching(
 }
 
 /**
- * Posição pedida para mover um container (mesma escala) na Principal, reduzida ao que encosta no
- * container que o ponteiro atravessaria. Redimensionar (escala diferente) segue como veio.
+ * Requested position to move a container (same scale) in Main, reduced to what touches the
+ * container the pointer would cross. Resizing (different scale) goes through as it came.
  */
 function touchingPlacement(
   p: Project,
@@ -141,7 +142,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
   /** A perspectiva aberta em `p` (`null` = a Principal). */
   const viewFor = (p: Project): Perspective | null =>
     openPerspectiveIn(p, deps.perspective?.() ?? null);
-  /** Devolve `principal-only` quando a operação é recusada fora da Principal. */
+  /** Returns `principal-only` when the operation is refused outside Main. */
   const guarded = <T>(run: () => ActionResult<T>): ActionResult<T> => {
     try {
       return run();
@@ -152,12 +153,13 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       throw e;
     }
   };
-  /** Mínimo do componente de cada marcação de `p`: vale ao converter o `rect` para outro espaço. */
+  /** Component minimum of each marking of `p`: applies when converting the `rect` to another space. */
   const minSizeOf = (p: Project) => (id: string) =>
     model.componentMinSize(p, catalog(), id);
   /**
-   * Opções do assentar das operações de geometria que não são prévia de gesto. `before` é o projeto
-   * de antes (o do início do gesto): as perspectivas se reconciliam com a diferença até ele.
+   * Settle options of the geometry operations that are not a gesture preview. `before` is the
+   * earlier project (the one from the start of the gesture): perspectives reconcile with the
+   * difference up to it.
    */
   const settleOptions = (p: Project): model.SettleOptions => ({
     settle: true,
@@ -165,8 +167,9 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     minSizeOf: minSizeOf(p),
   });
   /**
-   * Opções das operações que mudam o retângulo da marcação: o tamanho mínimo do componente que
-   * a desenha (nada para uma marcação comum) e o mínimo das demais, para a troca de espaço.
+   * Options of the operations that change the marking's rectangle: the minimum size of the
+   * component that draws it (nothing for a plain marking) and the minimum of the others, for the
+   * space change.
    */
   const rectOptions = (p: Project, markingId: string): model.RectOptions => {
     const minSize = model.componentMinSize(p, catalog(), markingId);
@@ -174,15 +177,15 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       ? { minSizeOf: minSizeOf(p) }
       : { minSize, minSizeOf: minSizeOf(p) };
   };
-  /** Opções do encosto: o assentar de sempre e os padrões de `anchor` que o componente declara. */
+  /** Snap options: the usual settle and the `anchor` defaults that the component declares. */
   const snapOptions = (p: Project): model.SnapToAnchorOptions => ({
     ...settleOptions(p),
     defaults: model.markingAnchorDefaults(p, catalog()),
   });
   /**
-   * O Arrumar de uma marcação: o arranjo das filhas ou o ajuste ao conteúdo e, com âncora, o
-   * encosto depois (o tamanho já é o novo). A marcação ancorada que não se arruma nem se ajusta
-   * só encosta; sem âncora, a regra de hoje (e os erros dela).
+   * A marking's Arrange: the arrangement of the children or the fit to the content and, with an
+   * anchor, the snap afterwards (the size is already the new one). An anchored marking that is
+   * neither arranged nor fitted only snaps; without an anchor, today's rule (and its errors).
    */
   const arrangeAndSnap = (
     p: Project,
@@ -216,17 +219,17 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     });
     return { project: snapped.project, warnings: [...warnings, ...snapped.warnings] };
   };
-  /** O retângulo pedido preso ao tamanho mínimo do componente (o gesto não trava no meio). */
+  /** The requested rectangle clamped to the component's minimum size (the gesture does not lock up). */
   const wantedRect = (p: Project, markingId: string, rect: Rect): Rect => {
     const min = model.componentMinSize(p, catalog(), markingId);
     const base = view.shownRect(p, viewFor(p), markingId);
     return min && base ? clampToMinSize(rect, base, min) : rect;
   };
   /**
-   * Operação final de um gesto: repete a operação com os valores finais e `settle: true` sobre o
-   * projeto do início do gesto (`updateGesture` sempre parte dele). A final nunca pode falhar:
-   * se falhar, o `commitGesture` gravaria a prévia sem assentar; então assenta a última prévia
-   * válida. `op` recebe o projeto do início e a última prévia.
+   * Final operation of a gesture: repeats the operation with the final values and `settle: true` on
+   * the project from the start of the gesture (`updateGesture` always starts from it). The final
+   * one can never fail: if it did, `commitGesture` would record the preview without settling; so it
+   * settles the last valid preview. `op` receives the starting project and the last preview.
    */
   const finishGesture = (op: (base: Project, last: Project) => Project): ActionResult => {
     const last = store.project.peek();
@@ -238,10 +241,10 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
   };
 
   /**
-   * Aplica uma operação que cria (containers, marcações, componentes). Com uma perspectiva aberta
-   * (decisão 8): a marcação do canvas nova que não é flutuante recusa a operação inteira
-   * (`principal-only`); cada raiz nova entra na perspectiva onde foi criada e chega à Principal, e
-   * as chegadas vão para `deps.onArrival`. Na Principal é `store.apply`.
+   * Applies an operation that creates (containers, markings, components). With an open perspective
+   * (decision 8): a new canvas marking that is not floating refuses the whole operation
+   * (`principal-only`); each new root enters the perspective where it was created and arrives in
+   * Main, and the arrivals go to `deps.onArrival`. In Main it is `store.apply`.
    */
   const applyCreating = (op: Operation): ActionResult =>
     guarded(() => {
@@ -270,12 +273,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         model.createProject({ name, now, firstLayer: { ...firstLayer, id: newId() } }),
       );
     },
-    /** Aplica uma operação que cria raízes (ver `applyCreating`): a sessão usa nas que criam containers. */
+    /** Applies an operation that creates roots (see `applyCreating`): the session uses it for those that create containers. */
     applyCreating,
     renameProject: (name: string) => store.apply((p) => model.renameProject(p, name)),
     setContainerMarkingColor: (containerId: string, color: string | null) =>
       store.apply((p) => model.setContainerMarkingColor(p, containerId, color)),
-    /** Modo do desenho do projeto (v18); `null` volta ao primeiro modo de cada especialização. */
+    /** Project drawing mode (v18); `null` goes back to the first mode of each specialization. */
     setProjectDrawingMode: (mode: string | null) =>
       store.apply((p) => model.setProjectDrawingMode(p, mode)),
     /** Modo do desenho que o container fixa; `null` volta a seguir o do projeto. */
@@ -284,16 +287,16 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     /** Densidade do container (v19); `null` volta a 1. Uma entrada de desfazer. */
     setContainerDensity: (containerId: string, density: number | null) =>
       store.apply((p) => model.setContainerDensity(p, containerId, density)),
-    /** Direção de leitura do projeto (v20); `null` volta a `ltr`. Uma entrada de desfazer. */
+    /** Project reading direction (v20); `null` goes back to `ltr`. One undo entry. */
     setProjectDirection: (direction: ReadingDirection | null) =>
       store.apply((p) => model.setProjectDirection(p, direction)),
-    /** Direção que o container fixa; `null` volta a seguir a do projeto. Uma entrada de desfazer. */
+    /** Direction the container fixes; `null` goes back to following the project's. One undo entry. */
     setContainerDirection: (containerId: string, direction: ReadingDirection | null) =>
       store.apply((p) => model.setContainerDirection(p, containerId, direction)),
     renameContainer: (containerId: string, name: string | null) =>
       store.apply((p) => model.renameContainer(p, containerId, name)),
 
-    // Trava (etapa 2.5): cada chamada é uma entrada no histórico, inclusive "trancar todas".
+    // Lock (stage 2.5): each call is one history entry, including "lock all".
     setMarkingLocked: (markingId: string, locked: boolean) =>
       store.apply((p) => model.setMarkingLocked(p, markingId, locked)),
     setImageLocked: (containerId: string, locked: boolean) =>
@@ -356,7 +359,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       readonly height: number;
       readonly background: string;
       readonly center?: Point;
-      /** Densidade (v19); ausente ou 1 não grava a chave. Na mesma entrada de desfazer. */
+      /** Density (v19); absent or 1 does not write the key. In the same undo entry. */
       readonly density?: number;
     }) => {
       const { density, ...rest } = args;
@@ -375,15 +378,15 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         model.setBackgroundContainer(p, containerId, patch, settleOptions(p)),
       ),
 
-    // Gestos: prévias sem histórico e uma única entrada no fim (ver `ProjectStore`).
-    // As prévias rodam com `settle: false` (pertencimento congelado enquanto o ponteiro se
-    // move); ao soltar, o canvas chama a ação `finish…` da mesma operação, com os valores
-    // finais (encaixe e absorção já aplicados) e `settle: true`, dentro do MESMO gesto, e só
-    // então `commitGesture`: uma entrada de desfazer com geometria, espaço e pertencimento.
+    // Gestures: previews without history and a single entry at the end (see `ProjectStore`).
+    // Previews run with `settle: false` (membership frozen while the pointer
+    // moves); on release, the canvas calls the `finish…` action of the same operation, with the
+    // final values (snap and absorption already applied) and `settle: true`, inside the SAME
+    // gesture, and only then `commitGesture`: one undo entry with geometry, space and membership.
     beginGesture: () => store.beginGesture(),
     /**
-     * Prévia de mover/redimensionar. Se sobrepuser, fica na última posição válida. Numa
-     * perspectiva, `placement` é DA VISTA e mover anda só a raiz na perspectiva.
+     * Move/resize preview. If it overlaps, it stays at the last valid position. In a
+     * perspective, `placement` is OF THE VIEW and moving moves only the root in the perspective.
      */
     previewImagePlacement: (containerId: string, placement: Placement) =>
       guarded(() =>
@@ -403,8 +406,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         ),
       ),
     /**
-     * Final de mover/redimensionar o container: repete a operação com a posição da última
-     * prévia válida e assenta (ele entra ou sai de uma marcação do canvas). Nunca falha.
+     * Final of moving/resizing the container: repeats the operation with the position of the last
+     * valid preview and settles (it enters or leaves a canvas marking). Never fails.
      */
     finishImagePlacement: (containerId: string): ActionResult =>
       guarded(() =>
@@ -432,8 +435,9 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         }),
       ),
     /**
-     * Prévia de mover a marcação pelo deslocamento `dx`, `dy` (inteiros, no espaço da marcação).
-     * Nada prende a marcação ao container: ela pode sair dele; o espaço novo é decidido ao soltar.
+     * Move preview of the marking by the offset `dx`, `dy` (integers, in the marking's space).
+     * Nothing holds the marking to the container: it can leave it; the new space is decided on
+     * release.
      */
     previewMarkingMove: (markingId: string, dx: number, dy: number) =>
       guarded(() =>
@@ -446,9 +450,9 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         }),
       ),
     /**
-     * Final de mover a marcação: `dx`, `dy` são o deslocamento final no espaço de origem da
-     * marcação (o do ponteiro, mais o encaixe que o canvas calculou). Assenta o espaço (converte o
-     * `rect` dela e o das descendentes, com o `minSize` dos componentes) e o pertencimento.
+     * Final of moving the marking: `dx`, `dy` are the final offset in the marking's source
+     * space (the pointer's, plus the snap the canvas computed). It settles the space (converts its
+     * `rect` and its descendants', with the components' `minSize`) and the membership.
      */
     finishMarkingMove: (markingId: string, dx: number, dy: number): ActionResult =>
       guarded(() =>
@@ -460,7 +464,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
           );
         }),
       ),
-    /** Prévia de redimensionar a marcação. */
+    /** Resize preview of the marking. */
     previewMarkingRect: (markingId: string, rect: Rect) =>
       guarded(() =>
         store.updateGesture((p) => {
@@ -473,9 +477,9 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         }),
       ),
     /**
-     * Final de redimensionar a marcação: `rect` é o retângulo final (com a absorção que o canvas
-     * calculou). Assenta o pertencimento: o que deixou de caber sai do pai, o que passou a caber
-     * entra.
+     * Final of resizing the marking: `rect` is the final rectangle (with the absorption the canvas
+     * computed). It settles the membership: what no longer fits leaves the parent, what now fits
+     * enters.
      */
     finishMarkingRect: (markingId: string, rect: Rect): ActionResult =>
       guarded(() =>
@@ -489,10 +493,10 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         }),
       ),
     /**
-     * Prévia do arrasto conjunto: todos os itens pelo deslocamento `dx`, `dy` em unidades do
-     * canvas, cada um no próprio espaço (`moveItems`). Tudo ou nada: se algum item não pode ir
-     * (container sobrepondo um que não se move, marcação saindo do container, item travado), a
-     * prévia inteira fica na última posição válida.
+     * Preview of the joint drag: all items by the offset `dx`, `dy` in canvas units, each in its
+     * own space (`moveItems`). All or nothing: if some item cannot go (container overlapping one
+     * that does not move, marking leaving the container, locked item), the whole preview stays at
+     * the last valid position.
      */
     previewItemsMove: (items: readonly model.ItemRef[], dx: number, dy: number) =>
       guarded(() =>
@@ -504,8 +508,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         ),
       ),
     /**
-     * Final do arrasto conjunto: repete a operação com o último deslocamento válido (`dx`, `dy`,
-     * guardado pelo canvas) e assenta uma vez sobre o resultado inteiro. Nunca falha.
+     * Final of the joint drag: repeats the operation with the last valid offset (`dx`, `dy`,
+     * kept by the canvas) and settles once over the whole result. Never fails.
      */
     finishItemsMove: (
       items: readonly model.ItemRef[],
@@ -526,8 +530,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         ),
       ),
     /**
-     * Prévia do passo das setas (`nudgeItems`): `dx`, `dy` somados desde o começo do gesto, cada
-     * item no próprio espaço. Tudo ou nada, como o arrasto conjunto.
+     * Preview of the arrow-key step (`nudgeItems`): `dx`, `dy` summed since the start of the
+     * gesture, each item in its own space. All or nothing, like the joint drag.
      */
     previewItemsNudge: (items: readonly model.ItemRef[], dx: number, dy: number) =>
       guarded(() =>
@@ -538,7 +542,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
             }) ?? model.nudgeItems(p, items, dx, dy, { settle: false }),
         ),
       ),
-    /** Final do passo das setas: repete a operação com o último deslocamento válido e assenta. */
+    /** Final of the arrow-key step: repeats the operation with the last valid offset and settles. */
     finishItemsNudge: (
       items: readonly model.ItemRef[],
       dx: number,
@@ -560,11 +564,11 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     commitGesture: () => store.commitGesture(),
     cancelGesture: () => store.cancelGesture(),
 
-    // Marcações
+    // Markings
     /**
-     * Cria a marcação. `containerId` nulo = marcação do canvas (`rect` em unidades do canvas);
-     * senão, `rect` em pixels do container. O espaço e o pai saem do assentar (a marcação do
-     * canvas que cabe inteira num container passa a ser dele).
+     * Creates the marking. `containerId` null = canvas marking (`rect` in canvas units);
+     * otherwise, `rect` in container pixels. The space and the parent come from the settle (a
+     * canvas marking that fits entirely inside a container becomes the container's).
      */
     createMarking: (containerId: string | null, rect: Rect, name?: string | null) =>
       create(
@@ -586,7 +590,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
             ) ?? model.setMarkingRect(p, markingId, rect, rectOptions(p, markingId)),
         ),
       ),
-    /** Ajuste fino pelo painel: o valor é limitado às regras (ver `adjustMarkingRect`). */
+    /** Fine adjustment from the panel: the value is limited by the rules (see `adjustMarkingRect`). */
     adjustMarkingRect: (markingId: string, field: keyof Rect, value: number) =>
       guarded(() =>
         store.apply(
@@ -617,9 +621,10 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         ),
       ),
     /**
-     * Liga ou desliga a marcação flutuante (comentário sobre o canvas, fora do pertencimento).
-     * Ligar a tira do container e a leva ao canvas, convertida; desligar a devolve ao container
-     * que a contém inteira, se houver. É geometria: a trava impede nos dois sentidos.
+     * Turns the floating marking on or off (a comment over the canvas, outside membership).
+     * Turning it on removes it from the container and takes it to the canvas, converted; turning it
+     * off returns it to the container that contains it entirely, if any. It is geometry: the lock
+     * prevents it both ways.
      */
     setMarkingFloating: (markingId: string, floating: boolean) =>
       store.apply((p) =>
@@ -634,19 +639,20 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
           return model.removeMarking(p, markingId, settleOptions(p));
         }),
       ),
-    /** Posição entre as irmãs (0 = por baixo). Não é geometria: a trava não impede. */
+    /** Position among the siblings (0 = underneath). Not geometry: the lock does not prevent it. */
     reorderMarking: (markingId: string, index: number) =>
       store.apply((p) => model.reorderMarking(p, markingId, index)),
     /**
-     * Grava (ou, com `null`, tira) a âncora da marcação (v20, decisão 9). Não move nada (o encosto
-     * é `snapToAnchor`) e não é geometria: a trava não impede. Uma entrada de desfazer.
+     * Writes (or, with `null`, removes) the marking's anchor (v20, decision 9). Moves nothing (the
+     * snap is `snapToAnchor`) and is not geometry: the lock does not prevent it. One undo entry.
      */
     setMarkingAnchor: (markingId: string, anchor: model.MarkingAnchor | null) =>
       store.apply((p) => model.setMarkingAnchor(p, markingId, anchor)),
     /**
-     * "Encostar na âncora": põe a marcação ancorada junto da âncora (lado, alinhamento e
-     * deslocamento efetivos, os padrões vindos do componente) e leva as filhas e as ancoradas nela.
-     * Devolve os avisos (passou do container). Sem mudança, não há entrada de desfazer.
+     * "Snap to anchor": puts the anchored marking next to the anchor (effective side, alignment and
+     * offset, the defaults coming from the component) and carries its children and the markings
+     * anchored to it. Returns the warnings (went past the container). With no change, there is no
+     * undo entry.
      */
     snapToAnchor: (markingId: string): ActionResult<readonly model.ModelMessage[]> => {
       let warnings: readonly model.ModelMessage[] = [];
@@ -661,25 +667,25 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       return result.ok ? { ok: true, value: warnings } : result;
     },
 
-    // Setas (ME4, decisão 14): cada action é uma entrada de desfazer. A rota e a ponta também
-    // têm prévia de gesto (`preview…`, dentro de `beginGesture`/`commitGesture`): um gesto de
-    // arrastar um ponto ou uma ponta é uma entrada só. Seta não tem pertencimento: sem assentar.
-    /** Liga duas marcações; devolve o id da seta. A rota nasce no padrão (`points` vazio). */
+    // Arrows (ME4, decision 14): each action is one undo entry. The route and the tip also
+    // have a gesture preview (`preview…`, inside `beginGesture`/`commitGesture`): a gesture of
+    // dragging a point or a tip is a single entry. An arrow has no membership: no settle.
+    /** Links two markings; returns the arrow id. The route starts as the default (`points` empty). */
     addArrow: (
       from: string,
       to: string,
       options: Omit<model.NewArrowArgs, 'id' | 'from' | 'to'> = {},
     ) => create((id) => (p) => model.createArrow(p, { ...options, id, from, to })),
-    /** Exclui a seta e as anotações dela. */
+    /** Deletes the arrow and its annotations. */
     removeArrow: (arrowId: string) => store.apply((p) => model.removeArrow(p, arrowId)),
-    /** Troca a marcação de uma ponta e/ou o lado (`null` = automático). */
+    /** Changes the marking of a tip and/or the side (`null` = automatic). */
     setArrowEndpoint: (
       arrowId: string,
       end: ArrowEnd,
       markingId: string,
       side: ArrowSide | null,
     ) => store.apply((p) => model.setArrowEndpoint(p, arrowId, end, markingId, side)),
-    /** Pontos de passagem (no espaço das pontas, `arrowPointsSpace`); `[]` volta à rota padrão. */
+    /** Waypoints (in the tips' space, `arrowPointsSpace`); `[]` goes back to the default route. */
     setArrowRoute: (arrowId: string, points: readonly ArrowPoint[]) =>
       guarded(() =>
         store.apply((p) => {
@@ -693,7 +699,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.setArrowName(p, arrowId, name)),
     setArrowLocked: (arrowId: string, locked: boolean) =>
       store.apply((p) => model.setArrowLocked(p, arrowId, locked)),
-    /** Prévia do gesto de arrastar pontos de passagem; se falhar, fica na última prévia válida. */
+    /** Preview of the waypoint drag gesture; if it fails, it stays at the last valid preview. */
     previewArrowRoute: (arrowId: string, points: readonly ArrowPoint[]) =>
       guarded(() =>
         store.updateGesture((p) => {
@@ -701,7 +707,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
           return model.setArrowRoute(p, arrowId, points);
         }),
       ),
-    /** Prévia do gesto de arrastar uma ponta até outra marcação ou outro lado. */
+    /** Preview of the gesture of dragging a tip to another marking or another side. */
     previewArrowEndpoint: (
       arrowId: string,
       end: ArrowEnd,
@@ -712,8 +718,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         model.setArrowEndpoint(p, arrowId, end, markingId, side),
       ),
 
-    // Seleção múltipla (ME2): a seleção inteira numa operação, uma entrada de desfazer.
-    /** Exclui os itens (marcações com o que cobrem, containers com as marcações). */
+    // Multiple selection (ME2): the whole selection in one operation, one undo entry.
+    /** Deletes the items (markings with what they cover, containers with the markings). */
     removeItems: (items: readonly model.ItemRef[]) =>
       guarded(() =>
         store.apply((p) => {
@@ -726,24 +732,25 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     setItemsLocked: (items: readonly model.ItemRef[], locked: boolean) =>
       store.apply((p) => model.setItemsLocked(p, items, locked)),
 
-    /** Cria a marcação pai que envolve a seleção; devolve o id dela (uma entrada de desfazer). */
+    /** Creates the parent marking that wraps the selection; returns its id (one undo entry). */
     wrapItems: (items: readonly model.ItemRef[]) =>
       create((id) => (p) => model.wrapItems(p, { id, items }, settleOptions(p))),
 
-    // Componentes (etapa Biblioteca, B3): cada action é uma entrada de desfazer.
-    /** Cria a marcação e a anotação tipada que a desenha; devolve o id da marcação. */
+    // Components (Library stage, B3): each action is one undo entry.
+    /** Creates the marking and the typed annotation that draws it; returns the marking id. */
     addComponent: (args: {
-      /** Container da instância; `null` = o canvas (`center` em unidades do canvas). */
+      /** Instance container; `null` = the canvas (`center` in canvas units). */
       readonly containerId: string | null;
       readonly parentId: string | null;
       readonly specId: string;
       readonly typeId: string;
       readonly center?: Point;
-      /** Só tipo flutuante: perto deste alvo (`placeFloatingNear`), no lugar de `center`. */
+      /** Floating type only: near this target (`placeFloatingNear`), instead of `center`. */
       readonly near?: model.FloatingNearTarget;
       /**
-       * Nasce ancorada nesta marcação (do mesmo espaço) e já encostada, com os padrões de `anchor`
-       * que o componente declara na raiz (R4, decisão 13); vale no lugar de `center`.
+       * Born anchored to this marking (of the same space) and already snapped, with the `anchor`
+       * defaults that the component declares at the root (R4, decision 13); applies instead of
+       * `center`.
        */
       readonly anchorTo?: string;
     }): ActionResult<string> => {
@@ -771,10 +778,10 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       return result.ok ? { ok: true, value: markingId } : result;
     },
     /**
-     * Arruma as filhas do container pelo layout do slot (devolve os avisos) ou, na marcação de um
-     * componente sem filhas no slot, ajusta-a ao conteúdo (`fitMarking`, sem avisos). Com âncora, a
-     * marcação também encosta (R4, decisão 12), na mesma entrada de desfazer. Sem mudança, não há
-     * entrada de desfazer.
+     * Arranges the container's children by the slot layout (returns the warnings) or, on the
+     * marking of a component with no children in the slot, fits it to the content (`fitMarking`,
+     * no warnings). With an anchor, the marking also snaps (R4, decision 12), in the same undo
+     * entry. With no change, there is no undo entry.
      */
     arrange: (markingId: string): ActionResult<readonly model.ModelMessage[]> => {
       let warnings: readonly model.ModelMessage[] = [];
@@ -789,7 +796,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       return result.ok ? { ok: true, value: warnings } : result;
     },
 
-    // Anotações e pares
+    // Annotations and pairs
     addAnnotation: (
       markingId: string,
       layerId: string,
@@ -834,9 +841,10 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     moveEntry: (annotationId: string, entryId: string, to: number) =>
       store.apply((p) => model.moveEntry(p, annotationId, entryId, to)),
 
-    // Especializações (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"): cada operação é uma entrada no histórico.
-    // `packageFiles`: o pacote da biblioteca. O store só usa o NOME do arquivo da
-    // especialização dentro dele; os bytes são da sessão (grava em `specs/<id>/`), nunca do store.
+    // Specializations (docs/ARCHITECTURE.md, "Specializations in the project and typed
+    // annotations"): each operation is one history entry.
+    // `packageFiles`: the library package. The store only uses the NAME of the specialization
+    // file inside it; the bytes belong to the session (it writes to `specs/<id>/`), never to the store.
     applySpecialization: (spec: Spec, packageFiles?: SpecPackageFiles) =>
       store.apply((p) =>
         model.applySpecialization(p, spec, {
@@ -859,7 +867,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     removeSpecialization: (specId: string, mode: SpecRemovalMode, texts?: LabelTexts) =>
       store.apply((p) => model.removeSpecialization(p, specId, mode, { newId, texts })),
 
-    // Anotações tipadas
+    // Typed annotations
     addTypedAnnotation: (
       markingId: string,
       layerId: string,
@@ -907,13 +915,13 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         model.convertAnnotationToFree(p, annotationId, { newId, texts }),
       ),
 
-    // Repositórios por plataforma (etapa 3b): cada chamada é uma entrada no histórico.
+    // Platform repositories (stage 3b): each call is one history entry.
     setPlatformRepo: (platformId: string, repo: PlatformRepoInput) =>
       store.apply((p) => model.setPlatformRepo(p, platformId, repo)),
     removePlatformRepo: (platformId: string) =>
       store.apply((p) => model.removePlatformRepo(p, platformId)),
 
-    // Repositórios de documentos (schema v14): cada chamada é uma entrada no histórico.
+    // Document repositories (schema v14): each call is one history entry.
     setDocRepo: (docRepoId: string, localPath: string | null) =>
       store.apply((p) => model.setDocRepo(p, docRepoId, { localPath })),
     removeDocRepo: (docRepoId: string) =>

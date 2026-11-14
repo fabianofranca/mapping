@@ -1,7 +1,7 @@
 /*
- * Detalhes (inspetor, fase R5): identidade, seções recolhíveis, PropertyGrid, LayerGroup,
- * KeyValueGrid, DataGrid, ReferenceField e o seletor de referência. Medidas e cores só
- * dos tokens.
+ * Details (inspector, phase R5): identity, collapsible sections, PropertyGrid, LayerGroup,
+ * KeyValueGrid, DataGrid, ReferenceField and the reference picker. Sizes and colors only
+ * from the tokens.
  */
 
 .visually-hidden {
@@ -34,7 +34,7 @@
   color: var(--color-text);
 }
 
-/* Identidade: nome 15px, caminho e ID em mono com copiar */
+/* Identity: name 15px, path and ID in mono with copy */
 .identity {
   display: flex;
   flex-direction: column;
@@ -56,7 +56,7 @@
 }
 
 .identity-lock {
-  /* O ícone de ajuda e o cadeado andam juntos: se faltar espaço, descem os dois. */
+  /* The help icon and the lock go together: if there is not enough room, both drop down. */
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -64,7 +64,7 @@
 }
 
 .identity-name {
-  /* Base no tamanho do texto: sem espaço para o ID e os botões, eles descem para a linha de baixo. */
+  /* Base on the text size: with no room for the ID and the buttons, they drop to the line below. */
   flex: 1 1 auto;
   min-width: 0;
   font: var(--t-text-title);
@@ -104,7 +104,7 @@
   overflow-wrap: anywhere;
 }
 
-/* Seção recolhível (Marcação, Imagem, Anotações) */
+/* Collapsible section (Marking, Image, Annotations) */
 .details-section {
   display: flex;
   flex-direction: column;
@@ -165,7 +165,7 @@
   gap: var(--space-2);
 }
 
-/* PropertyGrid: rótulo (92px + a largura do ícone de ajuda) | controle */
+/* PropertyGrid: label (92px + the help icon width) | control */
 .props {
   display: grid;
   grid-template-columns: calc(var(--size-label-col) + var(--control-height-sm)) minmax(
@@ -198,8 +198,8 @@
 
 .props-value > .segmented {
   align-self: flex-start;
-  /* Coluna estreita: as opções quebram de linha, cada uma inteira e clicável (sem corte), e cada
-     linha reparte a largura toda (nenhuma opção fica sozinha e pequena). */
+  /* Narrow column: the options wrap, each one whole and clickable (no cutting), and each
+     line shares the whole width (no option is left alone and small). */
   flex-wrap: wrap;
   gap: var(--space-1);
   min-width: 0;
@@ -282,9 +282,9 @@ code.props-text {
 }
 
 /*
- * Painel estreito (Detalhes a 900 px, na revisão ou fora dela): a coluna do valor decide, não
- * a janela. Posição (X, Y) e Tamanho (L, A) seguem em duas linhas, e cada campo troca o respiro
- * lateral e o spinner por dígitos, para caber pelo menos 5 (#465).
+ * Narrow panel (Details at 900 px, in review or outside it): the value column decides, not
+ * the window. Position (X, Y) and Size (W, H) stay on two lines, and each field trades the side
+ * breathing room and the spinner for digits, to fit at least 5 (#465).
  */
 .props-value:has(> .props-pair) {
   container: props-pair / inline-size;
@@ -304,7 +304,7 @@ code.props-text {
     appearance: textfield;
   }
 
-  /* Rótulos longos (Deslocamento da âncora): cada campo ocupa a coluna inteira. */
+  /* Long labels (Anchor offset): each field takes the whole column. */
   .props-pair-stack {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -315,7 +315,7 @@ code.props-text {
   }
 }
 
-/* Cor das linhas: rádios Tema + paleta (24px) */
+/* Line color: Theme radios + palette (24px) */
 .color-field {
   display: flex;
   flex-direction: column;
@@ -398,7 +398,7 @@ code.props-text {
   cursor: pointer;
 }
 
-/* Selos: especialização e tipo da anotação */
+/* Badges: specialization and annotation type */
 .tag,
 .type {
   flex: none;
@@ -420,7 +420,7 @@ code.props-text {
   border-radius: var(--radius-xs);
 }
 
-/* LayerGroup: borda, faixa de 3px na cor da camada, recolhível */
+/* LayerGroup: border, 3px stripe in the layer color, collapsible */
 .layer-group {
   display: flex;
   flex-direction: column;
@@ -439,7 +439,7 @@ code.props-text {
   box-shadow: inset 3px 0 0 var(--layer-color);
 }
 
-/* Sem `overflow` no grupo (cortaria o menu ⋯ das linhas): o cabeçalho arredonda sozinho. */
+/* No `overflow` on the group (it would clip the ⋯ menu of the rows): the header rounds itself. */
 .layer-group-head:last-child {
   border-radius: var(--radius-md);
 }
@@ -477,7 +477,8 @@ button.layer-group-label:hover {
 }
 
 .layer-group-name {
-  /* Prioridade do cabeçalho: nome > flag > selo. O nome encolhe só depois do selo (#447): o selo cede quase tudo. */
+  /* Header priority: name > flag > badge. The name shrinks only after the badge (#447): the
+     badge yields almost everything. */
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -486,8 +487,8 @@ button.layer-group-label:hover {
 }
 
 .layer-group-head .tag {
-  /* O selo da especialização é o primeiro a encolher, com reticências (a dica traz o nome
-     inteiro); o nome da camada, a flag e a meta têm prioridade (#371, #447). */
+  /* The specialization badge is the first to shrink, with an ellipsis (the hint carries the whole
+     name); the layer name, the flag and the meta have priority (#371, #447). */
   flex: 0 1000 auto;
   min-width: 0;
   overflow: hidden;
@@ -495,8 +496,8 @@ button.layer-group-label:hover {
 }
 
 .layer-group-head .flag {
-  /* A flag da revisão (camada escondida) é um estado da camada: o texto fica inteiro e quem
-     encolhe é o selo, depois o nome (#372, #447). */
+  /* The review flag (hidden layer) is a state of the layer: the text stays whole and what
+     shrinks is the badge, then the name (#372, #447). */
   flex: none;
 }
 
@@ -516,8 +517,9 @@ button.layer-group-label:hover {
   white-space: nowrap;
 }
 
-/* Camada sem anotação (CL1, 1.4): "Nenhuma anotação nesta camada." fica numa nota abaixo do
-   cabeçalho, que quebra em linhas em vez de virar "Nenhu…" e não tira espaço do nome nem do selo. */
+/* Layer without annotations (CL1, 1.4): "No annotations in this layer." sits in a note below the
+   header, which wraps onto lines instead of turning into "No an…" and takes no room from the
+   name or the badge. */
 .layer-group-empty {
   margin: 0;
   padding: 0 var(--space-2) var(--space-1)
@@ -538,7 +540,7 @@ button.layer-group-label:hover {
   border-top: 1px solid var(--color-border);
 }
 
-/* Anotação dentro do grupo */
+/* Annotation inside the group */
 .layer-group .annotation {
   padding: 0 0 var(--space-2);
   background: none;
@@ -576,7 +578,7 @@ button.layer-group-label:hover {
   white-space: nowrap;
 }
 
-/* Pendências da marcação: cada motivo leva ao campo */
+/* Marking pending items: each reason leads to the field */
 .issues-title {
   display: flex;
   align-items: center;
@@ -607,7 +609,7 @@ button.layer-group-label:hover {
   color: var(--color-accent);
 }
 
-/* Botão com aparência de link (+ Par, + Linha, filhos) */
+/* Button that looks like a link (+ Pair, + Row, children) */
 .button-link {
   color: var(--color-accent);
   background: transparent;
@@ -645,9 +647,9 @@ button.layer-group-label:hover {
 }
 
 /*
- * As linhas dividem as colunas da tabela (subgrid): a coluna de um controle que não
- * encolhe (segmentado "sim | não") fica com a largura mínima dele em todas as linhas e
- * as outras dividem o resto, sem sobreposição. Campos e listas encolhem (largura 100%).
+ * The rows share the table's columns (subgrid): the column of a control that does not
+ * shrink (segmented "yes | no") keeps its minimum width in all the rows and
+ * the others share the rest, with no overlap. Fields and lists shrink (width 100%).
  */
 .data-grid {
   display: grid;
@@ -667,9 +669,9 @@ button.layer-group-label:hover {
 }
 
 /*
- * Os controles encolhem (largura 100%), então o mínimo das colunas de valor vem deles, e
- * não da célula (o segmentado continua dimensionando a própria coluna). Tabela larga rola
- * na própria caixa; as linhas ocupam a largura toda rolada.
+ * The controls shrink (width 100%), so the minimum of the value columns comes from them, and
+ * not from the cell (the segmented control keeps sizing its own column). A wide table scrolls
+ * in its own box; the rows take the whole scrolled width.
  */
 .data-grid .grid-cell-value .input {
   min-width: calc(var(--size-grid-col-min) * 0.5);
@@ -681,10 +683,10 @@ button.layer-group-label:hover {
 }
 
 /*
- * Célula `ref`: a coluna divide a tabela como as outras (sem largura mínima própria, que
- * fazia a tabela rolar na horizontal). O ✕ de Limpar fica ao lado do controle e, quando a
- * coluna é estreita demais, desce para a linha de baixo em vez de cobrir o rótulo ou esconder
- * o texto; o rótulo e "(referência quebrada)" quebram de linha em vez de ser cortados.
+ * `ref` cell: the column shares the table like the others (with no minimum width of its own, which
+ * made the table scroll horizontally). The Clear ✕ sits beside the control and, when the
+ * column is too narrow, drops to the line below instead of covering the label or hiding
+ * the text; the label and "(broken reference)" wrap onto lines instead of being cut.
  */
 .data-grid .grid-cell-value:has(> .ref-cell) {
   min-width: calc(var(--size-grid-col-min) * 0.85);
@@ -699,25 +701,27 @@ button.layer-group-label:hover {
   min-width: 0;
 }
 
-/* O ícone é decorativo: na tabela estreita o espaço dele vai para o texto. */
+/* The icon is decorative: in the narrow table its space goes to the text. */
 .ref-cell .ref-control > .icon {
   display: none;
 }
 
-/* TE1: o `min-width: 0` do controle tira a palavra do mínimo da coluna e `break-word` sozinho ainda
-   parte "referência" a 900 px; a célula quebrada pede o mínimo do conteúdo (a maior palavra). */
+/* TE1: the control's `min-width: 0` takes the word out of the column minimum and `break-word`
+   alone still splits "reference" at 900 px; the broken cell asks for the content minimum (the
+   longest word). */
 .ref-cell .ref-control.is-broken {
   min-width: min-content;
 }
 
-/* `break-word` (não `anywhere`): a referência quebrada quebra entre palavras, sem partir "referência". */
+/* `break-word` (not `anywhere`): the broken reference wraps between words, without splitting
+   "reference". */
 .ref-cell .ref-control .ref-control-text {
   overflow-wrap: break-word;
   text-overflow: clip;
   white-space: normal;
 }
 
-/* Os ícones de Ir para e Limpar também vêm numa âncora de Tooltip: só a do controle estica. */
+/* The Go to and Clear icons also come in a Tooltip anchor: only the control's one stretches. */
 .ref-field.ref-cell > .tooltip-anchor:first-child {
   flex: 1 1 auto;
 }
@@ -772,7 +776,7 @@ button.layer-group-label:hover {
   display: none;
 }
 
-/* Edição na célula: o campo só mostra a borda no hover e no foco. */
+/* Editing in the cell: the field shows the border only on hover and focus. */
 .grid-cell .input {
   width: 100%;
   background: transparent;
@@ -826,7 +830,7 @@ button.layer-group-label:hover {
   cursor: grabbing;
 }
 
-/* Linha de destino ao arrastar */
+/* Destination row when dragging */
 .grid-row[data-drop]::after {
   content: '';
   position: absolute;
@@ -865,7 +869,7 @@ button.layer-group-label:hover {
   gap: var(--space-1);
 }
 
-/* Campo tabela (DataGrid): título, contagem e + Linha */
+/* Table field (DataGrid): title, count and + Row */
 .table-field {
   display: flex;
   flex-direction: column;
@@ -891,14 +895,14 @@ button.layer-group-label:hover {
   color: var(--color-text-muted);
 }
 
-/* Menu ⋯ da linha */
+/* Row ⋯ menu */
 .action-menu {
   position: relative;
   display: inline-flex;
 }
 
 .action-menu-list {
-  /* Posicionada por JS (ActionMenu): fora do fluxo, não é cortada por uma grade que rola. */
+  /* Positioned by JS (ActionMenu): out of the flow, not clipped by a grid that scrolls. */
   position: fixed;
   z-index: var(--z-popover);
   display: flex;
@@ -926,7 +930,7 @@ button.layer-group-label:hover {
   gap: var(--space-2);
 }
 
-/* Itens que ligam e desligam: a coluna do visto; o atalho vai ao fim. */
+/* Items that toggle on and off: the check column; the shortcut goes to the end. */
 .action-menu-check {
   display: inline-flex;
   flex: none;
@@ -964,12 +968,12 @@ button.layer-group-label:hover {
 }
 
 .ref-field:not(.ref-cell) {
-  /* Coluna estreita dos Detalhes: sem 14ch para o controle, os botões quebram de linha. */
+  /* Narrow Details column: without 14ch for the control, the buttons wrap onto lines. */
   flex-wrap: wrap;
 }
 
-/* O Tooltip envolve o controle: a âncora dele ocupa a largura e o controle enche a âncora;
-   as dos ícones (Ir para, Limpar) mantêm o tamanho do botão. */
+/* The Tooltip wraps the control: its anchor takes the width and the control fills the anchor;
+   the icons' ones (Go to, Clear) keep the button size. */
 .ref-field > .tooltip-anchor {
   flex: none;
 }
@@ -1039,7 +1043,8 @@ button.layer-group-label:hover {
   white-space: nowrap;
 }
 
-/* Referência quebrada: o aviso inteiro importa mais que a linha única; quebra em vez de cortar. */
+/* Broken reference: the whole warning matters more than the single line; it wraps instead of
+   cutting. */
 .ref-control.is-broken .ref-control-text {
   overflow-wrap: break-word;
   text-overflow: clip;
@@ -1047,7 +1052,7 @@ button.layer-group-label:hover {
 }
 
 .ref-control-layer {
-  /* Em largura estreita a camada cede primeiro: o nome do alvo é o que importa. */
+  /* In narrow width the layer yields first: the target's name is what matters. */
   flex: 0 1000000 auto;
   min-width: 0;
   max-width: 35%;
@@ -1059,12 +1064,12 @@ button.layer-group-label:hover {
   white-space: nowrap;
 }
 
-/* Segmentado inválido (opção obrigatória sem escolha) */
+/* Invalid segmented control (required option with no choice) */
 .segmented-invalid {
   border-color: var(--color-danger);
 }
 
-/* Seletor de referência: popup no topo, sem fundo escurecido */
+/* Reference picker: popup at the top, no darkened background */
 .picker {
   width: min(var(--size-picker), calc(100vw - 2 * var(--space-4)));
   max-height: calc(100dvh - 2 * var(--space-8));
@@ -1236,8 +1241,8 @@ button.layer-group-label:hover {
   border-radius: var(--radius-xs);
 }
 
-/* "Definição" de uma anotação tipada (etapa 9): uma linha por plataforma com o arquivo que
-   define o símbolo do tipo, com as ações. */
+/* "Definition" of a typed annotation (stage 9): one row per platform with the file that
+   defines the type's symbol, with the actions. */
 .code-definitions {
   display: flex;
   flex-direction: column;
@@ -1256,8 +1261,9 @@ button.layer-group-label:hover {
   overflow-wrap: anywhere;
 }
 
-/* Avisos da especialização (formatVersion 10): selo, bloco do tipo e linha do campo/coluna.
-   A cor vem do `kind` (sempre com ícone e texto); só informam, não bloqueiam. */
+/* Specialization warnings (formatVersion 10): badge, type block and field/column row.
+   The color comes from the `kind` (always with icon and text); they only inform, they do not
+   block. */
 .notice-removed {
   color: var(--color-danger);
   background: var(--color-danger-bg);
@@ -1301,7 +1307,7 @@ button.layer-group-label:hover {
 }
 
 .notice-line {
-  /* Ícone fixo na coluna da esquerda, alinhado à primeira linha; a mensagem quebra na sua. */
+  /* Fixed icon in the left column, aligned to the first line; the message wraps on its own. */
   display: grid;
   grid-template-columns: auto 1fr;
   column-gap: var(--space-2);
@@ -1363,7 +1369,7 @@ button.layer-group-label:hover {
   flex: none;
 }
 
-/* Seção "Ligado por seta": uma linha por seta, só leitura (etapa #658). */
+/* "Linked by arrow" section: one row per arrow, read-only (stage #658). */
 .arrow-links {
   display: flex;
   flex-direction: column;
@@ -1396,7 +1402,7 @@ button.layer-group-label:hover {
   color: var(--color-text-muted);
 }
 
-/* O nome da ponta e o da seta encolhem com reticências, sem criar barra horizontal. */
+/* The head's name and the arrow's name shrink with ellipses, without creating a horizontal bar. */
 .arrow-link-end {
   flex: 0 1 auto;
   min-width: 0;
@@ -1475,7 +1481,7 @@ button.layer-group-label:hover {
   font: var(--t-text-small);
 }
 
-/* Perspectivas nos Detalhes (etapa #659, PE3) */
+/* Perspectives in the Details (stage #659, PE3) */
 .perspective-section {
   display: flex;
   flex-direction: column;

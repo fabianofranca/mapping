@@ -1,19 +1,19 @@
 import { signal } from '@preact/signals';
 
-// Faixas que o usuário pode dispensar. É estado de UI só da sessão (a app aberta):
-// não vai para o `localStorage`, para o `mapping.json` nem para o desfazer (B9, P8).
+// Banners the user can dismiss. It is session-only UI state (the open app):
+// it does not go to `localStorage`, to `mapping.json` or to undo (B9, P8).
 
-/** A faixa do build de preview foi dispensada nesta sessão (o selo PREVIEW continua). */
+/** The preview build's banner was dismissed in this session (the PREVIEW badge stays). */
 export const previewBannerDismissed = signal(false);
 
 export function dismissPreviewBanner(): void {
   previewBannerDismissed.value = true;
 }
 
-/** Chaves de aviso de abertura que podem ficar no topo depois de a tela inicial sair. */
+/** Opening notice keys that may stay at the top after the home screen leaves. */
 export type ProjectNoticeKey = 'home.folderHasProject';
 
-/** Aviso da última abertura de projeto (estado de UI da sessão; a chave, para seguir o idioma). */
+/** Notice of the last project opening (session UI state; the key, to follow the language). */
 export const projectNotice = signal<ProjectNoticeKey | null>(null);
 
 export function dismissProjectNotice(): void {

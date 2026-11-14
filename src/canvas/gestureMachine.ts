@@ -1,31 +1,31 @@
-// Máquina de estados que classifica o gesto de um ponteiro: clique, pan, mover,
-// redimensionar, desenhar ou pinça. Pura (sem DOM nem timers): o `CanvasController`
-// a alimenta com eventos e executa os efeitos devolvidos.
+// State machine that classifies a pointer's gesture: click, pan, move,
+// resize, draw or pinch. Pure (no DOM or timers): the `CanvasController`
+// feeds it events and executes the returned effects.
 import type { Point } from './viewport';
 
-/** Movimento (px de tela) a partir do qual um clique vira arrasto. */
+/** Movement (screen px) from which a click becomes a drag. */
 export const DRAG_THRESHOLD = 6;
 
-/** O que o arrasto faz. */
+/** What the drag does. */
 export type DragMode = 'pan' | 'move' | 'resize' | 'draw' | 'select';
 
 export type GestureState =
   | { readonly phase: 'idle' }
-  /** Pressionado, sem movimento suficiente para decidir. */
+  /** Pressed, without enough movement to decide. */
   | {
       readonly phase: 'pressed';
       readonly start: Point;
       readonly direct: DragMode;
     }
   | { readonly phase: 'dragging'; readonly mode: DragMode }
-  /** Dois ponteiros (pinça do trackpad ou da tela). Só termina quando todos saem. */
+  /** Two pointers (trackpad or screen pinch). It only ends when all leave. */
   | { readonly phase: 'pinch' };
 
 export type GestureEvent =
   | {
       readonly type: 'down';
       readonly point: Point;
-      /** O que o arrasto faz (o que o mouse faz). */
+      /** What the drag does (what the mouse does). */
       readonly direct: DragMode;
     }
   | { readonly type: 'move'; readonly point: Point }

@@ -2,14 +2,14 @@ import { signal, type ReadonlySignal } from '@preact/signals';
 import { tokenValue } from '../theme/tokens';
 import { readSetting, writeSetting } from '../utils/safeStorage';
 
-// Janelas de ferramenta do desktop (design system: docs/DESIGN-SYSTEM.md): quais estão
-// abertas, qual é a aba da janela inferior e o tamanho de cada lado. É estado de UI,
-// por dispositivo: fica no `localStorage` (com try/catch, em `safeStorage`), nunca no
-// `mapping.json` nem no histórico de desfazer.
+// Desktop tool windows (design system: docs/DESIGN-SYSTEM.md): which ones are
+// open, which tab the bottom window is on and the size of each side. It is UI state,
+// per device: it lives in `localStorage` (with try/catch, in `safeStorage`), never in
+// `mapping.json` nor in the undo history.
 
 /**
- * Janelas disponíveis. A janela inferior tem uma aba por janela: Lista, Incompletas,
- * Avisos, Diagnóstico e Propostas (etapa 4).
+ * Available windows. The bottom window has one tab per window: List, Incomplete,
+ * Warnings, Diagnostics and Proposals (stage 4).
  */
 export const TOOL_WINDOWS = [
   'tree',
@@ -28,7 +28,7 @@ export type ToolWindowId = (typeof TOOL_WINDOWS)[number];
 
 export type ToolWindowSide = 'left' | 'right' | 'bottom';
 
-/** Lado de cada janela: esquerda e direita são colunas; a inferior tem abas. */
+/** Side of each window: left and right are columns; the bottom one has tabs. */
 export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
   tree: 'left',
   layers: 'left',
@@ -43,12 +43,12 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
 };
 
 /**
- * Número do atalho de cada janela (Ctrl+Shift+N, e Alt+N onde o navegador deixa).
- * A numeração é a da seção Atalhos do DS 2.0: Árvore 1, Camadas 2, Detalhes 3, e na
- * janela inferior Lista 4, Incompletas 5, Diagnóstico 6 e Propostas 7; o Catálogo
- * (etapa Biblioteca, B5, que guarda a paleta da B3 como aba) é o 9. O 8, vago desde a B3,
- * é a janela Avisos (etapa #486), que fica na aba entre Incompletas e Diagnóstico. O 0 é a janela
- * Comentários (etapa Comentários), a última aba da janela inferior.
+ * Shortcut number of each window (Ctrl+Shift+N, and Alt+N where the browser allows it).
+ * The numbering is that of the DS 2.0 Shortcuts section: Tree 1, Layers 2, Details 3, and in the
+ * bottom window List 4, Incomplete 5, Diagnostics 6 and Proposals 7; the Catalog
+ * (Library stage, B5, which keeps B3's palette as a tab) is 9. The 8, vacant since B3,
+ * is the Warnings window (stage #486), which sits in the tab between Incomplete and Diagnostics.
+ * The 0 is the Comments window (Comments stage), the last tab of the bottom window.
  */
 export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   tree: 1,
@@ -63,30 +63,30 @@ export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   catalog: 9,
 };
 
-/** Janela do atalho Ctrl+Shift+N (`null` se o número não tem janela ainda). */
+/** Window of the Ctrl+Shift+N shortcut (`null` if the number has no window yet). */
 export function toolWindowByNumber(n: number): ToolWindowId | null {
   return TOOL_WINDOWS.find((id) => WINDOW_NUMBER[id] === n) ?? null;
 }
 
-/** Número de um token de comprimento (`--size-tw-left: 264px` → 264). */
+/** Number from a length token (`--size-tw-left: 264px` → 264). */
 function px(token: string): number {
   return Number.parseInt(tokenValue(token, 'light'), 10);
 }
 
-/** Largura mínima do canvas: as laterais nunca a invadem (`--size-canvas-min`). */
+/** Minimum canvas width: the side windows never invade it (`--size-canvas-min`). */
 const CANVAS_MIN = px('size-canvas-min');
 
-/** Padrão e limites de cada lado (seção Layouts do DS 2.0). */
+/** Default and limits of each side (Layouts section of the DS 2.0). */
 export const WINDOW_LIMITS: Readonly<
   Record<
     ToolWindowSide,
     { readonly default: number; readonly min: number; readonly max: number }
   >
 > = {
-  // Os mínimos somam, com o canvas, a área da janela mínima (900px menos as duas faixas): 180 + 280 + 360 = 820.
+  // The minimums add up, with the canvas, to the minimum window area (900px minus the two strips): 180 + 280 + 360 = 820.
   left: { default: px('size-tw-left'), min: 180, max: 480 },
   right: { default: px('size-tw-right'), min: 280, max: 560 },
-  // A janela inferior vai até 60% da altura do corpo do editor (`maxFraction` abaixo).
+  // The bottom window goes up to 60% of the editor body height (`maxFraction` below).
   bottom: { default: px('size-tw-bottom'), min: 120, max: Number.POSITIVE_INFINITY },
 };
 
@@ -94,12 +94,12 @@ const BOTTOM_MAX_FRACTION = 0.6;
 
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 
-/** Altura mínima de cada janela da coluna da esquerda quando Árvore e Camadas dividem. */
+/** Minimum height of each window of the left column when Tree and Layers share it. */
 const SPLIT_MIN = 96;
 
 /**
- * Altura da janela Camadas quando está empilhada embaixo da Árvore: nenhuma das duas
- * fica abaixo de `SPLIT_MIN` (nem passa do espaço da coluna). Função pura.
+ * Height of the Layers window when it is stacked below the Tree: neither of the two
+ * goes below `SPLIT_MIN` (nor exceeds the column's space). Pure function.
  */
 export function clampLayersHeight(size: number, columnHeight: number): number {
   const max = Math.max(SPLIT_MIN, columnHeight - SPLIT_MIN);
@@ -109,7 +109,7 @@ export function clampLayersHeight(size: number, columnHeight: number): number {
 /** Passo do Ctrl+Shift+setas (B2). */
 export const RESIZE_STEP = 16;
 
-/** Espaço disponível para as janelas: o corpo do editor, sem as faixas. */
+/** Space available for the windows: the editor body, without the strips. */
 export interface LayoutSpace {
   readonly width: number;
   readonly height: number;
@@ -118,9 +118,9 @@ export interface LayoutSpace {
 }
 
 /**
- * Tamanho válido para a janela: entre o mínimo e o máximo do lado, sem deixar o
- * canvas abaixo de `--size-canvas-min` (laterais) nem passar de 60% da altura
- * (inferior). Função pura: `tests/store/toolWindows.test.ts` cobre os limites.
+ * Valid size for the window: between the side's minimum and maximum, without leaving the
+ * canvas below `--size-canvas-min` (side windows) nor exceeding 60% of the height
+ * (bottom). Pure function: `tests/store/toolWindows.test.ts` covers the limits.
  */
 export function clampWindowSize(
   side: ToolWindowSide,
@@ -142,14 +142,14 @@ interface StoredLayout {
   readonly left?: number;
   readonly right?: number;
   readonly bottom?: number;
-  /** Altura da janela inferior em modo revisão (guardada à parte da normal). */
+  /** Height of the bottom window in review mode (kept apart from the normal one). */
   readonly bottomReview?: number;
   readonly layersHeight?: number;
 }
 
 const KEY = 'mapping.toolWindows';
 
-/** Ids que já existiram e hoje são outra janela (a paleta da B3 virou aba do Catálogo). */
+/** Ids that existed before and are now another window (B3's palette became a Catalog tab). */
 const RENAMED: Readonly<Record<string, ToolWindowId>> = { library: 'catalog' };
 
 function isToolWindow(value: unknown): value is ToolWindowId {
@@ -163,7 +163,7 @@ function readStored(): StoredLayout {
     const parsed: unknown = JSON.parse(text);
     return parsed !== null && typeof parsed === 'object' ? (parsed as StoredLayout) : {};
   } catch {
-    // Valor corrompido: vale o padrão.
+    // Corrupted value: the default applies.
     return {};
   }
 }
@@ -174,12 +174,12 @@ function storedSize(value: unknown, side: ToolWindowSide): number {
     : WINDOW_LIMITS[side].default;
 }
 
-/** Abertas por padrão: Árvore, Camadas e Detalhes (a Lista abre pela faixa). */
+/** Open by default: Tree, Layers and Details (the List opens from the strip). */
 const DEFAULT_OPEN: readonly ToolWindowId[] = ['tree', 'layers', 'details'];
 
 const stored = readStored();
 
-/** `open` só vale como lista; qualquer outro tipo guardado cai no padrão (#943). */
+/** `open` only applies as a list; any other stored type falls back to the default (#943). */
 function storedOpen(value: unknown): readonly ToolWindowId[] {
   if (!Array.isArray(value)) return DEFAULT_OPEN;
   return value
@@ -189,19 +189,19 @@ function storedOpen(value: unknown): readonly ToolWindowId[] {
 
 const openIds = signal<ReadonlySet<ToolWindowId>>(new Set(storedOpen(stored.open)));
 
-/** Altura inicial da janela inferior em modo revisão (`--size-tw-bottom-review`). */
+/** Initial height of the bottom window in review mode (`--size-tw-bottom-review`). */
 export const REVIEW_BOTTOM_DEFAULT = px('size-tw-bottom-review');
 
 /**
- * O padrão antigo da revisão (344 px). O `persist()` gravava `bottomReview` até para quem
- * nunca redimensionou; então um 344 guardado é o padrão de antes, não uma escolha, e passa
- * ao padrão novo (#598). Qualquer outro valor guardado é escolha e fica.
+ * The old review default (344 px). `persist()` used to write `bottomReview` even for those who
+ * never resized; so a stored 344 is the earlier default, not a choice, and moves
+ * to the new default (#598). Any other stored value is a choice and stays.
  */
 const OLD_REVIEW_BOTTOM_DEFAULT = 344;
 
 /**
- * A janela inferior tem duas alturas guardadas: a normal e a do modo revisão, que começa
- * maior que a normal (três linhas inteiras da lista e o rodapé de atalhos). `sizes.bottom` é a da vez.
+ * The bottom window has two stored heights: the normal one and the review mode one, which starts
+ * larger than the normal one (three whole list rows and the shortcuts footer). `sizes.bottom` is the current one.
  */
 let bottomHeights = {
   normal: storedSize(stored.bottom, 'bottom'),
@@ -221,7 +221,7 @@ const sizes = signal<Readonly<Record<ToolWindowSide, number>>>({
   bottom: bottomHeights.normal,
 });
 
-/** Altura da janela Camadas quando ela divide a coluna da esquerda com a Árvore. */
+/** Height of the Layers window when it shares the left column with the Tree. */
 const layersSplit = signal<number>(
   typeof stored.layersHeight === 'number' &&
     Number.isFinite(stored.layersHeight) &&
@@ -244,8 +244,8 @@ export const bottomToolWindow: ReadonlySignal<ToolWindowId> = bottomTab;
 export const layersWindowHeight: ReadonlySignal<number> = layersSplit;
 
 /**
- * Janelas visíveis de um lado, na ordem das janelas. A esquerda empilha Árvore e
- * Camadas; a direita tem uma só; a inferior mostra a aba ativa.
+ * Visible windows of a side, in the order of the windows. The left stacks Tree and
+ * Layers; the right has just one; the bottom shows the active tab.
  */
 export function openWindowsOf(side: ToolWindowSide): readonly ToolWindowId[] {
   const open = openToolWindows.value;
@@ -256,17 +256,17 @@ export function openWindowsOf(side: ToolWindowSide): readonly ToolWindowId[] {
   return TOOL_WINDOWS.filter((id) => WINDOW_SIDE[id] === side && open.has(id));
 }
 
-/** Primeira janela visível de um lado; `null` se o lado está recolhido. */
+/** First visible window of a side; `null` if the side is collapsed. */
 export function openWindowOf(side: ToolWindowSide): ToolWindowId | null {
   return openWindowsOf(side)[0] ?? null;
 }
 
-/** A janela está visível (e, na inferior, é a aba ativa). */
+/** The window is visible (and, in the bottom one, is the active tab). */
 export function isToolWindowOpen(id: ToolWindowId): boolean {
   return openWindowsOf(WINDOW_SIDE[id]).includes(id);
 }
 
-/** Largura da área das janelas (corpo do editor sem as faixas); 0 = ainda não medida. */
+/** Width of the windows area (editor body without the strips); 0 = not measured yet. */
 const paneWidth = signal(0);
 
 export function setPaneWidth(width: number): void {
@@ -274,12 +274,12 @@ export function setPaneWidth(width: number): void {
 }
 
 /**
- * Larguras que as laterais ocupam de fato: as guardadas, encolhidas (primeiro a direita,
- * depois a esquerda, até o mínimo de cada uma) para o canvas manter `--size-canvas-min`
- * numa janela mais estreita que a do layout guardado. Com 900px ou mais os mínimos
- * sempre cabem (180 + 280 + 360 = 820, a área da janela mínima), então nada passa por baixo
- * das faixas (#1464). `avail` 0
- * (não medido) mantém as guardadas; lado recolhido passa 0. Função pura.
+ * Widths the side windows actually occupy: the stored ones, shrunk (first the right,
+ * then the left, down to the minimum of each) so the canvas keeps `--size-canvas-min`
+ * in a window narrower than the stored layout's. At 900px or more the minimums
+ * always fit (180 + 280 + 360 = 820, the minimum window area), so nothing goes under
+ * the strips (#1464). `avail` 0
+ * (not measured) keeps the stored ones; a collapsed side passes 0. Pure function.
  */
 export function fitSideWidths(
   left: number,
@@ -289,7 +289,7 @@ export function fitSideWidths(
   if (avail <= 0) return { left, right };
   const excess = left + right + CANVAS_MIN - avail;
   if (excess <= 0) return { left, right };
-  // Lado recolhido (0) não encolhe; o aberto só desce até o mínimo.
+  // A collapsed side (0) does not shrink; the open one only goes down to the minimum.
   const cutRight =
     right === 0 ? 0 : clamp(excess, 0, Math.max(0, right - WINDOW_LIMITS.right.min));
   const cutLeft =
@@ -299,7 +299,7 @@ export function fitSideWidths(
   return { left: left - cutLeft, right: right - cutRight };
 }
 
-/** Largura que cada lateral ocupa agora (0 quando recolhida), já ajustada à janela. */
+/** Width each side window occupies now (0 when collapsed), already adjusted to the window. */
 export function sideWidth(side: 'left' | 'right'): number {
   const sizes = toolWindowSizes.value;
   const fit = fitSideWidths(
@@ -329,9 +329,9 @@ function persist(): void {
 }
 
 /**
- * Entra ou sai do layout da revisão: a janela inferior troca para a altura guardada do
- * modo (a da revisão começa em `size-tw-bottom-review`). Redimensionar depois grava na
- * altura do modo atual.
+ * Enters or leaves the review layout: the bottom window switches to the mode's stored
+ * height (the review one starts at `size-tw-bottom-review`). Resizing afterwards writes to the
+ * current mode's height.
  */
 export function setReviewLayout(on: boolean): void {
   if (reviewLayout === on) return;
@@ -346,8 +346,8 @@ export function showToolWindow(id: ToolWindowId): void {
   const side = WINDOW_SIDE[id];
   if (side === 'bottom') bottomTab.value = id;
   const next = new Set(openIds.value);
-  // A esquerda empilha Árvore e Camadas; os outros lados mostram uma janela por vez. A
-  // coluna da esquerda do Catálogo é só dele: abri-lo esconde as duas e vice-versa.
+  // The left stacks Tree and Layers; the other sides show one window at a time. The
+  // Catalog's left column is its own: opening it hides the two and vice versa.
   if (side !== 'left') {
     for (const other of next) if (WINDOW_SIDE[other] === side) next.delete(other);
   } else if (id === 'catalog') {
@@ -368,13 +368,13 @@ export function hideToolWindow(id: ToolWindowId): void {
   persist();
 }
 
-/** Clique na faixa (ou atalho): abre, troca de aba ou esconde a janela visível. */
+/** Click on the strip (or shortcut): opens, switches tab or hides the visible window. */
 export function toggleToolWindow(id: ToolWindowId): void {
   if (isToolWindowOpen(id)) hideToolWindow(id);
   else showToolWindow(id);
 }
 
-/** Grava o tamanho do lado, já limitado ao espaço disponível. */
+/** Writes the side's size, already limited to the available space. */
 export function resizeToolWindow(
   side: ToolWindowSide,
   size: number,
@@ -386,7 +386,7 @@ export function resizeToolWindow(
   persist();
 }
 
-/** Grava a altura da janela Camadas, limitada ao espaço da coluna da esquerda. */
+/** Writes the Layers window height, limited to the left column's space. */
 export function resizeLayersWindow(size: number, columnHeight: number): void {
   const next = clampLayersHeight(size, columnHeight);
   if (next === layersSplit.value) return;
@@ -394,12 +394,12 @@ export function resizeLayersWindow(size: number, columnHeight: number): void {
   persist();
 }
 
-/** Duplo clique na divisória entre Árvore e Camadas: volta à altura padrão. */
+/** Double click on the divider between Tree and Layers: goes back to the default height. */
 export function resetLayersWindowHeight(columnHeight: number): void {
   resizeLayersWindow(px('size-tw-layers'), columnHeight);
 }
 
-/** Duplo clique na divisória: volta ao tamanho padrão do lado (o da revisão, nela). */
+/** Double click on the divider: goes back to the side's default size (the review one's, in it). */
 export function resetToolWindowSize(side: ToolWindowSide, space: LayoutSpace): void {
   const size =
     side === 'bottom' && reviewLayout
@@ -409,12 +409,12 @@ export function resetToolWindowSize(side: ToolWindowSide, space: LayoutSpace): v
 }
 
 /**
- * Desktop compacto (abaixo de 1200px): Detalhes começa recolhido (B2). Só na
- * primeira visita; depois vale o layout guardado.
+ * Compact desktop (below 1200px): Details starts collapsed (B2). Only on the
+ * first visit; afterwards the stored layout applies.
  */
 export function collapseDetailsOnCompact(): void {
-  // Relê o armazenamento a cada chamada: o primeiro `persist()` já marca o layout como
-  // guardado, e a primeira visita não se repete ao trocar de projeto.
+  // Re-reads storage on every call: the first `persist()` already marks the layout as
+  // stored, and the first visit does not repeat when switching projects.
   if (readSetting(KEY) !== null) return;
   hideToolWindow('details');
 }

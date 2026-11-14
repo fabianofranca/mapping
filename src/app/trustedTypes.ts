@@ -1,31 +1,34 @@
-// Política `default` de Trusted Types (etapa Imagens remotas, decisão 13). A CSP do perfil `app`
-// (`pwa/csp.ts`) exige `require-trusted-types-for 'script'; trusted-types default`: nenhum HTML
-// nem URL de script entra na página sem passar por esta política, garantido pelo navegador.
-// As regras são puras e testadas; devolver `null` faz o navegador recusar a atribuição com
-// `TypeError` e emitir `securitypolicyviolation`. Sem `createScript`: script por string é recusado.
+// Trusted Types `default` policy (Remote images stage, decision 13). The `app` profile CSP
+// (`pwa/csp.ts`) requires `require-trusted-types-for 'script'; trusted-types default`: no HTML
+// or script URL enters the page without going through this policy, enforced by the browser.
+// The rules are pure and tested; returning `null` makes the browser refuse the assignment with
+// `TypeError` and emit `securitypolicyviolation`. No `createScript`: script by string is refused.
 import { reportError } from '../utils/report';
 
-/** O service worker é registrado com esta URL (`src/app/pwa.ts`): é a única aceita em `createScriptURL`. */
+/**
+ * The service worker is registered with this URL (`src/app/pwa.ts`): the only one accepted in
+ * `createScriptURL`.
+ */
 export const SERVICE_WORKER_URL = './sw.js';
 
 /**
- * Só a string vazia vira HTML: o Konva faz `container.innerHTML = ''` ao destruir o palco
- * (`node_modules/konva/lib/Stage.js`). O Preact só usa `innerHTML` com `dangerouslySetInnerHTML`,
- * que o código não usa.
+ * Only the empty string becomes HTML: Konva does `container.innerHTML = ''` when destroying the stage
+ * (`node_modules/konva/lib/Stage.js`). Preact only uses `innerHTML` with `dangerouslySetInnerHTML`,
+ * which the code does not use.
  */
 export function createHTML(input: string): string | null {
   return input === '' ? '' : null;
 }
 
 /**
- * O Chromium trata `navigator.serviceWorker.register` como sink de `TrustedScriptURL`:
- * só a URL exata do nosso service worker passa (desvio registrado da decisão 13).
+ * Chromium treats `navigator.serviceWorker.register` as a `TrustedScriptURL` sink:
+ * only the exact URL of our service worker passes (recorded deviation from decision 13).
  */
 export function createScriptURL(input: string): string | null {
   return input === SERVICE_WORKER_URL ? input : null;
 }
 
-/** Tipos do DOM para Trusted Types não existem no TS: só o que esta política usa. */
+/** DOM types for Trusted Types do not exist in TS: only what this policy uses. */
 interface TrustedTypePolicyFactoryLike {
   createPolicy: (
     name: string,
@@ -50,9 +53,10 @@ function factoryOf(target: unknown): TrustedTypePolicyFactoryLike | null {
 export type TrustedTypesStatus = 'installed' | 'unsupported' | 'failed';
 
 /**
- * Cria a política `default`. `unsupported` quando o navegador não tem Trusted Types (a CSP
- * `require-trusted-types-for` é então ignorada e a app segue); `failed` quando o navegador a recusou
- * (vai para o Diagnóstico).
+ * Creates the `default` policy. `unsupported` when the browser has no Trusted Types (the CSP
+ * `require-trusted-types-for` is then ignored and the app carries on); `failed` when the browser
+ * refused it
+ * (goes to Diagnostics).
  */
 export function installTrustedTypesPolicy(
   target: unknown = globalThis,
@@ -68,5 +72,5 @@ export function installTrustedTypesPolicy(
   }
 }
 
-// Efeito ao importar: `main.tsx` importa este módulo antes de qualquer outro.
+// Effect on import: `main.tsx` imports this module before any other.
 installTrustedTypesPolicy();

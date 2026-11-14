@@ -46,7 +46,7 @@
   overflow-wrap: anywhere;
 }
 
-/* Tabela completa na Lista (spans: fica dentro de um botão). */
+/* Full table in the List (spans: it sits inside a button). */
 .mini-table {
   display: grid;
   grid-template-columns: repeat(var(--cols), minmax(0, auto));

@@ -6,7 +6,7 @@ import type { RecentProject } from './controller';
 export type LocalRecent = Extract<RecentProject, { kind: 'local' }>;
 export type FolderRecent = Extract<RecentProject, { kind: 'folder' }>;
 
-/** Um formatador por idioma: criar um `Intl.DateTimeFormat` por linha a cada render é caro. */
+/** One formatter per language: creating an `Intl.DateTimeFormat` per row on every render is expensive. */
 const dateFormats = new Map<string, Intl.DateTimeFormat>();
 
 function dateFormat(lang: string): Intl.DateTimeFormat {
@@ -18,7 +18,7 @@ function dateFormat(lang: string): Intl.DateTimeFormat {
   return format;
 }
 
-/** Data e hora com segundos, só para a descrição do leitor de tela (TE1): distingue usos do mesmo minuto. */
+/** Date and time with seconds, only for the screen reader description (TE1): tells uses in the same minute apart. */
 const fullDateFormats = new Map<string, Intl.DateTimeFormat>();
 
 function fullDateFormat(lang: string): Intl.DateTimeFormat {
@@ -42,7 +42,7 @@ function formatDate(iso: string): string {
   try {
     return dateFormat(locale.value).format(new Date(iso));
   } catch {
-    // Data ilegível (ou idioma que o `Intl` recusa): mostra o texto como está.
+    // Unreadable date (or a language `Intl` rejects): shows the text as it is.
     return iso;
   }
 }
@@ -62,8 +62,8 @@ function Unexported({ project }: { readonly project: RecentProject }) {
 }
 
 /**
- * Lista única (projetos deste dispositivo e pastas), do uso mais recente ao mais antigo:
- * Nome | Origem (selo) | Último uso, com Abrir e Excluir (ou Remover da lista) na linha.
+ * Single list (projects of this device and folders), from the most recent use to the oldest:
+ * Name | Origin (badge) | Last used, with Open and Delete (or Remove from list) on the row.
  */
 export function ProjectTable({
   projects,
@@ -100,15 +100,15 @@ export function ProjectTable({
   );
 }
 
-/** Id de elemento estável da linha, derivado de `kind:id` sem caracteres inválidos. */
+/** Stable element id of the row, derived from `kind:id` without invalid characters. */
 function rowDomId(project: RecentProject, part: string): string {
   return `recent-${project.kind}-${project.id.replace(/[^A-Za-z0-9_-]/g, '_')}-${part}`;
 }
 
 /**
- * Uma linha da lista. Os botões levam o nome do projeto no nome acessível (o texto visível
- * vem primeiro, WCAG 2.5.3) e apontam por `aria-describedby` para a origem, a pasta (quando
- * aparece) e o último uso, que já estão na tela: linhas de mesmo nome se distinguem.
+ * One row of the list. The buttons carry the project name in the accessible name (the visible
+ * text comes first, WCAG 2.5.3) and point through `aria-describedby` to the origin, the folder (when
+ * it shows) and the last use, which are already on screen: rows with the same name can be told apart.
  */
 function ProjectRow({
   project,

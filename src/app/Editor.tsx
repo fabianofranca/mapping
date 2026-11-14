@@ -33,7 +33,7 @@ import { useExitReview } from './useExitReview';
 import { Button } from '../ui/controls';
 
 export function Editor({ open }: { readonly open: OpenProject }) {
-  // Um contexto (e um estado de UI) novo por projeto aberto: o Editor não é remontado ao trocar.
+  // A new context (and UI state) per open project: the Editor is not remounted on switching.
   return (
     <EditorProvider open={open}>
       <EditorScreen />
@@ -42,17 +42,17 @@ export function Editor({ open }: { readonly open: OpenProject }) {
 }
 
 /**
- * Exportado para os testes de contagem de renderizações (tests/components/editorRenders.test.tsx)
- * e da janela estreita (tests/components/narrowWindow.test.tsx).
+ * Exported for the render-count tests (tests/components/editorRenders.test.tsx)
+ * and the narrow window ones (tests/components/narrowWindow.test.tsx).
  *
- * Um shell só (só desktop): barra principal, janelas com o canvas e barra de status.
- * Abaixo da largura mínima ele fica escondido atrás do aviso, sem desmontar: o canvas é
- * montado uma vez e a seleção e o viewport continuam ao alargar a janela.
+ * A single shell (desktop only): main bar, windows with the canvas and status bar.
+ * Below the minimum width it stays hidden behind the notice, without unmounting: the canvas is
+ * mounted once and the selection and viewport continue when the window widens.
  */
 export function EditorScreen() {
   const { store, ui, canvas, review, layers } = useEditor();
   const narrow = useNarrowWindow();
-  // Faixa do desktop compacto (900 a 1199px): abaixo dela a janela é estreita.
+  // Compact desktop band (900 to 1199px): below it the window is narrow.
   const compact = useMediaQuery(
     `(min-width: ${BREAKPOINTS.appMin}px) and (max-width: ${BREAKPOINTS.compact}px)`,
   );
@@ -61,25 +61,25 @@ export function EditorScreen() {
   const intake = useImageIntake({ dialogs, notices });
   const componentDrop = useComponentDrop(notices);
   const commands = useProjectCommands(dialogs, notices);
-  // Com o editor escondido atrás do aviso, o teclado não age sobre o que não se vê.
+  // With the editor hidden behind the notice, the keyboard does not act on what is not seen.
   useEditorShortcuts(dialogs, commands, !narrow, notices.busy);
   useExternalChanges();
   useReviewSync();
   const reviewing = review.proposalId.value !== null;
   const exitReview = useExitReview(dialogs);
 
-  // Só fatias do projeto confirmado (ver `ProjectStore.committed`): a tela não
-  // renderiza de novo a cada prévia de gesto, nem a cada edição que não as muda.
+  // Only slices of the committed project (see `ProjectStore.committed`): the screen does not
+  // render again on every gesture preview, nor on every edit that does not change them.
   const hasProject = useComputed(() => store.committed.value !== null);
-  // O estado vazio é do projeto à vista: na visão Proposto da revisão, o "como ficaria"
-  // (uma importação nova só tem imagens na prévia; o aviso não pode cobri-las).
+  // The empty state belongs to the project in view: in the review's Proposed view, the "how it would look"
+  // (a new import only has images in the preview; the notice cannot cover them).
   const noImages = useComputed(
     () => (review.derived.shownProject.value?.containers.length ?? 0) === 0,
   );
   const { busy } = notices;
 
-  // Desktop compacto (abaixo de 1200px): Detalhes começa recolhido (B2). Só ao abrir o
-  // editor: estreitar a janela depois encolhe as laterais (`fitSideWidths`), não as fecha.
+  // Compact desktop (below 1200px): Details starts collapsed (B2). Only when opening the
+  // editor: narrowing the window later shrinks the side windows (`fitSideWidths`), it does not close them.
   const openedCompact = useRef(compact);
   useEffect(() => {
     if (openedCompact.current) collapseDetailsOnCompact();
@@ -87,10 +87,10 @@ export function EditorScreen() {
 
   if (!hasProject.value) return null;
 
-  /** Backlinks, "Ir para o alvo", vinculadas e Incompletas: em qualquer marcação. */
+  /** Backlinks, "Go to target", linked and Incomplete: on any marking. */
   const onGoToAnnotation = (annotation: AnnotationLocation) => {
     const selection = ui.selection.peek();
-    // A dona da anotação é uma marcação ou uma seta (v13): `goToAnnotation` escolhe pelo projeto.
+    // The annotation's owner is a marking or an arrow (v13): `goToAnnotation` chooses by project.
     const sameMarking =
       (selection?.kind === 'marking' || selection?.kind === 'arrow') &&
       selection.id === annotation.markingId;
@@ -98,7 +98,7 @@ export function EditorScreen() {
     if (!sameMarking) canvas.current?.centerSelection();
   };
 
-  /** Escolher na árvore, na lista ou nos breadcrumbs seleciona e centraliza o canvas. */
+  /** Choosing in the tree, the list or the breadcrumbs selects and centers the canvas. */
   const onSelect = (next: NonNullable<Selection>) => {
     ui.selection.value = next;
     canvas.current?.centerSelection();
@@ -147,7 +147,7 @@ export function EditorScreen() {
               <CanvasNotices notices={notices} />
               <CanvasContextMenu />
               <Minimap />
-              {/* A legenda aberta fica por cima do minimapa pelo z-index (--z-popover acima do --z-canvas-overlay), não pela ordem no DOM. */}
+              {/* The open legend sits above the minimap by z-index (--z-popover above --z-canvas-overlay), not by DOM order. */}
               <ReviewLegend />
               {noImages.value && (
                 <div class="canvas-empty">

@@ -1,11 +1,11 @@
 /**
- * Desenha uma `Scene` (a instância de um componente) com Konva.
+ * Draws a `Scene` (the instance of a component) with Konva.
  *
- * Cada nó da cena vira um `Konva.Group` (o "contêiner" do nó, com a transformação, a
- * opacidade e a visibilidade) que guarda as formas do próprio nó (um shape por
- * preenchimento, mais um para o traço) e, depois delas, os contêineres dos filhos. Todo
- * shape e todo contêiner levam o atributo `sceneId`, para o visualizador achar o nó da cena
- * a partir do alvo de um evento do Konva.
+ * Each scene node becomes a `Konva.Group` (the node's "container", with the transform,
+ * opacity and visibility) that holds the node's own shapes (one shape per
+ * fill, plus one for the stroke) and, after them, the children's containers. Every
+ * shape and every container carries the `sceneId` attribute, so the viewer can find the scene node
+ * from the target of a Konva event.
  */
 import {
   growRadius,
@@ -55,48 +55,50 @@ import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning, RenderWarningCode } from './renderWarnings';
 import type { RemoteImageView, RemoteImageViewState } from './remoteImageTypes';
 
-/** Única origem de imagem que o renderizador carrega sozinho (herança do laboratório). */
+/** The only image origin the renderer loads by itself (a legacy of the lab). */
 const DATA_URL = /^data:/i;
 
 export { DEFAULT_PALETTE, type RenderPalette };
 export type { RenderWarning, RenderWarningCode };
 
-/** O que a função de imagem remota devolve: a vista completa ou só o estado (reservado). */
+/** What the remote image function returns: the full view or just the state (placeholder). */
 export type RemoteImageResult = RemoteImageView | RemoteImageViewState;
 
 export interface RenderOptions {
   /**
-   * Resolve a URL do nó `image` do componente (RI3): já passada pela política de URL e pelo
-   * consentimento, com o carregador por trás. Sem ela, toda imagem remota é o reservado. O
-   * `renderScene` nunca cria `Image` para URL remota.
+   * Resolves the URL of the component's `image` node (RI3): already passed through the URL policy
+   * and consent, with the loader behind it. Without it, every remote image is the placeholder.
+   * `renderScene` never creates an `Image` for a remote URL.
    */
   readonly remoteImage?: (url: string) => RemoteImageResult;
   /**
-   * `true` quando o resultado será lido de volta (`toDataURL`, `toBlob`, `getImageData`):
-   * imagem `opaque` (carregada sem CORS) não é desenhada, o reservado entra no lugar dela.
+   * `true` when the result will be read back (`toDataURL`, `toBlob`, `getImageData`):
+   * an `opaque` image (loaded without CORS) is not drawn, the placeholder takes its place.
    */
   readonly pixelSafe?: boolean;
-  /** Uma imagem embutida (`data:`) terminou de carregar: hora de redesenhar. */
+  /** An embedded image (`data:`) finished loading: time to redraw. */
   readonly onImageLoaded?: () => void;
-  /** Cores do reservado e do nó desconhecido (padrão: `DEFAULT_PALETTE`). */
+  /** Colors of the placeholder and of the unknown node (default: `DEFAULT_PALETTE`). */
   readonly palette?: Partial<RenderPalette>;
-  /** Desenha o contorno do reservado de um `slot` (padrão `true`; a camada do produto usa `false`). */
+  /**
+   * Draws the placeholder outline of a `slot` (default `true`; the product layer uses `false`).
+   */
   readonly showSlots?: boolean;
 }
 
 export interface RenderResult {
   readonly root: Konva.Group;
-  /** Contêiner Konva de cada nó da cena, pelo id. */
+  /** Konva container of each scene node, by id. */
   readonly byId: ReadonlyMap<string, Konva.Group>;
-  /** Aproximações feitas ao desenhar (além das do conversor), com código e parâmetros. */
+  /** Approximations made while drawing (besides the converter's), with code and parameters. */
   readonly warnings: readonly RenderWarning[];
-  /** URLs remotas (`url` do preenchimento `image`) que a cena usa, sem repetir. */
+  /** Remote URLs (`url` of the `image` fill) that the scene uses, without repeats. */
   readonly imageUrls: readonly string[];
 }
 
 export const SCENE_ID_ATTR = 'sceneId';
 
-/** Forma que só existe para receber o ponteiro: não pinta nem recebe sombra. */
+/** Shape that exists only to receive the pointer: it neither paints nor receives a shadow. */
 const HIT_ONLY_ATTR = 'hitOnly';
 
 interface Box {
@@ -136,15 +138,17 @@ class Renderer {
     container.setAttr(SCENE_ID_ATTR, node.id);
     this.byId.set(node.id, container);
 
-    // A sombra vai na primeira forma que a aceitar. Um grupo com efeito
-    // (ex.: `filter` num grupo que envolve a forma) repassa a sombra à primeira forma descendente.
+    // The shadow goes on the first shape that accepts it. A group with an effect
+    // (e.g. `filter` on a group that wraps the shape) passes the shadow to the first descendant
+    // shape.
     const shadows = this.outerShadows([...pendingShadows, ...node.effects]);
 
     if (node.type === 'frame' && node.clip) {
       const { width, height, cornerRadius, clipBox } = node;
       container.clipFunc((ctx) => {
         if (clipBox) {
-          // Recorte ampliado (traço fora da caixa, sombra): retângulo reto, sem os cantos.
+          // Enlarged clip (stroke outside the box, shadow): straight rectangle, without the
+          // corners.
           ctx.beginPath();
           ctx.rect(clipBox.x, clipBox.y, clipBox.width, clipBox.height);
           ctx.closePath();
@@ -154,7 +158,7 @@ class Renderer {
 
     if (node.type === 'text' && cutsText(node)) {
       const { width } = node;
-      // Recorte só na horizontal (a caixa do texto); na vertical, o que o texto desenha fica.
+      // Clip only horizontally (the text box); vertically, what the text draws stays.
       container.clipFunc((ctx) => {
         ctx.beginPath();
         ctx.rect(0, -CUT_REACH, width, 2 * CUT_REACH);
@@ -163,11 +167,12 @@ class Renderer {
     }
 
     const shapes = this.shapesOf(node);
-    // A área clicável invisível de um quadro transparente não pinta: não é dona da sombra.
+    // The invisible clickable area of a transparent frame does not paint: it does not own the
+    // shadow.
     const shadowOwner =
       shadows.length > 0 ? shapes.find((s) => !s.getAttr(HIT_ONLY_ATTR)) : undefined;
-    // Várias sombras (ou `spread`) num retângulo ou elipse: uma forma só de sombra por sombra, por
-    // baixo das formas do nó, a última da lista primeiro (a primeira fica por cima).
+    // Several shadows (or `spread`) on a rectangle or ellipse: one shadow-only shape per shadow,
+    // below the node's shapes, the last of the list first (the first stays on top).
     const casters = shadowOwner !== undefined && castsShadows(node, shadows);
     if (casters) {
       for (const shadow of [...shadows].reverse()) {
@@ -183,8 +188,9 @@ class Renderer {
 
     if (hasChildren(node)) {
       let forward = shadows.length > 0 && !shadowOwner ? shadows : [];
-      // Quadro com recorte ampliado (sombra, traço) e raio: o ampliado vale ao quadro; os filhos
-      // saem num grupo recortado pela forma (o raio), e o canto deles não sai reto.
+      // Frame with an enlarged clip (shadow, stroke) and radius: the enlarged one applies to the
+      // frame; the children go in a group clipped by the shape (the radius), and their corner does
+      // not come out straight.
       let holder: Konva.Group = container;
       if (
         node.type === 'frame' &&
@@ -200,7 +206,7 @@ class Renderer {
       }
       for (const child of node.children) {
         holder.add(this.render(child, forward));
-        // Só o primeiro filho herda as sombras do grupo.
+        // Only the first child inherits the group's shadows.
         forward = [];
       }
       if (shadows.length > 0 && !shadowOwner && node.children.length === 0) {
@@ -221,13 +227,16 @@ class Renderer {
     return shape;
   }
 
-  /** As sombras externas, na ordem; a interna não existe no canvas 2D: ignorada, com aviso. */
+  /**
+   * The outer shadows, in order; the inner one does not exist in canvas 2D: ignored, with a
+   * warning.
+   */
   private outerShadows(shadows: readonly Shadow[]): Shadow[] {
     if (shadows.some((s) => s.inner)) this.warn('inner-shadow');
     return shadows.filter((s) => !s.inner);
   }
 
-  /** As formas do próprio nó (sem os filhos). */
+  /** The node's own shapes (without the children). */
   private shapesOf(node: SceneNode): Konva.Shape[] {
     const box: Box = { width: node.width, height: node.height };
     const shapes: Konva.Shape[] = [];
@@ -241,7 +250,7 @@ class Renderer {
             cornerRadius: konvaRadius(node.cornerRadius),
             listening: true,
           };
-          // Cor sólida sem canto arredondado: bordas em pixels inteiros (sem fio na emenda).
+          // Solid color without a rounded corner: borders in whole pixels (no seam line).
           const shape =
             paint.type === 'solid' && isSquare(node.cornerRadius)
               ? new PixelRect(config)
@@ -260,7 +269,7 @@ class Renderer {
           }
         }
         if (node.fills.length === 0 && !node.stroke && node.type === 'frame') {
-          // Quadro transparente: uma área clicável invisível, para o hover achar o quadro.
+          // Transparent frame: an invisible clickable area, so hover finds the frame.
           shapes.push(
             this.hitOnly(
               new KonvaRect({
@@ -329,7 +338,8 @@ class Renderer {
           fontSize: style.fontSize,
           fontStyle: fontStyle(style.fontWeight, style.italic),
           align: style.align,
-          // `cap-middle` é do `capMiddleY`: o Konva desenha em `top` e o nó desce o deslocamento.
+          // `cap-middle` belongs to `capMiddleY`: Konva draws at `top` and the node moves down by
+          // the offset.
           verticalAlign:
             style.verticalAlign === 'cap-middle' ? 'top' : style.verticalAlign,
           lineHeight: style.lineHeight ? style.lineHeight / style.fontSize : 1.2,
@@ -339,13 +349,14 @@ class Renderer {
           ellipsis: style.ellipsis === true,
           ...(style.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
         };
-        // `wrap: none` sem `ellipsis` numa caixa fixa: o Text não leva `width` (o Konva tiraria a
-        // letra inteira) e o grupo recorta por pixel na caixa; o `align` é do `x` (decisão 19).
+        // `wrap: none` without `ellipsis` in a fixed box: the Text gets no `width` (Konva would
+        // drop the whole letter) and the group clips by pixel in the box; the `align` belongs to
+        // the `x` (decision 19).
         const cut = cutsText(node);
         if (node.width > 0 && !cut) {
-          // A folga da quebra (0,5 px), a mesma do medidor; o `x` desfaz o deslocamento do `align`.
-          // Uma palavra mais larga que a caixa fica inteira na linha e as outras quebram onde o
-          // modelo e o medidor quebram.
+          // The wrap slack (0.5 px), the same as the measurer's; the `x` undoes the `align` shift.
+          // A word wider than the box stays whole on the line and the others wrap where the
+          // model and the measurer wrap.
           const breaks = style.wrap !== 'none' && style.ellipsis !== true;
           const safe = breaks
             ? wordSafeText(node.text, attrs, node.width)
@@ -364,11 +375,11 @@ class Renderer {
           attrs.y = capMiddleY(attrs, node, style);
         if (style.baselineTop !== undefined)
           attrs.y = baselineY(attrs, style.baselineTop);
-        // Texto do SVG sem largura: o x é a âncora (`text-anchor`), então o texto centrado
-        // ou à direita cresce para a esquerda a partir dela.
+        // SVG text without width: the x is the anchor (`text-anchor`), so centered text
+        // or right-aligned text grows to the left from it.
         const anchor = (shape: KonvaText): KonvaText => {
           if (cut) {
-            // O bloco (a linha mais larga) se alinha na caixa; o Konva alinha as linhas dentro dele.
+            // The block (the widest line) aligns in the box; Konva aligns the lines inside it.
             shape.x(cutLineLeft(style.align, node.width, shape.width(), shape.width()));
             return shape;
           }
@@ -390,11 +401,11 @@ class Renderer {
       case 'group':
         return shapes;
       case 'unknown': {
-        // Um `slot` (laboratório de componentes) é um espaço reservado, não uma falha:
-        // contorno discreto e sem aviso.
+        // A `slot` (component lab) is a reserved space, not a failure:
+        // discreet outline and no warning.
         const slot = node.sourceType === 'slot';
         if (slot && this.options.showSlots === false) return shapes;
-        // O ícone desconhecido já levou o aviso do motor (`ícone desconhecido: <nome>`).
+        // The unknown icon already got the engine's warning (`unknown icon: <name>`).
         if (!slot && node.sourceType !== 'icon') {
           this.warn('unknown-node', { type: node.sourceType });
         }
@@ -415,9 +426,9 @@ class Renderer {
   }
 
   /**
-   * Texto rico (`runs`): um fundo (`KonvaRect`) por caixa em linha e um `KonvaText` por pedaço de
-   * texto, nas posições do `runLayout` da cena, deslocadas pelo `verticalAlign` do nó. O fundo
-   * vem antes do texto do chip; o traço do nó vale para cada pedaço de texto.
+   * Rich text (`runs`): one background (`KonvaRect`) per inline box and one `KonvaText` per piece
+   * of text, at the `runLayout` positions of the scene, shifted by the node's `verticalAlign`. The
+   * background comes before the chip's text; the node's stroke applies to each piece of text.
    */
   private richTextShapes(node: TextNode, runs: readonly SceneTextRun[]): Konva.Shape[] {
     const shapes: Konva.Shape[] = [];
@@ -432,7 +443,7 @@ class Renderer {
         if (piece.chip) shapes.push(chipShape(piece, run, top));
         shapes.push(runTextShape(node, run, piece, top));
         if (node.stroke) {
-          // Como no texto simples: o preenchimento e o contorno são formas separadas.
+          // As in plain text: the fill and the outline are separate shapes.
           const outline = runTextShape(node, run, piece, top);
           this.applyStroke(outline, node.stroke, 'path');
           shapes.push(outline);
@@ -442,7 +453,7 @@ class Renderer {
     return shapes;
   }
 
-  /** Aplica um preenchimento a uma forma; uma imagem vira a própria forma (`KonvaImage`). */
+  /** Applies a fill to a shape; an image becomes the shape itself (`KonvaImage`). */
   private fillShape(shape: ShapeWithFill, paint: Paint, box: Box): Konva.Shape[] {
     shape.opacity(paint.opacity ?? 1);
     switch (paint.type) {
@@ -469,14 +480,15 @@ class Renderer {
   }
 
   private imageFill(shape: ShapeWithFill, paint: Paint & { type: 'image' }, box: Box) {
-    // `paint.url` é a imagem remota do nó `image` do componente: o renderizador não a baixa; a
-    // função das opções devolve o estado (e a imagem pronta, já passada pela política e pelo
-    // consentimento). Tudo menos `loaded`/`opaque` é o reservado, sem aviso (estado normal).
+    // `paint.url` is the remote image of the component's `image` node: the renderer does not
+    // download it; the options function returns the state (and the ready image, already passed
+    // through the policy and consent). Everything but `loaded`/`opaque` is the placeholder, with no
+    // warning (normal state).
     if (!paint.src && paint.url !== undefined) {
       this.imageUrls.add(paint.url);
       return this.remoteImageFill(shape, paint, paint.url, box);
     }
-    // Só a imagem embutida (`data:`) é carregada aqui; qualquer outro esquema vira reservado.
+    // Only the embedded image (`data:`) is loaded here; any other scheme becomes a placeholder.
     if (!paint.src || !DATA_URL.test(paint.src)) {
       this.warn('image-without-pixels');
       return placeholder(shape, box, this.palette);
@@ -499,7 +511,8 @@ class Renderer {
       };
       const ready = cachedEmbeddedImage(paint.src);
       if (ready) {
-        // Já decodificada: usa de imediato (sem pedir quadro, senão o desenho se repetiria).
+        // Already decoded: use it at once (without requesting a frame, or the drawing would
+        // repeat).
         apply(ready);
         return [image];
       }
@@ -514,7 +527,7 @@ class Renderer {
       });
       return [image];
     }
-    // Imagem como preenchimento de elipse/caminho: o Konva usa `fillPatternImage`.
+    // Image as a fill of an ellipse/path: Konva uses `fillPatternImage`.
     loadEmbeddedImage(paint.src, {
       onLoad: (element) => {
         shape.fillPriority('pattern');
@@ -555,7 +568,9 @@ class Renderer {
     return [image];
   }
 
-  /** A função das opções pode lançar ou devolver só o estado: nenhum dos dois derruba o desenho. */
+  /**
+   * The options function may throw or return only the state: neither of the two breaks the drawing.
+   */
   private resolveRemote(url: string): RemoteImageView {
     const resolve = this.options.remoteImage;
     if (!resolve) return { state: 'invalid' };
@@ -567,7 +582,10 @@ class Renderer {
     }
   }
 
-  /** `stroke.sides`: uma linha reta por lado pedido (sem arco no canto, mesmo com raio). */
+  /**
+   * `stroke.sides`: one straight line per requested side (no arc at the corner, even with a
+   * radius).
+   */
   private sideStrokes(stroke: Stroke, box: Box): Konva.Shape[] {
     return sideSegments(stroke, box.width, box.height).map((seg) => {
       const line = new KonvaLine({ points: [seg.x1, seg.y1, seg.x2, seg.y2] });
@@ -576,7 +594,7 @@ class Renderer {
     });
   }
 
-  /** `stroke.gap`: o contorno com o raio de cada canto, em linhas abertas que pulam os vãos. */
+  /** `stroke.gap`: the outline with each corner's radius, in open lines that skip the gaps. */
   private gapStrokes(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape[] {
     return gapOutlines(stroke, box.width, box.height, radius).map((points) => {
       const line = new KonvaLine({ points: points.flatMap((p) => [p.x, p.y]) });
@@ -586,7 +604,8 @@ class Renderer {
   }
 
   private rectStroke(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape {
-    // `offset`: o contorno afastado da forma (o anel cresce de cada lado, com o raio + offset).
+    // `offset`: the outline moved away from the shape (the ring grows on each side, by the radius +
+    // offset).
     const offset = stroke.offset ?? 0;
     const align = strokeAlignInset(stroke);
     const inset = align - offset;
@@ -613,7 +632,7 @@ class Renderer {
       this.warn('stroke-align-centered');
     }
     shape.strokeWidth(stroke.width);
-    // `scale: false`: a largura é em pixels de tela, em qualquer zoom.
+    // `scale: false`: the width is in screen pixels, at any zoom.
     if (stroke.scale === false) shape.strokeScaleEnabled(false);
     shape.lineCap(stroke.cap ?? 'butt');
     shape.lineJoin(stroke.join ?? 'miter');
@@ -643,7 +662,7 @@ class Renderer {
   }
 }
 
-/** Deslocamento vertical do texto rico na caixa do nó: folga × 0, ½ ou 1 (`verticalAlign`). */
+/** Vertical shift of rich text in the node's box: slack × 0, ½ or 1 (`verticalAlign`). */
 function verticalShift(node: TextNode, contentHeight: number): number {
   if (node.height <= 0) return 0;
   const free = node.height - contentHeight;
@@ -658,9 +677,10 @@ function verticalShift(node: TextNode, contentHeight: number): number {
 }
 
 /**
- * `cap-middle` no texto simples: o `y` do nó para o bloco (topo da maiúscula da primeira linha à
- * base da última) ficar no centro da caixa. `attrs` já traz a largura, a altura (a do `maxLines`,
- * se cortou) e `verticalAlign: top`; as linhas são as que o Konva desenha com eles.
+ * `cap-middle` in plain text: the node's `y` so the block (top of the first line's capital to the
+ * base of the last) sits at the center of the box. `attrs` already carries the width, the height
+ * (the `maxLines` one, if it cut) and `verticalAlign: top`; the lines are the ones Konva draws with
+ * them.
  */
 function capMiddleY(attrs: TextConfig, node: TextNode, style: TextStyle): number {
   if (node.height <= 0) return 0;
@@ -679,8 +699,8 @@ function capMiddleY(attrs: TextConfig, node: TextNode, style: TextStyle): number
 }
 
 /**
- * `baselinePadding.top`: o `y` do nó para a primeira linha de base ficar a `top` do topo dele. A
- * linha de base é a da fonte do nó, pelas mesmas medidas do `cap-middle` e do `konvaMeasurer`.
+ * `baselinePadding.top`: the node's `y` so the first baseline sits `top` below its top. The
+ * baseline is the node's font one, by the same measures as `cap-middle` and `konvaMeasurer`.
  */
 function baselineY(attrs: TextConfig, top: number): number {
   const probe = new KonvaText(attrs);
@@ -691,7 +711,7 @@ function baselineY(attrs: TextConfig, top: number): number {
   return top - lineBaseline(0, lineHeight, metrics);
 }
 
-/** Deslocamento vertical do texto rico: `baselinePadding.top`, `cap-middle` ou o `verticalAlign`. */
+/** Vertical shift of rich text: `baselinePadding.top`, `cap-middle` or the `verticalAlign`. */
 function richShift(node: TextNode, layout: RunLayout): number {
   const top = node.style.baselineTop;
   if (top !== undefined) {
@@ -703,7 +723,7 @@ function richShift(node: TextNode, layout: RunLayout): number {
     : verticalShift(node, layout.height);
 }
 
-/** A linha de base de uma linha do `runLayout`, com a fonte base do nó. */
+/** The baseline of a `runLayout` line, with the node's base font. */
 function baseOfLine(node: TextNode, line: { y: number; height: number }): number {
   const { style } = node;
   const sample = new KonvaText({
@@ -718,9 +738,9 @@ function baseOfLine(node: TextNode, line: { y: number; height: number }): number
 }
 
 /**
- * `cap-middle` nos trechos: a mesma regra com o `capHeight` da fonte base do nó e as linhas de
- * base da primeira e da última linha do `runLayout` (o pedaço fica centrado na altura da linha,
- * então a base é a do pedaço com a fonte base).
+ * `cap-middle` in the runs: the same rule with the node's base font `capHeight` and the baselines
+ * of the first and last `runLayout` line (the piece is centered on the line height,
+ * so the baseline is the piece's one with the base font).
  */
 function capMiddleRunsShift(node: TextNode, layout: RunLayout): number {
   const first = layout.lines[0];
@@ -745,12 +765,12 @@ function capMiddleRunsShift(node: TextNode, layout: RunLayout): number {
   });
 }
 
-/** A cor do trecho como preenchimento do Konva (`none` = sem preenchimento). */
+/** The run's color as a Konva fill (`none` = no fill). */
 function runFill(color: string): string | undefined {
   return /^(none|transparent)$/i.test(color.trim()) ? undefined : color;
 }
 
-/** O fundo de uma caixa em linha: a caixa inteira do pedaço, com o raio do trecho. */
+/** The background of an inline box: the whole box of the piece, with the run's radius. */
 function chipShape(piece: RunPiece, run: SceneTextRun, top: number): KonvaRect {
   return new KonvaRect({
     x: piece.x,
@@ -763,9 +783,9 @@ function chipShape(piece: RunPiece, run: SceneTextRun, top: number): KonvaRect {
 }
 
 /**
- * O texto de um pedaço: uma linha só, sem largura (o espaço inicial do chip fica) e na fonte do
- * trecho. No chip o texto fica `padding` para dentro da caixa; a altura de linha vem da altura do
- * pedaço (a do trecho, sem o respiro vertical do chip).
+ * The text of a piece: a single line, without width (the chip's leading space stays) and in the
+ * run's font. In the chip the text sits `padding` inside the box; the line height comes from the
+ * piece's height (the run's, without the chip's vertical breathing room).
  */
 function runTextShape(
   node: TextNode,
@@ -791,7 +811,7 @@ function runTextShape(
   });
 }
 
-/** Largura e altura da fonte de uma imagem pronta; `null` se não houver como saber. */
+/** Width and height of the source of a ready image; `null` if there is no way to know. */
 function sourceSize(view: RemoteImageView): { width: number; height: number } | null {
   let width = view.width;
   let height = view.height;
@@ -810,8 +830,8 @@ function sourceSize(view: RemoteImageView): { width: number; height: number } | 
 }
 
 /**
- * Posição, tamanho e recorte do `KonvaImage` para o `fit`: `cover` recorta o centro da fonte para
- * cobrir a caixa, `contain` encaixa a fonte inteira no centro, `fill` estica.
+ * Position, size and crop of the `KonvaImage` for the `fit`: `cover` crops the center of the source
+ * to cover the box, `contain` fits the whole source in the center, `fill` stretches.
  */
 export function imageFit(
   fit: ImageFit,
@@ -852,9 +872,10 @@ export function imageFit(
 const EPSILON = 1e-9;
 
 /**
- * `fill-width`, `fill-height`, `scale-down` e `none` (formato 4): a imagem na escala do `fit`,
- * centrada na caixa e recortada onde passa dela (o `ContentScale` `FillWidth`, `FillHeight`,
- * `Inside` e `None`). `scale-down` nunca amplia; `none` e `scale-down` usam o tamanho natural.
+ * `fill-width`, `fill-height`, `scale-down` and `none` (format 4): the image at the `fit` scale,
+ * centered in the box and clipped where it exceeds it (the `ContentScale` `FillWidth`,
+ * `FillHeight`,
+ * `Inside` and `None`). `scale-down` never enlarges; `none` and `scale-down` use the natural size.
  */
 function placedFit(
   fit: Exclude<ImageFit, 'cover' | 'contain' | 'fill'>,
@@ -894,7 +915,7 @@ function placedFit(
   };
 }
 
-/** Reservado de imagem: a forma em cinza, com um X. */
+/** Image placeholder: the shape in gray, with an X. */
 function placeholder(
   shape: Konva.Shape,
   box: Box,
@@ -908,13 +929,13 @@ function placeholder(
     strokeScaleEnabled: false,
     listening: false,
   });
-  // Um polígono com dois segmentos cruzados: desenha 0→fim, fim→(w,0), (w,0)→(0,h).
+  // A polygon with two crossed segments: draws 0→end, end→(w,0), (w,0)→(0,h).
   return [shape, cross];
 }
 
 /**
- * Sombra totalmente transparente ou sem desfoque, deslocamento nem `spread` que cresça a forma:
- * não custa desenhar.
+ * A fully transparent shadow, or one without blur, offset or `spread` that grows the shape:
+ * costs nothing to draw.
  */
 export function isInvisibleShadow(shadow: Shadow): boolean {
   if (
@@ -939,9 +960,9 @@ export function isInvisibleShadow(shadow: Shadow): boolean {
 }
 
 /**
- * `maxLines`: se o texto tem mais linhas que o limite, a caixa do Konva encolhe para `maxLines`
- * linhas (ele corta, e põe o … com `ellipsis`) e desce `offsetY` para manter o alinhamento
- * vertical da caixa do nó. `null` = a caixa do nó serve.
+ * `maxLines`: if the text has more lines than the limit, the Konva box shrinks to `maxLines`
+ * lines (it cuts, and puts the … with `ellipsis`) and moves down `offsetY` to keep the vertical
+ * alignment of the node's box. `null` = the node's box will do.
  */
 function maxLinesBox(
   attrs: TextConfig,
@@ -965,17 +986,20 @@ function maxLinesBox(
   return { height, offsetY };
 }
 
-/** A sombra desta lista pede formas à parte (várias sombras ou `spread`) e o nó as aceita? */
+/**
+ * Does this list's shadow call for separate shapes (several shadows or `spread`) and does the node
+ * accept them?
+ */
 function castsShadows(node: SceneNode, shadows: readonly Shadow[]): boolean {
   const boxed = node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
   return boxed && (shadows.length > 1 || shadows.some((s) => (s.spread ?? 0) !== 0));
 }
 
 /**
- * A forma que só leva uma sombra: desenha a silhueta do nó (crescida de `spread`) bem longe da
- * tela e traz a sombra de volta pelo deslocamento da sombra, que o canvas 2D aplica em pixels de
- * tela (não gira nem escala com a matriz). Assim a forma nunca aparece e a cor do nó não muda,
- * com preenchimento translúcido ou não.
+ * The shape that carries only one shadow: draws the node's silhouette (grown by `spread`) far away
+ * from the screen and brings the shadow back through the shadow offset, which canvas 2D applies in
+ * screen pixels (it neither rotates nor scales with the matrix). So the shape never shows and the
+ * node's color does not change, with a translucent fill or not.
  */
 function shadowCaster(node: SceneNode, shadow: Shadow): Konva.Shape {
   return new KonvaShape({
@@ -999,7 +1023,7 @@ function castShadow(
   const m = native.getTransform();
   const sx = Math.hypot(m.a, m.b) || 1;
   const sy = Math.hypot(m.c, m.d) || 1;
-  // Quanto a forma sai para o lado: mais que a tela, a forma e o desfoque juntos.
+  // How far the shape goes sideways: more than the screen, the shape and the blur together.
   const reach =
     native.canvas.width +
     native.canvas.height +
@@ -1024,7 +1048,7 @@ function castShadow(
 }
 
 function applyShadow(shape: Konva.Shape, shadow: Shadow): void {
-  // Uma sombra invisível ainda custa um `shadowBlur` do canvas por desenho: fica de fora.
+  // An invisible shadow still costs a canvas `shadowBlur` per draw: left out.
   if (isInvisibleShadow(shadow)) return;
   shape.shadowColor(shadow.color);
   shape.shadowBlur(shadow.blur);
@@ -1033,7 +1057,9 @@ function applyShadow(shape: Konva.Shape, shadow: Shadow): void {
   shape.shadowEnabled(true);
 }
 
-/** A largura do Text leva a folga da quebra; o `x` volta o que o `align` desloca por causa dela. */
+/**
+ * The Text width carries the wrap slack; the `x` gives back what the `align` shifts because of it.
+ */
 function slackShift(align: TextStyle['align']): number {
   if (align === 'center') return -WRAP_SLACK / 2;
   return align === 'right' ? -WRAP_SLACK : 0;
@@ -1063,7 +1089,7 @@ function flattenStops(
   return stops.flatMap((s) => [s.offset, s.color]);
 }
 
-/** `fontStyle` do Konva: "italic 600", "bold", "normal"… (ele monta a fonte do canvas com isso). */
+/** Konva `fontStyle`: "italic 600", "bold", "normal"… (it builds the canvas font from this). */
 export function fontStyle(weight: number, italic: boolean): string {
   const parts: string[] = [];
   if (italic) parts.push('italic');
@@ -1072,9 +1098,10 @@ export function fontStyle(weight: number, italic: boolean): string {
 }
 
 /**
- * Decompõe a matriz do nó em x, y, rotação, escala e inclinação, como o Konva espera. Com
- * determinante negativo (o espelho do `mirror` em rtl) o Konva devolveria rotação 180° e `scaleY`
- * negativo; aqui o espelho fica no `scaleX` (a mesma geometria, sem rotação espúria).
+ * Decomposes the node's matrix into x, y, rotation, scale and skew, as Konva expects. With
+ * a negative determinant (the `mirror` flip in rtl) Konva would return a 180° rotation and a
+ * negative `scaleY`; here the flip stays in `scaleX` (the same geometry, without a spurious
+ * rotation).
  */
 export function decompose(m: Matrix): {
   x: number;
@@ -1090,13 +1117,13 @@ export function decompose(m: Matrix): {
   return { ...flipped, scaleX: -flipped.scaleX };
 }
 
-/** O que `roundedRectPath` usa do contexto: serve ao do Konva e ao nativo do canvas 2D. */
+/** What `roundedRectPath` uses of the context: it serves Konva's and the native canvas 2D one. */
 type PathContext = Pick<
   CanvasRenderingContext2D,
   'beginPath' | 'moveTo' | 'lineTo' | 'arcTo' | 'closePath'
 >;
 
-/** Caminho de retângulo arredondado no contexto (para o clip dos quadros). */
+/** Rounded rectangle path on the context (for the frames' clip). */
 function roundedRectPath(
   ctx: PathContext,
   width: number,
@@ -1131,7 +1158,7 @@ export function renderScene(scene: Scene, options: RenderOptions = {}): RenderRe
   };
 }
 
-/** O id do nó da cena dono de um alvo de evento do Konva (forma ou contêiner), se houver. */
+/** The id of the scene node that owns a Konva event target (shape or container), if any. */
 export function sceneIdOf(target: Konva.Node | null | undefined): string | undefined {
   let node: Konva.Node | null | undefined = target;
   while (node) {

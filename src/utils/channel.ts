@@ -1,6 +1,6 @@
-// Canal do build: `main` (produção) ou `preview` (um branch publicado em /preview/
-// pelo `workflow_dispatch`). O preview usa armazenamento separado para nunca migrar
-// nem apagar os projetos da versão principal (docs/ARCHITECTURE.md, "Preview isolado").
+// Build channel: `main` (production) or `preview` (a branch published at /preview/
+// by `workflow_dispatch`). The preview uses separate storage so it never migrates
+// nor deletes the projects of the main version (docs/ARCHITECTURE.md, "Isolated preview").
 
 export type Channel = 'main' | 'preview';
 
@@ -8,17 +8,17 @@ export function parseChannel(value: unknown): Channel {
   return value === 'preview' ? 'preview' : 'main';
 }
 
-/** Canal deste build, definido por `VITE_CHANNEL` na hora do build. */
+/** Channel of this build, defined by `VITE_CHANNEL` at build time. */
 export const CHANNEL: Channel = parseChannel(import.meta.env.VITE_CHANNEL);
 
 export const isPreview = CHANNEL === 'preview';
 
-/** Chave do `localStorage` no canal: o preview ganha o prefixo `preview:`. */
+/** `localStorage` key in the channel: the preview gets the `preview:` prefix. */
 export function channelStorageKey(key: string, channel: Channel = CHANNEL): string {
   return channel === 'preview' ? `preview:${key}` : key;
 }
 
-/** Nome do banco IndexedDB no canal: o preview ganha o sufixo `-preview`. */
+/** IndexedDB database name in the channel: the preview gets the `-preview` suffix. */
 export function channelDbName(name: string, channel: Channel = CHANNEL): string {
   return channel === 'preview' ? `${name}-preview` : name;
 }

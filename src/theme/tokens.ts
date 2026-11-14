@@ -1,12 +1,12 @@
 /**
- * Tokens de design: fonte única do tema (design system: docs/DESIGN-SYSTEM.md).
+ * Design tokens: single source of the theme (design system: docs/DESIGN-SYSTEM.md).
  *
- * `renderTokensCss()` gera o CSS que o plugin do Vite entrega como `virtual:tokens.css`
- * (vite.config.ts). O bloco escuro existe uma vez só aqui e é emitido nos dois seletores
- * que o CSS precisa (`prefers-color-scheme` e `data-theme='dark'`).
+ * `renderTokensCss()` generates the CSS that the Vite plugin delivers as `virtual:tokens.css`
+ * (vite.config.ts). The dark block exists only once here and is emitted in the two selectors
+ * the CSS needs (`prefers-color-scheme` and `data-theme='dark'`).
  *
- * Nomes: `color-bg` vira `--color-bg`; `space-0-5` é o `space-0.5` do DS (o ponto não
- * é válido em nome de variável CSS).
+ * Names: `color-bg` becomes `--color-bg`; `space-0-5` is the DS's `space-0.5` (the dot is not
+ * valid in a CSS variable name).
  */
 import { BREAKPOINTS } from './breakpoints';
 
@@ -21,11 +21,11 @@ function isThemed(value: TokenValue): value is Themed {
   return typeof value !== 'string';
 }
 
-/** Alfa do cartão (`color-card`, `opacity-card`) e do halo (`cv-halo`, `opacity-halo`): uma fonte só para a cor e a opacidade. */
+/** Alpha of the card (`color-card`, `opacity-card`) and of the halo (`cv-halo`, `opacity-halo`): a single source for the color and the opacity. */
 const CARD_ALPHA = 0.92;
 const HALO_ALPHA = 0.72;
 
-/** Paleta padrão das camadas, em ordem. É dado do projeto: `src/model/layers.ts` a espelha. */
+/** Default palette of the layers, in order. It is project data: `src/model/layers.ts` mirrors it. */
 export const LAYER_COLORS: readonly string[] = [
   '#d32f2f',
   '#1e88e5',
@@ -45,7 +45,7 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'color-hover': { light: '#eef1f4', dark: '#262b33' },
   'color-pressed': { light: '#e3e7ec', dark: '#2f353f' },
   'color-canvas-bg': { light: '#e4e7eb', dark: '#0b0d11' },
-  /** Só divisória. O limite de controle é `color-border-control`. */
+  /** Divider only. The control border is `color-border-control`. */
   'color-border': { light: '#dfe3e8', dark: '#2c323b' },
   'color-border-control': { light: '#7d8590', dark: '#6b7480' },
   'color-text': { light: '#1b1f24', dark: '#e8eaed' },
@@ -64,10 +64,10 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'color-success': { light: '#1e7a46', dark: '#7ad3a0' },
   'color-success-bg': { light: '#e3f4ea', dark: '#163325' },
   /**
-   * Selo de estado da conversa (janela Comentários e seção Conversas dos Detalhes): texto e fundo por
-   * estado, do mesmo matiz do `cv-pin-*` do estado (laranja = aguardando você, ciano = aguardando
-   * agente, cinza = resolvida), escurecidos no claro e clareados no escuro para o texto passar de
-   * 4,5:1 sobre o fundo. O pino do canvas (`cv-pin-*`) não muda.
+   * Thread state badge (Comments window and the Threads section of Details): text and background per
+   * state, of the same hue as the state's `cv-pin-*` (orange = waiting on you, cyan = waiting on the
+   * agent, gray = resolved), darkened in light and lightened in dark so the text passes 4.5:1
+   * over the background. The canvas pin (`cv-pin-*`) does not change.
    */
   'color-thread-human': { light: '#84590b', dark: '#f0b242' },
   'color-thread-human-bg': { light: '#fcf2de', dark: '#413215' },
@@ -82,61 +82,61 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
     light: `rgba(255, 255, 255, ${CARD_ALPHA})`,
     dark: `rgba(28, 32, 39, ${CARD_ALPHA})`,
   },
-  // Canvas: iguais nos dois temas, porque ficam sobre a imagem.
+  // Canvas: the same in both themes, because they sit over the image.
   'cv-line': '#ffffff',
   'cv-halo': `rgba(10, 12, 16, ${HALO_ALPHA})`,
   'cv-select': '#4d8dff',
   /**
-   * Preenchimento do retângulo de seleção (Shift+arrasto): o azul de `cv-select` translúcido, igual
-   * nos dois temas (fica sobre a imagem e o fundo do canvas).
+   * Fill of the selection rectangle (Shift+drag): the translucent blue of `cv-select`, the same
+   * in both themes (it sits over the image and the canvas background).
    */
   'cv-select-fill': 'rgba(77, 141, 255, 0.15)',
   /**
-   * Contorno dos itens selecionados que não são o primário (seleção múltipla, ME2): o mesmo azul
-   * da seleção, mais discreto que ela. Fica sobre o fundo do canvas e sobre as fotos: passa de
-   * 3:1 sobre `color-canvas-bg` nos dois temas.
+   * Outline of the selected items that are not the primary (multi-select, ME2): the same blue
+   * as the selection, more discreet than it. It sits over the canvas background and over photos: it passes
+   * 3:1 over `color-canvas-bg` in both themes.
    */
   'cv-select-secondary': { light: '#2b6ad9', dark: '#8fb4ff' },
   'cv-invalid': '#ff6b6b',
   'cv-warning': '#ffc247',
   /**
-   * Borda tracejada da marcação do canvas (v13). Fica sobre o fundo do canvas e sobre as
-   * fotos: um violeta que passa de 3:1 sobre `color-canvas-bg` nos dois temas.
+   * Dashed border of the canvas marking (v13). It sits over the canvas background and over
+   * photos: a violet that passes 3:1 over `color-canvas-bg` in both themes.
    */
   'cv-canvas-marking': { light: '#5a3fc0', dark: '#b9a8ff' },
   /**
-   * Destaque da absorção (ao desenhar ou redimensionar, o que será envolvido ao soltar):
-   * traço e preenchimento translúcido, iguais nos dois temas (o verde passa de 3:1 sobre
-   * `color-canvas-bg` claro e escuro).
+   * Absorption highlight (when drawing or resizing, what will be wrapped on release):
+   * translucent stroke and fill, the same in both themes (the green passes 3:1 over
+   * light and dark `color-canvas-bg`).
    */
   'cv-absorb': '#0a8a5c',
   'cv-absorb-fill': 'rgba(10, 138, 92, 0.2)',
   /**
-   * Seta (v13, ME4): o traço, sobre o fundo do canvas e as fotos (com o halo `cv-halo` por fora).
-   * Um teal que passa de 3:1 sobre `color-canvas-bg` nos dois temas e não se confunde com a
-   * seleção (azul) nem com a borda da marcação do canvas (violeta).
+   * Arrow (v13, ME4): the stroke, over the canvas background and photos (with the `cv-halo` halo outside).
+   * A teal that passes 3:1 over `color-canvas-bg` in both themes and is not confused with the
+   * selection (blue) nor with the canvas marking border (violet).
    */
   'cv-arrow': { light: '#0f766e', dark: '#5eead4' },
-  /** Seta selecionada: o azul da seleção. */
+  /** Selected arrow: the selection blue. */
   'cv-arrow-select': 'var(--cv-select)',
-  /** Rótulo da seta (o `name`): texto e fundo, os do cartão do tema. */
+  /** Arrow label (the `name`): text and background, those of the theme's card. */
   'cv-arrow-label': 'var(--color-text)',
   'cv-arrow-label-bg': 'var(--color-card)',
   'cv-name-tag': 'var(--cv-select)',
-  /** Texto da etiqueta do nome (≥ 4,5:1 sobre `cv-name-tag`); não está no DS 2.0. */
+  /** Name tag text (≥ 4.5:1 over `cv-name-tag`); it is not in DS 2.0. */
   'cv-name-tag-text': '#0b1220',
-  /** Emblema do cadeado sobre a imagem: fundo e traço (mesmo par da etiqueta do nome). */
+  /** Lock badge over the image: background and stroke (same pair as the name tag). */
   'cv-lock': 'var(--cv-name-tag)',
   'cv-lock-glyph': 'var(--cv-name-tag-text)',
   /**
-   * Fundo do selo de tipo de mudança sobre a foto (revisão de propostas, etapa 4): mais
-   * opaco que `cv-halo` para o `cv-invalid` passar de 3:1 sobre foto branca.
+   * Background of the change-type badge over the photo (proposal review, stage 4): more
+   * opaque than `cv-halo` so `cv-invalid` passes 3:1 over a white photo.
    */
   'cv-badge': 'rgba(10, 12, 16, 0.9)',
   /**
-   * Pino das conversas (etapa Comentários, CM4): um fundo por estado (aguardando humano, aguardando
-   * agente, resolvida), o texto, o contorno, o anel do selecionado e o ponto de não lida. Ficam
-   * sobre a foto: iguais nos dois temas, e o texto escuro passa de 4,5:1 sobre os três fundos.
+   * Thread pin (Comments stage, CM4): one background per state (waiting on human, waiting on
+   * agent, resolved), the text, the outline, the selected ring and the unread dot. They sit
+   * over the photo: the same in both themes, and the dark text passes 4.5:1 over the three backgrounds.
    */
   'cv-pin-human': '#ffb020',
   'cv-pin-agent': '#5eead4',
@@ -146,16 +146,16 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'cv-pin-selected': 'var(--cv-select)',
   'cv-pin-unread': 'var(--cv-invalid)',
   /**
-   * Desenho dos componentes (B3): reservado de imagem e seu contorno (cinza neutro, legível sobre
-   * fundos claros e escuros) e a caixa de um nó que o desenho não conhece. Ficam sobre a tela
-   * em branco ou a foto: iguais nos dois temas.
+   * Component drawing (B3): image placeholder and its outline (neutral gray, legible over
+   * light and dark backgrounds) and the box of a node the drawing does not know. They sit over the blank
+   * canvas or the photo: the same in both themes.
    */
   'cv-component-placeholder': 'rgba(128, 128, 128, 0.25)',
   'cv-component-placeholder-line': 'rgba(128, 128, 128, 0.8)',
   'cv-component-unknown': '#d81b60',
-  /** Preenchimento da caixa de uma instância cujo tipo não tem componente ou não existe (o contorno e o texto são `cv-component-unknown`). */
+  /** Fill of the box of an instance whose type has no component or does not exist (the outline and the text are `cv-component-unknown`). */
   'cv-component-unknown-fill': 'rgba(216, 27, 96, 0.06)',
-  // Espelho do DS, sem uso no código: as cores `layer-NN` vêm de `LAYER_COLORS` (o código de camadas usa a paleta de `src/model/layers.ts`).
+  // Mirror of the DS, unused in the code: the `layer-NN` colors come from `LAYER_COLORS` (the layer code uses the palette of `src/model/layers.ts`).
   ...Object.fromEntries(
     LAYER_COLORS.map((c, i) => [`layer-${String(i + 1).padStart(2, '0')}`, c]),
   ),
@@ -173,7 +173,7 @@ interface TextStyle {
   readonly line: number;
   readonly weight: number;
   readonly family?: 'mono';
-  /** Também emite `--t-<name>-size|line|weight` (o Konva não lê o atalho `font`). */
+  /** Also emits `--t-<name>-size|line|weight` (Konva does not read the `font` shorthand). */
   readonly parts?: true;
 }
 
@@ -184,7 +184,7 @@ const TEXT_STYLES: readonly TextStyle[] = [
   { name: 't-body', size: 13, line: 20, weight: 400 },
   { name: 't-body-strong', size: 13, line: 20, weight: 600 },
   { name: 't-small', size: 12, line: 16, weight: 400 },
-  // Espelho do DS, sem uso no código.
+  // Mirror of the DS, unused in the code.
   { name: 't-label', size: 12, line: 16, weight: 400 },
   { name: 't-micro', size: 11, line: 16, weight: 600 },
   { name: 't-cv-name', size: 11, line: 16, weight: 600, parts: true },
@@ -194,8 +194,8 @@ const TEXT_STYLES: readonly TextStyle[] = [
 ];
 
 /**
- * Papéis da interface: alias para a escala `t-*` e os tamanhos de controle (28px). O CSS
- * dos componentes usa só os papéis, nunca a escala direta.
+ * Interface roles: aliases for the `t-*` scale and the control sizes (28px). The components' CSS
+ * uses only the roles, never the scale directly.
  */
 const ROLES: Readonly<Record<string, string>> = {
   't-text': 't-body',
@@ -203,23 +203,23 @@ const ROLES: Readonly<Record<string, string>> = {
   't-text-heading': 't-heading',
   't-text-title': 't-title',
   't-text-input': 't-body',
-  /** Altura de Button, TextField, Select, Segmented e IconButton. */
+  /** Height of Button, TextField, Select, Segmented and IconButton. */
   'control-height': 'size-control-lg',
-  /** Altura dos controles compactos (`size="sm"`). */
+  /** Height of compact controls (`size="sm"`). */
   'control-height-sm': 'size-control',
   'control-radius': 'radius-sm',
-  /** Lado do ícone. */
+  /** Icon side. */
   'control-icon': 'size-icon',
-  /** Lado da caixa de seleção e do rádio. */
+  /** Side of the checkbox and the radio. */
   'control-check': 'size-icon',
-  /** Altura de uma linha de árvore ou de lista (TreeRow). */
+  /** Height of a tree or list row (TreeRow). */
   'row-height': 'size-row',
 };
 
 const SCALES: Readonly<Record<string, TokenValue>> = {
-  // Espaço
+  // Space
   'space-0-5': '2px',
-  /** Respiro fino de um rótulo (`code`, `kbd`, marcador) do guia interativo. */
+  /** Fine breathing room of a label (`code`, `kbd`, marker) of the interactive guide. */
   'space-px': '1px',
   'space-1': '4px',
   'space-1-5': '6px',
@@ -228,20 +228,20 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'space-4': '16px',
   'space-6': '24px',
   'space-8': '32px',
-  // Raio
+  // Radius
   'radius-xs': '2px',
   'radius-sm': '4px',
   'radius-md': '6px',
   'radius-lg': '8px',
-  // Espelho do DS, sem uso no código.
+  // Mirror of the DS, unused in the code.
   'radius-xl': '12px',
   'radius-full': '999px',
-  // Sombras
+  // Shadows
   'shadow-popup': {
     light: '0 8px 24px rgba(16, 24, 40, 0.18)',
     dark: '0 8px 24px rgba(0, 0, 0, 0.5)',
   },
-  // Tamanhos
+  // Sizes
   'size-touch': '44px',
   'size-target-min': '24px',
   'size-control': '24px',
@@ -251,59 +251,59 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-tw-header': '32px',
   'size-statusbar': '26px',
   'size-stripe': '40px',
-  /** Barra de cor à esquerda de uma anotação no guia interativo. */
+  /** Color bar at the left of an annotation in the interactive guide. */
   'size-accent-bar': '4px',
   'size-icon': '16px',
   'size-handle': '10px',
-  /** Emblema do cadeado no canvas (px de tela). */
+  /** Lock badge on the canvas (screen px). */
   'size-lock-badge': '20px',
-  /** Pino de conversa no canvas (px de tela): altura, respiro dos lados, glifo do estado e vão entre o glifo e o rótulo. A largura é estimada: `size-cv-pin-char` por letra do rótulo. */
+  /** Thread pin on the canvas (screen px): height, side padding, state glyph and gap between the glyph and the label. The width is estimated: `size-cv-pin-char` per label letter. */
   'size-cv-pin-height': '20px',
   'size-cv-pin-pad': '8px',
   'size-cv-pin-glyph': '12px',
   'size-cv-pin-glyph-gap': '2px',
   'size-cv-pin-char': '7px',
-  /** Selo "Veio de <nome>" no canvas (px de tela): altura, respiro dos lados, vão até o canto da raiz (e, abaixo de uma raiz pequena, `gap-below`), faixa do nome do container que o selo evita e largura estimada por letra. */
+  /** "Came from <name>" badge on the canvas (screen px): height, side padding, gap to the root corner (and, below a small root, `gap-below`), band of the container name that the badge avoids and estimated width per letter. */
   'size-cv-arrival-height': '20px',
   'size-cv-arrival-pad': '8px',
   'size-cv-arrival-gap': '4px',
   'size-cv-arrival-gap-below': '10px',
   'size-cv-arrival-name-band': '24px',
   'size-cv-arrival-char': '7px',
-  /** Nível de detalhe do canvas: marcação menor que isto na tela (largura ou altura) desenha só a borda (sem halo, linha dupla, selo nem ⚠). */
+  /** Canvas level of detail: a marking smaller than this on screen (width or height) draws only the border (no halo, double line, badge or ⚠). */
   'size-lod-min-marking': '24px',
-  /** Nível de detalhe do canvas: marcação menor que isto na tela nas duas medidas não é desenhada. */
+  /** Canvas level of detail: a marking smaller than this on screen in both measures is not drawn. */
   'size-lod-hide-marking': '2px',
-  /** Seta no canvas (px de tela, constantes com o zoom): traço, traço selecionado e ponta. */
+  /** Arrow on the canvas (screen px, constant with the zoom): stroke, selected stroke and tip. */
   'size-arrow-stroke': '2px',
   'size-arrow-stroke-selected': '3px',
   'size-arrow-head': '10px',
-  /** Caixa máxima do minimapa (largura e altura, px): o conteúdo cabe nela, na proporção. */
+  /** Maximum box of the minimap (width and height, px): the content fits in it, in proportion. */
   'size-minimap-width': '132px',
   'size-minimap-height': '96px',
   'size-tw-left': '264px',
   'size-tw-right': '360px',
-  /** Altura inicial da janela inferior: 4 linhas inteiras da lista da Comentários, com filtros e cabeçalho, a 900 × 720 (decisão 6 da #734). Medido: a lista ganha 1 px por px de janela e 357 px dão 148 px (4 × 37 px); 360 px cabem em 60% do corpo do editor a 900 × 720 (`BOTTOM_MAX_FRACTION`). Com os filtros do layout estreito em duas linhas (CL3) a lista tem 207 px, 4 linhas inteiras mesmo com âncoras quebradas (37 + 3 × 53 px); o token não sobe: 360 px é o teto de 60%. */
+  /** Initial height of the bottom window: 4 whole rows of the Comments list, with filters and header, at 900 × 720 (decision 6 of #734). Measured: the list gains 1 px per window px and 357 px give 148 px (4 × 37 px); 360 px fit in 60% of the editor body at 900 × 720 (`BOTTOM_MAX_FRACTION`). With the narrow layout's filters on two lines (CL3) the list has 207 px, 4 whole rows even with broken anchors (37 + 3 × 53 px); the token does not go up: 360 px is the 60% ceiling. */
   'size-tw-bottom': '360px',
   'size-tw-layers': '224px',
-  /** Altura inicial da janela inferior em modo revisão (filtros recolhidos, 3 linhas inteiras da lista e o rodapé de atalhos a 900 px de largura). */
+  /** Initial height of the bottom window in review mode (collapsed filters, 3 whole list rows and the shortcut footer at 900 px wide). */
   'size-tw-bottom-review': '240px',
   /**
-   * Colunas de resumo da revisão (decisão 8 do HANDOFF-PROPOSALS): o resumo das linhas
-   * dos níveis (`ReviewRow`) e as contagens da lista de propostas (`ProposalRow`). As
-   * colunas de ação são derivadas do tamanho dos controles.
+   * Review summary columns (decision 8 of HANDOFF-PROPOSALS): the summary of the level
+   * rows (`ReviewRow`) and the counts of the proposal list (`ProposalRow`). The
+   * action columns are derived from the size of the controls.
    */
   'size-review-col-name-min': '194px',
   'size-review-col-summary': '232px',
   'size-proposal-col-counts': '236px',
-  /** Largura mínima da app (só desktop): abaixo dela, o aviso "Abra numa janela maior". */
+  /** Minimum width of the app (desktop only): below it, the "Open in a larger window" notice. */
   'size-app-min': `${BREAKPOINTS.appMin}px`,
-  /** Altura mínima da app (só desktop): abaixo dela também vale o aviso. */
+  /** Minimum height of the app (desktop only): below it the notice applies too. */
   'size-app-min-height': `${BREAKPOINTS.appMinHeight}px`,
   'size-canvas-min': '360px',
   'size-resize-hit': '8px',
   'size-label-col': '92px',
-  /** Largura mínima de uma coluna de valor na tabela (DataGrid); acima disso a tabela rola. */
+  /** Minimum width of a value column in the table (DataGrid); above that the table scrolls. */
   'size-grid-col-min': '96px',
   'size-dialog': '480px',
   'size-dialog-md': '560px',
@@ -312,46 +312,46 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-help-nav': '200px',
   'size-home-side': '240px',
   'size-home-main': '960px',
-  /** Seletor de referência (popup no topo, B14). */
+  /** Reference picker (popup at the top, B14). */
   'size-picker': '600px',
-  /** Seletor de referência da célula de uma tabela (versão compacta). */
+  /** Reference picker of a table cell (compact version). */
   'size-picker-compact': '420px',
   /**
-   * Popover de uma mudança nos Detalhes da revisão (`ChangePopover`, HANDOFF-REVIEW-DETAILS
-   * 3.1): cabe na janela Detalhes na largura inicial e dá para as três linhas do conflito.
+   * Popover of a change in the review Details (`ChangePopover`, HANDOFF-REVIEW-DETAILS
+   * 3.1): fits in the Details window at the initial width and leaves room for the three conflict rows.
    */
   'size-change-popover': '320px',
-  /** Painel "Mostrar no canvas" do modo visualização (`ViewModePanel`). */
+  /** "Show on canvas" panel of view mode (`ViewModePanel`). */
   'size-view-panel': '280px',
-  // Opacidades
-  /** Preenchimento de uma marcação do guia interativo, e o da selecionada. */
+  // Opacities
+  /** Fill of a marking of the interactive guide, and that of the selected one. */
   'opacity-mark-fill': '0.07',
   'opacity-mark-fill-selected': '0.28',
   'opacity-disabled': '0.45',
   'opacity-dimmed': '0.35',
   'opacity-ancestor': '0.75',
   'opacity-inherited': '0.7',
-  /** Contorno do `slot` (espaço reservado) do desenho dos componentes. */
+  /** Outline of the `slot` (reserved space) of the component drawing. */
   'opacity-slot': '0.6',
   'opacity-card': String(CARD_ALPHA),
-  /** Retângulo da vista no minimapa. */
+  /** Viewport rectangle in the minimap. */
   'opacity-grabbed': '0.25',
   'opacity-halo': String(HALO_ALPHA),
-  /** Contorno de hover do visualizador embutível (`viewer/viewer.ts`). */
+  /** Hover outline of the embeddable viewer (`viewer/viewer.ts`). */
   'opacity-viewer-hover': '0.8',
-  // Movimento
+  // Motion
   'duration-instant': '0ms',
   'duration-fast': '100ms',
   'duration-base': '160ms',
   'duration-slow': '240ms',
   /**
-   * Atraso para abrir o popover de uma mudança pelo hover (HANDOFF-REVIEW-DETAILS 3.1):
-   * pede intenção, senão percorrer o painel abriria um popover por linha.
+   * Delay to open a change's popover on hover (HANDOFF-REVIEW-DETAILS 3.1):
+   * asks for intent, otherwise sweeping the panel would open one popover per row.
    */
   'duration-hover-intent': '300ms',
   'easing-standard': 'cubic-bezier(0.2, 0, 0, 1)',
-  // Camadas de empilhamento
-  // Espelho do DS, sem uso no código: `z-canvas`, `z-picker` e `z-dialog`.
+  // Stacking layers
+  // Mirror of the DS, unused in the code: `z-canvas`, `z-picker` and `z-dialog`.
   'z-canvas': '0',
   'z-canvas-overlay': '10',
   'z-toolwindow': '20',
@@ -360,7 +360,7 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'z-picker': '60',
   'z-dialog': '70',
   'z-banner': '80',
-  // Breakpoints (só documentação: media queries usam `breakpoints.ts`)
+  // Breakpoints (documentation only: media queries use `breakpoints.ts`)
   'bp-compact': `${BREAKPOINTS.compact}px`,
   'bp-design': `${BREAKPOINTS.design}px`,
 };
@@ -382,7 +382,7 @@ function textTokens(): Record<string, string> {
   return out;
 }
 
-/** Todos os tokens por nome (sem o `--`), na ordem em que o CSS é emitido. */
+/** All tokens by name (without the `--`), in the order the CSS is emitted. */
 export const TOKENS: Readonly<Record<string, TokenValue>> = {
   ...COLORS,
   ...FONTS,
@@ -393,7 +393,7 @@ export const TOKENS: Readonly<Record<string, TokenValue>> = {
   ...SCALES,
 };
 
-/** Valor de um token num tema (tokens sem variação valem igual nos dois). */
+/** Value of a token in a theme (tokens without variation are the same in both). */
 export function tokenValue(name: string, theme: 'light' | 'dark'): string {
   const value = TOKENS[name];
   if (value === undefined) throw new Error(`Token desconhecido: ${name}`);
@@ -404,7 +404,7 @@ function declarations(entries: readonly (readonly [string, string])[]): string {
   return entries.map(([name, value]) => `    --${name}: ${value};`).join('\n');
 }
 
-/** CSS de `:root` (e dos temas) gerado a partir de `TOKENS`. */
+/** `:root` CSS (and the themes') generated from `TOKENS`. */
 export function renderTokensCss(): string {
   const all = Object.entries(TOKENS);
   const light = all.map(([name, v]) => [name, isThemed(v) ? v.light : v] as const);
@@ -412,7 +412,7 @@ export function renderTokensCss(): string {
   const indent = (block: string) => block.replaceAll(/^ {4}/gm, '  ');
 
   return [
-    '/* Gerado por src/theme/tokens.ts (renderTokensCss). Não edite. */',
+    '/* Generated by src/theme/tokens.ts (renderTokensCss). Do not edit. */',
     ':root {',
     '  color-scheme: light;',
     indent(declarations(light)),

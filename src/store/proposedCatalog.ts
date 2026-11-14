@@ -22,50 +22,51 @@ import type { ComponentSources, ReviewView } from './derived';
 import { createFontSync } from './fontSync';
 import { createPendingTracker } from './pendingTracker';
 
-// O catálogo de componentes da visão Proposto (etapa Proposto com componentes, PC1): o da
-// biblioteca aplicada mais os pacotes que a proposta aberta cria ou atualiza, lidos de
-// `proposals/<id>/<pasta>/`. Só leitura: nada é gravado em `specs/`. É estado da revisão, nunca
-// do projeto; quem o cria é o `createReviewState`, e a leitura acontece quando a proposta
-// abre (não quando a visão muda nem quando se decide).
+// The component catalog of the Proposed view (Proposed with components stage, PC1): that of the
+// applied library plus the packages the open proposal creates or updates, read from
+// `proposals/<id>/<folder>/`. Read-only: nothing is written to `specs/`. It is review state, never
+// project state; it is created by `createReviewState`, and the read happens when the proposal
+// opens (not when the view changes or when a decision is made).
 
 export interface ProposedComponents extends ComponentSources {
-  /** Resolve quando o que está pedido terminou de carregar (testes). */
+  /** Resolves when what was requested has finished loading (tests). */
   whenIdle(): Promise<void>;
   dispose(): void;
 }
 
 export interface ProposedComponentsDeps {
-  /** Os componentes das especializações aplicadas (a base, que vale fora do Proposto). */
+  /** The components of the applied specializations (the base, which holds outside Proposed). */
   readonly base: ComponentLibrary;
-  /** A proposta aberta na revisão; `null` fora dela. */
+  /** The proposal open in the review; `null` outside it. */
   readonly proposal: ReadonlySignal<Proposal | null>;
   readonly view: ReadonlySignal<ReviewView>;
-  /** O projeto à vista (`review.derived.shownProject`): diz que versão cada tipo usa. */
+  /** The project in view (`review.derived.shownProject`): says which version each type uses. */
   readonly shown: ReadonlySignal<Project | null>;
-  /** Bytes de um arquivo do projeto (`session.readImage`), ou `null`. */
+  /** Bytes of a project file (`session.readImage`), or `null`. */
   readonly read: (path: string) => Promise<Blob | null>;
-  /** Padrão: `createFontRegistry()`. */
+  /** Default: `createFontRegistry()`. */
   readonly fonts?: FontRegistry;
 }
 
-/** Pacote de uma especialização que a proposta cria ou atualiza e que ainda não foi aplicado. */
+/** Package of a specialization that the proposal creates or updates and that is not yet applied. */
 interface ProposedPackage {
   readonly proposalId: string;
   readonly specId: string;
   readonly version: number;
-  /** `specs/<pasta>`: onde o pacote ficará depois de aplicado. */
+  /** `specs/<folder>`: where the package will be after being applied. */
   readonly dir: string;
-  /** Arquivo da especialização (`specs/<pasta>/x.spec.json`). */
+  /** The specialization file (`specs/<folder>/x.spec.json`). */
   readonly file: string;
   readonly spec: Spec;
-  /** Identidade do conteúdo do `spec`: o `revise_proposal` que o muda sem mudar `id@versão` relê o pacote. */
+  /** Identity of the `spec` content: a `revise_proposal` that changes it without changing
+   * `id@version` re-reads the package. */
   readonly signature: string;
 }
 
 const keyOf = (s: { readonly specId: string; readonly version: number }): string =>
   `${s.specId}@${s.version}`;
 
-/** Pacotes das mudanças `specialization` de criar ou atualizar ainda não aplicadas (rejeitadas inclusive). */
+/** Packages of the not-yet-applied create/update `specialization` changes (rejected included). */
 function proposedPackages(p: Proposal | null): ProposedPackage[] {
   const out: ProposedPackage[] = [];
   if (!p) return out;
@@ -90,7 +91,7 @@ function proposedPackages(p: Proposal | null): ProposedPackage[] {
   return out;
 }
 
-/** Caminho do projeto (`specs/<pasta>/…`) de um arquivo do pacote → onde ele espera em `proposals/`. */
+/** Project path (`specs/<folder>/…`) of a package file → where it waits in `proposals/`. */
 const stagedPath = (pkg: ProposedPackage, path: string): string | null =>
   path.startsWith(`${pkg.dir}/`)
     ? `${proposalPackageDir(pkg.proposalId, pkg.dir)}/${path.slice(pkg.dir.length + 1)}`
@@ -104,8 +105,8 @@ export function createProposedComponents(
   const { track, whenIdle } = createPendingTracker();
   let disposed = false;
 
-  // Os pacotes da proposta aberta. A lista só muda quando muda o que há para ler (proposta
-  // aberta, mudança de especialização nova, aplicada): decidir não troca a lista.
+  // The open proposal's packages. The list only changes when what there is to read changes
+  // (open proposal, new specialization change, applied): deciding does not swap the list.
   let lastPackages: readonly ProposedPackage[] = [];
   const packages = computed((): readonly ProposedPackage[] => {
     const next = proposedPackages(deps.proposal.value);
@@ -125,13 +126,13 @@ export function createProposedComponents(
     return lastPackages;
   });
 
-  /** O que já foi lido, por `id@versão`; esquece tudo quando outra proposta abre. */
+  /** What was already read, by `id@version`; forgets everything when another proposal opens. */
   const entries = signal<ReadonlyMap<string, SpecComponents>>(new Map());
   const loading = new Set<string>();
-  /** A identidade do `spec` com que cada `id@versão` foi lido (ou está sendo lido) nesta proposta. */
+  /** The `spec` identity each `id@version` was read with (or is being read with) in this proposal. */
   const signatures = new Map<string, string>();
   let owner: string | null = null;
-  /** Sobe a cada registro de fontes terminado. */
+  /** Goes up on each finished font registration. */
   const epoch = signal(0);
 
   async function load(pkg: ProposedPackage, run: string): Promise<void> {
@@ -159,7 +160,7 @@ export function createProposedComponents(
     onRegistered: () => void epoch.value++,
   });
 
-  /** Fontes declaradas pelos pacotes da lista, com o pacote que as guarda. */
+  /** Fonts declared by the packages in the list, with the package that holds them. */
   const packageFonts = (list: readonly ProposedPackage[]) =>
     list.flatMap((pkg) =>
       (pkg.spec.fonts ?? []).map((declared) => ({
@@ -186,8 +187,8 @@ export function createProposedComponents(
       loading.add(`${run}|${key}`);
       void track(load(pkg, run));
     }
-    // As fontes seguem a lista (não a visão nem as decisões); sem nenhuma e sem nada
-    // registrado antes, não há o que fazer nem o que remedir.
+    // Fonts follow the list (not the view or the decisions); with none and with nothing
+    // registered before, there is nothing to do or to re-measure.
     const declares = list.some((pkg) => (pkg.spec.fonts ?? []).length > 0);
     if (!declares && !fontsRegistered) return;
     fontsRegistered = declares;
@@ -207,15 +208,15 @@ export function createProposedComponents(
   let lastCatalog: ComponentCatalog = EMPTY_CATALOG;
   const catalog = computed((): ComponentCatalog => {
     const from = base.catalog.value;
-    // Visão Atual, fora da revisão ou sem pacote proposto: o catálogo da base, o próprio objeto.
+    // Current view, outside the review or without a proposed package: the base catalog itself.
     if (deps.view.value !== 'proposed' || packages.value.length === 0) return from;
     const shown = deps.shown.value;
     const loaded = entries.value;
     const next = new Map<string, SpecComponents>();
     if (shown) {
       for (const s of shown.specializations) {
-        // O tipo vem do pacote proposto quando `id@versão` é dele; senão, o objeto da base
-        // (o mesmo, para o cache de desenho por marcação continuar valendo).
+        // The type comes from the proposed package when `id@version` is its; otherwise, the base
+        // object (the same one, so the per-marking draw cache stays valid).
         const components =
           loaded.get(keyOf({ specId: s.id, version: s.version })) ?? from.get(s.id);
         if (components) next.set(s.id, components);

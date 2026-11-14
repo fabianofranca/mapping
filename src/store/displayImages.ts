@@ -3,30 +3,30 @@ import { signal, type ReadonlySignal } from '@preact/signals';
 export type DisplayImage<T> =
   | { readonly status: 'loading' }
   | { readonly status: 'ready'; readonly bitmap: T }
-  /** O arquivo não existe no armazenamento (imagem ausente). */
+  /** The file does not exist in the storage (missing image). */
   | { readonly status: 'missing' }
-  /** O arquivo existe, mas não pôde ser decodificado. */
+  /** The file exists but could not be decoded. */
   | { readonly status: 'error' };
 
 export interface DisplayImages<T> {
   readonly images: ReadonlySignal<ReadonlyMap<string, DisplayImage<T>>>;
-  /** Começa a carregar a imagem, se ainda não estiver carregada ou carregando. */
+  /** Starts loading the image, if it is not already loaded or loading. */
   ensure(path: string): void;
   /**
-   * Libera (`close()`) os bitmaps dos arquivos fora de `paths` (arquivos que saíram
-   * do projeto). Se um deles voltar (desfazer), `ensure` o carrega de novo.
+   * Releases (`close()`) the bitmaps of the files outside `paths` (files that left the
+   * project). If one of them comes back (undo), `ensure` loads it again.
    */
   retain(paths: ReadonlySet<string>): void;
-  /** Descarta o bitmap para carregar de novo (ex.: arquivo reapontado). */
+  /** Discards the bitmap to load it again (e.g. file re-pointed). */
   invalidate(path: string): void;
   dispose(): void;
 }
 
 /**
- * Fecha o bitmap só no quadro seguinte. Quem o desenha (o canvas) ainda pode ter um
- * desenho pendente do quadro em que o bitmap estava no mapa: o mapa muda na hora e o
- * quadro seguinte deixa de referenciá-lo, antes de ele fechar. Desenhar um `ImageBitmap`
- * fechado lança `InvalidStateError` (achado 10 do relato de 2026-10-11).
+ * Closes the bitmap only on the next frame. Whoever draws it (the canvas) may still have a
+ * pending draw from the frame in which the bitmap was in the map: the map changes right away
+ * and the next frame stops referencing it, before it closes. Drawing a closed `ImageBitmap`
+ * throws `InvalidStateError` (finding 10 of the 2026-10-11 report).
  */
 function closeAfterFrame(bitmap: { close(): void }): void {
   const close = () => bitmap.close();
@@ -35,9 +35,9 @@ function closeAfterFrame(bitmap: { close(): void }): void {
 }
 
 /**
- * Bitmaps de exibição por caminho de arquivo, carregados sob demanda e
- * liberados (`close()`) ao sair do projeto. O mapa nunca contém um bitmap fechado: o
- * caminho sai do mapa primeiro e o bitmap fecha depois do quadro seguinte.
+ * Display bitmaps by file path, loaded on demand and
+ * released (`close()`) when leaving the project. The map never holds a closed bitmap: the
+ * path leaves the map first and the bitmap closes after the next frame.
  */
 export function createDisplayImages<T extends { close(): void }>(
   load: (path: string) => Promise<T | null>,
@@ -54,7 +54,7 @@ export function createDisplayImages<T extends { close(): void }>(
     images.value = next;
   };
 
-  /** O bitmap de `path`, para fechar depois de tirá-lo do mapa (`undefined` se não há). */
+  /** The bitmap of `path`, to close after taking it out of the map (`undefined` if none). */
   const bitmapOf = (path: string): T | undefined => {
     const current = images.value.get(path);
     return current?.status === 'ready' ? current.bitmap : undefined;
@@ -92,7 +92,7 @@ export function createDisplayImages<T extends { close(): void }>(
       for (const path of dropped) {
         const bitmap = bitmapOf(path);
         if (bitmap) bitmaps.push(bitmap);
-        // Um carregamento em andamento chega "velho": o bitmap é fechado ao chegar.
+        // A load in progress arrives "stale": the bitmap is closed on arrival.
         loadingGeneration.delete(path);
         next.delete(path);
       }

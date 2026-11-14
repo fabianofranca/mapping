@@ -1,6 +1,6 @@
-// O que um gesto move (decisão 5 da etapa canvas-escala): comparando o projeto desenhado antes do
-// gesto com o da prévia, saem as marcações, os containers e as setas que se mexem. O canvas leva os
-// nós deles para o grupo de arrasto; o resto do palco não é redesenhado até soltar. Sem Konva.
+// What a gesture moves (decision 5 of the canvas-scale stage): comparing the project drawn before the
+// gesture with the preview's, the markings, containers and arrows that move come out. The canvas takes
+// their nodes into the drag group; the rest of the stage is not redrawn until release. No Konva.
 import {
   projectIndex,
   type Arrow,
@@ -9,7 +9,7 @@ import {
   type ProjectContainer,
 } from '../model';
 
-/** Ids do que se move num gesto: marcações, containers (imagens) e setas. */
+/** Ids of what moves in a gesture: markings, containers (images) and arrows. */
 export interface DragSet {
   readonly markings: ReadonlySet<string>;
   readonly containers: ReadonlySet<string>;
@@ -18,7 +18,7 @@ export interface DragSet {
 
 const NONE: ReadonlySet<string> = new Set();
 
-/** Nada se move (fora de um gesto, ou antes da primeira prévia). Sempre o mesmo objeto. */
+/** Nothing moves (outside a gesture, or before the first preview). Always the same object. */
 export const EMPTY_DRAG: DragSet = { markings: NONE, containers: NONE, arrows: NONE };
 
 export function isEmptyDrag(set: DragSet): boolean {
@@ -26,13 +26,14 @@ export function isEmptyDrag(set: DragSet): boolean {
 }
 
 /**
- * O que a prévia move em relação a `base`:
- *  - o container cujo objeto mudou (ou que a prévia de imagem segue, `previewContainerId`), com
- *    todas as marcações dele (elas andam com a imagem sem mudar de objeto);
- *  - a marcação cujo objeto mudou (ela e as descendentes que a prévia moveu junto);
- *  - a seta cujo objeto mudou (rota, ponta) ou que toca qualquer marcação que se move.
- * Nenhum deles é decidido pelo canvas: é só a diferença entre os dois projetos, que o modelo já
- * produziu. Os ids são do projeto desenhado.
+ * What the preview moves relative to `base`:
+ *  - the container whose object changed (or that the image preview follows, `previewContainerId`), with
+ *    all its markings (they travel with the image without changing object);
+ *  - the marking whose object changed (it and the descendants the preview moved along with it);
+ *  - the arrow whose object changed (route, tip) or that touches any marking that moves.
+ * None of them is decided by the canvas: it is only the difference between the two projects, which
+ * the model already
+ * produced. The ids are the drawn project's.
  */
 export function dragSetOf(
   base: Project | null,
@@ -48,7 +49,7 @@ export function dragSetOf(
   return isEmptyDrag(set) ? EMPTY_DRAG : set;
 }
 
-/** Os containers de `current` cujo objeto mudou, ou que a prévia de imagem segue. */
+/** The containers of `current` whose object changed, or that the image preview follows. */
 function movedContainers(
   before: ReadonlyMap<string, ProjectContainer>,
   current: Project,
@@ -63,7 +64,7 @@ function movedContainers(
   return containers;
 }
 
-/** As setas de `current` cujo objeto mudou, ou que tocam uma marcação que se move. */
+/** The arrows of `current` whose object changed, or that touch a marking that moves. */
 function movedArrows(
   before: ReadonlyMap<string, Arrow>,
   current: Project,
@@ -77,7 +78,7 @@ function movedArrows(
   return arrows;
 }
 
-/** As marcações de `current` cujo objeto mudou, ou que estão num container que se move. */
+/** The markings of `current` whose object changed, or that are in a container that moves. */
 function movedMarkings(
   before: ReadonlyMap<string, Marking>,
   current: Project,
@@ -91,7 +92,7 @@ function movedMarkings(
   return markings;
 }
 
-/** Une dois conjuntos (o que se move só cresce durante o gesto); o primeiro se `b` não traz nada novo. */
+/** Joins two sets (what moves only grows during the gesture); the first if `b` brings nothing new. */
 export function mergeDrag(a: DragSet, b: DragSet): DragSet {
   if (isEmptyDrag(b)) return a;
   if (isEmptyDrag(a)) return b;
@@ -104,7 +105,7 @@ export function mergeDrag(a: DragSet, b: DragSet): DragSet {
   return { markings, containers, arrows };
 }
 
-/** `a` se `b` está todo em `a`; senão um conjunto novo com os dois. */
+/** `a` if `b` is entirely in `a`; otherwise a new set with both. */
 function union(a: ReadonlySet<string>, b: ReadonlySet<string>): ReadonlySet<string> {
   let grown = false;
   for (const id of b) {

@@ -1,10 +1,12 @@
 import { signal, type ReadonlySignal } from '@preact/signals';
 import { readSetting, writeSetting } from '../utils/safeStorage';
 
-// Identidade da pessoa neste dispositivo (etapa Comentários, decisão 10): nome e e-mail, pelo
-// `safeStorage` (`mapping.identity`), nunca no projeto. Sem ela a pessoa só lê as conversas:
-// escrever, resolver, reabrir e apagar pedem nome e e-mail (decisão 11). O e-mail passa por uma
-// conferência leve (`algo@algo`); a recomendação é usar os mesmos do `git config`.
+// The person's identity on this device (Comments stage, decision 10): name and email, through
+// `safeStorage` (`mapping.identity`), never in the project. Without it the person only reads the
+// threads:
+// writing, resolving, reopening and deleting ask for name and email (decision 11). The email goes
+// through a light check (`something@something`); the recommendation is to use the same ones as `git
+// config`.
 
 export interface Identity {
   readonly name: string;
@@ -13,7 +15,7 @@ export interface Identity {
 
 const IDENTITY_KEY = 'mapping.identity';
 
-/** `algo@algo`, sem espaços nem um segundo `@`. */
+/** `something@something`, without spaces or a second `@`. */
 export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+$/.test(email);
 }
@@ -36,12 +38,15 @@ function parseIdentity(raw: string | null): Identity | null {
 
 const current = signal<Identity | null>(parseIdentity(readSetting(IDENTITY_KEY)));
 
-/** A identidade deste dispositivo, ou `null` (só leitura nas conversas). */
+/** This device's identity, or `null` (read-only in the threads). */
 export const identity: ReadonlySignal<Identity | null> = current;
 
 export type SetIdentityResult = 'ok' | 'invalid-name' | 'invalid-email';
 
-/** Guarda nome e e-mail (sem espaços em volta). Recusa nome vazio e e-mail sem `algo@algo`. */
+/**
+ * Keeps name and email (without surrounding spaces). Refuses an empty name and an email without
+ * `something@something`.
+ */
 export function setIdentity(name: string, email: string): SetIdentityResult {
   const cleanName = name.trim();
   const cleanEmail = email.trim();

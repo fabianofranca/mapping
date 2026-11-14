@@ -1,8 +1,8 @@
-// Identificação do build (fase 5.4): SHA curto do commit mais a data do build, para
-// um relato de problema dizer de qual versão veio. O `index.html` avulso circula sem
-// o repositório, por isso a data. O valor é injetado por `define` no vite.config.ts.
+// Build identification (phase 5.4): short commit SHA plus the build date, so
+// a problem report says which version it came from. The standalone `index.html` circulates without
+// the repository, hence the date. The value is injected by `define` in vite.config.ts.
 
-/** Injetado pelo build (`define` no vite.config.ts); ausente fora dele. */
+/** Injected by the build (`define` in vite.config.ts); absent outside it. */
 declare const __BUILD_ID__: string | undefined;
 
 /** `abc1234 · 2026-10-10`. */
@@ -11,9 +11,9 @@ export function formatBuildId(sha: string, date: Date): string {
 }
 
 /**
- * Build id no momento do build: o commit do git (o `deploy.yml` faz checkouts próprios
- * da `main` e do preview, cujo commit não é o `GITHUB_SHA` da execução); sem git, o
- * `GITHUB_SHA` do CI; sem os dois, `dev`.
+ * Build id at build time: the git commit (`deploy.yml` makes its own checkouts
+ * of `main` and of the preview, whose commit is not the run's `GITHUB_SHA`); without git, the
+ * CI's `GITHUB_SHA`; without both, `dev`.
  */
 export function resolveBuildId(source: {
   readonly githubSha: string | undefined;
@@ -24,7 +24,7 @@ export function resolveBuildId(source: {
   try {
     sha = source.gitSha().trim();
   } catch {
-    // Sem git (ex.: código baixado como zip).
+    // Without git (e.g. code downloaded as a zip).
   }
   sha ||= source.githubSha?.trim() ?? '';
   return formatBuildId(sha || 'dev', source.now);

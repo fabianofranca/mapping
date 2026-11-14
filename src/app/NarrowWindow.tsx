@@ -2,15 +2,15 @@ import { t } from '../i18n';
 import { BREAKPOINTS, NARROW_QUERY } from '../theme/breakpoints';
 import { useMediaQuery } from '../ui/useMediaQuery';
 
-/** `true` enquanto a janela estiver abaixo da largura ou da altura mínima da app (só desktop). */
+/** `true` while the window is below the app's minimum width or height (desktop only). */
 export function useNarrowWindow(): boolean {
   return useMediaQuery(NARROW_QUERY);
 }
 
 /**
- * Aviso no lugar da tela quando a janela fica estreita demais. Quem o mostra só esconde
- * o resto (`hidden`), sem desmontar: o projeto continua aberto e gravando, e ao alargar
- * a janela tudo volta como estava.
+ * Notice in place of the screen when the window gets too narrow. Whoever shows it only hides
+ * the rest (`hidden`), without unmounting: the project stays open and saving, and when the
+ * window widens everything comes back as it was.
  */
 export function NarrowWindowNotice() {
   return (

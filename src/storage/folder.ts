@@ -23,8 +23,8 @@ import {
   type ProjectStorage,
 } from './types';
 
-// Subconjunto da File System Access API usado pela app. Tipado à parte para
-// não depender das definições do navegador e para permitir mocks nos testes.
+// Subset of the File System Access API used by the app. Typed separately so as not to
+// depend on the browser's definitions and to allow mocks in tests.
 
 export interface WritableLike {
   write(data: Blob | string): Promise<void>;
@@ -35,7 +35,7 @@ export interface WritableLike {
 export interface FileHandleLike {
   readonly kind: 'file';
   readonly name: string;
-  /** O `File` real tem `lastModified`; os mocks dos testes podem devolver só um `Blob`. */
+  /** The real `File` has `lastModified`; test mocks may return just a `Blob`. */
   getFile(): Promise<Blob & { readonly lastModified?: number }>;
   createWritable(): Promise<WritableLike>;
 }
@@ -55,8 +55,8 @@ export interface DirectoryHandleLike {
 export type FolderPermission = 'granted' | 'denied' | 'prompt';
 
 /**
- * Handle que pode ser guardado e reaberto noutra visita (recentes de pasta): o navegador
- * pede a permissão de novo com um clique, e `isSameEntry` evita a mesma pasta duas vezes.
+ * Handle that can be stored and reopened on another visit (recent folders): the browser
+ * asks for permission again on a click, and `isSameEntry` avoids the same folder twice.
  */
 export interface ReopenableDirectory extends DirectoryHandleLike {
   queryPermission(descriptor: { mode: 'readwrite' }): Promise<FolderPermission>;
@@ -64,7 +64,7 @@ export interface ReopenableDirectory extends DirectoryHandleLike {
   isSameEntry(other: DirectoryHandleLike): Promise<boolean>;
 }
 
-/** O navegador oferece o que os recentes de pasta precisam neste handle? */
+/** Does the browser offer what the recent folders need on this handle? */
 export function isReopenable(handle: DirectoryHandleLike): handle is ReopenableDirectory {
   return ['queryPermission', 'requestPermission', 'isSameEntry'].every(
     (method) => typeof Reflect.get(handle, method) === 'function',
@@ -72,10 +72,10 @@ export function isReopenable(handle: DirectoryHandleLike): handle is ReopenableD
 }
 
 /**
- * A pasta é do armazenamento privado da origem (OPFS, `navigator.storage.getDirectory()`)?
- * O seletor de pastas nunca devolve uma (ela é invisível para a pessoa); só os testes a usam
- * no lugar dele. Não vai para os recentes: no Chromium, ler de volta do IndexedDB um handle
- * do OPFS derruba a página. Sem OPFS (ou em `file://`, onde ele recusa): `false`.
+ * Is the folder in the origin's private storage (OPFS, `navigator.storage.getDirectory()`)?
+ * The folder picker never returns one (it is invisible to the person); only tests use it
+ * in its place. It does not go into the recents: in Chromium, reading an OPFS handle back
+ * from IndexedDB crashes the page. Without OPFS (or on `file://`, where it refuses): `false`.
  */
 export async function isOriginPrivate(handle: DirectoryHandleLike): Promise<boolean> {
   try {
@@ -94,10 +94,10 @@ export async function isOriginPrivate(handle: DirectoryHandleLike): Promise<bool
 }
 
 /**
- * Leitura e escrita na pasta: consulta e, se preciso, pede a permissão. Chamar no próprio
- * clique, sem espera longa antes (ler o handle do IndexedDB cabe na ativação do gesto): o
- * `requestPermission` só abre o diálogo do navegador dentro de um gesto da pessoa.
- * `observe`: cada resposta (consulta e, quando houve, pedido), para o rastro do Abrir.
+ * Read and write on the folder: queries and, if needed, asks for permission. Call it in the
+ * click itself, without a long wait before (reading the handle from IndexedDB fits within the
+ * gesture activation): `requestPermission` only opens the browser dialog inside a user gesture.
+ * `observe`: each answer (query and, when there was one, request), for the Open trace.
  */
 export async function ensurePermission(
   handle: ReopenableDirectory,
@@ -119,7 +119,7 @@ function directoryPicker(): DirectoryPicker | null {
   return typeof picker === 'function' ? (picker as DirectoryPicker) : null;
 }
 
-/** `showDirectoryPicker` existe e a página não está num iframe (onde ele é bloqueado). */
+/** `showDirectoryPicker` exists and the page is not in an iframe (where it is blocked). */
 export function isFolderModeSupported(): boolean {
   try {
     return directoryPicker() !== null && window.self === window.top;
@@ -128,7 +128,7 @@ export function isFolderModeSupported(): boolean {
   }
 }
 
-/** Abre o seletor de pasta. `null` se o usuário cancelar. */
+/** Opens the folder picker. `null` if the user cancels. */
 export async function pickDirectory(): Promise<DirectoryHandleLike | null> {
   const picker = directoryPicker();
   if (!picker) return null;
@@ -140,7 +140,7 @@ export async function pickDirectory(): Promise<DirectoryHandleLike | null> {
   }
 }
 
-/** A pasta (ou o arquivo) não existe mais: movida, renomeada ou apagada. */
+/** The folder (or the file) no longer exists: moved, renamed or deleted. */
 export function isNotFound(e: unknown): boolean {
   return (
     e instanceof DOMException &&
@@ -159,16 +159,16 @@ function splitPath(path: string): { dirs: string[]; name: string } {
 type FileBlob = Blob & { readonly lastModified?: number };
 
 /**
- * Handles já abertos, para não percorrer o caminho desde a raiz a cada chamada (numa pasta
- * lenta cada `getDirectoryHandle` custa caro). O mapa guarda a PROMESSA da pasta (chave: o
- * caminho, `proposals/P1`), para duas chamadas simultâneas não abrirem a mesma pasta duas vezes.
- * Só pastas abertas com sucesso ficam; um handle que o disco invalidou (pasta movida ou
- * apagada por fora) é descartado e a operação repete uma vez a partir da raiz.
+ * Handles already open, to avoid walking the path from the root on every call (on a slow
+ * folder each `getDirectoryHandle` is expensive). The map holds the folder's PROMISE (key: the
+ * path, `proposals/P1`), so two simultaneous calls do not open the same folder twice.
+ * Only successfully opened folders stay; a handle that the disk invalidated (folder moved or
+ * deleted externally) is discarded and the operation retries once from the root.
  */
 interface HandleCache {
   readonly root: DirectoryHandleLike;
   readonly dirs: Map<string, Promise<DirectoryHandleLike>>;
-  /** Handle do `mapping.json`, guardado ao gravar ou ler (o carimbo dispensa o caminho). */
+  /** Handle of `mapping.json`, kept on write or read (the stamp makes the path unnecessary). */
   mapping: FileHandleLike | null;
 }
 
@@ -176,14 +176,14 @@ function createHandleCache(root: DirectoryHandleLike): HandleCache {
   return { root, dirs: new Map(), mapping: null };
 }
 
-/** Tira do mapa a pasta `path` e tudo o que há dentro dela. */
+/** Removes folder `path` and everything inside it from the map. */
 function forgetTree(cache: HandleCache, path: string): void {
   for (const key of [...cache.dirs.keys()]) {
     if (key === path || key.startsWith(`${path}/`)) cache.dirs.delete(key);
   }
 }
 
-/** Tira do mapa todas as pastas do caminho (e as de dentro da última): recomeça da raiz. */
+/** Removes all the folders of the path from the map (and those inside the last one): restarts from the root. */
 function forgetChain(cache: HandleCache, dirs: readonly string[]): void {
   for (let i = 1; i < dirs.length; i++) cache.dirs.delete(dirs.slice(0, i).join('/'));
   if (dirs.length > 0) forgetTree(cache, dirs.join('/'));
@@ -199,13 +199,13 @@ function openDir(
   const promise = parent.getDirectoryHandle(name, { create });
   cache.dirs.set(key, promise);
   promise.catch(() => {
-    // Promessa rejeitada não fica no mapa; quem a esperava recebe o erro.
+    // A rejected promise does not stay in the map; whoever was waiting for it gets the error.
     if (cache.dirs.get(key) === promise) cache.dirs.delete(key);
   });
   return promise;
 }
 
-/** A pasta `key`: do mapa (`hit`) ou aberta agora a partir de `parent`. */
+/** The folder `key`: from the map (`hit`) or opened now from `parent`. */
 async function fetchDir(
   cache: HandleCache,
   key: string,
@@ -218,16 +218,16 @@ async function fetchDir(
     try {
       return { dir: await pending, hit: true };
     } catch {
-      // A abertura em curso de outra chamada falhou (talvez sem `create`): tenta a nossa.
+      // The other call's in-progress open failed (maybe without `create`): try ours.
     }
   }
   return { dir: await openDir(cache, key, parent, name, create), hit: false };
 }
 
 /**
- * Resolve as pastas do caminho usando o mapa. `trace.stored` diz se o último handle obtido
- * (ou, se a resolução falhar, o pai do passo que falhou) veio do mapa: só então um
- * "não existe" pode ser handle velho. Pasta inexistente sem `create`: `null`, sem guardar nada.
+ * Resolves the path's folders using the map. `trace.stored` says whether the last handle obtained
+ * (or, if resolution fails, the parent of the step that failed) came from the map: only then can a
+ * "does not exist" be a stale handle. Nonexistent folder without `create`: `null`, storing nothing.
  */
 async function resolveCached(
   cache: HandleCache,
@@ -251,10 +251,10 @@ async function resolveCached(
 }
 
 /**
- * Roda `op` com a pasta do caminho. Se o handle guardado estava velho (a resolução ou `op`
- * falham com "não existe" e o handle veio do mapa), esquece o caminho e repete UMA vez desde a
- * raiz. Um "não existe" legítimo numa pasta recém-aberta não repete. `op` deixa o
- * `NotFoundError` subir: quem trata o "arquivo não existe" é o chamador, depois daqui.
+ * Runs `op` with the path's folder. If the stored handle was stale (the resolution or `op`
+ * fail with "does not exist" and the handle came from the map), forgets the path and retries ONCE
+ * from the root. A legitimate "does not exist" on a freshly opened folder does not retry. `op` lets
+ * the `NotFoundError` bubble up: the caller handles the "file does not exist", after this.
  */
 async function withDir<T>(
   cache: HandleCache,
@@ -280,9 +280,9 @@ async function withDir<T>(
 }
 
 /**
- * Roda `fn` e devolve `null` se o que ele procurava não existe, ou `undefined` se a chamada falhou
- * por outro motivo (arquivo em uso, permissão): quem chama decide entre tratar como ausente e
- * tentar de novo depois, em vez de o erro derrubar um lote inteiro.
+ * Runs `fn` and returns `null` if what it was looking for does not exist, or `undefined` if the
+ * call failed for another reason (file in use, permission): the caller decides between treating
+ * it as absent and trying again later, instead of the error taking down a whole batch.
  */
 async function orUndefined<T>(
   fn: () => Promise<T | null>,
@@ -294,7 +294,7 @@ async function orUndefined<T>(
   }
 }
 
-/** Roda `fn` e devolve `null` se o que ele procurava não existe. */
+/** Runs `fn` and returns `null` if what it was looking for does not exist. */
 async function orNull<T>(fn: () => Promise<T | null>): Promise<T | null> {
   try {
     return await fn();
@@ -313,7 +313,7 @@ async function readFile(cache: HandleCache, path: string): Promise<FileBlob | nu
   );
 }
 
-/** Grava `data` em `path` (criando as pastas) e devolve o handle do arquivo gravado. */
+/** Writes `data` to `path` (creating the folders) and returns the handle of the written file. */
 async function writeFile(
   cache: HandleCache,
   path: string,
@@ -328,11 +328,11 @@ async function writeFile(
       await writable.write(data);
       await writable.close();
     } catch (e) {
-      // Descarta a escrita pela metade: o arquivo continua com o conteúdo anterior.
+      // Discards the half-done write: the file keeps its previous content.
       try {
         await writable.abort(e);
       } catch {
-        // O gravável já pode estar fechado ou com erro; o que importa é a falha original.
+        // The writable may already be closed or errored; what matters is the original failure.
       }
       throw e;
     }
@@ -350,7 +350,7 @@ async function removeFile(cache: HandleCache, path: string): Promise<void> {
   );
 }
 
-/** Remove a pasta e tudo o que há nela. Não falha se ela (ou o pai) já não existe. */
+/** Removes the folder and everything in it. Does not fail if it (or the parent) no longer exists. */
 async function removeDirectory(cache: HandleCache, path: string): Promise<void> {
   const { dirs, name } = splitPath(path);
   const tree = [...dirs, name].join('/');
@@ -363,12 +363,12 @@ async function removeDirectory(cache: HandleCache, path: string): Promise<void> 
       }),
     );
   } finally {
-    // Uma operação concorrente pode ter reaberto e guardado a pasta durante a remoção.
+    // A concurrent operation may have reopened and stored the folder during the removal.
     forgetTree(cache, tree);
   }
 }
 
-/** Caminhos de todos os arquivos sob `dir` (recursivo), relativos à raiz, em ordem alfabética. */
+/** Paths of all the files under `dir` (recursive), relative to the root, in alphabetical order. */
 async function listFiles(cache: HandleCache, dir: string): Promise<string[]> {
   const { dirs, name } = splitPath(dir);
   const all = [...dirs, name];
@@ -388,12 +388,12 @@ async function listFiles(cache: HandleCache, dir: string): Promise<string[]> {
 }
 
 async function removeProposalDir(cache: HandleCache, id: string): Promise<void> {
-  // Um id fora do padrão apontaria para outra pasta (ou para `proposals/` inteira).
+  // An id outside the pattern would point to another folder (or to the whole `proposals/`).
   if (!PROPOSAL_ID_RE.test(id)) throw new Error(`invalid proposal id: ${id}`);
   await removeDirectory(cache, proposalDir(id));
 }
 
-/** Lê o `mapping.json` pelo handle guardado (sem resolver o caminho); sem ele, pela raiz. */
+/** Reads `mapping.json` through the stored handle (without resolving the path); without it, from the root. */
 async function readMapping(cache: HandleCache): Promise<FileBlob | null> {
   const stored = cache.mapping;
   if (stored) {
@@ -415,9 +415,9 @@ async function readMapping(cache: HandleCache): Promise<FileBlob | null> {
 }
 
 /**
- * Percorre uma pasta uma vez (`values()`) e devolve o que `pick` acha em cada entrada (as que
- * devolvem `null` ficam de fora), com até `concurrency` conferências ao mesmo tempo. Pasta que
- * não existe: `[]`. A ordem é a do resultado de `mapLimit` (a da listagem).
+ * Walks a folder once (`values()`) and returns what `pick` finds in each entry (the ones that
+ * return `null` are left out), with up to `concurrency` checks at the same time. Folder that
+ * does not exist: `[]`. The order is that of the `mapLimit` result (the listing's).
  */
 async function mapDirEntries<T>(
   cache: HandleCache,
@@ -441,32 +441,32 @@ async function listDirNames(
   cache: HandleCache,
   dirName: string[],
   pick: (entry: FileHandleLike | DirectoryHandleLike) => Promise<string | null>,
-  /** Quantas conferências de `pick` rodam ao mesmo tempo. */
+  /** How many `pick` checks run at the same time. */
   concurrency = 1,
 ): Promise<string[]> {
   return (await mapDirEntries(cache, dirName, pick, concurrency)).sort();
 }
 
-/** O carimbo de um arquivo (tamanho e `lastModified`), o mesmo que `statProposal` devolve. */
+/** The stamp of a file (size and `lastModified`), the same that `statProposal` returns. */
 const stampOfFile = (file: FileBlob): string => `${file.size}:${file.lastModified ?? 0}`;
 
-/** Pares `[id, carimbo]` em ordem alfabética do id, como um `Map`. */
+/** `[id, stamp]` pairs in alphabetical order of the id, as a `Map`. */
 function sortedStamps<V>(pairs: readonly (readonly [string, V])[]): Map<string, V> {
   return new Map([...pairs].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
 /**
- * A pasta tem `mapping.json`? Para conferir se ela é um projeto (abrir, Localizar) sem passar
- * pelo `loadMapping` de um `ProjectStorage`, que só a sessão usa. A pasta sumida conta como
- * sem projeto; outros erros sobem.
+ * Does the folder have `mapping.json`? To check whether it is a project (open, Find) without going
+ * through the `loadMapping` of a `ProjectStorage`, which only the session uses. A vanished folder counts
+ * as without a project; other errors bubble up.
  */
 export async function hasMappingFile(root: DirectoryHandleLike): Promise<boolean> {
   return (await readFile(createHandleCache(root), MAPPING_FILE)) !== null;
 }
 
 /**
- * Projeto numa pasta do disco. Cada gravação vai direto para o arquivo. `copyId`: a cópia do
- * projeto (ver `ProjectStorage.copyId`), dada pelo controller antes de a sessão abrir.
+ * Project in a folder on disk. Each write goes straight to the file. `copyId`: the project's
+ * copy (see `ProjectStorage.copyId`), given by the controller before the session opens.
  */
 export function createFolderStorage(
   root: DirectoryHandleLike,
@@ -569,11 +569,11 @@ export function createFolderStorage(
         async (entry) => {
           if (entry.kind !== 'directory' || !PROPOSAL_ID_RE.test(entry.name)) return null;
           if (skip?.has(entry.name)) return [entry.name, null];
-          // Pelo handle da própria entrada: nada de resolver `proposals/<id>/` de novo.
+          // Through the entry's own handle: no resolving `proposals/<id>/` again.
           const handle = await orNull(() => entry.getFileHandle(PROPOSAL_FILE));
-          // Sem `proposal.json`: fica de fora, como no `listProposals`. Ilegível por outro
-          // motivo (um cliente de nuvem segurando o arquivo): presente, sem carimbo — a
-          // varredura a relê, em vez de o lote inteiro falhar.
+          // Without `proposal.json`: left out, as in `listProposals`. Unreadable for another
+          // reason (a cloud client holding the file): present, without a stamp — the
+          // scan rereads it, instead of the whole batch failing.
           if (!handle) return null;
           const file = await orUndefined(() => handle.getFile());
           if (file === null) return null;
@@ -612,9 +612,9 @@ export function createFolderStorage(
         async (entry) => {
           const id = entry.kind === 'file' ? threadIdOfFileName(entry.name) : null;
           if (entry.kind !== 'file' || id === null) return null;
-          // Pelo handle da própria entrada. O arquivo que sumiu no meio fica de fora; o
-          // ilegível por outro motivo volta presente, sem carimbo (a varredura o relê), para
-          // uma conversa travada não parecer apagada nem derrubar o lote.
+          // Through the entry's own handle. A file that vanished midway is left out; the
+          // one unreadable for another reason comes back present, without a stamp (the scan rereads it), so
+          // a locked thread does not look deleted nor take down the batch.
           const file = await orUndefined(() => entry.getFile());
           if (file === null) return null;
           return [id, file === undefined ? null : stampOfFile(file)];
@@ -628,9 +628,9 @@ export function createFolderStorage(
 }
 
 /**
- * Garante `backups/` no `.gitignore` da raiz, para quem versiona o projeto com git: cria o
- * arquivo, ou acrescenta a linha ao que já existe (nunca sobrescreve nem duplica; o texto vem
- * de `gitignoreWithBackups`, o mesmo do `create_project` do MCP). Devolve `true` se gravou.
+ * Ensures `backups/` is in the root `.gitignore`, for those who version the project with git: creates the
+ * file, or appends the line to the existing one (never overwrites or duplicates; the text comes
+ * from `gitignoreWithBackups`, the same as the MCP's `create_project`). Returns `true` if it wrote.
  */
 export async function ensureGitignore(root: DirectoryHandleLike): Promise<boolean> {
   const cache = createHandleCache(root);
@@ -642,12 +642,12 @@ export async function ensureGitignore(root: DirectoryHandleLike): Promise<boolea
 }
 
 export interface ExistingImage {
-  /** Caminho atual, relativo à raiz (`foto.jpg` ou `images/foto.jpg`). */
+  /** Current path, relative to the root (`photo.jpg` or `images/photo.jpg`). */
   readonly path: string;
   readonly name: string;
 }
 
-/** Imagens já presentes em `images/` e na raiz da pasta, em ordem alfabética. */
+/** Images already present in `images/` and at the folder root, in alphabetical order. */
 export async function findExistingImages(
   root: DirectoryHandleLike,
 ): Promise<ExistingImage[]> {

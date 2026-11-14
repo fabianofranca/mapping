@@ -2,11 +2,14 @@ import { toLibraryFiles, type PackageEntry, type Spec } from '../model';
 import { validateLibrary, type LibraryReport } from '../model/library';
 import type { SpecPackageFiles } from './project';
 
-// Validação de um pacote de biblioteca já lido para a memória. Pura (sem DOM): a importação
-// (`src/ui/specPackageImport.ts`) e a aplicação de uma proposta (`proposalActions.ts`) chamam
-// as mesmas funções.
+// Validation of a library package already read into memory. Pure (no DOM): the import
+// (`src/ui/specPackageImport.ts`) and the application of a proposal (`proposalActions.ts`) call
+// the same functions.
 
-/** O pacote como o validador o recebe (texto dos `.json` e `.md`, os demais só em presença). */
+/**
+ * The package as the validator receives it (text of the `.json` and `.md`, the rest only by
+ * presence).
+ */
 export function libraryInputFiles(files: SpecPackageFiles) {
   const entries: PackageEntry[] = [...files].map(([path, data]) => ({
     path: `pkg/${path}`,
@@ -15,12 +18,12 @@ export function libraryInputFiles(files: SpecPackageFiles) {
   return toLibraryFiles('pkg', entries);
 }
 
-/** Só o nível 1 (barato): lê a especialização do pacote, ou nada se ela não é legível. */
+/** Level 1 only (cheap): reads the package's specialization, or nothing if it is not readable. */
 export function readPackageSpec(files: SpecPackageFiles): Spec | undefined {
   return validateLibrary({ files: libraryInputFiles(files), level: 1 }).spec;
 }
 
-/** Os três níveis; `previous` liga o contrato de versão (atualização). */
+/** The three levels; `previous` plugs in the version contract (update). */
 export function validatePackage(files: SpecPackageFiles, previous?: Spec): LibraryReport {
   return validateLibrary({
     files: libraryInputFiles(files),

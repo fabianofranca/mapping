@@ -4,23 +4,23 @@ import { reportError } from '../utils/report';
 import type { FolderPermission } from './folder';
 import { withTimeout } from './local';
 
-// Pastas dos repositórios de documentos (`docRepos` da especialização, schema v14): o `doc` de
-// um tipo pode apontar um `.md` que vive num repositório externo. A app lê esse arquivo da
-// pasta do clone que a pessoa conecta uma vez por máquina (`showDirectoryPicker`); o handle
-// fica no IndexedDB, num banco só dele, com a `url` normalizada do repositório como chave. Ele
-// nunca vai para o `mapping.json`. O `Map` em memória guarda tudo também: sem IndexedDB (ou
-// se ele não abrir), a pasta vale até fechar a aba.
+// Folders of the document repositories (`docRepos` of the specialization, schema v14): the `doc` of
+// a type can point to a `.md` that lives in an external repository. The app reads that file from the
+// clone folder that the person connects once per machine (`showDirectoryPicker`); the handle
+// stays in IndexedDB, in a database of its own, with the repository's normalized `url` as the key. It
+// never goes to `mapping.json`. The in-memory `Map` keeps everything too: without IndexedDB (or
+// if it does not open), the folder lasts until the tab closes.
 
 const DB_NAME = channelDbName('mapping-doc-folders');
 const DB_VERSION = 1;
 
-/** Subconjunto do `FileSystemDirectoryHandle` que a leitura de documentos usa. */
+/** Subset of `FileSystemDirectoryHandle` that document reading uses. */
 export interface DocDirectoryHandle {
   getDirectoryHandle(name: string): Promise<DocDirectoryHandle>;
   getFileHandle(
     name: string,
   ): Promise<{ getFile(): Promise<{ text(): Promise<string> }> }>;
-  /** Ausente em handles que o navegador não sabe consultar: a leitura é tentada mesmo assim. */
+  /** Absent on handles the browser cannot query: the read is attempted anyway. */
   queryPermission?(descriptor: { mode: 'read' }): Promise<FolderPermission>;
   requestPermission?(descriptor: { mode: 'read' }): Promise<FolderPermission>;
 }
@@ -28,22 +28,22 @@ export interface DocDirectoryHandle {
 export type DocReadResult =
   | { status: 'found'; text: string }
   | { status: 'no-folder' }
-  /** `queryPermission` != `granted` (prompt ou denied): a pessoa precisa permitir de novo. */
+  /** `queryPermission` != `granted` (prompt or denied): the person must allow again. */
   | { status: 'permission' }
-  /** Arquivo ou subpasta inexistente, ou que não pôde ser lido. */
+  /** Nonexistent file or subfolder, or one that could not be read. */
   | { status: 'missing' };
 
 export interface DocFolderAccess {
-  /** `showDirectoryPicker` existe neste navegador. */
+  /** `showDirectoryPicker` exists in this browser. */
   supported(): boolean;
   read(repoUrl: string, path: string): Promise<DocReadResult>;
-  /** Abre o seletor (só pode ser chamado por um clique) e guarda a pasta; `false` se cancelou ou falhou. */
+  /** Opens the picker (can only be called from a click) and keeps the folder; `false` if cancelled or failed. */
   pick(repoUrl: string): Promise<boolean>;
-  /** `requestPermission({ mode: 'read' })` (também só por clique); `true` se concedida. */
+  /** `requestPermission({ mode: 'read' })` (also only from a click); `true` if granted. */
   request(repoUrl: string): Promise<boolean>;
 }
 
-/** O banco das pastas, atrás de uma interface pequena para os testes. */
+/** The folders' database, behind a small interface for the tests. */
 export interface DocFolderStore {
   get(key: string): Promise<DocDirectoryHandle | undefined>;
   put(key: string, handle: DocDirectoryHandle): Promise<void>;
@@ -51,13 +51,13 @@ export interface DocFolderStore {
 
 export interface DocFolderDeps {
   readonly picker?: () => Promise<DocDirectoryHandle>;
-  /** Abre o banco; `null` se não houver. Chamado uma vez, na primeira necessidade. */
+  /** Opens the database; `null` if there is none. Called once, on first need. */
   readonly openStore?: () => Promise<DocFolderStore | null>;
 }
 
 /**
- * Chave de um repositório: a `url` sem espaços nas pontas, sem `/` finais e sem o sufixo
- * `.git` (`https://x.com/a/b.git/` → `https://x.com/a/b`).
+ * Key of a repository: the `url` without spaces at the ends, without trailing `/` and without the `.git`
+ * suffix (`https://x.com/a/b.git/` → `https://x.com/a/b`).
  */
 export function normalizeRepoUrl(url: string): string {
   const trimSlashes = (s: string) => s.replace(/\/+$/, '');
@@ -69,7 +69,7 @@ interface DocFoldersSchema extends DBSchema {
 }
 
 async function openIdbStore(): Promise<DocFolderStore | null> {
-  // Sem IndexedDB o `openDB` lança: `getStore` registra e segue só com a memória.
+  // Without IndexedDB `openDB` throws: `getStore` logs it and goes on with memory only.
   const db = await withTimeout(
     openDB<DocFoldersSchema>(DB_NAME, DB_VERSION, {
       upgrade(upgrading) {
@@ -92,7 +92,7 @@ function defaultPicker(): (() => Promise<DocDirectoryHandle>) | null {
   return () => picker.call(globalThis) as Promise<DocDirectoryHandle>;
 }
 
-/** Cada segmento do caminho; `null` se vazio, com `..` ou sem nome de arquivo. */
+/** Each segment of the path; `null` if empty, with `..` or without a file name. */
 function pathSegments(path: string): string[] | null {
   const parts = path.split('/').filter((s) => s !== '' && s !== '.');
   if (parts.length === 0 || parts.includes('..')) return null;
@@ -109,7 +109,7 @@ async function readText(root: DocDirectoryHandle, path: string): Promise<DocRead
     const file = await (await dir.getFileHandle(name)).getFile();
     return { status: 'found', text: await file.text() };
   } catch {
-    // Inexistente (NotFoundError, TypeMismatchError) ou ilegível: o documento não aparece.
+    // Nonexistent (NotFoundError, TypeMismatchError) or unreadable: the document does not appear.
     return { status: 'missing' };
   }
 }
@@ -123,7 +123,7 @@ async function isGranted(handle: DocDirectoryHandle): Promise<boolean> {
   }
 }
 
-/** Cria o acesso às pastas dos repositórios de documentos; `deps` troca o seletor e o banco (testes). */
+/** Creates the access to the document repositories' folders; `deps` swaps the picker and the database (tests). */
 export function createDocFolderAccess(deps: DocFolderDeps = {}): DocFolderAccess {
   const memory = new Map<string, DocDirectoryHandle>();
   const picker = deps.picker ?? defaultPicker();
@@ -155,7 +155,7 @@ export function createDocFolderAccess(deps: DocFolderDeps = {}): DocFolderAccess
     try {
       await (await getStore())?.put(key, handle);
     } catch (e) {
-      // Sem gravar, a pasta vale até fechar a aba.
+      // Without writing, the folder lasts until the tab closes.
       reportError('docFolders.put', e);
     }
   };
@@ -176,7 +176,7 @@ export function createDocFolderAccess(deps: DocFolderDeps = {}): DocFolderAccess
         await remember(normalizeRepoUrl(repoUrl), await picker());
         return true;
       } catch {
-        // Cancelou (AbortError) ou o navegador recusou: nada muda.
+        // Cancelled (AbortError) or the browser refused: nothing changed.
         return false;
       }
     },
@@ -193,5 +193,5 @@ export function createDocFolderAccess(deps: DocFolderDeps = {}): DocFolderAccess
   };
 }
 
-/** A instância da app. */
+/** The app instance. */
 export const docFolderAccess: DocFolderAccess = createDocFolderAccess();

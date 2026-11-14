@@ -1,8 +1,8 @@
-// Variáveis de ambiente do build (ver vite.config.ts e .github/workflows/deploy.yml).
+// Build environment variables (see vite.config.ts and .github/workflows/deploy.yml).
 interface ImportMetaEnv {
-  /** `preview` no build do branch publicado em /preview/; ausente na versão principal. */
+  /** `preview` in the build of the branch published at /preview/; absent in the main version. */
   readonly VITE_CHANNEL?: string;
 }
 
-// CSS dos tokens, gerado de src/theme/tokens.ts pelo plugin `tokensCss` (vite.config.ts).
+// Token CSS, generated from src/theme/tokens.ts by the `tokensCss` plugin (vite.config.ts).
 declare module 'virtual:tokens.css' {}

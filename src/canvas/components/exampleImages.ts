@@ -1,17 +1,18 @@
 /**
- * Imagens estáticas da galeria do Catálogo: a cena de um exemplo desenhada pelo motor numa Stage
- * fora da tela e entregue como PNG `data:`. Gera-se uma vez e guarda-se em cache, uma entrada por
- * cena (especialização@versão, tipo, exemplo, tamanho); a época das fontes e a das imagens só dizem
- * se a imagem guardada ainda vale (se mudaram, ela é refeita no lugar, sem acumular as antigas). Konva fica aqui,
- * não na UI.
+ * Static images of the Catalog gallery: the scene of an example drawn by the engine on an
+ * off-screen Stage and delivered as a `data:` PNG. It is generated once and cached, one entry
+ * per scene (specialization@version, type, example, size); the fonts epoch and the images
+ * epoch only tell whether the stored image is still valid (if they changed, it is redone in
+ * place, without accumulating the old ones). Konva stays here, not in the UI.
  *
- * Auditoria das leituras de pixel (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador"): `stage.toDataURL` abaixo é a única
- * leitura de pixels sobre uma camada que pode ter componente com imagem. Ela usa sempre
- * `pixelSafe: true` (a imagem `opaque`, carregada sem CORS, nunca entra: vale o reservado) e as
- * imagens com CORS (`crossOrigin`) não contaminam o canvas. O minimapa (`src/ui/Minimap.tsx` e
- * `src/canvas/minimap.ts`) é DOM e não lê pixel; `src/storage/imageCrop.ts`, `imageImport.ts` e
- * `src/ui/review/ImageCompare.tsx` só leem as imagens do projeto (`blob:`). Um teste
- * (`tests/canvas/pixelReads.test.ts`) falha se uma nova leitura aparecer fora dessa lista.
+ * Audit of the pixel reads (docs/ARCHITECTURE.md, "Remote images: policy, consent and loader"):
+ * `stage.toDataURL` below is the only pixel read over a layer that may have a component with an
+ * image. It always uses `pixelSafe: true` (the `opaque` image, loaded without CORS, never gets
+ * in: the placeholder applies) and images with CORS (`crossOrigin`) do not taint the canvas.
+ * The minimap (`src/ui/Minimap.tsx` and `src/canvas/minimap.ts`) is DOM and does not read
+ * pixels; `src/storage/imageCrop.ts`, `imageImport.ts` and `src/ui/review/ImageCompare.tsx`
+ * only read the project's images (`blob:`). A test (`tests/canvas/pixelReads.test.ts`) fails
+ * if a new read appears outside this list.
  */
 import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
@@ -24,24 +25,25 @@ import {
 } from './renderScene';
 
 export interface ExampleImageOptions {
-  /** Padrão 2 (nítido em telas comuns). */
+  /** Default 2 (sharp on ordinary screens). */
   readonly pixelRatio?: number;
   readonly palette?: Partial<RenderPalette>;
-  /** Cor de fundo atrás do desenho (CSS); ausente = transparente. */
+  /** Background color behind the drawing (CSS); absent = transparent. */
   readonly background?: string;
   /**
-   * Resolve a URL do nó `image` (as duas portas da app e o carregador, de `remoteImages.ts`).
-   * Sem ela, toda imagem remota é o reservado. O resultado `opaque` nunca é desenhado aqui.
+   * Resolves the URL of the `image` node (the app's two gates and the loader, from
+   * `remoteImages.ts`). Without it, every remote image is the placeholder. The `opaque` result
+   * is never drawn here.
    */
   readonly remoteImage?: (url: string) => RemoteImageResult;
-  /** Recebe os avisos do desenho (com código e parâmetros) logo depois de a cena ser desenhada. */
+  /** Receives the drawing warnings (with code and parameters) right after the scene is drawn. */
   readonly onWarnings?: (warnings: readonly RenderWarning[]) => void;
 }
 
-/** Rasteriza a cena; injetável para os testes (sem canvas real no jsdom). */
+/** Rasterizes the scene; injectable for tests (no real canvas in jsdom). */
 export type SceneRasterizer = (root: FrameNode, options: ExampleImageOptions) => string;
 
-/** Desenha `root` numa Stage fora da tela e devolve o PNG como `data:`. */
+/** Draws `root` on an off-screen Stage and returns the PNG as `data:`. */
 export const renderSceneToDataUrl: SceneRasterizer = (root, options = {}) => {
   const width = Math.max(1, Math.ceil(root.width));
   const height = Math.max(1, Math.ceil(root.height));
@@ -59,7 +61,7 @@ export const renderSceneToDataUrl: SceneRasterizer = (root, options = {}) => {
     const rendered = renderScene(
       { root, warnings: [] },
       {
-        // O `toDataURL` abaixo lê pixels: imagem `opaque` (sem CORS) fica de fora.
+        // The `toDataURL` below reads pixels: an `opaque` image (no CORS) is left out.
         pixelSafe: true,
         ...(options.palette === undefined ? {} : { palette: options.palette }),
         ...(options.remoteImage === undefined
@@ -83,17 +85,18 @@ export interface ExampleImageKey {
   readonly specId: string;
   readonly version: number;
   readonly typeId: string;
-  /** Nome do exemplo, ou `"preview"`. */
+  /** Name of the example, or `"preview"`. */
   readonly example: string;
   readonly width: number;
   readonly height: number;
-  /** Muda quando as fontes terminam de carregar (o texto mede diferente). */
+  /** Changes when the fonts finish loading (the text measures differently). */
   readonly fontsEpoch: number;
-  /** Muda quando uma imagem remota termina de carregar ou o consentimento muda (decisão 7). */
+  /** Changes when a remote image finishes loading or the consent changes (decision 7). */
   readonly imagesEpoch: number;
 }
 
-/** A cena: o que identifica a imagem, sem as épocas (que só dizem se a guardada ainda vale). */
+/** The scene: what identifies the image, without the epochs (which only tell whether the
+ * stored one is still valid). */
 function sceneKey(key: ExampleImageKey): string {
   return `${key.specId}@${key.version}|${key.typeId}|${key.example}|${key.width}×${key.height}`;
 }
@@ -103,13 +106,14 @@ function stampOf(key: ExampleImageKey): string {
 }
 
 export interface ExampleImageCache {
-  /** O `data:` da imagem; gera na primeira chamada e devolve a mesma string enquanto as épocas valem. */
+  /** The image's `data:`; generates on the first call and returns the same string while the
+   * epochs are valid. */
   get(
     key: ExampleImageKey,
     draw: () => FrameNode | null,
     options?: ExampleImageOptions,
   ): string | null;
-  /** Os avisos do desenho da imagem guardada (vazio se a cena não foi desenhada). */
+  /** The drawing warnings of the stored image (empty if the scene was not drawn). */
   warnings(key: ExampleImageKey): readonly RenderWarning[];
   clear(): void;
   readonly size: number;

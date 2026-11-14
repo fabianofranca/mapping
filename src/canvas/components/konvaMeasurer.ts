@@ -1,7 +1,7 @@
 /**
- * O medidor de texto que usa o próprio Konva, para o layout bater com o desenho.
- * Depende do canvas do navegador (por isso fica fora do motor puro de `instantiate`); em testes
- * sem canvas use `approximateMeasurer`.
+ * The text measurer that uses Konva itself, so the layout matches the drawing.
+ * It depends on the browser canvas (so it stays out of the pure `instantiate` engine); in tests
+ * without a canvas use `approximateMeasurer`.
  */
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { canvasFontFamily } from '../../model/components/fontFamily';
@@ -19,7 +19,7 @@ function fontStyle(font: MeasureFont): string {
   return `${font.italic ? 'italic ' : ''}${font.weight === 400 ? 'normal' : String(font.weight)}`;
 }
 
-/** O texto do Konva com a fonte do medidor, sem altura (a altura é a das linhas quebradas). */
+/** Konva's text with the measurer's font, without height (the height is that of the wrapped lines). */
 function probeOf(
   text: string,
   font: MeasureFont,
@@ -32,8 +32,8 @@ function probeOf(
     letterSpacing: font.letterSpacing,
   };
   const wraps = font.wrap !== 'none';
-  // A palavra mais larga que a caixa fica inteira na linha, como no modelo (o Konva a partiria
-  // letra por letra), e as outras linhas quebram onde o modelo quebra.
+  // A word wider than the box stays whole on the line, as in the model (Konva would split it
+  // letter by letter), and the other lines wrap where the model wraps.
   const safe =
     maxWidth !== undefined && wraps && font.ellipsis !== true
       ? wordSafeText(text, face, maxWidth)
@@ -45,27 +45,27 @@ function probeOf(
     wrap: wraps ? 'word' : 'none',
     ellipsis: font.ellipsis === true,
     ...(font.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
-    // A folga de 0,5 px: a linha só quebra além dela (o desenho usa a mesma).
+    // The 0.5 px slack: the line only wraps beyond it (the drawing uses the same).
     ...(safe.width !== undefined ? { width: safe.width + WRAP_SLACK } : {}),
   });
 }
 
-/** Mede texto com o próprio Konva, para o layout bater com o desenho. */
+/** Measures text with Konva itself, so the layout matches the drawing. */
 export const konvaMeasurer: TextMeasurer = (text, font, maxWidth) => {
   const probe = probeOf(text, font, maxWidth);
   const { height } = textBoxLimits(probe.height(), font.maxLines, font.lineHeight);
   if (height !== probe.height()) {
-    // `maxLines`: o Konva corta (e põe o …) pela altura fixa.
+    // `maxLines`: Konva truncates (and adds the …) by the fixed height.
     probe.height(height);
   }
   const lines = probe.textArr.map((line) => line.text);
-  // `width()` devolve a largura fixada (o `maxWidth`); a do texto é a da linha mais larga.
+  // `width()` returns the fixed width (the `maxWidth`); the text's is that of the widest line.
   const natural = probe.getTextWidth();
   const metrics = {
     width: maxWidth === undefined ? natural : Math.min(natural, maxWidth),
     height,
     lines,
-    // A linha de base é a do desenho: o `ascent`/`descent` do canvas do Konva (decisão 2).
+    // The baseline is the drawing's: the `ascent`/`descent` of Konva's canvas (decision 2).
     ...lineBaselines(
       font.lineHeight,
       Math.max(1, lines.length),

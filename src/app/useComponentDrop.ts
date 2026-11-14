@@ -11,8 +11,9 @@ export interface ComponentDrop {
 }
 
 /**
- * Soltar no canvas um tipo arrastado da paleta cria a instância onde ela cai (uma entrada de
- * desfazer: `addComponent`). O destino acende durante o arrasto (`setDropTarget`).
+ * Dropping a type dragged from the palette onto the canvas creates the instance where it
+ * lands (one undo entry: `addComponent`). The target lights up during the drag
+ * (`setDropTarget`).
  */
 export function useComponentDrop({
   setMessage,

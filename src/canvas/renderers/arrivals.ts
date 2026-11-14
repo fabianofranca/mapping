@@ -1,9 +1,9 @@
-// Marcas de chegada (etapa #659, PE3, decisão 8): o selo "Veio de <nome>" sobre cada raiz que chegou
-// à Principal e a faixa tracejada "Área de chegada" com o título e o subtítulo. No molde do
-// `CommentPinRenderer`: um pool de nós por raiz, tamanho em px de tela (escala inversa do zoom) e os
-// nós que sobram destruídos. Cores e fonte só dos tokens; o desenho é do quadro de sempre.
-// A pílula do selo é invertida, como a dica: caixa `text` e rótulo `surface` (escura no tema claro,
-// clara no escuro), para aparecer sobre o fundo do canvas nos dois temas (TE1).
+// Arrival marks (stage #659, PE3, decision 8): the "Came from <name>" badge over each root that arrived
+// in Main and the dashed "Arrival area" band with its title and subtitle. Following the model of
+// `CommentPinRenderer`: a pool of nodes per root, size in screen px (inverse of the zoom scale) and the
+// leftover nodes destroyed. Colors and font only from the tokens; the drawing belongs to the usual frame.
+// The badge pill is inverted, like the hint: `text` box and `surface` label (dark in the light theme,
+// light in the dark one), so it shows over the canvas background in both themes (TE1).
 import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
@@ -21,7 +21,7 @@ import { visibleArea, type Frame } from '../frame';
 import type { CanvasTokens } from '../theme';
 import { HALO_WIDTH, fontStyle } from './metrics';
 
-/** Tracejado da faixa e vão entre a faixa e o título (px de tela). */
+/** Band dashing and gap between the band and the title (screen px). */
 const BAND_DASH = [6, 4];
 const BAND_STROKE = 1.5;
 const TITLE_GAP = 4;
@@ -74,9 +74,9 @@ export class ArrivalRenderer {
   private readonly badges = new Map<string, ArrivalBadgeNode>();
   readonly band: ArrivalBandNode;
   /**
-   * Retângulo do minimapa (HTML sobre o canvas) em px de tela, relativo ao canvas: guardado e
-   * refeito só quando o canvas ou o próprio minimapa mudam de tamanho (nada de `querySelector`
-   * nem `getBoundingClientRect` por quadro, que forçam o layout).
+   * Minimap rectangle (HTML over the canvas) in screen px, relative to the canvas: kept and
+   * redone only when the canvas or the minimap itself changes size (no `querySelector`
+   * nor `getBoundingClientRect` per frame, which force layout).
    */
   private minimapBox: Rect | undefined;
   private minimapStale = true;
@@ -99,7 +99,7 @@ export class ArrivalRenderer {
     layer.add(this.band.group);
   }
 
-  /** Quantos selos estão desenhados (os testes esperam por ele). */
+  /** How many badges are drawn (the tests wait on it). */
   get badgeCount(): number {
     return this.badges.size;
   }
@@ -112,13 +112,13 @@ export class ArrivalRenderer {
     return this.badges.get(root);
   }
 
-  /** Desenha a faixa e os selos do quadro; os selos que sobram são destruídos. */
+  /** Draws the frame's band and badges; the leftover badges are destroyed. */
   render(frame: ArrivalFrame): void {
     const { arrivals, tokens } = frame;
     const zoom = frame.viewport.scale;
     const view = visibleArea(frame.size, frame.viewport);
     const avoid = this.minimapArea(frame);
-    // A faixa primeiro: o título dela (que muda de lado com a vista) é um lugar a evitar.
+    // The band first: its title (which changes side with the view) is a place to avoid.
     const label = this.drawBand(arrivals?.band ?? null, zoom, tokens, view);
     const seen = new Set<string>();
     for (const badge of arrivals?.badges ?? []) {
@@ -213,7 +213,7 @@ export class ArrivalRenderer {
   ): void {
     const node = this.badgeFor(badge.root);
     const text = t('perspective.canvas.cameFrom', { name: badge.name });
-    // A fonte do token entra antes de medir: o primeiro desenho mediria com a fonte padrão.
+    // The token's font is loaded before measuring: the first drawing would measure with the default font.
     node.label.setAttrs({
       ...textAttrs(tokens, tokens.surface, tokens.type.name.weight),
       text,
@@ -251,7 +251,7 @@ export class ArrivalRenderer {
     });
   }
 
-  /** Desenha a faixa e devolve o retângulo do título dela (canvas), ou `null` sem faixa. */
+  /** Draws the band and returns the rectangle of its title (canvas), or `null` without a band. */
   private drawBand(
     band: Rect | null,
     zoom: number,
@@ -271,8 +271,8 @@ export class ArrivalRenderer {
       strokeWidth: BAND_STROKE / zoom,
       dash: BAND_DASH.map((d) => d / zoom),
     });
-    // Título e subtítulo (px de tela) ficam acima da faixa e da linha do nome dos containers; sem
-    // espaço, abaixo dela; sempre dentro da área visível.
+    // Title and subtitle (screen px) stay above the band and the containers' name row; without
+    // room, below it; always inside the visible area.
     node.title.setAttrs({
       ...textAttrs(tokens, tokens.text, tokens.type.name.weight),
       text: t('perspective.canvas.arrivalArea'),
@@ -285,14 +285,14 @@ export class ArrivalRenderer {
       x: 0,
       y: line,
     });
-    // Largura natural do texto (sem depender de `width`, que as reticências encurtam).
+    // Natural width of the text (not depending on `width`, which the ellipsis shortens).
     const natural = Math.max(
       node.title.measureSize(node.title.text()).width,
       node.hint.measureSize(node.hint.text()).width,
     );
     const size = { width: natural, height: 2 * line };
     const fit = arrivalBandLabelFit(natural, zoom, view, tokens.arrival);
-    // Sem `width` o Konva mede o texto inteiro; com ela, uma linha só, cortada com reticências.
+    // Without `width` Konva measures the whole text; with it, a single line, cut with an ellipsis.
     const clip = { width: fit ?? undefined, ellipsis: fit !== null };
     const at = arrivalBandLabelSpot(
       band,
