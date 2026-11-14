@@ -1,15 +1,15 @@
-# Antes da revisão legível — 2026-11-07 (épico `epic/antes-da-revisao`)
+# Readable "before the revision" — 2026-11-07 (épico `epic/antes-da-revisao`)
 
 ## Pendências
 
-- **Popover da mudança (`ChangePopover`), bloco "Antes da revisão":** linhas por campo (rótulo do campo da especialização ou chave do par + valor anterior) no lugar de um valor compacto; valores de tabela em uma linha de texto por registro (`white-space: pre-line`); `ref` pelo rótulo do alvo.
-- **`Popover`:** comportamento novo de posição com limite opcional (`limit`): o marcador da revisão não cobre a barra da revisão e, sem espaço embaixo nem em cima, abre do lado com mais espaço, com altura máxima e rolagem interna. Sem token novo.
+- **Change popover (`ChangePopover`), "Before the revision" block:** one row per field (label of the specialization field or key of the pair + previous value) in place of a compact value; table values as one line of text per record (`white-space: pre-line`); `ref` by the target's label.
+- **`Popover`:** new positioning behavior with an optional limit (`limit`): the review marker does not cover the review bar and, with no room below or above, opens to the side with more room, with a maximum height and inner scrolling. No new token.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping** neste fechamento: o bloco "Antes da revisão" (linhas por campo) e o comportamento de posição do `Popover` com limite estão registrados em Pendências e ficam para a próxima sincronização, sem token nem ícone novo. O artefato não foi aberto.
+Nothing to write to the **Mapping** artifact in this close: the "Before the revision" block (rows per field) and the positioning behavior of the `Popover` with a limit are recorded in Pendências and wait for the next sync, with no new token or icon. The artifact was not opened.
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: o bloco "Antes da revisão" por campo: guia do `ChangePopover` (texto, DS3) e estado novo na prévia do `ChangePopover` (DS4).
-- Passou para o registro do épico `epic/sincronia-ds-2`: a posição do `Popover` com `limit`: uma frase nos guias de `ChangeMark` e `ChangePopover` (texto, DS3); sem token nem prévia.
+- Passou para o registro do épico `epic/sincronia-ds-2`: the per-field "Before the revision" block: `ChangePopover` guide (text, DS3) and a new state in the `ChangePopover` preview (DS4).
+- Passou para o registro do épico `epic/sincronia-ds-2`: the position of the `Popover` with `limit`: one sentence in the `ChangeMark` and `ChangePopover` guides (text, DS3); no token or preview.

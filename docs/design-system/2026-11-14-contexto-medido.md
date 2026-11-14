@@ -1,13 +1,13 @@
-# Contexto do coordenador medido pelo painel — 2026-11-14 (épico `epic/contexto-medido`)
+# Coordinator context measured by the panel — 2026-11-14 (épico `epic/contexto-medido`)
 
 ## Pendências
 
-Pendências: nenhuma (só processo). O épico mexe só no `painel.py` e no skill `implementar-fila`; nenhum componente, token ou ícone do design system da app muda.
+Pending items: none (process only). The epic only touches `painel.py` and the `implementar-fila` skill; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componente, token nem ícone da app.
+Sem impacto on the Claude Design Mapping artifact: nothing was written, since the epic changes no component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

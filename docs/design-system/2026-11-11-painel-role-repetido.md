@@ -1,13 +1,13 @@
-# Registro repetido no painel da fila — 2026-11-11 (épico `epic/painel-role-repetido`)
+# Repeated record in the queue panel — 2026-11-11 (épico `epic/painel-role-repetido`)
 
 ## Pendências
 
-Nenhuma.
+None.
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do design system: o épico só mexe no `painel.py` e no skill `implementar-fila` (fluxo de entrega); nenhum componente, token ou ícone da app muda.
+Sem impacto on the design system's Mapping artifact: the epic only touches `painel.py` and the `implementar-fila` skill (delivery flow); no component, token or icon of the app changes.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

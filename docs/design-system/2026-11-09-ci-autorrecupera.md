@@ -1,13 +1,13 @@
-# CI que se recupera sozinho — 2026-11-09 (épico `epic/ci-autorrecupera`)
+# Self-recovering CI — 2026-11-09 (épico `epic/ci-autorrecupera`)
 
 ## Pendências
 
-Nenhuma. Impacto no design system: nenhum (só CI e ferramentas do fluxo de entrega).
+None. Design system impact: none (only CI and delivery flow tools).
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não mudou componente, token nem ícone.
+Nothing to write to the **Mapping** artifact: the epic changed no component, token or icon.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

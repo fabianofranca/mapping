@@ -1,13 +1,13 @@
-# CR do skill de detalhamento — 2026-11-09 (épico `epic/cr-skill-detalhar`)
+# CR of the detailing skill — 2026-11-09 (épico `epic/cr-skill-detalhar`)
 
 ## Pendências
 
-- CD1: nenhuma (só ferramenta do fluxo de entrega).
+- CD1: nenhuma (delivery flow tooling only).
 
 ## Sincronização
 
-Sem impacto no DS: o épico só mexeu na skill `/detalhar-backlog` e na regra de `changelog/` (fluxo de entrega). Nada foi gravado no artefato Mapping.
+Sem impacto on the DS: the epic only touched the `/detalhar-backlog` skill and the `changelog/` rule (delivery flow). Nothing was written to the Mapping artifact.
 
 ## Ficou sem gravar
 
-Nada: não houve pendência a aplicar.
+Nothing: there was no pending item to apply.

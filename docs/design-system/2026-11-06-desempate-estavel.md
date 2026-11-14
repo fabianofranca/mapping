@@ -1,13 +1,13 @@
-# Desempate estável — 2026-11-06 (épico `epic/desempate-estavel`)
+# Stable tie-breaking — 2026-11-06 (épico `epic/desempate-estavel`)
 
 ## Pendências
 
-Nenhuma. O épico só muda a regra de desempate do assentar da hierarquia (modelo, documentação e roteiros); nenhum componente, token ou ícone do design system muda.
+None. The epic only changes the tie-breaking rule of the hierarchy settle (model, documentation and scripts); no design system component, token or icon changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não mudou componente, token nem ícone.
+Nothing to write to the **Mapping** artifact: the epic changed no component, token or icon.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

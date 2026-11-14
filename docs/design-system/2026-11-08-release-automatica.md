@@ -1,13 +1,13 @@
-# Estável do MCP no merge do épico — 2026-11-08 (épico `epic/release-automatica`)
+# MCP stable release on epic merge — 2026-11-08 (épico `epic/release-automatica`)
 
 ## Pendências
 
-Pendências: nenhuma (só workflows, scripts de release e documentação).
+Pending items: none (only workflows, release scripts and documentation).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa não muda a app.
+No write to the Mapping artifact in Claude Design: the stage does not change the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

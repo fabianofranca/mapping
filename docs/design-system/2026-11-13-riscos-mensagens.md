@@ -1,13 +1,13 @@
-# Mensagens do modelo: riscos de manutenção — 2026-11-13 (épico `epic/riscos-mensagens`)
+# Model messages: maintenance risks — 2026-11-13 (épico `epic/riscos-mensagens`)
 
 ## Pendências
 
-Pendências: nenhuma (sem UI do app; só as mensagens do modelo em `src/model/`, os testes e o registro do MCP).
+Pending items: none (no app UI; only the model messages in `src/model/`, the tests and the MCP record).
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componentes, tokens nem ícones da app.
+Sem impacto on the Claude Design Mapping artifact: nothing was written, since the epic changes no components, tokens or icons of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

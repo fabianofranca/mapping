@@ -1,13 +1,13 @@
-# Rótulo do Carousel legível e roteiros alinhados — 2026-11-13 (épico `epic/rotulo-carousel-roteiros`)
+# Readable Carousel label and aligned scripts — 2026-11-13 (épico `epic/rotulo-carousel-roteiros`)
 
 ## Pendências
 
-Pendências: nenhuma. A interface da app não muda: o Catálogo só mostra o desenho novo do componente `carousel` da biblioteca `material3-compose`; nenhum componente, token nem ícone do design system da app muda.
+Pending items: none. The app's interface does not change: the Catalog only shows the new drawing of the `carousel` component of the `material3-compose` library; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componente, token nem ícone da app.
+Sem impacto on the Claude Design Mapping artifact: nothing was written, since the epic changes no component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

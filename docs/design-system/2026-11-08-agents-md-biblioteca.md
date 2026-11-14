@@ -1,13 +1,13 @@
-# AGENTS.md do workspace acertado — 2026-11-08 (épico `epic/agents-md-biblioteca`)
+# Workspace AGENTS.md fixed — 2026-11-08 (épico `epic/agents-md-biblioteca`)
 
 ## Pendências
 
-- AB1: nenhuma (só o texto do `AGENTS.md` do workspace).
+- AB1: nenhuma (only the text of the workspace `AGENTS.md`).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: a etapa não tocou a app.
+No write to the Claude Design Mapping artifact: the stage did not touch the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

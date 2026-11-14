@@ -1,13 +1,13 @@
-# Limpezas do épico de mensagens do modelo — 2026-11-11 (épico `epic/limpezas-mensagens`)
+# Cleanups of the model messages epic — 2026-11-11 (épico `epic/limpezas-mensagens`)
 
 ## Pendências
 
-Nenhuma. O épico só faz limpezas internas das mensagens do modelo e um teste; nenhum componente, token ou ícone do design system da app muda.
+None. The epic only does internal cleanups of the model messages and one test; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto no artefato **Mapping** (nada gravado): o épico não muda componente, token nem ícone da app, e as `## Pendências` estão vazias, então não há o que gravar. O índice `project/design-system.json` não foi tocado.
+Sem impacto on the **Mapping** artifact (nothing written): the epic changes no component, token or icon of the app, and the `## Pendências` are empty, so there is nothing to write. The `project/design-system.json` index was not touched.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

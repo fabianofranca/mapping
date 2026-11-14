@@ -1,13 +1,13 @@
-# Nomes acessíveis estáveis — 2026-11-09 (épico `epic/nomes-estaveis`)
+# Stable accessible names — 2026-11-09 (épico `epic/nomes-estaveis`)
 
 ## Pendências
 
-Pendências: nenhuma. Mudam só nomes acessíveis (`aria-label`, `aria-describedby`) de `ToolStripButton` (`src/ui/ToolStrip.tsx`) e das linhas de `Home` (`src/app/Home.tsx`), e o foco ao fechar `ImageConsentBanner`; nenhum componente, token, ícone, texto visível nem layout muda.
+Pending items: none. Only accessible names (`aria-label`, `aria-describedby`) of `ToolStripButton` (`src/ui/ToolStrip.tsx`) and of the `Home` rows (`src/app/Home.tsx`) change, plus the focus on closing `ImageConsentBanner`; no component, token, icon, visible text or layout changes.
 
 ## Sincronização
 
-Sem impacto: sem pendência, nada foi gravado no artefato Mapping (nenhum componente, token, ícone, texto visível ou layout mudou).
+Sem impacto: no pending item, nothing was written to the Mapping artifact (no component, token, icon, visible text or layout changed).
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

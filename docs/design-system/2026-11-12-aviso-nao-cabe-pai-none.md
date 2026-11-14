@@ -1,15 +1,15 @@
-# Aviso "O componente não cabe" com a palavra larga — 2026-11-12 (épico `epic/aviso-nao-cabe-pai-none`)
+# Notice "The component does not fit" with the wide word — 2026-11-12 (épico `epic/aviso-nao-cabe-pai-none`)
 
 ## Pendências
 
-- **`components/ComponentDrawing/preview.html`:** exemplo novo com sombras em lista, vão no contorno e texto justificado (o desenho que a app passou a fazer na etapa Material 3 fiel, #1571). A prévia é estática: o fechamento grava os três por HTML e CSS (`box-shadow` em lista, uma borda com um vão, `text-align: justify`), que ela consegue desenhar. Esta etapa só registra a pendência (decisão 16 da #1631).
+- **`components/ComponentDrawing/preview.html`:** new example with listed shadows, outline gap and justified text (the drawing the app started doing in the faithful Material 3 stage, #1571). The preview is static: closing writes the three as HTML and CSS (`box-shadow` list, a border with a gap, `text-align: justify`), which it can draw. This stage only records the pending item (decision 16 of #1631).
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-12: versão 83 (só o `project/design-system.json` com `lastChange`, além do preview abaixo).
+Gravado no artefato **Mapping** on 2026-11-12: version 83 (only `project/design-system.json` with `lastChange`, besides the preview below).
 
-- `components/ComponentDrawing/preview.html`: três exemplos novos na grade, em HTML e CSS estáticos com tokens do tema: sombras em lista (`box-shadow` com três camadas), vão no contorno (traçado SVG aberto onde a caixa de um nó nomeado o cruza) e texto justificado (`text-align: justify`, última linha à esquerda). O guia (`README.md`) já descrevia os três recursos e não mudou.
+- `components/ComponentDrawing/preview.html`: three new examples in the grid, in static HTML and CSS with theme tokens: listed shadows (`box-shadow` with three layers), outline gap (open SVG stroke where the box of a named node crosses it) and justified text (`text-align: justify`, last line on the left). The guide (`README.md`) already described the three features and did not change.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

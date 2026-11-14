@@ -1,5 +1,5 @@
-# Testador paralelo — 2026-11-04 (épico `epic/testador-paralelo`)
+# Parallel tester — 2026-11-04 (épico `epic/testador-paralelo`)
 
 ## Sincronização
 
-Sem impacto: a etapa só mudou a rodada completa do testador da nuvem (a divisão em 3 blocos, o modo "completo, bloco k de 3", as mensagens do coordenador e o resumo), documentação de teste e testes de ferramental; nenhum componente, token, ícone nem anatomia mudou. Nada foi gravado no artefato.
+Sem impacto: the stage only changed the full round of the cloud tester (the split into 3 blocks, the "full, block k of 3" mode, the coordinator's messages and the summary), test documentation and tooling tests; no component, token, icon or anatomy changed. Nothing was written to the artifact.

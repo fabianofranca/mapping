@@ -1,13 +1,13 @@
-# Perspectivas no guia e no exemplo — 2026-11-10 (épico `epic/guia-perspectivas`)
+# Perspectives in the guide and in the example — 2026-11-10 (épico `epic/guia-perspectivas`)
 
 ## Pendências
 
-O épico só muda o projeto de exemplo, o guia gerado, a documentação e o texto `help.guide.intro` (13 → 14 passos, cita as perspectivas). Nenhum componente, token ou ícone muda. Efeito no DS: o preview do `HelpDialog` no artefato mostra o texto antigo do guia ("12 passos", sem as perspectivas).
+The epic only changes the example project, the generated guide, the documentation and the `help.guide.intro` text (13 → 14 steps, mentions the perspectives). No component, token or icon changes. Effect on the DS: the `HelpDialog` preview in the artifact shows the old guide text ("12 steps", without the perspectives).
 
 ## Sincronização
 
-Nada foi gravado no artefato **Mapping**: a gravação do preview do `HelpDialog` foi negada pelo classificador de permissões da sessão (ver abaixo). Sem token, ícone nem guia de componente afetados.
+Nothing was written to the **Mapping** artifact: writing the `HelpDialog` preview was denied by the session's permission classifier (see below). No token, icon or component guide affected.
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: preview do `HelpDialog` com o texto antigo do passeio ("12 passos", sem as perspectivas) em vez de `help.guide.intro` de hoje (prévia, DS5).
+- Moved to the record of the epic `epic/sincronia-ds-2`: `HelpDialog` preview with the old tour text ("12 steps", without the perspectives) instead of today's `help.guide.intro` (preview, DS5).

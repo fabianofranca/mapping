@@ -1,13 +1,13 @@
-# Placement sem ruído — 2026-11-08 (épico `epic/placement-sem-ruido`)
+# Placement without noise — 2026-11-08 (épico `epic/placement-sem-ruido`)
 
 ## Pendências
 
 ## Sincronização
 
-Nenhuma gravação feita pelo agente: artefato curado à mão.
+No write made by the agent: hand-curated artifact.
 
-Impacto no DS: nenhum (correção no modelo e no `mapping.json`; sem componente, token ou ícone).
+Design system impact: none (fix in the model and in `mapping.json`; no component, token or icon).
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

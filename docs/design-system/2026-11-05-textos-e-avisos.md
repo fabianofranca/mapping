@@ -1,20 +1,20 @@
-# Textos da interface, linha de aviso e guia acertados — 2026-11-05 (épico `epic/textos-e-avisos`)
+# Interface texts, notice row and guide fixed — 2026-11-05 (épico `epic/textos-e-avisos`)
 
 ## Pendências
 
-- **`NoticeBadge` (linha de aviso, `NoticeLine`):** a `.notice-line` passa a ser um grid de duas colunas (`auto 1fr`, `align-items: start`): o ícone fica na coluna da esquerda, alinhado à primeira linha, e a mensagem (com `since` e `ref`) quebra na coluna da direita. Antes era um flex com quebra, e o ícone ficava sozinho acima da mensagem longa. Só tokens (`--space-*`). Arquivo: `src/theme/details.css` (`.notice-line`). Atualizar a variante "linha" do `NoticeBadge` no artefato.
-- **Textos:** a dica de Posição e Tamanho do painel da marcação e o texto da biblioteca em Especializações mudaram (sem impacto visual).
+- **`NoticeBadge` (notice row, `NoticeLine`):** `.notice-line` becomes a two-column grid (`auto 1fr`, `align-items: start`): the icon stays in the left column, aligned to the first line, and the message (with `since` and `ref`) wraps in the right column. Before it was a flex with wrapping, and the icon sat alone above the long message. Tokens only (`--space-*`). File: `src/theme/details.css` (`.notice-line`). Update the "row" variant of `NoticeBadge` in the artifact.
+- **Texts:** the Position and Size hint of the marking panel and the library text in Specializations changed (no visual impact).
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-05: versão 35 (conteúdo) e versão 36 (índice, só com o `lastChange`).
+Gravado no artefato **Mapping** on 2026-11-05: version 35 (content) and version 36 (index, only with the `lastChange`).
 
-- **`NoticeBadge`:** o guia (`README.md`) descreve o grid de duas colunas da linha de aviso (`auto 1fr`, vão `space-2`, `align-items: start`); o `bundle.css` ganhou a regra nova de `.notice-line` (e `.notice-origin` e `.notice-since` na coluna 2), igual a `src/theme/details.css`; a prévia ganhou um exemplo de mensagem longa em coluna estreita (`height` de 1700 para 1840).
-- **Textos:** a dica de Posição e Tamanho ("Em pixels do container" na marcação de container, "Em unidades do canvas" na do canvas) nas prévias de `MarkingPanel`, `PropertyGrid` e `HelpTip`, e o texto da biblioteca ("`formatVersion` 4 em diante") na prévia de `SpecsDialog`.
-- **Contraste:** sem impacto (nenhuma cor mudou).
+- **`NoticeBadge`:** the guide (`README.md`) describes the two-column grid of the notice row (`auto 1fr`, `space-2` gap, `align-items: start`); `bundle.css` gained the new `.notice-line` rule (and `.notice-origin` and `.notice-since` in column 2), identical to `src/theme/details.css`; the preview gained a long-message example in a narrow column (`height` from 1700 to 1840).
+- **Texts:** the Position and Size hint ("In container pixels" on the container marking, "In canvas units" on the canvas one) in the `MarkingPanel`, `PropertyGrid` and `HelpTip` previews, and the library text ("`formatVersion` 4 onward") in the `SpecsDialog` preview.
+- **Contrast:** no impact (no color changed).
 
 ## Ficou sem gravar
 
-Nada. Fica só uma conferência visual:
+Nothing. Only a visual check remains:
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: Conferência da prévia do `NoticeBadge` ("Linha do campo", exemplo de mensagem longa) nos dois temas.
+- Passou para o registro do épico `epic/sincronia-ds-2`: Check of the `NoticeBadge` preview ("Field row", long-message example) in both themes.

@@ -1,13 +1,13 @@
-# Exclusiva na frente drena a fila — 2026-11-13 (épico `epic/exclusiva-na-frente`)
+# Exclusive at the front drains the queue — 2026-11-13 (épico `epic/exclusiva-na-frente`)
 
 ## Pendências
 
-Pendências: nenhuma. Sem impacto: o épico só mexe no fluxo de entrega (`painel.py`, o skill `implementar-fila` e testes de ferramentas); nenhum componente, token ou ícone do design system da app muda.
+Pending items: none. No impact: the epic only touches the delivery flow (`painel.py`, the `implementar-fila` skill and tool tests); no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componente, token nem ícone da app.
+Sem impacto on the Claude Design Mapping artifact: nothing was written, since the epic changes no component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

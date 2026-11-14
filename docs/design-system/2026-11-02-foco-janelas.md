@@ -1,5 +1,5 @@
-# Foco nas janelas — 2026-11-02 (épico `epic/foco-janelas`)
+# Focus in windows — 2026-11-02 (épico `epic/foco-janelas`)
 
 ## Sincronização
 
-Sem impacto: a etapa só mudou o comportamento do foco ao fechar janelas de ferramenta, sem alterar tamanho, token, ícone nem anatomia. Nada foi gravado no artefato.
+Sem impacto: the stage only changed the focus behavior when closing tool windows, without altering size, token, icon or anatomy. Nothing was written to the artifact.

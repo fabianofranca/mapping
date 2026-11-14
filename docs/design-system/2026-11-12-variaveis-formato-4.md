@@ -1,13 +1,13 @@
-# Variáveis no formato 4, carousel como o Compose e slider em faixa — 2026-11-12 (épico `epic/variaveis-formato-4`)
+# Variables in format 4, carousel like Compose and band slider — 2026-11-12 (épico `epic/variaveis-formato-4`)
 
 ## Pendências
 
-Nenhuma. O épico muda a leitura do arquivo de componente (`let` e `$var`, trocados no `parseComponent`) e o desenho de dois componentes da biblioteca `material3-compose` (carousel e slider); nenhum componente, token nem ícone da interface da app muda.
+None. The epic changes how the component file is read (`let` and `$var`, swapped in `parseComponent`) and the drawing of two components of the `material3-compose` library (carousel and slider); no component, token or icon of the app's interface changes.
 
 ## Sincronização
 
-Sem impacto: nada a gravar no artefato **Mapping**.
+Sem impacto: nothing to write to the **Mapping** artifact.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

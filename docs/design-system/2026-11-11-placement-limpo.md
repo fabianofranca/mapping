@@ -1,13 +1,13 @@
-# Placement limpo — 2026-11-11 (épico `epic/placement-limpo`)
+# Clean placement — 2026-11-11 (épico `epic/placement-limpo`)
 
 ## Pendências
 
-Nenhuma. Impacto no DS: nenhum. O épico só muda o arredondamento do `placement` e das posições das perspectivas no modelo e o arrasto só vertical; nenhum componente, token nem ícone do design system da app muda.
+None. Impact on the DS: none. The epic only changes the rounding of `placement` and of the perspectives' positions in the model, and the vertical-only drag; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto no artefato **Mapping**: nenhum componente, token nem ícone do design system muda, então não há nada a gravar.
+Sem impacto on the **Mapping** artifact: no component, token or icon of the design system changes, so there is nothing to write.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

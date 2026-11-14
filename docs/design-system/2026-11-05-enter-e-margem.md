@@ -1,9 +1,9 @@
-# Enter grava o campo longo e Envolver com margem exata — 2026-11-05 (épico `epic/enter-e-margem`)
+# Enter saves the long field and Wrap with exact margin — 2026-11-05 (épico `epic/enter-e-margem`)
 
 ## Sincronização
 
-Nada foi gravado no artefato nesta sessão (o fechamento rodou sem acesso de escrita ao artefato **Mapping**). A EM1 (modelo e MCP) e a EM3 (foco do editor) não mudam tamanho, token, ícone nem anatomia. O único impacto é o da EM2, descrito abaixo.
+Nothing was written to the artifact in this session (the closing ran without write access to the **Mapping** artifact). EM1 (model and MCP) and EM3 (editor focus) do not change size, token, icon or anatomy. The only impact is EM2's, described below.
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: `TextField`: documentar no guia do `TextArea` do `StringEditor` o Enter que grava, o Shift+Enter que quebra e a troca de foco entre o campo de uma linha e o de várias.
+- Passou para o registro do épico `epic/sincronia-ds-2`: `TextField`: document in the `StringEditor` `TextArea` guide the Enter that saves, the Shift+Enter that breaks the line and the focus swap between the single-line field and the multi-line one.

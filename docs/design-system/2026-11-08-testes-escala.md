@@ -1,13 +1,13 @@
-# Testes de escala — 2026-11-08 (épico `epic/testes-escala`)
+# Scale tests — 2026-11-08 (épico `epic/testes-escala`)
 
 ## Pendências
 
-Pendências: nenhuma (só testes e CI; sem UI).
+Pending items: none (tests and CI only; no UI).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: o épico não mudou componentes, tokens nem ícones da app.
+No write to the Mapping artifact in Claude Design: the epic did not change app components, tokens or icons.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

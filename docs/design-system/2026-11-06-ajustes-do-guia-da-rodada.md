@@ -1,13 +1,13 @@
-# Ajustes do guia da rodada — 2026-11-06 (épico `epic/ajustes-do-guia-da-rodada`)
+# Round guide adjustments — 2026-11-06 (épico `epic/ajustes-do-guia-da-rodada`)
 
 ## Pendências
 
-Nenhuma. O épico só ajusta o texto de dois passos do guia de testes (R12.15 e R20.8); nenhum componente, token ou ícone do design system muda.
+None. The epic only adjusts the text of two steps of the test guide (R12.15 and R20.8); no design system component, token or icon changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não mudou componente, token nem ícone.
+Nothing to write to the **Mapping** artifact: the epic did not change any component, token or icon.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

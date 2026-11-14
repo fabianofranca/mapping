@@ -1,26 +1,26 @@
-# Revisão em janelas baixas — 2026-11-06 (épico `epic/revisao-janela-baixa`)
+# Review in short windows — 2026-11-06 (épico `epic/revisao-janela-baixa`)
 
 ## Pendências
 
-- **Filtros da revisão (`ReviewLevels`, `ReviewFilters`):** os filtros viram uma linha só com o botão **Filtros** (`Button` `sm`, ícone `filter`, `aria-haspopup="dialog"` e `aria-expanded`); com filtro ativo o rótulo é "Filtros · N" (N = grupos ativos entre decisão, tipos, imagem, camada e Só conflitos) e ao lado ficam o "N de M" e o **Limpar filtros**. Os controles de antes (decisão, chips de tipo, imagem, camada, Só conflitos) vão num `Popover` (`role="dialog"`, nome "Filtros da revisão", classe `review-filters-panel`: coluna, `--space-2` de espaço, `--space-3` de preenchimento, largura máxima de 20 × `--space-6`). Escolher não fecha o painel. Textos novos: `review.filtersButton` e `review.filtersButtonCount`. Arquivos: `src/ui/review/ReviewLevels.tsx`, `src/theme/review.css` (`.review-filters`, `.review-filters-panel`), `src/i18n/review.ts`. Atualizar o `ReviewLevels` no artefato (guia e prévia: linha de filtros recolhida, e o estado aberto do popover).
-- **Token `size-tw-bottom-review`:** de 344px para **240px** (3 linhas de 28 px da lista, o cabeçalho, os filtros recolhidos e o rodapé de atalhos a 900 px de largura). Arquivo: `src/theme/tokens.ts`. Atualizar o valor no `tokens.json` e a altura da janela inferior da revisão nos mockups.
-- **Legenda das marcas (revisão):** deixa de ser `position: absolute` dentro do canvas e passa a `position: fixed`, ancorada no canto superior esquerdo do canvas, com a largura limitada à coluna dele e a altura até o topo da barra de status; pode cobrir a janela Propostas e o minimapa. Camada: `--z-popover` (acima das janelas, abaixo de `--z-tooltip`). As medidas chegam por variáveis CSS (`--legend-top`, `--legend-left`, `--legend-width`, `--legend-room`) escritas pelo `ReviewLegend`. Sem token novo. Arquivos: `src/ui/review/ReviewCanvasControls.tsx`, `src/theme/review.css` (`.review-legend`). Atualizar o guia e a prévia do `Minimap` (a legenda cobrindo a janela inferior quando o canvas é baixo).
+- **Review filters (`ReviewLevels`, `ReviewFilters`):** the filters become a single row with the **Filters** button (`Button` `sm`, `filter` icon, `aria-haspopup="dialog"` and `aria-expanded`); with an active filter the label is "Filters · N" (N = active groups among decision, types, image, layer and Conflicts only) and next to it sit the "N of M" and **Clear filters**. The previous controls (decision, type chips, image, layer, Conflicts only) go in a `Popover` (`role="dialog"`, name "Review filters", class `review-filters-panel`: column, `--space-2` gap, `--space-3` padding, maximum width of 20 × `--space-6`). Choosing does not close the panel. New texts: `review.filtersButton` and `review.filtersButtonCount`. Files: `src/ui/review/ReviewLevels.tsx`, `src/theme/review.css` (`.review-filters`, `.review-filters-panel`), `src/i18n/review.ts`. Update `ReviewLevels` in the artifact (guide and preview: collapsed filters row, and the open state of the popover).
+- **Token `size-tw-bottom-review`:** from 344px to **240px** (3 list rows of 28 px, the header, the collapsed filters and the shortcuts footer at 900 px wide). File: `src/theme/tokens.ts`. Update the value in `tokens.json` and the height of the review bottom window in the mockups.
+- **Marking legend (review):** stops being `position: absolute` inside the canvas and becomes `position: fixed`, anchored to the top-left corner of the canvas, with its width limited to its column and its height up to the top of the status bar; it may cover the Proposals window and the minimap. Layer: `--z-popover` (above the windows, below `--z-tooltip`). The measurements arrive through CSS variables (`--legend-top`, `--legend-left`, `--legend-width`, `--legend-room`) written by `ReviewLegend`. No new token. Files: `src/ui/review/ReviewCanvasControls.tsx`, `src/theme/review.css` (`.review-legend`). Update the `Minimap` guide and preview (the legend covering the bottom window when the canvas is short).
 
-- **Janela mínima (`size-app-min-height`) e aviso "Abra numa janela maior":** o token passa de 860px para **720px** (`src/theme/tokens.ts`, vindo de `BREAKPOINTS.appMinHeight`); o aviso (`NarrowWindowNotice`, texto `narrow.body`) lê o valor e passa a dizer "900 × 720". Atualizar o valor no `tokens.json` e o número na prévia do aviso.
+- **Minimum window (`size-app-min-height`) and the "Open in a larger window" notice:** the token goes from 860px to **720px** (`src/theme/tokens.ts`, coming from `BREAKPOINTS.appMinHeight`); the notice (`NarrowWindowNotice`, text `narrow.body`) reads the value and now says "900 × 720". Update the value in `tokens.json` and the number in the notice preview.
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-06, no fechamento do épico (versão `1793937636-5db9`; o índice por último, com `lastChange`):
+Gravado no artefato **Mapping** on 2026-11-06, at the close of the epic (version `1793937636-5db9`; the index last, with `lastChange`):
 
-- `project/tokens.json`: `size-tw-bottom-review` de 344px para **240px** e `size-app-min-height` de 860px para **720px**, com os `usage` reescritos; o `usage` de `z-popover` passou a citar a legenda das marcas.
-- `project/components/bundle.css`: `.review-legend` (`position: fixed`, variáveis `--legend-*`, `z-index: var(--z-popover)`) e a regra nova `.review-filters-panel`.
-- `ReviewRow` (guia e prévia): a linha de filtros recolhida (**Filtros**, **Filtros · N**, "Mostrando N de M", **Limpar filtros**) e o painel aberto, em três cartões. Os filtros não têm componente próprio no Mapa.
-- `Minimap` (guia e prévia): a legenda das marcas ancorada, que desce por cima da Propostas e do minimapa quando o canvas é baixo (dois cartões: canvas alto e canvas baixo).
-- `NarrowWindow` (guia e prévia): 900×720.
-- `project/README.md` (princípio 1 e "Empilhamento"), `project/Layouts.md` e `project/Revisao.md` (um item em "Regras de comportamento", além das pendências).
-- `project/design-system.json`: só o `lastChange`.
+- `project/tokens.json`: `size-tw-bottom-review` from 344px to **240px** and `size-app-min-height` from 860px to **720px**, with the `usage` rewritten; the `usage` of `z-popover` now mentions the marking legend.
+- `project/components/bundle.css`: `.review-legend` (`position: fixed`, `--legend-*` variables, `z-index: var(--z-popover)`) and the new `.review-filters-panel` rule.
+- `ReviewRow` (guide and preview): the collapsed filters row (**Filters**, **Filters · N**, "Showing N of M", **Clear filters**) and the open panel, in three cards. The filters have no component of their own in the Map.
+- `Minimap` (guide and preview): the anchored marking legend, which drops over the Proposals window and the minimap when the canvas is short (two cards: tall canvas and short canvas).
+- `NarrowWindow` (guide and preview): 900×720.
+- `project/README.md` (principle 1 and "Stacking"), `project/Layouts.md` and `project/Revisao.md` (one item in "Behavior rules", besides the pending items).
+- `project/design-system.json`: only the `lastChange`.
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: a conferência das alturas dos cartões novos de `ReviewRow` (1440) e `Minimap` (1340) no visualizador real.
-- Passou para o registro do épico `epic/sincronia-ds-2`: a conferência de contraste dos cartões novos (a legenda ancorada e o painel de filtros usam só pares já cobertos em `Contraste.md`).
+- Passou para o registro do épico `epic/sincronia-ds-2`: checking the heights of the new `ReviewRow` (1440) and `Minimap` (1340) cards in the real viewer.
+- Passou para o registro do épico `epic/sincronia-ds-2`: the contrast check of the new cards (the anchored legend and the filters panel use only pairs already covered in `Contraste.md`).

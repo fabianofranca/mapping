@@ -1,13 +1,13 @@
-# Testador com subagente por lote — 2026-11-11 (épico `epic/testador-subagente`)
+# Tester with a subagent per batch — 2026-11-11 (épico `epic/testador-subagente`)
 
 ## Pendências
 
-Nenhuma. Impacto no DS: nenhum. O épico só mexe no prompt do testador, no `round-guide.mjs` e no `cloud.mjs`; nenhum componente, token ou ícone do design system da app muda.
+None. Impact on the DS: none. The epic only touches the tester's prompt, `round-guide.mjs` and `cloud.mjs`; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Sem impacto no artefato **Mapping**: o épico não muda componente, token nem ícone da app, então não há nada a gravar.
+Sem impacto on the **Mapping** artifact: the epic changes no component, token or icon of the app, so there is nothing to write.
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.

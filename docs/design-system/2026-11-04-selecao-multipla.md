@@ -1,10 +1,10 @@
-# Seleção múltipla — 2026-11-04 (épico `epic/selecao-multipla`)
+# Multiple selection — 2026-11-04 (épico `epic/selecao-multipla`)
 
 ## Sincronização
 
-Versões 25 (conteúdo) e 26 (índice) do artefato. **`Atalhos.md`:** a linha do Shift+clique cita Ctrl+clique (Cmd+clique no macOS); linhas novas "Selecionar por retângulo" (Shift+arrasto) e "Mover a seleção" (←↑→↓, 1 px; Shift, 10 px); parágrafo "Seleção múltipla" (no macOS o Ctrl+clique segue sendo o clique direito; o Shift+arrasto só soma; as setas só valem com o foco no canvas ou fora de controles, e não em somente leitura nem na revisão). **`Canvas.md`:** linha e parágrafo do retângulo de seleção (borda tracejada em `cv-select`, preenchimento `cv-select-fill`, sem halo nem prévia ao vivo, na camada de sobreposições) e `cv-select-fill` na tabela de tokens. **`tokens.json`:** token novo `cv-select-fill` (`rgba(77, 141, 255, 0.15)`, o mesmo nos dois temas; 141 tokens no artefato, 146 no código). **`Contraste.md`:** o par borda sobre preenchimento (2,26:1 no claro, 5,09:1 no escuro). **Não gravado:** a frase da introdução da Ajuda e a lista antiga no preview do `HelpDialog` (ver Pendências).
+Versões 25 (content) and 26 (index) of the artifact. **`Atalhos.md`:** the Shift+click row mentions Ctrl+click (Cmd+click on macOS); new rows "Select by rectangle" (Shift+drag) and "Move the selection" (←↑→↓, 1 px; Shift, 10 px); paragraph "Multiple selection" (on macOS Ctrl+click remains the right click; Shift+drag only adds; the arrows only apply with focus on the canvas or outside controls, and not in read-only nor in review). **`Canvas.md`:** row and paragraph for the selection rectangle (dashed border in `cv-select`, fill `cv-select-fill`, no halo or live preview, in the overlays layer) and `cv-select-fill` in the token table. **`tokens.json`:** new token `cv-select-fill` (`rgba(77, 141, 255, 0.15)`, the same in both themes; 141 tokens in the artifact, 146 in the code). **`Contraste.md`:** the border-over-fill pair (2.26:1 in light, 5.09:1 in dark). **Not written:** the Help intro sentence and the old list in the `HelpDialog` preview (see Pendências).
 
 ## Ficou sem gravar
 
-- Passou para o registro do épico `epic/sincronia-ds-2`: Preview do `HelpDialog` e a frase da introdução: refazer a lista e a introdução (`help.shortcuts.intro`) a partir do código de hoje.
-- Passou para o registro do épico `epic/sincronia-ds-2`: Contraste do retângulo de seleção (#456): já resolvida; o halo `cv-halo` está em `renderMarquee`, em `Canvas.md` e em `Contraste.md`.
+- Passou para o registro do épico `epic/sincronia-ds-2`: `HelpDialog` preview and the intro sentence: redo the list and the intro (`help.shortcuts.intro`) from today's code.
+- Passou para o registro do épico `epic/sincronia-ds-2`: Selection rectangle contrast (#456): already resolved; the `cv-halo` halo is in `renderMarquee`, in `Canvas.md` and in `Contraste.md`.

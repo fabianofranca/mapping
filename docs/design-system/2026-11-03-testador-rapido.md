@@ -1,5 +1,5 @@
-# Testador mais rápido — 2026-11-03 (épico `epic/testador-rapido`)
+# Faster tester — 2026-11-03 (épico `epic/testador-rapido`)
 
 ## Sincronização
 
-Sem impacto: a etapa só mudou `scripts/testing/`, documentação de teste e fluxo, sem tocar em `src/`. Nada foi gravado no artefato.
+Sem impacto: the stage only changed `scripts/testing/`, test documentation and flow, without touching `src/`. Nothing was written to the artifact.
