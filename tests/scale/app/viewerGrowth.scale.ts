@@ -7,9 +7,9 @@ import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../viewer/samples/samples';
 import { installFakeCanvas } from '../../canvas/harness';
 import { GROWTH_OPTIONS, expectLinearGrowth } from '../../support/growth';
 
-// Visualizador no teste de crescimento (#881): carregar e montar a cena, e redesenhá-la, em jsdom com o contexto
-// 2D falso (mede a árvore do Konva e o nosso código, não a pintura). A cena é a tela de exemplo repetida, uma
-// cópia abaixo da outra, com ids próprios, até chegar a `n` instâncias.
+// Viewer in the growth test (#881): loading and building the scene, and redrawing it, in jsdom with the fake
+// 2D context (it measures the Konva tree and our code, not the painting). The scene is the sample screen repeated, one
+// copy below the other, with their own ids, until reaching `n` instances.
 const library = loadLibrary(SAMPLE_FILES);
 
 function tiled(base: Screen, n: number): Screen {
@@ -23,7 +23,7 @@ function tiled(base: Screen, n: number): Screen {
       box: { ...i.box, y: i.box.y + k * base.height },
     })),
   ).flat();
-  return { ...base, id: `escala-${n}`, height: base.height * copies, instances };
+  return { ...base, id: `scale-${n}`, height: base.height * copies, instances };
 }
 
 function container(): HTMLDivElement {
@@ -47,8 +47,8 @@ afterAll(() => {
   document.body.replaceChildren();
 });
 
-describe('crescimento do visualizador (n = 1.250, 4n = 5.000 instâncias)', () => {
-  it('a cena repetida tem o tamanho pedido e desenha', () => {
+describe('viewer growth (n = 1,250, 4n = 5,000 instances)', () => {
+  it('the repeated scene has the requested size and draws', () => {
     const screen = tiled(SAMPLE_SCREEN, 1250);
     expect(screen.instances.length).toBeGreaterThanOrEqual(1250);
     const viewer = createViewer(container(), {
@@ -60,11 +60,11 @@ describe('crescimento do visualizador (n = 1.250, 4n = 5.000 instâncias)', () =
     viewer.dispose();
   });
 
-  it('carrega e monta a cena', GROWTH_OPTIONS, () => {
+  it('loads and builds the scene', GROWTH_OPTIONS, () => {
     let last: Viewer | null = null;
-    expectLinearGrowth('visualizador: createViewer', {
+    expectLinearGrowth('viewer: createViewer', {
       build,
-      // O visualizador da rodada anterior sai fora do tempo.
+      // The viewer of the previous round is dropped outside the measured time.
       prepare: () => {
         last?.dispose();
         last = null;
@@ -82,10 +82,10 @@ describe('crescimento do visualizador (n = 1.250, 4n = 5.000 instâncias)', () =
     (last as Viewer | null)?.dispose();
   });
 
-  it('atualiza uma instância da cena já montada', GROWTH_OPTIONS, () => {
+  it('updates one instance of the already built scene', GROWTH_OPTIONS, () => {
     const viewers: Viewer[] = [];
     let turn = 0;
-    expectLinearGrowth('visualizador: update de 1 instância', {
+    expectLinearGrowth('viewer: update of 1 instance', {
       build: (n) => {
         const { screen } = build(n);
         const viewer = createViewer(container(), {
@@ -96,12 +96,12 @@ describe('crescimento do visualizador (n = 1.250, 4n = 5.000 instâncias)', () =
         viewers.push(viewer);
         return { viewer, screen, next: screen } as UpdateState;
       },
-      // A tela nova (um valor de texto de uma instância) é montada fora do tempo; a medida é o `update`.
+      // The new screen (a text value of one instance) is built outside the measured time; the measurement is the `update`.
       prepare: (state) => {
         turn += 1;
         const instances = state.screen.instances.map((i) =>
           i.id === '0-i-bar'
-            ? { ...i, values: { ...i.values, title: `Entrar ${turn}` } }
+            ? { ...i, values: { ...i.values, title: `Sign in ${turn}` } }
             : i,
         );
         state.next = { ...state.screen, instances };

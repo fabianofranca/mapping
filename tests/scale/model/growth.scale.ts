@@ -8,7 +8,7 @@ import {
   measureGrowthAsync,
 } from '../../support/growth';
 
-// O auxiliar de crescimento com funções sintéticas: a linear passa e a quadrática (laço duplo) falha pela razão.
+// The growth helper with synthetic functions: the linear one passes and the quadratic one (double loop) fails on the ratio.
 interface Work {
   readonly size: number;
 }
@@ -20,7 +20,7 @@ function linear(w: Work): number {
   return sum;
 }
 
-/** Linear curto (< 1 ms em n), o caso que mais oscilava com a medição sequencial. */
+/** Short linear (< 1 ms at n), the case that fluctuated most with sequential measurement. */
 function shortLinear(w: Work): number {
   let sum = 0;
   for (let i = 0; i < w.size * 30; i++) sum += i % 7;
@@ -35,7 +35,7 @@ function quadratic(w: Work): number {
   return sum;
 }
 
-/** Relógio e coletor falsos: o tempo só anda quando o teste manda, então nada depende do tempo real. */
+/** Fake clock and collector: time only moves when the test says so, so nothing depends on real time. */
 function fakeEnvironment() {
   const state = { t: 0 };
   const log: string[] = [];
@@ -52,35 +52,35 @@ function fakeEnvironment() {
   };
 }
 
-describe('auxiliar de crescimento', () => {
-  it('a função linear passa (razão perto de 4×)', GROWTH_OPTIONS, () => {
-    const result = expectLinearGrowth('sintético linear', { build, run: linear });
+describe('growth helper', () => {
+  it('the linear function passes (ratio close to 4×)', GROWTH_OPTIONS, () => {
+    const result = expectLinearGrowth('synthetic linear', { build, run: linear });
     expect(result.ratio).toBeLessThan(GROWTH_LIMIT);
     expect(result.n).toBe(1250);
     expect(result.largeN).toBe(5000);
   });
 
-  it('a função linear curta (< 1 ms em n) passa', GROWTH_OPTIONS, () => {
-    const result = expectLinearGrowth('sintético linear curto', {
+  it('the short linear function (< 1 ms at n) passes', GROWTH_OPTIONS, () => {
+    const result = expectLinearGrowth('synthetic short linear', {
       build,
       run: shortLinear,
     });
     expect(result.ratio).toBeLessThan(GROWTH_LIMIT);
   });
 
-  it('a função quadrática falha pela razão (perto de 16×)', GROWTH_OPTIONS, () => {
+  it('the quadratic function fails on the ratio (close to 16×)', GROWTH_OPTIONS, () => {
     const result = measureGrowth({ build, run: quadratic });
     expect(result.ratio).toBeGreaterThan(GROWTH_LIMIT);
     expect(() =>
-      expectLinearGrowth('sintético quadrático', { build, run: quadratic }),
+      expectLinearGrowth('synthetic quadratic', { build, run: quadratic }),
     ).toThrow();
   });
 
-  it('o teto é 6×', () => {
+  it('the ceiling is 6×', () => {
     expect(GROWTH_LIMIT).toBe(6);
   });
 
-  it('cada execução mede uma versão nova do projeto, nos dois tamanhos', () => {
+  it('each run measures a new version of the project, at both sizes', () => {
     const seen = new Set<Work>();
     measureGrowth({
       build,
@@ -91,11 +91,11 @@ describe('auxiliar de crescimento', () => {
       warmup: 1,
       runs: 3,
     });
-    // (aquecimento + rodadas) por tamanho, todas objetos diferentes
+    // (warmup + rounds) per size, all different objects
     expect(seen.size).toBe(8);
   });
 
-  it('n e 4n se intercalam, com a ordem alternada por rodada', () => {
+  it('n and 4n are interleaved, with the order alternating per round', () => {
     const env = fakeEnvironment();
     const order: number[] = [];
     measureGrowth({
@@ -112,7 +112,7 @@ describe('auxiliar de crescimento', () => {
     expect(order).toEqual([1250, 5000, 5000, 1250, 1250, 5000, 5000, 1250]);
   });
 
-  it('coleta uma vez por par, fora do tempo medido', () => {
+  it('collects once per pair, outside the measured time', () => {
     const env = fakeEnvironment();
     measureGrowth({
       build,
@@ -127,7 +127,7 @@ describe('auxiliar de crescimento', () => {
     expect(env.log).toEqual(['collect', ...pair, 'collect', ...pair]);
   });
 
-  it('o aquecimento é o mesmo nos dois tamanhos', () => {
+  it('the warmup is the same at both sizes', () => {
     const count: Record<number, number> = { 1250: 0, 5000: 0 };
     measureGrowth({
       build,
@@ -142,18 +142,18 @@ describe('auxiliar de crescimento', () => {
     expect(count).toEqual({ 1250: 28, 5000: 28 });
   });
 
-  it('o prepare roda logo antes da sua execução e fora do tempo', () => {
+  it('prepare runs right before its run and outside the measured time', () => {
     const env = fakeEnvironment();
     let prepared: Work | null = null;
     const result = measureGrowth({
       build,
       prepare: (w) => {
         prepared = w;
-        env.state.t += 1000; // custoso, mas fora da medida
+        env.state.t += 1000; // costly, but outside the measurement
       },
       run: (w) => {
         expect(prepared).toBe(w);
-        env.state.t += w.size / 1250; // 1 ms em n, 4 ms em 4n
+        env.state.t += w.size / 1250; // 1 ms at n, 4 ms at 4n
       },
       warmup: 2,
       runs: 5,
@@ -165,7 +165,7 @@ describe('auxiliar de crescimento', () => {
     expect(result.ratio).toBeCloseTo(4, 9);
   });
 
-  it('a razão é a das medianas de uma amostra conhecida, com os quartis das razões par a par', () => {
+  it('the ratio is the one of the medians of a known sample, with the quartiles of the pairwise ratios', () => {
     const env = fakeEnvironment();
     const durations: Record<number, number[]> = {
       1250: [1, 9, 2, 8, 3],
@@ -187,12 +187,12 @@ describe('auxiliar de crescimento', () => {
     expect(result.smallMs).toBe(3);
     expect(result.largeMs).toBe(6);
     expect(result.ratio).toBe(2);
-    // razões par a par: 4, 4,44, 2,5, 6,25, 2 → ordenadas: 2, 2,5, 4, 4,44, 6,25
+    // pairwise ratios: 4, 4.44, 2.5, 6.25, 2 → sorted: 2, 2.5, 4, 4.44, 6.25
     expect(result.ratioQ1).toBeCloseTo(2.5, 9);
     expect(result.ratioQ3).toBeCloseTo(40 / 9, 9);
   });
 
-  it('a versão assíncrona intercala igual, com o prepare antes de cada execução', async () => {
+  it('the async version interleaves the same way, with prepare before each run', async () => {
     const env = fakeEnvironment();
     await measureGrowthAsync({
       build,
@@ -214,19 +214,19 @@ describe('auxiliar de crescimento', () => {
 });
 
 describe('growthRetry', () => {
-  it('GROWTH_RETRY=0 desliga o retry', () => {
+  it('GROWTH_RETRY=0 turns the retry off', () => {
     expect(growthRetry({ GROWTH_RETRY: '0' })).toBe(0);
   });
 
-  it('um inteiro de 0 a 9 vale ele mesmo', () => {
+  it('an integer from 0 to 9 is itself', () => {
     expect(growthRetry({ GROWTH_RETRY: '5' })).toBe(5);
   });
 
-  it('ausente vale 2', () => {
+  it('absent is 2', () => {
     expect(growthRetry({})).toBe(2);
   });
 
-  it('inválido vale 2', () => {
+  it('invalid is 2', () => {
     expect(growthRetry({ GROWTH_RETRY: 'x' })).toBe(2);
     expect(growthRetry({ GROWTH_RETRY: '-1' })).toBe(2);
     expect(growthRetry({ GROWTH_RETRY: '10' })).toBe(2);

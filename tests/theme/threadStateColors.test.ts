@@ -56,6 +56,6 @@ describe.each(STATES)('%s state badge', (state) => {
   });
 });
 
-it('o selo "aberta" sem mensagem segue neutro', () => {
+it('the "open" badge without a message stays neutral', () => {
   expect(ruleBody('.comments-badge')).toContain('var(--color-text-muted)');
 });

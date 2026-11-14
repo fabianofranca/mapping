@@ -71,10 +71,7 @@ describe('--help and usage errors (exit 2)', () => {
     ['without --file', ['kotlin', '--symbol', 'Foo']],
     ['without --symbol', ['kotlin', '--file', 'A.kt']],
     ['--file without a value', ['kotlin', '--symbol', 'Foo', '--file']],
-    [
-      'unknown option',
-      ['kotlin', '--file', 'A.kt', '--symbol', 'Foo', '--nope', 'x'],
-    ],
+    ['unknown option', ['kotlin', '--file', 'A.kt', '--symbol', 'Foo', '--nope', 'x']],
     ['stray argument', ['kotlin', 'A.kt', '--symbol', 'Foo']],
     [
       'repeated --overload',

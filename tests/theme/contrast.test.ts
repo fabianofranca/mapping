@@ -104,7 +104,7 @@ describe.each(['light', 'dark'] as const)(
   },
 );
 
-describe('canvas (iguais nos dois temas)', () => {
+describe('canvas (same in both themes)', () => {
   const cv = (name: string) => tokenValue(name, 'light');
 
   it('name tag text over cv-name-tag ≥ 4.5', () => {

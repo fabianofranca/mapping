@@ -25,7 +25,7 @@ describe('visible focus', () => {
   });
 });
 
-describe('altura dos controles', () => {
+describe('control height', () => {
   it.each(['.button', '.icon-button', '.segmented-item', '.input', '.tab'])(
     '%s uses the height of the --control-height role',
     (selector) => {
@@ -80,7 +80,7 @@ describe('stage 6.4: tooltips, layers, table and Diagnostics', () => {
     );
   });
 
-  it('tabela: as linhas dividem as mesmas colunas (subgrid)', () => {
+  it('table: the rows share the same columns (subgrid)', () => {
     expect(css['details.css']).toMatch(
       /\.data-grid \.grid-row\s*\{[^}]*grid-template-columns:\s*subgrid/,
     );

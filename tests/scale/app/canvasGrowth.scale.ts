@@ -13,13 +13,13 @@ import {
   expectLinearGrowth,
 } from '../../support/growth';
 
-// Crescimento do canvas (etapa canvas-desempenho, CD1): o quadro de pan, o de zoom e o primeiro quadro em
-// Enquadrar tudo com n = 1.250 e 4n = 5.000 marcações (50 por container, ou seja, 25 e 100 containers; setas na
-// metade), em jsdom com o contexto 2D falso: mede a árvore do Konva e o nosso código, não a pintura. Razão < 6×
-// (`expectLinearGrowth`); passar disso é defeito da etapa, não um teto a subir.
+// Canvas growth (stage canvas-desempenho, CD1): the pan frame, the zoom frame and the first frame in
+// Fit all with n = 1,250 and 4n = 5,000 markings (50 per container, i.e. 25 and 100 containers; arrows on
+// half), in jsdom with the fake 2D context: it measures the Konva tree and our code, not the painting. Ratio < 6×
+// (`expectLinearGrowth`); going over that is a defect of the stage, not a ceiling to raise.
 const PER_IMAGE = 50;
 
-/** Projetos montados uma vez por tamanho: montar não é o que se mede e leva segundos nos 5.000. */
+/** Projects built once per size: building is not what is measured and takes seconds at 5,000. */
 const projects = new Map<number, Project>();
 function projectOf(n: number): Project {
   let project = projects.get(n);
@@ -43,7 +43,7 @@ interface FrameState {
   readonly turn: { n: number };
 }
 
-/** Um cenário aberto por tamanho; `prepare` agenda a mudança de vista e `run` desenha o quadro. */
+/** One open scenario per size; `prepare` schedules the view change and `run` draws the frame. */
 function frameCase(label: string, act: (s: WholeProjectScenario, turn: number) => void) {
   const build = (n: number): FrameState => {
     const scenario = open(n);
@@ -57,49 +57,49 @@ function frameCase(label: string, act: (s: WholeProjectScenario, turn: number) =
     warmup: 5,
     runs: 15,
   });
-  // Cada caso devolve os cenários, que ocupam muita memória.
+  // Each case returns the scenarios, which take up a lot of memory.
   for (const scenario of opened.splice(0)) scenario.destroy();
 }
 
-describe(`crescimento do canvas (n = ${GROWTH_N}, ${GROWTH_FACTOR}n = ${GROWTH_N * GROWTH_FACTOR} marcações)`, () => {
-  it('o cenário tem os containers e as setas do tamanho pedido', () => {
+describe(`canvas growth (n = ${GROWTH_N}, ${GROWTH_FACTOR}n = ${GROWTH_N * GROWTH_FACTOR} markings)`, () => {
+  it('the scenario has the containers and arrows of the requested size', () => {
     const small = projectOf(GROWTH_N);
     const large = projectOf(GROWTH_N * GROWTH_FACTOR);
     if (small.containers.length !== 25 || large.containers.length !== 100) {
       throw new Error(
-        `fixture: ${small.containers.length} e ${large.containers.length} containers`,
+        `fixture: ${small.containers.length} and ${large.containers.length} containers`,
       );
     }
     if (small.arrows.length === 0 || large.arrows.length === 0)
-      throw new Error('fixture: sem setas');
+      throw new Error('fixture: no arrows');
   });
 
-  it('quadro de pan', GROWTH_OPTIONS, () => {
-    frameCase('canvas: quadro de pan', (s, turn) =>
+  it('pan frame', GROWTH_OPTIONS, () => {
+    frameCase('canvas: pan frame', (s, turn) =>
       s.controller.centerOnPoint({ x: 500 + (turn % 2) * 300, y: 500 }),
     );
   });
 
-  it('quadro de zoom', GROWTH_OPTIONS, () => {
-    frameCase('canvas: quadro de zoom', (s, turn) =>
+  it('zoom frame', GROWTH_OPTIONS, () => {
+    frameCase('canvas: zoom frame', (s, turn) =>
       s.controller.zoomBy(turn % 2 === 0 ? 1.1 : 1 / 1.1),
     );
   });
 
-  it('primeiro quadro em Enquadrar tudo', GROWTH_OPTIONS, () => {
+  it('first frame in Fit all', GROWTH_OPTIONS, () => {
     let last: WholeProjectScenario | null = null;
-    expectLinearGrowth('canvas: primeiro quadro em Enquadrar tudo', {
+    expectLinearGrowth('canvas: first frame in Fit all', {
       build: (n) => ({ n }),
-      // O cenário da rodada anterior sai fora do tempo.
+      // The scenario of the previous round is dropped outside the measured time.
       prepare: () => {
         last?.destroy();
         last = null;
-        // `CanvasController.destroy` deixa formas no registro de cores de acerto do Konva (cerca de cinco por
-        // marcação a cada abertura). Sem esvaziá-lo, a sexta abertura de 5.000 marcações leva ~90 s só procurando
-        // uma cor livre. Aqui nenhum outro cenário está vivo, então o registro pode ser esvaziado.
+        // `CanvasController.destroy` leaves shapes in Konva's hit-color registry (about five per
+        // marking on each opening). Without emptying it, the sixth opening of 5,000 markings takes ~90 s just looking for
+        // a free color. Here no other scenario is alive, so the registry can be emptied.
         for (const key of Object.keys(shapes)) delete shapes[key];
       },
-      // Mede abrir o cenário (store, derivados, controller) e o primeiro quadro, sobre o projeto já montado.
+      // Measures opening the scenario (store, derived state, controller) and the first frame, over the already built project.
       run: ({ n }) => {
         last = open(n);
       },

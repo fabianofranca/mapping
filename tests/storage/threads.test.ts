@@ -20,14 +20,14 @@ import { MemoryDirectory } from './memoryFs';
 
 afterEach(() => clearReportedErrors());
 
-describe('caminhos de conversa', () => {
-  it('reconhece só comments/<id>.json e comments/resolved/<id>.json', () => {
+describe('thread paths', () => {
+  it('recognizes only comments/<id>.json and comments/resolved/<id>.json', () => {
     expect(isThreadFilePath('comments/T1.json')).toBe(true);
     expect(isThreadFilePath('comments/resolved/T1.json')).toBe(true);
-    expect(isThreadFilePath('comments/.oculta.json')).toBe(false);
+    expect(isThreadFilePath('comments/.hidden.json')).toBe(false);
     expect(isThreadFilePath('comments/T1.txt')).toBe(false);
     expect(isThreadFilePath('comments/resolved/sub/T1.json')).toBe(false);
-    expect(isThreadFilePath('comments/outra/T1.json')).toBe(false);
+    expect(isThreadFilePath('comments/other/T1.json')).toBe(false);
     expect(isThreadFilePath('comments/../T1.json')).toBe(false);
     expect(isThreadFilePath('T1.json')).toBe(false);
     expect(threadLocationOfPath('comments/T1.json')).toEqual({
@@ -42,7 +42,7 @@ describe('caminhos de conversa', () => {
   });
 });
 
-/** O arquivo `<failing>.json` de `comments/` falha com um erro que não é "não existe". */
+/** The `<failing>.json` file of `comments/` fails with an error that is not "does not exist". */
 function failingThreadFile(root: MemoryDirectory, failing: string): DirectoryHandleLike {
   const wrapFile = (handle: FileHandleLike): FileHandleLike =>
     handle.name === failing
@@ -63,8 +63,8 @@ function failingThreadFile(root: MemoryDirectory, failing: string): DirectoryHan
   return wrapDir(root);
 }
 
-describe('pasta: comments/', () => {
-  it('lista só os arquivos válidos de cada pasta, lê, grava, carimba e apaga', async () => {
+describe('folder: comments/', () => {
+  it('lists only the valid files of each folder, reads, writes, stamps and deletes', async () => {
     const root = new MemoryDirectory('p');
     const storage = createFolderStorage(root);
     expect(await storage.listThreads(false)).toEqual([]);
@@ -73,7 +73,7 @@ describe('pasta: comments/', () => {
     root.put(threadFilePath('B', false), 'b');
     root.put(threadFilePath('A', false), 'a');
     root.put(threadFilePath('R', true), 'r');
-    root.put('comments/.oculta.json', 'x');
+    root.put('comments/.hidden.json', 'x');
     root.put('comments/notas.txt', 'x');
     root.put('comments/resolved/sub/X.json', 'x');
     expect(await storage.listThreads(false)).toEqual(['A', 'B']);
@@ -86,8 +86,8 @@ describe('pasta: comments/', () => {
     expect(stamp).toMatch(/^1:\d+$/);
     expect(await storage.statThread?.('Z', false)).toBeNull();
 
-    // `stampThreads` (decisão 9, etapa #1777): a mesma conferência de `listThreads` + `statThread`,
-    // num passo só, em ordem alfabética.
+    // `stampThreads` (decision 9, stage #1777): the same check as `listThreads` + `statThread`,
+    // in a single step, in alphabetical order.
     expect([...((await storage.stampThreads?.(false)) ?? [])]).toEqual([
       ['A', stamp],
       ['B', await storage.statThread?.('B', false)],
@@ -96,16 +96,16 @@ describe('pasta: comments/', () => {
       ['R', await storage.statThread?.('R', true)],
     ]);
 
-    // Um arquivo ilegível (erro que não é "não existe") não derruba a varredura nem faz a
-    // conversa parecer apagada: ela volta presente, com o carimbo desconhecido.
+    // An unreadable file (an error that is not "does not exist") does not break the scan nor make the
+    // thread look deleted: it comes back present, with the stamp unknown.
     const flaky = createFolderStorage(failingThreadFile(root, 'A.json'));
     expect([...((await flaky.stampThreads?.(false)) ?? [])]).toEqual([
       ['A', null],
       ['B', await storage.statThread?.('B', false)],
     ]);
 
-    await storage.writeThread('A', false, 'novo');
-    expect(await root.read(threadFilePath('A', false))).toBe('novo');
+    await storage.writeThread('A', false, 'new');
+    expect(await root.read(threadFilePath('A', false))).toBe('new');
     expect(await storage.statThread?.('A', false)).not.toBe(stamp);
     await storage.writeThread('C', true, 'c');
     expect(await root.read(threadFilePath('C', true))).toBe('c');
@@ -115,23 +115,23 @@ describe('pasta: comments/', () => {
     await expect(storage.removeThread('A', false)).resolves.toBeUndefined();
   });
 
-  it('mover ao resolver e ao reabrir: grava no destino e apaga a origem, sem deixar duas cópias', async () => {
+  it('moving on resolve and on reopen: writes to the destination and deletes the origin, leaving no two copies', async () => {
     const root = new MemoryDirectory('p');
     const storage = createFolderStorage(root);
-    await storage.writeThread('T1', false, 'aberta');
-    // Resolver: grava em resolved/ e só então apaga de comments/.
-    await storage.writeThread('T1', true, 'resolvida');
+    await storage.writeThread('T1', false, 'open');
+    // Resolve: writes to resolved/ and only then deletes from comments/.
+    await storage.writeThread('T1', true, 'resolved');
     await storage.removeThread('T1', false);
     expect(await storage.listThreads(false)).toEqual([]);
     expect(await storage.listThreads(true)).toEqual(['T1']);
-    // Reabrir: o caminho de volta.
-    await storage.writeThread('T1', false, 'reaberta');
+    // Reopen: the way back.
+    await storage.writeThread('T1', false, 'reopened');
     await storage.removeThread('T1', true);
     expect(await storage.listThreads(false)).toEqual(['T1']);
     expect(await storage.listThreads(true)).toEqual([]);
   });
 
-  it('recusa um id fora do THREAD_ID_RE', async () => {
+  it('refuses an id outside THREAD_ID_RE', async () => {
     const root = new MemoryDirectory('p');
     const storage = createFolderStorage(root);
     for (const bad of ['', '..', '.git', 'a/b', 'a\\b']) {
@@ -146,12 +146,12 @@ describe('pasta: comments/', () => {
 });
 
 describe('loadThreads', () => {
-  it('lê as válidas (abertas e resolvidas), guarda o texto exato e separa as inválidas', async () => {
+  it('reads the valid ones (open and resolved), keeps the exact text and separates the invalid ones', async () => {
     const root = new MemoryDirectory('p');
     const open = sampleThread({ id: 'T1' });
     const text = serializeThread(open);
     root.put(threadFilePath('T1', false), text);
-    root.put(threadFilePath('quebrada', false), '{ não é json');
+    root.put(threadFilePath('broken', false), '{ not json');
     root.put(threadFilePath('T2', false), serializeThread(sampleThread({ id: 'OUTRA' })));
     const resolved = sampleThread({ id: 'T3' });
     root.put(threadFilePath('T3', true), serializeThread(resolved));
@@ -161,16 +161,14 @@ describe('loadThreads', () => {
     expect(loaded.threads.find((t) => t.thread.id === 'T1')?.text).toBe(text);
     expect(loaded.threads.find((t) => t.thread.id === 'T1')?.resolvedDir).toBe(false);
     expect(loaded.threads.find((t) => t.thread.id === 'T3')?.resolvedDir).toBe(true);
-    expect(loaded.problems.map((p) => p.id).sort()).toEqual(['T2', 'quebrada']);
+    expect(loaded.problems.map((p) => p.id).sort()).toEqual(['T2', 'broken']);
     expect(loaded.problems.find((p) => p.id === 'T2')?.errors[0]).toContain(
       'the file name',
     );
-    expect(loaded.problemTexts?.get(threadFilePath('quebrada', false))).toBe(
-      '{ não é json',
-    );
+    expect(loaded.problemTexts?.get(threadFilePath('broken', false))).toBe('{ not json');
   });
 
-  it('sem resolvidas lê só comments/ (a leitura barata da conferência)', async () => {
+  it('without resolved ones reads only comments/ (the cheap read of the check)', async () => {
     const root = new MemoryDirectory('p');
     root.put(threadFilePath('T1', false), serializeThread(sampleThread({ id: 'T1' })));
     root.put(threadFilePath('T3', true), serializeThread(sampleThread({ id: 'T3' })));
@@ -178,11 +176,11 @@ describe('loadThreads', () => {
     expect(loaded.threads.map((t) => t.thread.id)).toEqual(['T1']);
   });
 
-  it('readThread diferencia arquivo ausente de arquivo inválido', async () => {
+  it('readThread tells a missing file from an invalid file', async () => {
     const root = new MemoryDirectory('p');
     root.put(threadFilePath('X', false), '[]');
     const storage = createFolderStorage(root);
-    expect(await readThread(storage, 'nada', false)).toMatchObject({
+    expect(await readThread(storage, 'nothing', false)).toMatchObject({
       ok: false,
       missing: true,
     });
@@ -193,11 +191,11 @@ describe('loadThreads', () => {
   });
 });
 
-describe('projeto local (IndexedDB)', () => {
+describe('local project (IndexedDB)', () => {
   let library: LocalLibrary;
   beforeEach(async () => {
     const opened = await openLocalLibrary();
-    if (!opened) throw new Error('IndexedDB indisponível');
+    if (!opened) throw new Error('IndexedDB unavailable');
     library = opened;
     for (const p of await library.list()) await library.remove(p.id);
   });
@@ -212,12 +210,12 @@ describe('projeto local (IndexedDB)', () => {
     ...extra,
   });
 
-  it('usa as chaves comments/… e leva as conversas do create', async () => {
+  it('uses the comments/… keys and carries the threads from create', async () => {
     await library.create(
       'a',
       files({
         threads: new Map([
-          [threadFilePath('T1', false), 'um'],
+          [threadFilePath('T1', false), 'one'],
           [threadFilePath('T2', true), 'dois'],
         ]),
       }),
@@ -226,7 +224,7 @@ describe('projeto local (IndexedDB)', () => {
     const storage = library.open('a');
     expect(await storage.listThreads(false)).toEqual(['T1']);
     expect(await storage.listThreads(true)).toEqual(['T2']);
-    expect(await storage.readThread('T1', false)).toBe('um');
+    expect(await storage.readThread('T1', false)).toBe('one');
     expect(await storage.readThread('T1', true)).toBeNull();
     expect(await storage.statThread).toBeUndefined();
     expect(storage.stampThreads).toBeUndefined();
@@ -235,7 +233,7 @@ describe('projeto local (IndexedDB)', () => {
     expect(await library.open('a').listThreads(false)).toEqual([]);
   });
 
-  it('gravar e apagar marcam o projeto como não exportado', async () => {
+  it('writing and deleting mark the project as not exported', async () => {
     await library.create('a', files(), { unexported: false });
     const storage = library.open('a');
     await storage.writeThread('T1', false, 'texto');
@@ -246,13 +244,13 @@ describe('projeto local (IndexedDB)', () => {
     await storage.removeThread('T1', false);
     expect((await library.get('a'))?.unexported).toBe(true);
     expect(await storage.readThread('T1', false)).toBeNull();
-    // Apagar o que não existe não falha nem marca de novo.
+    // Deleting what does not exist neither fails nor marks again.
     await library.setUnexported('a', false);
     await expect(storage.removeThread('T1', false)).resolves.toBeUndefined();
     expect((await library.get('a'))?.unexported).toBe(false);
   });
 
-  it('recusa um id fora do THREAD_ID_RE', async () => {
+  it('refuses an id outside THREAD_ID_RE', async () => {
     await library.create('a', files());
     const storage = library.open('a');
     await expect(storage.writeThread('../x', false, 'x')).rejects.toThrow(
@@ -262,7 +260,7 @@ describe('projeto local (IndexedDB)', () => {
   });
 });
 
-describe('zip com conversas', () => {
+describe('zip with threads', () => {
   const base = (threads: Map<string, string>): ProjectFiles => ({
     mapping: serialize(sampleProject()),
     images: new Map(),
@@ -272,12 +270,12 @@ describe('zip com conversas', () => {
     threads,
   });
 
-  it('ida e volta com abertas e resolvidas; o texto de um arquivo inválido volta idêntico', async () => {
+  it('round trip with open and resolved ones; the text of an invalid file comes back identical', async () => {
     const open = serializeThread(sampleThread({ id: 'T1' }));
     const threads = new Map([
       [threadFilePath('T1', false), open],
       [threadFilePath('T2', true), serializeThread(sampleThread({ id: 'T2' }))],
-      [threadFilePath('quebrada', false), '{ não é json'],
+      [threadFilePath('broken', false), '{ not json'],
     ]);
     const blob = await writeProjectZip(base(threads));
     const read = await readProjectZip(blob);
@@ -287,15 +285,15 @@ describe('zip com conversas', () => {
     expect(read.files.threads?.get('comments/T1.json')).toBe(open);
   });
 
-  it('só entram comments/<id>.json e comments/resolved/<id>.json', async () => {
+  it('only comments/<id>.json and comments/resolved/<id>.json come in', async () => {
     const zip = new JSZip();
     zip.file('mapping.json', serialize(sampleProject()));
     zip.file('comments/T1.json', 'a');
     zip.file('comments/resolved/T2.json', 'b');
     zip.file('comments/notas.txt', 'x');
-    zip.file('comments/.oculta.json', 'x');
+    zip.file('comments/.hidden.json', 'x');
     zip.file('comments/resolved/sub/T3.json', 'x');
-    zip.file('comments/outra/T4.json', 'x');
+    zip.file('comments/other/T4.json', 'x');
     const bytes = await zip.generateAsync({ type: 'arraybuffer' });
     const read = await readProjectZip(new Blob([bytes]));
     expect(read.ok).toBe(true);
@@ -306,10 +304,10 @@ describe('zip com conversas', () => {
     ]);
   });
 
-  it('um zip numa pasta (meu-projeto/) também traz as conversas, e sem elas o mapa vem vazio', async () => {
+  it('a zip in a folder (my-project/) also carries the threads, and without them the map comes back empty', async () => {
     const zip = new JSZip();
-    zip.file('meu/mapping.json', serialize(sampleProject()));
-    zip.file('meu/comments/T1.json', 'a');
+    zip.file('my/mapping.json', serialize(sampleProject()));
+    zip.file('my/comments/T1.json', 'a');
     const read = await readProjectZip(
       new Blob([await zip.generateAsync({ type: 'arraybuffer' })]),
     );

@@ -16,7 +16,9 @@ export function scriptMeasureProblems(text: string): string[] {
     if (!/\b(não|nunca)\b/i.test(sentence))
       problems.push(`${OLD_MEASURE} cited without negation: ${sentence.slice(0, 80)}`);
     if (!/só muda no fim/.test(sentence))
-      problems.push(`${OLD_MEASURE} without the reason (only changes at the end of the turn)`);
+      problems.push(
+        `${OLD_MEASURE} without the reason (only changes at the end of the turn)`,
+      );
   }
   return problems;
 }

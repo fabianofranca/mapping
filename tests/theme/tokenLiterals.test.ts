@@ -157,7 +157,7 @@ describe('theme-color', () => {
     expect(content('dark')).toBe(tokenValue('color-accent', 'dark'));
   });
 
-  it('o manifest segue o color-accent do tema claro', () => {
+  it('the manifest follows the color-accent of the light theme', () => {
     const manifest = JSON.parse(readFileSync('pwa/manifest.webmanifest', 'utf8')) as {
       theme_color: string;
     };

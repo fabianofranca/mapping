@@ -3,7 +3,7 @@ import { DEFAULT_LAYER_COLOR, LAYER_PALETTE } from '../../src/model';
 import { LAYER_COLORS } from '../../src/theme/tokens';
 
 describe('layer palette', () => {
-  it('src/model/layers.ts espelha os tokens layer-01…layer-10', () => {
+  it('src/model/layers.ts mirrors the tokens layer-01…layer-10', () => {
     expect(LAYER_PALETTE.map((c) => c.toLowerCase())).toEqual([...LAYER_COLORS]);
   });
 

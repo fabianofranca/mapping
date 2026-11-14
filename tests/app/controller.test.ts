@@ -796,6 +796,7 @@ describe('change proposals (stage 4)', () => {
     pickDirectory.mockResolvedValue(root);
     expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'opened' } });
     const { session } = await openedOf(app);
+    // pt-BR kept: shared fixture data (richScenario proposal title `Teste`) asserted by tests/store, tests/mcp
     expect(session.proposals.list.value.map((p) => p.title)).toEqual(['Teste']);
 
     await session.proposalActions.decide(
@@ -1101,7 +1102,7 @@ describe('folder recents (phase 6.6)', () => {
     const root = new PermissionDirectory('fresh');
     expect((await app.createFolderProject(root, 'New', [])).ok).toBe(true);
     await app.closeProject();
-    expect(folders().map((p) => p.name)).toEqual(['Novo']);
+    expect(folders().map((p) => p.name)).toEqual(['New']);
     await openViaPicker(root);
     expect(folders()).toHaveLength(1);
     // Another folder with the same name is another entry (`isSameEntry`, not the name).

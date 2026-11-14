@@ -40,7 +40,7 @@ describe('status bar item that opens a window', () => {
   });
 });
 
-describe('selo do IconButton', () => {
+describe('IconButton badge', () => {
   it('stays in the corner, outside the central glyph (⋯)', () => {
     const badge = rule(read('src/theme/controls.css'), '.icon-button-badge');
     expect(badge).toMatch(/transform:\s*translate\(/);

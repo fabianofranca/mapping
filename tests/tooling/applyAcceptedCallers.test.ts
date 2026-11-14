@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 const PATTERN = /\.applyAccepted\(/;
 
-/** Arquivos (ordenados) que chamam `.applyAccepted(`. */
+/** Files (sorted) that call `.applyAccepted(`. */
 export function callersOf(files: ReadonlyMap<string, string>): string[] {
   return [...files]
     .filter(([, text]) => PATTERN.test(text))

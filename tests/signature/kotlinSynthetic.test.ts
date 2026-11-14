@@ -174,11 +174,7 @@ describe('syntax error with file:line:column (of the opener)', () => {
       `package p\nval s = "abc\n@Composable fun Foo() {}\n`,
       'A.kt:2:9:',
     ],
-    [
-      'unterminated comment',
-      `package p\n\n  /* never closes\nfun x() {}\n`,
-      'A.kt:3:3:',
-    ],
+    ['unterminated comment', `package p\n\n  /* never closes\nfun x() {}\n`, 'A.kt:3:3:'],
     ['unclosed brace', `package p\nclass X {\n  fun y() {\n}\n`, 'A.kt:2:9:'],
     ['closing bracket without opening', `package p\nval a = 1 ]\n`, 'A.kt:2:11:'],
     ['closing of the wrong kind', `package p\nval a = (1]\n`, 'A.kt:2:11:'],

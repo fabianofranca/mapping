@@ -6,8 +6,8 @@ import { createHarness } from '../../components/harness';
 import { buildScaleProject } from '../../model/scaleProject';
 import { GROWTH_OPTIONS, expectLinearGrowth } from '../../support/growth';
 
-// Estado derivado do editor no teste de crescimento (#881): uma atualização do projeto à vista (versão nova) e
-// a leitura de tudo que o canvas, o painel e a lista leem.
+// Derived editor state in the growth test (#881): a project update in view (new version) and
+// reading everything that the canvas, the panel and the list read.
 function setup(markings: number) {
   const project = buildScaleProject({ markings });
   const h = createHarness(project);
@@ -33,8 +33,8 @@ function readAll({ derived }: Setup) {
   ] as const;
 }
 
-describe('crescimento do estado derivado (n = 1.250, 4n = 5.000 marcações)', () => {
-  it('lê tudo uma vez e confere que há o que medir', () => {
+describe('derived state growth (n = 1,250, 4n = 5,000 markings)', () => {
+  it('reads everything once and checks that there is something to measure', () => {
     const [layers, , annotations, dots, visibility, , incomplete, listing, , count] =
       readAll(setup(100));
     expect(layers.length).toBeGreaterThan(0);
@@ -47,16 +47,16 @@ describe('crescimento do estado derivado (n = 1.250, 4n = 5.000 marcações)', (
   });
 
   it(
-    'recalcula camadas visíveis, indicadores, visibilidade, pendências e lista numa versão nova',
+    'recomputes visible layers, indicators, visibility, pending items and list on a new version',
     GROWTH_OPTIONS,
     () => {
-      expectLinearGrowth('estado derivado do editor', {
+      expectLinearGrowth('editor derived state', {
         build: (n) => {
           const state = setup(n);
           readAll(state);
           return state;
         },
-        // `run` recebe uma cópia rasa: `shown` e `derived` são os mesmos, a versão nova é do projeto.
+        // `run` receives a shallow copy: `shown` and `derived` are the same, the new version is the project's.
         run: (state) => {
           state.shown.value = { ...state.project };
           return readAll(state);

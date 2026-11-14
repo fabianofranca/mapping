@@ -1,16 +1,16 @@
 // @vitest-environment node
-// Fase 8.2 (P1): catraca do "projeto à vista". A interface lê o projeto que está na tela
-// por `review.derived.shownProject` (na visão Proposto da revisão, o "como ficaria"; senão,
-// o confirmado). Só os arquivos abaixo podem ler `store.committed`/`store.project` em
-// `src/ui/**` e `src/app/**`, cada um com o porquê; um leitor novo quebra este teste, e um
-// que deixa de ler obriga a encurtar a lista (`toEqual`, não `toContain`).
+// Phase 8.2 (P1): ratchet of the "shown project". The interface reads the project that is on screen
+// through `review.derived.shownProject` (in the Proposed view of the review, the "how it would look"; otherwise,
+// the committed one). Only the files below may read `store.committed`/`store.project` in
+// `src/ui/**` and `src/app/**`, each with its reason; a new reader breaks this test, and one
+// that stops reading forces the list to be shortened (`toEqual`, not `toContain`).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const PATTERN = /\bstore\.(committed|project)\b/;
 
-/** Arquivos (ordenados) cujo texto lê `store.committed` ou `store.project`. */
+/** Files (sorted) whose text reads `store.committed` or `store.project`. */
 export function readersOf(files: ReadonlyMap<string, string>): string[] {
   return [...files]
     .filter(([, text]) => PATTERN.test(text))
@@ -18,7 +18,7 @@ export function readersOf(files: ReadonlyMap<string, string>): string[] {
     .sort();
 }
 
-/** `{ caminho relativo → texto }` de todo `.ts`/`.tsx` sob `dir`. */
+/** `{ relative path → text }` of every `.ts`/`.tsx` under `dir`. */
 function sources(dir: string, root = dir): Map<string, string> {
   const result = new Map<string, string>();
   for (const name of readdirSync(dir)) {
@@ -33,37 +33,37 @@ function sources(dir: string, root = dir): Map<string, string> {
 }
 
 /**
- * Quem ainda lê o projeto confirmado (ou o com a prévia do gesto) diretamente, e por quê.
- * Tudo o que descreve "o que está na tela" (trilha, barra de status, Camadas, Lista,
- * Incompletas, minimapa, atalhos de seleção, cursor) lê `shownProject`.
+ * Who still reads the committed project (or the one with the gesture preview) directly, and why.
+ * Everything that describes "what is on screen" (breadcrumb, status bar, Layers, List,
+ * Incomplete, minimap, selection shortcuts, cursor) reads `shownProject`.
  */
 const ALLOWLIST = [
-  // O editor existe se há projeto aberto, não "à vista".
+  // The editor exists if there is an open project, not "shown".
   'src/app/Editor.tsx',
-  // Diálogos de edição (apagar, renomear) agem sobre o projeto real; recusados na revisão.
+  // Edit dialogs (delete, rename) act on the real project; refused in the review.
   'src/app/EditorDialogs.tsx',
-  // O nome do projeto na barra é o real; o nome proposto aparece na revisão como mudança.
+  // The project name in the bar is the real one; the proposed name appears in the review as a change.
   'src/app/EditorMainBar.tsx',
-  // Fora do editor: sessão e recentes.
+  // Outside the editor: session and recents.
   'src/app/controller.ts',
-  // Referências `mapping://` e recortes apontam para o projeto real.
+  // `mapping://` references and crops point to the real project.
   'src/app/itemClipboard.ts',
-  // Pedidos de apagar imagem/marcação: projeto real, desabilitados na revisão.
+  // Requests to delete an image/marking: real project, disabled in the review.
   'src/app/useEditorDialogs.ts',
-  // Entrada de imagens (arrastar, colar, escolher): projeto real.
+  // Image intake (drag, paste, choose): real project.
   'src/app/useImageIntake.tsx',
-  // Diagnóstico do projeto real.
+  // Diagnostics of the real project.
   'src/ui/DiagnosticsView.tsx',
-  // Campo "Modo do desenho" do container (CF6): lê as especializações aplicadas do projeto real (como o ContainerDialog); desabilitado na revisão.
+  // "Drawing mode" field of the container (CF6): reads the applied specializations of the real project (like the ContainerDialog); disabled in the review.
   'src/ui/ContainerDrawingModeField.tsx',
-  // Novo container: lê as especializações aplicadas e a seleção do projeto real, para criar nele.
+  // New container: reads the applied specializations and the selection of the real project, to create in it.
   'src/ui/ContainerDialog.tsx',
-  // Detalhes na revisão (fase 9.5): o painel lê o projeto à vista; o atual é o outro lado
-  // de um item que não existe na visão Proposto (removido) e a origem dos fantasmas
-  // (anotações e pares que saem, desenhados no lugar onde estavam).
-  // Perspectivas (etapa #659, PE3): a lista de perspectivas, as chegadas e as raízes de cada uma são do
-  // projeto real; o projeto à vista de uma perspectiva só tem as raízes dela. Recusado na revisão
-  // (a revisão abre a Principal e trava o seletor).
+  // Details in the review (phase 9.5): the panel reads the shown project; the current one is the other side
+  // of an item that does not exist in the Proposed view (removed) and the source of the ghosts
+  // (annotations and pairs that leave, drawn where they were).
+  // Perspectives (stage #659, PE3): the list of perspectives, the arrivals and the roots of each one belong to the
+  // real project; the shown project of a perspective only has its roots. Refused in the review
+  // (the review opens the Main one and locks the selector).
   'src/ui/ArrivalNotice.tsx',
   'src/ui/ArrowLinksSection.tsx',
   'src/ui/CanvasContextMenu.tsx',
@@ -75,14 +75,14 @@ const ALLOWLIST = [
   'src/ui/PerspectiveSendMenu.tsx',
   'src/ui/PerspectivesSection.tsx',
   'src/ui/review/ReviewPanel.tsx',
-  // `CompareDialog`: a imagem "antes" é a do confirmado por definição.
+  // `CompareDialog`: the "before" image is the committed one by definition.
   'src/ui/review/ReviewCanvasControls.tsx',
-  // `useReviewNames`: precisa do atual e da prévia (nomes antes/depois).
+  // `useReviewNames`: needs the current one and the preview (before/after names).
   'src/ui/review/useReview.ts',
 ];
 
-describe('projeto à vista: quem lê store.committed/store.project em src/ui e src/app', () => {
-  it('a lista de leitores é exatamente a allowlist (um leitor novo justifica aqui ou lê shownProject)', () => {
+describe('shown project: who reads store.committed/store.project in src/ui and src/app', () => {
+  it('the list of readers is exactly the allowlist (a new reader is justified here or reads shownProject)', () => {
     const files = new Map([
       ...sources(join(process.cwd(), 'src', 'ui'), process.cwd()),
       ...sources(join(process.cwd(), 'src', 'app'), process.cwd()),
@@ -90,7 +90,7 @@ describe('projeto à vista: quem lê store.committed/store.project em src/ui e s
     expect(readersOf(files)).toEqual([...ALLOWLIST].sort());
   });
 
-  it('a varredura pega o padrão antigo e deixa passar o certo', () => {
+  it('the scan catches the old pattern and lets the right one through', () => {
     const files = new Map([
       ['src/ui/Old.tsx', 'const crumbs = crumbsOf(store.committed.value, selection);'],
       ['src/app/Old.ts', 'const p = editor.store.project.peek();'],

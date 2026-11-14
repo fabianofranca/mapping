@@ -1,6 +1,6 @@
 // @vitest-environment node
-// Etapa #323 (FC1): showToolWindow/hideToolWindow/toggleToolWindow do store só são importados
-// em src/ui e src/app por src/ui/toolWindowLayout.ts. A regra não pode desmontar a do Konva.
+// Stage #323 (FC1): showToolWindow/hideToolWindow/toggleToolWindow of the store are only imported
+// in src/ui and src/app by src/ui/toolWindowLayout.ts. The rule must not take down the Konva one.
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 
@@ -23,14 +23,14 @@ const konva = `import Konva from 'konva';
 export const k = Konva;
 `;
 
-describe('janelas de ferramenta: comandos do store só em toolWindowLayout.ts', () => {
-  it('import novo em src/ui/ é erro', async () => {
+describe('tool windows: store commands only in toolWindowLayout.ts', () => {
+  it('a new import in src/ui/ is an error', async () => {
     const messages = await restricted(raw, 'src/ui/review/Novo.tsx');
     expect(messages.length).toBeGreaterThan(0);
     expect(messages[0]).toContain('toolWindowLayout');
   });
 
-  it('import novo em src/app/ é erro', async () => {
+  it('a new import in src/app/ is an error', async () => {
     expect((await restricted(raw, 'src/app/Novo.tsx')).length).toBeGreaterThan(0);
   });
 
@@ -38,11 +38,11 @@ describe('janelas de ferramenta: comandos do store só em toolWindowLayout.ts', 
     expect(await restricted(raw, 'src/ui/toolWindowLayout.ts')).toEqual([]);
   });
 
-  it('outros nomes do store continuam livres', async () => {
+  it('other names from the store are still free', async () => {
     expect(await restricted(allowed, 'src/ui/Novo.tsx')).toEqual([]);
   });
 
-  it('a regra do Konva continua valendo em src/ui/', async () => {
+  it('the Konva rule still applies in src/ui/', async () => {
     const messages = await restricted(konva, 'src/ui/Novo.tsx');
     expect(messages).toHaveLength(1);
     expect(messages[0]).toContain('Konva');
