@@ -25,20 +25,20 @@ const key = (
   altKey: mods.alt ?? false,
 });
 
-describe('atalhos do editor', () => {
-  // Etapa 2.5: Alt+L tranca ou destranca o item selecionado.
-  it('Alt+L: trancar/destrancar (pela tecla física, por causa do Option no macOS)', () => {
+describe('editor shortcuts', () => {
+  // Stage 2.5: Alt+L locks or unlocks the selected item.
+  it('Alt+L: lock/unlock (by the physical key, because of Option on macOS)', () => {
     expect(shortcutFor(key('l', { alt: true }))).toEqual({ kind: 'toggle-lock' });
     expect(shortcutFor(key('¬', { alt: true }, 'KeyL'))).toEqual({ kind: 'toggle-lock' });
     expect(shortcutFor(key('l', { alt: true, shift: true }))).toBeNull();
     expect(shortcutFor(key('l', { alt: true, ctrl: true }))).toBeNull();
-    // O Ctrl+L continua sendo a janela Camadas e o L sozinho não faz nada.
+    // Ctrl+L is still the Layers window and L alone does nothing.
     expect(shortcutFor(key('l', { ctrl: true }))).toEqual({ kind: 'layers' });
     expect(shortcutFor(key('l'))).toBeNull();
   });
 
-  // Canvas limpo: Alt+H liga ou desliga o modo visualização.
-  it('Alt+H: modo visualização (pela tecla física, por causa do Option no macOS)', () => {
+  // Clean canvas: Alt+H toggles view mode.
+  it('Alt+H: view mode (by the physical key, because of Option on macOS)', () => {
     expect(shortcutFor(key('h', { alt: true }))).toEqual({ kind: 'view-mode' });
     expect(shortcutFor(key('˙', { alt: true }, 'KeyH'))).toEqual({ kind: 'view-mode' });
     expect(shortcutFor(key('h', { alt: true, shift: true }))).toBeNull();
@@ -46,8 +46,8 @@ describe('atalhos do editor', () => {
     expect(shortcutFor(key('h'))).toBeNull();
   });
 
-  // B3/P7: Alt+Shift+A arruma o container selecionado.
-  it('Alt+Shift+A: arrumar (pela tecla física, por causa do Option no macOS)', () => {
+  // B3/P7: Alt+Shift+A arranges the selected container.
+  it('Alt+Shift+A: arrange (by the physical key, because of Option on macOS)', () => {
     expect(shortcutFor(key('a', { alt: true, shift: true }))).toEqual({
       kind: 'arrange',
     });
@@ -58,13 +58,13 @@ describe('atalhos do editor', () => {
     expect(shortcutFor(key('a', { alt: true, shift: true, ctrl: true }))).toBeNull();
   });
 
-  // A camada ativa saiu: o Alt+N não é mais atalho.
-  it('Alt+N não faz nada (nem pela tecla física)', () => {
+  // The active layer is gone: Alt+N is no longer a shortcut.
+  it('Alt+N does nothing (not even by the physical key)', () => {
     expect(shortcutFor(key('n', { alt: true }))).toBeNull();
     expect(shortcutFor(key('˜', { alt: true }, 'KeyN'))).toBeNull();
   });
 
-  it('desfazer e refazer', () => {
+  it('undo and redo', () => {
     expect(shortcutFor(key('z', { ctrl: true }))).toEqual({ kind: 'undo' });
     expect(shortcutFor(key('z', { meta: true }))).toEqual({ kind: 'undo' });
     expect(shortcutFor(key('Z', { ctrl: true, shift: true }))).toEqual({ kind: 'redo' });
@@ -73,7 +73,7 @@ describe('atalhos do editor', () => {
     expect(shortcutFor(key('z'))).toBeNull();
   });
 
-  it('excluir e Esc', () => {
+  it('delete and Esc', () => {
     expect(shortcutFor(key('Delete'))).toEqual({ kind: 'delete' });
     expect(shortcutFor(key('Backspace'))).toEqual({ kind: 'delete' });
     expect(shortcutFor(key('Escape'))).toEqual({ kind: 'escape' });
@@ -82,8 +82,8 @@ describe('atalhos do editor', () => {
     expect(shortcutFor(key('z', { ctrl: true, alt: true }))).toBeNull();
   });
 
-  // Ctrl+Shift+número é o atalho oficial.
-  it('janelas de ferramenta: Ctrl+Shift+número e Alt+número', () => {
+  // Ctrl+Shift+number is the official shortcut.
+  it('tool windows: Ctrl+Shift+number and Alt+number', () => {
     expect(shortcutFor(key('1', { ctrl: true, shift: true }))).toEqual({
       kind: 'toggle-window',
       window: 'tree',
@@ -96,7 +96,7 @@ describe('atalhos do editor', () => {
       kind: 'toggle-window',
       window: 'list',
     });
-    // Com Shift o navegador manda o símbolo ($ no layout americano): vale a tecla física.
+    // With Shift the browser sends the symbol ($ on the US layout): the physical key counts.
     expect(shortcutFor(key('$', { ctrl: true, shift: true }, 'Digit4'))).toEqual({
       kind: 'toggle-window',
       window: 'list',
@@ -113,7 +113,7 @@ describe('atalhos do editor', () => {
       kind: 'toggle-window',
       window: 'diagnostics',
     });
-    // Alt+número desligado (Chrome no Linux troca de aba).
+    // Alt+number turned off (Chrome on Linux switches tabs).
     expect(shortcutFor(key('4', { alt: true }), false)).toBeNull();
     expect(shortcutFor(key('4', { ctrl: true, shift: true }), false)).toEqual({
       kind: 'toggle-window',
@@ -121,7 +121,7 @@ describe('atalhos do editor', () => {
     });
   });
 
-  it('setas movem a seleção 1 px; com Shift, 10 px; com Ctrl ou Alt não fazem isso', () => {
+  it('arrows move the selection 1 px; with Shift, 10 px; with Ctrl or Alt they do not', () => {
     expect(shortcutFor(key('ArrowLeft'))).toEqual({ kind: 'nudge', dx: -1, dy: 0 });
     expect(shortcutFor(key('ArrowDown'))).toEqual({ kind: 'nudge', dx: 0, dy: 1 });
     expect(shortcutFor(key('ArrowRight', { shift: true }))).toEqual({
@@ -136,11 +136,11 @@ describe('atalhos do editor', () => {
     });
     expect(shortcutFor(key('ArrowRight', { ctrl: true }))).toBeNull();
     expect(shortcutFor(key('ArrowLeft', { alt: true }))).toBeNull();
-    // Os atalhos com modificador seguem como estavam.
+    // The shortcuts with a modifier stay as they were.
     expect(shortcutFor(key('ArrowUp', { alt: true }))).toEqual({ kind: 'select-parent' });
   });
 
-  it('as setas são do editor só com o foco no canvas ou em nenhum controle', () => {
+  it('the arrows belong to the editor only with focus on the canvas or on no control', () => {
     const area = document.createElement('main');
     area.setAttribute('data-canvas-area', '');
     const button = document.createElement('button');
@@ -158,7 +158,7 @@ describe('atalhos do editor', () => {
     outside.remove();
   });
 
-  it('redimensionar a janela em foco e andar na seleção', () => {
+  it('resize the focused window and walk through the selection', () => {
     expect(shortcutFor(key('ArrowLeft', { ctrl: true, shift: true }))).toEqual({
       kind: 'resize-window',
       dx: -1,
@@ -175,8 +175,8 @@ describe('atalhos do editor', () => {
     });
   });
 
-  // Enquadrar seleção: Shift+2 pela tecla física (com Shift o `key` vira `@` ou `"`).
-  it('Shift+2: enquadrar a seleção, pela tecla física', () => {
+  // Frame selection: Shift+2 by the physical key (with Shift the `key` becomes `@` or `"`).
+  it('Shift+2: frame the selection, by the physical key', () => {
     expect(shortcutFor(key('@', { shift: true }, 'Digit2'))).toEqual({
       kind: 'fit-selection',
     });
@@ -184,7 +184,7 @@ describe('atalhos do editor', () => {
       kind: 'fit-selection',
     });
     expect(shortcutFor(key('2', { shift: true }))).toEqual({ kind: 'fit-selection' });
-    // Sem Shift, ou com outro modificador, não é este atalho (Ctrl+Shift+2 abre uma janela).
+    // Without Shift, or with another modifier, it is not this shortcut (Ctrl+Shift+2 opens a window).
     expect(shortcutFor(key('2', {}, 'Digit2'))).toBeNull();
     expect(shortcutFor(key('@', { shift: true, ctrl: true }, 'Digit2'))).not.toEqual({
       kind: 'fit-selection',
@@ -192,8 +192,8 @@ describe('atalhos do editor', () => {
     expect(SHORTCUT_LABELS.fitSelection).toBe('Shift+2');
   });
 
-  // Enquadrar tudo: Shift+1 pela tecla física (com Shift o `key` vira `!` ou `1`).
-  it('Shift+1: enquadrar tudo, pela tecla física', () => {
+  // Frame all: Shift+1 by the physical key (with Shift the `key` becomes `!` or `1`).
+  it('Shift+1: frame all, by the physical key', () => {
     expect(shortcutFor(key('!', { shift: true }, 'Digit1'))).toEqual({ kind: 'fit-all' });
     expect(shortcutFor(key('1', { shift: true }, 'Digit1'))).toEqual({ kind: 'fit-all' });
     expect(shortcutFor(key('1', {}, 'Digit1'))).toBeNull();
@@ -203,9 +203,9 @@ describe('atalhos do editor', () => {
     expect(SHORTCUT_LABELS.fitAll).toBe('Shift+1');
   });
 
-  it('zoom, exportar, camadas, ajuda e configurações', () => {
+  it('zoom, export, layers, help and settings', () => {
     expect(shortcutFor(key('=', { ctrl: true }))).toMatchObject({ kind: 'zoom' });
-    // Ctrl+Shift+= (Ctrl++ no teclado americano) também aproxima (#971, item 5).
+    // Ctrl+Shift+= (Ctrl++ on the US keyboard) also zooms in (#971, item 5).
     expect(shortcutFor(key('+', { ctrl: true, shift: true }))).toMatchObject({
       kind: 'zoom',
     });
@@ -220,13 +220,13 @@ describe('atalhos do editor', () => {
     expect(shortcutFor(key('F1'))).toEqual({ kind: 'help' });
   });
 
-  it('Alt+número vale instalado, ou fora do Linux', () => {
+  it('Alt+number works when installed, or outside Linux', () => {
     expect(altNumbersAvailable('X11; Linux x86_64', false)).toBe(false);
     expect(altNumbersAvailable('X11; Linux x86_64', true)).toBe(true);
     expect(altNumbersAvailable('Macintosh; Intel Mac OS X', false)).toBe(true);
   });
 
-  it('campos de texto ficam com o teclado', () => {
+  it('text fields keep the keyboard', () => {
     expect(isTextInput(document.createElement('input'))).toBe(true);
     expect(isTextInput(document.createElement('textarea'))).toBe(true);
     expect(isTextInput(document.createElement('div'))).toBe(false);
@@ -234,39 +234,40 @@ describe('atalhos do editor', () => {
   });
 });
 
-describe('atalhos de copiar (etapa 3a.2)', () => {
-  it('Ctrl+C e Cmd+C copiam a referência', () => {
+describe('copy shortcuts (stage 3a.2)', () => {
+  it('Ctrl+C and Cmd+C copy the reference', () => {
     expect(shortcutFor(key('c', { ctrl: true }))).toEqual({ kind: 'copy-reference' });
     expect(shortcutFor(key('c', { meta: true }))).toEqual({ kind: 'copy-reference' });
     expect(shortcutFor(key('C', { ctrl: true }))).toEqual({ kind: 'copy-reference' });
     expect(shortcutFor(key('c'))).toBeNull();
   });
 
-  it('Ctrl+Alt+C copia o recorte (pela tecla física, por causa do Option no macOS)', () => {
+  it('Ctrl+Alt+C copies the crop (by the physical key, because of Option on macOS)', () => {
     expect(shortcutFor(key('c', { ctrl: true, alt: true }))).toEqual({
       kind: 'copy-crop',
     });
+    // pt-BR kept: ç is the character macOS Option+C produces (a key value, not Portuguese text)
     expect(shortcutFor(key('ç', { meta: true, alt: true }, 'KeyC'))).toEqual({
       kind: 'copy-crop',
     });
     expect(shortcutFor(key('c', { alt: true }))).toBeNull();
   });
 
-  it('Ctrl+Shift+C continua livre: é o das ferramentas de desenvolvedor do Chrome', () => {
+  it('Ctrl+Shift+C stays free: it is the Chrome developer tools one', () => {
     expect(shortcutFor(key('c', { ctrl: true, shift: true }))).toBeNull();
     expect(shortcutFor(key('c', { ctrl: true, alt: true, shift: true }))).toBeNull();
   });
 });
 
-// Etapa 4 (HANDOFF-PROPOSALS 6): atalhos da revisão de propostas.
-describe('atalhos da revisão', () => {
-  it('A / R / Backspace decidem o nível selecionado (R é Rejeitar na revisão)', () => {
+// Stage 4 (HANDOFF-PROPOSALS 6): proposal review shortcuts.
+describe('review shortcuts', () => {
+  it('A / R / Backspace decide the selected level (R is Reject in the review)', () => {
     expect(reviewShortcutFor(key('a'))).toEqual({ kind: 'decide', state: 'accepted' });
     expect(reviewShortcutFor(key('R'))).toEqual({ kind: 'decide', state: 'rejected' });
     expect(reviewShortcutFor(key('Backspace'))).toEqual({ kind: 'decide', state: null });
   });
 
-  it('N / Shift+N e C / Shift+C andam nas pendentes e nos conflitos', () => {
+  it('N / Shift+N and C / Shift+C walk through the pending ones and the conflicts', () => {
     expect(reviewShortcutFor(key('n'))).toEqual({
       kind: 'step',
       target: 'pending',
@@ -289,14 +290,14 @@ describe('atalhos da revisão', () => {
     });
   });
 
-  it('P alterna Atual/Proposto, L a legenda e Ctrl+Enter aplica', () => {
+  it('P toggles Current/Proposed, L the legend and Ctrl+Enter applies', () => {
     expect(reviewShortcutFor(key('p'))).toEqual({ kind: 'toggle-view' });
     expect(reviewShortcutFor(key('l'))).toEqual({ kind: 'legend' });
     expect(reviewShortcutFor(key('Enter', { ctrl: true }))).toEqual({ kind: 'apply' });
     expect(reviewShortcutFor(key('Enter'))).toBeNull();
   });
 
-  it('não pega os atalhos do editor (Ctrl+Z, Ctrl+Shift+7, Alt+…)', () => {
+  it('does not catch the editor shortcuts (Ctrl+Z, Ctrl+Shift+7, Alt+…)', () => {
     expect(reviewShortcutFor(key('z', { ctrl: true }))).toBeNull();
     expect(reviewShortcutFor(key('&', { ctrl: true, shift: true }, 'Digit7'))).toBeNull();
     expect(reviewShortcutFor(key('a', { alt: true }))).toBeNull();
@@ -311,7 +312,7 @@ describe('atalhos da revisão', () => {
   });
 });
 
-// Etapa 8 (8.3), F5: `aria-keyshortcuts` na sintaxe ARIA; o rótulo humano fica na dica.
+// Stage 8 (8.3), F5: `aria-keyshortcuts` in ARIA syntax; the human label stays in the tooltip.
 describe('ariaKeys', () => {
   it.each([
     ['Ctrl+E', 'Control+E'],
@@ -333,13 +334,13 @@ describe('ariaKeys', () => {
     expect(ariaKeys(label)).toBe(aria);
   });
 
-  it('o que não é tecla não vira atributo', () => {
-    expect(ariaKeys('Ctrl+clique')).toBeUndefined();
+  it('what is not a key does not become an attribute', () => {
+    expect(ariaKeys('Ctrl+click')).toBeUndefined();
     expect(ariaKeys('')).toBeUndefined();
     expect(ariaKeys(undefined)).toBeUndefined();
   });
 
-  it('todos os atalhos da app têm forma ARIA', () => {
+  it('all the app shortcuts have an ARIA form', () => {
     const labels = [
       ...Object.values(SHORTCUT_LABELS),
       ...Object.values(REVIEW_KEYS),
@@ -351,14 +352,14 @@ describe('ariaKeys', () => {
   });
 });
 
-describe('atalho Envolver (etapa Envolver, EV1)', () => {
-  it('Ctrl+G e Cmd+G envolvem', () => {
+describe('Wrap shortcut (stage Wrap, EV1)', () => {
+  it('Ctrl+G and Cmd+G wrap', () => {
     expect(shortcutFor(key('g', { ctrl: true }))).toEqual({ kind: 'wrap' });
     expect(shortcutFor(key('g', { meta: true }))).toEqual({ kind: 'wrap' });
     expect(shortcutFor(key('G', { ctrl: true }))).toEqual({ kind: 'wrap' });
   });
 
-  it('G sozinho, Ctrl+Shift+G e Alt+G não são o atalho', () => {
+  it('G alone, Ctrl+Shift+G and Alt+G are not the shortcut', () => {
     expect(shortcutFor(key('g'))).toBeNull();
     expect(shortcutFor(key('g', { ctrl: true, shift: true }))).toBeNull();
     expect(shortcutFor(key('g', { alt: true }))).toBeNull();

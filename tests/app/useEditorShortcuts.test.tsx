@@ -32,8 +32,8 @@ import { createHarness, type Harness } from '../components/harness';
 import { sampleProject } from '../model/fixtures';
 import { cadastroProject } from '../model/specFixtures';
 
-// Atalhos do editor ligados ao store, à UI e ao canvas: o que cada tecla faz de verdade
-// (a tradução tecla → atalho é testada à parte, em `shortcuts.test.ts`).
+// Editor shortcuts wired to the store, the UI and the canvas: what each key really does
+// (the key → shortcut translation is tested separately, in `shortcuts.test.ts`).
 
 type Mods = Partial<Record<'ctrl' | 'meta' | 'shift' | 'alt', boolean>>;
 
@@ -147,7 +147,7 @@ const marking = (h: Harness, id: string) => {
   return found;
 };
 
-/** Dispara o evento a partir de um elemento (o alvo conta para campos de texto). */
+/** Fires the event from an element (the target matters for text fields). */
 function pressOn(el: Element, key: string, mods: Mods = {}): KeyboardEvent {
   const event = new KeyboardEvent('keydown', {
     key,
@@ -170,8 +170,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('useEditorShortcuts: edição', () => {
-  it('Ctrl+Z desfaz, Ctrl+Shift+Z e Ctrl+Y refazem, e o navegador não recebe a tecla', () => {
+describe('useEditorShortcuts: editing', () => {
+  it('Ctrl+Z undoes, Ctrl+Shift+Z and Ctrl+Y redo, and the browser does not receive the key', () => {
     const s = setup();
     s.harness.actions.renameLayer('L1', 'Pintura');
     expect(s.press('z', { ctrl: true }).defaultPrevented).toBe(true);
@@ -183,14 +183,14 @@ describe('useEditorShortcuts: edição', () => {
     expect(s.harness.project().layers[0]?.name).toBe('Pintura');
   });
 
-  it('Cmd+Z também desfaz (macOS)', () => {
+  it('Cmd+Z also undoes (macOS)', () => {
     const s = setup();
     s.harness.actions.renameLayer('L1', 'Pintura');
     s.press('z', { meta: true });
     expect(s.harness.project().layers[0]?.name).toBe('Lataria');
   });
 
-  it('fora do foco em campos: Ctrl+Z num campo de texto é do campo, não do editor', () => {
+  it('outside field focus: Ctrl+Z in a text field belongs to the field, not the editor', () => {
     const s = setup();
     s.harness.actions.renameLayer('L1', 'Pintura');
     const input = document.createElement('input');
@@ -200,7 +200,7 @@ describe('useEditorShortcuts: edição', () => {
     expect(s.harness.project().layers[0]?.name).toBe('Pintura');
   });
 
-  it('Esc sem gesto em andamento limpa a seleção; com gesto, só cancela o gesto', () => {
+  it('Esc without a gesture in progress clears the selection; with a gesture, it only cancels the gesture', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.canvas.cancelInteraction.mockReturnValue(true);
@@ -211,25 +211,25 @@ describe('useEditorShortcuts: edição', () => {
     expect(s.harness.ui.selection.value).toBeNull();
   });
 
-  it('Esc com a dica de ajuda aberta fecha só a dica e não limpa a seleção', async () => {
-    locale.value = 'pt-BR';
+  it('Esc with the help tip open closes only the tip and does not clear the selection', async () => {
+    locale.value = 'en-US';
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
-    render(<HelpTip name="Largura" text="Em pixels da imagem." />);
+    render(<HelpTip name="Width" text="In pixels of the image." />);
     const user = userEvent.setup();
     await user.tab();
     await user.keyboard('{Enter}');
-    const button = screen.getByRole('button', { name: 'Sobre Largura' });
+    const button = screen.getByRole('button', { name: 'About Width' });
     expect(button.getAttribute('aria-expanded')).toBe('true');
     await user.keyboard('{Escape}');
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
-    // Sem dica aberta, o Esc segue para quem o trata hoje.
+    // With no tip open, Esc goes to whoever handles it today.
     await user.keyboard('{Escape}');
     expect(s.harness.ui.selection.value).toBeNull();
   });
 
-  it('Esc sem canvas montado também limpa a seleção', () => {
+  it('Esc without a mounted canvas also clears the selection', () => {
     const s = setup();
     s.harness.context.canvas.current = null;
     s.harness.ui.selection.value = { kind: 'image', id: 'I1' };
@@ -238,8 +238,8 @@ describe('useEditorShortcuts: edição', () => {
   });
 });
 
-describe('useEditorShortcuts: excluir', () => {
-  it('Delete e Backspace pedem a exclusão da marcação selecionada', () => {
+describe('useEditorShortcuts: delete', () => {
+  it('Delete and Backspace request deletion of the selected marking', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     s.press('Delete');
@@ -249,14 +249,14 @@ describe('useEditorShortcuts: excluir', () => {
     expect(s.dialogs.requestDeleteImage).not.toHaveBeenCalled();
   });
 
-  it('com uma imagem selecionada, pede a exclusão da imagem', () => {
+  it('with an image selected, requests deletion of the image', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'image', id: 'I2' };
     s.press('Delete');
     expect(s.dialogs.requestDeleteImage.mock.calls[0]?.[0]).toMatchObject({ id: 'I2' });
   });
 
-  it('sem seleção ou em projeto somente leitura, não faz nada', () => {
+  it('without a selection or in a read-only project, does nothing', () => {
     const none = setup();
     none.press('Delete');
     expect(none.dialogs.requestDeleteMarking).not.toHaveBeenCalled();
@@ -268,7 +268,7 @@ describe('useEditorShortcuts: excluir', () => {
     expect(ro.dialogs.requestDeleteMarking).not.toHaveBeenCalled();
   });
 
-  it('num campo de texto, Delete apaga texto e não o item', () => {
+  it('in a text field, Delete erases text and not the item', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     const input = document.createElement('input');
@@ -278,8 +278,8 @@ describe('useEditorShortcuts: excluir', () => {
   });
 });
 
-describe('useEditorShortcuts: modo visualização (Alt+H)', () => {
-  it('liga e desliga, volta ao modo Navegar e mantém a seleção', () => {
+describe('useEditorShortcuts: view mode (Alt+H)', () => {
+  it('toggles on and off, goes back to Navigate mode and keeps the selection', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     s.harness.ui.mode.value = 'draw';
@@ -293,8 +293,8 @@ describe('useEditorShortcuts: modo visualização (Alt+H)', () => {
   });
 });
 
-describe('useEditorShortcuts: Alt+H com o foco num controle do painel', () => {
-  it('desliga o modo com o foco numa caixa de seleção (Choice) do painel', () => {
+describe('useEditorShortcuts: Alt+H with focus on a panel control', () => {
+  it('turns the mode off with focus on a checkbox (Choice) of the panel', () => {
     const s = setup();
     s.press('h', { alt: true });
     const box = document.createElement('input');
@@ -306,7 +306,7 @@ describe('useEditorShortcuts: Alt+H com o foco num controle do painel', () => {
     box.remove();
   });
 
-  it('com campo de texto em foco, o Alt+H não age', () => {
+  it('with a text field in focus, Alt+H does not act', () => {
     const s = setup();
     s.press('h', { alt: true });
     const input = document.createElement('input');
@@ -318,8 +318,8 @@ describe('useEditorShortcuts: Alt+H com o foco num controle do painel', () => {
   });
 });
 
-describe('useEditorShortcuts: sair do modo visualização (Esc)', () => {
-  it('o Esc sai do modo e não mexe na seleção', () => {
+describe('useEditorShortcuts: leaving view mode (Esc)', () => {
+  it('Esc leaves the mode and does not touch the selection', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     s.press('h', { alt: true });
@@ -329,7 +329,7 @@ describe('useEditorShortcuts: sair do modo visualização (Esc)', () => {
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
   });
 
-  it('com campo de texto em foco, o Esc não sai do modo', () => {
+  it('with a text field in focus, Esc does not leave the mode', () => {
     const s = setup();
     s.press('h', { alt: true });
     const input = document.createElement('input');
@@ -341,8 +341,8 @@ describe('useEditorShortcuts: sair do modo visualização (Esc)', () => {
   });
 });
 
-describe('useEditorShortcuts: trava (Alt+L)', () => {
-  it('tranca e destranca a marcação selecionada, com uma entrada de desfazer cada', () => {
+describe('useEditorShortcuts: lock (Alt+L)', () => {
+  it('locks and unlocks the selected marking, with one undo entry each', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     expect(s.press('l', { alt: true }).defaultPrevented).toBe(true);
@@ -354,7 +354,7 @@ describe('useEditorShortcuts: trava (Alt+L)', () => {
     expect(marking(s.harness, 'M2').locked).toBe(true);
   });
 
-  it('tranca a imagem selecionada', () => {
+  it('locks the selected image', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'image', id: 'I1' };
     s.press('l', { alt: true });
@@ -363,14 +363,14 @@ describe('useEditorShortcuts: trava (Alt+L)', () => {
     expect(s.harness.project().containers[0]?.locked).toBe(false);
   });
 
-  it('o item trancado continua selecionado', () => {
+  it('the locked item stays selected', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.press('l', { alt: true });
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
   });
 
-  it('sem seleção, somente leitura ou num campo de texto, não faz nada', () => {
+  it('without a selection, read-only or in a text field, does nothing', () => {
     const none = setup();
     none.press('l', { alt: true });
     expect(none.harness.store.canUndo.value).toBe(false);
@@ -389,8 +389,8 @@ describe('useEditorShortcuts: trava (Alt+L)', () => {
   });
 });
 
-describe('useEditorShortcuts: andar na seleção (Alt+↑ / Alt+↓)', () => {
-  it('Alt+↑ sobe para o pai e, na marcação raiz, para a imagem', () => {
+describe('useEditorShortcuts: walking the selection (Alt+↑ / Alt+↓)', () => {
+  it('Alt+↑ goes up to the parent and, on the root marking, to the image', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M3' };
     s.press('ArrowUp', { alt: true });
@@ -401,7 +401,7 @@ describe('useEditorShortcuts: andar na seleção (Alt+↑ / Alt+↓)', () => {
     expect(s.canvas.centerSelection).toHaveBeenCalledTimes(3);
   });
 
-  it('Alt+↓ desce para o primeiro filho; da imagem, para a primeira marcação raiz', () => {
+  it('Alt+↓ goes down to the first child; from the image, to the first root marking', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'image', id: 'I1' };
     s.press('ArrowDown', { alt: true });
@@ -410,7 +410,7 @@ describe('useEditorShortcuts: andar na seleção (Alt+↑ / Alt+↓)', () => {
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
   });
 
-  it('sem filhos, Alt+↓ não muda a seleção; sem seleção, nada acontece', () => {
+  it('without children, Alt+↓ does not change the selection; without a selection, nothing happens', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M3' };
     s.press('ArrowDown', { alt: true });
@@ -421,7 +421,7 @@ describe('useEditorShortcuts: andar na seleção (Alt+↑ / Alt+↓)', () => {
     expect(s.canvas.centerSelection).not.toHaveBeenCalled();
   });
 
-  it('a imagem sem marcações não tem para onde descer', () => {
+  it('the image without markings has nowhere to go down to', () => {
     const s = setup();
     s.harness.actions.removeMarking('M4');
     s.harness.ui.selection.value = { kind: 'image', id: 'I2' };
@@ -433,10 +433,10 @@ describe('useEditorShortcuts: andar na seleção (Alt+↑ / Alt+↓)', () => {
 const keyup = (key = 'ArrowRight') =>
   window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
 
-describe('useEditorShortcuts: setas movem a seleção', () => {
+describe('useEditorShortcuts: arrows move the selection', () => {
   const x = (s: Fake) => marking(s.harness, 'M1').rect.x;
 
-  it('apertar e soltar é uma entrada no desfazer; Ctrl+Z volta tudo', () => {
+  it('press and release is one undo entry; Ctrl+Z reverts everything', () => {
     const s = setup();
     selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
     const x0 = x(s);
@@ -454,7 +454,7 @@ describe('useEditorShortcuts: setas movem a seleção', () => {
     expect(s.harness.store.canUndo.value).toBe(false);
   });
 
-  it('segurar (keydown repetido, um keyup) é um gesto só', () => {
+  it('holding (repeated keydown, one keyup) is a single gesture', () => {
     const s = setup();
     selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
     const x0 = x(s);
@@ -468,7 +468,7 @@ describe('useEditorShortcuts: setas movem a seleção', () => {
     expect(s.harness.store.canUndo.value).toBe(false);
   });
 
-  it('perder o foco da janela fecha o gesto', () => {
+  it('losing window focus closes the gesture', () => {
     const s = setup();
     selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
     s.press('ArrowRight');
@@ -476,7 +476,7 @@ describe('useEditorShortcuts: setas movem a seleção', () => {
     expect(s.harness.store.canUndo.value).toBe(true);
   });
 
-  it('não move com foco em campo, defaultPrevented, somente leitura ou gesto de ponteiro', () => {
+  it('does not move with focus in a field, defaultPrevented, read-only or a pointer gesture', () => {
     const s = setup();
     selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
     const x0 = x(s);
@@ -487,7 +487,7 @@ describe('useEditorShortcuts: setas movem a seleção', () => {
     s.press('ArrowRight', {}, { cancelable: true });
     keyup();
     expect(x(s)).toBe(x0 + 1);
-    // defaultPrevented: um listener anterior já tratou.
+    // defaultPrevented: an earlier listener already handled it.
     const stop = (e: Event) => e.preventDefault();
     window.addEventListener('keydown', stop, true);
     s.press('ArrowRight');
@@ -507,7 +507,7 @@ describe('useEditorShortcuts: setas movem a seleção', () => {
     expect(x(ro)).toBe(r0);
   });
 
-  it('item trancado não move e nada entra no desfazer', () => {
+  it('a locked item does not move and nothing enters the undo history', () => {
     const s = setup();
     selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
     s.harness.actions.setMarkingLocked('M1', true);
@@ -522,8 +522,8 @@ describe('useEditorShortcuts: setas movem a seleção', () => {
   });
 });
 
-describe('useEditorShortcuts: zoom, ajuda, configurações e projeto', () => {
-  it('Shift+1 enquadra tudo e Shift+2 a seleção, mas num campo de texto a tecla é do campo', () => {
+describe('useEditorShortcuts: zoom, help, settings and project', () => {
+  it('Shift+1 frames all and Shift+2 the selection, but in a text field the key belongs to the field', () => {
     const s = setup();
     s.press('!', { shift: true }, { code: 'Digit1' });
     s.press('@', { shift: true }, { code: 'Digit2' });
@@ -552,7 +552,7 @@ describe('useEditorShortcuts: zoom, ajuda, configurações e projeto', () => {
     expect(s.canvas.fitSelection).toHaveBeenCalledTimes(1);
   });
 
-  it('Ctrl+= e Ctrl+− dão zoom por passo, e Ctrl+0 volta a 100%', () => {
+  it('Ctrl+= and Ctrl+− zoom by step, and Ctrl+0 goes back to 100%', () => {
     const s = setup();
     s.press('=', { ctrl: true });
     s.press('-', { ctrl: true });
@@ -562,7 +562,7 @@ describe('useEditorShortcuts: zoom, ajuda, configurações e projeto', () => {
     expect(s.canvas.zoomTo).toHaveBeenCalledWith(1);
   });
 
-  it('F1 abre a Ajuda e Ctrl+, as Configurações', () => {
+  it('F1 opens Help and Ctrl+, opens Settings', () => {
     const s = setup();
     s.press('F1');
     s.press(',', { ctrl: true });
@@ -570,31 +570,31 @@ describe('useEditorShortcuts: zoom, ajuda, configurações e projeto', () => {
     expect(s.dialogs.show).toHaveBeenNthCalledWith(2, { kind: 'settings' });
   });
 
-  it('Ctrl+E exporta o projeto', () => {
+  it('Ctrl+E exports the project', () => {
     const s = setup();
     s.press('e', { ctrl: true });
     expect(s.commands.exportProject).toHaveBeenCalledOnce();
   });
 
-  it('Ctrl+E com importação em curso (busy) não exporta, como os botões (#971, item 4)', () => {
+  it('Ctrl+E with an import in progress (busy) does not export, like the buttons (#971, item 4)', () => {
     const s = setup({ busy: true });
     s.press('e', { ctrl: true });
     expect(s.commands.exportProject).not.toHaveBeenCalled();
   });
 
-  it('Ctrl+L abre Camadas', () => {
+  it('Ctrl+L opens Layers', () => {
     const s = setup();
     s.press('l', { ctrl: true });
     expect(isToolWindowOpen('layers')).toBe(true);
   });
 });
 
-describe('useEditorShortcuts: janelas', () => {
-  it('Ctrl+Shift+N abre a janela; de novo, com ela em foco, esconde', () => {
+describe('useEditorShortcuts: windows', () => {
+  it('Ctrl+Shift+N opens the window; again, with it focused, hides it', () => {
     const s = setup();
     s.press('1', { ctrl: true, shift: true }, { code: 'Digit1' });
     expect(isToolWindowOpen('tree')).toBe(true);
-    // Com o foco dentro da janela, o mesmo atalho a esconde.
+    // With focus inside the window, the same shortcut hides it.
     const el = document.createElement('section');
     el.className = 'tool-window';
     el.setAttribute('data-window', 'tree');
@@ -605,7 +605,7 @@ describe('useEditorShortcuts: janelas', () => {
     expect(isToolWindowOpen('tree')).toBe(false);
   });
 
-  it('Alt+N abre a janela onde o navegador deixa (fora do Linux)', () => {
+  it('Alt+N opens the window where the browser allows it (outside Linux)', () => {
     vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
       'Mozilla/5.0 (Windows NT 10.0)',
     );
@@ -614,7 +614,7 @@ describe('useEditorShortcuts: janelas', () => {
     expect(isToolWindowOpen('details')).toBe(true);
   });
 
-  it('no Chrome do Linux, Alt+número é ignorado (o navegador troca de aba)', () => {
+  it('on Chrome for Linux, Alt+number is ignored (the browser switches tabs)', () => {
     vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
       'Mozilla/5.0 (X11; Linux x86_64)',
     );
@@ -623,7 +623,7 @@ describe('useEditorShortcuts: janelas', () => {
     expect(isToolWindowOpen('details')).toBe(false);
   });
 
-  it('Shift+Esc esconde a janela em foco (e sem foco não faz nada)', () => {
+  it('Shift+Esc hides the focused window (and without focus does nothing)', () => {
     const s = setup();
     showToolWindow('details');
     s.press('Escape', { shift: true });
@@ -638,7 +638,7 @@ describe('useEditorShortcuts: janelas', () => {
     expect(isToolWindowOpen('details')).toBe(false);
   });
 
-  it('Shift+Esc com gesto de ponteiro em andamento cancela o gesto e não esconde a janela', () => {
+  it('Shift+Esc with a pointer gesture in progress cancels the gesture and does not hide the window', () => {
     const s = setup();
     showToolWindow('details');
     const el = document.createElement('section');
@@ -655,12 +655,12 @@ describe('useEditorShortcuts: janelas', () => {
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
   });
 
-  it('Ctrl+Shift+setas redimensionam a janela em foco em passos de 16 px', () => {
+  it('Ctrl+Shift+arrows resize the focused window in steps of 16 px', () => {
     const s = setup();
     resetToolWindowSize('right', { width: 1400, height: 800, otherWidth: 0 });
     showToolWindow('details');
     const before = toolWindowSizes.value.right;
-    // Sem foco numa janela, nada muda.
+    // Without focus in a window, nothing changes.
     s.press('ArrowLeft', { ctrl: true, shift: true });
     expect(toolWindowSizes.value.right).toBe(before);
     const el = document.createElement('section');
@@ -675,9 +675,9 @@ describe('useEditorShortcuts: janelas', () => {
     expect(toolWindowSizes.value.right).toBe(before);
   });
 
-  // Etapa 8 (8.7), resíduo 5 (F4): a janela e a coluna são achadas pelos `data-*` que o
-  // ToolWindow e o EditorWindows expõem, não pelas classes de CSS deles.
-  it('Ctrl+Shift+↑ nas Camadas empilhadas mexe na divisória, medida pela coluna', () => {
+  // Stage 8 (8.7), residue 5 (F4): the window and the column are found by the `data-*` that
+  // ToolWindow and EditorWindows expose, not by their CSS classes.
+  it('Ctrl+Shift+↑ on stacked Layers moves the divider, measured by the column', () => {
     const s = setup();
     showToolWindow('layers');
     resizeLayersWindow(300, 800);
@@ -697,7 +697,7 @@ describe('useEditorShortcuts: janelas', () => {
 });
 
 describe('useEditorShortcuts: Alt+N', () => {
-  it('não faz nada: nem aciona botão, nem abre Detalhes (a camada ativa saiu)', () => {
+  it('does nothing: neither triggers a button nor opens Details (the active layer is gone)', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     const button = document.createElement('button');
@@ -714,12 +714,12 @@ describe('useEditorShortcuts: Alt+N', () => {
   });
 });
 
-describe('useEditorShortcuts: quando as teclas não valem', () => {
-  it('com um diálogo aberto, o teclado é do diálogo', () => {
+describe('useEditorShortcuts: when the keys do not apply', () => {
+  it('with a dialog open, the keyboard belongs to the dialog', () => {
     const s = setup();
     s.harness.actions.renameLayer('L1', 'Pintura');
-    // Etapa 8 (8.3), F4: um modal aberto conta em `modalOpen` (no lugar de procurar
-    // `dialog[open]` no documento).
+    // Stage 8 (8.3), F4: an open modal counts in `modalOpen` (instead of looking for
+    // `dialog[open]` in the document).
     modalOpen.value += 1;
     try {
       s.press('z', { ctrl: true });
@@ -731,7 +731,7 @@ describe('useEditorShortcuts: quando as teclas não valem', () => {
     expect(s.dialogs.show).not.toHaveBeenCalled();
   });
 
-  it('um evento já tratado (defaultPrevented) é ignorado', () => {
+  it('an already handled event (defaultPrevented) is ignored', () => {
     const s = setup();
     s.harness.actions.renameLayer('L1', 'Pintura');
     window.addEventListener('keydown', (e) => e.preventDefault(), {
@@ -742,7 +742,7 @@ describe('useEditorShortcuts: quando as teclas não valem', () => {
     expect(s.harness.project().layers[0]?.name).toBe('Pintura');
   });
 
-  it('desligado (janela estreita, editor atrás do aviso), nenhuma tecla vale', () => {
+  it('turned off (narrow window, editor behind the notice), no key applies', () => {
     const s = setup({ enabled: false });
     s.harness.actions.renameLayer('L1', 'Pintura');
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -754,13 +754,13 @@ describe('useEditorShortcuts: quando as teclas não valem', () => {
     expect(s.dialogs.show).not.toHaveBeenCalled();
   });
 
-  it('teclas sem atalho não são interceptadas', () => {
+  it('keys without a shortcut are not intercepted', () => {
     const s = setup();
     expect(s.press('a').defaultPrevented).toBe(false);
     expect(s.press('Enter').defaultPrevented).toBe(false);
   });
 
-  it('ao desmontar, o listener sai da janela', () => {
+  it('on unmount, the listener leaves the window', () => {
     const s = setup();
     s.harness.actions.renameLayer('L1', 'Pintura');
     s.unmount();
@@ -768,7 +768,7 @@ describe('useEditorShortcuts: quando as teclas não valem', () => {
     expect(s.harness.project().layers[0]?.name).toBe('Pintura');
   });
 
-  it('usa sempre a versão atual dos diálogos, sem reinscrever o listener', () => {
+  it('always uses the current version of the dialogs, without re-registering the listener', () => {
     const s = setup();
     const next = {
       current: null,
@@ -784,9 +784,9 @@ describe('useEditorShortcuts: quando as teclas não valem', () => {
   });
 });
 
-// Etapa 3a.2: Ctrl+C copia a referência e Ctrl+Alt+C o recorte, sem tirar o copiar nativo
-// dos campos de texto nem do texto selecionado na página.
-describe('useEditorShortcuts: copiar referência e recorte', () => {
+// Stage 3a.2: Ctrl+C copies the reference and Ctrl+Alt+C the crop, without taking away the
+// native copy from text fields or from text selected on the page.
+describe('useEditorShortcuts: copy reference and crop', () => {
   function mockClipboard(custom = false) {
     const writeText = vi.fn((text: string) => {
       void text;
@@ -806,7 +806,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
         constructor(readonly data: Record<string, unknown>) {}
       }
       vi.stubGlobal('ClipboardItem', FakeItem);
-      // O formato próprio só vai com `clipboard-read` já concedida.
+      // The custom format only goes with `clipboard-read` already granted.
       Object.defineProperty(navigator, 'permissions', {
         value: { query: () => Promise.resolve({ state: 'granted' }) },
         configurable: true,
@@ -822,7 +822,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     window.getSelection()?.removeAllRanges();
   });
 
-  it('com uma marcação selecionada, copia a referência e avisa', async () => {
+  it('with a marking selected, copies the reference and notifies', async () => {
     const { writeText } = mockClipboard();
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
@@ -831,15 +831,17 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
 
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     const text = String(writeText.mock.calls[0]?.[0]);
-    // Só a URL: sem o caminho legível (etapa referencia-url, decisão 1).
+    // Only the URL: without the readable path (stage referencia-url, decision 1).
+    // pt-BR kept: shared fixture data (project slug `projeto` of sampleProject) asserted by tests/mcp, tests/examples
     expect(text).toBe('mapping://projeto/m/m2');
+    // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
     expect(parseRef(text)).toEqual({ project: 'projeto', kind: 'm', code: 'm2' });
     await vi.waitFor(() =>
       expect(s.harness.ui.toast.value).toBe(t('copy.referenceDone')),
     );
   });
 
-  it('Cmd+C (macOS) também copia', async () => {
+  it('Cmd+C (macOS) also copies', async () => {
     const { writeText } = mockClipboard();
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -847,7 +849,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
   });
 
-  it('imagem selecionada: a referência é do tipo i', async () => {
+  it('image selected: the reference is of type i', async () => {
     const { writeText } = mockClipboard();
     const s = setup();
     s.harness.ui.selection.value = { kind: 'image', id: 'I2' };
@@ -859,7 +861,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     });
   });
 
-  it('grava também os dados do item, no formato web próprio, quando o navegador deixa', async () => {
+  it('also writes the item data, in the custom web format, when the browser allows it', async () => {
     const { write, writeText } = mockClipboard(true);
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -872,20 +874,22 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
       `web ${ITEM_CLIPBOARD_MIME}`,
     ]);
     const data = JSON.parse(await item.data[`web ${ITEM_CLIPBOARD_MIME}`]!.text());
+    // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
     expect(data).toMatchObject({ format: 'mapping-item', kind: 'm', project: 'projeto' });
     expect(data.item.id).toBe('M1');
+    // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
     expect(data.ref).toMatch(/^mapping:\/\/projeto\/m\/[0-9a-z]+$/);
     expect(await item.data['text/plain']!.text()).toBe(data.ref);
   });
 
-  it('sem nada selecionado, o copiar nativo continua', () => {
+  it('with nothing selected, native copy continues', () => {
     const { writeText } = mockClipboard();
     const s = setup();
     expect(s.press('c', { ctrl: true }).defaultPrevented).toBe(false);
     expect(writeText).not.toHaveBeenCalled();
   });
 
-  it('com o foco num campo de texto, o copiar nativo continua', () => {
+  it('with focus in a text field, native copy continues', () => {
     const { writeText } = mockClipboard();
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -895,18 +899,18 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     expect(writeText).not.toHaveBeenCalled();
   });
 
-  it('com texto selecionado na página, o copiar nativo continua', () => {
+  it('with text selected on the page, native copy continues', () => {
     const { writeText } = mockClipboard();
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     const p = document.body.appendChild(document.createElement('p'));
-    p.textContent = 'texto da página';
+    p.textContent = 'page text';
     window.getSelection()?.selectAllChildren(p);
     expect(s.press('c', { ctrl: true }).defaultPrevented).toBe(false);
     expect(writeText).not.toHaveBeenCalled();
   });
 
-  it('com o foco num cartão de anotação (fora dos campos), copia a referência dela', async () => {
+  it('with focus on an annotation card (outside the fields), copies its reference', async () => {
     const { writeText } = mockClipboard();
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -920,21 +924,22 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     expect(ref).toMatchObject({ kind: 'a', code: 'a1' });
   });
 
-  describe('com o foco numa propriedade (CM5, decisão 32)', () => {
-    /** Cartão `A1` com o campo `tipo`, o par `E1` e uma tabela `atributos` de uma linha `R1`. */
+  describe('with focus on a property (CM5, decision 32)', () => {
+    /** Card `A1` with the field `type`, the pair `E1` and a table `atributos` with one row `R1`. */
     function propertyCard() {
       const card = document.body.appendChild(document.createElement('div'));
       card.setAttribute('data-annotation', 'AC');
       const field = card.appendChild(document.createElement('div'));
-      field.setAttribute('data-field', 'nome');
+      field.setAttribute('data-field', 'name');
       const fieldButton = field.appendChild(document.createElement('button'));
-      // O par é de uma anotação livre (`AU`), em outro cartão.
+      // The pair belongs to a free annotation (`AU`), in another card.
       const free = document.body.appendChild(document.createElement('div'));
       free.setAttribute('data-annotation', 'AU');
       const entry = free.appendChild(document.createElement('div'));
       entry.setAttribute('data-entry', 'EN');
       const entryButton = entry.appendChild(document.createElement('button'));
       const table = card.appendChild(document.createElement('div'));
+      // pt-BR kept: shared fixture data (`atributos` table of cadastroProject) asserted by tests/mcp, tests/examples
       table.setAttribute('data-field', 'atributos');
       const tableButton = table.appendChild(document.createElement('button'));
       const row = table.appendChild(document.createElement('div'));
@@ -946,7 +951,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     const copiedRef = (writeText: { mock: { calls: unknown[][] } }) =>
       String(writeText.mock.calls[0]?.[0]);
 
-    it('no campo copia ...//f/<campo>', async () => {
+    it('on the field copies ...//f/<field>', async () => {
       const { writeText } = mockClipboard();
       const s = setup({ project: cadastroProject() });
       s.harness.ui.selection.value = { kind: 'marking', id: 'MF' };
@@ -955,15 +960,17 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
       expect(pressOn(fieldButton, 'c', { ctrl: true }).defaultPrevented).toBe(true);
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
       expect(parseAnyRef(copiedRef(writeText))).toMatchObject({
+        // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
         project: 'projeto',
-        ref: { type: 'field', key: 'nome' },
+        ref: { type: 'field', key: 'name' },
       });
       expect(copiedRef(writeText)).toMatch(
-        /^mapping:\/\/projeto\/a\/[0-9a-z]+\/f\/nome$/,
+        // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
+        /^mapping:\/\/projeto\/a\/[0-9a-z]+\/f\/name$/,
       );
     });
 
-    it('no par copia .../e/<código>', async () => {
+    it('on the pair copies .../e/<code>', async () => {
       const { writeText } = mockClipboard();
       const s = setup({ project: cadastroProject() });
       const { entryButton } = propertyCard();
@@ -971,12 +978,13 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
       expect(pressOn(entryButton, 'c', { ctrl: true }).defaultPrevented).toBe(true);
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
       expect(copiedRef(writeText)).toMatch(
+        // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
         /^mapping:\/\/projeto\/a\/[0-9a-z]+\/e\/[0-9a-z]+$/,
       );
       expect(s.harness.ui.toast.value).not.toBe(t('copy.failed'));
     });
 
-    it('na linha da tabela copia .../f/<campo>/r/<código> (a linha vale mais que o campo)', async () => {
+    it('on the table row copies .../f/<field>/r/<code> (the row wins over the field)', async () => {
       const { writeText } = mockClipboard();
       setup({ project: cadastroProject() });
       const { rowInput } = propertyCard();
@@ -984,25 +992,27 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
       expect(pressOn(rowInput, 'c', { ctrl: true }).defaultPrevented).toBe(true);
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
       expect(copiedRef(writeText)).toMatch(
+        // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
         /^mapping:\/\/projeto\/a\/[0-9a-z]+\/f\/atributos\/r\/[0-9a-z]+$/,
       );
     });
 
-    it('no campo da tabela, fora das linhas, copia o campo', async () => {
+    it('on the table field, outside the rows, copies the field', async () => {
       const { writeText } = mockClipboard();
       setup({ project: cadastroProject() });
       const { tableButton } = propertyCard();
       tableButton.focus();
       pressOn(tableButton, 'c', { ctrl: true });
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+      // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
       expect(copiedRef(writeText)).toMatch(/\/f\/atributos$/);
     });
 
-    it('num campo de texto sem seleção copia a propriedade; com texto selecionado, o copiar nativo continua', async () => {
+    it('in a text field without a selection copies the property; with selected text, native copy continues', async () => {
       const { writeText } = mockClipboard();
       setup({ project: cadastroProject() });
       const { rowInput } = propertyCard();
-      rowInput.value = 'ana@exemplo.com';
+      rowInput.value = 'ana@example.com';
       rowInput.focus();
       rowInput.setSelectionRange(0, 3);
       expect(pressOn(rowInput, 'c', { ctrl: true }).defaultPrevented).toBe(false);
@@ -1012,7 +1022,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     });
 
-    it('num editor de texto (contentEditable) o copiar nativo continua', () => {
+    it('in a text editor (contentEditable) native copy continues', () => {
       const { writeText } = mockClipboard();
       setup({ project: cadastroProject() });
       const { field } = {
@@ -1026,7 +1036,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
       expect(writeText).not.toHaveBeenCalled();
     });
 
-    it('no projeto local (fora de uma pasta) não copia', () => {
+    it('in a local project (outside a folder) it does not copy', () => {
       const { writeText } = mockClipboard();
       const s = setup({ project: cadastroProject() });
       Object.defineProperty(s.harness.context.session.storage, 'folderName', {
@@ -1042,7 +1052,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     });
   });
 
-  it('Ctrl+Alt+C copia o recorte da marcação selecionada como PNG', async () => {
+  it('Ctrl+Alt+C copies the crop of the selected marking as PNG', async () => {
     const { write } = mockClipboard(true);
     const s = setup();
     const png = new Blob(['png'], { type: 'image/png' });
@@ -1058,14 +1068,14 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     const item = write.mock.calls[0]?.[0][0] as { data: Record<string, Promise<Blob>> };
     expect(Object.keys(item.data)).toEqual(['image/png']);
     await expect(item.data['image/png']).resolves.toBe(png);
-    // O recorte é em pixels da imagem original: o rect da marcação.
+    // The crop is in pixels of the original image: the marking rect.
     expect(crop).toHaveBeenCalledWith(expect.any(Blob), marking(s.harness, 'M2').rect);
     await vi.waitFor(() => expect(s.harness.ui.toast.value).toBe(t('copy.cropDone')));
   });
 
-  it('o recorte avisa quando a imagem não pode ser lida', async () => {
+  it('the crop warns when the image cannot be read', async () => {
     const { write } = mockClipboard(true);
-    write.mockRejectedValue(new Error('recusado'));
+    write.mockRejectedValue(new Error('refused'));
     const s = setup();
     vi.spyOn(s.harness.context.session, 'readImage').mockResolvedValue(null);
     s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
@@ -1073,7 +1083,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     await vi.waitFor(() => expect(s.harness.ui.toast.value).toBe(t('copy.cropFailed')));
   });
 
-  it('Ctrl+Alt+C com uma imagem (ou nada) selecionado não faz nada', () => {
+  it('Ctrl+Alt+C with an image (or nothing) selected does nothing', () => {
     const { write } = mockClipboard(true);
     const s = setup();
     expect(s.press('c', { ctrl: true, alt: true }).defaultPrevented).toBe(false);
@@ -1082,9 +1092,9 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     expect(write).not.toHaveBeenCalled();
   });
 
-  it('se a área de transferência recusar, avisa que não copiou', async () => {
+  it('if the clipboard refuses, warns that it did not copy', async () => {
     const { writeText } = mockClipboard();
-    writeText.mockRejectedValue(new Error('negado'));
+    writeText.mockRejectedValue(new Error('denied'));
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.press('c', { ctrl: true });
@@ -1092,13 +1102,13 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
   });
 });
 
-describe('useEditorShortcuts: seleção múltipla', () => {
+describe('useEditorShortcuts: multiple selection', () => {
   const two = [
     { kind: 'marking', id: 'M1' },
     { kind: 'marking', id: 'M2' },
   ] as const;
 
-  it('Esc volta ao item principal e, de novo, limpa a seleção', () => {
+  it('Esc goes back to the main item and, again, clears the selection', () => {
     const s = setup();
     selectItems(s.harness.ui, two);
     s.press('Escape');
@@ -1108,7 +1118,7 @@ describe('useEditorShortcuts: seleção múltipla', () => {
     expect(s.harness.ui.selection.value).toBeNull();
   });
 
-  it('Esc com um gesto em andamento só cancela o gesto', () => {
+  it('Esc with a gesture in progress only cancels the gesture', () => {
     const s = setup();
     selectItems(s.harness.ui, two);
     s.canvas.cancelInteraction.mockReturnValueOnce(true);
@@ -1116,7 +1126,7 @@ describe('useEditorShortcuts: seleção múltipla', () => {
     expect(s.harness.ui.selectionGroup.value).not.toBeNull();
   });
 
-  it('Delete pede UMA exclusão da seleção inteira', () => {
+  it('Delete requests ONE deletion of the whole selection', () => {
     const s = setup();
     selectItems(s.harness.ui, [...two, { kind: 'image', id: 'I2' }]);
     s.press('Delete');
@@ -1125,7 +1135,7 @@ describe('useEditorShortcuts: seleção múltipla', () => {
     expect(s.dialogs.requestDeleteMarking).not.toHaveBeenCalled();
   });
 
-  it('Alt+L tranca todos; com todos trancados, destranca todos (uma entrada de desfazer)', () => {
+  it('Alt+L locks all; with all locked, unlocks all (one undo entry)', () => {
     const s = setup();
     s.harness.actions.setMarkingLocked('M1', true);
     selectItems(s.harness.ui, two);
@@ -1139,7 +1149,7 @@ describe('useEditorShortcuts: seleção múltipla', () => {
     expect(marking(s.harness, 'M2').locked).toBe(true);
   });
 
-  it('somente leitura: Delete e Alt+L não fazem nada', () => {
+  it('read-only: Delete and Alt+L do nothing', () => {
     const s = setup({ readOnly: true });
     selectItems(s.harness.ui, two);
     s.press('Delete');
@@ -1149,12 +1159,12 @@ describe('useEditorShortcuts: seleção múltipla', () => {
   });
 });
 
-describe('useEditorShortcuts: Envolver (Ctrl/Cmd+G)', () => {
+describe('useEditorShortcuts: Wrap (Ctrl/Cmd+G)', () => {
   const ids = (h: Harness) => h.project().markings.map((m) => m.id);
   const created = (h: Harness) =>
     h.project().markings.find((m) => !'M1M2M3M4'.includes(m.id));
 
-  it('com um item só, envolve e deixa a nova selecionada; Ctrl+Z desfaz', () => {
+  it('with a single item, wraps and leaves the new one selected; Ctrl+Z undoes', () => {
     const s = setup();
     selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
     const event = s.press('g', { ctrl: true });
@@ -1167,7 +1177,7 @@ describe('useEditorShortcuts: Envolver (Ctrl/Cmd+G)', () => {
     expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
   });
 
-  it('com três itens, envolve os três numa entrada só (Cmd+G também vale)', () => {
+  it('with three items, wraps the three in a single entry (Cmd+G also works)', () => {
     const s = setup();
     selectItems(s.harness.ui, [
       { kind: 'marking', id: 'M1' },
@@ -1183,13 +1193,13 @@ describe('useEditorShortcuts: Envolver (Ctrl/Cmd+G)', () => {
     expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
   });
 
-  it('não age, e não chama preventDefault, sem seleção', () => {
+  it('does not act, and does not call preventDefault, without a selection', () => {
     const s = setup();
     expect(s.press('g', { ctrl: true }).defaultPrevented).toBe(false);
     expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
   });
 
-  it('não age com o foco num campo de texto', () => {
+  it('does not act with focus in a text field', () => {
     const s = setup();
     selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
     const input = document.createElement('input');
@@ -1198,28 +1208,28 @@ describe('useEditorShortcuts: Envolver (Ctrl/Cmd+G)', () => {
     expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
   });
 
-  it('não age com o projeto somente leitura', () => {
+  it('does not act with a read-only project', () => {
     const s = setup({ readOnly: true });
     selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
     expect(s.press('g', { ctrl: true }).defaultPrevented).toBe(false);
     expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
   });
 
-  it('não age quando nada da seleção entra (só nota ou seta)', () => {
+  it('does not act when nothing of the selection qualifies (only a note or an arrow)', () => {
     const s = setup();
-    selectItems(s.harness.ui, [{ kind: 'arrow', id: 'nada' }]);
+    selectItems(s.harness.ui, [{ kind: 'arrow', id: 'none' }]);
     expect(s.press('g', { ctrl: true }).defaultPrevented).toBe(false);
     expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
   });
 
-  it('não age com o atalho desligado (janela estreita)', () => {
+  it('does not act with the shortcut turned off (narrow window)', () => {
     const s = setup({ enabled: false });
     selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
     expect(s.press('g', { ctrl: true }).defaultPrevented).toBe(false);
     expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
   });
 
-  it('segurar o Ctrl+G (tecla repetida) envolve uma vez só, sem aninhar pais', () => {
+  it('holding Ctrl+G (repeated key) wraps only once, without nesting parents', () => {
     const s = setup();
     selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
     s.press('g', { ctrl: true });
@@ -1227,17 +1237,17 @@ describe('useEditorShortcuts: Envolver (Ctrl/Cmd+G)', () => {
     expect(wrap).toBeDefined();
     const repeated = s.press('g', { ctrl: true }, { repeat: true });
     s.press('g', { ctrl: true }, { repeat: true });
-    // O "localizar próximo" do navegador continua fora do caminho; o atalho só não age.
+    // The browser "find next" stays out of the way; the shortcut just does not act.
     expect(repeated.defaultPrevented).toBe(true);
     expect(s.harness.project().markings).toHaveLength(5);
     expect(marking(s.harness, wrap?.id ?? '').parentId).toBeNull();
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: wrap?.id });
-    // Uma só entrada de desfazer.
+    // A single undo entry.
     s.press('z', { ctrl: true });
     expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
   });
 
-  it('com um arrasto ou redimensionamento em andamento, não age nem mostra o aviso', () => {
+  it('with a drag or resize in progress, does not act or show the notice', () => {
     const s = setup();
     selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
     s.canvas.isInteracting.mockReturnValue(true);

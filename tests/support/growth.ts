@@ -1,31 +1,31 @@
 import { expect } from 'vitest';
 
 /**
- * Teste de crescimento (#881, #882, etapa #1095): mede a mesma operação com n e 4n marcações e exige a razão
- * das medianas < 6×. O auxiliar vale para os casos do `npm run test:scale` e para os de crescimento do
- * `npm run test:perf` (`tests/model/performance.test.ts`; `tests/mcp/batchPerf.test.ts` só lê o teto).
+ * Growth test (#881, #882, stage #1095): measures the same operation with n and 4n markings and requires the ratio
+ * of the medians < 6×. The helper serves the cases of `npm run test:scale` and the growth cases of
+ * `npm run test:perf` (`tests/model/performance.test.ts`; `tests/mcp/batchPerf.test.ts` only reads the limit).
  *
- * Por que 6×: com a medição estável (n e 4n intercalados, ver abaixo), código linear mede 4,4 a 5,1× nestes
- * tamanhos (1.250 e 5.000 marcações), por efeito de memória, não por ruído: 5.000 marcações saem do cache e
- * 1.250 não (`projectIndex` sozinho, Maps de 5.000 chaves, dá ~5×). O quadrático mede 13 a 17×. O teto de 6×
- * separa os dois por mais de 2,5× e deixa ao menos 0,8× de folga a todo caso linear de hoje.
- * A razão não se negocia: passar do teto é defeito, não teto a subir; 6× é o teto calibrado pela medição, não
- * um ajuste a um caso. Caso com centro em 5× ou mais é "documentado" no próprio caso (de onde vem o excedente).
+ * Why 6×: with the stable measurement (n and 4n interleaved, see below), linear code measures 4.4 to 5.1× at these
+ * sizes (1,250 and 5,000 markings), because of a memory effect, not noise: 5,000 markings fall out of the cache and
+ * 1,250 do not (`projectIndex` alone, Maps of 5,000 keys, gives ~5×). The quadratic one measures 13 to 17×. The 6× limit
+ * separates the two by more than 2.5× and leaves at least 0.8× of slack to every linear case today.
+ * The ratio is not negotiable: going over the limit is a defect, not a limit to raise; 6× is the limit calibrated by the measurement, not
+ * an adjustment to one case. A case with its center at 5× or more is "documented" in the case itself (where the excess comes from).
  *
- * Como mede: depois de um aquecimento igual nos dois tamanhos, cada rodada coleta o lixo uma vez (`globalThis.gc`,
- * fora do tempo) e executa **uma** vez em n e **uma** em 4n, em ordem alternada por rodada, cada execução sobre
- * uma versão nova do projeto e com o `prepare` dela imediatamente antes, fora do tempo. Assim os dois tamanhos
- * veem em média o mesmo estado de heap e de cache; repetir `k` vezes em lote subia o centro e foi descartado.
+ * How it measures: after an equal warm-up at both sizes, each round collects garbage once (`globalThis.gc`,
+ * outside the timing) and runs **one** execution at n and **one** at 4n, in alternating order per round, each run on
+ * a fresh version of the project and with its `prepare` immediately before, outside the timing. This way both sizes
+ * see on average the same heap and cache state; repeating `k` times in a batch raised the center and was discarded.
  */
 export const GROWTH_LIMIT = 6;
-/** Tamanhos padrão: 1.250 e 5.000 marcações. */
+/** Default sizes: 1,250 and 5,000 markings. */
 export const GROWTH_N = 1250;
 export const GROWTH_FACTOR = 4;
 
 /**
- * O retry, de `GROWTH_RETRY` (`0` desliga; inteiro de 0 a 9 vale ele; ausente ou inválido vale 2). Função pura
- * exportada porque `GROWTH_OPTIONS` é avaliado no import. Com a medição intercalada, o retry é rede para o
- * runner compartilhado ruidoso, não para "operações de poucos ms que oscilam"; o aceite roda com `GROWTH_RETRY=0`.
+ * The retry, from `GROWTH_RETRY` (`0` turns it off; an integer from 0 to 9 is itself; absent or invalid is 2). Pure function
+ * exported because `GROWTH_OPTIONS` is evaluated at import. With the interleaved measurement, the retry is a net for the
+ * noisy shared runner, not for "operations of a few ms that oscillate"; acceptance runs with `GROWTH_RETRY=0`.
  */
 export function growthRetry(env: Record<string, string | undefined>): number {
   const raw = env.GROWTH_RETRY;
@@ -39,33 +39,33 @@ export interface GrowthResult {
   readonly largeN: number;
   readonly smallMs: number;
   readonly largeMs: number;
-  /** Razão das medianas. */
+  /** Ratio of the medians. */
   readonly ratio: number;
-  /** Quartis inferior e superior das razões 4n/n de cada par (a folga de verdade, para o log). */
+  /** Lower and upper quartiles of the 4n/n ratios of each pair (the real slack, for the log). */
   readonly ratioQ1: number;
   readonly ratioQ3: number;
 }
 
-/** Relógio e coletor injetáveis, só para os testes do próprio auxiliar. */
+/** Injectable clock and collector, only for the tests of the helper itself. */
 interface MeasureHooks {
-  /** Relógio em ms. Padrão `performance.now`. */
+  /** Clock in ms. Default `performance.now`. */
   readonly now?: () => number;
-  /** Coleta de lixo antes de cada par. Padrão `globalThis.gc` (sem `--expose-gc`, não coleta). */
+  /** Garbage collection before each pair. Default `globalThis.gc` (without `--expose-gc`, it does not collect). */
   readonly collect?: () => void;
 }
 
 export interface GrowthOptions<P extends object> extends MeasureHooks {
-  /** Monta o projeto (ou o que a operação lê) com `n` marcações. */
+  /** Builds the project (or what the operation reads) with `n` markings. */
   readonly build: (n: number) => P;
-  /** A operação medida; recebe sempre uma versão nova (`{ ...p }`) para não medir o memo do `projectIndex`. */
+  /** The measured operation; always receives a fresh version (`{ ...p }`) so it does not measure the `projectIndex` memo. */
   readonly run: (p: P) => unknown;
-  /** Opcional: roda sobre cada versão nova imediatamente antes de `run`, fora do tempo (ex.: o índice, que outro caso já mede). */
+  /** Optional: runs on each fresh version immediately before `run`, outside the timing (e.g. the index, which another case already measures). */
   readonly prepare?: (p: P) => unknown;
   readonly n?: number;
   readonly factor?: number;
-  /** Rodadas de aquecimento (JIT), iguais nos dois tamanhos. Padrão 24. */
+  /** Warm-up rounds (JIT), equal at both sizes. Default 24. */
   readonly warmup?: number;
-  /** Rodadas medidas por tamanho. Padrão 21 (a mediana de poucas rodadas oscila nos tamanhos de poucos ms). */
+  /** Measured rounds per size. Default 21 (the median of few rounds oscillates at sizes of a few ms). */
   readonly runs?: number;
 }
 
@@ -83,7 +83,7 @@ function defaultCollect(): void {
   (globalThis as { gc?: () => void }).gc?.();
 }
 
-/** Índices (0 = n, 1 = 4n) da rodada `r`: par n depois 4n, ímpar 4n depois n. */
+/** Indices (0 = n, 1 = 4n) of round `r`: even pairs n then 4n, odd pairs 4n then n. */
 function pairOrder(r: number): readonly [0 | 1, 0 | 1] {
   return r % 2 === 0 ? [0, 1] : [1, 0];
 }
@@ -108,7 +108,7 @@ function summarize(
   };
 }
 
-/** Mede n e 4n: aquece igual nos dois, intercala um par por rodada (gc antes, ordem alternada) e dá a razão das medianas. */
+/** Measures n and 4n: warms up equally at both, interleaves one pair per round (gc before, alternating order) and gives the ratio of the medians. */
 export function measureGrowth<P extends object>(options: GrowthOptions<P>): GrowthResult {
   const { build, run, prepare, n = GROWTH_N, factor = GROWTH_FACTOR } = options;
   const {
@@ -142,28 +142,28 @@ export function measureGrowth<P extends object>(options: GrowthOptions<P>): Grow
 
 function report(label: string, result: GrowthResult): void {
   console.info(
-    `crescimento · ${label}: n=${result.n} ${result.smallMs.toFixed(2)} ms · ` +
-      `4n=${result.largeN} ${result.largeMs.toFixed(2)} ms · razão ${result.ratio.toFixed(2)}× (teto ${GROWTH_LIMIT}×) · ` +
-      `quartis par a par ${result.ratioQ1.toFixed(2)}–${result.ratioQ3.toFixed(2)}×`,
+    `growth · ${label}: n=${result.n} ${result.smallMs.toFixed(2)} ms · ` +
+      `4n=${result.largeN} ${result.largeMs.toFixed(2)} ms · ratio ${result.ratio.toFixed(2)}× (limit ${GROWTH_LIMIT}×) · ` +
+      `pairwise quartiles ${result.ratioQ1.toFixed(2)}–${result.ratioQ3.toFixed(2)}×`,
   );
 }
 
-/** Mede, imprime para o log do CI mostrar a folga e exige a razão < 6×. Devolve o resultado. */
+/** Measures, prints so the CI log shows the slack, and requires the ratio < 6×. Returns the result. */
 export function expectLinearGrowth<P extends object>(
   label: string,
   options: GrowthOptions<P>,
 ): GrowthResult {
   const result = measureGrowth(options);
   report(label, result);
-  expect(result.ratio, `${label}: razão 4n/n`).toBeLessThan(GROWTH_LIMIT);
+  expect(result.ratio, `${label}: 4n/n ratio`).toBeLessThan(GROWTH_LIMIT);
   return result;
 }
 
 export interface AsyncGrowthOptions<P extends object> extends MeasureHooks {
   readonly build: (n: number) => P | Promise<P>;
-  /** A operação assíncrona medida (ex.: gravar pela sessão); recebe sempre uma cópia rasa nova de `build`. */
+  /** The measured async operation (e.g. saving through the session); always receives a fresh shallow copy of `build`. */
   readonly run: (p: P) => unknown;
-  /** Roda imediatamente antes de cada `run`, fora do tempo. */
+  /** Runs immediately before each `run`, outside the timing. */
   readonly prepare?: (p: P) => unknown;
   readonly n?: number;
   readonly factor?: number;
@@ -171,7 +171,7 @@ export interface AsyncGrowthOptions<P extends object> extends MeasureHooks {
   readonly runs?: number;
 }
 
-/** Como `measureGrowth`, para operação assíncrona (`await` em cada execução). */
+/** Like `measureGrowth`, for an async operation (`await` on each run). */
 export async function measureGrowthAsync<P extends object>(
   options: AsyncGrowthOptions<P>,
 ): Promise<GrowthResult> {
@@ -205,13 +205,13 @@ export async function measureGrowthAsync<P extends object>(
   return summarize(n, largeN, times[0], times[1]);
 }
 
-/** Como `expectLinearGrowth`, para operação assíncrona. */
+/** Like `expectLinearGrowth`, for an async operation. */
 export async function expectLinearGrowthAsync<P extends object>(
   label: string,
   options: AsyncGrowthOptions<P>,
 ): Promise<GrowthResult> {
   const result = await measureGrowthAsync(options);
   report(label, result);
-  expect(result.ratio, `${label}: razão 4n/n`).toBeLessThan(GROWTH_LIMIT);
+  expect(result.ratio, `${label}: 4n/n ratio`).toBeLessThan(GROWTH_LIMIT);
   return result;
 }

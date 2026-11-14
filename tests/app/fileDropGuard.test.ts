@@ -12,7 +12,7 @@ afterEach(() => remove?.());
 
 describe('fileDropGuard (#972)', () => {
   it.each(['dragover', 'drop'] as const)(
-    '%s com arquivo tem a ação padrão cancelada',
+    '%s with a file has the default action cancelled',
     (type) => {
       remove = installFileDropGuard();
       const event = dragEvent(type, ['Files']);
@@ -21,14 +21,14 @@ describe('fileDropGuard (#972)', () => {
     },
   );
 
-  it('arrasto interno, sem arquivo, não é tocado', () => {
+  it('internal drag, without a file, is left alone', () => {
     remove = installFileDropGuard();
     const event = dragEvent('dragover', ['application/x-mapping-component']);
     document.body.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(false);
   });
 
-  it('depois de removido não cancela mais', () => {
+  it('once removed, it no longer cancels', () => {
     installFileDropGuard()();
     const event = dragEvent('drop', ['Files']);
     document.body.dispatchEvent(event);

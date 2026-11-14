@@ -1,5 +1,5 @@
-// Visualizador (L1): createViewer monta um Stage no contêiner, desenha uma tela, enquadra e
-// avisa hover/clique; seleção e hover viram retângulos no overlay.
+// Viewer (L1): createViewer mounts a Stage in the container, draws a screen, fits it and
+// reports hover/click; selection and hover become rectangles in the overlay.
 import Konva from 'konva';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../canvas/harness';
@@ -18,7 +18,7 @@ beforeAll(() => installFakeCanvas());
 const library = loadLibrary(SAMPLE_FILES);
 const mounted: Viewer[] = [];
 
-/** Contêiner no jsdom, com o tamanho que o layout daria. */
+/** Container in jsdom, with the size the layout would give. */
 function container(width = 800, height = 600): HTMLDivElement {
   const el = document.createElement('div');
   Object.defineProperty(el, 'clientWidth', { value: width, configurable: true });
@@ -35,11 +35,11 @@ function make(el: HTMLElement, options: ViewerOptions = {}): Viewer {
 
 function stageOf(el: HTMLElement): Konva.Stage {
   const stage = Konva.stages.find((s) => s.container() === el);
-  if (!stage) throw new Error('stage não encontrado');
+  if (!stage) throw new Error('stage not found');
   return stage;
 }
 
-/** Os retângulos do overlay (a camada que não escuta eventos). */
+/** The overlay rectangles (the layer that does not listen to events). */
 function overlayRects(stage: Konva.Stage): Konva.Rect[] {
   const layer = stage.getLayers()[1];
   return layer ? layer.find<Konva.Rect>('Rect') : [];
@@ -49,7 +49,7 @@ function instanceNode(stage: Konva.Stage, id: string): Konva.Group {
   const node = stage.findOne<Konva.Group>(
     (n: Konva.Node) => n.getAttr('instanceId') === id,
   );
-  if (!node) throw new Error(`instância ${id} não encontrada`);
+  if (!node) throw new Error(`instance ${id} not found`);
   return node;
 }
 
@@ -60,7 +60,7 @@ afterEach(() => {
 });
 
 describe('createViewer', () => {
-  it('cria o stage no contêiner com o tamanho dele (mínimo 1)', () => {
+  it('creates the stage in the container with its size (minimum 1)', () => {
     const el = container(640, 480);
     make(el);
     const stage = stageOf(el);
@@ -72,7 +72,7 @@ describe('createViewer', () => {
     expect(stageOf(empty).size()).toEqual({ width: 1, height: 1 });
   });
 
-  it('update desenha a tela: artboard com o fundo e um grupo por instância', () => {
+  it('update draws the screen: artboard with the background and one group per instance', () => {
     const el = container();
     const viewer = make(el);
     viewer.update({ library, screen: SAMPLE_SCREEN });
@@ -84,7 +84,7 @@ describe('createViewer', () => {
       height: SAMPLE_SCREEN.height,
     });
     const group = stage.getLayers()[0]?.getChildren()[0] as Konva.Group;
-    // O artboard é o índice 0; as instâncias vêm depois, na ordem de desenho.
+    // The artboard is index 0; the instances come after, in drawing order.
     expect(group.getChildren()[0]).toBe(artboard);
     expect(group.getChildren()).toHaveLength(1 + SAMPLE_SCREEN.instances.length);
     expect(
@@ -93,7 +93,7 @@ describe('createViewer', () => {
     expect(viewer.warnings().size).toBe(0);
   });
 
-  it('opções library/screen na criação já desenham', () => {
+  it('library/screen options at creation already draw', () => {
     const el = container();
     const viewer = make(el, { library, screen: SAMPLE_SCREEN });
     expect(viewer.boxOf('i-enter')).toEqual(
@@ -101,23 +101,23 @@ describe('createViewer', () => {
     );
   });
 
-  it('enquadramento contain: escala e centro para o contêiner', () => {
+  it('contain fit: scale and center for the container', () => {
     const el = container(800, 600);
     const viewer = make(el, { library, screen: SAMPLE_SCREEN });
-    // 390x844 em 800x600 com 16 de margem: manda a altura.
+    // 390x844 in 800x600 with a 16 margin: the height rules.
     const expected = (600 - 32) / SAMPLE_SCREEN.height;
     expect(viewer.scale()).toBeCloseTo(expected, 6);
     const stage = stageOf(el);
     expect(stage.x()).toBeCloseTo((800 - SAMPLE_SCREEN.width * expected) / 2, 6);
     expect(stage.y()).toBeCloseTo((600 - SAMPLE_SCREEN.height * expected) / 2, 6);
 
-    // Sem margem e com um contêiner largo e baixo.
+    // Without a margin and with a wide, short container.
     const wide = container(1000, 422);
     const flat = make(wide, { library, screen: SAMPLE_SCREEN, padding: 0 });
     expect(flat.scale()).toBeCloseTo(422 / SAMPLE_SCREEN.height, 6);
   });
 
-  it('escala fixa centraliza; fit() relê o tamanho do contêiner', () => {
+  it('a fixed scale centers; fit() rereads the container size', () => {
     const el = container(800, 600);
     const viewer = make(el, { library, screen: SAMPLE_SCREEN, fit: 0.5 });
     expect(viewer.scale()).toBe(0.5);
@@ -134,7 +134,7 @@ describe('createViewer', () => {
     expect(contain.scale()).toBeCloseTo((1200 - 32) / SAMPLE_SCREEN.height, 6);
   });
 
-  it('reenquadra quando o ResizeObserver avisa e quando a tela muda de tamanho', () => {
+  it('refits when the ResizeObserver notifies and when the screen changes size', () => {
     let notify: (() => void) | undefined;
     const disconnect = vi.fn();
     vi.stubGlobal(
@@ -167,7 +167,7 @@ describe('createViewer', () => {
     expect(disconnect).toHaveBeenCalledOnce();
   });
 
-  it('a tela que some e volta com o mesmo tamanho depois de o contêiner mudar é reenquadrada', () => {
+  it('a screen that disappears and returns with the same size after the container changed is refitted', () => {
     let notify: (() => void) | undefined;
     vi.stubGlobal(
       'ResizeObserver',
@@ -194,13 +194,13 @@ describe('createViewer', () => {
     expect(viewer.scale()).toBeCloseTo((300 - 32) / SAMPLE_SCREEN.height, 6);
   });
 
-  it('o tamanho do stage desconta padding e borda do contêiner', () => {
+  it('the stage size discounts the container padding and border', () => {
     const el = container(800, 600);
     el.style.padding = '10px 20px';
     el.style.border = '5px solid black';
     const viewer = make(el, { library, screen: SAMPLE_SCREEN });
     const stage = stageOf(el);
-    // clientWidth/Height incluem o padding e não incluem a borda.
+    // clientWidth/Height include the padding and do not include the border.
     expect(stage.size()).toEqual({ width: 800 - 40, height: 600 - 20 });
     vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({
       left: 100,
@@ -213,7 +213,7 @@ describe('createViewer', () => {
       height: 610,
       toJSON: () => ({}),
     });
-    // A origem do stage fica depois da borda (5) e do padding (20 e 10).
+    // The stage origin sits after the border (5) and the padding (20 and 10).
     const origin = viewer.clientToScreen({
       x: 100 + 5 + 20 + stage.x(),
       y: 50 + 5 + 10 + stage.y(),
@@ -222,7 +222,7 @@ describe('createViewer', () => {
     expect(origin.y).toBeCloseTo(0, 6);
   });
 
-  it('o redimensionamento redesenha uma vez por quadro, não de forma síncrona', () => {
+  it('resizing redraws once per frame, not synchronously', () => {
     let notify: (() => void) | undefined;
     vi.stubGlobal(
       'ResizeObserver',
@@ -253,7 +253,7 @@ describe('createViewer', () => {
     expect(draw).toHaveBeenCalledTimes(1);
   });
 
-  it('setSelection e setHover criam retângulos no overlay, nas caixas certas', () => {
+  it('setSelection and setHover create rectangles in the overlay, on the right boxes', () => {
     const el = container();
     const viewer = make(el, { library, screen: SAMPLE_SCREEN });
     const stage = stageOf(el);
@@ -281,7 +281,7 @@ describe('createViewer', () => {
     expect(hover?.visible()).toBe(true);
     expect(hover?.getAttrs()).toMatchObject({ ...boxOf('i-card') });
 
-    // Hover numa instância selecionada não duplica o realce.
+    // Hover on a selected instance does not duplicate the highlight.
     viewer.setHover('i-email');
     expect(
       overlayRects(stage)
@@ -297,12 +297,12 @@ describe('createViewer', () => {
     ).toBe(false);
     viewer.setSelection([]);
     expect(overlayRects(stage).filter((r) => r.strokeWidth() === 2)).toHaveLength(0);
-    // Id desconhecido: sem retângulo.
+    // Unknown id: no rectangle.
     viewer.setSelection(['nada']);
     expect(overlayRects(stage).filter((r) => r.strokeWidth() === 2)).toHaveLength(0);
   });
 
-  it('a seleção acompanha a caixa quando a tela muda e some com a instância', () => {
+  it('the selection follows the box when the screen changes and goes away with the instance', () => {
     const el = container();
     const viewer = make(el, { library, screen: SAMPLE_SCREEN });
     viewer.setSelection(['i-enter']);
@@ -323,7 +323,7 @@ describe('createViewer', () => {
     expect(viewer.boxOf('i-enter')).toBeUndefined();
   });
 
-  it('onHover dispara só quando muda e onClick informa a instância e o ponto na tela', () => {
+  it('onHover fires only when it changes and onClick reports the instance and the point on the screen', () => {
     const el = container();
     const onHover = vi.fn();
     const onClick = vi.fn();
@@ -336,7 +336,7 @@ describe('createViewer', () => {
     stage.fire('mousemove', { target, evt: new MouseEvent('mousemove') });
     expect(onHover).toHaveBeenCalledTimes(1);
     expect(onHover).toHaveBeenLastCalledWith('i-enter');
-    // O realce de hover acompanha o ponteiro.
+    // The hover highlight follows the pointer.
     expect(
       overlayRects(stage)
         .find((r) => r.strokeWidth() === 1)
@@ -363,7 +363,7 @@ describe('createViewer', () => {
     expect(onClick.mock.calls[0]?.[1].x).toBeCloseTo(50, 6);
     expect(onClick.mock.calls[0]?.[1].y).toBeCloseTo(100, 6);
 
-    // Fundo: id indefinido. Botão != 0 é ignorado.
+    // Background: undefined id. Button != 0 is ignored.
     stage.fire('click', {
       target: artboard,
       evt: new MouseEvent('click', { button: 0 }),
@@ -376,7 +376,7 @@ describe('createViewer', () => {
     expect(onClick).toHaveBeenCalledTimes(2);
   });
 
-  it('interactive: false ignora o ponteiro; seleção e hover do hospedeiro continuam', () => {
+  it('interactive: false ignores the pointer; the host selection and hover continue', () => {
     const el = container();
     const onHover = vi.fn();
     const onClick = vi.fn();
@@ -398,7 +398,7 @@ describe('createViewer', () => {
     expect(onHover).not.toHaveBeenCalled();
     expect(onClick).not.toHaveBeenCalled();
 
-    // A seleção e o hover vindos do hospedeiro ainda aparecem.
+    // The selection and hover coming from the host still show up.
     viewer.setSelection(['i-enter']);
     expect(overlayRects(stage).filter((r) => r.strokeWidth() === 2)).toHaveLength(1);
     viewer.setHover('i-bar');
@@ -407,7 +407,7 @@ describe('createViewer', () => {
         .find((r) => r.strokeWidth() === 1)
         ?.visible(),
     ).toBe(true);
-    // As consultas seguem valendo.
+    // The queries still work.
     expect(viewer.boxOf('i-enter')).toBeDefined();
     expect(viewer.instanceAt({ x: 1, y: 1 })).toBeDefined();
     expect(viewer.clientToScreen({ x: 0, y: 0 })).toEqual({
@@ -415,7 +415,7 @@ describe('createViewer', () => {
       y: expect.any(Number),
     });
 
-    // Ligar de novo devolve os callbacks.
+    // Turning it on again brings the callbacks back.
     viewer.setInteractive(true);
     expect(stage.listening()).toBe(true);
     stage.fire('mousemove', { target, evt: new MouseEvent('mousemove') });
@@ -425,7 +425,7 @@ describe('createViewer', () => {
     expect(onClick.mock.calls[0]?.[0]).toBe('i-enter');
   });
 
-  it('setInteractive(false) com hover do ponteiro ativo avisa onHover(undefined) uma vez', () => {
+  it('setInteractive(false) with an active pointer hover notifies onHover(undefined) once', () => {
     const el = container();
     const onHover = vi.fn();
     const viewer = make(el, { library, screen: SAMPLE_SCREEN, onHover });
@@ -442,7 +442,7 @@ describe('createViewer', () => {
         .find((r) => r.strokeWidth() === 1)
         ?.visible(),
     ).toBe(false);
-    // Repetir não avisa de novo; sem hover ativo, desligar não avisa nada.
+    // Repeating does not notify again; with no active hover, turning it off notifies nothing.
     viewer.setInteractive(false);
     expect(onHover).toHaveBeenCalledTimes(2);
     const quiet = vi.fn();
@@ -451,7 +451,7 @@ describe('createViewer', () => {
     expect(quiet).not.toHaveBeenCalled();
   });
 
-  it('clientToScreen inverte a escala e o deslocamento', () => {
+  it('clientToScreen inverts the scale and the offset', () => {
     const el = container(800, 600);
     const viewer = make(el, { library, screen: SAMPLE_SCREEN });
     const stage = stageOf(el);
@@ -463,7 +463,7 @@ describe('createViewer', () => {
     });
     expect(point.x).toBeCloseTo(195, 6);
     expect(point.y).toBeCloseTo(422, 6);
-    // Considera o deslocamento do contêiner na página.
+    // Takes the container offset in the page into account.
     vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({
       left: 100,
       top: 50,
@@ -480,7 +480,7 @@ describe('createViewer', () => {
     expect(shifted.y).toBeCloseTo(0, 6);
   });
 
-  it('boxOf e instanceAt usam coordenadas da tela', () => {
+  it('boxOf and instanceAt use screen coordinates', () => {
     const viewer = make(container(), { library, screen: SAMPLE_SCREEN });
     expect(viewer.boxOf('i-avatar')).toEqual({ x: 155, y: 96, width: 80, height: 80 });
     expect(viewer.boxOf('nada')).toBeUndefined();
@@ -488,7 +488,7 @@ describe('createViewer', () => {
     expect(viewer.instanceAt({ x: 1, y: 843 })).toBeUndefined();
   });
 
-  it('warnings() e onWarnings reportam tipos desconhecidos', () => {
+  it('warnings() and onWarnings report unknown types', () => {
     const onWarnings = vi.fn();
     const viewer = make(container(), { onWarnings });
     const screen: Screen = {
@@ -509,12 +509,12 @@ describe('createViewer', () => {
     expect(onWarnings).toHaveBeenCalledTimes(1);
     const reported = onWarnings.mock.calls[0]?.[0] as ReadonlyMap<string, unknown>;
     expect(reported.has('x')).toBe(true);
-    // Mesma tela: nada mudou, nenhum aviso novo.
+    // Same screen: nothing changed, no new warning.
     viewer.update({ library, screen });
     expect(onWarnings).toHaveBeenCalledTimes(1);
   });
 
-  it('update com tela undefined esvazia; campos omitidos ficam', () => {
+  it('update with an undefined screen empties it; omitted fields stay', () => {
     const el = container();
     const viewer = make(el, { library, screen: SAMPLE_SCREEN });
     viewer.update({});
@@ -529,7 +529,7 @@ describe('createViewer', () => {
     expect(viewer.boxOf('i-bar')).toBeDefined();
   });
 
-  it('update com a mesma tela mantém os nós; redraw os recria', () => {
+  it('update with the same screen keeps the nodes; redraw recreates them', () => {
     const el = container();
     const viewer = make(el, { library, screen: SAMPLE_SCREEN });
     const stage = stageOf(el);
@@ -542,7 +542,7 @@ describe('createViewer', () => {
     expect(node.getChildren()[0]).not.toBe(inner);
   });
 
-  it('toDataURL devolve uma string e restaura o overlay', () => {
+  it('toDataURL returns a string and restores the overlay', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
       'data:image/png;base64,AA',
     );
@@ -553,7 +553,7 @@ describe('createViewer', () => {
     expect(stageOf(el).getLayers()[1]?.visible()).toBe(true);
   });
 
-  it('dispose não lança, destrói o stage e ignora updates depois', () => {
+  it('dispose does not throw, destroys the stage and ignores updates afterwards', () => {
     const el = container();
     const viewer = make(el, { library, screen: SAMPLE_SCREEN });
     const stage = stageOf(el);
@@ -573,16 +573,16 @@ describe('createViewer', () => {
     expect(viewer.toDataURL()).toBe('');
   });
 
-  it('funciona sem requestAnimationFrame (batchDraw direto)', () => {
+  it('works without requestAnimationFrame (direct batchDraw)', () => {
     vi.stubGlobal('requestAnimationFrame', undefined);
     const viewer = make(container(), { library, screen: SAMPLE_SCREEN });
     expect(() => viewer.setSelection(['i-bar'])).not.toThrow();
   });
-  // O custo de atualizar uma instância e de montar a cena deixou de ser só impresso aqui: o teste de
-  // crescimento (n e 4n instâncias, razão < 6×) está em tests/scale/app/viewerGrowth.scale.ts (npm run test:scale).
+  // The cost of updating an instance and of building the scene is no longer just printed here: the
+  // growth test (n and 4n instances, ratio < 6×) is in tests/scale/app/viewerGrowth.scale.ts (npm run test:scale).
 });
 
-describe('createViewer com source (JSON externo)', () => {
+describe('createViewer with source (external JSON)', () => {
   const m3 = loadLibrary(M3_FILES);
   const expected = screenFromSource(m3, settings, { measure: approximateMeasurer });
 
@@ -592,7 +592,7 @@ describe('createViewer com source (JSON externo)', () => {
       .map((n: Konva.Node) => String(n.getAttr('instanceId')));
   }
 
-  it('desenha a tela calculada e screen() a devolve; source vence screen', () => {
+  it('draws the computed screen and screen() returns it; source wins over screen', () => {
     const el = container();
     const viewer = make(el, { library: m3, source: settings, screen: M3_SCREEN });
     const calculated = expected.screen!;
@@ -602,12 +602,12 @@ describe('createViewer com source (JSON externo)', () => {
     expect(viewer.boxOf(first.id)).toEqual(first.box);
   });
 
-  it('screen() devolve a tela passada quando não há source', () => {
+  it('screen() returns the given screen when there is no source', () => {
     const viewer = make(container(), { library, screen: SAMPLE_SCREEN });
     expect(viewer.screen()).toBe(SAMPLE_SCREEN);
   });
 
-  it('sem biblioteca nada é desenhado e onSource não é chamado', () => {
+  it('without a library nothing is drawn and onSource is not called', () => {
     const onSource = vi.fn();
     const el = container();
     const viewer = make(el, { source: settings, onSource });
@@ -619,7 +619,7 @@ describe('createViewer com source (JSON externo)', () => {
     expect(viewer.screen()?.instances.length).toBeGreaterThan(0);
   });
 
-  it('onSource recebe os avisos (propriedade desconhecida)', () => {
+  it('onSource receives the warnings (unknown property)', () => {
     const json = structuredClone(settings) as unknown as {
       content: { children: { props: Record<string, unknown> }[] };
     };
@@ -631,7 +631,7 @@ describe('createViewer com source (JSON externo)', () => {
     expect(results[0]?.warnings.join('\n')).toContain('foo');
   });
 
-  it('redraw() recalcula; update com o mesmo objeto não, com objeto novo sim', () => {
+  it('redraw() recomputes; update with the same object does not, with a new object it does', () => {
     const onSource = vi.fn();
     const viewer = make(container(), { library: m3, source: settings, onSource });
     expect(onSource).toHaveBeenCalledTimes(1);
@@ -646,7 +646,7 @@ describe('createViewer com source (JSON externo)', () => {
     expect(viewer.screen()?.id).toBe('settings');
   });
 
-  it('source com error não desenha instâncias; limpar o source volta ao screen', () => {
+  it('a source with error draws no instances; clearing the source goes back to the screen', () => {
     const onSource = vi.fn();
     const el = container();
     const viewer = make(el, {
@@ -665,8 +665,8 @@ describe('createViewer com source (JSON externo)', () => {
   });
 });
 
-describe('fonte padrão do visualizador (CF5)', () => {
-  /** As famílias que o medidor recebeu ao desenhar a tela de exemplo (textos sem `family`). */
+describe('default font of the viewer (CF5)', () => {
+  /** The families the measurer received when drawing the sample screen (texts without `family`). */
   function families(options: ViewerOptions = {}): Set<string> {
     const seen = new Set<string>();
     const measure: typeof approximateMeasurer = (text, font, maxWidth) => {
@@ -677,20 +677,20 @@ describe('fonte padrão do visualizador (CF5)', () => {
     return seen;
   }
 
-  it('sem opção usa a pilha do --font-sans dos tokens da app, não uma fonte fixa', () => {
+  it('without the option uses the --font-sans stack of the app tokens, not a fixed font', () => {
     const seen = families();
     expect(seen.has(tokenValue('font-sans', 'light'))).toBe(true);
     expect(seen.has('Inter')).toBe(false);
   });
 
-  it('a opção fonts do hospedeiro vence', () => {
+  it('the host fonts option wins', () => {
     const seen = families({ fonts: { sans: 'Hospedeiro Sans' } });
     expect(seen.has('Hospedeiro Sans')).toBe(true);
     expect(seen.has(tokenValue('font-sans', 'light'))).toBe(false);
   });
 });
 
-describe('drawingMode (modo dos tokens)', () => {
+describe('drawingMode (token mode)', () => {
   const spec = {
     format: 'mapping-spec',
     formatVersion: 15,
@@ -735,14 +735,14 @@ describe('drawingMode (modo dos tokens)', () => {
     ],
   };
 
-  /** Os preenchimentos dos retângulos da instância (o fundo da tela fica de fora). */
+  /** The fills of the instance rectangles (the screen background is left out). */
   function fills(el: HTMLElement): unknown[] {
     return instanceNode(stageOf(el), 'i1')
       .find<Konva.Rect>('Rect')
       .map((r) => r.fill());
   }
 
-  it('sem a opção usa o primeiro modo; drawingMode "dark" desenha com os tokens do modo dark', () => {
+  it('without the option uses the first mode; drawingMode "dark" draws with the dark mode tokens', () => {
     expect(tokenLibrary.problems).toEqual([]);
     const light = container();
     make(light, { library: tokenLibrary, screen: tokenScreen });
@@ -754,7 +754,7 @@ describe('drawingMode (modo dos tokens)', () => {
     expect(fills(dark)).not.toContain('#1a73e8');
   });
 
-  it('trocar o modo em tempo de execução redesenha sem recarregar o projeto', () => {
+  it('changing the mode at runtime redraws without reloading the project', () => {
     const el = container();
     const viewer = make(el, { library: tokenLibrary, screen: tokenScreen });
     expect(fills(el)).toContain('#1a73e8');
@@ -762,7 +762,7 @@ describe('drawingMode (modo dos tokens)', () => {
     viewer.update({ drawingMode: 'dark' });
     expect(fills(el)).toContain('#8ab4f8');
     expect(fills(el)).not.toContain('#1a73e8');
-    expect(viewer.screen()).toBe(tokenScreen); // a tela e a biblioteca não foram recarregadas
+    expect(viewer.screen()).toBe(tokenScreen); // the screen and the library were not reloaded
 
     viewer.update({ drawingMode: undefined });
     expect(fills(el)).toContain('#1a73e8');
@@ -774,7 +774,7 @@ describe('rotation (EX3)', () => {
     format: 'mapping-spec',
     formatVersion: 4,
     id: 'turn',
-    name: 'Giro',
+    name: 'Spin',
     version: 1,
     layers: [
       {
@@ -784,9 +784,9 @@ describe('rotation (EX3)', () => {
         annotationTypes: [
           {
             id: 'bar',
-            name: 'Barra',
+            name: 'Bar',
             component: 'components/bar.json',
-            fields: [{ key: 'angle', label: 'Ângulo', type: 'number' }],
+            fields: [{ key: 'angle', label: 'Angle', type: 'number' }],
           },
         ],
       },
@@ -796,7 +796,7 @@ describe('rotation (EX3)', () => {
     format: 'mapping-component',
     formatVersion: 4,
     id: 'bar',
-    name: 'Barra',
+    name: 'Bar',
     size: { width: 100, height: 100 },
     template: {
       type: 'frame',
@@ -818,7 +818,7 @@ describe('rotation (EX3)', () => {
     { path: 'components/bar.json', text: JSON.stringify(barComponent) },
   ]);
 
-  it('desenha o nó girado em volta do centro da caixa, igual à app', () => {
+  it('draws the rotated node around the center of the box, same as the app', () => {
     const el = container();
     const viewer = make(el);
     const screen: Screen = {
@@ -841,7 +841,7 @@ describe('rotation (EX3)', () => {
     const node = stage.findOne<Konva.Group>((n: Konva.Node) => n.name() === 'turning');
     expect(node).toBeDefined();
     const abs = node!.getAbsoluteTransform().copy();
-    // a 90° em torno do centro, a barra 40×10 vira 10×40 em volta do mesmo ponto
+    // at 90° around the center, the 40×10 bar becomes 10×40 around the same point
     const local = (x: number, y: number) => abs.point({ x, y });
     const [a, b] = [local(0, 0), local(40, 10)];
     expect(Math.abs(a.x - b.x)).toBeCloseTo(10 * stage.getAbsoluteScale().x, 6);

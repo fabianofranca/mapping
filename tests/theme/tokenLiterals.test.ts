@@ -3,35 +3,35 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { BREAKPOINTS } from '../../src/theme/breakpoints';
 import { TOKENS, tokenValue } from '../../src/theme/tokens';
 
-// Nenhum valor de cor, espaço, raio, fonte,
-// opacidade, duração ou z-index fixo no CSS dos componentes; tudo vem de `var(--…)`.
-// Larguras e alturas de componentes (e a largura de bordas) ainda podem ser literais.
+// No color, spacing, radius, font,
+// opacity, duration or z-index value fixed in the component CSS; everything comes from `var(--…)`.
+// Widths and heights of components (and the border width) may still be literals.
 
 const DIR = 'src/theme';
 const files = readdirSync(DIR).filter((f) => f.endsWith('.css'));
 
-/** Quantidade com unidade de comprimento, exceto `0` (o zero não tem unidade). */
+/** Quantity with a length unit, except `0` (zero has no unit). */
 const LENGTH = /(?<![\w.-])-?\d*\.?\d+(px|rem|em)\b/;
 const TIME = /(?<![\w.-])\d*\.?\d+m?s\b/;
 const COLOR = /#[0-9a-fA-F]{3,8}\b|\b(rgb|rgba|hsl|hsla|oklch)\(/;
 
-/** Propriedades por categoria; o valor não pode ter literal da categoria. */
+/** Properties by category; the value cannot have a literal of the category. */
 const CATEGORIES: readonly { name: string; property: RegExp; literal: RegExp }[] = [
   {
-    name: 'espaço',
+    name: 'spacing',
     property:
       /^(padding|margin|gap|row-gap|column-gap|top|right|bottom|left|inset)(-[a-z]+)?$/,
     literal: LENGTH,
   },
-  { name: 'raio', property: /^border(-[a-z]+)*-radius$/, literal: LENGTH },
+  { name: 'radius', property: /^border(-[a-z]+)*-radius$/, literal: LENGTH },
   {
-    name: 'fonte',
+    name: 'font',
     property: /^(font|font-size|font-family|line-height)$/,
     literal: /.*/,
   },
-  { name: 'opacidade', property: /^opacity$/, literal: /\d/ },
+  { name: 'opacity', property: /^opacity$/, literal: /\d/ },
   {
-    name: 'duração',
+    name: 'duration',
     property: /^(transition|animation)(-duration|-delay)?$/,
     literal: TIME,
   },
@@ -44,7 +44,7 @@ interface Declaration {
   readonly value: string;
 }
 
-/** Declarações de um CSS (sem comentários), uma por `propriedade: valor;`. */
+/** Declarations of a CSS (without comments), one per `property: value;`. */
 function declarations(file: string): Declaration[] {
   const css = readFileSync(`${DIR}/${file}`, 'utf8').replaceAll(/\/\*[\s\S]*?\*\//g, '');
   return [...css.matchAll(/([a-z-]+)\s*:\s*([^;{}]+);/g)].map((m) => ({
@@ -55,8 +55,8 @@ function declarations(file: string): Declaration[] {
 }
 
 /**
- * O `<style>` do guia interativo (`scripts/guia/template.html`) também entra na varredura
- * (etapa #971, decisão 12). Os breakpoints do `@media` ficam (CSS não aceita `var()` ali).
+ * The `<style>` of the interactive guide (`scripts/guia/template.html`) is also part of the scan
+ * (stage #971, decision 12). The `@media` breakpoints stay (CSS does not accept `var()` there).
  */
 function guideDeclarations(): Declaration[] {
   const html = readFileSync('scripts/guia/template.html', 'utf8');
@@ -67,7 +67,7 @@ function guideDeclarations(): Declaration[] {
   return [...css.matchAll(/([a-z-]+)\s*:\s*([^;{}]+);/g)].map((m) => ({
     file: 'scripts/guia/template.html',
     property: m[1]!,
-    // O `0px` de reserva do `env()` (área segura) não é valor de design.
+    // The `0px` fallback of `env()` (safe area) is not a design value.
     value: m[2]!
       .replaceAll(/env\([^)]*\)/g, '')
       .replaceAll(/\s+/g, ' ')
@@ -78,18 +78,18 @@ function guideDeclarations(): Declaration[] {
 const all = [...files.flatMap(declarations), ...guideDeclarations()];
 
 /**
- * `font: inherit` e `font: var(--t-…)` são os únicos valores aceitos. Opacidade `0` e `1`
- * (mostrar ou esconder) não é valor de design: só os intermediários vêm dos tokens.
+ * `font: inherit` and `font: var(--t-…)` are the only accepted values. Opacity `0` and `1`
+ * (show or hide) is not a design value: only the intermediate ones come from the tokens.
  */
 function allowed(d: Declaration, category: string): boolean {
-  if (category === 'fonte')
+  if (category === 'font')
     return d.value === 'inherit' || /^var\(--[\w-]+\)$/.test(d.value);
-  if (category === 'opacidade') return d.value === '0' || d.value === '1';
+  if (category === 'opacity') return d.value === '0' || d.value === '1';
   return false;
 }
 
-describe('literais fora dos tokens', () => {
-  it.each(CATEGORIES)('$name: só var(--…)', ({ name, property, literal }) => {
+describe('literals outside the tokens', () => {
+  it.each(CATEGORIES)('$name: only var(--…)', ({ name, property, literal }) => {
     const bad = all
       .filter((d) => property.test(d.property) && literal.test(d.value))
       .filter((d) => !allowed(d, name))
@@ -104,14 +104,14 @@ describe('literais fora dos tokens', () => {
     expect(bad).toEqual([]);
   });
 
-  it('todo var(--token) usado existe (ou é local ao componente)', () => {
+  it('every var(--token) used exists (or is local to the component)', () => {
     const local = new Set([
       '--layer-color',
-      // Cor da anotação do guia, escrita pelo script da página.
+      // Color of the guide annotation, written by the page script.
       '--c',
       '--cols',
       '--depth',
-      // Medidas da legenda da revisão, escritas pelo `ReviewLegend`.
+      // Measures of the review legend, written by `ReviewLegend`.
       '--legend-top',
       '--legend-left',
       '--legend-width',
@@ -127,7 +127,7 @@ describe('literais fora dos tokens', () => {
 describe('media queries', () => {
   const known = new Set<number>(Object.values(BREAKPOINTS));
 
-  it('usam só os breakpoints de breakpoints.ts', () => {
+  it('use only the breakpoints of breakpoints.ts', () => {
     const bad: string[] = [];
     for (const file of files) {
       const css = readFileSync(`${DIR}/${file}`, 'utf8');
@@ -138,7 +138,7 @@ describe('media queries', () => {
     expect(bad).toEqual([]);
   });
 
-  it('a largura mínima da app é a do token size-app-min', () => {
+  it('the minimum width of the app is the size-app-min token one', () => {
     expect(TOKENS['size-app-min']).toBe(`${BREAKPOINTS.appMin}px`);
     expect(TOKENS['size-app-min-height']).toBe(`${BREAKPOINTS.appMinHeight}px`);
   });
@@ -152,12 +152,12 @@ describe('theme-color', () => {
       .find((m) => m.includes(`prefers-color-scheme: ${scheme}`))
       ?.match(/content="([^"]+)"/)?.[1];
 
-  it('index.html segue o color-accent de cada tema', () => {
+  it('index.html follows the color-accent of each theme', () => {
     expect(content('light')).toBe(tokenValue('color-accent', 'light'));
     expect(content('dark')).toBe(tokenValue('color-accent', 'dark'));
   });
 
-  it('o manifest segue o color-accent do tema claro', () => {
+  it('the manifest follows the color-accent of the light theme', () => {
     const manifest = JSON.parse(readFileSync('pwa/manifest.webmanifest', 'utf8')) as {
       theme_color: string;
     };

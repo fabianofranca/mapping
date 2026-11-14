@@ -1,8 +1,8 @@
 /** @jsxImportSource react */
 /**
- * Prova de que o projeto `viewer-react` do Vitest usa o React de verdade (e não
- * preact/compat): é nele que o invólucro `<MappingViewer/>` é testado. Também monta a página de
- * demonstração (`viewer/demo/main.tsx`) para o conjunto Material 3 (SDUI).
+ * Proof that the Vitest `viewer-react` project uses real React (and not preact/compat): it is
+ * where the `<MappingViewer/>` wrapper is tested. It also mounts the demo page
+ * (`viewer/demo/main.tsx`) for the Material 3 (SDUI) set.
  */
 import * as React from 'react';
 import { act } from 'react';
@@ -21,34 +21,34 @@ function Hello({ name }: { name: string }) {
   const [n] = React.useState(1);
   return (
     <p>
-      Olá, {name} {n}
+      Hello, {name} {n}
     </p>
   );
 }
 
 describe('ambiente React do visualizador', () => {
-  it('usa React 19 de verdade', () => {
+  it('uses real React 19', () => {
     expect(React.version.startsWith('19')).toBe(true);
   });
 
-  it('renderiza com createRoot dentro de act', async () => {
+  it('renders with createRoot inside act', async () => {
     const host = document.createElement('div');
     document.body.append(host);
     const root = createRoot(host);
     await act(async () => {
       root.render(
         <React.StrictMode>
-          <Hello name="mundo" />
+          <Hello name="world" />
         </React.StrictMode>,
       );
     });
-    expect(host.textContent).toBe('Olá, mundo 1');
+    expect(host.textContent).toBe('Hello, world 1');
     await act(async () => root.unmount());
     host.remove();
   });
 });
 
-describe('página de demonstração: Material 3 (SDUI)', () => {
+describe('demo page: Material 3 (SDUI)', () => {
   const expected = screenFromSource(loadLibrary(M3_FILES), settings, {
     measure: approximateMeasurer,
   });
@@ -68,7 +68,7 @@ describe('página de demonstração: Material 3 (SDUI)', () => {
     const found = [...document.querySelectorAll('button')].find(
       (b) => b.textContent === name,
     );
-    if (!found) throw new Error(`botão ${name} não encontrado`);
+    if (!found) throw new Error(`button ${name} not found`);
     return found;
   };
   const treeRows = (): number => document.querySelectorAll('.react-lab-tree li').length;
@@ -76,7 +76,7 @@ describe('página de demonstração: Material 3 (SDUI)', () => {
     document.querySelector('.react-lab-status')?.textContent ?? '';
   const textarea = (): HTMLTextAreaElement => {
     const el = document.querySelector('textarea');
-    if (!el) throw new Error('textarea não encontrada');
+    if (!el) throw new Error('textarea not found');
     return el;
   };
   const type = async (value: string): Promise<void> => {
@@ -90,7 +90,7 @@ describe('página de demonstração: Material 3 (SDUI)', () => {
     });
   };
 
-  it('o botão mostra o JSON do SDUI e a árvore tem as instâncias calculadas', async () => {
+  it('the button shows the SDUI JSON and the tree has the computed instances', async () => {
     expect(total).toBeGreaterThan(10);
     await act(async () => button('Material 3 (SDUI)').click());
     expect(button('Material 3 (SDUI)').getAttribute('aria-pressed')).toBe('true');
@@ -101,7 +101,7 @@ describe('página de demonstração: Material 3 (SDUI)', () => {
     expect(status()).toContain('Source warnings: none');
   });
 
-  it('editar o JSON muda a tela', async () => {
+  it('editing the JSON changes the screen', async () => {
     const edited = structuredClone(settings) as unknown as {
       content: { children: { children?: unknown[] }[] };
     };
@@ -111,14 +111,14 @@ describe('página de demonstração: Material 3 (SDUI)', () => {
     expect(document.querySelector('.react-lab-error')).toBeNull();
   });
 
-  it('JSON inválido mostra o erro e mantém a última tela', async () => {
+  it('invalid JSON shows the error and keeps the last screen', async () => {
     const rows = treeRows();
-    await type('{ quebrado');
+    await type('{ broken');
     expect(document.querySelector('.react-lab-error')?.textContent).toBeTruthy();
     expect(treeRows()).toBe(rows);
   });
 
-  it('JSON sem tela (error da origem) mostra o erro e mantém a última tela', async () => {
+  it('JSON without a screen (source error) shows the error and keeps the last screen', async () => {
     await type(JSON.stringify(settings));
     expect(treeRows()).toBe(total);
     expect(document.querySelector('.react-lab-error')).toBeNull();
@@ -128,15 +128,15 @@ describe('página de demonstração: Material 3 (SDUI)', () => {
     expect(status()).toContain('Settings (412 × 917)');
   });
 
-  it('avisos da origem aparecem quando há propriedade desconhecida', async () => {
+  it('source warnings show up when there is an unknown property', async () => {
     const edited = structuredClone(settings) as unknown as {
       content: { children: { props: Record<string, unknown> }[] };
     };
-    edited.content.children[0]!.props.propInventada = 1;
+    edited.content.children[0]!.props.madeUpProp = 1;
     await type(JSON.stringify(edited));
     expect(document.querySelector('.react-lab-error')).toBeNull();
     expect(status()).toContain('Source warnings:');
-    expect(status()).toContain('propInventada');
+    expect(status()).toContain('madeUpProp');
     expect(status()).not.toContain('Source warnings: none');
   });
 });

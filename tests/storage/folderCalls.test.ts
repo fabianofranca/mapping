@@ -6,7 +6,7 @@ import {
 } from '../../src/storage/folderCalls';
 import { MemoryDirectory } from './memoryFs';
 
-/** Tudo o que o contador viu, por tipo de chamada. */
+/** Everything the counter saw, by call type. */
 const kinds = (calls: ReturnType<typeof createFolderCalls>): Record<string, number> =>
   Object.fromEntries(Object.entries(calls.byKind).filter(([, n]) => n > 0));
 
@@ -23,7 +23,7 @@ const emptyKinds = (): Record<FolderCallKind, number> => ({
 });
 
 describe('countingDirectory', () => {
-  it('conta cada tipo de chamada uma vez, também nos handles devolvidos', async () => {
+  it('counts each call type once, also on the returned handles', async () => {
     const root = new MemoryDirectory('root');
     root.put('a/b/c.txt', 'x');
     root.put('a/d.txt', 'y');
@@ -63,7 +63,7 @@ describe('countingDirectory', () => {
     expect(calls.total).toBe(10);
   });
 
-  it('os handles que values() devolve também contam, recursivamente', async () => {
+  it('the handles that values() returns also count, recursively', async () => {
     const root = new MemoryDirectory('root');
     root.put('a/b/c.txt', 'x');
     const calls = createFolderCalls();
@@ -82,46 +82,46 @@ describe('countingDirectory', () => {
     });
   });
 
-  it('o resultado e o erro passam iguais', async () => {
+  it('the result and the error pass through unchanged', async () => {
     const root = new MemoryDirectory('root');
-    root.put('a.txt', 'conteúdo');
+    root.put('a.txt', 'content');
     const calls = createFolderCalls();
     const dir = countingDirectory(root, calls);
 
     const handle = await dir.getFileHandle('a.txt');
     const file = await (handle as { getFile(): Promise<Blob> }).getFile();
-    expect(await file.text()).toBe('conteúdo');
+    expect(await file.text()).toBe('content');
     expect(handle.name).toBe('a.txt');
     expect(handle.kind).toBe('file');
     expect(dir.kind).toBe('directory');
     expect(dir.name).toBe('root');
 
-    const error = await dir.getFileHandle('falta.txt').catch((e: unknown) => e);
+    const error = await dir.getFileHandle('missing.txt').catch((e: unknown) => e);
     expect(error).toBeInstanceOf(DOMException);
     expect((error as DOMException).name).toBe('NotFoundError');
-    // A chamada que falhou também foi feita.
+    // The call that failed was also made.
     expect(calls.byKind.getFileHandle).toBe(2);
 
-    await expect(dir.removeEntry('falta.txt')).rejects.toMatchObject({
+    await expect(dir.removeEntry('missing.txt')).rejects.toMatchObject({
       name: 'NotFoundError',
     });
     expect(calls.byKind.removeEntry).toBe(1);
   });
 
-  it('a gravação pelo handle embrulhado chega ao disco', async () => {
+  it('a write through the wrapped handle reaches the disk', async () => {
     const root = new MemoryDirectory('root');
     const calls = createFolderCalls();
     const dir = countingDirectory(root, calls);
-    const handle = await dir.getFileHandle('novo.txt', { create: true });
+    const handle = await dir.getFileHandle('new.txt', { create: true });
     const writable = await handle.createWritable();
-    await writable.write('olá');
+    await writable.write('hello');
     await writable.close();
-    expect(await root.read('novo.txt')).toBe('olá');
+    expect(await root.read('new.txt')).toBe('hello');
   });
 });
 
 describe('measure', () => {
-  it('mede chamadas e milissegundos da operação e devolve o resultado', async () => {
+  it('measures calls and milliseconds of the operation and returns the result', async () => {
     const root = new MemoryDirectory('root');
     root.put('a.txt', 'x');
     const calls = createFolderCalls();
@@ -138,7 +138,7 @@ describe('measure', () => {
     expect(measure?.ms).toBeGreaterThanOrEqual(0);
   });
 
-  it('guarda só a última medida de cada operação', async () => {
+  it('keeps only the last measurement of each operation', async () => {
     const root = new MemoryDirectory('root');
     root.put('a.txt', 'x');
     const calls = createFolderCalls();
@@ -157,7 +157,7 @@ describe('measure', () => {
     expect(snapshot[0]).toMatchObject({ op: 'save', calls: 1 });
   });
 
-  it('o snapshot vem na ordem open, save, library, decide, apply, sync', async () => {
+  it('the snapshot comes in the order open, save, library, decide, apply, sync', async () => {
     const calls = createFolderCalls();
     for (const op of ['sync', 'apply', 'decide', 'library', 'save', 'open'] as const) {
       await calls.measure(op, async () => undefined);
@@ -172,18 +172,18 @@ describe('measure', () => {
     ]);
   });
 
-  it('sem medida, o snapshot é vazio', () => {
+  it('without a measurement, the snapshot is empty', () => {
     expect(createFolderCalls().snapshot()).toEqual([]);
   });
 
-  it('uma fn que lança ainda registra a medida e repassa o erro', async () => {
+  it('an fn that throws still records the measurement and rethrows the error', async () => {
     const root = new MemoryDirectory('root');
     const calls = createFolderCalls();
     const dir = countingDirectory(root, calls);
     const boom = new Error('boom');
     await expect(
       calls.measure('decide', async () => {
-        await dir.getFileHandle('falta.txt').catch(() => undefined);
+        await dir.getFileHandle('missing.txt').catch(() => undefined);
         throw boom;
       }),
     ).rejects.toBe(boom);
@@ -192,7 +192,7 @@ describe('measure', () => {
     ]);
   });
 
-  it('a operação pode ser decidida no fim (save ou library)', async () => {
+  it('the operation can be decided at the end (save or library)', async () => {
     const calls = createFolderCalls();
     let wrotePackage = false;
     await calls.measure(
@@ -204,7 +204,7 @@ describe('measure', () => {
     expect(calls.snapshot().map((m) => m.op)).toEqual(['library']);
   });
 
-  it('operações de tipos diferentes ao mesmo tempo somam nas duas medidas', async () => {
+  it('operations of different kinds at the same time add up in both measurements', async () => {
     const root = new MemoryDirectory('root');
     root.put('a.txt', 'x');
     const calls = createFolderCalls();
@@ -226,8 +226,8 @@ describe('measure', () => {
   });
 });
 
-describe('MemoryDirectory com latência (dublê lento)', () => {
-  it('sem latência, nenhuma espera; com latencyMs, cada chamada demora e vale para as pastas de dentro', async () => {
+describe('MemoryDirectory with latency (slow double)', () => {
+  it('without latency, no wait; with latencyMs, each call takes time and applies to the inner folders', async () => {
     const root = new MemoryDirectory('root');
     root.put('a/b.txt', 'x');
     const fast = performance.now();
@@ -242,13 +242,13 @@ describe('MemoryDirectory com latência (dublê lento)', () => {
     const file = await slowA.getFileHandle('b.txt');
     await (file as { getFile(): Promise<Blob> }).getFile();
     const slowMs = performance.now() - slow;
-    // Três chamadas, 20 ms cada (com folga para o relógio do timer).
-    // Três chamadas de 20 ms; folga para o timer que dispara um pouco cedo.
+    // Three calls, 20 ms each (with slack for the timer clock).
+    // Three calls of 20 ms; slack for the timer that fires a bit early.
     expect(slowMs).toBeGreaterThanOrEqual(45);
     expect(fastMs).toBeLessThan(slowMs);
   });
 
-  it('o contador funciona por cima do dublê lento', async () => {
+  it('the counter works on top of the slow double', async () => {
     const root = new MemoryDirectory('root');
     root.put('a.txt', 'x');
     root.latencyMs = 5;

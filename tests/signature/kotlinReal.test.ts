@@ -8,19 +8,19 @@ import {
   type Sig,
 } from './support';
 
-// Trechos reais do androidx (commit 5113b82…) contra as fichas escritas à mão
-// (`tests/fixtures/signature/kotlin/*.expected.json`). Compara os bytes: a ordem das chaves conta.
+// Real androidx excerpts (commit 5113b82…) against the hand-written signatures
+// (`tests/fixtures/signature/kotlin/*.expected.json`). Compares the bytes: key order matters.
 
-describe('Button.kt (androidx): a ficha esperada à mão', () => {
+describe('Button.kt (androidx): the hand-written expected signature', () => {
   const result = runReal('Button.kt', 'androidx.compose.material3.Button', BUTTON_PATH);
 
-  it('sai com 0 e a saída é a ficha esperada, byte a byte', () => {
+  it('exits with 0 and the output is the expected signature, byte by byte', () => {
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
     expect(result.stdout).toBe(canonical('Button.expected.json'));
   });
 
-  it('todos os parâmetros, na ordem da fonte, com role e type', () => {
+  it('all parameters, in source order, with role and type', () => {
     const sig = JSON.parse(result.stdout) as Sig;
     expect(sig.params.map((p) => [p.name, p.role, p.type])).toEqual([
       ['onClick', 'callback', '() -> Unit'],
@@ -36,7 +36,7 @@ describe('Button.kt (androidx): a ficha esperada à mão', () => {
     ]);
   });
 
-  it('default, required e value (boolean com padrão, opaque sem campo)', () => {
+  it('default, required and value (boolean with default, opaque without field)', () => {
     const sig = JSON.parse(result.stdout) as Sig;
     const by = Object.fromEntries(sig.params.map((p) => [p.name, p]));
     expect(by.onClick).toMatchObject({ required: true });
@@ -51,7 +51,7 @@ describe('Button.kt (androidx): a ficha esperada à mão', () => {
     });
   });
 
-  it('a fábrica de buttonColors: a sobrecarga com mais parâmetros, sem value no colors', () => {
+  it('the buttonColors factory: the overload with the most parameters, no value on colors', () => {
     const sig = JSON.parse(result.stdout) as Sig;
     const colors = sig.params.find((p) => p.name === 'colors');
     expect(colors?.value).toBeUndefined();
@@ -66,7 +66,7 @@ describe('Button.kt (androidx): a ficha esperada à mão', () => {
     ]);
   });
 
-  it('o doc: um @param por parâmetro que existe e os da fábrica como colors.<param>', () => {
+  it('the doc: one @param per existing parameter and the factory ones as colors.<param>', () => {
     const sig = JSON.parse(result.stdout) as Sig;
     expect(Object.keys(sig.doc ?? {})).toEqual([
       'onClick',
@@ -89,7 +89,7 @@ describe('Button.kt (androidx): a ficha esperada à mão', () => {
     );
   });
 
-  it('source: kind, platform, language, symbol, path, ref, extractor (sem overload)', () => {
+  it('source: kind, platform, language, symbol, path, ref, extractor (no overload)', () => {
     const sig = JSON.parse(result.stdout) as Sig;
     expect(sig.source).toEqual({
       kind: 'code',
@@ -103,15 +103,15 @@ describe('Button.kt (androidx): a ficha esperada à mão', () => {
   });
 });
 
-describe('Switch.kt (androidx): SwitchColors e o slot thumbContent', () => {
+describe('Switch.kt (androidx): SwitchColors and the thumbContent slot', () => {
   const result = runReal('Switch.kt', 'Switch', SWITCH_PATH);
 
-  it('a ficha esperada, byte a byte (o symbol vira o nome completo pelo package)', () => {
+  it('the expected signature, byte by byte (the symbol becomes the full name through the package)', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toBe(canonical('Switch.expected.json'));
   });
 
-  it('thumbContent: (@Composable () -> Unit)? é um slot', () => {
+  it('thumbContent: (@Composable () -> Unit)? is a slot', () => {
     const sig = JSON.parse(result.stdout) as Sig;
     expect(sig.params.find((p) => p.name === 'thumbContent')).toEqual({
       name: 'thumbContent',
@@ -121,7 +121,7 @@ describe('Switch.kt (androidx): SwitchColors e o slot thumbContent', () => {
     });
   });
 
-  it('SwitchDefaults.colors: a sobrecarga de 16 parâmetros, defaults de várias linhas num texto só', () => {
+  it('SwitchDefaults.colors: the 16-parameter overload, multi-line defaults in a single text', () => {
     const sig = JSON.parse(result.stdout) as Sig;
     const colors = sig.params.find((p) => p.name === 'colors');
     expect(colors?.factory?.call).toBe(
@@ -134,10 +134,10 @@ describe('Switch.kt (androidx): SwitchColors e o slot thumbContent', () => {
   });
 });
 
-describe('AppBar.kt (androidx): as sobrecargas do TopAppBar', () => {
+describe('AppBar.kt (androidx): the TopAppBar overloads', () => {
   const symbol = 'androidx.compose.material3.TopAppBar';
 
-  it('--overload 2 (a com subtitle): a ficha esperada, source.overload = 2', () => {
+  it('--overload 2 (the one with subtitle): the expected signature, source.overload = 2', () => {
     const result = runReal('AppBar.kt', symbol, APPBAR_PATH, ['--overload', '2']);
     expect(result.stderr).toBe('');
     expect(result.stdout).toBe(canonical('AppBar.overload2.expected.json'));
@@ -146,7 +146,7 @@ describe('AppBar.kt (androidx): as sobrecargas do TopAppBar', () => {
     expect(sig.params.map((p) => p.name)).toContain('subtitle');
   });
 
-  it('sem --overload: a @Deprecated(level = HIDDEN) é ignorada e ainda restam duas: erro listando as três', () => {
+  it('without --overload: the @Deprecated(level = HIDDEN) is ignored and two remain: error listing the three', () => {
     const result = runReal('AppBar.kt', symbol, APPBAR_PATH);
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
@@ -160,7 +160,7 @@ describe('AppBar.kt (androidx): as sobrecargas do TopAppBar', () => {
     expect(result.stderr).toContain('--overload');
   });
 
-  it('--overload 1: a pública, com o KDoc dela (expandedHeight)', () => {
+  it('--overload 1: the public one, with its KDoc (expandedHeight)', () => {
     const result = runReal('AppBar.kt', symbol, APPBAR_PATH, ['--overload', '1']);
     expect(result.code).toBe(0);
     const sig = JSON.parse(result.stdout) as Sig;
@@ -169,7 +169,7 @@ describe('AppBar.kt (androidx): as sobrecargas do TopAppBar', () => {
     expect(sig.doc?.expandedHeight).toContain("this app bar's height");
   });
 
-  it('--overload 0: a deprecada escolhida de propósito', () => {
+  it('--overload 0: the deprecated one chosen on purpose', () => {
     const result = runReal('AppBar.kt', symbol, APPBAR_PATH, ['--overload', '0']);
     expect(result.code).toBe(0);
     const sig = JSON.parse(result.stdout) as Sig;
@@ -177,7 +177,7 @@ describe('AppBar.kt (androidx): as sobrecargas do TopAppBar', () => {
     expect(sig.params.map((p) => p.name)).not.toContain('expandedHeight');
   });
 
-  it('--overload 3: fora da lista, o erro mostra as candidatas', () => {
+  it('--overload 3: outside the list, the error shows the candidates', () => {
     const result = runReal('AppBar.kt', symbol, APPBAR_PATH, ['--overload', '3']);
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('is not in the list');

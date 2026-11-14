@@ -2,11 +2,11 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// Catraca de autoria (etapa Comentários, decisão 12): `kind` nunca vem do chamador. O código da
-// app (`src/**`) só monta autor `human`, com a identidade das Configurações; o servidor MCP
-// (`mcp/**`) só monta `agent`, com `email: null`. Quem aparece aqui
-// como "monta" é o literal `kind: 'human'` / `kind: 'agent'` (a comparação `=== 'agent'` e os
-// tipos não contam). No molde de `applyAcceptedCallers.test.ts`.
+// Authorship ratchet (Comments stage, decision 12): `kind` never comes from the caller. The
+// app code (`src/**`) only builds a `human` author, with the identity from Settings; the MCP server
+// (`mcp/**`) only builds `agent`, with `email: null`. What shows up here
+// as "builds" is the literal `kind: 'human'` / `kind: 'agent'` (the comparison `=== 'agent'` and the
+// types do not count). Modeled on `applyAcceptedCallers.test.ts`.
 
 const ROOT = join(__dirname, '..', '..');
 
@@ -29,7 +29,7 @@ function assembling(dir: string, kind: 'human' | 'agent'): string[] {
 }
 
 /**
- * O que cada raiz pode montar.
+ * What each root may build.
  */
 const RULES: readonly {
   readonly dir: string;
@@ -37,22 +37,22 @@ const RULES: readonly {
   readonly allowed: readonly string[];
 }[] = [
   { dir: 'src', kind: 'agent', allowed: [] },
-  // O servidor MCP só monta autor agent, numa função só; nunca human.
+  // The MCP server only builds an agent author, in a single function; never human.
   { dir: 'mcp', kind: 'agent', allowed: ['mcp/threads.ts'] },
   { dir: 'mcp', kind: 'human', allowed: [] },
-  // O modelo (src/model) não monta autor: valida e ordena. Só a ação da app monta o `human`.
+  // The model (src/model) does not build an author: it validates and sorts. Only the app action builds the `human`.
   { dir: 'src', kind: 'human', allowed: ['src/store/threadActions.ts'] },
 ];
 
-describe('catraca de autoria das conversas', () => {
+describe('authorship ratchet of the threads', () => {
   it.each(RULES)(
-    '$dir só monta autor $kind onde está liberado',
+    '$dir only builds author $kind where it is allowed',
     ({ dir, kind, allowed }) => {
       expect(assembling(dir, kind)).toEqual([...allowed].sort());
     },
   );
 
-  it('a ação da app monta o autor human com a identidade, e nenhum outro lugar de src/', () => {
+  it('the app action builds the human author with the identity, and no other place in src/', () => {
     const actions = readFileSync(join(ROOT, 'src/store/threadActions.ts'), 'utf8');
     expect(actions).toMatch(/kind:\s*'human'/);
     expect(actions).toMatch(/email:\s*me\.email/);

@@ -12,11 +12,11 @@ export interface RunResult {
   readonly code: number;
   readonly stdout: string;
   readonly stderr: string;
-  /** O que foi gravado por `--out`, por caminho. */
+  /** What was written by `--out`, by path. */
   readonly written: Readonly<Record<string, string>>;
 }
 
-/** Roda a CLI em processo, com arquivos em memória (caminho → texto). */
+/** Runs the CLI in-process, with in-memory files (path -> text). */
 export function run(
   argv: readonly string[],
   files: Readonly<Record<string, string>> = {},
@@ -44,7 +44,7 @@ export function run(
   return { code, stdout, stderr, written };
 }
 
-/** Extrai o `symbol` de um `A.kt` em memória; `flags` vão depois de `--symbol`. */
+/** Extracts the `symbol` from an in-memory `A.kt`; `flags` go after `--symbol`. */
 export function extract(
   source: string,
   symbol: string,
@@ -57,7 +57,7 @@ export function extract(
   });
 }
 
-/** A ficha impressa, já lida (falha o teste se a execução não deu certo). */
+/** The printed signature, already parsed (fails the test if the run did not succeed). */
 export function extractJson(
   source: string,
   symbol: string,
@@ -86,18 +86,18 @@ export interface Sig {
   doc?: Record<string, string>;
 }
 
-/** Um `A.kt` mínimo: o `package` e uma função composable. */
+/** A minimal `A.kt`: the `package` and a composable function. */
 export function composable(params: string, name = 'Foo'): string {
   return `package demo.ui\n\n@Composable\nfun ${name}(${params}) {}\n`;
 }
 
-/** Os parâmetros da ficha de uma função com a lista dada, por nome. */
+/** The signature parameters of a function with the given list, by name. */
 export function paramsOf(params: string): Record<string, SigParam> {
   const sig = extractJson(composable(params), 'Foo');
   return Object.fromEntries(sig.params.map((p) => [p.name, p]));
 }
 
-/** Roda o bundle (`.js` ou `.mjs`) num processo de verdade. */
+/** Runs the bundle (`.js` or `.mjs`) in a real process. */
 export function spawnBundle(
   bundle: string,
   args: readonly string[],
@@ -114,7 +114,7 @@ export function fixtureText(name: string): string {
   return readFileSync(join(FIXTURES, name), 'utf8');
 }
 
-/** A ficha esperada, no formato exato da saída (2 espaços, `\n` no fim). */
+/** The expected signature, in the exact output format (2 spaces, `\n` at the end). */
 export function canonical(name: string): string {
   return `${JSON.stringify(JSON.parse(fixtureText(name)), null, 2)}\n`;
 }
@@ -125,7 +125,7 @@ export const SWITCH_PATH = BUTTON_PATH.replace('Button.kt', 'Switch.kt');
 export const APPBAR_PATH = BUTTON_PATH.replace('Button.kt', 'AppBar.kt');
 export const REF = '5113b82a4ed6416d6344efa50e41db8cb65928ff';
 
-/** Roda o leitor Kotlin numa fixture real (trecho do androidx), com `--path` e `--ref` do commit. */
+/** Runs the Kotlin reader on a real fixture (androidx excerpt), with the commit's `--path` and `--ref`. */
 export function runReal(
   file: string,
   symbol: string,

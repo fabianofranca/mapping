@@ -1,6 +1,6 @@
 // @vitest-environment node
-// Etapa Vitest rápido (VT1): `--shard=i/N` divide os arquivos pelo tempo de cada um
-// (guloso, maior primeiro), não pelo número de arquivos nem pelo hash do caminho.
+// Fast Vitest stage (VT1): `--shard=i/N` splits the files by the time of each one
+// (greedy, biggest first), not by the number of files nor by the path hash.
 import { describe, expect, it } from 'vitest';
 import TimedSequencer, { balanceShards, medianDuration } from '../support/timedSequencer';
 
@@ -18,7 +18,7 @@ const load = (shard: string[], d: Record<string, number>, fallback: number): num
 
 describe('balanceShards', () => {
   it.each([1, 2, 3, 4])(
-    'com %i shards, a união é o conjunto inteiro, sem repetição',
+    'with %i shards, the union is the whole set, without repetition',
     (n) => {
       const list = paths(23);
       const d = durations(list);
@@ -28,7 +28,7 @@ describe('balanceShards', () => {
     },
   );
 
-  it('não depende da ordem de entrada', () => {
+  it('does not depend on the input order', () => {
     const list = paths(17);
     const d = durations(list);
     const reversed = [...list].reverse();
@@ -40,27 +40,27 @@ describe('balanceShards', () => {
     expect(balanceShards(shuffled, d, 4).map((s) => [...s].sort())).toEqual(base);
   });
 
-  it('arquivo sem tempo entra, com a mediana dos conhecidos', () => {
-    const list = [...paths(6), 'tests/new/novo.test.ts'];
+  it('a file without a time enters, with the median of the known ones', () => {
+    const list = [...paths(6), 'tests/new/new.test.ts'];
     const d = durations(paths(6));
     const shards = balanceShards(list, d, 3);
-    expect(shards.flat()).toContain('tests/new/novo.test.ts');
+    expect(shards.flat()).toContain('tests/new/new.test.ts');
     expect(shards.flat()).toHaveLength(7);
     expect(medianDuration({ a: 1, b: 9, c: 3 })).toBe(3);
     expect(medianDuration({ a: 1, b: 3 })).toBe(2);
     expect(medianDuration({})).toBe(1);
   });
 
-  it('tempo de arquivo que não existe mais só é ignorado', () => {
+  it('the time of a file that no longer exists is just ignored', () => {
     const list = paths(5);
-    const d = { ...durations(list), 'tests/removido.test.ts': 99 };
+    const d = { ...durations(list), 'tests/removed.test.ts': 99 };
     expect(balanceShards(list, d, 2).flat().sort()).toEqual([...list].sort());
   });
 
-  it('com tempos desiguais, fica mais equilibrado que a divisão por contagem', () => {
+  it('with uneven times, it is more balanced than the split by count', () => {
     const list = paths(12);
-    // Três arquivos pesados no começo da lista: a divisão por contagem (blocos
-    // contíguos de 3) põe os três no mesmo shard.
+    // Three heavy files at the start of the list: the split by count (contiguous
+    // blocks of 3) puts the three in the same shard.
     const d: Record<string, number> = {};
     list.forEach((p, i) => (d[p] = i < 3 ? 30 : 2));
     const byCount = [0, 1, 2, 3].map((i) => list.slice(i * 3, i * 3 + 3));
@@ -71,9 +71,9 @@ describe('balanceShards', () => {
     expect(max(timed)).toBeLessThanOrEqual(34);
   });
 
-  it('cada arquivo custa também a montagem (import, ambiente), mesmo com tempo zero', () => {
-    // O tempo medido de um arquivo não inclui o import dele: 200 arquivos de 0 s não são
-    // de graça. Sem esse custo fixo, todos cairiam no mesmo shard (o de menor índice).
+  it('each file also costs the setup (import, environment), even with zero time', () => {
+    // The measured time of a file does not include its import: 200 files of 0 s are not
+    // free. Without this fixed cost, all of them would fall in the same shard (the one with the lowest index).
     const heavy = paths(4);
     const tiny = Array.from({ length: 200 }, (_, i) => `tests/b/tiny${i}.test.ts`);
     const d: Record<string, number> = {};
@@ -93,7 +93,7 @@ describe('TimedSequencer', () => {
   const make = (index: number, count: number): TimedSequencer =>
     new TimedSequencer({ config: { root, shard: { index, count } } } as never);
 
-  it('os shards 1..N particionam os arquivos entre si', async () => {
+  it('shards 1..N partition the files among themselves', async () => {
     const list = paths(15);
     const specs = list.map(spec);
     const parts = await Promise.all(

@@ -14,28 +14,29 @@ import {
 import { bindDocumentSettings } from '../src/theme/apply';
 
 describe('i18n', () => {
-  it('en-US tem as mesmas chaves de pt-BR', () => {
+  it('en-US has the same keys as pt-BR', () => {
     expect(Object.keys(enUS).sort()).toEqual(Object.keys(ptBR).sort());
   });
 
-  it('t() segue o idioma atual', () => {
+  it('t() follows the current language', () => {
     setLocale('pt-BR');
+    // pt-BR kept: locale switching is the object of the test
     expect(t('settings.theme')).toBe('Tema');
     setLocale('en-US');
     expect(t('settings.theme')).toBe('Theme');
   });
 
-  it('detecta o idioma a partir de navigator.language', () => {
+  it('detects the language from navigator.language', () => {
     expect(detectLocale('pt-PT')).toBe('pt-BR');
     expect(detectLocale('fr-FR')).toBe('en-US');
     expect(detectLocale(undefined)).toBe('en-US');
   });
 });
 
-describe('tema e persistência', () => {
+describe('theme and persistence', () => {
   beforeEach(() => localStorage.clear());
 
-  it('persiste idioma e tema e aplica no <html>', () => {
+  it('persists language and theme and applies them to <html>', () => {
     const dispose = bindDocumentSettings();
     setTheme('dark');
     setLocale('pt-BR');
@@ -50,10 +51,10 @@ describe('tema e persistência', () => {
     dispose();
   });
 
-  it('não quebra se o localStorage lançar exceção', () => {
+  it('does not break if localStorage throws', () => {
     const original = Storage.prototype.setItem;
     Storage.prototype.setItem = () => {
-      throw new Error('bloqueado');
+      throw new Error('blocked');
     };
     try {
       expect(() => setTheme('light')).not.toThrow();
@@ -64,10 +65,10 @@ describe('tema e persistência', () => {
   });
 });
 
-describe('componentes sobre fotos', () => {
+describe('components over photos', () => {
   beforeEach(() => localStorage.clear());
 
-  it('vem desligado e a preferência é gravada', () => {
+  it('starts off and the preference is saved', () => {
     expect(showComponentsOnPhotos.value).toBe(false);
     setShowComponentsOnPhotos(true);
     expect(showComponentsOnPhotos.value).toBe(true);

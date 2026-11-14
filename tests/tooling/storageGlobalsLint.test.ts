@@ -1,14 +1,14 @@
 // @vitest-environment node
-// Fase 8.4: `localStorage`, `sessionStorage` e `indexedDB` só em `src/utils/safeStorage.ts`
-// (com try/catch e a chave do canal) e em `src/storage/local.ts` (os bancos). Este teste
-// prova que a regra ESLint pega o padrão antigo e que a regra do `src/model/` (a da
-// arquitetura, mais estrita) continua valendo: um bloco não substitui o outro.
+// Phase 8.4: `localStorage`, `sessionStorage` and `indexedDB` only in `src/utils/safeStorage.ts`
+// (with try/catch and the channel key) and in `src/storage/local.ts` (the databases). This test
+// proves that the ESLint rule catches the old pattern and that the `src/model/` rule (the
+// architecture one, stricter) still applies: one block does not replace the other.
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 
 const eslint = new ESLint({ cwd: process.cwd() });
 
-/** Mensagens das regras de globais ao lintar `code` como se fosse o arquivo `filePath`. */
+/** Messages of the globals rules when linting `code` as if it were the file `filePath`. */
 async function restricted(code: string, filePath: string): Promise<string[]> {
   const [result] = await eslint.lintText(code, { filePath });
   return (result?.messages ?? [])
@@ -26,27 +26,27 @@ const viaWindow = `export const value = window.sessionStorage.getItem('x');
 const database = `export const ok = typeof indexedDB !== 'undefined' && globalThis.indexedDB !== null;
 `;
 
-describe('armazenamento do navegador só em safeStorage.ts e local.ts (regra da fase 8.4)', () => {
-  it('localStorage direto em src/app/ é erro', async () => {
+describe('browser storage only in safeStorage.ts and local.ts (phase 8.4 rule)', () => {
+  it('direct localStorage in src/app/ is an error', async () => {
     const messages = await restricted(direct, 'src/app/recents.ts');
     expect(messages).toHaveLength(1);
     expect(messages[0]).toContain('safeStorage');
   });
 
-  it('window.sessionStorage em src/ui/ é erro', async () => {
+  it('window.sessionStorage in src/ui/ is an error', async () => {
     expect(await restricted(viaWindow, 'src/ui/StatusBar.tsx')).toHaveLength(1);
   });
 
-  it('indexedDB (global e por globalThis) em src/store/ é erro', async () => {
+  it('indexedDB (global and through globalThis) in src/store/ is an error', async () => {
     expect(await restricted(database, 'src/store/review.ts')).toHaveLength(2);
   });
 
-  it('safeStorage.ts e local.ts podem', async () => {
+  it('safeStorage.ts and local.ts may', async () => {
     expect(await restricted(direct + viaWindow, 'src/utils/safeStorage.ts')).toEqual([]);
     expect(await restricted(database, 'src/storage/local.ts')).toEqual([]);
   });
 
-  it('em src/model/, a regra da arquitetura continua: localStorage e document', async () => {
+  it('in src/model/, the architecture rule still applies: localStorage and document', async () => {
     const code = `export const a = localStorage.getItem('x');
 export const b = document.title;
 `;

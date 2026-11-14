@@ -35,7 +35,7 @@ describe('component.schema.json', () => {
 
   it('rejects an unknown key at the root and in a node', () => {
     const root = { ...clone(), extra: 1 };
-    expect(checkSchema(schema, root).join('\n')).toContain('$.extra: chave desconhecida');
+    expect(checkSchema(schema, root).join('\n')).toContain('$.extra: unknown key');
     const node = clone();
     (node.template as Record<string, unknown>).bogus = true;
     expect(checkSchema(schema, node).length).toBeGreaterThan(0);
@@ -52,8 +52,8 @@ describe('component.schema.json', () => {
   it('rejects a component without size', () => {
     const c = clone();
     delete c.size;
-    // pt-BR kept: message text emitted by tests/support/jsonSchema.ts (not translated here)
-    expect(checkSchema(schema, c)).toContain('$.size: obrigatório');
+    // (message emitted by tests/support/jsonSchema.ts)
+    expect(checkSchema(schema, c)).toContain('$.size: required');
   });
 
   it('rejects an id outside the pattern', () => {
@@ -428,8 +428,8 @@ describe('component.schema.json — rotation (EX3)', () => {
     const template = c.template as Record<string, unknown>;
     template.let = { Pad: 8 };
     template.children = [];
-    // pt-BR kept: message text emitted by tests/support/jsonSchema.ts (not translated here)
-    expect(checkSchema(schema, c).join('\n')).toContain('nome fora do padrão');
+    // (message emitted by tests/support/jsonSchema.ts)
+    expect(checkSchema(schema, c).join('\n')).toContain('name outside the pattern');
     template.let = { pad: 8 };
     template.children = [{ type: 'rect', width: { $var: 'pad', default: 1 }, height: 4 }];
     expect(checkSchema(schema, c)).not.toEqual([]);

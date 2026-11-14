@@ -14,25 +14,25 @@ import {
 import { buildScaleProject } from '../../model/scaleProject';
 import { GROWTH_OPTIONS, expectLinearGrowth } from '../../support/growth';
 
-// Casos do modelo do teste de crescimento (#881): a mesma operação com 1.250 e 5.000 marcações, razão < 6×.
-// O fixture é assentado uma vez; cada rodada mede uma versão nova do projeto (`{ ...p }`).
+// Model cases of the growth test (#881): the same operation with 1,250 and 5,000 markings, ratio < 6×.
+// The fixture is settled once; each round measures a new version of the project (`{ ...p }`).
 const build = (markings: number): Project => buildScaleProject({ markings });
 
-describe('crescimento do modelo (n = 1.250, 4n = 5.000 marcações)', () => {
-  it('valida os invariantes', GROWTH_OPTIONS, () => {
+describe('model growth (n = 1,250, 4n = 5,000 markings)', () => {
+  it('validates the invariants', GROWTH_OPTIONS, () => {
     expectLinearGrowth('validateProject', {
       build,
       run: (p) => {
         const issues = validateProject(p);
-        if (issues.length > 0) throw new Error('o fixture deveria ser válido');
+        if (issues.length > 0) throw new Error('the fixture should be valid');
         return issues;
       },
-      // Poucos ms por rodada: mais rodadas para a mediana não oscilar.
+      // A few ms per round: more rounds so the median does not fluctuate.
       runs: 41,
     });
   });
 
-  it('serializa e lê de volta sem perdas', GROWTH_OPTIONS, () => {
+  it('serializes and reads back without losses', GROWTH_OPTIONS, () => {
     const written = serialize(build(1250));
     const read = deserialize(written);
     expect(read.ok && serialize(read.project)).toBe(written);
@@ -43,10 +43,10 @@ describe('crescimento do modelo (n = 1.250, 4n = 5.000 marcações)', () => {
   });
 
   it(
-    'monta o índice, as pendências, os indicadores e a visibilidade',
+    'builds the index, the pending items, the indicators and the visibility',
     GROWTH_OPTIONS,
     () => {
-      expectLinearGrowth('índice + pendências + indicadores + visibilidade', {
+      expectLinearGrowth('index + pending items + indicators + visibility', {
         build,
         run: (p) => {
           projectIndex(p);
@@ -60,28 +60,28 @@ describe('crescimento do modelo (n = 1.250, 4n = 5.000 marcações)', () => {
     },
   );
 
-  it('monta a lista', GROWTH_OPTIONS, () => {
+  it('builds the list', GROWTH_OPTIONS, () => {
     expectLinearGrowth('buildListing', {
       build,
       run: (p) => {
         const listing = buildListing(p, p.layers, { showEmpty: true });
-        if (listing.length === 0) throw new Error('a lista não pode ficar vazia');
+        if (listing.length === 0) throw new Error('the list must not be empty');
         return listing;
       },
       runs: 41,
     });
   });
 
-  it.each([0, 1])('monta a perspectiva %i', GROWTH_OPTIONS, (which) => {
+  it.each([0, 1])('builds the perspective %i', GROWTH_OPTIONS, (which) => {
     expectLinearGrowth(`perspectiveView #${which + 1}`, {
       build,
-      // O índice da versão nova já é medido no caso acima: aqui só a vista.
+      // The index of the new version is already measured in the case above: here only the view.
       prepare: projectIndex,
       run: (p) => {
         const view = perspectiveView(p, p.perspectives[which]!);
-        // A vista tem só as raízes da perspectiva: metade das marcações (raiz com o grupo).
+        // The view has only the roots of the perspective: half of the markings (root with the group).
         if (view.markings.length === 0)
-          throw new Error('a perspectiva não pode ficar vazia');
+          throw new Error('the perspective must not be empty');
         return view;
       },
     });

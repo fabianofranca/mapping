@@ -1,17 +1,17 @@
-// Visualizador embutível: carga da biblioteca por URL e registro de fontes (funções do hospedeiro).
+// Embeddable viewer: loading the library by URL and registering fonts (host functions).
 import { describe, expect, it, vi } from 'vitest';
 import { SAMPLE_FILES } from '../../viewer/samples/samples';
 import { M3_FILES } from '../../viewer/samples/samplesMaterial3';
 import { loadLibrary } from '../../src/model/components/library';
 import { loadLibraryFromUrl, registerLibraryFonts } from '../../viewer/host';
 
-const BASE = 'https://exemplo.test/ds/';
+const BASE = 'https://example.test/ds/';
 const SPEC_URL = `${BASE}lab-components.spec.json`;
 const fontBytes = new Uint8Array([0, 1, 0, 0]).buffer;
 
 type Body = string | ArrayBuffer;
 
-/** `fetch` falso: URL → corpo (ausente = 404). Guarda as URLs pedidas. */
+/** Fake `fetch`: URL → body (missing = 404). Keeps the requested URLs. */
 function fakeFetch(bodies: Map<string, Body>) {
   const calls: string[] = [];
   const fn = vi.fn(async (input: RequestInfo | URL): Promise<Response> => {
@@ -35,7 +35,7 @@ function sampleBodies(): Map<string, Body> {
   );
 }
 
-/** Especialização de exemplo com duas fontes declaradas. */
+/** Sample specialization with two declared fonts. */
 function withFonts(): Map<string, Body> {
   const bodies = sampleBodies();
   const spec = JSON.parse(SAMPLE_FILES[0]!.text) as Record<string, unknown>;
@@ -48,7 +48,7 @@ function withFonts(): Map<string, Body> {
   return bodies;
 }
 
-/** Especialização de exemplo com `icons` na raiz e o arquivo de ícones servido. */
+/** Sample specialization with `icons` at the root and the icon file served. */
 function withIcons(): Map<string, Body> {
   const bodies = sampleBodies();
   const spec = JSON.parse(SAMPLE_FILES[0]!.text) as Record<string, unknown>;
@@ -69,7 +69,7 @@ function withIcons(): Map<string, Body> {
 }
 
 describe('loadLibraryFromUrl', () => {
-  it('carrega a especialização e os componentes por URL, igual ao loadLibrary com os arquivos', async () => {
+  it('loads the specialization and the components by URL, the same as loadLibrary with the files', async () => {
     const { fetch, calls } = fakeFetch(sampleBodies());
     const library = await loadLibraryFromUrl(SPEC_URL, { fetch });
     const expected = loadLibrary(SAMPLE_FILES);
@@ -83,7 +83,7 @@ describe('loadLibraryFromUrl', () => {
     expect(calls).toContain(`${BASE}components/button.json`);
   });
 
-  it('resolve referências com ../ e ./ relativas à URL da especialização', async () => {
+  it('resolves references with ../ and ./ relative to the specialization URL', async () => {
     const spec = JSON.parse(SAMPLE_FILES[0]!.text) as {
       layers: { annotationTypes: { component?: string }[] }[];
     };
@@ -104,7 +104,7 @@ describe('loadLibraryFromUrl', () => {
     expect(library.types.every((t) => t.component !== undefined)).toBe(true);
   });
 
-  it('o Material 3 por URL também carrega (pasta com componentes)', async () => {
+  it('Material 3 by URL also loads (folder with components)', async () => {
     const bodies = new Map<string, Body>(
       M3_FILES.map((f) => [`${BASE}${f.path}`, f.text] as const),
     );
@@ -117,7 +117,7 @@ describe('loadLibraryFromUrl', () => {
     expect(library.types.length).toBeGreaterThan(10);
   });
 
-  it('componente ausente (404) vira problema da biblioteca, sem derrubar o resto', async () => {
+  it('a missing component (404) becomes a library problem, without bringing down the rest', async () => {
     const bodies = sampleBodies();
     bodies.delete(`${BASE}components/button.json`);
     const { fetch } = fakeFetch(bodies);
@@ -129,7 +129,7 @@ describe('loadLibraryFromUrl', () => {
     expect(library.types.find((t) => t.id === 'card')?.component).toBeDefined();
   });
 
-  it('erro de rede num componente também o deixa de fora', async () => {
+  it('a network error on a component also leaves it out', async () => {
     const { fetch: inner } = fakeFetch(sampleBodies());
     const fetch = (async (input: RequestInfo | URL) => {
       if (String(input).endsWith('components/card.json')) throw new TypeError('offline');
@@ -140,7 +140,7 @@ describe('loadLibraryFromUrl', () => {
     expect(library.problems[0]).toContain('components/card.json');
   });
 
-  it('baixa o arquivo de ícones da especialização (icons na raiz)', async () => {
+  it('downloads the specialization icon file (icons at the root)', async () => {
     const bodies = withIcons();
     const { fetch, calls } = fakeFetch(bodies);
     const library = await loadLibraryFromUrl(SPEC_URL, { fetch });
@@ -149,7 +149,7 @@ describe('loadLibraryFromUrl', () => {
     expect(library.icons?.icons.star).toBeDefined();
   });
 
-  it('ícones que não vêm (404 ou erro de rede) viram problema, sem derrubar o resto', async () => {
+  it('icons that do not come (404 or network error) become a problem, without bringing down the rest', async () => {
     const missing = withIcons();
     missing.delete(`${BASE}icons/set.json`);
     const first = await loadLibraryFromUrl(SPEC_URL, {
@@ -170,21 +170,21 @@ describe('loadLibraryFromUrl', () => {
     expect(second.problems[0]).toContain('icon file not found');
   });
 
-  it('com fonts: false os ícones continuam sendo pedidos', async () => {
+  it('with fonts: false the icons are still requested', async () => {
     const { fetch, calls } = fakeFetch(withIcons());
     const library = await loadLibraryFromUrl(SPEC_URL, { fetch, fonts: false });
     expect(calls).toContain(`${BASE}icons/set.json`);
     expect(library.icons?.icons.star).toBeDefined();
   });
 
-  it('especialização 404 lança com a URL e o status', async () => {
+  it('a 404 specialization throws with the URL and the status', async () => {
     const { fetch } = fakeFetch(new Map());
     await expect(loadLibraryFromUrl(SPEC_URL, { fetch })).rejects.toThrow(
       new RegExp(`${SPEC_URL.replace(/\./g, '\\.')}.*404`),
     );
   });
 
-  it('sem fetch no ambiente nem nas opções, lança pedindo o fetch do hospedeiro', async () => {
+  it('without fetch in the environment or in the options, throws asking for the host fetch', async () => {
     vi.stubGlobal('fetch', undefined);
     try {
       await expect(loadLibraryFromUrl(SPEC_URL)).rejects.toThrow(/fetch/);
@@ -193,7 +193,7 @@ describe('loadLibraryFromUrl', () => {
     }
   });
 
-  it('usa o fetch global quando as opções não trazem um', async () => {
+  it('uses the global fetch when the options bring none', async () => {
     const { fetch, calls } = fakeFetch(sampleBodies());
     vi.stubGlobal('fetch', fetch);
     try {
@@ -205,7 +205,7 @@ describe('loadLibraryFromUrl', () => {
     }
   });
 
-  it('busca as fontes como bytes; a que não vem fica sem bytes', async () => {
+  it('fetches the fonts as bytes; the one that does not come is left without bytes', async () => {
     const { fetch, calls } = fakeFetch(withFonts());
     const library = await loadLibraryFromUrl(SPEC_URL, { fetch });
     expect(calls).toContain(`${BASE}fonts/Roboto-Regular.ttf`);
@@ -217,7 +217,7 @@ describe('loadLibraryFromUrl', () => {
     expect(library.problems).toEqual([]);
   });
 
-  it('fonts: false não busca fontes', async () => {
+  it('fonts: false does not fetch fonts', async () => {
     const { fetch, calls } = fakeFetch(withFonts());
     const library = await loadLibraryFromUrl(SPEC_URL, { fetch, fonts: false });
     expect(calls.some((url) => url.includes('/fonts/'))).toBe(false);
@@ -227,7 +227,7 @@ describe('loadLibraryFromUrl', () => {
 });
 
 describe('registerLibraryFonts', () => {
-  it('delega a registerFonts com o host dado e devolve o status de cada fonte', async () => {
+  it('delegates to registerFonts with the given host and returns the status of each font', async () => {
     const { fetch } = fakeFetch(withFonts());
     const library = await loadLibraryFromUrl(SPEC_URL, { fetch });
     const added: unknown[] = [];
@@ -253,13 +253,13 @@ describe('registerLibraryFonts', () => {
     expect((added[0] as FakeFace).source).toBe(fontBytes);
   });
 
-  it('biblioteca sem fontes: lista vazia', async () => {
+  it('library without fonts: empty list', async () => {
     expect(await registerLibraryFonts(loadLibrary(SAMPLE_FILES), {})).toEqual([]);
   });
 });
 
-describe('loadLibraryFromUrl: pedidos', () => {
-  /** Especialização com `refs` componentes distintos (o mesmo arquivo servido por todos) e os tipos repetidos. */
+describe('loadLibraryFromUrl: requests', () => {
+  /** Specialization with `distinct` distinct components (the same file served by all) and the repeated types. */
   function manyComponents(distinct: number, repeats: number): Map<string, Body> {
     const bodies = sampleBodies();
     const spec = JSON.parse(SAMPLE_FILES[0]!.text) as {
@@ -282,7 +282,7 @@ describe('loadLibraryFromUrl: pedidos', () => {
     return bodies;
   }
 
-  it('referências iguais são pedidas uma vez só', async () => {
+  it('equal references are requested only once', async () => {
     const { fetch, calls } = fakeFetch(manyComponents(3, 4));
     await loadLibraryFromUrl(SPEC_URL, { fetch });
     const component = calls.filter((url) => url.includes('/components/'));
@@ -290,7 +290,7 @@ describe('loadLibraryFromUrl: pedidos', () => {
     expect(new Set(component).size).toBe(3);
   });
 
-  it('limita os pedidos simultâneos', async () => {
+  it('limits the simultaneous requests', async () => {
     const bodies = manyComponents(30, 1);
     let inFlight = 0;
     let peak = 0;

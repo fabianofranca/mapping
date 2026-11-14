@@ -4,10 +4,10 @@ import type { Plugin } from 'vite';
 import { fontFiles } from '../../mcp/fontFiles.mjs';
 import { wasmFiles } from '../../mcp/wasmFiles.mjs';
 
-// Plugins do Vite que resolvem `wasm:` e `font:` do servidor MCP nos testes (o esbuild os embute no build).
-// Compartilhados pelo `vite.config.ts` (projeto `mcp`) e pelo `vitest.scale.config.ts` (projeto `scale-mcp`).
+// Vite plugins that resolve `wasm:` and `font:` of the MCP server in the tests (esbuild embeds them in the build).
+// Shared by `vite.config.ts` (project `mcp`) and by `vitest.scale.config.ts` (project `scale-mcp`).
 
-/** Nos testes do `mcp`, `import bytes from 'wasm:png'` (codecs de imagem) lê o `.wasm` do pacote, como o esbuild faz no build. */
+/** In the `mcp` tests, `import bytes from 'wasm:png'` (image codecs) reads the package's `.wasm`, as esbuild does in the build. */
 export function wasmBytes(): Plugin {
   const require = createRequire(import.meta.url);
   const prefix = '\0wasm-bytes:';
@@ -23,7 +23,7 @@ export function wasmBytes(): Plugin {
   };
 }
 
-/** Nos testes do `mcp`, `import bytes from 'font:sans'` lê o TTF embutido (mcp/fonts/), como o esbuild faz no build. */
+/** In the `mcp` tests, `import bytes from 'font:sans'` reads the embedded TTF (mcp/fonts/), as esbuild does in the build. */
 export function fontBytes(): Plugin {
   const prefix = '\0font-bytes:';
   return {

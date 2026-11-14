@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { place } from '../../src/ui/Popover';
 
-// `place` com limite (etapa #676, AR1, decisão 5): o painel nunca invade a área acima do
-// limite (a barra da revisão); sem limite, a posição é a de sempre.
+// `place` with a limit (stage #676, AR1, decision 5): the panel never invades the area above
+// the limit (the review bar); without a limit, the position is the usual one.
 
 const VIEW = { width: 1000, height: 700 };
 
@@ -27,7 +27,7 @@ const top = (el: HTMLElement) => Number.parseFloat(el.style.top);
 afterEach(() => undefined);
 
 describe('place', () => {
-  it('sem limite, abre embaixo e, sem caber, em cima, como sempre', () => {
+  it('without a limit, opens below and, when it does not fit, above, as usual', () => {
     const a = setup(100, 200);
     place(a.host, a.panel, 'start');
     expect(top(a.panel)).toBe(122);
@@ -37,26 +37,26 @@ describe('place', () => {
     expect(b.panel.style.maxHeight).toBe('');
   });
 
-  it('com limite e o gatilho perto do alto, não invade a barra', () => {
-    // Embaixo não cabe (422 + 450 > 692) e em cima o painel subiria até a borda da janela.
+  it('with a limit and the trigger near the top, does not invade the bar', () => {
+    // It does not fit below (422 + 450 > 692) and above the panel would rise to the window edge.
     const { host, panel } = setup(400, 450);
     place(host, panel, 'start', { top: 60 });
     expect(top(panel)).toBeGreaterThanOrEqual(60);
   });
 
-  it('sem espaço embaixo nem em cima, abre do lado com mais espaço, com altura máxima e rolagem', () => {
+  it('with no room below or above, opens on the side with more room, with a maximum height and scrolling', () => {
     const { host, panel } = setup(400, 900);
     place(host, panel, 'start', { top: 60 });
     expect(panel.style.overflowY).toBe('auto');
     const max = Number.parseFloat(panel.style.maxHeight);
-    // embaixo: 700 - 8 - 422 = 270; em cima: 400 - 4 - 64 = 332 (limite 60 + folga 4).
+    // below: 700 - 8 - 422 = 270; above: 400 - 4 - 64 = 332 (limit 60 + margin 4).
     expect(max).toBeGreaterThan(0);
     expect(top(panel)).toBeGreaterThanOrEqual(60);
     expect(top(panel) + max).toBeLessThanOrEqual(VIEW.height - 8);
     expect(top(panel) + max).toBeLessThanOrEqual(400);
   });
 
-  it('com limite e espaço embaixo, abre embaixo', () => {
+  it('with a limit and room below, opens below', () => {
     const { host, panel } = setup(100, 200);
     place(host, panel, 'start', { top: 60 });
     expect(top(panel)).toBe(122);

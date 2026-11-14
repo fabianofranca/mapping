@@ -11,8 +11,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BUNDLE_CJS, BUNDLE_ESM, FIXTURES, ROOT, spawnBundle } from './support';
 
-// Guardas estáticas e de execução: o extrator não abre rede e só grava o `--out`.
-// Mudar estas listas é uma decisão (docs/ARCHITECTURE.md, "signature/").
+// Static and runtime guards: the extractor opens no network and only writes `--out`.
+// Changing these lists is a decision (docs/ARCHITECTURE.md, "signature/").
 
 const DIR = join(ROOT, 'signature');
 
@@ -59,24 +59,24 @@ const NETWORK_MODULES =
 const NETWORK_GLOBALS =
   /(?<![\w$.])(?:fetch|XMLHttpRequest|WebSocket|EventSource|eval)\s*[(\s]|new Function/;
 
-describe('o que o código de signature/ pode fazer', () => {
+describe('what the signature/ code may do', () => {
   const all = sources();
 
-  it('a varredura vê o código do extrator (main, cli, leitor, tokenizador)', () => {
+  it('the scan sees the extractor code (main, cli, reader, tokenizer)', () => {
     const files = all.map((s) => s.file);
     expect(files).toContain('main.ts');
     expect(files).toContain('cli.ts');
     expect(files.some((f) => /kotlin/i.test(f))).toBe(true);
   });
 
-  it('nenhum módulo de rede ou de processo é importado, nenhum global de rede é usado', () => {
+  it('no network or process module is imported, no network global is used', () => {
     for (const { file, code } of all) {
-      expect(NETWORK_MODULES.test(code), `${file}: módulo de rede`).toBe(false);
-      expect(NETWORK_GLOBALS.test(code), `${file}: global de rede`).toBe(false);
+      expect(NETWORK_MODULES.test(code), `${file}: network module`).toBe(false);
+      expect(NETWORK_GLOBALS.test(code), `${file}: network global`).toBe(false);
     }
   });
 
-  it('só cli.ts chama função que grava, e só writeFile (o --out)', () => {
+  it('only cli.ts calls a writing function, and only writeFile (the --out)', () => {
     const calls: Record<string, string[]> = {};
     for (const { file, code } of all) {
       const names = [...new Set([...code.matchAll(WRITER_CALL)].map((m) => m[1]!))];
@@ -85,7 +85,7 @@ describe('o que o código de signature/ pode fazer', () => {
     expect(calls).toEqual({ 'cli.ts': ['writeFile'] });
   });
 
-  it('só importa de src/model/ (o app não entra no bundle)', () => {
+  it('only imports from src/model/ (the app does not enter the bundle)', () => {
     for (const { file, code } of all) {
       for (const m of code.matchAll(/from\s+['"]([^'"]*\/src\/[^'"]*)['"]/g)) {
         expect(m[1], file).toMatch(/\/src\/model(\/|$)/);
@@ -93,7 +93,7 @@ describe('o que o código de signature/ pode fazer', () => {
     }
   });
 
-  it('os bundles só tocam em node:fs (e node:path, node:url), nenhum módulo de rede', () => {
+  it('the bundles only touch node:fs (and node:path, node:url), no network module', () => {
     for (const bundle of [BUNDLE_CJS, BUNDLE_ESM]) {
       const text = readFileSync(bundle, 'utf8');
       const mods = new Set(
@@ -109,7 +109,7 @@ describe('o que o código de signature/ pode fazer', () => {
   });
 });
 
-/** Caminho relativo → conteúdo (ou `dir`) de tudo sob a pasta. */
+/** Relative path -> content (or `dir`) of everything under the folder. */
 function tree(dir: string): Record<string, string> {
   const out: Record<string, string> = {};
   for (const entry of readdirSync(dir, { recursive: true, encoding: 'utf8' })) {
@@ -119,8 +119,8 @@ function tree(dir: string): Record<string, string> {
   return out;
 }
 
-describe('execução: a árvore de pastas antes e depois', () => {
-  it('sem --out nada é gravado; com --out só o arquivo pedido aparece', () => {
+describe('execution: the folder tree before and after', () => {
+  it('without --out nothing is written; with --out only the requested file appears', () => {
     const dir = mkdtempSync(join(tmpdir(), 'mapping-signature-tree-'));
     try {
       cpSync(FIXTURES, join(dir, 'kt'), { recursive: true });
@@ -144,9 +144,9 @@ describe('execução: a árvore de pastas antes e depois', () => {
       );
       expect(failed.code).toBe(1);
       expect(tree(dir)).toEqual(before);
-      const written = spawnBundle(BUNDLE_ESM, [...base, '--out', 'ficha.json'], dir);
+      const written = spawnBundle(BUNDLE_ESM, [...base, '--out', 'signature.json'], dir);
       expect(written.code).toBe(0);
-      expect(tree(dir)).toEqual({ ...before, 'ficha.json': printed.stdout });
+      expect(tree(dir)).toEqual({ ...before, 'signature.json': printed.stdout });
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

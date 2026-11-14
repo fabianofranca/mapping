@@ -5,41 +5,41 @@ import { addLabel, slotTargetName } from '../../src/ui/componentTarget';
 import { marking, sampleProject } from '../model/fixtures';
 import { withNoteInstance } from '../model/notesFixtures';
 
-// Rótulo do Adicionar com destino num componente com slot (rodada de teste da ME2, R12.12):
-// reaproveita o rótulo da marcação (nome; sem nome, o do tipo que ela desenha).
+// Label of Add with a target in a component with a slot (ME2 test round, R12.12):
+// reuses the label of the marking (name; with no name, the one of the type it draws).
 function project(): Project {
   return withNoteInstance(sampleProject());
 }
 
-describe('rótulo do Adicionar dentro de um componente com slot', () => {
+describe('Add label inside a component with a slot', () => {
   afterEach(() => {
-    locale.value = 'pt-BR';
+    locale.value = 'en-US';
   });
 
-  it('usa o nome da marcação quando ela tem nome', () => {
+  it('uses the marking name when it has one', () => {
     const p = project();
-    expect(slotTargetName(p, { id: 'N1', name: 'Lista de produtos' })).toBe(
-      'Lista de produtos',
-    );
+    expect(slotTargetName(p, { id: 'N1', name: 'Product list' })).toBe('Product list');
   });
 
-  it('sem nome, usa o nome do tipo que a instância desenha', () => {
-    locale.value = 'pt-BR';
+  it('with no name, uses the name of the type the instance draws', () => {
+    locale.value = 'en-US';
     const p = project();
     const name = slotTargetName(p, marking(p, 'N1'));
+    // pt-BR kept: shared fixture data asserted by tests/model, tests/components (type name of notesFixtures)
     expect(name).toBe('Nota');
     expect(
       addLabel({ containerId: 'A', parentId: 'M', destination: { kind: 'slot', name } }),
-    ).toBe('Adicionar dentro de Nota');
-    locale.value = 'en-US';
+    ).toBe('Add inside Nota');
+    locale.value = 'pt-BR';
+    // pt-BR kept: the locale switch is the object of this assertion
     expect(
       addLabel({ containerId: 'A', parentId: 'M', destination: { kind: 'slot', name } }),
-    ).toBe('Add inside Nota');
+    ).toBe('Adicionar dentro de Nota');
   });
 
-  it('sem nome e sem tipo de componente, mantém o nome padrão', () => {
-    locale.value = 'pt-BR';
+  it('with no name and no component type, keeps the default name', () => {
+    locale.value = 'en-US';
     const p = project();
-    expect(slotTargetName(p, marking(p, 'M4'))).toBe('Marcação sem nome');
+    expect(slotTargetName(p, marking(p, 'M4'))).toBe('Unnamed marking');
   });
 });

@@ -1,6 +1,6 @@
 // @vitest-environment node
-// Etapa 8 (8.3): as regras automáticas do foco e do teclado (`docs/ARCHITECTURE.md`,
-// "Foco e teclado"). Este arquivo é a prova permanente de que elas pegam o padrão antigo.
+// Stage 8 (8.3): the automatic rules for focus and keyboard (`docs/ARCHITECTURE.md`,
+// "Focus and keyboard"). This file is the permanent proof that they catch the old pattern.
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { ESLint } from 'eslint';
@@ -13,8 +13,8 @@ async function messages(code: string, filePath: string) {
   return (result?.messages ?? []).filter((m) => m.ruleId === 'no-restricted-syntax');
 }
 
-describe('ESLint: consulta global ao DOM em src/ui e src/app (F4)', () => {
-  // O retorno do Exportar da `main` antes da 8.3: o botão achado pelo texto do atalho.
+describe('ESLint: global DOM query in src/ui and src/app (F4)', () => {
+  // The Export return of `main` before 8.3: the button found by the shortcut text.
   const oldExportButton = `
 const exportButton = () =>
   document.querySelector<HTMLElement>(
@@ -24,7 +24,7 @@ export { exportButton };
 `;
 
   it.each(['src/app/ExportProbe.tsx', 'src/ui/ExportProbe.tsx'])(
-    'o exportButton por seletor global é recusado em %s',
+    'the exportButton by global selector is refused in %s',
     async (file) => {
       const found = await messages(oldExportButton, file);
       expect(found.map((m) => m.message).join('\n')).toMatch(/global DOM query/i);
@@ -36,12 +36,12 @@ export { exportButton };
     "document.querySelector('dialog[open]');",
     "document.querySelectorAll('button');",
     "document.getElementById('help-x');",
-  ])('%s é recusado', async (code) => {
+  ])('%s is refused', async (code) => {
     const found = await messages(`export const f = () => ${code}\n`, 'src/app/Probe.ts');
     expect(found).toHaveLength(1);
   });
 
-  it('seletor por classe dentro de um ref também (atravessa componentes)', async () => {
+  it('class selector inside a ref too (crosses components)', async () => {
     const code = `
 export function f(root: HTMLElement) {
   root.querySelector<HTMLElement>('.icon-button')?.focus();
@@ -53,7 +53,7 @@ export function f(root: HTMLElement) {
     expect(found[0]?.message).toMatch(/class selector/i);
   });
 
-  it('data-* e role dentro de um ref passam', async () => {
+  it('data-* and role inside a ref pass', async () => {
     const code = `
 export function f(root: HTMLElement) {
   root.querySelector('[data-grip]');
@@ -63,8 +63,8 @@ export function f(root: HTMLElement) {
     expect(await messages(code, 'src/ui/Probe.tsx')).toEqual([]);
   });
 
-  // Etapa 8 (8.7), resíduo 5: `closest('.classe')` também atravessa componentes (o atalho de
-  // redimensionar achava a janela e a coluna pelas classes do ToolWindow e do EditorWindows).
+  // Stage 8 (8.7), residue 5: `closest('.class')` also crosses components (the resize shortcut
+  // found the window and the column by the classes of ToolWindow and EditorWindows).
   const oldFocusedWindow = `
 export function focusedWindow(el: Element) {
   const win = document.activeElement?.closest('.tool-window');
@@ -74,7 +74,7 @@ export function focusedWindow(el: Element) {
 `;
 
   it.each(['src/app/Probe.ts', 'src/ui/Probe.tsx', 'src/ui/toolWindowLayout.ts'])(
-    'closest por classe é recusado em %s (literal e template)',
+    'closest by class is refused in %s (literal and template)',
     async (file) => {
       const found = await messages(oldFocusedWindow, file);
       expect(found).toHaveLength(2);
@@ -82,7 +82,7 @@ export function focusedWindow(el: Element) {
     },
   );
 
-  it('closest por data-* e por tag passa', async () => {
+  it('closest by data-* and by tag passes', async () => {
     const code = `
 export function f(el: Element) {
   el.closest('[data-window]');
@@ -93,15 +93,15 @@ export function f(el: Element) {
     expect(await messages(code, 'src/app/Probe.ts')).toEqual([]);
   });
 
-  it('fora de src/ui e src/app a regra não vale', async () => {
+  it('outside src/ui and src/app the rule does not apply', async () => {
     const code = "export const f = () => document.querySelector('.x');\n";
     expect(await messages(code, 'src/storage/Probe.ts')).toEqual([]);
   });
 
-  // No flat config o último bloco de `no-restricted-syntax` vence: os blocos do foco juntam
-  // os seletores da sessão (8.1), e nenhum dos dois conjuntos some em src/ui e src/app.
+  // In the flat config the last `no-restricted-syntax` block wins: the focus blocks join
+  // the session selectors (8.1), and neither of the two sets disappears in src/ui and src/app.
   it.each(['src/app/Probe.tsx', 'src/ui/Probe.tsx', 'src/ui/focus.ts'])(
-    'a regra da sessão (8.1) continua valendo em %s',
+    'the session rule (8.1) still applies in %s',
     async (file) => {
       const code = 'export const f = (s: { saveMapping(): void }) => s.saveMapping();\n';
       const found = await messages(code, file);
@@ -109,7 +109,7 @@ export function f(el: Element) {
     },
   );
 
-  it('no controller valem a exceção da sessão e a regra do foco', async () => {
+  it('in the controller the session exception and the focus rule apply', async () => {
     const code = `
 export function other(s: { saveMapping(): void }) {
   s.saveMapping();
@@ -122,7 +122,7 @@ export function other(s: { saveMapping(): void }) {
   });
 });
 
-/** Todos os `.tsx` de `src/`. */
+/** All the `.tsx` of `src/`. */
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
@@ -131,22 +131,22 @@ function sources(dir: string): string[] {
   });
 }
 
-/** Sintaxe de `aria-keyshortcuts` (WAI-ARIA): modificadores + uma tecla, separados por "+". */
+/** `aria-keyshortcuts` syntax (WAI-ARIA): modifiers + one key, separated by "+". */
 const ARIA_KEYS =
   /^(?:(?:Control|Alt|Shift|Meta)\+)*(?:[A-Z0-9,.=\-/[\]\\;'`]|Plus|Space|Enter|Escape|Backspace|Delete|Tab|Home|End|PageUp|PageDown|Arrow(?:Up|Down|Left|Right)|F\d{1,2})(?: (?:(?:Control|Alt|Shift|Meta)\+)*(?:[A-Z0-9,.=\-/[\]\\;'`]|Plus|Space|Enter|Escape|Backspace|Delete|Tab|Home|End|PageUp|PageDown|Arrow(?:Up|Down|Left|Right)|F\d{1,2}))*$/;
 
-describe('aria-keyshortcuts sempre na sintaxe ARIA (F5)', () => {
+describe('aria-keyshortcuts always in the ARIA syntax (F5)', () => {
   const uses = sources('src').flatMap((file) =>
     [
       ...readFileSync(file, 'utf8').matchAll(/aria-keyshortcuts=(\{[^}\n]*\}?|"[^"]*")/g),
     ].map((m) => ({ file, value: m[1] ?? '' })),
   );
 
-  it('há usos para conferir', () => {
+  it('there are uses to check', () => {
     expect(uses.length).toBeGreaterThan(5);
   });
 
-  it('todo uso é um literal ARIA ou passa por ariaKeys()', () => {
+  it('every use is an ARIA literal or goes through ariaKeys()', () => {
     const wrong = uses.filter(({ value }) => {
       if (value.startsWith('"')) return !ARIA_KEYS.test(value.slice(1, -1));
       return !/^\{ariaKeys(?:All)?\(/.test(value);

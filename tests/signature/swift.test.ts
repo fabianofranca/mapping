@@ -5,9 +5,9 @@ import { parseSignature, planSignatureImport } from '../../src/model/signatures'
 import type { Spec } from '../../src/model/spec';
 import { BUNDLE_CJS, BUNDLE_ESM, ROOT, run, spawnBundle, type Sig } from './support';
 
-// O leitor SwiftUI (`mapping-signature/swift@1`, etapa #1079, S4; decisões 3, 9 e 10): o `init`
-// explícito (escolhido por `--init`) ou o memberwise, os rótulos, os enums, o padrão literal, o
-// `@ViewBuilder` e os `///`. Casos sintéticos em memória e as fixtures de tests/fixtures/signature/swift.
+// The SwiftUI reader (`mapping-signature/swift@1`, stage #1079, S4; decisions 3, 9 and 10): the
+// explicit `init` (chosen by `--init`) or the memberwise one, the labels, the enums, the literal default, the
+// `@ViewBuilder` and the `///`. Synthetic in-memory cases and the fixtures of tests/fixtures/signature/swift.
 
 const FIXTURES = join(ROOT, 'tests/fixtures/signature/swift');
 const rel = (name: string): string => `tests/fixtures/signature/swift/${name}`;
@@ -41,11 +41,11 @@ function swiftJson(
 const byName = (sig: Sig): Record<string, Sig['params'][number]> =>
   Object.fromEntries(sig.params.map((p) => [p.name, p]));
 
-/** Um `A.swift` mínimo: uma view com um `init` explícito cuja lista é a dada. */
+/** A minimal `A.swift`: a view with an explicit `init` whose list is the given one. */
 const withInit = (list: string, extra = ''): string =>
   `import SwiftUI\n\nstruct Foo: View {\n${extra}\n    init(${list}) {}\n    var body: some View { EmptyView() }\n}\n`;
 
-/** Um `A.swift` mínimo: uma view com as propriedades dadas (memberwise). */
+/** A minimal `A.swift`: a view with the given properties (memberwise). */
 const withProps = (props: string): string =>
   `import SwiftUI\n\nstruct Foo: View {\n${props}\n    var body: some View { EmptyView() }\n}\n`;
 
@@ -53,7 +53,7 @@ function extractFixture(name: string, flags: readonly string[]) {
   return run(['swift', '--file', rel(name), ...flags], { [rel(name)]: fixture(name) });
 }
 
-describe('init explícito: rótulos, `_`, padrões e papéis', () => {
+describe('explicit init: labels, `_`, defaults and roles', () => {
   let sig: Sig;
   beforeAll(() => {
     sig = swiftJson(fixture('ProfileCard.swift'), 'DS.ProfileCard', [
@@ -64,7 +64,7 @@ describe('init explícito: rótulos, `_`, padrões e papéis', () => {
     ]);
   });
 
-  it('source: plataforma swiftui, linguagem swift, símbolo como veio, sem init (um só explícito)', () => {
+  it('source: swiftui platform, swift language, symbol as given, no init (a single explicit one)', () => {
     expect(sig.source).toEqual({
       kind: 'code',
       platform: 'swiftui',
@@ -76,7 +76,7 @@ describe('init explícito: rótulos, `_`, padrões e papéis', () => {
     });
   });
 
-  it('os parâmetros do init, na ordem da fonte, com o rótulo externo só quando difere do nome', () => {
+  it('the init parameters, in source order, with the external label only when it differs from the name', () => {
     expect(sig.params.map((p) => [p.name, p.label])).toEqual([
       ['title', '_'],
       ['badgeCount', 'badge'],
@@ -86,7 +86,7 @@ describe('init explícito: rótulos, `_`, padrões e papéis', () => {
     ]);
   });
 
-  it('title: texto obrigatório; badgeCount: inteiro de padrão 0', () => {
+  it('title: required text; badgeCount: integer with default 0', () => {
     const by = byName(sig);
     expect(by.title).toEqual({
       name: 'title',
@@ -106,7 +106,7 @@ describe('init explícito: rótulos, `_`, padrões e papéis', () => {
     });
   });
 
-  it('o enum aninhado na struct vira options e o padrão `.compact` vira a opção', () => {
+  it('the enum nested in the struct becomes options and the `.compact` default becomes the option', () => {
     expect(byName(sig).style).toEqual({
       name: 'style',
       role: 'value',
@@ -116,7 +116,7 @@ describe('init explícito: rótulos, `_`, padrões e papéis', () => {
     });
   });
 
-  it('closure opcional é callback (sem required, padrão nil); @ViewBuilder é slot obrigatório', () => {
+  it('an optional closure is a callback (no required, default nil); @ViewBuilder is a required slot', () => {
     const by = byName(sig);
     expect(by.onTap).toEqual({
       name: 'onTap',
@@ -132,7 +132,7 @@ describe('init explícito: rótulos, `_`, padrões e papéis', () => {
     });
   });
 
-  it('doc: o `- Parameters:` da struct, o `- Parameter` do init e o /// do init; só parâmetros que existem', () => {
+  it('doc: the struct `- Parameters:`, the init `- Parameter` and the init ///; only parameters that exist', () => {
     expect(sig.doc).toEqual({
       title: 'The name shown at the top of the card.',
       badgeCount: 'How many unread items the badge shows.',
@@ -143,7 +143,7 @@ describe('init explícito: rótulos, `_`, padrões e papéis', () => {
   });
 });
 
-describe('memberwise: as propriedades armazenadas, sem os property wrappers de estado', () => {
+describe('memberwise: the stored properties, without the state property wrappers', () => {
   let sig: Sig;
   let by: Record<string, Sig['params'][number]>;
   beforeAll(() => {
@@ -151,7 +151,7 @@ describe('memberwise: as propriedades armazenadas, sem os property wrappers de e
     by = byName(sig);
   });
 
-  it('só entram let e var armazenadas, na ordem da declaração', () => {
+  it('only stored let and var come in, in declaration order', () => {
     expect(sig.params.map((p) => p.name)).toEqual([
       'text',
       'borderWidth',
@@ -164,7 +164,7 @@ describe('memberwise: as propriedades armazenadas, sem os property wrappers de e
     ]);
   });
 
-  it('ficam de fora @State, @FocusState, @Environment, @EnvironmentObject, @StateObject, let com valor, private, static e computadas', () => {
+  it('left out: @State, @FocusState, @Environment, @EnvironmentObject, @StateObject, let with a value, private, static and computed', () => {
     for (const out of [
       'hovering',
       'focused',
@@ -181,7 +181,7 @@ describe('memberwise: as propriedades armazenadas, sem os property wrappers de e
     }
   });
 
-  it('CGFloat é dimension; Color é color; Bool é boolean; Int? é integer sem required e de padrão nil', () => {
+  it('CGFloat is dimension; Color is color; Bool is boolean; Int? is integer without required and with default nil', () => {
     expect(by.borderWidth?.value).toEqual({ kind: 'dimension', default: 1 });
     expect(by.tint).toMatchObject({
       type: 'Color',
@@ -198,7 +198,7 @@ describe('memberwise: as propriedades armazenadas, sem os property wrappers de e
     });
   });
 
-  it('let sem valor é obrigatório e o texto vem do /// da propriedade', () => {
+  it('let without a value is required and the text comes from the property ///', () => {
     expect(by.text).toEqual({
       name: 'text',
       role: 'value',
@@ -212,7 +212,7 @@ describe('memberwise: as propriedades armazenadas, sem os property wrappers de e
     });
   });
 
-  it('@Binding vira Binding<T> com papel state; @ViewBuilder em closure é slot', () => {
+  it('@Binding becomes Binding<T> with role state; @ViewBuilder on a closure is a slot', () => {
     expect(by.count).toEqual({
       name: 'count',
       role: 'state',
@@ -227,13 +227,13 @@ describe('memberwise: as propriedades armazenadas, sem os property wrappers de e
     });
   });
 
-  it('sem init explícito não há source.init', () => {
+  it('without an explicit init there is no source.init', () => {
     expect(sig.source.init).toBeUndefined();
   });
 });
 
-describe('o tipo de cada parâmetro, o padrão literal e o papel', () => {
-  it('Double e Float são number; LocalizedStringKey e String são text; padrão string simples vira literal', () => {
+describe('the type of each parameter, the literal default and the role', () => {
+  it('Double and Float are number; LocalizedStringKey and String are text; a simple string default becomes a literal', () => {
     const sig = swiftJson(
       withInit(
         'ratio: Double = 0.5, scale: Float = 2, key: LocalizedStringKey = "OK", name: String = "a \\(b)"',
@@ -244,11 +244,11 @@ describe('o tipo de cada parâmetro, o padrão literal e o papel', () => {
     expect(by.ratio?.value).toEqual({ kind: 'number', default: 0.5 });
     expect(by.scale?.value).toEqual({ kind: 'number', default: 2 });
     expect(by.key?.value).toEqual({ kind: 'text', default: 'OK' });
-    // interpolação não é literal representável
+    // interpolation is not a representable literal
     expect(by.name?.value).toEqual({ kind: 'text' });
   });
 
-  it('CGFloat(8) e números negativos são literais; expressões ficam só no default em texto', () => {
+  it('CGFloat(8) and negative numbers are literals; expressions stay only in the default as text', () => {
     const by = byName(
       swiftJson(
         withInit(
@@ -263,7 +263,7 @@ describe('o tipo de cada parâmetro, o padrão literal e o papel', () => {
     expect(by.pad?.default).toBe('Metrics.pad');
   });
 
-  it('tipos que não são do mapa (Font, Image, listas, tuplas) são opaque', () => {
+  it('types that are not in the map (Font, Image, lists, tuples) are opaque', () => {
     const by = byName(
       swiftJson(
         withInit('font: Font = .body, icons: [String] = [], pair: (Int, Int) = (0, 0)'),
@@ -275,7 +275,7 @@ describe('o tipo de cada parâmetro, o padrão literal e o papel', () => {
     expect(by.pair?.value).toEqual({ kind: 'opaque' });
   });
 
-  it('o padrão do enum vale em .a, Tipo.a e Outer.Tipo.a; constante que não existe fica sem default', () => {
+  it('the enum default works as .a, Type.a and Outer.Type.a; a constant that does not exist stays without default', () => {
     const src = (def: string): string =>
       `import SwiftUI\nenum Tone { case warm, cold }\nstruct Foo: View {\n  init(tone: Tone = ${def}) {}\n  var body: some View { EmptyView() }\n}\n`;
     for (const def of ['.cold', 'Tone.cold', 'Module.Tone.cold']) {
@@ -291,7 +291,7 @@ describe('o tipo de cada parâmetro, o padrão literal e o papel', () => {
     });
   });
 
-  it('o enum de um --also conta; enum com valor associado é opaque', () => {
+  it('the enum of an --also counts; an enum with an associated value is opaque', () => {
     const also =
       'enum Tone: String { case warm = "w", cold = "c" }\nenum Rich { case a, b(Int) }\n';
     const src = withInit('tone: Tone = .warm, rich: Rich = .a');
@@ -302,11 +302,11 @@ describe('o tipo de cada parâmetro, o padrão literal e o papel', () => {
       options: ['warm', 'cold'],
     });
     expect(by.rich?.value).toEqual({ kind: 'opaque' });
-    // sem o --also, o enum é desconhecido
+    // without the --also, the enum is unknown
     expect(byName(swiftJson(src, 'Foo')).tone?.value).toEqual({ kind: 'opaque' });
   });
 
-  it('@escaping e closures são callback; closure que devolve view e @ViewBuilder são slot', () => {
+  it('@escaping and closures are callback; a closure that returns a view and @ViewBuilder are slot', () => {
     const src = `import SwiftUI
 struct Foo<Label: View>: View {
   init(
@@ -327,7 +327,7 @@ struct Foo<Label: View>: View {
     expect(by.icon?.role).toBe('slot');
   });
 
-  it('o tipo genérico que é View (no <> ou no where) é slot; o que não é, value opaque', () => {
+  it('a generic type that is View (in <> or in where) is a slot; one that is not, value opaque', () => {
     const src = `import SwiftUI
 struct Foo<Content, Other>: View where Content: View {
   let content: Content
@@ -340,7 +340,7 @@ struct Foo<Content, Other>: View where Content: View {
     expect(by.other).toMatchObject({ role: 'value', value: { kind: 'opaque' } });
   });
 
-  it('Binding no init é state; variádico é other; o nome interno `_` rótulo e o rótulo diferente do nome', () => {
+  it('Binding in init is state; variadic is other; the `_` label and a label different from the name', () => {
     const by = byName(
       swiftJson(withInit('_ on: Binding<Bool>, items names: String...'), 'Foo'),
     );
@@ -348,12 +348,12 @@ struct Foo<Content, Other>: View where Content: View {
     expect(by.names).toMatchObject({ label: 'items', role: 'other', type: 'String...' });
   });
 
-  it('vírgula final, comentários, atributos e quebras de linha na lista', () => {
+  it('trailing comma, comments, attributes and line breaks in the list', () => {
     const src = `import SwiftUI
 struct Foo: View {
   init(
-    // o título
-    title: String, /* o selo */
+    // the title
+    title: String, /* the badge */
     count: Int = 0,
   ) {}
   var body: some View { EmptyView() }
@@ -363,8 +363,8 @@ struct Foo: View {
   });
 });
 
-describe('sobrecargas de init (decisão 9)', () => {
-  it('ambíguo sem --init: falha (exit 1) listando todos os inits, com a marca dos deprecated', () => {
+describe('init overloads (decision 9)', () => {
+  it('ambiguous without --init: fails (exit 1) listing all the inits, with the deprecated mark', () => {
     const result = extractFixture('Chip.swift', ['--symbol', 'Chip']);
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
@@ -376,7 +376,7 @@ describe('sobrecargas de init (decisão 9)', () => {
     expect(result.stderr).toContain('  2: line 18 [deprecated] (label:)');
   });
 
-  it('--init escolhe pelo índice na lista completa e fica em source.init', () => {
+  it('--init picks by index in the complete list and stays in source.init', () => {
     const one = swiftJson(fixture('Chip.swift'), 'Chip', ['--init', '1']);
     expect(one.source.init).toBe(1);
     expect(one.params.map((p) => [p.name, p.label])).toEqual([
@@ -385,20 +385,20 @@ describe('sobrecargas de init (decisão 9)', () => {
     ]);
     const zero = swiftJson(fixture('Chip.swift'), 'Chip', ['--init', '0']);
     expect(zero.params.map((p) => [p.name, p.label])).toEqual([['title', '_']]);
-    // o deprecated também se escolhe, pelo índice
+    // the deprecated one can also be chosen, by index
     expect(
       swiftJson(fixture('Chip.swift'), 'Chip', ['--init', '2']).params[0]?.name,
     ).toBe('label');
   });
 
-  it('--init fora da lista: erro com a lista', () => {
+  it('--init outside the list: error with the list', () => {
     const result = extractSwift(fixture('Chip.swift'), 'Chip', ['--init', '7']);
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('--init 7 is not in the list: Chip has 3 inits');
     expect(result.stderr).toContain('  1: line 12 (title:count:)');
   });
 
-  it('só inits deprecated e sem --init: ambíguo (cita que só há deprecated)', () => {
+  it('only deprecated inits and no --init: ambiguous (mentions that only deprecated ones exist)', () => {
     const src = `import SwiftUI
 struct Foo: View {
   @available(*, deprecated) init(a: Int) {}
@@ -411,7 +411,7 @@ struct Foo: View {
     expect(result.stderr).toContain('only has deprecated inits');
   });
 
-  it('sem init explícito, --init 0 vale para o memberwise e fica em source.init', () => {
+  it('without an explicit init, --init 0 applies to the memberwise one and stays in source.init', () => {
     const sig = swiftJson(withProps('  let a: Int\n  var b = 2'), 'Foo', ['--init', '0']);
     expect(sig.source.init).toBe(0);
     expect(sig.params.map((p) => p.name)).toEqual(['a', 'b']);
@@ -421,8 +421,8 @@ struct Foo: View {
   });
 });
 
-describe('o memberwise em detalhe', () => {
-  it('var sem tipo escrito: o tipo vem do literal; sem literal, `_`', () => {
+describe('the memberwise in detail', () => {
+  it('var without a written type: the type comes from the literal; without a literal, `_`', () => {
     const by = byName(
       swiftJson(
         withProps(
@@ -442,21 +442,21 @@ describe('o memberwise em detalhe', () => {
     expect(by.what?.type).toBe('_');
   });
 
-  it('observadores (didSet) não tornam a propriedade computada; getter sim', () => {
+  it('observers (didSet) do not make the property computed; a getter does', () => {
     const src = withProps(
       '  var a: Int = 0 { didSet { print(a) } }\n  var b: Int { 5 }\n  var c: Int { get { 1 } }',
     );
     expect(swiftJson(src, 'Foo').params.map((p) => p.name)).toEqual(['a']);
   });
 
-  it('atributo e modificador em linhas separadas; ponto e vírgula; private(set) fica', () => {
+  it('attribute and modifier on separate lines; semicolon; private(set) stays', () => {
     const src = withProps(
       '  @State\n  private var hidden = 0\n  let a: Int; let b: Int\n  public private(set) var c: Int = 1',
     );
     expect(swiftJson(src, 'Foo').params.map((p) => p.name)).toEqual(['a', 'b', 'c']);
   });
 
-  it('wrapper com argumentos (@AppStorage("k")) não entra; @ObservedObject entra como state com o tipo do objeto', () => {
+  it('a wrapper with arguments (@AppStorage("k")) does not come in; @ObservedObject comes in as state with the object type', () => {
     const src = withProps(
       '  @AppStorage("k") var saved = false\n  @ObservedObject var model: Model\n  @Bindable var other: Other',
     );
@@ -467,7 +467,7 @@ describe('o memberwise em detalhe', () => {
     ]);
   });
 
-  it('o /// da propriedade vira o doc; o `- Parameter` da struct vale quando a propriedade não tem', () => {
+  it('the property /// becomes the doc; the struct `- Parameter` applies when the property has none', () => {
     const src = `import SwiftUI
 /// - Parameter b: Documented on the struct.
 struct Foo: View {
@@ -484,8 +484,8 @@ struct Foo: View {
   });
 });
 
-describe('a struct pelo --symbol', () => {
-  it('o prefixo do --symbol é guardado como veio; uma struct fora das duas de mesmo nome desambigua pelo tipo que a envolve', () => {
+describe('the struct by --symbol', () => {
+  it('the --symbol prefix is kept as given; a struct among two with the same name is disambiguated by the type that wraps it', () => {
     const src = `import SwiftUI
 enum A { struct Row: View { let x: Int; var body: some View { EmptyView() } } }
 enum B { struct Row: View { let y: Int; var body: some View { EmptyView() } } }
@@ -501,33 +501,33 @@ enum B { struct Row: View { let y: Int; var body: some View { EmptyView() } } }
     expect(swiftJson(src, 'Mod.A.Row').params.map((p) => p.name)).toEqual(['x']);
   });
 
-  it('struct inexistente: erro (exit 1) com o arquivo', () => {
-    const result = extractSwift(withProps('  let a: Int'), 'Nada');
+  it('missing struct: error (exit 1) with the file', () => {
+    const result = extractSwift(withProps('  let a: Int'), 'Nothing');
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('struct Nada not found in A.swift');
+    expect(result.stderr).toContain('struct Nothing not found in A.swift');
   });
 
-  it('class e enum de mesmo nome não são struct', () => {
+  it('a class and an enum with the same name are not a struct', () => {
     const result = extractSwift('class Foo {}\nenum Bar {}\n', 'Foo');
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('struct Foo not found');
   });
 
-  it('erro de sintaxe: arquivo:linha:coluna com o delimitador não fechado', () => {
+  it('syntax error: file:line:column with the unclosed delimiter', () => {
     const result = extractSwift('struct Foo: View {\n  init(a: Int,\n', 'Foo');
     expect(result.code).toBe(1);
     expect(result.stderr).toMatch(/^A\.swift:2:7: "\(" not closed\n$/);
   });
 
-  it('o --path vira source.path; sem ele vale o --file relativo', () => {
+  it('--path becomes source.path; without it the relative --file is used', () => {
     const sig = swiftJson(withProps('  let a: Int'), 'Foo');
     expect(sig.source.path).toBe('A.swift');
     expect(sig.source).not.toHaveProperty('ref');
   });
 });
 
-describe('opções que não são do leitor Swift (exit 2)', () => {
-  it('--overload é do kotlin e --init é do swift', () => {
+describe('options that do not belong to the Swift reader (exit 2)', () => {
+  it('--overload belongs to kotlin and --init belongs to swift', () => {
     const a = extractSwift(withProps('  let a: Int'), 'Foo', ['--overload', '1']);
     expect(a.code).toBe(2);
     expect(a.stderr).toContain('--overload');
@@ -538,14 +538,14 @@ describe('opções que não são do leitor Swift (exit 2)', () => {
     expect(k.stderr).toContain('--init');
   });
 
-  it('--init precisa de um inteiro de 0 em diante', () => {
+  it('--init needs an integer from 0 onward', () => {
     for (const bad of ['-1', 'a', '1.5']) {
       const r = extractSwift(withProps('  let a: Int'), 'Foo', ['--init', bad]);
       expect(r.code, bad).toBe(2);
     }
   });
 
-  it('o uso lista os três leitores e as opções novas', () => {
+  it('the usage lists the three readers and the new options', () => {
     const help = run(['--help']);
     expect(help.code).toBe(0);
     expect(help.stdout).toContain('mapping-signature swift --file');
@@ -556,7 +556,7 @@ describe('opções que não são do leitor Swift (exit 2)', () => {
   });
 });
 
-describe('determinismo e o bundle', () => {
+describe('determinism and the bundle', () => {
   const args = [
     'swift',
     '--file',
@@ -569,7 +569,7 @@ describe('determinismo e o bundle', () => {
     'fixture',
   ];
 
-  it('duas execuções e o .js contra o .mjs dão os mesmos bytes, e a ficha passa no parseSignature', () => {
+  it('two runs and the .js against the .mjs give the same bytes, and the signature passes parseSignature', () => {
     const a = spawnBundle(BUNDLE_CJS, args);
     const b = spawnBundle(BUNDLE_CJS, args);
     const esm = spawnBundle(BUNDLE_ESM, args);
@@ -582,7 +582,7 @@ describe('determinismo e o bundle', () => {
     expect(parseSignature(JSON.parse(a.stdout)).ok).toBe(true);
   });
 
-  it('as fichas esperadas das fixtures, byte a byte', () => {
+  it('the expected signatures of the fixtures, byte by byte', () => {
     const cases: [string, string[]][] = [
       [
         'ProfileCard.swift',
@@ -606,7 +606,7 @@ describe('determinismo e o bundle', () => {
   });
 });
 
-describe('a ficha Swift importada pela mesma tool, sem caso especial de plataforma', () => {
+describe('the Swift signature imported by the same tool, with no platform special case', () => {
   const library = JSON.parse(
     readFileSync(join(ROOT, 'tests/fixtures/signature/library/lib.spec.json'), 'utf8'),
   ) as Spec;
@@ -635,7 +635,7 @@ describe('a ficha Swift importada pela mesma tool, sem caso especial de platafor
     return result.plan;
   }
 
-  it('o argumento posicional vira `#0` e o rótulo externo vai para o code.params', () => {
+  it('the positional argument becomes `#0` and the external label goes to code.params', () => {
     const result = plan(library);
     expect(result.code?.params).toEqual({
       title: '#0',
@@ -647,11 +647,11 @@ describe('a ficha Swift importada pela mesma tool, sem caso especial de platafor
       ['badgeCount', 'number'],
       ['style', 'enum'],
     ]);
-    // onTap é callback e content é slot: ficam no unmapped
+    // onTap is a callback and content is a slot: they stay in unmapped
     expect(result.unmapped.map((u) => u.name)).toEqual(['onTap', 'content']);
   });
 
-  it('importar a mesma ficha duas vezes não muda nada', () => {
+  it('importing the same signature twice changes nothing', () => {
     const first = plan(library);
     const again = plan(first.spec, signature);
     expect(again.spec).toEqual(first.spec);
@@ -666,8 +666,8 @@ function parseSignatureOf(text: string) {
   return parsed.signature;
 }
 
-describe('achados da revisão `/code-review high` (S4)', () => {
-  it('a `{` (e o `where`) em linha própria não separa o cabeçalho da struct do corpo', () => {
+describe('findings of the `/code-review high` review (S4)', () => {
+  it('the `{` (and the `where`) on its own line does not separate the struct header from the body', () => {
     const allman = `import SwiftUI\n\nstruct Foo: View\n{\n    let title: String\n    var body: some View { EmptyView() }\n}\n`;
     expect(swiftJson(allman, 'Foo').params.map((p) => p.name)).toEqual(['title']);
     const where = `import SwiftUI\n\nstruct Foo<C>: View\n    where C: View\n{\n    let content: C\n    var body: some View { EmptyView() }\n}\n`;
@@ -677,7 +677,7 @@ describe('achados da revisão `/code-review high` (S4)', () => {
     });
   });
 
-  it('property wrappers sem argumento que o próprio Swift preenche ficam fora do memberwise', () => {
+  it('property wrappers without arguments that Swift itself fills in stay out of the memberwise', () => {
     const sig = swiftJson(
       withProps(
         '    let title: String\n    @Namespace var ns\n    @GestureState var drag = false\n    @ScaledMetric var size = 12\n    @AccessibilityFocusState var a11y: Bool',
@@ -687,17 +687,17 @@ describe('achados da revisão `/code-review high` (S4)', () => {
     expect(sig.params.map((p) => p.name)).toEqual(['title']);
   });
 
-  it('um init `private` não conta como candidato: sobrando um chamável, ele é o escolhido', () => {
+  it('a `private` init does not count as a candidate: with one callable left, it is the one chosen', () => {
     const source = `import SwiftUI\n\nstruct Foo: View {\n    let title: String\n    private let cache: Int\n    public init(title: String) { self.title = title; cache = 0 }\n    private init(title: String, cache: Int) { self.title = title; self.cache = cache }\n    var body: some View { EmptyView() }\n}\n`;
     expect(swiftJson(source, 'Foo').params.map((p) => p.name)).toEqual(['title']);
-    // com --init, o índice continua contando todos (também o private)
+    // with --init, the index still counts all of them (the private one too)
     expect(swiftJson(source, 'Foo', ['--init', '1']).params.map((p) => p.name)).toEqual([
       'title',
       'cache',
     ]);
   });
 
-  it('um padrão que quebra a linha com `?`, `:` ou `&&` na frente não é truncado', () => {
+  it('a default that breaks the line with `?`, `:` or `&&` in front is not truncated', () => {
     const sig = swiftJson(
       withProps(
         '    let flag: Bool\n    var tint: Color = flag\n        ? .red\n        : .blue\n    var ok: Bool = flag\n        && true',
@@ -709,7 +709,7 @@ describe('achados da revisão `/code-review high` (S4)', () => {
     expect(params.ok?.default).toBe('flag && true');
   });
 
-  it('um genérico `View & Equatable` também é slot', () => {
+  it('a generic `View & Equatable` is also a slot', () => {
     const source = `import SwiftUI\n\nstruct Card<Content: View & Equatable, Other: View & Hashable>: View {\n    let content: Content\n    let other: Other\n    var body: some View { EmptyView() }\n}\n`;
     const params = byName(swiftJson(source, 'Card'));
     expect(params.content?.role).toBe('slot');

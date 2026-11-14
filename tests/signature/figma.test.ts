@@ -5,8 +5,8 @@ import { parseSignature, planSignatureImport } from '../../src/model/signatures'
 import type { Spec } from '../../src/model/spec';
 import { BUNDLE_CJS, BUNDLE_ESM, ROOT, run, spawnBundle, type Sig } from './support';
 
-// O leitor Figma (`mapping-signature/figma@1`, etapa #1079, S4; decisões 3 e 10): as
-// `componentPropertyDefinitions` de um COMPONENT_SET ou COMPONENT, achado por `--node` no JSON salvo.
+// The Figma reader (`mapping-signature/figma@1`, stage #1079, S4; decisions 3 and 10): the
+// `componentPropertyDefinitions` of a COMPONENT_SET or COMPONENT, found by `--node` in the saved JSON.
 
 const NODES = 'tests/fixtures/signature/figma/button.nodes.json';
 const nodesText = readFileSync(join(ROOT, NODES), 'utf8');
@@ -34,7 +34,7 @@ const fixtureSig = (node = '12:34'): Sig => {
   return JSON.parse(result.stdout) as Sig;
 };
 
-/** Um COMPONENT_SET mínimo com as propriedades dadas. */
+/** A minimal COMPONENT_SET with the given properties. */
 const set = (definitions: Record<string, unknown>, type = 'COMPONENT_SET') => ({
   id: '1:1',
   name: 'Thing',
@@ -42,13 +42,13 @@ const set = (definitions: Record<string, unknown>, type = 'COMPONENT_SET') => ({
   componentPropertyDefinitions: definitions,
 });
 
-describe('as quatro naturezas de propriedade e o sufixo #id', () => {
+describe('the four property kinds and the #id suffix', () => {
   let sig: Sig;
   beforeAll(() => {
     sig = fixtureSig();
   });
 
-  it('source: design, figma, o id e o nome do nó, e o extrator', () => {
+  it('source: design, figma, the node id and name, and the extractor', () => {
     expect(sig.source).toEqual({
       kind: 'design',
       system: 'figma',
@@ -58,11 +58,11 @@ describe('as quatro naturezas de propriedade e o sufixo #id', () => {
     });
   });
 
-  it('as propriedades, na ordem da fonte', () => {
+  it('the properties, in source order', () => {
     expect(sig.params.map((p) => p.name)).toEqual(['Style', 'Disabled', 'Label', 'Icon']);
   });
 
-  it('VARIANT: enum com as variantOptions e o padrão; sem sufixo, sem id', () => {
+  it('VARIANT: enum with the variantOptions and the default; no suffix, no id', () => {
     expect(sig.params[0]).toEqual({
       name: 'Style',
       role: 'value',
@@ -72,7 +72,7 @@ describe('as quatro naturezas de propriedade e o sufixo #id', () => {
     });
   });
 
-  it('BOOLEAN: boolean com o padrão; o sufixo #<id> sai do nome e vai para o id', () => {
+  it('BOOLEAN: boolean with the default; the #<id> suffix leaves the name and goes to the id', () => {
     expect(sig.params[1]).toEqual({
       name: 'Disabled',
       id: '1:2',
@@ -83,7 +83,7 @@ describe('as quatro naturezas de propriedade e o sufixo #id', () => {
     });
   });
 
-  it('TEXT: text com o padrão', () => {
+  it('TEXT: text with the default', () => {
     expect(sig.params[2]).toEqual({
       name: 'Label',
       id: '1:3',
@@ -94,7 +94,7 @@ describe('as quatro naturezas de propriedade e o sufixo #id', () => {
     });
   });
 
-  it('INSTANCE_SWAP: slot, sem padrão (o id do componente é do arquivo) e sem required', () => {
+  it('INSTANCE_SWAP: slot, no default (the component id belongs to the file) and no required', () => {
     expect(sig.params[3]).toEqual({
       name: 'Icon',
       id: '1:4',
@@ -103,7 +103,7 @@ describe('as quatro naturezas de propriedade e o sufixo #id', () => {
     });
   });
 
-  it('um COMPONENT avulso também vale', () => {
+  it('a standalone COMPONENT also works', () => {
     const divider = fixtureSig('20:1');
     expect(divider.source).toMatchObject({ id: '20:1', name: 'Divider' });
     expect(divider.params).toEqual([
@@ -119,8 +119,8 @@ describe('as quatro naturezas de propriedade e o sufixo #id', () => {
   });
 });
 
-describe('o sufixo, os valores e as formas do JSON', () => {
-  it('o sufixo sai de qualquer natureza; o nome fica com espaços e símbolos; só o último #id conta', () => {
+describe('the suffix, the values and the shapes of the JSON', () => {
+  it('the suffix leaves any kind; the name keeps spaces and symbols; only the last #id counts', () => {
     const sig = figmaJson(
       set({
         'Size#10:20': { type: 'VARIANT', defaultValue: 'S', variantOptions: ['S', 'M'] },
@@ -134,14 +134,14 @@ describe('o sufixo, os valores e as formas do JSON', () => {
       ['Has icon #2', '3:4'],
       ['↳ Label', undefined],
     ]);
-    // texto vazio: a ficha guarda o padrão vazio
+    // empty text: the signature keeps the empty default
     expect(sig.params[2]).toMatchObject({
       default: '',
       value: { kind: 'text', default: '' },
     });
   });
 
-  it('padrão que não é uma das opções: o enum fica sem value.default; sem variantOptions: opaque', () => {
+  it('a default that is not one of the options: the enum has no value.default; without variantOptions: opaque', () => {
     const sig = figmaJson(
       set({
         A: { type: 'VARIANT', defaultValue: 'Z', variantOptions: ['X', 'Y'] },
@@ -154,7 +154,7 @@ describe('o sufixo, os valores e as formas do JSON', () => {
     expect(sig.params[1]?.value).toEqual({ kind: 'opaque' });
   });
 
-  it('um tipo que o leitor não conhece vira role other, sem value', () => {
+  it('a type the reader does not know becomes role other, without value', () => {
     const sig = figmaJson(set({ 'Slot#4:5': { type: 'SLOT' } }), '1:1');
     expect(sig.params[0]).toEqual({
       name: 'Slot',
@@ -165,7 +165,7 @@ describe('o sufixo, os valores e as formas do JSON', () => {
     });
   });
 
-  it('o description da propriedade, quando existe, vai para o doc', () => {
+  it('the property description, when present, goes to the doc', () => {
     const sig = figmaJson(
       set({
         'On#1:2': { type: 'BOOLEAN', defaultValue: false, description: 'Turns it on.' },
@@ -175,11 +175,11 @@ describe('o sufixo, os valores e as formas do JSON', () => {
     expect(sig.doc).toEqual({ On: 'Turns it on.' });
   });
 
-  it('componentPropertyDefinitions vazio dá uma ficha sem parâmetros', () => {
+  it('empty componentPropertyDefinitions gives a signature without parameters', () => {
     expect(figmaJson(set({}), '1:1').params).toEqual([]);
   });
 
-  it('o JSON de GET /v1/files/:key (a árvore inteira) e o nó solto também servem', () => {
+  it('the JSON of GET /v1/files/:key (the whole tree) and a loose node also work', () => {
     const node = set({ 'On#1:2': { type: 'BOOLEAN', defaultValue: false } });
     const file = {
       name: 'File',
@@ -204,22 +204,22 @@ describe('o sufixo, os valores e as formas do JSON', () => {
     ]);
   });
 
-  it('o id da URL (12-34) acha o nó 12:34', () => {
+  it('the URL id (12-34) finds node 12:34', () => {
     expect(fixtureSig('12-34')).toEqual(fixtureSig('12:34'));
   });
 });
 
-describe('erros (exit 1) com mensagem clara', () => {
+describe('errors (exit 1) with a clear message', () => {
   const files = { 'nodes.json': nodesText };
 
-  it('nó inexistente', () => {
+  it('missing node', () => {
     const result = extractFigma(files, '99:99');
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
     expect(result.stderr).toBe('node 99:99 not found in nodes.json\n');
   });
 
-  it('nó que não é COMPONENT_SET nem COMPONENT', () => {
+  it('a node that is neither COMPONENT_SET nor COMPONENT', () => {
     const result = extractFigma(files, '30:1');
     expect(result.code).toBe(1);
     expect(result.stderr).toBe(
@@ -227,7 +227,7 @@ describe('erros (exit 1) com mensagem clara', () => {
     );
   });
 
-  it('variante (COMPONENT sem componentPropertyDefinitions): aponta o component set', () => {
+  it('variant (COMPONENT without componentPropertyDefinitions): points to the component set', () => {
     const result = extractFigma(files, '12:35');
     expect(result.code).toBe(1);
     expect(result.stderr).toContain(
@@ -236,7 +236,7 @@ describe('erros (exit 1) com mensagem clara', () => {
     expect(result.stderr).toContain('use the id of the COMPONENT_SET');
   });
 
-  it('JSON inválido, propriedade sem type e type que não é texto', () => {
+  it('invalid JSON, property without type and a type that is not text', () => {
     const bad = extractFigma({ 'nodes.json': '{ nope' }, '1:1');
     expect(bad.code).toBe(1);
     expect(bad.stderr).toMatch(/^nodes\.json: invalid JSON: /);
@@ -248,15 +248,15 @@ describe('erros (exit 1) com mensagem clara', () => {
     expect(noType.stderr).toContain('the property "A" has no type');
   });
 
-  it('arquivo ilegível é erro de extração', () => {
-    const result = extractFigma({}, '1:1', [], 'falta.json');
+  it('an unreadable file is an extraction error', () => {
+    const result = extractFigma({}, '1:1', [], 'missing.json');
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('falta.json');
+    expect(result.stderr).toContain('missing.json');
   });
 });
 
-describe('opções (exit 2)', () => {
-  it('figma precisa de --file e --node, e não tem --symbol, --path, --ref, --also, --overload nem --init', () => {
+describe('options (exit 2)', () => {
+  it('figma needs --file and --node, and has no --symbol, --path, --ref, --also, --overload or --init', () => {
     expect(run(['figma', '--node', '1:1']).code).toBe(2);
     expect(run(['figma', '--file', 'a.json']).code).toBe(2);
     for (const flag of [
@@ -276,7 +276,7 @@ describe('opções (exit 2)', () => {
     }
   });
 
-  it('--node é do figma: nos leitores de código é erro de uso', () => {
+  it('--node belongs to figma: in the code readers it is a usage error', () => {
     for (const reader of ['kotlin', 'swift']) {
       const result = run([reader, '--file', 'A', '--symbol', 'X', '--node', '1:1'], {
         A: 'x',
@@ -286,12 +286,12 @@ describe('opções (exit 2)', () => {
     }
   });
 
-  it('o código sem --symbol continua sendo erro de uso', () => {
+  it('code without --symbol is still a usage error', () => {
     expect(run(['swift', '--file', 'A.swift']).code).toBe(2);
     expect(run(['kotlin', '--file', 'A.kt']).code).toBe(2);
   });
 
-  it('--file absoluto vale no figma (não há source.path)', () => {
+  it('an absolute --file is valid in figma (there is no source.path)', () => {
     const result = run(['figma', '--file', '/abs/nodes.json', '--node', '12:34'], {
       '/abs/nodes.json': nodesText,
     });
@@ -299,10 +299,10 @@ describe('opções (exit 2)', () => {
   });
 });
 
-describe('determinismo e o bundle', () => {
+describe('determinism and the bundle', () => {
   const args = ['figma', '--file', NODES, '--node', '12:34'];
 
-  it('duas execuções e o .js contra o .mjs dão os mesmos bytes; a ficha passa no parseSignature', () => {
+  it('two runs and the .js against the .mjs give the same bytes; the signature passes parseSignature', () => {
     const a = spawnBundle(BUNDLE_CJS, args);
     const b = spawnBundle(BUNDLE_CJS, args);
     const esm = spawnBundle(BUNDLE_ESM, args);
@@ -314,7 +314,7 @@ describe('determinismo e o bundle', () => {
     expect(parseSignature(JSON.parse(a.stdout)).ok).toBe(true);
   });
 
-  it('a ficha esperada da fixture, byte a byte', () => {
+  it('the expected signature of the fixture, byte by byte', () => {
     const out = spawnBundle(BUNDLE_CJS, args);
     const expected = JSON.parse(
       readFileSync(
@@ -326,14 +326,14 @@ describe('determinismo e o bundle', () => {
   });
 });
 
-describe('a ficha Figma importada liga o campo existente por `sources`, com `values`', () => {
+describe('the imported Figma signature links the existing field by `sources`, with `values`', () => {
   const library = JSON.parse(
     readFileSync(join(ROOT, 'tests/fixtures/signature/library/lib.spec.json'), 'utf8'),
   ) as Spec;
   let signature: Parameters<typeof planSignatureImport>[1]['signature'];
   beforeAll(() => {
     const parsed = parseSignature(fixtureSig());
-    if (!parsed.ok) throw new Error('ficha inválida');
+    if (!parsed.ok) throw new Error('invalid signature');
     signature = parsed.signature;
   });
 
@@ -348,7 +348,7 @@ describe('a ficha Figma importada liga o campo existente por `sources`, com `val
     return result.plan;
   }
 
-  it('Style casa com o campo style, as opções casam pelo texto normalizado e a que sobra avisa', () => {
+  it('Style matches the style field, the options match by normalized text and the leftover one warns', () => {
     const result = plan(library);
     expect(result.links[0]).toEqual({ param: 'Style', field: 'style', via: 'name' });
     expect(result.sources).toEqual([
@@ -371,11 +371,11 @@ describe('a ficha Figma importada liga o campo existente por `sources`, com `val
       'figma: the option `Text` of the source does not exist in the field',
     );
     expect(result.code).toBeUndefined();
-    // o slot Icon fica no unmapped
+    // the Icon slot stays in unmapped
     expect(result.unmapped.map((u) => u.name)).toContain('Icon');
   });
 
-  it('importar a mesma ficha duas vezes não muda nada e não duplica campo nem source', () => {
+  it('importing the same signature twice changes nothing and duplicates neither field nor source', () => {
     const first = plan(library);
     const again = plan(first.spec, signature);
     expect(again.spec).toEqual(first.spec);

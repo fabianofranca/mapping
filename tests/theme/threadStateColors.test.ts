@@ -6,11 +6,11 @@ const CSS = ['src/theme/panels.css', 'src/theme/threads.css']
   .map((f) => readFileSync(f, 'utf8'))
   .join('\n');
 
-/** O corpo da regra cujo seletor é exatamente `selector`. */
+/** The body of the rule whose selector is exactly `selector`. */
 function ruleBody(selector: string): string {
   const escaped = selector.replace(/[.]/g, '\\.');
   const m = new RegExp(`(?:^|\\})\\s*${escaped}\\s*\\{([^}]*)\\}`, 'm').exec(CSS);
-  if (!m) throw new Error(`regra ${selector} não encontrada`);
+  if (!m) throw new Error(`rule ${selector} not found`);
   return m[1]!;
 }
 
@@ -23,20 +23,20 @@ function hue(hex: string): number {
   return (h * 60 + 360) % 360;
 }
 
-/** Distância angular entre dois matizes, em graus. */
+/** Angular distance between two hues, in degrees. */
 function hueGap(a: string, b: string): number {
   const d = Math.abs(hue(a) - hue(b));
   return Math.min(d, 360 - d);
 }
 
 const STATES = ['human', 'agent', 'resolved'] as const;
-// Tolerância do matiz (decisão 3 da #925): 8° — o arredondamento do hex em cinzas azulados
-// (resolvida) move o matiz em alguns graus; abaixo disso ainda se lê como a mesma cor.
+// Hue tolerance (decision 3 of #925): 8° — the rounding of the hex in bluish grays
+// (resolved) moves the hue by a few degrees; below that it still reads as the same color.
 const HUE_TOLERANCE = 8;
 
-describe.each(STATES)('selo do estado %s', (state) => {
+describe.each(STATES)('%s state badge', (state) => {
   it.each([`.comments-badge-${state}`, `.thread-state-${state}`])(
-    '%s lê só os papéis color-thread-*',
+    '%s reads only the color-thread-* roles',
     (selector) => {
       const body = ruleBody(selector);
       expect(body).toContain(`color: var(--color-thread-${state})`);
@@ -45,10 +45,10 @@ describe.each(STATES)('selo do estado %s', (state) => {
     },
   );
 
-  describe.each(['light', 'dark'] as const)('tema %s', (theme) => {
+  describe.each(['light', 'dark'] as const)('%s theme', (theme) => {
     const pin = tokenValue(`cv-pin-${state}`, theme);
     it.each([`color-thread-${state}`, `color-thread-${state}-bg`])(
-      '%s é do matiz do cv-pin',
+      '%s is of the cv-pin hue',
       (name) => {
         expect(hueGap(tokenValue(name, theme), pin)).toBeLessThanOrEqual(HUE_TOLERANCE);
       },
@@ -56,6 +56,6 @@ describe.each(STATES)('selo do estado %s', (state) => {
   });
 });
 
-it('o selo "aberta" sem mensagem segue neutro', () => {
+it('the "open" badge without a message stays neutral', () => {
   expect(ruleBody('.comments-badge')).toContain('var(--color-text-muted)');
 });

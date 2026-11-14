@@ -4,30 +4,30 @@ import source from '../../index.html?raw';
 
 const REFERRER = /<meta\s+name="referrer"\s+content="no-referrer"\s*\/?>/i;
 
-/** Um index.html como o que sai do vite-plugin-singlefile: JS e CSS embutidos. */
+/** An index.html like the one vite-plugin-singlefile outputs: embedded JS and CSS. */
 const BUILT = `<!doctype html>
-<html lang="pt-BR">
+<html lang="en-US">
   <head>
     <meta charset="UTF-8" />
     <meta name="referrer" content="no-referrer" />
     <title>App</title>
-    <script type="module" crossorigin>console.log("oi")</script>
+    <script type="module" crossorigin>console.log("hi")</script>
     <style rel="stylesheet" crossorigin>body{margin:0}</style>
   </head>
   <body><div id="app"></div></body>
 </html>
 `;
 
-describe('CSP do index.html (build)', () => {
-  it('o hash é o SHA-256 em base64 do conteúdo, com quebras de linha normalizadas', () => {
-    // sha256("") em base64 é o valor clássico da especificação.
+describe('CSP of index.html (build)', () => {
+  it('the hash is the base64 SHA-256 of the content, with normalized line breaks', () => {
+    // base64 sha256("") is the classic value from the specification.
     expect(cspHash('')).toBe("'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='");
     expect(cspHash('a\r\nb\rc')).toBe(cspHash('a\nb\nc'));
   });
 
-  it('gera a política com os hashes dos blocos e as diretivas fixas', () => {
+  it('generates the policy with the block hashes and the fixed directives', () => {
     const policy = buildCsp(BUILT, 'app');
-    expect(policy).toContain(`script-src ${cspHash('console.log("oi")')}`);
+    expect(policy).toContain(`script-src ${cspHash('console.log("hi")')}`);
     expect(policy).toContain(`style-src ${cspHash('body{margin:0}')}`);
     expect(policy).toContain("default-src 'none'");
     expect(policy).toContain("connect-src 'none'");
@@ -39,14 +39,14 @@ describe('CSP do index.html (build)', () => {
     expect(policy).not.toMatch(/unsafe-/);
   });
 
-  it('perfil app: img-src com https: e http:, e Trusted Types exigido com a política default', () => {
+  it('app profile: img-src with https: and http:, and Trusted Types required with the default policy', () => {
     const directives = buildCsp(BUILT, 'app').split('; ');
     expect(directives).toContain("img-src 'self' data: blob: https: http:");
     expect(directives).toContain("require-trusted-types-for 'script'");
     expect(directives).toContain('trusted-types default');
   });
 
-  it('perfil static: img-src sem imagem remota e sem Trusted Types', () => {
+  it('static profile: img-src without remote image and without Trusted Types', () => {
     const policy = buildCsp(BUILT, 'static');
     const directives = policy.split('; ');
     expect(directives).toContain("img-src 'self' data: blob:");
@@ -55,7 +55,8 @@ describe('CSP do index.html (build)', () => {
     expect(verifyCsp(injectCsp(BUILT, 'static'), 'static')).toEqual([]);
   });
 
-  it('os perfis não se confundem: cada um rejeita a política do outro', () => {
+  it("the profiles are not mixed up: each one rejects the other's policy", () => {
+    // pt-BR kept: messages emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(injectCsp(BUILT, 'static'), 'app')).toEqual(
       expect.arrayContaining([
         expect.stringContaining('diretiva img-src'),
@@ -63,6 +64,7 @@ describe('CSP do index.html (build)', () => {
         expect.stringContaining('diretiva trusted-types'),
       ]),
     );
+    // pt-BR kept: messages emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(injectCsp(BUILT, 'app'), 'static')).toEqual(
       expect.arrayContaining([
         expect.stringContaining('diretiva img-src'),
@@ -71,7 +73,7 @@ describe('CSP do index.html (build)', () => {
     );
   });
 
-  it('perfil app: a falta de <meta name="referrer"> falha; no static não é exigida', () => {
+  it('app profile: a missing <meta name="referrer"> fails; it is not required in static', () => {
     const noReferrer = BUILT.replace(/\s*<meta name="referrer"[^>]*>/, '');
     expect(noReferrer).not.toContain('referrer');
     expect(verifyCsp(injectCsp(noReferrer, 'app'), 'app')).toEqual([
@@ -81,14 +83,14 @@ describe('CSP do index.html (build)', () => {
     expect(verifyCsp(injectCsp(noReferrer, 'static'), 'static')).toEqual([]);
   });
 
-  it('o referrer com outro valor também falha no app', () => {
+  it('the referrer with another value also fails in app', () => {
     const wrong = BUILT.replace('no-referrer', 'origin');
     expect(verifyCsp(injectCsp(wrong, 'app'), 'app')).toEqual([
       expect.stringContaining('referrer'),
     ]);
   });
 
-  it('põe a <meta> logo depois do charset e é idempotente', () => {
+  it('puts the <meta> right after the charset and is idempotent', () => {
     const html = applyCsp(BUILT, 'app');
     expect(html).toMatch(
       /<meta charset="UTF-8" \/>\s*<meta http-equiv="Content-Security-Policy"/,
@@ -98,15 +100,17 @@ describe('CSP do index.html (build)', () => {
     expect(html.match(/Content-Security-Policy/g)).toHaveLength(1);
   });
 
-  it('o build falha se a CSP faltar', () => {
+  it('the build fails if the CSP is missing', () => {
+    // pt-BR kept: message emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(BUILT, 'app')).toEqual([expect.stringContaining('não tem a CSP')]);
   });
 
-  it('o build falha se um bloco embutido não tiver o hash correspondente', () => {
+  it('the build fails if an embedded block has no matching hash', () => {
     const html = injectCsp(BUILT, 'app').replace(
-      'console.log("oi")',
-      'console.log("alterado")',
+      'console.log("hi")',
+      'console.log("changed")',
     );
+    // pt-BR kept: messages emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(html, 'app')).toEqual(
       expect.arrayContaining([
         expect.stringContaining('bloco <script> embutido sem hash'),
@@ -114,6 +118,7 @@ describe('CSP do index.html (build)', () => {
       ]),
     );
     const css = injectCsp(BUILT, 'app').replace('body{margin:0}', 'body{margin:1px}');
+    // pt-BR kept: message emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(css, 'app')).toEqual(
       expect.arrayContaining([
         expect.stringContaining('bloco <style> embutido sem hash'),
@@ -121,17 +126,18 @@ describe('CSP do index.html (build)', () => {
     );
   });
 
-  it('o build falha com um bloco novo (ex.: um <script> a mais) fora da política', () => {
+  it('the build fails with a new block (e.g. an extra <script>) outside the policy', () => {
     const html = injectCsp(BUILT, 'app').replace(
       '</head>',
       '<script>alert(1)</script></head>',
     );
+    // pt-BR kept: message emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(html, 'app')).toEqual([
       expect.stringContaining('bloco <script> embutido sem hash'),
     ]);
   });
 
-  it("rejeita 'unsafe-inline' e 'unsafe-eval'", () => {
+  it("rejects 'unsafe-inline' and 'unsafe-eval'", () => {
     const html = injectCsp(BUILT, 'app').replace(
       "style-src '",
       "style-src 'unsafe-inline' '",
@@ -144,17 +150,18 @@ describe('CSP do index.html (build)', () => {
     expect(verifyCsp(evalHtml, 'app').join('\n')).toContain('unsafe-eval');
   });
 
-  it('rejeita diretiva fixa alterada (ex.: connect-src aberto)', () => {
+  it('rejects a changed fixed directive (e.g. open connect-src)', () => {
     const html = injectCsp(BUILT, 'app').replace(
       "connect-src 'none'",
       "connect-src 'self'",
     );
+    // pt-BR kept: message emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(html, 'app')).toEqual([
       expect.stringContaining('diretiva connect-src: esperado "\'none\'"'),
     ]);
   });
 
-  it('rejeita script e CSS externos, style="" e handlers inline', () => {
+  it('rejects external script and CSS, style="" and inline handlers', () => {
     const external = injectCsp(BUILT, 'app').replace(
       '</head>',
       '<script src="./x.js"></script><link rel="stylesheet" href="./x.css" /></head>',
@@ -167,28 +174,29 @@ describe('CSP do index.html (build)', () => {
       '<div id="app"></div>',
       '<div id="app" style="color:red" onclick="x()"></div>',
     );
+    // pt-BR kept: messages emitted by pwa/csp.ts (outside this phase), asserted verbatim
     expect(verifyCsp(attrs, 'app')).toEqual([
       expect.stringContaining('atributo style'),
       expect.stringContaining('handler inline'),
     ]);
   });
 
-  it('não confunde texto dentro do JS embutido com atributos do HTML', () => {
+  it('does not mistake text inside the embedded JS for HTML attributes', () => {
     const js = 'const a = `<div style="x" onclick="y">`; </script'.replace(
       '</script',
       '',
     );
-    const html = BUILT.replace('console.log("oi")', js);
+    const html = BUILT.replace('console.log("hi")', js);
     expect(verifyCsp(injectCsp(html, 'app'), 'app')).toEqual([]);
   });
 
-  it('o index.html de origem tem a meta de referrer antes de qualquer recurso', () => {
+  it('the source index.html has the referrer meta before any resource', () => {
     const referrer = source.search(REFERRER);
     expect(referrer).toBeGreaterThanOrEqual(0);
     expect(source.search(/<(link|script)\b/i)).toBeGreaterThan(referrer);
   });
 
-  it('o index.html de origem não tem style="" nem handlers inline (a CSP os bloquearia)', () => {
+  it('the source index.html has no style="" or inline handlers (the CSP would block them)', () => {
     const tags = source.match(/<[a-z][^>]*>/gi) ?? [];
     expect(tags.filter((tag) => /\sstyle\s*=/i.test(tag))).toEqual([]);
     expect(tags.filter((tag) => /\son[a-z]+\s*=/i.test(tag))).toEqual([]);

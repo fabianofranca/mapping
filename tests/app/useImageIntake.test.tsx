@@ -9,7 +9,7 @@ import { EditorContext } from '../../src/ui/EditorContext';
 import { createHarness } from '../components/harness';
 import { sampleProject } from '../model/fixtures';
 
-// Soltar e colar imagens: o que cada gesto faz de verdade (#971, fase 1).
+// Dropping and pasting images: what each gesture really does (#971, phase 1).
 
 const png = (name: string) =>
   new File([new Uint8Array([1])], name, { type: 'image/png' });
@@ -72,35 +72,35 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('useImageIntake: soltar (#971, item 2)', () => {
-  it('uma imagem sobre uma imagem existente a troca', async () => {
+describe('useImageIntake: drop (#971, item 2)', () => {
+  it('an image over an existing image replaces it', async () => {
     const s = setup();
     s.intake().dropHandlers.onDrop(dropEvent([png('a.png')]));
     await vi.waitFor(() => expect(s.replaceImage).toHaveBeenCalledOnce());
     expect(s.addImages).not.toHaveBeenCalled();
   });
 
-  it('uma imagem + um arquivo que não é imagem não troca: entra como container novo e avisa', async () => {
+  it('an image + a non-image file does not replace: it enters as a new container and warns', async () => {
     const s = setup();
-    s.intake().dropHandlers.onDrop(dropEvent([png('a.png'), text('nota.txt')]));
+    s.intake().dropHandlers.onDrop(dropEvent([png('a.png'), text('note.txt')]));
     await vi.waitFor(() => expect(s.addImages).toHaveBeenCalledOnce());
     expect(s.replaceImage).not.toHaveBeenCalled();
     await vi.waitFor(() =>
       expect(s.setMessage).toHaveBeenCalledWith(
-        t('editor.dropIgnored', { names: 'nota.txt' }),
+        t('editor.dropIgnored', { names: 'note.txt' }),
       ),
     );
   });
 });
 
-describe('useImageIntake: colar (#971, item 3)', () => {
-  it('colar imagem importa', async () => {
+describe('useImageIntake: paste (#971, item 3)', () => {
+  it('pasting an image imports it', async () => {
     const s = setup();
     window.dispatchEvent(pasteEvent([png('a.png')]));
     await vi.waitFor(() => expect(s.addImages).toHaveBeenCalledOnce());
   });
 
-  it('com importação em curso (busy) o colar é ignorado, como o soltar', () => {
+  it('with an import in progress (busy) the paste is ignored, like the drop', () => {
     const s = setup(true);
     const event = pasteEvent([png('a.png')]);
     window.dispatchEvent(event);

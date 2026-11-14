@@ -1,10 +1,10 @@
-// Cor opaca do desabilitado da Material 3 (Compose): `top` a `alpha` composta sobre `base` (`compositeOver`).
+// Opaque color of the disabled state of Material 3 (Compose): `top` at `alpha` composited over `base` (`compositeOver`).
 import { expect } from 'vitest';
 
 const channels = (hex: string): number[] =>
   [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
-/** `top` com opacidade `alpha` sobre `base` (ambas `#rrggbb`), em `#rrggbb`. */
+/** `top` with opacity `alpha` over `base` (both `#rrggbb`), as `#rrggbb`. */
 export function compositeOver(top: string, alpha: number, base: string): string {
   const [a, b] = [channels(top), channels(base)];
   return `#${a
@@ -16,7 +16,7 @@ export function compositeOver(top: string, alpha: number, base: string): string 
     .join('')}`;
 }
 
-/** A cor opaca (`#rrggbb` ou `#rrggbbff`) bate com a esperada a ±1 por canal. */
+/** The opaque color (`#rrggbb` or `#rrggbbff`) matches the expected one within ±1 per channel. */
 export function isComposite(actual: string | undefined, expected: string): boolean {
   if (actual === undefined || !/^#[0-9a-f]{6}(ff)?$/i.test(actual)) return false;
   const want = channels(expected);
@@ -24,8 +24,8 @@ export function isComposite(actual: string | undefined, expected: string): boole
 }
 
 /**
- * A cor que sai do motor é opaca (`#rrggbb` ou `#rrggbbff`) e igual à esperada a ±1 por canal
- * (o motor arredonda a composição de outro jeito que o `Math.round` do teste).
+ * The color that comes out of the engine is opaque (`#rrggbb` or `#rrggbbff`) and equal to the expected one within ±1 per channel
+ * (the engine rounds the composition differently from the test's `Math.round`).
  */
 export function expectComposite(actual: string | undefined, expected: string): void {
   expect(actual, 'cor opaca').toMatch(/^#[0-9a-f]{6}(ff)?$/i);

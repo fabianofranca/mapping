@@ -25,7 +25,7 @@ let library: LocalLibrary;
 
 beforeEach(async () => {
   const opened = await openLocalLibrary();
-  if (!opened) throw new Error('IndexedDB indisponível');
+  if (!opened) throw new Error('IndexedDB unavailable');
   library = opened;
   for (const p of await library.list()) await library.remove(p.id);
 });
@@ -36,10 +36,10 @@ const noImages = new Map<string, Blob>();
 const noSpecs = new Map<string, string>();
 
 describe('LocalLibrary (IndexedDB)', () => {
-  // Etapa 8 (8.4), R10: `list()` não ordena (a ordem da tela inicial é a de
-  // `recentProjects`, pelo último uso). Este teste fixava a ordem por `updatedAt`, que ninguém
-  // usava; agora compara como conjunto.
-  it('cria, lista e lê o mapping', async () => {
+  // Stage 8 (8.4), R10: `list()` does not sort (the order of the home screen is that of
+  // `recentProjects`, by last use). This test used to pin the order by `updatedAt`, which nobody
+  // used; it now compares as a set.
+  it('creates, lists and reads the mapping', async () => {
     const a = serialize(emptyProject());
     const b = serialize({
       ...sampleProject(),
@@ -79,7 +79,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     expect(await library.open('a').loadMapping()).toBe(a);
   });
 
-  it('list() devolve na ordem do banco, sem ordenar por updatedAt', async () => {
+  it('list() returns in database order, without sorting by updatedAt', async () => {
     const files = (name: string, updatedAt: string) => ({
       mapping: serialize({
         ...emptyProject(),
@@ -90,14 +90,14 @@ describe('LocalLibrary (IndexedDB)', () => {
       proposals: noSpecs,
       proposalImages: noImages,
     });
-    // Chaves em ordem alfabética (a ordem do IndexedDB); datas na ordem contrária.
+    // Keys in alphabetical order (the IndexedDB order); dates in the opposite order.
     await library.create('a', files('A', '2026-01-01T00:00:00.000Z'));
     await library.create('b', files('B', '2027-01-01T00:00:00.000Z'));
     expect((await library.list()).map((p) => p.id)).toEqual(['a', 'b']);
     expect(library.open('a').copyId).toBe('a');
   });
 
-  it('salvar o mapping atualiza nome, data e marca como não exportado', async () => {
+  it('saving the mapping updates name, date and marks it as not exported', async () => {
     await library.create(
       'p',
       {
@@ -116,14 +116,14 @@ describe('LocalLibrary (IndexedDB)', () => {
       ...emptyProject(),
       project: {
         ...emptyProject().project,
-        name: 'Novo',
+        name: 'New',
         updatedAt: '2026-10-01T00:00:00.000Z',
       },
     };
     await storage.saveMapping(serialize(renamed));
     expect(await library.get('p')).toEqual({
       id: 'p',
-      name: 'Novo',
+      name: 'New',
       updatedAt: '2026-10-01T00:00:00.000Z',
       unexported: true,
       openedAt: expect.any(String),
@@ -132,7 +132,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     expect((await library.get('p'))?.unexported).toBe(false);
   });
 
-  it('grava, lê e remove imagens separadas por projeto', async () => {
+  it('writes, reads and removes images kept separate per project', async () => {
     const mapping = serialize(emptyProject());
     await library.create('p1', {
       mapping,
@@ -160,7 +160,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     expect(await (await library.open('p2').readImage('images/a.jpg'))?.text()).toBe('A2');
   });
 
-  it('lista só os arquivos de images/ do projeto', async () => {
+  it('lists only the images/ files of the project', async () => {
     const mapping = serialize(emptyProject());
     await library.create('p', {
       mapping,
@@ -195,7 +195,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     await expect(library.open('p').saveMapping(mapping)).rejects.toThrow();
   });
 
-  it('grava, lê e remove as cópias de specs/', async () => {
+  it('writes, reads and removes the copies in specs/', async () => {
     await library.create('p', {
       mapping: serialize(emptyProject()),
       images: noImages,
@@ -211,7 +211,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     expect(await storage.readSpec('specs/sdui.json')).toBeNull();
   });
 
-  it('lista, lê, grava e remove os arquivos de uma pasta de pacote (e marca não exportado)', async () => {
+  it('lists, reads, writes and removes the files of a package folder (and marks not exported)', async () => {
     await library.create(
       'p',
       {
@@ -236,7 +236,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     await storage.writeSpecFile('specs/m3/components/b.json', '{"b":1}');
     await storage.writeSpec('specs/m3/m3.spec.json', '{"id":"m3"}\n');
     await storage.writeSpec('specs/outra.json', '{}');
-    // Outro projeto com o mesmo caminho não aparece.
+    // Another project with the same path does not show up.
     await library.create('q', {
       mapping: serialize(emptyProject()),
       images: noImages,
@@ -260,7 +260,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     expect((await library.get('p'))?.unexported).toBe(true);
     expect(await storage.readSpecFile('specs/m3/fonts/R.ttf')).toBeNull();
     await library.setUnexported('p', false);
-    await storage.removeSpecFile('specs/m3/fonts/R.ttf'); // já não existe: nada muda
+    await storage.removeSpecFile('specs/m3/fonts/R.ttf'); // no longer exists: nothing changes
     expect((await library.get('p'))?.unexported).toBe(false);
     await storage.removeSpecDir('specs/m3');
     expect((await library.get('p'))?.unexported).toBe(true);
@@ -271,7 +271,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     ]);
   });
 
-  it('recusa caminhos fora de specs/ ou com ..', async () => {
+  it('refuses paths outside specs/ or with ..', async () => {
     await library.create('p', {
       mapping: serialize(emptyProject()),
       images: noImages,
@@ -287,7 +287,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     await expect(storage.removeSpecDir('specs')).rejects.toThrow();
   });
 
-  it('o pacote importado do zip (specAssets) fica no projeto local e volta no zip', async () => {
+  it('the package imported from the zip (specAssets) stays in the local project and comes back in the zip', async () => {
     const font = new Uint8Array([9, 8, 7, 255]);
     await library.create('p', {
       mapping: serialize(emptyProject()),
@@ -312,7 +312,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     );
   });
 
-  it('round-trip: zip → IndexedDB → zip com o mesmo conteúdo, inclusive specs/', async () => {
+  it('round-trip: zip -> IndexedDB -> zip with the same content, including specs/', async () => {
     const project = cadastroProject();
     const mapping = serialize(project);
     const specs = specFiles(project);
@@ -367,7 +367,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     expect(await again.files.images.get('images/cadastro.png')?.text()).toBe('CADASTRO');
   });
 
-  describe('backups do mapping (antes de migrar)', () => {
+  describe('mapping backups (before migrating)', () => {
     const create = (id: string) =>
       library.create(id, {
         mapping: serialize(emptyProject()),
@@ -377,11 +377,11 @@ describe('LocalLibrary (IndexedDB)', () => {
         proposalImages: noImages,
       });
 
-    it(`guarda só os ${MAX_LOCAL_BACKUPS} mais recentes, por projeto`, async () => {
+    it(`keeps only the ${MAX_LOCAL_BACKUPS} most recent, per project`, async () => {
       await create('p');
       await create('q');
       const storage = library.open('p');
-      // Fora de ordem e com versões diferentes: vale o carimbo de data.
+      // Out of order and with different versions: the date stamp is what counts.
       await storage.writeBackup('mapping.v2.20260103-000000.json', 'c');
       await storage.writeBackup('mapping.v1.20260101-000000.json', 'a');
       await storage.writeBackup('mapping.v3.20260104-000000.json', 'd');
@@ -394,7 +394,7 @@ describe('LocalLibrary (IndexedDB)', () => {
         'mapping.v1.20260102-000000.json',
       ]);
       expect(await library.listBackups('q')).toEqual(['mapping.v1.20250101-000000.json']);
-      // Os backups não mexem no mapping nem nas imagens.
+      // The backups do not touch the mapping or the images.
       expect(await storage.loadMapping()).toBe(serialize(emptyProject()));
     });
 
@@ -406,7 +406,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     });
   });
 
-  it('markOpened guarda a última abertura sem mexer no resto', async () => {
+  it('markOpened stores the last open without touching the rest', async () => {
     await library.create('p', {
       mapping: serialize(emptyProject()),
       images: noImages,
@@ -416,7 +416,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     });
     const before = await library.get('p');
     await library.markOpened('p', '2026-10-12T10:00:00.000Z');
-    await library.markOpened('nao-existe', '2026-10-12T10:00:00.000Z');
+    await library.markOpened('does-not-exist', '2026-10-12T10:00:00.000Z');
     expect(await library.get('p')).toEqual({
       ...before,
       openedAt: '2026-10-12T10:00:00.000Z',
@@ -424,7 +424,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     expect(await library.list()).toHaveLength(1);
   });
 
-  it('criar (ou importar um zip) conta como uso: grava openedAt de agora e mantém a data do mapping (G2)', async () => {
+  it('creating (or importing a zip) counts as use: writes openedAt of now and keeps the mapping date (G2)', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
       vi.setSystemTime(new Date('2026-10-12T10:00:00.000Z'));
@@ -453,13 +453,13 @@ describe('LocalLibrary (IndexedDB)', () => {
   });
 });
 
-describe('FolderLibrary (recentes de pasta)', () => {
+describe('FolderLibrary (recent folders)', () => {
   let folders: FolderLibrary;
 
   beforeEach(async () => {
     vi.stubGlobal('structuredClone', keepDirectoriesInClone());
     const opened = await openFolderLibrary();
-    if (!opened) throw new Error('IndexedDB indisponível');
+    if (!opened) throw new Error('IndexedDB unavailable');
     folders = opened;
     for (const f of await folders.list()) await folders.remove(f.id);
   });
@@ -469,7 +469,7 @@ describe('FolderLibrary (recentes de pasta)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('guarda handle, nome do projeto, nome da pasta e data; a lista não traz handles', async () => {
+  it('stores handle, project name, folder name and date; the list does not carry handles', async () => {
     const a = new PermissionDirectory('a');
     const b = new PermissionDirectory('b');
     const idA = await folders.remember(a, { name: 'A', usedAt: '2026-10-01T00:00:00Z' });
@@ -486,10 +486,10 @@ describe('FolderLibrary (recentes de pasta)', () => {
       usedAt: '2026-10-01T00:00:00Z',
     });
     expect(await folders.handle(idA)).toBe(a);
-    expect(await folders.handle('nao-existe')).toBeNull();
+    expect(await folders.handle('does-not-exist')).toBeNull();
   });
 
-  it('a mesma pasta (isSameEntry) atualiza a entrada em vez de duplicar', async () => {
+  it('the same folder (isSameEntry) updates the entry instead of duplicating it', async () => {
     const a = new PermissionDirectory('a');
     const id = await folders.remember(a, { name: 'A', usedAt: '2026-10-01T00:00:00Z' });
     const again = await folders.remember(a, {
@@ -502,13 +502,13 @@ describe('FolderLibrary (recentes de pasta)', () => {
     ]);
   });
 
-  it('um handle guardado que falha no isSameEntry não impede guardar outro', async () => {
+  it('a stored handle that fails in isSameEntry does not prevent storing another', async () => {
     const broken = new PermissionDirectory('velha');
     vi.spyOn(broken, 'isSameEntry').mockRejectedValue(
       new DOMException('', 'NotFoundError'),
     );
     await folders.remember(broken, { name: 'V', usedAt: '2026-10-01T00:00:00Z' });
-    // Mesmo nome de pasta: o handle guardado é comparado (e falha).
+    // Same folder name: the stored handle is compared (and fails).
     await folders.remember(new PermissionDirectory('velha'), {
       name: 'N',
       usedAt: '2026-10-02T00:00:00Z',
@@ -516,7 +516,7 @@ describe('FolderLibrary (recentes de pasta)', () => {
     expect(await folders.list()).toHaveLength(2);
   });
 
-  it('replaceId: a entrada passa a apontar para a pasta localizada', async () => {
+  it('replaceId: the entry now points to the located folder', async () => {
     const old = new PermissionDirectory('antiga');
     const id = await folders.remember(old, { name: 'P', usedAt: '2026-10-01T00:00:00Z' });
     const moved = new PermissionDirectory('movida');
@@ -528,7 +528,7 @@ describe('FolderLibrary (recentes de pasta)', () => {
     ]);
   });
 
-  it('replaceId de uma pasta que já estava na lista junta as duas entradas', async () => {
+  it('replaceId of a folder that was already in the list merges the two entries', async () => {
     const a = new PermissionDirectory('a');
     const b = new PermissionDirectory('b');
     const idA = await folders.remember(a, { name: 'A', usedAt: '2026-10-01T00:00:00Z' });
@@ -539,15 +539,15 @@ describe('FolderLibrary (recentes de pasta)', () => {
     expect((await folders.list()).map((f) => f.id)).toEqual([idB]);
   });
 
-  it('touch atualiza nome e data; remove tira da lista', async () => {
+  it('touch updates name and date; remove takes it off the list', async () => {
     const id = await folders.remember(new PermissionDirectory('a'), {
       name: 'A',
       usedAt: '2026-10-01T00:00:00Z',
     });
-    await folders.touch(id, { name: 'Renomeado', usedAt: '2026-10-05T00:00:00Z' });
-    await folders.touch('nao-existe', { name: 'X', usedAt: '2026-10-05T00:00:00Z' });
+    await folders.touch(id, { name: 'Renamed', usedAt: '2026-10-05T00:00:00Z' });
+    await folders.touch('does-not-exist', { name: 'X', usedAt: '2026-10-05T00:00:00Z' });
     expect((await folders.list()).map((f) => [f.name, f.usedAt])).toEqual([
-      ['Renomeado', '2026-10-05T00:00:00Z'],
+      ['Renamed', '2026-10-05T00:00:00Z'],
     ]);
     await folders.remove(id);
     expect(await folders.list()).toEqual([]);

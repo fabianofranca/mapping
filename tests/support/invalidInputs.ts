@@ -1,7 +1,7 @@
-// Entradas inválidas para a guarda de mensagens do modelo (etapa #1263, decisão 15): parte de
-// documentos válidos (as fixtures e a biblioteca Material 3) e os estraga de forma sistemática,
-// em vez de repetir os casos soltos de cada teste de modelo. Cada estrago troca UM valor da
-// árvore (apaga, nulo, número, texto, lista, objeto) ou acrescenta uma chave desconhecida.
+// Invalid inputs for the model message guard (stage #1263, decision 15): start from
+// valid documents (the fixtures and the Material 3 library) and spoil them systematically,
+// instead of repeating the loose cases of each model test. Each spoil replaces ONE value of the
+// tree (deletes, null, number, text, list, object) or adds an unknown key.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -12,7 +12,7 @@ const FIXTURES = join(__dirname, '../fixtures');
 export const readFixture = (path: string): string =>
   readFileSync(join(FIXTURES, path), 'utf8');
 
-/** Todos os caminhos da árvore (folhas e nós internos), na ordem do documento. */
+/** All the paths of the tree (leaves and inner nodes), in document order. */
 export function jsonPaths(value: Json, base: Path = []): Path[] {
   const out: Path[] = [];
   if (value !== null && typeof value === 'object') {
@@ -34,7 +34,7 @@ function parentOf(root: Json, path: Path): Record<string | number, Json> {
 
 const REPLACEMENTS: readonly Json[] = [null, 12345, -1, '', 'x?', [], {}, true];
 
-/** Os estragos de um valor: troca por cada `REPLACEMENTS`, remoção e chave desconhecida. */
+/** The spoils of a value: replacement by each `REPLACEMENTS`, removal and unknown key. */
 export function breakAt(root: Json, path: Path): Json[] {
   const key = path[path.length - 1] as string | number;
   const broken: Json[] = [];
@@ -57,7 +57,7 @@ export function breakAt(root: Json, path: Path): Json[] {
   return broken;
 }
 
-/** Os documentos estragados de `root`, no máximo `limit` caminhos (espaçados de modo uniforme). */
+/** The spoiled documents of `root`, at most `limit` paths (evenly spaced). */
 export function brokenDocuments(root: Json, limit: number): Json[] {
   const paths = jsonPaths(root);
   const stride = Math.max(1, Math.ceil(paths.length / limit));

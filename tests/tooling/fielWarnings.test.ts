@@ -1,5 +1,5 @@
-// R25.1: a biblioteca m3-fiel (cópia do pacote com oito componentes trocados pelo fiel.mjs) valida sem erro e só com os
-// avisos `parâmetro fora da ficha` conhecidos do pacote (S5, #1079; provisório: bug #1774, curadoria na #1134).
+// R25.1: the m3-fiel library (copy of the package with eight components swapped by fiel.mjs) validates without error and only with the
+// known `parameter outside the signature` warnings of the package (S5, #1079; provisional: bug #1774, curation in #1134).
 import { execFileSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -21,7 +21,7 @@ function list(dir: string, base = dir): string[] {
 }
 
 describe('fiel.mjs (R25.1)', () => {
-  it('m3-fiel: sem erro e só com avisos conhecidos (o interaction dos tipos trocados não fica sem uso)', () => {
+  it('m3-fiel: no error and only known warnings (the interaction of the swapped types is not left unused)', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'fiel-')), 'm3-fiel');
     cpSync(join(REPO, 'libraries/material3-compose'), dir, { recursive: true });
     execFileSync('node', [join(REPO, 'scripts/testing/fiel.mjs'), dir, '4']);
@@ -38,7 +38,7 @@ describe('fiel.mjs (R25.1)', () => {
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
   }, 30_000);
 
-  it('m3-fx (R25.71): o card de formato 4 valida sem erro e só com os avisos conhecidos, sem "text larger than the box" (CL1, achado 1.1)', () => {
+  it('m3-fx (R25.71): the format 4 card validates without error and only with the known warnings, without "text larger than the box" (CL1, finding 1.1)', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'fx-')), 'm3-fx');
     cpSync(join(REPO, 'libraries/material3-compose'), dir, { recursive: true });
     execFileSync('node', [join(REPO, 'scripts/testing/tokens.mjs'), dir]);
@@ -58,7 +58,7 @@ describe('fiel.mjs (R25.1)', () => {
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
   }, 30_000);
 
-  it('top-app-bar: a caixa vermelha mede 48, 68 e 88 com 1, 2 e 3 linhas (R25.95)', () => {
+  it('top-app-bar: the red box measures 48, 68 and 88 with 1, 2 and 3 lines (R25.95)', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'fiel-')), 'm3-fiel');
     cpSync(join(REPO, 'libraries/material3-compose'), dir, { recursive: true });
     execFileSync('node', [join(REPO, 'scripts/testing/fiel.mjs'), dir, '4']);
@@ -73,12 +73,13 @@ describe('fiel.mjs (R25.1)', () => {
         { x: 0, y: 0, width: 140, height: 100 },
         { measure: approximateMeasurer },
       );
+      // pt-BR kept: node name written by scripts/testing/fiel.mjs into the library component
       const box = [...walk(root)].find((n) => n.name === 'caixa');
       return box?.height ?? -1;
     };
     expect(['small', 'center', 'medium'].map(heightOf)).toEqual([48, 68, 88]);
   });
-  it('flow-row: as cinco caixas quebram em 3 + 2, em x 10, 50, 90 e y 10 / 36 (R25.98)', () => {
+  it('flow-row: the five boxes wrap into 3 + 2, at x 10, 50, 90 and y 10 / 36 (R25.98)', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'fiel-')), 'm3-fiel');
     cpSync(join(REPO, 'libraries/material3-compose'), dir, { recursive: true });
     execFileSync('node', [join(REPO, 'scripts/testing/fiel.mjs'), dir, '4']);
