@@ -125,7 +125,7 @@ export function warningText(contexto, jumps) {
       : 'nenhum registrado';
   return (
     `Gancho de contexto: esta sessão está em ${mil} mil, acima do gatilho de ${GATILHO / 1000} mil ` +
-    `(teto ${TETO_MIL} mil; sub-item "Teto de contexto da fase" do item 3 de "Para a sessão da fase", ` +
+    `(teto ${TETO_MIL} mil; sub-item "Phase context ceiling" do item 3 de "For the phase session", ` +
     `docs/FLOW.md). Se o PR da fase ainda não está aberto e esta não é a sessão 5 de 5, ` +
     `passe a vez agora (passos 1 a 5 da passagem), com <n> = ${mil}. ` +
     `Com o PR aberto, ou na sessão 5 de 5, siga. ` +

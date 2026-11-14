@@ -134,7 +134,7 @@ function stepsWithoutSubstitute(md: string, allowed: readonly string[]): string[
 /**
  * Exceptions accepted by the owner: steps of the main scripts that stay without a substitute for
  * the agent. Empty: R0.5 and R6.2 left the main scripts (RF and RA, on demand).
- * To add one, write here why and take the decision to the owner (docs/PROCESS.md, Fluxo de trabalho).
+ * To add one, write here why and take the decision to the owner (docs/PROCESS.md, Workflow).
  */
 const NO_SUBSTITUTE_EXCEPTIONS: readonly string[] = [];
 

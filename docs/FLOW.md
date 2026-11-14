@@ -107,7 +107,7 @@ CI runs only on PRs (`pull_request`), once per commit: a branch without a PR has
 The orchestrator creates the session with `create_session`: `model` and `effort` from the table, `source_url` of the repository, `source_revision` = `epic/<name>`, never `permission_mode: plan`. Message:
 
 ```text
-Você é o agente da fase <código> — <título> da etapa #<etapa> do repositório `fabianofranca/mapping`, no fluxo automatizado (docs/PROCESS.md, "Fluxo automatizado"). The owner does not follow this session: do not ask them anything, except the item 8 authorization, which they answer in this session's chat.
+Você é o agente da fase <código> — <título> da etapa #<etapa> do repositório `fabianofranca/mapping`, no fluxo automatizado (docs/PROCESS.md, "Automated flow"). The owner does not follow this session: do not ask them anything, except the item 8 authorization, which they answer in this session's chat.
 
 1. Read `CLAUDE.md`, `docs/PROCESS.md`, issue #<stage> with its comments and sub-issue #<phase>, which is your plan. Follow it; do not reopen decisions already made.
 2. Branch `<short branch>`, taken from the up-to-date `epic/<name>`. PR with base `epic/<name>`, title "<code> — <title>", body starting with "Parte de #<phase>" and the usual sections (Summary, How to test, Decisions made, DS impact, Agent impact).
