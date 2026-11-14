@@ -690,7 +690,7 @@ describe('variantes (decisão 9)', () => {
       'signatures/button.outlined.compose.json',
     ]);
     expect(new Set(pending.map((n) => n.message)).size).toBe(2);
-    expect(pending[0]?.message).toMatch(/^compose: o parâmetro/);
+    expect(pending[0]?.message).toMatch(/^compose: the parameter/);
     expect(pending[1]?.message).toMatch(/^compose: case `outlined`: the parameter/);
   });
 

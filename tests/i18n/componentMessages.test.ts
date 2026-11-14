@@ -18,10 +18,12 @@ import { LAYOUT_ANCHORS } from '../../src/model/components/layout';
 import { locale } from '../../src/store/settings';
 import { messageText } from '../../src/ui/modelMessage';
 import { issueText } from '../../src/ui/LibraryIssueList';
+import { ptBRText } from '../support/modelText';
 
 // MB4 (#1359): the errors and warnings of the component, the icons and the origins declaration have
-// a code and come out in the app language. In pt-BR the text equals `message`; in en-US there is no
-// Portuguese word outside the parameters (key names, ids and paths are data).
+// a code and come out in the app language. The model text is English and equals the en-US rendering;
+// in pt-BR the rendering is the pt-BR template filled with the parameters (key names, ids and paths
+// are data, so they never count as Portuguese).
 
 afterEach(() => {
   locale.value = 'pt-BR';
@@ -48,18 +50,23 @@ function withoutParams(text: string, issue: Coded): string {
   return out;
 }
 
+/** en-US shows the model text itself (English); pt-BR shows the pt-BR template filled in. */
+function expectBothLocales(issue: Coded): void {
+  const message = asMessage(issue);
+  locale.value = 'pt-BR';
+  expect(messageText(message), issue.message).toBe(ptBRText(message));
+  expect(messageText(message), issue.message).not.toBe(issue.message);
+  locale.value = 'en-US';
+  const shown = messageText(message);
+  expect(shown, issue.message).toBe(issue.message);
+  expect(withoutParams(shown, issue), `${issue.code}: ${shown}`).not.toMatch(PORTUGUESE);
+}
+
 function expectLocalized(issues: readonly Coded[]): void {
   expect(issues.length).toBeGreaterThan(0);
   for (const issue of issues) {
     expect(issue.code, issue.message).toBeDefined();
-    locale.value = 'pt-BR';
-    expect(messageText(asMessage(issue)), issue.message).toBe(issue.message);
-    locale.value = 'en-US';
-    const shown = messageText(asMessage(issue));
-    expect(withoutParams(shown, issue), `${issue.code}: ${shown}`).not.toMatch(
-      PORTUGUESE,
-    );
-    expect(shown, issue.message).not.toBe(issue.message);
+    expectBothLocales(issue);
   }
 }
 
@@ -365,13 +372,7 @@ describe('origins declaration messages', () => {
       expect(issues.length).toBeGreaterThan(0);
       for (const issue of issues) {
         expect(issue.code, issue.message).toBeDefined();
-        locale.value = 'pt-BR';
-        expect(messageText(asMessage(issue)), issue.message).toBe(issue.message);
-        locale.value = 'en-US';
-        const shown = messageText(asMessage(issue));
-        expect(withoutParams(shown, issue), `${issue.code}: ${shown}`).not.toMatch(
-          PORTUGUESE,
-        );
+        expectBothLocales(issue);
       }
     },
   );
@@ -528,7 +529,7 @@ describe('origin with a user value in the key name or in the anchor (RM1 defect)
     expect(parsed.ok).toBe(false);
     if (parsed.ok) return;
     const issue = (parsed.issues as readonly SpecIssue[]).find((i) =>
-      i.message.includes('chave desconhecida'),
+      i.message.includes('unknown key'),
     );
     expect(issue).toEqual({
       path: 'origins[0].x: y',
@@ -537,7 +538,9 @@ describe('origin with a user value in the key name or in the anchor (RM1 defect)
       params: { key: 'x: y' },
     });
     locale.value = 'en-US';
-    expect(messageText(asMessage(issue as Coded))).not.toMatch(PORTUGUESE);
+    expect(messageText(asMessage(issue as Coded))).toBe('unknown key: x: y');
+    locale.value = 'pt-BR';
+    expect(messageText(asMessage(issue as Coded))).toBe('chave desconhecida: x: y');
   });
 
   it('the anchor with "; use " in the value keeps the origins.anchorInvalid parameters', () => {
@@ -557,7 +560,7 @@ describe('origin with a user value in the key name or in the anchor (RM1 defect)
 // --- component catalog (the warning for the component that did not load) ----------------------
 
 describe('component that did not load', () => {
-  it('the reason becomes `detail` and comes out translated; in pt-BR the text is the current one', () => {
+  it('the reason becomes `detail` and comes out translated; the text is English and pt-BR is the template', () => {
     const spec = parseSpec({
       format: 'mapping-spec',
       formatVersion: 15,
@@ -587,13 +590,14 @@ describe('component that did not load', () => {
     for (const message of loaded.problemMessages) {
       expect(message.detail, message.text).toBeDefined();
       locale.value = 'pt-BR';
-      expect(messageText(message)).toBe(message.text);
+      expect(messageText(message)).toBe(ptBRText(message));
+      expect(messageText(message)).not.toBe(message.text);
       locale.value = 'en-US';
       const shown = messageText(message);
+      expect(shown).toBe(message.text);
       expect(withoutParams(shown, { message: '', params: message.params })).not.toMatch(
         PORTUGUESE,
       );
-      expect(shown).not.toBe(message.text);
     }
   });
 });

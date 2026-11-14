@@ -9,6 +9,7 @@ import { SPEC_PATTERN_CODES, specCodeForText } from '../../src/model/messages/te
 import { specMessages } from '../../src/model/messages/spec';
 import { specMsg } from '../../src/model/specIssueCode';
 import { issueText } from '../../src/ui/LibraryIssueList';
+import { ptBRText } from '../support/modelText';
 
 // MB2 (#1357): the specialization problems up to `layerShape` (fields, suggestions, `code`,
 // examples, `appliesTo`, children, documents, roles, groups, types and layers) and the default
@@ -694,10 +695,12 @@ function issuesOf(mutate: (s: Raw) => void): SpecIssue[] {
   return parsed.issues;
 }
 
+function asModelMessage(issue: SpecIssue) {
+  return modelMessage(issue.code ?? 'raw', issue.params ?? {}, issue.message);
+}
+
 function shown(issue: SpecIssue): string {
-  return messageText(
-    modelMessage(issue.code ?? 'raw', issue.params ?? {}, issue.message),
-  );
+  return messageText(asModelMessage(issue));
 }
 
 const PORTUGUESE = /[ãõçáéíóúâêô]/i;
@@ -744,16 +747,26 @@ describe('specialization messages (up to layerShape)', () => {
     }
   });
 
-  it('pt-BR: the text shown equals the `message`, except for the default zod texts', () => {
+  it('pt-BR: the text shown is the pt-BR template filled in (never the English `message`, even for the default zod texts)', () => {
     locale.value = 'pt-BR';
     for (const [, mutate] of CASES) {
       for (const issue of issuesOf(mutate)) {
         if (issue.code === undefined) continue;
-        if (ZOD_CODES.includes(issue.code)) {
-          // Declared exception (decision 6): the `message` is zod's, in English; the pt-BR is translated.
+        expect(shown(issue), issue.message).toBe(ptBRText(asModelMessage(issue)));
+        // The `message` of the zod codes is zod's own English text; the pt-BR is translated (decision 6).
+        if (ZOD_CODES.includes(issue.code))
           expect(shown(issue), issue.message).not.toBe(issue.message);
-          continue;
-        }
+      }
+    }
+  });
+
+  it('en-US: the text shown is the English `message` itself', () => {
+    locale.value = 'en-US';
+    for (const [, mutate] of CASES) {
+      for (const issue of issuesOf(mutate)) {
+        if (issue.code === undefined) continue;
+        // The zod codes may differ in the plural ("Unrecognized keys"): the template is the base text.
+        if (ZOD_CODES.includes(issue.code)) continue;
         expect(shown(issue), issue.message).toBe(issue.message);
       }
     }

@@ -83,7 +83,7 @@ describe('a ficha no pacote da biblioteca', () => {
         file: SPEC,
         path: 'layers[0].annotationTypes[0].code.compose.signature',
         severity: 'error',
-        message: `arquivo não encontrado: ${SIG}`,
+        message: `file not found: ${SIG}`,
       },
     ]);
   });
@@ -127,7 +127,7 @@ describe('a ficha no pacote da biblioteca', () => {
         file: SPEC,
         path: 'layers[0].annotationTypes[0].code.compose.params.color',
         severity: 'warning',
-        message: 'parâmetro fora da ficha: "removedParam"',
+        message: 'parameter outside the signature: "removedParam"',
       },
     ]);
   });
@@ -209,7 +209,7 @@ describe('o caso de variants e a ficha (achados da revisão)', () => {
         file: SPEC,
         path: `${CASE_AT}.params.label`,
         severity: 'warning',
-        message: 'parâmetro fora da ficha: "bogus"',
+        message: 'parameter outside the signature: "bogus"',
       },
     ]);
   });
@@ -227,7 +227,7 @@ describe('o caso de variants e a ficha (achados da revisão)', () => {
         file: SPEC,
         path: `${CASE_AT}.params.label`,
         severity: 'warning',
-        message: 'parâmetro fora da ficha: "enabled"',
+        message: 'parameter outside the signature: "enabled"',
       },
     ]);
   });
@@ -277,7 +277,7 @@ describe('plataforma da ficha e código dos problemas (CL1: S5-b e S5-d)', () =>
         path: at,
         severity: 'error',
         message:
-          'a ficha é da plataforma "swiftui", mas o code é da plataforma "compose"',
+          'the signature is for the platform "swiftui", but the code is for the platform "compose"',
       },
     ]);
   });

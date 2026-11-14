@@ -74,7 +74,7 @@ describe('validateLibrary com $token', () => {
     expect(messages(r)).toContainEqual([
       'components/tk.json',
       'template.children[0].fill',
-      'o token "inexistente" não existe nos tokens da especialização',
+      'the token "inexistente" does not exist in the specialization tokens',
     ]);
   });
 
@@ -85,7 +85,7 @@ describe('validateLibrary com $token', () => {
     expect(messages(r)).toContainEqual([
       'components/tk.json',
       'template.children[0].cornerRadius',
-      'o token "primary" é cor, mas aqui se espera número',
+      'the token "primary" is a color, but a number is expected here',
     ]);
   });
 
@@ -94,7 +94,7 @@ describe('validateLibrary com $token', () => {
     expect(messages(r)).toContainEqual([
       'components/tk.json',
       'template.children[0].fill',
-      'o token "primary" não existe nos tokens da especialização',
+      'the token "primary" does not exist in the specialization tokens',
     ]);
   });
 

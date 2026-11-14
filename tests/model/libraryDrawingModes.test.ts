@@ -69,20 +69,20 @@ describe('prova de desenho por modo (FX4)', () => {
     // 11 caracteres × 0,55 × corpo: 10 px = 60,5 (cabe em 100); 20 px = 121 (não cabe). Sem o
     // token resolvido o texto mediria 14 px (84,7) e não avisaria em modo nenhum.
     expect(warnings({ $token: 'size' }, TOKENS)).toEqual([
-      'tipo "t", os valores padrão, modo dark, tamanho inicial 100×50: conteúdo maior que a caixa: frame (aproximado)',
+      'type "t", the default values, mode dark, initial size 100×50: content larger than the box: frame (approximate)',
     ]);
   });
 
   it('o aviso que vale em todos os modos sai uma vez, sem modo', () => {
     const both = { modes: ['light', 'dark'], values: { size: 40 } };
     expect(warnings({ $token: 'size' }, both)).toEqual([
-      'tipo "t", os valores padrão, tamanho inicial 100×50: conteúdo maior que a caixa: frame (aproximado)',
+      'type "t", the default values, initial size 100×50: content larger than the box: frame (approximate)',
     ]);
   });
 
   it('sem tokens na especialização a mensagem não cita modo', () => {
     expect(warnings(30, null)).toEqual([
-      'tipo "t", os valores padrão, tamanho inicial 100×50: conteúdo maior que a caixa: frame (aproximado)',
+      'type "t", the default values, initial size 100×50: content larger than the box: frame (approximate)',
     ]);
   });
 });

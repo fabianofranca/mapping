@@ -81,7 +81,7 @@ describe('prova de desenho no tamanho ajustado (MC2, decisão 10)', () => {
     // Duas linhas de 30 = 60 de texto numa caixa de 50; com a altura `hug` o tamanho ajustado é 200×60.
     const out = warnings(component({ sizing: { height: 'hug' } }));
     expect(out).toEqual([
-      'tipo "t", os valores padrão, tamanho inicial 200×50: conteúdo maior que a caixa: frame (aproximado)',
+      'type "t", the default values, initial size 200×50: content larger than the box: frame (approximate)',
     ]);
   });
 
@@ -91,7 +91,7 @@ describe('prova de desenho no tamanho ajustado (MC2, decisão 10)', () => {
       component({ sizing: { height: 'hug' }, template: { maxHeight: 40 } }),
     );
     expect(out).toContain(
-      'tipo "t", os valores padrão, tamanho ajustado 200×40: conteúdo maior que a caixa: frame (aproximado)',
+      'type "t", the default values, fitted size 200×40: content larger than the box: frame (approximate)',
     );
   });
 
@@ -101,7 +101,7 @@ describe('prova de desenho no tamanho ajustado (MC2, decisão 10)', () => {
       [{ name: 'longo', values: { msg: LONG } }],
     );
     expect(out).toContain(
-      'tipo "t", o exemplo "longo", tamanho ajustado 200×40: conteúdo maior que a caixa: frame (aproximado)',
+      'type "t", the example "longo", fitted size 200×40: content larger than the box: frame (approximate)',
     );
   });
 
@@ -112,14 +112,14 @@ describe('prova de desenho no tamanho ajustado (MC2, decisão 10)', () => {
       }),
     );
     expect(out).toContain(
-      'tipo "t", os valores padrão, tamanho ajustado 200×40: conteúdo maior que a caixa: frame (aproximado)',
+      'type "t", the default values, fitted size 200×40: content larger than the box: frame (approximate)',
     );
   });
 
   it('componente sem eixo que depende do conteúdo não ganha o caso ajustado', () => {
     const out = warnings(component({}));
     expect(out).toEqual([
-      'tipo "t", os valores padrão, tamanho inicial 200×50: conteúdo maior que a caixa: frame (aproximado)',
+      'type "t", the default values, initial size 200×50: content larger than the box: frame (approximate)',
     ]);
   });
 
@@ -135,7 +135,7 @@ describe('prova de desenho no tamanho ajustado (MC2, decisão 10)', () => {
   it('sizing com valor inválido avisa no caso do size (sem `aproximado`: não depende da medida) e cai no size', () => {
     const out = warnings(component({ sizing: { height: { $field: 'msg' } } }));
     expect(out).toContain(
-      `tipo "t", os valores padrão, tamanho inicial 200×50: valor inválido em sizing.height: ${LONG}`,
+      `type "t", the default values, initial size 200×50: invalid value in sizing.height: ${LONG}`,
     );
     expect(out.some((w) => w.includes('tamanho ajustado'))).toBe(false);
   });

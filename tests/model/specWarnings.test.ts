@@ -45,7 +45,7 @@ describe('specWarnings', () => {
     const spec = load('examples/specs/sdui.json');
     const warning = specWarnings(spec).find((w) => w.code === 'type-without-code');
     expect(warning?.message).toBe(
-      `o tipo "${spec.layers[2]?.annotationTypes[0]?.id}" não tem \`code\`: nenhuma plataforma diz como criar uma instância dele`,
+      `the type "${spec.layers[2]?.annotationTypes[0]?.id}" has no \`code\`: no platform says how to create an instance of it`,
     );
   });
 
@@ -65,7 +65,7 @@ describe('specWarnings', () => {
       const warnings = only(v5({}));
       expect(warnings.map((w) => w.path)).toEqual(['platforms[0]', 'platforms[1]']);
       expect(warnings[0]?.message).toMatch(
-        /^a plataforma "android" tem tipos com `path` \((\d+)\), mas não declara `repo`: o agente não sabe em que repositório estão esses arquivos; declare `repo` \(formatVersion 5\)$/,
+        /^the platform "android" has types with `path` \((\d+)\), but does not declare `repo`: the agent does not know which repository holds those files; declare `repo` \(formatVersion 5\)$/,
       );
     });
 
@@ -115,7 +115,7 @@ describe('specWarnings', () => {
         (w) => w.code === 'path-without-repo',
       );
       expect(warnings).toHaveLength(1);
-      expect(warnings[0]?.message).toContain('tem tipos com `path` (2)');
+      expect(warnings[0]?.message).toContain('has types with `path` (2)');
     });
 
     it('plataforma sem tipos com path não avisa (o bff do exemplo)', () => {
@@ -170,7 +170,7 @@ describe('specWarnings', () => {
       ['path-without-repo', 'platforms[1]'],
     ]);
     expect(warnings[1]?.message).toBe(
-      'o campo "implementacao" do tipo "screen" é "codeRef", que saiu do formato: foi ignorado (os valores dele não são gravados); remova-o do arquivo',
+      'the field "implementacao" of the type "screen" is "codeRef", which was removed from the format: it was ignored (its values are not saved); remove it from the file',
     );
   });
 

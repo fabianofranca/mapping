@@ -107,7 +107,7 @@ describe('diffSpecs: aditivas', () => {
       code: 'added-type',
       path: 'layers[0].annotationTypes[2]',
       typeId: 'chip',
-      message: 'o tipo "chip" é novo',
+      message: 'the type "chip" is new',
     });
   });
 
@@ -136,7 +136,7 @@ describe('diffSpecs: aditivas', () => {
         path: `${BTN_PATH}.fields[3].columns[2]`,
         typeId: 'button',
         fieldKey: 'rows.extra',
-        message: 'a coluna "extra" do campo "rows" do tipo "button" é nova',
+        message: 'the column "extra" of the field "rows" of the type "button" is new',
       },
       {
         kind: 'additive',
@@ -144,7 +144,7 @@ describe('diffSpecs: aditivas', () => {
         path: `${BTN_PATH}.fields[4]`,
         typeId: 'button',
         fieldKey: 'icon',
-        message: 'o campo "icon" do tipo "button" é novo',
+        message: 'the field "icon" of the type "button" is new',
       },
     ]);
   });
@@ -174,7 +174,7 @@ describe('diffSpecs: aditivas', () => {
         typeId: 'button',
         fieldKey: 'style',
         option: 'tonal',
-        message: 'o campo "style" do tipo "button" ganhou a opção "tonal"',
+        message: 'the field "style" of the type "button" gained the option "tonal"',
       },
       {
         kind: 'additive',
@@ -183,7 +183,7 @@ describe('diffSpecs: aditivas', () => {
         typeId: 'button',
         fieldKey: 'rows.kind',
         option: 'c',
-        message: 'a coluna "kind" do campo "rows" do tipo "button" ganhou a opção "c"',
+        message: 'the column "kind" of the field "rows" of the type "button" gained the option "c"',
       },
     ]);
   });
@@ -253,7 +253,7 @@ describe('diffSpecs: aditivas', () => {
     ]);
     expect(changes.every((c) => c.kind === 'additive')).toBe(true);
     expect(changes[0]?.message).toBe(
-      'o componente do tipo "button" passou de "components/a.json" para "components/b.json"',
+      'the component of the type "button" changed from "components/a.json" to "components/b.json"',
     );
   });
 
@@ -334,7 +334,7 @@ describe('diffSpecs: quebras', () => {
       path: 'layers[0].annotationTypes[1]',
       typeId: 'badge',
       message:
-        'o tipo "badge" foi removido; declare um passo "remove-type" ou "rename-type" em migrations',
+        'the type "badge" was removed; declare a "remove-type" or "rename-type" step in migrations',
     });
   });
 
@@ -348,7 +348,7 @@ describe('diffSpecs: quebras', () => {
         typeId: 'button',
         fieldKey: 'label',
         message:
-          'o campo "label" do tipo "button" foi removido; declare um passo "remove-field" ou "rename-field" em migrations',
+          'the field "label" of the type "button" was removed; declare a "remove-field" or "rename-field" step in migrations',
       },
     ]);
   });
@@ -371,7 +371,7 @@ describe('diffSpecs: quebras', () => {
         fieldKey: 'style',
         option: 'text',
         message:
-          'a opção "text" do campo "style" do tipo "button" foi removida; declare um passo "map-values" com "text" em values em migrations',
+          'the option "text" of the field "style" of the type "button" was removed; declare a "map-values" step with "text" in values in migrations',
       },
     ]);
   });
@@ -389,7 +389,7 @@ describe('diffSpecs: quebras', () => {
         typeId: 'button',
         fieldKey: 'label',
         message:
-          'o campo "label" do tipo "button" passou a ser required; declare um passo "fill-field" em migrations',
+          'the field "label" of the type "button" became required; declare a "fill-field" step in migrations',
       },
     ]);
   });
@@ -407,7 +407,7 @@ describe('diffSpecs: quebras', () => {
         typeId: 'button',
         fieldKey: 'icon',
         message:
-          'o campo "icon" do tipo "button" é novo e já required; declare um passo "fill-field" em migrations',
+          'the field "icon" of the type "button" is new and already required; declare a "fill-field" step in migrations',
       },
     ]);
   });
@@ -425,7 +425,7 @@ describe('diffSpecs: quebras', () => {
         typeId: 'button',
         fieldKey: 'size',
         message:
-          'o campo "size" do tipo "button" mudou de tipo ("number" para "string"); declare um passo "fill-field" em migrations',
+          'the field "size" of the type "button" changed type ("number" to "string"); declare a "fill-field" step in migrations',
       },
     ]);
   });
@@ -450,7 +450,7 @@ describe('diffSpecs: quebras', () => {
         typeId: 'button',
         fieldKey: 'rows.col',
         message:
-          'a coluna "col" do campo "rows" do tipo "button" foi removida; declare um passo "remove-field" ou "rename-field" em migrations com field "rows.col"',
+          'the column "col" of the field "rows" of the type "button" was removed; declare a "remove-field" or "rename-field" step in migrations with field "rows.col"',
       },
     ]);
   });
@@ -478,10 +478,10 @@ describe('diffSpecs: quebras', () => {
       ['field-required', 'rows.extra', `${BTN_PATH}.fields[3].columns[2]`],
     ]);
     expect(changes[0]?.message).toBe(
-      'a coluna "col" do campo "rows" do tipo "button" mudou de tipo ("string" para "number"); declare um passo "fill-field" em migrations com field "rows.col"',
+      'the column "col" of the field "rows" of the type "button" changed type ("string" to "number"); declare a "fill-field" step in migrations with field "rows.col"',
     );
     expect(changes[2]?.message).toBe(
-      'a coluna "extra" do campo "rows" do tipo "button" é nova e já obrigatória; declare um passo "fill-field" em migrations com field "rows.extra"',
+      'the column "extra" of the field "rows" of the type "button" is new and already required; declare a "fill-field" step in migrations with field "rows.extra"',
     );
   });
 
@@ -997,7 +997,7 @@ describe('specializationUpdateImpact', () => {
     expect(impact.missingMigrations[0]).toMatchObject({
       code: 'removed-field',
       path: `${BTN_PATH}.fields[0]`,
-      message: expect.stringContaining('declare um passo "remove-field"'),
+      message: expect.stringContaining('declare a "remove-field"'),
     });
     expect(impact.breaking).toEqual(impact.missingMigrations);
     // os passos declarados são informados mesmo quando não cobrem tudo
@@ -1069,7 +1069,7 @@ describe('diffSpecs: papéis (childRoles)', () => {
         typeId: 'card',
         role: 'b',
         message:
-          'o papel "b" do tipo "card" foi removido; declare um passo "rename-role" ou "remove-role" em migrations (formatVersion 12)',
+          'the role "b" of the type "card" was removed; declare a "rename-role" or "remove-role" step in migrations (formatVersion 12)',
       },
     ]);
   });
@@ -1091,7 +1091,7 @@ describe('diffSpecs: papéis (childRoles)', () => {
         path: `${CARD_PATH}.childRoles`,
         typeId: 'card',
         message:
-          'o tipo "card" passou a ter papéis; declare um passo "set-role" em migrations (formatVersion 12)',
+          'the type "card" now has roles; declare a "set-role" step in migrations (formatVersion 12)',
       },
     ]);
   });
@@ -1108,7 +1108,7 @@ describe('diffSpecs: papéis (childRoles)', () => {
         path: `${CARD_PATH}.childRoles[1]`,
         typeId: 'card',
         role: 'b',
-        message: 'o tipo "card" ganhou o papel "b"',
+        message: 'the type "card" gained the role "b"',
       },
     ]);
     expect(

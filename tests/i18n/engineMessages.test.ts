@@ -10,6 +10,7 @@ import { parseSpec, type Spec } from '../../src/model';
 import type { ModelMessage } from '../../src/model/modelMessage';
 import { locale } from '../../src/store/settings';
 import { messageText } from '../../src/ui/modelMessage';
+import { ptBRText } from '../support/modelText';
 
 // MB5 (#1360): the drawing engine warnings (`instantiate`, `layoutScreen`, `expandRepeats`,
 // `screenFromSource` and the `measured` origin) carry `messages` (code + parameters) next to
@@ -472,17 +473,18 @@ describe('drawing engine warnings: messages next to warnings', () => {
     expect(codes.has(code), code).toBe(true);
   });
 
-  it('in pt-BR the text shown is the current one; in en-US there is no Portuguese outside the parameters', () => {
+  it('en-US shows the English text and pt-BR the pt-BR template, filled with the parameters', () => {
     for (const result of ALL) {
       for (const message of result.messages ?? []) {
         locale.value = 'pt-BR';
-        expect(messageText(message), message.code).toBe(message.text);
+        expect(messageText(message), message.code).toBe(ptBRText(message));
+        expect(messageText(message), message.code).not.toBe(message.text);
         locale.value = 'en-US';
         const shown = messageText(message);
+        expect(shown, message.code).toBe(message.text);
         expect(withoutParams(shown, message), `${message.code}: ${shown}`).not.toMatch(
           PORTUGUESE,
         );
-        expect(shown, message.code).not.toBe(message.text);
       }
     }
   });
@@ -502,18 +504,21 @@ describe('screen translation errors: errorMessage next to error', () => {
     ['missing width', () => run({ screen: { h: 400 } }), 'origins.error.widthInvalid'],
     ['missing height', () => run({ screen: { w: 300 } }), 'origins.error.heightInvalid'],
   ])(
-    '%s: has a code, text equal to error and en-US without Portuguese',
+    '%s: has a code, text equal to error and pt-BR from the template',
     (_l, make, code) => {
       const result = make();
       const message = result.errorMessage;
       expect(message?.code).toBe(code);
       expect(result.error).toBe(message?.text);
       locale.value = 'pt-BR';
-      expect(message === undefined ? '' : messageText(message)).toBe(result.error);
+      expect(message === undefined ? '' : messageText(message)).toBe(
+        ptBRText(message as ModelMessage),
+      );
+      expect(message === undefined ? '' : messageText(message)).not.toBe(result.error);
       locale.value = 'en-US';
       const shown = message === undefined ? '' : messageText(message);
+      expect(shown).toBe(result.error);
       expect(withoutParams(shown, message as ModelMessage)).not.toMatch(PORTUGUESE);
-      expect(shown).not.toBe(result.error);
     },
   );
 });
