@@ -27,18 +27,18 @@ describe('rótulo com ícone de ajuda (1.3)', () => {
 });
 
 describe('Segmented nos Detalhes (1.3)', () => {
-  it('as opções não quebram de linha e dividem a largura por igual', () => {
+  it('as opções quebram inteiras (e2e detailsSegmented) e cada linha reparte a largura toda', () => {
     const seg = rule(details, '.props-value > .segmented');
-    expect(seg).not.toMatch(/flex-wrap:\s*wrap/);
+    expect(seg).toMatch(/flex-wrap:\s*wrap/);
+    expect(seg).toMatch(/width:\s*100%/);
     const cell = rule(details, '.props-value > .segmented .segmented-cell');
-    expect(cell).toMatch(/flex:\s*1\s+1\s+0/);
-    expect(cell).toMatch(/min-width:\s*0/);
+    expect(cell).toMatch(/flex:\s*1\s+1\s+auto/);
   });
 
-  it('o texto da opção que não cabe termina em reticências', () => {
+  it('o texto da opção não é cortado', () => {
     const text = rule(details, '.props-value > .segmented .segmented-text');
-    expect(text).toMatch(/text-overflow:\s*ellipsis/);
-    expect(text).toMatch(/overflow:\s*hidden/);
+    expect(text).not.toMatch(/text-overflow/);
+    expect(text).toMatch(/white-space:\s*nowrap/);
   });
 });
 

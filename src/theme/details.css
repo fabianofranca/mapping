@@ -198,8 +198,9 @@
 
 .props-value > .segmented {
   align-self: flex-start;
-  /* Coluna estreita: as opções dividem a largura por igual, sem quebrar (nenhuma fica sozinha). */
-  flex-wrap: nowrap;
+  /* Coluna estreita: as opções quebram de linha, cada uma inteira e clicável (sem corte), e cada
+     linha reparte a largura toda (nenhuma opção fica sozinha e pequena). */
+  flex-wrap: wrap;
   gap: var(--space-1);
   min-width: 0;
   width: 100%;
@@ -215,14 +216,11 @@
 }
 
 .props-value > .segmented .segmented-cell {
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .props-value > .segmented .segmented-item:not(.segmented-item-icon) {
-  flex: 1;
-  min-width: 0;
-  padding: 0 var(--space-1);
+  width: 100%;
 }
 
 .props-value > .segmented-invalid .segmented-item {
@@ -230,9 +228,6 @@
 }
 
 .props-value > .segmented .segmented-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
