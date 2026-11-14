@@ -242,7 +242,7 @@ describe('implementar-fila: coordinator fine-tuning (FC2)', () => {
     expect(skill).toContain("painel.py session <folder> '#n' <id>");
     expect(skill).toMatch(/<código> arquivada/);
     expect(skill).toMatch(/not archived/i);
-    expect(skill).toMatch(/arquiva a `anterior`/);
+    expect(skill).toMatch(/archives the `anterior`/);
     expect(skill).toMatch(/does not archive itself/);
   });
 
@@ -264,7 +264,7 @@ describe('implementar-fila: coordinator fine-tuning (FC2)', () => {
 
   it('detalhar-backlog archives each detailing or grouping subagent (decision 9)', () => {
     expect(detalhar).toContain('archive_session');
-    expect(detalhar).toMatch(/arquiva/i);
+    expect(detalhar).toMatch(/archiv/i);
     expect(detalhar).toMatch(/final summary/);
   });
 
@@ -411,9 +411,11 @@ describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
     expect(waiting).toMatch(/left the merge/);
     expect(waiting).toMatch(/restarts the chain/);
     expect(waiting).toMatch(/Reading CI/);
-    expect(fallback).toMatch(/`send_later` is per PR that waits for the coordinator/);
+    expect(fallback).toMatch(/per-PR `send_later` that waits for the coordinator/);
     expect(fallback).toMatch(/No `send_later` per child/);
-    expect(fallback).toMatch(/Worst case of detection:[^\n]*PR that waits for the coordinator/);
+    expect(fallback).toMatch(
+      /Worst case of detection:[^\n]*PR that waits for the coordinator/,
+    );
     expect(fallback).toMatch(/does not use `subscribe_pr_activity`/);
     const economy = section(skill, '## Context economy');
     const item7 = economy.split('\n').find((l) => l.startsWith('7. '));
@@ -452,7 +454,11 @@ describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
   });
 
   it('"For the phase session": the ceiling always goes up and the phase opens the ceiling `bug` (#1802, decisions 1 to 6)', () => {
-    const ceiling = between(item6, '   - **Ceiling of `dist/index.html`:**', '**Transition:**');
+    const ceiling = between(
+      item6,
+      '   - **Ceiling of `dist/index.html`:**',
+      '**Transition:**',
+    );
     expect(ceiling).not.toMatch(/calls the owner/);
     expect(ceiling).not.toContain('ask the owner for authorization');
     expect(ceiling).toMatch(/always raises/);
@@ -465,7 +471,9 @@ describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
     expect(ceiling).toContain('Teto do `dist/index.html` subiu');
     expect(ceiling).toContain('acima dos limites, `bug` #<n> para o dono revisar');
     // the `bug` number only exists after it is opened: the 1st commit carries the line without it, and the 2nd completes it before the push
-    expect(ceiling).toMatch(/the commit ends it in "; acima dos limites, `bug` para o dono revisar"/);
+    expect(ceiling).toMatch(
+      /the commit ends it in "; acima dos limites, `bug` para o dono revisar"/,
+    );
     expect(ceiling).toMatch(/second commit completes the line[^\n]*only then the push/);
     expect(ceiling).toMatch(/no `PushNotification`|the owner looks later/);
     expect(ceiling).toContain('#1493');
@@ -527,60 +535,62 @@ describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
   it('the coordinator does not rerun the CI; it calls the owner (decision 4)', () => {
     expect(skill).not.toMatch(/reruns once if it died before testing/);
     expect(redCi).toMatch(/does not rerun the CI/);
-    expect(ciVermelho).toContain('ci-rerun.yml');
-    expect(ciVermelho).toContain('CI travado');
-    expect(ciVermelho).toContain('esperando dono');
-    expect(ciVermelho).toContain('PushNotification');
+    expect(redCi).toContain('ci-rerun.yml');
+    expect(redCi).toContain('CI travado');
+    expect(redCi).toContain('esperando dono');
+    expect(redCi).toContain('PushNotification');
   });
 
   it('"Red CI on the epic PR": ceiling rule, script and roadmap (decisions 6 to 9)', () => {
-    expect(ciVermelho).toContain('Tamanho do dist/index.html');
-    expect(ciVermelho).toMatch(/16 KiB/);
-    expect(ciVermelho).toContain('up to 14 KiB (14,336 bytes)');
-    expect(ciVermelho).toContain('excess above 14 KiB');
-    expect(ciVermelho).toMatch(/32 KiB/);
-    expect(ciVermelho).toMatch(/64 KiB/);
-    expect(ciVermelho).toMatch(/disposable worktree/);
-    expect(ciVermelho).toContain('npm ci && npm run build');
-    expect(ciVermelho).toContain('node scripts/ci/distBudget.mjs raise');
-    expect(ciVermelho).toContain('scripts/ci/dist-budget.json');
-    expect(ciVermelho).not.toContain('--ci .github/workflows/ci.yml');
+    expect(redCi).toContain('Tamanho do dist/index.html');
+    expect(redCi).toMatch(/16 KiB/);
+    expect(redCi).toContain('up to 14 KiB (14,336 bytes)');
+    expect(redCi).toContain('excess above 14 KiB');
+    expect(redCi).toMatch(/32 KiB/);
+    expect(redCi).toMatch(/64 KiB/);
+    expect(redCi).toMatch(/disposable worktree/);
+    expect(redCi).toContain('npm ci && npm run build');
+    expect(redCi).toContain('node scripts/ci/distBudget.mjs raise');
+    expect(redCi).toContain('scripts/ci/dist-budget.json');
+    expect(redCi).not.toContain('--ci .github/workflows/ci.yml');
     expect(redCi).not.toMatch(/INDEX_HTML_MAX_BYTES[^\n]*of `ci\.yml`/);
     expect(redCi).toMatch(/keeping `main`'s `ci\.yml`/);
-    expect(ciVermelho).toMatch(/`history`/);
-    expect(ciVermelho).toContain('changelog/<name>.md');
-    expect(ciVermelho).toContain('Orçamento do dist/index.html');
-    expect(ciVermelho).toContain('Teto na última revisão do dono');
-    expect(ciVermelho).toMatch(/first raise/);
-    expect(ciVermelho).toMatch(/including the phases'|raise done by the phase/);
+    expect(redCi).toMatch(/`history`/);
+    expect(redCi).toContain('changelog/<name>.md');
+    expect(redCi).toContain('Orçamento do dist/index.html');
+    expect(redCi).toContain('Teto na última revisão do dono');
+    expect(redCi).toMatch(/first raise/);
+    expect(redCi).toMatch(/including the phases'|raise done by the phase/);
   });
 
   it('"Red CI on the epic PR": the ceiling always goes up, the `bug` comes from the raise subagent (#1802, decisions 2, 3 and 6)', () => {
-    const teto = between(
-      ciVermelho,
-      '- **Teto do `dist/index.html`',
-      '\n\n**CI preso na fila',
+    const ceiling = between(
+      redCi,
+      '- **`dist/index.html` ceiling',
+      '\n\n**CI stuck in the queue',
     );
-    expect(teto).toMatch(/sobe sozinho, sem esperar o dono/);
-    expect(teto).not.toMatch(/chama o dono/);
-    expect(teto).not.toContain('Fora disso, chame o dono');
-    expect(teto).toMatch(/outra falha/);
-    expect(teto).toMatch(/sempre sobe/);
-    expect(teto).toContain('"bug: …"');
-    expect(teto).toMatch(/`bug` do teto/);
-    expect(teto).toMatch(/subagente da subida/);
-    expect(teto).toContain('item 6 da "Para a sessão da fase"');
-    // o formato do `bug` fica no FLOW.md e não se copia para o skill
-    expect(teto).not.toContain('severity: low');
-    expect(teto).not.toContain('in:title');
-    expect(teto).toContain('sem `PushNotification`');
-    expect(teto).toContain('<código>: teto +<K> KiB acima dos limites, bug #<n>');
-    expect(teto).toMatch(/#1493[^\n]*cita o `bug`|cita o `bug`[^\n]*#1493/);
-    expect(teto).toContain('Teto do `dist/index.html` subiu');
-    expect(teto).toMatch(/segundo commit[^\n]*antes do push/);
-    expect(teto).toContain('up to 14 KiB (14,336 bytes)');
-    expect(teto).toMatch(/32 KiB/);
-    expect(teto).toMatch(/64 KiB/);
+    expect(ceiling).toMatch(/goes up by itself, without waiting for the owner/);
+    expect(ceiling).not.toMatch(/calls the owner/);
+    expect(ceiling).not.toContain('Otherwise, call the owner');
+    expect(ceiling).toMatch(/a failure other than the size/);
+    expect(ceiling).toMatch(/always goes up/);
+    expect(ceiling).toContain('"bug: …"');
+    expect(ceiling).toMatch(/ceiling `bug`/);
+    expect(ceiling).toMatch(/raise subagent/);
+    expect(ceiling).toContain('item 6 of "For the phase session"');
+    // the format of the `bug` stays in FLOW.md and is not copied into the skill
+    expect(ceiling).not.toContain('severity: low');
+    expect(ceiling).not.toContain('in:title');
+    expect(ceiling).toContain('without `PushNotification`');
+    expect(ceiling).toContain('<code>: teto +<K> KiB acima dos limites, bug #<n>');
+    expect(ceiling).toMatch(
+      /#1493[^\n]*cites the ceiling `bug`|cites the ceiling `bug`[^\n]*#1493/,
+    );
+    expect(ceiling).toContain('Teto do `dist/index.html` subiu');
+    expect(ceiling).toMatch(/second commit[^\n]*before the push/);
+    expect(ceiling).toContain('up to 14 KiB (14,336 bytes)');
+    expect(ceiling).toMatch(/32 KiB/);
+    expect(ceiling).toMatch(/64 KiB/);
   });
 
   it('detalhar-backlog: "1. Candidates" leaves out the dist ceiling `bug` (#1802, decision 10)', () => {
@@ -614,7 +624,7 @@ describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
     ]) {
       expect(effort).toContain(trigger);
     }
-    expect(effort).toMatch(/whatever the size/);
+    expect(effort).toMatch(/whatever its size/);
     expect(effort).toMatch(/trigger/);
     expect(effort).toMatch(/reclassif/);
   });
@@ -666,100 +676,103 @@ describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
   });
 });
 
-// Etapa #1669 (QF1): execução do CI presa em `queued` sem jobs; o texto da fase e da fila.
-describe('CI preso na fila (#1669)', () => {
+// Stage #1669 (QF1): CI run stuck in `queued` with no jobs; the text of the phase and of the queue.
+describe('CI stuck in the queue (#1669)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
-  const fase = section(flow, '## Para a sessão da fase');
-  const item6 = between(fase, '\n6. ', '\n7. ');
-  const item7 = between(fase, '\n7. ', '\n8. ');
-  const presoSub = () => between(item6, '   - **Execução presa na fila:**', '\n   - **');
-  const porEtapa = section(skill, '## 3. Por etapa');
-  // O parágrafo é a abertura e os sub-itens, até o fim da seção "3. Por etapa" (o prettier separa a
-  // abertura da lista por uma linha em branco).
-  const paragrafoCi = () => {
-    const marca = '**CI preso na fila (PR de fase ou de épico)';
-    const at = porEtapa.indexOf(marca);
-    if (at < 0) throw new Error(`âncora inicial não achada: ${marca}`);
-    return porEtapa.slice(at);
+  const phase = section(flow, '## For the phase session');
+  const item6 = between(phase, '\n6. ', '\n7. ');
+  const item7 = between(phase, '\n7. ', '\n8. ');
+  const stuckSub = () => between(item6, '   - **Run stuck in the queue:**', '\n   - **');
+  const perStage = section(skill, '## 3. Per stage');
+  // The paragraph is the opening and the sub-items, up to the end of the section "3. Per stage"
+  // (prettier separates the opening from the list by a blank line).
+  const stuckParagraph = () => {
+    const mark = '**CI stuck in the queue (phase or epic PR)';
+    const at = perStage.indexOf(mark);
+    if (at < 0) throw new Error(`starting anchor not found: ${mark}`);
+    return perStage.slice(at);
   };
 
-  it('item 6 da fase: sub-item depois do Runner abandonado, com o script, a lista do commit e o aviso (decisões 1 a 3)', () => {
-    const preso = presoSub();
-    expect(item6.indexOf('**Runner abandonado:**')).toBeLessThan(
-      item6.indexOf('**Execução presa na fila:**'),
+  it('item 6 of the phase: sub-item after the Abandoned runner, with the script, the commit list and the notice (decisions 1 to 3)', () => {
+    const stuck = stuckSub();
+    expect(item6.indexOf('**Abandoned runner:**')).toBeLessThan(
+      item6.indexOf('**Run stuck in the queue:**'),
     );
-    expect(preso).toContain('node scripts/ci/ciRerun.mjs queued');
-    expect(preso).toContain('actions/workflows/ci.yml/runs?head_sha=');
-    expect(preso).toContain('16 min');
-    expect(preso).toContain('CI preso na fila: <link da execução>');
-    expect(preso).toMatch(/não fecha, não reabre, não reexecuta e não faz commit vazio/);
-    expect(preso).toMatch(/uma vez por `run`/);
-    expect(preso).toMatch(/não pergunta nada ao dono/);
+    expect(stuck).toContain('node scripts/ci/ciRerun.mjs queued');
+    expect(stuck).toContain('actions/workflows/ci.yml/runs?head_sha=');
+    expect(stuck).toContain('16 min');
+    expect(stuck).toContain('CI preso na fila: <link da execução>');
+    expect(stuck).toMatch(
+      /does not close, does not reopen, does not rerun and does not make an empty commit/,
+    );
+    expect(stuck).toMatch(/once per `run`/);
+    expect(stuck).toMatch(/does not ask the owner anything/);
   });
 
-  it('item 6 da fase: fechar e reabrir é do coordenador e a fase não trata closed/reopened como fim (decisões 5, 6 e 8)', () => {
-    const preso = presoSub();
-    expect(preso).toMatch(/recomece a Espera do CI/);
-    expect(preso).toContain('`closed`');
-    expect(preso).toContain('`reopened`');
-    expect(preso).toMatch(/não como fim do PR/);
+  it("item 6 of the phase: closing and reopening is the coordinator's and the phase does not treat closed/reopened as the end (decisions 5, 6 and 8)", () => {
+    const stuck = stuckSub();
+    expect(stuck).toMatch(/restart the CI wait/);
+    expect(stuck).toContain('`closed`');
+    expect(stuck).toContain('`reopened`');
+    expect(stuck).toMatch(/not as the end of the PR/);
   });
 
-  it('o item 7 cita "CI preso na fila" entre as mensagens de espera', () => {
+  it('item 7 cites "CI preso na fila" among the waiting messages', () => {
     expect(item7).toContain('CI preso na fila');
   });
 
-  it('"CI e preview" proíbe o commit vazio e só admite o fechar e reabrir na execução presa na fila (decisão 9)', () => {
-    const ci = between(flow, 'O CI roda só nos PRs', '\n\n');
-    expect(ci).toMatch(/nada de commit vazio/);
-    expect(ci).toMatch(/execução presa na fila/);
-    expect(ci).toMatch(/"sim" do dono/);
+  it('"CI and preview" forbids the empty commit and only admits closing and reopening for a run stuck in the queue (decision 9)', () => {
+    const ci = between(flow, 'CI runs only on PRs', '\n\n');
+    expect(ci).toMatch(/no empty commits/);
+    expect(ci).toMatch(/run is stuck in the queue/);
+    expect(ci).toMatch(/owner's "sim"/);
     expect(ci).toContain('item 6');
   });
 
-  it('skill: parágrafo CI preso na fila com a pergunta, as opções e os efeitos (decisões 3 a 7)', () => {
-    const paragrafo = paragrafoCi();
-    expect(paragrafo).toContain(
+  it('skill: CI stuck in the queue paragraph with the question, the options and the effects (decisions 3 to 7)', () => {
+    const paragraph = stuckParagraph();
+    expect(paragraph).toContain(
       'Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
     );
-    expect(paragrafo).toContain('Fechar e reabrir (Recomendado)');
-    expect(paragrafo).toContain('Esperar');
-    expect(paragrafo).toContain('update_pull_request');
-    expect(paragrafo).toContain('reaberto=true');
-    expect(paragrafo).toContain('instabilidade do GitHub');
-    expect(paragrafo).toContain('esperando dono');
-    expect(paragrafo).toContain('PushNotification');
-    expect(paragrafo).toContain('node scripts/ci/ciRerun.mjs queued');
-    expect(paragrafo).toMatch(/16 min/);
-    expect(paragrafo).toMatch(/[Ss]ó vale a resposta do dono no chat da fila/);
+    expect(paragraph).toContain('Fechar e reabrir (Recomendado)');
+    expect(paragraph).toContain('Esperar');
+    expect(paragraph).toContain('update_pull_request');
+    expect(paragraph).toContain('reaberto=true');
+    expect(paragraph).toContain('instabilidade do GitHub');
+    expect(paragraph).toContain('esperando dono');
+    expect(paragraph).toContain('PushNotification');
+    expect(paragraph).toContain('node scripts/ci/ciRerun.mjs queued');
+    expect(paragraph).toMatch(/16 min/);
+    expect(paragraph).toMatch(/[Oo]nly the owner's answer in the queue chat counts/);
   });
 
-  it('skill: o parágrafo vem depois do CI vermelho no PR do épico e antes do item que o remete', () => {
-    expect(skill.indexOf('**CI vermelho no PR do épico**')).toBeLessThan(
-      skill.indexOf('**CI preso na fila (PR de fase ou de épico)'),
+  it('skill: the paragraph comes after the red CI on the epic PR and before the item that refers to it', () => {
+    expect(skill.indexOf('**Red CI on the epic PR**')).toBeLessThan(
+      skill.indexOf('**CI stuck in the queue (phase or epic PR)'),
     );
   });
 
-  it('skill: "O coordenador não roda o CI de novo" continua e remete ao parágrafo novo', () => {
-    const item = between(skill, '- **O coordenador não roda o CI de novo.**', '\n- **');
+  it('skill: "The coordinator does not rerun the CI" stays and refers to the new paragraph', () => {
+    const item = between(skill, '- **The coordinator does not rerun the CI.**', '\n- **');
     expect(item).toContain('CI travado');
     expect(item).toMatch(
-      /salvo a execução presa na fila \(parágrafo \*\*CI preso na fila\*\*\)/,
+      /except for a run stuck in the queue \(paragraph \*\*CI stuck in the queue\*\*\)/,
     );
-    expect(item).toMatch(/runner abandonado/);
+    expect(item).toMatch(/abandoned runner/);
   });
 
-  it('skill: "Filha que espera o coordenador", o PR que espera e a conferência de hora em hora citam o caso', () => {
-    const filha = between(skill, '**Filha que espera o coordenador**', '\n\n');
-    expect(filha).toContain('CI preso na fila');
-    const espera = between(skill, '**PR que espera o coordenador:**', '\n\n');
-    expect(espera).toContain('CI preso na fila');
-        expect(reserva).toContain('CI preso na fila');
+  it('skill: "Child that waits for the coordinator", the PR that waits and the hourly check cite the case', () => {
+    const child = between(skill, '**Child that waits for the coordinator**', '\n\n');
+    expect(child).toContain('CI preso na fila');
+    const waiting = between(skill, '**PR that waits for the coordinator:**', '\n\n');
+    expect(waiting).toContain('CI stuck in the queue');
+    const fallback = between(skill, '**Fallback checks:**', '**Red CI');
+    expect(fallback).toContain('CI stuck in the queue');
   });
 
-  it('o skill ficou pequeno: o parágrafo novo e as remissões somam menos de 60 linhas (decisão 11)', () => {
-    const paragrafo = paragrafoCi();
-    expect(paragrafo.split('\n').length).toBeLessThan(60);
+  it('the skill stayed small: the new paragraph and the references add up to less than 60 lines (decision 11)', () => {
+    const paragraph = stuckParagraph();
+    expect(paragraph.split('\n').length).toBeLessThan(60);
   });
 });

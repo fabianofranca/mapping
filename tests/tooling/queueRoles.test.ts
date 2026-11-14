@@ -335,7 +335,7 @@ describe('implementar-fila: switch at 35% and one active session per role (decis
         switching.indexOf('**In the old session:**'),
         switching.indexOf('**In the new session**'),
       ),
-    ).toMatch(/role <pasta> coordenador <new id>/);
+    ).toMatch(/role <folder> coordenador <new id>/);
     expect(switching).toContain('`previous`');
     expect(switching).toContain('https://claude.ai/code/<new id>');
     expect(newSession).toMatch(/once more/);
