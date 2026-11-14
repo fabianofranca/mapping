@@ -42,4 +42,13 @@ describe('R17.14 e o text-field da Material 3', () => {
     expect(row).toBeDefined();
     expect(row).toMatch(/convert su-light\.png -crop \S+ \+repage -fuzz 8%/);
   });
+
+  it('R17.22 e R17.31 informam vazio o que o preview do componente completaria (achado 3.2)', () => {
+    const text = readFileSync(join(ROOT, 'docs/TESTING.md'), 'utf8');
+    const row = (id: string): string =>
+      text.split('\n').find((line) => line.startsWith(`| ${id} |`)) ?? '';
+    expect(row('R17.22')).toContain('"subtitle":"","supportingText":"","media":""');
+    expect(row('R17.31')).toContain('"actionLabel":""');
+    expect(row('R17.31')).toContain('"icon":""');
+  });
 });

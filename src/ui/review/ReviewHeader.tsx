@@ -69,6 +69,7 @@ export type HeaderVariant =
   | 'markingCreate'
   | 'markingRemove'
   | 'image'
+  | 'container'
   | 'imageCreate'
   | 'imageRemove'
   | 'proposal'
@@ -79,6 +80,7 @@ export type HeaderVariant =
 export function headerVariant(
   target: ReviewTarget,
   whole: Change | null | undefined,
+  changes: readonly Change[] = [],
 ): HeaderVariant {
   if (target.level === 'proposal') return 'proposal';
   if (target.level === 'project') return 'project';
@@ -87,8 +89,14 @@ export function headerVariant(
   const base = target.level === 'image' ? 'image' : 'marking';
   if (whole?.kind === 'create') return `${base}Create`;
   if (whole?.kind === 'remove') return `${base}Remove`;
+  // "Imagem alterada" só quando a proposta troca o arquivo ou as dimensões do container.
+  if (base === 'image' && !changes.some(replacesImage)) return 'container';
   return base;
 }
+
+/** A mudança troca a imagem do container (arquivo, ou tamanho do que não tem arquivo). */
+const replacesImage = (c: Change): boolean =>
+  c.entity === 'image' && (c.field === 'file' || c.field === 'size');
 
 /** Variante dos rótulos Aceitar/Rejeitar (criada e alterada decidem "a marcação"). */
 function actionVariant(
@@ -544,7 +552,12 @@ export function ReviewHeader({ target, whole = null }: ReviewHeaderProps) {
   const value: DecisionValue =
     state === 'accepted' || state === 'rejected' ? state : null;
   const locked = ids.some((id) => d.situation.value.get(id)?.locked === true);
-  const variant = headerVariant(target, whole);
+  const inLevel = new Set(ids);
+  const variant = headerVariant(
+    target,
+    whole,
+    names.proposal.changes.filter((c) => inLevel.has(c.id)),
+  );
   const action = actionVariant(variant);
   const name = targetName(names, target);
   const disabled = !open || (summary != null && summary.applied === summary.total);

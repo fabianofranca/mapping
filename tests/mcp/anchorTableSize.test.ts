@@ -119,3 +119,55 @@ describe('create_marking sem rect: o tamanho inclui as linhas do próprio lote',
     expect(again.steps[2]!.description).toContain('nada muda');
   }, 30_000);
 });
+
+// CL1, achado 3.2 (#1890): o servidor completa o que o lote não informa com o `preview` do
+// componente (como a Paleta da app; documentado em `create_marking`). O guia (R17.22 e R17.31)
+// informa vazio o que o passo não quer, e então nada além do pedido fica na anotação.
+describe('create_marking: o preview só entra no que o lote não informa', () => {
+  const valuesOf = (r: BatchResult, alias: string): Record<string, unknown> => {
+    const id = (r.aliases.get(alias) as { id: string }).id;
+    const a = r.project.annotations.find((x) => x.markingId === id)!;
+    return (a.values ?? {}) as Record<string, unknown>;
+  };
+  const make = (
+    alias: string,
+    type: string,
+    values: Record<string, unknown>,
+  ): Operation =>
+    ({
+      op: 'create_marking',
+      as: alias,
+      container: IMAGE,
+      rect: { x: 10, y: 10, width: 344, height: 48 },
+      annotation: { type: `material3-compose/${type}`, values },
+    }) as Operation;
+
+  it('o preview completa o campo que o lote não informa (decisão em aberto: bug do dono)', async () => {
+    const r = await runBatch(loaded, [make('$sn', 'snackbar', { message: 'Oi' })], io);
+    expect(r.errors).toEqual([]);
+    expect(valuesOf(r, '$sn').actionLabel).toBe('Desfazer');
+  }, 30_000);
+
+  it('com o campo informado vazio (como no R17.31), nada além do pedido entra', async () => {
+    const r = await runBatch(
+      loaded,
+      [
+        make('$sn', 'snackbar', { message: 'Oi', actionLabel: '' }),
+        make('$cd', 'card', {
+          title: 'Título',
+          style: 'elevated',
+          subtitle: '',
+          supportingText: '',
+          media: '',
+        }),
+        make('$ad', 'alert-dialog', { title: 'T', text: 'x', icon: '' }),
+      ],
+      io,
+    );
+    expect(r.errors).toEqual([]);
+    expect(valuesOf(r, '$sn').actionLabel ?? '').toBe('');
+    expect(valuesOf(r, '$cd').media ?? '').toBe('');
+    expect(valuesOf(r, '$cd').subtitle ?? '').toBe('');
+    expect(valuesOf(r, '$ad').icon ?? '').toBe('');
+  }, 30_000);
+});
