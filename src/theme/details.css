@@ -165,10 +165,13 @@
   gap: var(--space-2);
 }
 
-/* PropertyGrid: rótulo (92px) | controle */
+/* PropertyGrid: rótulo (92px + a largura do ícone de ajuda) | controle */
 .props {
   display: grid;
-  grid-template-columns: var(--size-label-col) minmax(0, 1fr);
+  grid-template-columns: calc(var(--size-label-col) + var(--control-height-sm)) minmax(
+      0,
+      1fr
+    );
   gap: var(--space-1) var(--space-2);
   align-items: start;
 }
@@ -195,10 +198,11 @@
 
 .props-value > .segmented {
   align-self: flex-start;
-  /* Coluna estreita: as opções quebram de linha, cada uma inteira e clicável (sem corte). */
-  flex-wrap: wrap;
+  /* Coluna estreita: as opções dividem a largura por igual, sem quebrar (nenhuma fica sozinha). */
+  flex-wrap: nowrap;
   gap: var(--space-1);
   min-width: 0;
+  width: 100%;
   max-width: 100%;
   border: 0;
   border-radius: 0;
@@ -210,11 +214,25 @@
   border-radius: var(--control-radius);
 }
 
+.props-value > .segmented .segmented-cell {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.props-value > .segmented .segmented-item:not(.segmented-item-icon) {
+  flex: 1;
+  min-width: 0;
+  padding: 0 var(--space-1);
+}
+
 .props-value > .segmented-invalid .segmented-item {
   border-color: var(--color-danger);
 }
 
 .props-value > .segmented .segmented-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
