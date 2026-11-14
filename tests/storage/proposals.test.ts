@@ -273,7 +273,7 @@ describe('loadProposals', () => {
     expect(loaded.proposals[0]?.stamp).toMatch(/^\d+:\d+$/);
     expect(loaded.problems.map((p) => p.id).sort()).toEqual(['P2', 'quebrada']);
     expect(loaded.problems.find((p) => p.id === 'P2')?.errors[0]).toContain(
-      'o nome da pasta',
+      'the folder name',
     );
     expect(loaded.problemTexts?.get('quebrada')).toBe('{ não é json');
   });
