@@ -8,13 +8,13 @@ import type { JSX } from 'preact';
 // Enter/Space on the button before the `click`.
 
 interface ClickSource {
-  /** Props to spread on the button: they record the keyboard and forget it on leaving or on mouse. */
+  /** Props to spread on the button: they record the keyboard and forget it on leave or mouse. */
   readonly handlers: {
     readonly onKeyDown: JSX.KeyboardEventHandler<HTMLElement>;
     readonly onPointerDown: () => void;
     readonly onBlur: () => void;
   };
-  /** Call in `onClick`: says whether the click came from the keyboard and resets the mark (one click). */
+  /** Call in `onClick`: says if the click came from the keyboard and resets the mark (one click). */
   readonly takeKeyboard: () => boolean;
 }
 

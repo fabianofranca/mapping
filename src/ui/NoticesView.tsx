@@ -32,7 +32,7 @@ function valueText(value: JsonValue | undefined): string {
   return JSON.stringify(value);
 }
 
-/** The notice's place: "Alert" (type), "Alert › legacyStyle" (field), "Alert › events › handler". */
+/** The notice's place: "Alert" (type), "Alert › legacyStyle" (field), "Alert › events › x". */
 function placeText(project: Project, usage: NoticeUsage): string {
   const type = findSpecType(project, {
     specId: usage.specId,
@@ -43,7 +43,7 @@ function placeText(project: Project, usage: NoticeUsage): string {
     .join(' › ');
 }
 
-/** The group's header: badge, place, scope, message, `since` and how many annotations it affects. */
+/** The group's header: badge, place, scope, message, `since` and affected annotation count. */
 function GroupHead({
   project,
   group,

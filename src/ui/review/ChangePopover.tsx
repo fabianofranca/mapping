@@ -44,11 +44,11 @@ import { useDecide, useReviewNames } from './useReview';
 /** What a marker represents: a change, or a field of the created or removed entity. */
 export interface MarkSubject {
   readonly change: Change;
-    /** Field shown: the change's, a field of the entity (part) or `''` (the entity). */
+  /** Field shown: the change's, a field of the entity (part) or `''` (the entity). */
   readonly field: string;
-    /** Field of a created or removed entity: no decision of its own. */
+  /** Field of a created or removed entity: no decision of its own. */
   readonly part: boolean;
-    /** In the part: the field's value in the entity shown, in the form of `from`/`to`. */
+  /** In the part: the field's value in the entity shown, in the form of `from`/`to`. */
   readonly value?: JsonValue;
 }
 
