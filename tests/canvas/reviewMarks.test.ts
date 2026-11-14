@@ -281,7 +281,8 @@ describe('reviewMarks', () => {
     const preview = previewProject(base, proposal).project;
     const shown = proposedDisplay(preview, proposal);
     expect(shown.containers.find((i) => i.id === 'I3')?.file).toBe(
-      'proposals/P1/images/new.webp',
+      // pt-BR kept: shared fixture data (proposalFixtures file name) asserted by tests/model
+      'proposals/P1/images/nova.webp',
     );
     // The other images do not change (same object).
     expect(shown.containers.find((i) => i.id === 'I1')).toBe(
