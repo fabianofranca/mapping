@@ -77,6 +77,7 @@ interface Fixture {
  * `formatVersion` 99 and `variants` in `code`, which the app does not know.
  */
 function fixture(layout: Layout): Fixture {
+  // pt-BR kept: ids and field keys of the shipped example `modelo-de-dados` (shared example data asserted by tests/examples)
   const valid = loadExample('modelo-de-dados');
   // The same specialization with another id: two types `classe`/`endpoint` in distinct specIds.
   const future: Spec = { ...valid, id: 'future', name: 'Future', version: 3 };

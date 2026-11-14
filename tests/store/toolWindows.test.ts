@@ -316,20 +316,23 @@ describe('malformed stored layout (#943)', () => {
     ['object', { tree: true }],
   ];
 
-  it.each(malformed)('open %s falls back to the default, without exception', async (_name, open) => {
-    localStorage.setItem('mapping.toolWindows', JSON.stringify({ open }));
-    vi.resetModules();
-    try {
-      const fresh = await import('../../src/store/toolWindows');
-      expect(fresh.isToolWindowOpen('tree')).toBe(true);
-      expect(fresh.isToolWindowOpen('layers')).toBe(true);
-      expect(fresh.isToolWindowOpen('details')).toBe(true);
-      expect(fresh.isToolWindowOpen('list')).toBe(false);
-    } finally {
-      localStorage.removeItem('mapping.toolWindows');
+  it.each(malformed)(
+    'open %s falls back to the default, without exception',
+    async (_name, open) => {
+      localStorage.setItem('mapping.toolWindows', JSON.stringify({ open }));
       vi.resetModules();
-    }
-  });
+      try {
+        const fresh = await import('../../src/store/toolWindows');
+        expect(fresh.isToolWindowOpen('tree')).toBe(true);
+        expect(fresh.isToolWindowOpen('layers')).toBe(true);
+        expect(fresh.isToolWindowOpen('details')).toBe(true);
+        expect(fresh.isToolWindowOpen('list')).toBe(false);
+      } finally {
+        localStorage.removeItem('mapping.toolWindows');
+        vi.resetModules();
+      }
+    },
+  );
 
   it('open with items that are not text ignores only those items', async () => {
     localStorage.setItem(
