@@ -790,6 +790,35 @@ function instantiateWithSlots(
   return { instantiated, plan };
 }
 
+/** What the assignment says about the slots of a drawing (empty with `screen` and without a slot). */
+type SlotFacts = Pick<
+  ComponentDrawing,
+  'slots' | 'slotOf' | 'inactiveFields' | 'slotIssues'
+>;
+
+const NO_FACTS: SlotFacts = {
+  slots: NO_SLOTS,
+  slotOf: NO_SLOT_OF,
+  inactiveFields: NO_FIELDS,
+  slotIssues: NO_ISSUES,
+};
+
+function slotFacts(
+  input: DrawInput,
+  plan: SlotPlan | undefined,
+  root: FrameNode,
+  space: UnitSpace,
+): SlotFacts {
+  if (plan === undefined) return NO_FACTS;
+  const { mc, kids, slotDefs } = input;
+  return {
+    slots: drawnSlots(mc.component, root, space, plan.assignment),
+    slotOf: new Map(kids.map((k) => [k.id, plan.assignment.slotOf.get(k.id) ?? null])),
+    inactiveFields: inactiveFieldsOf(mc.component, plan.assignment),
+    slotIssues: slotIssuesOf(mc, kids, slotDefs, plan.assignment),
+  };
+}
+
 function draw(input: DrawInput): Drawn {
   const { mc, markingId, containerId, rect, valueWarnings, received } = input;
   const { measure, mode, provided, density, direction, anchor } = input;
@@ -813,21 +842,14 @@ function draw(input: DrawInput): Drawn {
     ),
   );
   const { messages, provides } = instantiated;
-  const slots =
-    plan === undefined
-      ? NO_SLOTS
-      : drawnSlots(mc.component, instantiated.root, space, plan.assignment);
-  const slotOf =
-    plan === undefined
-      ? NO_SLOT_OF
-      : new Map(input.kids.map((k) => [k.id, plan.assignment.slotOf.get(k.id) ?? null]));
+  const facts = slotFacts(input, plan, instantiated.root, space);
   // With `screen` the drawing may go past the marking's rectangle: there is no "does not fit"
   // pending item.
   const found =
     screen === undefined
       ? overflowsOf(
           instantiated,
-          slots,
+          facts.slots,
           new Map(input.kids.map((k) => [k.id, k.rect])),
           space.density,
         )
@@ -841,14 +863,7 @@ function draw(input: DrawInput): Drawn {
     warnings: [...messages, ...valueWarnings],
     overflow: Object.keys(found).length > 0,
     shortfalls: found,
-    slots,
-    slotOf,
-    inactiveFields:
-      plan === undefined ? NO_FIELDS : inactiveFieldsOf(mc.component, plan.assignment),
-    slotIssues:
-      plan === undefined
-        ? NO_ISSUES
-        : slotIssuesOf(mc, input.kids, input.slotDefs, plan.assignment),
+    ...facts,
     ...placement(screen, rect, received),
     ...(anchor === undefined ? {} : { anchor }),
   };

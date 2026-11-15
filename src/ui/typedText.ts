@@ -90,6 +90,16 @@ export function ownerTypeNames(p: Project, a: Pick<Annotation, 'type'>): string 
     .join(t('typed.ownersJoin'));
 }
 
+/** The values of the texts of `slot-not-accepted` and `slot-full`: the slot, the owner's type, the child's type and the max. */
+function slotParams(p: Project, a: Annotation, issue: AnnotationIssue) {
+  return {
+    slot: issue.slot?.name ?? '',
+    owner: issue.owner ?? '',
+    type: typeOfAnnotation(p, a)?.type.name ?? '',
+    max: issue.max ?? 0,
+  };
+}
+
 /** Only the reason for the pending item (below the field itself, whose name is already beside it). */
 export function issueReason(p: Project, a: Annotation, issue: AnnotationIssue): string {
   const owner =
@@ -101,10 +111,7 @@ export function issueReason(p: Project, a: Annotation, issue: AnnotationIssue): 
     owners: ownerTypeNames(p, a),
     label: offered?.label ?? t('typed.roleLabel'),
     roles: (offered?.roles ?? []).map((r) => r.name).join(t('typed.ownersJoin')),
-    slot: issue.slot?.name ?? '',
-    owner: issue.owner ?? '',
-    type: typeOfAnnotation(p, a)?.type.name ?? '',
-    max: issue.max ?? 0,
+    ...slotParams(p, a, issue),
   });
 }
 

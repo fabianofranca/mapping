@@ -321,23 +321,32 @@ const NO_COMPONENTS: ComponentSources = {
   fontsEpoch: signal(0),
 };
 
+function sameIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
+  return (
+    x.code === y.code &&
+    x.key === y.key &&
+    x.rowId === y.rowId &&
+    x.column === y.column &&
+    sameSlotIssue(x, y)
+  );
+}
+
+/** The slot, owner and max of `slot-not-accepted` and `slot-full`. */
+function sameSlotIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
+  return (
+    x.slot?.id === y.slot?.id &&
+    x.slot?.name === y.slot?.name &&
+    x.owner === y.owner &&
+    x.max === y.max
+  );
+}
+
 function sameIssueList(
   a: readonly AnnotationIssue[],
   b: readonly AnnotationIssue[],
 ): boolean {
   return (
-    a.length === b.length &&
-    a.every(
-      (x, i) =>
-        x.code === b[i]?.code &&
-        x.key === b[i]?.key &&
-        x.rowId === b[i]?.rowId &&
-        x.column === b[i]?.column &&
-        x.slot?.id === b[i]?.slot?.id &&
-        x.slot?.name === b[i]?.slot?.name &&
-        x.owner === b[i]?.owner &&
-        x.max === b[i]?.max,
-    )
+    a.length === b.length && a.every((x, i) => sameIssue(x, b[i] as AnnotationIssue))
   );
 }
 
