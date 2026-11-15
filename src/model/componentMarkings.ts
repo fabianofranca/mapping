@@ -8,6 +8,7 @@ import {
   assignSlots,
   componentSlots,
   slotForPlacement,
+  slotHugAxes,
   slotKey,
 } from './components/slots';
 import type { ComponentDrawings } from './componentDrawings';
@@ -214,6 +215,10 @@ interface SlotBox {
   readonly maxPerLine: number | undefined;
   readonly maxLines: number | undefined;
   readonly hasSlot: boolean;
+  /** The slot's cross-axis alignment (`layout.align`): where a new child sits across a row or column. */
+  readonly align: ResolvedSlotLayout['align'];
+  /** The axes on which the slot takes its children's size (`hug`): its box there is not a limit for them. */
+  readonly hug: { readonly x: boolean; readonly y: boolean };
   /** The children the geometry put in this slot, in sibling order (the new one goes after the last). */
   readonly kids: readonly Marking[];
 }
@@ -364,6 +369,8 @@ function slotArea(
     maxPerLine: undefined,
     maxLines: undefined,
     hasSlot: false,
+    align: 'start' as const,
+    hug: { x: false, y: false },
     kids: [],
   };
   const mc = markingComponent(p, catalog, containerId);
@@ -393,6 +400,8 @@ function slotArea(
     maxPerLine: layout.maxPerLine,
     maxLines: layout.maxLines,
     hasSlot: true,
+    align: layout.align,
+    hug: slotHugAxes(slot),
     kids: scene.kids.get(slotKey(slot)) ?? [],
   };
 }
@@ -615,6 +624,14 @@ function fitSize(space: PlacementSpace, wanted: Size): Size {
     width: unitsToPixels(unitMin.width, space.density),
     height: unitsToPixels(unitMin.height, space.density),
   };
+  // On a `hug` axis of the slot its box is the content's, not a limit: the component itself is.
+  const outer = space.parent?.rect;
+  const hug = space.slot?.hug;
+  const room = (axis: 'width' | 'height'): number => {
+    const own = space.area?.[axis] ?? Infinity;
+    if (outer === undefined || hug === undefined) return own;
+    return (axis === 'width' ? hug.x : hug.y) ? Math.max(own, outer[axis]) : own;
+  };
   const fit = (size: number, minimum: number, available: number): number => {
     const value = Math.max(
       Math.min(Math.round(size), available),
@@ -626,8 +643,8 @@ function fitSize(space: PlacementSpace, wanted: Size): Size {
     return value;
   };
   return {
-    width: fit(wanted.width, min?.width ?? 0, space.area?.width ?? Infinity),
-    height: fit(wanted.height, min?.height ?? 0, space.area?.height ?? Infinity),
+    width: fit(wanted.width, min?.width ?? 0, room('width')),
+    height: fit(wanted.height, min?.height ?? 0, room('height')),
   };
 }
 
@@ -872,7 +889,27 @@ function slotRect(p: Project, parent: Marking, slot: SlotBox, size: Size): Rect 
     else x = near - size.width;
   } else if (last !== undefined && slot.flow === 'row') x = right(last.rect) + slot.gap;
   else if (last !== undefined && slot.flow === 'column') y = bottom(last.rect) + slot.gap;
+  const across = crossOffset(slot, size);
+  if (slot.flow === 'row') y += across;
+  else if (slot.flow === 'column') x += across;
   return { x: Math.round(x), y: Math.round(y), ...size };
+}
+
+/**
+ * Where the new child sits across a row (vertically) or a column (horizontally) of the slot: the slot's
+ * `align` (`center`, `end`; `start` and `stretch` stay at the start) inside the content area, as the arrangement
+ * does. On a `hug` cross axis the box takes the child's size, so there is nothing to offset.
+ */
+function crossOffset(slot: SlotBox, size: Size): number {
+  const row = slot.flow === 'row';
+  if (!row && slot.flow !== 'column') return 0;
+  if (row ? slot.hug.y : slot.hug.x) return 0;
+  const content = row
+    ? slot.area.height - slot.padding.top - slot.padding.bottom
+    : slot.area.width - slot.padding.left - slot.padding.right;
+  const free = Math.max(0, content - (row ? size.height : size.width));
+  if (slot.align === 'center') return free / 2;
+  return slot.align === 'end' ? free : 0;
 }
 
 /** No free place in the slot: the previous position (the slot's if it fits; otherwise clamped inside the component). */

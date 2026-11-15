@@ -189,6 +189,42 @@ describe('ComponentDrawing: content larger than the box, by slot', () => {
   });
 });
 
+describe('ComponentDrawing: a child inside a hug slot is not an overflow (CL1, 2.1, 3.1, 4.2)', () => {
+  it('two pins in the hug `actions` slot (where the engine right-aligns the box) do not overflow', () => {
+    let p = add(baseProject(), catalog, 'B', 'bar', {
+      rect: { x: 0, y: 0, width: 360, height: 56 },
+    });
+    p = add(p, catalog, 'PA', 'pin', {
+      parentId: 'B',
+      slot: 'actions',
+      rect: { x: 286, y: 16, width: 24, height: 24 },
+    });
+    expect(draw(p).get('B')!.overflow).toBe(false);
+    p = add(p, catalog, 'PB', 'pin', {
+      parentId: 'B',
+      slot: 'actions',
+      rect: { x: 316, y: 16, width: 24, height: 24 },
+    });
+    const bar = draw(p).get('B')!;
+    expect(bar.shortfalls).toEqual({});
+    expect(bar.overflow).toBe(false);
+  });
+
+  it('a child taller than the fixed slot still overflows, and only that slot', () => {
+    let p = add(baseProject(), catalog, 'B', 'bar', {
+      rect: { x: 0, y: 0, width: 360, height: 56 },
+    });
+    p = add(p, catalog, 'NAV', 'pin', {
+      parentId: 'B',
+      slot: 'navigationIcon',
+      rect: { x: 8, y: 2, width: 40, height: 52 },
+    });
+    expect(Object.keys(draw(p).get('B')!.shortfalls)).toEqual([
+      slotOverflowKey('navigationIcon'),
+    ]);
+  });
+});
+
 describe('createDrawingCache: slots', () => {
   it('moving a child from one slot to the other re-instantiates only the bar and that child', () => {
     const cache = createDrawingCache();

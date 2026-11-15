@@ -4,6 +4,7 @@ import {
   effectiveDirection,
   effectiveDrawingMode,
   projectIndex,
+  projectIssues,
   SLOT_OVERFLOW,
   typeOfAnnotation,
   type ComponentDrawing,
@@ -160,14 +161,19 @@ function slotItemOf(issue: DrawingSlotIssue, typeName: string): SlotItem {
 function slotItemsOf(
   drawing: ComponentDrawing,
   after: Project,
-  touched: ReadonlySet<string>,
+  touched: ReadonlySet<string> | null,
 ): [string, SlotItem][] {
   const index = projectIndex(after);
   const found: [string, SlotItem][] = [];
   for (const issue of drawing.slotIssues) {
     const child = index.annotations.get(issue.annotationId);
     if (!child) continue;
-    if (!touched.has(drawing.markingId) && !touched.has(child.markingId)) continue;
+    if (
+      touched !== null &&
+      !touched.has(drawing.markingId) &&
+      !touched.has(child.markingId)
+    )
+      continue;
     const typeName = typeOfAnnotation(after, child)?.type.name ?? '';
     found.push([issue.annotationId, slotItemOf(issue, typeName)]);
   }
@@ -175,14 +181,19 @@ function slotItemsOf(
 }
 
 /** The drawing cache of the fonts that measure `refs`' project (the proof has no saved revision to memoize on). */
-function drawingsOf(refs: Refs): ReturnType<DrawingCache> {
+function drawingsOf(
+  refs: Refs,
+  project: Project = refs.project,
+): ReturnType<DrawingCache> {
   const fonts = refs.loaded.fonts ?? builtinFontBook();
-  let cache = drawingCaches.get(fonts);
+  // The project as it was before the batch is drawn once, in a cache of its own: in the saved project's it would
+  // evict the entries that the next call reuses.
+  let cache = project === refs.project ? drawingCaches.get(fonts) : createDrawingCache();
   if (cache === undefined) {
     cache = createDrawingCache();
     drawingCaches.set(fonts, cache);
   }
-  return cache(refs.project, refs.loaded.catalog, measurerFor(fonts), 0);
+  return cache(project, refs.loaded.catalog, measurerFor(fonts), 0);
 }
 
 /**
@@ -193,18 +204,29 @@ export function drawingProof(
   refs: Refs,
   before: Project,
 ): Map<string, readonly DrawingItem[]> {
-  const after = refs.project;
+  const touched = touchedMarkings(before, refs.project);
+  if (touched.size === 0) return new Map();
+  return drawingItemsOf(refs, refs.project, touched);
+}
+
+/**
+ * The drawing items per annotation of `project`'s drawings; with `touched` only those of the touched
+ * markings (and of the drawings whose mother or child it touched), without it all of them.
+ */
+function drawingItemsOf(
+  refs: Refs,
+  project: Project,
+  touched: ReadonlySet<string> | null,
+): Map<string, readonly DrawingItem[]> {
   const found = new Map<string, readonly DrawingItem[]>();
-  const touched = touchedMarkings(before, after);
-  if (touched.size === 0) return found;
   const approximate = !(refs.loaded.fonts ?? builtinFontBook()).hasLibraryFonts;
   const add = (annotationId: string, items: readonly DrawingItem[]) =>
     found.set(annotationId, [...(found.get(annotationId) ?? []), ...items]);
-  for (const drawing of drawingsOf(refs).values()) {
-    if (drawing.overflow && touched.has(drawing.markingId)) {
+  for (const drawing of drawingsOf(refs, project).values()) {
+    if (drawing.overflow && (touched === null || touched.has(drawing.markingId))) {
       add(drawing.annotationId, itemsOf(drawing, approximate));
     }
-    for (const [annotationId, item] of slotItemsOf(drawing, after, touched)) {
+    for (const [annotationId, item] of slotItemsOf(drawing, project, touched)) {
       add(annotationId, [item]);
     }
   }
@@ -216,20 +238,42 @@ interface IssueEntry {
   readonly issues: readonly object[];
 }
 
-/** The batch's `issues` with the drawing's items (does not fit, slot not accepted or full) added to `issues.new`. */
+/** What tells two drawing items of an annotation apart (the amount missing does not). */
+const itemKey = (item: DrawingItem): string =>
+  'slot' in item
+    ? `${item.code}\u0000${item.slot.id}`
+    : `${item.code}\u0000${item.kind}\u0000${item.node}`;
+
+/**
+ * The batch's `issues` with the drawing's items (does not fit, slot not accepted or full) added: `new` lists
+ * only what the project did not already have before the batch, and `before`, `after` and `resolved` count the
+ * annotations with a static pending item or a drawing item, so what was already there is not new.
+ */
 export function withDrawingIssues(
   issues: Record<string, unknown>,
   refs: Refs,
   before: Project,
 ): Record<string, unknown> {
+  // The saved project is drawn first: drawing `before` ahead of it leaves its cache stale for a changed direction.
+  const hasAfter = drawingItemsOf(refs, refs.project, null);
   const proof = drawingProof(refs, before);
-  if (proof.size === 0) return issues;
+  const hadBefore = drawingItemsOf(refs, before, null);
+  const idsBefore = new Set([...projectIssues(before).keys(), ...hadBefore.keys()]);
+  const idsAfter = new Set([...projectIssues(refs.project).keys(), ...hasAfter.keys()]);
+  const counts = {
+    before: idsBefore.size,
+    after: idsAfter.size,
+    resolved: [...idsBefore].filter((id) => !idsAfter.has(id)).length,
+  };
   const entries = [...((issues.new as IssueEntry[] | undefined) ?? [])];
   for (const [annotationId, items] of proof) {
+    const had = new Set((hadBefore.get(annotationId) ?? []).map(itemKey));
+    const gained = items.filter((item) => !had.has(itemKey(item)));
+    if (gained.length === 0) continue;
     const ref = refs.ref('a', annotationId);
     const at = entries.findIndex((e) => e.annotation === ref);
-    if (at < 0) entries.push({ annotation: ref, issues: [...items] });
-    else entries[at] = { ...entries[at]!, issues: [...entries[at]!.issues, ...items] };
+    if (at < 0) entries.push({ annotation: ref, issues: [...gained] });
+    else entries[at] = { ...entries[at]!, issues: [...entries[at]!.issues, ...gained] };
   }
-  return { ...issues, new: entries };
+  return { ...issues, ...counts, new: entries };
 }

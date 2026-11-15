@@ -23,7 +23,9 @@ import {
   assignSlots,
   componentSlots,
   fallbackFields,
+  slotHugAxes,
   slotKey,
+  type HugAxes,
   type SlotAssignment,
   type SlotChild,
   type SlotInput,
@@ -470,17 +472,44 @@ export function slotOverflowKey(slotId: string): string {
   return slotId === '' ? SLOT_OVERFLOW : `${SLOT_OVERFLOW} ${slotId}`;
 }
 
-/** How much the worst child goes past the slot's box (with the rounding tolerance); 0 = fits. */
-function slotExcess(box: Rect, childRects: readonly Rect[]): number {
+const NO_HUG: HugAxes = { x: false, y: false };
+
+/**
+ * How much the worst child goes past the slot's box (with the rounding tolerance); 0 = fits. On a
+ * `hug` axis the box takes the children's size and the layout places it by the slot's own rules, so
+ * only the children's extent counts there, not where they happen to sit (a child inside its slot
+ * does not become an overflow because the shrunk box moved).
+ */
+function slotExcess(
+  box: Rect,
+  childRects: readonly Rect[],
+  hug: HugAxes = NO_HUG,
+): number {
   let worst = 0;
   for (const r of childRects) {
     const excess = Math.max(
-      box.x - SLOT_TOLERANCE - r.x,
-      box.y - SLOT_TOLERANCE - r.y,
-      r.x + r.width - (box.x + box.width + SLOT_TOLERANCE),
-      r.y + r.height - (box.y + box.height + SLOT_TOLERANCE),
+      hug.x ? Number.NEGATIVE_INFINITY : box.x - SLOT_TOLERANCE - r.x,
+      hug.y ? Number.NEGATIVE_INFINITY : box.y - SLOT_TOLERANCE - r.y,
+      hug.x
+        ? Number.NEGATIVE_INFINITY
+        : r.x + r.width - (box.x + box.width + SLOT_TOLERANCE),
+      hug.y
+        ? Number.NEGATIVE_INFINITY
+        : r.y + r.height - (box.y + box.height + SLOT_TOLERANCE),
     );
     worst = Math.max(worst, excess);
+  }
+  if (hug.x && childRects.length > 0) {
+    const extent =
+      Math.max(...childRects.map((r) => r.x + r.width)) -
+      Math.min(...childRects.map((r) => r.x));
+    worst = Math.max(worst, extent - box.width - SLOT_TOLERANCE);
+  }
+  if (hug.y && childRects.length > 0) {
+    const extent =
+      Math.max(...childRects.map((r) => r.y + r.height)) -
+      Math.min(...childRects.map((r) => r.y));
+    worst = Math.max(worst, extent - box.height - SLOT_TOLERANCE);
   }
   return worst > 0 ? worst + SLOT_TOLERANCE : 0;
 }
@@ -494,6 +523,7 @@ function overflowsOf(
   slots: readonly DrawnSlot[],
   rectOf: ReadonlyMap<string, Rect>,
   density: number,
+  hugOf: ReadonlyMap<string, HugAxes> = new Map(),
 ): Record<string, number> {
   const found: Record<string, number> = {};
   const shortfalls = instantiated.shortfalls ?? {};
@@ -501,7 +531,7 @@ function overflowsOf(
     found[w] = (shortfalls[w] ?? 0) * density;
   for (const slot of slots) {
     const rects = slot.children.flatMap((id) => rectOf.get(id) ?? []);
-    const excess = rects.length > 0 ? slotExcess(slot.box, rects) : 0;
+    const excess = rects.length > 0 ? slotExcess(slot.box, rects, hugOf.get(slot.id)) : 0;
     if (excess > 0) found[slotOverflowKey(slot.id)] = excess;
   }
   return found;
@@ -569,15 +599,17 @@ const NO_FIELDS: ReadonlyMap<string, string> = new Map();
 const NO_ISSUES: readonly DrawingSlotIssue[] = [];
 const NO_DEFS: readonly TypeSlot[] = [];
 
-/** Does a size (`width`/`height` of the slot) depend on what is inside it (`hug`, intrinsic, expression)? */
-function takesContent(spec: unknown): boolean {
-  if (spec === undefined || typeof spec === 'number' || spec === 'fill') return false;
-  return !(typeof spec === 'string' && spec.endsWith('%'));
+/** The hug axes of each slot of the component, by slot key. */
+function hugAxesOf(component: ComponentFile): ReadonlyMap<string, HugAxes> {
+  return new Map(
+    componentSlots(component).map((slot) => [slotKey(slot), slotHugAxes(slot)]),
+  );
 }
 
 /** Does the slot's size depend on its children (so the final drawing measures them)? */
 function measuresContent(slot: SlotTemplate): boolean {
-  return takesContent(slot.width) || takesContent(slot.height);
+  const hug = slotHugAxes(slot);
+  return hug.x || hug.y;
 }
 
 /** The box that joins the rectangles (image pixels), in component units, plus the slot's padding. */
@@ -863,6 +895,7 @@ function draw(input: DrawInput): Drawn {
           facts.slots,
           new Map(input.kids.map((k) => [k.id, k.rect])),
           space.density,
+          hugAxesOf(mc.component),
         )
       : {};
   const drawing: ComponentDrawing = {

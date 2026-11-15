@@ -44,6 +44,23 @@ export function componentSlots(component: ComponentFile): readonly SlotTemplate[
 }
 
 /** The key of a slot in the maps: its `id`, or the empty key for the only slot that has none. */
+/** The axes of a slot whose size follows its children (`hug`, an intrinsic size or an expression). */
+export interface HugAxes {
+  readonly x: boolean;
+  readonly y: boolean;
+}
+
+/** Does a size (`width`/`height` of the slot) depend on what is inside it (`hug`, intrinsic, expression)? */
+export function takesContent(spec: unknown): boolean {
+  if (spec === undefined || typeof spec === 'number' || spec === 'fill') return false;
+  return !(typeof spec === 'string' && spec.endsWith('%'));
+}
+
+/** The axes on which the slot takes its children's size: its box there is the content's, not a limit for it. */
+export function slotHugAxes(slot: Pick<SlotTemplate, 'width' | 'height'>): HugAxes {
+  return { x: takesContent(slot.width), y: takesContent(slot.height) };
+}
+
 export function slotKey(slot: Pick<SlotTemplate, 'id'>): string {
   return slot.id ?? '';
 }

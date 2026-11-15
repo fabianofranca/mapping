@@ -331,3 +331,41 @@ describe('the two new examples draw without warnings in light and dark (decision
 
 /** A node tree walker keeps the scene tests honest: the type `Json` is only for the raw files. */
 void (undefined as unknown as Json);
+
+describe('children born in a bottom-app-bar without a rect (CL1, 1.A)', () => {
+  const bar = (): Project => put(base(), 'BB', 'bottom-app-bar', r(0, 100, 360, 80));
+  const born = (p: Project, id: string, typeId: string, slot: string): Project =>
+    addComponentMarking(
+      p,
+      catalog,
+      {
+        markingId: id,
+        annotationId: `A_${id}`,
+        containerId: 'I1',
+        parentId: 'BB',
+        slot,
+        specId: spec.id,
+        typeId,
+      },
+      approximateMeasurer,
+    );
+  const rectOf = (p: Project, id: string) => p.markings.find((m) => m.id === id)!.rect;
+
+  it('the icon-buttons of `actions` sit centered on the bar, not at its top', () => {
+    let p = born(bar(), 'I1B', 'icon-button', 'actions');
+    p = born(p, 'I2B', 'icon-button', 'actions');
+    for (const id of ['I1B', 'I2B']) {
+      const rect = rectOf(p, id);
+      const middle = rect.y + rect.height / 2;
+      expect(Math.abs(middle - (100 + 40)), id).toBeLessThanOrEqual(4);
+    }
+    expect(draw(p).get('BB')!.shortfalls).toEqual({});
+  });
+
+  it('an extended-fab keeps its own width in `floatingActionButton` and the bar does not overflow', () => {
+    const p = born(bar(), 'EF', 'extended-fab', 'floatingActionButton');
+    const rect = rectOf(p, 'EF');
+    expect(rect.width).toBeGreaterThan(56);
+    expect(draw(p).get('BB')!.shortfalls).toEqual({});
+  });
+});

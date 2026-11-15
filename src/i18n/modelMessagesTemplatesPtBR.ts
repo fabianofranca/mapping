@@ -19,6 +19,8 @@ export const templatePtBR: {
     'há {count} especializações no pacote ({files}): indique qual validar',
   'model.library.paramOutsideSignature': 'parâmetro fora da ficha: "{name}"',
   'model.library.slotNotInComponent': 'slot não existe no componente: {id}',
+  'model.library.slotParameterRepeated':
+    'dois slots mapeiam para o mesmo parâmetro "{parameter}": {first} e {second}',
   'model.library.componentNoSlotIds': 'slots: o componente não tem slot com id',
   'model.library.signatureNotRead': 'arquivo não pôde ser lido: {path}',
   'model.library.signatureInvalid': '{reason}',
