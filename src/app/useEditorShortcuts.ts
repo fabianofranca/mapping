@@ -6,6 +6,7 @@ import {
   RESIZE_STEP,
   TOOL_WINDOWS,
   WINDOW_SIDE,
+  isToolWindowOpen,
   layersWindowHeight,
   resizeLayersWindow,
   resizeToolWindow,
@@ -255,6 +256,8 @@ export function useEditorShortcuts(
           if (canvas.current?.cancelInteraction()) return;
           // The review legend open, with focus on the button or the canvas: Esc closes only it.
           if (closeReviewLegendOnEscape(ui)) return;
+          // The Catalog opened from the strip button, focus still on it: Esc closes only the Catalog.
+          if (closeCatalogOnStripEscape()) return;
           // Comment armed: Esc disarms and returns to the previous tool.
           if (cancelComment(ui)) return;
           // In view mode Esc leaves the mode (the open panel already consumed its Esc).
@@ -419,4 +422,18 @@ export function useEditorShortcuts(
       window.removeEventListener('blur', endNudge);
     };
   }, [editor, store, ui, canvas, actions, review, shown]);
+}
+
+/**
+ * Esc with the Catalog open and focus on the strip's Catalog button (where it stays after the
+ * click): closes the window and keeps focus on the button and the selection. With focus inside the
+ * window, the window itself closes it (`ToolWindow`). Returns `true` when it consumed Esc.
+ */
+function closeCatalogOnStripEscape(): boolean {
+  if (!isToolWindowOpen('catalog')) return false;
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement) || active.dataset.stripWindow !== 'catalog')
+    return false;
+  closeToolWindow('catalog');
+  return true;
 }
