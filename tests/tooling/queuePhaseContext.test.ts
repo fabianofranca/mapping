@@ -114,6 +114,7 @@ describe('CX1 — "For the phase session" of docs/FLOW.md, sub-item of item 3', 
     expect(item1).toMatch(/issue #<stage> \*\*through one subagent\*\*/);
     expect(item1).toContain('the sections and numbered decisions the sub-issue cites');
     expect(item1).toContain('"out of scope" section');
+    expect(item1).toContain('with no citation, the stage');
     expect(item1).toMatch(/never loads the whole stage issue or its comments/);
     expect(item1).toContain('do not reopen decisions already made');
   });
@@ -127,6 +128,7 @@ describe('CX1 — "For the phase session" of docs/FLOW.md, sub-item of item 3', 
       item3.indexOf('   - **Phase context ceiling:**'),
     );
     expect(rule).toContain('~300 lines');
+    expect(rule).toContain('`docs/PROCESS.md` of item 1 are the exception');
     expect(rule).toContain('`grep -n`');
     expect(rule).toContain("`sed -n '<a>,<b>p'`");
     expect(rule).toContain('`Read` with `offset`/`limit`');
