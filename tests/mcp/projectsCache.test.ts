@@ -1,4 +1,11 @@
-import { cpSync, mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -148,5 +155,28 @@ describe('loadProject: cache and single read', () => {
     expect(JSON.parse(text).projects).toHaveLength(1);
     expect(fontBooks.created).toBe(before);
     await client.close();
+  });
+});
+
+describe('the drawing key covers the project files (CL5, finding 4)', () => {
+  it('changes with an outside edit of mapping.json that keeps the revision', async () => {
+    const { dir, roots } = workspace();
+    const location = await findProject(roots, 'telas');
+    const first = await loadProject(roots, location);
+    const text = readFileSync(join(dir, 'mapping.json'), 'utf8');
+    writeFileSync(join(dir, 'mapping.json'), text.replace('Screens', 'Screens (edited)'));
+    const second = await loadProject(roots, location);
+    expect(second.project.revision).toBe(first.project.revision);
+    expect(second.drawingKey).not.toBe(first.drawingKey);
+  });
+
+  it('changes with a specs/ copy edited without a version bump', async () => {
+    const { lib, roots } = workspace();
+    const location = await findProject(roots, 'telas');
+    const first = await loadProject(roots, location);
+    const edited = { ...spec, layers: [{ ...spec.layers[0]!, name: 'Edited UI' }] };
+    writeFileSync(join(lib, 'lib.spec.json'), JSON.stringify(edited));
+    const second = await loadProject(roots, location);
+    expect(second.drawingKey).not.toBe(first.drawingKey);
   });
 });

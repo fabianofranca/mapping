@@ -1062,3 +1062,38 @@ describe('arrangeMarking: wrap in the slot (MC4, decision 12)', () => {
     );
   });
 });
+
+describe('slotsOfScene: slots without an id (CL5, finding 1)', () => {
+  it('a formatVersion 1-3 component with two slots without ids keeps the first one, like componentSlots', async () => {
+    const { parseComponent } = await import('../../src/model/components/parseComponent');
+    const { instantiate } = await import('../../src/model/components/instantiate');
+    const { slotsOfScene } = await import('../../src/model/components/arrange');
+    const { componentSlots } = await import('../../src/model/components/slots');
+    const parsed = parseComponent({
+      format: 'mapping-component',
+      formatVersion: 3,
+      id: 'two',
+      name: 'Two',
+      size: { width: 200, height: 100 },
+      template: {
+        type: 'frame',
+        layout: { type: 'column' },
+        children: [
+          { type: 'slot', width: 200, height: 30 },
+          { type: 'slot', width: 200, height: 60 },
+        ],
+      },
+    });
+    if (!parsed.ok) throw new Error(parsed.errors.join('; '));
+    const { root } = instantiate(
+      parsed.component,
+      {},
+      { x: 0, y: 0, width: 200, height: 100 },
+      { measure: approximateMeasurer },
+    );
+    expect(componentSlots(parsed.component)).toHaveLength(1);
+    const scene = slotsOfScene(root);
+    expect(scene.size).toBe(1);
+    expect(scene.get('')?.box.height).toBe(30);
+  });
+});

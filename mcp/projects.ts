@@ -410,20 +410,25 @@ async function componentHash(roots: Roots, dir: string, path: string): Promise<s
 }
 
 /**
- * The drawing key: revision, `id@version` of the specializations, the hash of the components' text and the
+ * The drawing key: revision, the hash of `mapping.json` and of the `specs/` copies, `id@version` of the specializations, the hash of the components' text and the
  * fonts' file stamps (path, size and `mtime`: the bytes are read only once, by the font cache).
  */
 async function drawingKeyOf(
   roots: Roots,
   dir: string,
   project: Project,
+  contentHash: string,
 ): Promise<string> {
   const specs = project.specializations.map((s) => `${s.id}@${s.version}`);
   const components = await componentHashes(roots, dir, project);
   const fonts = (await fontFiles(roots, dir, project)).map((f) => `${f.path}:${f.stamp}`);
-  return [project.revision, specs.join(','), components.join(','), fonts.join(',')].join(
-    '|',
-  );
+  return [
+    project.revision,
+    contentHash,
+    specs.join(','),
+    components.join(','),
+    fonts.join(','),
+  ].join('|');
 }
 
 /** Projects `loadProject` keyed: a `LoadedProject` with another `project` spread in has no valid key. */
@@ -440,27 +445,33 @@ export interface LoadOptions {
   readonly fonts?: boolean;
 }
 
+/** What was interpreted: the model and the hash of the files it came from (`mapping.json` and the `specs/` copies). */
+interface Parsed {
+  readonly result: DeserializeResult;
+  readonly contentHash: string;
+}
+
 /**
  * Interprets the `mapping.json` once: the JSON serves to find the `specs/` copies to read and the
  * model (`deserializeParsed`).
  */
-async function parseMapping(
-  roots: Roots,
-  dir: string,
-  text: string,
-): Promise<DeserializeResult> {
+async function parseMapping(roots: Roots, dir: string, text: string): Promise<Parsed> {
   const specs = new Map<string, string>();
   let raw: unknown;
   try {
     raw = JSON.parse(text);
   } catch {
-    return { ok: false, error: { code: 'invalid-json' } };
+    return { result: { ok: false, error: { code: 'invalid-json' } }, contentHash: '' };
   }
   for (const file of referencedSpecFilesOf(raw)) {
     const specText = await readText(roots, dir, file);
     if (specText !== null) specs.set(file, specText);
   }
-  return deserializeParsed(raw, undefined, specs);
+  const contentHash = [
+    fnv1a(text),
+    ...[...specs].map(([file, t]) => `${file}:${fnv1a(t)}`),
+  ].join(',');
+  return { result: deserializeParsed(raw, undefined, specs), contentHash };
 }
 
 /** Reads the project from the folder: `mapping.json` and the `specs/` copies, validated by `src/model/`. */
@@ -479,7 +490,7 @@ export async function loadProject(
       { project: location.name },
     );
   }
-  const result = await parseMapping(roots, location.dir, text);
+  const { result, contentHash } = await parseMapping(roots, location.dir, text);
   if (!result.ok) {
     throw new ToolError('invalid-project', describeError(result.error), {
       project: location.name,
@@ -489,7 +500,7 @@ export async function loadProject(
   const catalog = await loadCatalog(roots, location.dir, result.project);
   const keyed = options.fonts !== false;
   const drawingKey = keyed
-    ? await drawingKeyOf(roots, location.dir, result.project)
+    ? await drawingKeyOf(roots, location.dir, result.project, contentHash)
     : undefined;
   if (drawingKey !== undefined) keyedProjects.set(result.project, drawingKey);
   return {

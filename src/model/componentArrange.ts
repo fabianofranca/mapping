@@ -31,7 +31,12 @@ import {
   type InstantiateOptions,
   type TextMeasurer,
 } from './components/instantiate';
-import { markingComponent, type ComponentCatalog } from './componentCatalog';
+import {
+  markingComponent,
+  type ComponentCatalog,
+  type MarkingComponent,
+} from './componentCatalog';
+import { typeSlots } from './specSlots';
 import {
   anchoredRect,
   clampedInto,
@@ -117,6 +122,7 @@ function kidsBySlot(
   p: Project,
   catalog: ComponentCatalog,
   marking: Marking,
+  mc: MarkingComponent,
   drawn: ReturnType<typeof componentForDrawing>,
   values: FieldValues,
   kids: readonly Marking[],
@@ -136,7 +142,10 @@ function kidsBySlot(
     options,
     probe: root,
     space,
-    defs: new Map(),
+    // The type's `accepts` decide too, as in the drawing (`planSlots`): both put a child in the same slot.
+    defs: new Map(
+      typeSlots(p, mc.specId, mc.typeId, mc.component).map((def) => [def.id, def]),
+    ),
     hasKids: true,
   });
   const assignment = assignSlots(
@@ -171,7 +180,7 @@ function containerOf(
   const kids = projectIndex(p).children.get(markingId) ?? [];
   if (kids.length === 0) return null;
   const values = drawingValues(p, mc.annotation, mc.type).values;
-  const bySlot = kidsBySlot(p, catalog, marking, drawn, values, kids, measure);
+  const bySlot = kidsBySlot(p, catalog, marking, mc, drawn, values, kids, measure);
   const slots = templates.flatMap((template): ContainerSlot[] => {
     const id = slotKey(template);
     const own = bySlot.get(id) ?? [];

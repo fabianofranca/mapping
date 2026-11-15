@@ -267,6 +267,8 @@ function sceneOfSlots(
   measure: TextMeasurer,
   drawings: ComponentDrawings | undefined,
 ): SlotScene {
+  // A `screen` component takes its children whole (the drawing has no slot plan for it): no slot box.
+  if (drawn.component.screen !== undefined) return { boxes: new Map(), kids: new Map() };
   const kids = childrenOf(p, container.id);
   const byId = new Map(kids.map((kid) => [kid.id, kid]));
   const known = drawings?.get(container.id);
