@@ -7,6 +7,7 @@ import {
   addContainer,
   addTableRow,
   addTypedAnnotation,
+  annotationAccessibility,
   applySpecialization,
   createArrow,
   createMarking,
@@ -20,6 +21,7 @@ import {
   type Project,
   type Rect,
   type Spec,
+  typeAccessibility,
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 import { idGen, layerOf } from './specFixtures';
@@ -437,5 +439,138 @@ describe('the audit as a whole', () => {
     expect(accessibilityAudit(p)).toBe(accessibilityAudit(p));
     const drawings = new Map() as ComponentDrawings;
     expect(accessibilityAudit(p, { drawings })).toBe(accessibilityAudit(p, { drawings }));
+  });
+});
+
+// Stage #1128 (A3): what the code needs (`get_code_hints`) and the resolved type (`get_component`).
+describe('annotationAccessibility (the code view)', () => {
+  const of = (p: Project, id: string, inactive?: ReadonlyMap<string, string>) =>
+    annotationAccessibility(
+      p,
+      p.annotations.find((a) => a.id === id)!,
+      inactive,
+    );
+
+  it('the role and the value of the first label field that has one', () => {
+    const p = put(world(), 'button', 'A', BIG, { alt: 'Close' });
+    expect(of(p, 'A')).toEqual({ role: 'button', label: 'Close' });
+  });
+
+  it('a required label that is empty is label null and missing', () => {
+    expect(of(put(world(), 'button', 'A'), 'A')).toEqual({
+      role: 'button',
+      label: null,
+      missing: true,
+    });
+  });
+
+  it('an optional label that is empty is label null, without missing', () => {
+    expect(of(put(world(), 'optional', 'A'), 'A')).toEqual({
+      role: 'button',
+      label: null,
+    });
+  });
+
+  it('an interactive role with no label declared is label null; a non-interactive one has no label key', () => {
+    expect(of(put(world(), 'slider', 'A'), 'A')).toEqual({ role: 'slider', label: null });
+    expect(of(put(world(), 'image', 'A', BIG, { label: 'Logo' }), 'A')).toEqual({
+      role: 'image',
+      label: 'Logo',
+    });
+  });
+
+  it('role none says only the role', () => {
+    expect(of(put(world(), 'none', 'A'), 'A')).toEqual({ role: 'none' });
+  });
+
+  it('field parts exist when their field has a value, each with its label or missing', () => {
+    const p = put(world(), 'bar', 'A', BIG, { title: 'T', badge: '1' });
+    expect(of(p, 'A')).toEqual({
+      parts: [
+        { id: 'close', role: 'button', label: 'T' },
+        { id: 'noName', role: 'button', label: '1' },
+        { id: 'plain', role: 'button', label: '1' },
+      ],
+    });
+    const bare = put(world(), 'bar', 'B', BIG, { title: 'T' });
+    expect(of(bare, 'B')!.parts).toEqual([
+      { id: 'noName', role: 'button', label: null, missing: true },
+      { id: 'plain', role: 'button', label: null },
+    ]);
+  });
+
+  it('table parts come one per row, from 0, with the first label column that has a value', () => {
+    const p = withRows(put(world(), 'bar', 'A'), 'A', [
+      { name: 'First' },
+      { hint: 'Second' },
+      {},
+    ]);
+    const rows = of(p, 'A')!.parts!.filter((part) => part.id === 'row');
+    expect(rows).toEqual([
+      { id: 'row', role: 'button', label: 'First', row: 0 },
+      { id: 'row', role: 'button', label: 'Second', row: 1 },
+      { id: 'row', role: 'button', label: null, missing: true, row: 2 },
+    ]);
+    // `<table>.<column>`: only the rows where the column has a value.
+    expect(of(p, 'A')!.parts!.filter((part) => part.id === 'cell')).toEqual([
+      { id: 'cell', role: 'button', label: null, missing: true, row: 1 },
+    ]);
+  });
+
+  it('a part whose field a slot child takes over is not there; without parts the key goes away', () => {
+    const p = put(world(), 'bar', 'A', BIG, { title: 'T' });
+    const inactive = new Map([['title', 'slot']]);
+    expect(of(p, 'A', inactive)).toBeNull();
+  });
+
+  it('a type with no accessibility, an annotation without type and the audit-free spec give null', () => {
+    const spec = specOf((s) => {
+      s.formatVersion = 17;
+      delete s.accessibility;
+      for (const type of s.layers[0].annotationTypes) delete type.accessibility;
+    });
+    const p = put(world(spec), 'button', 'A');
+    expect(of(p, 'A')).toBeNull();
+  });
+});
+
+describe('typeAccessibility (the resolved type)', () => {
+  const typeOf = (id: string, spec = specOf()) => {
+    const type = spec.layers[0]!.annotationTypes.find((t) => t.id === id)!;
+    return typeAccessibility(spec, type);
+  };
+
+  it('fills the defaults: label required by the role, the root touch target with its mode, part name and role', () => {
+    expect(typeOf('button')).toEqual({
+      role: 'button',
+      label: { fields: ['label', 'alt'], required: true },
+      touchTarget: { width: 44, height: 44, mode: 'visual' },
+    });
+    expect(typeOf('bar')!.parts![1]).toEqual({
+      id: 'noName',
+      name: 'noName',
+      when: 'title',
+      role: 'button',
+      label: { fields: ['badge'], required: true },
+    });
+  });
+
+  it('the type touch target replaces the root one; false opts out; a non-interactive type has none', () => {
+    expect(typeOf('own')!.touchTarget).toEqual({ width: 48, height: 48, mode: 'visual' });
+    expect(typeOf('wide')!.touchTarget).toEqual({
+      width: 48,
+      height: 48,
+      mode: 'expanded',
+    });
+    expect(typeOf('off')!.touchTarget).toBe(false);
+    expect(typeOf('image')).not.toHaveProperty('touchTarget');
+    expect(typeOf('image')!.label!.required).toBe(false);
+  });
+
+  it('null for a type with no accessibility', () => {
+    const spec = specOf((s) => {
+      delete s.layers[0].annotationTypes[0].accessibility;
+    });
+    expect(typeOf('button', spec)).toBeNull();
   });
 });

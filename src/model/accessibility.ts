@@ -74,6 +74,8 @@ interface ResolvedLabel {
 interface ResolvedPart {
   readonly id: string;
   readonly name: string;
+  /** The part's role; `button` when the specialization does not say. */
+  readonly role: string;
   /** The `when` as written (a field, a table or `<table>.<column>`). */
   readonly when: string;
   /** The table of a table part; `null` for a field part. */
@@ -84,6 +86,8 @@ interface ResolvedPart {
 }
 
 interface ResolvedType {
+  /** The type's role; `undefined` when it has none. */
+  readonly role: string | undefined;
   /** Label of the type; `null` when the type is not audited by itself. */
   readonly label: ResolvedLabel | null;
   /** The touch area to audit (`visual` mode only); `null` when there is none to audit. */
@@ -119,6 +123,7 @@ function resolvePart(
   return {
     id: part.id,
     name: part.name ?? part.id,
+    role: part.role ?? 'button',
     when: part.when,
     table,
     whenColumn: table !== null && dot >= 0 ? part.when.slice(dot + 1) : null,
@@ -145,6 +150,7 @@ function resolveType(
   const a: SpecTypeAccessibility = type.accessibility;
   const tables = new Set(type.fields.filter((f) => f.type === 'table').map((f) => f.key));
   return {
+    role: a.role,
     label: isAudited(a.role) ? resolveLabel(a.label, a.role ?? '', null) : null,
     touch: isInteractive(a.role) ? resolveTouch(type, root) : null,
     parts: (a.parts ?? []).map((part) => resolvePart(part, tables)),
@@ -221,11 +227,11 @@ function tablePartIssues(
   return issues;
 }
 
+/** The fields that a child's slot takes over (`ComponentDrawing.inactiveFields`): only the keys are read. */
+type FieldSet = { has(key: string): boolean };
+
 /** The part is not drawn: a child fills the slot that its field is the default content of. */
-function isInactive(
-  part: ResolvedPart,
-  inactive: ReadonlyMap<string, string> | undefined,
-) {
+function isInactive(part: ResolvedPart, inactive: FieldSet | undefined) {
   if (inactive === undefined) return false;
   return inactive.has(part.when) || (part.table !== null && inactive.has(part.table));
 }
@@ -233,7 +239,7 @@ function isInactive(
 function partsIssues(
   parts: readonly ResolvedPart[],
   values: Values,
-  inactive: ReadonlyMap<string, string> | undefined,
+  inactive: FieldSet | undefined,
 ): AnnotationIssue[] {
   const issues: AnnotationIssue[] = [];
   for (const part of parts) {
@@ -336,4 +342,188 @@ export function accessibilityAudit(
     byDrawings.set(key, audit);
   }
   return audit;
+}
+
+// --- What the code needs (stage #1128, decision 9 of #1081): role, label and parts of an annotation ---
+
+/** One part of an annotation as the code sees it: a field part once, a table part once per row. */
+export interface PartAccessibility {
+  readonly id: string;
+  readonly role: string;
+  /** The first label field with a value; `null` when none has. */
+  readonly label: string | null;
+  /** The part has a required label and it is empty: the mapping lacks it. */
+  readonly missing?: true;
+  /** The row (from 0) of a part of a table. */
+  readonly row?: number;
+}
+
+/**
+ * The accessibility an annotation hands to the code. `label: null` with `missing` is a required label that is
+ * empty (the mapping lacks it); `label: null` alone is an interactive role that declares no label (the name comes
+ * from the code). Only what exists is there: a type with no `accessibility` gives `null`.
+ */
+export interface AnnotationAccessibility {
+  readonly role?: string;
+  readonly label?: string | null;
+  readonly missing?: true;
+  readonly parts?: readonly PartAccessibility[];
+}
+
+/** The text of a label value: a string or a number; any other kind (object, boolean) is not a name. */
+const textOfValue = (value: JsonValue | undefined): string | undefined =>
+  typeof value === 'string'
+    ? value
+    : typeof value === 'number'
+      ? String(value)
+      : undefined;
+
+/** The label of a role: the first field with a value, else `null` (`missing` when it is required). */
+function labelOf(
+  label: ResolvedLabel | null,
+  values: Values,
+  interactive: boolean,
+): { label?: string | null; missing?: true } {
+  if (label === null) return interactive ? { label: null } : {};
+  const key = label.fields.find(
+    (field) => hasValue(values, field) && textOfValue(values[field]) !== undefined,
+  );
+  if (key !== undefined) return { label: textOfValue(values[key]) as string };
+  return label.required ? { label: null, missing: true } : { label: null };
+}
+
+/** A part always carries its label: the value, or `null` (with `missing` when it is required). */
+function partLabel(
+  part: ResolvedPart,
+  values: Values,
+): { label: string | null; missing?: true } {
+  const { label, missing } = labelOf(part.label, values, true);
+  return { label: label ?? null, ...(missing ? { missing } : {}) };
+}
+
+function fieldPart(part: ResolvedPart, values: Values): PartAccessibility[] {
+  if (!hasValue(values, part.when)) return [];
+  return [{ id: part.id, role: part.role, ...partLabel(part, values) }];
+}
+
+function tableParts(
+  part: ResolvedPart,
+  table: string,
+  values: Values,
+): PartAccessibility[] {
+  const found: PartAccessibility[] = [];
+  tableRows(values[table]).forEach((row, index) => {
+    if (part.whenColumn !== null && isEmptyValue(row[part.whenColumn])) return;
+    found.push({
+      id: part.id,
+      role: part.role,
+      ...partLabel(part, row),
+      row: index,
+    });
+  });
+  return found;
+}
+
+/**
+ * The accessibility of annotation `a` for the code, from the specialization's `accessibility`, or `null` when the
+ * type has none (or nothing to say). `inactive` is the drawing's `inactiveFields`: a part whose field is the
+ * default content of a full slot is not drawn, so it is not there (the child answers by its own type).
+ */
+export function annotationAccessibility(
+  p: Project,
+  a: Annotation,
+  inactive?: FieldSet,
+): AnnotationAccessibility | null {
+  const type = a.type && a.values ? typeOfAnnotation(p, a) : null;
+  const resolved = type && resolveSpec(type.spec).get(type.type.id);
+  if (!resolved) return null;
+  const values = a.values ?? {};
+  const parts = resolved.parts.flatMap((part) =>
+    isInactive(part, inactive)
+      ? []
+      : part.table === null
+        ? fieldPart(part, values)
+        : tableParts(part, part.table, values),
+  );
+  const out: AnnotationAccessibility = {
+    ...(resolved.role === undefined ? {} : { role: resolved.role }),
+    ...labelOf(resolved.label, values, isInteractive(resolved.role)),
+    ...(parts.length === 0 ? {} : { parts }),
+  };
+  return Object.keys(out).length === 0 ? null : out;
+}
+
+// --- The accessibility of a type, resolved (what the specialization says once the defaults are applied) ---
+
+/** A label as the type declares it: the fields (as written) and whether it is required (the default of the role). */
+export interface TypeAccessibilityLabel {
+  readonly fields: readonly string[];
+  readonly required: boolean;
+}
+
+export interface TypeAccessibilityPart {
+  readonly id: string;
+  readonly name: string;
+  readonly when: string;
+  readonly role: string;
+  readonly label?: TypeAccessibilityLabel;
+}
+
+/** The `accessibility` of a type with the defaults filled in; `touchTarget` is what applies to it (own, else the root's). */
+export interface TypeAccessibility {
+  readonly role?: string;
+  readonly label?: TypeAccessibilityLabel;
+  /** The touch area of an interactive type; `false` when the type opts out. */
+  readonly touchTarget?: (SpecTouchTarget & { readonly mode: string }) | false;
+  readonly parts?: readonly TypeAccessibilityPart[];
+}
+
+function declaredLabel(
+  label: SpecAccessibilityLabel | undefined,
+  role: string,
+): { label?: TypeAccessibilityLabel } {
+  return label === undefined
+    ? {}
+    : {
+        label: {
+          fields: [...label.fields],
+          required: label.required ?? isInteractive(role),
+        },
+      };
+}
+
+function declaredTouch(
+  type: SpecAnnotationType,
+  root: SpecTouchTarget | undefined,
+): Pick<TypeAccessibility, 'touchTarget'> {
+  const own = type.accessibility?.touchTarget;
+  const touch = own === undefined ? root : own;
+  if (touch === undefined) return {};
+  return {
+    touchTarget: touch === false ? false : { ...touch, mode: touch.mode ?? 'visual' },
+  };
+}
+
+/** The type's accessibility resolved (`get_component` and the type views); `null` when it has none. */
+export function typeAccessibility(
+  spec: Spec,
+  type: SpecAnnotationType,
+): TypeAccessibility | null {
+  const a = type.accessibility;
+  if (a === undefined) return null;
+  const parts = (a.parts ?? []).map((part): TypeAccessibilityPart => ({
+    id: part.id,
+    name: part.name ?? part.id,
+    when: part.when,
+    role: part.role ?? 'button',
+    ...declaredLabel(part.label, part.role ?? 'button'),
+  }));
+  return {
+    ...(a.role === undefined ? {} : { role: a.role }),
+    ...declaredLabel(a.label, a.role ?? ''),
+    ...(isInteractive(a.role)
+      ? declaredTouch(type, spec.accessibility?.touchTarget)
+      : {}),
+    ...(parts.length === 0 ? {} : { parts }),
+  };
 }

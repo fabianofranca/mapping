@@ -477,4 +477,36 @@ describe('accessibility (formatVersion 18)', () => {
       },
     ]);
   });
+
+  it('an unknown role and a part with its own touchTarget come with the exact path', async () => {
+    const spec = accessible();
+    spec.layers[0].annotationTypes[0].accessibility = {
+      role: 'clicky',
+      parts: [
+        {
+          id: 'p',
+          when: 'label',
+          label: { fields: ['label'] },
+          touchTarget: { width: 10, height: 10 },
+        },
+      ],
+    };
+    const result = ok(
+      await mcp.call<Validated>('validate_specialization', { text: text(spec) }),
+    );
+    expect(result.valid).toBe(false);
+    const byPath = Object.fromEntries(
+      (result.issues ?? []).map((i) => [i.path, i.message]),
+    );
+    expect(Object.keys(byPath)).toEqual(
+      expect.arrayContaining([
+        `${TYPE}.accessibility.role`,
+        `${TYPE}.accessibility.parts[0].touchTarget`,
+      ]),
+    );
+    expect(byPath[`${TYPE}.accessibility.role`]).toContain('clicky');
+    expect(byPath[`${TYPE}.accessibility.parts[0].touchTarget`]).toBe(
+      'a part has no touch target',
+    );
+  });
 });

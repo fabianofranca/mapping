@@ -1,4 +1,5 @@
 import {
+  accessibilityAudit,
   createDrawingCache,
   effectiveDensity,
   effectiveDirection,
@@ -7,13 +8,17 @@ import {
   projectIssues,
   SLOT_OVERFLOW,
   typeOfAnnotation,
+  type AnnotationIssue,
   type ComponentDrawing,
+  type ComponentDrawings,
   type DrawingCache,
   type DrawingSlotIssue,
   type Project,
 } from '../src/model';
 import { builtinFontBook, measurerFor, type FontBook } from './image/textMeasurer';
+import { auditWarning } from './auditViews';
 import type { Refs } from './items';
+import { issueView } from './views';
 
 // Per-instance drawing proof (Faithful components stage, CF10, decision 27): the component of
 // each marking created or changed by the batch is instantiated in the rectangle and with the real values,
@@ -59,8 +64,8 @@ function spaceChanged(before: Project, after: Project, containerId: string | nul
   );
 }
 
-/** Markings the batch created or changed (rectangle, annotation, mode, density, direction) and their owners. */
-function touchedMarkings(before: Project, after: Project): Set<string> {
+/** Markings the batch created or changed (rectangle, annotation, mode, density, direction). */
+function changedMarkings(before: Project, after: Project): Set<string> {
   const old = projectIndex(before);
   const next = projectIndex(after);
   const touched = new Set<string>();
@@ -73,7 +78,13 @@ function touchedMarkings(before: Project, after: Project): Set<string> {
       annotationsChanged(old.annotations, next.annotationsByMarking, marking.id);
     if (changed) touched.add(marking.id);
   }
-  addDependents(next, touched);
+  return touched;
+}
+
+/** The changed markings and whoever depends on their drawing (their followers and owners). */
+function touchedMarkings(before: Project, after: Project): Set<string> {
+  const touched = changedMarkings(before, after);
+  addDependents(projectIndex(after), touched);
   return touched;
 }
 
@@ -209,7 +220,7 @@ export function drawingProof(
 ): Map<string, readonly DrawingItem[]> {
   const touched = touchedMarkings(before, refs.project);
   if (touched.size === 0) return new Map();
-  return drawingItemsOf(refs, refs.project, touched);
+  return drawingItemsOf(refs, refs.project, touched, drawingsOf(refs, refs.project));
 }
 
 /**
@@ -220,12 +231,13 @@ function drawingItemsOf(
   refs: Refs,
   project: Project,
   touched: ReadonlySet<string> | null,
+  drawings: ComponentDrawings,
 ): Map<string, readonly DrawingItem[]> {
   const found = new Map<string, readonly DrawingItem[]>();
   const approximate = !(refs.loaded.fonts ?? builtinFontBook()).hasLibraryFonts;
   const add = (annotationId: string, items: readonly DrawingItem[]) =>
     found.set(annotationId, [...(found.get(annotationId) ?? []), ...items]);
-  for (const drawing of drawingsOf(refs, project).values()) {
+  for (const drawing of drawings.values()) {
     if (drawing.overflow && (touched === null || touched.has(drawing.markingId))) {
       add(drawing.annotationId, itemsOf(drawing, approximate));
     }
@@ -247,10 +259,49 @@ const itemKey = (item: DrawingItem): string =>
     ? `${item.code}\u0000${item.slot.id}`
     : `${item.code}\u0000${item.kind}\u0000${item.node}`;
 
+/** What tells two accessibility items of an annotation apart: the field, the part and the table cell. */
+const auditKey = (i: AnnotationIssue): string =>
+  [i.code, i.key, i.column, i.rowId, i.part?.id].map((x) => x ?? '').join('\u0000');
+
+/** The accessibility audit's pending items, by annotation, of the annotations in `only` (all when `null`). */
+function auditIssuesOf(
+  project: Project,
+  drawings: ComponentDrawings,
+  only: ReadonlySet<string> | null,
+): Map<string, readonly AnnotationIssue[]> {
+  const found = new Map<string, readonly AnnotationIssue[]>();
+  const index = projectIndex(project);
+  for (const [annotationId, entry] of accessibilityAudit(project, { drawings })) {
+    if (entry.issues.length === 0) continue;
+    const markingId = index.annotations.get(annotationId)?.markingId;
+    if (only !== null && (markingId === undefined || !only.has(markingId))) continue;
+    found.set(annotationId, entry.issues);
+  }
+  return found;
+}
+
 /**
- * The batch's `issues` with the drawing's items (does not fit, slot not accepted or full) added: `new` lists
- * only what the project did not already have before the batch, and `before`, `after` and `resolved` count the
- * annotations with a static pending item or a drawing item, so what was already there is not new.
+ * The `touch-target-small` warnings of the markings the batch created or changed (stage #1128, decision 9 of
+ * #1081): the audit's findings with the annotation, the marking and a message. They go in the plan's `warnings`,
+ * never in `issues`: a small touch area does not leave the annotation incomplete.
+ */
+export function touchWarnings(refs: Refs, before: Project): Record<string, unknown>[] {
+  const changed = changedMarkings(before, refs.project);
+  if (changed.size === 0) return [];
+  const audit = accessibilityAudit(refs.project, {
+    drawings: drawingsOf(refs, refs.project),
+  });
+  return [...audit.values()]
+    .flatMap((entry) => entry.findings)
+    .filter((finding) => changed.has(finding.markingId))
+    .map((finding) => auditWarning(refs, finding));
+}
+
+/**
+ * The batch's `issues` with the drawing's items (does not fit, slot not accepted or full) and the audit's
+ * (`accessible-label-missing`) added: `new` lists only what the project did not already have before the batch,
+ * and `before`, `after` and `resolved` count the annotations with a static pending item, a drawing item or an
+ * accessibility item, so what was already there is not new.
  */
 export function withDrawingIssues(
   issues: Record<string, unknown>,
@@ -258,25 +309,48 @@ export function withDrawingIssues(
   before: Project,
 ): Record<string, unknown> {
   // The saved project is drawn first: drawing `before` ahead of it leaves its cache stale for a changed direction.
-  const hasAfter = drawingItemsOf(refs, refs.project, null);
+  const drawingsAfter = drawingsOf(refs, refs.project);
+  const drawingsBefore = drawingsOf(refs, before);
+  const hasAfter = drawingItemsOf(refs, refs.project, null, drawingsAfter);
   const proof = drawingProof(refs, before);
-  const hadBefore = drawingItemsOf(refs, before, null);
-  const idsBefore = new Set([...projectIssues(before).keys(), ...hadBefore.keys()]);
-  const idsAfter = new Set([...projectIssues(refs.project).keys(), ...hasAfter.keys()]);
+  const hadBefore = drawingItemsOf(refs, before, null, drawingsBefore);
+  const auditAfter = auditIssuesOf(refs.project, drawingsAfter, null);
+  const auditBefore = auditIssuesOf(before, drawingsBefore, null);
+  const idsBefore = new Set([
+    ...projectIssues(before).keys(),
+    ...hadBefore.keys(),
+    ...auditBefore.keys(),
+  ]);
+  const idsAfter = new Set([
+    ...projectIssues(refs.project).keys(),
+    ...hasAfter.keys(),
+    ...auditAfter.keys(),
+  ]);
   const counts = {
     before: idsBefore.size,
     after: idsAfter.size,
     resolved: [...idsBefore].filter((id) => !idsAfter.has(id)).length,
   };
   const entries = [...((issues.new as IssueEntry[] | undefined) ?? [])];
-  for (const [annotationId, items] of proof) {
-    const had = new Set((hadBefore.get(annotationId) ?? []).map(itemKey));
-    const gained = items.filter((item) => !had.has(itemKey(item)));
-    if (gained.length === 0) continue;
+  const addGained = (annotationId: string, gained: readonly object[]) => {
+    if (gained.length === 0) return;
     const ref = refs.ref('a', annotationId);
     const at = entries.findIndex((e) => e.annotation === ref);
     if (at < 0) entries.push({ annotation: ref, issues: [...gained] });
     else entries[at] = { ...entries[at]!, issues: [...entries[at]!.issues, ...gained] };
+  };
+  for (const [annotationId, items] of proof) {
+    const had = new Set((hadBefore.get(annotationId) ?? []).map(itemKey));
+    addGained(
+      annotationId,
+      items.filter((item) => !had.has(itemKey(item))),
+    );
+  }
+  // Every annotation, not only the changed markings': a part that the batch makes drawn again (its slot child
+  // left) belongs to a marking the batch did not change, and `had` already keeps what was there before.
+  for (const [annotationId, items] of auditAfter) {
+    const had = new Set((auditBefore.get(annotationId) ?? []).map(auditKey));
+    addGained(annotationId, items.filter((i) => !had.has(auditKey(i))).map(issueView));
   }
   return { ...issues, ...counts, new: entries };
 }

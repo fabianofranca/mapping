@@ -591,7 +591,7 @@ describe('round-guide.mjs: base, index and excerpts (#1232, GL1)', () => {
       expect(out.split('\n').filter((l) => l.startsWith('Steps ('))).toHaveLength(1);
     });
 
-    it('R12: the four subsections with their setups and one Steps line per table excerpt', async () => {
+    it('R12: the five subsections with their setups and one Steps line per table excerpt', async () => {
       const { guideExcerpt } = await load();
       const guide = await guideOf(['R12']);
       const out = guideExcerpt(guide, ['R12']);
@@ -599,13 +599,14 @@ describe('round-guide.mjs: base, index and excerpts (#1232, GL1)', () => {
       expect(out).toContain('#### R12.23 to R12.28');
       expect(out).toContain('#### R12.34 to R12.40');
       expect(out).toContain('#### R12.41 to R12.43');
+      expect(out).toContain('#### R12.44');
       expect(
         out.match(/\*\*(?:Setup|Preparation)\.\*\*/g)?.length,
-      ).toBeGreaterThanOrEqual(5);
+      ).toBeGreaterThanOrEqual(6);
       const steps = out.split('\n').filter((l) => l.startsWith('Steps ('));
-      expect(steps).toHaveLength(5);
+      expect(steps).toHaveLength(6);
       const sum = steps.reduce((n, l) => n + Number(/^Steps \((\d+)\)/.exec(l)?.[1]), 0);
-      expect(sum).toBe(63);
+      expect(sum).toBe(64);
       expect(out).not.toMatch(/^\| R12\.\d/m);
     });
 
