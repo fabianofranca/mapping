@@ -1,4 +1,4 @@
-# Phase sessions read less before the work — [Não lançado]
+# Phase sessions read less before the work — 2026-11-15 (épico `epic/fase-contexto-leitura`, PR #2000, MCP unchanged, schema v20)
 
 ## Alterado
 
