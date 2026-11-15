@@ -6,6 +6,15 @@
 - The box rule: the `visible`, the sizes, the `anchors` and the `layout` of a slot and of its ancestors in the template cannot cite a field that only the `fallback` cites (`slot: the box cannot depend on a field of the default content: <field>`), because the default content is replaced by the child and the box has to be the same with or without it.
 - Which slot a child marking is in is derived from the geometry, never written to the project: the greatest intersection with the slot's box, the closest one when there is none, and a tie goes to the template order; a type that a slot accepts wins over a slot that accepts everything (`accepts` and `max` come with the specialization in a later phase). A new child with no geometry goes to the requested slot, else to the first one that accepts its type and is not full.
 - `docs/COMPONENT-FORMAT.md` ("Several slots and default content"), `docs/component.schema.json`, `docs/AGENT-GUIDE.md`, `docs/ARCHITECTURE.md` and the `spec-author` skill: the slot `id` and `fallback`, the rule that a code content lambda becomes a slot named by its parameter, and the pitfalls (numbered fields for free content, a slot without `id` in a component with two, a slot box that depends on the default content).
+- Several slots and default content in the drawing: the `fallback` of a slot is drawn, and measured in the slot's `hug`, only while the slot is empty, and a `hug` slot that holds children measures them (their box plus the slot's `padding`). It works in the app, in the MCP's image and in the viewer, which hides the `fallback` of the slots that receive children of the screen's tree. The "content larger than the box" warning names the slot (`content larger than the box: slot <id>`).
+- Arrange, the layout of a screen without geometry and the position of a new instance work per slot: each child is arranged by the layout of its own slot, a new child goes after the last one of the same slot, and the request can name the slot (`slot`).
+- The drawing of each component says its slots, which slot each child is in and which default-content fields are inactive (`slots`, `slotOf`, `inactiveFields`).
+- `docs/COMPONENT-FORMAT.md` ("Several slots and default content", "Sizing", "Engine warnings", "`clip` on the frame and the slot", "Known limits") and `docs/ARCHITECTURE.md`: the probe and the final drawing, the rounded clip and the two differences between the app and the MCP's image (the slot's own fill, which only shows in the PNG, and the truncated label of the `segmented-button`, `S…` in the app and `…` in the PNG).
+- Test library `rounded-bar` (`tests/fixtures/slots`): a bar with a radius of 16 and a slot with `clip`.
+
+## Corrigido
+
+- A child marking drawn in a slot with `clip` inside a frame with rounded corners is now cut by the rounding of the frame, in the app and in the MCP's image (before, it was cut by the slot's rectangle and the corners stuck out). Without a radius nothing changes.
 
 ## Alterado
 
