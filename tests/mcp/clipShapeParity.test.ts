@@ -3,21 +3,21 @@
 // the raster paints (MCP) agree within 0.5 px at scale 1 and 2. jsdom because it mounts the Konva layer.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { installFakeCanvas } from '../canvas/harness';
+import { installFakeCanvas } from '../canvas/fakeCanvas';
 import {
   type LayerDrawing,
   ComponentLayerRenderer,
 } from '../../src/canvas/components/componentLayer';
 import { createRaster } from '../../mcp/image/raster';
 import { paintScene } from '../../mcp/image/sceneRaster';
-import { createFontBook, measurerFor } from '../../mcp/image/textMeasurer';
+import { approximateMeasurer } from '../../src/model/components/instantiate';
 import type { Placement, Rect } from '../../src/model';
 import { type FrameNode, baseNode, translate } from '../../src/model/components/scene';
 
 beforeAll(() => installFakeCanvas());
 
-const book = createFontBook();
-const measure = measurerFor(book);
+// The scenes have no text: the approximate measurer is enough and the test needs no font.
+const measure = approximateMeasurer;
 const CLIP: Rect = { x: 10, y: 10, width: 100, height: 40 };
 const PLACEMENTS: ReadonlyMap<string, Placement> = new Map([
   ['img-1', { x: 0, y: 0, scale: 1 }],
@@ -154,7 +154,6 @@ describe('clipShape: Konva and raster silhouettes agree (<= 0.5 px)', () => {
           scaleX: scale,
           scaleY: scale,
           clip: { x: 0, y: 0, width: raster.width, height: raster.height },
-          fonts: book,
         },
       );
       let checked = 0;
