@@ -492,6 +492,7 @@ Write to `painel.py` **at every advance** (phase opened and merged, PR, tester, 
    Briefing (fill in the folder, the file and `<desde>`, the `at` of the first `log` record):
 
    <!-- portuguese-guard:begin frozen history briefing: it quotes the Portuguese log lines and PR bodies it reads and the frozen return line -->
+
    ```text
    You recover, once, the quality signals of the queue panel from before stage #1889. Folder: <folder> (a downloaded copy: `queue.json`, `meta.json`, `log.json`; read-only, never publish). Write the batch to <file>, in the `painel.py apply` syntax (one subcommand per line, without `painel.py` and without the folder): `sinal <id> campo=valor…`, `escapado '#<bug>' etapa='#<n>' sev=<high|medium|low>` and `log "…"`. Check it with `painel.py apply` on a second copy of the folder before returning. Return one line: `desde=<ISO> ate=<ISO> linhas=<k>; log: <a> linhas de resultado, <b> viraram sinal; PRs: <c> ligados, <d> sem ligação; escapados: <e>` (`ate` is the time you finish; `linhas` is the number of lines that did not turn into a `sinal`).
 
@@ -507,6 +508,7 @@ Write to `painel.py` **at every advance** (phase opened and merged, PR, tester, 
 
    The `ci` is not recovered (the CI of old commits is gone): leave it out, it stays "sem dado". A line that does not turn into a `sinal` is counted in `linhas=` and goes in a single `log` line, `log "histórico: <k> linhas sem sessão (<hora de cada uma>: <motivo>)"`, with the time of each one and the reason (a total, a repeat, no session of that stage). `painel.py historico --feito` and `escapado --conferido` are not in the batch: the coordinator runs them after `apply`, with `ate` = the real finishing time.
    ```
+
    <!-- portuguese-guard:end -->
 
 ## End
