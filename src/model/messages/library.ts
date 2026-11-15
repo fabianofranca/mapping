@@ -16,6 +16,8 @@ export const libraryMessages = {
   'library.specAmbiguous':
     'there are {count} specializations in the package ({files}): say which one to validate',
   'library.paramOutsideSignature': 'parameter outside the signature: "{name}"',
+  'library.slotNotInComponent': 'slot does not exist in the component: {id}',
+  'library.componentNoSlotIds': 'slots: the component has no slot with an id',
   // `mapping-signature` sheets of the package (`librarySignature.ts`)
   'library.signatureNotRead': 'file could not be read: {path}',
   'library.signatureInvalid': '{reason}',

@@ -26,6 +26,12 @@ export interface PlanSignatureImportOptions {
   readonly previous?: Signature;
   /** Where the sheet lives in the package; the default is `signatures/<type>[.<case>].<platform or system>.json`. */
   readonly signaturePath?: string;
+  /**
+   * The ids of the slots of the type's component (`componentSlots`, in template order): with them, a
+   * `role: slot` parameter is linked to the slot of the same normalized name (stage #1080, only in a
+   * `formatVersion` 17 specialization and in a code target). The model does not read components.
+   */
+  readonly slots?: readonly string[];
 }
 
 export type ImportErrorCode =
@@ -43,6 +49,14 @@ export interface ImportLink {
   readonly param: string;
   readonly field: string;
   readonly via: ImportLinkVia;
+}
+
+/** A `role: slot` parameter linked to a slot of the component: by an entry already in `code.slots` or by name. */
+export interface ImportSlotLink {
+  readonly slot: string;
+  /** The parameter, as written in the call. */
+  readonly param: string;
+  readonly via: 'slots' | 'name';
 }
 
 /** A notice the importer wrote (all carry `ref` = the sheet's path). */
@@ -76,6 +90,8 @@ export interface SignatureImportPlan {
   /** The fields the import created, as ready-made JSON. */
   readonly fields: readonly SpecField[];
   readonly links: readonly ImportLink[];
+  /** The slot parameters linked to the component's slots (empty without the `slots` option). */
+  readonly slotLinks: readonly ImportSlotLink[];
   /** The resulting platform `code` (code target). */
   readonly code?: SpecCode;
   /** The resulting `sources` of the type (design target). */

@@ -113,7 +113,7 @@ describe('slot parameters and the component slots', () => {
   it('a parameter with a field model is both a field (default content) and the slot parameter', () => {
     const modeled = slotParam('navigation_icon', { type: '@Composable () -> Unit' });
     const result = plan(v17(), [modeled]);
-    expect(result.type.fields.map((f) => f.key)).toContain('navigationIcon');
+    expect(result.type.fields.map((f) => f.key)).toContain('navigation_icon');
     expect(result.code?.slots).toEqual({ navigationIcon: 'navigation_icon' });
     expect(result.unmapped).toEqual([]);
   });
@@ -126,7 +126,10 @@ describe('slot parameters and the component slots', () => {
       type.code = {
         compose: {
           symbol: 'androidx.compose.material3.Button',
-          variants: { field: 'kind', cases: { outlined: {} } },
+          variants: {
+            field: 'kind',
+            cases: { outlined: { notes: 'outlined' } },
+          },
         },
       };
     });

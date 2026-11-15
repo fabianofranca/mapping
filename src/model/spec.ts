@@ -64,7 +64,7 @@ function onlyFormat(version: number): SpecMsg {
 // (`colors.containerColor`) or positional (`#0`), plus `signature` on the type's `sources` (see
 // `specSignature.ts`); version 17 is 16 plus the named slots (stage #1080): `slots` on the type
 // (`id`, `name`, `description`, `accepts`, `max`) and, in the `code` (and in each `variants` case),
-// `slots` (slot id → parameter name), outside the version contract (see `specSlotKeys.ts`).
+// `slots` (slot id → parameter name), outside the version contract (see `diffSpecs`).
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -941,7 +941,7 @@ const signatureKeys = {
   ignore: z.array(nonEmpty).optional(),
   calls: z.record(z.string(), nonEmpty).optional(),
   formats: z.record(z.string(), nonEmpty).optional(),
-  // `formatVersion` 17 only (`specSlotKeys.ts`): slot id → parameter name.
+  // `formatVersion` 17 only (`checkSlotKeys`): slot id → parameter name.
   slots: z.record(z.string(), nonEmpty).optional(),
 };
 
@@ -2343,6 +2343,8 @@ interface V11Type {
   readonly childRolesLabel?: string | undefined;
   readonly doc?: string | SpecDocRef | undefined;
   readonly fields?: readonly V14Field[] | undefined;
+  readonly slots?: readonly { readonly accepts?: unknown }[] | undefined;
+  readonly code?: Readonly<Record<string, unknown>> | undefined;
 }
 
 /** `ref` field or column with `accepts.annotations` (v14), in the raw shape. */
@@ -2555,7 +2557,7 @@ function checkAcceptsAnnotations(
 }
 
 /** First `formatVersion` of `slots` on the type and of `code.slots`. */
-const SLOTS_VERSION = 17;
+export const SLOTS_VERSION = 17;
 
 /** Raw `code` entry (or case) as far as `slots` is concerned. */
 interface RawSlotCode {

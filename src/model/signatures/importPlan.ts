@@ -7,6 +7,7 @@ import type {
   SpecMigrationStep,
   SpecNotice,
 } from '../spec';
+import { SLOTS_VERSION } from '../spec';
 import { interpretsParamTargets, PARAM_TARGETS_FORMAT_VERSION } from '../codeParams';
 import { diffSpecs } from '../specVersions';
 import { findTypeInSpec } from '../specLookup';
@@ -26,6 +27,7 @@ import type {
   ImportLink,
   ImportLinkVia,
   ImportNotice,
+  ImportSlotLink,
   PlanSignatureImportOptions,
   PlanSignatureImportResult,
   SignatureImportPlan,
@@ -60,6 +62,7 @@ class Importer {
   /** The targets that come only from the base's `params`: the case's sheet does not judge them. */
   private readonly inherited = new Set<string>();
   private readonly links: ImportLink[] = [];
+  private readonly slotLinks: ImportSlotLink[] = [];
   private readonly created: SpecField[] = [];
   private readonly pending: Unit[] = [];
   private readonly ignored = new Set<string>();
@@ -415,6 +418,44 @@ class Importer {
     scope.values = { ...scope.values, [field.key]: { ...current, [option]: text } };
   }
 
+  // --- the slot parameters (stage #1080, decision 9) ---
+
+  /**
+   * Links the `role: slot` parameters to the component's slots: an entry already in `code.slots` (the
+   * case's, else the base's) keeps its parameter; the others take the parameter of the same
+   * normalized name, and the entry is written only when the written name differs from the slot's
+   * `id`. Returns slot id → parameter for what got linked (the `unmapped` leaves them out).
+   */
+  private linkSlots(): Record<string, string> {
+    const linked: Record<string, string> = {};
+    const scope = this.prepared.scope as Scope | undefined;
+    const ids = this.options.slots;
+    if (this.design || scope === undefined || ids === undefined) return linked;
+    if (this.spec.formatVersion < SLOTS_VERSION) return linked;
+    const base = this.prepared.code as SpecCode;
+    const entries = { ...base.slots, ...scope.slots };
+    const taken = new Set(Object.values(entries));
+    const free = this.signature.params.filter((p) => p.role === 'slot');
+    for (const slot of ids) {
+      const entry = entries[slot];
+      if (entry !== undefined) {
+        linked[slot] = entry;
+        this.slotLinks.push({ slot, param: entry, via: 'slots' });
+        continue;
+      }
+      const param = free.find(
+        (p) => !taken.has(callName(p)) && normalizeName(callName(p)) === normalizeName(slot),
+      );
+      if (param === undefined) continue;
+      const written = callName(param);
+      taken.add(written);
+      linked[slot] = written;
+      this.slotLinks.push({ slot, param: written, via: 'name' });
+      if (written !== slot) scope.slots = { ...scope.slots, [slot]: written };
+    }
+    return linked;
+  }
+
   // --- what left, warnings and the rest ---
 
   private paramsView(): Record<string, string> {
@@ -655,9 +696,11 @@ class Importer {
     this.dropRemovedParams(outside, diff);
     const code = this.prepared.code;
     const ignore = [...this.configured, ...this.ignored];
+    const slots = this.linkSlots();
     const unmapped = unmappedParams(this.signature, {
       params: this.paramsView(),
       ignore,
+      slots,
     });
     return {
       spec: this.spec,
@@ -665,6 +708,7 @@ class Importer {
       signaturePath: this.path,
       fields: this.created,
       links: this.links,
+      slotLinks: this.slotLinks,
       ...(code === undefined ? {} : { code }),
       ...(this.prepared.source === undefined ? {} : { sources: this.type.sources ?? [] }),
       notices,

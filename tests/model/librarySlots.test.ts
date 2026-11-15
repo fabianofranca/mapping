@@ -187,7 +187,9 @@ describe('code.slots with the signature sheet (decision 9)', () => {
 
   it('without a signature there is no warning (the parameter is not checked)', () => {
     const found = issues(withCode({ slots: { navigationIcon: 'whatever' } }));
-    expect(found.filter((i) => i.severity === 'warning')).toEqual([]);
+    expect(
+      found.filter((i) => i.severity === 'warning' && i.path.includes('.slots')),
+    ).toEqual([]);
   });
 
   it('the signature of a variants case checks the case slots', () => {

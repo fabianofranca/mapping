@@ -7,6 +7,8 @@ import {
   type Spec,
   type SpecCode,
 } from '../src/model';
+import { parseComponentText } from '../src/model/components/parseComponent';
+import { componentSlots, slotKey } from '../src/model/components/slots';
 import { ToolError, type ToolErrorCode } from './errors';
 import { packageByPath, readJsonFile, type PackageSource } from './library';
 import { mergeOrdered } from './mergeOrdered';
@@ -126,6 +128,25 @@ async function readPrevious(
   };
 }
 
+/**
+ * The ids of the slots of the type's component, in template order (what links the `role: slot`
+ * parameters to the slots); `undefined` when the type has no component or it cannot be read: the
+ * importer then links no slot.
+ */
+async function componentSlotIds(
+  pkg: PackageSource,
+  typeId: string,
+): Promise<readonly string[] | undefined> {
+  const ref = pkg.spec.layers
+    .flatMap((layer) => layer.annotationTypes)
+    .find((type) => type.id === typeId)?.component;
+  if (ref === undefined) return undefined;
+  const text = await pkg.read(pkg.resolve(ref));
+  if (text === null) return undefined;
+  const parsed = parseComponentText(text);
+  return parsed.ok ? componentSlots(parsed.component).map(slotKey) : undefined;
+}
+
 /** Merges the imported type into the file's raw JSON (keeps the file's key order). */
 function mergedSpec(rawText: string, typeId: string, imported: unknown): unknown {
   const raw: unknown = JSON.parse(rawText);
@@ -149,12 +170,14 @@ export async function planSignatureImportTool(
   const signature = await readSignature(roots, args);
   const pkg = await packageByPath(roots, args.path);
   const { signature: previous, problem } = await readPrevious(pkg, args);
+  const slots = await componentSlotIds(pkg, args.type);
   const result = planSignatureImport(pkg.spec, {
     type: args.type,
     target: alvo,
     signature,
     ...(args.variant === undefined ? {} : { variant: args.variant }),
     ...(previous === undefined ? {} : { previous }),
+    ...(slots === undefined ? {} : { slots }),
   });
   if (!result.ok) {
     throw new ToolError(CODES[result.code], result.detail, {
@@ -176,6 +199,7 @@ export async function planSignatureImportTool(
     ...(problem === undefined ? {} : { previousProblem: problem }),
     fields: plan.fields,
     links: plan.links,
+    ...(plan.slotLinks.length === 0 ? {} : { slotLinks: plan.slotLinks }),
     ...(plan.code === undefined ? {} : { code: plan.code }),
     ...(plan.sources === undefined ? {} : { sources: plan.sources }),
     notices: plan.notices,
