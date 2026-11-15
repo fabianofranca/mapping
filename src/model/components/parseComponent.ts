@@ -139,6 +139,8 @@ const DIRECT_CONDITION_OPS: readonly string[] = [
   ...COMPARISON_OPS,
 ];
 const ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
+/** The id of a slot (v4): camelCase allowed, so it can equal the platform's parameter (`floatingActionButton`). */
+const SLOT_ID_PATTERN = /^[a-z][a-zA-Z0-9_-]*$/;
 const PERCENT_PATTERN = /^\d+(\.\d+)?%$/;
 
 /** Maximum number of shadows per node (`shadow` as a list, v4). */
@@ -1123,7 +1125,7 @@ function checkNode(
     ellipse: [],
     text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
     path: ['d', 'viewBox', 'fillRule', 'mirror'],
-    slot: ['label', 'layout', 'clip', 'provide'],
+    slot: ['label', 'layout', 'clip', 'provide', 'id', 'fallback'],
     repeat: [
       'field',
       'count',
@@ -1214,6 +1216,14 @@ function checkNode(
       if ('layout' in value) checkLayout(value.layout, join(path, 'layout'), out);
       if ('clip' in value) checkBoolExpr(value.clip, join(path, 'clip'), out);
       if ('provide' in value) checkProvide(value.provide, join(path, 'provide'), out);
+      if ('id' in value) checkSlotId(value.id, join(path, 'id'), out);
+      if ('fallback' in value)
+        checkFallback(
+          value.fallback,
+          join(path, 'fallback'),
+          layoutParent(value.layout),
+          out,
+        );
       return;
     case 'repeat':
       checkRepeat(value, path, out);
@@ -1225,6 +1235,24 @@ function checkNode(
       checkIconNode(value, path, out);
       return;
   }
+}
+
+/** `slot.id` (v4): text in the slot id pattern. */
+function checkSlotId(value: unknown, path: string, out: Ctx): void {
+  if (typeof value !== 'string' || !SLOT_ID_PATTERN.test(value))
+    add(out, path, `expected text matching ${SLOT_ID_PATTERN.source}`);
+}
+
+/** `slot.fallback` (v4): a `frame` (a node like the others, with the slot's layout as parent) that has no `slot`. */
+function checkFallback(value: unknown, path: string, parent: ParentKind, out: Ctx): void {
+  checkNode(value, path, out, parent);
+  if (!isRecord(value) || value.type !== 'frame') {
+    if (isRecord(value) && typeof value.type === 'string' && value.type !== 'frame')
+      add(out, join(path, 'type'), 'the fallback must be of type "frame"');
+    return;
+  }
+  for (const nested of nodesOfTypes(value, path, ['slot']))
+    add(out, nested.path, 'fallback: cannot have a slot');
 }
 
 /** `icon` (formatVersion 4): `name` required (text or expression), `color` and `strokeWidth`. */
@@ -2097,8 +2125,136 @@ function collectIssues(
       }
     }
     issues.push(...iconVersionIssues(version, template));
+    issues.push(...slotVersionIssues(version, template));
+    issues.push(...slotNameIssues(version, template));
   }
   return issues;
+}
+
+// ---------------------------------------------------------------------------------------
+// Named slots (v4): `id`, `fallback` and the box rule
+// ---------------------------------------------------------------------------------------
+
+/** A slot of the raw template with the path and its ancestors (root first), in depth, as `componentSlots` lists them. */
+interface RawSlot {
+  readonly node: Rec;
+  readonly path: string;
+  readonly ancestors: readonly { readonly node: Rec; readonly path: string }[];
+}
+
+function rawSlots(
+  node: unknown,
+  path: string,
+  ancestors: RawSlot['ancestors'] = [],
+  found: RawSlot[] = [],
+): RawSlot[] {
+  if (!isRecord(node)) return found;
+  if (node.type === 'slot') {
+    found.push({ node, path, ancestors });
+    return found;
+  }
+  if (node.type !== 'frame' || !Array.isArray(node.children)) return found;
+  const chain = [...ancestors, { node, path }];
+  node.children.forEach((child: unknown, i) =>
+    rawSlots(child, `${join(path, 'children')}[${i}]`, chain, found),
+  );
+  return found;
+}
+
+const isV4 = (version: unknown): boolean =>
+  typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY;
+
+/** `id` and `fallback` of a slot in a version before 4: `only allowed with formatVersion 4`, at the key's path. */
+function slotVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  if (isV4(version)) return [];
+  const out: ComponentIssue[] = [];
+  for (const { node, path } of rawSlots(template, 'template'))
+    for (const key of ['id', 'fallback'])
+      if (key in node) addIssue(out, join(path, key), V4_ONLY_MESSAGE);
+  return out;
+}
+
+/** The keys that make the slot's box and visibility, and so cannot cite a field of the default content. */
+const SLOT_BOX_KEYS = [
+  'visible',
+  'width',
+  'height',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
+  'anchors',
+  'layout',
+];
+
+/** The template as the rest of it for one slot: without any `fallback` and without the box keys of that slot and its ancestors. */
+function restForBox(node: unknown, chain: ReadonlySet<unknown>): unknown {
+  if (!isRecord(node)) return node;
+  const kept = Object.entries(node)
+    .filter(([key]) => !(node.type === 'slot' && key === 'fallback'))
+    .filter(([key]) => !(chain.has(node) && SLOT_BOX_KEYS.includes(key)))
+    .map(([key, value]): [string, unknown] => [
+      key,
+      key === 'children' && Array.isArray(value)
+        ? value.map((child: unknown) => restForBox(child, chain))
+        : value,
+    ]);
+  return Object.fromEntries(kept);
+}
+
+/** The fields only the slot's `fallback` cites: not by the rest of the template, setting aside the box keys under check. */
+function fallbackOnlyFields(template: unknown, slot: RawSlot): string[] {
+  const chain = new Set<unknown>([slot.node, ...slot.ancestors.map((a) => a.node)]);
+  const rest = referencedFields(restForBox(template, chain));
+  return [...referencedFields(slot.node.fallback)].filter((field) => !rest.has(field));
+}
+
+/** The keys of the slot and of its ancestors that cite one of the default-content `fields`. */
+function boxCitations(slot: RawSlot, fields: readonly string[]): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  for (const { node, path } of [...slot.ancestors, { node: slot.node, path: slot.path }])
+    for (const key of SLOT_BOX_KEYS) {
+      if (!(key in node)) continue;
+      const cited = referencedFields(node[key]);
+      for (const field of fields.filter((f) => cited.has(f)))
+        addIssue(out, join(path, key), `${BOX_MESSAGE}: ${field}`);
+    }
+  return out;
+}
+
+const NEEDS_ID_MESSAGE = 'slot: with more than one slot, each one needs an id';
+const BOX_MESSAGE = 'slot: the box cannot depend on a field of the default content';
+
+/**
+ * Slot rules of the v4 template: with more than one slot, each one needs an `id`, and it is unique
+ * (`slot: repeated id: <id>`); the box and the visibility of a slot, and of its ancestors, cannot cite a
+ * field that only the slot's `fallback` cites (a `visible` by `$has` of that field goes inside the
+ * `fallback`). Before 4 none of it applies: two slots without `id` stay valid.
+ */
+function slotNameIssues(version: unknown, template: unknown): ComponentIssue[] {
+  if (!isV4(version)) return [];
+  const out: ComponentIssue[] = [];
+  const slots = rawSlots(template, 'template');
+  const seen = new Set<string>();
+  for (const slot of slots) {
+    const id = slot.node.id;
+    if (id === undefined && slots.length > 1) addIssue(out, slot.path, NEEDS_ID_MESSAGE);
+    if (typeof id !== 'string' || !SLOT_ID_PATTERN.test(id)) continue;
+    if (seen.has(id)) addIssue(out, join(slot.path, 'id'), `slot: repeated id: ${id}`);
+    seen.add(id);
+  }
+  return [...out, ...slotBoxIssues(template, slots)];
+}
+
+/** The box rule for every slot that has a `fallback`. */
+function slotBoxIssues(template: unknown, slots: readonly RawSlot[]): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  for (const slot of slots) {
+    if (!isRecord(slot.node.fallback)) continue;
+    const fields = fallbackOnlyFields(template, slot);
+    if (fields.length > 0) out.push(...boxCitations(slot, fields));
+  }
+  return out;
 }
 
 /** Rows of a `table` field's `preview`: objects with text, number or null values. */
@@ -2163,6 +2319,8 @@ function collectWarnings(node: unknown, path: string): ComponentIssue[] {
   );
   if (node.template !== undefined)
     out.push(...collectWarnings(node.template, join(path, 'template')));
+  if (node.type === 'slot' && node.fallback !== undefined)
+    out.push(...collectWarnings(node.fallback, join(path, 'fallback')));
   return out;
 }
 

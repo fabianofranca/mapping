@@ -495,7 +495,22 @@ export interface PathTemplate extends TemplateNodeBase {
  */
 export interface SlotTemplate extends TemplateNodeBase {
   readonly type: 'slot';
+  /**
+   * Name of the slot (v4; pattern `^[a-z][a-zA-Z0-9_-]*$`, so it can equal the platform's
+   * parameter, such as `floatingActionButton`): required in every slot when the template has more than
+   * one, unique in the component; optional when it is the only one. The type's `slots` (the
+   * specialization) and the `slot` of a placement refer to it.
+   */
+  readonly id?: string;
   readonly label?: Expr<string>;
+  /**
+   * Default content (v4): a `frame` drawn in the slot's box while no child marking is in it, like the
+   * reserve content of a `<slot>` (Web Components, Vue) or the default value of a Compose lambda.
+   * It cannot have a `slot`. The fields only it cites are the slot's default-content fields
+   * (`fallbackFields`); the box and the visibility of the slot (and of its ancestors) cannot depend
+   * on them.
+   */
+  readonly fallback?: FrameTemplate;
   /**
    * How the child instances are organized inside the slot (component with a slot): `row`/`column`
    * position the children by sibling order and save their rectangles; `none` (or absent) leaves

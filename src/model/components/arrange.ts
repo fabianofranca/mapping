@@ -16,7 +16,6 @@ import type {
   LayoutSpec,
   LayoutWrap,
   SlotTemplate,
-  TemplateNode,
 } from './componentFormat';
 import { evaluate, evaluateBoolean } from './expressions';
 import {
@@ -40,6 +39,7 @@ import {
 import type { Library, TypeDef } from './library';
 import { type Instance, type Screen, childrenOf, renderOrder, updateBox } from './screen';
 import { type FrameNode, absoluteBoxes, walk } from './scene';
+import { componentSlots } from './slots';
 import { applyTokens, resolveTokens } from './tokens';
 import {
   alignInCell,
@@ -90,18 +90,9 @@ const NO_LAYOUT: ResolvedSlotLayout = {
   lineGap: 0,
 };
 
-/** First `slot` node of the template (depth-first search through the frames' `children`), or none. */
+/** First `slot` node of the template (`componentSlots`: depth-first through the frames' `children`), or none. */
 export function findSlot(component: ComponentFile): SlotTemplate | undefined {
-  const search = (node: TemplateNode): SlotTemplate | undefined => {
-    if (node.type === 'slot') return node;
-    if (node.type !== 'frame') return undefined;
-    for (const child of node.children ?? []) {
-      const found = search(child);
-      if (found) return found;
-    }
-    return undefined;
-  };
-  return search(component.template);
+  return componentSlots(component)[0];
 }
 
 /**
