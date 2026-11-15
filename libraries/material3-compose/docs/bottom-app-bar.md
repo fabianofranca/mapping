@@ -6,13 +6,18 @@ Annotation type: `bottom-app-bar` (Components layer).
 
 ## Fields
 
-| Key                    | Label           | Type   | Required | Options                                                   | Default | Description                                                                             |
-| ---------------------- | --------------- | ------ | -------- | --------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------- |
-| `actionIcon1`          | Action 1        | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | First action icon, on the left. Empty = no action.                                      |
-| `actionIcon2`          | Action 2        | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Second action icon. Empty = no action.                                                  |
-| `actionIcon3`          | Action 3        | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Third action icon. Empty = no action.                                                   |
-| `actionIcon4`          | Action 4        | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Fourth action icon. Empty = no action.                                                  |
-| `floatingActionButton` | Floating button | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Icon of the FAB embedded on the right (floatingActionButton parameter). Empty = no FAB. |
+| Key                               | Label                       | Type   | Required | Options                                                   | Default | Description                                                                                                                               |
+| --------------------------------- | --------------------------- | ------ | -------- | --------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `actionIcon1`                     | Action 1                    | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | First action icon, on the left. Empty = no action.                                                                                        |
+| `actionIcon1Description`          | Action 1 description        | string | no       | free text                                                 |         | Accessible name of action 1 (it is an action): what a screen reader reads ("Search", "Open the menu"). Empty = a pending item.            |
+| `actionIcon2`                     | Action 2                    | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Second action icon. Empty = no action.                                                                                                    |
+| `actionIcon2Description`          | Action 2 description        | string | no       | free text                                                 |         | Accessible name of action 2 (it is an action): what a screen reader reads ("Search", "Open the menu"). Empty = a pending item.            |
+| `actionIcon3`                     | Action 3                    | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Third action icon. Empty = no action.                                                                                                     |
+| `actionIcon3Description`          | Action 3 description        | string | no       | free text                                                 |         | Accessible name of action 3 (it is an action): what a screen reader reads ("Search", "Open the menu"). Empty = a pending item.            |
+| `actionIcon4`                     | Action 4                    | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Fourth action icon. Empty = no action.                                                                                                    |
+| `actionIcon4Description`          | Action 4 description        | string | no       | free text                                                 |         | Accessible name of action 4 (it is an action): what a screen reader reads ("Search", "Open the menu"). Empty = a pending item.            |
+| `floatingActionButton`            | Floating button             | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Icon of the FAB embedded on the right (floatingActionButton parameter). Empty = no FAB.                                                   |
+| `floatingActionButtonDescription` | Floating button description | string | no       | free text                                                 |         | Accessible name of the floating button (it is an action): what a screen reader reads ("Search", "Open the menu"). Empty = a pending item. |
 
 ## Compose
 
@@ -53,9 +58,9 @@ Notes from the `code` (what the tool hands to the agent):
 
 ## Examples
 
-- **With floating button**: actionIcon1=Check, actionIcon2=Edit, actionIcon3=Favorite, floatingActionButton=Add
-- **Four actions**: actionIcon1=Home, actionIcon2=Search, actionIcon3=Person, actionIcon4=Settings
-- **One action and button**: actionIcon1=Search, floatingActionButton=Edit
+- **With floating button**: actionIcon1=Check, actionIcon1Description=Done, actionIcon2=Edit, actionIcon2Description=Edit, actionIcon3=Favorite, actionIcon3Description=Favorite, floatingActionButton=Add, floatingActionButtonDescription=Add
+- **Four actions**: actionIcon1=Home, actionIcon1Description=Home, actionIcon2=Search, actionIcon2Description=Search, actionIcon3=Person, actionIcon3Description=Profile, actionIcon4=Settings, actionIcon4Description=Settings
+- **One action and button**: actionIcon1=Search, actionIcon1Description=Search, floatingActionButton=Edit, floatingActionButtonDescription=Edit
 
 ## Fidelity
 

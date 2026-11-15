@@ -6,13 +6,16 @@ Annotation type: `top-app-bar` (layer Components).
 
 ## Fields
 
-| Key              | Label           | Type   | Required | Options                                                   | Default | Description                                                                 |
-| ---------------- | --------------- | ------ | -------- | --------------------------------------------------------- | ------- | --------------------------------------------------------------------------- |
-| `title`          | Title           | string | yes      |                                                           |         | Screen title.                                                               |
-| `style`          | Style           | enum   | no       | `small`, `center`, `medium`, `large`                      | `small` | small, center (centered title), medium or large (large title on two lines). |
-| `navigationIcon` | Navigation icon | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Icon on the left (Menu or ArrowBack, for example). Empty = no icon.         |
-| `actionIcon1`    | Action 1        | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | First action icon on the right. Empty = no action.                          |
-| `actionIcon2`    | Action 2        | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Second action icon on the right. Empty = no action.                         |
+| Key                         | Label                       | Type   | Required | Options                                                   | Default | Description                                                                                                                               |
+| --------------------------- | --------------------------- | ------ | -------- | --------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`                     | Title                       | string | yes      |                                                           |         | Screen title.                                                                                                                             |
+| `style`                     | Style                       | enum   | no       | `small`, `center`, `medium`, `large`                      | `small` | small, center (centered title), medium or large (large title on two lines).                                                               |
+| `navigationIcon`            | Navigation icon             | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Icon on the left (Menu or ArrowBack, for example). Empty = no icon.                                                                       |
+| `navigationIconDescription` | Navigation icon description | string | no       | free text                                                 |         | Accessible name of the navigation icon (it is an action): what a screen reader reads ("Search", "Open the menu"). Empty = a pending item. |
+| `actionIcon1`               | Action 1                    | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | First action icon on the right. Empty = no action.                                                                                        |
+| `actionIcon1Description`    | Action 1 description        | string | no       | free text                                                 |         | Accessible name of action 1 (it is an action): what a screen reader reads ("Search", "Open the menu"). Empty = a pending item.            |
+| `actionIcon2`               | Action 2                    | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Second action icon on the right. Empty = no action.                                                                                       |
+| `actionIcon2Description`    | Action 2 description        | string | no       | free text                                                 |         | Accessible name of action 2 (it is an action): what a screen reader reads ("Search", "Open the menu"). Empty = a pending item.            |
 
 ## Compose
 
@@ -54,9 +57,11 @@ fun ScreenTopBar() {
 
 ## Examples
 
-- **Default**: title=Home, style=small, navigationIcon=Menu, actionIcon1=Search, actionIcon2=MoreVert
-- **Centered**: title=Profile, style=center, navigationIcon=ArrowBack
-- **Large**: title=Settings, style=large, navigationIcon=ArrowBack
+- **Default**: title=Home, style=small, navigationIcon=Menu, navigationIconDescription=Open the menu, actionIcon1=Search, actionIcon1Description=Search, actionIcon2=MoreVert, actionIcon2Description=More options
+- **Centered**: title=Profile, style=center, navigationIcon=ArrowBack, navigationIconDescription=Back
+- **Large**: title=Settings, style=large, navigationIcon=ArrowBack, navigationIconDescription=Back
+- **Labeled actions**: title=Inbox, style=small, navigationIcon=Menu, navigationIconDescription=Open the menu, actionIcon1=Search, actionIcon1Description=Search, actionIcon2=MoreVert, actionIcon2Description=More options
+- **Actions without a label**: title=Inbox, style=small, navigationIcon=Menu, actionIcon1=Search, actionIcon2=MoreVert
 
 ## Fidelity
 

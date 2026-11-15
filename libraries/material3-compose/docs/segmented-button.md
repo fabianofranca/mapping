@@ -15,11 +15,12 @@ Annotation type: `segmented-button` (layer Components).
 
 Columns of `options` (one row per option):
 
-| Key        | Label    | Type   | Required | Options                                                   | Default |
-| ---------- | -------- | ------ | -------- | --------------------------------------------------------- | ------- |
-| `label`    | Label    | string | yes      |                                                           |         |
-| `icon`     | Icon     | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
-| `selected` | Selected | enum   | no       | `true`, `false`                                           | `false` |
+| Key               | Label            | Type   | Required | Options                                                   | Default |
+| ----------------- | ---------------- | ------ | -------- | --------------------------------------------------------- | ------- |
+| `label`           | Label            | string | yes      |                                                           |         |
+| `icon`            | Icon             | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
+| `iconDescription` | Icon description | string | no       | free text                                                 |         |
+| `selected`        | Selected         | enum   | no       | `true`, `false`                                           | `false` |
 
 ## Compose
 

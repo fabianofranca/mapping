@@ -44,11 +44,11 @@ Notes from `code` (what the tool hands to the agent):
 ## Examples
 
 - **Add**: icon=Add, contentDescription=Add, size=regular
-- **Small tertiary**: icon=Edit, size=small, containerColor=tertiaryContainer
-- **Large**: icon=Add, size=large
-- **Hovered**: icon=Add, size=regular, interaction=hovered
-- **Focused**: icon=Edit, size=small, containerColor=tertiaryContainer, interaction=focused
-- **Pressed**: icon=Add, size=large, interaction=pressed
+- **Small tertiary**: icon=Edit, contentDescription=Edit, size=small, containerColor=tertiaryContainer
+- **Large**: icon=Add, contentDescription=Add, size=large
+- **Hovered**: icon=Add, contentDescription=Add, size=regular, interaction=hovered
+- **Focused**: icon=Edit, contentDescription=Edit, size=small, containerColor=tertiaryContainer, interaction=focused
+- **Pressed**: icon=Add, contentDescription=Add, size=large, interaction=pressed
 
 ## Fidelity
 
