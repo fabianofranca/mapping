@@ -326,6 +326,94 @@ describe('painel.py import (FM7, decision 17)', () => {
   });
 
   it(
+    'carries meta.escapados, meta.escapadosAt and meta.historico (QC1, F1) and adds none when the old panel has no such keys',
+    () => {
+      run('import', newDir, oldDir);
+      const plain = json(newDir, 'meta')[0]!;
+      expect(plain).not.toHaveProperty('escapados');
+      expect(plain).not.toHaveProperty('escapadosAt');
+      expect(plain).not.toHaveProperty('historico');
+
+      const escapados = [
+        { bug: '#1', etapa: '#2', sev: 'medium', at: '2026-11-12T10:00:00Z' },
+      ];
+      const historico = {
+        desde: '2026-11-11T00:00:00Z',
+        ate: '2026-11-14T00:00:00Z',
+        linhas: 12,
+      };
+      writeQueue(
+        oldDir,
+        oldQueue(),
+        { ...oldMeta(), escapados, escapadosAt: '2026-11-13T09:00:00Z', historico },
+        [{ at: '2026-11-10T08:00:00Z', text: 'Execução iniciada' }],
+      );
+      rmSync(newDir, { recursive: true, force: true });
+      run('init', newDir);
+      run('import', newDir, oldDir);
+      const meta = json(newDir, 'meta')[0]!;
+      expect(meta.escapados).toEqual(escapados);
+      expect(meta.escapadosAt).toBe('2026-11-13T09:00:00Z');
+      expect(meta.historico).toEqual(historico);
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'carries meta.canarios with its baseline next to meta.historico (QC2, F2) and adds none when the old panel has no canary',
+    () => {
+      run('import', newDir, oldDir);
+      expect(json(newDir, 'meta')[0]!).not.toHaveProperty('canarios');
+
+      const canarios = [
+        {
+          id: 'A',
+          papel: 'reteste',
+          de: 'Sonnet medium',
+          modelo: 'Haiku',
+          esforco: 'medium',
+          n: 5,
+          volta: 2,
+          inicio: '2026-11-12T12:00:00Z',
+          sessoes: [],
+          estado: 'ativo',
+          motivo: '',
+          fim: null,
+          resumo: {
+            antes: { sessoes: 3 },
+            canario: { sessoes: 0 },
+            veredito: 'não promover',
+          },
+        },
+      ];
+      const historico = {
+        desde: '2026-11-11T00:00:00Z',
+        ate: '2026-11-14T00:00:00Z',
+        linhas: 12,
+      };
+      writeQueue(oldDir, oldQueue(), { ...oldMeta(), canarios, historico }, [
+        { at: '2026-11-10T08:00:00Z', text: 'Execução iniciada' },
+      ]);
+      rmSync(newDir, { recursive: true, force: true });
+      run('init', newDir);
+      run('import', newDir, oldDir);
+      const meta = json(newDir, 'meta')[0]!;
+      expect(meta.historico).toEqual(historico);
+      const carried = meta.canarios as Record<string, unknown>[];
+      expect(carried).toHaveLength(1);
+      expect(carried[0]).toMatchObject({
+        id: 'A',
+        papel: 'reteste',
+        de: 'Sonnet medium',
+        n: 5,
+        volta: 2,
+        inicio: '2026-11-12T12:00:00Z',
+      });
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
     'brings aguardando, em andamento, esperando dono and falhou, in order and renumbered from 1 to n, with the ficha',
     () => {
       run('import', newDir, oldDir);
