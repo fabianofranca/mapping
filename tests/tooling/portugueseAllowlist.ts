@@ -2173,6 +2173,7 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     source: 'scripts/testing/cloud.mjs',
     group: 'names',
   },
+  { term: 'Onde o projeto é salvo', source: 'scripts/testing/cloud.mjs', group: 'names' },
   { term: 'título', source: 'scripts/testing/round-guide.mjs', group: 'script-output' },
   {
     term: 'já é o registrado; nada mudou',
