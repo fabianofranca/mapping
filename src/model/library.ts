@@ -615,13 +615,26 @@ function slotCoherence(
     check(slot.id, `${base}.slots[${index}].id`),
   );
   for (const [platform, entry] of Object.entries(type.code ?? {})) {
-    const at = `${base}.code.${platform}`;
-    for (const id of Object.keys(entry.slots ?? {})) check(id, `${at}.slots.${id}`);
-    for (const [value, kase] of Object.entries(entry.variants?.cases ?? {})) {
-      for (const id of Object.keys(kase.slots ?? {}))
-        check(id, `${at}.variants.cases.${value}.slots.${id}`);
-    }
+    codeSlotEntries(entry, `${base}.code.${platform}`).forEach(([id, at]) =>
+      check(id, at),
+    );
   }
+}
+
+/** The slot ids of a `code` entry (and of its `variants` cases) with the path of each one. */
+function codeSlotEntries(
+  entry: NonNullable<SpecAnnotationType['code']>[string],
+  at: string,
+): [string, string][] {
+  const found = Object.keys(entry.slots ?? {}).map((id): [string, string] => [
+    id,
+    `${at}.slots.${id}`,
+  ]);
+  for (const [value, kase] of Object.entries(entry.variants?.cases ?? {})) {
+    for (const id of Object.keys(kase.slots ?? {}))
+      found.push([id, `${at}.variants.cases.${value}.slots.${id}`]);
+  }
+  return found;
 }
 
 function typeCoherence(

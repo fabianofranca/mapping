@@ -162,6 +162,11 @@ function mergedSpec(rawText: string, typeId: string, imported: unknown): unknown
 const HINT = (path: string, bump: boolean): string =>
   `nothing was written. Write the \`spec\` to the package's specialization file and the sheet (the same JSON passed) to \`${path}\` inside it; run validate_library on the folder${bump ? ' (previous = the earlier version) and raise the version, because the contract changed' : ''}. Write only label, description and ignore by hand; \`migrations\` only if the person asks (see suggestedMigrations).`;
 
+/** `{ key: value }`, or nothing when the value is absent (for `exactOptionalPropertyTypes`). */
+function optional<K extends string, V>(key: K, value: V | undefined): { [P in K]?: V } {
+  return value === undefined ? {} : ({ [key]: value } as { [P in K]?: V });
+}
+
 export async function planSignatureImportTool(
   roots: Roots,
   args: PlanSignatureImportArgs,
@@ -175,9 +180,9 @@ export async function planSignatureImportTool(
     type: args.type,
     target: alvo,
     signature,
-    ...(args.variant === undefined ? {} : { variant: args.variant }),
-    ...(previous === undefined ? {} : { previous }),
-    ...(slots === undefined ? {} : { slots }),
+    ...optional('variant', args.variant),
+    ...optional('previous', previous),
+    ...optional('slots', slots),
   });
   if (!result.ok) {
     throw new ToolError(CODES[result.code], result.detail, {
