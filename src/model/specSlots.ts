@@ -8,12 +8,14 @@ import type { ComponentFile, SlotTemplate } from './components/componentFormat';
 import type { Project } from './types';
 import { resolveTypeItems } from './specChildren';
 import { findTypeInSpec, getSpec } from './specLookup';
-import type { SpecSlot } from './spec';
+import type { Spec, SpecSlot } from './spec';
 
 /** A slot of a type: what `slotForPlacement` reads, plus the shown `name`. */
 export interface TypeSlot extends PlacementSlot {
   /** The declared `name`, else the slot's literal `label`, else its `id`. */
   readonly name: string;
+  /** The declared `description`, when there is one. */
+  readonly description?: string;
 }
 
 function shownName(
@@ -36,7 +38,15 @@ export function typeSlots(
   typeId: string,
   component: ComponentFile,
 ): readonly TypeSlot[] {
-  const spec = getSpec(p, specId);
+  return specTypeSlots(getSpec(p, specId), typeId, component);
+}
+
+/** `typeSlots` over the specialization itself (`null`: not applied, every slot takes everything). */
+export function specTypeSlots(
+  spec: Spec | null,
+  typeId: string,
+  component: ComponentFile,
+): readonly TypeSlot[] {
   const declared = spec === null ? undefined : findTypeInSpec(spec, typeId)?.type.slots;
   return componentSlots(component).map((slot) => {
     const id = slotKey(slot);
@@ -45,6 +55,12 @@ export function typeSlots(
       spec !== null && own?.accepts !== undefined
         ? new Set(resolveTypeItems(spec, own.accepts))
         : undefined;
-    return { id, name: shownName(own, slot, id), accepts, max: own?.max };
+    return {
+      id,
+      name: shownName(own, slot, id),
+      ...(own?.description === undefined ? {} : { description: own.description }),
+      accepts,
+      max: own?.max,
+    };
   });
 }

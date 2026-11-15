@@ -25,6 +25,7 @@ import {
   resolveRef,
   specLayerOf,
   typeOfAnnotation,
+  type ResolvedType,
   ancestorsOf,
   type Annotation,
   type Arrow,
@@ -38,6 +39,7 @@ import {
 import { memoByProject } from '../src/model/projectIndex';
 import { annotationCode, assertPlatform, CODE_HINT, type CodeContext } from './codeViews';
 import { projectIssuesWithDrawings } from './drawings';
+import { childSlotView, markingSlotsView, typeSlotsView } from './slotViews';
 import { ToolError } from './errors';
 import { Refs } from './items';
 import {
@@ -205,6 +207,16 @@ function backlinksView(refs: Refs, annotation: Annotation): Json[] {
   }));
 }
 
+/** `slots` of the annotation's type (decision 12 of #1080), when its component has slots with an `id`. */
+function typeSlotsField(refs: Refs, resolved: ResolvedType | null): Json {
+  if (resolved === null) return {};
+  const component = refs.loaded.catalog
+    .get(resolved.spec.id)
+    ?.byType.get(resolved.type.id);
+  const slots = typeSlotsView(resolved.spec, resolved.type, component);
+  return slots === null ? {} : { slots };
+}
+
 /** The annotation with everything that describes it: content, links, outgoing references, backlinks and pending items. */
 export function annotationView(
   refs: Refs,
@@ -258,6 +270,7 @@ export function annotationView(
             specId: annotation.type.specId,
             typeId: annotation.type.typeId,
             name: resolvedType?.type.name ?? null,
+            ...typeSlotsField(refs, resolvedType),
           },
           values: annotation.values,
           ...(code ? { code } : {}),
@@ -395,6 +408,8 @@ export async function markingView(
     // drawn at the bottom.
     order: siblingPosition(p, marking.id),
     ...componentInfo(refs, marking),
+    ...markingSlotsView(refs, marking),
+    ...childSlotView(refs, marking),
     lock: {
       locked: marking.locked,
       geometryLocked: isMarkingGeometryLocked(p, marking.id),

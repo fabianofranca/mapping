@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   ModelError,
+  approximateMeasurer,
+  createDrawingCache,
   addTypedAnnotation,
   applySpecialization,
   codeBlueprint,
@@ -14,6 +16,7 @@ import {
   type Project,
 } from '../../src/model';
 import { ANDROID_REPO, codeProject, idGen, layerOf, withSpecRepo } from './specFixtures';
+import { slotsLibrary, slotsProject } from '../mcp/slotsProject';
 import { BUTTON_PATH, TEXT_BUTTON_PATH, variantsProject } from './variantsFixtures';
 
 function codeOf(fn: () => unknown): string | null {
@@ -442,5 +445,82 @@ describe('codeBlueprint with variants (formatVersion 9)', () => {
     const card = annotationOf(blueprintOf('MCD'), 'CD');
     expect(card.symbol).toBe('androidx.compose.material3.Card');
     expect(card.params).toEqual([]);
+  });
+});
+
+// The named slots (stage #1080, SL5, decision 11): with the `drawings` option the child markings go into the
+// slot argument of the mother's annotation, out of the node's `children`; the default-content fields of a
+// filled slot leave the params.
+describe('codeBlueprint with named slots', () => {
+  const options = {
+    tweak: (spec: Record<string, any>) => {
+      // eslint-disable-line @typescript-eslint/no-explicit-any
+      spec.platforms = [{ id: 'compose', name: 'Compose', language: 'kotlin' }];
+      const types: Record<string, any>[] = spec.layers[0].annotationTypes;
+      types.find((t) => t.id === 'bar')!.code = {
+        compose: {
+          symbol: 'demo.Bar',
+          params: { title: 'title', navLabel: 'navLabel', actionLabel: 'actionLabel' },
+          slots: { actions: 'trailingContent' },
+        },
+      };
+      types.find((t) => t.id === 'pin')!.code = {
+        compose: { symbol: 'demo.Pin', params: { label: 'label' } },
+      };
+    },
+  };
+  const project = slotsProject((add) => {
+    add('bar', 'bar', {
+      name: 'bar',
+      rect: { x: 100, y: 100, width: 360, height: 56 },
+      values: { navLabel: 'Back', actionLabel: 'More' },
+    });
+    add('p1', 'pin', { name: 'p1', parentId: 'mk-bar', slot: 'navigationIcon' });
+    add('p2', 'pin', { name: 'p2', parentId: 'mk-bar', slot: 'actions' });
+    add('p3', 'pin', { name: 'p3', parentId: 'mk-bar', slot: 'actions' });
+    add('lone', 'bar', {
+      name: 'lone',
+      rect: { x: 100, y: 300, width: 360, height: 56 },
+      values: { navLabel: 'Back' },
+    });
+  }, options);
+  const { catalog } = slotsLibrary(options);
+  const drawings = createDrawingCache()(project, catalog, approximateMeasurer, 0);
+
+  it('puts the children in the slot arguments, in the template order, out of children', () => {
+    const root = codeBlueprint(project, 'mk-bar', 'compose', { drawings }).root;
+    const bar = root.annotations[0]!;
+    expect(bar.slotArgs!.map((a) => [a.slot, a.name])).toEqual([
+      ['navigationIcon', 'navigationIcon'],
+      ['actions', 'trailingContent'],
+    ]);
+    expect(bar.slotArgs!.map((a) => a.children.map((n) => n.name))).toEqual([
+      ['p1'],
+      ['p2', 'p3'],
+    ]);
+    expect(root.children).toEqual([]);
+    // The node inside the argument is the usual node (annotations of its own).
+    expect(bar.slotArgs![0]!.children[0]!.annotations[0]!.symbol).toBe('demo.Pin');
+  });
+
+  it('drops the default-content fields of the filled slots from the params', () => {
+    const bar = codeBlueprint(project, 'mk-bar', 'compose', { drawings }).root
+      .annotations[0]!;
+    expect(bar.params.map((a) => a.key)).toEqual(['title']);
+    // The mapping values keep everything.
+    expect(bar.values).toMatchObject({ navLabel: 'Back', actionLabel: 'More' });
+  });
+
+  it('without the drawings, or with the slots empty, the answer is the one of before', () => {
+    const plain = codeBlueprint(project, 'mk-bar', 'compose').root;
+    expect(plain.annotations[0]!.slotArgs).toBeUndefined();
+    expect(plain.children.map((n) => n.name)).toEqual(['p1', 'p2', 'p3']);
+    expect(plain.annotations[0]!.params.map((a) => a.key)).toEqual([
+      'title',
+      'navLabel',
+      'actionLabel',
+    ]);
+    const lone = codeBlueprint(project, 'mk-lone', 'compose', { drawings }).root;
+    expect(lone).toEqual(codeBlueprint(project, 'mk-lone', 'compose').root);
   });
 });

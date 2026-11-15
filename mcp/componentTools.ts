@@ -24,6 +24,7 @@ import {
 import { packageCodeView } from './codeViews';
 import { packageSignatureReader } from './signatureFiles';
 import { Refs } from './items';
+import { typeSlotsView } from './slotViews';
 import { findProject, loadProject, type LoadedProject } from './projects';
 import type { Roots } from './paths';
 
@@ -283,6 +284,16 @@ function externalDocHint(
   return `the document ${doc.path} is not in the clone of ${doc.repo} (${found.localFile}); check the clone's ref${orLink}`;
 }
 
+/** `slots` of the type (decision 12 of #1080): only when its component has a slot with an `id`. */
+function slotsField(
+  spec: Spec,
+  type: SpecAnnotationType,
+  component: ComponentFile | undefined,
+): Json {
+  const slots = typeSlotsView(spec, type, component);
+  return slots === null ? {} : { slots };
+}
+
 /** `get_component`: everything about a library type. */
 export async function getComponent(
   roots: Roots,
@@ -365,6 +376,7 @@ export async function getComponent(
     ...(typeof type.doc === 'object' ? { docRef: { ...type.doc } } : {}),
     ...(external ? { docExternal: external.view } : {}),
     fields: type.fields.map(fieldView),
+    ...slotsField(source.spec, type, loaded?.component),
     examples,
     ...(type.code === undefined
       ? {}
