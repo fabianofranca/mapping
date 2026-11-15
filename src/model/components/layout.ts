@@ -11,10 +11,13 @@
  *   expression), or the axis's `size` (`resolveSizing`): px, `fill` or `hug`;
  *   every final size respects `minSize`; the measured `hug` rounds up to the next integer
  *   (`Math.ceil`), so the text does not wrap because of rounding. The rest stays exact.
- * - A component with a slot has a `slot`; the slot's layout (row/column/none, gap, padding,
- *   align, justify) comes from `resolveSlotLayout`. The `hug` of a component with a slot
- *   measures the arranged children (`slotContent` in `measureComponent`), so the card's height
- *   grows with the text.
+ * - A component with slots arranges each child in the slot it asks for (`LayoutNode.slot`, else the
+ *   placement's); each slot's layout (row/column/none, gap, padding, align, justify) comes from
+ *   `resolveSlotLayout` and arranges only its own children. The `hug` of a component with slots
+ *   measures the arranged children of each slot (`slotContent`, a map by slot key, in
+ *   `measureComponent`), so the card's height grows with the text; a slot with no child and a
+ *   default content (`fallback`) has no entry, so the engine measures that content. With several
+ *   slots, each instance of the result says the slot it is in (`Instance.slot`).
  * - `fill` on the main axis of a `hug` parent has nowhere to take size from: it falls back to
  *   `hug`. In a `column` the warning is `fill inside hug: using hug`; in a `row` (width) it
  *   falls back to `hug` without a warning.
@@ -24,7 +27,7 @@
 import { createMessageSet, textsOf, type Params } from '../messages/collector';
 import type { ModelMessageTemplateCode } from '../messages';
 import type { ModelMessage } from '../modelMessage';
-import { findSlot, resolveSlotLayout, type ResolvedSlotLayout } from './arrange';
+import { resolveSlotLayout, slotBoxesOfScene, type ResolvedSlotLayout } from './arrange';
 import type {
   ComponentFile,
   Direction,
@@ -34,6 +37,8 @@ import type {
 } from './componentFormat';
 import {
   type Box,
+  type InstantiateOptions,
+  type SlotSize,
   type TextMeasurer,
   instantiate,
   measureComponent,
@@ -55,7 +60,7 @@ import { lineExtents } from './gridPlan';
 import { type ResolvedSizing, resolveSizing } from './sizing';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
-import { absoluteBoxes, walk } from './scene';
+import { componentSlots, slotForPlacement, slotKey } from './slots';
 import { breakLines, stackLines } from './wrapLines';
 
 /** Node of the tree without geometry. */
@@ -65,8 +70,14 @@ export interface LayoutNode {
   /** Id of the annotation type in the library. */
   readonly typeId: string;
   readonly values: FieldValues;
-  /** They go into the component's slot, in order. */
+  /** They go into the component's slots (each in its own), in order. */
   readonly children: readonly LayoutNode[];
+  /**
+   * The slot of the parent this node goes into (`slotKey`: the slot `id`, or the empty key for a slot
+   * without one). Absent, or a key the parent does not have (that one warns): the slot the
+   * placement picks without geometry (`slotForPlacement`).
+   */
+  readonly slot?: string;
 }
 
 /** Anchor of a root outside the flow, on the screen (`start`/`end` = left/right). */
@@ -141,13 +152,19 @@ type Axis = 'width' | 'height';
 /** How the width of a component without geometry is measured: the `hug` (bounded by the parent) or the intrinsic measure. */
 type Mode = 'hug' | IntrinsicSize;
 
-/** Resolved node: component, slot (if a component with a slot), slot layout and already prepared children. */
+/** A slot of a resolved node: its template, key, layout and the already prepared children that go in it. */
+interface SlotGroup {
+  readonly slot: SlotTemplate;
+  readonly key: string;
+  readonly layout: ResolvedSlotLayout;
+  readonly kids: readonly Prepared[];
+}
+
+/** Resolved node: component, its slots (none if the component has no slot) and the children by slot. */
 interface Prepared {
   readonly node: LayoutNode;
   readonly component: ComponentFile;
-  readonly slot?: SlotTemplate;
-  readonly layout: ResolvedSlotLayout;
-  readonly kids: readonly Prepared[];
+  readonly groups: readonly SlotGroup[];
   /** The `sizing` evaluated with the node's values (px, `fill` or `hug` per axis). */
   readonly sizing: ResolvedSizing;
 }
@@ -337,26 +354,47 @@ export function layoutScreen(
 
   // --- preparation: type, component, slot and layout of each node --------------------------
 
+  /** The slot of a child: the one it asks for, else the placement's (an unknown key warns). */
+  const slotOfChild = (
+    owner: LayoutNode,
+    child: LayoutNode,
+    ids: readonly { readonly id: string }[],
+  ): string => {
+    if (child.slot !== undefined) {
+      if (ids.some((s) => s.id === child.slot)) return child.slot;
+      warn('engine.slotUnknown', { path: owner.id, slot: child.slot });
+    }
+    const placed = slotForPlacement(ids, { typeId: child.typeId });
+    return placed.ok ? placed.id : '';
+  };
+
   const prepare = (node: LayoutNode): Prepared | undefined => {
     const component = types.get(node.typeId)?.component;
     if (!component) {
       warn('engine.typeNoComponent', { path: node.id, typeId: node.typeId });
       return undefined;
     }
-    const slot = findSlot(component);
-    if (!slot && node.children.length > 0)
+    const slots = componentSlots(component);
+    if (slots.length === 0 && node.children.length > 0)
       warn('engine.childrenIgnored', { path: node.id });
-    const kids = slot
-      ? node.children.map(prepare).filter((k): k is Prepared => k !== undefined)
-      : [];
+    const ids = slots.map((s) => ({ id: slotKey(s) }));
+    const kidsOf = new Map<string, Prepared[]>(ids.map(({ id }) => [id, []]));
+    if (slots.length > 0)
+      for (const child of node.children) {
+        const prepared = prepare(child);
+        if (prepared) kidsOf.get(slotOfChild(node, child, ids))?.push(prepared);
+      }
     const sizing = resolveSizing(component, node.values);
     for (const m of sizing.messages) warn(m.code as ModelMessageTemplateCode, m.params);
     return {
       node,
       component,
-      ...(slot ? { slot } : {}),
-      layout: slot ? resolveSlotLayout(slot, node.values) : NONE_LAYOUT,
-      kids,
+      groups: slots.map((slot) => ({
+        slot,
+        key: slotKey(slot),
+        layout: resolveSlotLayout(slot, node.values),
+        kids: kidsOf.get(slotKey(slot)) ?? [],
+      })),
       sizing,
     };
   };
@@ -364,8 +402,8 @@ export function layoutScreen(
   const specOf = (p: Prepared, axis: Axis) => p.sizing[axis].spec;
   const withMin = (p: Prepared, axis: Axis, value: number) =>
     Math.max(value, p.component.minSize?.[axis] ?? 0);
-  const padW = (p: Prepared) => p.layout.padding.left + p.layout.padding.right;
-  const padH = (p: Prepared) => p.layout.padding.top + p.layout.padding.bottom;
+  const padW = (g: SlotGroup) => g.layout.padding.left + g.layout.padding.right;
+  const padH = (g: SlotGroup) => g.layout.padding.top + g.layout.padding.bottom;
 
   const cache = new Map<Prepared, Map<string, number>>();
   const cached = (p: Prepared, key: string, compute: () => number): number => {
@@ -381,22 +419,32 @@ export function layoutScreen(
     return value;
   };
 
-  /** Absolute box of the slot of the component instantiated in `box` (none if the slot is invisible). */
-  const slotBoxOf = (
+  /**
+   * `slotContent` for the engine: one size per slot that has children, or no default content
+   * (`fallback`) to measure; a slot with only a default content has no entry, so the engine measures it.
+   */
+  const slotContentOf = (
+    p: Prepared,
+    size: (g: SlotGroup) => SlotSize,
+  ): ReadonlyMap<string, SlotSize> =>
+    new Map(
+      p.groups
+        .filter((g) => g.kids.length > 0 || g.slot.fallback === undefined)
+        .map((g) => [g.key, size(g)]),
+    );
+
+  /** Absolute boxes of the slots (by key) of the component instantiated in `box` (an invisible slot is missing). */
+  const slotBoxesOf = (
     p: Prepared,
     box: Box,
-    slotContent: { width: number; height: number },
-  ): Box | undefined => {
+    slotContent: ReadonlyMap<string, SlotSize>,
+  ): ReadonlyMap<string, Box> => {
     const { root } = instantiate(p.component, p.node.values, box, {
       ...engine,
       idPrefix: p.node.id,
       slotContent,
     });
-    for (const node of walk(root)) {
-      if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
-      return absoluteBoxes(root).get(node.id);
-    }
-    return undefined;
+    return slotBoxesOfScene(root);
   };
 
   // --- intrinsic measures (hug), memoized ---------------------------------------------------
@@ -449,23 +497,30 @@ export function layoutScreen(
    * `min-content`, a `hug` or `fill` child enters with its own `min-content`; one that asks for
    * the intrinsic measure has it.
    */
-  const slotContentWidth = (p: Prepared, mode: Mode = 'hug'): number =>
-    cached(p, `scw|${mode}`, () => {
-      const widths = p.kids.map((kid) => {
+  const slotContentWidth = (p: Prepared, g: SlotGroup, mode: Mode = 'hug'): number =>
+    cached(p, `scw|${g.key}|${mode}`, () => {
+      const widths = g.kids.map((kid) => {
         const spec = specOf(kid, 'width');
         if (typeof spec === 'number') return withMin(kid, 'width', spec);
         const own = widthModeOf(spec);
         return intrinsicWidth(kid, inheritedMode(own, mode));
       });
-      return wrappedOrPlainWidth(p.layout, widths, mode) + padW(p);
+      return wrappedOrPlainWidth(g.layout, widths, mode) + padW(g);
     });
 
   /** `hug` width (or `min-content`/`max-content`): the measured template (with `slotContent` in components with a slot). */
   function intrinsicWidth(p: Prepared, mode: Mode = 'hug'): number {
     return cached(p, `iw|${mode}`, () => {
-      const options = p.slot
-        ? { ...engine, slotContent: { width: slotContentWidth(p, mode), height: 0 } }
-        : engine;
+      const options =
+        p.groups.length > 0
+          ? {
+              ...engine,
+              slotContent: slotContentOf(p, (g) => ({
+                width: slotContentWidth(p, g, mode),
+                height: 0,
+              })),
+            }
+          : engine;
       const { width } = measureComponent(
         p.component,
         p.node.values,
@@ -479,31 +534,36 @@ export function layoutScreen(
   /** `hug` height at the final width (`hugW`: the width also came from the `hug`). */
   function intrinsicHeight(p: Prepared, width: number, hugW: boolean): number {
     return cached(p, `ih|${width}|${hugW}`, () => {
-      let slotContent = { width: 0, height: 0 };
-      if (p.slot) {
-        const probe = slotBoxOf(
+      let options: InstantiateOptions = engine;
+      if (p.groups.length > 0) {
+        const probes = slotBoxesOf(
           p,
           { x: 0, y: 0, width, height: p.component.size.height },
-          { width: slotContentWidth(p), height: 0 },
+          slotContentOf(p, (g) => ({ width: slotContentWidth(p, g), height: 0 })),
         );
-        if (probe) {
-          const arranged = arrangeKids(
-            p.kids,
-            p.layout,
-            hugW && p.layout.type !== 'column'
-              ? null
-              : Math.max(0, probe.width - padW(p)),
-            null,
-            false,
-          );
-          slotContent = { width: probe.width, height: arranged.usedH + padH(p) };
-        }
+        options = {
+          ...engine,
+          slotContent: slotContentOf(p, (g) => {
+            const probe = probes.get(g.key);
+            if (!probe) return { width: 0, height: 0 };
+            const arranged = arrangeKids(
+              g.kids,
+              g.layout,
+              hugW && g.layout.type !== 'column'
+                ? null
+                : Math.max(0, probe.width - padW(g)),
+              null,
+              false,
+            );
+            return { width: probe.width, height: arranged.usedH + padH(g) };
+          }),
+        };
       }
       const { height } = measureComponent(
         p.component,
         p.node.values,
         { width, height: null },
-        p.slot ? { ...engine, slotContent } : engine,
+        options,
       );
       return withMin(p, 'height', hugValue(height));
     });
@@ -923,7 +983,9 @@ export function layoutScreen(
     box: Box,
     hugW: boolean,
     hugH: boolean,
-    parentId: string | undefined,
+    parent:
+      | { readonly id: string; readonly slot: string; readonly tagged: boolean }
+      | undefined,
     out: Instance[],
   ): void => {
     const { node } = p;
@@ -932,27 +994,70 @@ export function layoutScreen(
       typeId: node.typeId,
       box,
       values: node.values,
-      ...(parentId !== undefined ? { parentId } : {}),
+      ...(parent !== undefined ? { parentId: parent.id } : {}),
+      ...(parent?.tagged ? { slot: parent.slot } : {}),
     });
-    if (!p.slot || p.kids.length === 0) return;
-    const probe = slotBoxOf(p, box, { width: slotContentWidth(p), height: 0 });
-    if (!probe) {
-      warn('engine.slotInvisible', { path: node.id });
-      return;
-    }
-    const { layout } = p;
+    if (p.groups.length === 0 || p.groups.every((g) => g.kids.length === 0)) return;
+    const probes = slotBoxesOf(
+      p,
+      box,
+      slotContentOf(p, (g) => ({ width: slotContentWidth(p, g), height: 0 })),
+    );
     // `hug` parent on the main axis: the `fill` children already fell back to `hug` and there is no free space.
-    const cw =
-      hugW && layout.type !== 'column' ? null : Math.max(0, probe.width - padW(p));
-    const pre = arrangeKids(p.kids, layout, cw, null, false);
-    const slot =
-      slotBoxOf(p, box, { width: probe.width, height: pre.usedH + padH(p) }) ?? probe;
-    const ch = hugH && layout.type !== 'row' ? null : Math.max(0, slot.height - padH(p));
-    const arranged = arrangeKids(p.kids, layout, cw, ch, true, node.id);
+    const widthOfContent = (g: SlotGroup, probe: Box) =>
+      hugW && g.layout.type !== 'column' ? null : Math.max(0, probe.width - padW(g));
+    const pres = new Map(
+      p.groups.flatMap((g) => {
+        const probe = probes.get(g.key);
+        return probe
+          ? [
+              [
+                g.key,
+                arrangeKids(g.kids, g.layout, widthOfContent(g, probe), null, false),
+              ] as const,
+            ]
+          : [];
+      }),
+    );
+    const slots = slotBoxesOf(
+      p,
+      box,
+      slotContentOf(p, (g) => {
+        const probe = probes.get(g.key);
+        const pre = pres.get(g.key);
+        return probe && pre
+          ? { width: probe.width, height: pre.usedH + padH(g) }
+          : { width: 0, height: 0 };
+      }),
+    );
+    for (const g of p.groups) {
+      if (g.kids.length === 0) continue;
+      const probe = probes.get(g.key);
+      if (!probe) {
+        warn('engine.slotInvisible', { path: node.id });
+        continue;
+      }
+      placeGroup(p, g, slots.get(g.key) ?? probe, widthOfContent(g, probe), hugH, out);
+    }
+  };
+
+  /** Arranges and places the children of one slot (`slot` is its final box). */
+  const placeGroup = (
+    p: Prepared,
+    g: SlotGroup,
+    slot: Box,
+    cw: number | null,
+    hugH: boolean,
+    out: Instance[],
+  ): void => {
+    const { layout } = g;
+    const ch = hugH && layout.type !== 'row' ? null : Math.max(0, slot.height - padH(g));
+    const arranged = arrangeKids(g.kids, layout, cw, ch, true, p.node.id);
     const rects = mirroredRects(arranged, cw);
     const originX = slot.x + layout.padding.left;
     const originY = slot.y + layout.padding.top;
-    p.kids.forEach((kid, i) => {
+    const parent = { id: p.node.id, slot: g.key, tagged: p.groups.length > 1 };
+    g.kids.forEach((kid, i) => {
       const r = rects[i];
       if (!r) return;
       place(
@@ -960,7 +1065,7 @@ export function layoutScreen(
         { x: originX + r.x, y: originY + r.y, width: r.w, height: r.h },
         r.hugW,
         r.hugH,
-        node.id,
+        parent,
         out,
       );
     });

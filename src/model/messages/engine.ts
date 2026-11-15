@@ -16,6 +16,7 @@ export const engineMessages = {
   'engine.typeNoComponent': '{path}: type without a component: {typeId}',
   'engine.childrenIgnored': '{path}: children ignored (component without a slot)',
   'engine.fillInHugUsing': '{path}: fill inside hug: using hug',
+  'engine.slotUnknown': '{path}: unknown slot "{slot}": using the default slot',
   'engine.slotInvisible': '{path}: invisible slot: children ignored',
   'engine.childrenOutsideMaxLines': '{count} children outside maxLines: {name}',
   'engine.linesUnstable': '$lines unstable: {name}',

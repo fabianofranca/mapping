@@ -1,5 +1,5 @@
 import type { ComponentFile } from './components/componentFormat';
-import { findSlot } from './components/arrange';
+import { componentSlots } from './components/slots';
 import { resolvePath, type TextFile } from './components/library';
 import { INDEX_FIELD, isAnchorFieldName } from './components/expressions';
 import {
@@ -615,16 +615,17 @@ function typeCoherence(
   const component = pkg.components.get(path);
   if (component === undefined) return;
 
-  const slot = findSlot(component);
+  // The origin's `slot` names one of the component's slots (by their `name`).
+  const slots = componentSlots(component);
   (type.sources ?? []).forEach((source, index) => {
     if (source.slot === undefined) return;
     const at = `${base}.sources[${index}].slot`;
-    if (slot === undefined) {
+    if (slots.length === 0) {
       out.error(pkg.specPath, at, 'library.noSlot', { path });
-    } else if (slot.name !== source.slot) {
+    } else if (!slots.some((slot) => slot.name === source.slot)) {
       out.error(pkg.specPath, at, 'library.slotMismatch', {
         path,
-        slot: slot.name ?? '',
+        slot: slots.map((slot) => slot.name ?? '').join(', '),
         expected: source.slot,
       });
     }

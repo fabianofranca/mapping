@@ -1,12 +1,13 @@
 import {
-  findSlot,
   contentExtent,
   layoutChildren,
   isPlainNone,
   resolveSlotLayout,
   slotBoxOfScene,
+  slotsOfScene,
   type ResolvedSlotLayout,
 } from './components/arrange';
+import { assignSlots, componentSlots, slotKey } from './components/slots';
 import type {
   ComponentFile,
   FieldValues,
@@ -24,8 +25,10 @@ import {
 } from './components/sizing';
 import type { ResolvedTokens } from './components/tokens';
 import {
+  approximateMeasurer,
   instantiate,
   measureComponent,
+  type InstantiateOptions,
   type TextMeasurer,
 } from './components/instantiate';
 import { markingComponent, type ComponentCatalog } from './componentCatalog';
@@ -49,7 +52,13 @@ import {
   right,
   translateRect,
 } from './geometry';
-import { effectiveDensity, rectFromUnits, rectToUnits, unitsToPixels } from './density';
+import {
+  effectiveDensity,
+  rectFromUnits,
+  rectToUnits,
+  unitSpaceOf,
+  unitsToPixels,
+} from './density';
 import { settleFrom, type SettleOptions } from './hierarchySettle';
 import { markingLockStates } from './locks';
 import { modelMessage, type ModelMessage } from './modelMessage';
@@ -71,7 +80,18 @@ export interface ArrangeResult {
 /** Maximum passes until the sizes stabilize (a component with a slot stretched by its parent rearranges the children). */
 const MAX_PASSES = 4;
 
-/** A component with a slot that arranges: a `row`/`column` slot and at least one child. */
+/** One slot of a container that holds children: its layout and the children the geometry put in it. */
+interface ContainerSlot {
+  /** The slot's `id` (`slotKey`; the empty key for the only slot without `id`). */
+  readonly id: string;
+  readonly layout: ResolvedSlotLayout;
+  readonly kids: readonly Marking[];
+}
+
+/**
+ * A component with slots that arranges: at least one slot with a `row`/`column`/`grid`/aligned layout
+ * that holds children.
+ */
 interface Container {
   readonly id: string;
   readonly component: ComponentFile;
@@ -80,34 +100,91 @@ interface Container {
   /** Effective reading direction of the marking's space (`rtl` mirrors the row and the grid). */
   readonly direction: ReadingDirection;
   readonly values: FieldValues;
-  readonly layout: ResolvedSlotLayout;
+  /** The slots that hold children, in template order (a plain `none` layout is not arranged). */
+  readonly slots: readonly ContainerSlot[];
+  /** The slot of each child (by id) that is in one. */
+  readonly slotOf: ReadonlyMap<string, string>;
+  /** All the children of the marking. */
   readonly kids: readonly Marking[];
   readonly label: string;
+}
+
+/**
+ * The children by slot, by the geometry (`assignSlots`, decision 4): the component drawn with the slots
+ * empty gives the boxes. A component with a single slot takes every child with no probe.
+ */
+function kidsBySlot(
+  p: Project,
+  catalog: ComponentCatalog,
+  marking: Marking,
+  drawn: ReturnType<typeof componentForDrawing>,
+  values: FieldValues,
+  kids: readonly Marking[],
+  measure: TextMeasurer,
+): ReadonlyMap<string, readonly Marking[]> {
+  const slots = componentSlots(drawn.component);
+  const only = slots[0];
+  if (slots.length === 1 && only !== undefined) return new Map([[slotKey(only), kids]]);
+  const space = unitSpaceOf(marking.rect, effectiveDensity(p, marking.containerId));
+  const { root } = instantiate(drawn.component, values, space.box, {
+    measure,
+    idPrefix: marking.id,
+    ...drawOptions(drawn),
+  });
+  const inputs = [...slotsOfScene(root)].map(([id, slot]) => ({
+    id,
+    box: space.toPixels(slot.box),
+  }));
+  const assignment = assignSlots(
+    inputs,
+    kids.map((kid) => ({
+      id: kid.id,
+      rect: kid.rect,
+      typeId: markingComponent(p, catalog, kid.id)?.type.id,
+    })),
+  );
+  const byId = new Map(kids.map((kid) => [kid.id, kid]));
+  return new Map(
+    [...assignment.children].map(([id, ids]) => [
+      id,
+      ids.flatMap((kidId) => byId.get(kidId) ?? []),
+    ]),
+  );
 }
 
 function containerOf(
   p: Project,
   catalog: ComponentCatalog,
   markingId: string,
+  measure: TextMeasurer = approximateMeasurer,
 ): Container | null {
   const mc = markingComponent(p, catalog, markingId);
   if (mc === null) return null;
   const marking = projectIndex(p).markings.get(markingId);
-  const drawn = componentForDrawing(p, mc.component, marking?.containerId ?? null);
-  const slot = findSlot(drawn.component);
-  if (slot === undefined) return null;
-  const values = drawingValues(p, mc.annotation, mc.type).values;
-  const layout = resolveSlotLayout(slot, values);
-  if (isPlainNone(layout)) return null;
+  if (marking === undefined) return null;
+  const drawn = componentForDrawing(p, mc.component, marking.containerId);
+  const templates = componentSlots(drawn.component);
+  if (templates.length === 0) return null;
   const kids = projectIndex(p).children.get(markingId) ?? [];
   if (kids.length === 0) return null;
+  const values = drawingValues(p, mc.annotation, mc.type).values;
+  const bySlot = kidsBySlot(p, catalog, marking, drawn, values, kids, measure);
+  const slots = templates.flatMap((template): ContainerSlot[] => {
+    const id = slotKey(template);
+    const own = bySlot.get(id) ?? [];
+    return own.length === 0
+      ? []
+      : [{ id, layout: resolveSlotLayout(template, values), kids: own }];
+  });
+  if (slots.every((slot) => isPlainNone(slot.layout))) return null;
   return {
     id: markingId,
     component: drawn.component,
     tokens: drawn.tokens,
     direction: drawn.direction,
     values,
-    layout,
+    slots,
+    slotOf: new Map(slots.flatMap((slot) => slot.kids.map((kid) => [kid.id, slot.id]))),
     kids,
     label: marking?.name ?? mc.type.name,
   };
@@ -134,10 +211,20 @@ function alongTracks(layout: ResolvedSlotLayout): boolean {
   return layout.type === 'row';
 }
 
+/** The layout of the slot of `parent` that holds the child `kidId`, if any. */
+function layoutOfKid(parent: Container, kidId: string): ResolvedSlotLayout | undefined {
+  const id = parent.slotOf.get(kidId);
+  return parent.slots.find((slot) => slot.id === id)?.layout;
+}
+
 /** The parent slot's `align: stretch` stretches the child on this axis (the cross axis of its layout). */
-function stretchedBy(parent: Container | null, axis: 'width' | 'height'): boolean {
-  if (parent === null) return false;
-  const { layout } = parent;
+function stretchedBy(
+  parent: Container | null,
+  kidId: string,
+  axis: 'width' | 'height',
+): boolean {
+  const layout = parent === null ? undefined : layoutOfKid(parent, kidId);
+  if (layout === undefined) return false;
   // Grid: `justify` stretches on the tracks' axis and `align` on the lines' axis (in the cell).
   if (layout.type === 'grid') {
     const onTracks = alongTracks(layout) === (axis === 'width');
@@ -265,6 +352,20 @@ function clampRect(inner: Rect, outer: Rect, mode: 'push' | 'shrink'): Rect {
   };
 }
 
+/** What the children ask of a slot: their extent (a single line, or by the `available` main-axis space) plus the padding. */
+function paddedContent(
+  layout: ResolvedSlotLayout,
+  children: Parameters<typeof contentExtent>[1],
+  available: number | null,
+): { width: number; height: number } {
+  const extent = contentExtent(layout, children, available);
+  const pad = layout.padding;
+  return {
+    width: extent.width + pad.left + pad.right,
+    height: extent.height + pad.top + pad.bottom,
+  };
+}
+
 /**
  * Arranges the chosen component with a slot and the components with a slot inside it (the
  * subtree). From the deepest to the shallowest, each component with a slot positions the children
@@ -320,7 +421,7 @@ export function arrangeMarking(
 
   const containers = new Map<string, Container | null>();
   const containerAt = (id: string): Container | null => {
-    if (!containers.has(id)) containers.set(id, containerOf(p, catalog, id));
+    if (!containers.has(id)) containers.set(id, containerOf(p, catalog, id, measure));
     return containers.get(id) ?? null;
   };
   const labelOf = (id: string): string => {
@@ -340,7 +441,7 @@ export function arrangeMarking(
   /** The parent stretches this component with a slot on the axis (the parent's `stretch` outweighs the `hug`). */
   const stretchedByParent = (id: string, axis: 'width' | 'height'): boolean => {
     const parentId = (index.markings.get(id) as Marking).parentId;
-    return stretchedBy(parentId === null ? null : containerAt(parentId), axis);
+    return stretchedBy(parentId === null ? null : containerAt(parentId), id, axis);
   };
 
   // By text, so the same warning is not repeated across passes.
@@ -395,37 +496,63 @@ export function arrangeMarking(
     }).firstBaseline;
   };
 
+  /** What the children of one slot ask of it: their boxes (and baselines) and the size of the content. */
+  interface SlotWork {
+    readonly slot: ContainerSlot;
+    readonly children: readonly { box: Rect; baseline: number | undefined }[];
+    content: { width: number; height: number };
+  }
+
+  const workOf = (slot: ContainerSlot): SlotWork => {
+    const { layout, kids } = slot;
+    const baselines =
+      layout.align === 'baseline' ? kids.map((kid) => baselineOf(kid)) : [];
+    const children = kids.map((kid, i) => ({
+      box: rects.get(kid.id) as Rect,
+      baseline: baselines[i],
+    }));
+    return { slot, children, content: paddedContent(layout, children, null) };
+  };
+
   const arrangeOne = (id: string) => {
     const info = containerAt(id);
     if (info === null) return;
-    const { component, values, layout, kids } = info;
+    const { component, values, kids } = info;
     remeasureHugKids(kids);
-    const sizes = kids.map((k) => rects.get(k.id) as Rect);
-    const pad = layout.padding;
-    const baselines =
-      layout.align === 'baseline' ? kids.map((kid) => baselineOf(kid)) : [];
-    const children = sizes.map((box, i) => ({ box, baseline: baselines[i] }));
-    const padded = (extent: { width: number; height: number }) => ({
-      width: extent.width + pad.left + pad.right,
-      height: extent.height + pad.top + pad.bottom,
-    });
-    // What the children ask of the slot (the component's `hug`): a single line, or, with `wrap`, the
+    // What the children ask of each slot (the component's `hug`): a single line, or, with `wrap`, the
     // lines by the main-axis space the slot has (the drawing with the single-line request gives the space).
-    let slotContent = padded(contentExtent(layout, children, null));
-    if (needsAvailable(layout)) {
-      const probe = slotBoxOfScene(
-        instantiate(component, values, rects.get(id) as Rect, {
-          measure,
-          idPrefix: id,
-          slotContent,
-          ...drawOptions(info),
-        }).root,
+    const work = info.slots
+      .filter((slot) => !isPlainNone(slot.layout))
+      .map((slot) => workOf(slot));
+    const filled = new Set(
+      info.slots.filter((slot) => isPlainNone(slot.layout)).map((slot) => slot.id),
+    );
+    const contents = new Map(work.map((w) => [w.slot.id, w.content]));
+    const slotOptions = (): InstantiateOptions => ({
+      measure,
+      idPrefix: id,
+      slotContent: contents,
+      filledSlots: filled,
+      ...drawOptions(info),
+    });
+    if (work.some((w) => needsAvailable(w.slot.layout))) {
+      const { root } = instantiate(
+        component,
+        values,
+        rects.get(id) as Rect,
+        slotOptions(),
       );
-      if (probe !== undefined) {
-        const available = alongTracks(layout)
-          ? probe.width - pad.left - pad.right
-          : probe.height - pad.top - pad.bottom;
-        slotContent = padded(contentExtent(layout, children, Math.max(0, available)));
+      for (const w of work) {
+        const probe = needsAvailable(w.slot.layout)
+          ? slotBoxOfScene(root, w.slot.id)
+          : undefined;
+        if (probe === undefined) continue;
+        const { padding } = w.slot.layout;
+        const available = alongTracks(w.slot.layout)
+          ? probe.width - padding.left - padding.right
+          : probe.height - padding.top - padding.bottom;
+        w.content = paddedContent(w.slot.layout, w.children, Math.max(0, available));
+        contents.set(w.slot.id, w.content);
       }
     }
 
@@ -440,7 +567,8 @@ export function arrangeMarking(
       (fixed) =>
         measureComponent(component, values, fixed, {
           measure,
-          slotContent,
+          slotContent: contents,
+          filledSlots: filled,
           ...drawOptions(info),
         }),
     );
@@ -451,34 +579,31 @@ export function arrangeMarking(
       rects.set(id, rect);
     }
 
-    const { root } = instantiate(component, values, rect, {
-      measure,
-      idPrefix: id,
-      slotContent,
-      ...drawOptions(info),
-    });
-    const box = slotBoxOfScene(root);
-    if (box === undefined) return;
-    if (
-      (!hugW && slotContent.width > box.width + 0.5) ||
-      (!hugH && slotContent.height > box.height + 0.5)
-    ) {
-      warn(
-        modelMessage(
-          'arrange.overflow',
-          { label: info.label },
-          `${info.label}: content is larger than the container`,
-        ),
-      );
+    const { root } = instantiate(component, values, rect, slotOptions());
+    for (const w of work) {
+      const box = slotBoxOfScene(root, w.slot.id);
+      if (box === undefined) continue;
+      if (
+        (!hugW && w.content.width > box.width + 0.5) ||
+        (!hugH && w.content.height > box.height + 0.5)
+      ) {
+        warn(
+          modelMessage(
+            'arrange.overflow',
+            { label: info.label },
+            `${info.label}: content is larger than the container`,
+          ),
+        );
+      }
+      const targets = layoutChildren(box, w.slot.layout, w.children, info.direction);
+      w.slot.kids.forEach((kid, i) => {
+        const target = targets[i] as Rect;
+        const before = rects.get(kid.id) as Rect;
+        if (sameRect(before, target)) return;
+        rects.set(kid.id, target);
+        translate(kid.id, target.x - before.x, target.y - before.y);
+      });
     }
-    const targets = layoutChildren(box, layout, children, info.direction);
-    kids.forEach((kid, i) => {
-      const target = targets[i] as Rect;
-      const before = rects.get(kid.id) as Rect;
-      if (sameRect(before, target)) return;
-      rects.set(kid.id, target);
-      translate(kid.id, target.x - before.x, target.y - before.y);
-    });
   };
 
   const snapshot = () => postOrder.map((id) => rects.get(id) as Rect);
@@ -581,7 +706,7 @@ function fitTargetOf(
   // Children in a slot without a `row`/`column` layout do not fit either: measuring without them
   // would shrink the component and the settle would take the children out of it.
   const hasKids = (projectIndex(p).children.get(marking.id)?.length ?? 0) > 0;
-  if (hasKids && findSlot(mc.component) !== undefined) return null;
+  if (hasKids && componentSlots(mc.component).length > 0) return null;
   const values = drawingValues(p, mc.annotation, mc.type).values;
   const followed = followedAxes(resolveSizing(mc.component, values));
   if (!followed.width && !followed.height) return null;
@@ -677,8 +802,8 @@ export function fitMarking(
   const marking = findById(p.markings, markingId);
   const target = fitTargetOf(p, catalog, marking) ?? fail('not-fittable', markingId);
   const auto: { width?: boolean; height?: boolean } = {};
-  if (stretchedBy(target.parent, 'width')) auto.width = false;
-  if (stretchedBy(target.parent, 'height')) auto.height = false;
+  if (stretchedBy(target.parent, target.marking.id, 'width')) auto.width = false;
+  if (stretchedBy(target.parent, target.marking.id, 'height')) auto.height = false;
   // Measures in component units and writes in image pixels (× density, rounded up).
   const density = effectiveDensity(p, marking.containerId);
   const base = rectToUnits(marking.rect, density);

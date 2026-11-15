@@ -20,6 +20,12 @@ export interface Instance {
    * order in the list.
    */
   readonly parentId?: string;
+  /**
+   * The slot of the parent (`slotKey`: the slot `id`, or the empty key for a slot without one) the
+   * instance is in. Only `layoutScreen` writes it, and only for a parent with more than one slot;
+   * absent, the child is in the slot the placement picks without geometry (`slotForPlacement`).
+   */
+  readonly slot?: string;
 }
 
 export interface Screen {
@@ -187,7 +193,13 @@ export function setParent(
   if (parentId && [id, ...descendantsOf(screen, id)].includes(parentId)) return screen;
   const instance = screen.instances.find((i) => i.id === id);
   if (!instance) return screen;
-  const moved: Instance = parentId ? { ...instance, parentId } : withoutParent(instance);
+  // A new parent forgets the slot of the old one; a reorder among the same siblings keeps it.
+  const moved: Instance = parentId
+    ? {
+        ...(parentId === instance.parentId ? instance : withoutParent(instance)),
+        parentId,
+      }
+    : withoutParent(instance);
   const rest = screen.instances.filter((i) => i.id !== id);
   const siblings = rest.filter((i) => (i.parentId ?? undefined) === parentId);
   const at =
@@ -212,8 +224,9 @@ export function moveSibling(screen: Screen, id: string, delta: -1 | 1): Screen {
 }
 
 function withoutParent(instance: Instance): Instance {
-  const { parentId: _parentId, ...rest } = instance;
+  const { parentId: _parentId, slot: _slot, ...rest } = instance;
   void _parentId;
+  void _slot;
   return rest;
 }
 
@@ -357,6 +370,7 @@ export function parseScreen(input: unknown): Screen {
       id: typeof i.id === 'string' ? i.id : crypto.randomUUID(),
       typeId: str(i.typeId, `instances[${index}].typeId`),
       ...(typeof i.parentId === 'string' ? { parentId: i.parentId } : {}),
+      ...(typeof i.slot === 'string' ? { slot: i.slot } : {}),
       box: {
         x: num(b.x, `instances[${index}].box.x`),
         y: num(b.y, `instances[${index}].box.y`),

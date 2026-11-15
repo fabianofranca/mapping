@@ -105,7 +105,7 @@ function annotationsChanged(
 function itemOf(message: string, missing: number, approximate: boolean): OverflowItem {
   const rounded = Math.round(missing * 10) / 10;
   const kind =
-    message === SLOT_OVERFLOW
+    message === SLOT_OVERFLOW || message.startsWith(`${SLOT_OVERFLOW} `)
       ? 'slot'
       : (KIND_OF_PREFIX.find(([prefix]) => message.startsWith(prefix))?.[1] ?? 'content');
   const node = message.includes(': ')

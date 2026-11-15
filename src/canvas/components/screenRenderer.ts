@@ -19,8 +19,14 @@ import { type RemoteImageResult, renderScene } from './renderScene';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning } from './renderWarnings';
 import { clippedSlotBox } from '../../model/components/arrange';
+import { componentSlots, slotForPlacement, slotKey } from '../../model/components/slots';
 import { type Box, intersectClips } from '../../model/components/box';
-import type { Direction, FieldValues } from '../../model/components/componentFormat';
+import type {
+  ComponentFile,
+  Direction,
+  FieldValues,
+} from '../../model/components/componentFormat';
+import type { FrameNode } from '../../model/components/scene';
 import { type TextMeasurer, instantiate } from '../../model/components/instantiate';
 import {
   type Library,
@@ -104,13 +110,28 @@ interface Mounted {
   provided: ProvidedValues;
   /** What the instance's slot offers its children in the last drawing (`provide`). */
   offers: ProvidedValues | undefined;
-  /** Slot box (on the screen) when it has `clip`: the children only appear inside it. */
-  slotClip: Box | undefined;
+  /** Box (on the screen) of each slot (by `slotKey`) that has `clip`: its children only appear inside it. */
+  slotClips: ReadonlyMap<string, Box | undefined>;
   /**
-   * The clip (on the screen) that the children receive: the `slotClip` inside the instance's own
-   * clip.
+   * The clip (on the screen) that the children of each slot receive: the slot's clip inside the
+   * instance's own clip.
    */
-  childClip: Box | undefined;
+  childClips: ReadonlyMap<string, Box | undefined>;
+  /** The slots (by `slotKey`) that hold children of the screen: their default content is not drawn. */
+  filled: ReadonlySet<string>;
+}
+
+const NO_SLOTS: ReadonlySet<string> = new Set();
+
+/** `filledSlots` for `instantiate`, only when some slot holds children. */
+function filledOption(filled: ReadonlySet<string>): {
+  filledSlots?: ReadonlySet<string>;
+} {
+  return filled.size > 0 ? { filledSlots: filled } : {};
+}
+
+function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+  return a.size === b.size && [...a].every((key) => b.has(key));
 }
 
 /** The interior direction: the option overrides the screen's; with neither, `ltr`. */
@@ -164,10 +185,12 @@ export class ScreenRenderer {
     // Inherited color: what each instance's children inherit (what the parent inherited, with what it
     // offers on top), top to bottom in drawing order; one that offers nothing is passed through.
     const scopes = new Map<string, ProvidedValues>();
+    const filled = this.filledSlots(screen);
     renderOrder(screen).forEach((instance, index) => {
       seen.add(instance.id);
       order.push(instance.id);
-      if (this.syncInstance(instance, zBase + index, force, scopes)) changed = true;
+      const own = filled.get(instance.id) ?? NO_SLOTS;
+      if (this.syncInstance(instance, zBase + index, force, scopes, own)) changed = true;
     });
     for (const [id, entry] of this.mounted) {
       if (seen.has(id)) continue;
@@ -180,6 +203,33 @@ export class ScreenRenderer {
     return changed;
   }
 
+  /** The slot of a child (`slotKey`): the one it says, else the one the placement picks without geometry. */
+  private slotOfChild(child: Instance, parent: Instance | undefined): string | undefined {
+    if (child.slot !== undefined) return child.slot;
+    const slots = this.typesById.get(parent?.typeId ?? '')?.component;
+    if (slots === undefined) return undefined;
+    const placed = slotForPlacement(
+      componentSlots(slots).map((slot) => ({ id: slotKey(slot) })),
+      { typeId: child.typeId },
+    );
+    return placed.ok ? placed.id : undefined;
+  }
+
+  /** The slots that hold children, by instance id: from the screen's tree (`parentId` and `slot`). */
+  private filledSlots(screen: Screen): Map<string, Set<string>> {
+    const byId = new Map(screen.instances.map((i) => [i.id, i]));
+    const out = new Map<string, Set<string>>();
+    for (const child of screen.instances) {
+      if (child.parentId === undefined) continue;
+      const slot = this.slotOfChild(child, byId.get(child.parentId));
+      if (slot === undefined) continue;
+      const set = out.get(child.parentId) ?? new Set<string>();
+      set.add(slot);
+      out.set(child.parentId, set);
+    }
+    return out;
+  }
+
   /**
    * Creates, redraws or only reorders an instance (the identity diff, plus the inherited color: it
    * is also redrawn when the offered value the component reads changes). Returns true if anything
@@ -190,16 +240,18 @@ export class ScreenRenderer {
     z: number,
     force: boolean,
     scopes: Map<string, ProvidedValues>,
+    filled: ReadonlySet<string>,
   ): boolean {
     const current = this.mounted.get(instance.id);
     const inherited = scopes.get(instance.parentId ?? '') ?? NO_PROVIDED;
     const provided = this.readProvided(instance, inherited);
-    if (current && !force && isUpToDate(current, instance, provided)) {
+    if (current && !force && isUpToDate(current, instance, provided, filled)) {
       scopes.set(instance.id, extendProvided(inherited, current.offers));
       const clipped = this.clipByParent(current);
       return this.setZ(current.node, z) || clipped;
     }
     const entry = current ?? this.mount(instance);
+    entry.filled = filled;
     this.renderInto(entry, instance, provided);
     if (!current) this.options.onInstanceCreated?.(instance.id, entry.node);
     scopes.set(instance.id, extendProvided(inherited, entry.offers));
@@ -215,9 +267,12 @@ export class ScreenRenderer {
    */
   private clipByParent(entry: Mounted): boolean {
     const { parentId } = entry.instance;
-    const clip =
-      parentId === undefined ? undefined : this.mounted.get(parentId)?.childClip;
-    entry.childClip = intersectClips(entry.slotClip, clip);
+    const parent = parentId === undefined ? undefined : this.mounted.get(parentId);
+    const slot = parent && this.slotOfChild(entry.instance, parent.instance);
+    const clip = slot === undefined ? undefined : parent?.childClips.get(slot);
+    entry.childClips = new Map(
+      [...entry.slotClips].map(([key, own]) => [key, intersectClips(own, clip)]),
+    );
     return applyClip(entry.node, localClip(clip, entry.instance.box));
   }
 
@@ -238,8 +293,9 @@ export class ScreenRenderer {
       imageUrls: [],
       provided: NO_PROVIDED,
       offers: undefined,
-      slotClip: undefined,
-      childClip: undefined,
+      slotClips: new Map(),
+      childClips: new Map(),
+      filled: NO_SLOTS,
     };
     this.group.add(node);
     this.mounted.set(instance.id, entry);
@@ -351,7 +407,7 @@ export class ScreenRenderer {
     entry.imageUrls = [];
     entry.provided = provided;
     entry.offers = undefined;
-    entry.slotClip = undefined;
+    entry.slotClips = new Map();
     node.destroyChildren();
     node.position({ x: instance.box.x, y: instance.box.y });
     node.scale({ x: 1, y: 1 });
@@ -396,9 +452,10 @@ export class ScreenRenderer {
       idPrefix: instance.id,
       ...(this.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
       ...(provided === NO_PROVIDED ? {} : { provided }),
+      ...filledOption(entry.filled),
     });
     entry.offers = result.provides;
-    entry.slotClip = offsetBox(clippedSlotBox(result.root), instance.box);
+    entry.slotClips = slotClipsOf(type.component, result.root, instance.box);
     const rendered = renderScene(
       { root: result.root, warnings: [] },
       {
@@ -421,6 +478,20 @@ export class ScreenRenderer {
     entry.label = instanceLabel(type, instance.values);
     node.setAttr('label', entry.label);
   }
+}
+
+/** The clip of each slot (by `slotKey`) of the instantiated component, on the screen (none: without `clip`). */
+function slotClipsOf(
+  component: ComponentFile,
+  root: FrameNode,
+  origin: Box,
+): ReadonlyMap<string, Box | undefined> {
+  return new Map(
+    componentSlots(component).map((slot) => [
+      slotKey(slot),
+      offsetBox(clippedSlotBox(root, slotKey(slot)), origin),
+    ]),
+  );
 }
 
 /** The box shifted to the instance position (the scene starts at 0,0); a null stays null. */
@@ -461,6 +532,11 @@ function isUpToDate(
   entry: Mounted,
   instance: Instance,
   provided: ProvidedValues,
+  filled: ReadonlySet<string>,
 ): boolean {
-  return entry.instance === instance && sameProvided(entry.provided, provided);
+  return (
+    entry.instance === instance &&
+    sameProvided(entry.provided, provided) &&
+    sameSet(entry.filled, filled)
+  );
 }
