@@ -1392,7 +1392,10 @@ const slotShape = z
   .strict();
 
 /** The type's `slots` have unique ids. */
-function checkSlotIds(slots: readonly { id: string }[] | undefined, ctx: z.RefinementCtx): void {
+function checkSlotIds(
+  slots: readonly { id: string }[] | undefined,
+  ctx: z.RefinementCtx,
+): void {
   const seen = new Set<string>();
   (slots ?? []).forEach((slot, i) => {
     if (seen.has(slot.id)) {
@@ -2608,7 +2611,8 @@ function checkSlotKeys(
     type.slots.forEach((slot, si) => {
       (Array.isArray(slot.accepts) ? slot.accepts : []).forEach((item, ii) => {
         const itemPath = [...path, 'slots', si, 'accepts', ii];
-        if (typeof item === 'string') checkChildId(item, li, typeLayer, itemPath, add, true);
+        if (typeof item === 'string')
+          checkChildId(item, li, typeLayer, itemPath, add, true);
         else if (isRecord(item) && typeof item.layer === 'string') {
           const clause: SpecChildClause = { ...item, layer: item.layer };
           checkChildClause(clause, li, layers, itemPath, add, true);

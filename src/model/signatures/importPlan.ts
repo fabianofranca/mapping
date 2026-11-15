@@ -444,7 +444,8 @@ class Importer {
         continue;
       }
       const param = free.find(
-        (p) => !taken.has(callName(p)) && normalizeName(callName(p)) === normalizeName(slot),
+        (p) =>
+          !taken.has(callName(p)) && normalizeName(callName(p)) === normalizeName(slot),
       );
       if (param === undefined) continue;
       const written = callName(param);

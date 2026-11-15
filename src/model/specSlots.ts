@@ -16,7 +16,11 @@ export interface TypeSlot extends PlacementSlot {
   readonly name: string;
 }
 
-function shownName(declared: SpecSlot | undefined, slot: SlotTemplate, id: string): string {
+function shownName(
+  declared: SpecSlot | undefined,
+  slot: SlotTemplate,
+  id: string,
+): string {
   if (declared?.name !== undefined) return declared.name;
   return typeof slot.label === 'string' && slot.label !== '' ? slot.label : id;
 }
