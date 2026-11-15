@@ -162,9 +162,8 @@ const slotOfMap = (d: ComponentDrawing): Record<string, string> =>
   Object.fromEntries(d.slotOf);
 const names = (d: ComponentDrawing): string[] => {
   const out: string[] = [];
-  walk(d.root, (node) => {
+  for (const node of walk(d.root))
     if (node.name !== undefined && node.visible) out.push(node.name);
-  });
   return out;
 };
 
@@ -250,8 +249,8 @@ describe('with children the fallback goes away (the default content is replaced,
       },
     });
     if (children !== 'none') {
-      p = put(p, 'I1', 'icon-button', r(4, 728, 48, 48), { parentId: 'BAB' });
-      p = put(p, 'I2', 'icon-button', r(52, 728, 48, 48), { parentId: 'BAB' });
+      p = put(p, 'IB1', 'icon-button', r(4, 728, 48, 48), { parentId: 'BAB' });
+      p = put(p, 'IB2', 'icon-button', r(52, 728, 48, 48), { parentId: 'BAB' });
     }
     if (children === 'both')
       p = put(p, 'XF', 'extended-fab', r(200, 732, 140, 56), { parentId: 'BAB' });
@@ -274,7 +273,7 @@ describe('with children the fallback goes away (the default content is replaced,
     expect(names(drawing)).not.toContain('action 1');
     expect(names(drawing)).toContain('floating button');
     expect(drawing.slots.map((s) => [s.id, s.children, s.fallback])).toEqual([
-      ['actions', ['I1', 'I2'], false],
+      ['actions', ['IB1', 'IB2'], false],
       ['floatingActionButton', [], true],
     ]);
     expect([...drawing.inactiveFields]).toEqual(

@@ -73,9 +73,14 @@ The field chooses the resting appearance of a state, as `enabled` chooses the di
 - **Pressed handle:** becomes 28 by 28 (`PressedHandleWidth` and `PressedHandleHeight`, lines 38 and 39), on, off or with icon, centered in the same 24 area; mouse and focus do not change the size.
 - **Disabled wins:** with `enabled` `false` the `state` node is invisible, the handle neither changes color nor goes to 28, so the drawing is the disabled one, whatever the `interaction`.
 
+**Slots (named, `formatVersion` 17)**
+
+- `thumbContent` (`(@Composable () -> Unit)?`, `Switch.kt` lines 91 to 133 and `ThumbNode`, lines 209 to 297) is a 24 by 24 slot, centered on the handle area, that takes one `icon`. The compose commit is `5113b82a4ed6416d6344efa50e41db8cb65928ff`.
+- A child in the slot replaces the `thumbIcon` field's `check` or `close` (the default content); the `get_code_hints` writes `thumbContent = { Icon(...) }`. Without children the drawing is the one of before. The slot's box is always the 24 by 24 of the handle area, also when the handle is 16 (off, without icon).
+
 **What still differs from Compose**
 
 - No animated ripple, no transition between states and no handle slide animation: the drawing is a still frame. In `focused` the switch gets the focus ring (`FocusIndicatorColor`, `SwitchTokens.kt` line 36): the 3 ring in `secondary`, offset 2 from the shape (`stroke.offset`), outside the box (the width and the offset are from the stage decision; `*Tokens.kt` only provides the color), around the 52 × 32 track.
 - The drawing's 32 layer is smaller than Compose's 40, which would go 4 above and below the 32 track and, with the switch against the right edge, 4 beyond the instance. When pressed the handle area grows from 24 to 28 (and the side inset drops from 4 to 2), so the 28 handle fits in it without changing the center. When pressed Compose also moves the handle inside the track (the inset); the drawing keeps the resting position.
-- The Compose `thumbContent` is free; the `thumbIcon` field draws `check` when on and `close` when off (the Material pair), and the type's `code` only passes the `check`.
+- The default content of the `thumbContent` slot is the `thumbIcon` field's `check` when on and `close` when off (the Material pair), and the type's `code` only passes the `check`; the slot takes any `icon` marking.
 - The 16 space between the label and the switch and the label at 0.38 when disabled are drawing conventions: Compose has no label.

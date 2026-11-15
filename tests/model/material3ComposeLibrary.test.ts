@@ -706,11 +706,11 @@ describe('Material 3 (Compose) library update with the numeric slider', () => {
           );
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
-      [1, 15],
-      [2, 15],
-      [3, 15],
-      [4, 15],
-      [5, 15],
+      [1, 16],
+      [2, 16],
+      [3, 16],
+      [4, 16],
+      [5, 16],
     ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);

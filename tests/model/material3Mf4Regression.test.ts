@@ -92,7 +92,20 @@ const EXCEPTIONS = {
   // L2 (#1078): no node exceeds the parent box (warning `content larger than the box`). The switch state layer went from
   // 40 to 32 (the rail height, in the `chave` frame) and, when pressed, the handle area grows from 24 to 28 to fit the 28 handle;
   // the rest of the scene (rail, travel, handle, icons) stays equal.
-  switch: { rename: {}, drop: ['estado', 'área da alça'] },
+  // SL7 (#1080): the `thumbContent` slot (its box, the wrapper of the default content and the `thumb icon` frame) enter the
+  // scene; the icons and the handle stay in the same place.
+  switch: {
+    rename: {},
+    drop: ['estado', 'área da alça', 'thumb content', 'frame', 'thumb icon'],
+  },
+  // SL7 (#1080): the slots enter the scene as boxes (the Scaffold has no default content), the content slot was already there.
+  scaffold: {
+    rename: {},
+    drop: ['top bar', 'bottom bar', 'floating action button', 'snackbar host'],
+  },
+  // SL7 (#1080): the `content` slot, the wrapper of the default content and the `items (default)` frame enter the scene; the
+  // rows stay in the same place.
+  'bottom-sheet': { rename: {}, drop: ['content', 'frame', 'items (default)'] },
   // Card: the `recorte` frame (top corners of the media by the Card radius, even with the shadow widening the straight
   // clip of the root) wraps the `corpo`, in the same box as it; the rest of the scene stays equal (checked by
   // `material3CardMediaCorners.test.ts`).

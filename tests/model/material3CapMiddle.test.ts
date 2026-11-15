@@ -56,12 +56,14 @@ interface RawNode {
   font?: { verticalAlign?: unknown };
   children?: RawNode[];
   template?: RawNode;
+  fallback?: RawNode;
 }
 
 function textNodes(node: RawNode, out: RawNode[] = []): RawNode[] {
   if (node.type === 'text') out.push(node);
   for (const child of node.children ?? []) textNodes(child, out);
   if (node.template !== undefined) textNodes(node.template, out);
+  if (node.fallback !== undefined) textNodes(node.fallback, out);
   return out;
 }
 

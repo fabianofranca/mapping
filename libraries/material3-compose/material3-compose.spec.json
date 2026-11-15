@@ -1,9 +1,9 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 16,
+  "formatVersion": 17,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 15,
+  "version": 16,
   "description": "Material Design 3 (baseline, light and dark theme) for Jetpack Compose, with each type's composable in `code`. The symbols and parameters come from the androidx code at compose.material3 version 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Conventions: the slots (lambdas) of each composable are described in `notes`; size comes from width, height and weight; icons are Icons.Filled suggestions (the ones androidx puts in Icons.AutoMirrored flip in rtl); the reading direction and the anchor draw the tooltip (with its arrow), the badge and the menu anchored; the remote image uses the app's image loader; the Scaffold places each child in the right slot by its type.",
   "platforms": [
     {
@@ -457,7 +457,7 @@
         {
           "id": "scaffold",
           "name": "Scaffold",
-          "description": "Structure of a Material 3 screen: top bar, bottom bar, floating button and content. Each child marking goes to the Scaffold slot matching its type.",
+          "description": "Structure of a Material 3 screen: top bar, bottom bar, floating button, snackbar and content. Each child marking goes to the Scaffold slot that takes its type and, among those, by the geometry.",
           "component": "components/scaffold.json",
           "doc": "docs/scaffold.md",
           "fields": [
@@ -668,7 +668,7 @@
                   "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
                 }
               },
-              "notes": "Each child marking's slot comes from its type: `top-app-bar` goes in `topBar`, `navigation-bar` in `bottomBar`, `fab` and `extended-fab` in `floatingActionButton` and the rest in `content = { innerPadding -> … }`, applying `Modifier.padding(innerPadding)` to the first child of the content. A `modal` `bottom-sheet` goes in the content (the `ModalBottomSheet` opens over the screen); the `standard` one is the `BottomSheetScaffold` itself and replaces the Scaffold. With width and height `fill`, use `Modifier.fillMaxSize()`; `snackbarHost` and `contentWindowInsets` stay at their defaults.",
+              "notes": "Each child marking goes in the argument of its slot, chosen by the type and then by the geometry: `top-app-bar` (or `search-bar`) in `topBar`, `navigation-bar`, `short-navigation-bar` or `bottom-app-bar` in `bottomBar`, `fab` and `extended-fab` in `floatingActionButton`, `snackbar` in `snackbarHost` and the rest in `content = { innerPadding -> … }`, applying `Modifier.padding(innerPadding)` to the first child of the content. A `modal` `bottom-sheet` goes in the content (the `ModalBottomSheet` opens over the screen); the `standard` one is the `BottomSheetScaffold` itself and replaces the Scaffold. With width and height `fill`, use `Modifier.fillMaxSize()`; `snackbarHost` (with no `snackbar` child) and `contentWindowInsets` stay at their defaults.",
               "ignore": [
                 "modifier",
                 "topBar",
@@ -709,6 +709,40 @@
               "kind": "pending",
               "message": "compose: the parameter `contentWindowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/scaffold.compose.json"
+            }
+          ],
+          "slots": [
+            {
+              "id": "topBar",
+              "name": "Top bar",
+              "description": "The bar at the top of the screen.",
+              "accepts": ["top-app-bar", "search-bar"],
+              "max": 1
+            },
+            {
+              "id": "bottomBar",
+              "name": "Bottom bar",
+              "description": "The bar at the bottom of the screen.",
+              "accepts": ["navigation-bar", "short-navigation-bar", "bottom-app-bar"],
+              "max": 1
+            },
+            {
+              "id": "floatingActionButton",
+              "name": "Floating action button",
+              "description": "The floating action button, at the side set by `floatingActionButtonPosition`.",
+              "accepts": ["fab", "extended-fab"],
+              "max": 1
+            },
+            {
+              "id": "snackbarHost",
+              "name": "Snackbar host",
+              "description": "Where the snackbars appear, above the bottom bar.",
+              "accepts": ["snackbar"]
+            },
+            {
+              "id": "content",
+              "name": "Content",
+              "description": "The content of the screen, between the bars (the `content` lambda)."
             }
           ]
         },
@@ -4294,7 +4328,7 @@
             "compose": {
               "symbol": "androidx.compose.material3.TopAppBar",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt",
-              "notes": "`title = { Text(<title>) }`; with `navigationIcon` filled, `navigationIcon = { IconButton(onClick = …) { Icon(Icons.Filled.<navigationIcon>, contentDescription = …) } }`, and each filled `actionIcon1`/`actionIcon2` becomes an `IconButton` inside `actions = { … }`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. None of the four variants requires an opt-in; only `scrollBehavior` (`TopAppBarDefaults.pinnedScrollBehavior()` and relatives) requires `@OptIn(ExperimentalMaterial3Api::class)`.",
+              "notes": "`title = { Text(<title>) }`; with `navigationIcon` filled, `navigationIcon = { IconButton(onClick = …) { Icon(Icons.Filled.<navigationIcon>, contentDescription = …) } }`, and each filled `actionIcon1`/`actionIcon2` becomes an `IconButton` inside `actions = { … }`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. None of the four variants requires an opt-in; only `scrollBehavior` (`TopAppBarDefaults.pinnedScrollBehavior()` and relatives) requires `@OptIn(ExperimentalMaterial3Api::class)`. With child markings in the `navigationIcon` or `actions` slots the node carries `navigationIcon = { … }` and `actions = { … }` with them, and the `navigationIcon`, `actionIcon1` and `actionIcon2` of `values` are the default content that the children replace (they are not arguments then). Without child markings the arguments are the ones above.",
               "variants": {
                 "field": "style",
                 "cases": {
@@ -4633,6 +4667,21 @@
               "kind": "pending",
               "message": "compose: case `large`: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/top-app-bar.large.compose.json"
+            }
+          ],
+          "slots": [
+            {
+              "id": "navigationIcon",
+              "name": "Navigation icon",
+              "description": "The icon on the left of the title.",
+              "accepts": ["icon-button", "icon"],
+              "max": 1
+            },
+            {
+              "id": "actions",
+              "name": "Actions",
+              "description": "The action icons on the right of the title (the RowScope of `actions`).",
+              "accepts": ["icon-button", "icon-toggle-button", "icon"]
             }
           ]
         },
@@ -8590,6 +8639,15 @@
                 "checked": "true",
                 "interaction": "pressed"
               }
+            }
+          ],
+          "slots": [
+            {
+              "id": "thumbContent",
+              "name": "Thumb content",
+              "description": "The icon over the handle.",
+              "accepts": ["icon"],
+              "max": 1
             }
           ]
         },
@@ -14961,6 +15019,13 @@
               "kind": "pending",
               "message": "compose: the parameter `properties` (ModalBottomSheetProperties) is not a field yet",
               "ref": "signatures/bottom-sheet.compose.json"
+            }
+          ],
+          "slots": [
+            {
+              "id": "content",
+              "name": "Content",
+              "description": "The content below the sheet's header."
             }
           ]
         },
@@ -30076,7 +30141,7 @@
             "compose": {
               "symbol": "androidx.compose.material3.BottomAppBar",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt",
-              "notes": "Stable overload `BottomAppBar(actions = { … }, floatingActionButton = { … })`, without `scrollBehavior` (the overload with `scrollBehavior` requires `@OptIn(ExperimentalMaterial3Api::class)` and is not used here). Each filled `actionIcon1` to `actionIcon4` becomes an `IconButton(onClick = …) { Icon(Icons.Filled.<actionIconN>, contentDescription = …) }` inside `actions = { … }` (a `RowScope`, from left to right). With `floatingActionButton` filled, `floatingActionButton = { FloatingActionButton(onClick = …, containerColor = BottomAppBarDefaults.bottomAppBarFabColor, elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()) { Icon(Icons.Filled.<floatingActionButton>, contentDescription = …) } }`; empty = omit the parameter. Inside a Scaffold, the bar goes in `bottomBar`. The height (80, plus the system navigation bar) belongs to the component: width and position come from the `Modifier`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`.",
+              "notes": "Stable overload `BottomAppBar(actions = { … }, floatingActionButton = { … })`, without `scrollBehavior` (the overload with `scrollBehavior` requires `@OptIn(ExperimentalMaterial3Api::class)` and is not used here). Each filled `actionIcon1` to `actionIcon4` becomes an `IconButton(onClick = …) { Icon(Icons.Filled.<actionIconN>, contentDescription = …) }` inside `actions = { … }` (a `RowScope`, from left to right). With `floatingActionButton` filled, `floatingActionButton = { FloatingActionButton(onClick = …, containerColor = BottomAppBarDefaults.bottomAppBarFabColor, elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()) { Icon(Icons.Filled.<floatingActionButton>, contentDescription = …) } }`; empty = omit the parameter. Inside a Scaffold, the bar goes in `bottomBar`. The height (80, plus the system navigation bar) belongs to the component: width and position come from the `Modifier`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. With child markings in the `actions` slot the node carries `actions = { … }` with an `IconButton` (or the child's own call) for each one, and the `actionIcon1` to `actionIcon4` of `values` are the default content that the children replace (they are not arguments then); with a child in the `floatingActionButton` slot the node carries `floatingActionButton = { … }` with it and the `floatingActionButton` field's icon is not used. Without child markings the arguments are the ones above.",
               "ignore": ["modifier", "floatingActionButton"],
               "signature": "signatures/bottom-app-bar.compose.json",
               "params": {
@@ -30206,6 +30271,21 @@
               "kind": "pending",
               "message": "compose: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/bottom-app-bar.compose.json"
+            }
+          ],
+          "slots": [
+            {
+              "id": "actions",
+              "name": "Actions",
+              "description": "The action icons on the left of the bar (the RowScope of `actions`).",
+              "accepts": ["icon-button", "icon-toggle-button", "icon"]
+            },
+            {
+              "id": "floatingActionButton",
+              "name": "Floating action button",
+              "description": "The floating action button on the right of the bar.",
+              "accepts": ["fab", "extended-fab"],
+              "max": 1
             }
           ]
         },
@@ -30926,6 +31006,18 @@
                 "width": "fill"
               }
             }
+          ],
+          "slots": [
+            {
+              "id": "content",
+              "name": "Content",
+              "description": "The item that is swiped."
+            },
+            {
+              "id": "backgroundContent",
+              "name": "Background content",
+              "description": "The background revealed under the item while it is swiped."
+            }
           ]
         }
       ]
@@ -30934,7 +31026,7 @@
   "migrations": [
     {
       "from": 1,
-      "to": 15,
+      "to": 16,
       "steps": [
         {
           "op": "fill-field",
@@ -30958,7 +31050,7 @@
     },
     {
       "from": 2,
-      "to": 15,
+      "to": 16,
       "steps": [
         {
           "op": "fill-field",
@@ -30982,7 +31074,7 @@
     },
     {
       "from": 3,
-      "to": 15,
+      "to": 16,
       "steps": [
         {
           "op": "fill-field",
@@ -31006,7 +31098,7 @@
     },
     {
       "from": 4,
-      "to": 15,
+      "to": 16,
       "steps": [
         {
           "op": "fill-field",
@@ -31030,7 +31122,7 @@
     },
     {
       "from": 5,
-      "to": 15,
+      "to": 16,
       "steps": [
         {
           "op": "fill-field",

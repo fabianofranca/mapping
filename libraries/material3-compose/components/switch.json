@@ -1811,108 +1811,131 @@
                     }
                   },
                   {
-                    "type": "icon",
-                    "name": "check",
-                    "width": 16,
-                    "height": 16,
-                    "color": {
-                      "$if": {
-                        "$eq": ["enabled", "false"]
-                      },
-                      "then": {
-                        "$token": "on-surface"
-                      },
-                      "else": {
-                        "$token": "on-primary-container"
-                      }
-                    },
-                    "opacity": {
-                      "$if": {
-                        "$eq": ["enabled", "false"]
-                      },
-                      "then": {
-                        "$token": "state-disabled-content"
-                      },
-                      "else": 1
-                    },
-                    "visible": {
-                      "$and": [
-                        {
-                          "$eq": ["thumbIcon", "true"]
-                        },
-                        {
-                          "$field": "checked"
-                        }
-                      ]
-                    },
+                    "type": "slot",
+                    "id": "thumbContent",
+                    "name": "thumb content",
+                    "width": 24,
+                    "height": 24,
                     "anchors": {
                       "centerX": true,
                       "centerY": true
-                    }
-                  },
-                  {
-                    "type": "icon",
-                    "name": "close",
-                    "width": 16,
-                    "height": 16,
-                    "color": {
-                      "$if": {
-                        "$eq": ["enabled", "false"]
+                    },
+                    "layout": {
+                      "type": "none"
+                    },
+                    "fallback": {
+                      "type": "frame",
+                      "name": "thumb icon",
+                      "layout": {
+                        "type": "none"
                       },
-                      "then": {
-                        "$token": "surface"
-                      },
-                      "else": {
-                        "$token": "surface-container-highest"
-                      }
-                    },
-                    "opacity": 1,
-                    "visible": {
-                      "$and": [
+                      "children": [
                         {
-                          "$eq": ["thumbIcon", "true"]
-                        },
-                        {
-                          "$not": {
-                            "$field": "checked"
-                          }
-                        }
-                      ]
-                    },
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    }
-                  },
-                  {
-                    "type": "icon",
-                    "name": "close",
-                    "width": 16,
-                    "height": 16,
-                    "color": {
-                      "$token": "surface-container-highest"
-                    },
-                    "opacity": {
-                      "$token": "state-disabled-content"
-                    },
-                    "visible": {
-                      "$and": [
-                        {
-                          "$eq": ["thumbIcon", "true"]
-                        },
-                        {
-                          "$not": {
-                            "$field": "checked"
+                          "type": "icon",
+                          "name": "check",
+                          "width": 16,
+                          "height": 16,
+                          "color": {
+                            "$if": {
+                              "$eq": ["enabled", "false"]
+                            },
+                            "then": {
+                              "$token": "on-surface"
+                            },
+                            "else": {
+                              "$token": "on-primary-container"
+                            }
+                          },
+                          "opacity": {
+                            "$if": {
+                              "$eq": ["enabled", "false"]
+                            },
+                            "then": {
+                              "$token": "state-disabled-content"
+                            },
+                            "else": 1
+                          },
+                          "visible": {
+                            "$and": [
+                              {
+                                "$eq": ["thumbIcon", "true"]
+                              },
+                              {
+                                "$field": "checked"
+                              }
+                            ]
+                          },
+                          "anchors": {
+                            "centerX": true,
+                            "centerY": true
                           }
                         },
                         {
-                          "$eq": ["enabled", "false"]
+                          "type": "icon",
+                          "name": "close",
+                          "width": 16,
+                          "height": 16,
+                          "color": {
+                            "$if": {
+                              "$eq": ["enabled", "false"]
+                            },
+                            "then": {
+                              "$token": "surface"
+                            },
+                            "else": {
+                              "$token": "surface-container-highest"
+                            }
+                          },
+                          "opacity": 1,
+                          "visible": {
+                            "$and": [
+                              {
+                                "$eq": ["thumbIcon", "true"]
+                              },
+                              {
+                                "$not": {
+                                  "$field": "checked"
+                                }
+                              }
+                            ]
+                          },
+                          "anchors": {
+                            "centerX": true,
+                            "centerY": true
+                          }
+                        },
+                        {
+                          "type": "icon",
+                          "name": "close",
+                          "width": 16,
+                          "height": 16,
+                          "color": {
+                            "$token": "surface-container-highest"
+                          },
+                          "opacity": {
+                            "$token": "state-disabled-content"
+                          },
+                          "visible": {
+                            "$and": [
+                              {
+                                "$eq": ["thumbIcon", "true"]
+                              },
+                              {
+                                "$not": {
+                                  "$field": "checked"
+                                }
+                              },
+                              {
+                                "$eq": ["enabled", "false"]
+                              }
+                            ]
+                          },
+                          "anchors": {
+                            "centerX": true,
+                            "centerY": true
+                          }
                         }
                       ]
-                    },
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
                     }
                   }
                 ]
