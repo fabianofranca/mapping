@@ -19,3 +19,4 @@
 
 - The `dist/index.html` ceiling went up 16 KiB, from 2211840 to 2228224 bytes, by the budget rule (the format version 18 validation and its messages in two languages add 11430 bytes over `main`); above the limits, `bug` #1992 for the owner to review.
 - MCP: the compact row of `list_markings` (and of the children) carries `warnings` (the count of `touch-target-small` warnings) instead of the `audit` array; `get_marking` and `get_annotation` keep the full `audit`.
+- The `dist/index.html` ceiling went up another 16 KiB, from 2228224 to 2244608 bytes, by the budget rule (phase A5: 162 bytes over); above the limits, `bug` #2004 for the owner to review.
