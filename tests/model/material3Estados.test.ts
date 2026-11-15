@@ -256,8 +256,8 @@ describe('update from the previous library version to the new one', () => {
         if (type.id in INTERACTION_OPTIONS)
           type.fields = type.fields.filter((f) => f.key !== 'interaction');
       }
-    // 7 after MF4 of #899 (6 was EX4 of #897; 11 after VL2 of #1504; 12 after S5 of #1120; 13 after RC1 of #1743; 14 after R5 of #1110; 15 after the English text of ID7)
-    expect(spec.version).toBe(15);
+    // 7 after MF4 of #899 (6 was EX4 of #897; 11 after VL2 of #1504; 12 after S5 of #1120; 13 after RC1 of #1743; 14 after R5 of #1110; 15 after the English text of ID7; 16 after SL7 of #1080)
+    expect(spec.version).toBe(16);
     expect(missingMigrations(previous, spec)).toEqual([]);
     // only EX6 (#897) has a migration: the slider went from enum to number (`fill-field`), and the fields
     // these tests compare do not change

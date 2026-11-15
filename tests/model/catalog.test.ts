@@ -37,11 +37,11 @@ const catalog = buildCatalog(files);
 const entries = catalog.layers.flatMap((l) => l.entries);
 
 describe('Material 3 catalog', () => {
-  it('reads the specialization, the report and the fifteen types', () => {
+  it('reads the specialization, the report and the seventeen types', () => {
     expect(catalog.spec?.id).toBe('material3');
     expect(catalog.report.errors).toEqual([]);
     expect(catalog.layers.length).toBeGreaterThan(0);
-    expect(entries).toHaveLength(15);
+    expect(entries).toHaveLength(17);
     expect(catalog.layers[0]?.entries[0]?.layerId).toBe(catalog.layers[0]?.id);
   });
 

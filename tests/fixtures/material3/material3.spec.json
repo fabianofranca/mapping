@@ -1649,6 +1649,68 @@
               }
             }
           ]
+        },
+        {
+          "id": "m3-bottom-app-bar",
+          "name": "Bottom app bar",
+          "component": "components/m3-bottom-app-bar.json",
+          "fields": [
+            {
+              "key": "action1",
+              "label": "Action 1",
+              "type": "enum",
+              "options": ["check", "edit", "add", "favorite", "more", "search"],
+              "default": "check"
+            },
+            {
+              "key": "action2",
+              "label": "Action 2",
+              "type": "enum",
+              "options": ["check", "edit", "add", "favorite", "more", "search"],
+              "default": "edit"
+            },
+            {
+              "key": "fab",
+              "label": "Floating button",
+              "type": "enum",
+              "options": ["check", "edit", "add", "favorite", "more", "search"],
+              "default": "add"
+            }
+          ],
+          "doc": "docs/m3-bottom-app-bar.md",
+          "examples": [
+            {
+              "name": "Default",
+              "values": {
+                "action1": "check",
+                "action2": "edit",
+                "fab": "add"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-scaffold",
+          "name": "Scaffold",
+          "fields": [
+            {
+              "key": "fabPosition",
+              "label": "Floating button position",
+              "type": "enum",
+              "options": ["Start", "End", "Center", "EndOverlay"],
+              "default": "End"
+            }
+          ],
+          "component": "components/m3-scaffold.json",
+          "doc": "docs/m3-scaffold.md",
+          "examples": [
+            {
+              "name": "Default",
+              "values": {
+                "fabPosition": "End"
+              }
+            }
+          ]
         }
       ]
     }

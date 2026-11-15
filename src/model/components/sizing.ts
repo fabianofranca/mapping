@@ -105,6 +105,21 @@ export function followedAxes(resolved: ResolvedSizing): Record<SizingAxis, boole
   return { width: follows(resolved.width), height: follows(resolved.height) };
 }
 
+/**
+ * Does an axis of the evaluated `sizing` depend on the content (`hug`, `min-content` or `max-content`)? An axis
+ * that follows an expression's px does not: the size is the field's, not the children's. A component with a slot
+ * born with such an axis has no children to measure yet.
+ */
+export function sizingFollowsContent(
+  component: ComponentFile,
+  values: FieldValues,
+): boolean {
+  const resolved = resolveSizing(component, values);
+  return [resolved.width, resolved.height].some(
+    (axis) => axis.spec === 'hug' || isIntrinsicSize(axis.spec),
+  );
+}
+
 /** Rounds up, without letting floating-point noise raise a px. */
 const ceilFit = (value: number): number => Math.ceil(value - 1e-6);
 

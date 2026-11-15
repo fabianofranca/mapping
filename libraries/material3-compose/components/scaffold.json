@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "scaffold",
   "name": "Scaffold",
-  "description": "Material 3 screen structure: screen background and a slot for the top bar, the content, the bottom bar and the floating action button.",
+  "description": "Material 3 screen structure: screen background and the slots for the top bar, the bottom bar, the floating action button, the snackbar and the content.",
   "size": {
     "width": 360,
     "height": 800
@@ -142,6 +142,83 @@
       }
     },
     "children": [
+      {
+        "type": "slot",
+        "id": "topBar",
+        "name": "top bar",
+        "height": 64,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0
+        },
+        "layout": {
+          "type": "none"
+        }
+      },
+      {
+        "type": "slot",
+        "id": "bottomBar",
+        "name": "bottom bar",
+        "height": 80,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "none"
+        }
+      },
+      {
+        "type": "slot",
+        "id": "floatingActionButton",
+        "name": "floating action button",
+        "width": 56,
+        "height": 56,
+        "anchors": {
+          "left": {
+            "$switch": "floatingActionButtonPosition",
+            "cases": {
+              "Start": 16
+            }
+          },
+          "right": {
+            "$switch": "floatingActionButtonPosition",
+            "cases": {
+              "End": 16,
+              "EndOverlay": 16
+            }
+          },
+          "centerX": {
+            "$eq": ["floatingActionButtonPosition", "Center"]
+          },
+          "bottom": {
+            "$switch": "floatingActionButtonPosition",
+            "cases": {
+              "EndOverlay": 16
+            },
+            "default": 96
+          }
+        },
+        "layout": {
+          "type": "none"
+        }
+      },
+      {
+        "type": "slot",
+        "id": "snackbarHost",
+        "name": "snackbar host",
+        "height": 48,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "bottom": 96
+        },
+        "layout": {
+          "type": "none"
+        }
+      },
       {
         "type": "slot",
         "name": "content",
@@ -341,7 +418,8 @@
               "$token": "on-background"
             }
           }
-        }
+        },
+        "id": "content"
       }
     ]
   }

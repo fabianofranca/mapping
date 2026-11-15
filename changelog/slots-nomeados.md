@@ -26,6 +26,10 @@
 - In the app, the Details, the annotation summary and the field read every drawing pending item (`component-overflow`, `slot-not-accepted`, `slot-full`) from the editor's `derived.issues`, so a child in a slot that does not accept it shows the reason in its Details, and a component that does not fit shows it in its own.
 - The fields that the `fallback` of a slot draws show the note "The slot <name> has content: this field does not draw or go into the code" while a child is in that slot (`derived.inactiveFields`, in the Details' field status), and the note goes away when the slot empties, with `Ctrl+Z` included.
 - "Add inside" in the app hands the drawings to the `addComponent` action, so the new child goes to the first slot that accepts its type and is not full, in one undo entry.
+- Material 3 (Compose) library `version` 16 (specialization `formatVersion` 17): the `bottom-app-bar` (`actions` and `floatingActionButton`), the `top-app-bar` (`navigationIcon` and `actions`), the `scaffold` (`topBar`, `bottomBar`, `floatingActionButton`, `snackbarHost` and `content`), the `switch` (`thumbContent`), the `swipe-to-dismiss` (`content` and `backgroundContent`) and the `bottom-sheet` (`content`) have named slots with `accepts` and `max`. The fields that imitated a slot (`actionIcon1` to `actionIcon4`, `floatingActionButton`, `navigationIcon`...) stay as the default content of the slot, so who marks the common case does nothing extra and the six types draw as before; a child marked in a slot replaces the default content in the drawing and in `get_code_hints`.
+- `docs/` of the six components (Fidelity: the Compose file and line of the pinned commit for each slot, the `weight` of the children as a limit); `dropdown-menu` and `tabs` say why they stay out (content per table row).
+- Performance fixtures `m3-bottom-app-bar` and `m3-scaffold` (with slots and default content) and a budget case that draws the screen, a bar with four children and a scaffold with the bars through the drawing cache (16 ms; pan and zoom without instantiating).
+- `docs/TESTING.md`: R3, R9, R10 and R17 follow library version 16 (R17: the six types with and without children, in `light` and `dark`; R17.6 reads the scaffold's children in `topBar`, `content` and `floatingActionButton`), and R3 checks the `get_code_hints` of a bar with two `icon-button` in `actions`.
 
 ## Corrigido
 
@@ -39,3 +43,6 @@
 - The `dist/index.html` ceiling rose 16 KiB, from 2195456 to 2211840, by the budget rule.
 - `get_marking` and `list_markings` now also carry `component-overflow` in `issues` (before, only `plan_changes` and `propose_changes` listed it).
 - The `issues.new` of `plan_changes` and `propose_changes` lists, per annotation, only the codes it gained (before, only annotations that had no issue at all were listed).
+- Material 3 (Compose): the `scaffold` children go to the slot arguments (`topBar`, `bottomBar`, `floatingActionButton`, `content`) in `get_code_hints` instead of the node's `children`; the library `version` is 16.
+- A component with a slot is still measured at birth when no axis follows the content (an expression such as the `top-app-bar` height by `style`); as soon as one axis follows the content (`hug`, intrinsic), the component is born at its `size` and Arrange adjusts it after the children come in.
+- `providingSlot` (the slot that provides the inherited content color) is the first slot that has a `provide`, not the first slot: with five slots the `scaffold` kept offering the color to its children.

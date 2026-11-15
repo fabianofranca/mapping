@@ -95,9 +95,14 @@ Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb6
 - Maximum width of 640 (`SheetMaxWidth`, the root's `maxWidth`) and, in the standard, a minimum height of `sheetPeekHeight` (`requiredHeightIn(min = peekHeight)`, the root's `minHeight` read from the field). The modal has no minimum height.
 - Single-line label centered by the capital letter (`cap-middle`): the `label` node of each item (the `title` stays as it is) uses `font.verticalAlign: "cap-middle"` and stays `hug` in height, because the parent also measures by the text; the text box is the line, centered in the parent. Compose's `Text` centers by the font's line box (ascent and descent); the drawing centers the capital height in the box, and with Roboto the two coincide to within 1 px.
 
+**Slots (named, `formatVersion` 17)**
+
+- `content` (`ColumnScope.() -> Unit`, `ModalBottomSheet.kt` lines 361 to 431) is the area below the header (the handle and the `title`), as wide as the sheet and as high as its children (hug). The compose commit is `5113b82a4ed6416d6344efa50e41db8cb65928ff`.
+- A child in the slot replaces the `items` rows (the default content); the `get_code_hints` writes the children inside the `content`. Without children the drawing is the one of before. The sheet hugs: with children it measures them.
+
 **What still differs from Compose**
 
-- The sheet content is free-form (`ColumnScope.() -> Unit`): the title, its spacing and the bottom one are not constants of the composable. The drawing uses 16 on the sides of the title (the `ListItemStartPadding`), 8 on top and 16 at the bottom, and 16 of breathing room below the list in place of `contentWindowInsets` (the system bar), which are drawing conventions and not code values.
+- The sheet content is free-form (`ColumnScope.() -> Unit`; the `content` slot takes it as child markings, and the default content is the `items` rows): the title, its spacing and the bottom one are not constants of the composable. The drawing uses 16 on the sides of the title (the `ListItemStartPadding`), 8 on top and 16 at the bottom, and 16 of breathing room below the list in place of `contentWindowInsets` (the system bar), which are drawing conventions and not code values.
 - A `ListItem` without `colors` paints the container in `surface`, and that is what the drawing does; the strip is slightly lighter than the `surface-container-low` sheet. Whoever passes `ListItemDefaults.colors(containerColor = Color.Transparent)` does not see the strip, and the type has no field for that.
 - The top corners are the list `[corner-extra-large, corner-extra-large, 0, 0]` (the radius list accepts `$token` per item), so they follow the token if the specialization changes.
 - The standard's shadow is the two level 1 ones (point at 30% and ambient at 15%, through the tokens `elevation-1-point-*` and `elevation-1-ambient-*`); Compose's tonal one is not drawn. At 1 dp they barely show at the top of the sheet.

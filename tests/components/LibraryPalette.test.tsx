@@ -37,7 +37,7 @@ describe('Library palette', () => {
     const group = screen.getByRole('region', { name: 'Material Design 3 (baseline)' });
     // pt-BR kept: layer name of the shared library data (libraries/material3-compose)
     expect(within(group).getByText('Componentes')).toBeTruthy();
-    expect(within(group).getAllByRole('listitem')).toHaveLength(15);
+    expect(within(group).getAllByRole('listitem')).toHaveLength(17);
 
     const button = within(group).getByText('Button').closest('li') as HTMLElement;
     expect(within(button).queryByText('120 × 40')).toBeNull();

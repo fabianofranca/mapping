@@ -44,12 +44,15 @@ export function providedReads(component: ComponentFile): readonly string[] {
   return result;
 }
 
-/** The first `slot` of the template with `provide` (the same slot `findSlot` finds), or none. */
+/**
+ * The first `slot` of the template with `provide`, or none. With several slots (`formatVersion` 4) it is
+ * not always the first one: the Scaffold offers the content color in its `content` slot, which comes after the bars.
+ * What it offers reaches the children of the marking, whichever slot they are in.
+ */
 export function providingSlot(component: ComponentFile): SlotTemplate | undefined {
-  const slot = componentSlots(component)[0];
-  return slot?.provide === undefined || Object.keys(slot.provide).length === 0
-    ? undefined
-    : slot;
+  return componentSlots(component).find(
+    (slot) => slot.provide !== undefined && Object.keys(slot.provide).length > 0,
+  );
 }
 
 /** The part of `scope` that the component reads; `NO_PROVIDED` if it reads nothing (the common case). */

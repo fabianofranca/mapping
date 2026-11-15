@@ -46,17 +46,17 @@ test('Open library: list, Button page and playground that redraws', async ({ pag
     'Material Design 3 (baseline)',
   );
 
-  // Validation at the top and the 15 components in the list, by layer.
+  // Validation at the top and the 17 components in the list, by layer.
   const validation = screen.getByRole('region', { name: 'Package validation' });
   await expect(validation).toContainText('0 error(s) and 2 warning(s)');
   const list = screen.getByRole('navigation', { name: 'Components' });
-  await expect(list.locator('button[data-type-id]')).toHaveCount(15);
+  await expect(list.locator('button[data-type-id]')).toHaveCount(17);
 
   // Search filters the list.
   await screen.getByRole('searchbox', { name: 'Search components' }).fill('chip');
   await expect(list.locator('button[data-type-id]')).toHaveCount(1);
   await screen.getByRole('searchbox', { name: 'Search components' }).fill('');
-  await expect(list.locator('button[data-type-id]')).toHaveCount(15);
+  await expect(list.locator('button[data-type-id]')).toHaveCount(17);
 
   // Button page.
   await list.locator('button[data-type-id="m3-button"]').click();

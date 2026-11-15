@@ -168,316 +168,326 @@
         },
         "children": [
           {
-            "type": "frame",
-            "name": "navigation",
-            "width": 48,
+            "type": "slot",
+            "id": "navigationIcon",
+            "name": "navigation icon",
+            "width": "hug",
             "height": 48,
-            "visible": {
-              "$has": "navigationIcon"
-            },
             "layout": {
-              "type": "row",
-              "align": "center",
-              "justify": "center"
+              "type": "none"
             },
-            "children": [
-              {
-                "type": "icon",
-                "name": {
-                  "$switch": "navigationIcon",
-                  "cases": {
-                    "Home": "home",
-                    "Search": "search",
-                    "Person": "person",
-                    "Menu": "menu",
-                    "MoreVert": "more_vert",
-                    "Add": "add",
-                    "Check": "check",
-                    "Close": "close",
-                    "ArrowBack": "arrow_back",
-                    "Favorite": "favorite",
-                    "Edit": "edit",
-                    "Delete": "delete",
-                    "Share": "share",
-                    "Notifications": "notifications",
-                    "Settings": "settings",
-                    "Info": "info",
-                    "Star": "star",
-                    "Email": "email",
-                    "Phone": "phone",
-                    "Place": "place",
-                    "DateRange": "date_range",
-                    "ShoppingCart": "shopping_cart",
-                    "AccountCircle": "account_circle",
-                    "KeyboardArrowRight": "keyboard_arrow_right",
-                    "KeyboardArrowDown": "keyboard_arrow_down",
-                    "Refresh": "refresh",
-                    "Clear": "clear",
-                    "Done": "done",
-                    "Lock": "lock",
-                    "List": "list",
-                    "AccountBox": "account_box",
-                    "AddCircle": "add_circle",
-                    "ArrowDropDown": "arrow_drop_down",
-                    "ArrowDropUp": "arrow_drop_up",
-                    "ArrowForward": "arrow_forward",
-                    "ArrowUpward": "arrow_upward",
-                    "ArrowDownward": "arrow_downward",
-                    "Build": "build",
-                    "Call": "call",
-                    "CheckCircle": "check_circle",
-                    "Create": "create",
-                    "Face": "face",
-                    "FavoriteBorder": "favorite_border",
-                    "ExitToApp": "exit_to_app",
-                    "KeyboardArrowLeft": "keyboard_arrow_left",
-                    "KeyboardArrowUp": "keyboard_arrow_up",
-                    "LocationOn": "location_on",
-                    "MailOutline": "mail_outline",
-                    "PlayArrow": "play_arrow",
-                    "Send": "send",
-                    "ThumbUp": "thumb_up",
-                    "Warning": "warning",
-                    "Cancel": "cancel",
-                    "ExpandMore": "expand_more",
-                    "ExpandLess": "expand_less",
-                    "ChevronLeft": "chevron_left",
-                    "ChevronRight": "chevron_right",
-                    "FirstPage": "first_page",
-                    "LastPage": "last_page",
-                    "MoreHoriz": "more_horiz",
-                    "Apps": "apps",
-                    "Dashboard": "dashboard",
-                    "Folder": "folder",
-                    "FolderOpen": "folder_open",
-                    "InsertDriveFile": "insert_drive_file",
-                    "Description": "description",
-                    "Image": "image",
-                    "Mic": "mic",
-                    "Videocam": "videocam",
-                    "Chat": "chat",
-                    "Comment": "comment",
-                    "Forum": "forum",
-                    "NotificationsNone": "notifications_none",
-                    "Visibility": "visibility",
-                    "VisibilityOff": "visibility_off",
-                    "Language": "language",
-                    "Public": "public",
-                    "Link": "link",
-                    "Attachment": "attachment",
-                    "ContentCopy": "content_copy",
-                    "ContentPaste": "content_paste",
-                    "ContentCut": "content_cut",
-                    "Save": "save",
-                    "Download": "download",
-                    "Upload": "upload",
-                    "CloudUpload": "cloud_upload",
-                    "CloudDownload": "cloud_download",
-                    "Cloud": "cloud",
-                    "Sync": "sync",
-                    "Schedule": "schedule",
-                    "AccessTime": "access_time",
-                    "CalendarToday": "calendar_today",
-                    "Event": "event",
-                    "Today": "today",
-                    "Timer": "timer",
-                    "Alarm": "alarm",
-                    "History": "history",
-                    "Bookmark": "bookmark",
-                    "BookmarkBorder": "bookmark_border",
-                    "Label": "label",
-                    "Flag": "flag",
-                    "Help": "help",
-                    "HelpOutline": "help_outline",
-                    "Error": "error",
-                    "ErrorOutline": "error_outline",
-                    "Report": "report",
-                    "Block": "block",
-                    "Tune": "tune",
-                    "FilterList": "filter_list",
-                    "Sort": "sort",
-                    "Fullscreen": "fullscreen",
-                    "Wifi": "wifi",
-                    "Bluetooth": "bluetooth",
-                    "LightMode": "light_mode",
-                    "DarkMode": "dark_mode",
-                    "Palette": "palette",
-                    "ShoppingBag": "shopping_bag",
-                    "Store": "store",
-                    "Payment": "payment",
-                    "CreditCard": "credit_card",
-                    "AttachMoney": "attach_money",
-                    "Receipt": "receipt",
-                    "Map": "map",
-                    "Navigation": "navigation",
-                    "DirectionsCar": "directions_car",
-                    "Flight": "flight",
-                    "MenuOpen": "menu_open",
-                    "Logout": "logout",
-                    "Login": "login",
-                    "People": "people",
-                    "Group": "group",
-                    "PersonAdd": "person_add",
-                    "LockOpen": "lock_open",
-                    "Security": "security",
-                    "VerifiedUser": "verified_user",
-                    "Key": "key",
-                    "Pause": "pause",
-                    "Stop": "stop",
-                    "SkipNext": "skip_next",
-                    "SkipPrevious": "skip_previous",
-                    "VolumeUp": "volume_up",
-                    "VolumeOff": "volume_off",
-                    "ThumbDown": "thumb_down",
-                    "Reply": "reply",
-                    "Inbox": "inbox",
-                    "Archive": "archive",
-                    "Undo": "undo",
-                    "Redo": "redo",
-                    "ZoomIn": "zoom_in",
-                    "ZoomOut": "zoom_out",
-                    "Keyboard": "keyboard",
-                    "CheckBox": "check_box",
-                    "CheckBoxOutlineBlank": "check_box_outline_blank",
-                    "RadioButtonChecked": "radio_button_checked",
-                    "RadioButtonUnchecked": "radio_button_unchecked",
-                    "ToggleOn": "toggle_on",
-                    "ToggleOff": "toggle_off",
-                    "StarBorder": "star_border",
-                    "StarHalf": "star_half",
-                    "Lightbulb": "lightbulb",
-                    "Code": "code",
-                    "Terminal": "terminal",
-                    "Bolt": "bolt",
-                    "EditCalendar": "edit_calendar"
-                  },
-                  "default": {
-                    "$field": "navigationIcon"
-                  }
-                },
-                "width": 24,
-                "height": 24,
-                "color": {
-                  "$switch": "navigationIconContentColor",
-                  "cases": {
-                    "primary": {
-                      "$token": "primary"
+            "fallback": {
+              "type": "frame",
+              "name": "navigation",
+              "width": 48,
+              "height": 48,
+              "visible": {
+                "$has": "navigationIcon"
+              },
+              "layout": {
+                "type": "row",
+                "align": "center",
+                "justify": "center"
+              },
+              "children": [
+                {
+                  "type": "icon",
+                  "name": {
+                    "$switch": "navigationIcon",
+                    "cases": {
+                      "Home": "home",
+                      "Search": "search",
+                      "Person": "person",
+                      "Menu": "menu",
+                      "MoreVert": "more_vert",
+                      "Add": "add",
+                      "Check": "check",
+                      "Close": "close",
+                      "ArrowBack": "arrow_back",
+                      "Favorite": "favorite",
+                      "Edit": "edit",
+                      "Delete": "delete",
+                      "Share": "share",
+                      "Notifications": "notifications",
+                      "Settings": "settings",
+                      "Info": "info",
+                      "Star": "star",
+                      "Email": "email",
+                      "Phone": "phone",
+                      "Place": "place",
+                      "DateRange": "date_range",
+                      "ShoppingCart": "shopping_cart",
+                      "AccountCircle": "account_circle",
+                      "KeyboardArrowRight": "keyboard_arrow_right",
+                      "KeyboardArrowDown": "keyboard_arrow_down",
+                      "Refresh": "refresh",
+                      "Clear": "clear",
+                      "Done": "done",
+                      "Lock": "lock",
+                      "List": "list",
+                      "AccountBox": "account_box",
+                      "AddCircle": "add_circle",
+                      "ArrowDropDown": "arrow_drop_down",
+                      "ArrowDropUp": "arrow_drop_up",
+                      "ArrowForward": "arrow_forward",
+                      "ArrowUpward": "arrow_upward",
+                      "ArrowDownward": "arrow_downward",
+                      "Build": "build",
+                      "Call": "call",
+                      "CheckCircle": "check_circle",
+                      "Create": "create",
+                      "Face": "face",
+                      "FavoriteBorder": "favorite_border",
+                      "ExitToApp": "exit_to_app",
+                      "KeyboardArrowLeft": "keyboard_arrow_left",
+                      "KeyboardArrowUp": "keyboard_arrow_up",
+                      "LocationOn": "location_on",
+                      "MailOutline": "mail_outline",
+                      "PlayArrow": "play_arrow",
+                      "Send": "send",
+                      "ThumbUp": "thumb_up",
+                      "Warning": "warning",
+                      "Cancel": "cancel",
+                      "ExpandMore": "expand_more",
+                      "ExpandLess": "expand_less",
+                      "ChevronLeft": "chevron_left",
+                      "ChevronRight": "chevron_right",
+                      "FirstPage": "first_page",
+                      "LastPage": "last_page",
+                      "MoreHoriz": "more_horiz",
+                      "Apps": "apps",
+                      "Dashboard": "dashboard",
+                      "Folder": "folder",
+                      "FolderOpen": "folder_open",
+                      "InsertDriveFile": "insert_drive_file",
+                      "Description": "description",
+                      "Image": "image",
+                      "Mic": "mic",
+                      "Videocam": "videocam",
+                      "Chat": "chat",
+                      "Comment": "comment",
+                      "Forum": "forum",
+                      "NotificationsNone": "notifications_none",
+                      "Visibility": "visibility",
+                      "VisibilityOff": "visibility_off",
+                      "Language": "language",
+                      "Public": "public",
+                      "Link": "link",
+                      "Attachment": "attachment",
+                      "ContentCopy": "content_copy",
+                      "ContentPaste": "content_paste",
+                      "ContentCut": "content_cut",
+                      "Save": "save",
+                      "Download": "download",
+                      "Upload": "upload",
+                      "CloudUpload": "cloud_upload",
+                      "CloudDownload": "cloud_download",
+                      "Cloud": "cloud",
+                      "Sync": "sync",
+                      "Schedule": "schedule",
+                      "AccessTime": "access_time",
+                      "CalendarToday": "calendar_today",
+                      "Event": "event",
+                      "Today": "today",
+                      "Timer": "timer",
+                      "Alarm": "alarm",
+                      "History": "history",
+                      "Bookmark": "bookmark",
+                      "BookmarkBorder": "bookmark_border",
+                      "Label": "label",
+                      "Flag": "flag",
+                      "Help": "help",
+                      "HelpOutline": "help_outline",
+                      "Error": "error",
+                      "ErrorOutline": "error_outline",
+                      "Report": "report",
+                      "Block": "block",
+                      "Tune": "tune",
+                      "FilterList": "filter_list",
+                      "Sort": "sort",
+                      "Fullscreen": "fullscreen",
+                      "Wifi": "wifi",
+                      "Bluetooth": "bluetooth",
+                      "LightMode": "light_mode",
+                      "DarkMode": "dark_mode",
+                      "Palette": "palette",
+                      "ShoppingBag": "shopping_bag",
+                      "Store": "store",
+                      "Payment": "payment",
+                      "CreditCard": "credit_card",
+                      "AttachMoney": "attach_money",
+                      "Receipt": "receipt",
+                      "Map": "map",
+                      "Navigation": "navigation",
+                      "DirectionsCar": "directions_car",
+                      "Flight": "flight",
+                      "MenuOpen": "menu_open",
+                      "Logout": "logout",
+                      "Login": "login",
+                      "People": "people",
+                      "Group": "group",
+                      "PersonAdd": "person_add",
+                      "LockOpen": "lock_open",
+                      "Security": "security",
+                      "VerifiedUser": "verified_user",
+                      "Key": "key",
+                      "Pause": "pause",
+                      "Stop": "stop",
+                      "SkipNext": "skip_next",
+                      "SkipPrevious": "skip_previous",
+                      "VolumeUp": "volume_up",
+                      "VolumeOff": "volume_off",
+                      "ThumbDown": "thumb_down",
+                      "Reply": "reply",
+                      "Inbox": "inbox",
+                      "Archive": "archive",
+                      "Undo": "undo",
+                      "Redo": "redo",
+                      "ZoomIn": "zoom_in",
+                      "ZoomOut": "zoom_out",
+                      "Keyboard": "keyboard",
+                      "CheckBox": "check_box",
+                      "CheckBoxOutlineBlank": "check_box_outline_blank",
+                      "RadioButtonChecked": "radio_button_checked",
+                      "RadioButtonUnchecked": "radio_button_unchecked",
+                      "ToggleOn": "toggle_on",
+                      "ToggleOff": "toggle_off",
+                      "StarBorder": "star_border",
+                      "StarHalf": "star_half",
+                      "Lightbulb": "lightbulb",
+                      "Code": "code",
+                      "Terminal": "terminal",
+                      "Bolt": "bolt",
+                      "EditCalendar": "edit_calendar"
                     },
-                    "onPrimary": {
-                      "$token": "on-primary"
-                    },
-                    "primaryContainer": {
-                      "$token": "primary-container"
-                    },
-                    "onPrimaryContainer": {
-                      "$token": "on-primary-container"
-                    },
-                    "secondary": {
-                      "$token": "secondary"
-                    },
-                    "onSecondary": {
-                      "$token": "on-secondary"
-                    },
-                    "secondaryContainer": {
-                      "$token": "secondary-container"
-                    },
-                    "onSecondaryContainer": {
-                      "$token": "on-secondary-container"
-                    },
-                    "tertiary": {
-                      "$token": "tertiary"
-                    },
-                    "onTertiary": {
-                      "$token": "on-tertiary"
-                    },
-                    "tertiaryContainer": {
-                      "$token": "tertiary-container"
-                    },
-                    "onTertiaryContainer": {
-                      "$token": "on-tertiary-container"
-                    },
-                    "error": {
-                      "$token": "error"
-                    },
-                    "onError": {
-                      "$token": "on-error"
-                    },
-                    "errorContainer": {
-                      "$token": "error-container"
-                    },
-                    "onErrorContainer": {
-                      "$token": "on-error-container"
-                    },
-                    "background": {
-                      "$token": "background"
-                    },
-                    "onBackground": {
-                      "$token": "on-background"
-                    },
-                    "surface": {
-                      "$token": "surface"
-                    },
-                    "onSurface": {
-                      "$token": "on-surface"
-                    },
-                    "surfaceVariant": {
-                      "$token": "surface-variant"
-                    },
-                    "onSurfaceVariant": {
-                      "$token": "on-surface-variant"
-                    },
-                    "surfaceTint": {
-                      "$token": "surface-tint"
-                    },
-                    "inverseSurface": {
-                      "$token": "inverse-surface"
-                    },
-                    "inverseOnSurface": {
-                      "$token": "inverse-on-surface"
-                    },
-                    "inversePrimary": {
-                      "$token": "inverse-primary"
-                    },
-                    "outline": {
-                      "$token": "outline"
-                    },
-                    "outlineVariant": {
-                      "$token": "outline-variant"
-                    },
-                    "scrim": {
-                      "$token": "scrim"
-                    },
-                    "surfaceBright": {
-                      "$token": "surface-bright"
-                    },
-                    "surfaceDim": {
-                      "$token": "surface-dim"
-                    },
-                    "surfaceContainerLowest": {
-                      "$token": "surface-container-lowest"
-                    },
-                    "surfaceContainerLow": {
-                      "$token": "surface-container-low"
-                    },
-                    "surfaceContainer": {
-                      "$token": "surface-container"
-                    },
-                    "surfaceContainerHigh": {
-                      "$token": "surface-container-high"
-                    },
-                    "surfaceContainerHighest": {
-                      "$token": "surface-container-highest"
+                    "default": {
+                      "$field": "navigationIcon"
                     }
                   },
-                  "default": {
-                    "$token": "on-surface"
+                  "width": 24,
+                  "height": 24,
+                  "color": {
+                    "$switch": "navigationIconContentColor",
+                    "cases": {
+                      "primary": {
+                        "$token": "primary"
+                      },
+                      "onPrimary": {
+                        "$token": "on-primary"
+                      },
+                      "primaryContainer": {
+                        "$token": "primary-container"
+                      },
+                      "onPrimaryContainer": {
+                        "$token": "on-primary-container"
+                      },
+                      "secondary": {
+                        "$token": "secondary"
+                      },
+                      "onSecondary": {
+                        "$token": "on-secondary"
+                      },
+                      "secondaryContainer": {
+                        "$token": "secondary-container"
+                      },
+                      "onSecondaryContainer": {
+                        "$token": "on-secondary-container"
+                      },
+                      "tertiary": {
+                        "$token": "tertiary"
+                      },
+                      "onTertiary": {
+                        "$token": "on-tertiary"
+                      },
+                      "tertiaryContainer": {
+                        "$token": "tertiary-container"
+                      },
+                      "onTertiaryContainer": {
+                        "$token": "on-tertiary-container"
+                      },
+                      "error": {
+                        "$token": "error"
+                      },
+                      "onError": {
+                        "$token": "on-error"
+                      },
+                      "errorContainer": {
+                        "$token": "error-container"
+                      },
+                      "onErrorContainer": {
+                        "$token": "on-error-container"
+                      },
+                      "background": {
+                        "$token": "background"
+                      },
+                      "onBackground": {
+                        "$token": "on-background"
+                      },
+                      "surface": {
+                        "$token": "surface"
+                      },
+                      "onSurface": {
+                        "$token": "on-surface"
+                      },
+                      "surfaceVariant": {
+                        "$token": "surface-variant"
+                      },
+                      "onSurfaceVariant": {
+                        "$token": "on-surface-variant"
+                      },
+                      "surfaceTint": {
+                        "$token": "surface-tint"
+                      },
+                      "inverseSurface": {
+                        "$token": "inverse-surface"
+                      },
+                      "inverseOnSurface": {
+                        "$token": "inverse-on-surface"
+                      },
+                      "inversePrimary": {
+                        "$token": "inverse-primary"
+                      },
+                      "outline": {
+                        "$token": "outline"
+                      },
+                      "outlineVariant": {
+                        "$token": "outline-variant"
+                      },
+                      "scrim": {
+                        "$token": "scrim"
+                      },
+                      "surfaceBright": {
+                        "$token": "surface-bright"
+                      },
+                      "surfaceDim": {
+                        "$token": "surface-dim"
+                      },
+                      "surfaceContainerLowest": {
+                        "$token": "surface-container-lowest"
+                      },
+                      "surfaceContainerLow": {
+                        "$token": "surface-container-low"
+                      },
+                      "surfaceContainer": {
+                        "$token": "surface-container"
+                      },
+                      "surfaceContainerHigh": {
+                        "$token": "surface-container-high"
+                      },
+                      "surfaceContainerHighest": {
+                        "$token": "surface-container-highest"
+                      }
+                    },
+                    "default": {
+                      "$token": "on-surface"
+                    }
+                  },
+                  "visible": {
+                    "$has": "navigationIcon"
                   }
-                },
-                "visible": {
-                  "$has": "navigationIcon"
                 }
-              }
-            ]
+              ]
+            }
           },
           {
             "type": "frame",
@@ -835,628 +845,649 @@
             "children": []
           },
           {
-            "type": "frame",
-            "name": "action 1",
-            "width": 48,
+            "type": "slot",
+            "id": "actions",
+            "name": "actions",
+            "width": "hug",
             "height": 48,
-            "visible": {
-              "$has": "actionIcon1"
-            },
             "layout": {
               "type": "row",
-              "align": "center",
-              "justify": "center"
+              "align": "center"
             },
-            "children": [
-              {
-                "type": "icon",
-                "name": {
-                  "$switch": "actionIcon1",
-                  "cases": {
-                    "Home": "home",
-                    "Search": "search",
-                    "Person": "person",
-                    "Menu": "menu",
-                    "MoreVert": "more_vert",
-                    "Add": "add",
-                    "Check": "check",
-                    "Close": "close",
-                    "ArrowBack": "arrow_back",
-                    "Favorite": "favorite",
-                    "Edit": "edit",
-                    "Delete": "delete",
-                    "Share": "share",
-                    "Notifications": "notifications",
-                    "Settings": "settings",
-                    "Info": "info",
-                    "Star": "star",
-                    "Email": "email",
-                    "Phone": "phone",
-                    "Place": "place",
-                    "DateRange": "date_range",
-                    "ShoppingCart": "shopping_cart",
-                    "AccountCircle": "account_circle",
-                    "KeyboardArrowRight": "keyboard_arrow_right",
-                    "KeyboardArrowDown": "keyboard_arrow_down",
-                    "Refresh": "refresh",
-                    "Clear": "clear",
-                    "Done": "done",
-                    "Lock": "lock",
-                    "List": "list",
-                    "AccountBox": "account_box",
-                    "AddCircle": "add_circle",
-                    "ArrowDropDown": "arrow_drop_down",
-                    "ArrowDropUp": "arrow_drop_up",
-                    "ArrowForward": "arrow_forward",
-                    "ArrowUpward": "arrow_upward",
-                    "ArrowDownward": "arrow_downward",
-                    "Build": "build",
-                    "Call": "call",
-                    "CheckCircle": "check_circle",
-                    "Create": "create",
-                    "Face": "face",
-                    "FavoriteBorder": "favorite_border",
-                    "ExitToApp": "exit_to_app",
-                    "KeyboardArrowLeft": "keyboard_arrow_left",
-                    "KeyboardArrowUp": "keyboard_arrow_up",
-                    "LocationOn": "location_on",
-                    "MailOutline": "mail_outline",
-                    "PlayArrow": "play_arrow",
-                    "Send": "send",
-                    "ThumbUp": "thumb_up",
-                    "Warning": "warning",
-                    "Cancel": "cancel",
-                    "ExpandMore": "expand_more",
-                    "ExpandLess": "expand_less",
-                    "ChevronLeft": "chevron_left",
-                    "ChevronRight": "chevron_right",
-                    "FirstPage": "first_page",
-                    "LastPage": "last_page",
-                    "MoreHoriz": "more_horiz",
-                    "Apps": "apps",
-                    "Dashboard": "dashboard",
-                    "Folder": "folder",
-                    "FolderOpen": "folder_open",
-                    "InsertDriveFile": "insert_drive_file",
-                    "Description": "description",
-                    "Image": "image",
-                    "Mic": "mic",
-                    "Videocam": "videocam",
-                    "Chat": "chat",
-                    "Comment": "comment",
-                    "Forum": "forum",
-                    "NotificationsNone": "notifications_none",
-                    "Visibility": "visibility",
-                    "VisibilityOff": "visibility_off",
-                    "Language": "language",
-                    "Public": "public",
-                    "Link": "link",
-                    "Attachment": "attachment",
-                    "ContentCopy": "content_copy",
-                    "ContentPaste": "content_paste",
-                    "ContentCut": "content_cut",
-                    "Save": "save",
-                    "Download": "download",
-                    "Upload": "upload",
-                    "CloudUpload": "cloud_upload",
-                    "CloudDownload": "cloud_download",
-                    "Cloud": "cloud",
-                    "Sync": "sync",
-                    "Schedule": "schedule",
-                    "AccessTime": "access_time",
-                    "CalendarToday": "calendar_today",
-                    "Event": "event",
-                    "Today": "today",
-                    "Timer": "timer",
-                    "Alarm": "alarm",
-                    "History": "history",
-                    "Bookmark": "bookmark",
-                    "BookmarkBorder": "bookmark_border",
-                    "Label": "label",
-                    "Flag": "flag",
-                    "Help": "help",
-                    "HelpOutline": "help_outline",
-                    "Error": "error",
-                    "ErrorOutline": "error_outline",
-                    "Report": "report",
-                    "Block": "block",
-                    "Tune": "tune",
-                    "FilterList": "filter_list",
-                    "Sort": "sort",
-                    "Fullscreen": "fullscreen",
-                    "Wifi": "wifi",
-                    "Bluetooth": "bluetooth",
-                    "LightMode": "light_mode",
-                    "DarkMode": "dark_mode",
-                    "Palette": "palette",
-                    "ShoppingBag": "shopping_bag",
-                    "Store": "store",
-                    "Payment": "payment",
-                    "CreditCard": "credit_card",
-                    "AttachMoney": "attach_money",
-                    "Receipt": "receipt",
-                    "Map": "map",
-                    "Navigation": "navigation",
-                    "DirectionsCar": "directions_car",
-                    "Flight": "flight",
-                    "MenuOpen": "menu_open",
-                    "Logout": "logout",
-                    "Login": "login",
-                    "People": "people",
-                    "Group": "group",
-                    "PersonAdd": "person_add",
-                    "LockOpen": "lock_open",
-                    "Security": "security",
-                    "VerifiedUser": "verified_user",
-                    "Key": "key",
-                    "Pause": "pause",
-                    "Stop": "stop",
-                    "SkipNext": "skip_next",
-                    "SkipPrevious": "skip_previous",
-                    "VolumeUp": "volume_up",
-                    "VolumeOff": "volume_off",
-                    "ThumbDown": "thumb_down",
-                    "Reply": "reply",
-                    "Inbox": "inbox",
-                    "Archive": "archive",
-                    "Undo": "undo",
-                    "Redo": "redo",
-                    "ZoomIn": "zoom_in",
-                    "ZoomOut": "zoom_out",
-                    "Keyboard": "keyboard",
-                    "CheckBox": "check_box",
-                    "CheckBoxOutlineBlank": "check_box_outline_blank",
-                    "RadioButtonChecked": "radio_button_checked",
-                    "RadioButtonUnchecked": "radio_button_unchecked",
-                    "ToggleOn": "toggle_on",
-                    "ToggleOff": "toggle_off",
-                    "StarBorder": "star_border",
-                    "StarHalf": "star_half",
-                    "Lightbulb": "lightbulb",
-                    "Code": "code",
-                    "Terminal": "terminal",
-                    "Bolt": "bolt",
-                    "EditCalendar": "edit_calendar"
+            "fallback": {
+              "type": "frame",
+              "name": "actions (default)",
+              "layout": {
+                "type": "row",
+                "align": "center"
+              },
+              "children": [
+                {
+                  "type": "frame",
+                  "name": "action 1",
+                  "width": 48,
+                  "height": 48,
+                  "visible": {
+                    "$has": "actionIcon1"
                   },
-                  "default": {
-                    "$field": "actionIcon1"
-                  }
-                },
-                "width": 24,
-                "height": 24,
-                "color": {
-                  "$switch": "actionIconContentColor",
-                  "cases": {
-                    "primary": {
-                      "$token": "primary"
-                    },
-                    "onPrimary": {
-                      "$token": "on-primary"
-                    },
-                    "primaryContainer": {
-                      "$token": "primary-container"
-                    },
-                    "onPrimaryContainer": {
-                      "$token": "on-primary-container"
-                    },
-                    "secondary": {
-                      "$token": "secondary"
-                    },
-                    "onSecondary": {
-                      "$token": "on-secondary"
-                    },
-                    "secondaryContainer": {
-                      "$token": "secondary-container"
-                    },
-                    "onSecondaryContainer": {
-                      "$token": "on-secondary-container"
-                    },
-                    "tertiary": {
-                      "$token": "tertiary"
-                    },
-                    "onTertiary": {
-                      "$token": "on-tertiary"
-                    },
-                    "tertiaryContainer": {
-                      "$token": "tertiary-container"
-                    },
-                    "onTertiaryContainer": {
-                      "$token": "on-tertiary-container"
-                    },
-                    "error": {
-                      "$token": "error"
-                    },
-                    "onError": {
-                      "$token": "on-error"
-                    },
-                    "errorContainer": {
-                      "$token": "error-container"
-                    },
-                    "onErrorContainer": {
-                      "$token": "on-error-container"
-                    },
-                    "background": {
-                      "$token": "background"
-                    },
-                    "onBackground": {
-                      "$token": "on-background"
-                    },
-                    "surface": {
-                      "$token": "surface"
-                    },
-                    "onSurface": {
-                      "$token": "on-surface"
-                    },
-                    "surfaceVariant": {
-                      "$token": "surface-variant"
-                    },
-                    "onSurfaceVariant": {
-                      "$token": "on-surface-variant"
-                    },
-                    "surfaceTint": {
-                      "$token": "surface-tint"
-                    },
-                    "inverseSurface": {
-                      "$token": "inverse-surface"
-                    },
-                    "inverseOnSurface": {
-                      "$token": "inverse-on-surface"
-                    },
-                    "inversePrimary": {
-                      "$token": "inverse-primary"
-                    },
-                    "outline": {
-                      "$token": "outline"
-                    },
-                    "outlineVariant": {
-                      "$token": "outline-variant"
-                    },
-                    "scrim": {
-                      "$token": "scrim"
-                    },
-                    "surfaceBright": {
-                      "$token": "surface-bright"
-                    },
-                    "surfaceDim": {
-                      "$token": "surface-dim"
-                    },
-                    "surfaceContainerLowest": {
-                      "$token": "surface-container-lowest"
-                    },
-                    "surfaceContainerLow": {
-                      "$token": "surface-container-low"
-                    },
-                    "surfaceContainer": {
-                      "$token": "surface-container"
-                    },
-                    "surfaceContainerHigh": {
-                      "$token": "surface-container-high"
-                    },
-                    "surfaceContainerHighest": {
-                      "$token": "surface-container-highest"
+                  "layout": {
+                    "type": "row",
+                    "align": "center",
+                    "justify": "center"
+                  },
+                  "children": [
+                    {
+                      "type": "icon",
+                      "name": {
+                        "$switch": "actionIcon1",
+                        "cases": {
+                          "Home": "home",
+                          "Search": "search",
+                          "Person": "person",
+                          "Menu": "menu",
+                          "MoreVert": "more_vert",
+                          "Add": "add",
+                          "Check": "check",
+                          "Close": "close",
+                          "ArrowBack": "arrow_back",
+                          "Favorite": "favorite",
+                          "Edit": "edit",
+                          "Delete": "delete",
+                          "Share": "share",
+                          "Notifications": "notifications",
+                          "Settings": "settings",
+                          "Info": "info",
+                          "Star": "star",
+                          "Email": "email",
+                          "Phone": "phone",
+                          "Place": "place",
+                          "DateRange": "date_range",
+                          "ShoppingCart": "shopping_cart",
+                          "AccountCircle": "account_circle",
+                          "KeyboardArrowRight": "keyboard_arrow_right",
+                          "KeyboardArrowDown": "keyboard_arrow_down",
+                          "Refresh": "refresh",
+                          "Clear": "clear",
+                          "Done": "done",
+                          "Lock": "lock",
+                          "List": "list",
+                          "AccountBox": "account_box",
+                          "AddCircle": "add_circle",
+                          "ArrowDropDown": "arrow_drop_down",
+                          "ArrowDropUp": "arrow_drop_up",
+                          "ArrowForward": "arrow_forward",
+                          "ArrowUpward": "arrow_upward",
+                          "ArrowDownward": "arrow_downward",
+                          "Build": "build",
+                          "Call": "call",
+                          "CheckCircle": "check_circle",
+                          "Create": "create",
+                          "Face": "face",
+                          "FavoriteBorder": "favorite_border",
+                          "ExitToApp": "exit_to_app",
+                          "KeyboardArrowLeft": "keyboard_arrow_left",
+                          "KeyboardArrowUp": "keyboard_arrow_up",
+                          "LocationOn": "location_on",
+                          "MailOutline": "mail_outline",
+                          "PlayArrow": "play_arrow",
+                          "Send": "send",
+                          "ThumbUp": "thumb_up",
+                          "Warning": "warning",
+                          "Cancel": "cancel",
+                          "ExpandMore": "expand_more",
+                          "ExpandLess": "expand_less",
+                          "ChevronLeft": "chevron_left",
+                          "ChevronRight": "chevron_right",
+                          "FirstPage": "first_page",
+                          "LastPage": "last_page",
+                          "MoreHoriz": "more_horiz",
+                          "Apps": "apps",
+                          "Dashboard": "dashboard",
+                          "Folder": "folder",
+                          "FolderOpen": "folder_open",
+                          "InsertDriveFile": "insert_drive_file",
+                          "Description": "description",
+                          "Image": "image",
+                          "Mic": "mic",
+                          "Videocam": "videocam",
+                          "Chat": "chat",
+                          "Comment": "comment",
+                          "Forum": "forum",
+                          "NotificationsNone": "notifications_none",
+                          "Visibility": "visibility",
+                          "VisibilityOff": "visibility_off",
+                          "Language": "language",
+                          "Public": "public",
+                          "Link": "link",
+                          "Attachment": "attachment",
+                          "ContentCopy": "content_copy",
+                          "ContentPaste": "content_paste",
+                          "ContentCut": "content_cut",
+                          "Save": "save",
+                          "Download": "download",
+                          "Upload": "upload",
+                          "CloudUpload": "cloud_upload",
+                          "CloudDownload": "cloud_download",
+                          "Cloud": "cloud",
+                          "Sync": "sync",
+                          "Schedule": "schedule",
+                          "AccessTime": "access_time",
+                          "CalendarToday": "calendar_today",
+                          "Event": "event",
+                          "Today": "today",
+                          "Timer": "timer",
+                          "Alarm": "alarm",
+                          "History": "history",
+                          "Bookmark": "bookmark",
+                          "BookmarkBorder": "bookmark_border",
+                          "Label": "label",
+                          "Flag": "flag",
+                          "Help": "help",
+                          "HelpOutline": "help_outline",
+                          "Error": "error",
+                          "ErrorOutline": "error_outline",
+                          "Report": "report",
+                          "Block": "block",
+                          "Tune": "tune",
+                          "FilterList": "filter_list",
+                          "Sort": "sort",
+                          "Fullscreen": "fullscreen",
+                          "Wifi": "wifi",
+                          "Bluetooth": "bluetooth",
+                          "LightMode": "light_mode",
+                          "DarkMode": "dark_mode",
+                          "Palette": "palette",
+                          "ShoppingBag": "shopping_bag",
+                          "Store": "store",
+                          "Payment": "payment",
+                          "CreditCard": "credit_card",
+                          "AttachMoney": "attach_money",
+                          "Receipt": "receipt",
+                          "Map": "map",
+                          "Navigation": "navigation",
+                          "DirectionsCar": "directions_car",
+                          "Flight": "flight",
+                          "MenuOpen": "menu_open",
+                          "Logout": "logout",
+                          "Login": "login",
+                          "People": "people",
+                          "Group": "group",
+                          "PersonAdd": "person_add",
+                          "LockOpen": "lock_open",
+                          "Security": "security",
+                          "VerifiedUser": "verified_user",
+                          "Key": "key",
+                          "Pause": "pause",
+                          "Stop": "stop",
+                          "SkipNext": "skip_next",
+                          "SkipPrevious": "skip_previous",
+                          "VolumeUp": "volume_up",
+                          "VolumeOff": "volume_off",
+                          "ThumbDown": "thumb_down",
+                          "Reply": "reply",
+                          "Inbox": "inbox",
+                          "Archive": "archive",
+                          "Undo": "undo",
+                          "Redo": "redo",
+                          "ZoomIn": "zoom_in",
+                          "ZoomOut": "zoom_out",
+                          "Keyboard": "keyboard",
+                          "CheckBox": "check_box",
+                          "CheckBoxOutlineBlank": "check_box_outline_blank",
+                          "RadioButtonChecked": "radio_button_checked",
+                          "RadioButtonUnchecked": "radio_button_unchecked",
+                          "ToggleOn": "toggle_on",
+                          "ToggleOff": "toggle_off",
+                          "StarBorder": "star_border",
+                          "StarHalf": "star_half",
+                          "Lightbulb": "lightbulb",
+                          "Code": "code",
+                          "Terminal": "terminal",
+                          "Bolt": "bolt",
+                          "EditCalendar": "edit_calendar"
+                        },
+                        "default": {
+                          "$field": "actionIcon1"
+                        }
+                      },
+                      "width": 24,
+                      "height": 24,
+                      "color": {
+                        "$switch": "actionIconContentColor",
+                        "cases": {
+                          "primary": {
+                            "$token": "primary"
+                          },
+                          "onPrimary": {
+                            "$token": "on-primary"
+                          },
+                          "primaryContainer": {
+                            "$token": "primary-container"
+                          },
+                          "onPrimaryContainer": {
+                            "$token": "on-primary-container"
+                          },
+                          "secondary": {
+                            "$token": "secondary"
+                          },
+                          "onSecondary": {
+                            "$token": "on-secondary"
+                          },
+                          "secondaryContainer": {
+                            "$token": "secondary-container"
+                          },
+                          "onSecondaryContainer": {
+                            "$token": "on-secondary-container"
+                          },
+                          "tertiary": {
+                            "$token": "tertiary"
+                          },
+                          "onTertiary": {
+                            "$token": "on-tertiary"
+                          },
+                          "tertiaryContainer": {
+                            "$token": "tertiary-container"
+                          },
+                          "onTertiaryContainer": {
+                            "$token": "on-tertiary-container"
+                          },
+                          "error": {
+                            "$token": "error"
+                          },
+                          "onError": {
+                            "$token": "on-error"
+                          },
+                          "errorContainer": {
+                            "$token": "error-container"
+                          },
+                          "onErrorContainer": {
+                            "$token": "on-error-container"
+                          },
+                          "background": {
+                            "$token": "background"
+                          },
+                          "onBackground": {
+                            "$token": "on-background"
+                          },
+                          "surface": {
+                            "$token": "surface"
+                          },
+                          "onSurface": {
+                            "$token": "on-surface"
+                          },
+                          "surfaceVariant": {
+                            "$token": "surface-variant"
+                          },
+                          "onSurfaceVariant": {
+                            "$token": "on-surface-variant"
+                          },
+                          "surfaceTint": {
+                            "$token": "surface-tint"
+                          },
+                          "inverseSurface": {
+                            "$token": "inverse-surface"
+                          },
+                          "inverseOnSurface": {
+                            "$token": "inverse-on-surface"
+                          },
+                          "inversePrimary": {
+                            "$token": "inverse-primary"
+                          },
+                          "outline": {
+                            "$token": "outline"
+                          },
+                          "outlineVariant": {
+                            "$token": "outline-variant"
+                          },
+                          "scrim": {
+                            "$token": "scrim"
+                          },
+                          "surfaceBright": {
+                            "$token": "surface-bright"
+                          },
+                          "surfaceDim": {
+                            "$token": "surface-dim"
+                          },
+                          "surfaceContainerLowest": {
+                            "$token": "surface-container-lowest"
+                          },
+                          "surfaceContainerLow": {
+                            "$token": "surface-container-low"
+                          },
+                          "surfaceContainer": {
+                            "$token": "surface-container"
+                          },
+                          "surfaceContainerHigh": {
+                            "$token": "surface-container-high"
+                          },
+                          "surfaceContainerHighest": {
+                            "$token": "surface-container-highest"
+                          }
+                        },
+                        "default": {
+                          "$token": "on-surface-variant"
+                        }
+                      },
+                      "visible": {
+                        "$has": "actionIcon1"
+                      }
                     }
-                  },
-                  "default": {
-                    "$token": "on-surface-variant"
-                  }
+                  ]
                 },
-                "visible": {
-                  "$has": "actionIcon1"
-                }
-              }
-            ]
-          },
-          {
-            "type": "frame",
-            "name": "action 2",
-            "width": 48,
-            "height": 48,
-            "visible": {
-              "$has": "actionIcon2"
-            },
-            "layout": {
-              "type": "row",
-              "align": "center",
-              "justify": "center"
-            },
-            "children": [
-              {
-                "type": "icon",
-                "name": {
-                  "$switch": "actionIcon2",
-                  "cases": {
-                    "Home": "home",
-                    "Search": "search",
-                    "Person": "person",
-                    "Menu": "menu",
-                    "MoreVert": "more_vert",
-                    "Add": "add",
-                    "Check": "check",
-                    "Close": "close",
-                    "ArrowBack": "arrow_back",
-                    "Favorite": "favorite",
-                    "Edit": "edit",
-                    "Delete": "delete",
-                    "Share": "share",
-                    "Notifications": "notifications",
-                    "Settings": "settings",
-                    "Info": "info",
-                    "Star": "star",
-                    "Email": "email",
-                    "Phone": "phone",
-                    "Place": "place",
-                    "DateRange": "date_range",
-                    "ShoppingCart": "shopping_cart",
-                    "AccountCircle": "account_circle",
-                    "KeyboardArrowRight": "keyboard_arrow_right",
-                    "KeyboardArrowDown": "keyboard_arrow_down",
-                    "Refresh": "refresh",
-                    "Clear": "clear",
-                    "Done": "done",
-                    "Lock": "lock",
-                    "List": "list",
-                    "AccountBox": "account_box",
-                    "AddCircle": "add_circle",
-                    "ArrowDropDown": "arrow_drop_down",
-                    "ArrowDropUp": "arrow_drop_up",
-                    "ArrowForward": "arrow_forward",
-                    "ArrowUpward": "arrow_upward",
-                    "ArrowDownward": "arrow_downward",
-                    "Build": "build",
-                    "Call": "call",
-                    "CheckCircle": "check_circle",
-                    "Create": "create",
-                    "Face": "face",
-                    "FavoriteBorder": "favorite_border",
-                    "ExitToApp": "exit_to_app",
-                    "KeyboardArrowLeft": "keyboard_arrow_left",
-                    "KeyboardArrowUp": "keyboard_arrow_up",
-                    "LocationOn": "location_on",
-                    "MailOutline": "mail_outline",
-                    "PlayArrow": "play_arrow",
-                    "Send": "send",
-                    "ThumbUp": "thumb_up",
-                    "Warning": "warning",
-                    "Cancel": "cancel",
-                    "ExpandMore": "expand_more",
-                    "ExpandLess": "expand_less",
-                    "ChevronLeft": "chevron_left",
-                    "ChevronRight": "chevron_right",
-                    "FirstPage": "first_page",
-                    "LastPage": "last_page",
-                    "MoreHoriz": "more_horiz",
-                    "Apps": "apps",
-                    "Dashboard": "dashboard",
-                    "Folder": "folder",
-                    "FolderOpen": "folder_open",
-                    "InsertDriveFile": "insert_drive_file",
-                    "Description": "description",
-                    "Image": "image",
-                    "Mic": "mic",
-                    "Videocam": "videocam",
-                    "Chat": "chat",
-                    "Comment": "comment",
-                    "Forum": "forum",
-                    "NotificationsNone": "notifications_none",
-                    "Visibility": "visibility",
-                    "VisibilityOff": "visibility_off",
-                    "Language": "language",
-                    "Public": "public",
-                    "Link": "link",
-                    "Attachment": "attachment",
-                    "ContentCopy": "content_copy",
-                    "ContentPaste": "content_paste",
-                    "ContentCut": "content_cut",
-                    "Save": "save",
-                    "Download": "download",
-                    "Upload": "upload",
-                    "CloudUpload": "cloud_upload",
-                    "CloudDownload": "cloud_download",
-                    "Cloud": "cloud",
-                    "Sync": "sync",
-                    "Schedule": "schedule",
-                    "AccessTime": "access_time",
-                    "CalendarToday": "calendar_today",
-                    "Event": "event",
-                    "Today": "today",
-                    "Timer": "timer",
-                    "Alarm": "alarm",
-                    "History": "history",
-                    "Bookmark": "bookmark",
-                    "BookmarkBorder": "bookmark_border",
-                    "Label": "label",
-                    "Flag": "flag",
-                    "Help": "help",
-                    "HelpOutline": "help_outline",
-                    "Error": "error",
-                    "ErrorOutline": "error_outline",
-                    "Report": "report",
-                    "Block": "block",
-                    "Tune": "tune",
-                    "FilterList": "filter_list",
-                    "Sort": "sort",
-                    "Fullscreen": "fullscreen",
-                    "Wifi": "wifi",
-                    "Bluetooth": "bluetooth",
-                    "LightMode": "light_mode",
-                    "DarkMode": "dark_mode",
-                    "Palette": "palette",
-                    "ShoppingBag": "shopping_bag",
-                    "Store": "store",
-                    "Payment": "payment",
-                    "CreditCard": "credit_card",
-                    "AttachMoney": "attach_money",
-                    "Receipt": "receipt",
-                    "Map": "map",
-                    "Navigation": "navigation",
-                    "DirectionsCar": "directions_car",
-                    "Flight": "flight",
-                    "MenuOpen": "menu_open",
-                    "Logout": "logout",
-                    "Login": "login",
-                    "People": "people",
-                    "Group": "group",
-                    "PersonAdd": "person_add",
-                    "LockOpen": "lock_open",
-                    "Security": "security",
-                    "VerifiedUser": "verified_user",
-                    "Key": "key",
-                    "Pause": "pause",
-                    "Stop": "stop",
-                    "SkipNext": "skip_next",
-                    "SkipPrevious": "skip_previous",
-                    "VolumeUp": "volume_up",
-                    "VolumeOff": "volume_off",
-                    "ThumbDown": "thumb_down",
-                    "Reply": "reply",
-                    "Inbox": "inbox",
-                    "Archive": "archive",
-                    "Undo": "undo",
-                    "Redo": "redo",
-                    "ZoomIn": "zoom_in",
-                    "ZoomOut": "zoom_out",
-                    "Keyboard": "keyboard",
-                    "CheckBox": "check_box",
-                    "CheckBoxOutlineBlank": "check_box_outline_blank",
-                    "RadioButtonChecked": "radio_button_checked",
-                    "RadioButtonUnchecked": "radio_button_unchecked",
-                    "ToggleOn": "toggle_on",
-                    "ToggleOff": "toggle_off",
-                    "StarBorder": "star_border",
-                    "StarHalf": "star_half",
-                    "Lightbulb": "lightbulb",
-                    "Code": "code",
-                    "Terminal": "terminal",
-                    "Bolt": "bolt",
-                    "EditCalendar": "edit_calendar"
+                {
+                  "type": "frame",
+                  "name": "action 2",
+                  "width": 48,
+                  "height": 48,
+                  "visible": {
+                    "$has": "actionIcon2"
                   },
-                  "default": {
-                    "$field": "actionIcon2"
-                  }
-                },
-                "width": 24,
-                "height": 24,
-                "color": {
-                  "$switch": "actionIconContentColor",
-                  "cases": {
-                    "primary": {
-                      "$token": "primary"
-                    },
-                    "onPrimary": {
-                      "$token": "on-primary"
-                    },
-                    "primaryContainer": {
-                      "$token": "primary-container"
-                    },
-                    "onPrimaryContainer": {
-                      "$token": "on-primary-container"
-                    },
-                    "secondary": {
-                      "$token": "secondary"
-                    },
-                    "onSecondary": {
-                      "$token": "on-secondary"
-                    },
-                    "secondaryContainer": {
-                      "$token": "secondary-container"
-                    },
-                    "onSecondaryContainer": {
-                      "$token": "on-secondary-container"
-                    },
-                    "tertiary": {
-                      "$token": "tertiary"
-                    },
-                    "onTertiary": {
-                      "$token": "on-tertiary"
-                    },
-                    "tertiaryContainer": {
-                      "$token": "tertiary-container"
-                    },
-                    "onTertiaryContainer": {
-                      "$token": "on-tertiary-container"
-                    },
-                    "error": {
-                      "$token": "error"
-                    },
-                    "onError": {
-                      "$token": "on-error"
-                    },
-                    "errorContainer": {
-                      "$token": "error-container"
-                    },
-                    "onErrorContainer": {
-                      "$token": "on-error-container"
-                    },
-                    "background": {
-                      "$token": "background"
-                    },
-                    "onBackground": {
-                      "$token": "on-background"
-                    },
-                    "surface": {
-                      "$token": "surface"
-                    },
-                    "onSurface": {
-                      "$token": "on-surface"
-                    },
-                    "surfaceVariant": {
-                      "$token": "surface-variant"
-                    },
-                    "onSurfaceVariant": {
-                      "$token": "on-surface-variant"
-                    },
-                    "surfaceTint": {
-                      "$token": "surface-tint"
-                    },
-                    "inverseSurface": {
-                      "$token": "inverse-surface"
-                    },
-                    "inverseOnSurface": {
-                      "$token": "inverse-on-surface"
-                    },
-                    "inversePrimary": {
-                      "$token": "inverse-primary"
-                    },
-                    "outline": {
-                      "$token": "outline"
-                    },
-                    "outlineVariant": {
-                      "$token": "outline-variant"
-                    },
-                    "scrim": {
-                      "$token": "scrim"
-                    },
-                    "surfaceBright": {
-                      "$token": "surface-bright"
-                    },
-                    "surfaceDim": {
-                      "$token": "surface-dim"
-                    },
-                    "surfaceContainerLowest": {
-                      "$token": "surface-container-lowest"
-                    },
-                    "surfaceContainerLow": {
-                      "$token": "surface-container-low"
-                    },
-                    "surfaceContainer": {
-                      "$token": "surface-container"
-                    },
-                    "surfaceContainerHigh": {
-                      "$token": "surface-container-high"
-                    },
-                    "surfaceContainerHighest": {
-                      "$token": "surface-container-highest"
+                  "layout": {
+                    "type": "row",
+                    "align": "center",
+                    "justify": "center"
+                  },
+                  "children": [
+                    {
+                      "type": "icon",
+                      "name": {
+                        "$switch": "actionIcon2",
+                        "cases": {
+                          "Home": "home",
+                          "Search": "search",
+                          "Person": "person",
+                          "Menu": "menu",
+                          "MoreVert": "more_vert",
+                          "Add": "add",
+                          "Check": "check",
+                          "Close": "close",
+                          "ArrowBack": "arrow_back",
+                          "Favorite": "favorite",
+                          "Edit": "edit",
+                          "Delete": "delete",
+                          "Share": "share",
+                          "Notifications": "notifications",
+                          "Settings": "settings",
+                          "Info": "info",
+                          "Star": "star",
+                          "Email": "email",
+                          "Phone": "phone",
+                          "Place": "place",
+                          "DateRange": "date_range",
+                          "ShoppingCart": "shopping_cart",
+                          "AccountCircle": "account_circle",
+                          "KeyboardArrowRight": "keyboard_arrow_right",
+                          "KeyboardArrowDown": "keyboard_arrow_down",
+                          "Refresh": "refresh",
+                          "Clear": "clear",
+                          "Done": "done",
+                          "Lock": "lock",
+                          "List": "list",
+                          "AccountBox": "account_box",
+                          "AddCircle": "add_circle",
+                          "ArrowDropDown": "arrow_drop_down",
+                          "ArrowDropUp": "arrow_drop_up",
+                          "ArrowForward": "arrow_forward",
+                          "ArrowUpward": "arrow_upward",
+                          "ArrowDownward": "arrow_downward",
+                          "Build": "build",
+                          "Call": "call",
+                          "CheckCircle": "check_circle",
+                          "Create": "create",
+                          "Face": "face",
+                          "FavoriteBorder": "favorite_border",
+                          "ExitToApp": "exit_to_app",
+                          "KeyboardArrowLeft": "keyboard_arrow_left",
+                          "KeyboardArrowUp": "keyboard_arrow_up",
+                          "LocationOn": "location_on",
+                          "MailOutline": "mail_outline",
+                          "PlayArrow": "play_arrow",
+                          "Send": "send",
+                          "ThumbUp": "thumb_up",
+                          "Warning": "warning",
+                          "Cancel": "cancel",
+                          "ExpandMore": "expand_more",
+                          "ExpandLess": "expand_less",
+                          "ChevronLeft": "chevron_left",
+                          "ChevronRight": "chevron_right",
+                          "FirstPage": "first_page",
+                          "LastPage": "last_page",
+                          "MoreHoriz": "more_horiz",
+                          "Apps": "apps",
+                          "Dashboard": "dashboard",
+                          "Folder": "folder",
+                          "FolderOpen": "folder_open",
+                          "InsertDriveFile": "insert_drive_file",
+                          "Description": "description",
+                          "Image": "image",
+                          "Mic": "mic",
+                          "Videocam": "videocam",
+                          "Chat": "chat",
+                          "Comment": "comment",
+                          "Forum": "forum",
+                          "NotificationsNone": "notifications_none",
+                          "Visibility": "visibility",
+                          "VisibilityOff": "visibility_off",
+                          "Language": "language",
+                          "Public": "public",
+                          "Link": "link",
+                          "Attachment": "attachment",
+                          "ContentCopy": "content_copy",
+                          "ContentPaste": "content_paste",
+                          "ContentCut": "content_cut",
+                          "Save": "save",
+                          "Download": "download",
+                          "Upload": "upload",
+                          "CloudUpload": "cloud_upload",
+                          "CloudDownload": "cloud_download",
+                          "Cloud": "cloud",
+                          "Sync": "sync",
+                          "Schedule": "schedule",
+                          "AccessTime": "access_time",
+                          "CalendarToday": "calendar_today",
+                          "Event": "event",
+                          "Today": "today",
+                          "Timer": "timer",
+                          "Alarm": "alarm",
+                          "History": "history",
+                          "Bookmark": "bookmark",
+                          "BookmarkBorder": "bookmark_border",
+                          "Label": "label",
+                          "Flag": "flag",
+                          "Help": "help",
+                          "HelpOutline": "help_outline",
+                          "Error": "error",
+                          "ErrorOutline": "error_outline",
+                          "Report": "report",
+                          "Block": "block",
+                          "Tune": "tune",
+                          "FilterList": "filter_list",
+                          "Sort": "sort",
+                          "Fullscreen": "fullscreen",
+                          "Wifi": "wifi",
+                          "Bluetooth": "bluetooth",
+                          "LightMode": "light_mode",
+                          "DarkMode": "dark_mode",
+                          "Palette": "palette",
+                          "ShoppingBag": "shopping_bag",
+                          "Store": "store",
+                          "Payment": "payment",
+                          "CreditCard": "credit_card",
+                          "AttachMoney": "attach_money",
+                          "Receipt": "receipt",
+                          "Map": "map",
+                          "Navigation": "navigation",
+                          "DirectionsCar": "directions_car",
+                          "Flight": "flight",
+                          "MenuOpen": "menu_open",
+                          "Logout": "logout",
+                          "Login": "login",
+                          "People": "people",
+                          "Group": "group",
+                          "PersonAdd": "person_add",
+                          "LockOpen": "lock_open",
+                          "Security": "security",
+                          "VerifiedUser": "verified_user",
+                          "Key": "key",
+                          "Pause": "pause",
+                          "Stop": "stop",
+                          "SkipNext": "skip_next",
+                          "SkipPrevious": "skip_previous",
+                          "VolumeUp": "volume_up",
+                          "VolumeOff": "volume_off",
+                          "ThumbDown": "thumb_down",
+                          "Reply": "reply",
+                          "Inbox": "inbox",
+                          "Archive": "archive",
+                          "Undo": "undo",
+                          "Redo": "redo",
+                          "ZoomIn": "zoom_in",
+                          "ZoomOut": "zoom_out",
+                          "Keyboard": "keyboard",
+                          "CheckBox": "check_box",
+                          "CheckBoxOutlineBlank": "check_box_outline_blank",
+                          "RadioButtonChecked": "radio_button_checked",
+                          "RadioButtonUnchecked": "radio_button_unchecked",
+                          "ToggleOn": "toggle_on",
+                          "ToggleOff": "toggle_off",
+                          "StarBorder": "star_border",
+                          "StarHalf": "star_half",
+                          "Lightbulb": "lightbulb",
+                          "Code": "code",
+                          "Terminal": "terminal",
+                          "Bolt": "bolt",
+                          "EditCalendar": "edit_calendar"
+                        },
+                        "default": {
+                          "$field": "actionIcon2"
+                        }
+                      },
+                      "width": 24,
+                      "height": 24,
+                      "color": {
+                        "$switch": "actionIconContentColor",
+                        "cases": {
+                          "primary": {
+                            "$token": "primary"
+                          },
+                          "onPrimary": {
+                            "$token": "on-primary"
+                          },
+                          "primaryContainer": {
+                            "$token": "primary-container"
+                          },
+                          "onPrimaryContainer": {
+                            "$token": "on-primary-container"
+                          },
+                          "secondary": {
+                            "$token": "secondary"
+                          },
+                          "onSecondary": {
+                            "$token": "on-secondary"
+                          },
+                          "secondaryContainer": {
+                            "$token": "secondary-container"
+                          },
+                          "onSecondaryContainer": {
+                            "$token": "on-secondary-container"
+                          },
+                          "tertiary": {
+                            "$token": "tertiary"
+                          },
+                          "onTertiary": {
+                            "$token": "on-tertiary"
+                          },
+                          "tertiaryContainer": {
+                            "$token": "tertiary-container"
+                          },
+                          "onTertiaryContainer": {
+                            "$token": "on-tertiary-container"
+                          },
+                          "error": {
+                            "$token": "error"
+                          },
+                          "onError": {
+                            "$token": "on-error"
+                          },
+                          "errorContainer": {
+                            "$token": "error-container"
+                          },
+                          "onErrorContainer": {
+                            "$token": "on-error-container"
+                          },
+                          "background": {
+                            "$token": "background"
+                          },
+                          "onBackground": {
+                            "$token": "on-background"
+                          },
+                          "surface": {
+                            "$token": "surface"
+                          },
+                          "onSurface": {
+                            "$token": "on-surface"
+                          },
+                          "surfaceVariant": {
+                            "$token": "surface-variant"
+                          },
+                          "onSurfaceVariant": {
+                            "$token": "on-surface-variant"
+                          },
+                          "surfaceTint": {
+                            "$token": "surface-tint"
+                          },
+                          "inverseSurface": {
+                            "$token": "inverse-surface"
+                          },
+                          "inverseOnSurface": {
+                            "$token": "inverse-on-surface"
+                          },
+                          "inversePrimary": {
+                            "$token": "inverse-primary"
+                          },
+                          "outline": {
+                            "$token": "outline"
+                          },
+                          "outlineVariant": {
+                            "$token": "outline-variant"
+                          },
+                          "scrim": {
+                            "$token": "scrim"
+                          },
+                          "surfaceBright": {
+                            "$token": "surface-bright"
+                          },
+                          "surfaceDim": {
+                            "$token": "surface-dim"
+                          },
+                          "surfaceContainerLowest": {
+                            "$token": "surface-container-lowest"
+                          },
+                          "surfaceContainerLow": {
+                            "$token": "surface-container-low"
+                          },
+                          "surfaceContainer": {
+                            "$token": "surface-container"
+                          },
+                          "surfaceContainerHigh": {
+                            "$token": "surface-container-high"
+                          },
+                          "surfaceContainerHighest": {
+                            "$token": "surface-container-highest"
+                          }
+                        },
+                        "default": {
+                          "$token": "on-surface-variant"
+                        }
+                      },
+                      "visible": {
+                        "$has": "actionIcon2"
+                      }
                     }
-                  },
-                  "default": {
-                    "$token": "on-surface-variant"
-                  }
-                },
-                "visible": {
-                  "$has": "actionIcon2"
+                  ]
                 }
-              }
-            ]
+              ]
+            }
           }
         ]
       },
