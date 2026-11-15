@@ -11,3 +11,4 @@
 
 - **Break:** a `formatVersion` 4 component with two or more slots and no `id` in them, valid until now (the children went to the first slot), is now an error: `slot: with more than one slot, each one needs an id`, at the slot node. Put an `id` in each slot (the parameter name of the platform's lambda is a good one). No component of the repository's libraries, examples and fixtures has two slots, so none of them changes. A component with a single slot, with or without `id`, and a `formatVersion` 1 to 3 component keep working as before.
 - `docs/COMPONENT-FORMAT.md`: "One slot per component" leaves "Known limits", which now records the break above.
+- The `dist/index.html` ceiling rose 16 KiB, from 2179072 to 2195456, by the budget rule.
