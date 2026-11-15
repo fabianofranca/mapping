@@ -157,7 +157,7 @@ The complete method for writing a specialization (reading the format, inventory 
 
 ### Writing a library (`formatVersion` 4 package)
 
-The current format version is 17 (what each version adds is in `mapping-docs://SPEC-FORMAT.md`).
+The current format version is 18 (what each version adds is in `mapping-docs://SPEC-FORMAT.md`). Version 18 adds `accessibility` (`role`, `label`, `touchTarget` and `parts` on a type; `touchTarget` at the root): the audit reports the pending item `accessible-label-missing` and the warning `touch-target-small`, which is not counted in Incomplete.
 
 A **library** is a v4 specialization and its **folder**: the specialization at the root, one file per component in `components/`, one `.md` document per component in `docs/`, named examples (`examples` in the type, and the JSON of an external-system node in `examples/`) and the list of fonts in `fonts` (with the files in `fonts/` or, if they cannot go, a `README.txt` saying which ones they are). The formats are in `mapping-docs://SPEC-FORMAT.md` ("Library: the package") and `mapping-docs://COMPONENT-FORMAT.md`; the complete method, in the `spec-author` skill. Rules the agent must keep in mind:
 
