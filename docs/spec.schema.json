@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/spec.schema.json",
-  "title": "Mapping — specialization (formatVersion 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, and 17)",
-  "description": "Validates the structure. Rules between elements (unique ids, allowedChildren in another layer (from formatVersion 13, also in the owner's own layer), requiresOwner, labelField, rowLabel, compatible default, rowLabel/tags, platforms declared in platforms, keys of params and values, platforms/code from formatVersion 2, sources only in formatVersion 3, values of sources only on enum fields and with targets in the options) and, in formatVersion 4, the new keys only with formatVersion 4, sources with slot/ignore/path only on a system declared in origins (with path required there and name required elsewhere), examples with a single mode and values compatible with the type's fields, system of the examples declared in origins, unique family+weight+style pair in fonts, weight range with the first value smaller, rules of origins (the detail is in origins, validated by parseOrigins) and the migrations checks (to greater than from and up to version, unique from, the field key of a step is a field or table.column, the new side exists and the old side no longer exists, targets of map-values in the options, compatible default of fill-field) are only checked by the app validator; in formatVersion 5, platforms[].repo (formatVersion 5 is 4 plus repo; in an earlier version it is an error) is also only checked by the app validator; in formatVersion 6, containers (6 is 5 plus containers; in an earlier version it is an error, and the repeated id is checked by the app validator); in formatVersion 7, floating and appliesTo on the type and ref as a table column type (7 is 6 plus floating, appliesTo, and the ref column; in an earlier version it is an error, checked by the app validator; appliesTo not empty, with no repetition, and an arrow-only type has neither component nor floating); in formatVersion 8, suggestions and linkedRef on a string field and column (8 is 7 plus suggestions and linkedRef; linkedRef points to a ref field of the type or a ref column of the table; in an earlier version or on another type it is an error, checked by the app validator; non-empty list, up to 200 unique texts, non-empty and with no whitespace at the ends; it does not restrict the value); in formatVersion 9, variants on the code entry (9 is 8 plus variants; in an earlier version it is an error; field is the key of an enum field of the type at the top level, each key of cases is one of its options, the case is not empty, and params and values of the cases follow the rules of those of the base, all checked by the app validator); in formatVersion 10, notices on the type, the field, and the table column (10 is 9 plus notices; in an earlier version it is an error, checked by the app validator; two notices with the same kind and the same message in the list are an error, which JSON Schema does not express; the notice only informs); in formatVersion 11, the { layer, groups } clause in allowedChildren, layers[].groups, annotationTypes[].groups, childRoles, childRolesLabel, docRepos at the root, and the doc as an object { repo, path } (11 is 10 plus these features; in an earlier version it is an error; the clause's layer exists and, before formatVersion 13, is not the owner's own, the groups exist in the clause's layer, requiresOwner is checked on the resolved set of children, unique group ids in the layer, type groups only from its own layer, childRoles only on a type with allowedChildren and childRolesLabel only with childRoles, unique role ids in the type, unique docRepos ids, the doc's repo exists in docRepos and urlTemplate with {path}, all checked by the app validator); in formatVersion 12, the role migration steps rename-role, remove-role, and set-role (12 is 11 plus these steps; in an earlier version it is an error; type is a type of this version, with childRoles in rename-role and set-role; to and role of set-role are roles of the type, from of rename-role and role of remove-role no longer are; childType of set-role only has its format checked; all checked by the app validator); in formatVersion 13, allowedChildren accepts the { layer } clause for the owner's own layer and the id of a type in the same layer, including the type itself (13 is 12 plus this; in an earlier version it is an error; checked by the app validator); in formatVersion 14, accepts.annotations on a ref field and column (14 is 13 plus this; in an earlier version it is an error; the items use the allowedChildren syntax and layer, group, and type must exist in the specialization, checked by the app validator); in formatVersion 15, structural on the type (in an earlier version it is an error; structural: true cannot have a component, checked by the app validator) and origins[].kind (tree or measured; in an earlier version it is an error; the measured source only has system, kind, name, and booleans, checked by the app validator); in formatVersion 16, fieldModels at the root and signature, ignore, calls, and formats on code (and in the variants case) and signature on the type's sources (in an earlier version it is an error; the path and the positional value in params are only valid in 16; the content of the sheet is checked by the package validator); in formatVersion 17, slots on the type and slots on code (and in the variants case) (17 is 16 plus the named slots; in an earlier version it is an error; id and accepts items checked by the app validator, the slot against the component and the parameter against the sheet by the package validator); see SPEC-FORMAT.md.",
+  "title": "Mapping — specialization (formatVersion 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, and 18)",
+  "description": "Validates the structure. Rules between elements (unique ids, allowedChildren in another layer (from formatVersion 13, also in the owner's own layer), requiresOwner, labelField, rowLabel, compatible default, rowLabel/tags, platforms declared in platforms, keys of params and values, platforms/code from formatVersion 2, sources only in formatVersion 3, values of sources only on enum fields and with targets in the options) and, in formatVersion 4, the new keys only with formatVersion 4, sources with slot/ignore/path only on a system declared in origins (with path required there and name required elsewhere), examples with a single mode and values compatible with the type's fields, system of the examples declared in origins, unique family+weight+style pair in fonts, weight range with the first value smaller, rules of origins (the detail is in origins, validated by parseOrigins) and the migrations checks (to greater than from and up to version, unique from, the field key of a step is a field or table.column, the new side exists and the old side no longer exists, targets of map-values in the options, compatible default of fill-field) are only checked by the app validator; in formatVersion 5, platforms[].repo (formatVersion 5 is 4 plus repo; in an earlier version it is an error) is also only checked by the app validator; in formatVersion 6, containers (6 is 5 plus containers; in an earlier version it is an error, and the repeated id is checked by the app validator); in formatVersion 7, floating and appliesTo on the type and ref as a table column type (7 is 6 plus floating, appliesTo, and the ref column; in an earlier version it is an error, checked by the app validator; appliesTo not empty, with no repetition, and an arrow-only type has neither component nor floating); in formatVersion 8, suggestions and linkedRef on a string field and column (8 is 7 plus suggestions and linkedRef; linkedRef points to a ref field of the type or a ref column of the table; in an earlier version or on another type it is an error, checked by the app validator; non-empty list, up to 200 unique texts, non-empty and with no whitespace at the ends; it does not restrict the value); in formatVersion 9, variants on the code entry (9 is 8 plus variants; in an earlier version it is an error; field is the key of an enum field of the type at the top level, each key of cases is one of its options, the case is not empty, and params and values of the cases follow the rules of those of the base, all checked by the app validator); in formatVersion 10, notices on the type, the field, and the table column (10 is 9 plus notices; in an earlier version it is an error, checked by the app validator; two notices with the same kind and the same message in the list are an error, which JSON Schema does not express; the notice only informs); in formatVersion 11, the { layer, groups } clause in allowedChildren, layers[].groups, annotationTypes[].groups, childRoles, childRolesLabel, docRepos at the root, and the doc as an object { repo, path } (11 is 10 plus these features; in an earlier version it is an error; the clause's layer exists and, before formatVersion 13, is not the owner's own, the groups exist in the clause's layer, requiresOwner is checked on the resolved set of children, unique group ids in the layer, type groups only from its own layer, childRoles only on a type with allowedChildren and childRolesLabel only with childRoles, unique role ids in the type, unique docRepos ids, the doc's repo exists in docRepos and urlTemplate with {path}, all checked by the app validator); in formatVersion 12, the role migration steps rename-role, remove-role, and set-role (12 is 11 plus these steps; in an earlier version it is an error; type is a type of this version, with childRoles in rename-role and set-role; to and role of set-role are roles of the type, from of rename-role and role of remove-role no longer are; childType of set-role only has its format checked; all checked by the app validator); in formatVersion 13, allowedChildren accepts the { layer } clause for the owner's own layer and the id of a type in the same layer, including the type itself (13 is 12 plus this; in an earlier version it is an error; checked by the app validator); in formatVersion 14, accepts.annotations on a ref field and column (14 is 13 plus this; in an earlier version it is an error; the items use the allowedChildren syntax and layer, group, and type must exist in the specialization, checked by the app validator); in formatVersion 15, structural on the type (in an earlier version it is an error; structural: true cannot have a component, checked by the app validator) and origins[].kind (tree or measured; in an earlier version it is an error; the measured source only has system, kind, name, and booleans, checked by the app validator); in formatVersion 16, fieldModels at the root and signature, ignore, calls, and formats on code (and in the variants case) and signature on the type's sources (in an earlier version it is an error; the path and the positional value in params are only valid in 16; the content of the sheet is checked by the package validator); in formatVersion 17, slots on the type and slots on code (and in the variants case) (17 is 16 plus the named slots; in an earlier version it is an error; id and accepts items checked by the app validator, the slot against the component and the parameter against the sheet by the package validator); in formatVersion 18, accessibility at the root (touchTarget) and on the type (role, label, touchTarget, parts) (18 is 17 plus this; in an earlier version it is an error; the role is on the list, touchTarget only with an interactive role, the label fields exist and are string or enum, each part has a unique id and a when that is a field, a table or <table>.<column>, and a part has no touchTarget, all checked by the app validator); see SPEC-FORMAT.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "version", "layers"],
@@ -11,7 +11,7 @@
       "enum": ["mapping-spec", "mapeador-spec"]
     },
     "formatVersion": {
-      "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+      "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
     },
     "id": {
       "type": "string",
@@ -78,6 +78,16 @@
     "icons": {
       "description": "Icon set of the library (formatVersion 15): the path of ONE .json file in the package (format mapping-icons), relative to the specialization file, read by the icon node of format 4 components.",
       "$ref": "#/$defs/jsonFile"
+    },
+    "accessibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "formatVersion 18: accessibility of the whole specialization. touchTarget is the minimum touch area (in component units) of every type with an interactive role, unless the type declares its own. In an earlier version it is an error (checked by the app validator).",
+      "properties": {
+        "touchTarget": {
+          "$ref": "#/$defs/touchTarget"
+        }
+      }
     },
     "fieldModels": {
       "type": "object",
@@ -333,6 +343,9 @@
             "minLength": 1
           },
           "description": "formatVersion 11: ids of groups of its own layer that the type belongs to. In an earlier version it is an error; the groups must exist in the layer (checked by the app validator)."
+        },
+        "accessibility": {
+          "$ref": "#/$defs/typeAccessibility"
         },
         "slots": {
           "type": "array",
@@ -1069,6 +1082,120 @@
             "pattern": "\\{value\\}"
           },
           "description": "formatVersion 16: field key → value template, with {value} ({value}.dp)."
+        }
+      }
+    },
+    "accessibilityRole": {
+      "enum": [
+        "button",
+        "link",
+        "checkbox",
+        "radio",
+        "switch",
+        "slider",
+        "textbox",
+        "searchbox",
+        "tab",
+        "menuitem",
+        "option",
+        "image",
+        "heading",
+        "dialog",
+        "navigation",
+        "progressbar",
+        "none"
+      ]
+    },
+    "touchTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "description": "Minimum touch area in component units. mode visual (default): the marked rectangle is the touch area; expanded: the platform grows the area to the minimum, so the size audit skips the type.",
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "mode": {
+          "enum": ["visual", "expanded"]
+        }
+      }
+    },
+    "accessibilityLabel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fields"],
+      "description": "The first of the fields with a value gives the accessible name; each one is a string or enum field of the type (a table part uses <table>.<column> of its own table; checked by the app validator). required defaults to true for an interactive role and false otherwise.",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "accessibilityPart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "when"],
+      "description": "A part of the component audited by itself. when is a field key (the part exists when it has a value), a table field name (one part per row) or <table>.<column> (one per row where the column has a value). A part has no touchTarget (checked by the app validator).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "when": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "$ref": "#/$defs/accessibilityLabel"
+        },
+        "role": {
+          "$ref": "#/$defs/accessibilityRole"
+        }
+      }
+    },
+    "typeAccessibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "formatVersion 18: role, accessible label, touch target and parts of the type. touchTarget (false turns the type's touch audit off) only goes with an interactive role; a type without role, or with none, is not audited by itself but its parts are. In an earlier version it is an error (checked by the app validator).",
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/accessibilityRole"
+        },
+        "label": {
+          "$ref": "#/$defs/accessibilityLabel"
+        },
+        "touchTarget": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/touchTarget"
+            },
+            {
+              "const": false
+            }
+          ]
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/accessibilityPart"
+          }
         }
       }
     },

@@ -41,6 +41,8 @@ const EXCEPTIONS: Record<string, string> = {
     'type removed in stage 9; the parser accepts it only to ignore it and warn',
   'spec:layers[].annotationTypes[].fields[].columns[].type=table':
     'the schema declares the column with the shape of the field, but a column of a column does not exist',
+  'spec:layers[].annotationTypes[].accessibility.parts[].touchTarget':
+    'a part has no touch target: the key is accepted by the shape only to be rejected at its exact path',
   'spec:fonts[].style':
     'an example requires a font file in the package (without it the validator warns); owner decision (2026-11-01): the font is fixed in the mobile client, not in SDUI',
   'spec:fonts[].style=italic':
@@ -101,6 +103,36 @@ const MISSING_TODAY: string[] = [
   // the fixture tests/fixtures/slots/ and script R28.
   'spec:layers[].annotationTypes[].code{}.slots',
   'spec:layers[].annotationTypes[].code{}.variants.cases{}.slots',
+  // `accessibility` (formatVersion 18, stage #1081, A1): no distributed library declares it yet; the Material 3
+  // library adopts it in A4 and these items leave this list then. Covered by tests/model/specV18.test.ts,
+  // tests/model/accessibility.test.ts and the fixture tests/fixtures/accessibility/.
+  'spec:accessibility',
+  'spec:accessibility.touchTarget',
+  'spec:accessibility.touchTarget.height',
+  'spec:accessibility.touchTarget.mode',
+  'spec:accessibility.touchTarget.mode=expanded',
+  'spec:accessibility.touchTarget.mode=visual',
+  'spec:accessibility.touchTarget.width',
+  'spec:layers[].annotationTypes[].accessibility',
+  'spec:layers[].annotationTypes[].accessibility.label',
+  'spec:layers[].annotationTypes[].accessibility.label.fields',
+  'spec:layers[].annotationTypes[].accessibility.label.required',
+  'spec:layers[].annotationTypes[].accessibility.parts',
+  'spec:layers[].annotationTypes[].accessibility.parts[].id',
+  'spec:layers[].annotationTypes[].accessibility.parts[].label',
+  'spec:layers[].annotationTypes[].accessibility.parts[].label.fields',
+  'spec:layers[].annotationTypes[].accessibility.parts[].label.required',
+  'spec:layers[].annotationTypes[].accessibility.parts[].name',
+  'spec:layers[].annotationTypes[].accessibility.parts[].role',
+  'spec:layers[].annotationTypes[].accessibility.parts[].when',
+  'spec:layers[].annotationTypes[].accessibility.role',
+  'spec:layers[].annotationTypes[].accessibility.touchTarget',
+  'spec:layers[].annotationTypes[].accessibility.touchTarget.height',
+  'spec:layers[].annotationTypes[].accessibility.touchTarget.mode',
+  'spec:layers[].annotationTypes[].accessibility.touchTarget.mode=expanded',
+  'spec:layers[].annotationTypes[].accessibility.touchTarget.mode=visual',
+  'spec:layers[].annotationTypes[].accessibility.touchTarget.width',
+  'spec:layers[].annotationTypes[].accessibility.touchTarget=false',
   'component:node.span',
   'component:node.weight',
   'component:node.repeat.lineGap',

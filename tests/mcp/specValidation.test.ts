@@ -406,3 +406,75 @@ describe('slots (formatVersion 17)', () => {
     );
   });
 });
+
+describe('accessibility (formatVersion 18)', () => {
+  const TYPE = 'layers[0].annotationTypes[0]';
+  const accessible = (): Json => ({
+    format: 'mapping-spec',
+    formatVersion: 18,
+    id: 'a11y',
+    name: 'A11y',
+    version: 1,
+    accessibility: { touchTarget: { width: 44, height: 44 } },
+    layers: [
+      {
+        id: 'ui',
+        name: 'UI',
+        color: '#112233',
+        annotationTypes: [
+          {
+            id: 'button',
+            name: 'Button',
+            fields: [
+              { key: 'label', type: 'string' },
+              { key: 'size', type: 'number' },
+            ],
+            accessibility: { role: 'button', label: { fields: ['label'] } },
+          },
+        ],
+      },
+    ],
+  });
+
+  it('a valid v18 with accessibility is valid', async () => {
+    const result = ok(
+      await mcp.call<Validated>('validate_specialization', { text: text(accessible()) }),
+    );
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
+  it('accessibility in a v17 gives "only allowed with formatVersion 18" at the exact paths', async () => {
+    const spec = accessible();
+    spec.formatVersion = 17;
+    const result = ok(
+      await mcp.call<Validated>('validate_specialization', { text: text(spec) }),
+    );
+    expect(result.valid).toBe(false);
+    expect(result.issues).toEqual([
+      { path: 'accessibility', message: 'only allowed with formatVersion 18' },
+      { path: `${TYPE}.accessibility`, message: 'only allowed with formatVersion 18' },
+    ]);
+  });
+
+  it('a label field that is not string or enum and a touchTarget without a role come with the path', async () => {
+    const spec = accessible();
+    spec.layers[0].annotationTypes[0].accessibility = {
+      label: { fields: ['size'] },
+      touchTarget: { width: 10, height: 10 },
+    };
+    const result = ok(
+      await mcp.call<Validated>('validate_specialization', { text: text(spec) }),
+    );
+    expect(result.issues).toEqual([
+      {
+        path: `${TYPE}.accessibility.touchTarget`,
+        message: 'touchTarget: only valid with an interactive role',
+      },
+      {
+        path: `${TYPE}.accessibility.label.fields[0]`,
+        message: 'label: field size must be string or enum',
+      },
+    ]);
+  });
+});

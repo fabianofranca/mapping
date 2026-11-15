@@ -232,6 +232,19 @@ export const templatePtBR: {
   'model.spec.idRepeated': 'id "{id}" repetido',
   'model.spec.groupRepeated': 'grupo "{group}" repetido',
   'model.spec.slotIdInvalid': 'id de slot inválido; use [a-z][a-zA-Z0-9_-]*',
+  'model.spec.accessibilityRoleInvalid': 'role "{value}" inválido; use {roles}',
+  'model.spec.accessibilityTouchNeedsRole':
+    'touchTarget: só é válido com um role interativo',
+  'model.spec.accessibilityLabelFieldMissing': 'label: o campo não existe: {key}',
+  'model.spec.accessibilityLabelFieldType':
+    'label: o campo {key} deve ser string ou enum',
+  'model.spec.accessibilityLabelOtherTable':
+    'label: {key} pertence a outra tabela; use colunas de {table}',
+  'model.spec.accessibilityPartWhenInvalid':
+    'when: "{when}" não é campo nem tabela do tipo',
+  'model.spec.accessibilityPartColumnMissing':
+    'when: a tabela {table} não tem a coluna {column}',
+  'model.spec.accessibilityPartNoTouch': 'uma parte não tem área de toque',
   'model.spec.structuralNoComponent':
     'um tipo estrutural não desenha: não pode ter component',
   'model.spec.labelFieldNotString': '"{key}" deve ser um campo string do tipo',

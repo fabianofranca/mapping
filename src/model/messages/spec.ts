@@ -112,6 +112,16 @@ export const specMessages = {
   'spec.idRepeated': 'id "{id}" repeated',
   'spec.groupRepeated': 'group "{group}" repeated',
   'spec.slotIdInvalid': 'invalid slot id; use [a-z][a-zA-Z0-9_-]*',
+  'spec.accessibilityRoleInvalid': 'role "{value}" is invalid; use {roles}',
+  'spec.accessibilityTouchNeedsRole': 'touchTarget: only valid with an interactive role',
+  'spec.accessibilityLabelFieldMissing': 'label: field does not exist: {key}',
+  'spec.accessibilityLabelFieldType': 'label: field {key} must be string or enum',
+  'spec.accessibilityLabelOtherTable':
+    'label: {key} belongs to another table; use columns of {table}',
+  'spec.accessibilityPartWhenInvalid':
+    'when: "{when}" is neither a field nor a table of the type',
+  'spec.accessibilityPartColumnMissing': 'when: the table {table} has no column {column}',
+  'spec.accessibilityPartNoTouch': 'a part has no touch target',
   // Types
   'spec.structuralNoComponent':
     'a structural type does not draw: it cannot have a component',

@@ -55,10 +55,10 @@ function parsed(input: unknown): Spec {
 const str = (extra: Json = {}): Json => ({ key: 'kind', type: 'string', ...extra });
 
 describe('formatVersion 8: suggestions', () => {
-  it('the current version is 17 and the earlier ones are still accepted', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(17);
+  it('the current version is 18 and the earlier ones are still accepted', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(18);
     expect(SPEC_FORMAT_VERSIONS).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
     ]);
     for (const v of SPEC_FORMAT_VERSIONS) expect(parseSpec(spec(v, str())).ok).toBe(true);
   });

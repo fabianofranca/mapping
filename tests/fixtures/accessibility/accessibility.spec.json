@@ -1,0 +1,107 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 18,
+  "id": "accessibility",
+  "name": "Test accessibility",
+  "version": 1,
+  "accessibility": {
+    "touchTarget": { "width": 44, "height": 44, "mode": "visual" }
+  },
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#6750A4",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "component": "components/button.json",
+          "accessibility": {
+            "role": "button",
+            "label": { "fields": ["label"] }
+          },
+          "fields": [{ "key": "label", "type": "string", "default": "Button" }]
+        },
+        {
+          "id": "bar",
+          "name": "Bar",
+          "component": "components/bar.json",
+          "accessibility": {
+            "parts": [
+              {
+                "id": "action1",
+                "name": "First action",
+                "when": "actionIcon1",
+                "role": "button",
+                "label": { "fields": ["actionIcon1Description"] }
+              },
+              {
+                "id": "action2",
+                "name": "Second action",
+                "when": "actionIcon2",
+                "role": "button",
+                "label": { "fields": ["actionIcon2Description"] }
+              }
+            ]
+          },
+          "fields": [
+            { "key": "title", "type": "string", "default": "Title" },
+            { "key": "actionIcon1", "type": "string" },
+            { "key": "actionIcon1Description", "type": "string" },
+            { "key": "actionIcon2", "type": "string" },
+            { "key": "actionIcon2Description", "type": "string" }
+          ],
+          "slots": [
+            {
+              "id": "actions",
+              "name": "Actions",
+              "description": "The actions on the right of the title.",
+              "accepts": ["icon-button"],
+              "max": 2
+            }
+          ]
+        },
+        {
+          "id": "icon-button",
+          "name": "Icon button",
+          "component": "components/icon-button.json",
+          "accessibility": {
+            "role": "button",
+            "label": { "fields": ["contentDescription"] }
+          },
+          "fields": [
+            { "key": "contentDescription", "type": "string" },
+            { "key": "icon", "type": "string", "default": "star" }
+          ]
+        },
+        {
+          "id": "tabs",
+          "name": "Tabs",
+          "component": "components/tabs.json",
+          "accessibility": {
+            "parts": [
+              {
+                "id": "tab",
+                "name": "Tab",
+                "when": "items",
+                "role": "tab",
+                "label": { "fields": ["items.label", "items.iconDescription"] }
+              }
+            ]
+          },
+          "fields": [
+            {
+              "key": "items",
+              "type": "table",
+              "columns": [
+                { "key": "label", "type": "string" },
+                { "key": "iconDescription", "type": "string" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

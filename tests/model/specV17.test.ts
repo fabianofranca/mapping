@@ -96,10 +96,10 @@ const issuesOf = (raw: Json) => {
 };
 
 describe('formatVersion 17: version and shape', () => {
-  it('the current version is 17 and 16 is still accepted', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(17);
+  it('17 is accepted (and so is 16); the current version is 18', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(18);
     expect(SPEC_FORMAT_VERSIONS).toContain(16);
-    expect(SPEC_FORMAT_VERSIONS.at(-1)).toBe(17);
+    expect(SPEC_FORMAT_VERSIONS).toContain(17);
   });
 
   it('the v17 specialization with slots, accepts, max and code.slots is valid and is read', () => {

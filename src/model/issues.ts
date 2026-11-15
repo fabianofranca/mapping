@@ -62,7 +62,12 @@ export type AnnotationIssueCode =
   /** The child is beyond the `max` of its slot (the same origin as `slot-not-accepted`). */
   | 'slot-full'
   /** The child is in a slot hidden by its `visible`: it stays in the slot and in the code, and is not drawn (#1978). */
-  | 'slot-hidden';
+  | 'slot-hidden'
+  /**
+   * The accessible label is empty (stage #1126, `accessibility.label.required`), on the type or on a
+   * part. Not produced by `projectIssues`: `accessibilityAudit` (`accessibility.ts`) does.
+   */
+  | 'accessible-label-missing';
 
 export interface AnnotationIssue {
   readonly code: AnnotationIssueCode;
@@ -78,6 +83,8 @@ export interface AnnotationIssue {
   readonly owner?: string;
   /** `slot-full`: the number of children the slot takes. */
   readonly max?: number;
+  /** `accessible-label-missing` of a part: the part (`id` and its name, `id` by default). */
+  readonly part?: { readonly id: string; readonly name: string };
 }
 
 /** Issue of a reference (`ref` field or `ref` column cell); `null` if it is fine. */

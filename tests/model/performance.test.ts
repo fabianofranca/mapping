@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  accessibilityAudit,
   addAnnotation,
   addPerspective,
   approximateMeasurer,
@@ -31,6 +32,7 @@ import {
 } from '../../src/model';
 import { expectLinearGrowth, GROWTH_OPTIONS } from '../support/growth';
 import { expectBelow } from '../support/perfReport';
+import { withAccessibility } from './accessibilityFixtures';
 import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 import { buildLargeProject } from './largeProject';
 import { buildLargeTypedProject } from './largeTypedProject';
@@ -210,6 +212,25 @@ describe('large project with typed annotations and references', () => {
         markingVisibility(p, active, 'hide', null);
         return dots;
       }, project);
+      expectBelow(ms, FRAME_BUDGET_MS);
+    },
+  );
+
+  budgetIt(
+    `accessibility audit + pending items in under ${FRAME_BUDGET_MS} ms (half of the markings in a 3x container)`,
+    BUDGET_OPTIONS,
+    () => {
+      const accessible = withAccessibility(project);
+      expect(validateProject(accessible)).toEqual([]);
+      const audit = accessibilityAudit({ ...accessible });
+      const found = [...audit.values()];
+      // The fixture has something to report in both kinds, in density 1 and in the 3x containers.
+      expect(found.some((a) => a.issues.length > 0)).toBe(true);
+      expect(found.some((a) => a.findings.length > 0)).toBe(true);
+      const ms = medianMs((p) => {
+        projectIssues(p);
+        return accessibilityAudit(p);
+      }, accessible);
       expectBelow(ms, FRAME_BUDGET_MS);
     },
   );
