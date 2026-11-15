@@ -334,6 +334,18 @@ describe('canario usar (decisions 12 and 14)', () => {
     expect(usar('fase', '#10', 'Sonnet', 'medium')).toBe('atual');
   });
 
+  it('refuses a role or an effort that does not exist, instead of answering `atual` for a typo', () => {
+    addA();
+    for (const args of [
+      ['bogus', '#10', 'modelo=Sonnet', 'esforco=medium'],
+      ['reteste', '#10', 'modelo=Sonnet', 'esforco=medum'],
+      ['reteste', '#10', 'modelo=Sonet', 'esforco=medium'],
+    ]) {
+      const r = tryRunAt(D(13), 'canario', dir, 'usar', ...args);
+      expect(r.code, args.join(' ')).toBe(2);
+    }
+  });
+
   it('does not write anything', () => {
     addA();
     const before = snapshot();
@@ -502,6 +514,38 @@ describe('session canario= (decision 13)', () => {
       tryRunAt(D(13), 'session', dir, '#10', 'f3', 'kind=fase', 'label=QM2', 'canario=B')
         .code,
     ).toBe(2);
+  });
+
+  it('the successor registered without a label (kind= alone) still joins the canary under evaluation', () => {
+    runAt(
+      START,
+      'canario',
+      dir,
+      'add',
+      'B',
+      'papel=fase',
+      'de=Sonnet high',
+      'esforco=medium',
+      'filtro=processo',
+      'n=1',
+      'volta=2',
+    );
+    runAt(D(13), 'session', dir, '#10', 'f1', 'kind=fase', 'canario=B');
+    expect(canary('B').estado).toBe('em avaliação');
+    runAt(D(13), 'session', dir, '#10', 'f2', 'kind=fase', 'canario=B');
+    expect(canary('B').sessoes).toEqual(['f1', 'f2']);
+  });
+
+  it('refuses to move a session that is already in a canary to another one, writing nothing', () => {
+    addA();
+    addA([], START, 'A2');
+    session(D(13), 'r1', '#10', 'reteste', 'RT1', 'A');
+    const before = snapshot();
+    const r = tryRunAt(D(13), 'session', dir, '#10', 'r1', 'canario=A2');
+    expect(r.code).toBe(2);
+    expect(r.err).toContain('A');
+    expect(snapshot()).toBe(before);
+    expect(canary('A2').sessoes).toEqual([]);
   });
 
   it('A counts sessions, even with the same label', () => {

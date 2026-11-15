@@ -123,7 +123,7 @@ or `ciclo` >= 1; `correção`, with `ci` >= 2, `ciclo` >= 1, an escaped defect o
 created after it with `alta`+`media` > 0; `testador`, with an escaped defect `high`/`medium` of its stage; `reteste`, with a `falso` of `high` or `medium`.
 `fechamento`, `coordenador` and `supervisor` have no ruler. The escaped `low`, `ci` 1 and a successor `correção` of the same label are not rework.
 Canaries (stage #1889, decisions 12 to 15): `meta.canarios` holds `{id, papel, de, modelo, esforco, filtro, n, volta, inicio,
-sessoes, estado, motivo, fim}` plus what every write recomputes (`contadas`, `retrabalhos`, `resumo`; the page only draws them).
+sessoes, estado, motivo, fim}` plus what every write recomputes (`contadas`, `retrabalhos`, `resumo`; ready for a page to draw, which this phase does not touch).
 `canario DIR add <id> papel=<role with a ruler> de="<model> <effort>" [modelo=<family>] [esforco=<effort>] [filtro=processo] n=<k> volta=<k>`
 tries a cheaper configuration (`modelo` and `esforco` default to those of `de`; at least one has to change; `filtro` only `processo`;
 `n` and `volta` positive; a repeated id, a role without ruler or any other bad field is code 2 and nothing is written);
@@ -1276,6 +1276,9 @@ def canary_use(a):
         if k not in ("modelo", "esforco"):
             raise Erro(f"unknown field '{k}'; valid: modelo, esforco")
     want = (model_family(pairs["modelo"]), pairs["esforco"])
+    validate_choice("papel", papel, RULER_KINDS)
+    validate_choice("modelo", want[0], MODEL_LADDER)
+    validate_choice("esforco", want[1], EFFORTS)
     q, m = load(a.dir, "queue"), load(a.dir, "meta")
     meta = m[0] if m else {}
     for c in canary_list(meta):
@@ -1308,11 +1311,13 @@ def canary_to_join(meta, pairs, sid, issue):
         raise Erro("canario= needs kind= (or a session already registered with its kind)")
     if c["papel"] != kind:
         raise Erro(f"canary {c['id']} is for {c['papel']}, the session is {kind}")
-    label = pairs["label"] if "label" in pairs else known.get("label")
+    label = (pairs["label"] if "label" in pairs else known.get("label")) or ""
+    if known.get("canario") not in (None, c["id"]):
+        raise Erro(f"session {sid} is already in canary {known['canario']}, not {c['id']}")
     if c["estado"] == "ativo" or (c["estado"] in CANARY_BUSY and sid in c["sessoes"]):
         return c
     successor = kind in PHASE_KINDS and any(
-        e.get("issue") == issue and e.get("label") == label for e in canary_members(c, meta))
+        e.get("issue") == issue and (e.get("label") or "") == label for e in canary_members(c, meta))
     if c["estado"] in CANARY_BUSY and successor:
         return c
     raise Erro(f"canary {c['id']} is {c['estado']}, not ativo")
@@ -1416,7 +1421,7 @@ def refresh_canary(c, meta, q, ruler, log):
 
 
 def update_canaries(q, meta, log):
-    """Every write refreshes `meta.canarios` (the page only draws it); True when a canary just reverted and the log grew."""
+    """Every write refreshes `meta.canarios` (ready for a page to draw); True when a canary just reverted and the log grew."""
     if not canary_list(meta):
         return False
     ruler = Ruler(q, meta)
