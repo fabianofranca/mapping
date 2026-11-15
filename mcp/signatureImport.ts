@@ -175,7 +175,8 @@ export async function planSignatureImportTool(
   const signature = await readSignature(roots, args);
   const pkg = await packageByPath(roots, args.path);
   const { signature: previous, problem } = await readPrevious(pkg, args);
-  const slots = await componentSlotIds(pkg, args.type);
+  // Only a code target has slot parameters: a design target does not read the component.
+  const slots = 'platform' in alvo ? await componentSlotIds(pkg, args.type) : undefined;
   const result = planSignatureImport(pkg.spec, {
     type: args.type,
     target: alvo,
@@ -198,10 +199,10 @@ export async function planSignatureImportTool(
     path: args.path,
     type: args.type,
     ...alvo,
-    ...(args.variant === undefined ? {} : { variant: args.variant }),
+    ...optional('variant', args.variant),
     signaturePath: plan.signaturePath,
     previous: previous !== undefined,
-    ...(problem === undefined ? {} : { previousProblem: problem }),
+    ...optional('previousProblem', problem),
     fields: plan.fields,
     links: plan.links,
     ...(plan.slotLinks.length === 0 ? {} : { slotLinks: plan.slotLinks }),

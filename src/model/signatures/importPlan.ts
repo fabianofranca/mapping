@@ -421,26 +421,42 @@ class Importer {
   // --- the slot parameters (stage #1080, decision 9) ---
 
   /**
+   * The `code.slots` entries (the case's over the base's) and, of them, the ones whose parameter the
+   * sheet still has with `role: slot`: a stale entry is not a link (`validate_library` warns about it).
+   */
+  private slotEntries(): { all: Record<string, string>; valid: Record<string, string> } {
+    const scope = this.prepared.scope as Scope | undefined;
+    if (this.design || scope === undefined) return { all: {}, valid: {} };
+    const base = this.prepared.code as SpecCode;
+    const all = { ...base.slots, ...scope.slots };
+    const names = new Set(
+      this.signature.params.filter((p) => p.role === 'slot').map(callName),
+    );
+    const valid = Object.fromEntries(Object.entries(all).filter(([, v]) => names.has(v)));
+    return { all, valid };
+  }
+
+  /**
    * Links the `role: slot` parameters to the component's slots: an entry already in `code.slots` (the
    * case's, else the base's) keeps its parameter; the others take the parameter of the same
    * normalized name, and the entry is written only when the written name differs from the slot's
-   * `id`. Returns slot id → parameter for what got linked (the `unmapped` leaves them out).
+   * `id`. Returns slot id → parameter for what is linked (the `unmapped` leaves them out), also
+   * the entries already written when the component's slot ids are not known.
    */
   private linkSlots(): Record<string, string> {
-    const linked: Record<string, string> = {};
+    const { all, valid } = this.slotEntries();
+    const linked: Record<string, string> = { ...valid };
     const scope = this.prepared.scope as Scope | undefined;
     const ids = this.options.slots;
     if (this.design || scope === undefined || ids === undefined) return linked;
     if (this.spec.formatVersion < SLOTS_VERSION) return linked;
-    const base = this.prepared.code as SpecCode;
-    const entries = { ...base.slots, ...scope.slots };
-    const taken = new Set(Object.values(entries));
+    const taken = new Set(Object.values(all));
     const free = this.signature.params.filter((p) => p.role === 'slot');
     for (const slot of ids) {
-      const entry = entries[slot];
-      if (entry !== undefined) {
-        linked[slot] = entry;
-        this.slotLinks.push({ slot, param: entry, via: 'slots' });
+      if (Object.hasOwn(all, slot)) {
+        const param = all[slot] as string;
+        if (Object.hasOwn(valid, slot))
+          this.slotLinks.push({ slot, param, via: 'slots' });
         continue;
       }
       const param = free.find(

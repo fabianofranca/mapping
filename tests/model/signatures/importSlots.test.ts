@@ -140,4 +140,46 @@ describe('slot parameters and the component slots', () => {
       navigationIcon: 'navigation_icon',
     });
   });
+
+  // Found by the /code-review of the phase.
+  it('a slot id that is a member of Object.prototype (constructor) is linked by name like any other', () => {
+    const result = plan(v17(), [slotParam('constructor')], { slots: ['constructor'] });
+    expect(result.slotLinks).toEqual([
+      { slot: 'constructor', param: 'constructor', via: 'name' },
+    ]);
+    expect(result.unmapped).toEqual([]);
+  });
+
+  it('a stale code.slots entry (its parameter left the sheet) is not reported as linked', () => {
+    const spec = librarySpec((s) => {
+      s.formatVersion = 17;
+      s.layers[0].annotationTypes[1].code = {
+        compose: {
+          symbol: 'androidx.compose.material3.Button',
+          slots: { actions: 'gone' },
+        },
+      };
+    });
+    const result = plan(spec, [slotParam('trailing')]);
+    expect(result.slotLinks).toEqual([]);
+    expect(result.code?.slots).toEqual({ actions: 'gone' });
+    expect(result.unmapped.map((u) => u.name)).toEqual(['trailing']);
+  });
+
+  it('without the component slot ids, the entries already in code.slots still take their parameter out of unmapped', () => {
+    const spec = librarySpec((s) => {
+      s.formatVersion = 17;
+      s.layers[0].annotationTypes[1].code = {
+        compose: {
+          symbol: 'androidx.compose.material3.Button',
+          slots: { actions: 'trailing' },
+        },
+      };
+    });
+    const result = plan(spec, [slotParam('trailing'), slotParam('content')], {
+      slots: undefined,
+    });
+    expect(result.slotLinks).toEqual([]);
+    expect(result.unmapped.map((u) => u.name)).toEqual(['content']);
+  });
 });
