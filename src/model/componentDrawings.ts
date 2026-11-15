@@ -660,11 +660,13 @@ function planSlots(
   probe: FrameNode,
 ): SlotPlan {
   const byId = new Map(defs.map((def) => [def.id, def]));
+  const hug = hugAxesOf(mc.component);
   const inputs: SlotInput[] = [...slotsOfScene(probe)].map(([id, slot]) => ({
     id,
     box: space.toPixels(slot.box),
     accepts: byId.get(id)?.accepts,
     max: byId.get(id)?.max,
+    grows: (hug.get(id)?.x ?? false) || (hug.get(id)?.y ?? false),
   }));
   const assignment = assignSlots(inputs, kids);
   const templates = new Map(componentSlots(mc.component).map((s) => [slotKey(s), s]));

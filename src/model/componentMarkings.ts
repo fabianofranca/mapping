@@ -8,6 +8,7 @@ import {
   assignSlots,
   componentSlots,
   slotForPlacement,
+  slotGrows,
   slotHugAxes,
   slotKey,
 } from './components/slots';
@@ -292,12 +293,16 @@ function sceneOfSlots(
   const defs = new Map(
     typeSlots(p, mc.specId, mc.typeId, mc.component).map((def) => [def.id, def]),
   );
+  const grows = new Map(
+    componentSlots(drawn.component).map((s) => [slotKey(s), slotGrows(s)]),
+  );
   const assignment = assignSlots(
     [...boxes].map(([id, box]) => ({
       id,
       box,
       accepts: defs.get(id)?.accepts,
       max: defs.get(id)?.max,
+      grows: grows.get(id) ?? false,
     })),
     kids.map((kid) => ({
       id: kid.id,

@@ -56,6 +56,12 @@ export function takesContent(spec: unknown): boolean {
   return !(typeof spec === 'string' && spec.endsWith('%'));
 }
 
+/** Does the slot take its children's size on some axis (so its box grows to the children it takes)? */
+export function slotGrows(slot: Pick<SlotTemplate, 'width' | 'height'>): boolean {
+  const hug = slotHugAxes(slot);
+  return hug.x || hug.y;
+}
+
 /** The axes on which the slot takes its children's size: its box there is the content's, not a limit for it. */
 export function slotHugAxes(slot: Pick<SlotTemplate, 'width' | 'height'>): HugAxes {
   return { x: takesContent(slot.width), y: takesContent(slot.height) };
@@ -133,6 +139,11 @@ export interface SlotInput {
   readonly accepts?: ReadonlySet<string> | undefined;
   readonly max?: number | undefined;
   readonly visible?: boolean | undefined;
+  /**
+   * The slot hugs its children (`slotHugAxes`): its box is only the content's, so it grows to take in each
+   * child assigned to it, and the next child touching that grown box goes to the same slot.
+   */
+  readonly grows?: boolean | undefined;
 }
 
 /** A child marking of the instance: its rectangle and the type of its component annotation (none: no type). */
@@ -168,6 +179,13 @@ function intersection(a: SlotRect, b: SlotRect): number {
   return width > 0 && height > 0 ? width * height : 0;
 }
 
+/** The gap between two rectangles (0 when they touch or overlap): where a child sits relative to a slot's edge. */
+function gap(a: SlotRect, b: SlotRect): number {
+  const dx = Math.max(a.x - (b.x + b.width), b.x - (a.x + a.width), 0);
+  const dy = Math.max(a.y - (b.y + b.height), b.y - (a.y + a.height), 0);
+  return Math.hypot(dx, dy);
+}
+
 function distance(a: SlotRect, b: SlotRect): number {
   return Math.hypot(
     a.x + a.width / 2 - (b.x + b.width / 2),
@@ -175,7 +193,21 @@ function distance(a: SlotRect, b: SlotRect): number {
   );
 }
 
-/** The slot of greatest intersection with the rectangle; with none touching, the nearest; ties go to the first. */
+function union(a: SlotRect, b: SlotRect): SlotRect {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return {
+    x,
+    y,
+    width: Math.max(a.x + a.width, b.x + b.width) - x,
+    height: Math.max(a.y + a.height, b.y + b.height) - y,
+  };
+}
+
+/**
+ * The slot of greatest intersection with the rectangle; with none overlapping it, the one whose edge is
+ * nearest (then the nearest center); ties go to the first.
+ */
 function closest(rect: SlotRect, slots: readonly SlotInput[]): SlotInput | undefined {
   let best: SlotInput | undefined;
   let bestArea = 0;
@@ -188,11 +220,14 @@ function closest(rect: SlotRect, slots: readonly SlotInput[]): SlotInput | undef
   }
   if (best !== undefined) return best;
   let nearest: SlotInput | undefined;
+  let nearestGap = Infinity;
   let nearestDistance = Infinity;
   for (const slot of slots) {
+    const g = gap(slot.box, rect);
     const d = distance(slot.box, rect);
-    if (d < nearestDistance) {
+    if (g < nearestGap || (g === nearestGap && d < nearestDistance)) {
       nearest = slot;
+      nearestGap = g;
       nearestDistance = d;
     }
   }
@@ -232,26 +267,48 @@ export function assignSlots(
 ): SlotAssignment {
   const visible = slots.filter((slot) => slot.visible !== false);
   const slotOf = new Map<string, string>();
-  const lists = new Map<string, string[]>(visible.map((slot) => [slot.id, []]));
-  const unassigned: string[] = [];
+  const unassigned = new Set<string>();
   const notAccepted = new Set<string>();
-  for (const child of children) {
-    const options = candidates(visible, child.typeId);
+  // A slot that hugs its children grows to each child it takes: the children go in order of their gap to the
+  // slots (the nearest first, then the order given), so those in a row away from the empty box follow the first.
+  let current = visible;
+  const order = children
+    .map((child, index) => ({ child, index, gap: gapToSlots(child.rect, visible) }))
+    .sort((a, b) => a.gap - b.gap || a.index - b.index);
+  for (const { child } of order) {
+    const options = candidates(current, child.typeId);
     const chosen = closest(child.rect, options.slots);
     if (chosen === undefined) {
-      unassigned.push(child.id);
+      unassigned.add(child.id);
       continue;
     }
     slotOf.set(child.id, chosen.id);
-    lists.get(chosen.id)?.push(child.id);
     if (!options.accepted) notAccepted.add(child.id);
+    if (chosen.grows === true)
+      current = current.map((slot) =>
+        slot.id === chosen.id ? { ...slot, box: union(slot.box, child.rect) } : slot,
+      );
+  }
+  // The results keep the order of the children given (the siblings').
+  const lists = new Map<string, string[]>(visible.map((slot) => [slot.id, []]));
+  const ordered = new Map<string, string>();
+  for (const child of children) {
+    const id = slotOf.get(child.id);
+    if (id === undefined) continue;
+    ordered.set(child.id, id);
+    lists.get(id)?.push(child.id);
   }
   return {
-    slotOf,
+    slotOf: ordered,
     children: lists,
-    unassigned,
-    issues: slotIssues(visible, children, slotOf, lists, notAccepted),
+    unassigned: children.filter((c) => unassigned.has(c.id)).map((c) => c.id),
+    issues: slotIssues(visible, children, ordered, lists, notAccepted),
   };
+}
+
+/** The smallest gap between a rectangle and any slot (the order in which `assignSlots` takes the children). */
+function gapToSlots(rect: SlotRect, slots: readonly SlotInput[]): number {
+  return slots.reduce((least, slot) => Math.min(least, gap(slot.box, rect)), Infinity);
 }
 
 function slotIssues(

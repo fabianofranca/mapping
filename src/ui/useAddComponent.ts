@@ -50,7 +50,7 @@ function placementOf(
  * project in view is the one that gets written (not the review's Proposed view); otherwise none, and the
  * placement instantiates the probe (the same result).
  */
-function writtenDrawings(editor: EditorContextValue): {
+export function writtenDrawings(editor: EditorContextValue): {
   readonly drawings?: ComponentDrawings;
 } {
   const written = editor.store.project.peek();
