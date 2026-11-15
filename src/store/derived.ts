@@ -3,6 +3,8 @@ import { t } from '../i18n';
 import {
   EMPTY_CATALOG,
   NO_DRAWINGS,
+  accessibilityAudit,
+  buildAuditRows,
   markingComponent,
   typeSlots,
   acceptedPending,
@@ -24,7 +26,7 @@ import {
   markingVisibility,
   memoByProject,
   noticeCounts,
-  noticedCount,
+  noticedCountWithAudit,
   previewProject,
   projectIndex,
   structuralMarkingIds,
@@ -37,8 +39,11 @@ import {
   summarizeDecisions,
   validateAccepted,
   type AcceptedValidation,
+  type AccessibilityAudit,
   type Annotation,
   type AnnotationIssue,
+  type AuditFinding,
+  type AuditRow,
   type Change,
   type ChangeEntity,
   type ChangeComparison,
@@ -139,8 +144,19 @@ export interface EditorDerived {
   readonly noticeList: ReadonlySignal<readonly NoticeGroup[]>;
   /** Counts of annotations with a notice (by `kind` and in total), with the window's filters. */
   readonly noticeCounts: ReadonlySignal<NoticeCounts>;
-  /** How many annotations have some notice (window tab and status bar; without filters). */
+  /**
+   * How many annotations have some notice or a `touch-target-small` warning (window tab and status
+   * bar; without filters).
+   */
   readonly noticedCount: ReadonlySignal<number>;
+  /**
+   * The accessibility audit's warnings (`touch-target-small`) by marking (stage #1127); only the
+   * markings with a warning appear. The same map while the warnings do not change. The pending
+   * `accessible-label-missing` is not here: it is in `issues`.
+   */
+  readonly auditFindings: ReadonlySignal<ReadonlyMap<string, readonly AuditFinding[]>>;
+  /** The rows of the Notices window's Accessibility section (it follows "Only visible layers"). */
+  readonly auditList: ReadonlySignal<readonly AuditRow[]>;
   /** Anchored threads (Comments stage): window rows, counts and threads per item. */
   readonly threads: ThreadDerived;
   /**
@@ -350,7 +366,26 @@ function sameIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
     x.key === y.key &&
     x.rowId === y.rowId &&
     x.column === y.column &&
+    samePart(x, y) &&
     sameSlotIssue(x, y)
+  );
+}
+
+/** The part of `accessible-label-missing` (its id and name). */
+function samePart(x: AnnotationIssue, y: AnnotationIssue): boolean {
+  return x.part?.id === y.part?.id && x.part?.name === y.part?.name;
+}
+
+/** The row is the same one (same objects, and a finding that says the same). */
+function sameAuditRow(a: AuditRow, b: AuditRow | undefined): boolean {
+  return (
+    b !== undefined &&
+    a.annotation === b.annotation &&
+    a.marking === b.marking &&
+    a.layer === b.layer &&
+    a.arrow === b.arrow &&
+    sameItems(a.path, b.path) &&
+    sameFinding(a.finding, b.finding)
   );
 }
 
@@ -381,6 +416,47 @@ function sameIssues(
   for (const [id, list] of a) {
     const other = b.get(id);
     if (other === undefined || !sameIssueList(list, other)) return false;
+  }
+  return true;
+}
+
+const NO_AUDIT: AccessibilityAudit = new Map();
+const NO_FINDINGS: ReadonlyMap<string, readonly AuditFinding[]> = new Map();
+const NO_AUDIT_ROWS: readonly AuditRow[] = [];
+
+function sameSize(
+  a: { readonly width: number; readonly height: number },
+  b: { readonly width: number; readonly height: number },
+): boolean {
+  return a.width === b.width && a.height === b.height;
+}
+
+function sameFinding(a: AuditFinding, b: AuditFinding): boolean {
+  return (
+    a.code === b.code &&
+    a.annotationId === b.annotationId &&
+    a.markingId === b.markingId &&
+    a.density === b.density &&
+    sameSize(a.actual, b.actual) &&
+    sameSize(a.min, b.min) &&
+    sameSize(a.minPx, b.minPx)
+  );
+}
+
+function sameFindings(
+  a: ReadonlyMap<string, readonly AuditFinding[]>,
+  b: ReadonlyMap<string, readonly AuditFinding[]>,
+): boolean {
+  if (a.size !== b.size) return false;
+  for (const [id, list] of a) {
+    const other = b.get(id);
+    if (
+      other === undefined ||
+      list.length !== other.length ||
+      !list.every((f, i) => sameFinding(f, other[i] as AuditFinding))
+    ) {
+      return false;
+    }
   }
   return true;
 }
@@ -463,6 +539,41 @@ export function createEditorDerived(
   // Model pending items plus what only the drawing knows: "the component does not fit" and the
   // children a slot does not accept or that go past its `max` (decisions 7 and 10 of #1080). Without a
   // drawing that has any of them, it is the model's map; with one, the previous map if nothing changed.
+  // The accessibility audit (stage #1127, decision 13 of #1081): one memoized computed from the project,
+  // the specializations (inside the project) and the drawings (the parts a slot's child replaces are
+  // skipped). Pan and zoom never reach it, and an edit audits the project once, whoever reads it.
+  const audit = computed((): AccessibilityAudit => {
+    const p = project.value;
+    return p ? accessibilityAudit(p, { drawings: scenes.value }) : NO_AUDIT;
+  });
+
+  // The audit's pending items (`accessible-label-missing`), the same map while they do not change.
+  let lastAuditIssues: ReadonlyMap<string, readonly AnnotationIssue[]> = NO_ISSUES;
+  const auditIssues = computed(() => {
+    const next = new Map<string, readonly AnnotationIssue[]>();
+    for (const [id, entry] of audit.value) {
+      if (entry.issues.length > 0) next.set(id, entry.issues);
+    }
+    if (sameIssues(next, lastAuditIssues)) return lastAuditIssues;
+    lastAuditIssues = next.size === 0 ? NO_ISSUES : next;
+    return lastAuditIssues;
+  });
+
+  let lastFindings: ReadonlyMap<string, readonly AuditFinding[]> = NO_FINDINGS;
+  const auditFindings = computed(() => {
+    const next = new Map<string, AuditFinding[]>();
+    for (const entry of audit.value.values()) {
+      for (const finding of entry.findings) {
+        const list = next.get(finding.markingId);
+        if (list) list.push(finding);
+        else next.set(finding.markingId, [finding]);
+      }
+    }
+    if (sameFindings(next, lastFindings)) return lastFindings;
+    lastFindings = next.size === 0 ? NO_FINDINGS : next;
+    return lastFindings;
+  });
+
   let lastIssues: ReadonlyMap<string, readonly AnnotationIssue[]> = NO_ISSUES;
   const issues = computed(() => {
     const p = project.value;
@@ -470,14 +581,16 @@ export function createEditorDerived(
     const drawn = [...scenes.value.values()].filter(
       (d) => d.overflow || d.slotIssues.length > 0,
     );
-    if (drawn.length === 0) return base;
+    const accessibility = auditIssues.value;
+    if (drawn.length === 0 && accessibility.size === 0) return base;
     const merged = new Map(base);
-    const add = (annotationId: string, issue: AnnotationIssue) =>
-      merged.set(annotationId, [...(merged.get(annotationId) ?? []), issue]);
+    const add = (annotationId: string, ...more: AnnotationIssue[]) =>
+      merged.set(annotationId, [...(merged.get(annotationId) ?? []), ...more]);
     for (const d of drawn) {
       if (d.overflow) add(d.annotationId, { code: 'component-overflow' });
       for (const { annotationId, ...issue } of d.slotIssues) add(annotationId, issue);
     }
+    for (const [annotationId, list] of accessibility) add(annotationId, ...list);
     if (sameIssues(merged, lastIssues)) return lastIssues;
     lastIssues = merged;
     return merged;
@@ -685,7 +798,25 @@ export function createEditorDerived(
   });
   const noticedCountSignal = computed(() => {
     const p = project.value;
-    return p ? noticedCount(p) : 0;
+    return p ? noticedCountWithAudit(p, audit.value) : 0;
+  });
+  // The Accessibility section: only the "Only visible layers" filter applies to it.
+  let lastAuditRows = NO_AUDIT_ROWS;
+  const auditList = computed((): readonly AuditRow[] => {
+    const p = project.value;
+    if (!p || audit.value.size === 0) return NO_AUDIT_ROWS;
+    const next = buildAuditRows(
+      p,
+      audit.value,
+      ui.noticesVisibleOnly.value ? visible.value : undefined,
+    );
+    if (next.length === 0) return NO_AUDIT_ROWS;
+    const same =
+      next.length === lastAuditRows.length &&
+      next.every((row, i) => sameAuditRow(row, lastAuditRows[i]));
+    if (same) return lastAuditRows;
+    lastAuditRows = next;
+    return next;
   });
 
   let lastOrigins = NO_IMAGE_ORIGINS;
@@ -832,6 +963,8 @@ export function createEditorDerived(
     noticeList,
     noticeCounts: noticeCountsSignal,
     noticedCount: noticedCountSignal,
+    auditFindings,
+    auditList,
     threads: createThreadDerived(project, ui, threadSources),
     densitySuggestions,
     catalog: components.catalog,

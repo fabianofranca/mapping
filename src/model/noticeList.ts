@@ -1,3 +1,4 @@
+import type { AccessibilityAudit, AuditFinding } from './accessibility';
 import { noticeUsage, NOTICE_KINDS, type NoticeUsage } from './notices';
 import { memoByProject, projectIndex } from './projectIndex';
 import { VALUES_FIELD_PREFIX, type Change } from './proposal';
@@ -258,6 +259,59 @@ function tallyNotices(p: Project, filters: NoticeFilters): Tally {
 /** How many project annotations have some notice (window tab and status bar). */
 export function noticedCount(p: Project): number {
   return noticesByAnnotation(p).size;
+}
+
+/**
+ * The same count with the audit's warnings (stage #1127): the annotations with a notice plus those with
+ * a `touch-target-small` that have none, so an annotation with both counts once (the same unit as
+ * `noticedCount`).
+ */
+export function noticedCountWithAudit(p: Project, audit: AccessibilityAudit): number {
+  const notices = noticesByAnnotation(p);
+  let count = notices.size;
+  for (const [id, entry] of audit) {
+    if (entry.findings.length > 0 && !notices.has(id)) count += 1;
+  }
+  return count;
+}
+
+/** A warning of the accessibility audit with the context to find it (a row of the Accessibility section). */
+export interface AuditRow {
+  readonly annotation: Annotation;
+  /** The marking; for an arrow annotation, the arrow's source marking. */
+  readonly marking: Marking;
+  /** From the root marking down to itself (the last item is `marking`). */
+  readonly path: readonly Marking[];
+  readonly layer: Layer;
+  readonly arrow?: Arrow;
+  readonly finding: AuditFinding;
+}
+
+/**
+ * The rows of the Notices window's Accessibility section, in Incomplete order (containers, markings
+ * depth-first, annotations). `onlyLayers` restricts them to the visible layers; the `kind` and "Only
+ * notices in use" filters of the table do not apply.
+ */
+export function buildAuditRows(
+  p: Project,
+  audit: AccessibilityAudit,
+  onlyLayers?: readonly Layer[],
+): AuditRow[] {
+  const places = annotationPlaces(p);
+  const allowed = onlyLayers && new Set(onlyLayers.map((l) => l.id));
+  const rows: { readonly order: number; readonly row: AuditRow }[] = [];
+  for (const [id, entry] of audit) {
+    const place = places.get(id);
+    if (!place || (allowed && !allowed.has(place.layer.id))) continue;
+    const { annotation, marking, path, layer, arrow } = place;
+    for (const finding of entry.findings) {
+      rows.push({
+        order: place.order,
+        row: { annotation, marking, path, layer, arrow, finding },
+      });
+    }
+  }
+  return rows.sort((a, b) => a.order - b.order).map(({ row }) => row);
 }
 
 /**
