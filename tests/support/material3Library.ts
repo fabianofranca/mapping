@@ -635,7 +635,8 @@ const A4_FIELDS: Record<string, string[]> = {
   switch: ['thumbIcon'],
   'swipe-to-dismiss': ['icon'],
 };
-const a4Keys = (id: string): string[] => (A4_FIELDS[id] ?? []).map((k) => `${k}Description`);
+const a4Keys = (id: string): string[] =>
+  (A4_FIELDS[id] ?? []).map((k) => `${k}Description`);
 /** The examples that A4 added (labeled and unlabeled actions of the top app bar, for the accessibility script). */
 const A4_EXAMPLES: Record<string, string[]> = {
   'top-app-bar': ['Labeled actions', 'Actions without a label'],

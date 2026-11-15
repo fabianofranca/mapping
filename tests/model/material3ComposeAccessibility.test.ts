@@ -86,7 +86,12 @@ const field = (key: string, role: string, required?: false): ExpectedPart => ({
   label: [`${key}Description`],
   ...(required === undefined ? {} : { required }),
 });
-const row = (id: string, table: string, role: string, columns: string[]): ExpectedPart => ({
+const row = (
+  id: string,
+  table: string,
+  role: string,
+  columns: string[],
+): ExpectedPart => ({
   id,
   when: table,
   role,
@@ -127,9 +132,7 @@ const PARTS: Record<string, ExpectedPart[]> = {
   'navigation-drawer': [NAVIGATION_ITEM],
   tabs: [{ ...NAVIGATION_ITEM, id: 'tab' }],
   'dropdown-menu': [row('item', 'items', 'menuitem', ['text'])],
-  'segmented-button': [
-    row('option', 'options', 'radio', ['label', 'iconDescription']),
-  ],
+  'segmented-button': [row('option', 'options', 'radio', ['label', 'iconDescription'])],
 };
 
 /** The new optional `string` fields (`<field>Description`) and the new columns (`iconDescription`). */
@@ -186,7 +189,8 @@ describe('Material 3 (Compose): accessibility of the library (A4, decision 11)',
     } else {
       expect(a?.label?.fields, id).toEqual(expected.label);
       expect(a?.label?.required, `${id}: required`).toBe(
-        expected.required ?? (INTERACTIVE_ROLES as readonly string[]).includes(expected.role),
+        expected.required ??
+          (INTERACTIVE_ROLES as readonly string[]).includes(expected.role),
       );
     }
   });
@@ -236,7 +240,8 @@ describe('Material 3 (Compose): accessibility of the library (A4, decision 11)',
       })),
       id,
     ).toEqual(expected);
-    for (const part of parts) expect(part.name.length, `${id}/${part.id}: name`).toBeGreaterThan(0);
+    for (const part of parts)
+      expect(part.name.length, `${id}/${part.id}: name`).toBeGreaterThan(0);
   });
 
   it('only the listed types have parts', () => {
@@ -252,26 +257,35 @@ describe('Material 3 (Compose): the label fields and columns are new, optional a
   const find = (type: SpecAnnotationType, key: string) =>
     type.fields.find((f) => f.key === key);
 
-  it.each(Object.entries(NEW_FIELDS))('%s: <field>Description exist and are optional strings', (id, keys) => {
-    const type = typeOf(id);
-    for (const key of keys) {
-      const f = find(type, `${key}Description`);
-      expect(f, `${id}.${key}Description`).toBeDefined();
-      expect(f?.type).toBe('string');
-      expect(f?.required ?? false).toBe(false);
-      expect(f?.default, 'no default: empty is a pending item').toBeUndefined();
-      expect(find(type, key), `${id}.${key}: the icon field`).toBeDefined();
-    }
-  });
+  it.each(Object.entries(NEW_FIELDS))(
+    '%s: <field>Description exist and are optional strings',
+    (id, keys) => {
+      const type = typeOf(id);
+      for (const key of keys) {
+        const f = find(type, `${key}Description`);
+        expect(f, `${id}.${key}Description`).toBeDefined();
+        expect(f?.type).toBe('string');
+        expect(f?.required ?? false).toBe(false);
+        expect(
+          (f as { default?: unknown } | undefined)?.default,
+          'no default: empty is a pending item',
+        ).toBeUndefined();
+        expect(find(type, key), `${id}.${key}: the icon field`).toBeDefined();
+      }
+    },
+  );
 
-  it.each(Object.entries(NEW_COLUMNS))('%s: the table has the optional iconDescription column', (id, table) => {
-    const f = find(typeOf(id), table);
-    expect(f?.type).toBe('table');
-    if (f?.type !== 'table') return;
-    const column = f.columns.find((c) => c.key === 'iconDescription');
-    expect(column?.type).toBe('string');
-    expect(column?.required ?? false).toBe(false);
-  });
+  it.each(Object.entries(NEW_COLUMNS))(
+    '%s: the table has the optional iconDescription column',
+    (id, table) => {
+      const f = find(typeOf(id), table);
+      expect(f?.type).toBe('table');
+      if (f?.type !== 'table') return;
+      const column = f.columns.find((c) => c.key === 'iconDescription');
+      expect(column?.type).toBe('string');
+      expect(column?.required ?? false).toBe(false);
+    },
+  );
 
   it('every label field of a part exists, in the type or in the part table', () => {
     for (const type of types) {
@@ -421,20 +435,26 @@ describe('Material 3 (Compose): the Fidelity cites the Compose and the roadmap i
     }
   });
 
-  it.each(EXPANDED)('%s: the Fidelity cites the minimumInteractiveComponentSize line and the overlap roadmap', (id) => {
-    const f = fidelity(id);
-    expect(f, id).toMatch(/touchTarget/);
-    expect(f, id).toMatch(/expanded/);
-    expect(f, `${id}: cites a Kotlin line`).toMatch(/\.kt`? \(lines? \d+/);
-    expect(f, `${id}: overlap not audited`).toMatch(/overlap/i);
-    expect(f, `${id}: roadmap`).toContain(`#${OVERLAP_ROADMAP}`);
-  });
+  it.each(EXPANDED)(
+    '%s: the Fidelity cites the minimumInteractiveComponentSize line and the overlap roadmap',
+    (id) => {
+      const f = fidelity(id);
+      expect(f, id).toMatch(/touchTarget/);
+      expect(f, id).toMatch(/expanded/);
+      expect(f, `${id}: cites a Kotlin line`).toMatch(/\.kt`? \(lines? \d+/);
+      expect(f, `${id}: overlap not audited`).toMatch(/overlap/i);
+      expect(f, `${id}: roadmap`).toContain(`#${OVERLAP_ROADMAP}`);
+    },
+  );
 
-  it.each(['chip', 'segmented-button'])('%s: the Fidelity records the role of the base case and cites the role-by-case roadmap', (id) => {
-    const f = fidelity(id);
-    expect(f, id).toMatch(/Role\.\w+/);
-    expect(f, id).toContain(`#${ROLE_BY_CASE_ROADMAP}`);
-  });
+  it.each(['chip', 'segmented-button'])(
+    '%s: the Fidelity records the role of the base case and cites the role-by-case roadmap',
+    (id) => {
+      const f = fidelity(id);
+      expect(f, id).toMatch(/Role\.\w+/);
+      expect(f, id).toContain(`#${ROLE_BY_CASE_ROADMAP}`);
+    },
+  );
 
   it('the docs that registered the minimum as text no longer say it is not a field of the type', () => {
     for (const id of [
