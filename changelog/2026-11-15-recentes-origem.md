@@ -1,4 +1,4 @@
-# Recent projects, source in the tester state — [Não lançado] (épico `epic/recentes-origem`, PR #0, MCP unchanged, schema v19)
+# Recent projects, source in the tester state — 2026-11-15 (épico `epic/recentes-origem`, PR #0, MCP unchanged, schema v20)
 
 ## Alterado
 
