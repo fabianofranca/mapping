@@ -1,4 +1,4 @@
-# Usage and quality per role in the queue — [Não lançado] (épico `epic/qualidade-por-papel`, PR #0, MCP 0.41.0 unchanged, schema v19)
+# Usage and quality per role in the queue — 2026-11-15 (épico `epic/qualidade-por-papel`, PR #0, MCP unchanged, schema v20)
 
 ## Adicionado
 

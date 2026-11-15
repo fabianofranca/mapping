@@ -1,4 +1,4 @@
-# Usage and quality per role in the queue — [Não lançado] (épico `epic/qualidade-por-papel`)
+# Usage and quality per role in the queue — 2026-11-15 (épico `epic/qualidade-por-papel`)
 
 ## Pendências
 
