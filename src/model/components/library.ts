@@ -7,7 +7,7 @@
  * `showDirectoryPicker`) become the same `{ path, text }` list before reaching here.
  */
 import type { ComponentFile, FieldValue } from './componentFormat';
-import { findSlot } from './arrange';
+import { componentSlots } from './slots';
 import {
   type FieldSource,
   type Origin,
@@ -216,15 +216,14 @@ function checkTypeSources(
   problems: string[],
 ): void {
   if (!component) return;
-  const slot = findSlot(component);
+  const slots = componentSlots(component);
   sources.forEach((source, index) => {
     if (source.slot === undefined) return;
     const at = `${id}.sources[${index}].slot`;
-    if (!slot) problems.push(`${at}: the component has no slot`);
-    else if (slot.name !== source.slot) {
-      problems.push(
-        `${at}: the component's slot is "${slot.name ?? ''}", not "${source.slot}"`,
-      );
+    if (slots.length === 0) problems.push(`${at}: the component has no slot`);
+    else if (!slots.some((slot) => slot.name === source.slot)) {
+      const names = slots.map((slot) => `"${slot.name ?? ''}"`).join(', ');
+      problems.push(`${at}: the component's slot is ${names}, not "${source.slot}"`);
     }
   });
 }

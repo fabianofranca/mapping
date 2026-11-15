@@ -619,6 +619,7 @@ export const templatePtBR: {
   'model.engine.typeNoComponent': '{path}: tipo sem componente: {typeId}',
   'model.engine.childrenIgnored': '{path}: filhos ignorados (componente sem slot)',
   'model.engine.fillInHugUsing': '{path}: fill dentro de hug: usando hug',
+  'model.engine.slotUnknown': '{path}: slot desconhecido "{slot}": usando o slot padrão',
   'model.engine.slotInvisible': '{path}: slot invisível: filhos ignorados',
   'model.engine.childrenOutsideMaxLines': '{count} filhos fora de maxLines: {name}',
   'model.engine.linesUnstable': '$lines instável: {name}',

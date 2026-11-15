@@ -1,4 +1,4 @@
-import { findSlot } from './components/arrange';
+import { componentSlots } from './components/slots';
 import type { ComponentFile } from './components/componentFormat';
 import { parseIconsText, type IconSet } from './components/icons';
 import { resolvePathChecked } from './components/library';
@@ -294,7 +294,7 @@ export function markingTypeName(p: Project, markingId: string): string | null {
 
 /** Component with a slot: the component has a slot that receives child markings. */
 export function hasSlotComponent(component: ComponentFile): boolean {
-  return findSlot(component) !== undefined;
+  return componentSlots(component).length > 0;
 }
 
 /**

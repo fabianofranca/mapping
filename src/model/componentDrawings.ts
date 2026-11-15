@@ -1,16 +1,33 @@
-import { clippedSlotBox, findSlot, slotBoxOfScene } from './components/arrange';
+import {
+  resolveSlotLayout,
+  slotClipShapes,
+  slotsOfScene,
+  tokenizedComponent,
+  type ResolvedSlotLayout,
+} from './components/arrange';
 import { intersectClips } from './components/box';
 import type {
   ComponentFile,
   FieldValues,
   ScreenAnchor,
+  SlotTemplate,
 } from './components/componentFormat';
 import {
   instantiate,
   type InstantiateOptions,
+  type SlotSize,
   type TextMeasurer,
 } from './components/instantiate';
-import type { ResolvedTokens } from './components/tokens';
+import { applyTokens, type ResolvedTokens } from './components/tokens';
+import {
+  assignSlots,
+  componentSlots,
+  fallbackFields,
+  slotKey,
+  type SlotAssignment,
+  type SlotChild,
+  type SlotIssue,
+} from './components/slots';
 import {
   NO_PROVIDED,
   extendProvided,
@@ -32,7 +49,12 @@ import { effectiveDirection } from './direction';
 import { effectiveDrawingMode } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
-import { multiply, type FrameNode, type Matrix } from './components/scene';
+import {
+  multiply,
+  type CornerRadius,
+  type FrameNode,
+  type Matrix,
+} from './components/scene';
 import type { AnchorSide, Marking, Project, ReadingDirection, Rect } from './types';
 
 // Component drawings (Library stage, B3): the instantiated scene of each marking that has a
@@ -85,12 +107,58 @@ export interface ComponentDrawing {
    */
   readonly clip?: Rect;
   /**
+   * Rounded shapes that also cut the child of a slot with `clip` (decision 23 of #1080): the boxes of
+   * the template frames (with `clip` and a `cornerRadius` > 0) that contain the slot, in the same
+   * space as `clip` (image pixels or canvas units), with their radius already in that space. The
+   * drawing only shows inside `clip` **and** inside every shape. Only present when some shape has a
+   * radius (without it, `clip` is the whole story); a child of the child inherits its parent's shapes
+   * and adds its own.
+   */
+  readonly clipShape?: readonly ClipShape[];
+  /**
+   * The slots of the drawn scene (decision 7 of #1080), in template order, with the box of the final
+   * drawing in image pixels (or canvas units) and the child markings the geometry put in each one.
+   * Empty with `screen` (no probe and no assignment) and in a component without a slot.
+   */
+  readonly slots: readonly DrawnSlot[];
+  /**
+   * The slot (its `id`; the empty key for the one without `id`) of each child marking of this one;
+   * `null` for the child that no visible slot receives. Empty with `screen`.
+   */
+  readonly slotOf: ReadonlyMap<string, string | null>;
+  /**
+   * The default-content fields of the slots that hold child markings (they mean nothing while a
+   * child fills the slot), by field name, with the `id` of the filled slot (`fallbackFields`).
+   */
+  readonly inactiveFields: ReadonlyMap<string, string>;
+  /** The children no slot accepts or beyond a slot's `max` (stage SL4); empty until then. */
+  readonly slotIssues: readonly SlotIssue[];
+  /**
    * The marking's anchor (v20): the stored side (absent = the component's default) and the
    * target marking's rectangle, in the same space as the `rect` (container pixels or canvas
    * units). It is what the engine reads in the `$anchor.*` pseudo-fields (R3, part 2); absent
    * without an anchor.
    */
   readonly anchor?: DrawingAnchor;
+}
+
+/** One slot of a drawing (see `ComponentDrawing.slots`). */
+export interface DrawnSlot {
+  /** The slot's `id` (`slotKey`): the empty key for the only slot that has none. */
+  readonly id: string;
+  /** The slot's label, as the scene names it. */
+  readonly name: string;
+  readonly box: Rect;
+  /** The ids of the child markings in the slot, in the order of the siblings. */
+  readonly children: readonly string[];
+  /** The slot draws its default content (it has a `fallback` and no child). */
+  readonly fallback: boolean;
+}
+
+/** A rounded box that cuts the drawing of a slot's child (see `ComponentDrawing.clipShape`). */
+export interface ClipShape {
+  readonly box: Rect;
+  readonly radius: CornerRadius;
 }
 
 /** The side and rectangle of a drawing's anchor (see `ComponentDrawing.anchor`). */
@@ -137,8 +205,8 @@ interface Entry {
    * 15).
    */
   readonly anchor: DrawingAnchor | undefined;
-  /** Rectangles of the direct children (containers only). */
-  readonly childRects: readonly Rect[];
+  /** The direct children (containers only): id, rectangle and type id, in sibling order. */
+  readonly kids: readonly SlotChild[];
   /**
    * Inherited color: only the values offered by the ancestors that the component reads
    * (`$provided`).
@@ -146,12 +214,12 @@ interface Entry {
   readonly provided: ProvidedValues;
   /** What this marking's slot offers to its children (`provide`), already resolved. */
   readonly offers: ProvidedValues | undefined;
-  /** The clip this marking imposes on its children (slot box with `clip`), if any. */
-  readonly slotClip: Rect | undefined;
-  /** The clip it receives from its parent (the parent's `childClip`, the same object). */
-  readonly clip: Rect | undefined;
-  /** The clip the children receive: the `slotClip` inside the received `clip` (intersection). */
-  readonly childClip: Rect | undefined;
+  /** What each slot with `clip` of this marking imposes on its children. */
+  readonly slotClips: ReadonlyMap<string, SlotClip>;
+  /** What this marking receives from the slot of its parent that it is in. */
+  readonly received: Received;
+  /** What each child receives: its slot's clip and shapes inside what this marking received. */
+  readonly childReceived: ReadonlyMap<string, Received>;
   readonly drawing: ComponentDrawing;
 }
 
@@ -180,8 +248,18 @@ function sameAnchor(a: DrawingAnchor | undefined, b: DrawingAnchor | undefined):
   return a.side === b.side && sameRect(a.rect, b.rect);
 }
 
-function sameRects(a: readonly Rect[], b: readonly Rect[]): boolean {
-  return a.length === b.length && a.every((r, i) => sameRect(r, b[i] as Rect));
+function sameKids(a: readonly SlotChild[], b: readonly SlotChild[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((kid, i) => {
+      const other = b[i] as SlotChild;
+      return (
+        kid.id === other.id &&
+        kid.typeId === other.typeId &&
+        sameRect(kid.rect, other.rect)
+      );
+    })
+  );
 }
 
 /** Same value; the rows of a table (lists recreated on every read) compare cell by cell. */
@@ -213,28 +291,109 @@ function stableRect(before: Rect | undefined, next: Rect | undefined): Rect | un
     : next;
 }
 
-/** The same drawing with another clip from the parent (without the key when there is none). */
-function withClip(drawing: ComponentDrawing, clip: Rect | undefined): ComponentDrawing {
+function sameRadius(a: CornerRadius, b: CornerRadius): boolean {
+  if (typeof a === 'number' || typeof b === 'number') return a === b;
+  return a.every((r, i) => r === b[i]);
+}
+
+function sameShapes(
+  a: readonly ClipShape[] | undefined,
+  b: readonly ClipShape[] | undefined,
+): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return (
+    a.length === b.length &&
+    a.every((s, i) => {
+      const other = b[i] as ClipShape;
+      return sameRect(s.box, other.box) && sameRadius(s.radius, other.radius);
+    })
+  );
+}
+
+/** The previous shapes when they equal the new ones (the canvas compares them by identity). */
+function stableShapes(
+  before: readonly ClipShape[] | undefined,
+  next: readonly ClipShape[] | undefined,
+): readonly ClipShape[] | undefined {
+  return sameShapes(before, next) ? before : next;
+}
+
+/** What a marking receives from the slot of its parent that it is in (see `ComponentDrawing.clip`). */
+interface Received {
+  readonly clip: Rect | undefined;
+  readonly shapes: readonly ClipShape[] | undefined;
+}
+
+const NOTHING_RECEIVED: Received = { clip: undefined, shapes: undefined };
+
+/** What one slot with `clip` imposes on its children (image pixels or canvas units). */
+interface SlotClip {
+  readonly clip: Rect;
+  readonly shapes: readonly ClipShape[] | undefined;
+}
+
+const NO_SLOT_CLIPS: ReadonlyMap<string, SlotClip> = new Map();
+
+/** A drawing with the clip and the shapes its parent's slot gives it (without the keys when there are none). */
+function withReceived(drawing: ComponentDrawing, received: Received): ComponentDrawing {
   const copy: { -readonly [K in keyof ComponentDrawing]: ComponentDrawing[K] } = {
     ...drawing,
   };
   delete copy.clip;
-  if (clip !== undefined) copy.clip = clip;
+  delete copy.clipShape;
+  if (received.clip !== undefined) copy.clip = received.clip;
+  if (received.shapes !== undefined) copy.clipShape = received.shapes;
   return copy;
 }
 
 /**
- * What situates the drawing: the screen anchor (`screen`) or, otherwise, the parent's clip
- * (`clip`).
+ * What a marking passes down to each of its children: the clip of the slot the child is in (when it
+ * has `clip`) inside what the marking itself received, and the rounded shapes it received plus the
+ * slot's. A child in no slot, or in one without `clip`, gets what the marking received. Reuses the
+ * previous values when equal (the canvas compares them by identity).
+ */
+function childReceived(
+  slotClips: ReadonlyMap<string, SlotClip>,
+  slotOf: ReadonlyMap<string, string | null>,
+  received: Received,
+  before: ReadonlyMap<string, Received> | undefined,
+): ReadonlyMap<string, Received> {
+  const out = new Map<string, Received>();
+  for (const [childId, slot] of slotOf) {
+    const own = slot === null ? undefined : slotClips.get(slot);
+    out.set(childId, receivedFrom(own, received, before?.get(childId)));
+  }
+  return out;
+}
+
+/** What one child receives: its slot's clip inside what the marking received, with stable identities. */
+function receivedFrom(
+  own: SlotClip | undefined,
+  received: Received,
+  previous: Received | undefined,
+): Received {
+  const shapes = [...(received.shapes ?? []), ...(own?.shapes ?? [])];
+  return {
+    clip: stableRect(previous?.clip, intersectClips(own?.clip, received.clip)),
+    shapes: stableShapes(previous?.shapes, shapes.length === 0 ? undefined : shapes),
+  };
+}
+
+/**
+ * What situates the drawing: the screen anchor (`screen`) or, otherwise, what the parent's slot
+ * gives it (`clip` and `clipShape`).
  */
 function placement(
   screen: ComponentFile['screen'],
   rect: Rect,
-  clip: Rect | undefined,
-): Pick<ComponentDrawing, 'screen' | 'clip'> {
+  received: Received,
+): Pick<ComponentDrawing, 'screen' | 'clip' | 'clipShape'> {
   if (screen !== undefined)
     return { screen: { anchor: screen.anchor ?? 'center', rect } };
-  return clip === undefined ? {} : { clip };
+  return {
+    ...(received.clip === undefined ? {} : { clip: received.clip }),
+    ...(received.shapes === undefined ? {} : { clipShape: received.shapes }),
+  };
 }
 
 /** The matrix of the scene root in units: `translate(rect.x, rect.y) · scale(density)`. */
@@ -245,15 +404,13 @@ function rootMatrix(rect: Rect, density: number): Matrix {
 /** Key of `shortfalls` for the child that goes past the slot's box. */
 export const SLOT_OVERFLOW = 'content larger than the box: slot';
 
+/** The `shortfalls` key of a slot: the plain one for the slot without `id`, otherwise with its `id`. */
+export function slotOverflowKey(slotId: string): string {
+  return slotId === '' ? SLOT_OVERFLOW : `${SLOT_OVERFLOW} ${slotId}`;
+}
+
 /** How much the worst child goes past the slot's box (with the rounding tolerance); 0 = fits. */
-function slotExcess(
-  root: FrameNode,
-  childRects: readonly Rect[],
-  toPixels: (box: Rect) => Rect,
-): number {
-  const unitBox = slotBoxOfScene(root);
-  if (unitBox === undefined) return 0;
-  const box = toPixels(unitBox);
+function slotExcess(box: Rect, childRects: readonly Rect[]): number {
   let worst = 0;
   for (const r of childRects) {
     const excess = Math.max(
@@ -268,20 +425,24 @@ function slotExcess(
 }
 
 /**
- * The drawing's "does not fit": the engine's warning (with how much is missing) and the child
- * outside the slot.
+ * The drawing's "does not fit": the engine's warning (with how much is missing) and, per slot, the
+ * children outside its box.
  */
 function overflowsOf(
-  overflowWarnings: readonly string[],
-  shortfalls: Readonly<Record<string, number>>,
-  root: FrameNode,
-  childRects: readonly Rect[],
-  space: UnitSpace,
+  instantiated: ReturnType<typeof instantiate>,
+  slots: readonly DrawnSlot[],
+  rectOf: ReadonlyMap<string, Rect>,
+  density: number,
 ): Record<string, number> {
   const found: Record<string, number> = {};
-  for (const w of overflowWarnings) found[w] = (shortfalls[w] ?? 0) * space.density;
-  const excess = childRects.length > 0 ? slotExcess(root, childRects, space.toPixels) : 0;
-  if (excess > 0) found[SLOT_OVERFLOW] = excess;
+  const shortfalls = instantiated.shortfalls ?? {};
+  for (const w of instantiated.overflowWarnings ?? [])
+    found[w] = (shortfalls[w] ?? 0) * density;
+  for (const slot of slots) {
+    const rects = slot.children.flatMap((id) => rectOf.get(id) ?? []);
+    const excess = rects.length > 0 ? slotExcess(slot.box, rects) : 0;
+    if (excess > 0) found[slotOverflowKey(slot.id)] = excess;
+  }
   return found;
 }
 
@@ -327,34 +488,6 @@ function instantiateOptions(
   };
 }
 
-/** The "does not fit" of an instantiated scene, in image pixels. */
-function overflowsOfScene(
-  instantiated: ReturnType<typeof instantiate>,
-  childRects: readonly Rect[],
-  space: UnitSpace,
-): Record<string, number> {
-  return overflowsOf(
-    instantiated.overflowWarnings ?? [],
-    instantiated.shortfalls ?? {},
-    instantiated.root,
-    childRects,
-    space,
-  );
-}
-
-/**
- * The clip that the slot's box imposes on the children, in image pixels (no clip with
- * `screen`).
- */
-function slotClipOf(
-  screen: ComponentFile['screen'],
-  root: FrameNode,
-  space: UnitSpace,
-): Rect | undefined {
-  const unitClip = screen === undefined ? clippedSlotBox(root) : undefined;
-  return unitClip === undefined ? undefined : space.toPixels(unitClip);
-}
-
 /**
  * The scene with the density scale at the root; with density 1 the scene itself (already in
  * pixels).
@@ -365,38 +498,229 @@ function withRootMatrix(root: FrameNode, rect: Rect, density: number): FrameNode
     : { ...root, transform: multiply(rootMatrix(rect, density), root.transform) };
 }
 
-function draw(
-  mc: MarkingComponent,
-  markingId: string,
-  containerId: string | null,
-  rect: Rect,
-  values: FieldValues,
-  valueWarnings: readonly ModelMessage[],
-  childRects: readonly Rect[],
-  measure: TextMeasurer,
-  mode: string | undefined,
-  provided: ProvidedValues,
-  clip: Rect | undefined,
+// ---------------------------------------------------------------------------------------
+// Slots: the probe, the assignment and the final drawing (decisions 6 and 7 of #1080)
+// ---------------------------------------------------------------------------------------
+
+const NO_SLOTS: readonly DrawnSlot[] = [];
+const NO_SLOT_OF: ReadonlyMap<string, string | null> = new Map();
+const NO_FIELDS: ReadonlyMap<string, string> = new Map();
+const NO_ISSUES: readonly SlotIssue[] = [];
+
+/** Does a size (`width`/`height` of the slot) depend on what is inside it (`hug`, intrinsic, expression)? */
+function takesContent(spec: unknown): boolean {
+  if (spec === undefined || typeof spec === 'number' || spec === 'fill') return false;
+  return !(typeof spec === 'string' && spec.endsWith('%'));
+}
+
+/** Does the slot's size depend on its children (so the final drawing measures them)? */
+function measuresContent(slot: SlotTemplate): boolean {
+  return takesContent(slot.width) || takesContent(slot.height);
+}
+
+/** The box that joins the rectangles (image pixels), in component units, plus the slot's padding. */
+function contentSize(
+  rects: readonly Rect[],
+  padding: ResolvedSlotLayout['padding'],
   density: number,
-  direction: ReadingDirection,
-  anchor: DrawingAnchor | undefined,
-): {
-  drawing: ComponentDrawing;
-  offers: ProvidedValues | undefined;
-  slotClip: Rect | undefined;
-} {
+): SlotSize {
+  const left = Math.min(...rects.map((r) => r.x));
+  const top = Math.min(...rects.map((r) => r.y));
+  const right = Math.max(...rects.map((r) => r.x + r.width));
+  const bottom = Math.max(...rects.map((r) => r.y + r.height));
+  return {
+    width: (right - left) / density + padding.left + padding.right,
+    height: (bottom - top) / density + padding.top + padding.bottom,
+  };
+}
+
+/** The slot template with that key, with the tokens applied (its `padding` can be a token). */
+function tokenizedSlot(
+  component: ComponentFile,
+  tokens: ResolvedTokens | undefined,
+  key: string,
+): SlotTemplate | undefined {
+  const drawn =
+    tokens === undefined ? tokenizedComponent(component) : applyTokens(component, tokens);
+  return componentSlots(drawn).find((slot) => slotKey(slot) === key);
+}
+
+/** What the probe and the assignment decide about the final drawing. */
+interface SlotPlan {
+  readonly assignment: SlotAssignment;
+  /** `slotContent` of the final drawing: the children's size of each filled slot that measures them. */
+  readonly content: ReadonlyMap<string, SlotSize>;
+  /** The other filled slots (a fixed size has nothing to measure): only their `fallback` goes away. */
+  readonly filled: ReadonlySet<string>;
+  /** Is the probe not the final drawing (a filled slot has a `fallback` or measures its children)? */
+  readonly needsFinal: boolean;
+}
+
+function planSlots(
+  mc: MarkingComponent,
+  values: FieldValues,
+  tokens: ResolvedTokens | undefined,
+  kids: readonly SlotChild[],
+  space: UnitSpace,
+  probe: FrameNode,
+): SlotPlan {
+  const inputs = [...slotsOfScene(probe)].map(([id, slot]) => ({
+    id,
+    box: space.toPixels(slot.box),
+  }));
+  const assignment = assignSlots(inputs, kids);
+  const templates = new Map(componentSlots(mc.component).map((s) => [slotKey(s), s]));
+  const rectOf = new Map(kids.map((k) => [k.id, k.rect]));
+  const content = new Map<string, SlotSize>();
+  const filled = new Set<string>();
+  let needsFinal = false;
+  for (const [id, ids] of assignment.children) {
+    const template = templates.get(id);
+    if (ids.length === 0 || template === undefined) continue;
+    needsFinal ||= template.fallback !== undefined || measuresContent(template);
+    if (!measuresContent(template)) {
+      filled.add(id);
+      continue;
+    }
+    const slot = tokenizedSlot(mc.component, tokens, id) ?? template;
+    const { padding } = resolveSlotLayout(slot, values);
+    content.set(
+      id,
+      contentSize(
+        ids.flatMap((childId) => rectOf.get(childId) ?? []),
+        padding,
+        space.density,
+      ),
+    );
+  }
+  return { assignment, content, filled, needsFinal };
+}
+
+/** The radius of a shape in image pixels (× the density). */
+function scaledRadius(radius: CornerRadius, density: number): CornerRadius {
+  if (density === 1) return radius;
+  return typeof radius === 'number'
+    ? radius * density
+    : ([
+        radius[0] * density,
+        radius[1] * density,
+        radius[2] * density,
+        radius[3] * density,
+      ] as const);
+}
+
+/** What each slot with `clip` of the drawn scene imposes on its children (in image pixels). */
+function slotClipsOf(root: FrameNode, space: UnitSpace): ReadonlyMap<string, SlotClip> {
+  const out = new Map<string, SlotClip>();
+  for (const [id, slot] of slotsOfScene(root)) {
+    if (!slot.clip) continue;
+    const shapes = slotClipShapes(root, id).map((shape) => ({
+      box: space.toPixels(shape.box),
+      radius: scaledRadius(shape.radius, space.density),
+    }));
+    out.set(id, {
+      clip: space.toPixels(slot.box),
+      shapes: shapes.length === 0 ? undefined : shapes,
+    });
+  }
+  return out.size === 0 ? NO_SLOT_CLIPS : out;
+}
+
+/** The slots of the drawn scene, with their boxes in image pixels and their children. */
+function drawnSlots(
+  component: ComponentFile,
+  root: FrameNode,
+  space: UnitSpace,
+  assignment: SlotAssignment,
+): readonly DrawnSlot[] {
+  const templates = new Map(componentSlots(component).map((s) => [slotKey(s), s]));
+  return [...slotsOfScene(root)].map(([id, slot]) => {
+    const children = assignment.children.get(id) ?? [];
+    return {
+      id,
+      name: slot.name,
+      box: space.toPixels(slot.box),
+      children,
+      fallback: children.length === 0 && templates.get(id)?.fallback !== undefined,
+    };
+  });
+}
+
+/** The default-content fields of the slots that hold children (they mean nothing now), by field. */
+function inactiveFieldsOf(
+  component: ComponentFile,
+  assignment: SlotAssignment,
+): ReadonlyMap<string, string> {
+  const out = new Map<string, string>();
+  for (const [id, fields] of fallbackFields(component)) {
+    if ((assignment.children.get(id) ?? []).length === 0) continue;
+    for (const field of fields) if (!out.has(field)) out.set(field, id);
+  }
+  return out.size === 0 ? NO_FIELDS : out;
+}
+
+interface DrawInput {
+  readonly mc: MarkingComponent;
+  readonly markingId: string;
+  readonly containerId: string | null;
+  readonly rect: Rect;
+  readonly values: FieldValues;
+  readonly valueWarnings: readonly ModelMessage[];
+  /** The direct children of the marking (containers only; none with `screen`). */
+  readonly kids: readonly SlotChild[];
+  readonly measure: TextMeasurer;
+  readonly mode: string | undefined;
+  readonly provided: ProvidedValues;
+  readonly received: Received;
+  readonly density: number;
+  readonly direction: ReadingDirection;
+  readonly anchor: DrawingAnchor | undefined;
+}
+
+interface Drawn {
+  readonly drawing: ComponentDrawing;
+  readonly offers: ProvidedValues | undefined;
+  readonly slotClips: ReadonlyMap<string, SlotClip>;
+}
+
+/** The scene of a marking: the probe (slots empty) and, when children change it, the final drawing. */
+function instantiateWithSlots(
+  input: DrawInput,
+  tokens: ResolvedTokens | undefined,
+  space: UnitSpace,
+  options: InstantiateOptions,
+): { instantiated: ReturnType<typeof instantiate>; plan: SlotPlan | undefined } {
+  const { mc, values, kids } = input;
+  const screen = mc.component.screen !== undefined;
+  const target: Rect = screen ? { x: 0, y: 0, ...mc.component.size } : space.box;
+  const probe = instantiate(mc.component, values, target, options);
+  // With `screen` there is no probe and no assignment (decision 6): the slot's box is not in the
+  // children's space.
+  if (screen || componentSlots(mc.component).length === 0)
+    return { instantiated: probe, plan: undefined };
+  const plan = planSlots(mc, values, tokens, kids, space, probe.root);
+  if (!plan.needsFinal) return { instantiated: probe, plan };
+  const instantiated = instantiate(mc.component, values, target, {
+    ...options,
+    slotContent: plan.content,
+    filledSlots: plan.filled,
+  });
+  return { instantiated, plan };
+}
+
+function draw(input: DrawInput): Drawn {
+  const { mc, markingId, containerId, rect, valueWarnings, received } = input;
+  const { measure, mode, provided, density, direction, anchor } = input;
   const tokens =
     mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
   const screen = mc.component.screen;
   // In screen pixels the drawing measures the component's `size`, at the origin (the canvas anchors
   // it) and does not scale with the density, just as it does not scale with the zoom.
   const space = unitSpaceOf(rect, screen === undefined ? density : 1);
-  const box: Rect =
-    screen === undefined ? space.box : { x: 0, y: 0, ...mc.component.size };
-  const instantiated = instantiate(
-    mc.component,
-    values,
-    box,
+  const { instantiated, plan } = instantiateWithSlots(
+    input,
+    tokens,
+    space,
     instantiateOptions(
       markingId,
       measure,
@@ -407,27 +731,72 @@ function draw(
     ),
   );
   const { messages, provides } = instantiated;
+  const slots =
+    plan === undefined
+      ? NO_SLOTS
+      : drawnSlots(mc.component, instantiated.root, space, plan.assignment);
+  const slotOf =
+    plan === undefined
+      ? NO_SLOT_OF
+      : new Map(input.kids.map((k) => [k.id, plan.assignment.slotOf.get(k.id) ?? null]));
   // With `screen` the drawing may go past the marking's rectangle: there is no "does not fit"
   // pending item.
   const found =
-    screen === undefined ? overflowsOfScene(instantiated, childRects, space) : {};
-  const root = withRootMatrix(instantiated.root, rect, space.density);
+    screen === undefined
+      ? overflowsOf(
+          instantiated,
+          slots,
+          new Map(input.kids.map((k) => [k.id, k.rect])),
+          space.density,
+        )
+      : {};
   const drawing: ComponentDrawing = {
     markingId,
     containerId,
     annotationId: mc.annotation.id,
     layerId: mc.annotation.layerId,
-    root,
+    root: withRootMatrix(instantiated.root, rect, space.density),
     warnings: [...messages, ...valueWarnings],
     overflow: Object.keys(found).length > 0,
     shortfalls: found,
-    ...placement(screen, rect, clip),
+    slots,
+    slotOf,
+    inactiveFields:
+      plan === undefined ? NO_FIELDS : inactiveFieldsOf(mc.component, plan.assignment),
+    slotIssues: NO_ISSUES,
+    ...placement(screen, rect, received),
     ...(anchor === undefined ? {} : { anchor }),
   };
-  // With `screen` the scene is at the origin (screen pixels): the slot's box is not in the
-  // children's space.
-  const slotClip = slotClipOf(screen, instantiated.root, space);
-  return { drawing, offers: provides, slotClip };
+  return {
+    drawing,
+    offers: provides,
+    slotClips:
+      screen === undefined ? slotClipsOf(instantiated.root, space) : NO_SLOT_CLIPS,
+  };
+}
+
+const NO_KIDS: readonly SlotChild[] = [];
+
+/** The previous clips and shapes of a slot when they equal the new ones (stable identity). */
+function stableSlotClips(
+  before: ReadonlyMap<string, SlotClip> | undefined,
+  next: ReadonlyMap<string, SlotClip>,
+): ReadonlyMap<string, SlotClip> {
+  if (before === undefined || next.size === 0) return next;
+  return new Map(
+    [...next].map(([id, now]) => {
+      const was = before.get(id);
+      const same =
+        was !== undefined &&
+        sameRect(was.clip, now.clip) &&
+        sameShapes(was.shapes, now.shapes);
+      return [id, same ? was : now];
+    }),
+  );
+}
+
+function sameReceived(a: Received, b: Received): boolean {
+  return a.clip === b.clip && a.shapes === b.shapes;
 }
 
 /**
@@ -436,8 +805,8 @@ function draw(
  * depends on changes: the rectangle, the component (by identity), the resolved values (shallow
  * comparison), the measurer, the fonts epoch, the effective mode, density and direction, the
  * anchor (side and target rectangle; only the anchored ones depend on it) and, in containers,
- * the children's rectangles; otherwise the same `ComponentDrawing` comes back. The same inputs
- * return the same `Map`.
+ * the children (id, rectangle and type: they decide the slots); otherwise the same
+ * `ComponentDrawing` comes back. The same inputs return the same `Map`.
  */
 export function createDrawingCache(): DrawingCache {
   let entries = new Map<string, Entry>();
@@ -470,36 +839,50 @@ export function createDrawingCache(): DrawingCache {
     const { children, markings: markingsById } = projectIndex(p);
     const next = new Map<string, Entry>();
     const drawings = new Map<string, ComponentDrawing>();
+    const components = new Map<string, MarkingComponent | null>();
+    const componentOf = (id: string): MarkingComponent | null => {
+      let found = components.get(id);
+      if (found === undefined) {
+        found = markingComponent(p, catalog, id);
+        components.set(id, found);
+      }
+      return found;
+    };
     // Inherited color: what each marking's children inherit (the parent's, with what it offers
     // on top), from top to bottom; the closest one wins and one that offers nothing is crossed.
     const scopes = new Map<string, ProvidedValues>();
-    // Clip of each marking's children: the slot box with `clip` inside the clip that the marking
-    // itself receives (the clip goes down to the grandchildren).
-    const clips = new Map<string, Rect | undefined>();
+    // What each marking receives from the slot of its parent that it is in (the clip goes down
+    // to the grandchildren), set when the parent is drawn.
+    const passed = new Map<string, Received>();
     const scopeOf = (parentId: string | null): ProvidedValues =>
       parentId === null ? NO_PROVIDED : (scopes.get(parentId) ?? NO_PROVIDED);
     for (const marking of topDown(p.markings)) {
       const inherited = scopeOf(marking.parentId);
-      const mc = markingComponent(p, catalog, marking.id);
+      const mc = componentOf(marking.id);
       if (mc === null) {
         scopes.set(marking.id, inherited);
         continue;
       }
       const provided = pickProvided(inherited, mc.component);
-      const clip =
-        marking.parentId === null || mc.component.screen !== undefined
-          ? undefined
-          : clips.get(marking.parentId);
+      const screen = mc.component.screen !== undefined;
+      const received =
+        marking.parentId === null || screen
+          ? NOTHING_RECEIVED
+          : (passed.get(marking.id) ?? NOTHING_RECEIVED);
       const { values, warnings: valueWarnings } = drawingValues(
         p,
         mc.annotation,
         mc.type,
         { ...DEFAULT_LABEL_TEXTS, untitled },
       );
-      const childRects =
-        findSlot(mc.component) === undefined
-          ? []
-          : (children.get(marking.id) ?? []).map((c) => c.rect);
+      const kids =
+        screen || componentSlots(mc.component).length === 0
+          ? NO_KIDS
+          : (children.get(marking.id) ?? []).map((c) => ({
+              id: c.id,
+              rect: c.rect,
+              typeId: componentOf(c.id)?.type.id,
+            }));
       const mode = effectiveDrawingMode(p, marking.containerId);
       const density = effectiveDensity(p, marking.containerId);
       const direction = effectiveDirection(p, marking.containerId);
@@ -521,46 +904,52 @@ export function createDrawingCache(): DrawingCache {
         shallowEqual(before.values, values) &&
         before.valueWarnings.length === valueWarnings.length &&
         before.valueWarnings.every((w, i) => w.text === valueWarnings[i]?.text) &&
-        sameRects(before.childRects, childRects) &&
+        sameKids(before.kids, kids) &&
         sameProvided(before.provided, provided)
       ) {
-        const kept =
-          before.clip === clip
-            ? before
-            : {
-                ...before,
-                clip,
-                childClip: stableRect(
-                  before.childClip,
-                  intersectClips(before.slotClip, clip),
-                ),
-                drawing: withClip(before.drawing, clip),
-              };
+        const kept = sameReceived(before.received, received)
+          ? before
+          : {
+              ...before,
+              received,
+              childReceived: childReceived(
+                before.slotClips,
+                before.drawing.slotOf,
+                received,
+                before.childReceived,
+              ),
+              drawing: withReceived(before.drawing, received),
+            };
         next.set(marking.id, kept);
         drawings.set(marking.id, kept.drawing);
         scopes.set(marking.id, extendProvided(inherited, before.offers));
-        clips.set(marking.id, kept.childClip);
+        for (const [id, r] of kept.childReceived) passed.set(id, r);
         continue;
       }
-      const { drawing, offers, slotClip } = draw(
+      const { drawing, offers, slotClips } = draw({
         mc,
-        marking.id,
-        marking.containerId,
-        marking.rect,
+        markingId: marking.id,
+        containerId: marking.containerId,
+        rect: marking.rect,
         values,
         valueWarnings,
-        childRects,
+        kids,
         measure,
         mode,
         provided,
-        clip,
+        received,
         density,
         direction,
         anchor,
+      });
+      const stableClips = stableSlotClips(before?.slotClips, slotClips);
+      const forChildren = childReceived(
+        stableClips,
+        drawing.slotOf,
+        received,
+        before?.childReceived,
       );
-      const stableClip = stableRect(before?.slotClip, slotClip);
-      const childClip = stableRect(before?.childClip, intersectClips(stableClip, clip));
-      clips.set(marking.id, childClip);
+      for (const [id, r] of forChildren) passed.set(id, r);
       scopes.set(marking.id, extendProvided(inherited, offers));
       next.set(marking.id, {
         markingId: marking.id,
@@ -576,12 +965,12 @@ export function createDrawingCache(): DrawingCache {
         density,
         direction,
         anchor,
-        childRects,
+        kids,
         provided,
         offers,
-        slotClip: stableClip,
-        clip,
-        childClip,
+        slotClips: stableClips,
+        received,
+        childReceived: forChildren,
         drawing,
       });
       drawings.set(marking.id, drawing);

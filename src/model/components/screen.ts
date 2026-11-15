@@ -20,6 +20,12 @@ export interface Instance {
    * order in the list.
    */
   readonly parentId?: string;
+  /**
+   * The slot of the parent (`slotKey`: the slot `id`, or the empty key for a slot without one) the
+   * instance is in. Only `layoutScreen` writes it, and only for a parent with more than one slot;
+   * absent, the child is in the slot the placement picks without geometry (`slotForPlacement`).
+   */
+  readonly slot?: string;
 }
 
 export interface Screen {
@@ -58,7 +64,14 @@ export function addInstance(screen: Screen, instance: Omit<Instance, 'id'>): Scr
   };
 }
 
-/** Removes only the instance; the children go up to its parent. */
+/** The slot key belongs to the parent it was written for: a child that changes parent loses it. */
+function withoutSlot(instance: Instance): Instance {
+  const { slot: _slot, ...rest } = instance;
+  void _slot;
+  return rest;
+}
+
+/** Removes only the instance; the children go up to its parent (without the removed parent's slot key). */
 export function removeInstance(screen: Screen, id: string): Screen {
   const removed = screen.instances.find((i) => i.id === id);
   if (!removed) return screen;
@@ -66,9 +79,9 @@ export function removeInstance(screen: Screen, id: string): Screen {
     .filter((i) => i.id !== id)
     .map((i) =>
       i.parentId === id
-        ? removed.parentId
-          ? { ...i, parentId: removed.parentId }
-          : withoutParent(i)
+        ? withoutSlot(
+            removed.parentId ? { ...i, parentId: removed.parentId } : withoutParent(i),
+          )
         : i,
     );
   return { ...screen, instances };
@@ -187,7 +200,13 @@ export function setParent(
   if (parentId && [id, ...descendantsOf(screen, id)].includes(parentId)) return screen;
   const instance = screen.instances.find((i) => i.id === id);
   if (!instance) return screen;
-  const moved: Instance = parentId ? { ...instance, parentId } : withoutParent(instance);
+  // A new parent forgets the slot of the old one; a reorder among the same siblings keeps it.
+  const moved: Instance = parentId
+    ? {
+        ...(parentId === instance.parentId ? instance : withoutParent(instance)),
+        parentId,
+      }
+    : withoutParent(instance);
   const rest = screen.instances.filter((i) => i.id !== id);
   const siblings = rest.filter((i) => (i.parentId ?? undefined) === parentId);
   const at =
@@ -212,8 +231,9 @@ export function moveSibling(screen: Screen, id: string, delta: -1 | 1): Screen {
 }
 
 function withoutParent(instance: Instance): Instance {
-  const { parentId: _parentId, ...rest } = instance;
+  const { parentId: _parentId, slot: _slot, ...rest } = instance;
   void _parentId;
+  void _slot;
   return rest;
 }
 
@@ -357,6 +377,7 @@ export function parseScreen(input: unknown): Screen {
       id: typeof i.id === 'string' ? i.id : crypto.randomUUID(),
       typeId: str(i.typeId, `instances[${index}].typeId`),
       ...(typeof i.parentId === 'string' ? { parentId: i.parentId } : {}),
+      ...(typeof i.slot === 'string' ? { slot: i.slot } : {}),
       box: {
         x: num(b.x, `instances[${index}].box.x`),
         y: num(b.y, `instances[${index}].box.y`),

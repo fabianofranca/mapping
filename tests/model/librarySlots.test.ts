@@ -9,7 +9,12 @@ import { parseComponent } from '../../src/model/components/parseComponent';
 import { validateLibrary, type LibraryFile } from '../../src/model/library';
 
 const DIR = 'tests/fixtures/slots';
-const PATHS = ['slots.spec.json', 'components/bar.json', 'components/pin.json'];
+const PATHS = [
+  'slots.spec.json',
+  'components/bar.json',
+  'components/pin.json',
+  'components/rounded-bar.json',
+];
 
 const read = (path: string): string => readFileSync(join(DIR, path), 'utf8');
 

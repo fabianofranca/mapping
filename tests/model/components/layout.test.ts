@@ -1,4 +1,6 @@
 // Components Lab: arrangement by sizes (`layoutScreen`).
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type {
   ComponentFile,
@@ -1142,4 +1144,110 @@ describe('layoutScreen: sizing min-content and max-content', () => {
     );
     expect(boxOf(result, 'b').width).toBeCloseTo(16 * 5.5, 9);
   });
+});
+
+// --- named slots (#1080, SL2) -----------------------------------------------------------------
+
+describe('layoutScreen: named slots', () => {
+  const SLOTS_DIR = 'tests/fixtures/slots';
+  const slotFile = (path: string) => ({
+    path,
+    text: readFileSync(join(SLOTS_DIR, path), 'utf8'),
+  });
+  /** The bar of the fixture, fixed (360 × 56) or hugging its content. */
+  const barFile = (hug: boolean) => {
+    const file = slotFile('components/bar.json');
+    if (!hug) return file;
+    const json = JSON.parse(file.text) as Record<string, unknown>;
+    return { ...file, text: JSON.stringify({ ...json, sizing: HUG_HUG }) };
+  };
+  const slotsLibrary = (hug: boolean) =>
+    loadLibrary([
+      slotFile('slots.spec.json'),
+      barFile(hug),
+      slotFile('components/pin.json'),
+      slotFile('components/rounded-bar.json'),
+    ]);
+  const fixed = slotsLibrary(false);
+  const hugging = slotsLibrary(true);
+
+  const bar = (children: readonly LayoutNode[], values: LayoutNode['values'] = {}) =>
+    root(node('b', 'bar', values, children));
+  const pin = (id: string, slot?: string): LayoutNode => ({
+    ...node(id, 'pin'),
+    ...(slot === undefined ? {} : { slot }),
+  });
+  const slotOf = (result: ReturnType<typeof run>, id: string) =>
+    result.screen.instances.find((i) => i.id === id)?.slot;
+  const widthOfBar = (children: readonly LayoutNode[], values = {}) =>
+    boxOf(run([bar(children, values)], 600, 600, hugging), 'b').width;
+
+  it('the fixture library loads without problems', () => {
+    expect(fixed.problems).toEqual([]);
+    expect(hugging.problems).toEqual([]);
+  });
+
+  it('each child goes to the slot it asks for and is arranged by that slot only', () => {
+    const result = run(
+      [bar([pin('a', 'actions'), pin('n', 'navigationIcon')])],
+      360,
+      600,
+      fixed,
+    );
+    expect(result.warnings).toEqual([]);
+    // navigationIcon: 40 × 40 at (8, 8), layout none: the child in its corner.
+    expect(boxOf(result, 'n')).toEqual({ x: 8, y: 8, width: 24, height: 24 });
+    // actions: hug (24 wide) at the right edge, row aligned to the center of its 40 px.
+    expect(boxOf(result, 'a')).toEqual({ x: 328, y: 16, width: 24, height: 24 });
+    expect(slotOf(result, 'a')).toBe('actions');
+    expect(slotOf(result, 'n')).toBe('navigationIcon');
+  });
+
+  it('children of the same slot go in order, with that slot layout (row, gap 4)', () => {
+    const result = run(
+      [bar([pin('a1', 'actions'), pin('a2', 'actions')])],
+      360,
+      600,
+      fixed,
+    );
+    expect(boxOf(result, 'a1')).toMatchObject({ x: 300, width: 24 });
+    expect(boxOf(result, 'a2')).toMatchObject({ x: 328, width: 24 });
+  });
+
+  it('a child without slot goes to the one the placement picks (the first)', () => {
+    const result = run([bar([pin('k')])], 360, 600, fixed);
+    expect(boxOf(result, 'k')).toEqual({ x: 8, y: 8, width: 24, height: 24 });
+    expect(slotOf(result, 'k')).toBe('navigationIcon');
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('an unknown slot warns and the child goes to the default slot', () => {
+    const result = run([bar([pin('k', 'nope')])], 360, 600, fixed);
+    expect(result.warnings).toEqual(['b: unknown slot "nope": using the default slot']);
+    expect(result.messages.map((m) => m.code)).toEqual(['engine.slotUnknown']);
+    expect(slotOf(result, 'k')).toBe('navigationIcon');
+    expect(boxOf(result, 'k')).toEqual({ x: 8, y: 8, width: 24, height: 24 });
+  });
+
+  it('a component with a single slot does not tag its children', () => {
+    const result = run([root(node('c', 'col', {}, [node('a', 'fixed')]))]);
+    expect(result.screen.instances.every((i) => !('slot' in i))).toBe(true);
+  });
+
+  it('hug: the empty slot measures its default content, the filled one its children', () => {
+    const base = widthOf([], {});
+    // actions empty with a label: the fallback text (4 × 6.6 = 26.4 px) counts.
+    expect(widthOf([], { actionLabel: 'More' })).toBe(Math.ceil(base + 26.4 - 1e-9));
+    // actions filled: the child (24 px) counts and the fallback does not, label or not.
+    expect(widthOf([pin('a', 'actions')], { actionLabel: 'More' })).toBe(base + 24);
+    expect(widthOf([pin('a', 'actions')])).toBe(base + 24);
+    // a child in the fixed slot (nothing to measure) keeps the other slot's default content.
+    expect(widthOf([pin('n', 'navigationIcon')], { actionLabel: 'More' })).toBe(
+      Math.ceil(base + 26.4 - 1e-9),
+    );
+  });
+
+  function widthOf(children: readonly LayoutNode[], values: LayoutNode['values'] = {}) {
+    return widthOfBar(children, values);
+  }
 });
