@@ -167,6 +167,7 @@ function seedRetests(count: number): void {
     kind: 'reteste',
     label: `RT${i}`,
     created: `2026-11-11T${String(i).padStart(2, '0')}:30:00Z`,
+    sinais: { ok: 1 },
     cost: {
       usd: 1,
       ctx: 1000,
@@ -509,11 +510,12 @@ describe('session canario= (decision 13)', () => {
     session(D(13), 'f2', '#10', 'fase', 'QM1', 'B');
     expect(canary('B').sessoes).toEqual(['f1', 'f2']);
     expect(canary('B').contadas).toBe(1);
-    // a different phase does not join
+    // a different phase does not join: it runs outside the canary (QC2, F4)
     expect(
       tryRunAt(D(13), 'session', dir, '#10', 'f3', 'kind=fase', 'label=QM2', 'canario=B')
         .code,
-    ).toBe(2);
+    ).toBe(0);
+    expect(canary('B').sessoes).toEqual(['f1', 'f2']);
   });
 
   it('the successor registered without a label (kind= alone) still joins the canary under evaluation', () => {
@@ -553,6 +555,69 @@ describe('session canario= (decision 13)', () => {
     session(D(13), 'r1', '#10', 'reteste', 'RT1', 'A');
     session(D(13), 'r2', '#10', 'reteste', 'RT1', 'A');
     expect(canary('A').contadas).toBe(2);
+  });
+});
+
+describe('a session that arrives after the canary reached n (QC2, F4)', () => {
+  const addUnit = (): void => {
+    runAt(
+      START,
+      'canario',
+      dir,
+      'add',
+      'A',
+      'papel=reteste',
+      'de=Sonnet medium',
+      'modelo=haiku',
+      'n=1',
+      'volta=2',
+    );
+  };
+
+  it('two parallel applies: the second `session ... canario=A` runs outside the canary, with a log line, and does not abort', () => {
+    addUnit();
+    const one = path.join(dir, 'one.txt');
+    const two = path.join(dir, 'two.txt');
+    writeFileSync(one, "session '#10' r1 kind=reteste label=RT1 canario=A\n");
+    writeFileSync(
+      two,
+      'session \'#10\' r2 kind=reteste label=RT2 canario=A\nlog "after r2"\n',
+    );
+    runAt(D(13), 'apply', dir, one);
+    const r = tryRunAt(D(13), 'apply', dir, two);
+    expect(r.code, r.err).toBe(0);
+    expect(canary('A').sessoes).toEqual(['r1']);
+    expect(canary('A').contadas).toBe(1);
+    expect(logTexts().some((t) => t.includes('r2') && t.includes('A'))).toBe(true);
+    expect(logTexts()).toContain('after r2');
+    const r2 = (metaFile().sessions as Entry[]).find((e) => e.id === 'r2')!;
+    expect(r2.kind).toBe('reteste');
+    expect(r2.canario).toBeUndefined();
+  });
+
+  it('two session lines in one apply do not overshoot n', () => {
+    addUnit();
+    const file = path.join(dir, 'batch.txt');
+    writeFileSync(
+      file,
+      [
+        "session '#10' r1 kind=reteste label=RT1 canario=A",
+        "session '#10' r2 kind=reteste label=RT2 canario=A",
+        '',
+      ].join('\n'),
+    );
+    const r = tryRunAt(D(13), 'apply', dir, file);
+    expect(r.code, r.err).toBe(0);
+    expect(canary('A').sessoes).toEqual(['r1']);
+    expect(canary('A').contadas).toBe(1);
+  });
+
+  it('a canary ended by the owner still refuses the session', () => {
+    addUnit();
+    runAt(D(13), 'canario', dir, 'end', 'A', 'motivo=parou');
+    expect(
+      tryRunAt(D(13), 'session', dir, '#10', 'r1', 'kind=reteste', 'canario=A').code,
+    ).toBe(2);
   });
 });
 
@@ -740,6 +805,8 @@ describe('the summary before x canary (decision 13)', () => {
     // after the start, not in the canary and in the old configuration: in neither side
     session(D(13), 'late', '#40', 'reteste', 'RT3');
     cost(D(13), 'late', 70);
+    // the signals of each retest were recorded (a session with none is "sem dado", QC2 F3)
+    for (const id of ['b1', 'b2', 'c1', 'c2']) runAt(D(13), 'sinal', dir, id, 'ok=1');
   }
 
   it('each side brings sessions, median per session, median per merged stage, decided and with rework', () => {
@@ -909,6 +976,23 @@ describe('`show` and the candidates (decisions 7 and 13)', () => {
     expect(runAt(D(25), 'show', dir)).toContain(
       'candidatos a teste: reteste Sonnet medium',
     );
+  });
+});
+
+describe('a reverted canary keeps its step out of the candidates (QC2, F5)', () => {
+  it('the step the canary tried is not offered again, and another step of the role still is', () => {
+    seedRetests(10);
+    addA([], D(21));
+    session(D(22), 'x1', '#20', 'reteste', 'RT9', 'A');
+    runAt(D(22), 'sinal', dir, 'x1', 'falso=high');
+    runAt(D(22), 'sinal', dir, 'x1', 'falso=medium');
+    expect(canary('A').estado).toBe('revertido');
+    expect(runAt(D(23), 'show', dir)).toContain('candidatos a teste: nenhum');
+    expect(
+      (metaFile().uso as Entry[]).find(
+        (u) => u.papel === 'reteste' && u.modelo === 'Sonnet',
+      )?.candidato ?? null,
+    ).toBeNull();
   });
 });
 

@@ -60,7 +60,8 @@ interface Seed {
   ctx?: number;
   model?: string;
   effort?: string;
-  sinais?: Entry;
+  /** Default `{ sub: 0 }` (a session whose signals were recorded); `null` is a session with none ("sem dado"). */
+  sinais?: Entry | null;
   noCost?: boolean;
 }
 
@@ -76,7 +77,7 @@ function entry(s: Seed): Entry {
       at: s.created ?? '2026-11-11T12:00:00Z',
     };
   }
-  if (s.sinais) e.sinais = s.sinais;
+  if (s.sinais !== null) e.sinais = s.sinais ?? { sub: 0 };
   return e;
 }
 
@@ -507,6 +508,7 @@ describe('the rework ruler (decision 6)', () => {
     created: T(11),
     ...(sinais ? { sinais } : {}),
   });
+  const bare = (): Seed => ({ ...phase(), sinais: null });
   const reworked = (papel: string): [unknown, unknown] => {
     const u = usageOf(papel);
     return [u.comRetrabalho, u.decididas];
@@ -572,10 +574,22 @@ describe('the rework ruler (decision 6)', () => {
     expect(reworked('fase')).toEqual([expected, 1]);
   });
 
-  it('a session without sinais (history) has no rework for the lack of data', () => {
-    decided([phase()]);
-    expect(reworked('fase')).toEqual([0, 1]);
-    expect(usageOf('fase').sequencia).toBe(1);
+  it('a decided session without sinais is "sem dado" (no verdict), not clean; rework evidence from the stage still counts (QC2, F3)', () => {
+    decided([bare()]);
+    expect(usageOf('fase')).toMatchObject({
+      decididas: 0,
+      comRetrabalho: 0,
+      sequencia: 0,
+    });
+    // the same stage with a correção is rework even without signals on the phase itself
+    decided([
+      bare(),
+      { id: 'c1', issue: '#10', kind: 'correção', label: 'CL1', created: T(12) },
+    ]);
+    expect(reworked('fase')).toEqual([1, 1]);
+    // an empty `sinais` is the same as none
+    decided([{ ...phase(), sinais: {} }]);
+    expect(usageOf('fase').decididas).toBe(0);
   });
 
   it('correção: rework through a later correção of another label, not of the same one', () => {
@@ -702,7 +716,13 @@ describe('the clean streak and the candidate (decision 7)', () => {
   /** `n` sessions of the kind, each one in its own merged stage, in chronological order; `dirty` are the indexes with `ci` 2. */
   function streak(
     n: number,
-    o: { kind?: string; model?: string; effort?: string; dirty?: number[] } = {},
+    o: {
+      kind?: string;
+      model?: string;
+      effort?: string;
+      dirty?: number[];
+      noSinais?: boolean;
+    } = {},
   ): void {
     const seeds: Seed[] = [];
     const merged: string[] = [];
@@ -717,7 +737,7 @@ describe('the clean streak and the candidate (decision 7)', () => {
         created: `2026-11-${String(11 + Math.floor(i / 20)).padStart(2, '0')}T${String(i % 20).padStart(2, '0')}:00:00Z`,
         model: o.model ?? 'claude-sonnet-5-5',
         effort: o.effort ?? 'medium',
-        ...(o.dirty?.includes(i) ? { sinais: { ci: 2 } } : {}),
+        sinais: o.noSinais ? null : { ci: o.dirty?.includes(i) ? 2 : 0 },
       });
     }
     put(seeds, { merged });
@@ -755,6 +775,16 @@ describe('the clean streak and the candidate (decision 7)', () => {
       sequencia: 8,
       candidato: null,
     });
+  });
+
+  it('10 decided sessions without sinais give no streak, no candidate and show says nenhum (QC2, F3)', () => {
+    streak(10, { kind: 'fase', noSinais: true });
+    expect(usageOf('fase')).toMatchObject({
+      decididas: 0,
+      sequencia: 0,
+      candidato: null,
+    });
+    expect(run('show', dir)).toMatch(/^candidatos a teste: nenhum$/m);
   });
 
   it('a fresh panel says candidatos a teste: nenhum', () => {
