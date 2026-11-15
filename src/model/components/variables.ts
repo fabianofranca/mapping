@@ -224,7 +224,7 @@ function openScope(
   return { vars: node.let, parent, path: at };
 }
 
-/** The children of `children` and the `template` are nodes; the rest of the keys is a value. */
+/** The children of `children`, the `template` and the slot's `fallback` are nodes; the rest of the keys is a value. */
 function expandKey(
   key: string,
   value: unknown,
@@ -233,7 +233,8 @@ function expandKey(
   st: State,
 ): unknown {
   const at = join(path, key);
-  if (key === 'template' && isRecord(value)) return expandNode(value, at, scope, st);
+  if ((key === 'template' || key === 'fallback') && isRecord(value))
+    return expandNode(value, at, scope, st);
   if (key !== 'children' || !Array.isArray(value))
     return expandValue(value, at, scope, st);
   let changed = false;

@@ -214,6 +214,14 @@ describe('findSlot / hasSlot / resolveSlotLayout', () => {
     expect(slot?.name).toBe('fundo');
   });
 
+  it('with several named slots, the first one in template order is the slot', () => {
+    const two = component('two-slots', [
+      { type: 'frame', children: [{ type: 'slot', id: 'first', name: 'a' }] },
+      { type: 'slot', id: 'second', name: 'b' },
+    ]);
+    expect(findSlot(two as never)?.id).toBe('first');
+  });
+
   it('resolves gap and padding from the fields, with the expression defaults', () => {
     const slot = findSlot(typeOf('row-center').component)!;
     expect(resolveSlotLayout(slot, { spacing: 12, padding: 6 })).toEqual({

@@ -94,6 +94,11 @@ const MISSING_TODAY: string[] = [
   // `span` and `weight` (stage #1078, L3): Material 3 does not adopt them (the grid and
   // `repeat.layout` do, in L5); covered by tests/model/components/gridInstantiate.test.ts, gridParse.test.ts,
   // gridSlot.test.ts and by script R25.
+  // `slot.id` and `slot.fallback` (stage #1080, SL1): the Material 3 library adopts them in SL7; until
+  // then they are covered by tests/model/components/slots*.test.ts, tests/model/librarySlots.test.ts
+  // and the fixture tests/fixtures/slots/.
+  'component:node.slot.fallback',
+  'component:node.slot.id',
   'component:node.span',
   'component:node.weight',
   'component:node.repeat.lineGap',

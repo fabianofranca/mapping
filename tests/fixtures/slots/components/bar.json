@@ -1,0 +1,64 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "bar",
+  "name": "Bar",
+  "description": "A bar with two named slots: a fixed one on the left and a hug one on the right, each with a default content.",
+  "size": { "width": 360, "height": 56 },
+  "preview": { "title": "Title", "navLabel": "Back", "actionLabel": "More" },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "row", "align": "center", "gap": 8, "padding": 8 },
+    "fill": "#FEF7FF",
+    "children": [
+      {
+        "type": "slot",
+        "id": "navigationIcon",
+        "name": "navigationIcon",
+        "width": 40,
+        "height": 40,
+        "layout": { "type": "none" },
+        "fallback": {
+          "type": "frame",
+          "layout": { "type": "row", "align": "center", "justify": "center" },
+          "visible": { "$has": "navLabel" },
+          "children": [
+            {
+              "type": "text",
+              "text": { "$field": "navLabel" },
+              "font": { "size": 12 },
+              "width": "hug"
+            }
+          ]
+        }
+      },
+      {
+        "type": "text",
+        "text": { "$field": "title", "default": "Title" },
+        "font": { "size": 20, "weight": 500 },
+        "width": "fill"
+      },
+      {
+        "type": "slot",
+        "id": "actions",
+        "name": "actions",
+        "width": "hug",
+        "height": 40,
+        "layout": { "type": "row", "gap": 4, "align": "center" },
+        "fallback": {
+          "type": "frame",
+          "layout": { "type": "row", "align": "center" },
+          "visible": { "$has": "actionLabel" },
+          "children": [
+            {
+              "type": "text",
+              "text": { "$field": "actionLabel" },
+              "font": { "size": 12 },
+              "width": "hug"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

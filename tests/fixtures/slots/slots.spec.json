@@ -1,0 +1,32 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 15,
+  "id": "slots",
+  "name": "Test slots",
+  "version": 1,
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#6750A4",
+      "annotationTypes": [
+        {
+          "id": "bar",
+          "name": "Bar",
+          "component": "components/bar.json",
+          "fields": [
+            { "key": "title", "type": "string", "default": "Title" },
+            { "key": "navLabel", "type": "string" },
+            { "key": "actionLabel", "type": "string" }
+          ]
+        },
+        {
+          "id": "pin",
+          "name": "Pin",
+          "component": "components/pin.json",
+          "fields": [{ "key": "label", "type": "string", "default": "pin" }]
+        }
+      ]
+    }
+  ]
+}
