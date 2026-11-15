@@ -26,8 +26,9 @@ import {
   slotKey,
   type SlotAssignment,
   type SlotChild,
-  type SlotIssue,
+  type SlotInput,
 } from './components/slots';
+import { typeSlots, type TypeSlot } from './specSlots';
 import {
   NO_PROVIDED,
   extendProvided,
@@ -131,8 +132,12 @@ export interface ComponentDrawing {
    * child fills the slot), by field name, with the `id` of the filled slot (`fallbackFields`).
    */
   readonly inactiveFields: ReadonlyMap<string, string>;
-  /** The children no slot accepts or beyond a slot's `max` (stage SL4); empty until then. */
-  readonly slotIssues: readonly SlotIssue[];
+  /**
+   * The children no slot accepts or beyond a slot's `max`, by the `accepts` and `max` of the type
+   * (decision 10 of #1080): one per issue, on the child's annotation with a component. Empty when the
+   * type declares no `slots`. `derived.ts` and the MCP read it like they read `overflow`.
+   */
+  readonly slotIssues: readonly DrawingSlotIssue[];
   /**
    * The marking's anchor (v20): the stored side (absent = the component's default) and the
    * target marking's rectangle, in the same space as the `rect` (container pixels or canvas
@@ -140,6 +145,19 @@ export interface ComponentDrawing {
    * without an anchor.
    */
   readonly anchor?: DrawingAnchor;
+}
+
+/** A child that a slot does not accept (`slot-not-accepted`) or that goes past its `max` (`slot-full`). */
+export interface DrawingSlotIssue {
+  /** The child's annotation that has the component (the one the cache draws). */
+  readonly annotationId: string;
+  readonly code: 'slot-not-accepted' | 'slot-full';
+  /** The slot the geometry put the child in (`name`: the type's, else the label, else the `id`). */
+  readonly slot: { readonly id: string; readonly name: string };
+  /** The name of this marking's type (the owner of the slot). */
+  readonly owner: string;
+  /** `slot-full` only: how many children the slot takes. */
+  readonly max?: number;
 }
 
 /** One slot of a drawing (see `ComponentDrawing.slots`). */
@@ -206,7 +224,9 @@ interface Entry {
    */
   readonly anchor: DrawingAnchor | undefined;
   /** The direct children (containers only): id, rectangle and type id, in sibling order. */
-  readonly kids: readonly SlotChild[];
+  readonly kids: readonly DrawKid[];
+  /** The slots of the type with `accepts` and `max` (decision 5); empty without children. */
+  readonly slotDefs: readonly TypeSlot[];
   /**
    * Inherited color: only the values offered by the ancestors that the component reads
    * (`$provided`).
@@ -248,18 +268,48 @@ function sameAnchor(a: DrawingAnchor | undefined, b: DrawingAnchor | undefined):
   return a.side === b.side && sameRect(a.rect, b.rect);
 }
 
-function sameKids(a: readonly SlotChild[], b: readonly SlotChild[]): boolean {
+/** A child of the instance as the cache reads it: what `assignSlots` needs plus the annotation the issues go on. */
+interface DrawKid extends SlotChild {
+  readonly annotationId: string | undefined;
+}
+
+function sameKids(a: readonly DrawKid[], b: readonly DrawKid[]): boolean {
   return (
     a.length === b.length &&
     a.every((kid, i) => {
-      const other = b[i] as SlotChild;
+      const other = b[i] as DrawKid;
       return (
         kid.id === other.id &&
         kid.typeId === other.typeId &&
+        kid.annotationId === other.annotationId &&
         sameRect(kid.rect, other.rect)
       );
     })
   );
+}
+
+/** The slots of the type are the same: ids, names, `max` and the set of accepted types (it decides the slots). */
+function sameSlotDefs(a: readonly TypeSlot[], b: readonly TypeSlot[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((slot, i) => {
+      const other = b[i] as TypeSlot;
+      return (
+        slot.id === other.id &&
+        slot.name === other.name &&
+        slot.max === other.max &&
+        sameAccepts(slot.accepts, other.accepts)
+      );
+    })
+  );
+}
+
+function sameAccepts(
+  a: ReadonlySet<string> | undefined,
+  b: ReadonlySet<string> | undefined,
+): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.size === b.size && [...a].every((id) => b.has(id));
 }
 
 /** Same value; the rows of a table (lists recreated on every read) compare cell by cell. */
@@ -505,7 +555,8 @@ function withRootMatrix(root: FrameNode, rect: Rect, density: number): FrameNode
 const NO_SLOTS: readonly DrawnSlot[] = [];
 const NO_SLOT_OF: ReadonlyMap<string, string | null> = new Map();
 const NO_FIELDS: ReadonlyMap<string, string> = new Map();
-const NO_ISSUES: readonly SlotIssue[] = [];
+const NO_ISSUES: readonly DrawingSlotIssue[] = [];
+const NO_DEFS: readonly TypeSlot[] = [];
 
 /** Does a size (`width`/`height` of the slot) depend on what is inside it (`hug`, intrinsic, expression)? */
 function takesContent(spec: unknown): boolean {
@@ -561,12 +612,16 @@ function planSlots(
   values: FieldValues,
   tokens: ResolvedTokens | undefined,
   kids: readonly SlotChild[],
+  defs: readonly TypeSlot[],
   space: UnitSpace,
   probe: FrameNode,
 ): SlotPlan {
-  const inputs = [...slotsOfScene(probe)].map(([id, slot]) => ({
+  const byId = new Map(defs.map((def) => [def.id, def]));
+  const inputs: SlotInput[] = [...slotsOfScene(probe)].map(([id, slot]) => ({
     id,
     box: space.toPixels(slot.box),
+    accepts: byId.get(id)?.accepts,
+    max: byId.get(id)?.max,
   }));
   const assignment = assignSlots(inputs, kids);
   const templates = new Map(componentSlots(mc.component).map((s) => [slotKey(s), s]));
@@ -659,6 +714,32 @@ function inactiveFieldsOf(
   return out.size === 0 ? NO_FIELDS : out;
 }
 
+/** The issues of the assignment (`slot-not-accepted`, `slot-full`) on the child's annotation with a component. */
+function slotIssuesOf(
+  mc: MarkingComponent,
+  kids: readonly DrawKid[],
+  defs: readonly TypeSlot[],
+  assignment: SlotAssignment,
+): readonly DrawingSlotIssue[] {
+  if (assignment.issues.length === 0) return NO_ISSUES;
+  const annotations = new Map(kids.map((k) => [k.id, k.annotationId]));
+  const names = new Map(defs.map((def) => [def.id, def.name]));
+  const out: DrawingSlotIssue[] = [];
+  for (const issue of assignment.issues) {
+    // A child with no component annotation has nowhere to carry the issue.
+    const annotationId = annotations.get(issue.childId);
+    if (annotationId === undefined) continue;
+    out.push({
+      annotationId,
+      code: issue.code,
+      slot: { id: issue.slotId, name: names.get(issue.slotId) ?? issue.slotId },
+      owner: mc.type.name,
+      ...(issue.max === undefined ? {} : { max: issue.max }),
+    });
+  }
+  return out.length === 0 ? NO_ISSUES : out;
+}
+
 interface DrawInput {
   readonly mc: MarkingComponent;
   readonly markingId: string;
@@ -667,7 +748,8 @@ interface DrawInput {
   readonly values: FieldValues;
   readonly valueWarnings: readonly ModelMessage[];
   /** The direct children of the marking (containers only; none with `screen`). */
-  readonly kids: readonly SlotChild[];
+  readonly kids: readonly DrawKid[];
+  readonly slotDefs: readonly TypeSlot[];
   readonly measure: TextMeasurer;
   readonly mode: string | undefined;
   readonly provided: ProvidedValues;
@@ -698,7 +780,7 @@ function instantiateWithSlots(
   // children's space.
   if (screen || componentSlots(mc.component).length === 0)
     return { instantiated: probe, plan: undefined };
-  const plan = planSlots(mc, values, tokens, kids, space, probe.root);
+  const plan = planSlots(mc, values, tokens, kids, input.slotDefs, space, probe.root);
   if (!plan.needsFinal) return { instantiated: probe, plan };
   const instantiated = instantiate(mc.component, values, target, {
     ...options,
@@ -763,7 +845,10 @@ function draw(input: DrawInput): Drawn {
     slotOf,
     inactiveFields:
       plan === undefined ? NO_FIELDS : inactiveFieldsOf(mc.component, plan.assignment),
-    slotIssues: NO_ISSUES,
+    slotIssues:
+      plan === undefined
+        ? NO_ISSUES
+        : slotIssuesOf(mc, input.kids, input.slotDefs, plan.assignment),
     ...placement(screen, rect, received),
     ...(anchor === undefined ? {} : { anchor }),
   };
@@ -775,7 +860,7 @@ function draw(input: DrawInput): Drawn {
   };
 }
 
-const NO_KIDS: readonly SlotChild[] = [];
+const NO_KIDS: readonly DrawKid[] = [];
 
 /** The previous clips and shapes of a slot when they equal the new ones (stable identity). */
 function stableSlotClips(
@@ -882,7 +967,12 @@ export function createDrawingCache(): DrawingCache {
               id: c.id,
               rect: c.rect,
               typeId: componentOf(c.id)?.type.id,
+              annotationId: componentOf(c.id)?.annotation.id,
             }));
+      // The slots of the type decide which child goes where, so they are an input of the drawing; only
+      // a marking with children has an assignment.
+      const slotDefs =
+        kids.length === 0 ? NO_DEFS : typeSlots(p, mc.specId, mc.typeId, mc.component);
       const mode = effectiveDrawingMode(p, marking.containerId);
       const density = effectiveDensity(p, marking.containerId);
       const direction = effectiveDirection(p, marking.containerId);
@@ -905,6 +995,7 @@ export function createDrawingCache(): DrawingCache {
         before.valueWarnings.length === valueWarnings.length &&
         before.valueWarnings.every((w, i) => w.text === valueWarnings[i]?.text) &&
         sameKids(before.kids, kids) &&
+        sameSlotDefs(before.slotDefs, slotDefs) &&
         sameProvided(before.provided, provided)
       ) {
         const kept = sameReceived(before.received, received)
@@ -934,6 +1025,7 @@ export function createDrawingCache(): DrawingCache {
         values,
         valueWarnings,
         kids,
+        slotDefs,
         measure,
         mode,
         provided,
@@ -966,6 +1058,7 @@ export function createDrawingCache(): DrawingCache {
         direction,
         anchor,
         kids,
+        slotDefs,
         provided,
         offers,
         slotClips: stableClips,

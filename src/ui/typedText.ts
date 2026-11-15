@@ -101,6 +101,10 @@ export function issueReason(p: Project, a: Annotation, issue: AnnotationIssue): 
     owners: ownerTypeNames(p, a),
     label: offered?.label ?? t('typed.roleLabel'),
     roles: (offered?.roles ?? []).map((r) => r.name).join(t('typed.ownersJoin')),
+    slot: issue.slot?.name ?? '',
+    owner: issue.owner ?? '',
+    type: typeOfAnnotation(p, a)?.type.name ?? '',
+    max: issue.max ?? 0,
   });
 }
 

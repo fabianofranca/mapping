@@ -2316,6 +2316,7 @@ class Batch {
           id: markingId,
           rect,
           asked: op.rect,
+          typeId: typeRef.typeId,
         });
       }
       if (annotation.name !== undefined) {
@@ -2505,7 +2506,7 @@ class Batch {
     before: Project,
     after: Project,
     targetId: string,
-    created: { id: string; rect: Rect; asked: Rect | undefined },
+    created: { id: string; rect: Rect; asked: Rect | undefined; typeId: string },
   ): void {
     const target = this.markingLabel(after, targetId);
     const { asked, rect } = created;
@@ -2521,7 +2522,17 @@ class Batch {
         : parentId === null
           ? '; it ended up outside it'
           : `; it ended up inside ${this.markingLabel(after, parentId)}`;
-    if (!placementFitsSlot(before, this.catalog, targetId, rect, this.measurer)) {
+    if (
+      !placementFitsSlot(
+        before,
+        this.catalog,
+        targetId,
+        rect,
+        this.measurer,
+        undefined,
+        created.typeId,
+      )
+    ) {
       notes.push(
         `the marking did not fit in the slot of ${target}: enlarge the component or use Arrange in the app${where}`,
       );

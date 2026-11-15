@@ -53,7 +53,14 @@ export type AnnotationIssueCode =
    * The component that draws the marking does not fit in the box (Library stage). The model does
    * not produce it: whoever has the drawing (`src/store/derived.ts`) adds it to the issues.
    */
-  | 'component-overflow';
+  | 'component-overflow'
+  /**
+   * The child marking's slot does not accept its type (stage #1080, decision 10). The model does not
+   * produce it: it is born in the drawing cache, which knows which slot each child is in.
+   */
+  | 'slot-not-accepted'
+  /** The child is beyond the `max` of its slot (the same origin as `slot-not-accepted`). */
+  | 'slot-full';
 
 export interface AnnotationIssue {
   readonly code: AnnotationIssueCode;
@@ -63,6 +70,12 @@ export interface AnnotationIssue {
   readonly rowId?: string;
   /** Table column involved. */
   readonly column?: string;
+  /** `slot-not-accepted` and `slot-full`: the slot of the owner that the child is in. */
+  readonly slot?: { readonly id: string; readonly name: string };
+  /** `slot-not-accepted` and `slot-full`: the name of the owner's type (the one that has the slot). */
+  readonly owner?: string;
+  /** `slot-full`: the number of children the slot takes. */
+  readonly max?: number;
 }
 
 /** Issue of a reference (`ref` field or `ref` column cell); `null` if it is fine. */

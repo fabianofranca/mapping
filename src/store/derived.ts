@@ -332,7 +332,11 @@ function sameIssueList(
         x.code === b[i]?.code &&
         x.key === b[i]?.key &&
         x.rowId === b[i]?.rowId &&
-        x.column === b[i]?.column,
+        x.column === b[i]?.column &&
+        x.slot?.id === b[i]?.slot?.id &&
+        x.slot?.name === b[i]?.slot?.name &&
+        x.owner === b[i]?.owner &&
+        x.max === b[i]?.max,
     )
   );
 }
@@ -424,21 +428,23 @@ export function createEditorDerived(
   const drawingsOf = (p: Project | null): ComponentDrawings =>
     p === project.value ? scenes.value : drawings(p);
 
-  // Model pending items plus "the component does not fit" (only the drawing knows). Without a
-  // drawing that
-  // overflows, it is the model's map; with one, the previous map if nothing changed.
+  // Model pending items plus what only the drawing knows: "the component does not fit" and the
+  // children a slot does not accept or that go past its `max` (decisions 7 and 10 of #1080). Without a
+  // drawing that has any of them, it is the model's map; with one, the previous map if nothing changed.
   let lastIssues: ReadonlyMap<string, readonly AnnotationIssue[]> = NO_ISSUES;
   const issues = computed(() => {
     const p = project.value;
     const base = p ? projectIssues(p) : NO_ISSUES;
-    const overflowing = [...scenes.value.values()].filter((d) => d.overflow);
-    if (overflowing.length === 0) return base;
+    const drawn = [...scenes.value.values()].filter(
+      (d) => d.overflow || d.slotIssues.length > 0,
+    );
+    if (drawn.length === 0) return base;
     const merged = new Map(base);
-    for (const d of overflowing) {
-      merged.set(d.annotationId, [
-        ...(merged.get(d.annotationId) ?? []),
-        { code: 'component-overflow' } satisfies AnnotationIssue,
-      ]);
+    const add = (annotationId: string, issue: AnnotationIssue) =>
+      merged.set(annotationId, [...(merged.get(annotationId) ?? []), issue]);
+    for (const d of drawn) {
+      if (d.overflow) add(d.annotationId, { code: 'component-overflow' });
+      for (const { annotationId, ...issue } of d.slotIssues) add(annotationId, issue);
     }
     if (sameIssues(merged, lastIssues)) return lastIssues;
     lastIssues = merged;
