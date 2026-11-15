@@ -17,6 +17,8 @@ export const callName = (param: SignatureParam): string =>
 export interface CodeLinks {
   readonly params?: Readonly<Record<string, string>> | undefined;
   readonly ignore?: readonly string[] | undefined;
+  /** Slot id → the parameter that receives it (`code.slots`; the importer also passes the linked by name). */
+  readonly slots?: Readonly<Record<string, string>> | undefined;
 }
 
 /** A signature parameter without a field: what the agent needs to know to write the call. */
@@ -50,6 +52,7 @@ export function unmappedParams(signature: Signature, code: CodeLinks): UnmappedP
       if (positional !== undefined) mapped.add(positional.name);
     }
   }
+  for (const name of Object.values(code.slots ?? {})) mapped.add(name);
   const ignored = new Set(code.ignore ?? []);
   return signature.params
     .filter(

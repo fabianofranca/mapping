@@ -1,5 +1,5 @@
 import type { ComponentFile } from './components/componentFormat';
-import { componentSlots } from './components/slots';
+import { componentSlots, slotKey } from './components/slots';
 import { resolvePath, type TextFile } from './components/library';
 import { INDEX_FIELD, isAnchorFieldName } from './components/expressions';
 import {
@@ -594,6 +594,49 @@ function tokenChecks(pkg: Package, path: string, out: Collector): void {
   }
 }
 
+/**
+ * The type's `slots` (`formatVersion` 17) and the `code.<platform>.slots` keys (and those of the `variants`
+ * cases) name slots that the component has; a component whose slots have no `id` takes none.
+ */
+function slotCoherence(
+  pkg: Package,
+  type: SpecAnnotationType,
+  base: string,
+  slots: readonly { readonly id?: string | undefined }[],
+  out: Collector,
+): void {
+  const ids = new Set(slots.map(slotKey).filter((id) => id !== ''));
+  const check = (id: string, at: string): void => {
+    if (ids.has(id)) return;
+    if (ids.size === 0) out.error(pkg.specPath, at, 'library.componentNoSlotIds');
+    else out.error(pkg.specPath, at, 'library.slotNotInComponent', { id });
+  };
+  (type.slots ?? []).forEach((slot, index) =>
+    check(slot.id, `${base}.slots[${index}].id`),
+  );
+  for (const [platform, entry] of Object.entries(type.code ?? {})) {
+    codeSlotEntries(entry, `${base}.code.${platform}`).forEach(([id, at]) =>
+      check(id, at),
+    );
+  }
+}
+
+/** The slot ids of a `code` entry (and of its `variants` cases) with the path of each one. */
+function codeSlotEntries(
+  entry: NonNullable<SpecAnnotationType['code']>[string],
+  at: string,
+): [string, string][] {
+  const found = Object.keys(entry.slots ?? {}).map((id): [string, string] => [
+    id,
+    `${at}.slots.${id}`,
+  ]);
+  for (const [value, kase] of Object.entries(entry.variants?.cases ?? {})) {
+    for (const id of Object.keys(kase.slots ?? {}))
+      found.push([id, `${at}.variants.cases.${value}.slots.${id}`]);
+  }
+  return found;
+}
+
 function typeCoherence(
   pkg: Package,
   type: SpecAnnotationType,
@@ -630,6 +673,8 @@ function typeCoherence(
       });
     }
   });
+
+  slotCoherence(pkg, type, base, slots, out);
 
   const keys = new Set(type.fields.map((f) => f.key));
   const raw = pkg.componentJson.get(path);

@@ -1,5 +1,6 @@
 import {
   copyFileSync,
+  cpSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -40,6 +41,7 @@ beforeAll(async () => {
       join(root, 'fontes', `${name}.json`),
     );
   }
+  cpSync(join('tests', 'fixtures', 'slots'), join(root, 'slots'), { recursive: true });
   mcp = await connect([root]);
 });
 
@@ -334,5 +336,73 @@ describe('arguments and security', () => {
     expect(
       errorOf(await mcp.call('validate_specialization', { path: 'fontes' })).code,
     ).toBe('not-a-file');
+  });
+});
+
+describe('slots (formatVersion 17)', () => {
+  const SLOTS_SPEC = join('tests', 'fixtures', 'slots', 'slots.spec.json');
+  const slotsSpec = (): Json => JSON.parse(readFileSync(SLOTS_SPEC, 'utf8')) as Json;
+  const BAR = 'layers[0].annotationTypes[0]';
+
+  it('the test library specialization is a valid v17 with slots', async () => {
+    const result = ok(
+      await mcp.call<Validated>('validate_specialization', {
+        path: 'slots/slots.spec.json',
+      }),
+    );
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
+  it('slots in a v16 give "only allowed with formatVersion 17" at the exact path', async () => {
+    const spec = slotsSpec();
+    spec.formatVersion = 16;
+    const result = ok(
+      await mcp.call<Validated>('validate_specialization', { text: text(spec) }),
+    );
+    expect(result.valid).toBe(false);
+    expect(result.issues).toEqual([
+      { path: `${BAR}.slots`, message: 'only allowed with formatVersion 17' },
+    ]);
+  });
+
+  it('an accepts with a type that does not exist and a max below 1 come with the path', async () => {
+    const spec = slotsSpec();
+    spec.layers[0].annotationTypes[0].slots[0].accepts = ['nope'];
+    spec.layers[0].annotationTypes[0].slots[1].max = 0;
+    const result = ok(
+      await mcp.call<Validated>('validate_specialization', { text: text(spec) }),
+    );
+    expect(result.issues?.map((i) => i.path).sort()).toEqual([
+      `${BAR}.slots[0].accepts[0]`,
+      `${BAR}.slots[1].max`,
+    ]);
+  });
+
+  it('validate_library: the test library has no error or warning; a slot the component lacks is an error', async () => {
+    const good = ok(
+      await mcp.call<Validated>('validate_library', { path: 'slots' }),
+    ) as unknown as { valid: boolean; errors: unknown[]; warnings: unknown[] };
+    expect(good.valid).toBe(true);
+    expect(good.warnings).toEqual([]);
+
+    const bad = join(root, 'slots-bad');
+    cpSync(join('tests', 'fixtures', 'slots'), bad, { recursive: true });
+    const spec = slotsSpec();
+    spec.layers[0].annotationTypes[0].slots.push({ id: 'nope' });
+    writeFileSync(join(bad, 'slots.spec.json'), text(spec));
+    const result = ok(
+      await mcp.call<{ valid: boolean; errors: { path: string; message: string }[] }>(
+        'validate_library',
+        { path: 'slots-bad' },
+      ),
+    );
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        path: `${BAR}.slots[2].id`,
+        message: 'slot does not exist in the component: nope',
+      }),
+    );
   });
 });
