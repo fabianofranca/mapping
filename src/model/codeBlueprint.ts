@@ -368,12 +368,9 @@ export function codeBlueprint(
     }
     // The target enters the path when descending: a `ref` that comes back to it becomes a `repeated` node.
     const here = new Set(path).add(target.id);
-    const targetMarking = index.markings.get(target.markingId);
-    const seenMarkings = new Set<string>();
-    const slotted =
-      targetMarking === undefined
-        ? null
-        : slottedOf(targetMarking, seenMarkings, here, target.id);
+    // An annotation of the project always has its marking (the model validates it).
+    const targetMarking = index.markings.get(target.markingId)!;
+    const slotted = slottedOf(targetMarking, new Set<string>(), here, target.id);
     const annotation = annotationOf(
       target,
       resolved,

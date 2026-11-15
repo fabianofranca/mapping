@@ -30,10 +30,18 @@
 - `docs/` of the six components (Fidelity: the Compose file and line of the pinned commit for each slot, the `weight` of the children as a limit); `dropdown-menu` and `tabs` say why they stay out (content per table row).
 - Performance fixtures `m3-bottom-app-bar` and `m3-scaffold` (with slots and default content) and a budget case that draws the screen, a bar with four children and a scaffold with the bars through the drawing cache (16 ms; pan and zoom without instantiating).
 - `docs/TESTING.md`: R3, R9, R10 and R17 follow library version 16 (R17: the six types with and without children, in `light` and `dark`; R17.6 reads the scaffold's children in `topBar`, `content` and `floatingActionButton`), and R3 checks the `get_code_hints` of a bar with two `icon-button` in `actions`.
+- Library validation: two slots mapped to the same parameter of a platform in `code.slots` (entry and `variants` case) are refused with `library.slotParameterRepeated`; the generated code would pass the same argument twice.
+- Test checks for the slot fixes: the `bottom-app-bar` children born without `rect`, the `useComponentDrop` drawings, `plan_changes` counting what the project already had, the drawing memo of a project without a key and the component hashes of the drawing key.
 
 ## Corrigido
 
 - A child marking drawn in a slot with `clip` inside a frame with rounded corners is now cut by the rounding of the frame, in the app and in the MCP's image (before, it was cut by the slot's rectangle and the corners stuck out). Without a radius nothing changes.
+- A child that is inside its slot no longer reports `component-overflow`: the overflow of a slot with a `hug` axis counts the extent of its children, not their position (the Scaffold and Bar false positives of the Contacts screen, the second pin in `actions`).
+- A `hug` slot that grows takes in the children assigned to it, nearest first, so the farthest child no longer strays to the other slot (`actions` next to `floatingActionButton`).
+- The children born in a `bottom-app-bar` without `rect` are centered across the bar, and the extended FAB keeps its width (the `floatingActionButton` slot is `hug` and its fallback frame is 56 × 56; the library `version` stays 16).
+- `plan_changes` and `propose_changes` list in `issues.new` only what the marking did not already have before the batch, and `before`, `after` and `resolved` count the drawing items too.
+- The Catalog drag (`useComponentDrop`) hands the drawings to `addComponent`, like the Palette does.
+- The MCP no longer instantiates the drawings once per list row when the project has no valid drawing key, and `loadProject` no longer rereads and rehashes the component files that did not change.
 
 ## Alterado
 
@@ -46,3 +54,4 @@
 - Material 3 (Compose): the `scaffold` children go to the slot arguments (`topBar`, `bottomBar`, `floatingActionButton`, `content`) in `get_code_hints` instead of the node's `children`; the library `version` is 16.
 - A component with a slot is still measured at birth when no axis follows the content (an expression such as the `top-app-bar` height by `style`); as soon as one axis follows the content (`hug`, intrinsic), the component is born at its `size` and Arrange adjusts it after the children come in.
 - `providingSlot` (the slot that provides the inherited content color) is the first slot that has a `provide`, not the first slot: with five slots the `scaffold` kept offering the color to its children.
+- Scripts: `docs/TESTING.md` R9.13, R9.23, R12.37, R17.13, R17.29, R17.30, R17.33 (numbers and preparation), R28.8, R28.11, R28.12 and R28.18 follow the real behavior; `slot-not-accepted` carries no `max` (only `slot-full` does).
