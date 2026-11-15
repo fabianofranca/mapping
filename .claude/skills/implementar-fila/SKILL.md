@@ -374,7 +374,8 @@ painel.py cost <folder> <id> usd=<x> ctx=<tokens> model=<m> effort=<e> [served=<
 painel.py costs [--desde <ISO>] <folder>              # total, by kind (sessions, US$, median) and by stage; reads only the meta
 painel.py uso [--desde <ISO>] <folder>                # usage and quality per role × model × effort (meta.uso): one line per key and the signals; reads only the meta
 painel.py sinal <folder> <id> campo=valor…            # quality signals of a session, in meta.sessions[i].sinais (phase and fix: ci cr crFix ciclo dono sub; testador/reteste: ok falha alta media baixa falso=<high|medium|low> sub); a number replaces, +k adds; code 2 and nothing written on a bad field
-painel.py escapado <folder> '#<bug>' etapa='#<n>' sev=<high|medium|low>   # escaped defect, in meta.escapados (the same bug replaces); `escapado <folder> --conferido` records the time of the last check (meta.escapadosAt)
+painel.py escapado <folder> '#<bug>' etapa='#<n>' sev=<high|medium|low>   # escaped defect, in meta.escapados (the same bug replaces)
+painel.py escapado <folder> --conferido               # records the time of the last check of the escaped defects (meta.escapadosAt)
 painel.py historico <folder> --feito desde=<ISO> ate=<ISO> [linhas=<k>]   # marks the one-time history as recovered (meta.historico); "Session switch" › "In the new session", step 5
 painel.py canario <folder> add <id> papel=<role> de="<model> <effort>" [modelo=<family>] [esforco=<effort>] [filtro=processo] n=<k> volta=<k>   # canary A or B (meta.canarios); goes into `apply`
 painel.py canario <folder> end <id> [motivo="…"]       # the owner (or a refused Haiku) ends the canary: `terminado pelo dono`; goes into `apply`
