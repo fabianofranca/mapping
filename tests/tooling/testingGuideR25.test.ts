@@ -44,10 +44,12 @@ function editJson(file: string, edit: (json: Record<string, unknown>) => void): 
 
 const MSG_15 = 'only allowed with formatVersion 15';
 const MSG_16 = 'only allowed with formatVersion 16';
+const MSG_17 = 'only allowed with formatVersion 17';
 
 /**
- * With the specialization lowered to 14, there are only version errors: those of 15 (`tokens`, `icons`, `structural`) and, with the package
- * at 16, those of 16 (`fieldModels` and `signature`, `ignore`, `calls` and `formats` of `code.compose`, in each type and case).
+ * With the specialization lowered to 14, there are only version errors: those of 15 (`tokens`, `icons`, `structural`), those of 16
+ * (`fieldModels` and `signature`, `ignore`, `calls` and `formats` of `code.compose`, in each type and case) and, with the package
+ * at 17, those of 17 (the `slots` of the types).
  */
 function onlyVersionErrors(
   errors: readonly { message: string; path: string }[],
@@ -55,6 +57,7 @@ function onlyVersionErrors(
   return errors.every(
     (e) =>
       e.message === MSG_15 ||
+      (e.message === MSG_17 && e.path.endsWith('.slots')) ||
       (e.message === MSG_16 &&
         (e.path === 'fieldModels' || e.path.includes('.code.compose.'))),
   );
@@ -92,7 +95,7 @@ describe('R25.22 and R25.23: the guide tokens.mjs merges the package tokens', ()
     ]);
   }, 30_000);
 
-  it('m3-tokens-v14: tokens and icons ask for 15 and everything else is from 16 (fieldModels and signatures)', () => {
+  it('m3-tokens-v14: tokens and icons ask for 15, the slots for 17 and everything else is from 16 (fieldModels and signatures)', () => {
     const report = validate(v14);
     expect(report.ok).toBe(false);
     expect(report.errors.every((e) => e.file === 'material3-compose.spec.json')).toBe(
@@ -184,7 +187,7 @@ describe('R25.43 and R25.44: the screen folders of the guide', () => {
     ]);
   });
 
-  it('m3-tela-st9 (formatVersion 14): structural, tokens and icons ask for 15 and the rest is from 16', () => {
+  it('m3-tela-st9 (formatVersion 14): structural, tokens and icons ask for 15, the slots for 17 and the rest is from 16', () => {
     const errors = validate(st9).errors;
     expect(onlyVersionErrors(errors)).toBe(true);
     expect(
