@@ -30,7 +30,7 @@ const handover = between(
 const notified = between(perStage, 'When the phase notifies (', '3. **Tester.**');
 const item6 = between(phase, '6. Follow the PR', '7. When done, notify');
 const LINE =
-  'Retomada por contexto (<k> de 5): a sessão anterior (<id>) passou a vez com <n> mil; a passagem está em <link>. Continue no branch <branch>, que já existe (não o recrie da origin/epic/<nome>), e não refaça o que a passagem dá como feito.';
+  'Retomada por contexto (<k> de 5): a sessão anterior (<id>) passou a vez com <n> mil; a passagem está em <link>. Continue no branch <branch>, que já existe (não o recrie da origin/epic/<nome>), e não refaça o que a passagem dá como feito, e não releia o que a passagem dá como lido.';
 const occurrences = (text: string, piece: string): number => text.split(piece).length - 1;
 
 describe('CX1 — "For the phase session" of docs/FLOW.md, sub-item of item 3', () => {
@@ -85,6 +85,7 @@ describe('CX1 — "For the phase session" of docs/FLOW.md, sub-item of item 3', 
       'the decisions made outside the sub-issue',
       'the pending defects',
       'the next step',
+      'the files and sections already read',
     ]) {
       expect(ceiling).toContain(field);
     }
@@ -104,6 +105,38 @@ describe('CX1 — "For the phase session" of docs/FLOW.md, sub-item of item 3', 
     expect(ceiling).toContain('`git switch <branch>`');
     expect(ceiling).toMatch(/continues on the branch that already exists/);
     expect(ceiling).toMatch(/does not recreate it/);
+  });
+
+  it('#1996: item 1 reads the stage issue through one subagent, never whole in the main thread', () => {
+    const item1 = between(phase, '\n1. Read', '\n2. Branch');
+    expect(item1).toContain('`CLAUDE.md`, `docs/PROCESS.md`');
+    expect(item1).toMatch(/sub-issue #<phase> with its comments/);
+    expect(item1).toMatch(/issue #<stage> \*\*through one subagent\*\*/);
+    expect(item1).toContain('the sections and numbered decisions the sub-issue cites');
+    expect(item1).toContain('"out of scope" section');
+    expect(item1).toMatch(/never loads the whole stage issue or its comments/);
+    expect(item1).toContain('do not reopen decisions already made');
+  });
+
+  it('#1996: the reading rule is a sub-item of item 3: grep -n and a range, never a whole long file', () => {
+    const anchorRead = item3.indexOf('   - **Reading rule:**');
+    expect(anchorRead).toBeGreaterThan(0);
+    expect(anchorRead).toBeLessThan(item3.indexOf('   - **Phase context ceiling:**'));
+    const rule = item3.slice(
+      anchorRead,
+      item3.indexOf('   - **Phase context ceiling:**'),
+    );
+    expect(rule).toContain('~300 lines');
+    expect(rule).toContain('`grep -n`');
+    expect(rule).toContain("`sed -n '<a>,<b>p'`");
+    expect(rule).toContain('`Read` with `offset`/`limit`');
+    expect(rule).toContain('`| head -40`');
+  });
+
+  it('#1996: the successor does not reread what the handoff gives as read', () => {
+    expect(ceiling).toMatch(
+      /without redoing what the handoff gives as done or rereading what it gives as read/,
+    );
   });
 
   it('PP2: the whole resume line appears only once in FLOW + skill, and it is in the sub-item of item 3', () => {
