@@ -82,16 +82,19 @@ describe('the texts of the pending item', () => {
     );
   });
 
-  it('speaks Portuguese in pt-BR', () => {
+  it('is translated in pt-BR', () => {
     locale.value = 'pt-BR';
     const p = a11yPut(a11yWorld(), 'bar', 'B', undefined, { actionIcon1: 'search' });
     const harness = createHarness(p);
     const issue = harness.context.derived.issues.value
       .get('B')
       ?.find((i) => i.part?.id === 'action1');
-    expect(issue && issueMessage(p, annotationOf(p, 'B'), issue)).toBe(
-      'Sem rótulo acessível na parte First action',
+    const message = issue ? issueMessage(p, annotationOf(p, 'B'), issue) : '';
+    // The pt-BR text of the key, with the part's name filled in (not the English one).
+    expect(message).toBe(
+      t('issue.accessible-label-missing-part', { part: 'First action' }),
     );
+    expect(message).not.toBe('Missing accessible label on the part First action');
   });
 });
 
