@@ -1,6 +1,8 @@
 import {
+  accessibilityAudit,
   createDrawingCache,
   projectIssues,
+  type AccessibilityAudit,
   type AnnotationIssue,
   type ComponentDrawings,
 } from '../src/model';
@@ -17,6 +19,8 @@ interface Entry {
   readonly drawings: ComponentDrawings;
   /** The model's issues plus the drawing's, built on first use. */
   issues?: ReadonlyMap<string, readonly AnnotationIssue[]>;
+  /** The accessibility audit (stage #1128), built on first use with this entry's drawings. */
+  audit?: AccessibilityAudit;
 }
 
 /** How many projects the memo keeps (the oldest one leaves first). */
@@ -56,9 +60,21 @@ export function projectDrawings(loaded: LoadedProject): ComponentDrawings {
   return entryOf(loaded).drawings;
 }
 
+/**
+ * The accessibility audit of the project (`accessible-label-missing` issues and `touch-target-small`
+ * findings per annotation), memoized with the drawings by content key: two reads on the same revision
+ * audit once. Only the annotations that have something are in the map.
+ */
+export function projectAudit(loaded: LoadedProject): AccessibilityAudit {
+  const entry = entryOf(loaded);
+  entry.audit ??= accessibilityAudit(loaded.project, { drawings: entry.drawings });
+  return entry.audit;
+}
+
 function mergeDrawingIssues(
   base: ReadonlyMap<string, readonly AnnotationIssue[]>,
   drawings: ComponentDrawings,
+  audit: AccessibilityAudit,
 ): ReadonlyMap<string, readonly AnnotationIssue[]> {
   let merged: Map<string, readonly AnnotationIssue[]> | undefined;
   const add = (annotationId: string, issue: AnnotationIssue) => {
@@ -69,20 +85,27 @@ function mergeDrawingIssues(
     if (d.overflow) add(d.annotationId, { code: 'component-overflow' });
     for (const { annotationId, ...issue } of d.slotIssues) add(annotationId, issue);
   }
+  for (const [annotationId, entry] of audit) {
+    for (const issue of entry.issues) add(annotationId, issue);
+  }
   return merged ?? base;
 }
 
 /**
  * The pending items of every annotation: the model's (`projectIssues`) plus the drawing's
- * (`component-overflow`, `slot-not-accepted`, `slot-full`, `slot-hidden`), in the same shape and order as `derived.issues`.
- * It is the model's own map when no drawing has anything.
+ * (`component-overflow`, `slot-not-accepted`, `slot-full`, `slot-hidden`) and the audit's (`accessible-label-missing`),
+ * in the same shape and order as `derived.issues`. It is the model's own map when none of them has anything.
  */
 export function projectIssuesWithDrawings(
   loaded: LoadedProject,
 ): ReadonlyMap<string, readonly AnnotationIssue[]> {
   const entry = entryOf(loaded);
   if (entry.issues !== undefined) return entry.issues;
-  const issues = mergeDrawingIssues(projectIssues(loaded.project), entry.drawings);
+  const issues = mergeDrawingIssues(
+    projectIssues(loaded.project),
+    entry.drawings,
+    projectAudit(loaded),
+  );
   entry.issues = issues;
   return issues;
 }

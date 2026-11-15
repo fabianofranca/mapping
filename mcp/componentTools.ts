@@ -4,6 +4,7 @@ import {
   getSpec,
   getSpecialization,
   repoLink,
+  typeAccessibility,
   type Spec,
   type SpecAnnotationType,
 } from '../src/model';
@@ -294,6 +295,12 @@ function slotsField(
   return slots === null ? {} : { slots };
 }
 
+/** `accessibility` of the type resolved (role, label, touch target and parts), only when it declares one. */
+function accessibilityField(spec: Spec, type: SpecAnnotationType): Json {
+  const accessibility = typeAccessibility(spec, type);
+  return accessibility === null ? {} : { accessibility };
+}
+
 /** `get_component`: everything about a library type. */
 export async function getComponent(
   roots: Roots,
@@ -377,6 +384,7 @@ export async function getComponent(
     ...(external ? { docExternal: external.view } : {}),
     fields: type.fields.map(fieldView),
     ...slotsField(source.spec, type, loaded?.component),
+    ...accessibilityField(source.spec, type),
     examples,
     ...(type.code === undefined
       ? {}

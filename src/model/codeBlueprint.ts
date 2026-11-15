@@ -4,6 +4,7 @@ import {
   platformRepoOf,
   type ProjectPlatform,
 } from './codeLocations';
+import { annotationAccessibility, type AnnotationAccessibility } from './accessibility';
 import { blueprintParams, type BlueprintParam } from './codeArgs';
 import type { ComponentDrawings } from './componentDrawings';
 import { resolveCode } from './codeVariants';
@@ -47,6 +48,11 @@ export interface BlueprintAnnotation {
   /** Parameters in the order of the type's fields; empty without `code`. */
   readonly params: readonly BlueprintParam[];
   readonly notes: string | null;
+  /**
+   * The role, the accessible label and the parts of the annotation (stage #1128): only when the type declares
+   * `accessibility` and has something to say. See `AnnotationAccessibility`.
+   */
+  readonly accessibility?: AnnotationAccessibility;
   /**
    * Filled-in values, per field and in the type's order, as in the mapping (untranslated):
    * `ref` by the target's label and `table` without `_id`. They serve the `notes` (e.g. "use the value
@@ -302,6 +308,16 @@ export function codeBlueprint(
   const rootMarking = index.markings.get(markingId) ?? fail('not-found', markingId);
   const platform = findPlatform(p, platformId) ?? fail('unknown-platform', platformId);
 
+  /** `{ accessibility }` of the annotation, or nothing; the parts a child fills in are not drawn. */
+  const accessibilityOf = (
+    a: Annotation,
+  ): { accessibility?: AnnotationAccessibility } => {
+    const drawing = options.drawings?.get(a.markingId);
+    const inactive = drawing?.annotationId === a.id ? drawing.inactiveFields : undefined;
+    const accessibility = annotationAccessibility(p, a, inactive);
+    return accessibility === null ? {} : { accessibility };
+  };
+
   const annotationOf = (
     a: Annotation,
     resolved: ResolvedType,
@@ -337,6 +353,7 @@ export function codeBlueprint(
       label: instanceLabel(p, a),
       layer: index.layers.get(a.layerId)?.name ?? null,
       ...codeSummary(p, resolved, platformId, code),
+      ...accessibilityOf(a),
       params,
       values: mappedValues(p, fields, values),
       linked,

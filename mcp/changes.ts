@@ -18,7 +18,7 @@ import {
   type BatchIo,
   type BatchResult,
 } from './batch';
-import { withDrawingIssues } from './drawingProof';
+import { touchWarnings, withDrawingIssues } from './drawingProof';
 import { ToolError } from './errors';
 import { Refs } from './items';
 import { membershipView } from './membership';
@@ -233,6 +233,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
       roleName: c.roleName,
       message: c.message,
     })),
+    ...touchWarnings(refs, result.before),
   ];
   const membership = membershipView(
     result.before,

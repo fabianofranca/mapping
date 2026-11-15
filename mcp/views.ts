@@ -30,6 +30,7 @@ import {
   type Annotation,
   type Arrow,
   type AnnotationIssue,
+  typeAccessibility,
   type Layer,
   type Marking,
   type Project,
@@ -38,7 +39,8 @@ import {
 } from '../src/model';
 import { memoByProject } from '../src/model/projectIndex';
 import { annotationCode, assertPlatform, CODE_HINT, type CodeContext } from './codeViews';
-import { projectIssuesWithDrawings } from './drawings';
+import { auditView } from './auditViews';
+import { projectAudit, projectIssuesWithDrawings } from './drawings';
 import { childSlotView, markingSlotsView, typeSlotsView } from './slotViews';
 import { ToolError } from './errors';
 import { Refs } from './items';
@@ -121,12 +123,19 @@ const siblingIndexes = memoByProject((p: Project): ReadonlyMap<string, number> =
   return indexes;
 });
 
+/** The audit's warnings of the annotations of a marking (empty when it has none). */
+function markingAudit(refs: Refs, annotations: readonly Annotation[]): Json[] {
+  const audit = projectAudit(refs.loaded);
+  return annotations.flatMap((a) => auditView(refs, audit.get(a.id)?.findings ?? []));
+}
+
 /** Marking in a compact row (lists and children). */
 export function markingRow(refs: Refs, marking: Marking): Json {
   const index = projectIndex(refs.project);
   const own = index.annotationsByMarking.get(marking.id) ?? [];
   const issues = projectIssuesWithDrawings(refs.loaded);
   const incomplete = own.filter((a) => issues.has(a.id)).length;
+  const audit = markingAudit(refs, own);
   return {
     ref: refs.ref('m', marking.id),
     name: marking.name,
@@ -143,15 +152,19 @@ export function markingRow(refs: Refs, marking: Marking): Json {
     needsReview: marking.needsReview,
     annotations: own.length,
     ...(incomplete > 0 ? { incomplete } : {}),
+    ...(audit.length > 0 ? { audit } : {}),
   };
 }
 
-function issueView(issue: AnnotationIssue): Json {
+export function issueView(issue: AnnotationIssue): Json {
   return {
     code: issue.code,
     ...(issue.key !== undefined ? { key: issue.key } : {}),
     ...(issue.rowId !== undefined ? { rowId: issue.rowId } : {}),
     ...(issue.column !== undefined ? { column: issue.column } : {}),
+    ...(issue.part !== undefined
+      ? { part: { id: issue.part.id, name: issue.part.name } }
+      : {}),
     ...(issue.slot !== undefined
       ? { slot: { id: issue.slot.id, name: issue.slot.name } }
       : {}),
@@ -217,6 +230,13 @@ function typeSlotsField(refs: Refs, resolved: ResolvedType | null): Json {
   return slots === null ? {} : { slots };
 }
 
+/** `accessibility` of the annotation's type, resolved (role, label, touch target and parts), when it declares one. */
+function typeAccessibilityField(resolved: ResolvedType | null): Json {
+  const accessibility =
+    resolved === null ? null : typeAccessibility(resolved.spec, resolved.type);
+  return accessibility === null ? {} : { accessibility };
+}
+
 /** The annotation with everything that describes it: content, links, outgoing references, backlinks and pending items. */
 export function annotationView(
   refs: Refs,
@@ -231,6 +251,10 @@ export function annotationView(
   const layer = projectIndex(p).layers.get(annotation.layerId);
   const resolvedType = typeOfAnnotation(p, annotation);
   const issues = projectIssuesWithDrawings(refs.loaded).get(annotation.id) ?? [];
+  const audit = auditView(
+    refs,
+    projectAudit(refs.loaded).get(annotation.id)?.findings ?? [],
+  );
 
   const outgoing = refsOf(p, annotation).map((link) => {
     const { ref } = link;
@@ -271,6 +295,7 @@ export function annotationView(
             typeId: annotation.type.typeId,
             name: resolvedType?.type.name ?? null,
             ...typeSlotsField(refs, resolvedType),
+            ...typeAccessibilityField(resolvedType),
           },
           values: annotation.values,
           ...(code ? { code } : {}),
@@ -279,6 +304,7 @@ export function annotationView(
     ...(outgoing.length > 0 ? { refs: outgoing } : {}),
     ...(backlinks.length > 0 ? { backlinks } : {}),
     ...(issues.length > 0 ? { issues: issues.map(issueView) } : {}),
+    ...(audit.length > 0 ? { audit } : {}),
   };
 }
 

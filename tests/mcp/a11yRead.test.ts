@@ -167,3 +167,40 @@ describe('list_markings: accessibility', () => {
     ).toContain((await annotationsOf('bare'))[0]!.ref);
   });
 });
+
+describe('the type resolved: get_component and get_annotation', () => {
+  it('get_component carries accessibility with the defaults filled in', async () => {
+    const button = await call('get_component', {
+      project: 'a11y',
+      specId: 'accessibility',
+      type: 'button',
+    });
+    expect(button.accessibility).toEqual({
+      role: 'button',
+      label: { fields: ['label'], required: true },
+      touchTarget: { width: 44, height: 44, mode: 'visual' },
+    });
+    const bar = await call('get_component', {
+      project: 'a11y',
+      specId: 'accessibility',
+      type: 'bar',
+    });
+    expect(bar.accessibility.parts[0]).toEqual({
+      id: 'action1',
+      name: 'First action',
+      when: 'actionIcon1',
+      role: 'button',
+      label: { fields: ['actionIcon1Description'], required: true },
+    });
+    expect(bar.accessibility.role).toBeUndefined();
+    expect(bar.accessibility.touchTarget).toBeUndefined();
+  });
+
+  it('the annotation view carries the same accessibility in its type', async () => {
+    const [annotation] = await annotationsOf('small');
+    expect(annotation!.type.accessibility).toMatchObject({
+      role: 'button',
+      touchTarget: { width: 44, height: 44, mode: 'visual' },
+    });
+  });
+});
