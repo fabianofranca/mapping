@@ -8,8 +8,6 @@ import { createServer } from '../../mcp/server';
 import {
   COMPONENTS,
   FIXTURE,
-  SCREEN,
-  SPEC_ID,
   slotsProject,
   specText,
   type Placer,

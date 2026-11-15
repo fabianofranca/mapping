@@ -451,12 +451,13 @@ describe('codeBlueprint with variants (formatVersion 9)', () => {
 // The named slots (stage #1080, SL5, decision 11): with the `drawings` option the child markings go into the
 // slot argument of the mother's annotation, out of the node's `children`; the default-content fields of a
 // filled slot leave the params.
+type Doc = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 describe('codeBlueprint with named slots', () => {
   const options = {
-    tweak: (spec: Record<string, any>) => {
-      // eslint-disable-line @typescript-eslint/no-explicit-any
+    tweak: (spec: Doc) => {
       spec.platforms = [{ id: 'compose', name: 'Compose', language: 'kotlin' }];
-      const types: Record<string, any>[] = spec.layers[0].annotationTypes;
+      const types: Doc[] = spec.layers[0].annotationTypes;
       types.find((t) => t.id === 'bar')!.code = {
         compose: {
           symbol: 'demo.Bar',

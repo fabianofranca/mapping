@@ -225,6 +225,38 @@ function wholeSites(
   return sites;
 }
 
+/** The mapping values of the fields that carry something (empty lists stay out). */
+function mappedValues(
+  p: Project,
+  fields: readonly SpecField[],
+  values: Readonly<Record<string, JsonValue>>,
+): Record<string, JsonValue> {
+  const mapped: Record<string, JsonValue> = {};
+  for (const field of fields) {
+    const v = mappingValue(p, field, values[field.key]);
+    if (v !== null && !(Array.isArray(v) && v.length === 0)) mapped[field.key] = v;
+  }
+  return mapped;
+}
+
+/** What the type's `code` on the platform says about the annotation: symbol, path, its link and notes. */
+function codeSummary(
+  p: Project,
+  resolved: ResolvedType,
+  platformId: string,
+  code: SpecCode | null,
+): Pick<BlueprintAnnotation, 'symbol' | 'path' | 'pathUrl' | 'notes'> {
+  const path = code?.path ?? null;
+  return {
+    symbol: code?.symbol ?? null,
+    path,
+    pathUrl: path
+      ? codeLink(p, { specId: resolved.spec.id, platform: platformId, path })
+      : null,
+    notes: code?.notes ?? null,
+  };
+}
+
 /** The slot arguments of a marking, with what they take away from the annotation and the children. */
 interface Slotted {
   /** The annotation that draws the marking (the one that carries `slotArgs`). */
@@ -275,19 +307,12 @@ export function codeBlueprint(
     const fields = resolved.type.fields;
     const mine = slotted?.annotationId === a.id ? slotted : null;
     // The default-content fields of a filled slot are no arguments: the child is the content.
-    const argFields =
-      mine === null ? fields : fields.filter((field) => !mine.inactive.has(field.key));
     const params = blueprintParams(
-      argFields,
+      mine === null ? fields : fields.filter((field) => !mine.inactive.has(field.key)),
       code,
       resolved.spec.formatVersion,
       (field) => (code === null ? null : paramValue(p, field, values[field.key], code)),
     );
-    const mapped: Record<string, JsonValue> = {};
-    for (const field of fields) {
-      const v = mappingValue(p, field, values[field.key]);
-      if (v !== null && !(Array.isArray(v) && v.length === 0)) mapped[field.key] = v;
-    }
     const linked = (index.annotationsByOwner.get(a.id) ?? []).flatMap((child) => {
       const childType = included.get(child.id);
       return childType && !seen.has(child.id)
@@ -301,18 +326,9 @@ export function codeBlueprint(
       type: resolved.type.name,
       label: instanceLabel(p, a),
       layer: index.layers.get(a.layerId)?.name ?? null,
-      symbol: code?.symbol ?? null,
-      path: code?.path ?? null,
-      pathUrl: code?.path
-        ? codeLink(p, {
-            specId: resolved.spec.id,
-            platform: platformId,
-            path: code.path,
-          })
-        : null,
+      ...codeSummary(p, resolved, platformId, code),
       params,
-      notes: code?.notes ?? null,
-      values: mapped,
+      values: mappedValues(p, fields, values),
       linked,
       ...(mine === null ? {} : { slotArgs: mine.args }),
       targets: wholeSites(fields, values).flatMap((site) => {
