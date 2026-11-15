@@ -179,7 +179,7 @@ const isText = (type: unknown): boolean => type === 'string' || type === 'enum';
 const isRole = (role: string): boolean =>
   (ACCESSIBILITY_ROLES as readonly string[]).includes(role);
 
-const isInteractive = (role: string | undefined): boolean =>
+export const isInteractive = (role: string | undefined): boolean =>
   role !== undefined && (INTERACTIVE_ROLES as readonly string[]).includes(role);
 
 function checkRole(role: string | undefined, path: Path, add: Add): void {
@@ -265,8 +265,10 @@ function checkTableLabel(
   add: Add,
 ): void {
   keys.forEach((key, i) => {
-    const [owner, column = ''] = key.split('.', 2);
-    if (key.indexOf('.') < 0 || owner !== table.table) {
+    const dot = key.indexOf('.');
+    const owner = dot < 0 ? key : key.slice(0, dot);
+    const column = dot < 0 ? '' : key.slice(dot + 1);
+    if (dot < 0 || owner !== table.table) {
       add(
         [...path, i],
         specMsg('spec.accessibilityLabelOtherTable', { key, table: table.table }),

@@ -4,7 +4,6 @@ import type { AnnotationIssue } from './issues';
 import { projectIndex } from './projectIndex';
 import { tableRows } from './refs';
 import {
-  INTERACTIVE_ROLES,
   type Spec,
   type SpecAccessibilityLabel,
   type SpecAccessibilityPart,
@@ -12,6 +11,7 @@ import {
   type SpecTouchTarget,
   type SpecTypeAccessibility,
 } from './spec';
+import { isInteractive } from './specAccessibility';
 import { typeOfAnnotation } from './specLookup';
 import { isEmptyValue } from './typed';
 import type { Annotation, JsonValue, Project, Rect } from './types';
@@ -59,7 +59,7 @@ export interface AuditContext {
 }
 
 /** A density as text: up to 3 decimals, no trailing zeros (`2.625`, `3`). */
-export function formatDensity(density: number): string {
+export function densityText(density: number): string {
   return String(Number(density.toFixed(3)));
 }
 
@@ -92,9 +92,6 @@ interface ResolvedType {
 }
 
 type ResolvedSpec = ReadonlyMap<string, ResolvedType>;
-
-const isInteractive = (role: string | undefined): boolean =>
-  role !== undefined && (INTERACTIVE_ROLES as readonly string[]).includes(role);
 
 const isAudited = (role: string | undefined): boolean =>
   role !== undefined && role !== 'none';
@@ -144,8 +141,8 @@ function resolveType(
   type: SpecAnnotationType,
   root: SpecTouchTarget | undefined,
 ): ResolvedType | null {
-  if (type.accessibility === undefined && root === undefined) return null;
-  const a: SpecTypeAccessibility = type.accessibility ?? {};
+  if (type.accessibility === undefined) return null;
+  const a: SpecTypeAccessibility = type.accessibility;
   const tables = new Set(type.fields.filter((f) => f.type === 'table').map((f) => f.key));
   return {
     label: isAudited(a.role) ? resolveLabel(a.label, a.role ?? '', null) : null,

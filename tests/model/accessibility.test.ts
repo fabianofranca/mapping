@@ -10,7 +10,7 @@ import {
   applySpecialization,
   createArrow,
   createMarking,
-  formatDensity,
+  densityText,
   parseSpec,
   projectIssues,
   setContainerDensity,
@@ -280,10 +280,10 @@ describe('touch-target-small', () => {
   });
 
   it('prints the density with up to 3 decimals and no trailing zeros', () => {
-    expect(formatDensity(2.625)).toBe('2.625');
-    expect(formatDensity(3)).toBe('3');
-    expect(formatDensity(1.5)).toBe('1.5');
-    expect(formatDensity(2.6250001)).toBe('2.625');
+    expect(densityText(2.625)).toBe('2.625');
+    expect(densityText(3)).toBe('3');
+    expect(densityText(1.5)).toBe('1.5');
+    expect(densityText(2.6250001)).toBe('2.625');
     const p = put(world(specOf(), 2.625), 'button', 'A', rect(10, 10), { label: 'Ok' });
     const [finding] = findingsOf(p, 'A');
     expect(finding?.density).toBe(2.625);

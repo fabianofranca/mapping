@@ -337,6 +337,12 @@ describe('formatVersion 18: label fields', () => {
     expect(missing.map((i) => i.message)).toEqual([
       'label: field does not exist: actions.zz',
     ]);
+    const twoDots = issuesOf(
+      v18((s) => (bar(s).accessibility.parts[2].label.fields = ['actions.name.extra'])),
+    );
+    expect(twoDots.map((i) => i.message)).toEqual([
+      'label: field does not exist: actions.name.extra',
+    ]);
     const weight = issuesOf(
       v18((s) => (bar(s).accessibility.parts[2].label.fields = ['actions.weight'])),
     );
