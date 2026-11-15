@@ -8,8 +8,8 @@
 
 ## Sincronização
 
-Nothing to write to the **Mapping** artifact so far: phase A1 does not change a component, token or icon of the app.
+Versão 91 (guides and index, in a single publish) of the **Mapping** artifact, on 2026-11-15. All three pending items were recorded in the component guides: `NoticesView` (the Accessibility section, following only **Only visible layers**), `StatusBar` (the `NoticesItem` count adds the annotations with an accessibility warning, once per annotation) and `MarkingPanel` (one warning `Notice` per accessibility warning, size in units and image pixels, and the pending item `accessible-label-missing` listed in **Incomplete**). The index got its `lastChange`. The previews were not changed. No new component, token or icon.
 
 ## Ficou sem gravar
 
-Nothing so far.
+Nada.
