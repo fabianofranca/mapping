@@ -375,6 +375,9 @@ export function fnv1a(text: string): string {
   return hash.toString(16);
 }
 
+/** The hash of each component file, by path, size and `mtime` (P4: `loadProject` no longer rereads every load). */
+const hashCache = new StampCache<string>();
+
 /** The text of each component file of the applied specializations (hashed; unreadable = `-`). */
 async function componentHashes(
   roots: Roots,
@@ -386,15 +389,24 @@ async function componentHashes(
     const { spec } = applied;
     if (!spec || spec.formatVersion < 4) continue;
     for (const path of componentPaths(spec, applied.file)) {
-      try {
-        const text = await readText(roots, dir, path);
-        hashes.push(`${path}=${text === null ? '-' : fnv1a(text)}`);
-      } catch {
-        hashes.push(`${path}=-`);
-      }
+      hashes.push(`${path}=${await componentHash(roots, dir, path)}`);
     }
   }
   return hashes;
+}
+
+async function componentHash(roots: Roots, dir: string, path: string): Promise<string> {
+  try {
+    const found = await fileStamp(roots, dir, path);
+    const cached = found === null ? undefined : hashCache.get(found.stamp);
+    if (cached !== undefined) return cached;
+    const text = await readText(roots, dir, path);
+    const hash = text === null ? '-' : fnv1a(text);
+    if (found !== null && text !== null) hashCache.set(found.stamp, hash);
+    return hash;
+  } catch {
+    return '-';
+  }
 }
 
 /**
