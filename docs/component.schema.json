@@ -3057,6 +3057,15 @@
         "name": {
           "type": "string"
         },
+        "id": {
+          "description": "formatVersion 4: the slot's name, unique in the component and required when the component has more than one slot (the schema does not check the version or the uniqueness: that is parseComponent's job).",
+          "type": "string",
+          "pattern": "^[a-z][a-zA-Z0-9_-]*$"
+        },
+        "fallback": {
+          "description": "formatVersion 4: the default content, a frame drawn when no child marking is in the slot. It cannot contain a slot, and the slot's box cannot depend on a field that only the fallbacks cite (parseComponent checks both).",
+          "$ref": "#/$defs/node_frame"
+        },
         "visible": {
           "$ref": "#/$defs/expr_boolean"
         },
