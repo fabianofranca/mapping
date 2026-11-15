@@ -34,3 +34,14 @@ describe('audit views: the rounded size never reads as meeting the minimum', () 
     expect(view).toMatchObject({ actual: { width: 36, height: 48 } });
   });
 });
+
+describe('audit views: the minimum is rounded like the size (D6)', () => {
+  it('a fractional minimum reads as in the view', () => {
+    const f = { ...finding(36), min: { width: 47.96, height: 47.96 } } as AuditFinding;
+    const [view] = auditView(refs, [f]);
+    expect(view).toMatchObject({ min: { width: 48, height: 48 } });
+    expect(auditWarning(refs, f).message).toBe(
+      '36 × 48; minimum 48 × 48 units (126 × 126 px at 2.625x)',
+    );
+  });
+});

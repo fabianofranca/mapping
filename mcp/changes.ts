@@ -18,7 +18,7 @@ import {
   type BatchIo,
   type BatchResult,
 } from './batch';
-import { touchWarnings, withDrawingIssues } from './drawingProof';
+import { batchAudits, touchWarnings, withDrawingIssues } from './drawingProof';
 import { ToolError } from './errors';
 import { Refs } from './items';
 import { membershipView } from './membership';
@@ -217,6 +217,7 @@ function libraryWarningViews(result: BatchResult): Record<string, unknown>[] {
 /** Common part of the `plan_changes` and `propose_changes` responses: the batch result. */
 export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
   const { result, location, loaded, refs } = prepared;
+  const audits = batchAudits(refs, result.before);
   // Warnings (they block nothing): the library's.
   const warnings: unknown[] = [
     ...libraryWarningViews(result),
@@ -233,7 +234,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
       roleName: c.roleName,
       message: c.message,
     })),
-    ...touchWarnings(refs, result.before),
+    ...touchWarnings(refs, result.before, audits),
   ];
   const membership = membershipView(
     result.before,
@@ -251,7 +252,12 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
       : {}),
     summary: result.steps.map((s) => `${s.index}. ${s.description}`),
     changes: changeCounts(result.before, result.project),
-    issues: withDrawingIssues(issueChanges(refs, result.before), refs, result.before),
+    issues: withDrawingIssues(
+      issueChanges(refs, result.before),
+      refs,
+      result.before,
+      audits,
+    ),
     notices: noticeChanges(refs, result.before, prepared.changes()),
     ...(membership.length > 0 ? { membership } : {}),
     ...(warnings.length > 0 ? { warnings } : {}),

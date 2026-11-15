@@ -1,5 +1,6 @@
 import {
   accessibilityAudit,
+  type AccessibilityAudit,
   createDrawingCache,
   effectiveDensity,
   effectiveDirection,
@@ -263,19 +264,30 @@ const itemKey = (item: DrawingItem): string =>
 const auditKey = (i: AnnotationIssue): string =>
   [i.code, i.key, i.column, i.rowId, i.part?.id].map((x) => x ?? '').join('\u0000');
 
-/** The accessibility audit's pending items, by annotation, of the annotations in `only` (all when `null`). */
+/** The accessibility audit of the project before and after a batch: each one is computed once per batch. */
+export interface BatchAudits {
+  readonly before: AccessibilityAudit;
+  readonly after: AccessibilityAudit;
+}
+
+/** The audit of `before` and of the saved project, with the drawings that measure each (one audit per project). */
+export function batchAudits(refs: Refs, before: Project): BatchAudits {
+  // The saved project is drawn first: drawing `before` ahead of it leaves its cache stale for a changed direction.
+  const drawingsAfter = drawingsOf(refs, refs.project);
+  const drawingsBefore = drawingsOf(refs, before);
+  return {
+    after: accessibilityAudit(refs.project, { drawings: drawingsAfter }),
+    before: accessibilityAudit(before, { drawings: drawingsBefore }),
+  };
+}
+
+/** The accessibility audit's pending items, by annotation. */
 function auditIssuesOf(
-  project: Project,
-  drawings: ComponentDrawings,
-  only: ReadonlySet<string> | null,
+  audit: AccessibilityAudit,
 ): Map<string, readonly AnnotationIssue[]> {
   const found = new Map<string, readonly AnnotationIssue[]>();
-  const index = projectIndex(project);
-  for (const [annotationId, entry] of accessibilityAudit(project, { drawings })) {
-    if (entry.issues.length === 0) continue;
-    const markingId = index.annotations.get(annotationId)?.markingId;
-    if (only !== null && (markingId === undefined || !only.has(markingId))) continue;
-    found.set(annotationId, entry.issues);
+  for (const [annotationId, entry] of audit) {
+    if (entry.issues.length > 0) found.set(annotationId, entry.issues);
   }
   return found;
 }
@@ -283,17 +295,24 @@ function auditIssuesOf(
 /**
  * The `touch-target-small` warnings of the markings the batch created or changed (stage #1128, decision 9 of
  * #1081): the audit's findings with the annotation, the marking and a message. They go in the plan's `warnings`,
- * never in `issues`: a small touch area does not leave the annotation incomplete.
+ * never in `issues`: a small touch area does not leave the annotation incomplete. A warning the annotation already
+ * had before the batch is not new, so it does not show again.
  */
-export function touchWarnings(refs: Refs, before: Project): Record<string, unknown>[] {
+export function touchWarnings(
+  refs: Refs,
+  before: Project,
+  audits: BatchAudits,
+): Record<string, unknown>[] {
   const changed = changedMarkings(before, refs.project);
   if (changed.size === 0) return [];
-  const audit = accessibilityAudit(refs.project, {
-    drawings: drawingsOf(refs, refs.project),
-  });
-  return [...audit.values()]
+  const had = new Set(
+    [...audits.before.values()].flatMap((entry) =>
+      entry.findings.map((finding) => finding.annotationId),
+    ),
+  );
+  return [...audits.after.values()]
     .flatMap((entry) => entry.findings)
-    .filter((finding) => changed.has(finding.markingId))
+    .filter((finding) => changed.has(finding.markingId) && !had.has(finding.annotationId))
     .map((finding) => auditWarning(refs, finding));
 }
 
@@ -307,6 +326,7 @@ export function withDrawingIssues(
   issues: Record<string, unknown>,
   refs: Refs,
   before: Project,
+  audits: BatchAudits,
 ): Record<string, unknown> {
   // The saved project is drawn first: drawing `before` ahead of it leaves its cache stale for a changed direction.
   const drawingsAfter = drawingsOf(refs, refs.project);
@@ -314,8 +334,8 @@ export function withDrawingIssues(
   const hasAfter = drawingItemsOf(refs, refs.project, null, drawingsAfter);
   const proof = drawingProof(refs, before);
   const hadBefore = drawingItemsOf(refs, before, null, drawingsBefore);
-  const auditAfter = auditIssuesOf(refs.project, drawingsAfter, null);
-  const auditBefore = auditIssuesOf(before, drawingsBefore, null);
+  const auditAfter = auditIssuesOf(audits.after);
+  const auditBefore = auditIssuesOf(audits.before);
   const idsBefore = new Set([
     ...projectIssues(before).keys(),
     ...hadBefore.keys(),

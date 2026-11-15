@@ -40,7 +40,7 @@ export function auditView(refs: Refs, findings: readonly AuditFinding[]): Json[]
 /** The text of a warning: `36 × 40; minimum 44 × 44 units (132 × 132 px at 3x)`. */
 function warningMessage(f: AuditFinding): string {
   const { actual, min, minPx } = f;
-  return `${actualUnitsOf(actual.width)} × ${actualUnitsOf(actual.height)}; minimum ${min.width} × ${min.height} units (${minPx.width} × ${minPx.height} px at ${densityText(f.density)}x)`;
+  return `${actualUnitsOf(actual.width)} × ${actualUnitsOf(actual.height)}; minimum ${unitsOf(min.width)} × ${unitsOf(min.height)} units (${minPx.width} × ${minPx.height} px at ${densityText(f.density)}x)`;
 }
 
 /** A finding as an entry of the plan's `warnings`: the audit's fields plus the marking and a message. */

@@ -180,9 +180,21 @@ type Values = Readonly<Record<string, JsonValue>>;
 
 const hasValue = (values: Values, key: string): boolean => !isEmptyValue(values[key]);
 
-/** The label is empty: none of its fields has a value. */
+/** The text of a label value: a string or a number; any other kind (object, boolean) is not a name. */
+const textOfValue = (value: JsonValue | undefined): string | undefined =>
+  typeof value === 'string'
+    ? value
+    : typeof value === 'number'
+      ? String(value)
+      : undefined;
+
+/** A label field names the element: its value is text (non-empty) or a number. The audit and the code hints share it. */
+const hasLabelText = (values: Values, key: string): boolean =>
+  !isEmptyValue(values[key]) && textOfValue(values[key]) !== undefined;
+
+/** The label is empty: none of its fields names the element. */
 const labelEmpty = (label: ResolvedLabel, values: Values): boolean =>
-  label.required && !label.fields.some((key) => hasValue(values, key));
+  label.required && !label.fields.some((key) => hasLabelText(values, key));
 
 function typeIssues(label: ResolvedLabel | null, values: Values): AnnotationIssue[] {
   if (label === null || !labelEmpty(label, values)) return [];
@@ -215,7 +227,7 @@ function tablePartIssues(
   const issues: AnnotationIssue[] = [];
   for (const row of tableRows(values[table])) {
     if (part.whenColumn !== null && isEmptyValue(row[part.whenColumn])) continue;
-    if (label.fields.some((column) => !isEmptyValue(row[column]))) continue;
+    if (label.fields.some((column) => hasLabelText(row, column))) continue;
     issues.push({
       code: 'accessible-label-missing',
       key: table,
@@ -303,12 +315,17 @@ function auditAnnotation(
   return issues.length === 0 && findings.length === 0 ? null : { issues, findings };
 }
 
+/** The resolved accessibility of a typed annotation's type; `null` for a free annotation or a type that declares none. */
+function resolvedOf(p: Project, a: Annotation): ResolvedType | null {
+  const type = a.type && a.values ? typeOfAnnotation(p, a) : null;
+  return (type && resolveSpec(type.spec).get(type.type.id)) ?? null;
+}
+
 function computeAudit(p: Project, ctx: AuditContext): AccessibilityAudit {
   const out = new Map<string, AnnotationAudit>();
   const arrows = projectIndex(p).arrows;
   for (const a of p.annotations) {
-    const type = a.type && a.values ? typeOfAnnotation(p, a) : null;
-    const resolved = type && resolveSpec(type.spec).get(type.type.id);
+    const resolved = resolvedOf(p, a);
     if (!resolved) continue;
     // An arrow has no rectangle: only the label is audited, never the touch.
     const own = arrows.has(a.markingId) ? { ...resolved, touch: null } : resolved;
@@ -349,6 +366,8 @@ export function accessibilityAudit(
 /** One part of an annotation as the code sees it: a field part once, a table part once per row. */
 export interface PartAccessibility {
   readonly id: string;
+  /** The part's name as the specialization declares it (the `id` when it has none). */
+  readonly name: string;
   readonly role: string;
   /** The first label field with a value; `null` when none has. */
   readonly label: string | null;
@@ -370,14 +389,6 @@ export interface AnnotationAccessibility {
   readonly parts?: readonly PartAccessibility[];
 }
 
-/** The text of a label value: a string or a number; any other kind (object, boolean) is not a name. */
-const textOfValue = (value: JsonValue | undefined): string | undefined =>
-  typeof value === 'string'
-    ? value
-    : typeof value === 'number'
-      ? String(value)
-      : undefined;
-
 /** The label of a role: the first field with a value, else `null` (`missing` when it is required). */
 function labelOf(
   label: ResolvedLabel | null,
@@ -385,9 +396,7 @@ function labelOf(
   interactive: boolean,
 ): { label?: string | null; missing?: true } {
   if (label === null) return interactive ? { label: null } : {};
-  const key = label.fields.find(
-    (field) => hasValue(values, field) && textOfValue(values[field]) !== undefined,
-  );
+  const key = label.fields.find((field) => hasLabelText(values, field));
   if (key !== undefined) return { label: textOfValue(values[key]) as string };
   return label.required ? { label: null, missing: true } : { label: null };
 }
@@ -403,7 +412,7 @@ function partLabel(
 
 function fieldPart(part: ResolvedPart, values: Values): PartAccessibility[] {
   if (!hasValue(values, part.when)) return [];
-  return [{ id: part.id, role: part.role, ...partLabel(part, values) }];
+  return [{ id: part.id, name: part.name, role: part.role, ...partLabel(part, values) }];
 }
 
 function tableParts(
@@ -416,6 +425,7 @@ function tableParts(
     if (part.whenColumn !== null && isEmptyValue(row[part.whenColumn])) return;
     found.push({
       id: part.id,
+      name: part.name,
       role: part.role,
       ...partLabel(part, row),
       row: index,
@@ -434,8 +444,7 @@ export function annotationAccessibility(
   a: Annotation,
   inactive?: FieldSet,
 ): AnnotationAccessibility | null {
-  const type = a.type && a.values ? typeOfAnnotation(p, a) : null;
-  const resolved = type && resolveSpec(type.spec).get(type.type.id);
+  const resolved = resolvedOf(p, a);
   if (!resolved) return null;
   const values = a.values ?? {};
   const parts = resolved.parts.flatMap((part) =>
@@ -518,7 +527,7 @@ export function typeAccessibility(
     role: part.role ?? 'button',
     ...declaredLabel(part.label, part.role ?? 'button'),
   }));
-  return {
+  const resolved: TypeAccessibility = {
     ...(a.role === undefined ? {} : { role: a.role }),
     ...declaredLabel(a.label, a.role ?? ''),
     ...(isInteractive(a.role)
@@ -526,4 +535,6 @@ export function typeAccessibility(
       : {}),
     ...(parts.length === 0 ? {} : { parts }),
   };
+  // `accessibility: {}` declares nothing: it reads as no accessibility, not as an empty declaration.
+  return Object.keys(resolved).length === 0 ? null : resolved;
 }

@@ -176,6 +176,17 @@
   align-items: start;
 }
 
+/*
+ * A row whose label carries the field's menu next to the help icon: the column also gains the menu's
+ * width, so the label keeps its own width and breaks between words ("Navigation icon description"),
+ * never in the middle of one.
+ */
+.props:has(.props-label-cell > .action-menu) {
+  grid-template-columns:
+    calc(var(--size-label-col) + var(--control-height-sm) + var(--control-height))
+    minmax(0, 1fr);
+}
+
 .props-label {
   padding-top: var(--space-1);
   font: var(--t-text-small);

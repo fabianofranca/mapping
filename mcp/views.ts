@@ -123,10 +123,10 @@ const siblingIndexes = memoByProject((p: Project): ReadonlyMap<string, number> =
   return indexes;
 });
 
-/** The audit's warnings of the annotations of a marking (empty when it has none). */
-function markingAudit(refs: Refs, annotations: readonly Annotation[]): Json[] {
+/** How many audit warnings the annotations of a marking have; the compact row carries the count, `get_marking` the warnings. */
+function markingWarnings(refs: Refs, annotations: readonly Annotation[]): number {
   const audit = projectAudit(refs.loaded);
-  return annotations.flatMap((a) => auditView(refs, audit.get(a.id)?.findings ?? []));
+  return annotations.reduce((n, a) => n + (audit.get(a.id)?.findings.length ?? 0), 0);
 }
 
 /** Marking in a compact row (lists and children). */
@@ -135,7 +135,7 @@ export function markingRow(refs: Refs, marking: Marking): Json {
   const own = index.annotationsByMarking.get(marking.id) ?? [];
   const issues = projectIssuesWithDrawings(refs.loaded);
   const incomplete = own.filter((a) => issues.has(a.id)).length;
-  const audit = markingAudit(refs, own);
+  const warnings = markingWarnings(refs, own);
   return {
     ref: refs.ref('m', marking.id),
     name: marking.name,
@@ -152,7 +152,7 @@ export function markingRow(refs: Refs, marking: Marking): Json {
     needsReview: marking.needsReview,
     annotations: own.length,
     ...(incomplete > 0 ? { incomplete } : {}),
-    ...(audit.length > 0 ? { audit } : {}),
+    ...(warnings > 0 ? { warnings } : {}),
   };
 }
 
