@@ -111,6 +111,7 @@ export const specMessages = {
   'spec.childRolesEmpty': 'cannot be empty; remove the key or declare at least one role',
   'spec.idRepeated': 'id "{id}" repeated',
   'spec.groupRepeated': 'group "{group}" repeated',
+  'spec.slotIdInvalid': 'invalid slot id; use [a-z][a-zA-Z0-9_-]*',
   // Types
   'spec.structuralNoComponent':
     'a structural type does not draw: it cannot have a component',

@@ -1,5 +1,5 @@
 // Material 3 (Compose) library (`libraries/material3-compose/`, ready to use and applied by the person):
-// the specialization (`formatVersion` 15, library v2: light and dark tokens and an icon set) with the layout and content structures and the
+// the specialization (`formatVersion` 17, with the named slots of SL7 of #1080: light and dark tokens and an icon set) with the layout and content structures and the
 // Jetpack Compose Material 3 components, 50 types in three layers, each with `code.compose` (symbol and file in
 // androidx, at the pinned commit), a component that draws, a document and examples. The variants that swap the
 // symbol (`variants`) and the icons by `suggestions` follow the library's pattern.
@@ -312,11 +312,11 @@ describe('Material 3 (Compose) library', () => {
     expect(known.missing).toEqual([]);
   }, 30_000);
 
-  it('is formatVersion 16, version 15, with tokens in light and dark modes and the compose platform in androidx pinned at the commit', () => {
+  it('is formatVersion 17, version 16, with tokens in light and dark modes and the compose platform in androidx pinned at the commit', () => {
     expect(spec).toMatchObject({
-      formatVersion: 16,
+      formatVersion: 17,
       id: 'material3-compose',
-      version: 15,
+      version: 16,
       icons: 'icons/material-icons.json',
     });
     expect(spec.tokens?.modes).toEqual(['light', 'dark']);
@@ -706,11 +706,11 @@ describe('Material 3 (Compose) library update with the numeric slider', () => {
           );
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
-      [1, 15],
-      [2, 15],
-      [3, 15],
-      [4, 15],
-      [5, 15],
+      [1, 16],
+      [2, 16],
+      [3, 16],
+      [4, 16],
+      [5, 16],
     ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
@@ -758,9 +758,9 @@ describe('reading direction and anchor in the Material 3 (Compose) library (R5, 
       .join('');
   const catalog = buildCatalog(files);
 
-  it('the icon set is formatVersion 2 and the specialization is at version 15', () => {
+  it('the icon set is formatVersion 2 and the specialization is at version 16', () => {
     expect(iconSet.formatVersion).toBe(2);
-    expect(spec.version).toBe(15);
+    expect(spec.version).toBe(16);
   });
 
   it('every androidx AutoMirrored icon has mirror: true in the set, and no other does', () => {

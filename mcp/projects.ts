@@ -58,6 +58,12 @@ export interface LoadedProject {
    * libraries (files in `specs/<id>/`). Absent = only the built-in one.
    */
   readonly fonts?: FontBook;
+  /**
+   * Content key of what the drawing depends on (revision, applied specializations, component texts and
+   * fonts), built on load: `mcp/drawings.ts` memoizes the instantiation by it. Absent = no memo
+   * (also when the load skipped the fonts, as `list_projects` does).
+   */
+  readonly drawingKey?: string;
 }
 
 async function isProjectDir(dir: string): Promise<boolean> {
@@ -359,32 +365,113 @@ async function loadFontBook(
   return book;
 }
 
+/** FNV-1a (32 bits) of a text, in hex: enough to tell a changed file apart. */
+export function fnv1a(text: string): string {
+  let hash = 0x811c9dc5;
+  for (const byte of Buffer.from(text, 'utf8')) {
+    hash ^= byte;
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16);
+}
+
+/** The hash of each component file, by path, size and `mtime` (P4: `loadProject` no longer rereads every load). */
+const hashCache = new StampCache<string>();
+
+/** The text of each component file of the applied specializations (hashed; unreadable = `-`). */
+async function componentHashes(
+  roots: Roots,
+  dir: string,
+  project: Project,
+): Promise<string[]> {
+  const hashes: string[] = [];
+  for (const applied of project.specializations) {
+    const { spec } = applied;
+    if (!spec || spec.formatVersion < 4) continue;
+    for (const path of componentPaths(spec, applied.file)) {
+      hashes.push(`${path}=${await componentHash(roots, dir, path)}`);
+    }
+  }
+  return hashes;
+}
+
+async function componentHash(roots: Roots, dir: string, path: string): Promise<string> {
+  try {
+    const found = await fileStamp(roots, dir, path);
+    const cached = found === null ? undefined : hashCache.get(found.stamp);
+    if (cached !== undefined) return cached;
+    const text = await readText(roots, dir, path);
+    const hash = text === null ? '-' : fnv1a(text);
+    if (found !== null && text !== null) hashCache.set(found.stamp, hash);
+    return hash;
+  } catch {
+    return '-';
+  }
+}
+
+/**
+ * The drawing key: revision, the hash of `mapping.json` and of the `specs/` copies, `id@version` of the specializations, the hash of the components' text and the
+ * fonts' file stamps (path, size and `mtime`: the bytes are read only once, by the font cache).
+ */
+async function drawingKeyOf(
+  roots: Roots,
+  dir: string,
+  project: Project,
+  contentHash: string,
+): Promise<string> {
+  const specs = project.specializations.map((s) => `${s.id}@${s.version}`);
+  const components = await componentHashes(roots, dir, project);
+  const fonts = (await fontFiles(roots, dir, project)).map((f) => `${f.path}:${f.stamp}`);
+  return [
+    project.revision,
+    contentHash,
+    specs.join(','),
+    components.join(','),
+    fonts.join(','),
+  ].join('|');
+}
+
+/** Projects `loadProject` keyed: a `LoadedProject` with another `project` spread in has no valid key. */
+const keyedProjects = new WeakMap<Project, string>();
+
+/** The key of `loaded`'s drawing, or `undefined` when its project is not the one that was keyed. */
+export function drawingKeyOfLoaded(loaded: LoadedProject): string | undefined {
+  const key = loaded.drawingKey;
+  return key !== undefined && keyedProjects.get(loaded.project) === key ? key : undefined;
+}
+
 export interface LoadOptions {
   /** Interprets the fonts of the libraries (default). `false` in tools that only count (`list_projects`). */
   readonly fonts?: boolean;
+}
+
+/** What was interpreted: the model and the hash of the files it came from (`mapping.json` and the `specs/` copies). */
+interface Parsed {
+  readonly result: DeserializeResult;
+  readonly contentHash: string;
 }
 
 /**
  * Interprets the `mapping.json` once: the JSON serves to find the `specs/` copies to read and the
  * model (`deserializeParsed`).
  */
-async function parseMapping(
-  roots: Roots,
-  dir: string,
-  text: string,
-): Promise<DeserializeResult> {
+async function parseMapping(roots: Roots, dir: string, text: string): Promise<Parsed> {
   const specs = new Map<string, string>();
   let raw: unknown;
   try {
     raw = JSON.parse(text);
   } catch {
-    return { ok: false, error: { code: 'invalid-json' } };
+    return { result: { ok: false, error: { code: 'invalid-json' } }, contentHash: '' };
   }
   for (const file of referencedSpecFilesOf(raw)) {
     const specText = await readText(roots, dir, file);
     if (specText !== null) specs.set(file, specText);
   }
-  return deserializeParsed(raw, undefined, specs);
+  const contentHash = [
+    fnv1a(text),
+    ...[...specs].map(([file, t]) => `${file}:${fnv1a(t)}`),
+  ].join(',');
+  return { result: deserializeParsed(raw, undefined, specs), contentHash };
 }
 
 /** Reads the project from the folder: `mapping.json` and the `specs/` copies, validated by `src/model/`. */
@@ -403,7 +490,7 @@ export async function loadProject(
       { project: location.name },
     );
   }
-  const result = await parseMapping(roots, location.dir, text);
+  const { result, contentHash } = await parseMapping(roots, location.dir, text);
   if (!result.ok) {
     throw new ToolError('invalid-project', describeError(result.error), {
       project: location.name,
@@ -411,7 +498,13 @@ export async function loadProject(
     });
   }
   const catalog = await loadCatalog(roots, location.dir, result.project);
+  const keyed = options.fonts !== false;
+  const drawingKey = keyed
+    ? await drawingKeyOf(roots, location.dir, result.project, contentHash)
+    : undefined;
+  if (drawingKey !== undefined) keyedProjects.set(result.project, drawingKey);
   return {
+    ...(drawingKey === undefined ? {} : { drawingKey }),
     location,
     project: result.project,
     readOnly: result.readOnly,

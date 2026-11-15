@@ -435,6 +435,10 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
   ['spec.labelFieldNotString', (s) => (type(s).labelField = 'zz')],
   ['spec.onlyFormat', (s) => ((s.formatVersion = 14), (type(s).structural = true))],
   [
+    'spec.slotIdInvalid',
+    (s) => ((s.formatVersion = 17), (type(s).slots = [{ id: 'Bad id' }])),
+  ],
+  [
     'spec.onlyFormat',
     (s) => (
       (s.formatVersion = 9),

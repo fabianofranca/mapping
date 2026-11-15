@@ -73,10 +73,16 @@ Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb6
 - Actions: 48 areas starting 4 from the left (`BottomAppBarHorizontalPadding`), side by side, centered in the 76 row (80 minus the 4 on top from the `contentPadding`), hence 18 from the top; 24 icons in `on-surface` (the `contentColorFor(surface-container)`).
 - Embedded FAB: 56 by 56 in the `corner-large` shape (16), in `secondary-container` (`bottomAppBarFabColor`), with no shadow (`bottomAppBarFabElevation()` is 0), with the 24 icon in `on-secondary-container` (`contentColorFor`), 12 from the top (4 of top padding plus `FABVerticalPadding` 8) and 16 from the right (4 plus `FABHorizontalPadding` 12).
 
+**Slots (named, `formatVersion` 17)**
+
+- `actions` (`RowScope.() -> Unit`, `AppBar.kt` lines 1035 to 1133) is a slot with the `icon-button`, `icon-toggle-button` and `icon` types, a hug box of 76 high starting 4 from the left; `floatingActionButton` (`() -> Unit`, same lines) is a 56 by 56 slot, 12 from the top and 16 from the right, that takes one `fab` or `extended-fab`. The compose commit is `5113b82a4ed6416d6344efa50e41db8cb65928ff`.
+- A child marking in a slot replaces its default content: with a child in `actions` the `actionIcon1` to `actionIcon4` icons are not drawn, with a child in `floatingActionButton` the FAB of the field is not drawn, and the `get_code_hints` writes `actions = { ... }` and `floatingActionButton = { ... }` with the children, with no `actionIconN`. Without children the drawing is the one of before.
+- The children have no `weight` (Compose's `RowScope.weight`): the `Row` of weight 1 that shrinks what exceeds the space stays a limit (see below), and the slot's `layout` only places the children side by side.
+
 **What still differs from Compose**
 
 - The height of 80 does not add the system navigation bar (the bottom `windowInsets`) or the collapse on scroll (`scrollBehavior`).
 - No pressed, focus and hover states on the actions and the FAB, and no minimum 48 touch target beyond the action's own area.
-- Compose's actions are free-form (`actions = { ... }` accepts any composable); the type draws up to four 48 icons and those that exceed the space before the FAB do not shrink like the `Row` of weight 1.
+- The default content of `actions` draws up to four 48 icons (the fields) and those that exceed the space before the FAB do not shrink like the `Row` of weight 1; the child markings of the slot have no `weight` either.
 - The icons are only those of the library set (`icons`); the `Icons.Filled` of the same name, without the mirroring ones (`AutoMirrored`).
-- The type's FAB is always the regular 56 one; Compose lets any `floatingActionButton` composable through (an `ExtendedFloatingActionButton`, for example).
+- The FAB of the `floatingActionButton` field is always the regular 56 one; the `fab` and `extended-fab` markings go in the slot (an `ExtendedFloatingActionButton`, for example).

@@ -24,10 +24,9 @@ const NAMES = {
   pullingIndicator: 'pulling indicator',
   ring: 'ring',
   arrow: 'arrow',
-  restingItem: 'item at rest',
+  // SL7 (#1080): one `item` frame whose anchors follow the `direction` (0, 56 toward the end, -56 toward the start)
+  item: 'item',
   support: 'support',
-  itemSlidStart: 'item swiped to the start',
-  itemSlidEnd: 'item swiped to the end',
   image: 'image',
   veil: 'scrim',
 } as const;
@@ -388,9 +387,9 @@ describe('M5 group B — swipe-to-dismiss', () => {
   it('at rest: ListItem item in surface, body-large title in on-surface and body-medium supporting text in on-surface-variant, with 16 of room', () => {
     for (const mode of MODES) {
       const d = both('swipe-to-dismiss', item({ direction: 'Settled' }))[mode];
-      const row = box(d, NAMES.restingItem);
+      const row = box(d, NAMES.item);
       expect([row.x, row.y, row.width, row.height]).toEqual([0, 0, 360, 72]);
-      expect(fillOf(d, NAMES.restingItem)).toBe(tok('surface', mode));
+      expect(fillOf(d, NAMES.item)).toBe(tok('surface', mode));
       const title = textIn(d, NAMES.title)!;
       const support = textIn(d, NAMES.support)!;
       expect(fontOf(title)).toEqual(scale('body-large'));
@@ -410,14 +409,13 @@ describe('M5 group B — swipe-to-dismiss', () => {
     for (const mode of MODES) {
       const d = both('swipe-to-dismiss', item({ direction: 'EndToStart' }))[mode];
       expect(d.root.fills[0]).toMatchObject({ color: tok('error-container', mode) });
-      const moved = box(d, NAMES.itemSlidStart);
+      const moved = box(d, NAMES.item);
       expect([moved.x, moved.width]).toEqual([-56, 360]);
-      expect(fillOf(d, NAMES.itemSlidStart)).toBe(tok('surface', mode));
+      expect(fillOf(d, NAMES.item)).toBe(tok('surface', mode));
       const icon = backdropIcon(d)!;
       expect(icon.color).toBe(tok('on-error-container', mode));
       expect([icon.box.width, icon.box.height]).toEqual([24, 24]);
       expect([360 - (icon.box.x + icon.box.width), icon.box.y]).toEqual([24, 24]);
-      expect(named(d, NAMES.restingItem)).toBeUndefined();
     }
   });
 
@@ -427,7 +425,7 @@ describe('M5 group B — swipe-to-dismiss', () => {
         mode
       ];
       expect(d.root.fills[0]).toMatchObject({ color: tok('primary-container', mode) });
-      const moved = box(d, NAMES.itemSlidEnd);
+      const moved = box(d, NAMES.item);
       expect([moved.x, moved.width]).toEqual([56, 360]);
       const icon = backdropIcon(d)!;
       expect(icon.color).toBe(tok('on-primary-container', mode));
@@ -441,8 +439,7 @@ describe('M5 group B — swipe-to-dismiss', () => {
         'swipe-to-dismiss',
         item({ direction: 'EndToStart', enableDismissFromEndToStart: 'false' }),
       )[mode];
-      expect(named(d, NAMES.restingItem)).toBeDefined();
-      expect(named(d, NAMES.itemSlidStart)).toBeUndefined();
+      expect(box(d, NAMES.item).x).toBe(0);
       expect(d.root.fills[0]).toMatchObject({ color: tok('surface', mode) });
     }
   });

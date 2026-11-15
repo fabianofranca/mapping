@@ -131,6 +131,10 @@ export const FIT_COMPONENTS: Record<string, Json> = {
   'fit-fill': button('fit-fill', { width: 120, height: 40 }, { width: 'fill' }),
   // Without `sizing`: nothing to fit.
   'fit-plain': button('fit-plain', { width: 120, height: 40 }, undefined),
+  // A component with a slot and the height by expression (the box does not depend on the children): it measures.
+  'fit-slot-px': row('fit-slot-px', 'start', 'row', {
+    height: { $if: { $field: 'tall' }, then: 80, else: 30 },
+  }),
   // A row that stretches the children in height, and a row that does not.
   'fit-row-stretch': row('fit-row-stretch', 'stretch'),
   'fit-row-start': row('fit-row-start', 'start'),

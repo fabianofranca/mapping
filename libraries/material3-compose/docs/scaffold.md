@@ -69,6 +69,12 @@ Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb6
 - The background is the `containerColor` role (default `background`), read from the role token in both modes; before, they were fixed hex values, the same in both modes.
 - Since the `Surface` in `Scaffold.kt` does not pass `tonalElevation`, the background gets no tonal overlay.
 
+**Slots (named, `formatVersion` 17)**
+
+- `Scaffold` (`Scaffold.kt` lines 83 to 94) has the `topBar`, `bottomBar`, `snackbarHost`, `floatingActionButton` and `content` parameters, and the type has one slot for each, in this order, with fixed boxes: `topBar` 64 high at the top; `bottomBar` 80 high at the bottom; `floatingActionButton` 56 by 56, 16 above the `bottomBar` (`FabSpacing`, line 355) and on the side of `floatingActionButtonPosition` (`Start`, `Center` or `End`; `EndOverlay` goes 16 from the bottom of the screen, over the bar); `snackbarHost` 48 high, 16 above the `bottomBar`; `content`, the whole screen. The compose commit is `5113b82a4ed6416d6344efa50e41db8cb65928ff`.
+- Each child marking goes to the slot that accepts its type (`top-app-bar` and `search-bar` in `topBar`; `navigation-bar`, `short-navigation-bar` and `bottom-app-bar` in `bottomBar`; `fab` and `extended-fab` in `floatingActionButton`; `snackbar` in `snackbarHost`) and, among the slots that accept it, by the geometry; what no slot names (a `lazy-column`, a `card`) goes to `content`. The `get_code_hints` writes each child in the argument of its slot (`topBar = { ... }`, `content = { innerPadding -> ... }`).
+- The slots have no default content: an empty one draws nothing in the app (the MCP image draws its box).
+
 **What still differs from Compose**
 
 - The Scaffold draws only the background and the `content` area: `topBar`, `bottomBar`, `snackbarHost` and `floatingActionButton` are children (other types) that stay where the person marked them. The FAB position (`floatingActionButtonPosition`) and the 16 dp `FabSpacing` are only field information; the position is not drawn.

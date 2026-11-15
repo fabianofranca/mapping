@@ -1,0 +1,27 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "rounded-bar",
+  "name": "Rounded bar",
+  "description": "A bar with a corner radius of 16 and a single slot that clips its children: a child marking that fills the slot is cut by the bar's rounded corners.",
+  "size": { "width": 200, "height": 80 },
+  "preview": { "radius": 16 },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "column" },
+    "cornerRadius": { "$field": "radius", "default": 16 },
+    "clip": true,
+    "fill": "#FEF7FF",
+    "children": [
+      {
+        "type": "slot",
+        "id": "content",
+        "name": "content",
+        "width": "fill",
+        "height": "fill",
+        "clip": true,
+        "layout": { "type": "none" }
+      }
+    ]
+  }
+}

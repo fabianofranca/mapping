@@ -2,7 +2,6 @@ import {
   matchShortCode,
   parseRef,
   projectIndex,
-  projectIssues,
   typeOfAnnotation,
   type Annotation,
   type JsonValue,
@@ -10,6 +9,7 @@ import {
   type Project,
   type ProjectContainer,
 } from '../src/model';
+import { projectIssuesWithDrawings } from './drawings';
 import { ToolError } from './errors';
 import { CONTAINER_LABEL, type Refs } from './items';
 import { markingRow } from './views';
@@ -149,7 +149,7 @@ export function listMarkings(
 ): Record<string, unknown> {
   const p = refs.project;
   const index = projectIndex(p);
-  const issues = projectIssues(p);
+  const issues = projectIssuesWithDrawings(refs.loaded);
 
   if (filters.container !== undefined && filters.image !== undefined) {
     throw new ToolError(

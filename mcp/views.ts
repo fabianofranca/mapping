@@ -17,7 +17,6 @@ import {
   isMarkingGeometryLocked,
   markingLockStates,
   projectIndex,
-  projectIssues,
   platformRepoOf,
   projectPlatforms,
   refLabel,
@@ -26,6 +25,7 @@ import {
   resolveRef,
   specLayerOf,
   typeOfAnnotation,
+  type ResolvedType,
   ancestorsOf,
   type Annotation,
   type Arrow,
@@ -38,6 +38,8 @@ import {
 } from '../src/model';
 import { memoByProject } from '../src/model/projectIndex';
 import { annotationCode, assertPlatform, CODE_HINT, type CodeContext } from './codeViews';
+import { projectIssuesWithDrawings } from './drawings';
+import { childSlotView, markingSlotsView, typeSlotsView } from './slotViews';
 import { ToolError } from './errors';
 import { Refs } from './items';
 import {
@@ -123,7 +125,7 @@ const siblingIndexes = memoByProject((p: Project): ReadonlyMap<string, number> =
 export function markingRow(refs: Refs, marking: Marking): Json {
   const index = projectIndex(refs.project);
   const own = index.annotationsByMarking.get(marking.id) ?? [];
-  const issues = projectIssues(refs.project);
+  const issues = projectIssuesWithDrawings(refs.loaded);
   const incomplete = own.filter((a) => issues.has(a.id)).length;
   return {
     ref: refs.ref('m', marking.id),
@@ -150,6 +152,11 @@ function issueView(issue: AnnotationIssue): Json {
     ...(issue.key !== undefined ? { key: issue.key } : {}),
     ...(issue.rowId !== undefined ? { rowId: issue.rowId } : {}),
     ...(issue.column !== undefined ? { column: issue.column } : {}),
+    ...(issue.slot !== undefined
+      ? { slot: { id: issue.slot.id, name: issue.slot.name } }
+      : {}),
+    ...(issue.owner !== undefined ? { owner: issue.owner } : {}),
+    ...(issue.max !== undefined ? { max: issue.max } : {}),
   };
 }
 
@@ -200,6 +207,16 @@ function backlinksView(refs: Refs, annotation: Annotation): Json[] {
   }));
 }
 
+/** `slots` of the annotation's type (decision 12 of #1080), when its component has slots with an `id`. */
+function typeSlotsField(refs: Refs, resolved: ResolvedType | null): Json {
+  if (resolved === null) return {};
+  const component = refs.loaded.catalog
+    .get(resolved.spec.id)
+    ?.byType.get(resolved.type.id);
+  const slots = typeSlotsView(resolved.spec, resolved.type, component);
+  return slots === null ? {} : { slots };
+}
+
 /** The annotation with everything that describes it: content, links, outgoing references, backlinks and pending items. */
 export function annotationView(
   refs: Refs,
@@ -213,7 +230,7 @@ export function annotationView(
   const p = refs.project;
   const layer = projectIndex(p).layers.get(annotation.layerId);
   const resolvedType = typeOfAnnotation(p, annotation);
-  const issues = projectIssues(p).get(annotation.id) ?? [];
+  const issues = projectIssuesWithDrawings(refs.loaded).get(annotation.id) ?? [];
 
   const outgoing = refsOf(p, annotation).map((link) => {
     const { ref } = link;
@@ -253,6 +270,7 @@ export function annotationView(
             specId: annotation.type.specId,
             typeId: annotation.type.typeId,
             name: resolvedType?.type.name ?? null,
+            ...typeSlotsField(refs, resolvedType),
           },
           values: annotation.values,
           ...(code ? { code } : {}),
@@ -357,7 +375,7 @@ export async function markingView(
     return [{ layer: { id: layer.id, name: layer.name }, annotations: mine.map(view) }];
   });
 
-  const issues = projectIssues(p);
+  const issues = projectIssuesWithDrawings(refs.loaded);
   const tree = linkTree(refs, own);
   const children = index.children.get(marking.id) ?? [];
   const childRows = children.slice(0, LIST_LIMIT).map((c) => ({
@@ -390,6 +408,8 @@ export async function markingView(
     // drawn at the bottom.
     order: siblingPosition(p, marking.id),
     ...componentInfo(refs, marking),
+    ...markingSlotsView(refs, marking),
+    ...childSlotView(refs, marking),
     lock: {
       locked: marking.locked,
       geometryLocked: isMarkingGeometryLocked(p, marking.id),
@@ -483,7 +503,7 @@ export async function arrowView(
       },
     ];
   });
-  const issues = projectIssues(p);
+  const issues = projectIssuesWithDrawings(refs.loaded);
   const tree = linkTree(refs, own);
   return {
     kind: 'arrow',
@@ -599,7 +619,7 @@ export function projectSummary(loaded: LoadedProject): Json {
 export function projectDetail(refs: Refs): Json {
   const loaded = refs.loaded;
   const p = refs.project;
-  const issues = projectIssues(p);
+  const issues = projectIssuesWithDrawings(refs.loaded);
 
   const byCode: Record<string, number> = {};
   for (const list of issues.values()) {

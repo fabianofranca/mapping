@@ -1,0 +1,76 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 17,
+  "id": "slots",
+  "name": "Test slots",
+  "version": 1,
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#6750A4",
+      "annotationTypes": [
+        {
+          "id": "bar",
+          "name": "Bar",
+          "component": "components/bar.json",
+          "fields": [
+            {
+              "key": "title",
+              "type": "string",
+              "default": "Title"
+            },
+            {
+              "key": "navLabel",
+              "type": "string"
+            },
+            {
+              "key": "actionLabel",
+              "type": "string"
+            }
+          ],
+          "slots": [
+            {
+              "id": "navigationIcon",
+              "name": "Navigation icon",
+              "description": "The icon on the left of the title.",
+              "accepts": ["pin"],
+              "max": 1
+            },
+            {
+              "id": "actions",
+              "name": "Actions",
+              "description": "The actions on the right of the title.",
+              "accepts": ["pin"],
+              "max": 3
+            }
+          ]
+        },
+        {
+          "id": "pin",
+          "name": "Pin",
+          "component": "components/pin.json",
+          "fields": [
+            {
+              "key": "label",
+              "type": "string",
+              "default": "pin"
+            }
+          ]
+        },
+        {
+          "id": "rounded-bar",
+          "name": "Rounded bar",
+          "component": "components/rounded-bar.json",
+          "fields": [
+            {
+              "key": "radius",
+              "type": "number",
+              "default": 16
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

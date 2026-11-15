@@ -1,6 +1,7 @@
 import { useEditor } from '../ui/EditorContext';
 import { componentDropTarget } from '../ui/componentTarget';
 import { libraryErrorMessage } from '../ui/labels';
+import { writtenDrawings } from '../ui/useAddComponent';
 import { dragHasComponent, draggedComponent, setDraggedComponent } from './componentDrag';
 import type { EditorNotices } from './useEditorNotices';
 
@@ -78,6 +79,7 @@ export function useComponentDrop({
       specId: dragged.specId,
       typeId: dragged.typeId,
       ...(target.center ? { center: target.center } : {}),
+      ...writtenDrawings(editor),
     });
     if (!result.ok) {
       setMessage(libraryErrorMessage(result.error));

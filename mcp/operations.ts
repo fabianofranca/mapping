@@ -471,6 +471,12 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe(
         "Places the child in this component's slot, after the last child (reference, id or alias of a marking in the batch or in the project); the parent still comes from the geometry. Requires `annotation` of a type with a component and a target that draws a component with a slot (`invalid-parent` if it does not, or if `container` is another one). With `rect`, the `rect` supplies only the size (x and y are ignored). Full slot: the child stays attached to the component, with an `ignored-argument` warning. Does not apply with `near`.",
       ),
+    slot: z
+      .string()
+      .optional()
+      .describe(
+        "Only with `inside`: the `id` of the target's slot the child goes to (see `slots` in `get_marking` and `get_component`). Without it, the child goes to the first slot that takes its type and is not full. `invalid-arguments` without `inside` or with a slot the target does not have (the target's slots come in `detail`); a type the slot does not accept is created, with `slot-not-accepted` in the step's issues.",
+      ),
     rect: rect
       .optional()
       .describe(

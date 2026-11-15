@@ -337,7 +337,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   ellipse: [],
   text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
   path: ['d', 'viewBox', 'fillRule', 'mirror'],
-  slot: ['label', 'layout', 'provide', 'clip'],
+  slot: ['label', 'layout', 'provide', 'clip', 'id', 'fallback'],
   repeat: [
     'field',
     'count',
@@ -626,10 +626,12 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
     else if (isRec(node.src) && '$field' in node.src) out.add('image.src=$field');
   }
   // expressions and conditions in the node attributes (not in the children, visited below)
-  const { children, template, ...rest } = node;
+  const { children, template, fallback, ...rest } = node;
   exprFeatures(rest, out);
   if (Array.isArray(children)) for (const child of children) nodeFeatures(child, out);
   if (template !== undefined) nodeFeatures(template, out);
+  // The default content of a slot (formatVersion 4) is a node tree like the children.
+  if (fallback !== undefined) nodeFeatures(fallback, out);
 }
 
 /** Os recursos do componente que um arquivo usa. */

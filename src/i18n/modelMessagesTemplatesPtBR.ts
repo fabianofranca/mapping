@@ -18,6 +18,10 @@ export const templatePtBR: {
   'model.library.specAmbiguous':
     'há {count} especializações no pacote ({files}): indique qual validar',
   'model.library.paramOutsideSignature': 'parâmetro fora da ficha: "{name}"',
+  'model.library.slotNotInComponent': 'slot não existe no componente: {id}',
+  'model.library.slotParameterRepeated':
+    'dois slots mapeiam para o mesmo parâmetro "{parameter}": {first} e {second}',
+  'model.library.componentNoSlotIds': 'slots: o componente não tem slot com id',
   'model.library.signatureNotRead': 'arquivo não pôde ser lido: {path}',
   'model.library.signatureInvalid': '{reason}',
   'model.library.signatureNotCode': 'a ficha do code precisa ser de código',
@@ -227,6 +231,7 @@ export const templatePtBR: {
     'não pode ser vazio; tire a chave ou declare ao menos um papel',
   'model.spec.idRepeated': 'id "{id}" repetido',
   'model.spec.groupRepeated': 'grupo "{group}" repetido',
+  'model.spec.slotIdInvalid': 'id de slot inválido; use [a-z][a-zA-Z0-9_-]*',
   'model.spec.structuralNoComponent':
     'um tipo estrutural não desenha: não pode ter component',
   'model.spec.labelFieldNotString': '"{key}" deve ser um campo string do tipo',
@@ -619,6 +624,7 @@ export const templatePtBR: {
   'model.engine.typeNoComponent': '{path}: tipo sem componente: {typeId}',
   'model.engine.childrenIgnored': '{path}: filhos ignorados (componente sem slot)',
   'model.engine.fillInHugUsing': '{path}: fill dentro de hug: usando hug',
+  'model.engine.slotUnknown': '{path}: slot desconhecido "{slot}": usando o slot padrão',
   'model.engine.slotInvisible': '{path}: slot invisível: filhos ignorados',
   'model.engine.childrenOutsideMaxLines': '{count} filhos fora de maxLines: {name}',
   'model.engine.linesUnstable': '$lines instável: {name}',

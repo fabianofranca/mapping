@@ -84,6 +84,16 @@ describe('ComponentLayerRenderer', () => {
     expect(rects.some((r) => (r.dash() ?? []).length > 0)).toBe(false);
   });
 
+  it('does not draw a marking hidden by its parent slot (#1978)', () => {
+    const { layer, nodes } = setup();
+    layer.render(
+      toMap(drawing('a'), { ...drawing('b'), hidden: true }, drawing('c')),
+      all,
+      PLACEMENTS,
+    );
+    expect(nodes('img-1').map((n) => n.getAttr('markingId'))).toEqual(['a', 'c']);
+  });
+
   it('creates one group per image positioned by the placement, without events', () => {
     const { parent, layer, nodes } = setup();
     const changed = layer.render(

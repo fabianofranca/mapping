@@ -169,4 +169,22 @@ describe('moveSibling', () => {
     expect(ids(moveSibling(s, 'C', -1))).toEqual(['A', 'C', 'B']);
     expect(ids(moveSibling(s, 'B', 1))).toEqual(['A', 'C', 'B']);
   });
+
+  it('removing an instance hoists its children without the slot key of the removed parent', () => {
+    const base = newScreen('T', 100, 200);
+    const box = { x: 0, y: 0, width: 10, height: 10 };
+    const screen: Screen = {
+      ...base,
+      instances: [
+        { id: 'G', typeId: 'g', box, values: {} },
+        { id: 'A', typeId: 'a', box, values: {}, parentId: 'G' },
+        { id: 'C', typeId: 'c', box, values: {}, parentId: 'A', slot: 'body' },
+      ],
+    };
+    const hoisted = removeInstance(screen, 'A').instances.find((i) => i.id === 'C');
+    expect(hoisted?.parentId).toBe('G');
+    expect(hoisted?.slot).toBeUndefined();
+    const toRoot = removeInstance(screen, 'G').instances.find((i) => i.id === 'A');
+    expect(toRoot?.parentId).toBeUndefined();
+  });
 });

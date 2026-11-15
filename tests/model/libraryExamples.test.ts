@@ -1,4 +1,4 @@
-// Frozen library package of the tests (`tests/fixtures/material3/`): the 15-type Material 3
+// Frozen library package of the tests (`tests/fixtures/material3/`): the 17-type Material 3
 // that proves the library engine (it is not a distributed example; see `examples/README.md`).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -36,9 +36,9 @@ describe('material3 package is valid', () => {
     expect(parsed.spec.formatVersion).toBe(6);
   });
 
-  it('the fifteen components validate', () => {
+  it('the seventeen components validate', () => {
     const paths = files.filter((f) => f.path.startsWith('components/'));
-    expect(paths).toHaveLength(15);
+    expect(paths).toHaveLength(17);
     for (const f of paths) {
       const result = parseComponent(JSON.parse(f.text));
       expect(result.ok, `${f.path}: ${result.ok ? '' : result.errors.join('; ')}`).toBe(
@@ -67,7 +67,7 @@ describe('material3 package is valid', () => {
     for (const f of files.filter((x) => x.path.endsWith('.md'))) {
       expect(f.text.trim().length, f.path).toBeGreaterThan(0);
     }
-    expect(files.filter((x) => x.path.endsWith('.md'))).toHaveLength(15);
+    expect(files.filter((x) => x.path.endsWith('.md'))).toHaveLength(17);
   });
 
   it('each type with a component has one to three examples', () => {
@@ -105,9 +105,9 @@ describe('the repository package passes the library validator', () => {
     expect(report.ok).toBe(true);
     expect(report.summary).toMatchObject({
       level: 3,
-      types: 15,
-      components: 15,
-      docs: 15,
+      types: 17,
+      components: 17,
+      docs: 17,
     });
   });
 
@@ -139,7 +139,7 @@ describe('contract of the package origin', () => {
         .map((f) => ({ path: f.path, text: f.text })),
     );
     expect(library.problems).toEqual([]);
-    expect(library.types.filter((t) => t.component)).toHaveLength(15);
+    expect(library.types.filter((t) => t.component)).toHaveLength(17);
     const result = screenFromSource(library, json('examples/settings.sdui.json'), {
       measure: approximateMeasurer,
     });

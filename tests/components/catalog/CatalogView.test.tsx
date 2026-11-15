@@ -82,10 +82,10 @@ const entryButton = (name: string) =>
   screen.getByRole<HTMLButtonElement>('button', { name: new RegExp(`^${name}`) });
 
 describe('list', () => {
-  it('lists the 15 components per layer, with the container icon and without size', () => {
+  it('lists the 17 components per layer, with the container icon and without size', () => {
     view();
     const list = screen.getByRole('navigation', { name: t('catalog.view.components') });
-    expect(within(list).getAllByRole('button').length).toBe(15);
+    expect(within(list).getAllByRole('button').length).toBe(17);
     const column = entryButton('Column');
     expect(
       within(column).getByRole('img', { name: t('library.container') }),

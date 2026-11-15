@@ -1,7 +1,8 @@
 import { t } from '../i18n';
 import { rawValueLines, typeOfAnnotation, type Annotation, type Project } from '../model';
 import { Icon } from './icons';
-import { annotationDisplayName, displayLines, issueMessage, issuesOf } from './typedText';
+import { annotationDisplayName, displayLines, issueMessage } from './typedText';
+import { useIssuesOf } from './useIssues';
 
 /** Alert icon for an incomplete annotation, with the reasons in the `title`. */
 export function IssueBadge({
@@ -11,7 +12,7 @@ export function IssueBadge({
   readonly project: Project;
   readonly annotation: Annotation;
 }) {
-  const issues = issuesOf(project, annotation.id);
+  const issues = useIssuesOf(annotation.id);
   if (issues.length === 0) return null;
   const reasons = issues.map((i) => issueMessage(project, annotation, i)).join('\n');
   return (

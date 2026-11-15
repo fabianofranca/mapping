@@ -1,5 +1,6 @@
 import type { Spec, SpecCode, SpecCodeCase } from './spec';
 import {
+  callName,
   paramsOutsideSignature,
   parseSignatureText,
   type ExpandModels,
@@ -133,6 +134,33 @@ class Checker {
     }
   }
 
+  /**
+   * The `code.slots` (`formatVersion` 17) that the sheet lacks become a warning: the parameter must exist
+   * with `role: slot` (an entry without a slot parameter is the same "parameter outside the signature").
+   */
+  slots(
+    signature: Signature,
+    at: string,
+    slots: Readonly<Record<string, string>> | undefined,
+  ): void {
+    const named = new Set<string>();
+    for (const param of signature.params) {
+      if (param.role !== 'slot') continue;
+      named.add(param.name);
+      named.add(callName(param));
+    }
+    for (const [id, name] of Object.entries(slots ?? {})) {
+      if (named.has(name)) continue;
+      this.add(
+        'warning',
+        this.reader.specPath,
+        `${at}.slots.${id}`,
+        'library.paramOutsideSignature',
+        { name },
+      );
+    }
+  }
+
   /** The sheet's symbol and file are the `code`'s (or the case's); `where` says where errors point. */
   identity(
     source: Extract<Signature['source'], { kind: 'code' }>,
@@ -207,6 +235,7 @@ function checkCase(
       });
     }
     if (kase.params !== undefined) checker.params(inherited, at, kase.params, models);
+    checker.slots(inherited, at, kase.slots);
     return;
   }
   const signature = checker.open(kase.signature, `${at}.signature`);
@@ -220,6 +249,7 @@ function checkCase(
     { ...entry.params, ...kase.params },
     models,
   );
+  checker.slots(signature, at, { ...entry.slots, ...kase.slots });
 }
 
 /** Checks the sheets the specialization cites (in `code`, `variants` cases and `sources`). */
@@ -243,6 +273,7 @@ export function checkSignatures(spec: Spec, reader: Reader): SignatureCheck {
               entry.params,
               models,
             );
+            checker.slots(signature, at, entry.slots);
           }
         }
         for (const [value, kase] of Object.entries(entry.variants?.cases ?? {})) {

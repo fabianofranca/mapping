@@ -503,8 +503,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('the cloud prompt lists the scripts up to R27', () => {
-      expect(prompt).toContain('R0 to R27');
+    it('the cloud prompt lists the scripts up to R28', () => {
+      expect(prompt).toContain('R0 to R28');
     });
   });
 
@@ -523,9 +523,9 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(guide).toContain('`material3-compose.zip` (R17)');
     });
 
-    it('has steps R17.1 to R17.54, in order, and none depends on the owner', () => {
+    it('has steps R17.1 to R17.57, in order, and none depends on the owner', () => {
       const codes = [...stepActions(r17).keys()];
-      expect(codes).toEqual(Array.from({ length: 54 }, (_, i) => `R17.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 57 }, (_, i) => `R17.${i + 1}`));
       expect(/without a substitute/i.test(r17)).toBe(false);
       expect(r17).not.toContain('[person]');
     });
@@ -572,8 +572,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r17).toContain('Apply zip…');
     });
 
-    it('the cloud prompt lists the scripts up to R27', () => {
-      expect(prompt).toContain('R0 to R27');
+    it('the cloud prompt lists the scripts up to R28', () => {
+      expect(prompt).toContain('R0 to R28');
     });
   });
 
@@ -647,13 +647,13 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
     });
 
-    it('the cloud prompt lists the scripts up to R27', () => {
-      expect(prompt).toContain('R0 to R27');
+    it('the cloud prompt lists the scripts up to R28', () => {
+      expect(prompt).toContain('R0 to R28');
     });
 
-    it('the full-round order enumeration ends at R27, like the heading', () => {
-      expect(prompt).toContain('R5, R8 and R9 to R27.');
-      expect(prompt).not.toContain('R9 to R26');
+    it('the full-round order enumeration ends at R28, like the heading', () => {
+      expect(prompt).toContain('R5, R8 and R9 to R28.');
+      expect(prompt).not.toContain('R9 to R27');
     });
   });
 });

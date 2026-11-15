@@ -31,7 +31,7 @@ function onlyFormat(version: number): SpecMsg {
   return specMsg('spec.onlyFormat', { version: String(version) });
 }
 
-// Specialization format (`formatVersion` 1 to 16), see docs/SPEC-FORMAT.md. Version 2 adds
+// Specialization format (`formatVersion` 1 to 17), see docs/SPEC-FORMAT.md. Version 2 adds
 // `platforms` and `code`; version 1 is 2 without platforms and without `code`; version 3 is 2 plus
 // `sources` (external origins on types and fields, including `table` columns); version 4 is 3
 // plus the library: the package (the specialization's folder) with `component`, `doc` and
@@ -62,7 +62,9 @@ function onlyFormat(version: number): SpecMsg {
 // signature sheet (stage #1079): `fieldModels` at the root and, in the `code` (and in each
 // `variants` case), `signature`, `ignore`, `calls` and `formats`, with `params` by path
 // (`colors.containerColor`) or positional (`#0`), plus `signature` on the type's `sources` (see
-// `specSignature.ts`).
+// `specSignature.ts`); version 17 is 16 plus the named slots (stage #1080): `slots` on the type
+// (`id`, `name`, `description`, `accepts`, `max`) and, in the `code` (and in each `variants` case),
+// `slots` (slot id → parameter name), outside the version contract (see `diffSpecs`).
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -75,10 +77,10 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Value used before the product rename: import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Current format version (the one that the documentation and new examples use). */
-export const SPEC_FORMAT_VERSION = 16;
+export const SPEC_FORMAT_VERSION = 17;
 /** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -137,6 +139,8 @@ export interface SpecCodeCase {
   calls?: Record<string, string>;
   /** Templates with `{value}` (`formatVersion` 16 only): added to the base's, key by key. */
   formats?: Record<string, string>;
+  /** Slot id → parameter name (`formatVersion` 17 only): added to the base's, key by key. */
+  slots?: Record<string, string>;
 }
 
 /** An `enum` field of the type picks, by value, the case applied over the `code` base. */
@@ -174,6 +178,11 @@ export interface SpecCode {
   calls?: Record<string, string>;
   /** Field key → value template, with `{value}` (`{value}.dp`; `formatVersion` 16 only). */
   formats?: Record<string, string>;
+  /**
+   * Slot id of the component → parameter of the code that receives its content (`formatVersion` 17
+   * only); without an entry, the parameter is the slot's own `id`.
+   */
+  slots?: Record<string, string>;
   /** Variants by value of an `enum` field (`formatVersion` 9 only); see `resolveCode`. */
   variants?: SpecCodeVariants;
 }
@@ -371,6 +380,22 @@ export interface SpecDocRef {
   path: string;
 }
 
+/**
+ * A slot of the type's component (`formatVersion` 17 only): what it accepts and how many children it
+ * holds. Declaring `slots` is what turns on the validation of what goes in each slot.
+ */
+export interface SpecSlot {
+  /** The `id` of a `slot` of the component (the one that has no `id` cannot be declared). */
+  id: string;
+  /** Shown name; absent = the slot's `label`, else its `id`. */
+  name?: string;
+  description?: string;
+  /** Type ids and layer and group clauses, like `allowedChildren`; absent = any type. */
+  accepts?: SpecAllowedChild[];
+  /** Number of children the slot holds, an integer >= 1; absent = no limit. */
+  max?: number;
+}
+
 export interface SpecAnnotationType {
   id: string;
   name: string;
@@ -386,6 +411,8 @@ export interface SpecAnnotationType {
   /** Label of the role in the UI; absent = "Role" (`formatVersion` 11 only, with `childRoles`). */
   childRolesLabel?: string;
   fields: SpecField[];
+  /** The component's slots with what they accept (`formatVersion` 17 only). */
+  slots?: SpecSlot[];
   code?: SpecCodeMap;
   /** Origin elements the type corresponds to (`formatVersion` 3 onward). */
   sources?: SpecTypeSource[];
@@ -906,14 +933,16 @@ function checkFields(
 }
 
 /**
- * The `formatVersion` 16 keys of the `code` (and of the `variants` case); the version and the
- * content are in `specSignature.ts`.
+ * The new keys of the `code` (and of the `variants` case): those of `formatVersion` 16 (the version
+ * and the content are in `specSignature.ts`) and `slots`, of 17 (`checkSlotKeys`).
  */
 const signatureKeys = {
   signature: packagePath('.json').optional(),
   ignore: z.array(nonEmpty).optional(),
   calls: z.record(z.string(), nonEmpty).optional(),
   formats: z.record(z.string(), nonEmpty).optional(),
+  // `formatVersion` 17 only (`checkSlotKeys`): slot id → parameter name.
+  slots: z.record(z.string(), nonEmpty).optional(),
 };
 
 const codePathShape = z
@@ -1333,6 +1362,49 @@ function checkTypeGroups(
   });
 }
 
+// Slot id of the component (the same pattern as `slot.id` of the component format: camelCase allowed).
+const SLOT_ID_RE = /^[a-z][a-zA-Z0-9_-]*$/;
+const SLOT_ID_INVALID = specMsg('spec.slotIdInvalid');
+
+/** `slots[]` of the type (`formatVersion` 17): the shape; the version and the cross-checks are in `checkSlotKeys`. */
+const slotShape = z
+  .object({
+    id: z
+      .string({
+        error: (issue) => (issue.input === undefined ? 'required' : 'must be text'),
+      })
+      .regex(SLOT_ID_RE, SLOT_ID_INVALID.text),
+    name: nonEmpty.optional(),
+    description: z.string().optional(),
+    accepts: z
+      .array(allowedChildShape)
+      .refine(
+        (a) => a.length > 0,
+        'cannot be empty; remove the key or list at least one item',
+      )
+      .optional(),
+    max: z
+      .number({ error: 'must be a number' })
+      .int('must be an integer')
+      .min(1, 'must be >= 1')
+      .optional(),
+  })
+  .strict();
+
+/** The type's `slots` have unique ids. */
+function checkSlotIds(
+  slots: readonly { id: string }[] | undefined,
+  ctx: z.RefinementCtx,
+): void {
+  const seen = new Set<string>();
+  (slots ?? []).forEach((slot, i) => {
+    if (seen.has(slot.id)) {
+      addSpecIssue(ctx, ['slots', i, 'id'], specMsg('spec.idRepeated', { id: slot.id }));
+    }
+    seen.add(slot.id);
+  });
+}
+
 const annotationTypeShape = z
   .object({
     id: nonEmpty,
@@ -1345,6 +1417,7 @@ const annotationTypeShape = z
     childRoles: z.array(childRoleShape).optional(),
     childRolesLabel: nonEmpty.optional(),
     fields: z.array(fieldShape),
+    slots: z.array(slotShape).optional(),
     code: z.record(z.string(), codeEntryShape).optional(),
     sources: z.array(typeSourceShape).optional(),
     component: packagePath('.json').optional(),
@@ -1378,6 +1451,7 @@ const annotationTypeShape = z
     checkAppliesTo(type, ctx);
     checkChildRoles(type, ctx);
     checkTypeGroups(type.groups, ctx);
+    checkSlotIds(type.slots, ctx);
     checkCode(type, ctx);
     checkExamples(type, ctx);
     if (type.labelField != null) {
@@ -1511,6 +1585,7 @@ const FONT_WEIGHT_INVALID = specMsg('spec.fontWeightInvalid', {
   max: String(WEIGHT_MAX),
 });
 const KNOWN_SPEC_MSGS: readonly SpecMsg[] = [
+  SLOT_ID_INVALID,
   FORMAT_INVALID,
   FORMAT_VERSION_INVALID,
   CONTAINER_SIDE_MAX,
@@ -2271,6 +2346,8 @@ interface V11Type {
   readonly childRolesLabel?: string | undefined;
   readonly doc?: string | SpecDocRef | undefined;
   readonly fields?: readonly V14Field[] | undefined;
+  readonly slots?: readonly { readonly accepts?: unknown }[] | undefined;
+  readonly code?: Readonly<Record<string, unknown>> | undefined;
 }
 
 /** `ref` field or column with `accepts.annotations` (v14), in the raw shape. */
@@ -2474,6 +2551,69 @@ function checkAcceptsAnnotations(
         if (typeof item === 'string') {
           checkChildId(item, li, typeLayer, itemPath, add, true);
         } else if (isRecord(item) && typeof item.layer === 'string') {
+          const clause: SpecChildClause = { ...item, layer: item.layer };
+          checkChildClause(clause, li, layers, itemPath, add, true);
+        }
+      });
+    });
+  });
+}
+
+/** First `formatVersion` of `slots` on the type and of `code.slots`. */
+export const SLOTS_VERSION = 17;
+
+/** Raw `code` entry (or case) as far as `slots` is concerned. */
+interface RawSlotCode {
+  readonly slots?: unknown;
+  readonly variants?: { readonly cases?: Readonly<Record<string, unknown>> } | undefined;
+}
+
+/** Each `code` entry of the type and each case of its `variants`, with the path of its `slots` key. */
+function eachCodeSlots(
+  code: Readonly<Record<string, unknown>> | undefined,
+  typePath: (string | number)[],
+  visit: (slots: unknown, path: (string | number)[]) => void,
+): void {
+  for (const [platform, raw] of Object.entries(code ?? {})) {
+    if (!isRecord(raw)) continue;
+    const entry = raw as RawSlotCode;
+    const at = [...typePath, 'code', platform];
+    visit(entry.slots, [...at, 'slots']);
+    for (const [value, kase] of Object.entries(entry.variants?.cases ?? {})) {
+      if (isRecord(kase)) {
+        const path = [...at, 'variants', 'cases', value, 'slots'];
+        visit((kase as RawSlotCode).slots, path);
+      }
+    }
+  }
+}
+
+/**
+ * The named slots (v17): before it, `slots` on the type and `code.slots` are an error at the exact
+ * path; from it, each `accepts` item of a slot points at something that exists, with the same texts
+ * and the same resolver as `allowedChildren` (a type of the own layer is allowed). Whether the slot
+ * exists in the component and the parameter in the signature belong to the package (`library.ts`).
+ */
+function checkSlotKeys(
+  spec: { formatVersion: number; layers: readonly V11Layer[] },
+  typeLayer: ReadonlyMap<string, number>,
+  ctx: z.RefinementCtx,
+): void {
+  const add = issueAdder(ctx);
+  const layers = layerGroupIndex(spec.layers);
+  const current = spec.formatVersion >= SLOTS_VERSION;
+  eachV11Type(spec.layers, (type, _layer, path, li) => {
+    eachCodeSlots(type.code, path, (slots, slotsPath) => {
+      if (slots !== undefined && !current) add(slotsPath, onlyFormat(SLOTS_VERSION));
+    });
+    if (type.slots === undefined) return;
+    if (!current) return add([...path, 'slots'], onlyFormat(SLOTS_VERSION));
+    type.slots.forEach((slot, si) => {
+      (Array.isArray(slot.accepts) ? slot.accepts : []).forEach((item, ii) => {
+        const itemPath = [...path, 'slots', si, 'accepts', ii];
+        if (typeof item === 'string')
+          checkChildId(item, li, typeLayer, itemPath, add, true);
+        else if (isRecord(item) && typeof item.layer === 'string') {
           const clause: SpecChildClause = { ...item, layer: item.layer };
           checkChildClause(clause, li, layers, itemPath, add, true);
         }
@@ -2854,6 +2994,7 @@ export const specSchema = z
 
     checkAllowedChildren(spec, typeLayer, ctx);
     checkAcceptsAnnotations(spec, typeLayer, ctx);
+    checkSlotKeys(spec, typeLayer, ctx);
     if (spec.formatVersion >= 11) {
       checkLayerGroups(spec.layers, ctx);
       checkDocRepos(spec, ctx);

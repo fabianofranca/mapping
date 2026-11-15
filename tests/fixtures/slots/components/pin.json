@@ -1,0 +1,22 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "pin",
+  "name": "Pin",
+  "size": { "width": 24, "height": 24 },
+  "preview": { "label": "pin" },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "row", "align": "center", "justify": "center" },
+    "cornerRadius": 12,
+    "fill": "#E8DEF8",
+    "children": [
+      {
+        "type": "text",
+        "text": { "$field": "label", "default": "pin" },
+        "font": { "size": 10, "weight": 500 },
+        "width": "hug"
+      }
+    ]
+  }
+}

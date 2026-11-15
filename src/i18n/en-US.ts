@@ -963,11 +963,16 @@ export const enUS = {
   'issue.owner-not-allowed': 'owner type not allowed',
   'issue.missing-role': 'no {label} (choose {roles})',
   'issue.unknown-role': '{label} the owner does not offer',
+  'typed.slotFilledNote':
+    'The slot {slot} has content: this field does not draw or go into the code',
   'typed.roleLabel': 'Role',
   'issue.type-not-applicable': 'the type does not apply to this item (marking or arrow)',
   'issue.broken-ref': 'broken reference',
   'issue.ref-not-accepted': 'target not accepted (lost the tag or is no longer free)',
   'issue.component-overflow': 'The component does not fit',
+  'issue.slot-not-accepted': 'the slot {slot} of {owner} does not accept {type}',
+  'issue.slot-full': 'the slot {slot} of {owner} takes {max}',
+  'issue.slot-hidden': 'the slot {slot} of {owner} is hidden',
   'list.incomplete': 'Incomplete only',
   'list.emptyIncomplete': 'No incomplete annotations in the visible layers.',
   // Details (R5)

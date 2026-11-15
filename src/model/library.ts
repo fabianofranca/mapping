@@ -1,5 +1,5 @@
 import type { ComponentFile } from './components/componentFormat';
-import { findSlot } from './components/arrange';
+import { componentSlots, slotKey } from './components/slots';
 import { resolvePath, type TextFile } from './components/library';
 import { INDEX_FIELD, isAnchorFieldName } from './components/expressions';
 import {
@@ -594,6 +594,81 @@ function tokenChecks(pkg: Package, path: string, out: Collector): void {
   }
 }
 
+/**
+ * The type's `slots` (`formatVersion` 17) and the `code.<platform>.slots` keys (and those of the `variants`
+ * cases) name slots that the component has; a component whose slots have no `id` takes none.
+ */
+function slotCoherence(
+  pkg: Package,
+  type: SpecAnnotationType,
+  base: string,
+  slots: readonly { readonly id?: string | undefined }[],
+  out: Collector,
+): void {
+  const ids = new Set(slots.map(slotKey).filter((id) => id !== ''));
+  const check = (id: string, at: string): void => {
+    if (ids.has(id)) return;
+    if (ids.size === 0) out.error(pkg.specPath, at, 'library.componentNoSlotIds');
+    else out.error(pkg.specPath, at, 'library.slotNotInComponent', { id });
+  };
+  (type.slots ?? []).forEach((slot, index) =>
+    check(slot.id, `${base}.slots[${index}].id`),
+  );
+  for (const [platform, entry] of Object.entries(type.code ?? {})) {
+    codeSlotEntries(entry, `${base}.code.${platform}`).forEach(([id, at]) =>
+      check(id, at),
+    );
+    parameterClashes(pkg, entry, `${base}.code.${platform}`, [...ids], out);
+  }
+}
+
+/**
+ * Two slots of the component that the platform's `code.slots` maps to the same parameter (a slot with no
+ * entry keeps its `id` as the parameter) would generate the same argument twice: the entry, and each
+ * case of its `variants`, is checked as the sheet is read (the case's `slots` on top of the entry's).
+ */
+function parameterClashes(
+  pkg: Package,
+  entry: NonNullable<SpecAnnotationType['code']>[string],
+  at: string,
+  ids: readonly string[],
+  out: Collector,
+): void {
+  const clash = (map: Readonly<Record<string, string>>, where: string): void => {
+    const seen = new Map<string, string>();
+    for (const id of ids) {
+      const parameter = map[id] ?? id;
+      const first = seen.get(parameter);
+      if (first !== undefined)
+        out.error(pkg.specPath, `${where}.slots.${id}`, 'library.slotParameterRepeated', {
+          parameter,
+          first,
+          second: id,
+        });
+      else seen.set(parameter, id);
+    }
+  };
+  clash(entry.slots ?? {}, at);
+  for (const [value, kase] of Object.entries(entry.variants?.cases ?? {}))
+    clash({ ...entry.slots, ...kase.slots }, `${at}.variants.cases.${value}`);
+}
+
+/** The slot ids of a `code` entry (and of its `variants` cases) with the path of each one. */
+function codeSlotEntries(
+  entry: NonNullable<SpecAnnotationType['code']>[string],
+  at: string,
+): [string, string][] {
+  const found = Object.keys(entry.slots ?? {}).map((id): [string, string] => [
+    id,
+    `${at}.slots.${id}`,
+  ]);
+  for (const [value, kase] of Object.entries(entry.variants?.cases ?? {})) {
+    for (const id of Object.keys(kase.slots ?? {}))
+      found.push([id, `${at}.variants.cases.${value}.slots.${id}`]);
+  }
+  return found;
+}
+
 function typeCoherence(
   pkg: Package,
   type: SpecAnnotationType,
@@ -615,20 +690,23 @@ function typeCoherence(
   const component = pkg.components.get(path);
   if (component === undefined) return;
 
-  const slot = findSlot(component);
+  // The origin's `slot` names one of the component's slots (by their `name`).
+  const slots = componentSlots(component);
   (type.sources ?? []).forEach((source, index) => {
     if (source.slot === undefined) return;
     const at = `${base}.sources[${index}].slot`;
-    if (slot === undefined) {
+    if (slots.length === 0) {
       out.error(pkg.specPath, at, 'library.noSlot', { path });
-    } else if (slot.name !== source.slot) {
+    } else if (!slots.some((slot) => slot.name === source.slot)) {
       out.error(pkg.specPath, at, 'library.slotMismatch', {
         path,
-        slot: slot.name ?? '',
+        slot: slots.map((slot) => slot.name ?? '').join(', '),
         expected: source.slot,
       });
     }
   });
+
+  slotCoherence(pkg, type, base, slots, out);
 
   const keys = new Set(type.fields.map((f) => f.key));
   const raw = pkg.componentJson.get(path);

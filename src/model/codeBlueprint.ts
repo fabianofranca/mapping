@@ -5,6 +5,7 @@ import {
   type ProjectPlatform,
 } from './codeLocations';
 import { blueprintParams, type BlueprintParam } from './codeArgs';
+import type { ComponentDrawings } from './componentDrawings';
 import { resolveCode } from './codeVariants';
 import { fail } from './errors';
 import { projectIndex } from './projectIndex';
@@ -55,10 +56,37 @@ export interface BlueprintAnnotation {
   /** Annotations linked to this one (e.g. events of a button), with the same shape. */
   readonly linked: readonly BlueprintAnnotation[];
   /**
+   * The slot arguments (stage #1080, decision 11), only with the `drawings` option: one per slot **with an
+   * `id`** that holds child markings, in the template's order. The children that sit in them are not in
+   * the node's `children`. Absent without `drawings`, without children in a slot, and for a slot without `id`
+   * (so the answer is the one of before the named slots).
+   */
+  readonly slotArgs?: readonly BlueprintSlotArg[];
+  /**
    * Targets of the `ref`s to the whole annotation (v17) in the fields and cells, one per `ref`, in the
    * order of the fields and rows. The field, row and free-pair `ref`s do not count.
    */
   readonly targets: readonly BlueprintTarget[];
+}
+
+/** The argument of a slot of the component: the child markings the geometry put in it. */
+export interface BlueprintSlotArg {
+  /** The parameter that receives the content: `code.<platform>.slots[<slot>]`, else the slot's `id`. */
+  readonly name: string;
+  /** The slot's `id`. */
+  readonly slot: string;
+  /** The child nodes, in the order of the siblings; each is the node the tree would carry. */
+  readonly children: readonly BlueprintNode[];
+}
+
+/** What `codeBlueprint` reads besides the project. */
+export interface BlueprintOptions {
+  /**
+   * The drawings of the component markings (`createDrawingCache`): they say which slot each child sits in
+   * (`slotOf`) and which default-content fields mean nothing then (`inactiveFields`). Without them the
+   * children stay in `children` and every field is an argument, as before the named slots.
+   */
+  readonly drawings?: ComponentDrawings;
 }
 
 /** A `ref` to the whole annotation, with the target expanded. */
@@ -197,6 +225,67 @@ function wholeSites(
   return sites;
 }
 
+/** The mapping values of the fields that carry something (empty lists stay out). */
+function mappedValues(
+  p: Project,
+  fields: readonly SpecField[],
+  values: Readonly<Record<string, JsonValue>>,
+): Record<string, JsonValue> {
+  const mapped: Record<string, JsonValue> = {};
+  for (const field of fields) {
+    const v = mappingValue(p, field, values[field.key]);
+    if (v !== null && !(Array.isArray(v) && v.length === 0)) mapped[field.key] = v;
+  }
+  return mapped;
+}
+
+/** What the type's `code` on the platform says about the annotation: symbol, path, its link and notes. */
+function codeSummary(
+  p: Project,
+  resolved: ResolvedType,
+  platformId: string,
+  code: SpecCode | null,
+): Pick<BlueprintAnnotation, 'symbol' | 'path' | 'pathUrl' | 'notes'> {
+  const path = code?.path ?? null;
+  return {
+    symbol: code?.symbol ?? null,
+    path,
+    pathUrl: path
+      ? codeLink(p, { specId: resolved.spec.id, platform: platformId, path })
+      : null,
+    notes: code?.notes ?? null,
+  };
+}
+
+/** The default-content fields that the filled slot `slotId` makes meaningless. */
+function inactiveOf(
+  inactiveFields: ReadonlyMap<string, string>,
+  slotId: string,
+): string[] {
+  return [...inactiveFields]
+    .filter(([, slot]) => slot === slotId)
+    .map(([field]) => field);
+}
+
+/** The slot arguments of a marking, with what they take away from the annotation and the children. */
+interface Slotted {
+  /** The annotation that draws the marking (the one that carries `slotArgs`). */
+  readonly annotationId: string;
+  readonly args: readonly BlueprintSlotArg[];
+  /** The ids of the child markings that went into the arguments. */
+  readonly claimed: ReadonlySet<string>;
+  /** The default-content fields of the filled slots: not arguments. */
+  readonly inactive: ReadonlySet<string>;
+}
+
+/** The parameter of a slot on the platform: `code.<platform>.slots[<id>]`, else the `id` itself. */
+export function slotParam(code: SpecCode, slotId: string): string {
+  const slots = code.slots;
+  return slots !== undefined && Object.hasOwn(slots, slotId)
+    ? (slots[slotId] ?? slotId)
+    : slotId;
+}
+
 /**
  * Code blueprint of the marking `markingId` for the platform `platformId` (declared by
  * some applied specialization; otherwise fails with `unknown-platform`). In each marking
@@ -207,6 +296,7 @@ export function codeBlueprint(
   p: Project,
   markingId: string,
   platformId: string,
+  options: BlueprintOptions = {},
 ): CodeBlueprint {
   const index = projectIndex(p);
   const rootMarking = index.markings.get(markingId) ?? fail('not-found', markingId);
@@ -218,24 +308,25 @@ export function codeBlueprint(
     included: ReadonlyMap<string, ResolvedType>,
     seen: Set<string>,
     path: ReadonlySet<string>,
+    slotted: Slotted | null,
   ): BlueprintAnnotation => {
     seen.add(a.id);
     const here = new Set(path).add(a.id);
     const values = a.values ?? {};
     const code = codeFor(resolved, platformId, values);
     const fields = resolved.type.fields;
-    const params = blueprintParams(fields, code, resolved.spec.formatVersion, (field) =>
-      code === null ? null : paramValue(p, field, values[field.key], code),
+    const mine = slotted?.annotationId === a.id ? slotted : null;
+    // The default-content fields of a filled slot are no arguments: the child is the content.
+    const params = blueprintParams(
+      mine === null ? fields : fields.filter((field) => !mine.inactive.has(field.key)),
+      code,
+      resolved.spec.formatVersion,
+      (field) => (code === null ? null : paramValue(p, field, values[field.key], code)),
     );
-    const mapped: Record<string, JsonValue> = {};
-    for (const field of fields) {
-      const v = mappingValue(p, field, values[field.key]);
-      if (v !== null && !(Array.isArray(v) && v.length === 0)) mapped[field.key] = v;
-    }
     const linked = (index.annotationsByOwner.get(a.id) ?? []).flatMap((child) => {
       const childType = included.get(child.id);
       return childType && !seen.has(child.id)
-        ? [annotationOf(child, childType, included, seen, here)]
+        ? [annotationOf(child, childType, included, seen, here, slotted)]
         : [];
     });
     return {
@@ -245,19 +336,11 @@ export function codeBlueprint(
       type: resolved.type.name,
       label: instanceLabel(p, a),
       layer: index.layers.get(a.layerId)?.name ?? null,
-      symbol: code?.symbol ?? null,
-      path: code?.path ?? null,
-      pathUrl: code?.path
-        ? codeLink(p, {
-            specId: resolved.spec.id,
-            platform: platformId,
-            path: code.path,
-          })
-        : null,
+      ...codeSummary(p, resolved, platformId, code),
       params,
-      notes: code?.notes ?? null,
-      values: mapped,
+      values: mappedValues(p, fields, values),
       linked,
+      ...(mine === null ? {} : { slotArgs: mine.args }),
       targets: wholeSites(fields, values).flatMap((site) => {
         const target = targetOf(site, here);
         return target ? [target] : [];
@@ -285,16 +368,20 @@ export function codeBlueprint(
     }
     // The target enters the path when descending: a `ref` that comes back to it becomes a `repeated` node.
     const here = new Set(path).add(target.id);
+    // An annotation of the project always has its marking (the model validates it).
+    const targetMarking = index.markings.get(target.markingId)!;
+    const slotted = slottedOf(targetMarking, new Set<string>(), here, target.id);
     const annotation = annotationOf(
       target,
       resolved,
       includedFor(target.markingId),
       new Set(),
       here,
+      slotted,
     );
-    const children = (index.children.get(target.markingId) ?? []).map((child) =>
-      nodeOf(child, new Set(), here),
-    );
+    const children = (index.children.get(target.markingId) ?? [])
+      .filter((child) => slotted?.claimed.has(child.id) !== true)
+      .map((child) => nodeOf(child, new Set(), here));
     return { ...base, repeated: false, annotation, children };
   };
 
@@ -307,6 +394,47 @@ export function codeBlueprint(
     return included;
   };
 
+  /**
+   * The slot arguments of marking `m` (decision 11): the children its drawing put in a slot with an `id`,
+   * as nodes, under the annotation that draws it. `null` without drawings, without `code` on the platform
+   * (nothing to call), without a child in a slot or, with `only`, when another annotation draws the marking
+   * (the arguments would never be written and the children would vanish).
+   */
+  const slottedOf = (
+    m: Marking,
+    seenMarkings: Set<string>,
+    path: ReadonlySet<string>,
+    only?: string,
+  ): Slotted | null => {
+    const drawing = options.drawings?.get(m.id);
+    const drawn = drawing && index.annotations.get(drawing.annotationId);
+    if (!drawing || !drawn?.values || (only !== undefined && drawn.id !== only)) {
+      return null;
+    }
+    const resolved = typeOfAnnotation(p, drawn);
+    const code = resolved ? codeFor(resolved, platformId, drawn.values) : null;
+    if (code === null) return null;
+    const args: BlueprintSlotArg[] = [];
+    const claimed = new Set<string>();
+    const inactive = new Set<string>();
+    for (const slot of drawing.slots) {
+      const kids = slot.children
+        .flatMap((id) => index.markings.get(id) ?? [])
+        .filter((kid) => !seenMarkings.has(kid.id));
+      if (slot.id === '' || kids.length === 0) continue;
+      kids.forEach((kid) => claimed.add(kid.id));
+      inactiveOf(drawing.inactiveFields, slot.id).forEach((field) => inactive.add(field));
+      args.push({
+        name: slotParam(code, slot.id),
+        slot: slot.id,
+        children: kids.map((kid) => nodeOf(kid, seenMarkings, path)),
+      });
+    }
+    return args.length === 0
+      ? null
+      : { annotationId: drawing.annotationId, args, claimed, inactive };
+  };
+
   const visited = new Set<string>();
   const nodeOf = (
     m: Marking,
@@ -316,16 +444,19 @@ export function codeBlueprint(
     seenMarkings.add(m.id);
     const included = includedFor(m.id);
     const seen = new Set<string>();
+    const slotted = slottedOf(m, seenMarkings, path);
     const annotations: BlueprintAnnotation[] = [];
     for (const a of index.annotationsByMarking.get(m.id) ?? []) {
       const resolved = included.get(a.id);
       if (!resolved) continue;
       // Linked to another included annotation: appears under the owner.
       if (a.parentAnnotationId !== null && included.has(a.parentAnnotationId)) continue;
-      annotations.push(annotationOf(a, resolved, included, seen, path));
+      annotations.push(annotationOf(a, resolved, included, seen, path, slotted));
     }
     const children = (index.children.get(m.id) ?? [])
-      .filter((child) => !seenMarkings.has(child.id))
+      .filter(
+        (child) => !seenMarkings.has(child.id) && slotted?.claimed.has(child.id) !== true,
+      )
       .map((child) => nodeOf(child, seenMarkings, path));
     return {
       markingId: m.id,

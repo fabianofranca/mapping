@@ -73,6 +73,19 @@ describe('dropping a palette type on the canvas', () => {
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: created?.id });
   });
 
+  it('the drop carries the app drawings, as the palette Add does (CL1, P9)', async () => {
+    const s = await setup();
+    const add = vi.spyOn(s.harness.actions, 'addComponent');
+    const image = s.harness.project().containers[0];
+    const point = {
+      x: (image?.placement.x ?? 0) + 200,
+      y: (image?.placement.y ?? 0) + 150,
+    };
+    s.handlers().onDrop(event('drop', point));
+    expect(add).toHaveBeenCalledTimes(1);
+    expect(add.mock.calls[0]?.[0].drawings).toBeDefined();
+  });
+
   it('in the empty space far from everything: canvas marking', async () => {
     const s = await setup();
     s.handlers().onDrop(event('drop', { x: -5000, y: -5000 }));

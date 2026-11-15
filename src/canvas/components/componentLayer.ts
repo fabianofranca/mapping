@@ -4,7 +4,8 @@
 import Konva from 'konva/lib/Core';
 import { IDENTITY_PLACEMENT, type Placement, type Rect } from '../../model';
 import type { ScreenAnchor } from '../../model/components/componentFormat';
-import type { FrameNode } from '../../model/components/scene';
+import type { ClipShape } from '../../model/componentDrawings';
+import type { CornerRadius, FrameNode } from '../../model/components/scene';
 import { type RemoteImageResult, type RenderPalette, renderScene } from './renderScene';
 
 /** What the renderer draws for each marking (the model's `ComponentDrawing` has this shape). */
@@ -24,6 +25,16 @@ export interface LayerDrawing {
    * drawing only shows inside it. The screen-pixel drawing ignores the clip.
    */
   readonly clip?: Rect;
+  /**
+   * Rounded boxes that also cut the drawing (same space as `clip`; only when some radius is above
+   * 0): it shows inside `clip` and inside every shape. The screen-pixel drawing ignores them.
+   */
+  readonly clipShape?: readonly ClipShape[];
+  /**
+   * The marking is in a slot hidden by `visible` (or under one that is): it is not drawn, but keeps its outline
+   * and stays selectable, since the marking itself is not hidden (#1978).
+   */
+  readonly hidden?: true;
 }
 
 /** Fraction (of the width and height) of each anchor's point. */
@@ -460,7 +471,10 @@ export class ComponentLayerRenderer {
       },
     );
     root.listening(false);
-    const node = drawing.clip && !drawing.screen ? clipped(root, drawing.clip) : root;
+    const node =
+      drawing.clip && !drawing.screen
+        ? clipped(root, drawing.clip, drawing.clipShape)
+        : root;
     node.setAttr('markingId', drawing.markingId);
     return { node, imageUrls, images: root.find('Image').length };
   }
@@ -470,15 +484,54 @@ export class ComponentLayerRenderer {
  * Wraps the scene in a group (no transform, in the container's space) clipped by the slot's
  * box: the `root` matrix does not enter the computation, the clip applies in the space where `clip` was measured.
  */
-function clipped(root: Konva.Group, { x, y, width, height }: Rect): Konva.Group {
+function clipped(
+  root: Konva.Group,
+  { x, y, width, height }: Rect,
+  shapes: readonly ClipShape[] = [],
+): Konva.Group {
   const wrapper = new Konva.Group({ listening: false, name: root.name() });
   wrapper.clipFunc((ctx) => {
     ctx.beginPath();
     ctx.rect(x, y, width, height);
     ctx.closePath();
   });
-  wrapper.add(root);
+  // One nested group per rounded shape: the intersection comes from the nesting.
+  let holder = wrapper;
+  for (const { box, radius } of shapes) {
+    const inner = new Konva.Group({ listening: false });
+    inner.clipFunc((ctx) => roundedBoxPath(ctx, box, radius));
+    holder.add(inner);
+    holder = inner;
+  }
+  holder.add(root);
   return wrapper;
+}
+
+/** Rounded rectangle path (per-corner radii, each capped to half the smaller side, like the frame clip). */
+function roundedBoxPath(
+  ctx: Pick<
+    CanvasRenderingContext2D,
+    'beginPath' | 'moveTo' | 'lineTo' | 'arcTo' | 'closePath'
+  >,
+  { x, y, width, height }: Rect,
+  radius: CornerRadius,
+): void {
+  const list = typeof radius === 'number' ? [radius, radius, radius, radius] : radius;
+  const [a, b, c, d] = list.map((r) =>
+    Math.max(0, Math.min(r, width / 2, height / 2)),
+  ) as [number, number, number, number];
+  const [right, bottom] = [x + width, y + height];
+  ctx.beginPath();
+  ctx.moveTo(x + a, y);
+  ctx.lineTo(right - b, y);
+  ctx.arcTo(right, y, right, y + b, b);
+  ctx.lineTo(right, bottom - c);
+  ctx.arcTo(right, bottom, right - c, bottom, c);
+  ctx.lineTo(x + d, bottom);
+  ctx.arcTo(x, bottom, x, bottom - d, d);
+  ctx.lineTo(x, y + a);
+  ctx.arcTo(x, y, x + a, y, a);
+  ctx.closePath();
 }
 
 /** The drawings that appear, per space, in drawing order (only the ones that have a position). */
@@ -489,9 +542,9 @@ function wantedBySpace(
 ): Map<string | null, LayerDrawing[]> {
   const wanted = new Map<string | null, LayerDrawing[]>();
   for (const drawing of drawings.values()) {
-    if (placementOf(placements, drawing.containerId) === undefined || !visible(drawing)) {
+    if (drawing.hidden || placementOf(placements, drawing.containerId) === undefined)
       continue;
-    }
+    if (!visible(drawing)) continue;
     const list = wanted.get(drawing.containerId);
     if (list) list.push(drawing);
     else wanted.set(drawing.containerId, [drawing]);

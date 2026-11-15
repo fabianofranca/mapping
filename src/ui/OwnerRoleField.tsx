@@ -3,6 +3,7 @@ import { t } from '../i18n';
 import {
   ownerRolesOf,
   type Annotation,
+  type AnnotationIssue,
   type Project,
   type SpecChildRole,
 } from '../model';
@@ -10,7 +11,8 @@ import { Select } from './controls';
 import { useDetailsExtension } from './DetailsExtension';
 import { useEditor } from './EditorContext';
 import { Property } from './PropertyGrid';
-import { issueReason, issuesOf } from './typedText';
+import { issueReason } from './typedText';
+import { useIssuesOf } from './useIssues';
 
 interface OwnerRoleFieldProps {
   readonly project: Project;
@@ -21,10 +23,8 @@ interface OwnerRoleFieldProps {
 
 const hasContent = (c: unknown) => c !== undefined && c !== null && c !== false;
 
-function roleIssueOf(project: Project, annotation: Annotation) {
-  return issuesOf(project, annotation.id).find(
-    (i) => i.code === 'missing-role' || i.code === 'unknown-role',
-  );
+function roleIssueOf(issues: readonly AnnotationIssue[]) {
+  return issues.find((i) => i.code === 'missing-role' || i.code === 'unknown-role');
 }
 
 /** The options: "Choose…" (no valid role), the role the owner does not offer and the owner's. */
@@ -103,7 +103,7 @@ export function OwnerRoleField({
   const id = useId();
   const extras = useRoleExtras(annotation.id);
   const offered = owner ? ownerRolesOf(project, owner) : null;
-  const issue = roleIssueOf(project, annotation);
+  const issue = roleIssueOf(useIssuesOf(annotation.id));
   if (!offered && !issue && !extras.any) return null;
   return (
     <Property

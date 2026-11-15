@@ -33,9 +33,9 @@ import {
   annotationSummary,
   issueFocusKey,
   issueMessage,
-  issuesOf,
   ownerTypeNames,
 } from './typedText';
+import { useIssues } from './useIssues';
 import { Button, IconButton } from './controls';
 import {
   offeredTypeChoice,
@@ -414,12 +414,13 @@ function LayerGroup({
   children,
 }: LayerGroupProps) {
   const { ui } = useEditor();
+  const issues = useIssues();
   const ext = useDetailsExtension();
   const section = { kind: 'layer', id: layer.id } as const;
   const collapsed = isSectionCollapsed(ui, section);
   const changes = collapsed ? (ext?.sectionSummary(section) ?? null) : null;
   const empty = annotations.length === 0;
-  const incomplete = annotations.some((a) => issuesOf(project, a.id).length > 0);
+  const incomplete = annotations.some((a) => (issues.get(a.id)?.length ?? 0) > 0);
   const spec = layer.spec
     ? projectIndex(project).specializations.get(layer.spec.specId)
     : undefined;
@@ -512,9 +513,10 @@ function IssuesNotice({
   readonly groups: readonly { layer: Layer; annotations: readonly Annotation[] }[];
 }) {
   const { ui, layers } = useEditor();
+  const issues = useIssues();
   const items = groups.flatMap(({ layer, annotations }) =>
     annotations.flatMap((annotation) =>
-      issuesOf(project, annotation.id).map((issue, i) => ({
+      (issues.get(annotation.id) ?? []).map((issue, i) => ({
         key: `${annotation.id}:${i}`,
         layer,
         annotation,

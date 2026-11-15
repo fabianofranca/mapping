@@ -40,11 +40,21 @@ interface CodeEntry {
   notes?: string;
   variants?: unknown;
 }
+interface HintArg {
+  field?: string;
+  name: string;
+  value?: unknown;
+  /** Named slots (SL5 of #1080): the arg of a slot carries the child nodes. */
+  slot?: string;
+  trailing?: boolean;
+  children?: HintNode[];
+}
 interface HintAnnotation {
   ref: string;
   type: string;
   code?: CodeEntry;
-  args?: { field: string; name: string; value: unknown }[];
+  args?: HintArg[];
+  values?: Record<string, unknown>;
 }
 interface HintNode {
   ref: string;
@@ -68,6 +78,15 @@ const NAMES: Record<string, string> = {
   L2: 'Bruno',
   BT: 'Cancel',
   FB: 'New',
+  BAB: 'Bar with actions',
+  BI1: 'Action 1',
+  BI2: 'Action 2',
+  BXF: 'Add',
+  BAB0: 'Bar without children',
+  TAB: 'Top bar with actions',
+  TI1: 'Menu',
+  TI2: 'Search',
+  TI3: 'More',
 };
 
 /** 360 × 800 screen with the tree: Scaffold ⊃ (Top app bar, LazyColumn ⊃ 2 List items, Button, FAB). */
@@ -81,14 +100,17 @@ function screen(): Project {
     packageSpecName: 'material3-compose.spec.json',
   });
   p = addContainer(p, { id: 'SCREEN', file: 'images/a.png', width: 360, height: 800 });
+  // The bars of the slot cases (SL7 of #1080), in another container so that no Scaffold wraps them.
+  p = addContainer(p, { id: 'BARS', file: 'images/b.png', width: 360, height: 400 });
   const add = (
     id: string,
     typeId: string,
     layer: string,
     rect: { x: number; y: number; width: number; height: number },
     values: Record<string, string>,
+    containerId = 'SCREEN',
   ): void => {
-    p = createMarking(p, { id: `M${id}`, containerId: 'SCREEN', rect, name: NAMES[id] });
+    p = createMarking(p, { id: `M${id}`, containerId, rect, name: NAMES[id] });
     p = addTypedAnnotation(p, {
       id,
       markingId: `M${id}`,
@@ -114,6 +136,39 @@ function screen(): Project {
     style: 'outlined',
   });
   add('FB', 'fab', 'components', r(280, 700, 56, 56), { icon: 'Add' });
+  // A bottom-app-bar with two icon-buttons in `actions` and an extended-fab in `floatingActionButton`, one
+  // with the field icons only, and a top-app-bar with an icon at the left and two at the right.
+  const bar = { actionIcon1: 'Check', actionIcon2: 'Edit', floatingActionButton: 'Add' };
+  add('BAB', 'bottom-app-bar', 'components', r(0, 0, 360, 80), bar, 'BARS');
+  add('BI1', 'icon-button', 'components', r(4, 4, 48, 48), { icon: 'Check' }, 'BARS');
+  add('BI2', 'icon-button', 'components', r(52, 4, 48, 48), { icon: 'Edit' }, 'BARS');
+  add(
+    'BXF',
+    'extended-fab',
+    'components',
+    r(200, 12, 144, 56),
+    { text: 'Add', icon: 'Add' },
+    'BARS',
+  );
+  add('BAB0', 'bottom-app-bar', 'components', r(0, 120, 360, 80), bar, 'BARS');
+  add('TAB', 'top-app-bar', 'components', r(0, 240, 360, 64), { title: 'Home' }, 'BARS');
+  add('TI1', 'icon-button', 'components', r(4, 248, 48, 48), { icon: 'Menu' }, 'BARS');
+  add(
+    'TI2',
+    'icon-button',
+    'components',
+    r(256, 248, 48, 48),
+    { icon: 'Search' },
+    'BARS',
+  );
+  add(
+    'TI3',
+    'icon-button',
+    'components',
+    r(304, 248, 48, 48),
+    { icon: 'MoreVert' },
+    'BARS',
+  );
   return p;
 }
 
@@ -124,6 +179,7 @@ beforeAll(async () => {
   const dir = join(root, 'projetos', 'contacts');
   mkdirSync(join(dir, 'images'), { recursive: true });
   writeFileSync(join(dir, 'images', 'a.png'), PNG_1X1);
+  writeFileSync(join(dir, 'images', 'b.png'), PNG_1X1);
   writeFileSync(
     join(dir, 'mapping.json'),
     withUuids(serialize(source), Object.keys(ids)),
@@ -143,28 +199,50 @@ function flatten(node: HintNode): HintAnnotation[] {
 }
 
 describe('screen mapped with the Material 3 (Compose) library', () => {
-  it('get_code_hints returns the screen tree with the right composables', async () => {
+  it('get_code_hints returns the screen tree with the right composables, each child inside the arg of its slot', async () => {
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', { ref: mRef('MSC'), platform: 'compose' }),
     );
     // The symbol comes from `types` (the base) and, on types with `variants`, from the annotation's `code`.
     const symbolOf = (a: HintAnnotation) => a.code?.symbol ?? hints.types[a.type]?.symbol;
-    const tree = (node: HintNode): unknown => ({
-      composable: (node.annotations ?? []).map((a) => symbolOf(a)).join(','),
-      ...(node.children?.length ? { children: node.children.map(tree) } : {}),
-    });
-    // The hierarchy comes from geometry: the Scaffold wraps everything and the LazyColumn wraps the items.
+    const composable = (node: HintNode): string =>
+      (node.annotations ?? []).map((a) => symbolOf(a)).join(',');
+    const tree = (node: HintNode): unknown => {
+      const slots = (node.annotations ?? [])
+        .flatMap((a) => a.args ?? [])
+        .filter((arg) => arg.slot !== undefined);
+      return {
+        composable: composable(node),
+        // SL7 of #1080 (decision 18, on purpose): the Scaffold's children come in the args of its slots.
+        ...(slots.length > 0
+          ? {
+              slots: Object.fromEntries(
+                slots.map((arg) => [arg.slot, (arg.children ?? []).map(tree)]),
+              ),
+            }
+          : {}),
+        ...(node.children?.length ? { children: node.children.map(tree) } : {}),
+      };
+    };
+    // The geometry still wraps (the Scaffold around everything, the LazyColumn around the items), and the type
+    // picks the slot: the top bar and the FAB go to the slots that accept them; the LazyColumn and the Button,
+    // that no slot names, go to `content`.
     expect(tree(hints.tree)).toEqual({
       composable: `${M3}.Scaffold`,
-      children: [
-        { composable: `${M3}.TopAppBar` },
-        {
-          composable: 'androidx.compose.foundation.lazy.LazyColumn',
-          children: [{ composable: `${M3}.ListItem` }, { composable: `${M3}.ListItem` }],
-        },
-        { composable: `${M3}.OutlinedButton` },
-        { composable: `${M3}.FloatingActionButton` },
-      ],
+      slots: {
+        topBar: [{ composable: `${M3}.TopAppBar` }],
+        floatingActionButton: [{ composable: `${M3}.FloatingActionButton` }],
+        content: [
+          {
+            composable: 'androidx.compose.foundation.lazy.LazyColumn',
+            children: [
+              { composable: `${M3}.ListItem` },
+              { composable: `${M3}.ListItem` },
+            ],
+          },
+          { composable: `${M3}.OutlinedButton` },
+        ],
+      },
     });
   });
 
@@ -198,6 +276,73 @@ describe('screen mapped with the Material 3 (Compose) library', () => {
       }),
     );
     expect(base.matches.flatMap((m) => m.annotations)).toHaveLength(0);
+  });
+});
+
+describe('bars with child markings in their slots (SL7 of #1080, R3 and R17)', () => {
+  const argsOf = (hints: Hints): HintArg[] => hints.tree.annotations?.[0]?.args ?? [];
+  const slotArgs = (hints: Hints): HintArg[] =>
+    argsOf(hints).filter((arg) => arg.slot !== undefined);
+  const symbols = (arg: HintArg, hints: Hints): (string | undefined)[] =>
+    (arg.children ?? []).map((c) => {
+      const a = c.annotations?.[0];
+      return (
+        a?.code?.symbol ?? (a === undefined ? undefined : hints.types[a.type]?.symbol)
+      );
+    });
+  const hintsOf = async (key: string) =>
+    ok(await mcp.call<Hints>('get_code_hints', { ref: mRef(key), platform: 'compose' }));
+
+  it('the bottom-app-bar with two icon-buttons and an extended-fab: the calls are in the slots, with no actionIcon args', async () => {
+    const hints = await hintsOf('MBAB');
+    expect(slotArgs(hints).map((a) => [a.name, a.slot])).toEqual([
+      ['actions', 'actions'],
+      ['floatingActionButton', 'floatingActionButton'],
+    ]);
+    expect(symbols(slotArgs(hints)[0]!, hints)).toEqual([
+      `${M3}.IconButton`,
+      `${M3}.IconButton`,
+    ]);
+    expect(symbols(slotArgs(hints)[1]!, hints)).toEqual([
+      `${M3}.ExtendedFloatingActionButton`,
+    ]);
+    // The default content's fields (the icons and the button of the fields) are no args with the slots filled;
+    // they stay in the node's `values` (the mapping's, as always) and the type's `notes` say they mean nothing then.
+    expect(argsOf(hints).filter((arg) => arg.field !== undefined)).toEqual(
+      expect.not.arrayContaining([expect.objectContaining({ field: 'actionIcon1' })]),
+    );
+    const code = hints.types['material3-compose/bottom-app-bar']!;
+    expect(code.notes).toMatch(/actions = \{/);
+    expect(code.notes).toMatch(/child markings/i);
+  });
+
+  it('the bottom-app-bar without children: the args of always (the icons of the fields, no slot arg)', async () => {
+    const hints = await hintsOf('MBAB0');
+    expect(slotArgs(hints)).toEqual([]);
+    // Today's answer: the field args (the ones the type maps) and the icons of the fields in `values`.
+    expect(argsOf(hints).map((arg) => arg.field)).toEqual([
+      'containerColor',
+      'contentColor',
+      'tonalElevation',
+    ]);
+    expect(hints.tree.annotations![0]).toMatchObject({
+      values: { actionIcon1: 'Check', actionIcon2: 'Edit', floatingActionButton: 'Add' },
+    });
+  });
+
+  it('the top-app-bar: the icon at the left in navigationIcon and the two at the right in actions', async () => {
+    const hints = await hintsOf('MTAB');
+    expect(slotArgs(hints).map((a) => [a.slot, (a.children ?? []).length])).toEqual([
+      ['navigationIcon', 1],
+      ['actions', 2],
+    ]);
+    const fields = argsOf(hints)
+      .map((a) => a.field)
+      .filter((f) => f !== undefined);
+    expect(fields).not.toContain('navigationIcon');
+    expect(fields).not.toContain('actionIcon1');
+    // The title stays a field: only the slot's own default content leaves the node.
+    expect(hints.tree.annotations![0]!).toMatchObject({ values: { title: 'Home' } });
   });
 });
 

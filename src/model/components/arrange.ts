@@ -16,7 +16,6 @@ import type {
   LayoutSpec,
   LayoutWrap,
   SlotTemplate,
-  TemplateNode,
 } from './componentFormat';
 import { evaluate, evaluateBoolean } from './expressions';
 import {
@@ -39,7 +38,16 @@ import {
 } from './instantiate';
 import type { Library, TypeDef } from './library';
 import { type Instance, type Screen, childrenOf, renderOrder, updateBox } from './screen';
-import { type FrameNode, absoluteBoxes, walk } from './scene';
+import {
+  type CornerRadius,
+  type FrameNode,
+  type SceneNode,
+  type UnknownNode,
+  absoluteBoxes,
+  hasChildren,
+  walk,
+} from './scene';
+import { componentSlots } from './slots';
 import { applyTokens, resolveTokens } from './tokens';
 import {
   alignInCell,
@@ -90,18 +98,9 @@ const NO_LAYOUT: ResolvedSlotLayout = {
   lineGap: 0,
 };
 
-/** First `slot` node of the template (depth-first search through the frames' `children`), or none. */
+/** First `slot` node of the template (`componentSlots`: depth-first through the frames' `children`), or none. */
 export function findSlot(component: ComponentFile): SlotTemplate | undefined {
-  const search = (node: TemplateNode): SlotTemplate | undefined => {
-    if (node.type === 'slot') return node;
-    if (node.type !== 'frame') return undefined;
-    for (const child of node.children ?? []) {
-      const found = search(child);
-      if (found) return found;
-    }
-    return undefined;
-  };
-  return search(component.template);
+  return componentSlots(component)[0];
 }
 
 /**
@@ -273,22 +272,107 @@ export function slotBox(
   return undefined;
 }
 
-/** Absolute box of the slot in an already instantiated scene (the root carries the box's `translate`); none if the slot is invisible. */
-export function slotBoxOfScene(root: FrameNode): Box | undefined {
+/** Is it the scene node of the slot `id` (`slotKey`; `undefined` = any slot)? */
+function isSlotNode(node: SceneNode, id: string | undefined): node is UnknownNode {
+  return (
+    node.type === 'unknown' &&
+    node.sourceType === 'slot' &&
+    (id === undefined || (node.slotId ?? '') === id)
+  );
+}
+
+/**
+ * Absolute box of the slot in an already instantiated scene (the root carries the box's `translate`);
+ * `id` is the slot's key (`slotKey`; the first slot when absent); none if the slot is invisible.
+ */
+export function slotBoxOfScene(root: FrameNode, id?: string): Box | undefined {
   for (const node of walk(root)) {
-    if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
+    if (!isSlotNode(node, id)) continue;
     return absoluteBoxes(root).get(node.id);
   }
   return undefined;
 }
 
-/** The slot's box (first in the scene) when it has `clip`; otherwise none. */
-export function clippedSlotBox(root: FrameNode): Box | undefined {
+/** A slot of an instantiated scene: its absolute box, the name (its label) and whether it has `clip`. */
+export interface SceneSlot {
+  readonly box: Box;
+  readonly name: string;
+  readonly clip: boolean;
+}
+
+/** The slots of a scene, by `slotKey`, in template order; an invisible slot is not in the scene, so not here. */
+export function slotsOfScene(root: FrameNode): ReadonlyMap<string, SceneSlot> {
+  const out = new Map<string, SceneSlot>();
+  const boxes = absoluteBoxes(root);
   for (const node of walk(root)) {
-    if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
-    return node.clipChildren === true ? slotBoxOfScene(root) : undefined;
+    if (!isSlotNode(node, undefined)) continue;
+    const box = boxes.get(node.id);
+    if (box === undefined) continue;
+    const key = node.slotId ?? '';
+    // Slots without an id share the empty key: the first one wins, like `componentSlots` before formatVersion 4.
+    if (out.has(key)) continue;
+    out.set(key, {
+      box,
+      name: node.name,
+      clip: node.clipChildren === true,
+    });
+  }
+  return out;
+}
+
+/** The boxes of all the slots of a scene, by `slotKey`. */
+export function slotBoxesOfScene(root: FrameNode): ReadonlyMap<string, Box> {
+  return new Map([...slotsOfScene(root)].map(([key, slot]) => [key, slot.box]));
+}
+
+/** The slot's box (the first one, or the one with that key) when it has `clip`; otherwise none. */
+export function clippedSlotBox(root: FrameNode, id?: string): Box | undefined {
+  for (const node of walk(root)) {
+    if (!isSlotNode(node, id)) continue;
+    return node.clipChildren === true ? slotBoxOfScene(root, id) : undefined;
   }
   return undefined;
+}
+
+/** A rounded frame that cuts the child of a slot (`slotClipShapes`), in the scene's units. */
+export interface SlotClipShape {
+  readonly box: Box;
+  readonly radius: CornerRadius;
+}
+
+const hasRadius = (radius: CornerRadius): boolean =>
+  typeof radius === 'number' ? radius > 0 : radius.some((r) => r > 0);
+
+/** The ancestors of the node `target` (from the root), or `undefined` when it is not in the tree. */
+function ancestorsOf(root: SceneNode, target: SceneNode): SceneNode[] | undefined {
+  if (root === target) return [];
+  if (!hasChildren(root)) return undefined;
+  for (const child of root.children) {
+    const below = ancestorsOf(child, target);
+    if (below !== undefined) return [root, ...below];
+  }
+  return undefined;
+}
+
+/**
+ * The rounded shapes that also cut the child of the slot `id` (decision 23): the frames above the slot
+ * node with `clip` true and a `cornerRadius` greater than 0, outermost first, with their absolute box
+ * and radius in the scene's units. Only when the slot itself has `clip` (a slot with `clip` false shows
+ * its child whole, inside a rounded frame or not); empty when no frame is rounded.
+ */
+export function slotClipShapes(root: FrameNode, id?: string): readonly SlotClipShape[] {
+  const slot = [...walk(root)].find((node) => isSlotNode(node, id));
+  if (slot === undefined || slot.type !== 'unknown' || slot.clipChildren !== true)
+    return [];
+  const above = ancestorsOf(root, slot) ?? [];
+  const boxes = absoluteBoxes(root);
+  const shapes: SlotClipShape[] = [];
+  for (const node of above) {
+    if (node.type !== 'frame' || !node.clip || !hasRadius(node.cornerRadius)) continue;
+    const box = boxes.get(node.id);
+    if (box !== undefined) shapes.push({ box, radius: node.cornerRadius });
+  }
+  return shapes;
 }
 
 /** Position and size on the cross axis. */

@@ -29,6 +29,8 @@ import {
   effectiveDensity,
   componentMinSize,
   componentPlacement,
+  markingComponent,
+  typeSlots,
   componentSize,
   fitMarking,
   snapToAnchor,
@@ -114,6 +116,7 @@ import {
   uniqueImageFile,
   validateProject,
   type Annotation,
+  type AnnotationIssue,
   type AnnotationTypeRef,
   type EntryInput,
   type ExternalSource,
@@ -2183,6 +2186,12 @@ class Batch {
         'provide `container` (the old `image` is also accepted), not both',
       );
     }
+    if (op.slot !== undefined && op.inside === undefined) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`slot` only applies with `inside` (the component whose slot receives the child)',
+      );
+    }
     const containerRef = op.container ?? op.image;
     // `inside`: the target (a component with a slot) gives the container; the stored parent still comes from the geometry.
     const inside = op.inside === undefined ? null : this.insideTarget(op, containerRef);
@@ -2316,6 +2325,8 @@ class Batch {
           id: markingId,
           rect,
           asked: op.rect,
+          typeId: typeRef.typeId,
+          slot: op.slot,
         });
       }
       if (annotation.name !== undefined) {
@@ -2455,7 +2466,29 @@ class Batch {
         '`container` is not the container of the `inside` target: omit `container` (it comes from the target)',
       );
     }
+    this.checkInsideSlot(op, id);
     return { id, containerId: target.containerId };
+  }
+
+  /** The `slot` of `create_marking` is one of the target's slots with an `id` (the others go in `detail`). */
+  private checkInsideSlot(
+    op: Extract<Operation, { op: 'create_marking' }>,
+    targetId: string,
+  ): void {
+    if (op.slot === undefined) return;
+    const drawn = markingComponent(this.p, this.catalog, targetId);
+    const slots =
+      drawn === null
+        ? []
+        : typeSlots(this.p, drawn.specId, drawn.typeId, drawn.component).filter(
+            (slot) => slot.id !== '',
+          );
+    if (slots.some((slot) => slot.id === op.slot)) return;
+    throw new ToolError(
+      'invalid-arguments',
+      `the target has no slot "${op.slot}"; use one of its slots (see \`slots\` in get_marking)`,
+      { detail: { slots: slots.map((slot) => ({ id: slot.id, name: slot.name })) } },
+    );
   }
 
   /** Rectangle of the child in the target's slot; the step's `rect` supplies only the size (x and y are ignored). */
@@ -2486,6 +2519,7 @@ class Batch {
       {
         containerId,
         parentId: targetId,
+        ...(op.slot === undefined ? {} : { slot: op.slot }),
         ...typeRef,
         ...(rect === undefined
           ? {}
@@ -2505,7 +2539,13 @@ class Batch {
     before: Project,
     after: Project,
     targetId: string,
-    created: { id: string; rect: Rect; asked: Rect | undefined },
+    created: {
+      id: string;
+      rect: Rect;
+      asked: Rect | undefined;
+      typeId: string;
+      slot: string | undefined;
+    },
   ): void {
     const target = this.markingLabel(after, targetId);
     const { asked, rect } = created;
@@ -2521,7 +2561,17 @@ class Batch {
         : parentId === null
           ? '; it ended up outside it'
           : `; it ended up inside ${this.markingLabel(after, parentId)}`;
-    if (!placementFitsSlot(before, this.catalog, targetId, rect, this.measurer)) {
+    if (
+      !placementFitsSlot(
+        before,
+        this.catalog,
+        targetId,
+        rect,
+        this.measurer,
+        created.slot,
+        created.typeId,
+      )
+    ) {
       notes.push(
         `the marking did not fit in the slot of ${target}: enlarge the component or use Arrange in the app${where}`,
       );
@@ -2767,17 +2817,38 @@ export function changeCounts(before: Project, after: Project): Record<string, un
   };
 }
 
-/** Pending items (incomplete annotations) that the batch creates or resolves. */
+/** What tells two pending items of an annotation apart (the same code on another field or slot is another item). */
+const issueKey = (i: AnnotationIssue): string =>
+  [i.code, i.key ?? '', i.slot?.id ?? '', i.rowId ?? '', i.column ?? ''].join('\u0000');
+
+/** The items of `next` that `old` did not have. */
+function gainedIssues(
+  old: readonly AnnotationIssue[] | undefined,
+  next: readonly AnnotationIssue[],
+): AnnotationIssue[] {
+  const had = new Set((old ?? []).map(issueKey));
+  return next.filter((i) => !had.has(issueKey(i)));
+}
+
+/**
+ * Pending items (incomplete annotations) that the batch creates or resolves: `new` lists, per annotation, only
+ * the items it gained (an annotation that already had one and gets another lists just the new one); `resolved`
+ * counts the annotations that ended with no item.
+ */
 export function issueChanges(refs: Refs, before: Project): Record<string, unknown> {
   const after = refs.project;
   const old = projectIssues(before);
   const next = projectIssues(after);
-  const added = [...next.entries()]
-    .filter(([id]) => !old.has(id))
-    .map(([id, issues]) => ({
-      annotation: refs.ref('a', id),
-      issues: issues.map((i) => ({ code: i.code, ...(i.key ? { key: i.key } : {}) })),
-    }));
+  const added = [...next.entries()].flatMap(([id, issues]) => {
+    const gained = gainedIssues(old.get(id), issues);
+    if (gained.length === 0) return [];
+    return [
+      {
+        annotation: refs.ref('a', id),
+        issues: gained.map((i) => ({ code: i.code, ...(i.key ? { key: i.key } : {}) })),
+      },
+    ];
+  });
   const resolved = [...old.keys()].filter((id) => !next.has(id)).length;
   return { before: old.size, after: next.size, resolved, new: added };
 }

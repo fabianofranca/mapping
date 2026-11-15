@@ -306,6 +306,8 @@ export interface UnknownNode extends NodeBase {
    * itself only draws the box.
    */
   readonly clipChildren?: true;
+  /** Only on `slot` (v4): the slot's `id`; absent in the only slot of a component that has no `id`. */
+  readonly slotId?: string;
 }
 
 export type SceneNode =

@@ -1,25 +1,35 @@
 import {
-  findSlot,
   resolveSlotLayout,
-  slotBoxOfScene,
+  slotsOfScene,
   type ResolvedGrid,
   type ResolvedSlotLayout,
 } from './components/arrange';
+import {
+  assignSlots,
+  componentSlots,
+  slotForPlacement,
+  slotHugAxes,
+  slotKey,
+} from './components/slots';
+import type { ComponentDrawings } from './componentDrawings';
+import { typeSlots } from './specSlots';
 import type { InstanceAnchor } from './components/anchor';
 import { placeCells, trackCount, trackOffset, trackSize } from './components/gridLayout';
 import { lineExtents } from './components/gridPlan';
 import { WRAP_EPS, breakLines, stackLines } from './components/wrapLines';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
-import { fitComponentSize } from './components/sizing';
+import { fitComponentSize, sizingFollowsContent } from './components/sizing';
 import { instantiate, type TextMeasurer } from './components/instantiate';
 import {
   componentFileMinSize,
   hasSlotComponent,
   markingComponent,
   type ComponentCatalog,
+  type MarkingComponent,
 } from './componentCatalog';
 import { anchorValues, drawingValues } from './componentValues';
 import { effectiveDensity, unitSpaceOf, unitsToPixels } from './density';
+import { slotInputsOf } from './componentSlotInputs';
 import { componentForDrawing, drawOptions } from './drawingMode';
 import {
   anchoredRect,
@@ -120,6 +130,14 @@ export interface NewComponentArgs {
    * decides by geometry (the smallest marking of the space that contains the instance), never the request.
    */
   readonly parentId: string | null;
+  /**
+   * The slot of the target (`parentId`) the instance goes to (`slotKey`; its `id`). The slot asked
+   * for wins; absent, the first visible slot that accepts the new child's type (`typeId`) and is not
+   * full (the `accepts` and `max` of the type, via `typeSlots`), as `slotToUse` decides. A slot the
+   * target does not have fails with `invalid-parent`. Only the position depends on it: the stored
+   * parent is still what the settle decides.
+   */
+  readonly slot?: string;
   readonly specId: string;
   readonly typeId: string;
   /**
@@ -141,6 +159,11 @@ export interface NewComponentArgs {
    */
   readonly values?: TypedValues;
   readonly name?: string | null;
+  /**
+   * The app's drawings (`derived.drawingsOf`): the placement reads the slot of each child from the
+   * target's `ComponentDrawing` instead of instantiating the probe (the same result without them).
+   */
+  readonly drawings?: ComponentDrawings;
   /**
    * Anchor (v20): the instance is linked to another marking of the same space. Without `rect`, it is born at the
    * measured size and already attached (`componentAnchoredPlacement`); with `rect`, that one rules.
@@ -193,6 +216,12 @@ interface SlotBox {
   readonly maxPerLine: number | undefined;
   readonly maxLines: number | undefined;
   readonly hasSlot: boolean;
+  /** The slot's cross-axis alignment (`layout.align`): where a new child sits across a row or column. */
+  readonly align: ResolvedSlotLayout['align'];
+  /** The axes on which the slot takes its children's size (`hug`): its box there is not a limit for them. */
+  readonly hug: { readonly x: boolean; readonly y: boolean };
+  /** The children the geometry put in this slot, in sibling order (the new one goes after the last). */
+  readonly kids: readonly Marking[];
 }
 
 /** The slot's layout (in units) with the measures in image pixels: padding, gap, lineGap and `grid.min`. */
@@ -217,12 +246,123 @@ function scaledLayout(layout: ResolvedSlotLayout, density: number): ResolvedSlot
   };
 }
 
-/** Slot box in whole pixels, inside the component with a slot; its rectangle if there is no slot. */
+/** The boxes (image pixels) of the visible slots of a marking and the children the geometry put in each. */
+interface SlotScene {
+  readonly boxes: ReadonlyMap<string, Rect>;
+  readonly kids: ReadonlyMap<string, readonly Marking[]>;
+}
+
+/**
+ * The visible slots of the component drawn with its slots empty (the probe) and the children of
+ * each slot (`assignSlots`, decision 4). With the app's `drawings`, the assignment comes from the
+ * marking's `ComponentDrawing`, and so do the boxes when no slot holds children (then the drawing is
+ * the probe itself); the result is the same either way.
+ */
+function sceneOfSlots(
+  p: Project,
+  catalog: ComponentCatalog,
+  container: Marking,
+  mc: MarkingComponent,
+  drawn: ReturnType<typeof componentForDrawing>,
+  measure: TextMeasurer,
+  drawings: ComponentDrawings | undefined,
+): SlotScene {
+  // A `screen` component takes its children whole (the drawing has no slot plan for it): no slot box.
+  if (drawn.component.screen !== undefined) return { boxes: new Map(), kids: new Map() };
+  const kids = childrenOf(p, container.id);
+  const byId = new Map(kids.map((kid) => [kid.id, kid]));
+  const known = drawings?.get(container.id);
+  const own = (ids: readonly string[]): readonly Marking[] =>
+    ids.flatMap((id) => byId.get(id) ?? []);
+  if (known !== undefined && known.slots.every((slot) => slot.children.length === 0)) {
+    return {
+      boxes: new Map(
+        known.slots.flatMap((slot) =>
+          slot.hidden ? [] : [[slot.id, slot.box] as const],
+        ),
+      ),
+      kids: new Map(known.slots.map((slot) => [slot.id, []])),
+    };
+  }
+  const values = drawingValues(p, mc.annotation, mc.type).values;
+  const space = unitSpaceOf(container.rect, effectiveDensity(p, container.containerId));
+  const options = { measure, idPrefix: container.id, ...drawOptions(drawn) };
+  const { root } = instantiate(drawn.component, values, space.box, options);
+  const boxes = new Map(
+    [...slotsOfScene(root)].map(([id, slot]) => [id, space.toPixels(slot.box)]),
+  );
+  if (known !== undefined)
+    return { boxes, kids: new Map(known.slots.map((s) => [s.id, own(s.children)])) };
+  const defs = new Map(
+    typeSlots(p, mc.specId, mc.typeId, mc.component).map((def) => [def.id, def]),
+  );
+  const { inputs } = slotInputsOf({
+    component: drawn.component,
+    values,
+    target: space.box,
+    options,
+    probe: root,
+    space,
+    defs,
+    hasKids: kids.length > 0,
+  });
+  const assignment = assignSlots(
+    inputs,
+    kids.map((kid) => ({
+      id: kid.id,
+      rect: kid.rect,
+      typeId: markingComponent(p, catalog, kid.id)?.type.id,
+    })),
+  );
+  return {
+    boxes,
+    kids: new Map([...assignment.children].map(([id, ids]) => [id, own(ids)])),
+  };
+}
+
+/**
+ * The slot (by `slotKey`) a new child goes to when there is no geometry (decision 5): the one asked
+ * for, else the first visible one that accepts the child's type (`typeId`) and is not full, with the
+ * `accepts` and the `max` of the type (`typeSlots`); `undefined` when no slot is visible (the whole
+ * component then). A slot the component does not have fails with `invalid-parent`.
+ */
+function slotToUse(
+  p: Project,
+  mc: MarkingComponent,
+  scene: SlotScene,
+  asked: string | undefined,
+  typeId: string | undefined,
+): string | undefined {
+  const chosen = slotForPlacement(
+    typeSlots(p, mc.specId, mc.typeId, mc.component).map((slot) => ({
+      id: slot.id,
+      accepts: slot.accepts,
+      max: slot.max,
+      visible: scene.boxes.has(slot.id),
+    })),
+    {
+      ...(asked === undefined ? {} : { slot: asked }),
+      typeId,
+      counts: new Map([...scene.kids].map(([id, kids]) => [id, kids.length])),
+    },
+  );
+  if (chosen.ok) return scene.boxes.has(chosen.id) ? chosen.id : undefined;
+  if (chosen.reason === 'unknown-slot') return fail('invalid-parent', chosen.slot);
+  return undefined;
+}
+
+/**
+ * Slot box in whole pixels, inside the component with a slot (`slotId`: the one asked for, or the
+ * first visible one); its rectangle if there is no slot.
+ */
 function slotArea(
   p: Project,
   catalog: ComponentCatalog,
   containerId: string,
   measure: TextMeasurer,
+  slotId?: string,
+  drawings?: ComponentDrawings,
+  typeId?: string,
 ): SlotBox {
   const container = findById(p.markings, containerId);
   const none = { left: 0, top: 0, right: 0, bottom: 0 };
@@ -238,31 +378,25 @@ function slotArea(
     maxPerLine: undefined,
     maxLines: undefined,
     hasSlot: false,
+    align: 'start' as const,
+    hug: { x: false, y: false },
+    kids: [],
   };
   const mc = markingComponent(p, catalog, containerId);
-  const drawn =
-    mc === null ? null : componentForDrawing(p, mc.component, container.containerId);
-  const slot = drawn === null ? undefined : findSlot(drawn.component);
-  if (mc === null || drawn === null || slot === undefined) return whole;
+  const drawn = drawnWithSlots(p, mc, container.containerId);
+  if (mc === null || drawn === null) return whole;
+  const scene = sceneOfSlots(p, catalog, container, mc, drawn, measure, drawings);
+  const key = slotToUse(p, mc, scene, slotId, typeId);
+  const slot = componentSlots(drawn.component).find((s) => slotKey(s) === key);
+  const box = key === undefined ? undefined : scene.boxes.get(key);
+  if (slot === undefined || box === undefined) return whole;
+  const area = wholePixels(box, container.rect);
+  if (area === null) return whole;
   const values = drawingValues(p, mc.annotation, mc.type).values;
   const density = effectiveDensity(p, container.containerId);
-  const space = unitSpaceOf(container.rect, density);
-  const { root } = instantiate(drawn.component, values, space.box, {
-    measure,
-    idPrefix: container.id,
-    ...drawOptions(drawn),
-  });
-  const unitBox = slotBoxOfScene(root);
-  if (unitBox === undefined) return whole;
-  const box = space.toPixels(unitBox);
-  const x = Math.max(Math.ceil(box.x), container.rect.x);
-  const y = Math.max(Math.ceil(box.y), container.rect.y);
-  const r = Math.min(Math.floor(box.x + box.width), right(container.rect));
-  const b = Math.min(Math.floor(box.y + box.height), bottom(container.rect));
-  if (r - x < 1 || b - y < 1) return whole;
   const layout = scaledLayout(resolveSlotLayout(slot, values), density);
   return {
-    area: { x, y, width: r - x, height: b - y },
+    area,
     padding: layout.padding,
     gap: layout.gap,
     flow: layout.type,
@@ -275,7 +409,30 @@ function slotArea(
     maxPerLine: layout.maxPerLine,
     maxLines: layout.maxLines,
     hasSlot: true,
+    align: layout.align,
+    hug: slotHugAxes(slot),
+    kids: scene.kids.get(slotKey(slot)) ?? [],
   };
+}
+
+/** The component as drawn in its container when it has at least one slot; otherwise `null`. */
+function drawnWithSlots(
+  p: Project,
+  mc: ReturnType<typeof markingComponent>,
+  containerId: string | null,
+): ReturnType<typeof componentForDrawing> | null {
+  if (mc === null) return null;
+  const drawn = componentForDrawing(p, mc.component, containerId);
+  return drawn === null || componentSlots(drawn.component).length === 0 ? null : drawn;
+}
+
+/** A box in whole pixels inside `within` (`null` when less than a pixel is left). */
+function wholePixels(box: Rect, within: Rect): Rect | null {
+  const x = Math.max(Math.ceil(box.x), within.x);
+  const y = Math.max(Math.ceil(box.y), within.y);
+  const r = Math.min(Math.floor(box.x + box.width), right(within));
+  const b = Math.min(Math.floor(box.y + box.height), bottom(within));
+  return r - x < 1 || b - y < 1 ? null : { x, y, width: r - x, height: b - y };
 }
 
 /**
@@ -290,12 +447,14 @@ export function placementFitsSlot(
   targetId: string,
   rect: Rect,
   measure: TextMeasurer,
+  slotId?: string,
+  typeId?: string,
 ): boolean {
-  const slot = slotArea(p, catalog, targetId, measure);
+  const slot = slotArea(p, catalog, targetId, measure, slotId, undefined, typeId);
   if (!slot.hasSlot || !containsRect(slot.area, rect)) return false;
   // Row or column layout: stuck to the component, the child may be inside the slot area and still
   // on top of the last sibling (slot the size of the component): it also did not fit.
-  const kids = childrenOf(p, targetId);
+  const { kids } = slot;
   // In a grid, the new child must not cover any sibling (the neighboring cells stay free).
   if (slot.flow === 'grid') return !kids.some((k) => rectsOverlap(k.rect, rect));
   const last = kids.at(-1);
@@ -308,14 +467,17 @@ export function hasComponentSlot(
   catalog: ComponentCatalog,
   targetId: string,
   measure: TextMeasurer,
+  slotId?: string,
 ): boolean {
-  return slotArea(p, catalog, targetId, measure).hasSlot;
+  return slotArea(p, catalog, targetId, measure, slotId).hasSlot;
 }
 
 type PlacementArgs = Pick<
   NewComponentArgs,
-  'containerId' | 'parentId' | 'specId' | 'typeId' | 'center' | 'values'
+  'containerId' | 'parentId' | 'slot' | 'specId' | 'typeId' | 'center' | 'values'
 > & {
+  /** The app's drawings: the slot of each child and the boxes come from them (the same result without them). */
+  readonly drawings?: ComponentDrawings;
   /** Replaces the component's `size` (MCP: the `rect` of `inside`), with the same rules. */
   readonly size?: { readonly width: number; readonly height: number };
   /** The instance's anchor (`$anchor.*`) with which the size is measured; absent = no anchor. */
@@ -349,7 +511,10 @@ function placementSpace(
   const parent = args.parentId === null ? null : findById(p.markings, args.parentId);
   if (parent !== null && parent.containerId !== args.containerId)
     fail('invalid-parent', parent.id);
-  const slot = parent === null ? null : slotArea(p, catalog, parent.id, measure);
+  const slot =
+    parent === null
+      ? null
+      : slotArea(p, catalog, parent.id, measure, args.slot, args.drawings, args.typeId);
   // Without an image (canvas) and without a slot, there is no limit.
   const area: Rect | null = slot?.area ?? (image === null ? null : imagePixelRect(image));
   return {
@@ -416,7 +581,8 @@ function initialValues(
  * The size the new instance wants (decision 16 of #898): the component's `size` and, on the axes where the
  * `sizing` depends on the content (`hug` or expression), the size measured with the initial values
  * (`preview` plus the given ones). Whoever gives the size (`args.size`) rules, without measuring; a component without `sizing`
- * does not measure (the common case does not pay for the provisional project), nor does a component with a slot.
+ * does not measure (the common case does not pay for the provisional project), nor does a component with a slot
+ * and an axis that follows the content (its children do not exist yet).
  */
 function wantedSize(
   p: Project,
@@ -431,11 +597,14 @@ function wantedSize(
     width: unitsToPixels(component.size.width, density),
     height: unitsToPixels(component.size.height, density),
   };
-  // Component with a slot: the content is the children, which do not exist yet (born at `size`;
-  // Arrange adjusts it after they come in).
-  if (component.sizing === undefined || hasSlotComponent(component)) return nominal;
+  if (component.sizing === undefined) return nominal;
   const values = initialValues(p, space, args);
   if (values === undefined) return nominal;
+  // Component with a slot and an axis that follows the content: the content is the children, which do not
+  // exist yet (born at `size`; Arrange adjusts it after they come in). With no such axis (the Material 3
+  // top app bar's height by `style`) nothing depends on them and the component is measured as always.
+  if (hasSlotComponent(component) && sizingFollowsContent(component, values))
+    return nominal;
   const drawn = componentForDrawing(p, component, args.containerId);
   const fitted = fitComponentSize(
     drawn.component,
@@ -464,6 +633,14 @@ function fitSize(space: PlacementSpace, wanted: Size): Size {
     width: unitsToPixels(unitMin.width, space.density),
     height: unitsToPixels(unitMin.height, space.density),
   };
+  // On a `hug` axis of the slot its box is the content's, not a limit: the component itself is.
+  const outer = space.parent?.rect;
+  const hug = space.slot?.hug;
+  const room = (axis: 'width' | 'height'): number => {
+    const own = space.area?.[axis] ?? Infinity;
+    if (outer === undefined || hug === undefined) return own;
+    return (axis === 'width' ? hug.x : hug.y) ? Math.max(own, outer[axis]) : own;
+  };
   const fit = (size: number, minimum: number, available: number): number => {
     const value = Math.max(
       Math.min(Math.round(size), available),
@@ -475,8 +652,8 @@ function fitSize(space: PlacementSpace, wanted: Size): Size {
     return value;
   };
   return {
-    width: fit(wanted.width, min?.width ?? 0, space.area?.width ?? Infinity),
-    height: fit(wanted.height, min?.height ?? 0, space.area?.height ?? Infinity),
+    width: fit(wanted.width, min?.width ?? 0, room('width')),
+    height: fit(wanted.height, min?.height ?? 0, room('height')),
   };
 }
 
@@ -622,7 +799,7 @@ function wrappedSlotRect(
   size: Size,
 ): Rect | undefined {
   if (slot.flow === 'none' || slot.wrap === 'none') return undefined;
-  const point = wrapSlotPoint(childrenOf(p, parent.id), slot, size);
+  const point = wrapSlotPoint(slot.kids, slot, size);
   return point === undefined
     ? undefined
     : { x: Math.round(point.x), y: Math.round(point.y), ...size };
@@ -702,13 +879,13 @@ function gridSlotRect(kids: readonly Marking[], slot: SlotBox, size: Size): Rect
 
 /** R0 in a component with a slot: after the last child on the layout's axis, or at the start of the content (before the `clamp`). */
 function slotRect(p: Project, parent: Marking, slot: SlotBox, size: Size): Rect {
-  if (slot.flow === 'grid') return gridSlotRect(childrenOf(p, parent.id), slot, size);
+  if (slot.flow === 'grid') return gridSlotRect(slot.kids, slot, size);
   const wrapped = wrappedSlotRect(p, parent, slot, size);
   if (wrapped !== undefined) return wrapped;
   const slotBox = slot.area;
   let x = slotBox.x + slot.padding.left;
   let y = slotBox.y + slot.padding.top;
-  const last = childrenOf(p, parent.id).at(-1);
+  const last = slot.kids.at(-1);
   if (slot.reverse && slot.flow !== 'none') {
     // `layout.reverse`: the first child touches the end of the slot and the following ones go before the last.
     const column = slot.flow === 'column';
@@ -721,7 +898,27 @@ function slotRect(p: Project, parent: Marking, slot: SlotBox, size: Size): Rect 
     else x = near - size.width;
   } else if (last !== undefined && slot.flow === 'row') x = right(last.rect) + slot.gap;
   else if (last !== undefined && slot.flow === 'column') y = bottom(last.rect) + slot.gap;
+  const across = crossOffset(slot, size);
+  if (slot.flow === 'row') y += across;
+  else if (slot.flow === 'column') x += across;
   return { x: Math.round(x), y: Math.round(y), ...size };
+}
+
+/**
+ * Where the new child sits across a row (vertically) or a column (horizontally) of the slot: the slot's
+ * `align` (`center`, `end`; `start` and `stretch` stay at the start) inside the content area, as the arrangement
+ * does. On a `hug` cross axis the box takes the child's size, so there is nothing to offset.
+ */
+function crossOffset(slot: SlotBox, size: Size): number {
+  const row = slot.flow === 'row';
+  if (!row && slot.flow !== 'column') return 0;
+  if (row ? slot.hug.y : slot.hug.x) return 0;
+  const content = row
+    ? slot.area.height - slot.padding.top - slot.padding.bottom
+    : slot.area.width - slot.padding.left - slot.padding.right;
+  const free = Math.max(0, content - (row ? size.height : size.width));
+  if (slot.align === 'center') return free / 2;
+  return slot.align === 'end' ? free : 0;
 }
 
 /** No free place in the slot: the previous position (the slot's if it fits; otherwise clamped inside the component). */
@@ -781,7 +978,10 @@ export function componentPlacement(
 export function placementIsFree(
   p: Project,
   catalog: ComponentCatalog,
-  args: Pick<PlacementArgs, 'containerId' | 'parentId' | 'specId' | 'typeId'> & {
+  args: Pick<
+    PlacementArgs,
+    'containerId' | 'parentId' | 'slot' | 'specId' | 'typeId' | 'drawings'
+  > & {
     readonly rect: Rect;
   },
   measure: TextMeasurer,
@@ -950,10 +1150,12 @@ export function addComponentMarking(
       {
         containerId: args.containerId,
         parentId: args.parentId,
+        ...(args.slot === undefined ? {} : { slot: args.slot }),
         specId: args.specId,
         typeId: args.typeId,
         ...(args.center ? { center: args.center } : {}),
         ...(args.values ? { values: args.values } : {}),
+        ...(args.drawings ? { drawings: args.drawings } : {}),
       },
       measure,
     );

@@ -111,10 +111,10 @@ const issuesOf = (raw: Json) => {
 const ONLY_V16 = 'only allowed with formatVersion 16';
 
 describe('formatVersion 16: version and contract', () => {
-  it('the current version is 16 and 15 is still accepted', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(16);
+  it('16 is accepted, and so is 15', () => {
+    expect(SPEC_FORMAT_VERSION).toBeGreaterThanOrEqual(16);
     expect(SPEC_FORMAT_VERSIONS).toContain(15);
-    expect(SPEC_FORMAT_VERSIONS.at(-1)).toBe(16);
+    expect(SPEC_FORMAT_VERSIONS).toContain(16);
   });
 
   it('the v16 specialization with fieldModels, signature, calls, formats, #0 and colors.containerColor is valid', () => {

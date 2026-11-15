@@ -81,9 +81,15 @@ Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb6
 - The icon is the `icon` node of the library set, by the Compose name (`Delete`, `Done`…): an empty field is `delete` (the default the field already had) and a name outside the list falls back to the placeholder and warns `unknown icon`, instead of silently going back to `Delete`.
 - The box clips what leaves it (`clip`).
 
+**Slots (named, `formatVersion` 17)**
+
+- `content` (`RowScope.() -> Unit`, `SwipeToDismissBox.kt` lines 305 to 357) is the whole item, which moves with the swipe (its box is shifted by 56 to the side that the `direction` reveals); `backgroundContent` (`RowScope.() -> Unit`, line 331, the `Row(content = backgroundContent, Modifier.matchParentSize())`) is a 56 wide strip on the side that the item left, visible only when the swipe is enabled in that direction. The compose commit is `5113b82a4ed6416d6344efa50e41db8cb65928ff`.
+- A child in `content` replaces the item with `title` and `supportingText`; a child in `backgroundContent` replaces the `icon` field's icon; the `get_code_hints` writes `content = { ... }` and `backgroundContent = { ... }`. Without children the drawing is the one of before.
+- The children have no `weight`; the strip is 56 wide, not the whole width that Compose gives the `Row` (the background that the item leaves uncovered).
+
 **What still differs from Compose**
 
 - In Compose the item only settles outside the box (`EndToStart at -width`, `StartToEnd at width`), and the 56 is the gesture threshold: the drawn frame is that of a 56 drag, not a settled state. Once settled in `StartToEnd` or `EndToStart`, the `onDismiss` runs and the app removes the item.
-- The item is always a `ListItem` with title and support text (one line each); the Compose `content` is free (a `Card`, a `ListItem` with icons), and the background color change with the gesture progress (`state.dismissDirection`, `progress`) belongs to the app.
+- The item is always a `ListItem` with title and support text (one line each); the default content is the `ListItem` of the fields and the Compose `content` takes anything (a `Card`, a `ListItem` with icons): a child marking in the `content` slot, and the background color change with the gesture progress (`state.dismissDirection`, `progress`) belongs to the app.
 - Long support text ends in `…` on one line, which keeps the item at 72; the three-line `ListItem` (88) is not drawn.
 - No gesture, no animation, no dismiss velocity (`DismissVelocityThreshold`), no `onDismiss` and no focused or pressed state; `gesturesEnabled` is a field and code, but the drawing does not use it.

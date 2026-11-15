@@ -58,6 +58,7 @@ export * from './spec';
 export * from './notices';
 export * from './noticeList';
 export * from './specLookup';
+export * from './specSlots';
 export * from './specializations';
 export * from './libraryPackage';
 export * from './bundledLibrary';

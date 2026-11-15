@@ -899,6 +899,22 @@ describe('the new instance is born at the measured size (MC3, decision 16 of #89
     expect(rect.height).toBe(80);
   });
 
+  it('a component with a slot measures the axes whose size does not depend on the children (SL7)', () => {
+    // The height by expression is the style's, not the content's: it applies even with a slot (the Material 3
+    // top app bar gets its slots in SL7 and must keep being born with the 64/112/152 of the style).
+    expect(
+      marking(create('fit-slot-px', { values: { tall: 'yes' } }), 'B').rect.height,
+    ).toBe(80);
+    expect(marking(create('fit-slot-px'), 'B').rect.height).toBe(30);
+  });
+
+  it('a component with a slot and a `hug` axis keeps the nominal size: the content is the children, which do not exist yet', () => {
+    expect(marking(create('fit-row-none'), 'B').rect).toMatchObject({
+      width: 400,
+      height: 100,
+    });
+  });
+
   it('componentPlacement and componentSize measure with the given values', () => {
     const base = {
       containerId: 'I1',

@@ -4,9 +4,12 @@ import {
   effectiveDirection,
   effectiveDrawingMode,
   projectIndex,
+  projectIssues,
   SLOT_OVERFLOW,
+  typeOfAnnotation,
   type ComponentDrawing,
   type DrawingCache,
+  type DrawingSlotIssue,
   type Project,
 } from '../src/model';
 import { builtinFontBook, measurerFor, type FontBook } from './image/textMeasurer';
@@ -16,7 +19,7 @@ import type { Refs } from './items';
 // each marking created or changed by the batch is instantiated in the rectangle and with the real values,
 // in the container's effective mode, and the engine's "does not fit" becomes a `component-overflow` item in
 // `issues.new`. It is a warning: it does not block the batch. The warnings and the computations are the model's
-// (`ComponentDrawing.shortfalls`); here we only choose what to prove and how to show it.
+// (`ComponentDrawing.shortfalls` and `slotIssues`); here we only choose what to prove and how to show it.
 
 export const COMPONENT_OVERFLOW = 'component-overflow';
 
@@ -105,7 +108,7 @@ function annotationsChanged(
 function itemOf(message: string, missing: number, approximate: boolean): OverflowItem {
   const rounded = Math.round(missing * 10) / 10;
   const kind =
-    message === SLOT_OVERFLOW
+    message === SLOT_OVERFLOW || message.startsWith(`${SLOT_OVERFLOW} `)
       ? 'slot'
       : (KIND_OF_PREFIX.find(([prefix]) => message.startsWith(prefix))?.[1] ?? 'content');
   const node = message.includes(': ')
@@ -128,26 +131,107 @@ function itemsOf(drawing: ComponentDrawing, approximate: boolean): OverflowItem[
   );
 }
 
-/** The `component-overflow` items per annotation, of the markings the batch created or changed. */
-export function overflowProof(
+/** A child that its owner's slot does not accept or that goes past the slot's `max` (stage #1080, decision 10). */
+export interface SlotItem {
+  readonly code: DrawingSlotIssue['code'];
+  readonly slot: { readonly id: string; readonly name: string };
+  readonly owner: string;
+  readonly max?: number;
+  readonly message: string;
+}
+
+export type DrawingItem = OverflowItem | SlotItem;
+
+function slotMessage(issue: DrawingSlotIssue, where: string, typeName: string): string {
+  if (issue.code === 'slot-full') return `${where} takes ${issue.max ?? 0}`;
+  if (issue.code === 'slot-hidden') return `${where} is hidden`;
+  return `${where} does not accept ${typeName}`;
+}
+
+/** The `slot-not-accepted` text carries the child's type; `slot-full` carries the slot's `max`. */
+function slotItemOf(issue: DrawingSlotIssue, typeName: string): SlotItem {
+  const where = `the slot ${issue.slot.name} of ${issue.owner}`;
+  return {
+    code: issue.code,
+    slot: { id: issue.slot.id, name: issue.slot.name },
+    owner: issue.owner,
+    ...(issue.max === undefined ? {} : { max: issue.max }),
+    message: slotMessage(issue, where, typeName),
+  };
+}
+
+/** The slot items of a drawing whose mother or child marking the batch touched, by the child's annotation. */
+function slotItemsOf(
+  drawing: ComponentDrawing,
+  after: Project,
+  touched: ReadonlySet<string> | null,
+): [string, SlotItem][] {
+  const index = projectIndex(after);
+  const found: [string, SlotItem][] = [];
+  for (const issue of drawing.slotIssues) {
+    const child = index.annotations.get(issue.annotationId);
+    if (!child) continue;
+    if (
+      touched !== null &&
+      !touched.has(drawing.markingId) &&
+      !touched.has(child.markingId)
+    )
+      continue;
+    const typeName = typeOfAnnotation(after, child)?.type.name ?? '';
+    found.push([issue.annotationId, slotItemOf(issue, typeName)]);
+  }
+  return found;
+}
+
+/** The drawing cache of the fonts that measure `refs`' project (the proof has no saved revision to memoize on). */
+function drawingsOf(
   refs: Refs,
-  before: Project,
-): Map<string, readonly OverflowItem[]> {
-  const after = refs.project;
-  const found = new Map<string, readonly OverflowItem[]>();
-  const touched = touchedMarkings(before, after);
-  if (touched.size === 0) return found;
+  project: Project = refs.project,
+): ReturnType<DrawingCache> {
   const fonts = refs.loaded.fonts ?? builtinFontBook();
-  const approximate = !fonts.hasLibraryFonts;
-  let cache = drawingCaches.get(fonts);
+  // The project as it was before the batch is drawn once, in a cache of its own: in the saved project's it would
+  // evict the entries that the next call reuses.
+  let cache = project === refs.project ? drawingCaches.get(fonts) : createDrawingCache();
   if (cache === undefined) {
     cache = createDrawingCache();
     drawingCaches.set(fonts, cache);
   }
-  const drawings = cache(after, refs.loaded.catalog, measurerFor(fonts), 0);
-  for (const drawing of drawings.values()) {
-    if (!drawing.overflow || !touched.has(drawing.markingId)) continue;
-    found.set(drawing.annotationId, itemsOf(drawing, approximate));
+  return cache(project, refs.loaded.catalog, measurerFor(fonts), 0);
+}
+
+/**
+ * The drawing items per annotation, of the markings the batch created or changed: `component-overflow` of the
+ * touched markings and `slot-not-accepted` / `slot-full` of the drawings whose mother or child it touched.
+ */
+export function drawingProof(
+  refs: Refs,
+  before: Project,
+): Map<string, readonly DrawingItem[]> {
+  const touched = touchedMarkings(before, refs.project);
+  if (touched.size === 0) return new Map();
+  return drawingItemsOf(refs, refs.project, touched);
+}
+
+/**
+ * The drawing items per annotation of `project`'s drawings; with `touched` only those of the touched
+ * markings (and of the drawings whose mother or child it touched), without it all of them.
+ */
+function drawingItemsOf(
+  refs: Refs,
+  project: Project,
+  touched: ReadonlySet<string> | null,
+): Map<string, readonly DrawingItem[]> {
+  const found = new Map<string, readonly DrawingItem[]>();
+  const approximate = !(refs.loaded.fonts ?? builtinFontBook()).hasLibraryFonts;
+  const add = (annotationId: string, items: readonly DrawingItem[]) =>
+    found.set(annotationId, [...(found.get(annotationId) ?? []), ...items]);
+  for (const drawing of drawingsOf(refs, project).values()) {
+    if (drawing.overflow && (touched === null || touched.has(drawing.markingId))) {
+      add(drawing.annotationId, itemsOf(drawing, approximate));
+    }
+    for (const [annotationId, item] of slotItemsOf(drawing, project, touched)) {
+      add(annotationId, [item]);
+    }
   }
   return found;
 }
@@ -157,20 +241,42 @@ interface IssueEntry {
   readonly issues: readonly object[];
 }
 
-/** The batch's `issues` with the "does not fit" of the proven markings added to `issues.new`. */
-export function withOverflow(
+/** What tells two drawing items of an annotation apart (the amount missing does not). */
+const itemKey = (item: DrawingItem): string =>
+  'slot' in item
+    ? `${item.code}\u0000${item.slot.id}`
+    : `${item.code}\u0000${item.kind}\u0000${item.node}`;
+
+/**
+ * The batch's `issues` with the drawing's items (does not fit, slot not accepted or full) added: `new` lists
+ * only what the project did not already have before the batch, and `before`, `after` and `resolved` count the
+ * annotations with a static pending item or a drawing item, so what was already there is not new.
+ */
+export function withDrawingIssues(
   issues: Record<string, unknown>,
   refs: Refs,
   before: Project,
 ): Record<string, unknown> {
-  const proof = overflowProof(refs, before);
-  if (proof.size === 0) return issues;
+  // The saved project is drawn first: drawing `before` ahead of it leaves its cache stale for a changed direction.
+  const hasAfter = drawingItemsOf(refs, refs.project, null);
+  const proof = drawingProof(refs, before);
+  const hadBefore = drawingItemsOf(refs, before, null);
+  const idsBefore = new Set([...projectIssues(before).keys(), ...hadBefore.keys()]);
+  const idsAfter = new Set([...projectIssues(refs.project).keys(), ...hasAfter.keys()]);
+  const counts = {
+    before: idsBefore.size,
+    after: idsAfter.size,
+    resolved: [...idsBefore].filter((id) => !idsAfter.has(id)).length,
+  };
   const entries = [...((issues.new as IssueEntry[] | undefined) ?? [])];
   for (const [annotationId, items] of proof) {
+    const had = new Set((hadBefore.get(annotationId) ?? []).map(itemKey));
+    const gained = items.filter((item) => !had.has(itemKey(item)));
+    if (gained.length === 0) continue;
     const ref = refs.ref('a', annotationId);
     const at = entries.findIndex((e) => e.annotation === ref);
-    if (at < 0) entries.push({ annotation: ref, issues: [...items] });
-    else entries[at] = { ...entries[at]!, issues: [...entries[at]!.issues, ...items] };
+    if (at < 0) entries.push({ annotation: ref, issues: [...gained] });
+    else entries[at] = { ...entries[at]!, issues: [...entries[at]!.issues, ...gained] };
   }
-  return { ...issues, new: entries };
+  return { ...issues, ...counts, new: entries };
 }

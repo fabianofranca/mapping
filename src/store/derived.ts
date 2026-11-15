@@ -3,6 +3,8 @@ import { t } from '../i18n';
 import {
   EMPTY_CATALOG,
   NO_DRAWINGS,
+  markingComponent,
+  typeSlots,
   acceptedPending,
   buildIncompleteList,
   buildListing,
@@ -158,6 +160,13 @@ export interface EditorDerived {
    */
   readonly componentScenes: ReadonlySignal<ComponentDrawings>;
   /**
+   * The default-content fields that mean nothing now (#1080, decision 14): per annotation that
+   * draws a component, each field of a slot that holds children, with the slot's name. Read from the
+   * drawing cache (`ComponentDrawing.inactiveFields` and `slots`), never recomputed by the panel;
+   * the same map while nothing changed.
+   */
+  readonly inactiveFields: ReadonlySignal<InactiveFields>;
+  /**
    * Drawings of `p` (the canvas draws the project with the gesture preview). The project in view
    * returns `componentScenes`; another project uses the same cache, and only the marking that changed
    * is re-instantiated. It reads the same signals: it can be called inside a `computed`.
@@ -231,6 +240,20 @@ export interface ComponentSources {
 }
 
 const NO_ISSUES: ReadonlyMap<string, readonly AnnotationIssue[]> = new Map();
+
+/** The inactive default-content fields of each annotation that draws a component: field → slot name. */
+export type InactiveFields = ReadonlyMap<string, ReadonlyMap<string, string>>;
+const NO_INACTIVE: InactiveFields = new Map();
+
+function sameInactiveFields(a: InactiveFields, b: InactiveFields): boolean {
+  if (a.size !== b.size) return false;
+  for (const [id, fields] of a) {
+    const other = b.get(id);
+    if (other === undefined || fields.size !== other.size) return false;
+    for (const [field, slot] of fields) if (other.get(field) !== slot) return false;
+  }
+  return true;
+}
 const NO_ANNOTATIONS: ReadonlyMap<string, readonly Annotation[]> = new Map();
 const NO_DOTS: ReadonlyMap<string, readonly LayerDot[]> = new Map();
 const NO_VISIBILITY: ReadonlyMap<string, MarkingVisibility> = new Map();
@@ -321,19 +344,32 @@ const NO_COMPONENTS: ComponentSources = {
   fontsEpoch: signal(0),
 };
 
+function sameIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
+  return (
+    x.code === y.code &&
+    x.key === y.key &&
+    x.rowId === y.rowId &&
+    x.column === y.column &&
+    sameSlotIssue(x, y)
+  );
+}
+
+/** The slot, owner and max of `slot-not-accepted`, `slot-full` and `slot-hidden`. */
+function sameSlotIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
+  return (
+    x.slot?.id === y.slot?.id &&
+    x.slot?.name === y.slot?.name &&
+    x.owner === y.owner &&
+    x.max === y.max
+  );
+}
+
 function sameIssueList(
   a: readonly AnnotationIssue[],
   b: readonly AnnotationIssue[],
 ): boolean {
   return (
-    a.length === b.length &&
-    a.every(
-      (x, i) =>
-        x.code === b[i]?.code &&
-        x.key === b[i]?.key &&
-        x.rowId === b[i]?.rowId &&
-        x.column === b[i]?.column,
-    )
+    a.length === b.length && a.every((x, i) => sameIssue(x, b[i] as AnnotationIssue))
   );
 }
 
@@ -424,25 +460,56 @@ export function createEditorDerived(
   const drawingsOf = (p: Project | null): ComponentDrawings =>
     p === project.value ? scenes.value : drawings(p);
 
-  // Model pending items plus "the component does not fit" (only the drawing knows). Without a
-  // drawing that
-  // overflows, it is the model's map; with one, the previous map if nothing changed.
+  // Model pending items plus what only the drawing knows: "the component does not fit" and the
+  // children a slot does not accept or that go past its `max` (decisions 7 and 10 of #1080). Without a
+  // drawing that has any of them, it is the model's map; with one, the previous map if nothing changed.
   let lastIssues: ReadonlyMap<string, readonly AnnotationIssue[]> = NO_ISSUES;
   const issues = computed(() => {
     const p = project.value;
     const base = p ? projectIssues(p) : NO_ISSUES;
-    const overflowing = [...scenes.value.values()].filter((d) => d.overflow);
-    if (overflowing.length === 0) return base;
+    const drawn = [...scenes.value.values()].filter(
+      (d) => d.overflow || d.slotIssues.length > 0,
+    );
+    if (drawn.length === 0) return base;
     const merged = new Map(base);
-    for (const d of overflowing) {
-      merged.set(d.annotationId, [
-        ...(merged.get(d.annotationId) ?? []),
-        { code: 'component-overflow' } satisfies AnnotationIssue,
-      ]);
+    const add = (annotationId: string, issue: AnnotationIssue) =>
+      merged.set(annotationId, [...(merged.get(annotationId) ?? []), issue]);
+    for (const d of drawn) {
+      if (d.overflow) add(d.annotationId, { code: 'component-overflow' });
+      for (const { annotationId, ...issue } of d.slotIssues) add(annotationId, issue);
     }
     if (sameIssues(merged, lastIssues)) return lastIssues;
     lastIssues = merged;
     return merged;
+  });
+
+  let lastInactive: InactiveFields = NO_INACTIVE;
+  const inactiveFields = computed((): InactiveFields => {
+    const next = new Map<string, ReadonlyMap<string, string>>();
+    const p = project.value;
+    for (const drawing of scenes.value.values()) {
+      if (p === null || drawing.inactiveFields.size === 0) continue;
+      // The slot's name as the type calls it (the one `slot-full` and `slot-not-accepted` show), else the scene's label.
+      const mc = markingComponent(p, components.catalog.value, drawing.markingId);
+      const names = new Map([
+        ...drawing.slots.map((slot) => [slot.id, slot.name] as const),
+        ...(mc ? typeSlots(p, mc.specId, mc.typeId, mc.component) : []).map(
+          (slot) => [slot.id, slot.name] as const,
+        ),
+      ]);
+      next.set(
+        drawing.annotationId,
+        new Map(
+          [...drawing.inactiveFields].map(([field, slotId]) => [
+            field,
+            names.get(slotId) ?? slotId,
+          ]),
+        ),
+      );
+    }
+    if (sameInactiveFields(next, lastInactive)) return lastInactive;
+    lastInactive = next.size === 0 ? NO_INACTIVE : next;
+    return lastInactive;
   });
 
   const annotationsByMarking = computed(() => {
@@ -769,6 +836,7 @@ export function createEditorDerived(
     densitySuggestions,
     catalog: components.catalog,
     componentScenes: scenes,
+    inactiveFields,
     floatingMarkings,
     drawingsOf,
     drawnMarkings,
