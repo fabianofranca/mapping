@@ -78,6 +78,8 @@ export function paintContainerDrawings(
   const drawings = [...cache(project, source.catalog, measure, 0).values()].filter(
     (d) =>
       d.containerId === containerId &&
+      // What sits in a slot hidden by `visible`, or under one, is not drawn (as in the app).
+      d.hidden !== true &&
       (options.markingIds === undefined || options.markingIds.has(d.markingId)),
   );
   paintScene(raster, drawings, measure, { ...view, fonts });

@@ -45,6 +45,7 @@
 - The Catalog drag (`useComponentDrop`) hands the drawings to `addComponent`, like the Palette does.
 - The MCP no longer instantiates the drawings once per list row when the project has no valid drawing key, and `loadProject` no longer rereads and rehashes the component files that did not change.
 - In `swipe-to-dismiss`, a child in the right-hand strip with `direction` = `EndToStart` and `enableDismissFromEndToStart` off stays in `backgroundContent` (not drawn, with `slot-hidden`) instead of going to `content`: the slot's `left`/`right` anchors now follow only the `direction`, so the hidden slot keeps the strip it would have if visible (bug #1984, fix of #1978).
+- The MCP's PNG (`render_container` and `render_marking`) no longer draws what sits in a slot hidden by `visible`, nor its descendants (before, the icon of the hidden `backgroundContent` of a `swipe-to-dismiss` was painted); the app already skipped it (#1989).
 
 ## Alterado
 
