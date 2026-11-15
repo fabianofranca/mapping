@@ -18,6 +18,35 @@ export const CORNER_MARGIN = 3;
 /** Incomplete annotation alert, in the corner after the "to review" badge (screen px). */
 export const ALERT_GLYPH = '⚠';
 export const ALERT_SIZE = 13;
+/** Padding of the name's text box inside the marking (screen px). */
+export const TEXT_PADDING = 4;
+
+/**
+ * Horizontal layout of the marking's top-left corner (screen px from the marking's left edge):
+ * the "to review" badge, the incomplete ⚠ and the semantic zoom name. Each mark takes a width
+ * equal to its font size; `null` is a mark that is not drawn.
+ */
+export interface CornerLayout {
+  readonly badgeX: number | null;
+  readonly alertX: number | null;
+  readonly nameX: number;
+}
+
+export function cornerLayout(review: boolean, incomplete: boolean): CornerLayout {
+  const badgeX = review ? REVIEW_BADGE_SIZE / 3 : null;
+  const alertX = incomplete
+    ? badgeX === null
+      ? CORNER_MARGIN
+      : badgeX + REVIEW_BADGE_SIZE + CORNER_MARGIN
+    : null;
+  const end =
+    alertX !== null
+      ? alertX + ALERT_SIZE
+      : badgeX !== null
+        ? badgeX + REVIEW_BADGE_SIZE
+        : 0;
+  return { badgeX, alertX, nameX: end + TEXT_PADDING };
+}
 export const ELLIPSIS = '…';
 /** Lock badge: the stroke takes this fraction of the side; the icon grid has 16 units. */
 export const LOCK_GLYPH_RATIO = 0.7;

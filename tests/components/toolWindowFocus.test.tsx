@@ -197,9 +197,9 @@ describe('return focus on close', () => {
   });
 });
 
-// Esc in the Details and Comments windows (stage #1273, FE1): closes like the X when focus is
+// Esc in the Details, Comments and Catalog windows (stages #1273 and #1835): closes like the X when focus is
 // inside, outside a text field and without a modal or menu that consumes the Esc.
-describe('Esc closes Details and Comments', () => {
+describe('Esc closes Details, Comments and Catalog', () => {
   function EscShell({ extra }: { readonly extra?: (id: ToolWindowId) => unknown }) {
     const windows = [...openWindowsOf('left'), ...openWindowsOf('right')];
     const bottom = openWindowOf('bottom');
@@ -224,7 +224,7 @@ describe('Esc closes Details and Comments', () => {
     harness.ui.selection.value = { kind: 'marking', id: 'M1' };
   });
 
-  it.each(['details', 'comments'] as const)(
+  it.each(['details', 'comments', 'catalog'] as const)(
     '%s: Esc with focus on a button closes, focuses the strip button and the selection stays',
     async (id) => {
       const user = userEvent.setup();
@@ -251,6 +251,25 @@ describe('Esc closes Details and Comments', () => {
     await user.keyboard('{Escape}');
     await settle();
     expect(isToolWindowOpen('details')).toBe(true);
+    expect(active()).toBe(field);
+  });
+
+  it('Esc in the Catalog search box (type="search") does not close the window', async () => {
+    const user = userEvent.setup();
+    showToolWindow('catalog');
+    render(
+      <EscShell
+        extra={(id) =>
+          id === 'catalog' ? <input aria-label="Search component" type="search" /> : null
+        }
+      />,
+    );
+    await settle();
+    const field = screen.getByRole('searchbox', { name: 'Search component' });
+    field.focus();
+    await user.keyboard('{Escape}');
+    await settle();
+    expect(isToolWindowOpen('catalog')).toBe(true);
     expect(active()).toBe(field);
   });
 

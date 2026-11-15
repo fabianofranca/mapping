@@ -4,9 +4,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Frame } from '../../../src/canvas/frame';
 import { MarkingRenderer } from '../../../src/canvas/renderers/markings';
 import {
-  ALERT_SIZE,
   CORNER_MARGIN,
   REVIEW_BADGE_SIZE,
+  TEXT_PADDING,
+  cornerLayout,
 } from '../../../src/canvas/renderers/metrics';
 import {
   createMarking,
@@ -148,7 +149,39 @@ describe('MarkingRenderer', () => {
     it('after the incomplete ⚠', () => {
       const { renderer, render } = setup();
       render({ incomplete: new Set(['M1']) });
-      expect(node(renderer, 'M1').text?.header.x()).toBe(100 + ALERT_SIZE + 2);
+      expect(node(renderer, 'M1').text?.header.x()).toBe(100 + 20);
+    });
+
+    it('after the "to review" badge, without ⚠', () => {
+      const { renderer, render } = setup();
+      render({ project: withReview(canvasProject(), 'M1') });
+      expect(node(renderer, 'M1').text?.header.x()).toBe(
+        100 + cornerLayout(true, false).nameX,
+      );
+    });
+
+    it('after the badge and the ⚠', () => {
+      const { renderer, render } = setup();
+      render({ project: withReview(canvasProject(), 'M1'), incomplete: new Set(['M1']) });
+      expect(node(renderer, 'M1').text?.header.x()).toBe(
+        100 + cornerLayout(true, true).nameX,
+      );
+    });
+
+    it('a "to review" marking in view mode: the badge is not drawn, the name starts at the margin', () => {
+      const { renderer, render } = setup();
+      render({
+        project: withReview(canvasProject(), 'M1'),
+        view: {
+          containers: true,
+          images: true,
+          outline: true,
+          names: true,
+          arrows: true,
+        },
+      });
+      expect(textOf(renderer, 'M1').header.x()).toBe(100 + TEXT_PADDING);
+      expect(node(renderer, 'M1').badge?.visible() ?? false).toBe(false);
     });
   });
 
@@ -175,7 +208,9 @@ describe('MarkingRenderer', () => {
       const m1 = node(renderer, 'M1');
       expect(m1.badge?.visible()).toBe(true);
       expect(m1.badge?.x()).toBeLessThan(100 + REVIEW_BADGE_SIZE);
-      expect(m1.alert?.x()).toBe(100 + REVIEW_BADGE_SIZE + CORNER_MARGIN);
+      expect(m1.alert?.x()).toBe(
+        100 + REVIEW_BADGE_SIZE / 3 + REVIEW_BADGE_SIZE + CORNER_MARGIN,
+      );
     });
 
     it('without a pending item: the alert group is invisible', () => {
