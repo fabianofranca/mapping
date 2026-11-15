@@ -60,6 +60,8 @@ export function diffJson(
 export interface TesterState {
   title: string;
   url: string;
+  /** Where the open project is saved (status bar `title`): `Pasta`, `Neste dispositivo`, `Folder` or `On this device`; `null` on the home screen. */
+  origin?: string | null;
   dialogs: string[];
   notices: string[];
   saveStatus: string | null;
