@@ -105,6 +105,23 @@ together in the last one.
 `rank` (1, 2, 3…): the `aguardando` without `started`, except `segurada` and `ficha`, by wave and `order`; the others stay `null`. Arrow
 `{de, para, tipo}` (the arrow runs from the holder to the held one): `dep` by the ficha's `dep=` between nodes (without `:main` or `meta.merged`), only the
 transitive reduction, and `arquivo` from `#N` when the reason is `arquivo <x> com #N` or `schema com #N`.
+Usage and quality (stage #1889, decisions 2 to 7): every write refreshes `meta.uso`, one entry per key (`papel`, `modelo`, `esforco`) of
+the sessions with a `cost`: the model is the family of the id in `cost.model` (`Haiku`, `Sonnet`, `Opus`, `Fable`; another id as it came),
+the effort as written; with `sessoes`, `usd`, `pct`, `medianaSessao`, `medianaEtapa` (only merged stages), `ctxMediano`, `acimaTeto`
+(`ctx` > 300000 in `fase`, `correção`, `testador` and `reteste`), `intervencoes` (`dono` plus the context switches), `sinais` (the signals added
+up) and, for the roles with a rework ruler (`fase`, `correção`, `testador`, `reteste`): `decididas`, `comRetrabalho`, `sequencia` (decided sessions in
+a row without rework, from the most recent back) and `candidato` (the step below, from CLEAN_STREAK = 10 in a row). `uso [--desde <ISO>] DIR`
+prints one line per key and the signals. `sinal DIR <id> campo=valor…` writes `meta.sessions[i].sinais` (`ci`, `cr`, `crFix`, `ciclo`,
+`dono`, `sub` in `fase` and `correção`; `ok`, `falha`, `alta`, `media`, `baixa`, `falso=<high|medium|low>` and `sub` in `testador` and `reteste`; a
+number replaces and `+k` adds; all or nothing, code 2 on a bad field). `escapado DIR '#<bug>' etapa='#<n>' sev=<high|medium|low>` writes
+`meta.escapados` (the same bug replaces) and `escapado DIR --conferido` writes `meta.escapadosAt`; `historico DIR --feito desde=<ISO>
+ate=<ISO> [linhas=<k>]` writes `meta.historico`. `sinal`, `escapado` and `historico` go into `apply`; `uso` does not. `show` prints
+`escapados:` (with `— conferir` after ESCAPE_CHECK_HOURS = 24 h or without a check), `histórico:` and `candidatos a teste:` right after
+`testador acima do teto:`. Rework ruler (decision 6): only stages decided (`concluída` or in `meta.merged`) count; a missing signal is no rework.
+Rework per role: `fase` has it with a `correção` or a `testador` with `alta`+`media` > 0 in its stage, an escaped defect `high`/`medium` of the stage, `ci` >= 2
+or `ciclo` >= 1; `correção`, with `ci` >= 2, `ciclo` >= 1, an escaped defect of the stage, another `correção` of a different label created after it or a `reteste`
+created after it with `alta`+`media` > 0; `testador`, with an escaped defect `high`/`medium` of its stage; `reteste`, with a `falso` of `high` or `medium`.
+`fechamento`, `coordenador` and `supervisor` have no ruler. The escaped `low`, `ci` 1 and a successor `correção` of the same label are not rework.
 Standard library only. Usage: painel.py [--now ISO] <subcommand> DIR ...
 (the subcommand comes BEFORE the folder: `painel.py row <folder> '#n' status=...`).
 """
@@ -172,6 +189,20 @@ REQUEST_NEEDS_EVIDENCE = ("aplicado", "recusado")
 REQUEST_LATE_STATES = ("enviado", "aprovado")  # `atrasado` is computed, never written
 REQUEST_OPEN_STATES = ("enviado", "perguntado ao dono", "aprovado")
 REQUEST_LATE_MINUTES = 90
+# Usage and quality per role x model x effort (stage #1889).
+CLEAN_STREAK = 10  # decided sessions in a row without rework that make a key a candidate for a test (decision 7)
+ESCAPE_CHECK_HOURS = 24  # `show` asks to check the escaped defects again after this many hours (decision 5)
+RULER_KINDS = ["fase", "correção", "testador", "reteste"]  # the roles that have a rework ruler (decision 6)
+PHASE_KINDS = ["fase", "correção"]  # the roles that can have a context switch (a successor session of the same stage and label)
+CEILING_KINDS = RULER_KINDS  # where the 300 thousand context ceiling applies (decision 3)
+CONTEXT_CEILING = 300000  # final-context ceiling of the phase and of the tester (docs/FLOW.md, item 3)
+EFFORT_LADDER = ["medium", "high", "xhigh", "max"]  # `low` is below `medium`: the step below of an effort above `medium` goes down this list
+MODEL_LADDER = ["Haiku", "Sonnet", "Opus", "Fable"]  # cheapest first; the family is read from the id in `cost.model`
+SEVERITIES = ["high", "medium", "low"]
+PHASE_SIGNALS = ["ci", "cr", "crFix", "ciclo", "dono", "sub"]
+TESTER_SIGNALS = ["ok", "falha", "alta", "media", "baixa", "falso", "sub"]
+SIGNAL_FIELDS = {"fase": PHASE_SIGNALS, "correção": PHASE_SIGNALS, "testador": TESTER_SIGNALS, "reteste": TESTER_SIGNALS}
+SIGNAL_SUMS = ["ci", "cr", "crFix", "ciclo", "dono", "ok", "falha", "alta", "media", "baixa"]  # the numeric signals `uso` adds up
 
 NOW_OVERRIDE = None
 BATCH = None  # the shared Sessao of an `apply` in progress (None outside it)
@@ -258,6 +289,7 @@ class Sessao:
         meta[0]["vagas"] = text
         meta[0]["vagasItens"] = items
         meta[0]["grafoNos"], meta[0]["grafoSetas"] = queue_graph(self.get("queue"), meta[0], reasons)
+        meta[0]["uso"] = compute_uso(self.get("queue"), meta[0])
         self.touch("meta")
         order = [n for n in FILES if n in self.dirty]
         if self.loud:
@@ -662,6 +694,399 @@ def cmd_costs(a):
     for k in sorted(by_issue, key=lambda i: (not i.startswith("#"), int(i[1:]) if i[1:].isdigit() else 0, i)):
         v = by_issue[k]
         print(f"  {k}: {len(v)} sessões, {money(sum(v))}")
+
+
+# --- usage and quality per role x model x effort (stage #1889, phase QM1) ---
+
+def model_family(model):
+    """`Haiku`, `Sonnet`, `Opus` or `Fable` by the id in `cost.model`; another id stays as it came; empty, `—`."""
+    text = (model or "").strip()
+    for family in MODEL_LADDER:
+        if family.lower() in text.lower():
+            return family
+    return text or "—"
+
+
+def usage_key(e):
+    """`(role, model, effort)` of a session with a cost: the kind, the model family and the effort as written."""
+    cost = e["cost"]
+    return e.get("kind") or "—", model_family(cost.get("model")), cost.get("effort") or "—"
+
+
+def chronology(meta):
+    """`okey(e)`: the order of a session in time: `created` (without it, `cost.at`); its place in `meta.sessions` breaks ties."""
+    place = {id(e): i for i, e in enumerate(meta.get("sessions") or [])}
+
+    def okey(e):
+        return e.get("created") or (e.get("cost") or {}).get("at") or "", place.get(id(e), 0)
+    return okey
+
+
+def signal_count(e, name):
+    """A numeric signal of the session; 0 when it is missing (a session of the history has none: no data is not rework)."""
+    v = (e.get("sinais") or {}).get(name)
+    return v if isinstance(v, int) and not isinstance(v, bool) else 0
+
+
+def serious_findings(e):
+    """A tester or retest session with ❌ of high or medium severity."""
+    return signal_count(e, "alta") + signal_count(e, "media") > 0
+
+
+def own_rework(e):
+    """The session's own signals: `ci` of 2 or more (CI red after the PR opened) or a `ciclo` (the CI cycle diagnosis)."""
+    return signal_count(e, "ci") >= 2 or signal_count(e, "ciclo") >= 1
+
+
+def rework_fase(e, okey, stage, escaped):
+    if own_rework(e) or e.get("issue") in escaped:
+        return True
+    return any(x.get("kind") == "correção" or (x.get("kind") == "testador" and serious_findings(x)) for _, x in stage)
+
+
+def rework_correcao(e, okey, stage, escaped):
+    if own_rework(e) or e.get("issue") in escaped:
+        return True
+    return any(k > okey and ((x.get("kind") == "correção" and x.get("label") != e.get("label"))
+                             or (x.get("kind") == "reteste" and serious_findings(x))) for k, x in stage)
+
+
+def rework_testador(e, okey, stage, escaped):
+    return e.get("issue") in escaped
+
+
+def rework_reteste(e, okey, stage, escaped):
+    """A ✅ of this retest that turned out false (`falsos`) with high or medium severity."""
+    return any(sev in ("high", "medium") for sev in (e.get("sinais") or {}).get("falsos") or [])
+
+
+REWORK_RULES = {"fase": rework_fase, "correção": rework_correcao, "testador": rework_testador, "reteste": rework_reteste}
+
+
+def severe_escaped(meta):
+    """The stages with an escaped defect of high or medium severity (the low one is not rework)."""
+    return {x.get("etapa") for x in meta.get("escapados") or [] if x.get("sev") in ("high", "medium")}
+
+
+class Ruler:
+    """The rework ruler (decision 6), over every session of `meta.sessions`, with a cost or not: a stage counts only
+    when decided (`concluída` in the queue or in `meta.merged`)."""
+
+    def __init__(self, q, meta):
+        self.okey = chronology(meta)
+        self.escaped = severe_escaped(meta)
+        self.decided = set(meta.get("merged") or []) | {r["issue"] for r in q if r["status"] == "concluída"}
+        self.stages = {}
+        for e in meta.get("sessions") or []:
+            if e.get("issue"):
+                self.stages.setdefault(e["issue"], []).append((self.okey(e), e))
+
+    def verdict(self, e):
+        """None: outside the ruler (role without it, or stage not decided); True: rework; False: clean."""
+        rule = REWORK_RULES.get(e.get("kind"))
+        if rule is None or e.get("issue") not in self.decided:
+            return None
+        return rule(e, self.okey(e), self.stages.get(e["issue"], []), self.escaped)
+
+
+def clean_streak(flags):
+    """Decided sessions in a row without rework, from the most recent back; `flags` (True: rework) are in chronological order."""
+    n = 0
+    for bad in reversed(flags):
+        if bad:
+            break
+        n += 1
+    return n
+
+
+def step_below(modelo, esforco):
+    """The configuration one step below (decision 7), `(model, effort)`: an effort above `medium` goes down one step;
+    with `medium` or `low` the model goes down one, with the same effort. None where there is no step."""
+    if esforco in EFFORT_LADDER[1:]:
+        return modelo, EFFORT_LADDER[EFFORT_LADDER.index(esforco) - 1]
+    if esforco in ("medium", "low") and modelo in MODEL_LADDER and MODEL_LADDER.index(modelo) > 0:
+        return MODEL_LADDER[MODEL_LADDER.index(modelo) - 1], esforco
+    return None
+
+
+def candidate_of(key, streak):
+    """The step below of a key whose streak reached CLEAN_STREAK (a role with a ruler); None otherwise."""
+    papel, modelo, esforco = key
+    if papel not in RULER_KINDS or streak < CLEAN_STREAK:
+        return None
+    step = step_below(modelo, esforco)
+    return " ".join(step) if step else None
+
+
+def ruler_columns(key, es, ruler):
+    """`decididas`, `comRetrabalho`, `sequencia` and `candidato` of a key; all `None` for a role without a ruler."""
+    if key[0] not in RULER_KINDS:
+        return {"decididas": None, "comRetrabalho": None, "sequencia": None, "candidato": None}
+    judged = sorted(((ruler.okey(e), ruler.verdict(e)) for e in es), key=lambda t: t[0])
+    flags = [v for _, v in judged if v is not None]
+    streak = clean_streak(flags)
+    return {"decididas": len(flags), "comRetrabalho": sum(flags), "sequencia": streak,
+            "candidato": candidate_of(key, streak)}
+
+
+def switch_successors(meta):
+    """Ids of the fase/correção sessions that came after the first one of the same stage and label: the context switches."""
+    okey = chronology(meta)
+    groups = {}
+    for e in meta.get("sessions") or []:
+        if e.get("kind") in PHASE_KINDS and e.get("issue") and e.get("label"):
+            groups.setdefault((e["kind"], e["issue"], e["label"]), []).append((okey(e), e["id"]))
+    return {sid for g in groups.values() for _, sid in sorted(g)[1:]}
+
+
+def stage_median(es, decided):
+    """Median, among the decided stages, of what the key spent in each one; None with no decided stage."""
+    sums = {}
+    for e in es:
+        if e.get("issue") in decided:
+            sums[e["issue"]] = sums.get(e["issue"], 0) + usd_of(e)
+    return round(statistics.median(sums.values()), 2) if sums else None
+
+
+def ctx_values(es):
+    return [e["cost"]["ctx"] for e in es if isinstance(e["cost"].get("ctx"), (int, float))]
+
+
+def over_ceiling(papel, es):
+    """Sessions above CONTEXT_CEILING; None in a role the ceiling does not apply to."""
+    if papel not in CEILING_KINDS:
+        return None
+    return sum(1 for c in ctx_values(es) if c > CONTEXT_CEILING)
+
+
+def signal_sums(es):
+    """The numeric signals of the key's sessions added up (only those that were written) and the count of `falsos`."""
+    out = {}
+    for name in SIGNAL_SUMS:
+        vals = [signal_count(e, name) for e in es if name in (e.get("sinais") or {})]
+        if vals:
+            out[name] = sum(vals)
+    falsos = sum(len((e.get("sinais") or {}).get("falsos") or []) for e in es)
+    if falsos:
+        out["falsos"] = falsos
+    return out
+
+
+def usage_row(key, es, total, ruler, switches):
+    """The `meta.uso` entry of a key (decision 3)."""
+    papel, modelo, esforco = key
+    usd = sum(usd_of(e) for e in es)
+    sums = signal_sums(es)
+    trocas = sum(1 for e in es if e["id"] in switches)
+    if trocas:
+        sums["trocas"] = trocas
+    ctx = ctx_values(es)
+    row = {
+        "papel": papel, "modelo": modelo, "esforco": esforco, "sessoes": len(es),
+        "usd": round(usd, 2), "pct": round(100 * usd / total, 1) if total else 0.0,
+        "medianaSessao": round(statistics.median([usd_of(e) for e in es]), 2),
+        "medianaEtapa": stage_median(es, ruler.decided),
+        "ctxMediano": int(round(statistics.median(ctx))) if ctx else None,
+        "acimaTeto": over_ceiling(papel, es),
+        "intervencoes": sums.get("dono", 0) + trocas,
+        "sinais": sums,
+    }
+    row.update(ruler_columns(key, es, ruler))
+    return row
+
+
+def usage_order(row):
+    kind = row["papel"]
+    return (SESSION_KINDS.index(kind) if kind in SESSION_KINDS else len(SESSION_KINDS), -row["usd"],
+            row["modelo"], row["esforco"])
+
+
+def compute_uso(q, meta, since=None):
+    """The usage per role x model x effort of the sessions with a cost (`since` keeps those created from it on): the
+    `meta.uso` that every write refreshes. The rework ruler reads all the sessions of a stage, with a cost or not."""
+    es = costed(meta, since)
+    total = sum(usd_of(e) for e in es)
+    ruler, switches = Ruler(q, meta), switch_successors(meta)
+    groups = {}
+    for e in es:
+        groups.setdefault(usage_key(e), []).append(e)
+    return sorted((usage_row(k, g, total, ruler, switches) for k, g in groups.items()), key=usage_order)
+
+
+def dash(v):
+    return "—" if v is None else str(v)
+
+
+def usage_line(u):
+    """One line of `uso` for a key."""
+    ctx = "—" if u["ctxMediano"] is None else f"{round(u['ctxMediano'] / 1000)}k"
+    stage = "—" if u["medianaEtapa"] is None else money(u["medianaEtapa"])
+    rework = "—" if u["decididas"] is None else f"{u['comRetrabalho']} de {u['decididas']}"
+    return (f"{u['papel']} {u['modelo']} {u['esforco']}: {u['sessoes']} sessões, {money(u['usd'])} ({u['pct']}%), "
+            f"mediana {money(u['medianaSessao'])}, por etapa {stage}, contexto {ctx}, acima do teto {dash(u['acimaTeto'])}, "
+            f"intervenções {u['intervencoes']}, retrabalho {rework}, sequência {dash(u['sequencia'])}, "
+            f"candidato {dash(u['candidato'])}")
+
+
+def cmd_uso(a):
+    since = check_iso(a.desde) if a.desde else None
+    q, m = load(a.dir, "queue"), load(a.dir, "meta")
+    rows = compute_uso(q, m[0] if m else {}, since)
+    if not rows:
+        print("uso: —")
+        return
+    for u in rows:
+        print(usage_line(u))
+        if u["sinais"]:
+            print("  sinais: " + ", ".join(f"{k} {v}" for k, v in u["sinais"].items()))
+
+
+def find_session(meta, sid):
+    for e in meta.get("sessions") or []:
+        if e.get("id") == sid:
+            return e
+    raise Erro(f"{sid} is not in meta.sessions")
+
+
+def signal_number(k, v):
+    """`('add', n)` from `+n`, `('set', n)` from `n`; a negative number, a decimal or text is a usage error."""
+    if re.fullmatch(r"\+?[0-9]+", v):
+        return ("add" if v.startswith("+") else "set"), int(v)
+    if re.fullmatch(r"-[0-9]+", v):
+        raise Erro(f"{k} cannot be negative, got '{v}'")
+    raise Erro(f"{k} must be an integer (or +<n> to add), got '{v}'")
+
+
+def signal_change(k, v):
+    """`(field, op, value)` of one `campo=valor` of a `sinal`."""
+    if k == "sub":
+        return k, "set", v
+    if k == "falso":
+        validate_choice("falso", v, SEVERITIES)
+        return k, "falso", v
+    op, n = signal_number(k, v)
+    return k, op, n
+
+
+def signal_changes(kind, pairs):
+    """Every change of a `sinal`, validated before anything is written: the fields have to be those of the session's role."""
+    allowed = SIGNAL_FIELDS.get(kind)
+    if allowed is None:
+        raise Erro(f"a {kind or '—'} session has no signals (only {', '.join(SIGNAL_FIELDS)})")
+    known = set(PHASE_SIGNALS) | set(TESTER_SIGNALS)
+    for k in pairs:
+        if k not in known:
+            raise Erro(f"unknown field '{k}'; valid in {kind}: " + ", ".join(allowed))
+        if k not in allowed:
+            raise Erro(f"field '{k}' does not apply to {kind}; valid: " + ", ".join(allowed))
+    return [signal_change(k, v) for k, v in pairs.items()]
+
+
+def write_signal(sinais, change):
+    k, op, v = change
+    if k == "falso":
+        sinais.setdefault("falsos", []).append(v)
+    elif op == "add":
+        sinais[k] = signal_count({"sinais": sinais}, k) + v
+    else:
+        sinais[k] = v
+
+
+def cmd_sinal(a):
+    s = open_session(a.dir)
+    entry = find_session(s.get("meta")[0], a.session)
+    changes = signal_changes(entry.get("kind"), parse_pairs(a.pairs))
+    sinais = entry.setdefault("sinais", {})
+    for change in changes:
+        write_signal(sinais, change)
+    s.touch("meta")
+    s.commit()
+
+
+def escaped_record(a):
+    """The `meta.escapados` entry of an `escapado`: `bug`, `etapa` and `sev` checked."""
+    if not a.bug:
+        raise Erro("missing the bug: escapado <folder> '#<bug>' etapa='#<n>' sev=<high|medium|low>")
+    pairs = parse_pairs(a.pairs)
+    for k in pairs:
+        if k not in ("etapa", "sev"):
+            raise Erro(f"unknown field '{k}'; valid: etapa, sev")
+    for k in ("etapa", "sev"):
+        if k not in pairs:
+            raise Erro(f"falta {k}=")
+    validate_choice("sev", pairs["sev"], SEVERITIES)
+    return {"bug": norm_issue(a.bug), "etapa": norm_issue(pairs["etapa"]), "sev": pairs["sev"], "at": now()}
+
+
+def cmd_escapado(a):
+    if a.conferido and (a.bug or a.pairs):
+        raise Erro("--conferido takes no bug or fields")
+    record = None if a.conferido else escaped_record(a)
+    s = open_session(a.dir)
+    m = s.get("meta")[0]
+    if record is None:
+        m["escapadosAt"] = now()
+    else:
+        listed = m.setdefault("escapados", [])
+        for i, x in enumerate(listed):
+            if x.get("bug") == record["bug"]:
+                listed[i] = record
+                break
+        else:
+            listed.append(record)
+    s.touch("meta")
+    s.commit()
+
+
+def cmd_historico(a):
+    if a.feito is None:
+        raise Erro("historico needs --feito desde=<ISO> ate=<ISO> [linhas=<k>]")
+    pairs = parse_pairs(a.feito + a.pairs)
+    for k in pairs:
+        if k not in ("desde", "ate", "linhas"):
+            raise Erro(f"unknown field '{k}'; valid: desde, ate, linhas")
+    for k in ("desde", "ate"):
+        if k not in pairs:
+            raise Erro(f"falta {k}=")
+    lines = to_int("linhas", pairs.get("linhas", "0"))
+    if lines < 0:
+        raise Erro(f"linhas cannot be negative, got '{pairs['linhas']}'")
+    since, until = check_iso(pairs["desde"]), check_iso(pairs["ate"])
+    if since > until:
+        raise Erro(f"desde ({since}) is after ate ({until})")
+    s = open_session(a.dir)
+    s.get("meta")[0]["historico"] = {"desde": since, "ate": until, "linhas": lines}
+    s.touch("meta")
+    s.commit()
+
+
+def escaped_text(meta):
+    """`escapados:` of `show`: the count, each `#bug→#etapa sev` and how long ago they were checked (`— conferir` after
+    ESCAPE_CHECK_HOURS or never)."""
+    listed = meta.get("escapados") or []
+    head = str(len(listed))
+    if listed:
+        head += " (" + "; ".join(f"{x['bug']}→{x['etapa']} {x['sev']}" for x in listed) + ")"
+    at = meta.get("escapadosAt")
+    if not at:
+        return f"{head} · conferidos: nunca — conferir"
+    mins = minutes_since(at)
+    late = " — conferir" if mins > ESCAPE_CHECK_HOURS * 60 else ""
+    return f"{head} · conferidos há {mins // 60} h{late}"
+
+
+def history_text(meta):
+    """`histórico:` of `show`: `a recuperar` until `historico --feito`."""
+    h = meta.get("historico")
+    if not h:
+        return "a recuperar"
+    return f"recuperado ({h.get('desde')} a {h.get('ate')}; {h.get('linhas', 0)} linhas sem sessão)"
+
+
+def candidates_text(rows):
+    """`candidatos a teste:` of `show`: the keys with a candidate, or `nenhum`."""
+    return "; ".join(f"{u['papel']} {u['modelo']} {u['esforco']} → {u['candidato']} ({u['sequencia']} seguidas)"
+                     for u in rows if u.get("candidato")) or "nenhum"
 
 
 def cmd_merged(a):
@@ -1075,7 +1500,8 @@ def cmd_published(a):
     print("alterados: meta.json")
 
 
-BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "toca", "conflito", "costs", "roles", "requests", "import")
+BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "toca", "conflito", "costs", "roles", "requests", "import",
+                  "uso")
 
 
 def batch_lines(src):
@@ -1814,6 +2240,9 @@ def cmd_show(a):
         print("não publicado: nenhum")
     print(f"custo: {cost_summary(meta)}")
     print(f"testador acima do teto: {tester_over_limit_text(q, meta)}")
+    print(f"escapados: {escaped_text(meta)}")
+    print(f"histórico: {history_text(meta)}")
+    print(f"candidatos a teste: {candidates_text(compute_uso(q, meta))}")
     print(f"pedidos do supervisor: {requests_summary(meta)}")
     print_rules(meta)
     ctx = meta.get("context")
@@ -1886,6 +2315,17 @@ def build_parser():
     sp = add("cost", cmd_cost, "writes the cost of a session (usd= ctx= [model= effort= served= issue= kind=])")
     sp.add_argument("session")
     sp.add_argument("pairs", nargs="+")
+    sp = add("sinal", cmd_sinal, "records quality signals of a session: ci= cr= crFix= ciclo= dono= sub= (fase, correção) or ok= falha= alta= media= baixa= falso=<high|medium|low> sub= (testador, reteste); a number replaces, +k adds")
+    sp.add_argument("session")
+    sp.add_argument("pairs", nargs="+")
+    sp = add("escapado", cmd_escapado, "records an escaped defect: '#<bug>' etapa='#<n>' sev=<high|medium|low> (the same bug replaces); --conferido marks the check")
+    sp.add_argument("bug", nargs="?")
+    sp.add_argument("pairs", nargs="*")
+    sp.add_argument("--conferido", action="store_true", help="the escaped defects were checked now (meta.escapadosAt)")
+    sp = add("historico", cmd_historico, "marks the history as recovered: --feito desde=<ISO> ate=<ISO> [linhas=<k>] (the lines without a session)")
+    sp.add_argument("pairs", nargs="*", help="only to report a missing --feito")
+    sp.add_argument("--feito", nargs="*", default=None, metavar="campo=valor",
+                    help="the recovery is done: desde=<ISO> ate=<ISO> [linhas=<k>] (it takes the pairs itself: the positionals of an older argparse come out empty)")
     sp = add("merged", cmd_merged, "records a stage merged into main (without repeating)")
     sp.add_argument("issue")
     sp = add("context", cmd_context, "records the coordinator's context: <pct> [--fonte get_session] (by hand, source manual) or --medir --max <max_tokens> (measures with scripts/ci/contextUsage.mjs and writes the source)")
@@ -1930,6 +2370,10 @@ def build_parser():
     sp.add_argument("--desde", help="only the sessions with created from this date on (ISO UTC)")
     sp.add_argument("dir", help="folder of the JSON files")
     sp.set_defaults(fn=cmd_costs)
+    sp = sub.add_parser("uso", help="usage and quality per role x model x effort (reads queue and meta; --desde <ISO> filters by created)")
+    sp.add_argument("--desde", help="only the sessions with created from this date on (ISO UTC)")
+    sp.add_argument("dir", help="folder of the JSON files")
+    sp.set_defaults(fn=cmd_uso)
     sp = add("show", cmd_show, "readable summary; with '#n', the whole row (with the ficha)")
     sp.add_argument("issue", nargs="?")
     return p
