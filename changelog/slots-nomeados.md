@@ -44,6 +44,7 @@
 - `plan_changes` and `propose_changes` list in `issues.new` only what the marking did not already have before the batch, and `before`, `after` and `resolved` count the drawing items too.
 - The Catalog drag (`useComponentDrop`) hands the drawings to `addComponent`, like the Palette does.
 - The MCP no longer instantiates the drawings once per list row when the project has no valid drawing key, and `loadProject` no longer rereads and rehashes the component files that did not change.
+- In `swipe-to-dismiss`, a child in the right-hand strip with `direction` = `EndToStart` and `enableDismissFromEndToStart` off stays in `backgroundContent` (not drawn, with `slot-hidden`) instead of going to `content`: the slot's `left`/`right` anchors now follow only the `direction`, so the hidden slot keeps the strip it would have if visible (bug #1984, fix of #1978).
 
 ## Alterado
 
