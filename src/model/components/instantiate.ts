@@ -45,6 +45,13 @@
  *   inside hug" warning. With the parent already measured, `fill` divides what is left, which is
  *   then the `slotContent` itself. Without `slotContent` nothing changes (the slot is 0 when
  *   measuring). `measureComponent` measures only the root's plan.
+ * - `slotContent` is either that size (the only slot, as before) or a map by slot id (`slotKey`,
+ *   the empty key for a slot without `id`): the slots in the map, and those in `filledSlots`, hold
+ *   child markings. A slot with a `fallback` (the default content, decision 3 of #1080) and no child
+ *   draws it in its box, at the slot's position, as a sibling node right after the slot node (a
+ *   `none` frame that holds the `fallback`, instantiated on its own), and its `hug` is the
+ *   fallback's measure on that axis (`fill` and `hug` as the slot's box says, never "fill inside hug
+ *   becomes 0"). With children (or in `filledSlots`) the fallback is neither measured nor drawn.
  */
 import type {
   Anchors,
@@ -68,6 +75,7 @@ import type {
   PathTemplate,
   ShadowSpec,
   SizeSpec,
+  SlotTemplate,
   StrokeSide,
   StrokeSpec,
   TemplateNode,
@@ -107,6 +115,7 @@ import {
   parseSizeSpec,
 } from './layoutValues';
 import { providingSlot } from './provided';
+import { slotKey } from './slots';
 import { anchorFieldValues, type InstanceAnchor } from './anchor';
 import { ownDirection, resolveDirections } from './direction';
 import { createMessageSet, textsOf, type Params } from '../messages/collector';
@@ -212,6 +221,15 @@ export type TextMeasurer = (
   maxWidth?: number,
 ) => TextMetrics;
 
+/** The size of a slot's content: the arranged children plus the slot's padding. */
+export interface SlotSize {
+  readonly width: number;
+  readonly height: number;
+}
+
+/** One size (the component's only slot, as always) or one per slot, by `slotKey`. */
+export type SlotContent = SlotSize | ReadonlyMap<string, SlotSize>;
+
 export interface InstantiateOptions {
   readonly measure: TextMeasurer;
   /** Prefix of the node ids (e.g. the instance id). */
@@ -220,7 +238,12 @@ export interface InstantiateOptions {
    * Size of the slot content (arranged children plus the slot's padding), to measure a
    * component whose size depends on its children (`hug`). See the comment at the top of the file.
    */
-  readonly slotContent?: { readonly width: number; readonly height: number };
+  readonly slotContent?: SlotContent;
+  /**
+   * The slots (by `slotKey`) that hold child markings even without a `slotContent` entry (a fixed-size
+   * slot has nothing to measure): their `fallback` is neither measured nor drawn.
+   */
+  readonly filledSlots?: ReadonlySet<string>;
   /**
    * Tokens of the drawing mode, already resolved (`resolveTokens`); `font-sans` is the text's
    * default font. Absent = the component's (`resolvedTokens`, set by the catalog) or the built-in ones.
@@ -1243,6 +1266,9 @@ function createEngine(
         return node.viewBox[axis === 'w' ? 0 : 1];
       case 'icon':
         return iconBox(node)[axis === 'w' ? 0 : 1];
+      case 'slot':
+        // Only an empty slot with a `fallback` has something to measure (a filled one is 0, as always).
+        return slotFilled(node) ? 0 : (fallbackSize(node, axis, otherSize) ?? 0);
       default:
         return 0;
     }
@@ -1280,7 +1306,92 @@ function createEngine(
       ? Math.max(0, content - (anchors?.start ?? 0) - (anchors?.end ?? 0))
       : undefined;
 
-  /** A `slot` node with `slotContent`: the size of the arranged children (see the top of the file). */
+  /** The slot's own `slotContent` entry (the map's by `slotKey`, or the single size), if it has one. */
+  const slotContentOf = (node: SlotTemplate): SlotSize | undefined => {
+    const given = options.slotContent;
+    if (given === undefined) return undefined;
+    return 'get' in given ? given.get(slotKey(node)) : given;
+  };
+
+  /** Does the slot hold child markings (then its `fallback` is neither measured nor drawn)? */
+  const slotFilled = (node: SlotTemplate): boolean =>
+    slotContentOf(node) !== undefined || options.filledSlots?.has(slotKey(node)) === true;
+
+  /**
+   * The slot's default content as a component of its own: a `none` frame, with the slot's box, that
+   * holds the `fallback`. Instantiated apart, it brings along the tokens, the repeats, the directions
+   * and the whole layout engine, and the `fallback` gets the size rules of a child of a `none` parent
+   * (`fill` by default, `hug`, `px`, anchors).
+   */
+  const fallbackComponent = (node: SlotTemplate): ComponentFile | undefined =>
+    node.fallback === undefined
+      ? undefined
+      : {
+          ...original,
+          template: {
+            type: 'frame',
+            layout: { type: 'none' },
+            clip: false,
+            children: [node.fallback],
+          },
+        };
+
+  /** The options the default content is instantiated with: the instance's, without the slots' sizes. */
+  const fallbackOptions = (node: SlotTemplate, idPath: string): InstantiateOptions => {
+    const rest: { -readonly [K in keyof InstantiateOptions]: InstantiateOptions[K] } = {
+      ...callerOptions,
+    };
+    delete rest.slotContent;
+    delete rest.filledSlots;
+    return { ...rest, idPrefix: `${prefix}/${idPath}/fallback`, direction: dirOf(node) };
+  };
+
+  const fallbackMeasures = new Map<SlotTemplate, Map<string, number>>();
+
+  /**
+   * The default content's size on `axis` (the other axis is `otherSize`, or hug), or `undefined` when
+   * the slot has no `fallback`. A `fallback` that is not visible measures 0.
+   */
+  const fallbackSize = (
+    node: SlotTemplate,
+    axis: Axis,
+    otherSize: number | undefined,
+  ): number | undefined => {
+    const wrapper = fallbackComponent(node);
+    if (wrapper === undefined) return undefined;
+    let perSlot = fallbackMeasures.get(node);
+    if (perSlot === undefined) {
+      perSlot = new Map();
+      fallbackMeasures.set(node, perSlot);
+    }
+    const key = `${axis}:${otherSize ?? ''}`;
+    const known = perSlot.get(key);
+    if (known !== undefined) return known;
+    const other = otherSize ?? null;
+    const given = {
+      width: axis === 'w' ? null : other,
+      height: axis === 'h' ? null : other,
+    };
+    const measured = measureComponent(
+      wrapper,
+      sourceValues,
+      given,
+      fallbackOptions(node, 'm'),
+    );
+    const size = measured[axis === 'w' ? 'width' : 'height'];
+    perSlot.set(key, size);
+    return size;
+  };
+
+  /** A `slot` node's content size on an axis: its children's, or (empty) its default content's. */
+  const slotInner = (node: TemplateNode, axis: Axis): number | undefined => {
+    if (node.type !== 'slot') return undefined;
+    const given = slotContentOf(node);
+    if (given !== undefined) return given[axis === 'w' ? 'width' : 'height'];
+    return slotFilled(node) ? undefined : fallbackSize(node, axis, undefined);
+  };
+
+  /** A `slot` node with content: the size of the arranged children or of the default content (see the top of the file). */
   const slotSize = (
     node: TemplateNode,
     spec: SizeSpec,
@@ -1288,8 +1399,8 @@ function createEngine(
     content: number | null,
     anchors: ResolvedAnchors | undefined,
   ): number | undefined => {
-    if (node.type !== 'slot' || !options.slotContent) return undefined;
-    const inner = options.slotContent[axis === 'w' ? 'width' : 'height'];
+    const inner = slotInner(node, axis);
+    if (inner === undefined) return undefined;
     const takesContent =
       spec === 'hug' ||
       isIntrinsicSize(spec) ||
@@ -1455,7 +1566,7 @@ function createEngine(
       case 'frame':
         return frameIntrinsic(node, mode);
       case 'slot':
-        return Math.max(0, options.slotContent?.width ?? 0);
+        return Math.max(0, slotContentOf(node)?.width ?? slotInner(node, 'w') ?? 0);
       case 'path':
         return node.viewBox[0];
       case 'icon':
@@ -2575,9 +2686,13 @@ function createEngine(
     const stroke = strokeOf(frame.stroke, 'inside', 1);
     builtIds.set(frame, `${prefix}/${path}`);
     registerGap(frame, `${prefix}/${path}`, stroke);
-    const children = plan.placements.map((p) =>
-      buildNode(p.kid.node, `${path}.${p.kid.index}`, p.x, p.y, p.w, p.h),
-    );
+    const children = plan.placements.flatMap((p) => {
+      const kidPath = `${path}.${p.kid.index}`;
+      const built = buildNode(p.kid.node, kidPath, p.x, p.y, p.w, p.h);
+      const defaults =
+        p.kid.node.type === 'slot' ? buildFallback(p.kid.node, kidPath, p) : undefined;
+      return defaults === undefined ? [built] : [built, defaults];
+    });
     const base = {
       ...common(frame, `${prefix}/${path}`, x, y, w, h),
       ...(stroke ? { stroke } : {}),
@@ -2952,6 +3067,7 @@ function createEngine(
           name: label,
           type: 'unknown',
           sourceType: 'slot',
+          ...(node.id === undefined ? {} : { slotId: node.id }),
           ...(bool(node.clip, false) ? { clipChildren: true as const } : {}),
         };
       }
@@ -2979,6 +3095,32 @@ function createEngine(
         // `expandRepeats` already replaced every `repeat` with a frame: it never gets here.
         throw new Error('repeat not expanded');
     }
+  };
+
+  /**
+   * The default content of an empty slot, as the node that follows the slot node (the slot's box, in
+   * the same parent): the `fallback` instantiated apart (`fallbackComponent`). Its warnings and its
+   * "does not fit" come to this instance; `undefined` when the slot holds children, has no
+   * `fallback` or its `fallback` is not visible.
+   */
+  const buildFallback = (
+    node: SlotTemplate,
+    path: string,
+    p: { readonly x: number; readonly y: number; readonly w: number; readonly h: number },
+  ): SceneNode | undefined => {
+    const wrapper = slotFilled(node) ? undefined : fallbackComponent(node);
+    if (wrapper === undefined) return undefined;
+    const drawn = instantiate(
+      wrapper,
+      sourceValues,
+      { x: p.x, y: p.y, width: p.w, height: p.h },
+      fallbackOptions(node, path),
+    );
+    for (const message of drawn.messages)
+      warn(message.code as ModelMessageTemplateCode, message.params);
+    for (const [text, missing] of Object.entries(drawn.shortfalls ?? {}))
+      shortfalls.set(text, Math.max(shortfalls.get(text) ?? 0, missing));
+    return drawn.root.children.length === 0 ? undefined : drawn.root;
   };
 
   /** What the slot offers to its children: each `provide` evaluated with this instance's values. */

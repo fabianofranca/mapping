@@ -32,7 +32,12 @@ import { effectiveDirection } from './direction';
 import { effectiveDrawingMode } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
-import { multiply, type FrameNode, type Matrix } from './components/scene';
+import {
+  multiply,
+  type CornerRadius,
+  type FrameNode,
+  type Matrix,
+} from './components/scene';
 import type { AnchorSide, Marking, Project, ReadingDirection, Rect } from './types';
 
 // Component drawings (Library stage, B3): the instantiated scene of each marking that has a
@@ -85,12 +90,27 @@ export interface ComponentDrawing {
    */
   readonly clip?: Rect;
   /**
+   * Rounded shapes that also cut the child of a slot with `clip` (decision 23 of #1080): the boxes of
+   * the template frames (with `clip` and a `cornerRadius` > 0) that contain the slot, in the same
+   * space as `clip` (image pixels or canvas units), with their radius already in that space. The
+   * drawing only shows inside `clip` **and** inside every shape. Only present when some shape has a
+   * radius (without it, `clip` is the whole story); a child of the child inherits its parent's shapes
+   * and adds its own.
+   */
+  readonly clipShape?: readonly ClipShape[];
+  /**
    * The marking's anchor (v20): the stored side (absent = the component's default) and the
    * target marking's rectangle, in the same space as the `rect` (container pixels or canvas
    * units). It is what the engine reads in the `$anchor.*` pseudo-fields (R3, part 2); absent
    * without an anchor.
    */
   readonly anchor?: DrawingAnchor;
+}
+
+/** A rounded box that cuts the drawing of a slot's child (see `ComponentDrawing.clipShape`). */
+export interface ClipShape {
+  readonly box: Rect;
+  readonly radius: CornerRadius;
 }
 
 /** The side and rectangle of a drawing's anchor (see `ComponentDrawing.anchor`). */

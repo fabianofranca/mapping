@@ -924,6 +924,27 @@ class Painter {
   }
 
   /**
+   * Paints `node` cut by each of the `shapes` (polygons in raster pixels): one coverage mask per
+   * shape, nested, so the result is the intersection. The slot child with a rounded `clipShape`.
+   */
+  paintThrough(
+    node: SceneNode,
+    matrix: Matrix,
+    clip: PixelRect,
+    shapes: readonly Polygon[],
+  ): void {
+    const [mask, ...rest] = shapes;
+    if (mask === undefined) {
+      this.paint(node, matrix, 1, clip);
+      return;
+    }
+    this.masked(mask, clip, (inner, shift, area) => {
+      const moved = rest.map((poly) => poly.map((p) => apply(shift, p)));
+      inner.paintThrough(node, multiply(shift, matrix), area, moved);
+    });
+  }
+
+  /**
    * The children of a frame with a rotated `clip`: painted on a separate layer and composed by the
    * coverage of the rotated rectangle (the straight clip only serves axis-aligned frames).
    */
@@ -1303,6 +1324,15 @@ export interface SceneDrawing {
    * `root.transform`). Only what falls inside it shows up; the `screen` drawing ignores the clip.
    */
   readonly clip?: { x: number; y: number; width: number; height: number };
+  /**
+   * Rounded boxes that also cut the child (same space as `clip`; present only when some radius is
+   * above 0): the drawing shows inside `clip` and inside every shape, whose radius is capped to half
+   * the smaller side like a frame's `clip`. The `screen` drawing ignores them.
+   */
+  readonly clipShape?: readonly {
+    readonly box: { x: number; y: number; width: number; height: number };
+    readonly radius: CornerRadius;
+  }[];
 }
 
 /** The drawing's matrix on the raster: the image's, or only the anchor's translation in a screen drawing. */
@@ -1382,8 +1412,27 @@ export function paintScene(
         new Painter(raster, measure, scale * rootScale, view.fonts);
       scaled.set(rootScale, drawer);
     }
-    drawer.paint(root, base, 1, slotClip(drawing.clip, base, clip));
+    const region = slotClip(drawing.clip, base, clip);
+    const shapes = shapePolygons(drawing, base);
+    if (shapes.length === 0) drawer.paint(root, base, 1, region);
+    else drawer.paintThrough(root, base, region, shapes);
   }
+}
+
+/**
+ * The rounded shapes that cut a slot child (`clipShape`), as polygons in raster pixels. Only the
+ * shapes with a radius: without any, the rectangular clip already does the whole cut.
+ */
+function shapePolygons(drawing: SceneDrawing, base: Matrix): Polygon[] {
+  const { clipShape, screen } = drawing;
+  if (screen !== undefined || clipShape === undefined) return [];
+  return clipShape
+    .filter((s) => hasRadius(s.radius))
+    .map(({ box, radius }) =>
+      roundedRect(box.width, box.height, radius).map((p) =>
+        apply(base, { x: p.x + box.x, y: p.y + box.y }),
+      ),
+    );
 }
 
 /** The painting region of a slot child with `clip`: the reduced window's, cut by the slot's box. */
