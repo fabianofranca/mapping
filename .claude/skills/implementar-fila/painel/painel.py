@@ -1039,9 +1039,9 @@ def cmd_escapado(a):
 
 
 def cmd_historico(a):
-    if not a.feito:
+    if a.feito is None:
         raise Erro("historico needs --feito desde=<ISO> ate=<ISO> [linhas=<k>]")
-    pairs = parse_pairs(a.pairs)
+    pairs = parse_pairs(a.feito + a.pairs)
     for k in pairs:
         if k not in ("desde", "ate", "linhas"):
             raise Erro(f"unknown field '{k}'; valid: desde, ate, linhas")
@@ -2323,8 +2323,9 @@ def build_parser():
     sp.add_argument("pairs", nargs="*")
     sp.add_argument("--conferido", action="store_true", help="the escaped defects were checked now (meta.escapadosAt)")
     sp = add("historico", cmd_historico, "marks the history as recovered: --feito desde=<ISO> ate=<ISO> [linhas=<k>] (the lines without a session)")
-    sp.add_argument("pairs", nargs="*")
-    sp.add_argument("--feito", action="store_true", help="the recovery is done")
+    sp.add_argument("pairs", nargs="*", help="only to report a missing --feito")
+    sp.add_argument("--feito", nargs="*", default=None, metavar="campo=valor",
+                    help="the recovery is done: desde=<ISO> ate=<ISO> [linhas=<k>] (it takes the pairs itself: the positionals of an older argparse come out empty)")
     sp = add("merged", cmd_merged, "records a stage merged into main (without repeating)")
     sp.add_argument("issue")
     sp = add("context", cmd_context, "records the coordinator's context: <pct> [--fonte get_session] (by hand, source manual) or --medir --max <max_tokens> (measures with scripts/ci/contextUsage.mjs and writes the source)")
