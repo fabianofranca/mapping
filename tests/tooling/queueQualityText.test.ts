@@ -100,7 +100,7 @@ describe('QM2 — TESTING-NUVEM, "Report", item 5: the subagents line of the tes
 describe('QM2 — implementar-fila, "3. Per stage": the coordinator records the signals (decisions 4, 5, 8, 9 and 12a)', () => {
   it('the notice of the phase and the fix: sinal ci, cr, crFix and sub, in the same apply', () => {
     const notifies = between(perStage, '   When the phase notifies', '3. **Tester.**');
-    expect(notifies).toMatch(/sinal <folder> <id> ci=<k> cr=<N> crFix=<X> sub="…"/);
+    expect(notifies).toMatch(/sinal <id> ci=<k> cr=<N> crFix=<X> sub="…"/);
     expect(notifies).toContain('same `apply`');
     expect(notifies).toContain('`Revisão: não se aplica`');
     // an epic older than this stage has no lines: records only what came
@@ -110,7 +110,7 @@ describe('QM2 — implementar-fila, "3. Per stage": the coordinator records the 
   it('the notice of the tester and the retest: ok, falha, alta, media, baixa and sub, in the same apply', () => {
     const tester = between(perStage, '   - When a tester notifies', '4. **Fix**');
     expect(tester).toMatch(
-      /sinal <folder> <id> ok=<k> falha=<k> alta=<k> media=<k> baixa=<k> sub="…"/,
+      /sinal <id> ok=<k> falha=<k> alta=<k> media=<k> baixa=<k> sub="…"/,
     );
     expect(tester).toContain('same `apply`');
     expect(tester).toContain('only what came');
@@ -122,7 +122,7 @@ describe('QM2 — implementar-fila, "3. Per stage": the coordinator records the 
       '   **Child that waits for the owner**',
       '   **Phase that hands over by context**',
     );
-    expect(owner).toMatch(/sinal <folder> <id> dono=\+1/);
+    expect(owner).toMatch(/sinal <id> dono=\+1/);
   });
 
   it('the CI cycle action: ciclo=+1', () => {
@@ -131,7 +131,7 @@ describe('QM2 — implementar-fila, "3. Per stage": the coordinator records the 
       '    - **Action:** if it is a cycle',
       '  - `review_ready` or `idle` with the last turn ended on a `send_later`',
     );
-    expect(action).toMatch(/sinal <folder> <id> ciclo=\+1/);
+    expect(action).toMatch(/sinal <id> ciclo=\+1/);
   });
 
   it('the hourly check: the escaped defects once a day, when the show says "conferir"', () => {
@@ -144,10 +144,8 @@ describe('QM2 — implementar-fila, "3. Per stage": the coordinator records the 
     expect(escaped).toContain('`escapadosAt`');
     expect(escaped).toContain('`Origem: etapa #<n>`');
     expect(escaped).toContain('`code-review`');
-    expect(escaped).toMatch(
-      /escapado <folder> '#<bug>' etapa='#<n>' sev=<high\|medium\|low>/,
-    );
-    expect(escaped).toContain('escapado <folder> --conferido');
+    expect(escaped).toMatch(/escapado '#<bug>' etapa='#<n>' sev=<high\|medium\|low>/);
+    expect(escaped).toContain('escapado --conferido');
   });
 
   it('the fix briefing: the finding on a step that a retest gave ✅ comes back as falso=<sev>', () => {
@@ -157,7 +155,7 @@ describe('QM2 — implementar-fila, "3. Per stage": the coordinator records the 
       '   What needs an owner decision follows rule 1.',
     );
     expect(fix).toContain('`falso: <rótulo do reteste>:<sev>, …`');
-    expect(fix).toMatch(/sinal <folder> <id do reteste> falso=<sev>/);
+    expect(fix).toMatch(/sinal <id do reteste> falso=<sev>/);
     expect(fix).toContain('retest');
   });
 });
@@ -262,6 +260,46 @@ describe('QM2 — supervisionar-fila, "On-demand cost": the uso (decision 8 of t
   it('keeps the costs and the sweep lines', () => {
     expect(cost).toContain('`painel.py costs <folder>`');
     expect(cost).toContain('`varredura desde=<ISO>`');
+  });
+});
+describe('QM2 — the batch lines of the skill match `painel.py apply`', () => {
+  const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const script = readFileSync('.claude/skills/implementar-fila/painel/painel.py', 'utf8');
+
+  it('writes `sinal` and `escapado` without the folder outside the command list', () => {
+    // `apply` inserts the folder itself, so a line with `<folder>` would pass it twice
+    const outside = skill.replace(/^painel\.py (sinal|escapado) <folder>.*$/gm, '');
+    expect(outside).not.toMatch(/`(sinal|escapado) <folder>/);
+  });
+
+  it('names only signal fields that `painel.py` accepts', () => {
+    const fields = (name: string): string[] => {
+      const m = script.match(new RegExp(`^${name} = \\[(.*)\\]`, 'm'));
+      return m ? [...m[1]!.matchAll(/"(\w+)"/g)].map((f) => f[1]!) : [];
+    };
+    const documented = [
+      'ci',
+      'cr',
+      'crFix',
+      'ciclo',
+      'dono',
+      'ok',
+      'falha',
+      'alta',
+      'media',
+      'baixa',
+      'falso',
+    ];
+    const accepted = [...fields('PHASE_SIGNALS'), ...fields('TESTER_SIGNALS')];
+    for (const f of documented) expect(accepted).toContain(f);
+  });
+
+  it('runs `escapado --conferido` and does not overwrite recorded signals in the history step', () => {
+    const history = skill.slice(skill.indexOf('5. **History, once**'));
+    expect(history).toContain('`painel.py escapado <folder> --conferido`');
+    expect(history).toContain(
+      'Never overwrite or add to a session that already has `sinais`',
+    );
   });
 });
 // portuguese-guard:end
