@@ -434,11 +434,17 @@
 }
 
 /* Tighter tabs: all six fit in the minimum canvas width (`--size-canvas-min`). */
-/* A little breathing room per tab (4px between neighbors; the worst case still fits the 360px strip at 900px), so a counter does not read as part of the next tab's label. */
+/* A little breathing room per tab (4px between neighbors), so a counter does not read as part of the next tab's label. Compact windows (up to 1199px) keep the tight tabs: all six must fit the strip there. */
 .tool-window-bottom .tool-window-tabs .tab {
   padding: 0 var(--space-0-5);
   /* Six tabs: the small font leaves slack for the wider fonts of other machines. */
   font: var(--t-text-small);
+}
+
+@media (max-width: 1199px) {
+  .tool-window-bottom .tool-window-tabs .tab {
+    padding: 0;
+  }
 }
 
 .tool-window-bottom .tool-window-tabs .tab-badge,
