@@ -366,13 +366,30 @@ function sameIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
     x.key === y.key &&
     x.rowId === y.rowId &&
     x.column === y.column &&
-    x.part?.id === y.part?.id &&
-    x.part?.name === y.part?.name &&
+    samePart(x, y) &&
     sameSlotIssue(x, y)
   );
 }
 
+/** The part of `accessible-label-missing` (its id and name). */
+function samePart(x: AnnotationIssue, y: AnnotationIssue): boolean {
+  return x.part?.id === y.part?.id && x.part?.name === y.part?.name;
+}
+
 /** The slot, owner and max of `slot-not-accepted`, `slot-full` and `slot-hidden`. */
+/** The row is the same one (same objects, and a finding that says the same). */
+function sameAuditRow(a: AuditRow, b: AuditRow | undefined): boolean {
+  return (
+    b !== undefined &&
+    a.annotation === b.annotation &&
+    a.marking === b.marking &&
+    a.layer === b.layer &&
+    a.arrow === b.arrow &&
+    sameItems(a.path, b.path) &&
+    sameFinding(a.finding, b.finding)
+  );
+}
+
 function sameSlotIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
   return (
     x.slot?.id === y.slot?.id &&
@@ -796,16 +813,7 @@ export function createEditorDerived(
     if (next.length === 0) return NO_AUDIT_ROWS;
     const same =
       next.length === lastAuditRows.length &&
-      next.every(
-        (row, i) =>
-          row.annotation === lastAuditRows[i]?.annotation &&
-          row.marking === lastAuditRows[i]?.marking &&
-          row.layer === lastAuditRows[i]?.layer &&
-          row.arrow === lastAuditRows[i]?.arrow &&
-          row.path.length === lastAuditRows[i]?.path.length &&
-          row.path.every((m, j) => m === lastAuditRows[i]?.path[j]) &&
-          sameFinding(row.finding, (lastAuditRows[i] as AuditRow).finding),
-      );
+      next.every((row, i) => sameAuditRow(row, lastAuditRows[i]));
     if (same) return lastAuditRows;
     lastAuditRows = next;
     return next;
