@@ -11,6 +11,11 @@
 - The drawing of each component says its slots, which slot each child is in and which default-content fields are inactive (`slots`, `slotOf`, `inactiveFields`).
 - `docs/COMPONENT-FORMAT.md` ("Several slots and default content", "Sizing", "Engine warnings", "`clip` on the frame and the slot", "Known limits") and `docs/ARCHITECTURE.md`: the probe and the final drawing, the rounded clip and the two differences between the app and the MCP's image (the slot's own fill, which only shows in the PNG, and the truncated label of the `segmented-button`, `S…` in the app and `…` in the PNG).
 - Test library `rounded-bar` (`tests/fixtures/slots`): a bar with a radius of 16 and a slot with `clip`.
+- Specialization `formatVersion` 17: a type declares the slots of its component in `slots` (`id`, `name`, `accepts` with the same clauses as `children`, and `max` of at least 1), and `code.<platform>.slots` maps a slot id to the parameter that receives it (also in a `variants` case). In a `formatVersion` 16 or lower both keys are `only allowed with formatVersion 17`; the library validation checks them against the component (`slot does not exist in the component: <id>`, `slots: the component has no slot with an id`, `accepts` with a type, layer or group that does not exist) and against the signature sheet (`parameter outside the signature`). `diffSpecs` does not count them as a contract change.
+- `typeSlots` (`src/model/specSlots.ts`): the slots of a type with the `accepts` resolved like `allowedChildren` and the `max`; a slot the type does not declare accepts everything.
+- The signature import links each `role: slot` parameter to the slot of the same normalized name, writes the entry in `code.slots` only when the name differs from the id, takes the linked slot out of `unmapped` and stays idempotent; `plan_signature_import` returns the new `slotLinks`.
+- `docs/SPEC-FORMAT.md` ("Slots of the type (`slots`)"), `docs/spec.schema.json`, `docs/AGENT-GUIDE.md`, the `spec-author` skill and the `formatVersion` Help: the current version is 17.
+- Test script R28 "Named slots" in `docs/TESTING.md` (format part, rounded clip step and the documented differences between the app and the MCP's image), in block 4 of `docs/TESTING-NUVEM.md`.
 
 ## Corrigido
 

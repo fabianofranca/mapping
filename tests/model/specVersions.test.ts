@@ -303,6 +303,19 @@ describe('diffSpecs: additive', () => {
     expect(diffSpecs(before, next)).toEqual([]);
   });
 
+  it('slots and code.slots (version 17) stay outside the contract', () => {
+    const before = spec(1, [button(), badge]);
+    const next = spec(2, [
+      button({
+        slots: [{ id: 'actions', accepts: ['badge'], max: 2 }],
+        code: { web: { symbol: 'Button', slots: { actions: 'trailing' } } },
+      }),
+      badge,
+    ]);
+    expect(diffSpecs(before, next)).toEqual([]);
+    expect(diffSpecs(next, before)).toEqual([]);
+  });
+
   it('a type that changed layer is not a break', () => {
     const layers: SpecLayer[] = [
       { id: 'c', name: 'C', color: '#1E88E5', annotationTypes: [button()] },
