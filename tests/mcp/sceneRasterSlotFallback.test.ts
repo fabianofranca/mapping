@@ -44,10 +44,11 @@ const parsed = parseComponent({
   },
 });
 if (!parsed.ok) throw new Error(parsed.errors.join('; '));
+const host = parsed.component;
 
 function paint(filled: boolean): Raster {
   const { root } = instantiate(
-    parsed.component,
+    host,
     {},
     { x: 0, y: 0, width: 100, height: 60 },
     {
