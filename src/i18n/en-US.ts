@@ -963,6 +963,8 @@ export const enUS = {
   'issue.owner-not-allowed': 'owner type not allowed',
   'issue.missing-role': 'no {label} (choose {roles})',
   'issue.unknown-role': '{label} the owner does not offer',
+  'typed.slotFilledNote':
+    'The slot {slot} has content: this field does not draw or go into the code',
   'typed.roleLabel': 'Role',
   'issue.type-not-applicable': 'the type does not apply to this item (marking or arrow)',
   'issue.broken-ref': 'broken reference',

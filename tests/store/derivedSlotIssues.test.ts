@@ -167,3 +167,30 @@ describe('derived.issues: slot-not-accepted and slot-full', () => {
     expect(issueMessage(p, annotation('A_R'), refused)).toContain('Rounded bar');
   });
 });
+
+describe('derived.inactiveFields: the default-content fields of a slot that has content', () => {
+  it('maps each field of a filled slot, by annotation, to the slot name', () => {
+    const { derived } = setup();
+    // `R` is in `navigationIcon` and the pins in `actions`: both slots have content.
+    const bar = [...derived.inactiveFields.value].find(([, fields]) =>
+      fields.has('navLabel'),
+    );
+    expect(bar).toBeTruthy();
+    expect(bar?.[1].get('navLabel')).toBe('Navigation icon');
+    expect(bar?.[1].get('actionLabel')).toBe('Actions');
+    expect(bar?.[1].has('title')).toBe(false);
+  });
+
+  it('only the filled slot’s fields; empty again when the child leaves, with the same map otherwise', () => {
+    const { derived, actions } = setup();
+    actions.removeMarking('R');
+    const fields = [...derived.inactiveFields.value.values()][0]!;
+    expect(fields.has('navLabel')).toBe(false);
+    expect(fields.get('actionLabel')).toBe('Actions');
+    const before = derived.inactiveFields.value;
+    actions.renameProject('Another name');
+    expect(derived.inactiveFields.value).toBe(before);
+    for (const id of ['P1', 'P2', 'P3', 'P4']) actions.removeMarking(id);
+    expect(derived.inactiveFields.value.size).toBe(0);
+  });
+});

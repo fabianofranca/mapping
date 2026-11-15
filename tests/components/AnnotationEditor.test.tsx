@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, within } from '@testing-library/preact';
+import { act, cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { addTypedAnnotation, createMarking, type Project } from '../../src/model';
@@ -401,8 +401,9 @@ describe('AnnotationEditor — "Linked to"', () => {
         .filter((a) => a.id !== 'AY')
         .map((a) => (a.id === 'AX' ? { ...a, parentAnnotationId: null } : a)),
     };
-    const annotation = annotationOf(p, 'AX');
-    const { container } = render(<IssueBadge project={p} annotation={annotation} />);
+    const { container } = renderLive(createHarness(p), (live) => (
+      <IssueBadge project={live} annotation={annotationOf(live, 'AX')} />
+    ));
     const badge = screen.getByRole('img');
     expect(badge.getAttribute('aria-label')).toMatch(
       new RegExp(`^${t('issue.badge')}: `),

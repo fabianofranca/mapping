@@ -79,6 +79,9 @@ const ALLOWLIST = [
   'src/ui/review/ReviewCanvasControls.tsx',
   // `useReviewNames`: needs the current one and the preview (before/after names).
   'src/ui/review/useReview.ts',
+  // `useAddComponent`: the slot of the new child comes from the drawings of the project that gets written; the shown
+  // project of a perspective or of the Proposed view is clipped, so it would leave out the children of the slots.
+  'src/ui/useAddComponent.ts',
 ];
 
 describe('shown project: who reads store.committed/store.project in src/ui and src/app', () => {

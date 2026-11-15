@@ -2,7 +2,7 @@
 
 ## Pendências
 
-None. Nothing changes in the app's design system until phase SL6 (the note on the default-content fields, if it is not a pattern the design system already has).
+- `PropertyGrid` (`src/ui/PropertyGrid.tsx`, used by `TypedFields.tsx`): the `status` line (`.props-status`) now also carries the note of a default-content field of a slot that has a child ("The slot <name> has content: this field does not draw or go into the code"), with the `hint` still being the field's description. An existing pattern: no new component, token or icon; the `PropertyGrid` guide and preview need one more state of the `status`.
 
 ## Sincronização
 

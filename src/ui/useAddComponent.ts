@@ -1,8 +1,9 @@
 import { useComputed } from '@preact/signals';
 import { useState } from 'preact/hooks';
 import { t } from '../i18n';
-import { useEditor } from './EditorContext';
-import { addLabel, componentTarget } from './componentTarget';
+import type { ComponentDrawings } from '../model';
+import { useEditor, type EditorContextValue } from './EditorContext';
+import { addLabel, componentTarget, type ComponentTarget } from './componentTarget';
 import { libraryErrorMessage } from './labels';
 
 // "Add" of a library component, common to the palette and the Catalog: the target is
@@ -32,6 +33,31 @@ interface AddableType {
 
 const declaresAnchor = (type: AddableType): boolean =>
   type.component?.anchor !== undefined;
+
+/** The optional placement of the target: where it is born (`center`, `near` or `anchorTo`). */
+function placementOf(
+  target: ComponentTarget,
+): Pick<ComponentTarget, 'center' | 'near' | 'anchorTo'> {
+  return {
+    ...(target.center ? { center: target.center } : {}),
+    ...(target.near ? { near: target.near } : {}),
+    ...(target.anchorTo === undefined ? {} : { anchorTo: target.anchorTo }),
+  };
+}
+
+/**
+ * The app's drawings, from which the slot of each child comes (decisions 5 and 7 of #1080), when the
+ * project in view is the one that gets written (not the review's Proposed view); otherwise none, and the
+ * placement instantiates the probe (the same result).
+ */
+function writtenDrawings(editor: EditorContextValue): {
+  readonly drawings?: ComponentDrawings;
+} {
+  const written = editor.store.project.peek();
+  return written && written === editor.review.derived.shownProject.peek()
+    ? { drawings: editor.derived.drawingsOf(written) }
+    : {};
+}
 
 export function useAddComponent(): AddComponent {
   const editor = useEditor();
@@ -65,9 +91,8 @@ export function useAddComponent(): AddComponent {
       parentId: target.parentId,
       specId,
       typeId,
-      ...(target.center ? { center: target.center } : {}),
-      ...(target.near ? { near: target.near } : {}),
-      ...(target.anchorTo === undefined ? {} : { anchorTo: target.anchorTo }),
+      ...placementOf(target),
+      ...writtenDrawings(editor),
     });
     if (!result.ok) {
       setError(libraryErrorMessage(result.error));

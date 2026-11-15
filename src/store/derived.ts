@@ -3,6 +3,8 @@ import { t } from '../i18n';
 import {
   EMPTY_CATALOG,
   NO_DRAWINGS,
+  markingComponent,
+  typeSlots,
   acceptedPending,
   buildIncompleteList,
   buildListing,
@@ -158,6 +160,13 @@ export interface EditorDerived {
    */
   readonly componentScenes: ReadonlySignal<ComponentDrawings>;
   /**
+   * The default-content fields that mean nothing now (#1080, decision 14): per annotation that
+   * draws a component, each field of a slot that holds children, with the slot's name. Read from the
+   * drawing cache (`ComponentDrawing.inactiveFields` and `slots`), never recomputed by the panel;
+   * the same map while nothing changed.
+   */
+  readonly inactiveFields: ReadonlySignal<InactiveFields>;
+  /**
    * Drawings of `p` (the canvas draws the project with the gesture preview). The project in view
    * returns `componentScenes`; another project uses the same cache, and only the marking that changed
    * is re-instantiated. It reads the same signals: it can be called inside a `computed`.
@@ -231,6 +240,20 @@ export interface ComponentSources {
 }
 
 const NO_ISSUES: ReadonlyMap<string, readonly AnnotationIssue[]> = new Map();
+
+/** The inactive default-content fields of each annotation that draws a component: field → slot name. */
+export type InactiveFields = ReadonlyMap<string, ReadonlyMap<string, string>>;
+const NO_INACTIVE: InactiveFields = new Map();
+
+function sameInactiveFields(a: InactiveFields, b: InactiveFields): boolean {
+  if (a.size !== b.size) return false;
+  for (const [id, fields] of a) {
+    const other = b.get(id);
+    if (other === undefined || fields.size !== other.size) return false;
+    for (const [field, slot] of fields) if (other.get(field) !== slot) return false;
+  }
+  return true;
+}
 const NO_ANNOTATIONS: ReadonlyMap<string, readonly Annotation[]> = new Map();
 const NO_DOTS: ReadonlyMap<string, readonly LayerDot[]> = new Map();
 const NO_VISIBILITY: ReadonlyMap<string, MarkingVisibility> = new Map();
@@ -458,6 +481,35 @@ export function createEditorDerived(
     if (sameIssues(merged, lastIssues)) return lastIssues;
     lastIssues = merged;
     return merged;
+  });
+
+  let lastInactive: InactiveFields = NO_INACTIVE;
+  const inactiveFields = computed((): InactiveFields => {
+    const next = new Map<string, ReadonlyMap<string, string>>();
+    const p = project.value;
+    for (const drawing of scenes.value.values()) {
+      if (p === null || drawing.inactiveFields.size === 0) continue;
+      // The slot's name as the type calls it (the one `slot-full` and `slot-not-accepted` show), else the scene's label.
+      const mc = markingComponent(p, components.catalog.value, drawing.markingId);
+      const names = new Map([
+        ...drawing.slots.map((slot) => [slot.id, slot.name] as const),
+        ...(mc ? typeSlots(p, mc.specId, mc.typeId, mc.component) : []).map(
+          (slot) => [slot.id, slot.name] as const,
+        ),
+      ]);
+      next.set(
+        drawing.annotationId,
+        new Map(
+          [...drawing.inactiveFields].map(([field, slotId]) => [
+            field,
+            names.get(slotId) ?? slotId,
+          ]),
+        ),
+      );
+    }
+    if (sameInactiveFields(next, lastInactive)) return lastInactive;
+    lastInactive = next.size === 0 ? NO_INACTIVE : next;
+    return lastInactive;
   });
 
   const annotationsByMarking = computed(() => {
@@ -784,6 +836,7 @@ export function createEditorDerived(
     densitySuggestions,
     catalog: components.catalog,
     componentScenes: scenes,
+    inactiveFields,
     floatingMarkings,
     drawingsOf,
     drawnMarkings,

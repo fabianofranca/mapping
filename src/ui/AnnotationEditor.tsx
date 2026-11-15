@@ -36,9 +36,9 @@ import {
   annotationDisplayName,
   annotationSummary,
   issueReason,
-  issuesOf,
   labelTexts,
 } from './typedText';
+import { useIssuesOf } from './useIssues';
 
 interface AnnotationEditorProps {
   readonly project: Project;
@@ -162,7 +162,7 @@ export function AnnotationEditor({
   const storedOwnerInvalid =
     annotation.parentAnnotationId !== null &&
     !owners.some((a) => a.id === annotation.parentAnnotationId);
-  const ownerIssue = issuesOf(project, annotation.id).find(
+  const ownerIssue = useIssuesOf(annotation.id).find(
     (i) => i.code === 'missing-owner' || i.code === 'owner-not-allowed',
   );
   // The whole chosen value: the narrow column cuts the text, and the candidates start the same.
