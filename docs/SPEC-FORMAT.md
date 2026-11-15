@@ -875,6 +875,8 @@ The names are the WAI-ARIA ones, a neutral vocabulary. Each platform has its own
 
 `label: { fields: [<key>, …], required? }`. The **first field with a value** gives the accessible name (the text a screen reader speaks). Each key is a `string` or `enum` field of the type. `required` defaults to `true` for an interactive `role` and to `false` otherwise.
 
+A `label` on a type **without** `role`, or with `none`, is valid but has no effect (the audit does not read the type itself, and `get_component` does not report it): `validate_specialization` and `validate_library` return the warning `label-without-role` at `…accessibility.label`.
+
 An interactive `role` **without** `label` is valid: there is no label audit, only the touch target audit. The name then comes from code (a `slider` whose name is the label next to it, a button whose text is its content). After an import from the platform, the author links `label` to the field that the import filled from the platform's accessibility parameter (`contentDescription` in Compose, `accessibilityLabel` in SwiftUI, `aria-label` in HTML, `semanticLabel` or `Semantics.label` in Flutter): those names appear only here and in the skill, never in the core.
 
 ### `parts`

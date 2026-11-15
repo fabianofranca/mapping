@@ -1,4 +1,4 @@
-import { densityText, type AuditFinding } from '../src/model';
+import { actualUnitsOf, densityText, type AuditFinding } from '../src/model';
 import type { Refs } from './items';
 
 // The accessibility audit's warnings as the MCP shows them (stage #1128, decision 9 of #1081): `audit` in the
@@ -8,12 +8,6 @@ type Json = Record<string, unknown>;
 
 /** One decimal, no trailing zero (`36`, `36.5`): a size in component units. */
 const unitsOf = (n: number): number => Number(n.toFixed(1));
-
-/**
- * An actual size, rounded down to one decimal: a finding is raised below the minimum (with a 1 px tolerance),
- * so the rounded size never reads as meeting it (`43.96` is `43.9`, not `44`).
- */
-const actualUnitsOf = (n: number): number => Math.floor(n * 10 + 1e-6) / 10;
 
 /** A size `{ width, height }` with each side rounded by `round`. */
 const sizeOf = (

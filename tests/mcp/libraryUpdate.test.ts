@@ -287,6 +287,18 @@ function makeRemoval(dir: string): void {
   writeFileSync(file, JSON.stringify(component, null, 2));
 }
 
+/** v2: the chip becomes a button with a required label (`formatVersion` 18); the chip of the project has none. */
+function makeRequiredLabel(dir: string): void {
+  editSpec(dir, (spec) => {
+    spec.version = 2;
+    (spec as { formatVersion: number }).formatVersion = 18;
+    typeOf(spec, 'm3-chip').accessibility = {
+      role: 'button',
+      label: { fields: ['label'] },
+    };
+  });
+}
+
 beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-libupd-'));
   root = join(base, 'root');
@@ -296,6 +308,7 @@ beforeAll(async () => {
   makeRename(copyPackage('v2-rename'), true);
   makeRename(copyPackage('v2-no-migration'), false);
   makeRemoval(copyPackage('v2-remove'));
+  makeRequiredLabel(copyPackage('v2-label'));
   makeLayerRename(copyPackage('v2-layer'));
   // A single-file specialization (formatVersion 3), for the path without a package.
   mkdirSync(join(root, 'legacy'), { recursive: true });
@@ -357,6 +370,15 @@ describe('plan_library_update', () => {
     );
     expect(result.hint).toMatch(/additive/);
     expect(result.hint).toMatch(/update_specialization/);
+  });
+
+  it('a type that gains a required label: the annotation with no label is a new pending item', async () => {
+    const result = await plan('v2-label/material3');
+    expect(result.validation.errors).toEqual([]);
+    expect(result.pendingTotal).toBe(1);
+    expect(result.pending).toEqual([
+      expect.objectContaining({ code: 'accessible-label-missing', field: 'label' }),
+    ]);
   });
 
   it("a layer that disappears: is not additive and the hint asks for the person's confirmation", async () => {

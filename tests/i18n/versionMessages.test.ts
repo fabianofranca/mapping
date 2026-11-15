@@ -86,7 +86,17 @@ function warningSpecs(): { spec: Spec; ignored: Ignored }[] {
       return s;
     })(),
   );
-  return [legacy, platforms, ignored, v11, grouped];
+  const labelled = parsed(
+    spec({ formatVersion: 18 }, [
+      {
+        id: 't',
+        name: 'T',
+        fields: [{ key: 'k', type: 'string' }],
+        accessibility: { label: { fields: ['k'] } },
+      },
+    ]),
+  );
+  return [legacy, platforms, ignored, v11, grouped, labelled];
 }
 
 const PORTUGUESE = /[ãõçáéíóúâêô]/i;
@@ -202,6 +212,7 @@ describe('specialization version messages (MB3)', () => {
       'versions.manyChildrenIds',
       'versions.unusedGroup',
       'versions.unusedDocRepo',
+      'versions.labelWithoutRole',
     ]) {
       expect(codes, code).toContain(code);
     }

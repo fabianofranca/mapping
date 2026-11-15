@@ -13,6 +13,8 @@ export const versionMessages = {
     'the group "{group}" of the layer "{layer}" is declared, but no type is in it',
   'versions.unusedDocRepo':
     'the repository "{repo}" in docRepos is declared, but no `doc` uses it',
+  'versions.labelWithoutRole':
+    'the type "{typeId}" declares `label` without a role: it has no effect until the type has a role other than `none`',
   'versions.legacyFormat': '"{legacy}" is the old name of the format; use "mapping-spec"',
   'versions.typeWithoutCode':
     'the type "{typeId}" has no `code`: no platform says how to create an instance of it',

@@ -1,6 +1,7 @@
 import {
   accessibilityAudit,
   type AccessibilityAudit,
+  type AuditFinding,
   createDrawingCache,
   effectiveDensity,
   effectiveDirection,
@@ -218,10 +219,11 @@ function drawingsOf(
 export function drawingProof(
   refs: Refs,
   before: Project,
+  drawingsAfter: ComponentDrawings = drawingsOf(refs, refs.project),
 ): Map<string, readonly DrawingItem[]> {
   const touched = touchedMarkings(before, refs.project);
   if (touched.size === 0) return new Map();
-  return drawingItemsOf(refs, refs.project, touched, drawingsOf(refs, refs.project));
+  return drawingItemsOf(refs, refs.project, touched, drawingsAfter);
 }
 
 /**
@@ -268,6 +270,9 @@ const auditKey = (i: AnnotationIssue): string =>
 export interface BatchAudits {
   readonly before: AccessibilityAudit;
   readonly after: AccessibilityAudit;
+  /** The drawings the audits measured, shared with the drawing items: the batch draws each project once. */
+  readonly drawingsBefore: ComponentDrawings;
+  readonly drawingsAfter: ComponentDrawings;
 }
 
 /** The audit of `before` and of the saved project, with the drawings that measure each (one audit per project). */
@@ -278,6 +283,8 @@ export function batchAudits(refs: Refs, before: Project): BatchAudits {
   return {
     after: accessibilityAudit(refs.project, { drawings: drawingsAfter }),
     before: accessibilityAudit(before, { drawings: drawingsBefore }),
+    drawingsBefore,
+    drawingsAfter,
   };
 }
 
@@ -293,10 +300,24 @@ function auditIssuesOf(
 }
 
 /**
+ * A touch finding is news when the annotation had none before, or when the batch made it worse: a smaller
+ * `actual` (a side) or a larger `min`. An unchanged or better one is not repeated.
+ */
+export function worsened(before: AuditFinding | undefined, after: AuditFinding): boolean {
+  if (before === undefined) return true;
+  return (
+    after.actual.width < before.actual.width ||
+    after.actual.height < before.actual.height ||
+    after.min.width > before.min.width ||
+    after.min.height > before.min.height
+  );
+}
+
+/**
  * The `touch-target-small` warnings of the markings the batch created or changed (stage #1128, decision 9 of
  * #1081): the audit's findings with the annotation, the marking and a message. They go in the plan's `warnings`,
  * never in `issues`: a small touch area does not leave the annotation incomplete. A warning the annotation already
- * had before the batch is not new, so it does not show again.
+ * had before the batch and that the batch did not worsen is not new, so it does not show again.
  */
 export function touchWarnings(
   refs: Refs,
@@ -305,14 +326,18 @@ export function touchWarnings(
 ): Record<string, unknown>[] {
   const changed = changedMarkings(before, refs.project);
   if (changed.size === 0) return [];
-  const had = new Set(
-    [...audits.before.values()].flatMap((entry) =>
-      entry.findings.map((finding) => finding.annotationId),
-    ),
+  const had = new Map(
+    [...audits.before.values()]
+      .flatMap((entry) => entry.findings)
+      .map((finding) => [finding.annotationId, finding] as const),
   );
   return [...audits.after.values()]
     .flatMap((entry) => entry.findings)
-    .filter((finding) => changed.has(finding.markingId) && !had.has(finding.annotationId))
+    .filter(
+      (finding) =>
+        changed.has(finding.markingId) &&
+        worsened(had.get(finding.annotationId), finding),
+    )
     .map((finding) => auditWarning(refs, finding));
 }
 
@@ -328,11 +353,9 @@ export function withDrawingIssues(
   before: Project,
   audits: BatchAudits,
 ): Record<string, unknown> {
-  // The saved project is drawn first: drawing `before` ahead of it leaves its cache stale for a changed direction.
-  const drawingsAfter = drawingsOf(refs, refs.project);
-  const drawingsBefore = drawingsOf(refs, before);
+  const { drawingsAfter, drawingsBefore } = audits;
   const hasAfter = drawingItemsOf(refs, refs.project, null, drawingsAfter);
-  const proof = drawingProof(refs, before);
+  const proof = drawingProof(refs, before, drawingsAfter);
   const hadBefore = drawingItemsOf(refs, before, null, drawingsBefore);
   const auditAfter = auditIssuesOf(audits.after);
   const auditBefore = auditIssuesOf(audits.before);

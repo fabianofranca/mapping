@@ -97,7 +97,8 @@ interface ResolvedType {
 
 type ResolvedSpec = ReadonlyMap<string, ResolvedType>;
 
-const isAudited = (role: string | undefined): boolean =>
+/** A role the audit reads: one is declared and it is not `none`. A `label` on any other type has no effect. */
+export const isAudited = (role: string | undefined): boolean =>
   role !== undefined && role !== 'none';
 
 function resolveLabel(
@@ -335,6 +336,13 @@ function computeAudit(p: Project, ctx: AuditContext): AccessibilityAudit {
   return out;
 }
 
+/**
+ * An actual size in component units, rounded down to one decimal: a finding is raised below the minimum (with a
+ * 1 px tolerance), so the rounded size never reads as meeting it (`43.96` is `43.9`, not `44`). The app and the MCP
+ * show it the same way.
+ */
+export const actualUnitsOf = (n: number): number => Math.floor(n * 10 + 1e-6) / 10;
+
 const NO_DRAWINGS_KEY: object = {};
 const audits = new WeakMap<Project, WeakMap<object, AccessibilityAudit>>();
 
@@ -529,7 +537,7 @@ export function typeAccessibility(
   }));
   const resolved: TypeAccessibility = {
     ...(a.role === undefined ? {} : { role: a.role }),
-    ...declaredLabel(a.label, a.role ?? ''),
+    ...(isAudited(a.role) ? declaredLabel(a.label, a.role ?? '') : {}),
     ...(isInteractive(a.role)
       ? declaredTouch(type, spec.accessibility?.touchTarget)
       : {}),
