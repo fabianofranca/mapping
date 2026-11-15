@@ -612,6 +612,33 @@ export const COMPOSE_SIZES: Record<string, { width: number; height: number }> = 
 /** Table columns that the stage added to a type (ME4 gave `selected` to the items of the `dropdown-menu`). */
 const ADDED_COLUMNS: Record<string, Record<string, string[]>> = {
   'dropdown-menu': { items: ['selected'] },
+  // A4 (#1129): the description of the icon of each row (accessibility)
+  'navigation-bar': { items: ['iconDescription'] },
+  'short-navigation-bar': { items: ['iconDescription'] },
+  'navigation-rail': { items: ['iconDescription'] },
+  'navigation-drawer': { items: ['iconDescription'] },
+  tabs: { items: ['iconDescription'] },
+  'segmented-button': { options: ['iconDescription'] },
+};
+
+/** The `<field>Description` fields that A4 (#1129) added next to the icon fields (accessibility); v1 did not have them. */
+const A4_FIELDS: Record<string, string[]> = {
+  'top-app-bar': ['navigationIcon', 'actionIcon1', 'actionIcon2'],
+  'bottom-app-bar': [
+    ...['actionIcon1', 'actionIcon2', 'actionIcon3', 'actionIcon4'],
+    'floatingActionButton',
+  ],
+  'text-field': ['leadingIcon', 'trailingIcon'],
+  'secure-text-field': ['leadingIcon', 'trailingIcon'],
+  'search-bar': ['leadingIcon', 'trailingIcon'],
+  chip: ['leadingIcon', 'trailingIcon'],
+  switch: ['thumbIcon'],
+  'swipe-to-dismiss': ['icon'],
+};
+const a4Keys = (id: string): string[] => (A4_FIELDS[id] ?? []).map((k) => `${k}Description`);
+/** The examples that A4 added (labeled and unlabeled actions of the top app bar, for the accessibility script). */
+const A4_EXAMPLES: Record<string, string[]> = {
+  'top-app-bar': ['Labeled actions', 'Actions without a label'],
 };
 /** The notices that the import by signature (#1079, S5) put on the fields (`diverges`): v1 did not have them. */
 function withoutImportNotices(field: Raw): Raw {
@@ -633,6 +660,17 @@ function withoutAddedColumns(id: string, field: Raw): Raw {
  * The example without the rows of the `table` fields (EX5 of #897 put those of the `preview` in every example
  * of a type with a table; v1 did not have it, because the example did not accept rows).
  */
+function withoutA4Values(id: string, example: Raw): Raw {
+  // The `fab` already had `contentDescription`; A4 only filled it in its examples (no label pending).
+  const drop = [...a4Keys(id), ...(id === 'fab' ? ['contentDescription'] : [])];
+  if (example.values === undefined || drop.length === 0) return example;
+  return {
+    ...example,
+    values: Object.fromEntries(
+      Object.entries(example.values).filter(([k]) => !drop.includes(k)),
+    ),
+  };
+}
 function withoutTableValues(fields: readonly Raw[], example: Raw): Raw {
   if (example.values === undefined) return example;
   const tables = new Set(fields.filter((f) => f.type === 'table').map((f) => f.key));
@@ -682,7 +720,8 @@ export function v1WithEstados(
         f.key !== 'interaction' &&
         !EX4_FIELDS[id]?.includes(f.key as string) &&
         !MF5_FIELDS[id]?.includes(f.key as string) &&
-        !IMPORTED_FIELDS[id]?.includes(f.key as string),
+        !IMPORTED_FIELDS[id]?.includes(f.key as string) &&
+        !a4Keys(id).includes(f.key as string),
     )
     .map((f) => withoutImportNotices(withoutAddedColumns(id, f)));
   const actualExamples = (now.examples ?? [])
@@ -691,15 +730,16 @@ export function v1WithEstados(
         !isState(e) &&
         e.name !== LIMIT_EXAMPLES[id] &&
         !EX4_EXAMPLES[id]?.includes(e.name as string) &&
-        !MF5_EXAMPLES[id]?.includes(e.name as string),
+        !MF5_EXAMPLES[id]?.includes(e.name as string) &&
+        !A4_EXAMPLES[id]?.includes(e.name as string),
     )
-    .map((e) => withoutTableValues(now.fields, e));
+    .map((e) => withoutA4Values(id, withoutTableValues(now.fields, e)));
   const expectedExamples =
     id === 'slider'
       ? (before.examples ?? []).map((e) => ({ ...e, values: toNumbers(e.values) }))
-      : (before.examples ?? []).filter(
-          (e) => !L2_REMOVED_EXAMPLES[id]?.includes(e.name as string),
-        );
+      : (before.examples ?? [])
+          .filter((e) => !L2_REMOVED_EXAMPLES[id]?.includes(e.name as string))
+          .map((e) => withoutA4Values(id, e));
   return {
     actual: maskType(actualFields, actualExamples),
     expected: maskType(expectedFields, expectedExamples),

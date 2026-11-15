@@ -245,6 +245,8 @@ export const templatePtBR: {
   'model.spec.accessibilityPartColumnMissing':
     'when: a tabela {table} não tem a coluna {column}',
   'model.spec.accessibilityPartNoTouch': 'uma parte não tem área de toque',
+  'model.spec.accessibilityLabelFieldsEmpty':
+    'não pode ser vazio; liste ao menos um campo',
   'model.spec.structuralNoComponent':
     'um tipo estrutural não desenha: não pode ter component',
   'model.spec.labelFieldNotString': '"{key}" deve ser um campo string do tipo',

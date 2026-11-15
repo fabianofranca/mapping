@@ -122,6 +122,7 @@ export const specMessages = {
     'when: "{when}" is neither a field nor a table of the type',
   'spec.accessibilityPartColumnMissing': 'when: the table {table} has no column {column}',
   'spec.accessibilityPartNoTouch': 'a part has no touch target',
+  'spec.accessibilityLabelFieldsEmpty': 'cannot be empty; list at least one field',
   // Types
   'spec.structuralNoComponent':
     'a structural type does not draw: it cannot have a component',

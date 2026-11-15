@@ -117,6 +117,7 @@ function accessibilityCases(): readonly (readonly [string, (s: Raw) => void])[] 
     ],
     ['spec.accessibilityPartWhenInvalid', (s) => a(s, part({ when: 'zz' }))],
     ['spec.accessibilityPartColumnMissing', (s) => a(s, part({ when: 'tb.zz' }))],
+    ['spec.accessibilityLabelFieldsEmpty', (s) => a(s, part({ label: { fields: [] } }))],
     [
       'spec.accessibilityPartNoTouch',
       (s) => a(s, part({ touchTarget: { width: 1, height: 1 } })),
