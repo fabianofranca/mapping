@@ -1,4 +1,4 @@
-# Named slots with default content — [Não lançado] (épico `epic/slots-nomeados`)
+# Named slots with default content — 2026-11-15 (épico `epic/slots-nomeados`)
 
 ## Pendências
 
@@ -10,4 +10,4 @@ Nothing to write to the **Mapping** artifact so far: the epic does not change a 
 
 ## Ficou sem gravar
 
-None.
+- `PropertyGrid` guide and preview: one more state of the `status` line. Motivo: the closing session does not write to the **Mapping** artifact; it stays for the next design-system pass.
