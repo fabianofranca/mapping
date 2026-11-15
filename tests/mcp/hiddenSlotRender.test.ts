@@ -62,7 +62,8 @@ function scene(values: Record<string, string>, child: 'direct' | 'plain'): Proje
   });
   p = addContainer(p, { id: 'I1', file: null, width: 360, height: 200 } as never);
   p = put(p, 'SW', 'swipe-to-dismiss', r(0, 0, 360, 72), { values });
-  if (child === 'direct') return put(p, 'IC', 'icon', r(0, 0, 56, 72), { parentId: 'SW' });
+  if (child === 'direct')
+    return put(p, 'IC', 'icon', r(0, 0, 56, 72), { parentId: 'SW' });
   p = createMarking(p, {
     id: 'PL',
     containerId: 'I1',
@@ -75,12 +76,11 @@ function scene(values: Record<string, string>, child: 'direct' | 'plain'): Proje
 function painted(p: Project): { count: number; ink: number } {
   const raster = createRaster(360, 200);
   raster.data.fill(255);
-  const count = paintContainerDrawings(
-    raster,
-    { project: p, catalog },
-    'I1',
-    { scaleX: 1, scaleY: 1, clip: { x: 0, y: 0, width: 360, height: 200 } },
-  );
+  const count = paintContainerDrawings(raster, { project: p, catalog }, 'I1', {
+    scaleX: 1,
+    scaleY: 1,
+    clip: { x: 0, y: 0, width: 360, height: 200 },
+  });
   let ink = 0;
   for (let i = 0; i < raster.data.length; i += 4)
     if (raster.data[i]! < 255 || raster.data[i + 1]! < 255) ink += 1;
@@ -92,7 +92,14 @@ describe.each(['direct', 'plain'] as const)(
   (child) => {
     it('the model marks the drawing hidden when the direction is off, and not when it is on', () => {
       const hidden = (v: Record<string, string>) =>
-        [...createDrawingCache()(scene(v, child), catalog, approximateMeasurer, 0).values()]
+        [
+          ...createDrawingCache()(
+            scene(v, child),
+            catalog,
+            approximateMeasurer,
+            0,
+          ).values(),
+        ]
           .filter((d) => d.hidden === true)
           .map((d) => d.markingId)
           .sort();
