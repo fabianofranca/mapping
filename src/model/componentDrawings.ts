@@ -485,33 +485,38 @@ function slotExcess(
   childRects: readonly Rect[],
   hug: HugAxes = NO_HUG,
 ): number {
-  let worst = 0;
-  for (const r of childRects) {
-    const excess = Math.max(
-      hug.x ? Number.NEGATIVE_INFINITY : box.x - SLOT_TOLERANCE - r.x,
-      hug.y ? Number.NEGATIVE_INFINITY : box.y - SLOT_TOLERANCE - r.y,
-      hug.x
-        ? Number.NEGATIVE_INFINITY
-        : r.x + r.width - (box.x + box.width + SLOT_TOLERANCE),
-      hug.y
-        ? Number.NEGATIVE_INFINITY
-        : r.y + r.height - (box.y + box.height + SLOT_TOLERANCE),
-    );
-    worst = Math.max(worst, excess);
-  }
-  if (hug.x && childRects.length > 0) {
-    const extent =
-      Math.max(...childRects.map((r) => r.x + r.width)) -
-      Math.min(...childRects.map((r) => r.x));
-    worst = Math.max(worst, extent - box.width - SLOT_TOLERANCE);
-  }
-  if (hug.y && childRects.length > 0) {
-    const extent =
-      Math.max(...childRects.map((r) => r.y + r.height)) -
-      Math.min(...childRects.map((r) => r.y));
-    worst = Math.max(worst, extent - box.height - SLOT_TOLERANCE);
-  }
+  const worst = Math.max(
+    0,
+    axisExcess(childRects, box.x, box.width, hug.x, 'x', 'width'),
+    axisExcess(childRects, box.y, box.height, hug.y, 'y', 'height'),
+  );
   return worst > 0 ? worst + SLOT_TOLERANCE : 0;
+}
+
+/** The excess on one axis: positions against the box, or, on a `hug` axis, the children's extent against its size. */
+function axisExcess(
+  rects: readonly Rect[],
+  start: number,
+  size: number,
+  hug: boolean,
+  at: 'x' | 'y',
+  length: 'width' | 'height',
+): number {
+  if (rects.length === 0) return 0;
+  if (hug) {
+    const extent =
+      Math.max(...rects.map((r) => r[at] + r[length])) -
+      Math.min(...rects.map((r) => r[at]));
+    return extent - size - SLOT_TOLERANCE;
+  }
+  return Math.max(
+    ...rects.map((r) =>
+      Math.max(
+        start - SLOT_TOLERANCE - r[at],
+        r[at] + r[length] - (start + size + SLOT_TOLERANCE),
+      ),
+    ),
+  );
 }
 
 /**
