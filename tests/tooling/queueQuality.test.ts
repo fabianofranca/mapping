@@ -478,7 +478,10 @@ describe('painel.py historico (decision 10)', () => {
     ],
     ['ate outside ISO UTC', ['--feito', 'desde=2026-11-11T06:08:32Z', 'ate=tomorrow']],
     ['a missing ate', ['--feito', 'desde=2026-11-11T06:08:32Z']],
-    ['an inverted range (desde after ate)', ['--feito', 'desde=2026-11-14T00:30:00Z', 'ate=2026-11-11T06:08:32Z']],
+    [
+      'an inverted range (desde after ate)',
+      ['--feito', 'desde=2026-11-14T00:30:00Z', 'ate=2026-11-11T06:08:32Z'],
+    ],
     ['no --feito', ['desde=2026-11-11T06:08:32Z', 'ate=2026-11-14T00:30:00Z']],
     [
       'linhas that is not a number',
