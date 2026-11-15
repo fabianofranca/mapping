@@ -70,3 +70,5 @@ Reference: Compose `foundation` of commit `5113b82a4ed6416d6344efa50e41db8cb6592
 - `alpha` is a field and code, but the drawing does not use it; there is no `alignment` or `colorFilter` (they are not fields of the type).
 - The image is only requested from the network with the origin's permission in the app, and the MCP server always draws the placeholder; Compose loads the image through the app's loader.
 - The `surface-variant` background is a drawing choice: Compose's `Image` has no background or placeholder.
+
+**Accessibility** (stage #1081; the unit is the dp, 1 dp = 1 component unit): the type has `accessibility.role` `image` and reads the accessible name from `contentDescription`, which is optional (a decorative image needs none).

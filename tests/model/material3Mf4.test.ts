@@ -100,7 +100,7 @@ const tokens = (mode: Mode) => resolveTokens(catalog.library!.tokens, {}, mode);
 
 describe('MF4: version and additive update', () => {
   it('it is version 7 and the update from 6 is additive (no break and no missing migration)', () => {
-    expect(spec.version).toBe(16);
+    expect(spec.version).toBe(17);
     // Version 6, the one on `main` at the start of the epic, without the two-shadow elevation tokens.
     const previous = JSON.parse(JSON.stringify(spec)) as Spec;
     (previous as { version: number }).version = 6;

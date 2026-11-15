@@ -103,35 +103,13 @@ const MISSING_TODAY: string[] = [
   // the fixture tests/fixtures/slots/ and script R28.
   'spec:layers[].annotationTypes[].code{}.slots',
   'spec:layers[].annotationTypes[].code{}.variants.cases{}.slots',
-  // `accessibility` (formatVersion 18, stage #1081, A1): no distributed library declares it yet; the Material 3
-  // library adopts it in A4 and these items leave this list then. Covered by tests/model/specV18.test.ts,
-  // tests/model/accessibility.test.ts and the fixture tests/fixtures/accessibility/.
-  'spec:accessibility',
-  'spec:accessibility.touchTarget',
-  'spec:accessibility.touchTarget.height',
-  'spec:accessibility.touchTarget.mode',
-  'spec:accessibility.touchTarget.mode=expanded',
+  // `accessibility` (formatVersion 18, stage #1081): the Material 3 library adopts it in A4 and covers all but
+  // these three: the root declares `expanded` (no example of the root `visual`), the types declare `visual` where
+  // Compose does not expand (no type-level `expanded` of its own: it is inherited) and none opts out with
+  // `touchTarget: false`. Covered by tests/model/specV18.test.ts, tests/model/accessibility.test.ts and the
+  // fixture tests/fixtures/accessibility/.
   'spec:accessibility.touchTarget.mode=visual',
-  'spec:accessibility.touchTarget.width',
-  'spec:layers[].annotationTypes[].accessibility',
-  'spec:layers[].annotationTypes[].accessibility.label',
-  'spec:layers[].annotationTypes[].accessibility.label.fields',
-  'spec:layers[].annotationTypes[].accessibility.label.required',
-  'spec:layers[].annotationTypes[].accessibility.parts',
-  'spec:layers[].annotationTypes[].accessibility.parts[].id',
-  'spec:layers[].annotationTypes[].accessibility.parts[].label',
-  'spec:layers[].annotationTypes[].accessibility.parts[].label.fields',
-  'spec:layers[].annotationTypes[].accessibility.parts[].label.required',
-  'spec:layers[].annotationTypes[].accessibility.parts[].name',
-  'spec:layers[].annotationTypes[].accessibility.parts[].role',
-  'spec:layers[].annotationTypes[].accessibility.parts[].when',
-  'spec:layers[].annotationTypes[].accessibility.role',
-  'spec:layers[].annotationTypes[].accessibility.touchTarget',
-  'spec:layers[].annotationTypes[].accessibility.touchTarget.height',
-  'spec:layers[].annotationTypes[].accessibility.touchTarget.mode',
   'spec:layers[].annotationTypes[].accessibility.touchTarget.mode=expanded',
-  'spec:layers[].annotationTypes[].accessibility.touchTarget.mode=visual',
-  'spec:layers[].annotationTypes[].accessibility.touchTarget.width',
   'spec:layers[].annotationTypes[].accessibility.touchTarget=false',
   'component:node.span',
   'component:node.weight',
