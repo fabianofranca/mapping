@@ -117,13 +117,13 @@ number replaces and `+k` adds; all or nothing, code 2 on a bad field). `escapado
 `meta.escapados` (the same bug replaces) and `escapado DIR --conferido` writes `meta.escapadosAt`; `historico DIR --feito desde=<ISO>
 ate=<ISO> [linhas=<k>]` writes `meta.historico`. `sinal`, `escapado` and `historico` go into `apply`; `uso` does not. `show` prints
 `escapados:` (with `— conferir` after ESCAPE_CHECK_HOURS = 24 h or without a check), `histórico:` and `candidatos a teste:` right after
-`testador acima do teto:`. Rework ruler (decision 6): only stages decided (`concluída` or in `meta.merged`) count; a missing signal is no rework.
+`testador acima do teto:`. Rework ruler (decision 6): only stages decided (`concluída` or in `meta.merged`) count; a session with no signal and no rework seen is "sem dado", not clean.
 Rework per role: `fase` has it with a `correção` or a `testador` with `alta`+`media` > 0 in its stage, an escaped defect `high`/`medium` of the stage, `ci` >= 2
 or `ciclo` >= 1; `correção`, with `ci` >= 2, `ciclo` >= 1, an escaped defect of the stage, another `correção` of a different label created after it or a `reteste`
 created after it with `alta`+`media` > 0; `testador`, with an escaped defect `high`/`medium` of its stage; `reteste`, with a `falso` of `high` or `medium`.
 `fechamento`, `coordenador` and `supervisor` have no ruler. The escaped `low`, `ci` 1 and a successor `correção` of the same label are not rework.
 Canaries (stage #1889, decisions 12 to 15): `meta.canarios` holds `{id, papel, de, modelo, esforco, filtro, n, volta, inicio,
-sessoes, estado, motivo, fim}` plus what every write recomputes (`contadas`, `retrabalhos`, `resumo`; ready for a page to draw, which this phase does not touch).
+sessoes, estado, motivo, fim}` plus what every write recomputes (`contadas`, `retrabalhos`, `resumo`; the page draws them in the "Canaries" block).
 `canario DIR add <id> papel=<role with a ruler> de="<model> <effort>" [modelo=<family>] [esforco=<effort>] [filtro=processo] n=<k> volta=<k>`
 tries a cheaper configuration (`modelo` and `esforco` default to those of `de`; at least one has to change; `filtro` only `processo`;
 `n` and `volta` positive; a repeated id, a role without ruler or any other bad field is code 2 and nothing is written);
@@ -230,6 +230,7 @@ EFFORTS = ["low"] + EFFORT_LADDER  # the efforts a canary `de=` and `esforco=` a
 CANARY_FILTERS = ["processo"]  # the only stage filter: process stages (decision 14)
 CANARY_KEYS = ["papel", "de", "modelo", "esforco", "filtro", "n", "volta"]  # the fields of `canario add` after the id
 CANARY_BUSY = ("ativo", "em avaliação")  # the canary still running: its role has no candidate and `usar` may offer it
+CANARY_FULL = ("em avaliação", "encerrado")  # reached n: a later session runs outside it
 CANARY_FINAL = ("revertido", "terminado pelo dono")  # the states that never change again
 PROCESS_PREFIXES = (".claude/", ".github/", "scripts/ci/", "tests/tooling/", "changelog/", "docs/design-system/")
 PROCESS_FILES = ("docs/PROCESS.md", "docs/FLOW.md", "docs/TESTING-NUVEM.md", "CLAUDE.md")  # with or without `#section`
@@ -591,6 +592,8 @@ def cmd_session(a):
         validate_choice("kind", pairs["kind"], SESSION_KINDS)
     meta = s.get("meta")[0]
     joined = canary_to_join(meta, pairs, a.session, issue) if "canario" in pairs else None
+    if "canario" in pairs and joined is None:
+        log_outside_canary(s, pairs["canario"], a.session)
     ids = row.get("sessions", "").split()
     if a.session not in ids:
         ids.append(a.session)
@@ -610,6 +613,12 @@ def cmd_session(a):
             joined["sessoes"].append(a.session)
         s.touch("meta")
     s.commit()
+
+
+def log_outside_canary(s, canary_id, sid):
+    """A session that asked for a canary that already has its `n` runs outside it; the log says so."""
+    s.get("log").append({"at": now(), "text": f"canary {canary_id} already has its n: session {sid} runs outside it"})
+    s.touch("log")
 
 
 def session_entry(meta, sid):
@@ -823,11 +832,13 @@ class Ruler:
                 self.stages.setdefault(e["issue"], []).append((self.okey(e), e))
 
     def verdict(self, e):
-        """None: outside the ruler (role without it, or stage not decided); True: rework; False: clean."""
+        """None: outside the ruler (role without it, stage not decided, or "sem dado": no signals and no rework seen);
+        True: rework; False: clean."""
         rule = REWORK_RULES.get(e.get("kind"))
         if rule is None or e.get("issue") not in self.decided:
             return None
-        return rule(e, self.okey(e), self.stages.get(e["issue"], []), self.escaped)
+        rework = rule(e, self.okey(e), self.stages.get(e["issue"], []), self.escaped)
+        return rework if rework or e.get("sinais") else None
 
 
 def clean_streak(flags):
@@ -953,9 +964,11 @@ def compute_uso(q, meta, since=None):
         groups.setdefault(usage_key(e), []).append(e)
     rows = sorted((usage_row(k, g, total, ruler, switches) for k, g in groups.items()), key=usage_order)
     busy = {c.get("papel") for c in canary_list(meta) if c.get("estado") in CANARY_BUSY}
+    tried = {(c["papel"], *parse_de(c["de"]), f"{c['modelo']} {c['esforco']}")
+             for c in canary_list(meta) if c.get("estado") == "revertido"}
     for u in rows:
-        if u["papel"] in busy:
-            u["candidato"] = None  # a role under a canary is already being tried (decision 7)
+        if u["papel"] in busy or (u["papel"], u["modelo"], u["esforco"], u["candidato"]) in tried:
+            u["candidato"] = None  # a role under a canary is already being tried; a reverted step is not offered again
     return rows
 
 
@@ -1314,13 +1327,24 @@ def canary_to_join(meta, pairs, sid, issue):
     label = (pairs["label"] if "label" in pairs else known.get("label")) or ""
     if known.get("canario") not in (None, c["id"]):
         raise Erro(f"session {sid} is already in canary {known['canario']}, not {c['id']}")
-    if c["estado"] == "ativo" or (c["estado"] in CANARY_BUSY and sid in c["sessoes"]):
-        return c
+    return c if canary_slot(c, meta, sid, kind, issue, label) else None
+
+
+def canary_slot(c, meta, sid, kind, issue, label):
+    """True when the session enters the canary, False when it already has `n` (it runs outside it); an ended or
+    reverted canary refuses. The count reads the sessions, not the state, which only refreshes at the flush."""
+    state = c["estado"]
+    if sid in c["sessoes"] and state not in CANARY_FINAL:
+        return True
     successor = kind in PHASE_KINDS and any(
         e.get("issue") == issue and (e.get("label") or "") == label for e in canary_members(c, meta))
-    if c["estado"] in CANARY_BUSY and successor:
-        return c
-    raise Erro(f"canary {c['id']} is {c['estado']}, not ativo")
+    if state in CANARY_BUSY and successor:
+        return True
+    if state == "ativo":
+        return canary_units(c, meta) < c["n"]
+    if state in CANARY_FULL:
+        return False
+    raise Erro(f"canary {c['id']} is {state}, not ativo")
 
 
 def canary_rework(c, members, meta, ruler):
@@ -1421,7 +1445,7 @@ def refresh_canary(c, meta, q, ruler, log):
 
 
 def update_canaries(q, meta, log):
-    """Every write refreshes `meta.canarios` (ready for a page to draw); True when a canary just reverted and the log grew."""
+    """Every write refreshes `meta.canarios` (the page draws it); True when a canary just reverted and the log grew."""
     if not canary_list(meta):
         return False
     ruler = Ruler(q, meta)
@@ -1774,11 +1798,11 @@ def imported_row(old, order):
     return row
 
 
-IMPORT_QUALITY_KEYS = ("escapados", "escapadosAt", "historico")
+IMPORT_QUALITY_KEYS = ("escapados", "escapadosAt", "historico", "canarios")
 
 
 def carry_quality(old_meta, meta):
-    """Carries the quality data (escaped defects, check time, recovered-history mark) when the old panel has it."""
+    """Carries the quality data (escaped defects, check time, recovered-history mark, canaries) when the old panel has it."""
     for k in IMPORT_QUALITY_KEYS:
         if old_meta.get(k):
             meta[k] = old_meta[k]
