@@ -968,6 +968,8 @@ export const enUS = {
   'issue.broken-ref': 'broken reference',
   'issue.ref-not-accepted': 'target not accepted (lost the tag or is no longer free)',
   'issue.component-overflow': 'The component does not fit',
+  'issue.slot-not-accepted': 'the slot {slot} of {owner} does not accept {type}',
+  'issue.slot-full': 'the slot {slot} of {owner} takes {max}',
   'list.incomplete': 'Incomplete only',
   'list.emptyIncomplete': 'No incomplete annotations in the visible layers.',
   // Details (R5)

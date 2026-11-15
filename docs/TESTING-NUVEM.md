@@ -128,7 +128,7 @@ The full round (R0 to R28) runs in **5 simultaneous sessions**, one per block, w
 | 1     | R0, R1, R2, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14 and R26        | 150   |
 | 2     | R0, section 6 and R25                                                                   | 136   |
 | 3     | R0, section 6, R12, R15, R18, R19 and R27                                               | 144   |
-| 4     | R0, section 6, R4, R6.8a to R6.11, R9, R10, R13, R16, R22, R24, R28 and the visual pass | 156   |
+| 4     | R0, section 6, R4, R6.8a to R6.11, R9, R10, R13, R16, R22, R24, R28 and the visual pass | 160   |
 | 5     | R0, section 6, R11, R17, R20, R21 and R23                                               | 136   |
 
 There are 5 blocks by decision of the owner (2026-11-09). The visual pass stays in block 4 (decision 6 of stage #841). The limit of each block's generated guide (`MAX_BLOCK_GUIDE_CHARS`, in `tests/tooling/roundBlocks.test.ts`), the earlier sizes, the dependencies per block and the baselines: `cloud.mjs secao consulta.historico`.

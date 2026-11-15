@@ -16,6 +16,9 @@
 - The signature import links each `role: slot` parameter to the slot of the same normalized name, writes the entry in `code.slots` only when the name differs from the id, takes the linked slot out of `unmapped` and stays idempotent; `plan_signature_import` returns the new `slotLinks`.
 - `docs/SPEC-FORMAT.md` ("Slots of the type (`slots`)"), `docs/spec.schema.json`, `docs/AGENT-GUIDE.md`, the `spec-author` skill and the `formatVersion` Help: the current version is 17.
 - Test script R28 "Named slots" in `docs/TESTING.md` (format part, rounded clip step and the documented differences between the app and the MCP's image), in block 4 of `docs/TESTING-NUVEM.md`.
+- Pending items for slots: `slot-not-accepted` (a child marking in a slot that does not accept its type) and `slot-full` (a child beyond the slot's `max`). They are warnings, the child is still saved because the geometry decides the slot, and they show up in the Incomplete window, the list, `get_marking`, `list_markings` (also with `incomplete`), the `incompleteAnnotations` counts and the `issues.new` of `plan_changes` and `propose_changes`, with `slot`, `owner` and `max`. The Details show them in a later phase.
+- The type's `accepts` and `max` now decide the slot of a new child when no slot is asked: "add inside" in the app and `create_marking` with `inside` put it in the first slot that accepts its type and is not full.
+- `docs/AGENT-GUIDE.md` ("the geometry rules and the pending item warns"), `docs/MCP.md`, `docs/ARCHITECTURE.md` and R28 of `docs/TESTING.md` (steps R28.11 to R28.14): the pending items, how they are computed and the checks.
 
 ## Corrigido
 
@@ -27,3 +30,5 @@
 - `docs/COMPONENT-FORMAT.md`: "One slot per component" leaves "Known limits", which now records the break above.
 - The `dist/index.html` ceiling rose 16 KiB, from 2179072 to 2195456, by the budget rule.
 - The `dist/index.html` ceiling rose 16 KiB, from 2195456 to 2211840, by the budget rule.
+- `get_marking` and `list_markings` now also carry `component-overflow` in `issues` (before, only `plan_changes` and `propose_changes` listed it).
+- The `issues.new` of `plan_changes` and `propose_changes` lists, per annotation, only the codes it gained (before, only annotations that had no issue at all were listed).

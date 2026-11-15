@@ -321,19 +321,32 @@ const NO_COMPONENTS: ComponentSources = {
   fontsEpoch: signal(0),
 };
 
+function sameIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
+  return (
+    x.code === y.code &&
+    x.key === y.key &&
+    x.rowId === y.rowId &&
+    x.column === y.column &&
+    sameSlotIssue(x, y)
+  );
+}
+
+/** The slot, owner and max of `slot-not-accepted` and `slot-full`. */
+function sameSlotIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
+  return (
+    x.slot?.id === y.slot?.id &&
+    x.slot?.name === y.slot?.name &&
+    x.owner === y.owner &&
+    x.max === y.max
+  );
+}
+
 function sameIssueList(
   a: readonly AnnotationIssue[],
   b: readonly AnnotationIssue[],
 ): boolean {
   return (
-    a.length === b.length &&
-    a.every(
-      (x, i) =>
-        x.code === b[i]?.code &&
-        x.key === b[i]?.key &&
-        x.rowId === b[i]?.rowId &&
-        x.column === b[i]?.column,
-    )
+    a.length === b.length && a.every((x, i) => sameIssue(x, b[i] as AnnotationIssue))
   );
 }
 
@@ -424,21 +437,23 @@ export function createEditorDerived(
   const drawingsOf = (p: Project | null): ComponentDrawings =>
     p === project.value ? scenes.value : drawings(p);
 
-  // Model pending items plus "the component does not fit" (only the drawing knows). Without a
-  // drawing that
-  // overflows, it is the model's map; with one, the previous map if nothing changed.
+  // Model pending items plus what only the drawing knows: "the component does not fit" and the
+  // children a slot does not accept or that go past its `max` (decisions 7 and 10 of #1080). Without a
+  // drawing that has any of them, it is the model's map; with one, the previous map if nothing changed.
   let lastIssues: ReadonlyMap<string, readonly AnnotationIssue[]> = NO_ISSUES;
   const issues = computed(() => {
     const p = project.value;
     const base = p ? projectIssues(p) : NO_ISSUES;
-    const overflowing = [...scenes.value.values()].filter((d) => d.overflow);
-    if (overflowing.length === 0) return base;
+    const drawn = [...scenes.value.values()].filter(
+      (d) => d.overflow || d.slotIssues.length > 0,
+    );
+    if (drawn.length === 0) return base;
     const merged = new Map(base);
-    for (const d of overflowing) {
-      merged.set(d.annotationId, [
-        ...(merged.get(d.annotationId) ?? []),
-        { code: 'component-overflow' } satisfies AnnotationIssue,
-      ]);
+    const add = (annotationId: string, issue: AnnotationIssue) =>
+      merged.set(annotationId, [...(merged.get(annotationId) ?? []), issue]);
+    for (const d of drawn) {
+      if (d.overflow) add(d.annotationId, { code: 'component-overflow' });
+      for (const { annotationId, ...issue } of d.slotIssues) add(annotationId, issue);
     }
     if (sameIssues(merged, lastIssues)) return lastIssues;
     lastIssues = merged;

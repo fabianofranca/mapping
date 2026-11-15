@@ -968,6 +968,8 @@ export const ptBR: Dictionary = {
   'issue.broken-ref': 'referência quebrada',
   'issue.ref-not-accepted': 'alvo não aceito (perdeu a etiqueta ou deixou de ser livre)',
   'issue.component-overflow': 'O componente não cabe',
+  'issue.slot-not-accepted': 'o slot {slot} de {owner} não aceita {type}',
+  'issue.slot-full': 'o slot {slot} de {owner} aceita {max}',
   'list.incomplete': 'Só incompletas',
   'list.emptyIncomplete': 'Nenhuma anotação incompleta nas camadas visíveis.',
   'marking.section': 'Marcação',

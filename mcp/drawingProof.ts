@@ -5,8 +5,10 @@ import {
   effectiveDrawingMode,
   projectIndex,
   SLOT_OVERFLOW,
+  typeOfAnnotation,
   type ComponentDrawing,
   type DrawingCache,
+  type DrawingSlotIssue,
   type Project,
 } from '../src/model';
 import { builtinFontBook, measurerFor, type FontBook } from './image/textMeasurer';
@@ -16,7 +18,7 @@ import type { Refs } from './items';
 // each marking created or changed by the batch is instantiated in the rectangle and with the real values,
 // in the container's effective mode, and the engine's "does not fit" becomes a `component-overflow` item in
 // `issues.new`. It is a warning: it does not block the batch. The warnings and the computations are the model's
-// (`ComponentDrawing.shortfalls`); here we only choose what to prove and how to show it.
+// (`ComponentDrawing.shortfalls` and `slotIssues`); here we only choose what to prove and how to show it.
 
 export const COMPONENT_OVERFLOW = 'component-overflow';
 
@@ -128,26 +130,83 @@ function itemsOf(drawing: ComponentDrawing, approximate: boolean): OverflowItem[
   );
 }
 
-/** The `component-overflow` items per annotation, of the markings the batch created or changed. */
-export function overflowProof(
-  refs: Refs,
-  before: Project,
-): Map<string, readonly OverflowItem[]> {
-  const after = refs.project;
-  const found = new Map<string, readonly OverflowItem[]>();
-  const touched = touchedMarkings(before, after);
-  if (touched.size === 0) return found;
+/** A child that its owner's slot does not accept or that goes past the slot's `max` (stage #1080, decision 10). */
+export interface SlotItem {
+  readonly code: DrawingSlotIssue['code'];
+  readonly slot: { readonly id: string; readonly name: string };
+  readonly owner: string;
+  readonly max?: number;
+  readonly message: string;
+}
+
+export type DrawingItem = OverflowItem | SlotItem;
+
+/** The `slot-not-accepted` text carries the child's type; `slot-full` carries the slot's `max`. */
+function slotItemOf(issue: DrawingSlotIssue, typeName: string): SlotItem {
+  const where = `the slot ${issue.slot.name} of ${issue.owner}`;
+  return {
+    code: issue.code,
+    slot: { id: issue.slot.id, name: issue.slot.name },
+    owner: issue.owner,
+    ...(issue.max === undefined ? {} : { max: issue.max }),
+    message:
+      issue.code === 'slot-full'
+        ? `${where} takes ${issue.max ?? 0}`
+        : `${where} does not accept ${typeName}`,
+  };
+}
+
+/** The slot items of a drawing whose mother or child marking the batch touched, by the child's annotation. */
+function slotItemsOf(
+  drawing: ComponentDrawing,
+  after: Project,
+  touched: ReadonlySet<string>,
+): [string, SlotItem][] {
+  const index = projectIndex(after);
+  const found: [string, SlotItem][] = [];
+  for (const issue of drawing.slotIssues) {
+    const child = index.annotations.get(issue.annotationId);
+    if (!child) continue;
+    if (!touched.has(drawing.markingId) && !touched.has(child.markingId)) continue;
+    const typeName = typeOfAnnotation(after, child)?.type.name ?? '';
+    found.push([issue.annotationId, slotItemOf(issue, typeName)]);
+  }
+  return found;
+}
+
+/** The drawing cache of the fonts that measure `refs`' project (the proof has no saved revision to memoize on). */
+function drawingsOf(refs: Refs): ReturnType<DrawingCache> {
   const fonts = refs.loaded.fonts ?? builtinFontBook();
-  const approximate = !fonts.hasLibraryFonts;
   let cache = drawingCaches.get(fonts);
   if (cache === undefined) {
     cache = createDrawingCache();
     drawingCaches.set(fonts, cache);
   }
-  const drawings = cache(after, refs.loaded.catalog, measurerFor(fonts), 0);
-  for (const drawing of drawings.values()) {
-    if (!drawing.overflow || !touched.has(drawing.markingId)) continue;
-    found.set(drawing.annotationId, itemsOf(drawing, approximate));
+  return cache(refs.project, refs.loaded.catalog, measurerFor(fonts), 0);
+}
+
+/**
+ * The drawing items per annotation, of the markings the batch created or changed: `component-overflow` of the
+ * touched markings and `slot-not-accepted` / `slot-full` of the drawings whose mother or child it touched.
+ */
+export function drawingProof(
+  refs: Refs,
+  before: Project,
+): Map<string, readonly DrawingItem[]> {
+  const after = refs.project;
+  const found = new Map<string, readonly DrawingItem[]>();
+  const touched = touchedMarkings(before, after);
+  if (touched.size === 0) return found;
+  const approximate = !(refs.loaded.fonts ?? builtinFontBook()).hasLibraryFonts;
+  const add = (annotationId: string, items: readonly DrawingItem[]) =>
+    found.set(annotationId, [...(found.get(annotationId) ?? []), ...items]);
+  for (const drawing of drawingsOf(refs).values()) {
+    if (drawing.overflow && touched.has(drawing.markingId)) {
+      add(drawing.annotationId, itemsOf(drawing, approximate));
+    }
+    for (const [annotationId, item] of slotItemsOf(drawing, after, touched)) {
+      add(annotationId, [item]);
+    }
   }
   return found;
 }
@@ -157,13 +216,13 @@ interface IssueEntry {
   readonly issues: readonly object[];
 }
 
-/** The batch's `issues` with the "does not fit" of the proven markings added to `issues.new`. */
-export function withOverflow(
+/** The batch's `issues` with the drawing's items (does not fit, slot not accepted or full) added to `issues.new`. */
+export function withDrawingIssues(
   issues: Record<string, unknown>,
   refs: Refs,
   before: Project,
 ): Record<string, unknown> {
-  const proof = overflowProof(refs, before);
+  const proof = drawingProof(refs, before);
   if (proof.size === 0) return issues;
   const entries = [...((issues.new as IssueEntry[] | undefined) ?? [])];
   for (const [annotationId, items] of proof) {

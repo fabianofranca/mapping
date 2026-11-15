@@ -11,6 +11,7 @@ import {
   slotKey,
 } from './components/slots';
 import type { ComponentDrawings } from './componentDrawings';
+import { typeSlots } from './specSlots';
 import type { InstanceAnchor } from './components/anchor';
 import { placeCells, trackCount, trackOffset, trackSize } from './components/gridLayout';
 import { lineExtents } from './components/gridPlan';
@@ -128,9 +129,10 @@ export interface NewComponentArgs {
    */
   readonly parentId: string | null;
   /**
-   * The slot of the target (`parentId`) the instance goes to (`slotKey`; its `id`). Absent: the first
-   * visible slot (decision 5 of #1080; the type's `accepts` and `max` come in a later phase). A slot
-   * the target does not have fails with `invalid-parent`. Only the position depends on it: the stored
+   * The slot of the target (`parentId`) the instance goes to (`slotKey`; its `id`). The slot asked
+   * for wins; absent, the first visible slot that accepts the new child's type (`typeId`) and is not
+   * full (the `accepts` and `max` of the type, via `typeSlots`), as `slotToUse` decides. A slot the
+   * target does not have fails with `invalid-parent`. Only the position depends on it: the stored
    * parent is still what the settle decides.
    */
   readonly slot?: string;
@@ -277,8 +279,16 @@ function sceneOfSlots(
   );
   if (known !== undefined)
     return { boxes, kids: new Map(known.slots.map((s) => [s.id, own(s.children)])) };
+  const defs = new Map(
+    typeSlots(p, mc.specId, mc.typeId, mc.component).map((def) => [def.id, def]),
+  );
   const assignment = assignSlots(
-    [...boxes].map(([id, box]) => ({ id, box })),
+    [...boxes].map(([id, box]) => ({
+      id,
+      box,
+      accepts: defs.get(id)?.accepts,
+      max: defs.get(id)?.max,
+    })),
     kids.map((kid) => ({
       id: kid.id,
       rect: kid.rect,
@@ -293,22 +303,31 @@ function sceneOfSlots(
 
 /**
  * The slot (by `slotKey`) a new child goes to when there is no geometry (decision 5): the one asked
- * for, else the first visible one, in template order. `undefined` when no slot is visible (the whole
+ * for, else the first visible one that accepts the child's type (`typeId`) and is not full, with the
+ * `accepts` and the `max` of the type (`typeSlots`); `undefined` when no slot is visible (the whole
  * component then). A slot the component does not have fails with `invalid-parent`.
  */
 function slotToUse(
-  component: ComponentFile,
-  boxes: ReadonlyMap<string, Rect>,
+  p: Project,
+  mc: MarkingComponent,
+  scene: SlotScene,
   asked: string | undefined,
+  typeId: string | undefined,
 ): string | undefined {
   const chosen = slotForPlacement(
-    componentSlots(component).map((slot) => ({
-      id: slotKey(slot),
-      visible: boxes.has(slotKey(slot)),
+    typeSlots(p, mc.specId, mc.typeId, mc.component).map((slot) => ({
+      id: slot.id,
+      accepts: slot.accepts,
+      max: slot.max,
+      visible: scene.boxes.has(slot.id),
     })),
-    asked === undefined ? {} : { slot: asked },
+    {
+      ...(asked === undefined ? {} : { slot: asked }),
+      typeId,
+      counts: new Map([...scene.kids].map(([id, kids]) => [id, kids.length])),
+    },
   );
-  if (chosen.ok) return boxes.has(chosen.id) ? chosen.id : undefined;
+  if (chosen.ok) return scene.boxes.has(chosen.id) ? chosen.id : undefined;
   if (chosen.reason === 'unknown-slot') return fail('invalid-parent', chosen.slot);
   return undefined;
 }
@@ -324,6 +343,7 @@ function slotArea(
   measure: TextMeasurer,
   slotId?: string,
   drawings?: ComponentDrawings,
+  typeId?: string,
 ): SlotBox {
   const container = findById(p.markings, containerId);
   const none = { left: 0, top: 0, right: 0, bottom: 0 };
@@ -345,7 +365,7 @@ function slotArea(
   const drawn = drawnWithSlots(p, mc, container.containerId);
   if (mc === null || drawn === null) return whole;
   const scene = sceneOfSlots(p, catalog, container, mc, drawn, measure, drawings);
-  const key = slotToUse(drawn.component, scene.boxes, slotId);
+  const key = slotToUse(p, mc, scene, slotId, typeId);
   const slot = componentSlots(drawn.component).find((s) => slotKey(s) === key);
   const box = key === undefined ? undefined : scene.boxes.get(key);
   if (slot === undefined || box === undefined) return whole;
@@ -405,8 +425,9 @@ export function placementFitsSlot(
   rect: Rect,
   measure: TextMeasurer,
   slotId?: string,
+  typeId?: string,
 ): boolean {
-  const slot = slotArea(p, catalog, targetId, measure, slotId);
+  const slot = slotArea(p, catalog, targetId, measure, slotId, undefined, typeId);
   if (!slot.hasSlot || !containsRect(slot.area, rect)) return false;
   // Row or column layout: stuck to the component, the child may be inside the slot area and still
   // on top of the last sibling (slot the size of the component): it also did not fit.
@@ -470,7 +491,7 @@ function placementSpace(
   const slot =
     parent === null
       ? null
-      : slotArea(p, catalog, parent.id, measure, args.slot, args.drawings);
+      : slotArea(p, catalog, parent.id, measure, args.slot, args.drawings, args.typeId);
   // Without an image (canvas) and without a slot, there is no limit.
   const area: Rect | null = slot?.area ?? (image === null ? null : imagePixelRect(image));
   return {
