@@ -137,6 +137,24 @@ describe('plan_changes: touch-target-small in warnings', () => {
     expect(touchWarnings(grown)).toEqual([]);
   });
 
+  it('a batch that makes an existing warning worse warns again, in warnings and not in issues.new', async () => {
+    const reply = await plan([
+      {
+        op: 'update_marking',
+        marking: await refOf('small'),
+        rect: { x: 100, y: 100, width: 60, height: 60 },
+      },
+    ]);
+    const warnings = touchWarnings(reply);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatchObject({ actual: { width: 20, height: 20 } });
+    expect(
+      reply.issues.new
+        .flatMap((e) => e.issues)
+        .some((i) => i.code === 'touch-target-small'),
+    ).toBe(false);
+  });
+
   it('it is not a pending item: no accessible-label-missing and nothing in issues.new for the small button', async () => {
     const reply = await plan([createButton({ x: 500, y: 100, width: 108, height: 120 })]);
     expect(labelItems(reply)).toEqual([]);

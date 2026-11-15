@@ -368,6 +368,8 @@ export const templatePtBR: {
     'o grupo "{group}" da camada "{layer}" é declarado, mas nenhum tipo está nele',
   'model.versions.unusedDocRepo':
     'o repositório "{repo}" de docRepos é declarado, mas nenhum `doc` o usa',
+  'model.versions.labelWithoutRole':
+    'o tipo "{typeId}" declara `label` sem role: não tem efeito até o tipo ter um role diferente de `none`',
   'model.versions.legacyFormat':
     '"{legacy}" é o nome antigo do formato; use "mapping-spec"',
   'model.versions.typeWithoutCode':

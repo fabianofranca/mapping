@@ -1,6 +1,6 @@
 // The text of the accessibility audit's warnings (stage #1127), always via `t()`.
 import { t } from '../i18n';
-import type { AuditFinding } from '../model';
+import { actualUnitsOf, type AuditFinding } from '../model';
 import { formatDensity } from './density';
 import { locale } from '../store/settings';
 
@@ -23,8 +23,8 @@ export function auditFindingText(finding: AuditFinding): string {
   const units = (value: number) => formatMeasure(value, 1);
   const pixels = (value: number) => formatMeasure(value, 0);
   return t('audit.touchTargetSmall', {
-    width: units(finding.actual.width),
-    height: units(finding.actual.height),
+    width: units(actualUnitsOf(finding.actual.width)),
+    height: units(actualUnitsOf(finding.actual.height)),
     minWidth: units(finding.min.width),
     minHeight: units(finding.min.height),
     pxWidth: pixels(finding.minPx.width),

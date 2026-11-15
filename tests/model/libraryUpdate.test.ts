@@ -351,6 +351,43 @@ describe('specializationUpdateImpact: pending items', () => {
     ]);
   });
 
+  it('a type that gains a required accessible label counts the audit pending item once', () => {
+    const p = libProject(libSpec(1), [
+      { id: 'B1', type: 'button', values: { label: 'OK' } },
+      { id: 'B2', type: 'button', marking: 'M2', values: {} },
+    ]);
+    const button = buttonType();
+    const next = libSpec(2, {
+      c: [
+        {
+          ...button,
+          accessibility: { role: 'button', label: { fields: ['label'] } },
+        },
+        badgeType(),
+      ],
+      e: [chipType()],
+    });
+    const impact = specializationUpdateImpact(p, next);
+    expect(impact.pending).toEqual([
+      { annotationId: 'B2', issue: { code: 'accessible-label-missing', key: 'label' } },
+    ]);
+  });
+
+  it('a label that was already missing before the update is not new', () => {
+    const accessible = {
+      ...buttonType(),
+      accessibility: { role: 'button', label: { fields: ['label'] } },
+    } as SpecAnnotationType;
+    const p = libProject(libSpec(1, { c: [accessible, badgeType()], e: [chipType()] }), [
+      { id: 'B2', type: 'button', marking: 'M2', values: {} },
+    ]);
+    const impact = specializationUpdateImpact(
+      p,
+      libSpec(2, { c: [accessible, badgeType()], e: [chipType()] }),
+    );
+    expect(impact.pending).toEqual([]);
+  });
+
   it('incomplete map-values: a value without a destination becomes unknown-option; the old pending items do not count', () => {
     let p = libProject(
       libSpec(1, {

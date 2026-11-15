@@ -9,6 +9,7 @@ import {
   applySpecialization,
   createMarking,
   parseSpec,
+  specWarnings,
   typeAccessibility,
   type JsonValue,
   type Project,
@@ -93,5 +94,43 @@ describe('D7: an empty accessibility declares nothing', () => {
   it('typeAccessibility is null for `accessibility: {}`', () => {
     const s = spec({});
     expect(typeAccessibility(s, s.layers[0]!.annotationTypes[0]!)).toBeNull();
+  });
+});
+
+describe('R3: a label with no interactive-or-descriptive role has no effect', () => {
+  const label = { fields: ['label'] };
+
+  it.each<[string, unknown]>([
+    ['no role', { label }],
+    ['role none', { role: 'none', label }],
+  ])('typeAccessibility drops the label of a type with %s, as the audit does', (_, a) => {
+    const s = spec(a);
+    expect(typeAccessibility(s, s.layers[0]!.annotationTypes[0]!)?.label).toBeUndefined();
+  });
+
+  it('a label of a role that is audited stays', () => {
+    const s = spec({ role: 'image', label });
+    expect(typeAccessibility(s, s.layers[0]!.annotationTypes[0]!)?.label).toEqual({
+      fields: ['label'],
+      required: false,
+    });
+  });
+
+  it.each<[string, unknown]>([
+    ['no role', { label }],
+    ['role none', { role: 'none', label }],
+  ])('specWarnings warns at the label path for %s, and not for a role', (_, a) => {
+    const warnings = specWarnings(spec(a)).filter((w) => w.code === 'label-without-role');
+    expect(warnings.map((w) => w.path)).toEqual([
+      'layers[0].annotationTypes[0].accessibility.label',
+    ]);
+    expect(warnings[0]!.message).toBe(
+      'the type "button" declares `label` without a role: it has no effect until the type has a role other than `none`',
+    );
+    expect(
+      specWarnings(spec({ role: 'button', label })).filter(
+        (w) => w.code === 'label-without-role',
+      ),
+    ).toEqual([]);
   });
 });

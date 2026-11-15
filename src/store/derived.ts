@@ -25,7 +25,7 @@ import {
   markingLockStates,
   markingVisibility,
   memoByProject,
-  noticeCounts,
+  noticeCountsWithAudit,
   noticedCountWithAudit,
   previewProject,
   projectIndex,
@@ -785,17 +785,6 @@ export function createEditorDerived(
     if (!p) return [];
     return buildNoticeList(p, { ...noticeFilters.value, kind: ui.noticeKind.value });
   });
-  const noticeCountsSignal = computed((): NoticeCounts => {
-    const p = project.value;
-    if (!p)
-      return {
-        unit: 'annotations',
-        total: 0,
-        byKind: { removed: 0, deprecated: 0, diverges: 0, pending: 0 },
-        present: [],
-      };
-    return noticeCounts(p, noticeFilters.value);
-  });
   const noticedCountSignal = computed(() => {
     const p = project.value;
     return p ? noticedCountWithAudit(p, audit.value) : 0;
@@ -817,6 +806,17 @@ export function createEditorDerived(
     if (same) return lastAuditRows;
     lastAuditRows = next;
     return next;
+  });
+  const noticeCountsSignal = computed((): NoticeCounts => {
+    const p = project.value;
+    if (!p)
+      return {
+        unit: 'annotations',
+        total: 0,
+        byKind: { removed: 0, deprecated: 0, diverges: 0, pending: 0 },
+        present: [],
+      };
+    return noticeCountsWithAudit(p, noticeFilters.value, auditList.value);
   });
 
   let lastOrigins = NO_IMAGE_ORIGINS;

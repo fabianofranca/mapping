@@ -236,6 +236,14 @@ describe('derived.auditFindings and the counts', () => {
     expect(derived.incompleteCount.value).toBe(0);
   });
 
+  it('R5: the All filter counts what the status bar counts, an annotation whose only finding is touch-target-small', () => {
+    const p = a11yPut(a11yWorld(3), 'button', 'A', small, { label: 'Buy' });
+    const { derived } = setup(p);
+    expect(derived.noticedCount.value).toBe(1);
+    expect(derived.auditList.value).toHaveLength(1);
+    expect(derived.noticeCounts.value.total).toBe(derived.noticedCount.value);
+  });
+
   it('keeps the same map while the findings do not change', () => {
     const p = a11yPut(a11yWorld(3), 'button', 'A', small, { label: 'Buy' });
     const { derived, actions } = setup(p);

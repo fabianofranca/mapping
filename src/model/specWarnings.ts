@@ -5,6 +5,7 @@ import {
   type Spec,
   type SpecCode,
 } from './spec';
+import { isAudited } from './accessibility';
 import { templateMessage, type ModelMessageTemplateCode } from './messages';
 
 // Warnings of a valid specialization (stage 4): things that do not prevent the import, but
@@ -31,7 +32,9 @@ export type SpecWarningCode =
   /** Group of `layers[].groups` that no type of the layer uses. */
   | 'unused-group'
   /** Repository of `docRepos` that no `doc` uses. */
-  | 'unused-doc-repo';
+  | 'unused-doc-repo'
+  /** `accessibility.label` on a type with no role or with `none`: the audit does not read it. */
+  | 'label-without-role';
 
 export interface SpecWarning {
   readonly code: SpecWarningCode;
@@ -142,10 +145,30 @@ function codePathCount(entry: SpecCode): number {
   );
 }
 
+/** `label` on a type that the audit does not read (no role, or `none`): valid, but with no effect. */
+function labelWithoutRoleWarnings(spec: Spec): SpecWarning[] {
+  const found: SpecWarning[] = [];
+  spec.layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      const a = type.accessibility;
+      if (a?.label === undefined || isAudited(a.role)) return;
+      found.push(
+        warning(
+          'label-without-role',
+          `layers[${li}].annotationTypes[${ti}].accessibility.label`,
+          'versions.labelWithoutRole',
+          { typeId: type.id },
+        ),
+      );
+    });
+  });
+  return found;
+}
+
 /**
  * Warnings of the specialization (already validated), in file order (the type ones, then
  * `unused-platform` and `path-without-repo`, per platform, and finally the v11 ones:
- * `many-children-ids`, `unused-group` and `unused-doc-repo`); `ignored` are the fields
+ * `many-children-ids`, `unused-group` and `unused-doc-repo`, and the v18 `label-without-role`); `ignored` are the fields
  * ignored on reading (`parseSpec`), which come right after the old format.
  */
 export function specWarnings(
@@ -208,6 +231,7 @@ export function specWarnings(
     ...manyChildIdsWarnings(spec),
     ...unusedGroupWarnings(spec),
     ...unusedDocRepoWarnings(spec),
+    ...labelWithoutRoleWarnings(spec),
   );
   return warnings;
 }

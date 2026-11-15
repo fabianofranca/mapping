@@ -222,6 +222,25 @@ export function noticeCounts(p: Project, filters: NoticeFilters): NoticeCounts {
   };
 }
 
+/**
+ * `noticeCounts` for the "All" filter of the Notices window, with the Accessibility section's rows: the section
+ * shows under every kind, so "All" also counts the annotations whose only finding is a warning (an annotation with
+ * a notice and a warning counts once, the unit of `noticedCountWithAudit`). Without the unit of annotations (the
+ * listed notices), each row is one more.
+ */
+export function noticeCountsWithAudit(
+  p: Project,
+  filters: NoticeFilters,
+  rows: readonly AuditRow[],
+): NoticeCounts {
+  const counts = noticeCounts(p, filters);
+  if (rows.length === 0) return counts;
+  const known =
+    counts.unit === 'annotations' ? tallyNotices(p, filters).annotations : null;
+  const extra = rows.filter((row) => !known?.has(row.annotation.id)).length;
+  return { ...counts, total: counts.total + extra };
+}
+
 interface Tally {
   readonly annotations: Set<string>;
   readonly annotationsByKind: Map<SpecNoticeKind, Set<string>>;

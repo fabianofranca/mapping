@@ -76,12 +76,12 @@ describe('D1: a warning that already existed is not new', () => {
     expect(reply.warnings ?? []).toEqual([]);
   });
 
-  it('shrinking a button that was already small, to another small size, does not warn again', async () => {
+  it('growing a button that was already small, still small, does not warn again', async () => {
     const reply = await plan([
       {
         op: 'update_marking',
         marking: 'mapping://a11y/m/mksmall',
-        rect: { x: 100, y: 100, width: 90, height: 100 },
+        rect: { x: 100, y: 100, width: 120, height: 126 },
       },
     ]);
     expect(
@@ -137,5 +137,40 @@ describe('F4: the label of the 108 x 120 button in the test scripts', () => {
     expect(row('long').incomplete).toBe(1);
     expect(row('pay').incomplete).toBeUndefined();
     expect(row('pay').warnings).toBe(1);
+  });
+});
+
+describe('R3: validate_specialization warns about a label with no role', () => {
+  it('returns label-without-role at the label path, valid and with no error', async () => {
+    const text = JSON.stringify({
+      format: 'mapping-spec',
+      formatVersion: 18,
+      id: 'labelled',
+      name: 'Labelled',
+      version: 1,
+      layers: [
+        {
+          id: 'ui',
+          name: 'UI',
+          color: '#112233',
+          annotationTypes: [
+            {
+              id: 'card',
+              name: 'Card',
+              fields: [{ key: 'title', type: 'string' }],
+              accessibility: { label: { fields: ['title'] } },
+            },
+          ],
+        },
+      ],
+    });
+    const reply = await a11yCall(ws, 'validate_specialization', { text });
+    expect(reply.valid).toBe(true);
+    expect(reply.warnings).toEqual([
+      expect.objectContaining({
+        code: 'label-without-role',
+        path: 'layers[0].annotationTypes[0].accessibility.label',
+      }),
+    ]);
   });
 });
