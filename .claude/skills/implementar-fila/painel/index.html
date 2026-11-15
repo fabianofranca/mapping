@@ -597,6 +597,30 @@
       white-space: nowrap;
       text-align: right;
     }
+    /* qm4:begin */
+    #mp #mp-uso th,
+    #mp #mp-uso td {
+      white-space: nowrap;
+    }
+    #mp .canario {
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    #mp .canario .regua {
+      color: var(--color-fg-muted);
+      font-size: var(--cds-font-size-caption);
+    }
+    #mp .canario .veredito {
+      font-weight: var(--cds-font-weight-medium);
+    }
+    #mp .canario .veredito.ok {
+      color: var(--color-ok);
+    }
+    #mp .canario .veredito.bad {
+      color: var(--color-bad);
+    }
+    /* qm4:end */
     @media (max-width: 560px) {
       #mp .onda {
         grid-template-columns: 64px minmax(0, 1fr);
@@ -697,6 +721,30 @@
       <p class="ajuda" id="mp-custo-dica" aria-live="polite">
         Tap a bar or column to see the value.
       </p>
+      <h3>By role, model and effort</h3>
+      <div class="scroll" data-source="uso">
+        <table id="mp-uso">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Model</th>
+              <th>Effort</th>
+              <th>Sessions</th>
+              <th>US$ (%)</th>
+              <th>Median per session</th>
+              <th>Median per stage</th>
+              <th>Median context</th>
+              <th>Above ceiling</th>
+              <th>Rework</th>
+              <th>Streak</th>
+              <th>Candidate</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <h3>Canaries</h3>
+      <ul id="mp-canarios"></ul>
       <details id="mp-custo-tabela">
         <summary>Show the table of all stages and kinds</summary>
         <div class="scroll">
@@ -892,6 +940,15 @@
               kindPos(a.tipo) - kindPos(b.tipo),
           );
         },
+      });
+      // Usage per role x model x effort (stage #1889, QM4): painel.py computes `meta.uso` on every write; the
+      // page only hands it over (list or JSON text) and draws it. Missing or invalid gives an empty list.
+      dash.calc('uso', {
+        inputs: ['meta'],
+        title: 'Usage per role, model and effort',
+        description:
+          'The meta.uso that painel.py writes: one entry per role, model and effort.',
+        fn: (meta) => asList((meta[0] || {}).uso) || [],
       });
       const pad = (n) => String(n).padStart(2, '0');
       const fmt = (ms) => {
@@ -1590,6 +1647,102 @@
           d.textContent = fmt(now - Number(d.dataset.s));
         });
       }
+      // "By role, model and effort" (stage #1889, QM4): one row per `meta.uso` entry, roles in the order of KINDS and,
+      // within a role, the larger US$ first; a null column is "—".
+      const dashIfNull = (v, fmtFn) => (v == null ? '—' : fmtFn(v));
+      const moneyOrDash = (v) => dashIfNull(v, (x) => money(finite(x)));
+      const pct1 = (x) =>
+        finite(x).toLocaleString('pt-BR', {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        });
+      const usoCells = (u) => [
+        asText(u.papel),
+        asText(u.modelo),
+        asText(u.esforco),
+        asText(u.sessoes),
+        money(finite(u.usd)) + ' (' + pct1(u.pct) + '%)',
+        moneyOrDash(u.medianaSessao),
+        moneyOrDash(u.medianaEtapa),
+        dashIfNull(u.ctxMediano, (x) => Math.round(finite(x) / 1000) + 'k'),
+        dashIfNull(u.acimaTeto, asText),
+        u.decididas == null
+          ? '—'
+          : asText(u.comRetrabalho) + ' of ' + asText(u.decididas),
+        dashIfNull(u.sequencia, asText),
+        u.candidato ? '→ ' + asText(u.candidato) : '—',
+      ];
+      function renderUso(list) {
+        const tb = document.querySelector('#mp-uso tbody');
+        tb.replaceChildren();
+        const items = list
+          .filter(isObj)
+          .sort(
+            (a, b) =>
+              kindPos(a.papel) - kindPos(b.papel) || finite(b.usd) - finite(a.usd),
+          );
+        if (!items.length) {
+          const td = el('td', '', '—');
+          td.colSpan = 12;
+          const tr = el('tr');
+          tr.append(td);
+          tb.append(tr);
+          return;
+        }
+        for (const u of items) {
+          const tr = el('tr');
+          usoCells(u).forEach((v) => tr.append(el('td', '', v)));
+          tb.append(tr);
+        }
+      }
+      // "Canaries" (stage #1889, QM4): the head, the before x canary ruler and the verdict, all in text; the color
+      // of the verdict only repeats what the words already say.
+      const sideText = (s) =>
+        isObj(s)
+          ? 'median ' +
+            moneyOrDash(s.medianaSessao) +
+            ' per session, rework ' +
+            asText(s.comRetrabalho) +
+            ' of ' +
+            asText(s.decididas)
+          : '—';
+      const VEREDITO_COR = { 'pode promover': 'ok', revertido: 'bad' };
+      function canaryItem(c) {
+        const back = asList(c.retrabalhos) || [];
+        const head = [
+          asText(c.id),
+          asText(c.papel),
+          asText(c.de) + ' → ' + asText(c.modelo) + ' ' + asText(c.esforco),
+          ...(c.filtro ? ['filter ' + asText(c.filtro)] : []),
+          asText(c.contadas == null ? 0 : c.contadas) + '/' + asText(c.n),
+          asText(c.estado),
+          'rework ' + back.length + '/' + asText(c.volta),
+        ].join(' · ');
+        const r = isObj(c.resumo) ? c.resumo : null;
+        const line =
+          'before: ' +
+          (r ? sideText(r.antes) : '—') +
+          ' · canary: ' +
+          (r ? sideText(r.canario) : '—');
+        const verdict = r && r.veredito ? asText(r.veredito) : '—';
+        const box = el('div', 'canario');
+        const v = el('div', 'veredito', verdict);
+        if (has(VEREDITO_COR, verdict)) v.classList.add(VEREDITO_COR[verdict]);
+        box.append(el('div', '', head), el('div', 'regua', line), v);
+        const li = el('li');
+        li.append(box);
+        return li;
+      }
+      function renderCanarios(list) {
+        const ul = byId('mp-canarios');
+        ul.replaceChildren();
+        const items = list.filter(isObj);
+        if (!items.length) {
+          ul.append(el('li', '', '—'));
+          return;
+        }
+        items.forEach((c) => ul.append(canaryItem(c)));
+      }
       dash.onData(() => {
         const m = q('meta')[0] || {};
         // vagasItens comes ready from painel.py; the split only serves an old panel (without the field).
@@ -1646,6 +1799,8 @@
           ctb.appendChild(tr);
         }
         renderCusto(crows);
+        renderUso(q('uso'));
+        renderCanarios(asList(m.canarios) || []);
         // Supervisor requests and rules in force (meta.requests and meta.rules); without them the cards show "—".
         const fillList = (id, items) => {
           const ul = document.getElementById(id);
