@@ -7,6 +7,8 @@
 - `docs/SPEC-FORMAT.md` ("Accessibility"), `docs/spec.schema.json`, `docs/AGENT-GUIDE.md`, `docs/ARCHITECTURE.md`, the `spec-author` skill and the `formatVersion` Help: the current version is 18.
 - Test library `accessibility` (`tests/fixtures/accessibility`): a `button`, a bar with two field parts and a slot with a `fallback`, an `icon-button` and a type with a table part per row.
 - Performance: the audit joins the derived-state budget of `tests/model/performance.test.ts` (8 ms per frame) and the growth tests of `npm run test:scale`.
+- App (phase A2): the pending item `accessible-label-missing` appears in **Incomplete** and in the field (and in the cell of a table part) with the name of the field, of the part and the row (`Missing accessible label on the part Tab, row 2`); the warning `touch-target-small` appears in the new **Accessibility** section of the **Notices** window (only **Only visible layers** filters it) and as a line in the marking's **Details**, with the size in units and in pixels at the container's density; the status bar count adds the annotations with that warning, once per annotation, and **Incomplete** does not count it. The audit is a `computed` that pan and zoom do not touch (a test with a spy: 0 calls in 20 frames).
+- Test scripts: R9.40 (the pending item in the Details and `Ctrl+Z`) and the new script R29 — Accessibility (block 3).
 
 ## Alterado
 
