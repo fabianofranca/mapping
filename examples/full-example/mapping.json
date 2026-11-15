@@ -1223,7 +1223,9 @@
         "title": "Settings",
         "style": "small",
         "navigationIcon": "ArrowBack",
-        "actionIcon1": "MoreVert"
+        "navigationIconDescription": "Back",
+        "actionIcon1": "MoreVert",
+        "actionIcon1Description": "More options"
       },
       "entries": []
     },
@@ -1505,7 +1507,9 @@
         "title": "Order #1024",
         "style": "small",
         "navigationIcon": "ArrowBack",
-        "actionIcon1": "MoreVert"
+        "navigationIconDescription": "Back",
+        "actionIcon1": "MoreVert",
+        "actionIcon1Description": "More options"
       },
       "entries": []
     },
