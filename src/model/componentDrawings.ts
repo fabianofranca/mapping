@@ -361,14 +361,22 @@ function childReceived(
   const out = new Map<string, Received>();
   for (const [childId, slot] of slotOf) {
     const own = slot === null ? undefined : slotClips.get(slot);
-    const previous = before?.get(childId);
-    const shapes = [...(received.shapes ?? []), ...(own?.shapes ?? [])];
-    out.set(childId, {
-      clip: stableRect(previous?.clip, intersectClips(own?.clip, received.clip)),
-      shapes: stableShapes(previous?.shapes, shapes.length === 0 ? undefined : shapes),
-    });
+    out.set(childId, receivedFrom(own, received, before?.get(childId)));
   }
   return out;
+}
+
+/** What one child receives: its slot's clip inside what the marking received, with stable identities. */
+function receivedFrom(
+  own: SlotClip | undefined,
+  received: Received,
+  previous: Received | undefined,
+): Received {
+  const shapes = [...(received.shapes ?? []), ...(own?.shapes ?? [])];
+  return {
+    clip: stableRect(previous?.clip, intersectClips(own?.clip, received.clip)),
+    shapes: stableShapes(previous?.shapes, shapes.length === 0 ? undefined : shapes),
+  };
 }
 
 /**
@@ -701,7 +709,7 @@ function instantiateWithSlots(
 }
 
 function draw(input: DrawInput): Drawn {
-  const { mc, markingId, containerId, rect, values, valueWarnings, received } = input;
+  const { mc, markingId, containerId, rect, valueWarnings, received } = input;
   const { measure, mode, provided, density, direction, anchor } = input;
   const tokens =
     mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];

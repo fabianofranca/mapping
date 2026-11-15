@@ -342,25 +342,20 @@ function slotArea(
     kids: [],
   };
   const mc = markingComponent(p, catalog, containerId);
-  const drawn =
-    mc === null ? null : componentForDrawing(p, mc.component, container.containerId);
-  if (mc === null || drawn === null || componentSlots(drawn.component).length === 0)
-    return whole;
+  const drawn = drawnWithSlots(p, mc, container.containerId);
+  if (mc === null || drawn === null) return whole;
   const scene = sceneOfSlots(p, catalog, container, mc, drawn, measure, drawings);
   const key = slotToUse(drawn.component, scene.boxes, slotId);
   const slot = componentSlots(drawn.component).find((s) => slotKey(s) === key);
   const box = key === undefined ? undefined : scene.boxes.get(key);
   if (slot === undefined || box === undefined) return whole;
-  const x = Math.max(Math.ceil(box.x), container.rect.x);
-  const y = Math.max(Math.ceil(box.y), container.rect.y);
-  const r = Math.min(Math.floor(box.x + box.width), right(container.rect));
-  const b = Math.min(Math.floor(box.y + box.height), bottom(container.rect));
-  if (r - x < 1 || b - y < 1) return whole;
+  const area = wholePixels(box, container.rect);
+  if (area === null) return whole;
   const values = drawingValues(p, mc.annotation, mc.type).values;
   const density = effectiveDensity(p, container.containerId);
   const layout = scaledLayout(resolveSlotLayout(slot, values), density);
   return {
-    area: { x, y, width: r - x, height: b - y },
+    area,
     padding: layout.padding,
     gap: layout.gap,
     flow: layout.type,
@@ -373,8 +368,28 @@ function slotArea(
     maxPerLine: layout.maxPerLine,
     maxLines: layout.maxLines,
     hasSlot: true,
-    kids: key === undefined ? [] : (scene.kids.get(key) ?? []),
+    kids: scene.kids.get(slotKey(slot)) ?? [],
   };
+}
+
+/** The component as drawn in its container when it has at least one slot; otherwise `null`. */
+function drawnWithSlots(
+  p: Project,
+  mc: ReturnType<typeof markingComponent>,
+  containerId: string | null,
+): ReturnType<typeof componentForDrawing> | null {
+  if (mc === null) return null;
+  const drawn = componentForDrawing(p, mc.component, containerId);
+  return drawn === null || componentSlots(drawn.component).length === 0 ? null : drawn;
+}
+
+/** A box in whole pixels inside `within` (`null` when less than a pixel is left). */
+function wholePixels(box: Rect, within: Rect): Rect | null {
+  const x = Math.max(Math.ceil(box.x), within.x);
+  const y = Math.max(Math.ceil(box.y), within.y);
+  const r = Math.min(Math.floor(box.x + box.width), right(within));
+  const b = Math.min(Math.floor(box.y + box.height), bottom(within));
+  return r - x < 1 || b - y < 1 ? null : { x, y, width: r - x, height: b - y };
 }
 
 /**

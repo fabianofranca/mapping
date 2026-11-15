@@ -1247,6 +1247,13 @@ function createEngine(
       ? planFrame(node, null, null, { w: bound, h: null }).w
       : planFrame(node, otherSize ?? null, null, { w: null, h: bound }).h;
 
+  /** Only an empty slot with a `fallback` has something to measure (a filled one is 0, as always). */
+  const slotHug = (
+    node: SlotTemplate,
+    axis: Axis,
+    otherSize: number | undefined,
+  ): number => (slotFilled(node) ? 0 : (fallbackSize(node, axis, otherSize) ?? 0));
+
   /**
    * Size of a node's content on one axis (`otherSize`: the already resolved width, for the
    * height; `bound`: the available limit on the axis, to measure frames with `fill` children).
@@ -1267,8 +1274,7 @@ function createEngine(
       case 'icon':
         return iconBox(node)[axis === 'w' ? 0 : 1];
       case 'slot':
-        // Only an empty slot with a `fallback` has something to measure (a filled one is 0, as always).
-        return slotFilled(node) ? 0 : (fallbackSize(node, axis, otherSize) ?? 0);
+        return slotHug(node, axis, otherSize);
       default:
         return 0;
     }
