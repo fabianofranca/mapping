@@ -4,10 +4,10 @@ import {
   isPlainNone,
   resolveSlotLayout,
   slotBoxOfScene,
-  slotsOfScene,
   type ResolvedSlotLayout,
 } from './components/arrange';
-import { assignSlots, componentSlots, slotGrows, slotKey } from './components/slots';
+import { assignSlots, componentSlots, slotKey } from './components/slots';
+import { slotInputsOf } from './componentSlotInputs';
 import type {
   ComponentFile,
   FieldValues,
@@ -126,17 +126,19 @@ function kidsBySlot(
   const only = slots[0];
   if (slots.length === 1 && only !== undefined) return new Map([[slotKey(only), kids]]);
   const space = unitSpaceOf(marking.rect, effectiveDensity(p, marking.containerId));
-  const { root } = instantiate(drawn.component, values, space.box, {
-    measure,
-    idPrefix: marking.id,
-    ...drawOptions(drawn),
+  const options = { measure, idPrefix: marking.id, ...drawOptions(drawn) };
+  const { root } = instantiate(drawn.component, values, space.box, options);
+  // A slot hidden by `visible` keeps its children (#1978): they are not arranged, and do not move into another slot.
+  const { inputs, revealed } = slotInputsOf({
+    component: drawn.component,
+    values,
+    target: space.box,
+    options,
+    probe: root,
+    space,
+    defs: new Map(),
+    hasKids: true,
   });
-  const grows = new Map(slots.map((s) => [slotKey(s), slotGrows(s)]));
-  const inputs = [...slotsOfScene(root)].map(([id, slot]) => ({
-    id,
-    box: space.toPixels(slot.box),
-    grows: grows.get(id) ?? false,
-  }));
   const assignment = assignSlots(
     inputs,
     kids.map((kid) => ({
@@ -147,10 +149,9 @@ function kidsBySlot(
   );
   const byId = new Map(kids.map((kid) => [kid.id, kid]));
   return new Map(
-    [...assignment.children].map(([id, ids]) => [
-      id,
-      ids.flatMap((kidId) => byId.get(kidId) ?? []),
-    ]),
+    [...assignment.children]
+      .filter(([id]) => !revealed.has(id))
+      .map(([id, ids]) => [id, ids.flatMap((kidId) => byId.get(kidId) ?? [])]),
   );
 }
 

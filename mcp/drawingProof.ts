@@ -142,6 +142,12 @@ export interface SlotItem {
 
 export type DrawingItem = OverflowItem | SlotItem;
 
+function slotMessage(issue: DrawingSlotIssue, where: string, typeName: string): string {
+  if (issue.code === 'slot-full') return `${where} takes ${issue.max ?? 0}`;
+  if (issue.code === 'slot-hidden') return `${where} is hidden`;
+  return `${where} does not accept ${typeName}`;
+}
+
 /** The `slot-not-accepted` text carries the child's type; `slot-full` carries the slot's `max`. */
 function slotItemOf(issue: DrawingSlotIssue, typeName: string): SlotItem {
   const where = `the slot ${issue.slot.name} of ${issue.owner}`;
@@ -150,10 +156,7 @@ function slotItemOf(issue: DrawingSlotIssue, typeName: string): SlotItem {
     slot: { id: issue.slot.id, name: issue.slot.name },
     owner: issue.owner,
     ...(issue.max === undefined ? {} : { max: issue.max }),
-    message:
-      issue.code === 'slot-full'
-        ? `${where} takes ${issue.max ?? 0}`
-        : `${where} does not accept ${typeName}`,
+    message: slotMessage(issue, where, typeName),
   };
 }
 

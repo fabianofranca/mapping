@@ -354,7 +354,7 @@ function sameIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
   );
 }
 
-/** The slot, owner and max of `slot-not-accepted` and `slot-full`. */
+/** The slot, owner and max of `slot-not-accepted`, `slot-full` and `slot-hidden`. */
 function sameSlotIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
   return (
     x.slot?.id === y.slot?.id &&

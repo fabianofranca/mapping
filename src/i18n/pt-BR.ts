@@ -972,6 +972,7 @@ export const ptBR: Dictionary = {
   'issue.component-overflow': 'O componente não cabe',
   'issue.slot-not-accepted': 'o slot {slot} de {owner} não aceita {type}',
   'issue.slot-full': 'o slot {slot} de {owner} aceita {max}',
+  'issue.slot-hidden': 'o slot {slot} de {owner} está oculto',
   'list.incomplete': 'Só incompletas',
   'list.emptyIncomplete': 'Nenhuma anotação incompleta nas camadas visíveis.',
   'marking.section': 'Marcação',

@@ -28,9 +28,9 @@ import {
   type HugAxes,
   type SlotAssignment,
   type SlotChild,
-  type SlotInput,
 } from './components/slots';
 import { typeSlots, type TypeSlot } from './specSlots';
+import { slotInputsOf, type RevealedSlot } from './componentSlotInputs';
 import {
   NO_PROVIDED,
   extendProvided,
@@ -119,6 +119,11 @@ export interface ComponentDrawing {
    */
   readonly clipShape?: readonly ClipShape[];
   /**
+   * The marking sits in a slot hidden by `visible` (or under a marking that does): it keeps its outline and its
+   * place in the project but is not drawn (#1978). Absent otherwise.
+   */
+  readonly hidden?: true;
+  /**
    * The slots of the drawn scene (decision 7 of #1080), in template order, with the box of the final
    * drawing in image pixels (or canvas units) and the child markings the geometry put in each one.
    * Empty with `screen` (no probe and no assignment) and in a component without a slot.
@@ -153,7 +158,7 @@ export interface ComponentDrawing {
 export interface DrawingSlotIssue {
   /** The child's annotation that has the component (the one the cache draws). */
   readonly annotationId: string;
-  readonly code: 'slot-not-accepted' | 'slot-full';
+  readonly code: 'slot-not-accepted' | 'slot-full' | 'slot-hidden';
   /** The slot the geometry put the child in (`name`: the type's, else the label, else the `id`). */
   readonly slot: { readonly id: string; readonly name: string };
   /** The name of this marking's type (the owner of the slot). */
@@ -173,6 +178,11 @@ export interface DrawnSlot {
   readonly children: readonly string[];
   /** The slot draws its default content (it has a `fallback` and no child). */
   readonly fallback: boolean;
+  /**
+   * The slot is hidden by its `visible` but still holds children (#1978): `box` is the one it would have if
+   * visible and the children are not drawn. Only slots with children are listed.
+   */
+  readonly hidden: boolean;
 }
 
 /** A rounded box that cuts the drawing of a slot's child (see `ComponentDrawing.clipShape`). */
@@ -385,9 +395,11 @@ function stableShapes(
 interface Received {
   readonly clip: Rect | undefined;
   readonly shapes: readonly ClipShape[] | undefined;
+  /** The marking is in a hidden slot of its parent, or under one that is. */
+  readonly hidden: boolean;
 }
 
-const NOTHING_RECEIVED: Received = { clip: undefined, shapes: undefined };
+const NOTHING_RECEIVED: Received = { clip: undefined, shapes: undefined, hidden: false };
 
 /** What one slot with `clip` imposes on its children (image pixels or canvas units). */
 interface SlotClip {
@@ -404,6 +416,8 @@ function withReceived(drawing: ComponentDrawing, received: Received): ComponentD
   };
   delete copy.clip;
   delete copy.clipShape;
+  delete copy.hidden;
+  if (received.hidden) copy.hidden = true;
   if (received.clip !== undefined) copy.clip = received.clip;
   if (received.shapes !== undefined) copy.clipShape = received.shapes;
   return copy;
@@ -420,13 +434,39 @@ function childReceived(
   slotOf: ReadonlyMap<string, string | null>,
   received: Received,
   before: ReadonlyMap<string, Received> | undefined,
+  hiddenSlots: ReadonlySet<string>,
 ): ReadonlyMap<string, Received> {
   const out = new Map<string, Received>();
   for (const [childId, slot] of slotOf) {
     const own = slot === null ? undefined : slotClips.get(slot);
-    out.set(childId, receivedFrom(own, received, before?.get(childId)));
+    const hidden = received.hidden || (slot !== null && hiddenSlots.has(slot));
+    out.set(childId, receivedFrom(own, received, before?.get(childId), hidden));
   }
   return out;
+}
+
+/** The ids of the drawing's slots that are hidden by `visible` (and hold children). */
+function hiddenSlotIds(drawing: ComponentDrawing): ReadonlySet<string> {
+  const ids = drawing.slots.filter((slot) => slot.hidden).map((slot) => slot.id);
+  return ids.length === 0 ? NO_HIDDEN : new Set(ids);
+}
+
+const NO_HIDDEN: ReadonlySet<string> = new Set();
+
+const HIDDEN_RECEIVED: Received = { clip: undefined, shapes: undefined, hidden: true };
+
+/**
+ * The children of a hidden marking that no slot of it received (it has no slots) are hidden too: what is under
+ * a hidden marking is not drawn, whatever it is.
+ */
+function passHidden(
+  passed: Map<string, Received>,
+  kids: readonly Marking[] | undefined,
+  received: Received,
+): void {
+  if (!received.hidden) return;
+  for (const kid of kids ?? [])
+    if (!passed.has(kid.id)) passed.set(kid.id, HIDDEN_RECEIVED);
 }
 
 /** What one child receives: its slot's clip inside what the marking received, with stable identities. */
@@ -434,9 +474,11 @@ function receivedFrom(
   own: SlotClip | undefined,
   received: Received,
   previous: Received | undefined,
+  hidden: boolean,
 ): Received {
   const shapes = [...(received.shapes ?? []), ...(own?.shapes ?? [])];
   return {
+    hidden,
     clip: stableRect(previous?.clip, intersectClips(own?.clip, received.clip)),
     shapes: stableShapes(previous?.shapes, shapes.length === 0 ? undefined : shapes),
   };
@@ -450,10 +492,11 @@ function placement(
   screen: ComponentFile['screen'],
   rect: Rect,
   received: Received,
-): Pick<ComponentDrawing, 'screen' | 'clip' | 'clipShape'> {
+): Pick<ComponentDrawing, 'screen' | 'clip' | 'clipShape' | 'hidden'> {
   if (screen !== undefined)
     return { screen: { anchor: screen.anchor ?? 'center', rect } };
   return {
+    ...(received.hidden ? { hidden: true as const } : {}),
     ...(received.clip === undefined ? {} : { clip: received.clip }),
     ...(received.shapes === undefined ? {} : { clipShape: received.shapes }),
   };
@@ -535,6 +578,7 @@ function overflowsOf(
   for (const w of instantiated.overflowWarnings ?? [])
     found[w] = (shortfalls[w] ?? 0) * density;
   for (const slot of slots) {
+    if (slot.hidden) continue;
     const rects = slot.children.flatMap((id) => rectOf.get(id) ?? []);
     const excess = rects.length > 0 ? slotExcess(slot.box, rects, hugOf.get(slot.id)) : 0;
     if (excess > 0) found[slotOverflowKey(slot.id)] = excess;
@@ -647,6 +691,8 @@ function tokenizedSlot(
 /** What the probe and the assignment decide about the final drawing. */
 interface SlotPlan {
   readonly assignment: SlotAssignment;
+  /** The slots hidden by `visible` (by id), with the box they would have if visible. */
+  readonly revealed: ReadonlyMap<string, RevealedSlot>;
   /** `slotContent` of the final drawing: the children's size of each filled slot that measures them. */
   readonly content: ReadonlyMap<string, SlotSize>;
   /** The other filled slots (a fixed size has nothing to measure): only their `fallback` goes away. */
@@ -663,16 +709,17 @@ function planSlots(
   defs: readonly TypeSlot[],
   space: UnitSpace,
   probe: FrameNode,
+  reveal: Pick<Parameters<typeof slotInputsOf>[0], 'target' | 'options'>,
 ): SlotPlan {
-  const byId = new Map(defs.map((def) => [def.id, def]));
-  const hug = hugAxesOf(mc.component);
-  const inputs: SlotInput[] = [...slotsOfScene(probe)].map(([id, slot]) => ({
-    id,
-    box: space.toPixels(slot.box),
-    accepts: byId.get(id)?.accepts,
-    max: byId.get(id)?.max,
-    grows: (hug.get(id)?.x ?? false) || (hug.get(id)?.y ?? false),
-  }));
+  const { inputs, revealed } = slotInputsOf({
+    component: mc.component,
+    values,
+    ...reveal,
+    probe,
+    space,
+    defs: new Map(defs.map((def) => [def.id, def])),
+    hasKids: kids.length > 0,
+  });
   const assignment = assignSlots(inputs, kids);
   const templates = new Map(componentSlots(mc.component).map((s) => [slotKey(s), s]));
   const rectOf = new Map(kids.map((k) => [k.id, k.rect]));
@@ -681,7 +728,7 @@ function planSlots(
   let needsFinal = false;
   for (const [id, ids] of assignment.children) {
     const template = templates.get(id);
-    if (ids.length === 0 || template === undefined) continue;
+    if (ids.length === 0 || template === undefined || revealed.has(id)) continue;
     needsFinal ||= template.fallback !== undefined || measuresContent(template);
     if (!measuresContent(template)) {
       filled.add(id);
@@ -698,7 +745,7 @@ function planSlots(
       ),
     );
   }
-  return { assignment, content, filled, needsFinal };
+  return { assignment, revealed, content, filled, needsFinal };
 }
 
 /** The radius of a shape in image pixels (× the density). */
@@ -731,24 +778,34 @@ function slotClipsOf(root: FrameNode, space: UnitSpace): ReadonlyMap<string, Slo
   return out.size === 0 ? NO_SLOT_CLIPS : out;
 }
 
-/** The slots of the drawn scene, with their boxes in image pixels and their children. */
+/**
+ * The slots of the drawn scene, with their boxes in image pixels and their children, in template order. A slot
+ * hidden by `visible` is listed only when it holds children, with the box it would have if visible.
+ */
 function drawnSlots(
   component: ComponentFile,
   root: FrameNode,
   space: UnitSpace,
-  assignment: SlotAssignment,
+  plan: SlotPlan,
 ): readonly DrawnSlot[] {
   const templates = new Map(componentSlots(component).map((s) => [slotKey(s), s]));
-  return [...slotsOfScene(root)].map(([id, slot]) => {
-    const children = assignment.children.get(id) ?? [];
-    return {
+  const scene = slotsOfScene(root);
+  const out: DrawnSlot[] = [];
+  for (const [id, template] of templates) {
+    const children = plan.assignment.children.get(id) ?? [];
+    const slot = scene.get(id);
+    const found = slot ?? (children.length === 0 ? undefined : plan.revealed.get(id));
+    if (found === undefined) continue;
+    out.push({
       id,
-      name: slot.name,
-      box: space.toPixels(slot.box),
+      name: found.name,
+      box: slot === undefined ? (found as RevealedSlot).box : space.toPixels(slot.box),
       children,
-      fallback: children.length === 0 && templates.get(id)?.fallback !== undefined,
-    };
-  });
+      fallback: children.length === 0 && template.fallback !== undefined,
+      hidden: slot === undefined,
+    });
+  }
+  return out;
 }
 
 /** The default-content fields of the slots that hold children (they mean nothing now), by field. */
@@ -830,7 +887,10 @@ function instantiateWithSlots(
   // children's space.
   if (screen || componentSlots(mc.component).length === 0)
     return { instantiated: probe, plan: undefined };
-  const plan = planSlots(mc, values, tokens, kids, input.slotDefs, space, probe.root);
+  const plan = planSlots(mc, values, tokens, kids, input.slotDefs, space, probe.root, {
+    target,
+    options,
+  });
   if (!plan.needsFinal) return { instantiated: probe, plan };
   const instantiated = instantiate(mc.component, values, target, {
     ...options,
@@ -862,7 +922,7 @@ function slotFacts(
   if (plan === undefined) return NO_FACTS;
   const { mc, kids, slotDefs } = input;
   return {
-    slots: drawnSlots(mc.component, root, space, plan.assignment),
+    slots: drawnSlots(mc.component, root, space, plan),
     slotOf: new Map(kids.map((k) => [k.id, plan.assignment.slotOf.get(k.id) ?? null])),
     inactiveFields: inactiveFieldsOf(mc.component, plan.assignment),
     slotIssues: slotIssuesOf(mc, kids, slotDefs, plan.assignment),
@@ -947,7 +1007,7 @@ function stableSlotClips(
 }
 
 function sameReceived(a: Received, b: Received): boolean {
-  return a.clip === b.clip && a.shapes === b.shapes;
+  return a.hidden === b.hidden && a.clip === b.clip && a.shapes === b.shapes;
 }
 
 /**
@@ -1074,6 +1134,7 @@ export function createDrawingCache(): DrawingCache {
                 before.drawing.slotOf,
                 received,
                 before.childReceived,
+                hiddenSlotIds(before.drawing),
               ),
               drawing: withReceived(before.drawing, received),
             };
@@ -1081,6 +1142,7 @@ export function createDrawingCache(): DrawingCache {
         drawings.set(marking.id, kept.drawing);
         scopes.set(marking.id, extendProvided(inherited, before.offers));
         for (const [id, r] of kept.childReceived) passed.set(id, r);
+        passHidden(passed, children.get(marking.id), received);
         continue;
       }
       const { drawing, offers, slotClips } = draw({
@@ -1106,8 +1168,10 @@ export function createDrawingCache(): DrawingCache {
         drawing.slotOf,
         received,
         before?.childReceived,
+        hiddenSlotIds(drawing),
       );
       for (const [id, r] of forChildren) passed.set(id, r);
+      passHidden(passed, children.get(marking.id), received);
       scopes.set(marking.id, extendProvided(inherited, offers));
       next.set(marking.id, {
         markingId: marking.id,

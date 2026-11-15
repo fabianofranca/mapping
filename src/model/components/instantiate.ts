@@ -230,6 +230,19 @@ export interface SlotSize {
 /** One size (the component's only slot, as always) or one per slot, by `slotKey`. */
 export type SlotContent = SlotSize | ReadonlyMap<string, SlotSize>;
 
+const holdsSlotMemo = new WeakMap<TemplateNode, boolean>();
+
+/** Is the node a slot or a frame with a slot somewhere below it (what `revealSlots` shows)? */
+function holdsSlot(node: TemplateNode): boolean {
+  if (node.type === 'slot') return true;
+  if (node.type !== 'frame') return false;
+  const known = holdsSlotMemo.get(node);
+  if (known !== undefined) return known;
+  const found = (node.children ?? []).some(holdsSlot);
+  holdsSlotMemo.set(node, found);
+  return found;
+}
+
 export interface InstantiateOptions {
   readonly measure: TextMeasurer;
   /** Prefix of the node ids (e.g. the instance id). */
@@ -271,6 +284,12 @@ export interface InstantiateOptions {
    * `$anchor.x`, `$anchor.y`, `$anchor.width` and `$anchor.height`. Absent = no anchor (the five stay empty).
    */
   readonly anchor?: InstanceAnchor;
+  /**
+   * Draw the slots hidden by their `visible` (and the frames of the template that hold one) as if they were
+   * visible: the pass that tells where a hidden slot would be (#1978), so a child stays assigned to it. The
+   * scene is only read for the slots' boxes, never drawn.
+   */
+  readonly revealSlots?: boolean;
 }
 
 export interface Instantiated {
@@ -722,7 +741,8 @@ function createEngine(
     return allowed.includes(value as T) ? (value as T) : fallback;
   };
 
-  const isVisible = (node: TemplateNode) => bool(node.visible, true);
+  const isVisible = (node: TemplateNode) =>
+    (options.revealSlots === true && holdsSlot(node)) || bool(node.visible, true);
 
   // --- text -----------------------------------------------------------------------------
 

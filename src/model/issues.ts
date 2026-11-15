@@ -60,7 +60,9 @@ export type AnnotationIssueCode =
    */
   | 'slot-not-accepted'
   /** The child is beyond the `max` of its slot (the same origin as `slot-not-accepted`). */
-  | 'slot-full';
+  | 'slot-full'
+  /** The child is in a slot hidden by its `visible`: it stays in the slot and in the code, and is not drawn (#1978). */
+  | 'slot-hidden';
 
 export interface AnnotationIssue {
   readonly code: AnnotationIssueCode;
@@ -70,9 +72,9 @@ export interface AnnotationIssue {
   readonly rowId?: string;
   /** Table column involved. */
   readonly column?: string;
-  /** `slot-not-accepted` and `slot-full`: the slot of the owner that the child is in. */
+  /** `slot-not-accepted`, `slot-full` and `slot-hidden`: the slot of the owner that the child is in. */
   readonly slot?: { readonly id: string; readonly name: string };
-  /** `slot-not-accepted` and `slot-full`: the name of the owner's type (the one that has the slot). */
+  /** `slot-not-accepted`, `slot-full` and `slot-hidden`: the name of the owner's type (the one that has the slot). */
   readonly owner?: string;
   /** `slot-full`: the number of children the slot takes. */
   readonly max?: number;

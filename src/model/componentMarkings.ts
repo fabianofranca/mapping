@@ -8,7 +8,6 @@ import {
   assignSlots,
   componentSlots,
   slotForPlacement,
-  slotGrows,
   slotHugAxes,
   slotKey,
 } from './components/slots';
@@ -30,6 +29,7 @@ import {
 } from './componentCatalog';
 import { anchorValues, drawingValues } from './componentValues';
 import { effectiveDensity, unitSpaceOf, unitsToPixels } from './density';
+import { slotInputsOf } from './componentSlotInputs';
 import { componentForDrawing, drawOptions } from './drawingMode';
 import {
   anchoredRect,
@@ -274,17 +274,18 @@ function sceneOfSlots(
     ids.flatMap((id) => byId.get(id) ?? []);
   if (known !== undefined && known.slots.every((slot) => slot.children.length === 0)) {
     return {
-      boxes: new Map(known.slots.map((slot) => [slot.id, slot.box])),
+      boxes: new Map(
+        known.slots.flatMap((slot) =>
+          slot.hidden ? [] : [[slot.id, slot.box] as const],
+        ),
+      ),
       kids: new Map(known.slots.map((slot) => [slot.id, []])),
     };
   }
   const values = drawingValues(p, mc.annotation, mc.type).values;
   const space = unitSpaceOf(container.rect, effectiveDensity(p, container.containerId));
-  const { root } = instantiate(drawn.component, values, space.box, {
-    measure,
-    idPrefix: container.id,
-    ...drawOptions(drawn),
-  });
+  const options = { measure, idPrefix: container.id, ...drawOptions(drawn) };
+  const { root } = instantiate(drawn.component, values, space.box, options);
   const boxes = new Map(
     [...slotsOfScene(root)].map(([id, slot]) => [id, space.toPixels(slot.box)]),
   );
@@ -293,17 +294,18 @@ function sceneOfSlots(
   const defs = new Map(
     typeSlots(p, mc.specId, mc.typeId, mc.component).map((def) => [def.id, def]),
   );
-  const grows = new Map(
-    componentSlots(drawn.component).map((s) => [slotKey(s), slotGrows(s)]),
-  );
+  const { inputs } = slotInputsOf({
+    component: drawn.component,
+    values,
+    target: space.box,
+    options,
+    probe: root,
+    space,
+    defs,
+    hasKids: kids.length > 0,
+  });
   const assignment = assignSlots(
-    [...boxes].map(([id, box]) => ({
-      id,
-      box,
-      accepts: defs.get(id)?.accepts,
-      max: defs.get(id)?.max,
-      grows: grows.get(id) ?? false,
-    })),
+    inputs,
     kids.map((kid) => ({
       id: kid.id,
       rect: kid.rect,

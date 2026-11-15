@@ -30,6 +30,11 @@ export interface LayerDrawing {
    * 0): it shows inside `clip` and inside every shape. The screen-pixel drawing ignores them.
    */
   readonly clipShape?: readonly ClipShape[];
+  /**
+   * The marking is in a slot hidden by `visible` (or under one that is): it is not drawn, but keeps its outline
+   * and stays selectable, since the marking itself is not hidden (#1978).
+   */
+  readonly hidden?: true;
 }
 
 /** Fraction (of the width and height) of each anchor's point. */
@@ -537,9 +542,9 @@ function wantedBySpace(
 ): Map<string | null, LayerDrawing[]> {
   const wanted = new Map<string | null, LayerDrawing[]>();
   for (const drawing of drawings.values()) {
-    if (placementOf(placements, drawing.containerId) === undefined || !visible(drawing)) {
+    if (drawing.hidden || placementOf(placements, drawing.containerId) === undefined)
       continue;
-    }
+    if (!visible(drawing)) continue;
     const list = wanted.get(drawing.containerId);
     if (list) list.push(drawing);
     else wanted.set(drawing.containerId, [drawing]);
