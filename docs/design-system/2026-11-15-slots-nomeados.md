@@ -1,4 +1,4 @@
-# Named slots with default content — [Não lançado] (épico `epic/slots-nomeados`)
+# Named slots with default content — 2026-11-15 (épico `epic/slots-nomeados`)
 
 ## Pendências
 
@@ -6,7 +6,7 @@
 
 ## Sincronização
 
-Nothing to write to the **Mapping** artifact so far: the epic does not change a component, token or icon of the app.
+Versão 90 (content and index, in a single publish) of the **Mapping** artifact, on 2026-11-15. The only pending item was recorded: the `PropertyGrid` guide (`components/PropertyGrid/README.md`) now lists the default-content field of a slot that has a child ("The slot <name> has content: this field does not draw or go into the code") as a use of the `status` line, with the `hint` still being the field's description, and its preview (`preview.html`) gained a default-content row showing that state. No new component, token or icon.
 
 ## Ficou sem gravar
 
