@@ -2778,17 +2778,38 @@ export function changeCounts(before: Project, after: Project): Record<string, un
   };
 }
 
-/** Pending items (incomplete annotations) that the batch creates or resolves. */
+/** What tells two pending items of an annotation apart (the same code on another field or slot is another item). */
+const issueKey = (i: AnnotationIssue): string =>
+  [i.code, i.key ?? '', i.slot?.id ?? '', i.rowId ?? '', i.column ?? ''].join('\u0000');
+
+/** The items of `next` that `old` did not have. */
+function gainedIssues(
+  old: readonly AnnotationIssue[] | undefined,
+  next: readonly AnnotationIssue[],
+): AnnotationIssue[] {
+  const had = new Set((old ?? []).map(issueKey));
+  return next.filter((i) => !had.has(issueKey(i)));
+}
+
+/**
+ * Pending items (incomplete annotations) that the batch creates or resolves: `new` lists, per annotation, only
+ * the items it gained (an annotation that already had one and gets another lists just the new one); `resolved`
+ * counts the annotations that ended with no item.
+ */
 export function issueChanges(refs: Refs, before: Project): Record<string, unknown> {
   const after = refs.project;
   const old = projectIssues(before);
   const next = projectIssues(after);
-  const added = [...next.entries()]
-    .filter(([id]) => !old.has(id))
-    .map(([id, issues]) => ({
-      annotation: refs.ref('a', id),
-      issues: issues.map((i) => ({ code: i.code, ...(i.key ? { key: i.key } : {}) })),
-    }));
+  const added = [...next.entries()].flatMap(([id, issues]) => {
+    const gained = gainedIssues(old.get(id), issues);
+    if (gained.length === 0) return [];
+    return [
+      {
+        annotation: refs.ref('a', id),
+        issues: gained.map((i) => ({ code: i.code, ...(i.key ? { key: i.key } : {}) })),
+      },
+    ];
+  });
   const resolved = [...old.keys()].filter((id) => !next.has(id)).length;
   return { before: old.size, after: next.size, resolved, new: added };
 }

@@ -17,7 +17,6 @@ import {
   isMarkingGeometryLocked,
   markingLockStates,
   projectIndex,
-  projectIssues,
   platformRepoOf,
   projectPlatforms,
   refLabel,
@@ -38,6 +37,7 @@ import {
 } from '../src/model';
 import { memoByProject } from '../src/model/projectIndex';
 import { annotationCode, assertPlatform, CODE_HINT, type CodeContext } from './codeViews';
+import { projectIssuesWithDrawings } from './drawings';
 import { ToolError } from './errors';
 import { Refs } from './items';
 import {
@@ -123,7 +123,7 @@ const siblingIndexes = memoByProject((p: Project): ReadonlyMap<string, number> =
 export function markingRow(refs: Refs, marking: Marking): Json {
   const index = projectIndex(refs.project);
   const own = index.annotationsByMarking.get(marking.id) ?? [];
-  const issues = projectIssues(refs.project);
+  const issues = projectIssuesWithDrawings(refs.loaded);
   const incomplete = own.filter((a) => issues.has(a.id)).length;
   return {
     ref: refs.ref('m', marking.id),
@@ -150,6 +150,11 @@ function issueView(issue: AnnotationIssue): Json {
     ...(issue.key !== undefined ? { key: issue.key } : {}),
     ...(issue.rowId !== undefined ? { rowId: issue.rowId } : {}),
     ...(issue.column !== undefined ? { column: issue.column } : {}),
+    ...(issue.slot !== undefined
+      ? { slot: { id: issue.slot.id, name: issue.slot.name } }
+      : {}),
+    ...(issue.owner !== undefined ? { owner: issue.owner } : {}),
+    ...(issue.max !== undefined ? { max: issue.max } : {}),
   };
 }
 
@@ -213,7 +218,7 @@ export function annotationView(
   const p = refs.project;
   const layer = projectIndex(p).layers.get(annotation.layerId);
   const resolvedType = typeOfAnnotation(p, annotation);
-  const issues = projectIssues(p).get(annotation.id) ?? [];
+  const issues = projectIssuesWithDrawings(refs.loaded).get(annotation.id) ?? [];
 
   const outgoing = refsOf(p, annotation).map((link) => {
     const { ref } = link;
@@ -357,7 +362,7 @@ export async function markingView(
     return [{ layer: { id: layer.id, name: layer.name }, annotations: mine.map(view) }];
   });
 
-  const issues = projectIssues(p);
+  const issues = projectIssuesWithDrawings(refs.loaded);
   const tree = linkTree(refs, own);
   const children = index.children.get(marking.id) ?? [];
   const childRows = children.slice(0, LIST_LIMIT).map((c) => ({
@@ -483,7 +488,7 @@ export async function arrowView(
       },
     ];
   });
-  const issues = projectIssues(p);
+  const issues = projectIssuesWithDrawings(refs.loaded);
   const tree = linkTree(refs, own);
   return {
     kind: 'arrow',
@@ -599,7 +604,7 @@ export function projectSummary(loaded: LoadedProject): Json {
 export function projectDetail(refs: Refs): Json {
   const loaded = refs.loaded;
   const p = refs.project;
-  const issues = projectIssues(p);
+  const issues = projectIssuesWithDrawings(refs.loaded);
 
   const byCode: Record<string, number> = {};
   for (const list of issues.values()) {

@@ -58,6 +58,12 @@ export interface LoadedProject {
    * libraries (files in `specs/<id>/`). Absent = only the built-in one.
    */
   readonly fonts?: FontBook;
+  /**
+   * Content key of what the drawing depends on (revision, applied specializations, component texts and
+   * fonts), built on load: `mcp/drawings.ts` memoizes the instantiation by it. Absent = no memo
+   * (also when the load skipped the fonts, as `list_projects` does).
+   */
+  readonly drawingKey?: string;
 }
 
 async function isProjectDir(dir: string): Promise<boolean> {
@@ -359,6 +365,64 @@ async function loadFontBook(
   return book;
 }
 
+/** FNV-1a (32 bits) of a text, in hex: enough to tell a changed file apart. */
+export function fnv1a(text: string): string {
+  let hash = 0x811c9dc5;
+  for (const byte of Buffer.from(text, 'utf8')) {
+    hash ^= byte;
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16);
+}
+
+/** The text of each component file of the applied specializations (hashed; unreadable = `-`). */
+async function componentHashes(
+  roots: Roots,
+  dir: string,
+  project: Project,
+): Promise<string[]> {
+  const hashes: string[] = [];
+  for (const applied of project.specializations) {
+    const { spec } = applied;
+    if (!spec || spec.formatVersion < 4) continue;
+    for (const path of componentPaths(spec, applied.file)) {
+      try {
+        const text = await readText(roots, dir, path);
+        hashes.push(`${path}=${text === null ? '-' : fnv1a(text)}`);
+      } catch {
+        hashes.push(`${path}=-`);
+      }
+    }
+  }
+  return hashes;
+}
+
+/**
+ * The drawing key: revision, `id@version` of the specializations, the hash of the components' text and the
+ * fonts' file stamps (path, size and `mtime`: the bytes are read only once, by the font cache).
+ */
+async function drawingKeyOf(
+  roots: Roots,
+  dir: string,
+  project: Project,
+): Promise<string> {
+  const specs = project.specializations.map((s) => `${s.id}@${s.version}`);
+  const components = await componentHashes(roots, dir, project);
+  const fonts = (await fontFiles(roots, dir, project)).map((f) => `${f.path}:${f.stamp}`);
+  return [project.revision, specs.join(','), components.join(','), fonts.join(',')].join(
+    '|',
+  );
+}
+
+/** Projects `loadProject` keyed: a `LoadedProject` with another `project` spread in has no valid key. */
+const keyedProjects = new WeakMap<Project, string>();
+
+/** The key of `loaded`'s drawing, or `undefined` when its project is not the one that was keyed. */
+export function drawingKeyOfLoaded(loaded: LoadedProject): string | undefined {
+  const key = loaded.drawingKey;
+  return key !== undefined && keyedProjects.get(loaded.project) === key ? key : undefined;
+}
+
 export interface LoadOptions {
   /** Interprets the fonts of the libraries (default). `false` in tools that only count (`list_projects`). */
   readonly fonts?: boolean;
@@ -411,7 +475,13 @@ export async function loadProject(
     });
   }
   const catalog = await loadCatalog(roots, location.dir, result.project);
+  const keyed = options.fonts !== false;
+  const drawingKey = keyed
+    ? await drawingKeyOf(roots, location.dir, result.project)
+    : undefined;
+  if (drawingKey !== undefined) keyedProjects.set(result.project, drawingKey);
   return {
+    ...(drawingKey === undefined ? {} : { drawingKey }),
     location,
     project: result.project,
     readOnly: result.readOnly,
