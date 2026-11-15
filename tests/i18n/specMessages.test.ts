@@ -94,6 +94,36 @@ function fieldPath(s: Raw, path: string): void {
 }
 
 /** Each case: the expected code and the change that produces it from the valid specialization. */
+/** `accessibility` (v18): one mutation for each code. */
+function accessibilityCases(): readonly (readonly [string, (s: Raw) => void])[] {
+  const a = (s: Raw, value: Raw): void => {
+    s.formatVersion = 18;
+    type(s).fields = [
+      { key: 'k', type: 'string' },
+      { key: 'n', type: 'number' },
+      { key: 'tb', type: 'table', columns: [{ key: 'c', type: 'string' }] },
+    ];
+    type(s).accessibility = value;
+  };
+  const part = (extra: Raw): Raw => ({ parts: [{ id: 'p', when: 'k', ...extra }] });
+  return [
+    ['spec.accessibilityRoleInvalid', (s) => a(s, { role: 'x' })],
+    ['spec.accessibilityTouchNeedsRole', (s) => a(s, { touchTarget: false })],
+    ['spec.accessibilityLabelFieldMissing', (s) => a(s, { label: { fields: ['zz'] } })],
+    ['spec.accessibilityLabelFieldType', (s) => a(s, { label: { fields: ['n'] } })],
+    [
+      'spec.accessibilityLabelOtherTable',
+      (s) => a(s, part({ when: 'tb', label: { fields: ['k'] } })),
+    ],
+    ['spec.accessibilityPartWhenInvalid', (s) => a(s, part({ when: 'zz' }))],
+    ['spec.accessibilityPartColumnMissing', (s) => a(s, part({ when: 'tb.zz' }))],
+    [
+      'spec.accessibilityPartNoTouch',
+      (s) => a(s, part({ touchTarget: { width: 1, height: 1 } })),
+    ],
+  ];
+}
+
 const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
   ['spec.notEmpty', (s) => (layer(s).id = '')],
   ['spec.colorInvalid', (s) => (layer(s).color = 'red')],
@@ -438,6 +468,7 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     'spec.slotIdInvalid',
     (s) => ((s.formatVersion = 17), (type(s).slots = [{ id: 'Bad id' }])),
   ],
+  ...accessibilityCases(),
   [
     'spec.onlyFormat',
     (s) => (

@@ -316,6 +316,27 @@ describe('diffSpecs: additive', () => {
     expect(diffSpecs(next, before)).toEqual([]);
   });
 
+  it('accessibility (version 18, root and type) stays outside the contract', () => {
+    const before = spec(1, [button(), badge]);
+    const next = spec(
+      2,
+      [
+        button({
+          accessibility: {
+            role: 'button',
+            label: { fields: ['label'], required: true },
+            touchTarget: { width: 44, height: 44, mode: 'expanded' },
+            parts: [{ id: 'row', when: 'rows', label: { fields: ['rows.col'] } }],
+          },
+        }),
+        badge,
+      ],
+      { accessibility: { touchTarget: { width: 48, height: 48 } } },
+    );
+    expect(diffSpecs(before, next)).toEqual([]);
+    expect(diffSpecs(next, before)).toEqual([]);
+  });
+
   it('a type that changed layer is not a break', () => {
     const layers: SpecLayer[] = [
       { id: 'c', name: 'C', color: '#1E88E5', annotationTypes: [button()] },
