@@ -5,16 +5,8 @@ import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import type { Marking, Rect } from '../../model';
 import type { SemanticMode } from '../semanticText';
 import type { CanvasTokens } from '../theme';
-import {
-  ALERT_SIZE,
-  CORNER_MARGIN,
-  REVIEW_BADGE_SIZE,
-  fontStyle,
-  intersectRects,
-} from './metrics';
+import { TEXT_PADDING, cornerLayout, fontStyle, intersectRects } from './metrics';
 
-/** Inner margin of the header text (screen px); font and line come from `t-cv-name`. */
-const TEXT_PADDING = 4;
 /**
  * Height of the header line (where the badge, the alert and the name go). The value comes from when
  * the layer dots defined the line (2 × margin + 2 × radius): kept so the name does not move up.
@@ -49,6 +41,8 @@ export interface SemanticText {
   readonly view: Rect;
   readonly mode: SemanticMode;
   readonly incomplete: boolean;
+  /** Draws the "to review" badge (outside view mode): the name makes room for it. */
+  readonly review: boolean;
   /**
    * End (canvas y) of the parent's header when it passes through the corner of this marking
    * (a child in the same corner): its name goes below it instead of covering it.
@@ -72,7 +66,7 @@ export function updateSemanticText(
   tokens: CanvasTokens,
   zoom: number,
 ): HeaderBand | null {
-  const { marking, markingRect, mode, incomplete } = input;
+  const { marking, markingRect, mode, incomplete, review } = input;
   // At high zoom the marking's corner leaves the screen: the text stays anchored to the
   // visible part of it (and clipped to it).
   const rect = intersectRects(markingRect, input.view);
@@ -88,16 +82,13 @@ export function updateSemanticText(
   });
   // The badge and the alert only occupy the header if the marking's corner is visible.
   const atCorner = rect.x === markingRect.x && rect.y === markingRect.y;
-  // The name starts after the review badge and the alert.
-  const before = atCorner && marking.needsReview ? REVIEW_BADGE_SIZE + CORNER_MARGIN : 0;
-  const alertWidth = atCorner && incomplete ? ALERT_SIZE + 2 : 0;
+  // The name starts after the review badge and the alert (`cornerLayout`).
+  const nameX = atCorner ? cornerLayout(review, incomplete).nameX : TEXT_PADDING;
   // Child in the same corner as the parent: the name goes to the line below its header.
   const floor = input.headerFloor ?? null;
   const shifted = floor !== null && floor > rect.y;
   const headerTop = shifted ? floor : rect.y;
-  const headerX = shifted
-    ? rect.x + px(TEXT_PADDING)
-    : rect.x + px(before + alertWidth + (alertWidth > 0 ? 0 : TEXT_PADDING));
+  const headerX = rect.x + px(shifted ? TEXT_PADDING : nameX);
   const headerText = marking.name ?? '';
   if (headerText === '') {
     node.header.visible(false);
