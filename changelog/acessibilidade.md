@@ -7,3 +7,7 @@
 - `docs/SPEC-FORMAT.md` ("Accessibility"), `docs/spec.schema.json`, `docs/AGENT-GUIDE.md`, `docs/ARCHITECTURE.md`, the `spec-author` skill and the `formatVersion` Help: the current version is 18.
 - Test library `accessibility` (`tests/fixtures/accessibility`): a `button`, a bar with two field parts and a slot with a `fallback`, an `icon-button` and a type with a table part per row.
 - Performance: the audit joins the derived-state budget of `tests/model/performance.test.ts` (8 ms per frame) and the growth tests of `npm run test:scale`.
+
+## Alterado
+
+- The `dist/index.html` ceiling went up 16 KiB, from 2211840 to 2228224 bytes, by the budget rule (the format version 18 validation and its messages in two languages add 11430 bytes over `main`); above the limits, `bug` #1992 for the owner to review.
