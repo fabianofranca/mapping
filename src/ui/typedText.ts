@@ -78,7 +78,7 @@ export function ownerTypeNames(p: Project, a: Pick<Annotation, 'type'>): string 
     .join(t('typed.ownersJoin'));
 }
 
-/** The values of the texts of `slot-not-accepted` and `slot-full`: the slot, the owner's type, the child's type and the max. */
+/** The values of the texts of `slot-not-accepted`, `slot-full` and `slot-hidden`: the slot, the owner's type, the child's type and the max. */
 function slotParams(p: Project, a: Annotation, issue: AnnotationIssue) {
   return {
     slot: issue.slot?.name ?? '',

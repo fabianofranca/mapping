@@ -140,6 +140,12 @@ export interface SlotInput {
   readonly max?: number | undefined;
   readonly visible?: boolean | undefined;
   /**
+   * The slot is hidden by its `visible` and `box` is the one it would have if visible (the revealed pass of
+   * `instantiate`): it is still a candidate, but only wins a child that overlaps it more than any visible slot
+   * does, or that sits in a region of it smaller than the visible slot's (`closest`).
+   */
+  readonly hidden?: boolean | undefined;
+  /**
    * The slot hugs its children (`slotHugAxes`): its box is only the content's, so it grows to take in each
    * child assigned to it, and the next child touching that grown box goes to the same slot.
    */
@@ -153,9 +159,9 @@ export interface SlotChild {
   readonly typeId?: string | undefined;
 }
 
-/** The child that no slot accepts, or the one beyond the slot's `max`. */
+/** The child that no slot accepts, the one beyond the slot's `max` and the one in a slot hidden by `visible`. */
 export interface SlotIssue {
-  readonly code: 'slot-not-accepted' | 'slot-full';
+  readonly code: 'slot-not-accepted' | 'slot-full' | 'slot-hidden';
   readonly childId: string;
   readonly slotId: string;
   /** `slot-full` only: the slot's `max`. */
@@ -165,9 +171,9 @@ export interface SlotIssue {
 export interface SlotAssignment {
   /** The slot of each child that has one. */
   readonly slotOf: ReadonlyMap<string, string>;
-  /** The children of each visible slot (all of them have an entry), in the order of the children given. */
+  /** The children of each slot, hidden ones included (all of them have an entry), in the order of the children given. */
   readonly children: ReadonlyMap<string, readonly string[]>;
-  /** The children with no slot to go to (no visible slot), in order. */
+  /** The children with no slot to go to (the component has no slot), in order. */
   readonly unassigned: readonly string[];
   /** In the order of the children given; for one child, `slot-not-accepted` first. */
   readonly issues: readonly SlotIssue[];
@@ -209,29 +215,56 @@ function union(a: SlotRect, b: SlotRect): SlotRect {
  * nearest (then the nearest center); ties go to the first.
  */
 function closest(rect: SlotRect, slots: readonly SlotInput[]): SlotInput | undefined {
+  return mostOverlapping(rect, slots) ?? nearest(rect, slots);
+}
+
+function mostOverlapping(
+  rect: SlotRect,
+  slots: readonly SlotInput[],
+): SlotInput | undefined {
   let best: SlotInput | undefined;
   let bestArea = 0;
   for (const slot of slots) {
     const area = intersection(slot.box, rect);
-    if (area > bestArea) {
+    if (area > bestArea || (area > 0 && area === bestArea && wins(slot, best))) {
       best = slot;
       bestArea = area;
     }
   }
-  if (best !== undefined) return best;
-  let nearest: SlotInput | undefined;
-  let nearestGap = Infinity;
-  let nearestDistance = Infinity;
+  return best;
+}
+
+/** The slot whose edge is nearest (then the nearest center); on a tie the visible one wins, then the first. */
+function nearest(rect: SlotRect, slots: readonly SlotInput[]): SlotInput | undefined {
+  let best: SlotInput | undefined;
+  let bestGap = Infinity;
+  let bestDistance = Infinity;
   for (const slot of slots) {
     const g = gap(slot.box, rect);
     const d = distance(slot.box, rect);
-    if (g < nearestGap || (g === nearestGap && d < nearestDistance)) {
-      nearest = slot;
-      nearestGap = g;
-      nearestDistance = d;
+    const closer = g < bestGap || (g === bestGap && d < bestDistance);
+    if (closer || (g === bestGap && d === bestDistance && wins(slot, best))) {
+      best = slot;
+      bestGap = g;
+      bestDistance = d;
     }
   }
-  return nearest;
+  return best;
+}
+
+const areaOf = (slot: SlotInput) => slot.box.width * slot.box.height;
+
+/**
+ * On a tie, does `slot` take the place of `held`? A visible slot beats a hidden one with a box as big or
+ * bigger; a hidden slot beats a visible one only with a strictly smaller box (the child is in the more specific
+ * region); two of the same kind keep the first (the template order).
+ */
+function wins(slot: SlotInput, held: SlotInput | undefined): boolean {
+  if (held === undefined || (slot.hidden === true) === (held.hidden === true))
+    return false;
+  return slot.hidden === true
+    ? areaOf(slot) < areaOf(held)
+    : areaOf(slot) <= areaOf(held);
 }
 
 const acceptsExplicitly = (slot: SlotInput | PlacementSlot, typeId: string | undefined) =>
@@ -258,22 +291,23 @@ function candidates(
  * in the first non-empty order of candidates (`candidates`), the slot of greatest intersection with
  * its rectangle, or the nearest one when none touches it, or the first of the template on a tie.
  * `max` does not change the assignment: the children beyond it, in the order given (the siblings'),
- * get `slot-full`. A slot with `visible: false` is not a candidate. With a single slot the result is
+ * get `slot-full`. A slot hidden by `visible` (`hidden`) is still a candidate with the box it would have
+ * if visible, and its children get `slot-hidden`. With a single slot the result is
  * the one of today: every child goes to it.
  */
 export function assignSlots(
   slots: readonly SlotInput[],
   children: readonly SlotChild[],
 ): SlotAssignment {
-  const visible = slots.filter((slot) => slot.visible !== false);
+  const candidatesOf = slots.filter((slot) => slot.visible !== false);
   const slotOf = new Map<string, string>();
   const unassigned = new Set<string>();
   const notAccepted = new Set<string>();
   // A slot that hugs its children grows to each child it takes: the children go in order of their gap to the
   // slots (the nearest first, then the order given), so those in a row away from the empty box follow the first.
-  let current = visible;
+  let current = candidatesOf;
   const order = children
-    .map((child, index) => ({ child, index, gap: gapToSlots(child.rect, visible) }))
+    .map((child, index) => ({ child, index, gap: gapToSlots(child.rect, candidatesOf) }))
     .sort((a, b) => a.gap - b.gap || a.index - b.index);
   for (const { child } of order) {
     const options = candidates(current, child.typeId);
@@ -290,7 +324,7 @@ export function assignSlots(
       );
   }
   // The results keep the order of the children given (the siblings').
-  const lists = new Map<string, string[]>(visible.map((slot) => [slot.id, []]));
+  const lists = new Map<string, string[]>(candidatesOf.map((slot) => [slot.id, []]));
   const ordered = new Map<string, string>();
   for (const child of children) {
     const id = slotOf.get(child.id);
@@ -302,7 +336,7 @@ export function assignSlots(
     slotOf: ordered,
     children: lists,
     unassigned: children.filter((c) => unassigned.has(c.id)).map((c) => c.id),
-    issues: slotIssues(visible, children, ordered, lists, notAccepted),
+    issues: slotIssues(candidatesOf, children, ordered, lists, notAccepted),
   };
 }
 
@@ -319,12 +353,16 @@ function slotIssues(
   notAccepted: ReadonlySet<string>,
 ): SlotIssue[] {
   const max = new Map(slots.map((slot) => [slot.id, slot.max]));
+  const hidden = new Set(
+    slots.filter((slot) => slot.hidden === true).map((slot) => slot.id),
+  );
   const out: SlotIssue[] = [];
   for (const child of children) {
     const slotId = slotOf.get(child.id);
     if (slotId === undefined) continue;
     if (notAccepted.has(child.id))
       out.push({ code: 'slot-not-accepted', childId: child.id, slotId });
+    if (hidden.has(slotId)) out.push({ code: 'slot-hidden', childId: child.id, slotId });
     const limit = max.get(slotId);
     if (limit !== undefined && (lists.get(slotId) ?? []).indexOf(child.id) >= limit)
       out.push({ code: 'slot-full', childId: child.id, slotId, max: limit });
@@ -378,7 +416,7 @@ export function slotForPlacement(
       ? { ok: false, reason: 'unknown-slot', slot: request.slot }
       : { ok: true, id: asked.id, basis: 'requested' };
   }
-  const visible = slots.filter((slot) => slot.visible !== false);
+  const visible = slots.filter((slot) => slot.visible !== false && slot.hidden !== true);
   const accepting = [
     ...visible.filter((slot) => acceptsExplicitly(slot, request.typeId)),
     ...visible.filter((slot) => slot.accepts === undefined),

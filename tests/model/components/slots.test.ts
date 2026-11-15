@@ -548,3 +548,65 @@ describe('slotForPlacement', () => {
     expect(slotForPlacement([], {})).toEqual({ ok: false, reason: 'no-slots' });
   });
 });
+
+// #1978 (CL2): a slot hidden by `visible` joins with the box it would have; its children stay in it.
+describe('assignSlots with a slot hidden by visible', () => {
+  const content: SlotInput = { id: 'content', box: rect(0, 0, 360, 72) };
+  const strip = (extra: Partial<SlotInput> = {}): SlotInput => ({
+    id: 'background',
+    box: rect(0, 0, 56, 72),
+    hidden: true,
+    ...extra,
+  });
+
+  it('a child inside a hidden slot that is smaller than the visible one stays in the hidden slot (slot-hidden)', () => {
+    const result = assignSlots([content, strip()], [child('a', rect(4, 4, 40, 40))]);
+    expect(result.slotOf.get('a')).toBe('background');
+    expect(result.children.get('background')).toEqual(['a']);
+    expect(result.issues).toEqual([
+      { code: 'slot-hidden', childId: 'a', slotId: 'background' },
+    ]);
+  });
+
+  it('on an equal intersection the visible slot wins when the hidden box is as big or bigger', () => {
+    const big = strip({ box: rect(0, 0, 360, 72) });
+    const result = assignSlots([content, big], [child('a', rect(4, 4, 40, 40))]);
+    expect(result.slotOf.get('a')).toBe('content');
+    expect(result.issues).toEqual([]);
+  });
+
+  it('a child that overlaps the hidden slot more than any visible one goes to it', () => {
+    const left: SlotInput = { id: 'left', box: rect(0, 0, 100, 72) };
+    const hidden: SlotInput = { id: 'back', box: rect(100, 0, 100, 72), hidden: true };
+    const result = assignSlots([left, hidden], [child('a', rect(90, 0, 60, 72))]);
+    expect(result.slotOf.get('a')).toBe('back');
+  });
+
+  it('the nearest fallback prefers the visible slot on a tie', () => {
+    const near: SlotInput = { id: 'near', box: rect(0, 0, 50, 50) };
+    const far: SlotInput = { id: 'far', box: rect(0, 0, 50, 50), hidden: true };
+    expect(
+      assignSlots([far, near], [child('a', rect(200, 0, 10, 10))]).slotOf.get('a'),
+    ).toBe('near');
+  });
+
+  it('the children of a hidden slot count for the max of the slot', () => {
+    const result = assignSlots(
+      [content, strip({ max: 1 })],
+      [child('a', rect(0, 0, 20, 20)), child('b', rect(20, 0, 20, 20))],
+    );
+    expect(result.issues.map((i) => `${i.code}:${i.childId}`)).toEqual([
+      'slot-hidden:a',
+      'slot-hidden:b',
+      'slot-full:b',
+    ]);
+  });
+
+  it('a new child with no geometry never goes to a hidden slot', () => {
+    const placed = slotForPlacement(
+      [{ id: 'background', hidden: true }, { id: 'content' }],
+      {},
+    );
+    expect(placed).toMatchObject({ ok: true, id: 'content' });
+  });
+});

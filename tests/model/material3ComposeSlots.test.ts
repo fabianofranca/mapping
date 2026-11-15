@@ -11,6 +11,8 @@ import {
   addContainer,
   applySpecialization,
   approximateMeasurer,
+  arrangeMarking,
+  codeBlueprint,
   createDrawingCache,
   type ComponentDrawing,
   type NewComponentArgs,
@@ -367,5 +369,83 @@ describe('children born in a bottom-app-bar without a rect (CL1, 1.A)', () => {
     const rect = rectOf(p, 'EF');
     expect(rect.width).toBeGreaterThan(56);
     expect(draw(p).get('BB')!.shortfalls).toEqual({});
+  });
+});
+
+describe('a child of a slot hidden by `visible` stays in it (#1978, option A)', () => {
+  const swipe = (values: Record<string, string>, rect = r(0, 0, 56, 72)) => {
+    let p = put(base(), 'SW', 'swipe-to-dismiss', r(0, 0, 360, 72), { values });
+    p = put(p, 'BG', 'icon', rect, { parentId: 'SW' });
+    return draw(p).get('SW')!;
+  };
+
+  it('with the direction on, a child in the strip is in backgroundContent', () => {
+    expect(slotOfMap(swipe({ direction: 'StartToEnd' }))).toEqual({
+      BG: 'backgroundContent',
+    });
+  });
+
+  it('with the direction off, the child stays in backgroundContent and gets slot-hidden', () => {
+    const off = swipe({
+      direction: 'StartToEnd',
+      enableDismissFromStartToEnd: 'false',
+    });
+    expect(slotOfMap(off)).toEqual({ BG: 'backgroundContent' });
+    expect(off.slots.find((s) => s.id === 'backgroundContent')).toMatchObject({
+      hidden: true,
+      children: ['BG'],
+    });
+    expect(off.slotIssues.map((i) => i.code)).toEqual(['slot-hidden']);
+  });
+
+  const OFF = { direction: 'StartToEnd', enableDismissFromStartToEnd: 'false' };
+
+  it('turning the direction back on brings the child back, drawn, in the same slot', () => {
+    const on = swipe({ direction: 'StartToEnd' });
+    expect(on.slots.find((s) => s.id === 'backgroundContent')?.hidden).toBe(false);
+    expect(on.slotIssues).toEqual([]);
+  });
+
+  it('the hidden child is flagged as not drawn, and its own descendants too', () => {
+    let p = put(base(), 'SW', 'swipe-to-dismiss', r(0, 0, 360, 72), { values: OFF });
+    p = put(p, 'BG', 'icon-button', r(0, 0, 56, 72), { parentId: 'SW' });
+    p = put(p, 'IN', 'icon', r(8, 8, 24, 24), { parentId: 'BG' });
+    const drawings = draw(p);
+    expect(drawings.get('BG')?.hidden).toBe(true);
+    expect(drawings.get('IN')?.hidden).toBe(true);
+    expect(drawings.get('SW')?.hidden).toBeUndefined();
+  });
+
+  it('a child of the visible content slot is not hidden', () => {
+    let p = put(base(), 'SW', 'swipe-to-dismiss', r(0, 0, 360, 72), { values: OFF });
+    p = put(p, 'T1', 'text', r(100, 8, 200, 56), { parentId: 'SW' });
+    const drawings = draw(p);
+    expect(slotOfMap(drawings.get('SW')!)).toEqual({ T1: 'content' });
+    expect(drawings.get('T1')?.hidden).toBeUndefined();
+  });
+
+  it('the child stays in backgroundContent in get_code_hints', () => {
+    let p = put(base(), 'SW', 'swipe-to-dismiss', r(0, 0, 360, 72), { values: OFF });
+    p = put(p, 'BG', 'icon', r(4, 4, 40, 40), { parentId: 'SW' });
+    const drawings = draw(p);
+    const root = codeBlueprint(p, 'SW', 'compose', { drawings }).root;
+    expect(root.annotations[0]?.slotArgs?.map((a) => a.slot)).toEqual([
+      'backgroundContent',
+    ]);
+  });
+
+  it('Arrange leaves the child of the hidden slot where it is', () => {
+    let p = put(base(), 'SW', 'swipe-to-dismiss', r(0, 0, 360, 72), { values: OFF });
+    p = put(p, 'BG', 'icon', r(4, 4, 40, 40), { parentId: 'SW' });
+    p = put(p, 'T1', 'text', r(100, 8, 200, 56), { parentId: 'SW' });
+    let after = p;
+    try {
+      after = arrangeMarking(p, catalog, 'SW', approximateMeasurer).project;
+    } catch {
+      // `not-arrangeable` is fine: the point is that the hidden slot's child does not move.
+    }
+    const rectOf = (q: Project, id: string) => q.markings.find((m) => m.id === id)!.rect;
+    expect(rectOf(after, 'BG')).toEqual(rectOf(p, 'BG'));
+    expect(slotOfMap(draw(after).get('SW')!).BG).toBe('backgroundContent');
   });
 });

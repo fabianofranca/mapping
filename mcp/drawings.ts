@@ -74,7 +74,7 @@ function mergeDrawingIssues(
 
 /**
  * The pending items of every annotation: the model's (`projectIssues`) plus the drawing's
- * (`component-overflow`, `slot-not-accepted`, `slot-full`), in the same shape and order as `derived.issues`.
+ * (`component-overflow`, `slot-not-accepted`, `slot-full`, `slot-hidden`), in the same shape and order as `derived.issues`.
  * It is the model's own map when no drawing has anything.
  */
 export function projectIssuesWithDrawings(

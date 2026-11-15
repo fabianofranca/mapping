@@ -59,8 +59,8 @@ function declaredNames(refs: Refs, marking: Marking): Map<string, string> {
 
 /**
  * `slots` of the marking that draws a component with named slots: `{ id, name, children, fallback }` per slot,
- * `children` as references in the order of the siblings and `fallback` for "the slot shows its default
- * content". Empty object when the marking has no slot with an `id`.
+ * `children` as references in the order of the siblings, `fallback` for "the slot shows its default
+ * content" and `hidden` for a slot hidden by `visible` that still holds children (#1978). Empty object when the marking has no slot with an `id`.
  */
 export function markingSlotsView(refs: Refs, marking: Marking): Json {
   const drawing = projectDrawings(refs.loaded).get(marking.id);
@@ -73,6 +73,7 @@ export function markingSlotsView(refs: Refs, marking: Marking): Json {
       name: names.get(slot.id) ?? slot.name,
       children: slot.children.map((id) => refs.ref('m', id)),
       fallback: slot.fallback,
+      ...(slot.hidden ? { hidden: true } : {}),
     })),
   };
 }

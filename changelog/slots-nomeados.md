@@ -1,5 +1,7 @@
 # Named slots with default content — [Não lançado] (épico `epic/slots-nomeados`, PR #0, MCP 0.42.0, schema v20)
 
+- A child of a slot hidden by `visible` stays assigned to that slot (bug #1978, option A): it stays in the model and in `get_code_hints`, is not drawn (nor its descendants), keeps its outline and stays selectable, and gets the pending item `slot-hidden` ("the slot {slot} of {owner} is hidden") in the Incomplete window, the list, `get_marking`, `list_markings` and the `issues.new` of `plan_changes` and `propose_changes`. A slot hidden by `visible` is still a candidate with the box it would have if visible (a second `instantiate` pass, `revealSlots`, only when the marking has children and a slot is missing from the probe); a visible slot wins an equal intersection unless the hidden slot's box is smaller. `get_marking` lists the hidden slot with `hidden: true`. Arrange and "add inside" no longer move its child into another slot; `docs/COMPONENT-FORMAT.md` and `docs/MCP.md` say so.
+
 ## Adicionado
 
 - Component format (`formatVersion` 4): the `slot` node gains `id` (pattern `^[a-z][a-zA-Z0-9_-]*$`, so it can equal the parameter of a platform, like `floatingActionButton`) and `fallback`, the default content: a `frame` drawn while no child marking is in the slot. A component can now have several slots, each one with its own `id`; with a single slot the `id` stays optional and everything works as before. In a `formatVersion` 1 to 3 both keys are `only allowed with formatVersion 4`.
