@@ -14,6 +14,8 @@ import {
   arrangeMarking,
   codeBlueprint,
   createDrawingCache,
+  createMarking,
+  projectIndex,
   type ComponentDrawing,
   type NewComponentArgs,
   type Project,
@@ -455,6 +457,15 @@ describe('a child of a slot hidden by `visible` stays in it (#1978, option A)', 
     expect(drawings.get('BG')?.hidden).toBe(true);
     expect(drawings.get('IN')?.hidden).toBe(true);
     expect(drawings.get('SW')?.hidden).toBeUndefined();
+  });
+
+  it('a plain marking (no component) in the hidden slot passes the hidden state to its component descendant (CL5, finding 3)', () => {
+    let p = put(base(), 'SW', 'swipe-to-dismiss', r(0, 0, 360, 72), { values: OFF });
+    p = createMarking(p, { id: 'PL', containerId: 'I1', rect: r(4, 4, 48, 64) });
+    p = put(p, 'IN', 'icon', r(8, 8, 24, 24));
+    const drawings = draw(p);
+    expect(projectIndex(p).markings.get('IN')?.parentId).toBe('PL');
+    expect(drawings.get('IN')?.hidden).toBe(true);
   });
 
   it('a child of the visible content slot is not hidden', () => {

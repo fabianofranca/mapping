@@ -274,4 +274,100 @@ describe('componentPlacement: a component with `screen`', () => {
       componentPlacement(p, cat, { ...args, drawings }, approximateMeasurer),
     ).toEqual(without);
   });
+
+  it('a slot smaller than the component: the app and MCP agree on where a new child goes (CL5, finding 5)', () => {
+    const screenBar = JSON.parse(read('components/rounded-bar.json'));
+    screenBar.screen = { anchor: 'center' };
+    screenBar.template.layout = { type: 'column', padding: 20 };
+    const texts = new Map(
+      ['bar', 'pin', 'rounded-bar'].map((id) => [
+        `specs/slots/components/${id}.json`,
+        id === 'rounded-bar' ? JSON.stringify(screenBar) : read(`components/${id}.json`),
+      ]),
+    );
+    const loaded = loadSpecComponents(spec, 'specs/slots/slots.spec.json', 1, (path) =>
+      texts.get(path),
+    );
+    const cat: ComponentCatalog = new Map([[SPEC_ID, loaded]]);
+    const p = addComponentMarking(
+      baseProject(),
+      cat,
+      {
+        markingId: 'R',
+        annotationId: 'A_R',
+        containerId: 'I1',
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'rounded-bar',
+        rect: { x: 100, y: 100, width: 200, height: 80 },
+      },
+      approximateMeasurer,
+    );
+    const args = { containerId: 'I1', parentId: 'R', specId: SPEC_ID, typeId: 'pin' };
+    const drawings = createDrawingCache()(p, cat, approximateMeasurer, 0);
+    expect(
+      componentPlacement(p, cat, { ...args, drawings }, approximateMeasurer),
+    ).toEqual(componentPlacement(p, cat, args, approximateMeasurer));
+  });
+});
+
+describe('Arrange and the drawing agree on `accepts` (CL5, finding 2)', () => {
+  it('an X child closer to the open slot A goes to B, the only slot that accepts X, in both', () => {
+    // `navigationIcon` (slot A) takes only a `rounded-bar`; `actions` (slot B) takes a `pin`.
+    const edited = JSON.parse(read('slots.spec.json'));
+    edited.layers[0].annotationTypes[0].slots[0].accepts = ['rounded-bar'];
+    const parsed = parseSpec(edited);
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    const loaded = loadSpecComponents(
+      parsed.spec,
+      'specs/slots/slots.spec.json',
+      1,
+      (path) =>
+        path.endsWith('/bar.json') || path.endsWith('/pin.json')
+          ? read(`components/${path.split('/').pop()}`)
+          : read('components/rounded-bar.json'),
+    );
+    const cat: ComponentCatalog = new Map([[SPEC_ID, loaded]]);
+    let n = 0;
+    let p = addContainer(
+      applySpecialization(emptyProject(), parsed.spec, {
+        newId: () => `AC${++n}`,
+        packageSpecName: 'slots.spec.json',
+      }),
+      { id: 'I1', file: 'images/screen.png', width: 1000, height: 800 },
+    );
+    const args = (id: string, typeId: string, extra: Partial<NewComponentArgs>) => ({
+      markingId: id,
+      annotationId: `A_${id}`,
+      containerId: 'I1',
+      parentId: null,
+      specId: SPEC_ID,
+      typeId,
+      ...extra,
+    });
+    p = addComponentMarking(
+      p,
+      cat,
+      args('B', 'bar', { rect: { x: 100, y: 100, width: 360, height: 56 } }),
+      approximateMeasurer,
+    );
+    // The pin sits over the left (slot A's box), far from the right one.
+    p = addComponentMarking(
+      p,
+      cat,
+      args('PIN', 'pin', {
+        parentId: 'B',
+        rect: { x: 110, y: 108, width: 24, height: 24 },
+      }),
+      approximateMeasurer,
+    );
+    const drawing = createDrawingCache()(p, cat, approximateMeasurer, 0).get('B')!;
+    const drawnIn = drawing.slots.find((s) => s.children.includes('PIN'))?.id;
+    expect(drawnIn).toBe('actions');
+    // Arrange lays the child out in the same slot the drawing put it in (`actions`, a row).
+    expect(canArrange(p, cat, 'B')).toBe(true);
+    const arranged = arrangeMarking(p, cat, 'B', approximateMeasurer).project;
+    const kid = arranged.markings.find((m) => m.id === 'PIN')!;
+    expect(kid.rect.x + kid.rect.width / 2).toBeGreaterThan(100 + 180);
+  });
 });

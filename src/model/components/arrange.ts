@@ -308,7 +308,10 @@ export function slotsOfScene(root: FrameNode): ReadonlyMap<string, SceneSlot> {
     if (!isSlotNode(node, undefined)) continue;
     const box = boxes.get(node.id);
     if (box === undefined) continue;
-    out.set(node.slotId ?? '', {
+    const key = node.slotId ?? '';
+    // Slots without an id share the empty key: the first one wins, like `componentSlots` before formatVersion 4.
+    if (out.has(key)) continue;
+    out.set(key, {
       box,
       name: node.name,
       clip: node.clipChildren === true,

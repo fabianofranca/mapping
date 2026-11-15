@@ -1072,6 +1072,12 @@ export function createDrawingCache(): DrawingCache {
       const mc = componentOf(marking.id);
       if (mc === null) {
         scopes.set(marking.id, inherited);
+        // A plain marking has no slots, but what is under a hidden one is not drawn either.
+        passHidden(
+          passed,
+          children.get(marking.id),
+          passed.get(marking.id) ?? NOTHING_RECEIVED,
+        );
         continue;
       }
       const provided = pickProvided(inherited, mc.component);
