@@ -1,0 +1,22 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "icon-button",
+  "name": "Icon button",
+  "size": { "width": 40, "height": 40 },
+  "preview": { "icon": "star" },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "row", "align": "center", "justify": "center" },
+    "cornerRadius": 20,
+    "fill": "#E8DEF8",
+    "children": [
+      {
+        "type": "text",
+        "text": { "$field": "icon", "default": "star" },
+        "font": { "size": 10 },
+        "width": "hug"
+      }
+    ]
+  }
+}

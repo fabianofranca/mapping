@@ -1,0 +1,23 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "button",
+  "name": "Button",
+  "size": { "width": 120, "height": 44 },
+  "preview": { "label": "Button" },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "row", "align": "center", "justify": "center" },
+    "cornerRadius": 22,
+    "fill": "#6750A4",
+    "children": [
+      {
+        "type": "text",
+        "text": { "$field": "label", "default": "Button" },
+        "font": { "size": 14, "weight": 500 },
+        "color": "#FFFFFF",
+        "width": "hug"
+      }
+    ]
+  }
+}
