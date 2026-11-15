@@ -291,5 +291,43 @@ describe('with children the fallback goes away (the default content is replaced,
   });
 });
 
+describe('the two new examples draw without warnings in light and dark (decision 15)', () => {
+  const MODES = ['light', 'dark'] as const;
+  const scene = (which: 'bar' | 'scaffold', mode: (typeof MODES)[number]): Project => {
+    let p = { ...base(), drawingMode: mode } as Project;
+    if (which === 'bar') {
+      p = put(p, 'BAB', 'bottom-app-bar', r(0, 720, 360, 80));
+      p = put(p, 'IB1', 'icon-button', r(4, 728, 48, 48), { parentId: 'BAB' });
+      p = put(p, 'IB2', 'icon-button', r(52, 728, 48, 48), { parentId: 'BAB' });
+      return put(p, 'XF', 'extended-fab', r(200, 732, 140, 56), { parentId: 'BAB' });
+    }
+    p = put(p, 'SC', 'scaffold', r(0, 0, 360, 800));
+    p = put(p, 'TB', 'top-app-bar', r(0, 0, 360, 64), { parentId: 'SC' });
+    p = put(p, 'NB', 'navigation-bar', r(0, 720, 360, 80), { parentId: 'SC' });
+    p = put(p, 'FB', 'fab', r(288, 648, 56, 56), { parentId: 'SC' });
+    return put(p, 'LC', 'lazy-column', r(0, 64, 360, 584), { parentId: 'SC' });
+  };
+
+  for (const mode of MODES) {
+    it(`bottom-app-bar with two icon-buttons and an extended-fab, ${mode}`, () => {
+      const drawing = draw(scene('bar', mode)).get('BAB')!;
+      expect(drawing.warnings).toEqual([]);
+      expect(drawing.slotIssues).toEqual([]);
+      expect(slotOfMap(drawing)).toEqual({
+        IB1: 'actions',
+        IB2: 'actions',
+        XF: 'floatingActionButton',
+      });
+    });
+
+    it(`scaffold with top-app-bar, navigation-bar, fab and lazy-column, ${mode}`, () => {
+      const drawing = draw(scene('scaffold', mode)).get('SC')!;
+      expect(drawing.warnings).toEqual([]);
+      expect(drawing.slotIssues).toEqual([]);
+      expect(Object.keys(slotOfMap(drawing)).sort()).toEqual(['FB', 'LC', 'NB', 'TB']);
+    });
+  }
+});
+
 /** A node tree walker keeps the scene tests honest: the type `Json` is only for the raw files. */
 void (undefined as unknown as Json);

@@ -369,11 +369,11 @@ describe('validate_library', () => {
       const result = ok(await mcp.call<Validated>('validate_library', { path }));
       expect(result.valid, path).toBe(true);
       expect(result.errors).toEqual([]);
-      expect(result.summary).toMatchObject({ level: 3, components: 15, docs: 15 });
+      expect(result.summary).toMatchObject({ level: 3, components: 17, docs: 17 });
       expect(result.spec).toMatchObject({
         id: 'material3',
         formatVersion: 6,
-        components: 15,
+        components: 17,
         fonts: 2,
         origins: 1,
         migrations: 0,
@@ -474,7 +474,7 @@ describe('validate_specialization with v4', () => {
     expect(result.valid).toBe(true);
     expect(result.spec).toMatchObject({
       formatVersion: 6,
-      components: 15,
+      components: 17,
       fonts: 2,
       origins: 1,
       migrations: 0,
@@ -487,7 +487,7 @@ describe('validate_specialization with v4', () => {
 describe('list_components and get_component', () => {
   it('by package path', async () => {
     const list = ok(await mcp.call<Listed>('list_components', { path: 'lib/material3' }));
-    expect(list.count).toBe(15);
+    expect(list.count).toBe(17);
     const button = list.components.find((c) => c.type === 'm3-button');
     expect(button).toMatchObject({ hasDoc: true });
     expect(button?.size.width).toBeGreaterThan(0);
@@ -534,7 +534,7 @@ describe('list_components and get_component', () => {
         specId: 'material3',
       }),
     );
-    expect(list.count).toBe(15);
+    expect(list.count).toBe(17);
     const got = ok(
       await mcp.call<Component>('get_component', {
         project: 'screens',
@@ -590,7 +590,7 @@ describe('list_components and get_component', () => {
     expect(got.component).toBeNull();
     expect(got.hint).toMatch(/has no component/);
     const list = ok(await mcp.call<Listed>('list_components', { path: 'no-component' }));
-    expect(list.count).toBe(14);
+    expect(list.count).toBe(16);
     expect(list.typesWithoutComponent).toBe(1);
   });
 });

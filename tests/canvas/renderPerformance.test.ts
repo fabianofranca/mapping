@@ -32,6 +32,7 @@ import {
   addComponentMarking,
   applySpecialization,
   createArrow,
+  createDrawingCache,
   loadSpecComponents,
   parseSpec,
   projectIndex,
@@ -235,7 +236,7 @@ describe('canvas rendering with the large project', () => {
 
 // Budget of component drawing (B3): instantiating (pure engine, approximate measurer) and
 // drawing (`renderScene`, Konva in jsdom with a fake context) the Material 3 of the example package.
-// Measured (jsdom, development machine): one instance 0.03 to 0.9 ms (average of the 15
+// Measured (jsdom, development machine): one instance 0.03 to 0.9 ms (average of the 17
 // components ~0.25 ms); the settings screen (21 instances) 3.5 to 7 ms, with peaks of
 // ~15 ms from the garbage collector at the start. The instance budget is ~1 ms (4x headroom over the
 // average); the screen's is the frame's, with the median of several repetitions.
@@ -316,7 +317,7 @@ function layoutKeysOf(dir: string): LayoutKeys {
 /** The whole-screen budgets only apply to the new layout (decision 23 of #1078): checks before measuring. */
 function expectNewLayout(): void {
   const keys = layoutKeysOf(MATERIAL3_DIR);
-  expect(keys.v4Files, 'components in formatVersion 4').toBe(15);
+  expect(keys.v4Files, 'components in formatVersion 4').toBe(17);
   expect(keys.alignedNone, 'aligned none').toBeGreaterThan(0);
   expect(keys.grid, 'grid').toBeGreaterThan(0);
   expect(keys.weight, 'weight').toBeGreaterThan(0);
@@ -345,9 +346,9 @@ describe('component drawing (Material 3)', () => {
   beforeAll(() => installFakeCanvas());
   afterAll(() => vi.restoreAllMocks());
 
-  it('the example library loads with the 15 components and the screen has 21 instances', () => {
+  it('the example library loads with the 17 components and the screen has 21 instances', () => {
     expect(library.problems).toEqual([]);
-    expect(library.types.filter((type) => type.component)).toHaveLength(15);
+    expect(library.types.filter((type) => type.component)).toHaveLength(17);
     expect(M3_SCREEN.instances).toHaveLength(21);
   });
 
@@ -410,7 +411,7 @@ describe('component drawing (Material 3)', () => {
     }
   });
 
-  it('each distinct (text, font, limit) is measured once: 26 calls across the 15 components and 40 on the screen', () => {
+  it('each distinct (text, font, limit) is measured once: 26 calls across the 17 components and 40 on the screen', () => {
     const counted = (): { measure: typeof approximateMeasurer; calls: string[] } => {
       const calls: string[] = [];
       const measure: typeof approximateMeasurer = (text, font, maxWidth) => {
@@ -469,7 +470,7 @@ describe('component drawing (Material 3)', () => {
         perComponent.push((performance.now() - start) / runs);
       }
       const mean = perComponent.reduce((sum, ms) => sum + ms, 0) / perComponent.length;
-      expectBelow(mean, INSTANCE_BUDGET_MS, 'average of the 15');
+      expectBelow(mean, INSTANCE_BUDGET_MS, 'average of the 17');
       // No single component exceeds four times the budget (the largest measures ~0.9 ms).
       expectBelow(Math.max(...perComponent), INSTANCE_BUDGET_MS * 4, 'worst component');
     },
@@ -1060,6 +1061,92 @@ describe('components screen inside the CanvasController (Material 3)', () => {
       controller.destroy();
     },
   );
+
+  // Named slots (SL7, decision 15 of #1080): the screen of the budget plus a bar with four children and a
+  // scaffold with the bars, drawn through the drawing cache (probe, slot assignment and final drawing).
+  describe('with named slots (decision 15)', () => {
+    const slotsProject = (catalog: ComponentCatalog): Project => {
+      let p = addBackgroundContainer(m3Project(catalog), {
+        id: 'slots',
+        width: 900,
+        height: 1000,
+        background: '#FFFFFF',
+      });
+      const put = (id: string, typeId: string, rect: Rect, parentId: string | null) => {
+        p = addComponentMarking(
+          p,
+          catalog,
+          {
+            markingId: id,
+            annotationId: `A_${id}`,
+            containerId: 'slots',
+            parentId,
+            specId: 'material3',
+            typeId,
+            rect,
+          },
+          approximateMeasurer,
+        );
+      };
+      put('BAR', 'm3-bottom-app-bar', { x: 20, y: 900, width: 412, height: 80 }, null);
+      for (let i = 0; i < 4; i++)
+        put(
+          `BAR-F${i}`,
+          'm3-fab',
+          { x: 24 + i * 40, y: 920, width: 40, height: 40 },
+          'BAR',
+        );
+      put('SC', 'm3-scaffold', { x: 460, y: 20, width: 412, height: 915 }, null);
+      put('SC-TB', 'm3-top-app-bar', { x: 460, y: 20, width: 412, height: 64 }, 'SC');
+      put('SC-NB', 'm3-navigation-bar', { x: 460, y: 855, width: 412, height: 80 }, 'SC');
+      put('SC-FB', 'm3-fab', { x: 800, y: 783, width: 56, height: 56 }, 'SC');
+      return p;
+    };
+
+    budgetIt(
+      `the cache draws the screen, the bar with four children and the scaffold in ${RENDER_BUDGET_MS} ms`,
+      BUDGET_OPTIONS,
+      () => {
+        expectNewLayout();
+        const catalog = m3Catalog();
+        const project = slotsProject(catalog);
+        const cold = (): number => {
+          const cache = createDrawingCache();
+          const start = performance.now();
+          cache(project, catalog, approximateMeasurer, 0);
+          return performance.now() - start;
+        };
+        for (let i = 0; i < 4; i++) cold(); // Warm-up.
+        expectBelow(medianOf(15, cold), RENDER_BUDGET_MS);
+      },
+    );
+
+    it('the children land in their slots and the same project draws again without instantiating', () => {
+      const catalog = m3Catalog();
+      const project = slotsProject(catalog);
+      const cache = createDrawingCache();
+      const drawings = cache(project, catalog, approximateMeasurer, 0);
+      const bar = drawings.get('BAR');
+      expect([...(bar?.slotOf ?? [])].map(([, slot]) => slot)).toEqual(
+        Array(4).fill('actions'),
+      );
+      const scaffold = drawings.get('SC');
+      expect(Object.fromEntries(scaffold?.slotOf ?? [])).toEqual({
+        'SC-TB': 'topBar',
+        'SC-NB': 'bottomBar',
+        'SC-FB': 'floatingActionButton',
+      });
+      const instantiated = vi.spyOn(instantiateModule, 'instantiate');
+      try {
+        for (let step = 0; step < 20; step++) {
+          expect(cache(project, catalog, approximateMeasurer, 0)).toBe(drawings);
+        }
+        expect(instantiated).not.toHaveBeenCalled();
+      } finally {
+        instantiated.mockRestore();
+      }
+    });
+  });
 });
 
 // Proposed view with 60 new components (PC1): switching to Proposed instantiates the 60 new scenes

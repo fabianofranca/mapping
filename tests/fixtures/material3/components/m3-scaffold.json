@@ -1,0 +1,124 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "m3-scaffold",
+  "name": "Scaffold",
+  "description": "Screen skeleton: slots for the top bar, the bottom bar, the floating button, the snackbar and the content, in fixed boxes.",
+  "size": {
+    "width": 412,
+    "height": 915
+  },
+  "minSize": {
+    "width": 200,
+    "height": 300
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "fill"
+  },
+  "preview": {
+    "fabPosition": "End"
+  },
+  "template": {
+    "type": "frame",
+    "name": "scaffold",
+    "fill": "#FEF7FF",
+    "clip": false,
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "slot",
+        "id": "topBar",
+        "name": "top bar",
+        "height": 64,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0
+        },
+        "layout": {
+          "type": "none"
+        }
+      },
+      {
+        "type": "slot",
+        "id": "bottomBar",
+        "name": "bottom bar",
+        "height": 80,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "none"
+        }
+      },
+      {
+        "type": "slot",
+        "id": "floatingActionButton",
+        "name": "floating action button",
+        "width": 56,
+        "height": 56,
+        "anchors": {
+          "left": {
+            "$switch": "fabPosition",
+            "cases": {
+              "Start": 16
+            }
+          },
+          "right": {
+            "$switch": "fabPosition",
+            "cases": {
+              "End": 16,
+              "EndOverlay": 16
+            }
+          },
+          "centerX": {
+            "$eq": ["fabPosition", "Center"]
+          },
+          "bottom": {
+            "$switch": "fabPosition",
+            "cases": {
+              "EndOverlay": 16
+            },
+            "default": 96
+          }
+        },
+        "layout": {
+          "type": "none"
+        }
+      },
+      {
+        "type": "slot",
+        "id": "snackbarHost",
+        "name": "snackbar host",
+        "height": 48,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "bottom": 96
+        },
+        "layout": {
+          "type": "none"
+        }
+      },
+      {
+        "type": "slot",
+        "id": "content",
+        "name": "content",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "none"
+        }
+      }
+    ]
+  }
+}

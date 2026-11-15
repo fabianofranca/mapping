@@ -39,7 +39,7 @@ describe('componentPaths', () => {
     const spec = loadMaterial3();
     const paths = componentPaths(spec, 'specs/material3/material3.spec.json');
     expect(paths).toContain('specs/material3/components/m3-chip.json');
-    expect(paths).toHaveLength(15);
+    expect(paths).toHaveLength(17);
   });
 
   it('a type without a component is left out', () => {
@@ -144,7 +144,7 @@ describe('loadSpecComponents', () => {
       },
     );
     expect(loaded.problems).toEqual([]);
-    expect(loaded.byType.size).toBe(15);
+    expect(loaded.byType.size).toBe(17);
   });
 });
 
