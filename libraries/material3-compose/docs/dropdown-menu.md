@@ -135,3 +135,5 @@ The field chooses the resting appearance of a state; it does not go in the `code
 - The top radius of the exposed field is the list `[corner-extra-small, corner-extra-small, 0, 0]` (`$token` per item), without a taller clipped rectangle.
 - The exposed field's value stays on one line (clipped), like `singleLine`; Compose's `TextField` without `singleLine` wraps and grows. No menu scrolling (`verticalScroll`) when the items exceed the available height.
 - No free `leadingIcon` and `trailingIcon` (`composable`), custom `contentPadding`, `DropdownMenuItem` with custom `colors`, `onDismissRequest`, and `ExposedDropdownMenuBox` with `OutlinedTextField` or an editable one (input `menuAnchor`).
+
+**Accessibility** (stage #1081; the unit is the dp, 1 dp = 1 component unit): the type has no `accessibility.role` of its own and one `item` part per row of `items`, with role `menuitem`, named by the `text` column. Compose declares no `Role` in `Menu.kt` (the name comes from the WAI-ARIA list).

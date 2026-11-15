@@ -94,3 +94,5 @@ Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb6
 - The item is always a `ListItem` with title and support text (one line each); the default content is the `ListItem` of the fields and the Compose `content` takes anything (a `Card`, a `ListItem` with icons): a child marking in the `content` slot, and the background color change with the gesture progress (`state.dismissDirection`, `progress`) belongs to the app.
 - Long support text ends in `…` on one line, which keeps the item at 72; the three-line `ListItem` (88) is not drawn.
 - No gesture, no animation, no dismiss velocity (`DismissVelocityThreshold`), no `onDismiss` and no focused or pressed state; `gesturesEnabled` is a field and code, but the drawing does not use it.
+
+**Accessibility** (stage #1081; the unit is the dp, 1 dp = 1 component unit): the type has no `accessibility.role` of its own; the `icon` is an `image` part with the optional `iconDescription` field (the background icon is decorative by default). Compose declares no `Role` in `SwipeToDismissBox.kt`.

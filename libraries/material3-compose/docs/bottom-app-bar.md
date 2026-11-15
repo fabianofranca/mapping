@@ -91,3 +91,5 @@ Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb6
 - The default content of `actions` draws up to four 48 icons (the fields) and those that exceed the space before the FAB do not shrink like the `Row` of weight 1; the child markings of the slot have no `weight` either.
 - The icons are only those of the library set (`icons`); the `Icons.Filled` of the same name, without the mirroring ones (`AutoMirrored`).
 - The FAB of the `floatingActionButton` field is always the regular 56 one; the `fab` and `extended-fab` markings go in the slot (an `ExtendedFloatingActionButton`, for example).
+
+**Accessibility** (stage #1081; the unit is the dp, 1 dp = 1 component unit): the type has no `accessibility.role` of its own; `actionIcon1` to `actionIcon4` and the `floatingActionButton` are `button` parts, each named by its optional description field (`actionIcon1Description` and so on, `floatingActionButtonDescription`). An icon without a description is a pending item on its part (`accessible-label-missing`).
