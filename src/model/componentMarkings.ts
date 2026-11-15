@@ -129,9 +129,10 @@ export interface NewComponentArgs {
    */
   readonly parentId: string | null;
   /**
-   * The slot of the target (`parentId`) the instance goes to (`slotKey`; its `id`). Absent: the first
-   * visible slot (decision 5 of #1080; the type's `accepts` and `max` come in a later phase). A slot
-   * the target does not have fails with `invalid-parent`. Only the position depends on it: the stored
+   * The slot of the target (`parentId`) the instance goes to (`slotKey`; its `id`). The slot asked
+   * for wins; absent, the first visible slot that accepts the new child's type (`typeId`) and is not
+   * full (the `accepts` and `max` of the type, via `typeSlots`), as `slotToUse` decides. A slot the
+   * target does not have fails with `invalid-parent`. Only the position depends on it: the stored
    * parent is still what the settle decides.
    */
   readonly slot?: string;

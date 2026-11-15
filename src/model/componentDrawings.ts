@@ -227,6 +227,8 @@ interface Entry {
   readonly kids: readonly DrawKid[];
   /** The slots of the type with `accepts` and `max` (decision 5); empty without children. */
   readonly slotDefs: readonly TypeSlot[];
+  /** The owner type's name, which `slotIssues` carry (`DrawingSlotIssue.owner`). */
+  readonly ownerName: string;
   /**
    * Inherited color: only the values offered by the ancestors that the component reads
    * (`$provided`).
@@ -302,6 +304,15 @@ function sameSlotDefs(a: readonly TypeSlot[], b: readonly TypeSlot[]): boolean {
       );
     })
   );
+}
+
+/** The slot inputs of the drawing are the same: the slots of the type and the type's name (the issues' owner). */
+function sameSlotInputs(
+  before: Entry,
+  slotDefs: readonly TypeSlot[],
+  ownerName: string,
+): boolean {
+  return before.ownerName === ownerName && sameSlotDefs(before.slotDefs, slotDefs);
 }
 
 function sameAccepts(
@@ -1010,7 +1021,7 @@ export function createDrawingCache(): DrawingCache {
         before.valueWarnings.length === valueWarnings.length &&
         before.valueWarnings.every((w, i) => w.text === valueWarnings[i]?.text) &&
         sameKids(before.kids, kids) &&
-        sameSlotDefs(before.slotDefs, slotDefs) &&
+        sameSlotInputs(before, slotDefs, mc.type.name) &&
         sameProvided(before.provided, provided)
       ) {
         const kept = sameReceived(before.received, received)
@@ -1074,6 +1085,7 @@ export function createDrawingCache(): DrawingCache {
         anchor,
         kids,
         slotDefs,
+        ownerName: mc.type.name,
         provided,
         offers,
         slotClips: stableClips,

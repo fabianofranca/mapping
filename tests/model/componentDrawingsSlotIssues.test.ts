@@ -174,4 +174,22 @@ describe('ComponentDrawing.slotIssues', () => {
     expect(after).not.toBe(first);
     expect(after.slotIssues).toEqual([]);
   });
+
+  it('the cache re-instantiates when only the owner type`s name changes, so the issues name the new owner', () => {
+    let p = bar();
+    p = add(p, catalog, 'P1', 'pin', { parentId: 'B', slot: 'navigationIcon' });
+    p = add(p, catalog, 'P2', 'pin', { parentId: 'B', slot: 'navigationIcon' });
+    const cache = createDrawingCache();
+    const first = cache(p, catalog, approximateMeasurer, 0).get('B')!;
+    expect(first.slotIssues[0]?.owner).toBe('Bar');
+    const renamed = specOf((raw) => {
+      raw.layers[0].annotationTypes[0].name = 'Toolbar';
+    });
+    const q: Project = {
+      ...p,
+      specializations: p.specializations.map((s) => ({ ...s, spec: renamed })),
+    };
+    const after = cache(q, catalog, approximateMeasurer, 0).get('B')!;
+    expect(after.slotIssues.map((i) => i.owner)).toEqual(['Toolbar']);
+  });
 });
