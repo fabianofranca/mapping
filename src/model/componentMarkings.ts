@@ -17,7 +17,7 @@ import { placeCells, trackCount, trackOffset, trackSize } from './components/gri
 import { lineExtents } from './components/gridPlan';
 import { WRAP_EPS, breakLines, stackLines } from './components/wrapLines';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
-import { fitComponentSize } from './components/sizing';
+import { fitComponentSize, sizingFollowsContent } from './components/sizing';
 import { instantiate, type TextMeasurer } from './components/instantiate';
 import {
   componentFileMinSize,
@@ -563,7 +563,8 @@ function initialValues(
  * The size the new instance wants (decision 16 of #898): the component's `size` and, on the axes where the
  * `sizing` depends on the content (`hug` or expression), the size measured with the initial values
  * (`preview` plus the given ones). Whoever gives the size (`args.size`) rules, without measuring; a component without `sizing`
- * does not measure (the common case does not pay for the provisional project), nor does a component with a slot.
+ * does not measure (the common case does not pay for the provisional project), nor does a component with a slot
+ * and an axis that follows the content (its children do not exist yet).
  */
 function wantedSize(
   p: Project,
@@ -578,11 +579,14 @@ function wantedSize(
     width: unitsToPixels(component.size.width, density),
     height: unitsToPixels(component.size.height, density),
   };
-  // Component with a slot: the content is the children, which do not exist yet (born at `size`;
-  // Arrange adjusts it after they come in).
-  if (component.sizing === undefined || hasSlotComponent(component)) return nominal;
+  if (component.sizing === undefined) return nominal;
   const values = initialValues(p, space, args);
   if (values === undefined) return nominal;
+  // Component with a slot and an axis that follows the content: the content is the children, which do not
+  // exist yet (born at `size`; Arrange adjusts it after they come in). An axis by expression (the Material 3
+  // top app bar's height by `style`) does not depend on them and is measured as always.
+  if (hasSlotComponent(component) && sizingFollowsContent(component, values))
+    return nominal;
   const drawn = componentForDrawing(p, component, args.containerId);
   const fitted = fitComponentSize(
     drawn.component,

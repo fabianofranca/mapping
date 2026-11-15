@@ -62,9 +62,9 @@ function readSignature(path: string) {
 }
 
 describe('Material 3 (Compose): the signature sheets (decision 14 of #1079)', () => {
-  it('is formatVersion 16 and version 15 (the version went up once in the #1079 epic, over the 12 of main; the 14 is R5 of #1096; the 15 is the English text of ID7)', () => {
-    expect(spec.formatVersion).toBe(16);
-    expect(spec.version).toBe(15);
+  it('is formatVersion 17 and version 16 (the version went up once in the #1079 epic, over the 12 of main; the 14 is R5 of #1096; the 15 is the English text of ID7; the 16 is SL7 of #1080, the named slots)', () => {
+    expect(spec.formatVersion).toBe(17);
+    expect(spec.version).toBe(16);
   });
 
   it('every type, and every variants case, cites its sheet in signatures/', () => {
