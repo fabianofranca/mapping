@@ -326,6 +326,40 @@ describe('painel.py import (FM7, decision 17)', () => {
   });
 
   it(
+    'carries meta.escapados, meta.escapadosAt and meta.historico (QC1, F1) and adds none when the old panel has no such keys',
+    () => {
+      run('import', newDir, oldDir);
+      const plain = json(newDir, 'meta')[0]!;
+      expect(plain).not.toHaveProperty('escapados');
+      expect(plain).not.toHaveProperty('escapadosAt');
+      expect(plain).not.toHaveProperty('historico');
+
+      const escapados = [
+        { bug: '#1', etapa: '#2', sev: 'medium', at: '2026-11-12T10:00:00Z' },
+      ];
+      const historico = {
+        desde: '2026-11-11T00:00:00Z',
+        ate: '2026-11-14T00:00:00Z',
+        linhas: 12,
+      };
+      writeQueue(
+        oldDir,
+        oldQueue(),
+        { ...oldMeta(), escapados, escapadosAt: '2026-11-13T09:00:00Z', historico },
+        [{ at: '2026-11-10T08:00:00Z', text: 'Execução iniciada' }],
+      );
+      rmSync(newDir, { recursive: true, force: true });
+      run('init', newDir);
+      run('import', newDir, oldDir);
+      const meta = json(newDir, 'meta')[0]!;
+      expect(meta.escapados).toEqual(escapados);
+      expect(meta.escapadosAt).toBe('2026-11-13T09:00:00Z');
+      expect(meta.historico).toEqual(historico);
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
     'brings aguardando, em andamento, esperando dono and falhou, in order and renumbered from 1 to n, with the ficha',
     () => {
       run('import', newDir, oldDir);
