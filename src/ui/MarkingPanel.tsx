@@ -15,6 +15,7 @@ import type { ActionResult } from '../store/history';
 import type { AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
 import { ArrivalNotice } from './ArrivalNotice';
+import { auditFindingText } from './accessibilityText';
 import { ArrowLinksSection } from './ArrowLinksSection';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { Button, Choice, HelpTip, IconButton, TextField } from './controls';
@@ -25,6 +26,7 @@ import { DetailsIdentity } from './DetailsIdentity';
 import { Section } from './DetailsSection';
 import { arrangeHintKey, arrangeMarking, canArrangeMarking } from './arrange';
 import { useEditor } from './EditorContext';
+import { Notice } from './Notice';
 import { keepFocusAfterAction } from './focus';
 import { imageLabel, markingErrorMessage, markingLabel } from './labels';
 import { MarkingAnchorSection } from './MarkingAnchorSection';
@@ -189,6 +191,12 @@ export function MarkingPanel({
       {ext?.header(marking.id)}
 
       <ArrivalNotice itemId={marking.id} />
+
+      {(derived.auditFindings.value.get(marking.id) ?? []).map((finding) => (
+        <Notice key={`${finding.annotationId}:${finding.code}`} tone="warning" size="sm">
+          {auditFindingText(finding)}
+        </Notice>
+      ))}
 
       {marking.needsReview && (
         <div class="notice" role="status">

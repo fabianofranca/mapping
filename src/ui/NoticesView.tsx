@@ -4,6 +4,7 @@ import {
   NOTICE_KINDS,
   type JsonValue,
   type NoticeGroup,
+  type AuditRow,
   type NoticeUsage,
   type Project,
   type SpecNoticeKind,
@@ -14,6 +15,7 @@ import { Choice, Segmented, type SegmentedItem } from './controls';
 import { useEditor } from './EditorContext';
 import { LayerCell, MarkingCell, markingPathLabel } from './ListView';
 import { arrowText } from './labels';
+import { auditFindingText } from './accessibilityText';
 import { NoticeBadge, noticeKindLabel } from './NoticeBadge';
 
 interface NoticesViewProps {
@@ -90,6 +92,65 @@ function kindItems(
   ];
 }
 
+/** The Accessibility section (stage #1127): the audit's warnings, with their own header and count. */
+function AccessibilitySection({
+  project,
+  rows,
+  onGoToAnnotation,
+}: {
+  readonly project: Project;
+  readonly rows: readonly AuditRow[];
+  readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
+}) {
+  return (
+    <tbody>
+      <tr class="notices-group-row">
+        <th scope="colgroup" colSpan={4}>
+          <span class="notices-group-head">
+            <strong class="notices-place">{t('notices.accessibility.title')}</strong>
+            <span class="notices-count muted">
+              {t('notices.accessibility.count', { count: rows.length })}
+            </span>
+          </span>
+        </th>
+      </tr>
+      {rows.map(({ annotation, path, layer, arrow, finding }) => {
+        const label = markingPathLabel(project, path, arrow);
+        return (
+          <tr
+            key={`${annotation.id}:${finding.code}`}
+            class="list-row list-row-first"
+            onClick={() => onGoToAnnotation(annotation)}
+          >
+            <td class="list-cell list-cell-marking" data-label={t('list.col.marking')}>
+              <MarkingCell
+                label={label}
+                name={t('notices.accessibility.go', {
+                  name: arrow ? arrowText(project, arrow) : label,
+                })}
+                arrow={arrow !== undefined}
+              />
+            </td>
+            <td class="list-cell list-cell-layer" data-label={t('list.col.layer')}>
+              <LayerCell layer={layer} />
+            </td>
+            <td class="list-cell" data-label={t('list.col.annotation')}>
+              <AnnotationTitle
+                project={project}
+                annotation={annotation}
+                class="list-annotation-name"
+              />
+            </td>
+            <td class="list-cell" data-label={t('notices.col.value')}>
+              {auditFindingText(finding)}
+            </td>
+          </tr>
+        );
+      })}
+    </tbody>
+  );
+}
+
 /**
  * Notices window (stage #486, AV3): the specialization's notices grouped by notice (from most
  * to least severe), each with the annotations it affects. Choosing a row goes to the annotation.
@@ -102,6 +163,7 @@ export function NoticesView({ onGoToAnnotation }: NoticesViewProps) {
   const kind = ui.noticeKind.value;
   const list = derived.noticeList.value;
   const counts = derived.noticeCounts.value;
+  const audit = derived.auditList.value;
   if (!project) return null;
   const filtered =
     kind !== null || ui.noticesVisibleOnly.value || !ui.noticesInUseOnly.value;
@@ -131,7 +193,7 @@ export function NoticesView({ onGoToAnnotation }: NoticesViewProps) {
         />
       </div>
 
-      {list.length === 0 ? (
+      {list.length === 0 && audit.length === 0 ? (
         <p class="muted list-message">
           {t(filtered ? 'notices.emptyFiltered' : 'notices.empty')}
         </p>
@@ -203,6 +265,13 @@ export function NoticesView({ onGoToAnnotation }: NoticesViewProps) {
                 })}
               </tbody>
             ))}
+            {audit.length > 0 && (
+              <AccessibilitySection
+                project={project}
+                rows={audit}
+                onGoToAnnotation={onGoToAnnotation}
+              />
+            )}
           </table>
         </div>
       )}
