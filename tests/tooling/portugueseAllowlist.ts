@@ -1141,6 +1141,16 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'session-notices',
   },
   { term: 'É autorização do dono', source: 'docs/FLOW.md', group: 'session-notices' },
+  {
+    term: 'Canário B (#1889): esta sessão roda em `medium`; o item 10 continua no nível da tabela.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Canário <id> revertido',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
   { term: 'parou em:', source: 'docs/FLOW.md', group: 'session-notices' },
   {
     term: 'passou de 300 mil na quinta sessão',

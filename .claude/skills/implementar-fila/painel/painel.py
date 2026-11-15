@@ -141,8 +141,9 @@ its sessions; `fase`, a `correção` in the stage of one of its sessions (once p
 `resumo` = `{antes, canario, veredito}`: each side has `sessoes` (with a cost), `medianaSessao`, `medianaEtapa`, `decididas` and `comRetrabalho`
 (decision 6); the "before" is the same role and the `de` configuration (and, with a filter, the same filter) created before `inicio`; the verdict
 is `revertido`, `pode promover` (`encerrado`, at most PROMOTE_MAX_REWORK = 1 rework and a lower median per session than before) or `não promover`.
-A role with a canary `ativo` or `em avaliação` has no `candidato` in `meta.uso`; `show` prints `canários: <id> <role> <de> → <model> <effort> <k>/<n>
-(retrabalhos <r>/<volta>, <state>); …` (or `nenhum`) right after `candidatos a teste:`.
+A role with a canary `ativo` or `em avaliação` has no `candidato` in `meta.uso`.
+`show` prints the line `canários: <id> <role> <de> → <model> <effort> <k>/<n> (retrabalhos <r>/<volta>, <state>); …`
+(or `canários: nenhum`) right after the `meta.uso` candidates line.
 Standard library only. Usage: painel.py [--now ISO] <subcommand> DIR ...
 (the subcommand comes BEFORE the folder: `painel.py row <folder> '#n' status=...`).
 """
