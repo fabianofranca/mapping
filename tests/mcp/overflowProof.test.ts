@@ -511,7 +511,9 @@ describe('plan_changes: drawing proof × direction', () => {
 
   it('a batch only changing the container direction proves the component that overflows only in rtl', async () => {
     const project = await seedDir();
-    const container = project.containers.find((c) => c.file === null)!;
+    // The container of the `dir` marking (earlier tests leave other screens, with their own pending items, in the workspace).
+    const bar = project.markings.find((m) => m.name === 'dir')!;
+    const container = project.containers.find((c) => c.id === bar.containerId)!;
     const same = await plan(seeded, [
       { op: 'update_container', container: container.id },
     ]);

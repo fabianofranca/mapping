@@ -174,6 +174,43 @@ const child = (id: string, box: ReturnType<typeof rect>, typeId?: string): SlotC
   ...(typeId === undefined ? {} : { typeId }),
 });
 
+// P10 (CL1): an empty `hug` slot is a box with no width; the children laid out in a row from it must not
+// stray to a slot on the other side only because their centers are nearer to that one.
+describe('assignSlots: a slot that hugs its children grows to take them', () => {
+  const bottomBar: SlotInput[] = [
+    { id: 'actions', box: rect(4, 4, 0, 76), grows: true },
+    { id: 'floatingActionButton', box: rect(340, 12, 56, 56) },
+  ];
+  const row = (n: number) =>
+    Array.from({ length: n }, (_, i) => child(`k${i}`, rect(4 + i * 48, 16, 48, 48)));
+
+  it('five 48 px children in a row from the empty `actions` slot all stay in it', () => {
+    const result = assignSlots(bottomBar, row(5));
+    expect(result.children.get('actions')).toEqual(['k0', 'k1', 'k2', 'k3', 'k4']);
+    expect(result.children.get('floatingActionButton')).toEqual([]);
+  });
+
+  it('without `grows` the farthest child strays to the other slot (the defect)', () => {
+    const slots = bottomBar.map((slot) => ({ ...slot, grows: undefined }));
+    expect(assignSlots(slots, row(5)).slotOf.get('k4')).toBe('floatingActionButton');
+  });
+
+  it('a child beside the other slot still goes to that one', () => {
+    const result = assignSlots(bottomBar, [
+      ...row(2),
+      child('fab', rect(340, 12, 56, 56)),
+    ]);
+    expect(result.slotOf.get('fab')).toBe('floatingActionButton');
+    expect(result.children.get('actions')).toEqual(['k0', 'k1']);
+  });
+
+  it('the results keep the order of the children given', () => {
+    const result = assignSlots(bottomBar, [...row(3)].reverse());
+    expect(result.children.get('actions')).toEqual(['k2', 'k1', 'k0']);
+    expect([...result.slotOf.keys()]).toEqual(['k2', 'k1', 'k0']);
+  });
+});
+
 describe('assignSlots', () => {
   const bar: SlotInput[] = [
     { id: 'navigationIcon', box: rect(4, 8, 0, 48), accepts: types('icon-button') },

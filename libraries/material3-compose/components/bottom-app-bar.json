@@ -852,7 +852,7 @@
         "type": "slot",
         "id": "floatingActionButton",
         "name": "floating action button",
-        "width": 56,
+        "width": "hug",
         "height": 56,
         "anchors": {
           "right": 16,
@@ -863,6 +863,8 @@
         },
         "fallback": {
           "name": "floating button",
+          "width": 56,
+          "height": 56,
           "type": "frame",
           "cornerRadius": {
             "$token": "corner-large"

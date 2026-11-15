@@ -7,7 +7,7 @@ import {
   slotsOfScene,
   type ResolvedSlotLayout,
 } from './components/arrange';
-import { assignSlots, componentSlots, slotKey } from './components/slots';
+import { assignSlots, componentSlots, slotGrows, slotKey } from './components/slots';
 import type {
   ComponentFile,
   FieldValues,
@@ -131,9 +131,11 @@ function kidsBySlot(
     idPrefix: marking.id,
     ...drawOptions(drawn),
   });
+  const grows = new Map(slots.map((s) => [slotKey(s), slotGrows(s)]));
   const inputs = [...slotsOfScene(root)].map(([id, slot]) => ({
     id,
     box: space.toPixels(slot.box),
+    grows: grows.get(id) ?? false,
   }));
   const assignment = assignSlots(
     inputs,

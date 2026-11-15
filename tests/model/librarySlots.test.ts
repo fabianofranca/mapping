@@ -138,6 +138,41 @@ describe('slots in the library package', () => {
     });
   });
 
+  it('two slots mapped to the same parameter by code.slots are an error at the second (CL1, P2)', () => {
+    const found = issues(
+      withCode({ slots: { navigationIcon: 'content', actions: 'content' } }),
+    ).filter((i) => i.severity === 'error');
+    expect(found).toEqual([
+      {
+        file: SPEC,
+        path: `${TYPE}.code.compose.slots.actions`,
+        severity: 'error',
+        message:
+          'two slots map to the same parameter "content": navigationIcon and actions',
+      },
+    ]);
+  });
+
+  it('a slot renamed to the id of the other (which keeps its id as the parameter) is the same error, also in a variants case', () => {
+    const renamed = issues(withCode({ slots: { actions: 'navigationIcon' } })).filter(
+      (i) => i.severity === 'error',
+    );
+    expect(renamed.map((i) => i.path)).toEqual([`${TYPE}.code.compose.slots.actions`]);
+    const inCase = issues(
+      withCode({
+        variants: {
+          field: 'kind',
+          cases: {
+            Small: { symbol: 'x.SmallBar', slots: { actions: 'navigationIcon' } },
+          },
+        },
+      }),
+    ).filter((i) => i.severity === 'error');
+    expect(inCase.map((i) => i.path)).toEqual([
+      `${TYPE}.code.compose.variants.cases.Small.slots.actions`,
+    ]);
+  });
+
   it('the slot ids of the type and of code.slots that the component has pass', () => {
     const found = issues(
       withCode({ slots: { navigationIcon: 'navigation', actions: 'trailing' } }),

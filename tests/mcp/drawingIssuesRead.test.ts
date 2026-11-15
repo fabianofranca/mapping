@@ -149,27 +149,27 @@ describe('MCP reads carry the drawing issues', () => {
       container: SCREEN,
       incomplete: true,
     });
-    // The bar and the tiny bar (component-overflow), the extra pin (slot-full) and the rounded bar
-    // (slot-not-accepted).
-    expect(list.total).toBe(4);
+    // The tiny bar (component-overflow), the extra pin (slot-full) and the rounded bar (slot-not-accepted).
+    // The bar itself no longer overflows: its children sit in the hug `actions` slot, which takes their size (CL1, 2.1).
+    expect(list.total).toBe(3);
   });
 
   it('the counts of get_project, get_marking and the list rows count them', async () => {
     const project = await call('get_project', { project: 'slots' });
-    expect(project.issues.total).toBe(4);
+    expect(project.issues.total).toBe(3);
     expect(project.issues.byCode).toMatchObject({
       'slot-full': 1,
       'slot-not-accepted': 1,
-      'component-overflow': 2,
+      'component-overflow': 1,
     });
     // The marking view counts its own annotations (the extra pin has the slot-full).
     const all = await refs();
     const counts = [];
     for (const r of all)
       counts.push((await call('get_marking', { ref: r.ref })).incompleteAnnotations);
-    expect(counts.filter((n) => n === 1)).toHaveLength(4);
+    expect(counts.filter((n) => n === 1)).toHaveLength(3);
     const rows = await refs();
-    expect(rows.filter((r) => r.incomplete === 1)).toHaveLength(4);
+    expect(rows.filter((r) => r.incomplete === 1)).toHaveLength(3);
   });
 });
 
@@ -199,5 +199,23 @@ describe('the drawing is memoized by the content of the folder', () => {
     expect(created.passes).toBe(after1 + 1);
     await call('get_marking', { ref: first!.ref });
     expect(created.passes).toBe(after1 + 1);
+  });
+});
+
+describe('plan_changes counts what the project already had (CL1, 4.2)', () => {
+  it('a batch that only touches a marking with a pending item brings it in before, not in issues.new', async () => {
+    const rows = await refs();
+    let tiny: Row | undefined;
+    for (const r of rows) {
+      if ((await issuesOf(r.ref)).some((i) => i.code === 'component-overflow')) tiny = r;
+    }
+    expect(tiny).toBeDefined();
+    const plan = await call('plan_changes', {
+      project: 'slots',
+      operations: [{ op: 'update_marking', marking: tiny!.ref, move: { dx: 1, dy: 0 } }],
+    });
+    expect(plan.issues.before).toBeGreaterThanOrEqual(3);
+    expect(plan.issues.before).toBe(plan.issues.after);
+    expect(plan.issues.new ?? []).toEqual([]);
   });
 });

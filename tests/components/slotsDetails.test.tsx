@@ -68,9 +68,14 @@ describe('Details: the drawing’s pending items', () => {
   it('the component that does not fit shows component-overflow in its Details', async () => {
     const harness = await slotsHarness();
     const bar = place(harness, 'bar', null);
-    place(harness, 'pin', bar);
-    place(harness, 'pin', bar);
-    place(harness, 'pin', bar);
+    // A bar too small for its own title (the pins inside the hug slot no longer overflow it: CL1, 2.1).
+    const shrunk = harness.actions.setMarkingRect(bar, {
+      x: 10,
+      y: 10,
+      width: 60,
+      height: 20,
+    });
+    if (!shrunk.ok) throw new Error(`rect: ${shrunk.error}`);
     const annotationId = markingComponent(
       harness.project(),
       harness.context.derived.catalog.value,

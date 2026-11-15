@@ -618,7 +618,39 @@ function slotCoherence(
     codeSlotEntries(entry, `${base}.code.${platform}`).forEach(([id, at]) =>
       check(id, at),
     );
+    parameterClashes(pkg, entry, `${base}.code.${platform}`, [...ids], out);
   }
+}
+
+/**
+ * Two slots of the component that the platform's `code.slots` maps to the same parameter (a slot with no
+ * entry keeps its `id` as the parameter) would generate the same argument twice: the entry, and each
+ * case of its `variants`, is checked as the sheet is read (the case's `slots` on top of the entry's).
+ */
+function parameterClashes(
+  pkg: Package,
+  entry: NonNullable<SpecAnnotationType['code']>[string],
+  at: string,
+  ids: readonly string[],
+  out: Collector,
+): void {
+  const clash = (map: Readonly<Record<string, string>>, where: string): void => {
+    const seen = new Map<string, string>();
+    for (const id of ids) {
+      const parameter = map[id] ?? id;
+      const first = seen.get(parameter);
+      if (first !== undefined)
+        out.error(pkg.specPath, `${where}.slots.${id}`, 'library.slotParameterRepeated', {
+          parameter,
+          first,
+          second: id,
+        });
+      else seen.set(parameter, id);
+    }
+  };
+  clash(entry.slots ?? {}, at);
+  for (const [value, kase] of Object.entries(entry.variants?.cases ?? {}))
+    clash({ ...entry.slots, ...kase.slots }, `${at}.variants.cases.${value}`);
 }
 
 /** The slot ids of a `code` entry (and of its `variants` cases) with the path of each one. */
