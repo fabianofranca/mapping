@@ -5,6 +5,7 @@
  */
 import type { ComponentFile, SlotTemplate } from './componentFormat';
 import type { ProvidedValues } from './expressions';
+import { componentSlots } from './slots';
 
 export type { ProvidedValues };
 
@@ -45,18 +46,7 @@ export function providedReads(component: ComponentFile): readonly string[] {
 
 /** The first `slot` of the template with `provide` (the same slot `findSlot` finds), or none. */
 export function providingSlot(component: ComponentFile): SlotTemplate | undefined {
-  const search = (node: unknown): SlotTemplate | undefined => {
-    if (typeof node !== 'object' || node === null) return undefined;
-    const record = node as { type?: unknown; children?: unknown };
-    if (record.type === 'slot') return node as SlotTemplate;
-    if (record.type !== 'frame' || !Array.isArray(record.children)) return undefined;
-    for (const child of record.children as unknown[]) {
-      const found = search(child);
-      if (found) return found;
-    }
-    return undefined;
-  };
-  const slot = search(component.template);
+  const slot = componentSlots(component)[0];
   return slot?.provide === undefined || Object.keys(slot.provide).length === 0
     ? undefined
     : slot;

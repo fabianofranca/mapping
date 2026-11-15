@@ -51,6 +51,22 @@ describe('componentSlots', () => {
     expect(componentSlots(component).map((s) => s.id)).toEqual(['a', 'b', 'c', 'd']);
   });
 
+  it('a component before formatVersion 4 keeps only its first slot, as today (no ids to tell them apart)', () => {
+    const result = parseComponent({
+      format: 'mapping-component',
+      formatVersion: 3,
+      id: 'old',
+      name: 'Old',
+      size: { width: 100, height: 100 },
+      template: { type: 'frame', children: [slot(undefined), slot(undefined)] },
+    });
+    if (!result.ok) throw new Error(result.errors.join('; '));
+    expect(componentSlots(result.component)).toHaveLength(1);
+    expect(componentSlots(result.component)[0]).toBe(
+      result.component.template.children?.[0],
+    );
+  });
+
   it('is empty without a slot', () => {
     expect(componentSlots(parsed([text('x')]))).toEqual([]);
   });

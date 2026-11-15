@@ -28,15 +28,19 @@ function collectSlots(node: TemplateNode, out: SlotTemplate[]): void {
 /**
  * The `slot` nodes of the template, in template order, in depth (through the frames' `children`;
  * the `fallback` cannot have a slot and a slot is not valid inside a `repeat`). The same list for
- * the same component.
+ * the same component. In a `formatVersion` 1 to 3 component, only the first slot (the one the children
+ * go to).
  */
 export function componentSlots(component: ComponentFile): readonly SlotTemplate[] {
   const known = slotsCache.get(component);
   if (known !== undefined) return known;
   const found: SlotTemplate[] = [];
   collectSlots(component.template, found);
-  slotsCache.set(component, found);
-  return found;
+  // Before formatVersion 4 a slot has no `id` to tell it from another: the children go to the first
+  // one, as they always did (decision 2), so the others are not listed.
+  const slots = component.formatVersion < 4 ? found.slice(0, 1) : found;
+  slotsCache.set(component, slots);
+  return slots;
 }
 
 /** The key of a slot in the maps: its `id`, or the empty key for the only slot that has none. */

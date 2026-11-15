@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { iconNodes } from '../../src/model/components/icons';
 import { componentSlots, fallbackFields } from '../../src/model/components/slots';
 import { parseComponent } from '../../src/model/components/parseComponent';
 import { validateLibrary, type LibraryFile } from '../../src/model/library';
@@ -64,5 +65,23 @@ describe('validateLibrary: named slots test library', () => {
     expect(brief(report.errors).join('\n')).toContain(
       'slot: with more than one slot, each one needs an id',
     );
+  });
+});
+
+describe('icons in the default content', () => {
+  it('iconNodes collects the icon nodes of a slot fallback, at the fallback path', () => {
+    const template = {
+      type: 'frame',
+      children: [
+        {
+          type: 'slot',
+          id: 'a',
+          fallback: { type: 'frame', children: [{ type: 'icon', name: 'check' }] },
+        },
+      ],
+    };
+    expect(iconNodes(template)).toEqual([
+      { path: 'template.children[0].fallback.children[0].name', name: 'check' },
+    ]);
   });
 });

@@ -249,5 +249,7 @@ export function iconNodes(template: unknown, path = 'template'): IconNodeRef[] {
     );
   if (template.type === 'repeat')
     out.push(...iconNodes(template.template, join(path, 'template')));
+  if (template.type === 'slot')
+    out.push(...iconNodes(template.fallback, join(path, 'fallback')));
   return out;
 }
