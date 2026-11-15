@@ -64,7 +64,14 @@ export function addInstance(screen: Screen, instance: Omit<Instance, 'id'>): Scr
   };
 }
 
-/** Removes only the instance; the children go up to its parent. */
+/** The slot key belongs to the parent it was written for: a child that changes parent loses it. */
+function withoutSlot(instance: Instance): Instance {
+  const { slot: _slot, ...rest } = instance;
+  void _slot;
+  return rest;
+}
+
+/** Removes only the instance; the children go up to its parent (without the removed parent's slot key). */
 export function removeInstance(screen: Screen, id: string): Screen {
   const removed = screen.instances.find((i) => i.id === id);
   if (!removed) return screen;
@@ -72,9 +79,9 @@ export function removeInstance(screen: Screen, id: string): Screen {
     .filter((i) => i.id !== id)
     .map((i) =>
       i.parentId === id
-        ? removed.parentId
-          ? { ...i, parentId: removed.parentId }
-          : withoutParent(i)
+        ? withoutSlot(
+            removed.parentId ? { ...i, parentId: removed.parentId } : withoutParent(i),
+          )
         : i,
     );
   return { ...screen, instances };

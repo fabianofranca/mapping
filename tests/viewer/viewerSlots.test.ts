@@ -81,4 +81,12 @@ describe('createViewer: named slots', () => {
     expect(texts).toContain('ACT');
     expect(texts).not.toContain('NAV');
   });
+
+  it('a child with a slot key the parent does not have goes to the default slot, like the layout', () => {
+    const texts = drawnTexts('nope');
+    expect(texts).toContain('PIN');
+    // The placement's slot (the first) is the filled one; the other keeps its default content.
+    expect(texts).not.toContain('NAV');
+    expect(texts).toContain('ACT');
+  });
 });

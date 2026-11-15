@@ -18,14 +18,10 @@ import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { type RemoteImageResult, renderScene } from './renderScene';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning } from './renderWarnings';
-import { clippedSlotBox } from '../../model/components/arrange';
+import { slotsOfScene } from '../../model/components/arrange';
 import { componentSlots, slotForPlacement, slotKey } from '../../model/components/slots';
 import { type Box, intersectClips } from '../../model/components/box';
-import type {
-  ComponentFile,
-  Direction,
-  FieldValues,
-} from '../../model/components/componentFormat';
+import type { Direction, FieldValues } from '../../model/components/componentFormat';
 import type { FrameNode } from '../../model/components/scene';
 import { type TextMeasurer, instantiate } from '../../model/components/instantiate';
 import {
@@ -455,7 +451,7 @@ export class ScreenRenderer {
       ...filledOption(entry.filled),
     });
     entry.offers = result.provides;
-    entry.slotClips = slotClipsOf(type.component, result.root, instance.box);
+    entry.slotClips = slotClipsOf(result.root, instance.box);
     const rendered = renderScene(
       { root: result.root, warnings: [] },
       {
@@ -481,15 +477,12 @@ export class ScreenRenderer {
 }
 
 /** The clip of each slot (by `slotKey`) of the instantiated component, on the screen (none: without `clip`). */
-function slotClipsOf(
-  component: ComponentFile,
-  root: FrameNode,
-  origin: Box,
-): ReadonlyMap<string, Box | undefined> {
+function slotClipsOf(root: FrameNode, origin: Box): ReadonlyMap<string, Box | undefined> {
+  // One pass over the scene for all the slots (their boxes and `clip` flags).
   return new Map(
-    componentSlots(component).map((slot) => [
-      slotKey(slot),
-      offsetBox(clippedSlotBox(root, slotKey(slot)), origin),
+    [...slotsOfScene(root)].map(([key, slot]) => [
+      key,
+      slot.clip ? offsetBox(slot.box, origin) : undefined,
     ]),
   );
 }

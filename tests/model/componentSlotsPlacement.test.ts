@@ -233,3 +233,45 @@ describe('arrangeMarking: per slot', () => {
     expect(canArrange(bar(), catalog, 'B')).toBe(false);
   });
 });
+
+describe('componentPlacement: a component with `screen`', () => {
+  it('finds the same slot with and without the app drawings', () => {
+    const screenBar = JSON.parse(read('components/rounded-bar.json'));
+    screenBar.screen = { anchor: 'center' };
+    const texts = new Map(
+      ['bar', 'pin', 'rounded-bar'].map((id) => [
+        `specs/slots/components/${id}.json`,
+        id === 'rounded-bar' ? JSON.stringify(screenBar) : read(`components/${id}.json`),
+      ]),
+    );
+    const loaded = loadSpecComponents(spec, 'specs/slots/slots.spec.json', 1, (path) =>
+      texts.get(path),
+    );
+    const cat: ComponentCatalog = new Map([[SPEC_ID, loaded]]);
+    const p = addComponentMarking(
+      baseProject(),
+      cat,
+      {
+        markingId: 'R',
+        annotationId: 'A_R',
+        containerId: 'I1',
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'rounded-bar',
+        rect: { x: 100, y: 100, width: 200, height: 80 },
+      },
+      approximateMeasurer,
+    );
+    const args = {
+      containerId: 'I1',
+      parentId: 'R',
+      specId: SPEC_ID,
+      typeId: 'pin',
+    };
+    const without = componentPlacement(p, cat, args, approximateMeasurer);
+    const drawings = createDrawingCache()(p, cat, approximateMeasurer, 0);
+    expect(
+      componentPlacement(p, cat, { ...args, drawings }, approximateMeasurer),
+    ).toEqual(without);
+  });
+});
