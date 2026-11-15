@@ -25,6 +25,11 @@ beforeAll(async () => {
       });
       add('p1', 'pin', { name: 'p1', parentId: 'mk-bar', slot: 'navigationIcon' });
       add('p2', 'pin', { name: 'p2', rect: { x: 100, y: 400, width: 24, height: 24 } });
+      add('rb', 'rounded-bar', {
+        name: 'rb',
+        rect: { x: 100, y: 500, width: 200, height: 80 },
+      });
+      add('rk', 'pin', { name: 'rk', parentId: 'mk-rb' });
     },
     {
       tweak: (spec) => {
@@ -63,6 +68,15 @@ describe('get_marking with slots', () => {
   it('the child says which slot it is in', async () => {
     const view = await call('get_marking', { ref: refs.get('p1') });
     expect(view.slot).toEqual({ id: 'navigationIcon', name: 'Navigation icon' });
+  });
+
+  it('a component with one slot that has an id lists it, and its child says it is in it', async () => {
+    const mother = await call('get_marking', { ref: refs.get('rb') });
+    const child = await call('get_marking', { ref: refs.get('rk') });
+    expect(mother.slots).toEqual([
+      { id: 'content', name: 'content', children: [refs.get('rk')], fallback: false },
+    ]);
+    expect(child.slot).toEqual({ id: 'content', name: 'content' });
   });
 
   it('a marking outside any component with slots carries neither', async () => {

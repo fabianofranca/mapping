@@ -10,6 +10,7 @@ interface Reply {
   valid: boolean;
   errors?: { index: number; code: string; message: string; detail?: unknown }[];
   summary: string[];
+  warnings?: { index: number; code: string; message: string }[];
   issues: {
     new: { annotation: string; issues: { code: string; slot?: { id: string } }[] }[];
   };
@@ -122,5 +123,17 @@ describe('create_marking with inside + slot', () => {
       annotation: pin,
     });
     expect(reply.errors?.map((e) => e.code)).toEqual(['invalid-parent']);
+  });
+
+  it('the fit warning looks at the requested slot, not at the first one', async () => {
+    const reply = await plan({
+      op: 'create_marking',
+      inside: barRef,
+      slot: 'actions',
+      annotation: pin,
+    });
+    expect(reply.errors).toBeUndefined();
+    const text = JSON.stringify(reply.warnings ?? []);
+    expect(text).not.toMatch(/did not fit/);
   });
 });

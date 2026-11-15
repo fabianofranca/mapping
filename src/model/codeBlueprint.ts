@@ -257,6 +257,16 @@ function codeSummary(
   };
 }
 
+/** The default-content fields that the filled slot `slotId` makes meaningless. */
+function inactiveOf(
+  inactiveFields: ReadonlyMap<string, string>,
+  slotId: string,
+): string[] {
+  return [...inactiveFields]
+    .filter(([, slot]) => slot === slotId)
+    .map(([field]) => field);
+}
+
 /** The slot arguments of a marking, with what they take away from the annotation and the children. */
 interface Slotted {
   /** The annotation that draws the marking (the one that carries `slotArgs`). */
@@ -361,7 +371,9 @@ export function codeBlueprint(
     const targetMarking = index.markings.get(target.markingId);
     const seenMarkings = new Set<string>();
     const slotted =
-      targetMarking === undefined ? null : slottedOf(targetMarking, seenMarkings, here);
+      targetMarking === undefined
+        ? null
+        : slottedOf(targetMarking, seenMarkings, here, target.id);
     const annotation = annotationOf(
       target,
       resolved,
@@ -388,40 +400,42 @@ export function codeBlueprint(
   /**
    * The slot arguments of marking `m` (decision 11): the children its drawing put in a slot with an `id`,
    * as nodes, under the annotation that draws it. `null` without drawings, without `code` on the platform
-   * (nothing to call) or without a child in a slot.
+   * (nothing to call), without a child in a slot or, with `only`, when another annotation draws the marking
+   * (the arguments would never be written and the children would vanish).
    */
   const slottedOf = (
     m: Marking,
     seenMarkings: Set<string>,
     path: ReadonlySet<string>,
+    only?: string,
   ): Slotted | null => {
     const drawing = options.drawings?.get(m.id);
     const drawn = drawing && index.annotations.get(drawing.annotationId);
-    const resolved = drawn ? typeOfAnnotation(p, drawn) : null;
-    const code =
-      drawn && resolved ? codeFor(resolved, platformId, drawn.values ?? {}) : null;
-    if (!drawing || !drawn || code === null) return null;
+    if (!drawing || !drawn?.values || (only !== undefined && drawn.id !== only)) {
+      return null;
+    }
+    const resolved = typeOfAnnotation(p, drawn);
+    const code = resolved ? codeFor(resolved, platformId, drawn.values) : null;
+    if (code === null) return null;
     const args: BlueprintSlotArg[] = [];
     const claimed = new Set<string>();
+    const inactive = new Set<string>();
     for (const slot of drawing.slots) {
-      const kids = slot.children.flatMap((id) => index.markings.get(id) ?? []);
+      const kids = slot.children
+        .flatMap((id) => index.markings.get(id) ?? [])
+        .filter((kid) => !seenMarkings.has(kid.id));
       if (slot.id === '' || kids.length === 0) continue;
       kids.forEach((kid) => claimed.add(kid.id));
+      inactiveOf(drawing.inactiveFields, slot.id).forEach((field) => inactive.add(field));
       args.push({
         name: slotParam(code, slot.id),
         slot: slot.id,
-        children: kids
-          .filter((kid) => !seenMarkings.has(kid.id))
-          .map((kid) => nodeOf(kid, seenMarkings, path)),
+        children: kids.map((kid) => nodeOf(kid, seenMarkings, path)),
       });
     }
-    if (args.length === 0) return null;
-    const inactive = new Set(
-      [...drawing.inactiveFields]
-        .filter(([, slot]) => slot !== '')
-        .map(([field]) => field),
-    );
-    return { annotationId: drawing.annotationId, args, claimed, inactive };
+    return args.length === 0
+      ? null
+      : { annotationId: drawing.annotationId, args, claimed, inactive };
   };
 
   const visited = new Set<string>();

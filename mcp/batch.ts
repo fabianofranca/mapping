@@ -2326,6 +2326,7 @@ class Batch {
           rect,
           asked: op.rect,
           typeId: typeRef.typeId,
+          slot: op.slot,
         });
       }
       if (annotation.name !== undefined) {
@@ -2538,7 +2539,13 @@ class Batch {
     before: Project,
     after: Project,
     targetId: string,
-    created: { id: string; rect: Rect; asked: Rect | undefined; typeId: string },
+    created: {
+      id: string;
+      rect: Rect;
+      asked: Rect | undefined;
+      typeId: string;
+      slot: string | undefined;
+    },
   ): void {
     const target = this.markingLabel(after, targetId);
     const { asked, rect } = created;
@@ -2561,7 +2568,7 @@ class Batch {
         targetId,
         rect,
         this.measurer,
-        undefined,
+        created.slot,
         created.typeId,
       )
     ) {

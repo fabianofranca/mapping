@@ -86,7 +86,7 @@ export function childSlotView(refs: Refs, marking: Marking): Json {
     marking.parentId === null
       ? undefined
       : projectDrawings(refs.loaded).get(marking.parentId);
-  if (drawing === undefined || drawing.slots.length === 0) return {};
+  if (drawing === undefined || drawing.slots.every((slot) => slot.id === '')) return {};
   const id = drawing.slotOf.get(marking.id) ?? '';
   const slot = id === '' ? undefined : drawing.slots.find((s) => s.id === id);
   if (slot === undefined) return { slot: null };
