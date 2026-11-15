@@ -20,7 +20,7 @@ interface Row {
   ref: string;
   name: string | null;
   incomplete?: number;
-  audit?: Record<string, unknown>[];
+  warnings?: number;
 }
 
 async function rows(args: Record<string, unknown> = {}): Promise<Row[]> {
@@ -147,12 +147,12 @@ describe('list_markings: accessibility', () => {
     expect(all.find((r) => r.name === 'wide')!.incomplete).toBeUndefined();
   });
 
-  it('the row of the small button carries audit; the others do not', async () => {
+  it('the row of the small button carries the count of warnings, never the audit array; the others do not', async () => {
     const all = await rows();
     const small = all.find((r) => r.name === 'small')!;
-    expect(small.audit).toHaveLength(1);
-    expect(small.audit![0]).toMatchObject({ code: 'touch-target-small', density: 3 });
-    expect(all.filter((r) => r.audit !== undefined).map((r) => r.name)).toEqual([
+    expect(small.warnings).toBe(1);
+    expect(all.some((r) => 'audit' in r)).toBe(false);
+    expect(all.filter((r) => r.warnings !== undefined).map((r) => r.name)).toEqual([
       'small',
       'wide',
     ]);

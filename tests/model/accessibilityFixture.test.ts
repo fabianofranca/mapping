@@ -44,4 +44,12 @@ describe('accessibility test library', () => {
     expect(report.errors.map((i) => `${i.file} ${i.path}: ${i.message}`)).toEqual([]);
     expect(report.ok).toBe(true);
   });
+
+  it('the only warnings are the four "field not used by the drawing" ones (the library has no code; R29.1 lists them)', () => {
+    const report = validateLibrary({ files: pack() });
+    expect(report.warnings).toHaveLength(4);
+    expect(report.warnings.every((i) => /not used by the drawing/.test(i.message))).toBe(
+      true,
+    );
+  });
 });

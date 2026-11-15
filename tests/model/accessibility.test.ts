@@ -487,15 +487,15 @@ describe('annotationAccessibility (the code view)', () => {
     const p = put(world(), 'bar', 'A', BIG, { title: 'T', badge: '1' });
     expect(of(p, 'A')).toEqual({
       parts: [
-        { id: 'close', role: 'button', label: 'T' },
-        { id: 'noName', role: 'button', label: '1' },
-        { id: 'plain', role: 'button', label: '1' },
+        { id: 'close', name: 'Close', role: 'button', label: 'T' },
+        { id: 'noName', name: 'noName', role: 'button', label: '1' },
+        { id: 'plain', name: 'plain', role: 'button', label: '1' },
       ],
     });
     const bare = put(world(), 'bar', 'B', BIG, { title: 'T' });
     expect(of(bare, 'B')!.parts).toEqual([
-      { id: 'noName', role: 'button', label: null, missing: true },
-      { id: 'plain', role: 'button', label: null },
+      { id: 'noName', name: 'noName', role: 'button', label: null, missing: true },
+      { id: 'plain', name: 'plain', role: 'button', label: null },
     ]);
   });
 
@@ -507,13 +507,13 @@ describe('annotationAccessibility (the code view)', () => {
     ]);
     const rows = of(p, 'A')!.parts!.filter((part) => part.id === 'row');
     expect(rows).toEqual([
-      { id: 'row', role: 'button', label: 'First', row: 0 },
-      { id: 'row', role: 'button', label: 'Second', row: 1 },
-      { id: 'row', role: 'button', label: null, missing: true, row: 2 },
+      { id: 'row', name: 'Row', role: 'button', label: 'First', row: 0 },
+      { id: 'row', name: 'Row', role: 'button', label: 'Second', row: 1 },
+      { id: 'row', name: 'Row', role: 'button', label: null, missing: true, row: 2 },
     ]);
     // `<table>.<column>`: only the rows where the column has a value.
     expect(of(p, 'A')!.parts!.filter((part) => part.id === 'cell')).toEqual([
-      { id: 'cell', role: 'button', label: null, missing: true, row: 1 },
+      { id: 'cell', name: 'Cell', role: 'button', label: null, missing: true, row: 1 },
     ]);
   });
 

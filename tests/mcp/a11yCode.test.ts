@@ -98,14 +98,26 @@ describe('get_code_hints: accessibility', () => {
   it('the parts of a bar with no role come by field, each with the companion field value or missing', async () => {
     expect(await accessibilityOf('named')).toEqual({
       parts: [
-        { id: 'action1', role: 'button', label: 'Search' },
-        { id: 'action2', role: 'button', label: 'More' },
+        { id: 'action1', name: 'First action', role: 'button', label: 'Search' },
+        { id: 'action2', name: 'Second action', role: 'button', label: 'More' },
       ],
     });
     expect(await accessibilityOf('bare')).toEqual({
       parts: [
-        { id: 'action1', role: 'button', label: null, missing: true },
-        { id: 'action2', role: 'button', label: null, missing: true },
+        {
+          id: 'action1',
+          name: 'First action',
+          role: 'button',
+          label: null,
+          missing: true,
+        },
+        {
+          id: 'action2',
+          name: 'Second action',
+          role: 'button',
+          label: null,
+          missing: true,
+        },
       ],
     });
   });
@@ -124,9 +136,9 @@ describe('get_code_hints: accessibility', () => {
   it('the parts of a table come one per row (row from 0), the first label field with a value wins', async () => {
     expect(await accessibilityOf('tabs')).toEqual({
       parts: [
-        { id: 'tab', role: 'tab', label: 'Home', row: 0 },
-        { id: 'tab', role: 'tab', label: 'Search', row: 1 },
-        { id: 'tab', role: 'tab', label: null, missing: true, row: 2 },
+        { id: 'tab', name: 'Tab', role: 'tab', label: 'Home', row: 0 },
+        { id: 'tab', name: 'Tab', role: 'tab', label: 'Search', row: 1 },
+        { id: 'tab', name: 'Tab', role: 'tab', label: null, missing: true, row: 2 },
       ],
     });
   });

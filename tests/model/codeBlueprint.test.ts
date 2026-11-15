@@ -561,8 +561,20 @@ describe('codeBlueprint with accessibility', () => {
     expect(first('mk-btn').accessibility).toEqual({ role: 'button', label: 'Button' });
     expect(first('mk-bar').accessibility).toEqual({
       parts: [
-        { id: 'action1', role: 'button', label: null, missing: true },
-        { id: 'action2', role: 'button', label: null, missing: true },
+        {
+          id: 'action1',
+          name: 'First action',
+          role: 'button',
+          label: null,
+          missing: true,
+        },
+        {
+          id: 'action2',
+          name: 'Second action',
+          role: 'button',
+          label: null,
+          missing: true,
+        },
       ],
     });
   });
