@@ -1,4 +1,4 @@
-# Named slots with default content — [Não lançado] (épico `epic/slots-nomeados`, MCP 0.42.0, schema v20)
+# Named slots with default content — [Não lançado] (épico `epic/slots-nomeados`, PR #0, MCP 0.42.0, schema v20)
 
 ## Adicionado
 
