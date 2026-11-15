@@ -44,5 +44,5 @@
 - `get_marking` and `list_markings` now also carry `component-overflow` in `issues` (before, only `plan_changes` and `propose_changes` listed it).
 - The `issues.new` of `plan_changes` and `propose_changes` lists, per annotation, only the codes it gained (before, only annotations that had no issue at all were listed).
 - Material 3 (Compose): the `scaffold` children go to the slot arguments (`topBar`, `bottomBar`, `floatingActionButton`, `content`) in `get_code_hints` instead of the node's `children`; the library `version` is 16.
-- A component with a slot is measured on the axes whose size does not depend on the children (an expression such as the `top-app-bar` height by `style`); only an axis that follows the content (`hug`, intrinsic) skips the measure.
+- A component with a slot is still measured at birth when no axis follows the content (an expression such as the `top-app-bar` height by `style`); as soon as one axis follows the content (`hug`, intrinsic), the component is born at its `size` and Arrange adjusts it after the children come in.
 - `providingSlot` (the slot that provides the inherited content color) is the first slot that has a `provide`, not the first slot: with five slots the `scaffold` kept offering the color to its children.

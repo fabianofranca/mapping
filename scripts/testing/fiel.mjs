@@ -534,9 +534,11 @@ for (const layer of spec.layers)
       );
     }
 // The swapped `top-app-bar` has no slot: the type's named slots (formatVersion 17) would have no component to hold them.
-for (const layer of spec.layers)
-  for (const type of layer.annotationTypes)
-    if (type.id === 'top-app-bar') delete type.slots;
+// Only from version 4, where the component swap happens.
+if (version >= 4)
+  for (const layer of spec.layers)
+    for (const type of layer.annotationTypes)
+      if (type.id === 'top-app-bar') delete type.slots;
 // The `button`'s long-label example only fits the adjusted size, and the proof at `size` warns (MC3).
 for (const layer of spec.layers)
   for (const type of layer.annotationTypes)

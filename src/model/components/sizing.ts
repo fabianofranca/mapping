@@ -116,9 +116,7 @@ export function sizingFollowsContent(
 ): boolean {
   const resolved = resolveSizing(component, values);
   return [resolved.width, resolved.height].some(
-    (axis) =>
-      (axis.spec === 'hug' || isIntrinsicSize(axis.spec)) &&
-      expressionPx(axis) === undefined,
+    (axis) => axis.spec === 'hug' || isIntrinsicSize(axis.spec),
   );
 }
 

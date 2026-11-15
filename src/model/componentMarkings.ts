@@ -583,8 +583,8 @@ function wantedSize(
   const values = initialValues(p, space, args);
   if (values === undefined) return nominal;
   // Component with a slot and an axis that follows the content: the content is the children, which do not
-  // exist yet (born at `size`; Arrange adjusts it after they come in). An axis by expression (the Material 3
-  // top app bar's height by `style`) does not depend on them and is measured as always.
+  // exist yet (born at `size`; Arrange adjusts it after they come in). With no such axis (the Material 3
+  // top app bar's height by `style`) nothing depends on them and the component is measured as always.
   if (hasSlotComponent(component) && sizingFollowsContent(component, values))
     return nominal;
   const drawn = componentForDrawing(p, component, args.containerId);

@@ -236,8 +236,8 @@ describe('canvas rendering with the large project', () => {
 
 // Budget of component drawing (B3): instantiating (pure engine, approximate measurer) and
 // drawing (`renderScene`, Konva in jsdom with a fake context) the Material 3 of the example package.
-// Measured (jsdom, development machine): one instance 0.03 to 0.9 ms (average of the 17
-// components ~0.25 ms); the settings screen (21 instances) 3.5 to 7 ms, with peaks of
+// Measured (jsdom, development machine): one instance 0.03 to 0.9 ms (average of the 15
+// original components ~0.25 ms; the two with slots, added in SL7, fit the same budget); the settings screen (21 instances) 3.5 to 7 ms, with peaks of
 // ~15 ms from the garbage collector at the start. The instance budget is ~1 ms (4x headroom over the
 // average); the screen's is the frame's, with the median of several repetitions.
 const INSTANCE_BUDGET_MS = 1;
