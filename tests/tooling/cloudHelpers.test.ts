@@ -3108,6 +3108,81 @@ describe('canvas view for the tester (stage #1076, VC2)', () => {
     });
   });
 
+  describe('formatState: Origin line (stage #1657, decisions 3 and 4)', () => {
+    const base = {
+      title: 'Mapping',
+      url: 'x',
+      dialogs: [],
+      notices: [],
+      saveStatus: null,
+      focus: null,
+      windows: [],
+    };
+    it('prints "Origem: <value>" right after the Tab line', async () => {
+      const mod = await load();
+      const lines = (mod.formatState({ ...base, origin: 'Pasta' }) as string).split('\n');
+      expect(lines[0]).toMatch(/^Tab:/);
+      expect(lines[1]).toBe('Origem: Pasta');
+      expect(lines.length).toBeLessThanOrEqual(12);
+    });
+    it('with null, an empty text or without the field, prints no Origem line', async () => {
+      const mod = await load();
+      for (const origin of [null, '', undefined]) {
+        const text = mod.formatState({ ...base, origin }) as string;
+        expect(text.split('\n').some((l) => l.startsWith('Origem:'))).toBe(false);
+      }
+    });
+  });
+
+  describe('state() reads the origin from the status bar title', () => {
+    const g = globalThis as Record<string, unknown>;
+    const saved: Record<string, unknown> = {};
+    afterEach(() => {
+      for (const [k, v] of Object.entries(saved)) {
+        if (v === undefined) delete g[k];
+        else g[k] = v;
+      }
+    });
+    const run = async (titles: string[] | null) => {
+      const mod = await load();
+      for (const k of ['document', 'location']) saved[k] = g[k];
+      const item = (title: string) => ({
+        getAttribute: (n: string) => (n === 'title' ? title : null),
+      });
+      g.location = { href: 'u' };
+      g.document = {
+        title: 't',
+        activeElement: null,
+        querySelector: () => null,
+        querySelectorAll: (selector: string) =>
+          selector === '.statusbar .status-item' && titles ? titles.map(item) : [],
+      };
+      const apoio = mkdtempSync(path.join(tmpdir(), 'mapping-origin-apoio-'));
+      try {
+        const page = {
+          evaluate: async (fn: (arg?: unknown) => unknown, arg: unknown) =>
+            arg && typeof arg === 'object' && 'timeoutMs' in arg ? null : fn(),
+        };
+        const result = (await mod.state(page, apoio, { projectDir: null })) as {
+          origin?: string | null;
+        };
+        return result.origin;
+      } finally {
+        rmSync(apoio, { recursive: true, force: true });
+      }
+    };
+    it('returns the value of the "where the project is saved" item, in both languages', async () => {
+      expect(await run(['Where the project is saved: On this device'])).toBe(
+        'On this device',
+      );
+      expect(await run(['Zoom', 'Where the project is saved: Folder'])).toBe('Folder');
+    });
+    it('returns null without a status bar or without that item', async () => {
+      expect(await run(null)).toBeNull();
+      expect(await run(['Something else: x'])).toBeNull();
+    });
+  });
+
   describe('state() reads the selection', () => {
     const run = async (selection: string | null, mapping: object | null) => {
       const mod = await load();
