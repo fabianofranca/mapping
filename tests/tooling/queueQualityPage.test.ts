@@ -359,7 +359,7 @@ describe('queue panel page: the canaries', () => {
         'não promover',
       ],
       [
-        'B · fase · Sonnet high → Sonnet medium · 5/5 · encerrado · rework 0/2',
+        'B · fase · Sonnet high → Sonnet medium · filter processo · 5/5 · encerrado · rework 0/2',
         'before: median US$ 6,03 per session, rework 4 of 20 · canary: median US$ 2,11 per session, rework 0 of 5',
         'pode promover',
       ],

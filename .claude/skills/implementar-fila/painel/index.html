@@ -1650,6 +1650,7 @@
       // "By role, model and effort" (stage #1889, QM4): one row per `meta.uso` entry, roles in the order of KINDS and,
       // within a role, the larger US$ first; a null column is "—".
       const dashIfNull = (v, fmtFn) => (v == null ? '—' : fmtFn(v));
+      const moneyOrDash = (v) => dashIfNull(v, (x) => money(finite(x)));
       const pct1 = (x) =>
         finite(x).toLocaleString('pt-BR', {
           minimumFractionDigits: 1,
@@ -1661,8 +1662,8 @@
         asText(u.esforco),
         asText(u.sessoes),
         money(finite(u.usd)) + ' (' + pct1(u.pct) + '%)',
-        dashIfNull(u.medianaSessao, (x) => money(finite(x))),
-        dashIfNull(u.medianaEtapa, (x) => money(finite(x))),
+        moneyOrDash(u.medianaSessao),
+        moneyOrDash(u.medianaEtapa),
         dashIfNull(u.ctxMediano, (x) => Math.round(finite(x) / 1000) + 'k'),
         dashIfNull(u.acimaTeto, asText),
         u.decididas == null
@@ -1699,7 +1700,7 @@
       const sideText = (s) =>
         isObj(s)
           ? 'median ' +
-            dashIfNull(s.medianaSessao, (x) => money(finite(x))) +
+            moneyOrDash(s.medianaSessao) +
             ' per session, rework ' +
             asText(s.comRetrabalho) +
             ' of ' +
@@ -1712,6 +1713,7 @@
           asText(c.id),
           asText(c.papel),
           asText(c.de) + ' → ' + asText(c.modelo) + ' ' + asText(c.esforco),
+          ...(c.filtro ? ['filter ' + asText(c.filtro)] : []),
           asText(c.contadas == null ? 0 : c.contadas) + '/' + asText(c.n),
           asText(c.estado),
           'rework ' + back.length + '/' + asText(c.volta),
