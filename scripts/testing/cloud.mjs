@@ -938,6 +938,7 @@ export function formatState(state) {
     items.length ? items.map((i) => `"${i}"`).join(', ') : 'none';
   const lines = [
     `Tab: ${state.title} — ${state.url}`,
+    ...(state.origin ? [`Origem: ${state.origin}`] : []),
     `Dialogs: ${quoted(state.dialogs)}`,
     `Notices: ${quoted(state.notices)}`,
     `Saving: ${state.saveStatus ?? 'no indicator'}`,
@@ -1036,9 +1037,21 @@ function readAppDom() {
       text(active).slice(0, 60);
     focus = { role, name: name.slice(0, 80) };
   }
+  // The status bar item `title` is `status.targetLabel`: "<label>: <origin>", in both languages.
+  let origin = null;
+  const labels = ['Onde o projeto é salvo', 'Where the project is saved'];
+  for (const el of document.querySelectorAll('.statusbar .status-item')) {
+    const title = el.getAttribute('title') ?? '';
+    const label = labels.find((l) => title.startsWith(`${l}: `));
+    if (label && title.length > label.length + 2) {
+      origin = title.slice(label.length + 2);
+      break;
+    }
+  }
   return {
     title: document.title,
     url: location.href,
+    origin,
     dialogs,
     notices,
     saveStatus,

@@ -1,5 +1,5 @@
-// Markings on the canvas: border, review alert, layer indicators and the
-// semantic zoom name. Only the part visible on screen is updated.
+// Markings on the canvas: border, halo, "to review" badge, incomplete alert and the semantic zoom
+// name. Only the part visible on screen is updated.
 import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
@@ -22,9 +22,9 @@ import type { CanvasTokens } from '../theme';
 import {
   ALERT_GLYPH,
   ALERT_SIZE,
-  CORNER_MARGIN,
   HALO_WIDTH,
   REVIEW_BADGE_SIZE,
+  cornerLayout,
   fontStyle,
   intersectRects,
   sameInputs,
@@ -342,6 +342,7 @@ export class MarkingRenderer {
         ? tokens.canvasMarking
         : (lookup?.containers.get(marking.containerId ?? '')?.markingColor ?? null);
       const markingIncomplete = mode === null && incomplete.has(marking.id);
+      const markingReview = mode === null && marking.needsReview;
       // Marking with the drawing in view: the border only shows under the mouse or when selected
       // (proposal review, which marks the change on the border itself, keeps it).
       const withDrawing = drawn.has(marking.id);
@@ -351,7 +352,7 @@ export class MarkingRenderer {
           selected ||
           frame.hoverMarking === marking.id ||
           (reviewMark?.line ?? null) !== null;
-      // Pan without changing anything on the marking (the common case): border and indicators stay.
+      // Pan without changing anything on the marking (the common case): border and corner marks stay.
       const inputs = [
         reviewMark,
         marking,
@@ -409,6 +410,7 @@ export class MarkingRenderer {
         marking,
         placement,
         markingIncomplete,
+        markingReview,
         tokens,
         zoom,
         textMode,
@@ -428,6 +430,7 @@ export class MarkingRenderer {
             view: area,
             mode: textMode,
             incomplete: markingIncomplete,
+            review: markingReview,
             headerFloor,
           },
           tokens,
@@ -496,7 +499,7 @@ function updateMarkingNode(
   zoom: number,
   review: MarkingReviewMark | null = null,
   canvasMarking = false,
-  indicators = true,
+  editing = true,
   detail: LevelOfDetail = 'full',
 ): void {
   const rect = markingCanvasRect(placement, marking.rect);
@@ -560,7 +563,7 @@ function updateMarkingNode(
   } else node.inner?.visible(false);
   // Konva text re-measures on every attribute change: only touch those that show.
   // Context ancestor (Hide mode): only the border, no alert.
-  const outline = visibility === 'outline' || !indicators || !full;
+  const outline = visibility === 'outline' || !editing || !full;
   updateBadge(node, marking.needsReview && !outline, rect, tokens, zoom);
   updateAlert(node, marking, rect, incomplete && !outline, tokens, zoom);
 }
@@ -589,7 +592,7 @@ function updateBadge(
   const badge = REVIEW_BADGE_SIZE / zoom;
   (node.badge ??= new KonvaText({ text: '⚠' })).setAttrs({
     visible: true,
-    x: rect.x + badge / 3,
+    x: rect.x + (cornerLayout(true, false).badgeX ?? 0) / zoom,
     y: rect.y + badge / 3,
     fontSize: badge,
     fontFamily: tokens.fontFamily,
@@ -645,11 +648,11 @@ function updateAlert(
     clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
   });
   // With the review badge at the corner, the alert starts after it.
-  const left = marking.needsReview ? REVIEW_BADGE_SIZE : 0;
+  const alertX = cornerLayout(marking.needsReview, true).alertX ?? 0;
   const size = ALERT_SIZE / zoom;
   alert.setAttrs({
     visible: true,
-    x: rect.x + (left + CORNER_MARGIN) / zoom,
+    x: rect.x + alertX / zoom,
     y: rect.y + TEXT_HEADER_HEIGHT / 2 / zoom - size / 2,
     fontSize: size,
     fontFamily: tokens.fontFamily,

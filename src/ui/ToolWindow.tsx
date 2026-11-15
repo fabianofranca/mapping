@@ -41,8 +41,11 @@ function windowStyle(side: ToolWindowSide, size: number, stacked: boolean) {
   return stacked ? { height: `${layersWindowHeight.value}px` } : undefined;
 }
 
-/** Windows that Esc closes when the focus is inside them (stage #1273, decision 2). */
-const ESC_CLOSES: readonly ToolWindowId[] = ['details', 'comments'];
+/**
+ * Windows that Esc closes when the focus is inside them (stage #1273, decision 2; the Catalog
+ * joined in stage #1835, decision 1). The other windows keep no Esc (decision 3).
+ */
+const ESC_CLOSES: readonly ToolWindowId[] = ['details', 'comments', 'catalog'];
 
 /**
  * Esc without modifiers, not consumed by a menu, popover or tooltip, with no modal open and outside
