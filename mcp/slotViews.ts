@@ -1,6 +1,9 @@
 import {
+  markingComponent,
+  projectIndex,
   slotParam,
   specTypeSlots,
+  typeSlots,
   type ComponentFile,
   type Marking,
   type Spec,
@@ -46,6 +49,14 @@ export function typeSlotsView(
   }));
 }
 
+/** The shown name of each slot of the marking's type (the declared `name`, else the label, else the id), by id. */
+function declaredNames(refs: Refs, marking: Marking): Map<string, string> {
+  const drawn = markingComponent(refs.project, refs.loaded.catalog, marking.id);
+  if (drawn === null) return new Map();
+  const slots = typeSlots(refs.project, drawn.specId, drawn.typeId, drawn.component);
+  return new Map(slots.map((slot) => [slot.id, slot.name]));
+}
+
 /**
  * `slots` of the marking that draws a component with named slots: `{ id, name, children, fallback }` per slot,
  * `children` as references in the order of the siblings and `fallback` for "the slot shows its default
@@ -55,10 +66,11 @@ export function markingSlotsView(refs: Refs, marking: Marking): Json {
   const drawing = projectDrawings(refs.loaded).get(marking.id);
   const slots = drawing?.slots.filter((slot) => slot.id !== '') ?? [];
   if (slots.length === 0) return {};
+  const names = declaredNames(refs, marking);
   return {
     slots: slots.map((slot) => ({
       id: slot.id,
-      name: slot.name,
+      name: names.get(slot.id) ?? slot.name,
       children: slot.children.map((id) => refs.ref('m', id)),
       fallback: slot.fallback,
     })),
@@ -77,5 +89,8 @@ export function childSlotView(refs: Refs, marking: Marking): Json {
   if (drawing === undefined || drawing.slots.length === 0) return {};
   const id = drawing.slotOf.get(marking.id) ?? '';
   const slot = id === '' ? undefined : drawing.slots.find((s) => s.id === id);
-  return { slot: slot === undefined ? null : { id: slot.id, name: slot.name } };
+  if (slot === undefined) return { slot: null };
+  const mother = projectIndex(refs.project).markings.get(marking.parentId!)!;
+  const names = declaredNames(refs, mother);
+  return { slot: { id: slot.id, name: names.get(slot.id) ?? slot.name } };
 }
