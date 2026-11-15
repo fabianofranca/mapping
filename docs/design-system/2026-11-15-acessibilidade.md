@@ -1,4 +1,4 @@
-# Accessibility as a concept of the format — [Não lançado] (épico `epic/acessibilidade`)
+# Accessibility as a concept of the format — 2026-11-15 (épico `epic/acessibilidade`)
 
 ## Pendências
 
