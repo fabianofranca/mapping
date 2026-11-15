@@ -366,7 +366,7 @@ painel.py session <folder> '#n' <id> kind=<kind> [label=<code>]   # session crea
 painel.py cost <folder> <id> usd=<x> ctx=<tokens> model=<m> effort=<e> [served=<model>] [issue='#n' kind=<kind>]   # the session's cost (from get_session); kind required with a new id
 painel.py costs [--desde <ISO>] <folder>              # total, by kind (sessions, US$, median) and by stage; reads only the meta
 painel.py uso [--desde <ISO>] <folder>                # usage and quality per role × model × effort (meta.uso): one line per key and the signals; reads only the meta
-painel.py sinal <folder> <id> campo=valor…            # quality signals of a session, in meta.sessions[i].sinais (fase/correção: ci cr crFix ciclo dono sub; testador/reteste: ok falha alta media baixa falso=<high|medium|low> sub); a number replaces, +k adds; code 2 and nothing written on a bad field
+painel.py sinal <folder> <id> campo=valor…            # quality signals of a session, in meta.sessions[i].sinais (phase and fix: ci cr crFix ciclo dono sub; testador/reteste: ok falha alta media baixa falso=<high|medium|low> sub); a number replaces, +k adds; code 2 and nothing written on a bad field
 painel.py escapado <folder> '#<bug>' etapa='#<n>' sev=<high|medium|low>   # escaped defect, in meta.escapados (the same bug replaces)
 painel.py escapado <folder> --conferido               # records the time of the last check of the escaped defects (meta.escapadosAt)
 painel.py historico <folder> --feito desde=<ISO> ate=<ISO> [linhas=<k>]   # marks the one-time history as recovered (meta.historico); "Session switch" › "In the new session", step 5
@@ -491,6 +491,7 @@ Write to `painel.py` **at every advance** (phase opened and merged, PR, tester, 
 
    Briefing (fill in the folder, the file and `<desde>`, the `at` of the first `log` record):
 
+   <!-- portuguese-guard:begin frozen history briefing: it quotes the Portuguese log lines and PR bodies it reads and the frozen return line -->
    ```text
    You recover, once, the quality signals of the queue panel from before stage #1889. Folder: <folder> (a downloaded copy: `queue.json`, `meta.json`, `log.json`; read-only, never publish). Write the batch to <file>, in the `painel.py apply` syntax (one subcommand per line, without `painel.py` and without the folder): `sinal <id> campo=valor…`, `escapado '#<bug>' etapa='#<n>' sev=<high|medium|low>` and `log "…"`. Check it with `painel.py apply` on a second copy of the folder before returning. Return one line: `desde=<ISO> ate=<ISO> linhas=<k>; log: <a> linhas de resultado, <b> viraram sinal; PRs: <c> ligados, <d> sem ligação; escapados: <e>` (`ate` is the time you finish; `linhas` is the number of lines that did not turn into a `sinal`).
 
@@ -506,6 +507,7 @@ Write to `painel.py` **at every advance** (phase opened and merged, PR, tester, 
 
    The `ci` is not recovered (the CI of old commits is gone): leave it out, it stays "sem dado". A line that does not turn into a `sinal` is counted in `linhas=` and goes in a single `log` line, `log "histórico: <k> linhas sem sessão (<hora de cada uma>: <motivo>)"`, with the time of each one and the reason (a total, a repeat, no session of that stage).
    ```
+   <!-- portuguese-guard:end -->
 
 ## End
 

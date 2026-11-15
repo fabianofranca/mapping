@@ -1,11 +1,11 @@
 // @vitest-environment node
+// portuguese-guard:begin expected notice lines and panel output, frozen vocabulary matched by the skills
 // Phase QM2 (stage #1889, decisions 8 to 10): the texts that feed the quality signals of the queue panel. The final
 // notices of the phase, the fix, the tester and the retest gain the lines `CI vermelho depois do PR`, `Revisão` and
 // `Subagentes`; the coordinator records them with `painel.py sinal`; the escaped defects are checked once a day;
 // the history is recovered once, in the new session; and the supervision reads the `uso`. A text test: it reads the
 // files by section (like `contextUsage.test.ts`) and a missing anchor throws, so it never passes by not finding it.
 // The notices are frozen Portuguese vocabulary, so the file is a guard block.
-// portuguese-guard:begin expected notice lines and panel output, frozen vocabulary matched by the skills
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
