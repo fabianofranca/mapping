@@ -6,7 +6,7 @@ Only **folder** projects are within the MCP's reach; projects stored in the brow
 
 ## Installation
 
-1. Download `mapping-mcp.js` from the [latest `mcp-v*` Release](../../../releases) (there is also a `mapping-mcp.js.sha256` to check it: `sha256sum -c mapping-mcp.js.sha256`). To test something not yet published, download from a pre-release: `mcp-snapshot-pr<N>` (the build of a phase PR, before it enters the epic) or `mcp-v0.42.0-rc.<n>` (the epic's release candidate, generated on the merge of the last phase). They announce the version with a suffix in `--version` (`0.8.0-snapshot.pr172+abc1234`, `0.8.0-rc.1`).
+1. Download `mapping-mcp.js` from the [latest `mcp-v*` Release](../../../releases) (there is also a `mapping-mcp.js.sha256` to check it: `sha256sum -c mapping-mcp.js.sha256`). To test something not yet published, download from a pre-release: `mcp-snapshot-pr<N>` (the build of a phase PR, before it enters the epic) or `mcp-v0.43.0-rc.<n>` (the epic's release candidate, generated on the merge of the last phase). They announce the version with a suffix in `--version` (`0.8.0-snapshot.pr172+abc1234`, `0.8.0-rc.1`).
 2. Copy the file to `tools/` in the app's repository. It is self-contained (dependencies, image WebAssembly and documentation embedded): no `npm install` needed.
 3. Register the server in a `.mcp.json` at the repository root:
 
