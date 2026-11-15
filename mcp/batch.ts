@@ -29,6 +29,8 @@ import {
   effectiveDensity,
   componentMinSize,
   componentPlacement,
+  markingComponent,
+  typeSlots,
   componentSize,
   fitMarking,
   snapToAnchor,
@@ -2184,6 +2186,12 @@ class Batch {
         'provide `container` (the old `image` is also accepted), not both',
       );
     }
+    if (op.slot !== undefined && op.inside === undefined) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`slot` only applies with `inside` (the component whose slot receives the child)',
+      );
+    }
     const containerRef = op.container ?? op.image;
     // `inside`: the target (a component with a slot) gives the container; the stored parent still comes from the geometry.
     const inside = op.inside === undefined ? null : this.insideTarget(op, containerRef);
@@ -2318,6 +2326,7 @@ class Batch {
           rect,
           asked: op.rect,
           typeId: typeRef.typeId,
+          slot: op.slot,
         });
       }
       if (annotation.name !== undefined) {
@@ -2457,7 +2466,29 @@ class Batch {
         '`container` is not the container of the `inside` target: omit `container` (it comes from the target)',
       );
     }
+    this.checkInsideSlot(op, id);
     return { id, containerId: target.containerId };
+  }
+
+  /** The `slot` of `create_marking` is one of the target's slots with an `id` (the others go in `detail`). */
+  private checkInsideSlot(
+    op: Extract<Operation, { op: 'create_marking' }>,
+    targetId: string,
+  ): void {
+    if (op.slot === undefined) return;
+    const drawn = markingComponent(this.p, this.catalog, targetId);
+    const slots =
+      drawn === null
+        ? []
+        : typeSlots(this.p, drawn.specId, drawn.typeId, drawn.component).filter(
+            (slot) => slot.id !== '',
+          );
+    if (slots.some((slot) => slot.id === op.slot)) return;
+    throw new ToolError(
+      'invalid-arguments',
+      `the target has no slot "${op.slot}"; use one of its slots (see \`slots\` in get_marking)`,
+      { detail: { slots: slots.map((slot) => ({ id: slot.id, name: slot.name })) } },
+    );
   }
 
   /** Rectangle of the child in the target's slot; the step's `rect` supplies only the size (x and y are ignored). */
@@ -2488,6 +2519,7 @@ class Batch {
       {
         containerId,
         parentId: targetId,
+        ...(op.slot === undefined ? {} : { slot: op.slot }),
         ...typeRef,
         ...(rect === undefined
           ? {}
@@ -2507,7 +2539,13 @@ class Batch {
     before: Project,
     after: Project,
     targetId: string,
-    created: { id: string; rect: Rect; asked: Rect | undefined; typeId: string },
+    created: {
+      id: string;
+      rect: Rect;
+      asked: Rect | undefined;
+      typeId: string;
+      slot: string | undefined;
+    },
   ): void {
     const target = this.markingLabel(after, targetId);
     const { asked, rect } = created;
@@ -2530,7 +2568,7 @@ class Batch {
         targetId,
         rect,
         this.measurer,
-        undefined,
+        created.slot,
         created.typeId,
       )
     ) {

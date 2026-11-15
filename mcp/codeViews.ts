@@ -22,11 +22,13 @@ import {
   type SpecCode,
   type SpecRepo,
   type BlueprintParam,
+  type BlueprintSlotArg,
   type Signature,
   unmappedParams,
 } from '../src/model';
 import type { LocalFile, LocalFileChecker } from './codeFiles';
 import { ToolError } from './errors';
+import { projectDrawings } from './drawings';
 import type { Refs } from './items';
 import type { SignatureReader } from './signatureFiles';
 
@@ -230,12 +232,17 @@ export async function packageCodeView(
 // ---------------------------------------------------------------------------
 // get_code_hints
 
+/**
+ * What the tree needs besides the blueprint: the annotation's resolved `code` (type with `variants`) and, for
+ * the annotation with slot arguments, the last parameter of its signature sheet (`trailing`).
+ */
+interface HintData {
+  readonly codes: ReadonlyMap<string, Json>;
+  readonly lastParam: ReadonlyMap<string, string>;
+}
+
 /** Target of a `ref` for the whole annotation: the position, the label and the expanded target. */
-function hintTarget(
-  target: BlueprintTarget,
-  refs: Refs,
-  codes: ReadonlyMap<string, Json>,
-): Json {
+function hintTarget(target: BlueprintTarget, refs: Refs, data: HintData): Json {
   const base = {
     field: target.field,
     row: target.row,
@@ -243,10 +250,10 @@ function hintTarget(
     label: target.label,
   };
   if (target.annotation === null) return { ...base, repeated: true };
-  const children = target.children.map((c) => hintNode(c, refs, codes));
+  const children = target.children.map((c) => hintNode(c, refs, data));
   return {
     ...base,
-    annotation: hintAnnotation(target.annotation, refs, codes),
+    annotation: hintAnnotation(target.annotation, refs, data),
     ...(children.length > 0 ? { children } : {}),
   };
 }
@@ -270,13 +277,37 @@ function argJson(param: BlueprintParam): Json {
   return { field: param.key, name: param.name, value: param.value };
 }
 
+/**
+ * The argument of a slot: `{ name, slot, trailing?, children }`. `trailing` says the parameter is the last one
+ * of the signature sheet (the final lambda of Kotlin and Swift); without the sheet it never comes.
+ */
+function slotArgJson(
+  arg: BlueprintSlotArg,
+  refs: Refs,
+  data: HintData,
+  lastParam: string | undefined,
+): Json {
+  return {
+    name: arg.name,
+    slot: arg.slot,
+    ...(lastParam === arg.name ? { trailing: true } : {}),
+    children: arg.children.map((c) => hintNode(c, refs, data)),
+  };
+}
+
 function hintAnnotation(
   annotation: BlueprintAnnotation,
   refs: Refs,
-  codes: ReadonlyMap<string, Json>,
+  data: HintData,
 ): Json {
-  const linked = annotation.linked.map((a) => hintAnnotation(a, refs, codes));
-  const targets = annotation.targets.map((t) => hintTarget(t, refs, codes));
+  const { codes } = data;
+  const linked = annotation.linked.map((a) => hintAnnotation(a, refs, data));
+  const targets = annotation.targets.map((t) => hintTarget(t, refs, data));
+  const lastParam = data.lastParam.get(annotation.annotationId);
+  const slotArgs = (annotation.slotArgs ?? []).map((arg) =>
+    slotArgJson(arg, refs, data, lastParam),
+  );
+  const args = [...annotation.params.map((param) => argJson(param)), ...slotArgs];
   const code = codes.get(annotation.annotationId);
   const parentRole = projectIndex(refs.project).annotations.get(
     annotation.annotationId,
@@ -288,9 +319,7 @@ function hintAnnotation(
     layer: annotation.layer,
     ...(parentRole ? { parentRole } : {}),
     ...(code === undefined ? {} : { code }),
-    ...(annotation.params.length > 0
-      ? { args: annotation.params.map((param) => argJson(param)) }
-      : {}),
+    ...(args.length > 0 ? { args } : {}),
     ...(Object.keys(annotation.values).length > 0 ? { values: annotation.values } : {}),
     ...(linked.length > 0 ? { linked } : {}),
     ...(targets.length > 0 ? { targets } : {}),
@@ -313,13 +342,9 @@ function hintAnchor(refs: Refs, markingId: string): Json | null {
   };
 }
 
-function hintNode(
-  node: BlueprintNode,
-  refs: Refs,
-  codes: ReadonlyMap<string, Json>,
-): Json {
-  const annotations = node.annotations.map((a) => hintAnnotation(a, refs, codes));
-  const children = node.children.map((c) => hintNode(c, refs, codes));
+function hintNode(node: BlueprintNode, refs: Refs, data: HintData): Json {
+  const annotations = node.annotations.map((a) => hintAnnotation(a, refs, data));
+  const children = node.children.map((c) => hintNode(c, refs, data));
   const marking = projectIndex(refs.project).markings.get(node.markingId);
   const anchor = hintAnchor(refs, node.markingId);
   return {
@@ -340,6 +365,7 @@ function allAnnotations(node: BlueprintNode): BlueprintAnnotation[] {
   const visitAnnotation = (a: BlueprintAnnotation) => {
     out.push(a);
     a.linked.forEach(visitAnnotation);
+    for (const arg of a.slotArgs ?? []) arg.children.forEach(visit);
     for (const target of a.targets) {
       if (target.annotation) visitAnnotation(target.annotation);
       target.children.forEach(visit);
@@ -374,6 +400,12 @@ function noticesJson(type: SpecAnnotationType): Json {
   };
 }
 
+/** The last parameter of the sheet when it is a slot (the final lambda); `undefined` without a sheet. */
+function lastSlotParam(signature: Signature | null): string | undefined {
+  const last = signature?.params.at(-1);
+  return last?.role === 'slot' ? last.name : undefined;
+}
+
 /**
  * `get_code_hints`: the calls to write on the platform, from the marking and its
  * descendants. `types` carries, per `specId/typeId`, the type's instantiation code (only
@@ -386,7 +418,9 @@ export async function codeHintsView(
 ): Promise<Json> {
   const { refs } = ctx;
   assertPlatform(refs, platformId);
-  const blueprint = codeBlueprint(refs.project, markingId, platformId);
+  const blueprint = codeBlueprint(refs.project, markingId, platformId, {
+    drawings: projectDrawings(refs.loaded),
+  });
   const annotations = allAnnotations(blueprint.root);
   const unmapped = [
     ...new Set(
@@ -397,6 +431,8 @@ export async function codeHintsView(
   // Type with `variants`: each annotation's resolved code goes in the tree (`code`), because
   // the `symbol`, `path`, `params` and `notes` in `types` are the base's.
   const codes = new Map<string, Json>();
+  // The last parameter of the signature sheet of each annotation that has slot arguments (`trailing`).
+  const lastParam = new Map<string, string>();
   for (const a of annotations) {
     if (a.symbol === null) continue;
     const key = `${a.specId}/${a.typeId}`;
@@ -413,6 +449,12 @@ export async function codeHintsView(
         ),
         ...noticesJson(type),
       };
+    }
+    if ((a.slotArgs ?? []).length > 0) {
+      const last = lastSlotParam(
+        await signatureOf(ctx, a.specId, resolveCode(entry, a.values, type.fields)),
+      );
+      if (last !== undefined) lastParam.set(a.annotationId, last);
     }
     if (entry.variants !== undefined) {
       const resolved = resolveCode(entry, a.values, type.fields);
@@ -448,6 +490,6 @@ export async function codeHintsView(
           hint: 'types in `unmappedTypes` have no `code` on this platform in the specialization: there is no instantiation code mapped for them',
         }
       : {}),
-    tree: hintNode(blueprint.root, refs, codes),
+    tree: hintNode(blueprint.root, refs, { codes, lastParam }),
   };
 }
