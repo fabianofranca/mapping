@@ -229,6 +229,35 @@ describe('useEditorShortcuts: editing', () => {
     expect(s.harness.ui.selection.value).toBeNull();
   });
 
+  it('Esc with the Catalog open and focus on the strip Catalog button closes only the Catalog and keeps the selection', () => {
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    const button = document.createElement('button');
+    button.setAttribute('data-strip-window', 'catalog');
+    document.body.append(button);
+    button.focus();
+    showToolWindow('catalog');
+    const event = s.press('Escape');
+    expect(isToolWindowOpen('catalog')).toBe(false);
+    expect(document.activeElement).toBe(button);
+    expect(event.defaultPrevented).toBe(true);
+    expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+    // With the Catalog closed, the next Esc clears the selection as before.
+    s.press('Escape');
+    expect(s.harness.ui.selection.value).toBeNull();
+    button.remove();
+  });
+
+  it('Esc with the Catalog open and focus elsewhere (canvas) still clears the selection', () => {
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    showToolWindow('catalog');
+    s.press('Escape');
+    expect(isToolWindowOpen('catalog')).toBe(true);
+    expect(s.harness.ui.selection.value).toBeNull();
+    hideToolWindow('catalog');
+  });
+
   it('Esc without a mounted canvas also clears the selection', () => {
     const s = setup();
     s.harness.context.canvas.current = null;
