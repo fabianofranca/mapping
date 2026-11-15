@@ -201,3 +201,21 @@ describe('the drawing is memoized by the content of the folder', () => {
     expect(created.passes).toBe(after1 + 1);
   });
 });
+
+describe('plan_changes counts what the project already had (CL1, 4.2)', () => {
+  it('a batch that only touches a marking with a pending item brings it in before, not in issues.new', async () => {
+    const rows = await refs();
+    let tiny: Row | undefined;
+    for (const r of rows) {
+      if ((await issuesOf(r.ref)).some((i) => i.code === 'component-overflow')) tiny = r;
+    }
+    expect(tiny).toBeDefined();
+    const plan = await call('plan_changes', {
+      project: 'slots',
+      operations: [{ op: 'update_marking', marking: tiny!.ref, move: { dx: 1, dy: 0 } }],
+    });
+    expect(plan.issues.before).toBeGreaterThanOrEqual(3);
+    expect(plan.issues.before).toBe(plan.issues.after);
+    expect(plan.issues.new ?? []).toEqual([]);
+  });
+});
