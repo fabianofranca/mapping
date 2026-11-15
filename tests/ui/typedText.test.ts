@@ -1,16 +1,17 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { removeTableRow, type Project } from '../../src/model';
+import { projectIssues, removeTableRow, type Project } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { parseNumberInput } from '../../src/ui/FieldEditors';
 import {
   annotationDisplayName,
   annotationSourceLabel,
   issueMessage,
-  issuesOf,
   ownerTypeNames,
-  projectIssues,
 } from '../../src/ui/typedText';
 import { cadastroProject } from '../model/specFixtures';
+
+/** The model's pending items of one annotation (the components read the same ones from `derived.issues`). */
+const issuesOf = (p: Project, id: string) => projectIssues(p).get(id) ?? [];
 
 function annotation(p: Project, id: string) {
   const a = p.annotations.find((x) => x.id === id);

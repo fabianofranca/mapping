@@ -7,7 +7,6 @@ import {
   ownerRolesOf,
   ownerTypesOf,
   projectIndex,
-  projectIssues as modelProjectIssues,
   tableRows,
   typeOfAnnotation,
   typedDisplayLines,
@@ -69,17 +68,6 @@ export function displayLines(
   tables: 'summary' | 'full',
 ): DisplayLine[] {
   return typedDisplayLines(p, a, { tables, texts: displayTexts() });
-}
-
-/** Pending items of the project, computed once per project version. */
-export function projectIssues(
-  p: Project,
-): ReadonlyMap<string, readonly AnnotationIssue[]> {
-  return modelProjectIssues(p);
-}
-
-export function issuesOf(p: Project, annotationId: string): readonly AnnotationIssue[] {
-  return projectIssues(p).get(annotationId) ?? [];
 }
 
 /** Names of the types that can be owners, e.g. "Button or Image". */

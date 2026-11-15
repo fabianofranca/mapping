@@ -28,7 +28,8 @@ import { linkedFieldTargets } from './linkedRef';
 import { Property } from './PropertyGrid';
 import { RefPicker, type RefFieldDef } from './RefPicker';
 import { TableField } from './TableField';
-import { issueReason, issuesOf, labelTexts, refButtonName } from './typedText';
+import { issueReason, labelTexts, refButtonName } from './typedText';
+import { useIssuesOf } from './useIssues';
 
 export type { FieldContext } from './FieldEditors';
 
@@ -40,11 +41,13 @@ export function TypedField({
   field,
   ...ctx
 }: FieldContext & { readonly field: SpecField }) {
-  const { actions } = useEditor();
+  const editor = useEditor();
+  const { actions } = editor;
   const ext = useDetailsExtension();
   const id = useId();
   const citeItems = useCiteMenuItems();
   const { project, annotation, readOnly } = ctx;
+  const issues = useIssuesOf(annotation.id);
 
   if (field.type === 'table') return <TableField field={field} {...ctx} />;
 
@@ -52,9 +55,13 @@ export function TypedField({
   const backlinks = getBacklinks(project, annotation.id).filter(
     (b) => 'key' in b.ref && !('rowId' in b.ref) && b.ref.key === field.key,
   );
-  const issue = issuesOf(project, annotation.id).find(
+  const issue = issues.find(
     (i) => i.key === field.key && i.rowId === undefined && i.code !== 'unknown-field',
   );
+  // A default-content field of a slot that has children: it neither draws nor goes into the code now.
+  const filledSlot = editor.derived.inactiveFields.value
+    .get(annotation.id)
+    ?.get(field.key);
   const label = fieldLabel(field);
   // Free text: the annotation field accepts several lines; the table cell does not.
   const Editor = field.type === 'string' ? StringEditor : SimpleEditor;
@@ -99,6 +106,11 @@ export function TypedField({
         )
       }
       issue={issue ? issueReason(project, annotation, issue) : null}
+      status={
+        filledSlot === undefined
+          ? undefined
+          : t('typed.slotFilledNote', { slot: filledSlot })
+      }
       mark={ext?.mark(annotation.id, `values.${field.key}`)}
       below={ext?.below(annotation.id, `values.${field.key}`)}
       notices={field.notices}

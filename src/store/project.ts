@@ -6,6 +6,7 @@ import type {
   ArrowSide,
   ArrowStyle,
   ComponentCatalog,
+  ComponentDrawings,
   EntryInput,
   JsonValue,
   LabelTexts,
@@ -753,6 +754,11 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
        * `center`.
        */
       readonly anchorTo?: string;
+      /**
+       * The app's drawings (`derived.drawingsOf`): with them the slot of each child comes from the
+       * cache (decision 7 of #1080); without them the placement instantiates the probe (the same result).
+       */
+      readonly drawings?: ComponentDrawings;
     }): ActionResult<string> => {
       const markingId = newId();
       const annotationId = newId();

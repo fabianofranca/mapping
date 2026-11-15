@@ -158,6 +158,11 @@ export interface NewComponentArgs {
   readonly values?: TypedValues;
   readonly name?: string | null;
   /**
+   * The app's drawings (`derived.drawingsOf`): the placement reads the slot of each child from the
+   * target's `ComponentDrawing` instead of instantiating the probe (the same result without them).
+   */
+  readonly drawings?: ComponentDrawings;
+  /**
    * Anchor (v20): the instance is linked to another marking of the same space. Without `rect`, it is born at the
    * measured size and already attached (`componentAnchoredPlacement`); with `rect`, that one rules.
    */
@@ -1100,6 +1105,7 @@ export function addComponentMarking(
         typeId: args.typeId,
         ...(args.center ? { center: args.center } : {}),
         ...(args.values ? { values: args.values } : {}),
+        ...(args.drawings ? { drawings: args.drawings } : {}),
       },
       measure,
     );

@@ -963,6 +963,8 @@ export const ptBR: Dictionary = {
   'issue.owner-not-allowed': 'dono de tipo não permitido',
   'issue.missing-role': 'sem {label} (escolha {roles})',
   'issue.unknown-role': '{label} que o dono não oferece',
+  'typed.slotFilledNote':
+    'O slot {slot} tem conteúdo: este campo não desenha nem entra no código',
   'typed.roleLabel': 'Papel',
   'issue.type-not-applicable': 'o tipo não se aplica a este item (marcação ou seta)',
   'issue.broken-ref': 'referência quebrada',

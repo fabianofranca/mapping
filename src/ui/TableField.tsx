@@ -34,7 +34,8 @@ import { linkedCellTargets, type LinkedTargets } from './linkedRef';
 import { NoticeLines } from './NoticeBadge';
 import { RefCell } from './RefCell';
 import type { ActionResult } from '../store/history';
-import { issueMessage, issuesOf, refButtonName } from './typedText';
+import { issueMessage, refButtonName } from './typedText';
+import { useIssuesOf } from './useIssues';
 
 // DS 2.0 DataGrid for `table` fields: numbered # column, drag handle (P6),
 // in-cell editing and a ⋯ menu per row.
@@ -51,7 +52,7 @@ export function TableField({
   const { project, annotation, readOnly } = ctx;
   const rows = tableRows(annotation.values?.[field.key]);
   const backlinks = getBacklinks(project, annotation.id);
-  const issues = issuesOf(project, annotation.id).filter(
+  const issues = useIssuesOf(annotation.id).filter(
     (i) => i.key === field.key && i.rowId !== undefined,
   );
   // The targets of each column with `linkedRef`, computed once per render.
