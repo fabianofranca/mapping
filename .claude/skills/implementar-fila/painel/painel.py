@@ -118,6 +118,10 @@ number replaces and `+k` adds; all or nothing, code 2 on a bad field). `escapado
 ate=<ISO> [linhas=<k>]` writes `meta.historico`. `sinal`, `escapado` and `historico` go into `apply`; `uso` does not. `show` prints
 `escapados:` (with `— conferir` after ESCAPE_CHECK_HOURS = 24 h or without a check), `histórico:` and `candidatos a teste:` right after
 `testador acima do teto:`. Rework ruler (decision 6): only stages decided (`concluída` or in `meta.merged`) count; a missing signal is no rework.
+Rework per role: `fase` has it with a `correção` or a `testador` with `alta`+`media` > 0 in its stage, an escaped defect `high`/`medium` of the stage, `ci` >= 2
+or `ciclo` >= 1; `correção`, with `ci` >= 2, `ciclo` >= 1, an escaped defect of the stage, another `correção` of a different label created after it or a `reteste`
+created after it with `alta`+`media` > 0; `testador`, with an escaped defect `high`/`medium` of its stage; `reteste`, with a `falso` of `high` or `medium`.
+`fechamento`, `coordenador` and `supervisor` have no ruler. The escaped `low`, `ci` 1 and a successor `correção` of the same label are not rework.
 Standard library only. Usage: painel.py [--now ISO] <subcommand> DIR ...
 (the subcommand comes BEFORE the folder: `painel.py row <folder> '#n' status=...`).
 """
@@ -1047,8 +1051,11 @@ def cmd_historico(a):
     lines = to_int("linhas", pairs.get("linhas", "0"))
     if lines < 0:
         raise Erro(f"linhas cannot be negative, got '{pairs['linhas']}'")
+    since, until = check_iso(pairs["desde"]), check_iso(pairs["ate"])
+    if since > until:
+        raise Erro(f"desde ({since}) is after ate ({until})")
     s = open_session(a.dir)
-    s.get("meta")[0]["historico"] = {"desde": check_iso(pairs["desde"]), "ate": check_iso(pairs["ate"]), "linhas": lines}
+    s.get("meta")[0]["historico"] = {"desde": since, "ate": until, "linhas": lines}
     s.touch("meta")
     s.commit()
 
