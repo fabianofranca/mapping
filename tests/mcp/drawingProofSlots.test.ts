@@ -1,6 +1,6 @@
 import { rmSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { applySpecialization, type Annotation, type Project } from '../../src/model';
+import type { Annotation, Project } from '../../src/model';
 import { issueChanges } from '../../mcp/batch';
 import { Refs } from '../../mcp/items';
 import type { LoadedProject } from '../../mcp/projects';
@@ -26,9 +26,12 @@ let ws: Workspace;
 
 beforeAll(async () => {
   ws = await slotsWorkspace((add) => {
-    // A bar with a pin in `navigationIcon` (full: max 1).
+    // A bar with every slot full: one pin in `navigationIcon` (max 1) and three in `actions` (max 3).
     add('bar', 'bar', { rect: { x: 100, y: 100, width: 360, height: 56 } });
     add('p1', 'pin', { parentId: 'mk-bar', slot: 'navigationIcon' });
+    for (const id of ['a1', 'a2', 'a3']) {
+      add(id, 'pin', { parentId: 'mk-bar', slot: 'actions' });
+    }
     // Another bar that already has a `slot-full`, untouched by the batches below.
     add('bar2', 'bar', { rect: { x: 100, y: 400, width: 360, height: 56 } });
     add('q1', 'pin', { parentId: 'mk-bar2', slot: 'navigationIcon' });
@@ -56,7 +59,8 @@ async function barRef(y: number): Promise<string> {
     arguments: { project: 'slots', container: SCREEN },
   });
   const list = JSON.parse((result.content as { text: string }[])[0]!.text);
-  return list.markings.find((m: { rect: { x: number; y: number } }) => m.rect.y === y).ref;
+  return list.markings.find((m: { rect: { x: number; y: number } }) => m.rect.y === y)
+    .ref;
 }
 
 const slotItems = (entries: Entry[]): Item[] =>
@@ -140,17 +144,21 @@ describe('issueChanges: the codes an annotation gained', () => {
 
   it('an annotation that already had invalid-value and now also gets required-empty lists only the new one', () => {
     const { before, after, id } = pair();
-    const loaded = { project: after, location: { name: 'slots' } } as unknown as LoadedProject;
+    const loaded = {
+      project: after,
+      location: { name: 'slots' },
+    } as unknown as LoadedProject;
     const result = issueChanges(new Refs(loaded), before) as {
       resolved: number;
       new: { annotation: string; issues: { code: string; key?: string }[] }[];
     };
     expect(result.new).toEqual([
-      { annotation: expect.stringContaining('/a/'), issues: [{ code: 'required-empty', key: 'note' }] },
+      {
+        annotation: expect.stringContaining('/a/'),
+        issues: [{ code: 'required-empty', key: 'note' }],
+      },
     ]);
     expect(result.resolved).toBe(0);
     expect(id).toBe('an-rb');
   });
 });
-
-void applySpecialization;

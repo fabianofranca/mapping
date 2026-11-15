@@ -114,6 +114,7 @@ import {
   uniqueImageFile,
   validateProject,
   type Annotation,
+  type AnnotationIssue,
   type AnnotationTypeRef,
   type EntryInput,
   type ExternalSource,
