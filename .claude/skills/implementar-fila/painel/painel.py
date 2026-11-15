@@ -1774,6 +1774,16 @@ def imported_row(old, order):
     return row
 
 
+IMPORT_QUALITY_KEYS = ("escapados", "escapadosAt", "historico")
+
+
+def carry_quality(old_meta, meta):
+    """Carries the quality data (escaped defects, check time, recovered-history mark) when the old panel has it."""
+    for k in IMPORT_QUALITY_KEYS:
+        if old_meta.get(k):
+            meta[k] = old_meta[k]
+
+
 def cmd_import(a):
     new = open_session(a.dir)
     if new.get("queue"):
@@ -1807,6 +1817,7 @@ def cmd_import(a):
     rules = [r for r in old_m.get("rules") or [] if not r.get("endedAt")]
     if rules:
         meta["rules"] = rules
+    carry_quality(old_m, meta)
     running = sum(1 for r in rows if carries_session(r))
     new.get("log").append({"at": now(), "text": (
         f"importado de {a.old}: {len(rows)} linhas ({running} em andamento); "
