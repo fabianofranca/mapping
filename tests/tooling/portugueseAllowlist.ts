@@ -744,6 +744,31 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   {
+    term: 'histórico:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'conferidos há',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'linhas sem sessão',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'intervenções',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'sequência',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
     term: 'troque de sessão agora',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'script-output',
@@ -1116,6 +1141,16 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'session-notices',
   },
   { term: 'É autorização do dono', source: 'docs/FLOW.md', group: 'session-notices' },
+  {
+    term: 'Canário B (#1889): esta sessão roda em `medium`; o item 10 continua no nível da tabela.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Canário <id> revertido',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
   { term: 'parou em:', source: 'docs/FLOW.md', group: 'session-notices' },
   {
     term: 'passou de 300 mil na quinta sessão',
@@ -1673,6 +1708,91 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     term: '#<número>: <N> achados (<código>:<severidade>, …); reteste: sim|não',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'session-notices',
+  },
+  {
+    term: 'Revisão: <N> achados, <X> corrigidos',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Revisão: não se aplica',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Subagentes: <n> <modelo> <esforço>, …',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: '; subagentes <n> <modelo> <esforço>, …',
+    source: 'docs/TESTING-NUVEM.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'falso: <rótulo do reteste>:<sev>, …',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'candidatos a teste: <papel> <modelo> <esforço> → <degrau> (<k> seguidas)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'script-output',
+  },
+  {
+    term: 'sem ligação',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'ativo',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'em avaliação',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'encerrado',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'revertido',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'terminado pelo dono',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'pode promover',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'não promover',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'canário',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'retrabalhos',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'canários:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
   },
   {
     term: '<rótulo>: ainda trabalhando',
