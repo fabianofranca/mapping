@@ -39,9 +39,9 @@ async function refOf(name: string): Promise<string> {
 }
 
 /** The annotations of `get_marking` (one layer in these projects). */
-async function annotationsOf(name: string): Promise<Record<string, any>[]> {
+async function annotationsOf(name: string): Promise<Record<string, unknown>[]> {
   const marking = await call('get_marking', { ref: await refOf(name) });
-  return (marking.layers as { annotations: Record<string, any>[] }[]).flatMap(
+  return (marking.layers as { annotations: Record<string, unknown>[] }[]).flatMap(
     (l) => l.annotations,
   );
 }
@@ -198,7 +198,7 @@ describe('the type resolved: get_component and get_annotation', () => {
 
   it('the annotation view carries the same accessibility in its type', async () => {
     const [annotation] = await annotationsOf('small');
-    expect(annotation!.type.accessibility).toMatchObject({
+    expect((annotation!.type as { accessibility: unknown }).accessibility).toMatchObject({
       role: 'button',
       touchTarget: { width: 44, height: 44, mode: 'visual' },
     });
