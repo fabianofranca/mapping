@@ -1,6 +1,6 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 15,
+  "formatVersion": 17,
   "id": "slots",
   "name": "Test slots",
   "version": 1,
@@ -27,6 +27,22 @@
             {
               "key": "actionLabel",
               "type": "string"
+            }
+          ],
+          "slots": [
+            {
+              "id": "navigationIcon",
+              "name": "Navigation icon",
+              "description": "The icon on the left of the title.",
+              "accepts": ["pin"],
+              "max": 1
+            },
+            {
+              "id": "actions",
+              "name": "Actions",
+              "description": "The actions on the right of the title.",
+              "accepts": ["pin"],
+              "max": 3
             }
           ]
         },
