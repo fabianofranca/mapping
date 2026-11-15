@@ -97,10 +97,11 @@ function issueRow(a: Annotation, issue: AnnotationIssue): number {
 /** The text of `accessible-label-missing` of a part (the part's name and, in a table, the row); it names itself. */
 function partLabelText(a: Annotation, issue: AnnotationIssue): string | null {
   if (issue.part === undefined) return null;
-  const params = { part: issue.part.name, row: issueRow(a, issue) };
-  return issue.rowId === undefined
-    ? t('issue.accessible-label-missing-part', params)
-    : t('issue.accessible-label-missing-part-row', params);
+  const row = issueRow(a, issue);
+  // A row that is gone (a stale audit) names no position.
+  return row === 0
+    ? t('issue.accessible-label-missing-part', { part: issue.part.name })
+    : t('issue.accessible-label-missing-part-row', { part: issue.part.name, row });
 }
 
 /** Only the reason for the pending item (below the field itself, whose name is already beside it). */

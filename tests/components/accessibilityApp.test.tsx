@@ -82,6 +82,17 @@ describe('the texts of the pending item', () => {
     );
   });
 
+  it('names no row position when the row of the issue is gone', () => {
+    let p = a11yPut(a11yWorld(), 'tabs', 'T');
+    p = a11yRows(p, 'T', [{ label: 'Home' }, { label: '' }]);
+    const issue = createHarness(p).context.derived.issues.value.get('T')?.[0];
+    if (!issue) throw new Error('no issue');
+    const stale = { ...issue, rowId: 'gone' };
+    expect(issueMessage(p, annotationOf(p, 'T'), stale)).toBe(
+      'Missing accessible label on the part Tab',
+    );
+  });
+
   it('is translated in pt-BR', () => {
     locale.value = 'pt-BR';
     const p = a11yPut(a11yWorld(), 'bar', 'B', undefined, { actionIcon1: 'search' });

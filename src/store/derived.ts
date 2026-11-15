@@ -376,7 +376,6 @@ function samePart(x: AnnotationIssue, y: AnnotationIssue): boolean {
   return x.part?.id === y.part?.id && x.part?.name === y.part?.name;
 }
 
-/** The slot, owner and max of `slot-not-accepted`, `slot-full` and `slot-hidden`. */
 /** The row is the same one (same objects, and a finding that says the same). */
 function sameAuditRow(a: AuditRow, b: AuditRow | undefined): boolean {
   return (
@@ -390,6 +389,7 @@ function sameAuditRow(a: AuditRow, b: AuditRow | undefined): boolean {
   );
 }
 
+/** The slot, owner and max of `slot-not-accepted`, `slot-full` and `slot-hidden`. */
 function sameSlotIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
   return (
     x.slot?.id === y.slot?.id &&
