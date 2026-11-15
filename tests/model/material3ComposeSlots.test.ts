@@ -158,7 +158,7 @@ const r = (x: number, y: number, width: number, height: number) => ({
 });
 const draw = (p: Project): ReadonlyMap<string, ComponentDrawing> =>
   createDrawingCache()(p, catalog, approximateMeasurer, 0);
-const slotOfMap = (d: ComponentDrawing): Record<string, string> =>
+const slotOfMap = (d: ComponentDrawing): Record<string, string | null> =>
   Object.fromEntries(d.slotOf);
 const names = (d: ComponentDrawing): string[] => {
   const out: string[] = [];
