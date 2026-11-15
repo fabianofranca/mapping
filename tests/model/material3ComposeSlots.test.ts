@@ -398,6 +398,47 @@ describe('a child of a slot hidden by `visible` stays in it (#1978, option A)', 
     expect(off.slotIssues.map((i) => i.code)).toEqual(['slot-hidden']);
   });
 
+  describe.each([
+    {
+      direction: 'StartToEnd',
+      enable: 'enableDismissFromStartToEnd',
+      rect: r(0, 0, 56, 72),
+    },
+    {
+      direction: 'EndToStart',
+      enable: 'enableDismissFromEndToStart',
+      rect: r(304, 0, 56, 72),
+    },
+  ])('direction $direction (#1984)', ({ direction, enable, rect }) => {
+    it('with the matching enableDismiss off, the child stays in backgroundContent, hidden, slot-hidden', () => {
+      const off = swipe({ direction, [enable]: 'false' }, rect);
+      expect(slotOfMap(off)).toEqual({ BG: 'backgroundContent' });
+      expect(off.slots.find((s) => s.id === 'backgroundContent')).toMatchObject({
+        hidden: true,
+        children: ['BG'],
+      });
+      expect(off.slotIssues.map((i) => i.code)).toEqual(['slot-hidden']);
+    });
+
+    it('with it on, the child is drawn in the same slot and there is no slot-hidden', () => {
+      const on = swipe({ direction }, rect);
+      expect(slotOfMap(on)).toEqual({ BG: 'backgroundContent' });
+      expect(on.slots.find((s) => s.id === 'backgroundContent')?.hidden).toBe(false);
+      expect(on.slotIssues).toEqual([]);
+    });
+
+    it('get_code_hints keeps the child in backgroundContent with the direction off', () => {
+      let p = put(base(), 'SW', 'swipe-to-dismiss', r(0, 0, 360, 72), {
+        values: { direction, [enable]: 'false' },
+      });
+      p = put(p, 'BG', 'icon', rect, { parentId: 'SW' });
+      const root = codeBlueprint(p, 'SW', 'compose', { drawings: draw(p) }).root;
+      expect(root.annotations[0]?.slotArgs?.map((a) => a.slot)).toEqual([
+        'backgroundContent',
+      ]);
+    });
+  });
+
   const OFF = { direction: 'StartToEnd', enableDismissFromStartToEnd: 'false' };
 
   it('turning the direction back on brings the child back, drawn, in the same slot', () => {

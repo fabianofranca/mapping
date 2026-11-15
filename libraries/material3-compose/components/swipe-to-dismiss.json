@@ -277,31 +277,13 @@
         "anchors": {
           "left": {
             "$if": {
-              "$and": [
-                {
-                  "$eq": ["direction", "StartToEnd"]
-                },
-                {
-                  "$not": {
-                    "$eq": ["enableDismissFromStartToEnd", "false"]
-                  }
-                }
-              ]
+              "$eq": ["direction", "StartToEnd"]
             },
             "then": 0
           },
           "right": {
             "$if": {
-              "$and": [
-                {
-                  "$eq": ["direction", "EndToStart"]
-                },
-                {
-                  "$not": {
-                    "$eq": ["enableDismissFromEndToStart", "false"]
-                  }
-                }
-              ]
+              "$eq": ["direction", "EndToStart"]
             },
             "then": 0
           },
