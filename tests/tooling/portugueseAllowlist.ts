@@ -1700,6 +1700,41 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'session-notices',
   },
   {
+    term: 'Revisão: <N> achados, <X> corrigidos',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Revisão: não se aplica',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Subagentes: <n> <modelo> <esforço>, …',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: '; subagentes <n> <modelo> <esforço>, …',
+    source: 'docs/TESTING-NUVEM.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'falso: <rótulo do reteste>:<sev>, …',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'candidatos a teste: <papel> <modelo> <esforço> → <degrau> (<k> seguidas)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'script-output',
+  },
+  {
+    term: 'sem ligação',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
     term: '<rótulo>: ainda trabalhando',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'panel-values',
