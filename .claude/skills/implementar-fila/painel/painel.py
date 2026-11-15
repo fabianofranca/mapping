@@ -122,6 +122,28 @@ Rework per role: `fase` has it with a `correção` or a `testador` with `alta`+`
 or `ciclo` >= 1; `correção`, with `ci` >= 2, `ciclo` >= 1, an escaped defect of the stage, another `correção` of a different label created after it or a `reteste`
 created after it with `alta`+`media` > 0; `testador`, with an escaped defect `high`/`medium` of its stage; `reteste`, with a `falso` of `high` or `medium`.
 `fechamento`, `coordenador` and `supervisor` have no ruler. The escaped `low`, `ci` 1 and a successor `correção` of the same label are not rework.
+Canaries (stage #1889, decisions 12 to 15): `meta.canarios` holds `{id, papel, de, modelo, esforco, filtro, n, volta, inicio,
+sessoes, estado, motivo, fim}` plus what every write recomputes (`contadas`, `retrabalhos`, `resumo`; ready for a page to draw, which this phase does not touch).
+`canario DIR add <id> papel=<role with a ruler> de="<model> <effort>" [modelo=<family>] [esforco=<effort>] [filtro=processo] n=<k> volta=<k>`
+tries a cheaper configuration (`modelo` and `esforco` default to those of `de`; at least one has to change; `filtro` only `processo`;
+`n` and `volta` positive; a repeated id, a role without ruler or any other bad field is code 2 and nothing is written);
+`canario DIR end <id> [motivo="…"]` makes it `terminado pelo dono` (not a `revertido` one); both go into `apply`.
+`canario DIR usar <role> '#n' modelo=<m> esforco=<e>` only reads (outside `apply`) and prints `canario=<id> modelo=<m> esforco=<e>` when the
+requested configuration is the `de` of an `ativo` canary of the role that has not counted `n` and, with `filtro=processo`, the ficha of `#n`
+passes (decision 14: `testador=nenhum` and every citation of `toca=` is `.claude/`, `.github/`, `scripts/ci/`, `tests/tooling/`, `changelog/`,
+`docs/design-system/`, `docs/PROCESS.md`, `docs/FLOW.md`, `docs/TESTING-NUVEM.md` or `CLAUDE.md`, with or without `#section`); otherwise `atual`.
+`session DIR '#n' <id> kind=<role> [label=] canario=<id>` adds the session to the canary (code 2 for an unknown canary, another role or a
+canary that is not `ativo`; a phase also takes its successor by context, the same stage and label, while the canary is `em avaliação`).
+The canary counts `n` in sessions, and in `fase` and `correção` in distinct phases (stage + label). States: `ativo`, `em avaliação` (counted `n`),
+`encerrado` (every stage of the canary decided), `revertido` as soon as the rework reaches `volta` (at any time, with one `log` line written
+once: `canário <id> revertido: <k> retrabalhos (<ids>)`) and `terminado pelo dono`. Rework of a canary: `reteste`, each `falso` `high`/`medium` in
+its sessions; `fase`, a `correção` in the stage of one of its sessions (once per stage) and each `ciclo`; another role, the ruler of decision 6.
+`resumo` = `{antes, canario, veredito}`: each side has `sessoes` (with a cost), `medianaSessao`, `medianaEtapa`, `decididas` and `comRetrabalho`
+(decision 6); the "before" is the same role and the `de` configuration (and, with a filter, the same filter) created before `inicio`; the verdict
+is `revertido`, `pode promover` (`encerrado`, at most PROMOTE_MAX_REWORK = 1 rework and a lower median per session than before) or `não promover`.
+A role with a canary `ativo` or `em avaliação` has no `candidato` in `meta.uso`.
+`show` prints the line `canários: <id> <role> <de> → <model> <effort> <k>/<n> (retrabalhos <r>/<volta>, <state>); …`
+(or `canários: nenhum`) right after the `meta.uso` candidates line.
 Standard library only. Usage: painel.py [--now ISO] <subcommand> DIR ...
 (the subcommand comes BEFORE the folder: `painel.py row <folder> '#n' status=...`).
 """
@@ -203,6 +225,14 @@ PHASE_SIGNALS = ["ci", "cr", "crFix", "ciclo", "dono", "sub"]
 TESTER_SIGNALS = ["ok", "falha", "alta", "media", "baixa", "falso", "sub"]
 SIGNAL_FIELDS = {"fase": PHASE_SIGNALS, "correção": PHASE_SIGNALS, "testador": TESTER_SIGNALS, "reteste": TESTER_SIGNALS}
 SIGNAL_SUMS = ["ci", "cr", "crFix", "ciclo", "dono", "ok", "falha", "alta", "media", "baixa"]  # the numeric signals `uso` adds up
+PROMOTE_MAX_REWORK = 1  # a canary can be promoted with at most this much rework (decision 13, P3 of the stage)
+EFFORTS = ["low"] + EFFORT_LADDER  # the efforts a canary `de=` and `esforco=` accept
+CANARY_FILTERS = ["processo"]  # the only stage filter: process stages (decision 14)
+CANARY_KEYS = ["papel", "de", "modelo", "esforco", "filtro", "n", "volta"]  # the fields of `canario add` after the id
+CANARY_BUSY = ("ativo", "em avaliação")  # the canary still running: its role has no candidate and `usar` may offer it
+CANARY_FINAL = ("revertido", "terminado pelo dono")  # the states that never change again
+PROCESS_PREFIXES = (".claude/", ".github/", "scripts/ci/", "tests/tooling/", "changelog/", "docs/design-system/")
+PROCESS_FILES = ("docs/PROCESS.md", "docs/FLOW.md", "docs/TESTING-NUVEM.md", "CLAUDE.md")  # with or without `#section`
 
 NOW_OVERRIDE = None
 BATCH = None  # the shared Sessao of an `apply` in progress (None outside it)
@@ -289,6 +319,9 @@ class Sessao:
         meta[0]["vagas"] = text
         meta[0]["vagasItens"] = items
         meta[0]["grafoNos"], meta[0]["grafoSetas"] = queue_graph(self.get("queue"), meta[0], reasons)
+        if update_canaries(self.get("queue"), meta[0], self.get("log")):
+            self.touch("log")  # a canary reverted: the line goes into the publication
+            self.loud = True
         meta[0]["uso"] = compute_uso(self.get("queue"), meta[0])
         self.touch("meta")
         order = [n for n in FILES if n in self.dirty]
@@ -550,23 +583,31 @@ def cmd_session(a):
         raise Erro(f"{a.issue} não está na fila")
     pairs = parse_pairs(a.pairs)
     for k in pairs:
-        if k not in ("kind", "label"):
-            raise Erro(f"campo desconhecido '{k}'; válidos: kind, label")
+        if k not in ("kind", "label", "canario"):
+            raise Erro(f"campo desconhecido '{k}'; válidos: kind, label, canario")
     if "label" in pairs and "kind" not in pairs:
         raise Erro("label= só com kind=")
     if "kind" in pairs:
         validate_choice("kind", pairs["kind"], SESSION_KINDS)
+    meta = s.get("meta")[0]
+    joined = canary_to_join(meta, pairs, a.session, issue) if "canario" in pairs else None
     ids = row.get("sessions", "").split()
     if a.session not in ids:
         ids.append(a.session)
     row["sessions"] = " ".join(ids)
     s.touch("queue")
     if "kind" in pairs:
-        entry = session_entry(s.get("meta")[0], a.session)
+        entry = session_entry(meta, a.session)
         entry.setdefault("created", now())
         entry.update({"issue": issue, "kind": pairs["kind"]})
         if "label" in pairs or "label" not in entry:
             entry["label"] = pairs.get("label", "")
+        s.touch("meta")
+    if joined is not None:
+        entry = session_entry(meta, a.session)
+        entry["canario"] = joined["id"]
+        if a.session not in joined["sessoes"]:
+            joined["sessoes"].append(a.session)
         s.touch("meta")
     s.commit()
 
@@ -910,7 +951,12 @@ def compute_uso(q, meta, since=None):
     groups = {}
     for e in es:
         groups.setdefault(usage_key(e), []).append(e)
-    return sorted((usage_row(k, g, total, ruler, switches) for k, g in groups.items()), key=usage_order)
+    rows = sorted((usage_row(k, g, total, ruler, switches) for k, g in groups.items()), key=usage_order)
+    busy = {c.get("papel") for c in canary_list(meta) if c.get("estado") in CANARY_BUSY}
+    for u in rows:
+        if u["papel"] in busy:
+            u["candidato"] = None  # a role under a canary is already being tried (decision 7)
+    return rows
 
 
 def dash(v):
@@ -1087,6 +1133,310 @@ def candidates_text(rows):
     """`candidatos a teste:` of `show`: the keys with a candidate, or `nenhum`."""
     return "; ".join(f"{u['papel']} {u['modelo']} {u['esforco']} → {u['candidato']} ({u['sequencia']} seguidas)"
                      for u in rows if u.get("candidato")) or "nenhum"
+
+
+# --- canaries A and B (stage #1889, phase QM3, decisions 12 to 15) ---
+
+def canary_list(meta):
+    return meta.get("canarios") or []
+
+
+def find_canary(meta, cid):
+    for c in canary_list(meta):
+        if c.get("id") == cid:
+            return c
+    return None
+
+
+def parse_de(text):
+    """`(model family, effort)` of a `de="<model> <effort>"`; code 2 for anything else."""
+    words = (text or "").split()
+    if len(words) != 2 or model_family(words[0]) not in MODEL_LADDER or words[1] not in EFFORTS:
+        raise Erro(f"invalid de '{text}' (use de=\"<model> <effort>\", like \"Sonnet medium\")")
+    return model_family(words[0]), words[1]
+
+
+def positive_int(k, pairs):
+    n = to_int(k, pairs[k])
+    if n < 1:
+        raise Erro(f"{k} must be positive, got '{pairs[k]}'")
+    return n
+
+
+def canary_config(pairs):
+    """The fields of a new canary (all but the id and the run state), validated: code 2 for a missing or invalid one."""
+    for k in pairs:
+        if k not in CANARY_KEYS:
+            raise Erro(f"unknown field '{k}'; valid: " + ", ".join(CANARY_KEYS))
+    for k in ("papel", "de", "n", "volta"):
+        if k not in pairs:
+            raise Erro(f"falta {k}=")
+    validate_choice("papel", pairs["papel"], RULER_KINDS)
+    if "filtro" in pairs:
+        validate_choice("filtro", pairs["filtro"], CANARY_FILTERS)
+    if "modelo" not in pairs and "esforco" not in pairs:
+        raise Erro("falta modelo= or esforco=: a canary changes at least one of them")
+    de_model, de_effort = parse_de(pairs["de"])
+    modelo = model_family(pairs["modelo"]) if "modelo" in pairs else de_model
+    validate_choice("modelo", modelo, MODEL_LADDER)
+    esforco = pairs.get("esforco", de_effort)
+    validate_choice("esforco", esforco, EFFORTS)
+    if (modelo, esforco) == (de_model, de_effort):
+        raise Erro("the canary changes nothing: the model and the effort are those of de=")
+    return {"papel": pairs["papel"], "de": f"{de_model} {de_effort}", "modelo": modelo, "esforco": esforco,
+            "filtro": pairs.get("filtro"), "n": positive_int("n", pairs), "volta": positive_int("volta", pairs)}
+
+
+def canary_add(a):
+    if not a.args or "=" in a.args[0]:
+        raise Erro("canario add <id> papel= de=\"<model> <effort>\" [modelo=] [esforco=] [filtro=processo] n= volta=")
+    cid = a.args[0]
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", cid):
+        raise Erro(f"invalid canary id '{cid}' (letters, digits, - and _)")
+    config = canary_config(parse_pairs(a.args[1:]))
+    s = open_session(a.dir)
+    meta = s.get("meta")[0]
+    if find_canary(meta, cid):
+        raise Erro(f"canary {cid} already exists")
+    canary = {"id": cid, **config, "inicio": now(), "sessoes": [], "estado": "ativo", "motivo": "", "fim": None}
+    meta.setdefault("canarios", []).append(canary)
+    s.touch("meta")
+    s.commit()
+
+
+def canary_end(a):
+    if not a.args or "=" in a.args[0]:
+        raise Erro("canario end <id> [motivo=\"…\"]")
+    pairs = parse_pairs(a.args[1:])
+    for k in pairs:
+        if k != "motivo":
+            raise Erro(f"unknown field '{k}'; valid: motivo")
+    s = open_session(a.dir)
+    meta = s.get("meta")[0]
+    c = find_canary(meta, a.args[0])
+    if c is None:
+        raise Erro(f"canary {a.args[0]} does not exist")
+    if c["estado"] in CANARY_FINAL:
+        raise Erro(f"canary {c['id']} is already {c['estado']}")
+    c.update({"estado": "terminado pelo dono", "motivo": pairs.get("motivo", ""), "fim": now()})
+    s.touch("meta")
+    s.commit()
+
+
+def process_cite(cite):
+    """A citation of the `toca=` that belongs to a process stage: `#section` is not part of the path."""
+    base = cite.split("#", 1)[0]
+    return base.startswith(PROCESS_PREFIXES) or base in PROCESS_FILES
+
+
+def is_process_stage(row):
+    """Decision 14: the ficha says `testador=nenhum` and every citation of the `toca=` is process; no ficha or `?`, no."""
+    if row is None:
+        return False
+    plan = row.get("plan") or ""
+    if (plan_field(plan, "testador") or "").strip().lower() != "nenhum":
+        return False
+    cites = toca_list(plan)
+    return cites != ["?"] and all(process_cite(c) for c in cites)
+
+
+def canary_members(c, meta):
+    ids = set(c.get("sessoes") or [])
+    return [e for e in meta.get("sessions") or [] if e.get("id") in ids]
+
+
+def canary_units(c, meta):
+    """What `n` counts: sessions, or in a role with context switches (`fase`, `correção`) the distinct phases (stage + label)."""
+    es = canary_members(c, meta)
+    if c.get("papel") in PHASE_KINDS:
+        return len({(e.get("issue"), e.get("label")) for e in es})
+    return len(es)
+
+
+def canary_offers(c, meta, q, papel, issue, want):
+    """`usar`: this canary is active, of the role, with `want` as its `de`, still short of `n` and, with a filter, the stage passes."""
+    if c.get("estado") != "ativo" or c.get("papel") != papel or parse_de(c["de"]) != want:
+        return False
+    if canary_units(c, meta) >= c["n"]:
+        return False
+    return c.get("filtro") != "processo" or is_process_stage(find_row(q, issue))
+
+
+def canary_use(a):
+    if BATCH is not None:
+        raise Erro("`canario usar` only reads: it stays out of the batch (`apply`)")
+    if len(a.args) < 2:
+        raise Erro("canario usar <papel> '#n' modelo=<model> esforco=<effort>")
+    papel, issue = a.args[0], norm_issue(a.args[1])
+    pairs = parse_pairs(a.args[2:])
+    for k in ("modelo", "esforco"):
+        if k not in pairs:
+            raise Erro(f"falta {k}=")
+    for k in pairs:
+        if k not in ("modelo", "esforco"):
+            raise Erro(f"unknown field '{k}'; valid: modelo, esforco")
+    want = (model_family(pairs["modelo"]), pairs["esforco"])
+    validate_choice("papel", papel, RULER_KINDS)
+    validate_choice("modelo", want[0], MODEL_LADDER)
+    validate_choice("esforco", want[1], EFFORTS)
+    q, m = load(a.dir, "queue"), load(a.dir, "meta")
+    meta = m[0] if m else {}
+    for c in canary_list(meta):
+        if canary_offers(c, meta, q, papel, issue, want):
+            print(f"canario={c['id']} modelo={c['modelo']} esforco={c['esforco']}")
+            return
+    print("atual")
+
+
+CANARY_ACTIONS = {"add": canary_add, "end": canary_end, "usar": canary_use}
+
+
+def cmd_canario(a):
+    fn = CANARY_ACTIONS.get(a.action)
+    if fn is None:
+        raise Erro(f"unknown action '{a.action}'; valid: " + ", ".join(CANARY_ACTIONS))
+    fn(a)
+
+
+def canary_to_join(meta, pairs, sid, issue):
+    """The canary a `session ... canario=<id>` joins, checked before anything is written. It has to exist, be of the
+    role of the session and be `ativo`; a phase of the canary also takes its successor by context (same stage and
+    label) while the canary is under evaluation, and the same id again changes nothing."""
+    c = find_canary(meta, pairs["canario"])
+    if c is None:
+        raise Erro(f"canary {pairs['canario']} does not exist")
+    known = next((e for e in meta.get("sessions") or [] if e.get("id") == sid), None) or {}
+    kind = pairs.get("kind") or known.get("kind")
+    if not kind:
+        raise Erro("canario= needs kind= (or a session already registered with its kind)")
+    if c["papel"] != kind:
+        raise Erro(f"canary {c['id']} is for {c['papel']}, the session is {kind}")
+    label = (pairs["label"] if "label" in pairs else known.get("label")) or ""
+    if known.get("canario") not in (None, c["id"]):
+        raise Erro(f"session {sid} is already in canary {known['canario']}, not {c['id']}")
+    if c["estado"] == "ativo" or (c["estado"] in CANARY_BUSY and sid in c["sessoes"]):
+        return c
+    successor = kind in PHASE_KINDS and any(
+        e.get("issue") == issue and (e.get("label") or "") == label for e in canary_members(c, meta))
+    if c["estado"] in CANARY_BUSY and successor:
+        return c
+    raise Erro(f"canary {c['id']} is {c['estado']}, not ativo")
+
+
+def canary_rework(c, members, meta, ruler):
+    """The ids of the canary's sessions that count as rework, one entry per occurrence (decisions 12 and 14)."""
+    if c["papel"] == "reteste":
+        return [e["id"] for e in members for sev in (e.get("sinais") or {}).get("falsos") or []
+                if sev in ("high", "medium")]
+    if c["papel"] == "fase":
+        return phase_canary_rework(members, meta)
+    return [e["id"] for e in members if ruler.verdict(e) is True]
+
+
+def phase_canary_rework(members, meta):
+    """A `correção` in the stage of a session of the canary counts once per stage; each `ciclo` of a session of the canary counts."""
+    stages = {e.get("issue") for e in members}
+    okey = chronology(meta)
+    fixes = sorted((okey(e), e["id"], e.get("issue")) for e in meta.get("sessions") or []
+                   if e.get("kind") == "correção" and e.get("issue") in stages)
+    out, seen = [], set()
+    for _, sid, issue in fixes:
+        if issue not in seen:
+            seen.add(issue)
+            out.append(sid)
+    for e in members:
+        out += [e["id"]] * signal_count(e, "ciclo")
+    return out
+
+
+def canary_state(c, members, units, ruler):
+    if len(c["retrabalhos"]) >= c["volta"]:
+        return "revertido"
+    if units < c["n"]:
+        return "ativo"
+    return "encerrado" if all(e.get("issue") in ruler.decided for e in members) else "em avaliação"
+
+
+def side_summary(es, ruler):
+    """One side of the comparison, over sessions with a cost: sessions, median US$ per session and per merged stage, and
+    the stages decided with their rework by the ruler of decision 6."""
+    flags = [v for v in (ruler.verdict(e) for e in es) if v is not None]
+    usd = [usd_of(e) for e in es]
+    return {"sessoes": len(es), "medianaSessao": round(statistics.median(usd), 2) if usd else None,
+            "medianaEtapa": stage_median(es, ruler.decided), "decididas": len(flags), "comRetrabalho": sum(flags)}
+
+
+def canary_before(c, meta, q, ruler):
+    """The "before": sessions with a cost of the same role and the `de` configuration (and the same filter) created before `inicio`."""
+    model, effort = parse_de(c["de"])
+    out = []
+    for e in costed(meta):
+        if usage_key(e) != (c["papel"], model, effort) or ruler.okey(e)[0] >= c["inicio"]:
+            continue
+        if c.get("filtro") == "processo" and not is_process_stage(find_row(q, e.get("issue"))):
+            continue
+        out.append(e)
+    return out
+
+
+def canary_verdict(c, antes, canario):
+    """`revertido` when it came back; `pode promover` with the canary `encerrado`, at most PROMOTE_MAX_REWORK rework and
+    a lower median per session than before; `não promover` otherwise."""
+    if c["estado"] == "revertido":
+        return "revertido"
+    before, now_ = antes["medianaSessao"], canario["medianaSessao"]
+    cheaper = before is not None and now_ is not None and now_ < before
+    ok = c["estado"] == "encerrado" and len(c["retrabalhos"]) <= PROMOTE_MAX_REWORK and cheaper
+    return "pode promover" if ok else "não promover"
+
+
+def canary_summary(c, meta, q, ruler):
+    antes = side_summary(canary_before(c, meta, q, ruler), ruler)
+    canario = side_summary([e for e in canary_members(c, meta) if e.get("cost")], ruler)
+    return {"antes": antes, "canario": canario, "veredito": canary_verdict(c, antes, canario)}
+
+
+def revert_text(c):
+    ids = ", ".join(dict.fromkeys(c["retrabalhos"]))
+    return f"{len(c['retrabalhos'])} retrabalhos ({ids})"
+
+
+def refresh_canary(c, meta, q, ruler, log):
+    """Recomputes the counts, the rework, the state and the summary of a canary; True when a log line was written."""
+    members, units = canary_members(c, meta), canary_units(c, meta)
+    c["contadas"] = units
+    c["retrabalhos"] = canary_rework(c, members, meta, ruler)
+    wrote = False
+    if c["estado"] not in CANARY_FINAL:
+        state = canary_state(c, members, units, ruler)
+        if state != c["estado"]:
+            c["estado"] = state
+            c["fim"] = now() if state in ("encerrado", "revertido") else None
+        if state == "revertido":
+            c["motivo"] = revert_text(c)
+            log.append({"at": now(), "text": f"canário {c['id']} revertido: {c['motivo']}"})
+            wrote = True
+    c["resumo"] = canary_summary(c, meta, q, ruler)
+    return wrote
+
+
+def update_canaries(q, meta, log):
+    """Every write refreshes `meta.canarios` (ready for a page to draw); True when a canary just reverted and the log grew."""
+    if not canary_list(meta):
+        return False
+    ruler = Ruler(q, meta)
+    wrote = False
+    for c in canary_list(meta):
+        wrote = refresh_canary(c, meta, q, ruler, log) or wrote
+    return wrote
+
+
+def canary_text(meta):
+    """`canários:` of `show`: one entry per canary with the count, the rework and the state, or `nenhum`."""
+    return "; ".join(
+        f"{c['id']} {c['papel']} {c['de']} → {c['modelo']} {c['esforco']} {c.get('contadas', 0)}/{c['n']} "
+        f"(retrabalhos {len(c.get('retrabalhos') or [])}/{c['volta']}, {c['estado']})"
+        for c in canary_list(meta)) or "nenhum"
 
 
 def cmd_merged(a):
@@ -2243,6 +2593,7 @@ def cmd_show(a):
     print(f"escapados: {escaped_text(meta)}")
     print(f"histórico: {history_text(meta)}")
     print(f"candidatos a teste: {candidates_text(compute_uso(q, meta))}")
+    print(f"canários: {canary_text(meta)}")
     print(f"pedidos do supervisor: {requests_summary(meta)}")
     print_rules(meta)
     ctx = meta.get("context")
@@ -2326,6 +2677,9 @@ def build_parser():
     sp.add_argument("pairs", nargs="*", help="only to report a missing --feito")
     sp.add_argument("--feito", nargs="*", default=None, metavar="campo=valor",
                     help="the recovery is done: desde=<ISO> ate=<ISO> [linhas=<k>] (it takes the pairs itself: the positionals of an older argparse come out empty)")
+    sp = add("canario", cmd_canario, "canaries A and B: add <id> papel= de=\"<model> <effort>\" [modelo=] [esforco=] [filtro=processo] n= volta= | end <id> [motivo=] | usar <papel> '#n' modelo= esforco= (read-only: `canario=<id> modelo=<m> esforco=<e>` or `atual`)")
+    sp.add_argument("action", help="add, end or usar")
+    sp.add_argument("args", nargs="*", help="the id and campo=valor pairs (add, end) or the role, '#n' and pairs (usar)")
     sp = add("merged", cmd_merged, "records a stage merged into main (without repeating)")
     sp.add_argument("issue")
     sp = add("context", cmd_context, "records the coordinator's context: <pct> [--fonte get_session] (by hand, source manual) or --medir --max <max_tokens> (measures with scripts/ci/contextUsage.mjs and writes the source)")

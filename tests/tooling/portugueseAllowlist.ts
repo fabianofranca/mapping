@@ -1141,6 +1141,16 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'session-notices',
   },
   { term: 'É autorização do dono', source: 'docs/FLOW.md', group: 'session-notices' },
+  {
+    term: 'Canário B (#1889): esta sessão roda em `medium`; o item 10 continua no nível da tabela.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Canário <id> revertido',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
   { term: 'parou em:', source: 'docs/FLOW.md', group: 'session-notices' },
   {
     term: 'passou de 300 mil na quinta sessão',
@@ -1733,6 +1743,56 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     term: 'sem ligação',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'session-notices',
+  },
+  {
+    term: 'ativo',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'em avaliação',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'encerrado',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'revertido',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'terminado pelo dono',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'pode promover',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'não promover',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'canário',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'retrabalhos',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'canários:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
   },
   {
     term: '<rótulo>: ainda trabalhando',
