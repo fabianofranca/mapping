@@ -973,6 +973,7 @@ export const enUS = {
   'issue.slot-not-accepted': 'the slot {slot} of {owner} does not accept {type}',
   'issue.slot-full': 'the slot {slot} of {owner} takes {max}',
   'issue.slot-hidden': 'the slot {slot} of {owner} is hidden',
+  'issue.accessible-label-missing': 'missing accessible label',
   'list.incomplete': 'Incomplete only',
   'list.emptyIncomplete': 'No incomplete annotations in the visible layers.',
   // Details (R5)

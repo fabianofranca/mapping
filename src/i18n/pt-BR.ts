@@ -973,6 +973,7 @@ export const ptBR: Dictionary = {
   'issue.slot-not-accepted': 'o slot {slot} de {owner} não aceita {type}',
   'issue.slot-full': 'o slot {slot} de {owner} aceita {max}',
   'issue.slot-hidden': 'o slot {slot} de {owner} está oculto',
+  'issue.accessible-label-missing': 'rótulo de acessibilidade ausente',
   'list.incomplete': 'Só incompletas',
   'list.emptyIncomplete': 'Nenhuma anotação incompleta nas camadas visíveis.',
   'marking.section': 'Marcação',

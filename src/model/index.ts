@@ -73,6 +73,7 @@ export * from './clipboard';
 export * from './revision';
 export * from './backups';
 export * from './issues';
+export * from './accessibility';
 export * from './typedDisplay';
 export * from './codeLocations';
 export * from './codeBlueprint';
