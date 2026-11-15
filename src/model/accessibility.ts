@@ -370,8 +370,13 @@ export interface AnnotationAccessibility {
   readonly parts?: readonly PartAccessibility[];
 }
 
-const textOfValue = (value: JsonValue | undefined): string =>
-  typeof value === 'string' ? value : String(value);
+/** The text of a label value: a string or a number; any other kind (object, boolean) is not a name. */
+const textOfValue = (value: JsonValue | undefined): string | undefined =>
+  typeof value === 'string'
+    ? value
+    : typeof value === 'number'
+      ? String(value)
+      : undefined;
 
 /** The label of a role: the first field with a value, else `null` (`missing` when it is required). */
 function labelOf(
@@ -380,8 +385,10 @@ function labelOf(
   interactive: boolean,
 ): { label?: string | null; missing?: true } {
   if (label === null) return interactive ? { label: null } : {};
-  const key = label.fields.find((field) => hasValue(values, field));
-  if (key !== undefined) return { label: textOfValue(values[key]) };
+  const key = label.fields.find(
+    (field) => hasValue(values, field) && textOfValue(values[field]) !== undefined,
+  );
+  if (key !== undefined) return { label: textOfValue(values[key]) as string };
   return label.required ? { label: null, missing: true } : { label: null };
 }
 

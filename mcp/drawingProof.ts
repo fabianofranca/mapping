@@ -346,12 +346,9 @@ export function withDrawingIssues(
       items.filter((item) => !had.has(itemKey(item))),
     );
   }
-  const changed = changedMarkings(before, refs.project);
-  for (const [annotationId, items] of auditIssuesOf(
-    refs.project,
-    drawingsAfter,
-    changed,
-  )) {
+  // Every annotation, not only the changed markings': a part that the batch makes drawn again (its slot child
+  // left) belongs to a marking the batch did not change, and `had` already keeps what was there before.
+  for (const [annotationId, items] of auditAfter) {
     const had = new Set((auditBefore.get(annotationId) ?? []).map(auditKey));
     addGained(annotationId, items.filter((i) => !had.has(auditKey(i))).map(issueView));
   }
