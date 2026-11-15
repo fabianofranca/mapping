@@ -1,4 +1,4 @@
-# Esc closes the Catalog and one corner geometry for the marking — [Não lançado] (épico `epic/esc-catalogo-e-canto`, PR #1950, MCP unchanged, schema v19)
+# Esc closes the Catalog and one corner geometry for the marking — 2026-11-15 (épico `epic/esc-catalogo-e-canto`, PR #0, MCP unchanged, schema v19)
 
 ## Corrigido
 
