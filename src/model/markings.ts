@@ -210,13 +210,17 @@ export function setMarkingSpace(
   if (container && !containsRect(imagePixelRect(container), rect)) {
     fail('rect-out-of-image');
   }
+  if (container) checkArrowsStayOnPage(p, markingId, container.pageId);
   const copy: Rect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+  const { pageOf } = projectIndex(p);
   const base = {
     ...p,
     markings: updateById(p.markings, markingId, (m) => ({
       ...m,
       containerId,
       parentId: null,
+      // On the canvas the marking belongs to the page it was on; inside a container it has none.
+      pageId: containerId === null ? (pageOf.get(markingId) ?? null) : null,
       rect: copy,
     })),
   };
@@ -228,6 +232,18 @@ export function setMarkingSpace(
     markingId,
     options,
   );
+}
+
+/** A marking (and its descendants) that changes page cannot keep an arrow to a marking left on another one. */
+function checkArrowsStayOnPage(p: Project, markingId: string, pageId: string): void {
+  const { pageOf } = projectIndex(p);
+  const moving = new Set([markingId, ...descendantIds(p, markingId)]);
+  for (const a of p.arrows) {
+    const other = moving.has(a.from) ? a.to : moving.has(a.to) ? a.from : null;
+    if (other !== null && !moving.has(other) && pageOf.get(other) !== pageId) {
+      fail('arrow-cross-page', a.id);
+    }
+  }
 }
 
 /**
