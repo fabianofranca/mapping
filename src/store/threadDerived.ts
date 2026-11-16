@@ -49,6 +49,11 @@ export interface ThreadSources {
    * the project in view.
    */
   readonly project?: ReadonlySignal<Project | null>;
+  /**
+   * The open page (`session.page.id`). A canvas point lives on one page (stage #883, PG4): its pin
+   * only shows while that page is open. Without it, no page filters the pins.
+   */
+  readonly pageId?: ReadonlySignal<string | undefined>;
 }
 
 export interface ThreadDerived {
@@ -153,10 +158,17 @@ export function createThreadDerived(
     const threads = ui.commentPins.value ? all : all.filter((t) => t.id === selected);
     if (threads.length === 0) return NO_PINS;
     const unread = unreadIds.value;
-    return pinGroups(p, threads, {
+    const groups = pinGroups(p, threads, {
       selectedThreadId: selected,
       unread: (t) => unread.has(t.id),
     });
+    const open = sources.pageId?.value;
+    if (open === undefined) return groups;
+    const here = groups.filter(
+      (g) =>
+        g.host.kind !== 'point' || g.host.pageId === undefined || g.host.pageId === open,
+    );
+    return here.length === groups.length ? groups : here;
   });
 
   const citedIn = computed(() => backlinks(sources.threads.value));

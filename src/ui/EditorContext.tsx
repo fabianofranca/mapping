@@ -75,6 +75,7 @@ export function createEditorContextValue(
         proposals: session.proposals.list,
         // The anchors resolve on every page: a conversation on another page is not an orphan.
         project: review.derived.shownAcrossPages,
+        pageId: session.page.id,
       },
       perspective,
     ),

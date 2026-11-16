@@ -144,7 +144,7 @@ describe('canvas context menu', () => {
     ).toBe(true);
   });
 
-  it('Comment here on a canvas point is disabled, with a hint, off the first page', async () => {
+  it('Comment here on a canvas point stays enabled on a page that is not the first', async () => {
     const h = createHarness(pagesProject());
     h.context.session.page.open('PG2');
     h.ui.canvasMenu.value = {
@@ -152,22 +152,7 @@ describe('canvas context menu', () => {
       y: 10,
       target: null,
       comment: null,
-      here: { kind: 'point', containerId: null, x: 1, y: 2 },
-    };
-    mount(h, <CanvasContextMenu />);
-    const item = screen.getByRole('menuitem', { name: t('comments.here') });
-    expect(item.hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText(t('page.comment.canvasFirstPageOnly'))).toBeTruthy();
-  });
-
-  it('Comment here on a canvas point stays enabled on the first page', async () => {
-    const h = createHarness(pagesProject());
-    h.ui.canvasMenu.value = {
-      x: 10,
-      y: 10,
-      target: null,
-      comment: null,
-      here: { kind: 'point', containerId: null, x: 1, y: 2 },
+      here: { kind: 'point', containerId: null, x: 1, y: 2, pageId: 'PG2' },
     };
     mount(h, <CanvasContextMenu />);
     expect(

@@ -86,9 +86,6 @@ export const pagesEnUS = {
   // Status bar
   'page.status.name': 'Page {name}',
 
-  // Comments on an empty canvas spot (the anchor has no page of its own yet)
-  'page.comment.canvasFirstPageOnly':
-    'Comments on empty canvas are only on the first page for now',
   // Reference preview (PG3, decision 13)
   'refPreview.label': 'Reference preview',
   'refPreview.title': '{page}: {item}',
@@ -173,8 +170,6 @@ export const pagesPtBR: Record<keyof typeof pagesEnUS, string> = {
 
   'page.status.name': 'Página {name}',
 
-  'page.comment.canvasFirstPageOnly':
-    'Comentários no canvas vazio só existem na primeira página por enquanto',
   'refPreview.label': 'Prévia da referência',
   'refPreview.title': '{page} › {item}',
   'refPreview.goToPage': 'Ir para a página',

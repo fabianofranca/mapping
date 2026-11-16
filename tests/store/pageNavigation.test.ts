@@ -139,14 +139,34 @@ describe('revealTarget (citations and conversation anchors)', () => {
     }
   });
 
-  it('a layer, a conversation, a proposal and a canvas point change nothing', async () => {
+  it('a canvas point opens its page: its own, or the first one for a version 1 point', async () => {
+    const s = await start();
+    expect(
+      revealTarget(s, { kind: 'point', containerId: null, x: 1, y: 1, pageId: 'PG3' }),
+    ).toMatchObject({ found: true, pageChanged: true });
+    expect(s.page.id.value).toBe('PG3');
+    expect(
+      revealTarget(s, { kind: 'point', containerId: null, x: 1, y: 1 }),
+    ).toMatchObject({
+      found: true,
+      pageChanged: true,
+    });
+    expect(s.page.id.value).toBe('PG1');
+    s.page.open('PG2');
+    expect(
+      revealTarget(s, { kind: 'point', containerId: null, x: 1, y: 1, pageId: 'GONE' })
+        .found,
+    ).toBe(false);
+    expect(s.page.id.value).toBe('PG2');
+  });
+
+  it('a layer, a conversation and a proposal change nothing', async () => {
     const s = await start();
     s.page.open('PG2');
     for (const target of [
       { kind: 'layer', id: 'L1' },
       { kind: 'thread', id: 'T1' },
       { kind: 'proposal', id: 'P1' },
-      { kind: 'point', containerId: null, x: 1, y: 1 },
     ] as const) {
       expect(revealTarget(s, target).found).toBe(false);
     }

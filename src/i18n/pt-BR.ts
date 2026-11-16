@@ -767,6 +767,7 @@ export const ptBR: Dictionary = {
   'thread.anchor.missing.annotation': 'Anotação apagada · órfã',
   'thread.anchor.missing.entry': 'Par apagado · órfã',
   'thread.anchor.missing.row': 'Linha apagada · órfã',
+  'thread.anchor.missing.page': 'Página apagada · órfã',
   'citation.unnamed': '(sem nome)',
   'citation.missing': 'O item citado não existe mais',
   'citation.chipLabel': '{name}, citação',

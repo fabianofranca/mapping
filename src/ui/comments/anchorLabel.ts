@@ -25,6 +25,7 @@ const MISSING: Record<ThreadMissingKind, TranslationKey> = {
   annotation: 'thread.anchor.missing.annotation',
   entry: 'thread.anchor.missing.entry',
   row: 'thread.anchor.missing.row',
+  page: 'thread.anchor.missing.page',
 };
 
 type ItemAnchor = Extract<ThreadAnchor, { id: string }>;

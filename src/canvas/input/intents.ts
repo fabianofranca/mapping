@@ -394,13 +394,21 @@ export function tapSelection(
   return chain.find((pick) => keyOf(pick) === next) ?? null;
 }
 
-/** The `point` anchor of the click at `c` (canvas): in the highest container under it, or in the canvas. */
+/**
+ * The `point` anchor of the click at `c` (canvas): in the highest container under it, or in the
+ * canvas, where it carries the open page (`pageId`; stage #883, PG4) when there is one.
+ */
 export function pointAnchorAt(
   project: Project,
   c: Point,
+  pageId?: string,
 ): Extract<ThreadAnchor, { kind: 'point' }> {
   const image = imageAt(project.containers, c);
-  if (!image) return { kind: 'point', containerId: null, x: c.x, y: c.y };
+  if (!image) {
+    return pageId === undefined
+      ? { kind: 'point', containerId: null, x: c.x, y: c.y }
+      : { kind: 'point', containerId: null, x: c.x, y: c.y, pageId };
+  }
   const pixel = canvasToImagePixel(image.placement, c);
   return { kind: 'point', containerId: image.id, x: pixel.x, y: pixel.y };
 }
@@ -415,12 +423,13 @@ export function commentAnchorAt(
   c: Point,
   arrows?: ArrowHit,
   titles?: ReadonlyMap<string, Rect>,
+  pageId?: string,
 ): ThreadAnchor {
   const hit = hitChain(project, visibility, c, arrows, titles).find(
     (item) => item.kind !== 'image',
   );
   if (hit) return { kind: hit.kind, id: hit.id };
-  return pointAnchorAt(project, c);
+  return pointAnchorAt(project, c, pageId);
 }
 
 export function dragModeOf(intent: Intent): DragMode {

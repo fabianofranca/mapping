@@ -1,6 +1,6 @@
 import {
   THREAD_FORMAT,
-  THREAD_FORMAT_VERSION,
+  threadFormatVersion,
   compareThreadMessages,
   parseThread,
   sortThreadMessages,
@@ -66,7 +66,7 @@ function validated(data: unknown): Thread {
 export function openThread(args: OpenThreadArgs): Thread {
   return validated({
     format: THREAD_FORMAT,
-    formatVersion: THREAD_FORMAT_VERSION,
+    formatVersion: threadFormatVersion(args.anchor),
     id: args.id,
     anchor: args.anchor,
     createdAt: args.at,

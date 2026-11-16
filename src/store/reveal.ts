@@ -1,4 +1,5 @@
 import {
+  hostOf,
   perspectiveView,
   projectIndex,
   type CitationTarget,
@@ -84,13 +85,31 @@ export function revealAnnotation(
   return owner === undefined ? NOT_FOUND : revealItem(session, owner.markingId);
 }
 
+/**
+ * Opens the page of a canvas point (its own `pageId`, or the first page for a version 1 point).
+ * The point is not an item, so no perspective is looked at. An orphan point (the page was deleted)
+ * changes nothing.
+ */
+function revealPage(
+  session: RevealSession,
+  point: Extract<ThreadAnchor, { kind: 'point' }>,
+): RevealOutcome {
+  const p = session.store.committed.peek();
+  const host = p === null ? null : hostOf(p, point);
+  if (host?.kind !== 'point' || host.pageId === undefined) return NOT_FOUND;
+  const pageChanged = host.pageId !== session.page.openId();
+  if (pageChanged && !session.page.open(host.pageId)) return NOT_FOUND;
+  return { found: true, pageChanged, perspectiveChanged: false };
+}
+
 /** What a conversation anchor or a citation points at. */
 export type RevealTarget = ThreadAnchor | CitationTarget;
 
 /**
  * `revealItem` for whatever an anchor or a citation points at: an item (marking, container, arrow),
- * an annotation or one of its parts (field, pair, row), or a point inside a container. A layer, a
- * conversation, a proposal and a canvas point have no page of their own: nothing changes.
+ * an annotation or one of its parts (field, pair, row), or a point (inside a container, or on the
+ * canvas of its page). A layer, a conversation and a proposal have no page of their own: nothing
+ * changes.
  */
 export function revealTarget(
   session: RevealSession,
@@ -109,7 +128,7 @@ export function revealTarget(
       return revealAnnotation(session, target.annotationId);
     case 'point':
       return target.containerId === null
-        ? NOT_FOUND
+        ? revealPage(session, target)
         : revealItem(session, target.containerId);
     default:
       return NOT_FOUND;

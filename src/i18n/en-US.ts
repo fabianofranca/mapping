@@ -765,6 +765,7 @@ export const enUS = {
   'thread.anchor.missing.annotation': 'Annotation deleted · orphan',
   'thread.anchor.missing.entry': 'Pair deleted · orphan',
   'thread.anchor.missing.row': 'Row deleted · orphan',
+  'thread.anchor.missing.page': 'Page deleted · orphan',
   // CM5-B: citations in the composer and in messages
   'citation.unnamed': '(unnamed)',
   'citation.missing': 'The cited item no longer exists',

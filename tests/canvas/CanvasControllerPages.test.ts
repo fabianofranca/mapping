@@ -85,6 +85,7 @@ describe('CanvasController: pages', () => {
         copyId: null,
         identity: signal(null),
         project: review.derived.shownAcrossPages,
+        pageId: page.id,
       },
       createOpenPerspective(store, perspective.id),
     );
@@ -235,7 +236,7 @@ describe('CanvasController: pages', () => {
     expect(internals.pinLayer.size).toBe(1);
     perspective.open(null);
     flush();
-    // Completa of PG1: the container's point and the canvas point (which has no page: the first).
+    // Completa of PG1: the container's point and the canvas point (version 1: it reads on the first page).
     expect(internals.pinLayer.size).toBe(2);
     page.open('PG2');
     flush();

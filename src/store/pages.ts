@@ -120,18 +120,6 @@ function writeOpen(projectId: string, entry: StoredOpen): void {
   );
 }
 
-/**
- * Is `openId` the project's first page (or is there no open page: nothing to tell)? Canvas-point
- * comments live only there for now: the anchor has no page of its own yet (the conversations with
- * pages come later).
- */
-export function isFirstPage(
-  project: Project | null,
-  openId: string | undefined,
-): boolean {
-  return openId === undefined || openId === project?.pages[0]?.id;
-}
-
 /** The name of the page `id` in `p`, or `null` if `p` does not have it. */
 function nameOf(p: Project | null, id: string): string | null {
   return p?.pages.find((g) => g.id === id)?.name ?? null;
