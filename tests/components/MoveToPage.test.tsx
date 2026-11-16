@@ -192,7 +192,9 @@ describe('refusal: an arrow in the way', () => {
     fireEvent.click(within(submenu()).getByRole('menuitem', { name: 'Page 2' }));
     // The user wanders to another page before using the button.
     act(() => void harness.context.session.page.open('PG3'));
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Go to the arrow' }));
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: 'Go to the arrow' }));
     expect(harness.context.session.page.id.value).toBe('PG1');
     expect(harness.ui.selection.value).toEqual({ kind: 'arrow', id: 'R1' });
     expect(center).toHaveBeenCalledTimes(1);
@@ -201,17 +203,27 @@ describe('refusal: an arrow in the way', () => {
 });
 
 describe('Details: Move to page', () => {
+  /** Like the editor: the panel is only for what the project in view (cut by the open page) still has. */
+  function PanelOf({ harness, id }: { readonly harness: Harness; readonly id: string }) {
+    const shown = harness.context.review.derived.shownProject.value;
+    const image = shown?.containers.find((c) => c.id === id) ?? null;
+    if (image === null) return null;
+    return (
+      <SelectionPanel
+        image={image}
+        display={undefined}
+        readOnly={false}
+        busy={false}
+        onReplace={() => undefined}
+        onDelete={() => undefined}
+      />
+    );
+  }
+
   function renderContainer(harness: Harness, id: string) {
     render(
       <EditorContext.Provider value={harness.context}>
-        <SelectionPanel
-          image={harness.project().containers.find((c) => c.id === id) ?? null}
-          display={undefined}
-          readOnly={false}
-          busy={false}
-          onReplace={() => undefined}
-          onDelete={() => undefined}
-        />
+        <PanelOf harness={harness} id={id} />
         <DialogsHost />
       </EditorContext.Provider>,
     );
@@ -225,7 +237,9 @@ describe('Details: Move to page', () => {
         <MarkingPanel
           project={harness.project()}
           marking={marking}
-          image={harness.project().containers.find((c) => c.id === marking.containerId) ?? null}
+          image={
+            harness.project().containers.find((c) => c.id === marking.containerId) ?? null
+          }
           readOnly={false}
           onDelete={() => undefined}
           onGoToAnnotation={() => undefined}
@@ -285,7 +299,8 @@ describe('Details: Move to page', () => {
       </EditorContext.Provider>,
     );
     expect(
-      (screen.getByRole('button', { name: 'Move to page' }) as HTMLButtonElement).disabled,
+      (screen.getByRole('button', { name: 'Move to page' }) as HTMLButtonElement)
+        .disabled,
     ).toBe(true);
   });
 
@@ -298,6 +313,8 @@ describe('Details: Move to page', () => {
     await user.click(screen.getByRole('button', { name: 'Move to page' }));
     await user.click(screen.getByRole('menuitem', { name: 'Page 2' }));
     expect(pageOf(harness, 'I2')).toBe('PG1');
-    expect(screen.getByRole('alertdialog', { name: 'The move would cut arrows' })).toBeTruthy();
+    expect(
+      screen.getByRole('alertdialog', { name: 'The move would cut arrows' }),
+    ).toBeTruthy();
   });
 });

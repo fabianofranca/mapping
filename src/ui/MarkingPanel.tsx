@@ -31,6 +31,7 @@ import { keepFocusAfterAction } from './focus';
 import { imageLabel, markingErrorMessage, markingLabel } from './labels';
 import { MarkingAnchorSection } from './MarkingAnchorSection';
 import { MarkingPicker } from './MarkingPicker';
+import { MovePageControl } from './MovePageControl';
 import { PerspectivesSection, usePrincipalOnly } from './PerspectivesSection';
 import { Property, PropertyGrid } from './PropertyGrid';
 
@@ -345,6 +346,7 @@ export function MarkingPanel({
       <ArrowLinksSection project={project} marking={marking} />
 
       <PerspectivesSection itemId={marking.id} readOnly={readOnly} />
+      <MovePageControl itemId={marking.id} readOnly={readOnly} />
 
       {ext?.others(marking.id)}
 

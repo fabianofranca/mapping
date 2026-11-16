@@ -13,6 +13,7 @@ import { ZoomField } from './ZoomField';
 import { showAndFocusToolWindow } from './toolWindowLayout';
 import { awaitingText } from './review/ProposalRow';
 import { statusBarText } from './comments/commentsText';
+import { stepNoticeText, usePageStepNotice } from './PageNotices';
 
 // Status bar (B8): saving, destination and "not exported" on the left;
 // selection, cursor, zoom, schema, channel and build on the right. The cursor comes from the canvas in a
@@ -210,6 +211,26 @@ function PageItem() {
 }
 
 /**
+ * "Undone on <page>" / "Redone on <page>" (decision 12): undo and redo never switch the open page, so
+ * when the change was on another page the bar says where. A polite live region, gone after a few seconds.
+ */
+function PageStepItem() {
+  const notice = usePageStepNotice();
+  if (notice === null) return null;
+  const text = stepNoticeText(notice);
+  return (
+    <Item
+      class="status-item status-item-s"
+      title={text}
+      aria-live="polite"
+      icon={notice.kind === 'undone' ? 'undo' : 'redo'}
+    >
+      {text}
+    </Item>
+  );
+}
+
+/**
  * Open perspective (stage #659): its name (or the Main one) and, on the Main one, how many items
  * came from other perspectives.
  */
@@ -272,6 +293,7 @@ export function StatusBar() {
         </Item>
       )}
       <PageItem />
+      <PageStepItem />
       <PerspectiveItem />
       <ProposalsItem />
       <NoticesItem />

@@ -1,4 +1,5 @@
 import { Fragment, type ComponentChildren } from 'preact';
+import { useEffect } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   arrowDeletionImpact,
@@ -10,6 +11,7 @@ import { ContainerDialog } from '../ui/ContainerDialog';
 import { DeletePerspectiveDialog } from '../ui/DeletePerspectiveDialog';
 import { DeletePageDialog } from '../ui/DeletePageDialog';
 import { ManagePagesDialog } from '../ui/ManagePagesDialog';
+import { goToArrow } from '../ui/movePage';
 import { MovePageRefusedDialog } from '../ui/MovePageRefusedDialog';
 import { ManagePerspectivesDialog } from '../ui/ManagePerspectivesDialog';
 import { NewPerspectiveDialog } from '../ui/NewPerspectiveDialog';
@@ -372,7 +374,18 @@ function ExternalChangeDialog() {
 /** The dialog open in the editor (`dialogs.current`), if any. */
 export function EditorDialogs(props: EditorDialogsProps) {
   const ctx = useEditor();
-  const { current } = props.dialogs;
+  const { current, show } = props.dialogs;
+  // A "Move to page" that cut arrows (right-click menu, Details): the dialog lists them.
+  const refusal = ctx.moveRefusal.value;
+  useEffect(() => {
+    if (refusal === null) return;
+    ctx.moveRefusal.value = null;
+    show({
+      kind: 'movePageRefused',
+      arrows: refusal,
+      onGoToArrow: (arrowId) => goToArrow(ctx, arrowId),
+    });
+  }, [refusal, ctx, show]);
   return (
     <>
       {current && (

@@ -9,7 +9,10 @@ import { navigateTo } from './pageNavigation';
 // the call to the store action with the refusal handling, and "Go to the arrow" of the refusal.
 
 /** The ids that are roots (a container with no parent, a canvas marking), in order; the rest drop out. */
-export function movableRoots(project: Project, ids: readonly string[]): readonly string[] {
+export function movableRoots(
+  project: Project,
+  ids: readonly string[],
+): readonly string[] {
   const { rootMembers } = projectIndex(project);
   return [...new Set(ids)].filter((id) => rootMembers.has(id));
 }
@@ -37,7 +40,7 @@ export function moveRootsToPage(
 ): void {
   const result = editor.actions.moveRootsToPage(roots, pageId);
   if (result.ok) return;
-  if (result.error === 'page-arrow-crossing') {
+  if ('arrows' in result) {
     editor.moveRefusal.value = result.arrows;
   } else {
     showToast(editor.ui, t('page.error.generic'));

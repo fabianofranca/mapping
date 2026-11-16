@@ -16,6 +16,7 @@ import { CopyMenuItems } from './CopyActions';
 import { Button } from './controls';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
+import { MovePageMenuItems } from './MovePageMenuItems';
 import { createOpenScrollGuard } from './openScrollGuard';
 import { placeComment } from '../store/threadUi';
 import { peekSelectedItems, isItemSelected } from '../store/ui';
@@ -302,6 +303,9 @@ export function CanvasContextMenu() {
       {commentable && <CommentMenuItems comment={comment} here={here} close={close} />}
       {perspectiveIds.length > 0 && (
         <PerspectiveMenuItems ids={perspectiveIds} close={close} />
+      )}
+      {perspectiveIds.length > 0 && (
+        <MovePageMenuItems ids={perspectiveIds} close={close} />
       )}
       {arrangeId !== null && (
         <div class="menu-items">

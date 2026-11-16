@@ -110,3 +110,50 @@ describe('DeletePageDialog', () => {
     expect(session.page.id.value).toBe(harness.project().pages[0]?.id);
   });
 });
+
+describe('DeletePageDialog: the deliberate delete of the open page', () => {
+  it('discarding the open page opens the first page without the "no longer exists" notice', async () => {
+    const { harness, session } = await setupPages(['Second']);
+    const second = harness.project().pages[1]?.id as string;
+    session.page.open(second);
+    const user = await openDialog(harness, { kind: 'deletePage', id: second });
+    await user.click(button('Delete page'));
+    expect(session.page.id.value).toBe(harness.project().pages[0]?.id);
+    expect(session.page.notice.value).toBeNull();
+  });
+
+  it('moving the content of the open page opens the destination page, with no notice', async () => {
+    const { harness, ids, session } = await setupPages(['Second']);
+    const first = harness.project().pages[0]?.id as string;
+    const user = await openDialog(harness, { kind: 'deletePage', id: first });
+    expect(session.page.id.value).toBe(first);
+    await user.click(button('Move the content and delete the page'));
+    expect(session.page.id.value).toBe(ids[0]);
+    expect(session.page.notice.value).toBeNull();
+  });
+
+  it('deleting a page that is not open leaves the open page and any other notice alone', async () => {
+    const { harness, ids, session } = await setupPages(['Second']);
+    const first = harness.project().pages[0]?.id as string;
+    session.page.notice.value = { kind: 'moved', pageId: first, name: 'Page 1' };
+    const user = await openDialog(harness, { kind: 'deletePage', id: ids[0] as string });
+    await user.click(button('Delete page'));
+    expect(session.page.id.value).toBe(first);
+    expect(session.page.notice.value?.kind).toBe('moved');
+  });
+
+  it('undoing the delete of the open page still says it no longer exists', async () => {
+    const { harness, ids, session } = await setupPages(['Second']);
+    const second = ids[0] as string;
+    session.page.open(second);
+    const user = await openDialog(harness, { kind: 'deletePage', id: second });
+    await user.click(button('Delete page'));
+    session.page.open(second);
+    expect(session.page.id.value).toBe(harness.project().pages[0]?.id);
+    await harness.store.undo();
+    // The page is back; the user goes there and an undo of its creation takes the page away again.
+    session.page.open(second);
+    await harness.store.undo();
+    expect(session.page.notice.value).toEqual({ kind: 'removed', name: 'Second' });
+  });
+});
