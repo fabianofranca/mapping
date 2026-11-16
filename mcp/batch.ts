@@ -1,6 +1,13 @@
 import {
   ModelError,
   NOTICE_KINDS,
+  createPage,
+  deletePage,
+  movePage,
+  moveRootsToPage,
+  pageContent,
+  renamePage,
+  type Page,
   changeNotices,
   type Change,
   type SpecNotice,
@@ -157,6 +164,7 @@ import {
   MODEL_ERROR_HINTS,
 } from './modelErrors';
 import { measuredTree, planMeasured } from './importMeasured';
+import { findPage, hasSeveralPages } from './pages';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
 
@@ -185,7 +193,7 @@ export interface BatchIo {
 }
 
 type AliasTarget =
-  | { readonly kind: 'layer' | ItemKind; readonly id: string }
+  | { readonly kind: 'layer' | 'page' | ItemKind; readonly id: string }
   | {
       readonly kind: 'row';
       readonly annotationId: string;
@@ -193,7 +201,7 @@ type AliasTarget =
       readonly rowId: string;
     };
 
-type CreatedKind = 'layer' | ItemKind;
+type CreatedKind = 'layer' | 'page' | ItemKind;
 
 export interface CreatedItem {
   readonly index: number;
@@ -291,6 +299,7 @@ interface Step {
 
 const KIND_LABEL: Record<CreatedKind, string> = {
   layer: 'a layer',
+  page: 'a page',
   ...KIND_WITH_ARTICLE,
 };
 
@@ -320,6 +329,22 @@ function initialValuesArg(values: Record<string, JsonValue> | undefined): {
       value === null || typeof value === 'string' || typeof value === 'number',
   );
   return simple.length === 0 ? {} : { values: Object.fromEntries(simple) };
+}
+
+/** `{ pageId }` for the model's creators, or `{}` to leave the choice to them (the first page). */
+function pageArg(pageId: string | undefined): { pageId?: string } {
+  return pageId === undefined ? {} : { pageId };
+}
+
+/** The items of a wrap are on one page (`page-mixed` otherwise); arrows count through their ends. */
+function requireSinglePage(p: Project, ids: readonly string[]): void {
+  const { pageOf } = projectIndex(p);
+  const pages = new Set(ids.map((id) => pageOf.get(id)));
+  if (pages.size <= 1) return;
+  const names = [...pages].map(
+    (id) => `"${p.pages.find((g) => g.id === id)?.name ?? id}"`,
+  );
+  throw new ModelError('page-mixed', `the items are on ${names.join(', ')}`);
 }
 
 /** Some value is a table (list of rows): `initialValuesArg` leaves it out of the measurement. */
@@ -792,6 +817,84 @@ class Batch {
         : `layer not found: ${text}`,
       { layers: p.layers.map((l) => ({ id: l.id, name: l.name })) },
     );
+  }
+
+  /** Page by alias (`$name` of an `add_page` in the batch), id or name, in the batch's current project. */
+  private page(text: string, p: Project = this.p): Page {
+    const wanted = text.trim();
+    if (!wanted.startsWith('$')) return findPage(p, text);
+    const target = this.alias(wanted, 'page');
+    const page = 'id' in target ? p.pages.find((g) => g.id === target.id) : undefined;
+    if (page) return page;
+    throw new ToolError('not-found', `the page ${wanted} no longer exists`);
+  }
+
+  /**
+   * The page of a new root. `page` names it (and must agree with `implied`, the page that `container`, `near`,
+   * `beside`, `inside` or an anchor already gave); without either, a project with more than one page
+   * needs it (`page-required`) and with a single page the model takes that one (`undefined`).
+   */
+  private rootPageId(
+    p: Project,
+    pageText: string | undefined,
+    implied: string | null,
+  ): string | undefined {
+    if (pageText === undefined) {
+      if (implied !== null) return implied;
+      if (hasSeveralPages(p)) throw new ModelError('page-required');
+      return undefined;
+    }
+    const given = this.page(pageText, p);
+    if (implied !== null && implied !== given.id) {
+      const other = p.pages.find((g) => g.id === implied);
+      throw new ToolError(
+        'invalid-arguments',
+        `\`page\` is "${given.name}", but \`container\`, \`near\`, \`beside\`, \`inside\` or \`anchor\` is on the page "${other?.name ?? implied}": drop \`page\` or name that page`,
+        { hint: 'a new root goes to the page of what it is placed against' },
+      );
+    }
+    return given.id;
+  }
+
+  /** `{ pageId }` of `add_container`/`add_image`/`add_blank_image` (the reference container's page when `beside`); `{}` for the model's default. */
+  private containerPage(
+    op: { readonly page?: string },
+    p: Project,
+    beside: string | undefined,
+  ): { pageId?: string } {
+    const implied =
+      beside === undefined ? null : (projectIndex(p).pageOf.get(beside) ?? null);
+    return pageArg(this.rootPageId(p, op.page, implied));
+  }
+
+  /** `page` of `create_marking`: only a canvas marking has one; the target of `near`, `inside` or the anchor gives it. */
+  private markingPageId(
+    op: Extract<Operation, { op: 'create_marking' }>,
+    p: Project,
+    containerId: string | null,
+    reference: {
+      readonly inside: string | null;
+      readonly anchor: string | null;
+      readonly nearUsed: boolean;
+    },
+  ): string | undefined {
+    if (containerId !== null) {
+      if (op.page !== undefined) {
+        throw new ToolError(
+          'invalid-arguments',
+          "`page` only applies to a canvas marking: a marking in a container has no page of its own (it is on its container's)",
+        );
+      }
+      return undefined;
+    }
+    // An ignored `near` (non-floating type) stays a warning: it is not resolved here.
+    const near =
+      op.near === undefined || !reference.nearUsed
+        ? null
+        : this.containerOrMarking(op.near).id;
+    const ref = reference.inside ?? near ?? reference.anchor;
+    const implied = ref === null ? null : (projectIndex(p).pageOf.get(ref) ?? null);
+    return this.rootPageId(p, op.page, implied);
   }
 
   private type(text: string, p: Project = this.p): AnnotationTypeRef {
@@ -1308,6 +1411,14 @@ class Batch {
           })`,
         };
       }
+      case 'add_page':
+        return this.addPageOp(op, p);
+      case 'update_page':
+        return this.updatePageOp(op, p);
+      case 'delete_page':
+        return this.deletePageOp(op, p);
+      case 'move_to_page':
+        return this.moveToPageOp(op, p);
       case 'apply_specialization': {
         const loaded = await this.loadSpec(op.file, 'apply', p);
         const { spec } = loaded;
@@ -1572,6 +1683,94 @@ class Batch {
    * `values` on top. The server never arranges: the rectangles are the ones the agent provided.
    */
   /** `update_project`: the project's drawing mode and reading direction. */
+  /** `add_page`: a new page at the end of the tabs; `as` names it in the following operations. */
+  private addPageOp(op: Extract<Operation, { op: 'add_page' }>, p: Project): Step {
+    const id = crypto.randomUUID();
+    const project = createPage(p, { id, name: op.name });
+    return {
+      project,
+      description: `Add the page "${op.name.trim()}"`,
+      created: [{ kind: 'page', id }],
+    };
+  }
+
+  /** `update_page`: rename and/or move in the order of the tabs. */
+  private updatePageOp(op: Extract<Operation, { op: 'update_page' }>, p: Project): Step {
+    const page = this.page(op.page, p);
+    let project = p;
+    const changes: string[] = [];
+    if (op.name !== undefined) {
+      project = renamePage(project, page.id, op.name);
+      changes.push(`name "${op.name.trim()}"`);
+    }
+    if (op.position !== undefined) {
+      project = movePage(project, page.id, op.position);
+      changes.push(`position ${op.position}`);
+    }
+    return {
+      project,
+      description: `Change the page "${page.name}": ${changes.join(', ') || 'nothing'}`,
+    };
+  }
+
+  /**
+   * `delete_page`: `move_to` moves the roots to another page, `discard` deletes the content with the page; a
+   * page with content and neither fails with `page-not-empty` (the counts in `contents`).
+   */
+  private deletePageOp(op: Extract<Operation, { op: 'delete_page' }>, p: Project): Step {
+    if (op.move_to !== undefined && op.discard === true) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`move_to` and `discard` are mutually exclusive: move the content to another page or delete it with the page',
+      );
+    }
+    const page = this.page(op.page, p);
+    if (p.pages.length === 1) throw new ModelError('page-last', page.id);
+    const content = pageContent(p, page.id);
+    if (op.move_to !== undefined) {
+      const target = this.page(op.move_to, p);
+      if (target.id === page.id) {
+        throw new ToolError(
+          'invalid-arguments',
+          '`move_to` is the page being deleted: name another page',
+        );
+      }
+      return {
+        project: deletePage(p, page.id, { moveTo: target.id }),
+        description: `Delete the page "${page.name}"; its ${content.roots} root(s) move to "${target.name}"`,
+      };
+    }
+    const empty = content.containers + content.markings + content.arrows === 0;
+    if (op.discard !== true && !empty) {
+      throw new ModelError('page-not-empty', undefined, { contents: content });
+    }
+    return {
+      project: deletePage(p, page.id, { discard: true }),
+      description: empty
+        ? `Delete the empty page "${page.name}"`
+        : `Delete the page "${page.name}" and discard its content (${content.containers} container(s), ${content.markings} marking(s), ${content.arrows} arrow(s), ${content.annotations} annotation(s))`,
+    };
+  }
+
+  /** `move_to_page`: the model's `moveRootsToPage`; an arrow that would cross comes back in the error's `arrows`. */
+  private moveToPageOp(op: Extract<Operation, { op: 'move_to_page' }>, p: Project): Step {
+    const page = this.page(op.page, p);
+    const index = projectIndex(p);
+    const ids = [...new Set(op.roots.map((text) => this.containerOrMarking(text).id))];
+    for (const id of ids) {
+      if (index.arrows.has(id)) throw new ModelError('not-root', id);
+    }
+    const project = moveRootsToPage(p, ids, page.id);
+    const moving = ids.filter((id) => index.pageOf.get(id) !== page.id);
+    return {
+      project,
+      description:
+        moving.length === 0
+          ? `Move to the page "${page.name}": nothing changes, the ${ids.length === 1 ? 'root is' : 'roots are'} already there`
+          : `Move ${moving.length} ${moving.length === 1 ? 'root' : 'roots'} to the page "${page.name}"`,
+    };
+  }
+
   private updateProjectOp(
     op: Extract<Operation, { op: 'update_project' }>,
     p: Project,
@@ -1664,6 +1863,7 @@ class Batch {
       );
     }
     const beside = this.besideId(op, p);
+    const pageArgs = this.containerPage(op, p, beside);
     const image = await this.image(op, p);
     const id = crypto.randomUUID();
     let project = addContainer(p, {
@@ -1673,6 +1873,7 @@ class Batch {
       height: image.height,
       ...(op.center ? { center: op.center } : {}),
       ...(beside !== undefined ? { beside } : {}),
+      ...pageArgs,
     });
     if (op.name !== undefined) project = renameContainer(project, id, op.name);
     if (op.source !== undefined) {
@@ -1706,6 +1907,7 @@ class Batch {
       );
     }
     const beside = this.besideId(op, p);
+    const pageArgs = this.containerPage(op, p, beside);
     const id = crypto.randomUUID();
     let project = addBackgroundContainer(p, {
       id,
@@ -1715,6 +1917,7 @@ class Batch {
       background,
       ...(op.center ? { center: op.center } : {}),
       ...(beside !== undefined ? { beside } : {}),
+      ...pageArgs,
     });
     if (op.source !== undefined) {
       project = setImageSource(project, id, toSource(op.source));
@@ -2092,6 +2295,10 @@ class Batch {
     }
     const items = [...refs.values()];
     const entering = items.filter((item) => canWrapItems(p, [item]));
+    requireSinglePage(
+      p,
+      entering.map((item) => item.id),
+    );
     if (entering.length === 0) {
       throw new ModelError(
         'invalid-parent',
@@ -2215,9 +2422,16 @@ class Batch {
       );
     }
     const anchor = op.anchor === undefined ? null : this.markingAnchor(op.anchor);
+    const pageId = this.markingPageId(op, p, containerId, {
+      inside: inside?.id ?? null,
+      anchor: anchor?.to ?? null,
+      nearUsed: component?.floating === true,
+    });
     // The anchor is checked before creating (the invariant's errors); after settling, only the space
     // may have changed and then the new marking is created without an anchor, with a warning.
-    if (anchor !== null) checkAnchorTarget(p, markingId, containerId, anchor);
+    if (anchor !== null) {
+      checkAnchorTarget(p, markingId, containerId, anchor, pageId ?? null);
+    }
     if (anchor !== null && (op.near !== undefined || inside !== null)) {
       throw new ToolError(
         'invalid-arguments',
@@ -2289,6 +2503,7 @@ class Batch {
           {
             containerId,
             parentId: null,
+            ...(pageId === undefined ? {} : { pageId }),
             ...typeRef,
             ...initialValuesArg(annotation.values),
           },
@@ -2311,6 +2526,7 @@ class Batch {
             markingId,
             annotationId: newAnnotationId,
             containerId,
+            ...(pageId === undefined ? {} : { pageId }),
             parentId: inside?.id ?? null,
             ...typeRef,
             rect,
@@ -2342,6 +2558,7 @@ class Batch {
       project = createMarking(p, {
         id: markingId,
         containerId,
+        ...(pageId === undefined ? {} : { pageId }),
         rect: op.rect!,
         name: op.name ?? null,
       });

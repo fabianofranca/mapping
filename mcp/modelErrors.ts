@@ -90,7 +90,12 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'arrow-cross-page':
     'an arrow joins two markings of the same page: the ends are on different pages',
   'page-arrow-crossing':
-    'an arrow joins the roots that move to another page and others that stay: the arrows are in `data.arrows`',
+    'an arrow joins the roots that move to another page and others that stay: the arrows are in `arrows`',
+  'page-required':
+    'the project has more than one page: say in which one the new root goes',
+  'page-mixed': 'the items are on different pages: a wrap takes items of a single page',
+  'page-not-empty':
+    'the page has content: say where it goes (`move_to`) or discard it (`discard: true`)',
 };
 
 /** Hint about the next step for the model errors that have one. */
@@ -109,6 +114,14 @@ export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>
     'the anchor and the marking must be in the same space (the same container, or both on the canvas): move one of them first, with `update_marking` and `container`',
   'anchor-cycle':
     'the anchor already depends on this marking (directly or indirectly): anchor to another marking or remove the anchor on the other side with `anchor: null`',
+  'page-required':
+    'pass `page` (id or name; see `pages` in get_project), or a parameter that already says the page: `container`, `near`, `beside` or `inside`',
+  'page-mixed':
+    'wrap the items of one page at a time (see `page` in list_markings), or move them to the same page first with `move_to_page`',
+  'page-not-empty':
+    'pass `move_to` (the page that receives the content) or `discard: true` (delete the content with the page); `contents` says what is on the page',
+  'page-arrow-crossing':
+    'an arrow cannot join two pages: move the other end with the group (add its root to `roots`), or delete the arrow, then call `move_to_page` again',
   'container-density':
     'from 0.5 to 8; 3 for a 1080 px capture of a 360 dp phone (image pixels per component unit); `null` goes back to 1',
   'image-overlap':
@@ -155,18 +168,82 @@ function specificDetail(error: ModelError, refs?: Refs): string | undefined {
   }
 }
 
+/** One arrow that stops a `move_to_page`: its reference and the references of its ends. */
+export interface CrossingArrowView {
+  readonly arrow: string;
+  readonly from: string;
+  readonly to: string;
+}
+
+/** The arrows of a `page-arrow-crossing` (ids in the model's `data`), as references when there are `refs`. */
+function crossingArrows(
+  data: ModelErrorData | undefined,
+  refs?: Refs,
+): CrossingArrowView[] | undefined {
+  const arrows = data?.arrows;
+  if (!Array.isArray(arrows)) return undefined;
+  const ref = (id: string) => (refs ? refs.ref('m', id) : id);
+  return arrows.flatMap((a: unknown) => {
+    if (typeof a !== 'object' || a === null) return [];
+    const { id, from, to } = a as Record<string, unknown>;
+    if (typeof id !== 'string' || typeof from !== 'string' || typeof to !== 'string') {
+      return [];
+    }
+    return [{ arrow: ref(id), from: ref(from), to: ref(to) }];
+  });
+}
+
+/** What is on the page of a `page-not-empty` (counts of `pageContent`), as the error carries it. */
+function pageContents(
+  data: ModelErrorData | undefined,
+): Record<string, number> | undefined {
+  const contents = data?.contents;
+  if (typeof contents !== 'object' || contents === null) return undefined;
+  return Object.fromEntries(
+    Object.entries(contents).filter(
+      (entry): entry is [string, number] => typeof entry[1] === 'number',
+    ),
+  );
+}
+
+/** The structured facts that some model errors carry besides the text (`arrows`, `contents`). */
+function structuredFacts(
+  error: ModelError,
+  refs?: Refs,
+): { arrows?: CrossingArrowView[]; contents?: Record<string, number> } {
+  if (error.code === 'page-arrow-crossing') {
+    const arrows = crossingArrows(error.data, refs);
+    return arrows ? { arrows } : {};
+  }
+  if (error.code === 'page-not-empty') {
+    const contents = pageContents(error.data);
+    return contents ? { contents } : {};
+  }
+  return {};
+}
+
 /**
  * Detail and hint of a model error. The `data` becomes text here (the model only keeps facts); the id
  * of the other container becomes a reference when there are `refs`. Without `data`, the detail is the message text.
+ * `page-arrow-crossing` adds `arrows` (references) and `page-not-empty` adds `contents` (counts).
  */
 export function describeModelError(
   error: ModelError,
   refs?: Refs,
-): { detail?: string; hint?: string } {
+): {
+  detail?: string;
+  hint?: string;
+  arrows?: CrossingArrowView[];
+  contents?: Record<string, number>;
+} {
   const hint = MODEL_ERROR_HINTS[error.code];
   let detail = specificDetail(error, refs);
   detail ??= messageDetail(error);
-  return { ...(detail ? { detail } : {}), ...(hint ? { hint } : {}) };
+  return {
+    ...(detail ? { detail } : {}),
+    ...(hint ? { hint } : {}),
+    ...structuredFacts(error, refs),
+  };
 }
 
 /** Model rule error in a read tool → `ToolError` with the explanation and the detail. */

@@ -34,6 +34,7 @@ import {
   type Layer,
   type Marking,
   type Project,
+  type Page,
   type ProjectContainer,
   type ResolvedRef,
 } from '../src/model';
@@ -50,6 +51,7 @@ import {
   perspectiveSummaries,
   rootInfo,
 } from './perspectives';
+import { pageSummaries, pageView, findPage, hasSeveralPages } from './pages';
 import { resolveProjectFile, type Roots } from './paths';
 import type { LoadedProject } from './projects';
 
@@ -641,10 +643,30 @@ export function projectSummary(loaded: LoadedProject): Json {
   };
 }
 
+/**
+ * The containers `get_project` lists: all of them in a single-page project, those of `page` when it is
+ * given, and none (with a `hint`) when there are several pages and no `page`.
+ */
+function listedContainers(
+  p: Project,
+  pageQuery: string | undefined,
+): { containers: readonly ProjectContainer[]; page?: Page; hint?: string } {
+  if (pageQuery !== undefined) {
+    const page = findPage(p, pageQuery);
+    return { containers: p.containers.filter((c) => c.pageId === page.id), page };
+  }
+  if (!hasSeveralPages(p)) return { containers: p.containers };
+  return {
+    containers: [],
+    hint: `the project has ${p.pages.length} pages: pass \`page\` (id or name; see \`pages\`) to list the containers of one`,
+  };
+}
+
 /** Project summary (`get_project`). */
-export function projectDetail(refs: Refs): Json {
+export function projectDetail(refs: Refs, pageQuery?: string): Json {
   const loaded = refs.loaded;
   const p = refs.project;
+  const listed = listedContainers(p, pageQuery);
   const issues = projectIssuesWithDrawings(refs.loaded);
 
   const byCode: Record<string, number> = {};
@@ -700,7 +722,10 @@ export function projectDetail(refs: Refs): Json {
     // The project's reading direction: `ltr` when none is saved (it is what applies).
     direction: p.direction ?? 'ltr',
     ...(loaded.migratedFrom !== null ? { migratedFrom: loaded.migratedFrom } : {}),
-    containers: p.containers.map((image) => ({
+    pages: pageSummaries(p),
+    ...(listed.page ? { page: pageView(listed.page) } : {}),
+    ...(listed.hint ? { hint: listed.hint } : {}),
+    containers: listed.containers.map((image) => ({
       ...containerSummary(refs, image),
       markings: markingsByContainer.get(image.id) ?? 0,
     })),

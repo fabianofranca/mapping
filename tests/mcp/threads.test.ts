@@ -395,6 +395,7 @@ describe('open_thread', () => {
       containerId: null,
       x: -10,
       y: 5,
+      pageId: 'PG1',
     });
   });
 

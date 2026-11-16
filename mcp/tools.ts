@@ -298,14 +298,23 @@ export function registerTools(
     'get_project',
     {
       description:
-        "Project summary: containers (with `file`, `background` and `parent`), layers, specializations (with the state of the copy), code platforms (`platforms`, each with the `repos` the specializations declare and the `localPath` of the local clone; with `codeHint`: the `code` of the types is the instantiation code, not the generated code), the local clone per platform (`platformRepos`), the specializations' document repositories (`docRepos`: `id`, the `repos` each specialization declares and the `localPath` of the project's clone, `null` without a clone), the project's drawing mode (`drawingMode`, `null` without a mode; each container carries its own pinned `drawingMode` and the `effectiveDrawingMode`), the project's reading direction (`direction`: `ltr` or `rtl`, `ltr` when none is saved; each container carries its own pinned `direction`, `null` = follows the project, and the `effectiveDirection`), counts (`counts`: containers, markings, `canvasMarkings`, `floatingMarkings`, `arrows`, annotations, layers) and pending items (incomplete annotations).",
-      inputSchema: { project: projectArg },
+        "Project summary: containers (with `file`, `background` and `parent`), layers, specializations (with the state of the copy), code platforms (`platforms`, each with the `repos` the specializations declare and the `localPath` of the local clone; with `codeHint`: the `code` of the types is the instantiation code, not the generated code), the local clone per platform (`platformRepos`), the specializations' document repositories (`docRepos`: `id`, the `repos` each specialization declares and the `localPath` of the project's clone, `null` without a clone), the project's drawing mode (`drawingMode`, `null` without a mode; each container carries its own pinned `drawingMode` and the `effectiveDrawingMode`), the project's reading direction (`direction`: `ltr` or `rtl`, `ltr` when none is saved; each container carries its own pinned `direction`, `null` = follows the project, and the `effectiveDirection`), counts (`counts`: containers, markings, `canvasMarkings`, `floatingMarkings`, `arrows`, annotations, layers), the pages (`pages`: `id`, `name` and how many `roots`, `containers`, `markings` and `arrows` each holds) and pending items (incomplete annotations). In a project with several pages `containers` comes empty, with a `hint`, unless you pass `page` (id or name, see `pages`): then only the containers of that page are listed and `page` echoes it. A project with one page lists all its containers.",
+      inputSchema: {
+        project: projectArg,
+        page: z
+          .string()
+          .min(1)
+          .optional()
+          .describe(
+            'Only the containers of this page (id or name; see `pages`). Needed to list containers when the project has several pages.',
+          ),
+      },
       annotations: READ_ONLY,
     },
-    ({ project }) =>
+    ({ project, page }) =>
       respond(async () => {
         const loaded = await loadProject(roots, await findProject(roots, project));
-        return projectDetail(new Refs(loaded));
+        return projectDetail(new Refs(loaded), page);
       }),
   );
 
@@ -313,18 +322,25 @@ export function registerTools(
     'get_perspective',
     {
       description:
-        'A perspective of the project (a crop per audience: which roots appear, where they sit on the canvas and which layers are hidden): `roots` (canvas root = container without a parent, canvas marking or floating one, with `ref`, `kind`, `name` and the top-left `x`/`y` position, in canvas units) and `hiddenLayers`. `id` accepts the id (see `perspectives` in get_project) or the name. Read-only: the server does not create or change perspectives (always propose in the Main one). The Main perspective (the whole project) is not a saved perspective, and the "Only me" ones stay in the browser.',
+        'A perspective of the project (a crop per audience: which roots appear, where they sit on the canvas and which layers are hidden): `roots` (canvas root = container without a parent, canvas marking or floating one, with `ref`, `kind`, `name` and the top-left `x`/`y` position, in canvas units) and `hiddenLayers`. `id` accepts the id (see `perspectives` in get_project) or the name. Read-only: the server does not create or change perspectives (always propose in the Main one). The Main perspective (the whole project) is not a saved perspective, and the "Only me" ones stay in the browser. Every root carries the `page` (`id`, `name`) it is on; with the `page` argument (id or name) only the roots of that page are listed and `page` is echoed at the top.',
       inputSchema: {
         project: projectArg,
         id: z.string().min(1).describe('Id or name of the perspective; see get_project.'),
+        page: z
+          .string()
+          .min(1)
+          .optional()
+          .describe(
+            'Only the roots on this page (id or name; see `pages` in get_project).',
+          ),
       },
       annotations: READ_ONLY,
     },
-    ({ project, id }) =>
+    ({ project, id, page }) =>
       respond(async () => {
         const loaded = await loadProject(roots, await findProject(roots, project));
         const refs = new Refs(loaded);
-        return perspectiveDetail(refs, findPerspective(refs.project, id));
+        return perspectiveDetail(refs, findPerspective(refs.project, id), page);
       }),
   );
 
@@ -332,9 +348,16 @@ export function registerTools(
     'list_markings',
     {
       description:
-        "Lists markings in compact rows (reference, path, `space` (`container` or `canvas`), `floating`, rectangle in container pixels (on the canvas, in canvas units), lock, annotations, `effectiveDrawingMode`: the drawing mode that applies in the marking's space). Without `container` or `canvas`, lists the markings of the containers. The filters combine; those for layer, type and incomplete apply to the same own annotation of the marking (inherited ones do not count).",
+        "Lists markings in compact rows (reference, path, `space` (`container` or `canvas`), `floating`, rectangle in container pixels (on the canvas, in canvas units), lock, annotations, `effectiveDrawingMode`: the drawing mode that applies in the marking's space). Without `container` or `canvas`, lists the markings of the containers. The filters combine; those for layer, type and incomplete apply to the same own annotation of the marking (inherited ones do not count). `page` (id or name; see `pages` in get_project) keeps only the markings on that page: the canvas ones of the page and those of its containers.",
       inputSchema: {
         project: projectArg,
+        page: z
+          .string()
+          .min(1)
+          .optional()
+          .describe(
+            'Only the markings on this page (id or name; see `pages` in get_project).',
+          ),
         container: z
           .string()
           .optional()

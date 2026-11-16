@@ -58,6 +58,7 @@ export const MCP_ERROR_CODES = [
   'nothing-to-change',
   'outside-roots',
   'package-too-large',
+  'page-not-found',
   'path-not-found',
   'platform-not-declared',
   'project-mismatch',

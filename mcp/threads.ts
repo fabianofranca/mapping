@@ -9,6 +9,7 @@ import {
   filterThreads,
   formatAnyRef,
   extractCitations,
+  fail,
   lastMessage,
   layerShortCode,
   matchLayerCode,
@@ -35,6 +36,7 @@ import {
   type ThreadMessage,
 } from '../src/model';
 import { ToolError } from './errors';
+import { findPage, pageOfItemView, pageView } from './pages';
 import { INVALID_REF_HINT, Refs, candidateLocations, type ResolvedItem } from './items';
 import type { Roots } from './paths';
 import {
@@ -80,7 +82,7 @@ const THREAD_REF_ACCEPTED = [
 const ANCHOR_ACCEPTED = [
   'mapping://project/m/3f2a9c1e (marking or arrow), …/i/… (container), …/a/… (annotation), …/l/… (layer)',
   'mapping://project/a/3f2a9c1e/f/<field> (field), …/a/3f2a9c1e/e/<code> (pair), …/a/3f2a9c1e/f/<field>/r/<code> (row)',
-  '{ point: { container: "mapping://project/i/3f2a9c1e" | null, x, y } } (loose point, in container pixels; null = canvas)',
+  '{ point: { container: "mapping://project/i/3f2a9c1e" | null, x, y, page? } } (loose point, in container pixels; null = canvas, where `page` (id or name) is needed when the project has several pages)',
 ];
 
 // ---------------------------------------------------------------------------
@@ -296,10 +298,50 @@ function describeTarget(env: Env, target: CitationTarget): Json {
   };
 }
 
+/** The page of a canvas point: its own or, from a version 1 thread, the first one. */
+function pointPage(
+  env: Env,
+  anchor: Extract<ThreadAnchor, { kind: 'point' }>,
+): Json | null {
+  if (anchor.containerId !== null) return null;
+  const pageId = anchor.pageId ?? env.project.pages[0]?.id;
+  const page = env.project.pages.find((g) => g.id === pageId);
+  return page ? pageView(page) : null;
+}
+
 function pointOf(env: Env, anchor: Extract<ThreadAnchor, { kind: 'point' }>): Json {
   const container =
     anchor.containerId === null ? null : env.refs.ref('i', anchor.containerId);
-  return { container, x: anchor.x, y: anchor.y };
+  const page = pointPage(env, anchor);
+  return { container, x: anchor.x, y: anchor.y, ...(page ? { page } : {}) };
+}
+
+/** The page of the item an anchor points to (`null` for a layer, which has none). */
+function anchorPage(env: Env, anchor: ThreadAnchor): Json | null {
+  switch (anchor.kind) {
+    case 'point':
+      return (
+        pointPage(env, anchor) ??
+        (anchor.containerId === null
+          ? null
+          : pageOfItemView(env.project, anchor.containerId))
+      );
+    case 'layer':
+      return null;
+    case 'marking':
+    case 'container':
+    case 'arrow':
+      return pageOfItemView(env.project, anchor.id);
+    case 'annotation':
+      return annotationPage(env, anchor.id);
+    default:
+      return annotationPage(env, anchor.annotationId);
+  }
+}
+
+function annotationPage(env: Env, annotationId: string): Json | null {
+  const owner = annotationOf(env, annotationId);
+  return owner === undefined ? null : pageOfItemView(env.project, owner.markingId);
 }
 
 /** The anchor of a conversation: the resolved target, the loose point or, if orphaned, what is saved. */
@@ -314,6 +356,8 @@ function anchorView(env: Env, anchor: ThreadAnchor): Json {
       anchor,
     };
   }
+  const page = anchorPage(env, anchor);
+  const pageField = page ? { page } : {};
   if (anchor.kind === 'point') {
     const where =
       anchor.containerId === null ? 'Canvas' : env.refs.imageLabel(anchor.containerId);
@@ -322,10 +366,11 @@ function anchorView(env: Env, anchor: ThreadAnchor): Json {
       kind: 'point',
       point: pointOf(env, anchor),
       path: `${where} › point (${anchor.x}, ${anchor.y})`,
+      ...pageField,
     };
   }
   const described = describeTarget(env, anchor as CitationTarget);
-  return { orphan: false, ...described, name: described.label };
+  return { orphan: false, ...described, name: described.label, ...pageField };
 }
 
 /** What the list shows in `anchor`: the reference, the point, or (if orphaned) what is saved. */
@@ -380,6 +425,7 @@ function summaryRow(env: Env, thread: Thread): Json {
     kind: view.kind,
     path: view.path,
     orphan: view.orphan,
+    ...(view.page ? { page: view.page } : {}),
     status: thread.resolved === null ? 'open' : 'resolved',
     awaiting: awaiting(thread),
     messages: thread.messages.length,
@@ -559,18 +605,69 @@ function pointContainer(env: Env, raw: unknown, given: unknown): string | null {
   return (resolveRefAnchor(env, container as string, given) as { id: string }).id;
 }
 
-function resolvePointAnchor(env: Env, raw: unknown, given: unknown): ThreadAnchor {
+/**
+ * The page of a canvas point: the one given (id or name), the only one of the project when it has
+ * one, else `page-required` when `needsPage` (opening) or none (a filter, which then matches any page).
+ * A point inside a container has no page: passing one is an invalid anchor.
+ */
+function pointPageId(
+  env: Env,
+  raw: unknown,
+  inContainer: boolean,
+  options: AnchorOptions,
+  given: unknown,
+): string | undefined {
+  const { page } = raw as Record<string, unknown>;
+  if (page === undefined || page === null) {
+    if (inContainer || !options.needsPage) return undefined;
+    if (env.project.pages.length > 1) fail('page-required');
+    return env.project.pages[0]?.id;
+  }
+  if (typeof page !== 'string' || inContainer) {
+    throw invalidAnchor(
+      inContainer
+        ? 'a point inside a container has no `page`: the container decides it'
+        : '`page` must be the id or the name of a page',
+      given,
+    );
+  }
+  return findPage(env.project, page).id;
+}
+
+function resolvePointAnchor(
+  env: Env,
+  raw: unknown,
+  given: unknown,
+  options: AnchorOptions,
+): ThreadAnchor {
   const { x, y } = pointCoordinates(raw, given);
-  return { kind: 'point', containerId: pointContainer(env, raw, given), x, y };
+  const containerId = pointContainer(env, raw, given);
+  const pageId = pointPageId(env, raw, containerId !== null, options, given);
+  return {
+    kind: 'point',
+    containerId,
+    x,
+    y,
+    ...(pageId === undefined ? {} : { pageId }),
+  };
+}
+
+interface AnchorOptions {
+  /** A canvas point needs its page (opening a conversation); a filter may leave it out. */
+  readonly needsPage: boolean;
 }
 
 /** The anchor of the arguments of `open_thread` and of the `anchor` filter of `list_threads`. */
-function resolveAnchorArg(env: Env, anchor: AnchorArg): ThreadAnchor {
+function resolveAnchorArg(
+  env: Env,
+  anchor: AnchorArg,
+  options: AnchorOptions,
+): ThreadAnchor {
   if (typeof anchor === 'string') return resolveRefAnchor(env, anchor, anchor);
   if (typeof anchor === 'object' && anchor !== null && 'point' in anchor) {
-    return resolvePointAnchor(env, anchor.point, anchor);
+    return resolvePointAnchor(env, anchor.point, anchor, options);
   }
-  throw invalidAnchor('use a reference or { point: { container, x, y } }', anchor);
+  throw invalidAnchor('use a reference or { point: { container, x, y, page? } }', anchor);
 }
 
 // ---------------------------------------------------------------------------
@@ -607,20 +704,21 @@ function effectiveFilters(args: ListThreadsArgs): {
 }
 
 /** The conversation is anchored at the target or at a part of it. */
-function samePoint(a: ThreadAnchor, b: ThreadAnchor): boolean {
+function samePoint(env: Env, wanted: ThreadAnchor, own: ThreadAnchor): boolean {
+  if (wanted.kind !== 'point' || own.kind !== 'point') return false;
+  // A version 1 point is on the first page; a wanted point without a page matches any page.
+  const ownPage = own.pageId ?? env.project.pages[0]?.id;
   return (
-    a.kind === 'point' &&
-    b.kind === 'point' &&
-    a.containerId === b.containerId &&
-    a.x === b.x &&
-    a.y === b.y &&
-    a.pageId === b.pageId
+    wanted.containerId === own.containerId &&
+    wanted.x === own.x &&
+    wanted.y === own.y &&
+    (wanted.pageId === undefined || wanted.pageId === ownPage)
   );
 }
 
 function anchoredAt(env: Env, thread: Thread, anchor: ThreadAnchor): boolean {
   const own = thread.anchor;
-  if (anchor.kind === 'point' || own.kind === 'point') return samePoint(anchor, own);
+  if (anchor.kind === 'point' || own.kind === 'point') return samePoint(env, anchor, own);
   if (
     anchor.kind === 'marking' ||
     anchor.kind === 'container' ||
@@ -648,7 +746,7 @@ function selectThreads(env: Env, args: ListThreadsArgs): readonly Thread[] {
   let threads = filterThreads(env.threads, env.project, filter);
   if (wanted !== 'any') threads = threads.filter((t) => awaiting(t) === wanted);
   if (args.anchor !== undefined) {
-    const anchor = resolveAnchorArg(env, args.anchor);
+    const anchor = resolveAnchorArg(env, args.anchor, { needsPage: false });
     threads = threads.filter((t) => anchoredAt(env, t, anchor));
   }
   return threads;
@@ -782,7 +880,7 @@ export class Threads {
     const text = checkMessageText(args.text);
     const location = await findProject(this.roots, args.project);
     const env = await buildEnv(this.roots, location);
-    const anchor = resolveAnchorArg(env, args.anchor);
+    const anchor = resolveAnchorArg(env, args.anchor, { needsPage: true });
     const thread = translate(() =>
       openThread({
         id: randomUUID(),

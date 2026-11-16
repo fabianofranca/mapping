@@ -50,6 +50,7 @@ interface PerspectiveData {
     name: string | null;
     x: number;
     y: number;
+    page: { id: string; name: string };
   }[];
   missing: string[];
 }
@@ -191,6 +192,7 @@ describe('get_perspective', () => {
         name: null,
         x: 1200,
         y: 40,
+        page: { id: expect.any(String), name: 'Page 1' },
       },
       {
         ref: `mapping://persp/m/${codeOf(id('F1'))}`,
@@ -198,6 +200,7 @@ describe('get_perspective', () => {
         name: 'Table',
         x: 1480,
         y: 260,
+        page: { id: expect.any(String), name: 'Page 1' },
       },
     ]);
   });
