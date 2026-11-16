@@ -3,6 +3,7 @@ import { enUS } from '../../src/i18n/en-US';
 import { ptBR } from '../../src/i18n/pt-BR';
 import { catalogEnUS, catalogPtBR } from '../../src/i18n/catalog';
 import { modelMessagesEnUS, modelMessagesPtBR } from '../../src/i18n/modelMessages';
+import { pagesEnUS, pagesPtBR } from '../../src/i18n/pages';
 import { perspectivesEnUS, perspectivesPtBR } from '../../src/i18n/perspectives';
 import { reviewEnUS, reviewPtBR } from '../../src/i18n/review';
 import type { AppErrorCode } from '../../src/app/appResult';
@@ -40,6 +41,7 @@ const MODULES: readonly (readonly [
   ['catalog', catalogEnUS, catalogPtBR],
   ['review', reviewEnUS, reviewPtBR],
   ['perspectives', perspectivesEnUS, perspectivesPtBR],
+  ['pages', pagesEnUS, pagesPtBR],
   ['modelMessages', modelMessagesEnUS, modelMessagesPtBR],
 ];
 

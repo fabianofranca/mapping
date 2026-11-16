@@ -69,6 +69,28 @@ describe('PerspectivePicker', () => {
     expect(session.perspective.id.value).toBeNull();
   });
 
+  it('shows, next to each perspective, how many items it has on the open page', async () => {
+    const { session, harness } = await setup();
+    const user = userEvent.setup();
+    await openList(user);
+    let options = screen.getAllByRole('option');
+    expect(
+      within(options[0] as HTMLElement).getByText('1 item on this page'),
+    ).toBeTruthy();
+    expect(
+      within(options[1] as HTMLElement).getByText('nothing on this page'),
+    ).toBeTruthy();
+    await user.keyboard('{Escape}');
+    const added = harness.actions.addPage('Second');
+    if (!added.ok) throw new Error('page not created');
+    session.page.open(added.value);
+    await openList(user);
+    options = screen.getAllByRole('option');
+    expect(
+      within(options[0] as HTMLElement).getByText('nothing on this page'),
+    ).toBeTruthy();
+  });
+
   it('choosing a row opens the perspective and closes the list', async () => {
     const { session, shared } = await setup();
     const user = userEvent.setup();

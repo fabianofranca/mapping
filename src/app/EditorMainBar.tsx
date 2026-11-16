@@ -3,6 +3,7 @@ import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
 import { Icon } from '../ui/icons';
 import { MenuPopover } from '../ui/MenuPopover';
+import { PageMenu } from '../ui/PageMenu';
 import { PerspectivePicker } from '../ui/PerspectivePicker';
 import { PreviewBadge } from '../ui/PreviewBanner';
 import { Button, IconButton } from '../ui/controls';
@@ -56,6 +57,7 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
         </Button>
       </MenuPopover>
       <PerspectivePicker dialogs={dialogs} />
+      <PageMenu dialogs={dialogs} />
 
       {review.proposalId.value !== null && (
         <Flag icon="lock" title={t('review.readOnlyTip')}>

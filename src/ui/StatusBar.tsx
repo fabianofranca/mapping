@@ -193,6 +193,22 @@ const arrivalsTitle = (count: number) =>
     ? t('perspective.status.arrivalsOne')
     : t('perspective.status.arrivalsMany', { count });
 
+/** Open page (stage #883): "Page <name>", before the perspective. */
+function PageItem() {
+  const { session, store } = useEditor();
+  const id = session.page.id.value;
+  const name = store.committed.value?.pages.find((p) => p.id === id)?.name ?? '';
+  return (
+    <Item
+      class="status-item status-item-s4"
+      title={t('page.status.name', { name })}
+      icon="file"
+    >
+      {t('page.status.name', { name })}
+    </Item>
+  );
+}
+
 /**
  * Open perspective (stage #659): its name (or the Main one) and, on the Main one, how many items
  * came from other perspectives.
@@ -255,6 +271,7 @@ export function StatusBar() {
           {unexported}
         </Item>
       )}
+      <PageItem />
       <PerspectiveItem />
       <ProposalsItem />
       <NoticesItem />

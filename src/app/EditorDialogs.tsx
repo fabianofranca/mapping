@@ -8,6 +8,9 @@ import {
 } from '../model';
 import { ContainerDialog } from '../ui/ContainerDialog';
 import { DeletePerspectiveDialog } from '../ui/DeletePerspectiveDialog';
+import { DeletePageDialog } from '../ui/DeletePageDialog';
+import { ManagePagesDialog } from '../ui/ManagePagesDialog';
+import { MovePageRefusedDialog } from '../ui/MovePageRefusedDialog';
 import { ManagePerspectivesDialog } from '../ui/ManagePerspectivesDialog';
 import { NewPerspectiveDialog } from '../ui/NewPerspectiveDialog';
 import { Dialog } from '../ui/Dialog';
@@ -283,6 +286,38 @@ function renderDialog(
               focus: next === null ? { kind: 'close' } : { kind: 'delete', id: next },
             })
           }
+        />
+      );
+    case 'managePages':
+      return (
+        <ManagePagesDialog
+          onClose={close}
+          focus={dialog.focus}
+          onDelete={(id) => dialogs.show({ kind: 'deletePage', id })}
+        />
+      );
+    case 'deletePage':
+      // Opened from Manage (the only origin): on closing, it goes back to it, like the perspectives.
+      return (
+        <DeletePageDialog
+          id={dialog.id}
+          onClose={() =>
+            dialogs.show({
+              kind: 'managePages',
+              focus: { kind: 'delete', id: dialog.id },
+            })
+          }
+          onDeleted={() =>
+            dialogs.show({ kind: 'managePages', focus: { kind: 'close' } })
+          }
+        />
+      );
+    case 'movePageRefused':
+      return (
+        <MovePageRefusedDialog
+          arrows={dialog.arrows}
+          onGoToArrow={dialog.onGoToArrow}
+          onClose={close}
         />
       );
     case 'confirmClose':
