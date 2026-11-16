@@ -30,6 +30,7 @@ import { RefPicker, type RefFieldDef } from './RefPicker';
 import { TableField } from './TableField';
 import { issueReason, labelTexts, refButtonName } from './typedText';
 import { useIssuesOf } from './useIssues';
+import { useFollowRef } from './useFollowRef';
 
 export type { FieldContext } from './FieldEditors';
 
@@ -162,6 +163,7 @@ function RefField({
 }) {
   const { actions } = useEditor();
   const { project, annotation, readOnly } = ctx;
+  const followRef = useFollowRef(ctx.onGoToAnnotation);
   const [picking, setPicking] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const ref = parseRefValue(annotation.values?.[field.key]);
@@ -181,7 +183,7 @@ function RefField({
   const tip = hasValue && !broken ? `→ ${text}` : text;
 
   const goTo = () => {
-    if (target) ctx.onGoToAnnotation(target.annotation);
+    if (target) followRef(target.annotation);
   };
   const open = () => {
     if (!readOnly) setPicking(true);
@@ -259,7 +261,7 @@ function RefField({
           onPick={(picked, andGo) => {
             setPicking(false);
             actions.setFieldValue(annotation.id, field.key, { ...picked.ref });
-            if (andGo) ctx.onGoToAnnotation(picked.annotation);
+            if (andGo) followRef(picked.annotation);
           }}
         />
       )}

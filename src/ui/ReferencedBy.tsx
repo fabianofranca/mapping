@@ -2,6 +2,7 @@ import { t } from '../i18n';
 import { getBacklinks, projectIndex, type Annotation, type Project } from '../model';
 import type { AnnotationLocation } from '../store/ui';
 import { markingLabel } from './labels';
+import { useFollowRef } from './useFollowRef';
 import { annotationDisplayName } from './typedText';
 
 // "Referenced by" row of the typed annotation's card (stage #679, CF3): the annotations that
@@ -29,6 +30,7 @@ export function ReferencedByRow({
   annotation,
   onGoToAnnotation,
 }: ReferencedByProps) {
+  const followRef = useFollowRef(onGoToAnnotation);
   if (!annotation.type) return null;
   const sources = wholeAnnotationSources(project, annotation.id);
   if (sources.length === 0) return null;
@@ -51,7 +53,7 @@ export function ReferencedByRow({
             type="button"
             class="link-button referenced-item"
             title={t('ref.backlinkGo', { source: name })}
-            onClick={() => onGoToAnnotation(source)}
+            onClick={() => followRef(source)}
           >
             {t('annotation.referencedByItem', {
               source: name,

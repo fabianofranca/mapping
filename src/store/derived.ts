@@ -279,7 +279,7 @@ function hiddenVisibility(p: Project): ReadonlyMap<string, MarkingVisibility> {
 }
 
 /** All the whole markings, once per project version (view mode). */
-const fullVisibility = memoByProject(
+export const fullVisibility = memoByProject(
   (p: Project): ReadonlyMap<string, MarkingVisibility> =>
     new Map(p.markings.map((m) => [m.id, 'full' as const])),
 );
@@ -301,7 +301,7 @@ function layersWithDrawing(
  * without a file always; that of a photo only with the option on. `hiddenLayers`: layers with drawings
  * unchecked in view mode.
  */
-function drawnIds(
+export function drawnIds(
   all: ComponentDrawings,
   containers: ReadonlyMap<string, ProjectContainer>,
   onPhotos: boolean,

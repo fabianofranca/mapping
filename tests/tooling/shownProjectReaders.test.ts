@@ -85,6 +85,10 @@ const ALLOWLIST = [
   'src/ui/PageMenu.tsx',
   'src/ui/StatusBar.tsx',
   'src/ui/pageNavigation.ts',
+  // Following a reference to another page (stage #883, PG3): the page of the target comes from the real project, not the one cut by the open page.
+  'src/ui/useFollowRef.ts',
+  // The reference preview shows the real project (PG3): the item lives on a page the open one cuts away.
+  'src/ui/RefPreviewWindow.tsx',
   'src/ui/review/ReviewPanel.tsx',
   // `CompareDialog`: the "before" image is the committed one by definition.
   'src/ui/review/ReviewCanvasControls.tsx',

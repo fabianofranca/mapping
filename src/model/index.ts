@@ -10,6 +10,7 @@ export * from './projectIndex';
 export * from './perspective';
 export * from './spaces';
 export * from './pages';
+export * from './previewProject';
 export * from './perspectiveReconcile';
 export * from './perspectivePlace';
 export * from './perspectiveOps';
