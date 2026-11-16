@@ -62,6 +62,7 @@ describe('serialization', () => {
       'specializations',
       'platformRepos',
       'docRepos',
+      'pages',
       'layers',
       'containers',
       'markings',
@@ -79,6 +80,7 @@ describe('serialization', () => {
       markings: p.markings,
       containers: p.containers,
       layers: p.layers,
+      pages: p.pages,
       platformRepos: p.platformRepos,
       docRepos: p.docRepos,
       specializations: p.specializations,
@@ -177,7 +179,7 @@ describe('product name (app)', () => {
 describe('migrations', () => {
   it('the current registry has no pending migrations', () => {
     expect(SCHEMA_VERSION).toBe(21);
-    expect(migrate({ a: 1 }, 20)).toEqual({ ok: true, data: { a: 1 } });
+    expect(migrate({ a: 1 }, 21)).toEqual({ ok: true, data: { a: 1 } });
   });
 
   it('applies the registered migrations in sequence', () => {

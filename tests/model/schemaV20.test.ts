@@ -31,8 +31,8 @@ function open(raw: Raw): Project {
 }
 
 describe('schema v20', () => {
-  it('the current version is 20 and the registry has the v19 → v20 migration', () => {
-    expect(SCHEMA_VERSION).toBe(20);
+  it('the current version is at least 20 and the registry has the v19 → v20 migration', () => {
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(20);
     expect(migrations.get(19)).toBe(migrateFrom19To20);
   });
 
@@ -45,10 +45,10 @@ describe('schema v20', () => {
     const result = deserialize(JSON.stringify(v19Raw()), migrations);
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(19);
-    expect(result.project.schemaVersion).toBe(20);
+    expect(result.project.schemaVersion).toBe(SCHEMA_VERSION);
     expect(result.project.direction).toBeUndefined();
     const saved = JSON.parse(serialize(result.project)) as Raw;
-    expect(saved.schemaVersion).toBe(20);
+    expect(saved.schemaVersion).toBe(SCHEMA_VERSION);
     expect('direction' in saved).toBe(false);
     expect((saved.containers as Raw[]).every((c) => !('direction' in c))).toBe(true);
   });
@@ -82,7 +82,7 @@ describe('schema v20', () => {
     const saved = JSON.parse(serialize(p)) as Raw;
     const keys = Object.keys(saved);
     expect(keys.indexOf('direction')).toBe(keys.indexOf('drawingMode') + 1);
-    expect(keys.indexOf('layers')).toBe(keys.indexOf('direction') + 1);
+    expect(keys.indexOf('pages')).toBe(keys.indexOf('direction') + 1);
     const containerKeys = Object.keys((saved.containers as Raw[])[0]!);
     const at = containerKeys.indexOf('drawingMode');
     expect(containerKeys.slice(at)).toEqual(['drawingMode', 'direction', 'density']);

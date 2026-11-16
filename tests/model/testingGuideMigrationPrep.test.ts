@@ -12,9 +12,14 @@ import { sampleProject } from './fixtures';
  */
 function v15Text(): string {
   const data = JSON.parse(serialize(sampleProject())) as {
-    markings: { id: string; containerId: string | null }[];
+    pages: { id: string }[];
+    markings: { id: string; containerId: string | null; pageId: string | null }[];
   };
-  for (const m of data.markings) if (m.id === 'M4') m.containerId = null;
+  for (const m of data.markings) {
+    if (m.id !== 'M4') continue;
+    m.containerId = null;
+    m.pageId = data.pages[0]?.id ?? null;
+  }
   return JSON.stringify(data, null, 2);
 }
 

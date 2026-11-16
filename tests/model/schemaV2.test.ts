@@ -54,6 +54,7 @@ describe('migration v1 → v2', () => {
           'locked',
           'floating',
           'source',
+          'pageId',
         ]) as Record<string, unknown>;
         return { ...rest, imageId: containerId };
       }),
@@ -63,7 +64,15 @@ describe('migration v1 → v2', () => {
     expect(p.project.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(
       p.containers.map((i) =>
-        omit(i, ['name', 'parentId', 'markingColor', 'locked', 'source', 'background']),
+        omit(i, [
+          'name',
+          'parentId',
+          'pageId',
+          'markingColor',
+          'locked',
+          'source',
+          'background',
+        ]),
       ),
     ).toEqual(original.images);
     expect(
@@ -91,6 +100,7 @@ describe('migration v1 → v2', () => {
       'height',
       'placement',
       'parentId',
+      'pageId',
       'markingColor',
       'locked',
       'source',

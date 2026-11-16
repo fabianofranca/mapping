@@ -139,16 +139,18 @@ describe('migration v12 → v13 (no inheritance)', () => {
   it('the migrated v12 writes the container `parentId` and the marking `floating`, in the fixed order', () => {
     const saved = serialize(load(JSON.stringify(v12Raw())).project);
     const data = JSON.parse(saved) as Raw;
-    expect(Object.keys(data.containers[0]).slice(4, 8)).toEqual([
+    expect(Object.keys(data.containers[0]).slice(4, 9)).toEqual([
       'height',
       'placement',
       'parentId',
+      'pageId',
       'markingColor',
     ]);
     expect(Object.keys(data.markings[0])).toEqual([
       'id',
       'containerId',
       'parentId',
+      'pageId',
       'name',
       'rect',
       'needsReview',
@@ -178,6 +180,7 @@ describe('opening a v13 (earlier than the membership fields)', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     const base = {
       parentId: null,
+      pageId: data.pages[0].id,
       needsReview: false,
       locked: false,
       source: null,
