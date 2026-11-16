@@ -7,13 +7,14 @@ import type { Selection } from '../../store/ui';
 
 /**
  * The review item on the canvas: the marking, or the arrow (v13; the ids share the space),
- * whether it is from the project in view or created by the proposal.
+ * whether it is from the project in view (of any page) or created by the proposal.
  */
 function itemSelection(
   review: Pick<ReviewState, 'derived'>,
   id: string,
 ): NonNullable<Selection> {
-  const shown = review.derived.shownProject.peek();
+  // Every page: the item may be on a page that is not the open one (it opens when selected).
+  const shown = review.derived.shownAcrossPages.peek();
   const isArrow =
     (shown !== null && projectIndex(shown).arrows.has(id)) ||
     review.derived.proposal

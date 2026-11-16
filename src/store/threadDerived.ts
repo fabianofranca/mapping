@@ -42,6 +42,13 @@ export interface ThreadSources {
   readonly identity: ReadonlySignal<Identity | null>;
   /** The loaded proposals (id and title), to resolve the citations; without them, none. */
   readonly proposals?: ReadonlySignal<readonly CitationProposal[]>;
+  /**
+   * The project the anchors resolve against (`review.derived.shownAcrossPages`, stage #883): the
+   * project in view with every page, so a conversation on another page is found and the Comments
+   * window can go to it. The canvas pins stay on the project in view (the open page). Without it,
+   * the project in view.
+   */
+  readonly project?: ReadonlySignal<Project | null>;
 }
 
 export interface ThreadDerived {
@@ -96,8 +103,11 @@ export function createThreadDerived(
   ui: EditorUi,
   sources: ThreadSources = NO_SOURCES,
 ): ThreadDerived {
+  // Where the anchors resolve: every page (the pins below only draw the open one).
+  const anchors = sources.project ?? project;
+
   const entries = computed((): readonly ThreadEntry[] => {
-    const p = project.value;
+    const p = anchors.value;
     if (!p) return [];
     return sources.threads.value.map((thread) => ({
       thread,
@@ -156,7 +166,7 @@ export function createThreadDerived(
   // threads and the proposals, so pan, zoom and selection changes do not recompute it. Lazy:
   // it only runs with the filter on.
   const citesByThread = computed((): ReadonlyMap<string, readonly string[]> => {
-    const p = project.value;
+    const p = anchors.value;
     const map = new Map<string, readonly string[]>();
     if (!p) return map;
     const threads = sources.threads.value;
@@ -173,7 +183,7 @@ export function createThreadDerived(
   });
 
   const rows = computed((): readonly ThreadEntry[] => {
-    const p = project.value;
+    const p = anchors.value;
     if (!p) return [];
     const user = ui.commentsUser.value;
     const selected = ui.commentsCiteSelection.value ? ui.selection.value : null;

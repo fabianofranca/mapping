@@ -43,6 +43,33 @@ function mount(
   );
 }
 
+describe('CanvasNotices — page notices (stage #883, PG2)', () => {
+  it('a page notice goes to .canvas-overlay-foot and the foot goes away with it', () => {
+    vi.useFakeTimers();
+    const harness = createHarness(sampleProject());
+    const { container } = mount(harness);
+    expect(container.querySelector('.canvas-overlay-foot')).toBeNull();
+    act(() => {
+      harness.context.session.page.notice.value = { kind: 'removed', name: 'Second' };
+    });
+    expect(
+      container.querySelector('.canvas-overlay-foot [role="status"]')?.textContent,
+    ).toBe(t('page.notice.removed', { name: 'Second' }));
+    act(() => void vi.advanceTimersByTime(20000));
+    expect(container.querySelector('.canvas-overlay-foot')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('undone and redone are for the status bar: the canvas foot leaves them alone', () => {
+    const harness = createHarness(sampleProject());
+    const { container } = mount(harness);
+    act(() => {
+      harness.context.session.page.notice.value = { kind: 'undone', name: 'Second' };
+    });
+    expect(container.querySelector('.canvas-overlay-foot')).toBeNull();
+  });
+});
+
 describe('CanvasNotices — canvas foot (PV2, decision 7)', () => {
   it('the short notice goes to .canvas-overlay-foot, with the usual role and text', () => {
     const harness = createHarness(sampleProject());

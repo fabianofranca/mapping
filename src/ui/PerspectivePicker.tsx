@@ -7,6 +7,7 @@ import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { Popover } from './Popover';
 import { perspectiveContentText } from './perspectiveContentText';
+import { cycleStops } from './pickerKeys';
 
 // Perspective picker of the main bar (stage #659, PE3): the button shows the open one and
 // who sees it; the list has the "For everyone" group (Main first) and "Only mine".
@@ -16,11 +17,21 @@ const STOPS = '[role="option"], .perspective-action';
 interface RowProps {
   readonly name: string;
   readonly note: string;
+  /** Items the perspective shows on the open page (stage #883, decision 7). */
+  readonly pageCount: number;
   readonly selected: boolean;
   readonly onPick: () => void;
 }
 
-function Row({ name, note, selected, onPick }: RowProps) {
+/** "N items on this page", "1 item on this page" or "nothing on this page". */
+const pageCountText = (count: number): string =>
+  count === 0
+    ? t('page.perspectiveCount.none')
+    : count === 1
+      ? t('page.perspectiveCount.one')
+      : t('page.perspectiveCount.many', { count });
+
+function Row({ name, note, pageCount, selected, onPick }: RowProps) {
   return (
     /* Exception to Button: list option (role="option") (docs/DESIGN-SYSTEM.md, "Loose buttons") */
     <button
@@ -35,19 +46,10 @@ function Row({ name, note, selected, onPick }: RowProps) {
         {selected && <Icon name="check" />}
       </span>
       <span class="perspective-row-name">{name}</span>
+      <span class="perspective-row-page">{pageCountText(pageCount)}</span>
       <span class="perspective-row-note">{note}</span>
     </button>
   );
-}
-
-/** ↑/↓ cycle among the rows and the list's buttons. */
-function moveKeys(root: HTMLElement | null, e: KeyboardEvent): void {
-  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-  e.preventDefault();
-  const stops = [...(root?.querySelectorAll<HTMLElement>(STOPS) ?? [])];
-  const at = stops.indexOf(document.activeElement as HTMLElement);
-  const step = e.key === 'ArrowDown' ? 1 : -1;
-  stops[(at + step + stops.length) % stops.length]?.focus();
 }
 
 interface ListProps {
@@ -61,6 +63,9 @@ function PickerList({ dialogs, close }: ListProps) {
   const project = store.committed.value;
   const openId = session.perspective.id.value;
   const localIds = session.perspective.localIds.value;
+  const openPage = session.page.id.value;
+  const pageCounts = session.page.perspectiveCounts.value;
+  const completeCount = session.page.rootCounts.value.get(openPage) ?? 0;
 
   // Focus enters the open row, in the same commit that opens the list.
   useLayoutEffect(() => {
@@ -82,7 +87,11 @@ function PickerList({ dialogs, close }: ListProps) {
   };
 
   return (
-    <div class="perspective-list" ref={root} onKeyDown={(e) => moveKeys(root.current, e)}>
+    <div
+      class="perspective-list"
+      ref={root}
+      onKeyDown={(e) => cycleStops(root.current, e, STOPS)}
+    >
       <div role="listbox" aria-label={t('perspective.picker.list')}>
         <div role="group" aria-label={t('perspective.picker.shared')}>
           <div class="perspective-group" aria-hidden="true">
@@ -91,6 +100,7 @@ function PickerList({ dialogs, close }: ListProps) {
           <Row
             name={t('perspective.principal')}
             note={t('perspective.principalNote')}
+            pageCount={completeCount}
             selected={openId === null}
             onPick={() => pick(null)}
           />
@@ -99,6 +109,7 @@ function PickerList({ dialogs, close }: ListProps) {
               key={p.id}
               name={p.name}
               note={perspectiveContentText(project, p)}
+              pageCount={pageCounts.get(p.id) ?? 0}
               selected={openId === p.id}
               onPick={() => pick(p.id)}
             />
@@ -116,6 +127,7 @@ function PickerList({ dialogs, close }: ListProps) {
                 note={t('perspective.noteMine', {
                   content: perspectiveContentText(project, p),
                 })}
+                pageCount={pageCounts.get(p.id) ?? 0}
                 selected={openId === p.id}
                 onPick={() => pick(p.id)}
               />

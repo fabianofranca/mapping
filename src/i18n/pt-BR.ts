@@ -3,12 +3,14 @@ import { catalogPtBR } from './catalog';
 import { modelMessagesPtBR } from './modelMessages';
 import { reviewPtBR } from './review';
 import { perspectivesPtBR } from './perspectives';
+import { pagesPtBR } from './pages';
 
 // Values only: the keys and their context (comments) live in `en-US.ts`; `Dictionary` makes the
 // compiler reject a missing or an extra key.
 export const ptBR: Dictionary = {
   ...reviewPtBR,
   ...perspectivesPtBR,
+  ...pagesPtBR,
   ...catalogPtBR,
   ...modelMessagesPtBR,
   'app.title': 'Mapping',

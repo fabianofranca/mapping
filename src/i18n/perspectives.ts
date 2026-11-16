@@ -5,7 +5,7 @@
 
 export const perspectivesEnUS = {
   // Common
-  'perspective.principal': 'Main',
+  'perspective.principal': 'Full',
   'perspective.principalNote': 'everything · where proposals are accepted',
   'perspective.whoAll': 'everything',
   'perspective.whoShared': 'for everyone',
@@ -16,7 +16,7 @@ export const perspectivesEnUS = {
   'perspective.count.markingsOne': '1 marking',
   'perspective.count.empty': 'empty',
   'perspective.noteMine': 'only you see it · {content}',
-  'perspective.principalOnly': 'Main only',
+  'perspective.principalOnly': 'Full only',
   'perspective.error': 'The perspective operation could not be completed.',
 
   // Main bar selector
@@ -26,7 +26,7 @@ export const perspectivesEnUS = {
   'perspective.picker.mine': 'Only mine',
   'perspective.picker.new': 'New perspective…',
   'perspective.picker.manage': 'Manage perspectives…',
-  'perspective.picker.locked': 'The review shows Main. Leave it to switch.',
+  'perspective.picker.locked': 'The review shows Full. Leave it to switch.',
 
   // New perspective
   'perspective.new.title': 'New perspective',
@@ -66,21 +66,21 @@ export const perspectivesEnUS = {
   'perspective.manage.copyName': '{name} (copy)',
   'perspective.manage.delete': 'Delete {name}',
   'perspective.manage.note':
-    'Deleting a perspective deletes nothing from the project: everything stays in Main. Main cannot be deleted.',
+    'Deleting a perspective deletes nothing from the project: everything stays in Full. Full cannot be deleted.',
 
   // Delete perspective
   'perspective.delete.title': 'Delete the perspective {name}?',
-  'perspective.delete.stays': 'Stays in the project, in Main',
+  'perspective.delete.stays': 'Stays in the project, in Full',
   'perspective.delete.staysBody': '{content}, with their annotations and arrows.',
   'perspective.delete.goes': 'Goes away',
   'perspective.delete.goesBody':
     'What this perspective shows, its positions and its chosen layers.',
-  'perspective.delete.note': 'Anyone in it goes back to Main. You can undo with Ctrl+Z.',
+  'perspective.delete.note': 'Anyone in it goes back to Full. You can undo with Ctrl+Z.',
   'perspective.delete.confirm': 'Delete perspective',
 
   // Notices of a forced switch to Main
   'perspective.notice.removed': 'The perspective {name} was deleted.',
-  'perspective.notice.review': 'The review shows Main.',
+  'perspective.notice.review': 'The review shows Full.',
 
   // Right-click menu
   'perspective.menu.send': 'Send to perspective',
@@ -122,7 +122,7 @@ export const perspectivesEnUS = {
 
 // portuguese-guard:begin pt-BR part of the bilingual module (decision 2 of #741)
 export const perspectivesPtBR: Record<keyof typeof perspectivesEnUS, string> = {
-  'perspective.principal': 'Principal',
+  'perspective.principal': 'Completa',
   'perspective.principalNote': 'tudo · onde as propostas são aceitas',
   'perspective.whoAll': 'tudo',
   'perspective.whoShared': 'para todos',
@@ -133,7 +133,7 @@ export const perspectivesPtBR: Record<keyof typeof perspectivesEnUS, string> = {
   'perspective.count.markingsOne': '1 marcação',
   'perspective.count.empty': 'vazia',
   'perspective.noteMine': 'só você vê · {content}',
-  'perspective.principalOnly': 'só na Principal',
+  'perspective.principalOnly': 'só na Completa',
   'perspective.error': 'Não foi possível concluir a operação com a perspectiva.',
 
   'perspective.picker.label': 'Perspectiva: {name}, {who}',
@@ -142,7 +142,7 @@ export const perspectivesPtBR: Record<keyof typeof perspectivesEnUS, string> = {
   'perspective.picker.mine': 'Só minhas',
   'perspective.picker.new': 'Nova perspectiva…',
   'perspective.picker.manage': 'Gerenciar perspectivas…',
-  'perspective.picker.locked': 'A revisão mostra a Principal. Saia dela para trocar.',
+  'perspective.picker.locked': 'A revisão mostra a Completa. Saia dela para trocar.',
 
   'perspective.new.title': 'Nova perspectiva',
   'perspective.new.intro':
@@ -180,20 +180,20 @@ export const perspectivesPtBR: Record<keyof typeof perspectivesEnUS, string> = {
   'perspective.manage.copyName': '{name} (cópia)',
   'perspective.manage.delete': 'Apagar {name}',
   'perspective.manage.note':
-    'Apagar uma perspectiva não apaga nada do projeto: tudo continua na Principal. A Principal não se apaga.',
+    'Apagar uma perspectiva não apaga nada do projeto: tudo continua na Completa. A Completa não se apaga.',
 
   'perspective.delete.title': 'Apagar a perspectiva {name}?',
-  'perspective.delete.stays': 'Continua no projeto, na Principal',
+  'perspective.delete.stays': 'Continua no projeto, na Completa',
   'perspective.delete.staysBody': '{content}, com as anotações e as setas.',
   'perspective.delete.goes': 'Some',
   'perspective.delete.goesBody':
     'O que aparece nesta perspectiva, as posições dela e as camadas escolhidas.',
   'perspective.delete.note':
-    'Quem estiver nela volta para a Principal. Dá para desfazer com Ctrl+Z.',
+    'Quem estiver nela volta para a Completa. Dá para desfazer com Ctrl+Z.',
   'perspective.delete.confirm': 'Apagar perspectiva',
 
   'perspective.notice.removed': 'A perspectiva {name} foi apagada.',
-  'perspective.notice.review': 'A revisão mostra a Principal.',
+  'perspective.notice.review': 'A revisão mostra a Completa.',
 
   'perspective.menu.send': 'Enviar para perspectiva',
   'perspective.menu.sendHeading': 'Mostrar também em',

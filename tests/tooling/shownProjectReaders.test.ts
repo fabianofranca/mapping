@@ -74,6 +74,17 @@ const ALLOWLIST = [
   'src/ui/PerspectivePicker.tsx',
   'src/ui/PerspectiveSendMenu.tsx',
   'src/ui/PerspectivesSection.tsx',
+  // Pages (stage #883, PG2): the page list, the root counts and the page actions belong to the real
+  // project (the shown project is cut by the open page and the page actions are refused in the review);
+  // the status bar names the open page, and `pageNavigation` resolves items on any page.
+  'src/ui/DeletePageDialog.tsx',
+  'src/ui/ManagePagesDialog.tsx',
+  'src/ui/MovePageControl.tsx',
+  'src/ui/MovePageMenuItems.tsx',
+  'src/ui/MovePageRefusedDialog.tsx',
+  'src/ui/PageMenu.tsx',
+  'src/ui/StatusBar.tsx',
+  'src/ui/pageNavigation.ts',
   'src/ui/review/ReviewPanel.tsx',
   // `CompareDialog`: the "before" image is the committed one by definition.
   'src/ui/review/ReviewCanvasControls.tsx',

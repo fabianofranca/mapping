@@ -48,6 +48,7 @@ import {
   carryLocalPerspectives,
   mergeLocalPerspectives,
 } from './localPerspectiveSync';
+import { createPageState, type PageState } from './pages';
 import { createPerspectiveActions, type PerspectiveActions } from './perspectiveActions';
 import {
   createPerspectiveState,
@@ -245,6 +246,11 @@ export interface ProjectSession {
    * in this browser by `project.id`; switching perspective does not enter undo.
    */
   readonly perspective: PerspectiveState;
+  /**
+   * The open page and the page counts (stage #883): UI state, kept in this browser by `project.id`;
+   * switching page does not enter undo. What the actions create lands on it.
+   */
+  readonly page: PageState;
   /** Create, rename, duplicate, delete, send roots, hidden layers and Who sees. */
   readonly perspectiveActions: PerspectiveActions;
   readonly saveStatus: ReadonlySignal<SaveStatus>;
@@ -400,13 +406,19 @@ const packageKey = (s: { readonly id: string; readonly version: number }): strin
 
 export function openSession(options: SessionOptions): ProjectSession {
   const { storage, prepareImage } = options;
-  const store = createProjectStore({ now: options.now });
+  const store = createProjectStore({
+    now: options.now,
+    // Undo and redo never switch the page; the page state says where the change was.
+    onStep: (step) => page.noteStep(step),
+  });
   // The components are read further below (they need the package cache); the actions only ask for
   // the catalog at the time of use.
   const baseActions = createProjectActions(store, {
     newId: options.newId,
     components: () => components.catalog.peek(),
     perspective: () => perspective.openId(),
+    page: () => page.openId(),
+    onMoved: (pageId) => page.announceMoved(pageId),
     onArrival: (infos) => {
       // Accumulates: the notice of the first root in the queue stays after the second one is created.
       const roots = new Set(infos.map((info) => info.root));
@@ -431,6 +443,11 @@ export function openSession(options: SessionOptions): ProjectSession {
     projectId: options.project.project.id,
     localAvailable: localStore !== null,
     localIds: joined.ids,
+  });
+  const page = createPageState({
+    store,
+    projectId: options.project.project.id,
+    perspectiveId: perspective.id,
   });
   const localSync = attachLocalSync({
     store,
@@ -1358,6 +1375,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     threads,
     threadActions,
     perspective,
+    page,
     perspectiveActions,
     libraryIssues,
     components,
@@ -1527,6 +1545,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       saver.dispose();
       await localSync.dispose();
       perspective.dispose();
+      page.dispose();
       components.dispose();
       catalogs.dispose();
       store.close();

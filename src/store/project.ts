@@ -21,6 +21,7 @@ import type {
   SpecRemovalMode,
   TextMeasurer,
 } from '../model';
+import { ModelError } from '../model/errors';
 import type { ActionResult, Operation, ProjectStore } from './history';
 import * as view from './perspectiveGestures';
 import { openPerspectiveIn, type ArrivalInfo } from './perspectives';
@@ -47,7 +48,26 @@ export interface ActionDeps {
   readonly perspective?: () => string | null;
   /** Called with the arrivals in Main of an operation that created roots in a perspective. */
   readonly onArrival?: (infos: readonly ArrivalInfo[]) => void;
+  /**
+   * The open page (stage #883, PG2): what the actions create lands on it (containers and canvas
+   * markings). Without this function, the first page, as before pages.
+   */
+  readonly page?: () => string;
+  /** Called with the destination page when `moveRootsToPage` moved roots (the session tells the interface). */
+  readonly onMoved?: (pageId: string) => void;
 }
+
+/**
+ * Result of `moveRootsToPage`. A move that would cut arrows is refused with `page-arrow-crossing`
+ * and the arrows (the dialog lists them, with "Go to the arrow").
+ */
+export type MoveRootsResult =
+  | ActionResult
+  | {
+      readonly ok: false;
+      readonly error: 'page-arrow-crossing';
+      readonly arrows: readonly model.PageArrowCrossing[];
+    };
 
 /**
  * Clamps the requested rectangle to the component's minimum size, instead of refusing: the
@@ -136,9 +156,20 @@ function touchingPlacement(
     : { ...placement, x: own.placement.x + dx, y: own.placement.y + dy };
 }
 
+/** The arrows `data` of a `page-arrow-crossing` error. */
+function crossingArrowsOf(e: ModelError): readonly model.PageArrowCrossing[] {
+  const arrows = e.data?.arrows;
+  return Array.isArray(arrows) ? (arrows as readonly model.PageArrowCrossing[]) : [];
+}
+
 export function createProjectActions(store: ProjectStore, deps: ActionDeps = {}) {
   const newId = deps.newId ?? (() => crypto.randomUUID());
   const catalog = deps.components ?? (() => model.EMPTY_CATALOG);
+  /** The page that what is created lands on: the open one (the first when nobody says). */
+  const pageOpt = (): { readonly pageId: string } | Record<string, never> => {
+    const pageId = deps.page?.();
+    return pageId === undefined ? {} : { pageId };
+  };
   const measure = deps.measure ?? (() => textMeasurer.peek());
   /** A perspectiva aberta em `p` (`null` = a Principal). */
   const viewFor = (p: Project): Perspective | null =>
@@ -315,6 +346,49 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     setImageMarkingsLocked: (containerId: string, locked: boolean) =>
       store.apply((p) => model.setImageMarkingsLocked(p, containerId, locked)),
 
+    // Pages (v21, stage #883): the project's, in any perspective. Each action is one undo entry.
+    /** Adds a page at the end of the list and returns its id. It does not open it. */
+    addPage: (name: string) => create((id) => (p) => model.createPage(p, { id, name })),
+    renamePage: (pageId: string, name: string) =>
+      store.apply((p) => model.renamePage(p, pageId, name)),
+    /** Moves the page to position `toIndex` in the list. */
+    movePage: (pageId: string, toIndex: number) =>
+      store.apply((p) => model.movePage(p, pageId, toIndex)),
+    /**
+     * Deletes the page: its content goes to another page (`moveTo`) or goes away with it
+     * (`discard`). A single undo entry. The last page is refused (`page-last`).
+     */
+    deletePage: (pageId: string, how: model.PageDeletion) =>
+      store.apply((p) => model.deletePage(p, pageId, how, settleOptions(p))),
+    /**
+     * Takes the roots to the page, with everything in them (one undo entry). A move that cuts an
+     * arrow changes nothing and comes back as `page-arrow-crossing` with the arrows.
+     */
+    moveRootsToPage(rootIds: readonly string[], pageId: string): MoveRootsResult {
+      const refused: { arrows: readonly model.PageArrowCrossing[] | null } = {
+        arrows: null,
+      };
+      const before = store.committed.peek();
+      const result = store.apply((p) => {
+        try {
+          return model.moveRootsToPage(p, rootIds, pageId, settleOptions(p));
+        } catch (e) {
+          if (e instanceof ModelError && e.code === 'page-arrow-crossing') {
+            refused.arrows = crossingArrowsOf(e);
+          }
+          throw e;
+        }
+      });
+      if (!result.ok) {
+        const { arrows } = refused;
+        return arrows === null
+          ? result
+          : { ok: false, error: 'page-arrow-crossing', arrows };
+      }
+      if (store.committed.peek() !== before) deps.onMoved?.(pageId);
+      return result;
+    },
+
     // Camadas
     addLayer: (name: string, color: string) =>
       create((id) => (p) => model.addLayer(p, { id, name, color })),
@@ -332,7 +406,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       center?: { readonly x: number; readonly y: number },
     ) =>
       create(
-        (id) => (p) => model.addContainer(p, { ...file, id, center }, settleOptions(p)),
+        (id) => (p) =>
+          model.addContainer(p, { ...file, id, center, ...pageOpt() }, settleOptions(p)),
       ),
     setContainerPlacement: (containerId: string, placement: Placement) =>
       guarded(() =>
@@ -375,7 +450,11 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     }) => {
       const { density, ...rest } = args;
       return create((id) => (p) => {
-        const next = model.addBackgroundContainer(p, { ...rest, id }, settleOptions(p));
+        const next = model.addBackgroundContainer(
+          p,
+          { ...rest, id, ...pageOpt() },
+          settleOptions(p),
+        );
         return density === undefined || density === 1
           ? next
           : model.setContainerDensity(next, id, density);
@@ -584,7 +663,11 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     createMarking: (containerId: string | null, rect: Rect, name?: string | null) =>
       create(
         (id) => (p) =>
-          model.createMarking(p, { id, containerId, rect, name }, rectOptions(p, id)),
+          model.createMarking(
+            p,
+            { id, containerId, rect, name, ...(containerId === null ? pageOpt() : {}) },
+            rectOptions(p, id),
+          ),
       ),
     renameMarking: (markingId: string, name: string | null) =>
       store.apply((p) => model.renameMarking(p, markingId, name)),
@@ -785,6 +868,13 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
             ...rest,
             markingId,
             annotationId,
+            // A canvas instance with no target to derive the page from goes to the open page.
+            ...(args.containerId === null &&
+            args.parentId === null &&
+            anchorTo === undefined &&
+            args.near === undefined
+              ? pageOpt()
+              : {}),
             ...(anchorTo === undefined ? {} : { anchor: { to: anchorTo } }),
             ...(defaults === undefined ? {} : { anchorDefaults: defaults }),
           },

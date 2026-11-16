@@ -353,7 +353,7 @@ function sameTarget(a: ReviewTarget | null, b: ReviewTarget | null): boolean {
 }
 
 export function createReviewState(session: ProjectSession): ReviewState {
-  const { store, proposals, proposalActions, perspective } = session;
+  const { store, proposals, proposalActions, perspective, page } = session;
   const scope = resumeScope(session.storage);
   const proposalId = signal<string | null>(null);
   const selected = signal<ReviewTarget | null>(null);
@@ -398,6 +398,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
     filters,
     seen,
     perspectiveId: perspective.id,
+    pageId: page.id,
   });
 
   const components = createProposedComponents({

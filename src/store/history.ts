@@ -64,9 +64,18 @@ export type ActionResult<T = void> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly error: StoreErrorCode };
 
+/** An undo or redo that took effect: the project before and after it (pages: "Undone on page…"). */
+export interface HistoryStep {
+  readonly kind: 'undo' | 'redo';
+  readonly from: Project;
+  readonly to: Project;
+}
+
 export interface ProjectStoreDeps {
   /** ISO date used in `project.updatedAt`. */
   readonly now?: () => string;
+  /** Called right after an undo or redo changed the project (the session tells the open page). */
+  readonly onStep?: (step: HistoryStep) => void;
 }
 
 export interface LoadOptions {
@@ -182,8 +191,13 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
   /**
    * Runs the link's effect. Asynchronous: the history stops until the write finishes; if
    * it fails, `revert` returns the step (only if nothing else changed the project since).
+   * `done` runs once the link succeeded (never after a rollback).
    */
-  const runLink = (run: () => Promise<LinkResult> | undefined, revert: () => void) => {
+  const runLink = (
+    run: () => Promise<LinkResult> | undefined,
+    revert: () => void,
+    done: () => void,
+  ) => {
     let pending: Promise<LinkResult> | undefined;
     try {
       pending = run();
@@ -196,14 +210,20 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       });
       return;
     }
-    if (!pending) return;
+    if (!pending) {
+      done();
+      return;
+    }
     const token = ++linkSeq;
     const stepped = project.peek();
     linkPending.value = true;
     const settle = (result: LinkResult) => {
       batch(() => {
         if (token === linkSeq) linkPending.value = false;
-        if (result.ok) return;
+        if (result.ok) {
+          done();
+          return;
+        }
         if (project.peek() === stepped) revert();
         linkFailure.value = { seq: token, error: result.error };
       });
@@ -224,6 +244,11 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
   };
 
   const committed = computed(() => gestureBase.value ?? project.value);
+
+  /** Tells `deps.onStep` that an undo or redo took the project from `from` to the current one. */
+  const notifyStep = (kind: HistoryStep['kind'], from: Project, to: Project): void => {
+    deps.onStep?.({ kind, from, to });
+  };
 
   return {
     project,
@@ -336,14 +361,21 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
         project.value = touchProject(previous.project, now());
         revision.value++;
       });
+      const to = project.peek() as Project;
       const link = previous.link;
       if (link) {
-        runLink(link.undo, () => {
-          past.value = [...past.value, previous].slice(-HISTORY_LIMIT);
-          future.value = future.value.slice(1);
-          project.value = current;
-          revision.value++;
-        });
+        runLink(
+          link.undo,
+          () => {
+            past.value = [...past.value, previous].slice(-HISTORY_LIMIT);
+            future.value = future.value.slice(1);
+            project.value = current;
+            revision.value++;
+          },
+          () => notifyStep('undo', current, to),
+        );
+      } else {
+        notifyStep('undo', current, to);
       }
       return true;
     },
@@ -362,14 +394,21 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
         project.value = touchProject(next.project, now());
         revision.value++;
       });
+      const to = project.peek() as Project;
       const link = next.link;
       if (link) {
-        runLink(link.redo, () => {
-          past.value = past.value.slice(0, -1);
-          future.value = [next, ...future.value];
-          project.value = current;
-          revision.value++;
-        });
+        runLink(
+          link.redo,
+          () => {
+            past.value = past.value.slice(0, -1);
+            future.value = [next, ...future.value];
+            project.value = current;
+            revision.value++;
+          },
+          () => notifyStep('redo', current, to),
+        );
+      } else {
+        notifyStep('redo', current, to);
       }
       return true;
     },

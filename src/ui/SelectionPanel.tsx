@@ -18,6 +18,7 @@ import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
 import { ThreadsSection } from './comments/ThreadsSection';
 import { ArrivalNotice } from './ArrivalNotice';
+import { MovePageControl } from './MovePageControl';
 import { PerspectivesSection, usePrincipalOnly } from './PerspectivesSection';
 import { Section } from './DetailsSection';
 import { Icon } from './icons';
@@ -204,6 +205,7 @@ export function SelectionPanel({
         onOpenSettings={onOpenSettings}
       />
       <PerspectivesSection itemId={image.id} readOnly={readOnly} />
+      <MovePageControl itemId={image.id} readOnly={readOnly} />
       {ext?.others(image.id)}
       {own.length > 0 && (
         <div class="row">

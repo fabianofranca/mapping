@@ -2,14 +2,16 @@ import { catalogEnUS } from './catalog';
 import { modelMessagesEnUS } from './modelMessages';
 import { reviewEnUS } from './review';
 import { perspectivesEnUS } from './perspectives';
+import { pagesEnUS } from './pages';
 
 // en-US is the base dictionary: it defines the keys (`TranslationKey`) and the comments here are the
 // context for whoever translates. `pt-BR.ts` is typed against it (`Dictionary`) and holds only the
-// values, with the same keys and the same {parameters}. The modules below (`review`, `perspectives`,
+// values, with the same keys and the same {parameters}. The modules below (`review`, `perspectives`, `pages`,
 // `catalog`, `modelMessages`) follow the same rule and enter the dictionary through a spread.
 export const enUS = {
   ...reviewEnUS,
   ...perspectivesEnUS,
+  ...pagesEnUS,
   ...catalogEnUS,
   ...modelMessagesEnUS,
   'app.title': 'Mapping',

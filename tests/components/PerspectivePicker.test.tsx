@@ -40,13 +40,13 @@ const trigger = (name: string, who: string) =>
   screen.getByRole('button', { name: `Perspective: ${name}, ${who}` });
 
 function openList(user: ReturnType<typeof userEvent.setup>) {
-  return user.click(trigger('Main', 'everything'));
+  return user.click(trigger('Full', 'everything'));
 }
 
 describe('PerspectivePicker', () => {
   it('the button shows Main ("everything") by default', async () => {
     await setup();
-    expect(trigger('Main', 'everything')).toBeTruthy();
+    expect(trigger('Full', 'everything')).toBeTruthy();
   });
 
   it('lists Main first, For everyone and Only mine, with the open one marked', async () => {
@@ -56,7 +56,7 @@ describe('PerspectivePicker', () => {
     const list = screen.getByRole('listbox', { name: 'Perspectives' });
     const options = within(list).getAllByRole('option');
     expect(options.map((o) => o.getAttribute('data-name'))).toEqual([
-      'Main',
+      'Full',
       'Flow A',
       'Draft',
     ]);
@@ -67,6 +67,28 @@ describe('PerspectivePicker', () => {
     ).toBeTruthy();
     expect(within(options[1] as HTMLElement).getByText('empty')).toBeTruthy();
     expect(session.perspective.id.value).toBeNull();
+  });
+
+  it('shows, next to each perspective, how many items it has on the open page', async () => {
+    const { session, harness } = await setup();
+    const user = userEvent.setup();
+    await openList(user);
+    let options = screen.getAllByRole('option');
+    expect(
+      within(options[0] as HTMLElement).getByText('1 item on this page'),
+    ).toBeTruthy();
+    expect(
+      within(options[1] as HTMLElement).getByText('nothing on this page'),
+    ).toBeTruthy();
+    await user.keyboard('{Escape}');
+    const added = harness.actions.addPage('Second');
+    if (!added.ok) throw new Error('page not created');
+    session.page.open(added.value);
+    await openList(user);
+    options = screen.getAllByRole('option');
+    expect(
+      within(options[0] as HTMLElement).getByText('nothing on this page'),
+    ).toBeTruthy();
   });
 
   it('choosing a row opens the perspective and closes the list', async () => {
@@ -103,9 +125,9 @@ describe('PerspectivePicker', () => {
     const { session } = await setup();
     session.perspective.setLocked(true);
     await waitFor(() =>
-      expect((trigger('Main', 'everything') as HTMLButtonElement).disabled).toBe(true),
+      expect((trigger('Full', 'everything') as HTMLButtonElement).disabled).toBe(true),
     );
-    expect(screen.getByText('The review shows Main. Leave it to switch.')).toBeTruthy();
+    expect(screen.getByText('The review shows Full. Leave it to switch.')).toBeTruthy();
   });
 
   it('Esc closes and returns the focus to the button; arrows move', async () => {
@@ -120,6 +142,6 @@ describe('PerspectivePicker', () => {
     expect(document.activeElement?.textContent).toContain('Manage');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).toBeNull();
-    expect(document.activeElement).toBe(trigger('Main', 'everything'));
+    expect(document.activeElement).toBe(trigger('Full', 'everything'));
   });
 });

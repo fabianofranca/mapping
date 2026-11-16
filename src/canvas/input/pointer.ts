@@ -101,6 +101,8 @@ export interface PointerInputOptions {
   readonly containerTitles?: () => ReadonlyMap<string, Rect>;
   /** The thread pin under the canvas point (wins over the marking below); `null` if none. */
   readonly pinAt?: (c: Point) => PinPlace | null;
+  /** The open page takes comments on a canvas point (only the first one for now); default: yes. */
+  readonly canvasPointComments?: () => boolean;
 }
 
 /** Gestures that drag items: the cursor is the move one. */
@@ -821,6 +823,7 @@ export class PointerInput {
         arrows: this.arrowHit(project),
         titles: this.o.containerTitles?.(),
         pin: this.o.pinAt?.(c) ?? null,
+        canvasPoints: this.o.canvasPointComments?.() ?? true,
       },
       c,
     );

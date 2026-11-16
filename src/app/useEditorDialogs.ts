@@ -8,12 +8,14 @@ import {
   type ItemRef,
   markingDeletionImpact,
   type Marking,
+  type PageArrowCrossing,
   type ProjectContainer,
 } from '../model';
 import type { AspectChange } from '../store/session';
 import type { RefObject } from 'preact';
 import { useRef } from 'preact/hooks';
 import { useEditor } from '../ui/EditorContext';
+import type { ManagePagesFocus } from '../ui/ManagePagesDialog';
 import type { ManageFocus } from '../ui/ManagePerspectivesDialog';
 import { useDialogSlot, type DialogSlot } from '../ui/focus';
 
@@ -42,7 +44,19 @@ export type EditorDialog =
   /** Perspectives (stage #659, PE3). */
   | { readonly kind: 'newPerspective' }
   | { readonly kind: 'managePerspectives'; readonly focus?: ManageFocus }
-  | { readonly kind: 'deletePerspective'; readonly id: string };
+  | { readonly kind: 'deletePerspective'; readonly id: string }
+  /** Pages (stage #883, PG2): `focus: { kind: 'create' }` is "New page…" (the default focus too). */
+  | { readonly kind: 'managePages'; readonly focus?: ManagePagesFocus }
+  | { readonly kind: 'deletePage'; readonly id: string }
+  /**
+   * "Move to page" refused (`page-arrow-crossing`): lists the arrows. `onGoToArrow` is the opener's
+   * navigation (select the arrow, switch to its page, frame it); the dialog closes after calling it.
+   */
+  | {
+      readonly kind: 'movePageRefused';
+      readonly arrows: readonly PageArrowCrossing[];
+      readonly onGoToArrow: (arrowId: string) => void;
+    };
 
 export interface EditorDialogs {
   readonly current: EditorDialog | null;
