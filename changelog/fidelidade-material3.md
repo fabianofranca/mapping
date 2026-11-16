@@ -1,4 +1,4 @@
-# Fidelity notices of Material 3 (Compose) — [Não lançado] (épico `epic/fidelidade-material3`, PR pending, MCP unchanged, schema v20)
+# Fidelity notices of Material 3 (Compose) — [Não lançado] (épico `epic/fidelidade-material3`, PR #0, MCP unchanged, schema v20)
 
 ## Adicionado
 
