@@ -1,14 +1,20 @@
-import { effect } from '@preact/signals';
+import { effect, signal } from '@preact/signals';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addAnnotation,
   addContainer,
   createMarking,
   createProject,
+  projectIndex,
   renameMarking,
   type Project,
 } from '../../src/model';
+import { createEditorDerived } from '../../src/store/derived';
+import { createProjectStore } from '../../src/store/history';
+import { projectInPerspective } from '../../src/store/perspectiveShown';
+import { createEditorUi } from '../../src/store/ui';
 import { propose } from '../model/proposalFixtures';
+import { buildLargeProject } from '../model/largeProject';
 import { openHarness } from './proposalHarness';
 
 beforeEach(() => localStorage.clear());
@@ -118,6 +124,98 @@ describe('review of a large proposal', () => {
       expect(notified).toBe(1);
       stop();
       expect(build).toBeLessThan(1000);
+    },
+  );
+});
+
+// Pages (stage #883, PG2, decision 20): the project in view is cut by the open page, so what the
+// canvas, the panel and the list derive from it costs about its share of the project, not the
+// whole of it. Measured on the large project (20 images; here 2,000 markings, where the constant
+// cost of each derived value no longer hides the proportion) split into 4 pages.
+describe('derived state of the open page', () => {
+  function fourPages(): Project {
+    const large = buildLargeProject({ images: 20, markingsPerImage: 100 });
+    return {
+      ...large,
+      pages: ['PG1', 'PG2', 'PG3', 'PG4'].map((id, i) => ({ id, name: `Page ${i + 1}` })),
+      containers: large.containers.map((c, i) => ({
+        ...c,
+        pageId: `PG${(i % 4) + 1}`,
+      })),
+    };
+  }
+
+  const median = (values: number[]): number =>
+    [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] ?? 0;
+
+  /** Reads what the canvas, the panel and the list read. */
+  function readAll(d: ReturnType<typeof createEditorDerived>): void {
+    void [
+      d.visibleLayers.value,
+      d.issues.value,
+      d.annotationsByMarking.value,
+      d.layerDots.value,
+      d.markingVisibility.value,
+      d.canvasVisibility.value,
+      d.incompleteMarkings.value,
+      d.listing.value,
+      d.incompleteList.value,
+      d.incompleteCount.value,
+    ];
+  }
+
+  /**
+   * A new project version reaching the derived state, `pageId` open (none = the whole project).
+   * `cut` is the page cut and its index; `derive` is everything the canvas, the panel and the list
+   * read from the project in view. The index of the committed project is built before the
+   * measurement: both ways pay it, whatever the pages.
+   */
+  function measure(project: Project, pageId: string | undefined) {
+    const store = createProjectStore();
+    store.load(project);
+    const shown = signal<Project | null>(project);
+    const derived = createEditorDerived(store, createEditorUi(), shown);
+    const once = () => {
+      const version = { ...project };
+      projectIndex(version);
+      const start = performance.now();
+      const view = projectInPerspective(version, null, pageId);
+      projectIndex(view);
+      const cut = performance.now();
+      shown.value = view;
+      readAll(derived);
+      return { cut: cut - start, derive: performance.now() - cut };
+    };
+    for (let i = 0; i < 12; i++) once();
+    const runs = Array.from({ length: 21 }, once);
+    return {
+      cut: median(runs.map((r) => r.cut)),
+      derive: median(runs.map((r) => r.derive)),
+    };
+  }
+
+  it('the 4 pages hold the whole project, 5 images and 500 markings each', () => {
+    const project = fourPages();
+    for (const id of ['PG1', 'PG2', 'PG3', 'PG4']) {
+      const view = projectInPerspective(project, null, id);
+      expect(view.containers).toHaveLength(5);
+      expect(view.markings).toHaveLength(500);
+    }
+  });
+
+  budgetIt(
+    'deriving the open page costs at most a third of deriving the whole project, cut included it still costs less',
+    BUDGET_OPTIONS,
+    () => {
+      const project = fourPages();
+      const whole = measure(project, undefined);
+      const page = measure(project, 'PG1');
+      console.info(
+        `[perf] derived state: whole ${whole.derive.toFixed(2)} ms; one of 4 pages ${page.derive.toFixed(2)} ms ` +
+          `(ratio ${(page.derive / whole.derive).toFixed(2)}) + cut ${page.cut.toFixed(2)} ms`,
+      );
+      expect(page.derive).toBeLessThan(whole.derive / 3);
+      expect(page.cut + page.derive).toBeLessThan(whole.derive);
     },
   );
 });

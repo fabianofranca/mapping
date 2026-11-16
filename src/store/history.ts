@@ -64,9 +64,18 @@ export type ActionResult<T = void> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly error: StoreErrorCode };
 
+/** An undo or redo that took effect: the project before and after it (pages: "Undone on page…"). */
+export interface HistoryStep {
+  readonly kind: 'undo' | 'redo';
+  readonly from: Project;
+  readonly to: Project;
+}
+
 export interface ProjectStoreDeps {
   /** ISO date used in `project.updatedAt`. */
   readonly now?: () => string;
+  /** Called right after an undo or redo changed the project (the session tells the open page). */
+  readonly onStep?: (step: HistoryStep) => void;
 }
 
 export interface LoadOptions {
@@ -225,6 +234,11 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
 
   const committed = computed(() => gestureBase.value ?? project.value);
 
+  /** Tells `deps.onStep` that an undo or redo took the project from `from` to the current one. */
+  const notifyStep = (kind: HistoryStep['kind'], from: Project): void => {
+    deps.onStep?.({ kind, from, to: project.peek() as Project });
+  };
+
   return {
     project,
     committed,
@@ -336,6 +350,7 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
         project.value = touchProject(previous.project, now());
         revision.value++;
       });
+      notifyStep('undo', current);
       const link = previous.link;
       if (link) {
         runLink(link.undo, () => {
@@ -362,6 +377,7 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
         project.value = touchProject(next.project, now());
         revision.value++;
       });
+      notifyStep('redo', current);
       const link = next.link;
       if (link) {
         runLink(link.redo, () => {

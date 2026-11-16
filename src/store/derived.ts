@@ -1004,6 +1004,11 @@ export interface ReviewSources {
    * Main one. The review locks the Main one, so it is `null` while a proposal is open.
    */
   readonly perspectiveId?: ReadonlySignal<string | null>;
+  /**
+   * Id of the open page (`session.page.id`). The project in view is cut by it before the
+   * perspective (stage #883, decision 16). Without it (editor tests), the whole project.
+   */
+  readonly pageId?: ReadonlySignal<string>;
 }
 
 /** Counts of the open proposal (the review strip and the Proposals window). */
@@ -1200,6 +1205,12 @@ export interface ReviewDerived {
    * of the canvas read from here (a new import has images only in the preview).
    */
   readonly shownProject: ReadonlySignal<Project | null>;
+  /**
+   * `shownProject` before the page cut (stage #883): the same project in view, with every page. The
+   * conversations resolve their anchors against it, so a conversation on another page is not an
+   * orphan and going to it can switch the page (`ThreadSources.project`).
+   */
+  readonly shownAcrossPages: ReadonlySignal<Project | null>;
   /**
    * The "as it would be" with all the changes not yet applied, ignoring the decisions: what
    * a rejected creation proposed (the Details show it even outside the two views).
@@ -1528,15 +1539,23 @@ export function createReviewDerived(
   });
 
   // The project in view: the confirmed one or the proposal's "as it would be", clipped by the open
-  // perspective (decision 3). `projectInPerspective` is memoized by project and perspective, and nothing
+  // page and then by the open perspective (decision 3; pages, decision 16). `projectInPerspective` is memoized by project and perspective, and nothing
   // here reads the viewport: pan and zoom do not recompute.
-  const shownProject = computed((): Project | null => {
-    const base =
-      sources.proposalId.value === null || sources.view.value === 'current'
-        ? project.value
-        : (preview.value?.project ?? project.value);
-    return projectInPerspective(base, sources.perspectiveId?.value ?? null);
-  });
+  const viewBase = computed((): Project | null =>
+    sources.proposalId.value === null || sources.view.value === 'current'
+      ? project.value
+      : (preview.value?.project ?? project.value),
+  );
+  const shownProject = computed((): Project | null =>
+    projectInPerspective(
+      viewBase.value,
+      sources.perspectiveId?.value ?? null,
+      sources.pageId?.value,
+    ),
+  );
+  const shownAcrossPages = computed((): Project | null =>
+    projectInPerspective(viewBase.value, sources.perspectiveId?.value ?? null),
+  );
 
   const fullPreview = computed((): Project | null => {
     const changes = changesOf.value;
@@ -1617,6 +1636,7 @@ export function createReviewDerived(
     hold,
     preview,
     shownProject,
+    shownAcrossPages,
     fullPreview,
     fieldIndex,
     visibleIds,

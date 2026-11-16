@@ -102,7 +102,11 @@ function assertNoViewOverlap(
   const fixed = footprints.filter((f) => !moved.has(f.container.id));
   for (const m of footprints) {
     if (!moved.has(m.container.id)) continue;
-    const other = fixed.find((f) => model.rectsOverlap(m.rect, f.rect));
+    // Each page is a canvas of its own: only the containers of the same page can overlap.
+    const other = fixed.find(
+      (f) =>
+        f.container.pageId === m.container.pageId && model.rectsOverlap(m.rect, f.rect),
+    );
     if (other)
       model.fail('image-overlap', undefined, { containerId: other.container.id });
   }
@@ -128,9 +132,11 @@ function touchingViewDelta(
   const whole = roots.some((root) => model.isMarkingRoot(p, root));
   const shown = model.perspectiveView(p, perspective).containers;
   const footprint = (c: ProjectContainer) => model.imageCanvasRect(c, c.placement);
+  // Each page is a canvas of its own: what does not move only blocks on the pages of what moves.
+  const pages = new Set(shown.filter((c) => moved.has(c.id)).map((c) => c.pageId));
   return model.touchDelta(
     shown.filter((c) => moved.has(c.id)).map(footprint),
-    shown.filter((c) => !moved.has(c.id)).map(footprint),
+    shown.filter((c) => !moved.has(c.id) && pages.has(c.pageId)).map(footprint),
     dx,
     dy,
     whole,
