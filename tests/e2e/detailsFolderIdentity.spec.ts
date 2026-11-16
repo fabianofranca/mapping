@@ -74,7 +74,9 @@ test('Details in review at 900 px without a horizontal bar with the project open
     const b = document.querySelector('[data-window="details"] .tool-window-body')!;
     const p = document.querySelector('.panel-details')!;
     const pr = p.getBoundingClientRect();
+    // A tooltip is fixed and hidden (out of flow): its long text, as in a library notice, is not the panel's width.
     const over = [...p.querySelectorAll<HTMLElement>('*')]
+      .filter((e) => !e.closest('.tooltip'))
       .filter((e) => e.getBoundingClientRect().right > pr.right + 0.5)
       .map((e) => `${e.tagName}.${e.getAttribute('class')}`);
     const name = document.querySelector<HTMLElement>(
