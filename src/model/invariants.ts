@@ -8,8 +8,9 @@ import {
   rectsOverlap,
 } from './geometry';
 import { isValidDensity } from './density';
+import { sameSpace } from './spaces';
 import { tableRows } from './refs';
-import type { Entry, Marking, Perspective, Project, Rect } from './types';
+import type { Arrow, Entry, Marking, Perspective, Project, Rect } from './types';
 
 export type InvariantCode =
   | 'duplicate-id'
@@ -38,6 +39,12 @@ export type InvariantCode =
   | 'anchor-self'
   | 'anchor-cycle'
   | 'anchor-other-space'
+  | 'pages-empty'
+  | 'page-duplicate-name'
+  | 'page-missing'
+  | 'page-required'
+  | 'page-parent-mismatch'
+  | 'arrow-cross-page'
   | 'missing-parent-annotation'
   | 'annotation-parent-other-marking'
   | 'annotation-parent-same-layer'
@@ -67,7 +74,8 @@ export type InvariantEntity =
   | 'layer'
   | 'spec'
   | 'perspective'
-  | 'arrival';
+  | 'arrival'
+  | 'page';
 
 export interface InvariantIssue {
   readonly code: InvariantCode;
@@ -115,6 +123,38 @@ export function perspectiveNameKey(name: string): string {
   return name.trim().toLowerCase();
 }
 
+/** Page name for comparison (v21): the same rule as the perspective's. */
+export const pageNameKey = perspectiveNameKey;
+
+/**
+ * Pages (v21): at least one, unique ids (`duplicate-id`) and unique names (`page-duplicate-name`,
+ * `otherId` = the first page with that name). Without a page the project is reported once, on the
+ * project itself (`pages-empty`, entity `page`, `id` = the project's).
+ */
+function validatePages(p: Project, page: Report): void {
+  if (p.pages.length === 0) page('pages-empty', { id: p.project.id });
+  const ids = new Set<string>();
+  const names = new Map<string, string>();
+  for (const g of p.pages) {
+    if (ids.has(g.id)) page('duplicate-id', g);
+    ids.add(g.id);
+    const first = names.get(pageNameKey(g.name));
+    if (first !== undefined) page('page-duplicate-name', g, first);
+    else names.set(pageNameKey(g.name), g.id);
+  }
+}
+
+/**
+ * The page of each canvas item (v21): a container's own, a canvas marking's own, a container
+ * marking's through its container. `undefined` = unknown (the container does not exist).
+ */
+function pageOfMarking(
+  m: Marking,
+  containers: ReadonlyMap<string, { readonly pageId: string }>,
+): string | null | undefined {
+  return m.containerId === null ? m.pageId : containers.get(m.containerId)?.pageId;
+}
+
 /**
  * Project roots (v16): the container without a parent and the floating or canvas marking without
  * a parent. Only these appear in a perspective (`items`) or in an arrival (`arrivals`).
@@ -149,7 +189,9 @@ function rootProblem(
  * comparing every pair.
  */
 function overlappingContainers(containers: Project['containers']): number[][] {
+  // Each page is its own canvas (v21): containers on different pages never overlap.
   const rects = containers.map((c) => imageCanvasRect(c, c.placement));
+  const pages = containers.map((c) => c.pageId);
   const size = Math.max(1, ...rects.map((r) => Math.max(r.width, r.height)));
   const found = rects.map(() => new Set<number>());
   const cells = new Map<string, number[]>();
@@ -162,7 +204,9 @@ function overlappingContainers(containers: Project['containers']): number[][] {
       for (let y = cell(r.y); y <= y1; y++) {
         const key = `${x},${y}`;
         const bucket = cells.get(key) ?? [];
-        for (const j of bucket) if (rectsOverlap(rects[j] as Rect, r)) found[j]?.add(i);
+        for (const j of bucket) {
+          if (pages[j] === pages[i] && rectsOverlap(rects[j] as Rect, r)) found[j]?.add(i);
+        }
         cells.set(key, [...bucket, i]);
       }
     }
@@ -229,6 +273,36 @@ function validatePerspectives(p: Project, perspective: Report, arrival: Report):
   validateArrivals(p, ids, arrival);
 }
 
+/** The marking's page: unknown/missing page, required and absent, or present where it must not be. */
+function validateMarkingPage(
+  m: Marking,
+  pageIds: ReadonlySet<string>,
+  report: Report,
+): void {
+  if (m.containerId !== null) {
+    // A container marking has no page of its own: its page is the container's.
+    if (m.pageId !== null) report('page-required', m, m.pageId);
+  } else if (m.pageId === null) report('page-required', m);
+  else if (!pageIds.has(m.pageId)) report('page-missing', m, m.pageId);
+}
+
+/** The ends of an arrow are always on the same page (`arrow-cross-page`). */
+function validateArrowPage(
+  a: Arrow,
+  markings: ReadonlyMap<string, Marking>,
+  containers: ReadonlyMap<string, { readonly pageId: string }>,
+  report: Report,
+): void {
+  const from = markings.get(a.from);
+  const to = markings.get(a.to);
+  if (!from || !to) return;
+  const fromPage = pageOfMarking(from, containers);
+  const toPage = pageOfMarking(to, containers);
+  if (fromPage !== undefined && toPage !== undefined && fromPage !== toPage) {
+    report('arrow-cross-page', a, a.to);
+  }
+}
+
 /**
  * Anchors (v20): the target exists, is not the marking itself, is in the same space (the same
  * container, or both on the canvas) and the anchor chain does not close a cycle. The cycle is
@@ -246,7 +320,7 @@ function validateAnchors(
     const target = markings.get(to);
     if (target === undefined) report('anchor-missing', m, to);
     else if (to === m.id) report('anchor-self', m, to);
-    else if (target.containerId !== m.containerId) report('anchor-other-space', m, to);
+    else if (!sameSpace(target, m)) report('anchor-other-space', m, to);
     else if (anchorChainReturns(markings, m.id)) report('anchor-cycle', m, to);
   }
 }
@@ -296,6 +370,7 @@ export function validateProject(p: Project): InvariantIssue[] {
   const annotation = issue('annotation');
 
   validatePerspectives(p, issue('perspective'), issue('arrival'));
+  validatePages(p, issue('page'));
 
   const lists = [
     [p.specializations, spec],
@@ -343,7 +418,10 @@ export function validateProject(p: Project): InvariantIssue[] {
 
   const files = new Set<string>();
   const overlaps = overlappingContainers(p.containers);
+  const pageIds = new Set(p.pages.map((g) => g.id));
   p.containers.forEach((image, i) => {
+    if (image.pageId === '') imageIssue('page-required', image);
+    else if (!pageIds.has(image.pageId)) imageIssue('page-missing', image, image.pageId);
     // A container without a file does not compete for a name; color and file are mutually exclusive.
     if (image.file !== null) {
       if (files.has(image.file)) imageIssue('duplicate-file', image);
@@ -367,6 +445,7 @@ export function validateProject(p: Project): InvariantIssue[] {
     // Canvas marking (v13): null `containerId`, `rect` in canvas units, no bounds.
     const image = m.containerId === null ? undefined : containers.get(m.containerId);
     if (m.containerId !== null && !image) marking('missing-image', m, m.containerId);
+    validateMarkingPage(m, pageIds, marking);
     if (!isIntegerRect(m.rect)) marking('rect-not-integer', m);
     if (
       m.rect.width < MIN_STORED_MARKING_SIZE ||
@@ -390,6 +469,8 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (parent.floating) marking('parent-floating', m, parent.id);
     else if (parent.containerId !== m.containerId)
       marking('parent-other-image', m, parent.id);
+    else if (m.containerId === null && parent.pageId !== m.pageId)
+      marking('page-parent-mismatch', m, parent.id);
     else if (!containsRect(parent.rect, m.rect))
       marking('rect-outside-parent', m, parent.id);
   }
@@ -399,6 +480,7 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (!markings.has(a.from)) arrow('arrow-endpoint-missing', a, a.from);
     if (!markings.has(a.to)) arrow('arrow-endpoint-missing', a, a.to);
     if (a.from === a.to) arrow('arrow-self', a, a.from);
+    validateArrowPage(a, markings, containers, arrow);
   }
 
   validateAnchors(p, markings, marking);
@@ -410,6 +492,8 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (!parent) imageIssue('container-parent-missing', c, c.parentId);
     else if (parent.containerId !== null || parent.floating) {
       imageIssue('container-parent-not-canvas', c, parent.id);
+    } else if (parent.pageId !== c.pageId) {
+      imageIssue('page-parent-mismatch', c, parent.id);
     } else if (!containsRectApprox(parent.rect, imageCanvasRect(c, c.placement))) {
       imageIssue('container-outside-parent', c, parent.id);
     }

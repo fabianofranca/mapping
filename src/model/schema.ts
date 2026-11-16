@@ -71,6 +71,9 @@ export const layerSchema = z.object({
   spec: z.object({ specId: id, layerId: id }).nullable(),
 });
 
+/** Page of the project (v21). Name uniqueness is an invariant (`page-duplicate-name`). */
+export const pageSchema = z.object({ id, name: z.string().trim().min(1) });
+
 export const containerSchema = z.object({
   id,
   name: z.string().nullable(),
@@ -83,6 +86,11 @@ export const containerSchema = z.object({
    * field (ME0 preview) does not have it and opens without migration, as `null`.
    */
   parentId: id.nullable().default(null),
+  /**
+   * Page of the container (v21). Absent or empty is the `page-required` invariant (and has a
+   * repair), not a schema error: the file opens with the list of problems.
+   */
+  pageId: z.string().default(''),
   markingColor: hexColor.nullable(),
   locked: z.boolean(),
   source: sourceSchema.nullable(),
@@ -100,6 +108,11 @@ export const markingSchema = z.object({
   /** `null` = canvas marking (v13): `rect` in canvas units. */
   containerId: id.nullable(),
   parentId: id.nullable(),
+  /**
+   * Page of a canvas marking (v21); `null` on a container marking. Absent reads as `null`: a
+   * canvas marking without a page is the `page-required` invariant.
+   */
+  pageId: id.nullable().default(null),
   name: z.string().nullable(),
   rect: rectSchema,
   needsReview: z.boolean(),
@@ -239,6 +252,8 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   drawingMode: z.string().min(1).optional(),
   /** Project reading direction (v20); absent = `ltr`. */
   direction: readingDirection.optional(),
+  /** Pages in display order (v21); an empty list is the `pages-empty` invariant. */
+  pages: z.array(pageSchema),
   layers: z.array(layerSchema),
   containers: z.array(containerSchema),
   markings: z.array(markingSchema),

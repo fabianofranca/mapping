@@ -1,4 +1,5 @@
 import { fail } from './errors';
+import { DEFAULT_PAGE_NAME } from './migrations';
 import {
   APP_ID,
   COORDINATE_SYSTEM,
@@ -15,6 +16,11 @@ export interface NewProjectArgs {
   readonly now: string;
   /** Initial layer ("Camada 1" / "Layer 1", depending on the language). Always free. */
   readonly firstLayer: Omit<Layer, 'spec'>;
+  /**
+   * The first page (v21). Absent: a new UUID and `DEFAULT_PAGE_NAME`; the app passes the name in
+   * its language.
+   */
+  readonly firstPage?: { readonly id?: string; readonly name?: string };
 }
 
 export function createProject({
@@ -22,6 +28,7 @@ export function createProject({
   name,
   now,
   firstLayer,
+  firstPage,
 }: NewProjectArgs): Project {
   const trimmed = name.trim();
   if (trimmed === '') fail('invalid-name');
@@ -34,6 +41,12 @@ export function createProject({
     specializations: [],
     platformRepos: {},
     docRepos: {},
+    pages: [
+      {
+        id: firstPage?.id ?? crypto.randomUUID(),
+        name: firstPage?.name?.trim() || DEFAULT_PAGE_NAME,
+      },
+    ],
     layers: [{ ...firstLayer, spec: null }],
     containers: [],
     markings: [],

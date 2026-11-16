@@ -73,7 +73,13 @@ export type ModelErrorCode =
   // Perspectives (v16): the name is empty or repeated; the id is not a root's
   | 'perspective-name-empty'
   | 'perspective-name-taken'
-  | 'not-root';
+  | 'not-root'
+  // Pages (v21): the name is empty or repeated, the last page stays, nothing crosses pages
+  | 'page-name-empty'
+  | 'page-name-taken'
+  | 'page-last'
+  | 'arrow-cross-page'
+  | 'page-arrow-crossing';
 
 /**
  * Structured facts that some errors carry (a plain, serializable object). The model keeps
@@ -93,6 +99,18 @@ export type RectTooSmallData = {
 /** `data` of `image-overlap`: the container it overlaps with (the other one, not the one being moved). */
 export type ImageOverlapData = {
   readonly containerId: string;
+};
+
+/** One arrow that stops `moveRootsToPage` (`data.arrows` of `page-arrow-crossing`). */
+export type PageArrowCrossing = {
+  readonly id: string;
+  readonly from: string;
+  readonly to: string;
+};
+
+/** `data` of `page-arrow-crossing`: the arrows with one end inside the group that moves and one outside. */
+export type PageArrowCrossingData = {
+  readonly arrows: readonly PageArrowCrossing[];
 };
 
 export class ModelError extends Error {

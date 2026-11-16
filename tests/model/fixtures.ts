@@ -18,6 +18,7 @@ export function emptyProject(): Project {
     name: 'Teste',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Lataria', color: '#D32F2F' },
+    firstPage: { id: 'PG1', name: 'Page 1' },
   });
 }
 
