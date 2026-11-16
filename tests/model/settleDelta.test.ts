@@ -9,6 +9,7 @@ const marking = (id: string, containerId: string | null, x = 0): Marking => ({
   id,
   containerId,
   parentId: null,
+  pageId: containerId === null ? 'PG1' : null,
   name: null,
   rect: { x, y: 0, width: 10, height: 10 },
   needsReview: false,

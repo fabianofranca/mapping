@@ -39,6 +39,7 @@ const canvasMarking = (id: string, extra: Partial<Marking> = {}): Marking => ({
   id,
   containerId: null,
   parentId: null,
+  pageId: 'PG1',
   name: null,
   rect: { x: 300, y: 300, width: 100, height: 100 },
   needsReview: false,
@@ -110,7 +111,7 @@ describe('schema v16', () => {
     const result = load(JSON.stringify(v15Raw(), null, 2));
     expect(result.migratedFrom).toBe(15);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(20);
+    expect(result.project.schemaVersion).toBe(21);
     expect(result.project.project.id).toMatch(UUID);
     expect(result.project.perspectives).toEqual([]);
     expect(result.project.arrivals).toEqual([]);
@@ -121,7 +122,7 @@ describe('schema v16', () => {
     };
     expect(serialize(sameId)).toBe(serialize(original));
     const saved = JSON.parse(serialize(result.project)) as Raw;
-    expect(saved.schemaVersion).toBe(20);
+    expect(saved.schemaVersion).toBe(21);
     expect(saved.project.id).toBe(result.project.project.id);
     expect(saved.perspectives).toEqual([]);
     expect(saved.arrivals).toEqual([]);
@@ -184,7 +185,7 @@ describe('schema v16', () => {
 
   it('the v21 opens read-only ("newer version")', () => {
     const p = withPerspectives();
-    const newer = JSON.stringify({ ...JSON.parse(serialize(p)), schemaVersion: 21 });
+    const newer = JSON.stringify({ ...JSON.parse(serialize(p)), schemaVersion: 22 });
     const loaded = load(newer);
     expect(loaded.readOnly).toBe(true);
     expect(loaded.project.perspectives).toHaveLength(2);

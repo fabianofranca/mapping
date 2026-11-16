@@ -144,6 +144,34 @@ function buildView(p: Project, perspective: Perspective): Project {
   return { ...p, containers, markings, arrows, annotations };
 }
 
+const pageCache = new WeakMap<Project, Map<string, Project>>();
+
+/**
+ * The project cut down to one page (v21): the containers, markings, arrows and annotations of
+ * `pageId` and nothing else (`pages`, layers, perspectives and arrivals stay as they are). Each
+ * page is a canvas of its own, so whoever computes something on "the canvas" (the free spot of a
+ * root, the area where an arrival goes, what a perspective shows) does it on this view. A page
+ * that does not exist gives an empty view. Memoized per project and page.
+ */
+export function pageView(p: Project, pageId: string): Project {
+  let byPage = pageCache.get(p);
+  if (!byPage) pageCache.set(p, (byPage = new Map()));
+  let view = byPage.get(pageId);
+  if (!view) byPage.set(pageId, (view = buildPageView(p, pageId)));
+  return view;
+}
+
+function buildPageView(p: Project, pageId: string): Project {
+  const { pageOf } = projectIndex(p);
+  const onPage = (id: string) => pageOf.get(id) === pageId;
+  const containers = p.containers.filter((c) => c.pageId === pageId);
+  const markings = p.markings.filter((m) => onPage(m.id));
+  const arrows = p.arrows.filter((a) => onPage(a.id));
+  const kept = new Set<string>([...markings, ...arrows].map((x) => x.id));
+  const annotations = p.annotations.filter((a) => kept.has(a.markingId));
+  return { ...p, containers, markings, arrows, annotations };
+}
+
 const viewCache = new WeakMap<Project, WeakMap<Perspective, Project>>();
 
 /**
@@ -151,14 +179,21 @@ const viewCache = new WeakMap<Project, WeakMap<Perspective, Project>>();
  * are roots, each with its group, shifted to the item's position; the arrows with both ends in
  * the view (the waypoints follow); the annotations of what remains. Nothing about ownership
  * changes (`parentId`, `containerId`). Main (`null`) is the project itself.
+ * With `pageId` (v21) the view is cut down to that page (`pageView`): the roots of the
+ * perspective that live on other pages are not in it, and Main (`null`) is the page itself.
  * Memoized: the same project and the same perspective object give the same result.
  */
-export function perspectiveView(p: Project, perspective: Perspective | null): Project {
-  if (perspective === null) return p;
-  let byPerspective = viewCache.get(p);
-  if (!byPerspective) viewCache.set(p, (byPerspective = new WeakMap()));
+export function perspectiveView(
+  p: Project,
+  perspective: Perspective | null,
+  pageId?: string,
+): Project {
+  const base = pageId === undefined ? p : pageView(p, pageId);
+  if (perspective === null) return base;
+  let byPerspective = viewCache.get(base);
+  if (!byPerspective) viewCache.set(base, (byPerspective = new WeakMap()));
   let view = byPerspective.get(perspective);
-  if (!view) byPerspective.set(perspective, (view = buildView(p, perspective)));
+  if (!view) byPerspective.set(perspective, (view = buildView(base, perspective)));
   return view;
 }
 
@@ -195,17 +230,19 @@ export function arrowShownIn(
 
 /**
  * How many root containers and how many root markings the perspective shows (nonexistent items or
- * those that stopped being roots do not count). The text ("N screens · N tables") is the interface's.
+ * those that stopped being roots do not count; with `pageId`, only those of that page). The text ("N screens · N tables") is the interface's.
  */
 export function perspectiveContentCount(
   p: Project,
   perspective: Perspective,
+  pageId?: string,
 ): { readonly containers: number; readonly markings: number } {
   const index = projectIndex(p);
   let containers = 0;
   let markings = 0;
   for (const root of perspectiveRootSet(perspective)) {
     if (index.rootOf.get(root) !== root) continue;
+    if (pageId !== undefined && index.pageOf.get(root) !== pageId) continue;
     if (index.containers.has(root)) containers++;
     else markings++;
   }

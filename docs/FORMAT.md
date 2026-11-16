@@ -1,4 +1,4 @@
-# Format of `mapping.json` (schema v20)
+# Format of `mapping.json` (schema v21)
 
 The project is a folder (or a zip with the same content) with `mapping.json`, `images/` (the containers' image files) and,
 if any specializations are applied, `specs/` (and, if there are change proposals, `proposals/`). All the markings' coordinates are
@@ -34,7 +34,7 @@ per project). The `backups/` folder is not part of the project: the exported zip
 
 ```json
 {
-  "schemaVersion": 18,
+  "schemaVersion": 21,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -42,6 +42,7 @@ per project). The `backups/` folder is not part of the project: the exported zip
   "specializations": [],
   "platformRepos": {},
   "docRepos": {},
+  "pages": [{ "id": "PG1", "name": "Page 1" }],
   "layers": [{ "id": "L1", "name": "Components", "color": "#E53935", "spec": null }],
   "containers": [
     {
@@ -98,7 +99,7 @@ such as `M1` in the examples are valid too). Colors are `#RRGGBB`.
 
 | Field              | Type    | Description                                                                        |
 | ------------------ | ------- | ---------------------------------------------------------------------------------- |
-| `schemaVersion`    | `20`    | Schema version.                                                                    |
+| `schemaVersion`    | `21`    | Schema version.                                                                    |
 | `revision`         | integer | Write counter (v6, see below).                                                     |
 | `app`              | string  | Always `"mapping"` (reading also accepts `"mapeador-imagens"`).                    |
 | `coordinateSystem` | string  | Always `"image-pixels-exif-oriented"`: image pixels, EXIF applied.                 |
@@ -106,6 +107,7 @@ such as `M1` in the examples are valid too). Colors are `#RRGGBB`.
 | `specializations`  | array   | Applied specializations (see v4).                                                  |
 | `platformRepos`    | object  | Local clone of each platform (v7; only `localPath` since v11, see below).          |
 | `docRepos`         | object  | Local clone of each documents repository (v14, see "Fields of v14").               |
+| `pages`            | array   | The project's pages (v21, at least one): `id` and `name` (see "Fields of v21").    |
 | `drawingMode`      | string  | The project's drawing mode (v18, optional, see "Fields of v18").                   |
 | `direction`        | string  | The project's reading direction (v20, optional, see "Fields of v20").              |
 | `layers`           | array   | Layers, **global** (they apply to all containers), in display order.               |
@@ -122,12 +124,13 @@ such as `M1` in the examples are valid too). Colors are `#RRGGBB`.
 in the project; `null` in the container without a file, v10: see below); `width` and `height` (whole pixels, with the EXIF orientation already applied);
 `placement` (`{ x, y, scale }` — the image's position and scale on the canvas, for the interface only);
 `parentId` (v13: `null` or the canvas marking that wraps the container, computed by the app; see below);
+`pageId` (v21: the page the container lives on; see "Fields of v21 (pages)");
 `markingColor` (`null` or color); `locked` (boolean, v5: see below); `source` (`null` or source, v8:
 see below); `background` (`null` or `#RRGGBB` color, v10: the background color of the container without a file);
 `drawingMode` (v18, optional: the drawing mode that the container pins; see "Fields of v18"); `direction` (v20, optional: the reading direction that the container pins, `ltr` or `rtl`; see "Fields of v20"); `density` (v19, optional: image pixels per component unit; see "Fields of v19").
 
 **`markings[]`**: `id`; `containerId` (v12; formerly `imageId`; `null` in the canvas marking, v13); `parentId` (parent marking or `null`,
-computed by the app since v13); `name` (`string` or `null`);
+computed by the app since v13); `pageId` (v21: the page of a canvas marking; `null` inside a container); `name` (`string` or `null`);
 `rect` (`{ x, y, width, height }`, **whole pixels of the container's original image**, `x`/`y` ≥ 0; in the canvas marking,
 **whole canvas units**, `x`/`y` may be negative);
 `needsReview` (boolean, for the interface only); `locked` (boolean, v5: see below); `floating` (boolean, v13: see below);
@@ -157,7 +160,8 @@ file on read.
   `x + width ≤ image width`; same for `y`); in the canvas marking, no position limit.
 - The parent marking is **in the same space** (the same container, or the canvas) and **contains** the child's `rect`. There are no cycles.
 - Containment (v13): see "Fields of v13 (containment)"; the container's `parentId` and the floating marking have rules of their own.
-- Images **do not overlap** on the canvas (`placement` × size × scale).
+- Images **do not overlap** on the canvas of their page (`placement` × size × scale); images on different pages never compete for space.
+- Pages (v21): there is at least one page (`pages-empty`), names are unique ignoring case and the spaces at the ends (`page-duplicate-name`), every container is on an existing page (`page-required`, `page-missing`), a canvas marking has one too and a marking inside a container has none; no parent and no arrow crosses pages (`page-parent-mismatch`, `arrow-cross-page`). See "Fields of v21 (pages)".
 - Every annotation points to an existing marking (or arrow, v13) and an existing layer.
 - Anchor (v20): `anchor.to` is an existing marking in the **same space**, different from the marking itself and with no cycle
   (`anchor-missing`, `anchor-self`, `anchor-other-space`, `anchor-cycle`); see "Fields of v20".
@@ -193,22 +197,26 @@ shows the **exact list** of problems (rule, item type, id and name), with **Copy
 When all the problems have an unambiguous mechanical repair (`repairProject` in `src/model/repair.ts`), the
 dialog offers **Repair and open**:
 
-| Problem                                                                                                                 | Repair                                                                                  |
-| ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Pair with an `id` already used (in another annotation or in the same one)                                               | The first keeps the id; the others get a new id.                                        |
-| `rect` outside the image                                                                                                | Clipped to the image bounds; if no area is left, the marking is removed.                |
-| Marking of a nonexistent image                                                                                          | Removed.                                                                                |
-| Arrow with a nonexistent endpoint (or that is another arrow) or linked to itself (v13)                                  | Removed, with its annotations (in the next round).                                      |
-| Annotation of a nonexistent marking or layer                                                                            | Removed, with the annotations it owns (`parentAnnotationId`).                           |
-| Nonexistent `parentId` or cycle in the marking hierarchy                                                                | The marking (in a cycle, each one in the cycle) becomes a root of its space.            |
-| Floating marking inside a container or with a parent (v13)                                                              | Goes to the canvas, with the `rect` converted, and is left without a parent.            |
-| Parent of a floating marking; container parent that is nonexistent, not on the canvas or that does not contain it (v13) | The `parentId` becomes `null`.                                                          |
-| Overlapping images                                                                                                      | The one with the higher index goes to the right of the earlier ones' box.               |
-| Perspective with a root item that is nonexistent, not a root or repeated; nonexistent hidden layer (v16)                | The item (the second, if repeated) or the layer leaves the perspective.                 |
-| Perspective with a repeated `id` (v16)                                                                                  | The first keeps the id; the others get a new id.                                        |
-| Perspective with a repeated name (v16)                                                                                  | The first keeps the name; the others get " (2)", " (3)"…                                |
-| Arrival of a root that is nonexistent, not a root or repeated (v16)                                                     | Removed (the second, if repeated).                                                      |
-| Anchor with a target that is nonexistent, itself, in another space or in a cycle (v20)                                  | The marking stays where it is, with `anchor: null` (in a cycle, each one in the cycle). |
+| Problem                                                                                                                             | Repair                                                                                      |
+| ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Pair with an `id` already used (in another annotation or in the same one)                                                           | The first keeps the id; the others get a new id.                                            |
+| `rect` outside the image                                                                                                            | Clipped to the image bounds; if no area is left, the marking is removed.                    |
+| Marking of a nonexistent image                                                                                                      | Removed.                                                                                    |
+| Arrow with a nonexistent endpoint (or that is another arrow) or linked to itself (v13)                                              | Removed, with its annotations (in the next round).                                          |
+| Annotation of a nonexistent marking or layer                                                                                        | Removed, with the annotations it owns (`parentAnnotationId`).                               |
+| Nonexistent `parentId` or cycle in the marking hierarchy                                                                            | The marking (in a cycle, each one in the cycle) becomes a root of its space.                |
+| Floating marking inside a container or with a parent (v13)                                                                          | Goes to the canvas, with the `rect` converted, and is left without a parent.                |
+| Parent of a floating marking; container parent that is nonexistent, not on the canvas or that does not contain it (v13)             | The `parentId` becomes `null`.                                                              |
+| Overlapping images                                                                                                                  | The one with the higher index goes to the right of the earlier ones' box.                   |
+| Perspective with a root item that is nonexistent, not a root or repeated; nonexistent hidden layer (v16)                            | The item (the second, if repeated) or the layer leaves the perspective.                     |
+| Perspective with a repeated `id` (v16)                                                                                              | The first keeps the id; the others get a new id.                                            |
+| Perspective with a repeated name (v16)                                                                                              | The first keeps the name; the others get " (2)", " (3)"…                                    |
+| Arrival of a root that is nonexistent, not a root or repeated (v16)                                                                 | Removed (the second, if repeated).                                                          |
+| Anchor with a target that is nonexistent, itself, in another space or in a cycle (v20)                                              | The marking stays where it is, with `anchor: null` (in a cycle, each one in the cycle).     |
+| No page, a container or canvas marking without a page or on one that does not exist, `pageId` on a marking inside a container (v21) | A page is created ("Page 1"); the item goes to the first page; the `pageId` becomes `null`. |
+| Parent on another page (v21)                                                                                                        | The item becomes a root of its page.                                                        |
+| Arrow between markings of different pages (v21)                                                                                     | Removed, with its annotations (the only repair that deletes; it is listed).                 |
+| Repeated page name (v21)                                                                                                            | The first keeps the name; the others get " (2)", " (3)"…                                    |
 
 A repair may expose another (the removed marking leaves its annotations without a marking and its children without a parent):
 each round resolves what the previous one exposed. Any other problem (repeated id of an image, marking,
@@ -1142,6 +1150,45 @@ An earlier app rejects the v20 file as a "newer version", instead of discarding 
 Only `schemaVersion` changes to 20; no data is altered (no direction or anchor is created). As in every migration, the
 original goes to `backups/` before the first write and the migration banner appears at the top.
 
+## Fields of v21 (pages)
+
+v21 divides the canvas into **pages**: each page is a canvas of its own, with its own containers, canvas markings and arrows.
+A project with one page looks exactly like a v20 one.
+
+- **`pages`** (array, at the root, after `docRepos` and before `layers`): each entry is `{ "id", "name" }`. The list order is the order of
+  the tabs. There is always at least one page. The name is trimmed, not empty, and unique ignoring case and accents
+  (`page-duplicate-name`); ids are unique among pages, containers, markings and arrows (`duplicate-id`).
+- **`containers[].pageId`** (string, after `parentId`): the page the container lives on. Required (`page-required` when empty, `page-missing` when it is not on the list).
+- **`markings[].pageId`** (string or `null`, after `parentId`): the page of a **canvas marking** (`containerId` null). A marking inside a container
+  has `pageId: null` (its page is its container's). A canvas marking without a page is `page-required`, and so is a marking inside a container that carries a `pageId` (repaired to `null`).
+- **Everything is decided inside a page.** Containment (`settleHierarchy`) only compares things of the same page, so a canvas marking never
+  wraps a container of another page and a marking never enters a container of another page. Images only overlap-check against
+  the ones on their page. An arrow and an anchor between canvas markings of different pages are refused
+  (`arrow-cross-page`, `anchor-other-space`). A parent on another page is `page-parent-mismatch`.
+- **Moving roots between pages** (`moveRootsToPage`): a root takes everything that belongs to it along (`rootMembers`), shifted by a **whole**
+  offset (`ceil` in `x`, `round` in `y`) to the right of the destination's content (right edge + the gap between images), at its top (an
+  empty page: the origin). An arrow between the group and what stays is refused (`page-arrow-crossing`, with the list of arrows). The perspectives that
+  had a moved root place it to the right of what they already show on the destination page.
+- **Deleting a page** (`deletePage`): the content goes to another page (every root, as above) or is discarded. The last page cannot be deleted (`page-last`).
+  One undo entry.
+- **Perspectives and pages:** a perspective keeps the same roots; the app shows the part that is on the current page. `pageView(project, pageId)`
+  is the project cut by a page.
+
+### How a reader uses the pages
+
+A reader that does not care about pages (an agent, a script) can keep reading `containers` and `markings` as before: the coordinates
+are still pixels of the container and, for a canvas marking, units of the canvas **of its page**. Two things from different pages can sit at
+the same canvas coordinates without being near each other: compare positions only among items with the same page (`containers[].pageId`,
+`markings[].pageId`, or the container's for a marking inside it).
+
+An earlier app rejects the v21 file as a "newer version", instead of discarding the pages when writing.
+
+### Migration v20 → v21
+
+`pages` is created with one page (new UUID; the app names it "Page 1" in English and by its language otherwise); every container gets its `pageId` and
+every canvas marking gets `pageId` of that page; markings inside a container get `pageId: null`. A `pages`/`pageId` already in the file is kept. As in
+every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
+
 ## Migration
 
 v1 files are migrated on opening: every image gets `name: null` and every annotation gets
@@ -1152,7 +1199,7 @@ image and each marking. v5 files get `revision: 0`. v6 files get `platformRepos:
 v7 files get `source: null` on each image and each marking. v8 files lose the values of the
 `codeRef` fields, by the type declared in the specialization copy (see "Fields of v9"). v9 files
 get `background: null` on each image (see "Fields of v10"). v10 files lose the `urlTemplate` of
-each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). On save, the
-file becomes v20 (and, in folder mode, the original goes first to `backups/`, as in any
+each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). On save, the
+file becomes v21 (and, in folder mode, the original goes first to `backups/`, as in any
 migration).
 Files of a newer version open read-only.

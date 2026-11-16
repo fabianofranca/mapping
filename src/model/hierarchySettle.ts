@@ -88,10 +88,16 @@ export function markingCanvasRectOf(p: Project, marking: Marking): Rect {
 
 /**
  * The container that fully contains the `canvas` rectangle (canvas units). Since containers do
- * not overlap, there is at most one; `null` = none (the space is the canvas).
+ * not overlap, there is at most one; `null` = none (the space is the canvas). Each page is a
+ * canvas of its own: with `pageId`, only the containers of that page count.
  */
-export function containerContaining(p: Project, canvas: Rect): ProjectContainer | null {
+export function containerContaining(
+  p: Project,
+  canvas: Rect,
+  pageId?: string | null,
+): ProjectContainer | null {
   for (const c of p.containers) {
+    if (pageId !== undefined && pageId !== null && c.pageId !== pageId) continue;
     if (containsRectApprox(imageCanvasRect(c, c.placement), canvas)) return c;
   }
   return null;
@@ -109,10 +115,13 @@ export function enclosingAmong(
   containerId: string | null,
   candidates: ReadonlySet<string>,
   current: string | null,
+  pageId?: string | null,
 ): string | null {
   const group: Entry[] = [];
   p.markings.forEach((m, i) => {
-    if (!m.floating && m.containerId === containerId) group.push({ m, i });
+    if (m.floating || m.containerId !== containerId) return;
+    if (containerId === null && pageId !== undefined && m.pageId !== pageId) return;
+    group.push({ m, i });
   });
   const ranks = new Map<string, number>();
   equalRectRanks(group, ranks);
@@ -163,6 +172,8 @@ function settleSpace(
   options: SettleOptions | undefined,
 ): Marking {
   let canvas: Rect;
+  // The page of the canvas the marking is on, or lands on when it leaves its container.
+  let pageId: string | null = m.pageId;
   if (m.containerId === null) {
     canvas = m.rect;
   } else {
@@ -171,14 +182,16 @@ function settleSpace(
     if (!own) return m;
     if (!m.floating && containsRect(imagePixelRect(own), m.rect)) return m;
     canvas = toCanvasRect(own.placement, m.rect);
+    pageId = own.pageId;
   }
-  const target = m.floating ? null : containerContaining(p, canvas);
+  const target = m.floating ? null : containerContaining(p, canvas, pageId);
   if (target === null && m.containerId === null) return m;
   const min = options?.minSizeOf?.(m.id) ?? null;
   const space = target ? containerSpace(target) : CANVAS_SPACE;
   return {
     ...m,
     containerId: space.containerId,
+    pageId: space.containerId === null ? pageId : null,
     rect: fromCanvasRect(space.placement, canvas, space.bounds, min),
   };
 }
@@ -385,6 +398,16 @@ function collectDirty(w: Work, delta: SettleDelta): void {
   }
 }
 
+/** Key of the canvas space of a page (a container id never starts with a NUL). */
+function canvasKey(pageId: string | null): string {
+  return `\0page:${pageId ?? ''}`;
+}
+
+/** Key of the space of a marking: its container, or the canvas of its page. */
+function spaceKey(m: Marking): string {
+  return m.containerId ?? canvasKey(m.pageId);
+}
+
 /**
  * Decides the parents: the whole spaces (and the containers', if the canvas is one of them) and
  * the rest only in what was touched.
@@ -411,7 +434,8 @@ function settleFullSpaces(
   const inSpaces = (id: string | null) => spaces === null || spaces.has(id);
   const list = w.list.items();
   // Markings per space, with the index in the array; the rank resolves the equal-rectangle tie.
-  const bySpace = new Map<string | null, Entry[]>();
+  // The canvas is one space per page (`canvasKey`).
+  const bySpace = new Map<string, Entry[]>();
   const patches: Entry[] = [];
   list.forEach((m, i) => {
     if (!inSpaces(m.containerId)) return;
@@ -419,21 +443,22 @@ function settleFullSpaces(
       if (m.parentId !== null) patches.push({ m: { ...m, parentId: null }, i });
       return;
     }
-    const group = bySpace.get(m.containerId);
+    const key = spaceKey(m);
+    const group = bySpace.get(key);
     if (group) group.push({ m, i });
-    else bySpace.set(m.containerId, [{ m, i }]);
+    else bySpace.set(key, [{ m, i }]);
   });
   const ranks = new Map<string, number>();
   for (const group of bySpace.values()) equalRectRanks(group, ranks);
   const rankOf = (id: string) => ranks.get(id) ?? -1;
 
   // Spatial index of each space, built when someone asks (`docs/ARCHITECTURE.md`).
-  const indexes = new Map<string | null, RectIndex<Entry>>();
-  const indexOf = (containerId: string | null): RectIndex<Entry> => {
-    let index = indexes.get(containerId);
+  const indexes = new Map<string, RectIndex<Entry>>();
+  const indexOf = (key: string): RectIndex<Entry> => {
+    let index = indexes.get(key);
     if (!index) {
-      index = buildRectIndex(bySpace.get(containerId) ?? [], (e) => e.m.rect);
-      indexes.set(containerId, index);
+      index = buildRectIndex(bySpace.get(key) ?? [], (e) => e.m.rect);
+      indexes.set(key, index);
     }
     return index;
   };
@@ -444,7 +469,7 @@ function settleFullSpaces(
     }
   }
   const containers = inSpaces(null)
-    ? settleContainerParents(w.p.containers, indexOf(null), rankOf)
+    ? settleContainerParents(w.p.containers, (c) => indexOf(canvasKey(c.pageId)), rankOf)
     : w.p.containers;
   for (const e of patches) w.list.set(e.i, e.m);
   return containers;
@@ -455,13 +480,14 @@ function settleFullSpaces(
  */
 function settleContainerParents(
   list: readonly ProjectContainer[],
-  canvasIndex: RectIndex<Entry>,
+  canvasIndexOf: (c: ProjectContainer) => RectIndex<Entry>,
   rankOf: (id: string) => number,
 ): readonly ProjectContainer[] {
   let changed = false;
   const out = list.map((c) => {
     const rect = imageCanvasRect(c, c.placement);
-    const candidates = canvasIndex
+    // Only the canvas markings of the container's own page can contain it.
+    const candidates = canvasIndexOf(c)
       .containing(rect, EPSILON)
       .filter((e) => containsRectApprox(e.m.rect, rect));
     const parentId = pickParent(candidates, c.parentId, rankOf);

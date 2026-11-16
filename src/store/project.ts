@@ -269,9 +269,19 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
   };
 
   return {
-    newProject(name: string, now: string, firstLayer: Omit<Layer, 'id' | 'spec'>): void {
+    newProject(
+      name: string,
+      now: string,
+      firstLayer: Omit<Layer, 'id' | 'spec'>,
+      firstPageName?: string,
+    ): void {
       store.load(
-        model.createProject({ name, now, firstLayer: { ...firstLayer, id: newId() } }),
+        model.createProject({
+          name,
+          now,
+          firstLayer: { ...firstLayer, id: newId() },
+          ...(firstPageName === undefined ? {} : { firstPage: { name: firstPageName } }),
+        }),
       );
     },
     /** Applies an operation that creates roots (see `applyCreating`): the session uses it for those that create containers. */

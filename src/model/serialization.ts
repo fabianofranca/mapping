@@ -3,6 +3,7 @@ import { isRecord } from './isRecord';
 import {
   discardedOnMigrationTo11,
   discardedOnMigrationTo13,
+  DEFAULT_PAGE_NAME,
   migrate,
   migrations as defaultMigrations,
   type DiscardedInherit,
@@ -68,6 +69,7 @@ export function serialize(p: Project): string {
     ),
     ...(p.drawingMode === undefined ? {} : { drawingMode: p.drawingMode }),
     ...(p.direction === undefined ? {} : { direction: p.direction }),
+    pages: p.pages.map((g) => ({ id: g.id, name: g.name })),
     layers: p.layers.map((l) => ({
       id: l.id,
       name: l.name,
@@ -82,6 +84,7 @@ export function serialize(p: Project): string {
       height: i.height,
       placement: { x: i.placement.x, y: i.placement.y, scale: i.placement.scale },
       parentId: i.parentId,
+      pageId: i.pageId,
       markingColor: i.markingColor,
       locked: i.locked,
       source: i.source && { system: i.source.system, id: i.source.id, url: i.source.url },
@@ -94,6 +97,7 @@ export function serialize(p: Project): string {
       id: m.id,
       containerId: m.containerId,
       parentId: m.parentId,
+      pageId: m.pageId,
       name: m.name,
       rect: { x: m.rect.x, y: m.rect.y, width: m.rect.width, height: m.rect.height },
       needsReview: m.needsReview,
@@ -281,6 +285,7 @@ export function deserialize(
   text: string,
   registry: ReadonlyMap<number, Migration> = defaultMigrations,
   specs: ReadonlyMap<string, string> = new Map(),
+  pageName: string = DEFAULT_PAGE_NAME,
 ): DeserializeResult {
   let raw: unknown;
   try {
@@ -288,14 +293,19 @@ export function deserialize(
   } catch {
     return { ok: false, error: { code: 'invalid-json' } };
   }
-  return deserializeParsed(raw, registry, specs);
+  return deserializeParsed(raw, registry, specs, pageName);
 }
 
-/** `deserialize` for already-parsed JSON (whoever read it for something else does not read it again). */
+/**
+ * `deserialize` for already-parsed JSON (whoever read it for something else does not read it again).
+ * `pageName` is the name of the page the migration to v21 (and the repair of a project without
+ * pages) creates.
+ */
 export function deserializeParsed(
   raw: unknown,
   registry: ReadonlyMap<number, Migration> = defaultMigrations,
   specs: ReadonlyMap<string, string> = new Map(),
+  pageName: string = DEFAULT_PAGE_NAME,
 ): DeserializeResult {
   if (!isRecord(raw)) {
     return {
@@ -317,7 +327,7 @@ export function deserializeParsed(
   if (readOnly) {
     data = { ...raw, schemaVersion: SCHEMA_VERSION };
   } else if (version < SCHEMA_VERSION) {
-    const migrated = migrate(raw, version, registry, SCHEMA_VERSION, { specs });
+    const migrated = migrate(raw, version, registry, SCHEMA_VERSION, { specs, pageName });
     if (!migrated.ok) {
       return {
         ok: false,
@@ -346,7 +356,7 @@ export function deserializeParsed(
       ok: false,
       error: { code: 'invariant-violation', issues },
       repair: {
-        ...repairProject(project, issues),
+        ...repairProject(project, issues, undefined, pageName),
         readOnly,
         migratedFrom,
         specWarnings: warnings,

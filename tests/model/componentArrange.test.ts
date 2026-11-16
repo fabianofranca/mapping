@@ -488,6 +488,7 @@ describe('arrangeMarking: Material 3', () => {
           height: 1000,
           placement: { x: 0, y: 0, scale: 1 },
           parentId: null,
+          pageId: 'PG1',
           markingColor: null,
           locked: false,
           source: null,

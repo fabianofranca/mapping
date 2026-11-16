@@ -217,7 +217,7 @@ test('step 1: updating the SDUI to v2 shows the Screens layer and the platforms'
   ).toBeVisible();
   const { mapping } = await exportMapping(page);
   expect(mapping.layers.map((l) => l.name)).toContain('Screens');
-  expect(mapping.schemaVersion).toBe(20);
+  expect(mapping.schemaVersion).toBe(21);
 });
 
 test('step 2: the specialization repo is read-only and only the local path is editable', async ({
@@ -309,7 +309,7 @@ test('step 3: "Definition" of the Button ("Open in repository" and "Copy path") 
   await expect(page.getByText('implementation')).toHaveCount(0);
   const { mapping } = await exportMapping(page);
   expect(mapping).toMatchObject({
-    schemaVersion: 20,
+    schemaVersion: 21,
     platformRepos: {},
   });
   const screen = mapping.annotations.find((a) => a.type?.typeId === 'screen');

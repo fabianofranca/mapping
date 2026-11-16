@@ -87,6 +87,7 @@ export function project(): Project {
     name: 'Kotlin Suggestions',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Notes', color: '#1e88e5' },
+    firstPage: { id: 'PG1', name: 'Page 1' },
   });
   p = applySpecialization(p, spec, {
     newId: () => `LS${++n}`,

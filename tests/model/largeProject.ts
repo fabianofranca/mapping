@@ -29,6 +29,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
     name: 'Large',
     now: '2026-09-30T12:00:00.000Z',
     firstLayer: { id: 'L1', name: 'Bodywork', color: '#E53935' },
+    firstPage: { id: 'PG1', name: 'Page 1' },
   });
   const cols = 5;
   const scale = 1000 / Math.max(imageWidth, imageHeight);
@@ -44,6 +45,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
       id: containerId,
       name: null,
       parentId: null,
+      pageId: 'PG1',
       markingColor: null,
       locked: false,
       source: null,
@@ -66,6 +68,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
         id: parentId,
         containerId: containerId,
         parentId: null,
+        pageId: containerId === null ? 'PG1' : null,
         name: `Marking ${i}-${g}`,
         rect: parent,
         needsReview: false,
@@ -78,6 +81,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
           id: `${parentId}-${c}`,
           containerId: containerId,
           parentId,
+          pageId: containerId === null ? 'PG1' : null,
           name: null,
           rect: {
             x: parent.x + 10 + (c % 2) * Math.floor(parent.width / 2),

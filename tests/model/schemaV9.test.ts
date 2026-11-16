@@ -42,7 +42,7 @@ describe('migration v8 → v9 (removed code field)', () => {
     expect(result.migratedFrom).toBe(8);
     expect(result.readOnly).toBe(false);
     expect(result.specWarnings).toEqual([]);
-    expect(result.project.schemaVersion).toBe(20);
+    expect(result.project.schemaVersion).toBe(21);
     expect(screenValues(result.project)).toEqual({ nome: 'Cadastro', rota: '/cadastro' });
     // The same project as before the field, with the copy read without it.
     expect(result.project).toEqual(codeProject());
@@ -52,7 +52,7 @@ describe('migration v8 → v9 (removed code field)', () => {
   it('writes the current version without the values, and re-reading is stable (with the old copy in specs/)', () => {
     const { text, specs } = legacyCodeFiles();
     const saved = serialize(load(text, specs).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(20);
+    expect(JSON.parse(saved).schemaVersion).toBe(21);
     expect(saved).not.toContain('implementacao');
     expect(saved).not.toContain('CadastroScreen');
     const again = load(saved, specs);

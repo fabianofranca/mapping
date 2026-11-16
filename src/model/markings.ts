@@ -30,6 +30,7 @@ import { canDeleteMarking, canEditMarkingGeometry, requireUnlocked } from './loc
 import { findById, normalizeOptionalName, updateById } from './project';
 import { projectIndex, idInUse } from './projectIndex';
 import { countBrokenRefs } from './refs';
+import { containersOfPage, firstPageId, requirePage } from './spaces';
 import type { Marking, Project, Rect } from './types';
 
 /**
@@ -85,6 +86,19 @@ export interface NewMarkingArgs {
   readonly name?: string | null;
   /** Floating (v13): only on the canvas (`containerId` null); default `false`. */
   readonly floating?: boolean;
+  /**
+   * Page of a canvas marking (v21; default: the first page). A container marking has no page
+   * of its own (`pageId: null`): passing one with a `containerId` fails with `invalid-space`.
+   */
+  readonly pageId?: string;
+}
+
+/** A floating marking or one with a `pageId` lives only on the canvas; the page has to exist. */
+function checkNewMarkingSpace(p: Project, args: NewMarkingArgs, floating: boolean): void {
+  const onCanvas = args.containerId === null;
+  if ((floating || args.pageId !== undefined) && !onCanvas)
+    fail('invalid-space', args.id);
+  if (args.pageId !== undefined) requirePage(p, args.pageId);
 }
 
 /**
@@ -101,7 +115,7 @@ export function createMarking(
   // Markings, arrows and containers share the id space.
   if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   const floating = args.floating ?? false;
-  if (floating && args.containerId !== null) fail('invalid-space', args.id);
+  checkNewMarkingSpace(p, args, floating);
   const container =
     args.containerId === null ? null : findById(p.containers, args.containerId);
   checkRectShape(args.rect, options);
@@ -112,6 +126,7 @@ export function createMarking(
     id: args.id,
     containerId: args.containerId,
     parentId: null,
+    pageId: args.containerId === null ? (args.pageId ?? firstPageId(p)) : null,
     name: normalizeOptionalName(args.name ?? null),
     rect: {
       x: args.rect.x,
@@ -200,13 +215,17 @@ export function setMarkingSpace(
   if (container && !containsRect(imagePixelRect(container), rect)) {
     fail('rect-out-of-image');
   }
+  if (container) checkArrowsStayOnPage(p, markingId, container.pageId);
   const copy: Rect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+  const { pageOf } = projectIndex(p);
   const base = {
     ...p,
     markings: updateById(p.markings, markingId, (m) => ({
       ...m,
       containerId,
       parentId: null,
+      // On the canvas the marking belongs to the page it was on; inside a container it has none.
+      pageId: containerId === null ? (pageOf.get(markingId) ?? null) : null,
       rect: copy,
     })),
   };
@@ -218,6 +237,18 @@ export function setMarkingSpace(
     markingId,
     options,
   );
+}
+
+/** A marking (and its descendants) that changes page cannot keep an arrow to a marking left on another one. */
+function checkArrowsStayOnPage(p: Project, markingId: string, pageId: string): void {
+  const { pageOf } = projectIndex(p);
+  const moving = new Set([markingId, ...descendantIds(p, markingId)]);
+  for (const a of p.arrows) {
+    const other = moving.has(a.from) ? a.to : moving.has(a.to) ? a.from : null;
+    if (other !== null && !moving.has(other) && pageOf.get(other) !== pageId) {
+      fail('arrow-cross-page', a.id);
+    }
+  }
 }
 
 /**
@@ -300,6 +331,19 @@ export function adjustMarkingRect(
   return setMarkingRect(p, markingId, { ...rect, [field]: size }, options);
 }
 
+/** The marking taken out of its container onto the canvas of the container's page, as a floating one. */
+function floatedMarking(p: Project, marking: Marking, options?: RectOptions): Marking {
+  const min = options?.minSize ?? options?.minSizeOf?.(marking.id) ?? null;
+  return {
+    ...marking,
+    containerId: null,
+    pageId: projectIndex(p).pageOf.get(marking.id) ?? marking.pageId,
+    parentId: null,
+    floating: true,
+    rect: fromCanvasRect(IDENTITY_PLACEMENT, markingCanvasRectOf(p, marking), null, min),
+  };
+}
+
 /**
  * Turns the floating marking on or off (v13): a comment over the canvas, outside the containment
  * tree in both directions. Turning on takes the marking out of the container (converts the
@@ -317,24 +361,9 @@ export function setMarkingFloating(
   const marking = findById(p.markings, markingId);
   if (marking.floating === floating) return p;
   requireUnlocked(canEditMarkingGeometry(p, markingId));
-  let next: Marking;
-  if (floating) {
-    const min = options?.minSize ?? options?.minSizeOf?.(markingId) ?? null;
-    next = {
-      ...marking,
-      containerId: null,
-      parentId: null,
-      floating: true,
-      rect: fromCanvasRect(
-        IDENTITY_PLACEMENT,
-        markingCanvasRectOf(p, marking),
-        null,
-        min,
-      ),
-    };
-  } else {
-    next = { ...marking, floating: false };
-  }
+  const next: Marking = floating
+    ? floatedMarking(p, marking, options)
+    : { ...marking, floating: false };
   // Turning on the floating one takes the marking out of the container: attached arrows lose their
   // waypoints.
   const moved = floating && marking.containerId !== null;
@@ -430,8 +459,15 @@ function cascadeRemove(p: Project, markingId: string): Project {
  * same `containerId`, and `null` with `null` (the canvas ones, floating included).
  */
 function siblingsOf(p: Project, marking: Marking): readonly Marking[] {
-  const group = projectIndex(p).children.get(marking.parentId) ?? [];
-  return group.filter((m) => m.containerId === marking.containerId);
+  const { children, pageOf } = projectIndex(p);
+  const group = children.get(marking.parentId) ?? [];
+  // On the canvas each page is a space of its own: only the markings of the same page are siblings.
+  const page = pageOf.get(marking.id);
+  return group.filter(
+    (m) =>
+      m.containerId === marking.containerId &&
+      (marking.containerId !== null || pageOf.get(m.id) === page),
+  );
 }
 
 /**
@@ -486,6 +522,28 @@ export interface FloatingNearTarget {
   readonly id: string;
 }
 
+/** Each page is a canvas of its own: only what is on the target's page is an obstacle (containers and floating markings). */
+function floatingObstacles(
+  p: Project,
+  targetId: string,
+  pageId: string | undefined,
+): Rect[] {
+  const obstacles: Rect[] = containersOfPage(p, pageId).map((c) =>
+    imageCanvasRect(c, c.placement),
+  );
+  for (const m of p.markings) {
+    if (
+      m.floating &&
+      m.containerId === null &&
+      m.id !== targetId &&
+      m.pageId === pageId
+    ) {
+      obstacles.push(markingCanvasRectOf(p, m));
+    }
+  }
+  return obstacles;
+}
+
 /**
  * Rectangle (canvas units) for a floating marking of `size` near `target`, in a free spot of
  * the margin. Deterministic: tries the **right** of the target (on a container marking, the
@@ -521,12 +579,7 @@ export function placeFloatingNear(
         : index.containers.get(marking.containerId);
     anchor = container ? imageCanvasRect(container, container.placement) : start;
   }
-  const obstacles: Rect[] = p.containers.map((c) => imageCanvasRect(c, c.placement));
-  for (const m of p.markings) {
-    if (m.floating && m.containerId === null && m.id !== target.id) {
-      obstacles.push(markingCanvasRectOf(p, m));
-    }
-  }
+  const obstacles = floatingObstacles(p, target.id, index.pageOf.get(target.id));
   return floatingSpotNear(obstacles, anchor, start, size);
 }
 

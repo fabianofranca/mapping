@@ -759,7 +759,7 @@ describe('project with an old schema', () => {
     expect(readProposal(dir, proposed.proposal.id).baseRevision).toBe(0);
 
     const saved = acceptAllAndApply(dir, proposed.proposal.id);
-    expect(saved.schemaVersion).toBe(20);
+    expect(saved.schemaVersion).toBe(21);
     expect(saved.platformRepos).toEqual({});
     expect(saved.layers.at(-1)!.name).toBe('Notas');
   });

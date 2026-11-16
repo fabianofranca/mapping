@@ -147,6 +147,31 @@ function decode(entity: ChangeEntity, value: JsonValue): Entity {
 }
 
 /**
+ * Pages (v21): a proposal does not carry the page yet, so what it creates goes to the first page, and
+ * a marking that a `space` swap takes to the canvas keeps the page it was on (its container's). A
+ * marking inside a container has none (`pageId: null`); the settle that follows moves the page along
+ * with the space.
+ */
+function assignPages(
+  p: Project,
+  containers: Map<string, ProjectContainer>,
+  markings: Map<string, Marking>,
+): void {
+  const first = p.pages[0]?.id ?? '';
+  for (const [id, c] of containers) {
+    if (!c.pageId) containers.set(id, { ...c, pageId: first });
+  }
+  const { pageOf } = projectIndex(p);
+  for (const [id, m] of markings) {
+    if (m.containerId !== null) {
+      if (m.pageId !== null) markings.set(id, { ...m, pageId: null });
+    } else if (!m.pageId) {
+      markings.set(id, { ...m, pageId: pageOf.get(id) ?? first });
+    }
+  }
+}
+
+/**
  * `false` if the key is not a field of the annotation's type, in the specialization as it is in
  * the project being assembled. A type that cannot be resolved (specialization missing or without
  * a copy) does not decide: `true`, and the value becomes pending like any other.
@@ -441,6 +466,12 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
         );
     }
   }
+
+  assignPages(
+    p,
+    maps.image as Map<string, ProjectContainer>,
+    maps.marking as Map<string, Marking>,
+  );
 
   const layers = [...maps.layer.values()] as Layer[];
   for (const c of [...positions].sort((a, b) => (a.to as number) - (b.to as number))) {
