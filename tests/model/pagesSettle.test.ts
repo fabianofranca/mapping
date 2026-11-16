@@ -18,7 +18,7 @@ import {
   type InvariantCode,
   type Project,
 } from '../../src/model';
-import { image, marking } from './fixtures';
+import { NOW, image, marking } from './fixtures';
 
 // Pages (v21, PG1): containment is decided inside a page; no parent and no arrow crosses pages.
 
@@ -33,6 +33,8 @@ const rect = (x: number, y: number, width: number, height: number) => ({
 function overlappingPages(): Project {
   let p = createProject({
     name: 'Pages',
+    now: NOW,
+    firstLayer: { id: 'L1', name: 'Layer', color: '#D32F2F' },
     firstPage: { id: 'PG1', name: 'Page 1' },
   });
   p = createPage(p, { id: 'PG2', name: 'Page 2' });

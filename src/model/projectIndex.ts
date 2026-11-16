@@ -206,6 +206,26 @@ function rootGroups(
   return { rootOf, rootMembers: groups, roots, perspectivesByRoot };
 }
 
+/** The page of each container, marking and arrow (a marking inside a container has its container's; an arrow, its `from`'s). */
+function itemPages(
+  p: Project,
+  containers: ReadonlyMap<string, ProjectContainer>,
+  markings: ReadonlyMap<string, Marking>,
+): Map<string, string> {
+  const pageOf = new Map<string, string>();
+  for (const c of p.containers) pageOf.set(c.id, c.pageId);
+  for (const m of p.markings) {
+    const page =
+      m.containerId === null ? m.pageId : containers.get(m.containerId)?.pageId;
+    if (page !== undefined && page !== null) pageOf.set(m.id, page);
+  }
+  for (const a of p.arrows) {
+    const page = markings.has(a.from) ? pageOf.get(a.from) : undefined;
+    if (page !== undefined) pageOf.set(a.id, page);
+  }
+  return pageOf;
+}
+
 /** Page of each container, marking and arrow, and the roots of each page (v21). */
 function pageGroups(
   p: Project,
@@ -213,16 +233,7 @@ function pageGroups(
   markings: ReadonlyMap<string, Marking>,
   roots: readonly string[],
 ): Pick<ProjectIndex, 'pageOf' | 'rootsByPage'> {
-  const pageOf = new Map<string, string>();
-  for (const c of p.containers) pageOf.set(c.id, c.pageId);
-  for (const m of p.markings) {
-    const page = m.containerId === null ? m.pageId : containers.get(m.containerId)?.pageId;
-    if (page !== undefined && page !== null) pageOf.set(m.id, page);
-  }
-  for (const a of p.arrows) {
-    const page = markings.has(a.from) ? pageOf.get(a.from) : undefined;
-    if (page !== undefined) pageOf.set(a.id, page);
-  }
+  const pageOf = itemPages(p, containers, markings);
   const rootsByPage = new Map<string, string[]>(p.pages.map((g) => [g.id, []]));
   for (const id of roots) {
     const page = pageOf.get(id);
@@ -296,7 +307,12 @@ function buildIndex(p: Project): ProjectIndex {
     children,
     containersByParent,
     canvasRoots,
-    ...withPages(p, containersById, markingsById, rootGroups(p, containersById, markingsById, canvasRoots)),
+    ...withPages(
+      p,
+      containersById,
+      markingsById,
+      rootGroups(p, containersById, markingsById, canvasRoots),
+    ),
     annotationsByMarking,
     annotationsByOwner,
     specializations: byId(p.specializations),

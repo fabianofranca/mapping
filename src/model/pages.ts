@@ -84,26 +84,18 @@ export interface PageContent {
 export function pageContent(p: Project, pageId: string): PageContent {
   requirePage(p, pageId);
   const index = projectIndex(p);
-  let containers = 0;
-  let markings = 0;
-  let arrows = 0;
-  let annotations = 0;
-  for (const c of p.containers) if (c.pageId === pageId) containers++;
-  for (const m of p.markings) {
-    if (index.pageOf.get(m.id) !== pageId) continue;
-    markings++;
-    annotations += index.annotationsByMarking.get(m.id)?.length ?? 0;
-  }
-  for (const a of p.arrows) {
-    if (index.pageOf.get(a.id) !== pageId) continue;
-    arrows++;
-    annotations += index.annotationsByMarking.get(a.id)?.length ?? 0;
-  }
+  const onPage = (id: string) => index.pageOf.get(id) === pageId;
+  const markings = p.markings.filter((m) => onPage(m.id));
+  const arrows = p.arrows.filter((a) => onPage(a.id));
+  const annotations = [...markings, ...arrows].reduce(
+    (sum, item) => sum + (index.annotationsByMarking.get(item.id)?.length ?? 0),
+    0,
+  );
   return {
     roots: index.rootsByPage.get(pageId)?.length ?? 0,
-    containers,
-    markings,
-    arrows,
+    containers: p.containers.filter((c) => c.pageId === pageId).length,
+    markings: markings.length,
+    arrows: arrows.length,
     annotations,
   };
 }
@@ -218,12 +210,36 @@ export function moveRootsToPage(
 ): Project {
   requirePage(p, pageId);
   const index = projectIndex(p);
+  const moving = rootsToMove(p, rootIds, pageId);
+  if (moving.size === 0) return p;
+  const group = groupOf(p, moving);
+  const crossing = crossingArrows(p, group.markingIds);
+  if (crossing.length > 0) fail('page-arrow-crossing', undefined, { arrows: crossing });
+
+  const box = boundingBox(footprints(p, moving));
+  const content = footprints(p, index.rootsByPage.get(pageId) ?? []);
+  const d = box === null ? { dx: 0, dy: 0 } : offsetBeside(box, content);
+  const next = withGroupOnPage(p, group, pageId, d);
+  const withPerspectives = {
+    ...next,
+    perspectives: repositionPerspectives(next, moving, pageId),
+  };
+  return settleFrom(p, withPerspectives, options);
+}
+
+/** The roots that change page: each has to be a root, exist and be unlocked; the ones already there are left out. */
+function rootsToMove(
+  p: Project,
+  rootIds: readonly string[],
+  pageId: string,
+): Set<string> {
+  const index = projectIndex(p);
   for (const id of rootIds) {
-    if (!index.rootMembers.has(id))
+    if (!index.rootMembers.has(id)) {
       fail(index.rootOf.has(id) ? 'not-root' : 'not-found', id);
+    }
   }
   const moving = new Set(rootIds.filter((id) => index.pageOf.get(id) !== pageId));
-  if (moving.size === 0) return p;
   for (const id of moving) {
     requireUnlocked(
       index.containers.has(id)
@@ -231,21 +247,36 @@ export function moveRootsToPage(
         : canEditMarkingGeometry(p, id),
     );
   }
+  return moving;
+}
 
+interface MovingGroup {
+  readonly containerIds: ReadonlySet<string>;
+  readonly markingIds: ReadonlySet<string>;
+}
+
+/** Everything that belongs to the roots (`rootMembers`): the containers and the markings. */
+function groupOf(p: Project, roots: ReadonlySet<string>): MovingGroup {
+  const { rootMembers } = projectIndex(p);
   const containerIds = new Set<string>();
   const markingIds = new Set<string>();
-  for (const id of moving) {
-    const group = index.rootMembers.get(id);
+  for (const id of roots) {
+    const group = rootMembers.get(id);
     for (const c of group?.containers ?? []) containerIds.add(c.id);
     for (const m of group?.markings ?? []) markingIds.add(m.id);
   }
-  const crossing = crossingArrows(p, markingIds);
-  if (crossing.length > 0) fail('page-arrow-crossing', undefined, { arrows: crossing });
+  return { containerIds, markingIds };
+}
 
-  const box = boundingBox(footprints(p, moving));
-  const content = footprints(p, index.rootsByPage.get(pageId) ?? []);
-  const d = box === null ? { dx: 0, dy: 0 } : offsetBeside(box, content);
-  const next: Project = {
+/** The group on the page `pageId`, shifted by `d` (canvas markings and the group's own arrows follow). */
+function withGroupOnPage(
+  p: Project,
+  group: MovingGroup,
+  pageId: string,
+  d: { readonly dx: number; readonly dy: number },
+): Project {
+  const { containerIds, markingIds } = group;
+  return {
     ...p,
     containers: p.containers.map((c) =>
       containerIds.has(c.id)
@@ -267,11 +298,6 @@ export function moveRootsToPage(
     ),
     arrows: p.arrows.map((a) => (markingIds.has(a.from) ? shiftedArrow(p, a, d) : a)),
   };
-  const withPerspectives = {
-    ...next,
-    perspectives: repositionPerspectives(next, moving, pageId),
-  };
-  return settleFrom(p, withPerspectives, options);
 }
 
 // ---------------------------------------------------------------------------

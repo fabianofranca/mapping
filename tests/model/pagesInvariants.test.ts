@@ -56,10 +56,15 @@ const patchMarking = (p: Project, id: string, change: Partial<Marking>): Project
 
 /** Repairs and checks the result is valid; returns the codes of the repairs, in order. */
 function repaired(p: Project): { project: Project; codes: string[] } {
-  const result = repairProject(p, validateProject(p), (() => {
-    let n = 0;
-    return () => `new-${++n}`;
-  })(), 'Page 1');
+  const result = repairProject(
+    p,
+    validateProject(p),
+    (() => {
+      let n = 0;
+      return () => `new-${++n}`;
+    })(),
+    'Page 1',
+  );
   expect(result.unrepaired).toEqual([]);
   expect(validateProject(result.project)).toEqual([]);
   return {
@@ -101,7 +106,10 @@ describe('pages: invariants refuse the opening', () => {
 
   it('page-duplicate-name (ignoring case and the spaces at the ends) and duplicate-id', () => {
     const p = twoPages();
-    const named = { ...p, pages: [...p.pages.slice(0, 1), { id: 'PG2', name: '  PAGE 1 ' }] };
+    const named = {
+      ...p,
+      pages: [...p.pages.slice(0, 1), { id: 'PG2', name: '  PAGE 1 ' }],
+    };
     expect(validateProject(named)).toContainEqual(
       expect.objectContaining({
         code: 'page-duplicate-name',
@@ -119,18 +127,26 @@ describe('pages: invariants refuse the opening', () => {
   it('page-missing: container and canvas marking on a page that does not exist', () => {
     const p = twoPages();
     const bad = patchMarking(
-      { ...p, containers: p.containers.map((c) => (c.id === 'I3' ? { ...c, pageId: 'XX' } : c)) },
+      {
+        ...p,
+        containers: p.containers.map((c) => (c.id === 'I3' ? { ...c, pageId: 'XX' } : c)),
+      },
       'K',
       { pageId: 'XX' },
     );
-    expect(codes(bad)).toEqual(expect.arrayContaining(['page-missing:I3', 'page-missing:K']));
+    expect(codes(bad)).toEqual(
+      expect.arrayContaining(['page-missing:I3', 'page-missing:K']),
+    );
   });
 
   it('page-required: container without pageId, canvas marking without page, container marking with page', () => {
     const p = twoPages();
     const bad = patchMarking(
       patchMarking(
-        { ...p, containers: p.containers.map((c) => (c.id === 'I3' ? { ...c, pageId: '' } : c)) },
+        {
+          ...p,
+          containers: p.containers.map((c) => (c.id === 'I3' ? { ...c, pageId: '' } : c)),
+        },
         'K',
         { pageId: null },
       ),
@@ -148,7 +164,9 @@ describe('pages: invariants refuse the opening', () => {
     expect(codes(child)).toContain('page-parent-mismatch:J');
     const withParent: Project = {
       ...p,
-      containers: p.containers.map((c) => (c.id === 'I3' ? { ...c, parentId: 'K', pageId: 'PG1' } : c)),
+      containers: p.containers.map((c) =>
+        c.id === 'I3' ? { ...c, parentId: 'K', pageId: 'PG1' } : c,
+      ),
     };
     expect(codes(withParent)).toContain('page-parent-mismatch:I3');
   });
@@ -186,7 +204,8 @@ describe('pages: invariants refuse the opening', () => {
     const p = patchMarking(twoPages(), 'K', { pageId: 'XX' });
     const result = deserialize(serialize(p));
     expect(result.ok).toBe(false);
-    if (result.ok || result.error.code !== 'invariant-violation') throw new Error('expected');
+    if (result.ok || result.error.code !== 'invariant-violation')
+      throw new Error('expected');
     expect(result.error.issues.map((i) => i.code)).toContain('page-missing');
     expect(result.repair?.unrepaired).toEqual([]);
   });
@@ -200,7 +219,8 @@ describe('pages: invariants refuse the opening', () => {
     const canvas = json.markings.find((m) => m.id === 'K');
     delete canvas?.pageId;
     const result = deserialize(JSON.stringify(json));
-    if (result.ok || result.error.code !== 'invariant-violation') throw new Error('expected');
+    if (result.ok || result.error.code !== 'invariant-violation')
+      throw new Error('expected');
     expect(result.error.issues.map((i) => `${i.code}:${i.id}`)).toEqual(
       expect.arrayContaining(['page-required:I1', 'page-required:K']),
     );
@@ -214,7 +234,9 @@ describe('pages: the repair (Repair and open)', () => {
     expect(r.project.pages).toHaveLength(1);
     expect(r.project.pages[0]?.name).toBe('Page 1');
     expect(r.codes[0]).toMatch(/^created:pages-empty:/);
-    expect(r.project.containers.every((c) => c.pageId === r.project.pages[0]?.id)).toBe(true);
+    expect(r.project.containers.every((c) => c.pageId === r.project.pages[0]?.id)).toBe(
+      true,
+    );
   });
 
   it('a missing page or a missing pageId: the item goes to the first page', () => {
@@ -223,7 +245,11 @@ describe('pages: the repair (Repair and open)', () => {
       {
         ...p,
         containers: p.containers.map((c) =>
-          c.id === 'I3' ? { ...c, pageId: 'XX' } : c.id === 'I2' ? { ...c, pageId: '' } : c,
+          c.id === 'I3'
+            ? { ...c, pageId: 'XX' }
+            : c.id === 'I2'
+              ? { ...c, pageId: '' }
+              : c,
         ),
       },
       'K',
@@ -255,7 +281,9 @@ describe('pages: the repair (Repair and open)', () => {
     const p = twoPages();
     const bad: Project = {
       ...p,
-      containers: p.containers.map((c) => (c.id === 'I3' ? { ...c, parentId: 'K', pageId: 'PG1' } : c)),
+      containers: p.containers.map((c) =>
+        c.id === 'I3' ? { ...c, parentId: 'K', pageId: 'PG1' } : c,
+      ),
     };
     const fixed = repaired(bad);
     expect(fixed.project.containers.find((c) => c.id === 'I3')?.parentId).toBeNull();
@@ -291,7 +319,13 @@ describe('pages: the repair (Repair and open)', () => {
 
   it('a repeated page name: the repeated one gets a number; a repeated page id has no repair', () => {
     const p = twoPages();
-    const named = { ...p, pages: [{ id: 'PG1', name: 'Page 1' }, { id: 'PG2', name: 'page 1 ' }] };
+    const named = {
+      ...p,
+      pages: [
+        { id: 'PG1', name: 'Page 1' },
+        { id: 'PG2', name: 'page 1 ' },
+      ],
+    };
     const r = repaired(named);
     expect(r.project.pages.map((g) => g.name)).toEqual(['Page 1', 'page 1 (2)']);
     const dupId = { ...p, pages: [...p.pages, { id: 'PG2', name: 'Other' }] };

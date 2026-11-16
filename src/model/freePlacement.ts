@@ -102,19 +102,26 @@ function levelObstacles(
   excluded: ReadonlySet<string>,
 ): Rect[] {
   const crosses = (r: Rect): boolean => area === null || rectsOverlap(r, area);
-  const obstacles: Rect[] = [];
-  for (const m of p.markings) {
-    if (m.floating || m.containerId !== containerId || excluded.has(m.id)) continue;
-    if (containerId === null && m.pageId !== pageId) continue;
-    if (crosses(m.rect)) obstacles.push(m.rect);
-  }
-  if (containerId === null) {
-    for (const c of containersOfPage(p, pageId ?? undefined)) {
-      const canvas = imageCanvasRect(c, c.placement);
-      if (crosses(canvas)) obstacles.push(canvas);
-    }
+  const obstacles = p.markings
+    .filter((m) => isLevelObstacle(m, containerId, pageId, excluded) && crosses(m.rect))
+    .map((m) => m.rect);
+  if (containerId !== null) return obstacles;
+  for (const c of containersOfPage(p, pageId ?? undefined)) {
+    const canvas = imageCanvasRect(c, c.placement);
+    if (crosses(canvas)) obstacles.push(canvas);
   }
   return obstacles;
+}
+
+/** A marking that is an obstacle on the level: same space (on the canvas, same page), not floating, not excluded. */
+function isLevelObstacle(
+  m: Marking,
+  containerId: string | null,
+  pageId: string | null,
+  excluded: ReadonlySet<string>,
+): boolean {
+  if (m.floating || m.containerId !== containerId || excluded.has(m.id)) return false;
+  return containerId !== null || m.pageId === pageId;
 }
 
 /**

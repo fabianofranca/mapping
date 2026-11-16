@@ -205,7 +205,8 @@ function overlappingContainers(containers: Project['containers']): number[][] {
         const key = `${x},${y}`;
         const bucket = cells.get(key) ?? [];
         for (const j of bucket) {
-          if (pages[j] === pages[i] && rectsOverlap(rects[j] as Rect, r)) found[j]?.add(i);
+          if (pages[j] === pages[i] && rectsOverlap(rects[j] as Rect, r))
+            found[j]?.add(i);
         }
         cells.set(key, [...bucket, i]);
       }
@@ -340,6 +341,18 @@ function anchorChainReturns(
   return false;
 }
 
+/** Every container is on exactly one page of the list: `page-required` (empty) or `page-missing` (not on the list). */
+function validateContainerPages(
+  p: Project,
+  pageIds: ReadonlySet<string>,
+  imageIssue: Report,
+): void {
+  for (const image of p.containers) {
+    if (image.pageId === '') imageIssue('page-required', image);
+    else if (!pageIds.has(image.pageId)) imageIssue('page-missing', image, image.pageId);
+  }
+}
+
 /**
  * Checks the invariants that the zod schema does not express. Empty list = valid project.
  * See docs/FORMAT.md, "Validity rules". The arrow (v13) has its own:
@@ -419,9 +432,8 @@ export function validateProject(p: Project): InvariantIssue[] {
   const files = new Set<string>();
   const overlaps = overlappingContainers(p.containers);
   const pageIds = new Set(p.pages.map((g) => g.id));
+  validateContainerPages(p, pageIds, imageIssue);
   p.containers.forEach((image, i) => {
-    if (image.pageId === '') imageIssue('page-required', image);
-    else if (!pageIds.has(image.pageId)) imageIssue('page-missing', image, image.pageId);
     // A container without a file does not compete for a name; color and file are mutually exclusive.
     if (image.file !== null) {
       if (files.has(image.file)) imageIssue('duplicate-file', image);

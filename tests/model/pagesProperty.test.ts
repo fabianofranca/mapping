@@ -15,6 +15,7 @@ import {
   type InvariantCode,
   type Project,
 } from '../../src/model';
+import { NOW } from './fixtures';
 
 // Property (decision 20 of #883): after every geometry operation, with several pages, no parent
 // and no arrow crosses a page. Deterministic generator (mulberry32), like `settleEquivalence`.
@@ -54,7 +55,12 @@ const GUARDED: readonly InvariantCode[] = [
 ];
 
 function start(rng: Rng): Project {
-  let p = createProject({ name: 'Property', firstPage: { id: 'PG0', name: 'Page 0' } });
+  let p = createProject({
+    name: 'Property',
+    now: NOW,
+    firstLayer: { id: 'L1', name: 'Layer', color: '#D32F2F' },
+    firstPage: { id: 'PG0', name: 'Page 0' },
+  });
   const pages = rng.int(2, 3);
   for (let i = 1; i < pages; i++) p = createPage(p, { id: `PG${i}`, name: `Page ${i}` });
   for (let i = 0; i < 6; i++) {

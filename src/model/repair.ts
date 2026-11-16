@@ -298,9 +298,9 @@ function repairRound(
   // annotations go in the next round, like those of any owner that stopped existing.
   const arrows: Arrow[] = [];
   for (const a of p.arrows) {
-    const code = (['arrow-endpoint-missing', 'arrow-self', 'arrow-cross-page'] as const).find(
-      (c) => has('arrow', a.id, c),
-    );
+    const code = (
+      ['arrow-endpoint-missing', 'arrow-self', 'arrow-cross-page'] as const
+    ).find((c) => has('arrow', a.id, c));
     if (code) record(out, 'removed', code, 'arrow', a);
     else arrows.push(a);
   }
@@ -391,7 +391,8 @@ function repairRound(
     const repaged = repairContainerPage(image, has, pageIds, firstPage, out);
     const code = orphanCodes.find((c) => has('image', image.id, c));
     if (code === undefined || repaged.parentId === null) return repaged;
-    if (code === 'page-parent-mismatch' && repaged.pageId !== image.pageId) return repaged;
+    if (code === 'page-parent-mismatch' && repaged.pageId !== image.pageId)
+      return repaged;
     record(out, 'made-root', code, 'image', image);
     return { ...repaged, parentId: null };
   });

@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  SCHEMA_VERSION,
-  deserialize,
-  serialize,
-  type Project,
-} from '../../src/model';
+import { SCHEMA_VERSION, deserialize, serialize, type Project } from '../../src/model';
 import { migrateFrom20To21 } from '../../src/model/migrations';
 import { sampleProject } from './fixtures';
 
@@ -84,7 +79,10 @@ describe('migration v20 → v21 (pages)', () => {
         { id: 'B', name: 'B' },
       ],
       containers: [{ id: 'I', pageId: 'B' }, { id: 'J' }],
-      markings: [{ id: 'M', containerId: null, pageId: 'B' }, { id: 'N', containerId: 'I' }],
+      markings: [
+        { id: 'M', containerId: null, pageId: 'B' },
+        { id: 'N', containerId: 'I' },
+      ],
     });
     expect(migrated.pages).toEqual([
       { id: 'A', name: 'A' },
@@ -120,7 +118,10 @@ describe('migration v20 → v21 (pages)', () => {
     const keys = Object.keys(json);
     expect(keys.indexOf('pages')).toBe(keys.indexOf('layers') - 1);
     for (const key of ['containers', 'markings'] as const) {
-      const first = (json[key] as Record<string, unknown>[])[0] as Record<string, unknown>;
+      const first = (json[key] as Record<string, unknown>[])[0] as Record<
+        string,
+        unknown
+      >;
       const own = Object.keys(first);
       expect(own[own.indexOf('parentId') + 1]).toBe('pageId');
     }
