@@ -16,6 +16,7 @@
 ## Alterado
 
 - The `dist/index.html` ceiling went up 32 KiB, from 2244608 to 2277376, by the budget rule; above the limits, `bug` #2019 for the owner to review
+- The `dist/index.html` ceiling went up 16 KiB, from 2277376 to 2293760, by the budget rule; above the limits, `bug` for the owner to review
 - "Comment here" on an empty canvas spot is only offered on the first page for now: the anchor of a canvas point has no page until the conversations phase (PG4).
 - `createArrow` and `setArrowEndpoint` refuse ends on different pages (`arrow-cross-page`); `setMarkingSpace` refuses sending a marking with arrows into a container of another page.
 - A new container or canvas marking goes to the first page unless `pageId` says otherwise; placement only looks at the page.
