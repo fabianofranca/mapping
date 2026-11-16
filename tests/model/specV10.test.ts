@@ -72,10 +72,10 @@ function typeNotice(notice: unknown): Json {
 }
 
 describe('formatVersion 10: notices', () => {
-  it('the current version is 17 and v1 to v9 are still accepted', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(17);
+  it('the current version is 18 and v1 to v9 are still accepted', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(18);
     expect(SPEC_FORMAT_VERSIONS).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
     ]);
     for (const v of SPEC_FORMAT_VERSIONS) {
       expect(parseSpec(spec(v)).ok, `v${v}`).toBe(true);

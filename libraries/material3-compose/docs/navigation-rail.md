@@ -16,11 +16,12 @@ Annotation type: `navigation-rail` (Components layer).
 
 Columns of `items` (one row per item):
 
-| Key        | Label    | Type   | Required | Options                                                   | Default |
-| ---------- | -------- | ------ | -------- | --------------------------------------------------------- | ------- |
-| `label`    | Label    | string | yes      |                                                           |         |
-| `icon`     | Icon     | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
-| `selected` | Selected | enum   | no       | `true`, `false`                                           | `false` |
+| Key               | Label            | Type   | Required | Options                                                   | Default |
+| ----------------- | ---------------- | ------ | -------- | --------------------------------------------------------- | ------- |
+| `label`           | Label            | string | yes      |                                                           |         |
+| `icon`            | Icon             | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
+| `iconDescription` | Icon description | string | no       | free text                                                 |         |
+| `selected`        | Selected         | enum   | no       | `true`, `false`                                           | `false` |
 
 ## Compose
 
@@ -111,3 +112,5 @@ The field chooses the resting look of a state; it does not go into the `code` or
 - The scrim, the modal rail's elevation (Level2 in the tokens, no shadow in the composable), the expand and collapse animation, the header (`header`) and the rail button are not part of the drawing; the `modal-wide` style draws only the sheet.
 - The narrow rail's width is `hug` with a minimum of 80 (Compose's `widthIn(min = 80)`); the collapsed wide is capped at 96 even with a wider label, like Compose's `actualMinWidth`.
 - The `interaction` is a resting frame: no animated ripple or focus ring (Compose does not define `FocusIndicatorColor` for it in the pinned commit), no `enabled` and no icon-only item (an item with no label, with a round 56 × 56 indicator): the type requires the label.
+
+**Accessibility** (stage #1081; the unit is the dp, 1 dp = 1 component unit): the type has `accessibility.role` `navigation`, with no `label`, and one `item` part per row of `items` with role `tab`, named by the `label` and the `iconDescription` columns of the row (the second one is optional). Compose gives each item `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt` (line 252: `Role.Tab`).

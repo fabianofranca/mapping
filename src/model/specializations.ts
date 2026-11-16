@@ -1,5 +1,6 @@
 import { fail } from './errors';
 import { fileNameKey } from './containers';
+import { accessibilityAudit } from './accessibility';
 import { projectIssues, type AnnotationIssue } from './issues';
 import {
   runLibraryMigrations,
@@ -347,7 +348,23 @@ export interface SpecUpdateImpact {
 }
 
 const issueKey = (i: AnnotationIssue): string =>
-  [i.code, i.key ?? '', i.rowId ?? '', i.column ?? ''].join('\u0000');
+  [i.code, i.key ?? '', i.rowId ?? '', i.column ?? '', i.part?.id ?? ''].join('\u0000');
+
+/**
+ * The pending items of the project as the Incomplete list counts them: `projectIssues` plus the
+ * accessibility audit's `accessible-label-missing`, each once per annotation.
+ */
+function pendingOf(p: Project): ReadonlyMap<string, readonly AnnotationIssue[]> {
+  const audit = accessibilityAudit(p);
+  const base = projectIssues(p);
+  if (audit.size === 0) return base;
+  const merged = new Map(base);
+  for (const [id, entry] of audit) {
+    if (entry.issues.length > 0)
+      merged.set(id, [...(merged.get(id) ?? []), ...entry.issues]);
+  }
+  return merged;
+}
 
 /**
  * Pending items that exist in `after` and did not exist in `before`, in the specialization's
@@ -361,13 +378,14 @@ function newIssues(
   const was = new Set(
     before.annotations.filter((a) => a.type?.specId === specId).map((a) => a.id),
   );
-  const prior = projectIssues(before);
+  const prior = pendingOf(before);
+  const current = pendingOf(after);
   const pending: { annotationId: string; issue: AnnotationIssue }[] = [];
   for (const a of after.annotations) {
     // Typed in the specialization, or converted to free along the way.
     if (a.type?.specId !== specId && !was.has(a.id)) continue;
     const known = new Set((prior.get(a.id) ?? []).map(issueKey));
-    for (const issue of projectIssues(after).get(a.id) ?? []) {
+    for (const issue of current.get(a.id) ?? []) {
       if (!known.has(issueKey(issue))) pending.push({ annotationId: a.id, issue });
     }
   }

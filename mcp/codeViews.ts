@@ -321,6 +321,9 @@ function hintAnnotation(
     ...(code === undefined ? {} : { code }),
     ...(args.length > 0 ? { args } : {}),
     ...(Object.keys(annotation.values).length > 0 ? { values: annotation.values } : {}),
+    ...(annotation.accessibility === undefined
+      ? {}
+      : { accessibility: annotation.accessibility }),
     ...(linked.length > 0 ? { linked } : {}),
     ...(targets.length > 0 ? { targets } : {}),
   };

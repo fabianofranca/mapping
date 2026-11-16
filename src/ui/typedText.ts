@@ -88,8 +88,28 @@ function slotParams(p: Project, a: Annotation, issue: AnnotationIssue) {
   };
 }
 
+/** Position (1-based) of the table row of the issue, 0 when the row is gone. */
+function issueRow(a: Annotation, issue: AnnotationIssue): number {
+  if (issue.key === undefined || issue.rowId === undefined) return 0;
+  return tableRows(a.values?.[issue.key]).findIndex((r) => r._id === issue.rowId) + 1;
+}
+
+/** The text of `accessible-label-missing` of a part (the part's name and, in a table, the row); it names itself. */
+function partLabelText(a: Annotation, issue: AnnotationIssue): string | null {
+  if (issue.part === undefined) return null;
+  const row = issueRow(a, issue);
+  // A row that is gone (a stale audit) names no position.
+  return row === 0
+    ? t('issue.accessible-label-missing-part', { part: issue.part.name })
+    : t('issue.accessible-label-missing-part-row', { part: issue.part.name, row });
+}
+
 /** Only the reason for the pending item (below the field itself, whose name is already beside it). */
 export function issueReason(p: Project, a: Annotation, issue: AnnotationIssue): string {
+  if (issue.code === 'accessible-label-missing') {
+    const own = partLabelText(a, issue);
+    if (own !== null) return own;
+  }
   const owner =
     a.parentAnnotationId === null
       ? null
@@ -109,6 +129,15 @@ export function issueMessage(p: Project, a: Annotation, issue: AnnotationIssue):
   if (!issue.key) return reason;
   const type = typeOfAnnotation(p, a)?.type;
   const field = type?.fields.find((f) => f.key === issue.key);
+  if (issue.code === 'accessible-label-missing') {
+    // A part names itself (and its row); the type's label names the field.
+    return (
+      partLabelText(a, issue) ??
+      t('issue.accessible-label-missing-field', {
+        field: field ? fieldLabel(field) : issue.key,
+      })
+    );
+  }
   let where = field ? fieldLabel(field) : issue.key;
   if (issue.rowId !== undefined) {
     const rows = tableRows(a.values?.[issue.key]);

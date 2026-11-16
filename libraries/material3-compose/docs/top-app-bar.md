@@ -6,13 +6,16 @@ Annotation type: `top-app-bar` (layer Components).
 
 ## Fields
 
-| Key              | Label           | Type   | Required | Options                                                   | Default | Description                                                                 |
-| ---------------- | --------------- | ------ | -------- | --------------------------------------------------------- | ------- | --------------------------------------------------------------------------- |
-| `title`          | Title           | string | yes      |                                                           |         | Screen title.                                                               |
-| `style`          | Style           | enum   | no       | `small`, `center`, `medium`, `large`                      | `small` | small, center (centered title), medium or large (large title on two lines). |
-| `navigationIcon` | Navigation icon | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Icon on the left (Menu or ArrowBack, for example). Empty = no icon.         |
-| `actionIcon1`    | Action 1        | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | First action icon on the right. Empty = no action.                          |
-| `actionIcon2`    | Action 2        | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Second action icon on the right. Empty = no action.                         |
+| Key                         | Label                       | Type   | Required | Options                                                   | Default | Description                                                                                                                               |
+| --------------------------- | --------------------------- | ------ | -------- | --------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`                     | Title                       | string | yes      |                                                           |         | Screen title.                                                                                                                             |
+| `style`                     | Style                       | enum   | no       | `small`, `center`, `medium`, `large`                      | `small` | small, center (centered title), medium or large (large title on two lines).                                                               |
+| `navigationIcon`            | Navigation icon             | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Icon on the left (Menu or ArrowBack, for example). Empty = no icon.                                                                       |
+| `navigationIconDescription` | Navigation icon description | string | no       | free text                                                 |         | Accessible name of the navigation icon (it is an action): what a screen reader reads ("Search", "Open the menu"). Empty = a pending item. |
+| `actionIcon1`               | Action 1                    | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | First action icon on the right. Empty = no action.                                                                                        |
+| `actionIcon1Description`    | Action 1 description        | string | no       | free text                                                 |         | Accessible name of action 1 (it is an action): what a screen reader reads ("Search", "Open the menu"). Empty = a pending item.            |
+| `actionIcon2`               | Action 2                    | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         | Second action icon on the right. Empty = no action.                                                                                       |
+| `actionIcon2Description`    | Action 2 description        | string | no       | free text                                                 |         | Accessible name of action 2 (it is an action): what a screen reader reads ("Search", "Open the menu"). Empty = a pending item.            |
 
 ## Compose
 
@@ -54,9 +57,11 @@ fun ScreenTopBar() {
 
 ## Examples
 
-- **Default**: title=Home, style=small, navigationIcon=Menu, actionIcon1=Search, actionIcon2=MoreVert
-- **Centered**: title=Profile, style=center, navigationIcon=ArrowBack
-- **Large**: title=Settings, style=large, navigationIcon=ArrowBack
+- **Default**: title=Home, style=small, navigationIcon=Menu, navigationIconDescription=Open the menu, actionIcon1=Search, actionIcon1Description=Search, actionIcon2=MoreVert, actionIcon2Description=More options
+- **Centered**: title=Profile, style=center, navigationIcon=ArrowBack, navigationIconDescription=Back
+- **Large**: title=Settings, style=large, navigationIcon=ArrowBack, navigationIconDescription=Back
+- **Labeled actions**: title=Inbox, style=small, navigationIcon=Menu, navigationIconDescription=Open the menu, actionIcon1=Search, actionIcon1Description=Search, actionIcon2=MoreVert, actionIcon2Description=More options
+- **Actions without a label**: title=Inbox, style=small, navigationIcon=Menu, actionIcon1=Search, actionIcon2=MoreVert
 
 ## Fidelity
 
@@ -92,3 +97,5 @@ Reference: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb6
 - A title so long that it fills the whole gap gets, in Compose, an 8 shift to the left (the title `Box`, with 12 at the start, goes past `width - end` and is pushed); the drawing truncates the text at the computed margin. On the centered one, a title larger than the symmetric gap but that fits the asymmetric gap is pushed to one side in Compose; here it is truncated with `…`.
 - The icons are only those of the library set (`icons`); the Compose 48 `IconButton` has the `Icons.Filled` icon of the same name, without the mirroring ones (`AutoMirrored`), and without pressed, focused and hovered states.
 - No `windowInsets` (the status bar), which is not a field of the type; `expandedHeight`, `collapsedHeight` and `scrolledContainerColor` are fields and code, but the drawing does not use them. The `subtitle` is only drawn in the `small` style.
+
+**Accessibility** (stage #1081; the unit is the dp, 1 dp = 1 component unit): the type has no `accessibility.role` of its own; the `navigationIcon`, `actionIcon1` and `actionIcon2` are `button` parts, each named by its optional description field (`navigationIconDescription`, `actionIcon1Description`, `actionIcon2Description`). An icon without a description is a pending item on its part (`accessible-label-missing`); the "Labeled actions" example has them filled and "Actions without a label" is the deliberate one.

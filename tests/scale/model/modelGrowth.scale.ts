@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  accessibilityAudit,
   buildListing,
   deserialize,
   layerDotsByMarking,
@@ -11,6 +12,7 @@ import {
   validateProject,
   type Project,
 } from '../../../src/model';
+import { withAccessibility } from '../../model/accessibilityFixtures';
 import { buildScaleProject } from '../../model/scaleProject';
 import { GROWTH_OPTIONS, expectLinearGrowth } from '../../support/growth';
 
@@ -84,6 +86,20 @@ describe('model growth (n = 1,250, 4n = 5,000 markings)', () => {
           throw new Error('the perspective must not be empty');
         return view;
       },
+    });
+  });
+
+  it('audits accessibility (labels, parts and touch targets)', GROWTH_OPTIONS, () => {
+    expectLinearGrowth('accessibilityAudit', {
+      build: (markings) => withAccessibility(build(markings)),
+      // The index of the new version is already measured in the case above: here only the audit.
+      prepare: projectIndex,
+      run: (p) => {
+        const audit = accessibilityAudit(p);
+        if (audit.size === 0) throw new Error('the audit must find something');
+        return audit;
+      },
+      runs: 41,
     });
   });
 });

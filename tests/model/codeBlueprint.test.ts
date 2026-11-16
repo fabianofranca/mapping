@@ -16,6 +16,7 @@ import {
   type Project,
 } from '../../src/model';
 import { ANDROID_REPO, codeProject, idGen, layerOf, withSpecRepo } from './specFixtures';
+import { a11yMcpLibrary, a11yMcpProject, withAndroid } from '../mcp/a11yProject';
 import { slotsLibrary, slotsProject } from '../mcp/slotsProject';
 import { BUTTON_PATH, TEXT_BUTTON_PATH, variantsProject } from './variantsFixtures';
 
@@ -523,5 +524,74 @@ describe('codeBlueprint with named slots', () => {
     ]);
     const lone = codeBlueprint(project, 'mk-lone', 'compose', { drawings }).root;
     expect(lone).toEqual(codeBlueprint(project, 'mk-lone', 'compose').root);
+  });
+});
+
+// The accessibility of the annotations (stage #1128, A3, decision 9 of #1081): `accessibility` comes in the node only
+// when the type declares it and has something to say; the parts a slot child takes over are not there.
+describe('codeBlueprint with accessibility', () => {
+  const options = { tweak: withAndroid };
+  const project = a11yMcpProject((add) => {
+    add('btn', 'button', {
+      name: 'btn',
+      rect: { x: 100, y: 100, width: 360, height: 132 },
+    });
+    add('bar', 'bar', {
+      name: 'bar',
+      rect: { x: 100, y: 400, width: 800, height: 168 },
+    });
+    add('full', 'bar', {
+      name: 'full',
+      rect: { x: 100, y: 800, width: 800, height: 168 },
+    });
+    add('close', 'icon-button', {
+      name: 'close',
+      parentId: 'mk-full',
+      slot: 'actions',
+      values: { contentDescription: 'Close' },
+    });
+  }, options);
+  const { catalog } = a11yMcpLibrary(options);
+  const drawings = createDrawingCache()(project, catalog, approximateMeasurer, 0);
+  const first = (markingId: string, withDrawings = true) =>
+    codeBlueprint(project, markingId, 'android', withDrawings ? { drawings } : {}).root
+      .annotations[0]!;
+
+  it('carries the role and the label of the type, and the parts of the annotation', () => {
+    expect(first('mk-btn').accessibility).toEqual({ role: 'button', label: 'Button' });
+    expect(first('mk-bar').accessibility).toEqual({
+      parts: [
+        {
+          id: 'action1',
+          name: 'First action',
+          role: 'button',
+          label: null,
+          missing: true,
+        },
+        {
+          id: 'action2',
+          name: 'Second action',
+          role: 'button',
+          label: null,
+          missing: true,
+        },
+      ],
+    });
+  });
+
+  it('a part whose field a slot child fills in is not there: the bar has no accessibility and the child has its own', () => {
+    const bar = first('mk-full');
+    expect(bar.accessibility).toBeUndefined();
+    expect(bar.slotArgs![0]!.children[0]!.annotations[0]!.accessibility).toEqual({
+      role: 'button',
+      label: 'Close',
+    });
+    // Without the drawings nothing says that a child fills the slot: the parts are audited as before.
+    expect(first('mk-full', false).accessibility!.parts).toHaveLength(2);
+  });
+
+  it('a type that declares no accessibility keeps the node as it was (no key at all)', () => {
+    const plain = codeBlueprint(withIcon(), 'MCI', 'android').root.annotations[0]!;
+    expect('accessibility' in plain).toBe(false);
   });
 });

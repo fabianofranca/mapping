@@ -1,9 +1,9 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 17,
+  "formatVersion": 18,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 16,
+  "version": 17,
   "description": "Material Design 3 (baseline, light and dark theme) for Jetpack Compose, with each type's composable in `code`. The symbols and parameters come from the androidx code at compose.material3 version 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Conventions: the slots (lambdas) of each composable are described in `notes`; size comes from width, height and weight; icons are Icons.Filled suggestions (the ones androidx puts in Icons.AutoMirrored flip in rtl); the reading direction and the anchor draw the tooltip (with its arrow), the badge and the menu anchored; the remote image uses the app's image loader; the Scaffold places each child in the right slot by its type.",
   "platforms": [
     {
@@ -3345,7 +3345,14 @@
               "message": "compose: the parameter `imageVector` (ImageVector) is not a field yet",
               "ref": "signatures/icon.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "image",
+            "label": {
+              "fields": ["contentDescription"],
+              "required": false
+            }
+          }
         },
         {
           "id": "image",
@@ -3486,7 +3493,14 @@
               "message": "compose: the parameter `colorFilter` (ColorFilter?) is not a field yet",
               "ref": "signatures/image.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "image",
+            "label": {
+              "fields": ["contentDescription"],
+              "required": false
+            }
+          }
         }
       ]
     },
@@ -3691,6 +3705,12 @@
               "description": "Icon on the left (Menu or ArrowBack, for example). Empty = no icon."
             },
             {
+              "key": "navigationIconDescription",
+              "label": "Navigation icon description",
+              "type": "string",
+              "description": "Accessible name of the navigation icon (it is an action): what a screen reader reads (\"Search\", \"Open the menu\"). Empty = a pending item."
+            },
+            {
               "key": "actionIcon1",
               "label": "Action 1",
               "type": "string",
@@ -3863,6 +3883,12 @@
               "description": "First action icon on the right. Empty = no action."
             },
             {
+              "key": "actionIcon1Description",
+              "label": "Action 1 description",
+              "type": "string",
+              "description": "Accessible name of action 1 (it is an action): what a screen reader reads (\"Search\", \"Open the menu\"). Empty = a pending item."
+            },
+            {
               "key": "actionIcon2",
               "label": "Action 2",
               "type": "string",
@@ -4033,6 +4059,12 @@
                 "EditCalendar"
               ],
               "description": "Second action icon on the right. Empty = no action."
+            },
+            {
+              "key": "actionIcon2Description",
+              "label": "Action 2 description",
+              "type": "string",
+              "description": "Accessible name of action 2 (it is an action): what a screen reader reads (\"Search\", \"Open the menu\"). Empty = a pending item."
             },
             {
               "key": "subtitle",
@@ -4328,7 +4360,7 @@
             "compose": {
               "symbol": "androidx.compose.material3.TopAppBar",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt",
-              "notes": "`title = { Text(<title>) }`; with `navigationIcon` filled, `navigationIcon = { IconButton(onClick = …) { Icon(Icons.Filled.<navigationIcon>, contentDescription = …) } }`, and each filled `actionIcon1`/`actionIcon2` becomes an `IconButton` inside `actions = { … }`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. None of the four variants requires an opt-in; only `scrollBehavior` (`TopAppBarDefaults.pinnedScrollBehavior()` and relatives) requires `@OptIn(ExperimentalMaterial3Api::class)`. With child markings in the `navigationIcon` or `actions` slots the node carries `navigationIcon = { … }` and `actions = { … }` with them, and the `navigationIcon`, `actionIcon1` and `actionIcon2` of `values` are the default content that the children replace (they are not arguments then). Without child markings the arguments are the ones above.",
+              "notes": "`title = { Text(<title>) }`; with `navigationIcon` filled, `navigationIcon = { IconButton(onClick = …) { Icon(Icons.Filled.<navigationIcon>, contentDescription = <navigationIconDescription>) } }`, and each filled `actionIcon1`/`actionIcon2` becomes an `IconButton` inside `actions = { … }`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. None of the four variants requires an opt-in; only `scrollBehavior` (`TopAppBarDefaults.pinnedScrollBehavior()` and relatives) requires `@OptIn(ExperimentalMaterial3Api::class)`. With child markings in the `navigationIcon` or `actions` slots the node carries `navigationIcon = { … }` and `actions = { … }` with them, and the `navigationIcon`, `actionIcon1` and `actionIcon2` of `values` are the default content that the children replace (they are not arguments then). Without child markings the arguments are the ones above. The accessible name of each action is a field (`navigationIconDescription`, `actionIcon1Description`, `actionIcon2Description`): it goes in the `contentDescription` of the `Icon` inside the matching `IconButton` and is not an argument of the bar (`get_code_hints` hands it over in `accessibility.parts`). A child in a slot answers for its own label (the `icon-button` has `contentDescription`).",
               "variants": {
                 "field": "style",
                 "cases": {
@@ -4621,8 +4653,11 @@
                 "title": "Home",
                 "style": "small",
                 "navigationIcon": "Menu",
+                "navigationIconDescription": "Open the menu",
                 "actionIcon1": "Search",
-                "actionIcon2": "MoreVert"
+                "actionIcon1Description": "Search",
+                "actionIcon2": "MoreVert",
+                "actionIcon2Description": "More options"
               }
             },
             {
@@ -4630,7 +4665,8 @@
               "values": {
                 "title": "Profile",
                 "style": "center",
-                "navigationIcon": "ArrowBack"
+                "navigationIcon": "ArrowBack",
+                "navigationIconDescription": "Back"
               }
             },
             {
@@ -4638,7 +4674,31 @@
               "values": {
                 "title": "Settings",
                 "style": "large",
-                "navigationIcon": "ArrowBack"
+                "navigationIcon": "ArrowBack",
+                "navigationIconDescription": "Back"
+              }
+            },
+            {
+              "name": "Labeled actions",
+              "values": {
+                "title": "Inbox",
+                "style": "small",
+                "navigationIcon": "Menu",
+                "navigationIconDescription": "Open the menu",
+                "actionIcon1": "Search",
+                "actionIcon1Description": "Search",
+                "actionIcon2": "MoreVert",
+                "actionIcon2Description": "More options"
+              }
+            },
+            {
+              "name": "Actions without a label",
+              "values": {
+                "title": "Inbox",
+                "style": "small",
+                "navigationIcon": "Menu",
+                "actionIcon1": "Search",
+                "actionIcon2": "MoreVert"
               }
             }
           ],
@@ -4683,7 +4743,38 @@
               "description": "The action icons on the right of the title (the RowScope of `actions`).",
               "accepts": ["icon-button", "icon-toggle-button", "icon"]
             }
-          ]
+          ],
+          "accessibility": {
+            "parts": [
+              {
+                "id": "navigationIcon",
+                "name": "Navigation icon",
+                "when": "navigationIcon",
+                "role": "button",
+                "label": {
+                  "fields": ["navigationIconDescription"]
+                }
+              },
+              {
+                "id": "actionIcon1",
+                "name": "Action icon 1",
+                "when": "actionIcon1",
+                "role": "button",
+                "label": {
+                  "fields": ["actionIcon1Description"]
+                }
+              },
+              {
+                "id": "actionIcon2",
+                "name": "Action icon 2",
+                "when": "actionIcon2",
+                "role": "button",
+                "label": {
+                  "fields": ["actionIcon2Description"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "button",
@@ -5542,7 +5633,13 @@
               "message": "compose: case `text`: the parameter `elevation` (ButtonElevation?) is not a field yet",
               "ref": "signatures/button.text.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "button",
+            "label": {
+              "fields": ["label"]
+            }
+          }
         },
         {
           "id": "fab",
@@ -6010,6 +6107,7 @@
               "name": "Small tertiary",
               "values": {
                 "icon": "Edit",
+                "contentDescription": "Edit",
                 "size": "small",
                 "containerColor": "tertiaryContainer"
               }
@@ -6018,6 +6116,7 @@
               "name": "Large",
               "values": {
                 "icon": "Add",
+                "contentDescription": "Add",
                 "size": "large"
               }
             },
@@ -6025,6 +6124,7 @@
               "name": "Hovered",
               "values": {
                 "icon": "Add",
+                "contentDescription": "Add",
                 "size": "regular",
                 "interaction": "hovered"
               }
@@ -6033,6 +6133,7 @@
               "name": "Focused",
               "values": {
                 "icon": "Edit",
+                "contentDescription": "Edit",
                 "size": "small",
                 "containerColor": "tertiaryContainer",
                 "interaction": "focused"
@@ -6042,11 +6143,18 @@
               "name": "Pressed",
               "values": {
                 "icon": "Add",
+                "contentDescription": "Add",
                 "size": "large",
                 "interaction": "pressed"
               }
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "button",
+            "label": {
+              "fields": ["contentDescription"]
+            }
+          }
         },
         {
           "id": "extended-fab",
@@ -6473,7 +6581,7 @@
                   "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
                 }
               },
-              "notes": "Use the overload `ExtendedFloatingActionButton(text = { Text(<text>) }, icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }, onClick = …, expanded = <expanded>)`; without `icon`, use the `content = { Text(<text>) }` one. Inside a Scaffold, it goes in `floatingActionButton`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`.",
+              "notes": "Use the overload `ExtendedFloatingActionButton(text = { Text(<text>) }, icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }, onClick = …, expanded = <expanded>)`; without `icon`, use the `content = { Text(<text>) }` one. Inside a Scaffold, it goes in `floatingActionButton`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. Expanded, the accessible name is the `text` composed by the `Text`. Collapsed (`expanded = false`) Compose does not compose the `text`, so give the `icon` a `contentDescription` (the `text`) or the button has no name.",
               "ignore": ["modifier", "interactionSource", "icon"],
               "signature": "signatures/extended-fab.compose.json",
               "formats": {
@@ -6539,7 +6647,13 @@
                 "icon": "Add"
               }
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "button",
+            "label": {
+              "fields": ["text"]
+            }
+          }
         },
         {
           "id": "text-field",
@@ -6805,6 +6919,12 @@
               "description": "Icon before the text. Empty = no icon."
             },
             {
+              "key": "leadingIconDescription",
+              "label": "Leading icon description",
+              "type": "string",
+              "description": "Accessible description of the leading icon, read by a screen reader. Empty = the icon is decorative and is not announced."
+            },
+            {
               "key": "trailingIcon",
               "label": "Trailing icon",
               "type": "string",
@@ -6977,6 +7097,12 @@
               "description": "Icon after the text. Empty = no icon."
             },
             {
+              "key": "trailingIconDescription",
+              "label": "Trailing icon description",
+              "type": "string",
+              "description": "Accessible name of the trailing icon (it is an action): what a screen reader reads (\"Search\", \"Open the menu\"). Empty = a pending item."
+            },
+            {
               "key": "width",
               "label": "Width",
               "type": "enum",
@@ -7052,7 +7178,7 @@
                 "suffix": "suffix",
                 "supportingText": "supportingText"
               },
-              "notes": "`value` and `onValueChange` connect to a screen state. Filled `label`, `placeholder` and `supportingText` become `{ Text(<field>) }`; `leadingIcon` and `trailingIcon` become `{ Icon(Icons.Filled.<name>, contentDescription = null) }`. `maxLines` is emitted only when filled; filled and outlined do not require an opt-in. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).",
+              "notes": "`value` and `onValueChange` connect to a screen state. Filled `label`, `placeholder` and `supportingText` become `{ Text(<field>) }`; `leadingIcon` and `trailingIcon` become `{ Icon(Icons.Filled.<name>, contentDescription = <leadingIconDescription or trailingIconDescription>) }` (`null` when the description is empty). `maxLines` is emitted only when filled; filled and outlined do not require an opt-in. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow). The trailing icon is the action (clear, show the password): its description is required by the accessibility audit; the leading one is decorative when it has no description.",
               "variants": {
                 "field": "style",
                 "cases": {
@@ -7116,7 +7242,8 @@
                 "supportingText": "At least 8 characters",
                 "style": "outlined",
                 "isError": "true",
-                "trailingIcon": "Lock"
+                "trailingIcon": "Lock",
+                "trailingIconDescription": "Lock"
               }
             },
             {
@@ -7197,7 +7324,39 @@
               "message": "compose: case `outlined`: the parameter `colors` (TextFieldColors) is not a field yet",
               "ref": "signatures/text-field.outlined.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "textbox",
+            "label": {
+              "fields": ["label", "placeholder"]
+            },
+            "touchTarget": {
+              "width": 48,
+              "height": 48,
+              "mode": "visual"
+            },
+            "parts": [
+              {
+                "id": "leadingIcon",
+                "name": "Leading icon",
+                "when": "leadingIcon",
+                "role": "image",
+                "label": {
+                  "fields": ["leadingIconDescription"],
+                  "required": false
+                }
+              },
+              {
+                "id": "trailingIcon",
+                "name": "Trailing icon",
+                "when": "trailingIcon",
+                "role": "button",
+                "label": {
+                  "fields": ["trailingIconDescription"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "switch",
@@ -7251,6 +7410,12 @@
               "default": "false",
               "options": ["true", "false"],
               "description": "true shows a check icon on the thumb when on."
+            },
+            {
+              "key": "thumbIconDescription",
+              "label": "Thumb icon description",
+              "type": "string",
+              "description": "Accessible description of the thumb icon, read by a screen reader. Empty = the icon is decorative and is not announced."
             },
             {
               "key": "checkedThumbColor",
@@ -7981,7 +8146,7 @@
                 "disabledUncheckedBorderColor": "colors.disabledUncheckedBorderColor",
                 "disabledUncheckedIconColor": "colors.disabledUncheckedIconColor"
               },
-              "notes": "`onCheckedChange` connects to the screen's logic. The Switch has no label: `label` becomes a `Text` beside it, in a `Row`. With `thumbIcon = true`, pass `thumbContent = { Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(SwitchDefaults.IconSize)) }`.",
+              "notes": "`onCheckedChange` connects to the screen's logic. The Switch has no label: `label` becomes a `Text` beside it, in a `Row`. With `thumbIcon = true`, pass `thumbContent = { Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(SwitchDefaults.IconSize)) }`. `thumbIconDescription`, when filled, goes in the `contentDescription` of the thumb `Icon` (decorative, `null`, by default).",
               "ignore": ["modifier", "thumbContent", "interactionSource"],
               "signature": "signatures/switch.compose.json",
               "calls": {
@@ -8649,7 +8814,25 @@
               "accepts": ["icon"],
               "max": 1
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "switch",
+            "label": {
+              "fields": ["label"]
+            },
+            "parts": [
+              {
+                "id": "thumbIcon",
+                "name": "Thumb icon",
+                "when": "thumbIcon",
+                "role": "image",
+                "label": {
+                  "fields": ["thumbIconDescription"],
+                  "required": false
+                }
+              }
+            ]
+          }
         },
         {
           "id": "checkbox",
@@ -9282,7 +9465,13 @@
                 "interaction": "pressed"
               }
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "checkbox",
+            "label": {
+              "fields": ["label"]
+            }
+          }
         },
         {
           "id": "chip",
@@ -9529,6 +9718,12 @@
               "description": "Icon before the text. Empty = no icon."
             },
             {
+              "key": "leadingIconDescription",
+              "label": "Leading icon description",
+              "type": "string",
+              "description": "Accessible description of the leading icon, read by a screen reader. Empty = the icon is decorative and is not announced."
+            },
+            {
               "key": "avatar",
               "label": "Avatar",
               "type": "string",
@@ -9705,6 +9900,12 @@
                 "EditCalendar"
               ],
               "description": "Icon after the text. Empty = no icon. Does not exist in suggestion."
+            },
+            {
+              "key": "trailingIconDescription",
+              "label": "Trailing icon description",
+              "type": "string",
+              "description": "Accessible description of the trailing icon, read by a screen reader. Empty = the icon is decorative and is not announced."
             },
             {
               "key": "shape",
@@ -10705,7 +10906,7 @@
                 "width": "border.width",
                 "color": "border.color"
               },
-              "notes": "`onClick` connects to the screen's logic and `label = { Text(<label>) }`. Filled `leadingIcon` and `trailingIcon` become `{ Icon(Icons.Filled.<name>, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize)) }`. No style requires an opt-in.",
+              "notes": "`onClick` connects to the screen's logic and `label = { Text(<label>) }`. Filled `leadingIcon` and `trailingIcon` become `{ Icon(Icons.Filled.<name>, contentDescription = <leadingIconDescription or trailingIconDescription>, Modifier.size(AssistChipDefaults.IconSize)) }` (`null` when the description is empty: the chip's `label` already names it). No style requires an opt-in.",
               "variants": {
                 "field": "style",
                 "cases": {
@@ -11743,7 +11944,35 @@
                 "leadingIcon": "DateRange"
               }
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "button",
+            "label": {
+              "fields": ["label"]
+            },
+            "parts": [
+              {
+                "id": "leadingIcon",
+                "name": "Leading icon",
+                "when": "leadingIcon",
+                "role": "image",
+                "label": {
+                  "fields": ["leadingIconDescription"],
+                  "required": false
+                }
+              },
+              {
+                "id": "trailingIcon",
+                "name": "Trailing icon",
+                "when": "trailingIcon",
+                "role": "image",
+                "label": {
+                  "fields": ["trailingIconDescription"],
+                  "required": false
+                }
+              }
+            ]
+          }
         },
         {
           "id": "card",
@@ -13865,6 +14094,12 @@
                   "description": "Icon of the destination."
                 },
                 {
+                  "key": "iconDescription",
+                  "label": "Icon description",
+                  "type": "string",
+                  "description": "Accessible description of the icon, for an item with no text (icon only); with `label` filled, the text already names the item. Empty with no label = a pending item."
+                },
+                {
                   "key": "selected",
                   "label": "Selected",
                   "type": "enum",
@@ -13990,7 +14225,7 @@
             "compose": {
               "symbol": "androidx.compose.material3.NavigationBar",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationBar.kt",
-              "notes": "One `NavigationBarItem` per row of `items`, inside `NavigationBar { … }`: `selected`, `onClick`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` and `alwaysShowLabel = <alwaysShowLabel>` (an item parameter, not a bar one). Inside a Scaffold, the bar goes in `bottomBar`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`.",
+              "notes": "One `NavigationBarItem` per row of `items`, inside `NavigationBar { … }`: `selected`, `onClick`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = <iconDescription>) }`, `label = { Text(<label>) }` and `alwaysShowLabel = <alwaysShowLabel>` (an item parameter, not a bar one). Inside a Scaffold, the bar goes in `bottomBar`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. `iconDescription` names an icon-only row (no `label`), and is `null` when the row has a `label` that already names it.",
               "ignore": ["modifier"],
               "signature": "signatures/navigation-bar.compose.json",
               "params": {
@@ -14207,7 +14442,21 @@
               "message": "compose: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/navigation-bar.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "navigation",
+            "parts": [
+              {
+                "id": "item",
+                "name": "Item",
+                "when": "items",
+                "role": "tab",
+                "label": {
+                  "fields": ["items.label", "items.iconDescription"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "bottom-sheet",
@@ -15467,7 +15716,13 @@
               "message": "compose: case `outlined`: the parameter `colors` (IconButtonColors) is not a field yet",
               "ref": "signatures/icon-button.outlined.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "button",
+            "label": {
+              "fields": ["contentDescription"]
+            }
+          }
         },
         {
           "id": "icon-toggle-button",
@@ -15943,7 +16198,13 @@
               "message": "compose: case `outlined`: the parameter `colors` (IconToggleButtonColors) is not a field yet",
               "ref": "signatures/icon-toggle-button.outlined.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "checkbox",
+            "label": {
+              "fields": ["contentDescription"]
+            }
+          }
         },
         {
           "id": "segmented-button",
@@ -16138,6 +16399,12 @@
                   "description": "Icon of the unchecked segment; when checked, the segment shows the check. Empty = text only (and the check when checked)."
                 },
                 {
+                  "key": "iconDescription",
+                  "label": "Icon description",
+                  "type": "string",
+                  "description": "Accessible description of the icon, for an item with no text (icon only); with `label` filled, the text already names the item. Empty with no label = a pending item."
+                },
+                {
                   "key": "selected",
                   "label": "Selected",
                   "type": "enum",
@@ -16193,7 +16460,7 @@
               "params": {
                 "space": "space"
               },
-              "notes": "One `SegmentedButton` per row of `options`, inside `SingleChoiceSegmentedButtonRow { … }`: `selected`, `onClick`, `shape = SegmentedButtonDefaults.itemShape(index = <row position>, count = <number of rows>)` (required), `enabled = <enabled>` (a segment parameter, not a row one), `icon = { SegmentedButtonDefaults.Icon(active = <selected>) }` (the check) and `label = { Text(<label>) }`. With the `icon` column filled, pass `inactiveContent = { Icon(Icons.Filled.<icon>, contentDescription = null, Modifier.size(SegmentedButtonDefaults.IconSize)) }` to `SegmentedButtonDefaults.Icon`. `SegmentedButton` is an extension function of the row scope: import `androidx.compose.material3.SegmentedButton`. No type requires an opt-in. 1.4.0 does not ship the icons: the app adds `androidx.compose.material:material-icons-core` (or `-extended`) or uses a Material Symbol with `painterResource`.",
+              "notes": "One `SegmentedButton` per row of `options`, inside `SingleChoiceSegmentedButtonRow { … }`: `selected`, `onClick`, `shape = SegmentedButtonDefaults.itemShape(index = <row position>, count = <number of rows>)` (required), `enabled = <enabled>` (a segment parameter, not a row one), `icon = { SegmentedButtonDefaults.Icon(active = <selected>) }` (the check) and `label = { Text(<label>) }`. With the `icon` column filled, pass `inactiveContent = { Icon(Icons.Filled.<icon>, contentDescription = <iconDescription>, Modifier.size(SegmentedButtonDefaults.IconSize)) }` to `SegmentedButtonDefaults.Icon`. `SegmentedButton` is an extension function of the row scope: import `androidx.compose.material3.SegmentedButton`. No type requires an opt-in. 1.4.0 does not ship the icons: the app adds `androidx.compose.material:material-icons-core` (or `-extended`) or uses a Material Symbol with `painterResource`. `iconDescription` names an icon-only segment (no `label`).",
               "variants": {
                 "field": "selection",
                 "cases": {
@@ -16355,7 +16622,20 @@
                 ]
               }
             }
-          ]
+          ],
+          "accessibility": {
+            "parts": [
+              {
+                "id": "option",
+                "name": "Option",
+                "when": "options",
+                "role": "radio",
+                "label": {
+                  "fields": ["options.label", "options.iconDescription"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "radio-button",
@@ -16800,7 +17080,13 @@
                 "interaction": "pressed"
               }
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "radio",
+            "label": {
+              "fields": ["label"]
+            }
+          }
         },
         {
           "id": "slider",
@@ -17827,7 +18113,10 @@
               "message": "compose: case `range`: the parameter `steps` (@IntRange(from = 0) Int) is not a field yet",
               "ref": "signatures/slider.range.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "slider"
+          }
         },
         {
           "id": "search-bar",
@@ -18022,6 +18311,12 @@
               "description": "Icon before the text (usually Search). Empty = no icon."
             },
             {
+              "key": "leadingIconDescription",
+              "label": "Leading icon description",
+              "type": "string",
+              "description": "Accessible description of the leading icon, read by a screen reader. Empty = the icon is decorative and is not announced."
+            },
+            {
               "key": "trailingIcon",
               "label": "Trailing icon",
               "type": "string",
@@ -18192,6 +18487,12 @@
                 "EditCalendar"
               ],
               "description": "Icon after the text (for example Close to clear). Empty = no icon."
+            },
+            {
+              "key": "trailingIconDescription",
+              "label": "Trailing icon description",
+              "type": "string",
+              "description": "Accessible name of the trailing icon (it is an action): what a screen reader reads (\"Search\", \"Open the menu\"). Empty = a pending item."
             },
             {
               "key": "expanded",
@@ -18371,7 +18672,7 @@
                 "tonalElevation": "tonalElevation",
                 "shadowElevation": "shadowElevation"
               },
-              "notes": "Requires @OptIn(ExperimentalMaterial3Api::class): the whole SearchBar family is experimental at the pinned commit. Use the `SearchBar(inputField, expanded, onExpandedChange, …, content)` overload; the overloads with `query` and `active` are `@Deprecated`. The field goes in `inputField = { SearchBarDefaults.InputField(query = <query>, onQueryChange = …, onSearch = …, expanded = <expanded>, onExpandedChange = …, placeholder = { Text(<placeholder>) }, leadingIcon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = null) }, trailingIcon = { Icon(Icons.Filled.<trailingIcon>, contentDescription = null) }) }`, with `query` and `expanded` connected to screen states; `placeholder`, `leadingIcon` and `trailingIcon` are emitted only when filled. The child markings (results and suggestions) go in `content = { … }` (a Column), which only appears with `expanded = true`. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).",
+              "notes": "Requires @OptIn(ExperimentalMaterial3Api::class): the whole SearchBar family is experimental at the pinned commit. Use the `SearchBar(inputField, expanded, onExpandedChange, …, content)` overload; the overloads with `query` and `active` are `@Deprecated`. The field goes in `inputField = { SearchBarDefaults.InputField(query = <query>, onQueryChange = …, onSearch = …, expanded = <expanded>, onExpandedChange = …, placeholder = { Text(<placeholder>) }, leadingIcon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = <leadingIconDescription>) }, trailingIcon = { Icon(Icons.Filled.<trailingIcon>, contentDescription = <trailingIconDescription>) }) }`, with `query` and `expanded` connected to screen states; `placeholder`, `leadingIcon` and `trailingIcon` are emitted only when filled. The child markings (results and suggestions) go in `content = { … }` (a Column), which only appears with `expanded = true`. Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow). An empty description is `contentDescription = null`; the trailing icon is the action (clear the query) and its description is required by the accessibility audit.",
               "variants": {
                 "field": "style",
                 "cases": {
@@ -18496,6 +18797,7 @@
                 "placeholder": "Search songs",
                 "leadingIcon": "Search",
                 "trailingIcon": "Close",
+                "trailingIconDescription": "Close",
                 "style": "bar"
               }
             },
@@ -18506,6 +18808,7 @@
                 "placeholder": "Search",
                 "leadingIcon": "Search",
                 "trailingIcon": "Close",
+                "trailingIconDescription": "Close",
                 "expanded": "true",
                 "style": "docked"
               }
@@ -18532,6 +18835,7 @@
                 "placeholder": "Search",
                 "leadingIcon": "Search",
                 "trailingIcon": "Mic",
+                "trailingIconDescription": "Voice search",
                 "interaction": "pressed"
               }
             }
@@ -18552,7 +18856,39 @@
               "message": "compose: case `docked`: the parameter `colors.inputFieldColors` (TextFieldColors) is not a field yet",
               "ref": "signatures/search-bar.docked.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "searchbox",
+            "label": {
+              "fields": ["placeholder", "query"]
+            },
+            "touchTarget": {
+              "width": 48,
+              "height": 48,
+              "mode": "visual"
+            },
+            "parts": [
+              {
+                "id": "leadingIcon",
+                "name": "Leading icon",
+                "when": "leadingIcon",
+                "role": "image",
+                "label": {
+                  "fields": ["leadingIconDescription"],
+                  "required": false
+                }
+              },
+              {
+                "id": "trailingIcon",
+                "name": "Trailing icon",
+                "when": "trailingIcon",
+                "role": "button",
+                "label": {
+                  "fields": ["trailingIconDescription"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "date-picker",
@@ -23779,7 +24115,10 @@
               "message": "compose: case `linear`: the parameter `strokeCap` (StrokeCap) is not a field yet",
               "ref": "signatures/progress-indicator.linear.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "progressbar"
+          }
         },
         {
           "id": "secure-text-field",
@@ -24021,6 +24360,12 @@
               "description": "Icon before the text. Empty = no icon."
             },
             {
+              "key": "leadingIconDescription",
+              "label": "Leading icon description",
+              "type": "string",
+              "description": "Accessible description of the leading icon, read by a screen reader. Empty = the icon is decorative and is not announced."
+            },
+            {
               "key": "trailingIcon",
               "label": "Trailing icon",
               "type": "string",
@@ -24193,6 +24538,12 @@
               "description": "Icon after the text, usually the show or hide password button. Empty = no icon."
             },
             {
+              "key": "trailingIconDescription",
+              "label": "Trailing icon description",
+              "type": "string",
+              "description": "Accessible name of the trailing icon (it is an action): what a screen reader reads (\"Search\", \"Open the menu\"). Empty = a pending item."
+            },
+            {
               "key": "width",
               "label": "Width",
               "type": "enum",
@@ -24261,7 +24612,7 @@
                 "suffix": "suffix",
                 "supportingText": "supportingText"
               },
-              "notes": "Stable, no opt-in. Instead of `value`/`onValueChange`, the field takes `state = rememberTextFieldState()` (`androidx.compose.foundation.text.input.TextFieldState`), which holds the text; `hasText` only affects the drawing and is not a parameter. Filled `label`, `placeholder` and `supportingText` become `{ Text(<field>) }`; `leadingIcon` and `trailingIcon` become `{ Icon(Icons.Filled.<name>, contentDescription = null) }` (to show and hide the password, connect the icon to a `textObfuscationMode` that toggles `TextObfuscationMode.Visible` and `TextObfuscationMode.RevealLastTyped`). Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).",
+              "notes": "Stable, no opt-in. Instead of `value`/`onValueChange`, the field takes `state = rememberTextFieldState()` (`androidx.compose.foundation.text.input.TextFieldState`), which holds the text; `hasText` only affects the drawing and is not a parameter. Filled `label`, `placeholder` and `supportingText` become `{ Text(<field>) }`; `leadingIcon` and `trailingIcon` become `{ Icon(Icons.Filled.<name>, contentDescription = <leadingIconDescription or trailingIconDescription>) }` (`null` when the description is empty) (to show and hide the password, connect the icon to a `textObfuscationMode` that toggles `TextObfuscationMode.Visible` and `TextObfuscationMode.RevealLastTyped`). Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow). The trailing icon is the action (clear, show the password): its description is required by the accessibility audit; the leading one is decorative when it has no description.",
               "variants": {
                 "field": "style",
                 "cases": {
@@ -24317,7 +24668,8 @@
                 "hasText": "true",
                 "style": "outlined",
                 "leadingIcon": "Lock",
-                "trailingIcon": "Done"
+                "trailingIcon": "Done",
+                "trailingIconDescription": "Done"
               }
             },
             {
@@ -24438,7 +24790,39 @@
               "message": "compose: case `outlined`: the parameter `colors` (TextFieldColors) is not a field yet",
               "ref": "signatures/secure-text-field.outlined.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "textbox",
+            "label": {
+              "fields": ["label", "placeholder"]
+            },
+            "touchTarget": {
+              "width": 48,
+              "height": 48,
+              "mode": "visual"
+            },
+            "parts": [
+              {
+                "id": "leadingIcon",
+                "name": "Leading icon",
+                "when": "leadingIcon",
+                "role": "image",
+                "label": {
+                  "fields": ["leadingIconDescription"],
+                  "required": false
+                }
+              },
+              {
+                "id": "trailingIcon",
+                "name": "Trailing icon",
+                "when": "trailingIcon",
+                "role": "button",
+                "label": {
+                  "fields": ["trailingIconDescription"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "divider",
@@ -25036,7 +25420,7 @@
             "compose": {
               "symbol": "androidx.compose.material3.AlertDialog",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AlertDialog.kt",
-              "notes": "Stable, no opt-in: use the overload with `confirmButton` (the `content` one is `@Deprecated` and experimental). `AlertDialog(onDismissRequest = { … }, confirmButton = { TextButton(onClick = { … }) { Text(<confirmButton>) } }, dismissButton = { TextButton(onClick = { … }) { Text(<dismissButton>) } }, icon = { … }, title = { Text(<title>) }, text = { Text(<text>) })`. `dismissButton`, `icon`, `title` and `text` are emitted only when the field is filled (the parameters are optional and `null` by default). `onDismissRequest` closes the dialog (clears the state that shows it) and is not called by the buttons. With `icon` filled: `icon = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }` (without `contentDescription`, pass `null`); with an icon, the title is centered. The width goes from 280 to 560 dp by content and the dialog is a window over the screen, not part of the layout: declare it where the state that opens it lives (`if (showDialog) AlertDialog(…)`).",
+              "notes": "Stable, no opt-in: use the overload with `confirmButton` (the `content` one is `@Deprecated` and experimental). `AlertDialog(onDismissRequest = { … }, confirmButton = { TextButton(onClick = { … }) { Text(<confirmButton>) } }, dismissButton = { TextButton(onClick = { … }) { Text(<dismissButton>) } }, icon = { … }, title = { Text(<title>) }, text = { Text(<text>) })`. `dismissButton`, `icon`, `title` and `text` are emitted only when the field is filled (the parameters are optional and `null` by default). `onDismissRequest` closes the dialog (clears the state that shows it) and is not called by the buttons. With `icon` filled: `icon = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }` (without `contentDescription`, pass `null`); with an icon, the title is centered. The width goes from 280 to 560 dp by content and the dialog is a window over the screen, not part of the layout: declare it where the state that opens it lives (`if (showDialog) AlertDialog(…)`). The dialog's accessible name is `title` (or `text`); the `contentDescription` field is the one of the `icon` part.",
               "variants": {
                 "field": "style",
                 "cases": {
@@ -25286,7 +25670,25 @@
               "message": "compose: case `basic`: the parameter `properties` (DialogProperties) is not a field yet",
               "ref": "signatures/alert-dialog.basic.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "dialog",
+            "label": {
+              "fields": ["title", "text"]
+            },
+            "parts": [
+              {
+                "id": "icon",
+                "name": "Icon",
+                "when": "icon",
+                "role": "image",
+                "label": {
+                  "fields": ["contentDescription"],
+                  "required": false
+                }
+              }
+            ]
+          }
         },
         {
           "id": "dropdown-menu",
@@ -26132,7 +26534,20 @@
               "message": "compose: the parameter `properties` (PopupProperties) is not a field yet",
               "ref": "signatures/dropdown-menu.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "parts": [
+              {
+                "id": "item",
+                "name": "Item",
+                "when": "items",
+                "role": "menuitem",
+                "label": {
+                  "fields": ["items.text"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "navigation-rail",
@@ -26325,6 +26740,12 @@
                     "EditCalendar"
                   ],
                   "description": "Icon of the destination."
+                },
+                {
+                  "key": "iconDescription",
+                  "label": "Icon description",
+                  "type": "string",
+                  "description": "Accessible description of the icon, for an item with no text (icon only); with `label` filled, the text already names the item. Empty with no label = a pending item."
                 },
                 {
                   "key": "selected",
@@ -26818,7 +27239,7 @@
             "compose": {
               "symbol": "androidx.compose.material3.NavigationRail",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt",
-              "notes": "Stable, no opt-in. One `NavigationRailItem` per row of `items`, inside `NavigationRail { … }`: `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` and `alwaysShowLabel = <alwaysShowLabel>` (an item parameter, not a rail one). The rail's `header = { … }` slot (a FAB or the menu button) is not a field. The minimum width is 80 dp, coming from the composable; the height fills the screen (`fillMaxHeight`). The Scaffold has no slot for the rail: it goes in a `Row` before the content, inside `content = { innerPadding -> Row(Modifier.padding(innerPadding)) { rail; Box(Modifier.weight(1f)) { … } } }`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`.",
+              "notes": "Stable, no opt-in. One `NavigationRailItem` per row of `items`, inside `NavigationRail { … }`: `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = <iconDescription>) }`, `label = { Text(<label>) }` and `alwaysShowLabel = <alwaysShowLabel>` (an item parameter, not a rail one). The rail's `header = { … }` slot (a FAB or the menu button) is not a field. The minimum width is 80 dp, coming from the composable; the height fills the screen (`fillMaxHeight`). The Scaffold has no slot for the rail: it goes in a `Row` before the content, inside `content = { innerPadding -> Row(Modifier.padding(innerPadding)) { rail; Box(Modifier.weight(1f)) { … } } }`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. `iconDescription` names an icon-only row (no `label`), and is `null` when the row has a `label` that already names it.",
               "variants": {
                 "field": "style",
                 "cases": {
@@ -27434,7 +27855,21 @@
               "message": "compose: case `modal-wide`: the parameter `expandedProperties` (ModalWideNavigationRailProperties) is not a field yet",
               "ref": "signatures/navigation-rail.modal-wide.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "navigation",
+            "parts": [
+              {
+                "id": "item",
+                "name": "Item",
+                "when": "items",
+                "role": "tab",
+                "label": {
+                  "fields": ["items.label", "items.iconDescription"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "short-navigation-bar",
@@ -27627,6 +28062,12 @@
                     "EditCalendar"
                   ],
                   "description": "Icon of the destination."
+                },
+                {
+                  "key": "iconDescription",
+                  "label": "Icon description",
+                  "type": "string",
+                  "description": "Accessible description of the icon, for an item with no text (icon only); with `label` filled, the text already names the item. Empty with no label = a pending item."
                 },
                 {
                   "key": "selected",
@@ -27847,7 +28288,7 @@
                   "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
                 }
               },
-              "notes": "Stable, no opt-in. One `ShortNavigationBarItem` per row of `items`, inside `ShortNavigationBar(arrangement = <arrangement>) { … }`: `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` (the `label` is nullable, but the bar always shows the label), and `iconPosition = <iconPosition>` (an item parameter, not a bar one: repeat the value in all). Inside a Scaffold, the bar goes in `bottomBar`. The minimum height is 64 dp, coming from the composable; the width is the screen's. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`.",
+              "notes": "Stable, no opt-in. One `ShortNavigationBarItem` per row of `items`, inside `ShortNavigationBar(arrangement = <arrangement>) { … }`: `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = <iconDescription>) }`, `label = { Text(<label>) }` (the `label` is nullable, but the bar always shows the label), and `iconPosition = <iconPosition>` (an item parameter, not a bar one: repeat the value in all). Inside a Scaffold, the bar goes in `bottomBar`. The minimum height is 64 dp, coming from the composable; the width is the screen's. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. `iconDescription` names an icon-only row (no `label`), and is `null` when the row has a `label` that already names it.",
               "ignore": ["modifier", "content"],
               "signature": "signatures/short-navigation-bar.compose.json"
             }
@@ -28012,7 +28453,21 @@
               "message": "compose: the parameter `arrangement` (ShortNavigationBarArrangement) is not a field yet",
               "ref": "signatures/short-navigation-bar.compose.json"
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "navigation",
+            "parts": [
+              {
+                "id": "item",
+                "name": "Item",
+                "when": "items",
+                "role": "tab",
+                "label": {
+                  "fields": ["items.label", "items.iconDescription"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "navigation-drawer",
@@ -28222,6 +28677,12 @@
                   "description": "Icon of the destination."
                 },
                 {
+                  "key": "iconDescription",
+                  "label": "Icon description",
+                  "type": "string",
+                  "description": "Accessible description of the icon, for an item with no text (icon only); with `label` filled, the text already names the item. Empty with no label = a pending item."
+                },
+                {
                   "key": "selected",
                   "label": "Selected",
                   "type": "enum",
@@ -28303,7 +28764,7 @@
             "compose": {
               "symbol": "androidx.compose.material3.ModalNavigationDrawer",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationDrawer.kt",
-              "notes": "Stable, no opt-in. `ModalNavigationDrawer(drawerContent = { ModalDrawerSheet { … } }, drawerState = rememberDrawerState(DrawerValue.Closed)) { <screen content> }`; inside the `ModalDrawerSheet`: one `NavigationDrawerItem` per row of `items`: `label = { Text(<label>) }`, `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }` (nullable), `badge = { Text(<badge>) }` (nullable) and `modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)`; the `headline` becomes a `Text(<headline>, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)` before the items. The marking is the sheet: the screen content goes in the last parameter (`content`) and the scrim belongs to the composable. Open and close: `drawerState.open()` and `close()` in a coroutine. The drawer wraps the `Scaffold` (`ModalNavigationDrawer { Scaffold { … } }`), it does not take a slot of it. The width (up to 360 dp) belongs to the composable, and `Modifier.width(<marking width>.dp)` adjusts the sheet. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`.",
+              "notes": "Stable, no opt-in. `ModalNavigationDrawer(drawerContent = { ModalDrawerSheet { … } }, drawerState = rememberDrawerState(DrawerValue.Closed)) { <screen content> }`; inside the `ModalDrawerSheet`: one `NavigationDrawerItem` per row of `items`: `label = { Text(<label>) }`, `selected = <selected>`, `onClick = { /* screen logic */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = <iconDescription>) }` (nullable), `badge = { Text(<badge>) }` (nullable) and `modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)`; the `headline` becomes a `Text(<headline>, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)` before the items. The marking is the sheet: the screen content goes in the last parameter (`content`) and the scrim belongs to the composable. Open and close: `drawerState.open()` and `close()` in a coroutine. The drawer wraps the `Scaffold` (`ModalNavigationDrawer { Scaffold { … } }`), it does not take a slot of it. The width (up to 360 dp) belongs to the composable, and `Modifier.width(<marking width>.dp)` adjusts the sheet. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. `iconDescription` names an icon-only row (no `label`), and is `null` when the row has a `label` that already names it.",
               "variants": {
                 "field": "style",
                 "cases": {
@@ -28522,7 +28983,21 @@
                 ]
               }
             }
-          ]
+          ],
+          "accessibility": {
+            "role": "navigation",
+            "parts": [
+              {
+                "id": "item",
+                "name": "Item",
+                "when": "items",
+                "role": "tab",
+                "label": {
+                  "fields": ["items.label", "items.iconDescription"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "tabs",
@@ -28717,6 +29192,12 @@
                   "description": "Icon of the tab. Empty = text only."
                 },
                 {
+                  "key": "iconDescription",
+                  "label": "Icon description",
+                  "type": "string",
+                  "description": "Accessible description of the icon, for an item with no text (icon only); with `label` filled, the text already names the item. Empty with no label = a pending item."
+                },
+                {
                   "key": "selected",
                   "label": "Selected",
                   "type": "enum",
@@ -28889,7 +29370,7 @@
             "compose": {
               "symbol": "androidx.compose.material3.PrimaryTabRow",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TabRow.kt",
-              "notes": "The row is `PrimaryTabRow(selectedTabIndex = <index of the row of items with selected = true>) { … }` (`style` chooses the row). Inside, one tab per row of `items`: with `iconPosition = top` (or without an icon), `Tab(selected = <selected>, onClick = …, text = { Text(<label>) }, icon = { Icon(Icons.Filled.<icon>, contentDescription = null) })` (omit `icon` when the column is empty); with `iconPosition = leading`, `LeadingIconTab(selected, onClick, text = { Text(<label>) }, icon = { Icon(…) })`, which requires `text` and `icon`. `Tab` and `LeadingIconTab` are in `Tab.kt`, in the same package, and come from `androidx.compose.material3`. `TabRow` and `ScrollableTabRow` are `@Deprecated` (replaced by the four rows): do not use them. The four rows and the two tabs are stable, with no opt-in. The fixed row splits the width equally; the scrollable ones (`edgePadding` 52, `minTabWidth` 90, `scrollState`) give each tab the width of its content. Width and position come from the `Modifier` (the row has no size of its own; it usually goes under the `TopAppBar` or above the page content). Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`.",
+              "notes": "The row is `PrimaryTabRow(selectedTabIndex = <index of the row of items with selected = true>) { … }` (`style` chooses the row). Inside, one tab per row of `items`: with `iconPosition = top` (or without an icon), `Tab(selected = <selected>, onClick = …, text = { Text(<label>) }, icon = { Icon(Icons.Filled.<icon>, contentDescription = <iconDescription>) })` (omit `icon` when the column is empty); with `iconPosition = leading`, `LeadingIconTab(selected, onClick, text = { Text(<label>) }, icon = { Icon(…) })`, which requires `text` and `icon`. `Tab` and `LeadingIconTab` are in `Tab.kt`, in the same package, and come from `androidx.compose.material3`. `TabRow` and `ScrollableTabRow` are `@Deprecated` (replaced by the four rows): do not use them. The four rows and the two tabs are stable, with no opt-in. The fixed row splits the width equally; the scrollable ones (`edgePadding` 52, `minTabWidth` 90, `scrollState`) give each tab the width of its content. Width and position come from the `Modifier` (the row has no size of its own; it usually goes under the `TopAppBar` or above the page content). Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. `iconDescription` names an icon-only row (no `label`), and is `null` when the row has a `label` that already names it.",
               "variants": {
                 "field": "style",
                 "cases": {
@@ -29161,7 +29642,20 @@
                 ]
               }
             }
-          ]
+          ],
+          "accessibility": {
+            "parts": [
+              {
+                "id": "tab",
+                "name": "Tab",
+                "when": "items",
+                "role": "tab",
+                "label": {
+                  "fields": ["items.label", "items.iconDescription"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "bottom-app-bar",
@@ -29343,6 +29837,12 @@
               "description": "First action icon, on the left. Empty = no action."
             },
             {
+              "key": "actionIcon1Description",
+              "label": "Action 1 description",
+              "type": "string",
+              "description": "Accessible name of action 1 (it is an action): what a screen reader reads (\"Search\", \"Open the menu\"). Empty = a pending item."
+            },
+            {
               "key": "actionIcon2",
               "label": "Action 2",
               "type": "string",
@@ -29513,6 +30013,12 @@
                 "EditCalendar"
               ],
               "description": "Second action icon. Empty = no action."
+            },
+            {
+              "key": "actionIcon2Description",
+              "label": "Action 2 description",
+              "type": "string",
+              "description": "Accessible name of action 2 (it is an action): what a screen reader reads (\"Search\", \"Open the menu\"). Empty = a pending item."
             },
             {
               "key": "actionIcon3",
@@ -29687,6 +30193,12 @@
               "description": "Third action icon. Empty = no action."
             },
             {
+              "key": "actionIcon3Description",
+              "label": "Action 3 description",
+              "type": "string",
+              "description": "Accessible name of action 3 (it is an action): what a screen reader reads (\"Search\", \"Open the menu\"). Empty = a pending item."
+            },
+            {
               "key": "actionIcon4",
               "label": "Action 4",
               "type": "string",
@@ -29857,6 +30369,12 @@
                 "EditCalendar"
               ],
               "description": "Fourth action icon. Empty = no action."
+            },
+            {
+              "key": "actionIcon4Description",
+              "label": "Action 4 description",
+              "type": "string",
+              "description": "Accessible name of action 4 (it is an action): what a screen reader reads (\"Search\", \"Open the menu\"). Empty = a pending item."
             },
             {
               "key": "floatingActionButton",
@@ -30031,6 +30549,12 @@
               "description": "Icon of the FAB built in on the right (floatingActionButton parameter). Empty = no FAB."
             },
             {
+              "key": "floatingActionButtonDescription",
+              "label": "Floating button description",
+              "type": "string",
+              "description": "Accessible name of the floating button (it is an action): what a screen reader reads (\"Search\", \"Open the menu\"). Empty = a pending item."
+            },
+            {
               "key": "containerColor",
               "label": "Container color",
               "type": "enum",
@@ -30141,7 +30665,7 @@
             "compose": {
               "symbol": "androidx.compose.material3.BottomAppBar",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt",
-              "notes": "Stable overload `BottomAppBar(actions = { … }, floatingActionButton = { … })`, without `scrollBehavior` (the overload with `scrollBehavior` requires `@OptIn(ExperimentalMaterial3Api::class)` and is not used here). Each filled `actionIcon1` to `actionIcon4` becomes an `IconButton(onClick = …) { Icon(Icons.Filled.<actionIconN>, contentDescription = …) }` inside `actions = { … }` (a `RowScope`, from left to right). With `floatingActionButton` filled, `floatingActionButton = { FloatingActionButton(onClick = …, containerColor = BottomAppBarDefaults.bottomAppBarFabColor, elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()) { Icon(Icons.Filled.<floatingActionButton>, contentDescription = …) } }`; empty = omit the parameter. Inside a Scaffold, the bar goes in `bottomBar`. The height (80, plus the system navigation bar) belongs to the component: width and position come from the `Modifier`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. With child markings in the `actions` slot the node carries `actions = { … }` with an `IconButton` (or the child's own call) for each one, and the `actionIcon1` to `actionIcon4` of `values` are the default content that the children replace (they are not arguments then); with a child in the `floatingActionButton` slot the node carries `floatingActionButton = { … }` with it and the `floatingActionButton` field's icon is not used. Without child markings the arguments are the ones above.",
+              "notes": "Stable overload `BottomAppBar(actions = { … }, floatingActionButton = { … })`, without `scrollBehavior` (the overload with `scrollBehavior` requires `@OptIn(ExperimentalMaterial3Api::class)` and is not used here). Each filled `actionIcon1` to `actionIcon4` becomes an `IconButton(onClick = …) { Icon(Icons.Filled.<actionIconN>, contentDescription = <actionIconNDescription>) }` inside `actions = { … }` (a `RowScope`, from left to right). With `floatingActionButton` filled, `floatingActionButton = { FloatingActionButton(onClick = …, containerColor = BottomAppBarDefaults.bottomAppBarFabColor, elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()) { Icon(Icons.Filled.<floatingActionButton>, contentDescription = <floatingActionButtonDescription>) } }`; empty = omit the parameter. Inside a Scaffold, the bar goes in `bottomBar`. The height (80, plus the system navigation bar) belongs to the component: width and position come from the `Modifier`. Since material3 1.4.0 icons require `androidx.compose.material:material-icons-core` (or `-extended`) or a Material Symbol downloaded with `painterResource`; the ones that mirror (ArrowBack, KeyboardArrowRight, List) live in `Icons.AutoMirrored.Filled`. With child markings in the `actions` slot the node carries `actions = { … }` with an `IconButton` (or the child's own call) for each one, and the `actionIcon1` to `actionIcon4` of `values` are the default content that the children replace (they are not arguments then); with a child in the `floatingActionButton` slot the node carries `floatingActionButton = { … }` with it and the `floatingActionButton` field's icon is not used. Without child markings the arguments are the ones above. The accessible names are fields (`actionIcon1Description`, `actionIcon2Description`, `actionIcon3Description`, `actionIcon4Description` and `floatingActionButtonDescription`): they go in the `contentDescription` of the `Icon` and are not arguments of the bar (`get_code_hints` hands them over in `accessibility.parts`). A child in a slot answers for its own label.",
               "ignore": ["modifier", "floatingActionButton"],
               "signature": "signatures/bottom-app-bar.compose.json",
               "params": {
@@ -30244,25 +30768,35 @@
               "name": "With floating button",
               "values": {
                 "actionIcon1": "Check",
+                "actionIcon1Description": "Done",
                 "actionIcon2": "Edit",
+                "actionIcon2Description": "Edit",
                 "actionIcon3": "Favorite",
-                "floatingActionButton": "Add"
+                "actionIcon3Description": "Favorite",
+                "floatingActionButton": "Add",
+                "floatingActionButtonDescription": "Add"
               }
             },
             {
               "name": "Four actions",
               "values": {
                 "actionIcon1": "Home",
+                "actionIcon1Description": "Home",
                 "actionIcon2": "Search",
+                "actionIcon2Description": "Search",
                 "actionIcon3": "Person",
-                "actionIcon4": "Settings"
+                "actionIcon3Description": "Profile",
+                "actionIcon4": "Settings",
+                "actionIcon4Description": "Settings"
               }
             },
             {
               "name": "One action and button",
               "values": {
                 "actionIcon1": "Search",
-                "floatingActionButton": "Edit"
+                "actionIcon1Description": "Search",
+                "floatingActionButton": "Edit",
+                "floatingActionButtonDescription": "Edit"
               }
             }
           ],
@@ -30287,7 +30821,56 @@
               "accepts": ["fab", "extended-fab"],
               "max": 1
             }
-          ]
+          ],
+          "accessibility": {
+            "parts": [
+              {
+                "id": "actionIcon1",
+                "name": "Action icon 1",
+                "when": "actionIcon1",
+                "role": "button",
+                "label": {
+                  "fields": ["actionIcon1Description"]
+                }
+              },
+              {
+                "id": "actionIcon2",
+                "name": "Action icon 2",
+                "when": "actionIcon2",
+                "role": "button",
+                "label": {
+                  "fields": ["actionIcon2Description"]
+                }
+              },
+              {
+                "id": "actionIcon3",
+                "name": "Action icon 3",
+                "when": "actionIcon3",
+                "role": "button",
+                "label": {
+                  "fields": ["actionIcon3Description"]
+                }
+              },
+              {
+                "id": "actionIcon4",
+                "name": "Action icon 4",
+                "when": "actionIcon4",
+                "role": "button",
+                "label": {
+                  "fields": ["actionIcon4Description"]
+                }
+              },
+              {
+                "id": "floatingActionButton",
+                "name": "Floating action button",
+                "when": "floatingActionButton",
+                "role": "button",
+                "label": {
+                  "fields": ["floatingActionButtonDescription"]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "carousel",
@@ -30923,6 +31506,12 @@
               "description": "Icon of the revealed background (the drawing shows Delete, Done, Check, Favorite, Edit, Star, Share, Add and Close; others fall back to Delete). Empty = Delete."
             },
             {
+              "key": "iconDescription",
+              "label": "Background icon description",
+              "type": "string",
+              "description": "Accessible description of the background icon, read by a screen reader. Empty = the icon is decorative and is not announced."
+            },
+            {
               "key": "width",
               "label": "Width",
               "type": "enum",
@@ -30969,7 +31558,7 @@
                   "EndToStart": "SwipeToDismissBoxValue.EndToStart"
                 }
               },
-              "notes": "Stable, no opt-in. Use the overload with `onDismiss` (the one that only takes `content` and `backgroundContent` and reads `state.currentValue` is `@Deprecated`). `state = rememberSwipeToDismissBoxState(initialValue = <direction>)`: the `direction` field is the state's `initialValue` (it is not a parameter of `SwipeToDismissBox`) and, in general, stays at `Settled`; the two `enableDismiss…` are parameters of the box. `onDismiss = { value -> … }` removes the item (the app handles `StartToEnd` and `EndToStart`). `backgroundContent` (a `RowScope`) is the revealed background: a `Box(Modifier.fillMaxSize().background(<color>).padding(horizontal = 24.dp), contentAlignment = if (state.dismissDirection == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd) { Icon(Icons.Filled.<icon>, contentDescription = null) }`; the background colors belong to the app. The `content` (a `RowScope`) is the item, usually a `ListItem` or `Card` (the child marking, or whatever the app already has). Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow).",
+              "notes": "Stable, no opt-in. Use the overload with `onDismiss` (the one that only takes `content` and `backgroundContent` and reads `state.currentValue` is `@Deprecated`). `state = rememberSwipeToDismissBoxState(initialValue = <direction>)`: the `direction` field is the state's `initialValue` (it is not a parameter of `SwipeToDismissBox`) and, in general, stays at `Settled`; the two `enableDismiss…` are parameters of the box. `onDismiss = { value -> … }` removes the item (the app handles `StartToEnd` and `EndToStart`). `backgroundContent` (a `RowScope`) is the revealed background: a `Box(Modifier.fillMaxSize().background(<color>).padding(horizontal = 24.dp), contentAlignment = if (state.dismissDirection == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd) { Icon(Icons.Filled.<icon>, contentDescription = <iconDescription>) }`; the background colors belong to the app. The `content` (a `RowScope`) is the item, usually a `ListItem` or `Card` (the child marking, or whatever the app already has). Size: `fill` becomes `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` becomes `Modifier.width(<marking width>.dp)`/`height(<marking height>.dp)` and `weight` becomes `Modifier.weight(<weight>f)` (only inside Row, Column or FlowRow). `iconDescription` is empty (`null`) when the icon is decorative.",
               "ignore": ["modifier"],
               "signature": "signatures/swipe-to-dismiss.compose.json"
             }
@@ -31018,7 +31607,21 @@
               "name": "Background content",
               "description": "The background revealed under the item while it is swiped."
             }
-          ]
+          ],
+          "accessibility": {
+            "parts": [
+              {
+                "id": "icon",
+                "name": "Icon",
+                "when": "icon",
+                "role": "image",
+                "label": {
+                  "fields": ["iconDescription"],
+                  "required": false
+                }
+              }
+            ]
+          }
         }
       ]
     }
@@ -31026,7 +31629,7 @@
   "migrations": [
     {
       "from": 1,
-      "to": 16,
+      "to": 17,
       "steps": [
         {
           "op": "fill-field",
@@ -31050,7 +31653,7 @@
     },
     {
       "from": 2,
-      "to": 16,
+      "to": 17,
       "steps": [
         {
           "op": "fill-field",
@@ -31074,7 +31677,7 @@
     },
     {
       "from": 3,
-      "to": 16,
+      "to": 17,
       "steps": [
         {
           "op": "fill-field",
@@ -31098,7 +31701,7 @@
     },
     {
       "from": 4,
-      "to": 16,
+      "to": 17,
       "steps": [
         {
           "op": "fill-field",
@@ -31122,7 +31725,7 @@
     },
     {
       "from": 5,
-      "to": 16,
+      "to": 17,
       "steps": [
         {
           "op": "fill-field",
@@ -31144,5 +31747,12 @@
         }
       ]
     }
-  ]
+  ],
+  "accessibility": {
+    "touchTarget": {
+      "width": 48,
+      "height": 48,
+      "mode": "expanded"
+    }
+  }
 }

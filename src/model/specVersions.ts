@@ -21,7 +21,8 @@ import { templateMessage, type ModelMessageTemplateCode } from './messages';
 // roles is additive (`added-role`). Everything else is additive. Left OUT of the contract, on
 // purpose: layers, `labelField`, `allowedChildren` (ids and clauses), `groups`, `name`/`description`
 // and the order of the roles, `childRolesLabel`, `docRepos` and the `doc` object (v11),
-// `requiresOwner`, `description`, `tags`, `code`, `platforms`, `sources`, `notices` (and a type's
+// `requiresOwner`, `description`, `tags`, `code`, `platforms`, `sources`, `notices`, `slots`,
+// `accessibility` (v18, at the root and on the type) (and a type's
 // layer change; `appliesTo` only yields the additive notice `changed-applies-to`), plus removing a
 // `component`/`doc`/example/font: none of that generates a `SpecChange`. The roles of a renamed
 // type are not compared: the type is the `id`, and the old owner and the new type are different

@@ -41,6 +41,8 @@ const EXCEPTIONS: Record<string, string> = {
     'type removed in stage 9; the parser accepts it only to ignore it and warn',
   'spec:layers[].annotationTypes[].fields[].columns[].type=table':
     'the schema declares the column with the shape of the field, but a column of a column does not exist',
+  'spec:layers[].annotationTypes[].accessibility.parts[].touchTarget':
+    'a part has no touch target: the key is accepted by the shape only to be rejected at its exact path',
   'spec:fonts[].style':
     'an example requires a font file in the package (without it the validator warns); owner decision (2026-11-01): the font is fixed in the mobile client, not in SDUI',
   'spec:fonts[].style=italic':
@@ -101,6 +103,14 @@ const MISSING_TODAY: string[] = [
   // the fixture tests/fixtures/slots/ and script R28.
   'spec:layers[].annotationTypes[].code{}.slots',
   'spec:layers[].annotationTypes[].code{}.variants.cases{}.slots',
+  // `accessibility` (formatVersion 18, stage #1081): the Material 3 library adopts it in A4 and covers all but
+  // these three: the root declares `expanded` (no example of the root `visual`), the types declare `visual` where
+  // Compose does not expand (no type-level `expanded` of its own: it is inherited) and none opts out with
+  // `touchTarget: false`. Covered by tests/model/specV18.test.ts, tests/model/accessibility.test.ts and the
+  // fixture tests/fixtures/accessibility/.
+  'spec:accessibility.touchTarget.mode=visual',
+  'spec:layers[].annotationTypes[].accessibility.touchTarget.mode=expanded',
+  'spec:layers[].annotationTypes[].accessibility.touchTarget=false',
   'component:node.span',
   'component:node.weight',
   'component:node.repeat.lineGap',

@@ -1,6 +1,6 @@
-# Specialization format (`formatVersion` 1 to 17)
+# Specialization format (`formatVersion` 1 to 18)
 
-The format of the file that defines layers and annotation types (and, in `formatVersion` 2, the code platforms and the instantiation code of the types; in 3, the external sources; in 4, the **library**: components, documents, examples, fonts, executable origins and the version contract; in 5, the repository of each platform; in 6, the ready-made container sizes; in 7, the floating type; in 8, the text suggestions; in 9, the code variants; in 10, the notices; in 11, the children by layer and group, the link roles and the document in an external repository; in 12, the role migration steps; in 13, the children of the layer itself; in 14, the whole annotation as the target of a `ref`; in 15, the design tokens; in 16, the signatures and the field models). The "Help → Specializations" page of the app is a condensed version of this document (a test guarantees that the section titles and the code blocks match).
+The format of the file that defines layers and annotation types (and, in `formatVersion` 2, the code platforms and the instantiation code of the types; in 3, the external sources; in 4, the **library**: components, documents, examples, fonts, executable origins and the version contract; in 5, the repository of each platform; in 6, the ready-made container sizes; in 7, the floating type; in 8, the text suggestions; in 9, the code variants; in 10, the notices; in 11, the children by layer and group, the link roles and the document in an external repository; in 12, the role migration steps; in 13, the children of the layer itself; in 14, the whole annotation as the target of a `ref`; in 15, the design tokens; in 16, the signatures and the field models; in 17, the named slots; in 18, the accessibility). The "Help → Specializations" page of the app is a condensed version of this document (a test guarantees that the section titles and the code blocks match).
 
 ## What a specialization is
 
@@ -16,7 +16,8 @@ A **specialization** is a JSON file that defines **mandatory layers** and the **
 - `formatVersion` 15 is 14 plus the **design tokens**: the `tokens` key at the root declares named values (colors, radii, spacings, font families), simple or per mode (`light`/`dark`), which format 4 components read with `{ "$token": "name" }` (see "Design tokens"). Version 15 also brings the **icon set**: the `icons` key at the root points to a `.json` file in the package with the icons, which the `icon` node of format 4 components reads (see "Icon set"). Version 15 is additive: versions 1 to 14 are still accepted unchanged, and `tokens` or `icons` in an earlier version is the error `only allowed with formatVersion 15`, at the path of the key. Version 15 also brings `structural` on the annotation type: `structural: true` marks the type that **groups and does not draw** (a group, a section). It has no `component` (`structural` together with `component` is a validation error, at the path `structural`), its marking does not show the header with the name on the canvas, the outline appears only on mouse hover or when selected (like that of one that has a drawing) and it does not count as "without component" in any pending item; `structural` in an earlier version is the error `only allowed with formatVersion 15`, at the path `…annotationTypes[n].structural`. Version 15 also brings the **measured origin**: `origins[].kind` (`tree`, the default, or `measured`; see "Sources (sources)"); `kind` in an earlier version is the error `only allowed with formatVersion 15`, at the path `origins[n].kind`. Only a specialization that declares `tokens`, `icons`, `structural` or `kind: "measured"` moves up to 15.
 - `formatVersion` 16 is 15 plus the **signatures and the field models**: the `code` of each platform (and each case of `variants`) can now cite the **signature sheet** of what it calls (`signature`, format `mapping-signature`, see `docs/SIGNATURE-FORMAT.md`), leave parameters out on purpose (`ignore`), link parameters to factories (`calls`) and format the value (`formats`); `params` now accepts the path `colors.containerColor` and the positional `#0`; the type's `sources` accept `signature`; and the root gains `fieldModels` (see "Signatures and field models"). Version 16 is additive: versions 1 to 15 are still accepted unchanged, and each new key in an earlier version is the error `only allowed with formatVersion 16`, at the exact path of the key. Before 16, `params` values with `.` or `#0` are opaque text, as they always were. Only a specialization that declares `fieldModels`, `signature`, `ignore`, `calls` or `formats`, or a path or positional in `params`, moves up to 16.
 - `formatVersion` 17 is 16 plus the **named slots**: a type whose component has several slots (see `docs/COMPONENT-FORMAT.md`) can declare, in `slots`, what each slot accepts (`accepts`, with the same syntax as `allowedChildren`) and how many children it holds (`max`), and the `code` of each platform (and each `variants` case) can say which parameter receives each slot (`code.<platform>.slots`) (see "Slots of the type (`slots`)"). Version 17 is additive: versions 1 to 16 are still accepted unchanged, and each new key in an earlier version is the error `only allowed with formatVersion 17`, at the exact path of the key. Only a specialization that declares `slots` on a type or `slots` in a `code` moves up to 17.
-- `formatVersion` 2 is 1 plus the instantiation code (platforms and `code`: how to create an instance of each type). Import accepts versions 1 to 17; a v1 specialization is a v2 without platforms and without `code` (see "Platforms and code").
+- `formatVersion` 18 is 17 plus the **accessibility** (`accessibility`): at the root, the minimum touch target in component units; on a type, the accessibility `role`, the `label` (which fields give the accessible name), the `touchTarget` and the `parts` (icons and table items that come by field). The audit that reads them gives the pending item `accessible-label-missing` and the warning `touch-target-small` (see "Accessibility (`accessibility`)"). The keys are outside the version contract; before 18 they are the usual error `only allowed with formatVersion 18`.
+- `formatVersion` 2 is 1 plus the instantiation code (platforms and `code`: how to create an instance of each type). Import accepts versions 1 to 18; a v1 specialization is a v2 without platforms and without `code` (see "Platforms and code").
 - `formatVersion` 3 is 2 plus `sources`: which elements of an external system each type corresponds to and which source property each field comes from (see "Sources (sources)").
 - `formatVersion` 4 is 3 plus the **library**: the type points to a component (`component`), a document (`doc`) and examples (`examples`); the root gains `fonts`, `origins` and `migrations`; the `sources` gain `path`, `slot` and `ignore` (see "Sources (sources)", "Library: the package", "Version contract" and "Library validation"). Versions 1, 2 and 3 are still accepted unchanged: each v4 key in an earlier version is the error `only allowed with formatVersion 4`, at the exact path.
 - `formatVersion` 5 is 4 plus `repo` on the platforms: the library's repository on each platform (`url`, `urlTemplate`, `ref`), which provides the link and the revision of the file of each `symbol` (see "Platforms and code"). Versions 1 to 4 are still accepted unchanged: `repo` in an earlier version is the error `only allowed with formatVersion 5`, at the exact path.
@@ -784,6 +785,137 @@ A component can have several `slot` nodes, each with its own `id` (`docs/COMPONE
 
 **Importing the signature.** The importer (`plan_signature_import`) links each `role: slot` parameter to the slot of the same normalized name (lowercase, letters and digits only: `navigation_icon` matches `navigationIcon`) when the type has a component with named slots, and in a `formatVersion` 17 specialization. It writes the `code.slots` entry **only when the name in the call differs from the slot's `id`**, never overwrites an entry that already exists, takes the linked parameter out of the `unmapped`, and returns the links in `slotLinks` (`via: "name"` or `"slots"`). Importing the same sheet twice gives the same specialization.
 
+## Accessibility (`accessibility`)
+
+From `formatVersion` 18 the specialization says, per type, **what a person using assistive technology needs**: the role of the element, where its accessible name comes from and how large its touch area must be. The audit (below) reads it; nothing here changes how the annotation is drawn or saved.
+
+```json
+{
+  "accessibility": { "touchTarget": { "width": 48, "height": 48, "mode": "expanded" } },
+  "layers": [
+    {
+      "id": "ui",
+      "name": "UI",
+      "color": "#2563EB",
+      "annotationTypes": [
+        {
+          "id": "icon-button",
+          "name": "Icon button",
+          "fields": [
+            { "key": "label", "name": "Label", "type": "string" },
+            { "key": "icon", "name": "Icon", "type": "string" }
+          ],
+          "accessibility": {
+            "role": "button",
+            "label": { "fields": ["label"] }
+          }
+        },
+        {
+          "id": "top-bar",
+          "name": "Top bar",
+          "fields": [
+            { "key": "title", "name": "Title", "type": "string" },
+            { "key": "navigationIcon", "name": "Navigation icon", "type": "string" },
+            {
+              "key": "navigationIconDescription",
+              "name": "Navigation icon description",
+              "type": "string"
+            }
+          ],
+          "accessibility": {
+            "role": "heading",
+            "label": { "fields": ["title"] },
+            "parts": [
+              {
+                "id": "navigation",
+                "name": "Navigation icon",
+                "when": "navigationIcon",
+                "label": { "fields": ["navigationIconDescription"] }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Keys.**
+
+- **At the root:** `accessibility: { touchTarget? }`, the default touch target of every type that has an interactive `role` and does not declare its own.
+- **On the type:** `accessibility: { role?, label?, touchTarget?, parts? }`. Every key is optional.
+- `accessibility` is **outside the version contract**: adding, changing or removing it never produces a difference or a migration step. Without `accessibility` in the specialization the audit is empty.
+
+### `role`
+
+One of `button`, `link`, `checkbox`, `radio`, `switch`, `slider`, `textbox`, `searchbox`, `tab`, `menuitem`, `option`, `image`, `heading`, `dialog`, `navigation`, `progressbar` and `none`. The first eleven are the **interactive** ones (a person acts on them); `image`, `heading`, `dialog`, `navigation` and `progressbar` describe the element without being a control, and `none` says the element is decorative. A type without `role`, or with `none`, is **not audited by itself** (neither label nor touch target), but **its `parts` are audited all the same**.
+
+The names are the WAI-ARIA ones, a neutral vocabulary. Each platform has its own name for the same idea; this table is documentation only, the format never reads it:
+
+| `role`                 | Compose (`Role` / `semantics`)        | SwiftUI (`accessibilityAddTraits`)      | HTML (`role`)                   | Flutter (`Semantics`)                       |
+| ---------------------- | ------------------------------------- | --------------------------------------- | ------------------------------- | ------------------------------------------- |
+| `button`               | `Role.Button`                         | `.isButton`                             | `button`                        | `button: true`                              |
+| `link`                 | `Role.Button` with a click label      | `.isLink`                               | `link`                          | `link: true`                                |
+| `checkbox`             | `Role.Checkbox`                       | `.isButton` with the toggle value       | `checkbox`                      | `checked: <bool>`                           |
+| `radio`                | `Role.RadioButton`                    | `.isButton` with the selected value     | `radio`                         | `inMutuallyExclusiveGroup: true`, `checked` |
+| `switch`               | `Role.Switch`                         | `Toggle` (the toggle trait is implicit) | `switch`                        | `toggled: <bool>`                           |
+| `slider`               | `Role.Slider`, `progressBarRangeInfo` | `.isAdjustable` (`Slider`)              | `slider`                        | `slider: true`                              |
+| `textbox`, `searchbox` | `editableText`, `Role` not needed     | `TextField`, `.isSearchField`           | `textbox`, `searchbox`          | `textField: true`                           |
+| `tab`                  | `Role.Tab`                            | `.isButton` with the selected value     | `tab`                           | `selected: <bool>`, `button: true`          |
+| `menuitem`, `option`   | `Role.DropdownList`, `selectable`     | `.isButton`                             | `menuitem`, `option`            | `button: true`, `selected`                  |
+| `image`                | `Role.Image`                          | `.isImage`                              | `img`                           | `image: true`                               |
+| `heading`              | `heading()`                           | `.isHeader`                             | `heading`                       | `header: true`                              |
+| `dialog`               | `paneTitle`                           | `.isModal`                              | `dialog`                        | `scopesRoute: true`, `namesRoute: true`     |
+| `navigation`           | `isTraversalGroup`                    | (a container, no trait)                 | `navigation`                    | (a container, no flag)                      |
+| `progressbar`          | `progressBarRangeInfo`                | `ProgressView`                          | `progressbar`                   | `value`                                     |
+| `none`                 | `clearAndSetSemantics {}`             | `.accessibilityHidden(true)`            | `presentation` or `aria-hidden` | `ExcludeSemantics`                          |
+
+### `label`
+
+`label: { fields: [<key>, …], required? }`. The **first field with a value** gives the accessible name (the text a screen reader speaks). Each key is a `string` or `enum` field of the type. `required` defaults to `true` for an interactive `role` and to `false` otherwise.
+
+A `label` on a type **without** `role`, or with `none`, is valid but has no effect (the audit does not read the type itself, and `get_component` does not report it): `validate_specialization` and `validate_library` return the warning `label-without-role` at `…accessibility.label`.
+
+An interactive `role` **without** `label` is valid: there is no label audit, only the touch target audit. The name then comes from code (a `slider` whose name is the label next to it, a button whose text is its content). After an import from the platform, the author links `label` to the field that the import filled from the platform's accessibility parameter (`contentDescription` in Compose, `accessibilityLabel` in SwiftUI, `aria-label` in HTML, `semanticLabel` or `Semantics.label` in Flutter): those names appear only here and in the skill, never in the core.
+
+### `parts`
+
+A **part** is something inside the type that has its own accessible name and is not an annotation of its own: an icon that comes by field, an item of a table. `parts: [{ id, name?, when, label?, role? }]`:
+
+- `id` is unique in the type; `name` defaults to the `id` and is what the pending item shows; `role` defaults to `button`.
+- `when` says **when the part exists**: a field key (the part exists when the field has a value), the name of a `table` field (one part **per row**) or `<table>.<column>` (one part per row in which the column has a value). A `when` that is neither a field nor a table, or a table or column that does not exist, is an error.
+- `label.fields` of a part: for a part that depends on a field, field keys (`string` or `enum`); for a table part, `<table>.<column>` **of the same table** (a column of another table is the error `fields of another table`). By the rule above, `required` defaults to `true` for an interactive part role.
+- A part has **no `touchTarget`**: the key is an error (`a part has no touch target`), because a part has no rectangle of its own. The type's marking is the only rectangle.
+- **Parts are audited whatever the type's `role`**: a `top-bar` with `role: "heading"` or no `role` at all still has its navigation icon checked.
+- **A child in a slot is audited by its own type.** When the type has slots, a part whose `when` field is inactive because a child filled the slot (`inactiveFields` in the drawing, see `docs/COMPONENT-FORMAT.md`) is **skipped**: the icon-button that is the child is audited by its own `accessibility`, not by the part. Without a drawing for the marking, no part is skipped.
+
+### `touchTarget`
+
+`touchTarget: { width, height, mode? }`, with `width` and `height` greater than 0, in **component units** (the same units as `size` and `minSize` of the component). At the root it is the default; on a type it **replaces** the root's, and `false` turns the type's touch audit off. It only applies to a type with an interactive `role` (on another `role`, or without one, it is an error).
+
+`mode` says what the number means:
+
+- `visual` (default): the **marked rectangle** is the touch area, so it must be at least the minimum.
+- `expanded`: the platform grows the touch area up to the minimum by itself (for example Compose's `minimumInteractiveComponentSize`), so a smaller drawing is fine and the size audit **skips the type**.
+
+Example minimums, which live **only in the documentation and in the skill**, never in the core:
+
+| Platform or rule | `touchTarget`                                       |
+| ---------------- | --------------------------------------------------- |
+| Android          | `{ "width": 48, "height": 48, "mode": "expanded" }` |
+| iOS              | `{ "width": 44, "height": 44, "mode": "visual" }`   |
+| Web, WCAG 2.2 AA | `{ "width": 24, "height": 24, "mode": "visual" }`   |
+
+**Density.** The minimum is in units and the rectangle is in image pixels, so the audit converts: minimum in pixels = `ceil(width × density)` by `ceil(height × density)`, where `density` is the container's effective density (`add_container` and `update_container` set it; a marking inside another container uses that container's). A 108 × 120 px button in a 3x container is 36 × 40 units; against 44 × 44 the minimum is 132 × 132 px. The audit tolerates **1 px per axis**, like the slot tolerance. A marking whose owner is an **arrow** has no rectangle: only its label is audited, never its touch target.
+
+### The audit
+
+The audit is a pure function of the project and the specialization (`accessibilityAudit`, `src/model/accessibility.ts`) and gives two different things:
+
+- **Pending item `accessible-label-missing`**: a type or a part with `label.required` whose `label.fields` are all empty (for a table part, in its row). It is a normal pending item (it counts in Incomplete, lists the part by `name` and, for a table, the row number from 1). Text: "Missing accessible label: <field label>" for the type, "Missing accessible label in part <name>" for a field part and "Missing accessible label in part <name>, row <n>" for a table part.
+- **Warning `touch-target-small`**: a type with an interactive `role` and a `visual` touch target whose marked rectangle is below the minimum. It is **not** a pending item and **does not count in Incomplete**: it is a design finding, with the actual size, the minimum in units, the minimum in pixels and the density (up to 3 decimals, no trailing zeros, for example 2.625). The text never names a platform unit.
+
 ## Containers (ready-made sizes)
 
 `formatVersion` 6 lets the specialization offer **preset container sizes**: the canvas's top-level object (an app screen, a panel, a card) created without a file, with just a size and a background color. In the **New container** dialog, the **Preset size** list brings **Custom** and **Selection size** (from the core; the latter is the selected marking's rectangle and is disabled without a selection) and, below, the `containers` of each applied specialization, grouped by its name. Device sizes (phone, tablet, desktop) are domain-specific: they come from the specialization, not from the core. The repository's Material 3 library brings Phone 360 × 800, Large phone 412 × 915, Tablet 800 × 1280 and Desktop 1440 × 900.
@@ -952,6 +1084,7 @@ The four `kind` values have a **fixed severity**, in the order `removed` > `depr
 
 - Nobody hand-writes a notice with a tool's `ref`: it would disappear on the tool's next run.
 - A fidelity notice does not repeat what a tool-generated `pending` already says.
+- **Accessibility audit:** the `accessible-label-missing` pending item and the `touch-target-small` warning come from the `accessibility` keys of the type, not from `notices`; a fidelity notice does not repeat them (see "Accessibility (`accessibility`)").
 
 **How the app shows the two (no new control):**
 
@@ -1252,7 +1385,7 @@ For color, `{ "$token": "scrim", "alpha": 0.32 }` multiplies the alpha of the to
 
 A v11 that removes a role is rejected until it moves up to `formatVersion` 12 with the step that covers it. **Renamed owner:** when the type was renamed (`rename-type`), the roles are **not** compared between the old and the new type; a role that annotations use and that does not exist in the new type becomes `unknown-role` when migrating, and the author can declare `rename-role` with the new `id`, **after** the `rename-type`.
 
-**Outside the contract**, on purpose: `slots` of the type and `code.<platform>.slots` (`formatVersion` 17), `fieldModels`, `signature`, `ignore`, `calls`, `formats`, and the paths and positionals in `params` (`formatVersion` 16; what a signature import adds, an optional field or an `enum` option, is additive like any other), layers, `labelField`, `allowedChildren` (including the `{ layer, groups }` clause and, in 13, the children of the layer itself), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `accepts.annotations`, `groups` (of the layer and of the type), the `name` and `description` of a role, the order of `childRoles`, `childRolesLabel` and `docRepos`, switching the `doc` between text and object, and removing a `component`, a `doc`, an example, or a font. None of this produces a difference. A rename is indistinguishable from remove + add; whoever renames **declares** it in a `rename-*` step, and that is what sets it apart from a removal.
+**Outside the contract**, on purpose: `accessibility` (`formatVersion` 18, at the root and on the type), `slots` of the type and `code.<platform>.slots` (`formatVersion` 17), `fieldModels`, `signature`, `ignore`, `calls`, `formats`, and the paths and positionals in `params` (`formatVersion` 16; what a signature import adds, an optional field or an `enum` option, is additive like any other), layers, `labelField`, `allowedChildren` (including the `{ layer, groups }` clause and, in 13, the children of the layer itself), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `accepts.annotations`, `groups` (of the layer and of the type), the `name` and `description` of a role, the order of `childRoles`, `childRolesLabel` and `docRepos`, switching the `doc` between text and object, and removing a `component`, a `doc`, an example, or a font. None of this produces a difference. A rename is indistinguishable from remove + add; whoever renames **declares** it in a `rename-*` step, and that is what sets it apart from a removal.
 
 ### `migrations`
 
@@ -1565,7 +1698,7 @@ The packages `libraries/material3-compose/` and `examples/libraries/sdui-backend
 
 Error messages carry the path, e.g.: `layers[1].annotationTypes[0].fields[2].type: "numero" is invalid; use "string", "number", "date", "enum", "table" or "ref"`.
 
-- `format`, `formatVersion` (1 to 17), `id`, `name`, and `version` are required; `version` is an integer ≥ 1;
+- `format`, `formatVersion` (1 to 18), `id`, `name`, and `version` are required; `version` is an integer ≥ 1;
 - layer ids are unique; type ids are unique across the whole specialization; `key` is unique in the type and in the columns; no `key` starting with `_`;
 - `allowedChildren` only references existing types **in another layer** (from `formatVersion` 13, also in the owner's own layer, including the type itself);
 - every type with `requiresOwner: true` appears in the `allowedChildren` of some **other** type (in v11, in the **resolved** set of children of some owner: by id, by whole layer, or by group); a type that only lists itself does not satisfy this (`nenhum outro tipo o aceita como filho`);
@@ -1579,6 +1712,7 @@ Error messages carry the path, e.g.: `layers[1].annotationTypes[0].fields[2].typ
 - **v15, `tokens`:** only from `formatVersion` 15 (before that, `only allowed with formatVersion 15`, at the path `tokens`); `modes` a non-empty list of distinct names `[a-z0-9][a-z0-9-]*`; a token name in the same pattern; each value is text or a number, simple or with all the modes (and only them) of the same type (see "Design tokens");
 - **v16:** `fieldModels`, `signature`, `ignore`, `calls`, and `formats` (in `code`, for `variants` and, for `signature`, in `sources`) only from `formatVersion` 16 (before that, `only allowed with formatVersion 16`, at the path of the key); `like` points to an existing `<type>.<field>`; `format` and template have `{value}`; the first segment of a path in `params` is in `calls`; see "Signatures and field models";
 - **v17:** `slots` (on the type) and `slots` (in `code` and in the `variants` cases) only from `formatVersion` 17 (before that, `only allowed with formatVersion 17`, at the path of the key); the `id` of a slot follows `[a-z][a-zA-Z0-9_-]*` and is unique in the type; `accepts` is not empty and uses the `allowedChildren` syntax and errors; `max` is an integer ≥ 1; the slot against the component and the parameter against the sheet belong to `validate_library`; see "Slots of the type (`slots`)";
+- **v18, `accessibility`:** only from `formatVersion` 18 (before that, `only allowed with formatVersion 18`, at the path `accessibility` of the root or `…annotationTypes[n].accessibility`, and at the exact path of any key inside it); `role` is one of the listed roles (`role "x" is invalid; use …`, at `….accessibility.role`); `touchTarget` `{ width, height, mode? }` with `width` and `height` greater than 0 and `mode` `visual` or `expanded`, and on a type `false` turns the audit off; `touchTarget` on a type needs an interactive `role` (`touchTarget: only valid with an interactive role`); `label.fields` is a non-empty list of `string` or `enum` fields of the type (`label: field does not exist: <key>`, `label: field <key> must be string or enum`, at `….label.fields[i]`); `parts[n].id` is unique in the type; `parts[n].when` is a field, a `table` field or `<table>.<column>` that exists (otherwise an error); the `label.fields` of a table part are `<table>.<column>` of the same table (`fields of another table`); `parts[n].touchTarget` is an error (`a part has no touch target`); see "Accessibility (`accessibility`)";
 - `platforms`: `id` in the format `[a-z0-9-]+` and unique, `name` required, `language` and `repo` optional; `platforms` and `code` from `formatVersion` 2;
 - **v5, `repo`:** only in `formatVersion` 5, inside an entry of `platforms` (in an earlier version the error is `only allowed with formatVersion 5`, at the path `platforms[0].repo`); `url` required, starting with `http://` or `https://`, no spaces; `urlTemplate` optional, also `http(s)://` and with `{path}`; `ref` optional, non-empty text; any other property in `repo` is rejected;
 - **v11, children by layer and group:** only from `formatVersion` 11 (in an earlier version the error is `only allowed with formatVersion 11`, at the path `…annotationTypes[n].allowedChildren[k]` for the clause, `layers[n].groups`, and `…annotationTypes[m].groups`); each item of `allowedChildren` is a type id or a strict `{ layer, groups? }` clause (another property is an error, and so is `groups: []`); errors: a `layer` that is not a layer of the specialization, a `layer` that is the owner's own layer (`children must be in another layer`), and a nonexistent group in the clause's layer; `requiresOwner` is checked against the resolved set; `layers[n].groups`: `id` non-empty and unique in the layer, `name` non-empty; `annotationTypes[m].groups`: a non-empty list, without repeats, only of groups of the layer itself (a group that does not exist in the layer is an error); **warnings:** 20 or more ids as text in the same `allowedChildren` (`N types listed one by one; a { layer, groups } clause covers the layer or the groups`; with 19, no) and a declared group that no type uses (see "Children by layer and group");

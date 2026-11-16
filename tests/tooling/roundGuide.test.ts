@@ -591,7 +591,7 @@ describe('round-guide.mjs: base, index and excerpts (#1232, GL1)', () => {
       expect(out.split('\n').filter((l) => l.startsWith('Steps ('))).toHaveLength(1);
     });
 
-    it('R12: the four subsections with their setups and one Steps line per table excerpt', async () => {
+    it('R12: the five subsections with their setups and one Steps line per table excerpt', async () => {
       const { guideExcerpt } = await load();
       const guide = await guideOf(['R12']);
       const out = guideExcerpt(guide, ['R12']);
@@ -599,13 +599,14 @@ describe('round-guide.mjs: base, index and excerpts (#1232, GL1)', () => {
       expect(out).toContain('#### R12.23 to R12.28');
       expect(out).toContain('#### R12.34 to R12.40');
       expect(out).toContain('#### R12.41 to R12.43');
+      expect(out).toContain('#### R12.44');
       expect(
         out.match(/\*\*(?:Setup|Preparation)\.\*\*/g)?.length,
-      ).toBeGreaterThanOrEqual(5);
+      ).toBeGreaterThanOrEqual(6);
       const steps = out.split('\n').filter((l) => l.startsWith('Steps ('));
-      expect(steps).toHaveLength(5);
+      expect(steps).toHaveLength(6);
       const sum = steps.reduce((n, l) => n + Number(/^Steps \((\d+)\)/.exec(l)?.[1]), 0);
-      expect(sum).toBe(63);
+      expect(sum).toBe(64);
       expect(out).not.toMatch(/^\| R12\.\d/m);
     });
 
@@ -891,7 +892,7 @@ describe('round-guide.mjs --faixas (#1639, TC1, decision 3)', () => {
     expect((await loadFaixas()).FAIXA_LIMIT).toBe(20);
   });
 
-  it('acceptance: R25 in 7 batches, R12 in 4, R9 and R3 in 2, R17 in 3, R13 whole; the sum is the number of steps of the guide', async () => {
+  it('acceptance: R25 in 7 batches, R12 in 4, R9 in 3, R3 in 2, R17 in 3, R13 whole; the sum is the number of steps of the guide', async () => {
     const { planFaixas } = await loadFaixas();
     const scripts = ['R25', 'R12', 'R3', 'R13', 'R17', 'R9'];
     const batches = planFaixas(GUIDE, scripts);
@@ -901,7 +902,7 @@ describe('round-guide.mjs --faixas (#1639, TC1, decision 3)', () => {
     const stepCounts = Object.fromEntries(
       g.planGroups(GUIDE, scripts).items.map((i) => [i.token, i.steps]),
     );
-    const expected = { R25: 7, R12: 4, R17: 3, R9: 2, R3: 2, R13: 1 } as const;
+    const expected = { R25: 7, R12: 4, R17: 3, R9: 3, R3: 2, R13: 1 } as const;
     for (const [id, n] of Object.entries(expected)) {
       expect(by[id], id).toHaveLength(n);
       expect(
@@ -1028,10 +1029,10 @@ describe('round-guide.mjs --faixas (#1639, TC1, decision 3)', () => {
     );
     expect(r.status).toBe(0);
     const lines = r.stdout.trimEnd().split('\n');
-    expect(lines).toHaveLength(19);
-    expect(lines[0]).toMatch(/^batch 1 of 19: R3\.1-R3\.\d+[a-z]? \(20 steps\)$/);
+    expect(lines).toHaveLength(20);
+    expect(lines[0]).toMatch(/^batch 1 of 20: R3\.1-R3\.\d+[a-z]? \(20 steps\)$/);
     expect(lines.at(-1)).toMatch(
-      /^batch 19 of 19: R25\.\d+[a-z]?-R25\.\d+[a-z]? \(\d+ steps\)$/,
+      /^batch 20 of 20: R25\.\d+[a-z]?-R25\.\d+[a-z]? \(\d+ steps\)$/,
     );
     const none = spawnSync('node', [SCRIPT, '--faixas'], { encoding: 'utf8' });
     expect(none.status).toBe(2);

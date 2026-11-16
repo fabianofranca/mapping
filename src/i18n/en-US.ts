@@ -871,6 +871,12 @@ export const enUS = {
   'notices.scope.column': '(column)',
   'notices.col.value': 'Value',
   'notices.go': 'Go to the annotation with a notice in {name}',
+  'notices.accessibility.title': 'Accessibility',
+  'notices.accessibility.go':
+    'Go to the annotation with an accessibility warning in {name}',
+  'notices.accessibility.count': '{count} warning(s)',
+  'audit.touchTargetSmall':
+    '{width} × {height}; minimum {minWidth} × {minHeight} units ({pxWidth} × {pxHeight} px at {density}x)',
   'notices.status': 'Notices: {count}',
   'notices.statusTip': 'Open the Notices window ({count} annotation(s) with a notice)',
   'typed.chooseTypeTitle': 'New annotation in {layer}',
@@ -973,6 +979,11 @@ export const enUS = {
   'issue.slot-not-accepted': 'the slot {slot} of {owner} does not accept {type}',
   'issue.slot-full': 'the slot {slot} of {owner} takes {max}',
   'issue.slot-hidden': 'the slot {slot} of {owner} is hidden',
+  'issue.accessible-label-missing': 'missing accessible label',
+  'issue.accessible-label-missing-field': 'Missing accessible label: {field}',
+  'issue.accessible-label-missing-part': 'Missing accessible label on the part {part}',
+  'issue.accessible-label-missing-part-row':
+    'Missing accessible label on the part {part}, row {row}',
   'list.incomplete': 'Incomplete only',
   'list.emptyIncomplete': 'No incomplete annotations in the visible layers.',
   // Details (R5)

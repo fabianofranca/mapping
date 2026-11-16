@@ -11,6 +11,13 @@ import {
 import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
 import { isPackagePath, packagePathError } from './packagePaths';
 import { childSets } from './specChildren';
+import {
+  accessibilityShape,
+  checkAccessibilityKeys,
+  typeAccessibilityShape,
+  type SpecAccessibility,
+  type SpecTypeAccessibility,
+} from './specAccessibility';
 import { checkSignatureKeys } from './specSignature';
 import type { ModelMessageTemplateCode } from './messages';
 import {
@@ -25,13 +32,25 @@ import {
 } from './specIssueCode';
 
 export { isPackagePath };
+export {
+  ACCESSIBILITY_ROLES,
+  ACCESSIBILITY_VERSION,
+  INTERACTIVE_ROLES,
+  type AccessibilityRole,
+  type SpecAccessibility,
+  type SpecAccessibilityLabel,
+  type SpecAccessibilityPart,
+  type SpecTouchTarget,
+  type SpecTypeAccessibility,
+  type TouchTargetMode,
+} from './specAccessibility';
 
 /** "only allowed with formatVersion N" (the Ns with no catalog message of their own), with the code. */
 function onlyFormat(version: number): SpecMsg {
   return specMsg('spec.onlyFormat', { version: String(version) });
 }
 
-// Specialization format (`formatVersion` 1 to 17), see docs/SPEC-FORMAT.md. Version 2 adds
+// Specialization format (`formatVersion` 1 to 18), see docs/SPEC-FORMAT.md. Version 2 adds
 // `platforms` and `code`; version 1 is 2 without platforms and without `code`; version 3 is 2 plus
 // `sources` (external origins on types and fields, including `table` columns); version 4 is 3
 // plus the library: the package (the specialization's folder) with `component`, `doc` and
@@ -64,7 +83,9 @@ function onlyFormat(version: number): SpecMsg {
 // (`colors.containerColor`) or positional (`#0`), plus `signature` on the type's `sources` (see
 // `specSignature.ts`); version 17 is 16 plus the named slots (stage #1080): `slots` on the type
 // (`id`, `name`, `description`, `accepts`, `max`) and, in the `code` (and in each `variants` case),
-// `slots` (slot id → parameter name), outside the version contract (see `diffSpecs`).
+// `slots` (slot id → parameter name), outside the version contract (see `diffSpecs`); version 18 is
+// 17 plus `accessibility` (stage #1126): at the root (`touchTarget`) and on the type (`role`,
+// `label`, `touchTarget`, `parts`), outside the version contract too (see `specAccessibility.ts`).
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -77,10 +98,10 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Value used before the product rename: import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Current format version (the one that the documentation and new examples use). */
-export const SPEC_FORMAT_VERSION = 17;
+export const SPEC_FORMAT_VERSION = 18;
 /** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -413,6 +434,8 @@ export interface SpecAnnotationType {
   fields: SpecField[];
   /** The component's slots with what they accept (`formatVersion` 17 only). */
   slots?: SpecSlot[];
+  /** Role, accessible label, touch target and parts (`formatVersion` 18 only). */
+  accessibility?: SpecTypeAccessibility;
   code?: SpecCodeMap;
   /** Origin elements the type corresponds to (`formatVersion` 3 onward). */
   sources?: SpecTypeSource[];
@@ -520,6 +543,8 @@ export interface Spec {
    * a source type (`Color`, `Dp`, `boolean`) becomes a field; see `specSignature.ts`.
    */
   fieldModels?: SpecFieldModels;
+  /** Minimum touch target of the interactive types (`formatVersion` 18 only). */
+  accessibility?: SpecAccessibility;
 }
 
 const KEY_RE = /^[A-Za-z0-9_]+$/;
@@ -1418,6 +1443,8 @@ const annotationTypeShape = z
     childRolesLabel: nonEmpty.optional(),
     fields: z.array(fieldShape),
     slots: z.array(slotShape).optional(),
+    // `formatVersion` 18 only (`checkAccessibilityKeys`).
+    accessibility: typeAccessibilityShape.optional(),
     code: z.record(z.string(), codeEntryShape).optional(),
     sources: z.array(typeSourceShape).optional(),
     component: packagePath('.json').optional(),
@@ -2838,6 +2865,8 @@ export const specSchema = z
     icons: z.unknown().optional(),
     // Validated by `checkSignatureKeys` (the version, the shapes and the cross checks), in superRefine.
     fieldModels: z.unknown().optional(),
+    // `formatVersion` 18 only (`checkAccessibilityKeys`, which also does the type's).
+    accessibility: accessibilityShape.optional(),
   })
   .strict()
   .superRefine((spec, ctx) => {
@@ -2995,6 +3024,7 @@ export const specSchema = z
     checkAllowedChildren(spec, typeLayer, ctx);
     checkAcceptsAnnotations(spec, typeLayer, ctx);
     checkSlotKeys(spec, typeLayer, ctx);
+    checkAccessibilityKeys(spec, ctx);
     if (spec.formatVersion >= 11) {
       checkLayerGroups(spec.layers, ctx);
       checkDocRepos(spec, ctx);

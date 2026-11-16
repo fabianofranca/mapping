@@ -871,6 +871,11 @@ export const ptBR: Dictionary = {
   'notices.scope.column': '(coluna)',
   'notices.col.value': 'Valor',
   'notices.go': 'Ir para a anotação com aviso em {name}',
+  'notices.accessibility.title': 'Acessibilidade',
+  'notices.accessibility.go': 'Ir para a anotação com aviso de acessibilidade em {name}',
+  'notices.accessibility.count': '{count} aviso(s)',
+  'audit.touchTargetSmall':
+    '{width} × {height}; mínimo {minWidth} × {minHeight} unidades ({pxWidth} × {pxHeight} px a {density}x)',
   'notices.status': 'Avisos: {count}',
   'notices.statusTip': 'Abrir a janela Avisos ({count} anotação(ões) com aviso)',
   'typed.chooseTypeTitle': 'Nova anotação em {layer}',
@@ -973,6 +978,11 @@ export const ptBR: Dictionary = {
   'issue.slot-not-accepted': 'o slot {slot} de {owner} não aceita {type}',
   'issue.slot-full': 'o slot {slot} de {owner} aceita {max}',
   'issue.slot-hidden': 'o slot {slot} de {owner} está oculto',
+  'issue.accessible-label-missing': 'sem rótulo acessível',
+  'issue.accessible-label-missing-field': 'Sem rótulo acessível: {field}',
+  'issue.accessible-label-missing-part': 'Sem rótulo acessível na parte {part}',
+  'issue.accessible-label-missing-part-row':
+    'Sem rótulo acessível na parte {part}, linha {row}',
   'list.incomplete': 'Só incompletas',
   'list.emptyIncomplete': 'Nenhuma anotação incompleta nas camadas visíveis.',
   'marking.section': 'Marcação',

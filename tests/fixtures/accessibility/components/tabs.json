@@ -1,0 +1,17 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "tabs",
+  "name": "Tabs",
+  "size": { "width": 360, "height": 48 },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "row", "align": "center", "justify": "center", "gap": 24 },
+    "fill": "#FEF7FF",
+    "children": [
+      { "type": "text", "text": "Tab", "font": { "size": 14 }, "width": "hug" },
+      { "type": "text", "text": "Tab", "font": { "size": 14 }, "width": "hug" },
+      { "type": "text", "text": "Tab", "font": { "size": 14 }, "width": "hug" }
+    ]
+  }
+}

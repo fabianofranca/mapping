@@ -15,11 +15,12 @@ Annotation type: `tabs` (layer Components).
 
 Columns of `items` (one row per tab):
 
-| Key        | Label    | Type   | Required | Options                                                   | Default |
-| ---------- | -------- | ------ | -------- | --------------------------------------------------------- | ------- |
-| `label`    | Label    | string | yes      |                                                           |         |
-| `icon`     | Icon     | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
-| `selected` | Selected | enum   | no       | `true`, `false`                                           | `false` |
+| Key               | Label            | Type   | Required | Options                                                   | Default |
+| ----------------- | ---------------- | ------ | -------- | --------------------------------------------------------- | ------- |
+| `label`           | Label            | string | yes      |                                                           |         |
+| `icon`            | Icon             | string | no       | free text; icon suggestions (`Home`, `Search`, `Person`…) |         |
+| `iconDescription` | Icon description | string | no       | free text                                                 |         |
+| `selected`        | Selected         | enum   | no       | `true`, `false`                                           | `false` |
 
 ## Compose
 
@@ -112,3 +113,5 @@ The field chooses the resting appearance of a state; it does not go into the `co
 - The row height depends on the content in Compose: `max(72, icon + text + 20)` (`Tab.kt` lines 327 to 340), 72 with one line and 84 with a two-line label under the icon. Here it is the marking's (48 without a rectangle, the literal of `sizing.height`: `$lines` and `$rows` do not see the single-line text of the table, so the height does not follow the items). On a 72 marking, a two-line label raises the icon 1 above the top of the tab, because the position follows Compose (the last baseline 9 from the bottom) and the height does not grow; to see the whole tab, the marking needs 84.
 - Long label: the drawing wraps into up to two lines (`maxLines` 2) only on the label under the icon of the fixed row; what goes past two lines is cut off, and Compose, without `maxLines`, would grow the tab. In the scrollable ones the tab has the content width, so the label under the icon only wraps with a line break written in the text. With the icon on the left and in text-only tabs the label stays on one line, without wrapping, and the indicator follows the full text width even when it goes past the tab (Compose limits it to the `tabWidth`).
 - No `badge` over the icon (`Modifier.badgeBounds`) and no free-content `Tab`.
+
+**Accessibility** (stage #1081; the unit is the dp, 1 dp = 1 component unit): the type has no `accessibility.role` of its own and one `tab` part per row of `items`, with role `tab`, named by the `label` and the `iconDescription` columns of the row (the second one is optional). Compose gives each tab `Role.Tab` (`compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Tab.kt` (lines 180 and 252)).
