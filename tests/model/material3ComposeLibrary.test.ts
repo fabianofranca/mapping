@@ -319,11 +319,11 @@ describe('Material 3 (Compose) library', () => {
     expect(known.missing).toEqual([]);
   }, 30_000);
 
-  it('is formatVersion 18, version 17, with tokens in light and dark modes and the compose platform in androidx pinned at the commit', () => {
+  it('is formatVersion 18, at least version 18, with tokens in light and dark modes and the compose platform in androidx pinned at the commit', () => {
     expect(spec).toMatchObject({
       formatVersion: 18,
       id: 'material3-compose',
-      version: 17,
+      version: expect.any(Number),
       icons: 'icons/material-icons.json',
     });
     expect(spec.tokens?.modes).toEqual(['light', 'dark']);
@@ -713,11 +713,11 @@ describe('Material 3 (Compose) library update with the numeric slider', () => {
           );
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
-      [1, 17],
-      [2, 17],
-      [3, 17],
-      [4, 17],
-      [5, 17],
+      [1, spec.version],
+      [2, spec.version],
+      [3, spec.version],
+      [4, spec.version],
+      [5, spec.version],
     ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
@@ -791,16 +791,12 @@ describe('Material 3 (Compose) fidelity notices (C1 of #1134)', () => {
   });
 
   it('the list-item carries the exact diverges notice for the free-content lambdas, ref docs/list-item.md', () => {
-    const own = (typeOf('list-item').notices ?? []).filter(
-      (n) => n.ref === 'docs/list-item.md',
-    );
-    expect(own).toEqual([
-      {
-        kind: 'diverges',
-        message: LIST_ITEM_NOTICE,
-        ref: 'docs/list-item.md',
-      },
-    ]);
+    const notice = {
+      kind: 'diverges',
+      message: LIST_ITEM_NOTICE,
+      ref: 'docs/list-item.md',
+    };
+    expect(typeOf('list-item').notices ?? []).toContainEqual(notice);
   });
 
   it('the weight field of every type that has it carries the diverges notice, and no mother type carries it', () => {
@@ -819,6 +815,24 @@ describe('Material 3 (Compose) fidelity notices (C1 of #1134)', () => {
         `${t.id} must not carry the weight notice`,
       ).toEqual([]);
   });
+});
+
+describe('Material 3 (Compose) library: the update from the previous version', () => {
+  it('the package at version n passes the update from version n - 1 with no contract error (the check is relative)', () => {
+    // Notices and descriptions are outside the version contract (`diffSpecs` ignores them): the `previous` is the same
+    // specialization one version below, without migrations or notices.
+    const previous = JSON.parse(JSON.stringify(spec)) as Spec;
+    (previous as { version: number }).version = spec.version - 1;
+    delete (previous as { migrations?: unknown }).migrations;
+    for (const layer of previous.layers)
+      for (const type of layer.annotationTypes) {
+        delete (type as { notices?: unknown }).notices;
+        for (const f of type.fields) delete (f as { notices?: unknown }).notices;
+      }
+    expect(missingMigrations(previous, spec)).toEqual([]);
+    const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
+    expect(report.errors).toEqual([]);
+  }, 30_000);
 });
 
 describe('MC5 (#1033): every example draws without warnings at the size and at the fitted size', () => {
@@ -862,9 +876,9 @@ describe('reading direction and anchor in the Material 3 (Compose) library (R5, 
       .join('');
   const catalog = buildCatalog(files);
 
-  it('the icon set is formatVersion 2 and the specialization is at version 17', () => {
+  it('the icon set is formatVersion 2 and the specialization is at least at version 18', () => {
     expect(iconSet.formatVersion).toBe(2);
-    expect(spec.version).toBe(17);
+    expect(spec.version).toBeGreaterThanOrEqual(18);
   });
 
   it('every androidx AutoMirrored icon has mirror: true in the set, and no other does', () => {

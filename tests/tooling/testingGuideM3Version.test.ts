@@ -30,8 +30,9 @@ describe('R3.10 to R3.17 of the guide follow the Material 3 (Compose) package ve
   it('the setup generates mat-v(N+1) to mat-v(N+4) from the current version', () => {
     expect(guide).toContain(`\`mat-v${v + 1}\` to \`mat-v${v + 4}\``);
     expect(guide).toContain(`already at version ${v};`);
-    expect(guide).toContain(`s['version'] = ${v + 1}`);
-    expect(guide).toContain(`'from': ${v + 1}, 'to': ${v + 2}`);
+    // The script is relative to the version of the source folder (decision 7 of #1134): no number is fixed in it.
+    expect(guide).toContain("s['version'] = cur + 1");
+    expect(guide).toContain("'from': cur, 'to': cur + 1");
   });
 
   it('R3.14 to R3.17 use the shifted versions', () => {
@@ -62,10 +63,10 @@ describe('the guide evolve.py generates the mat-v(N+1) to mat-v(N+4) chain', () 
         });
       };
       const out = (n: number): string => join(dir, `mat-v${n}`);
-      run('libraries/material3-compose', out(v + 1), `v${v + 1}`);
-      run(out(v + 1), out(v + 2), `v${v + 2}`);
-      run(out(v + 2), out(v + 3), `v${v + 3}`);
-      run(out(v + 3), out(v + 4), `v${v + 4}`);
+      run('libraries/material3-compose', out(v + 1), 'n1');
+      run(out(v + 1), out(v + 2), 'n2');
+      run(out(v + 2), out(v + 3), 'n3');
+      run(out(v + 3), out(v + 4), 'n4');
       const read = (n: number): Record<string, unknown> =>
         JSON.parse(readFileSync(join(out(n), 'material3-compose.spec.json'), 'utf8'));
       const fab = (s: Record<string, unknown>): { key: string }[] =>

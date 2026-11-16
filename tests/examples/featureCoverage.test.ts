@@ -158,7 +158,6 @@ const MISSING_TODAY: string[] = [
   'spec:layers[].annotationTypes[].fields[].accepts.annotations',
   'spec:layers[].annotationTypes[].fields[].columns[].accepts.annotations',
   'spec:layers[].annotationTypes[].notices[].kind=deprecated',
-  'spec:layers[].annotationTypes[].notices[].kind=diverges',
   'spec:layers[].annotationTypes[].notices[].kind=removed',
   'spec:layers[].annotationTypes[].notices[].since',
   'spec:layers[].annotationTypes[].fields[].notices[].kind=deprecated',
