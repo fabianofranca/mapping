@@ -744,7 +744,7 @@ function allNotices(): {
     for (const f of t.fields) {
       for (const n of f.notices ?? [])
         out.push({ where: `${t.id}.${f.key}`, type: t.id, ...n });
-      for (const c of f.columns ?? [])
+      for (const c of 'columns' in f ? (f.columns ?? []) : [])
         for (const n of c.notices ?? [])
           out.push({ where: `${t.id}.${f.key}.${c.key}`, type: t.id, ...n });
     }
