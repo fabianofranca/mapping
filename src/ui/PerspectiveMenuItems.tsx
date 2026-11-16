@@ -38,10 +38,16 @@ export function blockedOutsideMain(
 }
 
 /** The "Main only" hint under the disabled item; the item cites it through `aria-describedby`. */
-export function PrincipalOnlyHint({ id }: { readonly id: string }) {
+export function PrincipalOnlyHint({
+  id,
+  text = t('perspective.principalOnly'),
+}: {
+  readonly id: string;
+  readonly text?: string;
+}) {
   return (
     <span id={id} class="menu-hint">
-      {t('perspective.principalOnly')}
+      {text}
     </span>
   );
 }
@@ -51,9 +57,12 @@ export function PrincipalOnlyItem({
   blocked,
   disabled = false,
   variant,
+  hint,
   onClick,
   children,
 }: {
+  /** Another reason for the block, shown under the item instead of "Main only". */
+  readonly hint?: string;
   readonly blocked: boolean;
   readonly disabled?: boolean;
   readonly variant?: 'danger';
@@ -72,7 +81,7 @@ export function PrincipalOnlyItem({
       >
         {children}
       </Button>
-      {blocked && <PrincipalOnlyHint id={hintId} />}
+      {blocked && <PrincipalOnlyHint id={hintId} text={hint} />}
     </>
   );
 }

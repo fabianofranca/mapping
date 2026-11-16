@@ -85,6 +85,10 @@ export const pagesEnUS = {
 
   // Status bar
   'page.status.name': 'Page {name}',
+
+  // Comments on an empty canvas spot (the anchor has no page of its own yet)
+  'page.comment.canvasFirstPageOnly':
+    'Comments on empty canvas are only on the first page for now',
 } as const;
 
 // portuguese-guard:begin pt-BR part of the bilingual module (decision 2 of #741)
@@ -161,5 +165,8 @@ export const pagesPtBR: Record<keyof typeof pagesEnUS, string> = {
   'page.notice.emptyPerspective': 'Nada desta perspectiva nesta página',
 
   'page.status.name': 'Página {name}',
+
+  'page.comment.canvasFirstPageOnly':
+    'Comentários no canvas vazio só existem na primeira página por enquanto',
 };
 // portuguese-guard:end

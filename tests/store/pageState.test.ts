@@ -174,3 +174,44 @@ describe('when the open page disappears', () => {
     expect(session.page.notice.value).toBeNull();
   });
 });
+
+describe('expectRemoval: a deliberate delete of the open page', () => {
+  it('skips the removed notice (once) and still opens the first page', async () => {
+    const { session } = await start();
+    session.page.open('PG2');
+    session.page.expectRemoval('PG2');
+    expect(session.actions.deletePage('PG2', { discard: true }).ok).toBe(true);
+    expect(session.page.id.value).toBe('PG1');
+    expect(session.page.notice.value).toBeNull();
+    // Once: a later removal of the open page (here an undo) notifies again.
+    const created = session.actions.addPage('Checkout');
+    if (!created.ok) throw new Error('page not created');
+    session.page.open(created.value);
+    session.store.undo();
+    expect(session.page.notice.value).toEqual({ kind: 'removed', name: 'Checkout' });
+  });
+
+  it('is cleared by the next change, so a stale expectation never hides a later removal', async () => {
+    const { session } = await start();
+    session.page.open('PG2');
+    session.page.expectRemoval('PG2');
+    expect(session.actions.renamePage('PG2', 'Renamed').ok).toBe(true);
+    expect(session.actions.deletePage('PG2', { discard: true }).ok).toBe(true);
+    expect(session.page.notice.value).toEqual({ kind: 'removed', name: 'Renamed' });
+  });
+
+  it('only covers the page it was announced for, and null cancels it', async () => {
+    const { session } = await start();
+    session.page.open('PG2');
+    session.page.expectRemoval('PG3');
+    expect(session.actions.deletePage('PG2', { discard: true }).ok).toBe(true);
+    expect(session.page.notice.value).toEqual({ kind: 'removed', name: 'Page 2' });
+    session.page.notice.value = null;
+    session.store.undo();
+    session.page.open('PG2');
+    session.page.expectRemoval('PG2');
+    session.page.expectRemoval(null);
+    session.actions.deletePage('PG2', { discard: true });
+    expect(session.page.notice.value).toEqual({ kind: 'removed', name: 'Page 2' });
+  });
+});

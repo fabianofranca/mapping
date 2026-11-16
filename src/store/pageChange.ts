@@ -72,6 +72,8 @@ export function pageOfChange(
   to: Project,
   openPage: string,
 ): string | null {
+  // A single page has nowhere else to tell about: no index to build for the common case.
+  if (from.pages.length < 2 && to.pages.length < 2) return null;
   if (!samePageList(from, to)) return null;
   if (GLOBAL_KEYS.some((key) => from[key] !== to[key])) return null;
   const touched = touchedPages(from, to);

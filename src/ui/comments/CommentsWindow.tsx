@@ -15,7 +15,7 @@ import {
 import { identity } from '../../store/identity';
 import type { ThreadEntry } from '../../store/threadDerived';
 import { selectedThreadId, selectThread, startComposing } from '../../store/threadUi';
-import type { Selection } from '../../store/ui';
+import { resolveSelection, type Selection } from '../../store/ui';
 import { ActionMenu } from '../ActionMenu';
 import { Button, Choice, Select, TextField } from '../controls';
 import { useEditor } from '../EditorContext';
@@ -80,7 +80,9 @@ export function CommentsHeaderActions() {
   const [bulk, setBulk] = useState(false);
   const project = review.derived.shownProject.value;
   if (!project || access.reviewing) return null;
-  const anchor = anchorOfSelection(ui.selection.value);
+  // An item of another page (the selection survives a page switch) is not in the shown project.
+  const selected = resolveSelection(project, ui.selection.value) !== null;
+  const anchor = selected ? anchorOfSelection(ui.selection.value) : null;
   const hint = anchor === null ? t('comments.newNoSelection') : undefined;
   const newTitle = access.readOnly ? t('comments.error.readOnly') : hint;
   return (

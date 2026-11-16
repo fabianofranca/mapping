@@ -14,6 +14,7 @@
 
 ## Alterado
 
+- "Comment here" on an empty canvas spot is only offered on the first page for now: the anchor of a canvas point has no page until the conversations phase (PG4).
 - `createArrow` and `setArrowEndpoint` refuse ends on different pages (`arrow-cross-page`); `setMarkingSpace` refuses sending a marking with arrows into a container of another page.
 - A new container or canvas marking goes to the first page unless `pageId` says otherwise; placement only looks at the page.
 - The open page is remembered per project (UI state, outside undo; resumes the first page when the kept one no longer exists, with a notice). Only the open page is drawn and listed.

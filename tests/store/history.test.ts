@@ -1,5 +1,5 @@
 import { effect } from '@preact/signals';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   moveContainer,
   moveMarking,
@@ -931,5 +931,58 @@ describe('store: drag without effect', () => {
     actions.commitGesture();
     expect(store.canUndo.value).toBe(false);
     expect(store.revision.value).toBe(0);
+  });
+});
+
+describe('store: onStep (the page notice of an undo/redo) waits for the history link', () => {
+  function stepped() {
+    const onStep = vi.fn();
+    const store = createProjectStore({ now: () => NOW, onStep });
+    store.load(sampleProject());
+    return { store, onStep };
+  }
+  const flush = async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  };
+  const boom = () => {
+    throw new Error('sync');
+  };
+
+  it('an undo with no link notifies once, right away', () => {
+    const { store, onStep } = stepped();
+    store.apply((p) => renameLayer(p, 'L1', 'One'));
+    store.undo();
+    expect(onStep).toHaveBeenCalledTimes(1);
+    expect(onStep.mock.calls[0]?.[0].kind).toBe('undo');
+  });
+
+  it('a synchronous link failure rolls the step back without notifying', () => {
+    const { store, onStep } = stepped();
+    store.apply((p) => renameLayer(p, 'L1', 'Applied'), {
+      link: { tag: 'P1', undo: boom, redo: boom },
+    });
+    store.undo();
+    expect(onStep).not.toHaveBeenCalled();
+  });
+
+  it('an asynchronous link notifies only after it succeeds, and not when the write fails', async () => {
+    const { store, onStep } = stepped();
+    const pending: ((r: { ok: true } | { ok: false; error: string }) => void)[] = [];
+    const next = () =>
+      new Promise<{ ok: true } | { ok: false; error: string }>((r) => pending.push(r));
+    store.apply((p) => renameLayer(p, 'L1', 'Applied'), {
+      link: { tag: 'P1', undo: next, redo: next },
+    });
+    store.undo();
+    expect(onStep).not.toHaveBeenCalled();
+    pending[0]?.({ ok: true });
+    await flush();
+    expect(onStep).toHaveBeenCalledTimes(1);
+
+    store.redo();
+    pending[1]?.({ ok: false, error: 'write-failed' });
+    await flush();
+    expect(onStep).toHaveBeenCalledTimes(1);
   });
 });

@@ -15,7 +15,7 @@ import {
 import type { EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
-import type { PageState } from '../store/pages';
+import { isFirstPage, type PageState } from '../store/pages';
 import type { ProjectActions } from '../store/project';
 import type { ReviewState } from '../store/review';
 import { locale, showArrows } from '../store/settings';
@@ -614,6 +614,7 @@ export class CanvasController {
         return pinHit(pins, c, this.view.scale, tokens.pin);
       },
       containerTitles: () => this.images.titleRects(),
+      canvasPointComments: () => this.onFirstPage(),
     });
 
     this.cleanups.push(
@@ -678,8 +679,7 @@ export class CanvasController {
 
   /** The open page is the project's first one (or there is no page state): where the canvas points live. */
   private onFirstPage(): boolean {
-    const open = this.page?.id.value;
-    return open === undefined || open === this.store.committed.value?.pages[0]?.id;
+    return isFirstPage(this.store.committed.value, this.page?.id.value);
   }
 
   /**

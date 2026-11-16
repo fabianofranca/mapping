@@ -41,6 +41,12 @@ export interface PageState {
   openId(): string;
   /** Opens the page. Refuses (`false`) an id the project does not have. Outside undo; kept in this browser. */
   open(id: string): boolean;
+  /**
+   * The page `pageId` is about to be deleted on purpose (the delete dialog): when it is the open
+   * one, the move to the first page skips the `removed` notice, once. `null` takes it back; any
+   * other change to the project also clears it.
+   */
+  expectRemoval(pageId: string | null): void;
   /** Last notice about the pages; the interface shows it and clears it (`notice.value = null`). */
   readonly notice: Signal<PageNotice | null>;
   /** The roots of each page in the Completa, by page id (the page picker's count). */
@@ -114,6 +120,18 @@ function writeOpen(projectId: string, entry: StoredOpen): void {
   );
 }
 
+/**
+ * Is `openId` the project's first page (or is there no open page: nothing to tell)? Canvas-point
+ * comments live only there for now: the anchor has no page of its own yet (the conversations with
+ * pages come later).
+ */
+export function isFirstPage(
+  project: Project | null,
+  openId: string | undefined,
+): boolean {
+  return openId === undefined || openId === project?.pages[0]?.id;
+}
+
 /** The name of the page `id` in `p`, or `null` if `p` does not have it. */
 function nameOf(p: Project | null, id: string): string | null {
   return p?.pages.find((g) => g.id === id)?.name ?? null;
@@ -135,6 +153,8 @@ export function createPageState(deps: PageStateDeps): PageStateHandle {
   const notice = signal<PageNotice | null>(null);
   /** The name of the open one the last time the project had it (for the `removed` notice). */
   let knownName = first?.name ?? '';
+  /** The page whose next removal is deliberate (`expectRemoval`); every change of the project clears it. */
+  let expected: string | null = null;
 
   const saved = readOpenBlob()[projectId];
   if (saved !== undefined) {
@@ -161,12 +181,14 @@ export function createPageState(deps: PageStateDeps): PageStateHandle {
     if (p === null) return;
     const current = chosen.peek();
     const name = nameOf(p, current);
+    const deliberate = expected === current;
+    expected = null;
     if (name === null) {
       const fallback = p.pages[0];
       if (fallback === undefined) return;
       batch(() => {
         chosen.value = fallback.id;
-        notice.value = { kind: 'removed', name: knownName };
+        if (!deliberate) notice.value = { kind: 'removed', name: knownName };
       });
       knownName = fallback.name;
       writeOpen(projectId, { id: fallback.id, name: fallback.name });
@@ -207,6 +229,9 @@ export function createPageState(deps: PageStateDeps): PageStateHandle {
       chosen.value = page;
       writeOpen(projectId, { id: page, name });
       return true;
+    },
+    expectRemoval(pageId) {
+      expected = pageId;
     },
     notice,
     rootCounts,

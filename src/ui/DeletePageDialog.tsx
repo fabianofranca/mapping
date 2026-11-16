@@ -1,7 +1,6 @@
 import { useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { pageContent, type PageContent, type Project } from '../model';
-import type { ProjectSession } from '../store/session';
 import { Button, Select } from './controls';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
@@ -63,24 +62,6 @@ function ContentBody({ project, id, content, target, onTarget }: BodyProps) {
   );
 }
 
-/**
- * The deliberate delete of the OPEN page: the store took the app to the first page with the
- * "no longer exists" notice, which reads odd after the user asked for it. The notice goes away and,
- * when the content moved, the destination page opens (so the user sees where it went). An undo or
- * an external reload that removes the open page keeps the notice (those do not come through here).
- */
-function settleOpenPage(
-  session: ProjectSession,
-  deleted: { readonly name: string },
-  how: { readonly moveTo: string } | { readonly discard: true },
-): void {
-  if ('moveTo' in how) session.page.open(how.moveTo);
-  const notice = session.page.notice.peek();
-  if (notice?.kind === 'removed' && notice.name === deleted.name) {
-    session.page.notice.value = null;
-  }
-}
-
 export function DeletePageDialog({ id, onClose, onDeleted }: DeleteProps) {
   const { actions, session, store } = useEditor();
   const project = store.committed.value;
@@ -93,12 +74,17 @@ export function DeletePageDialog({ id, onClose, onDeleted }: DeleteProps) {
   const content = pageContent(project, id);
   const empty = isEmpty(content);
   const run = (how: { readonly moveTo: string } | { readonly discard: true }) => {
+    // The store takes the app to the first page when the open one goes; announcing it first means
+    // that the "no longer exists" notice (for an undo or an external reload) is not shown.
     const wasOpen = session.page.openId() === id;
+    session.page.expectRemoval(id);
     if (!actions.deletePage(id, how).ok) {
+      session.page.expectRemoval(null);
       setFailed(true);
       return;
     }
-    if (wasOpen) settleOpenPage(session, page, how);
+    // The content moved: the destination page opens, so the user sees where it went.
+    if (wasOpen && 'moveTo' in how) session.page.open(how.moveTo);
     (onDeleted ?? onClose)();
   };
 
