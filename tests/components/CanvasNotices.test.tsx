@@ -50,14 +50,23 @@ describe('CanvasNotices — page notices (stage #883, PG2)', () => {
     const { container } = mount(harness);
     expect(container.querySelector('.canvas-overlay-foot')).toBeNull();
     act(() => {
-      harness.context.session.page.notice.value = { kind: 'undone', name: 'Second' };
+      harness.context.session.page.notice.value = { kind: 'removed', name: 'Second' };
     });
     expect(
       container.querySelector('.canvas-overlay-foot [role="status"]')?.textContent,
-    ).toBe(t('page.notice.undone', { name: 'Second' }));
+    ).toBe(t('page.notice.removed', { name: 'Second' }));
     act(() => void vi.advanceTimersByTime(20000));
     expect(container.querySelector('.canvas-overlay-foot')).toBeNull();
     vi.useRealTimers();
+  });
+
+  it('undone and redone are for the status bar: the canvas foot leaves them alone', () => {
+    const harness = createHarness(sampleProject());
+    const { container } = mount(harness);
+    act(() => {
+      harness.context.session.page.notice.value = { kind: 'undone', name: 'Second' };
+    });
+    expect(container.querySelector('.canvas-overlay-foot')).toBeNull();
   });
 });
 

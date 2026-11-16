@@ -265,6 +265,8 @@ describe('canvas context menu', () => {
     expect(imageItems.map((i) => i.textContent)).toEqual([
       t('cite.insert'),
       `${t('multi.wrap')}Ctrl+G`,
+      // Move to page (PG2): a root with a single page shows it disabled, with the hint.
+      t('page.move.menu'),
     ]);
     harness.ui.canvasMenu.value = null;
     await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
