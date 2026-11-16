@@ -26,6 +26,17 @@ const layer = z
   .string()
   .describe('Layer: id, name, `specId/layerId` (specialization layer) or alias `$name`.');
 
+const page = z
+  .string()
+  .describe('Page: id, name (case-insensitive) or alias `$name` of an `add_page`.');
+
+/** `page` of the operations that create a root (container, canvas marking, floating one). */
+const rootPage = page
+  .optional()
+  .describe(
+    'Page of the new root (id, name or alias `$name` of an `add_page` earlier in the batch). Required when the project has more than one page, unless another argument already says it (`container`, `near`, `beside`, `inside`); with a single page it is that one. See `pages` in get_project.',
+  );
+
 const int = z.number().int();
 const rect = z
   .object({ x: int, y: int, width: int, height: int })
@@ -310,6 +321,53 @@ export const operationSchema = z.discriminatedUnion('op', [
       'Free-form layer to delete (with its annotations and the ones linked to them).',
     ),
   }),
+  // Pages
+  z.object({
+    op: z.literal('add_page'),
+    as: alias.describe(
+      'Temporary alias (e.g. "$settings") to name the page in the `page`/`move_to` of the following operations (the name also works).',
+    ),
+    name: z
+      .string()
+      .describe('Name of the page (not empty; unique in the project, case-insensitive).'),
+  }),
+  z.object({
+    op: z.literal('update_page'),
+    page,
+    name: z
+      .string()
+      .optional()
+      .describe('New name (not empty; unique, case-insensitive).'),
+    position: int
+      .min(0)
+      .optional()
+      .describe('New position in the order of the pages (0 = the first tab).'),
+  }),
+  z.object({
+    op: z.literal('delete_page'),
+    page: page.describe('Page to delete (id, name or alias).'),
+    move_to: page
+      .optional()
+      .describe(
+        'Page that receives the roots of the deleted one (as `move_to_page` does). Do not combine with `discard`.',
+      ),
+    discard: z
+      .boolean()
+      .optional()
+      .describe(
+        '`true` deletes the content of the page together with it (containers, markings, arrows and annotations). Do not combine with `move_to`. A page with content and neither fails with `page-not-empty` (its `contents` give the counts); an empty page needs neither.',
+      ),
+  }),
+  z.object({
+    op: z.literal('move_to_page'),
+    roots: z
+      .array(item('Root (container, canvas marking or floating marking)'))
+      .min(1)
+      .describe(
+        'Roots to take to the page, each with everything that belongs to it (its markings, and the arrows among them). They keep their relative positions and enter at the right of what the page already holds. A marking inside a container is not a root (`not-root`).',
+      ),
+    page: page.describe('Destination page (id, name or alias).'),
+  }),
   // Specializations
   z.object({
     op: z.literal('apply_specialization'),
@@ -376,8 +434,9 @@ export const operationSchema = z.discriminatedUnion('op', [
     beside: item('Reference container')
       .optional()
       .describe(
-        'Reference container (reference, id or alias `$name`): the new one is created to its right, with the top aligned and the SAME scale (use it for content outside the image, next to the screen). Occupied spot: goes to the nearest free space. Do not combine with `center`.',
+        'Reference container (reference, id or alias `$name`): the new one is created to its right, with the top aligned and the SAME scale (use it for content outside the image, next to the screen). Occupied spot: goes to the nearest free space. Do not combine with `center`. Its page is the page of the reference container.',
       ),
+    page: rootPage,
   }),
   z.object({
     // Old, accepted with a warning: use `add_container` with `file`.
@@ -395,6 +454,7 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe(
         'Canvas point near which the container is placed (default: to the right of the others).',
       ),
+    page: rootPage,
   }),
   z.object({
     // Old, accepted with a warning: use `add_container` with `width`, `height` and `background`.
@@ -420,6 +480,7 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe(
         'Canvas point near which the container is placed (default: to the right of the others).',
       ),
+    page: rootPage,
   }),
   z.object({
     op: z.literal('update_container'),
@@ -477,6 +538,9 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe(
         "Only with `inside`: the `id` of the target's slot the child goes to (see `slots` in `get_marking` and `get_component`). Without it, the child goes to the first slot that takes its type and is not full. `invalid-arguments` without `inside` or with a slot the target does not have (the target's slots come in `detail`); a type the slot does not accept is created, with `slot-not-accepted` in the step's issues.",
       ),
+    page: rootPage.describe(
+      'Only for a canvas marking (without `container` or `inside`): its page (id, name or alias `$name`). Required when the project has more than one page, unless `near` or an `anchor` already says it (the page of the target). With `container` it fails with `invalid-arguments`: a marking in a container has no page of its own.',
+    ),
     rect: rect
       .optional()
       .describe(
