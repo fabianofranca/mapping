@@ -24,6 +24,12 @@ const MAX_BLOCK_BASE_CHARS = 45_000;
 const GUIDE = readFileSync('docs/TESTING.md', 'utf8');
 const CLOUD = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
 
+/**
+ * Test scripts that run outside the 5 blocks of the table, in a sixth session of the round (PG6 of #883: R30, Pages;
+ * no block had room for it under `MAX_BLOCK_GUIDE_CHARS`; the final rule is the owner's, in `bug` #2024).
+ */
+const SIXTH_SESSION = ['R30'];
+
 const STEP_RE = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
 
 /** The steps of the main test scripts (R0 to R29), in the order of the guide, outside the on-demand test scripts. */
@@ -112,7 +118,8 @@ function readBlocks(steps: string[]): Block[] {
   return blocks;
 }
 
-const steps = guideSteps();
+const allSteps = guideSteps();
+const steps = allSteps.filter((s) => !SIXTH_SESSION.includes(s.split('.')[0] as string));
 const blocks = readBlocks(steps);
 const blockOf = (step: string): number[] =>
   blocks.filter((b) => b.steps.includes(step)).map((b) => b.n);
@@ -220,6 +227,32 @@ describe('split of the full round into 5 blocks (stages #424 and #841)', () => {
       expect(base.length, `base of block ${b.n}`).toBeLessThanOrEqual(
         MAX_BLOCK_BASE_CHARS,
       );
+    }
+  });
+
+  it('the scripts of the sixth session exist in the guide, are in no block and their guide fits the limit', async () => {
+    const mod: {
+      buildRoundGuide: (
+        md: string,
+        scripts: string[],
+        o?: { commit?: string; mandatoryOnly?: boolean },
+      ) => string;
+    } = await import('../../scripts/testing/round-guide.mjs');
+    for (const script of SIXTH_SESSION) {
+      expect(
+        allSteps.some((s) => s.startsWith(`${script}.`)),
+        script,
+      ).toBe(true);
+      expect(
+        blocks.some((b) => b.scripts.includes(script)),
+        script,
+      ).toBe(false);
+      const out = mod.buildRoundGuide(GUIDE, ['R0', script], {
+        commit: 'abc1234',
+        mandatoryOnly: true,
+      });
+      expect(out, script).toMatch(new RegExp(`^### ${script} `, 'm'));
+      expect(out.length, script).toBeLessThanOrEqual(MAX_BLOCK_GUIDE_CHARS);
     }
   });
 });
