@@ -4,6 +4,7 @@ import { SCHEMA_VERSION, projectIndex, undeclaredDrawingMode } from '../model';
 import type { FontProblem } from '../storage/fonts';
 import { markDiagnosticsSeen, remoteImageIssues } from '../store/diagnostics';
 import { allowedOrigins } from '../store/imagePermissions';
+import { revealItem } from '../store/reveal';
 import { locale, theme } from '../store/settings';
 import { BUILD_ID } from '../utils/build';
 import { writeClipboardText } from '../utils/clipboard';
@@ -238,6 +239,9 @@ export function DiagnosticsComponents() {
     (d) => d.overflow,
   ).length;
   const select = (markingId: string) => {
+    // The warnings are those of the open page; opening the item's page first keeps this true
+    // whatever the list grows to show.
+    revealItem(session, markingId);
     ui.selection.value = { kind: 'marking', id: markingId };
     canvas.current?.centerSelection();
   };

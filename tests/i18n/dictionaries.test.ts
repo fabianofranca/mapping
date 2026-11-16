@@ -100,6 +100,9 @@ describe('dictionaries', () => {
       'language.pt-BR',
       'perspective.count.containers',
       'perspective.count.containersOne',
+      // Pages: "1 item" and "{from} → {to}" are the same in both languages.
+      'page.count.itemsOne',
+      'page.move.refusedArrow',
       'language.en-US',
       'image.dimensions',
       // Only {parameters}: the text comes from the parser.

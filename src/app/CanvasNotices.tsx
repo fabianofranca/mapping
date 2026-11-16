@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { Button } from '../ui/controls';
 import { useEditor } from '../ui/EditorContext';
-import { PageNotices } from '../ui/PageNotices';
+import { PageNoticeList, usePageNotices } from '../ui/PageNotices';
 import { ProposalNotices } from '../ui/review/ProposalNotices';
 import type { EditorNotices } from './useEditorNotices';
 
@@ -22,6 +22,8 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
   const readOnly = store.readOnly.value;
   const { message, progress } = notices;
   const toast = ui.toast.value;
+  const pages = usePageNotices();
+  const hasPageNotice = pages.shown !== null || pages.emptyPerspective;
 
   return (
     <>
@@ -76,20 +78,22 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
           </p>
         )}
       </div>
-      {/* Short notices at the bottom of the canvas (PV2): small, on the left, without covering the top of the image. */}
-      <div class="canvas-overlay-foot">
-        <PageNotices />
-        {toast && (
-          <p class="notice notice-info" role="status">
-            {toast}
-          </p>
-        )}
-        {progress && (
-          <p class="notice notice-info" aria-live="polite">
-            {progress}
-          </p>
-        )}
-      </div>
+      {(toast || progress || hasPageNotice) && (
+        // Short notices at the bottom of the canvas (PV2): small, on the left, without covering the top of the image.
+        <div class="canvas-overlay-foot">
+          <PageNoticeList {...pages} />
+          {toast && (
+            <p class="notice notice-info" role="status">
+              {toast}
+            </p>
+          )}
+          {progress && (
+            <p class="notice notice-info" aria-live="polite">
+              {progress}
+            </p>
+          )}
+        </div>
+      )}
     </>
   );
 }

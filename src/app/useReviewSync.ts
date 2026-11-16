@@ -1,6 +1,7 @@
 import { effect } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { projectIndex, type ReviewTarget, type ReviewTree } from '../model';
+import { revealItem } from '../store/reveal';
 import { setReviewLayout } from '../store/toolWindows';
 import { resolveSelection, type Selection } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
@@ -31,7 +32,7 @@ export function reviewTargetOf(
 }
 
 export function useReviewSync(): void {
-  const { review, ui } = useEditor();
+  const { review, ui, session } = useEditor();
 
   useEffect(
     () =>
@@ -50,11 +51,13 @@ export function useReviewSync(): void {
         const target = review.selected.value;
         if (review.proposalId.value === null) return;
         const next = canvasSelectionOf(review, target);
-        if (next !== undefined && !sameSelection(next, ui.selection.peek())) {
-          ui.selection.value = next;
-        }
+        if (next === undefined) return;
+        // The item may be on another page: the page opens before the selection (the review keeps
+        // the Completa locked, so only the page changes; an item the proposal creates is not found).
+        if (next !== null) revealItem(session, next.id);
+        if (!sameSelection(next, ui.selection.peek())) ui.selection.value = next;
       }),
-    [review, ui],
+    [review, ui, session],
   );
 
   // Canvas (or Tree) → review. Clearing the selection (clicking the background) takes the review off the item

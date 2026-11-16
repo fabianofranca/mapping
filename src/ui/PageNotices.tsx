@@ -26,11 +26,19 @@ function noticeText(notice: PageNotice): string {
   }
 }
 
-export function PageNotices() {
+/** What the page notices show now: the taken notice and whether the perspective is empty here. */
+export interface PageNoticeState {
+  readonly shown: PageNotice | null;
+  readonly emptyPerspective: boolean;
+  /** Opens the destination of a `moved` notice and dismisses it. */
+  readonly openMoved: (pageId: string) => void;
+}
+
+/** Takes the store's notice (clearing it) and keeps it on screen for `NOTICE_MS`. */
+export function usePageNotices(): PageNoticeState {
   const { session } = useEditor();
   const [shown, setShown] = useState<PageNotice | null>(null);
   const notice = session.page.notice.value;
-  const emptyPerspective = session.page.perspectiveEmpty.value;
 
   useEffect(() => {
     if (notice === null) return;
@@ -44,6 +52,18 @@ export function PageNotices() {
     return () => clearTimeout(timer);
   }, [shown]);
 
+  return {
+    shown,
+    emptyPerspective: session.page.perspectiveEmpty.value,
+    openMoved: (pageId) => {
+      session.page.open(pageId);
+      setShown(null);
+    },
+  };
+}
+
+/** The notices as paragraphs (the host decides where they sit). */
+export function PageNoticeList({ shown, emptyPerspective, openMoved }: PageNoticeState) {
   return (
     <>
       {shown !== null && (
@@ -55,10 +75,7 @@ export function PageNotices() {
               <Button
                 size="sm"
                 class="button-link"
-                onClick={() => {
-                  session.page.open(shown.pageId);
-                  setShown(null);
-                }}
+                onClick={() => openMoved(shown.pageId)}
               >
                 {t('page.move.open')}
               </Button>
@@ -73,4 +90,9 @@ export function PageNotices() {
       )}
     </>
   );
+}
+
+/** Standalone: the hook and the list together. `CanvasNotices` uses them apart (the foot needs to know). */
+export function PageNotices() {
+  return <PageNoticeList {...usePageNotices()} />;
 }

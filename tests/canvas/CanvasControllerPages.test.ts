@@ -3,12 +3,18 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { CanvasController } from '../../src/canvas/CanvasController';
 import type { CommentPinRenderer } from '../../src/canvas/renderers/commentPins';
 import { createCanvasViewState } from '../../src/canvas/viewState';
-import { approximateMeasurer, type Project, type Thread } from '../../src/model';
+import {
+  approximateMeasurer,
+  renameMarking,
+  type Project,
+  type Thread,
+} from '../../src/model';
 import { createEditorDerived } from '../../src/store/derived';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { createOpenPerspective } from '../../src/store/perspectiveShown';
 import { textMeasurer } from '../../src/store/textMeasure';
 import { createEditorUi } from '../../src/store/ui';
+import { propose } from '../model/proposalFixtures';
 import { sampleThread } from '../model/threadFixtures';
 import { pagesProject } from '../store/pageHarness';
 import { openHarness } from '../store/proposalHarness';
@@ -61,8 +67,11 @@ describe('CanvasController: pages', () => {
     anchor: { kind: 'marking', id: 'M5' },
   });
 
-  async function setup(threads: readonly Thread[] = []) {
-    const harness = await openHarness({ project: pagesProject() });
+  async function setup(
+    threads: readonly Thread[] = [],
+    options: Parameters<typeof openHarness>[0] = {},
+  ) {
+    const harness = await openHarness({ project: pagesProject(), ...options });
     const { store, actions, perspective, page } = harness.session;
     const { review } = harness;
     const ui = createEditorUi();
@@ -252,6 +261,40 @@ describe('CanvasController: pages', () => {
     expect(internals.drawnProject.peek()).toBe(drawn);
     expect(derived.perspective.peek()).toBe(shown);
     expect(internals.frame.peek().pins).toBe(pins);
+    controller.destroy();
+  });
+
+  it('the review draws the open page in the Current and Proposed views (the preview is not mistaken for the project)', async () => {
+    const base = pagesProject();
+    const after = renameMarking(
+      renameMarking(base, 'M5', 'Renamed on page 2'),
+      'M1',
+      'Renamed on page 1',
+    );
+    const { controller, page, review, internals } = await setup([], {
+      project: base,
+      proposals: [propose(base, after, { id: 'P1' })],
+    });
+    expect(review.open('P1').ok).toBe(true);
+    flush();
+    const nameOf = (id: string) =>
+      internals.drawnProject.peek()?.markings.find((m) => m.id === id)?.name;
+
+    // Proposed view, page 1: only the page's containers, with the proposed name.
+    expect(review.view.value).toBe('proposed');
+    expect(ids(internals.drawnProject.peek()).containers).toEqual(['I1', 'I2']);
+    expect(nameOf('M1')).toBe('Renamed on page 1');
+
+    page.open('PG2');
+    flush();
+    expect(ids(internals.drawnProject.peek()).containers).toEqual(['I3']);
+    expect(nameOf('M5')).toBe('Renamed on page 2');
+
+    // Current view: the same page, the confirmed names.
+    review.setView('current');
+    flush();
+    expect(ids(internals.drawnProject.peek()).containers).toEqual(['I3']);
+    expect(nameOf('M5')).not.toBe('Renamed on page 2');
     controller.destroy();
   });
 });

@@ -3,6 +3,7 @@ import { cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EditorDialogs } from '../../src/app/useEditorDialogs';
+import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { PageMenu } from '../../src/ui/PageMenu';
 import { renderLive } from './harness';
@@ -108,13 +109,16 @@ describe('PageMenu', () => {
     expect(document.activeElement).toBe(trigger('Page 1'));
   });
 
-  it('pt-BR texts', async () => {
+  it('follows the language', async () => {
     locale.value = 'pt-BR';
     await setup();
+    expect(t('page.picker.list')).not.toBe('Pages');
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: 'Página: Page 1' }));
-    expect(screen.getByRole('listbox', { name: 'Páginas' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Nova página…' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Gerenciar páginas…' })).toBeTruthy();
+    await user.click(
+      screen.getByRole('button', { name: t('page.picker.label', { name: 'Page 1' }) }),
+    );
+    expect(screen.getByRole('listbox', { name: t('page.picker.list') })).toBeTruthy();
+    expect(screen.getByRole('button', { name: t('page.picker.new') })).toBeTruthy();
+    expect(screen.getByRole('button', { name: t('page.picker.manage') })).toBeTruthy();
   });
 });

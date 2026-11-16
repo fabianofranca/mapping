@@ -6,7 +6,7 @@ import type { CitationTarget } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { selectedThreadId } from '../../src/store/threadUi';
 import { hideToolWindow } from '../../src/store/toolWindows';
-import { goToAnnotationOnAnyPage } from '../../src/ui/annotationNav';
+import { goToAnnotationOnAnyPage } from '../../src/ui/pageNavigation';
 import { goToCitation } from '../../src/ui/comments/citationNav';
 import { CommentsWindow } from '../../src/ui/comments/CommentsWindow';
 import { sampleThread } from '../model/threadFixtures';
@@ -100,7 +100,10 @@ describe('goToCitation across pages', () => {
     go(h, { kind: 'marking', id: 'M5' });
     expect(pageOf(h)).toBe('PG2');
     expect(session.perspective.id.value).toBeNull();
-    expect(session.perspective.notice.value).toEqual({ kind: 'outside', name: 'Only I2' });
+    expect(session.perspective.notice.value).toEqual({
+      kind: 'outside',
+      name: 'Only I2',
+    });
     expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M5' });
     expect(center).toHaveBeenCalledTimes(1);
   });
@@ -172,7 +175,9 @@ describe('conversations on other pages', () => {
     );
     const user = userEvent.setup();
     renderLive(h, () => <CommentsWindow />);
-    const row = (await screen.findAllByRole('row')).find((r) => /M5|Marking/i.test(r.textContent ?? ''));
+    const row = (await screen.findAllByRole('row')).find((r) =>
+      /M5|Marking/i.test(r.textContent ?? ''),
+    );
     const target = row ?? (await screen.findAllByRole('row'))[1];
     if (!target) throw new Error('no row');
     await act(() => user.click(target));

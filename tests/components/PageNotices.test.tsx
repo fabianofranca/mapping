@@ -83,8 +83,8 @@ describe('page notices', () => {
   });
 
   it('a notice goes away by itself', async () => {
-    vi.useFakeTimers();
     const { session } = await setup();
+    vi.useFakeTimers();
     act(() => {
       session.page.notice.value = { kind: 'undone', name: 'Second' };
     });

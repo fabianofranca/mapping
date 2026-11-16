@@ -291,16 +291,16 @@ export class CanvasController {
     const proposal = review.derived.proposal.value;
     // The Current view (or a proposal with nothing to preview) draws the store's project, with the
     // gesture preview; the Proposed view draws the "how it would look".
-    if (
-      shown === null ||
-      !proposal ||
-      review.view.value === 'current' ||
-      review.derived.preview.value === null
-    ) {
+    if (shown === null || !proposal || !this.previewShown(review)) {
       return projectInPerspective(this.store.project.value, null, this.page?.id.value);
     }
     return proposedDisplay(shown, proposal);
   });
+
+  /** The review is in the Proposed view and the proposal has a "how it would look" to draw. */
+  private previewShown(review: ReviewState): boolean {
+    return review.view.value !== 'current' && review.derived.preview.value !== null;
+  }
 
   /** Review marks (type, conflict, invalid, ghosts, removed); `null` outside it. */
   private readonly reviewCanvas = computed((): ReviewCanvas | null => {

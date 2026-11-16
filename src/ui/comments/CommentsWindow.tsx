@@ -19,6 +19,7 @@ import type { Selection } from '../../store/ui';
 import { ActionMenu } from '../ActionMenu';
 import { Button, Choice, Select, TextField } from '../controls';
 import { useEditor } from '../EditorContext';
+import { navigateTo } from '../pageNavigation';
 import { openToolWindow } from '../toolWindowLayout';
 import { anchorLabel } from './anchorLabel';
 import { Icon } from '../icons';
@@ -351,10 +352,13 @@ function ThreadRow({
 }
 
 export function CommentsWindow() {
-  const { ui, review, derived } = useEditor();
+  const editor = useEditor();
+  const { ui, review, derived } = editor;
   const access = useAccess();
   const del = useDeleteThread();
-  const project = review.derived.shownProject.value;
+  // The rows resolve against every page (a conversation on another page is not an orphan); the
+  // click opens the page of the item first.
+  const project = review.derived.shownAcrossPages.value;
   if (!project) return null;
   const rows = derived.threads.rows.value;
   const unread = derived.threads.unreadIds.value;
@@ -362,7 +366,10 @@ export function CommentsWindow() {
   const choose = (thread: Thread) => {
     // In the review the window only shows: choosing a row does not touch the selection (decision 26).
     if (access.reviewing) return;
-    selectThread(ui, project, thread);
+    navigateTo(editor, thread.anchor, () => {
+      const shown = review.derived.shownProject.peek();
+      if (shown) selectThread(ui, shown, thread);
+    });
     openToolWindow('details');
   };
   return (

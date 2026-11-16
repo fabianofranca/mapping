@@ -4,13 +4,14 @@ import { CanvasHost } from '../canvas/CanvasHost';
 import { t } from '../i18n';
 import { BREAKPOINTS } from '../theme/breakpoints';
 import { collapseDetailsOnCompact } from '../store/toolWindows';
-import { goToAnnotation, type Selection } from '../store/ui';
+import type { Selection } from '../store/ui';
 import type { AnnotationLocation } from '../store/ui';
 import { EditorProvider, useEditor } from '../ui/EditorContext';
 import { CanvasContextMenu } from '../ui/CanvasContextMenu';
 import { Minimap } from '../ui/Minimap';
 import { PerspectiveNotices } from '../ui/PerspectiveNotices';
 import { StatusBar } from '../ui/StatusBar';
+import { goToAnnotationOnAnyPage } from '../ui/pageNavigation';
 import { useMediaQuery } from '../ui/useMediaQuery';
 import type { OpenProject } from './controller';
 import { CanvasNotices } from './CanvasNotices';
@@ -50,7 +51,8 @@ export function Editor({ open }: { readonly open: OpenProject }) {
  * mounted once and the selection and viewport continue when the window widens.
  */
 export function EditorScreen() {
-  const { store, ui, canvas, review, layers } = useEditor();
+  const editor = useEditor();
+  const { store, ui, canvas, review } = editor;
   const narrow = useNarrowWindow();
   // Compact desktop band (900 to 1199px): below it the window is narrow.
   const compact = useMediaQuery(
@@ -87,16 +89,9 @@ export function EditorScreen() {
 
   if (!hasProject.value) return null;
 
-  /** Backlinks, "Go to target", linked and Incomplete: on any marking. */
-  const onGoToAnnotation = (annotation: AnnotationLocation) => {
-    const selection = ui.selection.peek();
-    // The annotation's owner is a marking or an arrow (v13): `goToAnnotation` chooses by project.
-    const sameMarking =
-      (selection?.kind === 'marking' || selection?.kind === 'arrow') &&
-      selection.id === annotation.markingId;
-    goToAnnotation(ui, annotation, null, store.committed.peek(), layers.show);
-    if (!sameMarking) canvas.current?.centerSelection();
-  };
+  /** Backlinks, "Go to target", linked and Incomplete: on any marking, on any page. */
+  const onGoToAnnotation = (annotation: AnnotationLocation) =>
+    goToAnnotationOnAnyPage(editor, annotation);
 
   /** Choosing in the tree, the list or the breadcrumbs selects and centers the canvas. */
   const onSelect = (next: NonNullable<Selection>) => {

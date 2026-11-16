@@ -1,6 +1,5 @@
 import 'fake-indexeddb/auto';
-import { cleanup, screen, within } from '@testing-library/preact';
-import userEvent from '@testing-library/user-event';
+import { cleanup, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { locale } from '../../src/store/settings';
 import { openDialog, setupPages } from './pageUiHarness';
@@ -130,8 +129,11 @@ describe('ManagePagesDialog', () => {
 
   it('Esc closes the dialog', async () => {
     const { harness } = await setupPages(['Second']);
-    const user = await openDialog(harness, { kind: 'managePages' });
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog')).toBeNull();
+    await openDialog(harness, { kind: 'managePages' });
+    // jsdom does not turn Esc into `cancel`: the event is what the browser fires.
+    document
+      .querySelector('dialog')
+      ?.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 });
