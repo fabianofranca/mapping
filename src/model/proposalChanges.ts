@@ -14,6 +14,7 @@ import {
   annotationValue,
   arrowValue,
   imageField,
+  imageFieldsFor,
   imageValue,
   jsonEqual,
   layerField,
@@ -21,6 +22,8 @@ import {
   markingField,
   markingFieldsFor,
   markingValue,
+  pageField,
+  pageValue,
   docRepoValue,
   projectValue,
   platformRepoValue,
@@ -29,7 +32,8 @@ import {
 } from './proposalValues';
 import { siblingPosition } from './markings';
 import { proposalAnchors, simulateApplied } from './proposalAnchors';
-import type { Annotation, JsonValue, Marking, Project } from './types';
+import { projectIndex } from './projectIndex';
+import type { Annotation, JsonValue, Marking, Page, Project } from './types';
 
 // Computing the changes (stage 4): whoever sends the proposal applies the operations to a copy
 // of the project with the model's pure operations (the MCP batch, `mcp/batch.ts`) and delivers
@@ -108,6 +112,72 @@ function markingPositions(
       });
     });
   }
+}
+
+/**
+ * Order of a list of the Project group (layers, pages): after applying creations (at the end) and
+ * removals, the existing ones keep the order from before and the created ones the order from
+ * after. Whatever is outside the longest increasing subsequence changes `position`; `from` is the
+ * index before (`null` for a created one) and `to` the index after.
+ */
+function positionChanges(
+  diff: Diff,
+  entity: 'layer' | 'page',
+  before: readonly { readonly id: string }[],
+  after: readonly { readonly id: string }[],
+): void {
+  const known = new Set(before.map((item) => item.id));
+  const rank = new Map<string, number>(before.map((item, i) => [item.id, i]));
+  after
+    .filter((item) => !known.has(item.id))
+    .forEach((item, i) => rank.set(item.id, before.length + i));
+  const keep = longestIncreasing(after.map((item) => rank.get(item.id) ?? 0));
+  after.forEach((item, i) => {
+    if (keep.has(i)) return;
+    diff.push({
+      entity,
+      entityId: item.id,
+      imageId: null,
+      markingId: null,
+      kind: 'update',
+      field: 'position',
+      from: known.has(item.id) ? (rank.get(item.id) ?? null) : null,
+      to: i,
+    });
+  });
+}
+
+/** Pages (formatVersion 10): creation, removal, rename and, last, the order. */
+function pageChanges(diff: Diff, base: Project, after: Project): void {
+  const basePages = byId(base.pages);
+  const afterPages = byId(after.pages);
+  for (const g of [...after.pages, ...base.pages.filter((g) => !afterPages.has(g.id))]) {
+    const before = basePages.get(g.id);
+    const next = afterPages.get(g.id);
+    diff.entity(
+      'page',
+      g.id,
+      { imageId: null, markingId: null },
+      before,
+      next,
+      pageValue,
+      COMPARED_FIELDS.page,
+      (page: Page, f) => pageField(page === before ? base : after, page, f),
+    );
+  }
+  positionChanges(diff, 'page', base.pages, after.pages);
+}
+
+/**
+ * Does a created or removed root carry its `pageId`? Not on the first page, which is where a root
+ * with no `pageId` goes when applied (so a proposal that only creates there stays as it always
+ * was); yes on any other, and on a page the proposal removes (so removing the page requires
+ * removing what is on it).
+ */
+function pageCarrier(base: Project, after: Project): (pageId: string) => boolean {
+  const first = base.pages[0]?.id;
+  const kept = new Set(after.pages.map((g) => g.id));
+  return (pageId) => pageId !== first || !kept.has(pageId);
 }
 
 class Diff {
@@ -260,14 +330,78 @@ function wholeEntityDiff<T>(
   }
 }
 
+/** The after list and, at the end, the ones that only existed before. */
+function union<T extends { readonly id: string }>(
+  next: readonly T[],
+  previous: readonly T[],
+  nextIds: ReadonlyMap<string, T>,
+): T[] {
+  return [...next, ...previous.filter((item) => !nextIds.has(item.id))];
+}
+
+/** Containers: creation, fields (the page swap carries the placement) and removal. */
+function containerChanges(
+  diff: Diff,
+  base: Project,
+  after: Project,
+  carries: (pageId: string) => boolean,
+): void {
+  const baseImages = byId(base.containers);
+  const afterImages = byId(after.containers);
+  for (const image of union(after.containers, base.containers, afterImages)) {
+    const before = baseImages.get(image.id);
+    const next = afterImages.get(image.id);
+    diff.entity(
+      'image',
+      image.id,
+      { imageId: image.id, markingId: null },
+      before,
+      next,
+      (i) => imageValue(i, carries(i.pageId)),
+      before && next ? imageFieldsFor(before, next) : [],
+      imageField,
+    );
+  }
+}
+
+/** Markings: creation, fields (the space and page swaps carry the `rect`), removal, anchors and order. */
+function markingChanges(
+  diff: Diff,
+  base: Project,
+  after: Project,
+  carries: (pageId: string) => boolean,
+): void {
+  const baseMarkings = byId(base.markings);
+  const afterMarkings = byId(after.markings);
+  const basePage = projectIndex(base).pageOf;
+  for (const m of union(after.markings, base.markings, afterMarkings)) {
+    const before = baseMarkings.get(m.id);
+    const next = afterMarkings.get(m.id);
+    diff.entity(
+      'marking',
+      m.id,
+      // Null `imageId` with `markingId`: the canvas marking (the review's Canvas group).
+      { imageId: m.containerId, markingId: m.id },
+      before,
+      next,
+      (marking) => markingValue(marking, carries(marking.pageId ?? '')),
+      before && next ? markingFieldsFor(before, next, basePage.get(m.id) ?? null) : [],
+      (marking, f) => markingField(marking === before ? base : after, marking, f),
+    );
+  }
+  const anchors = proposalAnchors(base, after);
+  diff.insertBefore(anchors);
+  markingPositions(diff, base, after, anchors);
+}
+
 /**
  * Compares the project before and after the operations and returns the changes, with ids
- * `c1`, `c2`… in order: Project group (specializations, repositories, layers), images,
+ * `c1`, `c2`… in order: Project group (specializations, repositories, layers, pages), images,
  * markings, arrows and annotations; in each collection, the after order and, at the end, the
  * removed ones. The review groups by image and item (`reviewTree`), so this order only
  * guarantees that applying everything appends the created entities in the same order as the
  * proposed project. The order of the pairs inside the list does not become a change; that of
- * layers and sibling markings does (`position`, only for those whose relative order changes).
+ * layers, pages and sibling markings does (`position`, only for those whose relative order changes).
  * `needsReview` does not become a change: the review is the check itself (the creation carries
  * the after value).
  */
@@ -335,75 +469,21 @@ export function computeChanges(base: Project, after: Project): Change[] {
       (layer, f) => layerField(after, layer, f),
     );
   }
-  // Order after applying creations (at the end) and removals: the existing ones in the order
-  // from before and the created ones in the order from after. Whatever is outside the longest
-  // increasing subsequence changes position.
-  const created = after.layers.filter((l) => !baseLayers.has(l.id));
-  const rank = new Map<string, number>(base.layers.map((l, i) => [l.id, i]));
-  created.forEach((l, i) => rank.set(l.id, base.layers.length + i));
-  const seq = after.layers.map((l) => rank.get(l.id) ?? 0);
-  const keep = longestIncreasing(seq);
-  after.layers.forEach((l, i) => {
-    if (keep.has(i)) return;
-    const from = baseLayers.has(l.id) ? (rank.get(l.id) ?? null) : null;
-    diff.push({
-      entity: 'layer',
-      entityId: l.id,
-      ...projectLevel,
-      kind: 'update',
-      field: 'position',
-      from,
-      to: i,
-    });
-  });
+  positionChanges(diff, 'layer', base.layers, after.layers);
+  pageChanges(diff, base, after);
 
   // Images, markings and annotations, each collection in the after order and then the
   // removed ones in the before order: applying everything appends the created ones in the same
   // order.
-  const baseImages = byId(base.containers);
-  const afterImages = byId(after.containers);
   const baseMarkings = byId(base.markings);
   const afterMarkings = byId(after.markings);
   const baseArrows = byId(base.arrows);
   const afterArrows = byId(after.arrows);
   const baseAnnotations = byId(base.annotations);
   const afterAnnotations = byId(after.annotations);
-  const union = <T extends { readonly id: string }>(
-    next: readonly T[],
-    previous: readonly T[],
-    nextIds: ReadonlyMap<string, T>,
-  ): T[] => [...next, ...previous.filter((item) => !nextIds.has(item.id))];
-
-  for (const image of union(after.containers, base.containers, afterImages)) {
-    diff.entity(
-      'image',
-      image.id,
-      { imageId: image.id, markingId: null },
-      baseImages.get(image.id),
-      afterImages.get(image.id),
-      imageValue,
-      COMPARED_FIELDS.image,
-      imageField,
-    );
-  }
-  for (const m of union(after.markings, base.markings, afterMarkings)) {
-    const before = baseMarkings.get(m.id);
-    const next = afterMarkings.get(m.id);
-    diff.entity(
-      'marking',
-      m.id,
-      // Null `imageId` with `markingId`: the canvas marking (the review's Canvas group).
-      { imageId: m.containerId, markingId: m.id },
-      before,
-      next,
-      markingValue,
-      before && next ? markingFieldsFor(before, next) : [],
-      (marking, f) => markingField(after, marking, f),
-    );
-  }
-  const anchors = proposalAnchors(base, after);
-  diff.insertBefore(anchors);
-  markingPositions(diff, base, after, anchors);
+  const carries = pageCarrier(base, after);
+  containerChanges(diff, base, after, carries);
+  markingChanges(diff, base, after, carries);
 
   // The arrow appears in the review under the origin marking: its container (or the canvas).
   // Creating and removing are the only changes (no field of an arrow that already exists is

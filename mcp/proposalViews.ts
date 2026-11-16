@@ -87,6 +87,8 @@ export class ProposalLabels {
         return this.ref('a', c.entityId) ?? `annotation ${c.entityId}`;
       case 'layer':
         return `layer "${this.layerName(c.entityId)}"`;
+      case 'page':
+        return `page ${c.entityId}`;
       case 'specialization':
         return `specialization ${c.entityId}`;
       case 'platformRepo':

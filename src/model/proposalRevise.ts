@@ -151,7 +151,8 @@ function changeKey(c: Change): string {
   return c.kind === 'update' ? `${head}|${c.field ?? ''}` : `${head}|${c.kind}`;
 }
 
-const MARKING_GEOMETRY = new Set(['rect', 'space', 'containerId']);
+const MARKING_GEOMETRY = new Set(['rect', 'space', 'containerId', 'page']);
+const IMAGE_GEOMETRY = new Set(['placement', 'page']);
 
 /**
  * Field family: the batch touching one field of the family counts as touching the others in it
@@ -160,9 +161,12 @@ const MARKING_GEOMETRY = new Set(['rect', 'space', 'containerId']);
 function family(c: Change): string {
   const field = c.field ?? '';
   if (c.entity === 'marking' && MARKING_GEOMETRY.has(field)) return 'geometry';
-  const typed =
-    field === 'type' || field.startsWith('values.') || field.startsWith('entries.');
-  return c.entity === 'annotation' && typed ? 'content' : field;
+  if (c.entity === 'image' && IMAGE_GEOMETRY.has(field)) return 'placement';
+  return c.entity === 'annotation' && isContentField(field) ? 'content' : field;
+}
+
+function isContentField(field: string): boolean {
+  return field === 'type' || field.startsWith('values.') || field.startsWith('entries.');
 }
 
 /** What the batch touched, per entity: the field families, or `*` (created or removed). */
