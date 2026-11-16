@@ -97,6 +97,8 @@ Why: the limit is the **size of each block's generated guide**: up to 200 thousa
 
 **Stage #1081 (A4, 2026-11-15):** R2 (4,098 characters, independent of the other scripts) moved from block 3 to block 2: with R29.10 and R29.11 (the Material 3 steps of the Accessibility script) block 3 would have gone to 202,323, above the ceiling. After the move the guides measure 198,237 (block 1), 199,997 (2), 198,225 (3), 198,630 (4) and 199,864 (5) against the 200,500 ceiling, which does not change; the steps are 160, 143, 147, 169 and 140.
 
+**Sixth session (stage #883, PG6):** R30 (Pages, with its own visual pass) is outside the table of 5 blocks because no block had room for it (guides of 198,946, 200,085, 198,950, 198,893 and 201,090 before R30, which has about 20 thousand characters). The coordinator runs it in one more session: `node scripts/testing/round-guide.mjs R0 R30 --out …/apoio/guia.md`, report "Full round — block 6", findings `6.1`, `6.2`…. The rule for the next rounds is the owner's (`bug` #2024).
+
 **Baseline of the lean flow (stage #1533, commit `7a11ccb`, reports at [#1543](https://github.com/fabianofranca/mapping/issues/1543); cost and context measurement of stage #1712, read from `get_session` on 2026-11-13):** the final context is the `context_usage.used_tokens` and the cost is the `cost_usd` of each "Testador — testador-enxuto, bloco k de 5" session; the retests are "Reteste — testador-enxuto (CL1, #1603)" and "(CL2, #1606)". Block 4's context, which the session itself did not measure (`used_tokens` 0), is the one read from `get_session` afterwards.
 
 | Session    | Final context | Cost      | Steps, time, `run`, checks                                                                                                       |
