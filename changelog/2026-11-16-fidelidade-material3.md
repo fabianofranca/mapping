@@ -1,4 +1,4 @@
-# Fidelity notices of Material 3 (Compose) — [Não lançado] (épico `epic/fidelidade-material3`, PR #0, MCP unchanged, schema v20)
+# Fidelity notices of Material 3 (Compose) — 2026-11-16 (épico `epic/fidelidade-material3`, PR #2011, MCP unchanged, schema v20)
 
 ## Adicionado
 

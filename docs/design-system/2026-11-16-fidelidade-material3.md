@@ -1,4 +1,4 @@
-# Fidelity notices of Material 3 (Compose) — [Não lançado] (épico `epic/fidelidade-material3`)
+# Fidelity notices of Material 3 (Compose) — 2026-11-16 (épico `epic/fidelidade-material3`)
 
 ## Pendências
 
@@ -6,7 +6,7 @@ None. The stage changes the notices of the `material3-compose` library, which is
 
 ## Sincronização
 
-No write to the Mapping artifact in Claude Design: nothing of the app interface changed (pending items: none).
+Sem impacto on the **Mapping** artifact (nothing written): nothing of the app interface changed (pending items: none).
 
 ## Ficou sem gravar
 
