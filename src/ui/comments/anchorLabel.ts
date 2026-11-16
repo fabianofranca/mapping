@@ -25,6 +25,7 @@ const MISSING: Record<ThreadMissingKind, TranslationKey> = {
   annotation: 'thread.anchor.missing.annotation',
   entry: 'thread.anchor.missing.entry',
   row: 'thread.anchor.missing.row',
+  page: 'thread.anchor.missing.page',
 };
 
 type ItemAnchor = Extract<ThreadAnchor, { id: string }>;
@@ -82,6 +83,15 @@ function itemLabel(project: Project, anchor: ItemAnchor): string {
   return found[anchor.kind]();
 }
 
+/** "Canvas", or "Canvas · page name" when the project has more than one page. */
+function canvasLabel(project: Project, pageId: string | undefined): string {
+  const page =
+    project.pages.length > 1 && pageId !== undefined
+      ? project.pages.find((g) => g.id === pageId)
+      : undefined;
+  return page ? t('thread.anchor.canvasPage', { page: page.name }) : t('canvas.name');
+}
+
 /** Where the thread lives, as text; the orphan says what vanished. */
 export function anchorLabel(project: Project, anchor: ThreadAnchor): string {
   const resolved = resolveAnchor(project, anchor);
@@ -92,7 +102,7 @@ export function anchorLabel(project: Project, anchor: ThreadAnchor): string {
         ? undefined
         : projectIndex(project).containers.get(anchor.containerId);
     return t('thread.anchor.point', {
-      where: container ? imageLabel(container) : t('canvas.name'),
+      where: container ? imageLabel(container) : canvasLabel(project, anchor.pageId),
     });
   }
   return 'annotationId' in anchor

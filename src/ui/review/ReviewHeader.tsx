@@ -162,6 +162,10 @@ export function issueText(names: ReviewNames, issue: ProposalIssue): string {
       return t('review.issue.closed');
     case 'missing-image':
       return t('review.issue.missingImage', params);
+    case 'arrow-cross-page':
+      return t('review.issue.crossPage', params);
+    case 'page-parent-mismatch':
+      return t('review.issue.pageParent', params);
     default:
       return t('review.issue.generic', { ...params, code: issue.code });
   }

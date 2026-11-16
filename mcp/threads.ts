@@ -613,7 +613,8 @@ function samePoint(a: ThreadAnchor, b: ThreadAnchor): boolean {
     b.kind === 'point' &&
     a.containerId === b.containerId &&
     a.x === b.x &&
-    a.y === b.y
+    a.y === b.y &&
+    a.pageId === b.pageId
   );
 }
 

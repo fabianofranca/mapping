@@ -226,6 +226,59 @@ function specName(names: ReviewNames, c: Change): string {
   return text(spec?.name) ?? c.entityId;
 }
 
+/**
+ * Name of a page. `preview` picks the project "as it would be" first (what a row says about where an
+ * item will be), otherwise the current one (what the change replaces). A page that only the proposal
+ * creates or removes is read from its change; `null` if it is nowhere.
+ */
+export function pageName(
+  names: ReviewNames,
+  id: string,
+  preview: boolean,
+): string | null {
+  const projects = preview
+    ? [names.preview, names.current]
+    : [names.current, names.preview];
+  for (const p of projects) {
+    const found = p?.pages.find((g) => g.id === id);
+    if (found) return found.name;
+  }
+  const c = entityLookup(names).wholeOf.get(id);
+  const record = c?.entity === 'page' ? entityRecord(c) : null;
+  return text(record?.name);
+}
+
+/** Id of the page that a `{ pageId, … }` value of a page change (or of a created root) cites. */
+function pageIdOf(value: JsonValue | undefined): string | null {
+  return isRecord(value) ? text(value.pageId) : null;
+}
+
+/**
+ * The page a change's row tells: where the item it changes will be (the project "as it would be"),
+ * falling back to where it is now and then to the `pageId` the change carries. `null` for changes
+ * with no item (the Project group) and for the page change itself, whose summary is "origin →
+ * destination".
+ */
+export function changePageName(names: ReviewNames, c: Change): string | null {
+  const itemId = c.markingId ?? c.imageId;
+  if (itemId === null || c.field === 'page') return null;
+  for (const p of [names.preview, names.current]) {
+    const id = p ? projectIndex(p).pageOf.get(itemId) : undefined;
+    if (id !== undefined) return pageName(names, id, true);
+  }
+  const id = pageIdOf(c.to) ?? pageIdOf(c.from);
+  return id === null ? null : pageName(names, id, true);
+}
+
+/** Does the review tell pages at all: more than one page, or a proposal that changes pages. */
+export function tellsPages(names: ReviewNames): boolean {
+  return (
+    names.current.pages.length > 1 ||
+    (names.preview?.pages.length ?? 0) > 1 ||
+    names.proposal.changes.some((c) => c.entity === 'page' || c.field === 'page')
+  );
+}
+
 /** Name of a review level (proposal, Project, Canvas, image or item). */
 export function targetName(names: ReviewNames, target: ReviewTarget): string {
   switch (target.level) {
@@ -270,6 +323,10 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'image.drawingMode': 'review.field.drawingMode',
   'image.density': 'review.field.density',
   'image.direction': 'review.field.direction',
+  'page.name': 'review.field.name',
+  'page.position': 'review.field.position',
+  'marking.page': 'review.field.page',
+  'image.page': 'review.field.page',
   'project.drawingMode': 'review.field.drawingMode',
   'project.direction': 'review.field.direction',
   'annotation.name': 'review.field.annotationName',
@@ -293,6 +350,7 @@ const ENTITY_KEYS = {
   marking: 'review.entity.marking',
   arrow: 'review.entity.arrow',
   annotation: 'review.entity.annotation',
+  page: 'review.entity.page',
   project: 'review.entity.project',
 } as const satisfies Record<Change['entity'], TranslationKey>;
 
@@ -320,6 +378,8 @@ export function entityName(names: ReviewNames, id: string): string | null {
     if (index.containers.has(id)) return imageName(names, id);
     if (index.layers.has(id)) return layerName(names, id);
     if (index.annotations.has(id)) return annotationName(names, id);
+    const page = p.pages.find((g) => g.id === id);
+    if (page) return page.name;
     // Without the copy in `specs/` (`spec: null`), the name may be in the proposal itself.
     const spec = index.specializations.get(id)?.spec;
     if (spec) return spec.name;
@@ -359,6 +419,26 @@ export function valueFieldLabel(names: ReviewNames, c: Change, key: string): str
   return field ? fieldLabel(field) : key;
 }
 
+/** Name of the change's object when it is an item or a page (no spec, repository or layer). */
+function itemSubject(
+  names: ReviewNames,
+  entity: 'image' | 'marking' | 'arrow' | 'page' | 'project',
+  id: string,
+): string | null {
+  switch (entity) {
+    case 'image':
+      return imageName(names, id);
+    case 'marking':
+      return markingName(names, id);
+    case 'arrow':
+      return arrowName(names, id);
+    case 'page':
+      return pageName(names, id, true);
+    case 'project':
+      return null;
+  }
+}
+
 /** Name of the change's object, for the titles ("Annotation onClick", "Layer Events"). */
 function subjectName(names: ReviewNames, c: Change): string | null {
   switch (c.entity) {
@@ -371,14 +451,8 @@ function subjectName(names: ReviewNames, c: Change): string | null {
     case 'platformRepo':
     case 'docRepo':
       return c.entityId;
-    case 'image':
-      return imageName(names, c.entityId);
-    case 'marking':
-      return markingName(names, c.entityId);
-    case 'arrow':
-      return arrowName(names, c.entityId);
-    case 'project':
-      return null;
+    default:
+      return itemSubject(names, c.entity, c.entityId);
   }
 }
 
@@ -529,6 +603,16 @@ function anchorText(names: ReviewNames, value: JsonValue): string {
     : summary;
 }
 
+/** The page of a page change's value ("Page 2"); the id when the page is nowhere. */
+function pageValueText(
+  names: ReviewNames,
+  value: Record<string, JsonValue>,
+  destination: boolean,
+): string {
+  const id = text(value.pageId) ?? '';
+  return pageName(names, id, destination) ?? id;
+}
+
 /** Text of a reading direction; `null` (absent) is "Follows the project" in the container and `ltr` in the project. */
 function directionText(entity: Change['entity'], value: JsonValue): string {
   if (value === 'ltr' || value === 'rtl') return t(`review.value.direction.${value}`);
@@ -575,6 +659,8 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
     }
     case 'layer':
       return [text(value.name), text(value.color)].filter(Boolean).join(' · ');
+    case 'page':
+      return text(value.name) ?? c.entityId;
     case 'specialization': {
       const version = typeof value.version === 'number' ? `v${value.version}` : '';
       return [specName(names, c), version].filter(Boolean).join(' ');
@@ -611,6 +697,8 @@ export function valueParts(
     return [{ text: formatDensity(typeof value === 'number' ? value : 1) }];
   }
   if (field === 'direction') return [{ text: directionText(c.entity, value) }];
+  if (field === 'page' && isRecord(value))
+    return [{ text: pageValueText(names, value, value === c.to) }];
   if (field === 'anchor' && value !== null) return [{ text: anchorText(names, value) }];
   if (value === null) return [{ text: t('review.value.empty') }];
   if (field.startsWith(VALUES_FIELD_PREFIX)) {

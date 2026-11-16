@@ -31,16 +31,22 @@ export const CHANGE_TYPES: readonly ChangeType[] = [
   'replaced',
 ];
 
+/** A change of position: a marking's rect, space or page, a container's placement or page. */
+function isMove(c: Change): boolean {
+  const geometry =
+    c.entity === 'marking' ? ['rect', 'space', 'page'] : ['placement', 'page'];
+  return (
+    (c.entity === 'marking' || c.entity === 'image') &&
+    c.field !== null &&
+    geometry.includes(c.field)
+  );
+}
+
 export function changeType(c: Change): ChangeType {
   if (c.kind === 'create') return 'created';
   if (c.kind === 'remove') return 'removed';
   if (c.entity === 'image' && c.field === 'file') return 'replaced';
-  if (
-    (c.entity === 'marking' && (c.field === 'rect' || c.field === 'space')) ||
-    (c.entity === 'image' && c.field === 'placement')
-  ) {
-    return 'moved';
-  }
+  if (isMove(c)) return 'moved';
   return 'changed';
 }
 

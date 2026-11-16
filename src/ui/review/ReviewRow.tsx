@@ -18,6 +18,8 @@ export interface ReviewRowProps {
   /** Depth (0 = proposal). */
   readonly depth: number;
   readonly label: string;
+  /** The page the changed item is on (stage #883, PG4); `null`/absent when the review does not tell pages. */
+  readonly page?: string | null;
   readonly state: LevelState;
   readonly counts?: DecisionCounts;
   readonly type?: ChangeType | null;
@@ -52,6 +54,7 @@ function treeitemAttrs(
     | 'expanded'
     | 'selected'
     | 'label'
+    | 'page'
     | 'revised'
     | 'position'
   >,
@@ -64,7 +67,13 @@ function treeitemAttrs(
     'aria-posinset': r.position?.posinset,
     'aria-expanded': r.expandable ? r.expanded : undefined,
     'aria-selected': r.selected,
-    'aria-label': r.revised ? `${r.label}, ${badgeText(r.revised)}` : r.label,
+    'aria-label': [
+      r.label,
+      r.page ? t('review.row.page', { name: r.page }) : null,
+      r.revised ? badgeText(r.revised) : null,
+    ]
+      .filter(Boolean)
+      .join(', '),
   };
 }
 
@@ -72,6 +81,7 @@ export function ReviewRow({
   rowKey,
   depth,
   label,
+  page,
   state,
   counts,
   type,
@@ -105,6 +115,7 @@ export function ReviewRow({
         expanded,
         selected,
         label,
+        page,
         revised,
         position,
       })}
@@ -135,6 +146,11 @@ export function ReviewRow({
         <span class="review-row-label" title={label}>
           {label}
         </span>
+        {page && (
+          <span class="review-row-page" title={t('review.row.page', { name: page })}>
+            {page}
+          </span>
+        )}
         {revised && <RevisedFlag badge={revised} />}
         {flags}
       </span>

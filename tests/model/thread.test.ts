@@ -3,7 +3,7 @@ import {
   COMMENTS_DIR,
   RESOLVED_DIR,
   THREAD_FORMAT,
-  THREAD_FORMAT_VERSION,
+  THREAD_FORMAT_VERSIONS,
   THREAD_ID_RE,
   THREAD_MESSAGE_MAX,
   parseThread,
@@ -32,7 +32,7 @@ function parsedOf(data: unknown): Thread {
 describe('constants and paths', () => {
   it('exposes the format, the version and the folders', () => {
     expect(THREAD_FORMAT).toBe('mapping-thread');
-    expect(THREAD_FORMAT_VERSION).toBe(1);
+    expect(THREAD_FORMAT_VERSIONS).toEqual([1, 2]);
     expect(COMMENTS_DIR).toBe('comments');
     expect(RESOLVED_DIR).toBe('comments/resolved');
     expect(THREAD_MESSAGE_MAX).toBe(10000);
@@ -71,7 +71,7 @@ describe('parsing', () => {
 
   it('rejects a different format and version', () => {
     expect(errorsOf({ ...rawThread(), format: 'other' })[0]).toMatch(/^format: /);
-    expect(errorsOf({ ...rawThread(), formatVersion: 2 })[0]).toMatch(/^formatVersion: /);
+    expect(errorsOf({ ...rawThread(), formatVersion: 3 })[0]).toMatch(/^formatVersion: /);
   });
 
   it.each(['id', 'anchor', 'createdAt', 'revision', 'resolved', 'messages'])(

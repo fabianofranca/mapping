@@ -15,7 +15,7 @@ import {
 import type { EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
-import { isFirstPage, type PageState } from '../store/pages';
+import { type PageState } from '../store/pages';
 import type { ProjectActions } from '../store/project';
 import type { ReviewState } from '../store/review';
 import { locale, showArrows } from '../store/settings';
@@ -402,9 +402,9 @@ export class CanvasController {
     const project = this.drawnProject.value;
     const groups = this.derived.threads.pins.value;
     if (!project || groups.length === 0) return NO_PINS;
-    // A thread on a canvas point only appears in the Completa (decision 15) of the first page: the
-    // anchor has no page of its own yet (the conversations with pages come later).
-    const principal = (this.perspective?.id.value ?? null) === null && this.onFirstPage();
+    // A thread on a canvas point only appears in the Completa (decision 15); the derived pins
+    // already hold only the points of the open page (stage #883, PG4).
+    const principal = (this.perspective?.id.value ?? null) === null;
     return pinPlaces(project, groups, this.derived.canvasVisibility.value, principal);
   });
 
@@ -614,7 +614,7 @@ export class CanvasController {
         return pinHit(pins, c, this.view.scale, tokens.pin);
       },
       containerTitles: () => this.images.titleRects(),
-      canvasPointComments: () => this.onFirstPage(),
+      openPageId: () => this.page?.id.value,
     });
 
     this.cleanups.push(
@@ -675,11 +675,6 @@ export class CanvasController {
         this.cursorRequest = null;
       },
     );
-  }
-
-  /** The open page is the project's first one (or there is no page state): where the canvas points live. */
-  private onFirstPage(): boolean {
-    return isFirstPage(this.store.committed.value, this.page?.id.value);
   }
 
   /**

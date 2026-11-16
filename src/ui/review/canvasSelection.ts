@@ -1,4 +1,11 @@
-import { projectIndex, proposalIndex, type ReviewTarget } from '../../model';
+import {
+  isRecord,
+  projectIndex,
+  proposalIndex,
+  type Change,
+  type ReviewTarget,
+} from '../../model';
+import { revealItem, type RevealSession } from '../../store/reveal';
 import type { ReviewState } from '../../store/review';
 import type { Selection } from '../../store/ui';
 
@@ -50,4 +57,53 @@ export function canvasSelectionOf(
     default:
       return undefined;
   }
+}
+
+/** The `pageId` a created or removed root, or a page change, carries in its values. */
+function carriedPage(c: Change): string | undefined {
+  for (const value of [c.to, c.from]) {
+    if (isRecord(value) && typeof value.pageId === 'string') return value.pageId;
+  }
+  return undefined;
+}
+
+/**
+ * The page where a review item is, in the view being shown (stage #883, PG4, decision 16): the Current
+ * view has an item moved by a page change on its origin page, the Proposed view on its destination.
+ * An item that only the proposal creates is not in the Current view: the `pageId` its change carries
+ * answers. `undefined` when the item is on no page (a change of the page list, a new image on the
+ * first page of a view that lacks it).
+ */
+export function reviewPageOf(
+  review: Pick<ReviewState, 'derived'>,
+  target: ReviewTarget | null,
+  itemId: string,
+): string | undefined {
+  const shown = review.derived.shownAcrossPages.peek();
+  const found = shown ? projectIndex(shown).pageOf.get(itemId) : undefined;
+  if (found !== undefined) return found;
+  const proposal = review.derived.proposal.peek();
+  const change =
+    proposal && target?.level === 'change' && target.id
+      ? proposalIndex(proposal).changes.get(target.id)
+      : undefined;
+  return change ? carriedPage(change) : undefined;
+}
+
+/**
+ * Opens the page of the review item before it is selected. The review keeps the Completa locked, so
+ * only the page changes; a page the proposal itself creates cannot be opened and stays where it is.
+ */
+export function revealReviewItem(
+  session: RevealSession,
+  review: Pick<ReviewState, 'derived'>,
+  target: ReviewTarget | null,
+  itemId: string,
+): void {
+  const pageId = reviewPageOf(review, target, itemId);
+  if (pageId === undefined) {
+    revealItem(session, itemId);
+    return;
+  }
+  if (pageId !== session.page.openId()) session.page.open(pageId);
 }

@@ -483,13 +483,14 @@ const without = (r: JsonRecord, key: string): JsonRecord => {
 /**
  * What the removal comparison sets aside, per entity: the container's `parentId` is derived
  * from the geometry (schema 13) and the proposal reader fills it in only in the `from`; the
- * arrow's route is the person's; a missing `parentRole` (proposal before v14) counts as
+ * arrow's route is the person's; the `pageId` of a root (formatVersion 10) is left out too, since the
+ * removal does not depend on the page the item is on; a missing `parentRole` (proposal before v14) counts as
  * `null`, on both sides.
  */
 const REMOVED_NORMALIZERS: Partial<Record<ChangeEntity, (r: JsonRecord) => JsonRecord>> =
   {
-    marking: (r) => ({ ...r, needsReview: false }),
-    image: (r) => without(r, 'parentId'),
+    marking: (r) => ({ ...without(r, 'pageId'), needsReview: false }),
+    image: (r) => without(without(r, 'parentId'), 'pageId'),
     arrow: (r) => without(r, 'points'),
     annotation: (r) => ({ ...r, parentRole: r.parentRole ?? null }),
   };
@@ -498,7 +499,10 @@ function lockWarning(c: Change, project: Project): boolean {
   const index = projectIndex(project);
   if (c.entity === 'marking' && index.markings.has(c.entityId)) {
     if (c.kind === 'remove') return !canDeleteMarking(project, c.entityId);
-    if (c.kind === 'update' && (c.field === 'rect' || c.field === 'space')) {
+    if (
+      c.kind === 'update' &&
+      (c.field === 'rect' || c.field === 'space' || c.field === 'page')
+    ) {
       return !canEditMarkingGeometry(project, c.entityId);
     }
   }
@@ -507,7 +511,10 @@ function lockWarning(c: Change, project: Project): boolean {
   }
   if (c.entity === 'image' && index.containers.has(c.entityId)) {
     if (c.kind === 'remove') return !canDeleteImage(project, c.entityId);
-    if (c.kind === 'update' && (c.field === 'placement' || c.field === 'size')) {
+    if (
+      c.kind === 'update' &&
+      (c.field === 'placement' || c.field === 'size' || c.field === 'page')
+    ) {
       return !canEditImagePlacement(project, c.entityId);
     }
     if (c.kind === 'update' && c.field === 'file' && isRecord(c.to)) {

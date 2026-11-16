@@ -45,8 +45,8 @@ export interface CommentTap {
   readonly arrows: ArrowHit;
   readonly titles: ReadonlyMap<string, Rect> | undefined;
   readonly pin: PinPlace | null;
-  /** The open page takes comments on a canvas point (only the first one for now). */
-  readonly canvasPoints: boolean;
+  /** The open page: a canvas point is created on it (`undefined`: no page, version 1 point). */
+  readonly pageId?: string;
 }
 
 /** The armed Comment click: opens the draft on the item or point (or disarms, if blocked). */
@@ -56,11 +56,14 @@ function placeAt(tap: CommentTap, c: Point): void {
     cancelComment(ui);
     return;
   }
-  const anchor = commentAnchorAt(project, tap.visibility, c, tap.arrows, tap.titles);
-  if (!tap.canvasPoints && anchor.kind === 'point' && anchor.containerId === null) {
-    cancelComment(ui);
-    return;
-  }
+  const anchor = commentAnchorAt(
+    project,
+    tap.visibility,
+    c,
+    tap.arrows,
+    tap.titles,
+    tap.pageId,
+  );
   placeComment(ui, project, anchor);
 }
 
@@ -88,9 +91,12 @@ export function canvasMenuAt(
   picked: HitItem | null,
   c: Point,
   at: { readonly x: number; readonly y: number },
+  pageId?: string,
 ): CanvasMenu | null {
   const here =
-    project && (!picked || picked.kind === 'image') ? pointAnchorAt(project, c) : null;
+    project && (!picked || picked.kind === 'image')
+      ? pointAnchorAt(project, c, pageId)
+      : null;
   if (!picked) return here ? { ...at, target: null, comment: null, here } : null;
   return {
     ...at,

@@ -32,6 +32,7 @@ import type {
   Layer,
   LayerSpecRef,
   Marking,
+  Page,
   Placement,
   DocRepo,
   PlatformRepo,
@@ -78,6 +79,7 @@ type Entity =
   | DocRepo
   | ProjectModeEntity
   | Layer
+  | Page
   | ProjectContainer
   | Marking
   | Arrow
@@ -90,21 +92,23 @@ const UPSERT_PHASE: Record<ChangeEntity, number> = {
   docRepo: 2,
   project: 3,
   layer: 4,
-  image: 5,
-  marking: 6,
-  arrow: 7,
-  annotation: 8,
+  page: 5,
+  image: 6,
+  marking: 7,
+  arrow: 8,
+  annotation: 9,
 };
 const REMOVE_PHASE: Record<ChangeEntity, number> = {
-  annotation: 9,
-  arrow: 10,
-  marking: 11,
-  image: 12,
-  layer: 13,
-  project: 14,
-  specialization: 15,
-  platformRepo: 16,
-  docRepo: 17,
+  annotation: 10,
+  arrow: 11,
+  marking: 12,
+  image: 13,
+  page: 14,
+  layer: 15,
+  project: 16,
+  specialization: 17,
+  platformRepo: 18,
+  docRepo: 19,
 };
 
 /**
@@ -147,10 +151,10 @@ function decode(entity: ChangeEntity, value: JsonValue): Entity {
 }
 
 /**
- * Pages (v21): a proposal does not carry the page yet, so what it creates goes to the first page, and
- * a marking that a `space` swap takes to the canvas keeps the page it was on (its container's). A
- * marking inside a container has none (`pageId: null`); the settle that follows moves the page along
- * with the space.
+ * Pages (v21): what a proposal creates without a `pageId` (one from before formatVersion 10, or on the
+ * first page) goes to the first page, and a marking that a `space` swap takes to the canvas keeps the
+ * page it was on (its container's). A marking inside a container has none (`pageId: null`); the settle
+ * that follows moves the page along with the space.
  */
 function assignPages(
   p: Project,
@@ -246,6 +250,14 @@ function withField(
       }
       if (field === 'placement')
         return { ...i, placement: snapPlacement(to as unknown as Placement) };
+      // Page swap: the page and the placement on it, together.
+      if (field === 'page' && isRecord(to)) {
+        return {
+          ...i,
+          pageId: to.pageId as string,
+          placement: snapPlacement(to.position as unknown as Placement),
+        };
+      }
       if (field === 'source')
         return { ...i, source: to as unknown as ExternalSource | null };
       return { ...i, [field]: to };
@@ -261,9 +273,23 @@ function withField(
           rect: to.rect as unknown as Rect,
         };
       }
+      // Page swap: the page and the `rect` on it, together; a marking that was inside a container
+      // leaves it (the change is only proposed for a marking that ends on the canvas).
+      if (field === 'page' && isRecord(to)) {
+        return {
+          ...m,
+          containerId: null,
+          pageId: to.pageId as string,
+          rect: to.position as unknown as Rect,
+        };
+      }
       if (field === 'source')
         return { ...m, source: to as unknown as ExternalSource | null };
       return { ...m, [field]: to };
+    }
+    case 'page': {
+      const g = current as Page;
+      return field === 'name' && typeof to === 'string' ? { ...g, name: to } : null;
     }
     case 'layer': {
       const l = current as Layer;
@@ -384,6 +410,45 @@ function placeGroup(
   });
 }
 
+/**
+ * The list with each repositioned item at its proposed index, in ascending order of `to`. An item
+ * that the same proposal removes is not repositioned (`splice(-1, 1)` would drop another).
+ */
+function placeByPosition<T extends { readonly id: string }>(
+  list: T[],
+  changes: readonly Change[],
+): T[] {
+  for (const c of [...changes].sort((a, b) => (a.to as number) - (b.to as number))) {
+    const from = list.findIndex((item) => item.id === c.entityId);
+    if (from < 0) continue;
+    const [item] = list.splice(from, 1);
+    if (item) list.splice(Math.min(c.to as number, list.length), 0, item);
+  }
+  return list;
+}
+
+/**
+ * The markings that changed space (a container, or the canvas) or page, between `before` and
+ * `after`: the waypoints of their arrows live in the space of both ends (and the proposal never
+ * carries a route), so those arrows go back to the default route.
+ */
+function markingsThatMoved(before: Project, after: Project): Set<string> {
+  const old = projectIndex(before);
+  const now = projectIndex(after);
+  const moved = new Set<string>();
+  for (const m of after.markings) {
+    const was = old.markings.get(m.id);
+    if (!was) continue;
+    if (
+      was.containerId !== m.containerId ||
+      old.pageOf.get(m.id) !== now.pageOf.get(m.id)
+    ) {
+      moved.add(m.id);
+    }
+  }
+  return moved;
+}
+
 const hasDirection = (v: unknown): boolean =>
   typeof v === 'object' && v !== null && 'direction' in v;
 
@@ -422,6 +487,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
       ['project', { drawingMode: p.drawingMode ?? null, direction: p.direction ?? null }],
     ]),
     layer: new Map(p.layers.map((l) => [l.id, l])),
+    page: new Map(p.pages.map((g) => [g.id, g])),
     image: new Map(p.containers.map((i) => [i.id, i])),
     marking: new Map(p.markings.map((m) => [m.id, m])),
     arrow: new Map(p.arrows.map((a) => [a.id, a])),
@@ -429,6 +495,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
   };
   const problems: PatchProblem[] = [];
   const positions: Change[] = [];
+  const pagePositions: Change[] = [];
   const markingPositions: Change[] = [];
   const phase = (c: Change) =>
     c.kind === 'remove' ? REMOVE_PHASE[c.entity] : UPSERT_PHASE[c.entity];
@@ -444,13 +511,12 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
       else map.set(c.entityId, decode(c.entity, c.to));
     } else if (c.kind === 'remove') {
       map.delete(c.entityId);
-    } else if (
-      (c.entity === 'layer' || c.entity === 'marking') &&
-      c.field === 'position'
-    ) {
+    } else if (c.field === 'position') {
       if (!map.has(c.entityId)) problems.push({ code: 'entity-missing', changeId: c.id });
       else if (c.entity === 'layer') positions.push(c);
-      else markingPositions.push(c);
+      else if (c.entity === 'page') pagePositions.push(c);
+      else if (c.entity === 'marking') markingPositions.push(c);
+      else problems.push({ code: 'field-mismatch', changeId: c.id });
     } else {
       const current = map.get(c.entityId);
       let next = current && withField(c.entity, current, c, maps.specialization);
@@ -473,15 +539,8 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     maps.marking as Map<string, Marking>,
   );
 
-  const layers = [...maps.layer.values()] as Layer[];
-  for (const c of [...positions].sort((a, b) => (a.to as number) - (b.to as number))) {
-    const from = layers.findIndex((l) => l.id === c.entityId);
-    // A layer that the same proposal removes is not repositioned (`splice(-1, 1)` would
-    // drop another).
-    if (from < 0) continue;
-    const [layer] = layers.splice(from, 1);
-    if (layer) layers.splice(Math.min(c.to as number, layers.length), 0, layer);
-  }
+  const layers = placeByPosition([...maps.layer.values()] as Layer[], positions);
+  const pages = placeByPosition([...maps.page.values()] as Page[], pagePositions);
 
   let markings = placeCreatedMarkings(
     [...maps.marking.values()] as Marking[],
@@ -504,13 +563,8 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     arrows = [...settled.arrows];
     // An end that changed space (by the proposal's `space` or by the settle) takes the arrow
     // back to the default route: the `points` stay in the space of both ends.
-    const before = projectIndex(p).markings;
-    const moved = new Set<string>();
-    for (const m of markings) {
-      const old = before.get(m.id);
-      if (old && old.containerId !== m.containerId) moved.add(m.id);
-    }
-    arrows = [...clearArrowRoutes({ ...p, arrows }, moved).arrows];
+    const interim = { ...p, containers, markings, arrows };
+    arrows = [...clearArrowRoutes(interim, markingsThatMoved(p, interim)).arrows];
   }
   placeAmongSiblings(markings, markingPositions);
 
@@ -521,6 +575,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     platformRepos: Object.fromEntries(maps.platformRepo) as Record<string, PlatformRepo>,
     docRepos: Object.fromEntries(maps.docRepo) as Record<string, DocRepo>,
     layers,
+    pages,
     containers,
     markings,
     arrows,
@@ -582,6 +637,36 @@ function specializationIssues(p: Project): { id: string; otherId: string }[] {
       out.push({ id: a.id, otherId: a.type.specId });
   }
   return out;
+}
+
+/**
+ * Invariants that a partial acceptance of a group that changes page can break: an arrow with its ends
+ * on two pages, a parent on another page. They are never one change's fault: they come from the page
+ * changes of the group's members, so the two exits (`changeIds`, reject one of those; `related`,
+ * accept the rest of the group) are the `page` changes of the entities the problem cites.
+ */
+const PAGE_ISSUES: ReadonlySet<string> = new Set([
+  'arrow-cross-page',
+  'page-parent-mismatch',
+]);
+
+const isPageChange = (c: Change): boolean => c.field === 'page';
+
+/**
+ * The entities whose page change settles a page problem: the ones it cites and, for an arrow, its
+ * two ends, each with its container (a marking inside a container goes with the container's page).
+ */
+function pageIssueIds(
+  project: Project,
+  issue: { readonly id: string; readonly otherId?: string | undefined },
+): string[] {
+  const index = projectIndex(project);
+  const arrow = index.arrows.get(issue.id);
+  const cited = arrow ? [arrow.from, arrow.to] : [issue.id, issue.otherId];
+  return cited.flatMap((id) => {
+    const container = id === undefined ? undefined : index.markings.get(id)?.containerId;
+    return [id ?? '', container ?? ''];
+  });
 }
 
 export interface AcceptedValidation {
@@ -682,10 +767,13 @@ export function validateAccepted(project: Project, p: Proposal): AcceptedValidat
     else byEntity.set(c.entityId, [c]);
   }
   const accepted = new Set(changeIds);
-  const involved = (...ids: (string | undefined)[]) => {
-    const changes = ids.flatMap((id) =>
-      id === undefined ? [] : (byEntity.get(id) ?? []),
-    );
+  const involved = (
+    ids: readonly (string | undefined)[],
+    keep: (c: Change) => boolean = () => true,
+  ) => {
+    const changes = ids
+      .flatMap((id) => (id === undefined ? [] : (byEntity.get(id) ?? [])))
+      .filter(keep);
     return {
       changeIds: changes.filter((c) => accepted.has(c.id)).map((c) => c.id),
       related: changes.filter((c) => p.decisions[c.id] === undefined).map((c) => c.id),
@@ -708,14 +796,16 @@ export function validateAccepted(project: Project, p: Proposal): AcceptedValidat
       code: issue.code,
       id: issue.id,
       ...(issue.otherId === undefined ? {} : { otherId: issue.otherId }),
-      ...involved(issue.id, issue.otherId),
+      ...(PAGE_ISSUES.has(issue.code)
+        ? involved(pageIssueIds(result, issue), isPageChange)
+        : involved([issue.id, issue.otherId])),
     });
   }
   for (const issue of freshSpecs) {
     issues.push({
       code: 'missing-specialization',
       ...issue,
-      ...involved(issue.id, issue.otherId),
+      ...involved([issue.id, issue.otherId]),
     });
   }
   return { ok: issues.length === 0, changeIds, issues, project: result };

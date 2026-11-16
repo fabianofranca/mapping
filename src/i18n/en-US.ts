@@ -758,6 +758,7 @@ export const enUS = {
   'thread.time.dateYear': '{month}/{day}/{year}',
   'thread.anchor.layer': 'Layer {name}',
   'thread.anchor.point': '{where} · loose point',
+  'thread.anchor.canvasPage': 'Canvas · {page}',
   'thread.anchor.missing.marking': 'Marking deleted · orphan',
   'thread.anchor.missing.container': 'Container deleted · orphan',
   'thread.anchor.missing.arrow': 'Arrow deleted · orphan',
@@ -765,6 +766,7 @@ export const enUS = {
   'thread.anchor.missing.annotation': 'Annotation deleted · orphan',
   'thread.anchor.missing.entry': 'Pair deleted · orphan',
   'thread.anchor.missing.row': 'Row deleted · orphan',
+  'thread.anchor.missing.page': 'Page deleted · orphan',
   // CM5-B: citations in the composer and in messages
   'citation.unnamed': '(unnamed)',
   'citation.missing': 'The cited item no longer exists',

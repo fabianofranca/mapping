@@ -18,7 +18,6 @@ import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { MovePageMenuItems } from './MovePageMenuItems';
 import { createOpenScrollGuard } from './openScrollGuard';
-import { isFirstPage } from '../store/pages';
 import { placeComment } from '../store/threadUi';
 import { peekSelectedItems, isItemSelected } from '../store/ui';
 import {
@@ -128,14 +127,11 @@ function CommentMenuItems({
   const project = review.derived.shownProject.value;
   if (!project) return null;
   const openId = session.perspective.id.value;
-  // A canvas-point thread has no page of its own yet: only the first page takes one.
-  const pageBlocked = !isFirstPage(store.committed.value, session.page.id.value);
-  /** Why a canvas-point comment is blocked: outside Main, or off the first page. */
-  const blockOf = (anchor: ThreadAnchor): 'main' | 'page' | null => {
-    if (anchor.kind !== 'point' || anchor.containerId !== null) return null;
-    if (blockedOutsideMain(project, openId, 'draw-canvas')) return 'main';
-    return pageBlocked ? 'page' : null;
-  };
+  /** A canvas-point comment is blocked outside Main (its final pin only shows there). */
+  const blocked = (anchor: ThreadAnchor): boolean =>
+    anchor.kind === 'point' &&
+    anchor.containerId === null &&
+    blockedOutsideMain(project, openId, 'draw-canvas');
   const items: readonly (readonly [ThreadAnchor | null, string])[] = [
     [comment, t('comments.comment')],
     [here, t('comments.here')],
@@ -147,12 +143,7 @@ function CommentMenuItems({
           <PrincipalOnlyItem
             key={label}
             // The draft of a canvas point shows outside Main, but the final pin does not.
-            blocked={blockOf(anchor) !== null}
-            hint={
-              blockOf(anchor) === 'page'
-                ? t('page.comment.canvasFirstPageOnly')
-                : undefined
-            }
+            blocked={blocked(anchor)}
             disabled={store.locked.value}
             onClick={() => {
               close();

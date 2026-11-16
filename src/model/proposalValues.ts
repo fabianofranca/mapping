@@ -13,6 +13,7 @@ import type {
   JsonValue,
   Layer,
   Marking,
+  Page,
   DocRepo,
   PlatformRepo,
   Project,
@@ -42,7 +43,11 @@ export function jsonEqual(a: JsonValue | undefined, b: JsonValue | undefined): b
   return ka.every((k) => Object.hasOwn(b, k) && jsonEqual(a[k], b[k]));
 }
 
-export function imageValue(i: ProjectContainer): JsonValue {
+/**
+ * The container in a proposal. `withPage`: the value carries its `pageId` (formatVersion 10); without
+ * it the value is that of before the pages, and a created one goes to the first page when applied.
+ */
+export function imageValue(i: ProjectContainer, withPage = false): JsonValue {
   return toJson({
     id: i.id,
     name: i.name,
@@ -60,10 +65,16 @@ export function imageValue(i: ProjectContainer): JsonValue {
     ...(i.density == null ? {} : { density: i.density }),
     // Only when pinned (formatVersion 8).
     ...(i.direction == null ? {} : { direction: i.direction }),
+    // Only when the proposal carries pages (formatVersion 10).
+    ...(withPage ? { pageId: i.pageId } : {}),
   });
 }
 
-export function markingValue(m: Marking): JsonValue {
+/**
+ * The marking in a proposal. `withPage`: a canvas marking carries its `pageId` (formatVersion 10); one
+ * inside a container never does (its page is its container's).
+ */
+export function markingValue(m: Marking, withPage = false): JsonValue {
   return toJson({
     id: m.id,
     containerId: m.containerId,
@@ -76,6 +87,10 @@ export function markingValue(m: Marking): JsonValue {
     source: m.source,
     // Only when anchored (formatVersion 9): without it the value is that of before the anchor.
     ...(m.anchor == null ? {} : { anchor: m.anchor }),
+    // Only when the proposal carries pages (formatVersion 10).
+    ...(withPage && m.containerId === null && m.pageId !== null
+      ? { pageId: m.pageId }
+      : {}),
   });
 }
 
@@ -113,6 +128,10 @@ export function annotationValue(a: Annotation): JsonValue {
 
 export function layerValue(l: Layer): JsonValue {
   return toJson({ id: l.id, name: l.name, color: l.color, spec: l.spec });
+}
+
+export function pageValue(g: Page): JsonValue {
+  return toJson({ id: g.id, name: g.name });
 }
 
 export function specializationValue(s: ProjectSpecialization): JsonValue {
@@ -156,24 +175,49 @@ export const COMPARED_FIELDS = {
     'drawingMode',
     'density',
     'direction',
+    'page',
   ],
-  marking: ['name', 'space', 'rect', 'floating', 'locked', 'source', 'anchor'],
+  marking: ['name', 'space', 'rect', 'floating', 'locked', 'source', 'anchor', 'page'],
   // The arrow is only created and removed: none of its fields is compared (see `ARROW_FIELDS`).
   arrow: [],
   annotation: ['name', 'parentAnnotationId', 'parentRole', 'markingId', 'layerId'],
   layer: ['name', 'color', 'spec'],
+  page: ['name'],
 } as const;
 
 /**
  * Compared fields of a marking that exists before and after: a change of space is the composite
- * change `space` (the `rect` goes inside it); without a change, `rect` is a separate field.
+ * change `space` (the `rect` goes inside it); a change of page of a canvas marking is the composite
+ * change `page` (`{ pageId, position }`, the `rect` goes inside it); without a change, `rect` is a
+ * separate field. A marking that also leaves its container for the canvas of another page carries
+ * only `page` (applying it also puts the marking on the canvas), so no partial acceptance is
+ * incoherent. `pageBefore` is the page it was on (its container's, for a marking in a container).
  */
 export function markingFieldsFor(
   before: Pick<Marking, 'containerId'>,
-  after: Pick<Marking, 'containerId'>,
+  after: Pick<Marking, 'containerId' | 'pageId'>,
+  pageBefore: string | null,
 ): readonly string[] {
   const moved = before.containerId !== after.containerId;
-  return COMPARED_FIELDS.marking.filter((f) => f !== (moved ? 'rect' : 'space'));
+  const paged = after.containerId === null && after.pageId !== pageBefore;
+  return COMPARED_FIELDS.marking.filter((f) => {
+    if (f === 'page') return paged;
+    // A marking that leaves its container for the canvas of another page is one `page` change.
+    if (f === 'space') return moved && !paged;
+    return f !== 'rect' || (!moved && !paged);
+  });
+}
+
+/**
+ * Compared fields of a container that exists before and after: a change of page is the composite
+ * change `page` (`{ pageId, position }`, the `placement` goes inside it).
+ */
+export function imageFieldsFor(
+  before: Pick<ProjectContainer, 'pageId'>,
+  after: Pick<ProjectContainer, 'pageId'>,
+): readonly string[] {
+  const moved = before.pageId !== after.pageId;
+  return COMPARED_FIELDS.image.filter((f) => f !== (moved ? 'placement' : 'page'));
 }
 
 export function imageField(i: ProjectContainer, field: string): JsonValue | undefined {
@@ -203,6 +247,8 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
       return i.density ?? null;
     case 'direction':
       return i.direction ?? null;
+    case 'page':
+      return toJson({ pageId: i.pageId, position: i.placement });
     default:
       return undefined;
   }
@@ -226,6 +272,10 @@ export function markingField(
   field: string,
 ): JsonValue | undefined {
   if (field === 'position') return siblingPosition(p, m.id).index;
+  if (field === 'page') {
+    const pageId = projectIndex(p).pageOf.get(m.id) ?? null;
+    return pageId === null ? undefined : toJson({ pageId, position: m.rect });
+  }
   return Object.hasOwn(MARKING_FIELD_READERS, field)
     ? MARKING_FIELD_READERS[field]?.(m)
     : undefined;
@@ -283,6 +333,17 @@ export function layerField(p: Project, l: Layer, field: string): JsonValue | und
   }
 }
 
+export function pageField(p: Project, g: Page, field: string): JsonValue | undefined {
+  switch (field) {
+    case 'name':
+      return g.name;
+    case 'position':
+      return p.pages.indexOf(g);
+    default:
+      return undefined;
+  }
+}
+
 /**
  * The current value that corresponds to the change's `from`/`to`: the whole entity (creation,
  * removal, specialization and repository) or the field. `undefined` if the entity (or the
@@ -314,6 +375,11 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
       const l = index.layers.get(c.entityId);
       if (!l) return undefined;
       return whole ? layerValue(l) : layerField(p, l, c.field ?? '');
+    }
+    case 'page': {
+      const g = p.pages.find((page) => page.id === c.entityId);
+      if (!g) return undefined;
+      return whole ? pageValue(g) : pageField(p, g, c.field ?? '');
     }
     case 'image': {
       const i = index.containers.get(c.entityId);
@@ -392,6 +458,9 @@ function entityRefs(entity: ChangeEntity, value: JsonValue): ValueRef[] {
     push(out, 'marking', str(field(value, 'parentId')));
     // The anchor (v20) is a strong reference: `anchor-missing` if the target does not exist.
     push(out, 'marking', str(field(field(value, 'anchor') ?? null, 'to')));
+    push(out, 'page', str(field(value, 'pageId')));
+  } else if (entity === 'image') {
+    push(out, 'page', str(field(value, 'pageId')));
   } else if (entity === 'arrow') {
     // Both endpoints are markings that must exist (invariant `arrow-endpoint-missing`).
     push(out, 'marking', str(field(value, 'from')));
@@ -416,6 +485,9 @@ function fieldRefs(entity: ChangeEntity, name: string, value: JsonValue): ValueR
     if (name === 'containerId') push(out, 'image', str(value));
     if (name === 'space') push(out, 'image', str(field(value, 'containerId')));
     if (name === 'anchor') push(out, 'marking', str(field(value, 'to')));
+    if (name === 'page') push(out, 'page', str(field(value, 'pageId')));
+  } else if (entity === 'image') {
+    if (name === 'page') push(out, 'page', str(field(value, 'pageId')));
   } else if (entity === 'annotation') {
     if (name === 'parentAnnotationId') push(out, 'annotation', str(value));
     if (name === 'markingId') push(out, 'marking', str(value));

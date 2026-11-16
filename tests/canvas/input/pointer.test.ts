@@ -461,13 +461,17 @@ describe('PointerInput: middle button and Ctrl+click (CR canvas/store, items 16 
     s.cleanup();
   });
 
-  it('the armed Comment refuses a canvas point off the first page, but still comments on an item', () => {
+  it('the armed Comment puts a canvas point on the open page, and still comments on an item', () => {
     const s = setup(false, canvasProject(), new Map(), {
-      canvasPointComments: () => false,
+      openPageId: () => 'PG2',
     });
     s.ui.commentArm.value = { mode: 'navigate' };
     s.click(1050, 50);
-    expect(s.ui.composing.value).toBeNull();
+    expect(s.ui.composing.value?.anchor).toMatchObject({
+      kind: 'point',
+      containerId: null,
+      pageId: 'PG2',
+    });
     s.ui.commentArm.value = { mode: 'navigate' };
     s.click(250, 250);
     expect(s.ui.composing.value).not.toBeNull();
