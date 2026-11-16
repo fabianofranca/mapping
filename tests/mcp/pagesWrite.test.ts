@@ -228,10 +228,23 @@ describe('a root needs a page when the project has several', () => {
     expect(codes(result)).toHaveLength(1);
   });
 
-  it('`page` and `near` on different pages fail', async () => {
-    const result = await plan([
-      { op: 'create_marking', near: id('Detail'), page: 'Main', rect, name: 'X' },
-    ]);
+  it('`page` and `near` of a floating type on different pages fail', async () => {
+    // A project made by `create_project` has the notes library (a floating type).
+    ok(await mcp.call('create_project', { path: 'notes-pages', name: 'notes-pages' }));
+    const result = await plan(
+      [
+        { op: 'add_container', as: '$far', name: 'Far', ...bg },
+        { op: 'add_page', name: 'Second' },
+        {
+          op: 'create_marking',
+          near: '$far',
+          page: 'Second',
+          annotation: { type: 'notas/nota' },
+          name: 'Note',
+        },
+      ],
+      'notes-pages',
+    );
     expect(result.valid).toBe(false);
     expect(result.errors?.[0]?.code).toBe('invalid-arguments');
     expect(result.errors?.[0]?.message).toMatch(/page/);
@@ -468,5 +481,92 @@ describe('a mixed batch through plan_changes and propose_changes', () => {
     ]);
     expect(proposed.valid, JSON.stringify(proposed.errors)).toBe(true);
     expect(readProposal(target.dir, proposed.proposal.id).formatVersion).toBeLessThan(10);
+  });
+});
+
+describe('anchors, wraps and `near` across pages', () => {
+  const FLOWS_NOTE = id('K-flows');
+  let project: { name: string; dir: string };
+
+  beforeAll(() => {
+    let p = createMarking(sample(), {
+      id: FLOWS_NOTE,
+      containerId: null,
+      pageId: PAGE_FLOWS,
+      rect: { x: 5000, y: 0, width: 80, height: 40 },
+      name: 'Flows note',
+    });
+    p = createMarking(p, {
+      id: id('M-detail2'),
+      containerId: id('Detail'),
+      rect: { x: 100, y: 100, width: 40, height: 30 },
+      name: 'Detail two',
+    });
+    p = createArrow(p, { id: id('A-flows'), from: id('M-detail'), to: id('M-detail2') });
+    project = fresh(p);
+  });
+
+  it('a canvas marking anchored to a canvas marking of its own page (page 2) is accepted', async () => {
+    const result = await plan(
+      [
+        {
+          op: 'create_marking',
+          page: 'Flows',
+          anchor: { to: FLOWS_NOTE },
+          rect: { x: 5100, y: 0, width: 40, height: 30 },
+          name: 'Tip',
+        },
+      ],
+      project.name,
+    );
+    expect(result.errors, JSON.stringify(result.errors)).toBeUndefined();
+    expect(result.valid).toBe(true);
+  });
+
+  it('an anchor to a canvas marking of another page is refused', async () => {
+    const result = await plan(
+      [
+        {
+          op: 'create_marking',
+          page: 'Flows',
+          anchor: { to: id('K-main') },
+          rect: { x: 5100, y: 0, width: 40, height: 30 },
+          name: 'Tip',
+        },
+      ],
+      project.name,
+    );
+    expect(result.valid).toBe(false);
+  });
+
+  it('wrap_items ignores an arrow of another page for the page check', async () => {
+    const result = await plan(
+      [{ op: 'wrap_items', items: [id('M-solo1'), id('A-flows')], name: 'Group' }],
+      project.name,
+    );
+    expect(result.errors, JSON.stringify(result.errors)).toBeUndefined();
+    expect(result.valid).toBe(true);
+  });
+
+  it('a stale `near` on a non-floating canvas marking stays a warning, not an error', async () => {
+    const result = ok(
+      await mcp.call<Plan & { warnings?: { code: string; op: number }[] }>(
+        'plan_changes',
+        {
+          project: project.name,
+          operations: [
+            {
+              op: 'create_marking',
+              page: 'Main',
+              near: 'm/00000000',
+              rect,
+              name: 'Plain',
+            },
+          ],
+        },
+      ),
+    );
+    expect(result.errors, JSON.stringify(result.errors)).toBeUndefined();
+    expect(result.warnings?.[0]).toMatchObject({ code: 'ignored-argument', op: 0 });
   });
 });

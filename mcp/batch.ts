@@ -872,7 +872,11 @@ class Batch {
     op: Extract<Operation, { op: 'create_marking' }>,
     p: Project,
     containerId: string | null,
-    reference: { readonly inside: string | null; readonly anchor: string | null },
+    reference: {
+      readonly inside: string | null;
+      readonly anchor: string | null;
+      readonly nearUsed: boolean;
+    },
   ): string | undefined {
     if (containerId !== null) {
       if (op.page !== undefined) {
@@ -883,7 +887,11 @@ class Batch {
       }
       return undefined;
     }
-    const near = op.near === undefined ? null : this.containerOrMarking(op.near).id;
+    // An ignored `near` (non-floating type) stays a warning: it is not resolved here.
+    const near =
+      op.near === undefined || !reference.nearUsed
+        ? null
+        : this.containerOrMarking(op.near).id;
     const ref = reference.inside ?? near ?? reference.anchor;
     const implied = ref === null ? null : (projectIndex(p).pageOf.get(ref) ?? null);
     return this.rootPageId(p, op.page, implied);
@@ -2286,11 +2294,11 @@ class Batch {
       refs.set(`${kind}:${target.id}`, { kind, id: target.id });
     }
     const items = [...refs.values()];
+    const entering = items.filter((item) => canWrapItems(p, [item]));
     requireSinglePage(
       p,
-      items.map((item) => item.id),
+      entering.map((item) => item.id),
     );
-    const entering = items.filter((item) => canWrapItems(p, [item]));
     if (entering.length === 0) {
       throw new ModelError(
         'invalid-parent',
@@ -2417,10 +2425,13 @@ class Batch {
     const pageId = this.markingPageId(op, p, containerId, {
       inside: inside?.id ?? null,
       anchor: anchor?.to ?? null,
+      nearUsed: component?.floating === true,
     });
     // The anchor is checked before creating (the invariant's errors); after settling, only the space
     // may have changed and then the new marking is created without an anchor, with a warning.
-    if (anchor !== null) checkAnchorTarget(p, markingId, containerId, anchor);
+    if (anchor !== null) {
+      checkAnchorTarget(p, markingId, containerId, anchor, pageId ?? null);
+    }
     if (anchor !== null && (op.near !== undefined || inside !== null)) {
       throw new ToolError(
         'invalid-arguments',

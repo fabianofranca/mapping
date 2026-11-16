@@ -102,8 +102,9 @@ export function perspectiveDetail(
   const missing = perspective.items
     .filter((item) => index.rootOf.get(item.root) !== item.root)
     .map((item) => item.root);
+  const missingSet = new Set(missing);
   const roots = perspective.items
-    .filter((item) => !missing.includes(item.root))
+    .filter((item) => !missingSet.has(item.root))
     .filter((item) => page === null || index.pageOf.get(item.root) === page.id)
     .map((item) => rootView(refs, item));
   return {
